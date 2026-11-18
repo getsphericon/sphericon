@@ -24627,6 +24627,8 @@ func (s *ProblemCode) Decode(d *jx.Decoder) error {
 		*s = ProblemCodeRevisionChanged
 	case ProblemCodePostalAddressRequired:
 		*s = ProblemCodePostalAddressRequired
+	case ProblemCodeConfirmationEmailRequired:
+		*s = ProblemCodeConfirmationEmailRequired
 	default:
 		*s = ProblemCode(v)
 	}
@@ -38665,6 +38667,10 @@ func (s *WorkspaceResource) encodeFields(e *jx.Encoder) {
 		e.Str(s.PostalAddress)
 	}
 	{
+		e.FieldStart("requireConfirmedOptIn")
+		e.Bool(s.RequireConfirmedOptIn)
+	}
+	{
 		e.FieldStart("timezone")
 		s.Timezone.Encode(e)
 	}
@@ -38680,13 +38686,14 @@ func (s *WorkspaceResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfWorkspaceResource = [6]string{
+var jsonFieldsNameOfWorkspaceResource = [7]string{
 	0: "id",
 	1: "name",
 	2: "postalAddress",
-	3: "timezone",
-	4: "sendCap",
-	5: "revision",
+	3: "requireConfirmedOptIn",
+	4: "timezone",
+	5: "sendCap",
+	6: "revision",
 }
 
 // Decode decodes WorkspaceResource from json.
@@ -38732,8 +38739,20 @@ func (s *WorkspaceResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"postalAddress\"")
 			}
-		case "timezone":
+		case "requireConfirmedOptIn":
 			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Bool()
+				s.RequireConfirmedOptIn = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"requireConfirmedOptIn\"")
+			}
+		case "timezone":
+			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
 				if err := s.Timezone.Decode(d); err != nil {
 					return err
@@ -38753,7 +38772,7 @@ func (s *WorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"sendCap\"")
 			}
 		case "revision":
-			requiredBitSet[0] |= 1 << 5
+			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
 				if err := s.Revision.Decode(d); err != nil {
 					return err
@@ -38772,7 +38791,7 @@ func (s *WorkspaceResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00101111,
+		0b01011111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

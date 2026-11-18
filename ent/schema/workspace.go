@@ -50,12 +50,34 @@ func (Workspace) Fields() []ent.Field {
 			Annotations(Sensitive{}, UniqueOverAll{Reason: "a collect key names one Workspace for ever, and a discarded Workspace keeps it to be restored"}),
 		// Confirmed opt-in policy (ADR 0013). When true, marketing sends require a
 		// Confirmation for the destination (double opt-in); when false (the default),
-		// the subtractive single-opt-in model applies unchanged. Forward-looking:
-		// enabling it backfills grandfathered confirmations rather than muting the
-		// existing list. Schema-only for now — exposed on the /site API in a later slice.
+		// the subtractive single-opt-in model applies unchanged. Only a person turns it on, in
+		// the console, and only while the confirmation email is set up: enabling it records a
+		// grandfathered Confirmation for every mailable address rather than muting the existing
+		// list.
 		field.Bool("require_confirmed_opt_in").
 			Annotations(Attribute(reasonSetting)).
 			Default(false),
+		// The confirmation email's settings (ADR 0013): the From, an address on a verified Sending
+		// domain (checked when it is saved), which marks the email set up, its name, the subject
+		// and the introductory paragraph. The rest of the email is fixed by sphericon. A NULL name,
+		// subject or intro reads as the Instance's default naming the Workspace, so a rename
+		// carries into it.
+		field.String("confirmation_from_email").
+			Optional().
+			Nillable().
+			NotEmpty(),
+		field.String("confirmation_from_name").
+			Optional().
+			Nillable().
+			NotEmpty(),
+		field.String("confirmation_subject").
+			Optional().
+			Nillable().
+			NotEmpty(),
+		field.String("confirmation_intro").
+			Optional().
+			Nillable().
+			NotEmpty(),
 		// Physical postal address printed in the marketing email footer, as
 		// CAN-SPAM 15 U.S.C. §7704(a)(5) requires of every commercial message.
 		// Freeform so it carries the legal sender name + address on one field

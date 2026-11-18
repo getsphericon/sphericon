@@ -102,10 +102,11 @@ func (m *Module) ConfirmSMSIn(ctx context.Context, s *ent.Scoped, number string,
 	if err != nil {
 		return nil, err
 	}
-	return m.recordIn(ctx, s, grant{
+	standing, _, err := m.recordIn(ctx, s, grant{
 		channel: channels.SMS, destination: number, provenance: confirmation.ProvenanceImported,
 		evidence: &ev, contactID: holder, at: consentstamps.At(m.now()),
 	})
+	return standing, err
 }
 
 // StartSMSIn reads a START the number texted, which occurred at the given time (ADR 0077): it lifts
@@ -128,7 +129,7 @@ func (m *Module) StartSMSIn(ctx context.Context, s *ent.Scoped, number string, a
 	if err != nil {
 		return false, err
 	}
-	_, err = m.recordIn(ctx, s, grant{
+	_, _, err = m.recordIn(ctx, s, grant{
 		channel: channels.SMS, destination: number, provenance: confirmation.ProvenanceKeyword,
 		contactID: holder, at: at,
 	})

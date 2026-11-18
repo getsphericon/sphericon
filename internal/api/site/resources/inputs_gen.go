@@ -338,6 +338,25 @@ func (c *InputsImpl) BroadcastsOrder(source site.SiteBroadcastsOrder) broadcasts
 	}
 	return broadcastsOrder
 }
+func (c *InputsImpl) ConfirmationEmailSet(source *site.SiteUpdateConfirmationEmailInput) workspaces.SetConfirmationEmailInput {
+	var workspacesSetConfirmationEmailInput workspaces.SetConfirmationEmailInput
+	if source != nil {
+		workspacesSetConfirmationEmailInput.Revision = revisionIn((*source).Revision)
+		workspacesSetConfirmationEmailInput.FromEmail = string((*source).FromEmail)
+		workspacesSetConfirmationEmailInput.FromName = stringPtrIn((*source).FromName)
+		workspacesSetConfirmationEmailInput.Subject = stringPtrIn((*source).Subject)
+		workspacesSetConfirmationEmailInput.Intro = stringPtrIn((*source).Intro)
+	}
+	return workspacesSetConfirmationEmailInput
+}
+func (c *InputsImpl) ConfirmedOptInSet(source *site.SiteSetConfirmedOptInInput) workspaceview.SetConfirmedOptInInput {
+	var workspaceviewSetConfirmedOptInInput workspaceview.SetConfirmedOptInInput
+	if source != nil {
+		workspaceviewSetConfirmedOptInInput.Revision = revisionIn((*source).Revision)
+		workspaceviewSetConfirmedOptInInput.On = (*source).Enabled
+	}
+	return workspaceviewSetConfirmedOptInInput
+}
 func (c *InputsImpl) ConsentEvidence(source *site.ConsentEvidence) confirmations.Evidence {
 	var confirmationsEvidence confirmations.Evidence
 	if source != nil {

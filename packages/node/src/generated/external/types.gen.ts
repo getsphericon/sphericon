@@ -3874,7 +3874,8 @@ export const ProblemCode = {
   MIGRATIONS_PENDING: 'migrations_pending',
   ACCEPTANCE_PENDING: 'acceptance_pending',
   REVISION_CHANGED: 'revision_changed',
-  POSTAL_ADDRESS_REQUIRED: 'postal_address_required'
+  POSTAL_ADDRESS_REQUIRED: 'postal_address_required',
+  CONFIRMATION_EMAIL_REQUIRED: 'confirmation_email_required'
 } as const;
 
 /**
@@ -5974,6 +5975,12 @@ export type WorkspaceResource = {
    * sets it, in the console's Workspace settings.
    */
   postalAddress: string;
+  /**
+   * Whether email reaches an address only once it holds a Confirmation (confirmed opt-in, ADR
+   * 0013); off, email is single opt-in by the Workspace's choice. Read-only: only a person turns it
+   * on, in the console's Workspace settings, affirming that the current mailable list consented.
+   */
+  requireConfirmedOptIn: boolean;
   /**
    * The IANA time zone every analytics report counts its days in (ADR 0057)
    */

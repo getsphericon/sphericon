@@ -173,7 +173,8 @@ export const ProblemCode = {
   MIGRATIONS_PENDING: 'migrations_pending',
   ACCEPTANCE_PENDING: 'acceptance_pending',
   REVISION_CHANGED: 'revision_changed',
-  POSTAL_ADDRESS_REQUIRED: 'postal_address_required'
+  POSTAL_ADDRESS_REQUIRED: 'postal_address_required',
+  CONFIRMATION_EMAIL_REQUIRED: 'confirmation_email_required'
 } as const;
 
 /**

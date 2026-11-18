@@ -81,6 +81,9 @@ type grant struct {
 	ip string
 	// at is when the consent was given (ADR 0154).
 	at consentstamps.Occurrence
+	// history records the proof as history that triggers nothing (events.MarketingConfirmed.History):
+	// a grandfathered Confirmation is asserted, not given by the person now.
+	history bool
 }
 
 // ErrSuperseded refuses a Confirmation given before the destination's consent was withdrawn: it
@@ -102,14 +105,14 @@ var _ = db.Declare(
 // stronger stands, and publishes its Channel's proof (grant.proof) when it writes, in the
 // transaction s is bound to. A weaker or equal one leaves everything as it was and
 // publishes nothing, so a repeated request is a no-op; so does one that a concurrent request beat
-// to the row. It returns the Confirmation that stands. One given before the destination's
-// Confirmation state was last set (an opt-out of everything withdrew it later) records nothing
-// either, and is ErrSuperseded when no Confirmation stands (ADR 0154): provenance is checked first,
-// then time.
-func (m *Module) recordIn(ctx context.Context, s *ent.Scoped, g grant) (*ent.Confirmation, error) {
+// to the row. It returns the Confirmation that stands and whether it is g's, written now. One
+// given before the destination's Confirmation state was last set (an opt-out of everything
+// withdrew it later) records nothing either, and is ErrSuperseded when no Confirmation stands (ADR
+// 0154): provenance is checked first, then time.
+func (m *Module) recordIn(ctx context.Context, s *ent.Scoped, g grant) (*ent.Confirmation, bool, error) {
 	key := stampKey(g.channel, g.destination)
 	if _, err := m.stamps.Hold(ctx, s, key); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	standing, err := s.Confirmation().Query().Where(
 		confirmation.ChannelEQ(g.channel),
@@ -119,29 +122,29 @@ func (m *Module) recordIn(ctx context.Context, s *ent.Scoped, g grant) (*ent.Con
 	case ent.IsNotFound(err):
 		standing = nil
 	case err != nil:
-		return nil, fmt.Errorf("find confirmation: %w", err)
+		return nil, false, fmt.Errorf("find confirmation: %w", err)
 	case !Stronger(g.provenance, standing.Provenance):
-		return standing, nil
+		return standing, false, nil
 	}
 	admitted, err := m.stamps.Admit(ctx, s, consentstamps.Observation{Key: key, Fact: consentstamps.Confirmation, Occurred: g.at})
 	switch {
 	case err != nil:
-		return nil, err
+		return nil, false, err
 	case !admitted && standing == nil:
-		return nil, ErrSuperseded
+		return nil, false, ErrSuperseded
 	case !admitted:
-		return standing, nil
+		return standing, false, nil
 	case standing != nil:
 		// The stronger Confirmation replaces the row whole, so its evidence and time are its own;
 		// the replaced one's Event stays in the log.
 		if err := s.Confirmation().DeleteOneID(standing.ID).Exec(ctx); err != nil {
-			return nil, fmt.Errorf("replace confirmation: %w", err)
+			return nil, false, fmt.Errorf("replace confirmation: %w", err)
 		}
 	}
 	// The Contact may be gone by now (erased between the send and the click): the Confirmation is
 	// keyed by its destination and is recorded unlinked.
 	if g.contactID, err = m.locks.Referenced(ctx, s, g.contactID); err != nil {
-		return nil, fmt.Errorf("lock the confirmation's contact: %w", err)
+		return nil, false, fmt.Errorf("lock the confirmation's contact: %w", err)
 	}
 	create := s.Confirmation().Create().
 		SetChannel(g.channel).
@@ -155,7 +158,7 @@ func (m *Module) recordIn(ctx context.Context, s *ent.Scoped, g grant) (*ent.Con
 	}
 	proof, err := g.proof(s.WorkspaceID())
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	id, err := create.
 		OnConflictColumns(confirmation.FieldWorkspaceID, confirmation.FieldChannel, confirmation.FieldDestination).
@@ -163,17 +166,19 @@ func (m *Module) recordIn(ctx context.Context, s *ent.Scoped, g grant) (*ent.Con
 		ID(ctx)
 	inserted, err := db.Inserted(err)
 	if err != nil {
-		return nil, fmt.Errorf("record confirmation: %w", err)
+		return nil, false, fmt.Errorf("record confirmation: %w", err)
 	}
 	if !inserted {
 		// A concurrent request recorded the destination first: its Confirmation stands, and its
 		// proof is its own.
-		return standingOf(ctx, s, g.channel, g.destination)
+		standing, err := standingOf(ctx, s, g.channel, g.destination)
+		return standing, false, err
 	}
 	if err := m.bus.PublishIn(ctx, s, proof); err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	return s.Confirmation().Get(ctx, id)
+	recorded, err := s.Confirmation().Get(ctx, id)
+	return recorded, err == nil, err
 }
 
 // standingOf reads the Confirmation of destination on channel.
@@ -196,7 +201,7 @@ func (g grant) proof(workspaceID int64) (events.DomainEvent, error) {
 	case channels.Email:
 		return &events.MarketingConfirmed{
 			WorkspaceID: workspaceID, ContactID: g.contactID, Email: g.destination,
-			Provenance: string(g.provenance), IP: g.ip,
+			Provenance: string(g.provenance), IP: g.ip, History: g.history,
 		}, nil
 	case channels.SMS:
 		e := &events.SmsConfirmed{

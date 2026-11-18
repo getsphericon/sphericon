@@ -34,6 +34,14 @@ type Workspace struct {
 	CollectKey string `json:"-"`
 	// RequireConfirmedOptIn holds the value of the "require_confirmed_opt_in" field.
 	RequireConfirmedOptIn bool `json:"require_confirmed_opt_in,omitempty"`
+	// ConfirmationFromEmail holds the value of the "confirmation_from_email" field.
+	ConfirmationFromEmail *string `json:"confirmation_from_email,omitempty"`
+	// ConfirmationFromName holds the value of the "confirmation_from_name" field.
+	ConfirmationFromName *string `json:"confirmation_from_name,omitempty"`
+	// ConfirmationSubject holds the value of the "confirmation_subject" field.
+	ConfirmationSubject *string `json:"confirmation_subject,omitempty"`
+	// ConfirmationIntro holds the value of the "confirmation_intro" field.
+	ConfirmationIntro *string `json:"confirmation_intro,omitempty"`
 	// PostalAddress holds the value of the "postal_address" field.
 	PostalAddress string `json:"postal_address,omitempty"`
 	// RetentionDays holds the value of the "retention_days" field.
@@ -660,7 +668,7 @@ func (*Workspace) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case workspace.FieldID, workspace.FieldRevision, workspace.FieldRetentionDays, workspace.FieldAttributionWindowDays, workspace.FieldSendCap:
 			values[i] = new(sql.NullInt64)
-		case workspace.FieldName, workspace.FieldPublicID, workspace.FieldCollectKey, workspace.FieldPostalAddress, workspace.FieldTimezone, workspace.FieldReportingCurrency, workspace.FieldSuspendedByKind, workspace.FieldSuspendedByID, workspace.FieldSuspensionReason:
+		case workspace.FieldName, workspace.FieldPublicID, workspace.FieldCollectKey, workspace.FieldConfirmationFromEmail, workspace.FieldConfirmationFromName, workspace.FieldConfirmationSubject, workspace.FieldConfirmationIntro, workspace.FieldPostalAddress, workspace.FieldTimezone, workspace.FieldReportingCurrency, workspace.FieldSuspendedByKind, workspace.FieldSuspendedByID, workspace.FieldSuspensionReason:
 			values[i] = new(sql.NullString)
 		case workspace.FieldCreatedAt, workspace.FieldUpdatedAt, workspace.FieldDiscardedAt, workspace.FieldSecondFactorRequiredAt, workspace.FieldErasedAt, workspace.FieldSuspendedAt, workspace.FieldClearedAt:
 			values[i] = new(sql.NullTime)
@@ -733,6 +741,34 @@ func (_m *Workspace) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field require_confirmed_opt_in", values[i])
 			} else if value.Valid {
 				_m.RequireConfirmedOptIn = value.Bool
+			}
+		case workspace.FieldConfirmationFromEmail:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field confirmation_from_email", values[i])
+			} else if value.Valid {
+				_m.ConfirmationFromEmail = new(string)
+				*_m.ConfirmationFromEmail = value.String
+			}
+		case workspace.FieldConfirmationFromName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field confirmation_from_name", values[i])
+			} else if value.Valid {
+				_m.ConfirmationFromName = new(string)
+				*_m.ConfirmationFromName = value.String
+			}
+		case workspace.FieldConfirmationSubject:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field confirmation_subject", values[i])
+			} else if value.Valid {
+				_m.ConfirmationSubject = new(string)
+				*_m.ConfirmationSubject = value.String
+			}
+		case workspace.FieldConfirmationIntro:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field confirmation_intro", values[i])
+			} else if value.Valid {
+				_m.ConfirmationIntro = new(string)
+				*_m.ConfirmationIntro = value.String
 			}
 		case workspace.FieldPostalAddress:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -1155,6 +1191,26 @@ func (_m *Workspace) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("require_confirmed_opt_in=")
 	builder.WriteString(fmt.Sprintf("%v", _m.RequireConfirmedOptIn))
+	builder.WriteString(", ")
+	if v := _m.ConfirmationFromEmail; v != nil {
+		builder.WriteString("confirmation_from_email=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.ConfirmationFromName; v != nil {
+		builder.WriteString("confirmation_from_name=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.ConfirmationSubject; v != nil {
+		builder.WriteString("confirmation_subject=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.ConfirmationIntro; v != nil {
+		builder.WriteString("confirmation_intro=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", ")
 	builder.WriteString("postal_address=")
 	builder.WriteString(_m.PostalAddress)

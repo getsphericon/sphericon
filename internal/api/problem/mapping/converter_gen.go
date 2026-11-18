@@ -51,6 +51,8 @@ func (c *ConverterImpl) CollectCode(source site.ProblemCode) collect.ProblemCode
 	switch source {
 	case site.ProblemCodeAcceptancePending:
 		collectapiProblemCode = collect.ProblemCodeAcceptancePending
+	case site.ProblemCodeConfirmationEmailRequired:
+		collectapiProblemCode = collect.ProblemCodeConfirmationEmailRequired
 	case site.ProblemCodeEmailVerificationRequired:
 		collectapiProblemCode = collect.ProblemCodeEmailVerificationRequired
 	case site.ProblemCodeMigrationsPending:
@@ -120,6 +122,8 @@ func (c *ConverterImpl) ExternalCode(source site.ProblemCode) external.ProblemCo
 	switch source {
 	case site.ProblemCodeAcceptancePending:
 		externalapiProblemCode = external.ProblemCodeAcceptancePending
+	case site.ProblemCodeConfirmationEmailRequired:
+		externalapiProblemCode = external.ProblemCodeConfirmationEmailRequired
 	case site.ProblemCodeEmailVerificationRequired:
 		externalapiProblemCode = external.ProblemCodeEmailVerificationRequired
 	case site.ProblemCodeMigrationsPending:
@@ -189,6 +193,8 @@ func (c *ConverterImpl) ServiceCode(source site.ProblemCode) service.ProblemCode
 	switch source {
 	case site.ProblemCodeAcceptancePending:
 		serviceapiProblemCode = service.ProblemCodeAcceptancePending
+	case site.ProblemCodeConfirmationEmailRequired:
+		serviceapiProblemCode = service.ProblemCodeConfirmationEmailRequired
 	case site.ProblemCodeEmailVerificationRequired:
 		serviceapiProblemCode = service.ProblemCodeEmailVerificationRequired
 	case site.ProblemCodeMigrationsPending:
@@ -274,6 +280,8 @@ func (c *ConverterImpl) StaffCode(source site.ProblemCode) staff.ProblemCode {
 	switch source {
 	case site.ProblemCodeAcceptancePending:
 		staffapiProblemCode = staff.ProblemCodeAcceptancePending
+	case site.ProblemCodeConfirmationEmailRequired:
+		staffapiProblemCode = staff.ProblemCodeConfirmationEmailRequired
 	case site.ProblemCodeEmailVerificationRequired:
 		staffapiProblemCode = staff.ProblemCodeEmailVerificationRequired
 	case site.ProblemCodeMigrationsPending:
@@ -343,6 +351,8 @@ func (c *ConverterImpl) StaffeeCode(source site.ProblemCode) staffee.ProblemCode
 	switch source {
 	case site.ProblemCodeAcceptancePending:
 		staffeeapiProblemCode = staffee.ProblemCodeAcceptancePending
+	case site.ProblemCodeConfirmationEmailRequired:
+		staffeeapiProblemCode = staffee.ProblemCodeConfirmationEmailRequired
 	case site.ProblemCodeEmailVerificationRequired:
 		staffeeapiProblemCode = staffee.ProblemCodeEmailVerificationRequired
 	case site.ProblemCodeMigrationsPending:

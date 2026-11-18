@@ -965,7 +965,8 @@ export const zProblemCode = z.enum([
   'migrations_pending',
   'acceptance_pending',
   'revision_changed',
-  'postal_address_required'
+  'postal_address_required',
+  'confirmation_email_required'
 ]);
 
 /**
@@ -1608,6 +1609,31 @@ export const zSiteConfirmEmailChangeInput = z.strictObject({
 });
 
 /**
+ * The texts the confirmation email goes out with while the Workspace sets none of its own: the
+ * Instance's defaults naming the Workspace
+ */
+export const zSiteConfirmationEmailDefaults = z.object({
+  fromName: z.string(),
+  subject: z.string(),
+  intro: z.string()
+});
+
+/**
+ * The confirmation email of the Workspace (ADR 0013): the email a Confirmation request sends,
+ * whose link records a Confirmation when the person presses Confirm. The Workspace sets its From,
+ * subject and introductory paragraph; the Confirm button, the line that nothing happens if the
+ * person did not ask, and the postal address when there is one are fixed.
+ */
+export const zSiteConfirmationEmailResource = z.object({
+  fromEmail: zEmailAddress.nullable(),
+  fromName: z.string().nullable(),
+  subject: z.string().nullable(),
+  intro: z.string().nullable(),
+  defaults: zSiteConfirmationEmailDefaults,
+  revision: zRevision
+});
+
+/**
  * What a Workspace holds for one email address, as counts only (a Privacy request lookup). Nothing held is all zeros and `contactHeld: false`.
  */
 export const zSiteContactHoldings = z.object({
@@ -2204,6 +2230,14 @@ export const zSiteAnalyticsOverview = z.object({
 });
 
 /**
+ * Turn confirmed opt-in on or off (ADR 0013)
+ */
+export const zSiteSetConfirmedOptInInput = z.strictObject({
+  revision: zRevision,
+  enabled: z.boolean()
+});
+
+/**
  * Switch domain join on or off
  */
 export const zSiteSetDomainJoinInput = z.strictObject({
@@ -2358,6 +2392,17 @@ export const zSiteTransactionalEmailStatus = z.enum([
   'suppressed',
   'failed'
 ]);
+
+/**
+ * Set up the confirmation email
+ */
+export const zSiteUpdateConfirmationEmailInput = z.strictObject({
+  revision: zRevision,
+  fromEmail: zEmailAddress,
+  fromName: z.exactOptional(z.string()),
+  subject: z.exactOptional(z.string()),
+  intro: z.exactOptional(z.string())
+});
 
 /**
  * Change a member's role. Only an owner may grant/transfer the owner role.
@@ -4034,6 +4079,7 @@ export const zSiteWorkspaceResource = z.object({
   collectKey: z.string(),
   postalAddress: z.string(),
   timezone: zTimeZoneName,
+  requireConfirmedOptIn: z.boolean(),
   role: zSiteMembershipRole,
   permissions: z.array(zPermission),
   suspendedAt: z.exactOptional(zTimestamp.nullable()),
@@ -5622,6 +5668,37 @@ export const zSiteCapturedMessagesGetPath = z.object({
  * The request has succeeded.
  */
 export const zSiteCapturedMessagesGetResponse = zSiteCapturedMessageResource;
+
+export const zSiteWorkspacesGetConfirmationEmailPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWorkspacesGetConfirmationEmailResponse = zSiteConfirmationEmailResource;
+
+export const zSiteWorkspacesUpdateConfirmationEmailBody = zSiteUpdateConfirmationEmailInput;
+
+export const zSiteWorkspacesUpdateConfirmationEmailPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWorkspacesUpdateConfirmationEmailResponse = zSiteConfirmationEmailResource;
+
+export const zSiteWorkspacesSetConfirmedOptInBody = zSiteSetConfirmedOptInInput;
+
+export const zSiteWorkspacesSetConfirmedOptInPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWorkspacesSetConfirmedOptInResponse = zSiteWorkspaceResource;
 
 export const zSiteConnectionsListPath = z.object({
   workspaceId: zWorkspaceId

@@ -2877,6 +2877,19 @@ func encodeSiteWorkspacesGetResponse(response *SiteWorkspaceResource, w http.Res
 	return nil
 }
 
+func encodeSiteWorkspacesGetConfirmationEmailResponse(response *SiteConfirmationEmailResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
 func encodeSiteWorkspacesGetRevenueSettingsResponse(response *SiteRevenueSettingsResource, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
@@ -2969,6 +2982,19 @@ func encodeSiteWorkspacesRestoreResponse(response *SiteWorkspaceResource, w http
 	return nil
 }
 
+func encodeSiteWorkspacesSetConfirmedOptInResponse(response *SiteWorkspaceResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
 func encodeSiteWorkspacesSetTimezoneResponse(response *SiteWorkspaceResource, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
@@ -2983,6 +3009,19 @@ func encodeSiteWorkspacesSetTimezoneResponse(response *SiteWorkspaceResource, w 
 }
 
 func encodeSiteWorkspacesUpdateResponse(response *SiteWorkspaceResource, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSiteWorkspacesUpdateConfirmationEmailResponse(response *SiteConfirmationEmailResource, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 

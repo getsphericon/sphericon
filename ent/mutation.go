@@ -75606,6 +75606,10 @@ type WorkspaceMutation struct {
 	public_id                          *string
 	collect_key                        *string
 	require_confirmed_opt_in           *bool
+	confirmation_from_email            *string
+	confirmation_from_name             *string
+	confirmation_subject               *string
+	confirmation_intro                 *string
 	postal_address                     *string
 	retention_days                     *int
 	addretention_days                  *int
@@ -76205,6 +76209,202 @@ func (m *WorkspaceMutation) OldRequireConfirmedOptIn(ctx context.Context) (v boo
 // ResetRequireConfirmedOptIn resets all changes to the "require_confirmed_opt_in" field.
 func (m *WorkspaceMutation) ResetRequireConfirmedOptIn() {
 	m.require_confirmed_opt_in = nil
+}
+
+// SetConfirmationFromEmail sets the "confirmation_from_email" field.
+func (m *WorkspaceMutation) SetConfirmationFromEmail(s string) {
+	m.confirmation_from_email = &s
+}
+
+// ConfirmationFromEmail returns the value of the "confirmation_from_email" field in the mutation.
+func (m *WorkspaceMutation) ConfirmationFromEmail() (r string, exists bool) {
+	v := m.confirmation_from_email
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConfirmationFromEmail returns the old "confirmation_from_email" field's value of the Workspace entity.
+// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceMutation) OldConfirmationFromEmail(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConfirmationFromEmail is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConfirmationFromEmail requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConfirmationFromEmail: %w", err)
+	}
+	return oldValue.ConfirmationFromEmail, nil
+}
+
+// ClearConfirmationFromEmail clears the value of the "confirmation_from_email" field.
+func (m *WorkspaceMutation) ClearConfirmationFromEmail() {
+	m.confirmation_from_email = nil
+	m.clearedFields[workspace.FieldConfirmationFromEmail] = struct{}{}
+}
+
+// ConfirmationFromEmailCleared returns if the "confirmation_from_email" field was cleared in this mutation.
+func (m *WorkspaceMutation) ConfirmationFromEmailCleared() bool {
+	_, ok := m.clearedFields[workspace.FieldConfirmationFromEmail]
+	return ok
+}
+
+// ResetConfirmationFromEmail resets all changes to the "confirmation_from_email" field.
+func (m *WorkspaceMutation) ResetConfirmationFromEmail() {
+	m.confirmation_from_email = nil
+	delete(m.clearedFields, workspace.FieldConfirmationFromEmail)
+}
+
+// SetConfirmationFromName sets the "confirmation_from_name" field.
+func (m *WorkspaceMutation) SetConfirmationFromName(s string) {
+	m.confirmation_from_name = &s
+}
+
+// ConfirmationFromName returns the value of the "confirmation_from_name" field in the mutation.
+func (m *WorkspaceMutation) ConfirmationFromName() (r string, exists bool) {
+	v := m.confirmation_from_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConfirmationFromName returns the old "confirmation_from_name" field's value of the Workspace entity.
+// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceMutation) OldConfirmationFromName(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConfirmationFromName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConfirmationFromName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConfirmationFromName: %w", err)
+	}
+	return oldValue.ConfirmationFromName, nil
+}
+
+// ClearConfirmationFromName clears the value of the "confirmation_from_name" field.
+func (m *WorkspaceMutation) ClearConfirmationFromName() {
+	m.confirmation_from_name = nil
+	m.clearedFields[workspace.FieldConfirmationFromName] = struct{}{}
+}
+
+// ConfirmationFromNameCleared returns if the "confirmation_from_name" field was cleared in this mutation.
+func (m *WorkspaceMutation) ConfirmationFromNameCleared() bool {
+	_, ok := m.clearedFields[workspace.FieldConfirmationFromName]
+	return ok
+}
+
+// ResetConfirmationFromName resets all changes to the "confirmation_from_name" field.
+func (m *WorkspaceMutation) ResetConfirmationFromName() {
+	m.confirmation_from_name = nil
+	delete(m.clearedFields, workspace.FieldConfirmationFromName)
+}
+
+// SetConfirmationSubject sets the "confirmation_subject" field.
+func (m *WorkspaceMutation) SetConfirmationSubject(s string) {
+	m.confirmation_subject = &s
+}
+
+// ConfirmationSubject returns the value of the "confirmation_subject" field in the mutation.
+func (m *WorkspaceMutation) ConfirmationSubject() (r string, exists bool) {
+	v := m.confirmation_subject
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConfirmationSubject returns the old "confirmation_subject" field's value of the Workspace entity.
+// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceMutation) OldConfirmationSubject(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConfirmationSubject is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConfirmationSubject requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConfirmationSubject: %w", err)
+	}
+	return oldValue.ConfirmationSubject, nil
+}
+
+// ClearConfirmationSubject clears the value of the "confirmation_subject" field.
+func (m *WorkspaceMutation) ClearConfirmationSubject() {
+	m.confirmation_subject = nil
+	m.clearedFields[workspace.FieldConfirmationSubject] = struct{}{}
+}
+
+// ConfirmationSubjectCleared returns if the "confirmation_subject" field was cleared in this mutation.
+func (m *WorkspaceMutation) ConfirmationSubjectCleared() bool {
+	_, ok := m.clearedFields[workspace.FieldConfirmationSubject]
+	return ok
+}
+
+// ResetConfirmationSubject resets all changes to the "confirmation_subject" field.
+func (m *WorkspaceMutation) ResetConfirmationSubject() {
+	m.confirmation_subject = nil
+	delete(m.clearedFields, workspace.FieldConfirmationSubject)
+}
+
+// SetConfirmationIntro sets the "confirmation_intro" field.
+func (m *WorkspaceMutation) SetConfirmationIntro(s string) {
+	m.confirmation_intro = &s
+}
+
+// ConfirmationIntro returns the value of the "confirmation_intro" field in the mutation.
+func (m *WorkspaceMutation) ConfirmationIntro() (r string, exists bool) {
+	v := m.confirmation_intro
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConfirmationIntro returns the old "confirmation_intro" field's value of the Workspace entity.
+// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceMutation) OldConfirmationIntro(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConfirmationIntro is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConfirmationIntro requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConfirmationIntro: %w", err)
+	}
+	return oldValue.ConfirmationIntro, nil
+}
+
+// ClearConfirmationIntro clears the value of the "confirmation_intro" field.
+func (m *WorkspaceMutation) ClearConfirmationIntro() {
+	m.confirmation_intro = nil
+	m.clearedFields[workspace.FieldConfirmationIntro] = struct{}{}
+}
+
+// ConfirmationIntroCleared returns if the "confirmation_intro" field was cleared in this mutation.
+func (m *WorkspaceMutation) ConfirmationIntroCleared() bool {
+	_, ok := m.clearedFields[workspace.FieldConfirmationIntro]
+	return ok
+}
+
+// ResetConfirmationIntro resets all changes to the "confirmation_intro" field.
+func (m *WorkspaceMutation) ResetConfirmationIntro() {
+	m.confirmation_intro = nil
+	delete(m.clearedFields, workspace.FieldConfirmationIntro)
 }
 
 // SetPostalAddress sets the "postal_address" field.
@@ -79738,7 +79938,7 @@ func (m *WorkspaceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WorkspaceMutation) Fields() []string {
-	fields := make([]string, 0, 23)
+	fields := make([]string, 0, 27)
 	if m.created_at != nil {
 		fields = append(fields, workspace.FieldCreatedAt)
 	}
@@ -79762,6 +79962,18 @@ func (m *WorkspaceMutation) Fields() []string {
 	}
 	if m.require_confirmed_opt_in != nil {
 		fields = append(fields, workspace.FieldRequireConfirmedOptIn)
+	}
+	if m.confirmation_from_email != nil {
+		fields = append(fields, workspace.FieldConfirmationFromEmail)
+	}
+	if m.confirmation_from_name != nil {
+		fields = append(fields, workspace.FieldConfirmationFromName)
+	}
+	if m.confirmation_subject != nil {
+		fields = append(fields, workspace.FieldConfirmationSubject)
+	}
+	if m.confirmation_intro != nil {
+		fields = append(fields, workspace.FieldConfirmationIntro)
 	}
 	if m.postal_address != nil {
 		fields = append(fields, workspace.FieldPostalAddress)
@@ -79832,6 +80044,14 @@ func (m *WorkspaceMutation) Field(name string) (ent.Value, bool) {
 		return m.CollectKey()
 	case workspace.FieldRequireConfirmedOptIn:
 		return m.RequireConfirmedOptIn()
+	case workspace.FieldConfirmationFromEmail:
+		return m.ConfirmationFromEmail()
+	case workspace.FieldConfirmationFromName:
+		return m.ConfirmationFromName()
+	case workspace.FieldConfirmationSubject:
+		return m.ConfirmationSubject()
+	case workspace.FieldConfirmationIntro:
+		return m.ConfirmationIntro()
 	case workspace.FieldPostalAddress:
 		return m.PostalAddress()
 	case workspace.FieldRetentionDays:
@@ -79887,6 +80107,14 @@ func (m *WorkspaceMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldCollectKey(ctx)
 	case workspace.FieldRequireConfirmedOptIn:
 		return m.OldRequireConfirmedOptIn(ctx)
+	case workspace.FieldConfirmationFromEmail:
+		return m.OldConfirmationFromEmail(ctx)
+	case workspace.FieldConfirmationFromName:
+		return m.OldConfirmationFromName(ctx)
+	case workspace.FieldConfirmationSubject:
+		return m.OldConfirmationSubject(ctx)
+	case workspace.FieldConfirmationIntro:
+		return m.OldConfirmationIntro(ctx)
 	case workspace.FieldPostalAddress:
 		return m.OldPostalAddress(ctx)
 	case workspace.FieldRetentionDays:
@@ -79981,6 +80209,34 @@ func (m *WorkspaceMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRequireConfirmedOptIn(v)
+		return nil
+	case workspace.FieldConfirmationFromEmail:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConfirmationFromEmail(v)
+		return nil
+	case workspace.FieldConfirmationFromName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConfirmationFromName(v)
+		return nil
+	case workspace.FieldConfirmationSubject:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConfirmationSubject(v)
+		return nil
+	case workspace.FieldConfirmationIntro:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConfirmationIntro(v)
 		return nil
 	case workspace.FieldPostalAddress:
 		v, ok := value.(string)
@@ -80171,6 +80427,18 @@ func (m *WorkspaceMutation) ClearedFields() []string {
 	if m.FieldCleared(workspace.FieldDiscardedAt) {
 		fields = append(fields, workspace.FieldDiscardedAt)
 	}
+	if m.FieldCleared(workspace.FieldConfirmationFromEmail) {
+		fields = append(fields, workspace.FieldConfirmationFromEmail)
+	}
+	if m.FieldCleared(workspace.FieldConfirmationFromName) {
+		fields = append(fields, workspace.FieldConfirmationFromName)
+	}
+	if m.FieldCleared(workspace.FieldConfirmationSubject) {
+		fields = append(fields, workspace.FieldConfirmationSubject)
+	}
+	if m.FieldCleared(workspace.FieldConfirmationIntro) {
+		fields = append(fields, workspace.FieldConfirmationIntro)
+	}
 	if m.FieldCleared(workspace.FieldPostalAddress) {
 		fields = append(fields, workspace.FieldPostalAddress)
 	}
@@ -80223,6 +80491,18 @@ func (m *WorkspaceMutation) ClearField(name string) error {
 	switch name {
 	case workspace.FieldDiscardedAt:
 		m.ClearDiscardedAt()
+		return nil
+	case workspace.FieldConfirmationFromEmail:
+		m.ClearConfirmationFromEmail()
+		return nil
+	case workspace.FieldConfirmationFromName:
+		m.ClearConfirmationFromName()
+		return nil
+	case workspace.FieldConfirmationSubject:
+		m.ClearConfirmationSubject()
+		return nil
+	case workspace.FieldConfirmationIntro:
+		m.ClearConfirmationIntro()
 		return nil
 	case workspace.FieldPostalAddress:
 		m.ClearPostalAddress()
@@ -80291,6 +80571,18 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 		return nil
 	case workspace.FieldRequireConfirmedOptIn:
 		m.ResetRequireConfirmedOptIn()
+		return nil
+	case workspace.FieldConfirmationFromEmail:
+		m.ResetConfirmationFromEmail()
+		return nil
+	case workspace.FieldConfirmationFromName:
+		m.ResetConfirmationFromName()
+		return nil
+	case workspace.FieldConfirmationSubject:
+		m.ResetConfirmationSubject()
+		return nil
+	case workspace.FieldConfirmationIntro:
+		m.ResetConfirmationIntro()
 		return nil
 	case workspace.FieldPostalAddress:
 		m.ResetPostalAddress()

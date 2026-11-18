@@ -1,5 +1,6 @@
 import {
   siteAuditGetRetentionOptions,
+  siteWorkspacesGetConfirmationEmailOptions,
   siteWorkspacesGetOptions,
   siteWorkspacesGetRevenueSettingsOptions,
 } from '../../../generated/site/@tanstack/react-query.gen.ts'
@@ -7,17 +8,20 @@ import {
   siteAuditSetRetention,
   siteWorkspacesSetTimezone,
   siteWorkspacesUpdate,
+  siteWorkspacesUpdateConfirmationEmail,
   siteWorkspacesUpdateRevenueSettings,
 } from '../../../generated/site/sdk.gen.ts'
 import { defineEditForm, defineModalEditor } from '../../../resources/defineResource.tsx'
 import { withRevision } from '../../../resources/resourceEditor.ts'
 import {
+  ConfirmationEmailFields,
   GeneralFields,
   RetentionFields,
   RevenueFields,
   TimezoneFields,
 } from './WorkspaceSettingsFields.tsx'
 import {
+  confirmationEmailSchema,
   generalSchema,
   retentionSchema,
   revenueSchema,
@@ -87,6 +91,28 @@ export const RevenueEditForm = defineEditForm({
     updated: t(($) => $.settings.saved),
     loadErrorTitle: t(($) => $.settings.revenue.loadError),
     saveErrorTitle: t(($) => $.settings.revenue.errorTitle),
+  }),
+})
+
+// The confirmation email of confirmed opt-in (ADR 0013).
+export const ConfirmationEmailEditForm = defineEditForm({
+  editorId: 'workspaceConfirmationEmailEditor',
+  schema: confirmationEmailSchema,
+  Form: ConfirmationEmailFields,
+  getOptions: ofWorkspace(siteWorkspacesGetConfirmationEmailOptions),
+  update: withRevision(async ({ path, body, throwOnError }) =>
+    siteWorkspacesUpdateConfirmationEmail({
+      path: { workspaceId: path.workspaceId },
+      body,
+      throwOnError,
+    }),
+  ),
+  operations: {},
+  texts: (t) => ({
+    editTitle: t(($) => $.settings.confirmedOptIn.emailTitle),
+    updated: t(($) => $.settings.saved),
+    loadErrorTitle: t(($) => $.settings.confirmedOptIn.loadError),
+    saveErrorTitle: t(($) => $.settings.confirmedOptIn.saveErrorTitle),
   }),
 })
 

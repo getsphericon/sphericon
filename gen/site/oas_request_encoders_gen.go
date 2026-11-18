@@ -1074,6 +1074,20 @@ func encodeSiteWorkspacesRequireSecondFactorRequest(
 	return nil
 }
 
+func encodeSiteWorkspacesSetConfirmedOptInRequest(
+	req *SiteSetConfirmedOptInInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
 func encodeSiteWorkspacesSetTimezoneRequest(
 	req *SiteWorkspaceTimezoneInput,
 	r *http.Request,
@@ -1090,6 +1104,20 @@ func encodeSiteWorkspacesSetTimezoneRequest(
 
 func encodeSiteWorkspacesUpdateRequest(
 	req *SiteUpdateWorkspaceInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeSiteWorkspacesUpdateConfirmationEmailRequest(
+	req *SiteUpdateConfirmationEmailInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"

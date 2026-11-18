@@ -37,6 +37,11 @@ enum ProblemCode {
    * 0156): Schedule and Send of an email Broadcast and Publish of an Automation with an email send
    * step are refused until a person sets one in the Workspace settings */
   postalAddressRequired: "postal_address_required",
+
+  /** The Workspace has no confirmation email set up (ADR 0013): confirmed opt-in cannot be turned
+   * on, and no confirmation email requested, until a person sets its From in the Workspace
+   * settings */
+  confirmationEmailRequired: "confirmation_email_required",
 }
 
 /** What a development server adds to a 500 so the page can show the fault; a production

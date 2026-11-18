@@ -141,6 +141,12 @@ var (
 	rn74AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
+	rn239AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn249AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
 	rn85AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
@@ -183,7 +189,7 @@ var (
 	rn142AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
-	rn240AllowedHeaders = map[string]string{
+	rn241AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
 	rn159AllowedHeaders = map[string]string{
@@ -201,7 +207,7 @@ var (
 	rn165AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
-	rn242AllowedHeaders = map[string]string{
+	rn243AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
 	rn179AllowedHeaders = map[string]string{
@@ -225,7 +231,7 @@ var (
 	rn212AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
-	rn247AllowedHeaders = map[string]string{
+	rn250AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
 	rn213AllowedHeaders = map[string]string{
@@ -3382,6 +3388,78 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									break
 								}
 								switch elem[0] {
+								case 'f': // Prefix: "firm"
+
+									if l := len("firm"); len(elem) >= l && elem[0:l] == "firm" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										break
+									}
+									switch elem[0] {
+									case 'a': // Prefix: "ation-email"
+
+										if l := len("ation-email"); len(elem) >= l && elem[0:l] == "ation-email" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										if len(elem) == 0 {
+											// Leaf node.
+											switch r.Method {
+											case "GET":
+												s.handleSiteWorkspacesGetConfirmationEmailRequest([1]string{
+													args[0],
+												}, elemIsEscaped, w, r)
+											case "PUT":
+												s.handleSiteWorkspacesUpdateConfirmationEmailRequest([1]string{
+													args[0],
+												}, elemIsEscaped, w, r)
+											default:
+												s.notAllowed(w, r, notAllowedParams{
+													allowedMethods: "GET,PUT",
+													allowedHeaders: rn239AllowedHeaders,
+													acceptPost:     "",
+													acceptPatch:    "",
+												})
+											}
+
+											return
+										}
+
+									case 'e': // Prefix: "ed-opt-in"
+
+										if l := len("ed-opt-in"); len(elem) >= l && elem[0:l] == "ed-opt-in" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										if len(elem) == 0 {
+											// Leaf node.
+											switch r.Method {
+											case "PUT":
+												s.handleSiteWorkspacesSetConfirmedOptInRequest([1]string{
+													args[0],
+												}, elemIsEscaped, w, r)
+											default:
+												s.notAllowed(w, r, notAllowedParams{
+													allowedMethods: "PUT",
+													allowedHeaders: rn249AllowedHeaders,
+													acceptPost:     "",
+													acceptPatch:    "",
+												})
+											}
+
+											return
+										}
+
+									}
+
 								case 'n': // Prefix: "nections"
 
 									if l := len("nections"); len(elem) >= l && elem[0:l] == "nections" {
@@ -4726,7 +4804,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									default:
 										s.notAllowed(w, r, notAllowedParams{
 											allowedMethods: "GET,PUT",
-											allowedHeaders: rn240AllowedHeaders,
+											allowedHeaders: rn241AllowedHeaders,
 											acceptPost:     "",
 											acceptPatch:    "",
 										})
@@ -5031,7 +5109,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 										default:
 											s.notAllowed(w, r, notAllowedParams{
 												allowedMethods: "DELETE,PUT",
-												allowedHeaders: rn242AllowedHeaders,
+												allowedHeaders: rn243AllowedHeaders,
 												acceptPost:     "",
 												acceptPatch:    "",
 											})
@@ -5623,7 +5701,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									default:
 										s.notAllowed(w, r, notAllowedParams{
 											allowedMethods: "PUT",
-											allowedHeaders: rn247AllowedHeaders,
+											allowedHeaders: rn250AllowedHeaders,
 											acceptPost:     "",
 											acceptPatch:    "",
 										})
@@ -9135,6 +9213,79 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 									break
 								}
 								switch elem[0] {
+								case 'f': // Prefix: "firm"
+
+									if l := len("firm"); len(elem) >= l && elem[0:l] == "firm" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										break
+									}
+									switch elem[0] {
+									case 'a': // Prefix: "ation-email"
+
+										if l := len("ation-email"); len(elem) >= l && elem[0:l] == "ation-email" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										if len(elem) == 0 {
+											// Leaf node.
+											switch method {
+											case "GET":
+												r.name = SiteWorkspacesGetConfirmationEmailOperation
+												r.summary = ""
+												r.operationID = "SiteWorkspaces_getConfirmationEmail"
+												r.operationGroup = ""
+												r.pathPattern = "/workspaces/{workspaceId}/confirmation-email"
+												r.args = args
+												r.count = 1
+												return r, true
+											case "PUT":
+												r.name = SiteWorkspacesUpdateConfirmationEmailOperation
+												r.summary = ""
+												r.operationID = "SiteWorkspaces_updateConfirmationEmail"
+												r.operationGroup = ""
+												r.pathPattern = "/workspaces/{workspaceId}/confirmation-email"
+												r.args = args
+												r.count = 1
+												return r, true
+											default:
+												return
+											}
+										}
+
+									case 'e': // Prefix: "ed-opt-in"
+
+										if l := len("ed-opt-in"); len(elem) >= l && elem[0:l] == "ed-opt-in" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										if len(elem) == 0 {
+											// Leaf node.
+											switch method {
+											case "PUT":
+												r.name = SiteWorkspacesSetConfirmedOptInOperation
+												r.summary = ""
+												r.operationID = "SiteWorkspaces_setConfirmedOptIn"
+												r.operationGroup = ""
+												r.pathPattern = "/workspaces/{workspaceId}/confirmed-opt-in"
+												r.args = args
+												r.count = 1
+												return r, true
+											default:
+												return
+											}
+										}
+
+									}
+
 								case 'n': // Prefix: "nections"
 
 									if l := len("nections"); len(elem) >= l && elem[0:l] == "nections" {

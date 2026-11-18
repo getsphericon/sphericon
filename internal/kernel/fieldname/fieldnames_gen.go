@@ -89,6 +89,7 @@ const (
 	ImageURL              = "imageUrl"
 	IncludeMachine        = "includeMachine"
 	IntegrationID         = "integrationId"
+	Intro                 = "intro"
 	Invitation            = "invitation"
 	IsDefault             = "isDefault"
 	Items                 = "items"

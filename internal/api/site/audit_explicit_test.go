@@ -307,7 +307,7 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	slices.Sort(want)
 	assert.Equal(t, want, seen)
 
-	assert.Equal(t, []string{"ee/domain/insights/auditentries/export.go", "internal/domain/contacts/contacts/contacts.go", "internal/domain/identity/invitations/invitations.go", "internal/domain/identity/memberships/creation.go", "internal/domain/identity/memberships/membershipsunchecked/membershipsunchecked.go", "internal/domain/identity/memberships/role_change.go", "internal/domain/identity/suspension/suspension.go", "internal/domain/identity/users/acceptance.go", "internal/domain/identity/users/users.go", "internal/domain/identity/workspaces/deletion.go", "internal/domain/orchestration/webhookendpoints/webhookendpoints.go", "internal/usecase/workspaceview/restore.go"},
+	assert.Equal(t, []string{"ee/domain/insights/auditentries/export.go", "internal/domain/contacts/contacts/contacts.go", "internal/domain/identity/invitations/invitations.go", "internal/domain/identity/memberships/creation.go", "internal/domain/identity/memberships/membershipsunchecked/membershipsunchecked.go", "internal/domain/identity/memberships/role_change.go", "internal/domain/identity/suspension/suspension.go", "internal/domain/identity/users/acceptance.go", "internal/domain/identity/users/users.go", "internal/domain/identity/workspaces/confirmedoptin.go", "internal/domain/identity/workspaces/deletion.go", "internal/domain/orchestration/webhookendpoints/webhookendpoints.go", "internal/usecase/workspaceview/restore.go"},
 		recordAuditCallSites(t), "a new explicit RecordAudit call site: list its actions and drive them above")
 }
 

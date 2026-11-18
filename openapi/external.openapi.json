@@ -5233,7 +5233,7 @@
     "/workspace": {
       "get": {
         "operationId": "Workspace_get",
-        "description": "Read the Workspace the token acts in: its name, postal address, time zone and Send cap. Read\nthe postal address before arming marketing email: an empty one refuses it, and only a person\ncan set it. Read the Send cap to explain a slow send or to plan one: a send larger than what\nremains of it in the last 24 hours goes out over more than a day. Read-only: no operation\nchanges the Send cap or the postal address.",
+        "description": "Read the Workspace the token acts in: its name, postal address, confirmed opt-in, time zone and Send cap. Read\nthe postal address before arming marketing email: an empty one refuses it, and only a person\ncan set it. Read the Send cap to explain a slow send or to plan one: a send larger than what\nremains of it in the last 24 hours goes out over more than a day. Read confirmed opt-in to know\nwhether a Contact needs a Confirmation before email reaches it. Read-only: no operation changes\nthe Send cap, the postal address or confirmed opt-in.",
         "parameters": [],
         "responses": {
           "200": {
@@ -11080,7 +11080,8 @@
           "migrations_pending",
           "acceptance_pending",
           "revision_changed",
-          "postal_address_required"
+          "postal_address_required",
+          "confirmation_email_required"
         ],
         "description": "A machine-readable reason a client branches on, beyond the HTTP status"
       },
@@ -13941,7 +13942,14 @@
       },
       "WorkspaceResource": {
         "type": "object",
-        "required": ["id", "name", "postalAddress", "timezone", "revision"],
+        "required": [
+          "id",
+          "name",
+          "postalAddress",
+          "requireConfirmedOptIn",
+          "timezone",
+          "revision"
+        ],
         "properties": {
           "id": {
             "allOf": [
@@ -13960,6 +13968,10 @@
             "type": "string",
             "description": "The physical postal address printed in the footer of every marketing email (ADR 0156); empty\nwhile the Workspace has none, and then Schedule of an email Broadcast and Publish of an\nAutomation with an email send step are a 409 postal_address_required. Read-only: only a person\nsets it, in the console's Workspace settings.",
             "x-untrusted": true
+          },
+          "requireConfirmedOptIn": {
+            "type": "boolean",
+            "description": "Whether email reaches an address only once it holds a Confirmation (confirmed opt-in, ADR\n0013); off, email is single opt-in by the Workspace's choice. Read-only: only a person turns it\non, in the console's Workspace settings, affirming that the current mailable list consented."
           },
           "timezone": {
             "allOf": [

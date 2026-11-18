@@ -161,6 +161,62 @@ func (_c *WorkspaceCreate) SetNillableRequireConfirmedOptIn(v *bool) *WorkspaceC
 	return _c
 }
 
+// SetConfirmationFromEmail sets the "confirmation_from_email" field.
+func (_c *WorkspaceCreate) SetConfirmationFromEmail(v string) *WorkspaceCreate {
+	_c.mutation.SetConfirmationFromEmail(v)
+	return _c
+}
+
+// SetNillableConfirmationFromEmail sets the "confirmation_from_email" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableConfirmationFromEmail(v *string) *WorkspaceCreate {
+	if v != nil {
+		_c.SetConfirmationFromEmail(*v)
+	}
+	return _c
+}
+
+// SetConfirmationFromName sets the "confirmation_from_name" field.
+func (_c *WorkspaceCreate) SetConfirmationFromName(v string) *WorkspaceCreate {
+	_c.mutation.SetConfirmationFromName(v)
+	return _c
+}
+
+// SetNillableConfirmationFromName sets the "confirmation_from_name" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableConfirmationFromName(v *string) *WorkspaceCreate {
+	if v != nil {
+		_c.SetConfirmationFromName(*v)
+	}
+	return _c
+}
+
+// SetConfirmationSubject sets the "confirmation_subject" field.
+func (_c *WorkspaceCreate) SetConfirmationSubject(v string) *WorkspaceCreate {
+	_c.mutation.SetConfirmationSubject(v)
+	return _c
+}
+
+// SetNillableConfirmationSubject sets the "confirmation_subject" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableConfirmationSubject(v *string) *WorkspaceCreate {
+	if v != nil {
+		_c.SetConfirmationSubject(*v)
+	}
+	return _c
+}
+
+// SetConfirmationIntro sets the "confirmation_intro" field.
+func (_c *WorkspaceCreate) SetConfirmationIntro(v string) *WorkspaceCreate {
+	_c.mutation.SetConfirmationIntro(v)
+	return _c
+}
+
+// SetNillableConfirmationIntro sets the "confirmation_intro" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableConfirmationIntro(v *string) *WorkspaceCreate {
+	if v != nil {
+		_c.SetConfirmationIntro(*v)
+	}
+	return _c
+}
+
 // SetPostalAddress sets the "postal_address" field.
 func (_c *WorkspaceCreate) SetPostalAddress(v string) *WorkspaceCreate {
 	_c.mutation.SetPostalAddress(v)
@@ -1253,6 +1309,26 @@ func (_c *WorkspaceCreate) check() error {
 	if _, ok := _c.mutation.RequireConfirmedOptIn(); !ok {
 		return &ValidationError{Name: "require_confirmed_opt_in", err: errors.New(`ent: missing required field "Workspace.require_confirmed_opt_in"`)}
 	}
+	if v, ok := _c.mutation.ConfirmationFromEmail(); ok {
+		if err := workspace.ConfirmationFromEmailValidator(v); err != nil {
+			return &ValidationError{Name: "confirmation_from_email", err: fmt.Errorf(`ent: validator failed for field "Workspace.confirmation_from_email": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.ConfirmationFromName(); ok {
+		if err := workspace.ConfirmationFromNameValidator(v); err != nil {
+			return &ValidationError{Name: "confirmation_from_name", err: fmt.Errorf(`ent: validator failed for field "Workspace.confirmation_from_name": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.ConfirmationSubject(); ok {
+		if err := workspace.ConfirmationSubjectValidator(v); err != nil {
+			return &ValidationError{Name: "confirmation_subject", err: fmt.Errorf(`ent: validator failed for field "Workspace.confirmation_subject": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.ConfirmationIntro(); ok {
+		if err := workspace.ConfirmationIntroValidator(v); err != nil {
+			return &ValidationError{Name: "confirmation_intro", err: fmt.Errorf(`ent: validator failed for field "Workspace.confirmation_intro": %w`, err)}
+		}
+	}
 	if v, ok := _c.mutation.RetentionDays(); ok {
 		if err := workspace.RetentionDaysValidator(v); err != nil {
 			return &ValidationError{Name: "retention_days", err: fmt.Errorf(`ent: validator failed for field "Workspace.retention_days": %w`, err)}
@@ -1356,6 +1432,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.RequireConfirmedOptIn(); ok {
 		_spec.SetField(workspace.FieldRequireConfirmedOptIn, field.TypeBool, value)
 		_node.RequireConfirmedOptIn = value
+	}
+	if value, ok := _c.mutation.ConfirmationFromEmail(); ok {
+		_spec.SetField(workspace.FieldConfirmationFromEmail, field.TypeString, value)
+		_node.ConfirmationFromEmail = &value
+	}
+	if value, ok := _c.mutation.ConfirmationFromName(); ok {
+		_spec.SetField(workspace.FieldConfirmationFromName, field.TypeString, value)
+		_node.ConfirmationFromName = &value
+	}
+	if value, ok := _c.mutation.ConfirmationSubject(); ok {
+		_spec.SetField(workspace.FieldConfirmationSubject, field.TypeString, value)
+		_node.ConfirmationSubject = &value
+	}
+	if value, ok := _c.mutation.ConfirmationIntro(); ok {
+		_spec.SetField(workspace.FieldConfirmationIntro, field.TypeString, value)
+		_node.ConfirmationIntro = &value
 	}
 	if value, ok := _c.mutation.PostalAddress(); ok {
 		_spec.SetField(workspace.FieldPostalAddress, field.TypeString, value)
@@ -2369,6 +2461,78 @@ func (u *WorkspaceUpsert) UpdateRequireConfirmedOptIn() *WorkspaceUpsert {
 	return u
 }
 
+// SetConfirmationFromEmail sets the "confirmation_from_email" field.
+func (u *WorkspaceUpsert) SetConfirmationFromEmail(v string) *WorkspaceUpsert {
+	u.Set(workspace.FieldConfirmationFromEmail, v)
+	return u
+}
+
+// UpdateConfirmationFromEmail sets the "confirmation_from_email" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateConfirmationFromEmail() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldConfirmationFromEmail)
+	return u
+}
+
+// ClearConfirmationFromEmail clears the value of the "confirmation_from_email" field.
+func (u *WorkspaceUpsert) ClearConfirmationFromEmail() *WorkspaceUpsert {
+	u.SetNull(workspace.FieldConfirmationFromEmail)
+	return u
+}
+
+// SetConfirmationFromName sets the "confirmation_from_name" field.
+func (u *WorkspaceUpsert) SetConfirmationFromName(v string) *WorkspaceUpsert {
+	u.Set(workspace.FieldConfirmationFromName, v)
+	return u
+}
+
+// UpdateConfirmationFromName sets the "confirmation_from_name" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateConfirmationFromName() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldConfirmationFromName)
+	return u
+}
+
+// ClearConfirmationFromName clears the value of the "confirmation_from_name" field.
+func (u *WorkspaceUpsert) ClearConfirmationFromName() *WorkspaceUpsert {
+	u.SetNull(workspace.FieldConfirmationFromName)
+	return u
+}
+
+// SetConfirmationSubject sets the "confirmation_subject" field.
+func (u *WorkspaceUpsert) SetConfirmationSubject(v string) *WorkspaceUpsert {
+	u.Set(workspace.FieldConfirmationSubject, v)
+	return u
+}
+
+// UpdateConfirmationSubject sets the "confirmation_subject" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateConfirmationSubject() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldConfirmationSubject)
+	return u
+}
+
+// ClearConfirmationSubject clears the value of the "confirmation_subject" field.
+func (u *WorkspaceUpsert) ClearConfirmationSubject() *WorkspaceUpsert {
+	u.SetNull(workspace.FieldConfirmationSubject)
+	return u
+}
+
+// SetConfirmationIntro sets the "confirmation_intro" field.
+func (u *WorkspaceUpsert) SetConfirmationIntro(v string) *WorkspaceUpsert {
+	u.Set(workspace.FieldConfirmationIntro, v)
+	return u
+}
+
+// UpdateConfirmationIntro sets the "confirmation_intro" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateConfirmationIntro() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldConfirmationIntro)
+	return u
+}
+
+// ClearConfirmationIntro clears the value of the "confirmation_intro" field.
+func (u *WorkspaceUpsert) ClearConfirmationIntro() *WorkspaceUpsert {
+	u.SetNull(workspace.FieldConfirmationIntro)
+	return u
+}
+
 // SetPostalAddress sets the "postal_address" field.
 func (u *WorkspaceUpsert) SetPostalAddress(v string) *WorkspaceUpsert {
 	u.Set(workspace.FieldPostalAddress, v)
@@ -2788,6 +2952,90 @@ func (u *WorkspaceUpsertOne) SetRequireConfirmedOptIn(v bool) *WorkspaceUpsertOn
 func (u *WorkspaceUpsertOne) UpdateRequireConfirmedOptIn() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.UpdateRequireConfirmedOptIn()
+	})
+}
+
+// SetConfirmationFromEmail sets the "confirmation_from_email" field.
+func (u *WorkspaceUpsertOne) SetConfirmationFromEmail(v string) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetConfirmationFromEmail(v)
+	})
+}
+
+// UpdateConfirmationFromEmail sets the "confirmation_from_email" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateConfirmationFromEmail() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateConfirmationFromEmail()
+	})
+}
+
+// ClearConfirmationFromEmail clears the value of the "confirmation_from_email" field.
+func (u *WorkspaceUpsertOne) ClearConfirmationFromEmail() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearConfirmationFromEmail()
+	})
+}
+
+// SetConfirmationFromName sets the "confirmation_from_name" field.
+func (u *WorkspaceUpsertOne) SetConfirmationFromName(v string) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetConfirmationFromName(v)
+	})
+}
+
+// UpdateConfirmationFromName sets the "confirmation_from_name" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateConfirmationFromName() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateConfirmationFromName()
+	})
+}
+
+// ClearConfirmationFromName clears the value of the "confirmation_from_name" field.
+func (u *WorkspaceUpsertOne) ClearConfirmationFromName() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearConfirmationFromName()
+	})
+}
+
+// SetConfirmationSubject sets the "confirmation_subject" field.
+func (u *WorkspaceUpsertOne) SetConfirmationSubject(v string) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetConfirmationSubject(v)
+	})
+}
+
+// UpdateConfirmationSubject sets the "confirmation_subject" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateConfirmationSubject() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateConfirmationSubject()
+	})
+}
+
+// ClearConfirmationSubject clears the value of the "confirmation_subject" field.
+func (u *WorkspaceUpsertOne) ClearConfirmationSubject() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearConfirmationSubject()
+	})
+}
+
+// SetConfirmationIntro sets the "confirmation_intro" field.
+func (u *WorkspaceUpsertOne) SetConfirmationIntro(v string) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetConfirmationIntro(v)
+	})
+}
+
+// UpdateConfirmationIntro sets the "confirmation_intro" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateConfirmationIntro() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateConfirmationIntro()
+	})
+}
+
+// ClearConfirmationIntro clears the value of the "confirmation_intro" field.
+func (u *WorkspaceUpsertOne) ClearConfirmationIntro() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearConfirmationIntro()
 	})
 }
 
@@ -3421,6 +3669,90 @@ func (u *WorkspaceUpsertBulk) SetRequireConfirmedOptIn(v bool) *WorkspaceUpsertB
 func (u *WorkspaceUpsertBulk) UpdateRequireConfirmedOptIn() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.UpdateRequireConfirmedOptIn()
+	})
+}
+
+// SetConfirmationFromEmail sets the "confirmation_from_email" field.
+func (u *WorkspaceUpsertBulk) SetConfirmationFromEmail(v string) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetConfirmationFromEmail(v)
+	})
+}
+
+// UpdateConfirmationFromEmail sets the "confirmation_from_email" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateConfirmationFromEmail() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateConfirmationFromEmail()
+	})
+}
+
+// ClearConfirmationFromEmail clears the value of the "confirmation_from_email" field.
+func (u *WorkspaceUpsertBulk) ClearConfirmationFromEmail() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearConfirmationFromEmail()
+	})
+}
+
+// SetConfirmationFromName sets the "confirmation_from_name" field.
+func (u *WorkspaceUpsertBulk) SetConfirmationFromName(v string) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetConfirmationFromName(v)
+	})
+}
+
+// UpdateConfirmationFromName sets the "confirmation_from_name" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateConfirmationFromName() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateConfirmationFromName()
+	})
+}
+
+// ClearConfirmationFromName clears the value of the "confirmation_from_name" field.
+func (u *WorkspaceUpsertBulk) ClearConfirmationFromName() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearConfirmationFromName()
+	})
+}
+
+// SetConfirmationSubject sets the "confirmation_subject" field.
+func (u *WorkspaceUpsertBulk) SetConfirmationSubject(v string) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetConfirmationSubject(v)
+	})
+}
+
+// UpdateConfirmationSubject sets the "confirmation_subject" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateConfirmationSubject() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateConfirmationSubject()
+	})
+}
+
+// ClearConfirmationSubject clears the value of the "confirmation_subject" field.
+func (u *WorkspaceUpsertBulk) ClearConfirmationSubject() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearConfirmationSubject()
+	})
+}
+
+// SetConfirmationIntro sets the "confirmation_intro" field.
+func (u *WorkspaceUpsertBulk) SetConfirmationIntro(v string) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetConfirmationIntro(v)
+	})
+}
+
+// UpdateConfirmationIntro sets the "confirmation_intro" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateConfirmationIntro() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateConfirmationIntro()
+	})
+}
+
+// ClearConfirmationIntro clears the value of the "confirmation_intro" field.
+func (u *WorkspaceUpsertBulk) ClearConfirmationIntro() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.ClearConfirmationIntro()
 	})
 }
 

@@ -231,6 +231,13 @@ type Converter interface {
 	WorkspaceToResource(source *ent.Workspace) siteapi.SiteWorkspaceResource
 	// The revenue settings are two columns of the Workspace (ADR 0064).
 	RevenueSettingsToResource(source *ent.Workspace) siteapi.SiteRevenueSettingsResource
+	// The confirmation email's settings (ADR 0013): what the Workspace stores beside the defaults,
+	// null where it keeps the default.
+	// goverter:map FromEmail | nilEmailAddress
+	// goverter:map FromName | nilString
+	// goverter:map Subject | nilString
+	// goverter:map Intro | nilString
+	ConfirmationEmailToResource(source workspaces.ConfirmationEmailSettings) siteapi.SiteConfirmationEmailResource
 	// The Reporting currency is the Workspace's, null until chosen; the sums are minor units.
 	// goverter:map Currency ReportingCurrency
 	// goverter:useEmptyOnNil:slice
@@ -807,6 +814,11 @@ func maxPerDay(n int) siteapi.MaxPerDay { return siteapi.MaxPerDay(narrow.Int32(
 // nilString renders an optional value: null when there is none.
 func nilString(v *string) siteapi.NilString {
 	return convert.Nil[siteapi.NilString](v)
+}
+
+// nilEmailAddress renders an optional address: null when there is none.
+func nilEmailAddress(v *string) siteapi.NilEmailAddress {
+	return convert.Nil[siteapi.NilEmailAddress]((*siteapi.EmailAddress)(v))
 }
 
 // nilEntityID renders an optional reference: null when there is none.

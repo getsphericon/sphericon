@@ -915,6 +915,8 @@ func (s *ProblemCode) Decode(d *jx.Decoder) error {
 		*s = ProblemCodeRevisionChanged
 	case ProblemCodePostalAddressRequired:
 		*s = ProblemCodePostalAddressRequired
+	case ProblemCodeConfirmationEmailRequired:
+		*s = ProblemCodeConfirmationEmailRequired
 	default:
 		*s = ProblemCode(v)
 	}

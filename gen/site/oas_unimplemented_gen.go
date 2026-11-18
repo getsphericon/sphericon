@@ -2077,6 +2077,15 @@ func (UnimplementedHandler) SiteWorkspacesGet(ctx context.Context, params SiteWo
 	return r, ht.ErrNotImplemented
 }
 
+// SiteWorkspacesGetConfirmationEmail implements SiteWorkspaces_getConfirmationEmail operation.
+//
+// Read the confirmation email's settings (Owner and Admin, ADR 0013).
+//
+// GET /workspaces/{workspaceId}/confirmation-email
+func (UnimplementedHandler) SiteWorkspacesGetConfirmationEmail(ctx context.Context, params SiteWorkspacesGetConfirmationEmailParams) (r *SiteConfirmationEmailResource, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteWorkspacesGetRevenueSettings implements SiteWorkspaces_getRevenueSettings operation.
 //
 // Read the Workspace's revenue settings: the Reporting currency (null until set) and the Attribution
@@ -2153,6 +2162,21 @@ func (UnimplementedHandler) SiteWorkspacesRestore(ctx context.Context, params Si
 	return r, ht.ErrNotImplemented
 }
 
+// SiteWorkspacesSetConfirmedOptIn implements SiteWorkspaces_setConfirmedOptIn operation.
+//
+// Turn confirmed opt-in on or off (Owner and Admin, ADR 0013); only a person does it, here: neither
+// `/api` nor MCP changes it. Turning it on records a `grandfathered` Confirmation for every email
+// address of a Contact that is mailable now (no Suppression, no opt-out of everything, no Confirmation
+// yet), each with its `marketing.confirmed` Event recorded as history that starts no Automation and
+// reaches no webhook, before the policy turns on. It is refused with 409 `confirmation_email_required`
+// while the confirmation email is not set up. Turning it on while it is on, or off while it is off,
+// changes nothing. A change is one Audit entry carrying the number of Confirmations it recorded.
+//
+// PUT /workspaces/{workspaceId}/confirmed-opt-in
+func (UnimplementedHandler) SiteWorkspacesSetConfirmedOptIn(ctx context.Context, req *SiteSetConfirmedOptInInput, params SiteWorkspacesSetConfirmedOptInParams) (r *SiteWorkspaceResource, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteWorkspacesSetTimezone implements SiteWorkspaces_setTimezone operation.
 //
 // Set the Workspace time zone (Owner and Admin only), the zone of every Report day (ADR 0057). 422 for
@@ -2170,6 +2194,17 @@ func (UnimplementedHandler) SiteWorkspacesSetTimezone(ctx context.Context, req *
 //
 // PUT /workspaces/{workspaceId}
 func (UnimplementedHandler) SiteWorkspacesUpdate(ctx context.Context, req *SiteUpdateWorkspaceInput, params SiteWorkspacesUpdateParams) (r *SiteWorkspaceResource, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteWorkspacesUpdateConfirmationEmail implements SiteWorkspaces_updateConfirmationEmail operation.
+//
+// Set up the confirmation email (Owner and Admin, ADR 0013): its From, an address on a verified
+// Sending domain of the Workspace (422 otherwise), its name, the subject and the introductory
+// paragraph. A change is recorded as an Audit entry.
+//
+// PUT /workspaces/{workspaceId}/confirmation-email
+func (UnimplementedHandler) SiteWorkspacesUpdateConfirmationEmail(ctx context.Context, req *SiteUpdateConfirmationEmailInput, params SiteWorkspacesUpdateConfirmationEmailParams) (r *SiteConfirmationEmailResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

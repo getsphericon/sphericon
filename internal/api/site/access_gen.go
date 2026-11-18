@@ -212,6 +212,7 @@ var operationAccess = map[siteapi.OperationName]access{
 	siteapi.SiteWorkspacesAccountLinkOperation:                 {workspace: true, permissions: []memberships.Permission{memberships.PermAccountLinkOpen}},
 	siteapi.SiteWorkspacesCreateOperation:                      {},
 	siteapi.SiteWorkspacesDeleteOperation:                      {workspace: true, permissions: []memberships.Permission{memberships.PermWorkspaceDelete}, whileAcceptancePending: true},
+	siteapi.SiteWorkspacesGetConfirmationEmailOperation:        {workspace: true, permissions: []memberships.Permission{memberships.PermWorkspaceUpdate}},
 	siteapi.SiteWorkspacesGetOperation:                         {workspace: true},
 	siteapi.SiteWorkspacesGetRevenueSettingsOperation:          {workspace: true},
 	siteapi.SiteWorkspacesLeaveOperation:                       {workspace: true},
@@ -220,7 +221,9 @@ var operationAccess = map[siteapi.OperationName]access{
 	siteapi.SiteWorkspacesListOperation:                        {},
 	siteapi.SiteWorkspacesRequireSecondFactorOperation:         {workspace: true, permissions: []memberships.Permission{memberships.PermSecondFactorManage}},
 	siteapi.SiteWorkspacesRestoreOperation:                     {},
+	siteapi.SiteWorkspacesSetConfirmedOptInOperation:           {workspace: true, permissions: []memberships.Permission{memberships.PermWorkspaceUpdate}},
 	siteapi.SiteWorkspacesSetTimezoneOperation:                 {workspace: true, permissions: []memberships.Permission{memberships.PermWorkspaceTimezone}},
+	siteapi.SiteWorkspacesUpdateConfirmationEmailOperation:     {workspace: true, permissions: []memberships.Permission{memberships.PermWorkspaceUpdate}},
 	siteapi.SiteWorkspacesUpdateOperation:                      {workspace: true, permissions: []memberships.Permission{memberships.PermWorkspaceUpdate}},
 	siteapi.SiteWorkspacesUpdateRevenueSettingsOperation:       {workspace: true, permissions: []memberships.Permission{memberships.PermRevenueConfigure}},
 }

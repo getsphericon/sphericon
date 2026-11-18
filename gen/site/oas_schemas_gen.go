@@ -8712,6 +8712,51 @@ func (o NilCurrencyCode) Or(d CurrencyCode) CurrencyCode {
 	return d
 }
 
+// NewNilEmailAddress returns new NilEmailAddress with value set to v.
+func NewNilEmailAddress(v EmailAddress) NilEmailAddress {
+	return NilEmailAddress{
+		Value: v,
+	}
+}
+
+// NilEmailAddress is nullable EmailAddress.
+type NilEmailAddress struct {
+	Value EmailAddress
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilEmailAddress) SetTo(v EmailAddress) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilEmailAddress) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilEmailAddress) SetToNull() {
+	o.Null = true
+	var v EmailAddress
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilEmailAddress) Get() (v EmailAddress, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilEmailAddress) Or(d EmailAddress) EmailAddress {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewNilEntityId returns new NilEntityId with value set to v.
 func NewNilEntityId(v EntityId) NilEntityId {
 	return NilEntityId{
@@ -13868,6 +13913,7 @@ const (
 	ProblemCodeAcceptancePending         ProblemCode = "acceptance_pending"
 	ProblemCodeRevisionChanged           ProblemCode = "revision_changed"
 	ProblemCodePostalAddressRequired     ProblemCode = "postal_address_required"
+	ProblemCodeConfirmationEmailRequired ProblemCode = "confirmation_email_required"
 )
 
 // AllValues returns all ProblemCode values.
@@ -13880,6 +13926,7 @@ func (ProblemCode) AllValues() []ProblemCode {
 		ProblemCodeAcceptancePending,
 		ProblemCodeRevisionChanged,
 		ProblemCodePostalAddressRequired,
+		ProblemCodeConfirmationEmailRequired,
 	}
 }
 
@@ -13899,6 +13946,8 @@ func (s ProblemCode) MarshalText() ([]byte, error) {
 	case ProblemCodeRevisionChanged:
 		return []byte(s), nil
 	case ProblemCodePostalAddressRequired:
+		return []byte(s), nil
+	case ProblemCodeConfirmationEmailRequired:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -13928,6 +13977,9 @@ func (s *ProblemCode) UnmarshalText(data []byte) error {
 		return nil
 	case ProblemCodePostalAddressRequired:
 		*s = ProblemCodePostalAddressRequired
+		return nil
+	case ProblemCodeConfirmationEmailRequired:
+		*s = ProblemCodeConfirmationEmailRequired
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -19778,6 +19830,129 @@ func (s *SiteConfirmEmailChangeInput) SetToken(val string) {
 	s.Token = val
 }
 
+// The texts the confirmation email goes out with while the Workspace sets none of its own: the
+// Instance's defaults naming the Workspace.
+// Ref: #/components/schemas/SiteConfirmationEmailDefaults
+type SiteConfirmationEmailDefaults struct {
+	// The From name: the Workspace's name.
+	FromName string `json:"fromName"`
+	// The subject.
+	Subject string `json:"subject"`
+	// The introductory paragraph.
+	Intro string `json:"intro"`
+}
+
+// GetFromName returns the value of FromName.
+func (s *SiteConfirmationEmailDefaults) GetFromName() string {
+	return s.FromName
+}
+
+// GetSubject returns the value of Subject.
+func (s *SiteConfirmationEmailDefaults) GetSubject() string {
+	return s.Subject
+}
+
+// GetIntro returns the value of Intro.
+func (s *SiteConfirmationEmailDefaults) GetIntro() string {
+	return s.Intro
+}
+
+// SetFromName sets the value of FromName.
+func (s *SiteConfirmationEmailDefaults) SetFromName(val string) {
+	s.FromName = val
+}
+
+// SetSubject sets the value of Subject.
+func (s *SiteConfirmationEmailDefaults) SetSubject(val string) {
+	s.Subject = val
+}
+
+// SetIntro sets the value of Intro.
+func (s *SiteConfirmationEmailDefaults) SetIntro(val string) {
+	s.Intro = val
+}
+
+// The confirmation email of the Workspace (ADR 0013): the email a Confirmation request sends, whose
+// link records a Confirmation when the person presses Confirm. The Workspace sets its From, subject
+// and introductory paragraph; the Confirm button, the line that nothing happens if the person did not
+// ask, and the postal address when there is one are fixed.
+// Ref: #/components/schemas/SiteConfirmationEmailResource
+type SiteConfirmationEmailResource struct {
+	// The From address, on a verified Sending domain when it was saved; null until the email is set up,
+	// and confirmed opt-in cannot be turned on before.
+	FromEmail NilEmailAddress `json:"fromEmail"`
+	// The From name; null while it is the default.
+	FromName NilString `json:"fromName"`
+	// The subject; null while it is the default.
+	Subject NilString `json:"subject"`
+	// The introductory paragraph; null while it is the default.
+	Intro NilString `json:"intro"`
+	// What a null name, subject or intro goes out as.
+	Defaults SiteConfirmationEmailDefaults `json:"defaults"`
+	// The Workspace's revision this answer shows (ADR 0119): a change of the confirmation email names it.
+	Revision Revision `json:"revision"`
+}
+
+// GetFromEmail returns the value of FromEmail.
+func (s *SiteConfirmationEmailResource) GetFromEmail() NilEmailAddress {
+	return s.FromEmail
+}
+
+// GetFromName returns the value of FromName.
+func (s *SiteConfirmationEmailResource) GetFromName() NilString {
+	return s.FromName
+}
+
+// GetSubject returns the value of Subject.
+func (s *SiteConfirmationEmailResource) GetSubject() NilString {
+	return s.Subject
+}
+
+// GetIntro returns the value of Intro.
+func (s *SiteConfirmationEmailResource) GetIntro() NilString {
+	return s.Intro
+}
+
+// GetDefaults returns the value of Defaults.
+func (s *SiteConfirmationEmailResource) GetDefaults() SiteConfirmationEmailDefaults {
+	return s.Defaults
+}
+
+// GetRevision returns the value of Revision.
+func (s *SiteConfirmationEmailResource) GetRevision() Revision {
+	return s.Revision
+}
+
+// SetFromEmail sets the value of FromEmail.
+func (s *SiteConfirmationEmailResource) SetFromEmail(val NilEmailAddress) {
+	s.FromEmail = val
+}
+
+// SetFromName sets the value of FromName.
+func (s *SiteConfirmationEmailResource) SetFromName(val NilString) {
+	s.FromName = val
+}
+
+// SetSubject sets the value of Subject.
+func (s *SiteConfirmationEmailResource) SetSubject(val NilString) {
+	s.Subject = val
+}
+
+// SetIntro sets the value of Intro.
+func (s *SiteConfirmationEmailResource) SetIntro(val NilString) {
+	s.Intro = val
+}
+
+// SetDefaults sets the value of Defaults.
+func (s *SiteConfirmationEmailResource) SetDefaults(val SiteConfirmationEmailDefaults) {
+	s.Defaults = val
+}
+
+// SetRevision sets the value of Revision.
+func (s *SiteConfirmationEmailResource) SetRevision(val Revision) {
+	s.Revision = val
+}
+
 // A Connection: the access a User gave an application (an MCP client) to the Workspace by consenting
 // to it (ADR 0061). It belongs to that User's Membership, can do no more than the User's Role allows
 // and ends with the Membership. Connections are not API tokens and are not listed with them.
@@ -25616,6 +25791,37 @@ func (s *SiteSendingDomainsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
+// Turn confirmed opt-in on or off (ADR 0013).
+// Ref: #/components/schemas/SiteSetConfirmedOptInInput
+type SiteSetConfirmedOptInInput struct {
+	// The Workspace's `revision` the change was made on (ADR 0119): the one it was read with.
+	Revision Revision `json:"revision"`
+	// On: email reaches an address only once it holds a Confirmation. Turning it on affirms that the
+	// Workspace's current mailable list consented, and records a `grandfathered` Confirmation for every
+	// address mailable now; off keeps every Confirmation.
+	Enabled bool `json:"enabled"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *SiteSetConfirmedOptInInput) GetRevision() Revision {
+	return s.Revision
+}
+
+// GetEnabled returns the value of Enabled.
+func (s *SiteSetConfirmedOptInInput) GetEnabled() bool {
+	return s.Enabled
+}
+
+// SetRevision sets the value of Revision.
+func (s *SiteSetConfirmedOptInInput) SetRevision(val Revision) {
+	s.Revision = val
+}
+
+// SetEnabled sets the value of Enabled.
+func (s *SiteSetConfirmedOptInInput) SetEnabled(val bool) {
+	s.Enabled = val
+}
+
 // Switch domain join on or off.
 // Ref: #/components/schemas/SiteSetDomainJoinInput
 type SiteSetDomainJoinInput struct {
@@ -26893,6 +27099,71 @@ func (s *SiteTransactionalEmailsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
+// Set up the confirmation email.
+// Ref: #/components/schemas/SiteUpdateConfirmationEmailInput
+type SiteUpdateConfirmationEmailInput struct {
+	// The Workspace's `revision` the change was made on (ADR 0119): the one it was read with.
+	Revision Revision `json:"revision"`
+	// The From address: 422 unless its domain is a verified Sending domain of the Workspace.
+	FromEmail EmailAddress `json:"fromEmail"`
+	// The From name, trimmed; omitted or blank, the default.
+	FromName OptString `json:"fromName"`
+	// The subject, trimmed; omitted or blank, the default.
+	Subject OptString `json:"subject"`
+	// The introductory paragraph, trimmed; omitted or blank, the default.
+	Intro OptString `json:"intro"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *SiteUpdateConfirmationEmailInput) GetRevision() Revision {
+	return s.Revision
+}
+
+// GetFromEmail returns the value of FromEmail.
+func (s *SiteUpdateConfirmationEmailInput) GetFromEmail() EmailAddress {
+	return s.FromEmail
+}
+
+// GetFromName returns the value of FromName.
+func (s *SiteUpdateConfirmationEmailInput) GetFromName() OptString {
+	return s.FromName
+}
+
+// GetSubject returns the value of Subject.
+func (s *SiteUpdateConfirmationEmailInput) GetSubject() OptString {
+	return s.Subject
+}
+
+// GetIntro returns the value of Intro.
+func (s *SiteUpdateConfirmationEmailInput) GetIntro() OptString {
+	return s.Intro
+}
+
+// SetRevision sets the value of Revision.
+func (s *SiteUpdateConfirmationEmailInput) SetRevision(val Revision) {
+	s.Revision = val
+}
+
+// SetFromEmail sets the value of FromEmail.
+func (s *SiteUpdateConfirmationEmailInput) SetFromEmail(val EmailAddress) {
+	s.FromEmail = val
+}
+
+// SetFromName sets the value of FromName.
+func (s *SiteUpdateConfirmationEmailInput) SetFromName(val OptString) {
+	s.FromName = val
+}
+
+// SetSubject sets the value of Subject.
+func (s *SiteUpdateConfirmationEmailInput) SetSubject(val OptString) {
+	s.Subject = val
+}
+
+// SetIntro sets the value of Intro.
+func (s *SiteUpdateConfirmationEmailInput) SetIntro(val OptString) {
+	s.Intro = val
+}
+
 // Site request body for updating a contact: the attributes /api takes, and its tag set. The app's
 // contact form sets the tags in the same save; /api tags a contact through its own operations
 // (`tags_apply`, `tags_remove`), which is why its body has no tags.
@@ -27807,6 +28078,9 @@ type SiteWorkspaceResource struct {
 	// The Workspace time zone (ADR 0057): the IANA name every analytics report counts its days in. UTC
 	// until an Owner or Admin sets it.
 	Timezone TimeZoneName `json:"timezone"`
+	// Whether email reaches an address only once it holds a Confirmation (confirmed opt-in, ADR 0013). Off
+	// until an Owner or Admin turns it on in the console, which needs the confirmation email set up.
+	RequireConfirmedOptIn bool `json:"requireConfirmedOptIn"`
 	// The authenticated User's role in this Workspace (from their Membership). It rides the Workspace list
 	// so role-gated UI is known even while the Workspace's own endpoints are withheld under a Two-factor
 	// requirement.
@@ -27890,6 +28164,11 @@ func (s *SiteWorkspaceResource) GetPostalAddress() string {
 // GetTimezone returns the value of Timezone.
 func (s *SiteWorkspaceResource) GetTimezone() TimeZoneName {
 	return s.Timezone
+}
+
+// GetRequireConfirmedOptIn returns the value of RequireConfirmedOptIn.
+func (s *SiteWorkspaceResource) GetRequireConfirmedOptIn() bool {
+	return s.RequireConfirmedOptIn
 }
 
 // GetRole returns the value of Role.
@@ -28005,6 +28284,11 @@ func (s *SiteWorkspaceResource) SetPostalAddress(val string) {
 // SetTimezone sets the value of Timezone.
 func (s *SiteWorkspaceResource) SetTimezone(val TimeZoneName) {
 	s.Timezone = val
+}
+
+// SetRequireConfirmedOptIn sets the value of RequireConfirmedOptIn.
+func (s *SiteWorkspaceResource) SetRequireConfirmedOptIn(val bool) {
+	s.RequireConfirmedOptIn = val
 }
 
 // SetRole sets the value of Role.

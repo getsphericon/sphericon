@@ -2084,38 +2084,54 @@ func init() {
 	workspaceDescRequireConfirmedOptIn := workspaceFields[4].Descriptor()
 	// workspace.DefaultRequireConfirmedOptIn holds the default value on creation for the require_confirmed_opt_in field.
 	workspace.DefaultRequireConfirmedOptIn = workspaceDescRequireConfirmedOptIn.Default.(bool)
+	// workspaceDescConfirmationFromEmail is the schema descriptor for confirmation_from_email field.
+	workspaceDescConfirmationFromEmail := workspaceFields[5].Descriptor()
+	// workspace.ConfirmationFromEmailValidator is a validator for the "confirmation_from_email" field. It is called by the builders before save.
+	workspace.ConfirmationFromEmailValidator = workspaceDescConfirmationFromEmail.Validators[0].(func(string) error)
+	// workspaceDescConfirmationFromName is the schema descriptor for confirmation_from_name field.
+	workspaceDescConfirmationFromName := workspaceFields[6].Descriptor()
+	// workspace.ConfirmationFromNameValidator is a validator for the "confirmation_from_name" field. It is called by the builders before save.
+	workspace.ConfirmationFromNameValidator = workspaceDescConfirmationFromName.Validators[0].(func(string) error)
+	// workspaceDescConfirmationSubject is the schema descriptor for confirmation_subject field.
+	workspaceDescConfirmationSubject := workspaceFields[7].Descriptor()
+	// workspace.ConfirmationSubjectValidator is a validator for the "confirmation_subject" field. It is called by the builders before save.
+	workspace.ConfirmationSubjectValidator = workspaceDescConfirmationSubject.Validators[0].(func(string) error)
+	// workspaceDescConfirmationIntro is the schema descriptor for confirmation_intro field.
+	workspaceDescConfirmationIntro := workspaceFields[8].Descriptor()
+	// workspace.ConfirmationIntroValidator is a validator for the "confirmation_intro" field. It is called by the builders before save.
+	workspace.ConfirmationIntroValidator = workspaceDescConfirmationIntro.Validators[0].(func(string) error)
 	// workspaceDescPostalAddress is the schema descriptor for postal_address field.
-	workspaceDescPostalAddress := workspaceFields[5].Descriptor()
+	workspaceDescPostalAddress := workspaceFields[9].Descriptor()
 	// workspace.DefaultPostalAddress holds the default value on creation for the postal_address field.
 	workspace.DefaultPostalAddress = workspaceDescPostalAddress.Default.(string)
 	// workspaceDescRetentionDays is the schema descriptor for retention_days field.
-	workspaceDescRetentionDays := workspaceFields[6].Descriptor()
+	workspaceDescRetentionDays := workspaceFields[10].Descriptor()
 	// workspace.RetentionDaysValidator is a validator for the "retention_days" field. It is called by the builders before save.
 	workspace.RetentionDaysValidator = workspaceDescRetentionDays.Validators[0].(func(int) error)
 	// workspaceDescTimezone is the schema descriptor for timezone field.
-	workspaceDescTimezone := workspaceFields[7].Descriptor()
+	workspaceDescTimezone := workspaceFields[11].Descriptor()
 	// workspace.TimezoneValidator is a validator for the "timezone" field. It is called by the builders before save.
 	workspace.TimezoneValidator = workspaceDescTimezone.Validators[0].(func(string) error)
 	// workspaceDescReportingCurrency is the schema descriptor for reporting_currency field.
-	workspaceDescReportingCurrency := workspaceFields[8].Descriptor()
+	workspaceDescReportingCurrency := workspaceFields[12].Descriptor()
 	// workspace.ReportingCurrencyValidator is a validator for the "reporting_currency" field. It is called by the builders before save.
 	workspace.ReportingCurrencyValidator = workspaceDescReportingCurrency.Validators[0].(func(string) error)
 	// workspaceDescAttributionWindowDays is the schema descriptor for attribution_window_days field.
-	workspaceDescAttributionWindowDays := workspaceFields[9].Descriptor()
+	workspaceDescAttributionWindowDays := workspaceFields[13].Descriptor()
 	// workspace.DefaultAttributionWindowDays holds the default value on creation for the attribution_window_days field.
 	workspace.DefaultAttributionWindowDays = workspaceDescAttributionWindowDays.Default.(int)
 	// workspace.AttributionWindowDaysValidator is a validator for the "attribution_window_days" field. It is called by the builders before save.
 	workspace.AttributionWindowDaysValidator = workspaceDescAttributionWindowDays.Validators[0].(func(int) error)
 	// workspaceDescSendCap is the schema descriptor for send_cap field.
-	workspaceDescSendCap := workspaceFields[10].Descriptor()
+	workspaceDescSendCap := workspaceFields[14].Descriptor()
 	// workspace.SendCapValidator is a validator for the "send_cap" field. It is called by the builders before save.
 	workspace.SendCapValidator = workspaceDescSendCap.Validators[0].(func(int) error)
 	// workspaceDescDomainJoinEnabled is the schema descriptor for domain_join_enabled field.
-	workspaceDescDomainJoinEnabled := workspaceFields[11].Descriptor()
+	workspaceDescDomainJoinEnabled := workspaceFields[15].Descriptor()
 	// workspace.DefaultDomainJoinEnabled holds the default value on creation for the domain_join_enabled field.
 	workspace.DefaultDomainJoinEnabled = workspaceDescDomainJoinEnabled.Default.(bool)
 	// workspaceDescAbuseExempt is the schema descriptor for abuse_exempt field.
-	workspaceDescAbuseExempt := workspaceFields[19].Descriptor()
+	workspaceDescAbuseExempt := workspaceFields[23].Descriptor()
 	// workspace.DefaultAbuseExempt holds the default value on creation for the abuse_exempt field.
 	workspace.DefaultAbuseExempt = workspaceDescAbuseExempt.Default.(bool)
 	workspacestandingMixin := schema.WorkspaceStanding{}.Mixin()

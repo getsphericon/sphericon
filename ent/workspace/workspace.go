@@ -31,6 +31,14 @@ const (
 	FieldCollectKey = "collect_key"
 	// FieldRequireConfirmedOptIn holds the string denoting the require_confirmed_opt_in field in the database.
 	FieldRequireConfirmedOptIn = "require_confirmed_opt_in"
+	// FieldConfirmationFromEmail holds the string denoting the confirmation_from_email field in the database.
+	FieldConfirmationFromEmail = "confirmation_from_email"
+	// FieldConfirmationFromName holds the string denoting the confirmation_from_name field in the database.
+	FieldConfirmationFromName = "confirmation_from_name"
+	// FieldConfirmationSubject holds the string denoting the confirmation_subject field in the database.
+	FieldConfirmationSubject = "confirmation_subject"
+	// FieldConfirmationIntro holds the string denoting the confirmation_intro field in the database.
+	FieldConfirmationIntro = "confirmation_intro"
 	// FieldPostalAddress holds the string denoting the postal_address field in the database.
 	FieldPostalAddress = "postal_address"
 	// FieldRetentionDays holds the string denoting the retention_days field in the database.
@@ -544,6 +552,10 @@ var Columns = []string{
 	FieldPublicID,
 	FieldCollectKey,
 	FieldRequireConfirmedOptIn,
+	FieldConfirmationFromEmail,
+	FieldConfirmationFromName,
+	FieldConfirmationSubject,
+	FieldConfirmationIntro,
 	FieldPostalAddress,
 	FieldRetentionDays,
 	FieldTimezone,
@@ -588,6 +600,14 @@ var (
 	CollectKeyValidator func(string) error
 	// DefaultRequireConfirmedOptIn holds the default value on creation for the "require_confirmed_opt_in" field.
 	DefaultRequireConfirmedOptIn bool
+	// ConfirmationFromEmailValidator is a validator for the "confirmation_from_email" field. It is called by the builders before save.
+	ConfirmationFromEmailValidator func(string) error
+	// ConfirmationFromNameValidator is a validator for the "confirmation_from_name" field. It is called by the builders before save.
+	ConfirmationFromNameValidator func(string) error
+	// ConfirmationSubjectValidator is a validator for the "confirmation_subject" field. It is called by the builders before save.
+	ConfirmationSubjectValidator func(string) error
+	// ConfirmationIntroValidator is a validator for the "confirmation_intro" field. It is called by the builders before save.
+	ConfirmationIntroValidator func(string) error
 	// DefaultPostalAddress holds the default value on creation for the "postal_address" field.
 	DefaultPostalAddress string
 	// RetentionDaysValidator is a validator for the "retention_days" field. It is called by the builders before save.
@@ -678,6 +698,26 @@ func ByCollectKey(opts ...sql.OrderTermOption) OrderOption {
 // ByRequireConfirmedOptIn orders the results by the require_confirmed_opt_in field.
 func ByRequireConfirmedOptIn(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRequireConfirmedOptIn, opts...).ToFunc()
+}
+
+// ByConfirmationFromEmail orders the results by the confirmation_from_email field.
+func ByConfirmationFromEmail(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldConfirmationFromEmail, opts...).ToFunc()
+}
+
+// ByConfirmationFromName orders the results by the confirmation_from_name field.
+func ByConfirmationFromName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldConfirmationFromName, opts...).ToFunc()
+}
+
+// ByConfirmationSubject orders the results by the confirmation_subject field.
+func ByConfirmationSubject(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldConfirmationSubject, opts...).ToFunc()
+}
+
+// ByConfirmationIntro orders the results by the confirmation_intro field.
+func ByConfirmationIntro(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldConfirmationIntro, opts...).ToFunc()
 }
 
 // ByPostalAddress orders the results by the postal_address field.

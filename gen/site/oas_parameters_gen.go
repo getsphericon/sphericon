@@ -24330,6 +24330,86 @@ func decodeSiteWorkspacesGetParams(args [1]string, argsEscaped bool, r *http.Req
 	return params, nil
 }
 
+// SiteWorkspacesGetConfirmationEmailParams is parameters of SiteWorkspaces_getConfirmationEmail operation.
+type SiteWorkspacesGetConfirmationEmailParams struct {
+	WorkspaceId WorkspaceId
+}
+
+func unpackSiteWorkspacesGetConfirmationEmailParams(packed middleware.Parameters) (params SiteWorkspacesGetConfirmationEmailParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(WorkspaceId)
+	}
+	return params
+}
+
+func decodeSiteWorkspacesGetConfirmationEmailParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteWorkspacesGetConfirmationEmailParams, _ error) {
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // SiteWorkspacesGetRevenueSettingsParams is parameters of SiteWorkspaces_getRevenueSettings operation.
 type SiteWorkspacesGetRevenueSettingsParams struct {
 	WorkspaceId WorkspaceId
@@ -24730,6 +24810,86 @@ func decodeSiteWorkspacesRestoreParams(args [1]string, argsEscaped bool, r *http
 	return params, nil
 }
 
+// SiteWorkspacesSetConfirmedOptInParams is parameters of SiteWorkspaces_setConfirmedOptIn operation.
+type SiteWorkspacesSetConfirmedOptInParams struct {
+	WorkspaceId WorkspaceId
+}
+
+func unpackSiteWorkspacesSetConfirmedOptInParams(packed middleware.Parameters) (params SiteWorkspacesSetConfirmedOptInParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(WorkspaceId)
+	}
+	return params
+}
+
+func decodeSiteWorkspacesSetConfirmedOptInParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteWorkspacesSetConfirmedOptInParams, _ error) {
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // SiteWorkspacesSetTimezoneParams is parameters of SiteWorkspaces_setTimezone operation.
 type SiteWorkspacesSetTimezoneParams struct {
 	WorkspaceId WorkspaceId
@@ -24827,6 +24987,86 @@ func unpackSiteWorkspacesUpdateParams(packed middleware.Parameters) (params Site
 }
 
 func decodeSiteWorkspacesUpdateParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteWorkspacesUpdateParams, _ error) {
+	// Decode path: workspaceId.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "workspaceId",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				var paramsDotWorkspaceIdVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotWorkspaceIdVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.WorkspaceId = WorkspaceId(paramsDotWorkspaceIdVal)
+				return nil
+			}(); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.WorkspaceId.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspaceId",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SiteWorkspacesUpdateConfirmationEmailParams is parameters of SiteWorkspaces_updateConfirmationEmail operation.
+type SiteWorkspacesUpdateConfirmationEmailParams struct {
+	WorkspaceId WorkspaceId
+}
+
+func unpackSiteWorkspacesUpdateConfirmationEmailParams(packed middleware.Parameters) (params SiteWorkspacesUpdateConfirmationEmailParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspaceId",
+			In:   "path",
+		}
+		params.WorkspaceId = packed[key].(WorkspaceId)
+	}
+	return params
+}
+
+func decodeSiteWorkspacesUpdateConfirmationEmailParams(args [1]string, argsEscaped bool, r *http.Request) (params SiteWorkspacesUpdateConfirmationEmailParams, _ error) {
 	// Decode path: workspaceId.
 	if err := func() error {
 		param := args[0]

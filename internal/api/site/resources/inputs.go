@@ -158,6 +158,9 @@ type Inputs interface {
 	// goverter:map Timezone Zone
 	TimezoneSet(source *siteapi.SiteWorkspaceTimezoneInput) workspaceview.SetTimezoneInput
 	RevenueSettingsSet(source *siteapi.SiteUpdateRevenueSettingsInput) workspaces.SetRevenueSettingsInput
+	ConfirmationEmailSet(source *siteapi.SiteUpdateConfirmationEmailInput) workspaces.SetConfirmationEmailInput
+	// goverter:map Enabled On
+	ConfirmedOptInSet(source *siteapi.SiteSetConfirmedOptInInput) workspaceview.SetConfirmedOptInInput
 	// Switching the requirement on: the caller sets Required.
 	// goverter:map Revision | revisionPtrIn
 	// goverter:ignore Required

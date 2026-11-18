@@ -4928,6 +4928,144 @@
         "x-required-permissions": []
       }
     },
+    "/workspaces/{workspaceId}/confirmation-email": {
+      "get": {
+        "operationId": "SiteWorkspaces_getConfirmationEmail",
+        "description": "Read the confirmation email's settings (Owner and Admin, ADR 0013)",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteConfirmationEmailResource"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Workspaces"],
+        "x-required-permissions": ["workspace:update"]
+      },
+      "put": {
+        "operationId": "SiteWorkspaces_updateConfirmationEmail",
+        "description": "Set up the confirmation email (Owner and Admin, ADR 0013): its From, an address on a verified\nSending domain of the Workspace (422 otherwise), its name, the subject and the introductory\nparagraph. A change is recorded as an Audit entry.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteConfirmationEmailResource"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Workspaces"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteUpdateConfirmationEmailInput"
+              }
+            }
+          }
+        },
+        "x-required-permissions": ["workspace:update"]
+      }
+    },
+    "/workspaces/{workspaceId}/confirmed-opt-in": {
+      "put": {
+        "operationId": "SiteWorkspaces_setConfirmedOptIn",
+        "description": "Turn confirmed opt-in on or off (Owner and Admin, ADR 0013); only a person does it, here:\nneither `/api` nor MCP changes it. Turning it on records a `grandfathered` Confirmation for\nevery email address of a Contact that is mailable now (no Suppression, no opt-out of\neverything, no Confirmation yet), each with its `marketing.confirmed` Event recorded as\nhistory that starts no Automation and reaches no webhook, before the policy turns on. It is\nrefused with 409 `confirmation_email_required` while the confirmation email is not set up.\nTurning it on while it is on, or off while it is off, changes nothing. A change is one Audit\nentry carrying the number of Confirmations it recorded.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteWorkspaceResource"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Workspaces"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteSetConfirmedOptInInput"
+              }
+            }
+          }
+        },
+        "x-required-permissions": ["workspace:update"]
+      }
+    },
     "/workspaces/{workspaceId}/connections": {
       "get": {
         "operationId": "SiteConnections_list",
@@ -13954,7 +14092,8 @@
           "migrations_pending",
           "acceptance_pending",
           "revision_changed",
-          "postal_address_required"
+          "postal_address_required",
+          "confirmation_email_required"
         ],
         "description": "A machine-readable reason a client branches on, beyond the HTTP status"
       },
@@ -16646,6 +16785,73 @@
         "description": "Confirm a requested email change using the token sent to the new address",
         "additionalProperties": false
       },
+      "SiteConfirmationEmailDefaults": {
+        "type": "object",
+        "required": ["fromName", "subject", "intro"],
+        "properties": {
+          "fromName": {
+            "type": "string",
+            "description": "The From name: the Workspace's name"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The subject"
+          },
+          "intro": {
+            "type": "string",
+            "description": "The introductory paragraph"
+          }
+        },
+        "description": "The texts the confirmation email goes out with while the Workspace sets none of its own: the\nInstance's defaults naming the Workspace"
+      },
+      "SiteConfirmationEmailResource": {
+        "type": "object",
+        "required": ["fromEmail", "fromName", "subject", "intro", "defaults", "revision"],
+        "properties": {
+          "fromEmail": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailAddress"
+              }
+            ],
+            "nullable": true,
+            "description": "The From address, on a verified Sending domain when it was saved; null until the email is\nset up, and confirmed opt-in cannot be turned on before"
+          },
+          "fromName": {
+            "type": "string",
+            "nullable": true,
+            "description": "The From name; null while it is the default"
+          },
+          "subject": {
+            "type": "string",
+            "nullable": true,
+            "description": "The subject; null while it is the default"
+          },
+          "intro": {
+            "type": "string",
+            "nullable": true,
+            "description": "The introductory paragraph; null while it is the default"
+          },
+          "defaults": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SiteConfirmationEmailDefaults"
+              }
+            ],
+            "description": "What a null name, subject or intro goes out as"
+          },
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The Workspace's revision this answer shows (ADR 0119): a change of the confirmation email names it"
+          }
+        },
+        "description": "The confirmation email of the Workspace (ADR 0013): the email a Confirmation request sends,\nwhose link records a Confirmation when the person presses Confirm. The Workspace sets its From,\nsubject and introductory paragraph; the Confirm button, the line that nothing happens if the\nperson did not ask, and the postal address when there is one are fixed."
+      },
       "SiteConnectionResource": {
         "type": "object",
         "required": ["id", "name", "scopes", "userId", "userName", "userEmail", "createdAt"],
@@ -19278,6 +19484,26 @@
         },
         "description": "The Complaint and Bounce rates of one Sending domain over a window"
       },
+      "SiteSetConfirmedOptInInput": {
+        "type": "object",
+        "required": ["revision", "enabled"],
+        "properties": {
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The Workspace's `revision` the change was made on (ADR 0119): the one it was read with"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "On: email reaches an address only once it holds a Confirmation. Turning it on affirms that\nthe Workspace's current mailable list consented, and records a `grandfathered` Confirmation\nfor every address mailable now; off keeps every Confirmation."
+          }
+        },
+        "description": "Turn confirmed opt-in on or off (ADR 0013)",
+        "additionalProperties": false
+      },
       "SiteSetDomainJoinInput": {
         "type": "object",
         "required": ["revision", "enabled"],
@@ -19805,6 +20031,42 @@
         "enum": ["pending", "sent", "suppressed", "failed"],
         "description": "Outcome of a transactional send"
       },
+      "SiteUpdateConfirmationEmailInput": {
+        "type": "object",
+        "required": ["revision", "fromEmail"],
+        "properties": {
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The Workspace's `revision` the change was made on (ADR 0119): the one it was read with"
+          },
+          "fromEmail": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailAddress"
+              }
+            ],
+            "description": "The From address: 422 unless its domain is a verified Sending domain of the Workspace"
+          },
+          "fromName": {
+            "type": "string",
+            "description": "The From name, trimmed; omitted or blank, the default"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The subject, trimmed; omitted or blank, the default"
+          },
+          "intro": {
+            "type": "string",
+            "description": "The introductory paragraph, trimmed; omitted or blank, the default"
+          }
+        },
+        "description": "Set up the confirmation email",
+        "additionalProperties": false
+      },
       "SiteUpdateContactInput": {
         "type": "object",
         "required": ["revision"],
@@ -20286,6 +20548,7 @@
           "collectKey",
           "postalAddress",
           "timezone",
+          "requireConfirmedOptIn",
           "role",
           "permissions",
           "mcpUrl",
@@ -20325,6 +20588,10 @@
               }
             ],
             "description": "The Workspace time zone (ADR 0057): the IANA name every analytics report counts its days\nin. UTC until an Owner or Admin sets it."
+          },
+          "requireConfirmedOptIn": {
+            "type": "boolean",
+            "description": "Whether email reaches an address only once it holds a Confirmation (confirmed opt-in, ADR\n0013). Off until an Owner or Admin turns it on in the console, which needs the confirmation\nemail set up."
           },
           "role": {
             "allOf": [

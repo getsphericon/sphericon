@@ -169,6 +169,86 @@ func (_u *WorkspaceUpdate) SetNillableRequireConfirmedOptIn(v *bool) *WorkspaceU
 	return _u
 }
 
+// SetConfirmationFromEmail sets the "confirmation_from_email" field.
+func (_u *WorkspaceUpdate) SetConfirmationFromEmail(v string) *WorkspaceUpdate {
+	_u.mutation.SetConfirmationFromEmail(v)
+	return _u
+}
+
+// SetNillableConfirmationFromEmail sets the "confirmation_from_email" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableConfirmationFromEmail(v *string) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetConfirmationFromEmail(*v)
+	}
+	return _u
+}
+
+// ClearConfirmationFromEmail clears the value of the "confirmation_from_email" field.
+func (_u *WorkspaceUpdate) ClearConfirmationFromEmail() *WorkspaceUpdate {
+	_u.mutation.ClearConfirmationFromEmail()
+	return _u
+}
+
+// SetConfirmationFromName sets the "confirmation_from_name" field.
+func (_u *WorkspaceUpdate) SetConfirmationFromName(v string) *WorkspaceUpdate {
+	_u.mutation.SetConfirmationFromName(v)
+	return _u
+}
+
+// SetNillableConfirmationFromName sets the "confirmation_from_name" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableConfirmationFromName(v *string) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetConfirmationFromName(*v)
+	}
+	return _u
+}
+
+// ClearConfirmationFromName clears the value of the "confirmation_from_name" field.
+func (_u *WorkspaceUpdate) ClearConfirmationFromName() *WorkspaceUpdate {
+	_u.mutation.ClearConfirmationFromName()
+	return _u
+}
+
+// SetConfirmationSubject sets the "confirmation_subject" field.
+func (_u *WorkspaceUpdate) SetConfirmationSubject(v string) *WorkspaceUpdate {
+	_u.mutation.SetConfirmationSubject(v)
+	return _u
+}
+
+// SetNillableConfirmationSubject sets the "confirmation_subject" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableConfirmationSubject(v *string) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetConfirmationSubject(*v)
+	}
+	return _u
+}
+
+// ClearConfirmationSubject clears the value of the "confirmation_subject" field.
+func (_u *WorkspaceUpdate) ClearConfirmationSubject() *WorkspaceUpdate {
+	_u.mutation.ClearConfirmationSubject()
+	return _u
+}
+
+// SetConfirmationIntro sets the "confirmation_intro" field.
+func (_u *WorkspaceUpdate) SetConfirmationIntro(v string) *WorkspaceUpdate {
+	_u.mutation.SetConfirmationIntro(v)
+	return _u
+}
+
+// SetNillableConfirmationIntro sets the "confirmation_intro" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableConfirmationIntro(v *string) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetConfirmationIntro(*v)
+	}
+	return _u
+}
+
+// ClearConfirmationIntro clears the value of the "confirmation_intro" field.
+func (_u *WorkspaceUpdate) ClearConfirmationIntro() *WorkspaceUpdate {
+	_u.mutation.ClearConfirmationIntro()
+	return _u
+}
+
 // SetPostalAddress sets the "postal_address" field.
 func (_u *WorkspaceUpdate) SetPostalAddress(v string) *WorkspaceUpdate {
 	_u.mutation.SetPostalAddress(v)
@@ -2350,6 +2430,26 @@ func (_u *WorkspaceUpdate) check() error {
 			return &ValidationError{Name: "collect_key", err: fmt.Errorf(`ent: validator failed for field "Workspace.collect_key": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ConfirmationFromEmail(); ok {
+		if err := workspace.ConfirmationFromEmailValidator(v); err != nil {
+			return &ValidationError{Name: "confirmation_from_email", err: fmt.Errorf(`ent: validator failed for field "Workspace.confirmation_from_email": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ConfirmationFromName(); ok {
+		if err := workspace.ConfirmationFromNameValidator(v); err != nil {
+			return &ValidationError{Name: "confirmation_from_name", err: fmt.Errorf(`ent: validator failed for field "Workspace.confirmation_from_name": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ConfirmationSubject(); ok {
+		if err := workspace.ConfirmationSubjectValidator(v); err != nil {
+			return &ValidationError{Name: "confirmation_subject", err: fmt.Errorf(`ent: validator failed for field "Workspace.confirmation_subject": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ConfirmationIntro(); ok {
+		if err := workspace.ConfirmationIntroValidator(v); err != nil {
+			return &ValidationError{Name: "confirmation_intro", err: fmt.Errorf(`ent: validator failed for field "Workspace.confirmation_intro": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.RetentionDays(); ok {
 		if err := workspace.RetentionDaysValidator(v); err != nil {
 			return &ValidationError{Name: "retention_days", err: fmt.Errorf(`ent: validator failed for field "Workspace.retention_days": %w`, err)}
@@ -2424,6 +2524,30 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.RequireConfirmedOptIn(); ok {
 		_spec.SetField(workspace.FieldRequireConfirmedOptIn, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ConfirmationFromEmail(); ok {
+		_spec.SetField(workspace.FieldConfirmationFromEmail, field.TypeString, value)
+	}
+	if _u.mutation.ConfirmationFromEmailCleared() {
+		_spec.ClearField(workspace.FieldConfirmationFromEmail, field.TypeString)
+	}
+	if value, ok := _u.mutation.ConfirmationFromName(); ok {
+		_spec.SetField(workspace.FieldConfirmationFromName, field.TypeString, value)
+	}
+	if _u.mutation.ConfirmationFromNameCleared() {
+		_spec.ClearField(workspace.FieldConfirmationFromName, field.TypeString)
+	}
+	if value, ok := _u.mutation.ConfirmationSubject(); ok {
+		_spec.SetField(workspace.FieldConfirmationSubject, field.TypeString, value)
+	}
+	if _u.mutation.ConfirmationSubjectCleared() {
+		_spec.ClearField(workspace.FieldConfirmationSubject, field.TypeString)
+	}
+	if value, ok := _u.mutation.ConfirmationIntro(); ok {
+		_spec.SetField(workspace.FieldConfirmationIntro, field.TypeString, value)
+	}
+	if _u.mutation.ConfirmationIntroCleared() {
+		_spec.ClearField(workspace.FieldConfirmationIntro, field.TypeString)
 	}
 	if value, ok := _u.mutation.PostalAddress(); ok {
 		_spec.SetField(workspace.FieldPostalAddress, field.TypeString, value)
@@ -4905,6 +5029,86 @@ func (_u *WorkspaceUpdateOne) SetNillableRequireConfirmedOptIn(v *bool) *Workspa
 	return _u
 }
 
+// SetConfirmationFromEmail sets the "confirmation_from_email" field.
+func (_u *WorkspaceUpdateOne) SetConfirmationFromEmail(v string) *WorkspaceUpdateOne {
+	_u.mutation.SetConfirmationFromEmail(v)
+	return _u
+}
+
+// SetNillableConfirmationFromEmail sets the "confirmation_from_email" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableConfirmationFromEmail(v *string) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetConfirmationFromEmail(*v)
+	}
+	return _u
+}
+
+// ClearConfirmationFromEmail clears the value of the "confirmation_from_email" field.
+func (_u *WorkspaceUpdateOne) ClearConfirmationFromEmail() *WorkspaceUpdateOne {
+	_u.mutation.ClearConfirmationFromEmail()
+	return _u
+}
+
+// SetConfirmationFromName sets the "confirmation_from_name" field.
+func (_u *WorkspaceUpdateOne) SetConfirmationFromName(v string) *WorkspaceUpdateOne {
+	_u.mutation.SetConfirmationFromName(v)
+	return _u
+}
+
+// SetNillableConfirmationFromName sets the "confirmation_from_name" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableConfirmationFromName(v *string) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetConfirmationFromName(*v)
+	}
+	return _u
+}
+
+// ClearConfirmationFromName clears the value of the "confirmation_from_name" field.
+func (_u *WorkspaceUpdateOne) ClearConfirmationFromName() *WorkspaceUpdateOne {
+	_u.mutation.ClearConfirmationFromName()
+	return _u
+}
+
+// SetConfirmationSubject sets the "confirmation_subject" field.
+func (_u *WorkspaceUpdateOne) SetConfirmationSubject(v string) *WorkspaceUpdateOne {
+	_u.mutation.SetConfirmationSubject(v)
+	return _u
+}
+
+// SetNillableConfirmationSubject sets the "confirmation_subject" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableConfirmationSubject(v *string) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetConfirmationSubject(*v)
+	}
+	return _u
+}
+
+// ClearConfirmationSubject clears the value of the "confirmation_subject" field.
+func (_u *WorkspaceUpdateOne) ClearConfirmationSubject() *WorkspaceUpdateOne {
+	_u.mutation.ClearConfirmationSubject()
+	return _u
+}
+
+// SetConfirmationIntro sets the "confirmation_intro" field.
+func (_u *WorkspaceUpdateOne) SetConfirmationIntro(v string) *WorkspaceUpdateOne {
+	_u.mutation.SetConfirmationIntro(v)
+	return _u
+}
+
+// SetNillableConfirmationIntro sets the "confirmation_intro" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableConfirmationIntro(v *string) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetConfirmationIntro(*v)
+	}
+	return _u
+}
+
+// ClearConfirmationIntro clears the value of the "confirmation_intro" field.
+func (_u *WorkspaceUpdateOne) ClearConfirmationIntro() *WorkspaceUpdateOne {
+	_u.mutation.ClearConfirmationIntro()
+	return _u
+}
+
 // SetPostalAddress sets the "postal_address" field.
 func (_u *WorkspaceUpdateOne) SetPostalAddress(v string) *WorkspaceUpdateOne {
 	_u.mutation.SetPostalAddress(v)
@@ -7099,6 +7303,26 @@ func (_u *WorkspaceUpdateOne) check() error {
 			return &ValidationError{Name: "collect_key", err: fmt.Errorf(`ent: validator failed for field "Workspace.collect_key": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ConfirmationFromEmail(); ok {
+		if err := workspace.ConfirmationFromEmailValidator(v); err != nil {
+			return &ValidationError{Name: "confirmation_from_email", err: fmt.Errorf(`ent: validator failed for field "Workspace.confirmation_from_email": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ConfirmationFromName(); ok {
+		if err := workspace.ConfirmationFromNameValidator(v); err != nil {
+			return &ValidationError{Name: "confirmation_from_name", err: fmt.Errorf(`ent: validator failed for field "Workspace.confirmation_from_name": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ConfirmationSubject(); ok {
+		if err := workspace.ConfirmationSubjectValidator(v); err != nil {
+			return &ValidationError{Name: "confirmation_subject", err: fmt.Errorf(`ent: validator failed for field "Workspace.confirmation_subject": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ConfirmationIntro(); ok {
+		if err := workspace.ConfirmationIntroValidator(v); err != nil {
+			return &ValidationError{Name: "confirmation_intro", err: fmt.Errorf(`ent: validator failed for field "Workspace.confirmation_intro": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.RetentionDays(); ok {
 		if err := workspace.RetentionDaysValidator(v); err != nil {
 			return &ValidationError{Name: "retention_days", err: fmt.Errorf(`ent: validator failed for field "Workspace.retention_days": %w`, err)}
@@ -7190,6 +7414,30 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	}
 	if value, ok := _u.mutation.RequireConfirmedOptIn(); ok {
 		_spec.SetField(workspace.FieldRequireConfirmedOptIn, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ConfirmationFromEmail(); ok {
+		_spec.SetField(workspace.FieldConfirmationFromEmail, field.TypeString, value)
+	}
+	if _u.mutation.ConfirmationFromEmailCleared() {
+		_spec.ClearField(workspace.FieldConfirmationFromEmail, field.TypeString)
+	}
+	if value, ok := _u.mutation.ConfirmationFromName(); ok {
+		_spec.SetField(workspace.FieldConfirmationFromName, field.TypeString, value)
+	}
+	if _u.mutation.ConfirmationFromNameCleared() {
+		_spec.ClearField(workspace.FieldConfirmationFromName, field.TypeString)
+	}
+	if value, ok := _u.mutation.ConfirmationSubject(); ok {
+		_spec.SetField(workspace.FieldConfirmationSubject, field.TypeString, value)
+	}
+	if _u.mutation.ConfirmationSubjectCleared() {
+		_spec.ClearField(workspace.FieldConfirmationSubject, field.TypeString)
+	}
+	if value, ok := _u.mutation.ConfirmationIntro(); ok {
+		_spec.SetField(workspace.FieldConfirmationIntro, field.TypeString, value)
+	}
+	if _u.mutation.ConfirmationIntroCleared() {
+		_spec.ClearField(workspace.FieldConfirmationIntro, field.TypeString)
 	}
 	if value, ok := _u.mutation.PostalAddress(); ok {
 		_spec.SetField(workspace.FieldPostalAddress, field.TypeString, value)

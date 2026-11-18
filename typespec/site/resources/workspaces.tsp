@@ -48,6 +48,11 @@ model SiteWorkspaceResource {
    * in. UTC until an Owner or Admin sets it. */
   timezone: TimeZoneName;
 
+  /** Whether email reaches an address only once it holds a Confirmation (confirmed opt-in, ADR
+   * 0013). Off until an Owner or Admin turns it on in the console, which needs the confirmation
+   * email set up. */
+  requireConfirmedOptIn: boolean;
+
   /** The authenticated User's role in this Workspace (from their Membership). It
    * rides the Workspace list so role-gated UI is known even while the Workspace's
    * own endpoints are withheld under a Two-factor requirement. */
@@ -152,6 +157,73 @@ model SiteUpdateWorkspaceInput {
    * 409 naming them in `usedBy` while an email Broadcast is scheduled or sending or an Automation
    * still sends email (ADR 0156). */
   postalAddress?: string;
+}
+
+/** Turn confirmed opt-in on or off (ADR 0013) */
+model SiteSetConfirmedOptInInput {
+  /** The Workspace's `revision` the change was made on (ADR 0119): the one it was read with */
+  revision: Revision;
+
+  /** On: email reaches an address only once it holds a Confirmation. Turning it on affirms that
+   * the Workspace's current mailable list consented, and records a `grandfathered` Confirmation
+   * for every address mailable now; off keeps every Confirmation. */
+  enabled: boolean;
+}
+
+/** The texts the confirmation email goes out with while the Workspace sets none of its own: the
+ * Instance's defaults naming the Workspace */
+model SiteConfirmationEmailDefaults {
+  /** The From name: the Workspace's name */
+  fromName: string;
+
+  /** The subject */
+  subject: string;
+
+  /** The introductory paragraph */
+  intro: string;
+}
+
+/** The confirmation email of the Workspace (ADR 0013): the email a Confirmation request sends,
+ * whose link records a Confirmation when the person presses Confirm. The Workspace sets its From,
+ * subject and introductory paragraph; the Confirm button, the line that nothing happens if the
+ * person did not ask, and the postal address when there is one are fixed. */
+model SiteConfirmationEmailResource {
+  /** The From address, on a verified Sending domain when it was saved; null until the email is
+   * set up, and confirmed opt-in cannot be turned on before */
+  fromEmail: EmailAddress | null;
+
+  /** The From name; null while it is the default */
+  fromName: string | null;
+
+  /** The subject; null while it is the default */
+  subject: string | null;
+
+  /** The introductory paragraph; null while it is the default */
+  intro: string | null;
+
+  /** What a null name, subject or intro goes out as */
+  defaults: SiteConfirmationEmailDefaults;
+
+  /** The Workspace's revision this answer shows (ADR 0119): a change of the confirmation email names it */
+  revision: Revision;
+}
+
+/** Set up the confirmation email */
+model SiteUpdateConfirmationEmailInput {
+  /** The Workspace's `revision` the change was made on (ADR 0119): the one it was read with */
+  revision: Revision;
+
+  /** The From address: 422 unless its domain is a verified Sending domain of the Workspace */
+  fromEmail: EmailAddress;
+
+  /** The From name, trimmed; omitted or blank, the default */
+  fromName?: string;
+
+  /** The subject, trimmed; omitted or blank, the default */
+  subject?: string;
+
+  /** The introductory paragraph, trimmed; omitted or blank, the default */
+  intro?: string;
 }
 
 /** Create a Workspace (ADR 0043) */
@@ -313,6 +385,41 @@ namespace SiteWorkspaces {
     @path workspaceId: WorkspaceId,
     @body body: SiteUpdateWorkspaceInput,
   ): SiteWorkspaceResource | Problem;
+
+  /** Turn confirmed opt-in on or off (Owner and Admin, ADR 0013); only a person does it, here:
+   * neither `/api` nor MCP changes it. Turning it on records a `grandfathered` Confirmation for
+   * every email address of a Contact that is mailable now (no Suppression, no opt-out of
+   * everything, no Confirmation yet), each with its `marketing.confirmed` Event recorded as
+   * history that starts no Automation and reaches no webhook, before the policy turns on. It is
+   * refused with 409 `confirmation_email_required` while the confirmation email is not set up.
+   * Turning it on while it is on, or off while it is off, changes nothing. A change is one Audit
+   * entry carrying the number of Confirmations it recorded. */
+  @put
+  @route("/{workspaceId}/confirmed-opt-in")
+  @requiresPermissions(#[Permission.workspaceUpdate])
+  op setConfirmedOptIn(
+    @path workspaceId: WorkspaceId,
+    @body body: SiteSetConfirmedOptInInput,
+  ): SiteWorkspaceResource | Problem;
+
+  /** Read the confirmation email's settings (Owner and Admin, ADR 0013) */
+  @get
+  @route("/{workspaceId}/confirmation-email")
+  @requiresPermissions(#[Permission.workspaceUpdate])
+  op getConfirmationEmail(@path workspaceId: WorkspaceId):
+    | SiteConfirmationEmailResource
+    | Problem;
+
+  /** Set up the confirmation email (Owner and Admin, ADR 0013): its From, an address on a verified
+   * Sending domain of the Workspace (422 otherwise), its name, the subject and the introductory
+   * paragraph. A change is recorded as an Audit entry. */
+  @put
+  @route("/{workspaceId}/confirmation-email")
+  @requiresPermissions(#[Permission.workspaceUpdate])
+  op updateConfirmationEmail(
+    @path workspaceId: WorkspaceId,
+    @body body: SiteUpdateConfirmationEmailInput,
+  ): SiteConfirmationEmailResource | Problem;
 
   /** Switch the Two-factor requirement on (owner and admin only): every User with a
    * Membership must then have a Second factor. Switching it on while it is already on keeps

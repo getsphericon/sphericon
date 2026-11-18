@@ -6,6 +6,7 @@ import { can } from '../../../utils/permissions.ts'
 import { IntegrationsSection } from '../IntegrationsSection.tsx'
 import { SendCapSection } from '../SendCapSection.tsx'
 import { SendingDomainsSection } from '../SendingDomainsSection.tsx'
+import { ConfirmedOptInSection } from './ConfirmedOptInSection.tsx'
 import { SettingsFrame } from './SettingsFrame.tsx'
 
 export function EmailsPage() {
@@ -28,6 +29,7 @@ export function EmailsPage() {
             workspaceId={workspace.id}
             canEdit={can(workspace, 'sending_domains:manage')}
           />
+          <ConfirmedOptInSection workspace={workspace} />
         </Stack>
       )}
     </SettingsFrame>

@@ -71,7 +71,8 @@ func kindStatus(kind validation.Kind) int {
 	switch kind {
 	case validation.KindNotFound:
 		return http.StatusNotFound
-	case validation.KindConflict, validation.KindRevisionChanged, validation.KindPostalAddressRequired:
+	case validation.KindConflict, validation.KindRevisionChanged, validation.KindPostalAddressRequired,
+		validation.KindConfirmationEmailRequired:
 		return http.StatusConflict
 	case validation.KindForbidden:
 		return http.StatusForbidden
@@ -93,8 +94,8 @@ func kindStatus(kind validation.Kind) int {
 
 // kindCode is the problem code a refusal of kind carries, by which the client tells it from the
 // other answers of its status: a Role without the Permission, an address not proven yet, a required
-// acceptance pending, a User the Two-factor requirement withholds, a changed revision and marketing
-// email armed without a postal address.
+// acceptance pending, a User the Two-factor requirement withholds, a changed revision, marketing
+// email armed without a postal address and confirmed opt-in without a confirmation email.
 func kindCode(kind validation.Kind) (siteapi.ProblemCode, bool) {
 	switch kind {
 	case validation.KindForbidden:
@@ -109,6 +110,8 @@ func kindCode(kind validation.Kind) (siteapi.ProblemCode, bool) {
 		return siteapi.ProblemCodeRevisionChanged, true
 	case validation.KindPostalAddressRequired:
 		return siteapi.ProblemCodePostalAddressRequired, true
+	case validation.KindConfirmationEmailRequired:
+		return siteapi.ProblemCodeConfirmationEmailRequired, true
 	default:
 		return "", false
 	}

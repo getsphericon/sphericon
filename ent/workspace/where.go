@@ -95,6 +95,26 @@ func RequireConfirmedOptIn(v bool) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldRequireConfirmedOptIn, v))
 }
 
+// ConfirmationFromEmail applies equality check predicate on the "confirmation_from_email" field. It's identical to ConfirmationFromEmailEQ.
+func ConfirmationFromEmail(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldConfirmationFromEmail, v))
+}
+
+// ConfirmationFromName applies equality check predicate on the "confirmation_from_name" field. It's identical to ConfirmationFromNameEQ.
+func ConfirmationFromName(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldConfirmationFromName, v))
+}
+
+// ConfirmationSubject applies equality check predicate on the "confirmation_subject" field. It's identical to ConfirmationSubjectEQ.
+func ConfirmationSubject(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldConfirmationSubject, v))
+}
+
+// ConfirmationIntro applies equality check predicate on the "confirmation_intro" field. It's identical to ConfirmationIntroEQ.
+func ConfirmationIntro(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldConfirmationIntro, v))
+}
+
 // PostalAddress applies equality check predicate on the "postal_address" field. It's identical to PostalAddressEQ.
 func PostalAddress(v string) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldPostalAddress, v))
@@ -538,6 +558,306 @@ func RequireConfirmedOptInEQ(v bool) predicate.Workspace {
 // RequireConfirmedOptInNEQ applies the NEQ predicate on the "require_confirmed_opt_in" field.
 func RequireConfirmedOptInNEQ(v bool) predicate.Workspace {
 	return predicate.Workspace(sql.FieldNEQ(FieldRequireConfirmedOptIn, v))
+}
+
+// ConfirmationFromEmailEQ applies the EQ predicate on the "confirmation_from_email" field.
+func ConfirmationFromEmailEQ(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldConfirmationFromEmail, v))
+}
+
+// ConfirmationFromEmailNEQ applies the NEQ predicate on the "confirmation_from_email" field.
+func ConfirmationFromEmailNEQ(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldConfirmationFromEmail, v))
+}
+
+// ConfirmationFromEmailIn applies the In predicate on the "confirmation_from_email" field.
+func ConfirmationFromEmailIn(vs ...string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldIn(FieldConfirmationFromEmail, vs...))
+}
+
+// ConfirmationFromEmailNotIn applies the NotIn predicate on the "confirmation_from_email" field.
+func ConfirmationFromEmailNotIn(vs ...string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotIn(FieldConfirmationFromEmail, vs...))
+}
+
+// ConfirmationFromEmailGT applies the GT predicate on the "confirmation_from_email" field.
+func ConfirmationFromEmailGT(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGT(FieldConfirmationFromEmail, v))
+}
+
+// ConfirmationFromEmailGTE applies the GTE predicate on the "confirmation_from_email" field.
+func ConfirmationFromEmailGTE(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGTE(FieldConfirmationFromEmail, v))
+}
+
+// ConfirmationFromEmailLT applies the LT predicate on the "confirmation_from_email" field.
+func ConfirmationFromEmailLT(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLT(FieldConfirmationFromEmail, v))
+}
+
+// ConfirmationFromEmailLTE applies the LTE predicate on the "confirmation_from_email" field.
+func ConfirmationFromEmailLTE(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLTE(FieldConfirmationFromEmail, v))
+}
+
+// ConfirmationFromEmailContains applies the Contains predicate on the "confirmation_from_email" field.
+func ConfirmationFromEmailContains(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldContains(FieldConfirmationFromEmail, v))
+}
+
+// ConfirmationFromEmailHasPrefix applies the HasPrefix predicate on the "confirmation_from_email" field.
+func ConfirmationFromEmailHasPrefix(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldHasPrefix(FieldConfirmationFromEmail, v))
+}
+
+// ConfirmationFromEmailHasSuffix applies the HasSuffix predicate on the "confirmation_from_email" field.
+func ConfirmationFromEmailHasSuffix(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldHasSuffix(FieldConfirmationFromEmail, v))
+}
+
+// ConfirmationFromEmailIsNil applies the IsNil predicate on the "confirmation_from_email" field.
+func ConfirmationFromEmailIsNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldIsNull(FieldConfirmationFromEmail))
+}
+
+// ConfirmationFromEmailNotNil applies the NotNil predicate on the "confirmation_from_email" field.
+func ConfirmationFromEmailNotNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotNull(FieldConfirmationFromEmail))
+}
+
+// ConfirmationFromEmailEqualFold applies the EqualFold predicate on the "confirmation_from_email" field.
+func ConfirmationFromEmailEqualFold(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEqualFold(FieldConfirmationFromEmail, v))
+}
+
+// ConfirmationFromEmailContainsFold applies the ContainsFold predicate on the "confirmation_from_email" field.
+func ConfirmationFromEmailContainsFold(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldContainsFold(FieldConfirmationFromEmail, v))
+}
+
+// ConfirmationFromNameEQ applies the EQ predicate on the "confirmation_from_name" field.
+func ConfirmationFromNameEQ(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldConfirmationFromName, v))
+}
+
+// ConfirmationFromNameNEQ applies the NEQ predicate on the "confirmation_from_name" field.
+func ConfirmationFromNameNEQ(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldConfirmationFromName, v))
+}
+
+// ConfirmationFromNameIn applies the In predicate on the "confirmation_from_name" field.
+func ConfirmationFromNameIn(vs ...string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldIn(FieldConfirmationFromName, vs...))
+}
+
+// ConfirmationFromNameNotIn applies the NotIn predicate on the "confirmation_from_name" field.
+func ConfirmationFromNameNotIn(vs ...string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotIn(FieldConfirmationFromName, vs...))
+}
+
+// ConfirmationFromNameGT applies the GT predicate on the "confirmation_from_name" field.
+func ConfirmationFromNameGT(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGT(FieldConfirmationFromName, v))
+}
+
+// ConfirmationFromNameGTE applies the GTE predicate on the "confirmation_from_name" field.
+func ConfirmationFromNameGTE(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGTE(FieldConfirmationFromName, v))
+}
+
+// ConfirmationFromNameLT applies the LT predicate on the "confirmation_from_name" field.
+func ConfirmationFromNameLT(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLT(FieldConfirmationFromName, v))
+}
+
+// ConfirmationFromNameLTE applies the LTE predicate on the "confirmation_from_name" field.
+func ConfirmationFromNameLTE(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLTE(FieldConfirmationFromName, v))
+}
+
+// ConfirmationFromNameContains applies the Contains predicate on the "confirmation_from_name" field.
+func ConfirmationFromNameContains(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldContains(FieldConfirmationFromName, v))
+}
+
+// ConfirmationFromNameHasPrefix applies the HasPrefix predicate on the "confirmation_from_name" field.
+func ConfirmationFromNameHasPrefix(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldHasPrefix(FieldConfirmationFromName, v))
+}
+
+// ConfirmationFromNameHasSuffix applies the HasSuffix predicate on the "confirmation_from_name" field.
+func ConfirmationFromNameHasSuffix(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldHasSuffix(FieldConfirmationFromName, v))
+}
+
+// ConfirmationFromNameIsNil applies the IsNil predicate on the "confirmation_from_name" field.
+func ConfirmationFromNameIsNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldIsNull(FieldConfirmationFromName))
+}
+
+// ConfirmationFromNameNotNil applies the NotNil predicate on the "confirmation_from_name" field.
+func ConfirmationFromNameNotNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotNull(FieldConfirmationFromName))
+}
+
+// ConfirmationFromNameEqualFold applies the EqualFold predicate on the "confirmation_from_name" field.
+func ConfirmationFromNameEqualFold(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEqualFold(FieldConfirmationFromName, v))
+}
+
+// ConfirmationFromNameContainsFold applies the ContainsFold predicate on the "confirmation_from_name" field.
+func ConfirmationFromNameContainsFold(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldContainsFold(FieldConfirmationFromName, v))
+}
+
+// ConfirmationSubjectEQ applies the EQ predicate on the "confirmation_subject" field.
+func ConfirmationSubjectEQ(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldConfirmationSubject, v))
+}
+
+// ConfirmationSubjectNEQ applies the NEQ predicate on the "confirmation_subject" field.
+func ConfirmationSubjectNEQ(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldConfirmationSubject, v))
+}
+
+// ConfirmationSubjectIn applies the In predicate on the "confirmation_subject" field.
+func ConfirmationSubjectIn(vs ...string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldIn(FieldConfirmationSubject, vs...))
+}
+
+// ConfirmationSubjectNotIn applies the NotIn predicate on the "confirmation_subject" field.
+func ConfirmationSubjectNotIn(vs ...string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotIn(FieldConfirmationSubject, vs...))
+}
+
+// ConfirmationSubjectGT applies the GT predicate on the "confirmation_subject" field.
+func ConfirmationSubjectGT(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGT(FieldConfirmationSubject, v))
+}
+
+// ConfirmationSubjectGTE applies the GTE predicate on the "confirmation_subject" field.
+func ConfirmationSubjectGTE(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGTE(FieldConfirmationSubject, v))
+}
+
+// ConfirmationSubjectLT applies the LT predicate on the "confirmation_subject" field.
+func ConfirmationSubjectLT(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLT(FieldConfirmationSubject, v))
+}
+
+// ConfirmationSubjectLTE applies the LTE predicate on the "confirmation_subject" field.
+func ConfirmationSubjectLTE(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLTE(FieldConfirmationSubject, v))
+}
+
+// ConfirmationSubjectContains applies the Contains predicate on the "confirmation_subject" field.
+func ConfirmationSubjectContains(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldContains(FieldConfirmationSubject, v))
+}
+
+// ConfirmationSubjectHasPrefix applies the HasPrefix predicate on the "confirmation_subject" field.
+func ConfirmationSubjectHasPrefix(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldHasPrefix(FieldConfirmationSubject, v))
+}
+
+// ConfirmationSubjectHasSuffix applies the HasSuffix predicate on the "confirmation_subject" field.
+func ConfirmationSubjectHasSuffix(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldHasSuffix(FieldConfirmationSubject, v))
+}
+
+// ConfirmationSubjectIsNil applies the IsNil predicate on the "confirmation_subject" field.
+func ConfirmationSubjectIsNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldIsNull(FieldConfirmationSubject))
+}
+
+// ConfirmationSubjectNotNil applies the NotNil predicate on the "confirmation_subject" field.
+func ConfirmationSubjectNotNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotNull(FieldConfirmationSubject))
+}
+
+// ConfirmationSubjectEqualFold applies the EqualFold predicate on the "confirmation_subject" field.
+func ConfirmationSubjectEqualFold(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEqualFold(FieldConfirmationSubject, v))
+}
+
+// ConfirmationSubjectContainsFold applies the ContainsFold predicate on the "confirmation_subject" field.
+func ConfirmationSubjectContainsFold(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldContainsFold(FieldConfirmationSubject, v))
+}
+
+// ConfirmationIntroEQ applies the EQ predicate on the "confirmation_intro" field.
+func ConfirmationIntroEQ(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldConfirmationIntro, v))
+}
+
+// ConfirmationIntroNEQ applies the NEQ predicate on the "confirmation_intro" field.
+func ConfirmationIntroNEQ(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldConfirmationIntro, v))
+}
+
+// ConfirmationIntroIn applies the In predicate on the "confirmation_intro" field.
+func ConfirmationIntroIn(vs ...string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldIn(FieldConfirmationIntro, vs...))
+}
+
+// ConfirmationIntroNotIn applies the NotIn predicate on the "confirmation_intro" field.
+func ConfirmationIntroNotIn(vs ...string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotIn(FieldConfirmationIntro, vs...))
+}
+
+// ConfirmationIntroGT applies the GT predicate on the "confirmation_intro" field.
+func ConfirmationIntroGT(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGT(FieldConfirmationIntro, v))
+}
+
+// ConfirmationIntroGTE applies the GTE predicate on the "confirmation_intro" field.
+func ConfirmationIntroGTE(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldGTE(FieldConfirmationIntro, v))
+}
+
+// ConfirmationIntroLT applies the LT predicate on the "confirmation_intro" field.
+func ConfirmationIntroLT(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLT(FieldConfirmationIntro, v))
+}
+
+// ConfirmationIntroLTE applies the LTE predicate on the "confirmation_intro" field.
+func ConfirmationIntroLTE(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldLTE(FieldConfirmationIntro, v))
+}
+
+// ConfirmationIntroContains applies the Contains predicate on the "confirmation_intro" field.
+func ConfirmationIntroContains(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldContains(FieldConfirmationIntro, v))
+}
+
+// ConfirmationIntroHasPrefix applies the HasPrefix predicate on the "confirmation_intro" field.
+func ConfirmationIntroHasPrefix(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldHasPrefix(FieldConfirmationIntro, v))
+}
+
+// ConfirmationIntroHasSuffix applies the HasSuffix predicate on the "confirmation_intro" field.
+func ConfirmationIntroHasSuffix(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldHasSuffix(FieldConfirmationIntro, v))
+}
+
+// ConfirmationIntroIsNil applies the IsNil predicate on the "confirmation_intro" field.
+func ConfirmationIntroIsNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldIsNull(FieldConfirmationIntro))
+}
+
+// ConfirmationIntroNotNil applies the NotNil predicate on the "confirmation_intro" field.
+func ConfirmationIntroNotNil() predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotNull(FieldConfirmationIntro))
+}
+
+// ConfirmationIntroEqualFold applies the EqualFold predicate on the "confirmation_intro" field.
+func ConfirmationIntroEqualFold(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEqualFold(FieldConfirmationIntro, v))
+}
+
+// ConfirmationIntroContainsFold applies the ContainsFold predicate on the "confirmation_intro" field.
+func ConfirmationIntroContainsFold(v string) predicate.Workspace {
+	return predicate.Workspace(sql.FieldContainsFold(FieldConfirmationIntro, v))
 }
 
 // PostalAddressEQ applies the EQ predicate on the "postal_address" field.

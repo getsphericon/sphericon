@@ -211,6 +211,7 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteWorkspacesCreateOperation:                      []string{},
 	SiteWorkspacesDeleteOperation:                      []string{},
 	SiteWorkspacesGetOperation:                         []string{},
+	SiteWorkspacesGetConfirmationEmailOperation:        []string{},
 	SiteWorkspacesGetRevenueSettingsOperation:          []string{},
 	SiteWorkspacesLeaveOperation:                       []string{},
 	SiteWorkspacesLiftSecondFactorRequirementOperation: []string{},
@@ -218,8 +219,10 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteWorkspacesListDeletedOperation:                 []string{},
 	SiteWorkspacesRequireSecondFactorOperation:         []string{},
 	SiteWorkspacesRestoreOperation:                     []string{},
+	SiteWorkspacesSetConfirmedOptInOperation:           []string{},
 	SiteWorkspacesSetTimezoneOperation:                 []string{},
 	SiteWorkspacesUpdateOperation:                      []string{},
+	SiteWorkspacesUpdateConfirmationEmailOperation:     []string{},
 	SiteWorkspacesUpdateRevenueSettingsOperation:       []string{},
 }
 

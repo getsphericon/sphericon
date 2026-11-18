@@ -42,6 +42,7 @@ export function workspace(extra: Partial<SiteWorkspaceResource> = {}): SiteWorks
     collectKey: 'omck_test_key',
     revision: 1,
     postalAddress: '1 Test Street\nTestville',
+    requireConfirmedOptIn: false,
     timezone: 'UTC',
     accountLinkAvailable: false,
     permissions: [],

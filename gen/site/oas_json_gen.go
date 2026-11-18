@@ -15082,6 +15082,50 @@ func (s *NilCurrencyCode) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes EmailAddress as json.
+func (o NilEmailAddress) Encode(e *jx.Encoder) {
+	if o.Null {
+		e.Null()
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes EmailAddress from json.
+func (o *NilEmailAddress) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode NilEmailAddress to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v EmailAddress
+		o.Value = v
+		o.Null = true
+		return nil
+	}
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s NilEmailAddress) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *NilEmailAddress) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes EntityId as json.
 func (o NilEntityId) Encode(e *jx.Encoder) {
 	if o.Null {
@@ -18580,6 +18624,8 @@ func (s *ProblemCode) Decode(d *jx.Decoder) error {
 		*s = ProblemCodeRevisionChanged
 	case ProblemCodePostalAddressRequired:
 		*s = ProblemCodePostalAddressRequired
+	case ProblemCodeConfirmationEmailRequired:
+		*s = ProblemCodeConfirmationEmailRequired
 	default:
 		*s = ProblemCode(v)
 	}
@@ -30214,6 +30260,305 @@ func (s *SiteConfirmEmailChangeInput) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteConfirmEmailChangeInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SiteConfirmationEmailDefaults) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteConfirmationEmailDefaults) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("fromName")
+		e.Str(s.FromName)
+	}
+	{
+		e.FieldStart("subject")
+		e.Str(s.Subject)
+	}
+	{
+		e.FieldStart("intro")
+		e.Str(s.Intro)
+	}
+}
+
+var jsonFieldsNameOfSiteConfirmationEmailDefaults = [3]string{
+	0: "fromName",
+	1: "subject",
+	2: "intro",
+}
+
+// Decode decodes SiteConfirmationEmailDefaults from json.
+func (s *SiteConfirmationEmailDefaults) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteConfirmationEmailDefaults to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "fromName":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.FromName = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"fromName\"")
+			}
+		case "subject":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Subject = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"subject\"")
+			}
+		case "intro":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Intro = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"intro\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteConfirmationEmailDefaults")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteConfirmationEmailDefaults) {
+					name = jsonFieldsNameOfSiteConfirmationEmailDefaults[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteConfirmationEmailDefaults) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteConfirmationEmailDefaults) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SiteConfirmationEmailResource) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteConfirmationEmailResource) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("fromEmail")
+		s.FromEmail.Encode(e)
+	}
+	{
+		e.FieldStart("fromName")
+		s.FromName.Encode(e)
+	}
+	{
+		e.FieldStart("subject")
+		s.Subject.Encode(e)
+	}
+	{
+		e.FieldStart("intro")
+		s.Intro.Encode(e)
+	}
+	{
+		e.FieldStart("defaults")
+		s.Defaults.Encode(e)
+	}
+	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfSiteConfirmationEmailResource = [6]string{
+	0: "fromEmail",
+	1: "fromName",
+	2: "subject",
+	3: "intro",
+	4: "defaults",
+	5: "revision",
+}
+
+// Decode decodes SiteConfirmationEmailResource from json.
+func (s *SiteConfirmationEmailResource) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteConfirmationEmailResource to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "fromEmail":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.FromEmail.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"fromEmail\"")
+			}
+		case "fromName":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.FromName.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"fromName\"")
+			}
+		case "subject":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Subject.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"subject\"")
+			}
+		case "intro":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				if err := s.Intro.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"intro\"")
+			}
+		case "defaults":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				if err := s.Defaults.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"defaults\"")
+			}
+		case "revision":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteConfirmationEmailResource")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00111111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteConfirmationEmailResource) {
+					name = jsonFieldsNameOfSiteConfirmationEmailResource[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteConfirmationEmailResource) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteConfirmationEmailResource) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -44253,6 +44598,117 @@ func (s *SiteSendingDomainsListOK) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *SiteSetConfirmedOptInInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteSetConfirmedOptInInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
+	{
+		e.FieldStart("enabled")
+		e.Bool(s.Enabled)
+	}
+}
+
+var jsonFieldsNameOfSiteSetConfirmedOptInInput = [2]string{
+	0: "revision",
+	1: "enabled",
+}
+
+// Decode decodes SiteSetConfirmedOptInInput from json.
+func (s *SiteSetConfirmedOptInInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteSetConfirmedOptInInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "revision":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
+		case "enabled":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Bool()
+				s.Enabled = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"enabled\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteSetConfirmedOptInInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteSetConfirmedOptInInput) {
+					name = jsonFieldsNameOfSiteSetConfirmedOptInInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteSetConfirmedOptInInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteSetConfirmedOptInInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *SiteSetDomainJoinInput) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -47642,6 +48098,166 @@ func (s *SiteTransactionalEmailsListOK) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *SiteUpdateConfirmationEmailInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteUpdateConfirmationEmailInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("revision")
+		s.Revision.Encode(e)
+	}
+	{
+		e.FieldStart("fromEmail")
+		s.FromEmail.Encode(e)
+	}
+	{
+		if s.FromName.Set {
+			e.FieldStart("fromName")
+			s.FromName.Encode(e)
+		}
+	}
+	{
+		if s.Subject.Set {
+			e.FieldStart("subject")
+			s.Subject.Encode(e)
+		}
+	}
+	{
+		if s.Intro.Set {
+			e.FieldStart("intro")
+			s.Intro.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfSiteUpdateConfirmationEmailInput = [5]string{
+	0: "revision",
+	1: "fromEmail",
+	2: "fromName",
+	3: "subject",
+	4: "intro",
+}
+
+// Decode decodes SiteUpdateConfirmationEmailInput from json.
+func (s *SiteUpdateConfirmationEmailInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteUpdateConfirmationEmailInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "revision":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Revision.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"revision\"")
+			}
+		case "fromEmail":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.FromEmail.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"fromEmail\"")
+			}
+		case "fromName":
+			if err := func() error {
+				s.FromName.Reset()
+				if err := s.FromName.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"fromName\"")
+			}
+		case "subject":
+			if err := func() error {
+				s.Subject.Reset()
+				if err := s.Subject.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"subject\"")
+			}
+		case "intro":
+			if err := func() error {
+				s.Intro.Reset()
+				if err := s.Intro.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"intro\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteUpdateConfirmationEmailInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSiteUpdateConfirmationEmailInput) {
+					name = jsonFieldsNameOfSiteUpdateConfirmationEmailInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteUpdateConfirmationEmailInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteUpdateConfirmationEmailInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *SiteUpdateContactInput) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -49620,6 +50236,10 @@ func (s *SiteWorkspaceResource) encodeFields(e *jx.Encoder) {
 		s.Timezone.Encode(e)
 	}
 	{
+		e.FieldStart("requireConfirmedOptIn")
+		e.Bool(s.RequireConfirmedOptIn)
+	}
+	{
 		e.FieldStart("role")
 		s.Role.Encode(e)
 	}
@@ -49717,30 +50337,31 @@ func (s *SiteWorkspaceResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteWorkspaceResource = [23]string{
+var jsonFieldsNameOfSiteWorkspaceResource = [24]string{
 	0:  "id",
 	1:  "name",
 	2:  "collectKey",
 	3:  "postalAddress",
 	4:  "timezone",
-	5:  "role",
-	6:  "permissions",
-	7:  "suspendedAt",
-	8:  "suspensionReason",
-	9:  "supportEmail",
-	10: "mcpUrl",
-	11: "trackerUrl",
-	12: "trackingTarget",
-	13: "shortLinkLength",
-	14: "smsMaxLength",
-	15: "holds",
-	16: "secondFactorRequiredAt",
-	17: "secondFactorGraceEndsAt",
-	18: "secondFactorRequirementGraceEndsAt",
-	19: "sendCap",
-	20: "accountLinkAvailable",
-	21: "createdAt",
-	22: "revision",
+	5:  "requireConfirmedOptIn",
+	6:  "role",
+	7:  "permissions",
+	8:  "suspendedAt",
+	9:  "suspensionReason",
+	10: "supportEmail",
+	11: "mcpUrl",
+	12: "trackerUrl",
+	13: "trackingTarget",
+	14: "shortLinkLength",
+	15: "smsMaxLength",
+	16: "holds",
+	17: "secondFactorRequiredAt",
+	18: "secondFactorGraceEndsAt",
+	19: "secondFactorRequirementGraceEndsAt",
+	20: "sendCap",
+	21: "accountLinkAvailable",
+	22: "createdAt",
+	23: "revision",
 }
 
 // Decode decodes SiteWorkspaceResource from json.
@@ -49808,8 +50429,20 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"timezone\"")
 			}
-		case "role":
+		case "requireConfirmedOptIn":
 			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Bool()
+				s.RequireConfirmedOptIn = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"requireConfirmedOptIn\"")
+			}
+		case "role":
+			requiredBitSet[0] |= 1 << 6
 			if err := func() error {
 				if err := s.Role.Decode(d); err != nil {
 					return err
@@ -49819,7 +50452,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"role\"")
 			}
 		case "permissions":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				s.Permissions = make([]Permission, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -49867,7 +50500,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"supportEmail\"")
 			}
 		case "mcpUrl":
-			requiredBitSet[1] |= 1 << 2
+			requiredBitSet[1] |= 1 << 3
 			if err := func() error {
 				v, err := d.Str()
 				s.McpUrl = string(v)
@@ -49879,7 +50512,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"mcpUrl\"")
 			}
 		case "trackerUrl":
-			requiredBitSet[1] |= 1 << 3
+			requiredBitSet[1] |= 1 << 4
 			if err := func() error {
 				v, err := d.Str()
 				s.TrackerUrl = string(v)
@@ -49901,7 +50534,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"trackingTarget\"")
 			}
 		case "shortLinkLength":
-			requiredBitSet[1] |= 1 << 5
+			requiredBitSet[1] |= 1 << 6
 			if err := func() error {
 				v, err := d.Int32()
 				s.ShortLinkLength = int32(v)
@@ -49913,7 +50546,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"shortLinkLength\"")
 			}
 		case "smsMaxLength":
-			requiredBitSet[1] |= 1 << 6
+			requiredBitSet[1] |= 1 << 7
 			if err := func() error {
 				if err := s.SmsMaxLength.Decode(d); err != nil {
 					return err
@@ -49923,7 +50556,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"smsMaxLength\"")
 			}
 		case "holds":
-			requiredBitSet[1] |= 1 << 7
+			requiredBitSet[2] |= 1 << 0
 			if err := func() error {
 				s.Holds = make([]SiteWorkspaceHold, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -49981,7 +50614,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"sendCap\"")
 			}
 		case "accountLinkAvailable":
-			requiredBitSet[2] |= 1 << 4
+			requiredBitSet[2] |= 1 << 5
 			if err := func() error {
 				v, err := d.Bool()
 				s.AccountLinkAvailable = bool(v)
@@ -49993,7 +50626,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"accountLinkAvailable\"")
 			}
 		case "createdAt":
-			requiredBitSet[2] |= 1 << 5
+			requiredBitSet[2] |= 1 << 6
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -50003,7 +50636,7 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "revision":
-			requiredBitSet[2] |= 1 << 6
+			requiredBitSet[2] |= 1 << 7
 			if err := func() error {
 				if err := s.Revision.Decode(d); err != nil {
 					return err
@@ -50022,9 +50655,9 @@ func (s *SiteWorkspaceResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [3]uint8{
-		0b01111111,
-		0b11101100,
-		0b01110000,
+		0b11111111,
+		0b11011000,
+		0b11100001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

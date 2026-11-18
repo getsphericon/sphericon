@@ -36,6 +36,8 @@ var (
 	EmailAddressTakenSignIn                               = ID{key: "email.address_taken.sign_in"}
 	EmailAddressTakenSubject                              = ID{key: "email.address_taken.subject"}
 	EmailAuthFooter                                       = ID{key: "email.auth.footer"}
+	EmailConfirmationRequestIntro                         = ID{key: "email.confirmation_request.intro"}
+	EmailConfirmationRequestSubject                       = ID{key: "email.confirmation_request.subject"}
 	EmailEmailChangeIntro                                 = ID{key: "email.email_change.intro"}
 	EmailEmailChangeSubject                               = ID{key: "email.email_change.subject"}
 	EmailEmailVerifyIntro                                 = ID{key: "email.email_verify.intro"}
@@ -136,6 +138,8 @@ var (
 	ErrorsConfirmLinkBad                                  = ID{key: "errors.confirm_link_bad"}
 	ErrorsConfirmLinkInvalid                              = ID{key: "errors.confirm_link_invalid"}
 	ErrorsConfirmationChannel                             = ID{key: "errors.confirmation_channel"}
+	ErrorsConfirmationEmailRequired                       = ID{key: "errors.confirmation_email_required"}
+	ErrorsConfirmationFromNotVerified                     = ID{key: "errors.confirmation_from_not_verified"}
 	ErrorsConnectionNotFound                              = ID{key: "errors.connection_not_found"}
 	ErrorsConsentBrandEmpty                               = ID{key: "errors.consent_brand_empty"}
 	ErrorsConsentSourceEmpty                              = ID{key: "errors.consent_source_empty"}

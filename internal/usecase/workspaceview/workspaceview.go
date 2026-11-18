@@ -25,6 +25,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
@@ -117,11 +118,13 @@ type UseCase struct {
 	outbound        *outboundmessages.Module
 	trackingDomains *trackingdomains.Module
 	removalCheck    *removalcheck.Module
+	confirmations   *confirmations.Module
 	unchecked       *workspacesunchecked.Module
 }
 
 // Modules are the modules the use case reads and changes the Workspace through. RemovalCheck finds the marketing email still to send that holds the postal address
-// (ADR 0156).
+// (ADR 0156); Confirmations records the grandfathered Confirmations turning confirmed opt-in on
+// asserts (ADR 0013).
 type Modules struct {
 	Users           *users.Module
 	Workspaces      *workspaces.Module
@@ -131,6 +134,7 @@ type Modules struct {
 	Outbound        *outboundmessages.Module
 	TrackingDomains *trackingdomains.Module
 	RemovalCheck    *removalcheck.Module
+	Confirmations   *confirmations.Module
 }
 
 // New builds the use case over the bus whose transactions create and restore a Workspace and the
@@ -140,7 +144,7 @@ func New(bus *events.Bus, mods Modules, now func() time.Time) *UseCase {
 	return &UseCase{
 		bus: bus, users: mods.Users, workspaces: mods.Workspaces, memberships: mods.Memberships, secondFactors: mods.SecondFactors,
 		holds: mods.Holds, outbound: mods.Outbound, trackingDomains: mods.TrackingDomains,
-		removalCheck: mods.RemovalCheck, unchecked: workspacesunchecked.New(now),
+		removalCheck: mods.RemovalCheck, confirmations: mods.Confirmations, unchecked: workspacesunchecked.New(now),
 	}
 }
 

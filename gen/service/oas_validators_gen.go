@@ -156,6 +156,8 @@ func (s ProblemCode) Validate() error {
 		return nil
 	case "postal_address_required":
 		return nil
+	case "confirmation_email_required":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}

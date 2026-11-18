@@ -1197,6 +1197,58 @@ func (m *WorkspaceMutation) unchanged(ctx context.Context) (*Workspace, bool, er
 			return nil, false, nil
 		}
 	}
+	if v, ok := m.ConfirmationFromEmail(); ok {
+		if row.ConfirmationFromEmail == nil {
+			return nil, false, nil
+		}
+		if !reflect.DeepEqual(v, *row.ConfirmationFromEmail) {
+			return nil, false, nil
+		}
+	}
+	if m.ConfirmationFromEmailCleared() {
+		if row.ConfirmationFromEmail != nil {
+			return nil, false, nil
+		}
+	}
+	if v, ok := m.ConfirmationFromName(); ok {
+		if row.ConfirmationFromName == nil {
+			return nil, false, nil
+		}
+		if !reflect.DeepEqual(v, *row.ConfirmationFromName) {
+			return nil, false, nil
+		}
+	}
+	if m.ConfirmationFromNameCleared() {
+		if row.ConfirmationFromName != nil {
+			return nil, false, nil
+		}
+	}
+	if v, ok := m.ConfirmationSubject(); ok {
+		if row.ConfirmationSubject == nil {
+			return nil, false, nil
+		}
+		if !reflect.DeepEqual(v, *row.ConfirmationSubject) {
+			return nil, false, nil
+		}
+	}
+	if m.ConfirmationSubjectCleared() {
+		if row.ConfirmationSubject != nil {
+			return nil, false, nil
+		}
+	}
+	if v, ok := m.ConfirmationIntro(); ok {
+		if row.ConfirmationIntro == nil {
+			return nil, false, nil
+		}
+		if !reflect.DeepEqual(v, *row.ConfirmationIntro) {
+			return nil, false, nil
+		}
+	}
+	if m.ConfirmationIntroCleared() {
+		if row.ConfirmationIntro != nil {
+			return nil, false, nil
+		}
+	}
 	if v, ok := m.PostalAddress(); ok {
 		if !reflect.DeepEqual(v, row.PostalAddress) {
 			return nil, false, nil
