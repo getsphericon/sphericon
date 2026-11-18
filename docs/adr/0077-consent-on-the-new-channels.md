@@ -9,7 +9,7 @@ status: accepted
 
 > **Amended by [[0179-a-web-push-binding-reaches-a-contact-only-by-proof]]:**
 > on web push the reversal in the Channel is an explicit subscribe (`subscribeToPush()` from a click),
-> recorded as `web_push.resume_observed`; a report a page view makes lifts nothing.
+> observed as `web_push.resume_observed`; a report a page view makes lifts nothing.
 
 > **Amended by [[0138-contacts-come-in-by-a-mapped-csv-import-and-leave-by-a-streamed-csv-export]]:**
 > a CSV import takes the same consent columns as the batch upsert, and may record the old

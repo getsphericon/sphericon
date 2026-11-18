@@ -409,8 +409,8 @@ Visitor a Telegram start token was issued to; on web push the Contact an **Ident
 when the browser reports its push subscription, or else the reporting Visitor. It is made only by
 what comes in from the channel (a `/start` carrying a token sphericon issued, a push subscription
 reported by the tracker), never asserted through the API, and the latest one wins: a chat bound
-again moves to its new owner. A web push report without a token moves the Binding to the reporting
-Visitor unless it is already that Visitor's Contact's. It is unique per (Integration, Destination); it keeps the chat id apart from the
+again moves to its new owner. A web push report without a token never takes a Binding from a
+Contact; the site's sign-out (the tracker's `reset`) releases it to the browser's new Visitor. It is unique per (Integration, Destination); it keeps the chat id apart from the
 Destination (the Telegram user id) and when the current owner got it. A Contact is reached through its own
 Bindings only; a Visitor's reaches nobody until a proven **Identify** hands it to the Contact.
 Whatever gives a Binding to a Contact records `telegram.bound` or `web_push.bound` for it, and

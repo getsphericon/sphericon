@@ -24,13 +24,16 @@ reached through the Visitor would let anyone who claims another person's email r
 personalised pushes in their own browser. ADR 0171 settled Telegram: a Visitor's Binding reaches no
 Contact until a proven Identify hands it over. Web push needs the same rule, and two things Telegram
 does not have: the browser reports its subscription again on later page views, and nothing but the
-reporting page knows who sits at the browser now.
+reporting page knows who sits at the browser now. A new Visitor on a returning person's browser is
+routine, not a sign that someone else sits there: Safari keeps a cookie written by script for seven
+days, and people clear cookies.
 
 Push platforms split the same way. A platform that messages a browser without a person (an anonymous
 subscription) sends to whoever allowed it; a platform that messages people ties a browser to a
-person only through the customer's sign-in, and the ones that guard it check a signature from the
-customer's server before they do. sphericon sends to Contacts (ADR 0075): every Segment, Condition,
-figure and Send-eligibility check counts Contacts.
+person through the customer's sign-in code. Where that tie rides on an unsigned call from the page,
+as a subscription attached to whatever contact a tracking cookie names does, whoever can make that
+call can route someone else's messages to their own browser. sphericon sends to Contacts (ADR 0075):
+every Segment, Condition, figure and Send-eligibility check counts Contacts.
 
 ## Decisions
 
@@ -40,14 +43,14 @@ figure and Send-eligibility check counts Contacts.
 - **A report whose token verifies gives the Binding to the Contact it proves**, made or moved, and
   records `web_push.bound` for it and `web_push.unbound` for a Contact it takes the Binding from.
   The same Contact reporting again records nothing.
-- **A report without a token:**
-  - makes a Binding owned by the reporting Visitor when the endpoint has none;
-  - leaves a Binding that is the reporting Visitor's Contact's where it is, and only refreshes its
-    keys;
-  - moves a Contact's Binding to the reporting Visitor when that Visitor is anonymous or another
-    Contact's, recording `web_push.unbound` for the Contact. A browser whose site reset the Visitor
-    at a sign-out (ADR 0171) stops showing the previous person's pushes on its next page view;
-  - moves another Visitor's Binding to the reporting Visitor, recording nothing.
+- **A report without a token never takes a Binding from a Contact.** It makes a Binding owned by
+  the reporting Visitor when the endpoint has none, refreshes the keys of a Contact's Binding
+  whoever reports it, and moves another Visitor's Binding to the reporting Visitor, recording
+  nothing.
+- **A sign-out releases the browser.** When the site calls the tracker's `reset()` (ADR 0171) and
+  the browser holds a push subscription, the tracker reports its release with the new Visitor: a
+  Contact's Binding of that endpoint moves to that anonymous Visitor, recording `web_push.unbound`.
+  A release needs only the endpoint, which nobody but the browser holds.
 - **A proven Identify hands the Visitor's Bindings on every Channel to the Contact it proves**, and
   records `<channel>.bound` for each: `telegram.bound` and `web_push.bound`. A claim, a Form submit
   and a Link identity token hand over nothing (ADR 0171).
@@ -57,9 +60,9 @@ figure and Send-eligibility check counts Contacts.
   the web push Integration's setup says so and leads to the Identity secret.
 - **An explicit subscribe lifts a web push opt-out on its Destination.** `subscribeToPush()` follows
   a click of the visitor, so it is the person asking to receive again, as a Telegram `/start` is
-  (ADR 0077). It records `web_push.resume_observed`, a consent observation ordered with the others by
-  when the Instance received it (ADR 0154), so a delayed or repeated report never undoes a later
-  opt-out. A report a page view makes never lifts one.
+  (ADR 0077). It reaches the consent subscriber as the observation `web_push.resume_observed`, as a
+  `/start` does on Telegram, ordered with the others by when the Instance received it (ADR 0154),
+  so a delayed or repeated report never undoes a later opt-out. A report a page view makes never lifts one.
 - **Under Tracker consent (ADR 0093)**, while consent is not `granted`, `subscribeToPush()` resolves
   `unavailable` without asking the browser, since no Visitor exists to own the Binding; `denied`
   stops the page-view reports and leaves the browser's subscription alone, since the visitor allowed
@@ -75,8 +78,13 @@ figure and Send-eligibility check counts Contacts.
 - The hand-over of a proven Identify is Channel-generic and announces each Binding on its Channel.
 - A web push Integration's setup includes the Identity secret, and its page says that subscribers
   of an unproven visitor reach nobody until the site proves who they are.
-- `web_push.resume_observed`, `web_push.unsubscribed` and `web_push.opt_out_recorded` are evidentiary
-  System events (ADR 0019), as their SMS and Telegram counterparts are.
+- Every web push opt-out, from a link or recorded by hand, records the System event
+  `web_push.unsubscribed` with its `via`, kept as consent proof like `telegram.unsubscribed`; the
+  stop and the resume reach the consent subscriber as the observations `web_push.stop_observed` and
+  `web_push.resume_observed`, as Telegram's do.
+- A shared browser whose site never calls `reset()` keeps showing the previous person's pushes until
+  another person's proven report or Identify takes it: the residual ADR 0171 accepts for Telegram
+  chats.
 
 ## Considered options
 
@@ -87,8 +95,8 @@ figure and Send-eligibility check counts Contacts.
   would route their pushes to the claimer's browser.
 - **The Binding always the Visitor's, reaching the Visitor's Contact** (the first spec). A claim binds
   an anonymous Visitor to any Contact, so it is the same leak.
-- **Keeping a Contact's Binding on every report without a token.** A shared browser would keep
-  showing the previous person's pushes after the site reset its Visitor at a sign-out.
-- **Moving a Contact's Binding on every report without a token.** A page view before the page's own
-  Identify would take the browser from its proven Contact and give it back a moment later, firing
-  `web_push.unbound` and `web_push.bound` and the Automations they trigger each time.
+- **Moving a Contact's Binding on a report without a token from an anonymous Visitor or another
+  Contact's.** A returning customer's browser gets a new Visitor whenever its cookie lapses (weekly
+  on Safari), so it would leave its proven Contact and come back at the page's next proven Identify,
+  firing `web_push.unbound` and `web_push.bound` and the Automations they trigger each time. The
+  site's sign-out is the signal that the person changed, and `reset()` already marks it.
