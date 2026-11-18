@@ -15,7 +15,7 @@ import { Route as oauthConsentRoute } from './routes/oauth/consent.tsx'
 import { Route as signupSurveyRoute } from './routes/signup-survey.tsx'
 import { Route as workspaceRoute } from './routes/workspaces/$workspaceId/route.tsx'
 import { Route as newWorkspaceRoute } from './routes/workspaces/new.tsx'
-import { testId } from './test/payloads.ts'
+import { testId, workspace as workspacePayload } from './test/payloads.ts'
 import { problem } from './test/problem.ts'
 import { worker } from './test/worker.ts'
 
@@ -24,23 +24,12 @@ const newRouter = () =>
   createAppRouter(new QueryClient({ defaultOptions: { queries: { retry: false } } }))
 
 const workspace = (workspaceId: string) => ({
+  ...workspacePayload(),
   id: workspaceId,
   name: workspaceId,
   workspaceId,
   collectKey: 'omck',
-  revision: 1,
   postalAddress: '',
-  requireConfirmedOptIn: false,
-  timezone: 'UTC',
-  accountLinkAvailable: false,
-  permissions: [],
-  mcpUrl: 'https://sphericon.test',
-  trackerUrl: 'https://t.sphericon.test',
-  shortLinkLength: 35,
-  smsMaxLength: { gsm7: 1600, ucs2: 700 },
-  holds: [],
-  role: 'owner' as const,
-  createdAt: '2026-01-01T00:00:00Z',
 })
 
 // The guards read the signed-in user and then the workspaces list. The setup signs a user in by

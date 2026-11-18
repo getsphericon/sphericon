@@ -11,7 +11,12 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteAutomationResource, AutomationStep } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
-import { emailIntegration, TIMESTAMPS, testId } from '../../test/payloads.ts'
+import {
+  emailIntegration,
+  TIMESTAMPS,
+  testId,
+  workspace as workspacePayload,
+} from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
@@ -30,22 +35,10 @@ const STEP: AutomationStep = {
 
 // The editor's counter reads the Workspace's short-link length.
 const WORKSPACE = {
-  id: 'TestWs01',
+  ...workspacePayload(),
   name: 'Test',
-  collectKey: 'omck_test_key',
-  revision: 1,
   postalAddress: '',
-  requireConfirmedOptIn: false,
-  timezone: 'UTC',
-  accountLinkAvailable: false,
-  permissions: [],
   mcpUrl: 'https://mcp.sphericon.test/',
-  trackerUrl: 'https://t.sphericon.test',
-  shortLinkLength: 35,
-  smsMaxLength: { gsm7: 1600, ucs2: 700 },
-  holds: [],
-  role: 'owner' as const,
-  createdAt: '2026-01-01T00:00:00Z',
 }
 
 const INTEGRATIONS = [

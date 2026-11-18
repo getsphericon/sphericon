@@ -6,29 +6,16 @@ import {
 } from '../../../generated/site/msw.gen.ts'
 import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
 import { Route as webhooksRoute } from '../../../routes/workspaces/$workspaceId/settings/webhooks.tsx'
+import { workspace as workspacePayload } from '../../../test/payloads.ts'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { routeMount } from '../../../test/routeMount.ts'
 import { worker } from '../../../test/worker.ts'
 import { WebhooksPage } from './webhooks.tsx'
 
 const workspace: SiteWorkspaceResource = {
-  id: 'TestWs01',
-  name: 'Acme',
-
-  collectKey: 'omck_test_key',
-  revision: 1,
+  ...workspacePayload(),
   postalAddress: '',
-  requireConfirmedOptIn: false,
-  timezone: 'UTC',
-  accountLinkAvailable: false,
   permissions: ['webhooks:manage'],
-  mcpUrl: 'https://sphericon.test',
-  trackerUrl: 'https://t.sphericon.test',
-  shortLinkLength: 35,
-  smsMaxLength: { gsm7: 1600, ucs2: 700 },
-  holds: [],
-  role: 'owner',
-  createdAt: '2026-01-01T00:00:00Z',
 }
 
 test('shows the webhooks of the workspace', async () => {

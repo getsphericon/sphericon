@@ -13,7 +13,7 @@ import type {
   SiteWorkspaceResource,
 } from '../../generated/site/types.gen.ts'
 import { Route as brandKitRoute } from '../../routes/workspaces/$workspaceId/brand-kit.tsx'
-import { hex } from '../../test/payloads.ts'
+import { hex, workspace as workspacePayload } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -21,23 +21,13 @@ import { worker } from '../../test/worker.ts'
 import { BrandKitPage } from './page.tsx'
 
 const workspace = (permissions: Permission[]): SiteWorkspaceResource => ({
+  ...workspacePayload(),
   id: 'AcmeWs01',
-  name: 'Acme',
-
   collectKey: 'ck',
-  revision: 1,
   postalAddress: '',
-  requireConfirmedOptIn: false,
-  timezone: 'UTC',
-  accountLinkAvailable: false,
   permissions,
-  holds: [],
   mcpUrl: 'https://example.com/mcp',
-  trackerUrl: 'https://t.sphericon.test',
-  shortLinkLength: 35,
-  smsMaxLength: { gsm7: 1600, ucs2: 700 },
   role: 'member',
-  createdAt: '2026-01-01T00:00:00Z',
 })
 
 const renderPage = async (permissions: Permission[]) => {

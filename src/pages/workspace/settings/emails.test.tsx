@@ -9,7 +9,7 @@ import {
 } from '../../../generated/site/msw.gen.ts'
 import type { SiteIntegrationResource } from '../../../generated/site/types.gen.ts'
 import { Route as emailsRoute } from '../../../routes/workspaces/$workspaceId/settings/emails.tsx'
-import { testId } from '../../../test/payloads.ts'
+import { testId, workspace as workspacePayload } from '../../../test/payloads.ts'
 import { problem } from '../../../test/problem.ts'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { routeMount } from '../../../test/routeMount.ts'
@@ -17,23 +17,8 @@ import { worker } from '../../../test/worker.ts'
 import { EmailsPage } from './emails.tsx'
 
 const workspace = {
-  id: 'TestWs01',
-  name: 'Acme',
-
-  collectKey: 'omck_test_key',
-  revision: 1,
+  ...workspacePayload(),
   postalAddress: '',
-  requireConfirmedOptIn: false,
-  timezone: 'UTC',
-  accountLinkAvailable: false,
-  permissions: [],
-  mcpUrl: 'https://sphericon.test',
-  trackerUrl: 'https://t.sphericon.test',
-  shortLinkLength: 35,
-  smsMaxLength: { gsm7: 1600, ucs2: 700 },
-  holds: [],
-  role: 'owner' as const,
-  createdAt: '2026-01-01T00:00:00Z',
 }
 
 test('shows the providers and the sending domains', async () => {

@@ -25,7 +25,7 @@ import type { SiteIntegrationResource } from '../../generated/site/types.gen.ts'
 import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
 import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspaceId/broadcasts/new.tsx'
-import { testId } from '../../test/payloads.ts'
+import { testId, workspace as workspacePayload } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { requestGate } from '../../test/requestGate.ts'
@@ -103,22 +103,8 @@ const INTEGRATIONS = [
 ]
 
 const WORKSPACE = {
-  id: 'TestWs01',
-  name: 'Acme',
-  collectKey: 'omck_test_key',
-  revision: 1,
+  ...workspacePayload(),
   postalAddress: '',
-  requireConfirmedOptIn: false,
-  timezone: 'UTC',
-  accountLinkAvailable: false,
-  permissions: [],
-  mcpUrl: 'https://sphericon.test',
-  trackerUrl: 'https://t.sphericon.test',
-  shortLinkLength: 35,
-  smsMaxLength: { gsm7: 1600, ucs2: 700 },
-  holds: [],
-  role: 'owner' as const,
-  createdAt: '2026-01-01T00:00:00Z',
 }
 
 // The form reads the Workspace for its Send cap; this one has none, so nothing is counted.

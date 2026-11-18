@@ -6,6 +6,7 @@ import {
   handleSiteWorkspacesRequireSecondFactor,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteWorkspaceResource } from '../../generated/site/types.gen.ts'
+import { workspace as workspacePayload } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
 import { formatDate } from '../../utils/datetime.ts'
@@ -14,21 +15,10 @@ import { SecondFactorRequirementSection } from './SecondFactorRequirementSection
 const NOW = '2026-01-01T00:00:00Z'
 
 const workspace = (over: Partial<SiteWorkspaceResource> = {}): SiteWorkspaceResource => ({
+  ...workspacePayload(),
   id: 'AcmeWs01',
-  name: 'Acme',
-
   collectKey: 'ck',
-  revision: 1,
   postalAddress: '',
-  requireConfirmedOptIn: false,
-  timezone: 'UTC',
-  accountLinkAvailable: false,
-  permissions: [],
-  mcpUrl: 'https://sphericon.test',
-  trackerUrl: 'https://t.sphericon.test',
-  shortLinkLength: 35,
-  smsMaxLength: { gsm7: 1600, ucs2: 700 },
-  holds: [],
   role: 'member',
   createdAt: NOW,
   ...over,

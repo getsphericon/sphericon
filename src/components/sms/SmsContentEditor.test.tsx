@@ -3,6 +3,7 @@ import { beforeEach, expect, test } from 'vitest'
 
 import { handleSiteWorkspacesList } from '../../generated/site/msw.gen.ts'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
+import { workspace as workspacePayload } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
@@ -15,22 +16,11 @@ beforeEach(() => {
     handleSiteWorkspacesList({
       body: [
         {
+          ...workspacePayload(),
           id: 'AcmeWs01',
-          name: 'Acme',
-          collectKey: 'omck_test_key',
-          revision: 1,
           postalAddress: '',
-          requireConfirmedOptIn: false,
-          timezone: 'UTC',
-          accountLinkAvailable: false,
-          permissions: [],
           mcpUrl: 'https://mcp.sphericon.test/',
-          trackerUrl: 'https://t.sphericon.test',
           shortLinkLength: 30,
-          smsMaxLength: { gsm7: 1600, ucs2: 700 },
-          holds: [],
-          role: 'owner',
-          createdAt: '2026-01-01T00:00:00Z',
         },
       ],
     }),
