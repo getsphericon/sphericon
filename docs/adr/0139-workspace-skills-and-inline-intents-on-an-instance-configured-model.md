@@ -5,6 +5,12 @@ build: [1609]
 
 # Workspace Skills, and inline intents on a model the Instance configures
 
+> **Revised before it was built** (#1609, #1467): the switch names the protocol, the endpoint host
+> and the model, and turns off when any of them changes: the host is the processor the definitions go
+> to, which a protocol alone does not name. The assistant as an author is set by the context a write
+> runs in, never by a field of it: the check of a fill token, for its Member, and the Recommendations
+> job of [[0164-the-assistant-recommends-from-detected-signals-and-never-sends]], with no Member.
+
 An agent operates a Workspace through MCP (ADR 0016) and is bounded by origin marks, an egress lock
 and review (ADR 0132). The app ships playbooks for it as MCP prompts (welcome, win-back,
 list-hygiene, set-up-sending-domain), Markdown files in the binary, and runs no model of its own.
@@ -31,17 +37,17 @@ rejected: what an assistant makes is a governed object, and its home is that obj
 
 ### Inline intents run on the Instance's model
 
-- **The Instance operator configures the model**: a provider, its endpoint, key and model, in the
+- **The Instance operator configures the model**: a protocol, its endpoint, key and model, in the
   Instance's settings. Without them there are no inline intents, and nothing else depends on them. A
   Workspace has no key of its own. The endpoint is the operator's own configuration, reached
   directly rather than through the SSRF-hardened client, so a self-hoster's model on a private
   address works.
 - **The owner turns them on for the Workspace, off by default, under a new owner-only Permission,
   `intents:manage`**: doing so accepts the operator's model provider as a processor of the Workspace's
-  definitions, a decision for the person who answers for the Workspace. The switch names the provider
-  and the model being accepted, and the Workspace keeps who accepted them and when, in every install;
-  the change is also audited where the Audit log exists. When the operator changes the provider or
-  the model, the switch turns off until an owner accepts the new ones.
+  definitions, a decision for the person who answers for the Workspace. The switch names the protocol,
+  the endpoint host and the model being accepted, and the Workspace keeps who accepted them and when, in
+  every install; the change is also audited where the Audit log exists. When the operator changes any of
+  the three, the switch turns off until an owner accepts the new ones.
 - **The model gets definitions and figures, never a Contact.** For a Segment it gets the schema (core
   attributes, Custom fields, Tags, Event actions, Scores), not the Conditions already saved, which may
   hold an address a Member typed. For a draft it gets the brief the Member typed, the draft in the
@@ -55,7 +61,9 @@ rejected: what an assistant makes is a governed object, and its home is that obj
   the Segment builder, checked as any Condition is; a brief becomes Message content in the composer;
   "explain" writes a reading of a report's figures beside it, kept nowhere. Nothing is written until
   the Member saves, and what is saved records its author as the assistant for that Member, shown at
-  Schedule and Publish with every other author (ADR 0132).
+  Schedule and Publish with every other author (ADR 0132). The author comes from the context of the
+  save, set by the server's check of the fill token it signed for the draft, never from a field a
+  client sends.
 - **What the model writes loads nothing before a person approves it.** An explanation is plain text,
   never rendered as markup, links or images. An assistant-filled draft's preview shows an image whose
   host is not a Known host only after a click, as ADR 0132 holds a non-Member's image, and its links
@@ -80,7 +88,8 @@ rejected: what an assistant makes is a governed object, and its home is that obj
   gains `skills:manage` and `intents:manage`.
 - The Instance gains the model's settings and a daily cap; the Workspace a switch with its recorded
   acceptance; the Usage snapshot a metric of intent tokens; three editors gain their intent.
-- Authors gain the kind "assistant"; the lists gain the filter by kinds of author.
+- Authors gain the kind "assistant", with the Member it wrote for or, for a Recommendation, none; the
+  lists gain the filter by kinds of author.
 
 ## Considered options
 

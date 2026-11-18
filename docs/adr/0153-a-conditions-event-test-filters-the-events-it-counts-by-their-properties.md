@@ -5,6 +5,10 @@ build: [1446]
 
 # A Condition's Event test filters the Events it counts by their properties
 
+> **Amended by [[0180-a-property-test-runs-in-postgres-as-one-sql-json-path]]:** the filter runs in the count as one SQL/JSON path, and a message's System
+> event is filtered by a sent-by test naming a Broadcast or Automation by id (it tests the
+> `broadcastId` or `automationId` the Event carries), not by keys of its own; the link stays `url`.
+
 > Amends [[0029-segment-rules-compile-to-generated-predicates]] (the `event` leaf) and extends
 > [[0133-a-trigger-exit-or-goal-matches-an-event-by-its-action-and-properties]] (its filter, now
 > also in a Condition).
