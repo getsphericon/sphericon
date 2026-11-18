@@ -360,9 +360,11 @@ unsubscribed from _everything_ → never; (3) (C, D) unsubscribed from S → nev
 so the negatives always dominate); (6) otherwise, send. A Confirmation is always required on SMS and
 WhatsApp, and on email only when the workspace requires confirmed opt-in; on Telegram and web push
 the Binding is the opt-in (the person started the bot or allowed notifications), and on mobile
-push the external push service holds it. Transactional messages (email only) skip layers 2–5
-(they still respect Suppression's hard bounces). Consent is per-channel: an email opt-out never
-silences SMS.
+push the external push service holds it. The rule has a mode, named by the message: a marketing
+message meets every layer with its Sending source; a Transactional message (email only) skips
+layers 2–5 (it still respects Suppression's hard bounces); a confirmation email meets Suppression
+and _everything_ when the Workspace asked for it, and Suppression only when the person did (see
+**Confirmation request**). Consent is per-channel: an email opt-out never silences SMS.
 
 **Control group**:
 A share of a Workspace's Contacts, chosen by a hash and turned on by the Workspace, that receives no
@@ -530,8 +532,9 @@ written for another's. It exists so double
 opt-in can be modeled **without** reintroducing a subscription status: the truth is an event, not
 a mutable flag. Required on SMS and WhatsApp always, and on email only when the workspace's
 **require-confirmed-opt-in** policy is on (default off = single opt-in); then Send-eligibility adds
-the one positive layer (see Send-eligibility). Carries **provenance** — `double_opt_in` (clicked a
-confirmation link, or returned from `everything` on the **Preference page** on fresh proof), `grandfathered` (existing contacts at policy-enablement), `imported`
+the one positive layer (see Send-eligibility). Only a person turns the policy on, asserting the
+current list consented, and that records a `grandfathered` Confirmation for each mailable address. Carries **provenance** — `double_opt_in` (clicked a
+confirmation link, or returned from `everything` on the **Preference page** on fresh proof), `grandfathered` (existing contacts at policy-enablement, its Event a Backfill), `imported`
 (asserted through the API or an import from the customer's server, with the consent wording, its source and the brand, by a customer who collected it, possibly through a verification service of their own) or `keyword` (a
 START sent on the Channel, from an On-site form's prefilled link carrying a Start token too); the strongest provenance wins (`double_opt_in` > `keyword` > `imported` > `grandfathered`): a weaker or equal one never replaces the one that stands. sphericon runs no SMS
 confirmation flow of its own. Confirmed via a signed link whose endpoint
@@ -540,6 +543,15 @@ is method-split (`GET` = page, `POST` = confirm) — a scanner GET must never fa
 after a full opt-out requires re-confirmation. Unlike an Unsubscribe it is **not** compliance-
 required to survive erasure — losing it merely forces re-confirmation, which fails safe.
 _Avoid_: Subscribed flag, subscription status, opt-in flag, double opt-in status
+
+**Confirmation request**:
+An ask for one confirmation email to a Contact's email address, whose link records a Confirmation
+with provenance `double_opt_in` when the person follows it and presses Confirm. The Workspace asks
+(a Member, the API, MCP), and an _everything_ opt-out refuses it; or the person asks (an On-site
+form, an expired link's page, the Preference page), and only Suppression stops it, so a person who
+left everything comes back through it. Creating a Contact never makes one. An address receives at
+most a few confirmation emails a day from a Workspace, whoever asks.
+_Avoid_: Opt-in email, verification email (a User's own address is verified, not confirmed)
 
 **Engagement tracking consent**:
 A per-(workspace, channel, destination) choice whether the opens and clicks of messages to that

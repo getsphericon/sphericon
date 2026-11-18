@@ -79,11 +79,12 @@ tracking grant, ADR 0120) is different: it is recorded where no refusal stands, 
   one-click `POST` keeps a single meaning. A page link may carry no source (a Transactional message,
   the author's variable): the token's decoding accepts that for the page, and the one-click `POST`
   still refuses it. The `/unsubscribed` route and its `all` link go.
-- The fresh link is a new System message on every Channel the page serves, beside the confirmation
-  mail, in ADR 0013's third eligibility mode with `everything` waived.
+- The fresh link is a new Outbound message kind, `preference` (ADR 0130), on every Channel the page
+  serves, beside the confirmation email; it is a message the person asked for, in ADR 0013's mode
+  that only Suppression (and on SMS and Telegram a Channel stop) stops.
 - The Unsubscribe module gains a lift of a source or of `everything` on email and of a source on
-  Telegram, reachable only from the page's proven actions; no `/site`, `/api` or MCP operation
-  widens.
+  Telegram, reachable only from the page's proven actions and from a confirmation link issued
+  after the opt-out (ADR 0013); no `/site`, `/api` or MCP operation widens.
 - The email footer loses ADR 0120's separate tracking link.
 
 ## Considered options
