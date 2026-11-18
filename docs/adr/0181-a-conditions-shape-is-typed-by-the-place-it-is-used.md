@@ -1,6 +1,6 @@
 ---
 status: accepted
-build: none
+build: [1640]
 ---
 
 # A Condition's shape is typed by the place it is used
