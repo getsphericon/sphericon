@@ -39,7 +39,7 @@ runner calls the function, and easement forbids river's `WorkerDefaults`,
 `AddWorker` and `NewPeriodicJob` below them. A new wiring package is added to the `wiring` component, never to a
 baseline. The kernel (`internal/kernel`, component `kernel`, ADR 0102) is the bottom tier: the
 packages that import none of ours, such as the vocabulary every tier shares (`channels`,
-`providers`, `holdreason`, `tokenscope`, `systemevent`, `jobkind`, and the stored definition
+`providers`, `holdreason`, `skipreason`, `deferralcause`, `tokenscope`, `systemevent`, `jobkind`, and the stored definition
 documents the ent schema types its `jsonb` columns with, ADR 0169: `conditiontree`, `automationstep`,
 `ruleaction`, `httpheader`) and the helpers that know no domain module
 (`i18n`, `validation`, `pagination`, `patch`, `secrets`, `credentials`, the renderers `emaildoc`,

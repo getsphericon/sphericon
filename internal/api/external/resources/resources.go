@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 
 	"github.com/go-faster/jx"
@@ -132,6 +133,7 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend optBool
 // goverter:extend optEditorDocument
 // goverter:extend optTrackingReason
+// goverter:extend optSkippedReason
 // goverter:extend auditDiff
 // goverter:extend optWebhookDisabledReason
 // goverter:extend nilCurrencyCode
@@ -516,6 +518,8 @@ type Converter interface {
 	// goverter:enum:transform value
 	TrackingReasonToResource(source trackingdomain.Reason) externalapi.TrackingReason
 	// goverter:enum:transform value
+	SkippedReasonToResource(source skipreason.Reason) externalapi.SkippedReason
+	// goverter:enum:transform value
 	TransactionalSendStatusToResource(source outboundmessages.TransactionalStatus) externalapi.TransactionalSendStatus
 	// goverter:enum:transform value
 	TrackingStateToResource(source trackingdomain.State) externalapi.TrackingState
@@ -729,6 +733,11 @@ func optString(v *string) externalapi.OptString {
 
 func optTrackingReason(c Converter, v *trackingdomain.Reason) externalapi.OptTrackingReason {
 	return convert.OptVia[externalapi.OptTrackingReason](v, c.TrackingReasonToResource)
+}
+
+// optSkippedReason is absent on every message but a skipped one.
+func optSkippedReason(c Converter, v *skipreason.Reason) externalapi.OptNilSkippedReason {
+	return convert.OptVia[externalapi.OptNilSkippedReason](v, c.SkippedReasonToResource)
 }
 
 // enrollmentFailure is the enrollment's failure detail; absent unless it failed.

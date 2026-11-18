@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -52,7 +53,7 @@ func TestCheckSuppressed(t *testing.T) {
 
 	d := decide(t, env, fixtures.TyrellID, fixtures.SuppressionTyrellSuppressedDestination, eligibility.SourceBroadcasts)
 	assert.False(t, d.Eligible)
-	assert.Equal(t, eligibility.ReasonSuppressed, d.Reason)
+	assert.Equal(t, skipreason.Suppressed, d.Reason)
 }
 
 // A lifted Suppression no longer blocks, in a single check or in the contact predicate.
@@ -79,21 +80,21 @@ func TestCheckTransactionalRespectsSuppression(t *testing.T) {
 
 	d := decide(t, env, fixtures.TyrellID, fixtures.SuppressionTyrellTransactionalDestination, "")
 	assert.False(t, d.Eligible)
-	assert.Equal(t, eligibility.ReasonSuppressed, d.Reason)
+	assert.Equal(t, skipreason.Suppressed, d.Reason)
 }
 
 func TestCheckUnsubscribedEverything(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	d := decide(t, env, fixtures.TyrellID, fixtures.TyrellMatrixUnsubEverythingEmail, eligibility.SourceBroadcasts)
-	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, d.Reason)
+	assert.Equal(t, skipreason.UnsubscribedEverything, d.Reason)
 }
 
 func TestCheckUnsubscribedFromOneSourceOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	src := eligibility.AutomationSource(7)
 
-	assert.Equal(t, eligibility.ReasonUnsubscribedSource,
+	assert.Equal(t, skipreason.UnsubscribedSource,
 		decide(t, env, fixtures.TyrellID, fixtures.TyrellMatrixUnsubAutomationEmail, src).Reason)
 	assert.True(t, decide(t, env, fixtures.TyrellID, fixtures.TyrellMatrixUnsubAutomationEmail, eligibility.SourceBroadcasts).Eligible,
 		"eligible for a different source")
@@ -118,7 +119,7 @@ func TestConfirmationGateBlocksUnconfirmed(t *testing.T) {
 
 	d := decide(t, env, fixtures.LumonID, fixtures.LumonMatrixCleanEmail, eligibility.SourceBroadcasts)
 	assert.False(t, d.Eligible)
-	assert.Equal(t, eligibility.ReasonUnconfirmed, d.Reason)
+	assert.Equal(t, skipreason.Unconfirmed, d.Reason)
 	assert.False(t, inAudience(t, env, fixtures.LumonID, fixtures.LumonMatrixCleanID, eligibility.SourceBroadcasts),
 		"unconfirmed contact excluded from the audience")
 }
@@ -140,7 +141,7 @@ func TestConfirmationDoesNotOverrideNegatives(t *testing.T) {
 
 	d := decide(t, env, fixtures.LumonID, fixtures.LumonMatrixConfirmedSuppressedEmail, eligibility.SourceBroadcasts)
 	assert.False(t, d.Eligible)
-	assert.Equal(t, eligibility.ReasonSuppressed, d.Reason, "negatives dominate the confirmation")
+	assert.Equal(t, skipreason.Suppressed, d.Reason, "negatives dominate the confirmation")
 }
 
 // Stored destinations are lower-cased; an address typed in another case and padded still matches.
@@ -156,7 +157,7 @@ func TestCheckWorksWithoutAContact(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	d := decide(t, env, fixtures.TyrellID, fixtures.SuppressionTyrellNoContactDestination, "")
-	assert.Equal(t, eligibility.ReasonSuppressed, d.Reason)
+	assert.Equal(t, skipreason.Suppressed, d.Reason)
 }
 
 // matrixEligibility returns the emails of a Workspace's matrix Contacts that the point Check
@@ -284,8 +285,8 @@ func TestSMSReasons(t *testing.T) {
 	optedOut, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: fixtures.TyrellMatrixUnsubEverythingPhone, Source: eligibility.AutomationSource(7)})
 	require.NoError(t, err)
 
-	assert.Equal(t, eligibility.ReasonUnconfirmed, unconfirmed.Reason)
-	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, optedOut.Reason)
+	assert.Equal(t, skipreason.Unconfirmed, unconfirmed.Reason)
+	assert.Equal(t, skipreason.UnsubscribedEverything, optedOut.Reason)
 }
 
 // bindingAudience returns the Contacts of Lacuna that the batch Predicate keeps on a Channel of
@@ -345,7 +346,7 @@ func TestSMSOptOutKeptUnderTheNumbersHashStillBlocks(t *testing.T) {
 	byCheck, byPredicate := smsMatrix(t, env, fixtures.TyrellID,
 		[]string{fixtures.TyrellMatrixUnsubEverythingPhone, fixtures.TyrellMatrixConfirmedPhone}, eligibility.SourceBroadcasts)
 
-	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, d.Reason)
+	assert.Equal(t, skipreason.UnsubscribedEverything, d.Reason)
 	assert.Equal(t, []string{fixtures.TyrellMatrixConfirmedPhone}, byCheck)
 	assert.Equal(t, []string{fixtures.TyrellMatrixConfirmedPhone}, byPredicate)
 }

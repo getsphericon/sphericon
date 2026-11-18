@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -21,7 +22,7 @@ func TestCheckIsConfinedToTheScopedWorkspace(t *testing.T) {
 
 	d, err := eligibility.New().Check(ctx, env.DB.Scoped(fixtures.GlobexID), eligibility.CheckInput{Channel: channels.Email, Destination: fixtures.SuppressionGlobexDestination, Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
-	assert.Equal(t, eligibility.ReasonSuppressed, d.Reason)
+	assert.Equal(t, skipreason.Suppressed, d.Reason)
 
 	d, err = eligibility.New().Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.Email, Destination: fixtures.SuppressionGlobexDestination, Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)

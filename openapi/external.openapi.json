@@ -8282,10 +8282,19 @@
             "type": "string",
             "description": "Delivery status"
           },
-          "reason": {
+          "skippedReason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SkippedReason"
+              }
+            ],
+            "nullable": true,
+            "description": "Why a skipped message was skipped"
+          },
+          "failure": {
             "type": "string",
             "nullable": true,
-            "description": "Why delivery failed or was skipped"
+            "description": "What a failed message failed with"
           },
           "claimedAt": {
             "allOf": [
@@ -9273,6 +9282,11 @@
         "enum": ["string", "number", "bool", "datetime"],
         "description": "A Custom field's value type"
       },
+      "DeferralCause": {
+        "type": "string",
+        "enum": ["provider_limit", "send_cap", "provider", "sending_window", "frequency_cap"],
+        "description": "What a Deferral waits for: the send is not consumed and goes through every check again when it is retried"
+      },
       "DnsRecord": {
         "type": "object",
         "required": ["type", "host", "value"],
@@ -10180,7 +10194,8 @@
           "channel",
           "destination",
           "status",
-          "reason",
+          "skipped_reason",
+          "failure",
           "contact_id",
           "broadcast_id",
           "automation_id",
@@ -10230,10 +10245,19 @@
             "type": "string",
             "description": "`pending` (claimed, provider not yet answered), `sent`, `skipped` or `failed`"
           },
-          "reason": {
+          "skipped_reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SkippedReason"
+              }
+            ],
+            "nullable": true,
+            "description": "Why a `skipped` message was skipped; absent on every other status"
+          },
+          "failure": {
             "type": "string",
             "nullable": true,
-            "description": "Why the message was skipped, or the failure text"
+            "description": "What a `failed` message failed with, in the provider's or the renderer's words; absent on every other status"
           },
           "contact_id": {
             "type": "string",
@@ -12298,6 +12322,20 @@
             "permission": "webhooks:manage"
           }
         ]
+      },
+      "SkippedReason": {
+        "type": "string",
+        "enum": [
+          "suppressed",
+          "unsubscribed_everything",
+          "unsubscribed_source",
+          "unconfirmed",
+          "no_destination",
+          "contact_erased",
+          "no_local_time",
+          "frequency_cap"
+        ],
+        "description": "Why an Outbound message was Skipped: final for its Destination, never retried. The first four\nare Send-eligibility's; a client switches over the list."
       },
       "SmsBroadcastContent": {
         "type": "object",

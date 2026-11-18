@@ -4,7 +4,7 @@ import (
 	"math/rand/v2"
 	"time"
 
-	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 )
 
 // Retry says whether an Outbound Outcome wants another attempt and after how long. It is
@@ -58,7 +58,7 @@ func (r Result) Retry(backlog int) Retry {
 		return HoldRetry()
 	case Deferral:
 		ceiling := deferralCeiling
-		if r.Cause == providerlimit.CauseSendCap {
+		if r.Cause == deferralcause.SendCap {
 			ceiling = sendCapCeiling
 		}
 		return deferralRetry(r.Wait, backlog, rand.Float64(), ceiling)

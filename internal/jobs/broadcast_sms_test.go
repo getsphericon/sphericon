@@ -12,11 +12,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -79,13 +79,13 @@ func TestAnSMSBroadcastSkipsARecipientThatLostItsPhoneOrOptedOutWithTheReason(t 
 	texted := lo.Map(sent, func(m twiliotest.Message, _ int) string { return m.To })
 	assert.Equal(t, []string{fixtures.ContactLacunaDotPhone}, texted)
 	skipped := env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(id), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).AllX(ctx)
-	reasons := lo.Associate(skipped, func(m *ent.OutboundMessage) (int64, string) {
-		return lo.FromPtr(m.ContactID), lo.FromPtr(m.Reason)
+	reasons := lo.Associate(skipped, func(m *ent.OutboundMessage) (int64, skipreason.Reason) {
+		return lo.FromPtr(m.ContactID), lo.FromPtr(m.SkippedReason)
 	})
-	assert.Equal(t, map[int64]string{
-		fixtures.ContactLacunaAdaID: eligibility.ReasonNoDestination,
-		fixtures.ContactLacunaBeaID: eligibility.ReasonUnsubscribedEverything,
-		fixtures.ContactLacunaCydID: eligibility.ReasonSuppressed,
+	assert.Equal(t, map[int64]skipreason.Reason{
+		fixtures.ContactLacunaAdaID: skipreason.NoDestination,
+		fixtures.ContactLacunaBeaID: skipreason.UnsubscribedEverything,
+		fixtures.ContactLacunaCydID: skipreason.Suppressed,
 	}, reasons)
 	figures := figuresOf(t, env, id)
 	assert.Equal(t, broadcasts.Stats{Recipients: 4, Sent: 1, Skipped: 3}, figures)

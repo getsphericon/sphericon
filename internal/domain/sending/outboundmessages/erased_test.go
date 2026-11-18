@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 )
@@ -36,7 +37,7 @@ func TestSendToAnErasedContactIsDroppedAtTheChokepoint(t *testing.T) {
 	res, err := newModule(env, time.Now).Send(ctx, s, req)
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Skipped, res.Outcome)
-	assert.Equal(t, outboundmessages.SkipContactErased, res.Reason)
+	assert.Equal(t, skipreason.ContactErased, res.SkippedReason)
 	assert.Len(t, env.CustomerMail.Messages(), before, "nothing reached the provider")
 	n, err := env.DB.OutboundMessage.Query().Where(outboundmessage.IdempotencyKey("bc:erased")).Count(ctx)
 	require.NoError(t, err)

@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -189,7 +190,7 @@ func TestSuppressedDestinationIsSkippedEvenForTransactional(t *testing.T) {
 	res, err := newModule(env, time.Now).Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:sup", suppressd))
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Skipped, res.Outcome)
-	assert.Equal(t, eligibility.ReasonSuppressed, res.Reason)
+	assert.Equal(t, skipreason.Suppressed, res.SkippedReason)
 	assert.Empty(t, env.CustomerMail.Messages())
 	row := env.DB.OutboundMessage.GetX(ctx, res.MessageID)
 	assert.Equal(t, outboundmessage.StatusSkipped, row.Status, "the skip is recorded")
@@ -206,7 +207,7 @@ func TestUnsubscribedContactIsSkippedForMarketingButNotTransactional(t *testing.
 	res, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:bob", fixtures.ContactBobID))
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Skipped, res.Outcome)
-	assert.Equal(t, eligibility.ReasonUnsubscribedSource, res.Reason)
+	assert.Equal(t, skipreason.UnsubscribedSource, res.SkippedReason)
 
 	// Bob can still receive his own transactional mail (no Sending source).
 	res, err = m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:bob", fixtures.ContactBobEmail))
@@ -430,7 +431,7 @@ func TestConfirmedOptInIsReadInsideTheRule(t *testing.T) {
 	res, err := newModule(env, time.Now).Send(ctx, env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:unconfirmed", fixtures.ContactAliceID))
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Skipped, res.Outcome)
-	assert.Equal(t, eligibility.ReasonUnconfirmed, res.Reason)
+	assert.Equal(t, skipreason.Unconfirmed, res.SkippedReason)
 }
 
 func TestPreflightReportsHoldsWithoutRecording(t *testing.T) {
@@ -459,8 +460,8 @@ func TestMarkFailedOnlyTouchesPendingClaims(t *testing.T) {
 	require.NoError(t, m.MarkFailed(ctx, env.DB.Scoped(fixtures.AcmeID), "tx:giveup", errors.New("retries exhausted")))
 	row := byKey(t, env, "tx:giveup")
 	assert.Equal(t, outboundmessage.StatusFailed, row.Status)
-	require.NotNil(t, row.Reason)
-	assert.Equal(t, "retries exhausted", *row.Reason)
+	require.NotNil(t, row.Failure)
+	assert.Equal(t, "retries exhausted", *row.Failure)
 }
 
 func TestSendTestSkipsEligibilityAndRecordsNothingButHonorsTheFreeze(t *testing.T) {

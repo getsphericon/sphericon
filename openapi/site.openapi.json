@@ -12661,10 +12661,19 @@
             "type": "string",
             "description": "Delivery status"
           },
-          "reason": {
+          "skippedReason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SkippedReason"
+              }
+            ],
+            "nullable": true,
+            "description": "Why a skipped message was skipped"
+          },
+          "failure": {
             "type": "string",
             "nullable": true,
-            "description": "Why delivery failed or was skipped"
+            "description": "What a failed message failed with"
           },
           "claimedAt": {
             "allOf": [
@@ -13321,6 +13330,11 @@
         "type": "string",
         "enum": ["string", "number", "bool", "datetime"],
         "description": "A Custom field's value type"
+      },
+      "DeferralCause": {
+        "type": "string",
+        "enum": ["provider_limit", "send_cap", "provider", "sending_window", "frequency_cap"],
+        "description": "What a Deferral waits for: the send is not consumed and goes through every check again when it is retried"
       },
       "DnsRecord": {
         "type": "object",
@@ -20746,6 +20760,20 @@
         },
         "description": "Set the Workspace time zone",
         "additionalProperties": false
+      },
+      "SkippedReason": {
+        "type": "string",
+        "enum": [
+          "suppressed",
+          "unsubscribed_everything",
+          "unsubscribed_source",
+          "unconfirmed",
+          "no_destination",
+          "contact_erased",
+          "no_local_time",
+          "frequency_cap"
+        ],
+        "description": "Why an Outbound message was Skipped: final for its Destination, never retried. The first four\nare Send-eligibility's; a client switches over the list."
       },
       "SmsBroadcastContent": {
         "type": "object",

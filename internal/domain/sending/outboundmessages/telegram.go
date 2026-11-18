@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 )
@@ -262,12 +263,12 @@ func classifyTelegram(err error) error {
 
 // unreachable removes the Binding of a chat Telegram no longer reaches, and records telegram.unbound:
 // the chat is no Destination any more.
-func (c telegramChannel) unreachable(ctx context.Context, s *ent.Scoped, _ events.Publisher, integ *ent.Integration, _ Request, to target, messageID int64) (string, error) {
+func (c telegramChannel) unreachable(ctx context.Context, s *ent.Scoped, _ events.Publisher, integ *ent.Integration, _ Request, to target, messageID int64) (skipreason.Reason, error) {
 	gone := bindings.Removal{Destination: to.dest, DedupKey: fmt.Sprintf("%s:gone:%d:%s", systemevent.TelegramUnbound, messageID, to.dest)}
 	if err := c.m.chats.Remove(ctx, s, integ, gone); err != nil {
 		return "", err
 	}
-	return eligibility.ReasonNoDestination, nil
+	return skipreason.NoDestination, nil
 }
 
 // optedOut records that the user of the target blocked the bot: the same Channel-wide opt-out and

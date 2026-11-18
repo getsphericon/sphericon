@@ -12,7 +12,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
@@ -21,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -237,11 +237,11 @@ func TestReplayReportsSkippedAndFailedOutcomes(t *testing.T) {
 	first, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), skipped)
 	require.NoError(t, err)
 	require.Equal(t, outboundmessages.Skipped, first.Outcome)
-	assert.Equal(t, eligibility.ReasonSuppressed, first.Reason)
+	assert.Equal(t, skipreason.Suppressed, first.SkippedReason)
 	again, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), skipped)
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Skipped, again.Outcome)
-	assert.Equal(t, eligibility.ReasonSuppressed, again.Reason)
+	assert.Equal(t, skipreason.Suppressed, again.SkippedReason)
 	assert.True(t, again.Replayed)
 	assert.Equal(t, first.MessageID, again.MessageID)
 
@@ -253,7 +253,7 @@ func TestReplayReportsSkippedAndFailedOutcomes(t *testing.T) {
 	again, err = m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), broken)
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Failed, again.Outcome)
-	assert.Equal(t, first.Reason, again.Reason)
+	assert.Equal(t, first.Failure, again.Failure)
 	assert.True(t, again.Replayed)
 }
 
@@ -666,7 +666,7 @@ func TestSendTestOutcomes(t *testing.T) {
 		res, err := newModule(env, time.Now).SendTest(ctx, env.DB.Scoped(fixtures.AcmeID), bad)
 		require.NoError(t, err)
 		assert.Equal(t, outboundmessages.Failed, res.Outcome)
-		assert.NotEmpty(t, res.Reason)
+		assert.NotEmpty(t, res.Failure)
 		assert.Empty(t, env.CustomerMail.Messages())
 	})
 

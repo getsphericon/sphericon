@@ -99,6 +99,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 )
 
@@ -44315,7 +44316,8 @@ type OutboundMessageMutation struct {
 	sending_domain             *string
 	provider_message_id        *string
 	status                     *outboundmessage.Status
-	reason                     *string
+	skipped_reason             *skipreason.Reason
+	failure                    *string
 	claimed_at                 *time.Time
 	sent_at                    *time.Time
 	delivered_at               *time.Time
@@ -44957,53 +44959,102 @@ func (m *OutboundMessageMutation) ResetStatus() {
 	m.status = nil
 }
 
-// SetReason sets the "reason" field.
-func (m *OutboundMessageMutation) SetReason(s string) {
-	m.reason = &s
+// SetSkippedReason sets the "skipped_reason" field.
+func (m *OutboundMessageMutation) SetSkippedReason(s skipreason.Reason) {
+	m.skipped_reason = &s
 }
 
-// Reason returns the value of the "reason" field in the mutation.
-func (m *OutboundMessageMutation) Reason() (r string, exists bool) {
-	v := m.reason
+// SkippedReason returns the value of the "skipped_reason" field in the mutation.
+func (m *OutboundMessageMutation) SkippedReason() (r skipreason.Reason, exists bool) {
+	v := m.skipped_reason
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldReason returns the old "reason" field's value of the OutboundMessage entity.
+// OldSkippedReason returns the old "skipped_reason" field's value of the OutboundMessage entity.
 // If the OutboundMessage object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *OutboundMessageMutation) OldReason(ctx context.Context) (v *string, err error) {
+func (m *OutboundMessageMutation) OldSkippedReason(ctx context.Context) (v *skipreason.Reason, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldReason is only allowed on UpdateOne operations")
+		return v, errors.New("OldSkippedReason is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldReason requires an ID field in the mutation")
+		return v, errors.New("OldSkippedReason requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldReason: %w", err)
+		return v, fmt.Errorf("querying old value for OldSkippedReason: %w", err)
 	}
-	return oldValue.Reason, nil
+	return oldValue.SkippedReason, nil
 }
 
-// ClearReason clears the value of the "reason" field.
-func (m *OutboundMessageMutation) ClearReason() {
-	m.reason = nil
-	m.clearedFields[outboundmessage.FieldReason] = struct{}{}
+// ClearSkippedReason clears the value of the "skipped_reason" field.
+func (m *OutboundMessageMutation) ClearSkippedReason() {
+	m.skipped_reason = nil
+	m.clearedFields[outboundmessage.FieldSkippedReason] = struct{}{}
 }
 
-// ReasonCleared returns if the "reason" field was cleared in this mutation.
-func (m *OutboundMessageMutation) ReasonCleared() bool {
-	_, ok := m.clearedFields[outboundmessage.FieldReason]
+// SkippedReasonCleared returns if the "skipped_reason" field was cleared in this mutation.
+func (m *OutboundMessageMutation) SkippedReasonCleared() bool {
+	_, ok := m.clearedFields[outboundmessage.FieldSkippedReason]
 	return ok
 }
 
-// ResetReason resets all changes to the "reason" field.
-func (m *OutboundMessageMutation) ResetReason() {
-	m.reason = nil
-	delete(m.clearedFields, outboundmessage.FieldReason)
+// ResetSkippedReason resets all changes to the "skipped_reason" field.
+func (m *OutboundMessageMutation) ResetSkippedReason() {
+	m.skipped_reason = nil
+	delete(m.clearedFields, outboundmessage.FieldSkippedReason)
+}
+
+// SetFailure sets the "failure" field.
+func (m *OutboundMessageMutation) SetFailure(s string) {
+	m.failure = &s
+}
+
+// Failure returns the value of the "failure" field in the mutation.
+func (m *OutboundMessageMutation) Failure() (r string, exists bool) {
+	v := m.failure
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFailure returns the old "failure" field's value of the OutboundMessage entity.
+// If the OutboundMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OutboundMessageMutation) OldFailure(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFailure is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFailure requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFailure: %w", err)
+	}
+	return oldValue.Failure, nil
+}
+
+// ClearFailure clears the value of the "failure" field.
+func (m *OutboundMessageMutation) ClearFailure() {
+	m.failure = nil
+	m.clearedFields[outboundmessage.FieldFailure] = struct{}{}
+}
+
+// FailureCleared returns if the "failure" field was cleared in this mutation.
+func (m *OutboundMessageMutation) FailureCleared() bool {
+	_, ok := m.clearedFields[outboundmessage.FieldFailure]
+	return ok
+}
+
+// ResetFailure resets all changes to the "failure" field.
+func (m *OutboundMessageMutation) ResetFailure() {
+	m.failure = nil
+	delete(m.clearedFields, outboundmessage.FieldFailure)
 }
 
 // SetClaimedAt sets the "claimed_at" field.
@@ -46285,7 +46336,7 @@ func (m *OutboundMessageMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OutboundMessageMutation) Fields() []string {
-	fields := make([]string, 0, 33)
+	fields := make([]string, 0, 34)
 	if m.created_at != nil {
 		fields = append(fields, outboundmessage.FieldCreatedAt)
 	}
@@ -46322,8 +46373,11 @@ func (m *OutboundMessageMutation) Fields() []string {
 	if m.status != nil {
 		fields = append(fields, outboundmessage.FieldStatus)
 	}
-	if m.reason != nil {
-		fields = append(fields, outboundmessage.FieldReason)
+	if m.skipped_reason != nil {
+		fields = append(fields, outboundmessage.FieldSkippedReason)
+	}
+	if m.failure != nil {
+		fields = append(fields, outboundmessage.FieldFailure)
 	}
 	if m.claimed_at != nil {
 		fields = append(fields, outboundmessage.FieldClaimedAt)
@@ -46417,8 +46471,10 @@ func (m *OutboundMessageMutation) Field(name string) (ent.Value, bool) {
 		return m.ProviderMessageID()
 	case outboundmessage.FieldStatus:
 		return m.Status()
-	case outboundmessage.FieldReason:
-		return m.Reason()
+	case outboundmessage.FieldSkippedReason:
+		return m.SkippedReason()
+	case outboundmessage.FieldFailure:
+		return m.Failure()
 	case outboundmessage.FieldClaimedAt:
 		return m.ClaimedAt()
 	case outboundmessage.FieldSentAt:
@@ -46492,8 +46548,10 @@ func (m *OutboundMessageMutation) OldField(ctx context.Context, name string) (en
 		return m.OldProviderMessageID(ctx)
 	case outboundmessage.FieldStatus:
 		return m.OldStatus(ctx)
-	case outboundmessage.FieldReason:
-		return m.OldReason(ctx)
+	case outboundmessage.FieldSkippedReason:
+		return m.OldSkippedReason(ctx)
+	case outboundmessage.FieldFailure:
+		return m.OldFailure(ctx)
 	case outboundmessage.FieldClaimedAt:
 		return m.OldClaimedAt(ctx)
 	case outboundmessage.FieldSentAt:
@@ -46627,12 +46685,19 @@ func (m *OutboundMessageMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetStatus(v)
 		return nil
-	case outboundmessage.FieldReason:
+	case outboundmessage.FieldSkippedReason:
+		v, ok := value.(skipreason.Reason)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkippedReason(v)
+		return nil
+	case outboundmessage.FieldFailure:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetReason(v)
+		m.SetFailure(v)
 		return nil
 	case outboundmessage.FieldClaimedAt:
 		v, ok := value.(time.Time)
@@ -46834,8 +46899,11 @@ func (m *OutboundMessageMutation) ClearedFields() []string {
 	if m.FieldCleared(outboundmessage.FieldProviderMessageID) {
 		fields = append(fields, outboundmessage.FieldProviderMessageID)
 	}
-	if m.FieldCleared(outboundmessage.FieldReason) {
-		fields = append(fields, outboundmessage.FieldReason)
+	if m.FieldCleared(outboundmessage.FieldSkippedReason) {
+		fields = append(fields, outboundmessage.FieldSkippedReason)
+	}
+	if m.FieldCleared(outboundmessage.FieldFailure) {
+		fields = append(fields, outboundmessage.FieldFailure)
 	}
 	if m.FieldCleared(outboundmessage.FieldSentAt) {
 		fields = append(fields, outboundmessage.FieldSentAt)
@@ -46920,8 +46988,11 @@ func (m *OutboundMessageMutation) ClearField(name string) error {
 	case outboundmessage.FieldProviderMessageID:
 		m.ClearProviderMessageID()
 		return nil
-	case outboundmessage.FieldReason:
-		m.ClearReason()
+	case outboundmessage.FieldSkippedReason:
+		m.ClearSkippedReason()
+		return nil
+	case outboundmessage.FieldFailure:
+		m.ClearFailure()
 		return nil
 	case outboundmessage.FieldSentAt:
 		m.ClearSentAt()
@@ -47021,8 +47092,11 @@ func (m *OutboundMessageMutation) ResetField(name string) error {
 	case outboundmessage.FieldStatus:
 		m.ResetStatus()
 		return nil
-	case outboundmessage.FieldReason:
-		m.ResetReason()
+	case outboundmessage.FieldSkippedReason:
+		m.ResetSkippedReason()
+		return nil
+	case outboundmessage.FieldFailure:
+		m.ResetFailure()
 		return nil
 	case outboundmessage.FieldClaimedAt:
 		m.ResetClaimedAt()

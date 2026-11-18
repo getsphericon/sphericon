@@ -49,7 +49,7 @@
   workspace_id: 1
   created_at: '{{daysAgo 8}}'
   updated_at: '{{daysAgo 8}}'
-- id: 103
+- id: 103 # fixture: OutboundMessageSkipped
   kind: transactional
   idempotency_key: 'transactional:txn-welcome-104'
   channel: email
@@ -57,12 +57,12 @@
   contact_id: 104
   template_id: 1
   status: skipped
-  reason: suppressed
+  skipped_reason: suppressed
   claimed_at: '{{daysAgo 6}}'
   workspace_id: 1
   created_at: '{{daysAgo 6}}'
   updated_at: '{{daysAgo 6}}'
-- id: 104
+- id: 104 # fixture: OutboundMessageFailed
   kind: transactional
   idempotency_key: 'transactional:txn-welcome-102'
   channel: email
@@ -70,7 +70,7 @@
   contact_id: 102
   template_id: 1
   status: failed
-  reason: provider timeout
+  failure: provider timeout
   claimed_at: '{{daysAgo 5}}'
   workspace_id: 1
   created_at: '{{daysAgo 5}}'
@@ -383,7 +383,7 @@
   channel: email
   destination: nobody@hooli.test
   status: skipped
-  reason: suppressed
+  skipped_reason: suppressed
   claimed_at: '{{daysAgo 1}}'
   workspace_id: 5
   created_at: '{{daysAgo 1}}'
@@ -985,7 +985,7 @@
   contact_id: 124
   sending_source: broadcasts
   status: failed
-  reason: '550 mailbox unavailable'
+  failure: '550 mailbox unavailable'
   claimed_at: '{{daysAgo 24}}'
   broadcast_id: 203
   broadcast_recipient_id: 1039
@@ -1308,7 +1308,7 @@
   contact_id: 100
   sending_source: broadcasts
   status: failed
-  reason: '550 mailbox unavailable'
+  failure: '550 mailbox unavailable'
   claimed_at: '{{daysAgo 7}}'
   broadcast_id: 103
   broadcast_recipient_id: 1100
@@ -1322,7 +1322,7 @@
   contact_id: 101
   sending_source: broadcasts
   status: failed
-  reason: '550 mailbox unavailable'
+  failure: '550 mailbox unavailable'
   claimed_at: '{{daysAgo 7}}'
   broadcast_id: 103
   broadcast_recipient_id: 1101
@@ -1336,7 +1336,7 @@
   contact_id: 102
   sending_source: broadcasts
   status: failed
-  reason: '421 try again later'
+  failure: '421 try again later'
   claimed_at: '{{daysAgo 7}}'
   broadcast_id: 103
   broadcast_recipient_id: 1102
@@ -1350,7 +1350,7 @@
   contact_id: 103
   sending_source: broadcasts
   status: skipped
-  reason: 'suppressed'
+  skipped_reason: 'suppressed'
   claimed_at: '{{daysAgo 7}}'
   broadcast_id: 103
   broadcast_recipient_id: 1103
@@ -1364,7 +1364,7 @@
   contact_id: 104
   sending_source: broadcasts
   status: skipped
-  reason: 'unsubscribed_source'
+  skipped_reason: 'unsubscribed_source'
   claimed_at: '{{daysAgo 7}}'
   broadcast_id: 103
   broadcast_recipient_id: 1104
@@ -4024,7 +4024,7 @@
   contact_id: 20041
   sending_source: 'broadcasts'
   status: 'failed'
-  reason: 'mailbox full'
+  failure: 'mailbox full'
   claimed_at: '{{hoursAgo 72}}'
   broadcast_id: 20006
   broadcast_recipient_id: 20182
@@ -4175,7 +4175,7 @@
   contact_id: 20017
   template_id: 20005
   status: 'failed'
-  reason: 'provider timeout'
+  failure: 'provider timeout'
   claimed_at: '{{hoursAgo 33}}'
   workspace_id: 20
   created_at: '{{hoursAgo 33}}'
@@ -4203,7 +4203,7 @@
   contact_id: 20046
   template_id: 20003
   status: 'skipped'
-  reason: 'suppressed'
+  skipped_reason: 'suppressed'
   claimed_at: '{{hoursAgo 50}}'
   workspace_id: 20
   created_at: '{{hoursAgo 50}}'
@@ -4343,6 +4343,7 @@
   channel: email
   destination: meter-emails-skipped@example.com
   status: skipped
+  skipped_reason: 'suppressed'
   claimed_at: '{{monthAgo 17 5 10 0}}'
   workspace_id: 5800
   created_at: '{{monthAgo 17 5 10 0}}'
@@ -4779,7 +4780,7 @@
   contact_id: 20001
   sending_source: 'automations'
   status: 'skipped'
-  reason: 'contact unsubscribed'
+  skipped_reason: 'unsubscribed_source'
   claimed_at: '{{hoursAgo 108}}'
   automation_id: 20001
   automation_run_id: 20005
@@ -4796,7 +4797,7 @@
   contact_id: 20004
   sending_source: 'automations'
   status: 'failed'
-  reason: 'smtp 451: mailbox temporarily unavailable'
+  failure: 'smtp 451: mailbox temporarily unavailable'
   claimed_at: '{{hoursAgo 125}}'
   automation_id: 20001
   automation_run_id: 20006

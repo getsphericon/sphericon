@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -58,7 +59,7 @@ func assertNothingNames(t *testing.T, env *testhelper.TestEnv, number string) {
 	evs := env.DB.Event.Query().Where(event.Phone(number)).CountX(ctx)
 	assert.Zero(t, evs, "no Event holds the number")
 	msgs := env.DB.OutboundMessage.Query().Where(outboundmessage.Or(
-		outboundmessage.Destination(number), outboundmessage.ReasonContains(digits))).CountX(ctx)
+		outboundmessage.Destination(number), outboundmessage.FailureContains(digits))).CountX(ctx)
 	assert.Zero(t, msgs, "no Outbound message holds it")
 	consents := env.DB.Confirmation.Query().Where(confirmation.Destination(number)).CountX(ctx)
 	assert.Zero(t, consents, "no Confirmation")
@@ -159,7 +160,7 @@ func TestErasingAContactWhoTextedLeavesOnlyItsPhoneHash(t *testing.T) {
 	confirmSMS(t, env, number)
 	dec, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: number, Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
-	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, dec.Reason)
+	assert.Equal(t, skipreason.UnsubscribedEverything, dec.Reason)
 	reached := s.Contact().Query().Where(contact.ID(int64(again.ID)),
 		eligibility.Audience(eligibility.PhoneDestination(), eligibility.SourceBroadcasts)).ExistX(ctx)
 	assert.False(t, reached, "a Broadcast skips it")
@@ -196,7 +197,7 @@ func TestAStartOlderThanAnErasedPersonsStopLiftsNothing(t *testing.T) {
 	dec, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: number, Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
 	stamps := env.DB.ConsentStamp.Query().Where(consentstamp.Destination(number)).CountX(ctx)
-	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, dec.Reason)
+	assert.Equal(t, skipreason.UnsubscribedEverything, dec.Reason)
 	assert.Zero(t, stamps, "the START is compared with the stamp kept by the hash, and writes no number")
 }
 
@@ -281,7 +282,7 @@ func TestLiftingTheSuppressionOfANumberThatCameBackLiftsItsErasedTwin(t *testing
 
 	after, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: number, Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
-	assert.Equal(t, eligibility.ReasonSuppressed, before.Reason)
+	assert.Equal(t, skipreason.Suppressed, before.Reason)
 	assert.True(t, after.Eligible, after.Reason)
 	standing := s.Suppression().Query().Where(entsuppression.ChannelEQ(channels.SMS),
 		entsuppression.DestinationIn(number, phone.Hash(number)), entsuppression.LiftedAtIsNil()).CountX(ctx)

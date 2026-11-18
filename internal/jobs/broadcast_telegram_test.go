@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -93,7 +94,7 @@ func TestATelegramBroadcastToAContactWhoStoppedIsNotFrozenAndALostBindingIsSkipp
 	assert.ElementsMatch(t, []string{tiaChat, tiaOtherChat, eveChat, fayChat}, chatsSentTo(env))
 	skipped := env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(id), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).OnlyX(ctx)
 	assert.Equal(t, int64(fixtures.ContactLacunaBenID), lo.FromPtr(skipped.ContactID))
-	assert.Equal(t, "no_destination", *skipped.Reason)
+	assert.Equal(t, skipreason.NoDestination, *skipped.SkippedReason)
 	figures := figuresOf(t, env, id)
 	assert.Equal(t, broadcasts.Stats{Recipients: 4, Sent: 3, Skipped: 1}, figures)
 }
@@ -219,7 +220,7 @@ func TestATelegramBroadcastCaptionOverTheCaptionLimitFailsThatMessage(t *testing
 	assert.Empty(t, requestsTo(env.Telegram.RequestsOf(telegramtest.SendPhoto), benChat))
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(id), outboundmessage.ContactID(fixtures.ContactLacunaBenID)).OnlyX(ctx)
 	assert.Equal(t, outboundmessage.StatusFailed, msg.Status)
-	assert.Equal(t, outboundmessages.ReasonContentTooLong, *msg.Reason)
+	assert.Equal(t, outboundmessages.ReasonContentTooLong, *msg.Failure)
 }
 
 // {{ unsubscribe_url }} in a Broadcast's text opts the chat out of the "broadcasts" source on

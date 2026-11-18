@@ -11,8 +11,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
-	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 )
 
@@ -30,7 +30,7 @@ type DeferredError struct {
 	// the recipient so the backlog of later recipients can tell it is asleep).
 	Delay time.Duration
 	// Cause is the limit the deferral waits for.
-	Cause providerlimit.Cause
+	Cause deferralcause.Cause
 }
 
 func (e *DeferredError) Error() string { return "send deferred: " + string(e.Cause) + " spent" }

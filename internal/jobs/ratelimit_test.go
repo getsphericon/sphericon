@@ -17,9 +17,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
-	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -114,7 +114,7 @@ func TestBroadcastLargerThanTheSendCapStaysSendingAndFinishesAsTheWindowFreesUp(
 			Detail(ctx, e.DB.Scoped(fixtures.AcmeID), e.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID))
 		require.NoError(t, err)
 		require.NotNil(t, detail.Progress)
-		assert.Equal(t, providerlimit.CauseSendCap, detail.Progress.LimitedBy)
+		assert.Equal(t, deferralcause.SendCap, detail.Progress.LimitedBy)
 		require.NotNil(t, detail.Progress.EstimatedCompletion)
 		assert.WithinDuration(t, now.Add(perToken), *detail.Progress.EstimatedCompletion, time.Second, "the one beyond the bucket waits a token")
 

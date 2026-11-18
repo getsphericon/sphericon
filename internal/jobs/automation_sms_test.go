@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -128,11 +129,11 @@ func TestAnSMSStepThroughAMessagingServiceSendsFromTheService(t *testing.T) {
 func TestAnSMSStepSkipsAContactItCannotTextAndMovesOn(t *testing.T) {
 	cases := map[string]struct {
 		run    int64
-		reason string
+		reason skipreason.Reason
 	}{
-		"no phone":        {run: fixtures.AutomationRunJobsSMSHiThenTagBobID, reason: eligibility.ReasonNoDestination},
-		"no Confirmation": {run: fixtures.AutomationRunJobsSMSHiThenTagTexterID, reason: eligibility.ReasonUnconfirmed},
-		"an SMS opt-out":  {run: fixtures.AutomationRunJobsSMSHiThenTagOptedOutID, reason: eligibility.ReasonUnsubscribedEverything},
+		"no phone":        {run: fixtures.AutomationRunJobsSMSHiThenTagBobID, reason: skipreason.NoDestination},
+		"no Confirmation": {run: fixtures.AutomationRunJobsSMSHiThenTagTexterID, reason: skipreason.Unconfirmed},
+		"an SMS opt-out":  {run: fixtures.AutomationRunJobsSMSHiThenTagOptedOutID, reason: skipreason.UnsubscribedEverything},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -150,7 +151,7 @@ func TestAnSMSStepSkipsAContactItCannotTextAndMovesOn(t *testing.T) {
 			skipped := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(t.Context())
 			assert.Equal(t, outboundmessage.StatusSkipped, skipped.Status)
 			assert.Equal(t, channels.SMS, skipped.Channel)
-			assert.Equal(t, tc.reason, lo.FromPtr(skipped.Reason))
+			assert.Equal(t, tc.reason, lo.FromPtr(skipped.SkippedReason))
 			smsSent := env.QueuedCount(t, systemevent.SmsSent, nil)
 			assert.Zero(t, smsSent)
 		})
@@ -173,7 +174,7 @@ func TestAMixedSequenceSendsTheEmailsAndRecordsTheSMSSkipForAContactWithNoPhone(
 	run := env.DB.AutomationRun.GetX(t.Context(), runID)
 	assert.Equal(t, automationrun.StatusCompleted, run.Status)
 	skipped := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).OnlyX(t.Context())
-	assert.Equal(t, eligibility.ReasonNoDestination, lo.FromPtr(skipped.Reason))
+	assert.Equal(t, skipreason.NoDestination, lo.FromPtr(skipped.SkippedReason))
 	assert.Equal(t, 1, lo.FromPtr(skipped.AutomationStep))
 }
 
@@ -200,7 +201,7 @@ func TestTheSMSUnsubscribeLinkOptsTheNumberOutOfEverySMS(t *testing.T) {
 	assert.Equal(t, unsubscribe.ViaLink, lo.FromPtr(optOut.Via))
 	dec, err := eligibility.New().Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.SMS, Destination: fixtures.ContactTexterConfirmedPhone, Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
-	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, dec.Reason, "a Broadcast's text does not go either")
+	assert.Equal(t, skipreason.UnsubscribedEverything, dec.Reason, "a Broadcast's text does not go either")
 	// The link of a received text attributes the opt-out to its Automation (ADR 0115), which the
 	// link itself does not name: an SMS link is for everything.
 	run := env.DB.AutomationRun.GetX(ctx, fixtures.AutomationRunJobsSMSStopLinkConfirmedID)
@@ -264,5 +265,5 @@ func TestASTOPBetweenTwoTextsOfAnEnrollmentSkipsTheSecond(t *testing.T) {
 	assert.Equal(t, automationrun.StatusCompleted, run.Status)
 	second := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).OnlyX(ctx)
 	assert.Equal(t, 1, lo.FromPtr(second.AutomationStep))
-	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, lo.FromPtr(second.Reason))
+	assert.Equal(t, skipreason.UnsubscribedEverything, lo.FromPtr(second.SkippedReason))
 }

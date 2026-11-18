@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
 // OutboundMessageCreate is the builder for creating a OutboundMessage entity.
@@ -176,16 +177,30 @@ func (_c *OutboundMessageCreate) SetNillableStatus(v *outboundmessage.Status) *O
 	return _c
 }
 
-// SetReason sets the "reason" field.
-func (_c *OutboundMessageCreate) SetReason(v string) *OutboundMessageCreate {
-	_c.mutation.SetReason(v)
+// SetSkippedReason sets the "skipped_reason" field.
+func (_c *OutboundMessageCreate) SetSkippedReason(v skipreason.Reason) *OutboundMessageCreate {
+	_c.mutation.SetSkippedReason(v)
 	return _c
 }
 
-// SetNillableReason sets the "reason" field if the given value is not nil.
-func (_c *OutboundMessageCreate) SetNillableReason(v *string) *OutboundMessageCreate {
+// SetNillableSkippedReason sets the "skipped_reason" field if the given value is not nil.
+func (_c *OutboundMessageCreate) SetNillableSkippedReason(v *skipreason.Reason) *OutboundMessageCreate {
 	if v != nil {
-		_c.SetReason(*v)
+		_c.SetSkippedReason(*v)
+	}
+	return _c
+}
+
+// SetFailure sets the "failure" field.
+func (_c *OutboundMessageCreate) SetFailure(v string) *OutboundMessageCreate {
+	_c.mutation.SetFailure(v)
+	return _c
+}
+
+// SetNillableFailure sets the "failure" field if the given value is not nil.
+func (_c *OutboundMessageCreate) SetNillableFailure(v *string) *OutboundMessageCreate {
+	if v != nil {
+		_c.SetFailure(*v)
 	}
 	return _c
 }
@@ -635,6 +650,11 @@ func (_c *OutboundMessageCreate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.status": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.SkippedReason(); ok {
+		if err := outboundmessage.SkippedReasonValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_reason", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.skipped_reason": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.ClaimedAt(); !ok {
 		return &ValidationError{Name: "claimed_at", err: errors.New(`ent: missing required field "OutboundMessage.claimed_at"`)}
 	}
@@ -717,9 +737,13 @@ func (_c *OutboundMessageCreate) createSpec() (*OutboundMessage, *sqlgraph.Creat
 		_spec.SetField(outboundmessage.FieldStatus, field.TypeEnum, value)
 		_node.Status = value
 	}
-	if value, ok := _c.mutation.Reason(); ok {
-		_spec.SetField(outboundmessage.FieldReason, field.TypeString, value)
-		_node.Reason = &value
+	if value, ok := _c.mutation.SkippedReason(); ok {
+		_spec.SetField(outboundmessage.FieldSkippedReason, field.TypeEnum, value)
+		_node.SkippedReason = &value
+	}
+	if value, ok := _c.mutation.Failure(); ok {
+		_spec.SetField(outboundmessage.FieldFailure, field.TypeString, value)
+		_node.Failure = &value
 	}
 	if value, ok := _c.mutation.ClaimedAt(); ok {
 		_spec.SetField(outboundmessage.FieldClaimedAt, field.TypeTime, value)
@@ -1119,21 +1143,39 @@ func (u *OutboundMessageUpsert) UpdateStatus() *OutboundMessageUpsert {
 	return u
 }
 
-// SetReason sets the "reason" field.
-func (u *OutboundMessageUpsert) SetReason(v string) *OutboundMessageUpsert {
-	u.Set(outboundmessage.FieldReason, v)
+// SetSkippedReason sets the "skipped_reason" field.
+func (u *OutboundMessageUpsert) SetSkippedReason(v skipreason.Reason) *OutboundMessageUpsert {
+	u.Set(outboundmessage.FieldSkippedReason, v)
 	return u
 }
 
-// UpdateReason sets the "reason" field to the value that was provided on create.
-func (u *OutboundMessageUpsert) UpdateReason() *OutboundMessageUpsert {
-	u.SetExcluded(outboundmessage.FieldReason)
+// UpdateSkippedReason sets the "skipped_reason" field to the value that was provided on create.
+func (u *OutboundMessageUpsert) UpdateSkippedReason() *OutboundMessageUpsert {
+	u.SetExcluded(outboundmessage.FieldSkippedReason)
 	return u
 }
 
-// ClearReason clears the value of the "reason" field.
-func (u *OutboundMessageUpsert) ClearReason() *OutboundMessageUpsert {
-	u.SetNull(outboundmessage.FieldReason)
+// ClearSkippedReason clears the value of the "skipped_reason" field.
+func (u *OutboundMessageUpsert) ClearSkippedReason() *OutboundMessageUpsert {
+	u.SetNull(outboundmessage.FieldSkippedReason)
+	return u
+}
+
+// SetFailure sets the "failure" field.
+func (u *OutboundMessageUpsert) SetFailure(v string) *OutboundMessageUpsert {
+	u.Set(outboundmessage.FieldFailure, v)
+	return u
+}
+
+// UpdateFailure sets the "failure" field to the value that was provided on create.
+func (u *OutboundMessageUpsert) UpdateFailure() *OutboundMessageUpsert {
+	u.SetExcluded(outboundmessage.FieldFailure)
+	return u
+}
+
+// ClearFailure clears the value of the "failure" field.
+func (u *OutboundMessageUpsert) ClearFailure() *OutboundMessageUpsert {
+	u.SetNull(outboundmessage.FieldFailure)
 	return u
 }
 
@@ -1694,24 +1736,45 @@ func (u *OutboundMessageUpsertOne) UpdateStatus() *OutboundMessageUpsertOne {
 	})
 }
 
-// SetReason sets the "reason" field.
-func (u *OutboundMessageUpsertOne) SetReason(v string) *OutboundMessageUpsertOne {
+// SetSkippedReason sets the "skipped_reason" field.
+func (u *OutboundMessageUpsertOne) SetSkippedReason(v skipreason.Reason) *OutboundMessageUpsertOne {
 	return u.Update(func(s *OutboundMessageUpsert) {
-		s.SetReason(v)
+		s.SetSkippedReason(v)
 	})
 }
 
-// UpdateReason sets the "reason" field to the value that was provided on create.
-func (u *OutboundMessageUpsertOne) UpdateReason() *OutboundMessageUpsertOne {
+// UpdateSkippedReason sets the "skipped_reason" field to the value that was provided on create.
+func (u *OutboundMessageUpsertOne) UpdateSkippedReason() *OutboundMessageUpsertOne {
 	return u.Update(func(s *OutboundMessageUpsert) {
-		s.UpdateReason()
+		s.UpdateSkippedReason()
 	})
 }
 
-// ClearReason clears the value of the "reason" field.
-func (u *OutboundMessageUpsertOne) ClearReason() *OutboundMessageUpsertOne {
+// ClearSkippedReason clears the value of the "skipped_reason" field.
+func (u *OutboundMessageUpsertOne) ClearSkippedReason() *OutboundMessageUpsertOne {
 	return u.Update(func(s *OutboundMessageUpsert) {
-		s.ClearReason()
+		s.ClearSkippedReason()
+	})
+}
+
+// SetFailure sets the "failure" field.
+func (u *OutboundMessageUpsertOne) SetFailure(v string) *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetFailure(v)
+	})
+}
+
+// UpdateFailure sets the "failure" field to the value that was provided on create.
+func (u *OutboundMessageUpsertOne) UpdateFailure() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateFailure()
+	})
+}
+
+// ClearFailure clears the value of the "failure" field.
+func (u *OutboundMessageUpsertOne) ClearFailure() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearFailure()
 	})
 }
 
@@ -2494,24 +2557,45 @@ func (u *OutboundMessageUpsertBulk) UpdateStatus() *OutboundMessageUpsertBulk {
 	})
 }
 
-// SetReason sets the "reason" field.
-func (u *OutboundMessageUpsertBulk) SetReason(v string) *OutboundMessageUpsertBulk {
+// SetSkippedReason sets the "skipped_reason" field.
+func (u *OutboundMessageUpsertBulk) SetSkippedReason(v skipreason.Reason) *OutboundMessageUpsertBulk {
 	return u.Update(func(s *OutboundMessageUpsert) {
-		s.SetReason(v)
+		s.SetSkippedReason(v)
 	})
 }
 
-// UpdateReason sets the "reason" field to the value that was provided on create.
-func (u *OutboundMessageUpsertBulk) UpdateReason() *OutboundMessageUpsertBulk {
+// UpdateSkippedReason sets the "skipped_reason" field to the value that was provided on create.
+func (u *OutboundMessageUpsertBulk) UpdateSkippedReason() *OutboundMessageUpsertBulk {
 	return u.Update(func(s *OutboundMessageUpsert) {
-		s.UpdateReason()
+		s.UpdateSkippedReason()
 	})
 }
 
-// ClearReason clears the value of the "reason" field.
-func (u *OutboundMessageUpsertBulk) ClearReason() *OutboundMessageUpsertBulk {
+// ClearSkippedReason clears the value of the "skipped_reason" field.
+func (u *OutboundMessageUpsertBulk) ClearSkippedReason() *OutboundMessageUpsertBulk {
 	return u.Update(func(s *OutboundMessageUpsert) {
-		s.ClearReason()
+		s.ClearSkippedReason()
+	})
+}
+
+// SetFailure sets the "failure" field.
+func (u *OutboundMessageUpsertBulk) SetFailure(v string) *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetFailure(v)
+	})
+}
+
+// UpdateFailure sets the "failure" field to the value that was provided on create.
+func (u *OutboundMessageUpsertBulk) UpdateFailure() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateFailure()
+	})
+}
+
+// ClearFailure clears the value of the "failure" field.
+func (u *OutboundMessageUpsertBulk) ClearFailure() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearFailure()
 	})
 }
 

@@ -118,3 +118,26 @@ func TestExportMessagesRefuseAMalformedCursor(t *testing.T) {
 
 	testhelper.ExternalRefusal(t, err, http.StatusBadRequest)
 }
+
+// A skipped message carries its Skipped reason and a failed one its failure text, each null on the
+// other (ADR 0178).
+func TestExportMessagesCarriesTheSkippedReasonAndTheFailureApart(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := exportClient(t, env, fixtures.AcmeID)
+
+	page := readExportMessages(t, c, "")
+
+	skipped := page.row(fixtures.OutboundMessageSkippedID)
+	require.NotNil(t, skipped)
+	assert.Equal(t, "skipped", skipped["status"])
+	assert.Equal(t, "suppressed", skipped["skipped_reason"])
+	assert.Contains(t, skipped, "failure")
+	assert.Nil(t, skipped["failure"])
+	failed := page.row(fixtures.OutboundMessageFailedID)
+	require.NotNil(t, failed)
+	assert.Equal(t, "failed", failed["status"])
+	assert.Equal(t, "provider timeout", failed["failure"])
+	assert.Contains(t, failed, "skipped_reason")
+	assert.Nil(t, failed["skipped_reason"])
+	assert.NotContains(t, failed, "reason")
+}

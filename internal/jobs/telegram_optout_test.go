@@ -34,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
@@ -162,7 +163,7 @@ func TestAStopSkipsTheNextTelegramStepAndTheEmailStepsStillSend(t *testing.T) {
 
 	assert.Empty(t, env.Telegram.RequestsOf(telegramtest.SendMessage))
 	skipped := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).OnlyX(t.Context())
-	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, *skipped.Reason)
+	assert.Equal(t, skipreason.UnsubscribedEverything, *skipped.SkippedReason)
 	subjects := lo.Map(env.CustomerMail.Messages(), func(m messaging.EmailMessage, _ int) string { return m.Subject })
 	assert.Equal(t, []string{"Still here"}, subjects)
 }
@@ -312,7 +313,7 @@ func TestASendToOnlyABlockedChatIsSkippedAsUnsubscribed(t *testing.T) {
 	assert.True(t, optedOut(t, env, optOutUser))
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(t.Context())
 	assert.Equal(t, outboundmessage.StatusSkipped, msg.Status)
-	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, *msg.Reason)
+	assert.Equal(t, skipreason.UnsubscribedEverything, *msg.SkippedReason)
 }
 
 func TestARecordedOptOutByHandOnTelegramCoversTheUser(t *testing.T) {
@@ -345,7 +346,7 @@ func TestAManualTelegramSuppressionStopsEverySendToTheUser(t *testing.T) {
 	assert.Equal(t, externalapi.SuppressionChannelTelegram, created.Channel)
 	d, err := eligibility.New().Check(t.Context(), env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.Telegram, Destination: strconv.Itoa(optOutUser)})
 	require.NoError(t, err)
-	assert.Equal(t, eligibility.ReasonSuppressed, d.Reason)
+	assert.Equal(t, skipreason.Suppressed, d.Reason)
 }
 
 func TestAManualTelegramDestinationThatIsNoUserIdIsRefused(t *testing.T) {

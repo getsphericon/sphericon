@@ -11,8 +11,8 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
-	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -52,8 +52,8 @@ func TestSpentSendCapIsADeferralWithTheWaitUntilTheWorkspaceBucketRefills(t *tes
 
 	res := send(t, m, env, "bc:3")
 	assert.Equal(t, outboundmessages.Deferral, res.Outcome)
-	assert.Equal(t, providerlimit.CauseSendCap, res.Cause)
-	assert.Empty(t, res.Reason, "a Deferral carries no hold reason")
+	assert.Equal(t, deferralcause.SendCap, res.Cause)
+	assert.Empty(t, res.Hold, "a Deferral carries no hold reason")
 	assert.Equal(t, 12*time.Hour, res.Wait, "2 per 24 hours refills one token every 12 hours")
 	assert.Zero(t, res.MessageID)
 	assert.Len(t, env.CustomerMail.Messages(), 2, "the provider is not called")
@@ -87,7 +87,7 @@ func TestASendCapDeferralRetriesWithinTheBound(t *testing.T) {
 	require.Equal(t, outboundmessages.Sent, send(t, m, env, "bc:2").Outcome)
 	byProvider := send(t, m, env, "bc:3")
 	require.Equal(t, outboundmessages.Deferral, byProvider.Outcome)
-	assert.Equal(t, providerlimit.CauseProviderLimit, byProvider.Cause)
+	assert.Equal(t, deferralcause.ProviderLimit, byProvider.Cause)
 	assert.Greater(t, byProvider.Retry(0).After, sendCapBound, "the Provider limit keeps its hour")
 }
 
@@ -128,7 +128,7 @@ func TestTransactionalSendsIgnoreTheSendCapButSpendIt(t *testing.T) {
 
 	res := send(t, m, env, "bc:1")
 	require.Equal(t, outboundmessages.Deferral, res.Outcome)
-	assert.Equal(t, providerlimit.CauseSendCap, res.Cause)
+	assert.Equal(t, deferralcause.SendCap, res.Cause)
 	assert.Equal(t, 24*time.Hour, res.Wait, "three sends against a cap of two leave half a day of debt before the next token")
 }
 
@@ -147,7 +147,7 @@ func TestWorkspaceAndIntegrationBucketsAreSpentTogetherOrNotAtAll(t *testing.T) 
 		for range 3 {
 			res := send(t, m, env, "bc:2")
 			require.Equal(t, outboundmessages.Deferral, res.Outcome)
-			require.Equal(t, providerlimit.CauseProviderLimit, res.Cause)
+			require.Equal(t, deferralcause.ProviderLimit, res.Cause)
 		}
 
 		c.Advance(time.Second)
@@ -155,7 +155,7 @@ func TestWorkspaceAndIntegrationBucketsAreSpentTogetherOrNotAtAll(t *testing.T) 
 		c.Advance(time.Second)
 		third := send(t, m, env, "bc:3")
 		assert.Equal(t, outboundmessages.Deferral, third.Outcome)
-		assert.Equal(t, providerlimit.CauseSendCap, third.Cause, "now the Send cap is spent")
+		assert.Equal(t, deferralcause.SendCap, third.Cause, "now the Send cap is spent")
 	})
 
 	t.Run("deferred by the Send cap", func(t *testing.T) {
@@ -169,14 +169,14 @@ func TestWorkspaceAndIntegrationBucketsAreSpentTogetherOrNotAtAll(t *testing.T) 
 		for range 3 {
 			res := send(t, m, env, "bc:2")
 			require.Equal(t, outboundmessages.Deferral, res.Outcome)
-			require.Equal(t, providerlimit.CauseSendCap, res.Cause)
+			require.Equal(t, deferralcause.SendCap, res.Cause)
 		}
 
 		capped(t, env, fixtures.AcmeID, nil)
 		assert.Equal(t, outboundmessages.Sent, send(t, m, env, "bc:2").Outcome, "the denied attempts left the Provider limit's second token")
 		third := send(t, m, env, "bc:3")
 		assert.Equal(t, outboundmessages.Deferral, third.Outcome)
-		assert.Equal(t, providerlimit.CauseProviderLimit, third.Cause)
+		assert.Equal(t, deferralcause.ProviderLimit, third.Cause)
 	})
 }
 
@@ -210,7 +210,7 @@ func TestTestInboxSendsCountAgainstTheSendCap(t *testing.T) {
 
 	res := sendToReader(t, env, m, "bc:3")
 	assert.Equal(t, outboundmessages.Deferral, res.Outcome, "the Test inbox's own 200 a day is far from spent")
-	assert.Equal(t, providerlimit.CauseSendCap, res.Cause)
+	assert.Equal(t, deferralcause.SendCap, res.Cause)
 }
 
 // The Instance's own send path enforces the Send cap on an Instance that has Send caps.
@@ -222,7 +222,7 @@ func TestTheInstanceSendPathEnforcesTheSendCap(t *testing.T) {
 	require.Equal(t, outboundmessages.Sent, send(t, m, env, "bc:1").Outcome)
 	res := send(t, m, env, "bc:2")
 	assert.Equal(t, outboundmessages.Deferral, res.Outcome)
-	assert.Equal(t, providerlimit.CauseSendCap, res.Cause)
+	assert.Equal(t, deferralcause.SendCap, res.Cause)
 }
 
 // A self-hosted Instance has no Send cap: a value stored on the Workspace (a restored dump, say)

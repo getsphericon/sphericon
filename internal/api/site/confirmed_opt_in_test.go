@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -206,7 +207,7 @@ func TestAContactCreatedAfterConfirmedOptInIsUnconfirmed(t *testing.T) {
 		eligibility.CheckInput{Channel: channels.Email, Destination: "late.comer@example.org", Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
 	audience := acmeEmailAudience(t, env)
-	assert.Equal(t, eligibility.ReasonUnconfirmed, decision.Reason)
+	assert.Equal(t, skipreason.Unconfirmed, decision.Reason)
 	assert.NotContains(t, audience, int64(created.ID))
 }
 

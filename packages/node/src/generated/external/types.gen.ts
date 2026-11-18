@@ -2054,9 +2054,13 @@ export type ContactExportOutboundMessage = {
    */
   status: string;
   /**
-   * Why delivery failed or was skipped
+   * Why a skipped message was skipped
    */
-  reason?: string | null;
+  skippedReason?: SkippedReason | null;
+  /**
+   * What a failed message failed with
+   */
+  failure?: string | null;
   /**
    * When the send was claimed
    */
@@ -2647,6 +2651,22 @@ export const CustomFieldType = {
  * A Custom field's value type
  */
 export type CustomFieldType = typeof CustomFieldType[keyof typeof CustomFieldType];
+
+/**
+ * What a Deferral waits for: the send is not consumed and goes through every check again when it is retried
+ */
+export const DeferralCause = {
+  PROVIDER_LIMIT: 'provider_limit',
+  SEND_CAP: 'send_cap',
+  PROVIDER: 'provider',
+  SENDING_WINDOW: 'sending_window',
+  FREQUENCY_CAP: 'frequency_cap'
+} as const;
+
+/**
+ * What a Deferral waits for: the send is not consumed and goes through every check again when it is retried
+ */
+export type DeferralCause = typeof DeferralCause[keyof typeof DeferralCause];
 
 /**
  * A TXT record the caller publishes: a Sending domain's DKIM key, or a Tracking domain's ownership
@@ -3298,9 +3318,13 @@ export type ExportMessageRow = {
    */
   status: string;
   /**
-   * Why the message was skipped, or the failure text
+   * Why a `skipped` message was skipped; absent on every other status
    */
-  reason: string | null;
+  skipped_reason: SkippedReason | null;
+  /**
+   * What a `failed` message failed with, in the provider's or the renderer's words; absent on every other status
+   */
+  failure: string | null;
   /**
    * The Contact the destination resolved to; absent for a stranger or after an Erasure
    */
@@ -4748,6 +4772,27 @@ export const SetupScope = {
  * apart from the send class: they are no send-class scope and bring no mcp:send.
  */
 export type SetupScope = typeof SetupScope[keyof typeof SetupScope];
+
+/**
+ * Why an Outbound message was Skipped: final for its Destination, never retried. The first four
+ * are Send-eligibility's; a client switches over the list.
+ */
+export const SkippedReason = {
+  SUPPRESSED: 'suppressed',
+  UNSUBSCRIBED_EVERYTHING: 'unsubscribed_everything',
+  UNSUBSCRIBED_SOURCE: 'unsubscribed_source',
+  UNCONFIRMED: 'unconfirmed',
+  NO_DESTINATION: 'no_destination',
+  CONTACT_ERASED: 'contact_erased',
+  NO_LOCAL_TIME: 'no_local_time',
+  FREQUENCY_CAP: 'frequency_cap'
+} as const;
+
+/**
+ * Why an Outbound message was Skipped: final for its Destination, never retried. The first four
+ * are Send-eligibility's; a client switches over the list.
+ */
+export type SkippedReason = typeof SkippedReason[keyof typeof SkippedReason];
 
 /**
  * SMS's content of a Broadcast as stored

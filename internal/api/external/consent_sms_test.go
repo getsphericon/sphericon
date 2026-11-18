@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -47,7 +48,7 @@ func TestAnAPIAssertedSMSConfirmationRecordsItsEvidenceAndMakesTheNumberEligible
 	created, err := c.ConfirmationsCreate(t.Context(), smsConsent("+1 (415) 555-0810"))
 
 	require.NoError(t, err)
-	assert.Equal(t, eligibility.ReasonUnconfirmed, before.Reason)
+	assert.Equal(t, skipreason.Unconfirmed, before.Reason)
 	assert.Equal(t, fixtures.ContactTexterPhone, created.Destination)
 	assert.Equal(t, externalapi.ConfirmationProvenanceImported, created.Provenance)
 	assert.Equal(t, "Acme", created.Brand.Value)
@@ -107,7 +108,7 @@ func TestAnSMSConfirmationIsRefusedOffSMSWithoutACountryCodeOrWithoutEvidence(t 
 	testhelper.ExternalRefusal(t, local, http.StatusUnprocessableEntity)
 	testhelper.ExternalRefusal(t, brand, http.StatusUnprocessableEntity)
 	decision := smsDecision(t, env, fixtures.ContactTexterPhone)
-	assert.Equal(t, eligibility.ReasonUnconfirmed, decision.Reason)
+	assert.Equal(t, skipreason.Unconfirmed, decision.Reason)
 }
 
 // An SMS opt-out that reached the Workspace by another route blocks the number on every sender,
@@ -129,7 +130,7 @@ func TestAnOffChannelSMSOptOutBlocksTheNumber(t *testing.T) {
 	assert.Equal(t, fixtures.ContactTexterPhone, created.Destination)
 	assert.Equal(t, eligibility.SourceEverything, created.SendingSource)
 	decision := smsDecision(t, env, fixtures.ContactTexterPhone)
-	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, decision.Reason)
+	assert.Equal(t, skipreason.UnsubscribedEverything, decision.Reason)
 	unsubscribed := env.QueuedCount(t, systemevent.SmsUnsubscribed, map[string]any{
 		"contactId": fixtures.ContactTexterID, "phone": fixtures.ContactTexterPhone, "via": events.UnsubscribedByManual,
 	})
@@ -191,7 +192,7 @@ func TestABatchUpsertRecordsSMSConsentFromItsItems(t *testing.T) {
 	withConsent := smsDecision(t, env, "+14155550830")
 	assert.True(t, withConsent.Eligible)
 	withoutConsent := smsDecision(t, env, "+14155550831")
-	assert.Equal(t, eligibility.ReasonUnconfirmed, withoutConsent.Reason)
+	assert.Equal(t, skipreason.Unconfirmed, withoutConsent.Reason)
 	smsConfirmed := env.QueuedCount(t, systemevent.SmsConfirmed, map[string]any{"phone": "+14155550830", "source": "store signup sheet"})
 	assert.Equal(t, 1, smsConfirmed)
 	marketingConfirmed := env.QueuedCount(t, systemevent.MarketingConfirmed, nil)

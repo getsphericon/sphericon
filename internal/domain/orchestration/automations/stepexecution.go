@@ -12,13 +12,13 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
 // RunStepArgs is the job that executes one step of one Enrollment. Step is the position the
@@ -304,7 +304,7 @@ func (m *StepExecution) send(ctx context.Context, s *ent.Scoped, a *ent.Automati
 		// step never sends twice.
 		return m.advance(ctx, s, run.ID, st.Index, stepMove{})
 	case outboundmessages.Skipped:
-		if res.Reason == eligibility.ReasonUnsubscribedSource {
+		if res.SkippedReason == skipreason.UnsubscribedSource {
 			// The Contact unsubscribed from this Automation: that exits the Enrollment, from
 			// whichever Channel it came (ADR 0081).
 			return quiet(m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
@@ -320,7 +320,7 @@ func (m *StepExecution) send(ctx context.Context, s *ent.Scoped, a *ent.Automati
 			// one else): it is recorded Failed, and the sequence goes on (ADR 0079).
 			return m.advance(ctx, s, run.ID, st.Index, stepMove{})
 		}
-		return m.fail(ctx, s, run.ID, fmt.Errorf("%s step %d: %s", st.Step.Type, st.Index, res.Reason))
+		return m.fail(ctx, s, run.ID, fmt.Errorf("%s step %d: %s", st.Step.Type, st.Index, res.Failure))
 	}
 }
 

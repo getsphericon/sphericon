@@ -2028,8 +2028,11 @@ func ScopedEntities() []*ScopedEntity {
 					b.SetProviderMessageID(*src.ProviderMessageID)
 				}
 				b.SetStatus(src.Status)
-				if src.Reason != nil {
-					b.SetReason(*src.Reason)
+				if src.SkippedReason != nil {
+					b.SetSkippedReason(*src.SkippedReason)
+				}
+				if src.Failure != nil {
+					b.SetFailure(*src.Failure)
 				}
 				b.SetClaimedAt(src.ClaimedAt)
 				if src.SentAt != nil {

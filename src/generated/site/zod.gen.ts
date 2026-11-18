@@ -520,6 +520,17 @@ export const zCustomFieldType = z.enum([
 ]);
 
 /**
+ * What a Deferral waits for: the send is not consumed and goes through every check again when it is retried
+ */
+export const zDeferralCause = z.enum([
+  'provider_limit',
+  'send_cap',
+  'provider',
+  'sending_window',
+  'frequency_cap'
+]);
+
+/**
  * A TXT record the caller publishes: a Sending domain's DKIM key, or a Tracking domain's ownership
  */
 export const zDnsRecord = z.object({
@@ -2445,6 +2456,21 @@ export const zSiteVerifyEmailInput = z.strictObject({
 });
 
 /**
+ * Why an Outbound message was Skipped: final for its Destination, never retried. The first four
+ * are Send-eligibility's; a client switches over the list.
+ */
+export const zSkippedReason = z.enum([
+  'suppressed',
+  'unsubscribed_everything',
+  'unsubscribed_source',
+  'unconfirmed',
+  'no_destination',
+  'contact_erased',
+  'no_local_time',
+  'frequency_cap'
+]);
+
+/**
  * SMS's content of a Broadcast as stored
  */
 export const zSmsBroadcastContent = z.object({
@@ -2970,7 +2996,8 @@ export const zContactExportOutboundMessage = z.object({
   sendingDomain: z.exactOptional(z.string().nullable()),
   providerMessageId: z.exactOptional(z.string().nullable()),
   status: z.string(),
-  reason: z.exactOptional(z.string().nullable()),
+  skippedReason: z.exactOptional(zSkippedReason.nullable()),
+  failure: z.exactOptional(z.string().nullable()),
   claimedAt: zTimestamp,
   sentAt: z.exactOptional(zTimestamp.nullable()),
   deliveredAt: z.exactOptional(zTimestamp.nullable()),

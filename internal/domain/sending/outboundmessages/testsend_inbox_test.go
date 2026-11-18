@@ -74,7 +74,7 @@ func TestTestSendWithoutVerifiedDomainKeepsTheSystemSenderForASenderThatDelivers
 			other, err := globexTestSend(env, via(env), "stranger@example.com")
 			require.NoError(t, err)
 			assert.Equal(t, outboundmessages.Refused, other.Outcome, "only the asker's own address")
-			assert.Equal(t, outboundmessages.RefuseOtherRecipient, other.Reason)
+			assert.Equal(t, outboundmessages.RefuseOtherRecipient, other.Refusal)
 		})
 	}
 }

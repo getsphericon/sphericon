@@ -2981,6 +2981,10 @@ const (
 	OutboundMessageErasableTransactionalDestination = "erin@initech.test"
 	// OutboundMessageErasableTransactionalID is from fixtures/outbound_messages.
 	OutboundMessageErasableTransactionalID = 301
+	// OutboundMessageFailedDestination is from fixtures/outbound_messages.
+	OutboundMessageFailedDestination = "noah.js@codebasics.dev"
+	// OutboundMessageFailedID is from fixtures/outbound_messages.
+	OutboundMessageFailedID = 104
 	// OutboundMessageGlobexAutomationCapturedDestination is from fixtures/outbound_messages.
 	OutboundMessageGlobexAutomationCapturedDestination = "reader@globex.test"
 	// OutboundMessageGlobexAutomationCapturedID is from fixtures/outbound_messages.
@@ -3003,6 +3007,10 @@ const (
 	OutboundMessagePostmarkAliceID = 811
 	// OutboundMessageSesAliceID is from fixtures/outbound_messages.
 	OutboundMessageSesAliceID = 810
+	// OutboundMessageSkippedDestination is from fixtures/outbound_messages.
+	OutboundMessageSkippedDestination = "ethan.data@codebasics.dev"
+	// OutboundMessageSkippedID is from fixtures/outbound_messages.
+	OutboundMessageSkippedID = 103
 	// OutboundMessageStaleClaimDestination is from fixtures/outbound_messages.
 	OutboundMessageStaleClaimDestination = "lease.demo@codebasics.dev"
 	// OutboundMessageStaleClaimID is from fixtures/outbound_messages.

@@ -138,9 +138,9 @@ func (m *Module) sendEmailBroadcastTest(ctx context.Context, s *ent.Scoped, b *e
 	case Held:
 		return Result{}, ErrHeld.With(HoldDetail(res.Hold))
 	case Refused:
-		return Result{}, ErrTestRefused.With(RefuseDetail(res.Reason))
+		return Result{}, ErrTestRefused.With(RefuseDetail(res.Refusal))
 	case Failed: // the content did not render
-		return Result{}, fmt.Errorf("%w: %s", emailrender.ErrInvalidContent, res.Reason)
+		return Result{}, fmt.Errorf("%w: %s", emailrender.ErrInvalidContent, res.Failure)
 	case Sent, Skipped, Deferral, Withdrawn:
 	}
 	return res, nil
@@ -233,7 +233,7 @@ func (m *Module) systemStandsIn(ctx context.Context, s *ent.Scoped, route Route,
 // is returned as the error it is.
 func failedContent(err error) (Result, error) {
 	if isContentError(err) {
-		return Result{Outcome: Failed, Reason: err.Error()}, nil
+		return Result{Outcome: Failed, Failure: err.Error()}, nil
 	}
 	return Result{}, err
 }
@@ -284,10 +284,10 @@ func (m *Module) sendTestFromSystem(ctx context.Context, s *ent.Scoped, ws *ent.
 	}
 	to := emailcase.Of(req.To)
 	if to != emailcase.Of(asker.Email) {
-		return Result{Outcome: Refused, Reason: RefuseOtherRecipient}, nil
+		return Result{Outcome: Refused, Refusal: RefuseOtherRecipient}, nil
 	}
 	if m.system == nil {
-		return Result{Outcome: Refused, Reason: RefuseNoSystemSender}, nil
+		return Result{Outcome: Refused, Refusal: RefuseNoSystemSender}, nil
 	}
 	// Render before taking a slot: content that cannot render never costs the budget.
 	msg, err := m.renderTest(ctx, s, ws, req, to)
@@ -297,7 +297,7 @@ func (m *Module) sendTestFromSystem(ctx context.Context, s *ent.Scoped, ws *ent.
 	// A System sender that names no From cannot send: refuse before a slot is taken.
 	from, name := messaging.EffectiveFrom(m.system, "", "")
 	if from == "" {
-		return Result{Outcome: Refused, Reason: RefuseNoSystemSender}, nil
+		return Result{Outcome: Refused, Refusal: RefuseNoSystemSender}, nil
 	}
 	if m.testBudget != nil {
 		refusal, err := m.testBudget.TakeTestSend(ctx, userID, s.WorkspaceID())

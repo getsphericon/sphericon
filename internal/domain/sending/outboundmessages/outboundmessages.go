@@ -33,6 +33,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 
 	"github.com/samber/lo"
@@ -70,9 +72,11 @@ type Outcome string
 const (
 	// Sent: the provider accepted the message (not "delivered" — see GLOSSARY).
 	Sent Outcome = "sent"
-	// Skipped: Send-eligibility forbids this destination. Reason is an eligibility.Reason*.
+	// Skipped: the send is final for this destination (Send-eligibility forbids it, it has none).
+	// Result.SkippedReason says why.
 	Skipped Outcome = "skipped"
 	// Failed: this one message can never be sent (e.g. its template failed to render).
+	// Result.Failure says what it failed with.
 	Failed Outcome = "failed"
 	// Held: the source cannot send right now. Reason is a Hold* constant.
 	Held Outcome = "held"
@@ -81,7 +85,7 @@ const (
 	// it is busy: no hold reason, no claim, no attempt consumed. Result.Wait says when
 	// capacity returns and Result.Cause which limit it waits for.
 	Deferral Outcome = "deferral"
-	// Refused: a Test send the System sender will not make (ADR 0041). Reason is a Refuse*
+	// Refused: a Test send the System sender will not make (ADR 0041). Result.Refusal is a Refuse*
 	// constant; unlike a Held it does not clear by waiting.
 	Refused Outcome = "refused"
 	// Withdrawn: the source stopped taking new messages before this one was claimed
@@ -114,16 +118,11 @@ func deferralBackoff(err error) time.Duration {
 	}
 }
 
-// ReasonMessageRefused starts the Failed reason of a message the provider refused for its own
+// ReasonMessageRefused starts the failure of a message the provider refused for its own
 // Destination, or with an answer that concerns no one else (an invalid number, a code that tells
 // nothing): "message_refused: <the provider's words> (error <code>)". The message fails alone: the
 // source's other messages, and an Automation's next steps, go on (Result.MessageOnly).
 const ReasonMessageRefused = "message_refused"
-
-// SkipContactErased is the Skipped reason of a send whose Contact was erased after
-// the send was queued (ADR 0021). Nothing is recorded for it: the message row would
-// carry the erased person's address.
-const SkipContactErased = "contact_erased"
 
 // Reasons a Test send from the System sender is Refused (ADR 0041).
 const (
@@ -184,9 +183,13 @@ type Result struct {
 	Wait time.Duration
 	// Cause is, for a Deferral of a Send, the limit it waits for; empty for every other Outcome
 	// and for a Test send (its cap is Limit).
-	Cause providerlimit.Cause
-	// Reason explains Skipped (eligibility reason), Failed (cause) and Refused (the Test send's).
-	Reason string
+	Cause deferralcause.Cause
+	// SkippedReason is why a Skipped send was skipped.
+	SkippedReason skipreason.Reason
+	// Failure is what a Failed send failed with.
+	Failure string
+	// Refusal is why a Test send was Refused, a Refuse* constant.
+	Refusal string
 	// Hold is why a Held send is held.
 	Hold holdreason.Reason
 	// MessageID is the Outbound message row; zero when Held (nothing was recorded).
@@ -203,7 +206,7 @@ type Result struct {
 // MessageOnly reports whether a Failed is this message's alone (ReasonMessageRefused), so the source
 // goes on past it. It reads the recorded reason, so a replayed Result answers as the first did.
 func (r Result) MessageOnly() bool {
-	return r.Outcome == Failed && strings.HasPrefix(r.Reason, ReasonMessageRefused+":")
+	return r.Outcome == Failed && strings.HasPrefix(r.Failure, ReasonMessageRefused+":")
 }
 
 // Senders builds the EmailSender email's provider adapter sends through, for the Integration a
@@ -381,7 +384,7 @@ type Request struct {
 	// Destination is where the message goes on its Channel (on email the address). Contact, when
 	// the destination resolves to one, supplies merge tags and attribution; ContactID alone
 	// attributes only. A send to a Contact may leave it empty when the Contact has no Destination
-	// on the Channel: the send is then Skipped with eligibility.ReasonNoDestination.
+	// on the Channel: the send is then Skipped with skipreason.NoDestination.
 	Destination string
 	Contact     *ent.Contact
 	ContactID   int64
@@ -498,7 +501,8 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	if gone, err := m.contactErased(ctx, s, req); err != nil {
 		return Result{}, err
 	} else if gone {
-		return Result{Outcome: Skipped, Reason: SkipContactErased}, nil
+		// Nothing is recorded for it: the message row would carry the erased person's address.
+		return Result{Outcome: Skipped, SkippedReason: skipreason.ContactErased}, nil
 	}
 
 	ws, err := m.workspace(ctx, s)
@@ -531,7 +535,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		return Result{}, err
 	}
 	if len(targets) == 0 {
-		return m.finish(ctx, s, msg, outboundmessage.StatusSkipped, Skipped, eligibility.ReasonNoDestination)
+		return m.skip(ctx, s, msg, skipreason.NoDestination)
 	}
 
 	eligible, skip, err := m.eligibleTargets(ctx, s, req, targets)
@@ -540,7 +544,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		return Result{}, err
 	}
 	if len(eligible) == 0 {
-		return m.finish(ctx, s, msg, outboundmessage.StatusSkipped, Skipped, skip)
+		return m.skip(ctx, s, msg, skip)
 	}
 	dest = eligible[0].dest
 
@@ -552,7 +556,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 			m.release(ctx, s, msg)
 			return Result{}, err
 		}
-		return m.finish(ctx, s, msg, outboundmessage.StatusFailed, Failed, err.Error())
+		return m.fail(ctx, s, msg, err.Error())
 	}
 
 	// Provider limit and Send cap: the last gate before the provider, so a message that was
@@ -576,7 +580,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		}
 		if ce, ok := errors.AsType[contentError](err); ok {
 			// The provider refused the message itself, as it will on every attempt.
-			return m.finish(ctx, s, msg, outboundmessage.StatusFailed, Failed, ce.Error())
+			return m.fail(ctx, s, msg, ce.Error())
 		}
 		m.release(ctx, s, msg)
 		return Result{}, err
@@ -586,9 +590,9 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		// Binding gone, a suppressed number), and the message is Skipped with what Send-eligibility
 		// would now say.
 		if skip == "" {
-			skip = eligibility.ReasonNoDestination
+			skip = skipreason.NoDestination
 		}
-		return m.finish(ctx, s, msg, outboundmessage.StatusSkipped, Skipped, skip)
+		return m.skip(ctx, s, msg, skip)
 	}
 	return m.recordSent(ctx, s, req, msg, g, first.to.dest, first.receipt, renderedSubject(rendered))
 }
@@ -605,7 +609,7 @@ func renderedSubject(rendered any) string {
 // eligibleTargets is the targets that pass Send-eligibility, each checked on its own at send time,
 // fail-closed: an error is a check that could not be made. When none passes, skip is the first
 // one's reason.
-func (m *Module) eligibleTargets(ctx context.Context, s *ent.Scoped, req Request, targets []target) (eligible []target, skip string, err error) {
+func (m *Module) eligibleTargets(ctx context.Context, s *ent.Scoped, req Request, targets []target) (eligible []target, skip skipreason.Reason, err error) {
 	onChannel := req.Channel()
 	for _, t := range targets {
 		dec, err := m.eligibility.Check(ctx, s, eligibility.CheckInput{Channel: onChannel, Destination: t.dest, Source: req.Source})
@@ -631,7 +635,7 @@ func (m *Module) eligibleTargets(ctx context.Context, s *ent.Scoped, req Request
 // the message for good, for that target alone (chatRefusedError), is a failed target only. The
 // message goes on to the others: first is nil when none took it and none failed, and a contentError
 // with the first refusal's description when none took it and one refused.
-func (m *Module) deliver(ctx context.Context, s *ent.Scoped, g gateResult, req Request, rendered any, targets []target, origin messaging.Origin, msg *ent.OutboundMessage) (first *accepted, stopped *Result, skip string, err error) {
+func (m *Module) deliver(ctx context.Context, s *ent.Scoped, g gateResult, req Request, rendered any, targets []target, origin messaging.Origin, msg *ent.OutboundMessage) (first *accepted, stopped *Result, skip skipreason.Reason, err error) {
 	messageID := msg.ID
 	var refused *chatRefusedError
 	for i, t := range targets {
@@ -651,7 +655,7 @@ func (m *Module) deliver(ctx context.Context, s *ent.Scoped, g gateResult, req R
 				return first, nil, skip, err
 			}
 			// The person's opt-out outweighs a dropped target's reason.
-			skip = eligibility.ReasonUnsubscribedEverything
+			skip = skipreason.UnsubscribedEverything
 			continue
 		}
 		if _, gone := errors.AsType[unreachableError](err); gone {
@@ -711,19 +715,19 @@ func (m *Module) stopOf(ctx context.Context, s *ent.Scoped, g gateResult, req Re
 		// is dropped, no attempt is consumed and the same Request runs again later.
 		// Transactional mail never defers (ADR 0023): it falls through to the
 		// retryable error, which releases the claim for the caller's retry.
-		return &Result{Outcome: Deferral, Cause: providerlimit.CauseProvider, Wait: wait}, err
+		return &Result{Outcome: Deferral, Cause: deferralcause.SlowDown, Wait: wait}, err
 	}
 	return nil, nil
 }
 
 // dropTarget removes a target its provider said reaches no one, in a transaction of its own, and
 // returns the Skipped reason the target now has.
-func (m *Module) dropTarget(ctx context.Context, s *ent.Scoped, req Request, g gateResult, t target, messageID int64) (string, error) {
+func (m *Module) dropTarget(ctx context.Context, s *ent.Scoped, req Request, g gateResult, t target, messageID int64) (skipreason.Reason, error) {
 	ch, err := m.channel(req.Channel())
 	if err != nil {
 		return "", err
 	}
-	var skip string
+	var skip skipreason.Reason
 	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		var uerr error
 		skip, uerr = ch.unreachable(ctx, ts, pub, g.route.Integration, req, t, messageID)
@@ -790,7 +794,7 @@ func (m *Module) MarkFailed(ctx context.Context, s *ent.Scoped, key string, caus
 	// the move is a no-op when the message is final or the lease is live.
 	err = move(ctx, s, msg, []predicate.OutboundMessage{
 		outboundmessage.ClaimedAtLT(m.now().Add(-m.lease)),
-	}, outboundmessage.StatusFailed, func(u *ent.OutboundMessageScopedUpdate) { u.SetReason(cause.Error()) })
+	}, outboundmessage.StatusFailed, func(u *ent.OutboundMessageScopedUpdate) { u.SetFailure(cause.Error()) })
 	if errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return nil
 	}
@@ -833,7 +837,7 @@ func (m *Module) FailRecipient(ctx context.Context, s *ent.Scoped, f Failure) (R
 			SetIdempotencyKey(key).
 			SetSendingSource(eligibility.SourceBroadcasts).
 			SetStatus(outboundmessage.StatusFailed).
-			SetReason(cause.Error())
+			SetFailure(cause.Error())
 		ref.stamp(create)
 		if rec.ContactID != 0 {
 			create.SetContactID(rec.ContactID)
@@ -848,7 +852,7 @@ func (m *Module) FailRecipient(ctx context.Context, s *ent.Scoped, f Failure) (R
 			if err != nil || withdrawn {
 				return lo.FromPtr(withdrawnResult(withdrawn)), err
 			}
-			return Result{Outcome: Failed, Reason: cause.Error(), MessageID: id}, nil
+			return Result{Outcome: Failed, Failure: cause.Error(), MessageID: id}, nil
 		}
 		// Lost the insert race to an attempt's claim: judge that row like any other.
 		if msg, err = m.find(ctx, s, key); err != nil || msg == nil {
@@ -866,14 +870,14 @@ func (m *Module) FailRecipient(ctx context.Context, s *ent.Scoped, f Failure) (R
 	}
 	err = move(ctx, s, msg, []predicate.OutboundMessage{
 		outboundmessage.ClaimedAtLT(m.now().Add(-m.lease)),
-	}, outboundmessage.StatusFailed, func(u *ent.OutboundMessageScopedUpdate) { u.SetReason(cause.Error()) })
+	}, outboundmessage.StatusFailed, func(u *ent.OutboundMessageScopedUpdate) { u.SetFailure(cause.Error()) })
 	if errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return Result{}, ErrInProgress // the claim moved under us: look again later
 	}
 	if err != nil {
 		return Result{}, err
 	}
-	return Result{Outcome: Failed, Reason: cause.Error(), MessageID: msg.ID}, nil
+	return Result{Outcome: Failed, Failure: cause.Error(), MessageID: msg.ID}, nil
 }
 
 // workspace loads the Workspace row the scoped client is confined to.
@@ -930,14 +934,13 @@ func (m *Module) through(ctx context.Context, s *ent.Scoped, route Route, conten
 
 func replayResult(msg *ent.OutboundMessage) Result {
 	r := Result{MessageID: msg.ID, Replayed: true}
-	r.Reason = lo.FromPtr(msg.Reason)
 	switch msg.Status {
 	case outboundmessage.StatusSent:
 		r.Outcome = Sent
 	case outboundmessage.StatusSkipped:
-		r.Outcome = Skipped
+		r.Outcome, r.SkippedReason = Skipped, lo.FromPtr(msg.SkippedReason)
 	default:
-		r.Outcome = Failed
+		r.Outcome, r.Failure = Failed, lo.FromPtr(msg.Failure)
 	}
 	return r
 }

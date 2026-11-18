@@ -9,6 +9,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
 // ID filters vertices based on their ID field.
@@ -101,9 +102,9 @@ func ProviderMessageID(v string) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldProviderMessageID, v))
 }
 
-// Reason applies equality check predicate on the "reason" field. It's identical to ReasonEQ.
-func Reason(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldEQ(FieldReason, v))
+// Failure applies equality check predicate on the "failure" field. It's identical to FailureEQ.
+func Failure(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldFailure, v))
 }
 
 // ClaimedAt applies equality check predicate on the "claimed_at" field. It's identical to ClaimedAtEQ.
@@ -771,79 +772,119 @@ func StatusNotIn(vs ...Status) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldNotIn(FieldStatus, vs...))
 }
 
-// ReasonEQ applies the EQ predicate on the "reason" field.
-func ReasonEQ(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldEQ(FieldReason, v))
+// SkippedReasonEQ applies the EQ predicate on the "skipped_reason" field.
+func SkippedReasonEQ(v skipreason.Reason) predicate.OutboundMessage {
+	vc := v
+	return predicate.OutboundMessage(sql.FieldEQ(FieldSkippedReason, vc))
 }
 
-// ReasonNEQ applies the NEQ predicate on the "reason" field.
-func ReasonNEQ(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldNEQ(FieldReason, v))
+// SkippedReasonNEQ applies the NEQ predicate on the "skipped_reason" field.
+func SkippedReasonNEQ(v skipreason.Reason) predicate.OutboundMessage {
+	vc := v
+	return predicate.OutboundMessage(sql.FieldNEQ(FieldSkippedReason, vc))
 }
 
-// ReasonIn applies the In predicate on the "reason" field.
-func ReasonIn(vs ...string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldIn(FieldReason, vs...))
+// SkippedReasonIn applies the In predicate on the "skipped_reason" field.
+func SkippedReasonIn(vs ...skipreason.Reason) predicate.OutboundMessage {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.OutboundMessage(sql.FieldIn(FieldSkippedReason, v...))
 }
 
-// ReasonNotIn applies the NotIn predicate on the "reason" field.
-func ReasonNotIn(vs ...string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldNotIn(FieldReason, vs...))
+// SkippedReasonNotIn applies the NotIn predicate on the "skipped_reason" field.
+func SkippedReasonNotIn(vs ...skipreason.Reason) predicate.OutboundMessage {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.OutboundMessage(sql.FieldNotIn(FieldSkippedReason, v...))
 }
 
-// ReasonGT applies the GT predicate on the "reason" field.
-func ReasonGT(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldGT(FieldReason, v))
+// SkippedReasonIsNil applies the IsNil predicate on the "skipped_reason" field.
+func SkippedReasonIsNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIsNull(FieldSkippedReason))
 }
 
-// ReasonGTE applies the GTE predicate on the "reason" field.
-func ReasonGTE(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldGTE(FieldReason, v))
+// SkippedReasonNotNil applies the NotNil predicate on the "skipped_reason" field.
+func SkippedReasonNotNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotNull(FieldSkippedReason))
 }
 
-// ReasonLT applies the LT predicate on the "reason" field.
-func ReasonLT(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldLT(FieldReason, v))
+// FailureEQ applies the EQ predicate on the "failure" field.
+func FailureEQ(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldFailure, v))
 }
 
-// ReasonLTE applies the LTE predicate on the "reason" field.
-func ReasonLTE(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldLTE(FieldReason, v))
+// FailureNEQ applies the NEQ predicate on the "failure" field.
+func FailureNEQ(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNEQ(FieldFailure, v))
 }
 
-// ReasonContains applies the Contains predicate on the "reason" field.
-func ReasonContains(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldContains(FieldReason, v))
+// FailureIn applies the In predicate on the "failure" field.
+func FailureIn(vs ...string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIn(FieldFailure, vs...))
 }
 
-// ReasonHasPrefix applies the HasPrefix predicate on the "reason" field.
-func ReasonHasPrefix(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldHasPrefix(FieldReason, v))
+// FailureNotIn applies the NotIn predicate on the "failure" field.
+func FailureNotIn(vs ...string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotIn(FieldFailure, vs...))
 }
 
-// ReasonHasSuffix applies the HasSuffix predicate on the "reason" field.
-func ReasonHasSuffix(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldHasSuffix(FieldReason, v))
+// FailureGT applies the GT predicate on the "failure" field.
+func FailureGT(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGT(FieldFailure, v))
 }
 
-// ReasonIsNil applies the IsNil predicate on the "reason" field.
-func ReasonIsNil() predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldIsNull(FieldReason))
+// FailureGTE applies the GTE predicate on the "failure" field.
+func FailureGTE(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGTE(FieldFailure, v))
 }
 
-// ReasonNotNil applies the NotNil predicate on the "reason" field.
-func ReasonNotNil() predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldNotNull(FieldReason))
+// FailureLT applies the LT predicate on the "failure" field.
+func FailureLT(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLT(FieldFailure, v))
 }
 
-// ReasonEqualFold applies the EqualFold predicate on the "reason" field.
-func ReasonEqualFold(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldEqualFold(FieldReason, v))
+// FailureLTE applies the LTE predicate on the "failure" field.
+func FailureLTE(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLTE(FieldFailure, v))
 }
 
-// ReasonContainsFold applies the ContainsFold predicate on the "reason" field.
-func ReasonContainsFold(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldContainsFold(FieldReason, v))
+// FailureContains applies the Contains predicate on the "failure" field.
+func FailureContains(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldContains(FieldFailure, v))
+}
+
+// FailureHasPrefix applies the HasPrefix predicate on the "failure" field.
+func FailureHasPrefix(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldHasPrefix(FieldFailure, v))
+}
+
+// FailureHasSuffix applies the HasSuffix predicate on the "failure" field.
+func FailureHasSuffix(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldHasSuffix(FieldFailure, v))
+}
+
+// FailureIsNil applies the IsNil predicate on the "failure" field.
+func FailureIsNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIsNull(FieldFailure))
+}
+
+// FailureNotNil applies the NotNil predicate on the "failure" field.
+func FailureNotNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotNull(FieldFailure))
+}
+
+// FailureEqualFold applies the EqualFold predicate on the "failure" field.
+func FailureEqualFold(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEqualFold(FieldFailure, v))
+}
+
+// FailureContainsFold applies the ContainsFold predicate on the "failure" field.
+func FailureContainsFold(v string) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldContainsFold(FieldFailure, v))
 }
 
 // ClaimedAtEQ applies the EQ predicate on the "claimed_at" field.

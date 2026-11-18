@@ -6,7 +6,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
-	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 )
 
 // Progress is how far a sending Broadcast has got (ADR 0023). A Broadcast stays
@@ -23,7 +23,7 @@ type Progress struct {
 	// LimitedBy is what the estimate waits for: the Send cap of the Workspace (when it lets the
 	// remaining recipients out later than the Provider limit would) or the Provider limit of the
 	// Integration; "" when nothing limits the sending (or it is held).
-	LimitedBy providerlimit.Cause
+	LimitedBy deferralcause.Cause
 }
 
 // Detail is one Broadcast's figures and, while it is sending, its Progress, both from a
@@ -72,17 +72,17 @@ func (m *Module) progressOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast
 	}
 	switch {
 	case b.LastScheduledAt != nil && b.LastScheduledAt.After(now):
-		p.EstimatedCompletion, p.LimitedBy = b.LastScheduledAt, providerlimit.CauseProviderLimit
+		p.EstimatedCompletion, p.LimitedBy = b.LastScheduledAt, deferralcause.ProviderLimit
 	case route.Interval() > 0:
 		eta := now.Add(time.Duration(pending) * route.Interval())
-		p.EstimatedCompletion, p.LimitedBy = &eta, providerlimit.CauseProviderLimit
+		p.EstimatedCompletion, p.LimitedBy = &eta, deferralcause.ProviderLimit
 	}
 	drain, err := m.out.SendCapDrain(ctx, s, pending)
 	if err != nil {
 		return nil, err
 	}
 	if eta := now.Add(drain.Wait); drain.Capped && drain.Wait > 0 && (p.EstimatedCompletion == nil || eta.After(*p.EstimatedCompletion)) {
-		p.EstimatedCompletion, p.LimitedBy = &eta, providerlimit.CauseSendCap
+		p.EstimatedCompletion, p.LimitedBy = &eta, deferralcause.SendCap
 	}
 	return p, nil
 }

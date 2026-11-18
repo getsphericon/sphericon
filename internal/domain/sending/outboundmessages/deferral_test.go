@@ -28,7 +28,7 @@ func TestProviderTooFastIsADeferralThenSentExactlyOnce(t *testing.T) {
 	res := send(t, m, env, "bc:fast")
 	assert.Equal(t, outboundmessages.Deferral, res.Outcome)
 	assert.Equal(t, outboundmessages.DeferralBackoff, res.Wait)
-	assert.Empty(t, res.Reason)
+	assert.Empty(t, res.Hold)
 
 	n, err := acme(env).OutboundMessage().Query().Where(outboundmessage.IdempotencyKey("bc:fast")).Count(context.Background())
 	require.NoError(t, err)

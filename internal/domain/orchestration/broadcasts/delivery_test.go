@@ -168,7 +168,7 @@ func TestRecipientWithoutEmailFailsWithAReason(t *testing.T) {
 
 	msg := d.messageOf(id)
 	assert.Equal(t, outboundmessage.StatusFailed, msg.Status, "every recipient ends with exactly one message")
-	assert.Equal(t, "contact has no email", *msg.Reason)
+	assert.Equal(t, "contact has no email", *msg.Failure)
 	assert.EqualValues(t, fixtures.BroadcastSendingID, *msg.BroadcastID)
 }
 
@@ -194,7 +194,7 @@ func TestRecipientThatCannotRenderFails(t *testing.T) {
 
 	msg := d.messageOf(id)
 	assert.Equal(t, outboundmessage.StatusFailed, msg.Status)
-	assert.NotNil(t, msg.Reason)
+	assert.NotNil(t, msg.Failure)
 }
 
 // The message goes out through the Integration the Broadcast names, not the default.
