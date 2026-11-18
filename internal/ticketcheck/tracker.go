@@ -260,3 +260,80 @@ func gh(ctx context.Context, args ...string) (string, error) {
 	}
 	return stdout.String(), nil
 }
+
+// OpenGraph reads every open issue with its labels, its parent and its edges to other open issues,
+// in one paginated query.
+func (Tracker) OpenGraph(ctx context.Context) ([]Node, error) {
+	const query = `query($owner: String!, $name: String!, $endCursor: String) {
+  repository(owner: $owner, name: $name) {
+    issues(states: OPEN, first: 100, after: $endCursor) {
+      pageInfo { hasNextPage endCursor }
+      nodes {
+        number title
+        labels(first: 20) { nodes { name } }
+        parent { number }
+        blockedBy(first: 100) { nodes { number state } }
+        subIssues(first: 100) { nodes { number state } }
+      }
+    }
+  }
+}`
+	out, err := gh(ctx, "api", "graphql", "--paginate", "--slurp",
+		"-F", "owner={owner}", "-F", "name={repo}", "-f", "query="+query)
+	if err != nil {
+		return nil, err
+	}
+	type ref struct {
+		Number int    `json:"number"`
+		State  string `json:"state"`
+	}
+	var pages []struct {
+		Data struct {
+			Repository struct {
+				Issues struct {
+					Nodes []struct {
+						Number int    `json:"number"`
+						Title  string `json:"title"`
+						Labels struct {
+							Nodes []ghLabel `json:"nodes"`
+						} `json:"labels"`
+						Parent    *ref `json:"parent"`
+						BlockedBy struct {
+							Nodes []ref `json:"nodes"`
+						} `json:"blockedBy"`
+						SubIssues struct {
+							Nodes []ref `json:"nodes"`
+						} `json:"subIssues"`
+					} `json:"nodes"`
+				} `json:"issues"`
+			} `json:"repository"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal([]byte(out), &pages); err != nil {
+		return nil, fmt.Errorf("gh api graphql: %w", err)
+	}
+	open := func(refs []ref) []int {
+		var numbers []int
+		for _, r := range refs {
+			if r.State == "OPEN" {
+				numbers = append(numbers, r.Number)
+			}
+		}
+		return numbers
+	}
+	var nodes []Node
+	for _, page := range pages {
+		for _, issue := range page.Data.Repository.Issues.Nodes {
+			node := Node{Number: issue.Number, Title: issue.Title,
+				BlockedBy: open(issue.BlockedBy.Nodes), SubIssues: open(issue.SubIssues.Nodes)}
+			for _, label := range issue.Labels.Nodes {
+				node.Labels = append(node.Labels, label.Name)
+			}
+			if issue.Parent != nil {
+				node.Parent = issue.Parent.Number
+			}
+			nodes = append(nodes, node)
+		}
+	}
+	return nodes, nil
+}
