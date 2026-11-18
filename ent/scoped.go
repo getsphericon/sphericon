@@ -9146,6 +9146,16 @@ func (x *BindingScopedCreate) SetChatID(v string) *BindingScopedCreate {
 
 const RoleOf_BindingScopedCreate_SetChatID = RoleStep
 
+// SetNillableChatID sets the "chat_id" field if the given value is not nil.
+func (x *BindingScopedCreate) SetNillableChatID(v *string) *BindingScopedCreate {
+	if v != nil {
+		x.SetChatID(*v)
+	}
+	return x
+}
+
+const RoleOf_BindingScopedCreate_SetNillableChatID = RoleStep
+
 // SetContactID sets the "contact_id" field.
 func (x *BindingScopedCreate) SetContactID(v int64) *BindingScopedCreate {
 	x.set = append(x.set, func(b *BindingCreate) { b.SetContactID(v) })
@@ -9358,6 +9368,14 @@ func (u *BindingScopedUpsert) UpdateChatID() *BindingScopedUpsert {
 }
 
 const RoleOf_BindingScopedUpsert_UpdateChatID = RoleStep
+
+// ClearChatID clears the value of the "chat_id" field.
+func (u *BindingScopedUpsert) ClearChatID() *BindingScopedUpsert {
+	u.u.SetNull(binding.FieldChatID)
+	return u
+}
+
+const RoleOf_BindingScopedUpsert_ClearChatID = RoleStep
 
 // UpdateContactID sets the "contact_id" field to the value that was provided on create.
 func (u *BindingScopedUpsert) UpdateContactID() *BindingScopedUpsert {
@@ -9632,6 +9650,14 @@ func (x *BindingScopedUpdateOne) SetNillableChatID(v *string) *BindingScopedUpda
 
 const RoleOf_BindingScopedUpdateOne_SetNillableChatID = RoleStep
 
+// ClearChatID clears the value of the "chat_id" field.
+func (x *BindingScopedUpdateOne) ClearChatID() *BindingScopedUpdateOne {
+	x.set = append(x.set, func(b *BindingUpdateOne) { b.ClearChatID() })
+	return x
+}
+
+const RoleOf_BindingScopedUpdateOne_ClearChatID = RoleStep
+
 // SetContactID sets the "contact_id" field.
 func (x *BindingScopedUpdateOne) SetContactID(v int64) *BindingScopedUpdateOne {
 	x.set = append(x.set, func(b *BindingUpdateOne) { b.SetContactID(v) })
@@ -9842,6 +9868,14 @@ func (x *BindingScopedUpdate) SetNillableChatID(v *string) *BindingScopedUpdate 
 }
 
 const RoleOf_BindingScopedUpdate_SetNillableChatID = RoleStep
+
+// ClearChatID clears the value of the "chat_id" field.
+func (x *BindingScopedUpdate) ClearChatID() *BindingScopedUpdate {
+	x.set = append(x.set, func(b *BindingUpdate) { b.ClearChatID() })
+	return x
+}
+
+const RoleOf_BindingScopedUpdate_ClearChatID = RoleStep
 
 // SetContactID sets the "contact_id" field.
 func (x *BindingScopedUpdate) SetContactID(v int64) *BindingScopedUpdate {

@@ -84,6 +84,14 @@ func (_c *BindingCreate) SetChatID(v string) *BindingCreate {
 	return _c
 }
 
+// SetNillableChatID sets the "chat_id" field if the given value is not nil.
+func (_c *BindingCreate) SetNillableChatID(v *string) *BindingCreate {
+	if v != nil {
+		_c.SetChatID(*v)
+	}
+	return _c
+}
+
 // SetContactID sets the "contact_id" field.
 func (_c *BindingCreate) SetContactID(v int64) *BindingCreate {
 	_c.mutation.SetContactID(v)
@@ -219,9 +227,6 @@ func (_c *BindingCreate) check() error {
 			return &ValidationError{Name: "destination", err: fmt.Errorf(`ent: validator failed for field "Binding.destination": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.ChatID(); !ok {
-		return &ValidationError{Name: "chat_id", err: errors.New(`ent: missing required field "Binding.chat_id"`)}
-	}
 	if v, ok := _c.mutation.ChatID(); ok {
 		if err := binding.ChatIDValidator(v); err != nil {
 			return &ValidationError{Name: "chat_id", err: fmt.Errorf(`ent: validator failed for field "Binding.chat_id": %w`, err)}
@@ -287,7 +292,7 @@ func (_c *BindingCreate) createSpec() (*Binding, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := _c.mutation.ChatID(); ok {
 		_spec.SetField(binding.FieldChatID, field.TypeString, value)
-		_node.ChatID = value
+		_node.ChatID = &value
 	}
 	if value, ok := _c.mutation.BoundAt(); ok {
 		_spec.SetField(binding.FieldBoundAt, field.TypeTime, value)
@@ -449,6 +454,12 @@ func (u *BindingUpsert) UpdateChatID() *BindingUpsert {
 	return u
 }
 
+// ClearChatID clears the value of the "chat_id" field.
+func (u *BindingUpsert) ClearChatID() *BindingUpsert {
+	u.SetNull(binding.FieldChatID)
+	return u
+}
+
 // SetContactID sets the "contact_id" field.
 func (u *BindingUpsert) SetContactID(v int64) *BindingUpsert {
 	u.Set(binding.FieldContactID, v)
@@ -596,6 +607,13 @@ func (u *BindingUpsertOne) SetChatID(v string) *BindingUpsertOne {
 func (u *BindingUpsertOne) UpdateChatID() *BindingUpsertOne {
 	return u.Update(func(s *BindingUpsert) {
 		s.UpdateChatID()
+	})
+}
+
+// ClearChatID clears the value of the "chat_id" field.
+func (u *BindingUpsertOne) ClearChatID() *BindingUpsertOne {
+	return u.Update(func(s *BindingUpsert) {
+		s.ClearChatID()
 	})
 }
 
@@ -920,6 +938,13 @@ func (u *BindingUpsertBulk) SetChatID(v string) *BindingUpsertBulk {
 func (u *BindingUpsertBulk) UpdateChatID() *BindingUpsertBulk {
 	return u.Update(func(s *BindingUpsert) {
 		s.UpdateChatID()
+	})
+}
+
+// ClearChatID clears the value of the "chat_id" field.
+func (u *BindingUpsertBulk) ClearChatID() *BindingUpsertBulk {
+	return u.Update(func(s *BindingUpsert) {
+		s.ClearChatID()
 	})
 }
 

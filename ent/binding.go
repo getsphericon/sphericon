@@ -34,7 +34,7 @@ type Binding struct {
 	// Destination holds the value of the "destination" field.
 	Destination string `json:"destination,omitempty"`
 	// ChatID holds the value of the "chat_id" field.
-	ChatID string `json:"chat_id,omitempty"`
+	ChatID *string `json:"chat_id,omitempty"`
 	// ContactID holds the value of the "contact_id" field.
 	ContactID *int64 `json:"contact_id,omitempty"`
 	// VisitorID holds the value of the "visitor_id" field.
@@ -178,7 +178,8 @@ func (_m *Binding) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field chat_id", values[i])
 			} else if value.Valid {
-				_m.ChatID = value.String
+				_m.ChatID = new(string)
+				*_m.ChatID = value.String
 			}
 		case binding.FieldContactID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -274,8 +275,10 @@ func (_m *Binding) String() string {
 	builder.WriteString("destination=")
 	builder.WriteString(_m.Destination)
 	builder.WriteString(", ")
-	builder.WriteString("chat_id=")
-	builder.WriteString(_m.ChatID)
+	if v := _m.ChatID; v != nil {
+		builder.WriteString("chat_id=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", ")
 	if v := _m.ContactID; v != nil {
 		builder.WriteString("contact_id=")

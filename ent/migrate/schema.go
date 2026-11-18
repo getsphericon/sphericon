@@ -385,7 +385,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "channel", Type: field.TypeEnum, Enums: []string{"telegram"}},
 		{Name: "destination", Type: field.TypeString},
-		{Name: "chat_id", Type: field.TypeString},
+		{Name: "chat_id", Type: field.TypeString, Nullable: true},
 		{Name: "bound_at", Type: field.TypeTime},
 		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "integration_id", Type: field.TypeInt64},
@@ -3481,8 +3481,9 @@ func init() {
 		Table: "bindings",
 	}
 	BindingsTable.Annotation.Checks = map[string]string{
-		"bindings_channel_check": "channel IN ('telegram')",
-		"bindings_owner_check":   "(contact_id IS NULL) <> (visitor_id IS NULL)",
+		"bindings_channel_check":     "channel IN ('telegram')",
+		"bindings_destination_check": "(channel = 'telegram' AND chat_id IS NOT NULL)",
+		"bindings_owner_check":       "(contact_id IS NULL) <> (visitor_id IS NULL)",
 	}
 	BrandKitsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	BrandKitsTable.Annotation = &entsql.Annotation{

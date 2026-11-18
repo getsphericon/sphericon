@@ -11,12 +11,13 @@ import (
 // ownerCheck is the invariant of an owned row: exactly one of the Contact and the Visitor owns it.
 const ownerCheck = "(contact_id IS NULL) <> (visitor_id IS NULL)"
 
-// Binding is the record that one Integration can reach one Destination and whose it is (ADR 0075):
-// a Telegram chat, made only by what the bot receives (a `/start` with a Start token), never
-// written through an API. The owner is a Contact or a Visitor, the latest owner wins; a Visitor's
-// Binding reaches nobody until a proven Identify hands it to the Contact (ADR 0171). It dies
-// with its owner and its Integration (an Integration is archived, never deleted, so only Workspace
-// deletion removes one).
+// Binding is the record that one Integration can reach one Destination and whose it is (ADR 0075),
+// on a Channel whose Destination is no attribute of the Contact: on Telegram a chat, made only by
+// what the bot receives (a `/start` with a Start token), never written through an API. Its columns
+// beyond the Destination are its Channel's (bindingDestinations). The owner is a Contact or a
+// Visitor, the latest owner wins; a Visitor's Binding reaches nobody until a proven Identify hands
+// it to the Contact (ADR 0171, ADR 0179). It dies with its owner and its Integration (an
+// Integration is archived, never deleted, so only Workspace deletion removes one).
 type Binding struct {
 	ent.Schema
 }
@@ -24,7 +25,15 @@ type Binding struct {
 func (Binding) Annotations() []schema.Annotation {
 	a := TableWithEnumChecks("bindings", Binding{}.Fields())
 	a.Checks["bindings_owner_check"] = ownerCheck
+	a.Checks["bindings_destination_check"] = variantCheck("channel", bindingDestinations)
 	return []schema.Annotation{a}
+}
+
+// bindingDestinations are the columns each Channel of Bindings keeps beside the Destination: a
+// Telegram Binding has the chat its messages go to. A Channel added to the channel enum adds its
+// entry here.
+var bindingDestinations = []variant{
+	{value: "telegram", required: []string{"chat_id"}},
 }
 
 func (Binding) Mixin() []ent.Mixin {
@@ -41,14 +50,16 @@ func (Binding) Fields() []ent.Field {
 		field.Enum("channel").
 			Values("telegram").
 			Immutable(),
-		// The channel's address of the person: the Telegram user id (`from.id`). Opt-outs are
-		// keyed by it.
+		// The Channel's address of the person, unique per Integration; opt-outs are keyed by it. On
+		// Telegram the user id (`from.id`).
 		field.String("destination").
 			NotEmpty().
 			Immutable(),
-		// Where a message goes: the Telegram chat id, kept apart because a private chat's id is not
-		// promised to equal the user id.
+		// Telegram's (bindingDestinations): where a message goes, the chat id, kept apart because a
+		// private chat's id is not promised to equal the user id.
 		field.String("chat_id").
+			Optional().
+			Nillable().
 			NotEmpty(),
 		// Exactly one of the two owners (bindings_owner_check).
 		field.Int64("contact_id").
@@ -59,7 +70,7 @@ func (Binding) Fields() []ent.Field {
 			Nillable(),
 		// When the current owner got the Binding: creation, or the latest move to another owner.
 		field.Time("bound_at").
-			Annotations(Attribute("the latest binding of the chat; a rebind moves it")),
+			Annotations(Attribute("the latest binding of the Destination; a rebind moves it")),
 	}
 }
 
