@@ -101,13 +101,15 @@ func (u *UseCase) Due(ctx context.Context) ([]int64, error) {
 	return slices.Compact(due), nil
 }
 
-// finishedBefore matches the Broadcasts sent or failed (both final, ADR 0046) before cutoff and
-// not pruned yet.
+// finishedBefore matches the Broadcasts sent, failed (both final, ADR 0046) or cancelled (final
+// too, ADR 0150, frozen like them by ADR 0151) before cutoff and not pruned yet. Each is counted
+// from the moment it took its final state, never from when it was created or started sending.
 func finishedBefore(cutoff time.Time) predicate.Broadcast {
 	return broadcast.And(
 		broadcast.Or(
 			broadcast.And(broadcast.StatusEQ(broadcast.StatusSent), broadcast.SentAtLT(cutoff)),
 			broadcast.And(broadcast.StatusEQ(broadcast.StatusFailed), broadcast.FailedAtLT(cutoff)),
+			broadcast.And(broadcast.StatusEQ(broadcast.StatusCancelled), broadcast.CancelledAtLT(cutoff)),
 		),
 		broadcast.Not(broadcast.HasFiguresWith(broadcastfigure.PrunedAtNotNil())),
 	)

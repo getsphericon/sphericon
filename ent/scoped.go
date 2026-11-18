@@ -15009,6 +15009,14 @@ func (x *BroadcastFigureScopedCreate) SetPending(v int) *BroadcastFigureScopedCr
 
 const RoleOf_BroadcastFigureScopedCreate_SetPending = RoleStep
 
+// SetCancelled sets the "cancelled" field.
+func (x *BroadcastFigureScopedCreate) SetCancelled(v int) *BroadcastFigureScopedCreate {
+	x.set = append(x.set, func(b *BroadcastFigureCreate) { b.SetCancelled(v) })
+	return x
+}
+
+const RoleOf_BroadcastFigureScopedCreate_SetCancelled = RoleStep
+
 // SetDelivered sets the "delivered" field.
 func (x *BroadcastFigureScopedCreate) SetDelivered(v int) *BroadcastFigureScopedCreate {
 	x.set = append(x.set, func(b *BroadcastFigureCreate) { b.SetDelivered(v) })

@@ -435,32 +435,36 @@ func init() {
 	broadcastfigureDescPending := broadcastfigureFields[7].Descriptor()
 	// broadcastfigure.PendingValidator is a validator for the "pending" field. It is called by the builders before save.
 	broadcastfigure.PendingValidator = broadcastfigureDescPending.Validators[0].(func(int) error)
+	// broadcastfigureDescCancelled is the schema descriptor for cancelled field.
+	broadcastfigureDescCancelled := broadcastfigureFields[8].Descriptor()
+	// broadcastfigure.CancelledValidator is a validator for the "cancelled" field. It is called by the builders before save.
+	broadcastfigure.CancelledValidator = broadcastfigureDescCancelled.Validators[0].(func(int) error)
 	// broadcastfigureDescDelivered is the schema descriptor for delivered field.
-	broadcastfigureDescDelivered := broadcastfigureFields[8].Descriptor()
+	broadcastfigureDescDelivered := broadcastfigureFields[9].Descriptor()
 	// broadcastfigure.DeliveredValidator is a validator for the "delivered" field. It is called by the builders before save.
 	broadcastfigure.DeliveredValidator = broadcastfigureDescDelivered.Validators[0].(func(int) error)
 	// broadcastfigureDescUndelivered is the schema descriptor for undelivered field.
-	broadcastfigureDescUndelivered := broadcastfigureFields[9].Descriptor()
+	broadcastfigureDescUndelivered := broadcastfigureFields[10].Descriptor()
 	// broadcastfigure.UndeliveredValidator is a validator for the "undelivered" field. It is called by the builders before save.
 	broadcastfigure.UndeliveredValidator = broadcastfigureDescUndelivered.Validators[0].(func(int) error)
 	// broadcastfigureDescBounced is the schema descriptor for bounced field.
-	broadcastfigureDescBounced := broadcastfigureFields[10].Descriptor()
+	broadcastfigureDescBounced := broadcastfigureFields[11].Descriptor()
 	// broadcastfigure.BouncedValidator is a validator for the "bounced" field. It is called by the builders before save.
 	broadcastfigure.BouncedValidator = broadcastfigureDescBounced.Validators[0].(func(int) error)
 	// broadcastfigureDescComplained is the schema descriptor for complained field.
-	broadcastfigureDescComplained := broadcastfigureFields[11].Descriptor()
+	broadcastfigureDescComplained := broadcastfigureFields[12].Descriptor()
 	// broadcastfigure.ComplainedValidator is a validator for the "complained" field. It is called by the builders before save.
 	broadcastfigure.ComplainedValidator = broadcastfigureDescComplained.Validators[0].(func(int) error)
 	// broadcastfigureDescOpened is the schema descriptor for opened field.
-	broadcastfigureDescOpened := broadcastfigureFields[12].Descriptor()
+	broadcastfigureDescOpened := broadcastfigureFields[13].Descriptor()
 	// broadcastfigure.OpenedValidator is a validator for the "opened" field. It is called by the builders before save.
 	broadcastfigure.OpenedValidator = broadcastfigureDescOpened.Validators[0].(func(int) error)
 	// broadcastfigureDescClicked is the schema descriptor for clicked field.
-	broadcastfigureDescClicked := broadcastfigureFields[13].Descriptor()
+	broadcastfigureDescClicked := broadcastfigureFields[14].Descriptor()
 	// broadcastfigure.ClickedValidator is a validator for the "clicked" field. It is called by the builders before save.
 	broadcastfigure.ClickedValidator = broadcastfigureDescClicked.Validators[0].(func(int) error)
 	// broadcastfigureDescCaptured is the schema descriptor for captured field.
-	broadcastfigureDescCaptured := broadcastfigureFields[14].Descriptor()
+	broadcastfigureDescCaptured := broadcastfigureFields[15].Descriptor()
 	// broadcastfigure.CapturedValidator is a validator for the "captured" field. It is called by the builders before save.
 	broadcastfigure.CapturedValidator = broadcastfigureDescCaptured.Validators[0].(func(int) error)
 	broadcastrecipientMixin := schema.BroadcastRecipient{}.Mixin()

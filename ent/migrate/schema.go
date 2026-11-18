@@ -561,6 +561,7 @@ var (
 		{Name: "skipped", Type: field.TypeInt},
 		{Name: "failed", Type: field.TypeInt},
 		{Name: "pending", Type: field.TypeInt},
+		{Name: "cancelled", Type: field.TypeInt, Default: "0"},
 		{Name: "delivered", Type: field.TypeInt},
 		{Name: "undelivered", Type: field.TypeInt},
 		{Name: "bounced", Type: field.TypeInt},
@@ -580,13 +581,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "broadcast_figures_broadcasts_figures",
-				Columns:    []*schema.Column{BroadcastFiguresColumns[17]},
+				Columns:    []*schema.Column{BroadcastFiguresColumns[18]},
 				RefColumns: []*schema.Column{BroadcastsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "broadcast_figures_workspaces_broadcast_figures",
-				Columns:    []*schema.Column{BroadcastFiguresColumns[18]},
+				Columns:    []*schema.Column{BroadcastFiguresColumns[19]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -595,7 +596,7 @@ var (
 			{
 				Name:    "broadcast_figures_workspace_id_broadcast_id",
 				Unique:  true,
-				Columns: []*schema.Column{BroadcastFiguresColumns[18], BroadcastFiguresColumns[17]},
+				Columns: []*schema.Column{BroadcastFiguresColumns[19], BroadcastFiguresColumns[18]},
 			},
 		},
 	}

@@ -100,6 +100,12 @@ func (_c *BroadcastFigureCreate) SetPending(v int) *BroadcastFigureCreate {
 	return _c
 }
 
+// SetCancelled sets the "cancelled" field.
+func (_c *BroadcastFigureCreate) SetCancelled(v int) *BroadcastFigureCreate {
+	_c.mutation.SetCancelled(v)
+	return _c
+}
+
 // SetDelivered sets the "delivered" field.
 func (_c *BroadcastFigureCreate) SetDelivered(v int) *BroadcastFigureCreate {
 	_c.mutation.SetDelivered(v)
@@ -279,6 +285,14 @@ func (_c *BroadcastFigureCreate) check() error {
 			return &ValidationError{Name: "pending", err: fmt.Errorf(`ent: validator failed for field "BroadcastFigure.pending": %w`, err)}
 		}
 	}
+	if _, ok := _c.mutation.Cancelled(); !ok {
+		return &ValidationError{Name: "cancelled", err: errors.New(`ent: missing required field "BroadcastFigure.cancelled"`)}
+	}
+	if v, ok := _c.mutation.Cancelled(); ok {
+		if err := broadcastfigure.CancelledValidator(v); err != nil {
+			return &ValidationError{Name: "cancelled", err: fmt.Errorf(`ent: validator failed for field "BroadcastFigure.cancelled": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.Delivered(); !ok {
 		return &ValidationError{Name: "delivered", err: errors.New(`ent: missing required field "BroadcastFigure.delivered"`)}
 	}
@@ -405,6 +419,10 @@ func (_c *BroadcastFigureCreate) createSpec() (*BroadcastFigure, *sqlgraph.Creat
 	if value, ok := _c.mutation.Pending(); ok {
 		_spec.SetField(broadcastfigure.FieldPending, field.TypeInt, value)
 		_node.Pending = value
+	}
+	if value, ok := _c.mutation.Cancelled(); ok {
+		_spec.SetField(broadcastfigure.FieldCancelled, field.TypeInt, value)
+		_node.Cancelled = value
 	}
 	if value, ok := _c.mutation.Delivered(); ok {
 		_spec.SetField(broadcastfigure.FieldDelivered, field.TypeInt, value)
@@ -606,6 +624,9 @@ func (u *BroadcastFigureUpsertOne) UpdateNewValues() *BroadcastFigureUpsertOne {
 		}
 		if _, exists := u.create.mutation.Pending(); exists {
 			s.SetIgnore(broadcastfigure.FieldPending)
+		}
+		if _, exists := u.create.mutation.Cancelled(); exists {
+			s.SetIgnore(broadcastfigure.FieldCancelled)
 		}
 		if _, exists := u.create.mutation.Delivered(); exists {
 			s.SetIgnore(broadcastfigure.FieldDelivered)
@@ -913,6 +934,9 @@ func (u *BroadcastFigureUpsertBulk) UpdateNewValues() *BroadcastFigureUpsertBulk
 			}
 			if _, exists := b.mutation.Pending(); exists {
 				s.SetIgnore(broadcastfigure.FieldPending)
+			}
+			if _, exists := b.mutation.Cancelled(); exists {
+				s.SetIgnore(broadcastfigure.FieldCancelled)
 			}
 			if _, exists := b.mutation.Delivered(); exists {
 				s.SetIgnore(broadcastfigure.FieldDelivered)

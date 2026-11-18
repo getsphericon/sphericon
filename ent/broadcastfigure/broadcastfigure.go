@@ -34,6 +34,8 @@ const (
 	FieldFailed = "failed"
 	// FieldPending holds the string denoting the pending field in the database.
 	FieldPending = "pending"
+	// FieldCancelled holds the string denoting the cancelled field in the database.
+	FieldCancelled = "cancelled"
 	// FieldDelivered holds the string denoting the delivered field in the database.
 	FieldDelivered = "delivered"
 	// FieldUndelivered holds the string denoting the undelivered field in the database.
@@ -85,6 +87,7 @@ var Columns = []string{
 	FieldSkipped,
 	FieldFailed,
 	FieldPending,
+	FieldCancelled,
 	FieldDelivered,
 	FieldUndelivered,
 	FieldBounced,
@@ -124,6 +127,8 @@ var (
 	FailedValidator func(int) error
 	// PendingValidator is a validator for the "pending" field. It is called by the builders before save.
 	PendingValidator func(int) error
+	// CancelledValidator is a validator for the "cancelled" field. It is called by the builders before save.
+	CancelledValidator func(int) error
 	// DeliveredValidator is a validator for the "delivered" field. It is called by the builders before save.
 	DeliveredValidator func(int) error
 	// UndeliveredValidator is a validator for the "undelivered" field. It is called by the builders before save.
@@ -196,6 +201,11 @@ func ByFailed(opts ...sql.OrderTermOption) OrderOption {
 // ByPending orders the results by the pending field.
 func ByPending(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPending, opts...).ToFunc()
+}
+
+// ByCancelled orders the results by the cancelled field.
+func ByCancelled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCancelled, opts...).ToFunc()
 }
 
 // ByDelivered orders the results by the delivered field.

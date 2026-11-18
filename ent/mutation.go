@@ -13192,6 +13192,8 @@ type BroadcastFigureMutation struct {
 	addfailed        *int
 	pending          *int
 	addpending       *int
+	cancelled        *int
+	addcancelled     *int
 	delivered        *int
 	adddelivered     *int
 	undelivered      *int
@@ -13801,6 +13803,62 @@ func (m *BroadcastFigureMutation) ResetPending() {
 	m.addpending = nil
 }
 
+// SetCancelled sets the "cancelled" field.
+func (m *BroadcastFigureMutation) SetCancelled(i int) {
+	m.cancelled = &i
+	m.addcancelled = nil
+}
+
+// Cancelled returns the value of the "cancelled" field in the mutation.
+func (m *BroadcastFigureMutation) Cancelled() (r int, exists bool) {
+	v := m.cancelled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCancelled returns the old "cancelled" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldCancelled(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCancelled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCancelled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCancelled: %w", err)
+	}
+	return oldValue.Cancelled, nil
+}
+
+// AddCancelled adds i to the "cancelled" field.
+func (m *BroadcastFigureMutation) AddCancelled(i int) {
+	if m.addcancelled != nil {
+		*m.addcancelled += i
+	} else {
+		m.addcancelled = &i
+	}
+}
+
+// AddedCancelled returns the value that was added to the "cancelled" field in this mutation.
+func (m *BroadcastFigureMutation) AddedCancelled() (r int, exists bool) {
+	v := m.addcancelled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCancelled resets all changes to the "cancelled" field.
+func (m *BroadcastFigureMutation) ResetCancelled() {
+	m.cancelled = nil
+	m.addcancelled = nil
+}
+
 // SetDelivered sets the "delivered" field.
 func (m *BroadcastFigureMutation) SetDelivered(i int) {
 	m.delivered = &i
@@ -14330,7 +14388,7 @@ func (m *BroadcastFigureMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BroadcastFigureMutation) Fields() []string {
-	fields := make([]string, 0, 18)
+	fields := make([]string, 0, 19)
 	if m.created_at != nil {
 		fields = append(fields, broadcastfigure.FieldCreatedAt)
 	}
@@ -14360,6 +14418,9 @@ func (m *BroadcastFigureMutation) Fields() []string {
 	}
 	if m.pending != nil {
 		fields = append(fields, broadcastfigure.FieldPending)
+	}
+	if m.cancelled != nil {
+		fields = append(fields, broadcastfigure.FieldCancelled)
 	}
 	if m.delivered != nil {
 		fields = append(fields, broadcastfigure.FieldDelivered)
@@ -14413,6 +14474,8 @@ func (m *BroadcastFigureMutation) Field(name string) (ent.Value, bool) {
 		return m.Failed()
 	case broadcastfigure.FieldPending:
 		return m.Pending()
+	case broadcastfigure.FieldCancelled:
+		return m.Cancelled()
 	case broadcastfigure.FieldDelivered:
 		return m.Delivered()
 	case broadcastfigure.FieldUndelivered:
@@ -14458,6 +14521,8 @@ func (m *BroadcastFigureMutation) OldField(ctx context.Context, name string) (en
 		return m.OldFailed(ctx)
 	case broadcastfigure.FieldPending:
 		return m.OldPending(ctx)
+	case broadcastfigure.FieldCancelled:
+		return m.OldCancelled(ctx)
 	case broadcastfigure.FieldDelivered:
 		return m.OldDelivered(ctx)
 	case broadcastfigure.FieldUndelivered:
@@ -14553,6 +14618,13 @@ func (m *BroadcastFigureMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPending(v)
 		return nil
+	case broadcastfigure.FieldCancelled:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCancelled(v)
+		return nil
 	case broadcastfigure.FieldDelivered:
 		v, ok := value.(int)
 		if !ok {
@@ -14635,6 +14707,9 @@ func (m *BroadcastFigureMutation) AddedFields() []string {
 	if m.addpending != nil {
 		fields = append(fields, broadcastfigure.FieldPending)
 	}
+	if m.addcancelled != nil {
+		fields = append(fields, broadcastfigure.FieldCancelled)
+	}
 	if m.adddelivered != nil {
 		fields = append(fields, broadcastfigure.FieldDelivered)
 	}
@@ -14676,6 +14751,8 @@ func (m *BroadcastFigureMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedFailed()
 	case broadcastfigure.FieldPending:
 		return m.AddedPending()
+	case broadcastfigure.FieldCancelled:
+		return m.AddedCancelled()
 	case broadcastfigure.FieldDelivered:
 		return m.AddedDelivered()
 	case broadcastfigure.FieldUndelivered:
@@ -14740,6 +14817,13 @@ func (m *BroadcastFigureMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddPending(v)
+		return nil
+	case broadcastfigure.FieldCancelled:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCancelled(v)
 		return nil
 	case broadcastfigure.FieldDelivered:
 		v, ok := value.(int)
@@ -14855,6 +14939,9 @@ func (m *BroadcastFigureMutation) ResetField(name string) error {
 		return nil
 	case broadcastfigure.FieldPending:
 		m.ResetPending()
+		return nil
+	case broadcastfigure.FieldCancelled:
+		m.ResetCancelled()
 		return nil
 	case broadcastfigure.FieldDelivered:
 		m.ResetDelivered()

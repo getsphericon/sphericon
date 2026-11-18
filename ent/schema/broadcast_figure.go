@@ -9,9 +9,10 @@ import (
 	"entgo.io/ent/schema/index"
 )
 
-// BroadcastFigure is a finished Broadcast's figures, frozen once before message retention deletes
-// its recipients and Outbound messages (ADR 0143). It is written once and never recomputed: a
-// Broadcast with this row reports it and nothing live, even while its rows are still being deleted.
+// BroadcastFigure is a finished (sent, failed or cancelled) Broadcast's figures, frozen once before
+// message retention deletes its recipients and Outbound messages (ADR 0143, ADR 0151). It is
+// written once and never recomputed: a Broadcast with this row reports it and nothing live, even
+// while its rows are still being deleted.
 type BroadcastFigure struct {
 	ent.Schema
 }
@@ -35,13 +36,17 @@ func (BroadcastFigure) Fields() []ent.Field {
 			Immutable(),
 		// The counts of the Stats of internal/domain/orchestration/broadcasts, but its Revenue (read
 		// from the Orders, which retention keeps). Pending is the recipients a failed Broadcast never
-		// sent (ADR 0046); none on a sent one.
+		// sent (ADR 0046) and the claims a cancelled one still had in flight; none on a sent one.
 		field.Int("recipients").NonNegative().Immutable(),
 		field.Int("unsubscribed").NonNegative().Immutable(),
 		field.Int("sent").NonNegative().Immutable(),
 		field.Int("skipped").NonNegative().Immutable(),
 		field.Int("failed").NonNegative().Immutable(),
 		field.Int("pending").NonNegative().Immutable(),
+		// The recipients a cancelled Broadcast left unsent (ADR 0150); none on any other. The
+		// database default fills the rows frozen before the column; a write always sets it.
+		field.Int("cancelled").NonNegative().Immutable().
+			Annotations(entsql.Default("0")),
 		field.Int("delivered").NonNegative().Immutable(),
 		field.Int("undelivered").NonNegative().Immutable(),
 		field.Int("bounced").NonNegative().Immutable(),
