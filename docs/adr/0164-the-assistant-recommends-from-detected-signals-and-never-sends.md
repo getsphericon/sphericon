@@ -5,6 +5,9 @@ build: [1467]
 
 # The assistant recommends from detected signals and never sends
 
+> **Revised before it was built** (#1467): the switch names the protocol, endpoint host and model, as
+> ADR 0139's now does, and the assistant with no Member is the author set by the job's context.
+
 > Extends [[0139-workspace-skills-and-inline-intents-on-an-instance-configured-model]] from intents a
 > Member asks for to Recommendations the assistant makes on its own.
 
@@ -30,7 +33,8 @@ author, never a sender, for any agent (ADR 0132), and a Control group can measur
   links to the reports it rests on; what it proposes, as zero or more drafts it made (a Segment, a draft
   Broadcast, an inactive Automation); and a status: `open`, `accepted` once a Member sends or publishes
   what it proposed, `dismissed` with an optional reason, or `expired` 14 days after it was made with
-  nothing done. Its author is the assistant. It is not a notification and not a task.
+  nothing done. Its author is the assistant, with no Member: the detector's job runs in the context
+  that sets that author, and no field of a write can. It is not a notification and not a task.
 
 ### When the assistant looks
 
@@ -50,7 +54,8 @@ author, never a sender, for any agent (ADR 0132), and a Control group can measur
   doing that with the draft, through the gates every send has.
 - **Data and consent as in ADR 0139**: the Instance's model, definitions and figures only, never a
   Contact, the Workspace's Skills included. An owner turns it on with a switch of its own, since it runs
-  unasked, under `intents:manage`, naming the provider and model accepted. Its tokens count in the same
+  unasked, under `intents:manage`, naming the protocol, endpoint host and model accepted, as ADR
+  0139's does. Its tokens count in the same
   metric and under the same daily cap as the inline intents.
 
 ### What it learned

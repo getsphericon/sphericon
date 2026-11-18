@@ -5,6 +5,9 @@ build: [1465]
 
 # A Condition tests a Contact's Orders and their lines
 
+> **Amended by [[0180-a-property-test-runs-in-postgres-as-one-sql-json-path]]:** a line filter is the Event filter's grammar over the line's keys, with every
+> operator under `and`, `or` and `not`, run as one SQL/JSON path.
+
 > Amends [[0064-revenue-is-read-from-order-events-and-credited-to-the-last-clicked-message]] (an Order
 > keeps its lines) and completes what
 > [[0153-a-conditions-event-test-filters-the-events-it-counts-by-their-properties]] left to Orders.

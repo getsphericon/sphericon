@@ -5,6 +5,11 @@ build: [1547]
 
 # An Automation branches into nested paths that rejoin
 
+> **Amended by [[0180-a-property-test-runs-in-postgres-as-one-sql-json-path]]:** the Enrollment's `event` copy is tested in Postgres as an SQL/JSON path,
+> not folded in memory; the test of the Enrollment's own message reaches the query as a boolean that
+> may be `NULL`. **Amended by [[0181-a-conditions-shape-is-typed-by-the-place-it-is-used]]:** where that test is valid is the tree type of a Branch path, and
+> whether a Condition can be unknown is read from its leaves.
+
 > **Amended by [[0136-a-wait-for-event-keeps-the-event-that-ended-it-for-later-steps]]:**
 > a Branch may also test the Event an earlier Wait for event arrived on, as a folded property.
 

@@ -5,6 +5,10 @@ build: [1546]
 
 # A Trigger, exit or goal matches an Event by its action and properties
 
+> **Amended by [[0180-a-property-test-runs-in-postgres-as-one-sql-json-path]]:** a matcher's filter is run by Postgres as one SQL/JSON path on the Event's
+> properties, not in memory, and it may hold the sent-by test of a message's System event. A Wait for
+> event awaits matchers too.
+
 > **Extended by [[0153-a-conditions-event-test-filters-the-events-it-counts-by-their-properties]]:**
 > a Condition's `event` leaf takes the same filter, whose Tag, Custom field or Score is Definition
 > use as a matcher's is; a Broadcast or Automation it names is not, since neither is ever removed.

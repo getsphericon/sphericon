@@ -4,6 +4,9 @@ status: accepted
 
 # A Segment's Condition compiles to generated ent predicates; an Event links to its Contact by a nullable FK
 
+> **Amended by [[0181-a-conditions-shape-is-typed-by-the-place-it-is-used]]:** a leaf is a member of a union by `kind` with typed fields, not a `field`
+> string with a prefix, and each place a Condition is used has a tree type of its own.
+
 > **Amended by [[0153-a-conditions-event-test-filters-the-events-it-counts-by-their-properties]]:**
 > the `event` leaf takes an optional filter on the counted Events' properties, ADR 0133's grammar.
 

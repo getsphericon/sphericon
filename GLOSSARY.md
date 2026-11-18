@@ -295,7 +295,8 @@ shared grammar: a Segment is a named Condition, a Rule holds one, each path of a
 Wait for event may hold one, and an **Event matcher**'s filter is one made of property tests only.
 A test of past Events may filter the Events it counts the same way, a message's Events also by the
 Broadcast or Automation that sent it and the link clicked; it counts only the Events still kept. A
-Branch alone may also test the Event a Wait for event arrived on (`awaited:<name>.<key>`).
+Branch or a Wait for event may also test the Event an earlier Wait for event arrived on. Each place a
+Condition is used admits its own kinds of test, and a test of properties names whose they are.
 _Avoid_: Filter, query, predicate, rule (a Rule is something else)
 
 **Score**:
@@ -897,8 +898,10 @@ _Avoid_: Stop condition, exit criteria, conversion
 
 **Event matcher**:
 An Event action with an optional filter on that Event's own properties (`contact.tagged` where `tag`
-is `qualified`): how a Trigger, an exit event and a goal event name the Events they react to. The
-filter says which Event, never which Contact; a test of the Contact is a Rule's.
+is `qualified`): how a Trigger, an exit event, a goal event and a **Wait for event** name the Events
+they react to. The filter says which Event, never which Contact; a test of the Contact is a Rule's
+or a Wait for event's Condition's. A message's Events may be filtered by the Broadcast or Automation
+that sent them.
 _Avoid_: Entry condition, event filter (unqualified), trigger condition
 
 **Enrollment**:
@@ -997,8 +1000,8 @@ _Avoid_: A/B test step, experiment, variant (that is a Broadcast's), random bran
 
 **Wait for event**:
 A Step that holds the Enrollment until an Event arrives or a timeout passes, then takes `arrived` or
-`timed_out`, two paths that rejoin after it. It waits for an Event of the actions it names (with an
-optional Condition on the Event), counted from when the Enrollment reached it, or for an open or
+`timed_out`, two paths that rejoin after it. It waits for an Event one of its **Event matchers**
+names (with an optional Condition on the Contact), counted from when the Enrollment reached it, or for an open or
 click of the message an earlier send Step sent to this Enrollment, counted whenever it happened.
 Waiting for an open or click has an _unknown_ path of its own, taken when that message went out
 untracked or was never sent to this Enrollment. It has a name, and an Event that arrived is kept on the
@@ -1379,7 +1382,7 @@ _Avoid_: Prompt (the MCP word for how it is served), playbook file, Template (th
 **Inline intent**:
 Help inside one of the app's editors from the model the Instance configures (a Segment from a
 description, a draft from a brief, an explanation of a report), on a Workspace whose owner accepted
-the named provider and model. The model sees definitions and figures, never a Contact; the app keeps
+the named protocol, endpoint host and model. The model sees definitions and figures, never a Contact; the app keeps
 no prompt or answer; what it makes is a draft a Member saves, and nothing it writes loads before then.
 _Avoid_: Chat, copilot, AI assistant (unqualified)
 
@@ -1393,8 +1396,9 @@ _Avoid_: Tainted, user input, PII (that is another question)
 
 **Author**:
 Who wrote a change to a Broadcast, an Automation, a Rule, a Segment or a Template: a User in the app,
-an API token (the Workspace's, or a User's Personal token, named with its User) or a Connection
-(named with the User it acts for and its client's self-declared name and host). Schedule and Publish
+an API token (the Workspace's, or a User's Personal token, named with its User), a Connection
+(named with the User it acts for and its client's self-declared name and host) or the assistant (for
+the Member who saved its draft, or for no one, on a Recommendation's draft). Schedule and Publish
 show every author since the object's last Schedule or Publish; a Segment and a Template, which have
 neither, show every author since they were made.
 _Avoid_: Owner, creator, last editor (an object has several authors)

@@ -4,6 +4,11 @@ status: accepted
 
 # A Rule is a stateless reaction to an Event, built on the Segment's Condition tree
 
+> **Amended by [[0180-a-property-test-runs-in-postgres-as-one-sql-json-path]]:** a `trigger:<key>` test is no longer folded in Go: the triggering Event's
+> properties reach the query as a `jsonb` parameter and the test runs there as an SQL/JSON path, so
+> the operators have no Go arm. **Amended by [[0181-a-conditions-shape-is-typed-by-the-place-it-is-used]]:** the test is a property leaf whose subject is
+> `trigger`, not a `trigger:` prefix, and only a Rule's tree type admits it.
+
 > Amended by [[0098-a-rule-is-deleted-not-archived]]: a Rule has no Archive; Delete discards one
 > with Firings and purges one without.
 

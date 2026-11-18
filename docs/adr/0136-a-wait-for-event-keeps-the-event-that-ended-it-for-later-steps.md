@@ -5,6 +5,11 @@ build: [1611]
 
 # A Wait for event keeps the Event that ended it for later Steps
 
+> **Amended by [[0180-a-property-test-runs-in-postgres-as-one-sql-json-path]]:** an `awaited` copy is tested in Postgres as an SQL/JSON path, not folded in
+> memory. **Amended by [[0181-a-conditions-shape-is-typed-by-the-place-it-is-used]]:** the test is a property leaf whose subject is `awaited` with the Wait
+> for event's name, not an `awaited:<name>.<key>` string, and a Branch path's and a Wait for event's
+> Condition admit it.
+
 A Wait for event (ADR 0124) moves an Enrollment on when an Event arrives, "a purchase within three
 days", but nothing after it can use that Event: a thank-you message cannot name the product bought.
 An Enrollment keeps one copy of an Event, the one that began it, with its properties bounded at

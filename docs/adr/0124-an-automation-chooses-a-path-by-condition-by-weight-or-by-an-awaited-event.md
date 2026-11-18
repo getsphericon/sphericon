@@ -5,6 +5,10 @@ build: [1547, 1611]
 
 # An Automation chooses a path by Condition, by weight or by an awaited Event
 
+> **Amended by [[0180-a-property-test-runs-in-postgres-as-one-sql-json-path]]:** a Wait for event awaits Event matchers (an action and an optional filter,
+> as a Trigger's); its optional Condition is an Automation Condition, as a Branch path's, and the
+> arriving Event's properties are tested by the matcher's filter.
+
 > **Amended by [[0136-a-wait-for-event-keeps-the-event-that-ended-it-for-later-steps]]:**
 > a Wait for event has a name and keeps the Event it arrived on, for later Steps and Branches.
 
