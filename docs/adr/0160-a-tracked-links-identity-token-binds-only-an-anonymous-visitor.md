@@ -34,7 +34,8 @@ only with Tracker consent.
 - **Only on a click that is recorded.** The token is added exactly when the click is recorded
   (ADR 0120): the message is tracked and its Destination's consent is to track now. A click that
   records nothing (an untracked message, its tracking withdrawn, a refusal since the send) redirects
-  without it. Whether a machine made the click does not matter.
+  without it. Whether a machine made the click does not matter: a scanner is kept out on the site
+  (below).
 - **Only to the Workspace's own sites, over `https`.** The Workspace lists the hostnames where its
   tracker runs, and only an `https` destination on one of them gets the token; a link to anyone
   else's site never carries it, and neither does a plain `http` one, where it would travel in clear.
@@ -49,14 +50,20 @@ only with Tracker consent.
   who clicks it; a later Identify without an Identity token, a form submit or another token leaves
   that Visitor where it is (ADR 0171), and a proven Identify moves it. Where the Workspace signs no
   Identity tokens, the binding stays, bounded by the 7 days and the listed sites.
-- **It lasts 7 days from the message's send**, and a token past that is ignored. The tracker removes it
-  from the address bar once read, so a copied URL does not carry it on.
+- **It is presented on the person's first interaction with the page.** The tracker removes the token
+  from the address bar on load, so a copied URL does not carry it on, keeps it in memory for that
+  page only, and sends it on the first pointer press, key press or touch, before the page is left.
+  A scanner that loads a link and runs its script makes none of them, so it binds no one; the page
+  views before the interaction are stitched once it binds, and a person who leaves without one is
+  not identified. A request whose User-Agent names a known crawler is ignored as well.
+- **It lasts 7 days from the message's send**, and a token past that is ignored.
 
 ## Consequences
 
 - The Workspace settings gain the switch and the list of hostnames; the click redirect appends the
   token when the click is recorded; the collect API takes the token with the Visitor id and answers
-  the same whatever it binds, so a token cannot be probed; the tracker reads and strips it.
+  the same whatever it binds, so a token cannot be probed; the tracker strips it on load and presents
+  it on the first interaction.
 - Glossary: **Link identity token**.
 
 ## Rejected
@@ -72,5 +79,8 @@ only with Tracker consent.
   bound, and a claim typed on the recipient's own browser (another person's email on a shared
   computer) would move them to a stranger, which ADR 0171 closes.
 - **No token on a click judged a machine's**: the judgment (ADR 0053) is a partial signal kept for the
-  rates, and on a click it mostly flags a person behind iCloud Private Relay; a scanner that runs the
-  page's script binds only its own anonymous Visitor.
+  rates, and it counts every click from an iCloud Private Relay range as a machine's, which is where
+  a person's click opened in Safari with Private Relay on comes from. The scanner is kept out where
+  it shows: it never interacts with the page.
+- **Presenting the token on load**: a scanner that runs the page's script would bind its own Visitor,
+  whose page views then read as the recipient's though nobody clicked.
