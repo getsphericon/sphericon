@@ -534,7 +534,7 @@ a mutable flag. Required on SMS and WhatsApp always, and on email only when the 
 **require-confirmed-opt-in** policy is on (default off = single opt-in); then Send-eligibility adds
 the one positive layer (see Send-eligibility). Only a person turns the policy on, asserting the
 current list consented, and that records a `grandfathered` Confirmation for each mailable address. Carries **provenance** — `double_opt_in` (clicked a
-confirmation link, or returned from `everything` on the **Preference page** on fresh proof), `grandfathered` (existing contacts at policy-enablement, its Event a Backfill), `imported`
+confirmation link, or returned from `everything` on the **Preference page** on fresh proof), `grandfathered` (existing contacts at policy-enablement, its Event history that triggers nothing), `imported`
 (asserted through the API or an import from the customer's server, with the consent wording, its source and the brand, by a customer who collected it, possibly through a verification service of their own) or `keyword` (a
 START sent on the Channel, from an On-site form's prefilled link carrying a Start token too); the strongest provenance wins (`double_opt_in` > `keyword` > `imported` > `grandfathered`): a weaker or equal one never replaces the one that stands. sphericon runs no SMS
 confirmation flow of its own. Confirmed via a signed link whose endpoint
@@ -721,7 +721,7 @@ requirement switched off) is not sent. Each Notice is sent and retried on its ow
 
 **Outbound message**:
 The durable record of one Outbound send — which surface and which of its records it belongs to,
-the Sending source (none for Transactional), the Sending domain, the provider's message id, whether
+the Sending source (none for Transactional or a confirmation email), the Sending domain, the provider's message id, whether
 it went out tracked and whether its tracking was withdrawn since (it then counts as untracked, for
 good), the outcome, and the lasting delivery and human engagement figures. Human opens, clicks and email
 delivery results keep the earliest time the Instance observed each kind, independently of the
