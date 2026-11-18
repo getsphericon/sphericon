@@ -250,8 +250,11 @@ Before running the `to-spec` skill, call the `advisor` tool first and take its a
 `to-spec` and `to-tickets` apply `ready-for-agent` only when every ADR, Step, module or contract a
 ticket builds on is on `main`, or is an open ticket it carries a native `blocked_by` edge to (see
 `docs/agents/issue-tracker.md`, "Blocking"). An accepted ADR with no ticket gets its own spec first.
-Check the code, not the glossary: the glossary may already describe what is decided but unbuilt. The
-skills are vendored, so this rule lives here rather than in them.
+Check the code, not the glossary: the glossary may already describe what is decided but unbuilt. A
+spec is ready once it is sliced: `to-spec` publishes it without the label, and `to-tickets` labels it
+`ready-for-agent` after its sub-issues are published, the one change it makes to the parent. The
+skills are vendored, so this rule lives here rather than in them; `mise run tickets:check` holds the
+mechanical part.
 
 ### Research notes stay out of this repository
 

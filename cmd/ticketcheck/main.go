@@ -1,6 +1,6 @@
 // Command ticketcheck runs the checks of internal/ticketcheck: that every ADR says whether it is
-// built (`adrs`, part of `mise run check:adr`), and that a ticket ready for an agent builds on built
-// ADRs (`issues`, `mise run tickets:check`, and .github/workflows/tickets.yml with --apply).
+// built (`adrs`, part of `mise run check:adr`), and that a ticket ready for an agent is ready
+// (`issues`, `mise run tickets:check`, and .github/workflows/tickets.yml with --apply).
 package main
 
 import (
@@ -30,7 +30,7 @@ func main() {
 func newRoot() *cli.Command {
 	return &cli.Command{
 		Name:  "ticketcheck",
-		Usage: "whether ADRs are built, and whether a ticket ready for an agent builds on built ADRs",
+		Usage: "whether ADRs are built, and whether a ticket ready for an agent is ready: built ADRs, native edges, a sliced spec",
 		Action: func(_ context.Context, cmd *cli.Command) error {
 			if cmd.Args().Present() {
 				return fmt.Errorf("unknown command %q (see `ticketcheck --help`)", cmd.Args().First())
@@ -51,7 +51,7 @@ func newRoot() *cli.Command {
 			},
 			{
 				Name:      "issues",
-				Usage:     "the named issues, or every open ready-for-agent issue, build on built ADRs",
+				Usage:     "the named issues, or every open ready-for-agent issue, build on built ADRs, carry a native edge for each `Blocked by` issue, and are sliced when a spec",
 				ArgsUsage: "[<number>...]",
 				Flags: []cli.Flag{&cli.BoolFlag{
 					Name:  flagApply,
@@ -81,24 +81,25 @@ func checkIssues(ctx context.Context, args []string, apply bool) error {
 	}
 	failed := 0
 	for _, issue := range issues {
-		gaps := ticketcheck.Check(issue, adrs, tickets)
-		if len(gaps) == 0 {
+		report := ticketcheck.Review(issue, adrs, tickets)
+		if !report.Failed() {
 			continue
 		}
 		failed++
 		fmt.Printf("#%d %s\n", issue.Number, issue.Title)
-		for _, gap := range gaps {
-			fmt.Printf("  %s\n", gap)
+		for _, line := range report.Lines() {
+			fmt.Printf("  %s\n", line)
 		}
 		if apply {
-			if err := tracker.TakeBack(ctx, issue.Number, gaps); err != nil {
+			if err := tracker.TakeBack(ctx, issue.Number, report); err != nil {
 				return err
 			}
 		}
 	}
 	if failed > 0 && !apply {
-		return fmt.Errorf("%d ticket(s) build on ADRs that are not built: wait for a ticket that builds each "+
-			"(`Blocked by #<n>`) or add a line `Without ADR <NNNN>: <why>`", failed)
+		return fmt.Errorf("%d ticket(s) not ready for an agent: wait for a ticket that builds each unbuilt ADR "+
+			"(a native edge) or add a line `Without ADR <NNNN>: <why>`, give each `Blocked by` issue a native edge, "+
+			"and slice a spec with `/to-tickets`", failed)
 	}
 	return nil
 }

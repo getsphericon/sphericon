@@ -214,10 +214,59 @@ func TestCheckHoldsWhatIsNeitherWaitedForNorWaived(t *testing.T) {
 	}
 }
 
-func TestCommentNamesEveryGapAndTheWayOut(t *testing.T) {
-	comment := ticketcheck.Comment([]ticketcheck.Gap{{ADR: "0136"}, {ADR: "0126", Tickets: []int{1400}}})
+func TestReviewWantsANativeEdgeForEachOpenIssueABlockedByLineNames(t *testing.T) {
+	// #1400 is open; #1438 is closed, or a pull request, which the tracker cannot gate on.
+	for name, tc := range map[string]struct {
+		issue ticketcheck.Issue
+		want  []int
+	}{
+		"a line, no edge":      {ticketcheck.Issue{Number: 1, Body: "Blocked by #1400 and #1438.\n"}, []int{1400}},
+		"a section, no edge":   {ticketcheck.Issue{Number: 1, Body: "## Blocked by\n\n- #1400\n- #1400\n"}, []int{1400}},
+		"a line with its edge": {ticketcheck.Issue{Number: 1, Body: "Blocked by #1400.\n", BlockedBy: []int{1400}}, nil},
+		"the parent's edge":    {ticketcheck.Issue{Number: 1, Parent: 9, Body: "Blocked by #1400.\n", BlockedBy: []int{1400}}, nil},
+		"a ticket in prose":    {ticketcheck.Issue{Number: 1, Body: "Needs what #1400 builds.\n"}, nil},
+		"a closed issue":       {ticketcheck.Issue{Number: 1, Body: "Blocked by #1438 (the ADR).\n"}, nil},
+	} {
+		t.Run(name, func(t *testing.T) {
+			report := ticketcheck.Review(tc.issue, decisions(t), openTickets(1400))
+			require.Equal(t, tc.want, report.Unlinked)
+		})
+	}
+}
+
+func TestReviewHoldsASpecUntilItHasSlices(t *testing.T) {
+	spec := "## Problem Statement\n\nx\n\n## User Stories\n\n1. As a marketer\n\n## Implementation Decisions\n\n- y\n"
+	for name, tc := range map[string]struct {
+		issue ticketcheck.Issue
+		want  bool
+	}{
+		"a spec with no slices": {ticketcheck.Issue{Number: 1, Body: spec}, true},
+		"a sliced spec":         {ticketcheck.Issue{Number: 1, Body: spec, SubIssues: []int{2, 3}}, false},
+		"a ticket":              {ticketcheck.Issue{Number: 1, Body: "## What to build\n\n## User Stories\n"}, false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			report := ticketcheck.Review(tc.issue, decisions(t), openTickets())
+			require.Equal(t, tc.want, report.Unsliced)
+			require.Equal(t, tc.want, report.Failed())
+		})
+	}
+}
+
+func TestCommentNamesEveryFindingAndTheWayOut(t *testing.T) {
+	comment := ticketcheck.Comment(ticketcheck.Report{
+		Gaps:     []ticketcheck.Gap{{ADR: "0136"}, {ADR: "0126", Tickets: []int{1400}}},
+		Unlinked: []int{1400, 1401},
+		Unsliced: true,
+	})
 	require.Contains(t, comment, "- ADR 0136 is not built, and no ticket builds it yet\n")
 	require.Contains(t, comment, "- ADR 0126 is not built yet: #1400 builds it\n")
+	require.Contains(t, comment, "- the body says it is blocked by #1400, #1401, with no native blocking edge\n")
+	require.Contains(t, comment, "- a spec with no slices: no sub-issue builds it yet\n")
 	require.Contains(t, comment, "`Without ADR <NNNN>: <why>`")
+	require.Contains(t, comment, "`/to-tickets`")
 	require.Contains(t, comment, "not a request for `/triage`")
+
+	gapsOnly := ticketcheck.Comment(ticketcheck.Report{Gaps: []ticketcheck.Gap{{ADR: "0136"}}})
+	require.NotContains(t, gapsOnly, "`/to-tickets`")
+	require.NotContains(t, gapsOnly, "native blocking edge for each issue")
 }

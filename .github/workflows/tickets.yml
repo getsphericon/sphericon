@@ -1,8 +1,9 @@
 name: Tickets
 
-# A ticket labelled ready-for-agent must build on ADRs that are built (internal/ticketcheck): an ADR
-# it names whose `build:` says it is not built is waited for or waived in the ticket. A ticket that
-# fails goes back to needs-triage with a comment naming the ADRs. It runs when a ticket is opened,
+# A ticket labelled ready-for-agent must be ready (internal/ticketcheck): an ADR it names whose
+# `build:` says it is not built is waited for or waived in the ticket, each open issue its `Blocked by`
+# line names has a native edge, and a spec has slices. A ticket that fails goes back to needs-triage
+# with a comment naming what keeps it. It runs when a ticket is opened,
 # labelled or edited, and over every ready ticket when an ADR changes on main (an ADR a ticket names
 # may land, or its `build:` change, after the ticket was labelled).
 on:

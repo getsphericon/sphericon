@@ -188,10 +188,15 @@ func (t Tracker) Issue(ctx context.Context, number int) (Issue, bool, error) {
 	return issue, g.ready(), err
 }
 
-// withBlockers adds the issue's parent and the native blocking edges of the issue and of its
-// parent: a sub-issue waits for what its parent waits for.
+// withBlockers adds the issue's parent, its sub-issues and the native blocking edges of the issue
+// and of its parent: a sub-issue waits for what its parent waits for.
 func (Tracker) withBlockers(ctx context.Context, g ghIssue) (Issue, error) {
 	issue := Issue{Number: g.Number, Title: g.Title, Body: g.Body}
+	subIssues, err := numbers(ctx, g.Number, fmt.Sprintf("repos/{owner}/{repo}/issues/%d/sub_issues", g.Number))
+	if err != nil {
+		return Issue{}, err
+	}
+	issue.SubIssues = subIssues
 	parent, err := gh(ctx, "api", fmt.Sprintf("repos/{owner}/{repo}/issues/%d", g.Number),
 		"--jq", `.parent_issue_url // "" | split("/") | last`)
 	if err != nil {
@@ -216,29 +221,33 @@ func (Tracker) withBlockers(ctx context.Context, g ghIssue) (Issue, error) {
 }
 
 func nativeBlockers(ctx context.Context, number int) ([]int, error) {
-	out, err := gh(ctx, "api", fmt.Sprintf("repos/{owner}/{repo}/issues/%d/dependencies/blocked_by", number),
-		"--jq", ".[].number")
+	return numbers(ctx, number, fmt.Sprintf("repos/{owner}/{repo}/issues/%d/dependencies/blocked_by", number))
+}
+
+// numbers reads the issue numbers of a list endpoint about an issue, every page of it.
+func numbers(ctx context.Context, number int, endpoint string) ([]int, error) {
+	out, err := gh(ctx, "api", "--paginate", endpoint, "--jq", ".[].number")
 	if err != nil {
 		return nil, err
 	}
-	var numbers []int
+	var found []int
 	for field := range strings.FieldsSeq(out) {
 		n, err := strconv.Atoi(field)
 		if err != nil {
-			return nil, fmt.Errorf("blocked_by of #%d: %q is not a number", number, field)
+			return nil, fmt.Errorf("%s of #%d: %q is not a number", endpoint, number, field)
 		}
-		numbers = append(numbers, n)
+		found = append(found, n)
 	}
-	return numbers, nil
+	return found, nil
 }
 
 // TakeBack moves an issue from ready-for-agent to needs-triage and says why.
-func (Tracker) TakeBack(ctx context.Context, number int, gaps []Gap) error {
+func (Tracker) TakeBack(ctx context.Context, number int, report Report) error {
 	n := strconv.Itoa(number)
 	if _, err := gh(ctx, "issue", "edit", n, "--remove-label", ReadyLabel, "--add-label", TriageLabel); err != nil {
 		return err
 	}
-	_, err := gh(ctx, "issue", "comment", n, "--body", Comment(gaps))
+	_, err := gh(ctx, "issue", "comment", n, "--body", Comment(report))
 	return err
 }
 
