@@ -16,7 +16,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -124,8 +123,9 @@ func TestTurningConfirmedOptInOnWithoutTheConfirmationEmailIsRefused(t *testing.
 	_, err := setConfirmedOptIn(t, env, env.SiteActor(t, fixtures.OwnerJohnEmail), true)
 
 	refused := testhelper.SiteRefusal(t, err, http.StatusConflict)
+	after := grandfatheredOfAcme(t, env)
 	assert.Equal(t, siteapi.ProblemCodeConfirmationEmailRequired, refused.Code.Value)
-	assert.Equal(t, before, grandfatheredOfAcme(t, env), "nothing is grandfathered")
+	assert.Equal(t, before, after, "nothing is grandfathered")
 	assert.Empty(t, env.QueuedEvents(t, events.NameAuditEntry))
 }
 
@@ -162,11 +162,13 @@ func TestTurningConfirmedOptInOnGrandfathersTheMailableListAsHistory(t *testing.
 	ws, err := setConfirmedOptIn(t, env, owner, true)
 	require.NoError(t, err)
 
-	assert.True(t, ws.RequireConfirmedOptIn)
-	assert.ElementsMatch(t, before, acmeEmailAudience(t, env), "the next Broadcast reaches the same audience")
+	after := acmeEmailAudience(t, env)
 	grandfathered := grandfatheredOfAcme(t, env) - grandfatheredBefore
+	history := historyOf() - historyBefore
+	assert.True(t, ws.RequireConfirmedOptIn)
+	assert.ElementsMatch(t, before, after, "the next Broadcast reaches the same audience")
 	require.Positive(t, grandfathered)
-	assert.Equal(t, grandfathered, historyOf()-historyBefore, "each Confirmation has its Event, as history")
+	assert.Equal(t, grandfathered, history, "each Confirmation has its Event, as history")
 
 	for _, args := range env.JobsOf(t, jobs.EvaluateTriggerArgs{}.Kind()) {
 		assert.NotEqual(t, systemevent.MarketingConfirmed, args["action"], "no Automation starts")
@@ -184,7 +186,7 @@ func TestTurningConfirmedOptInOnGrandfathersTheMailableListAsHistory(t *testing.
 	require.Len(t, entries, 2, "the email's set-up and the switch")
 	diff, err := json.Marshal(entries[1].Diff)
 	require.NoError(t, err)
-	assert.JSONEq(t, `{"require_confirmed_opt_in":{"from":false,"to":true},"`+workspaces.DiffConfirmationsRecorded+`":`+strconv.Itoa(grandfathered)+`}`, string(diff))
+	assert.JSONEq(t, `{"require_confirmed_opt_in":{"from":false,"to":true},"confirmations_recorded":`+strconv.Itoa(grandfathered)+`}`, string(diff))
 }
 
 func TestAContactCreatedAfterConfirmedOptInIsUnconfirmed(t *testing.T) {
@@ -203,8 +205,9 @@ func TestAContactCreatedAfterConfirmedOptInIsUnconfirmed(t *testing.T) {
 	decision, err := eligibility.New().Check(t.Context(), env.DB.Scoped(fixtures.AcmeID),
 		eligibility.CheckInput{Channel: channels.Email, Destination: "late.comer@example.org", Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
+	audience := acmeEmailAudience(t, env)
 	assert.Equal(t, eligibility.ReasonUnconfirmed, decision.Reason)
-	assert.NotContains(t, acmeEmailAudience(t, env), int64(created.ID))
+	assert.NotContains(t, audience, int64(created.ID))
 }
 
 // Turning it on while it is on grandfathers nobody who came since; turning it off keeps every
@@ -229,20 +232,22 @@ func TestASwitchToTheStateTheWorkspaceIsInChangesNothingAndOffKeepsTheConfirmati
 
 	again, err := setConfirmedOptIn(t, env, owner, true)
 	require.NoError(t, err)
-	assert.True(t, again.RequireConfirmedOptIn)
-	assert.Equal(t, confirmed, count(), "nobody who came since is grandfathered")
-
+	afterAgain := count()
 	off, err := setConfirmedOptIn(t, env, owner, false)
 	require.NoError(t, err)
+	afterOff := count()
+
+	assert.True(t, again.RequireConfirmedOptIn)
+	assert.Equal(t, confirmed, afterAgain, "nobody who came since is grandfathered")
 	assert.False(t, off.RequireConfirmedOptIn)
-	assert.Equal(t, confirmed, count(), "off keeps every Confirmation")
+	assert.Equal(t, confirmed, afterOff, "off keeps every Confirmation")
 
 	entries := lo.Filter(testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry),
 		func(e *events.AuditEntry, _ int) bool { return e.Action == events.ActionWorkspaceUpdate })
 	require.Len(t, entries, 3, "the set-up, on and off: the repeat is not recorded")
 	diff, err := json.Marshal(entries[2].Diff)
 	require.NoError(t, err)
-	assert.JSONEq(t, `{"require_confirmed_opt_in":{"from":true,"to":false},"`+workspaces.DiffConfirmationsRecorded+`":0}`, string(diff))
+	assert.JSONEq(t, `{"require_confirmed_opt_in":{"from":true,"to":false},"confirmations_recorded":0}`, string(diff))
 }
 
 func TestTurningConfirmedOptInOnNamesTheRevisionItWasMadeOn(t *testing.T) {

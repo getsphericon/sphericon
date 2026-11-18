@@ -1825,7 +1825,7 @@
       "affirmDescription": "By turning this on you confirm that every address you can email now agreed to receive your email. Each one is recorded as confirmed (grandfathered), including addresses that did not confirm while the setting was on before. From then on a new address gets email only after it confirms.",
       "affirmTitle": "Turn on confirmed opt-in?",
       "description": "Email reaches an address only once it confirms, by the link of a confirmation email. Turning it off keeps every confirmation.",
-      "emailDescription": "The email a confirmation request sends. Its Confirm button, the line that nothing happens if the person did not ask, and your postal address are added for you.",
+      "emailDescription": "The email a confirmation request sends. Its Confirm button, the line that nothing happens if the person did not ask, and your postal address when you have one are added for you.",
       "emailRequired": "Set up the confirmation email below before turning this on.",
       "emailTitle": "Confirmation email",
       "errorTitle": "Could not change confirmed opt-in",

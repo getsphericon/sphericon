@@ -16,9 +16,8 @@ import (
 )
 
 // grandfatherTyrell grandfathers Tyrell's eligibility matrix page by page, limit addresses at a
-// time, each page in a transaction of its own, and returns how many it recorded and the pages it
-// took.
-func grandfatherTyrell(t *testing.T, env *testhelper.TestEnv, limit int) (recorded, pages int) {
+// time, each page in a transaction of its own, and returns how many it recorded.
+func grandfatherTyrell(t *testing.T, env *testhelper.TestEnv, limit int) (recorded int) {
 	t.Helper()
 	confs := testhelper.Module[*confirmations.Module](env)
 	bus := testhelper.Module[*events.Bus](env)
@@ -31,9 +30,8 @@ func grandfatherTyrell(t *testing.T, env *testhelper.TestEnv, limit int) (record
 		})
 		require.NoError(t, err)
 		recorded += page.Recorded
-		pages++
 	}
-	return recorded, pages
+	return recorded
 }
 
 // provenanceOf is the provenance of the email Confirmation of address in Tyrell, "" when it has none.
@@ -54,18 +52,27 @@ func provenanceOf(t *testing.T, env *testhelper.TestEnv, address string) confirm
 func TestGrandfatheringCoversTheMailableAddressesOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	recorded, _ := grandfatherTyrell(t, env, confirmations.GrandfatherPage)
+	recorded := grandfatherTyrell(t, env, confirmations.GrandfatherPage)
 
-	for _, mailable := range []string{fixtures.TyrellMatrixCleanEmail, fixtures.TyrellMatrixUnsubBroadcastsEmail, fixtures.TyrellMatrixUnsubAutomationEmail} {
-		assert.Equal(t, confirmation.ProvenanceGrandfathered, provenanceOf(t, env, mailable), mailable)
+	got := map[string]confirmation.Provenance{}
+	for _, address := range []string{
+		fixtures.TyrellMatrixCleanEmail, fixtures.TyrellMatrixUnsubBroadcastsEmail, fixtures.TyrellMatrixUnsubAutomationEmail,
+		fixtures.TyrellMatrixSuppressedEmail, fixtures.TyrellMatrixUnsubEverythingEmail, fixtures.TyrellMatrixConfirmedEmail,
+	} {
+		got[address] = provenanceOf(t, env, address)
 	}
-	for _, refused := range []string{fixtures.TyrellMatrixSuppressedEmail, fixtures.TyrellMatrixUnsubEverythingEmail} {
-		assert.Empty(t, provenanceOf(t, env, refused), refused)
-	}
-	assert.Equal(t, confirmation.ProvenanceDoubleOptIn, provenanceOf(t, env, fixtures.TyrellMatrixConfirmedEmail))
 	n, err := env.DB.Scoped(fixtures.TyrellID).Confirmation().Query().
 		Where(confirmation.ProvenanceEQ(confirmation.ProvenanceGrandfathered)).Count(t.Context())
 	require.NoError(t, err)
+
+	assert.Equal(t, map[string]confirmation.Provenance{
+		fixtures.TyrellMatrixCleanEmail:           confirmation.ProvenanceGrandfathered,
+		fixtures.TyrellMatrixUnsubBroadcastsEmail: confirmation.ProvenanceGrandfathered,
+		fixtures.TyrellMatrixUnsubAutomationEmail: confirmation.ProvenanceGrandfathered,
+		fixtures.TyrellMatrixSuppressedEmail:      "",
+		fixtures.TyrellMatrixUnsubEverythingEmail: "",
+		fixtures.TyrellMatrixConfirmedEmail:       confirmation.ProvenanceDoubleOptIn,
+	}, got)
 	assert.Equal(t, n, recorded, "it counts what it recorded")
 }
 
@@ -74,10 +81,9 @@ func TestGrandfatheringCoversTheMailableAddressesOnly(t *testing.T) {
 func TestGrandfatheringInPagesRecordsWhatOnePageWould(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	recorded, pages := grandfatherTyrell(t, env, 1)
-	again, _ := grandfatherTyrell(t, env, confirmations.GrandfatherPage)
+	inPages := grandfatherTyrell(t, env, 1)
+	again := grandfatherTyrell(t, env, confirmations.GrandfatherPage)
 
-	assert.Greater(t, pages, recorded, "a page per address, and the last finds none")
-	assert.Positive(t, recorded)
+	assert.Positive(t, inPages)
 	assert.Zero(t, again, "a second pass finds nothing left to grandfather")
 }

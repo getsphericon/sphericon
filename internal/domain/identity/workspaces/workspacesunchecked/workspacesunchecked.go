@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -147,4 +148,57 @@ func cycleStorage(c *ent.Client, id int64, now time.Time) lifecycle.Storage[work
 			return n == 1, err
 		},
 	}
+}
+
+// DiffConfirmationsRecorded is the key of the switch of confirmed opt-in's Audit diff that holds
+// how many Confirmations the switch recorded (ADR 0013): the grandfathered ones turning it on
+// asserts, none when it is turned off.
+const DiffConfirmationsRecorded = "confirmations_recorded"
+
+// SwitchConfirmedOptInInput turns confirmed opt-in On or off, made on Revision (ADR 0119), when
+// Recorded Confirmations were recorded for it.
+type SwitchConfirmedOptInInput struct {
+	Revision int64
+	On       bool
+	Recorded int
+}
+
+// SwitchedConfirmedOptIn is a switch of confirmed opt-in: the Workspace as it now reads, and the
+// switch's Audit entry for the caller to record, nil when the switch changed nothing.
+type SwitchedConfirmedOptIn struct {
+	Workspace *ent.Workspace
+	Audit     *events.AuditEntry
+}
+
+// SwitchConfirmedOptInIn turns the scoped Workspace's confirmed opt-in on or off in the
+// transaction s is bound to, refused as workspaces.ConfirmedOptInSwitch refuses it. It is unchecked:
+// turning it on is sound only once every address mailable now holds a Confirmation, which the
+// contacts context records and identity cannot check, so its caller grandfathers them in the same
+// transaction (ADR 0013). The write goes through an unaudited scope, and it returns the switch's
+// one `workspace.update` Audit entry for the caller to record, carrying in.Recorded, which a
+// change of a column alone cannot carry; none, with nothing written, for a switch to the state the
+// Workspace is in.
+func (m *Module) SwitchConfirmedOptInIn(ctx context.Context, s *ent.Scoped, in SwitchConfirmedOptInInput) (SwitchedConfirmedOptIn, error) {
+	before, err := s.Workspace(ctx)
+	if err != nil {
+		return SwitchedConfirmedOptIn{}, err
+	}
+	changes, err := workspaces.ConfirmedOptInSwitch(before, in.Revision, in.On)
+	if err != nil || !changes {
+		return SwitchedConfirmedOptIn{Workspace: before}, err
+	}
+	after, err := events.Unaudited(s).EditWorkspaceAt(in.Revision).
+		Refusing(workspaces.ErrNotFound, workspaces.ErrRevisionChanged).
+		SetRequireConfirmedOptIn(in.On).Save(ctx)
+	if err != nil {
+		return SwitchedConfirmedOptIn{}, err
+	}
+	diff := map[string]any{
+		workspace.FieldRequireConfirmedOptIn: events.Change(before.RequireConfirmedOptIn, in.On),
+		DiffConfirmationsRecorded:            in.Recorded,
+	}
+	return SwitchedConfirmedOptIn{
+		Workspace: after,
+		Audit:     events.WorkspaceAudit(after, s.Actor(), events.ActionWorkspaceUpdate, diff),
+	}, nil
 }

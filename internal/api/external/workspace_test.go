@@ -66,7 +66,7 @@ func TestExternalWorkspaceOnAnInstanceWithoutSendCapsReadsNull(t *testing.T) {
 // that changes it: only a person turns it on, in the console.
 func TestExternalWorkspaceCarriesConfirmedOptIn(t *testing.T) {
 	env := testhelper.Setup(t)
-	assert.False(t, workspaceOf(t, env).RequireConfirmedOptIn)
+	before := workspaceOf(t, env)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	_, err := owner.SiteWorkspacesUpdateConfirmationEmail(t.Context(), &siteapi.SiteUpdateConfirmationEmailInput{
 		Revision: siteapi.Revision(env.WorkspaceRevision(t.Context(), t, string(fixtures.AcmePublicID))), FromEmail: "hello@mail.acme.com",
@@ -76,6 +76,8 @@ func TestExternalWorkspaceCarriesConfirmedOptIn(t *testing.T) {
 		Revision: siteapi.Revision(env.WorkspaceRevision(t.Context(), t, string(fixtures.AcmePublicID))), Enabled: true,
 	}, siteapi.SiteWorkspacesSetConfirmedOptInParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
+	after := workspaceOf(t, env)
 
-	assert.True(t, workspaceOf(t, env).RequireConfirmedOptIn)
+	assert.False(t, before.RequireConfirmedOptIn)
+	assert.True(t, after.RequireConfirmedOptIn)
 }

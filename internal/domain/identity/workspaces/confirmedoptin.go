@@ -7,8 +7,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/workspace"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -135,19 +133,6 @@ func setOrClear(v *string, set func(string) *ent.WorkspaceScopedUpdateOne, reset
 	reset()
 }
 
-// DiffConfirmationsRecorded is the key of the switch of confirmed opt-in's Audit diff that holds
-// how many Confirmations the switch recorded (ADR 0013): the grandfathered ones turning it on
-// asserts, none when it is turned off.
-const DiffConfirmationsRecorded = "confirmations_recorded"
-
-// SwitchConfirmedOptInInput turns confirmed opt-in On or off, made on Revision (ADR 0119), when
-// Recorded Confirmations were recorded for it.
-type SwitchConfirmedOptInInput struct {
-	Revision int64
-	On       bool
-	Recorded int
-}
-
 // ConfirmedOptInSwitch decides a switch of ws's confirmed opt-in to on, made on revision (ADR
 // 0013, ADR 0119), before anything is written for it: whether it changes the Workspace (a switch to
 // the state it is in changes nothing), refused with ErrRevisionChanged on a revision the Workspace
@@ -163,29 +148,4 @@ func ConfirmedOptInSwitch(ws *ent.Workspace, revision int64, on bool) (changes b
 		return false, ErrConfirmationEmailRequired
 	}
 	return true, nil
-}
-
-// SwitchConfirmedOptInIn turns the scoped Workspace's confirmed opt-in on or off in the
-// transaction s is bound to, refused as ConfirmedOptInSwitch refuses it, and records its one
-// `workspace.update` Audit entry with the number of Confirmations in.Recorded, which a change of a
-// column alone cannot carry: the write itself goes through an unaudited scope. A switch to the
-// state the Workspace is in writes nothing and records nothing.
-func (m *Module) SwitchConfirmedOptInIn(ctx context.Context, s *ent.Scoped, in SwitchConfirmedOptInInput) (*ent.Workspace, error) {
-	before, err := s.Workspace(ctx)
-	if err != nil {
-		return nil, err
-	}
-	changes, err := ConfirmedOptInSwitch(before, in.Revision, in.On)
-	if err != nil || !changes {
-		return before, err
-	}
-	after, err := edit(events.Unaudited(s), in.Revision).SetRequireConfirmedOptIn(in.On).Save(ctx)
-	if err != nil {
-		return nil, err
-	}
-	diff := map[string]any{
-		workspace.FieldRequireConfirmedOptIn: events.Change(before.RequireConfirmedOptIn, in.On),
-		DiffConfirmationsRecorded:            in.Recorded,
-	}
-	return after, m.bus.RecordAuditIn(ctx, s, events.WorkspaceAudit(after, s.Actor(), events.ActionWorkspaceUpdate, diff))
 }
