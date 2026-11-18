@@ -13,13 +13,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -196,7 +196,7 @@ func TestATwilioRefusalOfTheNumberFailsThatMessageAndTheRunGoesOn(t *testing.T) 
 
 			msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(ctx)
 			assert.Equal(t, outboundmessage.StatusFailed, msg.Status)
-			assert.Equal(t, tc.reason, lo.FromPtr(msg.Reason))
+			assert.Equal(t, tc.reason, lo.FromPtr(msg.Failure))
 			run := env.DB.AutomationRun.GetX(ctx, runID)
 			assert.Equal(t, automationrun.StatusCompleted, run.Status, "the Enrollment goes on")
 			inbox := env.Twilio.Messages()
@@ -229,8 +229,8 @@ func TestATwilioRefusalOfAnAlphanumericSenderFailsThatMessageOnly(t *testing.T) 
 
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(ctx)
 	assert.Equal(t, outboundmessage.StatusFailed, msg.Status)
-	assert.Contains(t, lo.FromPtr(msg.Reason), "message_refused: ")
-	assert.Contains(t, lo.FromPtr(msg.Reason), "(error 21606)")
+	assert.Contains(t, lo.FromPtr(msg.Failure), "message_refused: ")
+	assert.Contains(t, lo.FromPtr(msg.Failure), "(error 21606)")
 	run := env.DB.AutomationRun.GetX(ctx, runID)
 	assert.Equal(t, automationrun.StatusCompleted, run.Status, "the Enrollment goes on")
 	route, err := env.OutboundModule().Route(ctx, env.DB.Scoped(fixtures.AcmeID), "sms", new(int64(account.Integration.ID)))
@@ -257,8 +257,10 @@ func TestANumberTwilioSaysIsNoMobileNumberIsSuppressed(t *testing.T) {
 	assert.Equal(t, int64(fixtures.ContactTexterConfirmedID), lo.FromPtr(suppressed.ContactID))
 	msgs := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).
 		Order(outboundmessage.ByID()).AllX(ctx)
-	skipped := lo.Map(msgs, func(m *ent.OutboundMessage, _ int) string { return string(m.Status) + ": " + lo.FromPtr(m.Reason) })
-	suppressedSkip := string(outboundmessage.StatusSkipped) + ": " + eligibility.ReasonSuppressed
+	skipped := lo.Map(msgs, func(m *ent.OutboundMessage, _ int) string {
+		return string(m.Status) + ": " + string(lo.FromPtr(m.SkippedReason))
+	})
+	suppressedSkip := string(outboundmessage.StatusSkipped) + ": " + string(skipreason.Suppressed)
 	assert.Equal(t, []string{suppressedSkip, suppressedSkip}, skipped)
 	inbox := env.Twilio.Messages()
 	assert.Empty(t, inbox, "the second text never reached Twilio, though Twilio would accept it")

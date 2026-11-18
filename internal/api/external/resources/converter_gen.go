@@ -47,6 +47,7 @@ import (
 	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
 	providers "github.com/getsphericon/sphericon/internal/kernel/providers"
 	ruleaction "github.com/getsphericon/sphericon/internal/kernel/ruleaction"
+	skipreason "github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	jx "github.com/go-faster/jx"
 )
@@ -1061,7 +1062,8 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) ext
 		externalapiContactExportOutboundMessage.SendingDomain = optNilString((*source).SendingDomain)
 		externalapiContactExportOutboundMessage.ProviderMessageId = optNilString((*source).ProviderMessageID)
 		externalapiContactExportOutboundMessage.Status = string((*source).Status)
-		externalapiContactExportOutboundMessage.Reason = optNilString((*source).Reason)
+		externalapiContactExportOutboundMessage.SkippedReason = optSkippedReason(c, (*source).SkippedReason)
+		externalapiContactExportOutboundMessage.Failure = optNilString((*source).Failure)
 		externalapiContactExportOutboundMessage.ClaimedAt = timestamp((*source).ClaimedAt)
 		externalapiContactExportOutboundMessage.SentAt = optNilTimestamp((*source).SentAt)
 		externalapiContactExportOutboundMessage.DeliveredAt = optNilTimestamp((*source).DeliveredAt)
@@ -1409,6 +1411,30 @@ func (c *ConverterImpl) SesConfigToResource(source integrations.RedactedSES) ext
 	externalapiSesConfig.ConfigurationSet = omitEmptyConfigurationSet(source.ConfigurationSet)
 	externalapiSesConfig.ConfigurationSetMissing = source.ConfigurationSetMissing
 	return externalapiSesConfig
+}
+func (c *ConverterImpl) SkippedReasonToResource(source skipreason.Reason) external.SkippedReason {
+	var externalapiSkippedReason external.SkippedReason
+	switch source {
+	case skipreason.ContactErased:
+		externalapiSkippedReason = external.SkippedReasonContactErased
+	case skipreason.FrequencyCap:
+		externalapiSkippedReason = external.SkippedReasonFrequencyCap
+	case skipreason.NoDestination:
+		externalapiSkippedReason = external.SkippedReasonNoDestination
+	case skipreason.NoLocalTime:
+		externalapiSkippedReason = external.SkippedReasonNoLocalTime
+	case skipreason.Suppressed:
+		externalapiSkippedReason = external.SkippedReasonSuppressed
+	case skipreason.Unconfirmed:
+		externalapiSkippedReason = external.SkippedReasonUnconfirmed
+	case skipreason.UnsubscribedEverything:
+		externalapiSkippedReason = external.SkippedReasonUnsubscribedEverything
+	case skipreason.UnsubscribedSource:
+		externalapiSkippedReason = external.SkippedReasonUnsubscribedSource
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiSkippedReason
 }
 func (c *ConverterImpl) SmsBroadcastContentToResource(source *ent.Broadcast) external.SmsBroadcastContent {
 	var externalapiSmsBroadcastContent external.SmsBroadcastContent

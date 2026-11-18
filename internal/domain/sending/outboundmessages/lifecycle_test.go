@@ -34,6 +34,7 @@ func TestAFinalMessageIsNeverMarkedFailed(t *testing.T) {
 
 		after := s.OutboundMessage().Query().Where(outboundmessage.ID(before.ID)).OnlyX(ctx)
 		assert.Equal(t, status, after.Status)
-		assert.Equal(t, before.Reason, after.Reason)
+		assert.Equal(t, before.SkippedReason, after.SkippedReason)
+		assert.Equal(t, before.Failure, after.Failure)
 	}
 }

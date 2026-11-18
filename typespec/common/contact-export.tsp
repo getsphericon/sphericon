@@ -220,8 +220,11 @@ model ContactExportOutboundMessage {
   /** Delivery status */
   status: string;
 
-  /** Why delivery failed or was skipped */
-  reason?: string | null;
+  /** Why a skipped message was skipped */
+  skippedReason?: SkippedReason | null;
+
+  /** What a failed message failed with */
+  failure?: string | null;
 
   /** When the send was claimed */
   claimedAt: Timestamp;

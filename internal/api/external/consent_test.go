@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -42,7 +43,7 @@ func TestExternalSuppressionsCreateNarrowsEligibility(t *testing.T) {
 	assert.Equal(t, fixtures.ContactAliceEmail, created.Destination)
 	assert.Equal(t, externalapi.SuppressionReasonManual, created.Reason)
 
-	assert.Equal(t, eligibility.ReasonSuppressed, eligible(t, env, fixtures.ContactAliceEmail, eligibility.SourceBroadcasts).Reason)
+	assert.Equal(t, skipreason.Suppressed, eligible(t, env, fixtures.ContactAliceEmail, eligibility.SourceBroadcasts).Reason)
 	assert.False(t, eligible(t, env, fixtures.ContactAliceEmail, "").Eligible, "suppression blocks transactional sends too")
 }
 

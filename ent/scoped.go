@@ -70,6 +70,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 )
 
@@ -41265,23 +41266,41 @@ func (x *OutboundMessageScopedCreate) SetNillableStatus(v *outboundmessage.Statu
 
 const RoleOf_OutboundMessageScopedCreate_SetNillableStatus = RoleStep
 
-// SetReason sets the "reason" field.
-func (x *OutboundMessageScopedCreate) SetReason(v string) *OutboundMessageScopedCreate {
-	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetReason(v) })
+// SetSkippedReason sets the "skipped_reason" field.
+func (x *OutboundMessageScopedCreate) SetSkippedReason(v skipreason.Reason) *OutboundMessageScopedCreate {
+	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetSkippedReason(v) })
 	return x
 }
 
-const RoleOf_OutboundMessageScopedCreate_SetReason = RoleStep
+const RoleOf_OutboundMessageScopedCreate_SetSkippedReason = RoleStep
 
-// SetNillableReason sets the "reason" field if the given value is not nil.
-func (x *OutboundMessageScopedCreate) SetNillableReason(v *string) *OutboundMessageScopedCreate {
+// SetNillableSkippedReason sets the "skipped_reason" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableSkippedReason(v *skipreason.Reason) *OutboundMessageScopedCreate {
 	if v != nil {
-		x.SetReason(*v)
+		x.SetSkippedReason(*v)
 	}
 	return x
 }
 
-const RoleOf_OutboundMessageScopedCreate_SetNillableReason = RoleStep
+const RoleOf_OutboundMessageScopedCreate_SetNillableSkippedReason = RoleStep
+
+// SetFailure sets the "failure" field.
+func (x *OutboundMessageScopedCreate) SetFailure(v string) *OutboundMessageScopedCreate {
+	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetFailure(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetFailure = RoleStep
+
+// SetNillableFailure sets the "failure" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableFailure(v *string) *OutboundMessageScopedCreate {
+	if v != nil {
+		x.SetFailure(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetNillableFailure = RoleStep
 
 // SetClaimedAt sets the "claimed_at" field.
 func (x *OutboundMessageScopedCreate) SetClaimedAt(v time.Time) *OutboundMessageScopedCreate {
@@ -41992,29 +42011,53 @@ const RoleOf_OutboundMessageScopedUpsert_UpdateStatus = RoleStep
 
 const SetsState_OutboundMessageScopedUpsert_UpdateStatus = "Status"
 
-// SetReason sets the "reason" field.
-func (u *OutboundMessageScopedUpsert) SetReason(v string) *OutboundMessageScopedUpsert {
-	u.u.Set(outboundmessage.FieldReason, v)
+// SetSkippedReason sets the "skipped_reason" field.
+func (u *OutboundMessageScopedUpsert) SetSkippedReason(v skipreason.Reason) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldSkippedReason, v)
 	return u
 }
 
-const RoleOf_OutboundMessageScopedUpsert_SetReason = RoleStep
+const RoleOf_OutboundMessageScopedUpsert_SetSkippedReason = RoleStep
 
-// UpdateReason sets the "reason" field to the value that was provided on create.
-func (u *OutboundMessageScopedUpsert) UpdateReason() *OutboundMessageScopedUpsert {
-	u.u.SetExcluded(outboundmessage.FieldReason)
+// UpdateSkippedReason sets the "skipped_reason" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateSkippedReason() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldSkippedReason)
 	return u
 }
 
-const RoleOf_OutboundMessageScopedUpsert_UpdateReason = RoleStep
+const RoleOf_OutboundMessageScopedUpsert_UpdateSkippedReason = RoleStep
 
-// ClearReason clears the value of the "reason" field.
-func (u *OutboundMessageScopedUpsert) ClearReason() *OutboundMessageScopedUpsert {
-	u.u.SetNull(outboundmessage.FieldReason)
+// ClearSkippedReason clears the value of the "skipped_reason" field.
+func (u *OutboundMessageScopedUpsert) ClearSkippedReason() *OutboundMessageScopedUpsert {
+	u.u.SetNull(outboundmessage.FieldSkippedReason)
 	return u
 }
 
-const RoleOf_OutboundMessageScopedUpsert_ClearReason = RoleStep
+const RoleOf_OutboundMessageScopedUpsert_ClearSkippedReason = RoleStep
+
+// SetFailure sets the "failure" field.
+func (u *OutboundMessageScopedUpsert) SetFailure(v string) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldFailure, v)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_SetFailure = RoleStep
+
+// UpdateFailure sets the "failure" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateFailure() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldFailure)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_UpdateFailure = RoleStep
+
+// ClearFailure clears the value of the "failure" field.
+func (u *OutboundMessageScopedUpsert) ClearFailure() *OutboundMessageScopedUpsert {
+	u.u.SetNull(outboundmessage.FieldFailure)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_ClearFailure = RoleStep
 
 // SetClaimedAt sets the "claimed_at" field.
 func (u *OutboundMessageScopedUpsert) SetClaimedAt(v time.Time) *OutboundMessageScopedUpsert {
@@ -42799,31 +42842,57 @@ const RoleOf_OutboundMessageScopedUpdateOne_SetNillableStatus = RoleStep
 
 const SetsState_OutboundMessageScopedUpdateOne_SetNillableStatus = "Status"
 
-// SetReason sets the "reason" field.
-func (x *OutboundMessageScopedUpdateOne) SetReason(v string) *OutboundMessageScopedUpdateOne {
-	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetReason(v) })
+// SetSkippedReason sets the "skipped_reason" field.
+func (x *OutboundMessageScopedUpdateOne) SetSkippedReason(v skipreason.Reason) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetSkippedReason(v) })
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdateOne_SetReason = RoleStep
+const RoleOf_OutboundMessageScopedUpdateOne_SetSkippedReason = RoleStep
 
-// SetNillableReason sets the "reason" field if the given value is not nil.
-func (x *OutboundMessageScopedUpdateOne) SetNillableReason(v *string) *OutboundMessageScopedUpdateOne {
+// SetNillableSkippedReason sets the "skipped_reason" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableSkippedReason(v *skipreason.Reason) *OutboundMessageScopedUpdateOne {
 	if v != nil {
-		x.SetReason(*v)
+		x.SetSkippedReason(*v)
 	}
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdateOne_SetNillableReason = RoleStep
+const RoleOf_OutboundMessageScopedUpdateOne_SetNillableSkippedReason = RoleStep
 
-// ClearReason clears the value of the "reason" field.
-func (x *OutboundMessageScopedUpdateOne) ClearReason() *OutboundMessageScopedUpdateOne {
-	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.ClearReason() })
+// ClearSkippedReason clears the value of the "skipped_reason" field.
+func (x *OutboundMessageScopedUpdateOne) ClearSkippedReason() *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.ClearSkippedReason() })
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdateOne_ClearReason = RoleStep
+const RoleOf_OutboundMessageScopedUpdateOne_ClearSkippedReason = RoleStep
+
+// SetFailure sets the "failure" field.
+func (x *OutboundMessageScopedUpdateOne) SetFailure(v string) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetFailure(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetFailure = RoleStep
+
+// SetNillableFailure sets the "failure" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableFailure(v *string) *OutboundMessageScopedUpdateOne {
+	if v != nil {
+		x.SetFailure(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetNillableFailure = RoleStep
+
+// ClearFailure clears the value of the "failure" field.
+func (x *OutboundMessageScopedUpdateOne) ClearFailure() *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.ClearFailure() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_ClearFailure = RoleStep
 
 // SetClaimedAt sets the "claimed_at" field.
 func (x *OutboundMessageScopedUpdateOne) SetClaimedAt(v time.Time) *OutboundMessageScopedUpdateOne {
@@ -43730,31 +43799,57 @@ const RoleOf_OutboundMessageScopedUpdate_SetNillableStatus = RoleStep
 
 const SetsState_OutboundMessageScopedUpdate_SetNillableStatus = "Status"
 
-// SetReason sets the "reason" field.
-func (x *OutboundMessageScopedUpdate) SetReason(v string) *OutboundMessageScopedUpdate {
-	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetReason(v) })
+// SetSkippedReason sets the "skipped_reason" field.
+func (x *OutboundMessageScopedUpdate) SetSkippedReason(v skipreason.Reason) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetSkippedReason(v) })
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdate_SetReason = RoleStep
+const RoleOf_OutboundMessageScopedUpdate_SetSkippedReason = RoleStep
 
-// SetNillableReason sets the "reason" field if the given value is not nil.
-func (x *OutboundMessageScopedUpdate) SetNillableReason(v *string) *OutboundMessageScopedUpdate {
+// SetNillableSkippedReason sets the "skipped_reason" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableSkippedReason(v *skipreason.Reason) *OutboundMessageScopedUpdate {
 	if v != nil {
-		x.SetReason(*v)
+		x.SetSkippedReason(*v)
 	}
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdate_SetNillableReason = RoleStep
+const RoleOf_OutboundMessageScopedUpdate_SetNillableSkippedReason = RoleStep
 
-// ClearReason clears the value of the "reason" field.
-func (x *OutboundMessageScopedUpdate) ClearReason() *OutboundMessageScopedUpdate {
-	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.ClearReason() })
+// ClearSkippedReason clears the value of the "skipped_reason" field.
+func (x *OutboundMessageScopedUpdate) ClearSkippedReason() *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.ClearSkippedReason() })
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdate_ClearReason = RoleStep
+const RoleOf_OutboundMessageScopedUpdate_ClearSkippedReason = RoleStep
+
+// SetFailure sets the "failure" field.
+func (x *OutboundMessageScopedUpdate) SetFailure(v string) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetFailure(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetFailure = RoleStep
+
+// SetNillableFailure sets the "failure" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableFailure(v *string) *OutboundMessageScopedUpdate {
+	if v != nil {
+		x.SetFailure(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetNillableFailure = RoleStep
+
+// ClearFailure clears the value of the "failure" field.
+func (x *OutboundMessageScopedUpdate) ClearFailure() *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.ClearFailure() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_ClearFailure = RoleStep
 
 // SetClaimedAt sets the "claimed_at" field.
 func (x *OutboundMessageScopedUpdate) SetClaimedAt(v time.Time) *OutboundMessageScopedUpdate {

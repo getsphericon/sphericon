@@ -179,8 +179,8 @@ func TestAFailedLastAttemptGivesTheRecipientUpAndSettlesTheBroadcast(t *testing.
 	assert.Equal(t, broadcasts.Stats{Recipients: 1, Failed: 1}, d.stats())
 	msg := d.messageOf(id)
 	assert.Equal(t, outboundmessage.StatusFailed, msg.Status)
-	require.NotNil(t, msg.Reason)
-	assert.Contains(t, *msg.Reason, "smtp unavailable")
+	require.NotNil(t, msg.Failure)
+	assert.Contains(t, *msg.Failure, "smtp unavailable")
 }
 
 // A recipient whose send another attempt is making waits that attempt out, even on its last

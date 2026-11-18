@@ -13,6 +13,7 @@ import (
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -68,7 +69,7 @@ func TestAVisitorBindingWithNoContactReachesNobody(t *testing.T) {
 	assert.Empty(t, env.Telegram.RequestsOf(telegramtest.SendMessage))
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(t.Context())
 	assert.Equal(t, outboundmessage.StatusSkipped, msg.Status)
-	assert.Equal(t, "no_destination", *msg.Reason)
+	assert.Equal(t, skipreason.NoDestination, *msg.SkippedReason)
 }
 
 // The merge tag works in Telegram text: a fresh personal link on the default bot, which binds

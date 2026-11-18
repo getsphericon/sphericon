@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
 // OutboundMessage is the model entity for the OutboundMessage schema.
@@ -50,8 +51,10 @@ type OutboundMessage struct {
 	ProviderMessageID *string `json:"provider_message_id,omitempty"`
 	// Status holds the value of the "status" field.
 	Status outboundmessage.Status `json:"status,omitempty"`
-	// Reason holds the value of the "reason" field.
-	Reason *string `json:"reason,omitempty"`
+	// SkippedReason holds the value of the "skipped_reason" field.
+	SkippedReason *skipreason.Reason `json:"skipped_reason,omitempty"`
+	// Failure holds the value of the "failure" field.
+	Failure *string `json:"failure,omitempty"`
 	// ClaimedAt holds the value of the "claimed_at" field.
 	ClaimedAt time.Time `json:"claimed_at,omitempty"`
 	// SentAt holds the value of the "sent_at" field.
@@ -229,7 +232,7 @@ func (*OutboundMessage) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case outboundmessage.FieldID, outboundmessage.FieldWorkspaceID, outboundmessage.FieldContactID, outboundmessage.FieldBroadcastID, outboundmessage.FieldBroadcastRecipientID, outboundmessage.FieldAutomationID, outboundmessage.FieldAutomationRunID, outboundmessage.FieldAutomationStep, outboundmessage.FieldIntegrationID, outboundmessage.FieldTemplateID:
 			values[i] = new(sql.NullInt64)
-		case outboundmessage.FieldKind, outboundmessage.FieldIdempotencyKey, outboundmessage.FieldChannel, outboundmessage.FieldDestination, outboundmessage.FieldSendingSource, outboundmessage.FieldSendingDomain, outboundmessage.FieldProviderMessageID, outboundmessage.FieldStatus, outboundmessage.FieldReason, outboundmessage.FieldUndeliveredCode, outboundmessage.FieldRequestDigest, outboundmessage.FieldSubject, outboundmessage.FieldAppOrigin:
+		case outboundmessage.FieldKind, outboundmessage.FieldIdempotencyKey, outboundmessage.FieldChannel, outboundmessage.FieldDestination, outboundmessage.FieldSendingSource, outboundmessage.FieldSendingDomain, outboundmessage.FieldProviderMessageID, outboundmessage.FieldStatus, outboundmessage.FieldSkippedReason, outboundmessage.FieldFailure, outboundmessage.FieldUndeliveredCode, outboundmessage.FieldRequestDigest, outboundmessage.FieldSubject, outboundmessage.FieldAppOrigin:
 			values[i] = new(sql.NullString)
 		case outboundmessage.FieldCreatedAt, outboundmessage.FieldUpdatedAt, outboundmessage.FieldClaimedAt, outboundmessage.FieldSentAt, outboundmessage.FieldDeliveredAt, outboundmessage.FieldBouncedAt, outboundmessage.FieldComplainedAt, outboundmessage.FieldUndeliveredAt, outboundmessage.FieldOpenedAt, outboundmessage.FieldClickedAt:
 			values[i] = new(sql.NullTime)
@@ -330,12 +333,19 @@ func (_m *OutboundMessage) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Status = outboundmessage.Status(value.String)
 			}
-		case outboundmessage.FieldReason:
+		case outboundmessage.FieldSkippedReason:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field reason", values[i])
+				return fmt.Errorf("unexpected type %T for field skipped_reason", values[i])
 			} else if value.Valid {
-				_m.Reason = new(string)
-				*_m.Reason = value.String
+				_m.SkippedReason = new(skipreason.Reason)
+				*_m.SkippedReason = skipreason.Reason(value.String)
+			}
+		case outboundmessage.FieldFailure:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field failure", values[i])
+			} else if value.Valid {
+				_m.Failure = new(string)
+				*_m.Failure = value.String
 			}
 		case outboundmessage.FieldClaimedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -600,8 +610,13 @@ func (_m *OutboundMessage) String() string {
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Status))
 	builder.WriteString(", ")
-	if v := _m.Reason; v != nil {
-		builder.WriteString("reason=")
+	if v := _m.SkippedReason; v != nil {
+		builder.WriteString("skipped_reason=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.Failure; v != nil {
+		builder.WriteString("failure=")
 		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")

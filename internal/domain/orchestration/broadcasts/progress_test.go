@@ -11,8 +11,8 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
-	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -109,7 +109,7 @@ func TestProgressNamesTheSendCapAndEstimatesTheRecipientsBeyondItsTokens(t *test
 			detail, err := testhelper.Module[*broadcasts.Module](env).Detail(ctx, env.DB.Scoped(fixtures.AcmeID), env.DB.Broadcast.GetX(ctx, f.id))
 			require.NoError(t, err)
 			p := detail.Progress
-			assert.Equal(t, providerlimit.CauseSendCap, p.LimitedBy)
+			assert.Equal(t, deferralcause.SendCap, p.LimitedBy)
 			require.NotNil(t, p.EstimatedCompletion)
 			assert.WithinDuration(t, now.Add(c.want), *p.EstimatedCompletion, time.Second)
 		})
@@ -126,12 +126,12 @@ func TestProgressReportsTheLaterOfTheProviderLimitAndTheSendCap(t *testing.T) {
 		perSecond     *int
 		lastScheduled time.Duration // from now; a passed one leaves the estimate to the rate
 		want          time.Duration // for 3 pending, a full bucket
-		wantLimit     providerlimit.Cause
+		wantLimit     deferralcause.Cause
 	}{
-		{"the Send cap outlasts the rate", 2, new(1), -time.Hour, 12 * time.Hour, providerlimit.CauseSendCap},
-		{"the bucket holds every recipient", 100, new(1), -time.Hour, 3 * time.Second, providerlimit.CauseProviderLimit},
-		{"the Send cap outlasts the schedule", 2, nil, time.Hour, 12 * time.Hour, providerlimit.CauseSendCap},
-		{"the schedule outlasts a Send cap with room", 3, nil, time.Hour, time.Hour, providerlimit.CauseProviderLimit},
+		{"the Send cap outlasts the rate", 2, new(1), -time.Hour, 12 * time.Hour, deferralcause.SendCap},
+		{"the bucket holds every recipient", 100, new(1), -time.Hour, 3 * time.Second, deferralcause.ProviderLimit},
+		{"the Send cap outlasts the schedule", 2, nil, time.Hour, 12 * time.Hour, deferralcause.SendCap},
+		{"the schedule outlasts a Send cap with room", 3, nil, time.Hour, time.Hour, deferralcause.ProviderLimit},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -167,7 +167,7 @@ func TestProgressCountsTheSendCapAlreadySpent(t *testing.T) {
 	detail, err := testhelper.Module[*broadcasts.Module](env).Detail(ctx, s, env.DB.Broadcast.GetX(ctx, f.id))
 	require.NoError(t, err)
 	p := detail.Progress
-	assert.Equal(t, providerlimit.CauseSendCap, p.LimitedBy)
+	assert.Equal(t, deferralcause.SendCap, p.LimitedBy)
 	require.NotNil(t, p.EstimatedCompletion)
 	assert.WithinDuration(t, now.Add(36*time.Hour), *p.EstimatedCompletion, time.Minute)
 }

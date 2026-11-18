@@ -1607,9 +1607,13 @@ export type ContactExportOutboundMessage = {
    */
   status: string;
   /**
-   * Why delivery failed or was skipped
+   * Why a skipped message was skipped
    */
-  reason?: string | null;
+  skippedReason?: SkippedReason | null;
+  /**
+   * What a failed message failed with
+   */
+  failure?: string | null;
   /**
    * When the send was claimed
    */
@@ -2023,6 +2027,22 @@ export const CustomFieldType = {
  * A Custom field's value type
  */
 export type CustomFieldType = typeof CustomFieldType[keyof typeof CustomFieldType];
+
+/**
+ * What a Deferral waits for: the send is not consumed and goes through every check again when it is retried
+ */
+export const DeferralCause = {
+  PROVIDER_LIMIT: 'provider_limit',
+  SEND_CAP: 'send_cap',
+  PROVIDER: 'provider',
+  SENDING_WINDOW: 'sending_window',
+  FREQUENCY_CAP: 'frequency_cap'
+} as const;
+
+/**
+ * What a Deferral waits for: the send is not consumed and goes through every check again when it is retried
+ */
+export type DeferralCause = typeof DeferralCause[keyof typeof DeferralCause];
 
 /**
  * A TXT record the caller publishes: a Sending domain's DKIM key, or a Tracking domain's ownership
@@ -7371,6 +7391,27 @@ export type SiteWorkspaceTimezoneInput = {
    */
   timezone: TimeZoneName;
 };
+
+/**
+ * Why an Outbound message was Skipped: final for its Destination, never retried. The first four
+ * are Send-eligibility's; a client switches over the list.
+ */
+export const SkippedReason = {
+  SUPPRESSED: 'suppressed',
+  UNSUBSCRIBED_EVERYTHING: 'unsubscribed_everything',
+  UNSUBSCRIBED_SOURCE: 'unsubscribed_source',
+  UNCONFIRMED: 'unconfirmed',
+  NO_DESTINATION: 'no_destination',
+  CONTACT_ERASED: 'contact_erased',
+  NO_LOCAL_TIME: 'no_local_time',
+  FREQUENCY_CAP: 'frequency_cap'
+} as const;
+
+/**
+ * Why an Outbound message was Skipped: final for its Destination, never retried. The first four
+ * are Send-eligibility's; a client switches over the list.
+ */
+export type SkippedReason = typeof SkippedReason[keyof typeof SkippedReason];
 
 /**
  * SMS's content of a Broadcast as stored

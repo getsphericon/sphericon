@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
 // OutboundMessageUpdate is the builder for updating OutboundMessage entities.
@@ -187,23 +188,43 @@ func (_u *OutboundMessageUpdate) SetNillableStatus(v *outboundmessage.Status) *O
 	return _u
 }
 
-// SetReason sets the "reason" field.
-func (_u *OutboundMessageUpdate) SetReason(v string) *OutboundMessageUpdate {
-	_u.mutation.SetReason(v)
+// SetSkippedReason sets the "skipped_reason" field.
+func (_u *OutboundMessageUpdate) SetSkippedReason(v skipreason.Reason) *OutboundMessageUpdate {
+	_u.mutation.SetSkippedReason(v)
 	return _u
 }
 
-// SetNillableReason sets the "reason" field if the given value is not nil.
-func (_u *OutboundMessageUpdate) SetNillableReason(v *string) *OutboundMessageUpdate {
+// SetNillableSkippedReason sets the "skipped_reason" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableSkippedReason(v *skipreason.Reason) *OutboundMessageUpdate {
 	if v != nil {
-		_u.SetReason(*v)
+		_u.SetSkippedReason(*v)
 	}
 	return _u
 }
 
-// ClearReason clears the value of the "reason" field.
-func (_u *OutboundMessageUpdate) ClearReason() *OutboundMessageUpdate {
-	_u.mutation.ClearReason()
+// ClearSkippedReason clears the value of the "skipped_reason" field.
+func (_u *OutboundMessageUpdate) ClearSkippedReason() *OutboundMessageUpdate {
+	_u.mutation.ClearSkippedReason()
+	return _u
+}
+
+// SetFailure sets the "failure" field.
+func (_u *OutboundMessageUpdate) SetFailure(v string) *OutboundMessageUpdate {
+	_u.mutation.SetFailure(v)
+	return _u
+}
+
+// SetNillableFailure sets the "failure" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableFailure(v *string) *OutboundMessageUpdate {
+	if v != nil {
+		_u.SetFailure(*v)
+	}
+	return _u
+}
+
+// ClearFailure clears the value of the "failure" field.
+func (_u *OutboundMessageUpdate) ClearFailure() *OutboundMessageUpdate {
+	_u.mutation.ClearFailure()
 	return _u
 }
 
@@ -759,6 +780,11 @@ func (_u *OutboundMessageUpdate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SkippedReason(); ok {
+		if err := outboundmessage.SkippedReasonValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_reason", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.skipped_reason": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "OutboundMessage.workspace"`)
 	}
@@ -816,11 +842,17 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(outboundmessage.FieldStatus, field.TypeEnum, value)
 	}
-	if value, ok := _u.mutation.Reason(); ok {
-		_spec.SetField(outboundmessage.FieldReason, field.TypeString, value)
+	if value, ok := _u.mutation.SkippedReason(); ok {
+		_spec.SetField(outboundmessage.FieldSkippedReason, field.TypeEnum, value)
 	}
-	if _u.mutation.ReasonCleared() {
-		_spec.ClearField(outboundmessage.FieldReason, field.TypeString)
+	if _u.mutation.SkippedReasonCleared() {
+		_spec.ClearField(outboundmessage.FieldSkippedReason, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.Failure(); ok {
+		_spec.SetField(outboundmessage.FieldFailure, field.TypeString, value)
+	}
+	if _u.mutation.FailureCleared() {
+		_spec.ClearField(outboundmessage.FieldFailure, field.TypeString)
 	}
 	if value, ok := _u.mutation.ClaimedAt(); ok {
 		_spec.SetField(outboundmessage.FieldClaimedAt, field.TypeTime, value)
@@ -1347,23 +1379,43 @@ func (_u *OutboundMessageUpdateOne) SetNillableStatus(v *outboundmessage.Status)
 	return _u
 }
 
-// SetReason sets the "reason" field.
-func (_u *OutboundMessageUpdateOne) SetReason(v string) *OutboundMessageUpdateOne {
-	_u.mutation.SetReason(v)
+// SetSkippedReason sets the "skipped_reason" field.
+func (_u *OutboundMessageUpdateOne) SetSkippedReason(v skipreason.Reason) *OutboundMessageUpdateOne {
+	_u.mutation.SetSkippedReason(v)
 	return _u
 }
 
-// SetNillableReason sets the "reason" field if the given value is not nil.
-func (_u *OutboundMessageUpdateOne) SetNillableReason(v *string) *OutboundMessageUpdateOne {
+// SetNillableSkippedReason sets the "skipped_reason" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableSkippedReason(v *skipreason.Reason) *OutboundMessageUpdateOne {
 	if v != nil {
-		_u.SetReason(*v)
+		_u.SetSkippedReason(*v)
 	}
 	return _u
 }
 
-// ClearReason clears the value of the "reason" field.
-func (_u *OutboundMessageUpdateOne) ClearReason() *OutboundMessageUpdateOne {
-	_u.mutation.ClearReason()
+// ClearSkippedReason clears the value of the "skipped_reason" field.
+func (_u *OutboundMessageUpdateOne) ClearSkippedReason() *OutboundMessageUpdateOne {
+	_u.mutation.ClearSkippedReason()
+	return _u
+}
+
+// SetFailure sets the "failure" field.
+func (_u *OutboundMessageUpdateOne) SetFailure(v string) *OutboundMessageUpdateOne {
+	_u.mutation.SetFailure(v)
+	return _u
+}
+
+// SetNillableFailure sets the "failure" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableFailure(v *string) *OutboundMessageUpdateOne {
+	if v != nil {
+		_u.SetFailure(*v)
+	}
+	return _u
+}
+
+// ClearFailure clears the value of the "failure" field.
+func (_u *OutboundMessageUpdateOne) ClearFailure() *OutboundMessageUpdateOne {
+	_u.mutation.ClearFailure()
 	return _u
 }
 
@@ -1932,6 +1984,11 @@ func (_u *OutboundMessageUpdateOne) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SkippedReason(); ok {
+		if err := outboundmessage.SkippedReasonValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_reason", err: fmt.Errorf(`ent: validator failed for field "OutboundMessage.skipped_reason": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "OutboundMessage.workspace"`)
 	}
@@ -2006,11 +2063,17 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(outboundmessage.FieldStatus, field.TypeEnum, value)
 	}
-	if value, ok := _u.mutation.Reason(); ok {
-		_spec.SetField(outboundmessage.FieldReason, field.TypeString, value)
+	if value, ok := _u.mutation.SkippedReason(); ok {
+		_spec.SetField(outboundmessage.FieldSkippedReason, field.TypeEnum, value)
 	}
-	if _u.mutation.ReasonCleared() {
-		_spec.ClearField(outboundmessage.FieldReason, field.TypeString)
+	if _u.mutation.SkippedReasonCleared() {
+		_spec.ClearField(outboundmessage.FieldSkippedReason, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.Failure(); ok {
+		_spec.SetField(outboundmessage.FieldFailure, field.TypeString, value)
+	}
+	if _u.mutation.FailureCleared() {
+		_spec.ClearField(outboundmessage.FieldFailure, field.TypeString)
 	}
 	if value, ok := _u.mutation.ClaimedAt(); ok {
 		_spec.SetField(outboundmessage.FieldClaimedAt, field.TypeTime, value)

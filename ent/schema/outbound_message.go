@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/schema/index"
 
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
 // OutboundMessage is the durable record of one Outbound send (ADR 0015): one row per
@@ -29,12 +30,14 @@ type OutboundMessage struct {
 }
 
 // Annotations adds to the enum checks that a message's final report is delivered or undelivered,
-// never both (ADR 0079), and that it carries exactly its kind's provenance. The report needs no
+// never both (ADR 0079), that it carries exactly its kind's provenance, and that only its status's
+// own column explains it. The report needs no
 // Channel condition: only an SMS report sets undelivered_at.
 func (OutboundMessage) Annotations() []schema.Annotation {
 	a := TableWithEnumChecks("outbound_messages", OutboundMessage{}.Fields())
 	a.Checks["outbound_messages_final_report_check"] = "delivered_at IS NULL OR undelivered_at IS NULL"
 	a.Checks["outbound_messages_provenance_check"] = variantCheck("kind", outboundProvenance)
+	a.Checks["outbound_messages_outcome_check"] = variantCheck("status", outboundOutcome)
 	return []schema.Annotation{WithLowerCheck(a, "destination")}
 }
 
@@ -47,6 +50,15 @@ var outboundProvenance = []variant{
 	{value: "broadcast", required: []string{"broadcast_id"}, optional: []string{"broadcast_recipient_id"}},
 	{value: "automation", required: []string{"automation_id", "automation_step"}, optional: []string{"automation_run_id"}},
 	{value: "transactional", optional: []string{"template_id"}},
+}
+
+// outboundOutcome is the column that explains each status: a skipped message its Skipped reason,
+// a failed one its failure text, and neither the other's nor a pending or sent message either.
+var outboundOutcome = []variant{
+	{value: "pending"},
+	{value: "sent"},
+	{value: "skipped", required: []string{"skipped_reason"}},
+	{value: "failed", optional: []string{"failure"}},
 }
 
 func (OutboundMessage) Mixin() []ent.Mixin {
@@ -99,13 +111,22 @@ func (OutboundMessage) Fields() []ent.Field {
 			Nillable(),
 		// pending: claimed, provider not yet answered (or a crashed attempt).
 		// sent: accepted by the provider. skipped: final for this destination
-		// (see reason). failed: permanent failure of this one message.
+		// (see skipped_reason). failed: permanent failure of this one message (see failure).
 		field.Enum("status").
 			Annotations(Machine()).
 			Values("pending", "sent", "skipped", "failed").
 			Default("pending"),
-		// Why the message was skipped (an eligibility Reason*) or the failure text.
-		field.String("reason").
+		// Why a skipped message was skipped: set on every skipped message and on no other
+		// (outbound_messages_outcome_check). The reasons are skipreason's, the one closed list
+		// (ADR 0178).
+		field.Enum("skipped_reason").
+			GoType(skipreason.Reason("")).
+			Optional().
+			Nillable(),
+		// What a failed message failed with, in the provider's or the renderer's words; set on no
+		// message but a failed one (outbound_messages_outcome_check). An Erasure blanks the
+		// number it quotes (ADR 0021).
+		field.String("failure").
 			Optional().
 			Nillable(),
 		// Lease: a pending claim may be taken over by a retry only when its

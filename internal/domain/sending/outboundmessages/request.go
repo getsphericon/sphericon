@@ -73,7 +73,7 @@ func BroadcastRecipient(b *ent.Broadcast, rec *ent.BroadcastRecipient, c *ent.Co
 // AutomationStep is the Request for the send step at index step of an Automation run: its content,
 // on the content's Channel, through the Integration the step names (nil: that Channel's default,
 // ADR 0081). The Destination is the Contact's on that Channel; a Contact with none is Skipped
-// with eligibility.ReasonNoDestination, recorded for the step like any other skip. Each Automation
+// with skipreason.NoDestination, recorded for the step like any other skip. Each Automation
 // is its own unsubscribe Sending source; the unsubscribe click exits the enrollment (ADR 0001). The
 // message binds the Event the run began on as `event` (#752).
 func AutomationStep(a *ent.Automation, run *ent.AutomationRun, step int, integrationID *int64, c *ent.Contact, content Content) Request {

@@ -308,7 +308,7 @@ func TestSendBroadcastMarksFailedOnSendError(t *testing.T) {
 	assert.Len(t, msgs, audience, "every recipient ends with one message, each failed with its cause")
 	for _, m := range msgs {
 		assert.Equal(t, outboundmessage.StatusFailed, m.Status)
-		require.NotNil(t, m.Reason)
+		require.NotNil(t, m.Failure)
 	}
 
 	assert.Zero(t, countPublished(t, env, systemevent.EmailSent, fixtures.BroadcastScheduledID), "no email.sent event when the send fails")

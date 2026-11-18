@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -232,7 +233,7 @@ func TestATelegramContentRefusalFailsThatMessageWithTelegramsReason(t *testing.T
 	require.ErrorContains(t, err, "can't parse entities")
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(ctx)
 	assert.Equal(t, outboundmessage.StatusFailed, msg.Status)
-	assert.Contains(t, *msg.Reason, "can't parse entities")
+	assert.Contains(t, *msg.Failure, "can't parse entities")
 	assert.Equal(t, automationrun.StatusFailed, env.DB.AutomationRun.GetX(ctx, runID).Status)
 	assert.Equal(t, 1, env.DB.Binding.Query().Where(binding.Destination("555121")).CountX(ctx), "the Binding stays")
 }
@@ -253,7 +254,7 @@ func TestATelegramForbiddenThatIsNeitherBlockNorDeactivationFailsTheMessage(t *t
 	require.ErrorContains(t, err, "can't initiate conversation")
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(ctx)
 	assert.Equal(t, outboundmessage.StatusFailed, msg.Status)
-	assert.Contains(t, *msg.Reason, "can't initiate conversation")
+	assert.Contains(t, *msg.Failure, "can't initiate conversation")
 	assert.Equal(t, 1, env.DB.Binding.Query().Where(binding.Destination("555141")).CountX(ctx), "the Binding stays")
 }
 
@@ -293,7 +294,7 @@ func TestATelegramMessageFailsWhenEveryChatForbidsIt(t *testing.T) {
 	require.ErrorContains(t, err, "can't initiate conversation")
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(ctx)
 	assert.Equal(t, outboundmessage.StatusFailed, msg.Status)
-	assert.Contains(t, *msg.Reason, "can't initiate conversation")
+	assert.Contains(t, *msg.Failure, "can't initiate conversation")
 	assert.Len(t, env.Telegram.RequestsOf(telegramtest.SendMessage), 2, "each chat was tried")
 }
 
@@ -330,7 +331,7 @@ func TestATelegramDeadChatLosesItsBinding(t *testing.T) {
 			assert.Equal(t, 2, env.QueuedCount(t, systemevent.TelegramUnbound, nil))
 			skipped := env.DB.OutboundMessage.Query().
 				Where(outboundmessage.AutomationRunID(runID), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).OnlyX(ctx)
-			assert.Equal(t, "no_destination", *skipped.Reason)
+			assert.Equal(t, skipreason.NoDestination, *skipped.SkippedReason)
 			assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(ctx, runID).Status)
 		})
 	}

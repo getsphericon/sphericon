@@ -11,8 +11,10 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -145,6 +147,7 @@ import (
 // goverter:extend optAttentionSubject
 // goverter:extend optAbuseWarning
 // goverter:extend optTrackingReason
+// goverter:extend optSkippedReason
 // goverter:extend timestampOf
 // goverter:extend tagNames
 // goverter:extend auditDiff
@@ -351,11 +354,13 @@ type Converter interface {
 	// goverter:map EstimatedCompletion EstimatedCompletionAt
 	BroadcastProgressToResource(source broadcasts.Progress) siteapi.SiteBroadcastProgress
 	// A Broadcast's progress names only the Send cap or the Provider limit, never the provider's
-	// own throttling, which only a Deferral reports.
-	// goverter:enum:map CauseSendCap SiteBroadcastLimitSendCap
-	// goverter:enum:map CauseProviderLimit SiteBroadcastLimitProviderLimit
-	// goverter:enum:map CauseProvider @panic
-	BroadcastLimitToResource(source providerlimit.Cause) siteapi.SiteBroadcastLimit
+	// own throttling nor a per-recipient cause, which only a Deferral reports.
+	// goverter:enum:map SendCap SiteBroadcastLimitSendCap
+	// goverter:enum:map ProviderLimit SiteBroadcastLimitProviderLimit
+	// goverter:enum:map SlowDown @panic
+	// goverter:enum:map SendingWindow @panic
+	// goverter:enum:map FrequencyCap @panic
+	BroadcastLimitToResource(source deferralcause.Cause) siteapi.SiteBroadcastLimit
 
 	// goverter:ignore Warnings
 	EmailTemplateToResource(source *ent.EmailTemplate) siteapi.SiteEmailTemplateResource
@@ -769,6 +774,8 @@ type Converter interface {
 	// goverter:enum:transform value
 	TrackingReasonToResource(source trackingdomain.Reason) siteapi.TrackingReason
 	// goverter:enum:transform value
+	SkippedReasonToResource(source skipreason.Reason) siteapi.SkippedReason
+	// goverter:enum:transform value
 	TrackingStateToResource(source trackingdomain.State) siteapi.TrackingState
 	// goverter:enum:transform value
 	TrackingDomainRoleToResource(source trackingdomain.Role) siteapi.TrackingDomainRole
@@ -861,7 +868,7 @@ func optNilSmsOptOut(c Converter, v *confirmations.SMSOptOut) siteapi.OptNilSmsO
 }
 
 // broadcastLimit is null exactly when nothing limits the Broadcast (its limit is empty).
-func broadcastLimit(c Converter, v providerlimit.Cause) siteapi.NilSiteBroadcastLimit {
+func broadcastLimit(c Converter, v deferralcause.Cause) siteapi.NilSiteBroadcastLimit {
 	if v == "" {
 		return siteapi.NilSiteBroadcastLimit{Null: true}
 	}
@@ -957,10 +964,10 @@ func transactionalStatus(m *ent.OutboundMessage) siteapi.SiteTransactionalEmailS
 
 // transactionalError exposes the failure text only for a failed send.
 func transactionalError(m *ent.OutboundMessage) siteapi.OptNilString {
-	if m.Status != outboundmessage.StatusFailed || m.Reason == nil {
+	if m.Status != outboundmessage.StatusFailed || m.Failure == nil {
 		return siteapi.OptNilString{}
 	}
-	return siteapi.NewOptNilString(*m.Reason)
+	return siteapi.NewOptNilString(*m.Failure)
 }
 
 func optNilString(v *string) siteapi.OptNilString {
@@ -1095,6 +1102,11 @@ func optConsentDecision(c Converter, v *consentrecord.Decision) siteapi.OptSiteO
 
 func optTrackingReason(c Converter, v *trackingdomain.Reason) siteapi.OptTrackingReason {
 	return convert.OptVia[siteapi.OptTrackingReason](v, c.TrackingReasonToResource)
+}
+
+// optSkippedReason is absent on every message but a skipped one.
+func optSkippedReason(c Converter, v *skipreason.Reason) siteapi.OptNilSkippedReason {
+	return convert.OptVia[siteapi.OptNilSkippedReason](v, c.SkippedReasonToResource)
 }
 
 // tagNames lists the names of a contact's loaded tags, in the order they were read.

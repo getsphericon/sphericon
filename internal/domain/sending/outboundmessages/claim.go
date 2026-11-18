@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/infra/db"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
 // The unique constraints of the Outbound messages and their tracked links (ADR 0106): no client can
@@ -235,11 +236,19 @@ func (m *Module) dropClaim(ctx context.Context, s *ent.Scoped, msg *ent.Outbound
 	}
 }
 
-// finish records a final, non-sent status with its reason.
-func (m *Module) finish(ctx context.Context, s *ent.Scoped, msg *ent.OutboundMessage, status outboundmessage.Status, outcome Outcome, reason string) (Result, error) {
+// skip records the claimed message Skipped with its reason.
+func (m *Module) skip(ctx context.Context, s *ent.Scoped, msg *ent.OutboundMessage, reason skipreason.Reason) (Result, error) {
 	// A lost fence means the claim was taken over while we worked.
-	if err := moveOrStale(ctx, s, msg, status, func(u *ent.OutboundMessageScopedUpdate) { u.SetReason(reason) }); err != nil {
+	if err := moveOrStale(ctx, s, msg, outboundmessage.StatusSkipped, func(u *ent.OutboundMessageScopedUpdate) { u.SetSkippedReason(reason) }); err != nil {
 		return Result{}, err
 	}
-	return Result{Outcome: outcome, Reason: reason, MessageID: msg.ID}, nil
+	return Result{Outcome: Skipped, SkippedReason: reason, MessageID: msg.ID}, nil
+}
+
+// fail records the claimed message Failed with what it failed with.
+func (m *Module) fail(ctx context.Context, s *ent.Scoped, msg *ent.OutboundMessage, failure string) (Result, error) {
+	if err := moveOrStale(ctx, s, msg, outboundmessage.StatusFailed, func(u *ent.OutboundMessageScopedUpdate) { u.SetFailure(failure) }); err != nil {
+		return Result{}, err
+	}
+	return Result{Outcome: Failed, Failure: failure, MessageID: msg.ID}, nil
 }

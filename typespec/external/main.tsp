@@ -18,6 +18,7 @@ import "../common/contact-export.tsp";
 import "../common/lint.tsp";
 import "../common/broadcasts.tsp";
 import "../common/holds.tsp";
+import "../common/outcomes.tsp";
 import "../common/consent.tsp";
 import "../common/contacts.tsp";
 import "../common/limits.tsp";

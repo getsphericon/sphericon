@@ -16,11 +16,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
-	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -74,7 +75,7 @@ func TestTheProviderLimitOfATwilioIntegrationPacesItsTexts(t *testing.T) {
 
 	assert.Equal(t, outboundmessages.Sent, first.Outcome)
 	assert.Equal(t, outboundmessages.Deferral, second.Outcome)
-	assert.Equal(t, providerlimit.CauseProviderLimit, second.Cause)
+	assert.Equal(t, deferralcause.ProviderLimit, second.Cause)
 	assert.Positive(t, second.Wait)
 	inbox := env.Twilio.Messages()
 	assert.Len(t, inbox, 1, "Twilio is not asked for the deferred text")
@@ -92,10 +93,10 @@ func TestATextTwilioRefusesAsOptedOutRecordsTheOptOutAndIsSkipped(t *testing.T) 
 	res := sendText(t, env, textTo(t, env, account, "sms:1"))
 
 	assert.Equal(t, outboundmessages.Skipped, res.Outcome)
-	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, res.Reason)
+	assert.Equal(t, skipreason.UnsubscribedEverything, res.SkippedReason)
 	msg := env.DB.OutboundMessage.GetX(ctx, res.MessageID)
 	assert.Equal(t, outboundmessage.StatusSkipped, msg.Status)
-	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, lo.FromPtr(msg.Reason))
+	assert.Equal(t, skipreason.UnsubscribedEverything, lo.FromPtr(msg.SkippedReason))
 	stop := env.DB.Unsubscribe.Query().Where(unsubscribe.ChannelEQ(channels.SMS), unsubscribe.DestinationEQ(fixtures.ContactTexterPhone)).OnlyX(ctx)
 	assert.Equal(t, eligibility.SourceEverything, stop.SendingSource)
 	assert.Equal(t, unsubscribe.ViaRefusedSend, lo.FromPtr(stop.Via))
@@ -125,7 +126,7 @@ func TestTheSendCapCountsTextsWithEmail(t *testing.T) {
 
 	require.Equal(t, outboundmessages.Sent, email.Outcome)
 	assert.Equal(t, outboundmessages.Deferral, text.Outcome)
-	assert.Equal(t, providerlimit.CauseSendCap, text.Cause)
+	assert.Equal(t, deferralcause.SendCap, text.Cause)
 	inbox := env.Twilio.Messages()
 	assert.Empty(t, inbox)
 }
@@ -140,5 +141,5 @@ func TestAnSMSSentCountsAgainstTheSendCapOfLaterEmail(t *testing.T) {
 
 	require.Equal(t, outboundmessages.Sent, text.Outcome)
 	assert.Equal(t, outboundmessages.Deferral, email.Outcome)
-	assert.Equal(t, providerlimit.CauseSendCap, email.Cause)
+	assert.Equal(t, deferralcause.SendCap, email.Cause)
 }

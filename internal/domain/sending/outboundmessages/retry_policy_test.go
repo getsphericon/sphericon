@@ -8,7 +8,7 @@ import (
 	"pgregory.net/rapid"
 
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
-	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 )
 
 // A Deferral draws its own jitter, up to a fifth of the delay, so each case states the band
@@ -67,7 +67,7 @@ func TestASendCapDeferralAlwaysRetriesWithinTheBound(t *testing.T) {
 		wait := time.Duration(rapid.Int64Range(0, int64(48*time.Hour)).Draw(t, "wait"))
 		backlog := rapid.IntRange(0, 100_000).Draw(t, "backlog")
 
-		retry := outboundmessages.Result{Outcome: outboundmessages.Deferral, Cause: providerlimit.CauseSendCap, Wait: wait}.Retry(backlog)
+		retry := outboundmessages.Result{Outcome: outboundmessages.Deferral, Cause: deferralcause.SendCap, Wait: wait}.Retry(backlog)
 
 		assert.True(t, retry.Wanted)
 		assert.GreaterOrEqual(t, retry.After, time.Second)

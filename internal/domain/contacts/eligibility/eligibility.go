@@ -45,25 +45,15 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
-)
-
-// Reasons a destination is ineligible.
-const (
-	ReasonSuppressed             = "suppressed"
-	ReasonUnsubscribedEverything = "unsubscribed_everything"
-	ReasonUnsubscribedSource     = "unsubscribed_source"
-	ReasonUnconfirmed            = "unconfirmed"
-	// ReasonNoDestination: the Contact has no Destination on the Channel (no email address, no
-	// Binding), so there is nothing to send to. The Outbound send records it as a Skipped like an
-	// opt-out (ADR 0081).
-	ReasonNoDestination = "no_destination"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
 // Decision is the outcome of a single eligibility Check.
 type Decision struct {
 	Eligible bool
-	// Reason is empty when Eligible; otherwise one of the Reason* constants.
-	Reason string
+	// Reason is empty when Eligible; otherwise the Skipped reason Send-eligibility gives (one of
+	// skipreason's first four).
+	Reason skipreason.Reason
 }
 
 // Module decides eligibility. It holds nothing: every call takes the Workspace's scope.
@@ -113,7 +103,7 @@ func (m *Module) Check(ctx context.Context, s *ent.Scoped, in CheckInput) (Decis
 				for _, l := range layers(r, channel, source) {
 					b.WriteString(" WHEN ")
 					b.Join(l.blocks)
-					b.WriteString(" THEN ").Arg(l.reason)
+					b.WriteString(" THEN ").Arg(string(l.reason))
 				}
 				b.WriteString(" ELSE '' END")
 			}))
@@ -130,7 +120,7 @@ func (m *Module) Check(ctx context.Context, s *ent.Scoped, in CheckInput) (Decis
 	if reason[0] == workspaceMissing {
 		return Decision{}, fmt.Errorf("eligibility check: workspace %d not found", s.WorkspaceID())
 	}
-	return Decision{Eligible: reason[0] == "", Reason: reason[0]}, nil
+	return Decision{Eligible: reason[0] == "", Reason: skipreason.Reason(reason[0])}, nil
 }
 
 // workspaceMissing is the sentinel the check expression yields when the scoped
@@ -264,7 +254,7 @@ func GloballyOptedOut(channel channels.Channel) predicate.Contact {
 		r := contactRef(s)
 		var preds []*sql.Predicate
 		for _, l := range layers(r, channel, SourceBroadcasts) {
-			if l.reason == ReasonSuppressed || l.reason == ReasonUnsubscribedEverything {
+			if l.reason == skipreason.Suppressed || l.reason == skipreason.UnsubscribedEverything {
 				preds = append(preds, l.blocks)
 			}
 		}
@@ -283,7 +273,7 @@ func UnconfirmedMailable() predicate.Contact {
 		r := contactRef(s)
 		kept := []*sql.Predicate{sql.NotNull(s.C(contact.FieldEmail))}
 		for _, l := range layers(r, channels.Email, SourceEverything) {
-			if l.reason == ReasonSuppressed || l.reason == ReasonUnsubscribedEverything {
+			if l.reason == skipreason.Suppressed || l.reason == skipreason.UnsubscribedEverything {
 				kept = append(kept, sql.Not(l.blocks))
 			}
 		}
@@ -312,7 +302,7 @@ func contactRef(s *sql.Selector) ref {
 // layer is one rule of the eligibility model: blocks is true when the layer
 // forbids the send, reason is what the Decision reports.
 type layer struct {
-	reason string
+	reason skipreason.Reason
 	blocks *sql.Predicate
 }
 
@@ -335,7 +325,7 @@ var (
 // dominate). source "" is a transactional send.
 func layers(r ref, channel channels.Channel, source string) []layer {
 	suppressed := layer{
-		reason: ReasonSuppressed,
+		reason: skipreason.Suppressed,
 		blocks: sql.Exists(match(r, suppressionStore, channel)),
 	}
 	if source == "" {
@@ -344,11 +334,11 @@ func layers(r ref, channel channels.Channel, source string) []layer {
 	out := make([]layer, 0, 4)
 	out = append(out, suppressed,
 		layer{
-			reason: ReasonUnsubscribedEverything,
+			reason: skipreason.UnsubscribedEverything,
 			blocks: sql.Exists(match(r, unsubscribes, channel, unsubscribe.FieldSendingSource, SourceEverything)),
 		},
 		layer{
-			reason: ReasonUnsubscribedSource,
+			reason: skipreason.UnsubscribedSource,
 			blocks: sql.Exists(match(r, unsubscribes, channel, unsubscribe.FieldSendingSource, source)),
 		})
 	unconfirmed := sql.NotExists(match(r, confirmations, channel))
@@ -359,10 +349,10 @@ func layers(r ref, channel channels.Channel, source string) []layer {
 	case channels.SMS:
 		// A text asks for a Confirmation always (ADR 0077): the Workspace's confirmed-opt-in
 		// setting is about email only, and turning it off never relaxes sms.
-		return append(out, layer{reason: ReasonUnconfirmed, blocks: unconfirmed})
+		return append(out, layer{reason: skipreason.Unconfirmed, blocks: unconfirmed})
 	case channels.Email:
 		return append(out, layer{
-			reason: ReasonUnconfirmed,
+			reason: skipreason.Unconfirmed,
 			// Only when the workspace has confirmed opt-in on (ADR 0013): the flag is
 			// read in SQL so the default single-opt-in path never touches the
 			// confirmation store and no caller can forget to pass it.
@@ -370,7 +360,7 @@ func layers(r ref, channel channels.Channel, source string) []layer {
 		})
 	}
 	// A Channel no case names yet asks for a Confirmation always: closed until its rule is written.
-	return append(out, layer{reason: ReasonUnconfirmed, blocks: unconfirmed})
+	return append(out, layer{reason: skipreason.Unconfirmed, blocks: unconfirmed})
 }
 
 // match builds SELECT id FROM store WHERE workspace/destination/channel equal the

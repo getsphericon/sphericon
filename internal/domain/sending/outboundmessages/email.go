@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
@@ -56,7 +57,7 @@ func (emailChannel) targets(_ context.Context, _ *ent.Scoped, _ Request, _ Route
 }
 
 // unreachable: an email address is no Binding, and no email adapter reports one gone.
-func (emailChannel) unreachable(context.Context, *ent.Scoped, events.Publisher, *ent.Integration, Request, target, int64) (string, error) {
+func (emailChannel) unreachable(context.Context, *ent.Scoped, events.Publisher, *ent.Integration, Request, target, int64) (skipreason.Reason, error) {
 	return "", nil
 }
 

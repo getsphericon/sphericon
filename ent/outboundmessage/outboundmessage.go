@@ -9,6 +9,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
 const (
@@ -40,8 +41,10 @@ const (
 	FieldProviderMessageID = "provider_message_id"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
-	// FieldReason holds the string denoting the reason field in the database.
-	FieldReason = "reason"
+	// FieldSkippedReason holds the string denoting the skipped_reason field in the database.
+	FieldSkippedReason = "skipped_reason"
+	// FieldFailure holds the string denoting the failure field in the database.
+	FieldFailure = "failure"
 	// FieldClaimedAt holds the string denoting the claimed_at field in the database.
 	FieldClaimedAt = "claimed_at"
 	// FieldSentAt holds the string denoting the sent_at field in the database.
@@ -182,7 +185,8 @@ var Columns = []string{
 	FieldSendingDomain,
 	FieldProviderMessageID,
 	FieldStatus,
-	FieldReason,
+	FieldSkippedReason,
+	FieldFailure,
 	FieldClaimedAt,
 	FieldSentAt,
 	FieldDeliveredAt,
@@ -294,6 +298,16 @@ func StatusValidator(s Status) error {
 	}
 }
 
+// SkippedReasonValidator is a validator for the "skipped_reason" field enum values. It is called by the builders before save.
+func SkippedReasonValidator(sr skipreason.Reason) error {
+	switch sr {
+	case "suppressed", "unsubscribed_everything", "unsubscribed_source", "unconfirmed", "no_destination", "contact_erased", "no_local_time", "frequency_cap":
+		return nil
+	default:
+		return fmt.Errorf("outboundmessage: invalid enum value for skipped_reason field: %q", sr)
+	}
+}
+
 // OrderOption defines the ordering options for the OutboundMessage queries.
 type OrderOption func(*sql.Selector)
 
@@ -362,9 +376,14 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
 }
 
-// ByReason orders the results by the reason field.
-func ByReason(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldReason, opts...).ToFunc()
+// BySkippedReason orders the results by the skipped_reason field.
+func BySkippedReason(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSkippedReason, opts...).ToFunc()
+}
+
+// ByFailure orders the results by the failure field.
+func ByFailure(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFailure, opts...).ToFunc()
 }
 
 // ByClaimedAt orders the results by the claimed_at field.

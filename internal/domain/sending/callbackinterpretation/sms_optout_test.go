@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -110,7 +111,7 @@ func TestASTOPFromAContactsNumberOptsTheNumberOutOfEverySMS(t *testing.T) {
 	require.Equal(t, http.StatusOK, posted.Code, posted.Body.String())
 	dec := textable(t, env, knownNumber)
 	assert.False(t, dec.Eligible)
-	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, dec.Reason)
+	assert.Equal(t, skipreason.UnsubscribedEverything, dec.Reason)
 	stop := optOutOf(t, env, knownNumber)
 	require.NotNil(t, stop)
 	assert.Equal(t, eligibility.SourceEverything, stop.SendingSource)
@@ -143,7 +144,7 @@ func TestASTOPFromANumberNoContactHasStillOptsItOut(t *testing.T) {
 	require.NotNil(t, stop)
 	assert.Nil(t, stop.ContactID)
 	dec := textable(t, env, "+14155550199")
-	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, dec.Reason)
+	assert.Equal(t, skipreason.UnsubscribedEverything, dec.Reason)
 	contactsAfter := env.DB.Contact.Query().CountX(t.Context())
 	assert.Equal(t, contacts, contactsAfter, "a stranger's STOP creates no Contact")
 	unsubscribed := env.QueuedCount(t, systemevent.SmsUnsubscribed, nil)

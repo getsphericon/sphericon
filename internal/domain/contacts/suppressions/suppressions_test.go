@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -37,7 +38,7 @@ func TestAddNormalizesAndSuppressesInEligibility(t *testing.T) {
 	verdict, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.Email, Destination: "BLOCKED@example.com", Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
 	assert.False(t, verdict.Eligible)
-	assert.Equal(t, eligibility.ReasonSuppressed, verdict.Reason)
+	assert.Equal(t, skipreason.Suppressed, verdict.Reason)
 }
 
 func TestAddIsIdempotentAndKeepsTheFirstReason(t *testing.T) {
@@ -160,7 +161,7 @@ func TestAManualSMSSuppressionStoresTheNumberInE164(t *testing.T) {
 
 	verdict, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: "+14155550132", Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
-	assert.Equal(t, eligibility.ReasonSuppressed, verdict.Reason)
+	assert.Equal(t, skipreason.Suppressed, verdict.Reason)
 
 	for _, typed := range []string{"4155550132", "not a number", "+1"} {
 		_, err := registry.AddManual(ctx, s, channels.SMS, typed)

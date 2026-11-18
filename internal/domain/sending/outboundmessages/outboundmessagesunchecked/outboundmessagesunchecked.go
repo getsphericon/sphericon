@@ -94,13 +94,13 @@ func forgetTexts(ctx context.Context, s *ent.Scoped, contactID int64, phone stri
 		return nil
 	}
 	digits := strings.TrimPrefix(phone, "+")
-	quoting, err := s.OutboundMessage().Query().Where(which, outboundmessage.ReasonContains(digits)).All(ctx)
+	quoting, err := s.OutboundMessage().Query().Where(which, outboundmessage.FailureContains(digits)).All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, m := range quoting {
-		reason := strings.ReplaceAll(strings.ReplaceAll(lo.FromPtr(m.Reason), phone, erasedNumber), digits, erasedNumber)
-		if err := s.OutboundMessage().UpdateOneID(m.ID).SetReason(reason).Exec(ctx); err != nil {
+		failure := strings.ReplaceAll(strings.ReplaceAll(lo.FromPtr(m.Failure), phone, erasedNumber), digits, erasedNumber)
+		if err := s.OutboundMessage().UpdateOneID(m.ID).SetFailure(failure).Exec(ctx); err != nil {
 			return err
 		}
 	}

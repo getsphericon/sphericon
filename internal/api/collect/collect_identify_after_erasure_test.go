@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -44,11 +45,11 @@ func TestCollectIdentifyAfterErasureCreatesAFreshContactStillRefusedByTheSurvivi
 	transactional, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: "email", Destination: fixtures.ContactErasableEmail})
 	require.NoError(t, err)
 	assert.False(t, transactional.Eligible, "the surviving Suppression refuses even a transactional send")
-	assert.Equal(t, eligibility.ReasonSuppressed, transactional.Reason)
+	assert.Equal(t, skipreason.Suppressed, transactional.Reason)
 
 	require.NoError(t, env.DB.Suppression.DeleteOneID(fixtures.SuppressionErasableID).Exec(ctx))
 	broadcasts, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: "email", Destination: fixtures.ContactErasableEmail, Source: "broadcasts"})
 	require.NoError(t, err)
 	assert.False(t, broadcasts.Eligible, "the surviving Unsubscribe refuses the new Contact")
-	assert.Equal(t, eligibility.ReasonUnsubscribedSource, broadcasts.Reason)
+	assert.Equal(t, skipreason.UnsubscribedSource, broadcasts.Reason)
 }

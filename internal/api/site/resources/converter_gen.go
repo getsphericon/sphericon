@@ -50,11 +50,13 @@ import (
 	webhook "github.com/getsphericon/sphericon/internal/infra/webhook"
 	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
+	deferralcause "github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	emailrender "github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	holdreason "github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
 	providers "github.com/getsphericon/sphericon/internal/kernel/providers"
 	ruleaction "github.com/getsphericon/sphericon/internal/kernel/ruleaction"
+	skipreason "github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	smsrender "github.com/getsphericon/sphericon/internal/kernel/smsrender"
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	tokenscope "github.com/getsphericon/sphericon/internal/kernel/tokenscope"
@@ -654,15 +656,19 @@ func (c *ConverterImpl) BroadcastChannelToResource(source channels.Channel) site
 	}
 	return siteapiBroadcastChannel
 }
-func (c *ConverterImpl) BroadcastLimitToResource(source providerlimit.Cause) site.SiteBroadcastLimit {
+func (c *ConverterImpl) BroadcastLimitToResource(source deferralcause.Cause) site.SiteBroadcastLimit {
 	var siteapiSiteBroadcastLimit site.SiteBroadcastLimit
 	switch source {
-	case providerlimit.CauseProvider:
+	case deferralcause.FrequencyCap:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
-	case providerlimit.CauseProviderLimit:
+	case deferralcause.ProviderLimit:
 		siteapiSiteBroadcastLimit = site.SiteBroadcastLimitProviderLimit
-	case providerlimit.CauseSendCap:
+	case deferralcause.SendCap:
 		siteapiSiteBroadcastLimit = site.SiteBroadcastLimitSendCap
+	case deferralcause.SendingWindow:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	case deferralcause.SlowDown:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -1626,7 +1632,8 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) sit
 		siteapiContactExportOutboundMessage.SendingDomain = optNilString((*source).SendingDomain)
 		siteapiContactExportOutboundMessage.ProviderMessageId = optNilString((*source).ProviderMessageID)
 		siteapiContactExportOutboundMessage.Status = string((*source).Status)
-		siteapiContactExportOutboundMessage.Reason = optNilString((*source).Reason)
+		siteapiContactExportOutboundMessage.SkippedReason = optSkippedReason(c, (*source).SkippedReason)
+		siteapiContactExportOutboundMessage.Failure = optNilString((*source).Failure)
 		siteapiContactExportOutboundMessage.ClaimedAt = timestamp((*source).ClaimedAt)
 		siteapiContactExportOutboundMessage.SentAt = optNilTimestamp((*source).SentAt)
 		siteapiContactExportOutboundMessage.DeliveredAt = optNilTimestamp((*source).DeliveredAt)
@@ -2246,6 +2253,30 @@ func (c *ConverterImpl) SignupItemsToSite(source []signupitems.Document) []site.
 		}
 	}
 	return siteapiSiteSignupItemList
+}
+func (c *ConverterImpl) SkippedReasonToResource(source skipreason.Reason) site.SkippedReason {
+	var siteapiSkippedReason site.SkippedReason
+	switch source {
+	case skipreason.ContactErased:
+		siteapiSkippedReason = site.SkippedReasonContactErased
+	case skipreason.FrequencyCap:
+		siteapiSkippedReason = site.SkippedReasonFrequencyCap
+	case skipreason.NoDestination:
+		siteapiSkippedReason = site.SkippedReasonNoDestination
+	case skipreason.NoLocalTime:
+		siteapiSkippedReason = site.SkippedReasonNoLocalTime
+	case skipreason.Suppressed:
+		siteapiSkippedReason = site.SkippedReasonSuppressed
+	case skipreason.Unconfirmed:
+		siteapiSkippedReason = site.SkippedReasonUnconfirmed
+	case skipreason.UnsubscribedEverything:
+		siteapiSkippedReason = site.SkippedReasonUnsubscribedEverything
+	case skipreason.UnsubscribedSource:
+		siteapiSkippedReason = site.SkippedReasonUnsubscribedSource
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiSkippedReason
 }
 func (c *ConverterImpl) SmsBroadcastContentToResource(source *ent.Broadcast) site.SmsBroadcastContent {
 	var siteapiSmsBroadcastContent site.SmsBroadcastContent

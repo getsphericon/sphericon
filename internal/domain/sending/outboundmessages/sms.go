@@ -7,13 +7,13 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/smsrender"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
@@ -66,9 +66,9 @@ func (smsChannel) targets(_ context.Context, _ *ent.Scoped, _ Request, _ Route, 
 
 // unreachable suppresses a number the provider reports reaches no handset, like a hard bounce: no
 // send on the Channel goes to it again, and the message is Skipped as suppressed.
-func (smsChannel) unreachable(ctx context.Context, s *ent.Scoped, pub events.Publisher, _ *ent.Integration, req Request, to target, messageID int64) (string, error) {
+func (smsChannel) unreachable(ctx context.Context, s *ent.Scoped, pub events.Publisher, _ *ent.Integration, req Request, to target, messageID int64) (skipreason.Reason, error) {
 	err := pub.Publish(ctx, &events.SmsDestinationUnreachable{WorkspaceID: s.WorkspaceID(), Phone: to.dest, ContactID: req.contactID(), DedupID: fmt.Sprintf("sms-send:%d/unreachable", messageID)})
-	return eligibility.ReasonSuppressed, err
+	return skipreason.Suppressed, err
 }
 
 // optedOut reports the provider's semantic verdict without attributing a prior stop to this send.

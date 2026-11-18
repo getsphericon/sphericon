@@ -25,8 +25,11 @@ model ExportMessageRow {
   /** `pending` (claimed, provider not yet answered), `sent`, `skipped` or `failed` */
   status: string;
 
-  /** Why the message was skipped, or the failure text */
-  reason: string | null;
+  /** Why a `skipped` message was skipped; absent on every other status */
+  skipped_reason: SkippedReason | null;
+
+  /** What a `failed` message failed with, in the provider's or the renderer's words; absent on every other status */
+  failure: string | null;
 
   /** The Contact the destination resolved to; absent for a stranger or after an Erasure */
   contact_id: EntityId | null;

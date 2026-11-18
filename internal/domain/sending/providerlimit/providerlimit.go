@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/sendcaplimiter"
 	"github.com/getsphericon/sphericon/internal/infra/db"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 )
 
 // daySeconds is the length of the rolling window in seconds.
@@ -74,25 +75,11 @@ type Reservation struct {
 // integration reports whether the Integration's buckets apply.
 func (r Reservation) integration() bool { return r.IntegrationID != 0 && r.Limits.Any() }
 
-// Cause is the limit that slows sending: what a Deferral waits for, and what paces the rest of a
-// sending Broadcast. Each surface maps it to its own enum once, in its converter.
-type Cause string
-
-const (
-	// CauseProviderLimit: the Integration's Provider limit (ADR 0023).
-	CauseProviderLimit Cause = "provider_limit"
-	// CauseSendCap: the Workspace's Send cap (ADR 0067).
-	CauseSendCap Cause = "send_cap"
-	// CauseProvider: the provider's own, which answered "too fast" or "quota exceeded"; only a
-	// Deferral names it.
-	CauseProvider Cause = "provider"
-)
-
 // Shortfall is a denied reservation: the wait until every short bucket holds a token again, and
 // the limit whose wait is the longest. The zero Shortfall is a granted one.
 type Shortfall struct {
 	Wait  time.Duration
-	Cause Cause
+	Cause deferralcause.Cause
 }
 
 // Tx runs fn in one transaction over the scope s (events.Bus.WithinAuditTx), so the Workspace
@@ -356,9 +343,9 @@ func shortfall(ctx context.Context, s *ent.Scoped, r Reservation, now time.Time)
 			}
 		}
 	}
-	cause := CauseProviderLimit
+	cause := deferralcause.ProviderLimit
 	if workspaceWait > 0 && workspaceWait >= integrationWait {
-		cause = CauseSendCap
+		cause = deferralcause.SendCap
 	}
 	wait := math.Max(workspaceWait, integrationWait)
 	// Round up to a millisecond so a retry at exactly the reported wait succeeds.

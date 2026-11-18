@@ -5790,8 +5790,10 @@ type ContactExportOutboundMessage struct {
 	ProviderMessageId OptNilString `json:"providerMessageId"`
 	// Delivery status.
 	Status string `json:"status"`
-	// Why delivery failed or was skipped.
-	Reason OptNilString `json:"reason"`
+	// Why a skipped message was skipped.
+	SkippedReason OptNilSkippedReason `json:"skippedReason"`
+	// What a failed message failed with.
+	Failure OptNilString `json:"failure"`
 	// When the send was claimed.
 	ClaimedAt Timestamp `json:"claimedAt"`
 	// When the message was sent.
@@ -5865,9 +5867,14 @@ func (s *ContactExportOutboundMessage) GetStatus() string {
 	return s.Status
 }
 
-// GetReason returns the value of Reason.
-func (s *ContactExportOutboundMessage) GetReason() OptNilString {
-	return s.Reason
+// GetSkippedReason returns the value of SkippedReason.
+func (s *ContactExportOutboundMessage) GetSkippedReason() OptNilSkippedReason {
+	return s.SkippedReason
+}
+
+// GetFailure returns the value of Failure.
+func (s *ContactExportOutboundMessage) GetFailure() OptNilString {
+	return s.Failure
 }
 
 // GetClaimedAt returns the value of ClaimedAt.
@@ -5985,9 +5992,14 @@ func (s *ContactExportOutboundMessage) SetStatus(val string) {
 	s.Status = val
 }
 
-// SetReason sets the value of Reason.
-func (s *ContactExportOutboundMessage) SetReason(val OptNilString) {
-	s.Reason = val
+// SetSkippedReason sets the value of SkippedReason.
+func (s *ContactExportOutboundMessage) SetSkippedReason(val OptNilSkippedReason) {
+	s.SkippedReason = val
+}
+
+// SetFailure sets the value of Failure.
+func (s *ContactExportOutboundMessage) SetFailure(val OptNilString) {
+	s.Failure = val
 }
 
 // SetClaimedAt sets the value of ClaimedAt.
@@ -11708,6 +11720,74 @@ func (o OptNilSiteBroadcastProgress) Get() (v SiteBroadcastProgress, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilSiteBroadcastProgress) Or(d SiteBroadcastProgress) SiteBroadcastProgress {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilSkippedReason returns new OptNilSkippedReason with value set to v.
+func NewOptNilSkippedReason(v SkippedReason) OptNilSkippedReason {
+	return OptNilSkippedReason{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilSkippedReason is optional nullable SkippedReason.
+type OptNilSkippedReason struct {
+	Value SkippedReason
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilSkippedReason was set.
+func (o OptNilSkippedReason) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilSkippedReason) Reset() {
+	var v SkippedReason
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilSkippedReason) SetTo(v SkippedReason) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilSkippedReason) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilSkippedReason) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v SkippedReason
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilSkippedReason) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilSkippedReason) Get() (v SkippedReason, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilSkippedReason) Or(d SkippedReason) SkippedReason {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -28412,6 +28492,92 @@ func (s *SiteWorkspaceTimezoneInput) SetTimezone(val TimeZoneName) {
 
 // SiteWorkspacesLeaveNoContent is response for SiteWorkspacesLeave operation.
 type SiteWorkspacesLeaveNoContent struct{}
+
+// Why an Outbound message was Skipped: final for its Destination, never retried. The first four are
+// Send-eligibility's; a client switches over the list.
+// Ref: #/components/schemas/SkippedReason
+type SkippedReason string
+
+const (
+	SkippedReasonSuppressed             SkippedReason = "suppressed"
+	SkippedReasonUnsubscribedEverything SkippedReason = "unsubscribed_everything"
+	SkippedReasonUnsubscribedSource     SkippedReason = "unsubscribed_source"
+	SkippedReasonUnconfirmed            SkippedReason = "unconfirmed"
+	SkippedReasonNoDestination          SkippedReason = "no_destination"
+	SkippedReasonContactErased          SkippedReason = "contact_erased"
+	SkippedReasonNoLocalTime            SkippedReason = "no_local_time"
+	SkippedReasonFrequencyCap           SkippedReason = "frequency_cap"
+)
+
+// AllValues returns all SkippedReason values.
+func (SkippedReason) AllValues() []SkippedReason {
+	return []SkippedReason{
+		SkippedReasonSuppressed,
+		SkippedReasonUnsubscribedEverything,
+		SkippedReasonUnsubscribedSource,
+		SkippedReasonUnconfirmed,
+		SkippedReasonNoDestination,
+		SkippedReasonContactErased,
+		SkippedReasonNoLocalTime,
+		SkippedReasonFrequencyCap,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SkippedReason) MarshalText() ([]byte, error) {
+	switch s {
+	case SkippedReasonSuppressed:
+		return []byte(s), nil
+	case SkippedReasonUnsubscribedEverything:
+		return []byte(s), nil
+	case SkippedReasonUnsubscribedSource:
+		return []byte(s), nil
+	case SkippedReasonUnconfirmed:
+		return []byte(s), nil
+	case SkippedReasonNoDestination:
+		return []byte(s), nil
+	case SkippedReasonContactErased:
+		return []byte(s), nil
+	case SkippedReasonNoLocalTime:
+		return []byte(s), nil
+	case SkippedReasonFrequencyCap:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SkippedReason) UnmarshalText(data []byte) error {
+	switch SkippedReason(data) {
+	case SkippedReasonSuppressed:
+		*s = SkippedReasonSuppressed
+		return nil
+	case SkippedReasonUnsubscribedEverything:
+		*s = SkippedReasonUnsubscribedEverything
+		return nil
+	case SkippedReasonUnsubscribedSource:
+		*s = SkippedReasonUnsubscribedSource
+		return nil
+	case SkippedReasonUnconfirmed:
+		*s = SkippedReasonUnconfirmed
+		return nil
+	case SkippedReasonNoDestination:
+		*s = SkippedReasonNoDestination
+		return nil
+	case SkippedReasonContactErased:
+		*s = SkippedReasonContactErased
+		return nil
+	case SkippedReasonNoLocalTime:
+		*s = SkippedReasonNoLocalTime
+		return nil
+	case SkippedReasonFrequencyCap:
+		*s = SkippedReasonFrequencyCap
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 // SMS's content of a Broadcast as stored.
 // Ref: #/components/schemas/SmsBroadcastContent

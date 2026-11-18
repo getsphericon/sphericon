@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
 // Content is a Message content value (GLOSSARY, ADR 0078): what one message on one Channel says,
@@ -40,7 +41,7 @@ type channel interface {
 	// of send): a Channel of Bindings removes the Binding and records that it is gone, SMS
 	// suppresses the number. skip is the Skipped reason Send-eligibility now gives the target
 	// (no_destination, suppressed). It runs in a transaction of its own, outside the send's claim.
-	unreachable(ctx context.Context, s *ent.Scoped, pub events.Publisher, integ *ent.Integration, req Request, to target, messageID int64) (skip string, err error)
+	unreachable(ctx context.Context, s *ent.Scoped, pub events.Publisher, integ *ent.Integration, req Request, to target, messageID int64) (skip skipreason.Reason, err error)
 	// optedOut records the Channel-wide opt-out of a target whose provider refused the message
 	// because the person stopped at the provider (an optedOutError of send: a blocked bot, a number
 	// that texted STOP to the sender), attributed to msg, the message that found out (ADR 0077). It

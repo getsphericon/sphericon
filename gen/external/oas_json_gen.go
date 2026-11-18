@@ -11970,9 +11970,15 @@ func (s *ContactExportOutboundMessage) encodeFields(e *jx.Encoder) {
 		e.Str(s.Status)
 	}
 	{
-		if s.Reason.Set {
-			e.FieldStart("reason")
-			s.Reason.Encode(e)
+		if s.SkippedReason.Set {
+			e.FieldStart("skippedReason")
+			s.SkippedReason.Encode(e)
+		}
+	}
+	{
+		if s.Failure.Set {
+			e.FieldStart("failure")
+			s.Failure.Encode(e)
 		}
 	}
 	{
@@ -12061,7 +12067,7 @@ func (s *ContactExportOutboundMessage) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfContactExportOutboundMessage = [24]string{
+var jsonFieldsNameOfContactExportOutboundMessage = [25]string{
 	0:  "id",
 	1:  "kind",
 	2:  "channel",
@@ -12070,22 +12076,23 @@ var jsonFieldsNameOfContactExportOutboundMessage = [24]string{
 	5:  "sendingDomain",
 	6:  "providerMessageId",
 	7:  "status",
-	8:  "reason",
-	9:  "claimedAt",
-	10: "sentAt",
-	11: "deliveredAt",
-	12: "bouncedAt",
-	13: "undeliveredAt",
-	14: "undeliveredCode",
-	15: "complainedAt",
-	16: "openedAt",
-	17: "clickedAt",
-	18: "captured",
-	19: "broadcastId",
-	20: "automationId",
-	21: "automationStep",
-	22: "templateId",
-	23: "createdAt",
+	8:  "skippedReason",
+	9:  "failure",
+	10: "claimedAt",
+	11: "sentAt",
+	12: "deliveredAt",
+	13: "bouncedAt",
+	14: "undeliveredAt",
+	15: "undeliveredCode",
+	16: "complainedAt",
+	17: "openedAt",
+	18: "clickedAt",
+	19: "captured",
+	20: "broadcastId",
+	21: "automationId",
+	22: "automationStep",
+	23: "templateId",
+	24: "createdAt",
 }
 
 // Decode decodes ContactExportOutboundMessage from json.
@@ -12093,7 +12100,7 @@ func (s *ContactExportOutboundMessage) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode ContactExportOutboundMessage to nil")
 	}
-	var requiredBitSet [3]uint8
+	var requiredBitSet [4]uint8
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -12185,18 +12192,28 @@ func (s *ContactExportOutboundMessage) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"status\"")
 			}
-		case "reason":
+		case "skippedReason":
 			if err := func() error {
-				s.Reason.Reset()
-				if err := s.Reason.Decode(d); err != nil {
+				s.SkippedReason.Reset()
+				if err := s.SkippedReason.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"reason\"")
+				return errors.Wrap(err, "decode field \"skippedReason\"")
+			}
+		case "failure":
+			if err := func() error {
+				s.Failure.Reset()
+				if err := s.Failure.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"failure\"")
 			}
 		case "claimedAt":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[1] |= 1 << 2
 			if err := func() error {
 				if err := s.ClaimedAt.Decode(d); err != nil {
 					return err
@@ -12286,7 +12303,7 @@ func (s *ContactExportOutboundMessage) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"clickedAt\"")
 			}
 		case "captured":
-			requiredBitSet[2] |= 1 << 2
+			requiredBitSet[2] |= 1 << 3
 			if err := func() error {
 				v, err := d.Bool()
 				s.Captured = bool(v)
@@ -12338,7 +12355,7 @@ func (s *ContactExportOutboundMessage) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"templateId\"")
 			}
 		case "createdAt":
-			requiredBitSet[2] |= 1 << 7
+			requiredBitSet[3] |= 1 << 0
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -12356,10 +12373,11 @@ func (s *ContactExportOutboundMessage) Decode(d *jx.Decoder) error {
 	}
 	// Validate required fields.
 	var failures []validate.FieldError
-	for i, mask := range [3]uint8{
+	for i, mask := range [4]uint8{
 		0b10001111,
-		0b00000010,
-		0b10000100,
+		0b00000100,
+		0b00001000,
+		0b00000001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -23423,6 +23441,55 @@ func (s *OptNilSesConfigurationSetName) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes SkippedReason as json.
+func (o OptNilSkippedReason) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	if o.Null {
+		e.Null()
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes SkippedReason from json.
+func (o *OptNilSkippedReason) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptNilSkippedReason to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v SkippedReason
+		o.Value = v
+		o.Set = true
+		o.Null = true
+		return nil
+	}
+	o.Set = true
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptNilSkippedReason) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptNilSkippedReason) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes SmsConfirmation as json.
 func (o OptNilSmsConfirmation) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -30617,6 +30684,58 @@ func (s *SetTrackingDomainInput) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SetTrackingDomainInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SkippedReason as json.
+func (s SkippedReason) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SkippedReason from json.
+func (s *SkippedReason) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SkippedReason to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SkippedReason(v) {
+	case SkippedReasonSuppressed:
+		*s = SkippedReasonSuppressed
+	case SkippedReasonUnsubscribedEverything:
+		*s = SkippedReasonUnsubscribedEverything
+	case SkippedReasonUnsubscribedSource:
+		*s = SkippedReasonUnsubscribedSource
+	case SkippedReasonUnconfirmed:
+		*s = SkippedReasonUnconfirmed
+	case SkippedReasonNoDestination:
+		*s = SkippedReasonNoDestination
+	case SkippedReasonContactErased:
+		*s = SkippedReasonContactErased
+	case SkippedReasonNoLocalTime:
+		*s = SkippedReasonNoLocalTime
+	case SkippedReasonFrequencyCap:
+		*s = SkippedReasonFrequencyCap
+	default:
+		*s = SkippedReason(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SkippedReason) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SkippedReason) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

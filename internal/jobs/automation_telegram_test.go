@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -117,7 +118,7 @@ func TestAMixedSequenceSendsTheEmailsAndRecordsTheTelegramSkipForAContactWithNoB
 	assert.Empty(t, env.Telegram.RequestsOf(telegramtest.SendMessage))
 	assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(t.Context(), runID).Status)
 	skipped := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).OnlyX(t.Context())
-	assert.Equal(t, "no_destination", *skipped.Reason)
+	assert.Equal(t, skipreason.NoDestination, *skipped.SkippedReason)
 	assert.Equal(t, 1, *skipped.AutomationStep)
 	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramSent, nil))
 }
@@ -138,7 +139,7 @@ func TestARenderedTextOverTheLimitFailsThatMessageAlone(t *testing.T) {
 	assert.Empty(t, env.Telegram.RequestsOf(telegramtest.SendMessage))
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(t.Context())
 	assert.Equal(t, outboundmessage.StatusFailed, msg.Status)
-	assert.Equal(t, "content_too_long", *msg.Reason)
+	assert.Equal(t, "content_too_long", *msg.Failure)
 }
 
 func TestATelegramStepWithAnImageSendsAPhotoWithTheCaptionAndButtons(t *testing.T) {
