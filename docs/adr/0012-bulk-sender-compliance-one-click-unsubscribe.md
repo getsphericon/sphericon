@@ -22,12 +22,12 @@ status: accepted
 
 Gmail/Yahoo/Microsoft enforce bulk-sender requirements (2024+) as the **receiving** side: any
 mail landing in those inboxes — regardless of the transport it was sent through (SES, SMTP, …) —
-must be DKIM-authenticated, come from a domain with a published DMARC record, and (for senders
-
-> ~5k/day) carry a **one-click unsubscribe** (RFC 8058), with the spam-complaint rate held
-> < 0.3%. Non-compliant mail is spam-foldered or rejected. The transport does not do this for us:
-> SES ships whatever MIME we hand it and adds no `List-Unsubscribe` headers. So sphericon must build
-> the headers itself, in the message, before handing it to any provider.
+must be DKIM-authenticated and come from a domain with a published DMARC record; Gmail and Yahoo
+also require bulk senders (over about 5,000 a day) to carry a **one-click unsubscribe** (RFC 8058) and
+to hold the spam-complaint rate under 0.3%, where Microsoft only recommends a working unsubscribe link.
+Non-compliant mail is spam-foldered or rejected. The transport does not do this for us: SES ships
+whatever MIME we hand it and adds no `List-Unsubscribe` headers. So sphericon must build the headers
+itself, in the message, before handing it to any provider.
 
 This ADR covers the two forks still open after ADR 0011 settled the complaint-rate metric:
 one-click unsubscribe (RFC 8058) and DMARC posture. Both are table-stakes deliverability that a

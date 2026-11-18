@@ -1,5 +1,7 @@
 # Sending domains: sphericon-native DKIM, verified-domain required to send
 
+> **Amended by [[0184-spf-is-the-integrations-and-is-shown-per-integration]]:** the SPF records shown come from the provider of each Integration that sends from the domain, and are checked daily; DKIM stays the only gate.
+
 > **Amended by [[0131-email-replies-arrive-through-the-providers-inbound-route]]:**
 > under Reply handling a Sending domain names the one Integration whose inbound route receives its
 > replies; sending from it stays open to every Integration.
