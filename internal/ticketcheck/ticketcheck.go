@@ -2,8 +2,9 @@
 // ADR says in its front matter whether it is built (`build:`). A ticket that names an ADR not built
 // yet either waits for a ticket that builds it or says why it builds without it: an agent handed the
 // ticket otherwise finds nothing to build on. Only the ADRs the ticket names count, not those its own
-// ADR names, so a ticket names every ADR it builds on. `cmd/ticketcheck` runs the checks on the
-// files of docs/adr and on the issues of the tracker.
+// ADR names, so a ticket names every ADR it builds on. Two more things keep a ticket from an agent:
+// an open issue its `Blocked by` line names with no native edge, and, for a spec, no slices yet.
+// `cmd/ticketcheck` runs the checks on the files of docs/adr and on the issues of the tracker.
 package ticketcheck
 
 import (
@@ -122,23 +123,41 @@ type Issue struct {
 	Body      string
 	Parent    int   // the issue it is a sub-issue of, or 0
 	BlockedBy []int // the tracker's native blocking edges, the parent's included
+	SubIssues []int // its own sub-issues, whatever their state
 }
 
-// Gap is an ADR a ticket builds on that is not built, with the open tickets that build it.
+// Tickets is how the tracker's tickets stand.
+type Tickets interface {
+	State(number int) TicketState
+	// SubIssues returns the sub-issues of a ticket, whatever their state: the slices of a spec.
+	SubIssues(number int) []int
+}
+
+// Gap is an ADR a ticket builds on that is not built, with the open tickets its `build:` lists and
+// their open slices.
 type Gap struct {
 	ADR     string
 	Tickets []int
+	Slices  []int
 }
 
 func (g Gap) String() string {
 	if len(g.Tickets) == 0 {
 		return fmt.Sprintf("ADR %s is not built, and no ticket builds it yet", g.ADR)
 	}
-	refs := make([]string, len(g.Tickets))
-	for i, n := range g.Tickets {
-		refs[i] = "#" + strconv.Itoa(n)
+	text := fmt.Sprintf("ADR %s is not built yet: %s builds it", g.ADR, refs(g.Tickets))
+	if len(g.Slices) > 0 {
+		text += fmt.Sprintf(" (wait for the slice this ticket needs: %s)", refs(g.Slices))
 	}
-	return fmt.Sprintf("ADR %s is not built yet: %s builds it", g.ADR, strings.Join(refs, ", "))
+	return text
+}
+
+func refs(numbers []int) string {
+	out := make([]string, len(numbers))
+	for i, n := range numbers {
+		out[i] = "#" + strconv.Itoa(n)
+	}
+	return strings.Join(out, ", ")
 }
 
 var (
@@ -184,9 +203,11 @@ const (
 // as `(ADR NNNN)` or `(ADR NNNN, NNNN)` and those whose `build:` lists it or its parent (a sub-issue
 // of a spec builds what the spec builds). An ADR is built when it has no `build:` field, has `done`,
 // or lists no open ticket and at least one completed one. The issue waits for an ADR when it is
-// blocked by one of that ADR's open tickets (a native edge, its parent's, or a `Blocked by` line),
-// and waives it with a line `Without ADR NNNN: <why>`.
-func Check(issue Issue, adrs []ADR, state func(int) TicketState) []Gap {
+// blocked (a native edge, its parent's, or a `Blocked by` line) by a ticket that builds it, open or
+// completed: one its `build:` lists, or a slice of one, so a ticket waits for the slice of a spec it
+// needs rather than the whole spec, and a slice that is done still counts. It waives the ADR with a
+// line `Without ADR NNNN: <why>`.
+func Check(issue Issue, adrs []ADR, tickets Tickets) []Gap {
 	byNumber := make(map[string]ADR, len(adrs))
 	own := map[string]bool{}
 	for _, adr := range adrs {
@@ -211,24 +232,34 @@ func Check(issue Issue, adrs []ADR, state func(int) TicketState) []Gap {
 		if own[number] || !ok || !adr.Build.Recorded || adr.Build.Done {
 			continue
 		}
-		var building []int
+		var building, open []int
 		completed := false
 		for _, n := range adr.Build.Tickets {
-			switch state(n) {
+			switch tickets.State(n) {
 			case Open:
-				building = append(building, n)
+				open = append(open, n)
 			case Completed:
 				completed = true
 			case NotPlanned:
+				continue
+			}
+			building = append(building, n)
+			building = append(building, tickets.SubIssues(n)...)
+		}
+		if len(open) == 0 && completed {
+			continue
+		}
+		waited := func(n int) bool { return slices.Contains(waits, n) && tickets.State(n) != NotPlanned }
+		if slices.ContainsFunc(building, waited) || waives(issue.Body, number) {
+			continue
+		}
+		var slicesOpen []int
+		for _, n := range building {
+			if tickets.State(n) == Open && !slices.Contains(open, n) {
+				slicesOpen = append(slicesOpen, n)
 			}
 		}
-		if len(building) == 0 && completed {
-			continue
-		}
-		if slices.ContainsFunc(building, func(n int) bool { return slices.Contains(waits, n) }) || waives(issue.Body, number) {
-			continue
-		}
-		gaps = append(gaps, Gap{ADR: number, Tickets: building})
+		gaps = append(gaps, Gap{ADR: number, Tickets: open, Slices: slicesOpen})
 	}
 	return gaps
 }
@@ -269,17 +300,84 @@ func waives(body, number string) bool {
 	return waiver.MatchString(body)
 }
 
-// Comment is what the tracker says on a ticket the check took out of the agents' queue.
-func Comment(gaps []Gap) string {
-	var b bytes.Buffer
-	b.WriteString("This ticket builds on decisions that are not built yet, so it is back in triage:\n\n")
-	for _, gap := range gaps {
-		fmt.Fprintf(&b, "- %s\n", gap)
+// Report is what keeps a ticket from an agent: the unbuilt ADRs it builds on, the open issues its
+// body says it is blocked by with no native edge, and, for a spec, that it has no slices yet.
+type Report struct {
+	Gaps     []Gap
+	Unlinked []int
+	Unsliced bool
+}
+
+// Review checks a ticket ready for an agent. A `Blocked by` line or section is the to-tickets
+// template's mirror of the native edges, so an open issue it names must be one of them: the tracker
+// gates on the edges, and a line alone gates nothing. A spec (the to-spec template: its `## User
+// Stories` and `## Implementation Decisions`) is ready once to-tickets has sliced it into sub-issues.
+func Review(issue Issue, adrs []ADR, tickets Tickets) Report {
+	report := Report{Gaps: Check(issue, adrs, tickets)}
+	for _, n := range blockers(issue.Body) {
+		if n != issue.Number && tickets.State(n) == Open && !slices.Contains(issue.BlockedBy, n) &&
+			!slices.Contains(report.Unlinked, n) {
+			report.Unlinked = append(report.Unlinked, n)
+		}
 	}
-	b.WriteString("\nFor each of them, either wait for a ticket that builds it (`Blocked by #<n>`, or a native " +
-		"blocking edge; file one and add its number to the ADR's `build:` when there is none), or say why this " +
-		"ticket builds without it on a line `Without ADR <NNNN>: <why>`. Then label it `ready-for-agent` again; " +
-		"`mise run tickets:check -- <number>` runs the same check. This is not a request for `/triage`: the ticket " +
-		"is already written, so add the edges or waivers, or slice it again with `/to-tickets`.\n")
+	report.Unsliced = isSpec(issue.Body) && len(issue.SubIssues) == 0
+	return report
+}
+
+// Failed reports whether anything keeps the ticket from an agent.
+func (r Report) Failed() bool { return len(r.Gaps) > 0 || len(r.Unlinked) > 0 || r.Unsliced }
+
+// Lines names each finding on a line of its own.
+func (r Report) Lines() []string {
+	var lines []string
+	for _, gap := range r.Gaps {
+		lines = append(lines, gap.String())
+	}
+	if len(r.Unlinked) > 0 {
+		lines = append(lines, fmt.Sprintf("the body says it is blocked by %s, with no native blocking edge", refs(r.Unlinked)))
+	}
+	if r.Unsliced {
+		lines = append(lines, "a spec with no slices: no sub-issue builds it yet")
+	}
+	return lines
+}
+
+var specHeadings = []*regexp.Regexp{
+	regexp.MustCompile(`(?m)^##\s+User Stories\s*$`),
+	regexp.MustCompile(`(?m)^##\s+Implementation Decisions\s*$`),
+}
+
+func isSpec(body string) bool {
+	for _, heading := range specHeadings {
+		if !heading.MatchString(body) {
+			return false
+		}
+	}
+	return true
+}
+
+// Comment is what the tracker says on a ticket the check took out of the agents' queue.
+func Comment(r Report) string {
+	var b bytes.Buffer
+	b.WriteString("This ticket is not ready for an agent yet, so it is back in triage:\n\n")
+	for _, line := range r.Lines() {
+		fmt.Fprintf(&b, "- %s\n", line)
+	}
+	b.WriteString("\n")
+	if len(r.Gaps) > 0 {
+		b.WriteString("For each ADR, either wait for a ticket that builds it (a native blocking edge to it, or to the " +
+			"slice of it this ticket needs; file one and add its number to the ADR's `build:` when there is none), or " +
+			"say why this ticket builds without it on a line `Without ADR <NNNN>: <why>`.\n\n")
+	}
+	if len(r.Unlinked) > 0 {
+		b.WriteString("Add a native blocking edge for each issue the `Blocked by` line names, or take it off the line " +
+			"(`docs/agents/issue-tracker.md`, \"Blocking\").\n\n")
+	}
+	if r.Unsliced {
+		b.WriteString("Slice the spec with `/to-tickets`; its sub-issues carry the label, and the spec gets it back " +
+			"once they exist.\n\n")
+	}
+	b.WriteString("Then label it `ready-for-agent` again; `mise run tickets:check -- <number>` runs the same check. " +
+		"This is not a request for `/triage`: the ticket is already written.\n")
 	return b.String()
 }

@@ -250,8 +250,21 @@ Before running the `to-spec` skill, call the `advisor` tool first and take its a
 `to-spec` and `to-tickets` apply `ready-for-agent` only when every ADR, Step, module or contract a
 ticket builds on is on `main`, or is an open ticket it carries a native `blocked_by` edge to (see
 `docs/agents/issue-tracker.md`, "Blocking"). An accepted ADR with no ticket gets its own spec first.
-Check the code, not the glossary: the glossary may already describe what is decided but unbuilt. The
-skills are vendored, so this rule lives here rather than in them.
+Check the code, not the glossary: the glossary may already describe what is decided but unbuilt. A
+spec is ready once it is sliced: `to-spec` publishes it without the label, and `to-tickets` labels it
+`ready-for-agent` after its sub-issues are published, the one change it makes to the parent. The
+skills are vendored, so this rule lives here rather than in them; `mise run tickets:check` holds the
+mechanical part.
+
+### A hand-off is taken by its receiver
+
+When `to-spec` or `to-tickets` writes that another ticket builds a part ("is #N's", "comes with #N",
+"whichever lands second"), it reads #N first and finds that part there. When #N lacks it, the same
+run adds the part to #N's body, or files the ticket or spec that owns it and names that one instead.
+A "whichever lands second" line stands on both tickets, each naming the other. Before `to-spec`,
+list the open specs that change the same modules (a send path, an eligibility check, a shared
+grammar) and say in the spec how it meets each. The skills are vendored, so this rule lives here
+rather than in them.
 
 ### Research notes stay out of this repository
 
