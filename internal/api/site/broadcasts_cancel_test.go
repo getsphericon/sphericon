@@ -34,5 +34,5 @@ func TestSiteBroadcastCancelEndsASendingBroadcast(t *testing.T) {
 	assert.EqualValues(t, 1, b.Stats.CancelledCount)
 	assert.Zero(t, b.Stats.PendingCount)
 	ids := lo.Map(listed.Items, func(b siteapi.SiteBroadcastResource, _ int) int64 { return int64(b.ID) })
-	assert.Equal(t, []int64{fixtures.BroadcastSendingID}, ids)
+	assert.Equal(t, []int64{fixtures.BroadcastCancelledID, fixtures.BroadcastSendingID}, ids, "the fixture's cancelled Broadcast and this one")
 }
