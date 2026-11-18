@@ -739,6 +739,12 @@ const (
 	BroadcastBazaarName = "Bazaar sale"
 	// BroadcastBazaarSubject is from fixtures/broadcasts.
 	BroadcastBazaarSubject = "Bazaar sale"
+	// BroadcastCancelledID is from fixtures/broadcasts.
+	BroadcastCancelledID = 113
+	// BroadcastCancelledName is from fixtures/broadcasts.
+	BroadcastCancelledName = "Spring promo (stopped)"
+	// BroadcastCancelledSubject is from fixtures/broadcasts.
+	BroadcastCancelledSubject = "Spring promo"
 	// BroadcastCaptonLaterID is from fixtures/broadcasts.
 	BroadcastCaptonLaterID = 21101
 	// BroadcastCaptonLaterName is from fixtures/broadcasts.

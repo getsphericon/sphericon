@@ -284,6 +284,22 @@
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 1}}'
 
+# Cancelled while sending (ADR 0150): one recipient was sent before the Cancel, the other left
+# unsent, so it reports one cancelled. Its recipients and the one message are in
+# broadcast_recipients.yml and outbound_messages.yml.
+- id: 113 # fixture: BroadcastCancelled
+  revision: 1
+  name: Spring promo (stopped)
+  subject: Spring promo
+  from_name: CodeBasics
+  from_email: hello@codebasics.dev
+  body: '<p>Lorem ipsum learning content.</p>'
+  status: cancelled
+  cancelled_at: '{{daysAgo 2}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 4}}'
+  updated_at: '{{daysAgo 2}}'
+
 # SMS drafts through Acme's Twilio account (integration 8): one with a text, one whose text is
 # blank, which a schedule refuses.
 - id: 7340 # fixture: BroadcastSmsDraft

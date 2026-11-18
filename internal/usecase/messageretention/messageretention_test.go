@@ -177,37 +177,25 @@ func TestAFrozenBroadcastsRecipientSendsNothing(t *testing.T) {
 	assert.Equal(t, pruned, env.DB.OutboundMessage.Query().CountX(ctx))
 }
 
-// cancelledFigures is the cancelled sending Broadcast's figures with Alice and Carol left unsent
-// and Bob's message still pending, as its rows count them and as the frozen row keeps them.
-var cancelledFigures = broadcasts.Stats{Recipients: 3, Cancelled: 2, Pending: 1}
+// cancelledFigures is the cancelled fixture Broadcast's figures: one recipient sent and delivered
+// before the Cancel, the other left unsent.
+var cancelledFigures = broadcasts.Stats{Recipients: 2, Sent: 1, Delivered: 1, Cancelled: 1}
 
-// cancelSending places Alice and Carol on the sending Broadcast unsent and Bob with his pending
-// message, then cancels it.
-func cancelSending(t *testing.T, env *testhelper.TestEnv) {
+// cancelledStats is the report's figures of the cancelled Broadcast.
+func cancelledStats(t *testing.T, env *testhelper.TestEnv) broadcasts.Stats {
 	t.Helper()
-	ctx := context.Background()
-	for _, c := range []int64{fixtures.ContactAliceID, fixtures.ContactBobID, fixtures.ContactCarolID} {
-		env.PlaceRecipient(ctx, fixtures.BroadcastSendingID, c)
-	}
-	_, err := testhelper.Module[*broadcasts.Module](env).Cancel(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastSendingID)
+	stats, err := testhelper.Module[*broadcasts.Module](env).StatsOf(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastCancelledID)
 	require.NoError(t, err)
+	return stats[fixtures.BroadcastCancelledID]
 }
 
-// sendingStats is the report's figures of the sending Broadcast.
-func sendingStats(t *testing.T, env *testhelper.TestEnv) broadcasts.Stats {
-	t.Helper()
-	stats, err := testhelper.Module[*broadcasts.Module](env).StatsOf(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastSendingID)
-	require.NoError(t, err)
-	return stats[fixtures.BroadcastSendingID]
-}
-
-// sendingRows counts the sending Broadcast's recipients and Outbound messages, and says whether its
-// figures are frozen.
-func sendingRows(env *testhelper.TestEnv) (recipients, messages int, frozen bool) {
+// cancelledRows counts the cancelled Broadcast's recipients and Outbound messages, and says
+// whether its figures are frozen.
+func cancelledRows(env *testhelper.TestEnv) (recipients, messages int, frozen bool) {
 	ctx := context.Background()
-	recipients = env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.BroadcastID(fixtures.BroadcastSendingID)).CountX(ctx)
-	messages = env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(fixtures.BroadcastSendingID)).CountX(ctx)
-	frozen = env.DB.BroadcastFigure.Query().Where(broadcastfigure.BroadcastID(fixtures.BroadcastSendingID)).ExistX(ctx)
+	recipients = env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.BroadcastID(fixtures.BroadcastCancelledID)).CountX(ctx)
+	messages = env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(fixtures.BroadcastCancelledID)).CountX(ctx)
+	frozen = env.DB.BroadcastFigure.Query().Where(broadcastfigure.BroadcastID(fixtures.BroadcastCancelledID)).ExistX(ctx)
 	return recipients, messages, frozen
 }
 
@@ -216,41 +204,39 @@ func sendingRows(env *testhelper.TestEnv) (recipients, messages int, frozen bool
 func TestPruneMessagesFreezesACancelledBroadcastPastTheWindow(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	cancelSending(t, env)
-	before := sendingStats(t, env)
+	before := cancelledStats(t, env)
 	require.Equal(t, cancelledFigures, before)
-	now := time.Now().Add(messagesRetention + time.Hour)
+	now := time.Now().Add(messagesRetention)
 
 	pruneMessages(t, env, messagesRetention, now)
 
-	after := sendingStats(t, env)
+	after := cancelledStats(t, env)
 	assert.Equal(t, cancelledFigures, after, "the report reads the frozen row, cancelled included")
-	figure, err := env.DB.BroadcastFigure.Query().Where(broadcastfigure.BroadcastID(fixtures.BroadcastSendingID)).Only(ctx)
+	figure, err := env.DB.BroadcastFigure.Query().Where(broadcastfigure.BroadcastID(fixtures.BroadcastCancelledID)).Only(ctx)
 	require.NoError(t, err, "its figures are frozen")
-	assert.Equal(t, 2, figure.Cancelled)
+	assert.Equal(t, 1, figure.Cancelled)
 	assert.NotNil(t, figure.PrunedAt)
-	recipients, messages, _ := sendingRows(env)
+	recipients, messages, _ := cancelledRows(env)
 	assert.Zero(t, recipients)
 	assert.Zero(t, messages)
 }
 
-// The window of a cancelled Broadcast counts from its Cancel, not from when it was created or
-// started sending.
+// The window of a cancelled Broadcast counts from its Cancel (two days ago in the fixtures), not
+// from when it was created or started sending (four and three days ago).
 func TestPruneMessagesLeavesACancelledBroadcastInsideTheWindow(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	cancelSending(t, env)
-	now := time.Now().Add(messagesRetention - time.Hour)
+	now := time.Now().Add(messagesRetention - 3*24*time.Hour)
 	cutoff := now.Add(-messagesRetention)
-	created := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSendingID).CreatedAt
+	created := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastCancelledID).CreatedAt
 	require.Less(t, created, cutoff, "it was created before the window")
 
 	pruneMessages(t, env, messagesRetention, now)
 
-	recipients, messages, frozen := sendingRows(env)
+	recipients, messages, frozen := cancelledRows(env)
 	assert.False(t, frozen)
-	assert.Equal(t, 3, recipients)
+	assert.Equal(t, 2, recipients)
 	assert.Equal(t, 1, messages)
-	stats := sendingStats(t, env)
+	stats := cancelledStats(t, env)
 	assert.Equal(t, cancelledFigures, stats)
 }

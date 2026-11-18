@@ -218,12 +218,7 @@ func (m *Module) StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[
 		return nil, err
 	}
 	for _, f := range frozen {
-		out[f.BroadcastID] = Stats{
-			Recipients: f.Recipients, Unsubscribed: f.Unsubscribed,
-			Sent: f.Sent, Skipped: f.Skipped, Failed: f.Failed, Cancelled: f.Cancelled, Pending: f.Pending,
-			Delivered: f.Delivered, Undelivered: f.Undelivered, Bounced: f.Bounced, Complained: f.Complained,
-			Opened: f.Opened, Clicked: f.Clicked, Captured: f.Captured,
-		}
+		out[f.BroadcastID] = frozenStats(f)
 	}
 	revenue, err := m.revenues.CreditedToBroadcasts(ctx, s, ids...)
 	if err != nil {
@@ -235,6 +230,28 @@ func (m *Module) StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[
 		out[id] = st
 	}
 	return out, nil
+}
+
+// Frozen sets every count of the Stats on the create of a Broadcast's frozen figures row (ADR
+// 0143): Channel and Revenue are not stored. frozenStats reads the row back; the two are the one
+// mapping between Stats and BroadcastFigure, kept side by side.
+func (st Stats) Frozen(c *ent.BroadcastFigureScopedCreate) *ent.BroadcastFigureScopedCreate {
+	return c.
+		SetRecipients(st.Recipients).SetUnsubscribed(st.Unsubscribed).
+		SetSent(st.Sent).SetSkipped(st.Skipped).SetFailed(st.Failed).SetCancelled(st.Cancelled).SetPending(st.Pending).
+		SetDelivered(st.Delivered).SetUndelivered(st.Undelivered).
+		SetBounced(st.Bounced).SetComplained(st.Complained).
+		SetOpened(st.Opened).SetClicked(st.Clicked).SetCaptured(st.Captured)
+}
+
+// frozenStats is the Stats a frozen figures row keeps, Frozen read back.
+func frozenStats(f *ent.BroadcastFigure) Stats {
+	return Stats{
+		Recipients: f.Recipients, Unsubscribed: f.Unsubscribed,
+		Sent: f.Sent, Skipped: f.Skipped, Failed: f.Failed, Cancelled: f.Cancelled, Pending: f.Pending,
+		Delivered: f.Delivered, Undelivered: f.Undelivered, Bounced: f.Bounced, Complained: f.Complained,
+		Opened: f.Opened, Clicked: f.Clicked, Captured: f.Captured,
+	}
 }
 
 // RowStatsOf counts the given Broadcasts' figures from their rows, Revenue aside, whether or not

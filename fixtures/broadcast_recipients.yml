@@ -1725,6 +1725,24 @@
     updated_at: '{{daysAgo 1}}',
   }
 
+# The cancelled Broadcast's recipients: Liam's message was sent before the Cancel, Emma's never made.
+- {
+    id: 1130,
+    broadcast_id: 113,
+    contact_id: 100,
+    workspace_id: 1,
+    created_at: '{{daysAgo 3}}',
+    updated_at: '{{daysAgo 3}}',
+  }
+- {
+    id: 1131,
+    broadcast_id: 113,
+    contact_id: 101,
+    workspace_id: 1,
+    created_at: '{{daysAgo 3}}',
+    updated_at: '{{daysAgo 3}}',
+  }
+
 # Parked recipients (Alice, Bob, Carol) on the archived Broadcast: delivery tests move one onto the
 # Broadcast they send (testhelper PlaceRecipient), so each starts from exactly the recipients it
 # names. Bob's has a stale pending message, the claim a test makes live (ClaimRecipient).

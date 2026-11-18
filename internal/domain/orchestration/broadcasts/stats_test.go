@@ -1,6 +1,7 @@
 package broadcasts_test
 
 import (
+	"reflect"
 	"testing"
 	"time"
 
@@ -19,14 +20,44 @@ import (
 func TestStatsOfReadsEachBroadcastsRows(t *testing.T) {
 	d := newDelivery(t, time.Now)
 
-	got, err := d.broadcasts().StatsOf(d.t.Context(), d.s, fixtures.BroadcastSentID, fixtures.BroadcastDraftID, fixtures.BroadcastFailedID)
+	got, err := d.broadcasts().StatsOf(d.t.Context(), d.s, fixtures.BroadcastSentID, fixtures.BroadcastDraftID, fixtures.BroadcastFailedID, fixtures.BroadcastCancelledID)
 	require.NoError(t, err)
 
 	// Fixtures: 11 recipients, all sent, 5 opened and 2 clicked; the delivery result is stamped
 	// on three messages (3 delivered, 1 bounced, 1 complained).
 	assert.Equal(t, broadcasts.Stats{Recipients: 11, Sent: 11, Opened: 5, Clicked: 2, Delivered: 3, Bounced: 1, Complained: 1}, got[fixtures.BroadcastSentID])
 	assert.Equal(t, broadcasts.Stats{Recipients: 5, Failed: 3, Skipped: 2}, got[fixtures.BroadcastFailedID])
+	// The cancelled one sent to one recipient before its Cancel and left the other unsent.
+	assert.Equal(t, broadcasts.Stats{Recipients: 2, Sent: 1, Delivered: 1, Cancelled: 1}, got[fixtures.BroadcastCancelledID])
 	assert.Zero(t, got[fixtures.BroadcastDraftID])
+}
+
+// everyCount is Stats with every count set, each to a value of its own: a count added to Stats is
+// set here too, without an edit.
+func everyCount() broadcasts.Stats {
+	var st broadcasts.Stats
+	v := reflect.ValueOf(&st).Elem()
+	for i := range v.NumField() {
+		if f := v.Field(i); f.Kind() == reflect.Int {
+			f.SetInt(int64(i + 1))
+		}
+	}
+	return st
+}
+
+// A frozen Broadcast reports every count its figures row was written with: a count Frozen or the
+// read back leaves out comes back as zero.
+func TestAFrozenFiguresRowKeepsEveryCount(t *testing.T) {
+	d := newDelivery(t, time.Now)
+	want := everyCount()
+	// test writes: the frozen row is the subject: every count of Stats goes into it and comes back.
+	create := d.s.BroadcastFigure().Create().SetBroadcastID(fixtures.BroadcastDraftID)
+	require.NoError(t, want.Frozen(create).Exec(d.t.Context()))
+
+	got, err := d.broadcasts().StatsOf(d.t.Context(), d.s, fixtures.BroadcastDraftID)
+	require.NoError(t, err)
+
+	assert.Equal(t, want, got[fixtures.BroadcastDraftID])
 }
 
 func TestStatsOfNoBroadcastsIsEmpty(t *testing.T) {
