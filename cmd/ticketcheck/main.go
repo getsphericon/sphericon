@@ -61,6 +61,22 @@ func newRoot() *cli.Command {
 					return checkIssues(ctx, cmd.Args().Slice(), cmd.Bool(flagApply))
 				},
 			},
+			{
+				Name: "graph",
+				Usage: "every open issue with its native blockers, how many tickets it waits for, the edges to a " +
+					"whole spec and the edges another edge already implies, longest wait first",
+				Action: func(ctx context.Context, _ *cli.Command) error {
+					nodes, err := ticketcheck.Tracker{}.OpenGraph(ctx)
+					if err != nil {
+						return err
+					}
+					rows := ticketcheck.Graph(nodes)
+					for i := range rows {
+						fmt.Println(rows[i])
+					}
+					return nil
+				},
+			},
 		},
 	}
 }
