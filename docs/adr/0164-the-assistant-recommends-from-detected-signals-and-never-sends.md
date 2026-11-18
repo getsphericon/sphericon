@@ -6,7 +6,10 @@ build: [1467]
 # The assistant recommends from detected signals and never sends
 
 > **Revised before it was built** (#1467): the switch names the protocol, endpoint host and model, as
-> ADR 0139's now does, and the assistant with no Member is the author set by the job's context.
+> ADR 0139's now does, and the assistant with no Member is the author set by the job's context. The
+> detectors are a closed list in an order of priority, each with its rule; there is no rate detector in
+> the core and no daily pass besides the one job that runs them; a Recommendation, keyed by detector and
+> object, is the only state they keep; a sent Broadcast is no longer a detector.
 
 > Extends [[0139-workspace-skills-and-inline-intents-on-an-instance-configured-model]] from intents a
 > Member asks for to Recommendations the assistant makes on its own.
@@ -39,18 +42,40 @@ author, never a sender, for any agent (ADR 0132), and a Control group can measur
 ### When the assistant looks
 
 - **Detectors decide when, the model only writes.** A detector is a fixed rule over figures the app
-  already has: an item of Needs attention (ADR 0073), a rising complaint or bounce rate, an Automation
-  that stopped enrolling, a Segment whose engaged share falls, a Broadcast that finished. When one fires,
-  the model is asked for the rationale and, at the draft level, the drafts. Besides them, one daily pass
-  per Workspace at most. Why it looked is a rule anyone can read, not the model's guess.
-- **It runs on River**: detectors subscribe to the domain events or run as a periodic job per Workspace,
-  in batches that persist (ADR 0144). No new service.
+  already has, one of a closed list, in this order of priority:
+  1. **An item of Needs attention** (ADR 0073), its kind and its object. A deliverability warning
+     reaches the assistant this way where the Instance has one; the core sets no rate limit of its own
+     (ADR 0011), so there is no rate detector beside it.
+  2. **A Trigger that went quiet**: a live Automation whose Trigger matched no Event in the last 7 days,
+     entries skipped included, after at least 10 in the 28 days before. A matched Event that was
+     skipped (`once`, a cooldown) is not silence, so an audience used up does not fire it. A date
+     Trigger is left out.
+  3. **A Segment whose engaged share fell**: among the Contacts in a Segment a Broadcast went to in the
+     last 30 days, the share who clicked a message in the last 30 days against the share who clicked
+     in the 30 days before, read as two Conditions with their unknown results left out of both the
+     count and the base (ADR 0123), so an untracked Contact moves neither. Clicks, never opens, and
+     never a machine click (ADR 0053). It fires on a fall of a quarter or more over at least 200
+     Contacts whose engagement is known. A Segment whose own Condition tests engagement is left out,
+     read from its leaves: "no click in 30 days" would fall by construction.
+
+  When one fires, the model is asked for the rationale and, at the draft level, the drafts. Why it
+  looked is a rule anyone can read, not the model's guess.
+
+- **One daily job per Workspace runs every detector**, in the order above, on River in batches that
+  persist (ADR 0144). Each reads live figures; nothing is snapshotted for it. No new service.
+- **A Recommendation is its own memory.** A detector's firing is keyed by the detector and its object
+  (an item of Needs attention, an Automation, a Segment). It makes no Recommendation while one of that
+  key is open, nor for 30 days after one was closed, whether accepted, dismissed or expired, so a
+  lasting condition is raised again at most once a month.
+- **A sent Broadcast is not a signal.** Its outcome is its report's, and what to send next is a
+  Member's call from it; a Recommendation per send would crowd out the signals above.
 
 ### What it may do
 
 - **Two levels, neither sends.** `suggest`, the default, writes the Recommendation's text only; `draft`
   also makes the drafts. At most 5 Recommendations are open at once unless the Workspace changes it, so
-  they never flood. The assistant never schedules, publishes, activates or sends: accepting is a Member
+  they never flood. At the limit, a firing of a detector of higher priority than the lowest open
+  Recommendation expires that one and takes its place; any other firing makes none. The assistant never schedules, publishes, activates or sends: accepting is a Member
   doing that with the draft, through the gates every send has.
 - **Data and consent as in ADR 0139**: the Instance's model, definitions and figures only, never a
   Contact, the Workspace's Skills included. An owner turns it on with a switch of its own, since it runs

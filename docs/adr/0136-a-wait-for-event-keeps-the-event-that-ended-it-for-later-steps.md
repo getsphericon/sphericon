@@ -30,7 +30,8 @@ a deleted Score renders nothing (ADR 0129).
   to `arrived`, whose path may send, and so is never copied into what a message prints.
 - **A Wait for event has a name**, a key fixed when the Step is created, like a Custom field's or a
   Score's: lower-case letters, digits and underscores, starting with a letter, unique in the
-  Automation. Templates read `awaited.<name>`, the same shape as `event`:
+  Automation: across all its versions a name belongs to one Step id, so a removed Wait for event's
+  name is not given to another. Templates read `awaited.<name>`, the same shape as `event`:
   `{{ awaited.purchase.properties.total }}`. As for any merge tag, Publish does not check the names a
   template uses; a name with no copy renders nothing.
 - **Where there is no copy, it is empty.** After `timed_out` or unknown, or on a path that never

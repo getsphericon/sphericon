@@ -923,7 +923,8 @@ moment's Report day and its duration from when it began.
 An unsubscribe from the Automation has two
 effects from one action — it records the durable opt-out (scope `automation:<id>`) _and_ moves
 the active Enrollment to `exited`, whichever Channel it came from; an exit event likewise exits
-the Enrollment. Any other reason a send step's message is Skipped (no Destination on its Channel, an
+the Enrollment. An Enrollment that begins after the unsubscribe has its sends Skipped and runs its
+other Steps. Any other reason a send step's message is Skipped (no Destination on its Channel, an
 opt-out from that Channel, a Suppression) moves the Enrollment on to the next step, and the skip is
 recorded and reported, so one Channel's absence never ends a sequence that also uses others.
 _Avoid_: Run, automation run, journey instance, subscription
@@ -1827,8 +1828,9 @@ moment, and the checklist is done for good: a step that later regresses is not o
 _Avoid_: Onboarding wizard, getting started, tour
 
 **Recommendation**:
-What the assistant observed in a Workspace's figures when one of its fixed detectors fired (a rising
-complaint rate, an Automation that stopped enrolling, a finished Broadcast), with the reports it rests
+What the assistant observed in a Workspace's figures when one of its fixed detectors fired (an item
+that Needs attention, a Trigger that went quiet, a Segment whose engaged share fell), at most one
+open per detector and object, with the reports it rests
 on and, if the Workspace lets it, drafts it made; `open`, `accepted` once a Member sends or publishes
 what it proposed, `dismissed`, or `expired`. The assistant never schedules, publishes or sends.
 _Avoid_: Insight, notification, task, suggestion, alert
@@ -1959,7 +1961,8 @@ The hours and days of the week, in the recipient's local time, in which a Worksp
 may go out (8:00 to 20:00 every day unless it changes it, with windows of its own for countries).
 It must be open in every zone that may be the recipient's: the Contact's time zone, if any, and the
 zones of the number's prefix. A message outside it is deferred; one for which no moment of the week
-is open is Skipped; Transactional sends and messages the person just asked for are outside it.
+is open is Skipped; a message the person just asked for (the Preference page's fresh link) is outside
+it, and Transactional is email-only.
 _Avoid_: Quiet hours (the hours outside it), send window, DND
 
 **Staff hold**:

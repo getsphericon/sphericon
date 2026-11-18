@@ -4,6 +4,11 @@ status: accepted
 
 # A send step is on one Channel, and a skip moves on
 
+> **Amended by #1554:** an unsubscribe from this Automation exits the Enrollment active when it
+> arrives, whichever Channel it came from. An Enrollment that begins after it is not exited: its sends
+> to the Destination that refused the Automation are Skipped (a refusal is per Destination, ADR 0121)
+> and its other Steps run, as [[0127-an-automation-may-enroll-a-contact-again-one-enrollment-at-a-time]] decides, and a send Skipped for that reason moves on like any other.
+
 The Automation step is the one surface where every Channel meets (the map issue,
 getsphericon/sphericon#916). Today an Automation version holds one email Integration for all its
 steps, its send step is an email, and a Suppression or a hard bounce exits the Enrollment: with one
