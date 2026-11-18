@@ -1,6 +1,7 @@
 ---
 status: accepted
 build: none
+terms: [Score]
 ---
 
 # A Score is computed from Events and attributes, never kept as a counter

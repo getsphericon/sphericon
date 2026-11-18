@@ -1,6 +1,7 @@
 ---
 status: accepted
 build: none
+terms: [Tracker consent]
 ---
 
 # The tracker waits for Tracker consent when asked, and forms show without it

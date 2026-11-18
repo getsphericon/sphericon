@@ -1,5 +1,7 @@
 ---
 status: accepted
+build: none
+terms: [Content check, Feedback-ID]
 ---
 
 # Deliverability is observed through Feedback-IDs, Gmail's Postmaster data and content checks

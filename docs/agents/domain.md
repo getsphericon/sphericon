@@ -52,6 +52,13 @@ that replaces it. Filing the tickets of an ADR puts their numbers in its `build:
 requires the field from ADR 0178 on; an earlier ADR without it counts as built. A ticket that builds
 on an ADR not built yet waits for it or waives it (`issue-tracker.md`, "Before `ready-for-agent`").
 
+An ADR with `build: none` may also carry `terms:`, the glossary terms that name what it decides and
+nothing on `main` does, such as `terms: [Set field, Enroll step, Notify]`. A ticket that uses one of
+them, as written (the case counts) and outside a `Without ADR` line, names that ADR as if by its
+number, so a ticket that asks for a Notify step no spec builds is held like one that names ADR 0125.
+List only terms that mean nothing else in the app: `Enroll step`, not `Enroll`, which a Rule's
+Action is too. Once tickets build the ADR, its terms no longer count.
+
 ## Use the glossary's vocabulary
 
 When your output names a domain concept (in an issue title, a refactor proposal, a hypothesis, a test name), use the term as defined in `GLOSSARY.md`. Don't drift to synonyms the glossary explicitly avoids.

@@ -1,6 +1,7 @@
 ---
 status: accepted
 build: none
+terms: [Set field, Enroll step, Notify]
 ---
 
 # An Automation sets a field, enrolls elsewhere and notifies Members

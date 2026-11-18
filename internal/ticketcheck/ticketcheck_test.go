@@ -214,6 +214,63 @@ func TestCheckHoldsWhatIsNeitherWaitedForNorWaived(t *testing.T) {
 	}
 }
 
+func TestParseADRReadsTheTerms(t *testing.T) {
+	got := adr(t, "0125-actions.md", "---\nstatus: accepted\nbuild: none\nterms: [Set field, Enroll step , Notify]\n---\n")
+	require.Equal(t, []string{"Set field", "Enroll step", "Notify"}, got.Terms)
+
+	for name, text := range map[string]string{
+		"no brackets": "---\nbuild: none\nterms: Set field\n---\n",
+		"empty item":  "---\nbuild: none\nterms: [Set field, ]\n---\n",
+		"empty list":  "---\nbuild: none\nterms: []\n---\n",
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, err := ticketcheck.ParseADR("0125-actions.md", text)
+			require.ErrorContains(t, err, "`terms:` is a list")
+		})
+	}
+}
+
+// The decisions of the term checks: 0125 and 0128 are not built and no ticket builds them, 0166 is
+// built by an open ticket and lists a term too.
+func termDecisions(t *testing.T) []ticketcheck.ADR {
+	t.Helper()
+	return append(decisions(t),
+		adr(t, "0125-actions.md", "---\nbuild: none\nterms: [Set field, Enroll step, Notify]\n---\n"),
+		adr(t, "0128-merge.md", "---\nbuild: none\nterms: [Merge]\n---\n"),
+		adr(t, "0166-window.md", "---\nbuild: [1400]\nterms: [Wait until]\n---\n"))
+}
+
+func TestCheckFindsAnUnbuiltADRATicketNamesByATerm(t *testing.T) {
+	issue := ticketcheck.Issue{Number: 1456, Body: "- Set field may take a property; Notify binds it.\n- Merges move it.\n"}
+	gaps := ticketcheck.Check(issue, termDecisions(t), openTickets(1400))
+	require.Equal(t, []ticketcheck.Gap{
+		{ADR: "0125", Terms: []string{"Set field", "Notify"}},
+		{ADR: "0128", Terms: []string{"Merge"}},
+	}, gaps)
+	require.Equal(t, `ADR 0125 (named by "Set field", "Notify") is not built, and no ticket builds it yet`, gaps[0].String())
+}
+
+func TestCheckPassesATermThatIsNotUsedOrIsWaived(t *testing.T) {
+	for name, issue := range map[string]ticketcheck.Issue{
+		"another case":              {Number: 1, Body: "A merge tag that renders empty.\n"},
+		"part of a longer word":     {Number: 1, Body: "Merged rows, a Notifying hook, Merge-free.\n"},
+		"only on a waiver line":     {Number: 1, Body: "Without ADR 0130: Content checks see a Merge too.\n"},
+		"waived":                    {Number: 1, Body: "Notify reads it.\n\nWithout ADR 0125: Notify is the action Steps spec's.\n"},
+		"its own ADR":               {Number: 1, Title: "Set field (ADR 0125)", Body: "Set field writes it.\n"},
+		"an ADR a ticket builds":    {Number: 1, Body: "After a Wait until.\n"},
+		"no term of an unknown ADR": {Number: 1, Body: "Nothing to see.\n"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			require.Empty(t, ticketcheck.Check(issue, termDecisions(t), openTickets(1400)))
+		})
+	}
+}
+
+func TestCheckNamesNoTermWhenTheTicketNamesTheADRByNumber(t *testing.T) {
+	issue := ticketcheck.Issue{Number: 1, Body: "Notify, as ADR 0125 decides.\n"}
+	require.Equal(t, []ticketcheck.Gap{{ADR: "0125"}}, ticketcheck.Check(issue, termDecisions(t), openTickets(1400)))
+}
+
 func TestReviewWantsANativeEdgeForEachOpenIssueABlockedByLineNames(t *testing.T) {
 	// #1400 is open; #1438 is closed, or a pull request, which the tracker cannot gate on.
 	for name, tc := range map[string]struct {

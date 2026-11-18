@@ -1,6 +1,7 @@
 ---
 status: accepted
 build: none
+terms: [Broadcast series, series issue]
 ---
 
 # A Broadcast series makes an ordinary Broadcast at each occurrence

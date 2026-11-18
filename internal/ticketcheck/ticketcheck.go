@@ -2,7 +2,8 @@
 // ADR says in its front matter whether it is built (`build:`). A ticket that names an ADR not built
 // yet either waits for a ticket that builds it or says why it builds without it: an agent handed the
 // ticket otherwise finds nothing to build on. Only the ADRs the ticket names count, not those its own
-// ADR names, so a ticket names every ADR it builds on. Two more things keep a ticket from an agent:
+// ADR names, so a ticket names every ADR it builds on. An ADR no ticket builds yet may list the terms
+// that name what it decides (`terms:`), and a ticket that uses one names that ADR as if by its number. Two more things keep a ticket from an agent:
 // an open issue its `Blocked by` line names with no native edge, and, for a spec, no slices yet.
 // `cmd/ticketcheck` runs the checks on the files of docs/adr and on the issues of the tracker.
 package ticketcheck
@@ -33,6 +34,9 @@ type ADR struct {
 	Number string // the four digits of its file name
 	Text   string
 	Build  Build
+	// Terms name what it decides and nothing built does, such as "Set field" or "Merge": while no
+	// ticket builds it, a ticket that uses one builds on it.
+	Terms []string
 }
 
 // Build is what an ADR's `build:` field says.
@@ -42,7 +46,8 @@ type Build struct {
 	Tickets  []int // the tickets that build it; empty with `none`
 }
 
-// ParseADR reads an ADR file's number from its name and its `build:` field from its front matter.
+// ParseADR reads an ADR file's number from its name and its `build:` and `terms:` fields from its
+// front matter.
 func ParseADR(name, text string) (ADR, error) {
 	base := filepath.Base(name)
 	if len(base) < 5 || base[4] != '-' || strings.Trim(base[:4], "0123456789") != "" {
@@ -52,7 +57,43 @@ func ParseADR(name, text string) (ADR, error) {
 	if err != nil {
 		return ADR{}, fmt.Errorf("%s: %w", name, err)
 	}
-	return ADR{Number: base[:4], Text: text, Build: build}, nil
+	terms, err := parseTerms(text)
+	if err != nil {
+		return ADR{}, fmt.Errorf("%s: %w", name, err)
+	}
+	return ADR{Number: base[:4], Text: text, Build: build, Terms: terms}, nil
+}
+
+var errTermsValue = errors.New("`terms:` is a list of the terms that name what the ADR decides, such as " +
+	"`[Set field, Notify]`")
+
+// parseTerms reads the `terms:` line of the front matter, a list of terms separated by commas.
+func parseTerms(text string) ([]string, error) {
+	front, ok := frontMatter(text)
+	if !ok {
+		return nil, nil
+	}
+	for line := range strings.Lines(front) {
+		value, ok := strings.CutPrefix(strings.TrimSpace(line), "terms:")
+		if !ok {
+			continue
+		}
+		list, ok := strings.CutPrefix(strings.TrimSpace(value), "[")
+		list, closed := strings.CutSuffix(list, "]")
+		if !ok || !closed {
+			return nil, errTermsValue
+		}
+		var terms []string
+		for item := range strings.SplitSeq(list, ",") {
+			term := strings.TrimSpace(item)
+			if term == "" || strings.ContainsAny(term, "[]#`") {
+				return nil, errTermsValue
+			}
+			terms = append(terms, term)
+		}
+		return terms, nil
+	}
+	return nil, nil
 }
 
 var errBuildValue = errors.New("`build:` is `none` (not built, no ticket yet), `done` (built, or nothing to build) " +
@@ -134,22 +175,35 @@ type Tickets interface {
 }
 
 // Gap is an ADR a ticket builds on that is not built, with the open tickets its `build:` lists and
-// their open slices.
+// their open slices, and the ADR's terms the ticket uses when it does not name the ADR by number.
 type Gap struct {
 	ADR     string
 	Tickets []int
 	Slices  []int
+	Terms   []string
 }
 
 func (g Gap) String() string {
-	if len(g.Tickets) == 0 {
-		return fmt.Sprintf("ADR %s is not built, and no ticket builds it yet", g.ADR)
+	adr := "ADR " + g.ADR
+	if len(g.Terms) > 0 {
+		adr += " (named by " + quoted(g.Terms) + ")"
 	}
-	text := fmt.Sprintf("ADR %s is not built yet: %s builds it", g.ADR, refs(g.Tickets))
+	if len(g.Tickets) == 0 {
+		return adr + " is not built, and no ticket builds it yet"
+	}
+	text := fmt.Sprintf("%s is not built yet: %s builds it", adr, refs(g.Tickets))
 	if len(g.Slices) > 0 {
 		text += fmt.Sprintf(" (wait for the slice this ticket needs: %s)", refs(g.Slices))
 	}
 	return text
+}
+
+func quoted(terms []string) string {
+	out := make([]string, len(terms))
+	for i, term := range terms {
+		out[i] = strconv.Quote(term)
+	}
+	return strings.Join(out, ", ")
 }
 
 func refs(numbers []int) string {
@@ -169,7 +223,32 @@ var (
 	issueRef        = regexp.MustCompile(`#(\d+)`)
 	blockedBy       = regexp.MustCompile(`(?i)^\W*blocked by\b(.*)$`)
 	markdownHeading = regexp.MustCompile(`^\s*#{1,6}\s`)
+	anyWaiver       = regexp.MustCompile(`(?i)^\W*without ADR \d{4}\s*:`)
 )
+
+// usedTerms returns the terms of an ADR no ticket builds yet that a text uses, as written (the case
+// counts, so "merge tag" is not "Merge"), a plural `s` allowed. A waiver line does not count: it says
+// what the ticket builds without.
+func usedTerms(adr ADR, text string) []string {
+	if !adr.Build.Recorded || adr.Build.Done || len(adr.Build.Tickets) > 0 {
+		return nil
+	}
+	var lines []string
+	for line := range strings.Lines(text) {
+		if !anyWaiver.MatchString(line) {
+			lines = append(lines, line)
+		}
+	}
+	kept := strings.Join(lines, "")
+	var used []string
+	for _, term := range adr.Terms {
+		word := regexp.MustCompile(`(?:^|[^\pL\pN_-])` + regexp.QuoteMeta(term) + `s?(?:$|[^\pL\pN_-])`)
+		if word.MatchString(kept) {
+			used = append(used, term)
+		}
+	}
+	return used
+}
 
 // References returns the ADR numbers a text names, sorted.
 func References(text string) []string {
@@ -206,7 +285,8 @@ const (
 // blocked (a native edge, its parent's, or a `Blocked by` line) by a ticket that builds it, open or
 // completed: one its `build:` lists, or a slice of one, so a ticket waits for the slice of a spec it
 // needs rather than the whole spec, and a slice that is done still counts. It waives the ADR with a
-// line `Without ADR NNNN: <why>`.
+// line `Without ADR NNNN: <why>`. A ticket names an ADR no ticket builds yet by its number or by one of
+// its terms.
 func Check(issue Issue, adrs []ADR, tickets Tickets) []Gap {
 	byNumber := make(map[string]ADR, len(adrs))
 	own := map[string]bool{}
@@ -223,7 +303,16 @@ func Check(issue Issue, adrs []ADR, tickets Tickets) []Gap {
 		}
 	}
 
-	refs := References(issue.Title + "\n" + issue.Body)
+	text := issue.Title + "\n" + issue.Body
+	refs := References(text)
+	terms := map[string][]string{}
+	for _, adr := range adrs {
+		if used := usedTerms(adr, text); len(used) > 0 && !slices.Contains(refs, adr.Number) {
+			terms[adr.Number] = used
+			refs = append(refs, adr.Number)
+		}
+	}
+	slices.Sort(refs)
 	waits := append(slices.Clone(issue.BlockedBy), blockers(issue.Body)...)
 
 	var gaps []Gap
@@ -259,7 +348,7 @@ func Check(issue Issue, adrs []ADR, tickets Tickets) []Gap {
 				slicesOpen = append(slicesOpen, n)
 			}
 		}
-		gaps = append(gaps, Gap{ADR: number, Tickets: open, Slices: slicesOpen})
+		gaps = append(gaps, Gap{ADR: number, Tickets: open, Slices: slicesOpen, Terms: terms[number]})
 	}
 	return gaps
 }
