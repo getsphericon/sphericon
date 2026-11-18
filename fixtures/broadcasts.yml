@@ -284,9 +284,9 @@
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 1}}'
 
-# Cancelled while sending (ADR 0150): one recipient was sent before the Cancel, the other left
-# unsent, so it reports one cancelled. Its recipients and the one message are in
-# broadcast_recipients.yml and outbound_messages.yml.
+# Cancelled while sending (ADR 0150) before any of its two recipients was sent, so it reports two
+# cancelled and no message. Its recipients are in broadcast_recipients.yml; it has no message, so the
+# analytics of Acme's sends do not count it.
 - id: 113 # fixture: BroadcastCancelled
   revision: 1
   name: Spring promo (stopped)

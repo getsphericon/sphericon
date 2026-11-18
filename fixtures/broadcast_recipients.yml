@@ -1725,7 +1725,7 @@
     updated_at: '{{daysAgo 1}}',
   }
 
-# The cancelled Broadcast's recipients: Liam's message was sent before the Cancel, Emma's never made.
+# The cancelled Broadcast's recipients, both left unsent by its Cancel: neither has a message.
 - {
     id: 1130,
     broadcast_id: 113,

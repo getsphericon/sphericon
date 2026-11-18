@@ -403,21 +403,6 @@
 # Broadcast sends (kind: broadcast): the one message of every decided broadcast recipient in
 # broadcast_recipients.yml (ADR 0015). Ids are 10000 + the recipient id; the key is the
 # recipient key format ("broadcast:<recipient id>"). Pending recipients have no message.
-- id: 11130
-  kind: broadcast
-  idempotency_key: 'broadcast:1130'
-  channel: email
-  contact_id: 100
-  sending_source: broadcasts
-  status: sent
-  sent_at: '{{daysAgo 3}}'
-  claimed_at: '{{daysAgo 3}}'
-  broadcast_id: 113
-  broadcast_recipient_id: 1130
-  delivered_at: '{{daysAgo 3}}'
-  workspace_id: 1
-  created_at: '{{daysAgo 3}}'
-  updated_at: '{{daysAgo 3}}'
 - id: 11000
   kind: broadcast
   idempotency_key: 'broadcast:1000'

@@ -27,8 +27,8 @@ func TestStatsOfReadsEachBroadcastsRows(t *testing.T) {
 	// on three messages (3 delivered, 1 bounced, 1 complained).
 	assert.Equal(t, broadcasts.Stats{Recipients: 11, Sent: 11, Opened: 5, Clicked: 2, Delivered: 3, Bounced: 1, Complained: 1}, got[fixtures.BroadcastSentID])
 	assert.Equal(t, broadcasts.Stats{Recipients: 5, Failed: 3, Skipped: 2}, got[fixtures.BroadcastFailedID])
-	// The cancelled one sent to one recipient before its Cancel and left the other unsent.
-	assert.Equal(t, broadcasts.Stats{Recipients: 2, Sent: 1, Delivered: 1, Cancelled: 1}, got[fixtures.BroadcastCancelledID])
+	// The cancelled one left both its recipients unsent.
+	assert.Equal(t, broadcasts.Stats{Recipients: 2, Cancelled: 2}, got[fixtures.BroadcastCancelledID])
 	assert.Zero(t, got[fixtures.BroadcastDraftID])
 }
 
