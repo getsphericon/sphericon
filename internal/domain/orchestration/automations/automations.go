@@ -90,7 +90,7 @@ var (
 // StoredSteps are the steps as a version stores them, dropping the fields that do not belong to
 // each step's type and trimming tag names.
 func StoredSteps(steps []automationstep.Step) []automationstep.Step {
-	return automationstep.Rewrite(steps, func(_ int, s *automationstep.Step) automationstep.Step { return storedStep(s) })
+	return automationstep.Rewrite(steps, func(_ int, st *automationstep.Step) automationstep.Step { return storedStep(st) })
 }
 
 // storedStep is the step as a version stores it.

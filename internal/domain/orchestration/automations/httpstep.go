@@ -98,15 +98,16 @@ func (m *Module) sealSteps(steps, stored []automationstep.Step) ([]automationste
 		}
 	}
 	seen := map[string]bool{}
-	return automationstep.Map(steps, func(_ int, s *automationstep.Step) (automationstep.Step, error) {
+	return automationstep.Map(steps, func(_ int, st *automationstep.Step) (automationstep.Step, error) {
+		s := *st
 		if s.Type != automationstep.HTTP {
-			return *s, nil
+			return s, nil
 		}
 		if len(seen) >= MaxHTTPStepsPerAutomation {
 			return automationstep.Step{}, invalid("an automation has at most %d http steps", MaxHTTPStepsPerAutomation)
 		}
 		p, known := prev[s.ID]
-		sealed, err := m.sealHTTP(*s, p, known && s.ID != "")
+		sealed, err := m.sealHTTP(s, p, known && s.ID != "")
 		if err != nil {
 			return automationstep.Step{}, err
 		}
