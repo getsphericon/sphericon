@@ -8,7 +8,6 @@ package automationsuse
 
 import (
 	"context"
-	"slices"
 
 	"github.com/getsphericon/sphericon/internal/kernel/tagname"
 
@@ -50,9 +49,15 @@ func (m *Module) UsingTag(ctx context.Context, l *ent.WorkspaceLocked, name stri
 
 // namesTag reports whether a step of the version, if there is one, applies or removes the Tag.
 func namesTag(v *ent.AutomationVersion, name string) bool {
-	return v != nil && slices.ContainsFunc(v.Steps, func(st automationstep.Step) bool {
-		return (st.Type == automationstep.ApplyTag || st.Type == automationstep.RemoveTag) && tagname.Same(st.Tag, name)
-	})
+	if v == nil {
+		return false
+	}
+	for _, st := range automationstep.All(v.Steps) {
+		if (st.Type == automationstep.ApplyTag || st.Type == automationstep.RemoveTag) && tagname.Same(st.Tag, name) {
+			return true
+		}
+	}
+	return false
 }
 
 // LiveSends returns the sends of the Automations in Live use (ADR 0099), in Automation id order:
@@ -72,13 +77,12 @@ func (m *Module) LiveSends(ctx context.Context, l *ent.WorkspaceLocked) ([]liveu
 	for _, a := range autos {
 		user := liveuse.User{Kind: liveuse.Automation, ID: a.ID, Name: a.Name}
 		for _, v := range a.Edges.Versions {
-			steps := v.Steps
-			for i := range steps {
-				ch, ok := steps[i].Type.Channel()
+			for _, st := range automationstep.All(v.Steps) {
+				ch, ok := st.Type.Channel()
 				if !ok {
 					continue
 				}
-				integ, err := through.Of(ctx, ch, steps[i].IntegrationID)
+				integ, err := through.Of(ctx, ch, st.IntegrationID)
 				if err != nil {
 					return nil, err
 				}

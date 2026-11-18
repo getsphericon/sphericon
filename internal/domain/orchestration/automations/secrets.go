@@ -86,17 +86,18 @@ func guardedSteps(c *ent.Client, id int64) secrets.Guarded[[]automationstep.Step
 // rewrapSteps rewraps the sealed fields of an Automation version's HTTP steps: the URL, the header
 // values and the signing secret, each sealed on its own (ADR 0039).
 func rewrapSteps(cipher *secrets.Cipher, steps []automationstep.Step) (sealed []automationstep.Step, changed bool, err error) {
-	sealed = slices.Clone(steps)
-	for i := range sealed {
-		if sealed[i].Type != automationstep.HTTP {
-			continue
+	sealed, err = automationstep.Map(steps, func(_ int, st *automationstep.Step) (automationstep.Step, error) {
+		s := *st
+		if s.Type != automationstep.HTTP {
+			return s, nil
 		}
-		sealed[i].Headers = slices.Clone(sealed[i].Headers)
-		did, err := httpcall.Rewrap(cipher, &sealed[i].URL, &sealed[i].Secret, sealed[i].Headers)
-		if err != nil {
-			return nil, false, err
-		}
+		s.Headers = slices.Clone(s.Headers)
+		did, err := httpcall.Rewrap(cipher, &s.URL, &s.Secret, s.Headers)
 		changed = changed || did
+		return s, err
+	})
+	if err != nil {
+		return nil, false, err
 	}
 	return sealed, changed, nil
 }

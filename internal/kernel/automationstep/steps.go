@@ -5,7 +5,6 @@ package automationstep
 
 import (
 	"encoding/json"
-	"slices"
 
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
@@ -93,5 +92,10 @@ func (s *Step) TracksLinks() bool { return s.LinkTracking == nil || *s.LinkTrack
 // SendsEmail reports whether the steps contain an email Step: steps with none have no email
 // sending dependency.
 func SendsEmail(steps []Step) bool {
-	return slices.ContainsFunc(steps, func(step Step) bool { return step.Type == Email })
+	for _, st := range All(steps) {
+		if st.Type == Email {
+			return true
+		}
+	}
+	return false
 }

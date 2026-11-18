@@ -92,34 +92,30 @@ func invalid(format string, a ...any) error {
 // stored step with the same id.
 func (m *Module) sealSteps(steps, stored []automationstep.Step) ([]automationstep.Step, error) {
 	prev := map[string]automationstep.Step{}
-	for i := range stored {
-		if stored[i].Type == automationstep.HTTP {
-			prev[stored[i].ID] = stored[i]
+	for _, st := range automationstep.All(stored) {
+		if st.Type == automationstep.HTTP {
+			prev[st.ID] = *st
 		}
 	}
-	out := make([]automationstep.Step, len(steps))
 	seen := map[string]bool{}
-	for i := range steps {
-		s := steps[i]
+	return automationstep.Map(steps, func(_ int, s *automationstep.Step) (automationstep.Step, error) {
 		if s.Type != automationstep.HTTP {
-			out[i] = s
-			continue
+			return *s, nil
 		}
 		if len(seen) >= MaxHTTPStepsPerAutomation {
-			return nil, invalid("an automation has at most %d http steps", MaxHTTPStepsPerAutomation)
+			return *s, invalid("an automation has at most %d http steps", MaxHTTPStepsPerAutomation)
 		}
 		p, known := prev[s.ID]
-		sealed, err := m.sealHTTP(s, p, known && s.ID != "")
+		sealed, err := m.sealHTTP(*s, p, known && s.ID != "")
 		if err != nil {
-			return nil, err
+			return sealed, err
 		}
 		if seen[sealed.ID] {
-			return nil, invalid("duplicate http step id")
+			return sealed, invalid("duplicate http step id")
 		}
 		seen[sealed.ID] = true
-		out[i] = sealed
-	}
-	return out, nil
+		return sealed, nil
+	})
 }
 
 func (m *Module) sealHTTP(s, prev automationstep.Step, known bool) (automationstep.Step, error) {
