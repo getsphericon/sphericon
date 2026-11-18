@@ -4,6 +4,10 @@ status: accepted
 
 # An Upgrade only adds within a Major, and never stops a running Instance
 
+> **Amended by [[0181-a-conditions-shape-is-typed-by-the-place-it-is-used]]:** the migration that
+> rewrites the stored Conditions to their typed shape starts a Major, and while it runs the release
+> still serving cannot read the rewritten Conditions (its previews, due Broadcasts and Rules may fail).
+
 A self-hosted Instance is upgraded by whoever runs it, often several releases late, while customer
 sites keep sending events to it. So an Upgrade has to work from any release, and neither it nor a
 failed one may take a running Instance down: the tracker would lose the events of that window. The

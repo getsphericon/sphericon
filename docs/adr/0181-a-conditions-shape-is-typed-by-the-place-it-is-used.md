@@ -10,6 +10,8 @@ build: [1674, 1675, 1676, 1677, 1678, 1679]
 > [[0122-an-automation-branches-into-nested-paths-that-rejoin]] (where the test of an Enrollment's own
 > messages is refused) and [[0136-a-wait-for-event-keeps-the-event-that-ended-it-for-later-steps]]
 > (`awaited:<name>.<key>`), on top of [[0180-a-property-test-runs-in-postgres-as-one-sql-json-path]].
+> It also makes an exception to [[0033-upgrades-add-within-a-major-and-never-stop-a-running-instance]]
+> (a release inside a Major runs on the schema of any other release of it): see Consequences.
 
 ## Context
 
@@ -69,6 +71,14 @@ to parse.
   ogen and the TS generator, before the trees are moved onto it.
 - The runtime refusals of a misplaced leaf are deleted, and their tests become tests that the
   schema refuses the leaf.
+- The migration that rewrites the stored Conditions starts a Major. A release before it cannot read
+  the typed tree, and no reader of the old shape is kept, so the migration adds the next Major and
+  its floor (ADR 0033) and an older release refuses to start on the rewritten data. While it runs,
+  the release still serving cannot read what it rewrote: a Segment's preview, a Broadcast due in
+  that window and a Rule's evaluation may fail until the new release starts. The pull request that
+  lands the move is a breaking change whose `Upgrade:` line says so. Here the
+  promise that a running Instance is never stopped does not hold in full; keeping it would need
+  the release before the move to read the typed shape, the compatibility reader this ADR rules out.
 
 ## Considered options
 
