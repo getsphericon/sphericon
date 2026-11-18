@@ -1,6 +1,6 @@
 ---
 status: accepted
-build: [1546]
+build: [1546, 1606]
 ---
 
 # What an injected agent could do is bounded by origin marks, an egress lock and review
@@ -107,9 +107,11 @@ decision is about agents that connect to it.
 
 ### Links are reviewed before a send, whoever wrote them
 
-- **Schedule and Publish list every host the messages link to or load images from, and every URL of
-  an HTTP step and a Rule's HTTP Action the version adds.** A host the Workspace has never used is
-  marked new; a link whose host comes from a merge tag is marked as decided per recipient.
+- **Schedule and Publish list every host the messages link to or load images from, and the host of
+  every URL of an HTTP step and a Rule's HTTP Action the version adds.** Only the host: such a URL
+  is a secret that no surface returns, since it may carry a credential. A host the Workspace has
+  never used is marked new; a link whose host comes from a merge tag is marked as decided per
+  recipient.
 - **A host becomes known only by a send a person confirmed**: a Schedule or a Publish by a User, and
   the Workspace's Sending and Tracking domains. A Test send, a Transactional send and anything a
   Connection or token did make nothing known, so an agent cannot make its own host familiar.
