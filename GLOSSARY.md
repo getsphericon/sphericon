@@ -1379,6 +1379,14 @@ properties. An agent gets it wrapped as data, never as an instruction, and so it
 which is written for recipients.
 _Avoid_: Tainted, user input, PII (that is another question)
 
+**Author**:
+Who wrote a change to a Broadcast, an Automation, a Rule, a Segment or a Template: a User in the app,
+an API token (the Workspace's, or a User's Personal token, named with its User) or a Connection
+(named with the User it acts for and its client's self-declared name and host). Schedule and Publish
+show every author since the object's last Schedule or Publish; a Segment and a Template, which have
+neither, show every author since they were made.
+_Avoid_: Owner, creator, last editor (an object has several authors)
+
 **Known host**:
 A host a Workspace has used in a send a person confirmed (a User's Schedule or Publish), or one of
 its Sending and Tracking domains. Schedule and Publish mark any other host as new, beside every
