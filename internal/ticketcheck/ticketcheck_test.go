@@ -84,20 +84,27 @@ func decisions(t *testing.T) []ticketcheck.ADR {
 	}
 }
 
-// openTickets says that the numbers given are open, 1301 was closed as not planned, and every
-// other ticket was completed.
-func openTickets(numbers ...int) func(int) ticketcheck.TicketState {
-	return func(n int) ticketcheck.TicketState {
-		switch {
-		case slices.Contains(numbers, n):
-			return ticketcheck.Open
-		case n == 1301:
-			return ticketcheck.NotPlanned
-		default:
-			return ticketcheck.Completed
-		}
+// tracked says that its open numbers are open, 1301 was closed as not planned, and every other
+// ticket was completed; slices gives a spec's sub-issues.
+type tracked struct {
+	open   []int
+	slices map[int][]int
+}
+
+func (t tracked) State(n int) ticketcheck.TicketState {
+	switch {
+	case slices.Contains(t.open, n):
+		return ticketcheck.Open
+	case n == 1301:
+		return ticketcheck.NotPlanned
+	default:
+		return ticketcheck.Completed
 	}
 }
+
+func (t tracked) SubIssues(n int) []int { return t.slices[n] }
+
+func openTickets(numbers ...int) tracked { return tracked{open: numbers} }
 
 func TestCheckFindsAnUnbuiltADRTheTicketNames(t *testing.T) {
 	issue := ticketcheck.Issue{Number: 1476, Title: "Window form of Wait until", Body: "Extends ADR 0126.\n"}
@@ -137,6 +144,40 @@ func TestCheckTakesTheADRsOfATitleListAndOfAParentSpecAsItsOwn(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			require.Empty(t, ticketcheck.Check(issue, adrs, openTickets(1500, 1501, 1502)))
+		})
+	}
+}
+
+func TestCheckTakesASliceOfTheSpecAnADRListsAsAWait(t *testing.T) {
+	// ADR 0133 is built by the spec #1546, sliced into #1549 (done) and #1551 (open); ADR 0134 by
+	// #1300 (done) and #1400 (open).
+	adrs := append(decisions(t),
+		adr(t, "0133-matchers.md", "---\nbuild: [1546]\n---\n"),
+		adr(t, "0134-window.md", "---\nbuild: [1300, 1400]\n---\n"))
+	spec := tracked{open: []int{1400, 1546, 1551, 1600}, slices: map[int][]int{1546: {1549, 1551}}}
+	for name, issue := range map[string]ticketcheck.Issue{
+		"the open slice it needs": {Number: 1, Body: "Filters as ADR 0133.\n", BlockedBy: []int{1551}},
+		"a slice already done":    {Number: 1, Body: "Filters as ADR 0133.\n", BlockedBy: []int{1549}},
+		"the whole spec":          {Number: 1, Body: "Filters as ADR 0133.\n", BlockedBy: []int{1546}},
+		"a listed ticket done":    {Number: 1, Body: "Uses ADR 0134.\n", BlockedBy: []int{1300}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			require.Empty(t, ticketcheck.Check(issue, adrs, spec))
+		})
+	}
+
+	// A slice closed as not planned (#1301) builds nothing, and another ticket is no wait; the gap
+	// names the spec and its open slices.
+	for name, issue := range map[string]ticketcheck.Issue{
+		"a slice not planned": {Number: 1, Body: "Filters as ADR 0133.\n", BlockedBy: []int{1301}},
+		"another ticket":      {Number: 1, Body: "Filters as ADR 0133.\n", BlockedBy: []int{1600}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			withDropped := tracked{open: spec.open, slices: map[int][]int{1546: {1549, 1551, 1301}}}
+			gaps := ticketcheck.Check(issue, adrs, withDropped)
+			require.Equal(t, []ticketcheck.Gap{{ADR: "0133", Tickets: []int{1546}, Slices: []int{1551}}}, gaps)
+			require.Equal(t, "ADR 0133 is not built yet: #1546 builds it (wait for the slice this ticket needs: #1551)",
+				gaps[0].String())
 		})
 	}
 }

@@ -122,23 +122,41 @@ type Issue struct {
 	Body      string
 	Parent    int   // the issue it is a sub-issue of, or 0
 	BlockedBy []int // the tracker's native blocking edges, the parent's included
+	SubIssues []int // its own sub-issues, whatever their state
 }
 
-// Gap is an ADR a ticket builds on that is not built, with the open tickets that build it.
+// Tickets is how the tracker's tickets stand.
+type Tickets interface {
+	State(number int) TicketState
+	// SubIssues returns the sub-issues of a ticket, whatever their state: the slices of a spec.
+	SubIssues(number int) []int
+}
+
+// Gap is an ADR a ticket builds on that is not built, with the open tickets its `build:` lists and
+// their open slices.
 type Gap struct {
 	ADR     string
 	Tickets []int
+	Slices  []int
 }
 
 func (g Gap) String() string {
 	if len(g.Tickets) == 0 {
 		return fmt.Sprintf("ADR %s is not built, and no ticket builds it yet", g.ADR)
 	}
-	refs := make([]string, len(g.Tickets))
-	for i, n := range g.Tickets {
-		refs[i] = "#" + strconv.Itoa(n)
+	text := fmt.Sprintf("ADR %s is not built yet: %s builds it", g.ADR, refs(g.Tickets))
+	if len(g.Slices) > 0 {
+		text += fmt.Sprintf(" (wait for the slice this ticket needs: %s)", refs(g.Slices))
 	}
-	return fmt.Sprintf("ADR %s is not built yet: %s builds it", g.ADR, strings.Join(refs, ", "))
+	return text
+}
+
+func refs(numbers []int) string {
+	out := make([]string, len(numbers))
+	for i, n := range numbers {
+		out[i] = "#" + strconv.Itoa(n)
+	}
+	return strings.Join(out, ", ")
 }
 
 var (
@@ -184,9 +202,11 @@ const (
 // as `(ADR NNNN)` or `(ADR NNNN, NNNN)` and those whose `build:` lists it or its parent (a sub-issue
 // of a spec builds what the spec builds). An ADR is built when it has no `build:` field, has `done`,
 // or lists no open ticket and at least one completed one. The issue waits for an ADR when it is
-// blocked by one of that ADR's open tickets (a native edge, its parent's, or a `Blocked by` line),
-// and waives it with a line `Without ADR NNNN: <why>`.
-func Check(issue Issue, adrs []ADR, state func(int) TicketState) []Gap {
+// blocked (a native edge, its parent's, or a `Blocked by` line) by a ticket that builds it, open or
+// completed: one its `build:` lists, or a slice of one, so a ticket waits for the slice of a spec it
+// needs rather than the whole spec, and a slice that is done still counts. It waives the ADR with a
+// line `Without ADR NNNN: <why>`.
+func Check(issue Issue, adrs []ADR, tickets Tickets) []Gap {
 	byNumber := make(map[string]ADR, len(adrs))
 	own := map[string]bool{}
 	for _, adr := range adrs {
@@ -211,24 +231,34 @@ func Check(issue Issue, adrs []ADR, state func(int) TicketState) []Gap {
 		if own[number] || !ok || !adr.Build.Recorded || adr.Build.Done {
 			continue
 		}
-		var building []int
+		var building, open []int
 		completed := false
 		for _, n := range adr.Build.Tickets {
-			switch state(n) {
+			switch tickets.State(n) {
 			case Open:
-				building = append(building, n)
+				open = append(open, n)
 			case Completed:
 				completed = true
 			case NotPlanned:
+				continue
+			}
+			building = append(building, n)
+			building = append(building, tickets.SubIssues(n)...)
+		}
+		if len(open) == 0 && completed {
+			continue
+		}
+		waited := func(n int) bool { return slices.Contains(waits, n) && tickets.State(n) != NotPlanned }
+		if slices.ContainsFunc(building, waited) || waives(issue.Body, number) {
+			continue
+		}
+		var slicesOpen []int
+		for _, n := range building {
+			if tickets.State(n) == Open && !slices.Contains(open, n) {
+				slicesOpen = append(slicesOpen, n)
 			}
 		}
-		if len(building) == 0 && completed {
-			continue
-		}
-		if slices.ContainsFunc(building, func(n int) bool { return slices.Contains(waits, n) }) || waives(issue.Body, number) {
-			continue
-		}
-		gaps = append(gaps, Gap{ADR: number, Tickets: building})
+		gaps = append(gaps, Gap{ADR: number, Tickets: open, Slices: slicesOpen})
 	}
 	return gaps
 }

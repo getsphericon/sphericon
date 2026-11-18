@@ -58,9 +58,73 @@ func (g ghIssue) ready() bool {
 	return slices.ContainsFunc(g.Labels, func(l ghLabel) bool { return l.Name == ReadyLabel })
 }
 
-// States returns how each issue stands: open, closed as completed or closed as not planned. A
-// number that is no issue counts as completed.
-func (Tracker) States(ctx context.Context) (func(int) TicketState, error) {
+// Tickets returns how each issue stands, open, closed as completed or closed as not planned (a
+// number that is no issue counts as completed), and the sub-issues of every open ticket an ADR's
+// `build:` lists, read in one query.
+func (Tracker) Tickets(ctx context.Context, adrs []ADR) (Tickets, error) {
+	states, err := issueStates(ctx)
+	if err != nil {
+		return nil, err
+	}
+	t := tracked{states: states, subIssues: map[int][]int{}}
+	var listed []int
+	for _, adr := range adrs {
+		for _, n := range adr.Build.Tickets {
+			if t.State(n) == Open && !slices.Contains(listed, n) {
+				listed = append(listed, n)
+			}
+		}
+	}
+	if len(listed) == 0 {
+		return t, nil
+	}
+	var query strings.Builder
+	query.WriteString("query($owner: String!, $name: String!) { repository(owner: $owner, name: $name) {")
+	for _, n := range listed {
+		fmt.Fprintf(&query, " i%d: issue(number: %d) { subIssues(first: 100) { nodes { number } } }", n, n)
+	}
+	query.WriteString(" } }")
+	out, err := gh(ctx, "api", "graphql", "-F", "owner={owner}", "-F", "name={repo}", "-f", "query="+query.String())
+	if err != nil {
+		return nil, err
+	}
+	var found struct {
+		Data struct {
+			Repository map[string]struct {
+				SubIssues struct {
+					Nodes []struct {
+						Number int `json:"number"`
+					} `json:"nodes"`
+				} `json:"subIssues"`
+			} `json:"repository"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal([]byte(out), &found); err != nil {
+		return nil, fmt.Errorf("gh api graphql: %w", err)
+	}
+	for _, n := range listed {
+		for _, node := range found.Data.Repository["i"+strconv.Itoa(n)].SubIssues.Nodes {
+			t.subIssues[n] = append(t.subIssues[n], node.Number)
+		}
+	}
+	return t, nil
+}
+
+type tracked struct {
+	states    map[int]TicketState
+	subIssues map[int][]int
+}
+
+func (t tracked) State(n int) TicketState {
+	if state, ok := t.states[n]; ok {
+		return state
+	}
+	return Completed
+}
+
+func (t tracked) SubIssues(n int) []int { return t.subIssues[n] }
+
+func issueStates(ctx context.Context) (map[int]TicketState, error) {
 	out, err := gh(ctx, "issue", "list", "--state", "all", "--limit", "100000", "--json", "number,state,stateReason",
 		"--jq", `.[] | "\(.number) \(.state) \(.stateReason)"`)
 	if err != nil {
@@ -85,12 +149,7 @@ func (Tracker) States(ctx context.Context) (func(int) TicketState, error) {
 			states[n] = Completed
 		}
 	}
-	return func(n int) TicketState {
-		if state, ok := states[n]; ok {
-			return state
-		}
-		return Completed
-	}, nil
+	return states, nil
 }
 
 // Ready returns the open issues labelled ready-for-agent.
