@@ -779,6 +779,7 @@ func ScopedEntities() []*ScopedEntity {
 				b.SetSkipped(src.Skipped)
 				b.SetFailed(src.Failed)
 				b.SetPending(src.Pending)
+				b.SetCancelled(src.Cancelled)
 				b.SetDelivered(src.Delivered)
 				b.SetUndelivered(src.Undelivered)
 				b.SetBounced(src.Bounced)

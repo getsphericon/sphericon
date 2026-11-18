@@ -84,7 +84,9 @@ Destination by design (ADR 0137: a Broadcast is about its moment).
 
 ADR 0143 freezes a Broadcast that has been `sent` or `failed` past the retention window. `cancelled`
 is final too (ADR 0150) and now joins them, so a cancelled Broadcast's rows do not outlive the
-window.
+window. Its window is counted from the Cancel (`cancelled_at`), and its frozen row keeps the
+`cancelled` figure. A claim still pending when it is frozen, one whose attempt died long before the
+window ran out, is kept as `pending`, as a failed Broadcast's unsent Recipients are.
 
 ## Consequences
 

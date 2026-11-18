@@ -32,7 +32,7 @@ func (m *Module) Freeze(ctx context.Context, s *ent.Scoped, id int64) error {
 	return s.BroadcastFigure().Create().
 		SetBroadcastID(id).
 		SetRecipients(st.Recipients).SetUnsubscribed(st.Unsubscribed).
-		SetSent(st.Sent).SetSkipped(st.Skipped).SetFailed(st.Failed).SetPending(st.Pending).
+		SetSent(st.Sent).SetSkipped(st.Skipped).SetFailed(st.Failed).SetCancelled(st.Cancelled).SetPending(st.Pending).
 		SetDelivered(st.Delivered).SetUndelivered(st.Undelivered).
 		SetBounced(st.Bounced).SetComplained(st.Complained).
 		SetOpened(st.Opened).SetClicked(st.Clicked).SetCaptured(st.Captured).

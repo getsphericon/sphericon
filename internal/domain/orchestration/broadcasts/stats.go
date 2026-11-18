@@ -220,7 +220,7 @@ func (m *Module) StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[
 	for _, f := range frozen {
 		out[f.BroadcastID] = Stats{
 			Recipients: f.Recipients, Unsubscribed: f.Unsubscribed,
-			Sent: f.Sent, Skipped: f.Skipped, Failed: f.Failed, Pending: f.Pending,
+			Sent: f.Sent, Skipped: f.Skipped, Failed: f.Failed, Cancelled: f.Cancelled, Pending: f.Pending,
 			Delivered: f.Delivered, Undelivered: f.Undelivered, Bounced: f.Bounced, Complained: f.Complained,
 			Opened: f.Opened, Clicked: f.Clicked, Captured: f.Captured,
 		}

@@ -39,6 +39,8 @@ type BroadcastFigure struct {
 	Failed int `json:"failed,omitempty"`
 	// Pending holds the value of the "pending" field.
 	Pending int `json:"pending,omitempty"`
+	// Cancelled holds the value of the "cancelled" field.
+	Cancelled int `json:"cancelled,omitempty"`
 	// Delivered holds the value of the "delivered" field.
 	Delivered int `json:"delivered,omitempty"`
 	// Undelivered holds the value of the "undelivered" field.
@@ -99,7 +101,7 @@ func (*BroadcastFigure) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case broadcastfigure.FieldID, broadcastfigure.FieldWorkspaceID, broadcastfigure.FieldBroadcastID, broadcastfigure.FieldRecipients, broadcastfigure.FieldUnsubscribed, broadcastfigure.FieldSent, broadcastfigure.FieldSkipped, broadcastfigure.FieldFailed, broadcastfigure.FieldPending, broadcastfigure.FieldDelivered, broadcastfigure.FieldUndelivered, broadcastfigure.FieldBounced, broadcastfigure.FieldComplained, broadcastfigure.FieldOpened, broadcastfigure.FieldClicked, broadcastfigure.FieldCaptured:
+		case broadcastfigure.FieldID, broadcastfigure.FieldWorkspaceID, broadcastfigure.FieldBroadcastID, broadcastfigure.FieldRecipients, broadcastfigure.FieldUnsubscribed, broadcastfigure.FieldSent, broadcastfigure.FieldSkipped, broadcastfigure.FieldFailed, broadcastfigure.FieldPending, broadcastfigure.FieldCancelled, broadcastfigure.FieldDelivered, broadcastfigure.FieldUndelivered, broadcastfigure.FieldBounced, broadcastfigure.FieldComplained, broadcastfigure.FieldOpened, broadcastfigure.FieldClicked, broadcastfigure.FieldCaptured:
 			values[i] = new(sql.NullInt64)
 		case broadcastfigure.FieldCreatedAt, broadcastfigure.FieldUpdatedAt, broadcastfigure.FieldPrunedAt:
 			values[i] = new(sql.NullTime)
@@ -183,6 +185,12 @@ func (_m *BroadcastFigure) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field pending", values[i])
 			} else if value.Valid {
 				_m.Pending = int(value.Int64)
+			}
+		case broadcastfigure.FieldCancelled:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field cancelled", values[i])
+			} else if value.Valid {
+				_m.Cancelled = int(value.Int64)
 			}
 		case broadcastfigure.FieldDelivered:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -308,6 +316,9 @@ func (_m *BroadcastFigure) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("pending=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Pending))
+	builder.WriteString(", ")
+	builder.WriteString("cancelled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Cancelled))
 	builder.WriteString(", ")
 	builder.WriteString("delivered=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Delivered))

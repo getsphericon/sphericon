@@ -105,6 +105,11 @@ func Pending(v int) predicate.BroadcastFigure {
 	return predicate.BroadcastFigure(sql.FieldEQ(FieldPending, v))
 }
 
+// Cancelled applies equality check predicate on the "cancelled" field. It's identical to CancelledEQ.
+func Cancelled(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldEQ(FieldCancelled, v))
+}
+
 // Delivered applies equality check predicate on the "delivered" field. It's identical to DeliveredEQ.
 func Delivered(v int) predicate.BroadcastFigure {
 	return predicate.BroadcastFigure(sql.FieldEQ(FieldDelivered, v))
@@ -503,6 +508,46 @@ func PendingLT(v int) predicate.BroadcastFigure {
 // PendingLTE applies the LTE predicate on the "pending" field.
 func PendingLTE(v int) predicate.BroadcastFigure {
 	return predicate.BroadcastFigure(sql.FieldLTE(FieldPending, v))
+}
+
+// CancelledEQ applies the EQ predicate on the "cancelled" field.
+func CancelledEQ(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldEQ(FieldCancelled, v))
+}
+
+// CancelledNEQ applies the NEQ predicate on the "cancelled" field.
+func CancelledNEQ(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldNEQ(FieldCancelled, v))
+}
+
+// CancelledIn applies the In predicate on the "cancelled" field.
+func CancelledIn(vs ...int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldIn(FieldCancelled, vs...))
+}
+
+// CancelledNotIn applies the NotIn predicate on the "cancelled" field.
+func CancelledNotIn(vs ...int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldNotIn(FieldCancelled, vs...))
+}
+
+// CancelledGT applies the GT predicate on the "cancelled" field.
+func CancelledGT(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldGT(FieldCancelled, v))
+}
+
+// CancelledGTE applies the GTE predicate on the "cancelled" field.
+func CancelledGTE(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldGTE(FieldCancelled, v))
+}
+
+// CancelledLT applies the LT predicate on the "cancelled" field.
+func CancelledLT(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldLT(FieldCancelled, v))
+}
+
+// CancelledLTE applies the LTE predicate on the "cancelled" field.
+func CancelledLTE(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldLTE(FieldCancelled, v))
 }
 
 // DeliveredEQ applies the EQ predicate on the "delivered" field.
