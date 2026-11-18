@@ -1,6 +1,7 @@
 ---
 status: accepted
 build: none
+terms: [Preference page]
 ---
 
 # A Preference page per Destination, and only the person lifts a refusal

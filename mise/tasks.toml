@@ -700,7 +700,7 @@ fi
 '''
 
 ["tickets:check"]
-description = "Each named issue, or every open ready-for-agent issue, is ready for an agent: an ADR it names whose `build:` says it is not built is waited for (a native edge to a ticket that builds it, or to a slice of one) or waived (`Without ADR <NNNN>: <why>`), each open issue its `Blocked by` line names has a native edge, and a spec has slices. Reads the tracker with gh; .github/workflows/tickets.yml runs it with --apply"
+description = "Each named issue, or every open ready-for-agent issue, is ready for an agent: an ADR it names (by number, or by a term of an ADR no ticket builds, its `terms:`) whose `build:` says it is not built is waited for (a native edge to a ticket that builds it, or to a slice of one) or waived (`Without ADR <NNNN>: <why>`), each open issue its `Blocked by` line names has a native edge, and a spec has slices. Reads the tracker with gh; .github/workflows/tickets.yml runs it with --apply"
 run = "go run ./cmd/ticketcheck issues"
 
 ["tickets:graph"]

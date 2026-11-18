@@ -1,6 +1,7 @@
 ---
 status: accepted
 build: none
+terms: [Merge]
 ---
 
 # Two Contacts of one person are merged by a deliberate act
