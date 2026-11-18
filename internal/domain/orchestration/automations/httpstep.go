@@ -103,15 +103,15 @@ func (m *Module) sealSteps(steps, stored []automationstep.Step) ([]automationste
 			return *s, nil
 		}
 		if len(seen) >= MaxHTTPStepsPerAutomation {
-			return *s, invalid("an automation has at most %d http steps", MaxHTTPStepsPerAutomation)
+			return automationstep.Step{}, invalid("an automation has at most %d http steps", MaxHTTPStepsPerAutomation)
 		}
 		p, known := prev[s.ID]
 		sealed, err := m.sealHTTP(*s, p, known && s.ID != "")
 		if err != nil {
-			return sealed, err
+			return automationstep.Step{}, err
 		}
 		if seen[sealed.ID] {
-			return sealed, invalid("duplicate http step id")
+			return automationstep.Step{}, invalid("duplicate http step id")
 		}
 		seen[sealed.ID] = true
 		return sealed, nil

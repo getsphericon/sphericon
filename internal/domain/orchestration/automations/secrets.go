@@ -93,8 +93,11 @@ func rewrapSteps(cipher *secrets.Cipher, steps []automationstep.Step) (sealed []
 		}
 		s.Headers = slices.Clone(s.Headers)
 		did, err := httpcall.Rewrap(cipher, &s.URL, &s.Secret, s.Headers)
+		if err != nil {
+			return automationstep.Step{}, err
+		}
 		changed = changed || did
-		return s, err
+		return s, nil
 	})
 	if err != nil {
 		return nil, false, err

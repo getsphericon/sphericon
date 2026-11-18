@@ -272,11 +272,11 @@ func (m *Module) build(ctx context.Context, steps []automationstep.Step) ([]auto
 		c, err := emailrender.ResolveContent(ctx, m.renderer, &s.Subject, body, s.Doc, errBodyAndDoc)
 		switch {
 		case errors.Is(err, errBodyAndDoc):
-			return s, ErrInvalidStep.With(fmt.Sprintf("step %d: write a body or a doc, not both", i+1))
+			return automationstep.Step{}, ErrInvalidStep.With(fmt.Sprintf("step %d: write a body or a doc, not both", i+1))
 		case errors.Is(err, emailrender.ErrInvalidContent):
-			return s, ErrInvalidStep.With(fmt.Sprintf("step %d: %s", i+1, err))
+			return automationstep.Step{}, ErrInvalidStep.With(fmt.Sprintf("step %d: %s", i+1, err))
 		case err != nil:
-			return s, err
+			return automationstep.Step{}, err
 		}
 		s.Body, s.EditorVersion = c.Authored.Body, c.Authored.EditorVersion
 		return s, nil

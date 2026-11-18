@@ -45,7 +45,9 @@ func TestAllStopsWhenTheVisitorStops(t *testing.T) {
 	rapid.Check(t, func(rt *rapid.T) {
 		steps := stepsGen().Filter(func(s []automationstep.Step) bool { return len(s) > 0 }).Draw(rt, "steps")
 		stop := rapid.IntRange(0, len(steps)-1).Draw(rt, "stop")
-		assert.Equal(rt, stop+1, visitUntil(steps, stop))
+		want := stop + 1
+		visited := visitUntil(steps, stop)
+		assert.Equal(rt, want, visited)
 	})
 }
 
@@ -89,7 +91,7 @@ func TestMapRewritesEachStepInPlace(t *testing.T) {
 		want := make([]automationstep.Step, len(steps))
 		wantPositions := make([]int, len(steps))
 		for i := range steps {
-			want[i] = automationstep.Step{Type: automationstep.ApplyTag, Tag: strconv.Itoa(60 * (i + 1))}
+			want[i] = automationstep.Step{Type: automationstep.ApplyTag, Tag: strconv.Itoa(held[i].Seconds)}
 			wantPositions[i] = i
 		}
 		assert.Equal(rt, want, out)
@@ -112,10 +114,11 @@ func TestMapStopsAtTheFirstError(t *testing.T) {
 	rapid.Check(t, func(rt *rapid.T) {
 		steps := stepsGen().Filter(func(s []automationstep.Step) bool { return len(s) > 0 }).Draw(rt, "steps")
 		failAt := rapid.IntRange(0, len(steps)-1).Draw(rt, "failAt")
+		want := failAt + 1
 		out, visited, err := mapFailingAt(steps, failAt)
 		require.ErrorIs(rt, err, errRefused)
 		assert.Nil(rt, out)
-		assert.Equal(rt, failAt+1, visited)
+		assert.Equal(rt, want, visited)
 	})
 }
 
@@ -131,9 +134,10 @@ func TestRewriteRewritesEachStepInPlace(t *testing.T) {
 		{Type: automationstep.ApplyTag, Tag: "0/60"},
 		{Type: automationstep.ApplyTag, Tag: "1/120"},
 	}, out)
-	assert.NotNil(t, automationstep.Rewrite(nil, func(int, *automationstep.Step) automationstep.Step {
+	none := automationstep.Rewrite(nil, func(int, *automationstep.Step) automationstep.Step {
 		return automationstep.Step{}
-	}))
+	})
+	assert.NotNil(t, none)
 }
 
 // visitUntil visits the Steps until the one at stop and returns how many it visited.
