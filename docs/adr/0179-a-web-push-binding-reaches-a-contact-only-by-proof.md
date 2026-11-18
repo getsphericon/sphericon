@@ -1,6 +1,6 @@
 ---
 status: accepted
-build: [1102]
+build: [1102, 1680, 1683, 1684, 1691]
 ---
 
 # A web push Binding reaches a Contact only by proof, and its browser's reports keep it current
