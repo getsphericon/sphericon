@@ -53,7 +53,8 @@ func TestSpentPerSecondLimitIsADeferralWithTheWaitUntilCapacityReturns(t *testin
 
 	res := send(t, m, env, "bc:3")
 	assert.Equal(t, outboundmessages.Deferral, res.Outcome)
-	assert.Empty(t, res.Hold, "a Deferral carries no hold reason")
+	assert.Empty(t, res.SkippedReason, "a Deferral carries no hold reason")
+	assert.Empty(t, res.Failure)
 	assert.Equal(t, 500*time.Millisecond, res.Wait, "one token at 2 per second takes half a second")
 	assert.Zero(t, res.MessageID)
 	assert.Len(t, env.CustomerMail.Messages(), 2, "the provider is not called")
