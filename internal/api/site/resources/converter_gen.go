@@ -30,6 +30,7 @@ import (
 	consentrecords "github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	memberships "github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	signupitems "github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
+	workspaces "github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	abusewarning "github.com/getsphericon/sphericon/internal/domain/insights/abusewarning"
 	auditlog "github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	setupchecklist "github.com/getsphericon/sphericon/internal/domain/insights/setupchecklist"
@@ -853,6 +854,16 @@ func (c *ConverterImpl) CnameRecordToResource(source trackingdomains.Record) sit
 	siteapiCnameRecord.Host = source.Host
 	siteapiCnameRecord.Target = source.Target
 	return siteapiCnameRecord
+}
+func (c *ConverterImpl) ConfirmationEmailToResource(source workspaces.ConfirmationEmailSettings) site.SiteConfirmationEmailResource {
+	var siteapiSiteConfirmationEmailResource site.SiteConfirmationEmailResource
+	siteapiSiteConfirmationEmailResource.FromEmail = nilEmailAddress(source.FromEmail)
+	siteapiSiteConfirmationEmailResource.FromName = nilString(source.FromName)
+	siteapiSiteConfirmationEmailResource.Subject = nilString(source.Subject)
+	siteapiSiteConfirmationEmailResource.Intro = nilString(source.Intro)
+	siteapiSiteConfirmationEmailResource.Defaults = c.workspacesConfirmationEmailDefaultsToSiteapiSiteConfirmationEmailDefaults(source.Defaults)
+	siteapiSiteConfirmationEmailResource.Revision = revision(source.Revision)
+	return siteapiSiteConfirmationEmailResource
 }
 func (c *ConverterImpl) ConfirmationProvenanceToResource(source confirmation.Provenance) site.ConfirmationProvenance {
 	var siteapiConfirmationProvenance site.ConfirmationProvenance
@@ -2712,6 +2723,7 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWork
 		siteapiSiteWorkspaceResource.CollectKey = (*source).CollectKey
 		siteapiSiteWorkspaceResource.PostalAddress = (*source).PostalAddress
 		siteapiSiteWorkspaceResource.Timezone = workspaceTimezone((*source).Timezone)
+		siteapiSiteWorkspaceResource.RequireConfirmedOptIn = (*source).RequireConfirmedOptIn
 		// siteapiSiteWorkspaceResource.Role: ignore
 		// siteapiSiteWorkspaceResource.Permissions: ignore
 		siteapiSiteWorkspaceResource.SuspendedAt = optNilTimestamp((*source).SuspendedAt)
@@ -2874,4 +2886,11 @@ func (c *ConverterImpl) setupchecklistStepsToSiteapiSiteSetupSteps(source setupc
 	siteapiSiteSetupSteps.Contact = c.SetupStepStatusToResource(source.Contact)
 	siteapiSiteSetupSteps.SentEmail = c.SetupStepStatusToResource(source.SentEmail)
 	return siteapiSiteSetupSteps
+}
+func (c *ConverterImpl) workspacesConfirmationEmailDefaultsToSiteapiSiteConfirmationEmailDefaults(source workspaces.ConfirmationEmailDefaults) site.SiteConfirmationEmailDefaults {
+	var siteapiSiteConfirmationEmailDefaults site.SiteConfirmationEmailDefaults
+	siteapiSiteConfirmationEmailDefaults.FromName = source.FromName
+	siteapiSiteConfirmationEmailDefaults.Subject = source.Subject
+	siteapiSiteConfirmationEmailDefaults.Intro = source.Intro
+	return siteapiSiteConfirmationEmailDefaults
 }

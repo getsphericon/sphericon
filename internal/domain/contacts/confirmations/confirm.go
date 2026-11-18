@@ -40,7 +40,7 @@ func (m *Module) RecordConfirmation(ctx context.Context, s *ent.Scoped, target l
 		if err != nil || workspaces.DeletionStateOf(ws) == workspaces.StateErased {
 			return err
 		}
-		_, err = m.recordIn(ctx, sc, grant{
+		_, _, err = m.recordIn(ctx, sc, grant{
 			channel: channels.Email, destination: dest, provenance: confirmation.ProvenanceDoubleOptIn,
 			contactID: target.ContactID, ip: ip, at: consentstamps.At(at),
 		})

@@ -538,9 +538,17 @@ type MarketingConfirmed struct {
 	WorkspaceID int64  `json:"workspaceId"`
 	ContactID   int64  `json:"contactId,omitempty"`
 	Email       string `json:"email"`
-	Provenance  string `json:"provenance"`   // double_opt_in|grandfathered
+	Provenance  string `json:"provenance"`   // double_opt_in|grandfathered|imported
 	IP          string `json:"ip,omitempty"` // confirming client IP (double_opt_in only)
+	// History marks a Confirmation recorded as history rather than given now: the grandfathered
+	// ones turning confirmed opt-in on records (ADR 0013). Segmentation sees it, and like a
+	// Backfill (ADR 0044) it triggers no Automation and reaches no webhook. It travels in the
+	// envelope, so the consumers that decode it see it too.
+	History bool `json:"history,omitempty"`
 }
+
+// Backfilled reports whether the Confirmation is history (History): recorded, never reacted to.
+func (e *MarketingConfirmed) Backfilled() bool { return e.History }
 
 func (*MarketingConfirmed) EventName() string  { return systemevent.MarketingConfirmed }
 func (*MarketingConfirmed) EventVersion() int  { return 1 }

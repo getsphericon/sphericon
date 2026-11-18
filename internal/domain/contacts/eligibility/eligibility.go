@@ -272,6 +272,25 @@ func GloballyOptedOut(channel channels.Channel) predicate.Contact {
 	}
 }
 
+// UnconfirmedMailable matches the Contacts whose email address is mailable and holds no
+// Confirmation: the ones turning confirmed opt-in on grandfathers (ADR 0013). Mailable is what the
+// negative layers decide whatever the source, no Suppression and no opt-out of everything; a
+// per-source opt-out leaves the address mailable from every other source, so it does not exclude
+// it. It reads the stores, never the Workspace's policy, which is off while the Confirmations are
+// recorded.
+func UnconfirmedMailable() predicate.Contact {
+	return func(s *sql.Selector) {
+		r := contactRef(s)
+		kept := []*sql.Predicate{sql.NotNull(s.C(contact.FieldEmail))}
+		for _, l := range layers(r, channels.Email, SourceEverything) {
+			if l.reason == ReasonSuppressed || l.reason == ReasonUnsubscribedEverything {
+				kept = append(kept, sql.Not(l.blocks))
+			}
+		}
+		s.Where(sql.And(append(kept, sql.NotExists(match(r, confirmations, channels.Email)))...))
+	}
+}
+
 // ref names the (workspace, destination) a layer is evaluated for, as SQL
 // expression writers: a correlated Contact column pair for the batch form, bound
 // arguments for a single Check.

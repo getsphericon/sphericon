@@ -207,6 +207,7 @@ const (
 	SiteWorkspacesCreateOperation                      OperationName = "SiteWorkspacesCreate"
 	SiteWorkspacesDeleteOperation                      OperationName = "SiteWorkspacesDelete"
 	SiteWorkspacesGetOperation                         OperationName = "SiteWorkspacesGet"
+	SiteWorkspacesGetConfirmationEmailOperation        OperationName = "SiteWorkspacesGetConfirmationEmail"
 	SiteWorkspacesGetRevenueSettingsOperation          OperationName = "SiteWorkspacesGetRevenueSettings"
 	SiteWorkspacesLeaveOperation                       OperationName = "SiteWorkspacesLeave"
 	SiteWorkspacesLiftSecondFactorRequirementOperation OperationName = "SiteWorkspacesLiftSecondFactorRequirement"
@@ -214,7 +215,9 @@ const (
 	SiteWorkspacesListDeletedOperation                 OperationName = "SiteWorkspacesListDeleted"
 	SiteWorkspacesRequireSecondFactorOperation         OperationName = "SiteWorkspacesRequireSecondFactor"
 	SiteWorkspacesRestoreOperation                     OperationName = "SiteWorkspacesRestore"
+	SiteWorkspacesSetConfirmedOptInOperation           OperationName = "SiteWorkspacesSetConfirmedOptIn"
 	SiteWorkspacesSetTimezoneOperation                 OperationName = "SiteWorkspacesSetTimezone"
 	SiteWorkspacesUpdateOperation                      OperationName = "SiteWorkspacesUpdate"
+	SiteWorkspacesUpdateConfirmationEmailOperation     OperationName = "SiteWorkspacesUpdateConfirmationEmail"
 	SiteWorkspacesUpdateRevenueSettingsOperation       OperationName = "SiteWorkspacesUpdateRevenueSettings"
 )

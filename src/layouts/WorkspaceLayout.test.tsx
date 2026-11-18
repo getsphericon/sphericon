@@ -36,6 +36,7 @@ const workspace = (over: Partial<SiteWorkspaceResource>): SiteWorkspaceResource 
   collectKey: 'ck',
   revision: 1,
   postalAddress: '',
+  requireConfirmedOptIn: false,
   timezone: 'UTC',
   accountLinkAvailable: false,
   permissions: [],

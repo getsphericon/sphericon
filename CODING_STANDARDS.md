@@ -201,6 +201,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   `validation.Forbidden` 403 `permission_required`, `validation.Unauthorized` 401,
   `validation.Denied` 403, `validation.Unverified` 403 `email_verification_required`,
   `validation.PostalAddressRequired` 409 `postal_address_required`,
+  `validation.ConfirmationEmailRequired` 409 `confirmation_email_required`,
   `validation.LinkInvalid` 400 (a mailed link that does not stand), `validation.Incomplete` 428,
   `validation.UnknownReference` 400 (a reference that names nothing, such as a pending sign-up that
   is gone or a cursor never handed out), `validation.Unlicensed` 402 (a capability the License does

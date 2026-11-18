@@ -3,6 +3,7 @@ import * as z from 'zod'
 
 import {
   zRetentionDays,
+  zSiteUpdateConfirmationEmailInput,
   zSiteUpdateRevenueSettingsInput,
   zSiteUpdateWorkspaceInput,
   zSiteWorkspaceTimezoneInput,
@@ -29,6 +30,14 @@ export interface RevenueValues {
   attributionWindowDays: number
 }
 
+// The confirmation email (ADR 0013): a blank name, subject or intro goes out as its default.
+export interface ConfirmationEmailValues {
+  fromEmail: string
+  fromName: string
+  subject: string
+  intro: string
+}
+
 // A blank input holds '': no window, the log is kept forever.
 export interface RetentionValues {
   retentionDays: number | ''
@@ -41,10 +50,12 @@ export interface RetentionPayload {
 const generalBody = zSiteUpdateWorkspaceInput.omit({ revision: true })
 const timezoneBody = zSiteWorkspaceTimezoneInput.omit({ revision: true })
 const revenueBody = zSiteUpdateRevenueSettingsInput.omit({ revision: true })
+const confirmationEmailBody = zSiteUpdateConfirmationEmailInput.omit({ revision: true })
 
 export type GeneralPayload = z.output<typeof generalBody>
 export type TimezonePayload = z.output<typeof timezoneBody>
 export type RevenuePayload = z.output<typeof revenueBody>
+export type ConfirmationEmailPayload = z.output<typeof confirmationEmailBody>
 
 const generalBlank: GeneralValues = { name: '', postalAddress: '' }
 const timezoneBlank: TimezoneValues = { timezone: '' }
@@ -54,6 +65,12 @@ const revenueBlank: RevenueValues = { reportingCurrency: null, attributionWindow
 export const generalSchema = resourceFormSchema(generalBody, generalBlank)
 export const timezoneSchema = resourceFormSchema(timezoneBody, timezoneBlank)
 export const revenueSchema = resourceFormSchema(revenueBody, revenueBlank)
+export const confirmationEmailSchema = resourceFormSchema(confirmationEmailBody, {
+  fromEmail: '',
+  fromName: '',
+  subject: '',
+  intro: '',
+} satisfies ConfirmationEmailValues)
 
 const retention = z
   .custom<RetentionValues>((value) => typeof value === 'object' && value !== null)

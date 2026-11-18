@@ -877,7 +877,8 @@
           "migrations_pending",
           "acceptance_pending",
           "revision_changed",
-          "postal_address_required"
+          "postal_address_required",
+          "confirmation_email_required"
         ],
         "description": "A machine-readable reason a client branches on, beyond the HTTP status"
       },

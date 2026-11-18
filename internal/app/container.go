@@ -1031,7 +1031,7 @@ var contentPackage = do.Package(
 			Users: do.MustInvoke[*users.Module](i), Workspaces: do.MustInvoke[*workspaces.Module](i), Memberships: do.MustInvoke[*memberships.Module](i),
 			SecondFactors: do.MustInvoke[*secondfactors.Module](i), Holds: do.MustInvoke[*holds.Holds](i),
 			Outbound: do.MustInvoke[*outboundmessages.Module](i), TrackingDomains: do.MustInvoke[*trackingdomains.Module](i),
-			RemovalCheck: do.MustInvoke[*removalcheck.Module](i),
+			RemovalCheck: do.MustInvoke[*removalcheck.Module](i), Confirmations: do.MustInvoke[*confirmations.Module](i),
 		}, do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*analyticsreport.UseCase, error) {

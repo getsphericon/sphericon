@@ -2,12 +2,15 @@ import { Button, Group, NumberInput, Select, Stack, Textarea, TextInput } from '
 import { use } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import type { SiteConfirmationEmailResource } from '../../../generated/site/types.gen.ts'
 import { zAttributionWindowDays, zRetentionDays } from '../../../generated/site/zod.gen.ts'
 import type { ResourceFormProps } from '../../../resources/defineResource.tsx'
 import { boundsOf } from '../../../utils/bounds.ts'
 import { TIME_ZONES } from '../../../utils/datetime.ts'
 import { CanEdit } from './workspaceSettingsForm.ts'
 import type {
+  ConfirmationEmailPayload,
+  ConfirmationEmailValues,
   GeneralPayload,
   GeneralValues,
   RetentionPayload,
@@ -115,6 +118,52 @@ export function RevenueFields({
           allowNegative={false}
           clampBehavior="strict"
           {...form.getInputProps('attributionWindowDays')}
+        />
+        <SaveButton isPending={isPending} />
+      </Stack>
+    </form>
+  )
+}
+
+// The confirmation email's settings (ADR 0013): each blank text shows, and goes out as, its default.
+export function ConfirmationEmailFields({
+  form,
+  isPending,
+  onSubmit,
+  stored,
+}: ResourceFormProps<
+  ConfirmationEmailPayload,
+  ConfirmationEmailValues,
+  SiteConfirmationEmailResource
+>) {
+  const { t } = useTranslation()
+  const defaults = stored?.defaults
+  return (
+    <form onSubmit={form.onSubmit(onSubmit)}>
+      <Stack maw={520}>
+        <TextInput
+          type="email"
+          label={t(($) => $.settings.confirmedOptIn.fromEmailLabel)}
+          description={t(($) => $.settings.confirmedOptIn.fromEmailDescription)}
+          required
+          {...form.getInputProps('fromEmail')}
+        />
+        <TextInput
+          label={t(($) => $.settings.confirmedOptIn.fromNameLabel)}
+          placeholder={defaults?.fromName}
+          {...form.getInputProps('fromName')}
+        />
+        <TextInput
+          label={t(($) => $.settings.confirmedOptIn.subjectLabel)}
+          placeholder={defaults?.subject}
+          {...form.getInputProps('subject')}
+        />
+        <Textarea
+          label={t(($) => $.settings.confirmedOptIn.introLabel)}
+          placeholder={defaults?.intro}
+          autosize
+          minRows={3}
+          {...form.getInputProps('intro')}
         />
         <SaveButton isPending={isPending} />
       </Stack>

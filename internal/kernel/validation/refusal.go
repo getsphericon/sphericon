@@ -56,6 +56,10 @@ const (
 	// KindPostalAddressRequired is marketing email armed while its Workspace has no postal address,
 	// which its footer carries (ADR 0156): a person sets one in the Workspace settings first.
 	KindPostalAddressRequired
+	// KindConfirmationEmailRequired is confirmed opt-in or a Confirmation request while the Workspace
+	// has no confirmation email set up (ADR 0013): a person sets it up in the Workspace settings
+	// first.
+	KindConfirmationEmailRequired
 )
 
 // RefusalError is a sentinel domain error that carries its kind and the text to show a user.
@@ -139,6 +143,12 @@ func RevisionChanged(text string, key i18n.ID) *RefusalError {
 // postal address (KindPostalAddressRequired).
 func PostalAddressRequired(text string, key i18n.ID) *RefusalError {
 	return &RefusalError{kind: KindPostalAddressRequired, text: text, key: key}
+}
+
+// ConfirmationEmailRequired makes the sentinel for confirmed opt-in or a Confirmation request while
+// the Workspace has no confirmation email set up (KindConfirmationEmailRequired).
+func ConfirmationEmailRequired(text string, key i18n.ID) *RefusalError {
+	return &RefusalError{kind: KindConfirmationEmailRequired, text: text, key: key}
 }
 
 // Forbidden makes the sentinel for a caller whose Role lacks the Permission the request needs

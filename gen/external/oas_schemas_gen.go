@@ -15442,6 +15442,7 @@ const (
 	ProblemCodeAcceptancePending         ProblemCode = "acceptance_pending"
 	ProblemCodeRevisionChanged           ProblemCode = "revision_changed"
 	ProblemCodePostalAddressRequired     ProblemCode = "postal_address_required"
+	ProblemCodeConfirmationEmailRequired ProblemCode = "confirmation_email_required"
 )
 
 // AllValues returns all ProblemCode values.
@@ -15454,6 +15455,7 @@ func (ProblemCode) AllValues() []ProblemCode {
 		ProblemCodeAcceptancePending,
 		ProblemCodeRevisionChanged,
 		ProblemCodePostalAddressRequired,
+		ProblemCodeConfirmationEmailRequired,
 	}
 }
 
@@ -15473,6 +15475,8 @@ func (s ProblemCode) MarshalText() ([]byte, error) {
 	case ProblemCodeRevisionChanged:
 		return []byte(s), nil
 	case ProblemCodePostalAddressRequired:
+		return []byte(s), nil
+	case ProblemCodeConfirmationEmailRequired:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -15502,6 +15506,9 @@ func (s *ProblemCode) UnmarshalText(data []byte) error {
 		return nil
 	case ProblemCodePostalAddressRequired:
 		*s = ProblemCodePostalAddressRequired
+		return nil
+	case ProblemCodeConfirmationEmailRequired:
+		*s = ProblemCodeConfirmationEmailRequired
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -21831,6 +21838,10 @@ type WorkspaceResource struct {
 	// email send step are a 409 postal_address_required. Read-only: only a person sets it, in the
 	// console's Workspace settings.
 	PostalAddress string `json:"postalAddress"`
+	// Whether email reaches an address only once it holds a Confirmation (confirmed opt-in, ADR 0013);
+	// off, email is single opt-in by the Workspace's choice. Read-only: only a person turns it on, in the
+	// console's Workspace settings, affirming that the current mailable list consented.
+	RequireConfirmedOptIn bool `json:"requireConfirmedOptIn"`
 	// The IANA time zone every analytics report counts its days in (ADR 0057).
 	Timezone TimeZoneName `json:"timezone"`
 	// The Send cap the platform set on the Workspace, with its sends over the last 24 hours; null when no
@@ -21853,6 +21864,11 @@ func (s *WorkspaceResource) GetName() string {
 // GetPostalAddress returns the value of PostalAddress.
 func (s *WorkspaceResource) GetPostalAddress() string {
 	return s.PostalAddress
+}
+
+// GetRequireConfirmedOptIn returns the value of RequireConfirmedOptIn.
+func (s *WorkspaceResource) GetRequireConfirmedOptIn() bool {
+	return s.RequireConfirmedOptIn
 }
 
 // GetTimezone returns the value of Timezone.
@@ -21883,6 +21899,11 @@ func (s *WorkspaceResource) SetName(val string) {
 // SetPostalAddress sets the value of PostalAddress.
 func (s *WorkspaceResource) SetPostalAddress(val string) {
 	s.PostalAddress = val
+}
+
+// SetRequireConfirmedOptIn sets the value of RequireConfirmedOptIn.
+func (s *WorkspaceResource) SetRequireConfirmedOptIn(val bool) {
+	s.RequireConfirmedOptIn = val
 }
 
 // SetTimezone sets the value of Timezone.

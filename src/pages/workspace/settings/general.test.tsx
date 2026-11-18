@@ -32,6 +32,7 @@ const workspace: SiteWorkspaceResource = {
   collectKey: 'omck_test_key',
   revision: 1,
   postalAddress: '',
+  requireConfirmedOptIn: false,
   timezone: 'UTC',
   accountLinkAvailable: false,
   permissions: ['workspace:update', 'workspace:timezone', 'workspace:delete'],

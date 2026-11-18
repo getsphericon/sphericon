@@ -30,6 +30,7 @@ const workspace = (workspaceId: string) => ({
   collectKey: 'omck',
   revision: 1,
   postalAddress: '',
+  requireConfirmedOptIn: false,
   timezone: 'UTC',
   accountLinkAvailable: false,
   permissions: [],

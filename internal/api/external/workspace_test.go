@@ -9,6 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -59,4 +60,24 @@ func TestExternalWorkspaceOnAnInstanceWithoutSendCapsReadsNull(t *testing.T) {
 	ws := workspaceOf(t, env)
 
 	assert.True(t, ws.SendCap.IsNull(), "got %+v", ws.SendCap)
+}
+
+// An agent reads whether the Workspace requires confirmed opt-in (ADR 0013) and has no operation
+// that changes it: only a person turns it on, in the console.
+func TestExternalWorkspaceCarriesConfirmedOptIn(t *testing.T) {
+	env := testhelper.Setup(t)
+	before := workspaceOf(t, env)
+	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	_, err := owner.SiteWorkspacesUpdateConfirmationEmail(t.Context(), &siteapi.SiteUpdateConfirmationEmailInput{
+		Revision: siteapi.Revision(env.WorkspaceRevision(t.Context(), t, string(fixtures.AcmePublicID))), FromEmail: "hello@mail.acme.com",
+	}, siteapi.SiteWorkspacesUpdateConfirmationEmailParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+	_, err = owner.SiteWorkspacesSetConfirmedOptIn(t.Context(), &siteapi.SiteSetConfirmedOptInInput{
+		Revision: siteapi.Revision(env.WorkspaceRevision(t.Context(), t, string(fixtures.AcmePublicID))), Enabled: true,
+	}, siteapi.SiteWorkspacesSetConfirmedOptInParams{WorkspaceId: fixtures.AcmePublicID})
+	require.NoError(t, err)
+	after := workspaceOf(t, env)
+
+	assert.False(t, before.RequireConfirmedOptIn)
+	assert.True(t, after.RequireConfirmedOptIn)
 }

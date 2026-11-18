@@ -22,6 +22,7 @@ const workspace = (permissions: Permission[]): SiteWorkspaceResource => ({
   collectKey: 'ck',
   revision: 1,
   postalAddress: '',
+  requireConfirmedOptIn: false,
   timezone: 'UTC',
   accountLinkAvailable: false,
   permissions,

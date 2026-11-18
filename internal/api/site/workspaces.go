@@ -251,3 +251,36 @@ func (h *Handlers) SiteWorkspacesUpdateRevenueSettings(ctx context.Context, req 
 	r := mapper.RevenueSettingsToResource(w)
 	return &r, nil
 }
+
+// SiteWorkspacesSetConfirmedOptIn turns confirmed opt-in on or off (Permission workspace:update,
+// ADR 0013); turning it on grandfathers the addresses mailable now.
+func (h *Handlers) SiteWorkspacesSetConfirmedOptIn(ctx context.Context, req *siteapi.SiteSetConfirmedOptInInput, _ siteapi.SiteWorkspacesSetConfirmedOptInParams) (*siteapi.SiteWorkspaceResource, error) {
+	v, err := h.workspaceView.SetConfirmedOptIn(ctx, workspaceScope(ctx), h.viewCaller(ctx), inputs.ConfirmedOptInSet(req))
+	if err != nil {
+		return nil, err
+	}
+	resource := h.workspaceResource(v)
+	return &resource, nil
+}
+
+// SiteWorkspacesGetConfirmationEmail reads the confirmation email's settings (Permission
+// workspace:update, ADR 0013).
+func (h *Handlers) SiteWorkspacesGetConfirmationEmail(ctx context.Context, _ siteapi.SiteWorkspacesGetConfirmationEmailParams) (*siteapi.SiteConfirmationEmailResource, error) {
+	w, err := h.workspaces.Get(ctx, workspaceScope(ctx))
+	if err != nil {
+		return nil, err
+	}
+	r := mapper.ConfirmationEmailToResource(workspaces.ConfirmationEmailSettingsOf(w))
+	return &r, nil
+}
+
+// SiteWorkspacesUpdateConfirmationEmail sets up the confirmation email (Permission
+// workspace:update, ADR 0013): its From must be on a verified Sending domain.
+func (h *Handlers) SiteWorkspacesUpdateConfirmationEmail(ctx context.Context, req *siteapi.SiteUpdateConfirmationEmailInput, _ siteapi.SiteWorkspacesUpdateConfirmationEmailParams) (*siteapi.SiteConfirmationEmailResource, error) {
+	w, err := h.workspaces.SetConfirmationEmail(ctx, workspaceScope(ctx), inputs.ConfirmationEmailSet(req))
+	if err != nil {
+		return nil, err
+	}
+	r := mapper.ConfirmationEmailToResource(workspaces.ConfirmationEmailSettingsOf(w))
+	return &r, nil
+}

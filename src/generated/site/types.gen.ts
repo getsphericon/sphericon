@@ -2663,7 +2663,8 @@ export const ProblemCode = {
   MIGRATIONS_PENDING: 'migrations_pending',
   ACCEPTANCE_PENDING: 'acceptance_pending',
   REVISION_CHANGED: 'revision_changed',
-  POSTAL_ADDRESS_REQUIRED: 'postal_address_required'
+  POSTAL_ADDRESS_REQUIRED: 'postal_address_required',
+  CONFIRMATION_EMAIL_REQUIRED: 'confirmation_email_required'
 } as const;
 
 /**
@@ -4640,6 +4641,59 @@ export type SiteConfirmEmailChangeInput = {
 };
 
 /**
+ * The texts the confirmation email goes out with while the Workspace sets none of its own: the
+ * Instance's defaults naming the Workspace
+ */
+export type SiteConfirmationEmailDefaults = {
+  /**
+   * The From name: the Workspace's name
+   */
+  fromName: string;
+  /**
+   * The subject
+   */
+  subject: string;
+  /**
+   * The introductory paragraph
+   */
+  intro: string;
+};
+
+/**
+ * The confirmation email of the Workspace (ADR 0013): the email a Confirmation request sends,
+ * whose link records a Confirmation when the person presses Confirm. The Workspace sets its From,
+ * subject and introductory paragraph; the Confirm button, the line that nothing happens if the
+ * person did not ask, and the postal address when there is one are fixed.
+ */
+export type SiteConfirmationEmailResource = {
+  /**
+   * The From address, on a verified Sending domain when it was saved; null until the email is
+   * set up, and confirmed opt-in cannot be turned on before
+   */
+  fromEmail: EmailAddress | null;
+  /**
+   * The From name; null while it is the default
+   */
+  fromName: string | null;
+  /**
+   * The subject; null while it is the default
+   */
+  subject: string | null;
+  /**
+   * The introductory paragraph; null while it is the default
+   */
+  intro: string | null;
+  /**
+   * What a null name, subject or intro goes out as
+   */
+  defaults: SiteConfirmationEmailDefaults;
+  /**
+   * The Workspace's revision this answer shows (ADR 0119): a change of the confirmation email names it
+   */
+  revision: Revision;
+};
+
+/**
  * A Connection: the access a User gave an application (an MCP client) to the Workspace by
  * consenting to it (ADR 0061). It belongs to that User's Membership, can do no more than the
  * User's Role allows and ends with the Membership. Connections are not API tokens and are not
@@ -6439,6 +6493,22 @@ export type SiteSendingDomainRates = {
 };
 
 /**
+ * Turn confirmed opt-in on or off (ADR 0013)
+ */
+export type SiteSetConfirmedOptInInput = {
+  /**
+   * The Workspace's `revision` the change was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
+  /**
+   * On: email reaches an address only once it holds a Confirmation. Turning it on affirms that
+   * the Workspace's current mailable list consented, and records a `grandfathered` Confirmation
+   * for every address mailable now; off keeps every Confirmation.
+   */
+  enabled: boolean;
+};
+
+/**
  * Switch domain join on or off
  */
 export type SiteSetDomainJoinInput = {
@@ -6830,6 +6900,32 @@ export const SiteTransactionalEmailStatus = {
 export type SiteTransactionalEmailStatus = typeof SiteTransactionalEmailStatus[keyof typeof SiteTransactionalEmailStatus];
 
 /**
+ * Set up the confirmation email
+ */
+export type SiteUpdateConfirmationEmailInput = {
+  /**
+   * The Workspace's `revision` the change was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
+  /**
+   * The From address: 422 unless its domain is a verified Sending domain of the Workspace
+   */
+  fromEmail: EmailAddress;
+  /**
+   * The From name, trimmed; omitted or blank, the default
+   */
+  fromName?: string;
+  /**
+   * The subject, trimmed; omitted or blank, the default
+   */
+  subject?: string;
+  /**
+   * The introductory paragraph, trimmed; omitted or blank, the default
+   */
+  intro?: string;
+};
+
+/**
  * Site request body for updating a contact: the attributes /api takes, and its tag set. The
  * app's contact form sets the tags in the same save; /api tags a contact through its own
  * operations (`tags_apply`, `tags_remove`), which is why its body has no tags.
@@ -7161,6 +7257,12 @@ export type SiteWorkspaceResource = {
    * in. UTC until an Owner or Admin sets it.
    */
   timezone: TimeZoneName;
+  /**
+   * Whether email reaches an address only once it holds a Confirmation (confirmed opt-in, ADR
+   * 0013). Off until an Owner or Admin turns it on in the console, which needs the confirmation
+   * email set up.
+   */
+  requireConfirmedOptIn: boolean;
   /**
    * The authenticated User's role in this Workspace (from their Membership). It
    * rides the Workspace list so role-gated UI is known even while the Workspace's
@@ -12427,6 +12529,102 @@ export type SiteCapturedMessagesGetResponses = {
 };
 
 export type SiteCapturedMessagesGetResponse = SiteCapturedMessagesGetResponses[keyof SiteCapturedMessagesGetResponses];
+
+export type SiteWorkspacesGetConfirmationEmailData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/confirmation-email';
+};
+
+export type SiteWorkspacesGetConfirmationEmailErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteWorkspacesGetConfirmationEmailError = SiteWorkspacesGetConfirmationEmailErrors[keyof SiteWorkspacesGetConfirmationEmailErrors];
+
+export type SiteWorkspacesGetConfirmationEmailResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteConfirmationEmailResource;
+};
+
+export type SiteWorkspacesGetConfirmationEmailResponse = SiteWorkspacesGetConfirmationEmailResponses[keyof SiteWorkspacesGetConfirmationEmailResponses];
+
+export type SiteWorkspacesUpdateConfirmationEmailData = {
+  body: SiteUpdateConfirmationEmailInput;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/confirmation-email';
+};
+
+export type SiteWorkspacesUpdateConfirmationEmailErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteWorkspacesUpdateConfirmationEmailError = SiteWorkspacesUpdateConfirmationEmailErrors[keyof SiteWorkspacesUpdateConfirmationEmailErrors];
+
+export type SiteWorkspacesUpdateConfirmationEmailResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteConfirmationEmailResource;
+};
+
+export type SiteWorkspacesUpdateConfirmationEmailResponse = SiteWorkspacesUpdateConfirmationEmailResponses[keyof SiteWorkspacesUpdateConfirmationEmailResponses];
+
+export type SiteWorkspacesSetConfirmedOptInData = {
+  body: SiteSetConfirmedOptInInput;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/confirmed-opt-in';
+};
+
+export type SiteWorkspacesSetConfirmedOptInErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteWorkspacesSetConfirmedOptInError = SiteWorkspacesSetConfirmedOptInErrors[keyof SiteWorkspacesSetConfirmedOptInErrors];
+
+export type SiteWorkspacesSetConfirmedOptInResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteWorkspaceResource;
+};
+
+export type SiteWorkspacesSetConfirmedOptInResponse = SiteWorkspacesSetConfirmedOptInResponses[keyof SiteWorkspacesSetConfirmedOptInResponses];
 
 export type SiteConnectionsListData = {
   body?: never;

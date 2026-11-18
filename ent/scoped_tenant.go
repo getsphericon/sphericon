@@ -210,6 +210,110 @@ func (x *WorkspaceScopedUpdateOne) SetNillableRequireConfirmedOptIn(v *bool) *Wo
 
 const RoleOf_WorkspaceScopedUpdateOne_SetNillableRequireConfirmedOptIn = RoleStep
 
+// SetConfirmationFromEmail sets the "confirmation_from_email" field.
+func (x *WorkspaceScopedUpdateOne) SetConfirmationFromEmail(v string) *WorkspaceScopedUpdateOne {
+	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.SetConfirmationFromEmail(v) })
+	return x
+}
+
+const RoleOf_WorkspaceScopedUpdateOne_SetConfirmationFromEmail = RoleStep
+
+// SetNillableConfirmationFromEmail sets the "confirmation_from_email" field if the given value is not nil.
+func (x *WorkspaceScopedUpdateOne) SetNillableConfirmationFromEmail(v *string) *WorkspaceScopedUpdateOne {
+	if v != nil {
+		x.SetConfirmationFromEmail(*v)
+	}
+	return x
+}
+
+const RoleOf_WorkspaceScopedUpdateOne_SetNillableConfirmationFromEmail = RoleStep
+
+// ClearConfirmationFromEmail clears the value of the "confirmation_from_email" field.
+func (x *WorkspaceScopedUpdateOne) ClearConfirmationFromEmail() *WorkspaceScopedUpdateOne {
+	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.ClearConfirmationFromEmail() })
+	return x
+}
+
+const RoleOf_WorkspaceScopedUpdateOne_ClearConfirmationFromEmail = RoleStep
+
+// SetConfirmationFromName sets the "confirmation_from_name" field.
+func (x *WorkspaceScopedUpdateOne) SetConfirmationFromName(v string) *WorkspaceScopedUpdateOne {
+	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.SetConfirmationFromName(v) })
+	return x
+}
+
+const RoleOf_WorkspaceScopedUpdateOne_SetConfirmationFromName = RoleStep
+
+// SetNillableConfirmationFromName sets the "confirmation_from_name" field if the given value is not nil.
+func (x *WorkspaceScopedUpdateOne) SetNillableConfirmationFromName(v *string) *WorkspaceScopedUpdateOne {
+	if v != nil {
+		x.SetConfirmationFromName(*v)
+	}
+	return x
+}
+
+const RoleOf_WorkspaceScopedUpdateOne_SetNillableConfirmationFromName = RoleStep
+
+// ClearConfirmationFromName clears the value of the "confirmation_from_name" field.
+func (x *WorkspaceScopedUpdateOne) ClearConfirmationFromName() *WorkspaceScopedUpdateOne {
+	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.ClearConfirmationFromName() })
+	return x
+}
+
+const RoleOf_WorkspaceScopedUpdateOne_ClearConfirmationFromName = RoleStep
+
+// SetConfirmationSubject sets the "confirmation_subject" field.
+func (x *WorkspaceScopedUpdateOne) SetConfirmationSubject(v string) *WorkspaceScopedUpdateOne {
+	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.SetConfirmationSubject(v) })
+	return x
+}
+
+const RoleOf_WorkspaceScopedUpdateOne_SetConfirmationSubject = RoleStep
+
+// SetNillableConfirmationSubject sets the "confirmation_subject" field if the given value is not nil.
+func (x *WorkspaceScopedUpdateOne) SetNillableConfirmationSubject(v *string) *WorkspaceScopedUpdateOne {
+	if v != nil {
+		x.SetConfirmationSubject(*v)
+	}
+	return x
+}
+
+const RoleOf_WorkspaceScopedUpdateOne_SetNillableConfirmationSubject = RoleStep
+
+// ClearConfirmationSubject clears the value of the "confirmation_subject" field.
+func (x *WorkspaceScopedUpdateOne) ClearConfirmationSubject() *WorkspaceScopedUpdateOne {
+	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.ClearConfirmationSubject() })
+	return x
+}
+
+const RoleOf_WorkspaceScopedUpdateOne_ClearConfirmationSubject = RoleStep
+
+// SetConfirmationIntro sets the "confirmation_intro" field.
+func (x *WorkspaceScopedUpdateOne) SetConfirmationIntro(v string) *WorkspaceScopedUpdateOne {
+	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.SetConfirmationIntro(v) })
+	return x
+}
+
+const RoleOf_WorkspaceScopedUpdateOne_SetConfirmationIntro = RoleStep
+
+// SetNillableConfirmationIntro sets the "confirmation_intro" field if the given value is not nil.
+func (x *WorkspaceScopedUpdateOne) SetNillableConfirmationIntro(v *string) *WorkspaceScopedUpdateOne {
+	if v != nil {
+		x.SetConfirmationIntro(*v)
+	}
+	return x
+}
+
+const RoleOf_WorkspaceScopedUpdateOne_SetNillableConfirmationIntro = RoleStep
+
+// ClearConfirmationIntro clears the value of the "confirmation_intro" field.
+func (x *WorkspaceScopedUpdateOne) ClearConfirmationIntro() *WorkspaceScopedUpdateOne {
+	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.ClearConfirmationIntro() })
+	return x
+}
+
+const RoleOf_WorkspaceScopedUpdateOne_ClearConfirmationIntro = RoleStep
+
 // SetPostalAddress sets the "postal_address" field.
 func (x *WorkspaceScopedUpdateOne) SetPostalAddress(v string) *WorkspaceScopedUpdateOne {
 	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.SetPostalAddress(v) })
