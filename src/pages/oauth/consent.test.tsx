@@ -8,6 +8,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import { SetupScope } from '../../generated/site/types.gen.ts'
 import type { GrantableScope, Permission, SendScope } from '../../generated/site/types.gen.ts'
+import { workspace as workspacePayload } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
@@ -22,22 +23,9 @@ const request = {
 }
 
 const workspace = {
+  ...workspacePayload(),
   id: 'AcmeWs01',
-  name: 'Acme',
-  collectKey: 'omck_test_key',
-  revision: 1,
   postalAddress: '',
-  requireConfirmedOptIn: false,
-  timezone: 'UTC',
-  accountLinkAvailable: false,
-  permissions: [],
-  mcpUrl: 'https://sphericon.test',
-  trackerUrl: 'https://t.sphericon.test',
-  shortLinkLength: 35,
-  smsMaxLength: { gsm7: 1600, ucs2: 700 },
-  holds: [],
-  role: 'owner' as const,
-  createdAt: '2026-01-01T00:00:00Z',
 }
 
 const describeHandler = (

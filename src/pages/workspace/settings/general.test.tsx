@@ -12,6 +12,7 @@ import {
 } from '../../../generated/site/msw.gen.ts'
 import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
 import { Route as generalRoute } from '../../../routes/workspaces/$workspaceId/settings/index.tsx'
+import { workspace as workspacePayload } from '../../../test/payloads.ts'
 import { problem } from '../../../test/problem.ts'
 import { readAgain } from '../../../test/queryClients.ts'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
@@ -26,23 +27,9 @@ const revenueSettings = handleSiteWorkspacesGetRevenueSettings({
 })
 
 const workspace: SiteWorkspaceResource = {
-  id: 'TestWs01',
-  name: 'Acme',
-
-  collectKey: 'omck_test_key',
-  revision: 1,
+  ...workspacePayload(),
   postalAddress: '',
-  requireConfirmedOptIn: false,
-  timezone: 'UTC',
-  accountLinkAvailable: false,
   permissions: ['workspace:update', 'workspace:timezone', 'workspace:delete'],
-  mcpUrl: 'https://sphericon.test',
-  trackerUrl: 'https://t.sphericon.test',
-  shortLinkLength: 35,
-  smsMaxLength: { gsm7: 1600, ucs2: 700 },
-  holds: [],
-  role: 'owner',
-  createdAt: '2026-01-01T00:00:00Z',
 }
 
 test('renames the workspace', async () => {

@@ -17,7 +17,7 @@ import type {
   SiteMembershipResource,
   SiteWorkspaceResource,
 } from '../../generated/site/types.gen.ts'
-import { testId } from '../../test/payloads.ts'
+import { testId, workspace as workspacePayload } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
@@ -26,22 +26,10 @@ import { MembersSection } from './MembersSection.tsx'
 // The Workspace as the signed-in User sees it: managing the members needs members:manage and
 // resetting a Second factor second_factor:manage.
 const workspaceWith = (permissions: Permission[]): SiteWorkspaceResource => ({
-  id: 'TestWs01',
-  name: 'Acme',
-  collectKey: 'omck_test_key',
-  revision: 1,
+  ...workspacePayload(),
   postalAddress: '',
-  requireConfirmedOptIn: false,
-  timezone: 'UTC',
-  accountLinkAvailable: false,
   permissions,
-  mcpUrl: 'https://sphericon.test',
-  trackerUrl: 'https://t.sphericon.test',
-  shortLinkLength: 35,
-  smsMaxLength: { gsm7: 1600, ucs2: 700 },
-  holds: [],
   role: 'member',
-  createdAt: '2026-01-01T00:00:00Z',
 })
 const workspace = workspaceWith(['members:manage'])
 

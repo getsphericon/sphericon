@@ -12,6 +12,7 @@ import { Route as privacyRoute } from '../routes/workspaces/$workspaceId/setting
 import { Route as teamRoute } from '../routes/workspaces/$workspaceId/settings/team.tsx'
 import { Route as trackingRoute } from '../routes/workspaces/$workspaceId/settings/tracking.tsx'
 import { Route as webhooksRoute } from '../routes/workspaces/$workspaceId/settings/webhooks.tsx'
+import { workspace as workspacePayload } from '../test/payloads.ts'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
 import { routeMount } from '../test/routeMount.ts'
 import { worker } from '../test/worker.ts'
@@ -31,22 +32,12 @@ const LINKS = [
 ] as const
 
 const workspace = (permissions: Permission[]) => ({
+  ...workspacePayload(),
   id: 'AcmeWs01',
-  name: 'Acme',
-  collectKey: 'omck_test_key',
-  revision: 1,
   postalAddress: '',
-  requireConfirmedOptIn: false,
-  timezone: 'UTC',
-  accountLinkAvailable: false,
   permissions,
   mcpUrl: 'https://mcp.sphericon.test/',
-  trackerUrl: 'https://t.sphericon.test',
-  shortLinkLength: 35,
-  smsMaxLength: { gsm7: 1600, ucs2: 700 },
-  holds: [],
   role: 'member' as const,
-  createdAt: '2026-01-01T00:00:00Z',
 })
 
 beforeEach(() => {

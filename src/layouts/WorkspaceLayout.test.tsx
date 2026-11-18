@@ -15,7 +15,7 @@ import { Route as overviewRoute } from '../routes/workspaces/$workspaceId/index.
 import { Route as workspaceRoute } from '../routes/workspaces/$workspaceId/route.tsx'
 import { Route as teamRoute } from '../routes/workspaces/$workspaceId/settings/team.tsx'
 import { Route as newWorkspaceRoute } from '../routes/workspaces/new.tsx'
-import { page } from '../test/payloads.ts'
+import { page, workspace as workspacePayload } from '../test/payloads.ts'
 import { problem } from '../test/problem.ts'
 import { renderWithRouter } from '../test/renderWithRouter.tsx'
 import { routeMount } from '../test/routeMount.ts'
@@ -30,23 +30,11 @@ beforeEach(() => {
 })
 
 const workspace = (over: Partial<SiteWorkspaceResource>): SiteWorkspaceResource => ({
+  ...workspacePayload(),
   id: 'AcmeWs01',
-  name: 'Acme',
-
   collectKey: 'ck',
-  revision: 1,
   postalAddress: '',
-  requireConfirmedOptIn: false,
-  timezone: 'UTC',
-  accountLinkAvailable: false,
-  permissions: [],
-  mcpUrl: 'https://sphericon.test',
-  trackerUrl: 'https://t.sphericon.test',
-  shortLinkLength: 35,
-  smsMaxLength: { gsm7: 1600, ucs2: 700 },
-  holds: [],
   role: 'member',
-  createdAt: '2026-01-01T00:00:00Z',
   ...over,
 })
 

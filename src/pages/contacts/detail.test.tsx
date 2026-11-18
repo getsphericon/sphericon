@@ -28,7 +28,7 @@ import type {
 } from '../../generated/site/types.gen.ts'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
 import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/contacts/index.tsx'
-import { testId } from '../../test/payloads.ts'
+import { testId, workspace as workspacePayload } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithProviders } from '../../test/renderWithProviders.tsx'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -310,20 +310,9 @@ function holding(permissions: Permission[]) {
   return handleSiteWorkspacesList({
     body: [
       {
-        id: 'TestWs01',
-        name: 'Acme',
-        collectKey: 'omck_test_key',
-        revision: 1,
+        ...workspacePayload(),
         postalAddress: '',
-        requireConfirmedOptIn: false,
-        timezone: 'UTC',
-        accountLinkAvailable: false,
         permissions,
-        mcpUrl: 'https://sphericon.test',
-        trackerUrl: 'https://t.sphericon.test',
-        shortLinkLength: 35,
-        smsMaxLength: { gsm7: 1600, ucs2: 700 },
-        holds: [],
         role: 'member',
         createdAt: NOW,
       },

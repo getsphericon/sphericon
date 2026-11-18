@@ -9,7 +9,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteWorkspaceResource } from '../../generated/site/types.gen.ts'
 import { Route as customFieldsRoute } from '../../routes/workspaces/$workspaceId/custom-fields/index.tsx'
-import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
+import { page, TIMESTAMPS, testId, workspace as workspacePayload } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -67,22 +67,10 @@ const workspace = (permissions: SiteWorkspaceResource['permissions']) =>
   handleSiteWorkspacesList({
     body: [
       {
-        id: 'TestWs01',
-        name: 'Acme',
-        collectKey: 'omck_test_key',
-        revision: 1,
+        ...workspacePayload(),
         postalAddress: '',
-        requireConfirmedOptIn: false,
-        timezone: 'UTC',
-        accountLinkAvailable: false,
         permissions,
-        mcpUrl: 'https://sphericon.test',
-        trackerUrl: 'https://t.sphericon.test',
-        shortLinkLength: 35,
-        smsMaxLength: { gsm7: 1600, ucs2: 700 },
-        holds: [],
         role: 'admin',
-        createdAt: '2026-01-01T00:00:00Z',
       },
     ],
   })

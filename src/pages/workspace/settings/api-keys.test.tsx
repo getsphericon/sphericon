@@ -10,30 +10,16 @@ import {
   handleSiteWorkspacesList,
 } from '../../../generated/site/msw.gen.ts'
 import { Route as apiKeysRoute } from '../../../routes/workspaces/$workspaceId/settings/api-keys.tsx'
-import { testId } from '../../../test/payloads.ts'
+import { testId, workspace as workspacePayload } from '../../../test/payloads.ts'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { routeMount } from '../../../test/routeMount.ts'
 import { worker } from '../../../test/worker.ts'
 import { ApiKeysPage } from './api-keys.tsx'
 
 const workspace = {
-  id: 'TestWs01',
-  name: 'Acme',
-
-  collectKey: 'omck_test_key',
-  revision: 1,
+  ...workspacePayload(),
   postalAddress: '',
-  requireConfirmedOptIn: false,
-  timezone: 'UTC',
-  accountLinkAvailable: false,
   permissions: ['tokens:manage' as const],
-  mcpUrl: 'https://sphericon.test',
-  trackerUrl: 'https://t.sphericon.test',
-  shortLinkLength: 35,
-  smsMaxLength: { gsm7: 1600, ucs2: 700 },
-  holds: [],
-  role: 'owner' as const,
-  createdAt: '2026-01-01T00:00:00Z',
 }
 
 test('shows the API keys of the workspace and, apart, the personal tokens', async () => {
