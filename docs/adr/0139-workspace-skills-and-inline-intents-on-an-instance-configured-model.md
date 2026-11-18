@@ -1,6 +1,6 @@
 ---
 status: accepted
-build: none
+build: [1609]
 ---
 
 # Workspace Skills, and inline intents on a model the Instance configures
