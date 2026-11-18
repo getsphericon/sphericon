@@ -256,6 +256,16 @@ spec is ready once it is sliced: `to-spec` publishes it without the label, and `
 skills are vendored, so this rule lives here rather than in them; `mise run tickets:check` holds the
 mechanical part.
 
+### A hand-off is taken by its receiver
+
+When `to-spec` or `to-tickets` writes that another ticket builds a part ("is #N's", "comes with #N",
+"whichever lands second"), it reads #N first and finds that part there. When #N lacks it, the same
+run adds the part to #N's body, or files the ticket or spec that owns it and names that one instead.
+A "whichever lands second" line stands on both tickets, each naming the other. Before `to-spec`,
+list the open specs that change the same modules (a send path, an eligibility check, a shared
+grammar) and say in the spec how it meets each. The skills are vendored, so this rule lives here
+rather than in them.
+
 ### Research notes stay out of this repository
 
 A research note (the file the `research` skill writes, the `research/<name>` branch of the
