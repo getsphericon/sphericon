@@ -155,10 +155,9 @@ func cycleStorage(c *ent.Client, id int64, now time.Time) lifecycle.Storage[work
 // asserts, none when it is turned off.
 const DiffConfirmationsRecorded = "confirmations_recorded"
 
-// SwitchConfirmedOptInInput turns confirmed opt-in On or off, made on Revision (ADR 0119), when
-// Recorded Confirmations were recorded for it.
+// SwitchConfirmedOptInInput turns confirmed opt-in On or off, when Recorded Confirmations were
+// recorded for it.
 type SwitchConfirmedOptInInput struct {
-	Revision int64
 	On       bool
 	Recorded int
 }
@@ -171,30 +170,30 @@ type SwitchedConfirmedOptIn struct {
 }
 
 // SwitchConfirmedOptInIn turns the scoped Workspace's confirmed opt-in on or off in the
-// transaction s is bound to, refused as workspaces.ConfirmedOptInSwitch refuses it. It is unchecked:
-// turning it on is sound only once every address mailable now holds a Confirmation, which the
-// contacts context records and identity cannot check, so its caller grandfathers them in the same
-// transaction (ADR 0013). The write goes through an unaudited scope, and it returns the switch's
-// one `workspace.update` Audit entry for the caller to record, carrying in.Recorded, which a
-// change of a column alone cannot carry; none, with nothing written, for a switch to the state the
-// Workspace is in.
+// transaction s is bound to. It is unchecked: turning it on is sound only once every address
+// mailable now holds a Confirmation, which the contacts context records and identity cannot
+// check, so its caller grandfathers them in the same transaction (ADR 0013), and the caller has
+// decided the switch on the revision it was made on (workspaces.ConfirmedOptInSwitch) before it
+// recorded any. The write is conditioned on the policy alone, not on that revision: a change of
+// another setting while the Confirmations were recorded does not undo the switch and leave them
+// recorded with no Audit entry. Of two switches to the same state the second waits for the first
+// and writes nothing. The write goes through an unaudited scope, and it returns the switch's one
+// `workspace.update` Audit entry for the caller to record, carrying in.Recorded, which a change of
+// a column alone cannot carry; none, with nothing written, for a switch to the state the Workspace
+// is in.
 func (m *Module) SwitchConfirmedOptInIn(ctx context.Context, s *ent.Scoped, in SwitchConfirmedOptInInput) (SwitchedConfirmedOptIn, error) {
-	before, err := s.Workspace(ctx)
-	if err != nil {
-		return SwitchedConfirmedOptIn{}, err
-	}
-	changes, err := workspaces.ConfirmedOptInSwitch(before, in.Revision, in.On)
-	if err != nil || !changes {
-		return SwitchedConfirmedOptIn{Workspace: before}, err
-	}
-	after, err := events.Unaudited(s).EditWorkspaceAt(in.Revision).
-		Refusing(workspaces.ErrNotFound, workspaces.ErrRevisionChanged).
+	after, err := events.Unaudited(s).UpdateWorkspace().
+		Where(workspace.RequireConfirmedOptIn(!in.On)).
 		SetRequireConfirmedOptIn(in.On).Save(ctx)
+	if ent.IsNotFound(err) {
+		now, err := s.Workspace(ctx)
+		return SwitchedConfirmedOptIn{Workspace: now}, err
+	}
 	if err != nil {
 		return SwitchedConfirmedOptIn{}, err
 	}
 	diff := map[string]any{
-		workspace.FieldRequireConfirmedOptIn: events.Change(before.RequireConfirmedOptIn, in.On),
+		workspace.FieldRequireConfirmedOptIn: events.Change(!in.On, in.On),
 		DiffConfirmationsRecorded:            in.Recorded,
 	}
 	return SwitchedConfirmedOptIn{
