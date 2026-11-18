@@ -376,7 +376,8 @@ func (c *compiler) event(l eventCountLeaf) predicate.Contact {
 // tagRule is the subject has (or lacks) the Tag. Evaluated live — membership is never
 // materialized.
 func tagRule(l tagLeaf) predicate.Contact {
-	return reachable(contact.HasTagsWith(tag.NameKey(tagname.Key(l.name))), l.test)
+	has := contact.HasTagsWith(tag.NameKey(tagname.Key(l.name)))
+	return reachable(has, l.test)
 }
 
 // reachable is p when the presence test asks for it to be had, its negation otherwise.
@@ -463,7 +464,10 @@ func customJSON(key string, t test) (predicate.Contact, error) {
 	var cond func(column string) *sql.Predicate
 	switch t := t.(type) {
 	case presenceTest:
-		cond = func(column string) *sql.Predicate { return sqljson.HasKey(column, path) }
+		// Only "set" fits a Custom field type (fits): a key that is not set is no test here.
+		if t.set {
+			cond = func(column string) *sql.Predicate { return sqljson.HasKey(column, path) }
+		}
 	case textTest:
 		switch t.op {
 		case opEQ:
