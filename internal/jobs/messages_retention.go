@@ -7,6 +7,7 @@ import (
 
 	"github.com/riverqueue/river"
 
+	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/usecase/messageretention"
 )
@@ -35,7 +36,7 @@ func (w *PruneMessagesWorker) Work(ctx context.Context, _ *river.Job[PruneMessag
 	if err != nil {
 		return err
 	}
-	return queueEach(ctx, due, func(ws int64) river.JobArgs {
+	return jobextension.QueueEach(ctx, due, func(ws int64) river.JobArgs {
 		return PruneWorkspaceMessagesArgs{WorkspaceID: ws}
 	})
 }

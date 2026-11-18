@@ -1,11 +1,12 @@
 // Package usages materializes what each Workspace did per Usage period (ADR 0009): the
 // Usage snapshot of a closed period and the Live usage of the open one, one row per
 // (Workspace, period, metric) in the usages table. A periodic job of the Enterprise job
-// runner (ee/jobs), like the retention prune, closes the elapsed periods and
-// refreshes the open one; a read never recounts. Unlicensed (no `staff` feature),
+// runner (ee/jobs), like the retention prune, fans out into one job per Workspace (ADR 0144),
+// which closes the Workspace's elapsed periods and refreshes the open one; a read never
+// recounts. Unlicensed (no `staff` feature),
 // the job does nothing and no row is ever written.
 //
-// The raw client is used only to list Workspaces and to page their figures; every
+// The raw client is used only to list and read Workspaces and to page their figures; every
 // measurement and write goes through the Workspace's scoped client.
 //
 // Adding a metric: declare a Metric constant, add a measurer to metrics (and the
@@ -33,7 +34,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
-// Interval is how often the Edition's job closes elapsed periods and refreshes Live usage (Refresh).
+// Interval is how often the Edition's job closes elapsed periods and refreshes Live usage in every
+// Workspace (Due, Refresh).
 const Interval = 5 * time.Minute
 
 // Metric names one measured figure.
@@ -113,35 +115,46 @@ func New(client *ent.Client, lic *licensekey.License, now func() time.Time) *Mod
 	return &Module{client: client, lic: lic, now: now}
 }
 
-// Refresh closes every elapsed Usage period that is not closed yet and refreshes the
-// Live usage of the open one, for every Workspace, as of the clock's now. It is a pure function
-// of now and the stored data: running it twice or late gives the same rows, and a closed
-// figure is never rewritten. A Workspace that fails does not stop the others: every
-// failure is joined into the returned error. Without the staff license it does nothing.
-func (m *Module) Refresh(ctx context.Context) error {
+// Due is the live Workspaces, the ones the job refreshes one by one (Refresh). Without the staff
+// license it is none.
+func (m *Module) Due(ctx context.Context) ([]int64, error) {
+	if !m.lic.Has(licensekey.FeatureStaff) {
+		return nil, nil
+	}
+	ids, err := m.client.Workspace.Query().
+		Where(workspaces.Live()).
+		Order(ent.Asc(workspace.FieldID)).
+		IDs(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list workspaces: %w", err)
+	}
+	return ids, nil
+}
+
+// Refresh closes every elapsed Usage period of the Workspace that is not closed yet and refreshes
+// the Live usage of the open one, as of the clock's now. It is a pure function of now and the
+// stored data: running it twice or late gives the same rows, and a closed figure is never
+// rewritten. A Workspace in its deletion window or gone is left alone. Without the staff license
+// it does nothing.
+func (m *Module) Refresh(ctx context.Context, workspaceID int64) error {
 	if !m.lic.Has(licensekey.FeatureStaff) {
 		return nil
 	}
 	now := m.now()
-	live, err := m.client.Workspace.Query().
-		Where(workspaces.Live()).
+	ws, err := m.client.Workspace.Query().
+		Where(workspace.ID(workspaceID), workspaces.Live()).
 		Select(workspace.FieldID, workspace.FieldCreatedAt).
-		Order(ent.Asc(workspace.FieldID)).
-		All(ctx)
+		Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil
+	}
 	if err != nil {
-		return fmt.Errorf("list workspaces: %w", err)
+		return fmt.Errorf("read workspace %d: %w", workspaceID, err)
 	}
-	current := PeriodOf(now)
-	var errs []error
-	for _, ws := range live {
-		if err := ctx.Err(); err != nil {
-			return errors.Join(append(errs, err)...)
-		}
-		if err := refreshWorkspace(ctx, m.client.Scoped(ws.ID), PeriodOf(ws.CreatedAt), current, now); err != nil {
-			errs = append(errs, fmt.Errorf("usage of workspace %d: %w", ws.ID, err))
-		}
+	if err := refreshWorkspace(ctx, m.client.Scoped(ws.ID), PeriodOf(ws.CreatedAt), PeriodOf(now), now); err != nil {
+		return fmt.Errorf("usage of workspace %d: %w", ws.ID, err)
 	}
-	return errors.Join(errs...)
+	return nil
 }
 
 func refreshWorkspace(ctx context.Context, s *ent.Scoped, first, current, now time.Time) error {

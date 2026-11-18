@@ -234,9 +234,11 @@ Callback interpretation behind the Ingest hook, a sending module without a table
 consumer: its envelope carries only a Workspace id, ADR 0022), `ee/domain/insights/erasures` (the Export streams'
 event consumer, which writes the Erasures rows from `contact.erased`, and their prune job over every
 Workspace's rows, ADR 0045), `ee/usecase/auditlogretention` (the
-periodic prune job: a job entry point that lists Workspaces, then scopes), `ee/domain/insights/abusedetector` (the hourly
-pass of the Abuse detector, `Detector.Run`, ADR 0026, the same shape: it lists the Workspaces that are neither suspended nor
-exempt, then scopes to judge each, and writes its notice markers by id through `workspaces`), `ee/domain/insights/usages` (the periodic
+periodic prune: it lists the Workspaces its tick fans out over, and the job of one Workspace scopes to the Workspace it names,
+ADR 0144), `ee/domain/insights/abusedetector` (the hourly
+pass of the Abuse detector, `Detector.Due` and `Detector.Judge`, ADR 0026, the same shape: it lists the Workspaces that are neither
+suspended nor exempt, and the warned ones that left its reach, and the job of one Workspace reads its row, then scopes to judge it,
+and writes its notice markers by id through `workspaces`), `ee/domain/insights/usages` (the periodic
 usage job, same shape, plus the paged read of every Workspace's stored figures, and the ent hook that keeps the contacts peak as Contacts change, which `ee.Hooks` hands `internal/app/entclient` to install on every client bound to a transaction, with its guard on every other client; both do nothing without the `staff` license), `ee/domain/insights/workspaceoversight` (the
 Enterprise sections of the Staff console, ADR 0026: the Workspace rows, suspension state and
 rates the console shows as tenant metadata and Staff holds; Workspace data goes

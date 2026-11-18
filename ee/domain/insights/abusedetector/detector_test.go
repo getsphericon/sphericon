@@ -2,6 +2,7 @@ package abusedetector_test
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"testing"
 	"time"
@@ -42,10 +43,33 @@ type pass struct {
 	now      time.Time
 }
 
-// Run is one pass of the detector at at.
-func (p *pass) Run(ctx context.Context, at time.Time) (abusedetector.Summary, error) {
+// outcomes is who a pass over every Workspace warned and who it froze.
+type outcomes struct {
+	Warned, Frozen []int64
+}
+
+// Run is what the job's fan-out does at at: a Judge of every Workspace Due lists, with who was
+// warned and who frozen gathered and the failures joined.
+func (p *pass) Run(ctx context.Context, at time.Time) (outcomes, error) {
 	p.now = at
-	return p.detector.Run(ctx)
+	var sum outcomes
+	due, err := p.detector.Due(ctx)
+	if err != nil {
+		return sum, err
+	}
+	var errs []error
+	for _, ws := range due {
+		outcome, err := p.detector.Judge(ctx, ws)
+		switch outcome {
+		case abusedetector.Warned:
+			sum.Warned = append(sum.Warned, ws)
+		case abusedetector.Frozen:
+			sum.Frozen = append(sum.Frozen, ws)
+		case abusedetector.Unchanged:
+		}
+		errs = append(errs, err)
+	}
+	return sum, errors.Join(errs...)
 }
 
 // newDetector is the detector over the env's bus, as the Edition builds it: what it publishes
@@ -119,7 +143,7 @@ func TestNothingRunsWithoutTheStaffLicense(t *testing.T) {
 		d := newDetector(env, lic, limits)
 		summary, err := d.Run(t.Context(), at(overDay))
 		require.NoError(t, err)
-		assert.Equal(t, abusedetector.Summary{}, summary)
+		assert.Equal(t, outcomes{}, summary)
 	}
 	assert.False(t, suspended(t, env, fixtures.VandelayID))
 	assert.Empty(t, env.SystemMail.Messages())
@@ -131,7 +155,7 @@ func TestBelowTheVolumeFloorNothingHappensEvenAtAHundredPercent(t *testing.T) {
 	summary, err := detector(t, env).Run(t.Context(), at(floorDay)) // every send bounced hard
 
 	require.NoError(t, err)
-	assert.Equal(t, abusedetector.Summary{}, summary)
+	assert.Equal(t, outcomes{}, summary)
 	assert.False(t, suspended(t, env, fixtures.VandelayID))
 	assert.Empty(t, env.SystemMail.Messages())
 }
@@ -182,7 +206,7 @@ func TestWithNoDeliveryNoticesTheComplaintRateIsNotJudged(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, abusedetector.TierNone, breach.Tier)
-	assert.Equal(t, abusedetector.Summary{}, summary)
+	assert.Equal(t, outcomes{}, summary)
 	assert.False(t, suspended(t, env, fixtures.VandelayID))
 	assert.Empty(t, env.SystemMail.Messages())
 }
@@ -284,7 +308,7 @@ func TestASuspendedWorkspaceIsSkippedAndKeepsItsFirstActorAndReason(t *testing.T
 	summary, err := detector(t, env).Run(t.Context(), at(unjudgedDay))
 
 	require.NoError(t, err)
-	assert.Equal(t, abusedetector.Summary{}, summary)
+	assert.Equal(t, outcomes{}, summary)
 	ws := env.DB.Workspace.GetX(t.Context(), fixtures.MonarchID)
 	assert.Equal(t, workspace.SuspendedByKindStaff, *ws.SuspendedByKind)
 	assert.Equal(t, "chargeback", *ws.SuspensionReason)
@@ -389,7 +413,27 @@ func TestAWorkspaceInItsDeletionWindowIsNotJudged(t *testing.T) {
 	summary, err := detector(t, env).Run(t.Context(), at(unjudgedDay))
 
 	require.NoError(t, err)
-	assert.Equal(t, abusedetector.Summary{}, summary)
+	assert.Equal(t, outcomes{}, summary)
 	assert.False(t, suspended(t, env, fixtures.BluthID))
 	assert.Empty(t, env.SystemMail.Messages())
+}
+
+// A job the tick queued judges its Workspace as it stands when the job runs: one suspended or in
+// its deletion window since then is left alone.
+func TestAJobForAWorkspaceThatLeftTheDetectorsReachChangesNothing(t *testing.T) {
+	env := testhelper.Setup(t)
+	d := detector(t, env)
+	d.now = at(unjudgedDay)
+
+	monarch, err := d.detector.Judge(t.Context(), fixtures.MonarchID)
+	require.NoError(t, err)
+	bluth, err := d.detector.Judge(t.Context(), fixtures.BluthID)
+	require.NoError(t, err)
+	reason := env.DB.Workspace.GetX(t.Context(), fixtures.MonarchID).SuspensionReason
+	bluthSuspended := suspended(t, env, fixtures.BluthID)
+
+	assert.Equal(t, abusedetector.Unchanged, monarch)
+	assert.Equal(t, "chargeback", *reason)
+	assert.Equal(t, abusedetector.Unchanged, bluth)
+	assert.False(t, bluthSuspended)
 }

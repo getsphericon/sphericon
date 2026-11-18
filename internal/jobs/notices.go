@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/noticedelivery"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
 )
 
 // The Notices (ADR 0105): every mail sphericon sends on its own behalf, through the System sender,
@@ -73,7 +74,7 @@ func (w *NoticeEventWorker) Work(ctx context.Context, job *river.Job[NoticeEvent
 	if err != nil {
 		return err
 	}
-	err = queueEach(ctx, notices, func(n noticedelivery.Notice) river.JobArgs {
+	err = jobextension.QueueEach(ctx, notices, func(n noticedelivery.Notice) river.JobArgs {
 		return SendNoticeArgs{EventID: env.ID, To: n.To, Subject: n.Subject, Text: n.Text}
 	})
 	if err != nil {
