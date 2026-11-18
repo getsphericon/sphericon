@@ -29,9 +29,11 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
+	"github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
 	"github.com/getsphericon/sphericon/ee/domain/insights/workspaceoversight"
 	eejobs "github.com/getsphericon/sphericon/ee/jobs"
 	"github.com/getsphericon/sphericon/ee/licensekey"
+	"github.com/getsphericon/sphericon/ee/usecase/auditlogretention"
 	"github.com/getsphericon/sphericon/ent"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/app"
@@ -702,4 +704,14 @@ func addScheduled(tb testing.TB, p performers, sqlDB *sql.DB, client *ent.Client
 	retention := do.MustInvoke[*messageretention.UseCase](injector)
 	add(tb, p, sqlDB, ws, jobs.NewPruneMessagesWorker(retention))
 	add(tb, p, sqlDB, ws, jobs.NewPruneWorkspaceMessagesWorker(retention))
+	// The Edition's ticks over every Workspace and the job each fans out into (ADR 0144).
+	edition := do.MustInvoke[*ee.Edition](injector)
+	auditRetention := do.MustInvoke[*auditlogretention.UseCase](injector)
+	detector := do.MustInvoke[*abusedetector.Detector](injector)
+	add(tb, p, sqlDB, ws, eejobs.NewRetentionPruneWorker(auditRetention))
+	add(tb, p, sqlDB, ws, eejobs.NewWorkspaceRetentionPruneWorker(auditRetention))
+	add(tb, p, sqlDB, ws, eejobs.NewUsageRefreshWorker(edition.Usage))
+	add(tb, p, sqlDB, ws, eejobs.NewWorkspaceUsageRefreshWorker(edition.Usage))
+	add(tb, p, sqlDB, ws, eejobs.NewAbuseDetectionWorker(detector))
+	add(tb, p, sqlDB, ws, eejobs.NewWorkspaceAbuseDetectionWorker(detector))
 }

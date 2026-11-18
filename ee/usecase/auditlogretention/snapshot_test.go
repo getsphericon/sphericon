@@ -20,9 +20,8 @@ func TestPruneNeverRemovesAClosedUsageSnapshot(t *testing.T) {
 	require.Positive(t, before, "the fixture snapshot of December 2025 is closed")
 	env.DB.Workspace.Update().SetRetentionDays(1).ExecX(t.Context())
 
-	n, err := retention(env, testhelper.License(t, licensekey.FeatureRetention), func() time.Time { return febFirst.AddDate(5, 0, 0) }).Prune(t.Context())
+	n := pruneEach(t, retention(env, testhelper.License(t, licensekey.FeatureRetention), func() time.Time { return febFirst.AddDate(5, 0, 0) }))
 
-	require.NoError(t, err)
 	assert.Positive(t, n, "the prune ran and removed the old Audit entries")
 	after, err := env.DB.Scoped(fixtures.AcmeID).Usage().Query().Where(entusage.FinalizedAtNotNil()).Count(t.Context())
 	require.NoError(t, err)

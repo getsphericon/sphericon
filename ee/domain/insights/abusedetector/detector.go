@@ -2,12 +2,14 @@ package abusedetector
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
@@ -15,7 +17,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 )
 
-// Interval is how often the Edition runs the detector (Detector.Run).
+// Interval is how often the Edition runs the detector over every Workspace (Detector.Due,
+// Detector.Judge).
 const Interval = time.Hour
 
 // Detector performs the Abuse detector's hourly detection (ADR 0026, GLOSSARY "Abuse detector"):
@@ -26,7 +29,8 @@ const Interval = time.Hour
 // through a Workspace's own Integration, which a freeze holds. It never lifts a suspension: only a
 // Staff member does, and unsuspending stamps cleared_at, after which only newer Events count.
 //
-// It holds the raw client: like a job entry point it lists every Workspace, then scopes to each one.
+// It holds the raw client: like a job entry point it lists the Workspaces, and a pass scopes to the
+// one it judges after reading its row.
 type Detector struct {
 	watch      *Watch
 	client     *ent.Client
@@ -42,70 +46,90 @@ func NewDetector(client *ent.Client, bus *events.Bus, watch *Watch, suspender *s
 	return &Detector{watch: watch, client: client, bus: bus, suspend: suspender, workspaces: ws}
 }
 
-// Summary is who a pass warned and who it froze.
-type Summary struct {
-	Warned, Frozen []int64
+// Outcome is what judging one Workspace did to it.
+type Outcome int
+
+const (
+	// Unchanged is a Workspace neither warned nor frozen by this pass.
+	Unchanged Outcome = iota
+	// Warned is a Workspace whose owners this pass warned.
+	Warned
+	// Frozen is a Workspace this pass suspended.
+	Frozen
+)
+
+// judged matches the Workspaces the detector judges: live, not suspended and not exempt.
+func judged() predicate.Workspace {
+	return workspace.And(suspension.NotSuspended(), workspace.AbuseExempt(false), workspaces.Live())
 }
 
-// Run is one pass over every Workspace, at the watch's clock's now. Unlicensed it does nothing. Per Workspace,
-// in this order: a suspended one is skipped (its first actor and reason stand), an exempt
-// one is skipped, then the Workspace is judged over the window since its last clearance.
-// A freeze suspends it as `system`; a warning is published once per episode, and leaving the
-// warning tier ends the episode. It never lifts a suspension. The owners are told by the Notices
-// of what it published, which retry their own sends. One Workspace's failure does not stop the
-// others; the errors are joined.
-func (d *Detector) Run(ctx context.Context) (Summary, error) {
-	now := d.watch.now()
-	var sum Summary
+// outOfReach matches the Workspaces that were warned and have since been suspended by hand or
+// exempted: they have left the detector's reach, and their episode ends.
+func outOfReach() predicate.Workspace {
+	return workspace.And(workspaces.AbuseWarned(), workspace.Or(suspension.Suspended(), workspace.AbuseExempt(true)))
+}
+
+// Due is the Workspaces a pass judges one by one (Judge): the judged ones, and the warned ones out
+// of the detector's reach, whose episode a pass ends. Unlicensed it is none.
+func (d *Detector) Due(ctx context.Context) ([]int64, error) {
 	if !d.watch.Licensed() {
-		return sum, nil
+		return nil, nil
 	}
-	// A Workspace that was warned and then suspended by hand or exempted has left the
-	// detector's reach: end its episode, so a stale marker neither lists it as warned nor
-	// mutes the warning it earns after being cleared.
-	var errs []error
-	if err := d.workspaces.ClearAbuseWarnings(ctx, d.client, workspace.Or(suspension.Suspended(), workspace.AbuseExempt(true))); err != nil {
-		errs = append(errs, fmt.Errorf("end the warning episodes of suspended and exempt workspaces: %w", err))
-	}
-	candidates, err := d.client.Workspace.Query().
-		Where(suspension.NotSuspended(), workspace.AbuseExempt(false), workspaces.Live()).
-		WithStanding().
-		All(ctx)
+	ids, err := d.client.Workspace.Query().
+		Where(workspace.Or(judged(), outOfReach())).
+		Order(ent.Asc(workspace.FieldID)).
+		IDs(ctx)
 	if err != nil {
-		return sum, errors.Join(append(errs, fmt.Errorf("list workspaces for the abuse detector: %w", err))...)
+		return nil, fmt.Errorf("list workspaces for the abuse detector: %w", err)
 	}
-	for _, ws := range candidates {
-		breach, err := d.watch.standing(ctx, d.client.Scoped(ws.ID), ws, now)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("rates of workspace %d: %w", ws.ID, err))
-			continue
-		}
-		switch breach.Tier {
-		case TierFreeze:
-			frozen, err := d.freeze(ctx, ws, breach)
-			if frozen {
-				sum.Frozen = append(sum.Frozen, ws.ID)
-			}
-			if err != nil {
-				errs = append(errs, err)
-			}
-		case TierWarn:
-			warned, err := d.warn(ctx, ws, breach)
-			if warned {
-				sum.Warned = append(sum.Warned, ws.ID)
-			}
-			if err != nil {
-				errs = append(errs, err)
-			}
-		default:
-			if workspaces.StandingOf(ws).AbuseWarningNotifiedAt != nil {
-				if err := d.workspaces.ClearAbuseWarning(ctx, d.client, ws.ID); err != nil {
-					errs = append(errs, fmt.Errorf("end the warning episode of workspace %d: %w", ws.ID, err))
-				}
-			}
-		}
+	return ids, nil
+}
+
+// Judge is one pass over the Workspace, at the watch's clock's now. Unlicensed it does nothing.
+// A Workspace that was warned and then suspended by hand or exempted has left the detector's
+// reach: its episode ends, so a stale marker neither lists it as warned nor mutes the warning it
+// earns after being cleared. Any other suspended, exempt or deleted Workspace is skipped (a
+// suspended one keeps its first actor and reason). The rest is judged over the window since its
+// last clearance: a freeze suspends it as `system`; a warning is published once per episode, and
+// leaving the warning tier ends the episode. It never lifts a suspension. The owners are told by
+// the Notices of what it published, which retry their own sends.
+func (d *Detector) Judge(ctx context.Context, workspaceID int64) (Outcome, error) {
+	if !d.watch.Licensed() {
+		return Unchanged, nil
 	}
-	return sum, errors.Join(errs...)
+	now := d.watch.now()
+	ws, err := d.client.Workspace.Query().
+		Where(workspace.ID(workspaceID), judged()).
+		WithStanding().
+		Only(ctx)
+	if ent.IsNotFound(err) {
+		if err := d.workspaces.ClearAbuseWarnings(ctx, d.client, workspace.ID(workspaceID), outOfReach()); err != nil {
+			return Unchanged, fmt.Errorf("end the warning episode of workspace %d: %w", workspaceID, err)
+		}
+		return Unchanged, nil
+	}
+	if err != nil {
+		return Unchanged, fmt.Errorf("read workspace %d for the abuse detector: %w", workspaceID, err)
+	}
+	breach, err := d.watch.standing(ctx, d.client.Scoped(ws.ID), ws, now)
+	if err != nil {
+		return Unchanged, fmt.Errorf("rates of workspace %d: %w", ws.ID, err)
+	}
+	switch breach.Tier {
+	case TierFreeze:
+		frozen, err := d.freeze(ctx, ws, breach)
+		return lo.Ternary(frozen, Frozen, Unchanged), err
+	case TierWarn:
+		warned, err := d.warn(ctx, ws, breach)
+		return lo.Ternary(warned, Warned, Unchanged), err
+	default:
+		if workspaces.StandingOf(ws).AbuseWarningNotifiedAt != nil {
+			if err := d.workspaces.ClearAbuseWarning(ctx, d.client, ws.ID); err != nil {
+				return Unchanged, fmt.Errorf("end the warning episode of workspace %d: %w", ws.ID, err)
+			}
+		}
+		return Unchanged, nil
+	}
 }
 
 // freeze suspends the Workspace as the system, which tells its owners. Freezing is itself

@@ -227,7 +227,9 @@ type TestSendBudget interface {
 }
 
 // DefaultLease is how long a pending claim blocks other attempts before a retry may
-// take it over.
+// take it over. It must outlast every attempt that can hold a claim (ADR 0015, ADR 0144): a send
+// job, under its timeout, and a Transactional request. A shorter lease lets a retry take over a
+// send that is still live, and the provider gets the message twice.
 const DefaultLease = 5 * time.Minute
 
 // Module is the Outbound send module.

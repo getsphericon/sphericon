@@ -9,6 +9,8 @@ package jobs
 
 import (
 	"context"
+	"database/sql"
+	"slices"
 	"time"
 
 	"github.com/riverqueue/river"
@@ -20,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/usecase/auditlogretention"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
@@ -86,53 +89,202 @@ func (w *ErasureEventWorker) Work(ctx context.Context, job *river.Job[ErasureEve
 	return w.erasures.Record(ctx, job.Args.Envelope)
 }
 
-// RetentionPruneArgs is the advanced-retention prune (ADR 0014) and the clearing of the Audit
-// entries' client details past auditlogretention.ClientWindow (ADR 0050), every
+// RetentionPruneArgs is the tick of the advanced-retention prune (ADR 0014) and of the clearing of
+// the Audit entries' client details past auditlogretention.ClientWindow (ADR 0050), every
 // auditlogretention.Interval.
 type RetentionPruneArgs struct{}
 
 func (RetentionPruneArgs) Kind() string { return "ee_retention_prune" }
 
-type retentionPruneWorker struct {
+// RetentionPruneWorker fans the tick out into one WorkspaceRetentionPrune job per Workspace (ADR
+// 0144): a failure stays in its Workspace, and a larger instance means more jobs, not a longer one.
+type RetentionPruneWorker struct {
 	river.WorkerDefaults[RetentionPruneArgs]
 
 	retention *auditlogretention.UseCase
 }
 
-func (w *retentionPruneWorker) Work(ctx context.Context, _ *river.Job[RetentionPruneArgs]) error {
-	return w.retention.Sweep(ctx)
+// NewRetentionPruneWorker builds the tick over the use case.
+func NewRetentionPruneWorker(retention *auditlogretention.UseCase) *RetentionPruneWorker {
+	return &RetentionPruneWorker{retention: retention}
 }
 
-// UsageRefreshArgs closes the elapsed Usage periods and refreshes the open one (ADR 0009), every
-// usages.Interval.
+func (w *RetentionPruneWorker) Work(ctx context.Context, _ *river.Job[RetentionPruneArgs]) error {
+	due, err := w.retention.Due(ctx)
+	if err != nil {
+		return err
+	}
+	return queueEach(ctx, due, func(ws int64) river.JobArgs {
+		return WorkspaceRetentionPruneArgs{WorkspaceID: ws}
+	})
+}
+
+// WorkspaceRetentionPruneArgs is the retention's work in one Workspace.
+type WorkspaceRetentionPruneArgs struct {
+	jobkind.Workspace
+}
+
+func (WorkspaceRetentionPruneArgs) Kind() string { return "ee_retention_prune_workspace" }
+
+// InsertOpts queues one sweep of a Workspace at a time (jobkind.QueuedOnce): a tick that comes
+// round while the last one waits or retries queues none.
+func (WorkspaceRetentionPruneArgs) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{UniqueOpts: jobkind.QueuedOnce()}
+}
+
+// WorkspaceRetentionPruneWorker sweeps one Workspace (auditlogretention.UseCase.Sweep).
+type WorkspaceRetentionPruneWorker struct {
+	river.WorkerDefaults[WorkspaceRetentionPruneArgs]
+
+	retention *auditlogretention.UseCase
+}
+
+// NewWorkspaceRetentionPruneWorker builds the worker over the use case.
+func NewWorkspaceRetentionPruneWorker(retention *auditlogretention.UseCase) *WorkspaceRetentionPruneWorker {
+	return &WorkspaceRetentionPruneWorker{retention: retention}
+}
+
+func (w *WorkspaceRetentionPruneWorker) Work(ctx context.Context, job *river.Job[WorkspaceRetentionPruneArgs]) error {
+	return w.retention.Sweep(ctx, job.Args.WorkspaceID)
+}
+
+// UsageRefreshArgs is the tick that closes the elapsed Usage periods and refreshes the open one
+// (ADR 0009), every usages.Interval.
 type UsageRefreshArgs struct{}
 
 func (UsageRefreshArgs) Kind() string { return "ee_usage_refresh" }
 
-type usageRefreshWorker struct {
+// UsageRefreshWorker fans the tick out into one WorkspaceUsageRefresh job per live Workspace (ADR
+// 0144).
+type UsageRefreshWorker struct {
 	river.WorkerDefaults[UsageRefreshArgs]
 
 	usage *usages.Module
 }
 
-func (w *usageRefreshWorker) Work(ctx context.Context, _ *river.Job[UsageRefreshArgs]) error {
-	return w.usage.Refresh(ctx)
+// NewUsageRefreshWorker builds the tick over the Usage module.
+func NewUsageRefreshWorker(usage *usages.Module) *UsageRefreshWorker {
+	return &UsageRefreshWorker{usage: usage}
 }
 
-// AbuseDetectionArgs is a pass of the abuse detector (ADR 0026), every abusedetector.Interval.
+func (w *UsageRefreshWorker) Work(ctx context.Context, _ *river.Job[UsageRefreshArgs]) error {
+	due, err := w.usage.Due(ctx)
+	if err != nil {
+		return err
+	}
+	return queueEach(ctx, due, func(ws int64) river.JobArgs {
+		return WorkspaceUsageRefreshArgs{WorkspaceID: ws}
+	})
+}
+
+// WorkspaceUsageRefreshArgs is the Usage refresh of one Workspace.
+type WorkspaceUsageRefreshArgs struct {
+	jobkind.Workspace
+}
+
+func (WorkspaceUsageRefreshArgs) Kind() string { return "ee_usage_refresh_workspace" }
+
+// InsertOpts queues one refresh of a Workspace at a time (jobkind.QueuedOnce): a tick that comes
+// round while the last one waits or retries queues none.
+func (WorkspaceUsageRefreshArgs) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{UniqueOpts: jobkind.QueuedOnce()}
+}
+
+// WorkspaceUsageRefreshWorker refreshes the Usage of one Workspace (usages.Module.Refresh).
+type WorkspaceUsageRefreshWorker struct {
+	river.WorkerDefaults[WorkspaceUsageRefreshArgs]
+
+	usage *usages.Module
+}
+
+// NewWorkspaceUsageRefreshWorker builds the worker over the Usage module.
+func NewWorkspaceUsageRefreshWorker(usage *usages.Module) *WorkspaceUsageRefreshWorker {
+	return &WorkspaceUsageRefreshWorker{usage: usage}
+}
+
+func (w *WorkspaceUsageRefreshWorker) Work(ctx context.Context, job *river.Job[WorkspaceUsageRefreshArgs]) error {
+	return w.usage.Refresh(ctx, job.Args.WorkspaceID)
+}
+
+// AbuseDetectionArgs is the tick of the abuse detector (ADR 0026), every abusedetector.Interval.
 type AbuseDetectionArgs struct{}
 
 func (AbuseDetectionArgs) Kind() string { return "ee_abuse_detector" }
 
-type abuseDetectionWorker struct {
+// AbuseDetectionWorker fans the tick out into one WorkspaceAbuseDetection job per Workspace the
+// detector has to look at (ADR 0144).
+type AbuseDetectionWorker struct {
 	river.WorkerDefaults[AbuseDetectionArgs]
 
 	detector *abusedetector.Detector
 }
 
-func (w *abuseDetectionWorker) Work(ctx context.Context, _ *river.Job[AbuseDetectionArgs]) error {
-	_, err := w.detector.Run(ctx)
+// NewAbuseDetectionWorker builds the tick over the detector.
+func NewAbuseDetectionWorker(detector *abusedetector.Detector) *AbuseDetectionWorker {
+	return &AbuseDetectionWorker{detector: detector}
+}
+
+func (w *AbuseDetectionWorker) Work(ctx context.Context, _ *river.Job[AbuseDetectionArgs]) error {
+	due, err := w.detector.Due(ctx)
+	if err != nil {
+		return err
+	}
+	return queueEach(ctx, due, func(ws int64) river.JobArgs {
+		return WorkspaceAbuseDetectionArgs{WorkspaceID: ws}
+	})
+}
+
+// WorkspaceAbuseDetectionArgs is the abuse detector's judgement of one Workspace.
+type WorkspaceAbuseDetectionArgs struct {
+	jobkind.Workspace
+}
+
+func (WorkspaceAbuseDetectionArgs) Kind() string { return "ee_abuse_detector_workspace" }
+
+// InsertOpts queues one judgement of a Workspace at a time (jobkind.QueuedOnce): a tick that comes
+// round while the last one waits or retries queues none.
+func (WorkspaceAbuseDetectionArgs) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{UniqueOpts: jobkind.QueuedOnce()}
+}
+
+// WorkspaceAbuseDetectionWorker judges one Workspace (abusedetector.Detector.Judge).
+type WorkspaceAbuseDetectionWorker struct {
+	river.WorkerDefaults[WorkspaceAbuseDetectionArgs]
+
+	detector *abusedetector.Detector
+}
+
+// NewWorkspaceAbuseDetectionWorker builds the worker over the detector.
+func NewWorkspaceAbuseDetectionWorker(detector *abusedetector.Detector) *WorkspaceAbuseDetectionWorker {
+	return &WorkspaceAbuseDetectionWorker{detector: detector}
+}
+
+func (w *WorkspaceAbuseDetectionWorker) Work(ctx context.Context, job *river.Job[WorkspaceAbuseDetectionArgs]) error {
+	_, err := w.detector.Judge(ctx, job.Args.WorkspaceID)
 	return err
+}
+
+// insertChunk bounds a single InsertMany of a fan-out, so a large instance is queued in pieces
+// rather than in one huge statement.
+const insertChunk = 1000
+
+// queueEach fans a tick out into one job per Workspace, args(ws) each, through the river client of
+// the job it runs in. No Workspaces queue nothing and need no river client.
+func queueEach(ctx context.Context, workspaceIDs []int64, args func(int64) river.JobArgs) error {
+	if len(workspaceIDs) == 0 {
+		return nil
+	}
+	rc := river.ClientFromContext[*sql.Tx](ctx)
+	for chunk := range slices.Chunk(workspaceIDs, insertChunk) {
+		params := make([]river.InsertManyParams, len(chunk))
+		for i, ws := range chunk {
+			params[i] = river.InsertManyParams{Args: args(ws)}
+		}
+		if _, err := rc.InsertMany(ctx, params); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // ExportPruneArgs prunes the Erasures stream past the instance's Event retention window (ADR 0019,
@@ -178,7 +330,8 @@ type Deps struct {
 	EventsRetention time.Duration
 }
 
-// Extension is the Enterprise jobs for the job client: the advanced-retention prune (ADR 0014),
+// Extension is the Enterprise jobs for the job client, each periodic one of every Workspace a tick
+// that fans out into one job per Workspace (ADR 0144): the advanced-retention prune (ADR 0014),
 // which removes nothing without the retention license, the usage job (ADR 0009) and the abuse
 // detector (ADR 0026), which do nothing without the staff license, the prune of the Erasures
 // stream (ADR 0045), which does nothing without the export license, and the workers of the
@@ -187,9 +340,12 @@ type Deps struct {
 func Extension(deps Deps) jobextension.Extension {
 	return jobextension.Extension{
 		Workers: func(w *river.Workers) {
-			river.AddWorker(w, &retentionPruneWorker{retention: deps.Retention})
-			river.AddWorker(w, &usageRefreshWorker{usage: deps.Usage})
-			river.AddWorker(w, &abuseDetectionWorker{detector: deps.Detector})
+			river.AddWorker(w, NewRetentionPruneWorker(deps.Retention))
+			river.AddWorker(w, NewWorkspaceRetentionPruneWorker(deps.Retention))
+			river.AddWorker(w, NewUsageRefreshWorker(deps.Usage))
+			river.AddWorker(w, NewWorkspaceUsageRefreshWorker(deps.Usage))
+			river.AddWorker(w, NewAbuseDetectionWorker(deps.Detector))
+			river.AddWorker(w, NewWorkspaceAbuseDetectionWorker(deps.Detector))
 			river.AddWorker(w, &exportPruneWorker{erasures: deps.Erasures, retention: deps.EventsRetention})
 			river.AddWorker(w, NewEntryEventWorker(deps.Audit))
 			river.AddWorker(w, NewErasureEventWorker(deps.Erasures))

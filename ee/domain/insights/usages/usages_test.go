@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -33,10 +34,18 @@ func moment(n, day, hour int) time.Time {
 	return month(n).AddDate(0, 0, day-1).Add(time.Duration(hour) * time.Hour)
 }
 
-// refresh is a Refresh under lic, on a clock stopped at now.
+// refresh is what the job's fan-out does under lic, on a clock stopped at now: a Refresh of every
+// Workspace Due lists, with their failures joined.
 func refresh(t *testing.T, env *testhelper.TestEnv, lic *licensekey.License, now time.Time) error {
 	t.Helper()
-	return usages.New(env.DB, lic, func() time.Time { return now }).Refresh(t.Context())
+	m := usages.New(env.DB, lic, func() time.Time { return now })
+	due, err := m.Due(t.Context())
+	require.NoError(t, err)
+	errs := make([]error, 0, len(due))
+	for _, ws := range due {
+		errs = append(errs, m.Refresh(t.Context(), ws))
+	}
+	return errors.Join(errs...)
 }
 
 // usage is the module whose reads the tests check what a refresh stored with.
@@ -197,7 +206,7 @@ func TestListPagesEveryWorkspaceByIdAndDefaultsNothingItselfToARowlessPeriod(t *
 	assert.Equal(t, month(6), first.Items[0].Period)
 }
 
-func TestOneFailingWorkspaceDoesNotStopTheOthersFromClosing(t *testing.T) {
+func TestAWorkspaceThatFailsLeavesTheOthersToClose(t *testing.T) {
 	env := testhelper.Setup(t)
 	boom := errors.New("boom")
 	env.DB.Usage.Use(func(next ent.Mutator) ent.Mutator {
@@ -210,29 +219,33 @@ func TestOneFailingWorkspaceDoesNotStopTheOthersFromClosing(t *testing.T) {
 			return next.Mutate(ctx, m)
 		})
 	})
+	m := usages.New(env.DB, testhelper.License(t, licensekey.FeatureStaff), func() time.Time { return month(6).Add(time.Hour) })
 
-	err := refresh(t, env, testhelper.License(t, licensekey.FeatureStaff), month(6).Add(time.Hour))
+	acme := m.Refresh(t.Context(), fixtures.AcmeID)
+	globex := m.Refresh(t.Context(), fixtures.GlobexID)
 
-	require.ErrorIs(t, err, boom, "the failure is still reported")
-	page, listErr := usage(env).List(t.Context(), month(6), pagination.Params{Page: 1, PageSize: 100})
-	require.NoError(t, listErr)
-	assert.NotEmpty(t, page.Items, "Workspaces after the failing one are still refreshed")
-	for _, w := range page.Items {
-		assert.NotEqual(t, int64(fixtures.AcmeID), w.WorkspaceID)
-	}
+	require.ErrorIs(t, acme, boom)
+	require.NoError(t, globex)
+	page, err := usage(env).List(t.Context(), month(6), pagination.Params{Page: 1, PageSize: 100})
+	require.NoError(t, err)
+	ids := lo.Map(page.Items, func(w usages.WorkspaceUsage, _ int) int64 { return w.WorkspaceID })
+	assert.Contains(t, ids, int64(fixtures.GlobexID), "Globex closes its own period")
+	assert.NotContains(t, ids, int64(fixtures.AcmeID))
 }
 
+// The job fans out over the live Workspaces only, and a Workspace that entered its deletion window
+// after the tick queued its job is left alone when the job runs.
 func TestRefreshSkipsAWorkspaceInItsDeletionWindow(t *testing.T) {
 	env := testhelper.Setup(t) // Bluth has been in its deletion window for 5 days
+	m := usages.New(env.DB, testhelper.License(t, licensekey.FeatureStaff), time.Now)
+	bluth := env.DB.Scoped(fixtures.BluthID).Usage().Query()
+	before := bluth.Clone().CountX(t.Context())
 
-	require.NoError(t, refresh(t, env, testhelper.License(t, licensekey.FeatureStaff), time.Now()))
-
-	page, err := usage(env).List(t.Context(), month(1), pagination.Params{Page: 1, PageSize: 25})
+	due, err := m.Due(t.Context())
 	require.NoError(t, err)
-	ids := make([]int64, 0, len(page.Items))
-	for _, w := range page.Items {
-		ids = append(ids, w.WorkspaceID)
-	}
-	assert.Contains(t, ids, int64(fixtures.AcmeID), "live Workspaces are still measured")
-	assert.NotContains(t, ids, int64(fixtures.BluthID))
+	require.NoError(t, m.Refresh(t.Context(), fixtures.BluthID))
+
+	assert.Contains(t, due, int64(fixtures.AcmeID), "live Workspaces are still measured")
+	assert.NotContains(t, due, int64(fixtures.BluthID))
+	assert.Equal(t, before, bluth.Clone().CountX(t.Context()), "Bluth's job stores nothing")
 }

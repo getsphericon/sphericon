@@ -11,6 +11,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 
+	"github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/workspacestanding"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
@@ -135,9 +136,9 @@ func TestAWorkspaceFrozenByTheDetectorRefusesSendsOnTheAPI(t *testing.T) {
 	// The pass runs at the moment of the scenario: the env's clock is three days back.
 	scenario := time.Now().Add(-3 * 24 * time.Hour)
 	h := newHarness(t, testhelper.WithStaffVolumeFloor(20), testhelper.WithClock(func() time.Time { return scenario }))
-	summary, err := h.env.Abuse().Run(t.Context())
+	outcome, err := h.env.Abuse().Judge(t.Context(), fixtures.VandelayID)
 	require.NoError(t, err)
-	require.Equal(t, []int64{fixtures.VandelayID}, summary.Frozen)
+	require.Equal(t, abusedetector.Frozen, outcome)
 	vandelay := h.env.ExternalWithToken(t, h.env.ScopedBearerFor(t, fixtures.VandelayID, apitokens.ScopeEmailsSend))
 
 	_, err = vandelay.EmailsSend(t.Context(), &externalapi.SendTransactionalEmailInput{

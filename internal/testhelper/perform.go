@@ -49,6 +49,14 @@ func (env *TestEnv) PerformEnqueuedJobs(t *testing.T, only ...river.JobArgs) {
 	env.performEnqueuedJobs(t, true, only...)
 }
 
+// TryPerformEnqueuedJobs is PerformEnqueuedJobs that leaves a job whose worker fails to retry, as
+// river does, and goes on with the rest: a test of a failure that stays in its own job reads the
+// jobs' states afterwards (JobRowsOf).
+func (env *TestEnv) TryPerformEnqueuedJobs(t *testing.T, only ...river.JobArgs) {
+	t.Helper()
+	env.performEnqueuedJobs(t, false, only...)
+}
+
 // mailKinds are the jobs of the Notices (ADR 0105), which SystemMail runs before a read: the
 // Notices' event consumer, which queues the sends, and the sends.
 var mailKinds = []river.JobArgs{jobs.NoticeEventArgs{}, jobs.SendNoticeArgs{}}
