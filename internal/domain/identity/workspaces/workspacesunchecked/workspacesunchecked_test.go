@@ -110,3 +110,33 @@ func TestTombstoneInFinishesAWorkspaceErasedAlreadyAsANoOp(t *testing.T) {
 	assert.Equal(t, first.ErasedAt, got.ErasedAt)
 	assert.Equal(t, first.CollectKey, got.CollectKey, "no fresh collect key is drawn")
 }
+
+// switchAcme switches Acme's confirmed opt-in to on in a transaction of its own, as the Owner.
+func switchAcme(t *testing.T, env *testhelper.TestEnv, on bool) workspacesunchecked.SwitchedConfirmedOptIn {
+	t.Helper()
+	var switched workspacesunchecked.SwitchedConfirmedOptIn
+	err := env.Bus.WithinScopedTx(t.Context(), env.DB.Scoped(fixtures.AcmeID).As(ent.Actor{Kind: ent.ActorUser, ID: "owner"}, nil),
+		func(ts *ent.Scoped, _ events.Publisher) error {
+			var err error
+			switched, err = unchecked.SwitchConfirmedOptInIn(t.Context(), ts, workspacesunchecked.SwitchConfirmedOptInInput{On: on, Recorded: 3})
+			return err
+		})
+	require.NoError(t, err)
+	return switched
+}
+
+// A setting changed while the Confirmations were recorded does not undo the switch (it is decided
+// on its revision before), and a second switch to the same state writes nothing and has no entry.
+func TestSwitchingConfirmedOptInHoldsOverAnotherSettingAndOnlyOnce(t *testing.T) {
+	env := testhelper.Setup(t)
+	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetName("Acme renamed").ExecX(t.Context())
+
+	first := switchAcme(t, env, true)
+	second := switchAcme(t, env, true)
+
+	assert.True(t, first.Workspace.RequireConfirmedOptIn)
+	require.NotNil(t, first.Audit)
+	assert.Equal(t, 3, first.Audit.Diff["confirmations_recorded"])
+	assert.True(t, second.Workspace.RequireConfirmedOptIn)
+	assert.Nil(t, second.Audit, "the second switch changes nothing")
+}

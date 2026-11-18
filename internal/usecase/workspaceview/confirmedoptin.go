@@ -27,7 +27,10 @@ type SetConfirmedOptInInput struct {
 // one left unconfirmed. It is refused (workspaces.ConfirmedOptInSwitch) on a revision the
 // Workspace has moved past and, turning it on, while the confirmation email is not set up, before
 // anything is recorded. A switch to the state the Workspace is in changes nothing: it does not
-// grandfather the addresses that came since. Turning it off keeps every Confirmation.
+// grandfather the addresses that came since. Turning it off keeps every Confirmation. Once
+// recording has begun, a change of another setting no longer refuses the switch, so no
+// Confirmation is left recorded without its Audit entry. Of two switches to the same state at
+// once, the one that commits second writes nothing and records no entry.
 func (u *UseCase) SetConfirmedOptIn(ctx context.Context, s *ent.Scoped, c Caller, in SetConfirmedOptInInput) (View, error) {
 	ws, err := u.workspaces.Get(ctx, s)
 	if err != nil {
@@ -55,7 +58,7 @@ func (u *UseCase) SetConfirmedOptIn(ctx context.Context, s *ent.Scoped, c Caller
 			recorded += swept
 		}
 		switched, err := u.unchecked.SwitchConfirmedOptInIn(ctx, ts, workspacesunchecked.SwitchConfirmedOptInInput{
-			Revision: in.Revision, On: in.On, Recorded: recorded,
+			On: in.On, Recorded: recorded,
 		})
 		if err != nil {
 			return err
