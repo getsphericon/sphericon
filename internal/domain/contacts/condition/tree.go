@@ -167,7 +167,7 @@ func (propertyLeaf) isNode()    {}
 // moment.
 type test interface{ isTest() }
 
-// textTest compares a text value with value: eq, neq, contains or beginsWith (textTests). A number
+// textTest compares a text value with value: eq, neq, contains or beginsWith (textOperators). A number
 // or boolean Custom field's eq and neq are text tests too, compared with the stored value's text.
 type textTest struct {
 	op    operator
@@ -238,12 +238,12 @@ func decode(g conditiontree.Group) (group, error) {
 	return d, nil
 }
 
-// readable is the stored Condition as the readers of what it names see it: an entry decode
+// decodeSkipping is the stored Condition as the readers of what it names see it: an entry decode
 // refuses tests nothing and is left out, so one bad entry does not hide the others.
-func readable(g conditiontree.Group) group {
+func decodeSkipping(g conditiontree.Group) group {
 	d := group{combinator: g.Combinator, not: g.Not, entries: make([]node, 0, len(g.Rules))}
 	for _, raw := range g.Rules {
-		n, err := decodeEntry(raw, func(sub conditiontree.Group) (node, error) { return readable(sub), nil })
+		n, err := decodeEntry(raw, func(sub conditiontree.Group) (node, error) { return decodeSkipping(sub), nil })
 		if err != nil {
 			continue
 		}
@@ -381,7 +381,7 @@ func valueTest(op operator, value string) (test, bool) {
 	case opNotNull:
 		return presenceTest{set: true}, true
 	default:
-		if _, ok := textTests[op]; !ok {
+		if _, ok := textOperators[op]; !ok {
 			return nil, false
 		}
 		return textTest{op: op, value: value}, true

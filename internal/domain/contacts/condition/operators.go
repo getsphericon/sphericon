@@ -50,7 +50,7 @@ func text(have any) (string, bool) {
 	return s, ok
 }
 
-var textTests = map[operator]textOperator{
+var textOperators = map[operator]textOperator{
 	opEQ: {
 		contact: func(f textField, want string) predicate.Contact { return f.eq(want) },
 		event:   func(have any, want string) bool { s, ok := text(have); return ok && s == want },
@@ -72,7 +72,7 @@ var textTests = map[operator]textOperator{
 	},
 }
 
-// contact is the presence test of a Contact's text attribute: set or null. Like textTests, it
+// contact is the presence test of a Contact's text attribute: set or null. Like textOperators, it
 // means the same as event, its test of a property of the triggering Event.
 func (p presenceTest) contact(f textField) predicate.Contact {
 	if p.set {

@@ -164,9 +164,9 @@ func (c *compiler) node(ctx context.Context, n node) (predicate.Contact, error) 
 		// The subject has a Binding on a Telegram Integration of the Workspace. A Visitor's
 		// Binding is no Contact's (ADR 0171). Evaluated live; a Binding exists only for a Telegram
 		// Integration and goes with it, so the existence of one is the test.
-		return reachable(contact.HasBindings(), l.test), nil
+		return present(contact.HasBindings(), l.test), nil
 	case smsLeaf:
-		return reachable(textable(), l.test), nil
+		return present(textable(), l.test), nil
 	case customFieldLeaf:
 		return c.custom(ctx, l)
 	case eventCountLeaf:
@@ -194,7 +194,7 @@ func (c *compiler) attribute(l attributeLeaf) (predicate.Contact, error) {
 	}
 	switch t := l.test.(type) {
 	case textTest:
-		return textTests[t.op].contact(f, t.value), nil
+		return textOperators[t.op].contact(f, t.value), nil
 	case presenceTest:
 		return t.contact(f), nil
 	default:
@@ -213,7 +213,7 @@ func (c *compiler) birthday(t momentTest) predicate.Contact {
 }
 
 // since is the start of a window of the last days up to now. A window reaching back past the first
-// year starts there.
+// year starts there: no moment is older, and a cutoff before it would overflow a stored timestamp.
 func (c *compiler) since(days int) time.Time {
 	since := c.now.AddDate(0, 0, -days)
 	if since.Year() < 1 {
@@ -239,7 +239,7 @@ func (c *compiler) property(l propertyLeaf) (predicate.Contact, error) {
 	var holds func(have any) bool
 	switch t := l.test.(type) {
 	case textTest:
-		holds = func(have any) bool { return textTests[t.op].event(have, t.value) }
+		holds = func(have any) bool { return textOperators[t.op].event(have, t.value) }
 	case presenceTest:
 		holds = t.event
 	case numberTest:
@@ -353,12 +353,9 @@ func (c *compiler) event(l eventCountLeaf) predicate.Contact {
 		preds = append(preds, events.HumanOnly())
 	}
 	if l.withinDays != nil {
-		// A window reaching back past the first year counts all time: no Event is older, and a
-		// cutoff that far back would overflow a stored timestamp. A window longer than Event
-		// retention is capped by it (ADR 0019).
-		if since := c.now.AddDate(0, 0, -*l.withinDays); since.Year() >= 1 {
-			preds = append(preds, event.OccurredAtGTE(since))
-		}
+		// A window reaching back past the first year starts there (since), which counts all time:
+		// no Event is older. A window longer than Event retention is capped by it (ADR 0019).
+		preds = append(preds, event.OccurredAtGTE(c.since(*l.withinDays)))
 	}
 
 	holds := eventCounts[l.op].holds
@@ -377,11 +374,12 @@ func (c *compiler) event(l eventCountLeaf) predicate.Contact {
 // materialized.
 func tagRule(l tagLeaf) predicate.Contact {
 	has := contact.HasTagsWith(tag.NameKey(tagname.Key(l.name)))
-	return reachable(has, l.test)
+	return present(has, l.test)
 }
 
-// reachable is p when the presence test asks for it to be had, its negation otherwise.
-func reachable(p predicate.Contact, t presenceTest) predicate.Contact {
+// present is p, what a Contact has (a Tag, a Binding, an eligible phone), when the presence test
+// asks for it, its negation when it asks for its absence.
+func present(p predicate.Contact, t presenceTest) predicate.Contact {
 	if t.set {
 		return p
 	}
@@ -585,7 +583,7 @@ func ToDTO(g conditiontree.Group, into json.Unmarshaler) error {
 // field key would still compile were the field of type t (customFieldLeaf.fits). A malformed entry
 // tests nothing.
 func FitsCustomFieldType(g conditiontree.Group, key string, t customfield.Type) bool {
-	for n := range readable(g).leaves() {
+	for n := range decodeSkipping(g).leaves() {
 		if l, ok := n.(customFieldLeaf); ok && l.key == key && l.fits(t) != nil {
 			return false
 		}
@@ -596,7 +594,7 @@ func FitsCustomFieldType(g conditiontree.Group, key string, t customfield.Type) 
 // NamesTag reports whether any leaf of the group, at any depth, tests the Tag called name.
 // A malformed entry names nothing.
 func NamesTag(g conditiontree.Group, name string) bool {
-	for n := range readable(g).leaves() {
+	for n := range decodeSkipping(g).leaves() {
 		if l, ok := n.(tagLeaf); ok && tagname.Same(l.name, name) {
 			return true
 		}
@@ -608,7 +606,7 @@ func NamesTag(g conditiontree.Group, name string) bool {
 // leaf, at any depth and under a negation too, counts an open or a click, whose tracking a Contact
 // may have refused. A malformed entry counts nothing.
 func CanBeUnknown(g conditiontree.Group) bool {
-	for n := range readable(g).leaves() {
+	for n := range decodeSkipping(g).leaves() {
 		if l, ok := n.(eventCountLeaf); ok && events.IsEngagement(l.action) {
 			return true
 		}
