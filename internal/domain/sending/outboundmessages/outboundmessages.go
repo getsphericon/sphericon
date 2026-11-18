@@ -78,7 +78,7 @@ const (
 	// Failed: this one message can never be sent (e.g. its template failed to render).
 	// Result.Failure says what it failed with.
 	Failed Outcome = "failed"
-	// Held: the source cannot send right now. Reason is a Hold* constant.
+	// Held: the source cannot send right now. Result.Hold says why.
 	Held Outcome = "held"
 	// Deferral: a send limit is spent — the Integration's Provider limit (ADR 0023), the
 	// Workspace's Send cap (ADR 0067) or the provider's own. Nothing is wrong with the source,
@@ -204,7 +204,7 @@ type Result struct {
 }
 
 // MessageOnly reports whether a Failed is this message's alone (ReasonMessageRefused), so the source
-// goes on past it. It reads the recorded reason, so a replayed Result answers as the first did.
+// goes on past it. It reads the recorded failure, so a replayed Result answers as the first did.
 func (r Result) MessageOnly() bool {
 	return r.Outcome == Failed && strings.HasPrefix(r.Failure, ReasonMessageRefused+":")
 }
