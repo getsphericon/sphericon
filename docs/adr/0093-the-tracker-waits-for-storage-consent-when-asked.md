@@ -5,6 +5,10 @@ build: none
 
 # The tracker waits for Tracker consent when asked, and forms show without it
 
+> **Amended by [[0179-a-web-push-binding-reaches-a-contact-only-by-proof]]:**
+> while Tracker consent is not `granted`, `subscribeToPush()` resolves `unavailable` without asking
+> the browser; `denied` stops the push reports and leaves the browser's subscription alone.
+
 > **Renamed by [[0120-engagement-tracking-is-consented-per-destination]]:** the state this ADR
 > first called Storage consent is Tracker consent, apart from a message's Engagement tracking
 > consent.

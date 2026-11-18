@@ -4,6 +4,10 @@ status: accepted
 
 # An Identify through the collect key is a claim until the customer's server proves it
 
+> **Amended by [[0179-a-web-push-binding-reaches-a-contact-only-by-proof]]:**
+> a proven Identify records `<channel>.bound` for each Binding it hands over (`web_push.bound` too),
+> and the tracker's web push reports carry the Identity token as the start link request does.
+
 > Amends [[0002-one-contact-identity-absorb-the-tracking-profile]] (Identify moves a Visitor only
 > with a proof), [[0006-custom-fields-are-declared-by-use]] (the collect key declares none),
 > [[0072-identify-writes-a-contacts-core-attributes]] (a claim only fills),

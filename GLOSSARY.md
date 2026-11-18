@@ -132,7 +132,7 @@ Events onto the Contact, so pre-identify behavior becomes visible to segmentatio
 public collect key it is a **claim**: it finds or creates the Contact, gives one that exists only
 what it lacks and no alias key, binds only a Visitor that is anonymous or already that Contact's,
 and hands over no Binding. It is **proven** when it carries an **Identity token**: then it fills
-alias keys, overwrites core attributes and moves the Visitor.
+alias keys, overwrites core attributes and moves the Visitor with its Bindings.
 _Avoid_: Alias, merge, reconcile
 
 **Identity token**:
@@ -383,7 +383,7 @@ _Avoid_: Medium, transport, provider (that is what an Integration sends through)
 The channel-specific address a message is sent to: the Contact's email on email, its phone number
 (always in international form) on SMS and on WhatsApp (where the **WhatsApp user id** is a second key
 of it), its subject_id on mobile push, and a
-**Binding** on Telegram and web push. Suppression and Unsubscribe are keyed by
+**Binding** on Telegram and web push (there the hash of the browser's push endpoint). Suppression and Unsubscribe are keyed by
 (channel, destination); a Contact may have several (its email, its phone, its Bindings).
 _Avoid_: Address (unqualified), recipient, endpoint
 
@@ -405,16 +405,17 @@ _Avoid_: Integration-scoped address, bot subscriber
 
 **Binding**:
 The record that one Integration can reach one Destination, and whose it is: the Contact or the
-Visitor a Telegram start token was issued to, or the Visitor whose browser reported a web push
-subscription. It is made only by what
-comes in from the channel (a `/start` carrying a token sphericon issued, a subscription reported by
-the tracker), never asserted through the API, and the latest one wins: a chat bound again moves to
-its new owner. It is unique per (Integration, Destination); it keeps the chat id apart from the
+Visitor a Telegram start token was issued to; on web push the Contact an **Identity token** proves
+when the browser reports its push subscription, or else the reporting Visitor. It is made only by
+what comes in from the channel (a `/start` carrying a token sphericon issued, a push subscription
+reported by the tracker), never asserted through the API, and the latest one wins: a chat bound
+again moves to its new owner. A web push report without a token moves the Binding to the reporting
+Visitor unless it is already that Visitor's Contact's. It is unique per (Integration, Destination); it keeps the chat id apart from the
 Destination (the Telegram user id) and when the current owner got it. A Contact is reached through its own
 Bindings only; a Visitor's reaches nobody until a proven **Identify** hands it to the Contact.
-A `/start` that gives a Binding to a Contact records `telegram.bound` for it, and one that takes it
-from another Contact records `telegram.unbound` for that one; the same Contact starting again
-records nothing.
+Whatever gives a Binding to a Contact records `telegram.bound` or `web_push.bound` for it, and
+whatever takes it from a Contact records `telegram.unbound` or `web_push.unbound` for that one; the
+same Contact binding again records nothing.
 _Avoid_: Subscription (a rejected concept), endpoint, device, channel identity
 
 **Suppression**:
@@ -445,8 +446,8 @@ A per-(workspace, channel, destination, Sending source) opt-out from marketing �
 destination, not by Contact, so it survives contact deletion and re-import (the GDPR-erasure
 case: the opt-out is the minimum data retained to honor the refusal; on SMS it keeps the number's
 hash instead of the number once its Contact is erased). Only the person lifts it: from the
-**Preference page** on email and for a Telegram source, by START or `/start` in the Channel for a
-Channel stop. A member, the API and an agent only ever add one.
+**Preference page** on email and for a Telegram source, by START or `/start` in the Channel, or a web push
+subscribe from the site's own button, for a Channel stop. A member, the API and an agent only ever add one.
 Absence means subscribed — there is no positive subscription row and no "subscribed" flag on
 the Contact. The default in-email link unsubscribes from the _sending source_ only;
 "unsubscribe from everything" is a distinct, deliberate action. A bounce or complaint is not
@@ -455,7 +456,7 @@ On the other Channels an opt-out the person makes in the Channel itself — a ST
 or a blocked bot, WhatsApp's stop, an unsubscribe button — has the `everything` scope of that
 Channel, as the law and WhatsApp treat it; a source-scoped opt-out there is only a link to the
 **Preference page** that the author put into the message. Its reversal (START, a resume, an unblocked
-bot) lifts it.
+bot, a web push subscribe from the site's own button) lifts it.
 On Telegram the Destination is the user's id, so one stop covers every bot of the Workspace, and it
 is recorded with the `telegram.unsubscribed` System event: `/stop`, a STOP keyword (the core's list,
 shared with SMS), a press on the message's unsubscribe button (a callback button with the fixed
@@ -509,8 +510,9 @@ tracking consent**. From a marketing message, opting out of that message's sourc
 Narrowing (an opt-out, a refusal) takes effect from any link however old. Only the person lifts a
 refusal, and widening on the page takes a fresh proof of the address: a link from a message of the
 last 7 days, or else a fresh link sent to it on the same Channel. A return to a
-source records `email.resubscribed` (or `telegram.resubscribed`). On SMS and
-Telegram it shows a **Channel stop** and how to undo it in the Channel. It shows no other address
+source records `email.resubscribed` (or `telegram.resubscribed`). On SMS,
+Telegram and web push it shows a **Channel stop** and how to undo it in the Channel (on web push,
+the site's own button). It shows no other address
 of the Contact, and only narrowing once no Contact holds the Destination.
 _Avoid_: Preference center, subscription center, notification center, unsubscribe page,
 confirmation page (a **Confirmation** is consent)
@@ -519,7 +521,9 @@ confirmation page (a **Confirmation** is consent)
 An opt-out a person makes in the Channel itself: a STOP keyword, `/stop` or a blocked bot, an
 unsubscribe button, a send the provider refuses because the number stopped it, or one recorded by
 hand. It is an **Unsubscribe** with the `everything` scope of that Channel, and it drops the
-Destination's **Confirmation** there; its reversal (START, a resume, an unblocked bot) lifts it.
+Destination's **Confirmation** there; its reversal (START, a resume, an unblocked bot) lifts it. On
+web push, where the browser reports no block, the opt-out from a message's link or one recorded by
+hand is a Channel stop, and a subscribe from the site's own button is its reversal.
 _Avoid_: Opt-out flag, STOP handling
 
 **Confirmation** (confirmed opt-in):
@@ -1193,30 +1197,38 @@ _Avoid_: Inbox message, email log
 **Tracking domain**:
 A hostname of the Workspace's own choosing (e.g. `t.example.com`), a CNAME to the Instance's edge
 with a TXT record beside it naming the Workspace's row (its ownership token), on which the Workspace's tracking is served instead of the Instance's host once it serves: the links
-in its mail (open, click, unsubscribe, confirm), the short tracked links of its Telegram messages and SMS and
-the first-party tracker, for its own collect key only. A Workspace uses at most one; it belongs to the Workspace, not to a Sending domain, so a
+in its mail (open, click, unsubscribe, confirm), the short tracked links of its Telegram messages, SMS and web
+push notifications, the first-party tracker and its **Push worker**, for its own collect key only. A Workspace uses at most one; it belongs to the Workspace, not to a Sending domain, so a
 Workspace that sends no mail can have one. Another host is another Tracking domain: a replacement
 takes over only once it serves, and the one it replaces, or one removed, is **retired**: it serves
-no new mail or snippet but keeps serving the links already sent and the snippet already installed
-on it, and no other Workspace can take its host, until its CNAME no longer points at the
+no new mail or snippet but keeps serving the links already sent, the snippet already installed
+on it and the Push worker a site already imports from it, and no other Workspace can take its host, until its CNAME no longer points at the
 Instance's edge, its TXT no longer names it, or the Owner forgets it. A host is held only while both
 records stand, so one that changes hands goes to the Workspace its TXT now names.
 _Avoid_: Click domain, link domain, custom domain (unqualified)
 
 **Short tracked link**:
-The link `https://<Tracking domain or Instance host>/c/<token>` that stands, in a Telegram message or an
-SMS, for one URL of one Outbound message: every `<a href>` of a Telegram text and every link button's URL,
-and every http(s) link of an SMS text, is rewritten into one when the message is rendered, never through a
+The link `https://<Tracking domain or Instance host>/c/<token>` that stands, in a Telegram message, an
+SMS or a web push notification, for one URL of one Outbound message: every `<a href>` of a Telegram text
+and every link button's URL, every http(s) link of an SMS text and the link a web push notification
+opens are rewritten into one when the message is rendered, never through a
 third-party shortener. An SMS may keep its links as written (link tracking off, per step or Broadcast); a
 tracked SMS's characters and segments are counted with its links at the short link's length, in the editor and at save.
 The token is a short random value stored with the Outbound message and the URL it redirects to, so a
-retried message reuses its tokens; an unknown token answers 404. Following one records `telegram.clicked`
-or `sms.clicked` (a request from a messaging app's or a carrier's link-preview fetcher is **Machine
+retried message reuses its tokens; an unknown token answers 404. Following one records `telegram.clicked`,
+`sms.clicked` or `web_push.clicked` (a request from a messaging app's or a carrier's link-preview fetcher is **Machine
 engagement**) and redirects. An SMS **Test send** shows the same form through links with no Outbound
 message, one per URL the Workspace tested: they redirect and record nothing. The message's own
 unsubscribe link is not wrapped, and email keeps its signed click links. A click on any Channel is what
 **Attribution window** credits an Order to.
 _Avoid_: Redirect link, shortener, vanity link
+
+**Push worker**:
+The script sphericon serves at `/sw.js` on a Tracking domain and the Instance host, which a site
+imports from a one-line service worker file it hosts on its own origin: the browser lets only a
+worker of the page's origin receive pushes. It shows each web push notification and opens its link
+on a click, and never subscribes on its own.
+_Avoid_: Service worker (the browser's mechanism the site's file is one of), sw.js, push SDK
 
 **Message token**:
 The signed token the open pixel, the click links and the unsubscribe link of an email carry, naming

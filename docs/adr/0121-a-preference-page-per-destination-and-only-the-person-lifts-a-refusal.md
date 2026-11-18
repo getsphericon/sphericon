@@ -5,6 +5,10 @@ build: none
 
 # A Preference page per Destination, and only the person lifts a refusal
 
+> **Amended by [[0179-a-web-push-binding-reaches-a-contact-only-by-proof]]:**
+> a web push Destination's page shows its Channel stop and that the site's own button undoes it; no
+> `preference` message is ever pushed.
+
 > **Amended by [[0135-a-broadcast-series-makes-an-ordinary-broadcast-at-each-occurrence]]:**
 > the page lists each Broadcast series a person receives by name, beside all Broadcasts, which
 > covers them.
