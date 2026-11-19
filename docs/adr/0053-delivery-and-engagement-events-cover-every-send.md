@@ -4,6 +4,13 @@ status: accepted
 
 # Delivery and engagement Events cover every send, and machine engagement is flagged, not dropped
 
+> **Amended by [[0189-an-open-figure-carries-low-confidence]]:** an open figure carries
+> `confidence: low` in the contract, and machine opens are counted beside the human ones.
+
+> **Amended by #1736:** an open through a mailbox provider's proxy that loads a message's images to
+> display it (Gmail's, Yahoo's) is the person's, by an explicit list in the code; a click through it,
+> and every other crawler match, stays machine.
+
 > **Amended by [[0185-the-complaint-rate-counts-mail-to-providers-that-report-complaints]]:** the Complaint rate's denominator is mail delivered to mailbox providers that report complaints, Gmail left out.
 
 > **Amended by #1553:** an Event from the Automation's own message, on any Channel, is no longer
@@ -39,7 +46,7 @@ request, a Transactional send.
   Broadcast recipient's rollup stays (ADR 0019: reports must not shrink when Events expire): it is
   set once, and only by a human engagement.
 - **`machine` is a flag on the Event**, set from the user-agent (a maintained library, not our own
-  list) and the iCloud Private Relay egress ranges Apple publishes (refreshed by a river job into a plain
+  list, but for the display proxies #1736 lists) and the iCloud Private Relay egress ranges Apple publishes (refreshed by a river job into a plain
   table). Apple publishes no list for Mail Privacy Protection itself and the Private Relay list is
   known to be incomplete, so detection is a partial signal. Neither the address nor the user-agent is stored. A machine Event is kept, so a wrong
   detection can be fixed later, but it counts nowhere and triggers nothing. No timing heuristic:

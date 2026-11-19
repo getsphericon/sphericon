@@ -5,6 +5,9 @@ build: [1729]
 
 # The Complaint rate counts only mail to mailbox providers that report complaints
 
+> **Amended below:** the Mailbox provider splits a Broadcast's report and the deliverability figures,
+> for display only.
+
 > **Revised before it was built:** the reporting providers are named (Microsoft's consumer mail and
 > the Yahoo family), not "every provider but Gmail"; complaints and deliveries come from the same
 > providers; the provider is read when the rate is read, so a domain not yet looked up heals; the
@@ -71,3 +74,20 @@ by all delivered mail tell their users that Gmail is missing from it.
 - A Workspace sending mostly to Google-hosted or Microsoft 365 business mail sees its complaint rate
   undefined until Gmail's own rate is connected.
 - Glossary: **Mailbox provider**, **Complaint rate**.
+
+## Amendment: the figures split by Mailbox provider
+
+A problem at one provider hides in a total: mail one provider sends to spam or defers barely moves a
+Workspace's delivery or click rate when the others are fine, and the commercial platforms split their
+figures by provider for that reason.
+
+- **A Broadcast's report and the Workspace's deliverability figures split by Mailbox provider**:
+  delivered, bounced, clicked and complaints, one row per provider of the table above, and a row for
+  the domains not yet looked up.
+- **The complaint rate only where the provider reports complaints**; the other rows show "—" there,
+  not zero.
+- **Each rate is shown beside its denominator**, as the Complaint rate shows the share it covers, with
+  no volume floor: the floor is the detector's, and a small row reads as small.
+- **Display only**: no detector reads a provider's row.
+- **The table above stays the classifier**: no maintained library or open dataset maps mail
+  exchangers to providers.

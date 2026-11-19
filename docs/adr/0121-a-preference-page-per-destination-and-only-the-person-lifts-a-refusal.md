@@ -6,6 +6,10 @@ terms: [Preference page]
 
 # A Preference page per Destination, and only the person lifts a refusal
 
+> **Amended by [[0190-a-person-may-cap-their-own-destination-at-one-message-a-week]]:** the page of an
+> email or Telegram Destination offers a Personal frequency cap, set by anyone and cleared only by the
+> person.
+
 > **Amended by [[0179-a-web-push-binding-reaches-a-contact-only-by-proof]]:**
 > a web push Destination's page shows its Channel stop and that the site's own button undoes it; no
 > `preference` message is ever pushed.
