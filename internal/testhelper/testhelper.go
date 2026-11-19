@@ -67,8 +67,11 @@ import (
 	// The pgx driver behind database/sql.
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/mokevnin/dbcleaner/v2"
+	dbcleanerpg "github.com/mokevnin/dbcleaner/v2/postgres"
 	ht "github.com/ogen-go/ogen/http"
+	"github.com/peterldowns/pgtestdb"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/mod/sumdb/dirhash"
 )
 
 // Every test process (one per package) leases a database of its own, cloned from a
@@ -641,6 +644,39 @@ func (c injectClient) Do(r *http.Request) (*http.Response, error) {
 	rec := httptest.NewRecorder()
 	c.handler.ServeHTTP(rec, r)
 	return rec.Result(), nil
+}
+
+// newCleaner is a Cleaner of a database of the process's own, leased next to the one at url and
+// cloned from a schema-only template (postgres.WithTemplate of dbcleaner), so packages run in
+// parallel without sharing rows or locks. The fixtures go in at the start of every process, not
+// into the template: their relative dates must be relative to now.
+func newCleaner(url string, cfg *config.Config, opts ...dbcleaner.Option) *dbcleaner.Cleaner {
+	return dbcleaner.New(dbcleanerpg.Dialect(dbcleanerpg.WithTemplate(schemaTemplate{})), url,
+		append([]dbcleaner.Option{
+			dbcleaner.WithSetup(func(ctx context.Context, sqlDB *sql.DB) error {
+				return loadFixtures(ctx, sqlDB, cfg, projectRoot())
+			}),
+		}, opts...)...,
+	)
+}
+
+// schemaTemplate is the pgtestdb.Migrator that builds the schema templates the worker databases
+// are cloned from.
+type schemaTemplate struct{}
+
+// Hash digests everything that decides the schema a template holds: the migrations, which are
+// the only thing that creates it (an ent/schema edit shows up here once `mise run db:generate`
+// has written its migration). The names are hashed relative to the directory, so a checkout's
+// location does not matter.
+func (schemaTemplate) Hash() (string, error) {
+	return dirhash.HashDir(filepath.Join(projectRoot(), "migrations"), "migrations", dirhash.Hash1)
+}
+
+// Migrate applies the embedded migrations to an empty database: the same files, the same way
+// (goose), that production gets, so the app schema and river's tables come from them.
+func (schemaTemplate) Migrate(ctx context.Context, sqlDB *sql.DB, _ pgtestdb.Config) error {
+	_, err := db.Migrate(ctx, sqlDB)
+	return err
 }
 
 // loadFixtures replaces the contents of every fixture table with the committed rows. It
