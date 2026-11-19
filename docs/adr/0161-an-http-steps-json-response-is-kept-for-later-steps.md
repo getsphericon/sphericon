@@ -5,6 +5,9 @@ build: [1456]
 
 # An HTTP step's JSON response is kept for later Steps
 
+> **Amended by [[0181-a-conditions-shape-is-typed-by-the-place-it-is-used]]:** the Branch's leaf names
+> its subject in a typed field, `http` with the HTTP step's name, not in the `http:<name>.<key>` prefix.
+
 > Amends [[0039-outbound-calls-to-third-party-hooks]] (response data feeding later steps, left out of
 > scope) and follows [[0136-a-wait-for-event-keeps-the-event-that-ended-it-for-later-steps]].
 

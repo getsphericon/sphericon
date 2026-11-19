@@ -6,6 +6,13 @@ terms: [Set field, Enroll step, Notify]
 
 # An Automation sets a field, enrolls elsewhere and notifies Members
 
+> **Amended below:** a Notify is a Notice of ADR 0105: it writes a Notify row and publishes an event
+> that Notice delivery answers; the hourly cap counts the rows with no lock of its own; Erasure deletes
+> the rows and every Notice not yet sent that names the Contact.
+
+> **Amended by [[0161-an-http-steps-json-response-is-kept-for-later-steps]]:** a Notify's text may
+> name `http.<name>`, and a Set field may take a property of it; an Enroll does not carry it.
+
 > **Amended by [[0136-a-wait-for-event-keeps-the-event-that-ended-it-for-later-steps]]:**
 > a Set field may take a property of `awaited.<name>`, and a Notify's text may name it; an Enroll
 > carries only `event`.
@@ -147,3 +154,30 @@ and covers no team without a chat tool.
   Suppression; the Workspace's domain mails Contacts, and a Member is not one.
 - **No Notify, the HTTP step only.** It leaves a team without a chat tool with no way to hear of a
   lead.
+
+## Amendment: a Notify is a Notice of ADR 0105, and Erasure reaches it
+
+"Run once" above keys a Notice's job by the Enrollment and the Step id, written with the move. ADR
+0105 sends every Notice the same way: a change publishes an event in its transaction, Notice delivery
+answers it, and the modules know no recipient's address. Both hold when the job is that event's
+consumer. What a Notify needs beside it is a record: one Notify is sent once, the hourly cap counts
+something, and an Erasure finds what names the Contact.
+
+- **A Notify writes one Notify row**, unique on its source (the Enrollment and the Step id, or the
+  Firing and the Action), in the transaction of its effect, and publishes there a Workspace event
+  that Notice delivery answers. The row is job-written state in a table of its own (ADR 0168): the
+  Contact, the Automation or Rule, the outcome (queued, or skipped with its reason) and its moment. A
+  second run finds the row and does nothing.
+- **The event names Memberships, never addresses.** The Step reads the chosen Memberships when it
+  runs, and none left is the skip above, with no event; Notice delivery reads the Members' addresses
+  when it handles the event, so a Member who left in between gets nothing.
+- **The hourly cap counts the Workspace's queued Notify rows of the last hour, with no lock of its
+  own.** Two moves at once may pass it by a few: the cap is a safety valve, not a promise to a
+  person, and a lock per Workspace would join the Contact's lock in a new order (ADR 0137 keeps its
+  own lock out of that order for the same reason). Over the cap the row records the skip.
+- **Erasure deletes the Contact's Notify rows and every Notice not yet sent that names the Contact**,
+  as it purges the queued consumers of the Contact's events: a queued Notice holds the Contact's
+  values rendered. A Notice already sent is the Member's mail. The rows are otherwise kept for the
+  analytical Events' retention window (ADR 0019).
+- **A Notice counts against no Send cap**: it goes through the System sender, not an Integration
+  (ADR 0067).
