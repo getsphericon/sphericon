@@ -1288,13 +1288,13 @@ holds a send.
 _Avoid_: Reputation (Gmail no longer reports it), Gmail stats
 
 **Content check**:
-A fixed rule an email is checked against before it is sent (images without text, a link or image off
-`https`, a URL shortener, an image without `alt`, a merge tag that renders empty, a link to a name
-reserved for examples, text hidden from the reader, invisible characters, a no-reply sender, a preview
-text that repeats the subject, the Workspace's missing **Postal address**),
+A fixed rule an email is checked against before it is sent, by the email lint (images without text, a
+link or image off `https`, a URL shortener, an image without `alt`, a merge tag that renders empty, a
+link to a name reserved for examples, text hidden from the reader, characters used to hide text, a
+no-reply sender, a preview text that repeats the subject, the Workspace's missing **Postal address**),
 shown as a warning in the editor, at Schedule and Publish and when a Template is saved; it never
 blocks and is never a score.
-_Avoid_: Spam score, spam check, lint
+_Avoid_: Spam score, spam check
 
 **Postal address**:
 The Workspace's physical mailing address that the footer of every marketing email carries: a street
