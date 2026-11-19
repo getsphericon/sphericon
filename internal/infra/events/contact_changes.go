@@ -79,13 +79,14 @@ func (e *EnrollmentChange) Project() Projection {
 	}
 }
 
-// BindingChange is a Telegram chat becoming a Contact's (telegram.bound) or leaving it for another
-// (telegram.unbound), recorded in the transaction of the `/start` that moved it. The Integration
-// is the bot, a property `integrationId` a Trigger, a Rule or a Segment may read. DedupID is unique
-// per fact so that the same update's two events (one Contact's unbound, another's bound) both stand
-// and a redelivery of the update records neither twice.
+// BindingChange is a Binding becoming a Contact's (`<channel>.bound`) or leaving it for another
+// (`<channel>.unbound`), recorded in the transaction that moved it: on Telegram the `/start`'s, and
+// on any Channel a proven Identify's that hands a Visitor's Bindings over (ADR 0179). The
+// Integration is the one the Binding is on, a property `integrationId` a Trigger, a Rule or a
+// Segment may read. DedupID is unique per fact so that the same update's two events (one Contact's
+// unbound, another's bound) both stand and a redelivery of the update records neither twice.
 type BindingChange struct {
-	Action        string `json:"action"` // telegram.bound|telegram.unbound
+	Action        string `json:"action"` // <channel>.bound|<channel>.unbound: telegram.bound|telegram.unbound
 	WorkspaceID   int64  `json:"workspaceId"`
 	ContactID     int64  `json:"contactId"`
 	Email         string `json:"email,omitempty"`

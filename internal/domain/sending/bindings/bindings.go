@@ -1,8 +1,10 @@
-// Package bindings is where a Telegram chat becomes a Contact's: the Start token a start link
-// carries and the Binding a `/start <token>` makes (ADR 0075, ADR 0076). A Binding is made only by
-// what the bot receives, never written through an API; the token is issued for a Contact through
-// the APIs, and for a Visitor by the tracker. A Visitor's Binding reaches nobody until an Identify
-// the customer's server proved hands it to the Contact (ADR 0171).
+// Package bindings keeps the Bindings: the record that one Integration can reach one Destination
+// of a Channel whose Destination is no attribute of the Contact, and whose it is, a Contact's or a
+// Visitor's (ADR 0075). A Visitor's Binding reaches nobody until an Identify the customer's server
+// proved hands it, on whatever Channel, to the Contact (ADR 0171, ADR 0179). On Telegram a Binding
+// is a chat: the Start token a start link carries and the Binding a `/start <token>` makes
+// (ADR 0076), made only by what the bot receives, never written through an API; the token is
+// issued for a Contact through the APIs, and for a Visitor by the tracker.
 package bindings
 
 import (
@@ -70,7 +72,8 @@ func New(integ *integrations.Module, visits *visitors.Module, now func() time.Ti
 }
 
 // Chats is what the bots learn about the chats bound to them: a `/start <token>` that binds one, a
-// message read from one, a chat Telegram no longer reaches, and the Bindings a Visitor hands over.
+// message read from one, a chat Telegram no longer reaches; and the Bindings of every Channel a
+// Visitor hands over.
 // It records the System events of those changes in the transaction of the scope it is given, so
 // that scope must be bound to a transaction of its bus (events.Bus.PublishIn). It is a role apart
 // from Module: it publishes, and it reads no Integration's config.
@@ -323,7 +326,7 @@ func (c *Chats) bind(ctx context.Context, s *ent.Scoped, bot *ent.Integration, n
 func (c *Chats) rebind(ctx context.Context, s *ent.Scoped, bot *ent.Integration, now time.Time, own owner, r Redemption, existing *ent.Binding) error {
 	if lo.FromPtr(existing.ContactID) == lo.FromPtr(own.contactID) && lo.FromPtr(existing.VisitorID) == lo.FromPtr(own.visitorID) {
 		// The chat stays with its owner: nobody gains or loses it, so nothing is announced.
-		if existing.ChatID == r.ChatID {
+		if lo.FromPtr(existing.ChatID) == r.ChatID {
 			return nil
 		}
 		if err := s.Binding().UpdateOneID(existing.ID).SetChatID(r.ChatID).Exec(ctx); err != nil {
@@ -417,9 +420,15 @@ func (c *Chats) announce(ctx context.Context, s *ent.Scoped, bot *ent.Integratio
 	if err != nil {
 		return fmt.Errorf("read contact: %w", err)
 	}
+	return c.publishChange(ctx, s, action, person, bot.ID, dedup)
+}
+
+// publishChange records the System event action of person gaining or losing a Binding on the
+// Integration integrationID, deduplicated by dedup.
+func (c *Chats) publishChange(ctx context.Context, s *ent.Scoped, action string, person *ent.Contact, integrationID int64, dedup string) error {
 	return c.bus.PublishIn(ctx, s, &events.BindingChange{
 		Action: action, WorkspaceID: s.WorkspaceID(), ContactID: person.ID, Email: lo.FromPtr(person.Email),
-		IntegrationID: bot.ID, DedupID: dedup,
+		IntegrationID: integrationID, DedupID: dedup,
 	})
 }
 
@@ -458,10 +467,10 @@ func (c *Chats) Receive(ctx context.Context, s *ent.Scoped, bot *ent.Integration
 	})
 }
 
-// HandOver gives the Contact to every Binding of the Visitor vis, which a proven Identify has just
-// bound to it (ADR 0171), and records telegram.bound for each. Run it inside a transaction of the
-// bus that s is bound to. A Visitor with no Binding hands over nothing, so a repeated Identify
-// records nothing.
+// HandOver gives the Contact every Binding of the Visitor vis on every Channel, which a proven
+// Identify has just bound to it (ADR 0171, ADR 0179), and records each Binding's bound event on its
+// Channel (boundAction). Run it inside a transaction of the bus that s is bound to. A Visitor with
+// no Binding hands over nothing, so a repeated Identify records nothing.
 func (c *Chats) HandOver(ctx context.Context, s *ent.Scoped, vis *ent.Visitor, to *ent.Contact) error {
 	rows, err := s.Binding().Query().Where(binding.VisitorID(vis.ID)).Order(binding.ByID()).All(ctx)
 	if err != nil {
@@ -475,15 +484,31 @@ func (c *Chats) HandOver(ctx context.Context, s *ent.Scoped, vis *ent.Visitor, t
 		return fmt.Errorf("hand over bindings: %w", err)
 	}
 	for _, b := range rows {
-		err := c.bus.PublishIn(ctx, s, &events.BindingChange{
-			Action: systemevent.TelegramBound, WorkspaceID: s.WorkspaceID(), ContactID: to.ID, Email: lo.FromPtr(to.Email),
-			IntegrationID: b.IntegrationID, DedupID: fmt.Sprintf("telegram:binding:%d:contact:%d/bound", b.ID, to.ID),
-		})
+		action, err := boundAction(b.Channel)
 		if err != nil {
+			return fmt.Errorf("hand over binding %d: %w", b.ID, err)
+		}
+		dedup := fmt.Sprintf("%s:binding:%d:contact:%d/bound", b.Channel, b.ID, to.ID)
+		if err := c.publishChange(ctx, s, action, to, b.IntegrationID, dedup); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// boundActions are the System events of a Contact gaining a Binding, by its Channel:
+// `<channel>.bound`. A Channel added to the Binding's channel enum adds its entry here.
+var boundActions = map[binding.Channel]string{
+	binding.ChannelTelegram: systemevent.TelegramBound,
+}
+
+// boundAction is the System event of a Contact gaining a Binding on ch (boundActions).
+func boundAction(ch binding.Channel) (string, error) {
+	action, ok := boundActions[ch]
+	if !ok {
+		return "", fmt.Errorf("no bound event of channel %q", ch)
+	}
+	return action, nil
 }
 
 // PruneStartTokens deletes the Start tokens that lapsed by the clock or were used, in every

@@ -92,7 +92,8 @@ func (telegramChannel) targets(ctx context.Context, s *ent.Scoped, req Request, 
 	}
 	out := make([]target, len(rows))
 	for i, b := range rows {
-		out[i] = target{dest: b.Destination, chat: b.ChatID}
+		// A Telegram Binding always has its chat (bindings_destination_check).
+		out[i] = target{dest: b.Destination, chat: lo.FromPtr(b.ChatID)}
 	}
 	return out, nil
 }

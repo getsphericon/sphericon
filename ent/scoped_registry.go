@@ -536,7 +536,9 @@ func ScopedEntities() []*ScopedEntity {
 				b.SetIntegrationID(remap("Integration", src.IntegrationID))
 				b.SetChannel(src.Channel)
 				b.SetDestination(src.Destination)
-				b.SetChatID(src.ChatID)
+				if src.ChatID != nil {
+					b.SetChatID(*src.ChatID)
+				}
 				if src.ContactID != nil {
 					b.SetContactID(remap("Contact", *src.ContactID))
 				}

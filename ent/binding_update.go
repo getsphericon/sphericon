@@ -66,6 +66,12 @@ func (_u *BindingUpdate) SetNillableChatID(v *string) *BindingUpdate {
 	return _u
 }
 
+// ClearChatID clears the value of the "chat_id" field.
+func (_u *BindingUpdate) ClearChatID() *BindingUpdate {
+	_u.mutation.ClearChatID()
+	return _u
+}
+
 // SetContactID sets the "contact_id" field.
 func (_u *BindingUpdate) SetContactID(v int64) *BindingUpdate {
 	_u.mutation.SetContactID(v)
@@ -234,6 +240,9 @@ func (_u *BindingUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.ChatID(); ok {
 		_spec.SetField(binding.FieldChatID, field.TypeString, value)
 	}
+	if _u.mutation.ChatIDCleared() {
+		_spec.ClearField(binding.FieldChatID, field.TypeString)
+	}
 	if value, ok := _u.mutation.BoundAt(); ok {
 		_spec.SetField(binding.FieldBoundAt, field.TypeTime, value)
 	}
@@ -377,6 +386,12 @@ func (_u *BindingUpdateOne) SetNillableChatID(v *string) *BindingUpdateOne {
 	if v != nil {
 		_u.SetChatID(*v)
 	}
+	return _u
+}
+
+// ClearChatID clears the value of the "chat_id" field.
+func (_u *BindingUpdateOne) ClearChatID() *BindingUpdateOne {
+	_u.mutation.ClearChatID()
 	return _u
 }
 
@@ -577,6 +592,9 @@ func (_u *BindingUpdateOne) sqlSave(ctx context.Context) (_node *Binding, err er
 	}
 	if value, ok := _u.mutation.ChatID(); ok {
 		_spec.SetField(binding.FieldChatID, field.TypeString, value)
+	}
+	if _u.mutation.ChatIDCleared() {
+		_spec.ClearField(binding.FieldChatID, field.TypeString)
 	}
 	if value, ok := _u.mutation.BoundAt(); ok {
 		_spec.SetField(binding.FieldBoundAt, field.TypeTime, value)

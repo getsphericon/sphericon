@@ -360,6 +360,16 @@ func ChatIDHasSuffix(v string) predicate.Binding {
 	return predicate.Binding(sql.FieldHasSuffix(FieldChatID, v))
 }
 
+// ChatIDIsNil applies the IsNil predicate on the "chat_id" field.
+func ChatIDIsNil() predicate.Binding {
+	return predicate.Binding(sql.FieldIsNull(FieldChatID))
+}
+
+// ChatIDNotNil applies the NotNil predicate on the "chat_id" field.
+func ChatIDNotNil() predicate.Binding {
+	return predicate.Binding(sql.FieldNotNull(FieldChatID))
+}
+
 // ChatIDEqualFold applies the EqualFold predicate on the "chat_id" field.
 func ChatIDEqualFold(v string) predicate.Binding {
 	return predicate.Binding(sql.FieldEqualFold(FieldChatID, v))

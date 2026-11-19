@@ -1,8 +1,9 @@
 // Package visitoridentification is the use case of a Visitor identification, the Identify of the
 // glossary (ADR 0072, ADR 0102): the /collect call that binds a Visitor to a Contact, and the
 // tracker's Telegram start link, which an Identity token gives to the Contact it proves (ADR 0171).
-// It spans the proof (identitytokens), the Contact (contacts), the Visitor (visitors), its chats
-// (bindings) and its anonymous Events (the bus), so it composes their functions in one transaction.
+// It spans the proof (identitytokens), the Contact (contacts), the Visitor (visitors), its Bindings
+// on every Channel (bindings) and its anonymous Events (the bus), so it composes their functions in
+// one transaction.
 package visitoridentification
 
 import (
@@ -60,8 +61,8 @@ type UseCase struct {
 }
 
 // New builds the Identify use case; people resolves and upserts the Contact, visits sees and binds
-// the Visitor, tokens checks an Identity token, bindings issues start links and hands a Visitor's
-// over, chats hands a Visitor's chats over to the Contact, and now is the Instance clock a
+// the Visitor, tokens checks an Identity token, bindings issues start links, chats hands a
+// Visitor's Bindings on every Channel over to the Contact, and now is the Instance clock a
 // hand-over is dated by.
 func New(bus *events.Bus, people *contacts.Module, visits *visitors.Module, tokens *identitytokens.Module, b *bindings.Module, chats *bindings.Chats, now func() time.Time) *UseCase {
 	return &UseCase{bus: bus, contacts: people, visitors: visits, tokens: tokens, bindings: b, chats: chats, now: now}
@@ -85,7 +86,8 @@ var (
 // Visitor is anonymous or already that Contact's.
 //
 // With one it is proven: the keys are the token's, it fills the Contact's alias keys and writes its
-// attributes, moves the Visitor to it, stitches its Events and hands the Contact the Visitor's chats.
+// attributes, moves the Visitor to it, stitches its Events and hands the Contact the Visitor's
+// Bindings on every Channel (ADR 0179).
 // A token that does not verify refuses the call. A newly created Contact emits contact.created.
 func (u *UseCase) Identify(ctx context.Context, s *ent.Scoped, input Input) error {
 	visitorID := strings.TrimSpace(input.VisitorID)

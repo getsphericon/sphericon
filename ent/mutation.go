@@ -8768,7 +8768,7 @@ func (m *BindingMutation) ChatID() (r string, exists bool) {
 // OldChatID returns the old "chat_id" field's value of the Binding entity.
 // If the Binding object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BindingMutation) OldChatID(ctx context.Context) (v string, err error) {
+func (m *BindingMutation) OldChatID(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldChatID is only allowed on UpdateOne operations")
 	}
@@ -8782,9 +8782,22 @@ func (m *BindingMutation) OldChatID(ctx context.Context) (v string, err error) {
 	return oldValue.ChatID, nil
 }
 
+// ClearChatID clears the value of the "chat_id" field.
+func (m *BindingMutation) ClearChatID() {
+	m.chat_id = nil
+	m.clearedFields[binding.FieldChatID] = struct{}{}
+}
+
+// ChatIDCleared returns if the "chat_id" field was cleared in this mutation.
+func (m *BindingMutation) ChatIDCleared() bool {
+	_, ok := m.clearedFields[binding.FieldChatID]
+	return ok
+}
+
 // ResetChatID resets all changes to the "chat_id" field.
 func (m *BindingMutation) ResetChatID() {
 	m.chat_id = nil
+	delete(m.clearedFields, binding.FieldChatID)
 }
 
 // SetContactID sets the "contact_id" field.
@@ -9263,6 +9276,9 @@ func (m *BindingMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *BindingMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(binding.FieldChatID) {
+		fields = append(fields, binding.FieldChatID)
+	}
 	if m.FieldCleared(binding.FieldContactID) {
 		fields = append(fields, binding.FieldContactID)
 	}
@@ -9283,6 +9299,9 @@ func (m *BindingMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *BindingMutation) ClearField(name string) error {
 	switch name {
+	case binding.FieldChatID:
+		m.ClearChatID()
+		return nil
 	case binding.FieldContactID:
 		m.ClearContactID()
 		return nil
