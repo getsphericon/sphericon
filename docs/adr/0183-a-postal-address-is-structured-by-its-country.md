@@ -1,9 +1,13 @@
 ---
 status: accepted
-build: none
+build: [1731]
 ---
 
 # A postal address is structured by its country
+
+> **Revised before it was built:** the first line is required in every country (four formats leave it
+> optional), a postal code off its pattern warns, arming checks presence only, the formats come
+> through the contract, and the footer's layout and language are stated.
 
 > Amends [[0156-marketing-email-is-armed-only-with-a-postal-address]] (what counts as an address, and
 > how the footer writes it).
@@ -21,16 +25,24 @@ in fields (a first line, a city, a country, or the fields a country's format nam
 
 ## Decision
 
-- **The Postal address is fields, not text**: a country and the lines its format names (address lines,
-  locality, region, postal code), stored and returned as such on `/site` and the external Workspace.
+- **The Postal address is fields, not text**: a country (ISO 3166-1 alpha-2) and the lines its
+  format names (three address lines, sublocality, locality, region, postal code). "No address" is
+  none at all, and clearing it makes it none; a field the country's format does not use is refused.
 - **A country's format decides what is required and how it is written**, from
-  `github.com/bojanz/address` (Google's libaddressinput data, CLDR country list): it validates the
-  required fields and the postal code's pattern on save, formats the footer line, and serves the formats
-  to the console's form. The app keeps no table of its own.
+  `github.com/bojanz/address` (Google's libaddressinput data, the CLDR country list): its required
+  fields and its region list are checked on save, and a missing one is refused on its own field. The
+  first address line is required in every country, over the format, so a city and a country alone
+  never pass. A postal code that does not match the country's pattern is a warning, not a refusal:
+  the data may lag a real code, and a sender must never be left unable to send.
+- **Arming checks only that an address is there** (ADR 0156), never re-validates it: a newer release
+  of the format data does not stop a send.
+- **The console reads the formats through a typed `/site` operation**, part of the contract like any
+  other, and renders the form of the chosen country from it.
+- **The footer writes the address in its country's layout**, one line per line of the format, the
+  country's name in English like the rest of the footer, and the same lines in the text part.
 - **A PO box or a commercial mail receiving agency's mailbox is an address line.** Nothing is geocoded
   or checked against a postal service.
-- ADR 0156's arming rule, its "changed but not cleared" rule and its earlier signs stand: arming needs a
-  Postal address that its country's format accepts.
+- ADR 0156's arming rule, its "changed but not cleared" rule and its earlier signs stand.
 
 ## Considered options
 
