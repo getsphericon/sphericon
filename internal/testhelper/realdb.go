@@ -16,12 +16,14 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/mokevnin/dbcleaner"
-	dbcleanerpg "github.com/mokevnin/dbcleaner/postgres"
+	"github.com/mokevnin/dbcleaner/v2"
+	dbcleanerpg "github.com/mokevnin/dbcleaner/v2/postgres"
+	"github.com/peterldowns/pgtestdb"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/mod/sumdb/dirhash"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/postgres"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 )
@@ -138,20 +140,8 @@ func openBaseline() (baselineHandle, error) {
 	if err != nil {
 		return baselineHandle{}, err
 	}
-	version, err := schemaHash()
-	if err != nil {
-		return baselineHandle{}, err
-	}
 	// The Null strategy: nothing is undone between tests, a test only ever gets a clone.
-	leased := dbcleaner.New(shared,
-		dbcleaner.WithTemplate(version, func(ctx context.Context, sqlDB *sql.DB, _ string) error {
-			return migrateSchema(ctx, sqlDB)
-		}),
-		dbcleaner.WithSetup(func(ctx context.Context, sqlDB *sql.DB) error {
-			return loadFixtures(ctx, sqlDB, cfg, projectRoot())
-		}),
-		dbcleaner.WithStrategy(dbcleaner.Null()),
-	)
+	leased := newCleaner(shared, cfg, dbcleaner.WithStrategy(dbcleaner.Null()))
 	dsn, err := leased.URL(ctx)
 	if err != nil {
 		return baselineHandle{}, err
@@ -288,10 +278,35 @@ func projectRoot() string {
 	return filepath.Join(filepath.Dir(file), "..", "..")
 }
 
-// schemaHash digests everything that decides the schema a template holds: the migrations, which
-// are the only thing that creates it (an ent/schema edit shows up here once `mise run
-// db:generate` has written its migration). The names are hashed relative to the directory, so a
-// checkout's location does not matter.
-func schemaHash() (string, error) {
+// newCleaner is a Cleaner of a database of the process's own, leased next to the one at url and
+// cloned from a schema-only template (postgres.WithTemplate of dbcleaner), so packages run in
+// parallel without sharing rows or locks. The fixtures go in at the start of every process, not
+// into the template: their relative dates must be relative to now.
+func newCleaner(url string, cfg *config.Config, opts ...dbcleaner.Option) *dbcleaner.Cleaner {
+	return dbcleaner.New(dbcleanerpg.Dialect(dbcleanerpg.WithTemplate(schemaTemplate{})), url,
+		append([]dbcleaner.Option{
+			dbcleaner.WithSetup(func(ctx context.Context, sqlDB *sql.DB) error {
+				return loadFixtures(ctx, sqlDB, cfg, projectRoot())
+			}),
+		}, opts...)...,
+	)
+}
+
+// schemaTemplate is the pgtestdb.Migrator that builds the schema templates the worker databases
+// are cloned from.
+type schemaTemplate struct{}
+
+// Hash digests everything that decides the schema a template holds: the migrations, which are
+// the only thing that creates it (an ent/schema edit shows up here once `mise run db:generate`
+// has written its migration). The names are hashed relative to the directory, so a checkout's
+// location does not matter.
+func (schemaTemplate) Hash() (string, error) {
 	return dirhash.HashDir(filepath.Join(projectRoot(), "migrations"), "migrations", dirhash.Hash1)
+}
+
+// Migrate applies the embedded migrations to an empty database: the same files, the same way
+// (goose), that production gets, so the app schema and river's tables come from them.
+func (schemaTemplate) Migrate(ctx context.Context, sqlDB *sql.DB, _ pgtestdb.Config) error {
+	_, err := db.Migrate(ctx, sqlDB)
+	return err
 }

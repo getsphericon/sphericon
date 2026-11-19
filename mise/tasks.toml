@@ -338,7 +338,7 @@ else
     # pgtestdb's leftovers belong to no checkout: step 2 sweeps them.
     case "$d" in testdb_tpl_*) echo "keep    database $d (pgtestdb)"; continue ;; esac
     # A live checkout's test process databases: `<test db>_w<i>` and `<test db>_tpl_<hash>`
-    # (dbcleaner.WithTemplate, wired in internal/testhelper). They go with the checkout's `<test db>`.
+    # (postgres.WithTemplate of dbcleaner, wired in internal/testhelper). They go with the checkout's `<test db>`.
     base=${d%_w[0-9]*}; base=${base%_tpl_*}
     if [ "$base" != "$d" ] && grep -qxF "$base" "$keep"; then continue; fi
     if [ -z "$apply" ]; then echo "would drop database $d"; continue; fi
