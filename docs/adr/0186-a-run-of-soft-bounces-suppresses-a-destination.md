@@ -1,10 +1,14 @@
 ---
 status: accepted
-build: none
-terms: [Soft bounce run]
+build: [1726]
 ---
 
 # A run of soft bounces suppresses a Destination
+
+> **Revised before it was built:** a run is at least five counting soft bounces whose first and latest
+> are seven days apart (five daily sends span four days); only address and mailbox codes count and a
+> bounce with no code does not (a provider's block of the sender suppressed every recipient); only
+> Presets that report deliveries; the run restarts after a lift.
 
 > Amends [[0011-deliverability-rate-metrics]] (a soft bounce is still no reputation signal, but a run
 > of them is a Suppression) and [[0001-send-eligibility-model]] (a reason of Suppression).
@@ -19,15 +23,31 @@ the account's shared quota: the practice is to wait a week or two before giving 
 
 ## Decision
 
-- **Five soft bounces in a row on the recipient's side, with no delivery between them and at least
-  seven days from the first to the last, suppress the Destination**, with the reason `soft_bounce_run`.
-  A delivery ends the run. The Suppression is a Suppression like any other: only a person lifts it
-  (ADR 0121).
-- **The recipient's side is read from the enhanced status code (RFC 3463)** a Delivery notice carries:
-  a Preset passes the provider's code, or maps the provider's own bounce subtype to one. Codes of the
-  mail system, the protocol, the content and the security policy (subjects 3, 5, 6 and 7: a message too
-  large, content refused, a policy block) are the message's or the sender's fault and do not count. A
-  soft bounce with no code counts.
+- **A Soft bounce run suppresses the Destination**, with the reason `soft_bounce_run`: at least five
+  soft bounces that count, with no delivery between them, the first and the latest at least seven days
+  apart. A delivery ends the run, and so does a person's lifting of the Suppression: only what comes
+  after the lift counts again. The Suppression is a Suppression like any other: it blocks every
+  surface, Transactional included (ADR 0005), and only a person lifts it (ADR 0121).
+- **A soft bounce counts when its enhanced status code (RFC 3463) is about the address or the
+  mailbox**: subject 1 (addressing, such as `4.1.1`) or 2 (mailbox, such as `4.2.2` mailbox full). A
+  code of the mail system, routing, the protocol, the content or the security policy (subjects 3 to 7:
+  a message too large, a DNS failure, content refused, a sender blocked) is the message's, the
+  network's or the sender's, and does not count; nor does a soft bounce with no code, so a provider
+  that blocks the sender for a week suppresses no one.
+- **The code comes with the Delivery notice**: a Preset passes the provider's code where it has one
+  (Amazon SES's `status` of a bounced recipient), or maps the provider's own subtype to one (SES's
+  `MailboxFull` to `4.2.2`); with neither, the core reads the first enhanced status code in the
+  notice's reason (the provider's SMTP diagnostic). The field is optional, so a Preset without it
+  still loads.
+- **The run is read only where deliveries are reported**: a Preset declares which kinds of Delivery
+  notice it reports, and its tests prove each; a bounce that came through a Preset that reports no
+  delivery never counts, as "no delivery between" would mean nothing there.
+- **The run is read from the Destination's delivery Events**, which exist for an address that is no
+  Contact too, in the order of the messages' sending where a notice names its Outbound message, else
+  in the order of reporting. A delivery reported late for an earlier message ends no run already
+  ended by a Suppression: a Suppression is never lifted by a notice. A Test send's notices do not
+  count.
+- **Email only**; the other Channels have their own unreachable verdicts.
 - **A soft bounce still counts in no rate** (ADR 0011).
 
 ## Considered options
@@ -40,5 +60,5 @@ the account's shared quota: the practice is to wait a week or two before giving 
 
 ## Consequences
 
-- A Delivery notice gains the enhanced status code; Presets that know the provider's subtype map it.
+- A Delivery notice gains the optional enhanced status code; a Preset declares the kinds it reports.
 - Glossary: **Soft bounce**, **Soft bounce run**, **Suppression**.

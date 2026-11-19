@@ -1613,9 +1613,9 @@ suppress, but a **Soft bounce run** does; the Outbound message still carries it 
 _Avoid_: Transient bounce, temporary failure (the industry says soft; one word for one thing)
 
 **Soft bounce run**:
-Five **Soft bounces** in a row to one Destination on the recipient's side (its mailbox, not the
-message or the sender), with no delivery between them and at least seven days from the first to the
-last. It suppresses the Destination; a delivery ends it.
+At least five **Soft bounces** to one Destination about its address or its mailbox (not the message,
+the network or the sender), with no delivery between them, the first and the latest at least seven
+days apart. It suppresses the Destination; a delivery ends it, and so does lifting the Suppression.
 _Avoid_: Soft bounce limit, soft bounce threshold
 
 **Mailbox provider**:
