@@ -1,6 +1,6 @@
 ---
 status: accepted
-build: [1547, 1611]
+build: [1545, 1558, 1561, 1562, 1563, 1564, 1565, 1567, 1615, 1616, 1617, 1618, 1622, 1623, 1625]
 ---
 
 # An Automation chooses a path by Condition, by weight or by an awaited Event
