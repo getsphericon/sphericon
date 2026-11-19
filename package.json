@@ -45,7 +45,7 @@
     "@tiptap/react": "3.34.0",
     "@workflowbuilder/sdk": "^3.0.0",
     "@xstate/react": "^6.1.0",
-    "@xyflow/react": "^13.0.2",
+    "@xyflow/react": "^12.12.1",
     "ahooks": "^3.11.0",
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
