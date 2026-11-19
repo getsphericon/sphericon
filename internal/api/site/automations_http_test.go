@@ -17,6 +17,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
+// httpSecret is the signing secret the HTTP steps and http Actions of these tests are saved with.
+var httpSecret = testhelper.SigningSecret("http")
+
 func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
@@ -30,7 +33,7 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 			Type: siteapi.AutomationStepTypeHTTP, Body: siteapi.NewOptString(body),
 			URL:     siteapi.NewOptString("https://hooks.slack.com/services/T0/SECRETPATH"),
 			Headers: []siteapi.AutomationHttpHeaderInput{{Name: "Authorization", Value: siteapi.NewOptString("Bearer hunter2")}},
-			Secret:  siteapi.NewOptString("whsec_topsecret"),
+			Secret:  siteapi.NewOptSigningSecret(siteapi.SigningSecret(httpSecret)),
 		}},
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
@@ -60,14 +63,14 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 	require.NoError(t, err)
 	assert.Equal(t, "https://hooks.slack.com/services/T0/SECRETPATH", opened.URL)
 	assert.Equal(t, "Bearer hunter2", opened.Headers["Authorization"])
-	assert.Equal(t, "whsec_topsecret", opened.Secret)
+	assert.Equal(t, httpSecret, opened.Secret)
 
 	entries := env.QueuedEvents(t, events.NameAuditEntry)
 	require.NotEmpty(t, entries)
 	for _, e := range entries {
 		raw, err := json.Marshal(e)
 		require.NoError(t, err)
-		secrets := append([]string{"SECRETPATH", "hunter2", "whsec_topsecret"}, sealedAtCreate...)
+		secrets := append([]string{"SECRETPATH", "hunter2", httpSecret}, sealedAtCreate...)
 		secrets = append(secrets, steps[0].URL, steps[0].Secret, steps[0].Headers[0].Value)
 		for _, secret := range secrets {
 			assert.NotContains(t, string(raw), secret)

@@ -105,7 +105,7 @@ func (c *InputsImpl) AutomationStep(source external.AutomationStepInput) automat
 			automationstepStep.Headers[j] = c.externalapiAutomationHttpHeaderInputToHttpheaderHeader(source.Headers[j])
 		}
 	}
-	automationstepStep.Secret = stringIn(source.Secret)
+	automationstepStep.Secret = signingSecretIn(source.Secret)
 	automationstepStep.ClearSecret = boolIn(source.ClearSecret)
 	return automationstepStep
 }
@@ -685,7 +685,7 @@ func (c *InputsImpl) externalapiRuleActionInputToRuleactionAction(source externa
 		}
 	}
 	ruleactionAction.Body = stringIn(source.Body)
-	ruleactionAction.Secret = stringIn(source.Secret)
+	ruleactionAction.Secret = signingSecretIn(source.Secret)
 	ruleactionAction.ClearSecret = boolIn(source.ClearSecret)
 	return ruleactionAction
 }

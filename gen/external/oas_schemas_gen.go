@@ -2093,7 +2093,7 @@ type AutomationStep struct {
 	Headers []AutomationHttpHeader `json:"headers"`
 	// Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned.
 	// Omit it when editing to keep the stored secret.
-	Secret OptString `json:"secret"`
+	Secret OptSigningSecret `json:"secret"`
 	// Remove the signing secret on save (HTTP steps).
 	ClearSecret OptBool `json:"clearSecret"`
 	// Whether a signing secret is stored (HTTP steps, read only).
@@ -2180,7 +2180,7 @@ func (s *AutomationStep) GetHeaders() []AutomationHttpHeader {
 }
 
 // GetSecret returns the value of Secret.
-func (s *AutomationStep) GetSecret() OptString {
+func (s *AutomationStep) GetSecret() OptSigningSecret {
 	return s.Secret
 }
 
@@ -2280,7 +2280,7 @@ func (s *AutomationStep) SetHeaders(val []AutomationHttpHeader) {
 }
 
 // SetSecret sets the value of Secret.
-func (s *AutomationStep) SetSecret(val OptString) {
+func (s *AutomationStep) SetSecret(val OptSigningSecret) {
 	s.Secret = val
 }
 
@@ -2404,7 +2404,7 @@ type AutomationStepInput struct {
 	Headers []AutomationHttpHeaderInput `json:"headers"`
 	// Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned.
 	// Omit it when editing to keep the stored secret.
-	Secret OptString `json:"secret"`
+	Secret OptSigningSecret `json:"secret"`
 	// Remove the signing secret on save (HTTP steps).
 	ClearSecret OptBool `json:"clearSecret"`
 	// Whether a signing secret is stored (HTTP steps, read only).
@@ -2491,7 +2491,7 @@ func (s *AutomationStepInput) GetHeaders() []AutomationHttpHeaderInput {
 }
 
 // GetSecret returns the value of Secret.
-func (s *AutomationStepInput) GetSecret() OptString {
+func (s *AutomationStepInput) GetSecret() OptSigningSecret {
 	return s.Secret
 }
 
@@ -2591,7 +2591,7 @@ func (s *AutomationStepInput) SetHeaders(val []AutomationHttpHeaderInput) {
 }
 
 // SetSecret sets the value of Secret.
-func (s *AutomationStepInput) SetSecret(val OptString) {
+func (s *AutomationStepInput) SetSecret(val OptSigningSecret) {
 	s.Secret = val
 }
 
@@ -15008,6 +15008,52 @@ func (o OptProblemDetailsFields) Or(d ProblemDetailsFields) ProblemDetailsFields
 	return d
 }
 
+// NewOptSigningSecret returns new OptSigningSecret with value set to v.
+func NewOptSigningSecret(v SigningSecret) OptSigningSecret {
+	return OptSigningSecret{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSigningSecret is optional SigningSecret.
+type OptSigningSecret struct {
+	Value SigningSecret
+	Set   bool
+}
+
+// IsSet returns true if OptSigningSecret was set.
+func (o OptSigningSecret) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSigningSecret) Reset() {
+	var v SigningSecret
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSigningSecret) SetTo(v SigningSecret) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSigningSecret) Get() (v SigningSecret, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSigningSecret) Or(d SigningSecret) SigningSecret {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptString returns new OptString with value set to v.
 func NewOptString(v string) OptString {
 	return OptString{
@@ -16213,7 +16259,7 @@ type RuleAction struct {
 	Body OptString `json:"body"`
 	// Signing secret (http actions): when set, the request is signed with Standard Webhooks. Never
 	// returned. Omit it when editing to keep the stored secret.
-	Secret OptString `json:"secret"`
+	Secret OptSigningSecret `json:"secret"`
 	// Remove the signing secret on save (http actions).
 	ClearSecret OptBool `json:"clearSecret"`
 	// Whether a signing secret is stored (http actions, read only).
@@ -16256,7 +16302,7 @@ func (s *RuleAction) GetBody() OptString {
 }
 
 // GetSecret returns the value of Secret.
-func (s *RuleAction) GetSecret() OptString {
+func (s *RuleAction) GetSecret() OptSigningSecret {
 	return s.Secret
 }
 
@@ -16306,7 +16352,7 @@ func (s *RuleAction) SetBody(val OptString) {
 }
 
 // SetSecret sets the value of Secret.
-func (s *RuleAction) SetSecret(val OptString) {
+func (s *RuleAction) SetSecret(val OptSigningSecret) {
 	s.Secret = val
 }
 
@@ -16342,7 +16388,7 @@ type RuleActionInput struct {
 	Body OptString `json:"body"`
 	// Signing secret (http actions): when set, the request is signed with Standard Webhooks. Never
 	// returned. Omit it when editing to keep the stored secret.
-	Secret OptString `json:"secret"`
+	Secret OptSigningSecret `json:"secret"`
 	// Remove the signing secret on save (http actions).
 	ClearSecret OptBool `json:"clearSecret"`
 	// Whether a signing secret is stored (http actions, read only).
@@ -16385,7 +16431,7 @@ func (s *RuleActionInput) GetBody() OptString {
 }
 
 // GetSecret returns the value of Secret.
-func (s *RuleActionInput) GetSecret() OptString {
+func (s *RuleActionInput) GetSecret() OptSigningSecret {
 	return s.Secret
 }
 
@@ -16435,7 +16481,7 @@ func (s *RuleActionInput) SetBody(val OptString) {
 }
 
 // SetSecret sets the value of Secret.
-func (s *RuleActionInput) SetSecret(val OptString) {
+func (s *RuleActionInput) SetSecret(val OptSigningSecret) {
 	s.Secret = val
 }
 
@@ -18203,6 +18249,8 @@ func (s *SetTrackingDomainInput) GetHost() string {
 func (s *SetTrackingDomainInput) SetHost(val string) {
 	s.Host = val
 }
+
+type SigningSecret string
 
 // Why an Outbound message was Skipped: final for its Destination, never retried. The first four are
 // Send-eligibility's; a client switches over the list.

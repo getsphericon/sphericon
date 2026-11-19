@@ -306,6 +306,12 @@ const (
 	ConditionEventTimesMin = 0
 )
 
+// SigningSecret is the Standard Webhooks secret an HTTP step or an http Action signs its calls with.
+// From site SigningSecret.
+const (
+	SigningSecretPattern = `^(?:whsec_)?(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})$`
+)
+
 // CurrencyCode is an ISO 4217 currency code, a Workspace's reporting currency.
 // From site CurrencyCode.
 const (
@@ -401,6 +407,7 @@ var Owners = map[string][]string{
 	"RuleTriggerEventsMinItems":          {"Rule"},
 	"ConditionWithinDaysMin":             {"internal/domain/contacts/condition"},
 	"ConditionEventTimesMin":             {"internal/domain/contacts/condition"},
+	"SigningSecretPattern":               {"internal/infra/httpcall"},
 	"CurrencyCodePattern":                {"Workspace"},
 	"RegionalFormatMaxLength":            {"User"},
 	"SuspensionReasonMinLength":          {"internal/domain/identity/suspension"},

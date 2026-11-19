@@ -1,7 +1,6 @@
 package hooks_test
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -39,13 +38,9 @@ var hookClock = time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
 // The secrets of the two generic Integrations in fixtures/integrations.yml: whsec_ and the
 // base64 of a plain string, which is how the fixture spells them.
 var (
-	secretA = newSecret("secret-A0123456789")
-	secretB = newSecret("secret-B0123456789")
+	secretA = testhelper.SigningSecret("secret-A0123456789")
+	secretB = testhelper.SigningSecret("secret-B0123456789")
 )
-
-func newSecret(seed string) string {
-	return "whsec_" + base64.StdEncoding.EncodeToString([]byte("sphericon-test-"+seed))
-}
 
 func setupHooks(t *testing.T) *testhelper.TestEnv {
 	t.Helper()
@@ -288,7 +283,7 @@ func TestRotatingASecretKeepsTheOldOneValidUntilItIsRetired(t *testing.T) {
 	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 	id := int64(fixtures.IntegrationAcmeGenericAID)
 	key := fixtures.IntegrationAcmeGenericAIngestKey
-	rotated := newSecret("rotated-0123456789")
+	rotated := testhelper.SigningSecret("rotated-0123456789")
 
 	read := updateParams(t, c, id, &externalapi.UpdateIntegrationInput{Params: secretParam(rotated)})
 	assert.Equal(t, []string{"secret"}, read.SecretsRetiring)
@@ -332,7 +327,7 @@ func TestIntegrationParamsAreValidatedAgainstThePresetSchema(t *testing.T) {
 	for name, in := range map[string]externalapi.UpdateIntegrationInput{
 		"a secret of the wrong type": {Params: externalapi.NewOptJsonObject(externalapi.JsonObject{"secret": jx.Raw(`42`)})},
 		"a param the schema does not know": {Params: externalapi.NewOptJsonObject(externalapi.JsonObject{
-			"secret": jx.Raw(strconv.Quote(newSecret("x-0123456789"))), "extra": jx.Raw(`true`),
+			"secret": jx.Raw(strconv.Quote(testhelper.SigningSecret("x-0123456789"))), "extra": jx.Raw(`true`),
 		})},
 		"a Preset that does not exist": {Preset: externalapi.NewOptNilString("nope")},
 	} {
@@ -390,10 +385,10 @@ func TestChoosingAPresetAndRotatingASecretAreAuditedWithoutTheSecret(t *testing.
 	env := setupHooks(t)
 	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 	id := int64(fixtures.IntegrationAcmeGenericAID)
-	rotated := newSecret("audited-0123456789")
+	rotated := testhelper.SigningSecret("audited-0123456789")
 
 	updateParams(t, c, id, &externalapi.UpdateIntegrationInput{Params: secretParam(rotated)})
-	updateParams(t, c, id, &externalapi.UpdateIntegrationInput{Preset: externalapi.NewOptNilString("generic"), Params: secretParam(newSecret("again-0123456789"))})
+	updateParams(t, c, id, &externalapi.UpdateIntegrationInput{Preset: externalapi.NewOptNilString("generic"), Params: secretParam(testhelper.SigningSecret("again-0123456789"))})
 
 	entries := testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry)
 	require.NotEmpty(t, entries)

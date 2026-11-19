@@ -17,6 +17,7 @@ const (
 	contactOwner    = "Contact"
 	limit           = "limit"
 	telemetryReport = "TelemetryReport"
+	httpcallOwner   = "internal/infra/httpcall"
 )
 
 // Bounds are the contract's bounds on the input of a domain write, in the order they are written.
@@ -69,7 +70,7 @@ var Bounds = []Bound{
 	},
 	{
 		Name: "HTTPCallHeaders", Doc: "are the headers of an http Action or step.",
-		Spec: site, Schema: "RuleActionInput", Property: "headers", Owners: []string{"internal/infra/httpcall"},
+		Spec: site, Schema: "RuleActionInput", Property: "headers", Owners: []string{httpcallOwner},
 	},
 	{Name: "HTTPCallHeaders", Spec: site, Schema: "AutomationStepInput", Property: "headers"},
 	{
@@ -237,6 +238,10 @@ var Bounds = []Bound{
 		Name: "ConditionEventTimes", Doc: "is how many Events of an action a condition leaf counts.",
 		Spec: site, Schema: "ConditionEventLeafInput", Property: "times",
 		Owners: []string{"internal/domain/contacts/condition"},
+	},
+	{
+		Name: "SigningSecret", Doc: "is the Standard Webhooks secret an HTTP step or an http Action signs its calls with.",
+		Spec: site, Schema: "SigningSecret", Owners: []string{httpcallOwner},
 	},
 	{
 		Name: "CurrencyCode", Doc: "is an ISO 4217 currency code, a Workspace's reporting currency.",

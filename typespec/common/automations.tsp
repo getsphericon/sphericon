@@ -3,6 +3,7 @@
 
 import "./engagement.tsp";
 import "./segments.tsp";
+import "./signing-secret.tsp";
 
 namespace Sphericon;
 
@@ -98,7 +99,7 @@ model AutomationStepOf<Header, Button> {
   headers?: Header[];
 
   /** Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned. Omit it when editing to keep the stored secret. */
-  secret?: string;
+  secret?: SigningSecret;
 
   /** Remove the signing secret on save (HTTP steps) */
   clearSecret?: boolean;

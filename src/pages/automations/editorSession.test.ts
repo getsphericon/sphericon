@@ -188,7 +188,7 @@ test('two Saves retain an HTTP identity and its stored secret while preserving n
   const graph = stepsToGraph(DRAFT, [{ type: 'http', body: '{}' }], {})
   const node = httpNode(graph)
   node.data.properties.url = 'https://example.com/hook'
-  node.data.properties.secret = 'submitted-secret'
+  node.data.properties.secret = `whsec_${btoa('submitted')}`
   const server = httpServer()
   const actor = startSession()
   const identities = Promise.withResolvers<Parameters<typeof applyHttpIdentities>[1]>()

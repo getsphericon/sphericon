@@ -2,6 +2,7 @@
 // dry run and firings.
 
 import "./segments.tsp";
+import "./signing-secret.tsp";
 
 namespace Sphericon;
 
@@ -44,7 +45,7 @@ model RuleActionOf<Header> {
   body?: string;
 
   /** Signing secret (http actions): when set, the request is signed with Standard Webhooks. Never returned. Omit it when editing to keep the stored secret. */
-  secret?: string;
+  secret?: SigningSecret;
 
   /** Remove the signing secret on save (http actions) */
   clearSecret?: boolean;
