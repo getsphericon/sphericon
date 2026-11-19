@@ -5,6 +5,9 @@ build: none
 
 # Email replies arrive through the provider's inbound route
 
+> **Amended by [[0184-spf-is-the-integrations-and-is-shown-per-integration]]:** the Return-Path
+> stays the provider's when it sits on a subdomain the sender delegates to it (SES's custom MAIL FROM).
+
 > **Amended by [[0133-a-trigger-exit-or-goal-matches-an-event-by-its-action-and-properties]]:**
 > exit events now filter on properties; exit on a reply stays an option because no filter can name
 > the Enrollment that sent the email.
