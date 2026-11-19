@@ -507,7 +507,7 @@ a new send are not attributed to the Broadcast attempting that send.
 **Preference page**:
 The public page of one Destination on one Channel, reached from the unsubscribe link of a message:
 the Sending sources it received from or is opted out of, `everything`, and its **Engagement
-tracking consent**. From a marketing message, opting out of that message's source comes first.
+tracking consent**, and on email and Telegram a **Personal frequency cap**. From a marketing message, opting out of that message's source comes first.
 Narrowing (an opt-out, a refusal) takes effect from any link however old. Only the person lifts a
 refusal, and widening on the page takes a fresh proof of the address: a link from a message of the
 last 7 days, or else a fresh link sent to it on the same Channel. A return to a
@@ -785,9 +785,16 @@ period (three per 24 hours on SMS unless it changes it, none on email and Telegr
 own for countries on a phone Channel). Every Broadcast, series issue and Automation send counts;
 Transactional sends and messages the person asked for do not; a message to several Destinations
 counts once for each. Over it a Broadcast Recipient is
-Skipped and an Automation send is deferred, for one period at most, then Skipped. Distinct from the Send cap (per Workspace) and the
+Skipped and an Automation send is deferred, for one period at most, then Skipped. A **Personal
+frequency cap** on the Destination holds beside it, the stricter of the two winning. Distinct from the Send cap (per Workspace) and the
 Provider limit (per Integration).
 _Avoid_: Fatigue limit, rate limit, throttle, quota
+
+**Personal frequency cap**:
+The cap a person sets on their own email or Telegram Destination from the **Preference page**: at most
+one marketing message a week. It counts what the **Frequency cap** counts and holds beside it. Anyone
+may set it; only the person clears it, on fresh proof of the address.
+_Avoid_: Opt-down, snooze, frequency preference
 
 **Deferral**:
 The reversible, per-source Outcome of an Outbound send that found its Integration's Provider
@@ -1339,7 +1346,8 @@ the window (a Transactional one is left out, and so is one sent untracked for wa
 **Engagement tracking consent** or whose tracking was withdrawn since, which the reports count beside the rates; each message counts once,
 not each person), and opens
 and clicks, the stamps on those messages, are counted among that same cohort, so opened never
-exceeds sent and the rates stay within [0, 1]. Not the **Complaint rate** or **Bounce rate**: those are deliverability flow rates per
+exceeds sent and the rates stay within [0, 1]. An open figure carries low confidence, wherever it is
+shown or read, and machine opens are counted beside it. Not the **Complaint rate** or **Bounce rate**: those are deliverability flow rates per
 Sending domain, counted from Events by their own time and never tied to a send.
 _Avoid_: Reputation, deliverability (those name the Sending-domain rates)
 
@@ -1621,7 +1629,8 @@ _Avoid_: Soft bounce limit, soft bounce threshold
 **Mailbox provider**:
 Who runs a recipient domain's mail, read from where its mail goes (Gmail and Google Workspace,
 Microsoft's consumer mail, Microsoft 365, the Yahoo family, Apple iCloud, other), whatever the
-domain's name. It decides whether a delivery or a complaint counts in the **Complaint rate**.
+domain's name. It decides whether a delivery or a complaint counts in the **Complaint rate**, and
+splits a Broadcast's report and the deliverability figures.
 _Avoid_: ISP, inbox provider, email provider (that is the Integration's provider)
 
 **Machine engagement**:
@@ -1631,7 +1640,8 @@ build its preview (Telegram, WhatsApp). It is still recorded as an `email.opened
 `<channel>.clicked` Event, flagged `machine`, but it never counts toward open or click
 figures, never stamps the Outbound message as opened or clicked and never starts an Automation. Detected from
 the request's user-agent and source address, neither of which is stored. Detection is a partial
-signal, not proof: a proxy that hides itself is not caught.
+signal, not proof: a proxy that hides itself is not caught. An open through a mailbox's proxy that loads
+a message's images to display it (Gmail's, Yahoo's) is the person's; a click through it is machine.
 _Avoid_: Bot open, false open
 
 **Private relay range**:

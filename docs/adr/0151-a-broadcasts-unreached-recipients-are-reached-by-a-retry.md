@@ -5,6 +5,9 @@ build: [1439, 1440]
 
 # A Broadcast's unreached Recipients are reached by a Retry
 
+> **Amended by [[0189-an-open-figure-carries-low-confidence]]:** a resend to those who did not open
+> is declined as a feature.
+
 > Amends [[0143-old-outbound-messages-are-folded-into-stored-figures-and-deleted]] (a cancelled
 > Broadcast is frozen too) and [[0149-a-broadcasts-audience-is-chosen-explicitly-and-counted-before-it-is-armed]]
 > (a third kind of audience). Settles the retry that
@@ -112,4 +115,5 @@ window ran out, is kept as `pending`, as a failed Broadcast's unsent Recipients 
 - **A fixed retry window** (refused Recipients kept for a few days): it is an opinion about the
   content the app does not have; showing the age is enough for the person who decides.
 - **Resending to those who did not open**: it mails people already reached, and opens are unreliable
-  under `dont_track` (ADR 0120). It is not a retry and is not decided here.
+  under `dont_track` (ADR 0120). It is not a retry; ADR 0189 declines it as a feature: a Segment on
+  the Broadcast's Events and a new Broadcast do it.

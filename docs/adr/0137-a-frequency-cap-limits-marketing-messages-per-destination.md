@@ -5,6 +5,9 @@ build: [1592]
 
 # A frequency cap limits marketing messages per Destination
 
+> **Amended by [[0190-a-person-may-cap-their-own-destination-at-one-message-a-week]]:** a person may
+> cap their own Destination at one marketing message a week; the stricter cap holds.
+
 > **Amended by [[0178-a-frequency-cap-counts-each-destination-a-message-is-claimed-for-after-eligibility]]:**
 > each Destination a marketing message is claimed for is counted in a record of its own, after
 > Send-eligibility and the Sending window; a takeover counts nothing again; Outbound send decides
