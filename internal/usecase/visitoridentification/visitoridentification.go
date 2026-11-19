@@ -56,16 +56,16 @@ type UseCase struct {
 	visitors *visitors.Module
 	tokens   *identitytokens.Module
 	bindings *bindings.Module
-	chats    *bindings.Chats
+	owners   *bindings.Owners
 	now      func() time.Time
 }
 
 // New builds the Identify use case; people resolves and upserts the Contact, visits sees and binds
-// the Visitor, tokens checks an Identity token, bindings issues start links, chats hands a
+// the Visitor, tokens checks an Identity token, bindings issues start links, owners hands a
 // Visitor's Bindings on every Channel over to the Contact, and now is the Instance clock a
 // hand-over is dated by.
-func New(bus *events.Bus, people *contacts.Module, visits *visitors.Module, tokens *identitytokens.Module, b *bindings.Module, chats *bindings.Chats, now func() time.Time) *UseCase {
-	return &UseCase{bus: bus, contacts: people, visitors: visits, tokens: tokens, bindings: b, chats: chats, now: now}
+func New(bus *events.Bus, people *contacts.Module, visits *visitors.Module, tokens *identitytokens.Module, b *bindings.Module, owners *bindings.Owners, now func() time.Time) *UseCase {
+	return &UseCase{bus: bus, contacts: people, visitors: visits, tokens: tokens, bindings: b, owners: owners, now: now}
 }
 
 var (
@@ -143,7 +143,7 @@ func (u *UseCase) Identify(ctx context.Context, s *ent.Scoped, input Input) erro
 			return err
 		}
 		if proven {
-			if err := u.chats.HandOver(ctx, ts, vis, c); err != nil {
+			if err := u.owners.HandOver(ctx, ts, vis, c); err != nil {
 				return err
 			}
 		}

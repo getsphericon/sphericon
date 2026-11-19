@@ -911,10 +911,15 @@ var audiencePackage = do.Package(
 		return bindings.New(do.MustInvoke[*integrations.Module](i), do.MustInvoke[*visitors.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// The chats' side of the Bindings: Outbound send unbinds a chat Telegram no longer reaches, the
-	// Ingest hook binds and reads them, the identification and the erasure of a Contact hand them
-	// over and read them, and the jobs prune their Start tokens.
+	// Ingest hook binds and reads them, the erasure of a Contact reads them, and the jobs prune their
+	// Start tokens.
 	do.Lazy(func(i do.Injector) (*bindings.Chats, error) {
 		return bindings.NewChats(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
+	}),
+	// The owners' side of the Bindings, on every Channel: the identification of a Contact hands a
+	// Visitor's Bindings over to it.
+	do.Lazy(func(i do.Injector) (*bindings.Owners, error) {
+		return bindings.NewOwners(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*sendingdomains.Module, error) {
 		return sendingdomains.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[domainname.TXTLookup](i), do.MustInvoke[Clock](i)), nil
@@ -963,7 +968,7 @@ var contentPackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*visitoridentification.UseCase, error) {
 		return visitoridentification.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*contacts.Module](i), do.MustInvoke[*visitors.Module](i),
-			do.MustInvoke[*identitytokens.Module](i), do.MustInvoke[*bindings.Module](i), do.MustInvoke[*bindings.Chats](i), do.MustInvoke[Clock](i)), nil
+			do.MustInvoke[*identitytokens.Module](i), do.MustInvoke[*bindings.Module](i), do.MustInvoke[*bindings.Owners](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*unsubscriberecording.UseCase, error) {
 		return unsubscriberecording.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[*automations.Module](i),
