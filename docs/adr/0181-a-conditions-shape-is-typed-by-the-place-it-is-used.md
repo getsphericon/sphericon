@@ -9,7 +9,8 @@ build: [1674, 1675, 1676, 1677, 1678, 1679]
 > [[0054-a-rule-is-a-stateless-reaction-to-an-event-built-on-the-segment-condition-tree]] (`trigger:<key>`),
 > [[0122-an-automation-branches-into-nested-paths-that-rejoin]] (where the test of an Enrollment's own
 > messages is refused) and [[0136-a-wait-for-event-keeps-the-event-that-ended-it-for-later-steps]]
-> (`awaited:<name>.<key>`), on top of [[0180-a-property-test-runs-in-postgres-as-one-sql-json-path]].
+> (`awaited:<name>.<key>`) and [[0161-an-http-steps-json-response-is-kept-for-later-steps]]
+> (`http:<name>.<key>`), on top of [[0180-a-property-test-runs-in-postgres-as-one-sql-json-path]].
 > It also makes an exception to [[0033-upgrades-add-within-a-major-and-never-stop-a-running-instance]]
 > (a release inside a Major runs on the schema of any other release of it): see Consequences.
 
@@ -37,19 +38,20 @@ to parse.
 - **A property test names its subject in a typed field, never in a prefix.** Inside a filter (an
   Event matcher's, an `event` leaf's, a line filter) it has none: it tests the one Event or line the
   filter is about. In a Condition it is `trigger` (a Rule's triggering Event, an Enrollment's
-  `event`) or `awaited` with the name of a Wait for event. The key is a field of its own, so a key
+  `event`), `awaited` with the name of a Wait for event, or `http` with the name of an HTTP step
+  (ADR 0161). A Set field's source names a property the same way (ADR 0125). The key is a field of its own, so a key
   holding a dot needs no rule.
 - **Each place has a tree type of its own**, made from one TypeSpec template over the leaf kinds it
   admits:
 
-  | Place                      | Admits                                                                          |
-  | -------------------------- | ------------------------------------------------------------------------------- |
-  | Segment                    | the Contact's leaves, `event`, `order`                                          |
-  | Rule                       | a Segment's, and a property test of `trigger`                                   |
-  | Branch path                | a Rule's, a property test of `awaited`, the test of an Enrollment's own message |
-  | Wait for event's Condition | a Branch path's, without the test of an Enrollment's own message                |
-  | Event filter               | subjectless property tests, and the sent-by test on a message's System event    |
-  | Line filter                | subjectless property tests                                                      |
+  | Place                      | Admits                                                                                    |
+  | -------------------------- | ----------------------------------------------------------------------------------------- |
+  | Segment                    | the Contact's leaves, `event`, `order`                                                    |
+  | Rule                       | a Segment's, and a property test of `trigger`                                             |
+  | Branch path                | a Rule's, a property test of `awaited` or `http`, the test of an Enrollment's own message |
+  | Wait for event's Condition | a Branch path's, without `http` and the test of an Enrollment's own message               |
+  | Event filter               | subjectless property tests, and the sent-by test on a message's System event              |
+  | Line filter                | subjectless property tests                                                                |
 
   A leaf outside its place is refused by the schema and has no value in the generated Go and TS
   types; the editor and MCP are built from the place's type.
