@@ -149,7 +149,7 @@ func (c *InputsImpl) AutomationStep(source site.AutomationStepInput) automations
 			automationstepStep.Headers[j] = c.siteapiAutomationHttpHeaderInputToHttpheaderHeader(source.Headers[j])
 		}
 	}
-	automationstepStep.Secret = stringIn(source.Secret)
+	automationstepStep.Secret = signingSecretIn(source.Secret)
 	automationstepStep.ClearSecret = boolIn(source.ClearSecret)
 	return automationstepStep
 }
@@ -1111,7 +1111,7 @@ func (c *InputsImpl) siteapiRuleActionInputToRuleactionAction(source site.RuleAc
 		}
 	}
 	ruleactionAction.Body = stringIn(source.Body)
-	ruleactionAction.Secret = stringIn(source.Secret)
+	ruleactionAction.Secret = signingSecretIn(source.Secret)
 	ruleactionAction.ClearSecret = boolIn(source.ClearSecret)
 	return ruleactionAction
 }

@@ -618,7 +618,7 @@ export type AutomationStep = {
   /**
    * Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned. Omit it when editing to keep the stored secret.
    */
-  secret?: string;
+  secret?: SigningSecret;
   /**
    * Remove the signing secret on save (HTTP steps)
    */
@@ -731,7 +731,7 @@ export type AutomationStepInput = {
   /**
    * Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned. Omit it when editing to keep the stored secret.
    */
-  secret?: string;
+  secret?: SigningSecret;
   /**
    * Remove the signing secret on save (HTTP steps)
    */
@@ -4177,7 +4177,7 @@ export type RuleAction = {
   /**
    * Signing secret (http actions): when set, the request is signed with Standard Webhooks. Never returned. Omit it when editing to keep the stored secret.
    */
-  secret?: string;
+  secret?: SigningSecret;
   /**
    * Remove the signing secret on save (http actions)
    */
@@ -4223,7 +4223,7 @@ export type RuleActionInput = {
   /**
    * Signing secret (http actions): when set, the request is signed with Standard Webhooks. Never returned. Omit it when editing to keep the stored secret.
    */
-  secret?: string;
+  secret?: SigningSecret;
   /**
    * Remove the signing secret on save (http actions)
    */
@@ -4772,6 +4772,12 @@ export const SetupScope = {
  * apart from the send class: they are no send-class scope and bring no mcp:send.
  */
 export type SetupScope = typeof SetupScope[keyof typeof SetupScope];
+
+/**
+ * A Standard Webhooks signing secret: a non-empty base64 key, usually prefixed `whsec_`, such as
+ * `whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw`.
+ */
+export type SigningSecret = string;
 
 /**
  * Why an Outbound message was Skipped: final for its Destination, never retried. The first four

@@ -38,3 +38,10 @@ func IsUnavailable(err error) bool {
 		return errors.As(err, &netErr)
 	}
 }
+
+// IsConnectionLost reports whether err means the connection went away in the middle of a
+// request, after its statement may have reached the server: unlike IsUnavailable, whether the
+// request took effect is unknown, so only a request whose retry is idempotent may be retried.
+func IsConnectionLost(err error) bool {
+	return errors.Is(err, pgconn.ErrConnClosed)
+}

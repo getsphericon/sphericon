@@ -98,6 +98,7 @@ func TestAnInvalidHTTPActionIsRefused(t *testing.T) {
 		"not http":                {Type: ruleaction.HTTP, URL: "ftp://example.com", Body: `{}`},
 		"a body that is not JSON": {Type: ruleaction.HTTP, URL: hookURL, Body: `not json`},
 		"a reserved header":       {Type: ruleaction.HTTP, URL: hookURL, Body: `{}`, Headers: []httpheader.Header{{Name: "Host", Value: "x"}}},
+		"an empty secret":         {Type: ruleaction.HTTP, URL: hookURL, Body: `{}`, Secret: "whsec_"},
 	}
 	for name, a := range cases {
 		t.Run(name, func(t *testing.T) {

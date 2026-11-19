@@ -2,8 +2,10 @@ import { NodeType, sharedProperties } from '@workflowbuilder/sdk'
 import type { PaletteItem, UISchema, WBIcon } from '@workflowbuilder/sdk'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import * as z from 'zod'
 
 import { AutomationStepType, SystemEventAction } from '../../generated/site/types.gen.ts'
+import { zSigningSecret } from '../../generated/site/zod.gen.ts'
 import {
   CONTACT_CHANGE_ACTIONS,
   EMAIL_ENGAGEMENT_ACTIONS,
@@ -24,6 +26,10 @@ import { EXIT_EVENTS_FORMAT, GOAL_EVENT_FORMAT, TRIGGER_EVENT_FORMAT } from './t
 // The Trigger is not a Step: it is the canvas's start node and is saved as the automation's
 // trigger event, never in the steps.
 export const TRIGGER_NODE_TYPE = 'trigger'
+
+// The contract's form of a signing secret, for the HTTP step's form to check; an empty secret
+// keeps the stored one.
+export const SIGNING_SECRET_PATTERN = `^$|${z.toJSONSchema(zSigningSecret).pattern}`
 
 // Phosphor icon names (WBIcon) the SDK renders in the palette and node header.
 export const EMAIL_NODE_ICON = 'Envelope'
@@ -316,7 +322,11 @@ export function useAutomationNodeTypes(): PaletteItem[] {
               label: t(($) => $.automations.httpBodyLabel),
               format: HTTP_BODY_FORMAT,
             },
-            secret: { type: 'string', label: t(($) => $.automations.httpSecretLabel) },
+            secret: {
+              type: 'string',
+              label: t(($) => $.automations.httpSecretLabel),
+              pattern: SIGNING_SECRET_PATTERN,
+            },
           },
         },
         uischema: {

@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"golang.org/x/net/http/httpguts"
@@ -56,6 +57,9 @@ type Opened struct {
 }
 
 // reservedHeaders are set by sphericon itself and cannot be overridden by a call.
+// signingSecret is the contract's form of a signing secret.
+var signingSecret = regexp.MustCompile(bounds.SigningSecretPattern)
+
 var reservedHeaders = map[string]bool{
 	"content-type": true, "content-length": true, "host": true,
 	standardwebhooks.HeaderWebhookID: true, standardwebhooks.HeaderWebhookTimestamp: true,
@@ -198,6 +202,11 @@ func Seal(c *secrets.Cipher, in, prev Spec, what string) (Spec, error) {
 	case in.ClearSecret:
 		out.Secret = ""
 	case in.Secret != "":
+		// The secret signs every call (internal/infra/webhook): one the library cannot sign with is
+		// refused here rather than at each send.
+		if !signingSecret.MatchString(in.Secret) {
+			return out, invalid("secret must be a non-empty base64 key, optionally prefixed whsec_")
+		}
 		if out.Secret, err = seal(c, in.Secret); err != nil {
 			return out, err
 		}

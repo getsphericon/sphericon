@@ -1,7 +1,6 @@
 package callbackinterpretation_test
 
 import (
-	"encoding/base64"
 	"net/http"
 	"strconv"
 	"testing"
@@ -25,7 +24,7 @@ var receiveClock = time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
 
 // secretGenericA is the secret of the generic Integration IntegrationAcmeGenericA in
 // fixtures/integrations.yml: whsec_ and the base64 of a plain string, as the fixture spells it.
-var secretGenericA = "whsec_" + base64.StdEncoding.EncodeToString([]byte("sphericon-test-secret-A0123456789"))
+var secretGenericA = testhelper.SigningSecret("secret-A0123456789")
 
 func receiver(env *testhelper.TestEnv) *callbackinterpretation.Module {
 	clock := func() time.Time { return receiveClock }

@@ -41,3 +41,11 @@ func TestIsUnavailableRecognizesALostOrOverloadedDatabase(t *testing.T) {
 		assert.False(t, db.IsUnavailable(err), name)
 	}
 }
+
+func TestIsConnectionLostRecognizesAConnectionClosedMidRequest(t *testing.T) {
+	assert.True(t, db.IsConnectionLost(pgconn.ErrConnClosed))
+	assert.True(t, db.IsConnectionLost(fmt.Errorf("exec: %w", pgconn.ErrConnClosed)))
+	assert.False(t, db.IsConnectionLost(nil))
+	assert.False(t, db.IsConnectionLost(&pgconn.ConnectError{}))
+	assert.False(t, db.IsUnavailable(pgconn.ErrConnClosed), "the request may have taken effect")
+}

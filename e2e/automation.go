@@ -108,7 +108,7 @@ func (w *Workspace) PublishHTTPAutomation(a HTTPAutomation) {
 		Body: externalapi.NewOptString(a.Body),
 	}
 	if a.Hook.Secret != "" {
-		httpStep.Secret = externalapi.NewOptString(a.Hook.Secret)
+		httpStep.Secret = externalapi.NewOptSigningSecret(externalapi.SigningSecret(a.Hook.Secret))
 	}
 	res, err := w.api.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name:         externalapi.Name("e2e http automation " + uniq()),

@@ -1086,38 +1086,6 @@ export const zRuleActionType = z.enum([
 ]);
 
 /**
- * One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name, http actions the call.
- */
-export const zRuleAction = z.object({
-  type: zRuleActionType,
-  tag: z.exactOptional(z.string()),
-  automationId: z.exactOptional(zEntityId),
-  id: z.exactOptional(z.string()),
-  url: z.exactOptional(z.string()),
-  headers: z.exactOptional(z.array(zAutomationHttpHeader).max(5)),
-  body: z.exactOptional(z.string()),
-  secret: z.exactOptional(z.string()),
-  clearSecret: z.exactOptional(z.boolean()),
-  hasSecret: z.exactOptional(z.boolean())
-});
-
-/**
- * One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name, http actions the call.
- */
-export const zRuleActionInput = z.strictObject({
-  type: zRuleActionType,
-  tag: z.exactOptional(z.string()),
-  automationId: z.exactOptional(zEntityId),
-  id: z.exactOptional(z.string()),
-  url: z.exactOptional(z.string()),
-  headers: z.exactOptional(z.array(zAutomationHttpHeaderInput).max(5)),
-  body: z.exactOptional(z.string()),
-  secret: z.exactOptional(z.string()),
-  clearSecret: z.exactOptional(z.boolean()),
-  hasSecret: z.exactOptional(z.boolean())
-});
-
-/**
  * What one Action did when a Rule fired
  */
 export const zRuleActionResult = z.object({
@@ -1237,6 +1205,44 @@ export const zSetupScope = z.enum([
   'integrations:write',
   'webhooks:write'
 ]);
+
+/**
+ * A Standard Webhooks signing secret: a non-empty base64 key, usually prefixed `whsec_`, such as
+ * `whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw`.
+ */
+export const zSigningSecret = z.string().regex(/^(?:whsec_)?(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=|[A-Za-z0-9+\/]{4})$/);
+
+/**
+ * One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name, http actions the call.
+ */
+export const zRuleAction = z.object({
+  type: zRuleActionType,
+  tag: z.exactOptional(z.string()),
+  automationId: z.exactOptional(zEntityId),
+  id: z.exactOptional(z.string()),
+  url: z.exactOptional(z.string()),
+  headers: z.exactOptional(z.array(zAutomationHttpHeader).max(5)),
+  body: z.exactOptional(z.string()),
+  secret: z.exactOptional(zSigningSecret),
+  clearSecret: z.exactOptional(z.boolean()),
+  hasSecret: z.exactOptional(z.boolean())
+});
+
+/**
+ * One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name, http actions the call.
+ */
+export const zRuleActionInput = z.strictObject({
+  type: zRuleActionType,
+  tag: z.exactOptional(z.string()),
+  automationId: z.exactOptional(zEntityId),
+  id: z.exactOptional(z.string()),
+  url: z.exactOptional(z.string()),
+  headers: z.exactOptional(z.array(zAutomationHttpHeaderInput).max(5)),
+  body: z.exactOptional(z.string()),
+  secret: z.exactOptional(zSigningSecret),
+  clearSecret: z.exactOptional(z.boolean()),
+  hasSecret: z.exactOptional(z.boolean())
+});
 
 /**
  * How many people work at the User's company (second question)
@@ -2622,7 +2628,7 @@ export const zAutomationStep = z.object({
   id: z.exactOptional(z.string()),
   url: z.exactOptional(z.string()),
   headers: z.exactOptional(z.array(zAutomationHttpHeader).max(5)),
-  secret: z.exactOptional(z.string()),
+  secret: z.exactOptional(zSigningSecret),
   clearSecret: z.exactOptional(z.boolean()),
   hasSecret: z.exactOptional(z.boolean()),
   integrationId: z.exactOptional(zEntityId.nullable()),
@@ -2689,7 +2695,7 @@ export const zAutomationStepInput = z.strictObject({
   id: z.exactOptional(z.string()),
   url: z.exactOptional(z.string()),
   headers: z.exactOptional(z.array(zAutomationHttpHeaderInput).max(5)),
-  secret: z.exactOptional(z.string()),
+  secret: z.exactOptional(zSigningSecret),
   clearSecret: z.exactOptional(z.boolean()),
   hasSecret: z.exactOptional(z.boolean()),
   integrationId: z.exactOptional(zEntityId.nullable()),

@@ -66,12 +66,12 @@ import (
 
 	// The pgx driver behind database/sql.
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/mokevnin/dbcleaner"
-
-	// The Postgres cleaner of dbcleaner.
-	_ "github.com/mokevnin/dbcleaner/postgres"
+	"github.com/mokevnin/dbcleaner/v2"
+	dbcleanerpg "github.com/mokevnin/dbcleaner/v2/postgres"
 	ht "github.com/ogen-go/ogen/http"
+	"github.com/peterldowns/pgtestdb"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/mod/sumdb/dirhash"
 )
 
 // Every test process (one per package) leases a database of its own, cloned from a
@@ -113,22 +113,9 @@ var process = sync.OnceValues(func() (testProcess, error) {
 	if _, err := sharedDatabaseURL(); err != nil {
 		return testProcess{}, err
 	}
-	version, err := schemaHash()
-	if err != nil {
-		return testProcess{}, err
-	}
 	// Every process leases a database of its own, cloned from a schema-only template
-	// (dbcleaner.WithTemplate), so packages run in parallel without sharing rows or
-	// locks. The fixtures go in at the start of every process, not into the template:
-	// their relative dates must be relative to now.
-	cleaner := dbcleaner.New(cfg.DatabaseURL,
-		dbcleaner.WithTemplate(version, func(ctx context.Context, sqlDB *sql.DB, _ string) error {
-			return migrateSchema(ctx, sqlDB)
-		}),
-		dbcleaner.WithSetup(func(ctx context.Context, sqlDB *sql.DB) error {
-			return loadFixtures(ctx, sqlDB, cfg, projectRoot())
-		}),
-	)
+	// (newCleaner), so packages run in parallel without sharing rows or locks.
+	cleaner := newCleaner(cfg.DatabaseURL, cfg)
 	url, err := cleaner.URL(context.Background())
 	if err != nil {
 		return testProcess{}, err
@@ -659,11 +646,35 @@ func (c injectClient) Do(r *http.Request) (*http.Response, error) {
 	return rec.Result(), nil
 }
 
-// migrateSchema applies the embedded migrations to an empty database: the same files, the same
-// way (goose), that production gets, so the app schema and river's tables
-// come from them. The worker databases are cloned from a template that has just
-// this (see process).
-func migrateSchema(ctx context.Context, sqlDB *sql.DB) error {
+// newCleaner is a Cleaner of a database of the process's own, leased next to the one at url and
+// cloned from a schema-only template (postgres.WithTemplate of dbcleaner), so packages run in
+// parallel without sharing rows or locks. The fixtures go in at the start of every process, not
+// into the template: their relative dates must be relative to now.
+func newCleaner(url string, cfg *config.Config, opts ...dbcleaner.Option) *dbcleaner.Cleaner {
+	return dbcleaner.New(dbcleanerpg.Dialect(dbcleanerpg.WithTemplate(schemaTemplate{})), url,
+		append([]dbcleaner.Option{
+			dbcleaner.WithSetup(func(ctx context.Context, sqlDB *sql.DB) error {
+				return loadFixtures(ctx, sqlDB, cfg, projectRoot())
+			}),
+		}, opts...)...,
+	)
+}
+
+// schemaTemplate is the pgtestdb.Migrator that builds the schema templates the worker databases
+// are cloned from.
+type schemaTemplate struct{}
+
+// Hash digests everything that decides the schema a template holds: the migrations, which are
+// the only thing that creates it (an ent/schema edit shows up here once `mise run db:generate`
+// has written its migration). The names are hashed relative to the directory, so a checkout's
+// location does not matter.
+func (schemaTemplate) Hash() (string, error) {
+	return dirhash.HashDir(filepath.Join(projectRoot(), "migrations"), "migrations", dirhash.Hash1)
+}
+
+// Migrate applies the embedded migrations to an empty database: the same files, the same way
+// (goose), that production gets, so the app schema and river's tables come from them.
+func (schemaTemplate) Migrate(ctx context.Context, sqlDB *sql.DB, _ pgtestdb.Config) error {
 	_, err := db.Migrate(ctx, sqlDB)
 	return err
 }

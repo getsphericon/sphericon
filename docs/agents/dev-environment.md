@@ -68,7 +68,7 @@ its next rebase onto main plus `mise daemons stop`. Several tasks in one command
 them (`mise run check:fe ::: check:deps`); otherwise the extra names become arguments.
 
 Test packages run in parallel, each process on a database of its own, through
-`dbcleaner.WithTemplate` (wired in `internal/testhelper`): it leases `<test db>_w<i>` (an advisory
+dbcleaner's `postgres.WithTemplate` (wired in `internal/testhelper`): it leases `<test db>_w<i>` (an advisory
 lock on the shared test database, released when the process ends), cloned from
 `<test db>_tpl_<hash>`, a schema-only template built once per hash of the schema and the bus. The
 fixtures are loaded into the worker at the start of every process, because they use relative

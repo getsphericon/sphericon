@@ -20,6 +20,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
+// stepSecret is the signing secret the HTTP steps of these tests are saved with.
+var stepSecret = testhelper.SigningSecret("step")
+
 const slackBody = `{"text": "New signup: {{ first_name }} {{ last_name }}", "email": "{{ email }}"}`
 
 // openStored decrypts a stored HTTP step's URL, header values and secret, as its call opens them.
@@ -95,6 +98,10 @@ func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 	}
 	six := httpStep("https://hooks.example.com/x")
 	six.Headers = headers(6)
+	emptySecret := httpStep("https://hooks.example.com/x")
+	emptySecret.Secret = "whsec_"
+	notBase64 := httpStep("https://hooks.example.com/x")
+	notBase64.Secret = "whsec_not base64"
 
 	for name, steps := range map[string][]automationstep.Step{
 		"invalid json":      {invalidJSON},
@@ -104,6 +111,8 @@ func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 		"a new step no url": {noURL},
 		"eleven steps":      tooMany,
 		"six headers":       {six},
+		"an empty secret":   {emptySecret},
+		"a secret no key":   {notBase64},
 	} {
 		_, err := m.Create(ctx, acme, automations.CreateInput{Name: name, TriggerEvent: "signup", Steps: steps})
 		require.ErrorIs(t, err, automations.ErrInvalidStep, name)
@@ -147,12 +156,12 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 
 	step := httpStep("https://hooks.slack.com/services/T000/SECRETPATH")
 	step.Headers = []httpheader.Header{{Name: "Authorization", Value: "Bearer hunter2"}}
-	step.Secret = "whsec_topsecret"
+	step.Secret = stepSecret
 	created, err := m.Create(ctx, acme, automations.CreateInput{
 		Name: "Notify", TriggerEvent: "signup", Steps: []automationstep.Step{{Type: automationstep.Wait, Seconds: 1}, step},
 	})
 	require.NoError(t, err)
-	for _, secret := range []string{"SECRETPATH", "hunter2", "whsec_topsecret"} {
+	for _, secret := range []string{"SECRETPATH", "hunter2", stepSecret} {
 		assert.NotContains(t, created.Edges.DraftVersion.Steps, secret)
 	}
 
@@ -176,7 +185,7 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "https://hooks.slack.com/services/T000/SECRETPATH", opened.URL)
 	assert.Equal(t, map[string]string{"Authorization": "Bearer hunter2"}, opened.Headers)
-	assert.Equal(t, "whsec_topsecret", opened.Secret)
+	assert.Equal(t, stepSecret, opened.Secret)
 
 	// A new URL, header and a cleared secret replace what was stored.
 	replace := automationstep.Step{

@@ -43,9 +43,6 @@ interface Rewrite {
 // - @react-email/render loads Prettier with import() for its `pretty` pass, which esbuild inlines:
 //   250 KB of the bundle that the render never runs (src/entry.ts passes `pretty: false`).
 //   The load becomes a rejected promise, so Prettier leaves the bundle.
-// - goja bug: `split` with a lookahead regex returns extra empty strings, which breaks
-//   prosemirror-model's content-expression tokenizer (`"(tableCell | tableHeader)+"`). The
-//   equivalent match over word and punctuation tokens does not.
 // - react-email's code block registers every Prism language (about 400 names, 14,000 lines) when
 //   its module loads. In goja that is nearly all of a runtime's start (3 to 7 seconds on a quiet
 //   machine, 15 or more on one a full test run shares), and their regular expressions are nearly
@@ -67,11 +64,6 @@ const rewrites: Rewrite[] = [
       /Promise\.all\(\[import\("prettier\/standalone"\), import\("prettier\/plugins\/html"\)\]\)/g,
     replacement:
       "Promise.reject(new Error('Prettier is not bundled: the render passes pretty: false'))",
-  },
-  {
-    file: /prosemirror-model[\\/]dist[\\/]index\.js$/,
-    pattern: /string\.split\(\/\\s\*\(\?=\\b\|\\W\|\$\)\/\)/g,
-    replacement: '(string.match(/\\w+|[^\\s\\w]/g) || [])',
   },
   {
     file: /react-email[\\/]dist[\\/]components[\\/]code-block[\\/]prism\.mjs$/,

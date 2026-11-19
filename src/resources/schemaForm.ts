@@ -1,3 +1,4 @@
+import type { UseFormReturnType } from '@mantine/form'
 import { schemaResolver, useForm } from '@mantine/form'
 import { omit } from 'es-toolkit'
 import { useId } from 'react'
@@ -8,11 +9,10 @@ import { getFieldErrors } from '../utils/apiErrors.ts'
 // The messages a problem lists by field (its `errors` member).
 type FieldErrors = NonNullable<ReturnType<typeof getFieldErrors>>
 
-// The form useSchemaForm returns. @mantine/form's own form type is not importable (its .d.mts
-// re-exports a missing file), so it is derived from the hook; the members typed by the
-// validation rules are left out, they are the hook's business.
+// The form useSchemaForm returns: @mantine/form's own, without the members typed by the
+// validation rules, which are the hook's business.
 export type SchemaForm<TValues extends object, TOutput> = Omit<
-  ReturnType<typeof useForm<TValues, TOutput>>,
+  UseFormReturnType<TValues, TOutput, undefined>,
   'validate' | 'validateField' | 'isValid'
 > & {
   showFieldErrors: (error: unknown) => FieldErrors | undefined

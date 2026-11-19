@@ -29,7 +29,7 @@ func TestSiteRuleHTTPActionIsMaskedOnReadAndKeptOnEdit(t *testing.T) {
 			Type: siteapi.RuleActionTypeHTTP, Body: siteapi.NewOptString(`{"text":"{{ first_name }}"}`),
 			URL:     siteapi.NewOptString("https://hooks.slack.com/services/T0/SECRETPATH"),
 			Headers: []siteapi.AutomationHttpHeaderInput{{Name: "Authorization", Value: siteapi.NewOptString("Bearer hunter2")}},
-			Secret:  siteapi.NewOptString("whsec_topsecret"),
+			Secret:  siteapi.NewOptSigningSecret(siteapi.SigningSecret(httpSecret)),
 		}},
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)

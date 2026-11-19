@@ -224,11 +224,12 @@ func External(ctx context.Context, err error) *externalapi.ProblemDetailsStatusC
 }
 
 // Collect is the NewError of /collect, which also tells its client to retry: a database that
-// cannot be reached is a 503 with Retry-After, because a retried event is counted once
-// (clientEventId) and a client can send it again safely.
+// cannot be reached, or a connection lost while the event was being written, is a 503 with
+// Retry-After, because a retried event is counted once (clientEventId) and a client can send it
+// again safely whether or not the first attempt took effect.
 func Collect(ctx context.Context, err error) *collectapi.ProblemDetailsStatusCode {
 	status, body := http.StatusServiceUnavailable, Body(http.StatusServiceUnavailable, "database unavailable, retry later")
-	if dbpkg.IsUnavailable(err) {
+	if dbpkg.IsUnavailable(err) || dbpkg.IsConnectionLost(err) {
 		if ex, ok := ctx.Value(exchangeKey{}).(*exchange); ok {
 			ex.w.Header().Set("Retry-After", CollectRetryAfter)
 		}

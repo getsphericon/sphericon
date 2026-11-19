@@ -6,10 +6,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // The secret of the archived Integration in fixtures/integrations.yml.
-var secretArchived = newSecret("secret-C0123456789")
+var secretArchived = testhelper.SigningSecret("secret-C0123456789")
 
 // An archived Integration (ADR 0049) still reads its provider's callbacks: the bounce and the
 // complaint of mail already sent through it are facts Suppression must not lose. The hook is the

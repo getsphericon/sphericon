@@ -3,6 +3,7 @@ package server_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -39,6 +40,18 @@ func TestCollectAnswers503WithRetryAfterWhenTheDatabaseIsUnavailable(t *testing.
 	assert.Equal(t, "application/problem+json", rec.Header().Get("Content-Type"))
 	assert.NotEmpty(t, rec.Header().Get("Retry-After"))
 	assert.Empty(t, env.QueuedEnvelopes(t, events.NameCollected), "the request changed nothing")
+}
+
+// A connection lost mid-write may or may not have stored the event; a retry is counted once
+// (clientEventId), so the client is told to send it again.
+func TestCollectAnswers503WithRetryAfterWhenTheConnectionIsLostMidRequest(t *testing.T) {
+	env := testhelper.Setup(t)
+	failVisitorWrites(env, fmt.Errorf("insert visitor: %w", pgconn.ErrConnClosed))
+
+	rec := postCollect(t, env, collectReq{key: fixtures.AcmeCollectKey})
+
+	require.Equal(t, http.StatusServiceUnavailable, rec.Code)
+	assert.NotEmpty(t, rec.Header().Get("Retry-After"))
 }
 
 func TestCollectKeepsAnswering500ForAFailureThatIsNotTheDatabaseBeingGone(t *testing.T) {

@@ -25,7 +25,7 @@ func TestExternalHTTPStepIsMaskedOnRead(t *testing.T) {
 			Type: externalapi.AutomationStepTypeHTTP, Body: externalapi.NewOptString(`{"a":1}`),
 			URL:     externalapi.NewOptString("https://hooks.example.com/SECRETPATH"),
 			Headers: []externalapi.AutomationHttpHeaderInput{{Name: "X-Key", Value: externalapi.NewOptString("hunter2")}},
-			Secret:  externalapi.NewOptString("whsec_x"),
+			Secret:  externalapi.NewOptSigningSecret(externalapi.SigningSecret(testhelper.SigningSecret("http"))),
 		}},
 	})
 	require.NoError(t, err)

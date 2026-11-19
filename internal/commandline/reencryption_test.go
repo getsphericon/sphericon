@@ -27,6 +27,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
+// ruleDraftSecret is the signing secret of the http Action of a Rule draft.
+var ruleDraftSecret = testhelper.SigningSecret("rule-draft")
+
 // reencrypt runs `sphericon encryption-key reencrypt` the way the command does: cipher sweeps the
 // core owners' columns of stored secrets the wiring lists (app.SecretSweeps) over the test's raw
 // client, and the report of the run is written to out. It returns what the run counted and what
@@ -56,7 +59,7 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 	// An Enrollment stands on the first version of the Slack Automation (fixture), so editing its
 	// steps leaves that version as it was and adds a second: both hold sealed secrets.
 	_, err = testhelper.Module[*automations.Module](env).Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationNotifySlackID, automations.UpdateInput{Revision: env.AutomationRevision(ctx, t, fixtures.AutomationNotifySlackID), Steps: &[]automationstep.Step{
-		{Type: automationstep.HTTP, ID: "01J00000000000000000000001", URL: "https://hooks.example.test/v2", Body: `{"v":2}`, Secret: "whsec_second_version"},
+		{Type: automationstep.HTTP, ID: "01J00000000000000000000001", URL: "https://hooks.example.test/v2", Body: `{"v":2}`, Secret: testhelper.SigningSecret("second-version")},
 	}})
 	require.NoError(t, err)
 	slackVersions, err := env.DB.AutomationVersion.Query().Where(automationversion.AutomationID(fixtures.AutomationNotifySlackID)).Count(ctx)
@@ -183,7 +186,7 @@ func TestReencryptCoversEveryVersionOfADeletedRule(t *testing.T) {
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	module := testhelper.Module[*rules.Module](env)
 	_, err = module.Update(ctx, acme, fixtures.RuleHTTPExecutionID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme, fixtures.RuleHTTPExecutionID), Actions: &[]ruleaction.Action{{
-		Type: ruleaction.HTTP, URL: "https://hooks.example.test/rule", Body: "{}", Secret: "whsec_rule_draft",
+		Type: ruleaction.HTTP, URL: "https://hooks.example.test/rule", Body: "{}", Secret: ruleDraftSecret,
 		Headers: []httpheader.Header{{Name: "Authorization", Value: "Bearer rule-draft"}},
 	}}})
 	require.NoError(t, err)
@@ -210,7 +213,7 @@ func TestReencryptCoversEveryVersionOfADeletedRule(t *testing.T) {
 	}
 	assert.Len(t, opened, 4, "the draft's Action, the live one and the older version's two")
 	assert.Contains(t, opened, httpcall.Opened{
-		URL: "https://hooks.example.test/rule", Secret: "whsec_rule_draft",
+		URL: "https://hooks.example.test/rule", Secret: ruleDraftSecret,
 		Headers: map[string]string{"Authorization": "Bearer rule-draft"},
 	})
 }

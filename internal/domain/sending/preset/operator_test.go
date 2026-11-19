@@ -2,7 +2,6 @@ package preset_test
 
 import (
 	"bytes"
-	"encoding/base64"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -13,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 const headerHMACPreset = "testdata/custom/header-hmac.yaml"
@@ -25,7 +25,7 @@ func genericSample(signature string) (preset.Request, preset.Params, time.Time) 
 	header.Set("Webhook-Timestamp", "1767225600")
 	header.Set("Webhook-Signature", signature)
 	body := []byte(`{"id":"evt_1","destination":"Alice@Example.com","kind":"bounce","hard":true,"sending_domain":"News.Example.com"}`)
-	params := preset.Params{"secret": "whsec_" + base64.StdEncoding.EncodeToString([]byte("sphericon-test-secret-0123456789"))}
+	params := preset.Params{"secret": testhelper.SigningSecret("secret-0123456789")}
 	return preset.Request{Header: header, Body: body}, params, time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
 }
 

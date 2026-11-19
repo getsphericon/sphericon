@@ -65,6 +65,7 @@ import (
 // goverter:extend buttonsPatch
 // goverter:extend stringIn
 // goverter:extend emailIn
+// goverter:extend signingSecretIn
 // goverter:extend stringPtrIn
 // goverter:extend emailPtrIn
 // goverter:extend entityIDPtrIn
@@ -270,6 +271,7 @@ func maxPerDayPatch(o externalapi.OptNilMaxPerDay) patch.Field[int]       { retu
 func listPatch(list []string) patch.Field[[]string]                       { return convert.ListPatch(list) }
 func stringIn(o externalapi.OptString) string                             { return o.Or("") }
 func emailIn(o externalapi.OptEmailAddress) string                        { return string(o.Or("")) }
+func signingSecretIn(o externalapi.OptSigningSecret) string               { return string(o.Or("")) }
 func stringPtrIn(o externalapi.OptString) *string                         { return convert.Ptr(o) }
 func emailPtrIn(o externalapi.OptEmailAddress) *string                    { return convert.StringPtr(o) }
 func entityIDPtrIn(o externalapi.OptEntityId) *int64                      { return convert.Int64Ptr(o) }
