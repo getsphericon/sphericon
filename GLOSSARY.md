@@ -1305,9 +1305,9 @@ _Avoid_: Physical address (unqualified), company address, sender address (that i
 
 **Complaint rate**:
 The reputation-monitoring ratio `complaints / delivered`, per (Workspace, **Sending domain**), over a
-trailing time window, where `delivered` is the count of `email.delivered` Events to a **Mailbox
-provider** that reports complaints: Gmail reports none, so mail delivered there is left out, and
-Gmail's own spam rate is shown beside it. A **flow rate**: each event counts by its own
+trailing time window, counting only mail to a **Mailbox provider** that reports complaints
+(Microsoft's consumer mail and the Yahoo family), on both sides, with the share of mail it covers and,
+where connected, Gmail's own spam rate beside it. A **flow rate**: each event counts by its own
 `occurred_at`, so it is always current and never needs a Delivery notice to be linked back to its
 send. Derived from the `email.complained` / `email.delivered` Events (source of truth), **not** a
 stored status — a core, user-facing number computed live; the automated-suspension _thresholds_ that
@@ -1620,8 +1620,8 @@ _Avoid_: Soft bounce limit, soft bounce threshold
 
 **Mailbox provider**:
 Who runs a recipient domain's mail, read from where its mail goes (Gmail and Google Workspace,
-Microsoft, Yahoo, Apple, other), whatever the domain's name. It decides whether a delivery counts in
-the **Complaint rate**.
+Microsoft's consumer mail, Microsoft 365, the Yahoo family, Apple iCloud, other), whatever the
+domain's name. It decides whether a delivery or a complaint counts in the **Complaint rate**.
 _Avoid_: ISP, inbox provider, email provider (that is the Integration's provider)
 
 **Machine engagement**:
