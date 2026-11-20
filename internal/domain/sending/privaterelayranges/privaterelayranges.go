@@ -3,9 +3,11 @@
 // GLOSSARY: Machine engagement). A hit is machine when its user-agent belongs to a known crawler
 // or scanner (the crawler-user-agents list, a maintained library) or its address lies inside an
 // iCloud Private Relay egress range, a list Apple publishes and the refresh job keeps in a plain
-// table. Detection is a partial signal: Apple publishes no list for Mail Privacy Protection and
-// the Private Relay list is known to be incomplete. Neither the address nor the user-agent is
-// kept: they are read for the verdict and dropped.
+// table. An open is the one exception among the crawlers: Gmail and Yahoo load a message's images
+// through a display proxy of their own to show it, so an open through one is the person's
+// (DisplayProxies). Detection is a partial signal: Apple publishes no list for Mail Privacy
+// Protection and the Private Relay list is known to be incomplete. Neither the address nor the
+// user-agent is kept: they are read for the verdict and dropped.
 //
 // The table holds no Workspace data, so the package holds the raw ent client.
 package privaterelayranges
@@ -102,11 +104,27 @@ func New(client *ent.Client, source Source, now func() time.Time) *Detector {
 	return &Detector{client: client, source: source, now: now}
 }
 
-// IsMachine reports whether a hit with this user-agent from this client address is machine
-// engagement. An unreadable address or an empty user-agent says nothing: only a positive match
-// flags a hit, so a person is never discounted on a guess.
-func (d *Detector) IsMachine(ctx context.Context, userAgent, clientAddr string) bool {
-	if userAgent != "" && agents.IsCrawler(userAgent) {
+// Kind is the sort of hit a verdict is asked for: an open loads the message's images to show it,
+// a click follows a link the message carries.
+type Kind int
+
+const (
+	// AnOpen is a hit that loads the images of the message it names, as a mailbox does to show it.
+	AnOpen Kind = iota
+	// AClick is a hit that follows a link the message carries.
+	AClick
+)
+
+// DisplayProxies is the crawler patterns of the mailbox providers' own image proxies: Gmail and
+// Yahoo load a message's images through them to show the message, so an open through one is the
+// person's (ADR 0053). The rest of each proxy's traffic is still machine (crawlerVerdict).
+var DisplayProxies = []string{"GoogleImageProxy", "YahooMailProxy"}
+
+// IsMachine reports whether a hit of this kind, with this user-agent from this client address, is
+// machine engagement. An unreadable address or an empty user-agent says nothing: only a positive
+// match flags a hit, so a person is never discounted on a guess.
+func (d *Detector) IsMachine(ctx context.Context, userAgent, clientAddr string, kind Kind) bool {
+	if userAgent != "" && crawlerVerdict(userAgent, kind) {
 		return true
 	}
 	addr, err := netip.ParseAddr(clientAddr)
@@ -115,6 +133,23 @@ func (d *Detector) IsMachine(ctx context.Context, userAgent, clientAddr string) 
 	}
 	ranges := d.loaded(ctx)
 	return ranges != nil && ranges.Lookup(addr.Unmap())
+}
+
+// crawlerVerdict reports whether the user-agent makes a hit of this kind machine. An open through a
+// mailbox provider's display proxy is the person's: the proxy loads the images of a message the
+// provider is showing. A click through one stays machine (Yahoo's proxy also fetches the URLs a
+// message carries), and so does a hit that matches any other crawler.
+func crawlerVerdict(userAgent string, kind Kind) bool {
+	matched := agents.MatchingCrawlers(userAgent)
+	if kind == AClick {
+		return len(matched) > 0
+	}
+	for _, index := range matched {
+		if !slices.Contains(DisplayProxies, agents.Crawlers[index].Pattern) {
+			return true
+		}
+	}
+	return false
 }
 
 // loaded is the in-memory copy of the table, read again when it is older than reloadAfter. A
