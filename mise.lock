@@ -1100,50 +1100,51 @@ url = "https://github.com/google/osv-scanner/releases/download/v2.7.1/osv-scanne
 url_api = "https://api.github.com/repos/google/osv-scanner/releases/assets/726165294"
 
 [[tools."github:mokevnin/easement"]]
-version = "0.7.0"
+version = "0.10.0"
 backend = "github:mokevnin/easement"
-specifiers = ["0.7.0"]
+specifiers = ["0.10.0"]
 
 [tools."github:mokevnin/easement"."platforms.linux-arm64"]
-checksum = "sha256:c9a984e2761949f5860dd46b6b53a1458357b559a27cbbff1ad343c83d3f078f"
+checksum = "sha256:25eebb9538fc55dae6a18a087dbbb3faf6ab2a70130d6c98596e7d30ece8304c"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/easement/releases/download/v0.7.0/easement-aarch64-unknown-linux-gnu.tar.xz"
-url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/758893227"
+url = "https://github.com/mokevnin/easement/releases/download/v0.10.0/easement-aarch64-unknown-linux-gnu.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/768360150"
 
 [tools."github:mokevnin/easement"."platforms.linux-arm64-musl"]
-checksum = "sha256:c9a984e2761949f5860dd46b6b53a1458357b559a27cbbff1ad343c83d3f078f"
+checksum = "sha256:25eebb9538fc55dae6a18a087dbbb3faf6ab2a70130d6c98596e7d30ece8304c"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/easement/releases/download/v0.7.0/easement-aarch64-unknown-linux-gnu.tar.xz"
-url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/758893227"
+url = "https://github.com/mokevnin/easement/releases/download/v0.10.0/easement-aarch64-unknown-linux-gnu.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/768360150"
 
 [tools."github:mokevnin/easement"."platforms.linux-x64"]
-checksum = "sha256:60bc8ba6375adfc2b82a4908da76a9be1a699dd83981f28b782c26b8aabbf2e6"
+checksum = "sha256:d16e58aab08bde6e3fe5ed5892bf800e54784580459ac09916f774426da44813"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/easement/releases/download/v0.7.0/easement-x86_64-unknown-linux-gnu.tar.xz"
-url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/758893271"
+url = "https://github.com/mokevnin/easement/releases/download/v0.10.0/easement-x86_64-unknown-linux-gnu.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/768360184"
 
 [tools."github:mokevnin/easement"."platforms.linux-x64-musl"]
-checksum = "sha256:60bc8ba6375adfc2b82a4908da76a9be1a699dd83981f28b782c26b8aabbf2e6"
+checksum = "sha256:d16e58aab08bde6e3fe5ed5892bf800e54784580459ac09916f774426da44813"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/easement/releases/download/v0.7.0/easement-x86_64-unknown-linux-gnu.tar.xz"
-url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/758893271"
+url = "https://github.com/mokevnin/easement/releases/download/v0.10.0/easement-x86_64-unknown-linux-gnu.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/768360184"
 
 [tools."github:mokevnin/easement"."platforms.macos-arm64"]
-checksum = "sha256:b75b1fd73ca19c70ff0a2c31a62a0e309af912b643cff5f56a21c9ddecdd5495"
-url = "https://github.com/mokevnin/easement/releases/download/v0.7.0/easement-aarch64-apple-darwin.tar.xz"
-url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/758893217"
+checksum = "sha256:b435ea3d8e3ff9345cd5e65e6eda86594e193b11debcd98fb6518e371d63ffbb"
+checksum_source = "mise-versions"
+url = "https://github.com/mokevnin/easement/releases/download/v0.10.0/easement-aarch64-apple-darwin.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/768360142"
 
 [tools."github:mokevnin/easement"."platforms.macos-x64"]
-checksum = "sha256:a87e6f48aa1b06fada1eaa438cac155341c7f96362ec089fadf74a3198bb9952"
+checksum = "sha256:1feb4bc0db7c4acb87dd157f4e8faaf7b382f8e8ccb106c07e1e35a5456f60a3"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/easement/releases/download/v0.7.0/easement-x86_64-apple-darwin.tar.xz"
-url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/758893259"
+url = "https://github.com/mokevnin/easement/releases/download/v0.10.0/easement-x86_64-apple-darwin.tar.xz"
+url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/768360168"
 
 [tools."github:mokevnin/easement"."platforms.windows-x64"]
-checksum = "sha256:637093566716ab444189fc94d329111a932ab7b7b5bbc72c34bd34e3bafe7ca9"
+checksum = "sha256:25b57670da325e3038d88db915a1bb2daeb9b7f648290d466f2997179a08805e"
 checksum_source = "mise-versions"
-url = "https://github.com/mokevnin/easement/releases/download/v0.7.0/easement-x86_64-pc-windows-msvc.zip"
-url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/758893262"
+url = "https://github.com/mokevnin/easement/releases/download/v0.10.0/easement-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/mokevnin/easement/releases/assets/768360175"
 
 [[tools."github:mokevnin/heavy"]]
 version = "0.1.2"

@@ -152,6 +152,10 @@ forbid_external:
   - name: dayjs
     allow: [web-dates]
     because: dates go through src/utils/datetime.ts (src/AGENTS.md), which holds the plugins, the time zone and the formats; dayjs is imported only there and by the locale loading of the date inputs (`web-dates`)
+  - name: '@mantine/notifications'
+    allow_in:
+      [src/hooks/useNotify.ts, src/components/NotificationsProvider.tsx, src/main.tsx, package.json]
+    because: toasts go through useNotify (src/hooks/useNotify.ts), never Mantine's global store; only it, the provider and the app's root reach Mantine's notifications
 
 components:
   # The public API surfaces. Each has its own TypeSpec contract, handler package and auth scheme.
@@ -760,9 +764,6 @@ rules:
     may_depend_on: [web-shared, web-pages, web-console]
     because: the lazy route file is the one place a page is bound to its route
   web-pages:
-    forbid_external:
-      - name: '@mantine/notifications'
-        because: toasts go through useNotify (src/hooks/useNotify.ts), never Mantine's global store
     may_depend_on: [web-generated, web-shared, web-dates, web-routes, web-app]
     because: a page reaches its route through the route file's `Route` and never imports a lazy route file
   web-console:
