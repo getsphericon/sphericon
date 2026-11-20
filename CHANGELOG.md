@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.8.0](https://github.com/getsphericon/sphericon/compare/v0.7.0...v0.8.0) (2026-11-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* **sending:** an Outbound message's `reason` is split into `skipped_reason` (one of the Skipped reasons) and `failure`, in the Outbound messages export (`skipped_reason`, `failure`) and in the Data export (`skippedReason`, `failure`). Upgrade: run the migrations. A skipped Outbound message whose reason is none of the Skipped reasons, or a pending or sent one with a reason, stops the migration: set it by hand, then migrate again. A client of the exports reads the two new keys instead of `reason`.
+* the definition columns change type from text to jsonb, and a Segment's or a Rule version's Condition is required, the empty group when it has no tests.
+* **identity:** GET /site/me/identities/{provider}/link is gone; a link starts with POST /site/me/identities/link and a proof of identity.
+
+### Features
+
+* **broadcasts:** cancel a sending Broadcast ([#1540](https://github.com/getsphericon/sphericon/issues/1540)) ([261bc5d](https://github.com/getsphericon/sphericon/commit/261bc5df6fd545eb8775fd43fdcd6aaa0e9639f1)), closes [#1435](https://github.com/getsphericon/sphericon/issues/1435)
+* **broadcasts:** freeze a cancelled Broadcast past the messages retention window ([#1612](https://github.com/getsphericon/sphericon/issues/1612)) ([69a39e5](https://github.com/getsphericon/sphericon/commit/69a39e525cbe5b5c74fb39e47774fd700e52a81b))
+* **ee:** fan the all-Workspace jobs out into a job per Workspace ([#1627](https://github.com/getsphericon/sphericon/issues/1627)) ([abd40bc](https://github.com/getsphericon/sphericon/commit/abd40bc4a728a7d468f492564c42881189b78785))
+* refuse a signing secret that cannot sign; update npm and Go dependencies, dbcleaner v2 ([#1735](https://github.com/getsphericon/sphericon/issues/1735)) ([b2aad76](https://github.com/getsphericon/sphericon/commit/b2aad760d6b7c0bb90b412943e5e6703e7cac5d1))
+* store definition documents as typed jsonb (ADR 0169) ([#1578](https://github.com/getsphericon/sphericon/issues/1578)) ([9365274](https://github.com/getsphericon/sphericon/commit/93652749be11742296ab2859ba77277d23b1908f))
+* **ticketcheck:** accept a spec's slice as a wait, hold unsliced specs and Blocked by lines without an edge ([#1626](https://github.com/getsphericon/sphericon/issues/1626)) ([4c0d757](https://github.com/getsphericon/sphericon/commit/4c0d7571fd3485a9b31338978cc10e5b6d534309))
+* **ticketcheck:** hold a ticket that names an unbuilt ADR by one of its terms ([#1644](https://github.com/getsphericon/sphericon/issues/1644)) ([39f03cc](https://github.com/getsphericon/sphericon/commit/39f03cc6328a9b861c69e3138c07116fd0b31fa3))
+* **ticketcheck:** print the graph of open tickets with mise run tickets:graph ([#1628](https://github.com/getsphericon/sphericon/issues/1628)) ([743f400](https://github.com/getsphericon/sphericon/commit/743f400113e6a5121936be4ddbb27283f4517224))
+* **workspaces:** turn on confirmed opt-in with its confirmation email and grandfathering ([#1643](https://github.com/getsphericon/sphericon/issues/1643)) ([b669c15](https://github.com/getsphericon/sphericon/commit/b669c15fe1b436f459ebb979ef7b21a5867f5406))
+
+
+### Bug Fixes
+
+* **identity:** a Second factor reset needs the right in every Workspace of the member and tells them ([#1541](https://github.com/getsphericon/sphericon/issues/1541)) ([55210e2](https://github.com/getsphericon/sphericon/commit/55210e25f5fd83a364434be6f1399300ddf83736))
+* **identity:** linking a Sign-in provider asks for a fresh proof and mails the owner ([#1542](https://github.com/getsphericon/sphericon/issues/1542)) ([751f278](https://github.com/getsphericon/sphericon/commit/751f278a02cd8b7d5535c521e3ed8660480b6f95))
+* keep the secret rotation from writing between an edit's read and write ([#1583](https://github.com/getsphericon/sphericon/issues/1583)) ([54cf4a9](https://github.com/getsphericon/sphericon/commit/54cf4a9d638f7a6a41fb6cd001e7d99eaf8a00ec)), closes [#1480](https://github.com/getsphericon/sphericon/issues/1480)
+* **test:** keep internal/app tests off the dev stack's metrics port ([612f1d7](https://github.com/getsphericon/sphericon/commit/612f1d719c1e84e46acdc947fcdc5fa82aa6022e))
+* **workspaces:** keep the confirmed opt-in switch once its Confirmations are recorded ([#1672](https://github.com/getsphericon/sphericon/issues/1672)) ([f5d61d2](https://github.com/getsphericon/sphericon/commit/f5d61d22b0e3ca54d043d758c4b87186fa69beea))
+
+
+### Code Refactoring
+
+* **sending:** make the Skipped reasons and the Deferral causes closed lists ([#1719](https://github.com/getsphericon/sphericon/issues/1719)) ([8d1253a](https://github.com/getsphericon/sphericon/commit/8d1253a12ec1456d8db9cc00a2db733c447ef850))
+
 ## [0.7.0](https://github.com/getsphericon/sphericon/compare/v0.6.0...v0.7.0) (2026-11-17)
 
 
