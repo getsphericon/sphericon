@@ -1,6 +1,6 @@
 ---
 status: accepted
-build: none
+build: [1786, 1787, 1788, 1789, 1790]
 ---
 
 # An open figure carries low confidence
@@ -84,7 +84,7 @@ open.
   act, and a machine click is a scanner's, not a reader's.
 - **The machine count is read from the Events and is unknown past their horizon.** No column keeps
   it, and a Broadcast frozen by message retention (ADR 0143) stores none: once the Event retention
-  has passed since a Broadcast's last message went out, its machine count is `null`, never a zero
+  has passed since the Broadcast began sending, its machine count is `null`, never a zero
   the deleted Events would make up. Before that the report states the Event retention, as the clicks
   by link report does.
 - **The console marks an open figure from its `confidence`**, through one component that takes the
