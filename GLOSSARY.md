@@ -662,8 +662,9 @@ skipped, failed, pending, opened, clicked, unsubscribed) are derived from its re
 their messages and never stored, so they are live while it sends. Each Channel reports its own: a
 Telegram or SMS Broadcast has no opened, delivered, bounced or complained count and no open or
 delivery rate, and shows them as absent, never as zero. A Contact with several Bindings on the Broadcast's
-bot is one Recipient and one Outbound message, sent to each of its chats. Contrast Segment, which is a
-live query and never materialized.
+bot is one Recipient and one Outbound message, sent to each of its chats. Under a **Local-time
+schedule** it also holds its due moment, the time in its zone when it was frozen, before which it is
+not sent. Contrast Segment, which is a live query and never materialized.
 _Avoid_: Send log, delivery row
 
 **Outbound send**:
@@ -1982,9 +1983,9 @@ _Avoid_: Current usage, real-time usage
 
 **Local-time schedule**:
 A Broadcast's schedule for a date and a time of day reached in each Recipient's time zone (the
-Contact's, else the Workspace's), so each gets it at the same local hour; it runs from the first zone
-to the last, and cannot be armed once the moment has passed in any zone. Not for a Split test or a
-Broadcast series.
+Contact's, else the Workspace's), so each gets it at the same local hour. It runs from the moment the
+time comes in the Earth's first zone (UTC+14) to the moment it comes in the last (UTC−12), and cannot
+be armed once the time has come in the first. Not for a Split test or a Broadcast series.
 _Avoid_: Timewarp, time zone sending, send-time optimization (choosing a moment per person, which the
 app does not do)
 
