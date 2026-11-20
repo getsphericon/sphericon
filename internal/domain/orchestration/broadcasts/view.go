@@ -111,6 +111,16 @@ func (v *Views) Schedule(ctx context.Context, s *ent.Scoped, id int64, in Schedu
 	return view, nil
 }
 
+// Unschedule returns a scheduled Broadcast to draft (Module.Unschedule) and returns its view:
+// nothing is sent, and scheduling it again copies its segment's condition at that moment.
+func (v *Views) Unschedule(ctx context.Context, s *ent.Scoped, id int64) (View, error) {
+	b, err := v.m.Unschedule(ctx, s, id)
+	if err != nil {
+		return View{}, err
+	}
+	return v.figured(ctx, s, b)
+}
+
 // Cancel ends a sending Broadcast (Module.Cancel) and returns its view, with the Recipients it left
 // unsent.
 func (v *Views) Cancel(ctx context.Context, s *ent.Scoped, id int64) (View, error) {

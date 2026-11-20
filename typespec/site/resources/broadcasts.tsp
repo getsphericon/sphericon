@@ -257,6 +257,19 @@ interface SiteBroadcasts
   ): SiteBroadcastResource | Problem;
 
   /**
+   * Cancel a scheduled broadcast's schedule and return it to draft: nothing is sent, its audience
+   * goes with it, and scheduling it again copies its segment's condition at that moment. A broadcast
+   * that is already sending is cancelled, not unscheduled, and anything but a scheduled broadcast is
+   * a 409.
+   */
+  @action("unschedule")
+  @autoRoute
+  @requiresPermissions(#[])
+  unschedule(...ResourceParameters<SiteBroadcastResource>):
+    | SiteBroadcastResource
+    | Problem;
+
+  /**
    * Cancel a sending broadcast (ADR 0150): it moves to `cancelled`, final, and no recipient without
    * a message gets one afterwards. A message already handed to the provider goes out, since a
    * provider cannot be called back. The answer carries `unsent`, the recipients left unsent. A held

@@ -5,6 +5,7 @@ import {
   handleSiteBroadcastsArchive,
   handleSiteBroadcastsList,
   handleSiteBroadcastsUnarchive,
+  handleSiteBroadcastsUnschedule,
 } from '../../generated/site/msw.gen.ts'
 import { Route as broadcastsRoute } from '../../routes/workspaces/$workspaceId/broadcasts/index.tsx'
 import { testId } from '../../test/payloads.ts'
@@ -150,6 +151,40 @@ test('a draft has no Delete: archiving it calls archive and refreshes the list',
   await expect.element(screen.getByText('Broadcast archived')).toBeInTheDocument()
   await expect.poll(() => listFetches).toBe(2)
   await expect.element(screen.getByText('Spring launch')).not.toBeInTheDocument()
+})
+
+// A scheduled broadcast's schedule is cancelled from its row: nothing is sent, and the row comes back
+// as a draft with no schedule.
+test('a scheduled broadcast cancels its schedule and comes back as a draft', async () => {
+  const unscheduled: string[] = []
+  const SCHEDULED = {
+    ...DRAFT,
+    id: testId(3),
+    name: 'SQL course launch',
+    status: 'scheduled',
+    scheduledAt: '2026-01-01T09:00:00Z',
+    recipients: 118,
+  }
+  worker.use(
+    handleSiteBroadcastsList(() =>
+      HttpResponse.json({ items: [unscheduled.length > 0 ? DRAFT : SCHEDULED], totalItems: 1 }),
+    ),
+    handleSiteBroadcastsUnschedule(({ params }) => {
+      unscheduled.push(params.id)
+      return HttpResponse.json({ ...DRAFT, id: params.id })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastsListPage />, LIST_ROUTE)
+  await expect.element(screen.getByText('SQL course launch')).toBeInTheDocument()
+
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await expect.element(screen.getByRole('menuitem', { name: 'Archive' })).not.toBeInTheDocument()
+  await screen.getByRole('menuitem', { name: 'Cancel schedule' }).click()
+
+  await expect.poll(() => unscheduled).toEqual([testId(3)])
+  await expect.element(screen.getByText('Schedule cancelled')).toBeInTheDocument()
+  await expect.element(screen.getByText('Spring launch')).toBeInTheDocument()
 })
 
 test('a sending broadcast is work in flight and offers no Archive', async () => {

@@ -600,6 +600,17 @@ func (UnimplementedHandler) SiteBroadcastsUnarchive(ctx context.Context, params 
 	return r, ht.ErrNotImplemented
 }
 
+// SiteBroadcastsUnschedule implements SiteBroadcasts_unschedule operation.
+//
+// Cancel a scheduled broadcast's schedule and return it to draft: nothing is sent, its audience goes
+// with it, and scheduling it again copies its segment's condition at that moment. A broadcast that is
+// already sending is cancelled, not unscheduled, and anything but a scheduled broadcast is a 409.
+//
+// POST /workspaces/{workspaceId}/broadcasts/{id}/unschedule
+func (UnimplementedHandler) SiteBroadcastsUnschedule(ctx context.Context, params SiteBroadcastsUnscheduleParams) (r *SiteBroadcastResource, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteBroadcastsUpdate implements SiteBroadcasts_update operation.
 //
 // Update a resource from the site UI.
