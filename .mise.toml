@@ -30,7 +30,7 @@ zizmor = "latest"
 jq = "latest"
 lychee = "latest"
 shellcheck = "latest"
-"github:mokevnin/easement" = "0.7.0"
+"github:mokevnin/easement" = "0.10.0"
 "go:github.com/scip-code/scip-go/cmd/scip-go" = "latest"
 "npm:@sourcegraph/scip-typescript" = "latest"
 
