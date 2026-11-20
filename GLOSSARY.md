@@ -1637,8 +1637,8 @@ _Avoid_: ISP, inbox provider, email provider (that is the Integration's provider
 An open or click made by software rather than the recipient: a mail client's privacy proxy (Apple
 Mail Privacy Protection), a security scanner, a link prefetcher, or a messenger fetching a link to
 build its preview (Telegram, WhatsApp). It is still recorded as an `email.opened` /
-`<channel>.clicked` Event, flagged `machine`, but it never counts toward open or click
-figures, never stamps the Outbound message as opened or clicked and never starts an Automation. Detected from
+`<channel>.clicked` Event, flagged `machine`, but it never counts in a rate or among the human
+opens and clicks (machine opens are counted beside the human ones, machine clicks are not), never stamps the Outbound message as opened or clicked and never starts an Automation. Detected from
 the request's user-agent and source address, neither of which is stored. Detection is a partial
 signal, not proof: a proxy that hides itself is not caught. An open through a mailbox's proxy that loads
 a message's images to display it (Gmail's, Yahoo's) is the person's; a click through it is machine.
