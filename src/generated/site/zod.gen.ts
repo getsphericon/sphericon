@@ -5653,6 +5653,16 @@ export const zSiteBroadcastsUnarchivePath = z.object({
  */
 export const zSiteBroadcastsUnarchiveResponse = zSiteBroadcastResource;
 
+export const zSiteBroadcastsUnschedulePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteBroadcastsUnscheduleResponse = zSiteBroadcastResource;
+
 export const zSiteCapturedMessagesListPath = z.object({
   workspaceId: zWorkspaceId
 });

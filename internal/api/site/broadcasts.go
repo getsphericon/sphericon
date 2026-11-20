@@ -140,6 +140,17 @@ func (h *Handlers) SiteBroadcastsSchedule(ctx context.Context, req *siteapi.Sche
 	return &res, nil
 }
 
+// SiteBroadcastsUnschedule returns a scheduled broadcast to draft and answers it: nothing is sent,
+// its audience goes with the schedule, and scheduling it again copies the segment then.
+func (h *Handlers) SiteBroadcastsUnschedule(ctx context.Context, params siteapi.SiteBroadcastsUnscheduleParams) (*siteapi.SiteBroadcastResource, error) {
+	v, err := h.broadcastViews.Unschedule(ctx, workspaceScope(ctx), int64(params.ID))
+	if err != nil {
+		return nil, err
+	}
+	res := broadcastResource(v)
+	return &res, nil
+}
+
 // SiteBroadcastsCancel ends a sending broadcast (ADR 0150) and answers it with the recipients it
 // left unsent.
 func (h *Handlers) SiteBroadcastsCancel(ctx context.Context, params siteapi.SiteBroadcastsCancelParams) (*siteapi.SiteBroadcastResource, error) {

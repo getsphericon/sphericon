@@ -10,6 +10,7 @@ import {
   siteBroadcastsArchiveMutation,
   siteBroadcastsListOptions,
   siteBroadcastsUnarchiveMutation,
+  siteBroadcastsUnscheduleMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteBroadcastResource } from '../../generated/site/types.gen.ts'
 import { zBroadcastChannel, zBroadcastStatus } from '../../generated/site/zod.gen.ts'
@@ -41,6 +42,11 @@ export function BroadcastsListPage() {
     mutation: siteBroadcastsUnarchiveMutation(),
     successMessage: t(($) => $.notifications.broadcastRestored),
     errorTitle: t(($) => $.alerts.broadcastRestoreErrorTitle),
+  })
+  const unscheduleBroadcast = useResourceMutation({
+    mutation: siteBroadcastsUnscheduleMutation(),
+    successMessage: t(($) => $.notifications.broadcastUnscheduled),
+    errorTitle: t(($) => $.alerts.broadcastUnscheduleErrorTitle),
   })
   const cancelBroadcast = useCancelBroadcast(workspaceId)
   const { archived = false, channel, status, page } = broadcastsRoute.useSearch()
@@ -219,6 +225,15 @@ export function BroadcastsListPage() {
                   >
                     {t(($) => $.actions.edit)}
                   </MenuItemLink>
+                  {record.status === 'scheduled' && (
+                    <Menu.Item
+                      onClick={() =>
+                        unscheduleBroadcast.mutate({ path: { workspaceId, id: record.id } })
+                      }
+                    >
+                      {t(($) => $.broadcasts.unschedule)}
+                    </Menu.Item>
+                  )}
                   {record.status === 'sending' && (
                     <Menu.Item color="red" onClick={() => cancelBroadcast(record)}>
                       {t(($) => $.broadcasts.cancel.action)}

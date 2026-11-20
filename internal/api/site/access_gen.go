@@ -66,6 +66,7 @@ var operationAccess = map[siteapi.OperationName]access{
 	siteapi.SiteBroadcastsSendOperation:                        {workspace: true},
 	siteapi.SiteBroadcastsTestSendOperation:                    {workspace: true},
 	siteapi.SiteBroadcastsUnarchiveOperation:                   {workspace: true},
+	siteapi.SiteBroadcastsUnscheduleOperation:                  {workspace: true},
 	siteapi.SiteBroadcastsUpdateOperation:                      {workspace: true},
 	siteapi.SiteCapturedMessagesDeleteAllOperation:             {workspace: true},
 	siteapi.SiteCapturedMessagesDeleteOperation:                {workspace: true},
