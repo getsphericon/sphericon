@@ -1,7 +1,7 @@
-import { Checkbox, Select, TextInput } from '@mantine/core'
+import { Button, Checkbox, Select, TextInput } from '@mantine/core'
 import { useState } from 'react'
 import { expect, test } from 'vitest'
-import { userEvent } from 'vitest/browser'
+import { cdp, userEvent } from 'vitest/browser'
 import * as z from 'zod'
 
 import { renderWithProviders } from '../test/renderWithProviders.tsx'
@@ -25,7 +25,7 @@ function Form() {
       <TextInput label="Email" {...form.getInputProps('email')} />
       <Select label="Plan" data={plans} {...form.getInputProps('plan')} />
       <Checkbox label="Agree" {...form.getInputProps('agree', { type: 'checkbox' })} />
-      <button type="submit">{submitLabel}</button>
+      <Button type="submit">{submitLabel}</Button>
     </form>
   )
 }
@@ -208,4 +208,91 @@ test('a refusal of a field only another form renders is handed back, not placed 
     .element(screen.getByRole('status'))
     .toHaveTextContent(JSON.stringify({ password: ['Use at least 8 characters.'] }))
   await expect.element(screen.getByLabelText('Password')).not.toHaveFocus()
+})
+
+// press is a mouse press on a point of the page: the button goes down, the page may move under the
+// pointer (a blur shows an error and the layout shifts), and the button comes up where it went down,
+// or at `releaseAt`. A click that lands on an element in one piece (locator.click) cannot show that.
+async function press(x: number, y: number, releaseAt = { x, y }) {
+  const frame = window.frameElement?.getBoundingClientRect()
+  const scale = frame ? frame.width / window.innerWidth : 1
+  const at = (point: { x: number; y: number }) => ({
+    x: (frame?.x ?? 0) + point.x * scale,
+    y: (frame?.y ?? 0) + point.y * scale,
+    button: 'left' as const,
+    clickCount: 1,
+  })
+  const session = cdp()
+  await session.send('Input.dispatchMouseEvent', { ...at({ x, y }), type: 'mouseMoved' })
+  await session.send('Input.dispatchMouseEvent', { ...at({ x, y }), type: 'mousePressed' })
+  await new Promise<void>((resolve) => {
+    setTimeout(resolve, 100)
+  })
+  await session.send('Input.dispatchMouseEvent', { ...at(releaseAt), type: 'mouseMoved' })
+  await session.send('Input.dispatchMouseEvent', { ...at(releaseAt), type: 'mouseReleased' })
+}
+
+const emailError = 'Enter a valid email address.'
+
+// The blur's error moves the submit button down, so the part of the button the press started on
+// is gone by the time the mouse comes up: the press on the top edge is the one a click loses.
+test.each([
+  ['the top edge', (_height: number) => 2],
+  ['the bottom edge', (height: number) => height - 2],
+])(
+  'a press on %s of the submit button submits when the blur it causes moves the button',
+  async (_, offset) => {
+    const { screen, email, nameError } = await open()
+    await email.click()
+    const { left, top, width, height } = screen
+      .getByRole('button', { name: submitLabel })
+      .element()
+      .getBoundingClientRect()
+
+    await press(left + width / 2, top + offset(height))
+
+    await expect.element(screen.getByText(emailError)).toBeInTheDocument()
+    await expect.element(nameError).toBeInTheDocument()
+  },
+)
+
+test('a press that is dragged off the submit button still checks the field it left', async () => {
+  const { screen, email, nameError } = await open()
+  await email.click()
+  const { left, top, width } = screen
+    .getByRole('button', { name: submitLabel })
+    .element()
+    .getBoundingClientRect()
+
+  await press(left + width / 2, top + 2, { x: left + width / 2, y: top - 60 })
+
+  await expect.element(screen.getByText(emailError)).toBeInTheDocument()
+  await expect.element(nameError).not.toBeInTheDocument()
+})
+
+// The browser's own validation stops a submit on the first required field, before form.onSubmit
+// runs, so the field the press left must show its error without the submit.
+function NativeForm() {
+  const form = useSchemaForm(schema, { name: '', email: '', plan: '', agree: false })
+  return (
+    <form onSubmit={form.onSubmit(() => undefined)}>
+      <TextInput label="Name" required {...form.getInputProps('name')} />
+      <TextInput label="Email" type="email" required {...form.getInputProps('email')} />
+      <Button type="submit">{submitLabel}</Button>
+    </form>
+  )
+}
+
+test('a field left for the submit button shows its error when the browser stops the submit', async () => {
+  const screen = await renderWithProviders(<NativeForm />)
+  await screen.getByLabelText(/^Email/).click()
+  const { left, top, width } = screen
+    .getByRole('button', { name: submitLabel })
+    .element()
+    .getBoundingClientRect()
+
+  await press(left + width / 2, top + 2)
+
+  await expect.element(screen.getByText(emailError)).toBeInTheDocument()
+  await expect.element(screen.getByText('Name is required.')).not.toBeInTheDocument()
 })

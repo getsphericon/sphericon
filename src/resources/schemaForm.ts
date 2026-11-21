@@ -1,7 +1,7 @@
 import type { UseFormReturnType } from '@mantine/form'
 import { schemaResolver, useForm } from '@mantine/form'
 import { omit } from 'es-toolkit'
-import { useId } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import * as z from 'zod'
 
 import { getFieldErrors } from '../utils/apiErrors.ts'
@@ -25,7 +25,11 @@ export type SchemaForm<TValues extends object, TOutput> = Omit<
 //
 // Validation follows docs/standards/ui.md: a field is not validated when the form opens, it is
 // validated when it loses focus, an error that shows is re-checked on each keystroke, and a failed
-// submit focuses the first invalid field in the page's order.
+// submit focuses the first invalid field in the page's order. A field that loses focus to the press
+// of its own form's submit button is not validated then but when the press is over: the error would
+// push the button down and the press would come up beside it, with no click and no submit. The
+// press may end with no submit (it is dragged off the button, or the browser's own validation of
+// a required field stops it), so the field is checked when the press ends either way.
 //
 // A refusal from the server follows the same rules (docs/standards/ui.md, Errors): showFieldErrors
 // puts each message of the problem's `errors` under the field the form renders for its path, and
@@ -44,6 +48,40 @@ export function useSchemaForm<TValues extends object, TOutput>(
   // field never lands on another form's field with the same path. Mantine takes letters, digits and
   // dashes only, so each other character of the React id becomes a dash, which keeps ids apart.
   const name = `form${useId().replaceAll(/[^a-zA-Z0-9-]/g, '-')}`
+  // The submit button a mouse or finger is down on, from before the field loses focus to the press
+  // coming up. A button is not focused by a press in every browser, so the focus cannot tell.
+  const pressedSubmit = useRef<HTMLButtonElement | HTMLInputElement | null>(null)
+  // The fields that lost focus to that press: their blur validation waits for its end.
+  const skippedBlurs = useRef(new Set<string>())
+  const validateField = useRef<(path: string) => unknown>(() => undefined)
+  useEffect(() => {
+    const down = (event: PointerEvent) => {
+      const target = event.target instanceof Element ? event.target : null
+      pressedSubmit.current =
+        target?.closest<HTMLButtonElement | HTMLInputElement>(
+          'button[type="submit"], input[type="submit"]',
+        ) ?? null
+    }
+    const up = () => {
+      pressedSubmit.current = null
+      const paths = [...skippedBlurs.current]
+      skippedBlurs.current.clear()
+      // After the click that ends the press, so an error that shifts the layout cannot take it.
+      setTimeout(() => {
+        for (const path of paths) {
+          validateField.current(path)
+        }
+      }, 0)
+    }
+    document.addEventListener('pointerdown', down, true)
+    document.addEventListener('pointerup', up, true)
+    document.addEventListener('pointercancel', up, true)
+    return () => {
+      document.removeEventListener('pointerdown', down, true)
+      document.removeEventListener('pointerup', up, true)
+      document.removeEventListener('pointercancel', up, true)
+    }
+  }, [])
   const form = useForm<TValues, TOutput>({
     name,
     initialValues,
@@ -51,18 +89,33 @@ export function useSchemaForm<TValues extends object, TOutput>(
     transformValues: (values) => schema.parse(values),
     validateInputOnBlur: true,
     enhanceGetInputProps: ({ inputProps, field, form: renderedForm }) => {
-      // The error showing at render time is the one the keystroke is about to clear.
-      if (!renderedForm.errors[field]) {
-        return undefined
-      }
-      const { onChange } = inputProps
+      // Mantine assigns what is returned here over inputProps, so the handlers are read first.
+      const { onBlur, onChange } = inputProps
       return {
-        onChange: (...args: unknown[]) => {
-          onChange(...args)
-          renderedForm.validateField(field)
-        },
+        // A field with no focus handling (a radio) has no onBlur to wrap.
+        ...(onBlur && {
+          onBlur: (event: React.FocusEvent<HTMLElement & { form?: HTMLFormElement | null }>) => {
+            const pressed = pressedSubmit.current
+            if (!pressed?.form || pressed.form !== event.target.form) {
+              onBlur(event)
+            } else {
+              skippedBlurs.current.add(field)
+            }
+          },
+        }),
+        // The error showing at render time is the one the keystroke is about to clear.
+        ...(renderedForm.errors[field] && {
+          onChange: (...args: unknown[]) => {
+            onChange(...args)
+            renderedForm.validateField(field)
+          },
+        }),
       }
     },
+  })
+
+  useEffect(() => {
+    validateField.current = form.validateField
   })
 
   const onSubmit: typeof form.onSubmit = (handleSubmit, handleValidationFailure) =>
