@@ -3,6 +3,9 @@ run:
   # Lint the end-to-end suite too (e2e/ is behind this build tag, ADR 0024).
   build-tags:
     - e2e
+  # A second run (an editor's, an agent's, check:be beside them) waits for the lock instead of
+  # exiting with "parallel golangci-lint is running".
+  allow-serial-runners: true
 formatters:
   enable:
     - gofmt
