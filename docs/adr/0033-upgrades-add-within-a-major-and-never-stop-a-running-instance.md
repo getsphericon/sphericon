@@ -6,8 +6,9 @@ status: accepted
 
 > **Amended by [[0181-a-conditions-shape-is-typed-by-the-place-it-is-used]]:** the migration that
 > rewrites the stored Conditions to their typed shape starts a Major whose Upgrade stops the old
-> release first: that release reads a rewritten Condition as matching every Contact, and the new
-> release reads one it saves the same way.
+> release first: that release reads a rewritten Condition as matching every Contact. A Condition it
+> saves in the old shape is refused by the database (a CHECK requires the typed group's `entries`),
+> so that save fails rather than widens.
 
 A self-hosted Instance is upgraded by whoever runs it, often several releases late, while customer
 sites keep sending events to it. So an Upgrade has to work from any release, and neither it nor a

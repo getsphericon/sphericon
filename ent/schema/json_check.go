@@ -20,6 +20,14 @@ func conditionCheck(column string) string {
 	return jsonCheck(column, "object")
 }
 
+// conditionEntriesCheck is the CHECK that a Condition's group holds its entries as a list (ADR
+// 0181): a tree without them (the shape a release before the typed tree writes, under `rules`) or
+// with null ones would read as the empty group, which matches every Contact. A missing key is
+// refused too, so the comparison is never NULL; a NULL Condition passes.
+func conditionEntriesCheck(column string) string {
+	return fmt.Sprintf("%[1]s IS NULL OR COALESCE(jsonb_typeof(%[1]s -> 'entries') = 'array', false)", column)
+}
+
 // emptyConditionSQL is the empty Condition (conditiontree.Empty) as the default a column gives a
 // row written without one: the group with no tests, which matches every Contact.
 var emptyConditionSQL = string(lo.Must(json.Marshal(conditiontree.Empty())))

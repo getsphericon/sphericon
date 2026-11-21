@@ -15,7 +15,8 @@ type Segment struct {
 func (Segment) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entsql.Annotation{Table: "segments", Checks: map[string]string{
-			"segments_condition_check": conditionCheck("condition"),
+			"segments_condition_check":         conditionCheck("condition"),
+			"segments_condition_entries_check": conditionEntriesCheck("condition"),
 		}},
 		Audited{Action: "segment", NameField: NameColumn},
 	}

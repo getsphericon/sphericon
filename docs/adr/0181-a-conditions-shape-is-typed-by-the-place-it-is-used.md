@@ -78,12 +78,15 @@ to parse.
   the typed tree, and no reader of the old shape is kept, so the migration adds the next Major and
   its floor (ADR 0033), and a release older than the floor refuses to start on the rewritten data.
   The floor does not protect against the move: it is the last release before it, which ADR 0033
-  lets start on the next Major, and a release already running is not checked at all. The old and
-  the new shape misread each other silently: the release before the move reads a rewritten
+  lets start on the next Major, and a release already running is not checked at all. The release
+  before the move misreads the new shape silently: it reads a rewritten
   Condition as the empty group, which matches every Contact, so a Segment's preview counts
   everyone, a Broadcast due in that window goes to every Contact and every Rule fires on every
-  Event of its Trigger; and a Condition that release saves after the migration is in the old shape,
-  which the new release reads as matching every Contact too. The Upgrade therefore stops the old release before the migration runs and
+  Event of its Trigger. A Condition that release saves after the migration is in the old shape, its
+  entries under `rules`: the database refuses it, since a CHECK on each Condition column requires
+  the group's `entries` as a list (added after the rewrite), so the save fails instead of storing a
+  tree the new release, which refuses a group without `entries` too, would read as matching every
+  Contact. The reads still misread, so the Upgrade stops the old release before the migration runs and
   does not start it again: the new release is the first to serve on the rewritten data. The pull
   request that lands the move is a breaking change whose `Upgrade:` line says so. Here the promise
   that a running Instance is never stopped does not hold; keeping it would need the release
