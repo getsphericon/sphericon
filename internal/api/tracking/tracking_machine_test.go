@@ -123,6 +123,36 @@ func TestAPersonsHitIsUnaffected(t *testing.T) {
 	assert.Equal(t, 1, got.Clicked)
 }
 
+// The mailbox providers' own display proxies load a message's images to show it, so an open through
+// one is the person's; a click through the same proxy stays machine (ADR 0053, #1736).
+const (
+	gmailProxyUA = "Mozilla/5.0 (Windows NT 5.1; rv:11.0) Gecko Firefox/11.0 (via ggpht.com GoogleImageProxy)"
+	yahooProxyUA = "YahooMailProxy; https://help.yahoo.com/kb/yahoo-mail-proxy-SLN28749.html"
+)
+
+func TestADisplayProxyOpenIsThePersonsAndItsClickIsMachine(t *testing.T) {
+	for name, userAgent := range map[string]string{"Gmail": gmailProxyUA, "Yahoo": yahooProxyUA} {
+		t.Run(name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			ctx := t.Context()
+
+			hit(t, env, openPath(t, env, fixtures.OutboundMessageTrackingSampleID), userAgent, personAddr)
+			hit(t, env, clickPathTo(t, env, fixtures.OutboundMessageTrackingSampleID, linkA), userAgent, personAddr)
+
+			assert.False(t, onlyEngagement(t, env, systemevent.EmailOpened).Machine, "the proxy loaded the images of a message being shown")
+			assert.True(t, onlyEngagement(t, env, systemevent.EmailClicked).Machine, "the proxy also fetches the URLs a message carries")
+
+			env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
+			msg := env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageTrackingSampleID)
+			assert.NotNil(t, msg.OpenedAt, "an open through a display proxy is the person's")
+			assert.Nil(t, msg.ClickedAt, "a click through one is not")
+			got := figures(t, env, fixtures.BroadcastSentUntrackedID)
+			assert.Equal(t, 1, got.Opened)
+			assert.Zero(t, got.Clicked)
+		})
+	}
+}
+
 func TestAMachineOpenOfAnAutomationEmailIsNoFigureOfTheReport(t *testing.T) {
 	env := testhelper.Setup(t)
 	const id = fixtures.OutboundMessageAutomationTrackedID

@@ -70,7 +70,7 @@ func (r *Recorder) Open(ctx context.Context, token string, hit Hit) error {
 	if err != nil {
 		return ErrInvalidToken
 	}
-	return r.record(ctx, m, hit, func(e engaged, machine bool, at time.Time) events.DomainEvent {
+	return r.record(ctx, m, hit, privaterelayranges.AnOpen, func(e engaged, machine bool, at time.Time) events.DomainEvent {
 		return e.engagement(systemevent.EmailOpened, "", machine, at)
 	})
 }
@@ -81,7 +81,7 @@ func (r *Recorder) Click(ctx context.Context, token string, hit Hit) (string, er
 	if err != nil {
 		return "", ErrInvalidToken
 	}
-	if err := r.record(ctx, m, hit, clickOn(dest)); err != nil {
+	if err := r.record(ctx, m, hit, privaterelayranges.AClick, clickOn(dest)); err != nil {
 		return "", err
 	}
 	return dest, nil
@@ -104,7 +104,7 @@ func (r *Recorder) ShortLink(ctx context.Context, token string, hit Hit) (string
 		return link.URL, nil
 	}
 	m := messagetoken.Message{WorkspaceID: link.WorkspaceID, ID: *link.OutboundMessageID}
-	if err := r.record(ctx, m, hit, clickOn(link.URL)); err != nil {
+	if err := r.record(ctx, m, hit, privaterelayranges.AClick, clickOn(link.URL)); err != nil {
 		return "", err
 	}
 	return link.URL, nil
@@ -116,7 +116,7 @@ func (r *Recorder) ShortLink(ctx context.Context, token string, hit Hit) (string
 // whose Contact is gone (erased) or whose address was cleared, records nothing silently; a read
 // that fails for any other reason, or a failed publish, records nothing and is logged, since a
 // tracked link never refuses its recipient (ADR 0025).
-func (r *Recorder) record(ctx context.Context, m messagetoken.Message, hit Hit, eventOf func(e engaged, machine bool, at time.Time) events.DomainEvent) error {
+func (r *Recorder) record(ctx context.Context, m messagetoken.Message, hit Hit, kind privaterelayranges.Kind, eventOf func(e engaged, machine bool, at time.Time) events.DomainEvent) error {
 	if hit.Host != 0 && hit.Host != m.WorkspaceID {
 		return ErrNotFound
 	}
@@ -137,7 +137,7 @@ func (r *Recorder) record(ctx context.Context, m messagetoken.Message, hit Hit, 
 	if !ok {
 		return nil
 	}
-	machine := r.detector.IsMachine(ctx, hit.UserAgent, hit.Address)
+	machine := r.detector.IsMachine(ctx, privaterelayranges.IsMachineInput{Kind: kind, UserAgent: hit.UserAgent, ClientAddr: hit.Address})
 	if err := r.bus.Publish(ctx, eventOf(e, machine, r.now())); err != nil {
 		slog.ErrorContext(ctx, "engagement: recording failed", "message_id", m.ID, "err", err)
 	}
