@@ -35,17 +35,29 @@ func (w *Workspace) SendBroadcast(b Broadcast) {
 	w.ActivateBroadcast(w.createBroadcast(b))
 }
 
+// SendBroadcastTo is SendBroadcast to the Contacts of a Segment instead of all of them.
+func (w *Workspace) SendBroadcastTo(segment Segment, b Broadcast) {
+	w.t.Helper()
+	w.activate(w.createBroadcast(b), externalapi.NewNilEntityId(externalapi.EntityId(segment.ID)))
+}
+
 // ActivateBroadcast is a person's activation of a draft: it sets the Segment to all
 // Contacts and schedules the Broadcast for now, with the Workspace's own token, which carries the
 // send scope an agent's token does not.
 func (w *Workspace) ActivateBroadcast(id externalapi.EntityId) {
+	w.t.Helper()
+	w.activate(id, externalapi.NilEntityId{Null: true})
+}
+
+// activate sets the draft's Segment (null for all Contacts) and schedules it for now.
+func (w *Workspace) activate(id externalapi.EntityId, segment externalapi.NilEntityId) {
 	w.t.Helper()
 	ctx := w.t.Context()
 	// Each write names the revision it was made on (ADR 0119): the draft as read, then as the
 	// segment change left it.
 	read, err := w.api.BroadcastsGet(ctx, externalapi.BroadcastsGetParams{ID: id})
 	draft := ok[externalapi.BroadcastResource](w.t, "read broadcast", read, err)
-	aud, err := w.api.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{Revision: draft.Revision, SegmentId: externalapi.NilEntityId{Null: true}},
+	aud, err := w.api.BroadcastsSetSegment(ctx, &externalapi.SetBroadcastSegmentInput{Revision: draft.Revision, SegmentId: segment},
 		externalapi.BroadcastsSetSegmentParams{ID: id})
 	targeted := ok[externalapi.BroadcastResource](w.t, "set segment", aud, err)
 
