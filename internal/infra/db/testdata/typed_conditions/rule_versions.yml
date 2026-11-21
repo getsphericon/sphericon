@@ -1,0 +1,35 @@
+# Rule versions in the shape before ADR 0181, where a test of the triggering Event is a `rule` or
+# `number` leaf on `trigger:<key>`: Rule 1's past version (1), live version (2) and draft (3), and
+# Rule 2's live version, already typed.
+- id: 1
+  rule_id: 1
+  version: 1
+  condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"trigger:ref","operator":"null"},{"kind":"rule","field":"trigger:url","operator":"notNull"},{"kind":"rule","field":"trigger:url","operator":"beginsWith","value":"https://acme"},{"kind":"rule","field":"trigger:url","operator":"eq","value":"https://acme.test/pricing"},{"kind":"rule","field":"trigger:url","operator":"neq","value":"https://acme.test/"}]}'
+  actions: '[{"type":"apply_tag","tag":"visitor"}]'
+  workspace_id: 1
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 2
+  rule_id: 1
+  version: 2
+  condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"trigger:url","operator":"contains","value":"PRICING"},{"kind":"rule","field":"tag","operator":"has","value":"vip"}]}'
+  actions: '[{"type":"apply_tag","tag":"pricing"}]'
+  workspace_id: 1
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 3
+  rule_id: 1
+  version: 3
+  condition: '{"kind":"group","combinator":"and","rules":[{"kind":"number","field":"trigger:score","operator":"gt","value":5},{"kind":"rule","field":"custom:plan","operator":"eq","value":"free"}]}'
+  actions: '[{"type":"apply_tag","tag":"pricing"}]'
+  workspace_id: 1
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 4
+  rule_id: 2
+  version: 1
+  condition: '{"kind":"group","combinator":"and","entries":[{"kind":"property","of":{"kind":"trigger"},"key":"score","test":{"kind":"number","operator":"lte","value":5}}]}'
+  actions: '[{"type":"apply_tag","tag":"low"}]'
+  workspace_id: 1
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
