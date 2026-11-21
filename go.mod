@@ -9,7 +9,7 @@ require (
 	github.com/AfterShip/email-verifier v1.5.0
 	github.com/XSAM/otelsql v0.44.0
 	github.com/aws/aws-sdk-go-v2 v1.48.0
-	github.com/aws/aws-sdk-go-v2/credentials v1.21.2
+	github.com/aws/aws-sdk-go-v2/credentials v1.21.3
 	github.com/aws/aws-sdk-go-v2/service/sesv2 v1.80.0
 	github.com/aws/smithy-go v1.28.9
 	github.com/caarlos0/env/v11 v11.4.2
@@ -165,7 +165,7 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jessevdk/go-flags v1.6.1 // indirect
-	github.com/jonbaldie/go-mutesting/v2 v2.10.44 // indirect
+	github.com/jonbaldie/go-mutesting/v2 v2.10.45 // indirect
 	github.com/klauspost/compress v1.20.4 // indirect
 	github.com/klauspost/cpuid/v2 v2.4.2 // indirect
 	github.com/leodido/go-urn v1.5.0 // indirect

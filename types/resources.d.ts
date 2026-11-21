@@ -2501,6 +2501,8 @@ export default interface Resources {
       "contact": "Contact",
       "country": "Country",
       "email": "Email",
+      "filterByCountry": "Filter by country",
+      "filterByTag": "Filter by tag",
       "firstName": "First name",
       "lastName": "Last name",
       "locale": "Locale",

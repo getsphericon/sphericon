@@ -32,8 +32,8 @@ github.com/aws/aws-sdk-go-v2 v1.48.0 h1:tFU7EJVm7MfyaXLsXdYTZ0Vd6vwt9OljCyqq0gqk
 github.com/aws/aws-sdk-go-v2 v1.48.0/go.mod h1:oeKU5p+TQBnpeLmU42WZLWvzv+ORLn+74n4QVLnm/Z0=
 github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.27 h1:3dMP9eEmHVosFN1QiD24IJBKVY8m6iUfVYXqRCT118Q=
 github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.27/go.mod h1:KH4PKcqtjy1m0656eqQV2v53xE04ddJzuNloEKqlHkI=
-github.com/aws/aws-sdk-go-v2/credentials v1.21.2 h1:PWB8NaorQv2OzyNjXMy6RjBh+HzneyxY2ECC58jV600=
-github.com/aws/aws-sdk-go-v2/credentials v1.21.2/go.mod h1:N/A5a+8LDrdI9pcr4ZjuHuQIHU5km3rtDuVzt+xW2C4=
+github.com/aws/aws-sdk-go-v2/credentials v1.21.3 h1:bh+9VoJ4eDzJVEY6jfdNTBa0Dx7tdr+lWSPNovU1vXc=
+github.com/aws/aws-sdk-go-v2/credentials v1.21.3/go.mod h1:4CNs0EBvjDEpyaXSYCdNeNRhFjHFX2Y373tFUaeTYXA=
 github.com/aws/aws-sdk-go-v2/internal/configsources v1.5.12 h1:W0yUUzKBA8SofGQ0yZafEUuZq9UxfvijRgdc6vcRQPA=
 github.com/aws/aws-sdk-go-v2/internal/configsources v1.5.12/go.mod h1:xwKv6vwBNdpPFOxEm/ld4IODZK2s/1ksHvdBqLfH6Gs=
 github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.8.12 h1:lqSi8qvAnKC1vfosImdmOsuiJLr/jdybZX5299beB6Q=
@@ -236,8 +236,8 @@ github.com/jmattheis/goverter v1.11.1 h1:7jL4dLndhASjzMavWWxZ7VXexpaqklobCs/sEjP
 github.com/jmattheis/goverter v1.11.1/go.mod h1:pOwLbM2Zyn2WsAeXayFzrn8swypJdbv+X5asEBkq2PQ=
 github.com/johannesboyne/gofakes3 v1.2.0 h1:I9VEzPWvvAUAGzDlhYFoZjF0AXMlkcEyZlmBwiI6Oms=
 github.com/johannesboyne/gofakes3 v1.2.0/go.mod h1:UHhRZRod9rENGFrUWTYnQHZqlNgSmjOq8DaD/ATQYRM=
-github.com/jonbaldie/go-mutesting/v2 v2.10.44 h1:cSq5nzIQuZy0opcCNlpwkkoaJIEb1UHm+rUCssgDwX4=
-github.com/jonbaldie/go-mutesting/v2 v2.10.44/go.mod h1:3fBE3vdCcZF2dKabf8Hk8JiYDf3OGKF9+RUZIc27lc4=
+github.com/jonbaldie/go-mutesting/v2 v2.10.45 h1:n5/8mwde+24Ctl22vnf6C8cNZXgEP9IoNTwAwxqxpC0=
+github.com/jonbaldie/go-mutesting/v2 v2.10.45/go.mod h1:3fBE3vdCcZF2dKabf8Hk8JiYDf3OGKF9+RUZIc27lc4=
 github.com/jpillora/backoff v1.1.0 h1:9LWA6DCcU2qxTLK7iOxvuIQvuIe/twLJHryAcA3JFAs=
 github.com/jpillora/backoff v1.1.0/go.mod h1:InzEM6zwRZT3SOZRzyrihzVj4k8KKFicc+XgkyHOgNM=
 github.com/jtolds/gls v4.20.0+incompatible h1:xdiiI2gbIgH/gLH7ADydsJ1uDOEzR8yvV7C0MuV77Wo=

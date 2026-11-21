@@ -197,6 +197,7 @@ export function ContactsListPage() {
             filter: (
               <CountryFilter value={country} onChange={(next) => setFilter({ country: next })} />
             ),
+            filterButtonLabel: t(($) => $.table.filterByCountry),
             filtering: Boolean(country),
             render: (record) => {
               const fullName = contactFullName(record)
@@ -237,6 +238,7 @@ export function ContactsListPage() {
                 onChange={(next) => setFilter({ tag: next })}
               />
             ),
+            filterButtonLabel: t(($) => $.table.filterByTag),
             filtering: Boolean(tag),
             render: (record) => (
               <Group gap={4}>
