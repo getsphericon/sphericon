@@ -9,6 +9,10 @@ build: [1592]
 > text exists to exempt, and the app runs no SMS confirmation of an opt-in (ADR 0088); the Preference
 > page's fresh link is what stays outside the window.
 
+> **Amended by [[0121-a-preference-page-per-destination-and-only-the-person-lifts-a-refusal]]:**
+> the Preference page sends no fresh link on SMS, so no message the person asked for reaches the
+> window; a Test send is the only text outside it.
+
 > **Amended by [[0178-a-frequency-cap-counts-each-destination-a-message-is-claimed-for-after-eligibility]]:**
 > a wait for the window is recorded on the Enrollment, the Broadcast Recipient and the Outbound
 > message; the windows are rows per Channel and country.
@@ -38,8 +42,8 @@ ADR 0126 left quiet hours to Outbound send, as a guard no author can forget.
 - **A sending window guards every Broadcast and Automation send on SMS**, and on WhatsApp when it is
   built: marketing by surface, as ADR 0012 has it. It sits in Outbound send, the one place every
   send passes (ADR 0015).
-- **What the person just asked for is outside it**: the fresh link of the Preference page (ADR
-  0121). A Transactional send is
+- **What the person just asked for would be outside it**, but no such text exists: the
+  Preference page sends no fresh link on SMS (ADR 0121). A Transactional send is
   email-only (ADR 0077) and never reaches the window. An Automation answering a person's own message
   is a marketing send and waits like any other.
 - **Email and Telegram are outside it.** No law sets hours for them; a Workspace that wants a time of

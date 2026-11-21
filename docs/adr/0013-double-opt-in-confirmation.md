@@ -8,7 +8,10 @@ build: [1500, 1604]
 > **Amended by [[0121-a-preference-page-per-destination-and-only-the-person-lifts-a-refusal]]:** a
 > return from `everything` on the Preference page, on fresh proof of the address, records a
 > Confirmation with provenance `double_opt_in`; the fresh link that page sends for an older link is
-> a message the person asked for, in the mode below that `everything` does not stop.
+> a message the person asked for, in the mode below that `everything` does not stop. From an older
+> link a return from `everything` on email is this email, asked for by the person on the page; the
+> Preference page's `preference` messages count against the subscription-bombing limit with these
+> emails.
 
 > **Revised before it was built** (#1500): the flows that send the confirmation email, who asks
 > for it and what that changes, the subscription-bombing limit, the email's kind, sender and
@@ -126,7 +129,7 @@ A request is made by one of two parties, and the party decides what `everything`
   everything is itself a violation, and ADR 0121 puts Members, the API and MCP in one class that
   never undoes a refusal.
 - **The person asks**: an On-site form submit (ADR 0088), the "send a new link" of an expired
-  confirmation link, and the Preference page's fresh link (ADR 0121). Only Suppression stops it:
+  confirmation link, and the Preference page's return from `everything` from an older link (ADR 0121). Only Suppression stops it:
   returning after leaving everything goes through this email, as ADR 0088 has it for a form.
 
 A request for an address that already holds a Confirmation sends nothing and answers that it is
@@ -137,8 +140,9 @@ confirmed. A request is accepted (202) and sent by a job through Outbound send; 
 
 Confirmation emails are a **subscription-bombing** vector: a form submits a victim's address
 repeatedly, from anywhere. A Destination receives **at most 3 confirmation emails per Workspace in
-24 hours**, whoever asks, counted by the Instance's Postgres throttle (ADR 0025), the one that
-holds the mail budgets of an address. The number is fixed, not configurable, as the Test send caps
+24 hours**, whoever asks, the Preference page's `preference` messages included (ADR 0121),
+counted by the Instance's Postgres throttle (ADR 0025), the one that holds the mail budgets of an
+address. The number is fixed, not configurable, as the Test send caps
 of ADR 0041 are. Over it the Workspace's request gets 429; the person's request gets the same
 answer as an accepted one, so a form says nothing about an address. The On-site form keeps its own
 proof-of-work and collect limits (ADR 0088).

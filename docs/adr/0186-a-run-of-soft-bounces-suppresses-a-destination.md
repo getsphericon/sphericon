@@ -27,7 +27,8 @@ the account's shared quota: the practice is to wait a week or two before giving 
   soft bounces that count, with no delivery between them, the first and the latest at least seven days
   apart. A delivery ends the run, and so does a person's lifting of the Suppression: only what comes
   after the lift counts again. The Suppression is a Suppression like any other: it blocks every
-  surface, Transactional included (ADR 0005), and only a person lifts it (ADR 0121).
+  surface, Transactional included (ADR 0005), and only a Member lifts it (ADR 0061, ADR 0154), never
+  a notice, an agent or the person's Preference page.
 - **A soft bounce counts when its enhanced status code (RFC 3463) is about the address or the
   mailbox**: subject 1 (addressing, such as `4.1.1`) or 2 (mailbox, such as `4.2.2` mailbox full). A
   code of the mail system, routing, the protocol, the content or the security policy (subjects 3 to 7:

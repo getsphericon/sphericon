@@ -6,6 +6,9 @@ terms: [Broadcast series, series issue]
 
 # A Broadcast series makes an ordinary Broadcast at each occurrence
 
+> **Amended by [[0121-a-preference-page-per-destination-and-only-the-person-lifts-a-refusal]]:**
+> the page lists a series by its Public name, which a series cannot be created without.
+
 > **Amended by [[0149-a-broadcasts-audience-is-chosen-explicitly-and-counted-before-it-is-armed]]:**
 > a series names its audience: a Segment, or `null` for all Contacts, never an absent field.
 
@@ -68,7 +71,7 @@ Publish is send-class (ADR 0065).
   of `broadcasts` receives no series, and one opted out of a series still receives the Workspace's
   other Broadcasts. Its emails' one-click and footer unsubscribe from that series, with the
   source-scoped token (ADR 0012); the Preference page lists each series a person receives, by its
-  name, beside "all Broadcasts" (ADR 0121). The reserved `everything` covers both. So a new series
+  Public name, under "all Broadcasts" (ADR 0121). The reserved `everything` covers both. So a new series
   starts with every `broadcasts` opt-out already applied, and a series cannot be used to reach people
   who left the Workspace's Broadcasts.
 
