@@ -4,6 +4,9 @@ status: accepted
 
 # A Destination's consent history is read from its evidentiary Events
 
+> **Amended by [[0138-contacts-come-in-by-a-mapped-csv-import-and-leave-by-a-streamed-csv-export]]:** the state above the history
+> and the CSV export's Channel state are one set-based read beside Send eligibility.
+
 > **Amended by [[0154-consent-observations-apply-in-the-order-they-occurred]]:** an observation
 > older than the standing state is shown at its own time as one that changed nothing.
 

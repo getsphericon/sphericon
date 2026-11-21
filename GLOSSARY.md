@@ -57,8 +57,8 @@ _Avoid_: Profile, tracking profile, lead, subscriber, user, recipient
 
 **Contact source**:
 How a Contact first came to exist in the Workspace: created by hand (`manual`), through the
-external API, a batch import included (`api`), identified by the tracker (`tracker`), or by a
-**Form submit** (`onsite_form`). An
+external API, the batch upsert included (`api`), by a **CSV import** (`import`), identified by the
+tracker (`tracker`), or by a **Form submit** (`onsite_form`). An
 Integration's ingest hook never creates a Contact. Set once at creation and never changed, even when the same person later arrives through another door. A Contact that
 predates the field has no source. Not a **Sending source** (the unsubscribe scope).
 _Avoid_: Origin, channel, acquisition source
@@ -221,25 +221,31 @@ _Avoid_: Historical import, replay, silent event
 
 **Contact intake**:
 The **Import** of Contacts, through the API's batch upsert or a **CSV import**: each row upserts its
-Contact in a transaction of its own and, when it carries the evidence of SMS consent the phone gave
-outside sphericon, records the phone's imported **Confirmation** in that same transaction; a CSV
-import may also record the old platform's opt-outs and Suppressions. The whole batch is one `contact.import` Audit entry. A row
+Contact in a transaction of its own, filling its keys and adding its Tags, never clearing a value,
+and, when it carries the evidence of email or SMS consent given outside sphericon, records that
+Destination's imported **Confirmation** in that same transaction, at the time the evidence states or
+else now; a CSV import may also record the old platform's opt-outs and Suppressions. A batch of the
+API is one `contact.import` Audit entry, a CSV import's whole job another. A row
 that brings an email address new to the Workspace at a domain that cannot receive mail is refused;
 a disposable or role address is stored with a warning (ADR 0117).
 _Avoid_: Sync, bulk create
 
 **CSV import**:
 A Contact intake from a file a Member holding `contacts:import` uploads in the app: its columns
-mapped to keys, attributes, Custom fields, Tags and refusal columns (the old platform's opt-outs and
-bounces, by the cell values the Member lists), previewed with the opt-outs it would record, then run
-as a job whose refused rows can be downloaded for a week; the file is deleted when it ends. Like a
-Backfill it starts nothing (no Automation, Rule, exit, wait or Webhook) unless the Member asks it to.
+mapped to keys, attributes, Custom fields, Tags, consent and refusal columns (the old platform's
+opt-outs and bounces, by the cell values the Member lists, each with the time it may state), each
+text read in the format the Member chooses, previewed with the opt-outs it would record, then run as
+a job whose refused rows can be downloaded for a week; the file is deleted when it ends. A blank
+cell changes nothing, and a value its field cannot read is dropped, not the row. Like a Backfill it
+starts nothing (no Automation, Rule, exit, wait or Webhook) unless the Member asks it to; its
+refusals still act as any refusal does.
 _Avoid_: Upload, bulk create, migration
 
 **CSV export**:
 A streamed download of a Segment's Contacts, or all, with the columns a Member chooses, each
-Channel's state (may receive, opted out, suppressed) among them, so a Workspace that leaves takes its
-refusals with it. Distinct from a Data export (one Contact) and Export streams (a warehouse).
+Channel's state (may receive, needs confirmation, opted out, suppressed) among them, so a Workspace
+that leaves takes its refusals with it. Its headers are a CSV import's own, so a file it writes
+imports into another Workspace as it is. Distinct from a Data export (one Contact) and Export streams (a warehouse).
 _Avoid_: Backup, dump
 
 **Erasure**:
