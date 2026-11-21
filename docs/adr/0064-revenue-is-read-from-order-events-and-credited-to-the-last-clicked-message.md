@@ -2,6 +2,10 @@
 status: accepted
 ---
 
+> **Amended by [[0191-revenue-per-recipient-is-attributed-revenue-over-the-same-tracked-messages]]:**
+> the denominator of a per-recipient figure is the tracked messages whose revenue it divides, not
+> the delivered ones.
+
 > **Amended by [[0162-a-condition-tests-a-contacts-orders-and-their-lines]]:** an Order keeps the
 > lines of its latest Completed or Updated Event, and a Condition tests a Contact's Orders.
 
@@ -125,7 +129,7 @@ Sphericon's.
 - **The overview and the reports say what they count.** The overview shows revenue for 7, 30 or 90 Report
   days (30 by default) in the Workspace time zone and the share of it credited to messages, labelled as the revenue of the orders the Workspace sent in, not of its
   shop. A Broadcast and an Automation show orders and revenue; the denominator of any per-recipient
-  figure is delivered messages.
+  figure is the same messages' tracked count (ADR 0191).
 
 ## Considered options
 
