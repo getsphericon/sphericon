@@ -135,6 +135,16 @@ func TestGuardRefusesPendingMigrationsAndNamesMigrateUnlessAutoMigrateIsOn(t *te
 	require.NoError(t, g.Check(t.Context(), sqlDB))
 }
 
+// An empty database is behind no Major: migrating creates it at the binary's own, so a new
+// Instance installs the latest release directly, with no release of an older Major first.
+func TestGuardLetsAnyBinaryMigrateAnEmptyDatabase(t *testing.T) {
+	sqlDB := openEmpty(t)
+
+	err := guard("v0.6.0", true).Check(t.Context(), sqlDB)
+
+	require.NoError(t, err)
+}
+
 // A build with no release (go run, a dev image) is never older than a floor.
 func TestGuardLetsADevelopmentBuildStart(t *testing.T) {
 	sqlDB := migratedAt(t, 3, "v0.5.2")

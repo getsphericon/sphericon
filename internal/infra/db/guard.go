@@ -51,15 +51,24 @@ var initialState = SchemaState{Major: 1, Floor: "v0.0.0"}
 // existed) is Major 1. It only reads, so a client without the application's hooks (which act on
 // writes) reads it as the wiring's would.
 func ReadState(ctx context.Context, sqlDB *sql.DB) (SchemaState, error) {
+	state, _, err := readState(ctx, sqlDB)
+	return state, err
+}
+
+// readState is ReadState, and whether the database has no state table at all: an empty one, since
+// the first migration creates the table with its row.
+func readState(ctx context.Context, sqlDB *sql.DB) (state SchemaState, empty bool, err error) {
 	client := ent.NewClient(ent.Driver(entsql.OpenDB(dialect.Postgres, sqlDB)))
 	row, err := client.SchemaState.Get(ctx, 1)
 	switch {
 	case err == nil:
-		return SchemaState{Major: row.Major, Floor: row.Floor}, nil
-	case ent.IsNotFound(err) || isUndefinedTable(err):
-		return initialState, nil
+		return SchemaState{Major: row.Major, Floor: row.Floor}, false, nil
+	case isUndefinedTable(err):
+		return initialState, true, nil
+	case ent.IsNotFound(err):
+		return initialState, false, nil
 	default:
-		return SchemaState{}, fmt.Errorf("read schema state: %w", err)
+		return SchemaState{}, false, fmt.Errorf("read schema state: %w", err)
 	}
 }
 
@@ -90,8 +99,9 @@ type Guard struct {
 //
 // A binary of the database's Major, or one Major behind it but not older than the floor (the
 // last release of a Major), starts. A build with no release number is never older than a floor.
+// An empty database is behind no Major: its migrations create it at the binary's own.
 func (g Guard) Check(ctx context.Context, sqlDB *sql.DB) error {
-	state, err := ReadState(ctx, sqlDB)
+	state, empty, err := readState(ctx, sqlDB)
 	if err != nil {
 		return err
 	}
@@ -100,6 +110,9 @@ func (g Guard) Check(ctx context.Context, sqlDB *sql.DB) error {
 		majors = Majors
 	}
 	own := majors[len(majors)-1].Major
+	if empty {
+		state = SchemaState{Major: own}
+	}
 	who := fmt.Sprintf("sphericon %s (commit %s, built %s)", g.Build.Version, g.Build.Commit, g.Build.Date)
 	tail := " Upgrade guide: " + UpgradeGuideURL
 
