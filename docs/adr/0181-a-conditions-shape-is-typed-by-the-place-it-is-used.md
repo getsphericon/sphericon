@@ -76,12 +76,18 @@ to parse.
   schema refuses the leaf.
 - The migration that rewrites the stored Conditions starts a Major. A release before it cannot read
   the typed tree, and no reader of the old shape is kept, so the migration adds the next Major and
-  its floor (ADR 0033) and an older release refuses to start on the rewritten data. While it runs,
-  the release still serving cannot read what it rewrote: a Segment's preview, a Broadcast due in
-  that window and a Rule's evaluation may fail until the new release starts. The pull request that
-  lands the move is a breaking change whose `Upgrade:` line says so. Here the
-  promise that a running Instance is never stopped does not hold in full; keeping it would need
-  the release before the move to read the typed shape, the compatibility reader this ADR rules out.
+  its floor (ADR 0033), and a release older than the floor refuses to start on the rewritten data.
+  The floor does not protect against the move: it is the last release before it, which ADR 0033
+  lets start on the next Major, and a release already running is not checked at all. The old and
+  the new shape misread each other silently: the release before the move reads a rewritten
+  Condition as the empty group, which matches every Contact, so a Segment's preview counts
+  everyone, a Broadcast due in that window goes to every Contact and every Rule fires on every
+  Event of its Trigger; and a Condition that release saves after the migration is in the old shape,
+  which the new release reads as matching every Contact too. The Upgrade therefore stops the old release before the migration runs and
+  does not start it again: the new release is the first to serve on the rewritten data. The pull
+  request that lands the move is a breaking change whose `Upgrade:` line says so. Here the promise
+  that a running Instance is never stopped does not hold; keeping it would need the release
+  before the move to read the typed shape, the compatibility reader this ADR rules out.
 
 ## Considered options
 
