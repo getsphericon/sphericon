@@ -1,6 +1,6 @@
 ---
 status: accepted
-build: [1733]
+build: [1756, 1757, 1758]
 ---
 
 # SPF belongs to the Integration and is shown and checked per Integration
