@@ -1740,6 +1740,29 @@ func HasSegmentsWith(preds ...predicate.Segment) predicate.Workspace {
 	})
 }
 
+// HasConditionSpikes applies the HasEdge predicate on the "condition_spikes" edge.
+func HasConditionSpikes() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ConditionSpikesTable, ConditionSpikesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasConditionSpikesWith applies the HasEdge predicate on the "condition_spikes" edge with a given conditions (other predicates).
+func HasConditionSpikesWith(preds ...predicate.ConditionSpike) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newConditionSpikesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasEvents applies the HasEdge predicate on the "events" edge.
 func HasEvents() predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {

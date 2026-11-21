@@ -295,13 +295,13 @@ const (
 )
 
 // ConditionWithinDays is how many days back a condition leaf looks: an Event count's window or a date's.
-// From site ConditionEventLeafInput.withinDays, site ConditionDateWithinLeafInput.withinDays.
+// From site ConditionEventLeafInput.withinDays, site ConditionDateWithinLeafInput.withinDays, site EventLeafInput.withinDays, site WithinLastTestInput.days.
 const (
 	ConditionWithinDaysMin = 1
 )
 
 // ConditionEventTimes is how many Events of an action a condition leaf counts.
-// From site ConditionEventLeafInput.times.
+// From site ConditionEventLeafInput.times, site EventLeafInput.times.
 const (
 	ConditionEventTimesMin = 0
 )

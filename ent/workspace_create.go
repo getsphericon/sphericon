@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastfigure"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
+	"github.com/getsphericon/sphericon/ent/conditionspike"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
@@ -491,6 +492,21 @@ func (_c *WorkspaceCreate) AddSegments(v ...*Segment) *WorkspaceCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddSegmentIDs(ids...)
+}
+
+// AddConditionSpikeIDs adds the "condition_spikes" edge to the ConditionSpike entity by IDs.
+func (_c *WorkspaceCreate) AddConditionSpikeIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddConditionSpikeIDs(ids...)
+	return _c
+}
+
+// AddConditionSpikes adds the "condition_spikes" edges to the ConditionSpike entity.
+func (_c *WorkspaceCreate) AddConditionSpikes(v ...*ConditionSpike) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddConditionSpikeIDs(ids...)
 }
 
 // AddEventIDs adds the "events" edge to the Event entity by IDs.
@@ -1566,6 +1582,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(segment.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ConditionSpikesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ConditionSpikesTable,
+			Columns: []string{workspace.ConditionSpikesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(conditionspike.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

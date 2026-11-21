@@ -6,6 +6,7 @@ package resources
 import (
 	"fmt"
 	external "github.com/getsphericon/sphericon/gen/external"
+	conditionspike "github.com/getsphericon/sphericon/internal/domain/contacts/conditionspike"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	contacts "github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	eventrecording "github.com/getsphericon/sphericon/internal/domain/contacts/eventrecording"
@@ -565,6 +566,28 @@ func (c *InputsImpl) SmsBroadcastContentPatch(source external.SmsBroadcastConten
 	broadcastsSMSContentPatch.Text = stringPatch(source.Text)
 	broadcastsSMSContentPatch.LinkTracking = boolPatch(source.LinkTracking)
 	return broadcastsSMSContentPatch
+}
+func (c *InputsImpl) SpikeRuleCondition(source *external.SpikeRuleConditionInput) (conditionspike.Input, error) {
+	var conditionspikeInput conditionspike.Input
+	if source != nil {
+		jsonRawMessage, err := spikeRuleConditionIn((*source).Condition)
+		if err != nil {
+			return conditionspikeInput, err
+		}
+		conditionspikeInput.Condition = jsonRawMessage
+	}
+	return conditionspikeInput, nil
+}
+func (c *InputsImpl) SpikeSegmentCondition(source *external.SpikeSegmentConditionInput) (conditionspike.Input, error) {
+	var conditionspikeInput conditionspike.Input
+	if source != nil {
+		jsonRawMessage, err := spikeSegmentConditionIn((*source).Condition)
+		if err != nil {
+			return conditionspikeInput, err
+		}
+		conditionspikeInput.Condition = jsonRawMessage
+	}
+	return conditionspikeInput, nil
 }
 func (c *InputsImpl) SuppressionChannel(source external.SuppressionChannel) channels.Channel {
 	var channelsChannel channels.Channel

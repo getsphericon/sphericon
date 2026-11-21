@@ -95,6 +95,8 @@ import (
 // goverter:enum:unknown @panic
 // goverter:useZeroValueOnPointerInconsistency
 // goverter:extend timestamp
+// goverter:extend spikeSegmentCondition
+// goverter:extend spikeRuleCondition
 // goverter:extend revision
 // goverter:extend nilFloat64
 // goverter:extend optNilString
@@ -167,6 +169,10 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	ContactsToResources(source []*ent.Contact) []siteapi.SiteContactResource
 	SegmentToResource(source *ent.Segment) siteapi.SiteSegmentResource
+
+	// SPIKE (#1674): a stored Condition of each place.
+	SpikeSegmentConditionResult(source *ent.ConditionSpike) siteapi.SpikeSegmentConditionResult
+	SpikeRuleConditionResult(source *ent.ConditionSpike) siteapi.SpikeRuleConditionResult
 	// goverter:useEmptyOnNil:slice
 	SegmentsToResources(source []*ent.Segment) []siteapi.SiteSegmentResource
 	TokenToResource(source *ent.ApiToken) siteapi.SiteApiTokenResource

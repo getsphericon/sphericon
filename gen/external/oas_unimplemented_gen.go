@@ -347,6 +347,24 @@ func (UnimplementedHandler) CapturedMessagesList(ctx context.Context, params Cap
 	return r, ht.ErrNotImplemented
 }
 
+// ConditionSpikeRule implements ConditionSpike_rule operation.
+//
+// Store a Rule's Condition and return it as read back.
+//
+// POST /condition-spike/rule
+func (UnimplementedHandler) ConditionSpikeRule(ctx context.Context, req *SpikeRuleConditionInput) (r *SpikeRuleConditionResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ConditionSpikeSegment implements ConditionSpike_segment operation.
+//
+// Store a Segment's Condition and return it as read back.
+//
+// POST /condition-spike/segment
+func (UnimplementedHandler) ConditionSpikeSegment(ctx context.Context, req *SpikeSegmentConditionInput) (r *SpikeSegmentConditionResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // ConfirmationsCreate implements Confirmations_create operation.
 //
 // Record consent a phone number gave outside sphericon (a form of your own, a verification service),

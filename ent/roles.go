@@ -941,6 +941,68 @@ const (
 	RoleOf_CapturedMessageCreateBulk_OnConflictColumns = RoleStart
 )
 
+// The types ent generates for ConditionSpike.
+const (
+	TypeOf_ConditionSpike             = TypeEntity
+	TypeOf_ConditionSpikes            = TypeOther
+	TypeOf_ConditionSpikeEdges        = TypeOther
+	EntityOf_ConditionSpikeEdges      = "ConditionSpike"
+	TypeOf_ConditionSpikeMutation     = TypeOther
+	TypeOf_ConditionSpikeClient       = TypeClient
+	TypeOf_ConditionSpikeQuery        = TypeQuery
+	TypeOf_ConditionSpikeSelect       = TypeQuery
+	TypeOf_ConditionSpikeGroupBy      = TypeQuery
+	TypeOf_ConditionSpikeCreate       = TypeCreate
+	TypeOf_ConditionSpikeCreateBulk   = TypeCreate
+	TypeOf_ConditionSpikeUpdate       = TypeUpdate
+	TypeOf_ConditionSpikeUpdateOne    = TypeUpdate
+	TypeOf_ConditionSpikeDelete       = TypeDelete
+	TypeOf_ConditionSpikeDeleteOne    = TypeDelete
+	TypeOf_ConditionSpikeUpsert       = TypeUpsert
+	TypeOf_ConditionSpikeUpsertOne    = TypeUpsert
+	TypeOf_ConditionSpikeUpsertBulk   = TypeUpsert
+	EntityOf_ConditionSpikes          = "ConditionSpike"
+	EntityOf_ConditionSpike           = "ConditionSpike"
+	EntityOf_ConditionSpikeMutation   = "ConditionSpike"
+	EntityOf_ConditionSpikeClient     = "ConditionSpike"
+	EntityOf_ConditionSpikeQuery      = "ConditionSpike"
+	EntityOf_ConditionSpikeSelect     = "ConditionSpike"
+	EntityOf_ConditionSpikeGroupBy    = "ConditionSpike"
+	EntityOf_ConditionSpikeCreate     = "ConditionSpike"
+	EntityOf_ConditionSpikeCreateBulk = "ConditionSpike"
+	EntityOf_ConditionSpikeUpdate     = "ConditionSpike"
+	EntityOf_ConditionSpikeUpdateOne  = "ConditionSpike"
+	EntityOf_ConditionSpikeDelete     = "ConditionSpike"
+	EntityOf_ConditionSpikeDeleteOne  = "ConditionSpike"
+	EntityOf_ConditionSpikeUpsert     = "ConditionSpike"
+	EntityOf_ConditionSpikeUpsertOne  = "ConditionSpike"
+	EntityOf_ConditionSpikeUpsertBulk = "ConditionSpike"
+)
+
+// The reads and the writes ent's methods for ConditionSpike start.
+const (
+	RoleOf_ConditionSpikeClient_Create                = RoleStart
+	RoleOf_ConditionSpikeClient_CreateBulk            = RoleStart
+	RoleOf_ConditionSpikeClient_MapCreateBulk         = RoleStart
+	RoleOf_ConditionSpikeClient_Update                = RoleStart
+	RoleOf_ConditionSpikeClient_UpdateOne             = RoleStart
+	RoleOf_ConditionSpikeClient_Delete                = RoleStart
+	RoleOf_ConditionSpikeClient_Query                 = RoleRead
+	RoleOf_ConditionSpikeClient_UpdateOneID           = RoleStart
+	RoleOf_ConditionSpikeClient_DeleteOne             = RoleStart
+	RoleOf_ConditionSpikeClient_DeleteOneID           = RoleStart
+	RoleOf_ConditionSpikeClient_Get                   = RoleRead
+	RoleOf_ConditionSpikeClient_GetX                  = RoleRead
+	RoleOf_ConditionSpikeClient_QueryWorkspace        = RoleRead
+	RoleOf_ConditionSpike_QueryWorkspace              = RoleRead
+	RoleOf_ConditionSpikeQuery_QueryWorkspace         = RoleRead
+	RoleOf_ConditionSpike_Update                      = RoleStart
+	RoleOf_ConditionSpikeCreate_OnConflict            = RoleStart
+	RoleOf_ConditionSpikeCreate_OnConflictColumns     = RoleStart
+	RoleOf_ConditionSpikeCreateBulk_OnConflict        = RoleStart
+	RoleOf_ConditionSpikeCreateBulk_OnConflictColumns = RoleStart
+)
+
 // The types ent generates for Confirmation.
 const (
 	TypeOf_Confirmation             = TypeEntity
@@ -5093,6 +5155,9 @@ const (
 	RoleOf_WorkspaceClient_QuerySegments                  = RoleRead
 	RoleOf_Workspace_QuerySegments                        = RoleRead
 	RoleOf_WorkspaceQuery_QuerySegments                   = RoleRead
+	RoleOf_WorkspaceClient_QueryConditionSpikes           = RoleRead
+	RoleOf_Workspace_QueryConditionSpikes                 = RoleRead
+	RoleOf_WorkspaceQuery_QueryConditionSpikes            = RoleRead
 	RoleOf_WorkspaceClient_QueryEvents                    = RoleRead
 	RoleOf_Workspace_QueryEvents                          = RoleRead
 	RoleOf_WorkspaceQuery_QueryEvents                     = RoleRead

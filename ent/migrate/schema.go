@@ -717,6 +717,29 @@ var (
 			},
 		},
 	}
+	// ConditionSpikesColumns holds the columns for the "condition_spikes" table.
+	ConditionSpikesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "place", Type: field.TypeString},
+		{Name: "condition", Type: field.TypeJSON},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// ConditionSpikesTable holds the schema information for the "condition_spikes" table.
+	ConditionSpikesTable = &schema.Table{
+		Name:       "condition_spikes",
+		Columns:    ConditionSpikesColumns,
+		PrimaryKey: []*schema.Column{ConditionSpikesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "condition_spikes_workspaces_condition_spikes",
+				Columns:    []*schema.Column{ConditionSpikesColumns[5]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// ConfirmationsColumns holds the columns for the "confirmations" table.
 	ConfirmationsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -3348,6 +3371,7 @@ var (
 		BroadcastFiguresTable,
 		BroadcastRecipientsTable,
 		CapturedMessagesTable,
+		ConditionSpikesTable,
 		ConfirmationsTable,
 		ConsentRecordsTable,
 		ConsentStampsTable,
@@ -3526,6 +3550,13 @@ func init() {
 	CapturedMessagesTable.Annotation.Checks = map[string]string{
 		"captured_messages_recipient_lower": "recipient = lower(recipient)",
 		"captured_messages_surface_check":   "surface IN ('broadcast', 'automation', 'transactional', 'test')",
+	}
+	ConditionSpikesTable.ForeignKeys[0].RefTable = WorkspacesTable
+	ConditionSpikesTable.Annotation = &entsql.Annotation{
+		Table: "condition_spikes",
+	}
+	ConditionSpikesTable.Annotation.Checks = map[string]string{
+		"condition_spikes_condition_check": "jsonb_typeof(condition) = 'object'",
 	}
 	ConfirmationsTable.ForeignKeys[0].RefTable = ContactsTable
 	ConfirmationsTable.ForeignKeys[1].RefTable = WorkspacesTable

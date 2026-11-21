@@ -2345,6 +2345,20 @@ func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) s
 	siteapiSmtpConfig.FromName = omitEmpty(source.FromName)
 	return siteapiSmtpConfig
 }
+func (c *ConverterImpl) SpikeRuleConditionResult(source *ent.ConditionSpike) site.SpikeRuleConditionResult {
+	var siteapiSpikeRuleConditionResult site.SpikeRuleConditionResult
+	if source != nil {
+		siteapiSpikeRuleConditionResult.Condition = spikeRuleCondition((*source).Condition)
+	}
+	return siteapiSpikeRuleConditionResult
+}
+func (c *ConverterImpl) SpikeSegmentConditionResult(source *ent.ConditionSpike) site.SpikeSegmentConditionResult {
+	var siteapiSpikeSegmentConditionResult site.SpikeSegmentConditionResult
+	if source != nil {
+		siteapiSpikeSegmentConditionResult.Condition = spikeSegmentCondition((*source).Condition)
+	}
+	return siteapiSpikeSegmentConditionResult
+}
 func (c *ConverterImpl) StartLinkToResource(source bindings.StartLink) site.TelegramStartLinkResource {
 	var siteapiTelegramStartLinkResource site.TelegramStartLinkResource
 	siteapiTelegramStartLinkResource.URL = source.URL

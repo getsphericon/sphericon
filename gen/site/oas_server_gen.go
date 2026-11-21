@@ -464,6 +464,18 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/captured-messages
 	SiteCapturedMessagesList(ctx context.Context, params SiteCapturedMessagesListParams) (*SiteCapturedMessagesListOK, error)
+	// SiteConditionSpikeRule implements SiteConditionSpike_rule operation.
+	//
+	// Store a Rule's Condition and return it as read back.
+	//
+	// POST /workspaces/{workspaceId}/condition-spike/rule
+	SiteConditionSpikeRule(ctx context.Context, req *SpikeRuleConditionInput, params SiteConditionSpikeRuleParams) (*SpikeRuleConditionResult, error)
+	// SiteConditionSpikeSegment implements SiteConditionSpike_segment operation.
+	//
+	// Store a Segment's Condition and return it as read back.
+	//
+	// POST /workspaces/{workspaceId}/condition-spike/segment
+	SiteConditionSpikeSegment(ctx context.Context, req *SpikeSegmentConditionInput, params SiteConditionSpikeSegmentParams) (*SpikeSegmentConditionResult, error)
 	// SiteConnectionsDelete implements SiteConnections_delete operation.
 	//
 	// Revoke a Connection: the caller's own, or anyone's with members:manage.

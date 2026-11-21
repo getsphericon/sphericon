@@ -165,6 +165,18 @@ func (f CapturedMessageFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Va
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CapturedMessageMutation", m)
 }
 
+// The ConditionSpikeFunc type is an adapter to allow the use of ordinary
+// function as ConditionSpike mutator.
+type ConditionSpikeFunc func(context.Context, *ent.ConditionSpikeMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ConditionSpikeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ConditionSpikeMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ConditionSpikeMutation", m)
+}
+
 // The ConfirmationFunc type is an adapter to allow the use of ordinary
 // function as Confirmation mutator.
 type ConfirmationFunc func(context.Context, *ent.ConfirmationMutation) (ent.Value, error)

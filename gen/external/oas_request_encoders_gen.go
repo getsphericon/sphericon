@@ -178,6 +178,34 @@ func encodeBroadcastsUpdateRequest(
 	return nil
 }
 
+func encodeConditionSpikeRuleRequest(
+	req *SpikeRuleConditionInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeConditionSpikeSegmentRequest(
+	req *SpikeSegmentConditionInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
 func encodeConfirmationsCreateRequest(
 	req *CreateConfirmationInput,
 	r *http.Request,

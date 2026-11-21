@@ -65,6 +65,8 @@ const (
 	SiteCapturedMessagesDeleteAllOperation             OperationName = "SiteCapturedMessagesDeleteAll"
 	SiteCapturedMessagesGetOperation                   OperationName = "SiteCapturedMessagesGet"
 	SiteCapturedMessagesListOperation                  OperationName = "SiteCapturedMessagesList"
+	SiteConditionSpikeRuleOperation                    OperationName = "SiteConditionSpikeRule"
+	SiteConditionSpikeSegmentOperation                 OperationName = "SiteConditionSpikeSegment"
 	SiteConnectionsDeleteOperation                     OperationName = "SiteConnectionsDelete"
 	SiteConnectionsListOperation                       OperationName = "SiteConnectionsList"
 	SiteContactsCreateOperation                        OperationName = "SiteContactsCreate"

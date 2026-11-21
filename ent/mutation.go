@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastfigure"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
+	"github.com/getsphericon/sphericon/ent/conditionspike"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/consentstamp"
@@ -125,6 +126,7 @@ const (
 	TypeBroadcastFigure          = "BroadcastFigure"
 	TypeBroadcastRecipient       = "BroadcastRecipient"
 	TypeCapturedMessage          = "CapturedMessage"
+	TypeConditionSpike           = "ConditionSpike"
 	TypeConfirmation             = "Confirmation"
 	TypeConsentRecord            = "ConsentRecord"
 	TypeConsentStamp             = "ConsentStamp"
@@ -17329,6 +17331,627 @@ func (m *CapturedMessageMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown CapturedMessage edge %s", name)
+}
+
+// ConditionSpikeMutation represents an operation that mutates the ConditionSpike nodes in the graph.
+type ConditionSpikeMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int64
+	created_at       *time.Time
+	updated_at       *time.Time
+	place            *string
+	condition        *json.RawMessage
+	appendcondition  json.RawMessage
+	clearedFields    map[string]struct{}
+	workspace        *int64
+	clearedworkspace bool
+	done             bool
+	oldValue         func(context.Context) (*ConditionSpike, error)
+	predicates       []predicate.ConditionSpike
+}
+
+var _ ent.Mutation = (*ConditionSpikeMutation)(nil)
+
+// conditionspikeOption allows management of the mutation configuration using functional options.
+type conditionspikeOption func(*ConditionSpikeMutation)
+
+// newConditionSpikeMutation creates new mutation for the ConditionSpike entity.
+func newConditionSpikeMutation(c config, op Op, opts ...conditionspikeOption) *ConditionSpikeMutation {
+	m := &ConditionSpikeMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeConditionSpike,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withConditionSpikeID sets the ID field of the mutation.
+func withConditionSpikeID(id int64) conditionspikeOption {
+	return func(m *ConditionSpikeMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ConditionSpike
+		)
+		m.oldValue = func(ctx context.Context) (*ConditionSpike, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ConditionSpike.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withConditionSpike sets the old ConditionSpike of the mutation.
+func withConditionSpike(node *ConditionSpike) conditionspikeOption {
+	return func(m *ConditionSpikeMutation) {
+		m.oldValue = func(context.Context) (*ConditionSpike, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ConditionSpikeMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ConditionSpikeMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of ConditionSpike entities.
+func (m *ConditionSpikeMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ConditionSpikeMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ConditionSpikeMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ConditionSpike.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ConditionSpikeMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ConditionSpikeMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ConditionSpike entity.
+// If the ConditionSpike object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConditionSpikeMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ConditionSpikeMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ConditionSpikeMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ConditionSpikeMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ConditionSpike entity.
+// If the ConditionSpike object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConditionSpikeMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ConditionSpikeMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *ConditionSpikeMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *ConditionSpikeMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the ConditionSpike entity.
+// If the ConditionSpike object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConditionSpikeMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *ConditionSpikeMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetPlace sets the "place" field.
+func (m *ConditionSpikeMutation) SetPlace(s string) {
+	m.place = &s
+}
+
+// Place returns the value of the "place" field in the mutation.
+func (m *ConditionSpikeMutation) Place() (r string, exists bool) {
+	v := m.place
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlace returns the old "place" field's value of the ConditionSpike entity.
+// If the ConditionSpike object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConditionSpikeMutation) OldPlace(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlace is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlace requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlace: %w", err)
+	}
+	return oldValue.Place, nil
+}
+
+// ResetPlace resets all changes to the "place" field.
+func (m *ConditionSpikeMutation) ResetPlace() {
+	m.place = nil
+}
+
+// SetCondition sets the "condition" field.
+func (m *ConditionSpikeMutation) SetCondition(jm json.RawMessage) {
+	m.condition = &jm
+	m.appendcondition = nil
+}
+
+// Condition returns the value of the "condition" field in the mutation.
+func (m *ConditionSpikeMutation) Condition() (r json.RawMessage, exists bool) {
+	v := m.condition
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCondition returns the old "condition" field's value of the ConditionSpike entity.
+// If the ConditionSpike object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConditionSpikeMutation) OldCondition(ctx context.Context) (v json.RawMessage, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCondition is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCondition requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCondition: %w", err)
+	}
+	return oldValue.Condition, nil
+}
+
+// AppendCondition adds jm to the "condition" field.
+func (m *ConditionSpikeMutation) AppendCondition(jm json.RawMessage) {
+	m.appendcondition = append(m.appendcondition, jm...)
+}
+
+// AppendedCondition returns the list of values that were appended to the "condition" field in this mutation.
+func (m *ConditionSpikeMutation) AppendedCondition() (json.RawMessage, bool) {
+	if len(m.appendcondition) == 0 {
+		return nil, false
+	}
+	return m.appendcondition, true
+}
+
+// ResetCondition resets all changes to the "condition" field.
+func (m *ConditionSpikeMutation) ResetCondition() {
+	m.condition = nil
+	m.appendcondition = nil
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *ConditionSpikeMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[conditionspike.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *ConditionSpikeMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *ConditionSpikeMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *ConditionSpikeMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// Where appends a list predicates to the ConditionSpikeMutation builder.
+func (m *ConditionSpikeMutation) Where(ps ...predicate.ConditionSpike) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ConditionSpikeMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ConditionSpikeMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ConditionSpike, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ConditionSpikeMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ConditionSpikeMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ConditionSpike).
+func (m *ConditionSpikeMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ConditionSpikeMutation) Fields() []string {
+	fields := make([]string, 0, 5)
+	if m.created_at != nil {
+		fields = append(fields, conditionspike.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, conditionspike.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, conditionspike.FieldWorkspaceID)
+	}
+	if m.place != nil {
+		fields = append(fields, conditionspike.FieldPlace)
+	}
+	if m.condition != nil {
+		fields = append(fields, conditionspike.FieldCondition)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ConditionSpikeMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case conditionspike.FieldCreatedAt:
+		return m.CreatedAt()
+	case conditionspike.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case conditionspike.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case conditionspike.FieldPlace:
+		return m.Place()
+	case conditionspike.FieldCondition:
+		return m.Condition()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ConditionSpikeMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case conditionspike.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case conditionspike.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case conditionspike.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case conditionspike.FieldPlace:
+		return m.OldPlace(ctx)
+	case conditionspike.FieldCondition:
+		return m.OldCondition(ctx)
+	}
+	return nil, fmt.Errorf("unknown ConditionSpike field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ConditionSpikeMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case conditionspike.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case conditionspike.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case conditionspike.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case conditionspike.FieldPlace:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlace(v)
+		return nil
+	case conditionspike.FieldCondition:
+		v, ok := value.(json.RawMessage)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCondition(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ConditionSpike field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ConditionSpikeMutation) AddedFields() []string {
+	var fields []string
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ConditionSpikeMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ConditionSpikeMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown ConditionSpike numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ConditionSpikeMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ConditionSpikeMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ConditionSpikeMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ConditionSpike nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ConditionSpikeMutation) ResetField(name string) error {
+	switch name {
+	case conditionspike.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case conditionspike.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case conditionspike.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case conditionspike.FieldPlace:
+		m.ResetPlace()
+		return nil
+	case conditionspike.FieldCondition:
+		m.ResetCondition()
+		return nil
+	}
+	return fmt.Errorf("unknown ConditionSpike field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ConditionSpikeMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.workspace != nil {
+		edges = append(edges, conditionspike.EdgeWorkspace)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ConditionSpikeMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case conditionspike.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ConditionSpikeMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ConditionSpikeMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ConditionSpikeMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedworkspace {
+		edges = append(edges, conditionspike.EdgeWorkspace)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ConditionSpikeMutation) EdgeCleared(name string) bool {
+	switch name {
+	case conditionspike.EdgeWorkspace:
+		return m.clearedworkspace
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ConditionSpikeMutation) ClearEdge(name string) error {
+	switch name {
+	case conditionspike.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown ConditionSpike unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ConditionSpikeMutation) ResetEdge(name string) error {
+	switch name {
+	case conditionspike.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown ConditionSpike edge %s", name)
 }
 
 // ConfirmationMutation represents an operation that mutates the Confirmation nodes in the graph.
@@ -75734,6 +76357,9 @@ type WorkspaceMutation struct {
 	segments                           map[int64]struct{}
 	removedsegments                    map[int64]struct{}
 	clearedsegments                    bool
+	condition_spikes                   map[int64]struct{}
+	removedcondition_spikes            map[int64]struct{}
+	clearedcondition_spikes            bool
 	events                             map[int64]struct{}
 	removedevents                      map[int64]struct{}
 	clearedevents                      bool
@@ -77472,6 +78098,60 @@ func (m *WorkspaceMutation) ResetSegments() {
 	m.segments = nil
 	m.clearedsegments = false
 	m.removedsegments = nil
+}
+
+// AddConditionSpikeIDs adds the "condition_spikes" edge to the ConditionSpike entity by ids.
+func (m *WorkspaceMutation) AddConditionSpikeIDs(ids ...int64) {
+	if m.condition_spikes == nil {
+		m.condition_spikes = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.condition_spikes[ids[i]] = struct{}{}
+	}
+}
+
+// ClearConditionSpikes clears the "condition_spikes" edge to the ConditionSpike entity.
+func (m *WorkspaceMutation) ClearConditionSpikes() {
+	m.clearedcondition_spikes = true
+}
+
+// ConditionSpikesCleared reports if the "condition_spikes" edge to the ConditionSpike entity was cleared.
+func (m *WorkspaceMutation) ConditionSpikesCleared() bool {
+	return m.clearedcondition_spikes
+}
+
+// RemoveConditionSpikeIDs removes the "condition_spikes" edge to the ConditionSpike entity by IDs.
+func (m *WorkspaceMutation) RemoveConditionSpikeIDs(ids ...int64) {
+	if m.removedcondition_spikes == nil {
+		m.removedcondition_spikes = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.condition_spikes, ids[i])
+		m.removedcondition_spikes[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedConditionSpikes returns the removed IDs of the "condition_spikes" edge to the ConditionSpike entity.
+func (m *WorkspaceMutation) RemovedConditionSpikesIDs() (ids []int64) {
+	for id := range m.removedcondition_spikes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ConditionSpikesIDs returns the "condition_spikes" edge IDs in the mutation.
+func (m *WorkspaceMutation) ConditionSpikesIDs() (ids []int64) {
+	for id := range m.condition_spikes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetConditionSpikes resets all changes to the "condition_spikes" edge.
+func (m *WorkspaceMutation) ResetConditionSpikes() {
+	m.condition_spikes = nil
+	m.clearedcondition_spikes = false
+	m.removedcondition_spikes = nil
 }
 
 // AddEventIDs adds the "events" edge to the Event entity by ids.
@@ -80728,7 +81408,7 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WorkspaceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 51)
+	edges := make([]string, 0, 52)
 	if m.contacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -80740,6 +81420,9 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	}
 	if m.segments != nil {
 		edges = append(edges, workspace.EdgeSegments)
+	}
+	if m.condition_spikes != nil {
+		edges = append(edges, workspace.EdgeConditionSpikes)
 	}
 	if m.events != nil {
 		edges = append(edges, workspace.EdgeEvents)
@@ -80910,6 +81593,12 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 	case workspace.EdgeSegments:
 		ids := make([]ent.Value, 0, len(m.segments))
 		for id := range m.segments {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeConditionSpikes:
+		ids := make([]ent.Value, 0, len(m.condition_spikes))
+		for id := range m.condition_spikes {
 			ids = append(ids, id)
 		}
 		return ids
@@ -81199,7 +81888,7 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WorkspaceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 51)
+	edges := make([]string, 0, 52)
 	if m.removedcontacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -81211,6 +81900,9 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	}
 	if m.removedsegments != nil {
 		edges = append(edges, workspace.EdgeSegments)
+	}
+	if m.removedcondition_spikes != nil {
+		edges = append(edges, workspace.EdgeConditionSpikes)
 	}
 	if m.removedevents != nil {
 		edges = append(edges, workspace.EdgeEvents)
@@ -81378,6 +82070,12 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 	case workspace.EdgeSegments:
 		ids := make([]ent.Value, 0, len(m.removedsegments))
 		for id := range m.removedsegments {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeConditionSpikes:
+		ids := make([]ent.Value, 0, len(m.removedcondition_spikes))
+		for id := range m.removedcondition_spikes {
 			ids = append(ids, id)
 		}
 		return ids
@@ -81663,7 +82361,7 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WorkspaceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 51)
+	edges := make([]string, 0, 52)
 	if m.clearedcontacts {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -81675,6 +82373,9 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	}
 	if m.clearedsegments {
 		edges = append(edges, workspace.EdgeSegments)
+	}
+	if m.clearedcondition_spikes {
+		edges = append(edges, workspace.EdgeConditionSpikes)
 	}
 	if m.clearedevents {
 		edges = append(edges, workspace.EdgeEvents)
@@ -81832,6 +82533,8 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearedtags
 	case workspace.EdgeSegments:
 		return m.clearedsegments
+	case workspace.EdgeConditionSpikes:
+		return m.clearedcondition_spikes
 	case workspace.EdgeEvents:
 		return m.clearedevents
 	case workspace.EdgeEventJournalEntries:
@@ -81956,6 +82659,9 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 		return nil
 	case workspace.EdgeSegments:
 		m.ResetSegments()
+		return nil
+	case workspace.EdgeConditionSpikes:
+		m.ResetConditionSpikes()
 		return nil
 	case workspace.EdgeEvents:
 		m.ResetEvents()

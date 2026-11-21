@@ -10,6 +10,7 @@ import (
 	membership "github.com/getsphericon/sphericon/ent/membership"
 	signupsurveyresponse "github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	site "github.com/getsphericon/sphericon/gen/site"
+	conditionspike "github.com/getsphericon/sphericon/internal/domain/contacts/conditionspike"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	contacts "github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	segments "github.com/getsphericon/sphericon/internal/domain/contacts/segments"
@@ -941,6 +942,28 @@ func (c *InputsImpl) SortDirection(source site.SortDirection) pagination.Directi
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return paginationDirection
+}
+func (c *InputsImpl) SpikeRuleCondition(source *site.SpikeRuleConditionInput) (conditionspike.Input, error) {
+	var conditionspikeInput conditionspike.Input
+	if source != nil {
+		jsonRawMessage, err := spikeRuleConditionIn((*source).Condition)
+		if err != nil {
+			return conditionspikeInput, err
+		}
+		conditionspikeInput.Condition = jsonRawMessage
+	}
+	return conditionspikeInput, nil
+}
+func (c *InputsImpl) SpikeSegmentCondition(source *site.SpikeSegmentConditionInput) (conditionspike.Input, error) {
+	var conditionspikeInput conditionspike.Input
+	if source != nil {
+		jsonRawMessage, err := spikeSegmentConditionIn((*source).Condition)
+		if err != nil {
+			return conditionspikeInput, err
+		}
+		conditionspikeInput.Condition = jsonRawMessage
+	}
+	return conditionspikeInput, nil
 }
 func (c *InputsImpl) SuppressionChannel(source site.SuppressionChannel) channels.Channel {
 	var channelsChannel channels.Channel

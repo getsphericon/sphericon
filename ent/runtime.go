@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastfigure"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
+	"github.com/getsphericon/sphericon/ent/conditionspike"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/consentstamp"
@@ -509,6 +510,25 @@ func init() {
 	capturedmessageDescFromUnverified := capturedmessageFields[13].Descriptor()
 	// capturedmessage.DefaultFromUnverified holds the default value on creation for the from_unverified field.
 	capturedmessage.DefaultFromUnverified = capturedmessageDescFromUnverified.Default.(bool)
+	conditionspikeMixin := schema.ConditionSpike{}.Mixin()
+	conditionspikeMixinFields0 := conditionspikeMixin[0].Fields()
+	_ = conditionspikeMixinFields0
+	conditionspikeFields := schema.ConditionSpike{}.Fields()
+	_ = conditionspikeFields
+	// conditionspikeDescCreatedAt is the schema descriptor for created_at field.
+	conditionspikeDescCreatedAt := conditionspikeMixinFields0[0].Descriptor()
+	// conditionspike.DefaultCreatedAt holds the default value on creation for the created_at field.
+	conditionspike.DefaultCreatedAt = conditionspikeDescCreatedAt.Default.(func() time.Time)
+	// conditionspikeDescUpdatedAt is the schema descriptor for updated_at field.
+	conditionspikeDescUpdatedAt := conditionspikeMixinFields0[1].Descriptor()
+	// conditionspike.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	conditionspike.DefaultUpdatedAt = conditionspikeDescUpdatedAt.Default.(func() time.Time)
+	// conditionspike.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	conditionspike.UpdateDefaultUpdatedAt = conditionspikeDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// conditionspikeDescPlace is the schema descriptor for place field.
+	conditionspikeDescPlace := conditionspikeFields[1].Descriptor()
+	// conditionspike.PlaceValidator is a validator for the "place" field. It is called by the builders before save.
+	conditionspike.PlaceValidator = conditionspikeDescPlace.Validators[0].(func(string) error)
 	confirmationMixin := schema.Confirmation{}.Mixin()
 	confirmationMixinFields0 := confirmationMixin[0].Fields()
 	_ = confirmationMixinFields0

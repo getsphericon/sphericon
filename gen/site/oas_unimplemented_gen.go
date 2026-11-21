@@ -646,6 +646,24 @@ func (UnimplementedHandler) SiteCapturedMessagesList(ctx context.Context, params
 	return r, ht.ErrNotImplemented
 }
 
+// SiteConditionSpikeRule implements SiteConditionSpike_rule operation.
+//
+// Store a Rule's Condition and return it as read back.
+//
+// POST /workspaces/{workspaceId}/condition-spike/rule
+func (UnimplementedHandler) SiteConditionSpikeRule(ctx context.Context, req *SpikeRuleConditionInput, params SiteConditionSpikeRuleParams) (r *SpikeRuleConditionResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteConditionSpikeSegment implements SiteConditionSpike_segment operation.
+//
+// Store a Segment's Condition and return it as read back.
+//
+// POST /workspaces/{workspaceId}/condition-spike/segment
+func (UnimplementedHandler) SiteConditionSpikeSegment(ctx context.Context, req *SpikeSegmentConditionInput, params SiteConditionSpikeSegmentParams) (r *SpikeSegmentConditionResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteConnectionsDelete implements SiteConnections_delete operation.
 //
 // Revoke a Connection: the caller's own, or anyone's with members:manage.

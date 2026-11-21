@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastfigure"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
+	"github.com/getsphericon/sphericon/ent/conditionspike"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/consentstamp"
@@ -128,6 +129,8 @@ type Client struct {
 	BroadcastRecipient *BroadcastRecipientClient
 	// CapturedMessage is the client for interacting with the CapturedMessage builders.
 	CapturedMessage *CapturedMessageClient
+	// ConditionSpike is the client for interacting with the ConditionSpike builders.
+	ConditionSpike *ConditionSpikeClient
 	// Confirmation is the client for interacting with the Confirmation builders.
 	Confirmation *ConfirmationClient
 	// ConsentRecord is the client for interacting with the ConsentRecord builders.
@@ -282,6 +285,7 @@ func (c *Client) init() {
 	c.BroadcastFigure = NewBroadcastFigureClient(c.config)
 	c.BroadcastRecipient = NewBroadcastRecipientClient(c.config)
 	c.CapturedMessage = NewCapturedMessageClient(c.config)
+	c.ConditionSpike = NewConditionSpikeClient(c.config)
 	c.Confirmation = NewConfirmationClient(c.config)
 	c.ConsentRecord = NewConsentRecordClient(c.config)
 	c.ConsentStamp = NewConsentStampClient(c.config)
@@ -452,6 +456,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		BroadcastFigure:          NewBroadcastFigureClient(cfg),
 		BroadcastRecipient:       NewBroadcastRecipientClient(cfg),
 		CapturedMessage:          NewCapturedMessageClient(cfg),
+		ConditionSpike:           NewConditionSpikeClient(cfg),
 		Confirmation:             NewConfirmationClient(cfg),
 		ConsentRecord:            NewConsentRecordClient(cfg),
 		ConsentStamp:             NewConsentStampClient(cfg),
@@ -549,6 +554,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		BroadcastFigure:          NewBroadcastFigureClient(cfg),
 		BroadcastRecipient:       NewBroadcastRecipientClient(cfg),
 		CapturedMessage:          NewCapturedMessageClient(cfg),
+		ConditionSpike:           NewConditionSpikeClient(cfg),
 		Confirmation:             NewConfirmationClient(cfg),
 		ConsentRecord:            NewConsentRecordClient(cfg),
 		ConsentStamp:             NewConsentStampClient(cfg),
@@ -645,11 +651,11 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationFigure,
 		c.AutomationRun, c.AutomationVersion, c.Binding, c.BrandKit, c.Broadcast,
-		c.BroadcastFigure, c.BroadcastRecipient, c.CapturedMessage, c.Confirmation,
-		c.ConsentRecord, c.ConsentStamp, c.Contact, c.ContactTag, c.CustomField,
-		c.DefaultSendCap, c.EmailTemplate, c.Erasure, c.Event, c.EventJournalEntry,
-		c.EventReceipt, c.HeldOrderEvent, c.Hold, c.IdentitySecret,
-		c.InstanceAuditEntry, c.InstanceState, c.Integration,
+		c.BroadcastFigure, c.BroadcastRecipient, c.CapturedMessage, c.ConditionSpike,
+		c.Confirmation, c.ConsentRecord, c.ConsentStamp, c.Contact, c.ContactTag,
+		c.CustomField, c.DefaultSendCap, c.EmailTemplate, c.Erasure, c.Event,
+		c.EventJournalEntry, c.EventReceipt, c.HeldOrderEvent, c.Hold,
+		c.IdentitySecret, c.InstanceAuditEntry, c.InstanceState, c.Integration,
 		c.IntegrationProviderState, c.Invitation, c.JoinDomain, c.LegalDocumentDraft,
 		c.LegalDocumentVersion, c.Membership, c.OAuthClient, c.OAuthCode,
 		c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage, c.Passkey,
@@ -672,11 +678,11 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationFigure,
 		c.AutomationRun, c.AutomationVersion, c.Binding, c.BrandKit, c.Broadcast,
-		c.BroadcastFigure, c.BroadcastRecipient, c.CapturedMessage, c.Confirmation,
-		c.ConsentRecord, c.ConsentStamp, c.Contact, c.ContactTag, c.CustomField,
-		c.DefaultSendCap, c.EmailTemplate, c.Erasure, c.Event, c.EventJournalEntry,
-		c.EventReceipt, c.HeldOrderEvent, c.Hold, c.IdentitySecret,
-		c.InstanceAuditEntry, c.InstanceState, c.Integration,
+		c.BroadcastFigure, c.BroadcastRecipient, c.CapturedMessage, c.ConditionSpike,
+		c.Confirmation, c.ConsentRecord, c.ConsentStamp, c.Contact, c.ContactTag,
+		c.CustomField, c.DefaultSendCap, c.EmailTemplate, c.Erasure, c.Event,
+		c.EventJournalEntry, c.EventReceipt, c.HeldOrderEvent, c.Hold,
+		c.IdentitySecret, c.InstanceAuditEntry, c.InstanceState, c.Integration,
 		c.IntegrationProviderState, c.Invitation, c.JoinDomain, c.LegalDocumentDraft,
 		c.LegalDocumentVersion, c.Membership, c.OAuthClient, c.OAuthCode,
 		c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage, c.Passkey,
@@ -722,6 +728,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.BroadcastRecipient.mutate(ctx, m)
 	case *CapturedMessageMutation:
 		return c.CapturedMessage.mutate(ctx, m)
+	case *ConditionSpikeMutation:
+		return c.ConditionSpike.mutate(ctx, m)
 	case *ConfirmationMutation:
 		return c.Confirmation.mutate(ctx, m)
 	case *ConsentRecordMutation:
@@ -3159,6 +3167,155 @@ func (c *CapturedMessageClient) mutate(ctx context.Context, m *CapturedMessageMu
 		return (&CapturedMessageDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown CapturedMessage mutation op: %q", m.Op())
+	}
+}
+
+// ConditionSpikeClient is a client for the ConditionSpike schema.
+type ConditionSpikeClient struct {
+	config
+}
+
+// NewConditionSpikeClient returns a client for the ConditionSpike from the given config.
+func NewConditionSpikeClient(c config) *ConditionSpikeClient {
+	return &ConditionSpikeClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `conditionspike.Hooks(f(g(h())))`.
+func (c *ConditionSpikeClient) Use(hooks ...Hook) {
+	c.hooks.ConditionSpike = append(c.hooks.ConditionSpike, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `conditionspike.Intercept(f(g(h())))`.
+func (c *ConditionSpikeClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ConditionSpike = append(c.inters.ConditionSpike, interceptors...)
+}
+
+// Create returns a builder for creating a ConditionSpike entity.
+func (c *ConditionSpikeClient) Create() *ConditionSpikeCreate {
+	mutation := newConditionSpikeMutation(c.config, OpCreate)
+	return &ConditionSpikeCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ConditionSpike entities.
+func (c *ConditionSpikeClient) CreateBulk(builders ...*ConditionSpikeCreate) *ConditionSpikeCreateBulk {
+	return &ConditionSpikeCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ConditionSpikeClient) MapCreateBulk(slice any, setFunc func(*ConditionSpikeCreate, int)) *ConditionSpikeCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ConditionSpikeCreateBulk{err: fmt.Errorf("calling to ConditionSpikeClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ConditionSpikeCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ConditionSpikeCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ConditionSpike.
+func (c *ConditionSpikeClient) Update() *ConditionSpikeUpdate {
+	mutation := newConditionSpikeMutation(c.config, OpUpdate)
+	return &ConditionSpikeUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ConditionSpikeClient) UpdateOne(_m *ConditionSpike) *ConditionSpikeUpdateOne {
+	mutation := newConditionSpikeMutation(c.config, OpUpdateOne, withConditionSpike(_m))
+	return &ConditionSpikeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ConditionSpikeClient) UpdateOneID(id int64) *ConditionSpikeUpdateOne {
+	mutation := newConditionSpikeMutation(c.config, OpUpdateOne, withConditionSpikeID(id))
+	return &ConditionSpikeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ConditionSpike.
+func (c *ConditionSpikeClient) Delete() *ConditionSpikeDelete {
+	mutation := newConditionSpikeMutation(c.config, OpDelete)
+	return &ConditionSpikeDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ConditionSpikeClient) DeleteOne(_m *ConditionSpike) *ConditionSpikeDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ConditionSpikeClient) DeleteOneID(id int64) *ConditionSpikeDeleteOne {
+	builder := c.Delete().Where(conditionspike.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ConditionSpikeDeleteOne{builder}
+}
+
+// Query returns a query builder for ConditionSpike.
+func (c *ConditionSpikeClient) Query() *ConditionSpikeQuery {
+	return &ConditionSpikeQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeConditionSpike},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ConditionSpike entity by its id.
+func (c *ConditionSpikeClient) Get(ctx context.Context, id int64) (*ConditionSpike, error) {
+	return c.Query().Where(conditionspike.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ConditionSpikeClient) GetX(ctx context.Context, id int64) *ConditionSpike {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a ConditionSpike.
+func (c *ConditionSpikeClient) QueryWorkspace(_m *ConditionSpike) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(conditionspike.Table, conditionspike.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, conditionspike.WorkspaceTable, conditionspike.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ConditionSpikeClient) Hooks() []Hook {
+	return c.hooks.ConditionSpike
+}
+
+// Interceptors returns the client interceptors.
+func (c *ConditionSpikeClient) Interceptors() []Interceptor {
+	return c.inters.ConditionSpike
+}
+
+func (c *ConditionSpikeClient) mutate(ctx context.Context, m *ConditionSpikeMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ConditionSpikeCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ConditionSpikeUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ConditionSpikeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ConditionSpikeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ConditionSpike mutation op: %q", m.Op())
 	}
 }
 
@@ -13767,6 +13924,22 @@ func (c *WorkspaceClient) QuerySegments(_m *Workspace) *SegmentQuery {
 	return query
 }
 
+// QueryConditionSpikes queries the condition_spikes edge of a Workspace.
+func (c *WorkspaceClient) QueryConditionSpikes(_m *Workspace) *ConditionSpikeQuery {
+	query := (&ConditionSpikeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(conditionspike.Table, conditionspike.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.ConditionSpikesTable, workspace.ConditionSpikesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryEvents queries the events edge of a Workspace.
 func (c *WorkspaceClient) QueryEvents(_m *Workspace) *EventQuery {
 	query := (&EventClient{config: c.config}).Query()
@@ -14698,37 +14871,37 @@ type (
 	hooks struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationFigure, AutomationRun,
 		AutomationVersion, Binding, BrandKit, Broadcast, BroadcastFigure,
-		BroadcastRecipient, CapturedMessage, Confirmation, ConsentRecord, ConsentStamp,
-		Contact, ContactTag, CustomField, DefaultSendCap, EmailTemplate, Erasure,
-		Event, EventJournalEntry, EventReceipt, HeldOrderEvent, Hold, IdentitySecret,
-		InstanceAuditEntry, InstanceState, Integration, IntegrationProviderState,
-		Invitation, JoinDomain, LegalDocumentDraft, LegalDocumentVersion, Membership,
-		OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
-		OutboundMessage, Passkey, PasskeyChallenge, PendingSignup, PrivateRelayRange,
-		ProviderLimiter, RecoveryCode, Rule, RuleFiring, RuleVersion,
-		RuleVersionTrigger, SchemaState, SecondFactor, Segment, SendCapLimiter,
-		SendingDomain, ServiceCredential, SignupItem, SignupSurveyResponse,
-		StaffMember, StartToken, Suppression, Tag, TrackedLink, TrackingDomain,
-		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
-		Visitor, WebhookEndpoint, WebhookEndpointHealth, Workspace,
+		BroadcastRecipient, CapturedMessage, ConditionSpike, Confirmation,
+		ConsentRecord, ConsentStamp, Contact, ContactTag, CustomField, DefaultSendCap,
+		EmailTemplate, Erasure, Event, EventJournalEntry, EventReceipt, HeldOrderEvent,
+		Hold, IdentitySecret, InstanceAuditEntry, InstanceState, Integration,
+		IntegrationProviderState, Invitation, JoinDomain, LegalDocumentDraft,
+		LegalDocumentVersion, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
+		Order, OrderMovement, OutboundMessage, Passkey, PasskeyChallenge,
+		PendingSignup, PrivateRelayRange, ProviderLimiter, RecoveryCode, Rule,
+		RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState, SecondFactor,
+		Segment, SendCapLimiter, SendingDomain, ServiceCredential, SignupItem,
+		SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag, TrackedLink,
+		TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
+		UserTombstone, Visitor, WebhookEndpoint, WebhookEndpointHealth, Workspace,
 		WorkspaceStanding []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationFigure, AutomationRun,
 		AutomationVersion, Binding, BrandKit, Broadcast, BroadcastFigure,
-		BroadcastRecipient, CapturedMessage, Confirmation, ConsentRecord, ConsentStamp,
-		Contact, ContactTag, CustomField, DefaultSendCap, EmailTemplate, Erasure,
-		Event, EventJournalEntry, EventReceipt, HeldOrderEvent, Hold, IdentitySecret,
-		InstanceAuditEntry, InstanceState, Integration, IntegrationProviderState,
-		Invitation, JoinDomain, LegalDocumentDraft, LegalDocumentVersion, Membership,
-		OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
-		OutboundMessage, Passkey, PasskeyChallenge, PendingSignup, PrivateRelayRange,
-		ProviderLimiter, RecoveryCode, Rule, RuleFiring, RuleVersion,
-		RuleVersionTrigger, SchemaState, SecondFactor, Segment, SendCapLimiter,
-		SendingDomain, ServiceCredential, SignupItem, SignupSurveyResponse,
-		StaffMember, StartToken, Suppression, Tag, TrackedLink, TrackingDomain,
-		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
-		Visitor, WebhookEndpoint, WebhookEndpointHealth, Workspace,
+		BroadcastRecipient, CapturedMessage, ConditionSpike, Confirmation,
+		ConsentRecord, ConsentStamp, Contact, ContactTag, CustomField, DefaultSendCap,
+		EmailTemplate, Erasure, Event, EventJournalEntry, EventReceipt, HeldOrderEvent,
+		Hold, IdentitySecret, InstanceAuditEntry, InstanceState, Integration,
+		IntegrationProviderState, Invitation, JoinDomain, LegalDocumentDraft,
+		LegalDocumentVersion, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
+		Order, OrderMovement, OutboundMessage, Passkey, PasskeyChallenge,
+		PendingSignup, PrivateRelayRange, ProviderLimiter, RecoveryCode, Rule,
+		RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState, SecondFactor,
+		Segment, SendCapLimiter, SendingDomain, ServiceCredential, SignupItem,
+		SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag, TrackedLink,
+		TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
+		UserTombstone, Visitor, WebhookEndpoint, WebhookEndpointHealth, Workspace,
 		WorkspaceStanding []ent.Interceptor
 	}
 )

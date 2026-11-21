@@ -1497,6 +1497,20 @@ func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) e
 	externalapiSmtpConfig.FromName = omitEmpty(source.FromName)
 	return externalapiSmtpConfig
 }
+func (c *ConverterImpl) SpikeRuleConditionResult(source *ent.ConditionSpike) external.SpikeRuleConditionResult {
+	var externalapiSpikeRuleConditionResult external.SpikeRuleConditionResult
+	if source != nil {
+		externalapiSpikeRuleConditionResult.Condition = spikeRuleCondition((*source).Condition)
+	}
+	return externalapiSpikeRuleConditionResult
+}
+func (c *ConverterImpl) SpikeSegmentConditionResult(source *ent.ConditionSpike) external.SpikeSegmentConditionResult {
+	var externalapiSpikeSegmentConditionResult external.SpikeSegmentConditionResult
+	if source != nil {
+		externalapiSpikeSegmentConditionResult.Condition = spikeSegmentCondition((*source).Condition)
+	}
+	return externalapiSpikeSegmentConditionResult
+}
 func (c *ConverterImpl) StartLinkToResource(source bindings.StartLink) external.TelegramStartLinkResource {
 	var externalapiTelegramStartLinkResource external.TelegramStartLinkResource
 	externalapiTelegramStartLinkResource.URL = source.URL

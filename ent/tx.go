@@ -40,6 +40,8 @@ type Tx struct {
 	BroadcastRecipient *BroadcastRecipientClient
 	// CapturedMessage is the client for interacting with the CapturedMessage builders.
 	CapturedMessage *CapturedMessageClient
+	// ConditionSpike is the client for interacting with the ConditionSpike builders.
+	ConditionSpike *ConditionSpikeClient
 	// Confirmation is the client for interacting with the Confirmation builders.
 	Confirmation *ConfirmationClient
 	// ConsentRecord is the client for interacting with the ConsentRecord builders.
@@ -314,6 +316,7 @@ func (tx *Tx) init() {
 	tx.BroadcastFigure = NewBroadcastFigureClient(tx.config)
 	tx.BroadcastRecipient = NewBroadcastRecipientClient(tx.config)
 	tx.CapturedMessage = NewCapturedMessageClient(tx.config)
+	tx.ConditionSpike = NewConditionSpikeClient(tx.config)
 	tx.Confirmation = NewConfirmationClient(tx.config)
 	tx.ConsentRecord = NewConsentRecordClient(tx.config)
 	tx.ConsentStamp = NewConsentStampClient(tx.config)

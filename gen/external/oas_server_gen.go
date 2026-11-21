@@ -240,6 +240,18 @@ type Handler interface {
 	//
 	// GET /captured-messages
 	CapturedMessagesList(ctx context.Context, params CapturedMessagesListParams) (*CapturedMessagesListOK, error)
+	// ConditionSpikeRule implements ConditionSpike_rule operation.
+	//
+	// Store a Rule's Condition and return it as read back.
+	//
+	// POST /condition-spike/rule
+	ConditionSpikeRule(ctx context.Context, req *SpikeRuleConditionInput) (*SpikeRuleConditionResult, error)
+	// ConditionSpikeSegment implements ConditionSpike_segment operation.
+	//
+	// Store a Segment's Condition and return it as read back.
+	//
+	// POST /condition-spike/segment
+	ConditionSpikeSegment(ctx context.Context, req *SpikeSegmentConditionInput) (*SpikeSegmentConditionResult, error)
 	// ConfirmationsCreate implements Confirmations_create operation.
 	//
 	// Record consent a phone number gave outside sphericon (a form of your own, a verification service),

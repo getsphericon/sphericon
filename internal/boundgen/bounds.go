@@ -234,11 +234,15 @@ var Bounds = []Bound{
 		Owners: []string{"internal/domain/contacts/condition"},
 	},
 	{Name: "ConditionWithinDays", Spec: site, Schema: "ConditionDateWithinLeafInput", Property: "withinDays"},
+	// SPIKE (#1674): the per-place tree's leaves and tests take the same bounds.
+	{Name: "ConditionWithinDays", Spec: site, Schema: "EventLeafInput", Property: "withinDays"},
+	{Name: "ConditionWithinDays", Spec: site, Schema: "WithinLastTestInput", Property: "days"},
 	{
 		Name: "ConditionEventTimes", Doc: "is how many Events of an action a condition leaf counts.",
 		Spec: site, Schema: "ConditionEventLeafInput", Property: "times",
 		Owners: []string{"internal/domain/contacts/condition"},
 	},
+	{Name: "ConditionEventTimes", Spec: site, Schema: "EventLeafInput", Property: "times"},
 	{
 		Name: "SigningSecret", Doc: "is the Standard Webhooks secret an HTTP step or an http Action signs its calls with.",
 		Spec: site, Schema: "SigningSecret", Owners: []string{httpcallOwner},

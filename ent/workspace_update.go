@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastfigure"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
+	"github.com/getsphericon/sphericon/ent/conditionspike"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
@@ -610,6 +611,21 @@ func (_u *WorkspaceUpdate) AddSegments(v ...*Segment) *WorkspaceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddSegmentIDs(ids...)
+}
+
+// AddConditionSpikeIDs adds the "condition_spikes" edge to the ConditionSpike entity by IDs.
+func (_u *WorkspaceUpdate) AddConditionSpikeIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddConditionSpikeIDs(ids...)
+	return _u
+}
+
+// AddConditionSpikes adds the "condition_spikes" edges to the ConditionSpike entity.
+func (_u *WorkspaceUpdate) AddConditionSpikes(v ...*ConditionSpike) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddConditionSpikeIDs(ids...)
 }
 
 // AddEventIDs adds the "events" edge to the Event entity by IDs.
@@ -1408,6 +1424,27 @@ func (_u *WorkspaceUpdate) RemoveSegments(v ...*Segment) *WorkspaceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveSegmentIDs(ids...)
+}
+
+// ClearConditionSpikes clears all "condition_spikes" edges to the ConditionSpike entity.
+func (_u *WorkspaceUpdate) ClearConditionSpikes() *WorkspaceUpdate {
+	_u.mutation.ClearConditionSpikes()
+	return _u
+}
+
+// RemoveConditionSpikeIDs removes the "condition_spikes" edge to ConditionSpike entities by IDs.
+func (_u *WorkspaceUpdate) RemoveConditionSpikeIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveConditionSpikeIDs(ids...)
+	return _u
+}
+
+// RemoveConditionSpikes removes "condition_spikes" edges to ConditionSpike entities.
+func (_u *WorkspaceUpdate) RemoveConditionSpikes(v ...*ConditionSpike) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveConditionSpikeIDs(ids...)
 }
 
 // ClearEvents clears all "events" edges to the Event entity.
@@ -2812,6 +2849,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(segment.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ConditionSpikesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ConditionSpikesTable,
+			Columns: []string{workspace.ConditionSpikesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(conditionspike.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedConditionSpikesIDs(); len(nodes) > 0 && !_u.mutation.ConditionSpikesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ConditionSpikesTable,
+			Columns: []string{workspace.ConditionSpikesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(conditionspike.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ConditionSpikesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ConditionSpikesTable,
+			Columns: []string{workspace.ConditionSpikesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(conditionspike.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -5472,6 +5554,21 @@ func (_u *WorkspaceUpdateOne) AddSegments(v ...*Segment) *WorkspaceUpdateOne {
 	return _u.AddSegmentIDs(ids...)
 }
 
+// AddConditionSpikeIDs adds the "condition_spikes" edge to the ConditionSpike entity by IDs.
+func (_u *WorkspaceUpdateOne) AddConditionSpikeIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddConditionSpikeIDs(ids...)
+	return _u
+}
+
+// AddConditionSpikes adds the "condition_spikes" edges to the ConditionSpike entity.
+func (_u *WorkspaceUpdateOne) AddConditionSpikes(v ...*ConditionSpike) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddConditionSpikeIDs(ids...)
+}
+
 // AddEventIDs adds the "events" edge to the Event entity by IDs.
 func (_u *WorkspaceUpdateOne) AddEventIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddEventIDs(ids...)
@@ -6268,6 +6365,27 @@ func (_u *WorkspaceUpdateOne) RemoveSegments(v ...*Segment) *WorkspaceUpdateOne 
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveSegmentIDs(ids...)
+}
+
+// ClearConditionSpikes clears all "condition_spikes" edges to the ConditionSpike entity.
+func (_u *WorkspaceUpdateOne) ClearConditionSpikes() *WorkspaceUpdateOne {
+	_u.mutation.ClearConditionSpikes()
+	return _u
+}
+
+// RemoveConditionSpikeIDs removes the "condition_spikes" edge to ConditionSpike entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveConditionSpikeIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveConditionSpikeIDs(ids...)
+	return _u
+}
+
+// RemoveConditionSpikes removes "condition_spikes" edges to ConditionSpike entities.
+func (_u *WorkspaceUpdateOne) RemoveConditionSpikes(v ...*ConditionSpike) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveConditionSpikeIDs(ids...)
 }
 
 // ClearEvents clears all "events" edges to the Event entity.
@@ -7702,6 +7820,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(segment.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ConditionSpikesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ConditionSpikesTable,
+			Columns: []string{workspace.ConditionSpikesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(conditionspike.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedConditionSpikesIDs(); len(nodes) > 0 && !_u.mutation.ConditionSpikesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ConditionSpikesTable,
+			Columns: []string{workspace.ConditionSpikesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(conditionspike.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ConditionSpikesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ConditionSpikesTable,
+			Columns: []string{workspace.ConditionSpikesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(conditionspike.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

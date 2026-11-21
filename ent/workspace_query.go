@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastfigure"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
+	"github.com/getsphericon/sphericon/ent/conditionspike"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
@@ -81,6 +82,7 @@ type WorkspaceQuery struct {
 	withTags                      *TagQuery
 	withContactTags               *ContactTagQuery
 	withSegments                  *SegmentQuery
+	withConditionSpikes           *ConditionSpikeQuery
 	withEvents                    *EventQuery
 	withEventJournalEntries       *EventJournalEntryQuery
 	withOrders                    *OrderQuery
@@ -268,6 +270,28 @@ func (_q *WorkspaceQuery) QuerySegments() *SegmentQuery {
 			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
 			sqlgraph.To(segment.Table, segment.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, workspace.SegmentsTable, workspace.SegmentsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryConditionSpikes chains the current query on the "condition_spikes" edge.
+func (_q *WorkspaceQuery) QueryConditionSpikes() *ConditionSpikeQuery {
+	query := (&ConditionSpikeClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(conditionspike.Table, conditionspike.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.ConditionSpikesTable, workspace.ConditionSpikesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -1506,6 +1530,7 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withTags:                      _q.withTags.Clone(),
 		withContactTags:               _q.withContactTags.Clone(),
 		withSegments:                  _q.withSegments.Clone(),
+		withConditionSpikes:           _q.withConditionSpikes.Clone(),
 		withEvents:                    _q.withEvents.Clone(),
 		withEventJournalEntries:       _q.withEventJournalEntries.Clone(),
 		withOrders:                    _q.withOrders.Clone(),
@@ -1612,6 +1637,17 @@ func (_q *WorkspaceQuery) WithSegments(opts ...func(*SegmentQuery)) *WorkspaceQu
 		opt(query)
 	}
 	_q.withSegments = query
+	return _q
+}
+
+// WithConditionSpikes tells the query-builder to eager-load the nodes that are connected to
+// the "condition_spikes" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithConditionSpikes(opts ...func(*ConditionSpikeQuery)) *WorkspaceQuery {
+	query := (&ConditionSpikeClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withConditionSpikes = query
 	return _q
 }
 
@@ -2210,12 +2246,13 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [52]bool{
+		loadedTypes = [53]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
 			_q.withContactTags != nil,
 			_q.withSegments != nil,
+			_q.withConditionSpikes != nil,
 			_q.withEvents != nil,
 			_q.withEventJournalEntries != nil,
 			_q.withOrders != nil,
@@ -2318,6 +2355,13 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 		if err := _q.loadSegments(ctx, query, nodes,
 			func(n *Workspace) { n.Edges.Segments = []*Segment{} },
 			func(n *Workspace, e *Segment) { n.Edges.Segments = append(n.Edges.Segments, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withConditionSpikes; query != nil {
+		if err := _q.loadConditionSpikes(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.ConditionSpikes = []*ConditionSpike{} },
+			func(n *Workspace, e *ConditionSpike) { n.Edges.ConditionSpikes = append(n.Edges.ConditionSpikes, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -2801,6 +2845,36 @@ func (_q *WorkspaceQuery) loadSegments(ctx context.Context, query *SegmentQuery,
 	}
 	query.Where(predicate.Segment(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(workspace.SegmentsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadConditionSpikes(ctx context.Context, query *ConditionSpikeQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *ConditionSpike)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(conditionspike.FieldWorkspaceID)
+	}
+	query.Where(predicate.ConditionSpike(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.ConditionSpikesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

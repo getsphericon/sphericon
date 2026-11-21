@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastfigure"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
+	"github.com/getsphericon/sphericon/ent/conditionspike"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/consentstamp"
@@ -163,6 +164,7 @@ func checkColumn(t, c string) error {
 			broadcastfigure.Table:          broadcastfigure.ValidColumn,
 			broadcastrecipient.Table:       broadcastrecipient.ValidColumn,
 			capturedmessage.Table:          capturedmessage.ValidColumn,
+			conditionspike.Table:           conditionspike.ValidColumn,
 			confirmation.Table:             confirmation.ValidColumn,
 			consentrecord.Table:            consentrecord.ValidColumn,
 			consentstamp.Table:             consentstamp.ValidColumn,

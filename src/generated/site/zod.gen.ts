@@ -473,6 +473,21 @@ export const zConsentEvidence = z.strictObject({
 });
 
 /**
+ * A text attribute of a Contact
+ */
+export const zContactAttribute = z.enum([
+  'email',
+  'phone',
+  'subjectId',
+  'firstName',
+  'lastName',
+  'timeZone',
+  'country',
+  'locale',
+  'city'
+]);
+
+/**
  * How the contact first came to exist
  */
 export const zContactExportSource = z.enum([
@@ -641,6 +656,35 @@ export const zDryRunRuleInput = z.strictObject({
 });
 
 /**
+ * How an event count is bounded: at least `times`, or at most `times`
+ */
+export const zEventCountOperator = z.enum(['atLeast', 'atMost']);
+
+/**
+ * A count of a Contact's Events of one action, over all time or within the last `withinDays`
+ * days
+ */
+export const zEventLeaf = z.object({
+  kind: z.enum(['event']),
+  action: z.string(),
+  operator: zEventCountOperator,
+  times: z.int().gte(0).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  withinDays: z.exactOptional(z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
+});
+
+/**
+ * A count of a Contact's Events of one action, over all time or within the last `withinDays`
+ * days
+ */
+export const zEventLeafInput = z.strictObject({
+  kind: z.enum(['event']),
+  action: z.string(),
+  operator: zEventCountOperator,
+  times: z.int().gte(0).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  withinDays: z.exactOptional(z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
+});
+
+/**
  * Scopes an OAuth client may be granted without any extra opt-in: the external
  * API's read/write vocabulary. Token management scopes are deliberately absent,
  * so a connector can never mint further credentials.
@@ -670,6 +714,11 @@ export const zGrantableScope = z.enum([
   'tracking_domains:read',
   'integrations:read'
 ]);
+
+/**
+ * Whether a Contact has something: a Tag, a Telegram chat, a phone that can be texted
+ */
+export const zHasOperator = z.enum(['has', 'doesNotHave']);
 
 /**
  * Why a send is held (a Hold). A hold is reversible and not a failure: a held Broadcast keeps its
@@ -849,6 +898,11 @@ export const zAutomationReport = z.object({
 });
 
 /**
+ * Which side of `at` a moment is on: before is strictly earlier, after is at or later
+ */
+export const zMomentOperator = z.enum(['before', 'after']);
+
+/**
  * What a person calls a named row (a Tag, a Segment, a Rule, an Automation, a Template, a
  * Broadcast, an Integration, a token, a Passkey, a Workspace): at most 100 characters. Surrounding
  * spaces are trimmed before the name is stored, and a name that is empty then is refused (422).
@@ -870,6 +924,34 @@ export const zCreateTemplateInput = z.strictObject({
   subject: z.exactOptional(z.string()),
   body: z.exactOptional(z.string()),
   doc: z.exactOptional(zEditorDocument)
+});
+
+/**
+ * How a number test compares the value with its own
+ */
+export const zNumberOperator = z.enum([
+  'gt',
+  'gte',
+  'lt',
+  'lte'
+]);
+
+/**
+ * A test of a number. A missing value, or one that is not a number, fails it.
+ */
+export const zNumberTest = z.object({
+  kind: z.enum(['number']),
+  operator: zNumberOperator,
+  value: z.number()
+});
+
+/**
+ * A test of a number. A missing value, or one that is not a number, fails it.
+ */
+export const zNumberTestInput = z.strictObject({
+  kind: z.enum(['number']),
+  operator: zNumberOperator,
+  value: z.number()
 });
 
 /**
@@ -956,6 +1038,27 @@ export const zPersonalScope = z.enum([
   'integrations:write',
   'webhooks:write'
 ]);
+
+/**
+ * Whether a value is set
+ */
+export const zPresenceOperator = z.enum(['set', 'notSet']);
+
+/**
+ * A test of whether a value is set at all
+ */
+export const zPresenceTest = z.object({
+  kind: z.enum(['presence']),
+  operator: zPresenceOperator
+});
+
+/**
+ * A test of whether a value is set at all
+ */
+export const zPresenceTestInput = z.strictObject({
+  kind: z.enum(['presence']),
+  operator: zPresenceOperator
+});
 
 /**
  * A Preset: how an Instance verifies and reads one provider's bounce and complaint callbacks
@@ -2606,6 +2709,24 @@ export const zSystemEventAction = z.enum([
 ]);
 
 /**
+ * A test of whether a Contact has the Tag called `name`
+ */
+export const zTagLeaf = z.object({
+  kind: z.enum(['tag']),
+  name: z.string(),
+  operator: zHasOperator
+});
+
+/**
+ * A test of whether a Contact has the Tag called `name`
+ */
+export const zTagLeafInput = z.strictObject({
+  kind: z.enum(['tag']),
+  name: z.string(),
+  operator: zHasOperator
+});
+
+/**
  * A link button under a Telegram message: an inline URL button on a row of its own
  */
 export const zTelegramButton = z.object({
@@ -2783,6 +2904,88 @@ export const zTestSendBroadcastInput = z.strictObject({
 export const zTestWebhookInput = z.strictObject({
   eventType: z.string()
 });
+
+/**
+ * How a text test compares the value with its own
+ */
+export const zTextOperator = z.enum([
+  'eq',
+  'neq',
+  'contains',
+  'beginsWith'
+]);
+
+/**
+ * A test of a text value. A number or boolean Custom field's eq and neq are text tests too,
+ * compared with the stored value's text.
+ */
+export const zTextTest = z.object({
+  kind: z.enum(['text']),
+  operator: zTextOperator,
+  value: z.string()
+});
+
+/**
+ * What a Contact attribute test asks of a text attribute, by `kind`
+ */
+export const zAttributeTest = z.discriminatedUnion('kind', [
+  zTextTest.extend({ kind: z.literal('text') }),
+  zPresenceTest.extend({ kind: z.literal('presence') })
+]);
+
+/**
+ * A test of a Contact's text attribute
+ */
+export const zAttributeLeaf = z.object({
+  kind: z.enum(['attribute']),
+  attribute: zContactAttribute,
+  test: zAttributeTest
+});
+
+/**
+ * What a property test asks of the property's value, by `kind`
+ */
+export const zPropertyTest = z.discriminatedUnion('kind', [
+  zTextTest.extend({ kind: z.literal('text') }),
+  zNumberTest.extend({ kind: z.literal('number') }),
+  zPresenceTest.extend({ kind: z.literal('presence') })
+]);
+
+/**
+ * A test of a text value. A number or boolean Custom field's eq and neq are text tests too,
+ * compared with the stored value's text.
+ */
+export const zTextTestInput = z.strictObject({
+  kind: z.enum(['text']),
+  operator: zTextOperator,
+  value: z.string()
+});
+
+/**
+ * What a Contact attribute test asks of a text attribute, by `kind`
+ */
+export const zAttributeTestInput = z.discriminatedUnion('kind', [
+  zTextTestInput.extend({ kind: z.literal('text') }),
+  zPresenceTestInput.extend({ kind: z.literal('presence') })
+]);
+
+/**
+ * A test of a Contact's text attribute
+ */
+export const zAttributeLeafInput = z.strictObject({
+  kind: z.enum(['attribute']),
+  attribute: zContactAttribute,
+  test: zAttributeTestInput
+});
+
+/**
+ * What a property test asks of the property's value, by `kind`
+ */
+export const zPropertyTestInput = z.discriminatedUnion('kind', [
+  zTextTestInput.extend({ kind: z.literal('text') }),
+  zNumberTestInput.extend({ kind: z.literal('number') }),
+  zPresenceTestInput.extend({ kind: z.literal('presence') })
+]);
 
 export const zTimeZoneName = z.string();
 
@@ -3094,6 +3297,24 @@ export const zEnrollmentResource = z.object({
   failure: z.exactOptional(zEnrollmentFailure),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
+});
+
+/**
+ * A test of a moment: before or after `at`. Only a date-time with a UTC offset is a moment.
+ */
+export const zMomentTest = z.object({
+  kind: z.enum(['moment']),
+  operator: zMomentOperator,
+  at: zTimestamp
+});
+
+/**
+ * A test of a moment: before or after `at`. Only a date-time with a UTC offset is a moment.
+ */
+export const zMomentTestInput = z.strictObject({
+  kind: z.enum(['moment']),
+  operator: zMomentOperator,
+  at: zTimestamp
 });
 
 /**
@@ -3764,6 +3985,52 @@ export const zTrackingDomainResource = z.object({
 });
 
 /**
+ * The Event that fired a Rule, whose properties a property test reads
+ */
+export const zTriggerSource = z.object({
+  kind: z.enum(['trigger'])
+});
+
+/**
+ * Whose properties a Rule's property test reads, by `kind`: only the triggering Event
+ */
+export const zRulePropertySource = zTriggerSource;
+
+/**
+ * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
+ * key holding a dot needs no rule
+ */
+export const zRulePropertyLeaf = z.object({
+  kind: z.enum(['property']),
+  of: zRulePropertySource,
+  key: z.string(),
+  test: zPropertyTest
+});
+
+/**
+ * The Event that fired a Rule, whose properties a property test reads
+ */
+export const zTriggerSourceInput = z.strictObject({
+  kind: z.enum(['trigger'])
+});
+
+/**
+ * Whose properties a Rule's property test reads, by `kind`: only the triggering Event
+ */
+export const zRulePropertySourceInput = zTriggerSourceInput;
+
+/**
+ * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
+ * key holding a dot needs no rule
+ */
+export const zRulePropertyLeafInput = z.strictObject({
+  kind: z.enum(['property']),
+  of: zRulePropertySourceInput,
+  key: z.string(),
+  test: zPropertyTestInput
+});
+
+/**
  * A Twilio account without its secret
  */
 export const zTwilioConfig = z.object({
@@ -4064,6 +4331,66 @@ export const zWebhookTestResult = z.object({
 });
 
 /**
+ * A test of a moment: within the last `days` days up to now, so a moment still to come is not
+ * within
+ */
+export const zWithinLastTest = z.object({
+  kind: z.enum(['withinLast']),
+  days: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * What a Custom field test asks of the field's value, by `kind`; whether it fits the field's
+ * type is checked at save
+ */
+export const zCustomFieldTest = z.discriminatedUnion('kind', [
+  zTextTest.extend({ kind: z.literal('text') }),
+  zNumberTest.extend({ kind: z.literal('number') }),
+  zMomentTest.extend({ kind: z.literal('moment') }),
+  zWithinLastTest.extend({ kind: z.literal('withinLast') }),
+  zPresenceTest.extend({ kind: z.literal('presence') })
+]);
+
+/**
+ * A test of a Custom field of the Workspace, its key in a field of its own
+ */
+export const zCustomFieldLeaf = z.object({
+  kind: z.enum(['customField']),
+  key: z.string(),
+  test: zCustomFieldTest
+});
+
+/**
+ * A test of a moment: within the last `days` days up to now, so a moment still to come is not
+ * within
+ */
+export const zWithinLastTestInput = z.strictObject({
+  kind: z.enum(['withinLast']),
+  days: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * What a Custom field test asks of the field's value, by `kind`; whether it fits the field's
+ * type is checked at save
+ */
+export const zCustomFieldTestInput = z.discriminatedUnion('kind', [
+  zTextTestInput.extend({ kind: z.literal('text') }),
+  zNumberTestInput.extend({ kind: z.literal('number') }),
+  zMomentTestInput.extend({ kind: z.literal('moment') }),
+  zWithinLastTestInput.extend({ kind: z.literal('withinLast') }),
+  zPresenceTestInput.extend({ kind: z.literal('presence') })
+]);
+
+/**
+ * A test of a Custom field of the Workspace, its key in a field of its own
+ */
+export const zCustomFieldLeafInput = z.strictObject({
+  kind: z.enum(['customField']),
+  key: z.string(),
+  test: zCustomFieldTestInput
+});
+
+/**
  * A Workspace id (ADR 0043): 8 random base62 characters, assigned once at creation and the
  * Workspace's one public address.
  */
@@ -4227,6 +4554,50 @@ export const zCreateSegmentInput = z.strictObject({
 });
 
 /**
+ * A Rule's Condition: the tree of tests the Contact and the triggering Event match
+ */
+export const zRuleCondition = z.object({
+  kind: z.enum(['group']),
+  combinator: zConditionCombinator,
+  not: z.exactOptional(z.boolean()),
+  entries: z.array(z.lazy((): any => zRuleConditionNode))
+});
+
+/**
+ * A Rule's Condition: the tree of tests the Contact and the triggering Event match
+ */
+export const zRuleConditionInput = z.strictObject({
+  kind: z.enum(['group']),
+  combinator: zConditionCombinator,
+  not: z.exactOptional(z.boolean()),
+  entries: z.array(z.lazy((): any => zRuleConditionNodeInput))
+});
+
+/**
+ * An entry of a Rule's Condition, by `kind`: a Segment's, or a test of the triggering Event's property
+ */
+export const zRuleConditionNode = z.discriminatedUnion('kind', [
+  zRuleCondition.extend({ kind: z.literal('group') }),
+  zAttributeLeaf.extend({ kind: z.literal('attribute') }),
+  zTagLeaf.extend({ kind: z.literal('tag') }),
+  zCustomFieldLeaf.extend({ kind: z.literal('customField') }),
+  zEventLeaf.extend({ kind: z.literal('event') }),
+  zRulePropertyLeaf.extend({ kind: z.literal('property') })
+]);
+
+/**
+ * An entry of a Rule's Condition, by `kind`: a Segment's, or a test of the triggering Event's property
+ */
+export const zRuleConditionNodeInput = z.discriminatedUnion('kind', [
+  zRuleConditionInput.extend({ kind: z.literal('group') }),
+  zAttributeLeafInput.extend({ kind: z.literal('attribute') }),
+  zTagLeafInput.extend({ kind: z.literal('tag') }),
+  zCustomFieldLeafInput.extend({ kind: z.literal('customField') }),
+  zEventLeafInput.extend({ kind: z.literal('event') }),
+  zRulePropertyLeafInput.extend({ kind: z.literal('property') })
+]);
+
+/**
  * One version of a Rule's definition (ADR 0065): its Trigger events, Condition and Actions
  */
 export const zRuleVersion = z.object({
@@ -4235,6 +4606,48 @@ export const zRuleVersion = z.object({
   condition: z.exactOptional(zConditionGroup),
   actions: z.array(zRuleAction)
 });
+
+/**
+ * A Segment's Condition: the tree of tests a Contact matches
+ */
+export const zSegmentCondition = z.object({
+  kind: z.enum(['group']),
+  combinator: zConditionCombinator,
+  not: z.exactOptional(z.boolean()),
+  entries: z.array(z.lazy((): any => zSegmentConditionNode))
+});
+
+/**
+ * A Segment's Condition: the tree of tests a Contact matches
+ */
+export const zSegmentConditionInput = z.strictObject({
+  kind: z.enum(['group']),
+  combinator: zConditionCombinator,
+  not: z.exactOptional(z.boolean()),
+  entries: z.array(z.lazy((): any => zSegmentConditionNodeInput))
+});
+
+/**
+ * An entry of a Segment's Condition, by `kind`: a test of the Contact, an event count, or a nested group
+ */
+export const zSegmentConditionNode = z.discriminatedUnion('kind', [
+  zSegmentCondition.extend({ kind: z.literal('group') }),
+  zAttributeLeaf.extend({ kind: z.literal('attribute') }),
+  zTagLeaf.extend({ kind: z.literal('tag') }),
+  zCustomFieldLeaf.extend({ kind: z.literal('customField') }),
+  zEventLeaf.extend({ kind: z.literal('event') })
+]);
+
+/**
+ * An entry of a Segment's Condition, by `kind`: a test of the Contact, an event count, or a nested group
+ */
+export const zSegmentConditionNodeInput = z.discriminatedUnion('kind', [
+  zSegmentConditionInput.extend({ kind: z.literal('group') }),
+  zAttributeLeafInput.extend({ kind: z.literal('attribute') }),
+  zTagLeafInput.extend({ kind: z.literal('tag') }),
+  zCustomFieldLeafInput.extend({ kind: z.literal('customField') }),
+  zEventLeafInput.extend({ kind: z.literal('event') })
+]);
 
 /**
  * Request body for previewing a condition's segment
@@ -4272,6 +4685,34 @@ export const zSiteSegmentResource = z.object({
   revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
+});
+
+/**
+ * SPIKE: a Rule's Condition sent to be stored and read back
+ */
+export const zSpikeRuleConditionInput = z.strictObject({
+  condition: zRuleConditionInput
+});
+
+/**
+ * SPIKE: a Rule's Condition as stored
+ */
+export const zSpikeRuleConditionResult = z.object({
+  condition: zRuleCondition
+});
+
+/**
+ * SPIKE: a Segment's Condition sent to be stored and read back
+ */
+export const zSpikeSegmentConditionInput = z.strictObject({
+  condition: zSegmentConditionInput
+});
+
+/**
+ * SPIKE: a Segment's Condition as stored
+ */
+export const zSpikeSegmentConditionResult = z.object({
+  condition: zSegmentCondition
 });
 
 /**
@@ -6802,6 +7243,28 @@ export const zSiteWebhooksTestPath = z.object({
  * The request has succeeded.
  */
 export const zSiteWebhooksTestResponse = zWebhookTestResult;
+
+export const zSiteConditionSpikeRuleBody = zSpikeRuleConditionInput;
+
+export const zSiteConditionSpikeRulePath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteConditionSpikeRuleResponse = zSpikeRuleConditionResult;
+
+export const zSiteConditionSpikeSegmentBody = zSpikeSegmentConditionInput;
+
+export const zSiteConditionSpikeSegmentPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteConditionSpikeSegmentResponse = zSpikeSegmentConditionResult;
 
 export const zSiteRulesListPath = z.object({
   workspaceId: zWorkspaceId

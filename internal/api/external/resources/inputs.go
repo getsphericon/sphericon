@@ -8,6 +8,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/conditionspike"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eventrecording"
@@ -45,6 +46,8 @@ import (
 // goverter:enum:unknown @panic
 // goverter:useZeroValueOnPointerInconsistency
 // goverter:extend stringPatch
+// goverter:extend spikeSegmentConditionIn
+// goverter:extend spikeRuleConditionIn
 // goverter:extend revisionIn
 // goverter:extend namePatch
 // goverter:extend nameIn
@@ -171,6 +174,10 @@ type Inputs interface {
 	SegmentUpdate(source *externalapi.UpdateSegmentInput) (segments.UpdateInput, error)
 	// goverter:map Condition | conditionIn
 	SegmentPreview(source *externalapi.PreviewSegmentInput) (segments.PreviewInput, error)
+
+	// SPIKE (#1674): the per-place trees.
+	SpikeSegmentCondition(source *externalapi.SpikeSegmentConditionInput) (conditionspike.Input, error)
+	SpikeRuleCondition(source *externalapi.SpikeRuleConditionInput) (conditionspike.Input, error)
 
 	// The editor version is the save's own: the module renders the document and stamps it.
 	// goverter:ignore EditorVersion

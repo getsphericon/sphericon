@@ -322,6 +322,20 @@ func rewrite(v any) any {
 					continue
 				}
 			}
+			// SPIKE (#1674): a discriminator's mapping names its targets by component ref too.
+			if k == "mapping" {
+				if m, ok := val.(map[string]any); ok {
+					mapped := make(map[string]any, len(m))
+					for name, target := range m {
+						if s, ok := target.(string); ok && strings.HasPrefix(s, schemaRefPrefix) {
+							target = defsRefPrefix + strings.TrimPrefix(s, schemaRefPrefix)
+						}
+						mapped[name] = target
+					}
+					out[k] = mapped
+					continue
+				}
+			}
 			out[k] = rewrite(val)
 		}
 		if nullable, _ := out["nullable"].(bool); nullable {

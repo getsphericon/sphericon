@@ -71,6 +71,8 @@ var operationAccess = map[siteapi.OperationName]access{
 	siteapi.SiteCapturedMessagesDeleteOperation:                {workspace: true},
 	siteapi.SiteCapturedMessagesGetOperation:                   {workspace: true},
 	siteapi.SiteCapturedMessagesListOperation:                  {workspace: true},
+	siteapi.SiteConditionSpikeRuleOperation:                    {workspace: true},
+	siteapi.SiteConditionSpikeSegmentOperation:                 {workspace: true},
 	siteapi.SiteConnectionsDeleteOperation:                     {workspace: true},
 	siteapi.SiteConnectionsListOperation:                       {workspace: true},
 	siteapi.SiteContactsCreateOperation:                        {workspace: true},

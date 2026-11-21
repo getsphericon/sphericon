@@ -79,6 +79,8 @@ const (
 	EdgeContactTags = "contact_tags"
 	// EdgeSegments holds the string denoting the segments edge name in mutations.
 	EdgeSegments = "segments"
+	// EdgeConditionSpikes holds the string denoting the condition_spikes edge name in mutations.
+	EdgeConditionSpikes = "condition_spikes"
 	// EdgeEvents holds the string denoting the events edge name in mutations.
 	EdgeEvents = "events"
 	// EdgeEventJournalEntries holds the string denoting the event_journal_entries edge name in mutations.
@@ -210,6 +212,13 @@ const (
 	SegmentsInverseTable = "segments"
 	// SegmentsColumn is the table column denoting the segments relation/edge.
 	SegmentsColumn = "workspace_id"
+	// ConditionSpikesTable is the table that holds the condition_spikes relation/edge.
+	ConditionSpikesTable = "condition_spikes"
+	// ConditionSpikesInverseTable is the table name for the ConditionSpike entity.
+	// It exists in this package in order to avoid circular dependency with the "conditionspike" package.
+	ConditionSpikesInverseTable = "condition_spikes"
+	// ConditionSpikesColumn is the table column denoting the condition_spikes relation/edge.
+	ConditionSpikesColumn = "workspace_id"
 	// EventsTable is the table that holds the events relation/edge.
 	EventsTable = "events"
 	// EventsInverseTable is the table name for the Event entity.
@@ -862,6 +871,20 @@ func BySegmentsCount(opts ...sql.OrderTermOption) OrderOption {
 func BySegments(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newSegmentsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByConditionSpikesCount orders the results by condition_spikes count.
+func ByConditionSpikesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newConditionSpikesStep(), opts...)
+	}
+}
+
+// ByConditionSpikes orders the results by condition_spikes terms.
+func ByConditionSpikes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newConditionSpikesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -1548,6 +1571,13 @@ func newSegmentsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(SegmentsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, SegmentsTable, SegmentsColumn),
+	)
+}
+func newConditionSpikesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ConditionSpikesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ConditionSpikesTable, ConditionSpikesColumn),
 	)
 }
 func newEventsStep() *sqlgraph.Step {

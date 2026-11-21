@@ -97,6 +97,8 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:enum:unknown @panic
 // goverter:useZeroValueOnPointerInconsistency
 // goverter:extend timestamp
+// goverter:extend spikeSegmentCondition
+// goverter:extend spikeRuleCondition
 // goverter:extend revision
 // goverter:extend optNilString
 // goverter:extend optNilSendCap
@@ -199,6 +201,10 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	ApiTokensToInfos(source []*ent.ApiToken) []externalapi.ApiTokenInfo
 	SegmentToResource(source *ent.Segment) externalapi.SegmentResource
+
+	// SPIKE (#1674): a stored Condition of each place.
+	SpikeSegmentConditionResult(source *ent.ConditionSpike) externalapi.SpikeSegmentConditionResult
+	SpikeRuleConditionResult(source *ent.ConditionSpike) externalapi.SpikeRuleConditionResult
 	// goverter:useEmptyOnNil:slice
 	SegmentsToResources(source []*ent.Segment) []externalapi.SegmentResource
 	EmailTemplateToResource(source *ent.EmailTemplate) externalapi.TemplateResource

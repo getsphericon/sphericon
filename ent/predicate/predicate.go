@@ -45,6 +45,9 @@ type BroadcastRecipient func(*sql.Selector)
 // CapturedMessage is the predicate function for capturedmessage builders.
 type CapturedMessage func(*sql.Selector)
 
+// ConditionSpike is the predicate function for conditionspike builders.
+type ConditionSpike func(*sql.Selector)
+
 // Confirmation is the predicate function for confirmation builders.
 type Confirmation func(*sql.Selector)
 
