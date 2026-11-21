@@ -1,6 +1,6 @@
 ---
 status: accepted
-build: none
+build: [1801, 1802, 1803]
 ---
 
 # A Broadcast may be scheduled for a local time in each Recipient's zone
@@ -86,8 +86,8 @@ does not help time-sensitive content or small lists.
 - The report gives the first and last due moment of the Recipients, and while it sends how many are not
   yet due. The console's Schedule dialog offers both forms and shows when the send starts and ends; it
   disables the local form for a Broadcast with several Variants and says why.
-- The share outside the Sending window before Schedule (ADR 0134) and the Send cap warning read each
-  Recipient's due moment.
+- The share outside the Sending window before Schedule (ADR 0134) evaluates each Recipient at its due
+  moment. The Send cap warning reads no moment: it counts the audience against the Send cap.
 - Glossary: **Local-time schedule**; the **Broadcast recipient** entry gains its due moment.
 
 ## Rejected
