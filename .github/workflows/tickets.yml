@@ -36,7 +36,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup mise
-        uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+        uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
 
       # The issue's title and body are read through gh, never through the script; the number is all
       # the event passes. Without one every open ready-for-agent issue is checked.
