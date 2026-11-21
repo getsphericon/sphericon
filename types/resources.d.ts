@@ -1735,7 +1735,7 @@ export default interface Resources {
       "noRecords": "No segments yet",
       "previewButton": "Preview segment",
       "previewCount": "{{count, number}} matching contact" | "{{count, number}} matching contacts",
-      "triggerKeyLabel": "Event property name"
+      "propertyKeyLabel": "Event property name"
     },
     "settings": {
       "apiKeysTitle": "API keys",

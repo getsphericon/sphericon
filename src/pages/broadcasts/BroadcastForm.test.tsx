@@ -10,7 +10,7 @@ import {
   handleSiteTemplatesList,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
-import type { SendCap } from '../../generated/site/types.gen.ts'
+import type { SegmentCondition, SendCap } from '../../generated/site/types.gen.ts'
 import { Route as broadcastsRoute } from '../../routes/workspaces/$workspaceId/broadcasts/index.tsx'
 import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspaceId/broadcasts/new.tsx'
 import { testId, workspace as workspacePayload } from '../../test/payloads.ts'
@@ -42,10 +42,16 @@ const workspace = {
   postalAddress: '',
 }
 
-const VIPS = {
-  kind: 'group' as const,
-  combinator: 'and' as const,
-  rules: [{ kind: 'rule' as const, field: 'email', operator: 'contains' as const, value: 'vip' }],
+const VIPS: SegmentCondition = {
+  kind: 'group',
+  combinator: 'and',
+  entries: [
+    {
+      kind: 'attribute',
+      attribute: 'email',
+      test: { kind: 'text', operator: 'contains', value: 'vip' },
+    },
+  ],
 }
 
 // The Workspace's one Integration: email is the Channel a new Broadcast is offered.

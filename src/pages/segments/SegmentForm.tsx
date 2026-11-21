@@ -38,7 +38,8 @@ export function SegmentForm({
         >
           <ConditionBuilder
             workspaceId={workspaceId}
-            initialValue={toCondition(form.values.condition) ?? emptyGroup}
+            place="segment"
+            initialValue={toCondition(form.values.condition, 'segment') ?? emptyGroup}
             onChange={(next) => form.setFieldValue('condition', next)}
           />
         </Input.Wrapper>

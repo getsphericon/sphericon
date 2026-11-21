@@ -11,26 +11,35 @@ import {
   siteEventsActionsOptions,
   siteSegmentsPreviewMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { ConditionEventOperator } from '../../generated/site/types.gen.ts'
-import type { ConditionGroup } from '../../generated/site/types.gen.ts'
+import {
+  ContactAttribute,
+  EventCountOperator,
+  HasOperator,
+} from '../../generated/site/types.gen.ts'
+import type { RuleCondition, SegmentCondition } from '../../generated/site/types.gen.ts'
 import { useEventActionLabel } from '../../hooks/useEventActionLabel.ts'
 import { useTimeZone } from '../../hooks/useFormat.ts'
-import { eventFieldPrefix, eventPresets, toCondition, toDraft, toQuery } from './condition.ts'
-import type { ConditionDraft } from './condition.ts'
-import { EventCountEditor } from './EventCountEditor.tsx'
 import {
-  dateOperators,
+  customFieldId,
+  eventFieldPrefix,
+  eventPresets,
+  subjectFields,
+  toCondition,
+  toDraft,
+  toQuery,
+} from './condition.ts'
+import type { ConditionDraft, ConditionPlace } from './condition.ts'
+import { ConditionValueEditor } from './ConditionValueEditor.tsx'
+import {
+  attributeOperators,
+  birthdayOperators,
+  haveOperators,
   inputTypeOf,
   inputTypeOfField,
-  haveOperators,
   operatorsOf,
-  smsField,
-  telegramField,
-  textOperators,
-  triggerOperatorsOf,
+  propertyOperators,
+  tagOperators,
 } from './fieldOperators.ts'
-import { triggerFieldPrefix } from './triggerFieldPrefix.ts'
-import { TriggerFieldSelector } from './TriggerFieldSelector.tsx'
 
 // Event conditions count the action (per-field overrides the global operator set): the presets
 // "performed" and "not performed", or at least / at most a number of times. EventCountEditor
@@ -38,41 +47,68 @@ import { TriggerFieldSelector } from './TriggerFieldSelector.tsx'
 const eventOperators: Operator[] = [
   { name: eventPresets.performed, label: 'performed' },
   { name: eventPresets.notPerformed, label: 'not performed' },
-  { name: ConditionEventOperator.AT_LEAST, label: 'at least (times)' },
-  { name: ConditionEventOperator.AT_MOST, label: 'at most (times)' },
+  { name: EventCountOperator.AT_LEAST, label: 'at least (times)' },
+  { name: EventCountOperator.AT_MOST, label: 'at most (times)' },
 ]
 
+const attributeLabels: Record<ContactAttribute, string> = {
+  [ContactAttribute.SUBJECT_ID]: 'Subject ID',
+  [ContactAttribute.EMAIL]: 'Email',
+  [ContactAttribute.PHONE]: 'Phone',
+  [ContactAttribute.FIRST_NAME]: 'First name',
+  [ContactAttribute.LAST_NAME]: 'Last name',
+  [ContactAttribute.TIME_ZONE]: 'Time zone',
+  [ContactAttribute.COUNTRY]: 'Country',
+  [ContactAttribute.LOCALE]: 'Locale',
+  [ContactAttribute.CITY]: 'City',
+}
+
+// The Contact's leaves: its text attributes, its birthday, its Tags, and whether it can be reached
+// on Telegram or by SMS.
 const contactFields: Field[] = [
-  { name: 'subject_id', label: 'Subject ID' },
-  { name: 'email', label: 'Email' },
-  { name: 'phone', label: 'Phone' },
-  { name: 'first_name', label: 'First name' },
-  { name: 'last_name', label: 'Last name' },
-  { name: 'time_zone', label: 'Time zone' },
-  { name: 'country', label: 'Country' },
-  { name: 'locale', label: 'Locale' },
-  { name: 'city', label: 'City' },
-  // The birthday is a date: it takes the date leaves alone.
-  { name: 'birthday', label: 'Birthday', operators: dateOperators },
+  ...Object.entries(attributeLabels).map(([name, label]) => ({
+    name,
+    label,
+    operators: attributeOperators,
+  })),
+  { name: subjectFields.birthday, label: 'Birthday', operators: birthdayOperators },
+  // Whether the Contact has the Tag typed as the value.
+  { name: subjectFields.tag, label: 'Tag', operators: tagOperators },
   // Whether a Telegram chat is bound to the Contact or its Visitors: no value to type.
-  { name: telegramField, label: 'Telegram', operators: haveOperators, defaultOperator: 'has' },
+  {
+    name: subjectFields.telegram,
+    label: 'Telegram',
+    operators: haveOperators,
+    defaultOperator: HasOperator.HAS,
+  },
   // Whether the Contact's phone can be texted (it has an SMS Confirmation and no SMS opt-out): no
   // value to type.
-  { name: smsField, label: 'SMS', operators: haveOperators, defaultOperator: 'has' },
+  {
+    name: subjectFields.sms,
+    label: 'SMS',
+    operators: haveOperators,
+    defaultOperator: HasOperator.HAS,
+  },
 ]
+
+// A Rule's Condition also tests a property of the Event that fired it, its key typed beside it.
+const placeFields: Record<ConditionPlace, Field[]> = {
+  segment: [],
+  rule: [{ name: subjectFields.property, label: 'Event property', operators: propertyOperators }],
+}
 
 interface ConditionBuilderProps {
   workspaceId: string
   // The Condition the builder starts from. The builder keeps its own state from then on (an
   // operator the user picked stays picked, a count can be blank while it is typed), so a later
   // change of this value is not read: a form that loads another Condition remounts the builder.
-  initialValue: ConditionGroup
-  // Every edit, as a draft: toCondition is undefined while an event count, a number or a day is
-  // blank.
+  initialValue: SegmentCondition | RuleCondition
+  // Every edit, as a draft: toCondition is undefined while an event count, a number, a day or a
+  // property's key is blank.
   onChange: (draft: ConditionDraft) => void
-  // Offer the tests on the triggering Event's properties. Only a Rule has an Event: a
-  // Segment refuses them, and so does the segment preview, which is hidden with them.
-  triggerLeaves?: boolean
+  // Whose Condition it is (ADR 0181): the builder offers what the place admits. Only a Rule has an
+  // Event, whose properties it tests; only a Segment's Condition is previewed.
+  place: ConditionPlace
 }
 
 // ConditionBuilder is the visual Condition editor (react-querybuilder + the official
@@ -82,7 +118,7 @@ export function ConditionBuilder({
   workspaceId,
   initialValue,
   onChange,
-  triggerLeaves = false,
+  place,
 }: ConditionBuilderProps) {
   const { t } = useTranslation()
   const labelOf = useEventActionLabel()
@@ -90,20 +126,20 @@ export function ConditionBuilder({
   const timeZone = useTimeZone()
   const [initialQuery] = useState(() => toQuery(initialValue, timeZone))
   const [draft, setDraft] = useState<ConditionDraft>(initialValue)
-  const condition = toCondition(draft)
+  const condition = toCondition(draft, 'segment')
   const preview = useMutation(siteSegmentsPreviewMutation())
 
   // The workspace's distinct event actions become behavioral fields ("event:<action>"), each an
   // event leaf: a count of the action in the events log.
   const actionsQuery = useQuery(siteEventsActionsOptions({ path: { workspaceId } }))
-  // The typed Custom field catalogue (ADR 0006) becomes targetable fields
-  // ("custom:<key>") alongside the core fields — one governed attribute list. Each offers the
-  // operators the server lists for it and the leaves of its type; the operator picks the value
-  // input (inputTypeOf), a number field's own is a number.
+  // The typed Custom field catalogue (ADR 0006) becomes targetable fields alongside the core
+  // fields — one governed attribute list. Each offers the operators the server lists for its type,
+  // per typed test; the operator picks the value input (inputTypeOf), a number field's own is a
+  // number.
   const customFieldsQuery = useQuery(siteCustomFieldsListOptions({ path: { workspaceId } }))
   const fields = useMemo<Field[]>(() => {
     const customFields = (customFieldsQuery.data?.items ?? []).map<Field>((f) => ({
-      name: `custom:${f.key}`,
+      name: customFieldId(f.key),
       label: f.name,
       operators: operatorsOf(f),
       inputType: inputTypeOfField(f),
@@ -116,26 +152,19 @@ export function ConditionBuilder({
       operators: eventOperators,
       defaultOperator: eventPresets.performed,
     }))
-    const triggerFields: Field[] = triggerLeaves
-      ? [{ name: triggerFieldPrefix, label: 'Event property' }]
-      : []
-    return [...contactFields, ...customFields, ...eventFields, ...triggerFields]
-  }, [actionsQuery.data, customFieldsQuery.data, labelOf, t, triggerLeaves])
+    return [...contactFields, ...customFields, ...eventFields, ...placeFields[place]]
+  }, [actionsQuery.data, customFieldsQuery.data, labelOf, t, place])
 
   return (
     <Stack gap="xs">
       <QueryBuilderMantine>
         <QueryBuilder
           fields={fields}
-          operators={textOperators}
-          getOperators={triggerOperatorsOf}
+          operators={attributeOperators}
           getInputType={(_field, operator, { fieldData }) => inputTypeOf(operator, fieldData)}
           defaultQuery={initialQuery}
           enableMountQueryChange={false}
-          controlElements={{
-            valueEditor: EventCountEditor,
-            ...(triggerLeaves ? { fieldSelector: TriggerFieldSelector } : {}),
-          }}
+          controlElements={{ valueEditor: ConditionValueEditor }}
           onQueryChange={(q) => {
             const next = toDraft(q, timeZone)
             setDraft(next)
@@ -143,7 +172,7 @@ export function ConditionBuilder({
           }}
         />
       </QueryBuilderMantine>
-      {triggerLeaves ? null : (
+      {place === 'segment' ? (
         <Group>
           <Button
             variant="light"
@@ -164,7 +193,7 @@ export function ConditionBuilder({
             </Text>
           ) : null}
         </Group>
-      )}
+      ) : null}
     </Stack>
   )
 }

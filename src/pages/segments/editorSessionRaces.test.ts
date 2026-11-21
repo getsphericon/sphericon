@@ -34,7 +34,7 @@ const PATH = { workspaceId: 'TestWs01', id: testId(7) }
 const RESOURCE: SiteSegmentResource = {
   id: testId(7),
   name: 'Pros',
-  condition: { kind: 'group', combinator: 'and', rules: [] },
+  condition: { kind: 'group', combinator: 'and', entries: [] },
   archivedAt: null,
   revision: 1,
   ...TIMESTAMPS,

@@ -7,8 +7,13 @@ import {
   handleSiteEventsActions,
   handleSiteSegmentsPreview,
 } from '../../generated/site/msw.gen.ts'
-import { ConditionOperator } from '../../generated/site/types.gen.ts'
-import type { ConditionGroup } from '../../generated/site/types.gen.ts'
+import {
+  MomentOperator,
+  NumberOperator,
+  PresenceOperator,
+  TextOperator,
+} from '../../generated/site/types.gen.ts'
+import type { RuleCondition, SegmentCondition } from '../../generated/site/types.gen.ts'
 import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
@@ -16,6 +21,7 @@ import { emptyGroup } from './condition.ts'
 import type { ConditionDraft } from './condition.ts'
 import { ConditionBuilder } from './ConditionBuilder.tsx'
 
+// The Custom fields of each type, with what the server lists for the type.
 function serve(previewBodies: unknown[] = []) {
   worker.use(
     handleSiteEventsActions({ body: { actions: ['purchase'] } }),
@@ -26,12 +32,13 @@ function serve(previewBodies: unknown[] = []) {
           key: 'plan',
           name: 'Plan',
           type: 'string',
-          ruleOperators: [
-            ConditionOperator.EQ,
-            ConditionOperator.NEQ,
-            ConditionOperator.CONTAINS,
-            ConditionOperator.NOT_NULL,
-          ],
+          conditionTests: {
+            text: [TextOperator.EQ, TextOperator.NEQ, TextOperator.CONTAINS],
+            number: [],
+            moment: [],
+            withinLast: false,
+            presence: [PresenceOperator.SET],
+          },
           revision: 1,
           ...TIMESTAMPS,
         },
@@ -40,7 +47,28 @@ function serve(previewBodies: unknown[] = []) {
           key: 'age',
           name: 'Age',
           type: 'number',
-          ruleOperators: [ConditionOperator.EQ, ConditionOperator.NEQ, ConditionOperator.NOT_NULL],
+          conditionTests: {
+            text: [TextOperator.EQ, TextOperator.NEQ],
+            number: [NumberOperator.GT, NumberOperator.GTE, NumberOperator.LT, NumberOperator.LTE],
+            moment: [],
+            withinLast: false,
+            presence: [PresenceOperator.SET],
+          },
+          revision: 1,
+          ...TIMESTAMPS,
+        },
+        {
+          id: testId(3),
+          key: 'renews_at',
+          name: 'Renews at',
+          type: 'datetime',
+          conditionTests: {
+            text: [],
+            number: [],
+            moment: [MomentOperator.BEFORE, MomentOperator.AFTER],
+            withinLast: true,
+            presence: [PresenceOperator.SET],
+          },
           revision: 1,
           ...TIMESTAMPS,
         },
@@ -53,83 +81,167 @@ function serve(previewBodies: unknown[] = []) {
   )
 }
 
-test('sends the current rule to the segment preview', async () => {
+const emailContains: SegmentCondition = {
+  kind: 'group',
+  combinator: 'and',
+  entries: [
+    {
+      kind: 'attribute',
+      attribute: 'email',
+      test: { kind: 'text', operator: 'contains', value: '@x' },
+    },
+  ],
+}
+
+test('sends the current Condition to the segment preview', async () => {
   const previews: unknown[] = []
   serve(previews)
-  const value: ConditionGroup = {
-    kind: 'group',
-    combinator: 'and',
-    rules: [{ kind: 'rule', field: 'email', operator: 'contains', value: '@x' }],
-  }
   const { screen } = await renderWithRouter(
-    <ConditionBuilder workspaceId="TestWs01" initialValue={value} onChange={vi.fn<() => void>()} />,
+    <ConditionBuilder
+      workspaceId="TestWs01"
+      place="segment"
+      initialValue={emailContains}
+      onChange={vi.fn<() => void>()}
+    />,
   )
 
   await screen.getByRole('button', { name: 'Preview segment' }).click()
 
   await expect.poll(() => previews.length).toBe(1)
-  expect(previews).toEqual([{ condition: value }])
+  expect(previews).toEqual([{ condition: emailContains }])
   await expect.element(screen.getByText('3 matching contacts')).toBeInTheDocument()
 })
 
-test('a rule edits an Event property and has no segment preview', async () => {
+test("a Segment's builder offers no test of the triggering Event", async () => {
   serve()
-  const value: ConditionGroup = {
-    kind: 'group',
-    combinator: 'and',
-    rules: [{ kind: 'rule', field: 'trigger:url', operator: 'contains', value: 'pricing' }],
-  }
   const { screen } = await renderWithRouter(
     <ConditionBuilder
       workspaceId="TestWs01"
-      initialValue={value}
+      place="segment"
+      initialValue={emailContains}
       onChange={vi.fn<() => void>()}
-      triggerLeaves
     />,
   )
 
-  await expect.element(screen.getByLabelText('Event property name')).toHaveValue('url')
+  await screen.getByTestId('fields').click()
+
+  await expect.element(screen.getByRole('option', { name: 'Plan', exact: true })).toBeVisible()
+  await expect
+    .element(screen.getByRole('option', { name: 'Event property' }))
+    .not.toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Preview segment' })).toBeInTheDocument()
+})
+
+test("a Rule's builder offers the test of the triggering Event, with its key, and no segment preview", async () => {
+  serve()
+  const onChange = vi.fn<(draft: ConditionDraft) => void>()
+  const { screen } = await renderWithRouter(
+    <ConditionBuilder
+      workspaceId="TestWs01"
+      place="rule"
+      initialValue={emptyGroup}
+      onChange={onChange}
+    />,
+  )
+
+  await screen.getByRole('button', { name: /Rule/ }).first().click()
+  await screen.getByTestId('fields').click()
+  await screen.getByRole('option', { name: 'Event property' }).click()
+  await screen.getByLabelText('Event property name').fill('url')
+  await screen.getByTestId('value-editor').fill('/pricing')
+
+  await expect
+    .poll(() => onChange.mock.lastCall?.[0])
+    .toEqual({
+      kind: 'group',
+      combinator: 'and',
+      entries: [
+        {
+          kind: 'property',
+          of: { kind: 'trigger' },
+          key: 'url',
+          test: { kind: 'text', operator: 'eq', value: '/pricing' },
+        },
+      ],
+    })
   await expect
     .element(screen.getByRole('button', { name: 'Preview segment' }))
     .not.toBeInTheDocument()
 })
 
-test('a segment offers no Event property', async () => {
+test("a property's presence test keeps its key and asks for no value", async () => {
   serve()
-  const value: ConditionGroup = {
+  const onChange = vi.fn<(draft: ConditionDraft) => void>()
+  const value: RuleCondition = {
     kind: 'group',
     combinator: 'and',
-    rules: [{ kind: 'rule', field: 'email', operator: 'contains', value: '@x' }],
+    entries: [
+      {
+        kind: 'property',
+        of: { kind: 'trigger' },
+        key: 'coupon',
+        test: { kind: 'text', operator: 'eq', value: 'x' },
+      },
+    ],
   }
   const { screen } = await renderWithRouter(
-    <ConditionBuilder workspaceId="TestWs01" initialValue={value} onChange={vi.fn<() => void>()} />,
+    <ConditionBuilder
+      workspaceId="TestWs01"
+      place="rule"
+      initialValue={value}
+      onChange={onChange}
+    />,
   )
 
-  await expect.element(screen.getByRole('button', { name: 'Preview segment' })).toBeInTheDocument()
-  await expect.element(screen.getByLabelText('Event property name')).not.toBeInTheDocument()
+  await screen.getByTestId('operators').click()
+  await screen.getByRole('option', { name: 'is set' }).click()
+
+  await expect.element(screen.getByLabelText('Event property name')).toHaveValue('coupon')
+  await expect.element(screen.getByTestId('value-editor')).not.toBeInTheDocument()
+  await expect
+    .poll(() => onChange.mock.lastCall?.[0].entries)
+    .toEqual([
+      {
+        kind: 'property',
+        of: { kind: 'trigger' },
+        key: 'coupon',
+        test: { kind: 'presence', operator: 'set' },
+      },
+    ])
 })
 
-test('adding a rule emits the typed rule group', async () => {
+test('adding a rule emits the typed Condition', async () => {
   serve()
   const onChange = vi.fn<(draft: ConditionDraft) => void>()
   const { screen } = await renderWithRouter(
-    <ConditionBuilder workspaceId="TestWs01" initialValue={emptyGroup} onChange={onChange} />,
+    <ConditionBuilder
+      workspaceId="TestWs01"
+      place="segment"
+      initialValue={emptyGroup}
+      onChange={onChange}
+    />,
   )
 
   await screen.getByRole('button', { name: /Rule/ }).first().click()
 
   await expect.poll(() => onChange.mock.calls.length).toBeGreaterThan(0)
-  expect(onChange.mock.calls[0]?.[0]).toMatchObject({
+  expect(onChange.mock.calls[0]?.[0]).toEqual({
     kind: 'group',
     combinator: 'and',
-    rules: [{ kind: 'rule', field: 'subject_id', operator: 'eq' }],
+    entries: [
+      {
+        kind: 'attribute',
+        attribute: 'subject_id',
+        test: { kind: 'text', operator: 'eq', value: '' },
+      },
+    ],
   })
 })
 
-const counted: ConditionGroup = {
+const counted: SegmentCondition = {
   kind: 'group',
   combinator: 'and',
-  rules: [{ kind: 'event', action: 'purchase', operator: 'atLeast', times: 2, withinDays: 7 }],
+  entries: [{ kind: 'event', action: 'purchase', operator: 'atLeast', times: 2, withinDays: 7 }],
 }
 
 test('an event rule edits its count and its window, and previews what it shows', async () => {
@@ -138,6 +250,7 @@ test('an event rule edits its count and its window, and previews what it shows',
   const { screen } = await renderWithRouter(
     <ConditionBuilder
       workspaceId="TestWs01"
+      place="segment"
       initialValue={counted}
       onChange={vi.fn<() => void>()}
     />,
@@ -155,7 +268,7 @@ test('an event rule edits its count and its window, and previews what it shows',
       {
         condition: {
           ...counted,
-          rules: [
+          entries: [
             { kind: 'event', action: 'purchase', operator: 'atLeast', times: 3, withinDays: 14 },
           ],
         },
@@ -170,6 +283,7 @@ test('a count is typed digit by digit and can be emptied', async () => {
   const { screen } = await renderWithRouter(
     <ConditionBuilder
       workspaceId="TestWs01"
+      place="segment"
       initialValue={counted}
       onChange={vi.fn<() => void>()}
     />,
@@ -192,13 +306,18 @@ test('a count is typed digit by digit and can be emptied', async () => {
 
 test('a loaded count of at least once shows as the performed preset, with only its window', async () => {
   serve()
-  const value: ConditionGroup = {
+  const value: SegmentCondition = {
     kind: 'group',
     combinator: 'and',
-    rules: [{ kind: 'event', action: 'purchase', operator: 'atLeast', times: 1 }],
+    entries: [{ kind: 'event', action: 'purchase', operator: 'atLeast', times: 1 }],
   }
   const { screen } = await renderWithRouter(
-    <ConditionBuilder workspaceId="TestWs01" initialValue={value} onChange={vi.fn<() => void>()} />,
+    <ConditionBuilder
+      workspaceId="TestWs01"
+      place="segment"
+      initialValue={value}
+      onChange={vi.fn<() => void>()}
+    />,
   )
 
   await expect.element(screen.getByTestId('operators')).toHaveValue('performed')
@@ -206,33 +325,95 @@ test('a loaded count of at least once shows as the performed preset, with only i
   await expect.element(screen.getByLabelText('Times')).not.toBeInTheDocument()
 })
 
-// A number field offers the comparisons beside the operators the server lists for it, and takes a
-// number: the loaded comparison shows its operator and its number.
-test('a number custom field shows a comparison with its number', async () => {
-  serve()
-  const value: ConditionGroup = {
-    kind: 'group',
-    combinator: 'and',
-    rules: [{ kind: 'number', field: 'custom:age', operator: 'gte', value: 30 }],
-  }
+const customFieldTests: SegmentCondition = {
+  kind: 'group',
+  combinator: 'and',
+  entries: [
+    { kind: 'customField', key: 'age', test: { kind: 'number', operator: 'gte', value: 30 } },
+    { kind: 'customField', key: 'plan', test: { kind: 'text', operator: 'eq', value: 'pro' } },
+    { kind: 'customField', key: 'renews_at', test: { kind: 'presence', operator: 'set' } },
+  ],
+}
+
+async function operatorOptions(row: number) {
   const { screen } = await renderWithRouter(
-    <ConditionBuilder workspaceId="TestWs01" initialValue={value} onChange={vi.fn<() => void>()} />,
+    <ConditionBuilder
+      workspaceId="TestWs01"
+      place="segment"
+      initialValue={customFieldTests}
+      onChange={vi.fn<() => void>()}
+    />,
+  )
+  await screen.getByTestId('operators').nth(row).click()
+  const options = screen.getByRole('option')
+  await expect.element(options.first()).toBeVisible()
+  return options.elements().map((option) => option.textContent)
+}
+
+test('a number Custom field shows a comparison with its number', async () => {
+  serve()
+  const { screen } = await renderWithRouter(
+    <ConditionBuilder
+      workspaceId="TestWs01"
+      place="segment"
+      initialValue={customFieldTests}
+      onChange={vi.fn<() => void>()}
+    />,
   )
 
-  await expect.element(screen.getByTestId('operators')).toHaveValue('greater than or equal to')
-  await expect.element(screen.getByTestId('value-editor')).toHaveValue('30')
+  await expect
+    .element(screen.getByTestId('operators').first())
+    .toHaveValue('greater than or equal to')
+  await expect.element(screen.getByTestId('value-editor').first()).toHaveValue('30')
+})
+
+test('a number Custom field offers text is and is not, the number comparisons and presence', async () => {
+  serve()
+
+  const offered = await operatorOptions(0)
+
+  expect(offered).toEqual([
+    'is',
+    'is not',
+    'greater than',
+    'greater than or equal to',
+    'less than',
+    'less than or equal to',
+    'is set',
+  ])
+})
+
+test('a string Custom field offers the text operators it takes and presence', async () => {
+  serve()
+
+  const offered = await operatorOptions(1)
+
+  expect(offered).toEqual(['is', 'is not', 'contains', 'is set'])
+})
+
+test('a datetime Custom field offers the moment operators, the window and presence', async () => {
+  serve()
+
+  const offered = await operatorOptions(2)
+
+  expect(offered).toEqual(['is before', 'is after', 'within the last (days)', 'is set'])
 })
 
 test('the Telegram field offers has and does not have, and round-trips with no value', async () => {
   serve()
   const onChange = vi.fn<(draft: ConditionDraft) => void>()
-  const value: ConditionGroup = {
+  const value: SegmentCondition = {
     kind: 'group',
     combinator: 'and',
-    rules: [{ kind: 'rule', field: 'telegram', operator: 'has', value: '' }],
+    entries: [{ kind: 'telegram', operator: 'has' }],
   }
   const { screen } = await renderWithRouter(
-    <ConditionBuilder workspaceId="TestWs01" initialValue={value} onChange={onChange} />,
+    <ConditionBuilder
+      workspaceId="TestWs01"
+      place="segment"
+      initialValue={value}
+      onChange={onChange}
+    />,
   )
 
   await expect.element(screen.getByTestId('fields')).toHaveValue('Telegram')
@@ -244,17 +425,20 @@ test('the Telegram field offers has and does not have, and round-trips with no v
   await screen.getByRole('option', { name: 'does not have' }).click()
 
   await expect
-    .poll(() => onChange.mock.calls.at(-1)?.[0])
-    .toMatchObject({
-      rules: [{ kind: 'rule', field: 'telegram', operator: 'doesNotHave', value: '' }],
-    })
+    .poll(() => onChange.mock.lastCall?.[0].entries)
+    .toEqual([{ kind: 'telegram', operator: 'doesNotHave' }])
 })
 
 test('a rule picks the SMS field: has, no value, and does not have round-trips', async () => {
   serve()
   const onChange = vi.fn<(draft: ConditionDraft) => void>()
   const { screen } = await renderWithRouter(
-    <ConditionBuilder workspaceId="TestWs01" initialValue={emptyGroup} onChange={onChange} />,
+    <ConditionBuilder
+      workspaceId="TestWs01"
+      place="segment"
+      initialValue={emptyGroup}
+      onChange={onChange}
+    />,
   )
 
   await screen.getByRole('button', { name: /Rule/ }).first().click()
@@ -265,13 +449,39 @@ test('a rule picks the SMS field: has, no value, and does not have round-trips',
   await expect.element(screen.getByTestId('operators')).toHaveValue('has')
   await expect.element(screen.getByTestId('value-editor')).not.toBeInTheDocument()
   await expect
-    .poll(() => onChange.mock.calls.at(-1)?.[0])
-    .toMatchObject({ rules: [{ kind: 'rule', field: 'sms', operator: 'has', value: '' }] })
+    .poll(() => onChange.mock.lastCall?.[0].entries)
+    .toEqual([{ kind: 'sms', operator: 'has' }])
 
   await screen.getByTestId('operators').click()
   await screen.getByRole('option', { name: 'does not have' }).click()
 
   await expect
-    .poll(() => onChange.mock.calls.at(-1)?.[0])
-    .toMatchObject({ rules: [{ kind: 'rule', field: 'sms', operator: 'doesNotHave', value: '' }] })
+    .poll(() => onChange.mock.lastCall?.[0].entries)
+    .toEqual([{ kind: 'sms', operator: 'doesNotHave' }])
+})
+
+test('a loaded Tag shows its name and is edited as the Tag it tests', async () => {
+  serve()
+  const onChange = vi.fn<(draft: ConditionDraft) => void>()
+  const value: SegmentCondition = {
+    kind: 'group',
+    combinator: 'and',
+    entries: [{ kind: 'tag', name: 'vip', operator: 'has' }],
+  }
+  const { screen } = await renderWithRouter(
+    <ConditionBuilder
+      workspaceId="TestWs01"
+      place="segment"
+      initialValue={value}
+      onChange={onChange}
+    />,
+  )
+
+  await expect.element(screen.getByTestId('fields')).toHaveValue('Tag')
+  await expect.element(screen.getByTestId('value-editor')).toHaveValue('vip')
+  await screen.getByTestId('value-editor').fill('churned')
+
+  await expect
+    .poll(() => onChange.mock.lastCall?.[0].entries)
+    .toEqual([{ kind: 'tag', name: 'churned', operator: 'has' }])
 })

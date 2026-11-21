@@ -17,7 +17,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type {
   SiteAutomationResource,
-  ConditionGroup,
+  RuleCondition,
   SiteRuleResource,
 } from '../../generated/site/types.gen.ts'
 import { zUpdateRuleInput } from '../../generated/site/zod.gen.ts'
@@ -32,10 +32,16 @@ import { RuleCreatePage, RuleEditPage } from './resource.tsx'
 
 const REFRESH_RULE = 'Refresh rule'
 
-const CONDITION: ConditionGroup = {
+const CONDITION: RuleCondition = {
   kind: 'group',
   combinator: 'and',
-  rules: [{ kind: 'rule', field: 'email', operator: 'contains', value: '@x' }],
+  entries: [
+    {
+      kind: 'attribute',
+      attribute: 'email',
+      test: { kind: 'text', operator: 'contains', value: '@x' },
+    },
+  ],
 }
 
 const STORED: SiteRuleResource = {
@@ -120,7 +126,7 @@ test('creating a rule sends its name, trigger events, empty condition and action
       {
         name: 'Tag signups',
         triggerEvents: ['signed_up'],
-        condition: { kind: 'group', combinator: 'and', rules: [] },
+        condition: { kind: 'group', combinator: 'and', entries: [] },
         actions: [{ type: 'apply_tag', tag: 'new' }],
       },
     ])
@@ -457,4 +463,83 @@ test('Revert over unsaved edits asks first, and keeps them when the person stays
     .click()
   await expect.poll(() => reverted).toEqual([testId(7)])
   await expect.element(screen.getByLabelText('Tag')).toHaveValue('live')
+})
+
+// Every kind of leaf a Rule's Condition admits besides a Segment's own, as the server stores it.
+const WITH_PROPERTY: RuleCondition = {
+  kind: 'group',
+  combinator: 'and',
+  entries: [
+    {
+      kind: 'property',
+      of: { kind: 'trigger' },
+      key: 'url',
+      test: { kind: 'text', operator: 'beginsWith', value: '/pricing' },
+    },
+    {
+      kind: 'group',
+      combinator: 'or',
+      entries: [
+        {
+          kind: 'property',
+          of: { kind: 'trigger' },
+          key: 'order.total',
+          test: { kind: 'number', operator: 'gt', value: 100 },
+        },
+        { kind: 'tag', name: 'vip', operator: 'doesNotHave' },
+        {
+          kind: 'attribute',
+          attribute: 'email',
+          test: { kind: 'text', operator: 'contains', value: '@x' },
+        },
+        { kind: 'event', action: 'purchased', operator: 'atMost', times: 0 },
+      ],
+    },
+  ],
+}
+
+test("a Rule's Condition edited in the builder is saved in the typed shape it was read in", async () => {
+  const bodies: unknown[] = []
+  serveCatalogue()
+  worker.use(
+    handleSiteRulesGet({
+      body: {
+        ...STORED,
+        draft: { number: 1, triggerEvents: ['signed_up'], condition: WITH_PROPERTY, actions: [] },
+      },
+    }),
+    handleSiteRulesUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(STORED)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<RuleEditPage />, EDIT_ROUTE)
+  const key = screen.getByLabelText('Event property name').first()
+  await expect.element(key).toHaveValue('url')
+  await key.fill('path')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        revision: 1,
+        name: 'Tag signups',
+        triggerEvents: ['signed_up'],
+        condition: {
+          ...WITH_PROPERTY,
+          entries: [
+            {
+              kind: 'property',
+              of: { kind: 'trigger' },
+              key: 'path',
+              test: { kind: 'text', operator: 'beginsWith', value: '/pricing' },
+            },
+            WITH_PROPERTY.entries[1],
+          ],
+        },
+        actions: [],
+      },
+    ])
 })
