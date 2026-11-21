@@ -1023,12 +1023,20 @@ Enrollment takes the unknown path, a path of its own (empty means go on), which 
 must have.
 _Avoid_: Split (that one chooses by weight), decision node, if/else node, filter
 
+**Conversion window**:
+How long after an Enrollment passes a **Split** its goal still counts for the Split's path, set on
+the Split (7 days until set); an Enrollment is counted in a path's goal rate only once that long has
+passed. Not the **Attribution window**, which credits an Order to a click.
+_Avoid_: Experiment window, test window
+
 **Split**:
 A Step with two or more weighted paths, its weights summing to 100, which rejoin right after it; the
 Contact's path is fixed by the Contact and the Step (and, in a date-triggered Automation, the
 year, and when Contacts are enrolled again, the Enrollment's ordinal), so the same Enrollment lands
 on the same one, and it is kept on the Enrollment. An empty path is a holdout group. Used to test one path
-against another; no winner is picked for the author.
+against another: the report compares each path with the first, the control, on its goal rate within
+the **Conversion window** (and a content variant on its click rate and **Revenue per recipient**) and
+says whether a difference is significant; no winner is picked for the author.
 _Avoid_: A/B test step, experiment, variant (that is a Broadcast's), random branch
 
 **Wait for event**:

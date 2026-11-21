@@ -5,6 +5,10 @@ build: [1545, 1558, 1561, 1562, 1563, 1564, 1565, 1567, 1615, 1616, 1617, 1618, 
 
 # An Automation chooses a path by Condition, by weight or by an awaited Event
 
+> **Amended by [[0192-a-splits-paths-are-compared-with-its-first-by-a-test-that-may-be-read-at-any-time]]:**
+> the report compares each path of a Split with the first on its goal rate within a Conversion
+> window, by a test that may be read at any time; still no path is picked for the author.
+
 > **Amended by [[0180-a-property-test-runs-in-postgres-as-one-sql-json-path]]:** a Wait for event awaits Event matchers (an action and an optional filter,
 > as a Trigger's); its optional Condition is an Automation Condition, as a Branch path's, and the
 > arriving Event's properties are tested by the matcher's filter.
