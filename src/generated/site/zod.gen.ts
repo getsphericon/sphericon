@@ -319,141 +319,6 @@ export const zCnameRecord = z.object({
 export const zConditionCombinator = z.enum(['and', 'or']);
 
 /**
- * Which side of `at` a date leaf takes: before is strictly earlier, after is at or later, so the
- * two split time at `at`
- */
-export const zConditionDateOperator = z.enum(['before', 'after']);
-
-/**
- * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
- * is within the last `withinDays` days up to now, so a moment still to come is not within. Only a
- * date-time with a UTC offset is a moment, as for the date leaf.
- */
-export const zConditionDateWithinLeaf = z.object({
-  kind: z.enum(['dateWithin']),
-  field: z.string(),
-  withinDays: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
-});
-
-/**
- * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
- * is within the last `withinDays` days up to now, so a moment still to come is not within. Only a
- * date-time with a UTC offset is a moment, as for the date leaf.
- */
-export const zConditionDateWithinLeafInput = z.strictObject({
-  kind: z.enum(['dateWithin']),
-  field: z.string(),
-  withinDays: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
-});
-
-/**
- * How an event leaf bounds the count: at least `times`, or at most `times`
- */
-export const zConditionEventOperator = z.enum(['atLeast', 'atMost']);
-
-/**
- * A test of how many times a contact performed an Event action, over all time or within the
- * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
- * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
- * longer than Event retention is capped by it: expired Events are no longer counted.
- */
-export const zConditionEventLeaf = z.object({
-  kind: z.enum(['event']),
-  action: z.string(),
-  operator: zConditionEventOperator,
-  times: z.int().gte(0).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  withinDays: z.exactOptional(z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
-});
-
-/**
- * A test of how many times a contact performed an Event action, over all time or within the
- * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
- * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
- * longer than Event retention is capped by it: expired Events are no longer counted.
- */
-export const zConditionEventLeafInput = z.strictObject({
-  kind: z.enum(['event']),
-  action: z.string(),
-  operator: zConditionEventOperator,
-  times: z.int().gte(0).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  withinDays: z.exactOptional(z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
-});
-
-/**
- * How a number leaf compares the field with `value`: greater than, greater than or equal,
- * less than, or less than or equal
- */
-export const zConditionNumberOperator = z.enum([
-  'gt',
-  'gte',
-  'lt',
-  'lte'
-]);
-
-/**
- * A comparison of a number: a custom field of the workspace whose type is number
- * ("custom:<key>"), or a property of the Event that fired a rule ("trigger:<key>", valid only in a
- * rule). A missing key, or a value that is not a number (text, a boolean, null, a list), makes the
- * leaf false.
- */
-export const zConditionNumberLeaf = z.object({
-  kind: z.enum(['number']),
-  field: z.string(),
-  operator: zConditionNumberOperator,
-  value: z.number()
-});
-
-/**
- * A comparison of a number: a custom field of the workspace whose type is number
- * ("custom:<key>"), or a property of the Event that fired a rule ("trigger:<key>", valid only in a
- * rule). A missing key, or a value that is not a number (text, a boolean, null, a list), makes the
- * leaf false.
- */
-export const zConditionNumberLeafInput = z.strictObject({
-  kind: z.enum(['number']),
-  field: z.string(),
-  operator: zConditionNumberOperator,
-  value: z.number()
-});
-
-/**
- * What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and
- * notNull; the tag, telegram and sms fields take has and doesNotHave; a custom field takes the operators of its type,
- * which the custom field lists as `ruleOperators` (a number custom field is also compared by a
- * number leaf, a datetime one tested by the date leaves).
- */
-export const zConditionOperator = z.enum([
-  'eq',
-  'neq',
-  'contains',
-  'beginsWith',
-  'null',
-  'notNull',
-  'has',
-  'doesNotHave'
-]);
-
-/**
- * One test of a condition: a field, an operator and a value
- */
-export const zConditionLeaf = z.object({
-  kind: z.enum(['rule']),
-  field: z.string(),
-  operator: zConditionOperator,
-  value: z.exactOptional(z.string())
-});
-
-/**
- * One test of a condition: a field, an operator and a value
- */
-export const zConditionLeafInput = z.strictObject({
-  kind: z.enum(['rule']),
-  field: z.string(),
-  operator: zConditionOperator,
-  value: z.exactOptional(z.string())
-});
-
-/**
  * How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a keyword (the person texted START), imported (consent an API client or an import collected itself, with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A Confirmation is replaced only by a stronger one.
  */
 export const zConfirmationProvenance = z.enum([
@@ -471,6 +336,21 @@ export const zConsentEvidence = z.strictObject({
   source: z.string().min(1).max(500),
   brand: z.string().min(1).max(255)
 });
+
+/**
+ * A text attribute of a Contact
+ */
+export const zContactAttribute = z.enum([
+  'email',
+  'phone',
+  'subject_id',
+  'first_name',
+  'last_name',
+  'time_zone',
+  'country',
+  'locale',
+  'city'
+]);
 
 /**
  * How the contact first came to exist
@@ -641,6 +521,39 @@ export const zDryRunRuleInput = z.strictObject({
 });
 
 /**
+ * How an event count is bounded: at least `times`, or at most `times`
+ */
+export const zEventCountOperator = z.enum(['atLeast', 'atMost']);
+
+/**
+ * A count of how many times a Contact performed an Event action, over all time or within the
+ * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
+ * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
+ * longer than Event retention is capped by it: expired Events are no longer counted.
+ */
+export const zEventLeaf = z.object({
+  kind: z.enum(['event']),
+  action: z.string(),
+  operator: zEventCountOperator,
+  times: z.int().gte(0).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  withinDays: z.exactOptional(z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
+});
+
+/**
+ * A count of how many times a Contact performed an Event action, over all time or within the
+ * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
+ * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
+ * longer than Event retention is capped by it: expired Events are no longer counted.
+ */
+export const zEventLeafInput = z.strictObject({
+  kind: z.enum(['event']),
+  action: z.string(),
+  operator: zEventCountOperator,
+  times: z.int().gte(0).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  withinDays: z.exactOptional(z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
+});
+
+/**
  * Scopes an OAuth client may be granted without any extra opt-in: the external
  * API's read/write vocabulary. Token management scopes are deliberately absent,
  * so a connector can never mint further credentials.
@@ -670,6 +583,11 @@ export const zGrantableScope = z.enum([
   'tracking_domains:read',
   'integrations:read'
 ]);
+
+/**
+ * Whether a Contact has something: a Tag, a Telegram chat, a phone that can be texted
+ */
+export const zHasOperator = z.enum(['has', 'doesNotHave']);
 
 /**
  * Why a send is held (a Hold). A hold is reversible and not a failure: a held Broadcast keeps its
@@ -849,6 +767,12 @@ export const zAutomationReport = z.object({
 });
 
 /**
+ * Which side of `at` a moment is on: before is strictly earlier, after is at or later, so the two
+ * split time at `at`
+ */
+export const zMomentOperator = z.enum(['before', 'after']);
+
+/**
  * What a person calls a named row (a Tag, a Segment, a Rule, an Automation, a Template, a
  * Broadcast, an Integration, a token, a Passkey, a Workspace): at most 100 characters. Surrounding
  * spaces are trimmed before the name is stored, and a name that is empty then is refused (422).
@@ -870,6 +794,37 @@ export const zCreateTemplateInput = z.strictObject({
   subject: z.exactOptional(z.string()),
   body: z.exactOptional(z.string()),
   doc: z.exactOptional(zEditorDocument)
+});
+
+/**
+ * How a number test compares the value with its own: greater than, greater than or equal, less
+ * than, or less than or equal
+ */
+export const zNumberOperator = z.enum([
+  'gt',
+  'gte',
+  'lt',
+  'lte'
+]);
+
+/**
+ * A test of a number. A missing value, or one that is not a number (text, a boolean, null, a
+ * list), fails it.
+ */
+export const zNumberTest = z.object({
+  kind: z.enum(['number']),
+  operator: zNumberOperator,
+  value: z.number()
+});
+
+/**
+ * A test of a number. A missing value, or one that is not a number (text, a boolean, null, a
+ * list), fails it.
+ */
+export const zNumberTestInput = z.strictObject({
+  kind: z.enum(['number']),
+  operator: zNumberOperator,
+  value: z.number()
 });
 
 /**
@@ -956,6 +911,27 @@ export const zPersonalScope = z.enum([
   'integrations:write',
   'webhooks:write'
 ]);
+
+/**
+ * Whether a value is set
+ */
+export const zPresenceOperator = z.enum(['set', 'notSet']);
+
+/**
+ * A test of whether a value is set at all
+ */
+export const zPresenceTest = z.object({
+  kind: z.enum(['presence']),
+  operator: zPresenceOperator
+});
+
+/**
+ * A test of whether a value is set at all
+ */
+export const zPresenceTestInput = z.strictObject({
+  kind: z.enum(['presence']),
+  operator: zPresenceOperator
+});
 
 /**
  * A Preset: how an Instance verifies and reads one provider's bounce and complaint callbacks
@@ -2506,6 +2482,24 @@ export const zSmsFromKind = z.enum([
 ]);
 
 /**
+ * A test of whether a Contact has a phone that can be texted: one with an SMS Confirmation and no
+ * SMS opt-out or Suppression
+ */
+export const zSmsLeaf = z.object({
+  kind: z.enum(['sms']),
+  operator: zHasOperator
+});
+
+/**
+ * A test of whether a Contact has a phone that can be texted: one with an SMS Confirmation and no
+ * SMS opt-out or Suppression
+ */
+export const zSmsLeafInput = z.strictObject({
+  kind: z.enum(['sms']),
+  operator: zHasOperator
+});
+
+/**
  * SMTP config without the password
  */
 export const zSmtpConfig = z.object({
@@ -2604,6 +2598,24 @@ export const zSystemEventAction = z.enum([
   'sms.unsubscribed',
   'contact.consent_superseded'
 ]);
+
+/**
+ * A test of whether a Contact has the Tag called `name`
+ */
+export const zTagLeaf = z.object({
+  kind: z.enum(['tag']),
+  name: z.string(),
+  operator: zHasOperator
+});
+
+/**
+ * A test of whether a Contact has the Tag called `name`
+ */
+export const zTagLeafInput = z.strictObject({
+  kind: z.enum(['tag']),
+  name: z.string(),
+  operator: zHasOperator
+});
 
 /**
  * A link button under a Telegram message: an inline URL button on a row of its own
@@ -2769,6 +2781,22 @@ export const zTelegramConfigInput = z.strictObject({
 });
 
 /**
+ * A test of whether a Contact has a Telegram chat bound, on its own or through a Visitor
+ */
+export const zTelegramLeaf = z.object({
+  kind: z.enum(['telegram']),
+  operator: zHasOperator
+});
+
+/**
+ * A test of whether a Contact has a Telegram chat bound, on its own or through a Visitor
+ */
+export const zTelegramLeafInput = z.strictObject({
+  kind: z.enum(['telegram']),
+  operator: zHasOperator
+});
+
+/**
  * Request body for a test send: where the preview goes, in the field of the broadcast's Channel.
  * The field of the other Channel is not read.
  */
@@ -2783,6 +2811,106 @@ export const zTestSendBroadcastInput = z.strictObject({
 export const zTestWebhookInput = z.strictObject({
   eventType: z.string()
 });
+
+/**
+ * How a text test compares the value with its own
+ */
+export const zTextOperator = z.enum([
+  'eq',
+  'neq',
+  'contains',
+  'beginsWith'
+]);
+
+/**
+ * The tests a Condition's Custom field test takes on a field of one type, each with the
+ * operators it takes there; an empty list is a test the type does not take
+ */
+export const zCustomFieldConditionTests = z.object({
+  text: z.array(zTextOperator),
+  number: z.array(zNumberOperator),
+  moment: z.array(zMomentOperator),
+  withinLast: z.boolean(),
+  presence: z.array(zPresenceOperator)
+});
+
+/**
+ * A test of a text value. On a Contact attribute or an Event's property, contains is a
+ * case-insensitive substring. On a Custom field, contains holds when the field's value is a list
+ * that holds `value`, and a number or boolean field's eq and neq compare the text of its value.
+ */
+export const zTextTest = z.object({
+  kind: z.enum(['text']),
+  operator: zTextOperator,
+  value: z.string()
+});
+
+/**
+ * What a test of a Contact attribute asks of it, by `kind`
+ */
+export const zAttributeTest = z.discriminatedUnion('kind', [
+  zTextTest.extend({ kind: z.literal('text') }),
+  zPresenceTest.extend({ kind: z.literal('presence') })
+]);
+
+/**
+ * A test of a Contact's text attribute
+ */
+export const zAttributeLeaf = z.object({
+  kind: z.enum(['attribute']),
+  attribute: zContactAttribute,
+  test: zAttributeTest
+});
+
+/**
+ * What a property test asks of the property's value, by `kind`. A key the Event lacks fails
+ * every test; a text test fails on a value that is not text; set holds for a text value and notSet
+ * for an explicit null.
+ */
+export const zPropertyTest = z.discriminatedUnion('kind', [
+  zTextTest.extend({ kind: z.literal('text') }),
+  zNumberTest.extend({ kind: z.literal('number') }),
+  zPresenceTest.extend({ kind: z.literal('presence') })
+]);
+
+/**
+ * A test of a text value. On a Contact attribute or an Event's property, contains is a
+ * case-insensitive substring. On a Custom field, contains holds when the field's value is a list
+ * that holds `value`, and a number or boolean field's eq and neq compare the text of its value.
+ */
+export const zTextTestInput = z.strictObject({
+  kind: z.enum(['text']),
+  operator: zTextOperator,
+  value: z.string()
+});
+
+/**
+ * What a test of a Contact attribute asks of it, by `kind`
+ */
+export const zAttributeTestInput = z.discriminatedUnion('kind', [
+  zTextTestInput.extend({ kind: z.literal('text') }),
+  zPresenceTestInput.extend({ kind: z.literal('presence') })
+]);
+
+/**
+ * A test of a Contact's text attribute
+ */
+export const zAttributeLeafInput = z.strictObject({
+  kind: z.enum(['attribute']),
+  attribute: zContactAttribute,
+  test: zAttributeTestInput
+});
+
+/**
+ * What a property test asks of the property's value, by `kind`. A key the Event lacks fails
+ * every test; a text test fails on a value that is not text; set holds for a text value and notSet
+ * for an explicit null.
+ */
+export const zPropertyTestInput = z.discriminatedUnion('kind', [
+  zTextTestInput.extend({ kind: z.literal('text') }),
+  zNumberTestInput.extend({ kind: z.literal('number') }),
+  zPresenceTestInput.extend({ kind: z.literal('presence') })
+]);
 
 export const zTimeZoneName = z.string();
 
@@ -2899,32 +3027,6 @@ export const zBrandKitResource = z.object({
   footerText: z.string(),
   updatedAt: z.exactOptional(zTimestamp.nullable()),
   revision: zRevision
-});
-
-/**
- * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
- * is before or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date
- * without a time, a date-time without an offset or a value that is not a date-time makes the leaf
- * false.
- */
-export const zConditionDateLeaf = z.object({
-  kind: z.enum(['date']),
-  field: z.string(),
-  operator: zConditionDateOperator,
-  at: zTimestamp
-});
-
-/**
- * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
- * is before or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date
- * without a time, a date-time without an offset or a value that is not a date-time makes the leaf
- * false.
- */
-export const zConditionDateLeafInput = z.strictObject({
-  kind: z.enum(['date']),
-  field: z.string(),
-  operator: zConditionDateOperator,
-  at: zTimestamp
 });
 
 /**
@@ -3094,6 +3196,28 @@ export const zEnrollmentResource = z.object({
   failure: z.exactOptional(zEnrollmentFailure),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
+});
+
+/**
+ * A test of a moment: before or after `at`. Only a date-time with a UTC offset is a moment: a
+ * missing value, a date without a time, a date-time without an offset or a value that is not a
+ * date-time fails it.
+ */
+export const zMomentTest = z.object({
+  kind: z.enum(['moment']),
+  operator: zMomentOperator,
+  at: zTimestamp
+});
+
+/**
+ * A test of a moment: before or after `at`. Only a date-time with a UTC offset is a moment: a
+ * missing value, a date without a time, a date-time without an offset or a value that is not a
+ * date-time fails it.
+ */
+export const zMomentTestInput = z.strictObject({
+  kind: z.enum(['moment']),
+  operator: zMomentOperator,
+  at: zTimestamp
 });
 
 /**
@@ -3414,7 +3538,7 @@ export const zSiteCustomFieldResource = z.object({
   key: z.string(),
   name: z.string(),
   type: zCustomFieldType,
-  ruleOperators: z.array(zConditionOperator),
+  conditionTests: zCustomFieldConditionTests,
   revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
@@ -3764,6 +3888,52 @@ export const zTrackingDomainResource = z.object({
 });
 
 /**
+ * The Event that fired a Rule, whose properties a property test reads
+ */
+export const zTriggerSource = z.object({
+  kind: z.enum(['trigger'])
+});
+
+/**
+ * Whose properties a Rule's property test reads, by `kind`: the triggering Event
+ */
+export const zRulePropertySource = zTriggerSource;
+
+/**
+ * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
+ * key holding a dot is one key
+ */
+export const zRulePropertyLeaf = z.object({
+  kind: z.enum(['property']),
+  of: zRulePropertySource,
+  key: z.string(),
+  test: zPropertyTest
+});
+
+/**
+ * The Event that fired a Rule, whose properties a property test reads
+ */
+export const zTriggerSourceInput = z.strictObject({
+  kind: z.enum(['trigger'])
+});
+
+/**
+ * Whose properties a Rule's property test reads, by `kind`: the triggering Event
+ */
+export const zRulePropertySourceInput = zTriggerSourceInput;
+
+/**
+ * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
+ * key holding a dot is one key
+ */
+export const zRulePropertyLeafInput = z.strictObject({
+  kind: z.enum(['property']),
+  of: zRulePropertySourceInput,
+  key: z.string(),
+  test: zPropertyTestInput
+});
+
+/**
  * A Twilio account without its secret
  */
 export const zTwilioConfig = z.object({
@@ -4064,6 +4234,100 @@ export const zWebhookTestResult = z.object({
 });
 
 /**
+ * A test of a moment: within the last `days` days up to now, so a moment still to come is not
+ * within. A moment is read as for the moment test.
+ */
+export const zWithinLastTest = z.object({
+  kind: z.enum(['withinLast']),
+  days: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * What a test of the Contact's birthday asks of it, by `kind`
+ */
+export const zBirthdayTest = z.discriminatedUnion('kind', [
+  zMomentTest.extend({ kind: z.literal('moment') }),
+  zWithinLastTest.extend({ kind: z.literal('withinLast') })
+]);
+
+/**
+ * A test of the Contact's date of birth
+ */
+export const zBirthdayLeaf = z.object({
+  kind: z.enum(['birthday']),
+  test: zBirthdayTest
+});
+
+/**
+ * What a Custom field test asks of the field's value, by `kind`. Which tests and operators a
+ * field takes depends on its type, which the Custom field lists as `conditionTests`; a test the
+ * type does not take is refused when the Condition is saved.
+ */
+export const zCustomFieldTest = z.discriminatedUnion('kind', [
+  zTextTest.extend({ kind: z.literal('text') }),
+  zNumberTest.extend({ kind: z.literal('number') }),
+  zMomentTest.extend({ kind: z.literal('moment') }),
+  zWithinLastTest.extend({ kind: z.literal('withinLast') }),
+  zPresenceTest.extend({ kind: z.literal('presence') })
+]);
+
+/**
+ * A test of a Custom field of the Workspace, its key in a field of its own
+ */
+export const zCustomFieldLeaf = z.object({
+  kind: z.enum(['customField']),
+  key: z.string(),
+  test: zCustomFieldTest
+});
+
+/**
+ * A test of a moment: within the last `days` days up to now, so a moment still to come is not
+ * within. A moment is read as for the moment test.
+ */
+export const zWithinLastTestInput = z.strictObject({
+  kind: z.enum(['withinLast']),
+  days: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * What a test of the Contact's birthday asks of it, by `kind`
+ */
+export const zBirthdayTestInput = z.discriminatedUnion('kind', [
+  zMomentTestInput.extend({ kind: z.literal('moment') }),
+  zWithinLastTestInput.extend({ kind: z.literal('withinLast') })
+]);
+
+/**
+ * A test of the Contact's date of birth
+ */
+export const zBirthdayLeafInput = z.strictObject({
+  kind: z.enum(['birthday']),
+  test: zBirthdayTestInput
+});
+
+/**
+ * What a Custom field test asks of the field's value, by `kind`. Which tests and operators a
+ * field takes depends on its type, which the Custom field lists as `conditionTests`; a test the
+ * type does not take is refused when the Condition is saved.
+ */
+export const zCustomFieldTestInput = z.discriminatedUnion('kind', [
+  zTextTestInput.extend({ kind: z.literal('text') }),
+  zNumberTestInput.extend({ kind: z.literal('number') }),
+  zMomentTestInput.extend({ kind: z.literal('moment') }),
+  zWithinLastTestInput.extend({ kind: z.literal('withinLast') }),
+  zPresenceTestInput.extend({ kind: z.literal('presence') })
+]);
+
+/**
+ * A test of a Custom field of the Workspace, its key in a field of its own
+ */
+export const zCustomFieldLeafInput = z.strictObject({
+  kind: z.enum(['customField']),
+  key: z.string(),
+  test: zCustomFieldTestInput
+});
+
+/**
  * A Workspace id (ADR 0043): 8 random base62 characters, assigned once at creation and the
  * Workspace's one public address.
  */
@@ -4161,60 +4425,12 @@ export const zProblemDetails = z.object({
 });
 
 /**
- * A group of tests combined with and/or, optionally negated. An empty group matches every
- * contact (an empty negated group matches none).
- */
-export const zConditionGroup = z.object({
-  kind: z.enum(['group']),
-  combinator: zConditionCombinator,
-  not: z.exactOptional(z.boolean()),
-  rules: z.array(z.lazy((): any => zConditionNode))
-});
-
-/**
- * A group of tests combined with and/or, optionally negated. An empty group matches every
- * contact (an empty negated group matches none).
- */
-export const zConditionGroupInput = z.strictObject({
-  kind: z.enum(['group']),
-  combinator: zConditionCombinator,
-  not: z.exactOptional(z.boolean()),
-  rules: z.array(z.lazy((): any => zConditionNodeInput))
-});
-
-/**
- * A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested
- * group inside a condition group, discriminated by `kind`.
- */
-export const zConditionNode = z.discriminatedUnion('kind', [
-  zConditionLeaf.extend({ kind: z.literal('rule') }),
-  zConditionEventLeaf.extend({ kind: z.literal('event') }),
-  zConditionNumberLeaf.extend({ kind: z.literal('number') }),
-  zConditionDateLeaf.extend({ kind: z.literal('date') }),
-  zConditionDateWithinLeaf.extend({ kind: z.literal('dateWithin') }),
-  zConditionGroup.extend({ kind: z.literal('group') })
-]);
-
-/**
- * A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested
- * group inside a condition group, discriminated by `kind`.
- */
-export const zConditionNodeInput = z.discriminatedUnion('kind', [
-  zConditionLeafInput.extend({ kind: z.literal('rule') }),
-  zConditionEventLeafInput.extend({ kind: z.literal('event') }),
-  zConditionNumberLeafInput.extend({ kind: z.literal('number') }),
-  zConditionDateLeafInput.extend({ kind: z.literal('date') }),
-  zConditionDateWithinLeafInput.extend({ kind: z.literal('dateWithin') }),
-  zConditionGroupInput.extend({ kind: z.literal('group') })
-]);
-
-/**
  * Request body for creating a Rule: it is created inactive, with its definition as the draft
  */
 export const zCreateRuleInput = z.strictObject({
   name: zName,
   triggerEvents: z.array(z.string()).min(1),
-  condition: z.exactOptional(zConditionGroupInput),
+  condition: z.exactOptional(z.lazy((): any => zRuleConditionInput)),
   actions: z.exactOptional(z.array(zRuleActionInput))
 });
 
@@ -4223,8 +4439,60 @@ export const zCreateRuleInput = z.strictObject({
  */
 export const zCreateSegmentInput = z.strictObject({
   name: zName,
-  condition: zConditionGroupInput
+  condition: z.lazy((): any => zSegmentConditionInput)
 });
+
+/**
+ * A Rule's Condition: the tree of tests the Contact and the Event that fired the Rule match
+ */
+export const zRuleCondition = z.object({
+  kind: z.enum(['group']),
+  combinator: zConditionCombinator,
+  not: z.exactOptional(z.boolean()),
+  entries: z.array(z.lazy((): any => zRuleConditionNode))
+});
+
+/**
+ * A Rule's Condition: the tree of tests the Contact and the Event that fired the Rule match
+ */
+export const zRuleConditionInput = z.strictObject({
+  kind: z.enum(['group']),
+  combinator: zConditionCombinator,
+  not: z.exactOptional(z.boolean()),
+  entries: z.array(z.lazy((): any => zRuleConditionNodeInput))
+});
+
+/**
+ * An entry of a Rule's Condition, by `kind`: a Segment's, or a test of a property of the Event
+ * that fired the Rule
+ */
+export const zRuleConditionNode = z.discriminatedUnion('kind', [
+  zRuleCondition.extend({ kind: z.literal('group') }),
+  zAttributeLeaf.extend({ kind: z.literal('attribute') }),
+  zBirthdayLeaf.extend({ kind: z.literal('birthday') }),
+  zTagLeaf.extend({ kind: z.literal('tag') }),
+  zTelegramLeaf.extend({ kind: z.literal('telegram') }),
+  zSmsLeaf.extend({ kind: z.literal('sms') }),
+  zCustomFieldLeaf.extend({ kind: z.literal('customField') }),
+  zEventLeaf.extend({ kind: z.literal('event') }),
+  zRulePropertyLeaf.extend({ kind: z.literal('property') })
+]);
+
+/**
+ * An entry of a Rule's Condition, by `kind`: a Segment's, or a test of a property of the Event
+ * that fired the Rule
+ */
+export const zRuleConditionNodeInput = z.discriminatedUnion('kind', [
+  zRuleConditionInput.extend({ kind: z.literal('group') }),
+  zAttributeLeafInput.extend({ kind: z.literal('attribute') }),
+  zBirthdayLeafInput.extend({ kind: z.literal('birthday') }),
+  zTagLeafInput.extend({ kind: z.literal('tag') }),
+  zTelegramLeafInput.extend({ kind: z.literal('telegram') }),
+  zSmsLeafInput.extend({ kind: z.literal('sms') }),
+  zCustomFieldLeafInput.extend({ kind: z.literal('customField') }),
+  zEventLeafInput.extend({ kind: z.literal('event') }),
+  zRulePropertyLeafInput.extend({ kind: z.literal('property') })
+]);
 
 /**
  * One version of a Rule's definition (ADR 0065): its Trigger events, Condition and Actions
@@ -4232,15 +4500,65 @@ export const zCreateSegmentInput = z.strictObject({
 export const zRuleVersion = z.object({
   number: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   triggerEvents: z.array(z.string()),
-  condition: z.exactOptional(zConditionGroup),
+  condition: z.exactOptional(zRuleCondition),
   actions: z.array(zRuleAction)
 });
+
+/**
+ * A Segment's Condition: the tree of tests a Contact matches
+ */
+export const zSegmentCondition = z.object({
+  kind: z.enum(['group']),
+  combinator: zConditionCombinator,
+  not: z.exactOptional(z.boolean()),
+  entries: z.array(z.lazy((): any => zSegmentConditionNode))
+});
+
+/**
+ * A Segment's Condition: the tree of tests a Contact matches
+ */
+export const zSegmentConditionInput = z.strictObject({
+  kind: z.enum(['group']),
+  combinator: zConditionCombinator,
+  not: z.exactOptional(z.boolean()),
+  entries: z.array(z.lazy((): any => zSegmentConditionNodeInput))
+});
+
+/**
+ * An entry of a Segment's Condition, by `kind`: a test of the Contact, an event count or a nested
+ * group
+ */
+export const zSegmentConditionNode = z.discriminatedUnion('kind', [
+  zSegmentCondition.extend({ kind: z.literal('group') }),
+  zAttributeLeaf.extend({ kind: z.literal('attribute') }),
+  zBirthdayLeaf.extend({ kind: z.literal('birthday') }),
+  zTagLeaf.extend({ kind: z.literal('tag') }),
+  zTelegramLeaf.extend({ kind: z.literal('telegram') }),
+  zSmsLeaf.extend({ kind: z.literal('sms') }),
+  zCustomFieldLeaf.extend({ kind: z.literal('customField') }),
+  zEventLeaf.extend({ kind: z.literal('event') })
+]);
+
+/**
+ * An entry of a Segment's Condition, by `kind`: a test of the Contact, an event count or a nested
+ * group
+ */
+export const zSegmentConditionNodeInput = z.discriminatedUnion('kind', [
+  zSegmentConditionInput.extend({ kind: z.literal('group') }),
+  zAttributeLeafInput.extend({ kind: z.literal('attribute') }),
+  zBirthdayLeafInput.extend({ kind: z.literal('birthday') }),
+  zTagLeafInput.extend({ kind: z.literal('tag') }),
+  zTelegramLeafInput.extend({ kind: z.literal('telegram') }),
+  zSmsLeafInput.extend({ kind: z.literal('sms') }),
+  zCustomFieldLeafInput.extend({ kind: z.literal('customField') }),
+  zEventLeafInput.extend({ kind: z.literal('event') })
+]);
 
 /**
  * Request body for previewing a condition's segment
  */
 export const zSitePreviewSegmentInput = z.strictObject({
-  condition: z.exactOptional(zConditionGroupInput),
+  condition: z.exactOptional(zSegmentConditionInput),
   channel: z.exactOptional(zBroadcastChannel),
   integrationId: z.exactOptional(zEntityId.nullable())
 });
@@ -4267,7 +4585,7 @@ export const zSiteRuleResource = z.object({
 export const zSiteSegmentResource = z.object({
   id: zEntityId,
   name: z.string(),
-  condition: z.exactOptional(zConditionGroup),
+  condition: z.exactOptional(zSegmentCondition),
   archivedAt: z.exactOptional(zTimestamp.nullable()),
   revision: zRevision,
   createdAt: zTimestamp,
@@ -4281,7 +4599,7 @@ export const zUpdateRuleInput = z.strictObject({
   revision: zRevision,
   name: z.exactOptional(zName),
   triggerEvents: z.exactOptional(z.array(z.string()).min(1)),
-  condition: z.exactOptional(zConditionGroupInput),
+  condition: z.exactOptional(zRuleConditionInput),
   actions: z.exactOptional(z.array(zRuleActionInput))
 });
 
@@ -4291,7 +4609,7 @@ export const zUpdateRuleInput = z.strictObject({
 export const zUpdateSegmentInput = z.strictObject({
   revision: zRevision,
   name: z.exactOptional(zName),
-  condition: z.exactOptional(zConditionGroupInput)
+  condition: z.exactOptional(zSegmentConditionInput)
 });
 
 /**

@@ -69,7 +69,7 @@ model RuleVersion {
   triggerEvents: string[];
 
   /** The Contact must match this condition for the Rule to fire; absent means every Contact */
-  condition?: ConditionGroup;
+  condition?: RuleCondition;
 
   /** The Rule's ordered Actions */
   actions: RuleAction[];
@@ -103,7 +103,7 @@ model CreateRuleInput {
   @minItems(1)
   triggerEvents: string[];
 
-  condition?: ConditionGroupInput;
+  condition?: RuleConditionInput;
 
   /** The Actions to run, in order */
   actions?: RuleActionInput[];
@@ -120,7 +120,7 @@ model UpdateRuleInput {
   @minItems(1)
   triggerEvents?: string[];
 
-  condition?: ConditionGroupInput;
+  condition?: RuleConditionInput;
 
   /** The Actions to run, in order */
   actions?: RuleActionInput[];

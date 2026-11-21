@@ -226,7 +226,7 @@ type Inputs interface {
 	SegmentCreate(source *siteapi.CreateSegmentInput) (segments.CreateInput, error)
 	// goverter:map Condition | segmentConditionPatch
 	SegmentUpdate(source *siteapi.UpdateSegmentInput) (segments.UpdateInput, error)
-	// goverter:map Condition | conditionIn
+	// goverter:map Condition | segmentConditionIn
 	SegmentPreview(source *siteapi.SitePreviewSegmentInput) (segments.PreviewInput, error)
 
 	// The editor version is the save's own: the module renders the document and stamps it.
@@ -238,9 +238,9 @@ type Inputs interface {
 	AutomationUpdate(source *siteapi.UpdateAutomationInput) automations.UpdateInput
 
 	RuleActions(source []siteapi.RuleActionInput) []ruleaction.Action
-	// goverter:map Condition | conditionIn
+	// goverter:map Condition | ruleConditionIn
 	RuleCreate(source *siteapi.CreateRuleInput) (rules.CreateInput, error)
-	// goverter:map Condition | conditionIn
+	// goverter:map Condition | ruleConditionIn
 	RuleUpdate(source *siteapi.UpdateRuleInput) (rules.UpdateInput, error)
 
 	TokenCreate(source *siteapi.SiteCreateTokenInput) apitokens.Input
@@ -440,9 +440,14 @@ func ruleActionsPtrIn(c Inputs, actions []siteapi.RuleActionInput) *[]ruleaction
 	return &out
 }
 
-// conditionIn is a Condition the request may leave out; nil when it is absent.
-func conditionIn(o siteapi.OptConditionGroupInput) (*conditiontree.Group, error) {
-	return condition.FromOptionalDTO(o)
+// segmentConditionIn is a Segment's Condition the request may leave out; nil when it is absent.
+func segmentConditionIn(o siteapi.OptSegmentConditionInput) (*conditiontree.Segment, error) {
+	return condition.FromOptionalDTO[conditiontree.Segment](o)
+}
+
+// ruleConditionIn is a Rule's Condition the request may leave out; nil when it is absent.
+func ruleConditionIn(o siteapi.OptRuleConditionInput) (*conditiontree.Rule, error) {
+	return condition.FromOptionalDTO[conditiontree.Rule](o)
 }
 
 // documentIn is the editor document of a write as the JSON the modules render; nil when the
@@ -596,18 +601,18 @@ func sortDirectionIn(c Inputs, o siteapi.OptSortDirection) pagination.Direction 
 	return c.SortDirection(v)
 }
 
-func createSegmentCondition(g siteapi.ConditionGroupInput) (*conditiontree.Group, error) {
-	def, err := condition.FromDTO(&g)
+func createSegmentCondition(g siteapi.SegmentConditionInput) (*conditiontree.Segment, error) {
+	def, err := condition.FromDTO[conditiontree.Segment](&g)
 	if err != nil {
 		return nil, err
 	}
 	return &def, nil
 }
 
-func segmentConditionPatch(o siteapi.OptConditionGroupInput) (patch.Field[conditiontree.Group], error) {
-	def, err := condition.FromOptionalDTO(o)
+func segmentConditionPatch(o siteapi.OptSegmentConditionInput) (patch.Field[conditiontree.Segment], error) {
+	def, err := condition.FromOptionalDTO[conditiontree.Segment](o)
 	if err != nil {
-		return patch.Field[conditiontree.Group]{}, err
+		return patch.Field[conditiontree.Segment]{}, err
 	}
 	return patch.FromPtr(def), nil
 }

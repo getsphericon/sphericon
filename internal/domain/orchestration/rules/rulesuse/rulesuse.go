@@ -38,7 +38,7 @@ func (m *Module) UnfitForCustomFieldType(ctx context.Context, l *ent.WorkspaceLo
 	}
 	return lo.Filter(kept, func(r *ent.Rule, _ int) bool {
 		return lo.SomeBy(versions(r), func(v *ent.RuleVersion) bool {
-			return !condition.FitsCustomFieldType(v.Condition, key, t)
+			return !condition.FitsCustomFieldType(v.Condition.Group, key, t)
 		})
 	}), nil
 }
@@ -77,6 +77,6 @@ func versions(r *ent.Rule) []*ent.RuleVersion {
 
 // namesTag reports whether the version names the Tag in its Condition or in a tag Action.
 func namesTag(v *ent.RuleVersion, name string) bool {
-	return condition.NamesTag(v.Condition, name) ||
+	return condition.NamesTag(v.Condition.Group, name) ||
 		slices.ContainsFunc(v.Actions, func(a ruleaction.Action) bool { return a.NamesTag(name) })
 }

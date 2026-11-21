@@ -27,7 +27,7 @@ func TestAnAuthoringTokenCannotChangeWhatAnActiveRuleDoes(t *testing.T) {
 
 	res, err := author.RulesUpdate(ctx, &externalapi.UpdateRuleInput{Revision: externalapi.Revision(env.RuleRevision(ctx, t, int64(id))),
 		TriggerEvents: []string{"rule_vip", "anything"},
-		Condition:     externalapi.NewOptConditionGroupInput(testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`)),
+		Condition:     externalapi.NewOptRuleConditionInput(testhelper.ExternalRuleCondition(t, `{"kind":"group","combinator":"and","entries":[]}`)),
 		Actions:       []externalapi.RuleActionInput{{Type: externalapi.RuleActionTypeApplyTag, Tag: externalapi.NewOptString("hijacked")}},
 	}, externalapi.RulesUpdateParams{ID: id})
 	require.NoError(t, err)

@@ -20,8 +20,8 @@ import (
 
 // The Conditions of the Segment "Pro & team members" (SegmentProPlan) before and after an edit.
 const (
-	proPlanCondition  = `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"pro"}]}`
-	freePlanCondition = `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"free"}]}`
+	proPlanCondition  = `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"plan","test":{"kind":"text","operator":"eq","value":"pro"}}]}`
+	freePlanCondition = `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"plan","test":{"kind":"text","operator":"eq","value":"free"}}]}`
 )
 
 // audienceScopes is what these tests' token holds: it reads what it writes (ADR 0119), and sends.
@@ -57,7 +57,7 @@ func setSegmentCondition(t *testing.T, c *externalapi.Client, id externalapi.Ent
 	// An edit names the revision it was made on (ADR 0119), so the client reads the Segment first.
 	seg, err := c.SegmentsGet(t.Context(), externalapi.SegmentsGetParams{ID: id})
 	require.NoError(t, err)
-	_, err = c.SegmentsUpdate(t.Context(), &externalapi.UpdateSegmentInput{Revision: seg.Revision, Condition: externalapi.NewOptConditionGroupInput(testhelper.ExternalRuleGroup(t, def))},
+	_, err = c.SegmentsUpdate(t.Context(), &externalapi.UpdateSegmentInput{Revision: seg.Revision, Condition: externalapi.NewOptSegmentConditionInput(testhelper.ExternalSegmentCondition(t, def))},
 		externalapi.SegmentsUpdateParams{ID: id})
 	require.NoError(t, err)
 }
@@ -205,7 +205,7 @@ func TestExternalScheduleAnswersTheRecipientsAtThatMoment(t *testing.T) {
 	c := env.ExternalScoped(t, audienceScopes...)
 	env.SuppressDestination(t.Context(), fixtures.ContactLiamEmail)
 	preview, err := c.SegmentsPreview(t.Context(), &externalapi.PreviewSegmentInput{
-		Condition: externalapi.NewOptConditionGroupInput(testhelper.ExternalRuleGroup(t, proPlanCondition)),
+		Condition: externalapi.NewOptSegmentConditionInput(testhelper.ExternalSegmentCondition(t, proPlanCondition)),
 		Channel:   externalapi.NewOptBroadcastChannel(externalapi.BroadcastChannelEmail),
 	})
 	require.NoError(t, err)
@@ -227,8 +227,8 @@ func TestExternalScheduleAnswersTheRecipientsAtThatMoment(t *testing.T) {
 func TestExternalScheduleRefusesAnAudienceItCannotCount(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, audienceScopes...)
-	broken := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`
-	require.NoError(t, env.DB.Segment.UpdateOneID(fixtures.SegmentProPlanID).SetCondition(testhelper.Condition(t, broken)).Exec(t.Context()))
+	broken := `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`
+	require.NoError(t, env.DB.Segment.UpdateOneID(fixtures.SegmentProPlanID).SetCondition(testhelper.SegmentCondition(t, broken)).Exec(t.Context()))
 	id := entityIDString(fixtures.BroadcastProSegmentID)
 	read, err := c.BroadcastsGet(t.Context(), externalapi.BroadcastsGetParams{ID: id})
 	require.NoError(t, err)

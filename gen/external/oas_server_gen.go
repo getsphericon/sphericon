@@ -558,9 +558,9 @@ type Handler interface {
 	SegmentsList(ctx context.Context, params SegmentsListParams) (*SegmentsListOK, error)
 	// SegmentsPreview implements Segments_preview operation.
 	//
-	// Count the contacts matching an unsaved rule definition, or all contacts without one. With a
-	// `channel` it also counts the recipients a Broadcast there would take now: read it back before a
-	// Broadcast is handed over for scheduling (ADR 0149).
+	// Count the contacts matching an unsaved Condition, or all contacts without one. With a `channel` it
+	// also counts the recipients a Broadcast there would take now: read it back before a Broadcast is
+	// handed over for scheduling (ADR 0149).
 	//
 	// POST /segments/preview
 	SegmentsPreview(ctx context.Context, req *PreviewSegmentInput) (*PreviewSegmentResult, error)

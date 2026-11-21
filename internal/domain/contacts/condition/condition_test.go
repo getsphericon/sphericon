@@ -2,7 +2,6 @@ package condition_test
 
 import (
 	"context"
-	"encoding/json"
 	"math"
 	"testing"
 	"time"
@@ -24,12 +23,12 @@ import (
 // validate compiles a condition for the Acme Workspace.
 func validate(t *testing.T, env *testhelper.TestEnv, def string) error {
 	t.Helper()
-	_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), testhelper.Condition(t, def))
+	_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), testhelper.SegmentCondition(t, def))
 	return err
 }
 
 // emailsIn returns, in email order, the emails of the Workspace's Contacts matching g.
-func emailsIn(t *testing.T, env *testhelper.TestEnv, ws int64, g conditiontree.Group) []string {
+func emailsIn(t *testing.T, env *testhelper.TestEnv, ws int64, g conditiontree.Segment) []string {
 	t.Helper()
 	ctx := context.Background()
 	s := env.DB.Scoped(ws)
@@ -40,62 +39,31 @@ func emailsIn(t *testing.T, env *testhelper.TestEnv, ws int64, g conditiontree.G
 	return emails
 }
 
-func rule(field, op, value string) condition.Leaf {
-	return condition.Leaf{Kind: "rule", Field: field, Operator: op, Value: value}
-}
-
-// marshal encodes leaf rules (or nested groups) into the raw rules[] entries.
-func marshal(entries ...any) []json.RawMessage {
-	out := make([]json.RawMessage, len(entries))
-	for i, e := range entries {
-		b, err := json.Marshal(e)
-		if err != nil {
-			panic(err)
-		}
-		out[i] = b
-	}
-	return out
-}
-
 func TestCompileEvaluatesAgainstContacts(t *testing.T) {
 	env := testhelper.Setup(t)
 	const ann, bob, cara = fixtures.MassiveAnnEmail, fixtures.MassiveBobEmail, fixtures.MassiveCaraEmail
-	match := func(g conditiontree.Group) []string { return emailsIn(t, env, fixtures.MassiveID, g) }
+	match := func(g conditiontree.Group) []string {
+		return emailsIn(t, env, fixtures.MassiveID, conditiontree.Segment{Group: g})
+	}
 
 	// Empty group matches everyone.
-	assert.Equal(t, []string{ann, bob, cara}, match(conditiontree.Group{Kind: "group", Combinator: conditiontree.And}))
+	assert.Equal(t, []string{ann, bob, cara}, match(groupOf(conditiontree.And, false)))
 
-	// custom:plan = pro -> Ann + Cara
-	assert.Equal(t, []string{ann, cara}, match(conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Rules: marshal(rule("custom:plan", "eq", "pro"))}))
+	// plan = pro -> Ann + Cara
+	assert.Equal(t, []string{ann, cara}, match(opsGroup(customField("plan", text("eq", "pro")))))
 
 	// and: first_name=Ann AND plan=pro -> just Ann
-	assert.Equal(t, []string{ann}, match(conditiontree.Group{
-		Kind:       "group",
-		Combinator: conditiontree.And,
-		Rules:      marshal(rule("first_name", "eq", "Ann"), rule("custom:plan", "eq", "pro")),
-	}))
+	assert.Equal(t, []string{ann}, match(opsGroup(attribute("first_name", text("eq", "Ann")), customField("plan", text("eq", "pro")))))
 
 	// or: first_name=Ann OR first_name=Bob
-	assert.Equal(t, []string{ann, bob}, match(conditiontree.Group{
-		Kind:       "group",
-		Combinator: conditiontree.Or,
-		Rules:      marshal(rule("first_name", "eq", "Ann"), rule("first_name", "eq", "Bob")),
-	}))
+	assert.Equal(t, []string{ann, bob}, match(groupOf(conditiontree.Or, false,
+		attribute("first_name", text("eq", "Ann")), attribute("first_name", text("eq", "Bob")))))
 
-	// custom:plan notNull -> all have it
-	assert.Equal(t, []string{ann, bob, cara}, match(conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Rules: marshal(rule("custom:plan", "notNull", ""))}))
+	// plan is set -> all have it
+	assert.Equal(t, []string{ann, bob, cara}, match(opsGroup(customField("plan", presence("set")))))
 
 	// not: NOT(plan=pro) -> only Bob (free)
-	assert.Equal(t, []string{bob}, match(conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Not: true, Rules: marshal(rule("custom:plan", "eq", "pro"))}))
-}
-
-// eventLeaf is an event count leaf; withinDays 0 leaves the window out (all time).
-func eventLeaf(action, op string, times, withinDays int) condition.EventLeaf {
-	l := condition.EventLeaf{Kind: "event", Action: action, Operator: op, Times: &times}
-	if withinDays != 0 {
-		l.WithinDays = &withinDays
-	}
-	return l
+	assert.Equal(t, []string{bob}, match(groupOf(conditiontree.And, true, customField("plan", text("eq", "pro")))))
 }
 
 // Massive's Events: Ann did page_view 2, 3 and 20 days ago and purchase 40 days ago; one
@@ -105,7 +73,7 @@ func TestEventConditions(t *testing.T) {
 	const ann, bob, cara = fixtures.MassiveAnnEmail, fixtures.MassiveBobEmail, fixtures.MassiveCaraEmail
 
 	for name, tc := range map[string]struct {
-		leaf condition.EventLeaf
+		leaf leaf
 		want []string
 	}{
 		"performed ever":                            {eventLeaf("page_view", "atLeast", 1, 0), []string{ann}},
@@ -125,7 +93,7 @@ func TestEventConditions(t *testing.T) {
 		"software opens are not counted": {eventLeaf(systemevent.EmailOpened, "atLeast", 2, 0), []string{cara}},
 		"at most one human open":         {eventLeaf(systemevent.EmailOpened, "atMost", 1, 0), []string{ann, bob}},
 	} {
-		got := emailsIn(t, env, fixtures.MassiveID, opsGroup(tc.leaf))
+		got := emailsIn(t, env, fixtures.MassiveID, segmentOf(tc.leaf))
 		assert.ElementsMatch(t, tc.want, got, name)
 	}
 }
@@ -134,7 +102,7 @@ func TestEventConditions(t *testing.T) {
 func TestEventConditionsCompose(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	exactlyOne := opsGroup(eventLeaf(systemevent.EmailOpened, "atLeast", 1, 0), eventLeaf(systemevent.EmailOpened, "atMost", 1, 0))
+	exactlyOne := segmentOf(eventLeaf(systemevent.EmailOpened, "atLeast", 1, 0), eventLeaf(systemevent.EmailOpened, "atMost", 1, 0))
 	got := emailsIn(t, env, fixtures.MassiveID, exactlyOne)
 
 	assert.Equal(t, []string{fixtures.MassiveBobEmail}, got, "exactly once is a group of atLeast and atMost")
@@ -147,7 +115,7 @@ func TestTagConditions(t *testing.T) {
 	ctx := context.Background()
 
 	// The anchor contacts 1-3 are the only ones the fixtures tag.
-	count := func(g conditiontree.Group) int {
+	count := func(g conditiontree.Segment) int {
 		p, err := condition.New(time.Now).Compile(ctx, env.DB.Scoped(fixtures.AcmeID), g)
 		require.NoError(t, err)
 		n, err := env.DB.Contact.Query().
@@ -156,24 +124,18 @@ func TestTagConditions(t *testing.T) {
 		require.NoError(t, err)
 		return n
 	}
-	has := func(name string) conditiontree.Group {
-		return conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Rules: marshal(rule("tag", "has", name))}
-	}
+	has := func(name string) conditiontree.Segment { return segmentOf(tagLeaf(name, "has")) }
 
 	assert.Equal(t, 2, count(has("vip")))
 	assert.Equal(t, 2, count(has(" VIP ")), "a Tag is named whatever the case (tagname)")
-	assert.True(t, condition.NamesTag(has("VIP"), "vip"), "a Condition naming the Tag in another case names it")
+	assert.True(t, condition.NamesTag(has("VIP").Group, "vip"), "a Condition naming the Tag in another case names it")
 	assert.Equal(t, 1, count(has("newsletter")))
 	assert.Equal(t, 0, count(has("unused")), "an existing Tag nobody has matches no one")
 	assert.Equal(t, 0, count(has("never-created")))
-	assert.Equal(t, 1, count(conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Rules: marshal(rule("tag", "doesNotHave", "vip"))}), "contact 2")
+	assert.Equal(t, 1, count(segmentOf(tagLeaf("vip", "doesNotHave"))), "contact 2")
 
-	// Composes with other rules: vip AND newsletter -> contact 1 only.
-	assert.Equal(t, 1, count(conditiontree.Group{
-		Kind:       "group",
-		Combinator: conditiontree.And,
-		Rules:      marshal(rule("tag", "has", "vip"), rule("tag", "has", "newsletter")),
-	}))
+	// Composes with other leaves: vip AND newsletter -> contact 1 only.
+	assert.Equal(t, 1, count(segmentOf(tagLeaf("vip", "has"), tagLeaf("newsletter", "has"))))
 
 	// Live: tagging contact 2 adds it to the audience.
 	_, err := testhelper.Module[*contacts.Module](env).ApplyTag(ctx, env.DB.Scoped(fixtures.AcmeID), 2, "vip")
@@ -182,24 +144,14 @@ func TestTagConditions(t *testing.T) {
 
 	// A same-named Tag in another workspace never matches here.
 	assert.Equal(t, 0, count(has(fixtures.TagGlobexName)))
-
-	// Validation: only has / doesNotHave are valid for the tag field.
-	assert.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"eq","value":"vip"}]}`))
 }
 
 func TestValidate(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, validate(t, env, `{"kind":"group","combinator":"or","rules":[{"kind":"rule","field":"email","operator":"contains","value":"x"}]}`))
+	require.NoError(t, validate(t, env, `{"kind":"group","combinator":"or","entries":[{"kind":"attribute","attribute":"email","test":{"kind":"text","operator":"contains","value":"x"}}]}`))
 
 	// nested group
-	require.NoError(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"group","combinator":"or","rules":[{"kind":"rule","field":"first_name","operator":"eq","value":"Ann"}]}]}`))
-
-	// unknown field
-	require.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))
-	// unsupported operator
-	require.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"email","operator":"weird","value":"x"}]}`))
-	// an entry that is no node
-	require.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":["email"]}`))
+	require.NoError(t, validate(t, env, `{"kind":"group","combinator":"and","entries":[{"kind":"group","combinator":"or","entries":[{"kind":"attribute","attribute":"first_name","test":{"kind":"text","operator":"eq","value":"Ann"}}]}]}`))
 }
 
 // Fixtures: Liam (100) has a Binding of his own, Emma (101) only one of her phone Visitor's, Alice (1)
@@ -211,7 +163,7 @@ func TestTelegramConditions(t *testing.T) {
 	const liam, emma, alice = fixtures.ContactLiamID, 101, fixtures.ContactAliceID
 
 	matching := func(op string) []int64 {
-		g := conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Rules: marshal(rule("telegram", op, ""))}
+		g := segmentOf(telegram(op))
 		p, err := condition.New(time.Now).Compile(ctx, env.DB.Scoped(fixtures.AcmeID), g)
 		require.NoError(t, err)
 		ids, err := env.DB.Contact.Query().
@@ -229,9 +181,7 @@ func TestTelegramConditions(t *testing.T) {
 	assert.Empty(t, matching("has"))
 	assert.ElementsMatch(t, []int64{liam, emma, alice}, matching("doesNotHave"))
 
-	// Only has / doesNotHave are valid for the telegram field.
-	require.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"telegram","operator":"eq","value":""}]}`))
-	require.NoError(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"telegram","operator":"has"}]}`))
+	require.NoError(t, validate(t, env, `{"kind":"group","combinator":"and","entries":[{"kind":"telegram","operator":"has"}]}`))
 }
 
 // The sms field selects the Contacts that can be texted: a phone with an SMS Confirmation, no SMS
@@ -245,7 +195,7 @@ func TestSMSConditions(t *testing.T) {
 
 	matching := func(ws int64, op string) []int64 {
 		t.Helper()
-		g := conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Rules: marshal(rule("sms", op, ""))}
+		g := segmentOf(sms(op))
 		s := env.DB.Scoped(ws)
 		p, err := condition.New(time.Now).Compile(ctx, s, g)
 		require.NoError(t, err)
@@ -286,7 +236,5 @@ func TestSMSConditions(t *testing.T) {
 	assert.Equal(t, []int64{fixtures.TyrellMatrixCleanID}, matching(fixtures.TyrellID, "has"))
 	assert.Contains(t, matching(fixtures.TyrellID, "doesNotHave"), int64(fixtures.TyrellMatrixConfirmedID))
 
-	// Only has / doesNotHave are valid for the sms field.
-	require.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"sms","operator":"eq","value":""}]}`))
-	require.NoError(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"sms","operator":"doesNotHave"}]}`))
+	require.NoError(t, validate(t, env, `{"kind":"group","combinator":"and","entries":[{"kind":"sms","operator":"doesNotHave"}]}`))
 }

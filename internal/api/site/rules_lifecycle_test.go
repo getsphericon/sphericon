@@ -70,16 +70,16 @@ func TestSiteRulesRefuseTooManyActionsAndAnOversizedCondition(t *testing.T) {
 	refused := testhelper.SiteRefusal(t, tooMany, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Detail.Or(""), "at most 20 Actions")
 
-	leaf := `{"kind":"rule","field":"tag","operator":"has","value":"vip"}`
+	leaf := `{"kind":"tag","name":"vip","operator":"has"}`
 	var body strings.Builder
-	body.WriteString(`{"kind":"group","combinator":"and","rules":[`)
+	body.WriteString(`{"kind":"group","combinator":"and","entries":[`)
 	for i := 0; i <= rules.MaxConditionNodes; i++ {
 		body.WriteString(leaf + ",")
 	}
 	body.WriteString(leaf + `]}`)
 	_, bigCondition := c.SiteRulesCreate(ctx, &siteapi.CreateRuleInput{
 		Name: "wide", TriggerEvents: []string{"a"},
-		Condition: siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, body.String())),
+		Condition: siteapi.NewOptRuleConditionInput(testhelper.SiteRuleCondition(t, body.String())),
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: ws})
 	refusedCondition := testhelper.SiteRefusal(t, bigCondition, http.StatusUnprocessableEntity)
 	assert.Contains(t, refusedCondition.Detail.Or(""), "Condition")

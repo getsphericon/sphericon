@@ -43,7 +43,7 @@ func TestSiteSavingALiveRuleUnchangedMakesNoDraft(t *testing.T) {
 	updated, err := c.SiteRulesUpdate(context.Background(), &siteapi.UpdateRuleInput{Revision: siteapi.Revision(env.RuleRevision(t.Context(), t, int64(siteapi.EntityId(fixtures.RuleMultiTriggerID)))),
 		Name:          siteapi.NewOptName("Either of two events"),
 		TriggerEvents: []string{"rule_multi_a", "rule_multi_b"},
-		Condition:     siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`)),
+		Condition:     siteapi.NewOptRuleConditionInput(testhelper.SiteRuleCondition(t, `{"kind":"group","combinator":"and","entries":[]}`)),
 		Actions: []siteapi.RuleActionInput{
 			tagAction(siteapi.RuleActionTypeApplyTag, "rule-multi"),
 			tagAction(siteapi.RuleActionTypeRemoveTag, "vip"),

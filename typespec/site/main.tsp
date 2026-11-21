@@ -37,6 +37,7 @@ import "../common/captured-messages.tsp";
 import "../common/custom-fields.tsp";
 import "../common/engagement.tsp";
 import "../common/enrollments.tsp";
+import "../common/conditions.tsp";
 import "../common/rules.tsp";
 import "../common/segments.tsp";
 import "../common/suppressions.tsp";

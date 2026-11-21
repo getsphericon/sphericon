@@ -4055,7 +4055,7 @@ export const siteSegmentsCreateMutation = (options?: Partial<Options<SiteSegment
 export const siteSegmentsPreviewQueryKey = (options: Options<SiteSegmentsPreviewData>) => createQueryKey('siteSegmentsPreview', options, false, ['Site Segments']);
 
 /**
- * Preview how many active contacts match a rule definition
+ * Preview how many active contacts match an unsaved Condition
  */
 export const siteSegmentsPreviewOptions = (options: Options<SiteSegmentsPreviewData>) => queryOptions<SiteSegmentsPreviewResponse, SiteSegmentsPreviewError, SiteSegmentsPreviewResponse, ReturnType<typeof siteSegmentsPreviewQueryKey>>({
   queryFn: async ({ queryKey, signal }) => {
@@ -4073,7 +4073,7 @@ export const siteSegmentsPreviewOptions = (options: Options<SiteSegmentsPreviewD
 export const siteSegmentsPreviewMutationKey = (options?: Partial<Options<SiteSegmentsPreviewData>>) => createMutationKey('siteSegmentsPreview', options, ['Site Segments']);
 
 /**
- * Preview how many active contacts match a rule definition
+ * Preview how many active contacts match an unsaved Condition
  */
 export const siteSegmentsPreviewMutation = (options?: Partial<Options<SiteSegmentsPreviewData>>): UseMutationOptions<SiteSegmentsPreviewResponse, SiteSegmentsPreviewError, Options<SiteSegmentsPreviewData>> => {
   const mutationOptions: UseMutationOptions<SiteSegmentsPreviewResponse, SiteSegmentsPreviewError, Options<SiteSegmentsPreviewData>> = {

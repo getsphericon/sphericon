@@ -305,6 +305,23 @@ Branch or a Wait for event may also test the Event an earlier Wait for event arr
 Condition is used admits its own kinds of test, and a test of properties names whose they are.
 _Avoid_: Filter, query, predicate, rule (a Rule is something else)
 
+**Leaf**:
+An entry of a **Condition** that tests one thing: a Contact attribute, the birthday, a Tag, Telegram
+or SMS reachability, a Custom field, a count of past Events, or a **Property test**. The place a
+Condition is used decides which leaves it admits: a Segment's admits no Property test, a Rule's does.
+_Avoid_: Rule (a Rule is something else), field, criterion
+
+**Typed test**:
+What a **Leaf** asks of the value it reads, typed by that value: text, number, moment, within the
+last days, or presence. A test holds only the operators its type takes, so a text operator on a
+number is no test at all.
+_Avoid_: Operator (one of a test's ways to compare), condition type
+
+**Property test**:
+A **Leaf** that tests one property of an Event, naming whose Event it is (its subject: in a Rule,
+the triggering Event) and the property's key apart, so a key holding a dot is one key.
+_Avoid_: Trigger field, prefixed key
+
 **Score**:
 A named definition of the Workspace whose value for a Contact is computed when it is read, never
 stored: points for the Contact's Events of chosen actions within its window, capped per action, and

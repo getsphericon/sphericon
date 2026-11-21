@@ -41,8 +41,9 @@ to parse.
   `event`), `awaited` with the name of a Wait for event, or `http` with the name of an HTTP step
   (ADR 0161). A Set field's source names a property the same way (ADR 0125). The key is a field of its own, so a key
   holding a dot needs no rule.
-- **Each place has a tree type of its own**, made from one TypeSpec template over the leaf kinds it
-  admits:
+- **Each place has a tree type of its own**: one TypeSpec template of the group over the place's
+  union of entries, and that union lists the shared leaf models it admits (TypeSpec cannot spread one
+  union into another):
 
   | Place                      | Admits                                                                                    |
   | -------------------------- | ----------------------------------------------------------------------------------------- |

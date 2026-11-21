@@ -33,7 +33,7 @@ type RuleVersion struct {
 	// Version holds the value of the "version" field.
 	Version int `json:"version,omitempty"`
 	// Condition holds the value of the "condition" field.
-	Condition conditiontree.Group `json:"condition,omitempty"`
+	Condition conditiontree.Rule `json:"condition,omitempty"`
 	// Actions holds the value of the "actions" field.
 	Actions []ruleaction.Action `json:"actions,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.

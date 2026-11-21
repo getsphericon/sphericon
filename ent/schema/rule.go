@@ -89,10 +89,10 @@ func (RuleVersion) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		// The Condition tree (conditiontree.Group, internal/domain/contacts/condition), jsonb (ADR
+		// The Rule's Condition (conditiontree.Rule, internal/domain/contacts/condition), jsonb (ADR
 		// 0169); the empty group, with no tests, matches every Contact.
-		field.JSON("condition", conditiontree.Group{}).
-			Default(conditiontree.Empty()).
+		field.JSON("condition", conditiontree.Rule{}).
+			Default(conditiontree.Rule{Group: conditiontree.Empty()}).
 			Annotations(entsql.Default(emptyConditionSQL)),
 		// The Actions (ruleaction.Action), a jsonb array run in order (ADR 0169):
 		// [{"type":"apply_tag","tag":"clicked"}]. Sensitive: an http Action holds a sealed URL and

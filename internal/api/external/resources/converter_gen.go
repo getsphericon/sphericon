@@ -696,7 +696,7 @@ func (c *ConverterImpl) CustomFieldToResource(source *ent.CustomField) external.
 		externalapiCustomFieldResource.Key = (*source).Key
 		externalapiCustomFieldResource.Name = (*source).Name
 		externalapiCustomFieldResource.Type = c.CustomFieldTypeToResource((*source).Type)
-		externalapiCustomFieldResource.RuleOperators = customFieldRuleOperators((*source).Type)
+		externalapiCustomFieldResource.ConditionTests = customFieldConditionTests((*source).Type)
 		externalapiCustomFieldResource.Revision = revision((*source).Revision)
 		externalapiCustomFieldResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiCustomFieldResource.UpdatedAt = timestamp((*source).UpdatedAt)
@@ -1276,7 +1276,7 @@ func (c *ConverterImpl) RuleVersionToResource(source *ent.RuleVersion) external.
 	if source != nil {
 		externalapiRuleVersion.Number = count((*source).Version)
 		externalapiRuleVersion.TriggerEvents = ruleTriggerEvents(source)
-		externalapiRuleVersion.Condition = segmentCondition((*source).Condition)
+		externalapiRuleVersion.Condition = ruleCondition((*source).Condition)
 		externalapiRuleVersion.Actions = ruleActions(c, (*source).Actions)
 	}
 	return externalapiRuleVersion

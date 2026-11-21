@@ -95,6 +95,54 @@ export type ApplyTagInput = {
 };
 
 /**
+ * A test of a Contact's text attribute
+ */
+export type AttributeLeaf = {
+  kind: 'attribute';
+  /**
+   * The attribute tested
+   */
+  attribute: ContactAttribute;
+  /**
+   * What it asks of the attribute
+   */
+  test: AttributeTest;
+};
+
+/**
+ * A test of a Contact's text attribute
+ */
+export type AttributeLeafInput = {
+  kind: 'attribute';
+  /**
+   * The attribute tested
+   */
+  attribute: ContactAttribute;
+  /**
+   * What it asks of the attribute
+   */
+  test: AttributeTestInput;
+};
+
+/**
+ * What a test of a Contact attribute asks of it, by `kind`
+ */
+export type AttributeTest = ({
+  kind: 'text';
+} & TextTest) | ({
+  kind: 'presence';
+} & PresenceTest);
+
+/**
+ * What a test of a Contact attribute asks of it, by `kind`
+ */
+export type AttributeTestInput = ({
+  kind: 'text';
+} & TextTestInput) | ({
+  kind: 'presence';
+} & PresenceTestInput);
+
+/**
  * A whole number of days the Attribution window lasts: 1 to 90 (ADR 0064)
  */
 export type AttributionWindowDays = number;
@@ -797,6 +845,46 @@ export type AutomationVersion = {
 };
 
 /**
+ * A test of the Contact's date of birth
+ */
+export type BirthdayLeaf = {
+  kind: 'birthday';
+  /**
+   * What it asks of the birthday
+   */
+  test: BirthdayTest;
+};
+
+/**
+ * A test of the Contact's date of birth
+ */
+export type BirthdayLeafInput = {
+  kind: 'birthday';
+  /**
+   * What it asks of the birthday
+   */
+  test: BirthdayTestInput;
+};
+
+/**
+ * What a test of the Contact's birthday asks of it, by `kind`
+ */
+export type BirthdayTest = ({
+  kind: 'moment';
+} & MomentTest) | ({
+  kind: 'withinLast';
+} & WithinLastTest);
+
+/**
+ * What a test of the Contact's birthday asks of it, by `kind`
+ */
+export type BirthdayTestInput = ({
+  kind: 'moment';
+} & MomentTestInput) | ({
+  kind: 'withinLast';
+} & WithinLastTestInput);
+
+/**
  * The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets
  * the palette the editor offers and what an agent is told to use: write a message in these values.
  * Its values are written into a message when the message is authored, so saving it never changes a
@@ -950,370 +1038,6 @@ export const ConditionCombinator = { AND: 'and', OR: 'or' } as const;
 export type ConditionCombinator = typeof ConditionCombinator[keyof typeof ConditionCombinator];
 
 /**
- * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
- * is before or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date
- * without a time, a date-time without an offset or a value that is not a date-time makes the leaf
- * false.
- */
-export type ConditionDateLeaf = {
-  kind: 'date';
-  /**
-   * What it tests: "birthday" or "custom:<key>" for a datetime custom field
-   */
-  field: string;
-  /**
-   * Which side of `at` the moment is on
-   */
-  operator: ConditionDateOperator;
-  /**
-   * The moment the field's is compared with
-   */
-  at: Timestamp;
-};
-
-/**
- * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
- * is before or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date
- * without a time, a date-time without an offset or a value that is not a date-time makes the leaf
- * false.
- */
-export type ConditionDateLeafInput = {
-  kind: 'date';
-  /**
-   * What it tests: "birthday" or "custom:<key>" for a datetime custom field
-   */
-  field: string;
-  /**
-   * Which side of `at` the moment is on
-   */
-  operator: ConditionDateOperator;
-  /**
-   * The moment the field's is compared with
-   */
-  at: Timestamp;
-};
-
-/**
- * Which side of `at` a date leaf takes: before is strictly earlier, after is at or later, so the
- * two split time at `at`
- */
-export const ConditionDateOperator = { BEFORE: 'before', AFTER: 'after' } as const;
-
-/**
- * Which side of `at` a date leaf takes: before is strictly earlier, after is at or later, so the
- * two split time at `at`
- */
-export type ConditionDateOperator = typeof ConditionDateOperator[keyof typeof ConditionDateOperator];
-
-/**
- * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
- * is within the last `withinDays` days up to now, so a moment still to come is not within. Only a
- * date-time with a UTC offset is a moment, as for the date leaf.
- */
-export type ConditionDateWithinLeaf = {
-  kind: 'dateWithin';
-  /**
-   * What it tests: "birthday" or "custom:<key>" for a datetime custom field
-   */
-  field: string;
-  /**
-   * The window, in days back from now
-   */
-  withinDays: number;
-};
-
-/**
- * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
- * is within the last `withinDays` days up to now, so a moment still to come is not within. Only a
- * date-time with a UTC offset is a moment, as for the date leaf.
- */
-export type ConditionDateWithinLeafInput = {
-  kind: 'dateWithin';
-  /**
-   * What it tests: "birthday" or "custom:<key>" for a datetime custom field
-   */
-  field: string;
-  /**
-   * The window, in days back from now
-   */
-  withinDays: number;
-};
-
-/**
- * A test of how many times a contact performed an Event action, over all time or within the
- * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
- * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
- * longer than Event retention is capped by it: expired Events are no longer counted.
- */
-export type ConditionEventLeaf = {
-  kind: 'event';
-  /**
-   * The Event action counted
-   */
-  action: string;
-  /**
-   * How the count is bounded
-   */
-  operator: ConditionEventOperator;
-  /**
-   * The bound: atLeast takes 1 or more, atMost 0 or more
-   */
-  times: number;
-  /**
-   * Count only the Events of the last this many days; absent counts all time
-   */
-  withinDays?: number;
-};
-
-/**
- * A test of how many times a contact performed an Event action, over all time or within the
- * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
- * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
- * longer than Event retention is capped by it: expired Events are no longer counted.
- */
-export type ConditionEventLeafInput = {
-  kind: 'event';
-  /**
-   * The Event action counted
-   */
-  action: string;
-  /**
-   * How the count is bounded
-   */
-  operator: ConditionEventOperator;
-  /**
-   * The bound: atLeast takes 1 or more, atMost 0 or more
-   */
-  times: number;
-  /**
-   * Count only the Events of the last this many days; absent counts all time
-   */
-  withinDays?: number;
-};
-
-/**
- * How an event leaf bounds the count: at least `times`, or at most `times`
- */
-export const ConditionEventOperator = { AT_LEAST: 'atLeast', AT_MOST: 'atMost' } as const;
-
-/**
- * How an event leaf bounds the count: at least `times`, or at most `times`
- */
-export type ConditionEventOperator = typeof ConditionEventOperator[keyof typeof ConditionEventOperator];
-
-/**
- * A group of tests combined with and/or, optionally negated. An empty group matches every
- * contact (an empty negated group matches none).
- */
-export type ConditionGroup = {
-  kind: 'group';
-  /**
-   * How the entries combine
-   */
-  combinator: ConditionCombinator;
-  /**
-   * Negate the whole group
-   */
-  not?: boolean;
-  /**
-   * The group's leaves and nested groups
-   */
-  rules: Array<ConditionNode>;
-};
-
-/**
- * A group of tests combined with and/or, optionally negated. An empty group matches every
- * contact (an empty negated group matches none).
- */
-export type ConditionGroupInput = {
-  kind: 'group';
-  /**
-   * How the entries combine
-   */
-  combinator: ConditionCombinator;
-  /**
-   * Negate the whole group
-   */
-  not?: boolean;
-  /**
-   * The group's leaves and nested groups
-   */
-  rules: Array<ConditionNodeInput>;
-};
-
-/**
- * One test of a condition: a field, an operator and a value
- */
-export type ConditionLeaf = {
-  kind: 'rule';
-  /**
-   * What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,
-   * time_zone, country, locale, city), "tag", "telegram" (has a Telegram chat bound, on its own or through a Visitor; the value is
-   * ignored), "sms" (has a phone that can be texted: one with an SMS Confirmation and no SMS opt-out or
-   * Suppression; the value is ignored), "custom:<key>" for a custom field of the workspace,
-   * or "trigger:<key>" (a property of the Event that fired a rule: valid only in a rule, refused in
-   * a segment, takes the text operators, and is false when the Event lacks the key or holds a value
-   * that is not text; a number property is compared by a number leaf)
-   */
-  field: string;
-  /**
-   * How the field is tested
-   */
-  operator: ConditionOperator;
-  /**
-   * The value to test against: a tag name, blank for null and notNull
-   */
-  value?: string;
-};
-
-/**
- * One test of a condition: a field, an operator and a value
- */
-export type ConditionLeafInput = {
-  kind: 'rule';
-  /**
-   * What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,
-   * time_zone, country, locale, city), "tag", "telegram" (has a Telegram chat bound, on its own or through a Visitor; the value is
-   * ignored), "sms" (has a phone that can be texted: one with an SMS Confirmation and no SMS opt-out or
-   * Suppression; the value is ignored), "custom:<key>" for a custom field of the workspace,
-   * or "trigger:<key>" (a property of the Event that fired a rule: valid only in a rule, refused in
-   * a segment, takes the text operators, and is false when the Event lacks the key or holds a value
-   * that is not text; a number property is compared by a number leaf)
-   */
-  field: string;
-  /**
-   * How the field is tested
-   */
-  operator: ConditionOperator;
-  /**
-   * The value to test against: a tag name, blank for null and notNull
-   */
-  value?: string;
-};
-
-/**
- * A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested
- * group inside a condition group, discriminated by `kind`.
- */
-export type ConditionNode = ({
-  kind: 'rule';
-} & ConditionLeaf) | ({
-  kind: 'event';
-} & ConditionEventLeaf) | ({
-  kind: 'number';
-} & ConditionNumberLeaf) | ({
-  kind: 'date';
-} & ConditionDateLeaf) | ({
-  kind: 'dateWithin';
-} & ConditionDateWithinLeaf) | ({
-  kind: 'group';
-} & ConditionGroup);
-
-/**
- * A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested
- * group inside a condition group, discriminated by `kind`.
- */
-export type ConditionNodeInput = ({
-  kind: 'rule';
-} & ConditionLeafInput) | ({
-  kind: 'event';
-} & ConditionEventLeafInput) | ({
-  kind: 'number';
-} & ConditionNumberLeafInput) | ({
-  kind: 'date';
-} & ConditionDateLeafInput) | ({
-  kind: 'dateWithin';
-} & ConditionDateWithinLeafInput) | ({
-  kind: 'group';
-} & ConditionGroupInput);
-
-/**
- * A comparison of a number: a custom field of the workspace whose type is number
- * ("custom:<key>"), or a property of the Event that fired a rule ("trigger:<key>", valid only in a
- * rule). A missing key, or a value that is not a number (text, a boolean, null, a list), makes the
- * leaf false.
- */
-export type ConditionNumberLeaf = {
-  kind: 'number';
-  /**
-   * What it compares: "custom:<key>" for a number custom field, or "trigger:<key>"
-   */
-  field: string;
-  /**
-   * How the field compares with `value`
-   */
-  operator: ConditionNumberOperator;
-  /**
-   * The number the field is compared with
-   */
-  value: number;
-};
-
-/**
- * A comparison of a number: a custom field of the workspace whose type is number
- * ("custom:<key>"), or a property of the Event that fired a rule ("trigger:<key>", valid only in a
- * rule). A missing key, or a value that is not a number (text, a boolean, null, a list), makes the
- * leaf false.
- */
-export type ConditionNumberLeafInput = {
-  kind: 'number';
-  /**
-   * What it compares: "custom:<key>" for a number custom field, or "trigger:<key>"
-   */
-  field: string;
-  /**
-   * How the field compares with `value`
-   */
-  operator: ConditionNumberOperator;
-  /**
-   * The number the field is compared with
-   */
-  value: number;
-};
-
-/**
- * How a number leaf compares the field with `value`: greater than, greater than or equal,
- * less than, or less than or equal
- */
-export const ConditionNumberOperator = {
-  GT: 'gt',
-  GTE: 'gte',
-  LT: 'lt',
-  LTE: 'lte'
-} as const;
-
-/**
- * How a number leaf compares the field with `value`: greater than, greater than or equal,
- * less than, or less than or equal
- */
-export type ConditionNumberOperator = typeof ConditionNumberOperator[keyof typeof ConditionNumberOperator];
-
-/**
- * What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and
- * notNull; the tag, telegram and sms fields take has and doesNotHave; a custom field takes the operators of its type,
- * which the custom field lists as `ruleOperators` (a number custom field is also compared by a
- * number leaf, a datetime one tested by the date leaves).
- */
-export const ConditionOperator = {
-  EQ: 'eq',
-  NEQ: 'neq',
-  CONTAINS: 'contains',
-  BEGINS_WITH: 'beginsWith',
-  NULL: 'null',
-  NOT_NULL: 'notNull',
-  HAS: 'has',
-  DOES_NOT_HAVE: 'doesNotHave'
-} as const;
-
-/**
- * What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and
- * notNull; the tag, telegram and sms fields take has and doesNotHave; a custom field takes the operators of its type,
- * which the custom field lists as `ruleOperators` (a number custom field is also compared by a
- * number leaf, a datetime one tested by the date leaves).
- */
-export type ConditionOperator = typeof ConditionOperator[keyof typeof ConditionOperator];
-
-/**
  * How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a keyword (the person texted START), imported (consent an API client or an import collected itself, with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A Confirmation is replaced only by a stronger one.
  */
 export const ConfirmationProvenance = {
@@ -1345,6 +1069,26 @@ export type ConsentEvidence = {
    */
   brand: string;
 };
+
+/**
+ * A text attribute of a Contact
+ */
+export const ContactAttribute = {
+  EMAIL: 'email',
+  PHONE: 'phone',
+  SUBJECT_ID: 'subject_id',
+  FIRST_NAME: 'first_name',
+  LAST_NAME: 'last_name',
+  TIME_ZONE: 'time_zone',
+  COUNTRY: 'country',
+  LOCALE: 'locale',
+  CITY: 'city'
+} as const;
+
+/**
+ * A text attribute of a Contact
+ */
+export type ContactAttribute = typeof ContactAttribute[keyof typeof ContactAttribute];
 
 /**
  * The contact's place in one broadcast's audience (how its send ended, and whether it was opened or clicked, is in `outboundMessages`)
@@ -1931,7 +1675,7 @@ export type CreateRuleInput = {
    * The Event actions that make the Rule fire; at least one
    */
   triggerEvents: Array<string>;
-  condition?: ConditionGroupInput;
+  condition?: RuleConditionInput;
   /**
    * The Actions to run, in order
    */
@@ -1949,7 +1693,7 @@ export type CreateSegmentInput = {
   /**
    * Segment condition: the tree of tests; an empty group matches all contacts
    */
-  condition: ConditionGroupInput;
+  condition: SegmentConditionInput;
 };
 
 /**
@@ -2012,6 +1756,97 @@ export type CreateWebhookInput = {
  * by the server, which refuses an unknown one with a reason.
  */
 export type CurrencyCode = string;
+
+/**
+ * The tests a Condition's Custom field test takes on a field of one type, each with the
+ * operators it takes there; an empty list is a test the type does not take
+ */
+export type CustomFieldConditionTests = {
+  /**
+   * The operators of a text test
+   */
+  text: Array<TextOperator>;
+  /**
+   * The operators of a number test
+   */
+  number: Array<NumberOperator>;
+  /**
+   * The operators of a moment test
+   */
+  moment: Array<MomentOperator>;
+  /**
+   * Whether it takes the test of the last days
+   */
+  withinLast: boolean;
+  /**
+   * The operators of a presence test
+   */
+  presence: Array<PresenceOperator>;
+};
+
+/**
+ * A test of a Custom field of the Workspace, its key in a field of its own
+ */
+export type CustomFieldLeaf = {
+  kind: 'customField';
+  /**
+   * The Custom field's key
+   */
+  key: string;
+  /**
+   * What it asks of the field's value
+   */
+  test: CustomFieldTest;
+};
+
+/**
+ * A test of a Custom field of the Workspace, its key in a field of its own
+ */
+export type CustomFieldLeafInput = {
+  kind: 'customField';
+  /**
+   * The Custom field's key
+   */
+  key: string;
+  /**
+   * What it asks of the field's value
+   */
+  test: CustomFieldTestInput;
+};
+
+/**
+ * What a Custom field test asks of the field's value, by `kind`. Which tests and operators a
+ * field takes depends on its type, which the Custom field lists as `conditionTests`; a test the
+ * type does not take is refused when the Condition is saved.
+ */
+export type CustomFieldTest = ({
+  kind: 'text';
+} & TextTest) | ({
+  kind: 'number';
+} & NumberTest) | ({
+  kind: 'moment';
+} & MomentTest) | ({
+  kind: 'withinLast';
+} & WithinLastTest) | ({
+  kind: 'presence';
+} & PresenceTest);
+
+/**
+ * What a Custom field test asks of the field's value, by `kind`. Which tests and operators a
+ * field takes depends on its type, which the Custom field lists as `conditionTests`; a test the
+ * type does not take is refused when the Condition is saved.
+ */
+export type CustomFieldTestInput = ({
+  kind: 'text';
+} & TextTestInput) | ({
+  kind: 'number';
+} & NumberTestInput) | ({
+  kind: 'moment';
+} & MomentTestInput) | ({
+  kind: 'withinLast';
+} & WithinLastTestInput) | ({
+  kind: 'presence';
+} & PresenceTestInput);
 
 /**
  * A Custom field's value type
@@ -2288,6 +2123,68 @@ export type EnrollmentStatus = typeof EnrollmentStatus[keyof typeof EnrollmentSt
 export type EntityId = string;
 
 /**
+ * How an event count is bounded: at least `times`, or at most `times`
+ */
+export const EventCountOperator = { AT_LEAST: 'atLeast', AT_MOST: 'atMost' } as const;
+
+/**
+ * How an event count is bounded: at least `times`, or at most `times`
+ */
+export type EventCountOperator = typeof EventCountOperator[keyof typeof EventCountOperator];
+
+/**
+ * A count of how many times a Contact performed an Event action, over all time or within the
+ * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
+ * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
+ * longer than Event retention is capped by it: expired Events are no longer counted.
+ */
+export type EventLeaf = {
+  kind: 'event';
+  /**
+   * The Event action counted
+   */
+  action: string;
+  /**
+   * How the count is bounded
+   */
+  operator: EventCountOperator;
+  /**
+   * The bound: atLeast takes 1 or more, atMost 0 or more
+   */
+  times: number;
+  /**
+   * Count only the Events of the last this many days; absent counts all time
+   */
+  withinDays?: number;
+};
+
+/**
+ * A count of how many times a Contact performed an Event action, over all time or within the
+ * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
+ * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
+ * longer than Event retention is capped by it: expired Events are no longer counted.
+ */
+export type EventLeafInput = {
+  kind: 'event';
+  /**
+   * The Event action counted
+   */
+  action: string;
+  /**
+   * How the count is bounded
+   */
+  operator: EventCountOperator;
+  /**
+   * The bound: atLeast takes 1 or more, atMost 0 or more
+   */
+  times: number;
+  /**
+   * Count only the Events of the last this many days; absent counts all time
+   */
+  withinDays?: number;
+};
+
+/**
  * Scopes an OAuth client may be granted without any extra opt-in: the external
  * API's read/write vocabulary. Token management scopes are deliberately absent,
  * so a connector can never mint further credentials.
@@ -2324,6 +2221,16 @@ export const GrantableScope = {
  * so a connector can never mint further credentials.
  */
 export type GrantableScope = typeof GrantableScope[keyof typeof GrantableScope];
+
+/**
+ * Whether a Contact has something: a Tag, a Telegram chat, a phone that can be texted
+ */
+export const HasOperator = { HAS: 'has', DOES_NOT_HAVE: 'doesNotHave' } as const;
+
+/**
+ * Whether a Contact has something: a Tag, a Telegram chat, a phone that can be texted
+ */
+export type HasOperator = typeof HasOperator[keyof typeof HasOperator];
 
 /**
  * Why a send is held (a Hold). A hold is reversible and not a failure: a held Broadcast keeps its
@@ -2542,11 +2449,106 @@ export type MessageRevenue = {
 };
 
 /**
+ * Which side of `at` a moment is on: before is strictly earlier, after is at or later, so the two
+ * split time at `at`
+ */
+export const MomentOperator = { BEFORE: 'before', AFTER: 'after' } as const;
+
+/**
+ * Which side of `at` a moment is on: before is strictly earlier, after is at or later, so the two
+ * split time at `at`
+ */
+export type MomentOperator = typeof MomentOperator[keyof typeof MomentOperator];
+
+/**
+ * A test of a moment: before or after `at`. Only a date-time with a UTC offset is a moment: a
+ * missing value, a date without a time, a date-time without an offset or a value that is not a
+ * date-time fails it.
+ */
+export type MomentTest = {
+  kind: 'moment';
+  /**
+   * Which side of `at` the moment is on
+   */
+  operator: MomentOperator;
+  /**
+   * The moment compared with
+   */
+  at: Timestamp;
+};
+
+/**
+ * A test of a moment: before or after `at`. Only a date-time with a UTC offset is a moment: a
+ * missing value, a date without a time, a date-time without an offset or a value that is not a
+ * date-time fails it.
+ */
+export type MomentTestInput = {
+  kind: 'moment';
+  /**
+   * Which side of `at` the moment is on
+   */
+  operator: MomentOperator;
+  /**
+   * The moment compared with
+   */
+  at: Timestamp;
+};
+
+/**
  * What a person calls a named row (a Tag, a Segment, a Rule, an Automation, a Template, a
  * Broadcast, an Integration, a token, a Passkey, a Workspace): at most 100 characters. Surrounding
  * spaces are trimmed before the name is stored, and a name that is empty then is refused (422).
  */
 export type Name = string;
+
+/**
+ * How a number test compares the value with its own: greater than, greater than or equal, less
+ * than, or less than or equal
+ */
+export const NumberOperator = {
+  GT: 'gt',
+  GTE: 'gte',
+  LT: 'lt',
+  LTE: 'lte'
+} as const;
+
+/**
+ * How a number test compares the value with its own: greater than, greater than or equal, less
+ * than, or less than or equal
+ */
+export type NumberOperator = typeof NumberOperator[keyof typeof NumberOperator];
+
+/**
+ * A test of a number. A missing value, or one that is not a number (text, a boolean, null, a
+ * list), fails it.
+ */
+export type NumberTest = {
+  kind: 'number';
+  /**
+   * How the value compares
+   */
+  operator: NumberOperator;
+  /**
+   * The number compared with
+   */
+  value: number;
+};
+
+/**
+ * A test of a number. A missing value, or one that is not a number (text, a boolean, null, a
+ * list), fails it.
+ */
+export type NumberTestInput = {
+  kind: 'number';
+  /**
+   * How the value compares
+   */
+  operator: NumberOperator;
+  /**
+   * The number compared with
+   */
+  value: number;
+};
 
 /**
  * How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)
@@ -2654,6 +2656,38 @@ export const PersonalScope = {
  * so it is declared here and not with the external vocabulary.
  */
 export type PersonalScope = typeof PersonalScope[keyof typeof PersonalScope];
+
+/**
+ * Whether a value is set
+ */
+export const PresenceOperator = { SET: 'set', NOT_SET: 'notSet' } as const;
+
+/**
+ * Whether a value is set
+ */
+export type PresenceOperator = typeof PresenceOperator[keyof typeof PresenceOperator];
+
+/**
+ * A test of whether a value is set at all
+ */
+export type PresenceTest = {
+  kind: 'presence';
+  /**
+   * Set or not set
+   */
+  operator: PresenceOperator;
+};
+
+/**
+ * A test of whether a value is set at all
+ */
+export type PresenceTestInput = {
+  kind: 'presence';
+  /**
+   * Set or not set
+   */
+  operator: PresenceOperator;
+};
 
 /**
  * A Preset: how an Instance verifies and reads one provider's bounce and complaint callbacks
@@ -2782,6 +2816,32 @@ export type ProblemDetails = {
    */
   workspaces?: Array<SoleOwnedWorkspace>;
 };
+
+/**
+ * What a property test asks of the property's value, by `kind`. A key the Event lacks fails
+ * every test; a text test fails on a value that is not text; set holds for a text value and notSet
+ * for an explicit null.
+ */
+export type PropertyTest = ({
+  kind: 'text';
+} & TextTest) | ({
+  kind: 'number';
+} & NumberTest) | ({
+  kind: 'presence';
+} & PresenceTest);
+
+/**
+ * What a property test asks of the property's value, by `kind`. A key the Event lacks fails
+ * every test; a text test fails on a value that is not text; set holds for a text value and notSet
+ * for an explicit null.
+ */
+export type PropertyTestInput = ({
+  kind: 'text';
+} & TextTestInput) | ({
+  kind: 'number';
+} & NumberTestInput) | ({
+  kind: 'presence';
+} & PresenceTestInput);
 
 /**
  * Where an effective Provider limit comes from
@@ -3037,6 +3097,92 @@ export const RuleActionType = {
 export type RuleActionType = typeof RuleActionType[keyof typeof RuleActionType];
 
 /**
+ * A Rule's Condition: the tree of tests the Contact and the Event that fired the Rule match
+ */
+export type RuleCondition = {
+  kind: 'group';
+  /**
+   * How the entries combine
+   */
+  combinator: ConditionCombinator;
+  /**
+   * Negate the whole group
+   */
+  not?: boolean;
+  /**
+   * The group's tests and nested groups
+   */
+  entries: Array<RuleConditionNode>;
+};
+
+/**
+ * A Rule's Condition: the tree of tests the Contact and the Event that fired the Rule match
+ */
+export type RuleConditionInput = {
+  kind: 'group';
+  /**
+   * How the entries combine
+   */
+  combinator: ConditionCombinator;
+  /**
+   * Negate the whole group
+   */
+  not?: boolean;
+  /**
+   * The group's tests and nested groups
+   */
+  entries: Array<RuleConditionNodeInput>;
+};
+
+/**
+ * An entry of a Rule's Condition, by `kind`: a Segment's, or a test of a property of the Event
+ * that fired the Rule
+ */
+export type RuleConditionNode = ({
+  kind: 'group';
+} & RuleCondition) | ({
+  kind: 'attribute';
+} & AttributeLeaf) | ({
+  kind: 'birthday';
+} & BirthdayLeaf) | ({
+  kind: 'tag';
+} & TagLeaf) | ({
+  kind: 'telegram';
+} & TelegramLeaf) | ({
+  kind: 'sms';
+} & SmsLeaf) | ({
+  kind: 'customField';
+} & CustomFieldLeaf) | ({
+  kind: 'event';
+} & EventLeaf) | ({
+  kind: 'property';
+} & RulePropertyLeaf);
+
+/**
+ * An entry of a Rule's Condition, by `kind`: a Segment's, or a test of a property of the Event
+ * that fired the Rule
+ */
+export type RuleConditionNodeInput = ({
+  kind: 'group';
+} & RuleConditionInput) | ({
+  kind: 'attribute';
+} & AttributeLeafInput) | ({
+  kind: 'birthday';
+} & BirthdayLeafInput) | ({
+  kind: 'tag';
+} & TagLeafInput) | ({
+  kind: 'telegram';
+} & TelegramLeafInput) | ({
+  kind: 'sms';
+} & SmsLeafInput) | ({
+  kind: 'customField';
+} & CustomFieldLeafInput) | ({
+  kind: 'event';
+} & EventLeafInput) | ({
+  kind: 'property';
+} & RulePropertyLeafInput);
+
+/**
  * One Action a Rule would run, described without running it
  */
 export type RuleDryRunAction = {
@@ -3120,6 +3266,56 @@ export type RuleFiringResource = {
 };
 
 /**
+ * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
+ * key holding a dot is one key
+ */
+export type RulePropertyLeaf = {
+  kind: 'property';
+  /**
+   * Whose property it is
+   */
+  of: RulePropertySource;
+  /**
+   * The property's key
+   */
+  key: string;
+  /**
+   * What it asks of the property's value
+   */
+  test: PropertyTest;
+};
+
+/**
+ * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
+ * key holding a dot is one key
+ */
+export type RulePropertyLeafInput = {
+  kind: 'property';
+  /**
+   * Whose property it is
+   */
+  of: RulePropertySourceInput;
+  /**
+   * The property's key
+   */
+  key: string;
+  /**
+   * What it asks of the property's value
+   */
+  test: PropertyTestInput;
+};
+
+/**
+ * Whose properties a Rule's property test reads, by `kind`: the triggering Event
+ */
+export type RulePropertySource = TriggerSource;
+
+/**
+ * Whose properties a Rule's property test reads, by `kind`: the triggering Event
+ */
+export type RulePropertySourceInput = TriggerSourceInput;
+
+/**
  * Rule lifecycle status: active reacts to Events, inactive acts on nothing
  */
 export const RuleStatus = { ACTIVE: 'active', INACTIVE: 'inactive' } as const;
@@ -3144,7 +3340,7 @@ export type RuleVersion = {
   /**
    * The Contact must match this condition for the Rule to fire; absent means every Contact
    */
-  condition?: ConditionGroup;
+  condition?: RuleCondition;
   /**
    * The Rule's ordered Actions
    */
@@ -3164,6 +3360,88 @@ export type ScheduleBroadcastInput = {
    */
   scheduledAt: Timestamp;
 };
+
+/**
+ * A Segment's Condition: the tree of tests a Contact matches
+ */
+export type SegmentCondition = {
+  kind: 'group';
+  /**
+   * How the entries combine
+   */
+  combinator: ConditionCombinator;
+  /**
+   * Negate the whole group
+   */
+  not?: boolean;
+  /**
+   * The group's tests and nested groups
+   */
+  entries: Array<SegmentConditionNode>;
+};
+
+/**
+ * A Segment's Condition: the tree of tests a Contact matches
+ */
+export type SegmentConditionInput = {
+  kind: 'group';
+  /**
+   * How the entries combine
+   */
+  combinator: ConditionCombinator;
+  /**
+   * Negate the whole group
+   */
+  not?: boolean;
+  /**
+   * The group's tests and nested groups
+   */
+  entries: Array<SegmentConditionNodeInput>;
+};
+
+/**
+ * An entry of a Segment's Condition, by `kind`: a test of the Contact, an event count or a nested
+ * group
+ */
+export type SegmentConditionNode = ({
+  kind: 'group';
+} & SegmentCondition) | ({
+  kind: 'attribute';
+} & AttributeLeaf) | ({
+  kind: 'birthday';
+} & BirthdayLeaf) | ({
+  kind: 'tag';
+} & TagLeaf) | ({
+  kind: 'telegram';
+} & TelegramLeaf) | ({
+  kind: 'sms';
+} & SmsLeaf) | ({
+  kind: 'customField';
+} & CustomFieldLeaf) | ({
+  kind: 'event';
+} & EventLeaf);
+
+/**
+ * An entry of a Segment's Condition, by `kind`: a test of the Contact, an event count or a nested
+ * group
+ */
+export type SegmentConditionNodeInput = ({
+  kind: 'group';
+} & SegmentConditionInput) | ({
+  kind: 'attribute';
+} & AttributeLeafInput) | ({
+  kind: 'birthday';
+} & BirthdayLeafInput) | ({
+  kind: 'tag';
+} & TagLeafInput) | ({
+  kind: 'telegram';
+} & TelegramLeafInput) | ({
+  kind: 'sms';
+} & SmsLeafInput) | ({
+  kind: 'customField';
+} & CustomFieldLeafInput) | ({
+  kind: 'event';
+} & EventLeafInput);
 
 /**
  * The Workspace's Send cap (ADR 0067): the most messages it may send per rolling 24 hours across
@@ -5025,9 +5303,9 @@ export type SiteCustomFieldResource = {
    */
   type: CustomFieldType;
   /**
-   * The operators a rule leaf on this field takes, by its type
+   * The tests a Condition takes on this field, by its type, each with its operators
    */
-  ruleOperators: Array<ConditionOperator>;
+  conditionTests: CustomFieldConditionTests;
   /**
    * The revision of the state this answer shows (ADR 0119): an update names it
    */
@@ -6151,7 +6429,7 @@ export type SitePreviewSegmentInput = {
   /**
    * Condition; absent means all contacts
    */
-  condition?: ConditionGroupInput;
+  condition?: SegmentConditionInput;
   /**
    * The Channel of a Broadcast the audience is asked for. When given, the result also counts the
    * recipients the Broadcast would take: the matching contacts it could send to now.
@@ -6477,7 +6755,7 @@ export type SiteSegmentResource = {
   /**
    * Segment condition: the tree of tests; an empty group matches all contacts
    */
-  condition?: ConditionGroup;
+  condition?: SegmentCondition;
   /**
    * When the segment was archived; null while it is kept
    */
@@ -7516,6 +7794,30 @@ export const SmsFromKind = {
 export type SmsFromKind = typeof SmsFromKind[keyof typeof SmsFromKind];
 
 /**
+ * A test of whether a Contact has a phone that can be texted: one with an SMS Confirmation and no
+ * SMS opt-out or Suppression
+ */
+export type SmsLeaf = {
+  kind: 'sms';
+  /**
+   * Has one or does not
+   */
+  operator: HasOperator;
+};
+
+/**
+ * A test of whether a Contact has a phone that can be texted: one with an SMS Confirmation and no
+ * SMS opt-out or Suppression
+ */
+export type SmsLeafInput = {
+  kind: 'sms';
+  /**
+   * Has one or does not
+   */
+  operator: HasOperator;
+};
+
+/**
  * The opt-out of a contact's phone from every SMS of the Workspace: when, and how the person stopped
  */
 export type SmsOptOut = {
@@ -7661,6 +7963,36 @@ export const SystemEventAction = {
 export type SystemEventAction = typeof SystemEventAction[keyof typeof SystemEventAction];
 
 /**
+ * A test of whether a Contact has the Tag called `name`
+ */
+export type TagLeaf = {
+  kind: 'tag';
+  /**
+   * The Tag's name
+   */
+  name: string;
+  /**
+   * Has it or does not
+   */
+  operator: HasOperator;
+};
+
+/**
+ * A test of whether a Contact has the Tag called `name`
+ */
+export type TagLeafInput = {
+  kind: 'tag';
+  /**
+   * The Tag's name
+   */
+  name: string;
+  /**
+   * Has it or does not
+   */
+  operator: HasOperator;
+};
+
+/**
  * Telegram's content of a Broadcast as stored
  */
 export type TelegramBroadcastContent = {
@@ -7777,6 +8109,28 @@ export type TelegramConfigInput = {
 };
 
 /**
+ * A test of whether a Contact has a Telegram chat bound, on its own or through a Visitor
+ */
+export type TelegramLeaf = {
+  kind: 'telegram';
+  /**
+   * Has one or does not
+   */
+  operator: HasOperator;
+};
+
+/**
+ * A test of whether a Contact has a Telegram chat bound, on its own or through a Visitor
+ */
+export type TelegramLeafInput = {
+  kind: 'telegram';
+  /**
+   * Has one or does not
+   */
+  operator: HasOperator;
+};
+
+/**
  * A Telegram start link: the person who opens it and presses Start binds their chat to the contact it was issued for. The link works once.
  */
 export type TelegramStartLinkResource = {
@@ -7813,6 +8167,55 @@ export type TestWebhookInput = {
    * The event name the sample carries, for example `contact.created`
    */
   eventType: string;
+};
+
+/**
+ * How a text test compares the value with its own
+ */
+export const TextOperator = {
+  EQ: 'eq',
+  NEQ: 'neq',
+  CONTAINS: 'contains',
+  BEGINS_WITH: 'beginsWith'
+} as const;
+
+/**
+ * How a text test compares the value with its own
+ */
+export type TextOperator = typeof TextOperator[keyof typeof TextOperator];
+
+/**
+ * A test of a text value. On a Contact attribute or an Event's property, contains is a
+ * case-insensitive substring. On a Custom field, contains holds when the field's value is a list
+ * that holds `value`, and a number or boolean field's eq and neq compare the text of its value.
+ */
+export type TextTest = {
+  kind: 'text';
+  /**
+   * How the value compares
+   */
+  operator: TextOperator;
+  /**
+   * The text compared with
+   */
+  value: string;
+};
+
+/**
+ * A test of a text value. On a Contact attribute or an Event's property, contains is a
+ * case-insensitive substring. On a Custom field, contains holds when the field's value is a list
+ * that holds `value`, and a number or boolean field's eq and neq compare the text of its value.
+ */
+export type TextTestInput = {
+  kind: 'text';
+  /**
+   * How the value compares
+   */
+  operator: TextOperator;
+  /**
+   * The text compared with
+   */
+  value: string;
 };
 
 export type TimeZoneName = string;
@@ -7933,6 +8336,20 @@ export const TrackingState = {
  * State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host with the ownership TXT beside it, `dns_verified` once both are (the edge may provision), `serving` once HTTPS on the host answers
  */
 export type TrackingState = typeof TrackingState[keyof typeof TrackingState];
+
+/**
+ * The Event that fired a Rule, whose properties a property test reads
+ */
+export type TriggerSource = {
+  kind: 'trigger';
+};
+
+/**
+ * The Event that fired a Rule, whose properties a property test reads
+ */
+export type TriggerSourceInput = {
+  kind: 'trigger';
+};
 
 /**
  * A Twilio account without its secret
@@ -8161,7 +8578,7 @@ export type UpdateRuleInput = {
    * The Event actions that make the Rule fire; at least one
    */
   triggerEvents?: Array<string>;
-  condition?: ConditionGroupInput;
+  condition?: RuleConditionInput;
   /**
    * The Actions to run, in order
    */
@@ -8183,7 +8600,7 @@ export type UpdateSegmentInput = {
   /**
    * Segment condition: the tree of tests; an empty group matches all contacts
    */
-  condition?: ConditionGroupInput;
+  condition?: SegmentConditionInput;
 };
 
 /**
@@ -8365,6 +8782,30 @@ export type WebhookTestResult = {
    * Why the delivery failed; absent when delivered
    */
   kind?: WebhookErrorKind;
+};
+
+/**
+ * A test of a moment: within the last `days` days up to now, so a moment still to come is not
+ * within. A moment is read as for the moment test.
+ */
+export type WithinLastTest = {
+  kind: 'withinLast';
+  /**
+   * The window, in days back from now
+   */
+  days: number;
+};
+
+/**
+ * A test of a moment: within the last `days` days up to now, so a moment still to come is not
+ * within. A moment is read as for the moment test.
+ */
+export type WithinLastTestInput = {
+  kind: 'withinLast';
+  /**
+   * The window, in days back from now
+   */
+  days: number;
 };
 
 /**

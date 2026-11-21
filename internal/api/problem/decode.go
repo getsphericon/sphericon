@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/ogen-go/ogen/ogenerrors"
+	"github.com/ogen-go/ogen/validate"
 )
 
 // UnknownProperty is the field error of a property the contract does not declare: a request body
@@ -24,7 +25,7 @@ var (
 )
 
 // undecodedProperty is the path of the request body property a decoding error is about, its
-// segments joined by dots (`content.subjct`, `condition.rules.1.field`), and the reason it is
+// segments joined by dots (`content.subjct`, `condition.entries.1.name`), and the reason it is
 // refused: UnknownProperty for a property the contract does not declare, the decoder's own message
 // for a value it cannot read (a wrong type). The path is empty when err is no request decoding
 // error or names no property. The decoders name the object keys only; the item of each array on
@@ -103,4 +104,62 @@ func quoted(pattern *regexp.Regexp, message string) (string, bool) {
 	}
 	name, err := strconv.Unquote(match[1])
 	return name, err == nil
+}
+
+// unionWrapper is the name ogen's validators give the field that holds a union's variant, a
+// field of the generated type that is no key of the body.
+const unionWrapper = "OneOf"
+
+// itemName is how ogen's validators name the item of an array they refuse: `[<index>]`.
+var itemName = regexp.MustCompile(`^\[(\d+)\]$`)
+
+// invalidProperties is the path and the reason of each property of a decoded request body the
+// contract's validation refuses (a value outside an enum, a range or a pattern), its segments joined by dots
+// as undecodedProperty joins them (`condition.entries.1.test.operator`). Unlike a decoding error,
+// ogen's validators name every key and every array item on the way, so the body is not decoded
+// again. It is empty when err is no validation of a request body.
+func invalidProperties(err error) map[string][]string {
+	if _, ok := errors.AsType[*ogenerrors.DecodeRequestError](err); !ok {
+		return nil
+	}
+	// A body that does not decode (a missing required property among them) is undecodedProperty's,
+	// a parameter is no property of the body.
+	if _, ok := errors.AsType[*ogenerrors.DecodeBodyError](err); ok {
+		return nil
+	}
+	if _, ok := errors.AsType[*ogenerrors.DecodeParamsError](err); ok {
+		return nil
+	}
+	invalid, ok := errors.AsType[*validate.Error](err)
+	if !ok {
+		return nil
+	}
+	out := map[string][]string{}
+	collectInvalid(invalid, nil, out)
+	return out
+}
+
+// collectInvalid adds to out the path and reason of every field invalid refuses, under the path
+// steps leads to it.
+func collectInvalid(invalid *validate.Error, steps []step, out map[string][]string) {
+	for _, field := range invalid.Fields {
+		at := steps
+		if match := itemName.FindStringSubmatch(field.Name); match != nil {
+			index, err := strconv.Atoi(match[1])
+			if err != nil {
+				continue
+			}
+			at = append(slices.Clip(steps), step{index: index, item: true})
+		} else if field.Name != unionWrapper {
+			at = append(slices.Clip(steps), step{key: field.Name})
+		}
+		if nested, ok := errors.AsType[*validate.Error](field.Error); ok {
+			collectInvalid(nested, at, out)
+			continue
+		}
+		if len(at) > 0 {
+			path := joinPath(at)
+			out[path] = append(out[path], field.Error.Error())
+		}
+	}
 }

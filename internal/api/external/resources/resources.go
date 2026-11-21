@@ -116,6 +116,7 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend optNilInt32
 // goverter:extend jsonObject
 // goverter:extend segmentCondition
+// goverter:extend ruleCondition
 // goverter:extend ruleActions
 // goverter:extend ruleResults
 // goverter:extend editorDocument
@@ -226,7 +227,7 @@ type Converter interface {
 	// goverter:map Group Group | optNonEmpty
 	// goverter:useEmptyOnNil:map
 	EmailSchemaTypeToResource(source emaildoc.AgentType) externalapi.EmailSchemaType
-	// goverter:map Type RuleOperators | customFieldRuleOperators
+	// goverter:map Type ConditionTests | customFieldConditionTests
 	CustomFieldToResource(source *ent.CustomField) externalapi.CustomFieldResource
 	// goverter:useEmptyOnNil:slice
 	CustomFieldsToResources(source []*ent.CustomField) []externalapi.CustomFieldResource
@@ -709,14 +710,24 @@ func optNilTimestamp(v *time.Time) externalapi.OptNilTimestamp {
 	return convert.Opt[externalapi.OptNilTimestamp]((*externalapi.Timestamp)(v))
 }
 
-// segmentCondition maps a Condition into the typed DTO. One that no longer decodes as the contract's
-// tree reads as having none.
-func segmentCondition(g conditiontree.Group) externalapi.OptConditionGroup {
-	var group externalapi.ConditionGroup
-	if err := condition.ToDTO(g, &group); err != nil {
-		return externalapi.OptConditionGroup{}
+// segmentCondition maps a Segment's Condition into the typed DTO. One that no longer decodes as the
+// contract's tree reads as having none.
+func segmentCondition(g conditiontree.Segment) externalapi.OptSegmentCondition {
+	var tree externalapi.SegmentCondition
+	if err := condition.ToDTO(g, &tree); err != nil {
+		return externalapi.OptSegmentCondition{}
 	}
-	return externalapi.NewOptConditionGroup(group)
+	return externalapi.NewOptSegmentCondition(tree)
+}
+
+// ruleCondition maps a Rule's Condition into the typed DTO. One that no longer decodes as the
+// contract's tree reads as having none.
+func ruleCondition(g conditiontree.Rule) externalapi.OptRuleCondition {
+	var tree externalapi.RuleCondition
+	if err := condition.ToDTO(g, &tree); err != nil {
+		return externalapi.OptRuleCondition{}
+	}
+	return externalapi.NewOptRuleCondition(tree)
 }
 
 func optTimestamp(v *time.Time) externalapi.OptTimestamp {
@@ -920,10 +931,17 @@ func schemaExample(doc json.RawMessage) externalapi.EditorDocument {
 	return convert.DocObject[externalapi.EditorDocument](doc)
 }
 
-// customFieldRuleOperators is the operators a rule leaf may test on a Custom field of the type: the
+// customFieldConditionTests is what a Condition may ask of a Custom field of the type: the
 // Condition's table, listed so a client offers what the server takes.
-func customFieldRuleOperators(t customfield.Type) []externalapi.ConditionOperator {
-	return lo.Map(condition.RuleOperators(t), func(op string, _ int) externalapi.ConditionOperator { return externalapi.ConditionOperator(op) })
+func customFieldConditionTests(t customfield.Type) externalapi.CustomFieldConditionTests {
+	tests := condition.CustomFieldTests(t)
+	return externalapi.CustomFieldConditionTests{
+		Text:       lo.Map(tests.Text, func(op string, _ int) externalapi.TextOperator { return externalapi.TextOperator(op) }),
+		Number:     lo.Map(tests.Number, func(op string, _ int) externalapi.NumberOperator { return externalapi.NumberOperator(op) }),
+		Moment:     lo.Map(tests.Moment, func(op string, _ int) externalapi.MomentOperator { return externalapi.MomentOperator(op) }),
+		WithinLast: tests.WithinLast,
+		Presence:   lo.Map(tests.Presence, func(op string, _ int) externalapi.PresenceOperator { return externalapi.PresenceOperator(op) }),
+	}
 }
 
 // optNilSendCap is null exactly when no Send cap applies.

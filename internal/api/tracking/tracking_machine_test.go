@@ -172,13 +172,13 @@ func TestAMachineOpenOfAnAutomationEmailIsNoFigureOfTheReport(t *testing.T) {
 func TestAMachineOpenOrClickIsNoMatchOfASegmentCondition(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	const alice = `{"kind":"rule","field":"email","operator":"eq","value":"` + fixtures.ContactAliceEmail + `"}`
+	const alice = `{"kind":"attribute","attribute":"email","test":{"kind":"text","operator":"eq","value":"` + fixtures.ContactAliceEmail + `"}}`
 	matching := func(action string) int32 {
 		t.Helper()
-		def := `{"kind":"group","combinator":"and","rules":[` + alice +
+		def := `{"kind":"group","combinator":"and","entries":[` + alice +
 			`,{"kind":"event","action":"` + action + `","operator":"atLeast","times":1}]}`
 		out, err := c.SiteSegmentsPreview(t.Context(), &siteapi.SitePreviewSegmentInput{
-			Condition: siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, def)),
+			Condition: siteapi.NewOptSegmentConditionInput(testhelper.SiteSegmentCondition(t, def)),
 		}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.AcmePublicID})
 		require.NoError(t, err)
 		res := out

@@ -3,6 +3,7 @@ package problem_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -21,19 +22,20 @@ import (
 
 // A request body is the client's bytes, and the path of a property it fails at is read from the
 // decoder's error, which carries the client's key names, with the item of each array on the way
-// found by decoding the body again (ADR 0148). Whatever the body, a body that does not decode is
-// a 400, every field error names a path of whole segments that leads somewhere in the body and
-// carries a reason, and nothing panics.
+// found by decoding the body again (ADR 0148). Whatever the body, a body that does not decode or
+// holds a value the contract does not take is a 400, every field error names a path of whole
+// segments that leads somewhere in the body and carries a reason, and nothing panics.
 func FuzzUndecodedBodyNamesWholePaths(f *testing.F) {
 	f.Add(`{"name":"x","segment_id":"a"}`)
 	f.Add(`{"name":"x","content":{"channel":"email","subjct":"s"}}`)
 	f.Add(`{"name":"x","content":{"channel":"email","subject":3}}`)
 	f.Add(`{"name":"x","content":{"channel":"email","a.b\"c":1}}`)
 	f.Add(`{"name":"x","content":{"channel":"sms","text":"hi","":1}}`)
-	f.Add(`{"name":"x","condition":{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"f","operator":"eq","value":1},{"kind":"rule","combinator":"or"}]}}`)
-	f.Add(`{"name":"x","condition":{"kind":"group","combinator":"and","rules":[{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":3}]}]}}`)
-	f.Add(`{"name":"x","condition":{"kind":"group","combinator":"and","rules":7}}`)
-	f.Add(`{"name":"x","condition":{"kind":"group","rules":[],"rules":[{"1":2}]}}`)
+	f.Add(`{"name":"x","condition":{"kind":"group","combinator":"and","entries":[{"kind":"tag","name":1,"operator":"has"},{"kind":"tag","combinator":"or"}]}}`)
+	f.Add(`{"name":"x","condition":{"kind":"group","combinator":"and","entries":[{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":3}]}]}}`)
+	f.Add(`{"name":"x","condition":{"kind":"group","combinator":"and","entries":7}}`)
+	f.Add(`{"name":"x","condition":{"kind":"group","combinator":"and","entries":[{"kind":"tag","name":"v","operator":"has"},{"kind":"customField","key":"k","test":{"kind":"number","operator":"contains","value":1}}]}}`)
+	f.Add(`{"name":"x","condition":{"kind":"group","entries":[],"entries":[{"1":2}]}}`)
 	f.Add(`{"name":`)
 	f.Add(`3`)
 
@@ -56,8 +58,11 @@ type operation struct {
 	in   func() decodable
 }
 
-// decodable is a request body type ogen decodes as JSON.
-type decodable interface{ Decode(d *jx.Decoder) error }
+// decodable is a request body type ogen decodes as JSON and then validates against the contract.
+type decodable interface {
+	Decode(d *jx.Decoder) error
+	Validate() error
+}
 
 var (
 	broadcastCreate = operation{externalapi.BroadcastsCreateOperation, func() decodable { return &externalapi.CreateBroadcastInput{} }}
@@ -65,16 +70,12 @@ var (
 )
 
 // answerTo is the status and the field errors the operation is answered with on /api when body
-// does not decode, handed to the error handler as ogen's server hands it, or 0 and none when body
-// decodes.
+// does not decode or holds a value the contract does not take, handed to the error handler as
+// ogen's server hands it, or 0 and none when body decodes and validates.
 func answerTo(op operation, body string) (status int, fields map[string][]string) {
-	err := op.in().Decode(jx.DecodeStr(body))
-	if err == nil {
+	refused := refusalOf(op, body)
+	if refused == nil {
 		return 0, nil
-	}
-	refused := &ogenerrors.DecodeRequestError{
-		Name: op.name,
-		Err:  &ogenerrors.DecodeBodyError{ContentType: "application/json", Body: []byte(body), Err: err},
 	}
 	h := problem.Middleware[externalapi.Handler](http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 		var answer *siteapi.ProblemDetails
@@ -83,6 +84,22 @@ func answerTo(op operation, body string) (status int, fields map[string][]string
 	}))
 	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/", http.NoBody))
 	return status, fields
+}
+
+// refusalOf is the error ogen's server answers body with: its decoding error, else its validation
+// error, else nil.
+func refusalOf(op operation, body string) error {
+	in := op.in()
+	if err := in.Decode(jx.DecodeStr(body)); err != nil {
+		return &ogenerrors.DecodeRequestError{
+			Name: op.name,
+			Err:  &ogenerrors.DecodeBodyError{ContentType: "application/json", Body: []byte(body), Err: err},
+		}
+	}
+	if err := in.Validate(); err != nil {
+		return &ogenerrors.DecodeRequestError{Name: op.name, Err: fmt.Errorf("validate: %w", err)}
+	}
+	return nil
 }
 
 // leadsInto reports whether path names a place in body: each key a member of the object it is
@@ -162,11 +179,11 @@ func splitPath(path string) (segments []string, ok bool) {
 // field error names the keys alone: the work a refused request costs is bounded.
 func TestAFailureNestedPastTheSearchNamesItsKeys(t *testing.T) {
 	const depth = 80
-	condition := `{"kind":"rule","bogus":true}`
+	condition := `{"kind":"tag","bogus":true}`
 	path := "bogus"
 	for range depth {
-		condition = `{"kind":"group","combinator":"and","rules":[` + condition + `]}`
-		path = "rules." + path
+		condition = `{"kind":"group","combinator":"and","entries":[` + condition + `]}`
+		path = "entries." + path
 	}
 	body := `{"name":"x","condition":` + condition + `}`
 
@@ -179,11 +196,11 @@ func TestAFailureNestedPastTheSearchNamesItsKeys(t *testing.T) {
 // A failure nested within the search names the item of every array on the way.
 func TestAFailureNestedWithinTheSearchNamesEveryItem(t *testing.T) {
 	const depth = 10
-	condition := `{"kind":"rule","bogus":true}`
+	condition := `{"kind":"tag","bogus":true}`
 	path := "bogus"
 	for range depth {
-		condition = `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"f","operator":"eq","value":"v"},` + condition + `]}`
-		path = "rules.1." + path
+		condition = `{"kind":"group","combinator":"and","entries":[{"kind":"tag","name":"v","operator":"has"},` + condition + `]}`
+		path = "entries.1." + path
 	}
 	body := `{"name":"x","condition":` + condition + `}`
 
@@ -191,4 +208,25 @@ func TestAFailureNestedWithinTheSearchNamesEveryItem(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, status)
 	assert.Equal(t, map[string][]string{"condition." + path: {problem.UnknownProperty}}, fields)
+}
+
+// A body that decodes but holds a value outside the contract (an operator its test does not take,
+// an attribute the Contact has not) names it by its path, the item of every array on the way
+// included, as a body that does not decode does.
+func TestAValueOutsideTheContractNamesItsPath(t *testing.T) {
+	const body = `{"name":"x","condition":{"kind":"group","combinator":"and","entries":[
+		{"kind":"tag","name":"v","operator":"has"},
+		{"kind":"group","combinator":"or","entries":[
+			{"kind":"customField","key":"k","test":{"kind":"number","operator":"contains","value":1}},
+			{"kind":"attribute","attribute":"password","test":{"kind":"text","operator":"eq","value":"x"}}
+		]}
+	]}}`
+
+	status, fields := answerTo(segmentCreate, body)
+
+	assert.Equal(t, http.StatusBadRequest, status)
+	assert.Equal(t, map[string][]string{
+		"condition.entries.1.entries.0.test.operator": {"invalid value: contains"},
+		"condition.entries.1.entries.1.attribute":     {"invalid value: password"},
+	}, fields)
 }

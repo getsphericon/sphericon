@@ -110,7 +110,7 @@ func (Broadcast) Fields() []ent.Field {
 		// later edit of the Segment changes nothing for an armed Broadcast, and segment_id stays
 		// as provenance. Nil on a draft and on a Broadcast to all contacts (ADR 0149); jsonb (ADR
 		// 0169).
-		field.JSON("condition", &conditiontree.Group{}).
+		field.JSON("condition", &conditiontree.Segment{}).
 			Optional(),
 		// The Integration of the Broadcast's Channel it sends through; nil means that Channel's
 		// default.

@@ -229,14 +229,14 @@ var Bounds = []Bound{
 	},
 	{Name: "RuleTriggerEvents", Spec: site, Schema: "UpdateRuleInput", Property: "triggerEvents"},
 	{
-		Name: "ConditionWithinDays", Doc: "is how many days back a condition leaf looks: an Event count's window or a date's.",
-		Spec: site, Schema: "ConditionEventLeafInput", Property: "withinDays",
+		Name: "ConditionWithinDays", Doc: "is how many days back a condition looks: an Event count's window or a moment's within the last days.",
+		Spec: site, Schema: "EventLeafInput", Property: "withinDays",
 		Owners: []string{"internal/domain/contacts/condition"},
 	},
-	{Name: "ConditionWithinDays", Spec: site, Schema: "ConditionDateWithinLeafInput", Property: "withinDays"},
+	{Name: "ConditionWithinDays", Spec: site, Schema: "WithinLastTestInput", Property: "days"},
 	{
 		Name: "ConditionEventTimes", Doc: "is how many Events of an action a condition leaf counts.",
-		Spec: site, Schema: "ConditionEventLeafInput", Property: "times",
+		Spec: site, Schema: "EventLeafInput", Property: "times",
 		Owners: []string{"internal/domain/contacts/condition"},
 	},
 	{

@@ -47,7 +47,7 @@ func TestExternalRulesReadNeedsTheAutomationsReadScope(t *testing.T) {
 	assert.Equal(t, []string{"rule_vip"}, live.TriggerEvents)
 	condition, hasCondition := live.Condition.Get()
 	require.True(t, hasCondition)
-	assert.Len(t, condition.Rules, 1)
+	assert.Len(t, condition.Entries, 1)
 	require.Len(t, live.Actions, 1)
 	assert.Equal(t, "rule-vip-seen", live.Actions[0].Tag.Or(""))
 
@@ -90,8 +90,8 @@ func TestExternalRulesCreatePublishAndDeactivate(t *testing.T) {
 	_, err = author.RulesCreate(ctx, &externalapi.CreateRuleInput{
 		Name:          "Typo",
 		TriggerEvents: []string{systemevent.EmailClicked},
-		Condition: externalapi.NewOptConditionGroupInput(testhelper.ExternalRuleGroup(t,
-			`{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:no_such_field","operator":"eq","value":"x"}]}`)),
+		Condition: externalapi.NewOptRuleConditionInput(testhelper.ExternalRuleCondition(t,
+			`{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"no_such_field","test":{"kind":"text","operator":"eq","value":"x"}}]}`)),
 	})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
@@ -99,8 +99,8 @@ func TestExternalRulesCreatePublishAndDeactivate(t *testing.T) {
 		Name:          "Clicked twice this week",
 		TriggerEvents: []string{systemevent.EmailClicked},
 		Actions:       []externalapi.RuleActionInput{{Type: externalapi.RuleActionTypeApplyTag, Tag: externalapi.NewOptString("keen")}},
-		Condition: externalapi.NewOptConditionGroupInput(testhelper.ExternalRuleGroup(t,
-			`{"kind":"group","combinator":"and","rules":[{"kind":"event","action":"email.clicked","operator":"atLeast","times":2,"withinDays":7}]}`)),
+		Condition: externalapi.NewOptRuleConditionInput(testhelper.ExternalRuleCondition(t,
+			`{"kind":"group","combinator":"and","entries":[{"kind":"event","action":"email.clicked","operator":"atLeast","times":2,"withinDays":7}]}`)),
 	})
 	require.NoError(t, err)
 

@@ -1648,7 +1648,7 @@
   workspace_id: 94
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
-# Duff: the values of trial_ends in each shape a date leaf tells apart (Custom field 7700): three ISO
+# Duff: the values of trial_ends in each shape a moment test tells apart (Custom field 7700): three ISO
 # forms, text and Unix seconds.
 - id: 7703
   revision: 1

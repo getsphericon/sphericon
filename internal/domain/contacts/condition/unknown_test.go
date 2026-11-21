@@ -18,9 +18,7 @@ var engagements = []string{systemevent.EmailOpened, systemevent.EmailClicked, sy
 
 // negated is the group of entries, negated.
 func negated(entries ...any) conditiontree.Group {
-	g := opsGroup(entries...)
-	g.Not = true
-	return g
+	return groupOf(conditiontree.And, true, entries...)
 }
 
 func TestAConditionCanBeUnknownWhenItCountsAnEngagement(t *testing.T) {
@@ -30,7 +28,7 @@ func TestAConditionCanBeUnknownWhenItCountsAnEngagement(t *testing.T) {
 
 		counted := condition.CanBeUnknown(opsGroup(count))
 		countedWithin := condition.CanBeUnknown(opsGroup(within))
-		nested := condition.CanBeUnknown(opsGroup(rule("email", "eq", "a@example.com"), opsGroup(opsGroup(count))))
+		nested := condition.CanBeUnknown(opsGroup(attribute("email", text("eq", "a@example.com")), opsGroup(opsGroup(count))))
 		underNot := condition.CanBeUnknown(opsGroup(negated(count)))
 
 		assert.True(t, counted, "%s counted", action)
@@ -42,8 +40,8 @@ func TestAConditionCanBeUnknownWhenItCountsAnEngagement(t *testing.T) {
 	for name, g := range map[string]conditiontree.Group{
 		"the empty Condition":                                    conditiontree.Empty(),
 		"a count of another kind":                                opsGroup(eventLeaf("signup", "atLeast", 1, 0), negated(eventLeaf(systemevent.EmailSent, "atLeast", 1, 0))),
-		"tests on the Contact":                                   opsGroup(rule("email", "eq", "a@example.com"), rule("tag", "has", "vip"), opsGroup(rule("telegram", "has", ""))),
-		"a triggering Event's property named like an engagement": opsGroup(rule("trigger:"+systemevent.EmailOpened, "eq", "x")),
+		"tests on the Contact":                                   opsGroup(attribute("email", text("eq", "a@example.com")), tagLeaf("vip", "has"), opsGroup(telegram("has"))),
+		"a triggering Event's property named like an engagement": opsGroup(property(systemevent.EmailOpened, text("eq", "x"))),
 	} {
 		unknown := condition.CanBeUnknown(g)
 
@@ -70,12 +68,10 @@ func TestCanBeUnknownAgreesWithItsLeavesAtAnyDepth(t *testing.T) {
 					counted = append(counted, action)
 					entries = append(entries, eventLeaf(action, "atLeast", 1, 0))
 				default:
-					entries = append(entries, rule("tag", "has", "vip"))
+					entries = append(entries, tagLeaf("vip", "has"))
 				}
 			}
-			g := opsGroup(entries...)
-			g.Not = rapid.Bool().Draw(rt, "not")
-			return g
+			return groupOf(conditiontree.And, rapid.Bool().Draw(rt, "not"), entries...)
 		}
 		g := tree(0)
 		want := slices.ContainsFunc(counted, func(a string) bool { return slices.Contains(engagements, a) })

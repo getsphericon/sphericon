@@ -169,7 +169,7 @@ type Inputs interface {
 	SegmentCreate(source *externalapi.CreateSegmentInput) (segments.CreateInput, error)
 	// goverter:map Condition | segmentConditionPatch
 	SegmentUpdate(source *externalapi.UpdateSegmentInput) (segments.UpdateInput, error)
-	// goverter:map Condition | conditionIn
+	// goverter:map Condition | segmentConditionIn
 	SegmentPreview(source *externalapi.PreviewSegmentInput) (segments.PreviewInput, error)
 
 	// The editor version is the save's own: the module renders the document and stamps it.
@@ -181,9 +181,9 @@ type Inputs interface {
 	AutomationUpdate(source *externalapi.UpdateAutomationInput) automations.UpdateInput
 
 	RuleActions(source []externalapi.RuleActionInput) []ruleaction.Action
-	// goverter:map Condition | conditionIn
+	// goverter:map Condition | ruleConditionIn
 	RuleCreate(source *externalapi.CreateRuleInput) (rules.CreateInput, error)
-	// goverter:map Condition | conditionIn
+	// goverter:map Condition | ruleConditionIn
 	RuleUpdate(source *externalapi.UpdateRuleInput) (rules.UpdateInput, error)
 
 	ApiTokenCreate(source *externalapi.CreateApiTokenInput) apitokens.Input
@@ -359,9 +359,14 @@ func ruleActionsPtrIn(c Inputs, actions []externalapi.RuleActionInput) *[]ruleac
 	return &out
 }
 
-// conditionIn is a Condition the request may leave out; nil when it is absent.
-func conditionIn(o externalapi.OptConditionGroupInput) (*conditiontree.Group, error) {
-	return condition.FromOptionalDTO(o)
+// segmentConditionIn is a Segment's Condition the request may leave out; nil when it is absent.
+func segmentConditionIn(o externalapi.OptSegmentConditionInput) (*conditiontree.Segment, error) {
+	return condition.FromOptionalDTO[conditiontree.Segment](o)
+}
+
+// ruleConditionIn is a Rule's Condition the request may leave out; nil when it is absent.
+func ruleConditionIn(o externalapi.OptRuleConditionInput) (*conditiontree.Rule, error) {
+	return condition.FromOptionalDTO[conditiontree.Rule](o)
 }
 
 // eventPropertiesIn decodes each property keeping numbers as the text that was sent: an amount of
@@ -507,18 +512,18 @@ func integrationConfigPatch(o externalapi.OptIntegrationConfigInput) (patch.Fiel
 	return patch.Set(cfg), nil
 }
 
-func createSegmentCondition(g externalapi.ConditionGroupInput) (*conditiontree.Group, error) {
-	def, err := condition.FromDTO(&g)
+func createSegmentCondition(g externalapi.SegmentConditionInput) (*conditiontree.Segment, error) {
+	def, err := condition.FromDTO[conditiontree.Segment](&g)
 	if err != nil {
 		return nil, err
 	}
 	return &def, nil
 }
 
-func segmentConditionPatch(o externalapi.OptConditionGroupInput) (patch.Field[conditiontree.Group], error) {
-	def, err := condition.FromOptionalDTO(o)
+func segmentConditionPatch(o externalapi.OptSegmentConditionInput) (patch.Field[conditiontree.Segment], error) {
+	def, err := condition.FromOptionalDTO[conditiontree.Segment](o)
 	if err != nil {
-		return patch.Field[conditiontree.Group]{}, err
+		return patch.Field[conditiontree.Segment]{}, err
 	}
 	return patch.FromPtr(def), nil
 }

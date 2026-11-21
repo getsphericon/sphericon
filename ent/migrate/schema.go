@@ -2398,7 +2398,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "version", Type: field.TypeInt},
-		{Name: "condition", Type: field.TypeJSON, Default: "{\"kind\":\"group\",\"combinator\":\"and\",\"rules\":[]}"},
+		{Name: "condition", Type: field.TypeJSON, Default: "{\"kind\":\"group\",\"combinator\":\"and\",\"entries\":[]}"},
 		{Name: "actions", Type: field.TypeJSON, Default: "[]"},
 		{Name: "rule_id", Type: field.TypeInt64},
 		{Name: "workspace_id", Type: field.TypeInt64},
@@ -2523,7 +2523,7 @@ var (
 		{Name: "archived_at", Type: field.TypeTime, Nullable: true},
 		{Name: "revision", Type: field.TypeInt64},
 		{Name: "name", Type: field.TypeString},
-		{Name: "condition", Type: field.TypeJSON, Default: "{\"kind\":\"group\",\"combinator\":\"and\",\"rules\":[]}"},
+		{Name: "condition", Type: field.TypeJSON, Default: "{\"kind\":\"group\",\"combinator\":\"and\",\"entries\":[]}"},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// SegmentsTable holds the schema information for the "segments" table.

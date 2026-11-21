@@ -17,7 +17,7 @@ model SegmentResource {
   name: string;
 
   /** Segment condition: the tree of tests; an empty group matches all contacts */
-  condition?: ConditionGroup;
+  condition?: SegmentCondition;
 
   /** When the segment was archived; null while it is kept */
   archivedAt?: Timestamp | null;
@@ -35,7 +35,7 @@ model SegmentResource {
 /** Request body for previewing a condition's segment */
 model PreviewSegmentInput {
   /** Condition; absent means all contacts */
-  condition?: ConditionGroupInput;
+  condition?: SegmentConditionInput;
 
   /**
    * The Channel of a Broadcast the audience is asked for (ADR 0149). When given, the result also
@@ -69,7 +69,7 @@ interface Segments
       ApiTokenScope.segmentsRead,
       ApiTokenScope.segmentsWrite
     > {
-  /** Count the contacts matching an unsaved rule definition, or all contacts without one. With a `channel` it also counts the recipients a Broadcast there would take now: read it back before a Broadcast is handed over for scheduling (ADR 0149). */
+  /** Count the contacts matching an unsaved Condition, or all contacts without one. With a `channel` it also counts the recipients a Broadcast there would take now: read it back before a Broadcast is handed over for scheduling (ADR 0149). */
   @collectionAction(SegmentResource, "preview")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.segmentsRead])

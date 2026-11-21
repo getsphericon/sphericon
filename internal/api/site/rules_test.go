@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-const vipCondition = `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"has","value":"vip"}]}`
+const vipCondition = `{"kind":"group","combinator":"and","entries":[{"kind":"tag","name":"vip","operator":"has"}]}`
 
 func tagAction(kind siteapi.RuleActionType, name string) siteapi.RuleActionInput {
 	return siteapi.RuleActionInput{Type: kind, Tag: siteapi.NewOptString(name)}
@@ -30,7 +30,7 @@ func TestSiteRulesCRUDPublishAndDeactivate(t *testing.T) {
 	created, err := c.SiteRulesCreate(ctx, &siteapi.CreateRuleInput{
 		Name:          "Tag the vips who clicked",
 		TriggerEvents: []string{systemevent.EmailClicked, "link_followed", systemevent.EmailClicked},
-		Condition:     siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, vipCondition)),
+		Condition:     siteapi.NewOptRuleConditionInput(testhelper.SiteRuleCondition(t, vipCondition)),
 		Actions:       []siteapi.RuleActionInput{tagAction(siteapi.RuleActionTypeApplyTag, "clicker"), tagAction(siteapi.RuleActionTypeRemoveTag, "cold")},
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
@@ -47,7 +47,7 @@ func TestSiteRulesCRUDPublishAndDeactivate(t *testing.T) {
 	assert.Equal(t, siteapi.RuleActionTypeRemoveTag, draft.Actions[1].Type)
 	condition, hasCondition := draft.Condition.Get()
 	require.True(t, hasCondition)
-	assert.Len(t, condition.Rules, 1)
+	assert.Len(t, condition.Entries, 1)
 	_, activated := res.ActivatedAt.Get()
 	assert.False(t, activated)
 
@@ -107,12 +107,12 @@ func TestSiteRulesAreRefusedWhenInvalid(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
-	unknownField := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:no_such_field","operator":"eq","value":"x"}]}`
+	unknownField := `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"no_such_field","test":{"kind":"text","operator":"eq","value":"x"}}]}`
 	apply := []siteapi.RuleActionInput{tagAction(siteapi.RuleActionTypeApplyTag, "x")}
 
 	_, unknown := c.SiteRulesCreate(ctx, &siteapi.CreateRuleInput{
 		Name: "Typo", TriggerEvents: []string{"a"}, Actions: apply,
-		Condition: siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, unknownField)),
+		Condition: siteapi.NewOptRuleConditionInput(testhelper.SiteRuleCondition(t, unknownField)),
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: workspaceID})
 	testhelper.SiteRefusal(t, unknown, http.StatusUnprocessableEntity, "a custom field the Workspace does not have is refused on save")
 
@@ -128,53 +128,30 @@ func TestSiteRulesAreRefusedWhenInvalid(t *testing.T) {
 	testhelper.SiteRefusal(t, blankTrigger, http.StatusUnprocessableEntity)
 
 	_, typoUpdate := c.SiteRulesUpdate(ctx, &siteapi.UpdateRuleInput{Revision: siteapi.Revision(env.RuleRevision(ctx, t, int64(fixtures.RuleTagClickedID))),
-		Condition: siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, unknownField)),
+		Condition: siteapi.NewOptRuleConditionInput(testhelper.SiteRuleCondition(t, unknownField)),
 	}, siteapi.SiteRulesUpdateParams{WorkspaceId: workspaceID, ID: fixtures.RuleTagClickedID})
 	testhelper.SiteRefusal(t, typoUpdate, http.StatusUnprocessableEntity)
 }
 
-func TestSiteTriggerLeafIsAcceptedInARuleAndRefusedInASegment(t *testing.T) {
-	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	ctx := context.Background()
-	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
-	leaf := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"trigger:url","operator":"contains","value":"pricing"}]}`
-
-	_, err := c.SiteRulesCreate(ctx, &siteapi.CreateRuleInput{
-		Name: "Pricing", TriggerEvents: []string{"a"},
-		Actions:   []siteapi.RuleActionInput{tagAction(siteapi.RuleActionTypeApplyTag, "x")},
-		Condition: siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, leaf)),
-	}, siteapi.SiteRulesCreateParams{WorkspaceId: workspaceID})
-	require.NoError(t, err)
-
-	_, segment := c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{
-		Name: "Pricing", Condition: testhelper.SiteRuleGroup(t, leaf),
-	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
-	testhelper.SiteRefusal(t, segment, http.StatusUnprocessableEntity)
-}
-
-// A Rule compares a number property of its Event; a date leaf on a property is refused, since an
-// Event's properties have no type.
+// A Rule compares a number property of its Event.
 func TestSiteRuleConditionComparesATriggerNumber(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 	create := func(leaf string) error {
 		t.Helper()
-		def := `{"kind":"group","combinator":"and","rules":[` + leaf + `]}`
+		def := `{"kind":"group","combinator":"and","entries":[` + leaf + `]}`
 		_, err := c.SiteRulesCreate(ctx, &siteapi.CreateRuleInput{
 			Name: "Promoters", TriggerEvents: []string{"nps_submitted"},
 			Actions:   []siteapi.RuleActionInput{tagAction(siteapi.RuleActionTypeApplyTag, "promoter")},
-			Condition: siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, def)),
+			Condition: siteapi.NewOptRuleConditionInput(testhelper.SiteRuleCondition(t, def)),
 		}, siteapi.SiteRulesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 		return err
 	}
 
-	promoters := create(`{"kind":"number","field":"trigger:score","operator":"gte","value":9}`)
-	dated := create(`{"kind":"dateWithin","field":"trigger:at","withinDays":7}`)
+	promoters := create(`{"kind":"property","of":{"kind":"trigger"},"key":"score","test":{"kind":"number","operator":"gte","value":9}}`)
 
 	require.NoError(t, promoters)
-	testhelper.SiteRefusal(t, dated, http.StatusUnprocessableEntity)
 }
 
 // A Rule's Condition counts Events as a Segment's does, and refuses the same counts.
@@ -184,11 +161,11 @@ func TestSiteRuleConditionCountsEvents(t *testing.T) {
 	ctx := context.Background()
 	create := func(leaf string) error {
 		t.Helper()
-		def := `{"kind":"group","combinator":"and","rules":[` + leaf + `]}`
+		def := `{"kind":"group","combinator":"and","entries":[` + leaf + `]}`
 		_, err := c.SiteRulesCreate(ctx, &siteapi.CreateRuleInput{
 			Name: "Pricing twice", TriggerEvents: []string{"pricing_viewed"},
 			Actions:   []siteapi.RuleActionInput{tagAction(siteapi.RuleActionTypeApplyTag, "keen")},
-			Condition: siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, def)),
+			Condition: siteapi.NewOptRuleConditionInput(testhelper.SiteRuleCondition(t, def)),
 		}, siteapi.SiteRulesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 		return err
 	}

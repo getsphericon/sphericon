@@ -33,7 +33,7 @@ type Segment struct {
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Condition holds the value of the "condition" field.
-	Condition conditiontree.Group `json:"condition,omitempty"`
+	Condition conditiontree.Segment `json:"condition,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SegmentQuery when eager-loading is set.
 	Edges        SegmentEdges `json:"edges"`

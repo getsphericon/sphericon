@@ -22,15 +22,15 @@ func TestSiteSegmentSaveOnAStaleRevisionIsRefused(t *testing.T) {
 	params := siteapi.SiteSegmentsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SegmentProPlanID)}
 	read, err := c.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams(params))
 	require.NoError(t, err)
-	firstCondition := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"has","value":"first"}]}`
-	secondCondition := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"has","value":"second"}]}`
+	firstCondition := `{"kind":"group","combinator":"and","entries":[{"kind":"tag","name":"first","operator":"has"}]}`
+	secondCondition := `{"kind":"group","combinator":"and","entries":[{"kind":"tag","name":"second","operator":"has"}]}`
 
 	first, err := c.SiteSegmentsUpdate(ctx, &siteapi.UpdateSegmentInput{
-		Revision: read.Revision, Condition: siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, firstCondition)),
+		Revision: read.Revision, Condition: siteapi.NewOptSegmentConditionInput(testhelper.SiteSegmentCondition(t, firstCondition)),
 	}, params)
 	require.NoError(t, err)
 	_, err = c.SiteSegmentsUpdate(ctx, &siteapi.UpdateSegmentInput{
-		Revision: read.Revision, Condition: siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, secondCondition)),
+		Revision: read.Revision, Condition: siteapi.NewOptSegmentConditionInput(testhelper.SiteSegmentCondition(t, secondCondition)),
 	}, params)
 
 	refused := testhelper.SiteRefusal(t, err, http.StatusConflict)

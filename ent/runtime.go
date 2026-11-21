@@ -1432,7 +1432,7 @@ func init() {
 	// ruleversionDescCondition is the schema descriptor for condition field.
 	ruleversionDescCondition := ruleversionFields[1].Descriptor()
 	// ruleversion.DefaultCondition holds the default value on creation for the condition field.
-	ruleversion.DefaultCondition = ruleversionDescCondition.Default.(conditiontree.Group)
+	ruleversion.DefaultCondition = ruleversionDescCondition.Default.(conditiontree.Rule)
 	// ruleversionDescActions is the schema descriptor for actions field.
 	ruleversionDescActions := ruleversionFields[2].Descriptor()
 	// ruleversion.DefaultActions holds the default value on creation for the actions field.
@@ -1524,7 +1524,7 @@ func init() {
 	// segmentDescCondition is the schema descriptor for condition field.
 	segmentDescCondition := segmentFields[2].Descriptor()
 	// segment.DefaultCondition holds the default value on creation for the condition field.
-	segment.DefaultCondition = segmentDescCondition.Default.(conditiontree.Group)
+	segment.DefaultCondition = segmentDescCondition.Default.(conditiontree.Segment)
 	sendcaplimiterMixin := schema.SendCapLimiter{}.Mixin()
 	sendcaplimiterMixinFields0 := sendcaplimiterMixin[0].Fields()
 	_ = sendcaplimiterMixinFields0

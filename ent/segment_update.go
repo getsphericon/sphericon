@@ -107,13 +107,13 @@ func (_u *SegmentUpdate) SetNillableName(v *string) *SegmentUpdate {
 }
 
 // SetCondition sets the "condition" field.
-func (_u *SegmentUpdate) SetCondition(v conditiontree.Group) *SegmentUpdate {
+func (_u *SegmentUpdate) SetCondition(v conditiontree.Segment) *SegmentUpdate {
 	_u.mutation.SetCondition(v)
 	return _u
 }
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (_u *SegmentUpdate) SetNillableCondition(v *conditiontree.Group) *SegmentUpdate {
+func (_u *SegmentUpdate) SetNillableCondition(v *conditiontree.Segment) *SegmentUpdate {
 	if v != nil {
 		_u.SetCondition(*v)
 	}
@@ -356,13 +356,13 @@ func (_u *SegmentUpdateOne) SetNillableName(v *string) *SegmentUpdateOne {
 }
 
 // SetCondition sets the "condition" field.
-func (_u *SegmentUpdateOne) SetCondition(v conditiontree.Group) *SegmentUpdateOne {
+func (_u *SegmentUpdateOne) SetCondition(v conditiontree.Segment) *SegmentUpdateOne {
 	_u.mutation.SetCondition(v)
 	return _u
 }
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (_u *SegmentUpdateOne) SetNillableCondition(v *conditiontree.Group) *SegmentUpdateOne {
+func (_u *SegmentUpdateOne) SetNillableCondition(v *conditiontree.Segment) *SegmentUpdateOne {
 	if v != nil {
 		_u.SetCondition(*v)
 	}

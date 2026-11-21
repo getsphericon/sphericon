@@ -16,9 +16,9 @@ func TestExternalBlankNamesAreRefusedWith422(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := env.ExternalScoped(t, apitokens.ScopeSegmentsWrite, apitokens.ScopeBroadcastsWrite)
-	const def = `{"kind":"group","combinator":"and","rules":[]}`
+	const def = `{"kind":"group","combinator":"and","entries":[]}`
 
-	_, segment := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "", Condition: testhelper.ExternalRuleGroup(t, def)})
+	_, segment := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "", Condition: testhelper.ExternalSegmentCondition(t, def)})
 	_, broadcast := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Revision: externalapi.Revision(env.BroadcastRevision(ctx, t, int64(draftBroadcast))), Name: externalapi.NewOptName("")},
 		externalapi.BroadcastsUpdateParams{ID: draftBroadcast})
 

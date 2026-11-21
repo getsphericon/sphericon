@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
@@ -20,7 +21,7 @@ import (
 
 // triggerMatches reports whether g, compiled as a Rule's Condition against props, holds for the
 // Contact.
-func triggerMatches(t require.TestingT, s *ent.Scoped, g conditiontree.Group, props map[string]any, id int64) bool {
+func triggerMatches(t require.TestingT, s *ent.Scoped, g conditiontree.Rule, props map[string]any, id int64) bool {
 	ctx := context.Background()
 	p, err := condition.New(time.Now).RulePredicate(ctx, s, g, props)
 	require.NoError(t, err)
@@ -29,42 +30,46 @@ func triggerMatches(t require.TestingT, s *ent.Scoped, g conditiontree.Group, pr
 	return ok
 }
 
-// One operator table serves a Contact attribute (SQL) and an Event property (Go): for any
-// attribute, operator, operand and Contact, the two sides agree.
+// One table of the text and presence tests serves a Contact attribute (SQL) and an Event property
+// (Go): for any attribute, test, operand and Contact, the two sides agree.
 func TestOperatorsAgreeOnTheContactSideAndTheEventSide(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.OscorpID)
 	contacts, err := s.Contact().Query().All(context.Background())
 	require.NoError(t, err)
 	require.NotEmpty(t, contacts)
-	attribute := map[string]func(*ent.Contact) *string{
+	attributes := map[string]func(*ent.Contact) *string{
 		"first_name": func(c *ent.Contact) *string { return c.FirstName },
 		"phone":      func(c *ent.Contact) *string { return c.Phone },
 	}
 
 	rapid.Check(t, func(rt *rapid.T) {
 		field := rapid.SampledFrom([]string{"first_name", "phone"}).Draw(rt, "field")
-		op := rapid.SampledFrom([]string{string(siteapi.ConditionOperatorEq), string(siteapi.ConditionOperatorNeq), string(siteapi.ConditionOperatorContains), string(siteapi.ConditionOperatorBeginsWith), string(siteapi.ConditionOperatorNull), string(siteapi.ConditionOperatorNotNull)}).Draw(rt, "operator")
 		want := rapid.SampledFrom([]string{"Anna", "anna", "ELL", "an", "", "zzz"}).Draw(rt, "operand")
+		texts := lo.Map(siteapi.TextOperator("").AllValues(), func(op siteapi.TextOperator, _ int) leaf { return text(string(op), want) })
+		presences := lo.Map(siteapi.PresenceOperator("").AllValues(), func(op siteapi.PresenceOperator, _ int) leaf { return presence(string(op)) })
+		test := rapid.SampledFrom(append(texts, presences...)).Draw(rt, "test")
 		c := rapid.SampledFrom(contacts).Draw(rt, "contact")
-		have := property(attribute[field](c))
+		have := asProperty(attributes[field](c))
 
-		viaSQL := triggerMatches(rt, s, opsGroup(rule(field, op, want)), nil, c.ID)
-		viaGo := triggerMatches(rt, s, opsGroup(rule("trigger:k", op, want)), map[string]any{"k": have}, c.ID)
+		viaSQL := triggerMatches(rt, s, ruleOf(attribute(field, test)), nil, c.ID)
+		viaGo := triggerMatches(rt, s, ruleOf(property("k", test)), map[string]any{"k": have}, c.ID)
 
-		assert.Equal(rt, viaSQL, viaGo, "%s %s %q on %v", field, op, want, have)
+		assert.Equal(rt, viaSQL, viaGo, "%s %v on %v", field, test, have)
 	})
 }
 
-func TestTriggerLeafHoldsForAStringOfThatKey(t *testing.T) {
+func TestPropertyTestHoldsForAStringOfThatKey(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	assert.True(t, triggerMatches(t, s, opsGroup(rule("trigger:amount", "eq", "10")), map[string]any{"amount": "10"}, fixtures.ContactAliceID))
+	holds := triggerMatches(t, s, ruleOf(property("amount", text("eq", "10"))), map[string]any{"amount": "10"}, fixtures.ContactAliceID)
+
+	assert.True(t, holds)
 }
 
-// A property that is missing, or not a string, satisfies no operator that needs one.
-func TestTriggerLeafIsFalseForAMissingKeyOrAnotherType(t *testing.T) {
+// A property that is missing, or not a string, passes no test that needs one.
+func TestPropertyTestIsFalseForAMissingKeyOrAnotherType(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	notStrings := []map[string]any{
@@ -73,70 +78,65 @@ func TestTriggerLeafIsFalseForAMissingKeyOrAnotherType(t *testing.T) {
 	}
 
 	rapid.Check(t, func(rt *rapid.T) {
-		// Operators that need a string; null is tested separately.
-		op := rapid.SampledFrom([]string{string(siteapi.ConditionOperatorEq), string(siteapi.ConditionOperatorNeq), string(siteapi.ConditionOperatorContains), string(siteapi.ConditionOperatorBeginsWith), string(siteapi.ConditionOperatorNotNull)}).Draw(rt, "operator")
+		// The tests that need a string; notSet is tested separately.
+		texts := lo.Map(siteapi.TextOperator("").AllValues(), func(op siteapi.TextOperator, _ int) leaf { return text(string(op), "10") })
+		test := rapid.SampledFrom(append(texts, presence("set"))).Draw(rt, "test")
 		props := rapid.SampledFrom(notStrings).Draw(rt, "props")
 
-		holds := triggerMatches(rt, s, opsGroup(rule("trigger:amount", op, "10")), props, fixtures.ContactAliceID)
+		holds := triggerMatches(rt, s, ruleOf(property("amount", test)), props, fixtures.ContactAliceID)
 
-		assert.False(rt, holds, "%s on %v", op, props)
+		assert.False(rt, holds, "%v on %v", test, props)
 	})
 }
 
-func TestTriggerLeafNullMeansAnExplicitNullNotAMissingKey(t *testing.T) {
+func TestPropertyNotSetMeansAnExplicitNullNotAMissingKey(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	null := opsGroup(rule("trigger:amount", "null", ""))
+	notSet := ruleOf(property("amount", presence("notSet")))
 
-	assert.True(t, triggerMatches(t, s, null, map[string]any{"amount": nil}, fixtures.ContactAliceID), "an explicit null is empty")
-	assert.False(t, triggerMatches(t, s, null, map[string]any{}, fixtures.ContactAliceID), "a missing key is false, not empty")
+	explicitNull := triggerMatches(t, s, notSet, map[string]any{"amount": nil}, fixtures.ContactAliceID)
+	missing := triggerMatches(t, s, notSet, map[string]any{}, fixtures.ContactAliceID)
+
+	assert.True(t, explicitNull, "an explicit null is not set")
+	assert.False(t, missing, "a missing key is false, not unset")
 }
 
-func TestTriggerLeafFoldsIntoTheRestOfTheTree(t *testing.T) {
+func TestPropertyTestFoldsIntoTheRestOfTheTree(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.OscorpID)
 	anna := env.DB.Contact.Query().Where(contact.Email(fixtures.OscorpAnnaEmail)).OnlyX(context.Background()).ID
 	props := map[string]any{"url": "https://x.test/pricing"}
-	hit := rule("trigger:url", "contains", "pricing")
-	miss := rule("trigger:url", "contains", "docs")
-	annaRow := rule("first_name", "eq", "Anna")
+	hit := property("url", text("contains", "pricing"))
+	miss := property("url", text("contains", "docs"))
+	annaRow := attribute("first_name", text("eq", "Anna"))
+	or := conditiontree.Rule{Group: groupOf(conditiontree.Or, false, miss, annaRow)}
+	not := conditiontree.Rule{Group: groupOf(conditiontree.And, true, miss)}
+	notHit := conditiontree.Rule{Group: groupOf(conditiontree.And, true, hit)}
 
-	assert.True(t, triggerMatches(t, s, opsGroup(hit, annaRow), props, anna))
-	assert.False(t, triggerMatches(t, s, opsGroup(miss, annaRow), props, anna))
-	or := conditiontree.Group{Kind: "group", Combinator: conditiontree.Or, Rules: marshal(miss, annaRow)}
+	assert.True(t, triggerMatches(t, s, ruleOf(hit, annaRow), props, anna))
+	assert.False(t, triggerMatches(t, s, ruleOf(miss, annaRow), props, anna))
 	assert.True(t, triggerMatches(t, s, or, props, anna))
-	not := conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Not: true, Rules: marshal(miss)}
 	assert.True(t, triggerMatches(t, s, not, props, anna), "not of a false leaf holds")
-	notHit := conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Not: true, Rules: marshal(hit)}
 	assert.False(t, triggerMatches(t, s, notHit, props, anna), "not of a true leaf holds for no one")
-	assert.True(t, triggerMatches(t, s, opsGroup(opsGroup(hit)), props, anna), "inside a nested group")
+	assert.True(t, triggerMatches(t, s, ruleOf(opsGroup(hit)), props, anna), "inside a nested group")
 }
 
-func TestTriggerLeafIsValidOnlyInARule(t *testing.T) {
+// Any key is valid on save: nothing says which properties an Event will carry. A property test
+// with no key is refused.
+func TestARulesPropertyTestTakesAnyKey(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	g := opsGroup(rule("trigger:amount", "eq", "10"))
 
-	_, err := condition.New(time.Now).Compile(ctx, s, g)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "only in a Rule")
+	_, anyKey := condition.New(time.Now).RulePredicate(ctx, s, ruleOf(property("amount", text("eq", "10"))), nil)
+	_, noKey := condition.New(time.Now).RulePredicate(ctx, s, ruleOf(property("", text("eq", "10"))), nil)
 
-	// Any key is valid on save: nothing says which properties an Event will carry.
-	_, err = condition.New(time.Now).RulePredicate(ctx, s, g, nil)
-	require.NoError(t, err)
-
-	for name, bad := range map[string]condition.Leaf{
-		"no key":           rule("trigger:", "eq", "x"),
-		"unknown operator": rule("trigger:k", "atLeast", "x"),
-	} {
-		_, err = condition.New(time.Now).RulePredicate(ctx, s, opsGroup(bad), nil)
-		require.Error(t, err, name)
-	}
+	require.NoError(t, anyKey)
+	require.ErrorContains(t, noKey, "property key is required")
 }
 
-// property is an attribute as an Event property: its text, or JSON null when the attribute is null.
-func property(v *string) any {
+// asProperty is an attribute as an Event property: its text, or JSON null when the attribute is null.
+func asProperty(v *string) any {
 	if v == nil {
 		return nil
 	}

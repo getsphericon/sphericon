@@ -439,6 +439,320 @@ func (s *ApplyTagInput) SetName(val Name) {
 	s.Name = val
 }
 
+// A test of a Contact's text attribute.
+// Ref: #/components/schemas/AttributeLeaf
+type AttributeLeaf struct {
+	Kind AttributeLeafKind `json:"kind"`
+	// The attribute tested.
+	Attribute ContactAttribute `json:"attribute"`
+	// What it asks of the attribute.
+	Test AttributeTest `json:"test"`
+}
+
+// GetKind returns the value of Kind.
+func (s *AttributeLeaf) GetKind() AttributeLeafKind {
+	return s.Kind
+}
+
+// GetAttribute returns the value of Attribute.
+func (s *AttributeLeaf) GetAttribute() ContactAttribute {
+	return s.Attribute
+}
+
+// GetTest returns the value of Test.
+func (s *AttributeLeaf) GetTest() AttributeTest {
+	return s.Test
+}
+
+// SetKind sets the value of Kind.
+func (s *AttributeLeaf) SetKind(val AttributeLeafKind) {
+	s.Kind = val
+}
+
+// SetAttribute sets the value of Attribute.
+func (s *AttributeLeaf) SetAttribute(val ContactAttribute) {
+	s.Attribute = val
+}
+
+// SetTest sets the value of Test.
+func (s *AttributeLeaf) SetTest(val AttributeTest) {
+	s.Test = val
+}
+
+// A test of a Contact's text attribute.
+// Ref: #/components/schemas/AttributeLeafInput
+type AttributeLeafInput struct {
+	Kind AttributeLeafInputKind `json:"kind"`
+	// The attribute tested.
+	Attribute ContactAttribute `json:"attribute"`
+	// What it asks of the attribute.
+	Test AttributeTestInput `json:"test"`
+}
+
+// GetKind returns the value of Kind.
+func (s *AttributeLeafInput) GetKind() AttributeLeafInputKind {
+	return s.Kind
+}
+
+// GetAttribute returns the value of Attribute.
+func (s *AttributeLeafInput) GetAttribute() ContactAttribute {
+	return s.Attribute
+}
+
+// GetTest returns the value of Test.
+func (s *AttributeLeafInput) GetTest() AttributeTestInput {
+	return s.Test
+}
+
+// SetKind sets the value of Kind.
+func (s *AttributeLeafInput) SetKind(val AttributeLeafInputKind) {
+	s.Kind = val
+}
+
+// SetAttribute sets the value of Attribute.
+func (s *AttributeLeafInput) SetAttribute(val ContactAttribute) {
+	s.Attribute = val
+}
+
+// SetTest sets the value of Test.
+func (s *AttributeLeafInput) SetTest(val AttributeTestInput) {
+	s.Test = val
+}
+
+type AttributeLeafInputKind string
+
+const (
+	AttributeLeafInputKindAttribute AttributeLeafInputKind = "attribute"
+)
+
+// AllValues returns all AttributeLeafInputKind values.
+func (AttributeLeafInputKind) AllValues() []AttributeLeafInputKind {
+	return []AttributeLeafInputKind{
+		AttributeLeafInputKindAttribute,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s AttributeLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case AttributeLeafInputKindAttribute:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *AttributeLeafInputKind) UnmarshalText(data []byte) error {
+	switch AttributeLeafInputKind(data) {
+	case AttributeLeafInputKindAttribute:
+		*s = AttributeLeafInputKindAttribute
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type AttributeLeafKind string
+
+const (
+	AttributeLeafKindAttribute AttributeLeafKind = "attribute"
+)
+
+// AllValues returns all AttributeLeafKind values.
+func (AttributeLeafKind) AllValues() []AttributeLeafKind {
+	return []AttributeLeafKind{
+		AttributeLeafKindAttribute,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s AttributeLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case AttributeLeafKindAttribute:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *AttributeLeafKind) UnmarshalText(data []byte) error {
+	switch AttributeLeafKind(data) {
+	case AttributeLeafKindAttribute:
+		*s = AttributeLeafKindAttribute
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// What a test of a Contact attribute asks of it, by `kind`.
+// Ref: #/components/schemas/AttributeTest
+type AttributeTest struct {
+	OneOf AttributeTestSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *AttributeTest) GetOneOf() AttributeTestSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *AttributeTest) SetOneOf(val AttributeTestSum) {
+	s.OneOf = val
+}
+
+// What a test of a Contact attribute asks of it, by `kind`.
+// Ref: #/components/schemas/AttributeTestInput
+type AttributeTestInput struct {
+	OneOf AttributeTestInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *AttributeTestInput) GetOneOf() AttributeTestInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *AttributeTestInput) SetOneOf(val AttributeTestInputSum) {
+	s.OneOf = val
+}
+
+// AttributeTestInputSum represents sum type.
+type AttributeTestInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type              AttributeTestInputSumType
+	TextTestInput     TextTestInput
+	PresenceTestInput PresenceTestInput
+}
+
+// AttributeTestInputSumType is oneOf type of AttributeTestInputSum.
+type AttributeTestInputSumType string
+
+// Possible values for AttributeTestInputSumType.
+const (
+	TextTestInputAttributeTestInputSum     AttributeTestInputSumType = "text"
+	PresenceTestInputAttributeTestInputSum AttributeTestInputSumType = "presence"
+)
+
+// IsTextTestInput reports whether AttributeTestInputSum is TextTestInput.
+func (s AttributeTestInputSum) IsTextTestInput() bool {
+	return s.Type == TextTestInputAttributeTestInputSum
+}
+
+// IsPresenceTestInput reports whether AttributeTestInputSum is PresenceTestInput.
+func (s AttributeTestInputSum) IsPresenceTestInput() bool {
+	return s.Type == PresenceTestInputAttributeTestInputSum
+}
+
+// SetTextTestInput sets AttributeTestInputSum to TextTestInput.
+func (s *AttributeTestInputSum) SetTextTestInput(v TextTestInput) {
+	s.Type = TextTestInputAttributeTestInputSum
+	s.TextTestInput = v
+}
+
+// GetTextTestInput returns TextTestInput and true boolean if AttributeTestInputSum is TextTestInput.
+func (s AttributeTestInputSum) GetTextTestInput() (v TextTestInput, ok bool) {
+	if !s.IsTextTestInput() {
+		return v, false
+	}
+	return s.TextTestInput, true
+}
+
+// NewTextTestInputAttributeTestInputSum returns new AttributeTestInputSum from TextTestInput.
+func NewTextTestInputAttributeTestInputSum(v TextTestInput) AttributeTestInputSum {
+	var s AttributeTestInputSum
+	s.SetTextTestInput(v)
+	return s
+}
+
+// SetPresenceTestInput sets AttributeTestInputSum to PresenceTestInput.
+func (s *AttributeTestInputSum) SetPresenceTestInput(v PresenceTestInput) {
+	s.Type = PresenceTestInputAttributeTestInputSum
+	s.PresenceTestInput = v
+}
+
+// GetPresenceTestInput returns PresenceTestInput and true boolean if AttributeTestInputSum is PresenceTestInput.
+func (s AttributeTestInputSum) GetPresenceTestInput() (v PresenceTestInput, ok bool) {
+	if !s.IsPresenceTestInput() {
+		return v, false
+	}
+	return s.PresenceTestInput, true
+}
+
+// NewPresenceTestInputAttributeTestInputSum returns new AttributeTestInputSum from PresenceTestInput.
+func NewPresenceTestInputAttributeTestInputSum(v PresenceTestInput) AttributeTestInputSum {
+	var s AttributeTestInputSum
+	s.SetPresenceTestInput(v)
+	return s
+}
+
+// AttributeTestSum represents sum type.
+type AttributeTestSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type         AttributeTestSumType
+	TextTest     TextTest
+	PresenceTest PresenceTest
+}
+
+// AttributeTestSumType is oneOf type of AttributeTestSum.
+type AttributeTestSumType string
+
+// Possible values for AttributeTestSumType.
+const (
+	TextTestAttributeTestSum     AttributeTestSumType = "text"
+	PresenceTestAttributeTestSum AttributeTestSumType = "presence"
+)
+
+// IsTextTest reports whether AttributeTestSum is TextTest.
+func (s AttributeTestSum) IsTextTest() bool { return s.Type == TextTestAttributeTestSum }
+
+// IsPresenceTest reports whether AttributeTestSum is PresenceTest.
+func (s AttributeTestSum) IsPresenceTest() bool { return s.Type == PresenceTestAttributeTestSum }
+
+// SetTextTest sets AttributeTestSum to TextTest.
+func (s *AttributeTestSum) SetTextTest(v TextTest) {
+	s.Type = TextTestAttributeTestSum
+	s.TextTest = v
+}
+
+// GetTextTest returns TextTest and true boolean if AttributeTestSum is TextTest.
+func (s AttributeTestSum) GetTextTest() (v TextTest, ok bool) {
+	if !s.IsTextTest() {
+		return v, false
+	}
+	return s.TextTest, true
+}
+
+// NewTextTestAttributeTestSum returns new AttributeTestSum from TextTest.
+func NewTextTestAttributeTestSum(v TextTest) AttributeTestSum {
+	var s AttributeTestSum
+	s.SetTextTest(v)
+	return s
+}
+
+// SetPresenceTest sets AttributeTestSum to PresenceTest.
+func (s *AttributeTestSum) SetPresenceTest(v PresenceTest) {
+	s.Type = PresenceTestAttributeTestSum
+	s.PresenceTest = v
+}
+
+// GetPresenceTest returns PresenceTest and true boolean if AttributeTestSum is PresenceTest.
+func (s AttributeTestSum) GetPresenceTest() (v PresenceTest, ok bool) {
+	if !s.IsPresenceTest() {
+		return v, false
+	}
+	return s.PresenceTest, true
+}
+
+// NewPresenceTestAttributeTestSum returns new AttributeTestSum from PresenceTest.
+func NewPresenceTestAttributeTestSum(v PresenceTest) AttributeTestSum {
+	var s AttributeTestSum
+	s.SetPresenceTest(v)
+	return s
+}
+
 type AttributionWindowDays int32
 
 // What an Audit entry says was done, as `<entity>.<verb>`: an action the server records on its own, or
@@ -2673,6 +2987,296 @@ func (s *AutomationVersion) SetSteps(val []AutomationStep) {
 	s.Steps = val
 }
 
+// A test of the Contact's date of birth.
+// Ref: #/components/schemas/BirthdayLeaf
+type BirthdayLeaf struct {
+	Kind BirthdayLeafKind `json:"kind"`
+	// What it asks of the birthday.
+	Test BirthdayTest `json:"test"`
+}
+
+// GetKind returns the value of Kind.
+func (s *BirthdayLeaf) GetKind() BirthdayLeafKind {
+	return s.Kind
+}
+
+// GetTest returns the value of Test.
+func (s *BirthdayLeaf) GetTest() BirthdayTest {
+	return s.Test
+}
+
+// SetKind sets the value of Kind.
+func (s *BirthdayLeaf) SetKind(val BirthdayLeafKind) {
+	s.Kind = val
+}
+
+// SetTest sets the value of Test.
+func (s *BirthdayLeaf) SetTest(val BirthdayTest) {
+	s.Test = val
+}
+
+// A test of the Contact's date of birth.
+// Ref: #/components/schemas/BirthdayLeafInput
+type BirthdayLeafInput struct {
+	Kind BirthdayLeafInputKind `json:"kind"`
+	// What it asks of the birthday.
+	Test BirthdayTestInput `json:"test"`
+}
+
+// GetKind returns the value of Kind.
+func (s *BirthdayLeafInput) GetKind() BirthdayLeafInputKind {
+	return s.Kind
+}
+
+// GetTest returns the value of Test.
+func (s *BirthdayLeafInput) GetTest() BirthdayTestInput {
+	return s.Test
+}
+
+// SetKind sets the value of Kind.
+func (s *BirthdayLeafInput) SetKind(val BirthdayLeafInputKind) {
+	s.Kind = val
+}
+
+// SetTest sets the value of Test.
+func (s *BirthdayLeafInput) SetTest(val BirthdayTestInput) {
+	s.Test = val
+}
+
+type BirthdayLeafInputKind string
+
+const (
+	BirthdayLeafInputKindBirthday BirthdayLeafInputKind = "birthday"
+)
+
+// AllValues returns all BirthdayLeafInputKind values.
+func (BirthdayLeafInputKind) AllValues() []BirthdayLeafInputKind {
+	return []BirthdayLeafInputKind{
+		BirthdayLeafInputKindBirthday,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s BirthdayLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case BirthdayLeafInputKindBirthday:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *BirthdayLeafInputKind) UnmarshalText(data []byte) error {
+	switch BirthdayLeafInputKind(data) {
+	case BirthdayLeafInputKindBirthday:
+		*s = BirthdayLeafInputKindBirthday
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type BirthdayLeafKind string
+
+const (
+	BirthdayLeafKindBirthday BirthdayLeafKind = "birthday"
+)
+
+// AllValues returns all BirthdayLeafKind values.
+func (BirthdayLeafKind) AllValues() []BirthdayLeafKind {
+	return []BirthdayLeafKind{
+		BirthdayLeafKindBirthday,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s BirthdayLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case BirthdayLeafKindBirthday:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *BirthdayLeafKind) UnmarshalText(data []byte) error {
+	switch BirthdayLeafKind(data) {
+	case BirthdayLeafKindBirthday:
+		*s = BirthdayLeafKindBirthday
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// What a test of the Contact's birthday asks of it, by `kind`.
+// Ref: #/components/schemas/BirthdayTest
+type BirthdayTest struct {
+	OneOf BirthdayTestSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *BirthdayTest) GetOneOf() BirthdayTestSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *BirthdayTest) SetOneOf(val BirthdayTestSum) {
+	s.OneOf = val
+}
+
+// What a test of the Contact's birthday asks of it, by `kind`.
+// Ref: #/components/schemas/BirthdayTestInput
+type BirthdayTestInput struct {
+	OneOf BirthdayTestInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *BirthdayTestInput) GetOneOf() BirthdayTestInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *BirthdayTestInput) SetOneOf(val BirthdayTestInputSum) {
+	s.OneOf = val
+}
+
+// BirthdayTestInputSum represents sum type.
+type BirthdayTestInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                BirthdayTestInputSumType
+	MomentTestInput     MomentTestInput
+	WithinLastTestInput WithinLastTestInput
+}
+
+// BirthdayTestInputSumType is oneOf type of BirthdayTestInputSum.
+type BirthdayTestInputSumType string
+
+// Possible values for BirthdayTestInputSumType.
+const (
+	MomentTestInputBirthdayTestInputSum     BirthdayTestInputSumType = "moment"
+	WithinLastTestInputBirthdayTestInputSum BirthdayTestInputSumType = "withinLast"
+)
+
+// IsMomentTestInput reports whether BirthdayTestInputSum is MomentTestInput.
+func (s BirthdayTestInputSum) IsMomentTestInput() bool {
+	return s.Type == MomentTestInputBirthdayTestInputSum
+}
+
+// IsWithinLastTestInput reports whether BirthdayTestInputSum is WithinLastTestInput.
+func (s BirthdayTestInputSum) IsWithinLastTestInput() bool {
+	return s.Type == WithinLastTestInputBirthdayTestInputSum
+}
+
+// SetMomentTestInput sets BirthdayTestInputSum to MomentTestInput.
+func (s *BirthdayTestInputSum) SetMomentTestInput(v MomentTestInput) {
+	s.Type = MomentTestInputBirthdayTestInputSum
+	s.MomentTestInput = v
+}
+
+// GetMomentTestInput returns MomentTestInput and true boolean if BirthdayTestInputSum is MomentTestInput.
+func (s BirthdayTestInputSum) GetMomentTestInput() (v MomentTestInput, ok bool) {
+	if !s.IsMomentTestInput() {
+		return v, false
+	}
+	return s.MomentTestInput, true
+}
+
+// NewMomentTestInputBirthdayTestInputSum returns new BirthdayTestInputSum from MomentTestInput.
+func NewMomentTestInputBirthdayTestInputSum(v MomentTestInput) BirthdayTestInputSum {
+	var s BirthdayTestInputSum
+	s.SetMomentTestInput(v)
+	return s
+}
+
+// SetWithinLastTestInput sets BirthdayTestInputSum to WithinLastTestInput.
+func (s *BirthdayTestInputSum) SetWithinLastTestInput(v WithinLastTestInput) {
+	s.Type = WithinLastTestInputBirthdayTestInputSum
+	s.WithinLastTestInput = v
+}
+
+// GetWithinLastTestInput returns WithinLastTestInput and true boolean if BirthdayTestInputSum is WithinLastTestInput.
+func (s BirthdayTestInputSum) GetWithinLastTestInput() (v WithinLastTestInput, ok bool) {
+	if !s.IsWithinLastTestInput() {
+		return v, false
+	}
+	return s.WithinLastTestInput, true
+}
+
+// NewWithinLastTestInputBirthdayTestInputSum returns new BirthdayTestInputSum from WithinLastTestInput.
+func NewWithinLastTestInputBirthdayTestInputSum(v WithinLastTestInput) BirthdayTestInputSum {
+	var s BirthdayTestInputSum
+	s.SetWithinLastTestInput(v)
+	return s
+}
+
+// BirthdayTestSum represents sum type.
+type BirthdayTestSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type           BirthdayTestSumType
+	MomentTest     MomentTest
+	WithinLastTest WithinLastTest
+}
+
+// BirthdayTestSumType is oneOf type of BirthdayTestSum.
+type BirthdayTestSumType string
+
+// Possible values for BirthdayTestSumType.
+const (
+	MomentTestBirthdayTestSum     BirthdayTestSumType = "moment"
+	WithinLastTestBirthdayTestSum BirthdayTestSumType = "withinLast"
+)
+
+// IsMomentTest reports whether BirthdayTestSum is MomentTest.
+func (s BirthdayTestSum) IsMomentTest() bool { return s.Type == MomentTestBirthdayTestSum }
+
+// IsWithinLastTest reports whether BirthdayTestSum is WithinLastTest.
+func (s BirthdayTestSum) IsWithinLastTest() bool { return s.Type == WithinLastTestBirthdayTestSum }
+
+// SetMomentTest sets BirthdayTestSum to MomentTest.
+func (s *BirthdayTestSum) SetMomentTest(v MomentTest) {
+	s.Type = MomentTestBirthdayTestSum
+	s.MomentTest = v
+}
+
+// GetMomentTest returns MomentTest and true boolean if BirthdayTestSum is MomentTest.
+func (s BirthdayTestSum) GetMomentTest() (v MomentTest, ok bool) {
+	if !s.IsMomentTest() {
+		return v, false
+	}
+	return s.MomentTest, true
+}
+
+// NewMomentTestBirthdayTestSum returns new BirthdayTestSum from MomentTest.
+func NewMomentTestBirthdayTestSum(v MomentTest) BirthdayTestSum {
+	var s BirthdayTestSum
+	s.SetMomentTest(v)
+	return s
+}
+
+// SetWithinLastTest sets BirthdayTestSum to WithinLastTest.
+func (s *BirthdayTestSum) SetWithinLastTest(v WithinLastTest) {
+	s.Type = WithinLastTestBirthdayTestSum
+	s.WithinLastTest = v
+}
+
+// GetWithinLastTest returns WithinLastTest and true boolean if BirthdayTestSum is WithinLastTest.
+func (s BirthdayTestSum) GetWithinLastTest() (v WithinLastTest, ok bool) {
+	if !s.IsWithinLastTest() {
+		return v, false
+	}
+	return s.WithinLastTest, true
+}
+
+// NewWithinLastTestBirthdayTestSum returns new BirthdayTestSum from WithinLastTest.
+func NewWithinLastTestBirthdayTestSum(v WithinLastTest) BirthdayTestSum {
+	var s BirthdayTestSum
+	s.SetWithinLastTest(v)
+	return s
+}
+
 // The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets the
 // palette the editor offers and what an agent is told to use: write a message in these values. Its
 // values are written into a message when the message is authored, so saving it never changes a message
@@ -3349,1695 +3953,6 @@ func (s *ConditionCombinator) UnmarshalText(data []byte) error {
 	}
 }
 
-// A test of a custom field of the workspace whose type is datetime ("custom:"): its moment is before
-// or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date without a time,
-// a date-time without an offset or a value that is not a date-time makes the leaf false.
-// Ref: #/components/schemas/ConditionDateLeaf
-type ConditionDateLeaf struct {
-	Kind ConditionDateLeafKind `json:"kind"`
-	// What it tests: "birthday" or "custom:" for a datetime custom field.
-	Field string `json:"field"`
-	// Which side of `at` the moment is on.
-	Operator ConditionDateOperator `json:"operator"`
-	// The moment the field's is compared with.
-	At Timestamp `json:"at"`
-}
-
-// GetKind returns the value of Kind.
-func (s *ConditionDateLeaf) GetKind() ConditionDateLeafKind {
-	return s.Kind
-}
-
-// GetField returns the value of Field.
-func (s *ConditionDateLeaf) GetField() string {
-	return s.Field
-}
-
-// GetOperator returns the value of Operator.
-func (s *ConditionDateLeaf) GetOperator() ConditionDateOperator {
-	return s.Operator
-}
-
-// GetAt returns the value of At.
-func (s *ConditionDateLeaf) GetAt() Timestamp {
-	return s.At
-}
-
-// SetKind sets the value of Kind.
-func (s *ConditionDateLeaf) SetKind(val ConditionDateLeafKind) {
-	s.Kind = val
-}
-
-// SetField sets the value of Field.
-func (s *ConditionDateLeaf) SetField(val string) {
-	s.Field = val
-}
-
-// SetOperator sets the value of Operator.
-func (s *ConditionDateLeaf) SetOperator(val ConditionDateOperator) {
-	s.Operator = val
-}
-
-// SetAt sets the value of At.
-func (s *ConditionDateLeaf) SetAt(val Timestamp) {
-	s.At = val
-}
-
-// A test of a custom field of the workspace whose type is datetime ("custom:"): its moment is before
-// or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date without a time,
-// a date-time without an offset or a value that is not a date-time makes the leaf false.
-// Ref: #/components/schemas/ConditionDateLeafInput
-type ConditionDateLeafInput struct {
-	Kind ConditionDateLeafInputKind `json:"kind"`
-	// What it tests: "birthday" or "custom:" for a datetime custom field.
-	Field string `json:"field"`
-	// Which side of `at` the moment is on.
-	Operator ConditionDateOperator `json:"operator"`
-	// The moment the field's is compared with.
-	At Timestamp `json:"at"`
-}
-
-// GetKind returns the value of Kind.
-func (s *ConditionDateLeafInput) GetKind() ConditionDateLeafInputKind {
-	return s.Kind
-}
-
-// GetField returns the value of Field.
-func (s *ConditionDateLeafInput) GetField() string {
-	return s.Field
-}
-
-// GetOperator returns the value of Operator.
-func (s *ConditionDateLeafInput) GetOperator() ConditionDateOperator {
-	return s.Operator
-}
-
-// GetAt returns the value of At.
-func (s *ConditionDateLeafInput) GetAt() Timestamp {
-	return s.At
-}
-
-// SetKind sets the value of Kind.
-func (s *ConditionDateLeafInput) SetKind(val ConditionDateLeafInputKind) {
-	s.Kind = val
-}
-
-// SetField sets the value of Field.
-func (s *ConditionDateLeafInput) SetField(val string) {
-	s.Field = val
-}
-
-// SetOperator sets the value of Operator.
-func (s *ConditionDateLeafInput) SetOperator(val ConditionDateOperator) {
-	s.Operator = val
-}
-
-// SetAt sets the value of At.
-func (s *ConditionDateLeafInput) SetAt(val Timestamp) {
-	s.At = val
-}
-
-type ConditionDateLeafInputKind string
-
-const (
-	ConditionDateLeafInputKindDate ConditionDateLeafInputKind = "date"
-)
-
-// AllValues returns all ConditionDateLeafInputKind values.
-func (ConditionDateLeafInputKind) AllValues() []ConditionDateLeafInputKind {
-	return []ConditionDateLeafInputKind{
-		ConditionDateLeafInputKindDate,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s ConditionDateLeafInputKind) MarshalText() ([]byte, error) {
-	switch s {
-	case ConditionDateLeafInputKindDate:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *ConditionDateLeafInputKind) UnmarshalText(data []byte) error {
-	switch ConditionDateLeafInputKind(data) {
-	case ConditionDateLeafInputKindDate:
-		*s = ConditionDateLeafInputKindDate
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-type ConditionDateLeafKind string
-
-const (
-	ConditionDateLeafKindDate ConditionDateLeafKind = "date"
-)
-
-// AllValues returns all ConditionDateLeafKind values.
-func (ConditionDateLeafKind) AllValues() []ConditionDateLeafKind {
-	return []ConditionDateLeafKind{
-		ConditionDateLeafKindDate,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s ConditionDateLeafKind) MarshalText() ([]byte, error) {
-	switch s {
-	case ConditionDateLeafKindDate:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *ConditionDateLeafKind) UnmarshalText(data []byte) error {
-	switch ConditionDateLeafKind(data) {
-	case ConditionDateLeafKindDate:
-		*s = ConditionDateLeafKindDate
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// Which side of `at` a date leaf takes: before is strictly earlier, after is at or later, so the two
-// split time at `at`.
-// Ref: #/components/schemas/ConditionDateOperator
-type ConditionDateOperator string
-
-const (
-	ConditionDateOperatorBefore ConditionDateOperator = "before"
-	ConditionDateOperatorAfter  ConditionDateOperator = "after"
-)
-
-// AllValues returns all ConditionDateOperator values.
-func (ConditionDateOperator) AllValues() []ConditionDateOperator {
-	return []ConditionDateOperator{
-		ConditionDateOperatorBefore,
-		ConditionDateOperatorAfter,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s ConditionDateOperator) MarshalText() ([]byte, error) {
-	switch s {
-	case ConditionDateOperatorBefore:
-		return []byte(s), nil
-	case ConditionDateOperatorAfter:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *ConditionDateOperator) UnmarshalText(data []byte) error {
-	switch ConditionDateOperator(data) {
-	case ConditionDateOperatorBefore:
-		*s = ConditionDateOperatorBefore
-		return nil
-	case ConditionDateOperatorAfter:
-		*s = ConditionDateOperatorAfter
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// A test of a custom field of the workspace whose type is datetime ("custom:"): its moment is within
-// the last `withinDays` days up to now, so a moment still to come is not within. Only a date-time with
-// a UTC offset is a moment, as for the date leaf.
-// Ref: #/components/schemas/ConditionDateWithinLeaf
-type ConditionDateWithinLeaf struct {
-	Kind ConditionDateWithinLeafKind `json:"kind"`
-	// What it tests: "birthday" or "custom:" for a datetime custom field.
-	Field string `json:"field"`
-	// The window, in days back from now.
-	WithinDays int32 `json:"withinDays"`
-}
-
-// GetKind returns the value of Kind.
-func (s *ConditionDateWithinLeaf) GetKind() ConditionDateWithinLeafKind {
-	return s.Kind
-}
-
-// GetField returns the value of Field.
-func (s *ConditionDateWithinLeaf) GetField() string {
-	return s.Field
-}
-
-// GetWithinDays returns the value of WithinDays.
-func (s *ConditionDateWithinLeaf) GetWithinDays() int32 {
-	return s.WithinDays
-}
-
-// SetKind sets the value of Kind.
-func (s *ConditionDateWithinLeaf) SetKind(val ConditionDateWithinLeafKind) {
-	s.Kind = val
-}
-
-// SetField sets the value of Field.
-func (s *ConditionDateWithinLeaf) SetField(val string) {
-	s.Field = val
-}
-
-// SetWithinDays sets the value of WithinDays.
-func (s *ConditionDateWithinLeaf) SetWithinDays(val int32) {
-	s.WithinDays = val
-}
-
-// A test of a custom field of the workspace whose type is datetime ("custom:"): its moment is within
-// the last `withinDays` days up to now, so a moment still to come is not within. Only a date-time with
-// a UTC offset is a moment, as for the date leaf.
-// Ref: #/components/schemas/ConditionDateWithinLeafInput
-type ConditionDateWithinLeafInput struct {
-	Kind ConditionDateWithinLeafInputKind `json:"kind"`
-	// What it tests: "birthday" or "custom:" for a datetime custom field.
-	Field string `json:"field"`
-	// The window, in days back from now.
-	WithinDays int32 `json:"withinDays"`
-}
-
-// GetKind returns the value of Kind.
-func (s *ConditionDateWithinLeafInput) GetKind() ConditionDateWithinLeafInputKind {
-	return s.Kind
-}
-
-// GetField returns the value of Field.
-func (s *ConditionDateWithinLeafInput) GetField() string {
-	return s.Field
-}
-
-// GetWithinDays returns the value of WithinDays.
-func (s *ConditionDateWithinLeafInput) GetWithinDays() int32 {
-	return s.WithinDays
-}
-
-// SetKind sets the value of Kind.
-func (s *ConditionDateWithinLeafInput) SetKind(val ConditionDateWithinLeafInputKind) {
-	s.Kind = val
-}
-
-// SetField sets the value of Field.
-func (s *ConditionDateWithinLeafInput) SetField(val string) {
-	s.Field = val
-}
-
-// SetWithinDays sets the value of WithinDays.
-func (s *ConditionDateWithinLeafInput) SetWithinDays(val int32) {
-	s.WithinDays = val
-}
-
-type ConditionDateWithinLeafInputKind string
-
-const (
-	ConditionDateWithinLeafInputKindDateWithin ConditionDateWithinLeafInputKind = "dateWithin"
-)
-
-// AllValues returns all ConditionDateWithinLeafInputKind values.
-func (ConditionDateWithinLeafInputKind) AllValues() []ConditionDateWithinLeafInputKind {
-	return []ConditionDateWithinLeafInputKind{
-		ConditionDateWithinLeafInputKindDateWithin,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s ConditionDateWithinLeafInputKind) MarshalText() ([]byte, error) {
-	switch s {
-	case ConditionDateWithinLeafInputKindDateWithin:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *ConditionDateWithinLeafInputKind) UnmarshalText(data []byte) error {
-	switch ConditionDateWithinLeafInputKind(data) {
-	case ConditionDateWithinLeafInputKindDateWithin:
-		*s = ConditionDateWithinLeafInputKindDateWithin
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-type ConditionDateWithinLeafKind string
-
-const (
-	ConditionDateWithinLeafKindDateWithin ConditionDateWithinLeafKind = "dateWithin"
-)
-
-// AllValues returns all ConditionDateWithinLeafKind values.
-func (ConditionDateWithinLeafKind) AllValues() []ConditionDateWithinLeafKind {
-	return []ConditionDateWithinLeafKind{
-		ConditionDateWithinLeafKindDateWithin,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s ConditionDateWithinLeafKind) MarshalText() ([]byte, error) {
-	switch s {
-	case ConditionDateWithinLeafKindDateWithin:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *ConditionDateWithinLeafKind) UnmarshalText(data []byte) error {
-	switch ConditionDateWithinLeafKind(data) {
-	case ConditionDateWithinLeafKindDateWithin:
-		*s = ConditionDateWithinLeafKindDateWithin
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// A test of how many times a contact performed an Event action, over all time or within the last
-// `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of both.
-// Engagement Events made by software (machine opens and clicks) are not counted. A window longer than
-// Event retention is capped by it: expired Events are no longer counted.
-// Ref: #/components/schemas/ConditionEventLeaf
-type ConditionEventLeaf struct {
-	Kind ConditionEventLeafKind `json:"kind"`
-	// The Event action counted.
-	Action string `json:"action"`
-	// How the count is bounded.
-	Operator ConditionEventOperator `json:"operator"`
-	// The bound: atLeast takes 1 or more, atMost 0 or more.
-	Times int32 `json:"times"`
-	// Count only the Events of the last this many days; absent counts all time.
-	WithinDays OptInt32 `json:"withinDays"`
-}
-
-// GetKind returns the value of Kind.
-func (s *ConditionEventLeaf) GetKind() ConditionEventLeafKind {
-	return s.Kind
-}
-
-// GetAction returns the value of Action.
-func (s *ConditionEventLeaf) GetAction() string {
-	return s.Action
-}
-
-// GetOperator returns the value of Operator.
-func (s *ConditionEventLeaf) GetOperator() ConditionEventOperator {
-	return s.Operator
-}
-
-// GetTimes returns the value of Times.
-func (s *ConditionEventLeaf) GetTimes() int32 {
-	return s.Times
-}
-
-// GetWithinDays returns the value of WithinDays.
-func (s *ConditionEventLeaf) GetWithinDays() OptInt32 {
-	return s.WithinDays
-}
-
-// SetKind sets the value of Kind.
-func (s *ConditionEventLeaf) SetKind(val ConditionEventLeafKind) {
-	s.Kind = val
-}
-
-// SetAction sets the value of Action.
-func (s *ConditionEventLeaf) SetAction(val string) {
-	s.Action = val
-}
-
-// SetOperator sets the value of Operator.
-func (s *ConditionEventLeaf) SetOperator(val ConditionEventOperator) {
-	s.Operator = val
-}
-
-// SetTimes sets the value of Times.
-func (s *ConditionEventLeaf) SetTimes(val int32) {
-	s.Times = val
-}
-
-// SetWithinDays sets the value of WithinDays.
-func (s *ConditionEventLeaf) SetWithinDays(val OptInt32) {
-	s.WithinDays = val
-}
-
-// A test of how many times a contact performed an Event action, over all time or within the last
-// `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of both.
-// Engagement Events made by software (machine opens and clicks) are not counted. A window longer than
-// Event retention is capped by it: expired Events are no longer counted.
-// Ref: #/components/schemas/ConditionEventLeafInput
-type ConditionEventLeafInput struct {
-	Kind ConditionEventLeafInputKind `json:"kind"`
-	// The Event action counted.
-	Action string `json:"action"`
-	// How the count is bounded.
-	Operator ConditionEventOperator `json:"operator"`
-	// The bound: atLeast takes 1 or more, atMost 0 or more.
-	Times int32 `json:"times"`
-	// Count only the Events of the last this many days; absent counts all time.
-	WithinDays OptInt32 `json:"withinDays"`
-}
-
-// GetKind returns the value of Kind.
-func (s *ConditionEventLeafInput) GetKind() ConditionEventLeafInputKind {
-	return s.Kind
-}
-
-// GetAction returns the value of Action.
-func (s *ConditionEventLeafInput) GetAction() string {
-	return s.Action
-}
-
-// GetOperator returns the value of Operator.
-func (s *ConditionEventLeafInput) GetOperator() ConditionEventOperator {
-	return s.Operator
-}
-
-// GetTimes returns the value of Times.
-func (s *ConditionEventLeafInput) GetTimes() int32 {
-	return s.Times
-}
-
-// GetWithinDays returns the value of WithinDays.
-func (s *ConditionEventLeafInput) GetWithinDays() OptInt32 {
-	return s.WithinDays
-}
-
-// SetKind sets the value of Kind.
-func (s *ConditionEventLeafInput) SetKind(val ConditionEventLeafInputKind) {
-	s.Kind = val
-}
-
-// SetAction sets the value of Action.
-func (s *ConditionEventLeafInput) SetAction(val string) {
-	s.Action = val
-}
-
-// SetOperator sets the value of Operator.
-func (s *ConditionEventLeafInput) SetOperator(val ConditionEventOperator) {
-	s.Operator = val
-}
-
-// SetTimes sets the value of Times.
-func (s *ConditionEventLeafInput) SetTimes(val int32) {
-	s.Times = val
-}
-
-// SetWithinDays sets the value of WithinDays.
-func (s *ConditionEventLeafInput) SetWithinDays(val OptInt32) {
-	s.WithinDays = val
-}
-
-type ConditionEventLeafInputKind string
-
-const (
-	ConditionEventLeafInputKindEvent ConditionEventLeafInputKind = "event"
-)
-
-// AllValues returns all ConditionEventLeafInputKind values.
-func (ConditionEventLeafInputKind) AllValues() []ConditionEventLeafInputKind {
-	return []ConditionEventLeafInputKind{
-		ConditionEventLeafInputKindEvent,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s ConditionEventLeafInputKind) MarshalText() ([]byte, error) {
-	switch s {
-	case ConditionEventLeafInputKindEvent:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *ConditionEventLeafInputKind) UnmarshalText(data []byte) error {
-	switch ConditionEventLeafInputKind(data) {
-	case ConditionEventLeafInputKindEvent:
-		*s = ConditionEventLeafInputKindEvent
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-type ConditionEventLeafKind string
-
-const (
-	ConditionEventLeafKindEvent ConditionEventLeafKind = "event"
-)
-
-// AllValues returns all ConditionEventLeafKind values.
-func (ConditionEventLeafKind) AllValues() []ConditionEventLeafKind {
-	return []ConditionEventLeafKind{
-		ConditionEventLeafKindEvent,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s ConditionEventLeafKind) MarshalText() ([]byte, error) {
-	switch s {
-	case ConditionEventLeafKindEvent:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *ConditionEventLeafKind) UnmarshalText(data []byte) error {
-	switch ConditionEventLeafKind(data) {
-	case ConditionEventLeafKindEvent:
-		*s = ConditionEventLeafKindEvent
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// How an event leaf bounds the count: at least `times`, or at most `times`.
-// Ref: #/components/schemas/ConditionEventOperator
-type ConditionEventOperator string
-
-const (
-	ConditionEventOperatorAtLeast ConditionEventOperator = "atLeast"
-	ConditionEventOperatorAtMost  ConditionEventOperator = "atMost"
-)
-
-// AllValues returns all ConditionEventOperator values.
-func (ConditionEventOperator) AllValues() []ConditionEventOperator {
-	return []ConditionEventOperator{
-		ConditionEventOperatorAtLeast,
-		ConditionEventOperatorAtMost,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s ConditionEventOperator) MarshalText() ([]byte, error) {
-	switch s {
-	case ConditionEventOperatorAtLeast:
-		return []byte(s), nil
-	case ConditionEventOperatorAtMost:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *ConditionEventOperator) UnmarshalText(data []byte) error {
-	switch ConditionEventOperator(data) {
-	case ConditionEventOperatorAtLeast:
-		*s = ConditionEventOperatorAtLeast
-		return nil
-	case ConditionEventOperatorAtMost:
-		*s = ConditionEventOperatorAtMost
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// A group of tests combined with and/or, optionally negated. An empty group matches every contact (an
-// empty negated group matches none).
-// Ref: #/components/schemas/ConditionGroup
-type ConditionGroup struct {
-	Kind ConditionGroupKind `json:"kind"`
-	// How the entries combine.
-	Combinator ConditionCombinator `json:"combinator"`
-	// Negate the whole group.
-	Not OptBool `json:"not"`
-	// The group's leaves and nested groups.
-	Rules []ConditionNode `json:"rules"`
-}
-
-// GetKind returns the value of Kind.
-func (s *ConditionGroup) GetKind() ConditionGroupKind {
-	return s.Kind
-}
-
-// GetCombinator returns the value of Combinator.
-func (s *ConditionGroup) GetCombinator() ConditionCombinator {
-	return s.Combinator
-}
-
-// GetNot returns the value of Not.
-func (s *ConditionGroup) GetNot() OptBool {
-	return s.Not
-}
-
-// GetRules returns the value of Rules.
-func (s *ConditionGroup) GetRules() []ConditionNode {
-	return s.Rules
-}
-
-// SetKind sets the value of Kind.
-func (s *ConditionGroup) SetKind(val ConditionGroupKind) {
-	s.Kind = val
-}
-
-// SetCombinator sets the value of Combinator.
-func (s *ConditionGroup) SetCombinator(val ConditionCombinator) {
-	s.Combinator = val
-}
-
-// SetNot sets the value of Not.
-func (s *ConditionGroup) SetNot(val OptBool) {
-	s.Not = val
-}
-
-// SetRules sets the value of Rules.
-func (s *ConditionGroup) SetRules(val []ConditionNode) {
-	s.Rules = val
-}
-
-// A group of tests combined with and/or, optionally negated. An empty group matches every contact (an
-// empty negated group matches none).
-// Ref: #/components/schemas/ConditionGroupInput
-type ConditionGroupInput struct {
-	Kind ConditionGroupInputKind `json:"kind"`
-	// How the entries combine.
-	Combinator ConditionCombinator `json:"combinator"`
-	// Negate the whole group.
-	Not OptBool `json:"not"`
-	// The group's leaves and nested groups.
-	Rules []ConditionNodeInput `json:"rules"`
-}
-
-// GetKind returns the value of Kind.
-func (s *ConditionGroupInput) GetKind() ConditionGroupInputKind {
-	return s.Kind
-}
-
-// GetCombinator returns the value of Combinator.
-func (s *ConditionGroupInput) GetCombinator() ConditionCombinator {
-	return s.Combinator
-}
-
-// GetNot returns the value of Not.
-func (s *ConditionGroupInput) GetNot() OptBool {
-	return s.Not
-}
-
-// GetRules returns the value of Rules.
-func (s *ConditionGroupInput) GetRules() []ConditionNodeInput {
-	return s.Rules
-}
-
-// SetKind sets the value of Kind.
-func (s *ConditionGroupInput) SetKind(val ConditionGroupInputKind) {
-	s.Kind = val
-}
-
-// SetCombinator sets the value of Combinator.
-func (s *ConditionGroupInput) SetCombinator(val ConditionCombinator) {
-	s.Combinator = val
-}
-
-// SetNot sets the value of Not.
-func (s *ConditionGroupInput) SetNot(val OptBool) {
-	s.Not = val
-}
-
-// SetRules sets the value of Rules.
-func (s *ConditionGroupInput) SetRules(val []ConditionNodeInput) {
-	s.Rules = val
-}
-
-type ConditionGroupInputKind string
-
-const (
-	ConditionGroupInputKindGroup ConditionGroupInputKind = "group"
-)
-
-// AllValues returns all ConditionGroupInputKind values.
-func (ConditionGroupInputKind) AllValues() []ConditionGroupInputKind {
-	return []ConditionGroupInputKind{
-		ConditionGroupInputKindGroup,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s ConditionGroupInputKind) MarshalText() ([]byte, error) {
-	switch s {
-	case ConditionGroupInputKindGroup:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *ConditionGroupInputKind) UnmarshalText(data []byte) error {
-	switch ConditionGroupInputKind(data) {
-	case ConditionGroupInputKindGroup:
-		*s = ConditionGroupInputKindGroup
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-type ConditionGroupKind string
-
-const (
-	ConditionGroupKindGroup ConditionGroupKind = "group"
-)
-
-// AllValues returns all ConditionGroupKind values.
-func (ConditionGroupKind) AllValues() []ConditionGroupKind {
-	return []ConditionGroupKind{
-		ConditionGroupKindGroup,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s ConditionGroupKind) MarshalText() ([]byte, error) {
-	switch s {
-	case ConditionGroupKindGroup:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *ConditionGroupKind) UnmarshalText(data []byte) error {
-	switch ConditionGroupKind(data) {
-	case ConditionGroupKindGroup:
-		*s = ConditionGroupKindGroup
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// One test of a condition: a field, an operator and a value.
-// Ref: #/components/schemas/ConditionLeaf
-type ConditionLeaf struct {
-	Kind ConditionLeafKind `json:"kind"`
-	// What it tests: a contact attribute (email, phone, subject_id, first_name, last_name, time_zone,
-	// country, locale, city), "tag", "telegram" (has a Telegram chat bound, on its own or through a
-	// Visitor; the value is ignored), "sms" (has a phone that can be texted: one with an SMS Confirmation
-	// and no SMS opt-out or Suppression; the value is ignored), "custom:" for a custom field of the
-	// workspace, or "trigger:" (a property of the Event that fired a rule: valid only in a rule, refused
-	// in a segment, takes the text operators, and is false when the Event lacks the key or holds a value
-	// that is not text; a number property is compared by a number leaf).
-	Field string `json:"field"`
-	// How the field is tested.
-	Operator ConditionOperator `json:"operator"`
-	// The value to test against: a tag name, blank for null and notNull.
-	Value OptString `json:"value"`
-}
-
-// GetKind returns the value of Kind.
-func (s *ConditionLeaf) GetKind() ConditionLeafKind {
-	return s.Kind
-}
-
-// GetField returns the value of Field.
-func (s *ConditionLeaf) GetField() string {
-	return s.Field
-}
-
-// GetOperator returns the value of Operator.
-func (s *ConditionLeaf) GetOperator() ConditionOperator {
-	return s.Operator
-}
-
-// GetValue returns the value of Value.
-func (s *ConditionLeaf) GetValue() OptString {
-	return s.Value
-}
-
-// SetKind sets the value of Kind.
-func (s *ConditionLeaf) SetKind(val ConditionLeafKind) {
-	s.Kind = val
-}
-
-// SetField sets the value of Field.
-func (s *ConditionLeaf) SetField(val string) {
-	s.Field = val
-}
-
-// SetOperator sets the value of Operator.
-func (s *ConditionLeaf) SetOperator(val ConditionOperator) {
-	s.Operator = val
-}
-
-// SetValue sets the value of Value.
-func (s *ConditionLeaf) SetValue(val OptString) {
-	s.Value = val
-}
-
-// One test of a condition: a field, an operator and a value.
-// Ref: #/components/schemas/ConditionLeafInput
-type ConditionLeafInput struct {
-	Kind ConditionLeafInputKind `json:"kind"`
-	// What it tests: a contact attribute (email, phone, subject_id, first_name, last_name, time_zone,
-	// country, locale, city), "tag", "telegram" (has a Telegram chat bound, on its own or through a
-	// Visitor; the value is ignored), "sms" (has a phone that can be texted: one with an SMS Confirmation
-	// and no SMS opt-out or Suppression; the value is ignored), "custom:" for a custom field of the
-	// workspace, or "trigger:" (a property of the Event that fired a rule: valid only in a rule, refused
-	// in a segment, takes the text operators, and is false when the Event lacks the key or holds a value
-	// that is not text; a number property is compared by a number leaf).
-	Field string `json:"field"`
-	// How the field is tested.
-	Operator ConditionOperator `json:"operator"`
-	// The value to test against: a tag name, blank for null and notNull.
-	Value OptString `json:"value"`
-}
-
-// GetKind returns the value of Kind.
-func (s *ConditionLeafInput) GetKind() ConditionLeafInputKind {
-	return s.Kind
-}
-
-// GetField returns the value of Field.
-func (s *ConditionLeafInput) GetField() string {
-	return s.Field
-}
-
-// GetOperator returns the value of Operator.
-func (s *ConditionLeafInput) GetOperator() ConditionOperator {
-	return s.Operator
-}
-
-// GetValue returns the value of Value.
-func (s *ConditionLeafInput) GetValue() OptString {
-	return s.Value
-}
-
-// SetKind sets the value of Kind.
-func (s *ConditionLeafInput) SetKind(val ConditionLeafInputKind) {
-	s.Kind = val
-}
-
-// SetField sets the value of Field.
-func (s *ConditionLeafInput) SetField(val string) {
-	s.Field = val
-}
-
-// SetOperator sets the value of Operator.
-func (s *ConditionLeafInput) SetOperator(val ConditionOperator) {
-	s.Operator = val
-}
-
-// SetValue sets the value of Value.
-func (s *ConditionLeafInput) SetValue(val OptString) {
-	s.Value = val
-}
-
-type ConditionLeafInputKind string
-
-const (
-	ConditionLeafInputKindRule ConditionLeafInputKind = "rule"
-)
-
-// AllValues returns all ConditionLeafInputKind values.
-func (ConditionLeafInputKind) AllValues() []ConditionLeafInputKind {
-	return []ConditionLeafInputKind{
-		ConditionLeafInputKindRule,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s ConditionLeafInputKind) MarshalText() ([]byte, error) {
-	switch s {
-	case ConditionLeafInputKindRule:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *ConditionLeafInputKind) UnmarshalText(data []byte) error {
-	switch ConditionLeafInputKind(data) {
-	case ConditionLeafInputKindRule:
-		*s = ConditionLeafInputKindRule
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-type ConditionLeafKind string
-
-const (
-	ConditionLeafKindRule ConditionLeafKind = "rule"
-)
-
-// AllValues returns all ConditionLeafKind values.
-func (ConditionLeafKind) AllValues() []ConditionLeafKind {
-	return []ConditionLeafKind{
-		ConditionLeafKindRule,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s ConditionLeafKind) MarshalText() ([]byte, error) {
-	switch s {
-	case ConditionLeafKindRule:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *ConditionLeafKind) UnmarshalText(data []byte) error {
-	switch ConditionLeafKind(data) {
-	case ConditionLeafKindRule:
-		*s = ConditionLeafKindRule
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested group
-// inside a condition group, discriminated by `kind`.
-// Ref: #/components/schemas/ConditionNode
-type ConditionNode struct {
-	OneOf ConditionNodeSum
-}
-
-// GetOneOf returns the value of OneOf.
-func (s *ConditionNode) GetOneOf() ConditionNodeSum {
-	return s.OneOf
-}
-
-// SetOneOf sets the value of OneOf.
-func (s *ConditionNode) SetOneOf(val ConditionNodeSum) {
-	s.OneOf = val
-}
-
-// A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested group
-// inside a condition group, discriminated by `kind`.
-// Ref: #/components/schemas/ConditionNodeInput
-type ConditionNodeInput struct {
-	OneOf ConditionNodeInputSum
-}
-
-// GetOneOf returns the value of OneOf.
-func (s *ConditionNodeInput) GetOneOf() ConditionNodeInputSum {
-	return s.OneOf
-}
-
-// SetOneOf sets the value of OneOf.
-func (s *ConditionNodeInput) SetOneOf(val ConditionNodeInputSum) {
-	s.OneOf = val
-}
-
-// ConditionNodeInputSum represents sum type.
-type ConditionNodeInputSum struct {
-	// Type selects the active sum variant, switch on this field.
-	Type                         ConditionNodeInputSumType
-	ConditionLeafInput           ConditionLeafInput
-	ConditionEventLeafInput      ConditionEventLeafInput
-	ConditionNumberLeafInput     ConditionNumberLeafInput
-	ConditionDateLeafInput       ConditionDateLeafInput
-	ConditionDateWithinLeafInput ConditionDateWithinLeafInput
-	ConditionGroupInput          ConditionGroupInput
-}
-
-// ConditionNodeInputSumType is oneOf type of ConditionNodeInputSum.
-type ConditionNodeInputSumType string
-
-// Possible values for ConditionNodeInputSumType.
-const (
-	ConditionLeafInputConditionNodeInputSum           ConditionNodeInputSumType = "rule"
-	ConditionEventLeafInputConditionNodeInputSum      ConditionNodeInputSumType = "event"
-	ConditionNumberLeafInputConditionNodeInputSum     ConditionNodeInputSumType = "number"
-	ConditionDateLeafInputConditionNodeInputSum       ConditionNodeInputSumType = "date"
-	ConditionDateWithinLeafInputConditionNodeInputSum ConditionNodeInputSumType = "dateWithin"
-	ConditionGroupInputConditionNodeInputSum          ConditionNodeInputSumType = "group"
-)
-
-// IsConditionLeafInput reports whether ConditionNodeInputSum is ConditionLeafInput.
-func (s ConditionNodeInputSum) IsConditionLeafInput() bool {
-	return s.Type == ConditionLeafInputConditionNodeInputSum
-}
-
-// IsConditionEventLeafInput reports whether ConditionNodeInputSum is ConditionEventLeafInput.
-func (s ConditionNodeInputSum) IsConditionEventLeafInput() bool {
-	return s.Type == ConditionEventLeafInputConditionNodeInputSum
-}
-
-// IsConditionNumberLeafInput reports whether ConditionNodeInputSum is ConditionNumberLeafInput.
-func (s ConditionNodeInputSum) IsConditionNumberLeafInput() bool {
-	return s.Type == ConditionNumberLeafInputConditionNodeInputSum
-}
-
-// IsConditionDateLeafInput reports whether ConditionNodeInputSum is ConditionDateLeafInput.
-func (s ConditionNodeInputSum) IsConditionDateLeafInput() bool {
-	return s.Type == ConditionDateLeafInputConditionNodeInputSum
-}
-
-// IsConditionDateWithinLeafInput reports whether ConditionNodeInputSum is ConditionDateWithinLeafInput.
-func (s ConditionNodeInputSum) IsConditionDateWithinLeafInput() bool {
-	return s.Type == ConditionDateWithinLeafInputConditionNodeInputSum
-}
-
-// IsConditionGroupInput reports whether ConditionNodeInputSum is ConditionGroupInput.
-func (s ConditionNodeInputSum) IsConditionGroupInput() bool {
-	return s.Type == ConditionGroupInputConditionNodeInputSum
-}
-
-// SetConditionLeafInput sets ConditionNodeInputSum to ConditionLeafInput.
-func (s *ConditionNodeInputSum) SetConditionLeafInput(v ConditionLeafInput) {
-	s.Type = ConditionLeafInputConditionNodeInputSum
-	s.ConditionLeafInput = v
-}
-
-// GetConditionLeafInput returns ConditionLeafInput and true boolean if ConditionNodeInputSum is ConditionLeafInput.
-func (s ConditionNodeInputSum) GetConditionLeafInput() (v ConditionLeafInput, ok bool) {
-	if !s.IsConditionLeafInput() {
-		return v, false
-	}
-	return s.ConditionLeafInput, true
-}
-
-// NewConditionLeafInputConditionNodeInputSum returns new ConditionNodeInputSum from ConditionLeafInput.
-func NewConditionLeafInputConditionNodeInputSum(v ConditionLeafInput) ConditionNodeInputSum {
-	var s ConditionNodeInputSum
-	s.SetConditionLeafInput(v)
-	return s
-}
-
-// SetConditionEventLeafInput sets ConditionNodeInputSum to ConditionEventLeafInput.
-func (s *ConditionNodeInputSum) SetConditionEventLeafInput(v ConditionEventLeafInput) {
-	s.Type = ConditionEventLeafInputConditionNodeInputSum
-	s.ConditionEventLeafInput = v
-}
-
-// GetConditionEventLeafInput returns ConditionEventLeafInput and true boolean if ConditionNodeInputSum is ConditionEventLeafInput.
-func (s ConditionNodeInputSum) GetConditionEventLeafInput() (v ConditionEventLeafInput, ok bool) {
-	if !s.IsConditionEventLeafInput() {
-		return v, false
-	}
-	return s.ConditionEventLeafInput, true
-}
-
-// NewConditionEventLeafInputConditionNodeInputSum returns new ConditionNodeInputSum from ConditionEventLeafInput.
-func NewConditionEventLeafInputConditionNodeInputSum(v ConditionEventLeafInput) ConditionNodeInputSum {
-	var s ConditionNodeInputSum
-	s.SetConditionEventLeafInput(v)
-	return s
-}
-
-// SetConditionNumberLeafInput sets ConditionNodeInputSum to ConditionNumberLeafInput.
-func (s *ConditionNodeInputSum) SetConditionNumberLeafInput(v ConditionNumberLeafInput) {
-	s.Type = ConditionNumberLeafInputConditionNodeInputSum
-	s.ConditionNumberLeafInput = v
-}
-
-// GetConditionNumberLeafInput returns ConditionNumberLeafInput and true boolean if ConditionNodeInputSum is ConditionNumberLeafInput.
-func (s ConditionNodeInputSum) GetConditionNumberLeafInput() (v ConditionNumberLeafInput, ok bool) {
-	if !s.IsConditionNumberLeafInput() {
-		return v, false
-	}
-	return s.ConditionNumberLeafInput, true
-}
-
-// NewConditionNumberLeafInputConditionNodeInputSum returns new ConditionNodeInputSum from ConditionNumberLeafInput.
-func NewConditionNumberLeafInputConditionNodeInputSum(v ConditionNumberLeafInput) ConditionNodeInputSum {
-	var s ConditionNodeInputSum
-	s.SetConditionNumberLeafInput(v)
-	return s
-}
-
-// SetConditionDateLeafInput sets ConditionNodeInputSum to ConditionDateLeafInput.
-func (s *ConditionNodeInputSum) SetConditionDateLeafInput(v ConditionDateLeafInput) {
-	s.Type = ConditionDateLeafInputConditionNodeInputSum
-	s.ConditionDateLeafInput = v
-}
-
-// GetConditionDateLeafInput returns ConditionDateLeafInput and true boolean if ConditionNodeInputSum is ConditionDateLeafInput.
-func (s ConditionNodeInputSum) GetConditionDateLeafInput() (v ConditionDateLeafInput, ok bool) {
-	if !s.IsConditionDateLeafInput() {
-		return v, false
-	}
-	return s.ConditionDateLeafInput, true
-}
-
-// NewConditionDateLeafInputConditionNodeInputSum returns new ConditionNodeInputSum from ConditionDateLeafInput.
-func NewConditionDateLeafInputConditionNodeInputSum(v ConditionDateLeafInput) ConditionNodeInputSum {
-	var s ConditionNodeInputSum
-	s.SetConditionDateLeafInput(v)
-	return s
-}
-
-// SetConditionDateWithinLeafInput sets ConditionNodeInputSum to ConditionDateWithinLeafInput.
-func (s *ConditionNodeInputSum) SetConditionDateWithinLeafInput(v ConditionDateWithinLeafInput) {
-	s.Type = ConditionDateWithinLeafInputConditionNodeInputSum
-	s.ConditionDateWithinLeafInput = v
-}
-
-// GetConditionDateWithinLeafInput returns ConditionDateWithinLeafInput and true boolean if ConditionNodeInputSum is ConditionDateWithinLeafInput.
-func (s ConditionNodeInputSum) GetConditionDateWithinLeafInput() (v ConditionDateWithinLeafInput, ok bool) {
-	if !s.IsConditionDateWithinLeafInput() {
-		return v, false
-	}
-	return s.ConditionDateWithinLeafInput, true
-}
-
-// NewConditionDateWithinLeafInputConditionNodeInputSum returns new ConditionNodeInputSum from ConditionDateWithinLeafInput.
-func NewConditionDateWithinLeafInputConditionNodeInputSum(v ConditionDateWithinLeafInput) ConditionNodeInputSum {
-	var s ConditionNodeInputSum
-	s.SetConditionDateWithinLeafInput(v)
-	return s
-}
-
-// SetConditionGroupInput sets ConditionNodeInputSum to ConditionGroupInput.
-func (s *ConditionNodeInputSum) SetConditionGroupInput(v ConditionGroupInput) {
-	s.Type = ConditionGroupInputConditionNodeInputSum
-	s.ConditionGroupInput = v
-}
-
-// GetConditionGroupInput returns ConditionGroupInput and true boolean if ConditionNodeInputSum is ConditionGroupInput.
-func (s ConditionNodeInputSum) GetConditionGroupInput() (v ConditionGroupInput, ok bool) {
-	if !s.IsConditionGroupInput() {
-		return v, false
-	}
-	return s.ConditionGroupInput, true
-}
-
-// NewConditionGroupInputConditionNodeInputSum returns new ConditionNodeInputSum from ConditionGroupInput.
-func NewConditionGroupInputConditionNodeInputSum(v ConditionGroupInput) ConditionNodeInputSum {
-	var s ConditionNodeInputSum
-	s.SetConditionGroupInput(v)
-	return s
-}
-
-// ConditionNodeSum represents sum type.
-type ConditionNodeSum struct {
-	// Type selects the active sum variant, switch on this field.
-	Type                    ConditionNodeSumType
-	ConditionLeaf           ConditionLeaf
-	ConditionEventLeaf      ConditionEventLeaf
-	ConditionNumberLeaf     ConditionNumberLeaf
-	ConditionDateLeaf       ConditionDateLeaf
-	ConditionDateWithinLeaf ConditionDateWithinLeaf
-	ConditionGroup          ConditionGroup
-}
-
-// ConditionNodeSumType is oneOf type of ConditionNodeSum.
-type ConditionNodeSumType string
-
-// Possible values for ConditionNodeSumType.
-const (
-	ConditionLeafConditionNodeSum           ConditionNodeSumType = "rule"
-	ConditionEventLeafConditionNodeSum      ConditionNodeSumType = "event"
-	ConditionNumberLeafConditionNodeSum     ConditionNodeSumType = "number"
-	ConditionDateLeafConditionNodeSum       ConditionNodeSumType = "date"
-	ConditionDateWithinLeafConditionNodeSum ConditionNodeSumType = "dateWithin"
-	ConditionGroupConditionNodeSum          ConditionNodeSumType = "group"
-)
-
-// IsConditionLeaf reports whether ConditionNodeSum is ConditionLeaf.
-func (s ConditionNodeSum) IsConditionLeaf() bool { return s.Type == ConditionLeafConditionNodeSum }
-
-// IsConditionEventLeaf reports whether ConditionNodeSum is ConditionEventLeaf.
-func (s ConditionNodeSum) IsConditionEventLeaf() bool {
-	return s.Type == ConditionEventLeafConditionNodeSum
-}
-
-// IsConditionNumberLeaf reports whether ConditionNodeSum is ConditionNumberLeaf.
-func (s ConditionNodeSum) IsConditionNumberLeaf() bool {
-	return s.Type == ConditionNumberLeafConditionNodeSum
-}
-
-// IsConditionDateLeaf reports whether ConditionNodeSum is ConditionDateLeaf.
-func (s ConditionNodeSum) IsConditionDateLeaf() bool {
-	return s.Type == ConditionDateLeafConditionNodeSum
-}
-
-// IsConditionDateWithinLeaf reports whether ConditionNodeSum is ConditionDateWithinLeaf.
-func (s ConditionNodeSum) IsConditionDateWithinLeaf() bool {
-	return s.Type == ConditionDateWithinLeafConditionNodeSum
-}
-
-// IsConditionGroup reports whether ConditionNodeSum is ConditionGroup.
-func (s ConditionNodeSum) IsConditionGroup() bool { return s.Type == ConditionGroupConditionNodeSum }
-
-// SetConditionLeaf sets ConditionNodeSum to ConditionLeaf.
-func (s *ConditionNodeSum) SetConditionLeaf(v ConditionLeaf) {
-	s.Type = ConditionLeafConditionNodeSum
-	s.ConditionLeaf = v
-}
-
-// GetConditionLeaf returns ConditionLeaf and true boolean if ConditionNodeSum is ConditionLeaf.
-func (s ConditionNodeSum) GetConditionLeaf() (v ConditionLeaf, ok bool) {
-	if !s.IsConditionLeaf() {
-		return v, false
-	}
-	return s.ConditionLeaf, true
-}
-
-// NewConditionLeafConditionNodeSum returns new ConditionNodeSum from ConditionLeaf.
-func NewConditionLeafConditionNodeSum(v ConditionLeaf) ConditionNodeSum {
-	var s ConditionNodeSum
-	s.SetConditionLeaf(v)
-	return s
-}
-
-// SetConditionEventLeaf sets ConditionNodeSum to ConditionEventLeaf.
-func (s *ConditionNodeSum) SetConditionEventLeaf(v ConditionEventLeaf) {
-	s.Type = ConditionEventLeafConditionNodeSum
-	s.ConditionEventLeaf = v
-}
-
-// GetConditionEventLeaf returns ConditionEventLeaf and true boolean if ConditionNodeSum is ConditionEventLeaf.
-func (s ConditionNodeSum) GetConditionEventLeaf() (v ConditionEventLeaf, ok bool) {
-	if !s.IsConditionEventLeaf() {
-		return v, false
-	}
-	return s.ConditionEventLeaf, true
-}
-
-// NewConditionEventLeafConditionNodeSum returns new ConditionNodeSum from ConditionEventLeaf.
-func NewConditionEventLeafConditionNodeSum(v ConditionEventLeaf) ConditionNodeSum {
-	var s ConditionNodeSum
-	s.SetConditionEventLeaf(v)
-	return s
-}
-
-// SetConditionNumberLeaf sets ConditionNodeSum to ConditionNumberLeaf.
-func (s *ConditionNodeSum) SetConditionNumberLeaf(v ConditionNumberLeaf) {
-	s.Type = ConditionNumberLeafConditionNodeSum
-	s.ConditionNumberLeaf = v
-}
-
-// GetConditionNumberLeaf returns ConditionNumberLeaf and true boolean if ConditionNodeSum is ConditionNumberLeaf.
-func (s ConditionNodeSum) GetConditionNumberLeaf() (v ConditionNumberLeaf, ok bool) {
-	if !s.IsConditionNumberLeaf() {
-		return v, false
-	}
-	return s.ConditionNumberLeaf, true
-}
-
-// NewConditionNumberLeafConditionNodeSum returns new ConditionNodeSum from ConditionNumberLeaf.
-func NewConditionNumberLeafConditionNodeSum(v ConditionNumberLeaf) ConditionNodeSum {
-	var s ConditionNodeSum
-	s.SetConditionNumberLeaf(v)
-	return s
-}
-
-// SetConditionDateLeaf sets ConditionNodeSum to ConditionDateLeaf.
-func (s *ConditionNodeSum) SetConditionDateLeaf(v ConditionDateLeaf) {
-	s.Type = ConditionDateLeafConditionNodeSum
-	s.ConditionDateLeaf = v
-}
-
-// GetConditionDateLeaf returns ConditionDateLeaf and true boolean if ConditionNodeSum is ConditionDateLeaf.
-func (s ConditionNodeSum) GetConditionDateLeaf() (v ConditionDateLeaf, ok bool) {
-	if !s.IsConditionDateLeaf() {
-		return v, false
-	}
-	return s.ConditionDateLeaf, true
-}
-
-// NewConditionDateLeafConditionNodeSum returns new ConditionNodeSum from ConditionDateLeaf.
-func NewConditionDateLeafConditionNodeSum(v ConditionDateLeaf) ConditionNodeSum {
-	var s ConditionNodeSum
-	s.SetConditionDateLeaf(v)
-	return s
-}
-
-// SetConditionDateWithinLeaf sets ConditionNodeSum to ConditionDateWithinLeaf.
-func (s *ConditionNodeSum) SetConditionDateWithinLeaf(v ConditionDateWithinLeaf) {
-	s.Type = ConditionDateWithinLeafConditionNodeSum
-	s.ConditionDateWithinLeaf = v
-}
-
-// GetConditionDateWithinLeaf returns ConditionDateWithinLeaf and true boolean if ConditionNodeSum is ConditionDateWithinLeaf.
-func (s ConditionNodeSum) GetConditionDateWithinLeaf() (v ConditionDateWithinLeaf, ok bool) {
-	if !s.IsConditionDateWithinLeaf() {
-		return v, false
-	}
-	return s.ConditionDateWithinLeaf, true
-}
-
-// NewConditionDateWithinLeafConditionNodeSum returns new ConditionNodeSum from ConditionDateWithinLeaf.
-func NewConditionDateWithinLeafConditionNodeSum(v ConditionDateWithinLeaf) ConditionNodeSum {
-	var s ConditionNodeSum
-	s.SetConditionDateWithinLeaf(v)
-	return s
-}
-
-// SetConditionGroup sets ConditionNodeSum to ConditionGroup.
-func (s *ConditionNodeSum) SetConditionGroup(v ConditionGroup) {
-	s.Type = ConditionGroupConditionNodeSum
-	s.ConditionGroup = v
-}
-
-// GetConditionGroup returns ConditionGroup and true boolean if ConditionNodeSum is ConditionGroup.
-func (s ConditionNodeSum) GetConditionGroup() (v ConditionGroup, ok bool) {
-	if !s.IsConditionGroup() {
-		return v, false
-	}
-	return s.ConditionGroup, true
-}
-
-// NewConditionGroupConditionNodeSum returns new ConditionNodeSum from ConditionGroup.
-func NewConditionGroupConditionNodeSum(v ConditionGroup) ConditionNodeSum {
-	var s ConditionNodeSum
-	s.SetConditionGroup(v)
-	return s
-}
-
-// A comparison of a number: a custom field of the workspace whose type is number ("custom:"), or a
-// property of the Event that fired a rule ("trigger:", valid only in a rule). A missing key, or a
-// value that is not a number (text, a boolean, null, a list), makes the leaf false.
-// Ref: #/components/schemas/ConditionNumberLeaf
-type ConditionNumberLeaf struct {
-	Kind ConditionNumberLeafKind `json:"kind"`
-	// What it compares: "custom:" for a number custom field, or "trigger:".
-	Field string `json:"field"`
-	// How the field compares with `value`.
-	Operator ConditionNumberOperator `json:"operator"`
-	// The number the field is compared with.
-	Value float64 `json:"value"`
-}
-
-// GetKind returns the value of Kind.
-func (s *ConditionNumberLeaf) GetKind() ConditionNumberLeafKind {
-	return s.Kind
-}
-
-// GetField returns the value of Field.
-func (s *ConditionNumberLeaf) GetField() string {
-	return s.Field
-}
-
-// GetOperator returns the value of Operator.
-func (s *ConditionNumberLeaf) GetOperator() ConditionNumberOperator {
-	return s.Operator
-}
-
-// GetValue returns the value of Value.
-func (s *ConditionNumberLeaf) GetValue() float64 {
-	return s.Value
-}
-
-// SetKind sets the value of Kind.
-func (s *ConditionNumberLeaf) SetKind(val ConditionNumberLeafKind) {
-	s.Kind = val
-}
-
-// SetField sets the value of Field.
-func (s *ConditionNumberLeaf) SetField(val string) {
-	s.Field = val
-}
-
-// SetOperator sets the value of Operator.
-func (s *ConditionNumberLeaf) SetOperator(val ConditionNumberOperator) {
-	s.Operator = val
-}
-
-// SetValue sets the value of Value.
-func (s *ConditionNumberLeaf) SetValue(val float64) {
-	s.Value = val
-}
-
-// A comparison of a number: a custom field of the workspace whose type is number ("custom:"), or a
-// property of the Event that fired a rule ("trigger:", valid only in a rule). A missing key, or a
-// value that is not a number (text, a boolean, null, a list), makes the leaf false.
-// Ref: #/components/schemas/ConditionNumberLeafInput
-type ConditionNumberLeafInput struct {
-	Kind ConditionNumberLeafInputKind `json:"kind"`
-	// What it compares: "custom:" for a number custom field, or "trigger:".
-	Field string `json:"field"`
-	// How the field compares with `value`.
-	Operator ConditionNumberOperator `json:"operator"`
-	// The number the field is compared with.
-	Value float64 `json:"value"`
-}
-
-// GetKind returns the value of Kind.
-func (s *ConditionNumberLeafInput) GetKind() ConditionNumberLeafInputKind {
-	return s.Kind
-}
-
-// GetField returns the value of Field.
-func (s *ConditionNumberLeafInput) GetField() string {
-	return s.Field
-}
-
-// GetOperator returns the value of Operator.
-func (s *ConditionNumberLeafInput) GetOperator() ConditionNumberOperator {
-	return s.Operator
-}
-
-// GetValue returns the value of Value.
-func (s *ConditionNumberLeafInput) GetValue() float64 {
-	return s.Value
-}
-
-// SetKind sets the value of Kind.
-func (s *ConditionNumberLeafInput) SetKind(val ConditionNumberLeafInputKind) {
-	s.Kind = val
-}
-
-// SetField sets the value of Field.
-func (s *ConditionNumberLeafInput) SetField(val string) {
-	s.Field = val
-}
-
-// SetOperator sets the value of Operator.
-func (s *ConditionNumberLeafInput) SetOperator(val ConditionNumberOperator) {
-	s.Operator = val
-}
-
-// SetValue sets the value of Value.
-func (s *ConditionNumberLeafInput) SetValue(val float64) {
-	s.Value = val
-}
-
-type ConditionNumberLeafInputKind string
-
-const (
-	ConditionNumberLeafInputKindNumber ConditionNumberLeafInputKind = "number"
-)
-
-// AllValues returns all ConditionNumberLeafInputKind values.
-func (ConditionNumberLeafInputKind) AllValues() []ConditionNumberLeafInputKind {
-	return []ConditionNumberLeafInputKind{
-		ConditionNumberLeafInputKindNumber,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s ConditionNumberLeafInputKind) MarshalText() ([]byte, error) {
-	switch s {
-	case ConditionNumberLeafInputKindNumber:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *ConditionNumberLeafInputKind) UnmarshalText(data []byte) error {
-	switch ConditionNumberLeafInputKind(data) {
-	case ConditionNumberLeafInputKindNumber:
-		*s = ConditionNumberLeafInputKindNumber
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-type ConditionNumberLeafKind string
-
-const (
-	ConditionNumberLeafKindNumber ConditionNumberLeafKind = "number"
-)
-
-// AllValues returns all ConditionNumberLeafKind values.
-func (ConditionNumberLeafKind) AllValues() []ConditionNumberLeafKind {
-	return []ConditionNumberLeafKind{
-		ConditionNumberLeafKindNumber,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s ConditionNumberLeafKind) MarshalText() ([]byte, error) {
-	switch s {
-	case ConditionNumberLeafKindNumber:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *ConditionNumberLeafKind) UnmarshalText(data []byte) error {
-	switch ConditionNumberLeafKind(data) {
-	case ConditionNumberLeafKindNumber:
-		*s = ConditionNumberLeafKindNumber
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// How a number leaf compares the field with `value`: greater than, greater than or equal, less than,
-// or less than or equal.
-// Ref: #/components/schemas/ConditionNumberOperator
-type ConditionNumberOperator string
-
-const (
-	ConditionNumberOperatorGt  ConditionNumberOperator = "gt"
-	ConditionNumberOperatorGte ConditionNumberOperator = "gte"
-	ConditionNumberOperatorLt  ConditionNumberOperator = "lt"
-	ConditionNumberOperatorLte ConditionNumberOperator = "lte"
-)
-
-// AllValues returns all ConditionNumberOperator values.
-func (ConditionNumberOperator) AllValues() []ConditionNumberOperator {
-	return []ConditionNumberOperator{
-		ConditionNumberOperatorGt,
-		ConditionNumberOperatorGte,
-		ConditionNumberOperatorLt,
-		ConditionNumberOperatorLte,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s ConditionNumberOperator) MarshalText() ([]byte, error) {
-	switch s {
-	case ConditionNumberOperatorGt:
-		return []byte(s), nil
-	case ConditionNumberOperatorGte:
-		return []byte(s), nil
-	case ConditionNumberOperatorLt:
-		return []byte(s), nil
-	case ConditionNumberOperatorLte:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *ConditionNumberOperator) UnmarshalText(data []byte) error {
-	switch ConditionNumberOperator(data) {
-	case ConditionNumberOperatorGt:
-		*s = ConditionNumberOperatorGt
-		return nil
-	case ConditionNumberOperatorGte:
-		*s = ConditionNumberOperatorGte
-		return nil
-	case ConditionNumberOperatorLt:
-		*s = ConditionNumberOperatorLt
-		return nil
-	case ConditionNumberOperatorLte:
-		*s = ConditionNumberOperatorLte
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and notNull;
-// the tag, telegram and sms fields take has and doesNotHave; a custom field takes the operators of its
-// type, which the custom field lists as `ruleOperators` (a number custom field is also compared by a
-// number leaf, a datetime one tested by the date leaves).
-// Ref: #/components/schemas/ConditionOperator
-type ConditionOperator string
-
-const (
-	ConditionOperatorEq          ConditionOperator = "eq"
-	ConditionOperatorNeq         ConditionOperator = "neq"
-	ConditionOperatorContains    ConditionOperator = "contains"
-	ConditionOperatorBeginsWith  ConditionOperator = "beginsWith"
-	ConditionOperatorNull        ConditionOperator = "null"
-	ConditionOperatorNotNull     ConditionOperator = "notNull"
-	ConditionOperatorHas         ConditionOperator = "has"
-	ConditionOperatorDoesNotHave ConditionOperator = "doesNotHave"
-)
-
-// AllValues returns all ConditionOperator values.
-func (ConditionOperator) AllValues() []ConditionOperator {
-	return []ConditionOperator{
-		ConditionOperatorEq,
-		ConditionOperatorNeq,
-		ConditionOperatorContains,
-		ConditionOperatorBeginsWith,
-		ConditionOperatorNull,
-		ConditionOperatorNotNull,
-		ConditionOperatorHas,
-		ConditionOperatorDoesNotHave,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s ConditionOperator) MarshalText() ([]byte, error) {
-	switch s {
-	case ConditionOperatorEq:
-		return []byte(s), nil
-	case ConditionOperatorNeq:
-		return []byte(s), nil
-	case ConditionOperatorContains:
-		return []byte(s), nil
-	case ConditionOperatorBeginsWith:
-		return []byte(s), nil
-	case ConditionOperatorNull:
-		return []byte(s), nil
-	case ConditionOperatorNotNull:
-		return []byte(s), nil
-	case ConditionOperatorHas:
-		return []byte(s), nil
-	case ConditionOperatorDoesNotHave:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *ConditionOperator) UnmarshalText(data []byte) error {
-	switch ConditionOperator(data) {
-	case ConditionOperatorEq:
-		*s = ConditionOperatorEq
-		return nil
-	case ConditionOperatorNeq:
-		*s = ConditionOperatorNeq
-		return nil
-	case ConditionOperatorContains:
-		*s = ConditionOperatorContains
-		return nil
-	case ConditionOperatorBeginsWith:
-		*s = ConditionOperatorBeginsWith
-		return nil
-	case ConditionOperatorNull:
-		*s = ConditionOperatorNull
-		return nil
-	case ConditionOperatorNotNull:
-		*s = ConditionOperatorNotNull
-		return nil
-	case ConditionOperatorHas:
-		*s = ConditionOperatorHas
-		return nil
-	case ConditionOperatorDoesNotHave:
-		*s = ConditionOperatorDoesNotHave
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
 // How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a
 // keyword (the person texted START), imported (consent an API client or an import collected itself,
 // with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A
@@ -5138,6 +4053,98 @@ func (s *ConsentEvidence) SetSource(val string) {
 // SetBrand sets the value of Brand.
 func (s *ConsentEvidence) SetBrand(val string) {
 	s.Brand = val
+}
+
+// A text attribute of a Contact.
+// Ref: #/components/schemas/ContactAttribute
+type ContactAttribute string
+
+const (
+	ContactAttributeEmail     ContactAttribute = "email"
+	ContactAttributePhone     ContactAttribute = "phone"
+	ContactAttributeSubjectID ContactAttribute = "subject_id"
+	ContactAttributeFirstName ContactAttribute = "first_name"
+	ContactAttributeLastName  ContactAttribute = "last_name"
+	ContactAttributeTimeZone  ContactAttribute = "time_zone"
+	ContactAttributeCountry   ContactAttribute = "country"
+	ContactAttributeLocale    ContactAttribute = "locale"
+	ContactAttributeCity      ContactAttribute = "city"
+)
+
+// AllValues returns all ContactAttribute values.
+func (ContactAttribute) AllValues() []ContactAttribute {
+	return []ContactAttribute{
+		ContactAttributeEmail,
+		ContactAttributePhone,
+		ContactAttributeSubjectID,
+		ContactAttributeFirstName,
+		ContactAttributeLastName,
+		ContactAttributeTimeZone,
+		ContactAttributeCountry,
+		ContactAttributeLocale,
+		ContactAttributeCity,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ContactAttribute) MarshalText() ([]byte, error) {
+	switch s {
+	case ContactAttributeEmail:
+		return []byte(s), nil
+	case ContactAttributePhone:
+		return []byte(s), nil
+	case ContactAttributeSubjectID:
+		return []byte(s), nil
+	case ContactAttributeFirstName:
+		return []byte(s), nil
+	case ContactAttributeLastName:
+		return []byte(s), nil
+	case ContactAttributeTimeZone:
+		return []byte(s), nil
+	case ContactAttributeCountry:
+		return []byte(s), nil
+	case ContactAttributeLocale:
+		return []byte(s), nil
+	case ContactAttributeCity:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ContactAttribute) UnmarshalText(data []byte) error {
+	switch ContactAttribute(data) {
+	case ContactAttributeEmail:
+		*s = ContactAttributeEmail
+		return nil
+	case ContactAttributePhone:
+		*s = ContactAttributePhone
+		return nil
+	case ContactAttributeSubjectID:
+		*s = ContactAttributeSubjectID
+		return nil
+	case ContactAttributeFirstName:
+		*s = ContactAttributeFirstName
+		return nil
+	case ContactAttributeLastName:
+		*s = ContactAttributeLastName
+		return nil
+	case ContactAttributeTimeZone:
+		*s = ContactAttributeTimeZone
+		return nil
+	case ContactAttributeCountry:
+		*s = ContactAttributeCountry
+		return nil
+	case ContactAttributeLocale:
+		*s = ContactAttributeLocale
+		return nil
+	case ContactAttributeCity:
+		*s = ContactAttributeCity
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 // The contact's place in one broadcast's audience (how its send ended, and whether it was opened or
@@ -6610,8 +5617,8 @@ func (s *CreateIntegrationInput) SetParams(val OptJsonObject) {
 type CreateRuleInput struct {
 	Name Name `json:"name"`
 	// The Event actions that make the Rule fire; at least one.
-	TriggerEvents []string               `json:"triggerEvents"`
-	Condition     OptConditionGroupInput `json:"condition"`
+	TriggerEvents []string              `json:"triggerEvents"`
+	Condition     OptRuleConditionInput `json:"condition"`
 	// The Actions to run, in order.
 	Actions []RuleActionInput `json:"actions"`
 }
@@ -6627,7 +5634,7 @@ func (s *CreateRuleInput) GetTriggerEvents() []string {
 }
 
 // GetCondition returns the value of Condition.
-func (s *CreateRuleInput) GetCondition() OptConditionGroupInput {
+func (s *CreateRuleInput) GetCondition() OptRuleConditionInput {
 	return s.Condition
 }
 
@@ -6647,7 +5654,7 @@ func (s *CreateRuleInput) SetTriggerEvents(val []string) {
 }
 
 // SetCondition sets the value of Condition.
-func (s *CreateRuleInput) SetCondition(val OptConditionGroupInput) {
+func (s *CreateRuleInput) SetCondition(val OptRuleConditionInput) {
 	s.Condition = val
 }
 
@@ -6662,7 +5669,7 @@ type CreateSegmentInput struct {
 	// Segment name.
 	Name Name `json:"name"`
 	// Segment condition: the tree of tests; an empty group matches all contacts.
-	Condition ConditionGroupInput `json:"condition"`
+	Condition SegmentConditionInput `json:"condition"`
 }
 
 // GetName returns the value of Name.
@@ -6671,7 +5678,7 @@ func (s *CreateSegmentInput) GetName() Name {
 }
 
 // GetCondition returns the value of Condition.
-func (s *CreateSegmentInput) GetCondition() ConditionGroupInput {
+func (s *CreateSegmentInput) GetCondition() SegmentConditionInput {
 	return s.Condition
 }
 
@@ -6681,7 +5688,7 @@ func (s *CreateSegmentInput) SetName(val Name) {
 }
 
 // SetCondition sets the value of Condition.
-func (s *CreateSegmentInput) SetCondition(val ConditionGroupInput) {
+func (s *CreateSegmentInput) SetCondition(val SegmentConditionInput) {
 	s.Condition = val
 }
 
@@ -6811,6 +5818,554 @@ func (s *CreateWebhookInput) SetEnabled(val OptBool) {
 }
 
 type CurrencyCode string
+
+// The tests a Condition's Custom field test takes on a field of one type, each with the operators it
+// takes there; an empty list is a test the type does not take.
+// Ref: #/components/schemas/CustomFieldConditionTests
+type CustomFieldConditionTests struct {
+	// The operators of a text test.
+	Text []TextOperator `json:"text"`
+	// The operators of a number test.
+	Number []NumberOperator `json:"number"`
+	// The operators of a moment test.
+	Moment []MomentOperator `json:"moment"`
+	// Whether it takes the test of the last days.
+	WithinLast bool `json:"withinLast"`
+	// The operators of a presence test.
+	Presence []PresenceOperator `json:"presence"`
+}
+
+// GetText returns the value of Text.
+func (s *CustomFieldConditionTests) GetText() []TextOperator {
+	return s.Text
+}
+
+// GetNumber returns the value of Number.
+func (s *CustomFieldConditionTests) GetNumber() []NumberOperator {
+	return s.Number
+}
+
+// GetMoment returns the value of Moment.
+func (s *CustomFieldConditionTests) GetMoment() []MomentOperator {
+	return s.Moment
+}
+
+// GetWithinLast returns the value of WithinLast.
+func (s *CustomFieldConditionTests) GetWithinLast() bool {
+	return s.WithinLast
+}
+
+// GetPresence returns the value of Presence.
+func (s *CustomFieldConditionTests) GetPresence() []PresenceOperator {
+	return s.Presence
+}
+
+// SetText sets the value of Text.
+func (s *CustomFieldConditionTests) SetText(val []TextOperator) {
+	s.Text = val
+}
+
+// SetNumber sets the value of Number.
+func (s *CustomFieldConditionTests) SetNumber(val []NumberOperator) {
+	s.Number = val
+}
+
+// SetMoment sets the value of Moment.
+func (s *CustomFieldConditionTests) SetMoment(val []MomentOperator) {
+	s.Moment = val
+}
+
+// SetWithinLast sets the value of WithinLast.
+func (s *CustomFieldConditionTests) SetWithinLast(val bool) {
+	s.WithinLast = val
+}
+
+// SetPresence sets the value of Presence.
+func (s *CustomFieldConditionTests) SetPresence(val []PresenceOperator) {
+	s.Presence = val
+}
+
+// A test of a Custom field of the Workspace, its key in a field of its own.
+// Ref: #/components/schemas/CustomFieldLeaf
+type CustomFieldLeaf struct {
+	Kind CustomFieldLeafKind `json:"kind"`
+	// The Custom field's key.
+	Key string `json:"key"`
+	// What it asks of the field's value.
+	Test CustomFieldTest `json:"test"`
+}
+
+// GetKind returns the value of Kind.
+func (s *CustomFieldLeaf) GetKind() CustomFieldLeafKind {
+	return s.Kind
+}
+
+// GetKey returns the value of Key.
+func (s *CustomFieldLeaf) GetKey() string {
+	return s.Key
+}
+
+// GetTest returns the value of Test.
+func (s *CustomFieldLeaf) GetTest() CustomFieldTest {
+	return s.Test
+}
+
+// SetKind sets the value of Kind.
+func (s *CustomFieldLeaf) SetKind(val CustomFieldLeafKind) {
+	s.Kind = val
+}
+
+// SetKey sets the value of Key.
+func (s *CustomFieldLeaf) SetKey(val string) {
+	s.Key = val
+}
+
+// SetTest sets the value of Test.
+func (s *CustomFieldLeaf) SetTest(val CustomFieldTest) {
+	s.Test = val
+}
+
+// A test of a Custom field of the Workspace, its key in a field of its own.
+// Ref: #/components/schemas/CustomFieldLeafInput
+type CustomFieldLeafInput struct {
+	Kind CustomFieldLeafInputKind `json:"kind"`
+	// The Custom field's key.
+	Key string `json:"key"`
+	// What it asks of the field's value.
+	Test CustomFieldTestInput `json:"test"`
+}
+
+// GetKind returns the value of Kind.
+func (s *CustomFieldLeafInput) GetKind() CustomFieldLeafInputKind {
+	return s.Kind
+}
+
+// GetKey returns the value of Key.
+func (s *CustomFieldLeafInput) GetKey() string {
+	return s.Key
+}
+
+// GetTest returns the value of Test.
+func (s *CustomFieldLeafInput) GetTest() CustomFieldTestInput {
+	return s.Test
+}
+
+// SetKind sets the value of Kind.
+func (s *CustomFieldLeafInput) SetKind(val CustomFieldLeafInputKind) {
+	s.Kind = val
+}
+
+// SetKey sets the value of Key.
+func (s *CustomFieldLeafInput) SetKey(val string) {
+	s.Key = val
+}
+
+// SetTest sets the value of Test.
+func (s *CustomFieldLeafInput) SetTest(val CustomFieldTestInput) {
+	s.Test = val
+}
+
+type CustomFieldLeafInputKind string
+
+const (
+	CustomFieldLeafInputKindCustomField CustomFieldLeafInputKind = "customField"
+)
+
+// AllValues returns all CustomFieldLeafInputKind values.
+func (CustomFieldLeafInputKind) AllValues() []CustomFieldLeafInputKind {
+	return []CustomFieldLeafInputKind{
+		CustomFieldLeafInputKindCustomField,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s CustomFieldLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case CustomFieldLeafInputKindCustomField:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *CustomFieldLeafInputKind) UnmarshalText(data []byte) error {
+	switch CustomFieldLeafInputKind(data) {
+	case CustomFieldLeafInputKindCustomField:
+		*s = CustomFieldLeafInputKindCustomField
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type CustomFieldLeafKind string
+
+const (
+	CustomFieldLeafKindCustomField CustomFieldLeafKind = "customField"
+)
+
+// AllValues returns all CustomFieldLeafKind values.
+func (CustomFieldLeafKind) AllValues() []CustomFieldLeafKind {
+	return []CustomFieldLeafKind{
+		CustomFieldLeafKindCustomField,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s CustomFieldLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case CustomFieldLeafKindCustomField:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *CustomFieldLeafKind) UnmarshalText(data []byte) error {
+	switch CustomFieldLeafKind(data) {
+	case CustomFieldLeafKindCustomField:
+		*s = CustomFieldLeafKindCustomField
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// What a Custom field test asks of the field's value, by `kind`. Which tests and operators a field
+// takes depends on its type, which the Custom field lists as `conditionTests`; a test the type does
+// not take is refused when the Condition is saved.
+// Ref: #/components/schemas/CustomFieldTest
+type CustomFieldTest struct {
+	OneOf CustomFieldTestSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *CustomFieldTest) GetOneOf() CustomFieldTestSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *CustomFieldTest) SetOneOf(val CustomFieldTestSum) {
+	s.OneOf = val
+}
+
+// What a Custom field test asks of the field's value, by `kind`. Which tests and operators a field
+// takes depends on its type, which the Custom field lists as `conditionTests`; a test the type does
+// not take is refused when the Condition is saved.
+// Ref: #/components/schemas/CustomFieldTestInput
+type CustomFieldTestInput struct {
+	OneOf CustomFieldTestInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *CustomFieldTestInput) GetOneOf() CustomFieldTestInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *CustomFieldTestInput) SetOneOf(val CustomFieldTestInputSum) {
+	s.OneOf = val
+}
+
+// CustomFieldTestInputSum represents sum type.
+type CustomFieldTestInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                CustomFieldTestInputSumType
+	TextTestInput       TextTestInput
+	NumberTestInput     NumberTestInput
+	MomentTestInput     MomentTestInput
+	WithinLastTestInput WithinLastTestInput
+	PresenceTestInput   PresenceTestInput
+}
+
+// CustomFieldTestInputSumType is oneOf type of CustomFieldTestInputSum.
+type CustomFieldTestInputSumType string
+
+// Possible values for CustomFieldTestInputSumType.
+const (
+	TextTestInputCustomFieldTestInputSum       CustomFieldTestInputSumType = "text"
+	NumberTestInputCustomFieldTestInputSum     CustomFieldTestInputSumType = "number"
+	MomentTestInputCustomFieldTestInputSum     CustomFieldTestInputSumType = "moment"
+	WithinLastTestInputCustomFieldTestInputSum CustomFieldTestInputSumType = "withinLast"
+	PresenceTestInputCustomFieldTestInputSum   CustomFieldTestInputSumType = "presence"
+)
+
+// IsTextTestInput reports whether CustomFieldTestInputSum is TextTestInput.
+func (s CustomFieldTestInputSum) IsTextTestInput() bool {
+	return s.Type == TextTestInputCustomFieldTestInputSum
+}
+
+// IsNumberTestInput reports whether CustomFieldTestInputSum is NumberTestInput.
+func (s CustomFieldTestInputSum) IsNumberTestInput() bool {
+	return s.Type == NumberTestInputCustomFieldTestInputSum
+}
+
+// IsMomentTestInput reports whether CustomFieldTestInputSum is MomentTestInput.
+func (s CustomFieldTestInputSum) IsMomentTestInput() bool {
+	return s.Type == MomentTestInputCustomFieldTestInputSum
+}
+
+// IsWithinLastTestInput reports whether CustomFieldTestInputSum is WithinLastTestInput.
+func (s CustomFieldTestInputSum) IsWithinLastTestInput() bool {
+	return s.Type == WithinLastTestInputCustomFieldTestInputSum
+}
+
+// IsPresenceTestInput reports whether CustomFieldTestInputSum is PresenceTestInput.
+func (s CustomFieldTestInputSum) IsPresenceTestInput() bool {
+	return s.Type == PresenceTestInputCustomFieldTestInputSum
+}
+
+// SetTextTestInput sets CustomFieldTestInputSum to TextTestInput.
+func (s *CustomFieldTestInputSum) SetTextTestInput(v TextTestInput) {
+	s.Type = TextTestInputCustomFieldTestInputSum
+	s.TextTestInput = v
+}
+
+// GetTextTestInput returns TextTestInput and true boolean if CustomFieldTestInputSum is TextTestInput.
+func (s CustomFieldTestInputSum) GetTextTestInput() (v TextTestInput, ok bool) {
+	if !s.IsTextTestInput() {
+		return v, false
+	}
+	return s.TextTestInput, true
+}
+
+// NewTextTestInputCustomFieldTestInputSum returns new CustomFieldTestInputSum from TextTestInput.
+func NewTextTestInputCustomFieldTestInputSum(v TextTestInput) CustomFieldTestInputSum {
+	var s CustomFieldTestInputSum
+	s.SetTextTestInput(v)
+	return s
+}
+
+// SetNumberTestInput sets CustomFieldTestInputSum to NumberTestInput.
+func (s *CustomFieldTestInputSum) SetNumberTestInput(v NumberTestInput) {
+	s.Type = NumberTestInputCustomFieldTestInputSum
+	s.NumberTestInput = v
+}
+
+// GetNumberTestInput returns NumberTestInput and true boolean if CustomFieldTestInputSum is NumberTestInput.
+func (s CustomFieldTestInputSum) GetNumberTestInput() (v NumberTestInput, ok bool) {
+	if !s.IsNumberTestInput() {
+		return v, false
+	}
+	return s.NumberTestInput, true
+}
+
+// NewNumberTestInputCustomFieldTestInputSum returns new CustomFieldTestInputSum from NumberTestInput.
+func NewNumberTestInputCustomFieldTestInputSum(v NumberTestInput) CustomFieldTestInputSum {
+	var s CustomFieldTestInputSum
+	s.SetNumberTestInput(v)
+	return s
+}
+
+// SetMomentTestInput sets CustomFieldTestInputSum to MomentTestInput.
+func (s *CustomFieldTestInputSum) SetMomentTestInput(v MomentTestInput) {
+	s.Type = MomentTestInputCustomFieldTestInputSum
+	s.MomentTestInput = v
+}
+
+// GetMomentTestInput returns MomentTestInput and true boolean if CustomFieldTestInputSum is MomentTestInput.
+func (s CustomFieldTestInputSum) GetMomentTestInput() (v MomentTestInput, ok bool) {
+	if !s.IsMomentTestInput() {
+		return v, false
+	}
+	return s.MomentTestInput, true
+}
+
+// NewMomentTestInputCustomFieldTestInputSum returns new CustomFieldTestInputSum from MomentTestInput.
+func NewMomentTestInputCustomFieldTestInputSum(v MomentTestInput) CustomFieldTestInputSum {
+	var s CustomFieldTestInputSum
+	s.SetMomentTestInput(v)
+	return s
+}
+
+// SetWithinLastTestInput sets CustomFieldTestInputSum to WithinLastTestInput.
+func (s *CustomFieldTestInputSum) SetWithinLastTestInput(v WithinLastTestInput) {
+	s.Type = WithinLastTestInputCustomFieldTestInputSum
+	s.WithinLastTestInput = v
+}
+
+// GetWithinLastTestInput returns WithinLastTestInput and true boolean if CustomFieldTestInputSum is WithinLastTestInput.
+func (s CustomFieldTestInputSum) GetWithinLastTestInput() (v WithinLastTestInput, ok bool) {
+	if !s.IsWithinLastTestInput() {
+		return v, false
+	}
+	return s.WithinLastTestInput, true
+}
+
+// NewWithinLastTestInputCustomFieldTestInputSum returns new CustomFieldTestInputSum from WithinLastTestInput.
+func NewWithinLastTestInputCustomFieldTestInputSum(v WithinLastTestInput) CustomFieldTestInputSum {
+	var s CustomFieldTestInputSum
+	s.SetWithinLastTestInput(v)
+	return s
+}
+
+// SetPresenceTestInput sets CustomFieldTestInputSum to PresenceTestInput.
+func (s *CustomFieldTestInputSum) SetPresenceTestInput(v PresenceTestInput) {
+	s.Type = PresenceTestInputCustomFieldTestInputSum
+	s.PresenceTestInput = v
+}
+
+// GetPresenceTestInput returns PresenceTestInput and true boolean if CustomFieldTestInputSum is PresenceTestInput.
+func (s CustomFieldTestInputSum) GetPresenceTestInput() (v PresenceTestInput, ok bool) {
+	if !s.IsPresenceTestInput() {
+		return v, false
+	}
+	return s.PresenceTestInput, true
+}
+
+// NewPresenceTestInputCustomFieldTestInputSum returns new CustomFieldTestInputSum from PresenceTestInput.
+func NewPresenceTestInputCustomFieldTestInputSum(v PresenceTestInput) CustomFieldTestInputSum {
+	var s CustomFieldTestInputSum
+	s.SetPresenceTestInput(v)
+	return s
+}
+
+// CustomFieldTestSum represents sum type.
+type CustomFieldTestSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type           CustomFieldTestSumType
+	TextTest       TextTest
+	NumberTest     NumberTest
+	MomentTest     MomentTest
+	WithinLastTest WithinLastTest
+	PresenceTest   PresenceTest
+}
+
+// CustomFieldTestSumType is oneOf type of CustomFieldTestSum.
+type CustomFieldTestSumType string
+
+// Possible values for CustomFieldTestSumType.
+const (
+	TextTestCustomFieldTestSum       CustomFieldTestSumType = "text"
+	NumberTestCustomFieldTestSum     CustomFieldTestSumType = "number"
+	MomentTestCustomFieldTestSum     CustomFieldTestSumType = "moment"
+	WithinLastTestCustomFieldTestSum CustomFieldTestSumType = "withinLast"
+	PresenceTestCustomFieldTestSum   CustomFieldTestSumType = "presence"
+)
+
+// IsTextTest reports whether CustomFieldTestSum is TextTest.
+func (s CustomFieldTestSum) IsTextTest() bool { return s.Type == TextTestCustomFieldTestSum }
+
+// IsNumberTest reports whether CustomFieldTestSum is NumberTest.
+func (s CustomFieldTestSum) IsNumberTest() bool { return s.Type == NumberTestCustomFieldTestSum }
+
+// IsMomentTest reports whether CustomFieldTestSum is MomentTest.
+func (s CustomFieldTestSum) IsMomentTest() bool { return s.Type == MomentTestCustomFieldTestSum }
+
+// IsWithinLastTest reports whether CustomFieldTestSum is WithinLastTest.
+func (s CustomFieldTestSum) IsWithinLastTest() bool {
+	return s.Type == WithinLastTestCustomFieldTestSum
+}
+
+// IsPresenceTest reports whether CustomFieldTestSum is PresenceTest.
+func (s CustomFieldTestSum) IsPresenceTest() bool { return s.Type == PresenceTestCustomFieldTestSum }
+
+// SetTextTest sets CustomFieldTestSum to TextTest.
+func (s *CustomFieldTestSum) SetTextTest(v TextTest) {
+	s.Type = TextTestCustomFieldTestSum
+	s.TextTest = v
+}
+
+// GetTextTest returns TextTest and true boolean if CustomFieldTestSum is TextTest.
+func (s CustomFieldTestSum) GetTextTest() (v TextTest, ok bool) {
+	if !s.IsTextTest() {
+		return v, false
+	}
+	return s.TextTest, true
+}
+
+// NewTextTestCustomFieldTestSum returns new CustomFieldTestSum from TextTest.
+func NewTextTestCustomFieldTestSum(v TextTest) CustomFieldTestSum {
+	var s CustomFieldTestSum
+	s.SetTextTest(v)
+	return s
+}
+
+// SetNumberTest sets CustomFieldTestSum to NumberTest.
+func (s *CustomFieldTestSum) SetNumberTest(v NumberTest) {
+	s.Type = NumberTestCustomFieldTestSum
+	s.NumberTest = v
+}
+
+// GetNumberTest returns NumberTest and true boolean if CustomFieldTestSum is NumberTest.
+func (s CustomFieldTestSum) GetNumberTest() (v NumberTest, ok bool) {
+	if !s.IsNumberTest() {
+		return v, false
+	}
+	return s.NumberTest, true
+}
+
+// NewNumberTestCustomFieldTestSum returns new CustomFieldTestSum from NumberTest.
+func NewNumberTestCustomFieldTestSum(v NumberTest) CustomFieldTestSum {
+	var s CustomFieldTestSum
+	s.SetNumberTest(v)
+	return s
+}
+
+// SetMomentTest sets CustomFieldTestSum to MomentTest.
+func (s *CustomFieldTestSum) SetMomentTest(v MomentTest) {
+	s.Type = MomentTestCustomFieldTestSum
+	s.MomentTest = v
+}
+
+// GetMomentTest returns MomentTest and true boolean if CustomFieldTestSum is MomentTest.
+func (s CustomFieldTestSum) GetMomentTest() (v MomentTest, ok bool) {
+	if !s.IsMomentTest() {
+		return v, false
+	}
+	return s.MomentTest, true
+}
+
+// NewMomentTestCustomFieldTestSum returns new CustomFieldTestSum from MomentTest.
+func NewMomentTestCustomFieldTestSum(v MomentTest) CustomFieldTestSum {
+	var s CustomFieldTestSum
+	s.SetMomentTest(v)
+	return s
+}
+
+// SetWithinLastTest sets CustomFieldTestSum to WithinLastTest.
+func (s *CustomFieldTestSum) SetWithinLastTest(v WithinLastTest) {
+	s.Type = WithinLastTestCustomFieldTestSum
+	s.WithinLastTest = v
+}
+
+// GetWithinLastTest returns WithinLastTest and true boolean if CustomFieldTestSum is WithinLastTest.
+func (s CustomFieldTestSum) GetWithinLastTest() (v WithinLastTest, ok bool) {
+	if !s.IsWithinLastTest() {
+		return v, false
+	}
+	return s.WithinLastTest, true
+}
+
+// NewWithinLastTestCustomFieldTestSum returns new CustomFieldTestSum from WithinLastTest.
+func NewWithinLastTestCustomFieldTestSum(v WithinLastTest) CustomFieldTestSum {
+	var s CustomFieldTestSum
+	s.SetWithinLastTest(v)
+	return s
+}
+
+// SetPresenceTest sets CustomFieldTestSum to PresenceTest.
+func (s *CustomFieldTestSum) SetPresenceTest(v PresenceTest) {
+	s.Type = PresenceTestCustomFieldTestSum
+	s.PresenceTest = v
+}
+
+// GetPresenceTest returns PresenceTest and true boolean if CustomFieldTestSum is PresenceTest.
+func (s CustomFieldTestSum) GetPresenceTest() (v PresenceTest, ok bool) {
+	if !s.IsPresenceTest() {
+		return v, false
+	}
+	return s.PresenceTest, true
+}
+
+// NewPresenceTestCustomFieldTestSum returns new CustomFieldTestSum from PresenceTest.
+func NewPresenceTestCustomFieldTestSum(v PresenceTest) CustomFieldTestSum {
+	var s CustomFieldTestSum
+	s.SetPresenceTest(v)
+	return s
+}
 
 // A Custom field's value type.
 // Ref: #/components/schemas/CustomFieldType
@@ -7579,6 +7134,251 @@ func (s *EnrollmentStatus) UnmarshalText(data []byte) error {
 
 type EntityId publicid.ID
 
+// How an event count is bounded: at least `times`, or at most `times`.
+// Ref: #/components/schemas/EventCountOperator
+type EventCountOperator string
+
+const (
+	EventCountOperatorAtLeast EventCountOperator = "atLeast"
+	EventCountOperatorAtMost  EventCountOperator = "atMost"
+)
+
+// AllValues returns all EventCountOperator values.
+func (EventCountOperator) AllValues() []EventCountOperator {
+	return []EventCountOperator{
+		EventCountOperatorAtLeast,
+		EventCountOperatorAtMost,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EventCountOperator) MarshalText() ([]byte, error) {
+	switch s {
+	case EventCountOperatorAtLeast:
+		return []byte(s), nil
+	case EventCountOperatorAtMost:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EventCountOperator) UnmarshalText(data []byte) error {
+	switch EventCountOperator(data) {
+	case EventCountOperatorAtLeast:
+		*s = EventCountOperatorAtLeast
+		return nil
+	case EventCountOperatorAtMost:
+		*s = EventCountOperatorAtMost
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A count of how many times a Contact performed an Event action, over all time or within the last
+// `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of both.
+// Engagement Events made by software (machine opens and clicks) are not counted. A window longer than
+// Event retention is capped by it: expired Events are no longer counted.
+// Ref: #/components/schemas/EventLeaf
+type EventLeaf struct {
+	Kind EventLeafKind `json:"kind"`
+	// The Event action counted.
+	Action string `json:"action"`
+	// How the count is bounded.
+	Operator EventCountOperator `json:"operator"`
+	// The bound: atLeast takes 1 or more, atMost 0 or more.
+	Times int32 `json:"times"`
+	// Count only the Events of the last this many days; absent counts all time.
+	WithinDays OptInt32 `json:"withinDays"`
+}
+
+// GetKind returns the value of Kind.
+func (s *EventLeaf) GetKind() EventLeafKind {
+	return s.Kind
+}
+
+// GetAction returns the value of Action.
+func (s *EventLeaf) GetAction() string {
+	return s.Action
+}
+
+// GetOperator returns the value of Operator.
+func (s *EventLeaf) GetOperator() EventCountOperator {
+	return s.Operator
+}
+
+// GetTimes returns the value of Times.
+func (s *EventLeaf) GetTimes() int32 {
+	return s.Times
+}
+
+// GetWithinDays returns the value of WithinDays.
+func (s *EventLeaf) GetWithinDays() OptInt32 {
+	return s.WithinDays
+}
+
+// SetKind sets the value of Kind.
+func (s *EventLeaf) SetKind(val EventLeafKind) {
+	s.Kind = val
+}
+
+// SetAction sets the value of Action.
+func (s *EventLeaf) SetAction(val string) {
+	s.Action = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *EventLeaf) SetOperator(val EventCountOperator) {
+	s.Operator = val
+}
+
+// SetTimes sets the value of Times.
+func (s *EventLeaf) SetTimes(val int32) {
+	s.Times = val
+}
+
+// SetWithinDays sets the value of WithinDays.
+func (s *EventLeaf) SetWithinDays(val OptInt32) {
+	s.WithinDays = val
+}
+
+// A count of how many times a Contact performed an Event action, over all time or within the last
+// `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of both.
+// Engagement Events made by software (machine opens and clicks) are not counted. A window longer than
+// Event retention is capped by it: expired Events are no longer counted.
+// Ref: #/components/schemas/EventLeafInput
+type EventLeafInput struct {
+	Kind EventLeafInputKind `json:"kind"`
+	// The Event action counted.
+	Action string `json:"action"`
+	// How the count is bounded.
+	Operator EventCountOperator `json:"operator"`
+	// The bound: atLeast takes 1 or more, atMost 0 or more.
+	Times int32 `json:"times"`
+	// Count only the Events of the last this many days; absent counts all time.
+	WithinDays OptInt32 `json:"withinDays"`
+}
+
+// GetKind returns the value of Kind.
+func (s *EventLeafInput) GetKind() EventLeafInputKind {
+	return s.Kind
+}
+
+// GetAction returns the value of Action.
+func (s *EventLeafInput) GetAction() string {
+	return s.Action
+}
+
+// GetOperator returns the value of Operator.
+func (s *EventLeafInput) GetOperator() EventCountOperator {
+	return s.Operator
+}
+
+// GetTimes returns the value of Times.
+func (s *EventLeafInput) GetTimes() int32 {
+	return s.Times
+}
+
+// GetWithinDays returns the value of WithinDays.
+func (s *EventLeafInput) GetWithinDays() OptInt32 {
+	return s.WithinDays
+}
+
+// SetKind sets the value of Kind.
+func (s *EventLeafInput) SetKind(val EventLeafInputKind) {
+	s.Kind = val
+}
+
+// SetAction sets the value of Action.
+func (s *EventLeafInput) SetAction(val string) {
+	s.Action = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *EventLeafInput) SetOperator(val EventCountOperator) {
+	s.Operator = val
+}
+
+// SetTimes sets the value of Times.
+func (s *EventLeafInput) SetTimes(val int32) {
+	s.Times = val
+}
+
+// SetWithinDays sets the value of WithinDays.
+func (s *EventLeafInput) SetWithinDays(val OptInt32) {
+	s.WithinDays = val
+}
+
+type EventLeafInputKind string
+
+const (
+	EventLeafInputKindEvent EventLeafInputKind = "event"
+)
+
+// AllValues returns all EventLeafInputKind values.
+func (EventLeafInputKind) AllValues() []EventLeafInputKind {
+	return []EventLeafInputKind{
+		EventLeafInputKindEvent,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EventLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case EventLeafInputKindEvent:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EventLeafInputKind) UnmarshalText(data []byte) error {
+	switch EventLeafInputKind(data) {
+	case EventLeafInputKindEvent:
+		*s = EventLeafInputKindEvent
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type EventLeafKind string
+
+const (
+	EventLeafKindEvent EventLeafKind = "event"
+)
+
+// AllValues returns all EventLeafKind values.
+func (EventLeafKind) AllValues() []EventLeafKind {
+	return []EventLeafKind{
+		EventLeafKindEvent,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EventLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case EventLeafKindEvent:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EventLeafKind) UnmarshalText(data []byte) error {
+	switch EventLeafKind(data) {
+	case EventLeafKindEvent:
+		*s = EventLeafKindEvent
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // Scopes an OAuth client may be granted without any extra opt-in: the external API's read/write
 // vocabulary. Token management scopes are deliberately absent, so a connector can never mint further
 // credentials.
@@ -7765,6 +7565,49 @@ func (s *GrantableScope) UnmarshalText(data []byte) error {
 		return nil
 	case GrantableScopeIntegrationsRead:
 		*s = GrantableScopeIntegrationsRead
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Whether a Contact has something: a Tag, a Telegram chat, a phone that can be texted.
+// Ref: #/components/schemas/HasOperator
+type HasOperator string
+
+const (
+	HasOperatorHas         HasOperator = "has"
+	HasOperatorDoesNotHave HasOperator = "doesNotHave"
+)
+
+// AllValues returns all HasOperator values.
+func (HasOperator) AllValues() []HasOperator {
+	return []HasOperator{
+		HasOperatorHas,
+		HasOperatorDoesNotHave,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s HasOperator) MarshalText() ([]byte, error) {
+	switch s {
+	case HasOperatorHas:
+		return []byte(s), nil
+	case HasOperatorDoesNotHave:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *HasOperator) UnmarshalText(data []byte) error {
+	switch HasOperator(data) {
+	case HasOperatorHas:
+		*s = HasOperatorHas
+		return nil
+	case HasOperatorDoesNotHave:
+		*s = HasOperatorDoesNotHave
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -8632,6 +8475,202 @@ func (s *MessageRevenue) SetAmount(val int64) {
 	s.Amount = val
 }
 
+// Which side of `at` a moment is on: before is strictly earlier, after is at or later, so the two
+// split time at `at`.
+// Ref: #/components/schemas/MomentOperator
+type MomentOperator string
+
+const (
+	MomentOperatorBefore MomentOperator = "before"
+	MomentOperatorAfter  MomentOperator = "after"
+)
+
+// AllValues returns all MomentOperator values.
+func (MomentOperator) AllValues() []MomentOperator {
+	return []MomentOperator{
+		MomentOperatorBefore,
+		MomentOperatorAfter,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s MomentOperator) MarshalText() ([]byte, error) {
+	switch s {
+	case MomentOperatorBefore:
+		return []byte(s), nil
+	case MomentOperatorAfter:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *MomentOperator) UnmarshalText(data []byte) error {
+	switch MomentOperator(data) {
+	case MomentOperatorBefore:
+		*s = MomentOperatorBefore
+		return nil
+	case MomentOperatorAfter:
+		*s = MomentOperatorAfter
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A test of a moment: before or after `at`. Only a date-time with a UTC offset is a moment: a missing
+// value, a date without a time, a date-time without an offset or a value that is not a date-time fails
+// it.
+// Ref: #/components/schemas/MomentTest
+type MomentTest struct {
+	Kind MomentTestKind `json:"kind"`
+	// Which side of `at` the moment is on.
+	Operator MomentOperator `json:"operator"`
+	// The moment compared with.
+	At Timestamp `json:"at"`
+}
+
+// GetKind returns the value of Kind.
+func (s *MomentTest) GetKind() MomentTestKind {
+	return s.Kind
+}
+
+// GetOperator returns the value of Operator.
+func (s *MomentTest) GetOperator() MomentOperator {
+	return s.Operator
+}
+
+// GetAt returns the value of At.
+func (s *MomentTest) GetAt() Timestamp {
+	return s.At
+}
+
+// SetKind sets the value of Kind.
+func (s *MomentTest) SetKind(val MomentTestKind) {
+	s.Kind = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *MomentTest) SetOperator(val MomentOperator) {
+	s.Operator = val
+}
+
+// SetAt sets the value of At.
+func (s *MomentTest) SetAt(val Timestamp) {
+	s.At = val
+}
+
+// A test of a moment: before or after `at`. Only a date-time with a UTC offset is a moment: a missing
+// value, a date without a time, a date-time without an offset or a value that is not a date-time fails
+// it.
+// Ref: #/components/schemas/MomentTestInput
+type MomentTestInput struct {
+	Kind MomentTestInputKind `json:"kind"`
+	// Which side of `at` the moment is on.
+	Operator MomentOperator `json:"operator"`
+	// The moment compared with.
+	At Timestamp `json:"at"`
+}
+
+// GetKind returns the value of Kind.
+func (s *MomentTestInput) GetKind() MomentTestInputKind {
+	return s.Kind
+}
+
+// GetOperator returns the value of Operator.
+func (s *MomentTestInput) GetOperator() MomentOperator {
+	return s.Operator
+}
+
+// GetAt returns the value of At.
+func (s *MomentTestInput) GetAt() Timestamp {
+	return s.At
+}
+
+// SetKind sets the value of Kind.
+func (s *MomentTestInput) SetKind(val MomentTestInputKind) {
+	s.Kind = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *MomentTestInput) SetOperator(val MomentOperator) {
+	s.Operator = val
+}
+
+// SetAt sets the value of At.
+func (s *MomentTestInput) SetAt(val Timestamp) {
+	s.At = val
+}
+
+type MomentTestInputKind string
+
+const (
+	MomentTestInputKindMoment MomentTestInputKind = "moment"
+)
+
+// AllValues returns all MomentTestInputKind values.
+func (MomentTestInputKind) AllValues() []MomentTestInputKind {
+	return []MomentTestInputKind{
+		MomentTestInputKindMoment,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s MomentTestInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case MomentTestInputKindMoment:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *MomentTestInputKind) UnmarshalText(data []byte) error {
+	switch MomentTestInputKind(data) {
+	case MomentTestInputKindMoment:
+		*s = MomentTestInputKindMoment
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type MomentTestKind string
+
+const (
+	MomentTestKindMoment MomentTestKind = "moment"
+)
+
+// AllValues returns all MomentTestKind values.
+func (MomentTestKind) AllValues() []MomentTestKind {
+	return []MomentTestKind{
+		MomentTestKindMoment,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s MomentTestKind) MarshalText() ([]byte, error) {
+	switch s {
+	case MomentTestKindMoment:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *MomentTestKind) UnmarshalText(data []byte) error {
+	switch MomentTestKind(data) {
+	case MomentTestKindMoment:
+		*s = MomentTestKindMoment
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 type Name string
 
 // NewNilAutomationVersion returns new NilAutomationVersion with value set to v.
@@ -9354,6 +9393,214 @@ func (o NilTimestamp) Or(d Timestamp) Timestamp {
 	return d
 }
 
+// How a number test compares the value with its own: greater than, greater than or equal, less than,
+// or less than or equal.
+// Ref: #/components/schemas/NumberOperator
+type NumberOperator string
+
+const (
+	NumberOperatorGt  NumberOperator = "gt"
+	NumberOperatorGte NumberOperator = "gte"
+	NumberOperatorLt  NumberOperator = "lt"
+	NumberOperatorLte NumberOperator = "lte"
+)
+
+// AllValues returns all NumberOperator values.
+func (NumberOperator) AllValues() []NumberOperator {
+	return []NumberOperator{
+		NumberOperatorGt,
+		NumberOperatorGte,
+		NumberOperatorLt,
+		NumberOperatorLte,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s NumberOperator) MarshalText() ([]byte, error) {
+	switch s {
+	case NumberOperatorGt:
+		return []byte(s), nil
+	case NumberOperatorGte:
+		return []byte(s), nil
+	case NumberOperatorLt:
+		return []byte(s), nil
+	case NumberOperatorLte:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *NumberOperator) UnmarshalText(data []byte) error {
+	switch NumberOperator(data) {
+	case NumberOperatorGt:
+		*s = NumberOperatorGt
+		return nil
+	case NumberOperatorGte:
+		*s = NumberOperatorGte
+		return nil
+	case NumberOperatorLt:
+		*s = NumberOperatorLt
+		return nil
+	case NumberOperatorLte:
+		*s = NumberOperatorLte
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A test of a number. A missing value, or one that is not a number (text, a boolean, null, a list),
+// fails it.
+// Ref: #/components/schemas/NumberTest
+type NumberTest struct {
+	Kind NumberTestKind `json:"kind"`
+	// How the value compares.
+	Operator NumberOperator `json:"operator"`
+	// The number compared with.
+	Value float64 `json:"value"`
+}
+
+// GetKind returns the value of Kind.
+func (s *NumberTest) GetKind() NumberTestKind {
+	return s.Kind
+}
+
+// GetOperator returns the value of Operator.
+func (s *NumberTest) GetOperator() NumberOperator {
+	return s.Operator
+}
+
+// GetValue returns the value of Value.
+func (s *NumberTest) GetValue() float64 {
+	return s.Value
+}
+
+// SetKind sets the value of Kind.
+func (s *NumberTest) SetKind(val NumberTestKind) {
+	s.Kind = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *NumberTest) SetOperator(val NumberOperator) {
+	s.Operator = val
+}
+
+// SetValue sets the value of Value.
+func (s *NumberTest) SetValue(val float64) {
+	s.Value = val
+}
+
+// A test of a number. A missing value, or one that is not a number (text, a boolean, null, a list),
+// fails it.
+// Ref: #/components/schemas/NumberTestInput
+type NumberTestInput struct {
+	Kind NumberTestInputKind `json:"kind"`
+	// How the value compares.
+	Operator NumberOperator `json:"operator"`
+	// The number compared with.
+	Value float64 `json:"value"`
+}
+
+// GetKind returns the value of Kind.
+func (s *NumberTestInput) GetKind() NumberTestInputKind {
+	return s.Kind
+}
+
+// GetOperator returns the value of Operator.
+func (s *NumberTestInput) GetOperator() NumberOperator {
+	return s.Operator
+}
+
+// GetValue returns the value of Value.
+func (s *NumberTestInput) GetValue() float64 {
+	return s.Value
+}
+
+// SetKind sets the value of Kind.
+func (s *NumberTestInput) SetKind(val NumberTestInputKind) {
+	s.Kind = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *NumberTestInput) SetOperator(val NumberOperator) {
+	s.Operator = val
+}
+
+// SetValue sets the value of Value.
+func (s *NumberTestInput) SetValue(val float64) {
+	s.Value = val
+}
+
+type NumberTestInputKind string
+
+const (
+	NumberTestInputKindNumber NumberTestInputKind = "number"
+)
+
+// AllValues returns all NumberTestInputKind values.
+func (NumberTestInputKind) AllValues() []NumberTestInputKind {
+	return []NumberTestInputKind{
+		NumberTestInputKindNumber,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s NumberTestInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case NumberTestInputKindNumber:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *NumberTestInputKind) UnmarshalText(data []byte) error {
+	switch NumberTestInputKind(data) {
+	case NumberTestInputKindNumber:
+		*s = NumberTestInputKindNumber
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type NumberTestKind string
+
+const (
+	NumberTestKindNumber NumberTestKind = "number"
+)
+
+// AllValues returns all NumberTestKind values.
+func (NumberTestKind) AllValues() []NumberTestKind {
+	return []NumberTestKind{
+		NumberTestKindNumber,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s NumberTestKind) MarshalText() ([]byte, error) {
+	switch s {
+	case NumberTestKindNumber:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *NumberTestKind) UnmarshalText(data []byte) error {
+	switch NumberTestKind(data) {
+	case NumberTestKindNumber:
+		*s = NumberTestKindNumber
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // NewOptAttributionWindowDays returns new OptAttributionWindowDays with value set to v.
 func NewOptAttributionWindowDays(v AttributionWindowDays) OptAttributionWindowDays {
 	return OptAttributionWindowDays{
@@ -9670,98 +9917,6 @@ func (o OptBroadcastContentInput) Get() (v BroadcastContentInput, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptBroadcastContentInput) Or(d BroadcastContentInput) BroadcastContentInput {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptConditionGroup returns new OptConditionGroup with value set to v.
-func NewOptConditionGroup(v ConditionGroup) OptConditionGroup {
-	return OptConditionGroup{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptConditionGroup is optional ConditionGroup.
-type OptConditionGroup struct {
-	Value ConditionGroup
-	Set   bool
-}
-
-// IsSet returns true if OptConditionGroup was set.
-func (o OptConditionGroup) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptConditionGroup) Reset() {
-	var v ConditionGroup
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptConditionGroup) SetTo(v ConditionGroup) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptConditionGroup) Get() (v ConditionGroup, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptConditionGroup) Or(d ConditionGroup) ConditionGroup {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptConditionGroupInput returns new OptConditionGroupInput with value set to v.
-func NewOptConditionGroupInput(v ConditionGroupInput) OptConditionGroupInput {
-	return OptConditionGroupInput{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptConditionGroupInput is optional ConditionGroupInput.
-type OptConditionGroupInput struct {
-	Value ConditionGroupInput
-	Set   bool
-}
-
-// IsSet returns true if OptConditionGroupInput was set.
-func (o OptConditionGroupInput) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptConditionGroupInput) Reset() {
-	var v ConditionGroupInput
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptConditionGroupInput) SetTo(v ConditionGroupInput) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptConditionGroupInput) Get() (v ConditionGroupInput, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptConditionGroupInput) Or(d ConditionGroupInput) ConditionGroupInput {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -12392,6 +12547,190 @@ func (o OptProblemDetailsFields) Or(d ProblemDetailsFields) ProblemDetailsFields
 	return d
 }
 
+// NewOptRuleCondition returns new OptRuleCondition with value set to v.
+func NewOptRuleCondition(v RuleCondition) OptRuleCondition {
+	return OptRuleCondition{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptRuleCondition is optional RuleCondition.
+type OptRuleCondition struct {
+	Value RuleCondition
+	Set   bool
+}
+
+// IsSet returns true if OptRuleCondition was set.
+func (o OptRuleCondition) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptRuleCondition) Reset() {
+	var v RuleCondition
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptRuleCondition) SetTo(v RuleCondition) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptRuleCondition) Get() (v RuleCondition, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptRuleCondition) Or(d RuleCondition) RuleCondition {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptRuleConditionInput returns new OptRuleConditionInput with value set to v.
+func NewOptRuleConditionInput(v RuleConditionInput) OptRuleConditionInput {
+	return OptRuleConditionInput{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptRuleConditionInput is optional RuleConditionInput.
+type OptRuleConditionInput struct {
+	Value RuleConditionInput
+	Set   bool
+}
+
+// IsSet returns true if OptRuleConditionInput was set.
+func (o OptRuleConditionInput) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptRuleConditionInput) Reset() {
+	var v RuleConditionInput
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptRuleConditionInput) SetTo(v RuleConditionInput) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptRuleConditionInput) Get() (v RuleConditionInput, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptRuleConditionInput) Or(d RuleConditionInput) RuleConditionInput {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSegmentCondition returns new OptSegmentCondition with value set to v.
+func NewOptSegmentCondition(v SegmentCondition) OptSegmentCondition {
+	return OptSegmentCondition{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSegmentCondition is optional SegmentCondition.
+type OptSegmentCondition struct {
+	Value SegmentCondition
+	Set   bool
+}
+
+// IsSet returns true if OptSegmentCondition was set.
+func (o OptSegmentCondition) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSegmentCondition) Reset() {
+	var v SegmentCondition
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSegmentCondition) SetTo(v SegmentCondition) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSegmentCondition) Get() (v SegmentCondition, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSegmentCondition) Or(d SegmentCondition) SegmentCondition {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptSegmentConditionInput returns new OptSegmentConditionInput with value set to v.
+func NewOptSegmentConditionInput(v SegmentConditionInput) OptSegmentConditionInput {
+	return OptSegmentConditionInput{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSegmentConditionInput is optional SegmentConditionInput.
+type OptSegmentConditionInput struct {
+	Value SegmentConditionInput
+	Set   bool
+}
+
+// IsSet returns true if OptSegmentConditionInput was set.
+func (o OptSegmentConditionInput) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSegmentConditionInput) Reset() {
+	var v SegmentConditionInput
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSegmentConditionInput) SetTo(v SegmentConditionInput) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSegmentConditionInput) Get() (v SegmentConditionInput, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSegmentConditionInput) Or(d SegmentConditionInput) SegmentConditionInput {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSigningSecret returns new OptSigningSecret with value set to v.
 func NewOptSigningSecret(v SigningSecret) OptSigningSecret {
 	return OptSigningSecret{
@@ -13985,6 +14324,173 @@ func (s *PersonalScope) UnmarshalText(data []byte) error {
 	}
 }
 
+// Whether a value is set.
+// Ref: #/components/schemas/PresenceOperator
+type PresenceOperator string
+
+const (
+	PresenceOperatorSet    PresenceOperator = "set"
+	PresenceOperatorNotSet PresenceOperator = "notSet"
+)
+
+// AllValues returns all PresenceOperator values.
+func (PresenceOperator) AllValues() []PresenceOperator {
+	return []PresenceOperator{
+		PresenceOperatorSet,
+		PresenceOperatorNotSet,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s PresenceOperator) MarshalText() ([]byte, error) {
+	switch s {
+	case PresenceOperatorSet:
+		return []byte(s), nil
+	case PresenceOperatorNotSet:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *PresenceOperator) UnmarshalText(data []byte) error {
+	switch PresenceOperator(data) {
+	case PresenceOperatorSet:
+		*s = PresenceOperatorSet
+		return nil
+	case PresenceOperatorNotSet:
+		*s = PresenceOperatorNotSet
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A test of whether a value is set at all.
+// Ref: #/components/schemas/PresenceTest
+type PresenceTest struct {
+	Kind PresenceTestKind `json:"kind"`
+	// Set or not set.
+	Operator PresenceOperator `json:"operator"`
+}
+
+// GetKind returns the value of Kind.
+func (s *PresenceTest) GetKind() PresenceTestKind {
+	return s.Kind
+}
+
+// GetOperator returns the value of Operator.
+func (s *PresenceTest) GetOperator() PresenceOperator {
+	return s.Operator
+}
+
+// SetKind sets the value of Kind.
+func (s *PresenceTest) SetKind(val PresenceTestKind) {
+	s.Kind = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *PresenceTest) SetOperator(val PresenceOperator) {
+	s.Operator = val
+}
+
+// A test of whether a value is set at all.
+// Ref: #/components/schemas/PresenceTestInput
+type PresenceTestInput struct {
+	Kind PresenceTestInputKind `json:"kind"`
+	// Set or not set.
+	Operator PresenceOperator `json:"operator"`
+}
+
+// GetKind returns the value of Kind.
+func (s *PresenceTestInput) GetKind() PresenceTestInputKind {
+	return s.Kind
+}
+
+// GetOperator returns the value of Operator.
+func (s *PresenceTestInput) GetOperator() PresenceOperator {
+	return s.Operator
+}
+
+// SetKind sets the value of Kind.
+func (s *PresenceTestInput) SetKind(val PresenceTestInputKind) {
+	s.Kind = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *PresenceTestInput) SetOperator(val PresenceOperator) {
+	s.Operator = val
+}
+
+type PresenceTestInputKind string
+
+const (
+	PresenceTestInputKindPresence PresenceTestInputKind = "presence"
+)
+
+// AllValues returns all PresenceTestInputKind values.
+func (PresenceTestInputKind) AllValues() []PresenceTestInputKind {
+	return []PresenceTestInputKind{
+		PresenceTestInputKindPresence,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s PresenceTestInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case PresenceTestInputKindPresence:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *PresenceTestInputKind) UnmarshalText(data []byte) error {
+	switch PresenceTestInputKind(data) {
+	case PresenceTestInputKindPresence:
+		*s = PresenceTestInputKindPresence
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type PresenceTestKind string
+
+const (
+	PresenceTestKindPresence PresenceTestKind = "presence"
+)
+
+// AllValues returns all PresenceTestKind values.
+func (PresenceTestKind) AllValues() []PresenceTestKind {
+	return []PresenceTestKind{
+		PresenceTestKindPresence,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s PresenceTestKind) MarshalText() ([]byte, error) {
+	switch s {
+	case PresenceTestKindPresence:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *PresenceTestKind) UnmarshalText(data []byte) error {
+	switch PresenceTestKind(data) {
+	case PresenceTestKindPresence:
+		*s = PresenceTestKindPresence
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A Preset: how an Instance verifies and reads one provider's bounce and complaint callbacks.
 // Ref: #/components/schemas/PresetResource
 type PresetResource struct {
@@ -14389,6 +14895,230 @@ func (s *ProblemDetailsStatusCode) SetStatusCode(val int) {
 // SetResponse sets the value of Response.
 func (s *ProblemDetailsStatusCode) SetResponse(val ProblemDetails) {
 	s.Response = val
+}
+
+// What a property test asks of the property's value, by `kind`. A key the Event lacks fails every
+// test; a text test fails on a value that is not text; set holds for a text value and notSet for an
+// explicit null.
+// Ref: #/components/schemas/PropertyTest
+type PropertyTest struct {
+	OneOf PropertyTestSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *PropertyTest) GetOneOf() PropertyTestSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *PropertyTest) SetOneOf(val PropertyTestSum) {
+	s.OneOf = val
+}
+
+// What a property test asks of the property's value, by `kind`. A key the Event lacks fails every
+// test; a text test fails on a value that is not text; set holds for a text value and notSet for an
+// explicit null.
+// Ref: #/components/schemas/PropertyTestInput
+type PropertyTestInput struct {
+	OneOf PropertyTestInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *PropertyTestInput) GetOneOf() PropertyTestInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *PropertyTestInput) SetOneOf(val PropertyTestInputSum) {
+	s.OneOf = val
+}
+
+// PropertyTestInputSum represents sum type.
+type PropertyTestInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type              PropertyTestInputSumType
+	TextTestInput     TextTestInput
+	NumberTestInput   NumberTestInput
+	PresenceTestInput PresenceTestInput
+}
+
+// PropertyTestInputSumType is oneOf type of PropertyTestInputSum.
+type PropertyTestInputSumType string
+
+// Possible values for PropertyTestInputSumType.
+const (
+	TextTestInputPropertyTestInputSum     PropertyTestInputSumType = "text"
+	NumberTestInputPropertyTestInputSum   PropertyTestInputSumType = "number"
+	PresenceTestInputPropertyTestInputSum PropertyTestInputSumType = "presence"
+)
+
+// IsTextTestInput reports whether PropertyTestInputSum is TextTestInput.
+func (s PropertyTestInputSum) IsTextTestInput() bool {
+	return s.Type == TextTestInputPropertyTestInputSum
+}
+
+// IsNumberTestInput reports whether PropertyTestInputSum is NumberTestInput.
+func (s PropertyTestInputSum) IsNumberTestInput() bool {
+	return s.Type == NumberTestInputPropertyTestInputSum
+}
+
+// IsPresenceTestInput reports whether PropertyTestInputSum is PresenceTestInput.
+func (s PropertyTestInputSum) IsPresenceTestInput() bool {
+	return s.Type == PresenceTestInputPropertyTestInputSum
+}
+
+// SetTextTestInput sets PropertyTestInputSum to TextTestInput.
+func (s *PropertyTestInputSum) SetTextTestInput(v TextTestInput) {
+	s.Type = TextTestInputPropertyTestInputSum
+	s.TextTestInput = v
+}
+
+// GetTextTestInput returns TextTestInput and true boolean if PropertyTestInputSum is TextTestInput.
+func (s PropertyTestInputSum) GetTextTestInput() (v TextTestInput, ok bool) {
+	if !s.IsTextTestInput() {
+		return v, false
+	}
+	return s.TextTestInput, true
+}
+
+// NewTextTestInputPropertyTestInputSum returns new PropertyTestInputSum from TextTestInput.
+func NewTextTestInputPropertyTestInputSum(v TextTestInput) PropertyTestInputSum {
+	var s PropertyTestInputSum
+	s.SetTextTestInput(v)
+	return s
+}
+
+// SetNumberTestInput sets PropertyTestInputSum to NumberTestInput.
+func (s *PropertyTestInputSum) SetNumberTestInput(v NumberTestInput) {
+	s.Type = NumberTestInputPropertyTestInputSum
+	s.NumberTestInput = v
+}
+
+// GetNumberTestInput returns NumberTestInput and true boolean if PropertyTestInputSum is NumberTestInput.
+func (s PropertyTestInputSum) GetNumberTestInput() (v NumberTestInput, ok bool) {
+	if !s.IsNumberTestInput() {
+		return v, false
+	}
+	return s.NumberTestInput, true
+}
+
+// NewNumberTestInputPropertyTestInputSum returns new PropertyTestInputSum from NumberTestInput.
+func NewNumberTestInputPropertyTestInputSum(v NumberTestInput) PropertyTestInputSum {
+	var s PropertyTestInputSum
+	s.SetNumberTestInput(v)
+	return s
+}
+
+// SetPresenceTestInput sets PropertyTestInputSum to PresenceTestInput.
+func (s *PropertyTestInputSum) SetPresenceTestInput(v PresenceTestInput) {
+	s.Type = PresenceTestInputPropertyTestInputSum
+	s.PresenceTestInput = v
+}
+
+// GetPresenceTestInput returns PresenceTestInput and true boolean if PropertyTestInputSum is PresenceTestInput.
+func (s PropertyTestInputSum) GetPresenceTestInput() (v PresenceTestInput, ok bool) {
+	if !s.IsPresenceTestInput() {
+		return v, false
+	}
+	return s.PresenceTestInput, true
+}
+
+// NewPresenceTestInputPropertyTestInputSum returns new PropertyTestInputSum from PresenceTestInput.
+func NewPresenceTestInputPropertyTestInputSum(v PresenceTestInput) PropertyTestInputSum {
+	var s PropertyTestInputSum
+	s.SetPresenceTestInput(v)
+	return s
+}
+
+// PropertyTestSum represents sum type.
+type PropertyTestSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type         PropertyTestSumType
+	TextTest     TextTest
+	NumberTest   NumberTest
+	PresenceTest PresenceTest
+}
+
+// PropertyTestSumType is oneOf type of PropertyTestSum.
+type PropertyTestSumType string
+
+// Possible values for PropertyTestSumType.
+const (
+	TextTestPropertyTestSum     PropertyTestSumType = "text"
+	NumberTestPropertyTestSum   PropertyTestSumType = "number"
+	PresenceTestPropertyTestSum PropertyTestSumType = "presence"
+)
+
+// IsTextTest reports whether PropertyTestSum is TextTest.
+func (s PropertyTestSum) IsTextTest() bool { return s.Type == TextTestPropertyTestSum }
+
+// IsNumberTest reports whether PropertyTestSum is NumberTest.
+func (s PropertyTestSum) IsNumberTest() bool { return s.Type == NumberTestPropertyTestSum }
+
+// IsPresenceTest reports whether PropertyTestSum is PresenceTest.
+func (s PropertyTestSum) IsPresenceTest() bool { return s.Type == PresenceTestPropertyTestSum }
+
+// SetTextTest sets PropertyTestSum to TextTest.
+func (s *PropertyTestSum) SetTextTest(v TextTest) {
+	s.Type = TextTestPropertyTestSum
+	s.TextTest = v
+}
+
+// GetTextTest returns TextTest and true boolean if PropertyTestSum is TextTest.
+func (s PropertyTestSum) GetTextTest() (v TextTest, ok bool) {
+	if !s.IsTextTest() {
+		return v, false
+	}
+	return s.TextTest, true
+}
+
+// NewTextTestPropertyTestSum returns new PropertyTestSum from TextTest.
+func NewTextTestPropertyTestSum(v TextTest) PropertyTestSum {
+	var s PropertyTestSum
+	s.SetTextTest(v)
+	return s
+}
+
+// SetNumberTest sets PropertyTestSum to NumberTest.
+func (s *PropertyTestSum) SetNumberTest(v NumberTest) {
+	s.Type = NumberTestPropertyTestSum
+	s.NumberTest = v
+}
+
+// GetNumberTest returns NumberTest and true boolean if PropertyTestSum is NumberTest.
+func (s PropertyTestSum) GetNumberTest() (v NumberTest, ok bool) {
+	if !s.IsNumberTest() {
+		return v, false
+	}
+	return s.NumberTest, true
+}
+
+// NewNumberTestPropertyTestSum returns new PropertyTestSum from NumberTest.
+func NewNumberTestPropertyTestSum(v NumberTest) PropertyTestSum {
+	var s PropertyTestSum
+	s.SetNumberTest(v)
+	return s
+}
+
+// SetPresenceTest sets PropertyTestSum to PresenceTest.
+func (s *PropertyTestSum) SetPresenceTest(v PresenceTest) {
+	s.Type = PresenceTestPropertyTestSum
+	s.PresenceTest = v
+}
+
+// GetPresenceTest returns PresenceTest and true boolean if PropertyTestSum is PresenceTest.
+func (s PropertyTestSum) GetPresenceTest() (v PresenceTest, ok bool) {
+	if !s.IsPresenceTest() {
+		return v, false
+	}
+	return s.PresenceTest, true
+}
+
+// NewPresenceTestPropertyTestSum returns new PropertyTestSum from PresenceTest.
+func NewPresenceTestPropertyTestSum(v PresenceTest) PropertyTestSum {
+	var s PropertyTestSum
+	s.SetPresenceTest(v)
+	return s
 }
 
 // Where an effective Provider limit comes from.
@@ -15060,6 +15790,736 @@ func (s *RuleActionType) UnmarshalText(data []byte) error {
 	}
 }
 
+// A Rule's Condition: the tree of tests the Contact and the Event that fired the Rule match.
+// Ref: #/components/schemas/RuleCondition
+type RuleCondition struct {
+	Kind RuleConditionKind `json:"kind"`
+	// How the entries combine.
+	Combinator ConditionCombinator `json:"combinator"`
+	// Negate the whole group.
+	Not OptBool `json:"not"`
+	// The group's tests and nested groups.
+	Entries []RuleConditionNode `json:"entries"`
+}
+
+// GetKind returns the value of Kind.
+func (s *RuleCondition) GetKind() RuleConditionKind {
+	return s.Kind
+}
+
+// GetCombinator returns the value of Combinator.
+func (s *RuleCondition) GetCombinator() ConditionCombinator {
+	return s.Combinator
+}
+
+// GetNot returns the value of Not.
+func (s *RuleCondition) GetNot() OptBool {
+	return s.Not
+}
+
+// GetEntries returns the value of Entries.
+func (s *RuleCondition) GetEntries() []RuleConditionNode {
+	return s.Entries
+}
+
+// SetKind sets the value of Kind.
+func (s *RuleCondition) SetKind(val RuleConditionKind) {
+	s.Kind = val
+}
+
+// SetCombinator sets the value of Combinator.
+func (s *RuleCondition) SetCombinator(val ConditionCombinator) {
+	s.Combinator = val
+}
+
+// SetNot sets the value of Not.
+func (s *RuleCondition) SetNot(val OptBool) {
+	s.Not = val
+}
+
+// SetEntries sets the value of Entries.
+func (s *RuleCondition) SetEntries(val []RuleConditionNode) {
+	s.Entries = val
+}
+
+// A Rule's Condition: the tree of tests the Contact and the Event that fired the Rule match.
+// Ref: #/components/schemas/RuleConditionInput
+type RuleConditionInput struct {
+	Kind RuleConditionInputKind `json:"kind"`
+	// How the entries combine.
+	Combinator ConditionCombinator `json:"combinator"`
+	// Negate the whole group.
+	Not OptBool `json:"not"`
+	// The group's tests and nested groups.
+	Entries []RuleConditionNodeInput `json:"entries"`
+}
+
+// GetKind returns the value of Kind.
+func (s *RuleConditionInput) GetKind() RuleConditionInputKind {
+	return s.Kind
+}
+
+// GetCombinator returns the value of Combinator.
+func (s *RuleConditionInput) GetCombinator() ConditionCombinator {
+	return s.Combinator
+}
+
+// GetNot returns the value of Not.
+func (s *RuleConditionInput) GetNot() OptBool {
+	return s.Not
+}
+
+// GetEntries returns the value of Entries.
+func (s *RuleConditionInput) GetEntries() []RuleConditionNodeInput {
+	return s.Entries
+}
+
+// SetKind sets the value of Kind.
+func (s *RuleConditionInput) SetKind(val RuleConditionInputKind) {
+	s.Kind = val
+}
+
+// SetCombinator sets the value of Combinator.
+func (s *RuleConditionInput) SetCombinator(val ConditionCombinator) {
+	s.Combinator = val
+}
+
+// SetNot sets the value of Not.
+func (s *RuleConditionInput) SetNot(val OptBool) {
+	s.Not = val
+}
+
+// SetEntries sets the value of Entries.
+func (s *RuleConditionInput) SetEntries(val []RuleConditionNodeInput) {
+	s.Entries = val
+}
+
+type RuleConditionInputKind string
+
+const (
+	RuleConditionInputKindGroup RuleConditionInputKind = "group"
+)
+
+// AllValues returns all RuleConditionInputKind values.
+func (RuleConditionInputKind) AllValues() []RuleConditionInputKind {
+	return []RuleConditionInputKind{
+		RuleConditionInputKindGroup,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s RuleConditionInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case RuleConditionInputKindGroup:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *RuleConditionInputKind) UnmarshalText(data []byte) error {
+	switch RuleConditionInputKind(data) {
+	case RuleConditionInputKindGroup:
+		*s = RuleConditionInputKindGroup
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type RuleConditionKind string
+
+const (
+	RuleConditionKindGroup RuleConditionKind = "group"
+)
+
+// AllValues returns all RuleConditionKind values.
+func (RuleConditionKind) AllValues() []RuleConditionKind {
+	return []RuleConditionKind{
+		RuleConditionKindGroup,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s RuleConditionKind) MarshalText() ([]byte, error) {
+	switch s {
+	case RuleConditionKindGroup:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *RuleConditionKind) UnmarshalText(data []byte) error {
+	switch RuleConditionKind(data) {
+	case RuleConditionKindGroup:
+		*s = RuleConditionKindGroup
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// An entry of a Rule's Condition, by `kind`: a Segment's, or a test of a property of the Event that
+// fired the Rule.
+// Ref: #/components/schemas/RuleConditionNode
+type RuleConditionNode struct {
+	OneOf RuleConditionNodeSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *RuleConditionNode) GetOneOf() RuleConditionNodeSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *RuleConditionNode) SetOneOf(val RuleConditionNodeSum) {
+	s.OneOf = val
+}
+
+// An entry of a Rule's Condition, by `kind`: a Segment's, or a test of a property of the Event that
+// fired the Rule.
+// Ref: #/components/schemas/RuleConditionNodeInput
+type RuleConditionNodeInput struct {
+	OneOf RuleConditionNodeInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *RuleConditionNodeInput) GetOneOf() RuleConditionNodeInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *RuleConditionNodeInput) SetOneOf(val RuleConditionNodeInputSum) {
+	s.OneOf = val
+}
+
+// RuleConditionNodeInputSum represents sum type.
+type RuleConditionNodeInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                  RuleConditionNodeInputSumType
+	RuleConditionInput    RuleConditionInput
+	AttributeLeafInput    AttributeLeafInput
+	BirthdayLeafInput     BirthdayLeafInput
+	TagLeafInput          TagLeafInput
+	TelegramLeafInput     TelegramLeafInput
+	SmsLeafInput          SmsLeafInput
+	CustomFieldLeafInput  CustomFieldLeafInput
+	EventLeafInput        EventLeafInput
+	RulePropertyLeafInput RulePropertyLeafInput
+}
+
+// RuleConditionNodeInputSumType is oneOf type of RuleConditionNodeInputSum.
+type RuleConditionNodeInputSumType string
+
+// Possible values for RuleConditionNodeInputSumType.
+const (
+	RuleConditionInputRuleConditionNodeInputSum    RuleConditionNodeInputSumType = "group"
+	AttributeLeafInputRuleConditionNodeInputSum    RuleConditionNodeInputSumType = "attribute"
+	BirthdayLeafInputRuleConditionNodeInputSum     RuleConditionNodeInputSumType = "birthday"
+	TagLeafInputRuleConditionNodeInputSum          RuleConditionNodeInputSumType = "tag"
+	TelegramLeafInputRuleConditionNodeInputSum     RuleConditionNodeInputSumType = "telegram"
+	SmsLeafInputRuleConditionNodeInputSum          RuleConditionNodeInputSumType = "sms"
+	CustomFieldLeafInputRuleConditionNodeInputSum  RuleConditionNodeInputSumType = "customField"
+	EventLeafInputRuleConditionNodeInputSum        RuleConditionNodeInputSumType = "event"
+	RulePropertyLeafInputRuleConditionNodeInputSum RuleConditionNodeInputSumType = "property"
+)
+
+// IsRuleConditionInput reports whether RuleConditionNodeInputSum is RuleConditionInput.
+func (s RuleConditionNodeInputSum) IsRuleConditionInput() bool {
+	return s.Type == RuleConditionInputRuleConditionNodeInputSum
+}
+
+// IsAttributeLeafInput reports whether RuleConditionNodeInputSum is AttributeLeafInput.
+func (s RuleConditionNodeInputSum) IsAttributeLeafInput() bool {
+	return s.Type == AttributeLeafInputRuleConditionNodeInputSum
+}
+
+// IsBirthdayLeafInput reports whether RuleConditionNodeInputSum is BirthdayLeafInput.
+func (s RuleConditionNodeInputSum) IsBirthdayLeafInput() bool {
+	return s.Type == BirthdayLeafInputRuleConditionNodeInputSum
+}
+
+// IsTagLeafInput reports whether RuleConditionNodeInputSum is TagLeafInput.
+func (s RuleConditionNodeInputSum) IsTagLeafInput() bool {
+	return s.Type == TagLeafInputRuleConditionNodeInputSum
+}
+
+// IsTelegramLeafInput reports whether RuleConditionNodeInputSum is TelegramLeafInput.
+func (s RuleConditionNodeInputSum) IsTelegramLeafInput() bool {
+	return s.Type == TelegramLeafInputRuleConditionNodeInputSum
+}
+
+// IsSmsLeafInput reports whether RuleConditionNodeInputSum is SmsLeafInput.
+func (s RuleConditionNodeInputSum) IsSmsLeafInput() bool {
+	return s.Type == SmsLeafInputRuleConditionNodeInputSum
+}
+
+// IsCustomFieldLeafInput reports whether RuleConditionNodeInputSum is CustomFieldLeafInput.
+func (s RuleConditionNodeInputSum) IsCustomFieldLeafInput() bool {
+	return s.Type == CustomFieldLeafInputRuleConditionNodeInputSum
+}
+
+// IsEventLeafInput reports whether RuleConditionNodeInputSum is EventLeafInput.
+func (s RuleConditionNodeInputSum) IsEventLeafInput() bool {
+	return s.Type == EventLeafInputRuleConditionNodeInputSum
+}
+
+// IsRulePropertyLeafInput reports whether RuleConditionNodeInputSum is RulePropertyLeafInput.
+func (s RuleConditionNodeInputSum) IsRulePropertyLeafInput() bool {
+	return s.Type == RulePropertyLeafInputRuleConditionNodeInputSum
+}
+
+// SetRuleConditionInput sets RuleConditionNodeInputSum to RuleConditionInput.
+func (s *RuleConditionNodeInputSum) SetRuleConditionInput(v RuleConditionInput) {
+	s.Type = RuleConditionInputRuleConditionNodeInputSum
+	s.RuleConditionInput = v
+}
+
+// GetRuleConditionInput returns RuleConditionInput and true boolean if RuleConditionNodeInputSum is RuleConditionInput.
+func (s RuleConditionNodeInputSum) GetRuleConditionInput() (v RuleConditionInput, ok bool) {
+	if !s.IsRuleConditionInput() {
+		return v, false
+	}
+	return s.RuleConditionInput, true
+}
+
+// NewRuleConditionInputRuleConditionNodeInputSum returns new RuleConditionNodeInputSum from RuleConditionInput.
+func NewRuleConditionInputRuleConditionNodeInputSum(v RuleConditionInput) RuleConditionNodeInputSum {
+	var s RuleConditionNodeInputSum
+	s.SetRuleConditionInput(v)
+	return s
+}
+
+// SetAttributeLeafInput sets RuleConditionNodeInputSum to AttributeLeafInput.
+func (s *RuleConditionNodeInputSum) SetAttributeLeafInput(v AttributeLeafInput) {
+	s.Type = AttributeLeafInputRuleConditionNodeInputSum
+	s.AttributeLeafInput = v
+}
+
+// GetAttributeLeafInput returns AttributeLeafInput and true boolean if RuleConditionNodeInputSum is AttributeLeafInput.
+func (s RuleConditionNodeInputSum) GetAttributeLeafInput() (v AttributeLeafInput, ok bool) {
+	if !s.IsAttributeLeafInput() {
+		return v, false
+	}
+	return s.AttributeLeafInput, true
+}
+
+// NewAttributeLeafInputRuleConditionNodeInputSum returns new RuleConditionNodeInputSum from AttributeLeafInput.
+func NewAttributeLeafInputRuleConditionNodeInputSum(v AttributeLeafInput) RuleConditionNodeInputSum {
+	var s RuleConditionNodeInputSum
+	s.SetAttributeLeafInput(v)
+	return s
+}
+
+// SetBirthdayLeafInput sets RuleConditionNodeInputSum to BirthdayLeafInput.
+func (s *RuleConditionNodeInputSum) SetBirthdayLeafInput(v BirthdayLeafInput) {
+	s.Type = BirthdayLeafInputRuleConditionNodeInputSum
+	s.BirthdayLeafInput = v
+}
+
+// GetBirthdayLeafInput returns BirthdayLeafInput and true boolean if RuleConditionNodeInputSum is BirthdayLeafInput.
+func (s RuleConditionNodeInputSum) GetBirthdayLeafInput() (v BirthdayLeafInput, ok bool) {
+	if !s.IsBirthdayLeafInput() {
+		return v, false
+	}
+	return s.BirthdayLeafInput, true
+}
+
+// NewBirthdayLeafInputRuleConditionNodeInputSum returns new RuleConditionNodeInputSum from BirthdayLeafInput.
+func NewBirthdayLeafInputRuleConditionNodeInputSum(v BirthdayLeafInput) RuleConditionNodeInputSum {
+	var s RuleConditionNodeInputSum
+	s.SetBirthdayLeafInput(v)
+	return s
+}
+
+// SetTagLeafInput sets RuleConditionNodeInputSum to TagLeafInput.
+func (s *RuleConditionNodeInputSum) SetTagLeafInput(v TagLeafInput) {
+	s.Type = TagLeafInputRuleConditionNodeInputSum
+	s.TagLeafInput = v
+}
+
+// GetTagLeafInput returns TagLeafInput and true boolean if RuleConditionNodeInputSum is TagLeafInput.
+func (s RuleConditionNodeInputSum) GetTagLeafInput() (v TagLeafInput, ok bool) {
+	if !s.IsTagLeafInput() {
+		return v, false
+	}
+	return s.TagLeafInput, true
+}
+
+// NewTagLeafInputRuleConditionNodeInputSum returns new RuleConditionNodeInputSum from TagLeafInput.
+func NewTagLeafInputRuleConditionNodeInputSum(v TagLeafInput) RuleConditionNodeInputSum {
+	var s RuleConditionNodeInputSum
+	s.SetTagLeafInput(v)
+	return s
+}
+
+// SetTelegramLeafInput sets RuleConditionNodeInputSum to TelegramLeafInput.
+func (s *RuleConditionNodeInputSum) SetTelegramLeafInput(v TelegramLeafInput) {
+	s.Type = TelegramLeafInputRuleConditionNodeInputSum
+	s.TelegramLeafInput = v
+}
+
+// GetTelegramLeafInput returns TelegramLeafInput and true boolean if RuleConditionNodeInputSum is TelegramLeafInput.
+func (s RuleConditionNodeInputSum) GetTelegramLeafInput() (v TelegramLeafInput, ok bool) {
+	if !s.IsTelegramLeafInput() {
+		return v, false
+	}
+	return s.TelegramLeafInput, true
+}
+
+// NewTelegramLeafInputRuleConditionNodeInputSum returns new RuleConditionNodeInputSum from TelegramLeafInput.
+func NewTelegramLeafInputRuleConditionNodeInputSum(v TelegramLeafInput) RuleConditionNodeInputSum {
+	var s RuleConditionNodeInputSum
+	s.SetTelegramLeafInput(v)
+	return s
+}
+
+// SetSmsLeafInput sets RuleConditionNodeInputSum to SmsLeafInput.
+func (s *RuleConditionNodeInputSum) SetSmsLeafInput(v SmsLeafInput) {
+	s.Type = SmsLeafInputRuleConditionNodeInputSum
+	s.SmsLeafInput = v
+}
+
+// GetSmsLeafInput returns SmsLeafInput and true boolean if RuleConditionNodeInputSum is SmsLeafInput.
+func (s RuleConditionNodeInputSum) GetSmsLeafInput() (v SmsLeafInput, ok bool) {
+	if !s.IsSmsLeafInput() {
+		return v, false
+	}
+	return s.SmsLeafInput, true
+}
+
+// NewSmsLeafInputRuleConditionNodeInputSum returns new RuleConditionNodeInputSum from SmsLeafInput.
+func NewSmsLeafInputRuleConditionNodeInputSum(v SmsLeafInput) RuleConditionNodeInputSum {
+	var s RuleConditionNodeInputSum
+	s.SetSmsLeafInput(v)
+	return s
+}
+
+// SetCustomFieldLeafInput sets RuleConditionNodeInputSum to CustomFieldLeafInput.
+func (s *RuleConditionNodeInputSum) SetCustomFieldLeafInput(v CustomFieldLeafInput) {
+	s.Type = CustomFieldLeafInputRuleConditionNodeInputSum
+	s.CustomFieldLeafInput = v
+}
+
+// GetCustomFieldLeafInput returns CustomFieldLeafInput and true boolean if RuleConditionNodeInputSum is CustomFieldLeafInput.
+func (s RuleConditionNodeInputSum) GetCustomFieldLeafInput() (v CustomFieldLeafInput, ok bool) {
+	if !s.IsCustomFieldLeafInput() {
+		return v, false
+	}
+	return s.CustomFieldLeafInput, true
+}
+
+// NewCustomFieldLeafInputRuleConditionNodeInputSum returns new RuleConditionNodeInputSum from CustomFieldLeafInput.
+func NewCustomFieldLeafInputRuleConditionNodeInputSum(v CustomFieldLeafInput) RuleConditionNodeInputSum {
+	var s RuleConditionNodeInputSum
+	s.SetCustomFieldLeafInput(v)
+	return s
+}
+
+// SetEventLeafInput sets RuleConditionNodeInputSum to EventLeafInput.
+func (s *RuleConditionNodeInputSum) SetEventLeafInput(v EventLeafInput) {
+	s.Type = EventLeafInputRuleConditionNodeInputSum
+	s.EventLeafInput = v
+}
+
+// GetEventLeafInput returns EventLeafInput and true boolean if RuleConditionNodeInputSum is EventLeafInput.
+func (s RuleConditionNodeInputSum) GetEventLeafInput() (v EventLeafInput, ok bool) {
+	if !s.IsEventLeafInput() {
+		return v, false
+	}
+	return s.EventLeafInput, true
+}
+
+// NewEventLeafInputRuleConditionNodeInputSum returns new RuleConditionNodeInputSum from EventLeafInput.
+func NewEventLeafInputRuleConditionNodeInputSum(v EventLeafInput) RuleConditionNodeInputSum {
+	var s RuleConditionNodeInputSum
+	s.SetEventLeafInput(v)
+	return s
+}
+
+// SetRulePropertyLeafInput sets RuleConditionNodeInputSum to RulePropertyLeafInput.
+func (s *RuleConditionNodeInputSum) SetRulePropertyLeafInput(v RulePropertyLeafInput) {
+	s.Type = RulePropertyLeafInputRuleConditionNodeInputSum
+	s.RulePropertyLeafInput = v
+}
+
+// GetRulePropertyLeafInput returns RulePropertyLeafInput and true boolean if RuleConditionNodeInputSum is RulePropertyLeafInput.
+func (s RuleConditionNodeInputSum) GetRulePropertyLeafInput() (v RulePropertyLeafInput, ok bool) {
+	if !s.IsRulePropertyLeafInput() {
+		return v, false
+	}
+	return s.RulePropertyLeafInput, true
+}
+
+// NewRulePropertyLeafInputRuleConditionNodeInputSum returns new RuleConditionNodeInputSum from RulePropertyLeafInput.
+func NewRulePropertyLeafInputRuleConditionNodeInputSum(v RulePropertyLeafInput) RuleConditionNodeInputSum {
+	var s RuleConditionNodeInputSum
+	s.SetRulePropertyLeafInput(v)
+	return s
+}
+
+// RuleConditionNodeSum represents sum type.
+type RuleConditionNodeSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type             RuleConditionNodeSumType
+	RuleCondition    RuleCondition
+	AttributeLeaf    AttributeLeaf
+	BirthdayLeaf     BirthdayLeaf
+	TagLeaf          TagLeaf
+	TelegramLeaf     TelegramLeaf
+	SmsLeaf          SmsLeaf
+	CustomFieldLeaf  CustomFieldLeaf
+	EventLeaf        EventLeaf
+	RulePropertyLeaf RulePropertyLeaf
+}
+
+// RuleConditionNodeSumType is oneOf type of RuleConditionNodeSum.
+type RuleConditionNodeSumType string
+
+// Possible values for RuleConditionNodeSumType.
+const (
+	RuleConditionRuleConditionNodeSum    RuleConditionNodeSumType = "group"
+	AttributeLeafRuleConditionNodeSum    RuleConditionNodeSumType = "attribute"
+	BirthdayLeafRuleConditionNodeSum     RuleConditionNodeSumType = "birthday"
+	TagLeafRuleConditionNodeSum          RuleConditionNodeSumType = "tag"
+	TelegramLeafRuleConditionNodeSum     RuleConditionNodeSumType = "telegram"
+	SmsLeafRuleConditionNodeSum          RuleConditionNodeSumType = "sms"
+	CustomFieldLeafRuleConditionNodeSum  RuleConditionNodeSumType = "customField"
+	EventLeafRuleConditionNodeSum        RuleConditionNodeSumType = "event"
+	RulePropertyLeafRuleConditionNodeSum RuleConditionNodeSumType = "property"
+)
+
+// IsRuleCondition reports whether RuleConditionNodeSum is RuleCondition.
+func (s RuleConditionNodeSum) IsRuleCondition() bool {
+	return s.Type == RuleConditionRuleConditionNodeSum
+}
+
+// IsAttributeLeaf reports whether RuleConditionNodeSum is AttributeLeaf.
+func (s RuleConditionNodeSum) IsAttributeLeaf() bool {
+	return s.Type == AttributeLeafRuleConditionNodeSum
+}
+
+// IsBirthdayLeaf reports whether RuleConditionNodeSum is BirthdayLeaf.
+func (s RuleConditionNodeSum) IsBirthdayLeaf() bool {
+	return s.Type == BirthdayLeafRuleConditionNodeSum
+}
+
+// IsTagLeaf reports whether RuleConditionNodeSum is TagLeaf.
+func (s RuleConditionNodeSum) IsTagLeaf() bool { return s.Type == TagLeafRuleConditionNodeSum }
+
+// IsTelegramLeaf reports whether RuleConditionNodeSum is TelegramLeaf.
+func (s RuleConditionNodeSum) IsTelegramLeaf() bool {
+	return s.Type == TelegramLeafRuleConditionNodeSum
+}
+
+// IsSmsLeaf reports whether RuleConditionNodeSum is SmsLeaf.
+func (s RuleConditionNodeSum) IsSmsLeaf() bool { return s.Type == SmsLeafRuleConditionNodeSum }
+
+// IsCustomFieldLeaf reports whether RuleConditionNodeSum is CustomFieldLeaf.
+func (s RuleConditionNodeSum) IsCustomFieldLeaf() bool {
+	return s.Type == CustomFieldLeafRuleConditionNodeSum
+}
+
+// IsEventLeaf reports whether RuleConditionNodeSum is EventLeaf.
+func (s RuleConditionNodeSum) IsEventLeaf() bool { return s.Type == EventLeafRuleConditionNodeSum }
+
+// IsRulePropertyLeaf reports whether RuleConditionNodeSum is RulePropertyLeaf.
+func (s RuleConditionNodeSum) IsRulePropertyLeaf() bool {
+	return s.Type == RulePropertyLeafRuleConditionNodeSum
+}
+
+// SetRuleCondition sets RuleConditionNodeSum to RuleCondition.
+func (s *RuleConditionNodeSum) SetRuleCondition(v RuleCondition) {
+	s.Type = RuleConditionRuleConditionNodeSum
+	s.RuleCondition = v
+}
+
+// GetRuleCondition returns RuleCondition and true boolean if RuleConditionNodeSum is RuleCondition.
+func (s RuleConditionNodeSum) GetRuleCondition() (v RuleCondition, ok bool) {
+	if !s.IsRuleCondition() {
+		return v, false
+	}
+	return s.RuleCondition, true
+}
+
+// NewRuleConditionRuleConditionNodeSum returns new RuleConditionNodeSum from RuleCondition.
+func NewRuleConditionRuleConditionNodeSum(v RuleCondition) RuleConditionNodeSum {
+	var s RuleConditionNodeSum
+	s.SetRuleCondition(v)
+	return s
+}
+
+// SetAttributeLeaf sets RuleConditionNodeSum to AttributeLeaf.
+func (s *RuleConditionNodeSum) SetAttributeLeaf(v AttributeLeaf) {
+	s.Type = AttributeLeafRuleConditionNodeSum
+	s.AttributeLeaf = v
+}
+
+// GetAttributeLeaf returns AttributeLeaf and true boolean if RuleConditionNodeSum is AttributeLeaf.
+func (s RuleConditionNodeSum) GetAttributeLeaf() (v AttributeLeaf, ok bool) {
+	if !s.IsAttributeLeaf() {
+		return v, false
+	}
+	return s.AttributeLeaf, true
+}
+
+// NewAttributeLeafRuleConditionNodeSum returns new RuleConditionNodeSum from AttributeLeaf.
+func NewAttributeLeafRuleConditionNodeSum(v AttributeLeaf) RuleConditionNodeSum {
+	var s RuleConditionNodeSum
+	s.SetAttributeLeaf(v)
+	return s
+}
+
+// SetBirthdayLeaf sets RuleConditionNodeSum to BirthdayLeaf.
+func (s *RuleConditionNodeSum) SetBirthdayLeaf(v BirthdayLeaf) {
+	s.Type = BirthdayLeafRuleConditionNodeSum
+	s.BirthdayLeaf = v
+}
+
+// GetBirthdayLeaf returns BirthdayLeaf and true boolean if RuleConditionNodeSum is BirthdayLeaf.
+func (s RuleConditionNodeSum) GetBirthdayLeaf() (v BirthdayLeaf, ok bool) {
+	if !s.IsBirthdayLeaf() {
+		return v, false
+	}
+	return s.BirthdayLeaf, true
+}
+
+// NewBirthdayLeafRuleConditionNodeSum returns new RuleConditionNodeSum from BirthdayLeaf.
+func NewBirthdayLeafRuleConditionNodeSum(v BirthdayLeaf) RuleConditionNodeSum {
+	var s RuleConditionNodeSum
+	s.SetBirthdayLeaf(v)
+	return s
+}
+
+// SetTagLeaf sets RuleConditionNodeSum to TagLeaf.
+func (s *RuleConditionNodeSum) SetTagLeaf(v TagLeaf) {
+	s.Type = TagLeafRuleConditionNodeSum
+	s.TagLeaf = v
+}
+
+// GetTagLeaf returns TagLeaf and true boolean if RuleConditionNodeSum is TagLeaf.
+func (s RuleConditionNodeSum) GetTagLeaf() (v TagLeaf, ok bool) {
+	if !s.IsTagLeaf() {
+		return v, false
+	}
+	return s.TagLeaf, true
+}
+
+// NewTagLeafRuleConditionNodeSum returns new RuleConditionNodeSum from TagLeaf.
+func NewTagLeafRuleConditionNodeSum(v TagLeaf) RuleConditionNodeSum {
+	var s RuleConditionNodeSum
+	s.SetTagLeaf(v)
+	return s
+}
+
+// SetTelegramLeaf sets RuleConditionNodeSum to TelegramLeaf.
+func (s *RuleConditionNodeSum) SetTelegramLeaf(v TelegramLeaf) {
+	s.Type = TelegramLeafRuleConditionNodeSum
+	s.TelegramLeaf = v
+}
+
+// GetTelegramLeaf returns TelegramLeaf and true boolean if RuleConditionNodeSum is TelegramLeaf.
+func (s RuleConditionNodeSum) GetTelegramLeaf() (v TelegramLeaf, ok bool) {
+	if !s.IsTelegramLeaf() {
+		return v, false
+	}
+	return s.TelegramLeaf, true
+}
+
+// NewTelegramLeafRuleConditionNodeSum returns new RuleConditionNodeSum from TelegramLeaf.
+func NewTelegramLeafRuleConditionNodeSum(v TelegramLeaf) RuleConditionNodeSum {
+	var s RuleConditionNodeSum
+	s.SetTelegramLeaf(v)
+	return s
+}
+
+// SetSmsLeaf sets RuleConditionNodeSum to SmsLeaf.
+func (s *RuleConditionNodeSum) SetSmsLeaf(v SmsLeaf) {
+	s.Type = SmsLeafRuleConditionNodeSum
+	s.SmsLeaf = v
+}
+
+// GetSmsLeaf returns SmsLeaf and true boolean if RuleConditionNodeSum is SmsLeaf.
+func (s RuleConditionNodeSum) GetSmsLeaf() (v SmsLeaf, ok bool) {
+	if !s.IsSmsLeaf() {
+		return v, false
+	}
+	return s.SmsLeaf, true
+}
+
+// NewSmsLeafRuleConditionNodeSum returns new RuleConditionNodeSum from SmsLeaf.
+func NewSmsLeafRuleConditionNodeSum(v SmsLeaf) RuleConditionNodeSum {
+	var s RuleConditionNodeSum
+	s.SetSmsLeaf(v)
+	return s
+}
+
+// SetCustomFieldLeaf sets RuleConditionNodeSum to CustomFieldLeaf.
+func (s *RuleConditionNodeSum) SetCustomFieldLeaf(v CustomFieldLeaf) {
+	s.Type = CustomFieldLeafRuleConditionNodeSum
+	s.CustomFieldLeaf = v
+}
+
+// GetCustomFieldLeaf returns CustomFieldLeaf and true boolean if RuleConditionNodeSum is CustomFieldLeaf.
+func (s RuleConditionNodeSum) GetCustomFieldLeaf() (v CustomFieldLeaf, ok bool) {
+	if !s.IsCustomFieldLeaf() {
+		return v, false
+	}
+	return s.CustomFieldLeaf, true
+}
+
+// NewCustomFieldLeafRuleConditionNodeSum returns new RuleConditionNodeSum from CustomFieldLeaf.
+func NewCustomFieldLeafRuleConditionNodeSum(v CustomFieldLeaf) RuleConditionNodeSum {
+	var s RuleConditionNodeSum
+	s.SetCustomFieldLeaf(v)
+	return s
+}
+
+// SetEventLeaf sets RuleConditionNodeSum to EventLeaf.
+func (s *RuleConditionNodeSum) SetEventLeaf(v EventLeaf) {
+	s.Type = EventLeafRuleConditionNodeSum
+	s.EventLeaf = v
+}
+
+// GetEventLeaf returns EventLeaf and true boolean if RuleConditionNodeSum is EventLeaf.
+func (s RuleConditionNodeSum) GetEventLeaf() (v EventLeaf, ok bool) {
+	if !s.IsEventLeaf() {
+		return v, false
+	}
+	return s.EventLeaf, true
+}
+
+// NewEventLeafRuleConditionNodeSum returns new RuleConditionNodeSum from EventLeaf.
+func NewEventLeafRuleConditionNodeSum(v EventLeaf) RuleConditionNodeSum {
+	var s RuleConditionNodeSum
+	s.SetEventLeaf(v)
+	return s
+}
+
+// SetRulePropertyLeaf sets RuleConditionNodeSum to RulePropertyLeaf.
+func (s *RuleConditionNodeSum) SetRulePropertyLeaf(v RulePropertyLeaf) {
+	s.Type = RulePropertyLeafRuleConditionNodeSum
+	s.RulePropertyLeaf = v
+}
+
+// GetRulePropertyLeaf returns RulePropertyLeaf and true boolean if RuleConditionNodeSum is RulePropertyLeaf.
+func (s RuleConditionNodeSum) GetRulePropertyLeaf() (v RulePropertyLeaf, ok bool) {
+	if !s.IsRulePropertyLeaf() {
+		return v, false
+	}
+	return s.RulePropertyLeaf, true
+}
+
+// NewRulePropertyLeafRuleConditionNodeSum returns new RuleConditionNodeSum from RulePropertyLeaf.
+func NewRulePropertyLeafRuleConditionNodeSum(v RulePropertyLeaf) RuleConditionNodeSum {
+	var s RuleConditionNodeSum
+	s.SetRulePropertyLeaf(v)
+	return s
+}
+
 // One Action a Rule would run, described without running it.
 // Ref: #/components/schemas/RuleDryRunAction
 type RuleDryRunAction struct {
@@ -15290,6 +16750,294 @@ func (s *RuleFiringResource) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
 }
 
+// A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a key
+// holding a dot is one key.
+// Ref: #/components/schemas/RulePropertyLeaf
+type RulePropertyLeaf struct {
+	Kind RulePropertyLeafKind `json:"kind"`
+	// Whose property it is.
+	Of RulePropertySource `json:"of"`
+	// The property's key.
+	Key string `json:"key"`
+	// What it asks of the property's value.
+	Test PropertyTest `json:"test"`
+}
+
+// GetKind returns the value of Kind.
+func (s *RulePropertyLeaf) GetKind() RulePropertyLeafKind {
+	return s.Kind
+}
+
+// GetOf returns the value of Of.
+func (s *RulePropertyLeaf) GetOf() RulePropertySource {
+	return s.Of
+}
+
+// GetKey returns the value of Key.
+func (s *RulePropertyLeaf) GetKey() string {
+	return s.Key
+}
+
+// GetTest returns the value of Test.
+func (s *RulePropertyLeaf) GetTest() PropertyTest {
+	return s.Test
+}
+
+// SetKind sets the value of Kind.
+func (s *RulePropertyLeaf) SetKind(val RulePropertyLeafKind) {
+	s.Kind = val
+}
+
+// SetOf sets the value of Of.
+func (s *RulePropertyLeaf) SetOf(val RulePropertySource) {
+	s.Of = val
+}
+
+// SetKey sets the value of Key.
+func (s *RulePropertyLeaf) SetKey(val string) {
+	s.Key = val
+}
+
+// SetTest sets the value of Test.
+func (s *RulePropertyLeaf) SetTest(val PropertyTest) {
+	s.Test = val
+}
+
+// A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a key
+// holding a dot is one key.
+// Ref: #/components/schemas/RulePropertyLeafInput
+type RulePropertyLeafInput struct {
+	Kind RulePropertyLeafInputKind `json:"kind"`
+	// Whose property it is.
+	Of RulePropertySourceInput `json:"of"`
+	// The property's key.
+	Key string `json:"key"`
+	// What it asks of the property's value.
+	Test PropertyTestInput `json:"test"`
+}
+
+// GetKind returns the value of Kind.
+func (s *RulePropertyLeafInput) GetKind() RulePropertyLeafInputKind {
+	return s.Kind
+}
+
+// GetOf returns the value of Of.
+func (s *RulePropertyLeafInput) GetOf() RulePropertySourceInput {
+	return s.Of
+}
+
+// GetKey returns the value of Key.
+func (s *RulePropertyLeafInput) GetKey() string {
+	return s.Key
+}
+
+// GetTest returns the value of Test.
+func (s *RulePropertyLeafInput) GetTest() PropertyTestInput {
+	return s.Test
+}
+
+// SetKind sets the value of Kind.
+func (s *RulePropertyLeafInput) SetKind(val RulePropertyLeafInputKind) {
+	s.Kind = val
+}
+
+// SetOf sets the value of Of.
+func (s *RulePropertyLeafInput) SetOf(val RulePropertySourceInput) {
+	s.Of = val
+}
+
+// SetKey sets the value of Key.
+func (s *RulePropertyLeafInput) SetKey(val string) {
+	s.Key = val
+}
+
+// SetTest sets the value of Test.
+func (s *RulePropertyLeafInput) SetTest(val PropertyTestInput) {
+	s.Test = val
+}
+
+type RulePropertyLeafInputKind string
+
+const (
+	RulePropertyLeafInputKindProperty RulePropertyLeafInputKind = "property"
+)
+
+// AllValues returns all RulePropertyLeafInputKind values.
+func (RulePropertyLeafInputKind) AllValues() []RulePropertyLeafInputKind {
+	return []RulePropertyLeafInputKind{
+		RulePropertyLeafInputKindProperty,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s RulePropertyLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case RulePropertyLeafInputKindProperty:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *RulePropertyLeafInputKind) UnmarshalText(data []byte) error {
+	switch RulePropertyLeafInputKind(data) {
+	case RulePropertyLeafInputKindProperty:
+		*s = RulePropertyLeafInputKindProperty
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type RulePropertyLeafKind string
+
+const (
+	RulePropertyLeafKindProperty RulePropertyLeafKind = "property"
+)
+
+// AllValues returns all RulePropertyLeafKind values.
+func (RulePropertyLeafKind) AllValues() []RulePropertyLeafKind {
+	return []RulePropertyLeafKind{
+		RulePropertyLeafKindProperty,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s RulePropertyLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case RulePropertyLeafKindProperty:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *RulePropertyLeafKind) UnmarshalText(data []byte) error {
+	switch RulePropertyLeafKind(data) {
+	case RulePropertyLeafKindProperty:
+		*s = RulePropertyLeafKindProperty
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Whose properties a Rule's property test reads, by `kind`: the triggering Event.
+// Ref: #/components/schemas/RulePropertySource
+type RulePropertySource struct {
+	OneOf RulePropertySourceSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *RulePropertySource) GetOneOf() RulePropertySourceSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *RulePropertySource) SetOneOf(val RulePropertySourceSum) {
+	s.OneOf = val
+}
+
+// Whose properties a Rule's property test reads, by `kind`: the triggering Event.
+// Ref: #/components/schemas/RulePropertySourceInput
+type RulePropertySourceInput struct {
+	OneOf RulePropertySourceInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *RulePropertySourceInput) GetOneOf() RulePropertySourceInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *RulePropertySourceInput) SetOneOf(val RulePropertySourceInputSum) {
+	s.OneOf = val
+}
+
+// RulePropertySourceInputSum represents sum type.
+type RulePropertySourceInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type               RulePropertySourceInputSumType
+	TriggerSourceInput TriggerSourceInput
+}
+
+// RulePropertySourceInputSumType is oneOf type of RulePropertySourceInputSum.
+type RulePropertySourceInputSumType string
+
+// Possible values for RulePropertySourceInputSumType.
+const (
+	TriggerSourceInputRulePropertySourceInputSum RulePropertySourceInputSumType = "trigger"
+)
+
+// IsTriggerSourceInput reports whether RulePropertySourceInputSum is TriggerSourceInput.
+func (s RulePropertySourceInputSum) IsTriggerSourceInput() bool {
+	return s.Type == TriggerSourceInputRulePropertySourceInputSum
+}
+
+// SetTriggerSourceInput sets RulePropertySourceInputSum to TriggerSourceInput.
+func (s *RulePropertySourceInputSum) SetTriggerSourceInput(v TriggerSourceInput) {
+	s.Type = TriggerSourceInputRulePropertySourceInputSum
+	s.TriggerSourceInput = v
+}
+
+// GetTriggerSourceInput returns TriggerSourceInput and true boolean if RulePropertySourceInputSum is TriggerSourceInput.
+func (s RulePropertySourceInputSum) GetTriggerSourceInput() (v TriggerSourceInput, ok bool) {
+	if !s.IsTriggerSourceInput() {
+		return v, false
+	}
+	return s.TriggerSourceInput, true
+}
+
+// NewTriggerSourceInputRulePropertySourceInputSum returns new RulePropertySourceInputSum from TriggerSourceInput.
+func NewTriggerSourceInputRulePropertySourceInputSum(v TriggerSourceInput) RulePropertySourceInputSum {
+	var s RulePropertySourceInputSum
+	s.SetTriggerSourceInput(v)
+	return s
+}
+
+// RulePropertySourceSum represents sum type.
+type RulePropertySourceSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type          RulePropertySourceSumType
+	TriggerSource TriggerSource
+}
+
+// RulePropertySourceSumType is oneOf type of RulePropertySourceSum.
+type RulePropertySourceSumType string
+
+// Possible values for RulePropertySourceSumType.
+const (
+	TriggerSourceRulePropertySourceSum RulePropertySourceSumType = "trigger"
+)
+
+// IsTriggerSource reports whether RulePropertySourceSum is TriggerSource.
+func (s RulePropertySourceSum) IsTriggerSource() bool {
+	return s.Type == TriggerSourceRulePropertySourceSum
+}
+
+// SetTriggerSource sets RulePropertySourceSum to TriggerSource.
+func (s *RulePropertySourceSum) SetTriggerSource(v TriggerSource) {
+	s.Type = TriggerSourceRulePropertySourceSum
+	s.TriggerSource = v
+}
+
+// GetTriggerSource returns TriggerSource and true boolean if RulePropertySourceSum is TriggerSource.
+func (s RulePropertySourceSum) GetTriggerSource() (v TriggerSource, ok bool) {
+	if !s.IsTriggerSource() {
+		return v, false
+	}
+	return s.TriggerSource, true
+}
+
+// NewTriggerSourceRulePropertySourceSum returns new RulePropertySourceSum from TriggerSource.
+func NewTriggerSourceRulePropertySourceSum(v TriggerSource) RulePropertySourceSum {
+	var s RulePropertySourceSum
+	s.SetTriggerSource(v)
+	return s
+}
+
 // Rule lifecycle status: active reacts to Events, inactive acts on nothing.
 // Ref: #/components/schemas/RuleStatus
 type RuleStatus string
@@ -15341,7 +17089,7 @@ type RuleVersion struct {
 	// The Event actions that make the Rule fire; any one of them does.
 	TriggerEvents []string `json:"triggerEvents"`
 	// The Contact must match this condition for the Rule to fire; absent means every Contact.
-	Condition OptConditionGroup `json:"condition"`
+	Condition OptRuleCondition `json:"condition"`
 	// The Rule's ordered Actions.
 	Actions []RuleAction `json:"actions"`
 }
@@ -15357,7 +17105,7 @@ func (s *RuleVersion) GetTriggerEvents() []string {
 }
 
 // GetCondition returns the value of Condition.
-func (s *RuleVersion) GetCondition() OptConditionGroup {
+func (s *RuleVersion) GetCondition() OptRuleCondition {
 	return s.Condition
 }
 
@@ -15377,7 +17125,7 @@ func (s *RuleVersion) SetTriggerEvents(val []string) {
 }
 
 // SetCondition sets the value of Condition.
-func (s *RuleVersion) SetCondition(val OptConditionGroup) {
+func (s *RuleVersion) SetCondition(val OptRuleCondition) {
 	s.Condition = val
 }
 
@@ -15414,6 +17162,682 @@ func (s *ScheduleBroadcastInput) SetRevision(val Revision) {
 // SetScheduledAt sets the value of ScheduledAt.
 func (s *ScheduleBroadcastInput) SetScheduledAt(val Timestamp) {
 	s.ScheduledAt = val
+}
+
+// A Segment's Condition: the tree of tests a Contact matches.
+// Ref: #/components/schemas/SegmentCondition
+type SegmentCondition struct {
+	Kind SegmentConditionKind `json:"kind"`
+	// How the entries combine.
+	Combinator ConditionCombinator `json:"combinator"`
+	// Negate the whole group.
+	Not OptBool `json:"not"`
+	// The group's tests and nested groups.
+	Entries []SegmentConditionNode `json:"entries"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SegmentCondition) GetKind() SegmentConditionKind {
+	return s.Kind
+}
+
+// GetCombinator returns the value of Combinator.
+func (s *SegmentCondition) GetCombinator() ConditionCombinator {
+	return s.Combinator
+}
+
+// GetNot returns the value of Not.
+func (s *SegmentCondition) GetNot() OptBool {
+	return s.Not
+}
+
+// GetEntries returns the value of Entries.
+func (s *SegmentCondition) GetEntries() []SegmentConditionNode {
+	return s.Entries
+}
+
+// SetKind sets the value of Kind.
+func (s *SegmentCondition) SetKind(val SegmentConditionKind) {
+	s.Kind = val
+}
+
+// SetCombinator sets the value of Combinator.
+func (s *SegmentCondition) SetCombinator(val ConditionCombinator) {
+	s.Combinator = val
+}
+
+// SetNot sets the value of Not.
+func (s *SegmentCondition) SetNot(val OptBool) {
+	s.Not = val
+}
+
+// SetEntries sets the value of Entries.
+func (s *SegmentCondition) SetEntries(val []SegmentConditionNode) {
+	s.Entries = val
+}
+
+// A Segment's Condition: the tree of tests a Contact matches.
+// Ref: #/components/schemas/SegmentConditionInput
+type SegmentConditionInput struct {
+	Kind SegmentConditionInputKind `json:"kind"`
+	// How the entries combine.
+	Combinator ConditionCombinator `json:"combinator"`
+	// Negate the whole group.
+	Not OptBool `json:"not"`
+	// The group's tests and nested groups.
+	Entries []SegmentConditionNodeInput `json:"entries"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SegmentConditionInput) GetKind() SegmentConditionInputKind {
+	return s.Kind
+}
+
+// GetCombinator returns the value of Combinator.
+func (s *SegmentConditionInput) GetCombinator() ConditionCombinator {
+	return s.Combinator
+}
+
+// GetNot returns the value of Not.
+func (s *SegmentConditionInput) GetNot() OptBool {
+	return s.Not
+}
+
+// GetEntries returns the value of Entries.
+func (s *SegmentConditionInput) GetEntries() []SegmentConditionNodeInput {
+	return s.Entries
+}
+
+// SetKind sets the value of Kind.
+func (s *SegmentConditionInput) SetKind(val SegmentConditionInputKind) {
+	s.Kind = val
+}
+
+// SetCombinator sets the value of Combinator.
+func (s *SegmentConditionInput) SetCombinator(val ConditionCombinator) {
+	s.Combinator = val
+}
+
+// SetNot sets the value of Not.
+func (s *SegmentConditionInput) SetNot(val OptBool) {
+	s.Not = val
+}
+
+// SetEntries sets the value of Entries.
+func (s *SegmentConditionInput) SetEntries(val []SegmentConditionNodeInput) {
+	s.Entries = val
+}
+
+type SegmentConditionInputKind string
+
+const (
+	SegmentConditionInputKindGroup SegmentConditionInputKind = "group"
+)
+
+// AllValues returns all SegmentConditionInputKind values.
+func (SegmentConditionInputKind) AllValues() []SegmentConditionInputKind {
+	return []SegmentConditionInputKind{
+		SegmentConditionInputKindGroup,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SegmentConditionInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SegmentConditionInputKindGroup:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SegmentConditionInputKind) UnmarshalText(data []byte) error {
+	switch SegmentConditionInputKind(data) {
+	case SegmentConditionInputKindGroup:
+		*s = SegmentConditionInputKindGroup
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type SegmentConditionKind string
+
+const (
+	SegmentConditionKindGroup SegmentConditionKind = "group"
+)
+
+// AllValues returns all SegmentConditionKind values.
+func (SegmentConditionKind) AllValues() []SegmentConditionKind {
+	return []SegmentConditionKind{
+		SegmentConditionKindGroup,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SegmentConditionKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SegmentConditionKindGroup:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SegmentConditionKind) UnmarshalText(data []byte) error {
+	switch SegmentConditionKind(data) {
+	case SegmentConditionKindGroup:
+		*s = SegmentConditionKindGroup
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// An entry of a Segment's Condition, by `kind`: a test of the Contact, an event count or a nested
+// group.
+// Ref: #/components/schemas/SegmentConditionNode
+type SegmentConditionNode struct {
+	OneOf SegmentConditionNodeSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *SegmentConditionNode) GetOneOf() SegmentConditionNodeSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *SegmentConditionNode) SetOneOf(val SegmentConditionNodeSum) {
+	s.OneOf = val
+}
+
+// An entry of a Segment's Condition, by `kind`: a test of the Contact, an event count or a nested
+// group.
+// Ref: #/components/schemas/SegmentConditionNodeInput
+type SegmentConditionNodeInput struct {
+	OneOf SegmentConditionNodeInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *SegmentConditionNodeInput) GetOneOf() SegmentConditionNodeInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *SegmentConditionNodeInput) SetOneOf(val SegmentConditionNodeInputSum) {
+	s.OneOf = val
+}
+
+// SegmentConditionNodeInputSum represents sum type.
+type SegmentConditionNodeInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                  SegmentConditionNodeInputSumType
+	SegmentConditionInput SegmentConditionInput
+	AttributeLeafInput    AttributeLeafInput
+	BirthdayLeafInput     BirthdayLeafInput
+	TagLeafInput          TagLeafInput
+	TelegramLeafInput     TelegramLeafInput
+	SmsLeafInput          SmsLeafInput
+	CustomFieldLeafInput  CustomFieldLeafInput
+	EventLeafInput        EventLeafInput
+}
+
+// SegmentConditionNodeInputSumType is oneOf type of SegmentConditionNodeInputSum.
+type SegmentConditionNodeInputSumType string
+
+// Possible values for SegmentConditionNodeInputSumType.
+const (
+	SegmentConditionInputSegmentConditionNodeInputSum SegmentConditionNodeInputSumType = "group"
+	AttributeLeafInputSegmentConditionNodeInputSum    SegmentConditionNodeInputSumType = "attribute"
+	BirthdayLeafInputSegmentConditionNodeInputSum     SegmentConditionNodeInputSumType = "birthday"
+	TagLeafInputSegmentConditionNodeInputSum          SegmentConditionNodeInputSumType = "tag"
+	TelegramLeafInputSegmentConditionNodeInputSum     SegmentConditionNodeInputSumType = "telegram"
+	SmsLeafInputSegmentConditionNodeInputSum          SegmentConditionNodeInputSumType = "sms"
+	CustomFieldLeafInputSegmentConditionNodeInputSum  SegmentConditionNodeInputSumType = "customField"
+	EventLeafInputSegmentConditionNodeInputSum        SegmentConditionNodeInputSumType = "event"
+)
+
+// IsSegmentConditionInput reports whether SegmentConditionNodeInputSum is SegmentConditionInput.
+func (s SegmentConditionNodeInputSum) IsSegmentConditionInput() bool {
+	return s.Type == SegmentConditionInputSegmentConditionNodeInputSum
+}
+
+// IsAttributeLeafInput reports whether SegmentConditionNodeInputSum is AttributeLeafInput.
+func (s SegmentConditionNodeInputSum) IsAttributeLeafInput() bool {
+	return s.Type == AttributeLeafInputSegmentConditionNodeInputSum
+}
+
+// IsBirthdayLeafInput reports whether SegmentConditionNodeInputSum is BirthdayLeafInput.
+func (s SegmentConditionNodeInputSum) IsBirthdayLeafInput() bool {
+	return s.Type == BirthdayLeafInputSegmentConditionNodeInputSum
+}
+
+// IsTagLeafInput reports whether SegmentConditionNodeInputSum is TagLeafInput.
+func (s SegmentConditionNodeInputSum) IsTagLeafInput() bool {
+	return s.Type == TagLeafInputSegmentConditionNodeInputSum
+}
+
+// IsTelegramLeafInput reports whether SegmentConditionNodeInputSum is TelegramLeafInput.
+func (s SegmentConditionNodeInputSum) IsTelegramLeafInput() bool {
+	return s.Type == TelegramLeafInputSegmentConditionNodeInputSum
+}
+
+// IsSmsLeafInput reports whether SegmentConditionNodeInputSum is SmsLeafInput.
+func (s SegmentConditionNodeInputSum) IsSmsLeafInput() bool {
+	return s.Type == SmsLeafInputSegmentConditionNodeInputSum
+}
+
+// IsCustomFieldLeafInput reports whether SegmentConditionNodeInputSum is CustomFieldLeafInput.
+func (s SegmentConditionNodeInputSum) IsCustomFieldLeafInput() bool {
+	return s.Type == CustomFieldLeafInputSegmentConditionNodeInputSum
+}
+
+// IsEventLeafInput reports whether SegmentConditionNodeInputSum is EventLeafInput.
+func (s SegmentConditionNodeInputSum) IsEventLeafInput() bool {
+	return s.Type == EventLeafInputSegmentConditionNodeInputSum
+}
+
+// SetSegmentConditionInput sets SegmentConditionNodeInputSum to SegmentConditionInput.
+func (s *SegmentConditionNodeInputSum) SetSegmentConditionInput(v SegmentConditionInput) {
+	s.Type = SegmentConditionInputSegmentConditionNodeInputSum
+	s.SegmentConditionInput = v
+}
+
+// GetSegmentConditionInput returns SegmentConditionInput and true boolean if SegmentConditionNodeInputSum is SegmentConditionInput.
+func (s SegmentConditionNodeInputSum) GetSegmentConditionInput() (v SegmentConditionInput, ok bool) {
+	if !s.IsSegmentConditionInput() {
+		return v, false
+	}
+	return s.SegmentConditionInput, true
+}
+
+// NewSegmentConditionInputSegmentConditionNodeInputSum returns new SegmentConditionNodeInputSum from SegmentConditionInput.
+func NewSegmentConditionInputSegmentConditionNodeInputSum(v SegmentConditionInput) SegmentConditionNodeInputSum {
+	var s SegmentConditionNodeInputSum
+	s.SetSegmentConditionInput(v)
+	return s
+}
+
+// SetAttributeLeafInput sets SegmentConditionNodeInputSum to AttributeLeafInput.
+func (s *SegmentConditionNodeInputSum) SetAttributeLeafInput(v AttributeLeafInput) {
+	s.Type = AttributeLeafInputSegmentConditionNodeInputSum
+	s.AttributeLeafInput = v
+}
+
+// GetAttributeLeafInput returns AttributeLeafInput and true boolean if SegmentConditionNodeInputSum is AttributeLeafInput.
+func (s SegmentConditionNodeInputSum) GetAttributeLeafInput() (v AttributeLeafInput, ok bool) {
+	if !s.IsAttributeLeafInput() {
+		return v, false
+	}
+	return s.AttributeLeafInput, true
+}
+
+// NewAttributeLeafInputSegmentConditionNodeInputSum returns new SegmentConditionNodeInputSum from AttributeLeafInput.
+func NewAttributeLeafInputSegmentConditionNodeInputSum(v AttributeLeafInput) SegmentConditionNodeInputSum {
+	var s SegmentConditionNodeInputSum
+	s.SetAttributeLeafInput(v)
+	return s
+}
+
+// SetBirthdayLeafInput sets SegmentConditionNodeInputSum to BirthdayLeafInput.
+func (s *SegmentConditionNodeInputSum) SetBirthdayLeafInput(v BirthdayLeafInput) {
+	s.Type = BirthdayLeafInputSegmentConditionNodeInputSum
+	s.BirthdayLeafInput = v
+}
+
+// GetBirthdayLeafInput returns BirthdayLeafInput and true boolean if SegmentConditionNodeInputSum is BirthdayLeafInput.
+func (s SegmentConditionNodeInputSum) GetBirthdayLeafInput() (v BirthdayLeafInput, ok bool) {
+	if !s.IsBirthdayLeafInput() {
+		return v, false
+	}
+	return s.BirthdayLeafInput, true
+}
+
+// NewBirthdayLeafInputSegmentConditionNodeInputSum returns new SegmentConditionNodeInputSum from BirthdayLeafInput.
+func NewBirthdayLeafInputSegmentConditionNodeInputSum(v BirthdayLeafInput) SegmentConditionNodeInputSum {
+	var s SegmentConditionNodeInputSum
+	s.SetBirthdayLeafInput(v)
+	return s
+}
+
+// SetTagLeafInput sets SegmentConditionNodeInputSum to TagLeafInput.
+func (s *SegmentConditionNodeInputSum) SetTagLeafInput(v TagLeafInput) {
+	s.Type = TagLeafInputSegmentConditionNodeInputSum
+	s.TagLeafInput = v
+}
+
+// GetTagLeafInput returns TagLeafInput and true boolean if SegmentConditionNodeInputSum is TagLeafInput.
+func (s SegmentConditionNodeInputSum) GetTagLeafInput() (v TagLeafInput, ok bool) {
+	if !s.IsTagLeafInput() {
+		return v, false
+	}
+	return s.TagLeafInput, true
+}
+
+// NewTagLeafInputSegmentConditionNodeInputSum returns new SegmentConditionNodeInputSum from TagLeafInput.
+func NewTagLeafInputSegmentConditionNodeInputSum(v TagLeafInput) SegmentConditionNodeInputSum {
+	var s SegmentConditionNodeInputSum
+	s.SetTagLeafInput(v)
+	return s
+}
+
+// SetTelegramLeafInput sets SegmentConditionNodeInputSum to TelegramLeafInput.
+func (s *SegmentConditionNodeInputSum) SetTelegramLeafInput(v TelegramLeafInput) {
+	s.Type = TelegramLeafInputSegmentConditionNodeInputSum
+	s.TelegramLeafInput = v
+}
+
+// GetTelegramLeafInput returns TelegramLeafInput and true boolean if SegmentConditionNodeInputSum is TelegramLeafInput.
+func (s SegmentConditionNodeInputSum) GetTelegramLeafInput() (v TelegramLeafInput, ok bool) {
+	if !s.IsTelegramLeafInput() {
+		return v, false
+	}
+	return s.TelegramLeafInput, true
+}
+
+// NewTelegramLeafInputSegmentConditionNodeInputSum returns new SegmentConditionNodeInputSum from TelegramLeafInput.
+func NewTelegramLeafInputSegmentConditionNodeInputSum(v TelegramLeafInput) SegmentConditionNodeInputSum {
+	var s SegmentConditionNodeInputSum
+	s.SetTelegramLeafInput(v)
+	return s
+}
+
+// SetSmsLeafInput sets SegmentConditionNodeInputSum to SmsLeafInput.
+func (s *SegmentConditionNodeInputSum) SetSmsLeafInput(v SmsLeafInput) {
+	s.Type = SmsLeafInputSegmentConditionNodeInputSum
+	s.SmsLeafInput = v
+}
+
+// GetSmsLeafInput returns SmsLeafInput and true boolean if SegmentConditionNodeInputSum is SmsLeafInput.
+func (s SegmentConditionNodeInputSum) GetSmsLeafInput() (v SmsLeafInput, ok bool) {
+	if !s.IsSmsLeafInput() {
+		return v, false
+	}
+	return s.SmsLeafInput, true
+}
+
+// NewSmsLeafInputSegmentConditionNodeInputSum returns new SegmentConditionNodeInputSum from SmsLeafInput.
+func NewSmsLeafInputSegmentConditionNodeInputSum(v SmsLeafInput) SegmentConditionNodeInputSum {
+	var s SegmentConditionNodeInputSum
+	s.SetSmsLeafInput(v)
+	return s
+}
+
+// SetCustomFieldLeafInput sets SegmentConditionNodeInputSum to CustomFieldLeafInput.
+func (s *SegmentConditionNodeInputSum) SetCustomFieldLeafInput(v CustomFieldLeafInput) {
+	s.Type = CustomFieldLeafInputSegmentConditionNodeInputSum
+	s.CustomFieldLeafInput = v
+}
+
+// GetCustomFieldLeafInput returns CustomFieldLeafInput and true boolean if SegmentConditionNodeInputSum is CustomFieldLeafInput.
+func (s SegmentConditionNodeInputSum) GetCustomFieldLeafInput() (v CustomFieldLeafInput, ok bool) {
+	if !s.IsCustomFieldLeafInput() {
+		return v, false
+	}
+	return s.CustomFieldLeafInput, true
+}
+
+// NewCustomFieldLeafInputSegmentConditionNodeInputSum returns new SegmentConditionNodeInputSum from CustomFieldLeafInput.
+func NewCustomFieldLeafInputSegmentConditionNodeInputSum(v CustomFieldLeafInput) SegmentConditionNodeInputSum {
+	var s SegmentConditionNodeInputSum
+	s.SetCustomFieldLeafInput(v)
+	return s
+}
+
+// SetEventLeafInput sets SegmentConditionNodeInputSum to EventLeafInput.
+func (s *SegmentConditionNodeInputSum) SetEventLeafInput(v EventLeafInput) {
+	s.Type = EventLeafInputSegmentConditionNodeInputSum
+	s.EventLeafInput = v
+}
+
+// GetEventLeafInput returns EventLeafInput and true boolean if SegmentConditionNodeInputSum is EventLeafInput.
+func (s SegmentConditionNodeInputSum) GetEventLeafInput() (v EventLeafInput, ok bool) {
+	if !s.IsEventLeafInput() {
+		return v, false
+	}
+	return s.EventLeafInput, true
+}
+
+// NewEventLeafInputSegmentConditionNodeInputSum returns new SegmentConditionNodeInputSum from EventLeafInput.
+func NewEventLeafInputSegmentConditionNodeInputSum(v EventLeafInput) SegmentConditionNodeInputSum {
+	var s SegmentConditionNodeInputSum
+	s.SetEventLeafInput(v)
+	return s
+}
+
+// SegmentConditionNodeSum represents sum type.
+type SegmentConditionNodeSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type             SegmentConditionNodeSumType
+	SegmentCondition SegmentCondition
+	AttributeLeaf    AttributeLeaf
+	BirthdayLeaf     BirthdayLeaf
+	TagLeaf          TagLeaf
+	TelegramLeaf     TelegramLeaf
+	SmsLeaf          SmsLeaf
+	CustomFieldLeaf  CustomFieldLeaf
+	EventLeaf        EventLeaf
+}
+
+// SegmentConditionNodeSumType is oneOf type of SegmentConditionNodeSum.
+type SegmentConditionNodeSumType string
+
+// Possible values for SegmentConditionNodeSumType.
+const (
+	SegmentConditionSegmentConditionNodeSum SegmentConditionNodeSumType = "group"
+	AttributeLeafSegmentConditionNodeSum    SegmentConditionNodeSumType = "attribute"
+	BirthdayLeafSegmentConditionNodeSum     SegmentConditionNodeSumType = "birthday"
+	TagLeafSegmentConditionNodeSum          SegmentConditionNodeSumType = "tag"
+	TelegramLeafSegmentConditionNodeSum     SegmentConditionNodeSumType = "telegram"
+	SmsLeafSegmentConditionNodeSum          SegmentConditionNodeSumType = "sms"
+	CustomFieldLeafSegmentConditionNodeSum  SegmentConditionNodeSumType = "customField"
+	EventLeafSegmentConditionNodeSum        SegmentConditionNodeSumType = "event"
+)
+
+// IsSegmentCondition reports whether SegmentConditionNodeSum is SegmentCondition.
+func (s SegmentConditionNodeSum) IsSegmentCondition() bool {
+	return s.Type == SegmentConditionSegmentConditionNodeSum
+}
+
+// IsAttributeLeaf reports whether SegmentConditionNodeSum is AttributeLeaf.
+func (s SegmentConditionNodeSum) IsAttributeLeaf() bool {
+	return s.Type == AttributeLeafSegmentConditionNodeSum
+}
+
+// IsBirthdayLeaf reports whether SegmentConditionNodeSum is BirthdayLeaf.
+func (s SegmentConditionNodeSum) IsBirthdayLeaf() bool {
+	return s.Type == BirthdayLeafSegmentConditionNodeSum
+}
+
+// IsTagLeaf reports whether SegmentConditionNodeSum is TagLeaf.
+func (s SegmentConditionNodeSum) IsTagLeaf() bool { return s.Type == TagLeafSegmentConditionNodeSum }
+
+// IsTelegramLeaf reports whether SegmentConditionNodeSum is TelegramLeaf.
+func (s SegmentConditionNodeSum) IsTelegramLeaf() bool {
+	return s.Type == TelegramLeafSegmentConditionNodeSum
+}
+
+// IsSmsLeaf reports whether SegmentConditionNodeSum is SmsLeaf.
+func (s SegmentConditionNodeSum) IsSmsLeaf() bool { return s.Type == SmsLeafSegmentConditionNodeSum }
+
+// IsCustomFieldLeaf reports whether SegmentConditionNodeSum is CustomFieldLeaf.
+func (s SegmentConditionNodeSum) IsCustomFieldLeaf() bool {
+	return s.Type == CustomFieldLeafSegmentConditionNodeSum
+}
+
+// IsEventLeaf reports whether SegmentConditionNodeSum is EventLeaf.
+func (s SegmentConditionNodeSum) IsEventLeaf() bool {
+	return s.Type == EventLeafSegmentConditionNodeSum
+}
+
+// SetSegmentCondition sets SegmentConditionNodeSum to SegmentCondition.
+func (s *SegmentConditionNodeSum) SetSegmentCondition(v SegmentCondition) {
+	s.Type = SegmentConditionSegmentConditionNodeSum
+	s.SegmentCondition = v
+}
+
+// GetSegmentCondition returns SegmentCondition and true boolean if SegmentConditionNodeSum is SegmentCondition.
+func (s SegmentConditionNodeSum) GetSegmentCondition() (v SegmentCondition, ok bool) {
+	if !s.IsSegmentCondition() {
+		return v, false
+	}
+	return s.SegmentCondition, true
+}
+
+// NewSegmentConditionSegmentConditionNodeSum returns new SegmentConditionNodeSum from SegmentCondition.
+func NewSegmentConditionSegmentConditionNodeSum(v SegmentCondition) SegmentConditionNodeSum {
+	var s SegmentConditionNodeSum
+	s.SetSegmentCondition(v)
+	return s
+}
+
+// SetAttributeLeaf sets SegmentConditionNodeSum to AttributeLeaf.
+func (s *SegmentConditionNodeSum) SetAttributeLeaf(v AttributeLeaf) {
+	s.Type = AttributeLeafSegmentConditionNodeSum
+	s.AttributeLeaf = v
+}
+
+// GetAttributeLeaf returns AttributeLeaf and true boolean if SegmentConditionNodeSum is AttributeLeaf.
+func (s SegmentConditionNodeSum) GetAttributeLeaf() (v AttributeLeaf, ok bool) {
+	if !s.IsAttributeLeaf() {
+		return v, false
+	}
+	return s.AttributeLeaf, true
+}
+
+// NewAttributeLeafSegmentConditionNodeSum returns new SegmentConditionNodeSum from AttributeLeaf.
+func NewAttributeLeafSegmentConditionNodeSum(v AttributeLeaf) SegmentConditionNodeSum {
+	var s SegmentConditionNodeSum
+	s.SetAttributeLeaf(v)
+	return s
+}
+
+// SetBirthdayLeaf sets SegmentConditionNodeSum to BirthdayLeaf.
+func (s *SegmentConditionNodeSum) SetBirthdayLeaf(v BirthdayLeaf) {
+	s.Type = BirthdayLeafSegmentConditionNodeSum
+	s.BirthdayLeaf = v
+}
+
+// GetBirthdayLeaf returns BirthdayLeaf and true boolean if SegmentConditionNodeSum is BirthdayLeaf.
+func (s SegmentConditionNodeSum) GetBirthdayLeaf() (v BirthdayLeaf, ok bool) {
+	if !s.IsBirthdayLeaf() {
+		return v, false
+	}
+	return s.BirthdayLeaf, true
+}
+
+// NewBirthdayLeafSegmentConditionNodeSum returns new SegmentConditionNodeSum from BirthdayLeaf.
+func NewBirthdayLeafSegmentConditionNodeSum(v BirthdayLeaf) SegmentConditionNodeSum {
+	var s SegmentConditionNodeSum
+	s.SetBirthdayLeaf(v)
+	return s
+}
+
+// SetTagLeaf sets SegmentConditionNodeSum to TagLeaf.
+func (s *SegmentConditionNodeSum) SetTagLeaf(v TagLeaf) {
+	s.Type = TagLeafSegmentConditionNodeSum
+	s.TagLeaf = v
+}
+
+// GetTagLeaf returns TagLeaf and true boolean if SegmentConditionNodeSum is TagLeaf.
+func (s SegmentConditionNodeSum) GetTagLeaf() (v TagLeaf, ok bool) {
+	if !s.IsTagLeaf() {
+		return v, false
+	}
+	return s.TagLeaf, true
+}
+
+// NewTagLeafSegmentConditionNodeSum returns new SegmentConditionNodeSum from TagLeaf.
+func NewTagLeafSegmentConditionNodeSum(v TagLeaf) SegmentConditionNodeSum {
+	var s SegmentConditionNodeSum
+	s.SetTagLeaf(v)
+	return s
+}
+
+// SetTelegramLeaf sets SegmentConditionNodeSum to TelegramLeaf.
+func (s *SegmentConditionNodeSum) SetTelegramLeaf(v TelegramLeaf) {
+	s.Type = TelegramLeafSegmentConditionNodeSum
+	s.TelegramLeaf = v
+}
+
+// GetTelegramLeaf returns TelegramLeaf and true boolean if SegmentConditionNodeSum is TelegramLeaf.
+func (s SegmentConditionNodeSum) GetTelegramLeaf() (v TelegramLeaf, ok bool) {
+	if !s.IsTelegramLeaf() {
+		return v, false
+	}
+	return s.TelegramLeaf, true
+}
+
+// NewTelegramLeafSegmentConditionNodeSum returns new SegmentConditionNodeSum from TelegramLeaf.
+func NewTelegramLeafSegmentConditionNodeSum(v TelegramLeaf) SegmentConditionNodeSum {
+	var s SegmentConditionNodeSum
+	s.SetTelegramLeaf(v)
+	return s
+}
+
+// SetSmsLeaf sets SegmentConditionNodeSum to SmsLeaf.
+func (s *SegmentConditionNodeSum) SetSmsLeaf(v SmsLeaf) {
+	s.Type = SmsLeafSegmentConditionNodeSum
+	s.SmsLeaf = v
+}
+
+// GetSmsLeaf returns SmsLeaf and true boolean if SegmentConditionNodeSum is SmsLeaf.
+func (s SegmentConditionNodeSum) GetSmsLeaf() (v SmsLeaf, ok bool) {
+	if !s.IsSmsLeaf() {
+		return v, false
+	}
+	return s.SmsLeaf, true
+}
+
+// NewSmsLeafSegmentConditionNodeSum returns new SegmentConditionNodeSum from SmsLeaf.
+func NewSmsLeafSegmentConditionNodeSum(v SmsLeaf) SegmentConditionNodeSum {
+	var s SegmentConditionNodeSum
+	s.SetSmsLeaf(v)
+	return s
+}
+
+// SetCustomFieldLeaf sets SegmentConditionNodeSum to CustomFieldLeaf.
+func (s *SegmentConditionNodeSum) SetCustomFieldLeaf(v CustomFieldLeaf) {
+	s.Type = CustomFieldLeafSegmentConditionNodeSum
+	s.CustomFieldLeaf = v
+}
+
+// GetCustomFieldLeaf returns CustomFieldLeaf and true boolean if SegmentConditionNodeSum is CustomFieldLeaf.
+func (s SegmentConditionNodeSum) GetCustomFieldLeaf() (v CustomFieldLeaf, ok bool) {
+	if !s.IsCustomFieldLeaf() {
+		return v, false
+	}
+	return s.CustomFieldLeaf, true
+}
+
+// NewCustomFieldLeafSegmentConditionNodeSum returns new SegmentConditionNodeSum from CustomFieldLeaf.
+func NewCustomFieldLeafSegmentConditionNodeSum(v CustomFieldLeaf) SegmentConditionNodeSum {
+	var s SegmentConditionNodeSum
+	s.SetCustomFieldLeaf(v)
+	return s
+}
+
+// SetEventLeaf sets SegmentConditionNodeSum to EventLeaf.
+func (s *SegmentConditionNodeSum) SetEventLeaf(v EventLeaf) {
+	s.Type = EventLeafSegmentConditionNodeSum
+	s.EventLeaf = v
+}
+
+// GetEventLeaf returns EventLeaf and true boolean if SegmentConditionNodeSum is EventLeaf.
+func (s SegmentConditionNodeSum) GetEventLeaf() (v EventLeaf, ok bool) {
+	if !s.IsEventLeaf() {
+		return v, false
+	}
+	return s.EventLeaf, true
+}
+
+// NewEventLeafSegmentConditionNodeSum returns new SegmentConditionNodeSum from EventLeaf.
+func NewEventLeafSegmentConditionNodeSum(v EventLeaf) SegmentConditionNodeSum {
+	var s SegmentConditionNodeSum
+	s.SetEventLeaf(v)
+	return s
 }
 
 // The Workspace's Send cap (ADR 0067): the most messages it may send per rolling 24 hours across all
@@ -20988,8 +23412,8 @@ type SiteCustomFieldResource struct {
 	Name string `json:"name"`
 	// Value type: inferred from the first value, changed by an owner or admin.
 	Type CustomFieldType `json:"type"`
-	// The operators a rule leaf on this field takes, by its type.
-	RuleOperators []ConditionOperator `json:"ruleOperators"`
+	// The tests a Condition takes on this field, by its type, each with its operators.
+	ConditionTests CustomFieldConditionTests `json:"conditionTests"`
 	// The revision of the state this answer shows (ADR 0119): an update names it.
 	Revision Revision `json:"revision"`
 	// Creation timestamp.
@@ -21018,9 +23442,9 @@ func (s *SiteCustomFieldResource) GetType() CustomFieldType {
 	return s.Type
 }
 
-// GetRuleOperators returns the value of RuleOperators.
-func (s *SiteCustomFieldResource) GetRuleOperators() []ConditionOperator {
-	return s.RuleOperators
+// GetConditionTests returns the value of ConditionTests.
+func (s *SiteCustomFieldResource) GetConditionTests() CustomFieldConditionTests {
+	return s.ConditionTests
 }
 
 // GetRevision returns the value of Revision.
@@ -21058,9 +23482,9 @@ func (s *SiteCustomFieldResource) SetType(val CustomFieldType) {
 	s.Type = val
 }
 
-// SetRuleOperators sets the value of RuleOperators.
-func (s *SiteCustomFieldResource) SetRuleOperators(val []ConditionOperator) {
-	s.RuleOperators = val
+// SetConditionTests sets the value of ConditionTests.
+func (s *SiteCustomFieldResource) SetConditionTests(val CustomFieldConditionTests) {
+	s.ConditionTests = val
 }
 
 // SetRevision sets the value of Revision.
@@ -24691,7 +27115,7 @@ type SitePersonalTokensDeleteNoContent struct{}
 // Ref: #/components/schemas/SitePreviewSegmentInput
 type SitePreviewSegmentInput struct {
 	// Condition; absent means all contacts.
-	Condition OptConditionGroupInput `json:"condition"`
+	Condition OptSegmentConditionInput `json:"condition"`
 	// The Channel of a Broadcast the audience is asked for. When given, the result also counts the
 	// recipients the Broadcast would take: the matching contacts it could send to now.
 	Channel OptBroadcastChannel `json:"channel"`
@@ -24701,7 +27125,7 @@ type SitePreviewSegmentInput struct {
 }
 
 // GetCondition returns the value of Condition.
-func (s *SitePreviewSegmentInput) GetCondition() OptConditionGroupInput {
+func (s *SitePreviewSegmentInput) GetCondition() OptSegmentConditionInput {
 	return s.Condition
 }
 
@@ -24716,7 +27140,7 @@ func (s *SitePreviewSegmentInput) GetIntegrationId() OptNilEntityId {
 }
 
 // SetCondition sets the value of Condition.
-func (s *SitePreviewSegmentInput) SetCondition(val OptConditionGroupInput) {
+func (s *SitePreviewSegmentInput) SetCondition(val OptSegmentConditionInput) {
 	s.Condition = val
 }
 
@@ -25654,7 +28078,7 @@ type SiteSegmentResource struct {
 	// Segment name.
 	Name string `json:"name"`
 	// Segment condition: the tree of tests; an empty group matches all contacts.
-	Condition OptConditionGroup `json:"condition"`
+	Condition OptSegmentCondition `json:"condition"`
 	// When the segment was archived; null while it is kept.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// The revision of the state this answer shows (ADR 0119): an update names it.
@@ -25676,7 +28100,7 @@ func (s *SiteSegmentResource) GetName() string {
 }
 
 // GetCondition returns the value of Condition.
-func (s *SiteSegmentResource) GetCondition() OptConditionGroup {
+func (s *SiteSegmentResource) GetCondition() OptSegmentCondition {
 	return s.Condition
 }
 
@@ -25711,7 +28135,7 @@ func (s *SiteSegmentResource) SetName(val string) {
 }
 
 // SetCondition sets the value of Condition.
-func (s *SiteSegmentResource) SetCondition(val OptConditionGroup) {
+func (s *SiteSegmentResource) SetCondition(val OptSegmentCondition) {
 	s.Condition = val
 }
 
@@ -28941,6 +31365,132 @@ func (s *SmsFromKind) UnmarshalText(data []byte) error {
 	}
 }
 
+// A test of whether a Contact has a phone that can be texted: one with an SMS Confirmation and no SMS
+// opt-out or Suppression.
+// Ref: #/components/schemas/SmsLeaf
+type SmsLeaf struct {
+	Kind SmsLeafKind `json:"kind"`
+	// Has one or does not.
+	Operator HasOperator `json:"operator"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SmsLeaf) GetKind() SmsLeafKind {
+	return s.Kind
+}
+
+// GetOperator returns the value of Operator.
+func (s *SmsLeaf) GetOperator() HasOperator {
+	return s.Operator
+}
+
+// SetKind sets the value of Kind.
+func (s *SmsLeaf) SetKind(val SmsLeafKind) {
+	s.Kind = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *SmsLeaf) SetOperator(val HasOperator) {
+	s.Operator = val
+}
+
+// A test of whether a Contact has a phone that can be texted: one with an SMS Confirmation and no SMS
+// opt-out or Suppression.
+// Ref: #/components/schemas/SmsLeafInput
+type SmsLeafInput struct {
+	Kind SmsLeafInputKind `json:"kind"`
+	// Has one or does not.
+	Operator HasOperator `json:"operator"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SmsLeafInput) GetKind() SmsLeafInputKind {
+	return s.Kind
+}
+
+// GetOperator returns the value of Operator.
+func (s *SmsLeafInput) GetOperator() HasOperator {
+	return s.Operator
+}
+
+// SetKind sets the value of Kind.
+func (s *SmsLeafInput) SetKind(val SmsLeafInputKind) {
+	s.Kind = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *SmsLeafInput) SetOperator(val HasOperator) {
+	s.Operator = val
+}
+
+type SmsLeafInputKind string
+
+const (
+	SmsLeafInputKindSMS SmsLeafInputKind = "sms"
+)
+
+// AllValues returns all SmsLeafInputKind values.
+func (SmsLeafInputKind) AllValues() []SmsLeafInputKind {
+	return []SmsLeafInputKind{
+		SmsLeafInputKindSMS,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SmsLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SmsLeafInputKindSMS:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SmsLeafInputKind) UnmarshalText(data []byte) error {
+	switch SmsLeafInputKind(data) {
+	case SmsLeafInputKindSMS:
+		*s = SmsLeafInputKindSMS
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type SmsLeafKind string
+
+const (
+	SmsLeafKindSMS SmsLeafKind = "sms"
+)
+
+// AllValues returns all SmsLeafKind values.
+func (SmsLeafKind) AllValues() []SmsLeafKind {
+	return []SmsLeafKind{
+		SmsLeafKindSMS,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SmsLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SmsLeafKindSMS:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SmsLeafKind) UnmarshalText(data []byte) error {
+	switch SmsLeafKind(data) {
+	case SmsLeafKindSMS:
+		*s = SmsLeafKindSMS
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // The opt-out of a contact's phone from every SMS of the Workspace: when, and how the person stopped.
 // Ref: #/components/schemas/SmsOptOut
 type SmsOptOut struct {
@@ -29361,6 +31911,154 @@ func (s *SuppressionReason) UnmarshalText(data []byte) error {
 		return nil
 	case SuppressionReasonManual:
 		*s = SuppressionReasonManual
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A test of whether a Contact has the Tag called `name`.
+// Ref: #/components/schemas/TagLeaf
+type TagLeaf struct {
+	Kind TagLeafKind `json:"kind"`
+	// The Tag's name.
+	Name string `json:"name"`
+	// Has it or does not.
+	Operator HasOperator `json:"operator"`
+}
+
+// GetKind returns the value of Kind.
+func (s *TagLeaf) GetKind() TagLeafKind {
+	return s.Kind
+}
+
+// GetName returns the value of Name.
+func (s *TagLeaf) GetName() string {
+	return s.Name
+}
+
+// GetOperator returns the value of Operator.
+func (s *TagLeaf) GetOperator() HasOperator {
+	return s.Operator
+}
+
+// SetKind sets the value of Kind.
+func (s *TagLeaf) SetKind(val TagLeafKind) {
+	s.Kind = val
+}
+
+// SetName sets the value of Name.
+func (s *TagLeaf) SetName(val string) {
+	s.Name = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *TagLeaf) SetOperator(val HasOperator) {
+	s.Operator = val
+}
+
+// A test of whether a Contact has the Tag called `name`.
+// Ref: #/components/schemas/TagLeafInput
+type TagLeafInput struct {
+	Kind TagLeafInputKind `json:"kind"`
+	// The Tag's name.
+	Name string `json:"name"`
+	// Has it or does not.
+	Operator HasOperator `json:"operator"`
+}
+
+// GetKind returns the value of Kind.
+func (s *TagLeafInput) GetKind() TagLeafInputKind {
+	return s.Kind
+}
+
+// GetName returns the value of Name.
+func (s *TagLeafInput) GetName() string {
+	return s.Name
+}
+
+// GetOperator returns the value of Operator.
+func (s *TagLeafInput) GetOperator() HasOperator {
+	return s.Operator
+}
+
+// SetKind sets the value of Kind.
+func (s *TagLeafInput) SetKind(val TagLeafInputKind) {
+	s.Kind = val
+}
+
+// SetName sets the value of Name.
+func (s *TagLeafInput) SetName(val string) {
+	s.Name = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *TagLeafInput) SetOperator(val HasOperator) {
+	s.Operator = val
+}
+
+type TagLeafInputKind string
+
+const (
+	TagLeafInputKindTag TagLeafInputKind = "tag"
+)
+
+// AllValues returns all TagLeafInputKind values.
+func (TagLeafInputKind) AllValues() []TagLeafInputKind {
+	return []TagLeafInputKind{
+		TagLeafInputKindTag,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TagLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case TagLeafInputKindTag:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TagLeafInputKind) UnmarshalText(data []byte) error {
+	switch TagLeafInputKind(data) {
+	case TagLeafInputKindTag:
+		*s = TagLeafInputKindTag
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type TagLeafKind string
+
+const (
+	TagLeafKindTag TagLeafKind = "tag"
+)
+
+// AllValues returns all TagLeafKind values.
+func (TagLeafKind) AllValues() []TagLeafKind {
+	return []TagLeafKind{
+		TagLeafKindTag,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TagLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case TagLeafKindTag:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TagLeafKind) UnmarshalText(data []byte) error {
+	switch TagLeafKind(data) {
+	case TagLeafKindTag:
+		*s = TagLeafKindTag
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -29793,6 +32491,130 @@ func (s *TelegramConfigKind) UnmarshalText(data []byte) error {
 	}
 }
 
+// A test of whether a Contact has a Telegram chat bound, on its own or through a Visitor.
+// Ref: #/components/schemas/TelegramLeaf
+type TelegramLeaf struct {
+	Kind TelegramLeafKind `json:"kind"`
+	// Has one or does not.
+	Operator HasOperator `json:"operator"`
+}
+
+// GetKind returns the value of Kind.
+func (s *TelegramLeaf) GetKind() TelegramLeafKind {
+	return s.Kind
+}
+
+// GetOperator returns the value of Operator.
+func (s *TelegramLeaf) GetOperator() HasOperator {
+	return s.Operator
+}
+
+// SetKind sets the value of Kind.
+func (s *TelegramLeaf) SetKind(val TelegramLeafKind) {
+	s.Kind = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *TelegramLeaf) SetOperator(val HasOperator) {
+	s.Operator = val
+}
+
+// A test of whether a Contact has a Telegram chat bound, on its own or through a Visitor.
+// Ref: #/components/schemas/TelegramLeafInput
+type TelegramLeafInput struct {
+	Kind TelegramLeafInputKind `json:"kind"`
+	// Has one or does not.
+	Operator HasOperator `json:"operator"`
+}
+
+// GetKind returns the value of Kind.
+func (s *TelegramLeafInput) GetKind() TelegramLeafInputKind {
+	return s.Kind
+}
+
+// GetOperator returns the value of Operator.
+func (s *TelegramLeafInput) GetOperator() HasOperator {
+	return s.Operator
+}
+
+// SetKind sets the value of Kind.
+func (s *TelegramLeafInput) SetKind(val TelegramLeafInputKind) {
+	s.Kind = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *TelegramLeafInput) SetOperator(val HasOperator) {
+	s.Operator = val
+}
+
+type TelegramLeafInputKind string
+
+const (
+	TelegramLeafInputKindTelegram TelegramLeafInputKind = "telegram"
+)
+
+// AllValues returns all TelegramLeafInputKind values.
+func (TelegramLeafInputKind) AllValues() []TelegramLeafInputKind {
+	return []TelegramLeafInputKind{
+		TelegramLeafInputKindTelegram,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TelegramLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case TelegramLeafInputKindTelegram:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TelegramLeafInputKind) UnmarshalText(data []byte) error {
+	switch TelegramLeafInputKind(data) {
+	case TelegramLeafInputKindTelegram:
+		*s = TelegramLeafInputKindTelegram
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type TelegramLeafKind string
+
+const (
+	TelegramLeafKindTelegram TelegramLeafKind = "telegram"
+)
+
+// AllValues returns all TelegramLeafKind values.
+func (TelegramLeafKind) AllValues() []TelegramLeafKind {
+	return []TelegramLeafKind{
+		TelegramLeafKindTelegram,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TelegramLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case TelegramLeafKindTelegram:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TelegramLeafKind) UnmarshalText(data []byte) error {
+	switch TelegramLeafKind(data) {
+	case TelegramLeafKindTelegram:
+		*s = TelegramLeafKindTelegram
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A Telegram start link: the person who opens it and presses Start binds their chat to the contact it
 // was issued for. The link works once.
 // Ref: #/components/schemas/TelegramStartLinkResource
@@ -29870,6 +32692,215 @@ func (s *TestWebhookInput) GetEventType() string {
 // SetEventType sets the value of EventType.
 func (s *TestWebhookInput) SetEventType(val string) {
 	s.EventType = val
+}
+
+// How a text test compares the value with its own.
+// Ref: #/components/schemas/TextOperator
+type TextOperator string
+
+const (
+	TextOperatorEq         TextOperator = "eq"
+	TextOperatorNeq        TextOperator = "neq"
+	TextOperatorContains   TextOperator = "contains"
+	TextOperatorBeginsWith TextOperator = "beginsWith"
+)
+
+// AllValues returns all TextOperator values.
+func (TextOperator) AllValues() []TextOperator {
+	return []TextOperator{
+		TextOperatorEq,
+		TextOperatorNeq,
+		TextOperatorContains,
+		TextOperatorBeginsWith,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TextOperator) MarshalText() ([]byte, error) {
+	switch s {
+	case TextOperatorEq:
+		return []byte(s), nil
+	case TextOperatorNeq:
+		return []byte(s), nil
+	case TextOperatorContains:
+		return []byte(s), nil
+	case TextOperatorBeginsWith:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TextOperator) UnmarshalText(data []byte) error {
+	switch TextOperator(data) {
+	case TextOperatorEq:
+		*s = TextOperatorEq
+		return nil
+	case TextOperatorNeq:
+		*s = TextOperatorNeq
+		return nil
+	case TextOperatorContains:
+		*s = TextOperatorContains
+		return nil
+	case TextOperatorBeginsWith:
+		*s = TextOperatorBeginsWith
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A test of a text value. On a Contact attribute or an Event's property, contains is a
+// case-insensitive substring. On a Custom field, contains holds when the field's value is a list that
+// holds `value`, and a number or boolean field's eq and neq compare the text of its value.
+// Ref: #/components/schemas/TextTest
+type TextTest struct {
+	Kind TextTestKind `json:"kind"`
+	// How the value compares.
+	Operator TextOperator `json:"operator"`
+	// The text compared with.
+	Value string `json:"value"`
+}
+
+// GetKind returns the value of Kind.
+func (s *TextTest) GetKind() TextTestKind {
+	return s.Kind
+}
+
+// GetOperator returns the value of Operator.
+func (s *TextTest) GetOperator() TextOperator {
+	return s.Operator
+}
+
+// GetValue returns the value of Value.
+func (s *TextTest) GetValue() string {
+	return s.Value
+}
+
+// SetKind sets the value of Kind.
+func (s *TextTest) SetKind(val TextTestKind) {
+	s.Kind = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *TextTest) SetOperator(val TextOperator) {
+	s.Operator = val
+}
+
+// SetValue sets the value of Value.
+func (s *TextTest) SetValue(val string) {
+	s.Value = val
+}
+
+// A test of a text value. On a Contact attribute or an Event's property, contains is a
+// case-insensitive substring. On a Custom field, contains holds when the field's value is a list that
+// holds `value`, and a number or boolean field's eq and neq compare the text of its value.
+// Ref: #/components/schemas/TextTestInput
+type TextTestInput struct {
+	Kind TextTestInputKind `json:"kind"`
+	// How the value compares.
+	Operator TextOperator `json:"operator"`
+	// The text compared with.
+	Value string `json:"value"`
+}
+
+// GetKind returns the value of Kind.
+func (s *TextTestInput) GetKind() TextTestInputKind {
+	return s.Kind
+}
+
+// GetOperator returns the value of Operator.
+func (s *TextTestInput) GetOperator() TextOperator {
+	return s.Operator
+}
+
+// GetValue returns the value of Value.
+func (s *TextTestInput) GetValue() string {
+	return s.Value
+}
+
+// SetKind sets the value of Kind.
+func (s *TextTestInput) SetKind(val TextTestInputKind) {
+	s.Kind = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *TextTestInput) SetOperator(val TextOperator) {
+	s.Operator = val
+}
+
+// SetValue sets the value of Value.
+func (s *TextTestInput) SetValue(val string) {
+	s.Value = val
+}
+
+type TextTestInputKind string
+
+const (
+	TextTestInputKindText TextTestInputKind = "text"
+)
+
+// AllValues returns all TextTestInputKind values.
+func (TextTestInputKind) AllValues() []TextTestInputKind {
+	return []TextTestInputKind{
+		TextTestInputKindText,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TextTestInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case TextTestInputKindText:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TextTestInputKind) UnmarshalText(data []byte) error {
+	switch TextTestInputKind(data) {
+	case TextTestInputKindText:
+		*s = TextTestInputKindText
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type TextTestKind string
+
+const (
+	TextTestKindText TextTestKind = "text"
+)
+
+// AllValues returns all TextTestKind values.
+func (TextTestKind) AllValues() []TextTestKind {
+	return []TextTestKind{
+		TextTestKindText,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TextTestKind) MarshalText() ([]byte, error) {
+	switch s {
+	case TextTestKindText:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TextTestKind) UnmarshalText(data []byte) error {
+	switch TextTestKind(data) {
+	case TextTestKindText:
+		*s = TextTestKindText
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 type TimeZoneName string
@@ -30162,6 +33193,106 @@ func (s *TrackingState) UnmarshalText(data []byte) error {
 		return nil
 	case TrackingStateServing:
 		*s = TrackingStateServing
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The Event that fired a Rule, whose properties a property test reads.
+// Ref: #/components/schemas/TriggerSource
+type TriggerSource struct {
+	Kind TriggerSourceKind `json:"kind"`
+}
+
+// GetKind returns the value of Kind.
+func (s *TriggerSource) GetKind() TriggerSourceKind {
+	return s.Kind
+}
+
+// SetKind sets the value of Kind.
+func (s *TriggerSource) SetKind(val TriggerSourceKind) {
+	s.Kind = val
+}
+
+// The Event that fired a Rule, whose properties a property test reads.
+// Ref: #/components/schemas/TriggerSourceInput
+type TriggerSourceInput struct {
+	Kind TriggerSourceInputKind `json:"kind"`
+}
+
+// GetKind returns the value of Kind.
+func (s *TriggerSourceInput) GetKind() TriggerSourceInputKind {
+	return s.Kind
+}
+
+// SetKind sets the value of Kind.
+func (s *TriggerSourceInput) SetKind(val TriggerSourceInputKind) {
+	s.Kind = val
+}
+
+type TriggerSourceInputKind string
+
+const (
+	TriggerSourceInputKindTrigger TriggerSourceInputKind = "trigger"
+)
+
+// AllValues returns all TriggerSourceInputKind values.
+func (TriggerSourceInputKind) AllValues() []TriggerSourceInputKind {
+	return []TriggerSourceInputKind{
+		TriggerSourceInputKindTrigger,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TriggerSourceInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case TriggerSourceInputKindTrigger:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TriggerSourceInputKind) UnmarshalText(data []byte) error {
+	switch TriggerSourceInputKind(data) {
+	case TriggerSourceInputKindTrigger:
+		*s = TriggerSourceInputKindTrigger
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type TriggerSourceKind string
+
+const (
+	TriggerSourceKindTrigger TriggerSourceKind = "trigger"
+)
+
+// AllValues returns all TriggerSourceKind values.
+func (TriggerSourceKind) AllValues() []TriggerSourceKind {
+	return []TriggerSourceKind{
+		TriggerSourceKindTrigger,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TriggerSourceKind) MarshalText() ([]byte, error) {
+	switch s {
+	case TriggerSourceKindTrigger:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TriggerSourceKind) UnmarshalText(data []byte) error {
+	switch TriggerSourceKind(data) {
+	case TriggerSourceKindTrigger:
+		*s = TriggerSourceKindTrigger
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -30703,8 +33834,8 @@ type UpdateRuleInput struct {
 	Revision Revision `json:"revision"`
 	Name     OptName  `json:"name"`
 	// The Event actions that make the Rule fire; at least one.
-	TriggerEvents []string               `json:"triggerEvents"`
-	Condition     OptConditionGroupInput `json:"condition"`
+	TriggerEvents []string              `json:"triggerEvents"`
+	Condition     OptRuleConditionInput `json:"condition"`
 	// The Actions to run, in order.
 	Actions []RuleActionInput `json:"actions"`
 }
@@ -30725,7 +33856,7 @@ func (s *UpdateRuleInput) GetTriggerEvents() []string {
 }
 
 // GetCondition returns the value of Condition.
-func (s *UpdateRuleInput) GetCondition() OptConditionGroupInput {
+func (s *UpdateRuleInput) GetCondition() OptRuleConditionInput {
 	return s.Condition
 }
 
@@ -30750,7 +33881,7 @@ func (s *UpdateRuleInput) SetTriggerEvents(val []string) {
 }
 
 // SetCondition sets the value of Condition.
-func (s *UpdateRuleInput) SetCondition(val OptConditionGroupInput) {
+func (s *UpdateRuleInput) SetCondition(val OptRuleConditionInput) {
 	s.Condition = val
 }
 
@@ -30767,7 +33898,7 @@ type UpdateSegmentInput struct {
 	// Segment name.
 	Name OptName `json:"name"`
 	// Segment condition: the tree of tests; an empty group matches all contacts.
-	Condition OptConditionGroupInput `json:"condition"`
+	Condition OptSegmentConditionInput `json:"condition"`
 }
 
 // GetRevision returns the value of Revision.
@@ -30781,7 +33912,7 @@ func (s *UpdateSegmentInput) GetName() OptName {
 }
 
 // GetCondition returns the value of Condition.
-func (s *UpdateSegmentInput) GetCondition() OptConditionGroupInput {
+func (s *UpdateSegmentInput) GetCondition() OptSegmentConditionInput {
 	return s.Condition
 }
 
@@ -30796,7 +33927,7 @@ func (s *UpdateSegmentInput) SetName(val OptName) {
 }
 
 // SetCondition sets the value of Condition.
-func (s *UpdateSegmentInput) SetCondition(val OptConditionGroupInput) {
+func (s *UpdateSegmentInput) SetCondition(val OptSegmentConditionInput) {
 	s.Condition = val
 }
 
@@ -31256,6 +34387,132 @@ func (s *WebhookTestResult) SetStatus(val OptInt32) {
 // SetKind sets the value of Kind.
 func (s *WebhookTestResult) SetKind(val OptWebhookErrorKind) {
 	s.Kind = val
+}
+
+// A test of a moment: within the last `days` days up to now, so a moment still to come is not within.
+// A moment is read as for the moment test.
+// Ref: #/components/schemas/WithinLastTest
+type WithinLastTest struct {
+	Kind WithinLastTestKind `json:"kind"`
+	// The window, in days back from now.
+	Days int32 `json:"days"`
+}
+
+// GetKind returns the value of Kind.
+func (s *WithinLastTest) GetKind() WithinLastTestKind {
+	return s.Kind
+}
+
+// GetDays returns the value of Days.
+func (s *WithinLastTest) GetDays() int32 {
+	return s.Days
+}
+
+// SetKind sets the value of Kind.
+func (s *WithinLastTest) SetKind(val WithinLastTestKind) {
+	s.Kind = val
+}
+
+// SetDays sets the value of Days.
+func (s *WithinLastTest) SetDays(val int32) {
+	s.Days = val
+}
+
+// A test of a moment: within the last `days` days up to now, so a moment still to come is not within.
+// A moment is read as for the moment test.
+// Ref: #/components/schemas/WithinLastTestInput
+type WithinLastTestInput struct {
+	Kind WithinLastTestInputKind `json:"kind"`
+	// The window, in days back from now.
+	Days int32 `json:"days"`
+}
+
+// GetKind returns the value of Kind.
+func (s *WithinLastTestInput) GetKind() WithinLastTestInputKind {
+	return s.Kind
+}
+
+// GetDays returns the value of Days.
+func (s *WithinLastTestInput) GetDays() int32 {
+	return s.Days
+}
+
+// SetKind sets the value of Kind.
+func (s *WithinLastTestInput) SetKind(val WithinLastTestInputKind) {
+	s.Kind = val
+}
+
+// SetDays sets the value of Days.
+func (s *WithinLastTestInput) SetDays(val int32) {
+	s.Days = val
+}
+
+type WithinLastTestInputKind string
+
+const (
+	WithinLastTestInputKindWithinLast WithinLastTestInputKind = "withinLast"
+)
+
+// AllValues returns all WithinLastTestInputKind values.
+func (WithinLastTestInputKind) AllValues() []WithinLastTestInputKind {
+	return []WithinLastTestInputKind{
+		WithinLastTestInputKindWithinLast,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WithinLastTestInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case WithinLastTestInputKindWithinLast:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WithinLastTestInputKind) UnmarshalText(data []byte) error {
+	switch WithinLastTestInputKind(data) {
+	case WithinLastTestInputKindWithinLast:
+		*s = WithinLastTestInputKindWithinLast
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type WithinLastTestKind string
+
+const (
+	WithinLastTestKindWithinLast WithinLastTestKind = "withinLast"
+)
+
+// AllValues returns all WithinLastTestKind values.
+func (WithinLastTestKind) AllValues() []WithinLastTestKind {
+	return []WithinLastTestKind{
+		WithinLastTestKindWithinLast,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WithinLastTestKind) MarshalText() ([]byte, error) {
+	switch s {
+	case WithinLastTestKindWithinLast:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WithinLastTestKind) UnmarshalText(data []byte) error {
+	switch WithinLastTestKind(data) {
+	case WithinLastTestKindWithinLast:
+		*s = WithinLastTestKindWithinLast
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 type WorkspaceId string

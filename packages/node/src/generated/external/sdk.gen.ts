@@ -914,7 +914,7 @@ export const segmentsCreate = <ThrowOnError extends boolean = false>(options: Op
 });
 
 /**
- * Count the contacts matching an unsaved rule definition, or all contacts without one. With a `channel` it also counts the recipients a Broadcast there would take now: read it back before a Broadcast is handed over for scheduling (ADR 0149).
+ * Count the contacts matching an unsaved Condition, or all contacts without one. With a `channel` it also counts the recipients a Broadcast there would take now: read it back before a Broadcast is handed over for scheduling (ADR 0149).
  */
 export const segmentsPreview = <ThrowOnError extends boolean = false>(options: Options<SegmentsPreviewData, ThrowOnError>): RequestResult<SegmentsPreviewResponses, SegmentsPreviewErrors, ThrowOnError> => (options.client ?? client).post<SegmentsPreviewResponses, SegmentsPreviewErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],

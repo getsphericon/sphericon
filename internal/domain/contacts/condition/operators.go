@@ -8,16 +8,19 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 )
 
-// operator is a test a leaf names: the operators of the rule, number and date leaves.
+// operator is how a leaf or a test compares: the operators of the typed tests and of the Tag,
+// Telegram and SMS leaves.
 type operator string
 
 const (
-	opEQ          operator = "eq"
-	opNEQ         operator = "neq"
-	opContains    operator = "contains"
-	opBeginsWith  operator = "beginsWith"
-	opNull        operator = "null"
-	opNotNull     operator = "notNull"
+	opEQ         operator = "eq"
+	opNEQ        operator = "neq"
+	opContains   operator = "contains"
+	opBeginsWith operator = "beginsWith"
+
+	opSet    operator = "set"
+	opNotSet operator = "notSet"
+
 	opHas         operator = "has"
 	opDoesNotHave operator = "doesNotHave"
 
@@ -28,7 +31,7 @@ const (
 
 	opBefore operator = "before"
 	opAfter  operator = "after"
-	// opWithin is the moment test of the last days up to now, the `dateWithin` leaf's.
+	// opWithin is the moment test of the last days up to now, the `withinLast` test.
 	opWithin operator = "within"
 )
 
@@ -91,13 +94,13 @@ func (p presenceTest) event(have any) bool {
 	return have == nil
 }
 
-// operator is the stored operator of a value's presence test, notNull or null: the one the table
-// of what fits a Custom field (customFieldOperators) is written in.
+// operator is the operator of a value's presence test, set or notSet: the one the table of what
+// fits a Custom field (customFieldTests) is written in.
 func (p presenceTest) operator() operator {
 	if p.set {
-		return opNotNull
+		return opSet
 	}
-	return opNull
+	return opNotSet
 }
 
 // comparison is one operator of a number test, in the two places it is evaluated: filter is its
@@ -146,11 +149,11 @@ const (
 	isLocal = `(@.datetime().type() == "timestamp without time zone" || @.datetime().type() == "date")`
 )
 
-// momentLayout writes a bound of a date leaf as jsonpath's datetime() reads a moment: RFC 3339
+// momentLayout writes a bound of a moment test as jsonpath's datetime() reads a moment: RFC 3339
 // with the offset written out, never "Z".
 const momentLayout = "2006-01-02T15:04:05.999999-07:00"
 
-// localLayout writes a bound of a date leaf as the wall-clock time in the Workspace time zone,
+// localLayout writes a bound of a moment test as the wall-clock time in the Workspace time zone,
 // without an offset, which jsonpath's datetime() reads as a timestamp without a time zone.
 const localLayout = "2006-01-02T15:04:05.999999"
 
@@ -160,7 +163,7 @@ func eitherKind(zoned, local string) string {
 	return "(" + isZoned + " && " + zoned + ") || (" + isLocal + " && " + local + ")"
 }
 
-// sides is each operator of a date leaf as its jsonpath filter of a datetime Custom field against
+// sides is each operator of a moment test as its jsonpath filter of a datetime Custom field against
 // the bound $at ($atLocal for a value without an offset): before is strictly earlier, after is at
 // or later, so the two split time at the bound.
 var sides = map[operator]string{
@@ -168,27 +171,52 @@ var sides = map[operator]string{
 	opAfter:  eitherKind("@.datetime() >= $at.datetime()", "@.datetime() >= $atLocal.datetime()"),
 }
 
-// window is the jsonpath filter of a date-within leaf: a moment from $since up to $now, each bound
+// window is the jsonpath filter of a withinLast test: a moment from $since up to $now, each bound
 // written in both kinds.
 var window = eitherKind(
 	"@.datetime() >= $since.datetime() && @.datetime() <= $now.datetime()",
 	"@.datetime() >= $sinceLocal.datetime() && @.datetime() <= $nowLocal.datetime()",
 )
 
-// customFieldOperators is what a rule leaf may test on a Custom field, by the field's type: the one
-// table of what fits, which the API lists as each Custom field's ruleOperators. contains is the
-// membership of a JSON array, read from a string field. A number field is also compared by a
-// number leaf, a datetime field tested by the date leaves.
-var customFieldOperators = map[customfield.Type][]operator{
-	customfield.TypeString:   {opEQ, opNEQ, opContains, opNotNull},
-	customfield.TypeBool:     {opEQ, opNEQ, opNotNull},
-	customfield.TypeNumber:   {opEQ, opNEQ, opNotNull},
-	customfield.TypeDatetime: {opNotNull},
+// fieldTests is what a Custom field leaf may ask of a field of one type: per typed test, the
+// operators it takes (none: the type does not take the test), and whether it takes withinLast.
+type fieldTests struct {
+	text, number, moment, presence []operator
+	withinLast                     bool
 }
 
-// RuleOperators is the operators a rule leaf may test on a Custom field of type t.
-func RuleOperators(t customfield.Type) []string {
-	ops := customFieldOperators[t]
+// customFieldTests is what a Custom field leaf may ask of a field, by its type: the one table of
+// what fits, which the API lists as each Custom field's conditionTests. A text test's contains is
+// the membership of a JSON array, read from a string field; a number or boolean field's eq and neq
+// compare the text of its value. No type takes notSet: a field not set is no test of its type.
+var customFieldTests = map[customfield.Type]fieldTests{
+	customfield.TypeString:   {text: []operator{opEQ, opNEQ, opContains}, presence: []operator{opSet}},
+	customfield.TypeBool:     {text: []operator{opEQ, opNEQ}, presence: []operator{opSet}},
+	customfield.TypeNumber:   {text: []operator{opEQ, opNEQ}, number: []operator{opGT, opGTE, opLT, opLTE}, presence: []operator{opSet}},
+	customfield.TypeDatetime: {moment: []operator{opBefore, opAfter}, withinLast: true, presence: []operator{opSet}},
+}
+
+// Tests is what a Condition may ask of a Custom field of one type: per typed test, the operators
+// it takes there (none: the type does not take the test), and whether it takes withinLast.
+type Tests struct {
+	Text, Number, Moment, Presence []string
+	WithinLast                     bool
+}
+
+// CustomFieldTests is what a Condition may ask of a Custom field of type t.
+func CustomFieldTests(t customfield.Type) Tests {
+	fits := customFieldTests[t]
+	return Tests{
+		Text:       names(fits.text),
+		Number:     names(fits.number),
+		Moment:     names(fits.moment),
+		Presence:   names(fits.presence),
+		WithinLast: fits.withinLast,
+	}
+}
+
+// names is each operator's name.
+func names(ops []operator) []string {
 	out := make([]string, len(ops))
 	for i, op := range ops {
 		out[i] = string(op)

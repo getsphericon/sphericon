@@ -8146,7 +8146,7 @@
     "/workspaces/{workspaceId}/segments/preview": {
       "post": {
         "operationId": "SiteSegments_preview",
-        "description": "Preview how many active contacts match a rule definition",
+        "description": "Preview how many active contacts match an unsaved Condition",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteSegmentResourceParentKey"
@@ -10797,6 +10797,99 @@
         "description": "Request body for applying a tag to a contact",
         "additionalProperties": false
       },
+      "AttributeLeaf": {
+        "type": "object",
+        "required": ["kind", "attribute", "test"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["attribute"]
+          },
+          "attribute": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactAttribute"
+              }
+            ],
+            "description": "The attribute tested"
+          },
+          "test": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttributeTest"
+              }
+            ],
+            "description": "What it asks of the attribute"
+          }
+        },
+        "description": "A test of a Contact's text attribute"
+      },
+      "AttributeLeafInput": {
+        "type": "object",
+        "required": ["kind", "attribute", "test"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["attribute"]
+          },
+          "attribute": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactAttribute"
+              }
+            ],
+            "description": "The attribute tested"
+          },
+          "test": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttributeTestInput"
+              }
+            ],
+            "description": "What it asks of the attribute"
+          }
+        },
+        "description": "A test of a Contact's text attribute",
+        "additionalProperties": false
+      },
+      "AttributeTest": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TextTest"
+          },
+          {
+            "$ref": "#/components/schemas/PresenceTest"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "text": "#/components/schemas/TextTest",
+            "presence": "#/components/schemas/PresenceTest"
+          }
+        },
+        "description": "What a test of a Contact attribute asks of it, by `kind`"
+      },
+      "AttributeTestInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TextTestInput"
+          },
+          {
+            "$ref": "#/components/schemas/PresenceTestInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "text": "#/components/schemas/TextTestInput",
+            "presence": "#/components/schemas/PresenceTestInput"
+          }
+        },
+        "description": "What a test of a Contact attribute asks of it, by `kind`"
+      },
       "AttributionWindowDays": {
         "type": "integer",
         "format": "int32",
@@ -11627,6 +11720,83 @@
         },
         "description": "One version of an automation's definition: what publishing makes it do (ADR 0065)"
       },
+      "BirthdayLeaf": {
+        "type": "object",
+        "required": ["kind", "test"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["birthday"]
+          },
+          "test": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BirthdayTest"
+              }
+            ],
+            "description": "What it asks of the birthday"
+          }
+        },
+        "description": "A test of the Contact's date of birth"
+      },
+      "BirthdayLeafInput": {
+        "type": "object",
+        "required": ["kind", "test"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["birthday"]
+          },
+          "test": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BirthdayTestInput"
+              }
+            ],
+            "description": "What it asks of the birthday"
+          }
+        },
+        "description": "A test of the Contact's date of birth",
+        "additionalProperties": false
+      },
+      "BirthdayTest": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/MomentTest"
+          },
+          {
+            "$ref": "#/components/schemas/WithinLastTest"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "moment": "#/components/schemas/MomentTest",
+            "withinLast": "#/components/schemas/WithinLastTest"
+          }
+        },
+        "description": "What a test of the Contact's birthday asks of it, by `kind`"
+      },
+      "BirthdayTestInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/MomentTestInput"
+          },
+          {
+            "$ref": "#/components/schemas/WithinLastTestInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "moment": "#/components/schemas/MomentTestInput",
+            "withinLast": "#/components/schemas/WithinLastTestInput"
+          }
+        },
+        "description": "What a test of the Contact's birthday asks of it, by `kind`"
+      },
       "BrandKitResource": {
         "type": "object",
         "required": [
@@ -11795,446 +11965,6 @@
         "enum": ["and", "or"],
         "description": "How a condition group combines its entries"
       },
-      "ConditionDateLeaf": {
-        "type": "object",
-        "required": ["kind", "field", "operator", "at"],
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": ["date"]
-          },
-          "field": {
-            "type": "string",
-            "description": "What it tests: \"birthday\" or \"custom:<key>\" for a datetime custom field"
-          },
-          "operator": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ConditionDateOperator"
-              }
-            ],
-            "description": "Which side of `at` the moment is on"
-          },
-          "at": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Timestamp"
-              }
-            ],
-            "description": "The moment the field's is compared with"
-          }
-        },
-        "description": "A test of a custom field of the workspace whose type is datetime (\"custom:<key>\"): its moment\nis before or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date\nwithout a time, a date-time without an offset or a value that is not a date-time makes the leaf\nfalse."
-      },
-      "ConditionDateLeafInput": {
-        "type": "object",
-        "required": ["kind", "field", "operator", "at"],
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": ["date"]
-          },
-          "field": {
-            "type": "string",
-            "description": "What it tests: \"birthday\" or \"custom:<key>\" for a datetime custom field"
-          },
-          "operator": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ConditionDateOperator"
-              }
-            ],
-            "description": "Which side of `at` the moment is on"
-          },
-          "at": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Timestamp"
-              }
-            ],
-            "description": "The moment the field's is compared with"
-          }
-        },
-        "description": "A test of a custom field of the workspace whose type is datetime (\"custom:<key>\"): its moment\nis before or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date\nwithout a time, a date-time without an offset or a value that is not a date-time makes the leaf\nfalse.",
-        "additionalProperties": false
-      },
-      "ConditionDateOperator": {
-        "type": "string",
-        "enum": ["before", "after"],
-        "description": "Which side of `at` a date leaf takes: before is strictly earlier, after is at or later, so the\ntwo split time at `at`"
-      },
-      "ConditionDateWithinLeaf": {
-        "type": "object",
-        "required": ["kind", "field", "withinDays"],
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": ["dateWithin"]
-          },
-          "field": {
-            "type": "string",
-            "description": "What it tests: \"birthday\" or \"custom:<key>\" for a datetime custom field"
-          },
-          "withinDays": {
-            "type": "integer",
-            "format": "int32",
-            "minimum": 1,
-            "description": "The window, in days back from now"
-          }
-        },
-        "description": "A test of a custom field of the workspace whose type is datetime (\"custom:<key>\"): its moment\nis within the last `withinDays` days up to now, so a moment still to come is not within. Only a\ndate-time with a UTC offset is a moment, as for the date leaf."
-      },
-      "ConditionDateWithinLeafInput": {
-        "type": "object",
-        "required": ["kind", "field", "withinDays"],
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": ["dateWithin"]
-          },
-          "field": {
-            "type": "string",
-            "description": "What it tests: \"birthday\" or \"custom:<key>\" for a datetime custom field"
-          },
-          "withinDays": {
-            "type": "integer",
-            "format": "int32",
-            "minimum": 1,
-            "description": "The window, in days back from now"
-          }
-        },
-        "description": "A test of a custom field of the workspace whose type is datetime (\"custom:<key>\"): its moment\nis within the last `withinDays` days up to now, so a moment still to come is not within. Only a\ndate-time with a UTC offset is a moment, as for the date leaf.",
-        "additionalProperties": false
-      },
-      "ConditionEventLeaf": {
-        "type": "object",
-        "required": ["kind", "action", "operator", "times"],
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": ["event"]
-          },
-          "action": {
-            "type": "string",
-            "description": "The Event action counted"
-          },
-          "operator": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ConditionEventOperator"
-              }
-            ],
-            "description": "How the count is bounded"
-          },
-          "times": {
-            "type": "integer",
-            "format": "int32",
-            "minimum": 0,
-            "description": "The bound: atLeast takes 1 or more, atMost 0 or more"
-          },
-          "withinDays": {
-            "type": "integer",
-            "format": "int32",
-            "minimum": 1,
-            "description": "Count only the Events of the last this many days; absent counts all time"
-          }
-        },
-        "description": "A test of how many times a contact performed an Event action, over all time or within the\nlast `withinDays` days. Performed is atLeast 1, not performed is atMost 0; \"exactly\" is a group of\nboth. Engagement Events made by software (machine opens and clicks) are not counted. A window\nlonger than Event retention is capped by it: expired Events are no longer counted."
-      },
-      "ConditionEventLeafInput": {
-        "type": "object",
-        "required": ["kind", "action", "operator", "times"],
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": ["event"]
-          },
-          "action": {
-            "type": "string",
-            "description": "The Event action counted"
-          },
-          "operator": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ConditionEventOperator"
-              }
-            ],
-            "description": "How the count is bounded"
-          },
-          "times": {
-            "type": "integer",
-            "format": "int32",
-            "minimum": 0,
-            "description": "The bound: atLeast takes 1 or more, atMost 0 or more"
-          },
-          "withinDays": {
-            "type": "integer",
-            "format": "int32",
-            "minimum": 1,
-            "description": "Count only the Events of the last this many days; absent counts all time"
-          }
-        },
-        "description": "A test of how many times a contact performed an Event action, over all time or within the\nlast `withinDays` days. Performed is atLeast 1, not performed is atMost 0; \"exactly\" is a group of\nboth. Engagement Events made by software (machine opens and clicks) are not counted. A window\nlonger than Event retention is capped by it: expired Events are no longer counted.",
-        "additionalProperties": false
-      },
-      "ConditionEventOperator": {
-        "type": "string",
-        "enum": ["atLeast", "atMost"],
-        "description": "How an event leaf bounds the count: at least `times`, or at most `times`"
-      },
-      "ConditionGroup": {
-        "type": "object",
-        "required": ["kind", "combinator", "rules"],
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": ["group"]
-          },
-          "combinator": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ConditionCombinator"
-              }
-            ],
-            "description": "How the entries combine"
-          },
-          "not": {
-            "type": "boolean",
-            "description": "Negate the whole group"
-          },
-          "rules": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConditionNode"
-            },
-            "description": "The group's leaves and nested groups"
-          }
-        },
-        "description": "A group of tests combined with and/or, optionally negated. An empty group matches every\ncontact (an empty negated group matches none)."
-      },
-      "ConditionGroupInput": {
-        "type": "object",
-        "required": ["kind", "combinator", "rules"],
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": ["group"]
-          },
-          "combinator": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ConditionCombinator"
-              }
-            ],
-            "description": "How the entries combine"
-          },
-          "not": {
-            "type": "boolean",
-            "description": "Negate the whole group"
-          },
-          "rules": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConditionNodeInput"
-            },
-            "description": "The group's leaves and nested groups"
-          }
-        },
-        "description": "A group of tests combined with and/or, optionally negated. An empty group matches every\ncontact (an empty negated group matches none).",
-        "additionalProperties": false
-      },
-      "ConditionLeaf": {
-        "type": "object",
-        "required": ["kind", "field", "operator"],
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": ["rule"]
-          },
-          "field": {
-            "type": "string",
-            "description": "What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,\ntime_zone, country, locale, city), \"tag\", \"telegram\" (has a Telegram chat bound, on its own or through a Visitor; the value is\nignored), \"sms\" (has a phone that can be texted: one with an SMS Confirmation and no SMS opt-out or\nSuppression; the value is ignored), \"custom:<key>\" for a custom field of the workspace,\nor \"trigger:<key>\" (a property of the Event that fired a rule: valid only in a rule, refused in\na segment, takes the text operators, and is false when the Event lacks the key or holds a value\nthat is not text; a number property is compared by a number leaf)"
-          },
-          "operator": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ConditionOperator"
-              }
-            ],
-            "description": "How the field is tested"
-          },
-          "value": {
-            "type": "string",
-            "description": "The value to test against: a tag name, blank for null and notNull"
-          }
-        },
-        "description": "One test of a condition: a field, an operator and a value"
-      },
-      "ConditionLeafInput": {
-        "type": "object",
-        "required": ["kind", "field", "operator"],
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": ["rule"]
-          },
-          "field": {
-            "type": "string",
-            "description": "What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,\ntime_zone, country, locale, city), \"tag\", \"telegram\" (has a Telegram chat bound, on its own or through a Visitor; the value is\nignored), \"sms\" (has a phone that can be texted: one with an SMS Confirmation and no SMS opt-out or\nSuppression; the value is ignored), \"custom:<key>\" for a custom field of the workspace,\nor \"trigger:<key>\" (a property of the Event that fired a rule: valid only in a rule, refused in\na segment, takes the text operators, and is false when the Event lacks the key or holds a value\nthat is not text; a number property is compared by a number leaf)"
-          },
-          "operator": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ConditionOperator"
-              }
-            ],
-            "description": "How the field is tested"
-          },
-          "value": {
-            "type": "string",
-            "description": "The value to test against: a tag name, blank for null and notNull"
-          }
-        },
-        "description": "One test of a condition: a field, an operator and a value",
-        "additionalProperties": false
-      },
-      "ConditionNode": {
-        "type": "object",
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/ConditionLeaf"
-          },
-          {
-            "$ref": "#/components/schemas/ConditionEventLeaf"
-          },
-          {
-            "$ref": "#/components/schemas/ConditionNumberLeaf"
-          },
-          {
-            "$ref": "#/components/schemas/ConditionDateLeaf"
-          },
-          {
-            "$ref": "#/components/schemas/ConditionDateWithinLeaf"
-          },
-          {
-            "$ref": "#/components/schemas/ConditionGroup"
-          }
-        ],
-        "discriminator": {
-          "propertyName": "kind",
-          "mapping": {
-            "rule": "#/components/schemas/ConditionLeaf",
-            "event": "#/components/schemas/ConditionEventLeaf",
-            "number": "#/components/schemas/ConditionNumberLeaf",
-            "date": "#/components/schemas/ConditionDateLeaf",
-            "dateWithin": "#/components/schemas/ConditionDateWithinLeaf",
-            "group": "#/components/schemas/ConditionGroup"
-          }
-        },
-        "description": "A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested\ngroup inside a condition group, discriminated by `kind`."
-      },
-      "ConditionNodeInput": {
-        "type": "object",
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/ConditionLeafInput"
-          },
-          {
-            "$ref": "#/components/schemas/ConditionEventLeafInput"
-          },
-          {
-            "$ref": "#/components/schemas/ConditionNumberLeafInput"
-          },
-          {
-            "$ref": "#/components/schemas/ConditionDateLeafInput"
-          },
-          {
-            "$ref": "#/components/schemas/ConditionDateWithinLeafInput"
-          },
-          {
-            "$ref": "#/components/schemas/ConditionGroupInput"
-          }
-        ],
-        "discriminator": {
-          "propertyName": "kind",
-          "mapping": {
-            "rule": "#/components/schemas/ConditionLeafInput",
-            "event": "#/components/schemas/ConditionEventLeafInput",
-            "number": "#/components/schemas/ConditionNumberLeafInput",
-            "date": "#/components/schemas/ConditionDateLeafInput",
-            "dateWithin": "#/components/schemas/ConditionDateWithinLeafInput",
-            "group": "#/components/schemas/ConditionGroupInput"
-          }
-        },
-        "description": "A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested\ngroup inside a condition group, discriminated by `kind`."
-      },
-      "ConditionNumberLeaf": {
-        "type": "object",
-        "required": ["kind", "field", "operator", "value"],
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": ["number"]
-          },
-          "field": {
-            "type": "string",
-            "description": "What it compares: \"custom:<key>\" for a number custom field, or \"trigger:<key>\""
-          },
-          "operator": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ConditionNumberOperator"
-              }
-            ],
-            "description": "How the field compares with `value`"
-          },
-          "value": {
-            "type": "number",
-            "format": "double",
-            "description": "The number the field is compared with"
-          }
-        },
-        "description": "A comparison of a number: a custom field of the workspace whose type is number\n(\"custom:<key>\"), or a property of the Event that fired a rule (\"trigger:<key>\", valid only in a\nrule). A missing key, or a value that is not a number (text, a boolean, null, a list), makes the\nleaf false."
-      },
-      "ConditionNumberLeafInput": {
-        "type": "object",
-        "required": ["kind", "field", "operator", "value"],
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": ["number"]
-          },
-          "field": {
-            "type": "string",
-            "description": "What it compares: \"custom:<key>\" for a number custom field, or \"trigger:<key>\""
-          },
-          "operator": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ConditionNumberOperator"
-              }
-            ],
-            "description": "How the field compares with `value`"
-          },
-          "value": {
-            "type": "number",
-            "format": "double",
-            "description": "The number the field is compared with"
-          }
-        },
-        "description": "A comparison of a number: a custom field of the workspace whose type is number\n(\"custom:<key>\"), or a property of the Event that fired a rule (\"trigger:<key>\", valid only in a\nrule). A missing key, or a value that is not a number (text, a boolean, null, a list), makes the\nleaf false.",
-        "additionalProperties": false
-      },
-      "ConditionNumberOperator": {
-        "type": "string",
-        "enum": ["gt", "gte", "lt", "lte"],
-        "description": "How a number leaf compares the field with `value`: greater than, greater than or equal,\nless than, or less than or equal"
-      },
-      "ConditionOperator": {
-        "type": "string",
-        "enum": ["eq", "neq", "contains", "beginsWith", "null", "notNull", "has", "doesNotHave"],
-        "description": "What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and\nnotNull; the tag, telegram and sms fields take has and doesNotHave; a custom field takes the operators of its type,\nwhich the custom field lists as `ruleOperators` (a number custom field is also compared by a\nnumber leaf, a datetime one tested by the date leaves)."
-      },
       "ConfirmationProvenance": {
         "type": "string",
         "enum": ["double_opt_in", "keyword", "imported", "grandfathered"],
@@ -12265,6 +11995,21 @@
         },
         "description": "The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `sms.confirmed` Event to answer a proof request",
         "additionalProperties": false
+      },
+      "ContactAttribute": {
+        "type": "string",
+        "enum": [
+          "email",
+          "phone",
+          "subject_id",
+          "first_name",
+          "last_name",
+          "time_zone",
+          "country",
+          "locale",
+          "city"
+        ],
+        "description": "A text attribute of a Contact"
       },
       "ContactExportBroadcastRecipient": {
         "type": "object",
@@ -13221,7 +12966,7 @@
             "description": "The Event actions that make the Rule fire; at least one"
           },
           "condition": {
-            "$ref": "#/components/schemas/ConditionGroupInput"
+            "$ref": "#/components/schemas/RuleConditionInput"
           },
           "actions": {
             "type": "array",
@@ -13249,7 +12994,7 @@
           "condition": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/ConditionGroupInput"
+                "$ref": "#/components/schemas/SegmentConditionInput"
               }
             ],
             "description": "Segment condition: the tree of tests; an empty group matches all contacts"
@@ -13333,6 +13078,154 @@
         "type": "string",
         "pattern": "^[A-Z]{3}$",
         "description": "An ISO 4217 alphabetic currency code in capitals, such as `EUR`. Which codes exist is decided\nby the server, which refuses an unknown one with a reason."
+      },
+      "CustomFieldConditionTests": {
+        "type": "object",
+        "required": ["text", "number", "moment", "withinLast", "presence"],
+        "properties": {
+          "text": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TextOperator"
+            },
+            "description": "The operators of a text test"
+          },
+          "number": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NumberOperator"
+            },
+            "description": "The operators of a number test"
+          },
+          "moment": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MomentOperator"
+            },
+            "description": "The operators of a moment test"
+          },
+          "withinLast": {
+            "type": "boolean",
+            "description": "Whether it takes the test of the last days"
+          },
+          "presence": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PresenceOperator"
+            },
+            "description": "The operators of a presence test"
+          }
+        },
+        "description": "The tests a Condition's Custom field test takes on a field of one type, each with the\noperators it takes there; an empty list is a test the type does not take"
+      },
+      "CustomFieldLeaf": {
+        "type": "object",
+        "required": ["kind", "key", "test"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["customField"]
+          },
+          "key": {
+            "type": "string",
+            "description": "The Custom field's key"
+          },
+          "test": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CustomFieldTest"
+              }
+            ],
+            "description": "What it asks of the field's value"
+          }
+        },
+        "description": "A test of a Custom field of the Workspace, its key in a field of its own"
+      },
+      "CustomFieldLeafInput": {
+        "type": "object",
+        "required": ["kind", "key", "test"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["customField"]
+          },
+          "key": {
+            "type": "string",
+            "description": "The Custom field's key"
+          },
+          "test": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CustomFieldTestInput"
+              }
+            ],
+            "description": "What it asks of the field's value"
+          }
+        },
+        "description": "A test of a Custom field of the Workspace, its key in a field of its own",
+        "additionalProperties": false
+      },
+      "CustomFieldTest": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TextTest"
+          },
+          {
+            "$ref": "#/components/schemas/NumberTest"
+          },
+          {
+            "$ref": "#/components/schemas/MomentTest"
+          },
+          {
+            "$ref": "#/components/schemas/WithinLastTest"
+          },
+          {
+            "$ref": "#/components/schemas/PresenceTest"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "text": "#/components/schemas/TextTest",
+            "number": "#/components/schemas/NumberTest",
+            "moment": "#/components/schemas/MomentTest",
+            "withinLast": "#/components/schemas/WithinLastTest",
+            "presence": "#/components/schemas/PresenceTest"
+          }
+        },
+        "description": "What a Custom field test asks of the field's value, by `kind`. Which tests and operators a\nfield takes depends on its type, which the Custom field lists as `conditionTests`; a test the\ntype does not take is refused when the Condition is saved."
+      },
+      "CustomFieldTestInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TextTestInput"
+          },
+          {
+            "$ref": "#/components/schemas/NumberTestInput"
+          },
+          {
+            "$ref": "#/components/schemas/MomentTestInput"
+          },
+          {
+            "$ref": "#/components/schemas/WithinLastTestInput"
+          },
+          {
+            "$ref": "#/components/schemas/PresenceTestInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "text": "#/components/schemas/TextTestInput",
+            "number": "#/components/schemas/NumberTestInput",
+            "moment": "#/components/schemas/MomentTestInput",
+            "withinLast": "#/components/schemas/WithinLastTestInput",
+            "presence": "#/components/schemas/PresenceTestInput"
+          }
+        },
+        "description": "What a Custom field test asks of the field's value, by `kind`. Which tests and operators a\nfield takes depends on its type, which the Custom field lists as `conditionTests`; a test the\ntype does not take is refused when the Condition is saved."
       },
       "CustomFieldType": {
         "type": "string",
@@ -13650,6 +13543,82 @@
         "description": "A primary key as a client sees it (ADR 0142): the key sealed under the Instance's id key and\nwritten as 22 base62 characters, which say nothing about how many rows a table holds or when\none was made. The servers open it back into the key: a malformed id is refused as a 400 before\na handler runs. The pattern says the same in the contract, so a client (or a fuzzer) can tell a\nmalformed id from a valid one without trying it.",
         "x-ogen-type": "github.com/getsphericon/sphericon/internal/kernel/publicid.ID"
       },
+      "EventCountOperator": {
+        "type": "string",
+        "enum": ["atLeast", "atMost"],
+        "description": "How an event count is bounded: at least `times`, or at most `times`"
+      },
+      "EventLeaf": {
+        "type": "object",
+        "required": ["kind", "action", "operator", "times"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["event"]
+          },
+          "action": {
+            "type": "string",
+            "description": "The Event action counted"
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventCountOperator"
+              }
+            ],
+            "description": "How the count is bounded"
+          },
+          "times": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0,
+            "description": "The bound: atLeast takes 1 or more, atMost 0 or more"
+          },
+          "withinDays": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "Count only the Events of the last this many days; absent counts all time"
+          }
+        },
+        "description": "A count of how many times a Contact performed an Event action, over all time or within the\nlast `withinDays` days. Performed is atLeast 1, not performed is atMost 0; \"exactly\" is a group of\nboth. Engagement Events made by software (machine opens and clicks) are not counted. A window\nlonger than Event retention is capped by it: expired Events are no longer counted."
+      },
+      "EventLeafInput": {
+        "type": "object",
+        "required": ["kind", "action", "operator", "times"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["event"]
+          },
+          "action": {
+            "type": "string",
+            "description": "The Event action counted"
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventCountOperator"
+              }
+            ],
+            "description": "How the count is bounded"
+          },
+          "times": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0,
+            "description": "The bound: atLeast takes 1 or more, atMost 0 or more"
+          },
+          "withinDays": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "Count only the Events of the last this many days; absent counts all time"
+          }
+        },
+        "description": "A count of how many times a Contact performed an Event action, over all time or within the\nlast `withinDays` days. Performed is atLeast 1, not performed is atMost 0; \"exactly\" is a group of\nboth. Engagement Events made by software (machine opens and clicks) are not counted. A window\nlonger than Event retention is capped by it: expired Events are no longer counted.",
+        "additionalProperties": false
+      },
       "GrantableScope": {
         "type": "string",
         "enum": [
@@ -13755,6 +13724,11 @@
             "scope": "integrations:read"
           }
         ]
+      },
+      "HasOperator": {
+        "type": "string",
+        "enum": ["has", "doesNotHave"],
+        "description": "Whether a Contact has something: a Tag, a Telegram chat, a phone that can be texted"
       },
       "HoldReason": {
         "type": "string",
@@ -14006,10 +13980,124 @@
         },
         "description": "The Orders credited to one Broadcast or Automation and the net revenue of their Movements\n(ADR 0064), in the Reporting currency, read from the Movements and never stored: a refund\nlowers `amount` on its own day. Orders in another currency are counted in neither field."
       },
+      "MomentOperator": {
+        "type": "string",
+        "enum": ["before", "after"],
+        "description": "Which side of `at` a moment is on: before is strictly earlier, after is at or later, so the two\nsplit time at `at`"
+      },
+      "MomentTest": {
+        "type": "object",
+        "required": ["kind", "operator", "at"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["moment"]
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MomentOperator"
+              }
+            ],
+            "description": "Which side of `at` the moment is on"
+          },
+          "at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "The moment compared with"
+          }
+        },
+        "description": "A test of a moment: before or after `at`. Only a date-time with a UTC offset is a moment: a\nmissing value, a date without a time, a date-time without an offset or a value that is not a\ndate-time fails it."
+      },
+      "MomentTestInput": {
+        "type": "object",
+        "required": ["kind", "operator", "at"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["moment"]
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MomentOperator"
+              }
+            ],
+            "description": "Which side of `at` the moment is on"
+          },
+          "at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "The moment compared with"
+          }
+        },
+        "description": "A test of a moment: before or after `at`. Only a date-time with a UTC offset is a moment: a\nmissing value, a date without a time, a date-time without an offset or a value that is not a\ndate-time fails it.",
+        "additionalProperties": false
+      },
       "Name": {
         "type": "string",
         "maxLength": 100,
         "description": "What a person calls a named row (a Tag, a Segment, a Rule, an Automation, a Template, a\nBroadcast, an Integration, a token, a Passkey, a Workspace): at most 100 characters. Surrounding\nspaces are trimmed before the name is stored, and a name that is empty then is refused (422)."
+      },
+      "NumberOperator": {
+        "type": "string",
+        "enum": ["gt", "gte", "lt", "lte"],
+        "description": "How a number test compares the value with its own: greater than, greater than or equal, less\nthan, or less than or equal"
+      },
+      "NumberTest": {
+        "type": "object",
+        "required": ["kind", "operator", "value"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["number"]
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NumberOperator"
+              }
+            ],
+            "description": "How the value compares"
+          },
+          "value": {
+            "type": "number",
+            "format": "double",
+            "description": "The number compared with"
+          }
+        },
+        "description": "A test of a number. A missing value, or one that is not a number (text, a boolean, null, a\nlist), fails it."
+      },
+      "NumberTestInput": {
+        "type": "object",
+        "required": ["kind", "operator", "value"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["number"]
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NumberOperator"
+              }
+            ],
+            "description": "How the value compares"
+          },
+          "value": {
+            "type": "number",
+            "format": "double",
+            "description": "The number compared with"
+          }
+        },
+        "description": "A test of a number. A missing value, or one that is not a number (text, a boolean, null, a\nlist), fails it.",
+        "additionalProperties": false
       },
       "OptOutVia": {
         "type": "string",
@@ -14081,6 +14169,50 @@
           "webhooks:write"
         ],
         "description": "The scopes a User may give a credential of their own: a Connection by consenting, a Personal\ntoken by minting it (ADR 0061). The authorization server advertises these and no other, and the\nPersonal token form offers them. Each still needs the Permission its enum declares in\n`x-grant-permissions`; the token-only scopes are never a User's to give. Only /site names it,\nso it is declared here and not with the external vocabulary."
+      },
+      "PresenceOperator": {
+        "type": "string",
+        "enum": ["set", "notSet"],
+        "description": "Whether a value is set"
+      },
+      "PresenceTest": {
+        "type": "object",
+        "required": ["kind", "operator"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["presence"]
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PresenceOperator"
+              }
+            ],
+            "description": "Set or not set"
+          }
+        },
+        "description": "A test of whether a value is set at all"
+      },
+      "PresenceTestInput": {
+        "type": "object",
+        "required": ["kind", "operator"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["presence"]
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PresenceOperator"
+              }
+            ],
+            "description": "Set or not set"
+          }
+        },
+        "description": "A test of whether a value is set at all",
+        "additionalProperties": false
       },
       "PresetResource": {
         "type": "object",
@@ -14228,6 +14360,52 @@
           }
         },
         "description": "RFC 7807 Problem Details"
+      },
+      "PropertyTest": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TextTest"
+          },
+          {
+            "$ref": "#/components/schemas/NumberTest"
+          },
+          {
+            "$ref": "#/components/schemas/PresenceTest"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "text": "#/components/schemas/TextTest",
+            "number": "#/components/schemas/NumberTest",
+            "presence": "#/components/schemas/PresenceTest"
+          }
+        },
+        "description": "What a property test asks of the property's value, by `kind`. A key the Event lacks fails\nevery test; a text test fails on a value that is not text; set holds for a text value and notSet\nfor an explicit null."
+      },
+      "PropertyTestInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TextTestInput"
+          },
+          {
+            "$ref": "#/components/schemas/NumberTestInput"
+          },
+          {
+            "$ref": "#/components/schemas/PresenceTestInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "text": "#/components/schemas/TextTestInput",
+            "number": "#/components/schemas/NumberTestInput",
+            "presence": "#/components/schemas/PresenceTestInput"
+          }
+        },
+        "description": "What a property test asks of the property's value, by `kind`. A key the Event lacks fails\nevery test; a text test fails on a value that is not text; set holds for a text value and notSet\nfor an explicit null."
       },
       "ProviderLimitSource": {
         "type": "string",
@@ -14522,6 +14700,161 @@
         "enum": ["apply_tag", "remove_tag", "enroll_automation", "http"],
         "description": "Kind of Rule action"
       },
+      "RuleCondition": {
+        "type": "object",
+        "required": ["kind", "combinator", "entries"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["group"]
+          },
+          "combinator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConditionCombinator"
+              }
+            ],
+            "description": "How the entries combine"
+          },
+          "not": {
+            "type": "boolean",
+            "description": "Negate the whole group"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RuleConditionNode"
+            },
+            "description": "The group's tests and nested groups"
+          }
+        },
+        "description": "A Rule's Condition: the tree of tests the Contact and the Event that fired the Rule match"
+      },
+      "RuleConditionInput": {
+        "type": "object",
+        "required": ["kind", "combinator", "entries"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["group"]
+          },
+          "combinator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConditionCombinator"
+              }
+            ],
+            "description": "How the entries combine"
+          },
+          "not": {
+            "type": "boolean",
+            "description": "Negate the whole group"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RuleConditionNodeInput"
+            },
+            "description": "The group's tests and nested groups"
+          }
+        },
+        "description": "A Rule's Condition: the tree of tests the Contact and the Event that fired the Rule match",
+        "additionalProperties": false
+      },
+      "RuleConditionNode": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/RuleCondition"
+          },
+          {
+            "$ref": "#/components/schemas/AttributeLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/BirthdayLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/TagLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/TelegramLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/SmsLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/CustomFieldLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/EventLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/RulePropertyLeaf"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "attribute": "#/components/schemas/AttributeLeaf",
+            "birthday": "#/components/schemas/BirthdayLeaf",
+            "tag": "#/components/schemas/TagLeaf",
+            "telegram": "#/components/schemas/TelegramLeaf",
+            "sms": "#/components/schemas/SmsLeaf",
+            "customField": "#/components/schemas/CustomFieldLeaf",
+            "event": "#/components/schemas/EventLeaf",
+            "property": "#/components/schemas/RulePropertyLeaf",
+            "group": "#/components/schemas/RuleCondition"
+          }
+        },
+        "description": "An entry of a Rule's Condition, by `kind`: a Segment's, or a test of a property of the Event\nthat fired the Rule"
+      },
+      "RuleConditionNodeInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/RuleConditionInput"
+          },
+          {
+            "$ref": "#/components/schemas/AttributeLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/BirthdayLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/TagLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/TelegramLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/SmsLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/CustomFieldLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/EventLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/RulePropertyLeafInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "attribute": "#/components/schemas/AttributeLeafInput",
+            "birthday": "#/components/schemas/BirthdayLeafInput",
+            "tag": "#/components/schemas/TagLeafInput",
+            "telegram": "#/components/schemas/TelegramLeafInput",
+            "sms": "#/components/schemas/SmsLeafInput",
+            "customField": "#/components/schemas/CustomFieldLeafInput",
+            "event": "#/components/schemas/EventLeafInput",
+            "property": "#/components/schemas/RulePropertyLeafInput",
+            "group": "#/components/schemas/RuleConditionInput"
+          }
+        },
+        "description": "An entry of a Rule's Condition, by `kind`: a Segment's, or a test of a property of the Event\nthat fired the Rule"
+      },
       "RuleDryRunAction": {
         "type": "object",
         "required": ["type", "summary"],
@@ -14641,6 +14974,99 @@
         },
         "description": "One execution of a Rule for one Event, with what each Action did. Erased with the Contact."
       },
+      "RulePropertyLeaf": {
+        "type": "object",
+        "required": ["kind", "of", "key", "test"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["property"]
+          },
+          "of": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RulePropertySource"
+              }
+            ],
+            "description": "Whose property it is"
+          },
+          "key": {
+            "type": "string",
+            "description": "The property's key"
+          },
+          "test": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PropertyTest"
+              }
+            ],
+            "description": "What it asks of the property's value"
+          }
+        },
+        "description": "A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a\nkey holding a dot is one key"
+      },
+      "RulePropertyLeafInput": {
+        "type": "object",
+        "required": ["kind", "of", "key", "test"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["property"]
+          },
+          "of": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RulePropertySourceInput"
+              }
+            ],
+            "description": "Whose property it is"
+          },
+          "key": {
+            "type": "string",
+            "description": "The property's key"
+          },
+          "test": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PropertyTestInput"
+              }
+            ],
+            "description": "What it asks of the property's value"
+          }
+        },
+        "description": "A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a\nkey holding a dot is one key",
+        "additionalProperties": false
+      },
+      "RulePropertySource": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TriggerSource"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "trigger": "#/components/schemas/TriggerSource"
+          }
+        },
+        "description": "Whose properties a Rule's property test reads, by `kind`: the triggering Event"
+      },
+      "RulePropertySourceInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TriggerSourceInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "trigger": "#/components/schemas/TriggerSourceInput"
+          }
+        },
+        "description": "Whose properties a Rule's property test reads, by `kind`: the triggering Event"
+      },
       "RuleStatus": {
         "type": "string",
         "enum": ["active", "inactive"],
@@ -14665,7 +15091,7 @@
           "condition": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/ConditionGroup"
+                "$ref": "#/components/schemas/RuleCondition"
               }
             ],
             "description": "The Contact must match this condition for the Rule to fire; absent means every Contact"
@@ -14703,6 +15129,153 @@
         },
         "description": "Request body for scheduling a broadcast",
         "additionalProperties": false
+      },
+      "SegmentCondition": {
+        "type": "object",
+        "required": ["kind", "combinator", "entries"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["group"]
+          },
+          "combinator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConditionCombinator"
+              }
+            ],
+            "description": "How the entries combine"
+          },
+          "not": {
+            "type": "boolean",
+            "description": "Negate the whole group"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SegmentConditionNode"
+            },
+            "description": "The group's tests and nested groups"
+          }
+        },
+        "description": "A Segment's Condition: the tree of tests a Contact matches"
+      },
+      "SegmentConditionInput": {
+        "type": "object",
+        "required": ["kind", "combinator", "entries"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["group"]
+          },
+          "combinator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConditionCombinator"
+              }
+            ],
+            "description": "How the entries combine"
+          },
+          "not": {
+            "type": "boolean",
+            "description": "Negate the whole group"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SegmentConditionNodeInput"
+            },
+            "description": "The group's tests and nested groups"
+          }
+        },
+        "description": "A Segment's Condition: the tree of tests a Contact matches",
+        "additionalProperties": false
+      },
+      "SegmentConditionNode": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/SegmentCondition"
+          },
+          {
+            "$ref": "#/components/schemas/AttributeLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/BirthdayLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/TagLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/TelegramLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/SmsLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/CustomFieldLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/EventLeaf"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "attribute": "#/components/schemas/AttributeLeaf",
+            "birthday": "#/components/schemas/BirthdayLeaf",
+            "tag": "#/components/schemas/TagLeaf",
+            "telegram": "#/components/schemas/TelegramLeaf",
+            "sms": "#/components/schemas/SmsLeaf",
+            "customField": "#/components/schemas/CustomFieldLeaf",
+            "event": "#/components/schemas/EventLeaf",
+            "group": "#/components/schemas/SegmentCondition"
+          }
+        },
+        "description": "An entry of a Segment's Condition, by `kind`: a test of the Contact, an event count or a nested\ngroup"
+      },
+      "SegmentConditionNodeInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/SegmentConditionInput"
+          },
+          {
+            "$ref": "#/components/schemas/AttributeLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/BirthdayLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/TagLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/TelegramLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/SmsLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/CustomFieldLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/EventLeafInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "attribute": "#/components/schemas/AttributeLeafInput",
+            "birthday": "#/components/schemas/BirthdayLeafInput",
+            "tag": "#/components/schemas/TagLeafInput",
+            "telegram": "#/components/schemas/TelegramLeafInput",
+            "sms": "#/components/schemas/SmsLeafInput",
+            "customField": "#/components/schemas/CustomFieldLeafInput",
+            "event": "#/components/schemas/EventLeafInput",
+            "group": "#/components/schemas/SegmentConditionInput"
+          }
+        },
+        "description": "An entry of a Segment's Condition, by `kind`: a test of the Contact, an event count or a nested\ngroup"
       },
       "SendCap": {
         "type": "object",
@@ -17377,7 +17950,7 @@
           "key",
           "name",
           "type",
-          "ruleOperators",
+          "conditionTests",
           "revision",
           "createdAt",
           "updatedAt"
@@ -17407,12 +17980,13 @@
             ],
             "description": "Value type: inferred from the first value, changed by an owner or admin"
           },
-          "ruleOperators": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConditionOperator"
-            },
-            "description": "The operators a rule leaf on this field takes, by its type"
+          "conditionTests": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CustomFieldConditionTests"
+              }
+            ],
+            "description": "The tests a Condition takes on this field, by its type, each with its operators"
           },
           "revision": {
             "allOf": [
@@ -18989,7 +19563,7 @@
           "condition": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/ConditionGroupInput"
+                "$ref": "#/components/schemas/SegmentConditionInput"
               }
             ],
             "description": "Condition; absent means all contacts"
@@ -19442,7 +20016,7 @@
           "condition": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/ConditionGroup"
+                "$ref": "#/components/schemas/SegmentCondition"
               }
             ],
             "description": "Segment condition: the tree of tests; an empty group matches all contacts"
@@ -20911,6 +21485,45 @@
         "enum": ["number", "alphanumeric", "messagingService"],
         "description": "What an SMS integration's messages go out from"
       },
+      "SmsLeaf": {
+        "type": "object",
+        "required": ["kind", "operator"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["sms"]
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HasOperator"
+              }
+            ],
+            "description": "Has one or does not"
+          }
+        },
+        "description": "A test of whether a Contact has a phone that can be texted: one with an SMS Confirmation and no\nSMS opt-out or Suppression"
+      },
+      "SmsLeafInput": {
+        "type": "object",
+        "required": ["kind", "operator"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["sms"]
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HasOperator"
+              }
+            ],
+            "description": "Has one or does not"
+          }
+        },
+        "description": "A test of whether a Contact has a phone that can be texted: one with an SMS Confirmation and no\nSMS opt-out or Suppression",
+        "additionalProperties": false
+      },
       "SmsOptOut": {
         "type": "object",
         "required": ["via", "optedOutAt"],
@@ -21070,6 +21683,53 @@
         ],
         "description": "The action of a System event: an Event sphericon itself records, never a customer. An Event's\n`action`, an Automation's trigger and a condition carry one of these or a customer's own action,\nwhich may not take a System event's namespace; a webhook's event types may also name the Audit\nlog's `audit.entry`."
       },
+      "TagLeaf": {
+        "type": "object",
+        "required": ["kind", "name", "operator"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["tag"]
+          },
+          "name": {
+            "type": "string",
+            "description": "The Tag's name"
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HasOperator"
+              }
+            ],
+            "description": "Has it or does not"
+          }
+        },
+        "description": "A test of whether a Contact has the Tag called `name`"
+      },
+      "TagLeafInput": {
+        "type": "object",
+        "required": ["kind", "name", "operator"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["tag"]
+          },
+          "name": {
+            "type": "string",
+            "description": "The Tag's name"
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HasOperator"
+              }
+            ],
+            "description": "Has it or does not"
+          }
+        },
+        "description": "A test of whether a Contact has the Tag called `name`",
+        "additionalProperties": false
+      },
       "TelegramBroadcastContent": {
         "type": "object",
         "required": ["channel", "text", "buttons", "linkPreview"],
@@ -21212,6 +21872,45 @@
         "description": "A Telegram bot of the Workspace's own, on the `telegram` channel. Saving it checks the token with Telegram and points the bot's webhook at the integration's hook, replacing any webhook the bot had: use a bot dedicated to sphericon",
         "additionalProperties": false
       },
+      "TelegramLeaf": {
+        "type": "object",
+        "required": ["kind", "operator"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["telegram"]
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HasOperator"
+              }
+            ],
+            "description": "Has one or does not"
+          }
+        },
+        "description": "A test of whether a Contact has a Telegram chat bound, on its own or through a Visitor"
+      },
+      "TelegramLeafInput": {
+        "type": "object",
+        "required": ["kind", "operator"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["telegram"]
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HasOperator"
+              }
+            ],
+            "description": "Has one or does not"
+          }
+        },
+        "description": "A test of whether a Contact has a Telegram chat bound, on its own or through a Visitor",
+        "additionalProperties": false
+      },
       "TelegramStartLinkResource": {
         "type": "object",
         "required": ["url", "expiresAt"],
@@ -21260,6 +21959,58 @@
           }
         },
         "description": "Request body for sending a sample event to a webhook endpoint",
+        "additionalProperties": false
+      },
+      "TextOperator": {
+        "type": "string",
+        "enum": ["eq", "neq", "contains", "beginsWith"],
+        "description": "How a text test compares the value with its own"
+      },
+      "TextTest": {
+        "type": "object",
+        "required": ["kind", "operator", "value"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["text"]
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TextOperator"
+              }
+            ],
+            "description": "How the value compares"
+          },
+          "value": {
+            "type": "string",
+            "description": "The text compared with"
+          }
+        },
+        "description": "A test of a text value. On a Contact attribute or an Event's property, contains is a\ncase-insensitive substring. On a Custom field, contains holds when the field's value is a list\nthat holds `value`, and a number or boolean field's eq and neq compare the text of its value."
+      },
+      "TextTestInput": {
+        "type": "object",
+        "required": ["kind", "operator", "value"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["text"]
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TextOperator"
+              }
+            ],
+            "description": "How the value compares"
+          },
+          "value": {
+            "type": "string",
+            "description": "The text compared with"
+          }
+        },
+        "description": "A test of a text value. On a Contact attribute or an Event's property, contains is a\ncase-insensitive substring. On a Custom field, contains holds when the field's value is a list\nthat holds `value`, and a number or boolean field's eq and neq compare the text of its value.",
         "additionalProperties": false
       },
       "TimeZoneName": {
@@ -21410,6 +22161,29 @@
         "type": "string",
         "enum": ["pending", "dns_verified", "serving"],
         "description": "State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host with the ownership TXT beside it, `dns_verified` once both are (the edge may provision), `serving` once HTTPS on the host answers"
+      },
+      "TriggerSource": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["trigger"]
+          }
+        },
+        "description": "The Event that fired a Rule, whose properties a property test reads"
+      },
+      "TriggerSourceInput": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["trigger"]
+          }
+        },
+        "description": "The Event that fired a Rule, whose properties a property test reads",
+        "additionalProperties": false
       },
       "TwilioConfig": {
         "type": "object",
@@ -21796,7 +22570,7 @@
             "description": "The Event actions that make the Rule fire; at least one"
           },
           "condition": {
-            "$ref": "#/components/schemas/ConditionGroupInput"
+            "$ref": "#/components/schemas/RuleConditionInput"
           },
           "actions": {
             "type": "array",
@@ -21832,7 +22606,7 @@
           "condition": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/ConditionGroupInput"
+                "$ref": "#/components/schemas/SegmentConditionInput"
               }
             ],
             "description": "Segment condition: the tree of tests; an empty group matches all contacts"
@@ -22028,6 +22802,41 @@
           }
         },
         "description": "What the receiver answered to a test delivery. The endpoint's failure state is not touched."
+      },
+      "WithinLastTest": {
+        "type": "object",
+        "required": ["kind", "days"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["withinLast"]
+          },
+          "days": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "The window, in days back from now"
+          }
+        },
+        "description": "A test of a moment: within the last `days` days up to now, so a moment still to come is not\nwithin. A moment is read as for the moment test."
+      },
+      "WithinLastTestInput": {
+        "type": "object",
+        "required": ["kind", "days"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["withinLast"]
+          },
+          "days": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "The window, in days back from now"
+          }
+        },
+        "description": "A test of a moment: within the last `days` days up to now, so a moment still to come is not\nwithin. A moment is read as for the moment test.",
+        "additionalProperties": false
       },
       "WorkspaceId": {
         "type": "string",

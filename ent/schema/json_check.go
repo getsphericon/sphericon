@@ -15,7 +15,7 @@ func jsonCheck(column, jsonType string) string {
 	return fmt.Sprintf("jsonb_typeof(%s) = '%s'", column, jsonType)
 }
 
-// conditionCheck is jsonCheck for a Condition (conditiontree.Group), a JSON object.
+// conditionCheck is jsonCheck for a Condition (conditiontree.Segment, conditiontree.Rule), a JSON object.
 func conditionCheck(column string) string {
 	return jsonCheck(column, "object")
 }

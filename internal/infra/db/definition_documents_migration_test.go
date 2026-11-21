@@ -26,14 +26,14 @@ func TestTheDefinitionDocumentsMigrationKeepsEveryConditionAndSpellsEmptyAsTheEm
 	client := entclient.Core.New(sqlDB)
 	ctx := t.Context()
 
-	assert.JSONEq(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"pro"}]}`,
+	assert.JSONEq(t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"plan","test":{"kind":"text","operator":"eq","value":"pro"}}]}`,
 		testhelper.Document(t, client.Segment.GetX(ctx, 1).Condition))
-	assert.Equal(t, conditiontree.Empty(), client.Segment.GetX(ctx, 2).Condition, "''")
-	assert.Equal(t, conditiontree.Empty(), client.Segment.GetX(ctx, 3).Condition, "no Condition")
+	assert.Equal(t, conditiontree.Segment{Group: conditiontree.Empty()}, client.Segment.GetX(ctx, 2).Condition, "''")
+	assert.Equal(t, conditiontree.Segment{Group: conditiontree.Empty()}, client.Segment.GetX(ctx, 3).Condition, "no Condition")
 	first := client.RuleVersion.GetX(ctx, 1)
-	assert.Equal(t, conditiontree.Empty(), first.Condition, "no Condition")
+	assert.Equal(t, conditiontree.Rule{Group: conditiontree.Empty()}, first.Condition, "no Condition")
 	assert.Equal(t, []ruleaction.Action{{Type: ruleaction.ApplyTag, Tag: "clicked"}}, first.Actions)
-	assert.Equal(t, conditiontree.Empty(), client.RuleVersion.GetX(ctx, 2).Condition, "''")
-	assert.Equal(t, new(conditiontree.Empty()), client.Broadcast.GetX(ctx, 1).Condition, "''")
+	assert.Equal(t, conditiontree.Rule{Group: conditiontree.Empty()}, client.RuleVersion.GetX(ctx, 2).Condition, "''")
+	assert.Equal(t, &conditiontree.Segment{Group: conditiontree.Empty()}, client.Broadcast.GetX(ctx, 1).Condition, "''")
 	assert.Nil(t, client.Broadcast.GetX(ctx, 2).Condition)
 }

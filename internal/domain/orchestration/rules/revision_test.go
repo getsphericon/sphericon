@@ -22,9 +22,9 @@ func TestASaveOfARuleOnARevisionAlreadyMovedPastIsRefused(t *testing.T) {
 	read := env.RuleRevision(ctx, t, fixtures.RuleVipOnlyID)
 	first, second := conditionOf(2), conditionOf(3)
 
-	saved, err := m.Update(ctx, acme(env), fixtures.RuleVipOnlyID, rules.UpdateInput{Revision: read, Condition: new(testhelper.Condition(t, first))})
+	saved, err := m.Update(ctx, acme(env), fixtures.RuleVipOnlyID, rules.UpdateInput{Revision: read, Condition: new(testhelper.RuleCondition(t, first))})
 	require.NoError(t, err)
-	_, err = m.Update(ctx, acme(env), fixtures.RuleVipOnlyID, rules.UpdateInput{Revision: read, Condition: new(testhelper.Condition(t, second))})
+	_, err = m.Update(ctx, acme(env), fixtures.RuleVipOnlyID, rules.UpdateInput{Revision: read, Condition: new(testhelper.RuleCondition(t, second))})
 
 	require.ErrorIs(t, err, rules.ErrRevisionChanged)
 	stored, err := m.Get(ctx, acme(env), fixtures.RuleVipOnlyID)

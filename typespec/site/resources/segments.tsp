@@ -18,7 +18,7 @@ model SiteSegmentResource {
   name: string;
 
   /** Segment condition: the tree of tests; an empty group matches all contacts */
-  condition?: ConditionGroup;
+  condition?: SegmentCondition;
 
   /** When the segment was archived; null while it is kept */
   archivedAt?: Timestamp | null;
@@ -36,7 +36,7 @@ model SiteSegmentResource {
 /** Request body for previewing a condition's segment */
 model SitePreviewSegmentInput {
   /** Condition; absent means all contacts */
-  condition?: ConditionGroupInput;
+  condition?: SegmentConditionInput;
 
   /**
    * The Channel of a Broadcast the audience is asked for. When given, the result also counts the
@@ -70,7 +70,7 @@ interface SiteSegments
       #[],
       #[]
     > {
-  /** Preview how many active contacts match a rule definition */
+  /** Preview how many active contacts match an unsaved Condition */
   @collectionAction(SiteSegmentResource, "preview")
   @autoRoute
   @requiresPermissions(#[])

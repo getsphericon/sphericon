@@ -32,10 +32,10 @@ func (Segment) Fields() []ent.Field {
 			Immutable(),
 		field.String(NameColumn).
 			NotEmpty(),
-		// The Condition (conditiontree.Group), jsonb (ADR 0169); the empty group, with no tests,
-		// matches every Contact.
-		field.JSON("condition", conditiontree.Group{}).
-			Default(conditiontree.Empty()).
+		// The Segment's Condition (conditiontree.Segment), jsonb (ADR 0169); the empty group, with
+		// no tests, matches every Contact.
+		field.JSON("condition", conditiontree.Segment{}).
+			Default(conditiontree.Segment{Group: conditiontree.Empty()}).
 			Annotations(entsql.Default(emptyConditionSQL)),
 	}
 }

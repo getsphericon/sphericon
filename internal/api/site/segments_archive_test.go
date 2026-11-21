@@ -152,7 +152,7 @@ func TestSiteSegmentNameIsFreeAfterArchive(t *testing.T) {
 
 	_, err := c.SiteSegmentsCreate(context.Background(), &siteapi.CreateSegmentInput{
 		Name:      fixtures.SegmentArchivedName,
-		Condition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`),
+		Condition: testhelper.SiteSegmentCondition(t, `{"kind":"group","combinator":"and","entries":[]}`),
 	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 }

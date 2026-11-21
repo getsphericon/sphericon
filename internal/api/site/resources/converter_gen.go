@@ -1028,7 +1028,7 @@ func (c *ConverterImpl) CustomFieldToResource(source *ent.CustomField) site.Site
 		siteapiSiteCustomFieldResource.Key = (*source).Key
 		siteapiSiteCustomFieldResource.Name = (*source).Name
 		siteapiSiteCustomFieldResource.Type = c.CustomFieldTypeToResource((*source).Type)
-		siteapiSiteCustomFieldResource.RuleOperators = customFieldRuleOperators((*source).Type)
+		siteapiSiteCustomFieldResource.ConditionTests = customFieldConditionTests((*source).Type)
 		siteapiSiteCustomFieldResource.Revision = revision((*source).Revision)
 		siteapiSiteCustomFieldResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteCustomFieldResource.UpdatedAt = timestamp((*source).UpdatedAt)
@@ -2090,7 +2090,7 @@ func (c *ConverterImpl) RuleVersionToResource(source *ent.RuleVersion) site.Rule
 	if source != nil {
 		siteapiRuleVersion.Number = count((*source).Version)
 		siteapiRuleVersion.TriggerEvents = ruleTriggerEvents(source)
-		siteapiRuleVersion.Condition = segmentCondition((*source).Condition)
+		siteapiRuleVersion.Condition = ruleCondition((*source).Condition)
 		siteapiRuleVersion.Actions = ruleActions(c, (*source).Actions)
 	}
 	return siteapiRuleVersion

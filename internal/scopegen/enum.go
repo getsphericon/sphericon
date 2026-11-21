@@ -77,7 +77,7 @@ var SystemEventActions = Table{
 	}.Decls,
 }
 
-// ConditionCombinators is how a condition Group joins its rules, in the condition module, from the
+// ConditionCombinators is how a condition Group joins its entries, from the
 // contract's ConditionCombinator enum.
 var ConditionCombinators = Table{
 	Spec:    siteSpec,
@@ -85,8 +85,22 @@ var ConditionCombinators = Table{
 	Package: "conditiontree",
 	Decls: Enum{
 		Schema: "ConditionCombinator",
-		Doc:    []string{"Combinator is how a Group joins its rules: And, every rule matches; Or, any rule does."},
+		Doc:    []string{"Combinator is how a Group joins its entries: And, every entry matches; Or, any entry does."},
 		Type:   "Combinator",
+	}.Decls,
+}
+
+// ConditionAttributes is the text attributes of a Contact an attribute leaf of a Condition tests,
+// from the contract's ContactAttribute enum.
+var ConditionAttributes = Table{
+	Spec:    siteSpec,
+	Out:     "internal/kernel/conditiontree/attribute_gen.go",
+	Package: "conditiontree",
+	Decls: Enum{
+		Schema: "ContactAttribute",
+		Doc:    []string{"Attribute is a text attribute of a Contact that an attribute leaf tests."},
+		Type:   "Attribute",
+		Prefix: "Attribute",
 	}.Decls,
 }
 

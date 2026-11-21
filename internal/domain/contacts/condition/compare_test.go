@@ -19,21 +19,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func numberLeaf(field string, op siteapi.ConditionNumberOperator, value float64) condition.NumberLeaf {
-	return condition.NumberLeaf{Kind: "number", Field: field, Operator: string(op), Value: &value}
-}
-
-func dateAt(field string, op siteapi.ConditionDateOperator, at time.Time) condition.DateLeaf {
-	return condition.DateLeaf{Kind: "date", Field: field, Operator: string(op), At: at}
-}
-
-func dateWithin(field string, days int) condition.DateWithinLeaf {
-	return condition.DateWithinLeaf{Kind: "dateWithin", Field: field, WithinDays: days}
-}
-
 const (
-	score  = "custom:" + fixtures.CustomFieldWonkaScoreKey
-	seenAt = "custom:" + fixtures.CustomFieldWonkaSeenAtKey
+	score  = fixtures.CustomFieldWonkaScoreKey
+	seenAt = fixtures.CustomFieldWonkaSeenAtKey
 )
 
 // Wonka's scores: Ten 10, NineAndAHalf 9.5, Zulu 1, Minus -2.5; Text holds "10", Flag true, Null
@@ -43,25 +31,25 @@ func TestNumberLeafComparesANumberCustomField(t *testing.T) {
 	const ten, nine, zulu, minus = fixtures.WonkaTenEmail, fixtures.WonkaNineAndAHalfEmail, fixtures.WonkaZuluEmail, fixtures.WonkaMinusEmail
 
 	for name, tc := range map[string]struct {
-		leaf condition.NumberLeaf
+		test leaf
 		want []string
 	}{
-		"greater than":                   {numberLeaf(score, siteapi.ConditionNumberOperatorGt, 9.5), []string{ten}},
-		"greater than or equal":          {numberLeaf(score, siteapi.ConditionNumberOperatorGte, 9.5), []string{nine, ten}},
-		"less than":                      {numberLeaf(score, siteapi.ConditionNumberOperatorLt, 0), []string{minus}},
-		"less than or equal":             {numberLeaf(score, siteapi.ConditionNumberOperatorLte, 10), []string{minus, nine, ten, zulu}},
-		"only numbers, whatever the bar": {numberLeaf(score, siteapi.ConditionNumberOperatorGt, -1000), []string{minus, nine, ten, zulu}},
+		"greater than":                   {number("gt", 9.5), []string{ten}},
+		"greater than or equal":          {number("gte", 9.5), []string{nine, ten}},
+		"less than":                      {number("lt", 0), []string{minus}},
+		"less than or equal":             {number("lte", 10), []string{minus, nine, ten, zulu}},
+		"only numbers, whatever the bar": {number("gt", -1000), []string{minus, nine, ten, zulu}},
 	} {
-		got := emailsIn(t, env, fixtures.WonkaID, opsGroup(tc.leaf))
+		got := emailsIn(t, env, fixtures.WonkaID, segmentOf(customField(score, tc.test)))
 		assert.Equal(t, tc.want, got, name)
 	}
 }
 
 // A Contact whose value is not a number fails the leaf, so the negated leaf holds for it, as it
-// does for a Rule's folded trigger leaf.
+// does for a Rule's folded property test.
 func TestNotOfANumberLeafHoldsForAValueThatIsNotANumber(t *testing.T) {
 	env := testhelper.Setup(t)
-	not := conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Not: true, Rules: marshal(numberLeaf(score, siteapi.ConditionNumberOperatorGt, -1000))}
+	not := conditiontree.Segment{Group: groupOf(conditiontree.And, true, customField(score, number("gt", -1000)))}
 
 	got := emailsIn(t, env, fixtures.WonkaID, not)
 
@@ -82,16 +70,16 @@ func TestDateLeafTestsADatetimeCustomField(t *testing.T) {
 	fiveDaysAgo := time.Now().AddDate(0, 0, -5)
 
 	for name, tc := range map[string]struct {
-		leaf any
+		test leaf
 		want []string
 	}{
-		"before":                     {dateAt(seenAt, siteapi.ConditionDateOperatorBefore, fiveDaysAgo), []string{flag, minus, nine, null, offset, zulu}},
-		"after, a moment to come":    {dateAt(seenAt, siteapi.ConditionDateOperatorAfter, fiveDaysAgo), []string{list, ten}},
-		"within a week":              {dateWithin(seenAt, 7), []string{ten}},
-		"within a month":             {dateWithin(seenAt, 30), []string{nine, ten}},
-		"a window past every moment": {dateWithin(seenAt, math.MaxInt32), []string{flag, minus, nine, null, offset, ten, zulu}},
+		"before":                     {moment("before", fiveDaysAgo), []string{flag, minus, nine, null, offset, zulu}},
+		"after, a moment to come":    {moment("after", fiveDaysAgo), []string{list, ten}},
+		"within a week":              {withinLast(7), []string{ten}},
+		"within a month":             {withinLast(30), []string{nine, ten}},
+		"a window past every moment": {withinLast(math.MaxInt32), []string{flag, minus, nine, null, offset, ten, zulu}},
 	} {
-		got := emailsIn(t, env, fixtures.WonkaID, opsGroup(tc.leaf))
+		got := emailsIn(t, env, fixtures.WonkaID, segmentOf(customField(seenAt, tc.test)))
 		assert.Equal(t, tc.want, got, name)
 	}
 }
@@ -102,13 +90,13 @@ func TestDateLeafTestsADatetimeCustomField(t *testing.T) {
 func TestDateLeafReadsAZuluAndAnOffsetMoment(t *testing.T) {
 	env := testhelper.Setup(t)
 	midnight := time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
-	window := opsGroup(
-		dateAt(seenAt, siteapi.ConditionDateOperatorAfter, midnight.Add(-3*time.Hour)),
-		dateAt(seenAt, siteapi.ConditionDateOperatorBefore, midnight.Add(time.Hour)),
+	window := segmentOf(
+		customField(seenAt, moment("after", midnight.Add(-3*time.Hour))),
+		customField(seenAt, moment("before", midnight.Add(time.Hour))),
 	)
 
-	before := emailsIn(t, env, fixtures.WonkaID, opsGroup(dateAt(seenAt, siteapi.ConditionDateOperatorBefore, midnight)))
-	after := emailsIn(t, env, fixtures.WonkaID, opsGroup(dateAt(seenAt, siteapi.ConditionDateOperatorAfter, midnight)))
+	before := emailsIn(t, env, fixtures.WonkaID, segmentOf(customField(seenAt, moment("before", midnight))))
+	after := emailsIn(t, env, fixtures.WonkaID, segmentOf(customField(seenAt, moment("after", midnight))))
 	inWindow := emailsIn(t, env, fixtures.WonkaID, window)
 
 	assert.Equal(t, []string{fixtures.WonkaOffsetEmail}, before)
@@ -123,7 +111,7 @@ func TestDateLeafReadsAZuluAndAnOffsetMoment(t *testing.T) {
 func TestDateLeafReadsAValueWithoutAnOffsetInTheWorkspaceTimeZone(t *testing.T) {
 	env := testhelper.Setup(t)
 	eve := time.Date(2025, time.December, 31, 23, 0, 0, 0, time.UTC)
-	beforeEve := opsGroup(dateAt(seenAt, siteapi.ConditionDateOperatorBefore, eve))
+	beforeEve := segmentOf(customField(seenAt, moment("before", eve)))
 	utc := emailsIn(t, env, fixtures.WonkaID, beforeEve)
 	err := env.DB.Workspace.UpdateOneID(fixtures.WonkaID).SetTimezone("Asia/Tokyo").Exec(context.Background())
 	require.NoError(t, err)
@@ -142,8 +130,8 @@ func TestDateLeafComparesInstantsWhateverTheirZone(t *testing.T) {
 	at := time.Now().AddDate(0, 0, -5)
 	elsewhere := at.In(time.FixedZone("UTC-11", -11*60*60))
 
-	utc := emailsIn(t, env, fixtures.WonkaID, opsGroup(dateAt(seenAt, siteapi.ConditionDateOperatorBefore, at.UTC())))
-	zoned := emailsIn(t, env, fixtures.WonkaID, opsGroup(dateAt(seenAt, siteapi.ConditionDateOperatorBefore, elsewhere)))
+	utc := emailsIn(t, env, fixtures.WonkaID, segmentOf(customField(seenAt, moment("before", at.UTC()))))
+	zoned := emailsIn(t, env, fixtures.WonkaID, segmentOf(customField(seenAt, moment("before", elsewhere))))
 
 	assert.Equal(t, utc, zoned)
 }
@@ -158,13 +146,14 @@ func TestNumberLeavesAgreeOnTheContactSideAndTheEventSide(t *testing.T) {
 	require.NotEmpty(t, contacts)
 
 	rapid.Check(t, func(rt *rapid.T) {
-		op := rapid.SampledFrom(siteapi.ConditionNumberOperator("").AllValues()).Draw(rt, "operator")
+		op := rapid.SampledFrom(siteapi.NumberOperator("").AllValues()).Draw(rt, "operator")
 		want := rapid.SampledFrom([]float64{-1000, -2.5, 0, 9, 9.5, 10, 10.5}).Draw(rt, "operand")
 		not := rapid.Bool().Draw(rt, "not")
 		c := rapid.SampledFrom(contacts).Draw(rt, "contact")
 		// The Contact's Custom fields are the Event's properties: the same value under the same key.
-		onContact := conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Not: not, Rules: marshal(numberLeaf(score, op, want))}
-		onEvent := conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Not: not, Rules: marshal(numberLeaf("trigger:"+fixtures.CustomFieldWonkaScoreKey, op, want))}
+		test := number(string(op), want)
+		onContact := conditiontree.Rule{Group: groupOf(conditiontree.And, not, customField(score, test))}
+		onEvent := conditiontree.Rule{Group: groupOf(conditiontree.And, not, property(score, test))}
 
 		viaSQL := triggerMatches(rt, s, onContact, nil, c.ID)
 		viaGo := triggerMatches(rt, s, onEvent, c.CustomFields, c.ID)
@@ -174,10 +163,10 @@ func TestNumberLeavesAgreeOnTheContactSideAndTheEventSide(t *testing.T) {
 }
 
 // A collected Event keeps its numbers as json.Number; a stored one decodes them to float64.
-func TestTriggerNumberLeafReadsEitherDecodingOfANumber(t *testing.T) {
+func TestPropertyNumberTestReadsEitherDecodingOfANumber(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	atLeastNine := opsGroup(numberLeaf("trigger:score", siteapi.ConditionNumberOperatorGte, 9))
+	atLeastNine := ruleOf(property("score", number("gte", 9)))
 
 	collected := triggerMatches(t, s, atLeastNine, map[string]any{"score": json.Number("9.5")}, fixtures.ContactAliceID)
 	stored := triggerMatches(t, s, atLeastNine, map[string]any{"score": 9.0}, fixtures.ContactAliceID)
@@ -188,118 +177,120 @@ func TestTriggerNumberLeafReadsEitherDecodingOfANumber(t *testing.T) {
 	assert.False(t, text, "a number written as text is not a number")
 }
 
-func TestTriggerNumberLeafIsValidOnlyInARule(t *testing.T) {
+// A number test on a Custom field that is not a number, or one the Workspace does not have, is
+// refused, naming its entry.
+func TestCompileRefusesANumberTestThatDoesNotFit(t *testing.T) {
 	env := testhelper.Setup(t)
-	g := opsGroup(numberLeaf("trigger:score", siteapi.ConditionNumberOperatorGt, 1))
-
-	_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), g)
-
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "only in a Rule")
-}
-
-func TestCompileRefusesANumberLeafThatDoesNotFit(t *testing.T) {
-	env := testhelper.Setup(t)
-	withoutValue := numberLeaf(score, siteapi.ConditionNumberOperatorGt, 1)
-	withoutValue.Value = nil
 
 	for name, tc := range map[string]struct {
-		leaf condition.NumberLeaf
-		msg  string
+		key string
+		msg string
 	}{
-		"a string field":      {numberLeaf("custom:"+fixtures.CustomFieldWonkaPlanKey, siteapi.ConditionNumberOperatorGt, 1), "is of type string, not number"},
-		"a datetime field":    {numberLeaf(seenAt, siteapi.ConditionNumberOperatorGt, 1), "is of type datetime, not number"},
-		"an unknown field":    {numberLeaf("custom:nobody", siteapi.ConditionNumberOperatorGt, 1), "unknown custom field"},
-		"a contact attribute": {numberLeaf("email", siteapi.ConditionNumberOperatorGt, 1), "takes a custom field of type number or a trigger property"},
-		"the tag field":       {numberLeaf("tag", siteapi.ConditionNumberOperatorGt, 1), "takes a custom field of type number or a trigger property"},
-		"a text operator":     {numberLeaf(score, "eq", 1), "unsupported operator"},
-		"a date operator":     {numberLeaf(score, "before", 1), "unsupported operator"},
-		"no value":            {withoutValue, "value is required"},
+		"a string field":   {fixtures.CustomFieldWonkaPlanKey, `of type string takes no number test "gt"`},
+		"a datetime field": {seenAt, `of type datetime takes no number test "gt"`},
+		"an unknown field": {"nobody", "unknown custom field"},
 	} {
-		_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.WonkaID), opsGroup(tc.leaf))
+		_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.WonkaID), segmentOf(customField(tc.key, number("gt", 1))))
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), tc.msg, name)
-		assert.Contains(t, err.Error(), "rule 0", "%s: the error names the offending rule", name)
+		assert.Contains(t, err.Error(), "entry 0", "%s: the error names the offending entry", name)
 	}
 }
 
 // Anna was born on 1990-05-01, Bella on 1985-11-20, and Andy has no birthday.
-func TestDateLeafTestsTheBirthday(t *testing.T) {
+func TestBirthdayLeafPlacesTheDateOfBirth(t *testing.T) {
 	env := testhelper.Setup(t)
-	match := func(leaf any) []string { return emailsIn(t, env, fixtures.OscorpID, opsGroup(leaf)) }
+	match := func(test leaf) []string { return emailsIn(t, env, fixtures.OscorpID, segmentOf(birthday(test))) }
 	cut := time.Date(1988, time.January, 1, 0, 0, 0, 0, time.UTC)
 
-	assert.Equal(t, []string{fixtures.OscorpBellaEmail}, match(dateAt("birthday", siteapi.ConditionDateOperatorBefore, cut)))
-	assert.Equal(t, []string{fixtures.OscorpAnnaEmail}, match(dateAt("birthday", siteapi.ConditionDateOperatorAfter, cut)))
-	assert.Empty(t, match(dateWithin("birthday", 7)), "no birthday falls in the last week")
+	before := match(moment("before", cut))
+	after := match(moment("after", cut))
+	lastWeek := match(withinLast(7))
+
+	assert.Equal(t, []string{fixtures.OscorpBellaEmail}, before)
+	assert.Equal(t, []string{fixtures.OscorpAnnaEmail}, after)
+	assert.Empty(t, lastWeek, "no birthday falls in the last week")
 }
 
-func TestCompileRefusesADateLeafThatDoesNotFit(t *testing.T) {
+// A moment test on a Custom field that is not a datetime, one the Workspace does not have, or a
+// window of no days, is refused, naming its entry.
+func TestCompileRefusesAMomentTestThatDoesNotFit(t *testing.T) {
 	env := testhelper.Setup(t)
 	now := time.Now()
 
 	for name, tc := range map[string]struct {
-		leaf any
+		leaf leaf
 		msg  string
 	}{
-		"a number field":            {dateWithin(score, 7), "is of type number, not datetime"},
-		"a string field":            {dateAt("custom:"+fixtures.CustomFieldWonkaPlanKey, siteapi.ConditionDateOperatorBefore, now), "is of type string, not datetime"},
-		"an unknown field":          {dateWithin("custom:nobody", 7), "unknown custom field"},
-		"a trigger property":        {dateWithin("trigger:at", 7), "takes a custom field of type datetime"},
-		"a contact attribute":       {dateAt("email", siteapi.ConditionDateOperatorAfter, now), "takes a custom field of type datetime"},
-		"a number operator":         {dateAt(seenAt, "gt", now), "unsupported operator"},
-		"a window of no days":       {dateWithin(seenAt, 0), "withinDays must be at least 1"},
-		"a window of negative days": {dateWithin(seenAt, -1), "withinDays must be at least 1"},
+		"a number field":            {customField(score, withinLast(7)), "of type number takes no withinLast test"},
+		"a string field":            {customField(fixtures.CustomFieldWonkaPlanKey, moment("before", now)), `of type string takes no moment test "before"`},
+		"an unknown field":          {customField("nobody", withinLast(7)), "unknown custom field"},
+		"a window of no days":       {customField(seenAt, withinLast(0)), "days must be at least 1"},
+		"a window of negative days": {customField(seenAt, withinLast(-1)), "days must be at least 1"},
 	} {
-		_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.WonkaID), opsGroup(tc.leaf))
+		_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.WonkaID), segmentOf(tc.leaf))
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), tc.msg, name)
-		assert.Contains(t, err.Error(), "rule 0", "%s: the error names the offending rule", name)
+		assert.Contains(t, err.Error(), "entry 0", "%s: the error names the offending entry", name)
 	}
 }
 
-// A rule leaf on a Custom field takes only the operators that fit the field's type, the ones the
-// API lists as its ruleOperators.
-func TestCompileRefusesARuleOperatorThatDoesNotFitTheCustomFieldType(t *testing.T) {
+// A text or presence test on a Custom field takes only the operators that fit the field's type,
+// the ones the API lists as its conditionTests.
+func TestCompileRefusesATestOperatorThatDoesNotFitTheCustomFieldType(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	for name, leaf := range map[string]condition.Leaf{
-		"contains on a number":     rule(score, "contains", "1"),
-		"eq on a datetime":         rule(seenAt, "eq", "2020-01-01T00:00:00Z"),
-		"contains on a datetime":   rule(seenAt, "contains", "2020"),
-		"beginsWith on a string":   rule("custom:"+fixtures.CustomFieldWonkaPlanKey, "beginsWith", "p"),
-		"a number operator on one": rule(score, "gt", "1"),
+	for name, tc := range map[string]struct {
+		leaf leaf
+		msg  string
+	}{
+		"contains on a number":   {customField(score, text("contains", "1")), `takes no text test "contains"`},
+		"eq on a datetime":       {customField(seenAt, text("eq", "2020-01-01T00:00:00Z")), `takes no text test "eq"`},
+		"contains on a datetime": {customField(seenAt, text("contains", "2020")), `takes no text test "contains"`},
+		"beginsWith on a string": {customField(fixtures.CustomFieldWonkaPlanKey, text("beginsWith", "p")), `takes no text test "beginsWith"`},
+		"not set on a number":    {customField(score, presence("notSet")), `takes no presence test "notSet"`},
 	} {
-		_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.WonkaID), opsGroup(leaf))
+		_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.WonkaID), segmentOf(tc.leaf))
 		require.Error(t, err, name)
-		assert.Contains(t, err.Error(), "unsupported operator", name)
+		assert.Contains(t, err.Error(), tc.msg, name)
 	}
 }
 
-// What fits is what compiles: every operator listed for a type compiles on a field of that type.
-func TestEveryListedRuleOperatorCompiles(t *testing.T) {
+// What fits is what compiles: every test and operator listed for a type compiles on a field of
+// that type.
+func TestEveryListedTestCompiles(t *testing.T) {
 	env := testhelper.Setup(t)
-	fields := map[customfield.Type]string{
-		customfield.TypeString:   "custom:" + fixtures.CustomFieldWonkaPlanKey,
+	keys := map[customfield.Type]string{
+		customfield.TypeString:   fixtures.CustomFieldWonkaPlanKey,
 		customfield.TypeNumber:   score,
 		customfield.TypeDatetime: seenAt,
 	}
 
-	for typ, field := range fields {
-		for _, op := range condition.RuleOperators(typ) {
-			_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.WonkaID), opsGroup(rule(field, op, "x")))
-			require.NoError(t, err, "%s on %s", op, typ)
+	for typ, key := range keys {
+		for _, test := range listedTests(condition.CustomFieldTests(typ)) {
+			_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.WonkaID), segmentOf(customField(key, test)))
+			require.NoError(t, err, "%v on %s", test, typ)
 		}
 	}
 }
 
-// A Rule refuses a date leaf on a trigger property too: an Event's properties have no type.
-func TestRuleRefusesADateLeafOnATriggerProperty(t *testing.T) {
-	env := testhelper.Setup(t)
-	s := env.DB.Scoped(fixtures.AcmeID)
-
-	_, err := condition.New(time.Now).RulePredicate(context.Background(), s, opsGroup(dateWithin("trigger:at", 7)), nil)
-
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "takes a custom field of type datetime")
+// listedTests is a test of every operator the listing names, and withinLast when it takes it.
+func listedTests(tests condition.Tests) []leaf {
+	var out []leaf
+	for _, op := range tests.Text {
+		out = append(out, text(op, "x"))
+	}
+	for _, op := range tests.Number {
+		out = append(out, number(op, 1))
+	}
+	for _, op := range tests.Moment {
+		out = append(out, moment(op, time.Now()))
+	}
+	for _, op := range tests.Presence {
+		out = append(out, presence(op))
+	}
+	if tests.WithinLast {
+		out = append(out, withinLast(7))
+	}
+	return out
 }
