@@ -1,11 +1,14 @@
-// The merge tags every send binds (outbound.Bindings): the Contact's core fields.
+import { ContactAttribute } from '../generated/site/types.gen.ts'
+
+// The merge tags every send binds (outbound.Bindings): the Contact's core fields, by the names of
+// the contract's Contact attributes.
 export const CONTACT_TAGS = [
-  'first_name',
-  'last_name',
-  'email',
-  'city',
-  'country',
-  'locale',
+  ContactAttribute.FIRST_NAME,
+  ContactAttribute.LAST_NAME,
+  ContactAttribute.EMAIL,
+  ContactAttribute.CITY,
+  ContactAttribute.COUNTRY,
+  ContactAttribute.LOCALE,
 ] as const
 
 // The Telegram start link of the message's Contact, on the Workspace's default Telegram bot: it

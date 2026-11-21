@@ -7,20 +7,21 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 )
 
 func TestATraitOfACoreAttributeWritesTheAttributeNotACustomField(t *testing.T) {
 	core, fields := contacts.FromTraits(map[string]any{
-		"firstName": " Ada ",
-		"lastName":  "Lovelace",
-		"timeZone":  "Europe/London",
-		"country":   "gb",
-		"locale":    "en-gb",
-		"birthday":  "1815-12-10",
-		"city":      "London",
-		"avatar":    "https://example.com/ada.png",
-		"plan":      "pro",
+		fieldname.FirstName: " Ada ",
+		fieldname.LastName:  "Lovelace",
+		fieldname.TimeZone:  "Europe/London",
+		fieldname.Country:   "gb",
+		fieldname.Locale:    "en-gb",
+		fieldname.Birthday:  "1815-12-10",
+		fieldname.City:      "London",
+		fieldname.Avatar:    "https://example.com/ada.png",
+		"plan":              "pro",
 	})
 
 	assert.Equal(t, contacts.Core{
@@ -37,7 +38,7 @@ func TestATraitOfACoreAttributeWritesTheAttributeNotACustomField(t *testing.T) {
 }
 
 func TestANullTraitClearsItsAttribute(t *testing.T) {
-	core, fields := contacts.FromTraits(map[string]any{"country": nil, "birthday": nil})
+	core, fields := contacts.FromTraits(map[string]any{fieldname.Country: nil, fieldname.Birthday: nil})
 
 	assert.True(t, core.Country.IsClear())
 	assert.True(t, core.Birthday.IsClear())
@@ -46,13 +47,13 @@ func TestANullTraitClearsItsAttribute(t *testing.T) {
 
 func TestAnInvalidValueOfACoreAttributeIsDropped(t *testing.T) {
 	core, fields := contacts.FromTraits(map[string]any{
-		"timeZone":  "Mars/Olympus",
-		"country":   "USA",
-		"locale":    "not a tag",
-		"birthday":  "10/12/1815",
-		"avatar":    "http://example.com/ada.png",
-		"firstName": 42.0,
-		"city":      "   ",
+		fieldname.TimeZone:  "Mars/Olympus",
+		fieldname.Country:   "USA",
+		fieldname.Locale:    "not a tag",
+		fieldname.Birthday:  "10/12/1815",
+		fieldname.Avatar:    "http://example.com/ada.png",
+		fieldname.FirstName: 42.0,
+		fieldname.City:      "   ",
 	})
 
 	assert.Equal(t, contacts.Core{}, core, "every attribute keeps its stored value")
