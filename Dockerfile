@@ -4,7 +4,7 @@
 # which just wraps the prebuilt binary.
 
 # --- Stage 1: frontend (SPA + tracker bundle) ---
-FROM node:26.13.0-alpine3.24@sha256:8996bb5821d62a8fd9bb27c1cb07462f3fdce6e47d640c6a881ead0b064ce216 AS frontend
+FROM node:26.13.1-alpine3.24@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5 AS frontend
 
 RUN npm install -g pnpm@12.21.0
 WORKDIR /src
@@ -19,7 +19,7 @@ COPY . .
 RUN pnpm build:tracker && pnpm build
 
 # --- Stage 2: Go binary with embedded assets ---
-FROM golang:1.27.4-alpine3.24@sha256:0a5f7fe796599ff487605987432e7619ae45beeb2fba4c2ce0b907879932aebf AS gobuild
+FROM golang:1.27.4-alpine3.24@sha256:70bd7ddea8b6cbe5d6943cde279d6b67feb10cc924fb9100d1d8757c1575b280 AS gobuild
 
 WORKDIR /src
 COPY go.mod go.sum ./
