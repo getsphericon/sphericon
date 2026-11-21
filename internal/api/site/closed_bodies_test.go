@@ -73,7 +73,7 @@ func TestSiteBroadcastRefusesAValueOfTheWrongTypeByItsPath(t *testing.T) {
 
 // A property nested in a Condition's leaf, an item of its entries, is refused by its path, and no
 // Segment is stored.
-func TestSiteSegmentRefusesAPropertyNestedInAConditionLeaf(t *testing.T) {
+func TestSiteSegmentRefusesAnUnknownPropertyOfAnEntryOfItsCondition(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
