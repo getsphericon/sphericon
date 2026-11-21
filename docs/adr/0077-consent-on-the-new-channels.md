@@ -8,8 +8,9 @@ status: accepted
 # Consent on the new Channels
 
 > **Amended by [[0121-a-preference-page-per-destination-and-only-the-person-lifts-a-refusal]]:** besides
-> a Test send to the number its author types, the non-marketing message the app sends on these Channels
-> is the Preference page's fresh link, which the person asked for. Transactional stays email-only.
+> a Test send to the number its author types, the non-marketing message the app sends on Telegram
+> is the Preference page's fresh link, which the person asked for; on SMS the page sends none, so a
+> Test send is the only one. Transactional stays email-only.
 
 > **Amended by [[0179-a-web-push-binding-reaches-a-contact-only-by-proof]]:**
 > on web push the reversal in the Channel is an explicit subscribe (`subscribeToPush()` from a click),

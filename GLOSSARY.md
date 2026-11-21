@@ -365,7 +365,8 @@ push the external push service holds it. The rule has a mode, named by the messa
 message meets every layer with its Sending source; a Transactional message (email only) skips
 layers 2–5 (it still respects Suppression's hard bounces); a confirmation email meets Suppression
 and _everything_ when the Workspace asked for it, and Suppression only when the person did (see
-**Confirmation request**). Consent is per-channel: an email opt-out never silences SMS.
+**Confirmation request**); a **Preference page** fresh link meets Suppression and, on Telegram, a
+**Channel stop**. Consent is per-channel: an email opt-out never silences SMS.
 
 **Control group**:
 A share of a Workspace's Contacts, chosen by a hash and turned on by the Workspace, that receives no
@@ -437,17 +438,24 @@ series** is a narrower one of its own, so leaving "broadcasts" leaves every seri
 scope is the deliberate "leave entirely" opt-out (kept separate so a per-source unsubscribe
 never silently loses the whole contact). A source only ever _subtracts_ opt-outs from a send
 — it is never a target set ("send to everyone subscribed to source X" is the rejected List
-model leaking back; targeting is always a Segment). In the email, the unsubscribe link is
-labelled with the source's display name ("unsubscribe from this mailing list") — that
-"mailing list" wording is user-facing copy only, not a reintroduction of the List concept.
+model leaking back; targeting is always a Segment). The email's footer carries one link, to the
+**Preference page** ("unsubscribe or change your preferences"), where an Automation or a Broadcast
+series is shown by its **Public name**.
 _Avoid_: Topic, list, mailing list, subscription group
+
+**Public name**:
+The name the **Preference page** shows a person for an Automation or a **Broadcast series** they
+receive: written for that person, never the Workspace's own name for it, which the page never
+publishes. An Automation that sends cannot be published without one, nor a series created.
+_Avoid_: Display name (the sender's display name is the From name), label
 
 **Unsubscribe** (the record):
 A per-(workspace, channel, destination, Sending source) opt-out from marketing — keyed by
 destination, not by Contact, so it survives contact deletion and re-import (the GDPR-erasure
 case: the opt-out is the minimum data retained to honor the refusal; on SMS it keeps the number's
 hash instead of the number once its Contact is erased). Only the person lifts it: from the
-**Preference page** on email and for a Telegram source, by START or `/start` in the Channel, or a web push
+**Preference page** on email and for a Telegram source (and on email an _everything_ opt-out by the
+confirmation email's Confirm too), by START or `/start` in the Channel, or a web push
 subscribe from the site's own button, for a Channel stop. A member, the API and an agent only ever add one.
 Absence means subscribed — there is no positive subscription row and no "subscribed" flag on
 the Contact. The default in-email link unsubscribes from the _sending source_ only;
@@ -510,11 +518,13 @@ the Sending sources it received from or is opted out of, `everything`, and its *
 tracking consent**, and on email and Telegram a **Personal frequency cap**. From a marketing message, opting out of that message's source comes first.
 Narrowing (an opt-out, a refusal) takes effect from any link however old. Only the person lifts a
 refusal, and widening on the page takes a fresh proof of the address: a link from a message of the
-last 7 days, or else a fresh link sent to it on the same Channel. A return to a
+last 7 days, or else a fresh link sent to it on email or Telegram (from an older link, a return from
+`everything` on email is a **Confirmation request** the person makes). A return to a
 source records `email.resubscribed` (or `telegram.resubscribed`). On SMS,
 Telegram and web push it shows a **Channel stop** and how to undo it in the Channel (on web push,
-the site's own button). It shows no other address
-of the Contact, and only narrowing once no Contact holds the Destination.
+the site's own button); on SMS and web push it sends no fresh link. Sources appear by their **Public
+name**, and the address is shown masked. It shows no other address of the Contact, sends no fresh
+link to a suppressed address, and offers only narrowing once no Contact holds the Destination.
 _Avoid_: Preference center, subscription center, notification center, unsubscribe page,
 confirmation page (a **Confirmation** is consent)
 
@@ -553,9 +563,10 @@ _Avoid_: Subscribed flag, subscription status, opt-in flag, double opt-in status
 An ask for one confirmation email to a Contact's email address, whose link records a Confirmation
 with provenance `double_opt_in` when the person follows it and presses Confirm. The Workspace asks
 (a Member, the API, MCP), and an _everything_ opt-out refuses it; or the person asks (an On-site
-form, an expired link's page, the Preference page), and only Suppression stops it, so a person who
+form, an expired link's page, the Preference page's return from _everything_), and only Suppression stops it, so a person who
 left everything comes back through it. Creating a Contact never makes one. An address receives at
-most a few confirmation emails a day from a Workspace, whoever asks.
+most a few confirmation emails a day from a Workspace, whoever asks, counted with the Preference
+page's fresh links.
 _Avoid_: Opt-in email, verification email (a User's own address is verified, not confirmed)
 
 **Engagement tracking consent**:
@@ -727,7 +738,7 @@ requirement switched off) is not sent. Each Notice is sent and retried on its ow
 
 **Outbound message**:
 The durable record of one Outbound send — which surface and which of its records it belongs to,
-the Sending source (none for Transactional or a confirmation email), the Sending domain, the provider's message id, whether
+the Sending source (none for Transactional, a confirmation email or a Preference page fresh link), the Sending domain, the provider's message id, whether
 it went out tracked and whether its tracking was withdrawn since (it then counts as untracked, for
 good), the outcome, and the lasting delivery and human engagement figures. Human opens, clicks and email
 delivery results keep the earliest time the Instance observed each kind, independently of the

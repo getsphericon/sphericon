@@ -6,6 +6,11 @@ terms: [Personal frequency cap]
 
 # A person may cap their own Destination at one marketing message a week
 
+> **Amended by [[0121-a-preference-page-per-destination-and-only-the-person-lifts-a-refusal]]:**
+> clearing the cap takes the proof value only the page's verification constructs; a Merge records the
+> cap again on the Destination the survivor keeps, with the provenance `merge`, as it records a
+> refusal.
+
 > Amends [[0121-a-preference-page-per-destination-and-only-the-person-lifts-a-refusal]] (a choice on
 > the page besides opting out) and [[0137-a-frequency-cap-limits-marketing-messages-per-destination]]
 > (a cap the person sets).
@@ -39,7 +44,8 @@ and claim of an Outbound message (ADR 0137, 0178).
   The contract has no operation that clears it. Each change is an evidentiary Event
   (`<channel>.frequency_reduced`, `<channel>.frequency_restored`).
 - **It goes with the Destination**: an Erasure clears it (ADR 0021), and a Merge keeps it, since it is
-  the Destination's, not the Contact's (ADR 0128).
+  the Destination's, not the Contact's (ADR 0128); being a narrowing, it is also recorded again on the
+  Destination the survivor keeps on that Channel, with the provenance `merge`, as a refusal is.
 
 ## Considered options
 

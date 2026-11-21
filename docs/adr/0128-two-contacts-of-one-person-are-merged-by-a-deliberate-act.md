@@ -6,6 +6,10 @@ terms: [Merge]
 
 # Two Contacts of one person are merged by a deliberate act
 
+> **Amended by [[0121-a-preference-page-per-destination-and-only-the-person-lifts-a-refusal]]:** a
+> Personal frequency cap (ADR 0190) is a narrowing and travels to the kept Destination as a refusal
+> does.
+
 A Contact is found by its alias keys, `subject_id`, `email` and `phone`, each unique in the
 Workspace (ADR 0002). An Upsert resolves the first one that matches, in that order, and fills the
 keys the Contact lacks. When a key it would fill belongs to another Contact, the unique index refuses
@@ -69,8 +73,8 @@ failing: an On-site form does not attach a phone another Contact holds and still
   delete. They stay keyed by their Destinations, so a dropped address keeps its opt-outs and its
   proof of consent.
 - **Refusals travel to the kept Destination, consents do not.** Every opt-out of a dropped
-  Destination (an Unsubscribe of any scope, an Engagement tracking `denied`) is recorded again on
-  the Destination the survivor keeps on that Channel, with the provenance `merge`; narrowing needs no
+  Destination (an Unsubscribe of any scope, an Engagement tracking `denied`, a Personal frequency
+  cap) is recorded again on the Destination the survivor keeps on that Channel, with the provenance `merge`; narrowing needs no
   proof from the person (ADR 0121). A Confirmation or a `granted` is not copied: it is proof for the
   address it was given on. So a person who opted out through one address is not mailed at the other
   because their Contacts were merged.
