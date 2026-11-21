@@ -14,6 +14,7 @@ import {
   handleSiteSegmentsList,
   handleSiteSegmentsUpdate,
 } from '../../generated/site/msw.gen.ts'
+import { NumberOperator, PresenceOperator, TextOperator } from '../../generated/site/types.gen.ts'
 import type { SegmentCondition } from '../../generated/site/types.gen.ts'
 import { zSiteSegmentsUpdateBody } from '../../generated/site/zod.gen.ts'
 import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/edit.tsx'
@@ -390,11 +391,11 @@ test("a Segment's Condition edited in the builder is saved in the typed shape it
           name: 'Seats',
           type: 'number',
           conditionTests: {
-            text: ['eq', 'neq'],
-            number: ['gt', 'gte', 'lt', 'lte'],
+            text: [TextOperator.EQ, TextOperator.NEQ],
+            number: [NumberOperator.GT, NumberOperator.GTE, NumberOperator.LT, NumberOperator.LTE],
             moment: [],
             withinLast: false,
-            presence: ['set'],
+            presence: [PresenceOperator.SET],
           },
           revision: 1,
           ...TIMESTAMPS,

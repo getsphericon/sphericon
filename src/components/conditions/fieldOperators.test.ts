@@ -1,12 +1,19 @@
 import type { Operator } from 'react-querybuilder'
 import { expect, test } from 'vitest'
 
-import { CustomFieldType } from '../../generated/site/types.gen.ts'
+import {
+  CustomFieldType,
+  MomentOperator,
+  NumberOperator,
+  PresenceOperator,
+  TextOperator,
+} from '../../generated/site/types.gen.ts'
 import type {
   CustomFieldConditionTests,
   SiteCustomFieldResource,
 } from '../../generated/site/types.gen.ts'
 import { TIMESTAMPS, testId } from '../../test/payloads.ts'
+import { withinLastOperator } from './condition.ts'
 import {
   attributeOperators,
   inputTypeOf,
@@ -32,43 +39,61 @@ const field = (
 
 // What the server lists for each type (the Condition module's one table of what fits).
 const seats = field(CustomFieldType.NUMBER, {
-  text: ['eq', 'neq'],
-  number: ['gt', 'gte', 'lt', 'lte'],
+  text: [TextOperator.EQ, TextOperator.NEQ],
+  number: [NumberOperator.GT, NumberOperator.GTE, NumberOperator.LT, NumberOperator.LTE],
   moment: [],
   withinLast: false,
-  presence: ['set'],
+  presence: [PresenceOperator.SET],
 })
 const plan = field(CustomFieldType.STRING, {
-  text: ['eq', 'neq', 'contains'],
+  text: [TextOperator.EQ, TextOperator.NEQ, TextOperator.CONTAINS],
   number: [],
   moment: [],
   withinLast: false,
-  presence: ['set'],
+  presence: [PresenceOperator.SET],
 })
 const renewsAt = field(CustomFieldType.DATETIME, {
   text: [],
   number: [],
-  moment: ['before', 'after'],
+  moment: [MomentOperator.BEFORE, MomentOperator.AFTER],
   withinLast: true,
-  presence: ['set'],
+  presence: [PresenceOperator.SET],
 })
 
 test('a number Custom field offers text eq and neq, the number comparisons and presence', () => {
   const offered = operatorsOf(seats)
 
-  expect(names(offered)).toEqual(['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'set'])
+  expect(names(offered)).toEqual([
+    TextOperator.EQ,
+    TextOperator.NEQ,
+    NumberOperator.GT,
+    NumberOperator.GTE,
+    NumberOperator.LT,
+    NumberOperator.LTE,
+    PresenceOperator.SET,
+  ])
 })
 
 test('a string Custom field offers the text operators it takes and presence', () => {
   const offered = operatorsOf(plan)
 
-  expect(names(offered)).toEqual(['eq', 'neq', 'contains', 'set'])
+  expect(names(offered)).toEqual([
+    TextOperator.EQ,
+    TextOperator.NEQ,
+    TextOperator.CONTAINS,
+    PresenceOperator.SET,
+  ])
 })
 
 test('a datetime Custom field offers the moment operators, the window of days and presence', () => {
   const offered = operatorsOf(renewsAt)
 
-  expect(names(offered)).toEqual(['before', 'after', 'withinLast', 'set'])
+  expect(names(offered)).toEqual([
+    MomentOperator.BEFORE,
+    MomentOperator.AFTER,
+    withinLastOperator,
+    PresenceOperator.SET,
+  ])
 })
 
 test('a presence test takes no value on a Custom field or an attribute', () => {
@@ -76,23 +101,23 @@ test('a presence test takes no value on a Custom field or an attribute', () => {
   const onAttribute = attributeOperators.filter((operator) => operator.arity === 'unary')
 
   expect(onField?.arity).toBe('unary')
-  expect(names(onAttribute)).toEqual(['set', 'notSet'])
+  expect(names(onAttribute)).toEqual([PresenceOperator.SET, PresenceOperator.NOT_SET])
 })
 
 test('an Event property is tested as text, compared as a number or tested for presence, never as a moment', () => {
   const property = names(propertyOperators)
 
   expect(property).toEqual([
-    'eq',
-    'neq',
-    'contains',
-    'beginsWith',
-    'gt',
-    'gte',
-    'lt',
-    'lte',
-    'set',
-    'notSet',
+    TextOperator.EQ,
+    TextOperator.NEQ,
+    TextOperator.CONTAINS,
+    TextOperator.BEGINS_WITH,
+    NumberOperator.GT,
+    NumberOperator.GTE,
+    NumberOperator.LT,
+    NumberOperator.LTE,
+    PresenceOperator.SET,
+    PresenceOperator.NOT_SET,
   ])
 })
 

@@ -25,8 +25,8 @@ const numberLabels: Record<NumberOperator, string> = {
   [NumberOperator.LTE]: 'less than or equal to',
 }
 const momentLabels: Record<MomentOperator, string> = {
-  [MomentOperator.BEFORE]: 'before',
-  [MomentOperator.AFTER]: 'after',
+  [MomentOperator.BEFORE]: 'is before',
+  [MomentOperator.AFTER]: 'is after',
 }
 const presenceLabels: Record<PresenceOperator, string> = {
   [PresenceOperator.SET]: 'is set',

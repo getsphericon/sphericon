@@ -7,6 +7,12 @@ import {
   handleSiteEventsActions,
   handleSiteSegmentsPreview,
 } from '../../generated/site/msw.gen.ts'
+import {
+  MomentOperator,
+  NumberOperator,
+  PresenceOperator,
+  TextOperator,
+} from '../../generated/site/types.gen.ts'
 import type { RuleCondition, SegmentCondition } from '../../generated/site/types.gen.ts'
 import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -27,11 +33,11 @@ function serve(previewBodies: unknown[] = []) {
           name: 'Plan',
           type: 'string',
           conditionTests: {
-            text: ['eq', 'neq', 'contains'],
+            text: [TextOperator.EQ, TextOperator.NEQ, TextOperator.CONTAINS],
             number: [],
             moment: [],
             withinLast: false,
-            presence: ['set'],
+            presence: [PresenceOperator.SET],
           },
           revision: 1,
           ...TIMESTAMPS,
@@ -42,11 +48,11 @@ function serve(previewBodies: unknown[] = []) {
           name: 'Age',
           type: 'number',
           conditionTests: {
-            text: ['eq', 'neq'],
-            number: ['gt', 'gte', 'lt', 'lte'],
+            text: [TextOperator.EQ, TextOperator.NEQ],
+            number: [NumberOperator.GT, NumberOperator.GTE, NumberOperator.LT, NumberOperator.LTE],
             moment: [],
             withinLast: false,
-            presence: ['set'],
+            presence: [PresenceOperator.SET],
           },
           revision: 1,
           ...TIMESTAMPS,
@@ -59,9 +65,9 @@ function serve(previewBodies: unknown[] = []) {
           conditionTests: {
             text: [],
             number: [],
-            moment: ['before', 'after'],
+            moment: [MomentOperator.BEFORE, MomentOperator.AFTER],
             withinLast: true,
-            presence: ['set'],
+            presence: [PresenceOperator.SET],
           },
           revision: 1,
           ...TIMESTAMPS,
@@ -390,7 +396,7 @@ test('a datetime Custom field offers the moment operators, the window and presen
 
   const offered = await operatorOptions(2)
 
-  expect(offered).toEqual(['before', 'after', 'within the last (days)', 'is set'])
+  expect(offered).toEqual(['is before', 'is after', 'within the last (days)', 'is set'])
 })
 
 test('the Telegram field offers has and does not have, and round-trips with no value', async () => {

@@ -1,6 +1,7 @@
 import type { RuleGroupType } from 'react-querybuilder'
 import { expect, test } from 'vitest'
 
+import { MomentOperator } from '../../generated/site/types.gen.ts'
 import type {
   EventLeaf,
   RuleConditionInput,
@@ -254,7 +255,7 @@ test('a value that is no finite number leaves a number test blank', () => {
 // Paris is an hour ahead of UTC in March: a day there starts at 23:00 UTC the evening before.
 const paris = 'Europe/Paris'
 
-const dated = (operator: 'before' | 'after', at: string): SegmentCondition => ({
+const dated = (operator: MomentOperator, at: string): SegmentCondition => ({
   kind: 'group',
   combinator: 'and',
   entries: [{ kind: 'customField', key: 'renews_at', test: { kind: 'moment', operator, at } }],
