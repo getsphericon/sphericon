@@ -1,106 +1,115 @@
 import type { Field, InputType, Operator } from 'react-querybuilder'
 
 import {
-  ConditionDateOperator,
-  ConditionNumberOperator,
-  ConditionOperator,
   CustomFieldType,
+  HasOperator,
+  MomentOperator,
+  NumberOperator,
+  PresenceOperator,
+  TextOperator,
 } from '../../generated/site/types.gen.ts'
 import type { SiteCustomFieldResource } from '../../generated/site/types.gen.ts'
-import { dateWithinOperator } from './condition.ts'
-import { triggerFieldPrefix } from './triggerFieldPrefix.ts'
+import { withinLastOperator } from './condition.ts'
 
-// How the builder names each operator of a rule leaf.
-const ruleOperatorLabels: Record<ConditionOperator, string> = {
-  [ConditionOperator.EQ]: 'is',
-  [ConditionOperator.NEQ]: 'is not',
-  [ConditionOperator.CONTAINS]: 'contains',
-  [ConditionOperator.BEGINS_WITH]: 'begins with',
-  [ConditionOperator.NULL]: 'is empty',
-  [ConditionOperator.NOT_NULL]: 'is set',
-  [ConditionOperator.HAS]: 'has',
-  [ConditionOperator.DOES_NOT_HAVE]: 'does not have',
+// How the builder names each operator of a typed test, and of a leaf that has or does not have.
+const textLabels: Record<TextOperator, string> = {
+  [TextOperator.EQ]: 'is',
+  [TextOperator.NEQ]: 'is not',
+  [TextOperator.CONTAINS]: 'contains',
+  [TextOperator.BEGINS_WITH]: 'begins with',
+}
+const numberLabels: Record<NumberOperator, string> = {
+  [NumberOperator.GT]: 'greater than',
+  [NumberOperator.GTE]: 'greater than or equal to',
+  [NumberOperator.LT]: 'less than',
+  [NumberOperator.LTE]: 'less than or equal to',
+}
+const momentLabels: Record<MomentOperator, string> = {
+  [MomentOperator.BEFORE]: 'before',
+  [MomentOperator.AFTER]: 'after',
+}
+const presenceLabels: Record<PresenceOperator, string> = {
+  [PresenceOperator.SET]: 'is set',
+  [PresenceOperator.NOT_SET]: 'is not set',
+}
+const hasLabels: Record<HasOperator, string> = {
+  [HasOperator.HAS]: 'has',
+  [HasOperator.DOES_NOT_HAVE]: 'does not have',
 }
 
-function labelled(operator: ConditionOperator): Operator {
-  return { name: operator, label: ruleOperatorLabels[operator] }
-}
+const text = (operators: readonly TextOperator[]): Operator[] =>
+  operators.map((operator) => ({ name: operator, label: textLabels[operator] }))
+const number = (operators: readonly NumberOperator[]): Operator[] =>
+  operators.map((operator) => ({ name: operator, label: numberLabels[operator] }))
+const moment = (operators: readonly MomentOperator[]): Operator[] =>
+  operators.map((operator) => ({ name: operator, label: momentLabels[operator] }))
+// A presence test compares with nothing, so the builder shows no value input for it.
+const presence = (operators: readonly PresenceOperator[]): Operator[] =>
+  operators.map((operator) => ({ name: operator, label: presenceLabels[operator], arity: 'unary' }))
+const withinLast: Operator = { name: withinLastOperator, label: 'within the last (days)' }
 
-// A contact attribute is text.
-export const textOperators: Operator[] = [
-  ConditionOperator.EQ,
-  ConditionOperator.NEQ,
-  ConditionOperator.CONTAINS,
-  ConditionOperator.BEGINS_WITH,
-  ConditionOperator.NULL,
-  ConditionOperator.NOT_NULL,
-].map((operator) => labelled(operator))
+const allText = Object.values(TextOperator)
+const allNumber = Object.values(NumberOperator)
+const allMoment = Object.values(MomentOperator)
+const allPresence = Object.values(PresenceOperator)
 
-// The Telegram field: a Contact has a chat bound or does not.
-export const telegramField = 'telegram'
-// The SMS field: a Contact has a phone that can be texted (a Confirmation, no opt-out) or does not.
-export const smsField = 'sms'
-export const haveOperators: Operator[] = [
-  ConditionOperator.HAS,
-  ConditionOperator.DOES_NOT_HAVE,
-].map((operator) => labelled(operator))
+// A Contact attribute is text: it takes a text test or a presence test.
+export const attributeOperators: Operator[] = [...text(allText), ...presence(allPresence)]
 
-// A number leaf compares a number custom field or an Event property with a number.
-const numberOperators: Operator[] = [
-  { name: ConditionNumberOperator.GT, label: 'greater than' },
-  { name: ConditionNumberOperator.GTE, label: 'greater than or equal to' },
-  { name: ConditionNumberOperator.LT, label: 'less than' },
-  { name: ConditionNumberOperator.LTE, label: 'less than or equal to' },
+// The birthday is a date: a moment before or after a day, or a window in days back from now.
+export const birthdayOperators: Operator[] = [...moment(allMoment), withinLast]
+
+// A Tag is had or not, by its name, typed as the value.
+export const tagOperators: Operator[] = Object.values(HasOperator).map((operator) => ({
+  name: operator,
+  label: hasLabels[operator],
+}))
+
+// Telegram and SMS: a Contact has a chat bound, or a phone that can be texted, or does not; no
+// value to type.
+export const haveOperators: Operator[] = tagOperators.map((operator) => ({
+  ...operator,
+  arity: 'unary',
+}))
+
+// A Rule's Event property has no declared type: it is tested as text, compared as a number or
+// tested for presence. Its key is typed in its value, which every operator shows, presence too.
+export const propertyOperators: Operator[] = [
+  ...text(allText),
+  ...number(allNumber),
+  ...allPresence.map((operator) => ({ name: operator, label: presenceLabels[operator] })),
 ]
 
-// The date leaves test a datetime custom field or the birthday against a day, or a window in days
-// back from now.
-export const dateOperators: Operator[] = [
-  { name: ConditionDateOperator.BEFORE, label: 'before' },
-  { name: ConditionDateOperator.AFTER, label: 'after' },
-  { name: dateWithinOperator, label: 'within the last (days)' },
-]
+const presenceOperators = new Set<string>(allPresence)
 
-// The leaves a custom field of a type takes besides the rule leaf (the contract's number and date
-// leaves).
-const typedOperators: Partial<Record<CustomFieldType, Operator[]>> = {
-  [CustomFieldType.NUMBER]: numberOperators,
-  [CustomFieldType.DATETIME]: dateOperators,
+// isPresence tells a presence test's operator, which compares with no value.
+export function isPresence(operator: string): boolean {
+  return presenceOperators.has(operator)
 }
 
-// operatorsOf is what the builder offers on a custom field: the rule leaf's operators the server
-// lists for it (ruleOperators, the backend's one table of what fits a type), then the comparisons
-// of a number field or the moments of a datetime field.
+// operatorsOf is what the builder offers on a Custom field: per typed test, the operators the
+// server lists for the field's type (conditionTests, the backend's one table of what fits).
 export function operatorsOf(field: SiteCustomFieldResource): Operator[] {
+  const tests = field.conditionTests
   return [
-    ...field.ruleOperators.map((operator) => labelled(operator)),
-    ...(typedOperators[field.type] ?? []),
+    ...text(tests.text),
+    ...number(tests.number),
+    ...moment(tests.moment),
+    ...(tests.withinLast ? [withinLast] : []),
+    ...presence(tests.presence),
   ]
 }
 
-// The value input a custom field takes for its rule leaf: a number field's is a number.
+// The value input a Custom field takes for its text test: a number field's is a number.
 export function inputTypeOfField(field: SiteCustomFieldResource): InputType {
   return field.type === CustomFieldType.NUMBER ? 'number' : 'text'
 }
 
-// A Rule's Event property ("trigger:<key>") has no declared type: it is tested as text, or
-// compared as a number.
-const triggerOperators: Operator[] = [...textOperators, ...numberOperators]
-
-// triggerOperatorsOf is the operators of a field typed as an Event property, or null to keep the
-// field's own.
-export function triggerOperatorsOf(field: string): Operator[] | null {
-  return field.startsWith(triggerFieldPrefix) ? triggerOperators : null
-}
-
-const numberInput = new Set<string>([
-  ...numberOperators.map((operator) => operator.name),
-  dateWithinOperator,
-])
-const dateInput = new Set<string>([ConditionDateOperator.BEFORE, ConditionDateOperator.AFTER])
+const numberInput = new Set<string>([...allNumber, withinLastOperator])
+const dateInput = new Set<string>(allMoment)
 
 // inputTypeOf is the value input an operator on the field takes: a number for a comparison and for
-// the days of within, a day for before and after, and the field's own for a rule leaf.
+// the days of a window, a day for before and after, and the field's own for a text test.
 export function inputTypeOf(operator: string, field: Pick<Field, 'inputType'>): InputType | null {
   if (numberInput.has(operator)) {
     return 'number'

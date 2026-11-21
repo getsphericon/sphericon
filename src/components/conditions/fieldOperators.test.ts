@@ -1,82 +1,110 @@
 import type { Operator } from 'react-querybuilder'
 import { expect, test } from 'vitest'
 
-import {
-  ConditionDateOperator,
-  ConditionNumberOperator,
-  ConditionOperator,
-  CustomFieldType,
+import { CustomFieldType } from '../../generated/site/types.gen.ts'
+import type {
+  CustomFieldConditionTests,
+  SiteCustomFieldResource,
 } from '../../generated/site/types.gen.ts'
-import type { SiteCustomFieldResource } from '../../generated/site/types.gen.ts'
 import { TIMESTAMPS, testId } from '../../test/payloads.ts'
-import { dateWithinOperator } from './condition.ts'
-import { inputTypeOf, inputTypeOfField, operatorsOf, triggerOperatorsOf } from './fieldOperators.ts'
+import {
+  attributeOperators,
+  inputTypeOf,
+  inputTypeOfField,
+  operatorsOf,
+  propertyOperators,
+} from './fieldOperators.ts'
 
-const names = (operators: Operator[] | null) => operators?.map((operator) => operator.name)
+const names = (operators: Operator[]) => operators.map((operator) => operator.name)
 
 const field = (
   type: CustomFieldType,
-  ruleOperators: ConditionOperator[],
+  conditionTests: CustomFieldConditionTests,
 ): SiteCustomFieldResource => ({
   id: testId(1),
   key: 'k',
   name: 'K',
   type,
-  ruleOperators,
+  conditionTests,
   revision: 1,
   ...TIMESTAMPS,
 })
 
-const seats = field(CustomFieldType.NUMBER, [
-  ConditionOperator.EQ,
-  ConditionOperator.NEQ,
-  ConditionOperator.NOT_NULL,
-])
-const renewsAt = field(CustomFieldType.DATETIME, [ConditionOperator.NOT_NULL])
-const plan = field(CustomFieldType.STRING, [ConditionOperator.EQ, ConditionOperator.CONTAINS])
-
-test('a custom field offers the rule operators the server lists, then the leaves of its type', () => {
-  const number = names(operatorsOf(seats))
-  const datetime = names(operatorsOf(renewsAt))
-  const text = names(operatorsOf(plan))
-
-  expect(number).toEqual([
-    ConditionOperator.EQ,
-    ConditionOperator.NEQ,
-    ConditionOperator.NOT_NULL,
-    ConditionNumberOperator.GT,
-    ConditionNumberOperator.GTE,
-    ConditionNumberOperator.LT,
-    ConditionNumberOperator.LTE,
-  ])
-  expect(datetime).toEqual([
-    ConditionOperator.NOT_NULL,
-    ConditionDateOperator.BEFORE,
-    ConditionDateOperator.AFTER,
-    dateWithinOperator,
-  ])
-  expect(text).toEqual([ConditionOperator.EQ, ConditionOperator.CONTAINS])
+// What the server lists for each type (the Condition module's one table of what fits).
+const seats = field(CustomFieldType.NUMBER, {
+  text: ['eq', 'neq'],
+  number: ['gt', 'gte', 'lt', 'lte'],
+  moment: [],
+  withinLast: false,
+  presence: ['set'],
+})
+const plan = field(CustomFieldType.STRING, {
+  text: ['eq', 'neq', 'contains'],
+  number: [],
+  moment: [],
+  withinLast: false,
+  presence: ['set'],
+})
+const renewsAt = field(CustomFieldType.DATETIME, {
+  text: [],
+  number: [],
+  moment: ['before', 'after'],
+  withinLast: true,
+  presence: ['set'],
 })
 
-test('an Event property is tested as text or compared as a number, never as a moment', () => {
-  const property = names(triggerOperatorsOf('trigger:score'))
-  const attribute = triggerOperatorsOf('email')
+test('a number Custom field offers text eq and neq, the number comparisons and presence', () => {
+  const offered = operatorsOf(seats)
 
-  expect(property).toContain(ConditionOperator.CONTAINS)
-  expect(property).toContain(ConditionNumberOperator.GTE)
-  expect(property).not.toContain(dateWithinOperator)
-  expect(attribute).toBeNull()
+  expect(names(offered)).toEqual(['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'set'])
 })
 
-test('a comparison and a window take a number, before and after a day, a rule leaf its field’s', () => {
+test('a string Custom field offers the text operators it takes and presence', () => {
+  const offered = operatorsOf(plan)
+
+  expect(names(offered)).toEqual(['eq', 'neq', 'contains', 'set'])
+})
+
+test('a datetime Custom field offers the moment operators, the window of days and presence', () => {
+  const offered = operatorsOf(renewsAt)
+
+  expect(names(offered)).toEqual(['before', 'after', 'withinLast', 'set'])
+})
+
+test('a presence test takes no value on a Custom field or an attribute', () => {
+  const onField = operatorsOf(plan).find((operator) => operator.name === 'set')
+  const onAttribute = attributeOperators.filter((operator) => operator.arity === 'unary')
+
+  expect(onField?.arity).toBe('unary')
+  expect(names(onAttribute)).toEqual(['set', 'notSet'])
+})
+
+test('an Event property is tested as text, compared as a number or tested for presence, never as a moment', () => {
+  const property = names(propertyOperators)
+
+  expect(property).toEqual([
+    'eq',
+    'neq',
+    'contains',
+    'beginsWith',
+    'gt',
+    'gte',
+    'lt',
+    'lte',
+    'set',
+    'notSet',
+  ])
+})
+
+test('a comparison and a window take a number, before and after a day, a text test its field’s', () => {
   const numberField = { inputType: inputTypeOfField(seats) }
   const textField = { inputType: inputTypeOfField(plan) }
 
-  const comparison = inputTypeOf(ConditionNumberOperator.LTE, textField)
-  const window = inputTypeOf(dateWithinOperator, textField)
-  const moment = inputTypeOf(ConditionDateOperator.AFTER, textField)
-  const isOnNumber = inputTypeOf(ConditionOperator.EQ, numberField)
-  const isOnText = inputTypeOf(ConditionOperator.EQ, textField)
+  const comparison = inputTypeOf('lte', textField)
+  const window = inputTypeOf('withinLast', textField)
+  const moment = inputTypeOf('after', textField)
+  const isOnNumber = inputTypeOf('eq', numberField)
+  const isOnText = inputTypeOf('eq', textField)
 
   expect(comparison).toBe('number')
   expect(window).toBe('number')

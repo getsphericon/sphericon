@@ -10,7 +10,7 @@ import {
   handleSiteTagsList,
 } from '../../generated/site/msw.gen.ts'
 import { Route as activityRoute } from '../../routes/workspaces/$workspaceId/activity.tsx'
-import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
+import { NO_CONDITION_TESTS, page, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -44,7 +44,7 @@ function serve(...items: ReturnType<typeof event>[]) {
           key: 'plan',
           name: 'Plan',
           type: 'string',
-          ruleOperators: [],
+          conditionTests: NO_CONDITION_TESTS,
           revision: 1,
           ...TIMESTAMPS,
         },

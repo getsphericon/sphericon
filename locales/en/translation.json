@@ -1764,7 +1764,7 @@
     "previewButton": "Preview segment",
     "previewCount_one": "{{count, number}} matching contact",
     "previewCount_other": "{{count, number}} matching contacts",
-    "triggerKeyLabel": "Event property name"
+    "propertyKeyLabel": "Event property name"
   },
   "settings": {
     "apiKeysTitle": "API keys",

@@ -88,8 +88,8 @@ export function RuleForm({
         >
           <ConditionBuilder
             workspaceId={workspaceId}
-            triggerLeaves
-            initialValue={toCondition(form.values.condition) ?? emptyGroup}
+            place="rule"
+            initialValue={toCondition(form.values.condition, 'rule') ?? emptyGroup}
             onChange={(next) => form.setFieldValue('condition', next)}
           />
         </Input.Wrapper>

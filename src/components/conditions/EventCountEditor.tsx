@@ -1,36 +1,28 @@
 import { Group, NumberInput } from '@mantine/core'
-import { MantineValueEditor } from '@react-querybuilder/mantine'
 import type { MantineValueEditorProps } from '@react-querybuilder/mantine'
 import { useTranslation } from 'react-i18next'
 
-import { zConditionEventLeaf } from '../../generated/site/zod.gen.ts'
-import { eventCount, eventCountOf, eventFieldPrefix, isCountOperator } from './condition.ts'
-import { smsField, telegramField } from './fieldOperators.ts'
+import { zEventLeafInput } from '../../generated/site/zod.gen.ts'
+import { eventCount, eventCountOf, isCountOperator } from './condition.ts'
 
 // The least count and window the contract takes (atLeast's own floor of one is the server's), as
 // the inputs' min.
 function least(min: number | null): { min?: number } {
   return min === null ? {} : { min }
 }
-const leastTimes = least(zConditionEventLeaf.shape.times.minValue)
-const leastDays = least(zConditionEventLeaf.shape.withinDays.unwrap().minValue)
+const leastTimes = least(zEventLeafInput.shape.times.minValue)
+const leastDays = least(zEventLeafInput.shape.withinDays.unwrap().minValue)
 
 // A typed number, or nothing for a cleared input.
 function typed(input: unknown): number | undefined {
   return typeof input === 'number' ? input : undefined
 }
 
-// EventCountEditor is the builder's value editor: an event field edits its count (for atLeast
-// and atMost; a preset has its own) and its window in days, blank for all time. A blank count
-// stays blank and is marked required. Every other field keeps the Mantine editor.
+// EventCountEditor is the value editor of an event field: its count (for atLeast and atMost; a
+// preset has its own) and its window in days, blank for all time. A blank count stays blank and is
+// marked required.
 export function EventCountEditor(props: MantineValueEditorProps) {
   const { t } = useTranslation()
-  if (props.field === telegramField || props.field === smsField) {
-    return null
-  }
-  if (!props.field.startsWith(eventFieldPrefix)) {
-    return <MantineValueEditor {...props} />
-  }
   const count = eventCount(props.value)
   return (
     <Group gap="xs" wrap="nowrap" align="flex-start">
