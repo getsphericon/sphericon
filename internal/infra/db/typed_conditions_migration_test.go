@@ -89,12 +89,17 @@ var typedBroadcasts = map[int64]string{
 	2: `{"kind":"group","combinator":"and","entries":[]}`,
 }
 
+// recordedEdit is the diff of the Audit entry of testdata/typed_conditions, as it was recorded.
+const recordedEdit = `{"condition":{"from":{"kind":"group","combinator":"and","rules":[]},` +
+	`"to":{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"pro"}]}}}`
+
 // The upgrade rewrites every stored Condition to the typed tree of its place (ADR 0181): every
 // Segment (an archived one too), every Rule version (past, live and draft) and every armed
 // Broadcast's copy, each leaf kind and operator to the leaf and typed test it names, a nested
 // negated group keeping its negation. A Condition already in the typed shape, as a run interrupted
-// after its rewrite leaves it, is left as it is, a Broadcast to all Contacts keeps no Condition, and
-// the schema moves to the next Major.
+// after its rewrite leaves it, is left as it is, a Broadcast to all Contacts keeps no Condition, an
+// Audit entry keeps the Condition of its diff as it was recorded, and the schema moves to the next
+// Major.
 func TestTheTypedConditionsMigrationRewritesEveryStoredConditionToItsTypedTree(t *testing.T) {
 	sqlDB := typedConditionsBefore(t, "typed_conditions")
 
@@ -117,6 +122,8 @@ func TestTheTypedConditionsMigrationRewritesEveryStoredConditionToItsTypedTree(t
 	}
 	toAll := client.Broadcast.GetX(ctx, 3).Condition
 	assert.Nil(t, toAll)
+	recorded := client.AuditEntry.GetX(ctx, 1).Diff
+	assert.JSONEq(t, recordedEdit, testhelper.Document(t, recorded))
 	state, err := db.ReadState(ctx, sqlDB)
 	require.NoError(t, err)
 	assert.Equal(t, db.SchemaState(db.Majors[len(db.Majors)-1]), state)

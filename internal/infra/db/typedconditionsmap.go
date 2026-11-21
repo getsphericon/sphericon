@@ -42,25 +42,64 @@ const (
 	kindEvent         = "event"
 )
 
+// oldWord is a value of the old shape's vocabulary: an attribute a `rule` leaf named, or an
+// operator of its one enum.
+type oldWord string
+
+// The Contact's text attributes a `rule` leaf could test.
+const (
+	oldSubjectID oldWord = "subject_id"
+	oldEmail     oldWord = "email"
+	oldPhone     oldWord = "phone"
+	oldFirstName oldWord = "first_name"
+	oldLastName  oldWord = "last_name"
+	oldTimeZone  oldWord = "time_zone"
+	oldCountry   oldWord = "country"
+	oldLocale    oldWord = "locale"
+	oldCity      oldWord = "city"
+)
+
+// The operators of the old shape's leaves.
+const (
+	oldEQ          oldWord = "eq"
+	oldNEQ         oldWord = "neq"
+	oldContains    oldWord = "contains"
+	oldBeginsWith  oldWord = "beginsWith"
+	oldNull        oldWord = "null"
+	oldNotNull     oldWord = "notNull"
+	oldHas         oldWord = "has"
+	oldDoesNotHave oldWord = "doesNotHave"
+	oldGT          oldWord = "gt"
+	oldGTE         oldWord = "gte"
+	oldLT          oldWord = "lt"
+	oldLTE         oldWord = "lte"
+	oldBefore      oldWord = "before"
+	oldAfter       oldWord = "after"
+	oldAtLeast     oldWord = "atLeast"
+	oldAtMost      oldWord = "atMost"
+	oldAnd         oldWord = "and"
+	oldOr          oldWord = "or"
+)
+
 // oldAttributes is the Contact's text attributes a `rule` leaf could test.
-var oldAttributes = map[string]bool{
-	"subject_id": true, "email": true, "phone": true, "first_name": true, "last_name": true,
-	"time_zone": true, "country": true, "locale": true, "city": true,
+var oldAttributes = map[oldWord]bool{
+	oldSubjectID: true, oldEmail: true, oldPhone: true, oldFirstName: true, oldLastName: true,
+	oldTimeZone: true, oldCountry: true, oldLocale: true, oldCity: true,
 }
 
 // oldTextOperators is the operators of a `rule` leaf that compare text; null and notNull test
 // presence.
-var oldTextOperators = map[string]bool{"eq": true, "neq": true, "contains": true, "beginsWith": true}
+var oldTextOperators = map[oldWord]bool{oldEQ: true, oldNEQ: true, oldContains: true, oldBeginsWith: true}
 
-// oldPresence is the presence test each presence operator of a `rule` leaf names.
-var oldPresence = map[string]string{"null": "notSet", "notNull": "set"}
+// oldPresence is the operator of the presence test each presence operator of a `rule` leaf names.
+var oldPresence = map[oldWord]string{oldNull: "notSet", oldNotNull: "set"}
 
 // oldComparisons, oldSides and oldEventLeast are the operators of a number, a date and an event
 // leaf, with the least times an event operator takes.
 var (
-	oldComparisons = map[string]bool{"gt": true, "gte": true, "lt": true, "lte": true}
-	oldSides       = map[string]bool{"before": true, "after": true}
-	oldEventLeast  = map[string]int{"atLeast": 1, "atMost": 0}
+	oldComparisons = map[oldWord]bool{oldGT: true, oldGTE: true, oldLT: true, oldLTE: true}
+	oldSides       = map[oldWord]bool{oldBefore: true, oldAfter: true}
+	oldEventLeast  = map[oldWord]int{oldAtLeast: 1, oldAtMost: 0}
 )
 
 // The least days a window takes and the least times an event leaf counts, as the bounds were.
@@ -209,7 +248,7 @@ func mapGroup(g oldGroup, p conditionPlace) (typedGroup, error) {
 	if g.Kind != kindGroup {
 		return typedGroup{}, fmt.Errorf("unknown group kind %q", g.Kind)
 	}
-	if g.Combinator != "and" && g.Combinator != "or" {
+	if oldWord(g.Combinator) != oldAnd && oldWord(g.Combinator) != oldOr {
 		return typedGroup{}, fmt.Errorf("unknown combinator %q", g.Combinator)
 	}
 	out := typedGroup{Kind: kindGroup, Combinator: g.Combinator, Not: g.Not, Entries: make([]any, 0, len(g.Rules))}
@@ -304,7 +343,7 @@ func mapRule(l oldRule, p conditionPlace) (any, error) {
 		return typedCustomField{Kind: "customField", Key: key, Test: test}, nil
 	case strings.HasPrefix(l.Field, oldTriggerPrefix):
 		return propertyLeaf(l.Field, test, p)
-	case oldAttributes[l.Field]:
+	case oldAttributes[oldWord(l.Field)]:
 		return typedAttribute{Kind: "attribute", Attribute: l.Field, Test: test}, nil
 	default:
 		return nil, fmt.Errorf("unknown field %q", l.Field)
@@ -313,7 +352,7 @@ func mapRule(l oldRule, p conditionPlace) (any, error) {
 
 // hasOrNot refuses an operator of a Tag, Telegram or SMS leaf other than has and doesNotHave.
 func hasOrNot(op, field string) error {
-	if op != "has" && op != "doesNotHave" {
+	if oldWord(op) != oldHas && oldWord(op) != oldDoesNotHave {
 		return fmt.Errorf("unsupported operator %q for %s field", op, field)
 	}
 	return nil
@@ -322,10 +361,10 @@ func hasOrNot(op, field string) error {
 // valueTest is the typed test a `rule` leaf's operator names on a value: a presence test for null
 // and notNull, a text test for a text operator; false for any other.
 func valueTest(op, value string) (any, bool) {
-	if presence, ok := oldPresence[op]; ok {
+	if presence, ok := oldPresence[oldWord(op)]; ok {
 		return typedPresence{Kind: "presence", Operator: presence}, true
 	}
-	if !oldTextOperators[op] {
+	if !oldTextOperators[oldWord(op)] {
 		return nil, false
 	}
 	return typedText{Kind: "text", Operator: op, Value: value}, true
@@ -356,7 +395,7 @@ func propertyLeaf(field string, test any, p conditionPlace) (any, error) {
 // mapNumber maps a `number` leaf: the number test of a Custom field or of a property of the
 // triggering Event.
 func mapNumber(l oldNumber, p conditionPlace) (any, error) {
-	if !oldComparisons[l.Operator] {
+	if !oldComparisons[oldWord(l.Operator)] {
 		return nil, fmt.Errorf("unsupported operator %q for number leaf", l.Operator)
 	}
 	var value *float64
@@ -388,7 +427,7 @@ var zeroMoment = json.RawMessage(`"0001-01-01T00:00:00Z"`)
 
 // mapDate maps a `date` leaf: the moment test of the birthday or a Custom field.
 func mapDate(l oldDate) (any, error) {
-	if !oldSides[l.Operator] {
+	if !oldSides[oldWord(l.Operator)] {
 		return nil, fmt.Errorf("unsupported operator %q for date leaf", l.Operator)
 	}
 	at := zeroMoment
@@ -434,7 +473,7 @@ func mapEvent(l oldEvent) (any, error) {
 	if strings.TrimSpace(l.Action) == "" {
 		return nil, errors.New("event action is required")
 	}
-	least, ok := oldEventLeast[l.Operator]
+	least, ok := oldEventLeast[oldWord(l.Operator)]
 	if !ok {
 		return nil, fmt.Errorf("unsupported operator %q for event leaf", l.Operator)
 	}
