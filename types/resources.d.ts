@@ -74,6 +74,7 @@ export default interface Resources {
       "broadcastRestoreErrorTitle": "Failed to restore broadcast",
       "broadcastSaveErrorTitle": "Failed to save broadcast",
       "broadcastSendErrorTitle": "Failed to send broadcast",
+      "broadcastUnscheduleErrorTitle": "Failed to cancel the schedule",
       "contactLoadErrorTitle": "Failed to load contact",
       "customFieldLoadErrorTitle": "Failed to load custom fields",
       "eraseErrorTitle": "Failed to erase contact",
@@ -619,6 +620,7 @@ export default interface Resources {
       "testSendFrom": "Sent from {{from}}. Until a sending domain is verified this is the platform's own address, not the one your contacts will see.",
       "testSendPhoneHint": "With its country code, like +1 415 555 0100. The test skips the confirmation check and counts in no figure.",
       "testSendPhoneLabel": "Send a test text to",
+      "unschedule": "Cancel schedule",
       "useTemplate": "Start from template",
       "useTemplateNone": "— none —"
     },
@@ -1344,6 +1346,7 @@ export default interface Resources {
       "broadcastRestored": "Broadcast restored",
       "broadcastScheduled": "Broadcast scheduled",
       "broadcastSent": "Broadcast is sending",
+      "broadcastUnscheduled": "Schedule cancelled",
       "broadcastUpdated": "Broadcast updated",
       "contactCreated": "Contact created",
       "contactErased": "Contact erased",
