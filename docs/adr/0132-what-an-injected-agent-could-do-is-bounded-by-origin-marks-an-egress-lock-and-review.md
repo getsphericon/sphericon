@@ -5,6 +5,10 @@ build: [1548, 1617, 1645, 1646, 1647, 1648, 1649, 1650, 1651, 1652, 1653, 1654, 
 
 # What an injected agent could do is bounded by origin marks, an egress lock and review
 
+> **Amended by [[0138-contacts-come-in-by-a-mapped-csv-import-and-leave-by-a-streamed-csv-export]] (amendment):** the import's
+> history mark and the origin mark are stamped on the one envelope every Event carries, and a
+> Confirmation recorded through a Connection without `mcp:send` is marked as its Contact is.
+
 > **Amended by #1713:** a date Trigger reads no Event, so the Contact keeps, per date field
 > (`birthday` and each datetime Custom field), whether its last write came through a Connection
 > without `mcp:send`. An occurrence of such a value enrolls no one until a write without the mark;

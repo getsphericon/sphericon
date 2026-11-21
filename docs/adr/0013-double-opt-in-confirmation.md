@@ -5,6 +5,10 @@ build: [1500, 1604]
 
 # Double opt-in: confirmation as a positive event, not a subscription status
 
+> **Amended by [[0138-contacts-come-in-by-a-mapped-csv-import-and-leave-by-a-streamed-csv-export]]:** the batch upsert takes
+> `emailConsent`, so an imported email Confirmation is recorded as this ADR says; its time is the
+> one the evidence states, else now.
+
 > **Amended by [[0121-a-preference-page-per-destination-and-only-the-person-lifts-a-refusal]]:** a
 > return from `everything` on the Preference page, on fresh proof of the address, records a
 > Confirmation with provenance `double_opt_in`; the fresh link that page sends for an older link is
