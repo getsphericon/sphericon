@@ -5,6 +5,10 @@ build: [1597, 1598, 1599]
 
 # A Broadcast tests its Variants on a share and sends the Winner to the rest
 
+> **Amended by [[0191-revenue-per-recipient-is-attributed-revenue-over-the-same-tracked-messages]]:**
+> the revenue Winner metric is the Variant's Revenue per recipient, read from the one computation
+> of it.
+
 > Amends [[0080-a-broadcast-has-one-channel]] (a Broadcast's content is its Variants) and
 > [[0149-a-broadcasts-audience-is-chosen-explicitly-and-counted-before-it-is-armed]] (the count names
 > the test share).

@@ -340,6 +340,12 @@ a floor of zero per Order, and a cancelled Order counting nothing; late facts ca
 Attribution window after their Form submit; it is not attribution and takes nothing from a message.
 _Avoid_: Sales, turnover, GMV
 
+**Revenue per recipient**:
+A Broadcast's or an Automation's attributed **Revenue** over the tracked messages it was credited
+from: per message, not per Contact, and always the same messages on both sides (a period's figure is
+the revenue of the messages sent in it). Untracked messages count in neither.
+_Avoid_: Revenue per email, revenue per person, revenue per send, RPE
+
 **Reporting currency**:
 The one currency in which a Workspace's revenue is summed: the currency of the first Order Completed
 the Workspace sends, unless the Owner or an Admin chooses another. An Order in another currency is kept
@@ -650,7 +656,7 @@ _Avoid_: Version (that is an Automation's), A/B version, path (that is a Split's
 **Split test**:
 A Broadcast with several Variants, tried on a test share of its Recipients (split evenly between
 them, by Contact) for a fixed time, after which the **Winner** goes to the rest. Its winner metric,
-chosen before it is armed, is the click rate or the revenue per Recipient, counted over tracked
+chosen before it is armed, is the click rate or the **Revenue per recipient**, counted over tracked
 messages only, never opens. At a test share of 100% there is no rest.
 _Avoid_: A/B test (as a synonym), experiment, campaign test, Split (that is an Automation Step)
 
