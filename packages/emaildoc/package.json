@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@react-email/editor": "1.8.10",
-    "@tiptap/core": "3.34.0",
+    "@tiptap/core": "3.35.0",
     "esbuild": "0.28.2",
     "js-base64": "3.9.7",
     "react": "19.3.1",
