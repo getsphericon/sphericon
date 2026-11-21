@@ -37,11 +37,11 @@ func detector(t *testing.T) *privaterelayranges.Detector {
 func TestAFailedReloadKeepsTheLastTable(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		d := detector(t)
-		assert.True(t, d.IsMachine(context.Background(), "", relayAddr, privaterelayranges.AnOpen), "the first read loads the table")
+		assert.True(t, d.IsMachine(context.Background(), privaterelayranges.IsMachineInput{Kind: privaterelayranges.AnOpen, ClientAddr: relayAddr}), "the first read loads the table")
 
 		testhelper.Elapse(2 * time.Hour) // the copy is stale, and the next read fails
 
-		assert.True(t, d.IsMachine(cancelled(), "", relayAddr, privaterelayranges.AnOpen))
+		assert.True(t, d.IsMachine(cancelled(), privaterelayranges.IsMachineInput{Kind: privaterelayranges.AnOpen, ClientAddr: relayAddr}))
 	})
 }
 
@@ -49,12 +49,12 @@ func TestAFailedReloadKeepsTheLastTable(t *testing.T) {
 func TestAFailedFirstReadIsTriedAgainAfterAWhile(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		d := detector(t)
-		assert.False(t, d.IsMachine(cancelled(), "", relayAddr, privaterelayranges.AnOpen))
+		assert.False(t, d.IsMachine(cancelled(), privaterelayranges.IsMachineInput{Kind: privaterelayranges.AnOpen, ClientAddr: relayAddr}))
 
-		assert.False(t, d.IsMachine(context.Background(), "", relayAddr, privaterelayranges.AnOpen), "not retried at once")
+		assert.False(t, d.IsMachine(context.Background(), privaterelayranges.IsMachineInput{Kind: privaterelayranges.AnOpen, ClientAddr: relayAddr}), "not retried at once")
 
 		testhelper.Elapse(2 * time.Minute)
-		assert.True(t, d.IsMachine(context.Background(), "", relayAddr, privaterelayranges.AnOpen))
+		assert.True(t, d.IsMachine(context.Background(), privaterelayranges.IsMachineInput{Kind: privaterelayranges.AnOpen, ClientAddr: relayAddr}))
 	})
 }
 
@@ -80,8 +80,8 @@ func TestADisplayProxyOpenIsThePersonsAndItsClickIsMachine(t *testing.T) {
 	d := detector(t)
 	for _, pattern := range privaterelayranges.DisplayProxies {
 		for _, userAgent := range instancesOf(t, pattern) {
-			assert.False(t, d.IsMachine(context.Background(), userAgent, "", privaterelayranges.AnOpen), pattern)
-			assert.True(t, d.IsMachine(context.Background(), userAgent, "", privaterelayranges.AClick), pattern)
+			assert.False(t, d.IsMachine(context.Background(), privaterelayranges.IsMachineInput{Kind: privaterelayranges.AnOpen, UserAgent: userAgent}), pattern)
+			assert.True(t, d.IsMachine(context.Background(), privaterelayranges.IsMachineInput{Kind: privaterelayranges.AClick, UserAgent: userAgent}), pattern)
 		}
 	}
 }
@@ -105,7 +105,7 @@ func crawlerInstances(t *testing.T, skip []string) []string {
 func TestAnotherCrawlerIsMachineOnAnOpenAndOnAClick(t *testing.T) {
 	d := detector(t)
 	for _, userAgent := range crawlerInstances(t, privaterelayranges.DisplayProxies) {
-		assert.True(t, d.IsMachine(context.Background(), userAgent, "", privaterelayranges.AnOpen), userAgent)
-		assert.True(t, d.IsMachine(context.Background(), userAgent, "", privaterelayranges.AClick), userAgent)
+		assert.True(t, d.IsMachine(context.Background(), privaterelayranges.IsMachineInput{Kind: privaterelayranges.AnOpen, UserAgent: userAgent}), userAgent)
+		assert.True(t, d.IsMachine(context.Background(), privaterelayranges.IsMachineInput{Kind: privaterelayranges.AClick, UserAgent: userAgent}), userAgent)
 	}
 }

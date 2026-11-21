@@ -137,7 +137,7 @@ func (r *Recorder) record(ctx context.Context, m messagetoken.Message, hit Hit, 
 	if !ok {
 		return nil
 	}
-	machine := r.detector.IsMachine(ctx, hit.UserAgent, hit.Address, kind)
+	machine := r.detector.IsMachine(ctx, privaterelayranges.IsMachineInput{Kind: kind, UserAgent: hit.UserAgent, ClientAddr: hit.Address})
 	if err := r.bus.Publish(ctx, eventOf(e, machine, r.now())); err != nil {
 		slog.ErrorContext(ctx, "engagement: recording failed", "message_id", m.ID, "err", err)
 	}

@@ -120,14 +120,21 @@ const (
 // person's (ADR 0053). The rest of each proxy's traffic is still machine (crawlerVerdict).
 var DisplayProxies = []string{"GoogleImageProxy", "YahooMailProxy"}
 
-// IsMachine reports whether a hit of this kind, with this user-agent from this client address, is
-// machine engagement. An unreadable address or an empty user-agent says nothing: only a positive
-// match flags a hit, so a person is never discounted on a guess.
-func (d *Detector) IsMachine(ctx context.Context, userAgent, clientAddr string, kind Kind) bool {
-	if userAgent != "" && crawlerVerdict(userAgent, kind) {
+// IsMachineInput is the hit a verdict is asked for: its kind, its user-agent and its client address.
+type IsMachineInput struct {
+	Kind       Kind
+	UserAgent  string
+	ClientAddr string
+}
+
+// IsMachine reports whether the hit is machine engagement. An unreadable address or an empty
+// user-agent says nothing: only a positive match flags a hit, so a person is never discounted on a
+// guess.
+func (d *Detector) IsMachine(ctx context.Context, in IsMachineInput) bool {
+	if in.UserAgent != "" && crawlerVerdict(in.UserAgent, in.Kind) {
 		return true
 	}
-	addr, err := netip.ParseAddr(clientAddr)
+	addr, err := netip.ParseAddr(in.ClientAddr)
 	if err != nil {
 		return false
 	}
