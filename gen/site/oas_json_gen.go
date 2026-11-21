@@ -8545,8 +8545,8 @@ func (s *ContactAttribute) Decode(d *jx.Decoder) error {
 		*s = ContactAttributeEmail
 	case ContactAttributePhone:
 		*s = ContactAttributePhone
-	case ContactAttributeSubjectId:
-		*s = ContactAttributeSubjectId
+	case ContactAttributeSubjectID:
+		*s = ContactAttributeSubjectID
 	case ContactAttributeFirstName:
 		*s = ContactAttributeFirstName
 	case ContactAttributeLastName:

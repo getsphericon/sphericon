@@ -1793,10 +1793,10 @@ export type ConsentEvidence = {
 export const ContactAttribute = {
   EMAIL: 'email',
   PHONE: 'phone',
-  SUBJECT_ID: 'subjectId',
-  FIRST_NAME: 'firstName',
-  LAST_NAME: 'lastName',
-  TIME_ZONE: 'timeZone',
+  SUBJECT_ID: 'subject_id',
+  FIRST_NAME: 'first_name',
+  LAST_NAME: 'last_name',
+  TIME_ZONE: 'time_zone',
   COUNTRY: 'country',
   LOCALE: 'locale',
   CITY: 'city'

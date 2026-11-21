@@ -27,10 +27,10 @@ test("a Segment's Condition type takes neither a Rule-only leaf nor a text opera
     ],
   }
   const rule: RuleConditionInput = { kind: 'group', combinator: 'and', entries: [ruleOnlyLeaf] }
-  // @ts-expect-error a Segment admits no property test of the triggering Event
   const misplaced: SegmentConditionInput = {
     kind: 'group',
     combinator: 'and',
+    // @ts-expect-error a Segment admits no property test of the triggering Event
     entries: [ruleOnlyLeaf],
   }
   const nested: SegmentConditionInput = {
@@ -39,10 +39,10 @@ test("a Segment's Condition type takes neither a Rule-only leaf nor a text opera
     // @ts-expect-error not at any depth either
     entries: [{ kind: 'group', combinator: 'or', entries: [ruleOnlyLeaf] }],
   }
-  // @ts-expect-error contains is a text operator, not a number test's
   const mistyped: SegmentConditionInput = {
     kind: 'group',
     combinator: 'and',
+    // @ts-expect-error contains is a text operator, not a number test's
     entries: [textOperatorOnANumber],
   }
 

@@ -478,10 +478,10 @@ export const zConsentEvidence = z.strictObject({
 export const zContactAttribute = z.enum([
   'email',
   'phone',
-  'subjectId',
-  'firstName',
-  'lastName',
-  'timeZone',
+  'subject_id',
+  'first_name',
+  'last_name',
+  'time_zone',
   'country',
   'locale',
   'city'

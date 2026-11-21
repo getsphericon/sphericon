@@ -6782,10 +6782,10 @@ type ContactAttribute string
 const (
 	ContactAttributeEmail     ContactAttribute = "email"
 	ContactAttributePhone     ContactAttribute = "phone"
-	ContactAttributeSubjectId ContactAttribute = "subjectId"
-	ContactAttributeFirstName ContactAttribute = "firstName"
-	ContactAttributeLastName  ContactAttribute = "lastName"
-	ContactAttributeTimeZone  ContactAttribute = "timeZone"
+	ContactAttributeSubjectID ContactAttribute = "subject_id"
+	ContactAttributeFirstName ContactAttribute = "first_name"
+	ContactAttributeLastName  ContactAttribute = "last_name"
+	ContactAttributeTimeZone  ContactAttribute = "time_zone"
 	ContactAttributeCountry   ContactAttribute = "country"
 	ContactAttributeLocale    ContactAttribute = "locale"
 	ContactAttributeCity      ContactAttribute = "city"
@@ -6796,7 +6796,7 @@ func (ContactAttribute) AllValues() []ContactAttribute {
 	return []ContactAttribute{
 		ContactAttributeEmail,
 		ContactAttributePhone,
-		ContactAttributeSubjectId,
+		ContactAttributeSubjectID,
 		ContactAttributeFirstName,
 		ContactAttributeLastName,
 		ContactAttributeTimeZone,
@@ -6813,7 +6813,7 @@ func (s ContactAttribute) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case ContactAttributePhone:
 		return []byte(s), nil
-	case ContactAttributeSubjectId:
+	case ContactAttributeSubjectID:
 		return []byte(s), nil
 	case ContactAttributeFirstName:
 		return []byte(s), nil
@@ -6841,8 +6841,8 @@ func (s *ContactAttribute) UnmarshalText(data []byte) error {
 	case ContactAttributePhone:
 		*s = ContactAttributePhone
 		return nil
-	case ContactAttributeSubjectId:
-		*s = ContactAttributeSubjectId
+	case ContactAttributeSubjectID:
+		*s = ContactAttributeSubjectID
 		return nil
 	case ContactAttributeFirstName:
 		*s = ContactAttributeFirstName

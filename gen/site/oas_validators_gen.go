@@ -2320,13 +2320,13 @@ func (s ContactAttribute) Validate() error {
 		return nil
 	case "phone":
 		return nil
-	case "subjectId":
+	case "subject_id":
 		return nil
-	case "firstName":
+	case "first_name":
 		return nil
-	case "lastName":
+	case "last_name":
 		return nil
-	case "timeZone":
+	case "time_zone":
 		return nil
 	case "country":
 		return nil
