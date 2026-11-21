@@ -1,6 +1,6 @@
 ---
 status: accepted
-build: none
+build: [1824, 1825, 1826, 1827, 1828]
 terms: [Revenue per recipient]
 ---
 
