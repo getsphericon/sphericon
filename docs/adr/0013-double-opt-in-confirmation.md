@@ -129,7 +129,7 @@ A request is made by one of two parties, and the party decides what `everything`
   everything is itself a violation, and ADR 0121 puts Members, the API and MCP in one class that
   never undoes a refusal.
 - **The person asks**: an On-site form submit (ADR 0088), the "send a new link" of an expired
-  confirmation link, and the Preference page's fresh link (ADR 0121). Only Suppression stops it:
+  confirmation link, and the Preference page's return from `everything` from an older link (ADR 0121). Only Suppression stops it:
   returning after leaving everything goes through this email, as ADR 0088 has it for a form.
 
 A request for an address that already holds a Confirmation sends nothing and answers that it is

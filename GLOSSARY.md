@@ -2005,8 +2005,8 @@ The hours and days of the week, in the recipient's local time, in which a Worksp
 may go out (8:00 to 20:00 every day unless it changes it, with windows of its own for countries).
 It must be open in every zone that may be the recipient's: the Contact's time zone, if any, and the
 zones of the number's prefix. A message outside it is deferred; one for which no moment of the week
-is open is Skipped; a message the person just asked for (the Preference page's fresh link) is outside
-it, and Transactional is email-only.
+is open is Skipped; the Preference page sends no fresh link on SMS, so no message the person asked
+for meets it, and Transactional is email-only.
 _Avoid_: Quiet hours (the hours outside it), send window, DND
 
 **Staff hold**:

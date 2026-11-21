@@ -8,8 +8,8 @@ terms: [Preference page, Public name]
 
 > **Amended below:** a return from `everything` on email from an older link goes through the
 > confirmation email, and the `preference` message carries every other widening; a link's age is its
-> message's; the page acts on email and Telegram and only shows a Channel stop on SMS and web push; a
-> suppressed address gets no fresh link; the address is masked; an Automation or a Broadcast series
+> message's; the page sends fresh links on email and Telegram only, and on SMS and web push narrows
+> and shows the Channel stop; a suppressed address gets no fresh link; the address is masked; an Automation or a Broadcast series
 > is listed by its Public name; the fresh links share the confirmation emails' limit.
 
 > **Amended by [[0190-a-person-may-cap-their-own-destination-at-one-message-a-week]]:** the page of an
@@ -145,9 +145,10 @@ open or had drifted.
   the constructor anywhere else.
 - **The page acts on email and Telegram.** On Telegram the `preference` message goes through the
   Integration of the link's message, or, when its row is gone, through the Destination's oldest
-  Binding, the order a send uses. On SMS the page shows the Channel stop, since every SMS opt-out is
-  Channel-wide (ADR 0077), and START as its undoing; on web push the Channel stop and the site's own
-  button (ADR 0179). Neither sends a fresh link: a message that anyone holding a link could ask the
+  Binding, the order a send uses. On SMS and web push the page still narrows: its first action is
+  the Channel stop, since every opt-out from a link there is Channel-wide (ADR 0077, ADR 0179), and a
+  tracking refusal acts as anywhere. It shows START as the SMS stop's undoing and the site's own
+  button as web push's. Neither sends a fresh link: a message that anyone holding a link could ask the
   Workspace to pay for would be a bombing vector on a paid Channel. A tracking grant there acts only
   from a link of the last 7 days. WhatsApp is placed on the page by that Channel's own decision.
 - **A suppressed Destination** narrows as any other, and a widening from a link of the last 7 days is
@@ -164,9 +165,10 @@ open or had drifted.
 - **An Automation and a Broadcast series are listed by their Public name**, a name written for the
   person, not the Workspace's own name for it. An Automation with a Send step cannot be published
   without one, nor a series created; the internal name is never filled in for it.
-- **A message with no Sending source** (a Transactional email) renders the author's
-  `{{ unsubscribe_url }}` as a link to the page with no source, not as nothing; it carries no
-  `List-Unsubscribe`, and the one-click `POST` still refuses a token without a source.
+- **An email binds `{{ unsubscribe_url }}` too**, as a text and a Telegram message do: in a message
+  with no Sending source (a Transactional email) it is a link to the page with no source. Such a
+  message carries no footer and no `List-Unsubscribe`, and the one-click `POST` still refuses a token
+  without a source.
 - **A Personal frequency cap travels on a Merge as a refusal does** (ADR 0128, ADR 0190): it is a
   narrowing, recorded again on the Destination the survivor keeps, with the provenance `merge`.
 - **A return records `<channel>.resubscribed`** with its source and how it was made (`page`, or
