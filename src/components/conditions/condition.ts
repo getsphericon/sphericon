@@ -435,7 +435,9 @@ export function toDraft(query: RuleGroupType, timeZone?: string): ConditionDraft
   }
 }
 
-const placeSchemas: { [P in ConditionPlace]: z.ZodType<PlaceConditions[P]> } = {
+// Each place's Condition schema, typed: the generated one reaches a group's entries through a lazy
+// schema typed any, so a form's schema takes its Condition from here.
+export const conditionSchemas: { [P in ConditionPlace]: z.ZodType<PlaceConditions[P]> } = {
   segment: zSegmentConditionInput,
   rule: zRuleConditionInput,
 }
@@ -447,6 +449,6 @@ export function toCondition<P extends ConditionPlace>(
   draft: ConditionDraft,
   place: P,
 ): PlaceConditions[P] | undefined {
-  const parsed = placeSchemas[place].safeParse(draft)
+  const parsed = conditionSchemas[place].safeParse(draft)
   return parsed.success ? parsed.data : undefined
 }
