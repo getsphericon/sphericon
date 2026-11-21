@@ -2,18 +2,17 @@
 // tests on a Contact, the type of the document the Condition columns hold. Each place a Condition
 // is used has a type of its own over the same document, since each admits its own leaves (ADR
 // 0181): a Segment's (Segment) and a Rule's (Rule). internal/domain/contacts/condition decodes the
-// tree of each place and compiles it to a Contact predicate.
+// tree of each place and compiles it to a Contact predicate. Its vocabulary (the kinds of entry, test
+// and source each place and leaf admits, the operators, the attributes) is generated from the
+// contract.
 package conditiontree
 
 import "encoding/json"
 
-// KindGroup is the kind of a group entry of the tree.
-const KindGroup = "group"
-
 // Group is a group of the tree. Each entries[] item is decoded lazily because it is either a
 // nested Group or a leaf, as its `kind` says.
 type Group struct {
-	Kind       string            `json:"kind"`
+	Kind       Kind              `json:"kind"`
 	Combinator Combinator        `json:"combinator"`
 	Not        bool              `json:"not,omitempty"`
 	Entries    []json.RawMessage `json:"entries"`

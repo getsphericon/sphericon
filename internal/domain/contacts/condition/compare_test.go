@@ -278,16 +278,16 @@ func TestEveryListedTestCompiles(t *testing.T) {
 func listedTests(tests condition.Tests) []leaf {
 	var out []leaf
 	for _, op := range tests.Text {
-		out = append(out, text(op, "x"))
+		out = append(out, text(string(op), "x"))
 	}
 	for _, op := range tests.Number {
-		out = append(out, number(op, 1))
+		out = append(out, number(string(op), 1))
 	}
 	for _, op := range tests.Moment {
-		out = append(out, moment(op, time.Now()))
+		out = append(out, moment(string(op), time.Now()))
 	}
 	for _, op := range tests.Presence {
-		out = append(out, presence(op))
+		out = append(out, presence(string(op)))
 	}
 	if tests.WithinLast {
 		out = append(out, withinLast(7))

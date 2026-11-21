@@ -17,3 +17,16 @@ const (
 	AttributeLocale    Attribute = "locale"
 	AttributeCity      Attribute = "city"
 )
+
+// Attributes is every Attribute an attribute leaf may test, in the contract's order.
+var Attributes = []Attribute{
+	AttributeEmail,
+	AttributePhone,
+	AttributeSubjectId,
+	AttributeFirstName,
+	AttributeLastName,
+	AttributeTimeZone,
+	AttributeCountry,
+	AttributeLocale,
+	AttributeCity,
+}

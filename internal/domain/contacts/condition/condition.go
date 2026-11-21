@@ -5,7 +5,9 @@
 // combinator, a negation and their entries, whose leaves test a Contact attribute, the birthday, a
 // Tag, Telegram and SMS reachability, a Custom field, a count of the Contact's Events or, in a
 // Rule, a property of the triggering Event, each by a test typed by the value it reads (text,
-// presence, number or moment). Everything else here works on that tree.
+// presence, number, moment or the last days). What each place, leaf and test admits, and every
+// operator, is the contract's vocabulary generated into package conditiontree; what an operator
+// means is a switch over its values here. Everything else here works on that tree.
 //
 // A leaf is built from ent's generated predicates wherever one exists: the core
 // attributes (contact.EmailEQ …) and Tags (contact.HasTagsWith). An event count is a correlated
@@ -51,23 +53,30 @@ type textField struct {
 	null, notNull                 predicate.Contact
 }
 
-// textFields whitelists the core text attributes an attribute leaf may test.
-var textFields = map[conditiontree.Attribute]textField{
-	conditiontree.AttributeSubjectId: {contact.SubjectIDEQ, contact.SubjectIDNEQ, contact.SubjectIDContainsFold, contact.SubjectIDHasPrefix, contact.SubjectIDIsNil(), contact.SubjectIDNotNil()},
-	conditiontree.AttributeEmail:     {contact.EmailEQ, contact.EmailNEQ, contact.EmailContainsFold, contact.EmailHasPrefix, contact.EmailIsNil(), contact.EmailNotNil()},
-	conditiontree.AttributePhone:     {contact.PhoneEQ, contact.PhoneNEQ, contact.PhoneContainsFold, contact.PhoneHasPrefix, contact.PhoneIsNil(), contact.PhoneNotNil()},
-	conditiontree.AttributeFirstName: {contact.FirstNameEQ, contact.FirstNameNEQ, contact.FirstNameContainsFold, contact.FirstNameHasPrefix, contact.FirstNameIsNil(), contact.FirstNameNotNil()},
-	conditiontree.AttributeLastName:  {contact.LastNameEQ, contact.LastNameNEQ, contact.LastNameContainsFold, contact.LastNameHasPrefix, contact.LastNameIsNil(), contact.LastNameNotNil()},
-	conditiontree.AttributeTimeZone:  {contact.TimeZoneEQ, contact.TimeZoneNEQ, contact.TimeZoneContainsFold, contact.TimeZoneHasPrefix, contact.TimeZoneIsNil(), contact.TimeZoneNotNil()},
-	conditiontree.AttributeCountry:   {contact.CountryEQ, contact.CountryNEQ, contact.CountryContainsFold, contact.CountryHasPrefix, contact.CountryIsNil(), contact.CountryNotNil()},
-	conditiontree.AttributeLocale:    {contact.LocaleEQ, contact.LocaleNEQ, contact.LocaleContainsFold, contact.LocaleHasPrefix, contact.LocaleIsNil(), contact.LocaleNotNil()},
-	conditiontree.AttributeCity:      {contact.CityEQ, contact.CityNEQ, contact.CityContainsFold, contact.CityHasPrefix, contact.CityIsNil(), contact.CityNotNil()},
-}
-
-// birthdaySides is the predicate of each side of a moment test on the birthday.
-var birthdaySides = map[operator]func(time.Time) predicate.Contact{
-	opBefore: contact.BirthdayLT,
-	opAfter:  contact.BirthdayGTE,
+// textFieldOf is the generated predicates of the core text attribute a, or a refusal of an
+// attribute outside the contract.
+func textFieldOf(a conditiontree.Attribute) (textField, error) {
+	switch a {
+	case conditiontree.AttributeSubjectId:
+		return textField{contact.SubjectIDEQ, contact.SubjectIDNEQ, contact.SubjectIDContainsFold, contact.SubjectIDHasPrefix, contact.SubjectIDIsNil(), contact.SubjectIDNotNil()}, nil
+	case conditiontree.AttributeEmail:
+		return textField{contact.EmailEQ, contact.EmailNEQ, contact.EmailContainsFold, contact.EmailHasPrefix, contact.EmailIsNil(), contact.EmailNotNil()}, nil
+	case conditiontree.AttributePhone:
+		return textField{contact.PhoneEQ, contact.PhoneNEQ, contact.PhoneContainsFold, contact.PhoneHasPrefix, contact.PhoneIsNil(), contact.PhoneNotNil()}, nil
+	case conditiontree.AttributeFirstName:
+		return textField{contact.FirstNameEQ, contact.FirstNameNEQ, contact.FirstNameContainsFold, contact.FirstNameHasPrefix, contact.FirstNameIsNil(), contact.FirstNameNotNil()}, nil
+	case conditiontree.AttributeLastName:
+		return textField{contact.LastNameEQ, contact.LastNameNEQ, contact.LastNameContainsFold, contact.LastNameHasPrefix, contact.LastNameIsNil(), contact.LastNameNotNil()}, nil
+	case conditiontree.AttributeTimeZone:
+		return textField{contact.TimeZoneEQ, contact.TimeZoneNEQ, contact.TimeZoneContainsFold, contact.TimeZoneHasPrefix, contact.TimeZoneIsNil(), contact.TimeZoneNotNil()}, nil
+	case conditiontree.AttributeCountry:
+		return textField{contact.CountryEQ, contact.CountryNEQ, contact.CountryContainsFold, contact.CountryHasPrefix, contact.CountryIsNil(), contact.CountryNotNil()}, nil
+	case conditiontree.AttributeLocale:
+		return textField{contact.LocaleEQ, contact.LocaleNEQ, contact.LocaleContainsFold, contact.LocaleHasPrefix, contact.LocaleIsNil(), contact.LocaleNotNil()}, nil
+	case conditiontree.AttributeCity:
+		return textField{contact.CityEQ, contact.CityNEQ, contact.CityContainsFold, contact.CityHasPrefix, contact.CityIsNil(), contact.CityNotNil()}, nil
+	}
+	return textField{}, fmt.Errorf("unknown attribute %q", a)
 }
 
 // boundError is a leaf's refusal of a bound of the contract (package bounds), whose text is the
@@ -159,7 +168,7 @@ func (c *compiler) node(ctx context.Context, n node) (predicate.Contact, error) 
 	case attributeLeaf:
 		return c.attribute(l)
 	case birthdayLeaf:
-		return c.birthday(l.test), nil
+		return c.birthday(l)
 	case tagLeaf:
 		return tagRule(l), nil
 	case telegramLeaf:
@@ -183,25 +192,28 @@ func (c *compiler) node(ctx context.Context, n node) (predicate.Contact, error) 
 // attribute tests a text attribute of the Contact by a text or presence test, the ones decode
 // reads for it.
 func (c *compiler) attribute(l attributeLeaf) (predicate.Contact, error) {
-	f := textFields[l.name]
 	switch t := l.test.(type) {
 	case textTest:
-		return textOperators[t.op].contact(f, t.value), nil
+		return t.meaning.contact(l.field, t.value), nil
 	case presenceTest:
-		return t.contact(f), nil
+		return t.contact(l.field), nil
 	default:
 		return nil, fmt.Errorf("unsupported test %T for attribute %q", l.test, l.name)
 	}
 }
 
 // birthday places the Contact's date of birth: before or after a moment, or within the last days
-// up to now.
-func (c *compiler) birthday(t momentTest) predicate.Contact {
-	if t.op == opWithin {
-		since := c.since(t.withinDays)
-		return contact.And(contact.BirthdayGTE(since.UTC()), contact.BirthdayLTE(c.now.UTC()))
+// up to now, the tests decode reads for it.
+func (c *compiler) birthday(l birthdayLeaf) (predicate.Contact, error) {
+	switch t := l.test.(type) {
+	case momentTest:
+		return t.side.birthday(t.at.UTC()), nil
+	case withinLastTest:
+		since := c.since(t.days)
+		return contact.And(contact.BirthdayGTE(since.UTC()), contact.BirthdayLTE(c.now.UTC())), nil
+	default:
+		return nil, fmt.Errorf("unsupported test %T for the birthday", l.test)
 	}
-	return birthdaySides[t.op](t.at.UTC())
 }
 
 // since is the start of a window of the last days up to now. A window reaching back past the first
@@ -221,11 +233,16 @@ var (
 	nobody   = predicate.Contact(func(s *sql.Selector) { s.Where(sql.False()) })
 )
 
-// property is a test of one property of the triggering Event, decided here, in memory, and made
-// the constant predicate "everyone" or "no one" for the rest of the tree. A key the Event lacks
-// fails the test.
+// property is a test of one property of its source, decided here, in memory, and made the
+// constant predicate "everyone" or "no one" for the rest of the tree. A key the source lacks fails
+// the test.
 func (c *compiler) property(l propertyLeaf) predicate.Contact {
-	have, present := c.trigger[l.key]
+	// A source that is not the triggering Event has no properties here: its tests fail.
+	var properties map[string]any
+	if l.source == conditiontree.SourceTrigger {
+		properties = c.trigger
+	}
+	have, present := properties[l.key]
 	if present && holds(l.test, have) {
 		return everyone
 	}
@@ -237,12 +254,12 @@ func (c *compiler) property(l propertyLeaf) predicate.Contact {
 func holds(t test, have any) bool {
 	switch t := t.(type) {
 	case textTest:
-		return textOperators[t.op].event(have, t.value)
+		return t.meaning.event(have, t.value)
 	case presenceTest:
 		return t.event(have)
 	case numberTest:
 		n, ok := number(have)
-		return ok && comparisons[t.op].holds(n, t.value)
+		return ok && t.meaning.holds(n, t.value)
 	default:
 		return false
 	}
@@ -308,30 +325,27 @@ func jsonPath(key string, at target, filter string, vars map[string]any) (predic
 	}), nil
 }
 
-// eventCount is one operator of an event leaf: the least times it takes, and the test of the
-// Contact's count, given the correlated subquery that selects it.
+// eventCount is what one operator of an event leaf means: the least times it takes, and the test of
+// the Contact's count, given the correlated subquery that selects it.
 type eventCount struct {
 	least int
 	holds func(count *sql.Selector, times int) *sql.Predicate
 }
 
-// eventOperator is how an event leaf bounds the count of the Contact's Events.
-type eventOperator string
-
-const (
-	atLeast eventOperator = "atLeast"
-	atMost  eventOperator = "atMost"
-)
-
-// eventCounts is each event operator with the bound it takes.
-var eventCounts = map[eventOperator]eventCount{
-	// Without a GROUP BY the count is one row even over no Events, so HAVING decides alone.
-	atLeast: {least: 1, holds: func(count *sql.Selector, times int) *sql.Predicate {
-		return sql.Exists(count.Having(sql.GTE(sql.Count("*"), times)))
-	}},
-	atMost: {least: 0, holds: func(count *sql.Selector, times int) *sql.Predicate {
-		return sql.NotExists(count.Having(sql.GT(sql.Count("*"), times)))
-	}},
+// eventCountOf is what op means, or a refusal of an operator outside the contract. Without a GROUP
+// BY the count is one row even over no Events, so HAVING decides alone.
+func eventCountOf(op conditiontree.EventCountOperator) (eventCount, error) {
+	switch op {
+	case conditiontree.AtLeast:
+		return eventCount{least: 1, holds: func(count *sql.Selector, times int) *sql.Predicate {
+			return sql.Exists(count.Having(sql.GTE(sql.Count("*"), times)))
+		}}, nil
+	case conditiontree.AtMost:
+		return eventCount{least: 0, holds: func(count *sql.Selector, times int) *sql.Predicate {
+			return sql.NotExists(count.Having(sql.GT(sql.Count("*"), times)))
+		}}, nil
+	}
+	return eventCount{}, fmt.Errorf("unsupported operator %q for event leaf", op)
 }
 
 // event is the subject performed `action` at least (or at most) times times, over all time or
@@ -350,7 +364,7 @@ func (c *compiler) event(l eventCountLeaf) predicate.Contact {
 		preds = append(preds, event.OccurredAtGTE(c.since(*l.withinDays)))
 	}
 
-	holds := eventCounts[l.op].holds
+	holds := l.count.holds
 	return predicate.Contact(func(s *sql.Selector) {
 		t := sql.Table(event.Table)
 		count := sql.Dialect(s.Dialect()).Select(sql.Count("*")).From(t)
@@ -402,9 +416,11 @@ func (c *compiler) custom(ctx context.Context, l customFieldLeaf) (predicate.Con
 	}
 	switch test := l.test.(type) {
 	case numberTest:
-		return jsonPath(l.key, asIs, comparisons[test.op].filter, map[string]any{"v": test.value})
+		return jsonPath(l.key, asIs, test.meaning.filter, map[string]any{"v": test.value})
 	case momentTest:
 		return c.customMoment(ctx, l.key, test)
+	case withinLastTest:
+		return c.customWindow(ctx, l.key, test)
 	default:
 		return customJSON(l.key, l.test)
 	}
@@ -414,28 +430,27 @@ func (c *compiler) custom(ctx context.Context, l customFieldLeaf) (predicate.Con
 // (the one table, customFieldTests, which the API lists as each Custom field's conditionTests).
 func (l customFieldLeaf) fits(t customfield.Type) error {
 	tests := customFieldTests[t]
-	var kind string
-	var op operator
-	var takes []operator
+	var kind conditiontree.TestKind
+	var op string
+	var takes bool
 	switch test := l.test.(type) {
 	case textTest:
-		kind, op, takes = testText, test.op, tests.text
+		kind, op, takes = conditiontree.TestText, string(test.op), slices.Contains(tests.Text, test.op)
 	case numberTest:
-		kind, op, takes = testNumber, test.op, tests.number
+		kind, op, takes = conditiontree.TestNumber, string(test.op), slices.Contains(tests.Number, test.op)
 	case momentTest:
-		if test.op == opWithin {
-			if !tests.withinLast {
-				return fmt.Errorf("custom field %q of type %s takes no %s test", l.key, t, testWithinLast)
-			}
-			return nil
+		kind, op, takes = conditiontree.TestMoment, string(test.op), slices.Contains(tests.Moment, test.op)
+	case withinLastTest:
+		if !tests.WithinLast {
+			return fmt.Errorf("custom field %q of type %s takes no %s test", l.key, t, conditiontree.TestWithinLast)
 		}
-		kind, op, takes = testMoment, test.op, tests.moment
+		return nil
 	case presenceTest:
-		kind, op, takes = testPresence, test.operator(), tests.presence
+		kind, op, takes = conditiontree.TestPresence, string(test.operator()), slices.Contains(tests.Presence, test.operator())
 	default:
 		return fmt.Errorf("unsupported test %T for custom field %q", l.test, l.key)
 	}
-	if !slices.Contains(takes, op) {
+	if !takes {
 		return fmt.Errorf("custom field %q of type %s takes no %s test %q", l.key, t, kind, op)
 	}
 	return nil
@@ -459,17 +474,17 @@ func customJSON(key string, t test) (predicate.Contact, error) {
 		}
 	case textTest:
 		switch t.op {
-		case opEQ:
+		case conditiontree.TextEq:
 			cond = func(column string) *sql.Predicate { return sqljson.ValueEQ(column, t.value, path) }
-		case opNEQ:
+		case conditiontree.TextNeq:
 			cond = func(column string) *sql.Predicate { return sqljson.ValueNEQ(column, t.value, path) }
-		case opContains:
+		case conditiontree.TextContains:
 			// Membership of a JSON array (jsonb containment of the encoded value). The value
 			// is read as JSON, not unquoted to text, so a string element matches as a string.
 			cond = func(column string) *sql.Predicate {
 				return sqljson.ValueContains(column, t.value, path, sqljson.Unquote(false))
 			}
-		default:
+		case conditiontree.TextBeginsWith:
 			// beginsWith fits no Custom field type (fits), so it never reaches here.
 		}
 	}
@@ -481,22 +496,28 @@ func customJSON(key string, t test) (predicate.Contact, error) {
 	}), nil
 }
 
-// customMoment places a datetime Custom field's moment: which side of a bound it is on, or within
-// the last days up to now, so a moment still to come is not within.
+// customMoment places a datetime Custom field's moment: which side of a bound it is on.
 func (c *compiler) customMoment(ctx context.Context, key string, t momentTest) (predicate.Contact, error) {
 	loc, err := c.location(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if t.op == opWithin {
-		since := c.since(t.withinDays)
-		return jsonPath(key, asMoment, window, map[string]any{
-			"since": since.UTC().Format(momentLayout), "now": c.now.UTC().Format(momentLayout),
-			"sinceLocal": since.In(loc).Format(localLayout), "nowLocal": c.now.In(loc).Format(localLayout),
-		})
-	}
-	return jsonPath(key, asMoment, sides[t.op], map[string]any{
+	return jsonPath(key, asMoment, t.side.filter, map[string]any{
 		"at": t.at.UTC().Format(momentLayout), "atLocal": t.at.In(loc).Format(localLayout),
+	})
+}
+
+// customWindow places a datetime Custom field's moment within the last days up to now, so a moment
+// still to come is not within.
+func (c *compiler) customWindow(ctx context.Context, key string, t withinLastTest) (predicate.Contact, error) {
+	loc, err := c.location(ctx)
+	if err != nil {
+		return nil, err
+	}
+	since := c.since(t.days)
+	return jsonPath(key, asMoment, window, map[string]any{
+		"since": since.UTC().Format(momentLayout), "now": c.now.UTC().Format(momentLayout),
+		"sinceLocal": since.In(loc).Format(localLayout), "nowLocal": c.now.In(loc).Format(localLayout),
 	})
 }
 

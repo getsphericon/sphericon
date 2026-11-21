@@ -446,6 +446,16 @@ type Converter interface {
 	SuppressionToResource(source *ent.Suppression) siteapi.SiteSuppressionResource
 	// goverter:useEmptyOnNil:slice
 	SuppressionsToResources(source []*ent.Suppression) []siteapi.SiteSuppressionResource
+	// goverter:useEmptyOnNil:slice
+	ConditionTestsToResource(source condition.Tests) siteapi.CustomFieldConditionTests
+	// goverter:enum:transform value
+	TextOperatorToResource(source conditiontree.TextOperator) siteapi.TextOperator
+	// goverter:enum:transform value
+	NumberOperatorToResource(source conditiontree.NumberOperator) siteapi.NumberOperator
+	// goverter:enum:transform value
+	MomentOperatorToResource(source conditiontree.MomentOperator) siteapi.MomentOperator
+	// goverter:enum:transform value
+	PresenceOperatorToResource(source conditiontree.PresenceOperator) siteapi.PresenceOperator
 	// goverter:map Type ConditionTests | customFieldConditionTests
 	CustomFieldToResource(source *ent.CustomField) siteapi.SiteCustomFieldResource
 	// goverter:useEmptyOnNil:slice
@@ -1322,15 +1332,8 @@ func optNilHoldReason(c Converter, v *holdreason.Reason) siteapi.OptNilHoldReaso
 
 // customFieldConditionTests is what a Condition may ask of a Custom field of the type: the
 // Condition's table, listed so a client offers what the server takes.
-func customFieldConditionTests(t customfield.Type) siteapi.CustomFieldConditionTests {
-	tests := condition.CustomFieldTests(t)
-	return siteapi.CustomFieldConditionTests{
-		Text:       lo.Map(tests.Text, func(op string, _ int) siteapi.TextOperator { return siteapi.TextOperator(op) }),
-		Number:     lo.Map(tests.Number, func(op string, _ int) siteapi.NumberOperator { return siteapi.NumberOperator(op) }),
-		Moment:     lo.Map(tests.Moment, func(op string, _ int) siteapi.MomentOperator { return siteapi.MomentOperator(op) }),
-		WithinLast: tests.WithinLast,
-		Presence:   lo.Map(tests.Presence, func(op string, _ int) siteapi.PresenceOperator { return siteapi.PresenceOperator(op) }),
-	}
+func customFieldConditionTests(c Converter, t customfield.Type) siteapi.CustomFieldConditionTests {
+	return c.ConditionTestsToResource(condition.CustomFieldTests(t))
 }
 
 // optAttentionSubject is the object an attention item is about, absent for the Workspace's own.

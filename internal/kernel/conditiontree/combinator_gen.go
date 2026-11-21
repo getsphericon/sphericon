@@ -10,3 +10,9 @@ const (
 	And Combinator = "and"
 	Or  Combinator = "or"
 )
+
+// Combinators is every Combinator, in the contract's order.
+var Combinators = []Combinator{
+	And,
+	Or,
+}

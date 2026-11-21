@@ -227,6 +227,16 @@ type Converter interface {
 	// goverter:map Group Group | optNonEmpty
 	// goverter:useEmptyOnNil:map
 	EmailSchemaTypeToResource(source emaildoc.AgentType) externalapi.EmailSchemaType
+	// goverter:useEmptyOnNil:slice
+	ConditionTestsToResource(source condition.Tests) externalapi.CustomFieldConditionTests
+	// goverter:enum:transform value
+	TextOperatorToResource(source conditiontree.TextOperator) externalapi.TextOperator
+	// goverter:enum:transform value
+	NumberOperatorToResource(source conditiontree.NumberOperator) externalapi.NumberOperator
+	// goverter:enum:transform value
+	MomentOperatorToResource(source conditiontree.MomentOperator) externalapi.MomentOperator
+	// goverter:enum:transform value
+	PresenceOperatorToResource(source conditiontree.PresenceOperator) externalapi.PresenceOperator
 	// goverter:map Type ConditionTests | customFieldConditionTests
 	CustomFieldToResource(source *ent.CustomField) externalapi.CustomFieldResource
 	// goverter:useEmptyOnNil:slice
@@ -933,15 +943,8 @@ func schemaExample(doc json.RawMessage) externalapi.EditorDocument {
 
 // customFieldConditionTests is what a Condition may ask of a Custom field of the type: the
 // Condition's table, listed so a client offers what the server takes.
-func customFieldConditionTests(t customfield.Type) externalapi.CustomFieldConditionTests {
-	tests := condition.CustomFieldTests(t)
-	return externalapi.CustomFieldConditionTests{
-		Text:       lo.Map(tests.Text, func(op string, _ int) externalapi.TextOperator { return externalapi.TextOperator(op) }),
-		Number:     lo.Map(tests.Number, func(op string, _ int) externalapi.NumberOperator { return externalapi.NumberOperator(op) }),
-		Moment:     lo.Map(tests.Moment, func(op string, _ int) externalapi.MomentOperator { return externalapi.MomentOperator(op) }),
-		WithinLast: tests.WithinLast,
-		Presence:   lo.Map(tests.Presence, func(op string, _ int) externalapi.PresenceOperator { return externalapi.PresenceOperator(op) }),
-	}
+func customFieldConditionTests(c Converter, t customfield.Type) externalapi.CustomFieldConditionTests {
+	return c.ConditionTestsToResource(condition.CustomFieldTests(t))
 }
 
 // optNilSendCap is null exactly when no Send cap applies.

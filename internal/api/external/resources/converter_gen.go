@@ -21,6 +21,7 @@ import (
 	unsubscribe "github.com/getsphericon/sphericon/ent/unsubscribe"
 	webhookendpoint "github.com/getsphericon/sphericon/ent/webhookendpoint"
 	external "github.com/getsphericon/sphericon/gen/external"
+	condition "github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	orders "github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	brandkits "github.com/getsphericon/sphericon/internal/domain/content/brandkits"
@@ -41,6 +42,7 @@ import (
 	addresscheck "github.com/getsphericon/sphericon/internal/kernel/addresscheck"
 	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
+	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	emaildoc "github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	emailrender "github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	holdreason "github.com/getsphericon/sphericon/internal/kernel/holdreason"
@@ -534,6 +536,27 @@ func (c *ConverterImpl) CnameRecordToResource(source trackingdomains.Record) ext
 	externalapiCnameRecord.Target = source.Target
 	return externalapiCnameRecord
 }
+func (c *ConverterImpl) ConditionTestsToResource(source condition.Tests) external.CustomFieldConditionTests {
+	var externalapiCustomFieldConditionTests external.CustomFieldConditionTests
+	externalapiCustomFieldConditionTests.Text = make([]external.TextOperator, len(source.Text))
+	for i := 0; i < len(source.Text); i++ {
+		externalapiCustomFieldConditionTests.Text[i] = c.TextOperatorToResource(source.Text[i])
+	}
+	externalapiCustomFieldConditionTests.Number = make([]external.NumberOperator, len(source.Number))
+	for j := 0; j < len(source.Number); j++ {
+		externalapiCustomFieldConditionTests.Number[j] = c.NumberOperatorToResource(source.Number[j])
+	}
+	externalapiCustomFieldConditionTests.Moment = make([]external.MomentOperator, len(source.Moment))
+	for k := 0; k < len(source.Moment); k++ {
+		externalapiCustomFieldConditionTests.Moment[k] = c.MomentOperatorToResource(source.Moment[k])
+	}
+	externalapiCustomFieldConditionTests.WithinLast = source.WithinLast
+	externalapiCustomFieldConditionTests.Presence = make([]external.PresenceOperator, len(source.Presence))
+	for l := 0; l < len(source.Presence); l++ {
+		externalapiCustomFieldConditionTests.Presence[l] = c.PresenceOperatorToResource(source.Presence[l])
+	}
+	return externalapiCustomFieldConditionTests
+}
 func (c *ConverterImpl) ConfirmationProvenanceToResource(source confirmation.Provenance) external.ConfirmationProvenance {
 	var externalapiConfirmationProvenance external.ConfirmationProvenance
 	switch source {
@@ -696,7 +719,7 @@ func (c *ConverterImpl) CustomFieldToResource(source *ent.CustomField) external.
 		externalapiCustomFieldResource.Key = (*source).Key
 		externalapiCustomFieldResource.Name = (*source).Name
 		externalapiCustomFieldResource.Type = c.CustomFieldTypeToResource((*source).Type)
-		externalapiCustomFieldResource.ConditionTests = customFieldConditionTests((*source).Type)
+		externalapiCustomFieldResource.ConditionTests = customFieldConditionTests(c, (*source).Type)
 		externalapiCustomFieldResource.Revision = revision((*source).Revision)
 		externalapiCustomFieldResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiCustomFieldResource.UpdatedAt = timestamp((*source).UpdatedAt)
@@ -1031,6 +1054,34 @@ func (c *ConverterImpl) MessageRevenueToResource(source orders.Revenue) external
 	externalapiMessageRevenue.Amount = source.Credited.Amount
 	return externalapiMessageRevenue
 }
+func (c *ConverterImpl) MomentOperatorToResource(source conditiontree.MomentOperator) external.MomentOperator {
+	var externalapiMomentOperator external.MomentOperator
+	switch source {
+	case conditiontree.MomentAfter:
+		externalapiMomentOperator = external.MomentOperatorAfter
+	case conditiontree.MomentBefore:
+		externalapiMomentOperator = external.MomentOperatorBefore
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiMomentOperator
+}
+func (c *ConverterImpl) NumberOperatorToResource(source conditiontree.NumberOperator) external.NumberOperator {
+	var externalapiNumberOperator external.NumberOperator
+	switch source {
+	case conditiontree.NumberGt:
+		externalapiNumberOperator = external.NumberOperatorGt
+	case conditiontree.NumberGte:
+		externalapiNumberOperator = external.NumberOperatorGte
+	case conditiontree.NumberLt:
+		externalapiNumberOperator = external.NumberOperatorLt
+	case conditiontree.NumberLte:
+		externalapiNumberOperator = external.NumberOperatorLte
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiNumberOperator
+}
 func (c *ConverterImpl) OptOutViaToResource(source unsubscribe.Via) external.OptOutVia {
 	var externalapiOptOutVia external.OptOutVia
 	switch source {
@@ -1088,6 +1139,18 @@ func (c *ConverterImpl) OwnershipRecordToResource(source trackingdomains.Ownersh
 	externalapiDnsRecord.Host = source.Host
 	externalapiDnsRecord.Value = source.Value
 	return externalapiDnsRecord
+}
+func (c *ConverterImpl) PresenceOperatorToResource(source conditiontree.PresenceOperator) external.PresenceOperator {
+	var externalapiPresenceOperator external.PresenceOperator
+	switch source {
+	case conditiontree.PresenceNotSet:
+		externalapiPresenceOperator = external.PresenceOperatorNotSet
+	case conditiontree.PresenceSet:
+		externalapiPresenceOperator = external.PresenceOperatorSet
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiPresenceOperator
 }
 func (c *ConverterImpl) PresetsListPage(source pagination.Page[external.PresetResource]) *external.PresetsListOK {
 	var externalapiPresetsListOK external.PresetsListOK
@@ -1639,6 +1702,22 @@ func (c *ConverterImpl) TemplatesListPage(source pagination.Page[*ent.EmailTempl
 	externalapiTemplatesListOK.TotalItems = count(source.TotalItems)
 	externalapiTemplatesListOK.TotalPages = count(source.TotalPages)
 	return &externalapiTemplatesListOK
+}
+func (c *ConverterImpl) TextOperatorToResource(source conditiontree.TextOperator) external.TextOperator {
+	var externalapiTextOperator external.TextOperator
+	switch source {
+	case conditiontree.TextBeginsWith:
+		externalapiTextOperator = external.TextOperatorBeginsWith
+	case conditiontree.TextContains:
+		externalapiTextOperator = external.TextOperatorContains
+	case conditiontree.TextEq:
+		externalapiTextOperator = external.TextOperatorEq
+	case conditiontree.TextNeq:
+		externalapiTextOperator = external.TextOperatorNeq
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiTextOperator
 }
 func (c *ConverterImpl) TrackingDomainRoleToResource(source trackingdomain.Role) external.TrackingDomainRole {
 	var externalapiTrackingDomainRole external.TrackingDomainRole

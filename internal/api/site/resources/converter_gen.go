@@ -24,6 +24,7 @@ import (
 	unsubscribe "github.com/getsphericon/sphericon/ent/unsubscribe"
 	webhookendpoint "github.com/getsphericon/sphericon/ent/webhookendpoint"
 	site "github.com/getsphericon/sphericon/gen/site"
+	condition "github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	orders "github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	brandkits "github.com/getsphericon/sphericon/internal/domain/content/brandkits"
@@ -50,6 +51,7 @@ import (
 	webhook "github.com/getsphericon/sphericon/internal/infra/webhook"
 	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
+	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	deferralcause "github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	emailrender "github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	holdreason "github.com/getsphericon/sphericon/internal/kernel/holdreason"
@@ -861,6 +863,27 @@ func (c *ConverterImpl) CnameRecordToResource(source trackingdomains.Record) sit
 	siteapiCnameRecord.Target = source.Target
 	return siteapiCnameRecord
 }
+func (c *ConverterImpl) ConditionTestsToResource(source condition.Tests) site.CustomFieldConditionTests {
+	var siteapiCustomFieldConditionTests site.CustomFieldConditionTests
+	siteapiCustomFieldConditionTests.Text = make([]site.TextOperator, len(source.Text))
+	for i := 0; i < len(source.Text); i++ {
+		siteapiCustomFieldConditionTests.Text[i] = c.TextOperatorToResource(source.Text[i])
+	}
+	siteapiCustomFieldConditionTests.Number = make([]site.NumberOperator, len(source.Number))
+	for j := 0; j < len(source.Number); j++ {
+		siteapiCustomFieldConditionTests.Number[j] = c.NumberOperatorToResource(source.Number[j])
+	}
+	siteapiCustomFieldConditionTests.Moment = make([]site.MomentOperator, len(source.Moment))
+	for k := 0; k < len(source.Moment); k++ {
+		siteapiCustomFieldConditionTests.Moment[k] = c.MomentOperatorToResource(source.Moment[k])
+	}
+	siteapiCustomFieldConditionTests.WithinLast = source.WithinLast
+	siteapiCustomFieldConditionTests.Presence = make([]site.PresenceOperator, len(source.Presence))
+	for l := 0; l < len(source.Presence); l++ {
+		siteapiCustomFieldConditionTests.Presence[l] = c.PresenceOperatorToResource(source.Presence[l])
+	}
+	return siteapiCustomFieldConditionTests
+}
 func (c *ConverterImpl) ConfirmationEmailToResource(source workspaces.ConfirmationEmailSettings) site.SiteConfirmationEmailResource {
 	var siteapiSiteConfirmationEmailResource site.SiteConfirmationEmailResource
 	siteapiSiteConfirmationEmailResource.FromEmail = nilEmailAddress(source.FromEmail)
@@ -1028,7 +1051,7 @@ func (c *ConverterImpl) CustomFieldToResource(source *ent.CustomField) site.Site
 		siteapiSiteCustomFieldResource.Key = (*source).Key
 		siteapiSiteCustomFieldResource.Name = (*source).Name
 		siteapiSiteCustomFieldResource.Type = c.CustomFieldTypeToResource((*source).Type)
-		siteapiSiteCustomFieldResource.ConditionTests = customFieldConditionTests((*source).Type)
+		siteapiSiteCustomFieldResource.ConditionTests = customFieldConditionTests(c, (*source).Type)
 		siteapiSiteCustomFieldResource.Revision = revision((*source).Revision)
 		siteapiSiteCustomFieldResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteCustomFieldResource.UpdatedAt = timestamp((*source).UpdatedAt)
@@ -1566,6 +1589,34 @@ func (c *ConverterImpl) MessageRevenueToResource(source orders.Revenue) site.Mes
 	siteapiMessageRevenue.Amount = source.Credited.Amount
 	return siteapiMessageRevenue
 }
+func (c *ConverterImpl) MomentOperatorToResource(source conditiontree.MomentOperator) site.MomentOperator {
+	var siteapiMomentOperator site.MomentOperator
+	switch source {
+	case conditiontree.MomentAfter:
+		siteapiMomentOperator = site.MomentOperatorAfter
+	case conditiontree.MomentBefore:
+		siteapiMomentOperator = site.MomentOperatorBefore
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiMomentOperator
+}
+func (c *ConverterImpl) NumberOperatorToResource(source conditiontree.NumberOperator) site.NumberOperator {
+	var siteapiNumberOperator site.NumberOperator
+	switch source {
+	case conditiontree.NumberGt:
+		siteapiNumberOperator = site.NumberOperatorGt
+	case conditiontree.NumberGte:
+		siteapiNumberOperator = site.NumberOperatorGte
+	case conditiontree.NumberLt:
+		siteapiNumberOperator = site.NumberOperatorLt
+	case conditiontree.NumberLte:
+		siteapiNumberOperator = site.NumberOperatorLte
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiNumberOperator
+}
 func (c *ConverterImpl) OptOutViaToResource(source unsubscribe.Via) site.OptOutVia {
 	var siteapiOptOutVia site.OptOutVia
 	switch source {
@@ -1873,6 +1924,18 @@ func (c *ConverterImpl) PersonalTokensToResources(source []*ent.ApiToken) []site
 		siteapiSitePersonalTokenResourceList[i] = c.PersonalTokenToResource(source[i])
 	}
 	return siteapiSitePersonalTokenResourceList
+}
+func (c *ConverterImpl) PresenceOperatorToResource(source conditiontree.PresenceOperator) site.PresenceOperator {
+	var siteapiPresenceOperator site.PresenceOperator
+	switch source {
+	case conditiontree.PresenceNotSet:
+		siteapiPresenceOperator = site.PresenceOperatorNotSet
+	case conditiontree.PresenceSet:
+		siteapiPresenceOperator = site.PresenceOperatorSet
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiPresenceOperator
 }
 func (c *ConverterImpl) ProviderLimitSourceToResource(source providerlimit.Source) site.ProviderLimitSource {
 	var siteapiProviderLimitSource site.ProviderLimitSource
@@ -2512,6 +2575,22 @@ func (c *ConverterImpl) TestSendResultToResource(source outboundmessages.Result)
 	siteapiSiteTestSendBroadcastResult.From = optEmail(source.From)
 	siteapiSiteTestSendBroadcastResult.Captured = source.Captured
 	return siteapiSiteTestSendBroadcastResult
+}
+func (c *ConverterImpl) TextOperatorToResource(source conditiontree.TextOperator) site.TextOperator {
+	var siteapiTextOperator site.TextOperator
+	switch source {
+	case conditiontree.TextBeginsWith:
+		siteapiTextOperator = site.TextOperatorBeginsWith
+	case conditiontree.TextContains:
+		siteapiTextOperator = site.TextOperatorContains
+	case conditiontree.TextEq:
+		siteapiTextOperator = site.TextOperatorEq
+	case conditiontree.TextNeq:
+		siteapiTextOperator = site.TextOperatorNeq
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiTextOperator
 }
 func (c *ConverterImpl) TokenToResource(source *ent.ApiToken) site.SiteApiTokenResource {
 	var siteapiSiteApiTokenResource site.SiteApiTokenResource
