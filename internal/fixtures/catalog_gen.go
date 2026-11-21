@@ -709,10 +709,20 @@ const (
 	BrandKitGlobexID = 900
 	// BrandKitInitechID is from fixtures/brand_kits.
 	BrandKitInitechID = 300
+	// BrightpathCollectKey is from fixtures/workspaces.
+	BrightpathCollectKey = "omck_test_brightpath_collect_key"
 	// BrightpathContactSofiaEmail is from fixtures/contacts.
 	BrightpathContactSofiaEmail = "sofia.marino@northwind.example"
 	// BrightpathContactSofiaID is from fixtures/contacts.
 	BrightpathContactSofiaID = 20001
+	// BrightpathDemoSiteTokenID is from fixtures/api_tokens.
+	BrightpathDemoSiteTokenID = 20005
+	// BrightpathDemoSiteTokenName is from fixtures/api_tokens.
+	BrightpathDemoSiteTokenName = "Demo site"
+	// BrightpathDemoSiteTokenPrefix is from fixtures/api_tokens.
+	BrightpathDemoSiteTokenPrefix = "demosite0001"
+	// BrightpathDemoSiteTokenSecret is from fixtures/api_tokens.
+	BrightpathDemoSiteTokenSecret = "demo-token-secret-0000000000000000000000"
 	// BrightpathDevMcpTokenID is from fixtures/api_tokens.
 	BrightpathDevMcpTokenID = 20006
 	// BrightpathDevMcpTokenName is from fixtures/api_tokens.
@@ -721,6 +731,12 @@ const (
 	BrightpathDevMcpTokenPrefix = "devmcp000001"
 	// BrightpathDevMcpTokenSecret is from fixtures/api_tokens.
 	BrightpathDevMcpTokenSecret = "dev-mcp-token-secret-0000000000000000000"
+	// BrightpathID is from fixtures/workspaces.
+	BrightpathID = 20
+	// BrightpathName is from fixtures/workspaces.
+	BrightpathName = "Brightpath"
+	// BrightpathPublicID is from fixtures/workspaces.
+	BrightpathPublicID = "BrghtW20"
 	// BroadcastArchivedID is from fixtures/broadcasts.
 	BroadcastArchivedID = 107
 	// BroadcastArchivedName is from fixtures/broadcasts.
