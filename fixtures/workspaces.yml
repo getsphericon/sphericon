@@ -171,7 +171,7 @@
   updated_at: '2026-01-01 00:00:00'
 
 # --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
-- id: 20
+- id: 20 # fixture: Brightpath
   revision: 1
   name: 'Brightpath'
   public_id: 'BrghtW20'

@@ -95,7 +95,7 @@
   created_at: '{{hoursAgo 1440}}'
   updated_at: '{{hoursAgo 48}}'
 # The token the dev demo storefront's server uses: it writes events and Contacts, nothing else.
-- id: 20005
+- id: 20005 # fixture: BrightpathDemoSiteToken
   name: 'Demo site'
   prefix: 'demosite0001'
   secret_hash: '{{secretHash "demo-token-secret-0000000000000000000000"}}'
