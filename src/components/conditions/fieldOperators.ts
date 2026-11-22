@@ -3,28 +3,35 @@ import type { Field, InputType, Operator } from 'react-querybuilder'
 
 import { CustomFieldType, HasOperator } from '../../generated/site/types.gen.ts'
 import type { SiteCustomFieldResource } from '../../generated/site/types.gen.ts'
-import { leafTests, namedOperator, operatorName, testOperators, unnamed } from './condition.ts'
+import { leafTests, namedOperator, operatorName, testOperators } from './condition.ts'
 import type { NamedOperator, TestKind } from './condition.ts'
 
 // The builder's operators, each the operator of a test the contract names (condition.ts reads them
 // once from the generated enums and test unions), labelled from the en catalog.
 
-// label is how the builder names the operator of a test.
+// label is how the builder names the operator of a test. The switch narrows the operator by its
+// test's kind, one case per kind, and returns once after it: tsc refuses the read of the label
+// while a kind is missing.
 function label(t: TFunction, named: NamedOperator): string {
+  let text: string
   switch (named.kind) {
     case 'text':
-      return t(($) => $.conditions.textOperators[named.operator])
+      text = t(($) => $.conditions.textOperators[named.operator])
+      break
     case 'number':
-      return t(($) => $.conditions.numberOperators[named.operator])
+      text = t(($) => $.conditions.numberOperators[named.operator])
+      break
     case 'moment':
-      return t(($) => $.conditions.momentOperators[named.operator])
+      text = t(($) => $.conditions.momentOperators[named.operator])
+      break
     case 'withinLast':
-      return t(($) => $.conditions.withinLast)
+      text = t(($) => $.conditions.withinLast)
+      break
     case 'presence':
-      return t(($) => $.conditions.presenceOperators[named.operator])
-    default:
-      return unnamed(named)
+      text = t(($) => $.conditions.presenceOperators[named.operator])
+      break
   }
+  return text
 }
 
 // operator is the builder's operator of a test's. A presence test compares with nothing, so the
@@ -77,26 +84,27 @@ export function isPresence(name: string): boolean {
   return namedOperator(name)?.kind === 'presence'
 }
 
+// The operators of each typed test that a Custom field's type admits, as the server lists them
+// (conditionTests, the backend's one table of what fits).
+const fieldTestOperators: Record<
+  TestKind,
+  (t: TFunction, tests: SiteCustomFieldResource['conditionTests']) => Operator[]
+> = {
+  text: (t, tests) =>
+    tests.text.map((named) => operator(t, { kind: 'text', operator: named }, true)),
+  number: (t, tests) =>
+    tests.number.map((named) => operator(t, { kind: 'number', operator: named }, true)),
+  moment: (t, tests) =>
+    tests.moment.map((named) => operator(t, { kind: 'moment', operator: named }, true)),
+  withinLast: (t, tests) => (tests.withinLast ? [operator(t, { kind: 'withinLast' }, true)] : []),
+  presence: (t, tests) =>
+    tests.presence.map((named) => operator(t, { kind: 'presence', operator: named }, true)),
+}
+
 // operatorsOf is what the builder offers on a Custom field: per typed test, the operators the
-// server lists for the field's type (conditionTests, the backend's one table of what fits).
+// server lists for the field's type.
 export function operatorsOf(t: TFunction, field: SiteCustomFieldResource): Operator[] {
-  const tests = field.conditionTests
-  return leafTests.customField.flatMap((kind): Operator[] => {
-    switch (kind) {
-      case 'text':
-        return tests.text.map((named) => operator(t, { kind, operator: named }, true))
-      case 'number':
-        return tests.number.map((named) => operator(t, { kind, operator: named }, true))
-      case 'moment':
-        return tests.moment.map((named) => operator(t, { kind, operator: named }, true))
-      case 'withinLast':
-        return tests.withinLast ? [operator(t, { kind }, true)] : []
-      case 'presence':
-        return tests.presence.map((named) => operator(t, { kind, operator: named }, true))
-      default:
-        return unnamed(kind)
-    }
-  })
+  return leafTests.customField.flatMap((kind) => fieldTestOperators[kind](t, field.conditionTests))
 }
 
 // The value input a Custom field takes for its text test: a number field's is a number.
@@ -104,21 +112,24 @@ export function inputTypeOfField(field: SiteCustomFieldResource): InputType {
   return field.type === CustomFieldType.NUMBER ? 'number' : 'text'
 }
 
-// inputTypeOf is the value input an operator on the field takes: a number for a comparison and for
-// the days of a window, a day for before and after, and the field's own for a text test.
+type InputOf = (field: Pick<Field, 'inputType'>) => InputType | null
+
+// The field's own value input: a number field's is a number.
+const ownInput: InputOf = (field) => field.inputType ?? null
+
+// The value input each test's operators take: a number for a comparison and for the days of a
+// window, a day for before and after, and the field's own for a text test.
+const testInputs: Record<TestKind, InputOf> = {
+  text: ownInput,
+  number: () => 'number',
+  moment: () => 'date',
+  withinLast: () => 'number',
+  presence: ownInput,
+}
+
+// inputTypeOf is the value input an operator on the field takes; one that names no test (an event
+// count's, a Tag's) takes the field's own.
 export function inputTypeOf(name: string, field: Pick<Field, 'inputType'>): InputType | null {
   const kind = namedOperator(name)?.kind
-  switch (kind) {
-    case 'number':
-    case 'withinLast':
-      return 'number'
-    case 'moment':
-      return 'date'
-    case 'text':
-    case 'presence':
-    case undefined:
-      return field.inputType ?? null
-    default:
-      return unnamed(kind)
-  }
+  return kind === undefined ? ownInput(field) : testInputs[kind](field)
 }

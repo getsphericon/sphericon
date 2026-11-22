@@ -244,53 +244,64 @@ function dayOfSide(test: MomentTestInput, timeZone?: string): string {
   return dayOf(lastOfDay, timeZone)
 }
 
-// A leaf or test of a kind the switch over the kinds does not name: tsc refuses the call once a
-// kind is added to the contract and not here.
-export function unnamed(kind: never): never {
-  throw new Error(`a Condition entry of no known kind: ${JSON.stringify(kind)}`)
-}
+// The switches below narrow a union of the contract by its kind, one case per member, and return
+// once after the switch: tsc refuses the read of the result while a case is missing, so a kind
+// added to the contract and not here fails to compile, and no arm is left that nothing reaches.
 
 // The builder rule's operator and value of a test.
 function testRule(test: AnyTest, timeZone?: string): Pick<RuleType, 'operator' | 'value'> {
+  let rule: Pick<RuleType, 'operator' | 'value'>
   switch (test.kind) {
     case 'text':
-      return { operator: test.operator, value: test.value }
+      rule = { operator: test.operator, value: test.value }
+      break
     case 'number':
-      return { operator: test.operator, value: test.value }
+      rule = { operator: test.operator, value: test.value }
+      break
     case 'moment':
-      return { operator: test.operator, value: dayOfSide(test, timeZone) }
+      rule = { operator: test.operator, value: dayOfSide(test, timeZone) }
+      break
     case 'withinLast':
-      return { operator: withinLastOperator, value: test.days }
+      rule = { operator: withinLastOperator, value: test.days }
+      break
     case 'presence':
-      return { operator: test.operator, value: '' }
-    default:
-      return unnamed(test)
+      rule = { operator: test.operator, value: '' }
+      break
   }
+  return rule
 }
 
 function toRule(node: Exclude<RuleConditionNode, { kind: 'group' }>, timeZone?: string): RuleType {
+  let rule: RuleType
   switch (node.kind) {
     case 'attribute':
-      return { field: node.attribute, ...testRule(node.test, timeZone) }
+      rule = { field: node.attribute, ...testRule(node.test, timeZone) }
+      break
     case 'birthday':
-      return { field: subjectFields.birthday, ...testRule(node.test, timeZone) }
+      rule = { field: subjectFields.birthday, ...testRule(node.test, timeZone) }
+      break
     case 'tag':
-      return { field: subjectFields.tag, operator: node.operator, value: node.name }
+      rule = { field: subjectFields.tag, operator: node.operator, value: node.name }
+      break
     case 'telegram':
-      return { field: subjectFields.telegram, operator: node.operator, value: '' }
+      rule = { field: subjectFields.telegram, operator: node.operator, value: '' }
+      break
     case 'sms':
-      return { field: subjectFields.sms, operator: node.operator, value: '' }
+      rule = { field: subjectFields.sms, operator: node.operator, value: '' }
+      break
     case 'customField':
-      return { field: customFieldId(node.key), ...testRule(node.test, timeZone) }
+      rule = { field: customFieldId(node.key), ...testRule(node.test, timeZone) }
+      break
     case 'event':
-      return toEventRule(node)
+      rule = toEventRule(node)
+      break
     case 'property': {
       const { operator, value } = testRule(node.test, timeZone)
-      return { field: subjectFields.property, operator, value: propertyValueOf(node.key, value) }
+      rule = { field: subjectFields.property, operator, value: propertyValueOf(node.key, value) }
+      break
     }
-    default:
-      return unnamed(node)
   }
+  return rule
 }
 
 // react-querybuilder edits a plain {combinator, rules} tree of field, operator and value; the API's
@@ -363,30 +374,35 @@ function toTest(operator: string, value: unknown, timeZone?: string): TestDraft 
   if (named === undefined) {
     return undefined
   }
+  let test: TestDraft
   switch (named.kind) {
     case 'text':
-      return { kind: 'text', operator: named.operator, value: textOf(value) }
+      test = { kind: 'text', operator: named.operator, value: textOf(value) }
+      break
     case 'number': {
       const number = numberOf(value)
-      return {
+      test = {
         kind: 'number',
         operator: named.operator,
         ...(number === undefined ? {} : { value: number }),
       }
+      break
     }
     case 'moment': {
       const at = momentOfSide(named.operator, value, timeZone)
-      return { kind: 'moment', operator: named.operator, ...(at === undefined ? {} : { at }) }
+      test = { kind: 'moment', operator: named.operator, ...(at === undefined ? {} : { at }) }
+      break
     }
     case 'withinLast': {
       const days = numberOf(value)
-      return { kind: 'withinLast', ...(days === undefined ? {} : { days }) }
+      test = { kind: 'withinLast', ...(days === undefined ? {} : { days }) }
+      break
     }
     case 'presence':
-      return { kind: 'presence', operator: named.operator }
-    default:
-      return unnamed(named)
+      test = { kind: 'presence', operator: named.operator }
+      break
   }
+  return test
 }
 
 // takes reads the test a builder operator names as a test the leaf takes, or undefined.
@@ -412,22 +428,11 @@ function toEventLeaf(action: string, rule: RuleType): NodeDraft[] {
   return [{ kind: 'event', action, ...bound, ...span }]
 }
 
-type HaveKind = 'tag' | 'telegram' | 'sms'
-
-function toHaveLeaf(kind: HaveKind, rule: RuleType): NodeDraft[] {
+// toHaveLeaf reads a builder rule as a leaf the Contact has or not, or as nothing when its
+// operator is neither.
+function toHaveLeaf(rule: RuleType, leaf: (operator: HasOperator) => NodeDraft): NodeDraft[] {
   const operator = hasOperatorByName.get(rule.operator)
-  if (operator === undefined) {
-    return []
-  }
-  switch (kind) {
-    case 'tag':
-      return [{ kind, name: textOf(rule.value), operator }]
-    case 'telegram':
-    case 'sms':
-      return [{ kind, operator }]
-    default:
-      return unnamed(kind)
-  }
+  return operator === undefined ? [] : [leaf(operator)]
 }
 
 function toPropertyLeaf(rule: RuleType, timeZone?: string): NodeDraft[] {
@@ -440,6 +445,33 @@ function toPropertyLeaf(rule: RuleType, timeZone?: string): NodeDraft[] {
 }
 
 type LeafKind = Exclude<NodeDraft['kind'], 'group'>
+
+// How a builder rule reads as a leaf of each kind, or as nothing when its operator names no test
+// the leaf takes. tsc checks that every kind of leaf is here.
+const leaves: Record<LeafKind, (rule: RuleType, timeZone?: string) => NodeDraft[]> = {
+  event: (rule) => toEventLeaf(rule.field.slice(eventFieldPrefix.length), rule),
+  tag: (rule) =>
+    toHaveLeaf(rule, (operator) => ({ kind: 'tag', name: textOf(rule.value), operator })),
+  telegram: (rule) => toHaveLeaf(rule, (operator) => ({ kind: 'telegram', operator })),
+  sms: (rule) => toHaveLeaf(rule, (operator) => ({ kind: 'sms', operator })),
+  property: toPropertyLeaf,
+  customField: (rule, timeZone) => {
+    const test = takes(leafTests.customField, toTest(rule.operator, rule.value, timeZone))
+    const key = rule.field.slice(customFieldIdPrefix.length)
+    return test === undefined ? [] : [{ kind: 'customField', key, test }]
+  },
+  birthday: (rule, timeZone) => {
+    const test = takes(leafTests.birthday, toTest(rule.operator, rule.value, timeZone))
+    return test === undefined ? [] : [{ kind: 'birthday', test }]
+  },
+  attribute: (rule, timeZone) => {
+    const attribute = attributeByName.get(rule.field)
+    const test = takes(leafTests.attribute, toTest(rule.operator, rule.value, timeZone))
+    return attribute === undefined || test === undefined
+      ? []
+      : [{ kind: 'attribute', attribute, test }]
+  },
+}
 
 const subjectKinds = new Map<string, LeafKind>(
   Object.values(subjectFields).map((field) => [field, field]),
@@ -459,37 +491,8 @@ function leafKindOf(field: string): LeafKind | undefined {
 // toLeaf reads a builder rule as the leaf its field and operator name, or as nothing when they
 // name none.
 function toLeaf(rule: RuleType, timeZone?: string): NodeDraft[] {
-  const { field } = rule
-  const kind = leafKindOf(field)
-  if (kind === undefined) {
-    return []
-  }
-  switch (kind) {
-    case 'event':
-      return toEventLeaf(field.slice(eventFieldPrefix.length), rule)
-    case 'tag':
-    case 'telegram':
-    case 'sms':
-      return toHaveLeaf(kind, rule)
-    case 'property':
-      return toPropertyLeaf(rule, timeZone)
-    case 'customField': {
-      const test = takes(leafTests.customField, toTest(rule.operator, rule.value, timeZone))
-      const key = field.slice(customFieldIdPrefix.length)
-      return test === undefined ? [] : [{ kind, key, test }]
-    }
-    case 'birthday': {
-      const test = takes(leafTests.birthday, toTest(rule.operator, rule.value, timeZone))
-      return test === undefined ? [] : [{ kind, test }]
-    }
-    case 'attribute': {
-      const attribute = attributeByName.get(field)
-      const test = takes(leafTests.attribute, toTest(rule.operator, rule.value, timeZone))
-      return attribute === undefined || test === undefined ? [] : [{ kind, attribute, test }]
-    }
-    default:
-      return unnamed(kind)
-  }
+  const kind = leafKindOf(rule.field)
+  return kind === undefined ? [] : leaves[kind](rule, timeZone)
 }
 
 export function toDraft(query: RuleGroupType, timeZone?: string): ConditionDraft {

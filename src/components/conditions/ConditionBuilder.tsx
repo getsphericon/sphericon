@@ -28,7 +28,6 @@ import {
   toCondition,
   toDraft,
   toQuery,
-  unnamed,
 } from './condition.ts'
 import type { ConditionDraft, ConditionPlace } from './condition.ts'
 import { ConditionValueEditor } from './ConditionValueEditor.tsx'
@@ -93,22 +92,17 @@ function contactFields(t: TFunction): Field[] {
   ]
 }
 
-// A Rule's Condition also tests a property of the Event that fired it, its key typed beside it.
-function placeFields(t: TFunction, place: ConditionPlace): Field[] {
-  switch (place) {
-    case 'segment':
-      return []
-    case 'rule':
-      return [
-        {
-          name: subjectFields.property,
-          label: t(($) => $.conditions.fields.property),
-          operators: propertyOperators(t),
-        },
-      ]
-    default:
-      return unnamed(place)
-  }
+// The fields only one place offers: a Rule's Condition also tests a property of the Event that
+// fired it, its key typed beside it.
+const placeFields: Record<ConditionPlace, (t: TFunction) => Field[]> = {
+  segment: () => [],
+  rule: (t) => [
+    {
+      name: subjectFields.property,
+      label: t(($) => $.conditions.fields.property),
+      operators: propertyOperators(t),
+    },
+  ],
 }
 
 interface ConditionBuilderProps {
@@ -166,7 +160,7 @@ export function ConditionBuilder({
       operators: eventOperators(t),
       defaultOperator: eventPresets.performed,
     }))
-    return [...contactFields(t), ...customFields, ...eventFields, ...placeFields(t, place)]
+    return [...contactFields(t), ...customFields, ...eventFields, ...placeFields[place](t)]
   }, [actionsQuery.data, customFieldsQuery.data, labelOf, t, place])
 
   return (
