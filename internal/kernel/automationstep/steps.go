@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"maps"
 	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 
@@ -84,6 +85,17 @@ func New(p Payload) Step { return Step{Payload: p} }
 // HTTP and End.
 type Payload interface {
 	Kind() Kind
+	// Stored is the payload as a version stores it: tag names, a Telegram step's image and
+	// unsubscribe button trimmed, an SMS step's link tracking stored only when it is off, an email
+	// step's editor version only with its document, and an HTTP step's ClearSecret dropped.
+	Stored() Payload
+}
+
+// Sending is a send Step, Email, Telegram or SMS: what the three share.
+type Sending interface {
+	Payload
+	// Integration is the Integration it sends through, nil for its Channel's default (ADR 0081).
+	Integration() *int64
 }
 
 // Kind is the Step's kind; "" for a Step with no payload.
@@ -97,16 +109,10 @@ func (s Step) Kind() Kind {
 // Integration is the Integration a send step sends through, nil for its Channel's default and for
 // a Step that sends nothing.
 func (s Step) Integration() *int64 {
-	switch p := s.Payload.(type) {
-	case Email:
-		return p.IntegrationID
-	case Telegram:
-		return p.IntegrationID
-	case SMS:
-		return p.IntegrationID
-	default:
-		return nil
+	if p, ok := s.Payload.(Sending); ok {
+		return p.Integration()
 	}
+	return nil
 }
 
 // Email sends an email. Body is HTML. Doc is the editor's JSON document the Body was built from,
@@ -189,6 +195,37 @@ type HTTP struct {
 // End finishes its path and ends the Enrollment as completed at once (ADR 0124): a path stops early
 // by design, which is no exit. It holds nothing but its id, and it is the last Step of its path.
 type End struct{}
+
+func (p Email) Integration() *int64    { return p.IntegrationID }
+func (p Telegram) Integration() *int64 { return p.IntegrationID }
+func (p SMS) Integration() *int64      { return p.IntegrationID }
+
+func (p Email) Stored() Payload {
+	if len(p.Doc) == 0 {
+		p.Doc, p.EditorVersion = nil, ""
+	}
+	return p
+}
+
+func (p Telegram) Stored() Payload {
+	p.ImageURL, p.UnsubscribeButton = strings.TrimSpace(p.ImageURL), strings.TrimSpace(p.UnsubscribeButton)
+	return p
+}
+
+func (p SMS) Stored() Payload {
+	if p.TracksLinks() {
+		p.LinkTracking = nil // on is the default, stored as nothing
+	}
+	return p
+}
+
+func (p Wait) Stored() Payload      { return p }
+func (p ApplyTag) Stored() Payload  { return ApplyTag{Tag: strings.TrimSpace(p.Tag)} }
+func (p RemoveTag) Stored() Payload { return RemoveTag{Tag: strings.TrimSpace(p.Tag)} }
+func (p HTTP) Stored() Payload {
+	return HTTP{URL: p.URL, Headers: p.Headers, Body: p.Body, Secret: p.Secret}
+}
+func (p End) Stored() Payload { return p }
 
 func (Email) Kind() Kind     { return KindEmail }
 func (Telegram) Kind() Kind  { return KindTelegram }

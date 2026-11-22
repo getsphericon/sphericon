@@ -89,40 +89,12 @@ var (
 	errEventWithoutTime = errors.New("automations: the Event has no occurred_at")
 )
 
-// StoredSteps are the steps as a version stores them: tag names, a Telegram step's image and
-// unsubscribe button trimmed, an SMS step's link tracking stored only when it is off, an email
-// step's editor version only with its document, and an HTTP step's ClearSecret dropped.
+// StoredSteps are the steps as a version stores them, each payload in its stored form
+// (automationstep.Payload.Stored).
 func StoredSteps(p automationstep.Path) automationstep.Path {
 	return automationstep.Rewrite(p, func(_ int, st *automationstep.Step) automationstep.Step {
-		return automationstep.Step{ID: st.ID, Payload: storedPayload(st.Payload)}
+		return automationstep.Step{ID: st.ID, Payload: st.Payload.Stored()}
 	})
-}
-
-// storedPayload is what a step does as a version stores it.
-func storedPayload(payload automationstep.Payload) automationstep.Payload {
-	switch p := payload.(type) {
-	case automationstep.ApplyTag:
-		return automationstep.ApplyTag{Tag: strings.TrimSpace(p.Tag)}
-	case automationstep.RemoveTag:
-		return automationstep.RemoveTag{Tag: strings.TrimSpace(p.Tag)}
-	case automationstep.HTTP:
-		return automationstep.HTTP{URL: p.URL, Headers: p.Headers, Body: p.Body, Secret: p.Secret}
-	case automationstep.Telegram:
-		p.ImageURL, p.UnsubscribeButton = strings.TrimSpace(p.ImageURL), strings.TrimSpace(p.UnsubscribeButton)
-		return p
-	case automationstep.SMS:
-		if p.TracksLinks() {
-			p.LinkTracking = nil // on is the default, stored as nothing
-		}
-		return p
-	case automationstep.Email:
-		if len(p.Doc) == 0 {
-			p.Doc, p.EditorVersion = nil, ""
-		}
-		return p
-	default:
-		return payload
-	}
 }
 
 // refuse is ErrInvalidStep naming the Step by its id and kind (ADR 0122), and why.

@@ -53,15 +53,8 @@ func namesTag(v *ent.AutomationVersion, name string) bool {
 		return false
 	}
 	for _, st := range automationstep.All(v.Steps) {
-		switch p := st.Payload.(type) {
-		case automationstep.ApplyTag:
-			if tagname.Same(p.Tag, name) {
-				return true
-			}
-		case automationstep.RemoveTag:
-			if tagname.Same(p.Tag, name) {
-				return true
-			}
+		if p, ok := st.Payload.(automationstep.Tagging); ok && tagname.Same(p.TagName(), name) {
+			return true
 		}
 	}
 	return false
