@@ -23,7 +23,7 @@ import type {
 import { zUpdateRuleInput } from '../../generated/site/zod.gen.ts'
 import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/edit.tsx'
 import { Route as rulesCreateRoute } from '../../routes/workspaces/$workspaceId/rules/new.tsx'
-import { page, stepId, testId, TIMESTAMPS } from '../../test/payloads.ts'
+import { EMPTY_CONDITION, page, stepId, testId, TIMESTAMPS } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { requestGate } from '../../test/requestGate.ts'
 import { routeMount } from '../../test/routeMount.ts'
@@ -63,9 +63,15 @@ const STORED: SiteRuleResource = {
 const EDITED: SiteRuleResource = {
   ...STORED,
   status: 'active',
-  live: { number: 1, triggerEvents: ['signed_up'], actions: [{ type: 'apply_tag', tag: 'live' }] },
+  live: {
+    number: 1,
+    condition: EMPTY_CONDITION,
+    triggerEvents: ['signed_up'],
+    actions: [{ type: 'apply_tag', tag: 'live' }],
+  },
   draft: {
     number: 2,
+    condition: EMPTY_CONDITION,
     triggerEvents: ['signed_up'],
     actions: [{ type: 'apply_tag', tag: 'drafted' }],
   },
@@ -447,6 +453,7 @@ function gatedRuleServer(initial: SiteRuleResource) {
         name: name ?? server.name,
         draft: {
           number: server.draft?.number ?? (server.live?.number ?? 0) + 1,
+          condition: definition.condition ?? EMPTY_CONDITION,
           triggerEvents: definition.triggerEvents ?? [],
           actions: definition.actions ?? [],
         },

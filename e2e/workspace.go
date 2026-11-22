@@ -189,7 +189,7 @@ func (w *Workspace) AddOwner() []int64 {
 	require.NoError(w.t, err)
 	// An owner change takes its Workspace feed position inside a transaction.
 	err = w.env.bus.WithinScopedTx(ctx, w.scoped, func(ts *ent.Scoped, _ events.Publisher) error {
-		_, cerr := ts.Membership().Create().SetUserID(user.ID).SetRole(membership.RoleOwner).Save(ctx)
+		_, cerr := ts.Membership().Create().SetUserID(user.ID).SetRole(membership.RoleOwner).SetSource(membership.SourceCreator).Save(ctx)
 		return cerr
 	})
 	require.NoError(w.t, err)

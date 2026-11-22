@@ -136,7 +136,7 @@ const emailEvent = (
   properties: Record<string, unknown>,
 ): EmailEvent => ({ ...event(id, action, properties), emailSubject: 'Welcome to Hexlet' })
 
-// A message that kept no subject: sent before it was kept, or erased with its Contact.
+// A message that kept no subject: erased with its Contact.
 const subjectless = (
   id: string,
   action: string,

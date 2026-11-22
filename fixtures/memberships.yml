@@ -1,6 +1,7 @@
 # Anchor membership — user 1 (John) owns workspace 1 (Acme). DO NOT change:
 # referenced across the site API test suite as the authenticated owner.
 - id: 1 # fixture: AcmeOwnerMembership
+  source: creator
   user_id: 1
   workspace_id: 1
   role: owner
@@ -8,6 +9,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Globex (workspace 2) is a second tenant for isolation tests; Jane owns it.
 - id: 2 # fixture: GlobexOwnerMembership
+  source: creator
   user_id: 2
   workspace_id: 2
   role: owner
@@ -15,6 +17,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Mary holds the member role in Acme (role tests).
 - id: 3 # fixture: AcmeMemberMembership
+  source: invitation
   user_id: 3
   workspace_id: 1
   role: member
@@ -23,6 +26,7 @@
 # Mary also belongs to Globex: a User in several Workspaces (login and password-change
 # audit duplicates into each of them and into no other).
 - id: 4 # fixture: GlobexMaryMembership
+  source: invitation
   user_id: 3
   workspace_id: 2
   role: member
@@ -30,24 +34,28 @@
   updated_at: '2026-01-01 00:00:00'
 # Initech's roster (users 5-8): two owners, an admin and a member, for the Role invariant tests.
 - id: 5 # fixture: InitechOwnerMembership
+  source: creator
   user_id: 5
   workspace_id: 3
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 6 # fixture: InitechCoOwnerMembership
+  source: creator
   user_id: 6
   workspace_id: 3
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7 # fixture: InitechAdminMembership
+  source: invitation
   user_id: 7
   workspace_id: 3
   role: admin
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 8 # fixture: InitechMemberMembership
+  source: invitation
   user_id: 8
   workspace_id: 3
   role: member
@@ -55,6 +63,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Sam (with a Second factor) is a member of Globex.
 - id: 9 # fixture: GlobexSamMembership
+  source: invitation
   user_id: 9
   workspace_id: 2
   role: member
@@ -63,6 +72,7 @@
 # Umbrella (workspace 4) has a Two-factor requirement since 2026-03-01.
 # Rita's Membership predates it: her grace ends 7 days after the requirement's start.
 - id: 10 # fixture: UmbrellaRitaMembership
+  source: creator
   user_id: 10
   workspace_id: 4
   role: owner
@@ -70,6 +80,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Nina joined after the requirement started: her grace ends 7 days after joining.
 - id: 11 # fixture: UmbrellaNinaMembership
+  source: invitation
   user_id: 11
   workspace_id: 4
   role: member
@@ -77,6 +88,7 @@
   updated_at: '2026-03-05 00:00:00'
 # Sam's one Second factor satisfies Umbrella too.
 - id: 12 # fixture: UmbrellaSamMembership
+  source: invitation
   user_id: 9
   workspace_id: 4
   role: admin
@@ -84,6 +96,7 @@
   updated_at: '2026-01-01 00:00:00'
 # Rita in a Workspace without a requirement: it stays reachable while Umbrella is blocked.
 - id: 13 # fixture: InitechRitaMembership
+  source: invitation
   user_id: 10
   workspace_id: 3
   role: member
@@ -91,24 +104,28 @@
   updated_at: '2026-01-01 00:00:00'
 # The abuse detector's Workspaces (ADR 0026): Vandelay has two owners, Kramerica one.
 - id: 14 # fixture: VandelayArtMembership
+  source: creator
   user_id: 12
   workspace_id: 7
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 15 # fixture: VandelayCosmoMembership
+  source: creator
   user_id: 13
   workspace_id: 7
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 16 # fixture: KramericaNewmanMembership
+  source: creator
   user_id: 14
   workspace_id: 8
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 17 # fixture: HooliSallyMembership
+  source: creator
   user_id: 18
   workspace_id: 5
   role: owner
@@ -116,30 +133,35 @@
   updated_at: '2026-01-01 00:00:00'
 # Alice holds the admin role in Acme, so one Workspace has all three roles.
 - id: 18 # fixture: AcmeAdminMembership
+  source: invitation
   user_id: 19
   workspace_id: 1
   role: admin
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 19 # fixture: PiedPiperDoraMembership
+  source: creator
   user_id: 20
   workspace_id: 10
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 20 # fixture: AviatoDoraMembership
+  source: creator
   user_id: 20
   workspace_id: 11
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 21 # fixture: BluthDanMembership
+  source: creator
   user_id: 21
   workspace_id: 12
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 22 # fixture: CyberdynePruMembership
+  source: creator
   user_id: 24
   workspace_id: 13
   role: owner
@@ -148,18 +170,21 @@
 
 # --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
 - id: 20000
+  source: invitation
   user_id: 20000
   workspace_id: 20
   role: 'owner'
   created_at: '{{daysAgo 120}}'
   updated_at: '{{daysAgo 120}}'
 - id: 20001
+  source: invitation
   user_id: 20001
   workspace_id: 20
   role: 'admin'
   created_at: '{{daysAgo 118}}'
   updated_at: '{{daysAgo 118}}'
 - id: 20002
+  source: invitation
   user_id: 20002
   workspace_id: 20
   role: 'member'
@@ -168,12 +193,14 @@
 
 # Pat (a Passkey, no Second factor) is a member of Globex.
 - id: 23 # fixture: GlobexPatMembership
+  source: invitation
   user_id: 25
   workspace_id: 2
   role: member
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 5500 # fixture: DunderOwnerMembership
+  source: creator
   user_id: 5500
   workspace_id: 60
   role: owner
@@ -182,30 +209,35 @@
 
 # The stale unverified member holds a Membership in Hooli, so the prune job keeps the User.
 - id: 5700 # fixture: HooliStaleUnverifiedMembership
+  source: invitation
   user_id: 16
   workspace_id: 5
   role: member
   created_at: '{{daysAgo 30}}'
   updated_at: '{{daysAgo 30}}'
 - id: 5710 # fixture: CaptonCleoMembership
+  source: creator
   user_id: 5610
   workspace_id: 63
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 5711 # fixture: GothamGusMembership
+  source: creator
   user_id: 5611
   workspace_id: 61
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7300 # fixture: SabreSueMembership
+  source: creator
   user_id: 7300
   workspace_id: 79
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7400 # fixture: MeridianMonaMembership
+  source: creator
   user_id: 7400
   workspace_id: 83
   role: owner
@@ -213,66 +245,77 @@
   updated_at: '2026-01-01 00:00:00'
 # Rita owns the four revenue tenants.
 - id: 7200
+  source: creator
   user_id: 7200
   workspace_id: 75
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7201
+  source: creator
   user_id: 7200
   workspace_id: 76
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7202
+  source: creator
   user_id: 7200
   workspace_id: 77
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7203
+  source: creator
   user_id: 7200
   workspace_id: 78
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7100 # fixture: NakatomiHollyMembership
+  source: creator
   user_id: 7100
   workspace_id: 71
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7101 # fixture: SiriusOrionMembership
+  source: creator
   user_id: 7101
   workspace_id: 72
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7102 # fixture: MonarchMinaMembership
+  source: creator
   user_id: 7102
   workspace_id: 73
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7103 # fixture: VirtuconVeraMembership
+  source: creator
   user_id: 7103
   workspace_id: 74
   role: owner
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
 - id: 7104 # fixture: VirtuconVicMembership
+  source: creator
   user_id: 7104
   workspace_id: 74
   role: owner
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
 - id: 7700 # fixture: DuffDanMembership
+  source: creator
   user_id: 7700
   workspace_id: 94
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7720 # fixture: KrustyKentMembership
+  source: creator
   user_id: 7720
   workspace_id: 95
   role: owner
@@ -280,24 +323,28 @@
   updated_at: '2026-01-01 00:00:00'
 # Vehement's roster: one owner, one admin, one member.
 - id: 7600 # fixture: VehementOwnerMembership
+  source: creator
   user_id: 7600
   workspace_id: 91
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7601 # fixture: VehementAdminMembership
+  source: invitation
   user_id: 7601
   workspace_id: 91
   role: admin
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7602 # fixture: VehementMemberMembership
+  source: invitation
   user_id: 7602
   workspace_id: 91
   role: member
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7740 # fixture: LacunaLenaMembership
+  source: creator
   user_id: 7740
   workspace_id: 96
   role: owner
@@ -306,36 +353,42 @@
 # The rosters of Ollivanders and Gringotts (ADR 0177): Olga owns both, Abe is an admin of both
 # and Reese, with a Second factor, a member of both.
 - id: 7950 # fixture: OllivandersOlgaMembership
+  source: creator
   user_id: 7950
   workspace_id: 97
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7951 # fixture: GringottsOlgaMembership
+  source: creator
   user_id: 7950
   workspace_id: 98
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7952 # fixture: OllivandersAbeMembership
+  source: invitation
   user_id: 7951
   workspace_id: 97
   role: admin
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7953 # fixture: GringottsAbeMembership
+  source: invitation
   user_id: 7951
   workspace_id: 98
   role: admin
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7954 # fixture: OllivandersReeseMembership
+  source: invitation
   user_id: 7952
   workspace_id: 97
   role: member
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 7955 # fixture: GringottsReeseMembership
+  source: invitation
   user_id: 7952
   workspace_id: 98
   role: member

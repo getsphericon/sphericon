@@ -24,16 +24,16 @@ func TestTheDatabaseRefusesActionsThatAreNoJSONArray(t *testing.T) {
 	assert.True(t, ent.IsConstraintError(err), "a constraint refuses it: %v", err)
 }
 
-// The database refuses a Rule version's Condition whose group holds no list of entries, the tree a
-// release before ADR 0181 writes (rule_versions_condition_entries_check): it would read as the
-// empty group, which matches every Contact.
+// The database refuses a Rule version's Condition whose group holds no list of entries
+// (rule_versions_condition_entries_check): it would read as the empty group, which matches every
+// Contact.
 func TestTheDatabaseRefusesARuleConditionWithoutEntries(t *testing.T) {
 	env := testhelper.Setup(t)
-	var old conditiontree.Rule
-	require.NoError(t, json.Unmarshal([]byte(`{"kind":"group","combinator":"and","rules":[]}`), &old))
+	var noEntries conditiontree.Rule
+	require.NoError(t, json.Unmarshal([]byte(`{"kind":"group","combinator":"and"}`), &noEntries))
 
 	// test writes: the refused update is the operation under test.
-	err := env.DB.Scoped(fixtures.AcmeID).RuleVersion().Update().SetCondition(old).Exec(t.Context())
+	err := env.DB.Scoped(fixtures.AcmeID).RuleVersion().Update().SetCondition(noEntries).Exec(t.Context())
 	require.Error(t, err)
 	assert.True(t, ent.IsConstraintError(err), "a constraint refuses it: %v", err)
 }

@@ -67,8 +67,8 @@ func TestLoadClearsTheTombstonesOfTheUsersItReplaces(t *testing.T) {
 
 // The loader inserts the fixtures with the foreign keys switched off, so a row that names a missing
 // parent loads without a word, and only a later VALIDATE CONSTRAINT trips on it: a migration that
-// rebuilds that key (20261111135009_tenant_keys) failed on a seeded dev database. Every reference
-// a fixture makes must therefore point at a row, as the database would have required.
+// rebuilds that key fails on a seeded dev database. Every reference a fixture makes must therefore
+// point at a row, as the database would have required.
 func TestFixturesSatisfyEveryForeignKey(t *testing.T) {
 	sqlDB := testhelper.RealDB(t)
 

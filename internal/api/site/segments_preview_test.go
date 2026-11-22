@@ -93,7 +93,7 @@ func TestSiteSegmentsStoreAnEventCount(t *testing.T) {
 	require.NoError(t, err)
 	stored, err := c.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: created.ID})
 	require.NoError(t, err)
-	sentJSON, readJSON := testhelper.JSONOf(t, &sent), testhelper.JSONOf(t, &stored.Condition.Value)
+	sentJSON, readJSON := testhelper.JSONOf(t, &sent), testhelper.JSONOf(t, &stored.Condition)
 
 	assert.JSONEq(t, sentJSON, readJSON)
 }
@@ -212,7 +212,7 @@ func TestSiteSegmentsStoreNumberAndMomentTests(t *testing.T) {
 	require.NoError(t, err)
 	stored, err := c.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams{WorkspaceId: fixtures.DunderPublicID, ID: created.ID})
 	require.NoError(t, err)
-	sentJSON, readJSON := testhelper.JSONOf(t, &sent), testhelper.JSONOf(t, &stored.Condition.Value)
+	sentJSON, readJSON := testhelper.JSONOf(t, &sent), testhelper.JSONOf(t, &stored.Condition)
 
 	assert.JSONEq(t, sentJSON, readJSON)
 }

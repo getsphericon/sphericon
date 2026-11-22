@@ -391,7 +391,7 @@ func (e *Contact) auditFields() map[string]any {
 		"birthday":      derefAudit(e.Birthday),
 		"city":          derefAudit(e.City),
 		"avatar":        derefAudit(e.Avatar),
-		"source":        derefAudit(e.Source),
+		"source":        e.Source,
 		"custom_fields": e.CustomFields,
 	}
 }

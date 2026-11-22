@@ -14,7 +14,7 @@ func (h *Handlers) SegmentsList(ctx context.Context, params externalapi.Segments
 	if err != nil {
 		return nil, err
 	}
-	return mapper.SegmentsListPage(page), nil
+	return mapper.SegmentsListPage(page)
 }
 
 func (h *Handlers) SegmentsCreate(ctx context.Context, req *externalapi.CreateSegmentInput) (*externalapi.SegmentResource, error) {
@@ -27,7 +27,10 @@ func (h *Handlers) SegmentsCreate(ctx context.Context, req *externalapi.CreateSe
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.SegmentToResource(s)
+	res, err := mapper.SegmentToResource(s)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -38,7 +41,10 @@ func (h *Handlers) SegmentsGet(ctx context.Context, params externalapi.SegmentsG
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.SegmentToResource(s)
+	res, err := mapper.SegmentToResource(s)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -53,7 +59,10 @@ func (h *Handlers) SegmentsUpdate(ctx context.Context, req *externalapi.UpdateSe
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.SegmentToResource(s)
+	res, err := mapper.SegmentToResource(s)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -65,7 +74,10 @@ func (h *Handlers) SegmentsArchive(ctx context.Context, params externalapi.Segme
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.SegmentToResource(s)
+	res, err := mapper.SegmentToResource(s)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -77,7 +89,10 @@ func (h *Handlers) SegmentsUnarchive(ctx context.Context, params externalapi.Seg
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.SegmentToResource(s)
+	res, err := mapper.SegmentToResource(s)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 

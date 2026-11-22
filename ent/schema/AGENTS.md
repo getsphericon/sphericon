@@ -74,9 +74,14 @@
   type that writes the row says the same thing, so a mismatch does not compile
   (`outboundmessages.Ref`, `providers.Provider.Channel`).
 - `mise run db:reset` / `db:reset-test` to rebuild local DBs. A database made before the history
-  collapse (`20261024175209_init.sql` holds the whole app schema, river's tables stay
-  their own migrations) needs a `db:reset`. The project is greenfield, so the next collapse is the
-  same one `History-Collapse:` line and a `db:reset` for everyone.
+  collapse (`20261122015507_init.sql` holds the whole app schema, river's tables stay their own
+  migrations) needs a `db:reset`: the guard refuses it, since its Major is older than the first of
+  `db.Majors` (ADR 0033). The project is greenfield, so the next collapse is the same: one
+  `History-Collapse:` line, the init diffed again by `mise run db:generate init` from the river
+  files alone, the hand-written parts of the old init carried over (the `events` storage
+  parameters, the `schema_state` row, the partial-index predicates ent's diff reads back), every Go
+  data migration and migration test with its fixtures removed, the next Major written to the row
+  and made the only entry of `db.Majors`, and a `db:reset` for everyone.
 - Test DB is separate (`SPHERICON_ENV=test`); tests get it from the migrations, see docs/agents/dev-environment.md.
 
 

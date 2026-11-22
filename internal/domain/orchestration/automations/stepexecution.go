@@ -114,13 +114,13 @@ type EnrollOnRuleInput struct {
 // (ADR 0065), one transaction per Automation (enrollOnTrigger). An Event from an Automation's own
 // email (in.SourceAutomationID) never enrolls the Contact into that Automation, so an
 // open-triggered Automation cannot feed itself (ADR 0053); it still ends an Enrollment, so a click
-// in the Automation's own email can be its goal. The Event's OccurredAt is when it occurred; a zero
-// one (the job of a release before #751 carried none) is taken as now. Every Enrollment it makes
-// copies the stored Event's action and properties, read once (originOf, #752).
+// in the Automation's own email can be its goal. The Event's OccurredAt is when it occurred, which
+// an Event without one does not say, so it is refused. Every Enrollment it makes copies the stored
+// Event's action and properties, read once (originOf, #752).
 func (m *StepExecution) OnEvent(ctx context.Context, s *ent.Scoped, in OnEventInput) error {
 	contactID, ev := in.ContactID, in.Event
 	if ev.OccurredAt.IsZero() {
-		ev.OccurredAt = m.now()
+		return errEventWithoutTime
 	}
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		return m.endOnEvent(ctx, ts, pub, contactID, ev.Action, ev.OccurredAt)

@@ -45,9 +45,7 @@ func TestSiteRulesCRUDPublishAndDeactivate(t *testing.T) {
 	assert.Equal(t, siteapi.RuleActionTypeApplyTag, draft.Actions[0].Type)
 	assert.Equal(t, "clicker", draft.Actions[0].Tag.Or(""))
 	assert.Equal(t, siteapi.RuleActionTypeRemoveTag, draft.Actions[1].Type)
-	condition, hasCondition := draft.Condition.Get()
-	require.True(t, hasCondition)
-	assert.Len(t, condition.Entries, 1)
+	assert.Len(t, draft.Condition.Entries, 1)
 	_, activated := res.ActivatedAt.Get()
 	assert.False(t, activated)
 

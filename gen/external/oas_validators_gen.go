@@ -2194,15 +2194,8 @@ func (s *ContactExportContact) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
-		if value, ok := s.Source.Get(); ok {
-			if err := func() error {
-				if err := value.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return err
-			}
+		if err := s.Source.Validate(); err != nil {
+			return err
 		}
 		return nil
 	}(); err != nil {
@@ -7194,15 +7187,8 @@ func (s *RuleVersion) Validate() error {
 		})
 	}
 	if err := func() error {
-		if value, ok := s.Condition.Get(); ok {
-			if err := func() error {
-				if err := value.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return err
-			}
+		if err := s.Condition.Validate(); err != nil {
+			return err
 		}
 		return nil
 	}(); err != nil {
@@ -7597,15 +7583,8 @@ func (s *SegmentResource) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
-		if value, ok := s.Condition.Get(); ok {
-			if err := func() error {
-				if err := value.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return err
-			}
+		if err := s.Condition.Validate(); err != nil {
+			return err
 		}
 		return nil
 	}(); err != nil {

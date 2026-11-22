@@ -27,7 +27,7 @@ func requireDomainJoined(t *testing.T, env *testhelper.TestEnv, email string) {
 	joined := acmeMembersNamed(acmeMembers(t, env.SiteActor(t, fixtures.OwnerJohnEmail)), email)
 	require.Len(t, joined, 1, "%s is a member of Acme", email)
 	assert.Equal(t, siteapi.SiteMembershipRoleMember, joined[0].Role)
-	assert.Equal(t, siteapi.NewOptSiteMembershipSource(siteapi.SiteMembershipSourceDomain), joined[0].Source)
+	assert.Equal(t, siteapi.SiteMembershipSourceDomain, joined[0].Source)
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionMembershipDomainJoin)
 	require.Len(t, got, 1)
 	assert.Equal(t, "system", string(got[0].Actor.Kind))

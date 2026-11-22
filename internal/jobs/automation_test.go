@@ -642,23 +642,3 @@ func TestAGoalEventHandledBeforeTheTriggerEndsTheEnrollmentWhenItIsMade(t *testi
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusGoalReached, run.Status)
 }
-
-// A trigger job queued by a release before #751 carries no occurred_at (ADR 0033): the Event is
-// taken as occurring now, so the Enrollment does not begin in year 1, and the Contact's exit and
-// goal Events of the days before do not end it as it is made.
-func TestATriggerJobWithoutWhenTheEventOccurredBeginsTheEnrollmentNow(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := t.Context()
-	acme := env.DB.Scoped(fixtures.AcmeID)
-	earliest := time.Now().Add(-time.Microsecond) // began_at is kept to the microsecond
-
-	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(ctx, acme, automations.OnEventInput{ContactID: fixtures.ContactPaidBeforeEnrolledID, Event: automations.Event{Action: "payment_failed", OccurredAt: time.Time{}}}))
-	latest := time.Now()
-	runs := enrollmentsOf(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaidBeforeEnrolledID)
-	require.Len(t, runs, 1)
-	run, err := env.DB.AutomationRun.Get(ctx, runs[0])
-	require.NoError(t, err)
-
-	assert.Equal(t, automationrun.StatusActive, run.Status)
-	assert.WithinRange(t, run.BeganAt, earliest, latest)
-}

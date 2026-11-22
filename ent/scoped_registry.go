@@ -1159,9 +1159,7 @@ func ScopedEntities() []*ScopedEntity {
 				if src.Avatar != nil {
 					b.SetAvatar(*src.Avatar)
 				}
-				if src.Source != nil {
-					b.SetSource(*src.Source)
-				}
+				b.SetSource(src.Source)
 				if !reflect.ValueOf(src.CustomFields).IsZero() {
 					b.SetCustomFields(src.CustomFields)
 				}
@@ -1843,9 +1841,7 @@ func ScopedEntities() []*ScopedEntity {
 				b := s.Membership().Create()
 				b.SetUserID(src.UserID)
 				b.SetRole(src.Role)
-				if src.Source != nil {
-					b.SetSource(*src.Source)
-				}
+				b.SetSource(src.Source)
 				if src.SecondFactorRemindedAt != nil {
 					b.SetSecondFactorRemindedAt(*src.SecondFactorRemindedAt)
 				}

@@ -92,13 +92,14 @@ func (TrackingDomain) Indexes() []ent.Index {
 		// A Workspace has a host once, whatever its role.
 		index.Fields("workspace_id", "host").
 			Unique(),
-		// At most one current and one replacement per Workspace. The migration builds it
-		// CONCURRENTLY (ADR 0033).
+		// At most one current and one replacement per Workspace. A migration that adds it builds
+		// it CONCURRENTLY (ADR 0033).
 		index.Fields("workspace_id", "role").
 			Unique().
 			Annotations(entsql.IndexWhere("role IN ('current', 'replacement')")),
 		// A host belongs to one Workspace across the Instance among verified rows, retired ones
-		// included; pending claims never block anyone. The migration builds it CONCURRENTLY.
+		// included; pending claims never block anyone. A migration that adds it builds it
+		// CONCURRENTLY.
 		index.Fields("host").
 			Unique().
 			Annotations(entsql.IndexWhere("state IN ('dns_verified', 'serving')")),

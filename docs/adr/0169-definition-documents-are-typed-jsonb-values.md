@@ -29,8 +29,9 @@ Contact, and a missing one is nil, meaning none. Nothing queries inside these co
 
 ## Consequences
 
-- A migration converts the columns and replaces `''` with the empty group; the code that reads `''` and
-  compares text goes.
+- The columns are jsonb from the init on: the migration that converted them and replaced `''` with the
+  empty group went with the history collapse (ADR 0047). The code that reads `''` and compares text
+  goes.
 
 ## Rejected
 

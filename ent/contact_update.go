@@ -683,9 +683,6 @@ func (_u *ContactUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.AvatarCleared() {
 		_spec.ClearField(contact.FieldAvatar, field.TypeString)
 	}
-	if _u.mutation.SourceCleared() {
-		_spec.ClearField(contact.FieldSource, field.TypeEnum)
-	}
 	if value, ok := _u.mutation.CustomFields(); ok {
 		_spec.SetField(contact.FieldCustomFields, field.TypeJSON, value)
 	}
@@ -1689,9 +1686,6 @@ func (_u *ContactUpdateOne) sqlSave(ctx context.Context) (_node *Contact, err er
 	}
 	if _u.mutation.AvatarCleared() {
 		_spec.ClearField(contact.FieldAvatar, field.TypeString)
-	}
-	if _u.mutation.SourceCleared() {
-		_spec.ClearField(contact.FieldSource, field.TypeEnum)
 	}
 	if value, ok := _u.mutation.CustomFields(); ok {
 		_spec.SetField(contact.FieldCustomFields, field.TypeJSON, value)

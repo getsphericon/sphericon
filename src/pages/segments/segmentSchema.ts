@@ -2,8 +2,8 @@ import { emptyGroup, placeInputSchemas } from '../../components/conditions/condi
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import type { SegmentValues } from './SegmentForm.tsx'
 
-// A Segment is always a Condition: a stored segment without a condition loads as the empty
-// Condition (matches all contacts); the contract has no null condition.
+// A Segment is always a Condition: a new one starts as the empty Condition (matches all
+// contacts); the contract has no null condition.
 
 const blankSegment: SegmentValues = {
   name: '',

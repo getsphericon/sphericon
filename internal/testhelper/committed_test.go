@@ -31,7 +31,7 @@ func TestACommittedEnvsWriteIsSeenByAnotherConnectionOnceItCommits(t *testing.T)
 
 	release := env.HoldOpen(t, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		// test writes: a row no other connection may see before its transaction commits
-		return ts.Contact().Create().SetEmail(email).Exec(t.Context())
+		return ts.Contact().Create().SetSource(contact.SourceManual).SetEmail(email).Exec(t.Context())
 	})
 	assert.False(t, seen(), "the open transaction's row is its own")
 

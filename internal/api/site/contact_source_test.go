@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -24,5 +23,5 @@ func TestAContactCreatedByHandInTheSiteCarriesTheManualSource(t *testing.T) {
 
 	created, err := env.DB.Contact.Query().Where(contact.Email("source-hand@example.com")).Only(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, contact.SourceManual, lo.FromPtr(created.Source))
+	assert.Equal(t, contact.SourceManual, created.Source)
 }

@@ -45,9 +45,7 @@ func TestExternalRulesReadNeedsTheAutomationsReadScope(t *testing.T) {
 	assert.True(t, rule.Draft.Null, "no unpublished changes")
 	assert.EqualValues(t, 1, live.Number)
 	assert.Equal(t, []string{"rule_vip"}, live.TriggerEvents)
-	condition, hasCondition := live.Condition.Get()
-	require.True(t, hasCondition)
-	assert.Len(t, condition.Entries, 1)
+	assert.Len(t, live.Condition.Entries, 1)
 	require.Len(t, live.Actions, 1)
 	assert.Equal(t, "rule-vip-seen", live.Actions[0].Tag.Or(""))
 

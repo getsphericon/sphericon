@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -72,8 +73,8 @@ func TestAnErasureCancelsTheQueuedJobsThatNameTheContact(t *testing.T) {
 		return nil
 	}))
 	require.Len(t, env.QueuedMessages(t, systemevent.EmailSent, systemevent.ContactCreated), 3)
-	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: erasedID, Action: "x"})
-	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: bystanderID, Action: "x"})
+	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: erasedID, Action: "x", OccurredAt: time.Now(), SourceID: "evt-1"})
+	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: bystanderID, Action: "x", OccurredAt: time.Now(), SourceID: "evt-2"})
 	env.EnqueueJob(t, automations.RunStepArgs{WorkspaceID: fixtures.InitechID, RunID: fixtures.AutomationRunErasableID})
 	env.EnqueueJob(t, jobs.SendRecipientArgs{WorkspaceID: fixtures.InitechID, RecipientID: fixtures.BroadcastRecipientErasablePendingID, BroadcastID: fixtures.BroadcastInitechSendingID})
 	env.EnqueueJob(t, jobs.SendRecipientArgs{WorkspaceID: fixtures.InitechID, RecipientID: fixtures.BroadcastRecipientBystanderPendingID, BroadcastID: fixtures.BroadcastInitechSendingID})

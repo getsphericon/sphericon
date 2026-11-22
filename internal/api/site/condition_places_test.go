@@ -74,12 +74,12 @@ func TestSiteConditionOfEachPlaceIsReadBackAsSent(t *testing.T) {
 	updatedDraft, _ := updatedRule.Draft.Get()
 	readDraft, _ := readRule.Draft.Get()
 
-	assert.JSONEq(t, segmentConditionOfEveryLeaf, testhelper.JSONOf(t, &created.Condition.Value))
-	assert.JSONEq(t, segmentConditionOfEveryLeaf, testhelper.JSONOf(t, &updated.Condition.Value))
-	assert.JSONEq(t, segmentConditionOfEveryLeaf, testhelper.JSONOf(t, &readSegment.Condition.Value))
-	assert.JSONEq(t, ruleConditionOfEveryLeaf, testhelper.JSONOf(t, &createdDraft.Condition.Value))
-	assert.JSONEq(t, ruleConditionOfEveryLeaf, testhelper.JSONOf(t, &updatedDraft.Condition.Value))
-	assert.JSONEq(t, ruleConditionOfEveryLeaf, testhelper.JSONOf(t, &readDraft.Condition.Value))
+	assert.JSONEq(t, segmentConditionOfEveryLeaf, testhelper.JSONOf(t, &created.Condition))
+	assert.JSONEq(t, segmentConditionOfEveryLeaf, testhelper.JSONOf(t, &updated.Condition))
+	assert.JSONEq(t, segmentConditionOfEveryLeaf, testhelper.JSONOf(t, &readSegment.Condition))
+	assert.JSONEq(t, ruleConditionOfEveryLeaf, testhelper.JSONOf(t, &createdDraft.Condition))
+	assert.JSONEq(t, ruleConditionOfEveryLeaf, testhelper.JSONOf(t, &updatedDraft.Condition))
+	assert.JSONEq(t, ruleConditionOfEveryLeaf, testhelper.JSONOf(t, &readDraft.Condition))
 }
 
 // A leaf a place does not admit, or a test a leaf does not take, has no value in the place's type:

@@ -40,8 +40,8 @@ model SiteMembershipResource {
   /** The member's role in this workspace */
   role: SiteMembershipRole;
 
-  /** How the member got in; absent for a member from before it was recorded */
-  source?: SiteMembershipSource;
+  /** How the member got in */
+  source: SiteMembershipSource;
 
   /** When the member joined */
   createdAt: Timestamp;

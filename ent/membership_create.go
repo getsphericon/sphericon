@@ -78,14 +78,6 @@ func (_c *MembershipCreate) SetSource(v membership.Source) *MembershipCreate {
 	return _c
 }
 
-// SetNillableSource sets the "source" field if the given value is not nil.
-func (_c *MembershipCreate) SetNillableSource(v *membership.Source) *MembershipCreate {
-	if v != nil {
-		_c.SetSource(*v)
-	}
-	return _c
-}
-
 // SetSecondFactorRemindedAt sets the "second_factor_reminded_at" field.
 func (_c *MembershipCreate) SetSecondFactorRemindedAt(v time.Time) *MembershipCreate {
 	_c.mutation.SetSecondFactorRemindedAt(v)
@@ -213,6 +205,9 @@ func (_c *MembershipCreate) check() error {
 			return &ValidationError{Name: "role", err: fmt.Errorf(`ent: validator failed for field "Membership.role": %w`, err)}
 		}
 	}
+	if _, ok := _c.mutation.Source(); !ok {
+		return &ValidationError{Name: "source", err: errors.New(`ent: missing required field "Membership.source"`)}
+	}
 	if v, ok := _c.mutation.Source(); ok {
 		if err := membership.SourceValidator(v); err != nil {
 			return &ValidationError{Name: "source", err: fmt.Errorf(`ent: validator failed for field "Membership.source": %w`, err)}
@@ -271,7 +266,7 @@ func (_c *MembershipCreate) createSpec() (*Membership, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := _c.mutation.Source(); ok {
 		_spec.SetField(membership.FieldSource, field.TypeEnum, value)
-		_node.Source = &value
+		_node.Source = value
 	}
 	if value, ok := _c.mutation.SecondFactorRemindedAt(); ok {
 		_spec.SetField(membership.FieldSecondFactorRemindedAt, field.TypeTime, value)
@@ -455,12 +450,6 @@ func (u *MembershipUpsert) UpdateSource() *MembershipUpsert {
 	return u
 }
 
-// ClearSource clears the value of the "source" field.
-func (u *MembershipUpsert) ClearSource() *MembershipUpsert {
-	u.SetNull(membership.FieldSource)
-	return u
-}
-
 // SetSecondFactorRemindedAt sets the "second_factor_reminded_at" field.
 func (u *MembershipUpsert) SetSecondFactorRemindedAt(v time.Time) *MembershipUpsert {
 	u.Set(membership.FieldSecondFactorRemindedAt, v)
@@ -597,13 +586,6 @@ func (u *MembershipUpsertOne) SetSource(v membership.Source) *MembershipUpsertOn
 func (u *MembershipUpsertOne) UpdateSource() *MembershipUpsertOne {
 	return u.Update(func(s *MembershipUpsert) {
 		s.UpdateSource()
-	})
-}
-
-// ClearSource clears the value of the "source" field.
-func (u *MembershipUpsertOne) ClearSource() *MembershipUpsertOne {
-	return u.Update(func(s *MembershipUpsert) {
-		s.ClearSource()
 	})
 }
 
@@ -912,13 +894,6 @@ func (u *MembershipUpsertBulk) SetSource(v membership.Source) *MembershipUpsertB
 func (u *MembershipUpsertBulk) UpdateSource() *MembershipUpsertBulk {
 	return u.Update(func(s *MembershipUpsert) {
 		s.UpdateSource()
-	})
-}
-
-// ClearSource clears the value of the "source" field.
-func (u *MembershipUpsertBulk) ClearSource() *MembershipUpsertBulk {
-	return u.Update(func(s *MembershipUpsert) {
-		s.ClearSource()
 	})
 }
 

@@ -114,5 +114,5 @@ func (w *Workspace) RequireJoinedByDomain(c *Colleague) {
 	}
 	require.NotNil(w.t, joined, "%s is a member", c.Email)
 	require.Equal(w.t, siteapi.SiteMembershipRoleMember, joined.Role)
-	require.Equal(w.t, siteapi.NewOptSiteMembershipSource(siteapi.SiteMembershipSourceDomain), joined.Source)
+	require.Equal(w.t, siteapi.SiteMembershipSourceDomain, joined.Source)
 }

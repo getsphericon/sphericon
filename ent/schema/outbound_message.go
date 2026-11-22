@@ -188,8 +188,8 @@ func (OutboundMessage) Fields() []ent.Field {
 			Nillable(),
 		// The subject the recipient received, merge tags filled, written when an email is sent
 		// so a feed can name the email an Event is about after its Broadcast or Automation step
-		// changed or went. Personal data: cleared with the Contact (ADR 0021). Nil for a message
-		// sent before it was kept, a Channel with no subject and a message that was not sent.
+		// changed or went. Personal data: cleared with the Contact (ADR 0021). Nil for a Channel
+		// with no subject and a message that was not sent.
 		field.String("subject").
 			Optional().
 			Nillable(),

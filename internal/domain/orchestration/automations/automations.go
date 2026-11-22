@@ -85,6 +85,8 @@ var (
 	ErrInactive = validation.Conflict("automations: automation is not active", i18n.ErrorsAutomationInactive)
 
 	errBodyAndDoc = errors.New("automations: a step writes a body or a doc, not both")
+	// errEventWithoutTime: an Event handed to OnEvent without when it occurred.
+	errEventWithoutTime = errors.New("automations: the Event has no occurred_at")
 )
 
 // StoredSteps are the steps as a version stores them: tag names, a Telegram step's image and

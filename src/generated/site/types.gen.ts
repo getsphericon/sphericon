@@ -1129,9 +1129,9 @@ export type ContactExportContact = {
    */
   customFields?: JsonObject | null;
   /**
-   * The door the contact came through; absent for a contact that predates the field
+   * The door the contact came through
    */
-  source?: ContactExportSource | null;
+  source: ContactExportSource;
   /**
    * Creation timestamp
    */
@@ -3429,9 +3429,9 @@ export type RuleVersion = {
    */
   triggerEvents: Array<string>;
   /**
-   * The Contact must match this condition for the Rule to fire; absent means every Contact
+   * The Contact must match this condition for the Rule to fire; an empty group matches every Contact
    */
-  condition?: RuleCondition;
+  condition: RuleCondition;
   /**
    * The Rule's ordered Actions
    */
@@ -5592,8 +5592,7 @@ export type SiteEventResource = {
   properties?: JsonObject | null;
   /**
    * The subject the Contact received on the email the event is about, merge tags filled; null for
-   * an event that is about no email, or whose email kept no subject (sent before it was kept, or
-   * erased with the Contact)
+   * an event that is about no email, or whose email kept no subject (erased with the Contact)
    */
   emailSubject?: string | null;
   /**
@@ -5960,9 +5959,9 @@ export type SiteMembershipResource = {
    */
   role: SiteMembershipRole;
   /**
-   * How the member got in; absent for a member from before it was recorded
+   * How the member got in
    */
-  source?: SiteMembershipSource;
+  source: SiteMembershipSource;
   /**
    * When the member joined
    */
@@ -6018,10 +6017,6 @@ export type SiteNewPeoplePoint = {
    * Contacts created by the tracker that day
    */
   tracker: number;
-  /**
-   * Contacts that predate the Contact source
-   */
-  unknown: number;
 };
 
 /**
@@ -6846,7 +6841,7 @@ export type SiteSegmentResource = {
   /**
    * Segment condition: the tree of tests; an empty group matches all contacts
    */
-  condition?: SegmentCondition;
+  condition: SegmentCondition;
   /**
    * When the segment was archived; null while it is kept
    */

@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -30,6 +29,6 @@ func TestContactsCreatedThroughTheExternalAPICarryTheAPISource(t *testing.T) {
 	require.NoError(t, err)
 	batch, err := env.DB.Contact.Query().Where(contact.Email("source-batch@example.com")).Only(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, contact.SourceAPI, lo.FromPtr(single.Source))
-	assert.Equal(t, contact.SourceAPI, lo.FromPtr(batch.Source))
+	assert.Equal(t, contact.SourceAPI, single.Source)
+	assert.Equal(t, contact.SourceAPI, batch.Source)
 }

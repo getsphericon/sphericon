@@ -26,15 +26,6 @@ func memberWithEmail(t *testing.T, members []siteapi.SiteMembershipResource, ema
 	return m
 }
 
-func TestAMembershipFromBeforeSourceWasRecordedHasNone(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	members := membersOf(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID)
-	john := memberWithEmail(t, members, fixtures.OwnerJohnEmail)
-
-	assert.False(t, john.Source.Set)
-}
-
 func TestAWorkspaceCreatorIsRecordedAsTheCreator(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
@@ -45,7 +36,7 @@ func TestAWorkspaceCreatorIsRecordedAsTheCreator(t *testing.T) {
 
 	members := membersOf(t, env, fixtures.OwnerJohnEmail, created.ID)
 	john := memberWithEmail(t, members, fixtures.OwnerJohnEmail)
-	assert.Equal(t, siteapi.NewOptSiteMembershipSource(siteapi.SiteMembershipSourceCreator), john.Source)
+	assert.Equal(t, siteapi.SiteMembershipSourceCreator, john.Source)
 }
 
 func TestAnAcceptedInvitationIsRecordedAsTheMembershipsSource(t *testing.T) {
@@ -56,7 +47,7 @@ func TestAnAcceptedInvitationIsRecordedAsTheMembershipsSource(t *testing.T) {
 
 	members := membersOf(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID)
 	oscar := memberWithEmail(t, members, fixtures.OutsiderOscarEmail)
-	assert.Equal(t, siteapi.NewOptSiteMembershipSource(siteapi.SiteMembershipSourceInvitation), oscar.Source)
+	assert.Equal(t, siteapi.SiteMembershipSourceInvitation, oscar.Source)
 }
 
 func TestAnAdminInvitationRaisesAnExistingMemberToAdmin(t *testing.T) {
@@ -67,7 +58,7 @@ func TestAnAdminInvitationRaisesAnExistingMemberToAdmin(t *testing.T) {
 	members := membersOf(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID)
 	mary := memberWithEmail(t, members, fixtures.MemberMaryEmail)
 	assert.Equal(t, siteapi.SiteMembershipRoleAdmin, mary.Role)
-	assert.False(t, mary.Source.Set, "a raised Role keeps how the person got in")
+	assert.Equal(t, siteapi.SiteMembershipSourceInvitation, mary.Source, "a raised Role keeps how the person got in")
 }
 
 func TestAnInvitationNeverLowersAnAdmin(t *testing.T) {

@@ -52,8 +52,8 @@ model ContactExportContact {
   /** Typed custom field values keyed by the field's machine key */
   customFields?: JsonObject | null;
 
-  /** The door the contact came through; absent for a contact that predates the field */
-  source?: ContactExportSource | null;
+  /** The door the contact came through */
+  source: ContactExportSource;
 
   /** Creation timestamp */
   createdAt: Timestamp;

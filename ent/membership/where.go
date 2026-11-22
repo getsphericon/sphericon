@@ -240,16 +240,6 @@ func SourceNotIn(vs ...Source) predicate.Membership {
 	return predicate.Membership(sql.FieldNotIn(FieldSource, vs...))
 }
 
-// SourceIsNil applies the IsNil predicate on the "source" field.
-func SourceIsNil() predicate.Membership {
-	return predicate.Membership(sql.FieldIsNull(FieldSource))
-}
-
-// SourceNotNil applies the NotNil predicate on the "source" field.
-func SourceNotNil() predicate.Membership {
-	return predicate.Membership(sql.FieldNotNull(FieldSource))
-}
-
 // SecondFactorRemindedAtEQ applies the EQ predicate on the "second_factor_reminded_at" field.
 func SecondFactorRemindedAtEQ(v time.Time) predicate.Membership {
 	return predicate.Membership(sql.FieldEQ(FieldSecondFactorRemindedAt, v))

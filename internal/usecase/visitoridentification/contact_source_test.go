@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -23,7 +22,7 @@ func TestAContactCreatedByIdentifyCarriesTheTrackerSource(t *testing.T) {
 
 	created, err := env.DB.Contact.Query().Where(contact.Email("source-tracker@example.com")).Only(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, contact.SourceTracker, lo.FromPtr(created.Source))
+	assert.Equal(t, contact.SourceTracker, created.Source)
 }
 
 func TestIdentifyOfAnExistingContactLeavesItsSource(t *testing.T) {
@@ -35,5 +34,5 @@ func TestIdentifyOfAnExistingContactLeavesItsSource(t *testing.T) {
 
 	alice, err := env.DB.Contact.Get(ctx, fixtures.ContactAliceID)
 	require.NoError(t, err)
-	assert.Nil(t, alice.Source, "a Contact that predates the field stays unknown")
+	assert.Equal(t, contact.SourceManual, alice.Source, "Identify keeps the source the Contact was created with")
 }

@@ -950,7 +950,7 @@ func (c *ConverterImpl) ContactToExport(source *ent.Contact) site.ContactExportC
 		siteapiContactExportContact.City = optNilString((*source).City)
 		siteapiContactExportContact.Avatar = optNilString((*source).Avatar)
 		siteapiContactExportContact.CustomFields = jsonObject((*source).CustomFields)
-		siteapiContactExportContact.Source = optNilContactSource(c, (*source).Source)
+		siteapiContactExportContact.Source = c.ContactExportSourceToResource((*source).Source)
 		siteapiContactExportContact.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiContactExportContact.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -1552,7 +1552,7 @@ func (c *ConverterImpl) MembershipToResource(source *ent.Membership) site.SiteMe
 			siteapiSiteMembershipResource.Name = *pString2
 		}
 		siteapiSiteMembershipResource.Role = c.MembershipRoleToResource((*source).Role)
-		siteapiSiteMembershipResource.Source = optMembershipSource(c, (*source).Source)
+		siteapiSiteMembershipResource.Source = c.MembershipSourceToResource((*source).Source)
 		siteapiSiteMembershipResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiSiteMembershipResource
@@ -2122,48 +2122,68 @@ func (c *ConverterImpl) RuleStatusToResource(source rule.Status) site.RuleStatus
 	}
 	return siteapiRuleStatus
 }
-func (c *ConverterImpl) RuleToResource(source *ent.Rule) site.SiteRuleResource {
+func (c *ConverterImpl) RuleToResource(source *ent.Rule) (site.SiteRuleResource, error) {
 	var siteapiSiteRuleResource site.SiteRuleResource
 	if source != nil {
 		siteapiSiteRuleResource.ID = site.EntityId((*source).ID)
 		siteapiSiteRuleResource.Name = (*source).Name
 		siteapiSiteRuleResource.Status = c.RuleStatusToResource((*source).Status)
-		siteapiSiteRuleResource.Live = ruleVersionOrNull(c, (*source).Edges.LiveVersion)
-		siteapiSiteRuleResource.Draft = ruleVersionOrNull(c, (*source).Edges.DraftVersion)
+		siteapiNilRuleVersion, err := ruleVersionOrNull(c, (*source).Edges.LiveVersion)
+		if err != nil {
+			return siteapiSiteRuleResource, err
+		}
+		siteapiSiteRuleResource.Live = siteapiNilRuleVersion
+		siteapiNilRuleVersion2, err := ruleVersionOrNull(c, (*source).Edges.DraftVersion)
+		if err != nil {
+			return siteapiSiteRuleResource, err
+		}
+		siteapiSiteRuleResource.Draft = siteapiNilRuleVersion2
 		siteapiSiteRuleResource.ActivatedAt = optNilTimestamp((*source).ActivatedAt)
 		siteapiSiteRuleResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
 		siteapiSiteRuleResource.Revision = revision((*source).Revision)
 		siteapiSiteRuleResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteRuleResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
-	return siteapiSiteRuleResource
+	return siteapiSiteRuleResource, nil
 }
-func (c *ConverterImpl) RuleVersionToResource(source *ent.RuleVersion) site.RuleVersion {
+func (c *ConverterImpl) RuleVersionToResource(source *ent.RuleVersion) (site.RuleVersion, error) {
 	var siteapiRuleVersion site.RuleVersion
 	if source != nil {
 		siteapiRuleVersion.Number = count((*source).Version)
 		siteapiRuleVersion.TriggerEvents = ruleTriggerEvents(source)
-		siteapiRuleVersion.Condition = ruleCondition((*source).Condition)
+		siteapiRuleCondition, err := ruleCondition((*source).Condition)
+		if err != nil {
+			return siteapiRuleVersion, err
+		}
+		siteapiRuleVersion.Condition = siteapiRuleCondition
 		siteapiRuleVersion.Actions = ruleActions(c, (*source).Actions)
 	}
-	return siteapiRuleVersion
+	return siteapiRuleVersion, nil
 }
-func (c *ConverterImpl) RulesListPage(source pagination.Page[*ent.Rule]) *site.SiteRulesListOK {
+func (c *ConverterImpl) RulesListPage(source pagination.Page[*ent.Rule]) (*site.SiteRulesListOK, error) {
 	var siteapiSiteRulesListOK site.SiteRulesListOK
-	siteapiSiteRulesListOK.Items = c.RulesToResources(source.Items)
+	siteapiSiteRuleResourceList, err := c.RulesToResources(source.Items)
+	if err != nil {
+		return nil, err
+	}
+	siteapiSiteRulesListOK.Items = siteapiSiteRuleResourceList
 	siteapiSiteRulesListOK.Page = count(source.Page)
 	siteapiSiteRulesListOK.PageSize = count(source.PageSize)
 	siteapiSiteRulesListOK.TotalItems = count(source.TotalItems)
 	siteapiSiteRulesListOK.TotalPages = count(source.TotalPages)
-	return &siteapiSiteRulesListOK
+	return &siteapiSiteRulesListOK, nil
 }
-func (c *ConverterImpl) RulesToResources(source []*ent.Rule) []site.SiteRuleResource {
+func (c *ConverterImpl) RulesToResources(source []*ent.Rule) ([]site.SiteRuleResource, error) {
 	var siteapiSiteRuleResourceList []site.SiteRuleResource
 	siteapiSiteRuleResourceList = make([]site.SiteRuleResource, len(source))
 	for i := 0; i < len(source); i++ {
-		siteapiSiteRuleResourceList[i] = c.RuleToResource(source[i])
+		siteapiSiteRuleResource, err := c.RuleToResource(source[i])
+		if err != nil {
+			return nil, err
+		}
+		siteapiSiteRuleResourceList[i] = siteapiSiteRuleResource
 	}
-	return siteapiSiteRuleResourceList
+	return siteapiSiteRuleResourceList, nil
 }
 func (c *ConverterImpl) SegmentContactsListPage(source pagination.Page[*ent.Contact]) *site.SiteSegmentContactsListOK {
 	var siteapiSiteSegmentContactsListOK site.SiteSegmentContactsListOK
@@ -2174,35 +2194,47 @@ func (c *ConverterImpl) SegmentContactsListPage(source pagination.Page[*ent.Cont
 	siteapiSiteSegmentContactsListOK.TotalPages = count(source.TotalPages)
 	return &siteapiSiteSegmentContactsListOK
 }
-func (c *ConverterImpl) SegmentToResource(source *ent.Segment) site.SiteSegmentResource {
+func (c *ConverterImpl) SegmentToResource(source *ent.Segment) (site.SiteSegmentResource, error) {
 	var siteapiSiteSegmentResource site.SiteSegmentResource
 	if source != nil {
 		siteapiSiteSegmentResource.ID = site.EntityId((*source).ID)
 		siteapiSiteSegmentResource.Name = (*source).Name
-		siteapiSiteSegmentResource.Condition = segmentCondition((*source).Condition)
+		siteapiSegmentCondition, err := segmentCondition((*source).Condition)
+		if err != nil {
+			return siteapiSiteSegmentResource, err
+		}
+		siteapiSiteSegmentResource.Condition = siteapiSegmentCondition
 		siteapiSiteSegmentResource.ArchivedAt = optNilTimestamp((*source).ArchivedAt)
 		siteapiSiteSegmentResource.Revision = revision((*source).Revision)
 		siteapiSiteSegmentResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteSegmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
-	return siteapiSiteSegmentResource
+	return siteapiSiteSegmentResource, nil
 }
-func (c *ConverterImpl) SegmentsListPage(source pagination.Page[*ent.Segment]) *site.SiteSegmentsListOK {
+func (c *ConverterImpl) SegmentsListPage(source pagination.Page[*ent.Segment]) (*site.SiteSegmentsListOK, error) {
 	var siteapiSiteSegmentsListOK site.SiteSegmentsListOK
-	siteapiSiteSegmentsListOK.Items = c.SegmentsToResources(source.Items)
+	siteapiSiteSegmentResourceList, err := c.SegmentsToResources(source.Items)
+	if err != nil {
+		return nil, err
+	}
+	siteapiSiteSegmentsListOK.Items = siteapiSiteSegmentResourceList
 	siteapiSiteSegmentsListOK.Page = count(source.Page)
 	siteapiSiteSegmentsListOK.PageSize = count(source.PageSize)
 	siteapiSiteSegmentsListOK.TotalItems = count(source.TotalItems)
 	siteapiSiteSegmentsListOK.TotalPages = count(source.TotalPages)
-	return &siteapiSiteSegmentsListOK
+	return &siteapiSiteSegmentsListOK, nil
 }
-func (c *ConverterImpl) SegmentsToResources(source []*ent.Segment) []site.SiteSegmentResource {
+func (c *ConverterImpl) SegmentsToResources(source []*ent.Segment) ([]site.SiteSegmentResource, error) {
 	var siteapiSiteSegmentResourceList []site.SiteSegmentResource
 	siteapiSiteSegmentResourceList = make([]site.SiteSegmentResource, len(source))
 	for i := 0; i < len(source); i++ {
-		siteapiSiteSegmentResourceList[i] = c.SegmentToResource(source[i])
+		siteapiSiteSegmentResource, err := c.SegmentToResource(source[i])
+		if err != nil {
+			return nil, err
+		}
+		siteapiSiteSegmentResourceList[i] = siteapiSiteSegmentResource
 	}
-	return siteapiSiteSegmentResourceList
+	return siteapiSiteSegmentResourceList, nil
 }
 func (c *ConverterImpl) SendCapStatusToResource(source *providerlimit.SendCapStatus) site.OptNilSendCap {
 	return optNilSendCap(c, source)
@@ -2919,7 +2951,6 @@ func (c *ConverterImpl) analyticsreportNewPeoplePointToSiteapiSiteNewPeoplePoint
 	siteapiSiteNewPeoplePoint.Manual = count(source.Manual)
 	siteapiSiteNewPeoplePoint.API = count(source.API)
 	siteapiSiteNewPeoplePoint.Tracker = count(source.Tracker)
-	siteapiSiteNewPeoplePoint.Unknown = count(source.Unknown)
 	return siteapiSiteNewPeoplePoint
 }
 func (c *ConverterImpl) analyticsreportOwnerClicksToSiteapiSiteAnalyticsLinkOwner(source analyticsreport.OwnerClicks) site.SiteAnalyticsLinkOwner {

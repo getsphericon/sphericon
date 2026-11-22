@@ -221,8 +221,8 @@ function EmailSubject({ workspaceId, event, subject }: Row & { subject: string }
 }
 
 // EmailEvent is the row of an email System event: its verb, the subject the Contact received, and
-// what follows it. An Event whose email kept no subject (sent before it was kept, or erased with
-// the Contact) shows the action's words alone.
+// what follows it. An Event whose email kept no subject (erased with the Contact) shows the
+// action's words alone.
 function EmailEvent({
   workspaceId,
   event,

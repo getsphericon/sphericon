@@ -22119,7 +22119,7 @@ func (m *ContactMutation) Source() (r contact.Source, exists bool) {
 // OldSource returns the old "source" field's value of the Contact entity.
 // If the Contact object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ContactMutation) OldSource(ctx context.Context) (v *contact.Source, err error) {
+func (m *ContactMutation) OldSource(ctx context.Context) (v contact.Source, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldSource is only allowed on UpdateOne operations")
 	}
@@ -22133,22 +22133,9 @@ func (m *ContactMutation) OldSource(ctx context.Context) (v *contact.Source, err
 	return oldValue.Source, nil
 }
 
-// ClearSource clears the value of the "source" field.
-func (m *ContactMutation) ClearSource() {
-	m.source = nil
-	m.clearedFields[contact.FieldSource] = struct{}{}
-}
-
-// SourceCleared returns if the "source" field was cleared in this mutation.
-func (m *ContactMutation) SourceCleared() bool {
-	_, ok := m.clearedFields[contact.FieldSource]
-	return ok
-}
-
 // ResetSource resets all changes to the "source" field.
 func (m *ContactMutation) ResetSource() {
 	m.source = nil
-	delete(m.clearedFields, contact.FieldSource)
 }
 
 // SetCustomFields sets the "custom_fields" field.
@@ -22928,9 +22915,6 @@ func (m *ContactMutation) ClearedFields() []string {
 	if m.FieldCleared(contact.FieldAvatar) {
 		fields = append(fields, contact.FieldAvatar)
 	}
-	if m.FieldCleared(contact.FieldSource) {
-		fields = append(fields, contact.FieldSource)
-	}
 	if m.FieldCleared(contact.FieldCustomFields) {
 		fields = append(fields, contact.FieldCustomFields)
 	}
@@ -22980,9 +22964,6 @@ func (m *ContactMutation) ClearField(name string) error {
 		return nil
 	case contact.FieldAvatar:
 		m.ClearAvatar()
-		return nil
-	case contact.FieldSource:
-		m.ClearSource()
 		return nil
 	case contact.FieldCustomFields:
 		m.ClearCustomFields()
@@ -39915,7 +39896,7 @@ func (m *MembershipMutation) Source() (r membership.Source, exists bool) {
 // OldSource returns the old "source" field's value of the Membership entity.
 // If the Membership object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MembershipMutation) OldSource(ctx context.Context) (v *membership.Source, err error) {
+func (m *MembershipMutation) OldSource(ctx context.Context) (v membership.Source, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldSource is only allowed on UpdateOne operations")
 	}
@@ -39929,22 +39910,9 @@ func (m *MembershipMutation) OldSource(ctx context.Context) (v *membership.Sourc
 	return oldValue.Source, nil
 }
 
-// ClearSource clears the value of the "source" field.
-func (m *MembershipMutation) ClearSource() {
-	m.source = nil
-	m.clearedFields[membership.FieldSource] = struct{}{}
-}
-
-// SourceCleared returns if the "source" field was cleared in this mutation.
-func (m *MembershipMutation) SourceCleared() bool {
-	_, ok := m.clearedFields[membership.FieldSource]
-	return ok
-}
-
 // ResetSource resets all changes to the "source" field.
 func (m *MembershipMutation) ResetSource() {
 	m.source = nil
-	delete(m.clearedFields, membership.FieldSource)
 }
 
 // SetSecondFactorRemindedAt sets the "second_factor_reminded_at" field.
@@ -40350,9 +40318,6 @@ func (m *MembershipMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *MembershipMutation) ClearedFields() []string {
 	var fields []string
-	if m.FieldCleared(membership.FieldSource) {
-		fields = append(fields, membership.FieldSource)
-	}
 	if m.FieldCleared(membership.FieldSecondFactorRemindedAt) {
 		fields = append(fields, membership.FieldSecondFactorRemindedAt)
 	}
@@ -40370,9 +40335,6 @@ func (m *MembershipMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *MembershipMutation) ClearField(name string) error {
 	switch name {
-	case membership.FieldSource:
-		m.ClearSource()
-		return nil
 	case membership.FieldSecondFactorRemindedAt:
 		m.ClearSecondFactorRemindedAt()
 		return nil

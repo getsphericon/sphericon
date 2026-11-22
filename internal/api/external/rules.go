@@ -17,7 +17,7 @@ func (h *Handlers) RulesList(ctx context.Context, params externalapi.RulesListPa
 	if err != nil {
 		return nil, err
 	}
-	return mapper.RulesListPage(page), nil
+	return mapper.RulesListPage(page)
 }
 
 // RulesCreate always stores an inactive Rule: publishing is the send-class operation.
@@ -30,7 +30,10 @@ func (h *Handlers) RulesCreate(ctx context.Context, req *externalapi.CreateRuleI
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.RuleToResource(r)
+	res, err := mapper.RuleToResource(r)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -39,7 +42,10 @@ func (h *Handlers) RulesGet(ctx context.Context, params externalapi.RulesGetPara
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.RuleToResource(r)
+	res, err := mapper.RuleToResource(r)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -52,7 +58,10 @@ func (h *Handlers) RulesUpdate(ctx context.Context, req *externalapi.UpdateRuleI
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.RuleToResource(r)
+	res, err := mapper.RuleToResource(r)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -72,7 +81,10 @@ func (h *Handlers) RulesPublish(ctx context.Context, req *externalapi.RevisionIn
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.RuleToResource(r)
+	res, err := mapper.RuleToResource(r)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -82,7 +94,10 @@ func (h *Handlers) RulesRevert(ctx context.Context, req *externalapi.RevisionInp
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.RuleToResource(r)
+	res, err := mapper.RuleToResource(r)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -92,7 +107,10 @@ func (h *Handlers) RulesDeactivate(ctx context.Context, params externalapi.Rules
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.RuleToResource(r)
+	res, err := mapper.RuleToResource(r)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 

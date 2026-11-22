@@ -123,16 +123,6 @@ test('an action keeps its code on hover', async () => {
   await expect.element(screen.getByText('workspace.suspend')).toBeInTheDocument()
 })
 
-// An Integration's `restore`, which v0.2 to v0.3 recorded when an Integration was unarchived, is
-// gone from the contract with ADR 0100; the entries stay in the log and still read as words.
-test('an Integration restore an older release recorded is shown by its words', async () => {
-  const screen = await renderWithProviders(<AuditActionName action="integration.restore" />)
-
-  await expect
-    .element(screen.getByText('Restored an integration', { exact: true }))
-    .toBeInTheDocument()
-})
-
 test('an action the contract does not declare is shown by its code', async () => {
   const screen = await renderWithProviders(<AuditActionName action="tag.archive" />)
 

@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ee/domain/insights/usages"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -18,7 +19,7 @@ func TestWithoutALicenseSendingAndContactChangesWriteNoUsageRows(t *testing.T) {
 	h := newHarness(t, testhelper.WithoutLicense())
 	fixtureRows := h.env.DB.Usage.Query().CountX(t.Context())
 	// test writes: the contacts-peak hook fires on this Contact write
-	require.NoError(t, h.env.DB.Scoped(fixtures.AcmeID).Contact().Create().SetEmail("new@example.com").Exec(t.Context()))
+	require.NoError(t, h.env.DB.Scoped(fixtures.AcmeID).Contact().Create().SetSource(contact.SourceManual).SetEmail("new@example.com").Exec(t.Context()))
 	h.sendOnAPI(t, "unlicensed@example.com")
 
 	m := usages.New(h.env.DB, nil, time.Now)
