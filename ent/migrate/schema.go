@@ -340,6 +340,47 @@ var (
 			},
 		},
 	}
+	// AutomationStepRecordsColumns holds the columns for the "automation_step_records" table.
+	AutomationStepRecordsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "step_id", Type: field.TypeString},
+		{Name: "reached_at", Type: field.TypeTime},
+		{Name: "left_at", Type: field.TypeTime, Nullable: true},
+		{Name: "outcome", Type: field.TypeEnum, Nullable: true, Enums: []string{"done", "skipped"}},
+		{Name: "skip_reason", Type: field.TypeEnum, Nullable: true, Enums: []string{"suppressed", "unsubscribed_everything", "unsubscribed_source", "unconfirmed", "no_destination", "contact_erased", "no_local_time", "frequency_cap"}},
+		{Name: "due_at", Type: field.TypeTime, Nullable: true},
+		{Name: "run_id", Type: field.TypeInt64},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// AutomationStepRecordsTable holds the schema information for the "automation_step_records" table.
+	AutomationStepRecordsTable = &schema.Table{
+		Name:       "automation_step_records",
+		Columns:    AutomationStepRecordsColumns,
+		PrimaryKey: []*schema.Column{AutomationStepRecordsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "automation_step_records_automation_runs_run",
+				Columns:    []*schema.Column{AutomationStepRecordsColumns[9]},
+				RefColumns: []*schema.Column{AutomationRunsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "automation_step_records_workspaces_automation_step_records",
+				Columns:    []*schema.Column{AutomationStepRecordsColumns[10]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "automation_step_records_workspace_id_run_id_step_id",
+				Unique:  true,
+				Columns: []*schema.Column{AutomationStepRecordsColumns[10], AutomationStepRecordsColumns[9], AutomationStepRecordsColumns[3]},
+			},
+		},
+	}
 	// AutomationVersionsColumns holds the columns for the "automation_versions" table.
 	AutomationVersionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -3365,6 +3406,7 @@ var (
 		AutomationsTable,
 		AutomationFiguresTable,
 		AutomationRunsTable,
+		AutomationStepRecordsTable,
 		AutomationVersionsTable,
 		BindingsTable,
 		BrandKitsTable,
@@ -3489,6 +3531,18 @@ func init() {
 	AutomationRunsTable.Annotation.Checks = map[string]string{
 		"automation_runs_failure_kind_check": "failure_kind IN ('invalid_body', 'timeout', 'blocked_address', 'http_status', 'network')",
 		"automation_runs_status_check":       "status IN ('active', 'completed', 'failed', 'exited', 'goal_reached')",
+	}
+	AutomationStepRecordsTable.ForeignKeys[0].RefTable = AutomationRunsTable
+	AutomationStepRecordsTable.ForeignKeys[1].RefTable = WorkspacesTable
+	AutomationStepRecordsTable.Annotation = &entsql.Annotation{
+		Table: "automation_step_records",
+	}
+	AutomationStepRecordsTable.Annotation.Checks = map[string]string{
+		"automation_step_records_left_check":        "(left_at IS NULL) = (outcome IS NULL)",
+		"automation_step_records_outcome_check":     "outcome IN ('done', 'skipped')",
+		"automation_step_records_reason_check":      "outcome IS NOT NULL OR skip_reason IS NULL",
+		"automation_step_records_skip_reason_check": "skip_reason IN ('suppressed', 'unsubscribed_everything', 'unsubscribed_source', 'unconfirmed', 'no_destination', 'contact_erased', 'no_local_time', 'frequency_cap')",
+		"automation_step_records_skipped_check":     "(outcome = 'done' AND skip_reason IS NULL) OR (outcome = 'skipped' AND skip_reason IS NOT NULL)",
 	}
 	AutomationVersionsTable.ForeignKeys[0].RefTable = AutomationsTable
 	AutomationVersionsTable.ForeignKeys[1].RefTable = WorkspacesTable

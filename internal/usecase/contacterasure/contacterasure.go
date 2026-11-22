@@ -9,9 +9,9 @@
 // is an ordered list of steps (see UseCase.steps), each a call to the module that owns the rows over
 // the resolved Target: the use case reads the tables, and changes each only through its owner's
 // erase function. What the foreign keys of the Contact row do is no step: deleting the row
-// cascades to its Automation runs, Rule firings, Bindings, Start tokens, Confirmations and Tag
-// links, and sets null the Contact reference of its Broadcast recipients, Unsubscribes and
-// Suppressions. Extending Erasure (another identifier kind, another dependent table, another
+// cascades to its Automation runs and their Step records, Rule firings, Bindings, Start tokens,
+// Confirmations and Tag links, and sets null the Contact reference of its Broadcast recipients,
+// Unsubscribes and Suppressions. Extending Erasure (another identifier kind, another dependent table, another
 // signal published in the same transaction) means resolving the new identifier into a Target,
 // adding one step, or a foreign key that does the work, not a second code path. The Contact row
 // goes last, through the contacts module's unchecked removal contactsunchecked.Module.DeleteIn. Each step is

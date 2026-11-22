@@ -23,9 +23,8 @@ import (
 )
 
 // RunStepArgs is the job that executes one step of one Enrollment. Step is the id of the Step
-// the job expects the Enrollment to stand on (ADR 0122), "" for an Enrollment past the last Step
-// of its path, which the job completes: a job delivered again after its step moved the
-// Enrollment finds it elsewhere and ends quietly. The args carry the run id, so Erasure can
+// the job expects the Enrollment to stand on (ADR 0122): a job delivered again after its step moved
+// the Enrollment finds it elsewhere and ends quietly. The args carry the run id, so Erasure can
 // delete a queued step by it (ADR 0021): renaming `run_id` breaks that purge.
 type RunStepArgs struct {
 	jobkind.Workspace
@@ -188,7 +187,8 @@ func (m *StepExecution) start(ctx context.Context, s *ent.Scoped, makeEnrollment
 		if err != nil {
 			return err
 		}
-		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: runID, Step: lo.FromPtr(run.CurrentStepID)}, nil)
+		// A first Step that is a wait is due later: its job runs then.
+		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: runID, Step: lo.FromPtr(run.CurrentStepID)}, scheduled(run.ResumeAt))
 	})
 	return made, err
 }
@@ -196,10 +196,11 @@ func (m *StepExecution) start(ctx context.Context, s *ent.Scoped, makeEnrollment
 // Step executes the Step of the id step of the Enrollment runID and queues what follows it, in one
 // transaction with the move. It does nothing, and returns nil, when the Enrollment can no longer
 // take that step: it is erased with its Contact (ADR 0021), has left `active`, or stands elsewhere
-// than step because this job was delivered twice or a competing writer moved it. A step that
-// runs before the Enrollment's recorded resume time queues itself for that time and does
-// nothing else. An Enrollment past the last Step of its path (step "") completes, as does one on an
-// End; a Step id its version does not hold fails it. A send step is one Outbound send under the Automation's Sending source
+// than step because this job was delivered twice or a competing writer moved it. A wait holds the
+// Enrollment on itself until the due moment it recorded when the Enrollment reached it (ADR
+// 0124): its job run before that moment queues itself for then and does nothing else, and at that
+// moment it moves the Enrollment on. An End completes it at once. A Step id its version does not
+// hold fails it. A send step is one Outbound send under the Automation's Sending source
 // (ADR 0015): the Outbound module owns eligibility, the unsubscribe footer and the send record, and
 // Step only turns its Outcome into the Enrollment's next state.
 func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, step string) error {
@@ -231,9 +232,6 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 	if run.ResumeAt != nil && run.ResumeAt.After(m.now()) {
 		return m.requeue(ctx, s, run.ID, step, *run.ResumeAt)
 	}
-	if step == "" {
-		return m.complete(ctx, s, run.ID)
-	}
 	st, ok := automationstep.Find(version.Steps, step)
 	if !ok {
 		return m.fail(ctx, s, run.ID, fmt.Errorf("step %s is not a step of version %d", step, version.ID))
@@ -242,8 +240,8 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 
 	switch p := st.Payload.(type) {
 	case automationstep.Wait:
-		resume := m.now().Add(time.Duration(p.Seconds) * time.Second)
-		return m.advance(ctx, s, run.ID, at, stepMove{resumeAt: &resume})
+		// Its due moment, recorded when the Enrollment reached it, has come.
+		return m.advance(ctx, s, run.ID, at, stepMove{})
 
 	case automationstep.ApplyTag:
 		return m.tag(ctx, s, run, at, func(sys *ent.Scoped) error {
@@ -259,7 +257,7 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 	case automationstep.End:
 		// An End finishes the path and completes the Enrollment at once (ADR 0124): whatever
 		// its path holds after it is never reached.
-		return m.complete(ctx, s, run.ID)
+		return m.end(ctx, s, run.ID, at)
 
 	case automationstep.HTTP:
 		// The call runs on its own queue (ADR 0039); the job queued here makes it and moves
@@ -337,8 +335,9 @@ func (m *StepExecution) send(ctx context.Context, s *ent.Scoped, a *ent.Automati
 			}))
 		}
 		// No Destination on the step's Channel, an opt-out from the Channel or a Suppression: the
-		// sequence goes on with its next step, so one Channel's absence never ends it.
-		return m.advance(ctx, s, run.ID, at, stepMove{})
+		// sequence goes on with its next step, so one Channel's absence never ends it, and the
+		// step's record says why it was skipped.
+		return m.advance(ctx, s, run.ID, at, stepMove{skipped: res.SkippedReason})
 	default: // outboundmessages.Failed
 		if res.MessageOnly() {
 			// The provider refused this one message (an invalid number, an answer that concerns no
@@ -349,12 +348,12 @@ func (m *StepExecution) send(ctx context.Context, s *ent.Scoped, a *ent.Automati
 	}
 }
 
-// stepMove is what an advance does besides moving the Enrollment: resumeAt, when set, parks it and
-// schedules the next job for then; with makes writes of its own in the same transaction.
-// contactID, set when with writes the Contact's row, is that Contact: its lock is taken before the
-// Enrollment's (the lock order of lockContact).
+// stepMove is what an advance does besides moving the Enrollment: skipped, when set, is why the
+// Step it leaves was skipped, which its record keeps; with makes writes of its own in the same
+// transaction. contactID, set when with writes the Contact's row, is that Contact: its lock is
+// taken before the Enrollment's (the lock order of lockContact).
 type stepMove struct {
-	resumeAt  *time.Time
+	skipped   skipreason.Reason
 	contactID int64
 	with      func(*ent.Scoped, events.Publisher) error
 }
@@ -366,21 +365,15 @@ type place struct {
 	step  string
 }
 
-// next is the id of the Step that follows, "" past the last Step of the path.
-func (p place) next() string {
-	st, ok := automationstep.Next(p.steps, p.step)
-	if !ok {
-		return ""
-	}
-	return st.ID
-}
-
-// advance moves the Enrollment from the Step it stands on to the next one, or past the last Step
-// of its path, and queues the job that runs it, in one transaction with mv's own writes. A move
-// that finds the Enrollment gone or elsewhere, or its Contact gone, writes nothing and returns
-// nil.
+// advance moves the Enrollment off the Step it stands on, in one transaction with mv's own writes
+// and the Step records of the move (ADR 0124): onto the next Step, which it reaches then, queueing
+// the job that runs it (at the due moment of a wait, which holds the Enrollment on itself until
+// then), or, with no next Step, to its end: it completes, on the Step it left, and nothing is
+// queued. A move that finds the Enrollment gone or elsewhere, or its Contact gone, writes nothing
+// and returns nil.
 func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64, from place, mv stepMove) error {
-	to := from.next()
+	next, more := automationstep.Next(from.steps, from.step)
+	now := m.now()
 	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher, q events.Enqueuer) error {
 		if mv.contactID != 0 {
 			_, locked, err := m.lockContact(ctx, ts, mv.contactID)
@@ -388,7 +381,16 @@ func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64,
 				return err // an erased Contact's Enrollment is erased with it
 			}
 		}
-		if err := advanceRun(ctx, ts, runID, from.step, to, mv.resumeAt); err != nil {
+		var due *time.Time
+		if more {
+			due = dueOf(next, now)
+			if err := advanceRun(ctx, ts, runID, from.step, next.ID, due); err != nil {
+				return err
+			}
+			if err := leave(ctx, ts, runID, from.step, now, mv.skipped); err != nil {
+				return err
+			}
+		} else if err := completeOn(ctx, ts, pub, runID, from.step, now, mv.skipped); err != nil {
 			return err
 		}
 		if mv.with != nil {
@@ -396,9 +398,33 @@ func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64,
 				return err
 			}
 		}
-		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: runID, Step: to}, scheduled(mv.resumeAt))
+		if !more {
+			return nil
+		}
+		if err := reach(ctx, ts, runID, next.ID, now, due); err != nil {
+			return err
+		}
+		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: runID, Step: next.ID}, scheduled(due))
 	})
 	return quiet(err)
+}
+
+// end completes the Enrollment on the End it stands on (ADR 0124), the End's record stamped in
+// the same transaction; one that is no longer active or no longer there stays as it is.
+func (m *StepExecution) end(ctx context.Context, s *ent.Scoped, runID int64, at place) error {
+	now := m.now()
+	return quiet(m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+		return completeOn(ctx, ts, pub, runID, at.step, now, "")
+	}))
+}
+
+// completeOn completes the Enrollment on the Step of the id, which it leaves at now (skipped for
+// why when why is set), in the transaction s is bound to.
+func completeOn(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID int64, step string, now time.Time, why skipreason.Reason) error {
+	if err := completeRun(ctx, s, pub, runID, step, now); err != nil {
+		return err
+	}
+	return leave(ctx, s, runID, step, now, why)
 }
 
 // requeue queues the same step again for at.
@@ -417,13 +443,6 @@ func scheduled(at *time.Time) *river.InsertOpts {
 		return nil
 	}
 	return &river.InsertOpts{ScheduledAt: *at}
-}
-
-// complete ends the Enrollment `completed`; one that is no longer active stays as it is.
-func (m *StepExecution) complete(ctx context.Context, s *ent.Scoped, runID int64) error {
-	return quiet(m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		return completeRun(ctx, ts, pub, runID, m.now())
-	}))
 }
 
 // fail ends the Enrollment `failed` and returns cause for the job, or nothing when the run

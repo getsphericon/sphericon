@@ -5,6 +5,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
@@ -37,4 +38,17 @@ func (m *Module) Enrollment(ctx context.Context, s *ent.Scoped, automationID, id
 		return nil, ErrEnrollmentNotFound
 	}
 	return r, err
+}
+
+// StepRecords returns what an Enrollment of an Automation kept of each Step it reached (ADR
+// 0124), in the order it reached them. ErrEnrollmentNotFound when the Workspace has no such
+// Automation, or the Automation no such Enrollment.
+func (m *Module) StepRecords(ctx context.Context, s *ent.Scoped, automationID, enrollmentID int64) ([]*ent.AutomationStepRecord, error) {
+	if _, err := m.Enrollment(ctx, s, automationID, enrollmentID); err != nil {
+		return nil, err
+	}
+	return s.AutomationStepRecord().Query().
+		Where(automationsteprecord.RunID(enrollmentID)).
+		Order(ent.Asc(automationsteprecord.FieldReachedAt), ent.Asc(automationsteprecord.FieldID)).
+		All(ctx)
 }

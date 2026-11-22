@@ -478,7 +478,8 @@ export default interface Resources {
       "triggerMissing": "Keep exactly one trigger on the canvas.",
       "triggerMissingTitle": "Trigger needed",
       "waitNodeDescription": "Pause before the next step.",
-      "waitSecondsLabel": "Wait (seconds)"
+      "waitSecondsLabel": "Wait (seconds)",
+      "waitingUntil": "Waiting until"
     },
     "brandKit": {
       "accentColorLabel": "Accent color",

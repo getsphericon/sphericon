@@ -3893,6 +3893,8 @@ const (
 	StartTokenGlobexUsedID = 900
 	// StartTokenGlobexUsedToken is from fixtures/start_tokens.
 	StartTokenGlobexUsedToken = "fixture-start-token-globex"
+	// StepRecordErasableID is from fixtures/automation_step_records.
+	StepRecordErasableID = 3000
 	// SuppressionErasableDestination is from fixtures/suppressions.
 	SuppressionErasableDestination = "erin@initech.test"
 	// SuppressionErasableID is from fixtures/suppressions.

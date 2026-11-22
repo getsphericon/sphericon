@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
@@ -1017,6 +1018,21 @@ func (_u *WorkspaceUpdate) AddAutomationRuns(v ...*AutomationRun) *WorkspaceUpda
 	return _u.AddAutomationRunIDs(ids...)
 }
 
+// AddAutomationStepRecordIDs adds the "automation_step_records" edge to the AutomationStepRecord entity by IDs.
+func (_u *WorkspaceUpdate) AddAutomationStepRecordIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddAutomationStepRecordIDs(ids...)
+	return _u
+}
+
+// AddAutomationStepRecords adds the "automation_step_records" edges to the AutomationStepRecord entity.
+func (_u *WorkspaceUpdate) AddAutomationStepRecords(v ...*AutomationStepRecord) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddAutomationStepRecordIDs(ids...)
+}
+
 // AddRuleIDs adds the "rules" edge to the Rule entity by IDs.
 func (_u *WorkspaceUpdate) AddRuleIDs(ids ...int64) *WorkspaceUpdate {
 	_u.mutation.AddRuleIDs(ids...)
@@ -1975,6 +1991,27 @@ func (_u *WorkspaceUpdate) RemoveAutomationRuns(v ...*AutomationRun) *WorkspaceU
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAutomationRunIDs(ids...)
+}
+
+// ClearAutomationStepRecords clears all "automation_step_records" edges to the AutomationStepRecord entity.
+func (_u *WorkspaceUpdate) ClearAutomationStepRecords() *WorkspaceUpdate {
+	_u.mutation.ClearAutomationStepRecords()
+	return _u
+}
+
+// RemoveAutomationStepRecordIDs removes the "automation_step_records" edge to AutomationStepRecord entities by IDs.
+func (_u *WorkspaceUpdate) RemoveAutomationStepRecordIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveAutomationStepRecordIDs(ids...)
+	return _u
+}
+
+// RemoveAutomationStepRecords removes "automation_step_records" edges to AutomationStepRecord entities.
+func (_u *WorkspaceUpdate) RemoveAutomationStepRecords(v ...*AutomationStepRecord) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveAutomationStepRecordIDs(ids...)
 }
 
 // ClearRules clears all "rules" edges to the Rule entity.
@@ -4034,6 +4071,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.AutomationStepRecordsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationStepRecordsTable,
+			Columns: []string{workspace.AutomationStepRecordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationsteprecord.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedAutomationStepRecordsIDs(); len(nodes) > 0 && !_u.mutation.AutomationStepRecordsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationStepRecordsTable,
+			Columns: []string{workspace.AutomationStepRecordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationsteprecord.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AutomationStepRecordsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationStepRecordsTable,
+			Columns: []string{workspace.AutomationStepRecordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationsteprecord.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _u.mutation.RulesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -5877,6 +5959,21 @@ func (_u *WorkspaceUpdateOne) AddAutomationRuns(v ...*AutomationRun) *WorkspaceU
 	return _u.AddAutomationRunIDs(ids...)
 }
 
+// AddAutomationStepRecordIDs adds the "automation_step_records" edge to the AutomationStepRecord entity by IDs.
+func (_u *WorkspaceUpdateOne) AddAutomationStepRecordIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddAutomationStepRecordIDs(ids...)
+	return _u
+}
+
+// AddAutomationStepRecords adds the "automation_step_records" edges to the AutomationStepRecord entity.
+func (_u *WorkspaceUpdateOne) AddAutomationStepRecords(v ...*AutomationStepRecord) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddAutomationStepRecordIDs(ids...)
+}
+
 // AddRuleIDs adds the "rules" edge to the Rule entity by IDs.
 func (_u *WorkspaceUpdateOne) AddRuleIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddRuleIDs(ids...)
@@ -6835,6 +6932,27 @@ func (_u *WorkspaceUpdateOne) RemoveAutomationRuns(v ...*AutomationRun) *Workspa
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAutomationRunIDs(ids...)
+}
+
+// ClearAutomationStepRecords clears all "automation_step_records" edges to the AutomationStepRecord entity.
+func (_u *WorkspaceUpdateOne) ClearAutomationStepRecords() *WorkspaceUpdateOne {
+	_u.mutation.ClearAutomationStepRecords()
+	return _u
+}
+
+// RemoveAutomationStepRecordIDs removes the "automation_step_records" edge to AutomationStepRecord entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveAutomationStepRecordIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveAutomationStepRecordIDs(ids...)
+	return _u
+}
+
+// RemoveAutomationStepRecords removes "automation_step_records" edges to AutomationStepRecord entities.
+func (_u *WorkspaceUpdateOne) RemoveAutomationStepRecords(v ...*AutomationStepRecord) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveAutomationStepRecordIDs(ids...)
 }
 
 // ClearRules clears all "rules" edges to the Rule entity.
@@ -8917,6 +9035,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.AutomationStepRecordsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationStepRecordsTable,
+			Columns: []string{workspace.AutomationStepRecordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationsteprecord.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedAutomationStepRecordsIDs(); len(nodes) > 0 && !_u.mutation.AutomationStepRecordsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationStepRecordsTable,
+			Columns: []string{workspace.AutomationStepRecordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationsteprecord.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AutomationStepRecordsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationStepRecordsTable,
+			Columns: []string{workspace.AutomationStepRecordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationsteprecord.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

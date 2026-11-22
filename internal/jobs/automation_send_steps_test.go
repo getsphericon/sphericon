@@ -12,6 +12,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/tag"
@@ -20,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -81,6 +83,33 @@ func TestASkippedEmailMovesTheEnrollmentOnToTheStepsAfterIt(t *testing.T) {
 			assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(t.Context(), runID).Status, "the skips do not end the Enrollment")
 			assert.Contains(t, tagNames(t, env, contactID), "walked-past", "the step after the emails ran")
 			assert.Equal(t, []externalapi.AutomationStepFigures{{StepId: firstEmailStepID, Skipped: 1}, {StepId: secondEmailStepID, Skipped: 1}}, stepFigures(t, env, fixtures.AutomationJobsEmailsThenTagID))
+		})
+	}
+}
+
+// A send Step the Enrollment moved on from without sending records that it was skipped, and why
+// (ADR 0124); the Steps it did run record that they were done.
+func TestASkippedEmailStepRecordsWhy(t *testing.T) {
+	cannotBeEmailed := map[string]struct {
+		runID int64
+		why   skipreason.Reason
+	}{
+		"no email address":        {fixtures.AutomationRunJobsEmailsThenTagNoEmailID, skipreason.NoDestination},
+		"suppressed":              {fixtures.AutomationRunJobsEmailsThenTagComplainedID, skipreason.Suppressed},
+		"unsubscribed everything": {fixtures.AutomationRunJobsEmailsThenTagUnsubscribedEverythingID, skipreason.UnsubscribedEverything},
+	}
+	for name, enrolled := range cannotBeEmailed {
+		t.Run(name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			queueStep(t, env, enrolled.runID)
+
+			env.RunQueuedSteps(t, stepperOf(env, resolvingTo(&fakeSender{})))
+
+			records := stepRecordsOf(t, env, enrolled.runID)
+			assert.Equal(t, []automationsteprecord.Outcome{automationsteprecord.OutcomeSkipped, automationsteprecord.OutcomeDone, automationsteprecord.OutcomeSkipped, automationsteprecord.OutcomeDone},
+				lo.Map(records, func(r *ent.AutomationStepRecord, _ int) automationsteprecord.Outcome { return lo.FromPtr(r.Outcome) }))
+			assert.Equal(t, []skipreason.Reason{enrolled.why, "", enrolled.why, ""},
+				lo.Map(records, func(r *ent.AutomationStepRecord, _ int) skipreason.Reason { return lo.FromPtr(r.SkipReason) }))
 		})
 	}
 }

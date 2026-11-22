@@ -198,8 +198,9 @@
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
 
-# A tag step an exit Event can end: the race of the two for one Contact takes the Contact's lock
-# first on both sides (#811). Trigger and exit unused elsewhere.
+# A tag step an exit Event can end, then a wait that holds the Enrollment active after it: the race
+# of the two for one Contact takes the Contact's lock first on both sides (#811). Trigger and exit
+# unused elsewhere.
 - id: 5567 # fixture: AutomationJobsTagWithExit
   revision: 1
   name: Jobs tag with exit

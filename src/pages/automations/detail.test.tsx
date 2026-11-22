@@ -24,12 +24,16 @@ import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
+import { formatDateTime } from '../../utils/datetime.ts'
 import { AutomationDetailPage } from './detail.tsx'
 
 const MOUNT = routeMount(automationsDetailRoute, {
   workspaceId: 'TestWs01',
   automationId: testId(1),
 })
+
+// When the wait an Enrollment stands on is due.
+const WAIT_DUE = '2026-03-20T09:30:00Z'
 
 const NO_REVENUE = { reportingCurrency: 'USD', orders: 0, amount: 0 }
 
@@ -105,8 +109,17 @@ test('shows the automation and the contacts enrolled in it', async () => {
             status: 'completed',
             ...TIMESTAMPS,
           },
+          {
+            id: testId(6),
+            automationId: testId(1),
+            contactId: testId(43),
+            status: 'active',
+            currentStepId: stepId(2),
+            resumeAt: WAIT_DUE,
+            ...TIMESTAMPS,
+          },
         ],
-        1,
+        2,
       ),
     }),
   )
@@ -116,6 +129,9 @@ test('shows the automation and the contacts enrolled in it', async () => {
   await expect.element(screen.getByText('Welcome series')).toBeInTheDocument()
   await expect.element(screen.getByText(testId(42))).toBeInTheDocument()
   await expect.element(screen.getByRole('cell', { name: 'Completed' })).toBeInTheDocument()
+  // An Enrollment on a wait shows when the wait is due.
+  await expect.element(screen.getByRole('cell', { name: 'Waiting until' })).toBeInTheDocument()
+  await expect.element(screen.getByText(formatDateTime(WAIT_DUE, 'en'))).toBeInTheDocument()
 })
 
 test('shows the opens, the clicks and the clicked links of the automation', async () => {

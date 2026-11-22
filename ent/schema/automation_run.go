@@ -13,8 +13,8 @@ import (
 
 // AutomationRun is one contact's progress through an Automation. The unique
 // (automation_id, contact_id) index enforces enroll-once-ever (re-enrollment is
-// a deliberate non-feature for the MVP). current_step_id names the Step to execute
-// next; resume_at is set while waiting.
+// a deliberate non-feature for the MVP). current_step_id names the Step it stands on;
+// resume_at is when the wait it stands on is due.
 type AutomationRun struct {
 	ent.Schema
 }
@@ -81,9 +81,9 @@ func (AutomationRun) Fields() []ent.Field {
 			Nillable(),
 		// The id of the Step of its version the Enrollment stands on, the Step its next job
 		// executes (ADR 0122): an id every version keeps, so a Step inserted above it in a later
-		// version moves nothing. Null once the Enrollment has stood past the last Step of its
-		// path, where the job that finds it there completes it. A terminal Enrollment keeps the
-		// Step it ended on.
+		// version moves nothing. A wait holds the Enrollment on itself until it is due (resume_at,
+		// ADR 0124), and the move that leaves the last Step completes the Enrollment there, so a
+		// terminal Enrollment keeps the Step it ended on. Null only for a version of no Steps.
 		field.String("current_step_id").
 			Optional().
 			Nillable(),

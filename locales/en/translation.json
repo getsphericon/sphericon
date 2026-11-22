@@ -477,6 +477,7 @@
     "triggerLabel": "Trigger event",
     "triggerMissing": "Keep exactly one trigger on the canvas.",
     "triggerMissingTitle": "Trigger needed",
+    "waitingUntil": "Waiting until",
     "waitNodeDescription": "Pause before the next step.",
     "waitSecondsLabel": "Wait (seconds)"
   },
