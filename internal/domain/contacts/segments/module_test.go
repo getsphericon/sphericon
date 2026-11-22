@@ -22,7 +22,8 @@ import (
 )
 
 const (
-	badCondition = `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"email","operator":"weird","value":"x"}]}`
+	// badCondition tests a Custom field the Workspace does not have.
+	badCondition = `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"no_such_field","test":{"kind":"text","operator":"eq","value":"x"}}]}`
 )
 
 func TestCreateRejectsInvalidDefinition(t *testing.T) {
@@ -30,7 +31,7 @@ func TestCreateRejectsInvalidDefinition(t *testing.T) {
 	m := testhelper.Module[*segments.Module](env)
 	ctx := context.Background()
 
-	_, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Bad", Condition: new(testhelper.Condition(t, badCondition))})
+	_, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Bad", Condition: new(testhelper.SegmentCondition(t, badCondition))})
 	require.ErrorIs(t, err, segments.ErrInvalidCondition)
 
 	persisted, err := env.DB.Scoped(fixtures.AcmeID).Segment().Query().Where(segment.Name("Bad")).Exist(ctx)
@@ -43,10 +44,10 @@ func TestCreateRefusesAWindowOfNoDays(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*segments.Module](env)
 	ctx := context.Background()
-	def := `{"kind":"group","combinator":"and","rules":[` +
+	def := `{"kind":"group","combinator":"and","entries":[` +
 		`{"kind":"event","action":"signup","operator":"atLeast","times":1,"withinDays":0}]}`
 
-	_, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "No days", Condition: new(testhelper.Condition(t, def))})
+	_, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "No days", Condition: new(testhelper.SegmentCondition(t, def))})
 
 	require.ErrorIs(t, err, segments.ErrInvalidCondition)
 	assert.Contains(t, validation.Message(err), "withinDays must be at least 1")
@@ -57,13 +58,13 @@ func TestCreateAcceptsValidAndEmptyDefinition(t *testing.T) {
 	m := testhelper.Module[*segments.Module](env)
 	ctx := context.Background()
 
-	def := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"email","operator":"contains","value":"x"}]}`
-	s, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Good", Condition: new(testhelper.Condition(t, def))})
+	def := `{"kind":"group","combinator":"and","entries":[{"kind":"attribute","attribute":"email","test":{"kind":"text","operator":"contains","value":"x"}}]}`
+	s, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Good", Condition: new(testhelper.SegmentCondition(t, def))})
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.AcmeID, s.WorkspaceID)
 	assert.JSONEq(t, def, testhelper.Document(t, s.Condition))
 
-	_, err = m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Empty", Condition: new(conditiontree.Empty())})
+	_, err = m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Empty", Condition: &conditiontree.Segment{Group: conditiontree.Empty()}})
 	require.NoError(t, err)
 	_, err = m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Nil"})
 	require.NoError(t, err)
@@ -74,15 +75,15 @@ func TestUpdateValidatesLikeCreate(t *testing.T) {
 	m := testhelper.Module[*segments.Module](env)
 	ctx := context.Background()
 
-	_, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Revision: env.SegmentRevision(ctx, t, fixtures.SegmentProPlanID), Condition: patch.Set(testhelper.Condition(t, badCondition))})
+	_, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Revision: env.SegmentRevision(ctx, t, fixtures.SegmentProPlanID), Condition: patch.Set(testhelper.SegmentCondition(t, badCondition))})
 	require.ErrorIs(t, err, segments.ErrInvalidCondition)
 
 	// An invalid definition is rejected and leaves the row untouched.
-	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Revision: env.SegmentRevision(ctx, t, fixtures.SegmentProPlanID), Condition: patch.Set(testhelper.Condition(t, badCondition))})
+	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Revision: env.SegmentRevision(ctx, t, fixtures.SegmentProPlanID), Condition: patch.Set(testhelper.SegmentCondition(t, badCondition))})
 	require.ErrorIs(t, err, segments.ErrInvalidCondition)
 	s, err := env.DB.Segment.Get(ctx, fixtures.SegmentProPlanID)
 	require.NoError(t, err)
-	assert.NotEqual(t, testhelper.Condition(t, badCondition), s.Condition)
+	assert.NotEqual(t, testhelper.SegmentCondition(t, badCondition), s.Condition)
 
 	got, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Revision: env.SegmentRevision(ctx, t, fixtures.SegmentProPlanID), Name: patch.Set("Renamed")})
 	require.NoError(t, err)
@@ -125,10 +126,10 @@ func TestPreviewAndCountErrors(t *testing.T) {
 	m := testhelper.Module[*segments.Module](env)
 	ctx := context.Background()
 
-	_, err := m.Preview(ctx, env.DB.Scoped(fixtures.AcmeID), segments.PreviewInput{Condition: new(testhelper.Condition(t, badCondition))})
+	_, err := m.Preview(ctx, env.DB.Scoped(fixtures.AcmeID), segments.PreviewInput{Condition: new(testhelper.SegmentCondition(t, badCondition))})
 	require.ErrorIs(t, err, segments.ErrInvalidCondition)
 
-	_, err = m.Preview(ctx, env.DB.Scoped(fixtures.AcmeID), segments.PreviewInput{Condition: new(testhelper.Condition(t, badCondition)), Channel: new(channels.Email)})
+	_, err = m.Preview(ctx, env.DB.Scoped(fixtures.AcmeID), segments.PreviewInput{Condition: new(testhelper.SegmentCondition(t, badCondition)), Channel: new(channels.Email)})
 	require.ErrorIs(t, err, segments.ErrInvalidCondition, "a Channel asked for changes nothing about a bad condition")
 
 	_, err = m.Count(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.SegmentProPlanID)

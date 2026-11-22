@@ -110,7 +110,7 @@ func (Broadcast) Fields() []ent.Field {
 		// later edit of the Segment changes nothing for an armed Broadcast, and segment_id stays
 		// as provenance. Nil on a draft and on a Broadcast to all contacts (ADR 0149); jsonb (ADR
 		// 0169).
-		field.JSON("condition", &conditiontree.Group{}).
+		field.JSON("condition", &conditiontree.Segment{}).
 			Optional(),
 		// The Integration of the Broadcast's Channel it sends through; nil means that Channel's
 		// default.
@@ -201,6 +201,7 @@ func broadcastTable() entsql.Annotation {
 	a.Checks["broadcasts_failed_at_check"] = "status <> 'failed' OR failed_at IS NOT NULL"
 	a.Checks["broadcasts_cancelled_at_check"] = "status <> 'cancelled' OR cancelled_at IS NOT NULL"
 	a.Checks["broadcasts_condition_check"] = conditionCheck("condition")
+	a.Checks["broadcasts_condition_entries_check"] = conditionEntriesCheck("condition")
 	return a
 }
 

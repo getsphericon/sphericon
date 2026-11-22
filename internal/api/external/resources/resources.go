@@ -116,6 +116,7 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend optNilInt32
 // goverter:extend jsonObject
 // goverter:extend segmentCondition
+// goverter:extend ruleCondition
 // goverter:extend ruleActions
 // goverter:extend ruleResults
 // goverter:extend editorDocument
@@ -226,7 +227,17 @@ type Converter interface {
 	// goverter:map Group Group | optNonEmpty
 	// goverter:useEmptyOnNil:map
 	EmailSchemaTypeToResource(source emaildoc.AgentType) externalapi.EmailSchemaType
-	// goverter:map Type RuleOperators | customFieldRuleOperators
+	// goverter:useEmptyOnNil:slice
+	ConditionTestsToResource(source condition.Tests) externalapi.CustomFieldConditionTests
+	// goverter:enum:transform value
+	TextOperatorToResource(source conditiontree.TextOperator) externalapi.TextOperator
+	// goverter:enum:transform value
+	NumberOperatorToResource(source conditiontree.NumberOperator) externalapi.NumberOperator
+	// goverter:enum:transform value
+	MomentOperatorToResource(source conditiontree.MomentOperator) externalapi.MomentOperator
+	// goverter:enum:transform value
+	PresenceOperatorToResource(source conditiontree.PresenceOperator) externalapi.PresenceOperator
+	// goverter:map Type ConditionTests | customFieldConditionTests
 	CustomFieldToResource(source *ent.CustomField) externalapi.CustomFieldResource
 	// goverter:useEmptyOnNil:slice
 	CustomFieldsToResources(source []*ent.CustomField) []externalapi.CustomFieldResource
@@ -709,14 +720,15 @@ func optNilTimestamp(v *time.Time) externalapi.OptNilTimestamp {
 	return convert.Opt[externalapi.OptNilTimestamp]((*externalapi.Timestamp)(v))
 }
 
-// segmentCondition maps a Condition into the typed DTO. One that no longer decodes as the contract's
-// tree reads as having none.
-func segmentCondition(g conditiontree.Group) externalapi.OptConditionGroup {
-	var group externalapi.ConditionGroup
-	if err := condition.ToDTO(g, &group); err != nil {
-		return externalapi.OptConditionGroup{}
-	}
-	return externalapi.NewOptConditionGroup(group)
+// segmentCondition maps a Segment's Condition into the typed DTO. One that no longer decodes as the
+// typed tree is absent, so one bad row does not fail the whole response.
+func segmentCondition(g conditiontree.Segment) externalapi.OptSegmentCondition {
+	return convert.OptDocument[externalapi.OptSegmentCondition, externalapi.SegmentCondition](g)
+}
+
+// ruleCondition maps a Rule's Condition into the typed DTO, absent as segmentCondition's.
+func ruleCondition(g conditiontree.Rule) externalapi.OptRuleCondition {
+	return convert.OptDocument[externalapi.OptRuleCondition, externalapi.RuleCondition](g)
 }
 
 func optTimestamp(v *time.Time) externalapi.OptTimestamp {
@@ -920,10 +932,10 @@ func schemaExample(doc json.RawMessage) externalapi.EditorDocument {
 	return convert.DocObject[externalapi.EditorDocument](doc)
 }
 
-// customFieldRuleOperators is the operators a rule leaf may test on a Custom field of the type: the
+// customFieldConditionTests is what a Condition may ask of a Custom field of the type: the
 // Condition's table, listed so a client offers what the server takes.
-func customFieldRuleOperators(t customfield.Type) []externalapi.ConditionOperator {
-	return lo.Map(condition.RuleOperators(t), func(op string, _ int) externalapi.ConditionOperator { return externalapi.ConditionOperator(op) })
+func customFieldConditionTests(c Converter, t customfield.Type) externalapi.CustomFieldConditionTests {
+	return c.ConditionTestsToResource(condition.CustomFieldTests(t))
 }
 
 // optNilSendCap is null exactly when no Send cap applies.

@@ -21,9 +21,9 @@ var countryCodePattern = regexp.MustCompile(bounds.CountryCodePattern)
 // contract's camelCase names (ADR 0072): a trait of one is no Custom field, and no Custom field
 // takes one.
 var reservedKeys = map[string]bool{
-	"subjectId": true, "email": true, "phone": true,
-	"firstName": true, "lastName": true, "timeZone": true, "country": true,
-	"locale": true, "birthday": true, "city": true, "avatar": true,
+	fieldname.SubjectID: true, fieldname.Email: true, fieldname.Phone: true,
+	fieldname.FirstName: true, fieldname.LastName: true, fieldname.TimeZone: true, fieldname.Country: true,
+	fieldname.Locale: true, fieldname.Birthday: true, fieldname.City: true, fieldname.Avatar: true,
 }
 
 // textTrait reads one text core attribute from a trait: where it goes in a Core, and the value a
@@ -34,13 +34,13 @@ type textTrait struct {
 }
 
 var textTraits = map[string]textTrait{
-	"firstName": {func(c *Core) *patch.Field[string] { return &c.FirstName }, text},
-	"lastName":  {func(c *Core) *patch.Field[string] { return &c.LastName }, text},
-	"city":      {func(c *Core) *patch.Field[string] { return &c.City }, text},
-	"timeZone":  {func(c *Core) *patch.Field[string] { return &c.TimeZone }, timeZoneName},
-	"country":   {func(c *Core) *patch.Field[string] { return &c.Country }, countryCode},
-	"locale":    {func(c *Core) *patch.Field[string] { return &c.Locale }, localeTag},
-	"avatar":    {func(c *Core) *patch.Field[string] { return &c.Avatar }, avatarURL},
+	fieldname.FirstName: {func(c *Core) *patch.Field[string] { return &c.FirstName }, text},
+	fieldname.LastName:  {func(c *Core) *patch.Field[string] { return &c.LastName }, text},
+	fieldname.City:      {func(c *Core) *patch.Field[string] { return &c.City }, text},
+	fieldname.TimeZone:  {func(c *Core) *patch.Field[string] { return &c.TimeZone }, timeZoneName},
+	fieldname.Country:   {func(c *Core) *patch.Field[string] { return &c.Country }, countryCode},
+	fieldname.Locale:    {func(c *Core) *patch.Field[string] { return &c.Locale }, localeTag},
+	fieldname.Avatar:    {func(c *Core) *patch.Field[string] { return &c.Avatar }, avatarURL},
 }
 
 // FromTraits splits the traits of an Identify into the core attributes they assert and the Custom
@@ -52,7 +52,7 @@ func FromTraits(traits map[string]any) (core Core, fields map[string]any) {
 		switch {
 		case !reservedKeys[key]:
 			fields[key] = value
-		case key == "birthday":
+		case key == fieldname.Birthday:
 			core.Birthday = traitOf(value, birthday)
 		default:
 			if t, ok := textTraits[key]; ok {

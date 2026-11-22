@@ -10608,7 +10608,7 @@ type BroadcastMutation struct {
 	doc                *json.RawMessage
 	appenddoc          json.RawMessage
 	editor_version     *string
-	condition          **conditiontree.Group
+	condition          **conditiontree.Segment
 	status             *broadcast.Status
 	scheduled_at       *time.Time
 	sent_at            *time.Time
@@ -11667,12 +11667,12 @@ func (m *BroadcastMutation) ResetSegmentID() {
 }
 
 // SetCondition sets the "condition" field.
-func (m *BroadcastMutation) SetCondition(c *conditiontree.Group) {
+func (m *BroadcastMutation) SetCondition(c *conditiontree.Segment) {
 	m.condition = &c
 }
 
 // Condition returns the value of the "condition" field in the mutation.
-func (m *BroadcastMutation) Condition() (r *conditiontree.Group, exists bool) {
+func (m *BroadcastMutation) Condition() (r *conditiontree.Segment, exists bool) {
 	v := m.condition
 	if v == nil {
 		return
@@ -11683,7 +11683,7 @@ func (m *BroadcastMutation) Condition() (r *conditiontree.Group, exists bool) {
 // OldCondition returns the old "condition" field's value of the Broadcast entity.
 // If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BroadcastMutation) OldCondition(ctx context.Context) (v *conditiontree.Group, err error) {
+func (m *BroadcastMutation) OldCondition(ctx context.Context) (v *conditiontree.Segment, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldCondition is only allowed on UpdateOne operations")
 	}
@@ -12688,7 +12688,7 @@ func (m *BroadcastMutation) SetField(name string, value ent.Value) error {
 		m.SetSegmentID(v)
 		return nil
 	case broadcast.FieldCondition:
-		v, ok := value.(*conditiontree.Group)
+		v, ok := value.(*conditiontree.Segment)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -54061,7 +54061,7 @@ type RuleVersionMutation struct {
 	updated_at       *time.Time
 	version          *int
 	addversion       *int
-	condition        *conditiontree.Group
+	condition        *conditiontree.Rule
 	actions          *[]ruleaction.Action
 	appendactions    []ruleaction.Action
 	clearedFields    map[string]struct{}
@@ -54385,12 +54385,12 @@ func (m *RuleVersionMutation) ResetVersion() {
 }
 
 // SetCondition sets the "condition" field.
-func (m *RuleVersionMutation) SetCondition(c conditiontree.Group) {
+func (m *RuleVersionMutation) SetCondition(c conditiontree.Rule) {
 	m.condition = &c
 }
 
 // Condition returns the value of the "condition" field in the mutation.
-func (m *RuleVersionMutation) Condition() (r conditiontree.Group, exists bool) {
+func (m *RuleVersionMutation) Condition() (r conditiontree.Rule, exists bool) {
 	v := m.condition
 	if v == nil {
 		return
@@ -54401,7 +54401,7 @@ func (m *RuleVersionMutation) Condition() (r conditiontree.Group, exists bool) {
 // OldCondition returns the old "condition" field's value of the RuleVersion entity.
 // If the RuleVersion object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RuleVersionMutation) OldCondition(ctx context.Context) (v conditiontree.Group, err error) {
+func (m *RuleVersionMutation) OldCondition(ctx context.Context) (v conditiontree.Rule, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldCondition is only allowed on UpdateOne operations")
 	}
@@ -54779,7 +54779,7 @@ func (m *RuleVersionMutation) SetField(name string, value ent.Value) error {
 		m.SetVersion(v)
 		return nil
 	case ruleversion.FieldCondition:
-		v, ok := value.(conditiontree.Group)
+		v, ok := value.(conditiontree.Rule)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -57040,7 +57040,7 @@ type SegmentMutation struct {
 	revision         *int64
 	addrevision      *int64
 	name             *string
-	condition        *conditiontree.Group
+	condition        *conditiontree.Segment
 	clearedFields    map[string]struct{}
 	workspace        *int64
 	clearedworkspace bool
@@ -57403,12 +57403,12 @@ func (m *SegmentMutation) ResetName() {
 }
 
 // SetCondition sets the "condition" field.
-func (m *SegmentMutation) SetCondition(c conditiontree.Group) {
+func (m *SegmentMutation) SetCondition(c conditiontree.Segment) {
 	m.condition = &c
 }
 
 // Condition returns the value of the "condition" field in the mutation.
-func (m *SegmentMutation) Condition() (r conditiontree.Group, exists bool) {
+func (m *SegmentMutation) Condition() (r conditiontree.Segment, exists bool) {
 	v := m.condition
 	if v == nil {
 		return
@@ -57419,7 +57419,7 @@ func (m *SegmentMutation) Condition() (r conditiontree.Group, exists bool) {
 // OldCondition returns the old "condition" field's value of the Segment entity.
 // If the Segment object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SegmentMutation) OldCondition(ctx context.Context) (v conditiontree.Group, err error) {
+func (m *SegmentMutation) OldCondition(ctx context.Context) (v conditiontree.Segment, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldCondition is only allowed on UpdateOne operations")
 	}
@@ -57618,7 +57618,7 @@ func (m *SegmentMutation) SetField(name string, value ent.Value) error {
 		m.SetName(v)
 		return nil
 	case segment.FieldCondition:
-		v, ok := value.(conditiontree.Group)
+		v, ok := value.(conditiontree.Segment)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

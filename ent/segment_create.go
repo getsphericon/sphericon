@@ -93,13 +93,13 @@ func (_c *SegmentCreate) SetName(v string) *SegmentCreate {
 }
 
 // SetCondition sets the "condition" field.
-func (_c *SegmentCreate) SetCondition(v conditiontree.Group) *SegmentCreate {
+func (_c *SegmentCreate) SetCondition(v conditiontree.Segment) *SegmentCreate {
 	_c.mutation.SetCondition(v)
 	return _c
 }
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (_c *SegmentCreate) SetNillableCondition(v *conditiontree.Group) *SegmentCreate {
+func (_c *SegmentCreate) SetNillableCondition(v *conditiontree.Segment) *SegmentCreate {
 	if v != nil {
 		_c.SetCondition(*v)
 	}
@@ -402,7 +402,7 @@ func (u *SegmentUpsert) UpdateName() *SegmentUpsert {
 }
 
 // SetCondition sets the "condition" field.
-func (u *SegmentUpsert) SetCondition(v conditiontree.Group) *SegmentUpsert {
+func (u *SegmentUpsert) SetCondition(v conditiontree.Segment) *SegmentUpsert {
 	u.Set(segment.FieldCondition, v)
 	return u
 }
@@ -549,7 +549,7 @@ func (u *SegmentUpsertOne) UpdateName() *SegmentUpsertOne {
 }
 
 // SetCondition sets the "condition" field.
-func (u *SegmentUpsertOne) SetCondition(v conditiontree.Group) *SegmentUpsertOne {
+func (u *SegmentUpsertOne) SetCondition(v conditiontree.Segment) *SegmentUpsertOne {
 	return u.Update(func(s *SegmentUpsert) {
 		s.SetCondition(v)
 	})
@@ -864,7 +864,7 @@ func (u *SegmentUpsertBulk) UpdateName() *SegmentUpsertBulk {
 }
 
 // SetCondition sets the "condition" field.
-func (u *SegmentUpsertBulk) SetCondition(v conditiontree.Group) *SegmentUpsertBulk {
+func (u *SegmentUpsertBulk) SetCondition(v conditiontree.Segment) *SegmentUpsertBulk {
 	return u.Update(func(s *SegmentUpsert) {
 		s.SetCondition(v)
 	})

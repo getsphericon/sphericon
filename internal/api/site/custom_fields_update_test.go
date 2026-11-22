@@ -47,9 +47,9 @@ func updateField(c *siteapi.Client, workspace siteapi.WorkspaceId, id siteapi.En
 // previewDuff counts Duff's Contacts that match the leaf.
 func previewDuff(t *testing.T, c *siteapi.Client, leaf string) int32 {
 	t.Helper()
-	def := `{"kind":"group","combinator":"and","rules":[` + leaf + `]}`
+	def := `{"kind":"group","combinator":"and","entries":[` + leaf + `]}`
 	res, err := c.SiteSegmentsPreview(context.Background(), &siteapi.SitePreviewSegmentInput{
-		Condition: siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, def)),
+		Condition: siteapi.NewOptSegmentConditionInput(testhelper.ConditionInput[siteapi.SegmentConditionInput](t, def)),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.DuffPublicID})
 	require.NoError(t, err)
 	return res.Count
@@ -76,7 +76,7 @@ func TestAContactWriteMakesADatetimeFieldFromAnISODate(t *testing.T) {
 	assert.Equal(t, siteapi.CustomFieldTypeNumber, fieldByKey(t, c, fixtures.AcmePublicID, "d_number").Type)
 }
 
-// A date leaf matches a Contact holding each ISO form, an offset-less one judged in the Workspace
+// A moment test matches a Contact holding each ISO form, an offset-less one judged in the Workspace
 // time zone, and not text or Unix seconds in the field. Against the bound 2026-01-14T23:00:00Z
 // (the evening before 2026-01-15), "2026-01-15" is after it in UTC and before it in Tokyo, where
 // that day began at 15:00 UTC of the 14th; "2026-01-15T10:00:00" is after it in both. Duff's
@@ -84,8 +84,8 @@ func TestAContactWriteMakesADatetimeFieldFromAnISODate(t *testing.T) {
 func TestADateLeafReadsEachISOFormInTheWorkspaceTimeZone(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.DuffOwnerDanEmail)
-	const beforeEve = `{"kind":"date","field":"custom:trial_ends","operator":"before","at":"2026-01-14T23:00:00Z"}`
-	const afterEve = `{"kind":"date","field":"custom:trial_ends","operator":"after","at":"2026-01-14T23:00:00Z"}`
+	const beforeEve = `{"kind":"customField","key":"trial_ends","test":{"kind":"moment","operator":"before","at":"2026-01-14T23:00:00Z"}}`
+	const afterEve = `{"kind":"customField","key":"trial_ends","test":{"kind":"moment","operator":"after","at":"2026-01-14T23:00:00Z"}}`
 
 	utcBefore := previewDuff(t, c, beforeEve)
 	utcAfter := previewDuff(t, c, afterEve)
@@ -112,7 +112,7 @@ func TestChangingATypeToDatetimeMakesEarlierISOStringsMatch(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, siteapi.CustomFieldTypeDatetime, updated.Type)
 	assert.Equal(t, field.Key, updated.Key)
-	count := previewDuff(t, c, `{"kind":"date","field":"custom:renewal","operator":"after","at":"2026-01-01T00:00:00Z"}`)
+	count := previewDuff(t, c, `{"kind":"customField","key":"renewal","test":{"kind":"moment","operator":"after","at":"2026-01-01T00:00:00Z"}}`)
 	assert.Equal(t, int32(1), count, "the ISO string matches, the text does not")
 }
 

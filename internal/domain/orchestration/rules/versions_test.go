@@ -53,17 +53,17 @@ func TestUpdatingAnActiveRuleWritesADraftAndLeavesTheLiveVersion(t *testing.T) {
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	triggers := []string{"rule_vip", "rule_vip_again"}
-	cond := `{"kind":"group","combinator":"and","rules":[]}`
+	cond := `{"kind":"group","combinator":"and","entries":[]}`
 	actions := tagAction("rule-vip-edited")
 
-	r, err := m.Update(ctx, acme(env), fixtures.RuleVipOnlyID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleVipOnlyID), TriggerEvents: &triggers, Condition: new(testhelper.Condition(t, cond)), Actions: &actions})
+	r, err := m.Update(ctx, acme(env), fixtures.RuleVipOnlyID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleVipOnlyID), TriggerEvents: &triggers, Condition: new(testhelper.RuleCondition(t, cond)), Actions: &actions})
 
 	require.NoError(t, err)
 	live, draft := rules.LiveAndDraft(r)
 	require.NotNil(t, draft)
 	assert.Equal(t, 2, draft.Version, "the draft is the version above the newest")
 	assert.Equal(t, triggers, rules.Triggers(draft))
-	assert.Equal(t, conditiontree.Empty(), draft.Condition, "an empty group matches every Contact")
+	assert.Equal(t, conditiontree.Rule{Group: conditiontree.Empty()}, draft.Condition, "an empty group matches every Contact")
 	assert.Equal(t, []string{"rule-vip-edited"}, appliedTags(t, draft))
 	assert.EqualValues(t, fixtures.RuleVipOnlyID, live.ID, "the live version is untouched")
 	assert.Equal(t, []string{"rule-vip-seen"}, appliedTags(t, live))
@@ -110,10 +110,10 @@ func TestAnUnchangedDefinitionMakesNoDraft(t *testing.T) {
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	name := "Renamed"
 	triggers := []string{"rule_vip"}
-	cond := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"has","value":"vip"}]}`
+	cond := `{"kind":"group","combinator":"and","entries":[{"kind":"tag","name":"vip","operator":"has"}]}`
 	actions := tagAction("rule-vip-seen")
 
-	r, err := m.Update(ctx, acme(env), fixtures.RuleVipOnlyID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleVipOnlyID), Name: &name, TriggerEvents: &triggers, Condition: new(testhelper.Condition(t, cond)), Actions: &actions})
+	r, err := m.Update(ctx, acme(env), fixtures.RuleVipOnlyID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleVipOnlyID), Name: &name, TriggerEvents: &triggers, Condition: new(testhelper.RuleCondition(t, cond)), Actions: &actions})
 
 	require.NoError(t, err)
 	_, draft := rules.LiveAndDraft(r)
@@ -126,10 +126,10 @@ func TestSavingTheEmptyConditionAgainMakesNoDraft(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
-	empty := `{"kind":"group","combinator":"and","rules":[]}`
+	empty := `{"kind":"group","combinator":"and","entries":[]}`
 	triggers := []string{"rule_multi_a", "rule_multi_b"}
 
-	r, err := m.Update(ctx, acme(env), fixtures.RuleMultiTriggerID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleMultiTriggerID), TriggerEvents: &triggers, Condition: new(testhelper.Condition(t, empty))})
+	r, err := m.Update(ctx, acme(env), fixtures.RuleMultiTriggerID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleMultiTriggerID), TriggerEvents: &triggers, Condition: new(testhelper.RuleCondition(t, empty))})
 
 	require.NoError(t, err)
 	_, draft := rules.LiveAndDraft(r)

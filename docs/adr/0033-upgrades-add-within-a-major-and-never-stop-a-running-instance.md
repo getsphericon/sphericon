@@ -5,8 +5,10 @@ status: accepted
 # An Upgrade only adds within a Major, and never stops a running Instance
 
 > **Amended by [[0181-a-conditions-shape-is-typed-by-the-place-it-is-used]]:** the migration that
-> rewrites the stored Conditions to their typed shape starts a Major, and while it runs the release
-> still serving cannot read the rewritten Conditions (its previews, due Broadcasts and Rules may fail).
+> rewrites the stored Conditions to their typed shape starts a Major whose Upgrade stops the old
+> release first: that release reads a rewritten Condition as matching every Contact. A Condition it
+> saves in the old shape is refused by the database (a CHECK requires the typed group's `entries`),
+> so that save fails rather than widens.
 
 A self-hosted Instance is upgraded by whoever runs it, often several releases late, while customer
 sites keep sending events to it. So an Upgrade has to work from any release, and neither it nor a
@@ -75,7 +77,10 @@ rules below make a jump safe without asking the Self-hoster to step through ever
   It does not refuse merely because the database's Major is higher: the last release of a Major
   is exactly the floor of the next, so it starts on the next Major's schema and an interrupted
   Upgrade leaves the Instance running. A release inside a Major runs on the schema of any other
-  release of it once its own migrations have run, and an older release runs on a newer schema. Every refusal names the version, the commit and a
+  release of it once its own migrations have run, and an older release runs on a newer schema.
+  The floor does not cover a destructive migration whose rewritten data the previous release
+  misreads (ADR 0181): that release is the floor, so it may run on the new schema, and such a
+  migration requires it to be stopped for the Upgrade and not started again. Every refusal names the version, the commit and a
   link to the upgrade guide. A build with no release number (`dev`) is never older than a floor.
 - **The new version migrates before it serves.** An Upgrade runs the migration with the new binary
   while the old one keeps running, and only then swaps and restarts. An interruption leaves the old

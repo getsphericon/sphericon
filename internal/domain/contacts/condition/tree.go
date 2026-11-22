@@ -5,95 +5,24 @@ import (
 	"errors"
 	"fmt"
 	"iter"
+	"slices"
 	"strings"
 	"time"
 
-	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
-// The stored shape of a leaf (ADR 0029, ADR 0054): a string `field` whose prefix says what it
-// tests, one operator enum for every kind of value, and the `rule`, `number`, `date` and
-// `dateWithin` kinds. Only the decode below reads it; everything else works on the typed tree.
+// place is the kinds of entry the tree of one place admits (ADR 0181): the contract's union of
+// the place's entries, so a Segment's tree takes no test of a Rule's triggering Event.
+type place []conditiontree.Kind
 
-const (
-	// customFieldPrefix marks a leaf as a Custom field condition: "custom:<key>".
-	customFieldPrefix = "custom:"
-	// tagField marks a leaf as a Tag condition: field "tag" with operator "has" or
-	// "doesNotHave" and value = the Tag name.
-	tagField = "tag"
-
-	// telegramField marks a leaf as the Telegram condition (ADR 0075): operator "has" or
-	// "doesNotHave", no value.
-	telegramField = "telegram"
-
-	// smsField marks a leaf as the "can be texted" condition: operator "has" or "doesNotHave", no
-	// value.
-	smsField = "sms"
-	// triggerFieldPrefix marks a leaf as a test on the triggering Event's own properties:
-	// "trigger:<key>". Valid only in a Rule (RulePredicate); a Segment refuses it.
-	triggerFieldPrefix = "trigger:"
-
-	// birthdayField is the one core attribute a date leaf tests: the Contact's date of birth.
-	birthdayField = "birthday"
+var (
+	segmentPlace = place(conditiontree.SegmentKinds)
+	rulePlace    = place(conditiontree.RuleKinds)
 )
-
-const (
-	kindRule       = "rule"
-	kindEvent      = "event"
-	kindNumber     = "number"
-	kindDate       = "date"
-	kindDateWithin = "dateWithin"
-)
-
-// Leaf is one test of the tree: a field, an operator and a value.
-type Leaf struct {
-	Kind     string `json:"kind"`
-	Field    string `json:"field"`
-	Operator string `json:"operator"`
-	Value    string `json:"value"`
-}
-
-// EventLeaf is a count of the Contact's Events of one action: at least or at most Times of
-// them, over all time or within the last WithinDays days. Times is a pointer so that a leaf
-// without it is refused instead of read as zero.
-type EventLeaf struct {
-	Kind       string `json:"kind"`
-	Action     string `json:"action"`
-	Operator   string `json:"operator"`
-	Times      *int   `json:"times"`
-	WithinDays *int   `json:"withinDays,omitempty"`
-}
-
-// NumberLeaf compares a number: a Custom field of type number ("custom:<key>") or, in a Rule, a
-// property of the triggering Event ("trigger:<key>"). Value is a pointer so that a leaf without it
-// is refused instead of read as zero.
-type NumberLeaf struct {
-	Kind     string   `json:"kind"`
-	Field    string   `json:"field"`
-	Operator string   `json:"operator"`
-	Value    *float64 `json:"value"`
-}
-
-// DateLeaf tests a Custom field of type datetime ("custom:<key>"): its moment is before At, or at
-// or after it.
-type DateLeaf struct {
-	Kind     string    `json:"kind"`
-	Field    string    `json:"field"`
-	Operator string    `json:"operator"`
-	At       time.Time `json:"at"`
-}
-
-// DateWithinLeaf tests a Custom field of type datetime ("custom:<key>"): its moment is within the
-// last WithinDays days up to now.
-type DateWithinLeaf struct {
-	Kind       string `json:"kind"`
-	Field      string `json:"field"`
-	WithinDays int    `json:"withinDays"`
-}
 
 // group is a decoded group of the tree: its entries hold, all of them or any, and the result is
 // negated when not is set.
@@ -106,12 +35,15 @@ type group struct {
 // node is an entry of a group: a nested group or one of the leaves below.
 type node interface{ isNode() }
 
-// attributeLeaf tests a core attribute of the Contact: a text attribute (textFields) by a text or
-// presence test, the birthday by a moment test.
+// attributeLeaf tests a text attribute of the Contact, read by field, by a text or presence test.
 type attributeLeaf struct {
-	name string
-	test test
+	name  conditiontree.Attribute
+	field textField
+	test  test
 }
+
+// birthdayLeaf places the Contact's date of birth by a moment or a withinLast test.
+type birthdayLeaf struct{ test test }
 
 // tagLeaf tests whether the Contact has the Tag called name.
 type tagLeaf struct {
@@ -125,37 +57,32 @@ type telegramLeaf struct{ test presenceTest }
 // smsLeaf tests whether the Contact can be texted.
 type smsLeaf struct{ test presenceTest }
 
-// customFieldLeaf tests the Custom field key by a text, presence, number or moment test. Whether
-// the test fits the field's type is data, checked when the leaf compiles (fits).
+// customFieldLeaf tests the Custom field key by a text, presence, number, moment or withinLast
+// test. Whether the test fits the field's type is data, checked when the leaf compiles (fits).
 type customFieldLeaf struct {
 	key  string
 	test test
 }
 
-// eventCountLeaf counts the Contact's Events of action: at least or at most times of them, over
-// all time or within the last withinDays days (nil for all time).
+// eventCountLeaf counts the Contact's Events of action: at least or at most times of them (count),
+// over all time or within the last withinDays days (nil for all time).
 type eventCountLeaf struct {
 	action     string
-	op         eventOperator
+	count      eventCount
 	times      int
 	withinDays *int
 }
 
-// subject is whose properties a property test reads.
-type subject string
-
-// subjectTrigger is the Event that fired a Rule.
-const subjectTrigger subject = "trigger"
-
-// propertyLeaf tests the property key of its subject by a text, presence or number test.
+// propertyLeaf tests the property key of its source by a text, presence or number test.
 type propertyLeaf struct {
-	subject subject
-	key     string
-	test    test
+	source conditiontree.Source
+	key    string
+	test   test
 }
 
 func (group) isNode()           {}
 func (attributeLeaf) isNode()   {}
+func (birthdayLeaf) isNode()    {}
 func (tagLeaf) isNode()         {}
 func (telegramLeaf) isNode()    {}
 func (smsLeaf) isNode()         {}
@@ -163,39 +90,45 @@ func (customFieldLeaf) isNode() {}
 func (eventCountLeaf) isNode()  {}
 func (propertyLeaf) isNode()    {}
 
-// test is what a leaf asks of the value it reads, typed by that value: text, presence, number or
-// moment.
+// test is what a leaf asks of the value it reads, typed by that value: text, presence, number,
+// moment or the last days.
 type test interface{ isTest() }
 
-// textTest compares a text value with value: eq, neq, contains or beginsWith (textOperators). A number
-// or boolean Custom field's eq and neq are text tests too, compared with the stored value's text.
+// textTest compares a text value with value by op, which means on a Contact attribute and on a
+// property of the triggering Event what its textOperator says. A number or boolean Custom field's
+// eq and neq are text tests too, compared with the stored value's text.
 type textTest struct {
-	op    operator
-	value string
+	op      conditiontree.TextOperator
+	meaning textOperator
+	value   string
 }
 
 // presenceTest asks whether a value is set (or a Tag, a Telegram Binding, an eligible phone had),
 // or not.
 type presenceTest struct{ set bool }
 
-// numberTest compares a number with value: gt, gte, lt or lte (comparisons).
+// numberTest compares a number with value by op, as its comparison says.
 type numberTest struct {
-	op    operator
-	value float64
+	op      conditiontree.NumberOperator
+	meaning comparison
+	value   float64
 }
 
-// momentTest places a moment: before at, or at or after it (sides), or within the last withinDays
-// days up to now (opWithin).
+// momentTest places a moment on the side op of at.
 type momentTest struct {
-	op         operator
-	at         time.Time
-	withinDays int
+	op   conditiontree.MomentOperator
+	side side
+	at   time.Time
 }
 
-func (textTest) isTest()     {}
-func (presenceTest) isTest() {}
-func (numberTest) isTest()   {}
-func (momentTest) isTest()   {}
+// withinLastTest asks for a moment in the window that reaches days back from now.
+type withinLastTest struct{ days int }
+
+func (textTest) isTest()       {}
+func (presenceTest) isTest()   {}
+func (numberTest) isTest()     {}
+func (momentTest) isTest()     {}
+func (withinLastTest) isTest() {}
 
 // leaves yields every leaf of the group, at any depth and under a negation too.
 func (g group) leaves() iter.Seq[node] {
@@ -216,22 +149,27 @@ func (g group) leaves() iter.Seq[node] {
 	}
 }
 
-// decode reads a stored Condition into the typed tree, refusing what it cannot read with the
-// path of the entry ("rule 0: rule 2: …") and what it cannot read there. It reads the tree alone:
-// whether a named Custom field exists, and whether its test fits the field's type, are the
-// compiler's checks.
-func decode(g conditiontree.Group) (group, error) {
+// decode reads a stored Condition of the place p into the typed tree, refusing what it cannot
+// read with the path of the entry ("entry 0: entry 2: …") and what it cannot read there. What a
+// place, a leaf or a test admits is the contract's vocabulary (package conditiontree), and a group
+// without its entries is refused, never read as the empty group that matches every Contact. It
+// reads the tree alone: whether a named Custom field exists, and whether its test fits the field's
+// type, are the compiler's checks.
+func decode(g conditiontree.Group, p place) (group, error) {
 	if g.Kind != conditiontree.KindGroup {
 		return group{}, fmt.Errorf("unknown group kind %q", g.Kind)
 	}
-	if g.Combinator != conditiontree.And && g.Combinator != conditiontree.Or {
+	if !slices.Contains(conditiontree.Combinators, g.Combinator) {
 		return group{}, fmt.Errorf("unknown combinator %q", g.Combinator)
 	}
-	d := group{combinator: g.Combinator, not: g.Not, entries: make([]node, 0, len(g.Rules))}
-	for i, raw := range g.Rules {
-		n, err := decodeEntry(raw, func(sub conditiontree.Group) (node, error) { return decode(sub) })
+	if g.Entries == nil {
+		return group{}, errors.New("group entries are required")
+	}
+	d := group{combinator: g.Combinator, not: g.Not, entries: make([]node, 0, len(g.Entries))}
+	for i, raw := range g.Entries {
+		n, err := decodeEntry(raw, p, func(sub conditiontree.Group) (node, error) { return decode(sub, p) })
 		if err != nil {
-			return group{}, fmt.Errorf("rule %d: %w", i, err)
+			return group{}, fmt.Errorf("entry %d: %w", i, err)
 		}
 		d.entries = append(d.entries, n)
 	}
@@ -239,11 +177,12 @@ func decode(g conditiontree.Group) (group, error) {
 }
 
 // decodeSkipping is the stored Condition as the readers of what it names see it: an entry decode
-// refuses tests nothing and is left out, so one bad entry does not hide the others.
+// refuses tests nothing and is left out, so one bad entry does not hide the others. It reads the
+// leaves of every place.
 func decodeSkipping(g conditiontree.Group) group {
-	d := group{combinator: g.Combinator, not: g.Not, entries: make([]node, 0, len(g.Rules))}
-	for _, raw := range g.Rules {
-		n, err := decodeEntry(raw, func(sub conditiontree.Group) (node, error) { return decodeSkipping(sub), nil })
+	d := group{combinator: g.Combinator, not: g.Not, entries: make([]node, 0, len(g.Entries))}
+	for _, raw := range g.Entries {
+		n, err := decodeEntry(raw, rulePlace, func(sub conditiontree.Group) (node, error) { return decodeSkipping(sub), nil })
 		if err != nil {
 			continue
 		}
@@ -252,225 +191,211 @@ func decodeSkipping(g conditiontree.Group) group {
 	return d
 }
 
-// decodeEntry reads a rules[] entry by its `kind`: a nested group, which sub reads, or a leaf.
-func decodeEntry(raw json.RawMessage, sub func(conditiontree.Group) (node, error)) (node, error) {
-	var probe struct {
-		Kind string `json:"kind"`
+// entry is a stored entries[] item: a nested group or a leaf, as its `kind` says, with the fields
+// of every kind of leaf. Operator is a Tag, Telegram or SMS leaf's HasOperator or an event leaf's
+// EventCountOperator.
+type entry struct {
+	Kind       conditiontree.Kind      `json:"kind"`
+	Attribute  conditiontree.Attribute `json:"attribute"`
+	Name       string                  `json:"name"`
+	Operator   string                  `json:"operator"`
+	Key        string                  `json:"key"`
+	Of         *source                 `json:"of"`
+	Test       json.RawMessage         `json:"test"`
+	Action     string                  `json:"action"`
+	Times      *int                    `json:"times"`
+	WithinDays *int                    `json:"withinDays"`
+}
+
+// source is a property test's `of`: whose properties it reads, by its `kind`.
+type source struct {
+	Kind conditiontree.Source `json:"kind"`
+}
+
+// storedTest is a leaf's stored `test`, with the fields of every kind of test. Value is a text
+// test's string or a number test's number; Operator is the operator of the test's kind.
+type storedTest struct {
+	Kind     conditiontree.TestKind `json:"kind"`
+	Operator string                 `json:"operator"`
+	Value    json.RawMessage        `json:"value"`
+	At       *time.Time             `json:"at"`
+	Days     *int                   `json:"days"`
+}
+
+// decodeEntry reads an entries[] item by its `kind`: a nested group, which sub reads, or a leaf
+// the place p admits.
+func decodeEntry(raw json.RawMessage, p place, sub func(conditiontree.Group) (node, error)) (node, error) {
+	var e entry
+	if err := json.Unmarshal(raw, &e); err != nil {
+		return nil, fmt.Errorf("malformed entry: %w", err)
 	}
-	if err := json.Unmarshal(raw, &probe); err != nil {
-		return nil, fmt.Errorf("malformed rule: %w", err)
+	if !slices.Contains(p, e.Kind) {
+		return nil, fmt.Errorf("unknown entry kind %q", e.Kind)
 	}
-	switch probe.Kind {
+	switch e.Kind {
 	case conditiontree.KindGroup:
 		var g conditiontree.Group
 		if err := json.Unmarshal(raw, &g); err != nil {
 			return nil, fmt.Errorf("malformed group: %w", err)
 		}
 		return sub(g)
-	case kindRule:
-		var l Leaf
-		if err := json.Unmarshal(raw, &l); err != nil {
-			return nil, fmt.Errorf("malformed rule: %w", err)
-		}
-		return decodeRule(l)
-	case kindEvent:
-		var l EventLeaf
-		if err := json.Unmarshal(raw, &l); err != nil {
-			return nil, fmt.Errorf("malformed event leaf: %w", err)
-		}
-		return decodeEvent(l)
-	case kindNumber:
-		var l NumberLeaf
-		if err := json.Unmarshal(raw, &l); err != nil {
-			return nil, fmt.Errorf("malformed number leaf: %w", err)
-		}
-		return decodeNumber(l)
-	case kindDate:
-		var l DateLeaf
-		if err := json.Unmarshal(raw, &l); err != nil {
-			return nil, fmt.Errorf("malformed date leaf: %w", err)
-		}
-		return decodeDate(l)
-	case kindDateWithin:
-		var l DateWithinLeaf
-		if err := json.Unmarshal(raw, &l); err != nil {
-			return nil, fmt.Errorf("malformed date leaf: %w", err)
-		}
-		return decodeDateWithin(l)
-	default:
-		return nil, fmt.Errorf("unknown rule kind %q", probe.Kind)
-	}
-}
-
-// decodeRule reads a `rule` leaf: what its field names, tested by the operator as a text or a
-// presence test.
-func decodeRule(r Leaf) (node, error) {
-	op := operator(r.Operator)
-	switch {
-	case r.Field == tagField:
-		has, err := hasOrNot(op, "tag")
+	case conditiontree.KindAttribute:
+		field, err := textFieldOf(e.Attribute)
 		if err != nil {
 			return nil, err
 		}
-		name := strings.TrimSpace(r.Value)
+		t, err := decodeTest(e.Test, conditiontree.AttributeTests)
+		if err != nil {
+			return nil, err
+		}
+		return attributeLeaf{name: e.Attribute, field: field, test: t}, nil
+	case conditiontree.KindBirthday:
+		t, err := decodeTest(e.Test, conditiontree.BirthdayTests)
+		if err != nil {
+			return nil, err
+		}
+		return birthdayLeaf{test: t}, nil
+	case conditiontree.KindTag:
+		has, err := hasOrNot(e.Operator)
+		if err != nil {
+			return nil, err
+		}
+		name := strings.TrimSpace(e.Name)
 		if name == "" {
 			return nil, errors.New("tag name is required")
 		}
 		return tagLeaf{name: name, test: has}, nil
-	case r.Field == telegramField:
-		has, err := hasOrNot(op, "telegram")
+	case conditiontree.KindTelegram:
+		has, err := hasOrNot(e.Operator)
 		if err != nil {
 			return nil, err
 		}
 		return telegramLeaf{test: has}, nil
-	case r.Field == smsField:
-		has, err := hasOrNot(op, "sms")
+	case conditiontree.KindSms:
+		has, err := hasOrNot(e.Operator)
 		if err != nil {
 			return nil, err
 		}
 		return smsLeaf{test: has}, nil
-	case strings.HasPrefix(r.Field, customFieldPrefix):
-		key, err := keyOf(r.Field, customFieldPrefix)
+	case conditiontree.KindCustomField:
+		if e.Key == "" {
+			return nil, errors.New("custom field key is required")
+		}
+		t, err := decodeTest(e.Test, conditiontree.CustomFieldTests)
 		if err != nil {
 			return nil, err
 		}
-		t, ok := valueTest(op, r.Value)
-		if !ok {
-			return nil, fmt.Errorf("unsupported operator %q for json field %q", op, key)
-		}
-		return customFieldLeaf{key: key, test: t}, nil
-	case strings.HasPrefix(r.Field, triggerFieldPrefix):
-		t, ok := valueTest(op, r.Value)
-		if !ok {
-			return nil, fmt.Errorf("unsupported operator %q for trigger field", op)
-		}
-		key, err := keyOf(r.Field, triggerFieldPrefix)
-		if err != nil {
-			return nil, err
-		}
-		return propertyLeaf{subject: subjectTrigger, key: key, test: t}, nil
+		return customFieldLeaf{key: e.Key, test: t}, nil
+	case conditiontree.KindEvent:
+		return decodeEvent(e)
+	case conditiontree.KindProperty:
+		return decodeProperty(e)
 	}
-	if _, ok := textFields[r.Field]; !ok {
-		return nil, fmt.Errorf("unknown field %q", r.Field)
-	}
-	t, ok := valueTest(op, r.Value)
-	if !ok {
-		return nil, fmt.Errorf("unsupported operator %q", r.Operator)
-	}
-	return attributeLeaf{name: r.Field, test: t}, nil
+	return nil, fmt.Errorf("unknown entry kind %q", e.Kind)
 }
 
-// hasOrNot is the presence test of a Tag, Telegram or SMS leaf: has or doesNotHave.
-func hasOrNot(op operator, field string) (presenceTest, error) {
-	switch op {
-	case opHas:
-		return presenceTest{set: true}, nil
-	case opDoesNotHave:
-		return presenceTest{set: false}, nil
-	default:
-		return presenceTest{}, fmt.Errorf("unsupported operator %q for %s field", op, field)
+// decodeProperty reads a property test of a source a Rule's property test reads.
+func decodeProperty(e entry) (node, error) {
+	if e.Of == nil || !slices.Contains(conditiontree.RuleSources, e.Of.Kind) {
+		return nil, errors.New("a property test reads the triggering Event's properties")
 	}
-}
-
-// valueTest is the test of a value a `rule` leaf's operator names: a text test, or null and
-// notNull as the presence test. false for any other operator.
-func valueTest(op operator, value string) (test, bool) {
-	switch op {
-	case opNull:
-		return presenceTest{set: false}, true
-	case opNotNull:
-		return presenceTest{set: true}, true
-	default:
-		if _, ok := textOperators[op]; !ok {
-			return nil, false
-		}
-		return textTest{op: op, value: value}, true
+	if e.Key == "" {
+		return nil, errors.New("property key is required")
 	}
-}
-
-// keyOf is the key a prefixed field names, refused when there is none.
-func keyOf(field, prefix string) (string, error) {
-	key := strings.TrimPrefix(field, prefix)
-	if key == "" {
-		return "", fmt.Errorf("unknown field %q", prefix)
-	}
-	return key, nil
-}
-
-// decodeNumber reads a `number` leaf: a number Custom field's or a triggering Event's property's
-// number test.
-func decodeNumber(l NumberLeaf) (node, error) {
-	op := operator(l.Operator)
-	if _, ok := comparisons[op]; !ok {
-		return nil, fmt.Errorf("unsupported operator %q for number leaf", l.Operator)
-	}
-	if l.Value == nil {
-		return nil, errors.New("number leaf value is required")
-	}
-	t := numberTest{op: op, value: *l.Value}
-	switch {
-	case strings.HasPrefix(l.Field, customFieldPrefix):
-		key, err := keyOf(l.Field, customFieldPrefix)
-		if err != nil {
-			return nil, err
-		}
-		return customFieldLeaf{key: key, test: t}, nil
-	case strings.HasPrefix(l.Field, triggerFieldPrefix):
-		key, err := keyOf(l.Field, triggerFieldPrefix)
-		if err != nil {
-			return nil, err
-		}
-		return propertyLeaf{subject: subjectTrigger, key: key, test: t}, nil
-	default:
-		return nil, fmt.Errorf("field %q: a number leaf takes a custom field of type %s or a trigger property", l.Field, customfield.TypeNumber)
-	}
-}
-
-// decodeDate reads a `date` leaf: the moment test of the birthday or a datetime Custom field
-// against a bound.
-func decodeDate(l DateLeaf) (node, error) {
-	op := operator(l.Operator)
-	if _, ok := sides[op]; !ok {
-		return nil, fmt.Errorf("unsupported operator %q for date leaf", l.Operator)
-	}
-	return momentLeaf(l.Field, momentTest{op: op, at: l.At})
-}
-
-// decodeDateWithin reads a `dateWithin` leaf: the moment test of the birthday or a datetime Custom
-// field over the last days.
-func decodeDateWithin(l DateWithinLeaf) (node, error) {
-	if err := validation.Min(fieldname.WithinDays, l.WithinDays, bounds.ConditionWithinDaysMin); err != nil {
-		return nil, boundError{err}
-	}
-	return momentLeaf(l.Field, momentTest{op: opWithin, withinDays: l.WithinDays})
-}
-
-// momentLeaf is the leaf of a moment test on field: the birthday or a Custom field. An Event's
-// property has no type, so a moment test takes no "trigger:" field.
-func momentLeaf(field string, t momentTest) (node, error) {
-	if field == birthdayField {
-		return attributeLeaf{name: birthdayField, test: t}, nil
-	}
-	if !strings.HasPrefix(field, customFieldPrefix) {
-		return nil, fmt.Errorf("field %q: a date leaf takes a custom field of type %s", field, customfield.TypeDatetime)
-	}
-	key, err := keyOf(field, customFieldPrefix)
+	t, err := decodeTest(e.Test, conditiontree.PropertyTests)
 	if err != nil {
 		return nil, err
 	}
-	return customFieldLeaf{key: key, test: t}, nil
+	return propertyLeaf{source: e.Of.Kind, key: e.Key, test: t}, nil
+}
+
+// hasOrNot is the presence test of a Tag, Telegram or SMS leaf: has or doesNotHave.
+func hasOrNot(op string) (presenceTest, error) {
+	switch conditiontree.HasOperator(op) {
+	case conditiontree.Has:
+		return presenceTest{set: true}, nil
+	case conditiontree.DoesNotHave:
+		return presenceTest{set: false}, nil
+	}
+	return presenceTest{}, fmt.Errorf("unknown operator %q", op)
+}
+
+// presenceOf is the presence test of a value: set or notSet.
+func presenceOf(op string) (presenceTest, error) {
+	switch conditiontree.PresenceOperator(op) {
+	case conditiontree.PresenceSet:
+		return presenceTest{set: true}, nil
+	case conditiontree.PresenceNotSet:
+		return presenceTest{set: false}, nil
+	}
+	return presenceTest{}, fmt.Errorf("unknown presence operator %q", op)
+}
+
+// decodeTest reads a leaf's test, refusing one whose `kind` is not among the kinds the leaf takes.
+func decodeTest(raw json.RawMessage, kinds []conditiontree.TestKind) (test, error) {
+	var t storedTest
+	if err := json.Unmarshal(raw, &t); err != nil {
+		return nil, fmt.Errorf("malformed test: %w", err)
+	}
+	if !slices.Contains(kinds, t.Kind) {
+		return nil, fmt.Errorf("unknown test kind %q", t.Kind)
+	}
+	switch t.Kind {
+	case conditiontree.TestText:
+		var value string
+		if err := json.Unmarshal(t.Value, &value); err != nil {
+			return nil, fmt.Errorf("text test value: %w", err)
+		}
+		op := conditiontree.TextOperator(t.Operator)
+		meaning, err := textOperatorOf(op)
+		if err != nil {
+			return nil, err
+		}
+		return textTest{op: op, meaning: meaning, value: value}, nil
+	case conditiontree.TestNumber:
+		var value float64
+		if err := json.Unmarshal(t.Value, &value); err != nil {
+			return nil, fmt.Errorf("number test value: %w", err)
+		}
+		op := conditiontree.NumberOperator(t.Operator)
+		meaning, err := comparisonOf(op)
+		if err != nil {
+			return nil, err
+		}
+		return numberTest{op: op, meaning: meaning, value: value}, nil
+	case conditiontree.TestMoment:
+		op := conditiontree.MomentOperator(t.Operator)
+		s, err := sideOf(op)
+		if err != nil {
+			return nil, err
+		}
+		if t.At == nil {
+			return nil, errors.New("moment test at is required")
+		}
+		return momentTest{op: op, side: s, at: *t.At}, nil
+	case conditiontree.TestWithinLast:
+		if t.Days == nil {
+			return nil, errors.New("withinLast test days is required")
+		}
+		if err := validation.Min(fieldname.Days, *t.Days, bounds.ConditionWithinDaysMin); err != nil {
+			return nil, boundError{err}
+		}
+		return withinLastTest{days: *t.Days}, nil
+	case conditiontree.TestPresence:
+		return presenceOf(t.Operator)
+	}
+	return nil, fmt.Errorf("unknown test kind %q", t.Kind)
 }
 
 // decodeEvent reads an `event` leaf: a count of the Contact's Events of one action.
-func decodeEvent(l EventLeaf) (node, error) {
+func decodeEvent(l entry) (node, error) {
 	action := strings.TrimSpace(l.Action)
 	if action == "" {
 		return nil, errors.New("event action is required")
 	}
-	op := eventOperator(l.Operator)
-	count, ok := eventCounts[op]
-	if !ok {
-		return nil, fmt.Errorf("unsupported operator %q for event leaf", l.Operator)
+	count, err := eventCountOf(conditiontree.EventCountOperator(l.Operator))
+	if err != nil {
+		return nil, err
 	}
 	if l.Times == nil {
 		return nil, errors.New("event leaf times is required")
@@ -487,5 +412,5 @@ func decodeEvent(l EventLeaf) (node, error) {
 			return nil, boundError{err}
 		}
 	}
-	return eventCountLeaf{action: action, op: op, times: times, withinDays: l.WithinDays}, nil
+	return eventCountLeaf{action: action, count: count, times: times, withinDays: l.WithinDays}, nil
 }

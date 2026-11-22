@@ -122,6 +122,7 @@ import (
 // goverter:extend editorDocument
 // goverter:extend automationSteps
 // goverter:extend segmentCondition
+// goverter:extend ruleCondition
 // goverter:extend ruleActions
 // goverter:extend ruleResults
 // goverter:extend emailVerified
@@ -445,7 +446,17 @@ type Converter interface {
 	SuppressionToResource(source *ent.Suppression) siteapi.SiteSuppressionResource
 	// goverter:useEmptyOnNil:slice
 	SuppressionsToResources(source []*ent.Suppression) []siteapi.SiteSuppressionResource
-	// goverter:map Type RuleOperators | customFieldRuleOperators
+	// goverter:useEmptyOnNil:slice
+	ConditionTestsToResource(source condition.Tests) siteapi.CustomFieldConditionTests
+	// goverter:enum:transform value
+	TextOperatorToResource(source conditiontree.TextOperator) siteapi.TextOperator
+	// goverter:enum:transform value
+	NumberOperatorToResource(source conditiontree.NumberOperator) siteapi.NumberOperator
+	// goverter:enum:transform value
+	MomentOperatorToResource(source conditiontree.MomentOperator) siteapi.MomentOperator
+	// goverter:enum:transform value
+	PresenceOperatorToResource(source conditiontree.PresenceOperator) siteapi.PresenceOperator
+	// goverter:map Type ConditionTests | customFieldConditionTests
 	CustomFieldToResource(source *ent.CustomField) siteapi.SiteCustomFieldResource
 	// goverter:useEmptyOnNil:slice
 	CustomFieldsToResources(source []*ent.CustomField) []siteapi.SiteCustomFieldResource
@@ -1060,14 +1071,15 @@ func optEditorDocument(doc json.RawMessage) siteapi.OptEditorDocument {
 	return convert.OptObject[siteapi.OptEditorDocument](convert.DocObject[siteapi.EditorDocument](doc))
 }
 
-// segmentCondition maps a Condition into the typed DTO. One that no longer decodes as the contract's
-// tree reads as having none.
-func segmentCondition(g conditiontree.Group) siteapi.OptConditionGroup {
-	var group siteapi.ConditionGroup
-	if err := condition.ToDTO(g, &group); err != nil {
-		return siteapi.OptConditionGroup{}
-	}
-	return siteapi.NewOptConditionGroup(group)
+// segmentCondition maps a Segment's Condition into the typed DTO. One that no longer decodes as the
+// typed tree is absent, so one bad row does not fail the whole response.
+func segmentCondition(g conditiontree.Segment) siteapi.OptSegmentCondition {
+	return convert.OptDocument[siteapi.OptSegmentCondition, siteapi.SegmentCondition](g)
+}
+
+// ruleCondition maps a Rule's Condition into the typed DTO, absent as segmentCondition's.
+func ruleCondition(g conditiontree.Rule) siteapi.OptRuleCondition {
+	return convert.OptDocument[siteapi.OptRuleCondition, siteapi.RuleCondition](g)
 }
 
 func optTimestamp(v *time.Time) siteapi.OptTimestamp {
@@ -1309,10 +1321,10 @@ func optNilHoldReason(c Converter, v *holdreason.Reason) siteapi.OptNilHoldReaso
 	return convert.OptVia[siteapi.OptNilHoldReason](v, c.HoldReasonToResource)
 }
 
-// customFieldRuleOperators is the operators a rule leaf may test on a Custom field of the type: the
+// customFieldConditionTests is what a Condition may ask of a Custom field of the type: the
 // Condition's table, listed so a client offers what the server takes.
-func customFieldRuleOperators(t customfield.Type) []siteapi.ConditionOperator {
-	return lo.Map(condition.RuleOperators(t), func(op string, _ int) siteapi.ConditionOperator { return siteapi.ConditionOperator(op) })
+func customFieldConditionTests(c Converter, t customfield.Type) siteapi.CustomFieldConditionTests {
+	return c.ConditionTestsToResource(condition.CustomFieldTests(t))
 }
 
 // optAttentionSubject is the object an attention item is about, absent for the Workspace's own.

@@ -945,6 +945,18 @@ func replayResult(msg *ent.OutboundMessage) Result {
 	return r
 }
 
+// contactTag is the merge tag of one of a Contact's core fields, the name every send binds it as.
+type contactTag string
+
+const (
+	tagEmail     contactTag = "email"
+	tagFirstName contactTag = "first_name"
+	tagLastName  contactTag = "last_name"
+	tagCity      contactTag = "city"
+	tagCountry   contactTag = "country"
+	tagLocale    contactTag = "locale"
+)
+
 // Bindings builds the Liquid merge-tag context: the Contact's custom fields first,
 // then its core fields (so a custom field can never shadow email/first_name/
 // last_name/city/country/locale), then the Request's own variables, which win. The country is
@@ -953,12 +965,12 @@ func Bindings(c *ent.Contact, vars map[string]any) map[string]any {
 	b := map[string]any{}
 	if c != nil {
 		maps.Copy(b, c.CustomFields)
-		b["email"] = lo.FromPtr(c.Email)
-		b["first_name"] = lo.FromPtr(c.FirstName)
-		b["last_name"] = lo.FromPtr(c.LastName)
-		b["city"] = lo.FromPtr(c.City)
-		b["country"] = countryName(lo.FromPtr(c.Country))
-		b["locale"] = lo.FromPtr(c.Locale)
+		b[string(tagEmail)] = lo.FromPtr(c.Email)
+		b[string(tagFirstName)] = lo.FromPtr(c.FirstName)
+		b[string(tagLastName)] = lo.FromPtr(c.LastName)
+		b[string(tagCity)] = lo.FromPtr(c.City)
+		b[string(tagCountry)] = countryName(lo.FromPtr(c.Country))
+		b[string(tagLocale)] = lo.FromPtr(c.Locale)
 	}
 	maps.Copy(b, vars)
 	return b

@@ -23,6 +23,7 @@ func goMigrations() []*goose.Migration {
 	return []*goose.Migration{
 		goose.NewGoMigration(PhonesToE164Version, &goose.GoFunc{RunTx: lockBounded(phonesToE164)}, nil),
 		goose.NewGoMigration(TagNameKeysVersion, &goose.GoFunc{RunTx: lockBounded(tagNameKeys)}, nil),
+		goose.NewGoMigration(TypedConditionsVersion, &goose.GoFunc{RunTx: lockBounded(RewriteTypedConditions)}, nil),
 	}
 }
 

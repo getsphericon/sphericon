@@ -74,7 +74,7 @@ func TestATagNothingNamesPasses(t *testing.T) {
 
 // A retype is refused while a Segment tests the field with a leaf the new type does not take; a
 // leaf every type takes (notNull) does not hold the type. Duff's "Ends soon" tests ends_on with a
-// date leaf, "Has it" only that has_it is there.
+// moment test, "Has it" only that has_it is there.
 func TestACustomFieldRetypeIsRefusedOnlyByALeafTheNewTypeDoesNotTake(t *testing.T) {
 	env := testhelper.Setup(t)
 

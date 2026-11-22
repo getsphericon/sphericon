@@ -35,6 +35,8 @@ var Majors = []Major{
 	{Major: 1, Floor: "v0.0.0"},
 	// workspaces.ingest_key dropped: every Integration has its own hook key (ADR 0037).
 	{Major: 2, Floor: "v0.1.2"},
+	// Every stored Condition rewritten to the typed tree of its place (ADR 0181).
+	typedConditionsMajor,
 }
 
 // SchemaState is the state row: the database's Major and the oldest release that still runs
@@ -51,15 +53,36 @@ var initialState = SchemaState{Major: 1, Floor: "v0.0.0"}
 // existed) is Major 1. It only reads, so a client without the application's hooks (which act on
 // writes) reads it as the wiring's would.
 func ReadState(ctx context.Context, sqlDB *sql.DB) (SchemaState, error) {
+	state, _, err := readState(ctx, sqlDB)
+	return state, err
+}
+
+// readState is ReadState, and whether the database is empty: none of the app's tables exists yet,
+// so its migrations create it at the binary's own Major. A database without the state table is not
+// empty for that alone: the releases of Major 1 before the table (v0.1.x) left the app's tables
+// without it, and the migrations of this history that sort before 20261024175209_init, which creates
+// the table with the app's tables (the outbox's and river's), create none of them. The Workspace table, which every release's
+// schema has, tells the two apart.
+func readState(ctx context.Context, sqlDB *sql.DB) (state SchemaState, empty bool, err error) {
 	client := ent.NewClient(ent.Driver(entsql.OpenDB(dialect.Postgres, sqlDB)))
 	row, err := client.SchemaState.Get(ctx, 1)
 	switch {
 	case err == nil:
-		return SchemaState{Major: row.Major, Floor: row.Floor}, nil
-	case ent.IsNotFound(err) || isUndefinedTable(err):
-		return initialState, nil
+		return SchemaState{Major: row.Major, Floor: row.Floor}, false, nil
+	case isUndefinedTable(err):
+		_, probe := client.Workspace.Query().Exist(ctx)
+		switch {
+		case probe == nil:
+			return initialState, false, nil
+		case isUndefinedTable(probe):
+			return initialState, true, nil
+		default:
+			return SchemaState{}, false, fmt.Errorf("read schema state: look for the app's tables: %w", probe)
+		}
+	case ent.IsNotFound(err):
+		return initialState, false, nil
 	default:
-		return SchemaState{}, fmt.Errorf("read schema state: %w", err)
+		return SchemaState{}, false, fmt.Errorf("read schema state: %w", err)
 	}
 }
 
@@ -90,8 +113,9 @@ type Guard struct {
 //
 // A binary of the database's Major, or one Major behind it but not older than the floor (the
 // last release of a Major), starts. A build with no release number is never older than a floor.
+// An empty database is behind no Major: its migrations create it at the binary's own.
 func (g Guard) Check(ctx context.Context, sqlDB *sql.DB) error {
-	state, err := ReadState(ctx, sqlDB)
+	state, empty, err := readState(ctx, sqlDB)
 	if err != nil {
 		return err
 	}
@@ -100,6 +124,9 @@ func (g Guard) Check(ctx context.Context, sqlDB *sql.DB) error {
 		majors = Majors
 	}
 	own := majors[len(majors)-1].Major
+	if empty {
+		state = SchemaState{Major: own}
+	}
 	who := fmt.Sprintf("sphericon %s (commit %s, built %s)", g.Build.Version, g.Build.Commit, g.Build.Date)
 	tail := " Upgrade guide: " + UpgradeGuideURL
 

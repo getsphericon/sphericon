@@ -1,12 +1,16 @@
-// The merge tags every send binds (outbound.Bindings): the Contact's core fields.
-export const CONTACT_TAGS = [
-  'first_name',
-  'last_name',
-  'email',
-  'city',
-  'country',
-  'locale',
-] as const
+// The merge tags every send binds from the Contact's core fields (outboundmessages.Bindings, whose
+// contactTag is the server's side of this vocabulary). A merge tag is no Condition attribute: the
+// country tag renders the country's name, for one.
+const contactTag = {
+  firstName: 'first_name',
+  lastName: 'last_name',
+  email: 'email',
+  city: 'city',
+  country: 'country',
+  locale: 'locale',
+} as const
+
+export const CONTACT_TAGS = Object.values(contactTag)
 
 // The Telegram start link of the message's Contact, on the Workspace's default Telegram bot: it
 // renders empty when the Workspace has none. A token is issued only for a message that uses it.

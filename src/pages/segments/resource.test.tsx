@@ -14,7 +14,8 @@ import {
   handleSiteSegmentsList,
   handleSiteSegmentsUpdate,
 } from '../../generated/site/msw.gen.ts'
-import type { ConditionGroup } from '../../generated/site/types.gen.ts'
+import { NumberOperator, PresenceOperator, TextOperator } from '../../generated/site/types.gen.ts'
+import type { SegmentCondition } from '../../generated/site/types.gen.ts'
 import { zSiteSegmentsUpdateBody } from '../../generated/site/zod.gen.ts'
 import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/edit.tsx'
 import { Route as segmentsDetailRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/index.tsx'
@@ -27,10 +28,16 @@ import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { SegmentCreatePage, SegmentEditPage } from './resource.tsx'
 
-const RULE: ConditionGroup = {
+const RULE: SegmentCondition = {
   kind: 'group',
   combinator: 'and',
-  rules: [{ kind: 'rule', field: 'email', operator: 'contains', value: '@x' }],
+  entries: [
+    {
+      kind: 'attribute',
+      attribute: 'email',
+      test: { kind: 'text', operator: 'contains', value: '@x' },
+    },
+  ],
 }
 
 const CREATE_ROUTE = routeMount(segmentsCreateRoute, { workspaceId: 'TestWs01' })
@@ -88,7 +95,7 @@ test('creating a segment sends name and a rule, refreshes the list and opens the
   await expect.poll(() => bodies.length).toBe(1)
   // A new segment starts as the empty rule group, which matches every contact.
   expect(bodies).toEqual([
-    { name: 'Everyone', condition: { kind: 'group', combinator: 'and', rules: [] } },
+    { name: 'Everyone', condition: { kind: 'group', combinator: 'and', entries: [] } },
   ])
   await expect.element(screen.getByText('Segment created')).toBeInTheDocument()
   await expect.poll(() => listFetches).toBe(2)
@@ -179,7 +186,7 @@ test('a successful save reloads the Condition editor from the saved definition',
       body: {
         id: testId(7),
         name: 'Everyone',
-        condition: { kind: 'group', combinator: 'and', rules: [] },
+        condition: { kind: 'group', combinator: 'and', entries: [] },
         revision: 1,
         ...TIMESTAMPS,
       },
@@ -197,10 +204,10 @@ test('a successful save reloads the Condition editor from the saved definition',
 
 test('an unfinished Condition is refused, then saves its completed structured edit', async () => {
   const bodies: unknown[] = []
-  const condition: ConditionGroup = {
+  const condition: SegmentCondition = {
     kind: 'group',
     combinator: 'and',
-    rules: [{ kind: 'event', action: 'purchased', operator: 'atLeast', times: 2, withinDays: 7 }],
+    entries: [{ kind: 'event', action: 'purchased', operator: 'atLeast', times: 2, withinDays: 7 }],
   }
   serveCatalogue()
   worker.use(
@@ -239,7 +246,7 @@ test('an unfinished Condition is refused, then saves its completed structured ed
         condition: {
           kind: 'group',
           combinator: 'and',
-          rules: [
+          entries: [
             { kind: 'event', action: 'purchased', operator: 'atLeast', times: 3, withinDays: 7 },
           ],
         },
@@ -341,4 +348,93 @@ test('an archived segment opens its page instead of the form', async () => {
       replace: true,
     })
   await expect.element(screen.getByRole('button', { name: 'Save' })).not.toBeInTheDocument()
+})
+
+// Every leaf a Segment's Condition admits, the Tag first, as the server stores it.
+const EVERY_LEAF: SegmentCondition = {
+  kind: 'group',
+  combinator: 'or',
+  not: true,
+  entries: [
+    { kind: 'tag', name: 'vip', operator: 'has' },
+    {
+      kind: 'attribute',
+      attribute: 'email',
+      test: { kind: 'text', operator: 'contains', value: '@x' },
+    },
+    { kind: 'attribute', attribute: 'city', test: { kind: 'presence', operator: 'notSet' } },
+    { kind: 'birthday', test: { kind: 'withinLast', days: 7 } },
+    { kind: 'telegram', operator: 'has' },
+    { kind: 'sms', operator: 'doesNotHave' },
+    {
+      kind: 'group',
+      combinator: 'and',
+      entries: [
+        { kind: 'customField', key: 'seats', test: { kind: 'number', operator: 'gte', value: 10 } },
+        { kind: 'customField', key: 'seats', test: { kind: 'presence', operator: 'set' } },
+        { kind: 'event', action: 'purchased', operator: 'atLeast', times: 3, withinDays: 7 },
+      ],
+    },
+  ],
+}
+
+test("a Segment's Condition edited in the builder is saved in the typed shape it was read in", async () => {
+  const bodies: unknown[] = []
+  serveCatalogue()
+  worker.use(
+    handleSiteEventsActions({ body: { actions: ['purchased'] } }),
+    handleSiteCustomFieldsList({
+      body: page([
+        {
+          id: testId(1),
+          key: 'seats',
+          name: 'Seats',
+          type: 'number',
+          conditionTests: {
+            text: [TextOperator.EQ, TextOperator.NEQ],
+            number: [NumberOperator.GT, NumberOperator.GTE, NumberOperator.LT, NumberOperator.LTE],
+            moment: [],
+            withinLast: false,
+            presence: [PresenceOperator.SET],
+          },
+          revision: 1,
+          ...TIMESTAMPS,
+        },
+      ]),
+    }),
+    handleSiteSegmentsGet({
+      body: { id: testId(7), name: 'Buyers', condition: EVERY_LEAF, revision: 1, ...TIMESTAMPS },
+    }),
+    handleSiteSegmentsUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json({
+        id: testId(7),
+        name: 'Buyers',
+        condition: EVERY_LEAF,
+        revision: 2,
+        ...TIMESTAMPS,
+      })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<SegmentEditPage />, EDIT_ROUTE)
+  await expect.element(screen.getByTestId('value-editor').first()).toHaveValue('vip')
+  await screen.getByTestId('value-editor').first().fill('churned')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        revision: 1,
+        name: 'Buyers',
+        condition: {
+          ...EVERY_LEAF,
+          entries: [
+            { kind: 'tag', name: 'churned', operator: 'has' },
+            ...EVERY_LEAF.entries.slice(1),
+          ],
+        },
+      },
+    ])
 })

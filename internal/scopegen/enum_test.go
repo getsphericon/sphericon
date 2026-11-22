@@ -86,3 +86,53 @@ func TestGenerateSystemEventActionsDeclaresAnUntypedConstantPerActionAndTheirLis
 	require.Regexp(t, `SmsSent\s+= "sms.sent"`, out)
 	require.Regexp(t, `var Actions = \[\]string\{\s+ContactFieldChanged,\s+SmsSent,\s+\}`, out)
 }
+
+func TestGenerateConditionKindsListsWhatEachUnionAdmitsInItsOrder(t *testing.T) {
+	src, err := scopegen.ConditionKinds.Generate([]byte(`{"components":{"schemas":{
+	 "SegmentConditionNode":{"oneOf":[{"$ref":"#/components/schemas/SegmentCondition"},{"$ref":"#/components/schemas/TagLeaf"}],
+	  "discriminator":{"propertyName":"kind","mapping":{"tag":"#/components/schemas/TagLeaf","group":"#/components/schemas/SegmentCondition"}}},
+	 "RuleConditionNode":{"oneOf":[{"$ref":"#/components/schemas/RuleCondition"},{"$ref":"#/components/schemas/TagLeaf"},{"$ref":"#/components/schemas/RulePropertyLeaf"}],
+	  "discriminator":{"propertyName":"kind","mapping":{"property":"#/components/schemas/RulePropertyLeaf","tag":"#/components/schemas/TagLeaf","group":"#/components/schemas/RuleCondition"}}},
+	 "AttributeTest":{"oneOf":[{"$ref":"#/components/schemas/TextTest"}],"discriminator":{"propertyName":"kind","mapping":{"text":"#/components/schemas/TextTest"}}},
+	 "BirthdayTest":{"oneOf":[{"$ref":"#/components/schemas/WithinLastTest"}],"discriminator":{"propertyName":"kind","mapping":{"withinLast":"#/components/schemas/WithinLastTest"}}},
+	 "CustomFieldTest":{"oneOf":[{"$ref":"#/components/schemas/TextTest"},{"$ref":"#/components/schemas/WithinLastTest"}],
+	  "discriminator":{"propertyName":"kind","mapping":{"withinLast":"#/components/schemas/WithinLastTest","text":"#/components/schemas/TextTest"}}},
+	 "PropertyTest":{"oneOf":[{"$ref":"#/components/schemas/TextTest"}],"discriminator":{"propertyName":"kind","mapping":{"text":"#/components/schemas/TextTest"}}},
+	 "RulePropertySource":{"oneOf":[{"$ref":"#/components/schemas/TriggerSource"}],"discriminator":{"propertyName":"kind","mapping":{"trigger":"#/components/schemas/TriggerSource"}}}}}}`))
+	require.NoError(t, err)
+
+	out := string(src)
+	require.Contains(t, out, "package conditiontree")
+	require.Contains(t, out, "type Kind string")
+	require.Regexp(t, `KindGroup\s+Kind = "group"`, out)
+	require.Regexp(t, `KindProperty\s+Kind = "property"`, out)
+	require.Regexp(t, `var SegmentKinds = \[\]Kind\{\s+KindGroup,\s+KindTag,\s+\}`, out)
+	require.Regexp(t, `var RuleKinds = \[\]Kind\{\s+KindGroup,\s+KindTag,\s+KindProperty,\s+\}`, out)
+	require.Regexp(t, `var CustomFieldTests = \[\]TestKind\{\s+TestText,\s+TestWithinLast,\s+\}`, out)
+	require.Regexp(t, `var RuleSources = \[\]Source\{\s+SourceTrigger,\s+\}`, out)
+}
+
+func TestGenerateConditionKindsRefusesAUnionMemberWithoutAValue(t *testing.T) {
+	_, err := scopegen.ConditionKinds.Generate([]byte(`{"components":{"schemas":{
+	 "SegmentConditionNode":{"oneOf":[{"$ref":"#/components/schemas/TagLeaf"}],"discriminator":{"propertyName":"kind","mapping":{}}}}}}`))
+
+	require.ErrorContains(t, err, "SegmentConditionNode: the member #/components/schemas/TagLeaf has no discriminator value")
+}
+
+func TestGenerateConditionOperatorsTypesEachOperatorEnumWithItsList(t *testing.T) {
+	src, err := scopegen.ConditionOperators.Generate([]byte(`{"components":{"schemas":{
+	 "TextOperator":{"type":"string","enum":["eq","beginsWith"]},
+	 "NumberOperator":{"type":"string","enum":["gt"]},
+	 "MomentOperator":{"type":"string","enum":["before"]},
+	 "PresenceOperator":{"type":"string","enum":["set","notSet"]},
+	 "HasOperator":{"type":"string","enum":["has","doesNotHave"]},
+	 "EventCountOperator":{"type":"string","enum":["atLeast","atMost"]}}}}`))
+	require.NoError(t, err)
+
+	out := string(src)
+	require.Regexp(t, `TextBeginsWith\s+TextOperator = "beginsWith"`, out)
+	require.Regexp(t, `var TextOperators = \[\]TextOperator\{\s+TextEq,\s+TextBeginsWith,\s+\}`, out)
+	require.Regexp(t, `PresenceNotSet\s+PresenceOperator = "notSet"`, out)
+	require.Regexp(t, `DoesNotHave\s+HasOperator = "doesNotHave"`, out)
+	require.Regexp(t, `AtMost\s+EventCountOperator = "atMost"`, out)
+}

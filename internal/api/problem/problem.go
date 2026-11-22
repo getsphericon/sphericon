@@ -167,6 +167,10 @@ func decide(ctx context.Context, ex *exchange, err error) (int, *siteapi.Problem
 		if path, reason := undecodedProperty(ctx, err); path != "" && code == http.StatusBadRequest {
 			p.Errors = siteapi.NewOptProblemDetailsErrors(siteapi.ProblemDetailsErrors{path: {reason}})
 		}
+		// A body that decodes but holds a value the contract does not take names it the same way.
+		if invalid := invalidProperties(err); len(invalid) > 0 && code == http.StatusBadRequest {
+			p.Errors = siteapi.NewOptProblemDetailsErrors(invalid)
+		}
 	} else if ex != nil {
 		// The client is told nothing about a server fault, so the log is the only place it shows.
 		if dbg := Debug(ex.r, ex.w, err.Error(), ""); dbg != nil {

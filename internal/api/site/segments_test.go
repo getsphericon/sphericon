@@ -41,7 +41,7 @@ func TestSiteSegmentsScopedToWorkspace(t *testing.T) {
 	// Create scopes the segment to the workspace and returns the resource.
 	res, err := c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{
 		Name:      "VIP customers",
-		Condition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"vip"}]}`),
+		Condition: testhelper.ConditionInput[siteapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"plan","test":{"kind":"text","operator":"eq","value":"vip"}}]}`),
 	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	assert.Equal(t, "VIP customers", res.Name)

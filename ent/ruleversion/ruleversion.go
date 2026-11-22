@@ -102,7 +102,7 @@ var (
 	// VersionValidator is a validator for the "version" field. It is called by the builders before save.
 	VersionValidator func(int) error
 	// DefaultCondition holds the default value on creation for the "condition" field.
-	DefaultCondition conditiontree.Group
+	DefaultCondition conditiontree.Rule
 	// DefaultActions holds the default value on creation for the "actions" field.
 	DefaultActions []ruleaction.Action
 )

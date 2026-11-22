@@ -3585,7 +3585,7 @@ export const siteSegmentsCreate = <ThrowOnError extends boolean = false>(options
 });
 
 /**
- * Preview how many active contacts match a rule definition
+ * Preview how many active contacts match an unsaved Condition
  */
 export const siteSegmentsPreview = <ThrowOnError extends boolean = false>(options: Options<SiteSegmentsPreviewData, ThrowOnError>): RequestResult<SiteSegmentsPreviewResponses, SiteSegmentsPreviewErrors, ThrowOnError> => (options.client ?? client).post<SiteSegmentsPreviewResponses, SiteSegmentsPreviewErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({

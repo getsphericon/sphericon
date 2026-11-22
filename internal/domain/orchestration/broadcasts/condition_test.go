@@ -36,5 +36,5 @@ func TestAnArmedBroadcastHoldsNoConditionForAllContactsAndTheEmptyGroupForASegme
 	require.NoError(t, err)
 	env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetSegmentID(fixtures.SegmentNewsletterID).ExecX(ctx)
 	schedule(fixtures.BroadcastDraftID)
-	assert.Equal(t, new(conditiontree.Empty()), env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).Condition)
+	assert.Equal(t, &conditiontree.Segment{Group: conditiontree.Empty()}, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).Condition)
 }

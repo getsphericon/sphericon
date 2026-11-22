@@ -17,7 +17,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type {
   SiteAutomationResource,
-  ConditionGroup,
+  RuleCondition,
   SiteRuleResource,
 } from '../../generated/site/types.gen.ts'
 import { zUpdateRuleInput } from '../../generated/site/zod.gen.ts'
@@ -32,10 +32,16 @@ import { RuleCreatePage, RuleEditPage } from './resource.tsx'
 
 const REFRESH_RULE = 'Refresh rule'
 
-const CONDITION: ConditionGroup = {
+const CONDITION: RuleCondition = {
   kind: 'group',
   combinator: 'and',
-  rules: [{ kind: 'rule', field: 'email', operator: 'contains', value: '@x' }],
+  entries: [
+    {
+      kind: 'attribute',
+      attribute: 'email',
+      test: { kind: 'text', operator: 'contains', value: '@x' },
+    },
+  ],
 }
 
 const STORED: SiteRuleResource = {
@@ -120,7 +126,7 @@ test('creating a rule sends its name, trigger events, empty condition and action
       {
         name: 'Tag signups',
         triggerEvents: ['signed_up'],
-        condition: { kind: 'group', combinator: 'and', rules: [] },
+        condition: { kind: 'group', combinator: 'and', entries: [] },
         actions: [{ type: 'apply_tag', tag: 'new' }],
       },
     ])
@@ -241,6 +247,87 @@ test('an enroll action picks one of the automations and saves it', async () => {
         triggerEvents: ['signed_up'],
         condition: CONDITION,
         actions: [{ type: 'enroll_automation', automationId: testId(6) }],
+      },
+    ])
+})
+
+// An Action switched to another kind sends that kind's fields alone, never the Tag or the
+// Automation of the kind it was.
+test('an action switched from a tag to an enrollment saves the automation alone', async () => {
+  const bodies: unknown[] = []
+  serveCatalogue()
+  worker.use(
+    handleSiteAutomationsList({ body: page([automation(testId(5), 'Welcome flow')], 1) }),
+    handleSiteRulesGet({ body: STORED }),
+    handleSiteRulesUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(STORED)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<RuleEditPage />, EDIT_ROUTE)
+
+  await expect.element(screen.getByLabelText('Tag')).toHaveValue('new')
+  await screen.getByRole('combobox', { name: 'Action' }).click()
+  await screen.getByRole('option', { name: 'Enroll in automation' }).click()
+  await screen.getByRole('combobox', { name: 'Automation' }).click()
+  await screen.getByRole('option', { name: 'Welcome flow' }).click()
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        revision: 1,
+        name: 'Tag signups',
+        triggerEvents: ['signed_up'],
+        condition: CONDITION,
+        actions: [{ type: 'enroll_automation', automationId: testId(5) }],
+      },
+    ])
+})
+
+test('an action switched from an enrollment to a tag saves the tag alone', async () => {
+  const bodies: unknown[] = []
+  serveCatalogue()
+  worker.use(
+    handleSiteAutomationsList({ body: page([automation(testId(5), 'Welcome flow')], 1) }),
+    handleSiteRulesGet({
+      body: {
+        ...STORED,
+        draft: {
+          number: 1,
+          triggerEvents: ['signed_up'],
+          condition: CONDITION,
+          actions: [{ type: 'enroll_automation', automationId: testId(5) }],
+        },
+      },
+    }),
+    handleSiteRulesUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(STORED)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<RuleEditPage />, EDIT_ROUTE)
+
+  await expect
+    .element(screen.getByRole('combobox', { name: 'Automation' }))
+    .toHaveValue('Welcome flow')
+  await screen.getByRole('combobox', { name: 'Action' }).click()
+  await screen.getByRole('option', { name: 'Apply tag' }).click()
+  await screen.getByLabelText('Tag').fill('vip')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        revision: 1,
+        name: 'Tag signups',
+        triggerEvents: ['signed_up'],
+        condition: CONDITION,
+        actions: [{ type: 'apply_tag', tag: 'vip' }],
       },
     ])
 })
@@ -457,4 +544,147 @@ test('Revert over unsaved edits asks first, and keeps them when the person stays
     .click()
   await expect.poll(() => reverted).toEqual([testId(7)])
   await expect.element(screen.getByLabelText('Tag')).toHaveValue('live')
+})
+
+// Every kind of leaf a Rule's Condition admits besides a Segment's own, as the server stores it.
+const WITH_PROPERTY: RuleCondition = {
+  kind: 'group',
+  combinator: 'and',
+  entries: [
+    {
+      kind: 'property',
+      of: { kind: 'trigger' },
+      key: 'url',
+      test: { kind: 'text', operator: 'beginsWith', value: '/pricing' },
+    },
+    {
+      kind: 'group',
+      combinator: 'or',
+      entries: [
+        {
+          kind: 'property',
+          of: { kind: 'trigger' },
+          key: 'order.total',
+          test: { kind: 'number', operator: 'gt', value: 100 },
+        },
+        { kind: 'tag', name: 'vip', operator: 'doesNotHave' },
+        {
+          kind: 'attribute',
+          attribute: 'email',
+          test: { kind: 'text', operator: 'contains', value: '@x' },
+        },
+        { kind: 'event', action: 'purchased', operator: 'atMost', times: 0 },
+      ],
+    },
+  ],
+}
+
+test("a Rule's Condition edited in the builder is saved in the typed shape it was read in", async () => {
+  const bodies: unknown[] = []
+  serveCatalogue()
+  worker.use(
+    handleSiteRulesGet({
+      body: {
+        ...STORED,
+        draft: { number: 1, triggerEvents: ['signed_up'], condition: WITH_PROPERTY, actions: [] },
+      },
+    }),
+    handleSiteRulesUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(STORED)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<RuleEditPage />, EDIT_ROUTE)
+  const key = screen.getByLabelText('Event property name').first()
+  await expect.element(key).toHaveValue('url')
+  await key.fill('path')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        revision: 1,
+        name: 'Tag signups',
+        triggerEvents: ['signed_up'],
+        condition: {
+          ...WITH_PROPERTY,
+          entries: [
+            {
+              kind: 'property',
+              of: { kind: 'trigger' },
+              key: 'path',
+              test: { kind: 'text', operator: 'beginsWith', value: '/pricing' },
+            },
+            WITH_PROPERTY.entries[1],
+          ],
+        },
+        actions: [],
+      },
+    ])
+})
+
+// A property's key cleared in the builder leaves a Condition the Rule cannot hold yet: Save refuses
+// it, and saves once the key is typed again.
+test("a Rule's Condition with a property's key cleared is refused, then saves once it is typed", async () => {
+  const bodies: unknown[] = []
+  const keyed: RuleCondition = {
+    kind: 'group',
+    combinator: 'and',
+    entries: [
+      {
+        kind: 'property',
+        of: { kind: 'trigger' },
+        key: 'url',
+        test: { kind: 'text', operator: 'beginsWith', value: '/pricing' },
+      },
+    ],
+  }
+  serveCatalogue()
+  worker.use(
+    handleSiteRulesGet({
+      body: {
+        ...STORED,
+        draft: { number: 1, triggerEvents: ['signed_up'], condition: keyed, actions: [] },
+      },
+    }),
+    handleSiteRulesUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(STORED)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<RuleEditPage />, EDIT_ROUTE)
+  const key = screen.getByLabelText('Event property name')
+  await expect.element(key).toHaveValue('url')
+  await key.fill('')
+  await screen.getByRole('button', { name: 'Save' }).click()
+  await expect.element(screen.getByText('This field is required')).toBeInTheDocument()
+  expect(bodies).toEqual([])
+
+  await key.fill('path')
+  await screen.getByRole('button', { name: 'Save' }).click()
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        revision: 1,
+        name: 'Tag signups',
+        triggerEvents: ['signed_up'],
+        condition: {
+          kind: 'group',
+          combinator: 'and',
+          entries: [
+            {
+              kind: 'property',
+              of: { kind: 'trigger' },
+              key: 'path',
+              test: { kind: 'text', operator: 'beginsWith', value: '/pricing' },
+            },
+          ],
+        },
+        actions: [],
+      },
+    ])
 })

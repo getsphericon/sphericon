@@ -186,7 +186,7 @@ func TestEvaluateTestsTheEventsProperties(t *testing.T) {
 	assert.Equal(t, 1, fire("p-hit", map[string]any{"url": "https://x.test/pricing"}))
 }
 
-// "nps_submitted with score >= 9" (RulePromoters): a number leaf on the Event's property fires for
+// "nps_submitted with score >= 9" (RulePromoters): a number test of the Event's property fires for
 // a score of 9 or more, whichever way the number was decoded, and not for a lower one or a number
 // as text.
 func TestEvaluateComparesANumberProperty(t *testing.T) {

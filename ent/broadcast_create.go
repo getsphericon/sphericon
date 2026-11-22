@@ -273,7 +273,7 @@ func (_c *BroadcastCreate) SetNillableSegmentID(v *int64) *BroadcastCreate {
 }
 
 // SetCondition sets the "condition" field.
-func (_c *BroadcastCreate) SetCondition(v *conditiontree.Group) *BroadcastCreate {
+func (_c *BroadcastCreate) SetCondition(v *conditiontree.Segment) *BroadcastCreate {
 	_c.mutation.SetCondition(v)
 	return _c
 }
@@ -1126,7 +1126,7 @@ func (u *BroadcastUpsert) ClearSegmentID() *BroadcastUpsert {
 }
 
 // SetCondition sets the "condition" field.
-func (u *BroadcastUpsert) SetCondition(v *conditiontree.Group) *BroadcastUpsert {
+func (u *BroadcastUpsert) SetCondition(v *conditiontree.Segment) *BroadcastUpsert {
 	u.Set(broadcast.FieldCondition, v)
 	return u
 }
@@ -1679,7 +1679,7 @@ func (u *BroadcastUpsertOne) ClearSegmentID() *BroadcastUpsertOne {
 }
 
 // SetCondition sets the "condition" field.
-func (u *BroadcastUpsertOne) SetCondition(v *conditiontree.Group) *BroadcastUpsertOne {
+func (u *BroadcastUpsertOne) SetCondition(v *conditiontree.Segment) *BroadcastUpsertOne {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.SetCondition(v)
 	})
@@ -2424,7 +2424,7 @@ func (u *BroadcastUpsertBulk) ClearSegmentID() *BroadcastUpsertBulk {
 }
 
 // SetCondition sets the "condition" field.
-func (u *BroadcastUpsertBulk) SetCondition(v *conditiontree.Group) *BroadcastUpsertBulk {
+func (u *BroadcastUpsertBulk) SetCondition(v *conditiontree.Segment) *BroadcastUpsertBulk {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.SetCondition(v)
 	})

@@ -663,6 +663,57 @@ export default interface Resources {
       "overwrite": "Save mine over it",
       "title": "Changed since you opened it"
     },
+    "conditions": {
+      "attributes": {
+        "city": "City",
+        "country": "Country",
+        "email": "Email",
+        "first_name": "First name",
+        "last_name": "Last name",
+        "locale": "Locale",
+        "phone": "Phone",
+        "subject_id": "Subject ID",
+        "time_zone": "Time zone"
+      },
+      "eventOperators": {
+        "atLeast": "at least (times)",
+        "atMost": "at most (times)",
+        "notPerformed": "not performed",
+        "performed": "performed"
+      },
+      "fields": {
+        "birthday": "Birthday",
+        "property": "Event property",
+        "sms": "SMS",
+        "tag": "Tag",
+        "telegram": "Telegram"
+      },
+      "hasOperators": {
+        "doesNotHave": "does not have",
+        "has": "has"
+      },
+      "momentOperators": {
+        "after": "is after",
+        "before": "is before"
+      },
+      "numberOperators": {
+        "gt": "greater than",
+        "gte": "greater than or equal to",
+        "lt": "less than",
+        "lte": "less than or equal to"
+      },
+      "presenceOperators": {
+        "notSet": "is not set",
+        "set": "is set"
+      },
+      "textOperators": {
+        "beginsWith": "begins with",
+        "contains": "contains",
+        "eq": "is",
+        "neq": "is not"
+      },
+      "withinLast": "within the last (days)"
+    },
     "confirmEmailChange": {
       "errorBody": "This confirmation link is invalid or has expired.",
       "errorTitle": "Confirmation failed",
@@ -1735,7 +1786,7 @@ export default interface Resources {
       "noRecords": "No segments yet",
       "previewButton": "Preview segment",
       "previewCount": "{{count, number}} matching contact" | "{{count, number}} matching contacts",
-      "triggerKeyLabel": "Event property name"
+      "propertyKeyLabel": "Event property name"
     },
     "settings": {
       "apiKeysTitle": "API keys",

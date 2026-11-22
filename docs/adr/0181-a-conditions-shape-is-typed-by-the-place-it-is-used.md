@@ -41,8 +41,9 @@ to parse.
   `event`), `awaited` with the name of a Wait for event, or `http` with the name of an HTTP step
   (ADR 0161). A Set field's source names a property the same way (ADR 0125). The key is a field of its own, so a key
   holding a dot needs no rule.
-- **Each place has a tree type of its own**, made from one TypeSpec template over the leaf kinds it
-  admits:
+- **Each place has a tree type of its own**: one TypeSpec template of the group over the place's
+  union of entries, and that union lists the shared leaf models it admits (TypeSpec cannot spread one
+  union into another):
 
   | Place                      | Admits                                                                                    |
   | -------------------------- | ----------------------------------------------------------------------------------------- |
@@ -75,12 +76,21 @@ to parse.
   schema refuses the leaf.
 - The migration that rewrites the stored Conditions starts a Major. A release before it cannot read
   the typed tree, and no reader of the old shape is kept, so the migration adds the next Major and
-  its floor (ADR 0033) and an older release refuses to start on the rewritten data. While it runs,
-  the release still serving cannot read what it rewrote: a Segment's preview, a Broadcast due in
-  that window and a Rule's evaluation may fail until the new release starts. The pull request that
-  lands the move is a breaking change whose `Upgrade:` line says so. Here the
-  promise that a running Instance is never stopped does not hold in full; keeping it would need
-  the release before the move to read the typed shape, the compatibility reader this ADR rules out.
+  its floor (ADR 0033), and a release older than the floor refuses to start on the rewritten data.
+  The floor does not protect against the move: it is the last release before it, which ADR 0033
+  lets start on the next Major, and a release already running is not checked at all. The release
+  before the move misreads the new shape silently: it reads a rewritten
+  Condition as the empty group, which matches every Contact, so a Segment's preview counts
+  everyone, a Broadcast due in that window goes to every Contact and every Rule fires on every
+  Event of its Trigger. A Condition that release saves after the migration is in the old shape, its
+  entries under `rules`: the database refuses it, since a CHECK on each Condition column requires
+  the group's `entries` as a list (added after the rewrite), so the save fails instead of storing a
+  tree the new release, which refuses a group without `entries` too, would read as matching every
+  Contact. The reads still misread, so the Upgrade stops the old release before the migration runs and
+  does not start it again: the new release is the first to serve on the rewritten data. The pull
+  request that lands the move is a breaking change whose `Upgrade:` line says so. Here the promise
+  that a running Instance is never stopped does not hold; keeping it would need the release
+  before the move to read the typed shape, the compatibility reader this ADR rules out.
 
 ## Considered options
 

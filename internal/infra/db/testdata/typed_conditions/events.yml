@@ -1,0 +1,25 @@
+# Ann's purchases: three over all time, two in the last week. Bob's one, long ago.
+- id: 1
+  contact_id: 1
+  action: purchase
+  workspace_id: 1
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 2
+  contact_id: 1
+  action: purchase
+  workspace_id: 1
+  occurred_at: '{{daysAgo 3}}'
+  created_at: '{{daysAgo 3}}'
+- id: 3
+  contact_id: 1
+  action: purchase
+  workspace_id: 1
+  occurred_at: '{{daysAgo 20}}'
+  created_at: '{{daysAgo 20}}'
+- id: 4
+  contact_id: 2
+  action: purchase
+  workspace_id: 1
+  occurred_at: '{{daysAgo 40}}'
+  created_at: '{{daysAgo 40}}'

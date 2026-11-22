@@ -127,7 +127,8 @@ const (
 // Tables are the files `cmd/scopegen` writes.
 var Tables = []Table{
 	ServiceScopes, ExternalScopes, ExternalPermissions, SitePermissions, GrantPermissions,
-	Permissions, TokenScopes, CredentialScopes, UserScopes, SystemEventActions, ConditionCombinators, SiteRateLimits,
+	Permissions, TokenScopes, CredentialScopes, UserScopes, SystemEventActions, ConditionCombinators, ConditionAttributes, ConditionOperators,
+	ConditionKinds, SiteRateLimits,
 	StaffRateLimits,
 }
 

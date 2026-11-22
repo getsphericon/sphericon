@@ -9,66 +9,64 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func opsGroup(entries ...any) conditiontree.Group {
-	return conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Rules: marshal(entries...)}
-}
-
 func TestPlainColumnOperators(t *testing.T) {
 	env := testhelper.Setup(t)
 	const anna, andy, bella = fixtures.OscorpAnnaEmail, fixtures.OscorpAndyEmail, fixtures.OscorpBellaEmail
 
 	for name, tc := range map[string]struct {
-		rule condition.Leaf
+		leaf leaf
 		want []string
 	}{
-		"equals":      {rule("first_name", "eq", "Anna"), []string{anna}},
-		"not equals":  {rule("first_name", "neq", "Anna"), []string{andy, bella}},
-		"contains":    {rule("first_name", "contains", "ELL"), []string{bella}},
-		"begins with": {rule("email", "beginsWith", "an"), []string{andy, anna}},
-		"null":        {rule("phone", "null", ""), []string{andy}},
-		"not null":    {rule("phone", "notNull", ""), []string{anna, bella}},
-		"country":     {rule("country", "eq", "DE"), []string{anna}},
-		"no country":  {rule("country", "null", ""), []string{andy}},
-		"city":        {rule("city", "eq", "Berlin"), []string{anna}},
-		"locale":      {rule("locale", "beginsWith", "fr"), []string{bella}},
+		"equals":      {attribute("first_name", text("eq", "Anna")), []string{anna}},
+		"not equals":  {attribute("first_name", text("neq", "Anna")), []string{andy, bella}},
+		"contains":    {attribute("first_name", text("contains", "ELL")), []string{bella}},
+		"begins with": {attribute("email", text("beginsWith", "an")), []string{andy, anna}},
+		"not set":     {attribute("phone", presence("notSet")), []string{andy}},
+		"set":         {attribute("phone", presence("set")), []string{anna, bella}},
+		"a country":   {attribute("country", text("eq", "DE")), []string{anna}},
+		"no country":  {attribute("country", presence("notSet")), []string{andy}},
+		"a city":      {attribute("city", text("eq", "Berlin")), []string{anna}},
+		"a locale":    {attribute("locale", text("beginsWith", "fr")), []string{bella}},
 	} {
-		assert.Equal(t, tc.want, emailsIn(t, env, fixtures.OscorpID, opsGroup(tc.rule)), name)
+		got := emailsIn(t, env, fixtures.OscorpID, segmentOf(tc.leaf))
+		assert.Equal(t, tc.want, got, name)
 	}
 }
 
 func TestCustomFieldOperators(t *testing.T) {
 	env := testhelper.Setup(t)
-	match := func(r condition.Leaf) []string { return emailsIn(t, env, fixtures.InitrodeID, opsGroup(r)) }
+	match := func(l leaf) []string { return emailsIn(t, env, fixtures.InitrodeID, segmentOf(l)) }
 
-	assert.Equal(t, []string{fixtures.InitrodeOneEmail}, match(rule("custom:plan", "eq", "pro")))
-	assert.Equal(t, []string{fixtures.InitrodeTwoEmail}, match(rule("custom:plan", "neq", "pro")))
-	assert.Equal(t, []string{fixtures.InitrodeOneEmail, fixtures.InitrodeTwoEmail}, match(rule("custom:plan", "notNull", "")))
-	// "contains" on a JSON column is membership of a JSON array, not substring.
-	assert.Equal(t, []string{fixtures.InitrodeOneEmail}, match(rule("custom:tags", "contains", "beta")))
-	assert.Empty(t, match(rule("custom:tags", "contains", "gamma")))
+	assert.Equal(t, []string{fixtures.InitrodeOneEmail}, match(customField("plan", text("eq", "pro"))))
+	assert.Equal(t, []string{fixtures.InitrodeTwoEmail}, match(customField("plan", text("neq", "pro"))))
+	assert.Equal(t, []string{fixtures.InitrodeOneEmail, fixtures.InitrodeTwoEmail}, match(customField("plan", presence("set"))))
+	// contains on a Custom field is membership of a JSON array, not substring.
+	assert.Equal(t, []string{fixtures.InitrodeOneEmail}, match(customField("tags", text("contains", "beta"))))
+	assert.Empty(t, match(customField("tags", text("contains", "gamma"))))
 }
 
-// The key of a custom-field rule is data, never SQL: quotes in it are matched literally
+// The key of a Custom field test is data, never SQL: quotes in it are matched literally
 // and an injection payload is just a key nobody has.
 func TestCustomFieldKeyIsABoundArgument(t *testing.T) {
 	env := testhelper.Setup(t)
-	match := func(r condition.Leaf) []string { return emailsIn(t, env, fixtures.InitrodeID, opsGroup(r)) }
+	match := func(l leaf) []string { return emailsIn(t, env, fixtures.InitrodeID, segmentOf(l)) }
 
-	assert.Equal(t, []string{fixtures.InitrodeQuoteEmail}, match(rule("custom:it's", "eq", "here")))
+	assert.Equal(t, []string{fixtures.InitrodeQuoteEmail}, match(customField("it's", text("eq", "here"))))
 
 	// Even a declared key that looks like SQL is data: the catalogue accepts any key
 	// ingest created, and it only ever reaches the query as one quoted literal.
 	payload := fixtures.CustomFieldInitrodeInjectionKey
-	// Four representative operators for the injection probe.
-	for _, op := range []string{string(siteapi.ConditionOperatorEq), string(siteapi.ConditionOperatorNeq), string(siteapi.ConditionOperatorContains), string(siteapi.ConditionOperatorNotNull)} {
-		assert.Empty(t, match(rule("custom:"+payload, op, "a")), op)
+	// Four representative tests for the injection probe.
+	for name, test := range map[string]leaf{
+		"equals": text("eq", "a"), "differs": text("neq", "a"), "holds": text("contains", "a"), "is set": presence("set"),
+	} {
+		assert.Empty(t, match(customField(payload, test)), name)
 	}
 }
 
@@ -81,7 +79,7 @@ func TestCustomFieldMustBeInTheWorkspaceCatalogue(t *testing.T) {
 		"declared by another Workspace":  fixtures.CustomFieldGlobexKey,
 		"injection that nobody declared": "x' IS NOT NULL AND (SELECT count(*) FROM users)>0 AND 'a",
 	} {
-		_, err := condition.New(time.Now).Compile(context.Background(), ws, opsGroup(rule("custom:"+key, "eq", "a")))
+		_, err := condition.New(time.Now).Compile(context.Background(), ws, segmentOf(customField(key, text("eq", "a"))))
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), "unknown custom field", name)
 	}
@@ -92,58 +90,54 @@ func TestEmptyGroupsMatchEveryoneUnlessNegated(t *testing.T) {
 
 	assert.Equal(t, []string{
 		fixtures.InitrodeOneEmail, fixtures.InitrodeQuoteEmail, fixtures.InitrodeThreeEmail, fixtures.InitrodeTwoEmail,
-	}, emailsIn(t, env, fixtures.InitrodeID, conditiontree.Group{Kind: "group", Combinator: conditiontree.And}))
-	assert.Empty(t, emailsIn(t, env, fixtures.InitrodeID, conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Not: true}),
+	}, emailsIn(t, env, fixtures.InitrodeID, segmentOf()))
+	assert.Empty(t, emailsIn(t, env, fixtures.InitrodeID, conditiontree.Segment{Group: groupOf(conditiontree.And, true)}),
 		"an empty negated group matches no one")
 }
 
-func TestCompileRefusesWhatTheRuleSetDoesNotAllow(t *testing.T) {
+// What the tree's type holds but its data does not: a blank Tag name, a Custom field test its type
+// does not take, a Custom field leaf with no key. Each names its entry.
+func TestCompileRefusesWhatTheTreeDoesNotAllow(t *testing.T) {
 	env := testhelper.Setup(t)
 	for name, tc := range map[string]struct {
-		rule condition.Leaf
+		leaf leaf
 		msg  string
 	}{
-		"unknown column":                {rule("password", "eq", "x"), "unknown field"},
-		"unsupported plain operator":    {rule("email", "regex", "x"), "unsupported operator"},
-		"an event as a field":           {rule("event:signup", "eq", "x"), "unknown field"},
-		"unsupported tag operator":      {rule("tag", "eq", "vip"), "for tag field"},
-		"blank tag name":                {rule("tag", "has", "   "), "tag name is required"},
-		"unsupported json operator":     {rule("custom:plan", "beginsWith", "p"), "for json field"},
-		"json prefix without a key":     {rule("custom:", "eq", "x"), "unknown field"},
-		"plain operator on json column": {rule("custom:plan", "null", ""), "for json field"},
+		"blank tag name":                  {tagLeaf("   ", "has"), "tag name is required"},
+		"beginsWith on a Custom field":    {customField("plan", text("beginsWith", "p")), `takes no text test "beginsWith"`},
+		"a Custom field leaf with no key": {customField("", text("eq", "x")), "custom field key is required"},
+		"not set on a Custom field":       {customField("plan", presence("notSet")), `takes no presence test "notSet"`},
 	} {
-		_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), opsGroup(tc.rule))
+		_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), segmentOf(tc.leaf))
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), tc.msg, name)
-		assert.Contains(t, err.Error(), "rule 0", "%s: the error names the offending rule", name)
+		assert.Contains(t, err.Error(), "entry 0", "%s: the error names the offending entry", name)
 	}
 }
 
 func TestCompileRefusesAnEventLeafOutOfRange(t *testing.T) {
 	env := testhelper.Setup(t)
 	withoutTimes := eventLeaf("signup", "atLeast", 1, 0)
-	withoutTimes.Times = nil
+	delete(withoutTimes, "times")
 	zeroWindow := eventLeaf("signup", "atLeast", 1, 0)
-	zero := 0
-	zeroWindow.WithinDays = &zero
+	zeroWindow["withinDays"] = 0
 
 	for name, tc := range map[string]struct {
-		leaf condition.EventLeaf
+		leaf leaf
 		msg  string
 	}{
 		"no action":                {eventLeaf("", "atLeast", 1, 0), "event action is required"},
 		"a blank action":           {eventLeaf("  ", "atLeast", 1, 0), "event action is required"},
-		"a text operator":          {eventLeaf("signup", "eq", 1, 0), "unsupported operator"},
 		"no times":                 {withoutTimes, "times is required"},
 		"at least none":            {eventLeaf("signup", "atLeast", 0, 0), "atLeast takes times of 1 or more"},
 		"at most a negative count": {eventLeaf("signup", "atMost", -1, 0), "times must be at least 0"},
 		"a zero window":            {zeroWindow, "withinDays must be at least 1"},
 		"a negative window":        {eventLeaf("signup", "atLeast", 1, -1), "withinDays must be at least 1"},
 	} {
-		_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), opsGroup(tc.leaf))
+		_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), segmentOf(tc.leaf))
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), tc.msg, name)
-		assert.Contains(t, err.Error(), "rule 0", "%s: the error names the offending rule", name)
+		assert.Contains(t, err.Error(), "entry 0", "%s: the error names the offending entry", name)
 	}
 }
 
@@ -151,37 +145,44 @@ func TestCompileRefusesMalformedEntries(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	ws := env.DB.Scoped(fixtures.AcmeID)
+	compile := func(entry string) error {
+		g := conditiontree.Group{Kind: conditiontree.KindGroup, Combinator: conditiontree.And, Entries: []json.RawMessage{json.RawMessage(entry)}}
+		_, err := condition.New(time.Now).Compile(ctx, ws, conditiontree.Segment{Group: g})
+		return err
+	}
 
-	// A rules[] entry that is not an object at all.
-	_, err := condition.New(time.Now).Compile(ctx, ws, conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Rules: []json.RawMessage{json.RawMessage(`42`)}})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "malformed rule")
+	notAnObject := compile(`42`)
+	entriesNotAList := compile(`{"kind":"group","combinator":"or","entries":"nope"}`)
+	valueNotText := compile(`{"kind":"attribute","attribute":"email","test":{"kind":"text","operator":"eq","value":{"a":1}}}`)
+	noKind := compile(`{"attribute":"email","test":{"kind":"text","operator":"eq","value":"x"}}`)
+	_, xor := condition.New(time.Now).Compile(ctx, ws, conditiontree.Segment{Group: groupOf("xor", false)})
+	_, nested := condition.New(time.Now).Compile(ctx, ws, segmentOf(opsGroup(tagLeaf(" ", "has"))))
 
-	// A nested group whose own rules are not a list.
-	_, err = condition.New(time.Now).Compile(ctx, ws, conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Rules: []json.RawMessage{json.RawMessage(`{"kind":"group","combinator":"or","rules":"nope"}`)}})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "malformed group")
+	require.ErrorContains(t, notAnObject, "malformed entry")
+	require.ErrorContains(t, entriesNotAList, "malformed group")
+	require.ErrorContains(t, valueNotText, "text test value")
+	require.ErrorContains(t, noKind, "unknown entry kind", "a kind is never guessed from the fields")
+	require.ErrorContains(t, xor, "unknown combinator", "an unknown combinator is not read as and")
+	require.ErrorContains(t, nested, "entry 0: entry 0: tag name is required", "an error deep in a nested group names its path")
+}
 
-	// A leaf whose value is not a string.
-	_, err = condition.New(time.Now).Compile(ctx, ws, conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Rules: []json.RawMessage{json.RawMessage(`{"kind":"rule","field":"email","operator":"eq","value":{"a":1}}`)}})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "malformed rule")
+// A group without its entries (the tree before ADR 0181 kept them under `rules`) is refused at any
+// depth, never read as the empty group that matches every Contact.
+func TestCompileRefusesAGroupWithoutEntries(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	ws := env.DB.Scoped(fixtures.AcmeID)
+	var root conditiontree.Segment
+	require.NoError(t, json.Unmarshal([]byte(`{"kind":"group","combinator":"and","rules":[]}`), &root))
+	nestedGroup := conditiontree.Group{Kind: conditiontree.KindGroup, Combinator: conditiontree.And, Entries: []json.RawMessage{
+		json.RawMessage(`{"kind":"group","combinator":"or","rules":[{"kind":"rule","field":"email","operator":"eq","value":"x"}]}`),
+	}}
 
-	// An entry whose kind is missing or unknown is refused, not guessed from its fields.
-	_, err = condition.New(time.Now).Compile(ctx, ws, conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Rules: []json.RawMessage{json.RawMessage(`{"field":"email","operator":"eq","value":"x"}`)}})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "unknown rule kind")
+	_, atTheRoot := condition.New(time.Now).Compile(ctx, ws, root)
+	_, nested := condition.New(time.Now).Compile(ctx, ws, conditiontree.Segment{Group: nestedGroup})
 
-	// An unknown combinator is refused, not read as "and".
-	_, err = condition.New(time.Now).Compile(ctx, ws, conditiontree.Group{Kind: "group", Combinator: "xor"})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "unknown combinator")
-
-	// An error deep in a nested group is reported with its path.
-	nested := opsGroup(opsGroup(rule("password", "eq", "x")))
-	_, err = condition.New(time.Now).Compile(ctx, ws, nested)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "rule 0: rule 0: unknown field")
+	require.ErrorContains(t, atTheRoot, "group entries are required")
+	require.ErrorContains(t, nested, "entry 0: group entries are required")
 }
 
 func TestCompileRefusesInvalidConditions(t *testing.T) {
@@ -189,13 +190,13 @@ func TestCompileRefusesInvalidConditions(t *testing.T) {
 	ctx := context.Background()
 	ws := env.DB.Scoped(fixtures.AcmeID)
 
-	_, err := condition.New(time.Now).Compile(ctx, ws, testhelper.Condition(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))
+	_, err := condition.New(time.Now).Compile(ctx, ws, testhelper.SegmentCondition(t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`))
 	require.Error(t, err)
 
-	_, err = condition.New(time.Now).Compile(ctx, ws, conditiontree.Group{})
+	_, err = condition.New(time.Now).Compile(ctx, ws, conditiontree.Segment{})
 	require.Error(t, err, "a document that is no group")
 
-	p, err := condition.New(time.Now).Compile(ctx, ws, conditiontree.Empty())
+	p, err := condition.New(time.Now).Compile(ctx, ws, conditiontree.Segment{Group: conditiontree.Empty()})
 	require.NoError(t, err)
 	assert.NotNil(t, p, "the empty group matches everyone")
 }

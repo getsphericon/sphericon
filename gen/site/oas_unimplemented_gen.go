@@ -1531,7 +1531,7 @@ func (UnimplementedHandler) SiteSegmentsList(ctx context.Context, params SiteSeg
 
 // SiteSegmentsPreview implements SiteSegments_preview operation.
 //
-// Preview how many active contacts match a rule definition.
+// Preview how many active contacts match an unsaved Condition.
 //
 // POST /workspaces/{workspaceId}/segments/preview
 func (UnimplementedHandler) SiteSegmentsPreview(ctx context.Context, req *SitePreviewSegmentInput, params SiteSegmentsPreviewParams) (r *SitePreviewSegmentResult, _ error) {

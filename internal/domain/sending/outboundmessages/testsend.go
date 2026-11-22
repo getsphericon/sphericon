@@ -113,8 +113,8 @@ const testSampleEmail = "alex@example.com"
 // testVariables are the sample merge data a Test send is rendered with.
 func testVariables(email string) map[string]any {
 	return map[string]any{
-		"first_name": "Alex", "last_name": "Sample", "email": email,
-		"city": "Berlin", "country": "Germany", "locale": "de",
+		string(tagFirstName): "Alex", string(tagLastName): "Sample", string(tagEmail): email,
+		string(tagCity): "Berlin", string(tagCountry): "Germany", string(tagLocale): "de",
 	}
 }
 

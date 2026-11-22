@@ -9,7 +9,13 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteWorkspaceResource } from '../../generated/site/types.gen.ts'
 import { Route as customFieldsRoute } from '../../routes/workspaces/$workspaceId/custom-fields/index.tsx'
-import { page, TIMESTAMPS, testId, workspace as workspacePayload } from '../../test/payloads.ts'
+import {
+  NO_CONDITION_TESTS,
+  page,
+  TIMESTAMPS,
+  testId,
+  workspace as workspacePayload,
+} from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -23,7 +29,7 @@ const PLAN = {
   key: 'plan',
   name: 'Plan',
   type: 'string' as const,
-  ruleOperators: [],
+  conditionTests: NO_CONDITION_TESTS,
   revision: 1,
   ...TIMESTAMPS,
 }
@@ -32,7 +38,7 @@ const SEATS = {
   key: 'seats',
   name: 'Seats',
   type: 'number' as const,
-  ruleOperators: [],
+  conditionTests: NO_CONDITION_TESTS,
   revision: 1,
   ...TIMESTAMPS,
 }

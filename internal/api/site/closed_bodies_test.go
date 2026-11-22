@@ -71,15 +71,15 @@ func TestSiteBroadcastRefusesAValueOfTheWrongTypeByItsPath(t *testing.T) {
 	assert.Contains(t, refused.Errors.Or(nil), "content.subject")
 }
 
-// A property nested in a Condition's rule, an item of its rules, is refused by its path through
-// the objects (an array adds no segment), and no Segment is stored.
-func TestSiteSegmentRefusesAPropertyNestedInAConditionRule(t *testing.T) {
+// A property nested in a Condition's leaf, an item of its entries, is refused by its path, and no
+// Segment is stored.
+func TestSiteSegmentRefusesAnUnknownPropertyOfAnEntryOfItsCondition(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	edited := env.SiteActorVia(t, fixtures.OwnerJohnEmail, testhelper.EditBody(func(body map[string]any) {
-		rules := body["condition"].(map[string]any)["rules"].([]any)
-		rules[0].(map[string]any)["bogus"] = true
+		entries := body["condition"].(map[string]any)["entries"].([]any)
+		entries[0].(map[string]any)["bogus"] = true
 	}))
 	list := siteapi.SiteSegmentsListParams{WorkspaceId: fixtures.AcmePublicID}
 	before, err := c.SiteSegmentsList(ctx, list)
@@ -87,13 +87,13 @@ func TestSiteSegmentRefusesAPropertyNestedInAConditionRule(t *testing.T) {
 
 	_, err = edited.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{
 		Name:      "Pros",
-		Condition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"pro"}]}`),
+		Condition: testhelper.ConditionInput[siteapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"plan","test":{"kind":"text","operator":"eq","value":"pro"}}]}`),
 	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	after, listErr := c.SiteSegmentsList(ctx, list)
 
 	require.NoError(t, listErr)
 	refused := testhelper.SiteRefusal(t, err, http.StatusBadRequest)
-	reasons := refused.Errors.Or(nil)["condition.rules.0.bogus"]
+	reasons := refused.Errors.Or(nil)["condition.entries.0.bogus"]
 	assert.Equal(t, []string{unknownProperty}, reasons)
 	assert.Equal(t, before.TotalItems, after.TotalItems, "a refused create stores nothing")
 }

@@ -243,6 +243,27 @@ func OptNonZero[O any, T comparable, P setter[O, T]](v T) O {
 	return Opt[O, T, P](&v)
 }
 
+// OptDocument is the ogen Opt* value O of a stored document (a jsonb column's Go value, ADR 0169)
+// as the contract's typed model T: the document's JSON read by T's own decoder, absent when it no
+// longer reads as T, so one stored row that does not decode leaves its field out rather than
+// failing the whole response.
+func OptDocument[O any, T any, PT interface {
+	*T
+	json.Unmarshaler
+}, P setter[O, T]](doc any) O {
+	var o O
+	b, err := json.Marshal(doc)
+	if err != nil {
+		return o
+	}
+	var t T
+	if PT(&t).UnmarshalJSON(b) != nil {
+		return o
+	}
+	P(&o).SetTo(t)
+	return o
+}
+
 // OptObject is the ogen Opt* or OptNil* value O of an opaque object, absent when m is nil.
 func OptObject[O any, M ~map[string]jx.Raw, P setter[O, M]](m M) O {
 	if m == nil {

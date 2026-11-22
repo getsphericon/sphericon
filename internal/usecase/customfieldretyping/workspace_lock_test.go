@@ -19,12 +19,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 )
 
-// dateHasIt tests Duff's has_it with a date leaf, which fits a datetime field and no string one.
+// dateHasIt tests Duff's has_it with a moment test, which fits a datetime field and no string one.
 // has_it is a datetime field only a notNull leaf tests, so it may become a string.
-const dateHasIt = `{"kind":"group","combinator":"and","rules":[{"kind":"date","field":"custom:` + fixtures.CustomFieldDuffHasItKey + `","operator":"after","at":"2026-01-01T00:00:00Z"}]}`
+const dateHasIt = `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"` + fixtures.CustomFieldDuffHasItKey + `","test":{"kind":"moment","operator":"after","at":"2026-01-01T00:00:00Z"}}]}`
 
 // retypeRace is a race over Duff's lock and the writers that meet in it: a retype of has_it to a
-// string, and the save of a Segment and of a Rule testing has_it with a date leaf.
+// string, and the save of a Segment and of a Rule testing has_it with a moment test.
 type retypeRace struct {
 	env   *testhelper.TestEnv
 	scope *ent.Scoped
@@ -50,14 +50,14 @@ func newRetypeRace(t *testing.T) *retypeRace {
 		return err
 	}}
 	r.saveSegment = testhelper.Writer{Name: "save", Run: func() error {
-		seg, err := segs.Create(ctx, s, segments.CreateInput{Name: "Has it lately", Condition: new(testhelper.Condition(t, dateHasIt))})
+		seg, err := segs.Create(ctx, s, segments.CreateInput{Name: "Has it lately", Condition: new(testhelper.SegmentCondition(t, dateHasIt))})
 		if seg != nil {
 			*r.savedID = seg.ID
 		}
 		return err
 	}}
 	r.saveRule = testhelper.Writer{Name: "save", Run: func() error {
-		rl, err := ruleset.Create(ctx, s, rules.CreateInput{Name: "Has it lately", TriggerEvents: []string{"x"}, Condition: new(testhelper.Condition(t, dateHasIt))})
+		rl, err := ruleset.Create(ctx, s, rules.CreateInput{Name: "Has it lately", TriggerEvents: []string{"x"}, Condition: new(testhelper.RuleCondition(t, dateHasIt))})
 		if rl != nil {
 			*r.savedID = rl.ID
 		}

@@ -234,7 +234,7 @@ func cutTo(body []byte, at span, items []span, n int) []byte {
 }
 
 // joinPath is path as the key of the problem's errors: its segments joined by dots, an index as
-// its number (`rules.1.field`, the path a form names its field by), a key as segment quotes it.
+// its number (`entries.1.name`, the path a form names its field by), a key as segment quotes it.
 func joinPath(path []step) string {
 	var b bytes.Buffer
 	for i, s := range path {

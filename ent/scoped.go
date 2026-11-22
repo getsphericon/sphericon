@@ -12045,7 +12045,7 @@ func (x *BroadcastScopedCreate) SetNillableSegmentID(v *int64) *BroadcastScopedC
 const RoleOf_BroadcastScopedCreate_SetNillableSegmentID = RoleStep
 
 // SetCondition sets the "condition" field.
-func (x *BroadcastScopedCreate) SetCondition(v *conditiontree.Group) *BroadcastScopedCreate {
+func (x *BroadcastScopedCreate) SetCondition(v *conditiontree.Segment) *BroadcastScopedCreate {
 	x.set = append(x.set, func(b *BroadcastCreate) { b.SetCondition(v) })
 	return x
 }
@@ -12736,7 +12736,7 @@ func (u *BroadcastScopedUpsert) ClearSegmentID() *BroadcastScopedUpsert {
 const RoleOf_BroadcastScopedUpsert_ClearSegmentID = RoleStep
 
 // SetCondition sets the "condition" field.
-func (u *BroadcastScopedUpsert) SetCondition(v *conditiontree.Group) *BroadcastScopedUpsert {
+func (u *BroadcastScopedUpsert) SetCondition(v *conditiontree.Segment) *BroadcastScopedUpsert {
 	u.u.Set(broadcast.FieldCondition, v)
 	return u
 }
@@ -13616,7 +13616,7 @@ func (x *BroadcastScopedUpdateOne) ClearSegmentID() *BroadcastScopedUpdateOne {
 const RoleOf_BroadcastScopedUpdateOne_ClearSegmentID = RoleStep
 
 // SetCondition sets the "condition" field.
-func (x *BroadcastScopedUpdateOne) SetCondition(v *conditiontree.Group) *BroadcastScopedUpdateOne {
+func (x *BroadcastScopedUpdateOne) SetCondition(v *conditiontree.Segment) *BroadcastScopedUpdateOne {
 	x.set = append(x.set, func(b *BroadcastUpdateOne) { b.SetCondition(v) })
 	return x
 }
@@ -14416,7 +14416,7 @@ func (x *BroadcastScopedUpdate) ClearSegmentID() *BroadcastScopedUpdate {
 const RoleOf_BroadcastScopedUpdate_ClearSegmentID = RoleStep
 
 // SetCondition sets the "condition" field.
-func (x *BroadcastScopedUpdate) SetCondition(v *conditiontree.Group) *BroadcastScopedUpdate {
+func (x *BroadcastScopedUpdate) SetCondition(v *conditiontree.Segment) *BroadcastScopedUpdate {
 	x.set = append(x.set, func(b *BroadcastUpdate) { b.SetCondition(v) })
 	return x
 }
@@ -48667,7 +48667,7 @@ func (x *RuleVersionScopedCreate) SetVersion(v int) *RuleVersionScopedCreate {
 const RoleOf_RuleVersionScopedCreate_SetVersion = RoleStep
 
 // SetCondition sets the "condition" field.
-func (x *RuleVersionScopedCreate) SetCondition(v conditiontree.Group) *RuleVersionScopedCreate {
+func (x *RuleVersionScopedCreate) SetCondition(v conditiontree.Rule) *RuleVersionScopedCreate {
 	x.set = append(x.set, func(b *RuleVersionCreate) { b.SetCondition(v) })
 	return x
 }
@@ -48675,7 +48675,7 @@ func (x *RuleVersionScopedCreate) SetCondition(v conditiontree.Group) *RuleVersi
 const RoleOf_RuleVersionScopedCreate_SetCondition = RoleStep
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (x *RuleVersionScopedCreate) SetNillableCondition(v *conditiontree.Group) *RuleVersionScopedCreate {
+func (x *RuleVersionScopedCreate) SetNillableCondition(v *conditiontree.Rule) *RuleVersionScopedCreate {
 	if v != nil {
 		x.SetCondition(*v)
 	}
@@ -48870,7 +48870,7 @@ func (u *RuleVersionScopedUpsert) UpdateRuleID() *RuleVersionScopedUpsert {
 const RoleOf_RuleVersionScopedUpsert_UpdateRuleID = RoleStep
 
 // SetCondition sets the "condition" field.
-func (u *RuleVersionScopedUpsert) SetCondition(v conditiontree.Group) *RuleVersionScopedUpsert {
+func (u *RuleVersionScopedUpsert) SetCondition(v conditiontree.Rule) *RuleVersionScopedUpsert {
 	u.u.Set(ruleversion.FieldCondition, v)
 	return u
 }
@@ -49127,7 +49127,7 @@ func (x *RuleVersionScopedUpdateOne) SetNillableRuleID(v *int64) *RuleVersionSco
 const RoleOf_RuleVersionScopedUpdateOne_SetNillableRuleID = RoleStep
 
 // SetCondition sets the "condition" field.
-func (x *RuleVersionScopedUpdateOne) SetCondition(v conditiontree.Group) *RuleVersionScopedUpdateOne {
+func (x *RuleVersionScopedUpdateOne) SetCondition(v conditiontree.Rule) *RuleVersionScopedUpdateOne {
 	x.set = append(x.set, func(b *RuleVersionUpdateOne) { b.SetCondition(v) })
 	return x
 }
@@ -49135,7 +49135,7 @@ func (x *RuleVersionScopedUpdateOne) SetCondition(v conditiontree.Group) *RuleVe
 const RoleOf_RuleVersionScopedUpdateOne_SetCondition = RoleStep
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (x *RuleVersionScopedUpdateOne) SetNillableCondition(v *conditiontree.Group) *RuleVersionScopedUpdateOne {
+func (x *RuleVersionScopedUpdateOne) SetNillableCondition(v *conditiontree.Rule) *RuleVersionScopedUpdateOne {
 	if v != nil {
 		x.SetCondition(*v)
 	}
@@ -49366,7 +49366,7 @@ func (x *RuleVersionScopedUpdate) SetNillableRuleID(v *int64) *RuleVersionScoped
 const RoleOf_RuleVersionScopedUpdate_SetNillableRuleID = RoleStep
 
 // SetCondition sets the "condition" field.
-func (x *RuleVersionScopedUpdate) SetCondition(v conditiontree.Group) *RuleVersionScopedUpdate {
+func (x *RuleVersionScopedUpdate) SetCondition(v conditiontree.Rule) *RuleVersionScopedUpdate {
 	x.set = append(x.set, func(b *RuleVersionUpdate) { b.SetCondition(v) })
 	return x
 }
@@ -49374,7 +49374,7 @@ func (x *RuleVersionScopedUpdate) SetCondition(v conditiontree.Group) *RuleVersi
 const RoleOf_RuleVersionScopedUpdate_SetCondition = RoleStep
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (x *RuleVersionScopedUpdate) SetNillableCondition(v *conditiontree.Group) *RuleVersionScopedUpdate {
+func (x *RuleVersionScopedUpdate) SetNillableCondition(v *conditiontree.Rule) *RuleVersionScopedUpdate {
 	if v != nil {
 		x.SetCondition(*v)
 	}
@@ -50682,7 +50682,7 @@ func (x *SegmentScopedCreate) SetName(v string) *SegmentScopedCreate {
 const RoleOf_SegmentScopedCreate_SetName = RoleStep
 
 // SetCondition sets the "condition" field.
-func (x *SegmentScopedCreate) SetCondition(v conditiontree.Group) *SegmentScopedCreate {
+func (x *SegmentScopedCreate) SetCondition(v conditiontree.Segment) *SegmentScopedCreate {
 	x.set = append(x.set, func(b *SegmentCreate) { b.SetCondition(v) })
 	return x
 }
@@ -50690,7 +50690,7 @@ func (x *SegmentScopedCreate) SetCondition(v conditiontree.Group) *SegmentScoped
 const RoleOf_SegmentScopedCreate_SetCondition = RoleStep
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (x *SegmentScopedCreate) SetNillableCondition(v *conditiontree.Group) *SegmentScopedCreate {
+func (x *SegmentScopedCreate) SetNillableCondition(v *conditiontree.Segment) *SegmentScopedCreate {
 	if v != nil {
 		x.SetCondition(*v)
 	}
@@ -50903,7 +50903,7 @@ func (u *SegmentScopedUpsert) UpdateName() *SegmentScopedUpsert {
 const RoleOf_SegmentScopedUpsert_UpdateName = RoleStep
 
 // SetCondition sets the "condition" field.
-func (u *SegmentScopedUpsert) SetCondition(v conditiontree.Group) *SegmentScopedUpsert {
+func (u *SegmentScopedUpsert) SetCondition(v conditiontree.Segment) *SegmentScopedUpsert {
 	u.u.Set(segment.FieldCondition, v)
 	return u
 }
@@ -51277,7 +51277,7 @@ func (x *SegmentScopedUpdateOne) SetNillableName(v *string) *SegmentScopedUpdate
 const RoleOf_SegmentScopedUpdateOne_SetNillableName = RoleStep
 
 // SetCondition sets the "condition" field.
-func (x *SegmentScopedUpdateOne) SetCondition(v conditiontree.Group) *SegmentScopedUpdateOne {
+func (x *SegmentScopedUpdateOne) SetCondition(v conditiontree.Segment) *SegmentScopedUpdateOne {
 	x.set = append(x.set, func(b *SegmentUpdateOne) { b.SetCondition(v) })
 	return x
 }
@@ -51285,7 +51285,7 @@ func (x *SegmentScopedUpdateOne) SetCondition(v conditiontree.Group) *SegmentSco
 const RoleOf_SegmentScopedUpdateOne_SetCondition = RoleStep
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (x *SegmentScopedUpdateOne) SetNillableCondition(v *conditiontree.Group) *SegmentScopedUpdateOne {
+func (x *SegmentScopedUpdateOne) SetNillableCondition(v *conditiontree.Segment) *SegmentScopedUpdateOne {
 	if v != nil {
 		x.SetCondition(*v)
 	}
@@ -51445,7 +51445,7 @@ func (x *SegmentScopedUpdate) SetNillableName(v *string) *SegmentScopedUpdate {
 const RoleOf_SegmentScopedUpdate_SetNillableName = RoleStep
 
 // SetCondition sets the "condition" field.
-func (x *SegmentScopedUpdate) SetCondition(v conditiontree.Group) *SegmentScopedUpdate {
+func (x *SegmentScopedUpdate) SetCondition(v conditiontree.Segment) *SegmentScopedUpdate {
 	x.set = append(x.set, func(b *SegmentUpdate) { b.SetCondition(v) })
 	return x
 }
@@ -51453,7 +51453,7 @@ func (x *SegmentScopedUpdate) SetCondition(v conditiontree.Group) *SegmentScoped
 const RoleOf_SegmentScopedUpdate_SetCondition = RoleStep
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (x *SegmentScopedUpdate) SetNillableCondition(v *conditiontree.Group) *SegmentScopedUpdate {
+func (x *SegmentScopedUpdate) SetNillableCondition(v *conditiontree.Segment) *SegmentScopedUpdate {
 	if v != nil {
 		x.SetCondition(*v)
 	}

@@ -29209,7 +29209,7 @@ func (s *Server) handleSiteSegmentsListRequest(args [1]string, argsEscaped bool,
 
 // handleSiteSegmentsPreviewRequest handles SiteSegments_preview operation.
 //
-// Preview how many active contacts match a rule definition.
+// Preview how many active contacts match an unsaved Condition.
 //
 // POST /workspaces/{workspaceId}/segments/preview
 func (s *Server) handleSiteSegmentsPreviewRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

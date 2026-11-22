@@ -47,3 +47,37 @@ func TestCollectedEventMakesARuleTagAndEnrollTheContact(t *testing.T) {
 	w.RequireNotTagged(bystander, "e2e-interested")
 	w.Inbox.RequireNone(Match{To: bystander})
 }
+
+// A Rule is built in the console with a typed test of a property of the Event that fires it (ADR
+// 0181), so only an Event whose property passes tags its Contact; once its Condition is edited and
+// published again, the new test decides.
+func TestARuleBuiltAndEditedInTheConsoleTestsThePropertiesOfTheEventThatFiresIt(t *testing.T) {
+	t.Parallel()
+	w := env.NewWorkspace(t)
+	pro, free, large, small := w.NewRecipient(), w.NewRecipient(), w.NewRecipient(), w.NewRecipient()
+	w.ImportContacts(pro, free, large, small)
+	rule := w.PublishRule(Rule{
+		TriggerEvent: "e2e.pricing_viewed",
+		Tag:          "e2e-qualified",
+		Condition: `{"kind":"group","combinator":"and","entries":[
+			{"kind":"property","of":{"kind":"trigger"},"key":"plan","test":{"kind":"text","operator":"eq","value":"pro"}}]}`,
+	})
+
+	w.VisitWith(free, "e2e.pricing_viewed", `{"plan":"free"}`)
+	w.VisitWith(pro, "e2e.pricing_viewed", `{"plan":"pro"}`)
+
+	w.RequireTagged(pro, "e2e-qualified")
+	w.RequireNotTagged(free, "e2e-qualified")
+
+	w.EditRuleCondition(rule, `{"kind":"group","combinator":"or","entries":[
+		{"kind":"property","of":{"kind":"trigger"},"key":"seats","test":{"kind":"number","operator":"gte","value":10}},
+		{"kind":"group","combinator":"and","entries":[
+			{"kind":"property","of":{"kind":"trigger"},"key":"seats","test":{"kind":"presence","operator":"notSet"}},
+			{"kind":"property","of":{"kind":"trigger"},"key":"plan","test":{"kind":"text","operator":"eq","value":"enterprise"}}]}]}`)
+
+	w.VisitWith(small, "e2e.pricing_viewed", `{"plan":"pro","seats":3}`)
+	w.VisitWith(large, "e2e.pricing_viewed", `{"plan":"free","seats":12}`)
+
+	w.RequireTagged(large, "e2e-qualified")
+	w.RequireNotTagged(small, "e2e-qualified")
+}

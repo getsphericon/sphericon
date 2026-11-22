@@ -1,5 +1,6 @@
 import type {
   BrandKitResource,
+  CustomFieldConditionTests,
   SiteIntegrationResource,
   SiteWorkspaceResource,
 } from '../generated/site/types.gen.ts'
@@ -11,6 +12,15 @@ export const TIMESTAMPS = { createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-
 // page wraps items in the paginated list envelope every list endpoint returns.
 export function page<T>(items: T[], totalItems = items.length) {
   return { items, page: 1, pageSize: 25, totalItems, totalPages: Math.ceil(totalItems / 25) }
+}
+
+// What a Custom field's Condition tests are to a page that does not offer them.
+export const NO_CONDITION_TESTS: CustomFieldConditionTests = {
+  text: [],
+  number: [],
+  moment: [],
+  withinLast: false,
+  presence: [],
 }
 
 // A brand color from its hex digits. A Brand kit's colors are data of the Workspace, not the

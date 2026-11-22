@@ -1,6 +1,8 @@
 package convert_test
 
 import (
+	"encoding/json"
+	"errors"
 	"math"
 	"strconv"
 	"testing"
@@ -198,4 +200,39 @@ func TestStringPtr(t *testing.T) {
 	assert.Equal(t, "Europe/Berlin", *got)
 
 	assert.Nil(t, convert.StringPtr[zone](optZone{}))
+}
+
+// group mimics an ogen model with its own decoder, which refuses a document without its entries.
+type group struct {
+	Entries []int `json:"entries"`
+}
+
+func (g *group) UnmarshalJSON(b []byte) error {
+	var raw struct {
+		Entries *[]int `json:"entries"`
+	}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if raw.Entries == nil {
+		return errors.New("entries are required")
+	}
+	g.Entries = *raw.Entries
+	return nil
+}
+
+// optGroup mimics an ogen OptGroup.
+type optGroup struct {
+	v   group
+	set bool
+}
+
+func (o *optGroup) SetTo(v group) { o.v, o.set = v, true }
+
+func TestOptDocumentReadsADocumentByTheModelsDecoderAndLeavesOneItRefusesAbsent(t *testing.T) {
+	read := convert.OptDocument[optGroup, group](map[string]any{"entries": []int{1, 2}})
+	refused := convert.OptDocument[optGroup, group](map[string]any{"rules": []int{1}})
+
+	assert.Equal(t, optGroup{v: group{Entries: []int{1, 2}}, set: true}, read)
+	assert.Equal(t, optGroup{}, refused)
 }

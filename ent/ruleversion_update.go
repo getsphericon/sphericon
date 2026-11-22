@@ -71,13 +71,13 @@ func (_u *RuleVersionUpdate) SetNillableRuleID(v *int64) *RuleVersionUpdate {
 }
 
 // SetCondition sets the "condition" field.
-func (_u *RuleVersionUpdate) SetCondition(v conditiontree.Group) *RuleVersionUpdate {
+func (_u *RuleVersionUpdate) SetCondition(v conditiontree.Rule) *RuleVersionUpdate {
 	_u.mutation.SetCondition(v)
 	return _u
 }
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (_u *RuleVersionUpdate) SetNillableCondition(v *conditiontree.Group) *RuleVersionUpdate {
+func (_u *RuleVersionUpdate) SetNillableCondition(v *conditiontree.Rule) *RuleVersionUpdate {
 	if v != nil {
 		_u.SetCondition(*v)
 	}
@@ -479,13 +479,13 @@ func (_u *RuleVersionUpdateOne) SetNillableRuleID(v *int64) *RuleVersionUpdateOn
 }
 
 // SetCondition sets the "condition" field.
-func (_u *RuleVersionUpdateOne) SetCondition(v conditiontree.Group) *RuleVersionUpdateOne {
+func (_u *RuleVersionUpdateOne) SetCondition(v conditiontree.Rule) *RuleVersionUpdateOne {
 	_u.mutation.SetCondition(v)
 	return _u
 }
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (_u *RuleVersionUpdateOne) SetNillableCondition(v *conditiontree.Group) *RuleVersionUpdateOne {
+func (_u *RuleVersionUpdateOne) SetNillableCondition(v *conditiontree.Rule) *RuleVersionUpdateOne {
 	if v != nil {
 		_u.SetCondition(*v)
 	}

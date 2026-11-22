@@ -58,7 +58,7 @@ func New(bus *events.Bus, now func() time.Time) *Module {
 // CreateInput is a new Segment. A nil Condition is the empty group: no tests yet, every Contact.
 type CreateInput struct {
 	Name      string
-	Condition *conditiontree.Group
+	Condition *conditiontree.Segment
 }
 
 // UpdateInput is a patch of a Segment: a field that keeps leaves the stored value. Neither field
@@ -67,13 +67,13 @@ type UpdateInput struct {
 	// Revision is the Segment's revision the edit was made on (ADR 0119).
 	Revision  int64
 	Name      patch.Field[string]
-	Condition patch.Field[conditiontree.Group]
+	Condition patch.Field[conditiontree.Segment]
 }
 
 // Validate checks a condition against the Contact attributes and the Workspace's Custom
 // field catalogue. A condition with no tests is valid. This is the single rule set behind
 // Create, Update, Preview and Count.
-func (s *Module) Validate(ctx context.Context, ws *ent.Scoped, cond conditiontree.Group) error {
+func (s *Module) Validate(ctx context.Context, ws *ent.Scoped, cond conditiontree.Segment) error {
 	if _, err := s.conditions.Compile(ctx, ws, cond); err != nil {
 		return ErrInvalidCondition.With(err.Error())
 	}
@@ -99,7 +99,7 @@ func (s *Module) Create(ctx context.Context, ws *ent.Scoped, in CreateInput) (*e
 
 // createIn validates the condition and stores the Segment under the Workspace's lock (ADR 0108).
 func (s *Module) createIn(ctx context.Context, wl *ent.WorkspaceLocked, in CreateInput) (*ent.Segment, error) {
-	cond := conditiontree.Empty()
+	cond := conditiontree.Segment{Group: conditiontree.Empty()}
 	if in.Condition != nil {
 		cond = *in.Condition
 	}
@@ -172,7 +172,7 @@ func refuseArchived(s *ent.Segment) error {
 // Broadcast the audience is asked for, with the Integration it routes through (nil: the Channel's
 // default). Without a Channel the preview counts the match alone.
 type PreviewInput struct {
-	Condition     *conditiontree.Group
+	Condition     *conditiontree.Segment
 	Channel       *channels.Channel
 	IntegrationID *int64
 }
@@ -188,7 +188,7 @@ type PreviewResult struct {
 // of a Broadcast on the Channel the input names. A Condition that does not compile is
 // ErrInvalidCondition.
 func (s *Module) Preview(ctx context.Context, ws *ent.Scoped, in PreviewInput) (PreviewResult, error) {
-	cond := conditiontree.Empty()
+	cond := conditiontree.Segment{Group: conditiontree.Empty()}
 	if in.Condition != nil {
 		cond = *in.Condition
 	}

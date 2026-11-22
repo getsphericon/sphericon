@@ -32,6 +32,7 @@ openapi/site (`GrantableScope`, `SendScope`, `SetupScope`, `PersonalScope` enums
 openapi/* (the request fields: every request body's properties and every operation's parameters) ──cmd/scopegen──▶ internal/kernel/fieldname/fieldnames_gen.go (a constant per json name, which a refusal of a field is reported under; ast-grep `refused-field-is-a-constant`)
 openapi/{site,staff} (`x-rate-limit` per operation, from `@rateLimited`) ──cmd/scopegen──▶ internal/infra/ratelimit/{site,staff}_limits_gen.go (the ServeMux pattern of each limited operation and its `RouteLimit`)
 openapi/site (`SystemEventAction` enum) ──cmd/scopegen──▶ internal/kernel/systemevent/actions_gen.go (an untyped constant per System event action and the `Actions` list, which the bus registry and the ent schema's retention predicate name); the files are `scopegen.Tables`
+openapi/site (the Condition's vocabulary: `ConditionCombinator`, `ContactAttribute` and the operator enums; the discriminators of each place's entry union, each leaf's test union and the property source union) ──cmd/scopegen──▶ internal/kernel/conditiontree/{combinator,attribute,operators,kinds}_gen.go (a type, its constants and its list per enum, and what each place and leaf admits, which `internal/domain/contacts/condition` decodes a stored Condition by)
 openapi/*.openapi.json (every bound of what a client sends: the ones `boundgen.Bounds` lists, with their lengths, ranges, item counts, patterns and defaults, and the ones `boundgen.TransportOnly` names as never reaching a write; generation fails on any other) ──cmd/boundgen──▶ internal/kernel/bounds/bounds_gen.go (a constant per bound and the owner that checks it, ADR 0107) and packages/analytics/src/bounds.gen.ts (the bounds the tracker owns, which cannot import zod)
 fixtures/*.yml (`# fixture: Name` rows)  ──cmd/fixturegen──▶ internal/fixtures/catalog_gen.go (named test constants)
 internal/kernel/i18n/locales/en.json  ──cmd/i18ngen──▶ internal/kernel/i18n/ids_gen.go (one i18n.ID per message: a call can only name a message the catalog has)
@@ -187,11 +188,11 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   `/service` and the telemetry report are not closed, and a closed model a response also reaches
   fails the compile (`closed-in-response`): one schema would close the response too. Such a shape
   is a template instantiated twice, the response's model
-  under its plain name and the request's as `…Input` (`ConditionGroupOf<Node>`, `AutomationStepOf`),
+  under its plain name and the request's as `…Input` (`ConditionOf<Node>`, `AutomationStepOf`),
   or `model XInput is X` for a leaf; a test that edits what it read and sends it back goes through
   the wire with `testhelper.Resend`. The server
   answers an undeclared property with a 400 whose field errors name its path, an array's item by
-  its index (`content.subjct`, `condition.rules.1.field`). ogen's errors name the keys only, so
+  its index (`content.subjct`, `condition.entries.1.name`). ogen's errors name the keys only, so
   `internal/api/problem/items.go` finds each item by decoding the body again with its arrays cut,
   with the request types `problem.Middleware[H]` reads off the surface's `Handler`. Its fixture is
   `typespec/lib/testdata/bodies.tsp`.

@@ -66,7 +66,7 @@ type Broadcast struct {
 	// SegmentID holds the value of the "segment_id" field.
 	SegmentID *int64 `json:"segment_id,omitempty"`
 	// Condition holds the value of the "condition" field.
-	Condition *conditiontree.Group `json:"condition,omitempty"`
+	Condition *conditiontree.Segment `json:"condition,omitempty"`
 	// IntegrationID holds the value of the "integration_id" field.
 	IntegrationID *int64 `json:"integration_id,omitempty"`
 	// Status holds the value of the "status" field.

@@ -1088,7 +1088,7 @@ type Handler interface {
 	SiteSegmentsList(ctx context.Context, params SiteSegmentsListParams) (*SiteSegmentsListOK, error)
 	// SiteSegmentsPreview implements SiteSegments_preview operation.
 	//
-	// Preview how many active contacts match a rule definition.
+	// Preview how many active contacts match an unsaved Condition.
 	//
 	// POST /workspaces/{workspaceId}/segments/preview
 	SiteSegmentsPreview(ctx context.Context, req *SitePreviewSegmentInput, params SiteSegmentsPreviewParams) (*SitePreviewSegmentResult, error)

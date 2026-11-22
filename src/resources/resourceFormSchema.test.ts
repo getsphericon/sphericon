@@ -47,7 +47,7 @@ test('a Rule keeps structured Conditions and Actions through hydration and unrel
     condition: {
       kind: 'group',
       combinator: 'and',
-      rules: [{ kind: 'event', action: 'purchased', operator: 'atLeast', times: 2 }],
+      entries: [{ kind: 'event', action: 'purchased', operator: 'atLeast', times: 2 }],
     },
     actions: [{ type: 'apply_tag', tag: 'new' }],
   })
@@ -59,7 +59,7 @@ test('a Rule keeps structured Conditions and Actions through hydration and unrel
     condition: {
       kind: 'group',
       combinator: 'and',
-      rules: [{ kind: 'event', action: 'purchased', operator: 'atLeast', times: 2 }],
+      entries: [{ kind: 'event', action: 'purchased', operator: 'atLeast', times: 2 }],
     },
     actions: [{ type: 'apply_tag', tag: 'new' }],
   })
@@ -78,16 +78,16 @@ test('an incomplete Condition stays in the editor and is refused at its missing 
     triggerEvents: ['signed_up'],
     condition: {
       ...emptyGroup,
-      rules: [{ kind: 'event', action: 'purchased', operator: 'atLeast' }],
+      entries: [{ kind: 'event', action: 'purchased', operator: 'atLeast' }],
     },
   }
   const submitted = form.create.safeParse(values)
   const issues = submitted.error?.issues.map((issue) => issue.path)
 
-  expect(values.condition.rules).toEqual([
+  expect(values.condition.entries).toEqual([
     { kind: 'event', action: 'purchased', operator: 'atLeast' },
   ])
-  expect(issues).toEqual([['condition', 'rules', 0, 'times']])
+  expect(issues).toEqual([['condition', 'entries', 0, 'times']])
 })
 
 test('a nullable marker cannot silently omit a nonnullable structured field', () => {

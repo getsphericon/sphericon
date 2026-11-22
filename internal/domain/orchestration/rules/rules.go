@@ -50,7 +50,7 @@ import (
 const (
 	// MaxActions is how many Actions one Rule may run.
 	MaxActions = 20
-	// MaxConditionNodes is how many nodes (groups and rules, nested ones included) a Condition
+	// MaxConditionNodes is how many nodes (groups and leaves, nested ones included) a Condition
 	// may have.
 	MaxConditionNodes = 50
 )
@@ -155,7 +155,7 @@ type CreateInput struct {
 	Name          string
 	TriggerEvents []string
 	// Condition is the tree; nil is the empty group, which matches every Contact.
-	Condition *conditiontree.Group
+	Condition *conditiontree.Rule
 	Actions   []ruleaction.Action
 }
 
@@ -167,7 +167,7 @@ type UpdateInput struct {
 	Revision      int64
 	Name          *string
 	TriggerEvents *[]string
-	Condition     *conditiontree.Group
+	Condition     *conditiontree.Rule
 	Actions       *[]ruleaction.Action
 }
 
@@ -175,7 +175,7 @@ type UpdateInput struct {
 // Actions.
 type definition struct {
 	triggers  []string
-	condition conditiontree.Group
+	condition conditiontree.Rule
 	actions   []ruleaction.Action
 }
 
@@ -263,7 +263,7 @@ func (versioned) Editable(r *ent.Rule) error {
 // validates what it changes. An http Action that names one of the base's Actions by ID keeps the
 // secrets it does not resend.
 func (m *Module) merge(ctx context.Context, s *ent.Scoped, base *ent.RuleVersion, in UpdateInput) (definition, error) {
-	def := definition{condition: conditiontree.Empty(), actions: []ruleaction.Action{}}
+	def := definition{condition: conditiontree.Rule{Group: conditiontree.Empty()}, actions: []ruleaction.Action{}}
 	var stored []ruleaction.Action
 	if base != nil {
 		def, stored = definitionOf(base), base.Actions
@@ -447,13 +447,13 @@ func saveTriggers(ctx context.Context, s *ent.Scoped, versionID int64, actions [
 	return s.RuleVersionTrigger().CreateBulk(creates...).Exec(ctx)
 }
 
-// validateCondition checks a Condition as a Segment's is checked: it parses, and every leaf names
-// a Contact attribute, a Tag, an Event action or a custom field the Workspace has. A Rule's
-// Condition may also test the triggering Event's properties ("trigger:<key>", any key).
-func (m *Module) validateCondition(ctx context.Context, s *ent.Scoped, cond conditiontree.Group) error {
+// validateCondition checks a Rule's Condition as a Segment's is checked: it parses, and every leaf
+// names a Contact attribute, a Tag, an Event action or a custom field the Workspace has. A Rule's
+// Condition may also test the triggering Event's properties, any key.
+func (m *Module) validateCondition(ctx context.Context, s *ent.Scoped, cond conditiontree.Rule) error {
 	size := cond.Size()
 	if size > MaxConditionNodes {
-		return ErrInvalid.With(fmt.Sprintf("a Condition has at most %d groups and rules, this one has %d", MaxConditionNodes, size))
+		return ErrInvalid.With(fmt.Sprintf("a Condition has at most %d groups and tests, this one has %d", MaxConditionNodes, size))
 	}
 	if _, err := m.conditions.RulePredicate(ctx, s, cond, nil); err != nil {
 		return ErrInvalid.With(err.Error())
@@ -618,7 +618,7 @@ func (m *Module) Evaluate(ctx context.Context, s *ent.Scoped, ev Event) ([]int64
 // holds evaluates a version's Condition for the Contact against its current data. A Condition
 // that no longer compiles (a custom field it named has since been deleted) holds for nobody:
 // retrying cannot fix it, and the other Rules must still run.
-func (m *Module) holds(ctx context.Context, s *ent.Scoped, cond conditiontree.Group, ev Event) (bool, error) {
+func (m *Module) holds(ctx context.Context, s *ent.Scoped, cond conditiontree.Rule, ev Event) (bool, error) {
 	pred, err := m.conditions.RulePredicate(ctx, s, cond, ev.Properties)
 	if errors.Is(err, condition.ErrStorage) {
 		return false, err

@@ -6,33 +6,40 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 )
 
-// SiteRuleGroup builds a site API rule group from its JSON, so a test reads as the rule
-// it sends instead of the nested generated union.
-func SiteRuleGroup(tb testing.TB, def string) siteapi.ConditionGroupInput {
+// ConditionInput builds a Condition of a surface's request type C (siteapi.SegmentConditionInput,
+// externalapi.RuleConditionInput, …) from its JSON, so a test reads as the tree it sends instead of
+// the nested generated union. A kind the place does not admit, or a key a leaf does not declare,
+// fails the test here; a value outside an enum decodes, and is the server's to refuse.
+func ConditionInput[C any, PC interface {
+	*C
+	json.Unmarshaler
+}](tb testing.TB, def string) C {
 	tb.Helper()
-	var group siteapi.ConditionGroupInput
-	require.NoError(tb, group.UnmarshalJSON([]byte(def)))
-	return group
+	var tree C
+	require.NoError(tb, PC(&tree).UnmarshalJSON([]byte(def)), "the Condition is a tree of its place")
+	return tree
 }
 
-// ExternalRuleGroup is SiteRuleGroup for the external API.
-func ExternalRuleGroup(tb testing.TB, def string) externalapi.ConditionGroupInput {
+// SegmentCondition is a Segment's Condition a test writes as JSON, the value the modules take and
+// the columns hold (ADR 0169). It is read through the contract's closed type first, so a kind a
+// Segment does not admit, or a key a leaf does not declare, fails the test.
+func SegmentCondition(tb testing.TB, def string) conditiontree.Segment {
 	tb.Helper()
-	var group externalapi.ConditionGroupInput
-	require.NoError(tb, group.UnmarshalJSON([]byte(def)))
-	return group
+	ConditionInput[siteapi.SegmentConditionInput](tb, def)
+	var g conditiontree.Segment
+	require.NoError(tb, json.Unmarshal([]byte(def), &g))
+	return g
 }
 
-// Condition is the Condition a test writes as JSON, the value the modules take and the columns
-// hold (ADR 0169).
-func Condition(tb testing.TB, def string) conditiontree.Group {
+// RuleCondition is SegmentCondition for a Rule's Condition.
+func RuleCondition(tb testing.TB, def string) conditiontree.Rule {
 	tb.Helper()
-	var g conditiontree.Group
+	ConditionInput[siteapi.RuleConditionInput](tb, def)
+	var g conditiontree.Rule
 	require.NoError(tb, json.Unmarshal([]byte(def), &g))
 	return g
 }

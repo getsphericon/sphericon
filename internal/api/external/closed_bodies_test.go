@@ -68,7 +68,7 @@ func TestExternalSegmentRefusesAPropertyNestedInItsCondition(t *testing.T) {
 
 	_, err = edited.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{
 		Name:      "Pros",
-		Condition: testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"pro"}]}`),
+		Condition: testhelper.ConditionInput[externalapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"plan","test":{"kind":"text","operator":"eq","value":"pro"}}]}`),
 	})
 	after, listErr := c.SegmentsList(ctx, externalapi.SegmentsListParams{})
 
@@ -109,17 +109,17 @@ func TestExternalOpenMapsTakeAnyKey(t *testing.T) {
 }
 
 // A failure inside an array names the item it is in: the index of the item the decoder failed at,
-// counted from 0, as a segment of the path (`condition.rules.1.combinator`). The item is the one
+// counted from 0, as a segment of the path (`condition.entries.1.combinator`). The item is the one
 // that fails, not the first that holds the key: a group's `combinator` is declared, the same key
-// on a rule is not.
+// on a leaf is not.
 func TestExternalSegmentNamesTheItemOfAnArrayItFailsAt(t *testing.T) {
-	rule := func(extra map[string]any) map[string]any {
-		r := map[string]any{"kind": "rule", "field": "custom:plan", "operator": "eq", "value": "pro"}
-		maps.Copy(r, extra)
-		return r
+	leaf := func(extra map[string]any) map[string]any {
+		l := map[string]any{"kind": "tag", "name": "vip", "operator": "has"}
+		maps.Copy(l, extra)
+		return l
 	}
-	group := func(rules ...any) map[string]any {
-		return map[string]any{"kind": "group", "combinator": "and", "rules": rules}
+	group := func(entries ...any) map[string]any {
+		return map[string]any{"kind": "group", "combinator": "and", "entries": entries}
 	}
 	cases := []struct {
 		name      string
@@ -128,18 +128,25 @@ func TestExternalSegmentNamesTheItemOfAnArrayItFailsAt(t *testing.T) {
 	}{
 		{
 			"a key another variant declares",
-			group(group(rule(nil)), rule(map[string]any{"combinator": "or"})),
-			"condition.rules.1.combinator",
+			group(group(leaf(nil)), leaf(map[string]any{"combinator": "or"})),
+			"condition.entries.1.combinator",
 		},
 		{
 			"a value of the wrong type",
-			group(rule(nil), rule(nil), rule(map[string]any{"field": 3})),
-			"condition.rules.2.field",
+			group(leaf(nil), leaf(nil), leaf(map[string]any{"name": 3})),
+			"condition.entries.2.name",
 		},
 		{
 			"in a nested array",
-			group(group(rule(nil)), group(rule(nil), rule(map[string]any{"bogus": true}))),
-			"condition.rules.1.rules.1.bogus",
+			group(group(leaf(nil)), group(leaf(nil), leaf(map[string]any{"bogus": true}))),
+			"condition.entries.1.entries.1.bogus",
+		},
+		{
+			"inside a leaf's test",
+			group(leaf(nil), map[string]any{"kind": "customField", "key": "plan", "test": map[string]any{
+				"kind": "text", "operator": "eq", "value": "pro", "bogus": true,
+			}}),
+			"condition.entries.1.test.bogus",
 		},
 	}
 	for _, tc := range cases {
@@ -153,7 +160,7 @@ func TestExternalSegmentNamesTheItemOfAnArrayItFailsAt(t *testing.T) {
 
 			_, err := edited.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{
 				Name:      "Pros",
-				Condition: testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`),
+				Condition: testhelper.ConditionInput[externalapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[]}`),
 			})
 
 			refused := testhelper.ExternalRefusal(t, err, http.StatusBadRequest)

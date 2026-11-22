@@ -16,21 +16,23 @@ import (
 // readers built on that decode never panic, and none of them finds what the document does not
 // hold: no engagement count without an engagement's name, no Tag without the Tag's name.
 func FuzzDecodeReadsAnyDocument(f *testing.F) {
-	f.Add(`{"kind":"rule","field":"email","operator":"eq","value":"x"}`)
-	f.Add(`{"kind":"rule","field":"tag","operator":"has","value":"vip"}`)
-	f.Add(`{"kind":"rule","field":"custom:plan","operator":"contains","value":"pro"}`)
-	f.Add(`{"kind":"rule","field":"trigger:url","operator":"null","value":""}`)
-	f.Add(`{"kind":"number","field":"custom:score","operator":"gte","value":9.5}`)
-	f.Add(`{"kind":"date","field":"birthday","operator":"before","at":"1990-01-01T00:00:00Z"}`)
-	f.Add(`{"kind":"dateWithin","field":"custom:seen_at","withinDays":7}`)
+	f.Add(`{"kind":"attribute","attribute":"email","test":{"kind":"text","operator":"eq","value":"x"}}`)
+	f.Add(`{"kind":"tag","name":"vip","operator":"has"}`)
+	f.Add(`{"kind":"customField","key":"plan","test":{"kind":"text","operator":"contains","value":"pro"}}`)
+	f.Add(`{"kind":"property","of":{"kind":"trigger"},"key":"url","test":{"kind":"presence","operator":"notSet"}}`)
+	f.Add(`{"kind":"customField","key":"score","test":{"kind":"number","operator":"gte","value":9.5}}`)
+	f.Add(`{"kind":"birthday","test":{"kind":"moment","operator":"before","at":"1990-01-01T00:00:00Z"}}`)
+	f.Add(`{"kind":"customField","key":"seen_at","test":{"kind":"withinLast","days":7}}`)
 	f.Add(`{"kind":"event","action":"email.opened","operator":"atLeast","times":1,"withinDays":30}`)
-	f.Add(`{"kind":"group","combinator":"or","not":true,"rules":[{"kind":"event","action":"sms.clicked","operator":"atMost","times":0}]}`)
-	f.Add(`{"kind":"group","combinator":"and","rules":"nope"}`)
-	f.Add(`{"kind":"rule","field":"custom:","operator":"eq","value":{"a":1}}`)
+	f.Add(`{"kind":"group","combinator":"or","not":true,"entries":[{"kind":"event","action":"sms.clicked","operator":"atMost","times":0}]}`)
+	f.Add(`{"kind":"group","combinator":"and","entries":"nope"}`)
+	f.Add(`{"kind":"customField","key":"","test":{"kind":"text","operator":"eq","value":{"a":1}}}`)
+	f.Add(`{"kind":"telegram","operator":"has"}`)
+	f.Add(`{"kind":"sms","operator":"doesNotHave"}`)
 	f.Add(`42`)
 
 	f.Fuzz(func(t *testing.T, entry string) {
-		g := conditiontree.Group{Kind: conditiontree.KindGroup, Combinator: conditiontree.And, Rules: []json.RawMessage{json.RawMessage(entry)}}
+		g := conditiontree.Group{Kind: conditiontree.KindGroup, Combinator: conditiontree.And, Entries: []json.RawMessage{json.RawMessage(entry)}}
 		names := strings.Contains(strings.ToLower(entry), "vip")
 		counts := strings.Contains(entry, "opened") || strings.Contains(entry, "clicked")
 

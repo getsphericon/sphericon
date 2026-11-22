@@ -670,6 +670,57 @@
     "overwrite": "Save mine over it",
     "title": "Changed since you opened it"
   },
+  "conditions": {
+    "attributes": {
+      "city": "City",
+      "country": "Country",
+      "email": "Email",
+      "first_name": "First name",
+      "last_name": "Last name",
+      "locale": "Locale",
+      "phone": "Phone",
+      "subject_id": "Subject ID",
+      "time_zone": "Time zone"
+    },
+    "eventOperators": {
+      "atLeast": "at least (times)",
+      "atMost": "at most (times)",
+      "notPerformed": "not performed",
+      "performed": "performed"
+    },
+    "fields": {
+      "birthday": "Birthday",
+      "property": "Event property",
+      "sms": "SMS",
+      "tag": "Tag",
+      "telegram": "Telegram"
+    },
+    "hasOperators": {
+      "doesNotHave": "does not have",
+      "has": "has"
+    },
+    "momentOperators": {
+      "after": "is after",
+      "before": "is before"
+    },
+    "numberOperators": {
+      "gt": "greater than",
+      "gte": "greater than or equal to",
+      "lt": "less than",
+      "lte": "less than or equal to"
+    },
+    "presenceOperators": {
+      "notSet": "is not set",
+      "set": "is set"
+    },
+    "textOperators": {
+      "beginsWith": "begins with",
+      "contains": "contains",
+      "eq": "is",
+      "neq": "is not"
+    },
+    "withinLast": "within the last (days)"
+  },
   "confirmations": {
     "deleteRule": "The rule stops firing and is deleted for good. What it has already done to contacts stays.",
     "deleteTag": "The tag is removed from the catalogue. A tag that a segment rule or an automation step uses cannot be deleted: change those first.",
@@ -1764,7 +1815,7 @@
     "previewButton": "Preview segment",
     "previewCount_one": "{{count, number}} matching contact",
     "previewCount_other": "{{count, number}} matching contacts",
-    "triggerKeyLabel": "Event property name"
+    "propertyKeyLabel": "Event property name"
   },
   "settings": {
     "apiKeysTitle": "API keys",

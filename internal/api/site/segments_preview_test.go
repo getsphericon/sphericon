@@ -28,9 +28,9 @@ func TestSiteSegmentsPreviewCountsMatchingActiveContacts(t *testing.T) {
 
 	// Dunder holds one contact (DunderPreviewTarget) with the distinctive custom field.
 
-	def := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"preview-pro"}]}`
+	def := `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"plan","test":{"kind":"text","operator":"eq","value":"preview-pro"}}]}`
 	res, err := c.SiteSegmentsPreview(ctx, &siteapi.SitePreviewSegmentInput{
-		Condition: siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, def)),
+		Condition: siteapi.NewOptSegmentConditionInput(testhelper.ConditionInput[siteapi.SegmentConditionInput](t, def)),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.DunderPublicID})
 	require.NoError(t, err)
 	assert.Equal(t, int32(1), res.Count)
@@ -47,9 +47,9 @@ func previewOne(t *testing.T, c *siteapi.Client, leaf string) *siteapi.SitePrevi
 // tryPreviewOne previews, in Dunder, a Condition of one leaf, for a test that expects the refusal.
 func tryPreviewOne(t *testing.T, c *siteapi.Client, leaf string) (*siteapi.SitePreviewSegmentResult, error) {
 	t.Helper()
-	def := `{"kind":"group","combinator":"and","rules":[` + leaf + `]}`
+	def := `{"kind":"group","combinator":"and","entries":[` + leaf + `]}`
 	return c.SiteSegmentsPreview(context.Background(), &siteapi.SitePreviewSegmentInput{
-		Condition: siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, def)),
+		Condition: siteapi.NewOptSegmentConditionInput(testhelper.ConditionInput[siteapi.SegmentConditionInput](t, def)),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.DunderPublicID})
 }
 
@@ -85,8 +85,8 @@ func TestSiteSegmentsStoreAnEventCount(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	const def = `{"kind":"group","combinator":"and","rules":[{"kind":"event","action":"pricing_viewed","operator":"atLeast","times":2,"withinDays":7}]}`
-	sent := testhelper.SiteRuleGroup(t, def)
+	const def = `{"kind":"group","combinator":"and","entries":[{"kind":"event","action":"pricing_viewed","operator":"atLeast","times":2,"withinDays":7}]}`
+	sent := testhelper.ConditionInput[siteapi.SegmentConditionInput](t, def)
 
 	created, err := c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{Name: "Pricing twice", Condition: sent},
 		siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
@@ -98,17 +98,17 @@ func TestSiteSegmentsStoreAnEventCount(t *testing.T) {
 	assert.JSONEq(t, sentJSON, readJSON)
 }
 
-// A number leaf compares a number custom field and a date leaf tests a datetime one: in Dunder,
+// A number test compares a number custom field and a moment test a datetime one: in Dunder,
 // DunderPreviewTarget holds 12 seats and renewed two days ago.
 func TestSiteSegmentsPreviewComparesNumbersAndDates(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.DunderOwnerDwightEmail)
 	monthAgo := time.Now().AddDate(0, 0, -30).UTC().Format(time.RFC3339)
 
-	atLeastTen := previewOne(t, c, `{"kind":"number","field":"custom:seats","operator":"gte","value":10}`)
-	moreThanTwelve := previewOne(t, c, `{"kind":"number","field":"custom:seats","operator":"gt","value":12}`)
-	thisWeek := previewOne(t, c, `{"kind":"dateWithin","field":"custom:renews_at","withinDays":7}`)
-	beforeAMonthAgo := previewOne(t, c, `{"kind":"date","field":"custom:renews_at","operator":"before","at":"`+monthAgo+`"}`)
+	atLeastTen := previewOne(t, c, `{"kind":"customField","key":"seats","test":{"kind":"number","operator":"gte","value":10}}`)
+	moreThanTwelve := previewOne(t, c, `{"kind":"customField","key":"seats","test":{"kind":"number","operator":"gt","value":12}}`)
+	thisWeek := previewOne(t, c, `{"kind":"customField","key":"renews_at","test":{"kind":"withinLast","days":7}}`)
+	beforeAMonthAgo := previewOne(t, c, `{"kind":"customField","key":"renews_at","test":{"kind":"moment","operator":"before","at":"`+monthAgo+`"}}`)
 
 	assert.Equal(t, &siteapi.SitePreviewSegmentResult{Count: 1}, atLeastTen)
 	assert.Equal(t, &siteapi.SitePreviewSegmentResult{Count: 0}, moreThanTwelve)
@@ -116,37 +116,36 @@ func TestSiteSegmentsPreviewComparesNumbersAndDates(t *testing.T) {
 	assert.Equal(t, &siteapi.SitePreviewSegmentResult{Count: 0}, beforeAMonthAgo)
 }
 
-// Each operator fits a field type: a number leaf on a string field or a contact attribute, a date
-// leaf on a number field, contains on a number field and eq on a datetime field are refused (422); a
-// window of no days is refused at the edge (400).
-func TestSiteSegmentsPreviewRefusesANumberOrDateLeafThatDoesNotFit(t *testing.T) {
+// Each test fits a field type: a number test on a string field, a withinLast test on a number
+// field, contains on a number field and eq on a datetime field are refused (422); a window of no
+// days is refused at the edge (400).
+func TestSiteSegmentsPreviewRefusesATestThatDoesNotFit(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.DunderOwnerDwightEmail)
 
-	_, numberOnText := tryPreviewOne(t, c, `{"kind":"number","field":"custom:plan","operator":"gt","value":1}`)
-	_, numberOnEmail := tryPreviewOne(t, c, `{"kind":"number","field":"email","operator":"gt","value":1}`)
-	_, dateOnNumber := tryPreviewOne(t, c, `{"kind":"dateWithin","field":"custom:seats","withinDays":7}`)
-	_, containsOnNumber := tryPreviewOne(t, c, `{"kind":"rule","field":"custom:seats","operator":"contains","value":"1"}`)
-	_, eqOnDatetime := tryPreviewOne(t, c, `{"kind":"rule","field":"custom:renews_at","operator":"eq","value":"x"}`)
-	_, noDays := tryPreviewOne(t, c, `{"kind":"dateWithin","field":"custom:renews_at","withinDays":0}`)
+	_, numberOnText := tryPreviewOne(t, c, `{"kind":"customField","key":"plan","test":{"kind":"number","operator":"gt","value":1}}`)
+	_, dateOnNumber := tryPreviewOne(t, c, `{"kind":"customField","key":"seats","test":{"kind":"withinLast","days":7}}`)
+	_, containsOnNumber := tryPreviewOne(t, c, `{"kind":"customField","key":"seats","test":{"kind":"text","operator":"contains","value":"1"}}`)
+	_, eqOnDatetime := tryPreviewOne(t, c, `{"kind":"customField","key":"renews_at","test":{"kind":"text","operator":"eq","value":"x"}}`)
+	_, noDays := tryPreviewOne(t, c, `{"kind":"customField","key":"renews_at","test":{"kind":"withinLast","days":0}}`)
 
 	testhelper.SiteRefusal(t, numberOnText, http.StatusUnprocessableEntity)
-	testhelper.SiteRefusal(t, numberOnEmail, http.StatusUnprocessableEntity)
 	testhelper.SiteRefusal(t, dateOnNumber, http.StatusUnprocessableEntity)
 	testhelper.SiteRefusal(t, containsOnNumber, http.StatusUnprocessableEntity)
 	testhelper.SiteRefusal(t, eqOnDatetime, http.StatusUnprocessableEntity)
 	testhelper.SiteRefusal(t, noDays, http.StatusBadRequest)
 }
 
-// A Custom field lists the operators a rule leaf on it takes, and a Condition takes exactly those:
-// in Dunder, plan is a string, seats a number and renews_at a datetime field.
 // refusedWith reports whether err is a refusal of the site answered with status.
 func refusedWith(err error, status int) bool {
 	refused, ok := errors.AsType[*siteapi.ProblemDetailsStatusCode](err)
 	return ok && refused.StatusCode == status
 }
 
-func TestSiteCustomFieldsListTheRuleOperatorsAConditionTakes(t *testing.T) {
+// A Custom field lists, per typed test, the operators a Condition's test of it takes, and a
+// Condition takes exactly those: in Dunder, plan is a string, seats a number and renews_at a
+// datetime field.
+func TestSiteCustomFieldsListTheTestsAConditionTakes(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.DunderOwnerDwightEmail)
 	listed, err := c.SiteCustomFieldsList(context.Background(), siteapi.SiteCustomFieldsListParams{WorkspaceId: fixtures.DunderPublicID})
@@ -154,27 +153,59 @@ func TestSiteCustomFieldsListTheRuleOperatorsAConditionTakes(t *testing.T) {
 	seats, found := lo.Find(listed.Items, func(f siteapi.SiteCustomFieldResource) bool { return f.Key == "seats" })
 	require.True(t, found)
 
-	assert.Equal(t, []siteapi.ConditionOperator{
-		siteapi.ConditionOperatorEq, siteapi.ConditionOperatorNeq, siteapi.ConditionOperatorNotNull,
-	}, seats.RuleOperators, "a number field is compared by a number leaf, not by contains")
+	assert.Equal(t, siteapi.CustomFieldConditionTests{
+		Text:     []siteapi.TextOperator{siteapi.TextOperatorEq, siteapi.TextOperatorNeq},
+		Number:   []siteapi.NumberOperator{siteapi.NumberOperatorGt, siteapi.NumberOperatorGte, siteapi.NumberOperatorLt, siteapi.NumberOperatorLte},
+		Moment:   []siteapi.MomentOperator{},
+		Presence: []siteapi.PresenceOperator{siteapi.PresenceOperatorSet},
+	}, seats.ConditionTests, "a number field is compared by a number test, its text by eq and neq, never by contains")
 	for _, f := range listed.Items {
-		for _, op := range siteapi.ConditionOperator("").AllValues() {
-			_, err := tryPreviewOne(t, c, `{"kind":"rule","field":"custom:`+f.Key+`","operator":"`+string(op)+`","value":"x"}`)
-			assert.Equal(t, !slices.Contains(f.RuleOperators, op), refusedWith(err, http.StatusUnprocessableEntity), "%s on the %s field %s", op, f.Type, f.Key)
+		for _, test := range everyTest() {
+			_, err := tryPreviewOne(t, c, `{"kind":"customField","key":"`+f.Key+`","test":`+test.json+`}`)
+			assert.Equal(t, !test.listed(f.ConditionTests), refusedWith(err, http.StatusUnprocessableEntity), "%s on the %s field %s", test.json, f.Type, f.Key)
 		}
 	}
 }
 
-// A Segment stores number and date leaves as they were sent and reads them back.
-func TestSiteSegmentsStoreNumberAndDateLeaves(t *testing.T) {
+// typedTest is a test of a Custom field as JSON, and whether a listing names it.
+type typedTest struct {
+	json   string
+	listed func(siteapi.CustomFieldConditionTests) bool
+}
+
+// everyTest is a test of every operator of every typed test.
+func everyTest() []typedTest {
+	var out []typedTest
+	for _, op := range siteapi.TextOperator("").AllValues() {
+		out = append(out, typedTest{`{"kind":"text","operator":"` + string(op) + `","value":"x"}`,
+			func(l siteapi.CustomFieldConditionTests) bool { return slices.Contains(l.Text, op) }})
+	}
+	for _, op := range siteapi.NumberOperator("").AllValues() {
+		out = append(out, typedTest{`{"kind":"number","operator":"` + string(op) + `","value":1}`,
+			func(l siteapi.CustomFieldConditionTests) bool { return slices.Contains(l.Number, op) }})
+	}
+	for _, op := range siteapi.MomentOperator("").AllValues() {
+		out = append(out, typedTest{`{"kind":"moment","operator":"` + string(op) + `","at":"2026-01-02T03:04:05Z"}`,
+			func(l siteapi.CustomFieldConditionTests) bool { return slices.Contains(l.Moment, op) }})
+	}
+	for _, op := range siteapi.PresenceOperator("").AllValues() {
+		out = append(out, typedTest{`{"kind":"presence","operator":"` + string(op) + `"}`,
+			func(l siteapi.CustomFieldConditionTests) bool { return slices.Contains(l.Presence, op) }})
+	}
+	return append(out, typedTest{`{"kind":"withinLast","days":7}`,
+		func(l siteapi.CustomFieldConditionTests) bool { return l.WithinLast }})
+}
+
+// A Segment stores number and moment tests as they were sent and reads them back.
+func TestSiteSegmentsStoreNumberAndMomentTests(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.DunderOwnerDwightEmail)
 	ctx := context.Background()
-	const def = `{"kind":"group","combinator":"and","rules":[` +
-		`{"kind":"number","field":"custom:seats","operator":"lte","value":2.5},` +
-		`{"kind":"date","field":"custom:renews_at","operator":"after","at":"2026-01-02T03:04:05Z"},` +
-		`{"kind":"dateWithin","field":"custom:renews_at","withinDays":30}]}`
-	sent := testhelper.SiteRuleGroup(t, def)
+	const def = `{"kind":"group","combinator":"and","entries":[` +
+		`{"kind":"customField","key":"seats","test":{"kind":"number","operator":"lte","value":2.5}},` +
+		`{"kind":"customField","key":"renews_at","test":{"kind":"moment","operator":"after","at":"2026-01-02T03:04:05Z"}},` +
+		`{"kind":"customField","key":"renews_at","test":{"kind":"withinLast","days":30}}]}`
+	sent := testhelper.ConditionInput[siteapi.SegmentConditionInput](t, def)
 
 	created, err := c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{Name: "Small and renewing", Condition: sent},
 		siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.DunderPublicID})
@@ -192,7 +223,7 @@ func TestSiteSegmentsPreviewRejectsInvalidDefinition(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := c.SiteSegmentsPreview(ctx, &siteapi.SitePreviewSegmentInput{
-		Condition: siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)),
+		Condition: siteapi.NewOptSegmentConditionInput(testhelper.ConditionInput[siteapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`)),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.AcmePublicID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
@@ -204,7 +235,7 @@ func TestSiteSegmentsCreateRejectsInvalidRuleDefinition(t *testing.T) {
 
 	_, err := c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{
 		Name:      "Bad rule",
-		Condition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`),
+		Condition: testhelper.ConditionInput[siteapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`),
 	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
@@ -213,7 +244,7 @@ func TestSiteSegmentsCreateAndUpdateShareValidation(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	bad := testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)
+	bad := testhelper.ConditionInput[siteapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`)
 
 	// Create rejects a bad definition.
 	_, err := c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{
@@ -221,7 +252,7 @@ func TestSiteSegmentsCreateAndUpdateShareValidation(t *testing.T) {
 	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
-	_, err = c.SiteSegmentsUpdate(ctx, &siteapi.UpdateSegmentInput{Revision: siteapi.Revision(env.SegmentRevision(ctx, t, fixtures.SegmentActiveID)), Condition: siteapi.NewOptConditionGroupInput(bad)},
+	_, err = c.SiteSegmentsUpdate(ctx, &siteapi.UpdateSegmentInput{Revision: siteapi.Revision(env.SegmentRevision(ctx, t, fixtures.SegmentActiveID)), Condition: siteapi.NewOptSegmentConditionInput(bad)},
 		siteapi.SiteSegmentsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SegmentActiveID)})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
@@ -286,7 +317,7 @@ func TestSiteSegmentsPreviewLeavesRecipientsOutWithoutAChannel(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.DunderOwnerDwightEmail)
 
-	res := previewOne(t, c, `{"kind":"rule","field":"custom:plan","operator":"eq","value":"preview-pro"}`)
+	res := previewOne(t, c, `{"kind":"customField","key":"plan","test":{"kind":"text","operator":"eq","value":"preview-pro"}}`)
 
 	assert.False(t, res.Recipients.Set)
 }

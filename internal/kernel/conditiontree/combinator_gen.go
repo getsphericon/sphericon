@@ -2,7 +2,7 @@
 
 package conditiontree
 
-// Combinator is how a Group joins its rules: And, every rule matches; Or, any rule does.
+// Combinator is how a Group joins its entries: And, every entry matches; Or, any entry does.
 type Combinator string
 
 // The values of the contract's ConditionCombinator enum, in its order.
@@ -10,3 +10,9 @@ const (
 	And Combinator = "and"
 	Or  Combinator = "or"
 )
+
+// Combinators is every Combinator, in the contract's order.
+var Combinators = []Combinator{
+	And,
+	Or,
+}

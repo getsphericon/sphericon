@@ -359,7 +359,7 @@ func (_u *BroadcastUpdate) ClearSegmentID() *BroadcastUpdate {
 }
 
 // SetCondition sets the "condition" field.
-func (_u *BroadcastUpdate) SetCondition(v *conditiontree.Group) *BroadcastUpdate {
+func (_u *BroadcastUpdate) SetCondition(v *conditiontree.Segment) *BroadcastUpdate {
 	_u.mutation.SetCondition(v)
 	return _u
 }
@@ -1374,7 +1374,7 @@ func (_u *BroadcastUpdateOne) ClearSegmentID() *BroadcastUpdateOne {
 }
 
 // SetCondition sets the "condition" field.
-func (_u *BroadcastUpdateOne) SetCondition(v *conditiontree.Group) *BroadcastUpdateOne {
+func (_u *BroadcastUpdateOne) SetCondition(v *conditiontree.Segment) *BroadcastUpdateOne {
 	_u.mutation.SetCondition(v)
 	return _u
 }

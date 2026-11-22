@@ -322,6 +322,10 @@ func rewrite(v any) any {
 					continue
 				}
 			}
+			if k == "discriminator" {
+				out[k] = rewriteDiscriminator(val)
+				continue
+			}
 			out[k] = rewrite(val)
 		}
 		if nullable, _ := out["nullable"].(bool); nullable {
@@ -340,6 +344,28 @@ func rewrite(v any) any {
 	default:
 		return v
 	}
+}
+
+// rewriteDiscriminator is a discriminator whose mapping names its targets as local `$defs` refs:
+// a recursive union (a place's Condition) maps each `kind` to a component ref, which a tool's
+// schema does not have.
+func rewriteDiscriminator(v any) any {
+	d, ok := v.(map[string]any)
+	if !ok {
+		return v
+	}
+	out := maps.Clone(d)
+	if mapping, ok := d["mapping"].(map[string]any); ok {
+		local := make(map[string]any, len(mapping))
+		for name, target := range mapping {
+			if s, ok := target.(string); ok {
+				target = defsRefPrefix + strings.TrimPrefix(s, schemaRefPrefix)
+			}
+			local[name] = target
+		}
+		out["mapping"] = local
+	}
+	return out
 }
 
 // collectDefs returns the component schemas transitively referenced by the tool's

@@ -75,13 +75,13 @@ func (_c *RuleVersionCreate) SetVersion(v int) *RuleVersionCreate {
 }
 
 // SetCondition sets the "condition" field.
-func (_c *RuleVersionCreate) SetCondition(v conditiontree.Group) *RuleVersionCreate {
+func (_c *RuleVersionCreate) SetCondition(v conditiontree.Rule) *RuleVersionCreate {
 	_c.mutation.SetCondition(v)
 	return _c
 }
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (_c *RuleVersionCreate) SetNillableCondition(v *conditiontree.Group) *RuleVersionCreate {
+func (_c *RuleVersionCreate) SetNillableCondition(v *conditiontree.Rule) *RuleVersionCreate {
 	if v != nil {
 		_c.SetCondition(*v)
 	}
@@ -435,7 +435,7 @@ func (u *RuleVersionUpsert) UpdateRuleID() *RuleVersionUpsert {
 }
 
 // SetCondition sets the "condition" field.
-func (u *RuleVersionUpsert) SetCondition(v conditiontree.Group) *RuleVersionUpsert {
+func (u *RuleVersionUpsert) SetCondition(v conditiontree.Rule) *RuleVersionUpsert {
 	u.Set(ruleversion.FieldCondition, v)
 	return u
 }
@@ -555,7 +555,7 @@ func (u *RuleVersionUpsertOne) UpdateRuleID() *RuleVersionUpsertOne {
 }
 
 // SetCondition sets the "condition" field.
-func (u *RuleVersionUpsertOne) SetCondition(v conditiontree.Group) *RuleVersionUpsertOne {
+func (u *RuleVersionUpsertOne) SetCondition(v conditiontree.Rule) *RuleVersionUpsertOne {
 	return u.Update(func(s *RuleVersionUpsert) {
 		s.SetCondition(v)
 	})
@@ -845,7 +845,7 @@ func (u *RuleVersionUpsertBulk) UpdateRuleID() *RuleVersionUpsertBulk {
 }
 
 // SetCondition sets the "condition" field.
-func (u *RuleVersionUpsertBulk) SetCondition(v conditiontree.Group) *RuleVersionUpsertBulk {
+func (u *RuleVersionUpsertBulk) SetCondition(v conditiontree.Rule) *RuleVersionUpsertBulk {
 	return u.Update(func(s *RuleVersionUpsert) {
 		s.SetCondition(v)
 	})

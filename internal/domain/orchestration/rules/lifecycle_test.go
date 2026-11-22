@@ -218,8 +218,8 @@ func TestCreateAcceptsTheCapExactlyAndUpdateEnforcesIt(t *testing.T) {
 
 // conditionOf is an `and` group of n tag leaves: n+1 nodes counting the group.
 func conditionOf(n int) string {
-	leaf := `{"kind":"rule","field":"tag","operator":"has","value":"vip"}`
-	return `{"kind":"group","combinator":"and","rules":[` + strings.TrimSuffix(strings.Repeat(leaf+",", n), ",") + `]}`
+	leaf := `{"kind":"tag","name":"vip","operator":"has"}`
+	return `{"kind":"group","combinator":"and","entries":[` + strings.TrimSuffix(strings.Repeat(leaf+",", n), ",") + `]}`
 }
 
 func TestARuleRefusesAConditionLargerThanTheCap(t *testing.T) {
@@ -228,15 +228,15 @@ func TestARuleRefusesAConditionLargerThanTheCap(t *testing.T) {
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	big := conditionOf(rules.MaxConditionNodes)
 
-	_, err := m.Create(ctx, acme(env), rules.CreateInput{Name: "big", TriggerEvents: []string{"x"}, Condition: new(testhelper.Condition(t, big))})
+	_, err := m.Create(ctx, acme(env), rules.CreateInput{Name: "big", TriggerEvents: []string{"x"}, Condition: new(testhelper.RuleCondition(t, big))})
 	require.ErrorIs(t, err, rules.ErrInvalid)
 	assert.Contains(t, err.Error(), "Condition")
 
-	_, err = m.Update(ctx, acme(env), fixtures.RuleInactiveID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleInactiveID), Condition: new(testhelper.Condition(t, big))})
+	_, err = m.Update(ctx, acme(env), fixtures.RuleInactiveID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleInactiveID), Condition: new(testhelper.RuleCondition(t, big))})
 	require.ErrorIs(t, err, rules.ErrInvalid)
 
 	fits := conditionOf(rules.MaxConditionNodes - 1)
-	_, err = m.Create(ctx, acme(env), rules.CreateInput{Name: "fits", TriggerEvents: []string{"x"}, Condition: new(testhelper.Condition(t, fits))})
+	_, err = m.Create(ctx, acme(env), rules.CreateInput{Name: "fits", TriggerEvents: []string{"x"}, Condition: new(testhelper.RuleCondition(t, fits))})
 	require.NoError(t, err)
 }
 

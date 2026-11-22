@@ -24,8 +24,8 @@ model SiteCustomFieldResource {
   /** Value type: inferred from the first value, changed by an owner or admin */
   type: CustomFieldType;
 
-  /** The operators a rule leaf on this field takes, by its type */
-  ruleOperators: ConditionOperator[];
+  /** The tests a Condition takes on this field, by its type, each with its operators */
+  conditionTests: CustomFieldConditionTests;
 
   /** The revision of the state this answer shows (ADR 0119): an update names it */
   revision: Revision;

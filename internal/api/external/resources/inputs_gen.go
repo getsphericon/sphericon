@@ -477,11 +477,11 @@ func (c *InputsImpl) RuleCreate(source *external.CreateRuleInput) (rules.CreateI
 				rulesCreateInput.TriggerEvents[i] = (*source).TriggerEvents[i]
 			}
 		}
-		pConditiontreeGroup, err := conditionIn((*source).Condition)
+		pConditiontreeRule, err := ruleConditionIn((*source).Condition)
 		if err != nil {
 			return rulesCreateInput, err
 		}
-		rulesCreateInput.Condition = pConditiontreeGroup
+		rulesCreateInput.Condition = pConditiontreeRule
 		rulesCreateInput.Actions = c.RuleActions((*source).Actions)
 	}
 	return rulesCreateInput, nil
@@ -492,11 +492,11 @@ func (c *InputsImpl) RuleUpdate(source *external.UpdateRuleInput) (rules.UpdateI
 		rulesUpdateInput.Revision = revisionIn((*source).Revision)
 		rulesUpdateInput.Name = namePtrIn((*source).Name)
 		rulesUpdateInput.TriggerEvents = listPtrIn((*source).TriggerEvents)
-		pConditiontreeGroup, err := conditionIn((*source).Condition)
+		pConditiontreeRule, err := ruleConditionIn((*source).Condition)
 		if err != nil {
 			return rulesUpdateInput, err
 		}
-		rulesUpdateInput.Condition = pConditiontreeGroup
+		rulesUpdateInput.Condition = pConditiontreeRule
 		rulesUpdateInput.Actions = ruleActionsPtrIn(c, (*source).Actions)
 	}
 	return rulesUpdateInput, nil
@@ -505,22 +505,22 @@ func (c *InputsImpl) SegmentCreate(source *external.CreateSegmentInput) (segment
 	var segmentsCreateInput segments.CreateInput
 	if source != nil {
 		segmentsCreateInput.Name = nameIn((*source).Name)
-		pConditiontreeGroup, err := createSegmentCondition((*source).Condition)
+		pConditiontreeSegment, err := createSegmentCondition((*source).Condition)
 		if err != nil {
 			return segmentsCreateInput, err
 		}
-		segmentsCreateInput.Condition = pConditiontreeGroup
+		segmentsCreateInput.Condition = pConditiontreeSegment
 	}
 	return segmentsCreateInput, nil
 }
 func (c *InputsImpl) SegmentPreview(source *external.PreviewSegmentInput) (segments.PreviewInput, error) {
 	var segmentsPreviewInput segments.PreviewInput
 	if source != nil {
-		pConditiontreeGroup, err := conditionIn((*source).Condition)
+		pConditiontreeSegment, err := segmentConditionIn((*source).Condition)
 		if err != nil {
 			return segmentsPreviewInput, err
 		}
-		segmentsPreviewInput.Condition = pConditiontreeGroup
+		segmentsPreviewInput.Condition = pConditiontreeSegment
 		segmentsPreviewInput.Channel = broadcastChannelPtrIn(c, (*source).Channel)
 		segmentsPreviewInput.IntegrationID = nilEntityIDPtrIn((*source).IntegrationId)
 	}

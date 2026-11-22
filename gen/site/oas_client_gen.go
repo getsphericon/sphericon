@@ -1110,7 +1110,7 @@ type Invoker interface {
 	SiteSegmentsList(ctx context.Context, params SiteSegmentsListParams) (*SiteSegmentsListOK, error)
 	// SiteSegmentsPreview invokes SiteSegments_preview operation.
 	//
-	// Preview how many active contacts match a rule definition.
+	// Preview how many active contacts match an unsaved Condition.
 	//
 	// POST /workspaces/{workspaceId}/segments/preview
 	SiteSegmentsPreview(ctx context.Context, request *SitePreviewSegmentInput, params SiteSegmentsPreviewParams) (*SitePreviewSegmentResult, error)
@@ -22834,7 +22834,7 @@ func (c *Client) sendSiteSegmentsList(ctx context.Context, params SiteSegmentsLi
 
 // SiteSegmentsPreview invokes SiteSegments_preview operation.
 //
-// Preview how many active contacts match a rule definition.
+// Preview how many active contacts match an unsaved Condition.
 //
 // POST /workspaces/{workspaceId}/segments/preview
 func (c *Client) SiteSegmentsPreview(ctx context.Context, request *SitePreviewSegmentInput, params SiteSegmentsPreviewParams) (*SitePreviewSegmentResult, error) {
