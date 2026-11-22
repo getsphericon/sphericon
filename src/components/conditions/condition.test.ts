@@ -332,3 +332,44 @@ test('a combinator kept between the rules of the query builder is not a rule', (
     { kind: 'customField', key: 'seats', test: { kind: 'number', operator: 'gte', value: 1 } },
   ])
 })
+
+const alone = (field: string, operator: string, value: unknown): RuleGroupType => ({
+  combinator: 'and',
+  rules: [{ field, operator, value }],
+})
+
+test('a rule on a field that names no subject is dropped', () => {
+  const unknownField = toDraft(alone('nickname', 'eq', 'Ada'))
+
+  expect(unknownField.entries).toEqual([])
+})
+
+test('a Tag, Telegram or SMS rule is dropped unless it is had or not had', () => {
+  const tagContains = toDraft(alone('tag', 'contains', 'vip'))
+  const telegramSet = toDraft(alone('telegram', 'set', ''))
+  const smsPerformed = toDraft(alone('sms', 'performed', ''))
+  const tagHad = toDraft(alone('tag', 'has', 'vip'))
+
+  expect(tagContains.entries).toEqual([])
+  expect(telegramSet.entries).toEqual([])
+  expect(smsPerformed.entries).toEqual([])
+  expect(tagHad.entries).toEqual([{ kind: 'tag', name: 'vip', operator: 'has' }])
+})
+
+test('a property rule is dropped when its operator names no test a property takes, its key with it', () => {
+  const before = toDraft(alone('property', 'before', { key: 'paid_at', value: '2026-03-01' }))
+  const lastDays = toDraft(alone('property', withinLastOperator, { key: 'paid_at', value: 7 }))
+  const counted = toDraft(alone('property', 'atLeast', { key: 'paid_at', value: { times: 1 } }))
+
+  expect(before.entries).toEqual([])
+  expect(lastDays.entries).toEqual([])
+  expect(counted.entries).toEqual([])
+})
+
+test("a Custom field rule is dropped when its operator names no test, an event count's or a Tag's", () => {
+  const performed = toDraft(alone('customField:plan', eventPresets.performed, ''))
+  const has = toDraft(alone('customField:plan', 'has', 'pro'))
+
+  expect(performed.entries).toEqual([])
+  expect(has.entries).toEqual([])
+})
