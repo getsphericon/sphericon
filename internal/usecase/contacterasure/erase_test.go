@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -36,6 +37,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
+	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
@@ -437,4 +439,25 @@ func TestAnErasureKeepsTheSuppressionOfANumberByItsHash(t *testing.T) {
 	assert.Nil(t, kept.LiftedAt, "it still refuses")
 	named := env.DB.Suppression.Query().Where(suppression.Destination(fixtures.ContactLacunaSuppressedPhone)).ExistX(ctx)
 	assert.False(t, named, "no Suppression names the number")
+}
+
+// An Erasure removes the Contact's skipped entries (ADR 0127), as the automations module lists
+// them, and leaves another Contact's alone.
+func TestAnErasureRemovesTheContactsSkippedEntries(t *testing.T) {
+	env := testhelper.Setup(t)
+	skipped := func(contactID int64) []int64 {
+		page, err := testhelper.Module[*automations.Module](env).SkippedEntries(t.Context(), env.DB.Scoped(fixtures.InitechID),
+			pagination.Params{Page: 1, PageSize: 10}, automations.SkippedEntriesFilter{AutomationID: fixtures.AutomationInitechID, ContactID: contactID})
+		require.NoError(t, err)
+		return lo.Map(page.Items, func(e *ent.AutomationSkippedEntry, _ int) int64 { return e.ID })
+	}
+	before := skipped(fixtures.ContactErasableID)
+
+	eraseErasable(t, env)
+
+	assert.Equal(t, []int64{fixtures.SkippedEntryErasableID}, before)
+	erased := skipped(fixtures.ContactErasableID)
+	assert.Empty(t, erased)
+	bystander := skipped(fixtures.ContactBystanderID)
+	assert.Equal(t, []int64{fixtures.SkippedEntryBystanderID}, bystander)
 }

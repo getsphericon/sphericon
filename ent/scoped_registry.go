@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
@@ -403,6 +404,12 @@ func ScopedEntities() []*ScopedEntity {
 				if !reflect.ValueOf(src.EventProperties).IsZero() {
 					b.SetEventProperties(src.EventProperties)
 				}
+				if src.TriggerSourceID != nil {
+					b.SetTriggerSourceID(*src.TriggerSourceID)
+				}
+				if src.FiringID != nil {
+					b.SetFiringID(remap("RuleFiring", *src.FiringID))
+				}
 				if src.EndedAt != nil {
 					b.SetEndedAt(*src.EndedAt)
 				}
@@ -447,6 +454,54 @@ func ScopedEntities() []*ScopedEntity {
 					},
 				},
 			},
+		},
+		{
+			Kind:         Kinds["AutomationSkippedEntry"],
+			Name:         "AutomationSkippedEntry",
+			Wrapper:      reflect.TypeFor[*AutomationSkippedEntryScoped](),
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.AutomationSkippedEntry.Query().Where(automationskippedentry.WorkspaceID(ws)).Order(Asc(automationskippedentry.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.AutomationSkippedEntry().Get(ctx, id)
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.AutomationSkippedEntry().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.AutomationSkippedEntry().Update().Where(automationskippedentry.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.AutomationSkippedEntry().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.AutomationSkippedEntry().Delete().Where(automationskippedentry.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.AutomationSkippedEntry.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.AutomationSkippedEntry().Create()
+				b.SetAutomationID(remap("Automation", src.AutomationID))
+				b.SetContactID(remap("Contact", src.ContactID))
+				if src.SourceID != nil {
+					b.SetSourceID(*src.SourceID)
+				}
+				if src.FiringID != nil {
+					b.SetFiringID(remap("RuleFiring", *src.FiringID))
+				}
+				b.SetReason(src.Reason)
+				b.SetOccurredAt(src.OccurredAt)
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
 		},
 		{
 			Kind:         Kinds["AutomationStepRecord"],

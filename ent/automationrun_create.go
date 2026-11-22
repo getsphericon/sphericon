@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
@@ -127,6 +128,34 @@ func (_c *AutomationRunCreate) SetEventProperties(v map[string]interface{}) *Aut
 	return _c
 }
 
+// SetTriggerSourceID sets the "trigger_source_id" field.
+func (_c *AutomationRunCreate) SetTriggerSourceID(v string) *AutomationRunCreate {
+	_c.mutation.SetTriggerSourceID(v)
+	return _c
+}
+
+// SetNillableTriggerSourceID sets the "trigger_source_id" field if the given value is not nil.
+func (_c *AutomationRunCreate) SetNillableTriggerSourceID(v *string) *AutomationRunCreate {
+	if v != nil {
+		_c.SetTriggerSourceID(*v)
+	}
+	return _c
+}
+
+// SetFiringID sets the "firing_id" field.
+func (_c *AutomationRunCreate) SetFiringID(v int64) *AutomationRunCreate {
+	_c.mutation.SetFiringID(v)
+	return _c
+}
+
+// SetNillableFiringID sets the "firing_id" field if the given value is not nil.
+func (_c *AutomationRunCreate) SetNillableFiringID(v *int64) *AutomationRunCreate {
+	if v != nil {
+		_c.SetFiringID(*v)
+	}
+	return _c
+}
+
 // SetEndedAt sets the "ended_at" field.
 func (_c *AutomationRunCreate) SetEndedAt(v time.Time) *AutomationRunCreate {
 	_c.mutation.SetEndedAt(v)
@@ -235,6 +264,11 @@ func (_c *AutomationRunCreate) SetVersion(v *AutomationVersion) *AutomationRunCr
 // SetContact sets the "contact" edge to the Contact entity.
 func (_c *AutomationRunCreate) SetContact(v *Contact) *AutomationRunCreate {
 	return _c.SetContactID(v.ID)
+}
+
+// SetFiring sets the "firing" edge to the RuleFiring entity.
+func (_c *AutomationRunCreate) SetFiring(v *RuleFiring) *AutomationRunCreate {
+	return _c.SetFiringID(v.ID)
 }
 
 // Mutation returns the AutomationRunMutation object of the builder.
@@ -395,6 +429,10 @@ func (_c *AutomationRunCreate) createSpec() (*AutomationRun, *sqlgraph.CreateSpe
 		_spec.SetField(automationrun.FieldEventProperties, field.TypeJSON, value)
 		_node.EventProperties = value
 	}
+	if value, ok := _c.mutation.TriggerSourceID(); ok {
+		_spec.SetField(automationrun.FieldTriggerSourceID, field.TypeString, value)
+		_node.TriggerSourceID = &value
+	}
 	if value, ok := _c.mutation.EndedAt(); ok {
 		_spec.SetField(automationrun.FieldEndedAt, field.TypeTime, value)
 		_node.EndedAt = &value
@@ -485,6 +523,23 @@ func (_c *AutomationRunCreate) createSpec() (*AutomationRun, *sqlgraph.CreateSpe
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.ContactID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.FiringIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   automationrun.FiringTable,
+			Columns: []string{automationrun.FiringColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(rulefiring.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.FiringID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -753,6 +808,12 @@ func (u *AutomationRunUpsertOne) UpdateNewValues() *AutomationRunUpsertOne {
 		}
 		if _, exists := u.create.mutation.EventProperties(); exists {
 			s.SetIgnore(automationrun.FieldEventProperties)
+		}
+		if _, exists := u.create.mutation.TriggerSourceID(); exists {
+			s.SetIgnore(automationrun.FieldTriggerSourceID)
+		}
+		if _, exists := u.create.mutation.FiringID(); exists {
+			s.SetIgnore(automationrun.FieldFiringID)
 		}
 	}))
 	return u
@@ -1195,6 +1256,12 @@ func (u *AutomationRunUpsertBulk) UpdateNewValues() *AutomationRunUpsertBulk {
 			}
 			if _, exists := b.mutation.EventProperties(); exists {
 				s.SetIgnore(automationrun.FieldEventProperties)
+			}
+			if _, exists := b.mutation.TriggerSourceID(); exists {
+				s.SetIgnore(automationrun.FieldTriggerSourceID)
+			}
+			if _, exists := b.mutation.FiringID(); exists {
+				s.SetIgnore(automationrun.FieldFiringID)
 			}
 		}
 	}))

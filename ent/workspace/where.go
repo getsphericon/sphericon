@@ -2223,6 +2223,29 @@ func HasAutomationFiguresWith(preds ...predicate.AutomationFigure) predicate.Wor
 	})
 }
 
+// HasAutomationSkippedEntries applies the HasEdge predicate on the "automation_skipped_entries" edge.
+func HasAutomationSkippedEntries() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, AutomationSkippedEntriesTable, AutomationSkippedEntriesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasAutomationSkippedEntriesWith applies the HasEdge predicate on the "automation_skipped_entries" edge with a given conditions (other predicates).
+func HasAutomationSkippedEntriesWith(preds ...predicate.AutomationSkippedEntry) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newAutomationSkippedEntriesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasEmailTemplates applies the HasEdge predicate on the "email_templates" edge.
 func HasEmailTemplates() predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {

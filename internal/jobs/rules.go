@@ -112,7 +112,7 @@ type enrollAction struct {
 
 func (a enrollAction) Run(ctx context.Context, s *ent.Scoped, in rules.ActionInput) (rules.Result, error) {
 	enrolled, err := a.steps.EnrollOnRule(ctx, s, automations.EnrollOnRuleInput{
-		AutomationID: in.Action.AutomationID, ContactID: in.ContactID, SourceID: in.Firing.SourceID,
+		AutomationID: in.Action.AutomationID, ContactID: in.ContactID, FiringID: in.Firing.ID, SourceID: in.Firing.SourceID,
 	})
 	if err == nil && !enrolled {
 		return rules.Result{Status: rules.Skipped, Detail: "the contact is already enrolled"}, nil

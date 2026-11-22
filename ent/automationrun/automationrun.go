@@ -35,6 +35,10 @@ const (
 	FieldEventAction = "event_action"
 	// FieldEventProperties holds the string denoting the event_properties field in the database.
 	FieldEventProperties = "event_properties"
+	// FieldTriggerSourceID holds the string denoting the trigger_source_id field in the database.
+	FieldTriggerSourceID = "trigger_source_id"
+	// FieldFiringID holds the string denoting the firing_id field in the database.
+	FieldFiringID = "firing_id"
 	// FieldEndedAt holds the string denoting the ended_at field in the database.
 	FieldEndedAt = "ended_at"
 	// FieldCurrentStepID holds the string denoting the current_step_id field in the database.
@@ -55,6 +59,8 @@ const (
 	EdgeVersion = "version"
 	// EdgeContact holds the string denoting the contact edge name in mutations.
 	EdgeContact = "contact"
+	// EdgeFiring holds the string denoting the firing edge name in mutations.
+	EdgeFiring = "firing"
 	// Table holds the table name of the automationrun in the database.
 	Table = "automation_runs"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -85,6 +91,13 @@ const (
 	ContactInverseTable = "contacts"
 	// ContactColumn is the table column denoting the contact relation/edge.
 	ContactColumn = "contact_id"
+	// FiringTable is the table that holds the firing relation/edge.
+	FiringTable = "automation_runs"
+	// FiringInverseTable is the table name for the RuleFiring entity.
+	// It exists in this package in order to avoid circular dependency with the "rulefiring" package.
+	FiringInverseTable = "rule_firings"
+	// FiringColumn is the table column denoting the firing relation/edge.
+	FiringColumn = "firing_id"
 )
 
 // Columns holds all SQL columns for automationrun fields.
@@ -100,6 +113,8 @@ var Columns = []string{
 	FieldBeganAt,
 	FieldEventAction,
 	FieldEventProperties,
+	FieldTriggerSourceID,
+	FieldFiringID,
 	FieldEndedAt,
 	FieldCurrentStepID,
 	FieldResumeAt,
@@ -237,6 +252,16 @@ func ByEventAction(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEventAction, opts...).ToFunc()
 }
 
+// ByTriggerSourceID orders the results by the trigger_source_id field.
+func ByTriggerSourceID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTriggerSourceID, opts...).ToFunc()
+}
+
+// ByFiringID orders the results by the firing_id field.
+func ByFiringID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFiringID, opts...).ToFunc()
+}
+
 // ByEndedAt orders the results by the ended_at field.
 func ByEndedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEndedAt, opts...).ToFunc()
@@ -294,6 +319,13 @@ func ByContactField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newContactStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByFiringField orders the results by firing field.
+func ByFiringField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newFiringStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -320,5 +352,12 @@ func newContactStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ContactInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, ContactTable, ContactColumn),
+	)
+}
+func newFiringStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(FiringInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, FiringTable, FiringColumn),
 	)
 }

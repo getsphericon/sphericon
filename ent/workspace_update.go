@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
@@ -926,6 +927,21 @@ func (_u *WorkspaceUpdate) AddAutomationFigures(v ...*AutomationFigure) *Workspa
 		ids[i] = v[i].ID
 	}
 	return _u.AddAutomationFigureIDs(ids...)
+}
+
+// AddAutomationSkippedEntryIDs adds the "automation_skipped_entries" edge to the AutomationSkippedEntry entity by IDs.
+func (_u *WorkspaceUpdate) AddAutomationSkippedEntryIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddAutomationSkippedEntryIDs(ids...)
+	return _u
+}
+
+// AddAutomationSkippedEntries adds the "automation_skipped_entries" edges to the AutomationSkippedEntry entity.
+func (_u *WorkspaceUpdate) AddAutomationSkippedEntries(v ...*AutomationSkippedEntry) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddAutomationSkippedEntryIDs(ids...)
 }
 
 // AddEmailTemplateIDs adds the "email_templates" edge to the EmailTemplate entity by IDs.
@@ -1865,6 +1881,27 @@ func (_u *WorkspaceUpdate) RemoveAutomationFigures(v ...*AutomationFigure) *Work
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAutomationFigureIDs(ids...)
+}
+
+// ClearAutomationSkippedEntries clears all "automation_skipped_entries" edges to the AutomationSkippedEntry entity.
+func (_u *WorkspaceUpdate) ClearAutomationSkippedEntries() *WorkspaceUpdate {
+	_u.mutation.ClearAutomationSkippedEntries()
+	return _u
+}
+
+// RemoveAutomationSkippedEntryIDs removes the "automation_skipped_entries" edge to AutomationSkippedEntry entities by IDs.
+func (_u *WorkspaceUpdate) RemoveAutomationSkippedEntryIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveAutomationSkippedEntryIDs(ids...)
+	return _u
+}
+
+// RemoveAutomationSkippedEntries removes "automation_skipped_entries" edges to AutomationSkippedEntry entities.
+func (_u *WorkspaceUpdate) RemoveAutomationSkippedEntries(v ...*AutomationSkippedEntry) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveAutomationSkippedEntryIDs(ids...)
 }
 
 // ClearEmailTemplates clears all "email_templates" edges to the EmailTemplate entity.
@@ -3794,6 +3831,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automationfigure.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.AutomationSkippedEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationSkippedEntriesTable,
+			Columns: []string{workspace.AutomationSkippedEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationskippedentry.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedAutomationSkippedEntriesIDs(); len(nodes) > 0 && !_u.mutation.AutomationSkippedEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationSkippedEntriesTable,
+			Columns: []string{workspace.AutomationSkippedEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationskippedentry.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AutomationSkippedEntriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationSkippedEntriesTable,
+			Columns: []string{workspace.AutomationSkippedEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationskippedentry.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -5869,6 +5951,21 @@ func (_u *WorkspaceUpdateOne) AddAutomationFigures(v ...*AutomationFigure) *Work
 	return _u.AddAutomationFigureIDs(ids...)
 }
 
+// AddAutomationSkippedEntryIDs adds the "automation_skipped_entries" edge to the AutomationSkippedEntry entity by IDs.
+func (_u *WorkspaceUpdateOne) AddAutomationSkippedEntryIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddAutomationSkippedEntryIDs(ids...)
+	return _u
+}
+
+// AddAutomationSkippedEntries adds the "automation_skipped_entries" edges to the AutomationSkippedEntry entity.
+func (_u *WorkspaceUpdateOne) AddAutomationSkippedEntries(v ...*AutomationSkippedEntry) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddAutomationSkippedEntryIDs(ids...)
+}
+
 // AddEmailTemplateIDs adds the "email_templates" edge to the EmailTemplate entity by IDs.
 func (_u *WorkspaceUpdateOne) AddEmailTemplateIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddEmailTemplateIDs(ids...)
@@ -6806,6 +6903,27 @@ func (_u *WorkspaceUpdateOne) RemoveAutomationFigures(v ...*AutomationFigure) *W
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAutomationFigureIDs(ids...)
+}
+
+// ClearAutomationSkippedEntries clears all "automation_skipped_entries" edges to the AutomationSkippedEntry entity.
+func (_u *WorkspaceUpdateOne) ClearAutomationSkippedEntries() *WorkspaceUpdateOne {
+	_u.mutation.ClearAutomationSkippedEntries()
+	return _u
+}
+
+// RemoveAutomationSkippedEntryIDs removes the "automation_skipped_entries" edge to AutomationSkippedEntry entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveAutomationSkippedEntryIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveAutomationSkippedEntryIDs(ids...)
+	return _u
+}
+
+// RemoveAutomationSkippedEntries removes "automation_skipped_entries" edges to AutomationSkippedEntry entities.
+func (_u *WorkspaceUpdateOne) RemoveAutomationSkippedEntries(v ...*AutomationSkippedEntry) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveAutomationSkippedEntryIDs(ids...)
 }
 
 // ClearEmailTemplates clears all "email_templates" edges to the EmailTemplate entity.
@@ -8765,6 +8883,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automationfigure.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.AutomationSkippedEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationSkippedEntriesTable,
+			Columns: []string{workspace.AutomationSkippedEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationskippedentry.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedAutomationSkippedEntriesIDs(); len(nodes) > 0 && !_u.mutation.AutomationSkippedEntriesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationSkippedEntriesTable,
+			Columns: []string{workspace.AutomationSkippedEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationskippedentry.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AutomationSkippedEntriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationSkippedEntriesTable,
+			Columns: []string{workspace.AutomationSkippedEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationskippedentry.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

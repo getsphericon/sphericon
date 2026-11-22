@@ -60,11 +60,15 @@ type Event struct {
 
 // origin is what an Enrollment keeps of the Event it began on: when it occurred (began_at), and its
 // action and properties, which every step binds as `event` (#752). An origin with only OccurredAt
-// is an Enrollment no Event began: its `event` is empty.
+// is an Enrollment no Event began: its `event` is empty. It also names what caused the entry, so
+// that one cause enrolls a Contact in an Automation once (ADR 0127): SourceID, the source id of the
+// Event whose Trigger it is, or FiringID, the Rule Firing whose Enroll Action it is.
 type origin struct {
 	Action     string
 	OccurredAt time.Time
 	Properties map[string]any
+	SourceID   string
+	FiringID   int64
 }
 
 // originOf is the origin of an Event: its action and occurred_at, and the properties of the row
@@ -72,7 +76,7 @@ type origin struct {
 // stored before the trigger job is queued (#751); an Event no longer stored (Retention or an Erasure
 // removed it) gives no properties.
 func originOf(ctx context.Context, s *ent.Scoped, ev Event) (origin, error) {
-	o := origin{Action: ev.Action, OccurredAt: ev.OccurredAt}
+	o := origin{Action: ev.Action, OccurredAt: ev.OccurredAt, SourceID: ev.SourceID}
 	stored, err := storedEvent(ctx, s, ev.SourceID)
 	if err != nil || stored == nil {
 		return o, err
@@ -90,19 +94,20 @@ func storedEvent(ctx context.Context, s *ent.Scoped, sourceID string) (*ent.Even
 	return stored, err
 }
 
-// enrollOnRule enrolls the Contact (enroll) for a Rule that fired on the Event stored with
-// sourceID (the Firing's source_id): the Enrollment began when that Event occurred and keeps its
+// enrollOnRule enrolls the Contact (enroll) for the Firing of a Rule that fired on the Event stored
+// with in.SourceID (the Firing's source_id): the Enrollment began when that Event occurred and keeps its
 // action and properties, as the Rule's own http Action binds them (#752). When no such Event is
 // stored any more (Retention or an Erasure removed it), it begins now and its `event` is empty.
 // The Rule job reads the Automation before it enrolls, so a Deactivate or an Archive may have
 // landed since: under the lock it enrolls nobody and returns ErrInactive unless the Automation is
 // still kept and active (ADR 0099).
-func (m *StepExecution) enrollOnRule(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, sourceID string, now time.Time) (runID int64, enrolled bool, err error) {
-	fired, err := storedEvent(ctx, s, sourceID)
+func (m *StepExecution) enrollOnRule(ctx context.Context, s *ent.Scoped, pub events.Publisher, in EnrollOnRuleInput, now time.Time) (runID int64, enrolled bool, err error) {
+	automationID, contactID := in.AutomationID, in.ContactID
+	fired, err := storedEvent(ctx, s, in.SourceID)
 	if err != nil {
 		return 0, false, err
 	}
-	o := origin{OccurredAt: now}
+	o := origin{OccurredAt: now, FiringID: in.FiringID}
 	if fired != nil {
 		o.Action, o.Properties, o.OccurredAt = fired.Action, events.BoundedProperties(fired.Properties), fired.OccurredAt
 	}
@@ -171,6 +176,13 @@ func (m *StepExecution) enroll(ctx context.Context, s *ent.Scoped, pub events.Pu
 	admitted, err := admits(a.row)
 	if err != nil || !admitted {
 		return 0, false, err
+	}
+	reason, skipped, err := judgeEntry(ctx, s, automationID, contactID, o)
+	if err != nil {
+		return 0, false, err
+	}
+	if skipped {
+		return 0, false, recordSkip(ctx, s, automationID, contactID, o, reason)
 	}
 	ending, endedAt, ended, err := endedSince(ctx, s, a.row.Edges.LiveVersion, contactID, o.OccurredAt)
 	if err != nil {
@@ -268,6 +280,12 @@ func begin(ctx context.Context, s *ent.Scoped, held contactlock.Locked, a liveSh
 	}
 	if o.Action != "" {
 		create.SetEventAction(o.Action)
+	}
+	if o.SourceID != "" {
+		create.SetTriggerSourceID(o.SourceID)
+	}
+	if o.FiringID != 0 {
+		create.SetFiringID(o.FiringID)
 	}
 	if len(o.Properties) > 0 {
 		create.SetEventProperties(o.Properties)

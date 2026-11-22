@@ -26,6 +26,7 @@ var Kinds = map[string]Kind{
 	"Automation":               {Table: "automations", Kind: schema.Kind{WorkspaceOwned: true, Archivable: true, Versioned: true, Revised: true}},
 	"AutomationFigure":         {Table: "automation_figures", Kind: schema.Kind{WorkspaceOwned: true}},
 	"AutomationRun":            {Table: "automation_runs", Kind: schema.Kind{WorkspaceOwned: true}},
+	"AutomationSkippedEntry":   {Table: "automation_skipped_entries", Kind: schema.Kind{WorkspaceOwned: true}},
 	"AutomationStepRecord":     {Table: "automation_step_records", Kind: schema.Kind{WorkspaceOwned: true}},
 	"AutomationVersion":        {Table: "automation_versions", Kind: schema.Kind{WorkspaceOwned: true}},
 	"Binding":                  {Table: "bindings", Kind: schema.Kind{WorkspaceOwned: true}},
