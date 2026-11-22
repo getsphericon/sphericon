@@ -56,6 +56,9 @@ type Event struct {
 	Action     string
 	SourceID   string
 	OccurredAt time.Time
+	// SendLocked marks an Event a write through a Connection without mcp:send published
+	// (events.Envelope.SendLocked): it ends Enrollments, but enrolls no one (ADR 0132).
+	SendLocked bool
 }
 
 // origin is what an Enrollment keeps of the Event it began on: when it occurred (began_at), and its

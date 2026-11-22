@@ -246,3 +246,14 @@
   workspace_id: 92
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 2}}'
+
+# Halcyon (workspace 99): fires on every Event a write through a Connection publishes.
+- id: 9900 # fixture: RuleHalcyonAgentWrites
+  revision: 1
+  name: React to what is written
+  status: active
+  activated_at: '{{daysAgo 12}}'
+  live_version_id: 9900
+  workspace_id: 99
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'

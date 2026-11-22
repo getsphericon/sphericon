@@ -50,6 +50,8 @@ const (
 	FieldURL = "url"
 	// FieldBackfill holds the string denoting the backfill field in the database.
 	FieldBackfill = "backfill"
+	// FieldSendLocked holds the string denoting the send_locked field in the database.
+	FieldSendLocked = "send_locked"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// EdgeContact holds the string denoting the contact edge name in mutations.
@@ -111,6 +113,7 @@ var Columns = []string{
 	FieldAutomationID,
 	FieldURL,
 	FieldBackfill,
+	FieldSendLocked,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -140,6 +143,8 @@ var (
 	DefaultCaptured bool
 	// DefaultBackfill holds the default value on creation for the "backfill" field.
 	DefaultBackfill bool
+	// DefaultSendLocked holds the default value on creation for the "send_locked" field.
+	DefaultSendLocked bool
 )
 
 // OrderOption defines the ordering options for the Event queries.
@@ -233,6 +238,11 @@ func ByURL(opts ...sql.OrderTermOption) OrderOption {
 // ByBackfill orders the results by the backfill field.
 func ByBackfill(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBackfill, opts...).ToFunc()
+}
+
+// BySendLocked orders the results by the send_locked field.
+func BySendLocked(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSendLocked, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.

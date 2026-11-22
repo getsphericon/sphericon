@@ -737,6 +737,10 @@ func init() {
 	eventDescBackfill := eventFields[15].Descriptor()
 	// event.DefaultBackfill holds the default value on creation for the backfill field.
 	event.DefaultBackfill = eventDescBackfill.Default.(bool)
+	// eventDescSendLocked is the schema descriptor for send_locked field.
+	eventDescSendLocked := eventFields[16].Descriptor()
+	// event.DefaultSendLocked holds the default value on creation for the send_locked field.
+	event.DefaultSendLocked = eventDescSendLocked.Default.(bool)
 	eventjournalentryMixin := schema.EventJournalEntry{}.Mixin()
 	eventjournalentryMixinFields0 := eventjournalentryMixin[0].Fields()
 	_ = eventjournalentryMixinFields0

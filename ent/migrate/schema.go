@@ -1138,6 +1138,7 @@ var (
 		{Name: "captured", Type: field.TypeBool, Default: false},
 		{Name: "url", Type: field.TypeString, Nullable: true},
 		{Name: "backfill", Type: field.TypeBool, Default: false},
+		{Name: "send_locked", Type: field.TypeBool, Default: false},
 		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "broadcast_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "automation_id", Type: field.TypeInt64, Nullable: true},
@@ -1151,25 +1152,25 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "events_contacts_events",
-				Columns:    []*schema.Column{EventsColumns[15]},
+				Columns:    []*schema.Column{EventsColumns[16]},
 				RefColumns: []*schema.Column{ContactsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "events_broadcasts_broadcast",
-				Columns:    []*schema.Column{EventsColumns[16]},
+				Columns:    []*schema.Column{EventsColumns[17]},
 				RefColumns: []*schema.Column{BroadcastsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "events_automations_automation",
-				Columns:    []*schema.Column{EventsColumns[17]},
+				Columns:    []*schema.Column{EventsColumns[18]},
 				RefColumns: []*schema.Column{AutomationsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "events_workspaces_events",
-				Columns:    []*schema.Column{EventsColumns[18]},
+				Columns:    []*schema.Column{EventsColumns[19]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1178,32 +1179,32 @@ var (
 			{
 				Name:    "event_workspace_id_source_id",
 				Unique:  true,
-				Columns: []*schema.Column{EventsColumns[18], EventsColumns[3]},
+				Columns: []*schema.Column{EventsColumns[19], EventsColumns[3]},
 			},
 			{
 				Name:    "event_workspace_id_contact_id_action",
 				Unique:  false,
-				Columns: []*schema.Column{EventsColumns[18], EventsColumns[15], EventsColumns[8]},
+				Columns: []*schema.Column{EventsColumns[19], EventsColumns[16], EventsColumns[8]},
 			},
 			{
 				Name:    "event_workspace_id_action_occurred_at",
 				Unique:  false,
-				Columns: []*schema.Column{EventsColumns[18], EventsColumns[8], EventsColumns[10]},
+				Columns: []*schema.Column{EventsColumns[19], EventsColumns[8], EventsColumns[10]},
 			},
 			{
 				Name:    "event_workspace_id_visitor_id",
 				Unique:  false,
-				Columns: []*schema.Column{EventsColumns[18], EventsColumns[4]},
+				Columns: []*schema.Column{EventsColumns[19], EventsColumns[4]},
 			},
 			{
 				Name:    "event_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{EventsColumns[15]},
+				Columns: []*schema.Column{EventsColumns[16]},
 			},
 			{
 				Name:    "event_workspace_id_broadcast_id",
 				Unique:  false,
-				Columns: []*schema.Column{EventsColumns[18], EventsColumns[16]},
+				Columns: []*schema.Column{EventsColumns[19], EventsColumns[17]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "broadcast_id IS NOT NULL",
 				},
@@ -1211,7 +1212,7 @@ var (
 			{
 				Name:    "event_workspace_id_automation_id",
 				Unique:  false,
-				Columns: []*schema.Column{EventsColumns[18], EventsColumns[17]},
+				Columns: []*schema.Column{EventsColumns[19], EventsColumns[18]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "automation_id IS NOT NULL",
 				},
@@ -1219,7 +1220,7 @@ var (
 			{
 				Name:    "event_workspace_id_updated_at_id",
 				Unique:  false,
-				Columns: []*schema.Column{EventsColumns[18], EventsColumns[2], EventsColumns[0]},
+				Columns: []*schema.Column{EventsColumns[19], EventsColumns[2], EventsColumns[0]},
 			},
 			{
 				Name:    "events_created_at_analytical_idx",

@@ -140,6 +140,11 @@ func Backfill(v bool) predicate.Event {
 	return predicate.Event(sql.FieldEQ(FieldBackfill, v))
 }
 
+// SendLocked applies equality check predicate on the "send_locked" field. It's identical to SendLockedEQ.
+func SendLocked(v bool) predicate.Event {
+	return predicate.Event(sql.FieldEQ(FieldSendLocked, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Event {
 	return predicate.Event(sql.FieldEQ(FieldCreatedAt, v))
@@ -923,6 +928,16 @@ func BackfillEQ(v bool) predicate.Event {
 // BackfillNEQ applies the NEQ predicate on the "backfill" field.
 func BackfillNEQ(v bool) predicate.Event {
 	return predicate.Event(sql.FieldNEQ(FieldBackfill, v))
+}
+
+// SendLockedEQ applies the EQ predicate on the "send_locked" field.
+func SendLockedEQ(v bool) predicate.Event {
+	return predicate.Event(sql.FieldEQ(FieldSendLocked, v))
+}
+
+// SendLockedNEQ applies the NEQ predicate on the "send_locked" field.
+func SendLockedNEQ(v bool) predicate.Event {
+	return predicate.Event(sql.FieldNEQ(FieldSendLocked, v))
 }
 
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.

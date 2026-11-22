@@ -100,6 +100,12 @@ type Envelope struct {
 	// that carries it, so Rules never chain (ADR 0054). The Action's work runs in a context
 	// CausedBy made, which the publisher stamps it from.
 	CausedBy string `json:"causedBy,omitempty"`
+	// SendLocked marks an event a write through a Connection without mcp:send published (ADR
+	// 0132): the write's context made by SendLocked, which the publisher stamps it from. Such an
+	// event enrolls no one and fires no Rule, but still ends an Enrollment as an exit or goal event
+	// and still reaches the Webhook endpoints: the mark only stops sends from starting. Its stored
+	// Event keeps it (events.send_locked).
+	SendLocked bool `json:"sendLocked,omitempty"`
 	// CorrelationID is shared by every event of one chain: what a request, or the handling of
 	// an event, published (correlation.go). CausationID is the id of the event whose handling
 	// published this one, empty at the start of a chain.

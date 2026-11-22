@@ -27929,6 +27929,24 @@ func (x *EventScopedCreate) SetNillableBackfill(v *bool) *EventScopedCreate {
 
 const RoleOf_EventScopedCreate_SetNillableBackfill = RoleStep
 
+// SetSendLocked sets the "send_locked" field.
+func (x *EventScopedCreate) SetSendLocked(v bool) *EventScopedCreate {
+	x.set = append(x.set, func(b *EventCreate) { b.SetSendLocked(v) })
+	return x
+}
+
+const RoleOf_EventScopedCreate_SetSendLocked = RoleStep
+
+// SetNillableSendLocked sets the "send_locked" field if the given value is not nil.
+func (x *EventScopedCreate) SetNillableSendLocked(v *bool) *EventScopedCreate {
+	if v != nil {
+		x.SetSendLocked(*v)
+	}
+	return x
+}
+
+const RoleOf_EventScopedCreate_SetNillableSendLocked = RoleStep
+
 // SetContact sets the "contact" edge to the Contact entity.
 func (x *EventScopedCreate) SetContact(v *Contact) *EventScopedCreate {
 	x.set = append(x.set, func(b *EventCreate) { b.SetContact(v) })

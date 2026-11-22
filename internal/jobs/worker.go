@@ -160,7 +160,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewEvaluateTriggerWorker(entClient, stepper))
 	river.AddWorker(workers, NewRunStepWorker(entClient, stepper))
 	river.AddWorker(workers, NewLateNoticeWorker(entClient, deps.Callbacks))
-	river.AddWorker(workers, &EvaluateRulesWorker{ent: entClient, mod: deps.Rules})
+	river.AddWorker(workers, NewEvaluateRulesWorker(entClient, deps.Rules))
 	river.AddWorker(workers, &RunRuleActionsWorker{ent: entClient, mod: deps.Rules, runners: RuleActionRunners(mod, deps.Contacts, stepper)})
 	river.AddWorker(workers, NewRunRuleHTTPWorker(entClient, deps.Rules, rand.Float64))
 	river.AddWorker(workers, NewRunHTTPStepWorker(entClient, stepper, rand.Float64))

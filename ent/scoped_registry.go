@@ -1408,6 +1408,7 @@ func ScopedEntities() []*ScopedEntity {
 					b.SetURL(*src.URL)
 				}
 				b.SetBackfill(src.Backfill)
+				b.SetSendLocked(src.SendLocked)
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

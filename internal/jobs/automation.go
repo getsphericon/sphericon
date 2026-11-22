@@ -30,6 +30,9 @@ type EvaluateTriggerArgs struct {
 	// the job makes copies that row's properties (#752). The properties themselves stay on the row,
 	// which Erasure removes, and never ride in the job. Required.
 	SourceID string `json:"source_id"`
+	// SendLocked marks an Event a write through a Connection without mcp:send published
+	// (events.Envelope.SendLocked): it ends Enrollments, but enrolls no one (ADR 0132).
+	SendLocked bool `json:"send_locked,omitempty"`
 }
 
 func (EvaluateTriggerArgs) Kind() string { return jobkind.EvaluateTrigger.Kind }
@@ -74,7 +77,7 @@ func (w *EvaluateTriggerWorker) Work(ctx context.Context, job *river.Job[Evaluat
 		return nil // stale or forged job args; never enroll across Workspaces
 	}
 	args := job.Args
-	ev := automations.Event{Action: args.Action, SourceID: args.SourceID, OccurredAt: args.OccurredAt}
+	ev := automations.Event{Action: args.Action, SourceID: args.SourceID, OccurredAt: args.OccurredAt, SendLocked: args.SendLocked}
 	return w.steps.OnEvent(ctx, w.ent.Scoped(c.WorkspaceID), automations.OnEventInput{ContactID: c.ID, Event: ev, SourceAutomationID: args.SourceAutomationID})
 }
 

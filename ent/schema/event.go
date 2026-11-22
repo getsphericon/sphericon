@@ -119,6 +119,13 @@ func (Event) Fields() []ent.Field {
 			Annotations(Attribute(reasonFact)).
 			Default(false).
 			Immutable(),
+		// Written through a Connection without mcp:send (ADR 0132), from its envelope's mark:
+		// recorded, but no Automation enrolls and no Rule fires on it. It still ends an Enrollment
+		// as an exit or goal event and still reaches the Webhook endpoints.
+		field.Bool("send_locked").
+			Annotations(Attribute(reasonFact)).
+			Default(false).
+			Immutable(),
 	}
 }
 

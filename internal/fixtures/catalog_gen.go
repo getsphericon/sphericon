@@ -99,6 +99,36 @@ const (
 	AutomationHTTPExecutionName = "HTTP execution"
 	// AutomationHTTPExecutionVersionID is from fixtures/automation_versions.
 	AutomationHTTPExecutionVersionID = 5580
+	// AutomationHalcyonCourseID is from fixtures/automations.
+	AutomationHalcyonCourseID = 9904
+	// AutomationHalcyonCourseName is from fixtures/automations.
+	AutomationHalcyonCourseName = "Course"
+	// AutomationHalcyonCourseVersionID is from fixtures/automation_versions.
+	AutomationHalcyonCourseVersionID = 9904
+	// AutomationHalcyonOnCreatedID is from fixtures/automations.
+	AutomationHalcyonOnCreatedID = 9903
+	// AutomationHalcyonOnCreatedName is from fixtures/automations.
+	AutomationHalcyonOnCreatedName = "On contact created"
+	// AutomationHalcyonOnCreatedVersionID is from fixtures/automation_versions.
+	AutomationHalcyonOnCreatedVersionID = 9903
+	// AutomationHalcyonOnFieldChangedID is from fixtures/automations.
+	AutomationHalcyonOnFieldChangedID = 9902
+	// AutomationHalcyonOnFieldChangedName is from fixtures/automations.
+	AutomationHalcyonOnFieldChangedName = "On contact field changed"
+	// AutomationHalcyonOnFieldChangedVersionID is from fixtures/automation_versions.
+	AutomationHalcyonOnFieldChangedVersionID = 9902
+	// AutomationHalcyonOnSignalID is from fixtures/automations.
+	AutomationHalcyonOnSignalID = 9900
+	// AutomationHalcyonOnSignalName is from fixtures/automations.
+	AutomationHalcyonOnSignalName = "On agent signal"
+	// AutomationHalcyonOnSignalVersionID is from fixtures/automation_versions.
+	AutomationHalcyonOnSignalVersionID = 9900
+	// AutomationHalcyonOnTaggedID is from fixtures/automations.
+	AutomationHalcyonOnTaggedID = 9901
+	// AutomationHalcyonOnTaggedName is from fixtures/automations.
+	AutomationHalcyonOnTaggedName = "On contact tagged"
+	// AutomationHalcyonOnTaggedVersionID is from fixtures/automation_versions.
+	AutomationHalcyonOnTaggedVersionID = 9901
 	// AutomationHoldDemoID is from fixtures/automations.
 	AutomationHoldDemoID = 103
 	// AutomationHoldDemoName is from fixtures/automations.
@@ -513,6 +543,8 @@ const (
 	AutomationRunHTTPFailedID = 1101
 	// AutomationRunHTTPPendingID is from fixtures/automation_runs.
 	AutomationRunHTTPPendingID = 5580
+	// AutomationRunHalcyonCourseIdaID is from fixtures/automation_runs.
+	AutomationRunHalcyonCourseIdaID = 9900
 	// AutomationRunJobsBrokenTemplateID is from fixtures/automation_runs.
 	AutomationRunJobsBrokenTemplateID = 5568
 	// AutomationRunJobsEmailsThenTagAliceID is from fixtures/automation_runs.
@@ -1321,6 +1353,10 @@ const (
 	ContactGlobexReaderEmail = "reader@globex.test"
 	// ContactGlobexReaderID is from fixtures/contacts.
 	ContactGlobexReaderID = 901
+	// ContactHalcyonIdaEmail is from fixtures/contacts.
+	ContactHalcyonIdaEmail = "ida@halcyon.example"
+	// ContactHalcyonIdaID is from fixtures/contacts.
+	ContactHalcyonIdaID = 9900
 	// ContactHoldDemoEmail is from fixtures/contacts.
 	ContactHoldDemoEmail = "hold.demo@codebasics.dev"
 	// ContactHoldDemoID is from fixtures/contacts.
@@ -1525,6 +1561,12 @@ const (
 	CustomFieldGlobexKey = "globex_only"
 	// CustomFieldGlobexName is from fixtures/custom_fields.
 	CustomFieldGlobexName = "Globex only"
+	// CustomFieldHalcyonMoodID is from fixtures/custom_fields.
+	CustomFieldHalcyonMoodID = 9900
+	// CustomFieldHalcyonMoodKey is from fixtures/custom_fields.
+	CustomFieldHalcyonMoodKey = "mood"
+	// CustomFieldHalcyonMoodName is from fixtures/custom_fields.
+	CustomFieldHalcyonMoodName = "Mood"
 	// CustomFieldInitrodeInjectionID is from fixtures/custom_fields.
 	CustomFieldInitrodeInjectionID = 5504
 	// CustomFieldInitrodeInjectionKey is from fixtures/custom_fields.
@@ -2121,6 +2163,24 @@ const (
 	GringottsPublicID = "GrngtW98"
 	// GringottsReeseMembershipID is from fixtures/memberships.
 	GringottsReeseMembershipID = 7955
+	// HalcyonCollectKey is from fixtures/workspaces.
+	HalcyonCollectKey = "omck_test_halcyon_collect_key"
+	// HalcyonHalMembershipID is from fixtures/memberships.
+	HalcyonHalMembershipID = 9900
+	// HalcyonID is from fixtures/workspaces.
+	HalcyonID = 99
+	// HalcyonName is from fixtures/workspaces.
+	HalcyonName = "Halcyon"
+	// HalcyonOwnerHalEmail is from fixtures/users.
+	HalcyonOwnerHalEmail = "hal@halcyon.test"
+	// HalcyonOwnerHalID is from fixtures/users.
+	HalcyonOwnerHalID = 9900
+	// HalcyonOwnerHalName is from fixtures/users.
+	HalcyonOwnerHalName = "Hal"
+	// HalcyonOwnerHalPassword is from fixtures/users.
+	HalcyonOwnerHalPassword = "password"
+	// HalcyonPublicID is from fixtures/workspaces.
+	HalcyonPublicID = "HalcnW99"
 	// HeldOrderEventAcmeEventID is from fixtures/held_order_events.
 	HeldOrderEventAcmeEventID = "fixture-held-event-1"
 	// HeldOrderEventAcmeID is from fixtures/held_order_events.
@@ -3419,6 +3479,12 @@ const (
 	RuleHTTPExecutionTwoActionsVersionID = 141
 	// RuleHTTPExecutionVersionID is from fixtures/rule_versions.
 	RuleHTTPExecutionVersionID = 140
+	// RuleHalcyonAgentWritesID is from fixtures/rules.
+	RuleHalcyonAgentWritesID = 9900
+	// RuleHalcyonAgentWritesName is from fixtures/rules.
+	RuleHalcyonAgentWritesName = "React to what is written"
+	// RuleHalcyonAgentWritesVersionID is from fixtures/rule_versions.
+	RuleHalcyonAgentWritesVersionID = 9900
 	// RuleInactiveID is from fixtures/rules.
 	RuleInactiveID = 102
 	// RuleInactiveName is from fixtures/rules.
@@ -4413,6 +4479,10 @@ const (
 	WebhookGlobexID = 900
 	// WebhookGlobexURL is from fixtures/webhook_endpoints.
 	WebhookGlobexURL = "https://globex.example/hook"
+	// WebhookHalcyonID is from fixtures/webhook_endpoints.
+	WebhookHalcyonID = 9900
+	// WebhookHalcyonURL is from fixtures/webhook_endpoints.
+	WebhookHalcyonURL = "https://hooks.halcyon.test/sphericon"
 	// WebhookInitechAuditID is from fixtures/webhook_endpoints.
 	WebhookInitechAuditID = 301
 	// WebhookInitechAuditURL is from fixtures/webhook_endpoints.

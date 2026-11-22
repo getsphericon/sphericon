@@ -273,6 +273,7 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) (err error) {
 		Data:        data,
 		DedupKey:    dedupKey,
 		CausedBy:    causeOf(ctx),
+		SendLocked:  IsSendLocked(ctx),
 	}
 	stamp(ctx, &env)
 	first, err := p.claimExternal(ctx, env)
