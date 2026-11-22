@@ -26,11 +26,11 @@ func TestSiteSegmentSaveOnAStaleRevisionIsRefused(t *testing.T) {
 	secondCondition := `{"kind":"group","combinator":"and","entries":[{"kind":"tag","name":"second","operator":"has"}]}`
 
 	first, err := c.SiteSegmentsUpdate(ctx, &siteapi.UpdateSegmentInput{
-		Revision: read.Revision, Condition: siteapi.NewOptSegmentConditionInput(testhelper.SiteSegmentCondition(t, firstCondition)),
+		Revision: read.Revision, Condition: siteapi.NewOptSegmentConditionInput(testhelper.ConditionInput[siteapi.SegmentConditionInput](t, firstCondition)),
 	}, params)
 	require.NoError(t, err)
 	_, err = c.SiteSegmentsUpdate(ctx, &siteapi.UpdateSegmentInput{
-		Revision: read.Revision, Condition: siteapi.NewOptSegmentConditionInput(testhelper.SiteSegmentCondition(t, secondCondition)),
+		Revision: read.Revision, Condition: siteapi.NewOptSegmentConditionInput(testhelper.ConditionInput[siteapi.SegmentConditionInput](t, secondCondition)),
 	}, params)
 
 	refused := testhelper.SiteRefusal(t, err, http.StatusConflict)

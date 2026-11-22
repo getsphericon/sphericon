@@ -721,23 +721,14 @@ func optNilTimestamp(v *time.Time) externalapi.OptNilTimestamp {
 }
 
 // segmentCondition maps a Segment's Condition into the typed DTO. One that no longer decodes as the
-// contract's tree reads as having none.
+// typed tree is absent, so one bad row does not fail the whole response.
 func segmentCondition(g conditiontree.Segment) externalapi.OptSegmentCondition {
-	var tree externalapi.SegmentCondition
-	if err := condition.ToDTO(g, &tree); err != nil {
-		return externalapi.OptSegmentCondition{}
-	}
-	return externalapi.NewOptSegmentCondition(tree)
+	return convert.OptDocument[externalapi.OptSegmentCondition, externalapi.SegmentCondition](g)
 }
 
-// ruleCondition maps a Rule's Condition into the typed DTO. One that no longer decodes as the
-// contract's tree reads as having none.
+// ruleCondition maps a Rule's Condition into the typed DTO, absent as segmentCondition's.
 func ruleCondition(g conditiontree.Rule) externalapi.OptRuleCondition {
-	var tree externalapi.RuleCondition
-	if err := condition.ToDTO(g, &tree); err != nil {
-		return externalapi.OptRuleCondition{}
-	}
-	return externalapi.NewOptRuleCondition(tree)
+	return convert.OptDocument[externalapi.OptRuleCondition, externalapi.RuleCondition](g)
 }
 
 func optTimestamp(v *time.Time) externalapi.OptTimestamp {

@@ -79,7 +79,7 @@ func TestSiteRulesRefuseTooManyActionsAndAnOversizedCondition(t *testing.T) {
 	body.WriteString(leaf + `]}`)
 	_, bigCondition := c.SiteRulesCreate(ctx, &siteapi.CreateRuleInput{
 		Name: "wide", TriggerEvents: []string{"a"},
-		Condition: siteapi.NewOptRuleConditionInput(testhelper.SiteRuleCondition(t, body.String())),
+		Condition: siteapi.NewOptRuleConditionInput(testhelper.ConditionInput[siteapi.RuleConditionInput](t, body.String())),
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: ws})
 	refusedCondition := testhelper.SiteRefusal(t, bigCondition, http.StatusUnprocessableEntity)
 	assert.Contains(t, refusedCondition.Detail.Or(""), "Condition")

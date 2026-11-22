@@ -580,18 +580,6 @@ func FromOptionalDTO[P conditiontree.Place, G any, M interface {
 	return &g, nil
 }
 
-// ToDTO loads a Condition of one place into an API DTO.
-func ToDTO[P conditiontree.Place](g P, into json.Unmarshaler) error {
-	b, err := json.Marshal(g)
-	if err == nil {
-		err = into.UnmarshalJSON(b)
-	}
-	if err != nil {
-		return fmt.Errorf("decode condition: %w", err)
-	}
-	return nil
-}
-
 // FitsCustomFieldType reports whether every leaf of the group, at any depth, that tests the Custom
 // field key would still compile were the field of type t (customFieldLeaf.fits). A malformed entry
 // tests nothing.

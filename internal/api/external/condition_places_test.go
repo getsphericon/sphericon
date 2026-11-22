@@ -48,8 +48,8 @@ func TestExternalConditionOfEachPlaceIsReadBackAsSent(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead, apitokens.ScopeSegmentsWrite, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite)
-	segment := testhelper.ExternalSegmentCondition(t, segmentConditionOfEveryLeaf)
-	rule := testhelper.ExternalRuleCondition(t, ruleConditionOfEveryLeaf)
+	segment := testhelper.ConditionInput[externalapi.SegmentConditionInput](t, segmentConditionOfEveryLeaf)
+	rule := testhelper.ConditionInput[externalapi.RuleConditionInput](t, ruleConditionOfEveryLeaf)
 
 	created, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "Every leaf", Condition: segment})
 	require.NoError(t, err)
@@ -115,7 +115,7 @@ func TestExternalConditionRefusesWhatItsPlaceDoesNotAdmitByItsPath(t *testing.T)
 			}))
 
 			_, err := edited.SegmentsCreate(t.Context(), &externalapi.CreateSegmentInput{
-				Name: "Misplaced", Condition: testhelper.ExternalSegmentCondition(t, `{"kind":"group","combinator":"and","entries":[]}`),
+				Name: "Misplaced", Condition: testhelper.ConditionInput[externalapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[]}`),
 			})
 
 			refused := testhelper.ExternalRefusal(t, err, http.StatusBadRequest)

@@ -90,7 +90,7 @@ func TestExternalRulesCreatePublishAndDeactivate(t *testing.T) {
 	_, err = author.RulesCreate(ctx, &externalapi.CreateRuleInput{
 		Name:          "Typo",
 		TriggerEvents: []string{systemevent.EmailClicked},
-		Condition: externalapi.NewOptRuleConditionInput(testhelper.ExternalRuleCondition(t,
+		Condition: externalapi.NewOptRuleConditionInput(testhelper.ConditionInput[externalapi.RuleConditionInput](t,
 			`{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"no_such_field","test":{"kind":"text","operator":"eq","value":"x"}}]}`)),
 	})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
@@ -99,7 +99,7 @@ func TestExternalRulesCreatePublishAndDeactivate(t *testing.T) {
 		Name:          "Clicked twice this week",
 		TriggerEvents: []string{systemevent.EmailClicked},
 		Actions:       []externalapi.RuleActionInput{{Type: externalapi.RuleActionTypeApplyTag, Tag: externalapi.NewOptString("keen")}},
-		Condition: externalapi.NewOptRuleConditionInput(testhelper.ExternalRuleCondition(t,
+		Condition: externalapi.NewOptRuleConditionInput(testhelper.ConditionInput[externalapi.RuleConditionInput](t,
 			`{"kind":"group","combinator":"and","entries":[{"kind":"event","action":"email.clicked","operator":"atLeast","times":2,"withinDays":7}]}`)),
 	})
 	require.NoError(t, err)

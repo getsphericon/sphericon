@@ -111,9 +111,9 @@ func TestSiteSegmentsErrorBranches(t *testing.T) {
 	known := idStr(fixtures.SegmentProPlanID)
 	missing := idStr(99999)
 
-	_, err := c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{Name: "x", Condition: testhelper.SiteSegmentCondition(t, `{"kind":"group","combinator":"and","entries":[]}`)}, siteapi.SiteSegmentsCreateParams{WorkspaceId: foreign})
+	_, err := c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{Name: "x", Condition: testhelper.ConditionInput[siteapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[]}`)}, siteapi.SiteSegmentsCreateParams{WorkspaceId: foreign})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
-	_, err = c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{Name: "x", Condition: testhelper.SiteSegmentCondition(t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`)}, siteapi.SiteSegmentsCreateParams{WorkspaceId: acme})
+	_, err = c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{Name: "x", Condition: testhelper.ConditionInput[siteapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`)}, siteapi.SiteSegmentsCreateParams{WorkspaceId: acme})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
 	_, err = c.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams{WorkspaceId: foreign, ID: known})
@@ -130,7 +130,7 @@ func TestSiteSegmentsErrorBranches(t *testing.T) {
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 	_, err = c.SiteSegmentsUpdate(ctx, rename, siteapi.SiteSegmentsUpdateParams{WorkspaceId: acme, ID: missing})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
-	_, err = c.SiteSegmentsUpdate(ctx, &siteapi.UpdateSegmentInput{Revision: g4.Revision, Condition: siteapi.NewOptSegmentConditionInput(testhelper.SiteSegmentCondition(t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`))}, siteapi.SiteSegmentsUpdateParams{WorkspaceId: acme, ID: known})
+	_, err = c.SiteSegmentsUpdate(ctx, &siteapi.UpdateSegmentInput{Revision: g4.Revision, Condition: siteapi.NewOptSegmentConditionInput(testhelper.ConditionInput[siteapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`))}, siteapi.SiteSegmentsUpdateParams{WorkspaceId: acme, ID: known})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	_, err = c.SiteSegmentsUpdate(ctx, rename, siteapi.SiteSegmentsUpdateParams{WorkspaceId: acme, ID: known})
 	require.NoError(t, err)

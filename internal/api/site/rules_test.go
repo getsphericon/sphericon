@@ -30,7 +30,7 @@ func TestSiteRulesCRUDPublishAndDeactivate(t *testing.T) {
 	created, err := c.SiteRulesCreate(ctx, &siteapi.CreateRuleInput{
 		Name:          "Tag the vips who clicked",
 		TriggerEvents: []string{systemevent.EmailClicked, "link_followed", systemevent.EmailClicked},
-		Condition:     siteapi.NewOptRuleConditionInput(testhelper.SiteRuleCondition(t, vipCondition)),
+		Condition:     siteapi.NewOptRuleConditionInput(testhelper.ConditionInput[siteapi.RuleConditionInput](t, vipCondition)),
 		Actions:       []siteapi.RuleActionInput{tagAction(siteapi.RuleActionTypeApplyTag, "clicker"), tagAction(siteapi.RuleActionTypeRemoveTag, "cold")},
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
@@ -112,7 +112,7 @@ func TestSiteRulesAreRefusedWhenInvalid(t *testing.T) {
 
 	_, unknown := c.SiteRulesCreate(ctx, &siteapi.CreateRuleInput{
 		Name: "Typo", TriggerEvents: []string{"a"}, Actions: apply,
-		Condition: siteapi.NewOptRuleConditionInput(testhelper.SiteRuleCondition(t, unknownField)),
+		Condition: siteapi.NewOptRuleConditionInput(testhelper.ConditionInput[siteapi.RuleConditionInput](t, unknownField)),
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: workspaceID})
 	testhelper.SiteRefusal(t, unknown, http.StatusUnprocessableEntity, "a custom field the Workspace does not have is refused on save")
 
@@ -128,7 +128,7 @@ func TestSiteRulesAreRefusedWhenInvalid(t *testing.T) {
 	testhelper.SiteRefusal(t, blankTrigger, http.StatusUnprocessableEntity)
 
 	_, typoUpdate := c.SiteRulesUpdate(ctx, &siteapi.UpdateRuleInput{Revision: siteapi.Revision(env.RuleRevision(ctx, t, int64(fixtures.RuleTagClickedID))),
-		Condition: siteapi.NewOptRuleConditionInput(testhelper.SiteRuleCondition(t, unknownField)),
+		Condition: siteapi.NewOptRuleConditionInput(testhelper.ConditionInput[siteapi.RuleConditionInput](t, unknownField)),
 	}, siteapi.SiteRulesUpdateParams{WorkspaceId: workspaceID, ID: fixtures.RuleTagClickedID})
 	testhelper.SiteRefusal(t, typoUpdate, http.StatusUnprocessableEntity)
 }
@@ -144,7 +144,7 @@ func TestSiteRuleConditionComparesATriggerNumber(t *testing.T) {
 		_, err := c.SiteRulesCreate(ctx, &siteapi.CreateRuleInput{
 			Name: "Promoters", TriggerEvents: []string{"nps_submitted"},
 			Actions:   []siteapi.RuleActionInput{tagAction(siteapi.RuleActionTypeApplyTag, "promoter")},
-			Condition: siteapi.NewOptRuleConditionInput(testhelper.SiteRuleCondition(t, def)),
+			Condition: siteapi.NewOptRuleConditionInput(testhelper.ConditionInput[siteapi.RuleConditionInput](t, def)),
 		}, siteapi.SiteRulesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 		return err
 	}
@@ -165,7 +165,7 @@ func TestSiteRuleConditionCountsEvents(t *testing.T) {
 		_, err := c.SiteRulesCreate(ctx, &siteapi.CreateRuleInput{
 			Name: "Pricing twice", TriggerEvents: []string{"pricing_viewed"},
 			Actions:   []siteapi.RuleActionInput{tagAction(siteapi.RuleActionTypeApplyTag, "keen")},
-			Condition: siteapi.NewOptRuleConditionInput(testhelper.SiteRuleCondition(t, def)),
+			Condition: siteapi.NewOptRuleConditionInput(testhelper.ConditionInput[siteapi.RuleConditionInput](t, def)),
 		}, siteapi.SiteRulesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 		return err
 	}

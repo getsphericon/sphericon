@@ -1072,23 +1072,14 @@ func optEditorDocument(doc json.RawMessage) siteapi.OptEditorDocument {
 }
 
 // segmentCondition maps a Segment's Condition into the typed DTO. One that no longer decodes as the
-// contract's tree reads as having none.
+// typed tree is absent, so one bad row does not fail the whole response.
 func segmentCondition(g conditiontree.Segment) siteapi.OptSegmentCondition {
-	var tree siteapi.SegmentCondition
-	if err := condition.ToDTO(g, &tree); err != nil {
-		return siteapi.OptSegmentCondition{}
-	}
-	return siteapi.NewOptSegmentCondition(tree)
+	return convert.OptDocument[siteapi.OptSegmentCondition, siteapi.SegmentCondition](g)
 }
 
-// ruleCondition maps a Rule's Condition into the typed DTO. One that no longer decodes as the
-// contract's tree reads as having none.
+// ruleCondition maps a Rule's Condition into the typed DTO, absent as segmentCondition's.
 func ruleCondition(g conditiontree.Rule) siteapi.OptRuleCondition {
-	var tree siteapi.RuleCondition
-	if err := condition.ToDTO(g, &tree); err != nil {
-		return siteapi.OptRuleCondition{}
-	}
-	return siteapi.NewOptRuleCondition(tree)
+	return convert.OptDocument[siteapi.OptRuleCondition, siteapi.RuleCondition](g)
 }
 
 func optTimestamp(v *time.Time) siteapi.OptTimestamp {

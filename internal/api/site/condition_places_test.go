@@ -48,8 +48,8 @@ func TestSiteConditionOfEachPlaceIsReadBackAsSent(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	segment := testhelper.SiteSegmentCondition(t, segmentConditionOfEveryLeaf)
-	rule := testhelper.SiteRuleCondition(t, ruleConditionOfEveryLeaf)
+	segment := testhelper.ConditionInput[siteapi.SegmentConditionInput](t, segmentConditionOfEveryLeaf)
+	rule := testhelper.ConditionInput[siteapi.RuleConditionInput](t, ruleConditionOfEveryLeaf)
 
 	created, err := c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{Name: "Every leaf", Condition: segment},
 		siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
@@ -116,7 +116,7 @@ func TestSiteConditionRefusesWhatItsPlaceDoesNotAdmitByItsPath(t *testing.T) {
 			}))
 
 			_, err := edited.SiteSegmentsCreate(t.Context(), &siteapi.CreateSegmentInput{
-				Name: "Misplaced", Condition: testhelper.SiteSegmentCondition(t, `{"kind":"group","combinator":"and","entries":[]}`),
+				Name: "Misplaced", Condition: testhelper.ConditionInput[siteapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[]}`),
 			}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 
 			refused := testhelper.SiteRefusal(t, err, http.StatusBadRequest)
@@ -132,7 +132,7 @@ func TestSiteConditionTestsEveryContactAttribute(t *testing.T) {
 
 	for _, attribute := range siteapi.ContactAttribute("").AllValues() {
 		_, err := c.SiteSegmentsPreview(t.Context(), &siteapi.SitePreviewSegmentInput{
-			Condition: siteapi.NewOptSegmentConditionInput(testhelper.SiteSegmentCondition(t,
+			Condition: siteapi.NewOptSegmentConditionInput(testhelper.ConditionInput[siteapi.SegmentConditionInput](t,
 				`{"kind":"group","combinator":"and","entries":[{"kind":"attribute","attribute":"`+string(attribute)+`","test":{"kind":"presence","operator":"set"}}]}`)),
 		}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.AcmePublicID})
 

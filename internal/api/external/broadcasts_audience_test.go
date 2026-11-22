@@ -57,7 +57,7 @@ func setSegmentCondition(t *testing.T, c *externalapi.Client, id externalapi.Ent
 	// An edit names the revision it was made on (ADR 0119), so the client reads the Segment first.
 	seg, err := c.SegmentsGet(t.Context(), externalapi.SegmentsGetParams{ID: id})
 	require.NoError(t, err)
-	_, err = c.SegmentsUpdate(t.Context(), &externalapi.UpdateSegmentInput{Revision: seg.Revision, Condition: externalapi.NewOptSegmentConditionInput(testhelper.ExternalSegmentCondition(t, def))},
+	_, err = c.SegmentsUpdate(t.Context(), &externalapi.UpdateSegmentInput{Revision: seg.Revision, Condition: externalapi.NewOptSegmentConditionInput(testhelper.ConditionInput[externalapi.SegmentConditionInput](t, def))},
 		externalapi.SegmentsUpdateParams{ID: id})
 	require.NoError(t, err)
 }
@@ -205,7 +205,7 @@ func TestExternalScheduleAnswersTheRecipientsAtThatMoment(t *testing.T) {
 	c := env.ExternalScoped(t, audienceScopes...)
 	env.SuppressDestination(t.Context(), fixtures.ContactLiamEmail)
 	preview, err := c.SegmentsPreview(t.Context(), &externalapi.PreviewSegmentInput{
-		Condition: externalapi.NewOptSegmentConditionInput(testhelper.ExternalSegmentCondition(t, proPlanCondition)),
+		Condition: externalapi.NewOptSegmentConditionInput(testhelper.ConditionInput[externalapi.SegmentConditionInput](t, proPlanCondition)),
 		Channel:   externalapi.NewOptBroadcastChannel(externalapi.BroadcastChannelEmail),
 	})
 	require.NoError(t, err)

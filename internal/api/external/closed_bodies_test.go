@@ -68,7 +68,7 @@ func TestExternalSegmentRefusesAPropertyNestedInItsCondition(t *testing.T) {
 
 	_, err = edited.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{
 		Name:      "Pros",
-		Condition: testhelper.ExternalSegmentCondition(t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"plan","test":{"kind":"text","operator":"eq","value":"pro"}}]}`),
+		Condition: testhelper.ConditionInput[externalapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"plan","test":{"kind":"text","operator":"eq","value":"pro"}}]}`),
 	})
 	after, listErr := c.SegmentsList(ctx, externalapi.SegmentsListParams{})
 
@@ -160,7 +160,7 @@ func TestExternalSegmentNamesTheItemOfAnArrayItFailsAt(t *testing.T) {
 
 			_, err := edited.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{
 				Name:      "Pros",
-				Condition: testhelper.ExternalSegmentCondition(t, `{"kind":"group","combinator":"and","entries":[]}`),
+				Condition: testhelper.ConditionInput[externalapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[]}`),
 			})
 
 			refused := testhelper.ExternalRefusal(t, err, http.StatusBadRequest)

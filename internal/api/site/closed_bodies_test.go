@@ -87,7 +87,7 @@ func TestSiteSegmentRefusesAnUnknownPropertyOfAnEntryOfItsCondition(t *testing.T
 
 	_, err = edited.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{
 		Name:      "Pros",
-		Condition: testhelper.SiteSegmentCondition(t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"plan","test":{"kind":"text","operator":"eq","value":"pro"}}]}`),
+		Condition: testhelper.ConditionInput[siteapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"plan","test":{"kind":"text","operator":"eq","value":"pro"}}]}`),
 	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	after, listErr := c.SiteSegmentsList(ctx, list)
 

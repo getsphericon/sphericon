@@ -30,7 +30,7 @@ func TestSiteSegmentsPreviewCountsMatchingActiveContacts(t *testing.T) {
 
 	def := `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"plan","test":{"kind":"text","operator":"eq","value":"preview-pro"}}]}`
 	res, err := c.SiteSegmentsPreview(ctx, &siteapi.SitePreviewSegmentInput{
-		Condition: siteapi.NewOptSegmentConditionInput(testhelper.SiteSegmentCondition(t, def)),
+		Condition: siteapi.NewOptSegmentConditionInput(testhelper.ConditionInput[siteapi.SegmentConditionInput](t, def)),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.DunderPublicID})
 	require.NoError(t, err)
 	assert.Equal(t, int32(1), res.Count)
@@ -49,7 +49,7 @@ func tryPreviewOne(t *testing.T, c *siteapi.Client, leaf string) (*siteapi.SiteP
 	t.Helper()
 	def := `{"kind":"group","combinator":"and","entries":[` + leaf + `]}`
 	return c.SiteSegmentsPreview(context.Background(), &siteapi.SitePreviewSegmentInput{
-		Condition: siteapi.NewOptSegmentConditionInput(testhelper.SiteSegmentCondition(t, def)),
+		Condition: siteapi.NewOptSegmentConditionInput(testhelper.ConditionInput[siteapi.SegmentConditionInput](t, def)),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.DunderPublicID})
 }
 
@@ -86,7 +86,7 @@ func TestSiteSegmentsStoreAnEventCount(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 	const def = `{"kind":"group","combinator":"and","entries":[{"kind":"event","action":"pricing_viewed","operator":"atLeast","times":2,"withinDays":7}]}`
-	sent := testhelper.SiteSegmentCondition(t, def)
+	sent := testhelper.ConditionInput[siteapi.SegmentConditionInput](t, def)
 
 	created, err := c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{Name: "Pricing twice", Condition: sent},
 		siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
@@ -205,7 +205,7 @@ func TestSiteSegmentsStoreNumberAndMomentTests(t *testing.T) {
 		`{"kind":"customField","key":"seats","test":{"kind":"number","operator":"lte","value":2.5}},` +
 		`{"kind":"customField","key":"renews_at","test":{"kind":"moment","operator":"after","at":"2026-01-02T03:04:05Z"}},` +
 		`{"kind":"customField","key":"renews_at","test":{"kind":"withinLast","days":30}}]}`
-	sent := testhelper.SiteSegmentCondition(t, def)
+	sent := testhelper.ConditionInput[siteapi.SegmentConditionInput](t, def)
 
 	created, err := c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{Name: "Small and renewing", Condition: sent},
 		siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.DunderPublicID})
@@ -223,7 +223,7 @@ func TestSiteSegmentsPreviewRejectsInvalidDefinition(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := c.SiteSegmentsPreview(ctx, &siteapi.SitePreviewSegmentInput{
-		Condition: siteapi.NewOptSegmentConditionInput(testhelper.SiteSegmentCondition(t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`)),
+		Condition: siteapi.NewOptSegmentConditionInput(testhelper.ConditionInput[siteapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`)),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.AcmePublicID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
@@ -235,7 +235,7 @@ func TestSiteSegmentsCreateRejectsInvalidRuleDefinition(t *testing.T) {
 
 	_, err := c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{
 		Name:      "Bad rule",
-		Condition: testhelper.SiteSegmentCondition(t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`),
+		Condition: testhelper.ConditionInput[siteapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`),
 	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
@@ -244,7 +244,7 @@ func TestSiteSegmentsCreateAndUpdateShareValidation(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	bad := testhelper.SiteSegmentCondition(t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`)
+	bad := testhelper.ConditionInput[siteapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`)
 
 	// Create rejects a bad definition.
 	_, err := c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{

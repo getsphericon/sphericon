@@ -46,13 +46,13 @@ func TestExternalSegmentsWrite(t *testing.T) {
 
 	_, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{
 		Name:      "Bad",
-		Condition: testhelper.ExternalSegmentCondition(t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`),
+		Condition: testhelper.ConditionInput[externalapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`),
 	})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
 	const def = `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"plan","test":{"kind":"text","operator":"eq","value":"pro"}}]}`
 	seg, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{
-		Name: "Pros", Condition: testhelper.ExternalSegmentCondition(t, def),
+		Name: "Pros", Condition: testhelper.ConditionInput[externalapi.SegmentConditionInput](t, def),
 	})
 	require.NoError(t, err)
 	assert.Equal(t, "Pros", seg.Name)
@@ -62,7 +62,7 @@ func TestExternalSegmentsWrite(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "Pros 2", upd.Name)
 
-	_, err = c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Revision: upd.Revision, Condition: externalapi.NewOptSegmentConditionInput(testhelper.ExternalSegmentCondition(t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`))},
+	_, err = c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Revision: upd.Revision, Condition: externalapi.NewOptSegmentConditionInput(testhelper.ConditionInput[externalapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`))},
 		externalapi.SegmentsUpdateParams{ID: seg.ID})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }
@@ -75,7 +75,7 @@ func TestExternalSegmentsPreviewCountsTheRecipientsOfABroadcast(t *testing.T) {
 	ctx := t.Context()
 	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead)
 	paying := &externalapi.PreviewSegmentInput{
-		Condition: externalapi.NewOptSegmentConditionInput(testhelper.ExternalSegmentCondition(t, `{"kind":"group","combinator":"or","entries":[`+
+		Condition: externalapi.NewOptSegmentConditionInput(testhelper.ConditionInput[externalapi.SegmentConditionInput](t, `{"kind":"group","combinator":"or","entries":[`+
 			`{"kind":"customField","key":"plan","test":{"kind":"text","operator":"eq","value":"pro"}},`+
 			`{"kind":"customField","key":"plan","test":{"kind":"text","operator":"eq","value":"team"}}]}`)),
 		Channel: externalapi.NewOptBroadcastChannel(externalapi.BroadcastChannelEmail),
@@ -107,11 +107,11 @@ func TestExternalSegmentsPreview(t *testing.T) {
 	const def = `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"plan","test":{"kind":"text","operator":"eq","value":"pro"}}]}`
 	want, err := testhelper.Module[*segments.Module](env).Preview(ctx, env.DB.Scoped(fixtures.AcmeID), segments.PreviewInput{Condition: new(testhelper.SegmentCondition(t, def))})
 	require.NoError(t, err)
-	res, err := c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Condition: externalapi.NewOptSegmentConditionInput(testhelper.ExternalSegmentCondition(t, def))})
+	res, err := c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Condition: externalapi.NewOptSegmentConditionInput(testhelper.ConditionInput[externalapi.SegmentConditionInput](t, def))})
 	require.NoError(t, err)
 	assert.EqualValues(t, want.Count, res.Count)
 
-	_, err = c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Condition: externalapi.NewOptSegmentConditionInput(testhelper.ExternalSegmentCondition(t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`))})
+	_, err = c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Condition: externalapi.NewOptSegmentConditionInput(testhelper.ConditionInput[externalapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"nope","test":{"kind":"text","operator":"eq","value":"x"}}]}`))})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
@@ -126,7 +126,7 @@ func TestExternalSegmentsPreviewCountsEvents(t *testing.T) {
 		def := `{"kind":"group","combinator":"and","entries":[{"kind":"attribute","attribute":"email","test":{"kind":"text","operator":"eq","value":"` +
 			fixtures.ContactLiamEmail + `"}},` + leaf + `]}`
 		return c.SegmentsPreview(context.Background(), &externalapi.PreviewSegmentInput{
-			Condition: externalapi.NewOptSegmentConditionInput(testhelper.ExternalSegmentCondition(t, def)),
+			Condition: externalapi.NewOptSegmentConditionInput(testhelper.ConditionInput[externalapi.SegmentConditionInput](t, def)),
 		})
 	}
 
@@ -150,7 +150,7 @@ func TestExternalSegmentsStoreAnEventCount(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead, apitokens.ScopeSegmentsWrite)
-	sent := testhelper.ExternalSegmentCondition(t, `{"kind":"group","combinator":"and","entries":[{"kind":"event","action":"pricing_viewed","operator":"atMost","times":0,"withinDays":30}]}`)
+	sent := testhelper.ConditionInput[externalapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[{"kind":"event","action":"pricing_viewed","operator":"atMost","times":0,"withinDays":30}]}`)
 
 	created, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "Never priced", Condition: sent})
 	require.NoError(t, err)
@@ -169,7 +169,7 @@ func TestExternalSegmentsPreviewFitsNumberAndDateLeavesToTheFieldType(t *testing
 	preview := func(leaf string) error {
 		t.Helper()
 		_, err := c.SegmentsPreview(context.Background(), &externalapi.PreviewSegmentInput{
-			Condition: externalapi.NewOptSegmentConditionInput(testhelper.ExternalSegmentCondition(t, `{"kind":"group","combinator":"and","entries":[`+leaf+`]}`)),
+			Condition: externalapi.NewOptSegmentConditionInput(testhelper.ConditionInput[externalapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[`+leaf+`]}`)),
 		})
 		return err
 	}
@@ -188,7 +188,7 @@ func TestExternalSegmentsStoreANumberLeaf(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead, apitokens.ScopeSegmentsWrite)
-	sent := testhelper.ExternalSegmentCondition(t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"courses_completed","test":{"kind":"number","operator":"lt","value":1.5}}]}`)
+	sent := testhelper.ConditionInput[externalapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[{"kind":"customField","key":"courses_completed","test":{"kind":"number","operator":"lt","value":1.5}}]}`)
 
 	created, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "Barely started", Condition: sent})
 	require.NoError(t, err)
@@ -213,7 +213,7 @@ func TestExternalSegmentsScopes(t *testing.T) {
 	ro := env.ExternalScoped(t, apitokens.ScopeSegmentsRead)
 	_, err = ro.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{
 		Name:      "x",
-		Condition: testhelper.ExternalSegmentCondition(t, `{"kind":"group","combinator":"and","entries":[]}`),
+		Condition: testhelper.ConditionInput[externalapi.SegmentConditionInput](t, `{"kind":"group","combinator":"and","entries":[]}`),
 	})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 	_, err = ro.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Revision: 1}, externalapi.SegmentsUpdateParams{ID: entityIDString(fixtures.SegmentActiveID)})
@@ -260,12 +260,12 @@ func TestExternalSegmentsTakeTheCanBeTextedCondition(t *testing.T) {
 		fixtures.ContactTexterEmail + `"}},{"kind":"sms","operator":"has"}]}`
 	preview := func() *externalapi.PreviewSegmentResult {
 		t.Helper()
-		out, err := c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Condition: externalapi.NewOptSegmentConditionInput(testhelper.ExternalSegmentCondition(t, def))})
+		out, err := c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Condition: externalapi.NewOptSegmentConditionInput(testhelper.ConditionInput[externalapi.SegmentConditionInput](t, def))})
 		require.NoError(t, err)
 		return out
 	}
 
-	_, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "Texter", Condition: testhelper.ExternalSegmentCondition(t, def)})
+	_, err := c.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{Name: "Texter", Condition: testhelper.ConditionInput[externalapi.SegmentConditionInput](t, def)})
 	require.NoError(t, err)
 	before := preview()
 	_, err = c.ConfirmationsCreate(ctx, smsConsent(fixtures.ContactTexterPhone))
