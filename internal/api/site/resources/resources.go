@@ -118,7 +118,6 @@ import (
 // goverter:extend workspaceTimezone
 // goverter:extend optNilTimestamp
 // goverter:extend nilTimestamp
-// goverter:extend optNilInt32
 // goverter:extend jsonObject
 // goverter:extend editorDocument
 // goverter:extend automationPath
@@ -901,10 +900,6 @@ func broadcastLimit(c Converter, v deferralcause.Cause) siteapi.NilSiteBroadcast
 // nilFloat32 renders a figure a Channel may not report: null when it does not.
 func nilFloat32(v *float32) siteapi.NilFloat32 {
 	return convert.Nil[siteapi.NilFloat32](v)
-}
-
-func optNilInt32(v *int) siteapi.OptNilInt32 {
-	return convert.Opt[siteapi.OptNilInt32](convert.Int32Ptr(v))
 }
 
 // broadcastContent is a Broadcast's content in the arm of its Channel: a oneOf is beyond

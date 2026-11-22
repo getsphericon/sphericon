@@ -2127,9 +2127,13 @@ type AutomationReport struct {
 	Links []LinkClicks `json:"links"`
 	// What the automation's enrollments did over the chosen period and the period before it.
 	Results AutomationResults `json:"results"`
-	// The send steps' messages by step position, in step order: one entry per position any of the
-	// automation's messages was sent from, across its versions.
+	// The send Steps' messages by Step id, each summed over every version that had the Step and sorted by
+	// the newest of those versions, then by its place there: one entry per Step any of the automation's
+	// messages was sent from.
 	Steps []AutomationStepFigures `json:"steps"`
+	// The send Steps' messages by version and Step id, in version order and, within a version, in its Step
+	// order.
+	VersionSteps []AutomationVersionStepFigures `json:"versionSteps"`
 }
 
 // GetOpens returns the value of Opens.
@@ -2182,6 +2186,11 @@ func (s *AutomationReport) GetSteps() []AutomationStepFigures {
 	return s.Steps
 }
 
+// GetVersionSteps returns the value of VersionSteps.
+func (s *AutomationReport) GetVersionSteps() []AutomationVersionStepFigures {
+	return s.VersionSteps
+}
+
 // SetOpens sets the value of Opens.
 func (s *AutomationReport) SetOpens(val int32) {
 	s.Opens = val
@@ -2230,6 +2239,11 @@ func (s *AutomationReport) SetResults(val AutomationResults) {
 // SetSteps sets the value of Steps.
 func (s *AutomationReport) SetSteps(val []AutomationStepFigures) {
 	s.Steps = val
+}
+
+// SetVersionSteps sets the value of VersionSteps.
+func (s *AutomationReport) SetVersionSteps(val []AutomationVersionStepFigures) {
+	s.VersionSteps = val
 }
 
 // The length of the period an automation's results are read over, in Report days (ADR 0057), today
@@ -2596,11 +2610,11 @@ func (s *AutomationStep) SetOneOf(val AutomationStepSum) {
 	s.OneOf = val
 }
 
-// The messages of the send step at one position.
+// The messages of one send Step, over every version that had it.
 // Ref: #/components/schemas/AutomationStepFigures
 type AutomationStepFigures struct {
-	// The step's position, 0 for the first step.
-	Step int32 `json:"step"`
+	// The Step's id, the same in every version.
+	StepId StepId `json:"stepId"`
 	// Messages the provider accepted.
 	Sent int32 `json:"sent"`
 	// Messages skipped: the contact had no address on the step's Channel, had opted out of it, or was
@@ -2608,9 +2622,9 @@ type AutomationStepFigures struct {
 	Skipped int32 `json:"skipped"`
 }
 
-// GetStep returns the value of Step.
-func (s *AutomationStepFigures) GetStep() int32 {
-	return s.Step
+// GetStepId returns the value of StepId.
+func (s *AutomationStepFigures) GetStepId() StepId {
+	return s.StepId
 }
 
 // GetSent returns the value of Sent.
@@ -2623,9 +2637,9 @@ func (s *AutomationStepFigures) GetSkipped() int32 {
 	return s.Skipped
 }
 
-// SetStep sets the value of Step.
-func (s *AutomationStepFigures) SetStep(val int32) {
-	s.Step = val
+// SetStepId sets the value of StepId.
+func (s *AutomationStepFigures) SetStepId(val StepId) {
+	s.StepId = val
 }
 
 // SetSent sets the value of Sent.
@@ -3123,6 +3137,59 @@ func (s *AutomationVersion) SetGoalEvent(val NilString) {
 // SetSteps sets the value of Steps.
 func (s *AutomationVersion) SetSteps(val AutomationPath) {
 	s.Steps = val
+}
+
+// The messages one version's send Step sent.
+// Ref: #/components/schemas/AutomationVersionStepFigures
+type AutomationVersionStepFigures struct {
+	// The version's number.
+	Version int32 `json:"version"`
+	// The Step's id.
+	StepId StepId `json:"stepId"`
+	// Messages the provider accepted.
+	Sent int32 `json:"sent"`
+	// Messages skipped, as in AutomationStepFigures.
+	Skipped int32 `json:"skipped"`
+}
+
+// GetVersion returns the value of Version.
+func (s *AutomationVersionStepFigures) GetVersion() int32 {
+	return s.Version
+}
+
+// GetStepId returns the value of StepId.
+func (s *AutomationVersionStepFigures) GetStepId() StepId {
+	return s.StepId
+}
+
+// GetSent returns the value of Sent.
+func (s *AutomationVersionStepFigures) GetSent() int32 {
+	return s.Sent
+}
+
+// GetSkipped returns the value of Skipped.
+func (s *AutomationVersionStepFigures) GetSkipped() int32 {
+	return s.Skipped
+}
+
+// SetVersion sets the value of Version.
+func (s *AutomationVersionStepFigures) SetVersion(val int32) {
+	s.Version = val
+}
+
+// SetStepId sets the value of StepId.
+func (s *AutomationVersionStepFigures) SetStepId(val StepId) {
+	s.StepId = val
+}
+
+// SetSent sets the value of Sent.
+func (s *AutomationVersionStepFigures) SetSent(val int32) {
+	s.Sent = val
+}
+
+// SetSkipped sets the value of Skipped.
+func (s *AutomationVersionStepFigures) SetSkipped(val int32) {
+	s.Skipped = val
 }
 
 // Paginated response.
@@ -6333,8 +6400,8 @@ type ContactExportOutboundMessage struct {
 	BroadcastId OptNilEntityId `json:"broadcastId"`
 	// Automation that produced the message.
 	AutomationId OptNilEntityId `json:"automationId"`
-	// Step of the automation that produced the message.
-	AutomationStep OptNilInt32 `json:"automationStep"`
+	// Id of the automation Step that produced the message, the same in every version.
+	AutomationStepId OptNilString `json:"automationStepId"`
 	// Template the message was rendered from.
 	TemplateId OptNilEntityId `json:"templateId"`
 	// Creation timestamp.
@@ -6451,9 +6518,9 @@ func (s *ContactExportOutboundMessage) GetAutomationId() OptNilEntityId {
 	return s.AutomationId
 }
 
-// GetAutomationStep returns the value of AutomationStep.
-func (s *ContactExportOutboundMessage) GetAutomationStep() OptNilInt32 {
-	return s.AutomationStep
+// GetAutomationStepId returns the value of AutomationStepId.
+func (s *ContactExportOutboundMessage) GetAutomationStepId() OptNilString {
+	return s.AutomationStepId
 }
 
 // GetTemplateId returns the value of TemplateId.
@@ -6576,9 +6643,9 @@ func (s *ContactExportOutboundMessage) SetAutomationId(val OptNilEntityId) {
 	s.AutomationId = val
 }
 
-// SetAutomationStep sets the value of AutomationStep.
-func (s *ContactExportOutboundMessage) SetAutomationStep(val OptNilInt32) {
-	s.AutomationStep = val
+// SetAutomationStepId sets the value of AutomationStepId.
+func (s *ContactExportOutboundMessage) SetAutomationStepId(val OptNilString) {
+	s.AutomationStepId = val
 }
 
 // SetTemplateId sets the value of TemplateId.
@@ -14484,74 +14551,6 @@ func (o OptNilImageUrl) Get() (v ImageUrl, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilImageUrl) Or(d ImageUrl) ImageUrl {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptNilInt32 returns new OptNilInt32 with value set to v.
-func NewOptNilInt32(v int32) OptNilInt32 {
-	return OptNilInt32{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilInt32 is optional nullable int32.
-type OptNilInt32 struct {
-	Value int32
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilInt32 was set.
-func (o OptNilInt32) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilInt32) Reset() {
-	var v int32
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilInt32) SetTo(v int32) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilInt32) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilInt32) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v int32
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilInt32) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilInt32) Get() (v int32, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilInt32) Or(d int32) int32 {
 	if v, ok := o.Get(); ok {
 		return v
 	}

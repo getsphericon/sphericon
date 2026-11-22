@@ -1673,6 +1673,22 @@ func (c *AutomationFigureClient) QueryAutomation(_m *AutomationFigure) *Automati
 	return query
 }
 
+// QueryVersion queries the version edge of a AutomationFigure.
+func (c *AutomationFigureClient) QueryVersion(_m *AutomationFigure) *AutomationVersionQuery {
+	query := (&AutomationVersionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automationfigure.Table, automationfigure.FieldID, id),
+			sqlgraph.To(automationversion.Table, automationversion.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, automationfigure.VersionTable, automationfigure.VersionColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *AutomationFigureClient) Hooks() []Hook {
 	return c.hooks.AutomationFigure
@@ -8134,6 +8150,22 @@ func (c *OutboundMessageClient) QueryAutomation(_m *OutboundMessage) *Automation
 			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, id),
 			sqlgraph.To(automation.Table, automation.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, outboundmessage.AutomationTable, outboundmessage.AutomationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAutomationVersion queries the automation_version edge of a OutboundMessage.
+func (c *OutboundMessageClient) QueryAutomationVersion(_m *OutboundMessage) *AutomationVersionQuery {
+	query := (&AutomationVersionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, id),
+			sqlgraph.To(automationversion.Table, automationversion.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, outboundmessage.AutomationVersionTable, outboundmessage.AutomationVersionColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

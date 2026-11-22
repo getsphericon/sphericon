@@ -8,10 +8,18 @@ import {
   handleSiteAutomationsRevert,
   handleSiteEnrollmentsList,
   handleSiteIntegrationsGet,
+  handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteAutomationResource, AutomationResults } from '../../generated/site/types.gen.ts'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
-import { emailIntegration, page, stepId, testId, TIMESTAMPS } from '../../test/payloads.ts'
+import {
+  emailIntegration,
+  page,
+  stepId,
+  testId,
+  TIMESTAMPS,
+  workspace,
+} from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -83,6 +91,7 @@ test('shows the automation and the contacts enrolled in it', async () => {
         revenue: { reportingCurrency: 'USD', orders: 0, amount: 0 },
         links: [],
         steps: [],
+        versionSteps: [],
         results: NO_RESULTS,
       },
     }),
@@ -143,6 +152,7 @@ test('shows the opens, the clicks and the clicked links of the automation', asyn
           { url: 'https://dest.test/b', clicks: 2 },
         ],
         steps: [],
+        versionSteps: [],
         results: NO_RESULTS,
       },
     }),
@@ -195,6 +205,7 @@ test('marks an inactive automation as inactive', async () => {
         revenue: { reportingCurrency: 'USD', orders: 0, amount: 0 },
         links: [],
         steps: [],
+        versionSteps: [],
         results: NO_RESULTS,
       },
     }),
@@ -245,6 +256,7 @@ test('shows the orders and the net revenue credited to the automation', async ()
         revenue: { reportingCurrency: 'USD', orders: 4, amount: 12000 },
         links: [],
         steps: [],
+        versionSteps: [],
         results: NO_RESULTS,
       },
     }),
@@ -288,6 +300,7 @@ test('shows no orders or revenue on the automation until the first order sets th
         revenue: { reportingCurrency: null, orders: 0, amount: 0 },
         links: [],
         steps: [],
+        versionSteps: [],
         results: NO_RESULTS,
       },
     }),
@@ -336,6 +349,7 @@ const NO_FIGURES = {
   revenue: { reportingCurrency: 'USD', orders: 0, amount: 0 },
   links: [],
   steps: [],
+  versionSteps: [],
   results: NO_RESULTS,
 }
 
@@ -586,26 +600,53 @@ test('the period picked shows the results of that period', async () => {
   await expect.element(screen.getByText('Previous 30 days: 3 (+33.33%)')).not.toBeInTheDocument()
 })
 
-test('shows what each send step sent and skipped, by its position', async () => {
+test('shows what each send step sent and skipped, by its id across versions, named by the live version', async () => {
+  const live = {
+    number: 2,
+    triggerEvent: 'signup',
+    exitEvents: [],
+    goalEvent: null,
+    steps: {
+      id: stepId(1),
+      steps: [
+        { id: stepId(11), type: 'email' as const, subject: 'Welcome aboard', body: '' },
+        { id: stepId(12), type: 'wait' as const, seconds: 60 },
+      ],
+    },
+  }
   worker.use(
-    handleSiteAutomationsGet({ body: { ...PENDING, draft: null } }),
+    handleSiteAutomationsGet({ body: { ...PENDING, live, draft: null } }),
     handleSiteAutomationReportsGet({
       body: {
         ...NO_FIGURES,
         steps: [
-          { step: 0, sent: 41, skipped: 3 },
-          { step: 2, sent: 17, skipped: 29 },
+          { stepId: stepId(11), sent: 41, skipped: 3 },
+          { stepId: stepId(13), sent: 17, skipped: 29 },
+        ],
+        versionSteps: [
+          { version: 1, stepId: stepId(13), sent: 17, skipped: 29 },
+          { version: 1, stepId: stepId(11), sent: 20, skipped: 3 },
+          { version: 2, stepId: stepId(11), sent: 21, skipped: 0 },
         ],
       },
     }),
     handleSiteEnrollmentsList({ body: page([], 0) }),
+    // The live version sends email: the page reads the Workspace's postal address (ADR 0156).
+    handleSiteWorkspacesList({ body: [workspace()] }),
   )
 
   const { screen } = await renderWithRouter(<AutomationDetailPage />, MOUNT)
 
   await expect.element(screen.getByText('Send steps')).toBeInTheDocument()
-  await expect.element(screen.getByRole('row', { name: '1 41 3' })).toBeInTheDocument()
-  await expect.element(screen.getByRole('row', { name: '3 17 29' })).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('row', { name: '1. Send email: Welcome aboard 41 3' }))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('row', { name: 'Not in the live version 17 29' }))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('row', { name: '2 1. Send email: Welcome aboard 21 0' }))
+    .toBeInTheDocument()
 })
 
 test('an archived automation is read-only: it offers no edit and no publish', async () => {
@@ -639,6 +680,7 @@ test('an archived automation is read-only: it offers no edit and no publish', as
         revenue: { reportingCurrency: 'USD', orders: 0, amount: 0 },
         links: [],
         steps: [],
+        versionSteps: [],
         results: NO_RESULTS,
       },
     }),

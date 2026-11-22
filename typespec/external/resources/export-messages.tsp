@@ -43,8 +43,11 @@ model ExportMessageRow {
   /** The Automation run that sent the message */
   automation_run_id: EntityId | null;
 
-  /** The step of the Automation that sent the message */
-  automation_step: int32 | null;
+  /** The number of the Automation version that sent the message */
+  automation_version: int32 | null;
+
+  /** The id of the Automation Step that sent the message, the same in every version */
+  automation_step_id: string | null;
 
   /** The Integration the message went out through */
   integration_id: EntityId | null;

@@ -4884,6 +4884,15 @@ func (s *Scoped) checkAutomationFigure(ctx context.Context, ms ...*AutomationFig
 			return fmt.Errorf("automation: %w", err)
 		}
 	}
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.VersionIDs()...)
+		}
+		if err := s.verifyAutomationVersion(ctx, ids); err != nil {
+			return fmt.Errorf("version: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -5033,13 +5042,21 @@ func (x *AutomationFigureScopedCreate) SetAutomationID(v int64) *AutomationFigur
 
 const RoleOf_AutomationFigureScopedCreate_SetAutomationID = RoleStep
 
-// SetStep sets the "step" field.
-func (x *AutomationFigureScopedCreate) SetStep(v int) *AutomationFigureScopedCreate {
-	x.set = append(x.set, func(b *AutomationFigureCreate) { b.SetStep(v) })
+// SetVersionID sets the "version_id" field.
+func (x *AutomationFigureScopedCreate) SetVersionID(v int64) *AutomationFigureScopedCreate {
+	x.set = append(x.set, func(b *AutomationFigureCreate) { b.SetVersionID(v) })
 	return x
 }
 
-const RoleOf_AutomationFigureScopedCreate_SetStep = RoleStep
+const RoleOf_AutomationFigureScopedCreate_SetVersionID = RoleStep
+
+// SetStepID sets the "step_id" field.
+func (x *AutomationFigureScopedCreate) SetStepID(v string) *AutomationFigureScopedCreate {
+	x.set = append(x.set, func(b *AutomationFigureCreate) { b.SetStepID(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedCreate_SetStepID = RoleStep
 
 // SetSent sets the "sent" field.
 func (x *AutomationFigureScopedCreate) SetSent(v int) *AutomationFigureScopedCreate {
@@ -5156,6 +5173,14 @@ func (x *AutomationFigureScopedCreate) SetAutomation(v *Automation) *AutomationF
 }
 
 const RoleOf_AutomationFigureScopedCreate_SetAutomation = RoleStep
+
+// SetVersion sets the "version" edge to the AutomationVersion entity.
+func (x *AutomationFigureScopedCreate) SetVersion(v *AutomationVersion) *AutomationFigureScopedCreate {
+	x.set = append(x.set, func(b *AutomationFigureCreate) { b.SetVersion(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedCreate_SetVersion = RoleStep
 
 const (
 	TypeOf_AutomationFigureScopedCreate                        = TypeScopedCreate
@@ -40979,6 +41004,15 @@ func (s *Scoped) checkOutboundMessage(ctx context.Context, ms ...*OutboundMessag
 	{
 		var ids []int64
 		for _, m := range ms {
+			ids = append(ids, m.AutomationVersionIDs()...)
+		}
+		if err := s.verifyAutomationVersion(ctx, ids); err != nil {
+			return fmt.Errorf("automation_version: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, m := range ms {
 			ids = append(ids, m.IntegrationIDs()...)
 		}
 		if err := s.verifyIntegration(ctx, ids); err != nil {
@@ -41592,23 +41626,41 @@ func (x *OutboundMessageScopedCreate) SetNillableAutomationRunID(v *int64) *Outb
 
 const RoleOf_OutboundMessageScopedCreate_SetNillableAutomationRunID = RoleStep
 
-// SetAutomationStep sets the "automation_step" field.
-func (x *OutboundMessageScopedCreate) SetAutomationStep(v int) *OutboundMessageScopedCreate {
-	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetAutomationStep(v) })
+// SetAutomationVersionID sets the "automation_version_id" field.
+func (x *OutboundMessageScopedCreate) SetAutomationVersionID(v int64) *OutboundMessageScopedCreate {
+	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetAutomationVersionID(v) })
 	return x
 }
 
-const RoleOf_OutboundMessageScopedCreate_SetAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedCreate_SetAutomationVersionID = RoleStep
 
-// SetNillableAutomationStep sets the "automation_step" field if the given value is not nil.
-func (x *OutboundMessageScopedCreate) SetNillableAutomationStep(v *int) *OutboundMessageScopedCreate {
+// SetNillableAutomationVersionID sets the "automation_version_id" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableAutomationVersionID(v *int64) *OutboundMessageScopedCreate {
 	if v != nil {
-		x.SetAutomationStep(*v)
+		x.SetAutomationVersionID(*v)
 	}
 	return x
 }
 
-const RoleOf_OutboundMessageScopedCreate_SetNillableAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedCreate_SetNillableAutomationVersionID = RoleStep
+
+// SetAutomationStepID sets the "automation_step_id" field.
+func (x *OutboundMessageScopedCreate) SetAutomationStepID(v string) *OutboundMessageScopedCreate {
+	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetAutomationStepID(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetAutomationStepID = RoleStep
+
+// SetNillableAutomationStepID sets the "automation_step_id" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableAutomationStepID(v *string) *OutboundMessageScopedCreate {
+	if v != nil {
+		x.SetAutomationStepID(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetNillableAutomationStepID = RoleStep
 
 // SetIntegrationID sets the "integration_id" field.
 func (x *OutboundMessageScopedCreate) SetIntegrationID(v int64) *OutboundMessageScopedCreate {
@@ -41731,6 +41783,14 @@ func (x *OutboundMessageScopedCreate) SetAutomation(v *Automation) *OutboundMess
 }
 
 const RoleOf_OutboundMessageScopedCreate_SetAutomation = RoleStep
+
+// SetAutomationVersion sets the "automation_version" edge to the AutomationVersion entity.
+func (x *OutboundMessageScopedCreate) SetAutomationVersion(v *AutomationVersion) *OutboundMessageScopedCreate {
+	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetAutomationVersion(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetAutomationVersion = RoleStep
 
 // SetIntegration sets the "integration" edge to the Integration entity.
 func (x *OutboundMessageScopedCreate) SetIntegration(v *Integration) *OutboundMessageScopedCreate {
@@ -42391,37 +42451,45 @@ func (u *OutboundMessageScopedUpsert) ClearAutomationRunID() *OutboundMessageSco
 
 const RoleOf_OutboundMessageScopedUpsert_ClearAutomationRunID = RoleStep
 
-// SetAutomationStep sets the "automation_step" field.
-func (u *OutboundMessageScopedUpsert) SetAutomationStep(v int) *OutboundMessageScopedUpsert {
-	u.u.Set(outboundmessage.FieldAutomationStep, v)
+// UpdateAutomationVersionID sets the "automation_version_id" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateAutomationVersionID() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldAutomationVersionID)
 	return u
 }
 
-const RoleOf_OutboundMessageScopedUpsert_SetAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpsert_UpdateAutomationVersionID = RoleStep
 
-// AddAutomationStep adds v to the "automation_step" field.
-func (u *OutboundMessageScopedUpsert) AddAutomationStep(v int) *OutboundMessageScopedUpsert {
-	u.u.Add(outboundmessage.FieldAutomationStep, v)
+// ClearAutomationVersionID clears the value of the "automation_version_id" field.
+func (u *OutboundMessageScopedUpsert) ClearAutomationVersionID() *OutboundMessageScopedUpsert {
+	u.u.SetNull(outboundmessage.FieldAutomationVersionID)
 	return u
 }
 
-const RoleOf_OutboundMessageScopedUpsert_AddAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpsert_ClearAutomationVersionID = RoleStep
 
-// UpdateAutomationStep sets the "automation_step" field to the value that was provided on create.
-func (u *OutboundMessageScopedUpsert) UpdateAutomationStep() *OutboundMessageScopedUpsert {
-	u.u.SetExcluded(outboundmessage.FieldAutomationStep)
+// SetAutomationStepID sets the "automation_step_id" field.
+func (u *OutboundMessageScopedUpsert) SetAutomationStepID(v string) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldAutomationStepID, v)
 	return u
 }
 
-const RoleOf_OutboundMessageScopedUpsert_UpdateAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpsert_SetAutomationStepID = RoleStep
 
-// ClearAutomationStep clears the value of the "automation_step" field.
-func (u *OutboundMessageScopedUpsert) ClearAutomationStep() *OutboundMessageScopedUpsert {
-	u.u.SetNull(outboundmessage.FieldAutomationStep)
+// UpdateAutomationStepID sets the "automation_step_id" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateAutomationStepID() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldAutomationStepID)
 	return u
 }
 
-const RoleOf_OutboundMessageScopedUpsert_ClearAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpsert_UpdateAutomationStepID = RoleStep
+
+// ClearAutomationStepID clears the value of the "automation_step_id" field.
+func (u *OutboundMessageScopedUpsert) ClearAutomationStepID() *OutboundMessageScopedUpsert {
+	u.u.SetNull(outboundmessage.FieldAutomationStepID)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_ClearAutomationStepID = RoleStep
 
 // UpdateIntegrationID sets the "integration_id" field to the value that was provided on create.
 func (u *OutboundMessageScopedUpsert) UpdateIntegrationID() *OutboundMessageScopedUpsert {
@@ -43286,39 +43354,57 @@ func (x *OutboundMessageScopedUpdateOne) ClearAutomationRunID() *OutboundMessage
 
 const RoleOf_OutboundMessageScopedUpdateOne_ClearAutomationRunID = RoleStep
 
-// SetAutomationStep sets the "automation_step" field.
-func (x *OutboundMessageScopedUpdateOne) SetAutomationStep(v int) *OutboundMessageScopedUpdateOne {
-	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetAutomationStep(v) })
+// SetAutomationVersionID sets the "automation_version_id" field.
+func (x *OutboundMessageScopedUpdateOne) SetAutomationVersionID(v int64) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetAutomationVersionID(v) })
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdateOne_SetAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpdateOne_SetAutomationVersionID = RoleStep
 
-// SetNillableAutomationStep sets the "automation_step" field if the given value is not nil.
-func (x *OutboundMessageScopedUpdateOne) SetNillableAutomationStep(v *int) *OutboundMessageScopedUpdateOne {
+// SetNillableAutomationVersionID sets the "automation_version_id" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableAutomationVersionID(v *int64) *OutboundMessageScopedUpdateOne {
 	if v != nil {
-		x.SetAutomationStep(*v)
+		x.SetAutomationVersionID(*v)
 	}
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdateOne_SetNillableAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpdateOne_SetNillableAutomationVersionID = RoleStep
 
-// AddAutomationStep adds value to the "automation_step" field.
-func (x *OutboundMessageScopedUpdateOne) AddAutomationStep(v int) *OutboundMessageScopedUpdateOne {
-	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.AddAutomationStep(v) })
+// ClearAutomationVersionID clears the value of the "automation_version_id" field.
+func (x *OutboundMessageScopedUpdateOne) ClearAutomationVersionID() *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.ClearAutomationVersionID() })
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdateOne_AddAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpdateOne_ClearAutomationVersionID = RoleStep
 
-// ClearAutomationStep clears the value of the "automation_step" field.
-func (x *OutboundMessageScopedUpdateOne) ClearAutomationStep() *OutboundMessageScopedUpdateOne {
-	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.ClearAutomationStep() })
+// SetAutomationStepID sets the "automation_step_id" field.
+func (x *OutboundMessageScopedUpdateOne) SetAutomationStepID(v string) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetAutomationStepID(v) })
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdateOne_ClearAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpdateOne_SetAutomationStepID = RoleStep
+
+// SetNillableAutomationStepID sets the "automation_step_id" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableAutomationStepID(v *string) *OutboundMessageScopedUpdateOne {
+	if v != nil {
+		x.SetAutomationStepID(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetNillableAutomationStepID = RoleStep
+
+// ClearAutomationStepID clears the value of the "automation_step_id" field.
+func (x *OutboundMessageScopedUpdateOne) ClearAutomationStepID() *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.ClearAutomationStepID() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_ClearAutomationStepID = RoleStep
 
 // SetIntegrationID sets the "integration_id" field.
 func (x *OutboundMessageScopedUpdateOne) SetIntegrationID(v int64) *OutboundMessageScopedUpdateOne {
@@ -43495,6 +43581,22 @@ func (x *OutboundMessageScopedUpdateOne) ClearAutomation() *OutboundMessageScope
 }
 
 const RoleOf_OutboundMessageScopedUpdateOne_ClearAutomation = RoleStep
+
+// SetAutomationVersion sets the "automation_version" edge to the AutomationVersion entity.
+func (x *OutboundMessageScopedUpdateOne) SetAutomationVersion(v *AutomationVersion) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetAutomationVersion(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetAutomationVersion = RoleStep
+
+// ClearAutomationVersion clears the "automation_version" edge to the AutomationVersion entity.
+func (x *OutboundMessageScopedUpdateOne) ClearAutomationVersion() *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.ClearAutomationVersion() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_ClearAutomationVersion = RoleStep
 
 // SetIntegration sets the "integration" edge to the Integration entity.
 func (x *OutboundMessageScopedUpdateOne) SetIntegration(v *Integration) *OutboundMessageScopedUpdateOne {
@@ -44243,39 +44345,57 @@ func (x *OutboundMessageScopedUpdate) ClearAutomationRunID() *OutboundMessageSco
 
 const RoleOf_OutboundMessageScopedUpdate_ClearAutomationRunID = RoleStep
 
-// SetAutomationStep sets the "automation_step" field.
-func (x *OutboundMessageScopedUpdate) SetAutomationStep(v int) *OutboundMessageScopedUpdate {
-	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetAutomationStep(v) })
+// SetAutomationVersionID sets the "automation_version_id" field.
+func (x *OutboundMessageScopedUpdate) SetAutomationVersionID(v int64) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetAutomationVersionID(v) })
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdate_SetAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpdate_SetAutomationVersionID = RoleStep
 
-// SetNillableAutomationStep sets the "automation_step" field if the given value is not nil.
-func (x *OutboundMessageScopedUpdate) SetNillableAutomationStep(v *int) *OutboundMessageScopedUpdate {
+// SetNillableAutomationVersionID sets the "automation_version_id" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableAutomationVersionID(v *int64) *OutboundMessageScopedUpdate {
 	if v != nil {
-		x.SetAutomationStep(*v)
+		x.SetAutomationVersionID(*v)
 	}
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdate_SetNillableAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpdate_SetNillableAutomationVersionID = RoleStep
 
-// AddAutomationStep adds value to the "automation_step" field.
-func (x *OutboundMessageScopedUpdate) AddAutomationStep(v int) *OutboundMessageScopedUpdate {
-	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.AddAutomationStep(v) })
+// ClearAutomationVersionID clears the value of the "automation_version_id" field.
+func (x *OutboundMessageScopedUpdate) ClearAutomationVersionID() *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.ClearAutomationVersionID() })
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdate_AddAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpdate_ClearAutomationVersionID = RoleStep
 
-// ClearAutomationStep clears the value of the "automation_step" field.
-func (x *OutboundMessageScopedUpdate) ClearAutomationStep() *OutboundMessageScopedUpdate {
-	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.ClearAutomationStep() })
+// SetAutomationStepID sets the "automation_step_id" field.
+func (x *OutboundMessageScopedUpdate) SetAutomationStepID(v string) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetAutomationStepID(v) })
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdate_ClearAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpdate_SetAutomationStepID = RoleStep
+
+// SetNillableAutomationStepID sets the "automation_step_id" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableAutomationStepID(v *string) *OutboundMessageScopedUpdate {
+	if v != nil {
+		x.SetAutomationStepID(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetNillableAutomationStepID = RoleStep
+
+// ClearAutomationStepID clears the value of the "automation_step_id" field.
+func (x *OutboundMessageScopedUpdate) ClearAutomationStepID() *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.ClearAutomationStepID() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_ClearAutomationStepID = RoleStep
 
 // SetIntegrationID sets the "integration_id" field.
 func (x *OutboundMessageScopedUpdate) SetIntegrationID(v int64) *OutboundMessageScopedUpdate {
@@ -44452,6 +44572,22 @@ func (x *OutboundMessageScopedUpdate) ClearAutomation() *OutboundMessageScopedUp
 }
 
 const RoleOf_OutboundMessageScopedUpdate_ClearAutomation = RoleStep
+
+// SetAutomationVersion sets the "automation_version" edge to the AutomationVersion entity.
+func (x *OutboundMessageScopedUpdate) SetAutomationVersion(v *AutomationVersion) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetAutomationVersion(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetAutomationVersion = RoleStep
+
+// ClearAutomationVersion clears the "automation_version" edge to the AutomationVersion entity.
+func (x *OutboundMessageScopedUpdate) ClearAutomationVersion() *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.ClearAutomationVersion() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_ClearAutomationVersion = RoleStep
 
 // SetIntegration sets the "integration" edge to the Integration entity.
 func (x *OutboundMessageScopedUpdate) SetIntegration(v *Integration) *OutboundMessageScopedUpdate {

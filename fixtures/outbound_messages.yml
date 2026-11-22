@@ -124,7 +124,8 @@
   kind: automation
   idempotency_key: 'automation:fixture-usage-108'
   automation_id: 108
-  automation_step: 0
+  automation_version_id: 108
+  automation_step_id: 'a5a7184a-a358-5884-bba4-52f54f15fcd6'
   channel: email
   destination: usage.two@codebasics.dev
   status: sent
@@ -196,7 +197,8 @@
   destination: reader@globex.test
   contact_id: 901
   automation_id: 900
-  automation_step: 0
+  automation_version_id: 901
+  automation_step_id: 'e79a8d05-4974-56ef-ab76-3d777a91a4bd'
   status: sent
   integration_id: 902
   captured: true
@@ -242,13 +244,14 @@
 # Erasure deletes while the message stays.
 - id: 305 # fixture: OutboundMessageErasableAutomation
   kind: automation
-  idempotency_key: 'automation:3000:0'
+  idempotency_key: 'automation:3000:42ba7642-d13f-55bb-8dfe-56d6b7ca7bdf'
   channel: email
   destination: erin@initech.test
   contact_id: 300
   automation_id: 300
   automation_run_id: 3000
-  automation_step: 0
+  automation_version_id: 300
+  automation_step_id: '42ba7642-d13f-55bb-8dfe-56d6b7ca7bdf'
   status: sent
   sending_domain: mail.initech.test
   sent_at: '2026-01-02 00:00:00'
@@ -4526,7 +4529,8 @@
   sent_at: '{{daysAgo 400}}'
   claimed_at: '{{daysAgo 400}}'
   automation_id: 100
-  automation_step: 0
+  automation_version_id: 100
+  automation_step_id: '8cdd0b49-43f8-527f-8de5-aa77c9a36138'
   delivered_at: '{{daysAgo 400}}'
   bounced_at: '{{daysAgo 400}}'
   workspace_id: 1
@@ -4542,7 +4546,8 @@
   sent_at: '{{daysAgo 400}}'
   claimed_at: '{{daysAgo 400}}'
   automation_id: 5570
-  automation_step: 0
+  automation_version_id: 5570
+  automation_step_id: '9c8accb8-0333-5f0e-8108-46788c73bdcb'
   workspace_id: 1
   created_at: '{{daysAgo 400}}'
   updated_at: '{{daysAgo 400}}'
@@ -4560,7 +4565,41 @@
   delivered_at: '{{daysAgo 400}}'
   complained_at: '{{daysAgo 399}}'
   automation_id: 100
-  automation_step: 0
+  automation_version_id: 100
+  automation_step_id: '8cdd0b49-43f8-527f-8de5-aa77c9a36138'
+  workspace_id: 1
+  created_at: '{{daysAgo 400}}'
+  updated_at: '{{daysAgo 400}}'
+
+# The Onboarding drip's first email (106), sent once by each of its versions, which both hold it
+# under one Step id (ADR 0122): its report sums the two and keeps each version's share, before and
+# after message retention prunes them.
+- id: 10601
+  kind: automation
+  idempotency_key: 'automation:onboarding:10601'
+  channel: email
+  destination: drip.one@example.com
+  status: sent
+  sent_at: '{{daysAgo 400}}'
+  claimed_at: '{{daysAgo 400}}'
+  delivered_at: '{{daysAgo 400}}'
+  automation_id: 106
+  automation_version_id: 106
+  automation_step_id: '2a17428c-014b-5b9e-866e-a08363b2780d'
+  workspace_id: 1
+  created_at: '{{daysAgo 400}}'
+  updated_at: '{{daysAgo 400}}'
+- id: 10602
+  kind: automation
+  idempotency_key: 'automation:onboarding:10602'
+  channel: email
+  destination: drip.two@example.com
+  status: skipped
+  skipped_reason: no_destination
+  claimed_at: '{{daysAgo 400}}'
+  automation_id: 106
+  automation_version_id: 1060
+  automation_step_id: '2a17428c-014b-5b9e-866e-a08363b2780d'
   workspace_id: 1
   created_at: '{{daysAgo 400}}'
   updated_at: '{{daysAgo 400}}'
@@ -4709,7 +4748,8 @@
   delivered_at: '{{hoursAgo 39}}'
   automation_id: 20001
   automation_run_id: 20001
-  automation_step: 0
+  automation_version_id: 20001
+  automation_step_id: '0538edba-f0b5-5f3f-87e0-8dfa66206e43'
   integration_id: 20003
   workspace_id: 20
   created_at: '{{hoursAgo 40}}'
@@ -4728,7 +4768,8 @@
   claimed_at: '{{hoursAgo 57}}'
   automation_id: 20001
   automation_run_id: 20002
-  automation_step: 0
+  automation_version_id: 20001
+  automation_step_id: '0538edba-f0b5-5f3f-87e0-8dfa66206e43'
   integration_id: 20003
   workspace_id: 20
   created_at: '{{hoursAgo 57}}'
@@ -4748,7 +4789,8 @@
   delivered_at: '{{hoursAgo 73}}'
   automation_id: 20001
   automation_run_id: 20003
-  automation_step: 0
+  automation_version_id: 20001
+  automation_step_id: '0538edba-f0b5-5f3f-87e0-8dfa66206e43'
   integration_id: 20003
   workspace_id: 20
   created_at: '{{hoursAgo 74}}'
@@ -4767,7 +4809,8 @@
   claimed_at: '{{hoursAgo 91}}'
   automation_id: 20001
   automation_run_id: 20004
-  automation_step: 0
+  automation_version_id: 20001
+  automation_step_id: '0538edba-f0b5-5f3f-87e0-8dfa66206e43'
   integration_id: 20003
   workspace_id: 20
   created_at: '{{hoursAgo 91}}'
@@ -4784,7 +4827,8 @@
   claimed_at: '{{hoursAgo 108}}'
   automation_id: 20001
   automation_run_id: 20005
-  automation_step: 0
+  automation_version_id: 20001
+  automation_step_id: '0538edba-f0b5-5f3f-87e0-8dfa66206e43'
   integration_id: 20003
   workspace_id: 20
   created_at: '{{hoursAgo 108}}'
@@ -4801,7 +4845,8 @@
   claimed_at: '{{hoursAgo 125}}'
   automation_id: 20001
   automation_run_id: 20006
-  automation_step: 0
+  automation_version_id: 20001
+  automation_step_id: '0538edba-f0b5-5f3f-87e0-8dfa66206e43'
   integration_id: 20003
   workspace_id: 20
   created_at: '{{hoursAgo 125}}'
@@ -4822,7 +4867,8 @@
   bounced_at: '{{hoursAgo 141}}'
   automation_id: 20001
   automation_run_id: 20007
-  automation_step: 0
+  automation_version_id: 20001
+  automation_step_id: '0538edba-f0b5-5f3f-87e0-8dfa66206e43'
   integration_id: 20003
   workspace_id: 20
   created_at: '{{hoursAgo 142}}'
@@ -4841,7 +4887,8 @@
   claimed_at: '{{hoursAgo 159}}'
   automation_id: 20001
   automation_run_id: 20008
-  automation_step: 0
+  automation_version_id: 20001
+  automation_step_id: '0538edba-f0b5-5f3f-87e0-8dfa66206e43'
   integration_id: 20003
   workspace_id: 20
   created_at: '{{hoursAgo 159}}'

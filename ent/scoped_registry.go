@@ -345,7 +345,8 @@ func ScopedEntities() []*ScopedEntity {
 				_ = remap
 				b := s.AutomationFigure().Create()
 				b.SetAutomationID(remap("Automation", src.AutomationID))
-				b.SetStep(src.Step)
+				b.SetVersionID(remap("AutomationVersion", src.VersionID))
+				b.SetStepID(src.StepID)
 				b.SetSent(src.Sent)
 				b.SetSkipped(src.Skipped)
 				b.SetDelivered(src.Delivered)
@@ -2074,8 +2075,11 @@ func ScopedEntities() []*ScopedEntity {
 				if src.AutomationRunID != nil {
 					b.SetAutomationRunID(remap("AutomationRun", *src.AutomationRunID))
 				}
-				if src.AutomationStep != nil {
-					b.SetAutomationStep(*src.AutomationStep)
+				if src.AutomationVersionID != nil {
+					b.SetAutomationVersionID(remap("AutomationVersion", *src.AutomationVersionID))
+				}
+				if src.AutomationStepID != nil {
+					b.SetAutomationStepID(*src.AutomationStepID)
 				}
 				if src.IntegrationID != nil {
 					b.SetIntegrationID(remap("Integration", *src.IntegrationID))
@@ -2115,6 +2119,12 @@ func ScopedEntities() []*ScopedEntity {
 					Name: "automation", Target: "Automation",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.OutboundMessage().UpdateOneID(id).SetAutomationID(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "automation_version", Target: "AutomationVersion",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.OutboundMessage().UpdateOneID(id).SetAutomationVersionID(target).Exec(ctx)
 					},
 				},
 				{

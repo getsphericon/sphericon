@@ -11,11 +11,12 @@ import type {
   AutomationReport,
   AutomationReportPeriod,
   AutomationResults,
-  AutomationStepFigures,
+  AutomationStep,
 } from '../../generated/site/types.gen.ts'
 import { zAutomationReportPeriod } from '../../generated/site/zod.gen.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
 import { formatMessageRevenue } from '../../utils/messageRevenue.ts'
+import { reportedStepLabel } from './stepLabel.ts'
 
 const PERIODS = zAutomationReportPeriod.options
 
@@ -110,15 +111,24 @@ function ResultsFigures({ results }: { results: AutomationResults }) {
   )
 }
 
-// What each send step sent and skipped, by its position: a skipped send moves the Enrollment on
-// (ADR 0081), so this is where a step that missed people shows. Renders nothing before any send.
-function StepFigures({ steps }: { steps: AutomationStepFigures[] }) {
+// What each send Step sent and skipped, by its id over every version, named by its place in the live
+// version; and, once more than one version sent, each version's share. A skipped send moves the
+// Enrollment on (ADR 0081), so this is where a Step that missed people shows. Renders nothing
+// before any send.
+function StepFigures({
+  report,
+  liveSteps,
+}: {
+  report: AutomationReport
+  liveSteps: AutomationStep[]
+}) {
   const { t } = useTranslation()
   const { formatNumber } = useFormat()
 
-  if (steps.length === 0) {
+  if (report.steps.length === 0) {
     return null
   }
+  const versions = new Set(report.versionSteps.map((figures) => figures.version))
 
   return (
     <Stack gap="xs">
@@ -136,9 +146,9 @@ function StepFigures({ steps }: { steps: AutomationStepFigures[] }) {
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
-            {steps.map((figures) => (
-              <Table.Tr key={figures.step}>
-                <Table.Td>{figures.step + 1}</Table.Td>
+            {report.steps.map((figures) => (
+              <Table.Tr key={figures.stepId}>
+                <Table.Td>{reportedStepLabel(t, liveSteps, figures.stepId)}</Table.Td>
                 <Table.Td>{formatNumber(figures.sent)}</Table.Td>
                 <Table.Td>{formatNumber(figures.skipped)}</Table.Td>
               </Table.Tr>
@@ -146,6 +156,30 @@ function StepFigures({ steps }: { steps: AutomationStepFigures[] }) {
           </Table.Tbody>
         </Table>
       </Table.ScrollContainer>
+      {versions.size > 1 && (
+        <Table.ScrollContainer minWidth={320}>
+          <Table>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>{t(($) => $.automations.stepFigures.version)}</Table.Th>
+                <Table.Th>{t(($) => $.automations.stepFigures.step)}</Table.Th>
+                <Table.Th>{t(($) => $.automations.stepFigures.sent)}</Table.Th>
+                <Table.Th>{t(($) => $.automations.stepFigures.skipped)}</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {report.versionSteps.map((figures) => (
+                <Table.Tr key={`${figures.version}:${figures.stepId}`}>
+                  <Table.Td>{figures.version}</Table.Td>
+                  <Table.Td>{reportedStepLabel(t, liveSteps, figures.stepId)}</Table.Td>
+                  <Table.Td>{formatNumber(figures.sent)}</Table.Td>
+                  <Table.Td>{formatNumber(figures.skipped)}</Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+      )}
     </Stack>
   )
 }
@@ -181,16 +215,19 @@ function Engagement({ report }: { report: AutomationReport }) {
 }
 
 /**
- * The results of an Automation over the period picked and the engagement of its emails. The
+ * The results of an Automation over the period picked, what its send Steps sent, named by the live
+ * version's Steps (liveSteps), and the engagement of its emails. The
  * period stays as picked while its figures load or fail to; until one is picked, the request names
  * none and the contract's default is the one the answer reports.
  */
 export function AutomationReport({
   workspaceId,
   automationId,
+  liveSteps,
 }: {
   workspaceId: string
   automationId: string
+  liveSteps: AutomationStep[]
 }) {
   const { t } = useTranslation()
   const [picked, setPicked] = useState<AutomationReportPeriod>()
@@ -227,7 +264,7 @@ export function AutomationReport({
         )}
         {report && !reportQuery.isPlaceholderData && <ResultsFigures results={report.results} />}
       </Stack>
-      {report && <StepFigures steps={report.steps} />}
+      {report && <StepFigures report={report} liveSteps={liveSteps} />}
       {report && <Engagement report={report} />}
     </Stack>
   )

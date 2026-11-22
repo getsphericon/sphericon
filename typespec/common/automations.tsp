@@ -496,20 +496,40 @@ model AutomationReport {
   /** What the automation's enrollments did over the chosen period and the period before it */
   results: AutomationResults;
 
-  /** The send steps' messages by step position, in step order: one entry per position any of the
-   * automation's messages was sent from, across its versions */
+  /** The send Steps' messages by Step id, each summed over every version that had the Step and
+   * sorted by the newest of those versions, then by its place there: one entry per Step any of the
+   * automation's messages was sent from */
   steps: AutomationStepFigures[];
+
+  /** The send Steps' messages by version and Step id, in version order and, within a version, in
+   * its Step order */
+  versionSteps: AutomationVersionStepFigures[];
 }
 
-/** The messages of the send step at one position */
+/** The messages of one send Step, over every version that had it */
 model AutomationStepFigures {
-  /** The step's position, 0 for the first step */
-  step: int32;
+  /** The Step's id, the same in every version */
+  stepId: StepId;
 
   /** Messages the provider accepted */
   sent: int32;
 
   /** Messages skipped: the contact had no address on the step's Channel, had opted out of it, or
    * was suppressed. The enrollment moved on to the next step. */
+  skipped: int32;
+}
+
+/** The messages one version's send Step sent */
+model AutomationVersionStepFigures {
+  /** The version's number */
+  version: int32;
+
+  /** The Step's id */
+  stepId: StepId;
+
+  /** Messages the provider accepted */
+  sent: int32;
+
+  /** Messages skipped, as in AutomationStepFigures */
   skipped: int32;
 }

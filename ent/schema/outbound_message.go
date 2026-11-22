@@ -42,13 +42,14 @@ func (OutboundMessage) Annotations() []schema.Annotation {
 }
 
 // outboundProvenance is the surface record each kind of Outbound message points at: a Broadcast
-// message its Broadcast, an Automation message its Automation and step, and neither of them the
+// message its Broadcast, an Automation message its Automation, the version and the Step id that
+// sent it (ADR 0122), and neither of them the
 // other's. A column whose foreign key is ON DELETE SET NULL (the recipient, the run, the Template)
 // is never required: it is cleared when its row goes and the message stays. A kind added to the
 // enum adds its entry here.
 var outboundProvenance = []variant{
 	{value: "broadcast", required: []string{"broadcast_id"}, optional: []string{"broadcast_recipient_id"}},
-	{value: "automation", required: []string{"automation_id", "automation_step"}, optional: []string{"automation_run_id"}},
+	{value: "automation", required: []string{"automation_id", "automation_version_id", "automation_step_id"}, optional: []string{"automation_run_id"}},
 	{value: "transactional", optional: []string{"template_id"}},
 }
 
@@ -75,7 +76,7 @@ func (OutboundMessage) Fields() []ent.Field {
 			Values("broadcast", "automation", "transactional").
 			Immutable(),
 		// Unique per (workspace, logical send): the surface builds it from its own
-		// identity (broadcast recipient, automation run + step, client key). The
+		// identity (broadcast recipient, automation run + Step id, client key). The
 		// unique index below makes a duplicate send impossible.
 		field.String("idempotency_key").
 			NotEmpty().
@@ -167,7 +168,11 @@ func (OutboundMessage) Fields() []ent.Field {
 		field.Int64("broadcast_recipient_id").Optional().Nillable(),
 		field.Int64("automation_id").Optional().Nillable(),
 		field.Int64("automation_run_id").Optional().Nillable(),
-		field.Int("automation_step").Optional().Nillable(),
+		// The Automation version and the Step of it that sent the message (ADR 0122): a Step keeps
+		// its id in every version, so a Step inserted above it in a later version moves neither its
+		// report nor its key.
+		field.Int64("automation_version_id").Optional().Nillable(),
+		field.String("automation_step_id").Optional().Nillable(),
 		// The Integration the message went out through (ADR 0023), its sent count over 24 hours is the
 		// Integration's usage. Nil when the sender had no Integration row.
 		field.Int64("integration_id").Optional().Nillable(),
@@ -206,6 +211,8 @@ func (OutboundMessage) Edges() []ent.Edge {
 		edge.To("broadcast", Broadcast.Type).Field("broadcast_id").Unique().
 			Annotations(entsql.OnDelete(entsql.Restrict)),
 		edge.To("automation", Automation.Type).Field("automation_id").Unique().
+			Annotations(entsql.OnDelete(entsql.Restrict)),
+		edge.To("automation_version", AutomationVersion.Type).Field("automation_version_id").Unique().
 			Annotations(entsql.OnDelete(entsql.Restrict)),
 		edge.To("integration", Integration.Type).Field("integration_id").Unique().
 			Annotations(entsql.OnDelete(entsql.Restrict)),
@@ -258,6 +265,8 @@ func (OutboundMessage) Indexes() []ent.Index {
 			StorageKey("outbound_messages_workspace_id_automation_id"),
 		index.Fields("workspace_id", "automation_run_id").
 			StorageKey("outbound_messages_workspace_id_automation_run_id"),
+		index.Fields("workspace_id", "automation_version_id").
+			StorageKey("outbound_messages_workspace_id_automation_version_id"),
 		index.Fields("workspace_id", "template_id").
 			StorageKey("outbound_messages_workspace_id_template_id"),
 		// The workspace analytics dashboard's send cohort: Broadcast sends by send time.

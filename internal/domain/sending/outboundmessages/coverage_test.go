@@ -325,12 +325,13 @@ func TestClaimRecordsTheRefOfItsKindOnTheMessage(t *testing.T) {
 			},
 		},
 		{
-			outboundmessages.AutomationRef{AutomationID: fixtures.AutomationWelcomeSeriesID, RunID: fixtures.AutomationRunWelcomeCompletedID, Step: 3},
+			outboundmessages.AutomationRef{AutomationID: fixtures.AutomationWelcomeSeriesID, VersionID: fixtures.AutomationWelcomeSeriesVersionID, RunID: fixtures.AutomationRunWelcomeCompletedID, StepID: "9c2251c9-031a-5e1e-b3a5-d4d37085ffe8"},
 			func(t *testing.T, row *ent.OutboundMessage) {
 				t.Helper()
 				assert.Equal(t, int64(fixtures.AutomationWelcomeSeriesID), *row.AutomationID)
 				assert.Equal(t, int64(fixtures.AutomationRunWelcomeCompletedID), *row.AutomationRunID)
-				assert.Equal(t, 3, *row.AutomationStep)
+				assert.Equal(t, int64(fixtures.AutomationWelcomeSeriesVersionID), *row.AutomationVersionID)
+				assert.Equal(t, "9c2251c9-031a-5e1e-b3a5-d4d37085ffe8", *row.AutomationStepID)
 				assert.Nil(t, row.BroadcastID)
 				assert.Nil(t, row.TemplateID)
 			},
@@ -375,7 +376,8 @@ func TestTheDatabaseRefusesAMessageOfOneKindWithAnotherKindsRecord(t *testing.T)
 		SetIdempotencyKey("mixed").
 		SetChannel(channels.Email).
 		SetAutomationID(fixtures.AutomationWelcomeSeriesID).
-		SetAutomationStep(0).
+		SetAutomationVersionID(fixtures.AutomationWelcomeSeriesVersionID).
+		SetAutomationStepID("8cdd0b49-43f8-527f-8de5-aa77c9a36138").
 		SetBroadcastID(fixtures.BroadcastSentID).
 		Exec(t.Context())
 	require.Error(t, err)

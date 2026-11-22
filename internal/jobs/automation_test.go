@@ -79,6 +79,17 @@ func stepJob(t *testing.T, env *testhelper.TestEnv, runID int64, step int) map[s
 	return map[string]any{"run_id": float64(runID), "step": float64(step), jobkind.WorkspaceArg: float64(run.WorkspaceID)}
 }
 
+// stepIDAt is the id of the Step at pos of the version the Enrollment runID began on, as its fixture
+// holds it.
+func stepIDAt(t *testing.T, env *testhelper.TestEnv, runID int64, pos int) string {
+	t.Helper()
+	run := env.DB.AutomationRun.GetX(t.Context(), runID)
+	version := env.DB.AutomationVersion.GetX(t.Context(), run.VersionID)
+	st, ok := automationstep.At(version.Steps, pos)
+	require.True(t, ok)
+	return st.ID
+}
+
 // triggerOf is the event that enrolls a fixture Automation: its live version's Trigger, or its draft's
 // when it was never published.
 func triggerOf(t *testing.T, env *testhelper.TestEnv, automationID int64) string {

@@ -217,37 +217,37 @@ func init() {
 	// automationfigure.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	automationfigure.UpdateDefaultUpdatedAt = automationfigureDescUpdatedAt.UpdateDefault.(func() time.Time)
 	// automationfigureDescSent is the schema descriptor for sent field.
-	automationfigureDescSent := automationfigureFields[3].Descriptor()
+	automationfigureDescSent := automationfigureFields[4].Descriptor()
 	// automationfigure.DefaultSent holds the default value on creation for the sent field.
 	automationfigure.DefaultSent = automationfigureDescSent.Default.(int)
 	// automationfigure.SentValidator is a validator for the "sent" field. It is called by the builders before save.
 	automationfigure.SentValidator = automationfigureDescSent.Validators[0].(func(int) error)
 	// automationfigureDescSkipped is the schema descriptor for skipped field.
-	automationfigureDescSkipped := automationfigureFields[4].Descriptor()
+	automationfigureDescSkipped := automationfigureFields[5].Descriptor()
 	// automationfigure.DefaultSkipped holds the default value on creation for the skipped field.
 	automationfigure.DefaultSkipped = automationfigureDescSkipped.Default.(int)
 	// automationfigure.SkippedValidator is a validator for the "skipped" field. It is called by the builders before save.
 	automationfigure.SkippedValidator = automationfigureDescSkipped.Validators[0].(func(int) error)
 	// automationfigureDescDelivered is the schema descriptor for delivered field.
-	automationfigureDescDelivered := automationfigureFields[5].Descriptor()
+	automationfigureDescDelivered := automationfigureFields[6].Descriptor()
 	// automationfigure.DefaultDelivered holds the default value on creation for the delivered field.
 	automationfigure.DefaultDelivered = automationfigureDescDelivered.Default.(int)
 	// automationfigure.DeliveredValidator is a validator for the "delivered" field. It is called by the builders before save.
 	automationfigure.DeliveredValidator = automationfigureDescDelivered.Validators[0].(func(int) error)
 	// automationfigureDescBounced is the schema descriptor for bounced field.
-	automationfigureDescBounced := automationfigureFields[6].Descriptor()
+	automationfigureDescBounced := automationfigureFields[7].Descriptor()
 	// automationfigure.DefaultBounced holds the default value on creation for the bounced field.
 	automationfigure.DefaultBounced = automationfigureDescBounced.Default.(int)
 	// automationfigure.BouncedValidator is a validator for the "bounced" field. It is called by the builders before save.
 	automationfigure.BouncedValidator = automationfigureDescBounced.Validators[0].(func(int) error)
 	// automationfigureDescComplained is the schema descriptor for complained field.
-	automationfigureDescComplained := automationfigureFields[7].Descriptor()
+	automationfigureDescComplained := automationfigureFields[8].Descriptor()
 	// automationfigure.DefaultComplained holds the default value on creation for the complained field.
 	automationfigure.DefaultComplained = automationfigureDescComplained.Default.(int)
 	// automationfigure.ComplainedValidator is a validator for the "complained" field. It is called by the builders before save.
 	automationfigure.ComplainedValidator = automationfigureDescComplained.Validators[0].(func(int) error)
 	// automationfigureDescCaptured is the schema descriptor for captured field.
-	automationfigureDescCaptured := automationfigureFields[8].Descriptor()
+	automationfigureDescCaptured := automationfigureFields[9].Descriptor()
 	// automationfigure.DefaultCaptured holds the default value on creation for the captured field.
 	automationfigure.DefaultCaptured = automationfigureDescCaptured.Default.(int)
 	// automationfigure.CapturedValidator is a validator for the "captured" field. It is called by the builders before save.

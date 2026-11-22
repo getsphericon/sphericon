@@ -11337,7 +11337,8 @@
           "revenue",
           "links",
           "results",
-          "steps"
+          "steps",
+          "versionSteps"
         ],
         "properties": {
           "opens": {
@@ -11398,7 +11399,14 @@
             "items": {
               "$ref": "#/components/schemas/AutomationStepFigures"
             },
-            "description": "The send steps' messages by step position, in step order: one entry per position any of the\nautomation's messages was sent from, across its versions"
+            "description": "The send Steps' messages by Step id, each summed over every version that had the Step and\nsorted by the newest of those versions, then by its place there: one entry per Step any of the\nautomation's messages was sent from"
+          },
+          "versionSteps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationVersionStepFigures"
+            },
+            "description": "The send Steps' messages by version and Step id, in version order and, within a version, in\nits Step order"
           }
         },
         "description": "An automation's engagement figures over its whole history and its results over a period"
@@ -11560,12 +11568,15 @@
       },
       "AutomationStepFigures": {
         "type": "object",
-        "required": ["step", "sent", "skipped"],
+        "required": ["stepId", "sent", "skipped"],
         "properties": {
-          "step": {
-            "type": "integer",
-            "format": "int32",
-            "description": "The step's position, 0 for the first step"
+          "stepId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id, the same in every version"
           },
           "sent": {
             "type": "integer",
@@ -11578,7 +11589,7 @@
             "description": "Messages skipped: the contact had no address on the step's Channel, had opted out of it, or\nwas suppressed. The enrollment moved on to the next step."
           }
         },
-        "description": "The messages of the send step at one position"
+        "description": "The messages of one send Step, over every version that had it"
       },
       "AutomationStepInput": {
         "type": "object",
@@ -11654,6 +11665,36 @@
           }
         },
         "description": "One version of an automation's definition: what publishing makes it do (ADR 0065)"
+      },
+      "AutomationVersionStepFigures": {
+        "type": "object",
+        "required": ["version", "stepId", "sent", "skipped"],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The version's number"
+          },
+          "stepId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id"
+          },
+          "sent": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages the provider accepted"
+          },
+          "skipped": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages skipped, as in AutomationStepFigures"
+          }
+        },
+        "description": "The messages one version's send Step sent"
       },
       "BirthdayLeaf": {
         "type": "object",
@@ -12470,11 +12511,10 @@
             "nullable": true,
             "description": "Automation that produced the message"
           },
-          "automationStep": {
-            "type": "integer",
-            "format": "int32",
+          "automationStepId": {
+            "type": "string",
             "nullable": true,
-            "description": "Step of the automation that produced the message"
+            "description": "Id of the automation Step that produced the message, the same in every version"
           },
           "templateId": {
             "type": "string",

@@ -73,8 +73,10 @@ const (
 	FieldAutomationID = "automation_id"
 	// FieldAutomationRunID holds the string denoting the automation_run_id field in the database.
 	FieldAutomationRunID = "automation_run_id"
-	// FieldAutomationStep holds the string denoting the automation_step field in the database.
-	FieldAutomationStep = "automation_step"
+	// FieldAutomationVersionID holds the string denoting the automation_version_id field in the database.
+	FieldAutomationVersionID = "automation_version_id"
+	// FieldAutomationStepID holds the string denoting the automation_step_id field in the database.
+	FieldAutomationStepID = "automation_step_id"
 	// FieldIntegrationID holds the string denoting the integration_id field in the database.
 	FieldIntegrationID = "integration_id"
 	// FieldTemplateID holds the string denoting the template_id field in the database.
@@ -93,6 +95,8 @@ const (
 	EdgeBroadcast = "broadcast"
 	// EdgeAutomation holds the string denoting the automation edge name in mutations.
 	EdgeAutomation = "automation"
+	// EdgeAutomationVersion holds the string denoting the automation_version edge name in mutations.
+	EdgeAutomationVersion = "automation_version"
 	// EdgeIntegration holds the string denoting the integration edge name in mutations.
 	EdgeIntegration = "integration"
 	// EdgeBroadcastRecipient holds the string denoting the broadcast_recipient edge name in mutations.
@@ -133,6 +137,13 @@ const (
 	AutomationInverseTable = "automations"
 	// AutomationColumn is the table column denoting the automation relation/edge.
 	AutomationColumn = "automation_id"
+	// AutomationVersionTable is the table that holds the automation_version relation/edge.
+	AutomationVersionTable = "outbound_messages"
+	// AutomationVersionInverseTable is the table name for the AutomationVersion entity.
+	// It exists in this package in order to avoid circular dependency with the "automationversion" package.
+	AutomationVersionInverseTable = "automation_versions"
+	// AutomationVersionColumn is the table column denoting the automation_version relation/edge.
+	AutomationVersionColumn = "automation_version_id"
 	// IntegrationTable is the table that holds the integration relation/edge.
 	IntegrationTable = "outbound_messages"
 	// IntegrationInverseTable is the table name for the Integration entity.
@@ -201,7 +212,8 @@ var Columns = []string{
 	FieldBroadcastRecipientID,
 	FieldAutomationID,
 	FieldAutomationRunID,
-	FieldAutomationStep,
+	FieldAutomationVersionID,
+	FieldAutomationStepID,
 	FieldIntegrationID,
 	FieldTemplateID,
 	FieldRequestDigest,
@@ -456,9 +468,14 @@ func ByAutomationRunID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAutomationRunID, opts...).ToFunc()
 }
 
-// ByAutomationStep orders the results by the automation_step field.
-func ByAutomationStep(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAutomationStep, opts...).ToFunc()
+// ByAutomationVersionID orders the results by the automation_version_id field.
+func ByAutomationVersionID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAutomationVersionID, opts...).ToFunc()
+}
+
+// ByAutomationStepID orders the results by the automation_step_id field.
+func ByAutomationStepID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAutomationStepID, opts...).ToFunc()
 }
 
 // ByIntegrationID orders the results by the integration_id field.
@@ -518,6 +535,13 @@ func ByBroadcastField(field string, opts ...sql.OrderTermOption) OrderOption {
 func ByAutomationField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newAutomationStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByAutomationVersionField orders the results by automation_version field.
+func ByAutomationVersionField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAutomationVersionStep(), sql.OrderByField(field, opts...))
 	}
 }
 
@@ -581,6 +605,13 @@ func newAutomationStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AutomationInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, AutomationTable, AutomationColumn),
+	)
+}
+func newAutomationVersionStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AutomationVersionInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, AutomationVersionTable, AutomationVersionColumn),
 	)
 }
 func newIntegrationStep() *sqlgraph.Step {
