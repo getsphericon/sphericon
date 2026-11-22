@@ -80,7 +80,7 @@ import (
 // goverter:extend requiredNilEntityIDPtrIn
 // goverter:extend boolIn
 // goverter:extend boolPtrIn
-// goverter:extend int32In
+// goverter:extend int32ToInt
 // goverter:extend entityIDIn
 // goverter:extend maxPerSecondPtrIn
 // goverter:extend maxPerDayPtrIn
@@ -90,7 +90,9 @@ import (
 // goverter:extend nilStringIn
 // goverter:extend timestampIn
 // goverter:extend timestampPtrIn
-// goverter:extend automationStepsPtrIn
+// goverter:extend automationPathPtrIn
+// goverter:extend automationStepsIn
+// goverter:extend stepIDIn
 // goverter:extend ruleActionsPtrIn
 // goverter:extend documentIn
 // goverter:extend documentPatch
@@ -172,10 +174,18 @@ type Inputs interface {
 	// goverter:map Condition | segmentConditionIn
 	SegmentPreview(source *externalapi.PreviewSegmentInput) (segments.PreviewInput, error)
 
-	// The editor version is the save's own: the module renders the document and stamps it.
+	// A version's root path; each Step is picked by automationStepIn.
+	AutomationPath(source externalapi.AutomationPathInput) automationstep.Path
+	// The arms of a Step, which automationStepIn picks; the Step's id is the arm's, which it
+	// takes. The editor version is the save's own: the module renders the document and stamps it.
 	// goverter:ignore EditorVersion
-	AutomationStep(source externalapi.AutomationStepInput) automationstep.Step
-	AutomationSteps(source []externalapi.AutomationStepInput) []automationstep.Step
+	EmailStepIn(source externalapi.EmailStepInput) automationstep.Email
+	TelegramStepIn(source externalapi.TelegramStepInput) automationstep.Telegram
+	SmsStepIn(source externalapi.SmsStepInput) automationstep.SMS
+	WaitStepIn(source externalapi.WaitStepInput) automationstep.Wait
+	ApplyTagStepIn(source externalapi.ApplyTagStepInput) automationstep.ApplyTag
+	RemoveTagStepIn(source externalapi.RemoveTagStepInput) automationstep.RemoveTag
+	HttpStepIn(source externalapi.HttpStepInput) automationstep.HTTP
 	TelegramButton(source externalapi.TelegramButtonInput) telegramrender.Button
 	AutomationCreate(source *externalapi.CreateAutomationInput) automations.CreateInput
 	AutomationUpdate(source *externalapi.UpdateAutomationInput) automations.UpdateInput
@@ -204,8 +214,6 @@ type Inputs interface {
 	// goverter:enum:map AutomationsReportPeriod30d ReportPeriod30Days
 	// goverter:enum:map AutomationsReportPeriod90d ReportPeriod90Days
 	AutomationReportPeriod(source externalapi.AutomationsReportPeriod) automations.ReportPeriod
-	// goverter:enum:transform value
-	AutomationStepType(source externalapi.AutomationStepType) automationstep.Kind
 	// goverter:enum:transform value
 	RuleActionType(source externalapi.RuleActionType) ruleaction.Type
 	// goverter:enum:transform value
@@ -292,7 +300,7 @@ func enrollmentStatusIn(o externalapi.OptEnrollmentStatus) string { return strin
 func requiredNilEntityIDPtrIn(o externalapi.NilEntityId) *int64 { return convert.Int64Ptr(o) }
 func boolIn(o externalapi.OptBool) bool                         { return o.Or(false) }
 func boolPtrIn(o externalapi.OptBool) *bool                     { return convert.Ptr(o) }
-func int32In(o externalapi.OptInt32) int                        { return int(o.Or(0)) }
+func int32ToInt(v int32) int                                    { return int(v) }
 func entityIDIn(o externalapi.OptEntityId) int64                { return int64(o.Or(0)) }
 func maxPerSecondPtrIn(o externalapi.OptNilMaxPerSecond) *int   { return intPtr(o) }
 func maxPerDayPtrIn(o externalapi.OptNilMaxPerDay) *int         { return intPtr(o) }
@@ -341,13 +349,53 @@ func timestampPtrIn(o externalapi.OptNilTimestamp) *time.Time {
 	return &t
 }
 
-// automationStepsPtrIn is the steps an update replaces: omitted (nil) keeps the stored ones.
-func automationStepsPtrIn(c Inputs, steps []externalapi.AutomationStepInput) *[]automationstep.Step {
-	if steps == nil {
+// automationPathPtrIn is the root path a write replaces the steps with: omitted (nil) keeps the
+// stored ones.
+func automationPathPtrIn(c Inputs, o externalapi.OptAutomationPathInput) *automationstep.Path {
+	in, ok := o.Get()
+	if !ok {
 		return nil
 	}
-	out := c.AutomationSteps(steps)
+	out := c.AutomationPath(in)
 	return &out
+}
+
+// stepIDIn is the id a Step or a path is written with, "" when the request leaves it to the
+// server.
+func stepIDIn(o externalapi.OptStepId) automationstep.ID { return automationstep.ID(o.Or("")) }
+
+// automationStepsIn maps a path's Steps onto the module's, each by automationStepIn.
+func automationStepsIn(c Inputs, in []externalapi.AutomationStepInput) []automationstep.Step {
+	out := make([]automationstep.Step, len(in))
+	for i := range in {
+		out[i] = automationStepIn(c, &in[i])
+	}
+	return out
+}
+
+// automationStepIn maps a Step of the union onto its kind's payload, with the id its arm carries;
+// a oneOf is beyond goverter, so only the switch is written here.
+func automationStepIn(c Inputs, in *externalapi.AutomationStepInput) automationstep.Step {
+	switch s := &in.OneOf; s.Type {
+	case externalapi.EmailStepInputAutomationStepInputSum:
+		return automationstep.Step{ID: stepIDIn(s.EmailStepInput.ID), Payload: c.EmailStepIn(s.EmailStepInput)}
+	case externalapi.TelegramStepInputAutomationStepInputSum:
+		return automationstep.Step{ID: stepIDIn(s.TelegramStepInput.ID), Payload: c.TelegramStepIn(s.TelegramStepInput)}
+	case externalapi.SmsStepInputAutomationStepInputSum:
+		return automationstep.Step{ID: stepIDIn(s.SmsStepInput.ID), Payload: c.SmsStepIn(s.SmsStepInput)}
+	case externalapi.WaitStepInputAutomationStepInputSum:
+		return automationstep.Step{ID: stepIDIn(s.WaitStepInput.ID), Payload: c.WaitStepIn(s.WaitStepInput)}
+	case externalapi.ApplyTagStepInputAutomationStepInputSum:
+		return automationstep.Step{ID: stepIDIn(s.ApplyTagStepInput.ID), Payload: c.ApplyTagStepIn(s.ApplyTagStepInput)}
+	case externalapi.RemoveTagStepInputAutomationStepInputSum:
+		return automationstep.Step{ID: stepIDIn(s.RemoveTagStepInput.ID), Payload: c.RemoveTagStepIn(s.RemoveTagStepInput)}
+	case externalapi.HttpStepInputAutomationStepInputSum:
+		return automationstep.Step{ID: stepIDIn(s.HttpStepInput.ID), Payload: c.HttpStepIn(s.HttpStepInput)}
+	case externalapi.EndStepInputAutomationStepInputSum:
+		return automationstep.Step{ID: stepIDIn(s.EndStepInput.ID), Payload: automationstep.End{}}
+	default:
+		return automationstep.Step{} // the save refuses a Step of no kind
+	}
 }
 
 // ruleActionsPtrIn is the Actions an update replaces: omitted (nil) keeps the stored ones.

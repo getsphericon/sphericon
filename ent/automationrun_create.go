@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 // AutomationRunCreate is the builder for creating a AutomationRun entity.
@@ -140,16 +141,16 @@ func (_c *AutomationRunCreate) SetNillableEndedAt(v *time.Time) *AutomationRunCr
 	return _c
 }
 
-// SetCurrentStep sets the "current_step" field.
-func (_c *AutomationRunCreate) SetCurrentStep(v int) *AutomationRunCreate {
-	_c.mutation.SetCurrentStep(v)
+// SetCurrentStepID sets the "current_step_id" field.
+func (_c *AutomationRunCreate) SetCurrentStepID(v automationstep.ID) *AutomationRunCreate {
+	_c.mutation.SetCurrentStepID(v)
 	return _c
 }
 
-// SetNillableCurrentStep sets the "current_step" field if the given value is not nil.
-func (_c *AutomationRunCreate) SetNillableCurrentStep(v *int) *AutomationRunCreate {
+// SetNillableCurrentStepID sets the "current_step_id" field if the given value is not nil.
+func (_c *AutomationRunCreate) SetNillableCurrentStepID(v *automationstep.ID) *AutomationRunCreate {
 	if v != nil {
-		_c.SetCurrentStep(*v)
+		_c.SetCurrentStepID(*v)
 	}
 	return _c
 }
@@ -287,10 +288,6 @@ func (_c *AutomationRunCreate) defaults() {
 		v := automationrun.DefaultBeganAt()
 		_c.mutation.SetBeganAt(v)
 	}
-	if _, ok := _c.mutation.CurrentStep(); !ok {
-		v := automationrun.DefaultCurrentStep
-		_c.mutation.SetCurrentStep(v)
-	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -323,14 +320,6 @@ func (_c *AutomationRunCreate) check() error {
 	}
 	if _, ok := _c.mutation.BeganAt(); !ok {
 		return &ValidationError{Name: "began_at", err: errors.New(`ent: missing required field "AutomationRun.began_at"`)}
-	}
-	if _, ok := _c.mutation.CurrentStep(); !ok {
-		return &ValidationError{Name: "current_step", err: errors.New(`ent: missing required field "AutomationRun.current_step"`)}
-	}
-	if v, ok := _c.mutation.CurrentStep(); ok {
-		if err := automationrun.CurrentStepValidator(v); err != nil {
-			return &ValidationError{Name: "current_step", err: fmt.Errorf(`ent: validator failed for field "AutomationRun.current_step": %w`, err)}
-		}
 	}
 	if v, ok := _c.mutation.FailureKind(); ok {
 		if err := automationrun.FailureKindValidator(v); err != nil {
@@ -410,9 +399,9 @@ func (_c *AutomationRunCreate) createSpec() (*AutomationRun, *sqlgraph.CreateSpe
 		_spec.SetField(automationrun.FieldEndedAt, field.TypeTime, value)
 		_node.EndedAt = &value
 	}
-	if value, ok := _c.mutation.CurrentStep(); ok {
-		_spec.SetField(automationrun.FieldCurrentStep, field.TypeInt, value)
-		_node.CurrentStep = value
+	if value, ok := _c.mutation.CurrentStepID(); ok {
+		_spec.SetField(automationrun.FieldCurrentStepID, field.TypeString, value)
+		_node.CurrentStepID = &value
 	}
 	if value, ok := _c.mutation.ResumeAt(); ok {
 		_spec.SetField(automationrun.FieldResumeAt, field.TypeTime, value)
@@ -640,21 +629,21 @@ func (u *AutomationRunUpsert) ClearEndedAt() *AutomationRunUpsert {
 	return u
 }
 
-// SetCurrentStep sets the "current_step" field.
-func (u *AutomationRunUpsert) SetCurrentStep(v int) *AutomationRunUpsert {
-	u.Set(automationrun.FieldCurrentStep, v)
+// SetCurrentStepID sets the "current_step_id" field.
+func (u *AutomationRunUpsert) SetCurrentStepID(v automationstep.ID) *AutomationRunUpsert {
+	u.Set(automationrun.FieldCurrentStepID, v)
 	return u
 }
 
-// UpdateCurrentStep sets the "current_step" field to the value that was provided on create.
-func (u *AutomationRunUpsert) UpdateCurrentStep() *AutomationRunUpsert {
-	u.SetExcluded(automationrun.FieldCurrentStep)
+// UpdateCurrentStepID sets the "current_step_id" field to the value that was provided on create.
+func (u *AutomationRunUpsert) UpdateCurrentStepID() *AutomationRunUpsert {
+	u.SetExcluded(automationrun.FieldCurrentStepID)
 	return u
 }
 
-// AddCurrentStep adds v to the "current_step" field.
-func (u *AutomationRunUpsert) AddCurrentStep(v int) *AutomationRunUpsert {
-	u.Add(automationrun.FieldCurrentStep, v)
+// ClearCurrentStepID clears the value of the "current_step_id" field.
+func (u *AutomationRunUpsert) ClearCurrentStepID() *AutomationRunUpsert {
+	u.SetNull(automationrun.FieldCurrentStepID)
 	return u
 }
 
@@ -901,24 +890,24 @@ func (u *AutomationRunUpsertOne) ClearEndedAt() *AutomationRunUpsertOne {
 	})
 }
 
-// SetCurrentStep sets the "current_step" field.
-func (u *AutomationRunUpsertOne) SetCurrentStep(v int) *AutomationRunUpsertOne {
+// SetCurrentStepID sets the "current_step_id" field.
+func (u *AutomationRunUpsertOne) SetCurrentStepID(v automationstep.ID) *AutomationRunUpsertOne {
 	return u.Update(func(s *AutomationRunUpsert) {
-		s.SetCurrentStep(v)
+		s.SetCurrentStepID(v)
 	})
 }
 
-// AddCurrentStep adds v to the "current_step" field.
-func (u *AutomationRunUpsertOne) AddCurrentStep(v int) *AutomationRunUpsertOne {
+// UpdateCurrentStepID sets the "current_step_id" field to the value that was provided on create.
+func (u *AutomationRunUpsertOne) UpdateCurrentStepID() *AutomationRunUpsertOne {
 	return u.Update(func(s *AutomationRunUpsert) {
-		s.AddCurrentStep(v)
+		s.UpdateCurrentStepID()
 	})
 }
 
-// UpdateCurrentStep sets the "current_step" field to the value that was provided on create.
-func (u *AutomationRunUpsertOne) UpdateCurrentStep() *AutomationRunUpsertOne {
+// ClearCurrentStepID clears the value of the "current_step_id" field.
+func (u *AutomationRunUpsertOne) ClearCurrentStepID() *AutomationRunUpsertOne {
 	return u.Update(func(s *AutomationRunUpsert) {
-		s.UpdateCurrentStep()
+		s.ClearCurrentStepID()
 	})
 }
 
@@ -1344,24 +1333,24 @@ func (u *AutomationRunUpsertBulk) ClearEndedAt() *AutomationRunUpsertBulk {
 	})
 }
 
-// SetCurrentStep sets the "current_step" field.
-func (u *AutomationRunUpsertBulk) SetCurrentStep(v int) *AutomationRunUpsertBulk {
+// SetCurrentStepID sets the "current_step_id" field.
+func (u *AutomationRunUpsertBulk) SetCurrentStepID(v automationstep.ID) *AutomationRunUpsertBulk {
 	return u.Update(func(s *AutomationRunUpsert) {
-		s.SetCurrentStep(v)
+		s.SetCurrentStepID(v)
 	})
 }
 
-// AddCurrentStep adds v to the "current_step" field.
-func (u *AutomationRunUpsertBulk) AddCurrentStep(v int) *AutomationRunUpsertBulk {
+// UpdateCurrentStepID sets the "current_step_id" field to the value that was provided on create.
+func (u *AutomationRunUpsertBulk) UpdateCurrentStepID() *AutomationRunUpsertBulk {
 	return u.Update(func(s *AutomationRunUpsert) {
-		s.AddCurrentStep(v)
+		s.UpdateCurrentStepID()
 	})
 }
 
-// UpdateCurrentStep sets the "current_step" field to the value that was provided on create.
-func (u *AutomationRunUpsertBulk) UpdateCurrentStep() *AutomationRunUpsertBulk {
+// ClearCurrentStepID clears the value of the "current_step_id" field.
+func (u *AutomationRunUpsertBulk) ClearCurrentStepID() *AutomationRunUpsertBulk {
 	return u.Update(func(s *AutomationRunUpsert) {
-		s.UpdateCurrentStep()
+		s.ClearCurrentStepID()
 	})
 }
 

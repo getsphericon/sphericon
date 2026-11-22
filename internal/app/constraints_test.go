@@ -113,6 +113,7 @@ func refusalProblems(t *testing.T, declarations []db.Declaration) []string {
 func tableOwners(t *testing.T) map[string]string {
 	t.Helper()
 	f := parse(t, filepath.Join(root, "tools", "analyzers", "entrywrite", "entrywrite.go"))
+	consts := stringConsts(t, f)
 	var owners map[string]string
 	ast.Inspect(f, func(n ast.Node) bool {
 		spec, ok := n.(*ast.ValueSpec)
@@ -122,7 +123,7 @@ func tableOwners(t *testing.T) map[string]string {
 		owners = map[string]string{}
 		for _, elt := range spec.Values[0].(*ast.CompositeLit).Elts {
 			kv := elt.(*ast.KeyValueExpr)
-			owners[unquote(t, kv.Key)] = unquote(t, kv.Value)
+			owners[unquote(t, kv.Key)] = valueOf(t, kv.Value, consts)
 		}
 		return false
 	})
@@ -241,6 +242,41 @@ func identName(e ast.Expr) string {
 		return v.Sel.Name
 	}
 	return ""
+}
+
+// stringConsts maps each string constant declared at the top of the file to its value, so a value
+// of the owners map may name one (a package that owns several tables).
+func stringConsts(t *testing.T, f *ast.File) map[string]string {
+	t.Helper()
+	consts := map[string]string{}
+	for _, decl := range f.Decls {
+		gen, ok := decl.(*ast.GenDecl)
+		if !ok || gen.Tok != token.CONST {
+			continue
+		}
+		for _, s := range gen.Specs {
+			spec := s.(*ast.ValueSpec)
+			for i, name := range spec.Names {
+				if i < len(spec.Values) {
+					if lit, ok := spec.Values[i].(*ast.BasicLit); ok && lit.Kind == token.STRING {
+						consts[name.Name] = unquote(t, lit)
+					}
+				}
+			}
+		}
+	}
+	return consts
+}
+
+// valueOf is a string literal's value, or the value of the string constant an identifier names.
+func valueOf(t *testing.T, e ast.Expr, consts map[string]string) string {
+	t.Helper()
+	if id, ok := e.(*ast.Ident); ok {
+		v, ok := consts[id.Name]
+		require.True(t, ok, "%s names no string constant of the file", id.Name)
+		return v
+	}
+	return unquote(t, e)
 }
 
 func unquote(t *testing.T, e ast.Expr) string {

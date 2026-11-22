@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
@@ -345,7 +346,8 @@ func ScopedEntities() []*ScopedEntity {
 				_ = remap
 				b := s.AutomationFigure().Create()
 				b.SetAutomationID(remap("Automation", src.AutomationID))
-				b.SetStep(src.Step)
+				b.SetVersionID(remap("AutomationVersion", src.VersionID))
+				b.SetStepID(src.StepID)
 				b.SetSent(src.Sent)
 				b.SetSkipped(src.Skipped)
 				b.SetDelivered(src.Delivered)
@@ -404,7 +406,9 @@ func ScopedEntities() []*ScopedEntity {
 				if src.EndedAt != nil {
 					b.SetEndedAt(*src.EndedAt)
 				}
-				b.SetCurrentStep(src.CurrentStep)
+				if src.CurrentStepID != nil {
+					b.SetCurrentStepID(*src.CurrentStepID)
+				}
 				if src.ResumeAt != nil {
 					b.SetResumeAt(*src.ResumeAt)
 				}
@@ -443,6 +447,59 @@ func ScopedEntities() []*ScopedEntity {
 					},
 				},
 			},
+		},
+		{
+			Kind:         Kinds["AutomationStepRecord"],
+			Name:         "AutomationStepRecord",
+			Wrapper:      reflect.TypeFor[*AutomationStepRecordScoped](),
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.AutomationStepRecord.Query().Where(automationsteprecord.WorkspaceID(ws)).Order(Asc(automationsteprecord.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.AutomationStepRecord().Get(ctx, id)
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.AutomationStepRecord().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.AutomationStepRecord().Update().Where(automationsteprecord.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.AutomationStepRecord().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.AutomationStepRecord().Delete().Where(automationsteprecord.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.AutomationStepRecord.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.AutomationStepRecord().Create()
+				b.SetRunID(remap("AutomationRun", src.RunID))
+				b.SetStepID(src.StepID)
+				b.SetReachedAt(src.ReachedAt)
+				if src.LeftAt != nil {
+					b.SetLeftAt(*src.LeftAt)
+				}
+				if src.Outcome != nil {
+					b.SetOutcome(*src.Outcome)
+				}
+				if src.SkipReason != nil {
+					b.SetSkipReason(*src.SkipReason)
+				}
+				if src.DueAt != nil {
+					b.SetDueAt(*src.DueAt)
+				}
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
 		},
 		{
 			Kind:         Kinds["AutomationVersion"],
@@ -2070,8 +2127,11 @@ func ScopedEntities() []*ScopedEntity {
 				if src.AutomationRunID != nil {
 					b.SetAutomationRunID(remap("AutomationRun", *src.AutomationRunID))
 				}
-				if src.AutomationStep != nil {
-					b.SetAutomationStep(*src.AutomationStep)
+				if src.AutomationVersionID != nil {
+					b.SetAutomationVersionID(remap("AutomationVersion", *src.AutomationVersionID))
+				}
+				if src.AutomationStepID != nil {
+					b.SetAutomationStepID(*src.AutomationStepID)
 				}
 				if src.IntegrationID != nil {
 					b.SetIntegrationID(remap("Integration", *src.IntegrationID))
@@ -2111,6 +2171,12 @@ func ScopedEntities() []*ScopedEntity {
 					Name: "automation", Target: "Automation",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.OutboundMessage().UpdateOneID(id).SetAutomationID(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "automation_version", Target: "AutomationVersion",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.OutboundMessage().UpdateOneID(id).SetAutomationVersionID(target).Exec(ctx)
 					},
 				},
 				{

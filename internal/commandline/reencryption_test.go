@@ -58,9 +58,10 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 
 	// An Enrollment stands on the first version of the Slack Automation (fixture), so editing its
 	// steps leaves that version as it was and adds a second: both hold sealed secrets.
-	_, err = testhelper.Module[*automations.Module](env).Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationNotifySlackID, automations.UpdateInput{Revision: env.AutomationRevision(ctx, t, fixtures.AutomationNotifySlackID), Steps: &[]automationstep.Step{
-		{Type: automationstep.HTTP, ID: "01J00000000000000000000001", URL: "https://hooks.example.test/v2", Body: `{"v":2}`, Secret: testhelper.SigningSecret("second-version")},
-	}})
+	slack := testhelper.LatestSteps(ctx, t, env.DB, fixtures.AutomationNotifySlackID)
+	_, err = testhelper.Module[*automations.Module](env).Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationNotifySlackID, automations.UpdateInput{Revision: env.AutomationRevision(ctx, t, fixtures.AutomationNotifySlackID), Steps: new(automationstep.Root(
+		automationstep.Step{ID: slack.Steps[0].ID, Payload: automationstep.HTTP{URL: "https://hooks.example.test/v2", Body: `{"v":2}`, Secret: testhelper.SigningSecret("second-version")}},
+	))})
 	require.NoError(t, err)
 	slackVersions, err := env.DB.AutomationVersion.Query().Where(automationversion.AutomationID(fixtures.AutomationNotifySlackID)).Count(ctx)
 	require.NoError(t, err)
@@ -148,8 +149,9 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 	require.NoError(t, err)
 	var sealedFields int
 	for _, row := range rows {
-		httpSteps := lo.Filter(row.Steps, func(s automationstep.Step, _ int) bool { return s.Type == automationstep.HTTP })
-		for _, s := range httpSteps {
+		httpSteps := lo.Filter(row.Steps.Steps, func(st automationstep.Step, _ int) bool { return st.Kind() == automationstep.KindHTTP })
+		for _, st := range httpSteps {
+			s := st.Payload.(automationstep.HTTP)
 			fields := make([]string, 0, 2+len(s.Headers))
 			fields = append(fields, s.URL, s.Secret)
 			for _, h := range s.Headers {
@@ -158,7 +160,7 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 			present := lo.Filter(fields, func(value string, _ int) bool { return value != "" })
 			for _, f := range present {
 				_, err := retired.Decrypt(f)
-				require.NoError(t, err, "automation %d HTTP step %s", row.ID, s.ID)
+				require.NoError(t, err, "automation %d HTTP step %s", row.ID, st.ID)
 				sealedFields++
 			}
 		}

@@ -266,6 +266,9 @@ func (_u *AutomationFigureUpdate) check() error {
 	if _u.mutation.AutomationCleared() && len(_u.mutation.AutomationIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "AutomationFigure.automation"`)
 	}
+	if _u.mutation.VersionCleared() && len(_u.mutation.VersionIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "AutomationFigure.version"`)
+	}
 	return nil
 }
 
@@ -625,6 +628,9 @@ func (_u *AutomationFigureUpdateOne) check() error {
 	}
 	if _u.mutation.AutomationCleared() && len(_u.mutation.AutomationIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "AutomationFigure.automation"`)
+	}
+	if _u.mutation.VersionCleared() && len(_u.mutation.VersionIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "AutomationFigure.version"`)
 	}
 	return nil
 }

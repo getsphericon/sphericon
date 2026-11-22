@@ -57,6 +57,9 @@ import (
 // eventsPath is the package of the events bus, whose Within… methods open a transaction (opensTx).
 const eventsPath = tier.Module + "internal/infra/events"
 
+// automationsPath is the package of the automations module, which owns several tables.
+const automationsPath = "internal/domain/orchestration/automations"
+
 // owners names, for each ent entity, the package that owns its table: the only one that writes it
 // (ADR 0102). A domain module owns the tables of its domain; the infrastructure owns the few that
 // belong to no domain (the Events of the bus, the Login throttle's attempts, the schema state the
@@ -65,10 +68,11 @@ var owners = map[string]string{
 	"ApiToken":                 "internal/domain/identity/apitokens",
 	"AuditEntry":               "ee/domain/insights/auditentries",
 	"AuthAttempt":              "internal/infra/throttle",
-	"Automation":               "internal/domain/orchestration/automations",
-	"AutomationFigure":         "internal/domain/orchestration/automations",
-	"AutomationRun":            "internal/domain/orchestration/automations",
-	"AutomationVersion":        "internal/domain/orchestration/automations",
+	"Automation":               automationsPath,
+	"AutomationFigure":         automationsPath,
+	"AutomationRun":            automationsPath,
+	"AutomationStepRecord":     automationsPath,
+	"AutomationVersion":        automationsPath,
 	"Binding":                  "internal/domain/sending/bindings",
 	"BrandKit":                 "internal/domain/content/brandkits",
 	"Broadcast":                "internal/domain/orchestration/broadcasts",

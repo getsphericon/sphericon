@@ -387,6 +387,9 @@ const (
 	RoleOf_AutomationFigureClient_QueryAutomation       = RoleRead
 	RoleOf_AutomationFigure_QueryAutomation             = RoleRead
 	RoleOf_AutomationFigureQuery_QueryAutomation        = RoleRead
+	RoleOf_AutomationFigureClient_QueryVersion          = RoleRead
+	RoleOf_AutomationFigure_QueryVersion                = RoleRead
+	RoleOf_AutomationFigureQuery_QueryVersion           = RoleRead
 	RoleOf_AutomationFigure_Update                      = RoleStart
 	RoleOf_AutomationFigureCreate_OnConflict            = RoleStart
 	RoleOf_AutomationFigureCreate_OnConflictColumns     = RoleStart
@@ -463,6 +466,71 @@ const (
 	RoleOf_AutomationRunCreate_OnConflictColumns     = RoleStart
 	RoleOf_AutomationRunCreateBulk_OnConflict        = RoleStart
 	RoleOf_AutomationRunCreateBulk_OnConflictColumns = RoleStart
+)
+
+// The types ent generates for AutomationStepRecord.
+const (
+	TypeOf_AutomationStepRecord             = TypeEntity
+	TypeOf_AutomationStepRecords            = TypeOther
+	TypeOf_AutomationStepRecordEdges        = TypeOther
+	EntityOf_AutomationStepRecordEdges      = "AutomationStepRecord"
+	TypeOf_AutomationStepRecordMutation     = TypeOther
+	TypeOf_AutomationStepRecordClient       = TypeClient
+	TypeOf_AutomationStepRecordQuery        = TypeQuery
+	TypeOf_AutomationStepRecordSelect       = TypeQuery
+	TypeOf_AutomationStepRecordGroupBy      = TypeQuery
+	TypeOf_AutomationStepRecordCreate       = TypeCreate
+	TypeOf_AutomationStepRecordCreateBulk   = TypeCreate
+	TypeOf_AutomationStepRecordUpdate       = TypeUpdate
+	TypeOf_AutomationStepRecordUpdateOne    = TypeUpdate
+	TypeOf_AutomationStepRecordDelete       = TypeDelete
+	TypeOf_AutomationStepRecordDeleteOne    = TypeDelete
+	TypeOf_AutomationStepRecordUpsert       = TypeUpsert
+	TypeOf_AutomationStepRecordUpsertOne    = TypeUpsert
+	TypeOf_AutomationStepRecordUpsertBulk   = TypeUpsert
+	EntityOf_AutomationStepRecords          = "AutomationStepRecord"
+	EntityOf_AutomationStepRecord           = "AutomationStepRecord"
+	EntityOf_AutomationStepRecordMutation   = "AutomationStepRecord"
+	EntityOf_AutomationStepRecordClient     = "AutomationStepRecord"
+	EntityOf_AutomationStepRecordQuery      = "AutomationStepRecord"
+	EntityOf_AutomationStepRecordSelect     = "AutomationStepRecord"
+	EntityOf_AutomationStepRecordGroupBy    = "AutomationStepRecord"
+	EntityOf_AutomationStepRecordCreate     = "AutomationStepRecord"
+	EntityOf_AutomationStepRecordCreateBulk = "AutomationStepRecord"
+	EntityOf_AutomationStepRecordUpdate     = "AutomationStepRecord"
+	EntityOf_AutomationStepRecordUpdateOne  = "AutomationStepRecord"
+	EntityOf_AutomationStepRecordDelete     = "AutomationStepRecord"
+	EntityOf_AutomationStepRecordDeleteOne  = "AutomationStepRecord"
+	EntityOf_AutomationStepRecordUpsert     = "AutomationStepRecord"
+	EntityOf_AutomationStepRecordUpsertOne  = "AutomationStepRecord"
+	EntityOf_AutomationStepRecordUpsertBulk = "AutomationStepRecord"
+)
+
+// The reads and the writes ent's methods for AutomationStepRecord start.
+const (
+	RoleOf_AutomationStepRecordClient_Create                = RoleStart
+	RoleOf_AutomationStepRecordClient_CreateBulk            = RoleStart
+	RoleOf_AutomationStepRecordClient_MapCreateBulk         = RoleStart
+	RoleOf_AutomationStepRecordClient_Update                = RoleStart
+	RoleOf_AutomationStepRecordClient_UpdateOne             = RoleStart
+	RoleOf_AutomationStepRecordClient_Delete                = RoleStart
+	RoleOf_AutomationStepRecordClient_Query                 = RoleRead
+	RoleOf_AutomationStepRecordClient_UpdateOneID           = RoleStart
+	RoleOf_AutomationStepRecordClient_DeleteOne             = RoleStart
+	RoleOf_AutomationStepRecordClient_DeleteOneID           = RoleStart
+	RoleOf_AutomationStepRecordClient_Get                   = RoleRead
+	RoleOf_AutomationStepRecordClient_GetX                  = RoleRead
+	RoleOf_AutomationStepRecordClient_QueryWorkspace        = RoleRead
+	RoleOf_AutomationStepRecord_QueryWorkspace              = RoleRead
+	RoleOf_AutomationStepRecordQuery_QueryWorkspace         = RoleRead
+	RoleOf_AutomationStepRecordClient_QueryRun              = RoleRead
+	RoleOf_AutomationStepRecord_QueryRun                    = RoleRead
+	RoleOf_AutomationStepRecordQuery_QueryRun               = RoleRead
+	RoleOf_AutomationStepRecord_Update                      = RoleStart
+	RoleOf_AutomationStepRecordCreate_OnConflict            = RoleStart
+	RoleOf_AutomationStepRecordCreate_OnConflictColumns     = RoleStart
+	RoleOf_AutomationStepRecordCreateBulk_OnConflict        = RoleStart
+	RoleOf_AutomationStepRecordCreateBulk_OnConflictColumns = RoleStart
 )
 
 // The types ent generates for AutomationVersion.
@@ -2894,6 +2962,9 @@ const (
 	RoleOf_OutboundMessageClient_QueryAutomation         = RoleRead
 	RoleOf_OutboundMessage_QueryAutomation               = RoleRead
 	RoleOf_OutboundMessageQuery_QueryAutomation          = RoleRead
+	RoleOf_OutboundMessageClient_QueryAutomationVersion  = RoleRead
+	RoleOf_OutboundMessage_QueryAutomationVersion        = RoleRead
+	RoleOf_OutboundMessageQuery_QueryAutomationVersion   = RoleRead
 	RoleOf_OutboundMessageClient_QueryIntegration        = RoleRead
 	RoleOf_OutboundMessage_QueryIntegration              = RoleRead
 	RoleOf_OutboundMessageQuery_QueryIntegration         = RoleRead
@@ -5174,6 +5245,9 @@ const (
 	RoleOf_WorkspaceClient_QueryAutomationRuns            = RoleRead
 	RoleOf_Workspace_QueryAutomationRuns                  = RoleRead
 	RoleOf_WorkspaceQuery_QueryAutomationRuns             = RoleRead
+	RoleOf_WorkspaceClient_QueryAutomationStepRecords     = RoleRead
+	RoleOf_Workspace_QueryAutomationStepRecords           = RoleRead
+	RoleOf_WorkspaceQuery_QueryAutomationStepRecords      = RoleRead
 	RoleOf_WorkspaceClient_QueryRules                     = RoleRead
 	RoleOf_Workspace_QueryRules                           = RoleRead
 	RoleOf_WorkspaceQuery_QueryRules                      = RoleRead

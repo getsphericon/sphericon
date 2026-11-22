@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -74,7 +75,7 @@ func TestAnStaffHoldMakesAnAutomationStepWaitAndContinue(t *testing.T) {
 	require.True(t, env.RunNextStep(t, held))
 	run := env.DB.AutomationRun.GetX(ctx, runIDs[0])
 	assert.Equal(t, automationrun.StatusActive, run.Status)
-	assert.Zero(t, run.CurrentStep)
+	assert.Equal(t, env.StepIDAt(t, runIDs[0], 0), lo.FromPtr(run.CurrentStepID))
 	assert.Equal(t, []map[string]any{stepJob(t, env, runIDs[0], 0)}, queuedSteps(t, env), "the same step is queued again")
 	assert.Empty(t, fs.sent)
 

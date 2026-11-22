@@ -95,6 +95,36 @@ export type ApplyTagInput = {
 };
 
 /**
+ * A Step that applies a Tag to the enrolled Contact
+ */
+export type ApplyTagStep = {
+  /**
+   * The Step's id
+   */
+  id: StepId;
+  type: 'apply_tag';
+  /**
+   * The Tag's name
+   */
+  tag: string;
+};
+
+/**
+ * A Step that applies a Tag, as a request writes it
+ */
+export type ApplyTagStepInput = {
+  /**
+   * The Step's id; omitted, the Step is given one
+   */
+  id?: StepId;
+  type: 'apply_tag';
+  /**
+   * The Tag's name; a blank one is refused
+   */
+  tag: string;
+};
+
+/**
  * A test of a Contact's text attribute
  */
 export type AttributeLeaf = {
@@ -392,6 +422,34 @@ export type AutomationHttpHeaderInput = {
 };
 
 /**
+ * A path of Steps, in the order an Enrollment walks them. A version's Steps are its root path.
+ */
+export type AutomationPath = {
+  /**
+   * The path's id
+   */
+  id: StepId;
+  /**
+   * The path's Steps, in order
+   */
+  steps: Array<AutomationStep>;
+};
+
+/**
+ * A path of Steps, as a request writes it
+ */
+export type AutomationPathInput = {
+  /**
+   * The path's id; omitted, the path is given one
+   */
+  id?: StepId;
+  /**
+   * The path's Steps, in order
+   */
+  steps: Array<AutomationStepInput>;
+};
+
+/**
  * One period of an automation's results. Each count is what happened in the period: an
  * enrollment counts as entered on the Report day it began and under its outcome on the Report day
  * it ended, whenever it began, so an enrollment still running counts as entered only.
@@ -479,10 +537,16 @@ export type AutomationReport = {
    */
   results: AutomationResults;
   /**
-   * The send steps' messages by step position, in step order: one entry per position any of the
-   * automation's messages was sent from, across its versions
+   * The send Steps' messages by Step id, each summed over every version that had the Step and
+   * sorted by the newest of those versions, then by its place there: one entry per Step any of the
+   * automation's messages was sent from
    */
   steps: Array<AutomationStepFigures>;
+  /**
+   * The send Steps' messages by version and Step id, in version order and, within a version, in
+   * its Step order
+   */
+  versionSteps: Array<AutomationVersionStepFigures>;
 };
 
 /**
@@ -592,107 +656,34 @@ export const AutomationStatus = { ACTIVE: 'active', INACTIVE: 'inactive' } as co
 export type AutomationStatus = typeof AutomationStatus[keyof typeof AutomationStatus];
 
 /**
- * One node in an automation's ordered, linear sequence. A flat shape: email
- * steps carry subject/body, wait steps carry seconds, tag steps carry the tag name.
+ * One Step of an automation, by `type`
  */
-export type AutomationStep = {
-  /**
-   * Step kind
-   */
-  type: AutomationStepType;
-  /**
-   * Email subject (email steps)
-   */
-  subject?: string;
-  /**
-   * Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: strings JSON-escaped, up to 64 KiB, must render to valid JSON, also with every tag empty). Both bind the Contact's fields plus `event.action` and `event.properties`: the Event the Enrollment began on (the one a Rule fired on, when a Rule enrolled), copied when it began; empty when no Event began it
-   */
-  body?: string;
-  /**
-   * The editor's JSON document an email step's body was built from, an opaque object checked by the
-   * server against the schema `email_schema` returns. Write it instead of `body` (both is a 422): the
-   * server renders the body from it in the same save, and a document that cannot be rendered refuses
-   * the whole save, naming the step. Writing only a body clears the step's document.
-   */
-  doc?: EditorDocument;
-  /**
-   * Version of the editor that rendered the document (email steps, read only)
-   */
-  editorVersion?: string;
-  /**
-   * Delay before the next step, in seconds (wait steps)
-   */
-  seconds?: number;
-  /**
-   * Tag name to apply to or remove from the enrolled contact (apply_tag and remove_tag steps)
-   */
-  tag?: string;
-  /**
-   * Step id (HTTP steps). Assigned on save; send it back on edit so the step keeps its secrets.
-   */
-  id?: string;
-  /**
-   * Hook URL to POST to (HTTP steps). A secret: never returned. Omit it when editing to keep the stored URL. Up to 2 KiB, http or https.
-   */
-  url?: string;
-  /**
-   * Up to 5 request headers (HTTP steps). On read, only the names are returned.
-   */
-  headers?: Array<AutomationHttpHeader>;
-  /**
-   * Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned. Omit it when editing to keep the stored secret.
-   */
-  secret?: SigningSecret;
-  /**
-   * Remove the signing secret on save (HTTP steps)
-   */
-  clearSecret?: boolean;
-  /**
-   * Whether a signing secret is stored (HTTP steps, read only)
-   */
-  hasSecret?: boolean;
-  /**
-   * The Integration a send step sends through (email, Telegram and SMS steps), of the step's Channel; null or
-   * omitted is that Channel's default. Each send step names its own, so one automation may send
-   * through several (ADR 0081).
-   */
-  integrationId?: EntityId | null;
-  /**
-   * The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer one is refused.
-   *
-   * The text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the Contact's phone with nothing appended, each http(s) link a short tracked link on the Tracking domain unless `linkTracking` is false; the save refuses a text over the part limit, its links counted as short links.
-   */
-  text?: string;
-  /**
-   * The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it is the person's Channel-wide Telegram opt-out; empty or omitted adds no button.
-   */
-  unsubscribeButton?: string;
-  /**
-   * An https image sent with a Telegram step; the text becomes its caption. Omitted or empty for a text message.
-   */
-  imageUrl?: string;
-  /**
-   * Up to 8 link buttons under a Telegram step's message, one per row, in order.
-   */
-  buttons?: Array<TelegramButton>;
-  /**
-   * Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an image.
-   */
-  linkPreview?: boolean;
-  /**
-   * Whether the links of an SMS step's text go out as short tracked links, whose clicks record `sms.clicked` (ADR 0083). On when omitted.
-   */
-  linkTracking?: boolean;
-};
+export type AutomationStep = ({
+  type: 'email';
+} & EmailStep) | ({
+  type: 'telegram';
+} & TelegramStep) | ({
+  type: 'sms';
+} & SmsStep) | ({
+  type: 'wait';
+} & WaitStep) | ({
+  type: 'apply_tag';
+} & ApplyTagStep) | ({
+  type: 'remove_tag';
+} & RemoveTagStep) | ({
+  type: 'http';
+} & HttpStep) | ({
+  type: 'end';
+} & EndStep);
 
 /**
- * The messages of the send step at one position
+ * The messages of one send Step, over every version that had it
  */
 export type AutomationStepFigures = {
   /**
-   * The step's position, 0 for the first step
+   * The Step's id, the same in every version
    */
-  step: number;
+  stepId: StepId;
   /**
    * Messages the provider accepted
    */
@@ -705,116 +696,25 @@ export type AutomationStepFigures = {
 };
 
 /**
- * One node in an automation's ordered, linear sequence. A flat shape: email
- * steps carry subject/body, wait steps carry seconds, tag steps carry the tag name.
+ * One Step of an automation, by `type`, as a request writes it. A field of another kind is refused.
  */
-export type AutomationStepInput = {
-  /**
-   * Step kind
-   */
-  type: AutomationStepType;
-  /**
-   * Email subject (email steps)
-   */
-  subject?: string;
-  /**
-   * Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: strings JSON-escaped, up to 64 KiB, must render to valid JSON, also with every tag empty). Both bind the Contact's fields plus `event.action` and `event.properties`: the Event the Enrollment began on (the one a Rule fired on, when a Rule enrolled), copied when it began; empty when no Event began it
-   */
-  body?: string;
-  /**
-   * The editor's JSON document an email step's body was built from, an opaque object checked by the
-   * server against the schema `email_schema` returns. Write it instead of `body` (both is a 422): the
-   * server renders the body from it in the same save, and a document that cannot be rendered refuses
-   * the whole save, naming the step. Writing only a body clears the step's document.
-   */
-  doc?: EditorDocument;
-  /**
-   * Version of the editor that rendered the document (email steps, read only)
-   */
-  editorVersion?: string;
-  /**
-   * Delay before the next step, in seconds (wait steps)
-   */
-  seconds?: number;
-  /**
-   * Tag name to apply to or remove from the enrolled contact (apply_tag and remove_tag steps)
-   */
-  tag?: string;
-  /**
-   * Step id (HTTP steps). Assigned on save; send it back on edit so the step keeps its secrets.
-   */
-  id?: string;
-  /**
-   * Hook URL to POST to (HTTP steps). A secret: never returned. Omit it when editing to keep the stored URL. Up to 2 KiB, http or https.
-   */
-  url?: string;
-  /**
-   * Up to 5 request headers (HTTP steps). On read, only the names are returned.
-   */
-  headers?: Array<AutomationHttpHeaderInput>;
-  /**
-   * Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned. Omit it when editing to keep the stored secret.
-   */
-  secret?: SigningSecret;
-  /**
-   * Remove the signing secret on save (HTTP steps)
-   */
-  clearSecret?: boolean;
-  /**
-   * Whether a signing secret is stored (HTTP steps, read only)
-   */
-  hasSecret?: boolean;
-  /**
-   * The Integration a send step sends through (email, Telegram and SMS steps), of the step's Channel; null or
-   * omitted is that Channel's default. Each send step names its own, so one automation may send
-   * through several (ADR 0081).
-   */
-  integrationId?: EntityId | null;
-  /**
-   * The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer one is refused.
-   *
-   * The text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the Contact's phone with nothing appended, each http(s) link a short tracked link on the Tracking domain unless `linkTracking` is false; the save refuses a text over the part limit, its links counted as short links.
-   */
-  text?: string;
-  /**
-   * The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it is the person's Channel-wide Telegram opt-out; empty or omitted adds no button.
-   */
-  unsubscribeButton?: string;
-  /**
-   * An https image sent with a Telegram step; the text becomes its caption. Omitted or empty for a text message.
-   */
-  imageUrl?: string;
-  /**
-   * Up to 8 link buttons under a Telegram step's message, one per row, in order.
-   */
-  buttons?: Array<TelegramButtonInput>;
-  /**
-   * Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an image.
-   */
-  linkPreview?: boolean;
-  /**
-   * Whether the links of an SMS step's text go out as short tracked links, whose clicks record `sms.clicked` (ADR 0083). On when omitted.
-   */
-  linkTracking?: boolean;
-};
-
-/**
- * Kind of automation step
- */
-export const AutomationStepType = {
-  EMAIL: 'email',
-  TELEGRAM: 'telegram',
-  SMS: 'sms',
-  WAIT: 'wait',
-  APPLY_TAG: 'apply_tag',
-  REMOVE_TAG: 'remove_tag',
-  HTTP: 'http'
-} as const;
-
-/**
- * Kind of automation step
- */
-export type AutomationStepType = typeof AutomationStepType[keyof typeof AutomationStepType];
+export type AutomationStepInput = ({
+  type: 'email';
+} & EmailStepInput) | ({
+  type: 'telegram';
+} & TelegramStepInput) | ({
+  type: 'sms';
+} & SmsStepInput) | ({
+  type: 'wait';
+} & WaitStepInput) | ({
+  type: 'apply_tag';
+} & ApplyTagStepInput) | ({
+  type: 'remove_tag';
+} & RemoveTagStepInput) | ({
+  type: 'http';
+} & HttpStepInput) | ({
+  type: 'end';
+} & EndStepInput);
 
 /**
  * One version of an automation's definition: what publishing makes it do (ADR 0065)
@@ -839,9 +739,31 @@ export type AutomationVersion = {
    */
   goalEvent: string | null;
   /**
-   * The ordered, linear steps
+   * The version's Steps: its root path
    */
-  steps: Array<AutomationStep>;
+  steps: AutomationPath;
+};
+
+/**
+ * The messages one version's send Step sent
+ */
+export type AutomationVersionStepFigures = {
+  /**
+   * The version's number
+   */
+  version: number;
+  /**
+   * The Step's id
+   */
+  stepId: StepId;
+  /**
+   * Messages the provider accepted
+   */
+  sent: number;
+  /**
+   * Messages skipped, as in AutomationStepFigures
+   */
+  skipped: number;
 };
 
 /**
@@ -1407,9 +1329,9 @@ export type ContactExportOutboundMessage = {
    */
   automationId?: EntityId | null;
   /**
-   * Step of the automation that produced the message
+   * Id of the automation Step that produced the message, the same in every version
    */
-  automationStep?: number | null;
+  automationStepId?: string | null;
   /**
    * Template the message was rendered from
    */
@@ -1556,7 +1478,10 @@ export type CreateAutomationInput = {
    * an exit event. Null or omitted is none.
    */
   goalEvent?: string | null;
-  steps?: Array<AutomationStepInput>;
+  /**
+   * The version's Steps: its root path
+   */
+  steps?: AutomationPathInput;
 };
 
 /**
@@ -2016,6 +1941,88 @@ export type EmailBroadcastContentInput = {
 };
 
 /**
+ * A Step that sends an email through the Integration it names
+ */
+export type EmailStep = {
+  /**
+   * The Step's id
+   */
+  id: StepId;
+  type: 'email';
+  /**
+   * Email subject
+   */
+  subject: string;
+  /**
+   * Email body as HTML. Binds the Contact's fields plus `event.action` and `event.properties`: the Event the Enrollment began on (the one a Rule fired on, when a Rule enrolled), copied when it began; empty when no Event began it
+   */
+  body: string;
+  /**
+   * The editor's JSON document the body was built from; absent when the body was written as HTML
+   */
+  doc?: EditorDocument;
+  /**
+   * Version of the editor that rendered the document; absent with it
+   */
+  editorVersion?: string;
+  /**
+   * The Integration the Step sends through, of the email Channel; absent is the Channel's default. Each send step names its own, so one automation may send through several (ADR 0081).
+   */
+  integrationId?: EntityId;
+};
+
+/**
+ * A Step that sends an email, as a request writes it
+ */
+export type EmailStepInput = {
+  /**
+   * The Step's id; omitted, the Step is given one
+   */
+  id?: StepId;
+  type: 'email';
+  /**
+   * Email subject
+   */
+  subject: string;
+  /**
+   * Email body as HTML, bound as on a stored email Step. Write it or `doc`, not both (both is a 422). Writing only a body clears the Step's document.
+   */
+  body?: string;
+  /**
+   * The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the body from it in the same save, and a document that cannot be rendered refuses the whole save, naming the Step.
+   */
+  doc?: EditorDocument;
+  /**
+   * The Integration the Step sends through, of the email Channel; null or omitted is the Channel's default
+   */
+  integrationId?: EntityId | null;
+};
+
+/**
+ * A Step that finishes its path and ends the Enrollment as `completed` at once (ADR 0124): a path
+ * stops early by design, which is no exit. It is the last Step of its path.
+ */
+export type EndStep = {
+  /**
+   * The Step's id
+   */
+  id: StepId;
+  type: 'end';
+};
+
+/**
+ * A Step that finishes its path, as a request writes it. A Step after it in the same path refuses
+ * the save, naming that Step.
+ */
+export type EndStepInput = {
+  /**
+   * The Step's id; omitted, the Step is given one
+   */
+  id?: StepId;
+  type: 'end';
+};
+
+/**
  * What an HTTP step recorded when it failed an Enrollment; absent on any other Enrollment.
  */
 export type EnrollmentFailure = {
@@ -2076,11 +2083,11 @@ export type EnrollmentResource = {
    */
   status: EnrollmentStatus;
   /**
-   * Index of the next step to run (0-based)
+   * Id of the Step of its version the Enrollment stands on (ADR 0122): a wait while it waits, the Step it ended on once it ended; absent only for a version of no Steps
    */
-  currentStep: number;
+  currentStepId?: StepId;
   /**
-   * When a waiting Enrollment runs its next step
+   * When the wait the Enrollment stands on is due: computed once, when it reached the wait (ADR 0124)
    */
   resumeAt?: Timestamp;
   /**
@@ -2251,6 +2258,60 @@ export const HoldReason = {
  * status and its remaining recipients send once it lifts, and an Automation's email steps wait.
  */
 export type HoldReason = typeof HoldReason[keyof typeof HoldReason];
+
+/**
+ * A Step that POSTs a JSON body to a hook URL (ADR 0039). Its URL, header values and signing secret are secrets: never returned.
+ */
+export type HttpStep = {
+  /**
+   * The Step's id: send it back on edit so the Step keeps its secrets
+   */
+  id: StepId;
+  type: 'http';
+  /**
+   * The Liquid JSON request body, bound as an email Step's body is
+   */
+  body: string;
+  /**
+   * The request headers, by name only
+   */
+  headers: Array<AutomationHttpHeader>;
+  /**
+   * Whether a signing secret is stored
+   */
+  hasSecret: boolean;
+};
+
+/**
+ * A Step that POSTs a JSON body to a hook URL, as a request writes it. A secret omitted keeps the stored value of the Step with the same id.
+ */
+export type HttpStepInput = {
+  /**
+   * The Step's id; omitted, the Step is given one. Send the id it was read with so the Step keeps its secrets.
+   */
+  id?: StepId;
+  type: 'http';
+  /**
+   * The Liquid JSON request body: strings JSON-escaped, up to 64 KiB, must render to valid JSON, also with every tag empty
+   */
+  body: string;
+  /**
+   * Hook URL to POST to. Omit it when editing to keep the stored URL. Up to 2 KiB, http or https.
+   */
+  url?: string;
+  /**
+   * Up to 5 request headers
+   */
+  headers?: Array<AutomationHttpHeaderInput>;
+  /**
+   * Signing secret: when set, the request is signed with Standard Webhooks. Omit it when editing to keep the stored secret.
+   */
+  secret?: SigningSecret;
+  /**
+   * Remove the signing secret on save
+   */
+  clearSecret?: boolean;
+};
 
 /**
  * The https URL of an image
@@ -2930,6 +2991,36 @@ export type RateTriple = {
  * numbers (`en-GB`, `de-DE`). A malformed tag is refused by the handler (422).
  */
 export type RegionalFormat = string;
+
+/**
+ * A Step that removes a Tag from the enrolled Contact
+ */
+export type RemoveTagStep = {
+  /**
+   * The Step's id
+   */
+  id: StepId;
+  type: 'remove_tag';
+  /**
+   * The Tag's name
+   */
+  tag: string;
+};
+
+/**
+ * A Step that removes a Tag, as a request writes it
+ */
+export type RemoveTagStepInput = {
+  /**
+   * The Step's id; omitted, the Step is given one
+   */
+  id?: StepId;
+  type: 'remove_tag';
+  /**
+   * The Tag's name; a blank one is refused
+   */
+  tag: string;
+};
 
 /**
  * A number of days an Audit log is kept: 1 to 3650
@@ -7827,6 +7918,52 @@ export type SmsOptOut = {
 };
 
 /**
+ * A Step that sends an SMS through the Integration it names
+ */
+export type SmsStep = {
+  /**
+   * The Step's id
+   */
+  id: StepId;
+  type: 'sms';
+  /**
+   * The text: plain text with Liquid merge tags (the Contact's fields, `event.action` and `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the Contact's phone with nothing appended.
+   */
+  text: string;
+  /**
+   * Whether the links of the text go out as short tracked links, whose clicks record `sms.clicked` (ADR 0083)
+   */
+  linkTracking: boolean;
+  /**
+   * The Integration the Step sends through, of the SMS Channel; absent is the Channel's default
+   */
+  integrationId?: EntityId;
+};
+
+/**
+ * A Step that sends an SMS, as a request writes it
+ */
+export type SmsStepInput = {
+  /**
+   * The Step's id; omitted, the Step is given one
+   */
+  id?: StepId;
+  type: 'sms';
+  /**
+   * The text, as on a stored SMS Step: each http(s) link a short tracked link on the Tracking domain unless `linkTracking` is false; the save refuses a text over the part limit, its links counted as short links.
+   */
+  text: string;
+  /**
+   * Whether the links of the text go out as short tracked links (ADR 0083). On when omitted.
+   */
+  linkTracking?: boolean;
+  /**
+   * The Integration the Step sends through, of the SMS Channel; null or omitted is the Channel's default
+   */
+  integrationId?: EntityId | null;
+};
+
+/**
  * SMTP config without the password
  */
 export type SmtpConfig = {
@@ -7876,6 +8013,13 @@ export const SortDirection = { ASC: 'asc', DESC: 'desc' } as const;
  * others do not carry an unused schema.
  */
 export type SortDirection = typeof SortDirection[keyof typeof SortDirection];
+
+/**
+ * The id of a Step or a path: a UUID in its lowercase text form, kept by every version of the
+ * automation. A client mints it when it creates the Step or path and sends it back on every save;
+ * one sent without an id is given one. Unique within a version, Steps and paths together.
+ */
+export type StepId = string;
 
 /**
  * A Channel a destination can be suppressed on
@@ -8137,6 +8281,76 @@ export type TelegramStartLinkResource = {
    * When the link lapses, 30 days after it is issued
    */
   expiresAt: Timestamp;
+};
+
+/**
+ * A Step that sends a Telegram message through the Integration it names
+ */
+export type TelegramStep = {
+  /**
+   * The Step's id
+   */
+  id: StepId;
+  type: 'telegram';
+  /**
+   * The message: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. With an image, its caption.
+   */
+  text: string;
+  /**
+   * The label of an unsubscribe button under the message; absent for none
+   */
+  unsubscribeButton?: string;
+  /**
+   * The https image sent with the message; absent for a text message
+   */
+  imageUrl?: string;
+  /**
+   * The link buttons under the message, one per row, in order
+   */
+  buttons: Array<TelegramButton>;
+  /**
+   * Whether a link in the text unfolds a preview; no effect with an image
+   */
+  linkPreview: boolean;
+  /**
+   * The Integration the Step sends through, of the Telegram Channel; absent is the Channel's default
+   */
+  integrationId?: EntityId;
+};
+
+/**
+ * A Step that sends a Telegram message, as a request writes it
+ */
+export type TelegramStepInput = {
+  /**
+   * The Step's id; omitted, the Step is given one
+   */
+  id?: StepId;
+  type: 'telegram';
+  /**
+   * The message, as on a stored Telegram Step. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer one is refused.
+   */
+  text: string;
+  /**
+   * The label of an unsubscribe button under the message, up to 64 characters. Pressing it is the person's Channel-wide Telegram opt-out; empty or omitted adds no button.
+   */
+  unsubscribeButton?: string;
+  /**
+   * An https image sent with the message; the text becomes its caption. Omitted or empty for a text message.
+   */
+  imageUrl?: string;
+  /**
+   * Up to 8 link buttons under the message, one per row, in order.
+   */
+  buttons?: Array<TelegramButtonInput>;
+  /**
+   * Whether a link in the text unfolds a preview. On when omitted; no effect with an image.
+   */
+  linkPreview?: boolean;
+  /**
+   * The Integration the Step sends through, of the Telegram Channel; null or omitted is the Channel's default
+   */
+  integrationId?: EntityId | null;
 };
 
 /**
@@ -8416,7 +8630,10 @@ export type UpdateAutomationInput = {
    * Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it
    */
   goalEvent?: string | null;
-  steps?: Array<AutomationStepInput>;
+  /**
+   * The version's Steps: its root path
+   */
+  steps?: AutomationPathInput;
 };
 
 /**
@@ -8695,6 +8912,36 @@ export type UsedByKind = typeof UsedByKind[keyof typeof UsedByKind];
  * by the handler (422), which applies the same limit to a Sign-in provider's name.
  */
 export type UserName = string;
+
+/**
+ * A Step that waits before the next one
+ */
+export type WaitStep = {
+  /**
+   * The Step's id
+   */
+  id: StepId;
+  type: 'wait';
+  /**
+   * Delay before the next Step, in seconds
+   */
+  seconds: number;
+};
+
+/**
+ * A Step that waits before the next one, as a request writes it
+ */
+export type WaitStepInput = {
+  /**
+   * The Step's id; omitted, the Step is given one
+   */
+  id?: StepId;
+  type: 'wait';
+  /**
+   * Delay before the next Step, in seconds; a negative one is refused
+   */
+  seconds: number;
+};
 
 /**
  * Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the

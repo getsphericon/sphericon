@@ -14,7 +14,7 @@ func (h *Handlers) SiteAutomationsList(ctx context.Context, params siteapi.SiteA
 	if err != nil {
 		return nil, err
 	}
-	return mapper.AutomationsListPage(page), nil
+	return mapper.AutomationsListPage(page)
 }
 
 func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.CreateAutomationInput, _ siteapi.SiteAutomationsCreateParams) (*siteapi.SiteAutomationResource, error) {
@@ -24,7 +24,10 @@ func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.Creat
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.AutomationToResource(a)
+	res, err := mapper.AutomationToResource(a)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -35,7 +38,10 @@ func (h *Handlers) SiteAutomationsGet(ctx context.Context, params siteapi.SiteAu
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.AutomationWithRevenueToResource(a)
+	res, err := mapper.AutomationWithRevenueToResource(a)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -47,7 +53,10 @@ func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.Updat
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.AutomationToResource(a)
+	res, err := mapper.AutomationToResource(a)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -62,7 +71,10 @@ func (h *Handlers) SiteAutomationsArchive(ctx context.Context, params siteapi.Si
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.AutomationToResource(a)
+	res, err := mapper.AutomationToResource(a)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -75,7 +87,10 @@ func (h *Handlers) SiteAutomationsUnarchive(ctx context.Context, params siteapi.
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.AutomationToResource(a)
+	res, err := mapper.AutomationToResource(a)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -86,7 +101,10 @@ func (h *Handlers) SiteAutomationsPublish(ctx context.Context, req *siteapi.Revi
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.AutomationToResource(a)
+	res, err := mapper.AutomationToResource(a)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -97,7 +115,10 @@ func (h *Handlers) SiteAutomationsDeactivate(ctx context.Context, params siteapi
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.AutomationToResource(a)
+	res, err := mapper.AutomationToResource(a)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -108,6 +129,9 @@ func (h *Handlers) SiteAutomationsRevert(ctx context.Context, req *siteapi.Revis
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.AutomationToResource(a)
+	res, err := mapper.AutomationToResource(a)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }

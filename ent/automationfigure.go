@@ -11,7 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 // AutomationFigure is the model entity for the AutomationFigure schema.
@@ -27,8 +29,10 @@ type AutomationFigure struct {
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
 	// AutomationID holds the value of the "automation_id" field.
 	AutomationID int64 `json:"automation_id,omitempty"`
-	// Step holds the value of the "step" field.
-	Step int `json:"step,omitempty"`
+	// VersionID holds the value of the "version_id" field.
+	VersionID int64 `json:"version_id,omitempty"`
+	// StepID holds the value of the "step_id" field.
+	StepID automationstep.ID `json:"step_id,omitempty"`
 	// Sent holds the value of the "sent" field.
 	Sent int `json:"sent,omitempty"`
 	// Skipped holds the value of the "skipped" field.
@@ -53,9 +57,11 @@ type AutomationFigureEdges struct {
 	Workspace *Workspace `json:"workspace,omitempty"`
 	// Automation holds the value of the automation edge.
 	Automation *Automation `json:"automation,omitempty"`
+	// Version holds the value of the version edge.
+	Version *AutomationVersion `json:"version,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -80,13 +86,26 @@ func (e AutomationFigureEdges) AutomationOrErr() (*Automation, error) {
 	return nil, &NotLoadedError{edge: "automation"}
 }
 
+// VersionOrErr returns the Version value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e AutomationFigureEdges) VersionOrErr() (*AutomationVersion, error) {
+	if e.Version != nil {
+		return e.Version, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: automationversion.Label}
+	}
+	return nil, &NotLoadedError{edge: "version"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*AutomationFigure) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case automationfigure.FieldID, automationfigure.FieldWorkspaceID, automationfigure.FieldAutomationID, automationfigure.FieldStep, automationfigure.FieldSent, automationfigure.FieldSkipped, automationfigure.FieldDelivered, automationfigure.FieldBounced, automationfigure.FieldComplained, automationfigure.FieldCaptured:
+		case automationfigure.FieldID, automationfigure.FieldWorkspaceID, automationfigure.FieldAutomationID, automationfigure.FieldVersionID, automationfigure.FieldSent, automationfigure.FieldSkipped, automationfigure.FieldDelivered, automationfigure.FieldBounced, automationfigure.FieldComplained, automationfigure.FieldCaptured:
 			values[i] = new(sql.NullInt64)
+		case automationfigure.FieldStepID:
+			values[i] = new(sql.NullString)
 		case automationfigure.FieldCreatedAt, automationfigure.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		default:
@@ -134,11 +153,17 @@ func (_m *AutomationFigure) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.AutomationID = value.Int64
 			}
-		case automationfigure.FieldStep:
+		case automationfigure.FieldVersionID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field step", values[i])
+				return fmt.Errorf("unexpected type %T for field version_id", values[i])
 			} else if value.Valid {
-				_m.Step = int(value.Int64)
+				_m.VersionID = value.Int64
+			}
+		case automationfigure.FieldStepID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field step_id", values[i])
+			} else if value.Valid {
+				_m.StepID = automationstep.ID(value.String)
 			}
 		case automationfigure.FieldSent:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -199,6 +224,11 @@ func (_m *AutomationFigure) QueryAutomation() *AutomationQuery {
 	return NewAutomationFigureClient(_m.config).QueryAutomation(_m)
 }
 
+// QueryVersion queries the "version" edge of the AutomationFigure entity.
+func (_m *AutomationFigure) QueryVersion() *AutomationVersionQuery {
+	return NewAutomationFigureClient(_m.config).QueryVersion(_m)
+}
+
 // Update returns a builder for updating this AutomationFigure.
 // Note that you need to call AutomationFigure.Unwrap() before calling this method if this AutomationFigure
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -234,8 +264,11 @@ func (_m *AutomationFigure) String() string {
 	builder.WriteString("automation_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.AutomationID))
 	builder.WriteString(", ")
-	builder.WriteString("step=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Step))
+	builder.WriteString("version_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.VersionID))
+	builder.WriteString(", ")
+	builder.WriteString("step_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.StepID))
 	builder.WriteString(", ")
 	builder.WriteString("sent=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Sent))

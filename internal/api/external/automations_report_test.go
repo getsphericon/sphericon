@@ -34,7 +34,7 @@ func TestExternalAutomationReportCountsAnEnrollmentThatEndsTodayInThePeriod(t *t
 	before := automationReport(t, c, params)
 
 	// The Enrollment walks its two tag steps and completes.
-	require.NoError(t, testhelper.Module[*automations.StepExecution](env).Step(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationRunTagOnEngagementAliceID, 0))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).Step(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationRunTagOnEngagementAliceID, env.StepIDAt(t, fixtures.AutomationRunTagOnEngagementAliceID, 0)))
 	env.RunQueuedSteps(t, testhelper.Module[*automations.StepExecution](env))
 	after := automationReport(t, c, params)
 

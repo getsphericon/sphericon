@@ -46,7 +46,7 @@ func smsAutomation(t *testing.T, env *testhelper.TestEnv, steps ...automationste
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 	created, err := m.Create(ctx, s, automations.CreateInput{
-		Name: "Cart reminder", TriggerEvent: smsTrigger, ExitEvents: []string{}, Steps: steps,
+		Name: "Cart reminder", TriggerEvent: smsTrigger, ExitEvents: []string{}, Steps: new(automationstep.Root(steps...)),
 	})
 	require.NoError(t, err)
 	_, err = m.Publish(ctx, s, created.ID, testhelper.AutomationRevisionIn(ctx, t, s, created.ID))
@@ -57,7 +57,7 @@ func smsAutomation(t *testing.T, env *testhelper.TestEnv, steps ...automationste
 // smsStep is an SMS step through the connected account.
 func smsStep(account testhelper.TwilioAccount, text string) automationstep.Step {
 	id := int64(account.Integration.ID)
-	return automationstep.Step{Type: automationstep.SMS, IntegrationID: &id, Text: text}
+	return automationstep.New(automationstep.SMS{IntegrationID: &id, Text: text})
 }
 
 // confirmSMS records the Confirmation an API client asserts for the number.
@@ -175,7 +175,7 @@ func TestAMixedSequenceSendsTheEmailsAndRecordsTheSMSSkipForAContactWithNoPhone(
 	assert.Equal(t, automationrun.StatusCompleted, run.Status)
 	skipped := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).OnlyX(t.Context())
 	assert.Equal(t, skipreason.NoDestination, lo.FromPtr(skipped.SkippedReason))
-	assert.Equal(t, 1, lo.FromPtr(skipped.AutomationStep))
+	assert.Equal(t, env.StepIDAt(t, runID, 1), lo.FromPtr(skipped.AutomationStepID))
 }
 
 // The unsubscribe link of a text is the number's Channel-wide opt-out (ADR 0077): a person who
@@ -264,6 +264,6 @@ func TestASTOPBetweenTwoTextsOfAnEnrollmentSkipsTheSecond(t *testing.T) {
 	run := env.DB.AutomationRun.GetX(ctx, runID)
 	assert.Equal(t, automationrun.StatusCompleted, run.Status)
 	second := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).OnlyX(ctx)
-	assert.Equal(t, 1, lo.FromPtr(second.AutomationStep))
+	assert.Equal(t, env.StepIDAt(t, runID, 1), lo.FromPtr(second.AutomationStepID))
 	assert.Equal(t, skipreason.UnsubscribedEverything, lo.FromPtr(second.SkippedReason))
 }

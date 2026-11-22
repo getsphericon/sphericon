@@ -13,7 +13,7 @@ import {
 import type { SiteAutomationResource, AutomationVersion } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
-import { testId, workspace } from '../../test/payloads.ts'
+import { stepId, testId, workspace } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -52,7 +52,7 @@ test('loads the automation into the builder', async () => {
           triggerEvent: 'email.clicked',
           exitEvents: [],
           goalEvent: null,
-          steps: [{ type: 'wait', seconds: 60 }],
+          steps: { id: stepId(1), steps: [{ id: stepId(11), type: 'wait', seconds: 60 }] },
         },
         createdAt: NOW,
         updatedAt: NOW,
@@ -90,16 +90,19 @@ const STORED: SiteAutomationResource = {
     triggerEvent: 'email.clicked',
     exitEvents: [],
     goalEvent: null,
-    steps: [
-      { type: 'wait', seconds: 60 },
-      { type: 'apply_tag', tag: 'vip' },
-    ],
+    steps: {
+      id: stepId(1),
+      steps: [
+        { id: stepId(11), type: 'wait', seconds: 60 },
+        { id: stepId(12), type: 'apply_tag', tag: 'vip' },
+      ],
+    },
   },
   createdAt: NOW,
   updatedAt: NOW,
 }
 
-test('saving from the builder sends the edited name, the trigger and the canvas steps', async () => {
+test('saving from the builder sends the edited name, the trigger and the canvas steps, each with its id', async () => {
   const bodies: unknown[] = []
   worker.use(
     handleSiteAutomationsGet({ body: STORED }),
@@ -122,10 +125,13 @@ test('saving from the builder sends the edited name, the trigger and the canvas 
         triggerEvent: 'email.clicked',
         exitEvents: [],
         goalEvent: null,
-        steps: [
-          { type: 'wait', seconds: 60 },
-          { type: 'apply_tag', tag: 'vip' },
-        ],
+        steps: {
+          id: stepId(1),
+          steps: [
+            { id: stepId(11), type: 'wait', seconds: 60 },
+            { id: stepId(12), type: 'apply_tag', tag: 'vip' },
+          ],
+        },
       },
     ])
   await expect.element(screen.getByText('Automation updated')).toBeInTheDocument()
@@ -152,9 +158,46 @@ test('saving sends the trigger event typed on the canvas, a custom one included'
 })
 
 // withSteps is STORED's draft with other steps.
-function withSteps(steps: AutomationVersion['steps']): AutomationVersion {
-  return { number: 1, triggerEvent: 'email.clicked', exitEvents: [], goalEvent: null, steps }
+function withSteps(steps: AutomationVersion['steps']['steps']): AutomationVersion {
+  return {
+    number: 1,
+    triggerEvent: 'email.clicked',
+    exitEvents: [],
+    goalEvent: null,
+    steps: { id: stepId(1), steps },
+  }
 }
+
+// An End (ADR 0124) is drawn, but this canvas cannot edit around one yet: a version holding one
+// opens read-only, with nothing to save that could drop it.
+test('a version holding an End opens read-only, drawing the End and offering no save', async () => {
+  worker.use(
+    handleSiteAutomationsGet({
+      body: {
+        ...STORED,
+        draft: withSteps([
+          { id: stepId(11), type: 'wait', seconds: 60 },
+          { id: stepId(12), type: 'end' },
+        ]),
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+
+  await expect.poll(() => flowNode(2)).toBeInstanceOf(Element)
+  await expect
+    .element(screen.getByText('This version ends a path with an End step', { exact: false }))
+    .toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
+  await expect.element(screen.getByLabelText('Name', { exact: false })).toBeDisabled()
+  await expect.element(screen.getByText('End', { exact: true }).first()).toBeInTheDocument()
+  await page.elementLocator(flowNode(2)).click()
+  await screen.getByText('Properties').click()
+  await expect
+    .element(screen.getByText('This version ends a path with an End step', { exact: false }))
+    .toBeInTheDocument()
+})
 
 const AUTHORED_DOC = {
   type: 'doc',
@@ -167,6 +210,7 @@ test('saving an email step written in the editor sends its document and no body'
     ...STORED,
     draft: withSteps([
       {
+        id: stepId(11),
         type: 'email',
         subject: 'Hi',
         body: '<p>Hello</p>',
@@ -195,7 +239,10 @@ test('saving an email step written in the editor sends its document and no body'
         triggerEvent: 'email.clicked',
         exitEvents: [],
         goalEvent: null,
-        steps: [{ type: 'email', subject: 'Hi', doc: AUTHORED_DOC }],
+        steps: {
+          id: stepId(1),
+          steps: [{ id: stepId(11), type: 'email', subject: 'Hi', doc: AUTHORED_DOC }],
+        },
       },
     ])
 })
@@ -223,7 +270,6 @@ test('shows no failed enrollments when none has a recorded reason', async () => 
             automationId: testId(5),
             contactId: testId(107),
             status: 'failed',
-            currentStep: 0,
             createdAt: NOW,
             updatedAt: NOW,
           },
@@ -265,7 +311,6 @@ test('lists the enrollments an HTTP step failed, with the reason and the respons
             automationId: testId(5),
             contactId: testId(107),
             status: 'failed',
-            currentStep: 0,
             failure: { kind: 'http_status', status: 503, excerpt: 'upstream unavailable' },
             createdAt: NOW,
             updatedAt: NOW,
@@ -303,7 +348,7 @@ test('an email step opens its document in the editor from the properties panel',
       body: {
         ...STORED,
         draft: withSteps([
-          { type: 'email', subject: 'Hi', body: '<p>Hello</p>', doc: AUTHORED_DOC },
+          { id: stepId(11), type: 'email', subject: 'Hi', body: '<p>Hello</p>', doc: AUTHORED_DOC },
         ]),
       },
     }),
@@ -347,14 +392,14 @@ test('the builder edits the draft and shows it pending above the live version', 
           triggerEvent: 'email.opened',
           exitEvents: [],
           goalEvent: null,
-          steps: [],
+          steps: { id: stepId(1), steps: [] },
         },
         draft: {
           number: 2,
           triggerEvent: 'email.clicked',
           exitEvents: [],
           goalEvent: null,
-          steps: [],
+          steps: { id: stepId(1), steps: [] },
         },
       },
     }),

@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 // AutomationRunUpdate is the builder for updating AutomationRun entities.
@@ -129,24 +130,23 @@ func (_u *AutomationRunUpdate) ClearEndedAt() *AutomationRunUpdate {
 	return _u
 }
 
-// SetCurrentStep sets the "current_step" field.
-func (_u *AutomationRunUpdate) SetCurrentStep(v int) *AutomationRunUpdate {
-	_u.mutation.ResetCurrentStep()
-	_u.mutation.SetCurrentStep(v)
+// SetCurrentStepID sets the "current_step_id" field.
+func (_u *AutomationRunUpdate) SetCurrentStepID(v automationstep.ID) *AutomationRunUpdate {
+	_u.mutation.SetCurrentStepID(v)
 	return _u
 }
 
-// SetNillableCurrentStep sets the "current_step" field if the given value is not nil.
-func (_u *AutomationRunUpdate) SetNillableCurrentStep(v *int) *AutomationRunUpdate {
+// SetNillableCurrentStepID sets the "current_step_id" field if the given value is not nil.
+func (_u *AutomationRunUpdate) SetNillableCurrentStepID(v *automationstep.ID) *AutomationRunUpdate {
 	if v != nil {
-		_u.SetCurrentStep(*v)
+		_u.SetCurrentStepID(*v)
 	}
 	return _u
 }
 
-// AddCurrentStep adds value to the "current_step" field.
-func (_u *AutomationRunUpdate) AddCurrentStep(v int) *AutomationRunUpdate {
-	_u.mutation.AddCurrentStep(v)
+// ClearCurrentStepID clears the value of the "current_step_id" field.
+func (_u *AutomationRunUpdate) ClearCurrentStepID() *AutomationRunUpdate {
+	_u.mutation.ClearCurrentStepID()
 	return _u
 }
 
@@ -329,11 +329,6 @@ func (_u *AutomationRunUpdate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "AutomationRun.status": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.CurrentStep(); ok {
-		if err := automationrun.CurrentStepValidator(v); err != nil {
-			return &ValidationError{Name: "current_step", err: fmt.Errorf(`ent: validator failed for field "AutomationRun.current_step": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.FailureKind(); ok {
 		if err := automationrun.FailureKindValidator(v); err != nil {
 			return &ValidationError{Name: "failure_kind", err: fmt.Errorf(`ent: validator failed for field "AutomationRun.failure_kind": %w`, err)}
@@ -390,11 +385,11 @@ func (_u *AutomationRunUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	if _u.mutation.EndedAtCleared() {
 		_spec.ClearField(automationrun.FieldEndedAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.CurrentStep(); ok {
-		_spec.SetField(automationrun.FieldCurrentStep, field.TypeInt, value)
+	if value, ok := _u.mutation.CurrentStepID(); ok {
+		_spec.SetField(automationrun.FieldCurrentStepID, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.AddedCurrentStep(); ok {
-		_spec.AddField(automationrun.FieldCurrentStep, field.TypeInt, value)
+	if _u.mutation.CurrentStepIDCleared() {
+		_spec.ClearField(automationrun.FieldCurrentStepID, field.TypeString)
 	}
 	if value, ok := _u.mutation.ResumeAt(); ok {
 		_spec.SetField(automationrun.FieldResumeAt, field.TypeTime, value)
@@ -657,24 +652,23 @@ func (_u *AutomationRunUpdateOne) ClearEndedAt() *AutomationRunUpdateOne {
 	return _u
 }
 
-// SetCurrentStep sets the "current_step" field.
-func (_u *AutomationRunUpdateOne) SetCurrentStep(v int) *AutomationRunUpdateOne {
-	_u.mutation.ResetCurrentStep()
-	_u.mutation.SetCurrentStep(v)
+// SetCurrentStepID sets the "current_step_id" field.
+func (_u *AutomationRunUpdateOne) SetCurrentStepID(v automationstep.ID) *AutomationRunUpdateOne {
+	_u.mutation.SetCurrentStepID(v)
 	return _u
 }
 
-// SetNillableCurrentStep sets the "current_step" field if the given value is not nil.
-func (_u *AutomationRunUpdateOne) SetNillableCurrentStep(v *int) *AutomationRunUpdateOne {
+// SetNillableCurrentStepID sets the "current_step_id" field if the given value is not nil.
+func (_u *AutomationRunUpdateOne) SetNillableCurrentStepID(v *automationstep.ID) *AutomationRunUpdateOne {
 	if v != nil {
-		_u.SetCurrentStep(*v)
+		_u.SetCurrentStepID(*v)
 	}
 	return _u
 }
 
-// AddCurrentStep adds value to the "current_step" field.
-func (_u *AutomationRunUpdateOne) AddCurrentStep(v int) *AutomationRunUpdateOne {
-	_u.mutation.AddCurrentStep(v)
+// ClearCurrentStepID clears the value of the "current_step_id" field.
+func (_u *AutomationRunUpdateOne) ClearCurrentStepID() *AutomationRunUpdateOne {
+	_u.mutation.ClearCurrentStepID()
 	return _u
 }
 
@@ -870,11 +864,6 @@ func (_u *AutomationRunUpdateOne) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "AutomationRun.status": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.CurrentStep(); ok {
-		if err := automationrun.CurrentStepValidator(v); err != nil {
-			return &ValidationError{Name: "current_step", err: fmt.Errorf(`ent: validator failed for field "AutomationRun.current_step": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.FailureKind(); ok {
 		if err := automationrun.FailureKindValidator(v); err != nil {
 			return &ValidationError{Name: "failure_kind", err: fmt.Errorf(`ent: validator failed for field "AutomationRun.failure_kind": %w`, err)}
@@ -948,11 +937,11 @@ func (_u *AutomationRunUpdateOne) sqlSave(ctx context.Context) (_node *Automatio
 	if _u.mutation.EndedAtCleared() {
 		_spec.ClearField(automationrun.FieldEndedAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.CurrentStep(); ok {
-		_spec.SetField(automationrun.FieldCurrentStep, field.TypeInt, value)
+	if value, ok := _u.mutation.CurrentStepID(); ok {
+		_spec.SetField(automationrun.FieldCurrentStepID, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.AddedCurrentStep(); ok {
-		_spec.AddField(automationrun.FieldCurrentStep, field.TypeInt, value)
+	if _u.mutation.CurrentStepIDCleared() {
+		_spec.ClearField(automationrun.FieldCurrentStepID, field.TypeString)
 	}
 	if value, ok := _u.mutation.ResumeAt(); ok {
 		_spec.SetField(automationrun.FieldResumeAt, field.TypeTime, value)

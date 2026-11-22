@@ -2,21 +2,25 @@ import { NodeType } from '@workflowbuilder/sdk'
 import type { WBIcon, WorkflowBuilderEdge, WorkflowBuilderNode } from '@workflowbuilder/sdk'
 import * as z from 'zod'
 
-import { AutomationStepType } from '../../generated/site/types.gen.ts'
 import type {
   AutomationHttpHeader,
+  AutomationPath,
+  AutomationPathInput,
   AutomationStep,
+  AutomationStepInput,
   AutomationVersion,
+  TelegramStep,
 } from '../../generated/site/types.gen.ts'
 import { zAutomationHttpHeader } from '../../generated/site/zod.gen.ts'
 import { jsonText } from '../../utils/jsonText.ts'
 import { docCodec } from '../../utils/messageDoc.ts'
 import { buttonsCodec } from '../../utils/telegramButtons.ts'
 import { completeButtons } from '../../utils/telegramContent.ts'
-import { OFF } from './nodeProperties.ts'
-import type { NodeProperties, ReadProperties } from './nodeProperties.ts'
+import { OFF, STORED } from './nodeProperties.ts'
+import type { NodeProperties, ReadProperties, StepKind } from './nodeProperties.ts'
 import {
   EMAIL_NODE_ICON,
+  END_NODE_ICON,
   HTTP_NODE_ICON,
   SMS_NODE_ICON,
   TAG_NODE_ICON,
@@ -27,10 +31,15 @@ import {
 } from './nodes.ts'
 
 // A step is the generated contract type (typed in TypeSpec; no hand-rolled
-// parse/serialize — the API carries steps as structured data, not a JSON string).
+// parse/serialize — the API carries steps as structured data, not a JSON string): a union by
+// `type`, each kind with fields of its own. A version's Steps are its root path, {id, steps}.
 export type { AutomationStep }
 
-// --- graph ↔ steps (the visual builder uses an xyflow graph; we persist []step) ---
+// --- graph ↔ steps (the visual builder uses an xyflow graph; we persist the root path) ---
+// A Step's node has the Step's id as its id (ADR 0122): a loaded node takes the stored id, and a
+// node dropped on the canvas the UUID the SDK mints for it, so every save sends each Step with the
+// id it keeps, and an HTTP step keeps its secrets by it. The root path's id rides on the Trigger
+// node (pathId).
 
 // The SDK's default node renderer key (NodeType.Node) and default edge type.
 const NODE_RENDERER_TYPE = 'node'
@@ -47,7 +56,7 @@ export interface AutomationGraph {
   edges: WorkflowBuilderEdge[]
 }
 
-const STEP_ICON: Record<AutomationStep['type'], WBIcon> = {
+const STEP_ICON: Record<StepKind, WBIcon> = {
   email: EMAIL_NODE_ICON,
   telegram: TELEGRAM_NODE_ICON,
   sms: SMS_NODE_ICON,
@@ -55,17 +64,18 @@ const STEP_ICON: Record<AutomationStep['type'], WBIcon> = {
   apply_tag: TAG_NODE_ICON,
   remove_tag: TAG_NODE_ICON,
   http: HTTP_NODE_ICON,
+  end: END_NODE_ICON,
 }
 
 // A Telegram step's content, as the form holds it: every value a string.
-function telegramProperties(step: AutomationStep): NodeProperties['telegram'] {
+function telegramProperties(step: TelegramStep): NodeProperties['telegram'] {
   return {
     integrationId: step.integrationId ?? '',
-    text: step.text ?? '',
+    text: step.text,
     unsubscribeButton: step.unsubscribeButton ?? '',
     imageUrl: step.imageUrl ?? '',
-    buttons: buttonsCodec.write(step.buttons ?? []),
-    linkPreview: step.linkPreview === false ? OFF : '',
+    buttons: buttonsCodec.write(step.buttons),
+    linkPreview: step.linkPreview ? '' : OFF,
   }
 }
 
@@ -73,42 +83,51 @@ function telegramProperties(step: AutomationStep): NodeProperties['telegram'] {
 // canvas holds them blank: a blank field is "keep what is stored". The headers come back as
 // names only, held as JSON text (headersText) for the same reason.
 function stepProperties(step: AutomationStep): NodeProperties[keyof NodeProperties] {
-  if (step.type === 'http') {
-    const http: NodeProperties['http'] = {
-      stepId: step.id ?? '',
-      url: '',
-      headers: headersText((step.headers ?? []).map(({ name }) => ({ name }))),
-      body: step.body ?? '',
-      secret: '',
+  switch (step.type) {
+    case 'http': {
+      const http: NodeProperties['http'] = {
+        stored: STORED,
+        url: '',
+        headers: headersText(step.headers.map(({ name }) => ({ name }))),
+        body: step.body,
+        secret: '',
+      }
+      return http
     }
-    return http
-  }
-  if (step.type === 'wait') {
-    const wait: NodeProperties['wait'] = { seconds: step.seconds ?? 0 }
-    return wait
-  }
-  if (step.type === 'apply_tag' || step.type === 'remove_tag') {
-    const tag: NodeProperties['tag'] = { tag: step.tag ?? '' }
-    return tag
-  }
-  if (step.type === 'telegram') {
-    return telegramProperties(step)
-  }
-  if (step.type === 'sms') {
-    const sms: NodeProperties['sms'] = {
-      integrationId: step.integrationId ?? '',
-      text: step.text ?? '',
-      linkTracking: step.linkTracking === false ? OFF : '',
+    case 'wait': {
+      const wait: NodeProperties['wait'] = { seconds: step.seconds }
+      return wait
     }
-    return sms
+    case 'apply_tag':
+    case 'remove_tag': {
+      const tag: NodeProperties['tag'] = { tag: step.tag }
+      return tag
+    }
+    case 'telegram':
+      return telegramProperties(step)
+    case 'end': {
+      const end: NodeProperties['end'] = {}
+      return end
+    }
+    case 'sms': {
+      const sms: NodeProperties['sms'] = {
+        integrationId: step.integrationId ?? '',
+        text: step.text,
+        linkTracking: step.linkTracking ? '' : OFF,
+      }
+      return sms
+    }
+    case 'email':
+    default: {
+      const email: NodeProperties['email'] = {
+        integrationId: step.integrationId ?? '',
+        subject: step.subject,
+        body: step.body,
+        doc: step.doc ? z.encode(docCodec, step.doc) : '',
+      }
+      return email
+    }
   }
-  const email: NodeProperties['email'] = {
-    integrationId: step.integrationId ?? '',
-    subject: step.subject ?? '',
-    body: step.body ?? '',
-    doc: step.doc ? z.encode(docCodec, step.doc) : '',
-  }
-  return email
 }
 
 const TRIGGER_NODE_ID = 'trigger'
@@ -117,12 +136,14 @@ const TRIGGER_NODE_ID = 'trigger'
 // Enrollment early and the one that ends it as having reached its goal (#751).
 export type AutomationTrigger = Pick<AutomationVersion, 'triggerEvent' | 'exitEvents' | 'goalEvent'>
 
-// The canvas holds the exit events as one line each, the goal event as text ('' for none).
-function triggerProperties(trigger: AutomationTrigger): Record<string, unknown> {
+// The canvas holds the exit events as one line each, the goal event as text ('' for none), and
+// the id of the root path the steps hang from.
+function triggerProperties(trigger: AutomationTrigger, pathId: string): Record<string, unknown> {
   return {
     triggerEvent: trigger.triggerEvent,
     exitEvents: trigger.exitEvents.join('\n'),
     goalEvent: trigger.goalEvent ?? '',
+    pathId,
   }
 }
 
@@ -140,11 +161,11 @@ function labelOf(labels: Record<string, string>, type: string): { label?: string
 }
 
 // stepsToGraph builds a linear top-to-bottom chain for the canvas: the Trigger as the start
-// node, then one node per stored step. Positions are synthesized from order, never persisted;
-// `labels` names each node kind on the canvas.
+// node, holding the root path's id, then one node per stored step, its id the Step's. Positions
+// are synthesized from order, never persisted; `labels` names each node kind on the canvas.
 export function stepsToGraph(
   trigger: AutomationTrigger,
-  steps: AutomationStep[],
+  path: AutomationPath,
   labels: Record<string, string>,
 ): AutomationGraph {
   const start: WorkflowBuilderNode = {
@@ -158,13 +179,16 @@ export function stepsToGraph(
       templateType: NodeType.StartNode,
       isStartNode: true,
       segments: [],
-      properties: { ...triggerProperties(trigger), ...labelOf(labels, TRIGGER_NODE_TYPE) },
+      properties: {
+        ...triggerProperties(trigger, path.id),
+        ...labelOf(labels, TRIGGER_NODE_TYPE),
+      },
     },
   }
   const nodes: WorkflowBuilderNode[] = [
     start,
-    ...steps.map((step, i): WorkflowBuilderNode => ({
-      id: `step-${i}`,
+    ...path.steps.map((step, i): WorkflowBuilderNode => ({
+      id: step.id,
       type: NODE_RENDERER_TYPE,
       position: { x: 0, y: (i + 1) * Y_GAP },
       data: {
@@ -216,12 +240,13 @@ function stepHeaders(text: string): AutomationHttpHeader[] {
 }
 
 // The Telegram step a node holds: what is left blank is left out.
-function telegramStep(props: ReadProperties<'telegram'>): AutomationStep {
+function telegramStep(id: string, props: ReadProperties<'telegram'>): AutomationStepInput {
   const integrationId = asText(props.integrationId)
   const unsubscribeButton = asText(props.unsubscribeButton)
   const imageUrl = asText(props.imageUrl).trim()
   const buttons = completeButtons(buttonsCodec.read(props.buttons))
   return {
+    id,
     type: 'telegram',
     text: asText(props.text),
     ...(integrationId === '' ? {} : { integrationId }),
@@ -234,9 +259,10 @@ function telegramStep(props: ReadProperties<'telegram'>): AutomationStep {
 
 // The SMS step a node holds. A step that names no Integration ('') leaves it out: it sends
 // through the SMS default. Link tracking is on unless the node turned it 'off'.
-function smsStep(props: ReadProperties<'sms'>): AutomationStep {
+function smsStep(id: string, props: ReadProperties<'sms'>): AutomationStepInput {
   const integrationId = asText(props.integrationId)
   return {
+    id,
     type: 'sms',
     text: asText(props.text),
     ...(integrationId === '' ? {} : { integrationId }),
@@ -244,63 +270,61 @@ function smsStep(props: ReadProperties<'sms'>): AutomationStep {
   }
 }
 
-function nodeToStep(node: WorkflowBuilderNode): AutomationStep | null {
+// The Step a node holds, with the node's id as its own; null for a node that is no Step.
+function nodeToStep(node: WorkflowBuilderNode): AutomationStepInput | null {
   const props: Record<string, unknown> = node.data.properties
-  if (node.data.type === AutomationStepType.HTTP) {
-    const http: ReadProperties<'http'> = props
-    const id = asText(http.stepId)
-    const url = asText(http.url).trim()
-    const secret = asText(http.secret)
-    return {
-      type: 'http',
-      body: asText(http.body),
-      headers: stepHeaders(asText(http.headers)),
-      ...(id === '' ? {} : { id }),
-      ...(url === '' ? {} : { url }),
-      ...(secret === '' ? {} : { secret }),
+  const { id } = node
+  switch (node.data.type) {
+    case 'http': {
+      const http: ReadProperties<'http'> = props
+      const url = asText(http.url).trim()
+      const secret = asText(http.secret)
+      return {
+        id,
+        type: 'http',
+        body: asText(http.body),
+        headers: stepHeaders(asText(http.headers)),
+        ...(url === '' ? {} : { url }),
+        ...(secret === '' ? {} : { secret }),
+      }
     }
-  }
-  if (node.data.type === AutomationStepType.WAIT) {
-    const wait: ReadProperties<'wait'> = props
-    return { type: 'wait', seconds: Math.trunc(Number(wait.seconds)) || 0 }
-  }
-  if (
-    node.data.type === AutomationStepType.APPLY_TAG ||
-    node.data.type === AutomationStepType.REMOVE_TAG
-  ) {
-    const tag: ReadProperties<'tag'> = props
-    return {
-      type:
-        node.data.type === AutomationStepType.APPLY_TAG
-          ? AutomationStepType.APPLY_TAG
-          : AutomationStepType.REMOVE_TAG,
-      tag: asText(tag.tag),
+    case 'wait': {
+      const wait: ReadProperties<'wait'> = props
+      return { id, type: 'wait', seconds: Math.trunc(Number(wait.seconds)) || 0 }
     }
+    case 'apply_tag':
+    case 'remove_tag': {
+      const tag: ReadProperties<'tag'> = props
+      return { id, type: node.data.type, tag: asText(tag.tag) }
+    }
+    case 'telegram':
+      return telegramStep(id, props)
+    case 'sms':
+      return smsStep(id, props)
+    // An End holds nothing but its id: the canvas cannot place one, but keeps one it read.
+    case 'end':
+      return { id, type: 'end' }
+    case 'email': {
+      // A message written in the editor is saved as its document alone (the server builds the
+      // body; sending both is a 422), and one written as HTML as its body alone. A step that names
+      // no Integration ('') leaves it out: it sends through the email default.
+      const email: ReadProperties<'email'> = props
+      const subject = asText(email.subject)
+      const integrationId = asText(email.integrationId)
+      const via = integrationId === '' ? {} : { integrationId }
+      const doc = docCodec.safeParse(asText(email.doc))
+      return doc.success
+        ? { id, type: 'email', ...via, subject, doc: doc.data }
+        : { id, type: 'email', ...via, subject, body: asText(email.body) }
+    }
+    default:
+      return null
   }
-  if (node.data.type === AutomationStepType.TELEGRAM) {
-    return telegramStep(props)
-  }
-  if (node.data.type === AutomationStepType.SMS) {
-    return smsStep(props)
-  }
-  if (node.data.type === AutomationStepType.EMAIL) {
-    // A message written in the editor is saved as its document alone (the server builds the
-    // body; sending both is a 422), and one written as HTML as its body alone. A step that names
-    // no Integration ('') leaves it out: it sends through the email default.
-    const email: ReadProperties<'email'> = props
-    const subject = asText(email.subject)
-    const integrationId = asText(email.integrationId)
-    const via = integrationId === '' ? {} : { integrationId }
-    const doc = docCodec.safeParse(asText(email.doc))
-    return doc.success
-      ? { type: 'email', ...via, subject, doc: doc.data }
-      : { type: 'email', ...via, subject, body: asText(email.body) }
-  }
-  return null
 }
 
 // graphToSteps linearizes the canvas graph: it finds the one Trigger node, reads the trigger,
-// exit and goal events off it and walks single outgoing edges from there into ordered steps.
+// exit and goal events and the root path's id off it and walks single outgoing edges from there
+// into the root path's ordered steps, each with its node's id.
 // The Trigger is not a Step. Branches are not supported yet: nodes off the main chain are
 // reported via `dropped` so the caller can warn instead of silently losing them. `triggerEvent`
 // is null when the canvas does not hold exactly one Trigger.
@@ -308,31 +332,31 @@ export function graphToSteps(graph: AutomationGraph): {
   triggerEvent: string | null
   exitEvents: string[]
   goalEvent: string | null
-  steps: AutomationStep[]
+  steps: AutomationPathInput
   dropped: number
 } {
   const ordered = linearGraphNodes(graph)
   const [root] = ordered
   if (!root) {
-    return { triggerEvent: null, exitEvents: [], goalEvent: null, steps: [], dropped: 0 }
+    return { triggerEvent: null, exitEvents: [], goalEvent: null, steps: { steps: [] }, dropped: 0 }
   }
   const steps = ordered.flatMap((node) => {
     const step = nodeToStep(node)
     return step ? [step] : []
   })
   const goalEvent = asText(root.data.properties.goalEvent).trim()
+  const pathId = asText(root.data.properties.pathId)
   return {
     triggerEvent: asText(root.data.properties.triggerEvent),
     exitEvents: exitEventsOf(asText(root.data.properties.exitEvents)),
     goalEvent: goalEvent === '' ? null : goalEvent,
-    steps,
+    steps: pathId === '' ? { steps } : { id: pathId, steps },
     dropped: graph.nodes.length - ordered.length,
   }
 }
 
-// The canvas order is its edges, not the order in which nodes were created. Save uses this same
-// walk to attach server-assigned HTTP step identities to the submitted canvas nodes.
-export function linearGraphNodes(graph: AutomationGraph): WorkflowBuilderNode[] {
+// The canvas order is its edges, not the order in which nodes were created.
+function linearGraphNodes(graph: AutomationGraph): WorkflowBuilderNode[] {
   const { nodes, edges } = graph
   const triggers = nodes.filter((n) => n.data.type === TRIGGER_NODE_TYPE)
   const [root] = triggers

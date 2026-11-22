@@ -6,6 +6,7 @@ package resources
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -98,12 +99,15 @@ import (
 // goverter:extend revision
 // goverter:extend nilFloat64
 // goverter:extend optNilString
+// goverter:extend optNilStepID
 // goverter:extend optNilOptOutVia
 // goverter:extend optNilHoldReason
 // goverter:extend omitEmpty
 // goverter:extend omitEmptyConfigurationSet
 // goverter:extend optNilEmailAddress
 // goverter:extend optNilEntityID
+// goverter:extend optEntityID
+// goverter:extend optStepID
 // goverter:extend optNilTimeZone
 // goverter:extend optNilCountry
 // goverter:extend optNilLocale
@@ -116,10 +120,18 @@ import (
 // goverter:extend workspaceTimezone
 // goverter:extend optNilTimestamp
 // goverter:extend nilTimestamp
-// goverter:extend optNilInt32
 // goverter:extend jsonObject
 // goverter:extend editorDocument
-// goverter:extend automationSteps
+// goverter:extend automationPath
+// goverter:extend automationStepViews
+// goverter:extend emailStepType
+// goverter:extend telegramStepType
+// goverter:extend smsStepType
+// goverter:extend waitStepType
+// goverter:extend applyTagStepType
+// goverter:extend removeTagStepType
+// goverter:extend httpStepType
+// goverter:extend endStepType
 // goverter:extend segmentCondition
 // goverter:extend ruleCondition
 // goverter:extend ruleActions
@@ -140,7 +152,6 @@ import (
 // goverter:extend optInt32
 // goverter:extend optString
 // goverter:extend optEmail
-// goverter:extend optBool
 // goverter:extend optEditorDocument
 // goverter:extend optMessageRevenue
 // goverter:extend optAttentionSubject
@@ -379,26 +390,33 @@ type Converter interface {
 	// The revenue is summed from Order Movements, which the mapper cannot see: an Automation the
 	// automations module read with its revenue maps through AutomationWithRevenueToResource.
 	// goverter:ignore Revenue
-	AutomationToResource(source *ent.Automation) siteapi.SiteAutomationResource
+	AutomationToResource(source *ent.Automation) (siteapi.SiteAutomationResource, error)
 	// An Automation with the revenue the automations module read for it (ADR 0064).
 	// goverter:autoMap Automation
 	// goverter:map Automation.Edges.LiveVersion Live | automationVersionOrNull
 	// goverter:map Automation.Edges.DraftVersion Draft | automationVersionOrNull
-	AutomationWithRevenueToResource(source automations.WithRevenue) siteapi.SiteAutomationResource
+	AutomationWithRevenueToResource(source automations.WithRevenue) (siteapi.SiteAutomationResource, error)
 	// goverter:useEmptyOnNil:slice
-	AutomationsWithRevenueToResources(source []automations.WithRevenue) []siteapi.SiteAutomationResource
+	AutomationsWithRevenueToResources(source []automations.WithRevenue) ([]siteapi.SiteAutomationResource, error)
 	// The stored definition string (the executor's JSON format) is decoded into the typed steps
 	// DTO at this boundary. The contract names the version "number".
 	// goverter:map Version Number | count
-	// goverter:map Steps | automationSteps
-	AutomationVersionToResource(source *ent.AutomationVersion) siteapi.AutomationVersion
-	// A step is the module's masked view: what it hides is never mapped.
-	// goverter:ignore URL
-	// goverter:ignore Secret
-	// goverter:ignore ClearSecret
+	// goverter:map Steps | automationPath
+	AutomationVersionToResource(source *ent.AutomationVersion) (siteapi.AutomationVersion, error)
+	// goverter:map Steps | automationStepViews
+	AutomationPathToResource(source automations.PathView) (siteapi.AutomationPath, error)
+	// The arms of a Step, the module's masked view of each kind, which automationStepViews wraps.
 	// goverter:map IntegrationID IntegrationId
-	AutomationStepToResource(source automations.StepView) siteapi.AutomationStep
-	AutomationStepsToResources(source []automations.StepView) []siteapi.AutomationStep
+	EmailStepToResource(source automations.EmailView) siteapi.EmailStep
+	// goverter:map IntegrationID IntegrationId
+	TelegramStepToResource(source automations.TelegramView) siteapi.TelegramStep
+	// goverter:map IntegrationID IntegrationId
+	SmsStepToResource(source automations.SMSView) siteapi.SmsStep
+	WaitStepToResource(source automations.WaitView) siteapi.WaitStep
+	ApplyTagStepToResource(source automations.TagView) siteapi.ApplyTagStep
+	RemoveTagStepToResource(source automations.TagView) siteapi.RemoveTagStep
+	HttpStepToResource(source automations.HTTPView) siteapi.HttpStep
+	EndStepToResource(source automations.EndView) siteapi.EndStep
 	// goverter:ignore Value
 	AutomationHttpHeaderToResource(source automations.HeaderName) siteapi.AutomationHttpHeader
 	TelegramButtonToResource(source telegramrender.Button) siteapi.TelegramButton
@@ -678,7 +696,7 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	SuppressionsListPage(source pagination.Page[*ent.Suppression]) *siteapi.SiteSuppressionsListOK
 	// goverter:useEmptyOnNil:slice
-	AutomationsListPage(source pagination.Page[automations.WithRevenue]) *siteapi.SiteAutomationsListOK
+	AutomationsListPage(source pagination.Page[automations.WithRevenue]) (*siteapi.SiteAutomationsListOK, error)
 	// goverter:useEmptyOnNil:slice
 	EventsListPage(source pagination.Page[*ent.Event]) *siteapi.SiteEventsListOK
 	// goverter:useEmptyOnNil:slice
@@ -722,8 +740,6 @@ type Converter interface {
 	AnalyticsOwnerKindToResource(source linkclick.OwnerKind) siteapi.SiteAnalyticsOwnerKind
 	// goverter:enum:transform value
 	AutomationStatusToResource(source automation.Status) siteapi.AutomationStatus
-	// goverter:enum:transform value
-	AutomationStepTypeToResource(source automationstep.Kind) siteapi.AutomationStepType
 	// goverter:enum:transform value
 	BroadcastStatusToResource(source broadcast.Status) siteapi.BroadcastStatus
 	// goverter:enum:transform value
@@ -889,10 +905,6 @@ func nilFloat32(v *float32) siteapi.NilFloat32 {
 	return convert.Nil[siteapi.NilFloat32](v)
 }
 
-func optNilInt32(v *int) siteapi.OptNilInt32 {
-	return convert.Opt[siteapi.OptNilInt32](convert.Int32Ptr(v))
-}
-
 // broadcastContent is a Broadcast's content in the arm of its Channel: a oneOf is beyond
 // goverter, so only the switch is written here.
 func broadcastContent(c Converter, b *ent.Broadcast) siteapi.BroadcastContent {
@@ -987,6 +999,21 @@ func optNilEmailAddress(v *string) siteapi.OptNilEmailAddress {
 	return convert.Opt[siteapi.OptNilEmailAddress]((*siteapi.EmailAddress)(v))
 }
 
+// optStepID is a Step id absent when there is none.
+func optStepID(v *automationstep.ID) siteapi.OptStepId {
+	return convert.Opt[siteapi.OptStepId]((*siteapi.StepId)(v))
+}
+
+// optNilStepID is the Step id an Automation message names, null for another kind of message.
+func optNilStepID(v *automationstep.ID) siteapi.OptNilString {
+	return convert.Opt[siteapi.OptNilString]((*string)(v))
+}
+
+// optEntityID is an id absent when there is none.
+func optEntityID(v *int64) siteapi.OptEntityId {
+	return convert.Opt[siteapi.OptEntityId]((*siteapi.EntityId)(v))
+}
+
 func optNilEntityID(v *int64) siteapi.OptNilEntityId {
 	return convert.Opt[siteapi.OptNilEntityId]((*siteapi.EntityId)(v))
 }
@@ -1048,22 +1075,80 @@ func nilTimestamp(v *time.Time) siteapi.NilTimestamp {
 }
 
 // automationVersionOrNull is a version of the Automation, or null when it has none.
-func automationVersionOrNull(c Converter, v *ent.AutomationVersion) siteapi.NilAutomationVersion {
+func automationVersionOrNull(c Converter, v *ent.AutomationVersion) (siteapi.NilAutomationVersion, error) {
 	if v == nil {
-		return siteapi.NilAutomationVersion{Null: true}
+		return siteapi.NilAutomationVersion{Null: true}, nil
 	}
-	return siteapi.NewNilAutomationVersion(c.AutomationVersionToResource(v))
+	res, err := c.AutomationVersionToResource(v)
+	if err != nil {
+		return siteapi.NilAutomationVersion{}, err
+	}
+	return siteapi.NewNilAutomationVersion(res), nil
 }
 
-// automationSteps maps a version's steps into the typed steps DTO, through the automations module's
+// automationPath maps a version's steps into the typed path DTO, through the automations module's
 // masked view of each step.
-func automationSteps(c Converter, steps []automationstep.Step) []siteapi.AutomationStep {
-	return c.AutomationStepsToResources(automations.Views(steps))
+func automationPath(c Converter, steps automationstep.Path) (siteapi.AutomationPath, error) {
+	view, err := automations.View(steps)
+	if err != nil {
+		return siteapi.AutomationPath{}, err
+	}
+	return c.AutomationPathToResource(view)
 }
 
-func optBool(v *bool) siteapi.OptBool {
-	return convert.Opt[siteapi.OptBool](v)
+// automationStepViews wraps each Step's view in the arm of its kind: a oneOf is beyond goverter,
+// so only the switch is written here. A view with no arm fails the response, never shown as an
+// empty Step.
+func automationStepViews(c Converter, views []automations.StepView) ([]siteapi.AutomationStep, error) {
+	out := make([]siteapi.AutomationStep, 0, len(views))
+	for _, v := range views {
+		var sum siteapi.AutomationStepSum
+		switch v := v.(type) {
+		case automations.EmailView:
+			sum = siteapi.NewEmailStepAutomationStepSum(c.EmailStepToResource(v))
+		case automations.TelegramView:
+			sum = siteapi.NewTelegramStepAutomationStepSum(c.TelegramStepToResource(v))
+		case automations.SMSView:
+			sum = siteapi.NewSmsStepAutomationStepSum(c.SmsStepToResource(v))
+		case automations.WaitView:
+			sum = siteapi.NewWaitStepAutomationStepSum(c.WaitStepToResource(v))
+		case automations.TagView:
+			// The module shows both tag kinds as one view; the union has an arm for each.
+			switch v.Type {
+			case automationstep.KindApplyTag:
+				sum = siteapi.NewApplyTagStepAutomationStepSum(c.ApplyTagStepToResource(v))
+			case automationstep.KindRemoveTag:
+				sum = siteapi.NewRemoveTagStepAutomationStepSum(c.RemoveTagStepToResource(v))
+			default:
+				return nil, fmt.Errorf("a tag step view of kind %q has no arm", v.Type)
+			}
+		case automations.HTTPView:
+			sum = siteapi.NewHttpStepAutomationStepSum(c.HttpStepToResource(v))
+		case automations.EndView:
+			sum = siteapi.NewEndStepAutomationStepSum(c.EndStepToResource(v))
+		default:
+			return nil, fmt.Errorf("the step view %T has no arm", v)
+		}
+		out = append(out, siteapi.AutomationStep{OneOf: sum})
+	}
+	return out, nil
 }
+
+// The discriminators of the Step arms.
+func emailStepType(automationstep.Kind) siteapi.EmailStepType { return siteapi.EmailStepTypeEmail }
+func telegramStepType(automationstep.Kind) siteapi.TelegramStepType {
+	return siteapi.TelegramStepTypeTelegram
+}
+func smsStepType(automationstep.Kind) siteapi.SmsStepType   { return siteapi.SmsStepTypeSMS }
+func waitStepType(automationstep.Kind) siteapi.WaitStepType { return siteapi.WaitStepTypeWait }
+func applyTagStepType(automationstep.Kind) siteapi.ApplyTagStepType {
+	return siteapi.ApplyTagStepTypeApplyTag
+}
+func removeTagStepType(automationstep.Kind) siteapi.RemoveTagStepType {
+	return siteapi.RemoveTagStepTypeRemoveTag
+}
+func httpStepType(automationstep.Kind) siteapi.HttpStepType { return siteapi.HttpStepTypeHTTP }
+func endStepType(automationstep.Kind) siteapi.EndStepType   { return siteapi.EndStepTypeEnd }
 
 func optEditorDocument(doc json.RawMessage) siteapi.OptEditorDocument {
 	return convert.OptObject[siteapi.OptEditorDocument](convert.DocObject[siteapi.EditorDocument](doc))

@@ -27,7 +27,7 @@ func automationRequest(t *testing.T, env *testhelper.TestEnv, key string) outbou
 	t.Helper()
 	req := marketing(t, env, key, fixtures.ContactAliceID)
 	req.Source = eligibility.AutomationSource(fixtures.AutomationHoldDemoID)
-	req.Ref = outboundmessages.AutomationRef{AutomationID: fixtures.AutomationHoldDemoID}
+	req.Ref = outboundmessages.AutomationRef{AutomationID: fixtures.AutomationHoldDemoID, VersionID: fixtures.AutomationHoldDemoVersionID, StepID: "1c7f087b-436d-5b5a-b11e-da4433bba846"}
 	return req
 }
 

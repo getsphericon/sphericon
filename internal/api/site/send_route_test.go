@@ -24,10 +24,10 @@ func TestSiteAutomationPublishIsAConflictWhileAStepsIntegrationCannotSend(t *tes
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	id := idStr(fixtures.AutomationHoldDemoID)
 	_, err := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(id))),
-		Steps: []siteapi.AutomationStepInput{
+		Steps: testhelper.SitePathEdit(
 			siteEmailStepVia(siteapi.OptNilEntityId{}),
 			siteEmailStepVia(siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationAcmeSesID))),
-		},
+		),
 	}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: id})
 	require.NoError(t, err)
 

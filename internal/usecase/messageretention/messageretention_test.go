@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/messageretention"
 )
@@ -60,6 +61,7 @@ func pruneMessages(t *testing.T, env *testhelper.TestEnv, retention time.Duratio
 type automationFigures struct {
 	Delivered, Bounced, Complained, Captured int
 	Steps                                    []automations.StepFigures
+	VersionSteps                             []automations.VersionStepFigures
 }
 
 // reports reads every finished Broadcast's Stats and every Automation's message figures.
@@ -82,7 +84,7 @@ func reports(t *testing.T, env *testhelper.TestEnv) (stats map[int64]broadcasts.
 		if err != nil {
 			continue // archived: no report
 		}
-		figures[a.ID] = automationFigures{r.Delivered, r.Bounced, r.Complained, r.Captured, r.Steps}
+		figures[a.ID] = automationFigures{r.Delivered, r.Bounced, r.Complained, r.Captured, r.Steps, r.VersionSteps}
 	}
 	return stats, figures
 }
@@ -120,6 +122,23 @@ func TestPruneMessagesKeepsEveryReportsFigures(t *testing.T) {
 		CountX(ctx))
 	assert.Positive(t, env.DB.OutboundMessage.Query().Where(outboundmessage.StatusEQ(outboundmessage.StatusPending)).CountX(ctx),
 		"a message still pending is never pruned")
+}
+
+// The Onboarding drip's first email is one Step that both its versions hold (ADR 0122): what its
+// pruned messages sent stays under each version and that Step, beside what was pruned before.
+func TestPrunedMessagesStayUnderTheirVersionAndStep(t *testing.T) {
+	env := testhelper.Setup(t)
+	pruneMessages(t, env, messagesRetention, past())
+
+	_, figures := reports(t, env)
+
+	firstEmail := automationstep.ID("2a17428c-014b-5b9e-866e-a08363b2780d")
+	drip := figures[fixtures.AutomationOnboardingDripID]
+	assert.Equal(t, []automations.VersionStepFigures{
+		{Version: 1, StepID: firstEmail, Sent: 4, Skipped: 1},
+		{Version: 2, StepID: firstEmail, Skipped: 1},
+	}, drip.VersionSteps)
+	assert.Equal(t, []automations.StepFigures{{StepID: firstEmail, Sent: 4, Skipped: 2}}, drip.Steps)
 }
 
 func TestPruneMessagesIsIdempotent(t *testing.T) {

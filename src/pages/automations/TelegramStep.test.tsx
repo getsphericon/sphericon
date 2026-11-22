@@ -8,9 +8,14 @@ import {
   handleSiteEnrollmentsList,
   handleSiteIntegrationsList,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteAutomationResource, AutomationStep } from '../../generated/site/types.gen.ts'
+import type {
+  AutomationPathInput,
+  AutomationStep,
+  AutomationStepInput,
+  SiteAutomationResource,
+} from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
-import { emailIntegration, TIMESTAMPS, testId } from '../../test/payloads.ts'
+import { emailIntegration, stepId, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
@@ -22,6 +27,17 @@ const EDIT_ROUTE = routeMount(automationsEditRoute, {
 })
 
 const STEP: AutomationStep = {
+  id: stepId(11),
+  type: 'telegram',
+  text: 'Hi <b>there</b>',
+  buttons: [],
+  linkPreview: true,
+  integrationId: testId(31),
+}
+
+// STEP as a save sends it: its defaults left out.
+const SENT: AutomationStepInput = {
+  id: stepId(11),
   type: 'telegram',
   text: 'Hi <b>there</b>',
   integrationId: testId(31),
@@ -42,7 +58,13 @@ function stored(steps: AutomationStep[]): SiteAutomationResource {
     name: 'Welcome flow',
     status: 'inactive',
     live: null,
-    draft: { number: 1, triggerEvent: 'telegram.bound', exitEvents: [], goalEvent: null, steps },
+    draft: {
+      number: 1,
+      triggerEvent: 'telegram.bound',
+      exitEvents: [],
+      goalEvent: null,
+      steps: { id: stepId(1), steps },
+    },
     revision: 1,
     ...TIMESTAMPS,
   }
@@ -65,14 +87,12 @@ function canvasPane() {
 }
 
 test('a Telegram step round-trips: its bot and text load, an edit saves them back', async () => {
-  const bodies: { steps?: AutomationStep[] }[] = []
-  let current = stored([STEP])
+  const bodies: { steps?: AutomationPathInput }[] = []
+  const current = stored([STEP])
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(current)),
     handleSiteAutomationsUpdate(async ({ request }) => {
-      const body = await request.json()
-      bodies.push(body)
-      current = stored(body.steps ?? [STEP])
+      bodies.push(await request.json())
       return HttpResponse.json(current)
     }),
     handleSiteIntegrationsList({ body: INTEGRATIONS }),
@@ -98,14 +118,24 @@ test('a Telegram step round-trips: its bot and text load, an edit saves them bac
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect
-    .poll(() => bodies.map((body) => body.steps))
-    .toEqual([[{ type: 'telegram', text: 'Welcome', integrationId: testId(31) }]])
+    .poll(() => bodies.map((body) => body.steps?.steps))
+    .toEqual([[{ ...SENT, text: 'Welcome' }]])
 })
 
 test('a Telegram text over the limit is flagged by the counter', async () => {
   worker.use(
     handleSiteAutomationsGet(() =>
-      HttpResponse.json(stored([{ type: 'telegram', text: 'x'.repeat(4100) }])),
+      HttpResponse.json(
+        stored([
+          {
+            id: stepId(11),
+            type: 'telegram',
+            text: 'x'.repeat(4100),
+            buttons: [],
+            linkPreview: true,
+          },
+        ]),
+      ),
     ),
     handleSiteIntegrationsList({ body: INTEGRATIONS }),
     handleSiteEnrollmentsList({
@@ -121,16 +151,12 @@ test('a Telegram text over the limit is flagged by the counter', async () => {
 })
 
 test('adding an image switches the counter to the caption limit, and buttons and the preview switch round-trip', async () => {
-  const bodies: { steps?: AutomationStep[] }[] = []
-  let current = stored([
-    { type: 'telegram', text: 'Hello {{ first_name }}', integrationId: testId(31) },
-  ])
+  const bodies: { steps?: AutomationPathInput }[] = []
+  const current = stored([{ ...STEP, text: 'Hello {{ first_name }}' }])
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(current)),
     handleSiteAutomationsUpdate(async ({ request }) => {
-      const body = await request.json()
-      bodies.push(body)
-      current = stored(body.steps ?? [])
+      bodies.push(await request.json())
       return HttpResponse.json(current)
     }),
     handleSiteIntegrationsList({ body: INTEGRATIONS }),
@@ -158,13 +184,12 @@ test('adding an image switches the counter to the caption limit, and buttons and
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect
-    .poll(() => bodies.map((body) => body.steps))
+    .poll(() => bodies.map((body) => body.steps?.steps))
     .toEqual([
       [
         {
-          type: 'telegram',
+          ...SENT,
           text: 'Hello {{ first_name }}',
-          integrationId: testId(31),
           imageUrl: 'https://cdn.example.com/a.png',
           buttons: [{ label: 'Open', url: 'https://example.com/a' }],
           linkPreview: false,
@@ -178,14 +203,12 @@ test('adding an image switches the counter to the caption limit, and buttons and
 })
 
 test('the unsubscribe button of a Telegram step is switched on with a label and saved', async () => {
-  const bodies: { steps?: AutomationStep[] }[] = []
-  let current = stored([STEP])
+  const bodies: { steps?: AutomationPathInput }[] = []
+  const current = stored([STEP])
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(current)),
     handleSiteAutomationsUpdate(async ({ request }) => {
-      const body = await request.json()
-      bodies.push(body)
-      current = stored(body.steps ?? [STEP])
+      bodies.push(await request.json())
       return HttpResponse.json(current)
     }),
     handleSiteIntegrationsList({ body: INTEGRATIONS }),
@@ -207,19 +230,17 @@ test('the unsubscribe button of a Telegram step is switched on with a label and 
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect
-    .poll(() => bodies.map((body) => body.steps))
-    .toEqual([[{ ...STEP, unsubscribeButton: 'Stop messages' }]])
+    .poll(() => bodies.map((body) => body.steps?.steps))
+    .toEqual([[{ ...SENT, unsubscribeButton: 'Stop messages' }]])
 })
 
 test('a Telegram step with an unsubscribe button loads its label, and switching it off drops it', async () => {
-  const bodies: { steps?: AutomationStep[] }[] = []
-  let current = stored([{ ...STEP, unsubscribeButton: 'Stop' }])
+  const bodies: { steps?: AutomationPathInput }[] = []
+  const current = stored([{ ...STEP, unsubscribeButton: 'Stop' }])
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(current)),
     handleSiteAutomationsUpdate(async ({ request }) => {
-      const body = await request.json()
-      bodies.push(body)
-      current = stored(body.steps ?? [STEP])
+      bodies.push(await request.json())
       return HttpResponse.json(current)
     }),
     handleSiteIntegrationsList({ body: INTEGRATIONS }),
@@ -236,5 +257,5 @@ test('a Telegram step with an unsubscribe button loads its label, and switching 
   await screen.getByText('Unsubscribe button', { exact: true }).click({ force: true })
   await screen.getByRole('button', { name: 'Save' }).click()
 
-  await expect.poll(() => bodies.map((body) => body.steps)).toEqual([[STEP]])
+  await expect.poll(() => bodies.map((body) => body.steps?.steps)).toEqual([[SENT]])
 })

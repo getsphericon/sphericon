@@ -159,9 +159,10 @@ func TestExitDuringAnEmailStepWaitsForTheSendAndNothingFollows(t *testing.T) {
 	stepper := e.stepper(t, bs)
 	runID := e.enrolledNow(t, fixtures.AutomationWelcomeSeriesID, fixtures.ContactAliceID)
 
+	first := e.env.StepIDAt(t, runID, 0)
 	stepDone := make(chan error, 1)
 	go func() {
-		stepDone <- stepper.Step(ctx, e.scoped, runID, 0)
+		stepDone <- stepper.Step(ctx, e.scoped, runID, first)
 	}()
 	testhelper.Receive(t, bs.started, "the send starts")
 	require.True(t, e.runRowIsLocked(t, runID), "an in-flight send holds the Enrollment")
@@ -181,7 +182,7 @@ func TestExitDuringAnEmailStepWaitsForTheSendAndNothingFollows(t *testing.T) {
 	assert.Equal(t, automationrun.StatusExited, e.client.AutomationRun.GetX(ctx, runID).Status)
 	assert.Len(t, bs.sent, 1, "exactly one mail for the step")
 
-	require.NoError(t, stepper.Step(ctx, e.scoped, runID, 0))
+	require.NoError(t, stepper.Step(ctx, e.scoped, runID, first))
 	assert.Len(t, bs.sent, 1, "no later step sends")
 }
 
@@ -201,10 +202,12 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 		close(started)
 		<-gate
 	}
-	steps := []automationstep.Step{{
-		Type: automationstep.HTTP, ID: "01J00000000000000000000001", URL: rcv.srv.URL, Body: `{"ok":true}`,
+	slack := testhelper.LatestSteps(ctx, t, e.env.DB, fixtures.AutomationNotifySlackID)
+	// A wait after the call keeps the Enrollment active once the call moves it on, for the exit.
+	steps := automationstep.Root(automationstep.Step{ID: slack.Steps[0].ID, Payload: automationstep.HTTP{
+		URL: rcv.srv.URL, Body: `{"ok":true}`,
 		Headers: []httpheader.Header{{Name: "Authorization"}},
-	}}
+	}}, automationstep.New(automationstep.Wait{Seconds: 3600}))
 	bus := e.bus(t)
 	mod := testhelper.Module[*automations.Module](e.env)
 	_, err := mod.Update(ctx, e.scoped, fixtures.AutomationNotifySlackID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, e.scoped, fixtures.AutomationNotifySlackID), Steps: &steps})
@@ -215,11 +218,12 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	runID := e.enrolledNow(t, fixtures.AutomationNotifySlackID, fixtures.ContactAliceID)
 	w := jobs.NewRunHTTPStepWorker(e.client, automations.NewStepExecution(bus, nil, testhelper.Module[*contacts.Module](e.env), e.fence, cipher, webhook.NewClientAllowing(2*time.Second, rcv.allow), time.Now), lowestDraw)
 
+	call := e.env.StepIDAt(t, runID, 0)
 	workDone := make(chan error, 1)
 	go func() {
 		workDone <- w.Work(workCtx, &river.Job[automations.RunHTTPStepArgs]{
 			JobRow: &rivertype.JobRow{Attempt: 1, MaxAttempts: automations.RunHTTPStepArgs{}.InsertOpts().MaxAttempts, CreatedAt: time.Now()},
-			Args:   automations.RunHTTPStepArgs{RunID: runID},
+			Args:   automations.RunHTTPStepArgs{RunID: runID, StepID: call},
 		})
 	}()
 	testhelper.Receive(t, started, "the work starts")

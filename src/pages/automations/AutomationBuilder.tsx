@@ -1,4 +1,5 @@
 import {
+  Alert,
   Box,
   Button,
   Group,
@@ -34,7 +35,6 @@ import { ChangedNotice } from '../../editing/ChangedNotice.tsx'
 import { useEditorEffects } from '../../editing/useEditorEffects.ts'
 import { useEditorSession } from '../../editing/useEditorSession.ts'
 import { siteAutomationsGetQueryKey } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { AutomationStepType } from '../../generated/site/types.gen.ts'
 import type { SiteAutomationResource, AutomationVersion } from '../../generated/site/types.gen.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
@@ -51,6 +51,7 @@ import {
 } from './integrationRenderer.ts'
 import { LeaveGuard } from './LeaveGuard.tsx'
 import { messageRenderer } from './messageRenderer.ts'
+import type { StepKind } from './nodeProperties.ts'
 import { useAutomationNodeTypes } from './nodes.ts'
 import { smsTextRenderer } from './smsRenderer.ts'
 import { telegramTextRenderer } from './telegramRenderer.ts'
@@ -153,11 +154,23 @@ function ThemeSync() {
   return null
 }
 
+// useHoldsEnd tells whether the canvas holds an End (ADR 0124). This canvas draws one but cannot
+// edit around it until it edits the tree, so such a version is read-only here: no edit and no
+// save could drop the End. Publish and Revert act on the stored version, which keeps it.
+function useHoldsEnd(): boolean {
+  return useStore((state) =>
+    state.nodes.some((node) => node.data.type === ('end' satisfies StepKind)),
+  )
+}
+
+// EditorReadOnly makes the canvas read-only while an operation is pending or it holds an End.
 function EditorReadOnly({ readOnly }: { readOnly: boolean }) {
   const { setReadOnly } = useWorkflowBuilderActions()
+  const holdsEnd = useHoldsEnd()
+  const locked = readOnly || holdsEnd
   useEffect(() => {
-    setReadOnly(readOnly)
-  }, [readOnly, setReadOnly])
+    setReadOnly(locked)
+  }, [locked, setReadOnly])
   return null
 }
 
@@ -189,6 +202,7 @@ function BuilderBar({
   const { resource: automation, operation } = session.context
   const unsaved = dirty({ name: form.values.name, graph: { nodes, edges } })
   const busy = !session.matches('idle')
+  const holdsEnd = useHoldsEnd()
 
   return (
     <Paper withBorder shadow="sm" p="xs" pos="absolute" top={16} left={16} right={16}>
@@ -203,7 +217,7 @@ function BuilderBar({
             flex={1}
             miw={0}
             maw={320}
-            disabled={session.hasTag('readOnly')}
+            disabled={session.hasTag('readOnly') || holdsEnd}
             {...form.getInputProps('name')}
           />
         </Group>
@@ -211,7 +225,7 @@ function BuilderBar({
           <FailedEnrollments workspaceId={workspaceId} automationId={automation.id} />
           <Button
             loading={session.matches('saving')}
-            disabled={busy}
+            disabled={busy || holdsEnd}
             onClick={() => {
               void onSave()
             }}
@@ -242,9 +256,20 @@ function BuilderBar({
 // the canvas holds an email step, saved or not: Publish is refused until the Workspace has one.
 function CanvasPostalAddressNotice({ workspaceId }: { workspaceId: string }) {
   const sendsEmail = useStore((state) =>
-    state.nodes.some((node) => node.data.type === AutomationStepType.EMAIL),
+    state.nodes.some((node) => node.data.type === ('email' satisfies StepKind)),
   )
   return sendsEmail ? <PostalAddressNotice workspaceId={workspaceId} /> : null
+}
+
+// CanvasEndNotice says why a canvas holding an End cannot be edited here (useHoldsEnd).
+function CanvasEndNotice() {
+  const { t } = useTranslation()
+  const holdsEnd = useHoldsEnd()
+  return holdsEnd ? (
+    <Alert color="yellow" title={t(($) => $.automations.endReadOnlyTitle)}>
+      {t(($) => $.automations.endReadOnly)}
+    </Alert>
+  ) : null
 }
 
 // AutomationBuilder hosts the visual flow editor. It edits the draft, or the live version when
@@ -261,12 +286,15 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
 
   const form = useAutomationBarForm(automation.name)
 
+  // An End is not in the palette (useHoldsEnd), so its label is named beside the palette's.
   const labels = useMemo(
-    () =>
-      Object.fromEntries(
+    () => ({
+      ...Object.fromEntries(
         nodeTypes.flatMap((item) => ('type' in item ? [[item.type, item.label]] : [])),
       ),
-    [nodeTypes],
+      ['end' satisfies StepKind]: t(($) => $.automations.stepEnd),
+    }),
+    [nodeTypes, t],
   )
   const initialGraph = useMemo(() => stepsToGraph(edited, edited.steps, labels), [edited, labels])
   const outcomeTexts = automationOutcomeTexts(t)
@@ -406,6 +434,7 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
               <WorkflowBuilder.Palette />
             </Box>
             <Stack pos="absolute" bottom={16} left={16} maw={420} gap="xs">
+              <CanvasEndNotice />
               <CanvasPostalAddressNotice workspaceId={workspaceId} />
               {session.context.changed && (
                 <ChangedNotice

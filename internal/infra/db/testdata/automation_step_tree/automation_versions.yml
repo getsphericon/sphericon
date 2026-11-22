@@ -1,0 +1,7 @@
+# A version of the init's shape: its Steps an array, with no ids (ADR 0122).
+- id: 1
+  workspace_id: 1
+  automation_id: 1
+  version: 1
+  steps: '[{"type":"wait","seconds":60}]'
+  trigger_event: signed_up

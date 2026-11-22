@@ -6,51 +6,90 @@ import "iter"
 // decoded Steps, so a change of their shape changes this walker, not its readers. A Step's
 // position is where it stands in the version, 0 for the first.
 
-// All yields each Step of the version with its position, in the order an Enrollment reaches them.
+// All yields each Step of the path with its position, in the order an Enrollment reaches them.
 // The Step is the version's own: a reader does not change it.
-func All(steps []Step) iter.Seq2[int, *Step] {
+func All(p Path) iter.Seq2[int, *Step] {
 	return func(yield func(int, *Step) bool) {
-		for i := range steps {
-			if !yield(i, &steps[i]) {
+		for i := range p.Steps {
+			if !yield(i, &p.Steps[i]) {
 				return
 			}
 		}
 	}
 }
 
-// At is the Step at the position, false when the version has none there: before its first Step or
-// past its last, where an Enrollment has finished.
-func At(steps []Step, pos int) (*Step, bool) {
-	for i, st := range All(steps) {
-		if i == pos {
+// First is the first Step of the path, where an Enrollment begins; false for a path of no Steps.
+func First(p Path) (*Step, bool) {
+	for _, st := range All(p) {
+		return st, true
+	}
+	return nil, false
+}
+
+// Find is the Step of the id, false when the path holds none: an Enrollment names the Step it
+// stands on by its id, which every version keeps (ADR 0122).
+func Find(p Path, id ID) (*Step, bool) {
+	for _, st := range All(p) {
+		if st.ID == id {
 			return st, true
 		}
 	}
 	return nil, false
 }
 
-// Map returns the version's Steps with each one, in order, replaced by what rewrite makes of it,
-// each in the place of the Step it was made from. Map writes nothing into the Steps given, and
-// rewrite is handed the version's own Step, which it does not change either. No Steps map to an
-// empty list, never nil, since a version stores `[]`. The first error stops the walk and is
-// returned, with no Steps.
-func Map(steps []Step, rewrite func(pos int, st *Step) (Step, error)) ([]Step, error) {
-	out := make([]Step, 0, len(steps))
-	for pos, st := range All(steps) {
+// Next is the Step an Enrollment reaches after the one of the id: the following Step of the path.
+// False after the last Step, where the Enrollment completes, and for an id the path does not hold.
+func Next(p Path, id ID) (*Step, bool) {
+	found := false
+	for _, st := range All(p) {
+		if found {
+			return st, true
+		}
+		found = st.ID == id
+	}
+	return nil, false
+}
+
+// AfterEnd is the first Step that follows an End in its path, false when every End is the last
+// Step of its path (ADR 0124): an End finishes its path, so a Step after it would never run. Each
+// path is checked on its own (afterEndIn): an End finishes the path that holds it, not the path
+// around its fork, so a fork's paths, once they come, are each checked by a call of their own.
+func AfterEnd(p Path) (*Step, bool) {
+	return afterEndIn(p)
+}
+
+// afterEndIn is the first Step that follows an End among the Steps of the path p itself.
+func afterEndIn(p Path) (*Step, bool) {
+	for i := range p.Steps {
+		if p.Steps[i].Kind() == KindEnd && i+1 < len(p.Steps) {
+			return &p.Steps[i+1], true
+		}
+	}
+	return nil, false
+}
+
+// Map returns the path with each Step, in order, replaced by what rewrite makes of it, each in the
+// place of the Step it was made from; the path keeps its id. Map writes nothing into the path
+// given, and rewrite is handed the version's own Step, which it does not change either. No Steps
+// map to an empty list, never nil, since a path stores `[]`. The first error stops the walk and is
+// returned, with the zero Path.
+func Map(p Path, rewrite func(pos int, st *Step) (Step, error)) (Path, error) {
+	out := make([]Step, 0, len(p.Steps))
+	for pos, st := range All(p) {
 		made, err := rewrite(pos, st)
 		if err != nil {
-			return nil, err
+			return Path{}, err
 		}
 		out = append(out, made)
 	}
-	return out, nil
+	return Path{ID: p.ID, Steps: out}, nil
 }
 
 // Rewrite is Map for a rewrite that cannot fail.
-func Rewrite(steps []Step, rewrite func(pos int, st *Step) Step) []Step {
-	out := make([]Step, 0, len(steps))
-	for pos, st := range All(steps) {
+func Rewrite(p Path, rewrite func(pos int, st *Step) Step) Path {
+	out := make([]Step, 0, len(p.Steps))
+	for pos, st := range All(p) {
 		out = append(out, rewrite(pos, st))
 	}
-	return out
+	return Path{ID: p.ID, Steps: out}
 }

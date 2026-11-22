@@ -13,7 +13,9 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 // AutomationFigureCreate is the builder for creating a AutomationFigure entity.
@@ -64,9 +66,15 @@ func (_c *AutomationFigureCreate) SetAutomationID(v int64) *AutomationFigureCrea
 	return _c
 }
 
-// SetStep sets the "step" field.
-func (_c *AutomationFigureCreate) SetStep(v int) *AutomationFigureCreate {
-	_c.mutation.SetStep(v)
+// SetVersionID sets the "version_id" field.
+func (_c *AutomationFigureCreate) SetVersionID(v int64) *AutomationFigureCreate {
+	_c.mutation.SetVersionID(v)
+	return _c
+}
+
+// SetStepID sets the "step_id" field.
+func (_c *AutomationFigureCreate) SetStepID(v automationstep.ID) *AutomationFigureCreate {
+	_c.mutation.SetStepID(v)
 	return _c
 }
 
@@ -170,6 +178,11 @@ func (_c *AutomationFigureCreate) SetAutomation(v *Automation) *AutomationFigure
 	return _c.SetAutomationID(v.ID)
 }
 
+// SetVersion sets the "version" edge to the AutomationVersion entity.
+func (_c *AutomationFigureCreate) SetVersion(v *AutomationVersion) *AutomationFigureCreate {
+	return _c.SetVersionID(v.ID)
+}
+
 // Mutation returns the AutomationFigureMutation object of the builder.
 func (_c *AutomationFigureCreate) Mutation() *AutomationFigureMutation {
 	return _c.mutation
@@ -253,8 +266,11 @@ func (_c *AutomationFigureCreate) check() error {
 	if _, ok := _c.mutation.AutomationID(); !ok {
 		return &ValidationError{Name: "automation_id", err: errors.New(`ent: missing required field "AutomationFigure.automation_id"`)}
 	}
-	if _, ok := _c.mutation.Step(); !ok {
-		return &ValidationError{Name: "step", err: errors.New(`ent: missing required field "AutomationFigure.step"`)}
+	if _, ok := _c.mutation.VersionID(); !ok {
+		return &ValidationError{Name: "version_id", err: errors.New(`ent: missing required field "AutomationFigure.version_id"`)}
+	}
+	if _, ok := _c.mutation.StepID(); !ok {
+		return &ValidationError{Name: "step_id", err: errors.New(`ent: missing required field "AutomationFigure.step_id"`)}
 	}
 	if _, ok := _c.mutation.Sent(); !ok {
 		return &ValidationError{Name: "sent", err: errors.New(`ent: missing required field "AutomationFigure.sent"`)}
@@ -310,6 +326,9 @@ func (_c *AutomationFigureCreate) check() error {
 	if len(_c.mutation.AutomationIDs()) == 0 {
 		return &ValidationError{Name: "automation", err: errors.New(`ent: missing required edge "AutomationFigure.automation"`)}
 	}
+	if len(_c.mutation.VersionIDs()) == 0 {
+		return &ValidationError{Name: "version", err: errors.New(`ent: missing required edge "AutomationFigure.version"`)}
+	}
 	return nil
 }
 
@@ -351,9 +370,9 @@ func (_c *AutomationFigureCreate) createSpec() (*AutomationFigure, *sqlgraph.Cre
 		_spec.SetField(automationfigure.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if value, ok := _c.mutation.Step(); ok {
-		_spec.SetField(automationfigure.FieldStep, field.TypeInt, value)
-		_node.Step = value
+	if value, ok := _c.mutation.StepID(); ok {
+		_spec.SetField(automationfigure.FieldStepID, field.TypeString, value)
+		_node.StepID = value
 	}
 	if value, ok := _c.mutation.Sent(); ok {
 		_spec.SetField(automationfigure.FieldSent, field.TypeInt, value)
@@ -411,6 +430,23 @@ func (_c *AutomationFigureCreate) createSpec() (*AutomationFigure, *sqlgraph.Cre
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.AutomationID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.VersionIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   automationfigure.VersionTable,
+			Columns: []string{automationfigure.VersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.VersionID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -620,8 +656,11 @@ func (u *AutomationFigureUpsertOne) UpdateNewValues() *AutomationFigureUpsertOne
 		if _, exists := u.create.mutation.AutomationID(); exists {
 			s.SetIgnore(automationfigure.FieldAutomationID)
 		}
-		if _, exists := u.create.mutation.Step(); exists {
-			s.SetIgnore(automationfigure.FieldStep)
+		if _, exists := u.create.mutation.VersionID(); exists {
+			s.SetIgnore(automationfigure.FieldVersionID)
+		}
+		if _, exists := u.create.mutation.StepID(); exists {
+			s.SetIgnore(automationfigure.FieldStepID)
 		}
 	}))
 	return u
@@ -996,8 +1035,11 @@ func (u *AutomationFigureUpsertBulk) UpdateNewValues() *AutomationFigureUpsertBu
 			if _, exists := b.mutation.AutomationID(); exists {
 				s.SetIgnore(automationfigure.FieldAutomationID)
 			}
-			if _, exists := b.mutation.Step(); exists {
-				s.SetIgnore(automationfigure.FieldStep)
+			if _, exists := b.mutation.VersionID(); exists {
+				s.SetIgnore(automationfigure.FieldVersionID)
+			}
+			if _, exists := b.mutation.StepID(); exists {
+				s.SetIgnore(automationfigure.FieldStepID)
 			}
 		}
 	}))

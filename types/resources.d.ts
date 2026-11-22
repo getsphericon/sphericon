@@ -356,6 +356,8 @@ export default interface Resources {
       "emailBodyLabel": "Email body",
       "emailNodeDescription": "Send an email to the contact.",
       "emailSubjectLabel": "Subject",
+      "endReadOnly": "This version ends a path with an End step, which this editor cannot edit yet. It is shown read-only; publishing or reverting it keeps the End.",
+      "endReadOnlyTitle": "Read-only version",
       "engagementHint": "Every open and click counts here, so a person who opens twice shows twice. Opens and clicks cover the Event retention window; delivered, bounced and complained do not.",
       "engagementTitle": "Engagement",
       "enrolledAt": "Enrolled at",
@@ -444,12 +446,15 @@ export default interface Resources {
       "statusLabel": "Status",
       "stepApplyTag": "Apply tag",
       "stepEmail": "Send email",
+      "stepEnd": "End",
       "stepFigures": {
-        "hint": "What each send step sent and skipped, across every version. A contact skipped at a step (no address, opted out of the channel, or suppressed) moves on to the next step.",
+        "hint": "What each send step sent and skipped, across every version that had it, and each version's share. A contact skipped at a step (no address, opted out of the channel, or suppressed) moves on to the next step.",
+        "notLive": "Not in the live version",
         "sent": "Sent",
         "skipped": "Skipped",
         "step": "Step",
-        "title": "Send steps"
+        "title": "Send steps",
+        "version": "Version"
       },
       "stepHttp": "Call a URL",
       "stepRemoveTag": "Remove tag",
@@ -471,7 +476,8 @@ export default interface Resources {
       "triggerMissing": "Keep exactly one trigger on the canvas.",
       "triggerMissingTitle": "Trigger needed",
       "waitNodeDescription": "Pause before the next step.",
-      "waitSecondsLabel": "Wait (seconds)"
+      "waitSecondsLabel": "Wait (seconds)",
+      "waitingUntil": "Waiting until"
     },
     "brandKit": {
       "accentColorLabel": "Accent color",

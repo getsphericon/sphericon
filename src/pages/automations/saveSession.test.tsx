@@ -12,7 +12,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteAutomationResource, AutomationVersion } from '../../generated/site/types.gen.ts'
 import { Route } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
-import { testId } from '../../test/payloads.ts'
+import { stepId, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -25,7 +25,7 @@ const LIVE: AutomationVersion = {
   triggerEvent: 'email.clicked',
   exitEvents: [],
   goalEvent: null,
-  steps: [],
+  steps: { id: stepId(1), steps: [] },
 }
 const DRAFT: AutomationVersion = { ...LIVE, number: 2 }
 const STORED: SiteAutomationResource = {

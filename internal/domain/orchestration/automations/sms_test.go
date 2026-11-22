@@ -84,8 +84,8 @@ func TestSmsUnsubscribedTriggersAndExits(t *testing.T) {
 	assert.NotZero(t, onConsent.ID)
 }
 
-func smsVia(id *int64, text string) automationstep.Step {
-	return automationstep.Step{Type: automationstep.SMS, IntegrationID: id, Text: text}
+func smsVia(id *int64, text string) automationstep.SMS {
+	return automationstep.SMS{IntegrationID: id, Text: text}
 }
 
 func TestPublishIsRefusedForAnSMSStepThatCannotSend(t *testing.T) {
@@ -100,7 +100,7 @@ func TestPublishIsRefusedForAnSMSStepThatCannotSend(t *testing.T) {
 	for name, integration := range cases {
 		t.Run(name, func(t *testing.T) {
 			_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID),
-				Steps: &[]automationstep.Step{smsVia(integration, "Hi")},
+				Steps: steps(smsVia(integration, "Hi")),
 			})
 			require.NoError(t, err, "a draft may name it")
 
@@ -117,7 +117,7 @@ func TestPublishSendsAnSMSStepThroughItsTwilioIntegration(t *testing.T) {
 	m := testhelper.Module[*automations.Module](env)
 	id := int64(env.AcmeTwilio(t).Integration.ID)
 	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID),
-		Steps: &[]automationstep.Step{smsVia(&id, "Hi")},
+		Steps: steps(smsVia(&id, "Hi")),
 	})
 	require.NoError(t, err)
 
@@ -133,7 +133,7 @@ func TestAnSMSStepNeedsATextThatRenders(t *testing.T) {
 	for name, text := range map[string]string{"blank": "  ", "bad Liquid": "{% if %}"} {
 		t.Run(name, func(t *testing.T) {
 			_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID),
-				Steps: &[]automationstep.Step{smsVia(nil, text)},
+				Steps: steps(smsVia(nil, text)),
 			})
 
 			require.ErrorIs(t, err, automations.ErrInvalidStep)
@@ -149,13 +149,14 @@ func TestSavingAnSMSStepOverTwiliosLengthLimitIsRefused(t *testing.T) {
 	atLimit := strings.Repeat("я", 700)
 
 	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID),
-		Steps: &[]automationstep.Step{smsVia(nil, atLimit)},
+		Steps: steps(smsVia(nil, atLimit)),
 	})
 	require.NoError(t, err)
+	over := automationstep.Root(automationstep.Step{ID: "5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1b01", Payload: smsVia(nil, atLimit+"я")})
 	_, err = m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID),
-		Steps: &[]automationstep.Step{smsVia(nil, atLimit+"я")},
+		Steps: &over,
 	})
 
 	require.ErrorIs(t, err, automations.ErrInvalidStep)
-	assert.ErrorContains(t, err, "step 1: the text is 701 characters in UCS-2 (11 segments); it may take 700 characters in UCS-2 at most")
+	assert.ErrorContains(t, err, "step 5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1b01 (sms): the text is 701 characters in UCS-2 (11 segments); it may take 700 characters in UCS-2 at most")
 }

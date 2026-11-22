@@ -37,7 +37,7 @@ func TestSiteAutomationsReadLiveAndDraftAndUpdateWritesTheDraft(t *testing.T) {
 	_, err := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(id))),
 		Name:         siteapi.NewOptName("Hold demo, edited"),
 		TriggerEvent: siteapi.NewOptString("hold_demo_v2"),
-		Steps:        []siteapi.AutomationStepInput{{Type: siteapi.AutomationStepTypeWait, Seconds: siteapi.NewOptInt32(60)}},
+		Steps:        testhelper.SitePathEdit(siteapi.WaitStepInput{Seconds: 60}),
 	}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: id})
 	require.NoError(t, err)
 	edited := get()
@@ -45,7 +45,10 @@ func TestSiteAutomationsReadLiveAndDraftAndUpdateWritesTheDraft(t *testing.T) {
 	assert.Equal(t, before.Live.Value, edited.Live.Value, "the live version is untouched")
 	assert.EqualValues(t, 2, edited.Draft.Value.Number)
 	assert.Equal(t, "hold_demo_v2", edited.Draft.Value.TriggerEvent)
-	assert.Equal(t, []siteapi.AutomationStep{{Type: siteapi.AutomationStepTypeWait, Seconds: siteapi.NewOptInt32(60)}}, edited.Draft.Value.Steps)
+	draftSteps := edited.Draft.Value.Steps.Steps
+	require.Len(t, draftSteps, 1)
+	assert.Equal(t, siteapi.WaitStepAutomationStepSum, draftSteps[0].OneOf.Type)
+	assert.EqualValues(t, 60, draftSteps[0].OneOf.WaitStep.Seconds)
 
 	_, err = c.SiteAutomationsPublish(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(id)))}, siteapi.SiteAutomationsPublishParams{WorkspaceId: workspaceID, ID: id})
 	require.NoError(t, err)

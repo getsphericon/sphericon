@@ -3,6 +3,7 @@ package outboundmessages
 import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 // Ref is the surface record a message is sent for, and through it the message's kind: a
@@ -35,17 +36,19 @@ func (r BroadcastRef) stamp(c *ent.OutboundMessageScopedCreate) {
 
 func (r BroadcastRef) owners() (broadcastID, automationID int64) { return r.BroadcastID, 0 }
 
-// AutomationRef is the message of the send step at index Step of an Automation run.
+// AutomationRef is the message of an Automation's send Step: the version and the Step id that sent
+// it (ADR 0122), and the run, 0 for none.
 type AutomationRef struct {
 	AutomationID int64
+	VersionID    int64
 	RunID        int64
-	Step         int
+	StepID       automationstep.ID
 }
 
 func (AutomationRef) Kind() outboundmessage.Kind { return outboundmessage.KindAutomation }
 
 func (r AutomationRef) stamp(c *ent.OutboundMessageScopedCreate) {
-	c.SetAutomationID(r.AutomationID).SetAutomationStep(r.Step)
+	c.SetAutomationID(r.AutomationID).SetAutomationVersionID(r.VersionID).SetAutomationStepID(r.StepID)
 	if r.RunID != 0 {
 		c.SetAutomationRunID(r.RunID)
 	}

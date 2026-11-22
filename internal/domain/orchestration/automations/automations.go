@@ -89,133 +89,126 @@ var (
 	errEventWithoutTime = errors.New("automations: the Event has no occurred_at")
 )
 
-// StoredSteps are the steps as a version stores them, dropping the fields that do not belong to
-// each step's type and trimming tag names.
-func StoredSteps(steps []automationstep.Step) []automationstep.Step {
-	return automationstep.Rewrite(steps, func(_ int, st *automationstep.Step) automationstep.Step { return storedStep(st) })
+// StoredSteps are the steps as a version stores them, each payload in its stored form
+// (automationstep.Payload.Stored).
+func StoredSteps(p automationstep.Path) automationstep.Path {
+	return automationstep.Rewrite(p, func(_ int, st *automationstep.Step) automationstep.Step {
+		return automationstep.Step{ID: st.ID, Payload: st.Payload.Stored()}
+	})
 }
 
-// storedStep is the step as a version stores it.
-func storedStep(s *automationstep.Step) automationstep.Step {
-	switch s.Type {
-	case automationstep.Wait:
-		return automationstep.Step{Type: automationstep.Wait, Seconds: s.Seconds}
-	case automationstep.ApplyTag, automationstep.RemoveTag:
-		return automationstep.Step{Type: s.Type, Tag: strings.TrimSpace(s.Tag)}
-	case automationstep.HTTP:
-		return automationstep.Step{Type: automationstep.HTTP, ID: s.ID, URL: s.URL, Headers: s.Headers, Body: s.Body, Secret: s.Secret}
-	case automationstep.Telegram:
-		return automationstep.Step{
-			Type: automationstep.Telegram, IntegrationID: s.IntegrationID, Text: s.Text,
-			ImageURL: strings.TrimSpace(s.ImageURL), Buttons: s.Buttons, LinkPreview: s.LinkPreview,
-			UnsubscribeButton: strings.TrimSpace(s.UnsubscribeButton),
-		}
-	case automationstep.SMS:
-		sms := automationstep.Step{Type: automationstep.SMS, IntegrationID: s.IntegrationID, Text: s.Text}
-		if !s.TracksLinks() {
-			sms.LinkTracking = new(false) // on is the default, stored as nothing
-		}
-		return sms
-	default:
-		email := automationstep.Step{Type: automationstep.Email, IntegrationID: s.IntegrationID, Subject: s.Subject, Body: s.Body}
-		if len(s.Doc) > 0 {
-			email.Doc, email.EditorVersion = s.Doc, s.EditorVersion
-		}
-		return email
-	}
+// refuse is ErrInvalidStep naming the Step by its id and kind (ADR 0122), and why.
+func refuse(st *automationstep.Step, why string) error {
+	return ErrInvalidStep.With(fmt.Sprintf("step %s (%s): %s", st.ID, st.Kind(), why))
 }
 
-// validate checks each step on its own. linkLength is the length of the Workspace's short tracked
-// links, what an SMS step's links count as.
-func validate(steps []automationstep.Step, linkLength int) error {
-	for i, s := range automationstep.All(steps) {
-		switch s.Type {
+// validate checks each step on its own; the steps carry their ids (identify). linkLength is the
+// length of the Workspace's short tracked links, what an SMS step's links count as.
+func validate(steps automationstep.Path, linkLength int) error {
+	for _, st := range automationstep.All(steps) {
+		switch s := st.Payload.(type) {
 		case automationstep.Email:
 			if err := emailrender.Lint(s.Subject, s.Body, nil).Error; err != nil {
-				return ErrInvalidStep.With(err.Error())
+				return refuse(st, err.Error())
 			}
 		case automationstep.Telegram:
 			if strings.TrimSpace(s.Text) == "" {
-				return ErrInvalidStep.With("a Telegram step needs a text")
+				return refuse(st, "a Telegram step needs a text")
 			}
-			if err := telegramrender.Check(s.Text); err != nil {
-				return ErrInvalidStep.With(err.Error())
-			}
-			if err := telegramrender.CheckUnsubscribeButton(s.UnsubscribeButton); err != nil {
-				return ErrInvalidStep.With(err.Error())
-			}
-			if err := telegramrender.CheckImage(s.ImageURL); err != nil {
-				return ErrInvalidStep.With(err.Error())
-			}
-			if err := telegramrender.CheckButtons(s.Buttons); err != nil {
-				return ErrInvalidStep.With(err.Error())
+			for _, err := range []error{
+				telegramrender.Check(s.Text),
+				telegramrender.CheckUnsubscribeButton(s.UnsubscribeButton),
+				telegramrender.CheckImage(s.ImageURL),
+				telegramrender.CheckButtons(s.Buttons),
+			} {
+				if err != nil {
+					return refuse(st, err.Error())
+				}
 			}
 		case automationstep.SMS:
 			if strings.TrimSpace(s.Text) == "" {
-				return ErrInvalidStep.With("an SMS step needs a text")
+				return refuse(st, "an SMS step needs a text")
 			}
 			if err := smsrender.Check(s.Text); err != nil {
-				return ErrInvalidStep.With(err.Error())
+				return refuse(st, err.Error())
 			}
 			// Twilio is the one SMS provider, so its length limit is the one a text is held to. Its
 			// links count as the short links they go out as, unless the step keeps them.
 			if err := smsrender.CheckLength(s.Text, twilio.MaxLength, lo.Ternary(s.TracksLinks(), linkLength, 0)); err != nil {
-				return ErrInvalidStep.With(fmt.Sprintf("step %d: %s", i+1, err))
+				return refuse(st, err.Error())
 			}
 		case automationstep.HTTP:
 		case automationstep.Wait:
 			if s.Seconds < 0 {
-				return ErrInvalidStep
+				return refuse(st, "a wait cannot be negative")
 			}
-		case automationstep.ApplyTag, automationstep.RemoveTag:
-			if strings.TrimSpace(s.Tag) == "" {
-				return ErrInvalidStep
+		case automationstep.Tagging:
+			if strings.TrimSpace(s.TagName()) == "" {
+				return refuse(st, "a tag step needs a tag name")
 			}
+		case automationstep.End:
 		default:
-			return ErrInvalidStep
+			return refuse(st, "the step has no known kind")
 		}
 	}
 	return nil
 }
 
-// SendStep is a send step of a version, where it stands and what it sends through.
+// identify gives the path and each step without an id one, keeping the ids sent; a malformed id
+// or one used twice in the version refuses the save, naming the Step or the path (ADR 0122).
+func identify(steps automationstep.Path) (automationstep.Path, error) {
+	out, err := automationstep.Identify(steps, automationstep.NewID)
+	if bad, ok := errors.AsType[*automationstep.BadIDError](err); ok {
+		return automationstep.Path{}, ErrInvalidStep.With(bad.Detail)
+	}
+	return out, err
+}
+
+// checkEnds refuses a Step that follows an End in its path, naming it by its id and kind: an End
+// finishes its path (ADR 0124), so the Step would never run. The steps carry their ids (identify).
+func checkEnds(steps automationstep.Path) error {
+	if st, after := automationstep.AfterEnd(steps); after {
+		return refuse(st, "it comes after an end step, which finishes its path")
+	}
+	return nil
+}
+
+// SendStep is a send step of a version: the Step, named by its id, and what it sends through.
 type SendStep struct {
-	// Index is the step's position in the version, 0 for the first.
-	Index int
-	Step  automationstep.Step
+	Step automationstep.Step
 }
 
 // Channel is the Channel the step sends on.
 func (s SendStep) Channel() channels.Channel {
-	ch, _ := s.Step.Type.Channel()
+	ch, _ := s.Step.Kind().Channel()
 	return ch
 }
 
 // Content is the step's Message content, its Channel's own shape (ADR 0078). A new send step kind
 // adds its case here beside Kind.Channel.
 func (s SendStep) Content() (outboundmessages.Content, error) {
-	switch s.Step.Type {
+	switch p := s.Step.Payload.(type) {
 	case automationstep.Email:
-		return outboundmessages.EmailContent{Subject: s.Step.Subject, Body: s.Step.Body}, nil
+		return outboundmessages.EmailContent{Subject: p.Subject, Body: p.Body}, nil
 	case automationstep.Telegram:
 		return outboundmessages.TelegramContent{
-			Text: s.Step.Text, ImageURL: s.Step.ImageURL, Buttons: s.Step.Buttons,
-			NoLinkPreview:     s.Step.LinkPreview != nil && !*s.Step.LinkPreview,
-			UnsubscribeButton: s.Step.UnsubscribeButton,
+			Text: p.Text, ImageURL: p.ImageURL, Buttons: p.Buttons,
+			NoLinkPreview:     p.LinkPreview != nil && !*p.LinkPreview,
+			UnsubscribeButton: p.UnsubscribeButton,
 		}, nil
 	case automationstep.SMS:
-		return outboundmessages.SMSContent{Text: s.Step.Text, NoLinkTracking: !s.Step.TracksLinks()}, nil
+		return outboundmessages.SMSContent{Text: p.Text, NoLinkTracking: !p.TracksLinks()}, nil
 	default:
-		return nil, fmt.Errorf("automations: step type %q has no message content", s.Step.Type)
+		return nil, fmt.Errorf("automations: step type %q has no message content", s.Step.Kind())
 	}
 }
 
 // SendSteps are the send steps of the version, in step order.
 func SendSteps(v *ent.AutomationVersion) []SendStep {
 	var out []SendStep
-	for i, st := range automationstep.All(v.Steps) {
-		if _, sends := st.Type.Channel(); sends {
-			out = append(out, SendStep{Index: i, Step: *st})
+	for _, st := range automationstep.All(v.Steps) {
+		if _, sends := st.Kind().Channel(); sends {
+			out = append(out, SendStep{Step: *st})
 		}
 	}
 	return out
@@ -259,13 +252,18 @@ func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer, o
 
 // build renders every email step that holds a document to its body, in the same save (ADR 0040,
 // the Template rules): a step with a document and a body is refused, and a document that cannot
-// be rendered refuses the whole save, naming the step (1-based). A step with no document is
-// left as it is, so a body-only write stores no document.
-func (m *Module) build(ctx context.Context, steps []automationstep.Step) ([]automationstep.Step, error) {
-	return automationstep.Map(steps, func(i int, st *automationstep.Step) (automationstep.Step, error) {
-		s := *st
-		if s.Type != automationstep.Email || len(s.Doc) == 0 {
-			return s, nil
+// be rendered refuses the whole save, naming the step by its id and kind. A step with no document
+// is left as it is, so a body-only write stores no document. The steps are identified first
+// (identify), so every refusal of the save can name its Step.
+func (m *Module) build(ctx context.Context, written automationstep.Path) (automationstep.Path, error) {
+	steps, err := identify(written)
+	if err != nil {
+		return automationstep.Path{}, err
+	}
+	return automationstep.Map(steps, func(_ int, st *automationstep.Step) (automationstep.Step, error) {
+		s, ok := st.Payload.(automationstep.Email)
+		if !ok || len(s.Doc) == 0 {
+			return *st, nil
 		}
 		var body *string
 		if s.Body != "" {
@@ -274,14 +272,14 @@ func (m *Module) build(ctx context.Context, steps []automationstep.Step) ([]auto
 		c, err := emailrender.ResolveContent(ctx, m.renderer, &s.Subject, body, s.Doc, errBodyAndDoc)
 		switch {
 		case errors.Is(err, errBodyAndDoc):
-			return automationstep.Step{}, ErrInvalidStep.With(fmt.Sprintf("step %d: write a body or a doc, not both", i+1))
+			return automationstep.Step{}, refuse(st, "write a body or a doc, not both")
 		case errors.Is(err, emailrender.ErrInvalidContent):
-			return automationstep.Step{}, ErrInvalidStep.With(fmt.Sprintf("step %d: %s", i+1, err))
+			return automationstep.Step{}, refuse(st, err.Error())
 		case err != nil:
 			return automationstep.Step{}, err
 		}
 		s.Body, s.EditorVersion = c.Authored.Body, c.Authored.EditorVersion
-		return s, nil
+		return automationstep.Step{ID: st.ID, Payload: s}, nil
 	})
 }
 
@@ -389,7 +387,8 @@ type CreateInput struct {
 	// nil is none.
 	ExitEvents []string
 	GoalEvent  *string
-	Steps      []automationstep.Step
+	// Steps are the root path; nil is none.
+	Steps *automationstep.Path
 }
 
 // UpdateInput changes an Automation; nil fields are left alone. The name is the Automation's own;
@@ -403,7 +402,8 @@ type UpdateInput struct {
 	ExitEvents *[]string
 	// GoalEvent sets the goal event, and a clear removes it.
 	GoalEvent patch.Field[string]
-	Steps     *[]automationstep.Step
+	// Steps replaces the root path; nil leaves it alone.
+	Steps *automationstep.Path
 }
 
 // LiveAndDraft returns the Automation's live version and its draft, each nil when it has none.
@@ -432,9 +432,11 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 		return nil, err
 	}
 	in.Name = name
-	steps, err := m.build(ctx, in.Steps)
-	if err != nil {
-		return nil, err
+	var steps automationstep.Path
+	if in.Steps != nil {
+		if steps, err = m.build(ctx, *in.Steps); err != nil {
+			return nil, err
+		}
 	}
 	owner := func(ctx context.Context, ts *ent.Scoped) (int64, error) {
 		a, err := ts.Automation().Create().SetName(in.Name).Save(ctx)
@@ -480,7 +482,7 @@ type edit struct {
 	trigger *string
 	exits   *[]string
 	goal    patch.Field[string]
-	steps   *[]automationstep.Step
+	steps   *automationstep.Path
 }
 
 // definition is the content of an Automation version as stored: its Trigger, the events that end
@@ -490,7 +492,7 @@ type definition struct {
 	trigger string
 	exits   []string
 	goal    *string
-	steps   []automationstep.Step
+	steps   automationstep.Path
 }
 
 // versioned is the Automation's part of the lifecycle (versioneddefinition.Definition).
@@ -505,8 +507,8 @@ func (versioned) Store(s *ent.Scoped) ent.VersionedStore[ent.Automation, ent.Aut
 // steps, each send step's Integration kept (not archived). An HTTP step that names one of the
 // base's steps by ID keeps the secrets it does not resend.
 func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.AutomationVersion, e edit) (definition, error) {
-	def := definition{exits: []string{}, steps: []automationstep.Step{}}
-	var stored []automationstep.Step
+	def := definition{exits: []string{}, steps: automationstep.Path{ID: automationstep.NewID(), Steps: []automationstep.Step{}}}
+	var stored automationstep.Path
 	if base != nil {
 		def, stored = definitionOf(base), base.Steps
 	}
@@ -527,14 +529,19 @@ func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.Automati
 		if err != nil {
 			return definition{}, err
 		}
-		if err := validate(*e.steps, linkLength); err != nil {
+		// The steps carry their ids: build identified them.
+		steps := *e.steps
+		if err := validate(steps, linkLength); err != nil {
+			return definition{}, err
+		}
+		if err := checkEnds(steps); err != nil {
 			return definition{}, err
 		}
 		// Each Integration the steps name is checked once, however many steps send through it.
 		var named []int64
-		for _, st := range automationstep.All(*e.steps) {
-			if st.IntegrationID != nil {
-				named = append(named, *st.IntegrationID)
+		for _, st := range automationstep.All(steps) {
+			if id := st.Integration(); id != nil {
+				named = append(named, *id)
 			}
 		}
 		for _, id := range lo.Uniq(named) {
@@ -542,7 +549,7 @@ func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.Automati
 				return definition{}, err
 			}
 		}
-		sealed, err := v.m.sealSteps(*e.steps, stored)
+		sealed, err := v.m.sealSteps(steps, stored)
 		if err != nil {
 			return definition{}, err
 		}
@@ -610,11 +617,12 @@ func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent
 	}
 	for i := range sends {
 		st := &sends[i]
-		if st.Step.Type != automationstep.Telegram {
+		tg, ok := st.Step.Payload.(automationstep.Telegram)
+		if !ok {
 			continue
 		}
-		if err := telegramrender.CheckWritten(st.Step.Text, st.Step.ImageURL != ""); err != nil {
-			return ErrInvalidStep.With(fmt.Sprintf("step %d: %s", st.Index+1, err))
+		if err := telegramrender.CheckWritten(tg.Text, tg.ImageURL != ""); err != nil {
+			return refuse(&st.Step, err.Error())
 		}
 	}
 	type routeKey struct {
@@ -624,15 +632,15 @@ func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent
 	asked := map[routeKey]bool{}
 	for i := range sends {
 		st := &sends[i]
-		key := routeKey{st.Channel(), lo.FromPtr(st.Step.IntegrationID)}
+		key := routeKey{st.Channel(), lo.FromPtr(st.Step.Integration())}
 		if asked[key] {
 			continue
 		}
 		asked[key] = true
-		if err := checkIntegration(ctx, ts, st.Step.IntegrationID); err != nil {
+		if err := checkIntegration(ctx, ts, st.Step.Integration()); err != nil {
 			return err
 		}
-		route, err := v.m.out.Route(ctx, ts, st.Channel(), st.Step.IntegrationID)
+		route, err := v.m.out.Route(ctx, ts, st.Channel(), st.Step.Integration())
 		if err != nil {
 			return err
 		}

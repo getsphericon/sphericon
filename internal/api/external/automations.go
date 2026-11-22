@@ -14,7 +14,7 @@ func (h *Handlers) AutomationsList(ctx context.Context, params externalapi.Autom
 	if err != nil {
 		return nil, err
 	}
-	return mapper.AutomationsListPage(page), nil
+	return mapper.AutomationsListPage(page)
 }
 
 // AutomationsCreate always stores an inactive Automation: publishing is the send-class operation.
@@ -23,7 +23,10 @@ func (h *Handlers) AutomationsCreate(ctx context.Context, req *externalapi.Creat
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.AutomationToResource(a)
+	res, err := mapper.AutomationToResource(a)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -33,7 +36,10 @@ func (h *Handlers) AutomationsGet(ctx context.Context, params externalapi.Automa
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.AutomationToResource(a)
+	res, err := mapper.AutomationToResource(a)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -43,7 +49,10 @@ func (h *Handlers) AutomationsUpdate(ctx context.Context, req *externalapi.Updat
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.AutomationToResource(a)
+	res, err := mapper.AutomationToResource(a)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -56,7 +65,10 @@ func (h *Handlers) AutomationsArchive(ctx context.Context, params externalapi.Au
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.AutomationToResource(a)
+	res, err := mapper.AutomationToResource(a)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -68,7 +80,10 @@ func (h *Handlers) AutomationsUnarchive(ctx context.Context, params externalapi.
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.AutomationToResource(a)
+	res, err := mapper.AutomationToResource(a)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -80,7 +95,10 @@ func (h *Handlers) AutomationsPublish(ctx context.Context, req *externalapi.Revi
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.AutomationToResource(a)
+	res, err := mapper.AutomationToResource(a)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -91,7 +109,10 @@ func (h *Handlers) AutomationsDeactivate(ctx context.Context, params externalapi
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.AutomationToResource(a)
+	res, err := mapper.AutomationToResource(a)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -113,6 +134,9 @@ func (h *Handlers) AutomationsRevert(ctx context.Context, req *externalapi.Revis
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.AutomationToResource(a)
+	res, err := mapper.AutomationToResource(a)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }

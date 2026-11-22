@@ -87,6 +87,12 @@ const (
 	AutomationGothamResultsName = "Gotham results"
 	// AutomationGothamResultsVersionID is from fixtures/automation_versions.
 	AutomationGothamResultsVersionID = 6100
+	// AutomationHTTPBelowAWaitID is from fixtures/automations.
+	AutomationHTTPBelowAWaitID = 5581
+	// AutomationHTTPBelowAWaitName is from fixtures/automations.
+	AutomationHTTPBelowAWaitName = "HTTP below a wait"
+	// AutomationHTTPBelowAWaitVersionID is from fixtures/automation_versions.
+	AutomationHTTPBelowAWaitVersionID = 5581
 	// AutomationHTTPExecutionID is from fixtures/automations.
 	AutomationHTTPExecutionID = 5580
 	// AutomationHTTPExecutionName is from fixtures/automations.
@@ -137,6 +143,12 @@ const (
 	AutomationJobsEmailsThenTagVersionID = 5568
 	// AutomationJobsEmptyVersionID is from fixtures/automation_versions.
 	AutomationJobsEmptyVersionID = 55633
+	// AutomationJobsEndsEarlyID is from fixtures/automations.
+	AutomationJobsEndsEarlyID = 5590
+	// AutomationJobsEndsEarlyName is from fixtures/automations.
+	AutomationJobsEndsEarlyName = "Jobs ends early"
+	// AutomationJobsEndsEarlyVersionID is from fixtures/automation_versions.
+	AutomationJobsEndsEarlyVersionID = 5590
 	// AutomationJobsGreetingID is from fixtures/automations.
 	AutomationJobsGreetingID = 5560
 	// AutomationJobsGreetingInactiveID is from fixtures/automations.
@@ -315,8 +327,6 @@ const (
 	AutomationJobsTelegramWelcomeBackName = "Jobs telegram welcome back"
 	// AutomationJobsTelegramWelcomeBackVersionID is from fixtures/automation_versions.
 	AutomationJobsTelegramWelcomeBackVersionID = 7507
-	// AutomationJobsUnknownStepVersionID is from fixtures/automation_versions.
-	AutomationJobsUnknownStepVersionID = 55632
 	// AutomationJobsWaitFirstID is from fixtures/automations.
 	AutomationJobsWaitFirstID = 5562
 	// AutomationJobsWaitFirstName is from fixtures/automations.
@@ -497,6 +507,8 @@ const (
 	AutomationRunErasableHTTPFailedID = 3001
 	// AutomationRunErasableID is from fixtures/automation_runs.
 	AutomationRunErasableID = 3000
+	// AutomationRunHTTPBelowAWaitID is from fixtures/automation_runs.
+	AutomationRunHTTPBelowAWaitID = 5581
 	// AutomationRunHTTPFailedID is from fixtures/automation_runs.
 	AutomationRunHTTPFailedID = 1101
 	// AutomationRunHTTPPendingID is from fixtures/automation_runs.
@@ -581,8 +593,6 @@ const (
 	AutomationRunJobsTelegramUnsubscribeLinkBobID = 7507
 	// AutomationRunJobsTelegramWelcomeBackBobID is from fixtures/automation_runs.
 	AutomationRunJobsTelegramWelcomeBackBobID = 7508
-	// AutomationRunJobsUnknownStepID is from fixtures/automation_runs.
-	AutomationRunJobsUnknownStepID = 5566
 	// AutomationRunMeridianArchivedFailedID is from fixtures/automation_runs.
 	AutomationRunMeridianArchivedFailedID = 7404
 	// AutomationRunMeridianEnrolledID is from fixtures/automation_runs.
@@ -3883,6 +3893,8 @@ const (
 	StartTokenGlobexUsedID = 900
 	// StartTokenGlobexUsedToken is from fixtures/start_tokens.
 	StartTokenGlobexUsedToken = "fixture-start-token-globex"
+	// StepRecordErasableID is from fixtures/automation_step_records.
+	StepRecordErasableID = 3000
 	// SuppressionErasableDestination is from fixtures/suppressions.
 	SuppressionErasableDestination = "erin@initech.test"
 	// SuppressionErasableID is from fixtures/suppressions.

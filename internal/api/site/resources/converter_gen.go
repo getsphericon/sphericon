@@ -49,7 +49,6 @@ import (
 	trackingdomains "github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	messaging "github.com/getsphericon/sphericon/internal/infra/messaging"
 	webhook "github.com/getsphericon/sphericon/internal/infra/webhook"
-	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	deferralcause "github.com/getsphericon/sphericon/internal/kernel/deferralcause"
@@ -222,6 +221,13 @@ func (c *ConverterImpl) AnalyticsSubscribedPeopleToResource(source *analyticsrep
 	}
 	return pSiteapiSiteAnalyticsSubscribedPeople
 }
+func (c *ConverterImpl) ApplyTagStepToResource(source automations.TagView) site.ApplyTagStep {
+	var siteapiApplyTagStep site.ApplyTagStep
+	siteapiApplyTagStep.ID = site.StepId(source.ID)
+	siteapiApplyTagStep.Type = applyTagStepType(source.Type)
+	siteapiApplyTagStep.Tag = source.Tag
+	return siteapiApplyTagStep
+}
 func (c *ConverterImpl) AttentionItemsToResources(source []needsattentionreport.Item) []site.SiteAttentionItem {
 	var siteapiSiteAttentionItemList []site.SiteAttentionItem
 	siteapiSiteAttentionItemList = make([]site.SiteAttentionItem, len(source))
@@ -354,6 +360,16 @@ func (c *ConverterImpl) AutomationHttpHeaderToResource(source automations.Header
 	// siteapiAutomationHttpHeader.Value: ignore
 	return siteapiAutomationHttpHeader
 }
+func (c *ConverterImpl) AutomationPathToResource(source automations.PathView) (site.AutomationPath, error) {
+	var siteapiAutomationPath site.AutomationPath
+	siteapiAutomationPath.ID = site.StepId(source.ID)
+	siteapiAutomationStepList, err := automationStepViews(c, source.Steps)
+	if err != nil {
+		return siteapiAutomationPath, err
+	}
+	siteapiAutomationPath.Steps = siteapiAutomationStepList
+	return siteapiAutomationPath, nil
+}
 func (c *ConverterImpl) AutomationPeriodResultsToResource(source automations.PeriodResults) site.AutomationPeriodResults {
 	var siteapiAutomationPeriodResults site.AutomationPeriodResults
 	siteapiAutomationPeriodResults.Entered = count(source.ResultCounts.Entered)
@@ -400,6 +416,12 @@ func (c *ConverterImpl) AutomationReportToResource(source automations.Report) si
 			siteapiAutomationReport.Steps[i] = c.automationsStepFiguresToSiteapiAutomationStepFigures(source.Steps[i])
 		}
 	}
+	if source.VersionSteps != nil {
+		siteapiAutomationReport.VersionSteps = make([]site.AutomationVersionStepFigures, len(source.VersionSteps))
+		for j := 0; j < len(source.VersionSteps); j++ {
+			siteapiAutomationReport.VersionSteps[j] = c.automationsVersionStepFiguresToSiteapiAutomationVersionStepFigures(source.VersionSteps[j])
+		}
+	}
 	return siteapiAutomationReport
 }
 func (c *ConverterImpl) AutomationResultsPointToResource(source automations.ResultsPoint) site.AutomationResultsPoint {
@@ -438,89 +460,31 @@ func (c *ConverterImpl) AutomationStatusToResource(source automation.Status) sit
 	}
 	return siteapiAutomationStatus
 }
-func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) site.AutomationStep {
-	var siteapiAutomationStep site.AutomationStep
-	siteapiAutomationStep.Type = c.AutomationStepTypeToResource(source.Type)
-	siteapiAutomationStep.Subject = optString(source.Subject)
-	siteapiAutomationStep.Body = optString(source.Body)
-	siteapiAutomationStep.Doc = optEditorDocument(source.Doc)
-	siteapiAutomationStep.EditorVersion = optString(source.EditorVersion)
-	siteapiAutomationStep.Seconds = optInt32(source.Seconds)
-	siteapiAutomationStep.Tag = optString(source.Tag)
-	siteapiAutomationStep.ID = optString(source.ID)
-	// siteapiAutomationStep.URL: ignore
-	if source.Headers != nil {
-		siteapiAutomationStep.Headers = make([]site.AutomationHttpHeader, len(source.Headers))
-		for i := 0; i < len(source.Headers); i++ {
-			siteapiAutomationStep.Headers[i] = c.AutomationHttpHeaderToResource(source.Headers[i])
-		}
-	}
-	// siteapiAutomationStep.Secret: ignore
-	// siteapiAutomationStep.ClearSecret: ignore
-	siteapiAutomationStep.HasSecret = optBool(source.HasSecret)
-	siteapiAutomationStep.IntegrationId = optNilEntityID(source.IntegrationID)
-	siteapiAutomationStep.Text = optString(source.Text)
-	siteapiAutomationStep.UnsubscribeButton = optString(source.UnsubscribeButton)
-	siteapiAutomationStep.ImageUrl = optString(source.ImageURL)
-	if source.Buttons != nil {
-		siteapiAutomationStep.Buttons = make([]site.TelegramButton, len(source.Buttons))
-		for j := 0; j < len(source.Buttons); j++ {
-			siteapiAutomationStep.Buttons[j] = c.TelegramButtonToResource(source.Buttons[j])
-		}
-	}
-	siteapiAutomationStep.LinkPreview = optBool(source.LinkPreview)
-	siteapiAutomationStep.LinkTracking = optBool(source.LinkTracking)
-	return siteapiAutomationStep
-}
-func (c *ConverterImpl) AutomationStepTypeToResource(source automationstep.Kind) site.AutomationStepType {
-	var siteapiAutomationStepType site.AutomationStepType
-	switch source {
-	case automationstep.ApplyTag:
-		siteapiAutomationStepType = site.AutomationStepTypeApplyTag
-	case automationstep.Email:
-		siteapiAutomationStepType = site.AutomationStepTypeEmail
-	case automationstep.HTTP:
-		siteapiAutomationStepType = site.AutomationStepTypeHTTP
-	case automationstep.RemoveTag:
-		siteapiAutomationStepType = site.AutomationStepTypeRemoveTag
-	case automationstep.SMS:
-		siteapiAutomationStepType = site.AutomationStepTypeSMS
-	case automationstep.Telegram:
-		siteapiAutomationStepType = site.AutomationStepTypeTelegram
-	case automationstep.Wait:
-		siteapiAutomationStepType = site.AutomationStepTypeWait
-	default:
-		panic(fmt.Sprintf("unexpected enum element: %v", source))
-	}
-	return siteapiAutomationStepType
-}
-func (c *ConverterImpl) AutomationStepsToResources(source []automations.StepView) []site.AutomationStep {
-	var siteapiAutomationStepList []site.AutomationStep
-	if source != nil {
-		siteapiAutomationStepList = make([]site.AutomationStep, len(source))
-		for i := 0; i < len(source); i++ {
-			siteapiAutomationStepList[i] = c.AutomationStepToResource(source[i])
-		}
-	}
-	return siteapiAutomationStepList
-}
-func (c *ConverterImpl) AutomationToResource(source *ent.Automation) site.SiteAutomationResource {
+func (c *ConverterImpl) AutomationToResource(source *ent.Automation) (site.SiteAutomationResource, error) {
 	var siteapiSiteAutomationResource site.SiteAutomationResource
 	if source != nil {
 		siteapiSiteAutomationResource.ID = site.EntityId((*source).ID)
 		siteapiSiteAutomationResource.Name = (*source).Name
 		siteapiSiteAutomationResource.Status = c.AutomationStatusToResource((*source).Status)
-		siteapiSiteAutomationResource.Live = automationVersionOrNull(c, (*source).Edges.LiveVersion)
-		siteapiSiteAutomationResource.Draft = automationVersionOrNull(c, (*source).Edges.DraftVersion)
+		siteapiNilAutomationVersion, err := automationVersionOrNull(c, (*source).Edges.LiveVersion)
+		if err != nil {
+			return siteapiSiteAutomationResource, err
+		}
+		siteapiSiteAutomationResource.Live = siteapiNilAutomationVersion
+		siteapiNilAutomationVersion2, err := automationVersionOrNull(c, (*source).Edges.DraftVersion)
+		if err != nil {
+			return siteapiSiteAutomationResource, err
+		}
+		siteapiSiteAutomationResource.Draft = siteapiNilAutomationVersion2
 		siteapiSiteAutomationResource.ArchivedAt = optNilTimestamp((*source).ArchivedAt)
 		// siteapiSiteAutomationResource.Revenue: ignore
 		siteapiSiteAutomationResource.Revision = revision((*source).Revision)
 		siteapiSiteAutomationResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteAutomationResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
-	return siteapiSiteAutomationResource
+	return siteapiSiteAutomationResource, nil
 }
-func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersion) site.AutomationVersion {
+func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersion) (site.AutomationVersion, error) {
 	var siteapiAutomationVersion site.AutomationVersion
 	if source != nil {
 		siteapiAutomationVersion.Number = count((*source).Version)
@@ -532,11 +496,15 @@ func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersio
 			}
 		}
 		siteapiAutomationVersion.GoalEvent = nilString((*source).GoalEvent)
-		siteapiAutomationVersion.Steps = automationSteps(c, (*source).Steps)
+		siteapiAutomationPath, err := automationPath(c, (*source).Steps)
+		if err != nil {
+			return siteapiAutomationVersion, err
+		}
+		siteapiAutomationVersion.Steps = siteapiAutomationPath
 	}
-	return siteapiAutomationVersion
+	return siteapiAutomationVersion, nil
 }
-func (c *ConverterImpl) AutomationWithRevenueToResource(source automations.WithRevenue) site.SiteAutomationResource {
+func (c *ConverterImpl) AutomationWithRevenueToResource(source automations.WithRevenue) (site.SiteAutomationResource, error) {
 	var siteapiSiteAutomationResource site.SiteAutomationResource
 	var pInt64 *int64
 	if source.Automation != nil {
@@ -563,12 +531,20 @@ func (c *ConverterImpl) AutomationWithRevenueToResource(source automations.WithR
 	if source.Automation != nil {
 		pEntAutomationVersion = source.Automation.Edges.LiveVersion
 	}
-	siteapiSiteAutomationResource.Live = automationVersionOrNull(c, pEntAutomationVersion)
+	siteapiNilAutomationVersion, err := automationVersionOrNull(c, pEntAutomationVersion)
+	if err != nil {
+		return siteapiSiteAutomationResource, err
+	}
+	siteapiSiteAutomationResource.Live = siteapiNilAutomationVersion
 	var pEntAutomationVersion2 *ent.AutomationVersion
 	if source.Automation != nil {
 		pEntAutomationVersion2 = source.Automation.Edges.DraftVersion
 	}
-	siteapiSiteAutomationResource.Draft = automationVersionOrNull(c, pEntAutomationVersion2)
+	siteapiNilAutomationVersion2, err := automationVersionOrNull(c, pEntAutomationVersion2)
+	if err != nil {
+		return siteapiSiteAutomationResource, err
+	}
+	siteapiSiteAutomationResource.Draft = siteapiNilAutomationVersion2
 	var pTimeTime *time.Time
 	if source.Automation != nil {
 		pTimeTime = source.Automation.ArchivedAt
@@ -592,24 +568,32 @@ func (c *ConverterImpl) AutomationWithRevenueToResource(source automations.WithR
 		pTimeTime3 = &source.Automation.UpdatedAt
 	}
 	siteapiSiteAutomationResource.UpdatedAt = timestampOf(pTimeTime3)
-	return siteapiSiteAutomationResource
+	return siteapiSiteAutomationResource, nil
 }
-func (c *ConverterImpl) AutomationsListPage(source pagination.Page[automations.WithRevenue]) *site.SiteAutomationsListOK {
+func (c *ConverterImpl) AutomationsListPage(source pagination.Page[automations.WithRevenue]) (*site.SiteAutomationsListOK, error) {
 	var siteapiSiteAutomationsListOK site.SiteAutomationsListOK
-	siteapiSiteAutomationsListOK.Items = c.AutomationsWithRevenueToResources(source.Items)
+	siteapiSiteAutomationResourceList, err := c.AutomationsWithRevenueToResources(source.Items)
+	if err != nil {
+		return nil, err
+	}
+	siteapiSiteAutomationsListOK.Items = siteapiSiteAutomationResourceList
 	siteapiSiteAutomationsListOK.Page = count(source.Page)
 	siteapiSiteAutomationsListOK.PageSize = count(source.PageSize)
 	siteapiSiteAutomationsListOK.TotalItems = count(source.TotalItems)
 	siteapiSiteAutomationsListOK.TotalPages = count(source.TotalPages)
-	return &siteapiSiteAutomationsListOK
+	return &siteapiSiteAutomationsListOK, nil
 }
-func (c *ConverterImpl) AutomationsWithRevenueToResources(source []automations.WithRevenue) []site.SiteAutomationResource {
+func (c *ConverterImpl) AutomationsWithRevenueToResources(source []automations.WithRevenue) ([]site.SiteAutomationResource, error) {
 	var siteapiSiteAutomationResourceList []site.SiteAutomationResource
 	siteapiSiteAutomationResourceList = make([]site.SiteAutomationResource, len(source))
 	for i := 0; i < len(source); i++ {
-		siteapiSiteAutomationResourceList[i] = c.AutomationWithRevenueToResource(source[i])
+		siteapiSiteAutomationResource, err := c.AutomationWithRevenueToResource(source[i])
+		if err != nil {
+			return nil, err
+		}
+		siteapiSiteAutomationResourceList[i] = siteapiSiteAutomationResource
 	}
-	return siteapiSiteAutomationResourceList
+	return siteapiSiteAutomationResourceList, nil
 }
 func (c *ConverterImpl) BindingToResource(source bindings.Chat) site.SiteBindingResource {
 	var siteapiSiteBindingResource site.SiteBindingResource
@@ -1137,6 +1121,17 @@ func (c *ConverterImpl) EmailBroadcastContentToResource(source *ent.Broadcast) s
 	}
 	return siteapiEmailBroadcastContent
 }
+func (c *ConverterImpl) EmailStepToResource(source automations.EmailView) site.EmailStep {
+	var siteapiEmailStep site.EmailStep
+	siteapiEmailStep.ID = site.StepId(source.ID)
+	siteapiEmailStep.Type = emailStepType(source.Type)
+	siteapiEmailStep.Subject = source.Subject
+	siteapiEmailStep.Body = source.Body
+	siteapiEmailStep.Doc = optEditorDocument(source.Doc)
+	siteapiEmailStep.EditorVersion = optString(source.EditorVersion)
+	siteapiEmailStep.IntegrationId = optEntityID(source.IntegrationID)
+	return siteapiEmailStep
+}
 func (c *ConverterImpl) EmailTemplateToResource(source *ent.EmailTemplate) site.SiteEmailTemplateResource {
 	var siteapiSiteEmailTemplateResource site.SiteEmailTemplateResource
 	if source != nil {
@@ -1160,6 +1155,12 @@ func (c *ConverterImpl) EmailTemplatesToResources(source []*ent.EmailTemplate) [
 		siteapiSiteEmailTemplateResourceList[i] = c.EmailTemplateToResource(source[i])
 	}
 	return siteapiSiteEmailTemplateResourceList
+}
+func (c *ConverterImpl) EndStepToResource(source automations.EndView) site.EndStep {
+	var siteapiEndStep site.EndStep
+	siteapiEndStep.ID = site.StepId(source.ID)
+	siteapiEndStep.Type = endStepType(source.Type)
+	return siteapiEndStep
 }
 func (c *ConverterImpl) EnrollmentFailureKindToResource(source automationrun.FailureKind) site.EnrollmentFailureKind {
 	var siteapiEnrollmentFailureKind site.EnrollmentFailureKind
@@ -1205,7 +1206,7 @@ func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) site.Enr
 		siteapiEnrollmentResource.AutomationId = site.EntityId((*source).AutomationID)
 		siteapiEnrollmentResource.ContactId = site.EntityId((*source).ContactID)
 		siteapiEnrollmentResource.Status = c.EnrollmentStatusToResource((*source).Status)
-		siteapiEnrollmentResource.CurrentStep = count((*source).CurrentStep)
+		siteapiEnrollmentResource.CurrentStepId = optStepID((*source).CurrentStepID)
 		siteapiEnrollmentResource.ResumeAt = optTimestamp((*source).ResumeAt)
 		siteapiEnrollmentResource.Failure = enrollmentFailure(c, (*source))
 		siteapiEnrollmentResource.CreatedAt = timestamp((*source).CreatedAt)
@@ -1318,6 +1319,20 @@ func (c *ConverterImpl) HoldsToResources(source []*ent.Hold) []site.SiteWorkspac
 		siteapiSiteWorkspaceHoldList[i] = c.HoldToResource(source[i])
 	}
 	return siteapiSiteWorkspaceHoldList
+}
+func (c *ConverterImpl) HttpStepToResource(source automations.HTTPView) site.HttpStep {
+	var siteapiHttpStep site.HttpStep
+	siteapiHttpStep.ID = site.StepId(source.ID)
+	siteapiHttpStep.Type = httpStepType(source.Type)
+	siteapiHttpStep.Body = source.Body
+	if source.Headers != nil {
+		siteapiHttpStep.Headers = make([]site.AutomationHttpHeader, len(source.Headers))
+		for i := 0; i < len(source.Headers); i++ {
+			siteapiHttpStep.Headers[i] = c.AutomationHttpHeaderToResource(source.Headers[i])
+		}
+	}
+	siteapiHttpStep.HasSecret = source.HasSecret
+	return siteapiHttpStep
 }
 func (c *ConverterImpl) IdentitiesToResources(source []*ent.UserIdentity) []site.SiteLinkedIdentity {
 	var siteapiSiteLinkedIdentityList []site.SiteLinkedIdentity
@@ -1697,7 +1712,7 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) sit
 		siteapiContactExportOutboundMessage.Captured = (*source).Captured
 		siteapiContactExportOutboundMessage.BroadcastId = optNilEntityID((*source).BroadcastID)
 		siteapiContactExportOutboundMessage.AutomationId = optNilEntityID((*source).AutomationID)
-		siteapiContactExportOutboundMessage.AutomationStep = optNilInt32((*source).AutomationStep)
+		siteapiContactExportOutboundMessage.AutomationStepId = optNilStepID((*source).AutomationStepID)
 		siteapiContactExportOutboundMessage.TemplateId = optNilEntityID((*source).TemplateID)
 		siteapiContactExportOutboundMessage.CreatedAt = timestamp((*source).CreatedAt)
 	}
@@ -1979,6 +1994,13 @@ func (c *ConverterImpl) ProviderLimitWarningToResource(source providerlimit.Warn
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiProviderLimitWarning
+}
+func (c *ConverterImpl) RemoveTagStepToResource(source automations.TagView) site.RemoveTagStep {
+	var siteapiRemoveTagStep site.RemoveTagStep
+	siteapiRemoveTagStep.ID = site.StepId(source.ID)
+	siteapiRemoveTagStep.Type = removeTagStepType(source.Type)
+	siteapiRemoveTagStep.Tag = source.Tag
+	return siteapiRemoveTagStep
 }
 func (c *ConverterImpl) RequiredPermissionsToResource(source map[string]memberships.Permission) site.SiteOAuthAuthorizationRequestRequiredPermissions {
 	var siteapiSiteOAuthAuthorizationRequestRequiredPermissions site.SiteOAuthAuthorizationRequestRequiredPermissions
@@ -2430,6 +2452,15 @@ func (c *ConverterImpl) SmsOptOutToResource(source *confirmations.SMSOptOut) sit
 	}
 	return siteapiSmsOptOut
 }
+func (c *ConverterImpl) SmsStepToResource(source automations.SMSView) site.SmsStep {
+	var siteapiSmsStep site.SmsStep
+	siteapiSmsStep.ID = site.StepId(source.ID)
+	siteapiSmsStep.Type = smsStepType(source.Type)
+	siteapiSmsStep.Text = source.Text
+	siteapiSmsStep.LinkTracking = source.LinkTracking
+	siteapiSmsStep.IntegrationId = optEntityID(source.IntegrationID)
+	return siteapiSmsStep
+}
 func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) site.SmtpConfig {
 	var siteapiSmtpConfig site.SmtpConfig
 	siteapiSmtpConfig.Kind = smtpConfigKind(source)
@@ -2592,6 +2623,23 @@ func (c *ConverterImpl) TelegramConfigToResource(source integrations.RedactedTel
 	siteapiTelegramConfig.BotId = source.BotID
 	siteapiTelegramConfig.Username = source.Username
 	return siteapiTelegramConfig
+}
+func (c *ConverterImpl) TelegramStepToResource(source automations.TelegramView) site.TelegramStep {
+	var siteapiTelegramStep site.TelegramStep
+	siteapiTelegramStep.ID = site.StepId(source.ID)
+	siteapiTelegramStep.Type = telegramStepType(source.Type)
+	siteapiTelegramStep.Text = source.Text
+	siteapiTelegramStep.UnsubscribeButton = optString(source.UnsubscribeButton)
+	siteapiTelegramStep.ImageUrl = optString(source.ImageURL)
+	if source.Buttons != nil {
+		siteapiTelegramStep.Buttons = make([]site.TelegramButton, len(source.Buttons))
+		for i := 0; i < len(source.Buttons); i++ {
+			siteapiTelegramStep.Buttons[i] = c.TelegramButtonToResource(source.Buttons[i])
+		}
+	}
+	siteapiTelegramStep.LinkPreview = source.LinkPreview
+	siteapiTelegramStep.IntegrationId = optEntityID(source.IntegrationID)
+	return siteapiTelegramStep
 }
 func (c *ConverterImpl) TemplatesListPage(source pagination.Page[*ent.EmailTemplate]) *site.SiteTemplatesListOK {
 	var siteapiSiteTemplatesListOK site.SiteTemplatesListOK
@@ -2798,6 +2846,13 @@ func (c *ConverterImpl) VisitorToExport(source *ent.Visitor) site.ContactExportV
 	}
 	return siteapiContactExportVisitor
 }
+func (c *ConverterImpl) WaitStepToResource(source automations.WaitView) site.WaitStep {
+	var siteapiWaitStep site.WaitStep
+	siteapiWaitStep.ID = site.StepId(source.ID)
+	siteapiWaitStep.Type = waitStepType(source.Type)
+	siteapiWaitStep.Seconds = count(source.Seconds)
+	return siteapiWaitStep
+}
 func (c *ConverterImpl) WebhookDisabledReasonToResource(source webhookendpoint.DisabledReason) site.WebhookDisabledReason {
 	var siteapiWebhookDisabledReason site.WebhookDisabledReason
 	switch source {
@@ -2966,10 +3021,18 @@ func (c *ConverterImpl) analyticsreportSubscribedPointToSiteapiSiteAnalyticsSubs
 }
 func (c *ConverterImpl) automationsStepFiguresToSiteapiAutomationStepFigures(source automations.StepFigures) site.AutomationStepFigures {
 	var siteapiAutomationStepFigures site.AutomationStepFigures
-	siteapiAutomationStepFigures.Step = count(source.Step)
+	siteapiAutomationStepFigures.StepId = site.StepId(source.StepID)
 	siteapiAutomationStepFigures.Sent = count(source.Sent)
 	siteapiAutomationStepFigures.Skipped = count(source.Skipped)
 	return siteapiAutomationStepFigures
+}
+func (c *ConverterImpl) automationsVersionStepFiguresToSiteapiAutomationVersionStepFigures(source automations.VersionStepFigures) site.AutomationVersionStepFigures {
+	var siteapiAutomationVersionStepFigures site.AutomationVersionStepFigures
+	siteapiAutomationVersionStepFigures.Version = count(source.Version)
+	siteapiAutomationVersionStepFigures.StepId = site.StepId(source.StepID)
+	siteapiAutomationVersionStepFigures.Sent = count(source.Sent)
+	siteapiAutomationVersionStepFigures.Skipped = count(source.Skipped)
+	return siteapiAutomationVersionStepFigures
 }
 func (c *ConverterImpl) linkclickClicksToSiteapiLinkClicks(source linkclick.Clicks) site.LinkClicks {
 	var siteapiLinkClicks site.LinkClicks

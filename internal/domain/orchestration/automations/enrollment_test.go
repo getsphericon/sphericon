@@ -126,13 +126,13 @@ func TestAStepOfAnExitedEnrollmentLeavesItExited(t *testing.T) {
 	_, err = env.ExitEnrollment(ctx, s, fixtures.AutomationWelcomeSeriesID, waiting.ContactID)
 	require.NoError(t, err)
 
-	require.NoError(t, testhelper.Module[*automations.StepExecution](env).Step(ctx, s, runID, waiting.CurrentStep))
-	require.NoError(t, testhelper.Module[*automations.StepExecution](env).Step(ctx, s, runID, waiting.CurrentStep+1))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).Step(ctx, s, runID, lo.FromPtr(waiting.CurrentStepID)))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).Step(ctx, s, runID, ""))
 
 	run, err := s.AutomationRun().Get(ctx, runID)
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusExited, run.Status)
-	assert.Equal(t, waiting.CurrentStep, run.CurrentStep)
+	assert.Equal(t, waiting.CurrentStepID, run.CurrentStepID)
 	assert.Nil(t, run.FailureKind)
 	queued := env.JobsOf(t, automations.RunStepArgs{}.Kind())
 	assert.Empty(t, queued)
@@ -160,12 +160,12 @@ func TestAStepJobForAnotherStepLeavesTheEnrollmentWhereItStands(t *testing.T) {
 	before, err := s.AutomationRun().Get(ctx, runID)
 	require.NoError(t, err)
 
-	require.NoError(t, testhelper.Module[*automations.StepExecution](env).Step(ctx, s, runID, before.CurrentStep+4))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).Step(ctx, s, runID, env.StepIDAt(t, runID, 0)))
 
 	after, err := s.AutomationRun().Get(ctx, runID)
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusActive, after.Status)
-	assert.Equal(t, before.CurrentStep, after.CurrentStep)
+	assert.Equal(t, before.CurrentStepID, after.CurrentStepID)
 	assert.Equal(t, before.ResumeAt, after.ResumeAt)
 	queued := env.JobsOf(t, automations.RunStepArgs{}.Kind())
 	assert.Empty(t, queued)

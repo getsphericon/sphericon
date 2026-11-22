@@ -8,6 +8,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
@@ -177,9 +178,15 @@ func AutomationRunID(v int64) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldAutomationRunID, v))
 }
 
-// AutomationStep applies equality check predicate on the "automation_step" field. It's identical to AutomationStepEQ.
-func AutomationStep(v int) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldEQ(FieldAutomationStep, v))
+// AutomationVersionID applies equality check predicate on the "automation_version_id" field. It's identical to AutomationVersionIDEQ.
+func AutomationVersionID(v int64) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldAutomationVersionID, v))
+}
+
+// AutomationStepID applies equality check predicate on the "automation_step_id" field. It's identical to AutomationStepIDEQ.
+func AutomationStepID(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldEQ(FieldAutomationStepID, vc))
 }
 
 // IntegrationID applies equality check predicate on the "integration_id" field. It's identical to IntegrationIDEQ.
@@ -1482,54 +1489,128 @@ func AutomationRunIDNotNil() predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldNotNull(FieldAutomationRunID))
 }
 
-// AutomationStepEQ applies the EQ predicate on the "automation_step" field.
-func AutomationStepEQ(v int) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldEQ(FieldAutomationStep, v))
+// AutomationVersionIDEQ applies the EQ predicate on the "automation_version_id" field.
+func AutomationVersionIDEQ(v int64) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldAutomationVersionID, v))
 }
 
-// AutomationStepNEQ applies the NEQ predicate on the "automation_step" field.
-func AutomationStepNEQ(v int) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldNEQ(FieldAutomationStep, v))
+// AutomationVersionIDNEQ applies the NEQ predicate on the "automation_version_id" field.
+func AutomationVersionIDNEQ(v int64) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNEQ(FieldAutomationVersionID, v))
 }
 
-// AutomationStepIn applies the In predicate on the "automation_step" field.
-func AutomationStepIn(vs ...int) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldIn(FieldAutomationStep, vs...))
+// AutomationVersionIDIn applies the In predicate on the "automation_version_id" field.
+func AutomationVersionIDIn(vs ...int64) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIn(FieldAutomationVersionID, vs...))
 }
 
-// AutomationStepNotIn applies the NotIn predicate on the "automation_step" field.
-func AutomationStepNotIn(vs ...int) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldNotIn(FieldAutomationStep, vs...))
+// AutomationVersionIDNotIn applies the NotIn predicate on the "automation_version_id" field.
+func AutomationVersionIDNotIn(vs ...int64) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotIn(FieldAutomationVersionID, vs...))
 }
 
-// AutomationStepGT applies the GT predicate on the "automation_step" field.
-func AutomationStepGT(v int) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldGT(FieldAutomationStep, v))
+// AutomationVersionIDIsNil applies the IsNil predicate on the "automation_version_id" field.
+func AutomationVersionIDIsNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIsNull(FieldAutomationVersionID))
 }
 
-// AutomationStepGTE applies the GTE predicate on the "automation_step" field.
-func AutomationStepGTE(v int) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldGTE(FieldAutomationStep, v))
+// AutomationVersionIDNotNil applies the NotNil predicate on the "automation_version_id" field.
+func AutomationVersionIDNotNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotNull(FieldAutomationVersionID))
 }
 
-// AutomationStepLT applies the LT predicate on the "automation_step" field.
-func AutomationStepLT(v int) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldLT(FieldAutomationStep, v))
+// AutomationStepIDEQ applies the EQ predicate on the "automation_step_id" field.
+func AutomationStepIDEQ(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldEQ(FieldAutomationStepID, vc))
 }
 
-// AutomationStepLTE applies the LTE predicate on the "automation_step" field.
-func AutomationStepLTE(v int) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldLTE(FieldAutomationStep, v))
+// AutomationStepIDNEQ applies the NEQ predicate on the "automation_step_id" field.
+func AutomationStepIDNEQ(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldNEQ(FieldAutomationStepID, vc))
 }
 
-// AutomationStepIsNil applies the IsNil predicate on the "automation_step" field.
-func AutomationStepIsNil() predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldIsNull(FieldAutomationStep))
+// AutomationStepIDIn applies the In predicate on the "automation_step_id" field.
+func AutomationStepIDIn(vs ...automationstep.ID) predicate.OutboundMessage {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = string(vs[i])
+	}
+	return predicate.OutboundMessage(sql.FieldIn(FieldAutomationStepID, v...))
 }
 
-// AutomationStepNotNil applies the NotNil predicate on the "automation_step" field.
-func AutomationStepNotNil() predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldNotNull(FieldAutomationStep))
+// AutomationStepIDNotIn applies the NotIn predicate on the "automation_step_id" field.
+func AutomationStepIDNotIn(vs ...automationstep.ID) predicate.OutboundMessage {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = string(vs[i])
+	}
+	return predicate.OutboundMessage(sql.FieldNotIn(FieldAutomationStepID, v...))
+}
+
+// AutomationStepIDGT applies the GT predicate on the "automation_step_id" field.
+func AutomationStepIDGT(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldGT(FieldAutomationStepID, vc))
+}
+
+// AutomationStepIDGTE applies the GTE predicate on the "automation_step_id" field.
+func AutomationStepIDGTE(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldGTE(FieldAutomationStepID, vc))
+}
+
+// AutomationStepIDLT applies the LT predicate on the "automation_step_id" field.
+func AutomationStepIDLT(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldLT(FieldAutomationStepID, vc))
+}
+
+// AutomationStepIDLTE applies the LTE predicate on the "automation_step_id" field.
+func AutomationStepIDLTE(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldLTE(FieldAutomationStepID, vc))
+}
+
+// AutomationStepIDContains applies the Contains predicate on the "automation_step_id" field.
+func AutomationStepIDContains(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldContains(FieldAutomationStepID, vc))
+}
+
+// AutomationStepIDHasPrefix applies the HasPrefix predicate on the "automation_step_id" field.
+func AutomationStepIDHasPrefix(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldHasPrefix(FieldAutomationStepID, vc))
+}
+
+// AutomationStepIDHasSuffix applies the HasSuffix predicate on the "automation_step_id" field.
+func AutomationStepIDHasSuffix(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldHasSuffix(FieldAutomationStepID, vc))
+}
+
+// AutomationStepIDIsNil applies the IsNil predicate on the "automation_step_id" field.
+func AutomationStepIDIsNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIsNull(FieldAutomationStepID))
+}
+
+// AutomationStepIDNotNil applies the NotNil predicate on the "automation_step_id" field.
+func AutomationStepIDNotNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotNull(FieldAutomationStepID))
+}
+
+// AutomationStepIDEqualFold applies the EqualFold predicate on the "automation_step_id" field.
+func AutomationStepIDEqualFold(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldEqualFold(FieldAutomationStepID, vc))
+}
+
+// AutomationStepIDContainsFold applies the ContainsFold predicate on the "automation_step_id" field.
+func AutomationStepIDContainsFold(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldContainsFold(FieldAutomationStepID, vc))
 }
 
 // IntegrationIDEQ applies the EQ predicate on the "integration_id" field.
@@ -1901,6 +1982,29 @@ func HasAutomation() predicate.OutboundMessage {
 func HasAutomationWith(preds ...predicate.Automation) predicate.OutboundMessage {
 	return predicate.OutboundMessage(func(s *sql.Selector) {
 		step := newAutomationStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasAutomationVersion applies the HasEdge predicate on the "automation_version" edge.
+func HasAutomationVersion() predicate.OutboundMessage {
+	return predicate.OutboundMessage(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, AutomationVersionTable, AutomationVersionColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasAutomationVersionWith applies the HasEdge predicate on the "automation_version" edge with a given conditions (other predicates).
+func HasAutomationVersionWith(preds ...predicate.AutomationVersion) predicate.OutboundMessage {
+	return predicate.OutboundMessage(func(s *sql.Selector) {
+		step := newAutomationVersionStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

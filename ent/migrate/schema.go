@@ -207,7 +207,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
-		{Name: "step", Type: field.TypeInt},
+		{Name: "step_id", Type: field.TypeString},
 		{Name: "sent", Type: field.TypeInt, Default: 0},
 		{Name: "skipped", Type: field.TypeInt, Default: 0},
 		{Name: "delivered", Type: field.TypeInt, Default: 0},
@@ -215,6 +215,7 @@ var (
 		{Name: "complained", Type: field.TypeInt, Default: 0},
 		{Name: "captured", Type: field.TypeInt, Default: 0},
 		{Name: "automation_id", Type: field.TypeInt64},
+		{Name: "version_id", Type: field.TypeInt64},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// AutomationFiguresTable holds the schema information for the "automation_figures" table.
@@ -230,17 +231,28 @@ var (
 				OnDelete:   schema.NoAction,
 			},
 			{
-				Symbol:     "automation_figures_workspaces_automation_figures",
+				Symbol:     "automation_figures_automation_versions_version",
 				Columns:    []*schema.Column{AutomationFiguresColumns[11]},
+				RefColumns: []*schema.Column{AutomationVersionsColumns[0]},
+				OnDelete:   schema.Restrict,
+			},
+			{
+				Symbol:     "automation_figures_workspaces_automation_figures",
+				Columns:    []*schema.Column{AutomationFiguresColumns[12]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "automation_figures_workspace_id_automation_id_step",
+				Name:    "automation_figures_workspace_automation_version_step",
 				Unique:  true,
-				Columns: []*schema.Column{AutomationFiguresColumns[11], AutomationFiguresColumns[10], AutomationFiguresColumns[3]},
+				Columns: []*schema.Column{AutomationFiguresColumns[12], AutomationFiguresColumns[10], AutomationFiguresColumns[11], AutomationFiguresColumns[3]},
+			},
+			{
+				Name:    "automation_figures_workspace_id_version_id",
+				Unique:  false,
+				Columns: []*schema.Column{AutomationFiguresColumns[12], AutomationFiguresColumns[11]},
 			},
 		},
 	}
@@ -254,7 +266,7 @@ var (
 		{Name: "event_action", Type: field.TypeString, Nullable: true},
 		{Name: "event_properties", Type: field.TypeJSON, Nullable: true},
 		{Name: "ended_at", Type: field.TypeTime, Nullable: true},
-		{Name: "current_step", Type: field.TypeInt, Default: 0},
+		{Name: "current_step_id", Type: field.TypeString, Nullable: true},
 		{Name: "resume_at", Type: field.TypeTime, Nullable: true},
 		{Name: "failure_kind", Type: field.TypeEnum, Nullable: true, Enums: []string{"invalid_body", "timeout", "blocked_address", "http_status", "network"}},
 		{Name: "failure_status", Type: field.TypeInt, Nullable: true},
@@ -328,13 +340,54 @@ var (
 			},
 		},
 	}
+	// AutomationStepRecordsColumns holds the columns for the "automation_step_records" table.
+	AutomationStepRecordsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "step_id", Type: field.TypeString},
+		{Name: "reached_at", Type: field.TypeTime},
+		{Name: "left_at", Type: field.TypeTime, Nullable: true},
+		{Name: "outcome", Type: field.TypeEnum, Nullable: true, Enums: []string{"done", "skipped"}},
+		{Name: "skip_reason", Type: field.TypeEnum, Nullable: true, Enums: []string{"suppressed", "unsubscribed_everything", "unsubscribed_source", "unconfirmed", "no_destination", "contact_erased", "no_local_time", "frequency_cap"}},
+		{Name: "due_at", Type: field.TypeTime, Nullable: true},
+		{Name: "run_id", Type: field.TypeInt64},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// AutomationStepRecordsTable holds the schema information for the "automation_step_records" table.
+	AutomationStepRecordsTable = &schema.Table{
+		Name:       "automation_step_records",
+		Columns:    AutomationStepRecordsColumns,
+		PrimaryKey: []*schema.Column{AutomationStepRecordsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "automation_step_records_automation_runs_run",
+				Columns:    []*schema.Column{AutomationStepRecordsColumns[9]},
+				RefColumns: []*schema.Column{AutomationRunsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "automation_step_records_workspaces_automation_step_records",
+				Columns:    []*schema.Column{AutomationStepRecordsColumns[10]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "automation_step_records_workspace_id_run_id_step_id",
+				Unique:  true,
+				Columns: []*schema.Column{AutomationStepRecordsColumns[10], AutomationStepRecordsColumns[9], AutomationStepRecordsColumns[3]},
+			},
+		},
+	}
 	// AutomationVersionsColumns holds the columns for the "automation_versions" table.
 	AutomationVersionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "version", Type: field.TypeInt},
-		{Name: "steps", Type: field.TypeJSON, Default: "[]"},
+		{Name: "steps", Type: field.TypeJSON},
 		{Name: "trigger_event", Type: field.TypeString},
 		{Name: "exit_events", Type: field.TypeJSON, Default: "[]"},
 		{Name: "goal_event", Type: field.TypeString, Nullable: true},
@@ -1942,12 +1995,13 @@ var (
 		{Name: "opened_at", Type: field.TypeTime, Nullable: true},
 		{Name: "clicked_at", Type: field.TypeTime, Nullable: true},
 		{Name: "captured", Type: field.TypeBool, Default: false},
-		{Name: "automation_step", Type: field.TypeInt, Nullable: true},
+		{Name: "automation_step_id", Type: field.TypeString, Nullable: true},
 		{Name: "request_digest", Type: field.TypeString, Nullable: true},
 		{Name: "subject", Type: field.TypeString, Nullable: true},
 		{Name: "app_origin", Type: field.TypeString, Nullable: true},
 		{Name: "broadcast_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "automation_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "automation_version_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "integration_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "broadcast_recipient_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "automation_run_id", Type: field.TypeInt64, Nullable: true},
@@ -1974,38 +2028,44 @@ var (
 				OnDelete:   schema.Restrict,
 			},
 			{
-				Symbol:     "outbound_messages_integrations_integration",
+				Symbol:     "outbound_messages_automation_versions_automation_version",
 				Columns:    []*schema.Column{OutboundMessagesColumns[29]},
+				RefColumns: []*schema.Column{AutomationVersionsColumns[0]},
+				OnDelete:   schema.Restrict,
+			},
+			{
+				Symbol:     "outbound_messages_integrations_integration",
+				Columns:    []*schema.Column{OutboundMessagesColumns[30]},
 				RefColumns: []*schema.Column{IntegrationsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "outbound_messages_broadcast_recipients_broadcast_recipient",
-				Columns:    []*schema.Column{OutboundMessagesColumns[30]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[31]},
 				RefColumns: []*schema.Column{BroadcastRecipientsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "outbound_messages_automation_runs_automation_run",
-				Columns:    []*schema.Column{OutboundMessagesColumns[31]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[32]},
 				RefColumns: []*schema.Column{AutomationRunsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "outbound_messages_contacts_contact",
-				Columns:    []*schema.Column{OutboundMessagesColumns[32]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[33]},
 				RefColumns: []*schema.Column{ContactsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "outbound_messages_email_templates_template",
-				Columns:    []*schema.Column{OutboundMessagesColumns[33]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[34]},
 				RefColumns: []*schema.Column{EmailTemplatesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "outbound_messages_workspaces_outbound_messages",
-				Columns:    []*schema.Column{OutboundMessagesColumns[34]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[35]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -2014,12 +2074,12 @@ var (
 			{
 				Name:    "outbound_messages_workspace_id_idempotency_key",
 				Unique:  true,
-				Columns: []*schema.Column{OutboundMessagesColumns[34], OutboundMessagesColumns[4]},
+				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[4]},
 			},
 			{
 				Name:    "outboundmessage_workspace_id_kind_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[34], OutboundMessagesColumns[3], OutboundMessagesColumns[1]},
+				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[3], OutboundMessagesColumns[1]},
 			},
 			{
 				Name:    "outbound_messages_kind_created_at",
@@ -2029,37 +2089,37 @@ var (
 			{
 				Name:    "outboundmessage_workspace_id_integration_id_sent_at",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[34], OutboundMessagesColumns[29], OutboundMessagesColumns[14]},
+				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[30], OutboundMessagesColumns[14]},
 			},
 			{
 				Name:    "outboundmessage_workspace_id_sending_domain_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[34], OutboundMessagesColumns[8], OutboundMessagesColumns[1]},
+				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[8], OutboundMessagesColumns[1]},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_provider_message_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[34], OutboundMessagesColumns[9]},
+				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[9]},
 			},
 			{
 				Name:    "outboundmessage_workspace_id_updated_at_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[34], OutboundMessagesColumns[2], OutboundMessagesColumns[0]},
+				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[2], OutboundMessagesColumns[0]},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[34], OutboundMessagesColumns[32]},
+				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[33]},
 			},
 			{
 				Name:    "outboundmessage_workspace_id_broadcast_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[34], OutboundMessagesColumns[27], OutboundMessagesColumns[10]},
+				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[27], OutboundMessagesColumns[10]},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_broadcast_recipient_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[34], OutboundMessagesColumns[30]},
+				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[31]},
 			},
 			{
 				Name:    "outbound_messages_broadcast_id",
@@ -2069,27 +2129,32 @@ var (
 			{
 				Name:    "outbound_messages_integration_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[29]},
+				Columns: []*schema.Column{OutboundMessagesColumns[30]},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_automation_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[34], OutboundMessagesColumns[28]},
+				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[28]},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_automation_run_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[34], OutboundMessagesColumns[31]},
+				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[32]},
+			},
+			{
+				Name:    "outbound_messages_workspace_id_automation_version_id",
+				Unique:  false,
+				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[29]},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_template_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[34], OutboundMessagesColumns[33]},
+				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[34]},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_sent_at_broadcast",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[34], OutboundMessagesColumns[14]},
+				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[14]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "broadcast_recipient_id IS NOT NULL",
 				},
@@ -3341,6 +3406,7 @@ var (
 		AutomationsTable,
 		AutomationFiguresTable,
 		AutomationRunsTable,
+		AutomationStepRecordsTable,
 		AutomationVersionsTable,
 		BindingsTable,
 		BrandKitsTable,
@@ -3450,7 +3516,8 @@ func init() {
 		"automations_status_check": "status IN ('active', 'inactive')",
 	}
 	AutomationFiguresTable.ForeignKeys[0].RefTable = AutomationsTable
-	AutomationFiguresTable.ForeignKeys[1].RefTable = WorkspacesTable
+	AutomationFiguresTable.ForeignKeys[1].RefTable = AutomationVersionsTable
+	AutomationFiguresTable.ForeignKeys[2].RefTable = WorkspacesTable
 	AutomationFiguresTable.Annotation = &entsql.Annotation{
 		Table: "automation_figures",
 	}
@@ -3465,13 +3532,25 @@ func init() {
 		"automation_runs_failure_kind_check": "failure_kind IN ('invalid_body', 'timeout', 'blocked_address', 'http_status', 'network')",
 		"automation_runs_status_check":       "status IN ('active', 'completed', 'failed', 'exited', 'goal_reached')",
 	}
+	AutomationStepRecordsTable.ForeignKeys[0].RefTable = AutomationRunsTable
+	AutomationStepRecordsTable.ForeignKeys[1].RefTable = WorkspacesTable
+	AutomationStepRecordsTable.Annotation = &entsql.Annotation{
+		Table: "automation_step_records",
+	}
+	AutomationStepRecordsTable.Annotation.Checks = map[string]string{
+		"automation_step_records_left_check":        "outcome IS NULL OR left_at IS NOT NULL",
+		"automation_step_records_outcome_check":     "outcome IN ('done', 'skipped')",
+		"automation_step_records_reason_check":      "outcome IS NOT NULL OR skip_reason IS NULL",
+		"automation_step_records_skip_reason_check": "skip_reason IN ('suppressed', 'unsubscribed_everything', 'unsubscribed_source', 'unconfirmed', 'no_destination', 'contact_erased', 'no_local_time', 'frequency_cap')",
+		"automation_step_records_skipped_check":     "(outcome = 'done' AND skip_reason IS NULL) OR (outcome = 'skipped' AND skip_reason IS NOT NULL)",
+	}
 	AutomationVersionsTable.ForeignKeys[0].RefTable = AutomationsTable
 	AutomationVersionsTable.ForeignKeys[1].RefTable = WorkspacesTable
 	AutomationVersionsTable.Annotation = &entsql.Annotation{
 		Table: "automation_versions",
 	}
 	AutomationVersionsTable.Annotation.Checks = map[string]string{
-		"automation_versions_steps_check": "jsonb_typeof(steps) = 'array'",
+		"automation_versions_steps_check": "COALESCE(jsonb_typeof(steps -> 'steps') = 'array', false)",
 	}
 	BindingsTable.ForeignKeys[0].RefTable = ContactsTable
 	BindingsTable.ForeignKeys[1].RefTable = IntegrationsTable
@@ -3718,12 +3797,13 @@ func init() {
 	}
 	OutboundMessagesTable.ForeignKeys[0].RefTable = BroadcastsTable
 	OutboundMessagesTable.ForeignKeys[1].RefTable = AutomationsTable
-	OutboundMessagesTable.ForeignKeys[2].RefTable = IntegrationsTable
-	OutboundMessagesTable.ForeignKeys[3].RefTable = BroadcastRecipientsTable
-	OutboundMessagesTable.ForeignKeys[4].RefTable = AutomationRunsTable
-	OutboundMessagesTable.ForeignKeys[5].RefTable = ContactsTable
-	OutboundMessagesTable.ForeignKeys[6].RefTable = EmailTemplatesTable
-	OutboundMessagesTable.ForeignKeys[7].RefTable = WorkspacesTable
+	OutboundMessagesTable.ForeignKeys[2].RefTable = AutomationVersionsTable
+	OutboundMessagesTable.ForeignKeys[3].RefTable = IntegrationsTable
+	OutboundMessagesTable.ForeignKeys[4].RefTable = BroadcastRecipientsTable
+	OutboundMessagesTable.ForeignKeys[5].RefTable = AutomationRunsTable
+	OutboundMessagesTable.ForeignKeys[6].RefTable = ContactsTable
+	OutboundMessagesTable.ForeignKeys[7].RefTable = EmailTemplatesTable
+	OutboundMessagesTable.ForeignKeys[8].RefTable = WorkspacesTable
 	OutboundMessagesTable.Annotation = &entsql.Annotation{
 		Table: "outbound_messages",
 	}
@@ -3733,7 +3813,7 @@ func init() {
 		"outbound_messages_final_report_check":   "delivered_at IS NULL OR undelivered_at IS NULL",
 		"outbound_messages_kind_check":           "kind IN ('broadcast', 'automation', 'transactional')",
 		"outbound_messages_outcome_check":        "(status = 'pending' AND skipped_reason IS NULL AND failure IS NULL) OR (status = 'sent' AND skipped_reason IS NULL AND failure IS NULL) OR (status = 'skipped' AND skipped_reason IS NOT NULL AND failure IS NULL) OR (status = 'failed' AND skipped_reason IS NULL)",
-		"outbound_messages_provenance_check":     "(kind = 'broadcast' AND broadcast_id IS NOT NULL AND automation_id IS NULL AND automation_step IS NULL AND automation_run_id IS NULL AND template_id IS NULL) OR (kind = 'automation' AND automation_id IS NOT NULL AND automation_step IS NOT NULL AND broadcast_id IS NULL AND broadcast_recipient_id IS NULL AND template_id IS NULL) OR (kind = 'transactional' AND broadcast_id IS NULL AND broadcast_recipient_id IS NULL AND automation_id IS NULL AND automation_step IS NULL AND automation_run_id IS NULL)",
+		"outbound_messages_provenance_check":     "(kind = 'broadcast' AND broadcast_id IS NOT NULL AND automation_id IS NULL AND automation_version_id IS NULL AND automation_step_id IS NULL AND automation_run_id IS NULL AND template_id IS NULL) OR (kind = 'automation' AND automation_id IS NOT NULL AND automation_version_id IS NOT NULL AND automation_step_id IS NOT NULL AND broadcast_id IS NULL AND broadcast_recipient_id IS NULL AND template_id IS NULL) OR (kind = 'transactional' AND broadcast_id IS NULL AND broadcast_recipient_id IS NULL AND automation_id IS NULL AND automation_version_id IS NULL AND automation_step_id IS NULL AND automation_run_id IS NULL)",
 		"outbound_messages_skipped_reason_check": "skipped_reason IN ('suppressed', 'unsubscribed_everything', 'unsubscribed_source', 'unconfirmed', 'no_destination', 'contact_erased', 'no_local_time', 'frequency_cap')",
 		"outbound_messages_status_check":         "status IN ('pending', 'sent', 'skipped', 'failed')",
 	}

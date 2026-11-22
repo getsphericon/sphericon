@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
@@ -238,6 +239,7 @@ func eraseSteps() []eraseStep {
 		stepOf((*ent.Scoped).RuleVersionTrigger, ruleversiontrigger.IDIn),
 		stepOf((*ent.Scoped).RuleVersion, ruleversion.IDIn),
 		keptStepOf((*ent.Scoped).Rule, (*ent.RuleScoped).QueryWithDiscarded, (*ent.RuleScoped).Purge, rule.IDIn),
+		stepOf((*ent.Scoped).AutomationStepRecord, automationsteprecord.IDIn),
 		stepOf((*ent.Scoped).AutomationRun, automationrun.IDIn),
 		stepOf((*ent.Scoped).AutomationVersion, automationversion.IDIn),
 		stepOf((*ent.Scoped).Visitor, visitor.IDIn),

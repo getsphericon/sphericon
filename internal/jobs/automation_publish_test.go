@@ -38,12 +38,11 @@ func editGreeting(t *testing.T, c *externalapi.Client) {
 	require.NoError(t, err)
 	_, err = c.AutomationsUpdate(t.Context(), &externalapi.UpdateAutomationInput{Revision: read.Revision,
 		TriggerEvent: externalapi.NewOptString("job_hijacked"),
-		Steps: []externalapi.AutomationStepInput{{
-			Type:          externalapi.AutomationStepTypeEmail,
-			Subject:       externalapi.NewOptString("Hijacked"),
+		Steps: testhelper.ExternalPathEdit(externalapi.EmailStepInput{
+			Subject:       "Hijacked",
 			Body:          externalapi.NewOptString("<p>Hijacked</p>"),
 			IntegrationId: externalapi.NewOptNilEntityId(externalapi.EntityId(fixtures.IntegrationAcmeMailgunID)),
-		}},
+		}),
 	}, externalapi.AutomationsUpdateParams{ID: externalapi.EntityId(fixtures.AutomationJobsGreetingID)})
 	require.NoError(t, err)
 }

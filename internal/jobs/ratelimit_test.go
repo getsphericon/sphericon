@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/riverqueue/river"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -163,13 +164,13 @@ func TestAutomationStepDefersWhenTransactionalTrafficSpendsTheLimit(t *testing.T
 		assert.GreaterOrEqual(t, env.JobSchedules(t, automations.RunStepArgs{}.Kind())[0].Sub(before), 3*time.Second, "pushed out by the Transactional debt")
 		run := env.DB.AutomationRun.GetX(ctx, runID)
 		assert.Equal(t, automationrun.StatusActive, run.Status)
-		assert.Zero(t, run.CurrentStep, "the enrollment keeps its place")
+		assert.Equal(t, env.StepIDAt(t, runID, 0), lo.FromPtr(run.CurrentStepID), "the enrollment keeps its place")
 		assert.Len(t, fs.sent, 3, "the step has not sent")
 
 		testhelper.Elapse(3 * time.Second)
 		require.True(t, env.RunNextStep(t, step))
 		assert.Len(t, fs.sent, 4, "the step sends once capacity returns")
-		assert.Equal(t, 1, env.DB.AutomationRun.GetX(ctx, runID).CurrentStep)
+		assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(ctx, runID).Status, "and leaves its one Step")
 	})
 }
 
@@ -199,7 +200,7 @@ func TestAutomationStepDeferredBySendCapAsksAgainWithinTheBound(t *testing.T) {
 		assert.LessOrEqual(t, wait, 10*time.Minute, "asks again within the bound, not after a day")
 		run := env.DB.AutomationRun.GetX(ctx, runID)
 		assert.Equal(t, automationrun.StatusActive, run.Status)
-		assert.Zero(t, run.CurrentStep, "the enrollment keeps its place")
+		assert.Equal(t, env.StepIDAt(t, runID, 0), lo.FromPtr(run.CurrentStepID), "the enrollment keeps its place")
 		assert.Empty(t, fs.sent, "the step has not sent")
 	})
 }
@@ -215,7 +216,7 @@ func TestAutomationStepAndBroadcastRecipientShareTheLimit(t *testing.T) {
 		require.NoError(t, testhelper.Module[*automations.StepExecution](e.TestEnv).OnEvent(ctx, e.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactHoldDemoID, Event: automations.Event{Action: "hold_demo", OccurredAt: time.Now()}}))
 		runID := e.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationHoldDemoID)).OnlyIDX(ctx)
 		require.True(t, e.RunNextStep(t, stepperWith(e.TestEnv, mod)))
-		require.Equal(t, []map[string]any{stepJob(t, e.TestEnv, runID, 1)}, queuedSteps(t, e.TestEnv), "the first send takes the only token and the Enrollment moves on")
+		require.Equal(t, automationrun.StatusCompleted, e.DB.AutomationRun.GetX(ctx, runID).Status, "the first send takes the only token and the Enrollment moves on")
 		require.Len(t, e.sender.sent, 1)
 
 		ids, err := planAudience(ctx, e.DB, mod, fixtures.BroadcastDraftID)

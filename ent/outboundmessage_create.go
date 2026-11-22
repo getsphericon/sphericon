@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/contact"
@@ -21,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
@@ -401,16 +403,30 @@ func (_c *OutboundMessageCreate) SetNillableAutomationRunID(v *int64) *OutboundM
 	return _c
 }
 
-// SetAutomationStep sets the "automation_step" field.
-func (_c *OutboundMessageCreate) SetAutomationStep(v int) *OutboundMessageCreate {
-	_c.mutation.SetAutomationStep(v)
+// SetAutomationVersionID sets the "automation_version_id" field.
+func (_c *OutboundMessageCreate) SetAutomationVersionID(v int64) *OutboundMessageCreate {
+	_c.mutation.SetAutomationVersionID(v)
 	return _c
 }
 
-// SetNillableAutomationStep sets the "automation_step" field if the given value is not nil.
-func (_c *OutboundMessageCreate) SetNillableAutomationStep(v *int) *OutboundMessageCreate {
+// SetNillableAutomationVersionID sets the "automation_version_id" field if the given value is not nil.
+func (_c *OutboundMessageCreate) SetNillableAutomationVersionID(v *int64) *OutboundMessageCreate {
 	if v != nil {
-		_c.SetAutomationStep(*v)
+		_c.SetAutomationVersionID(*v)
+	}
+	return _c
+}
+
+// SetAutomationStepID sets the "automation_step_id" field.
+func (_c *OutboundMessageCreate) SetAutomationStepID(v automationstep.ID) *OutboundMessageCreate {
+	_c.mutation.SetAutomationStepID(v)
+	return _c
+}
+
+// SetNillableAutomationStepID sets the "automation_step_id" field if the given value is not nil.
+func (_c *OutboundMessageCreate) SetNillableAutomationStepID(v *automationstep.ID) *OutboundMessageCreate {
+	if v != nil {
+		_c.SetAutomationStepID(*v)
 	}
 	return _c
 }
@@ -519,6 +535,11 @@ func (_c *OutboundMessageCreate) SetBroadcast(v *Broadcast) *OutboundMessageCrea
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (_c *OutboundMessageCreate) SetAutomation(v *Automation) *OutboundMessageCreate {
 	return _c.SetAutomationID(v.ID)
+}
+
+// SetAutomationVersion sets the "automation_version" edge to the AutomationVersion entity.
+func (_c *OutboundMessageCreate) SetAutomationVersion(v *AutomationVersion) *OutboundMessageCreate {
+	return _c.SetAutomationVersionID(v.ID)
 }
 
 // SetIntegration sets the "integration" edge to the Integration entity.
@@ -785,9 +806,9 @@ func (_c *OutboundMessageCreate) createSpec() (*OutboundMessage, *sqlgraph.Creat
 		_spec.SetField(outboundmessage.FieldCaptured, field.TypeBool, value)
 		_node.Captured = value
 	}
-	if value, ok := _c.mutation.AutomationStep(); ok {
-		_spec.SetField(outboundmessage.FieldAutomationStep, field.TypeInt, value)
-		_node.AutomationStep = &value
+	if value, ok := _c.mutation.AutomationStepID(); ok {
+		_spec.SetField(outboundmessage.FieldAutomationStepID, field.TypeString, value)
+		_node.AutomationStepID = &value
 	}
 	if value, ok := _c.mutation.RequestDigest(); ok {
 		_spec.SetField(outboundmessage.FieldRequestDigest, field.TypeString, value)
@@ -866,6 +887,23 @@ func (_c *OutboundMessageCreate) createSpec() (*OutboundMessage, *sqlgraph.Creat
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.AutomationID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.AutomationVersionIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.AutomationVersionTable,
+			Columns: []string{outboundmessage.AutomationVersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.AutomationVersionID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.IntegrationIDs(); len(nodes) > 0 {
@@ -1419,27 +1457,39 @@ func (u *OutboundMessageUpsert) ClearAutomationRunID() *OutboundMessageUpsert {
 	return u
 }
 
-// SetAutomationStep sets the "automation_step" field.
-func (u *OutboundMessageUpsert) SetAutomationStep(v int) *OutboundMessageUpsert {
-	u.Set(outboundmessage.FieldAutomationStep, v)
+// SetAutomationVersionID sets the "automation_version_id" field.
+func (u *OutboundMessageUpsert) SetAutomationVersionID(v int64) *OutboundMessageUpsert {
+	u.Set(outboundmessage.FieldAutomationVersionID, v)
 	return u
 }
 
-// UpdateAutomationStep sets the "automation_step" field to the value that was provided on create.
-func (u *OutboundMessageUpsert) UpdateAutomationStep() *OutboundMessageUpsert {
-	u.SetExcluded(outboundmessage.FieldAutomationStep)
+// UpdateAutomationVersionID sets the "automation_version_id" field to the value that was provided on create.
+func (u *OutboundMessageUpsert) UpdateAutomationVersionID() *OutboundMessageUpsert {
+	u.SetExcluded(outboundmessage.FieldAutomationVersionID)
 	return u
 }
 
-// AddAutomationStep adds v to the "automation_step" field.
-func (u *OutboundMessageUpsert) AddAutomationStep(v int) *OutboundMessageUpsert {
-	u.Add(outboundmessage.FieldAutomationStep, v)
+// ClearAutomationVersionID clears the value of the "automation_version_id" field.
+func (u *OutboundMessageUpsert) ClearAutomationVersionID() *OutboundMessageUpsert {
+	u.SetNull(outboundmessage.FieldAutomationVersionID)
 	return u
 }
 
-// ClearAutomationStep clears the value of the "automation_step" field.
-func (u *OutboundMessageUpsert) ClearAutomationStep() *OutboundMessageUpsert {
-	u.SetNull(outboundmessage.FieldAutomationStep)
+// SetAutomationStepID sets the "automation_step_id" field.
+func (u *OutboundMessageUpsert) SetAutomationStepID(v automationstep.ID) *OutboundMessageUpsert {
+	u.Set(outboundmessage.FieldAutomationStepID, v)
+	return u
+}
+
+// UpdateAutomationStepID sets the "automation_step_id" field to the value that was provided on create.
+func (u *OutboundMessageUpsert) UpdateAutomationStepID() *OutboundMessageUpsert {
+	u.SetExcluded(outboundmessage.FieldAutomationStepID)
+	return u
+}
+
+// ClearAutomationStepID clears the value of the "automation_step_id" field.
+func (u *OutboundMessageUpsert) ClearAutomationStepID() *OutboundMessageUpsert {
+	u.SetNull(outboundmessage.FieldAutomationStepID)
 	return u
 }
 
@@ -2058,31 +2108,45 @@ func (u *OutboundMessageUpsertOne) ClearAutomationRunID() *OutboundMessageUpsert
 	})
 }
 
-// SetAutomationStep sets the "automation_step" field.
-func (u *OutboundMessageUpsertOne) SetAutomationStep(v int) *OutboundMessageUpsertOne {
+// SetAutomationVersionID sets the "automation_version_id" field.
+func (u *OutboundMessageUpsertOne) SetAutomationVersionID(v int64) *OutboundMessageUpsertOne {
 	return u.Update(func(s *OutboundMessageUpsert) {
-		s.SetAutomationStep(v)
+		s.SetAutomationVersionID(v)
 	})
 }
 
-// AddAutomationStep adds v to the "automation_step" field.
-func (u *OutboundMessageUpsertOne) AddAutomationStep(v int) *OutboundMessageUpsertOne {
+// UpdateAutomationVersionID sets the "automation_version_id" field to the value that was provided on create.
+func (u *OutboundMessageUpsertOne) UpdateAutomationVersionID() *OutboundMessageUpsertOne {
 	return u.Update(func(s *OutboundMessageUpsert) {
-		s.AddAutomationStep(v)
+		s.UpdateAutomationVersionID()
 	})
 }
 
-// UpdateAutomationStep sets the "automation_step" field to the value that was provided on create.
-func (u *OutboundMessageUpsertOne) UpdateAutomationStep() *OutboundMessageUpsertOne {
+// ClearAutomationVersionID clears the value of the "automation_version_id" field.
+func (u *OutboundMessageUpsertOne) ClearAutomationVersionID() *OutboundMessageUpsertOne {
 	return u.Update(func(s *OutboundMessageUpsert) {
-		s.UpdateAutomationStep()
+		s.ClearAutomationVersionID()
 	})
 }
 
-// ClearAutomationStep clears the value of the "automation_step" field.
-func (u *OutboundMessageUpsertOne) ClearAutomationStep() *OutboundMessageUpsertOne {
+// SetAutomationStepID sets the "automation_step_id" field.
+func (u *OutboundMessageUpsertOne) SetAutomationStepID(v automationstep.ID) *OutboundMessageUpsertOne {
 	return u.Update(func(s *OutboundMessageUpsert) {
-		s.ClearAutomationStep()
+		s.SetAutomationStepID(v)
+	})
+}
+
+// UpdateAutomationStepID sets the "automation_step_id" field to the value that was provided on create.
+func (u *OutboundMessageUpsertOne) UpdateAutomationStepID() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateAutomationStepID()
+	})
+}
+
+// ClearAutomationStepID clears the value of the "automation_step_id" field.
+func (u *OutboundMessageUpsertOne) ClearAutomationStepID() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearAutomationStepID()
 	})
 }
 
@@ -2879,31 +2943,45 @@ func (u *OutboundMessageUpsertBulk) ClearAutomationRunID() *OutboundMessageUpser
 	})
 }
 
-// SetAutomationStep sets the "automation_step" field.
-func (u *OutboundMessageUpsertBulk) SetAutomationStep(v int) *OutboundMessageUpsertBulk {
+// SetAutomationVersionID sets the "automation_version_id" field.
+func (u *OutboundMessageUpsertBulk) SetAutomationVersionID(v int64) *OutboundMessageUpsertBulk {
 	return u.Update(func(s *OutboundMessageUpsert) {
-		s.SetAutomationStep(v)
+		s.SetAutomationVersionID(v)
 	})
 }
 
-// AddAutomationStep adds v to the "automation_step" field.
-func (u *OutboundMessageUpsertBulk) AddAutomationStep(v int) *OutboundMessageUpsertBulk {
+// UpdateAutomationVersionID sets the "automation_version_id" field to the value that was provided on create.
+func (u *OutboundMessageUpsertBulk) UpdateAutomationVersionID() *OutboundMessageUpsertBulk {
 	return u.Update(func(s *OutboundMessageUpsert) {
-		s.AddAutomationStep(v)
+		s.UpdateAutomationVersionID()
 	})
 }
 
-// UpdateAutomationStep sets the "automation_step" field to the value that was provided on create.
-func (u *OutboundMessageUpsertBulk) UpdateAutomationStep() *OutboundMessageUpsertBulk {
+// ClearAutomationVersionID clears the value of the "automation_version_id" field.
+func (u *OutboundMessageUpsertBulk) ClearAutomationVersionID() *OutboundMessageUpsertBulk {
 	return u.Update(func(s *OutboundMessageUpsert) {
-		s.UpdateAutomationStep()
+		s.ClearAutomationVersionID()
 	})
 }
 
-// ClearAutomationStep clears the value of the "automation_step" field.
-func (u *OutboundMessageUpsertBulk) ClearAutomationStep() *OutboundMessageUpsertBulk {
+// SetAutomationStepID sets the "automation_step_id" field.
+func (u *OutboundMessageUpsertBulk) SetAutomationStepID(v automationstep.ID) *OutboundMessageUpsertBulk {
 	return u.Update(func(s *OutboundMessageUpsert) {
-		s.ClearAutomationStep()
+		s.SetAutomationStepID(v)
+	})
+}
+
+// UpdateAutomationStepID sets the "automation_step_id" field to the value that was provided on create.
+func (u *OutboundMessageUpsertBulk) UpdateAutomationStepID() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateAutomationStepID()
+	})
+}
+
+// ClearAutomationStepID clears the value of the "automation_step_id" field.
+func (u *OutboundMessageUpsertBulk) ClearAutomationStepID() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearAutomationStepID()
 	})
 }
 

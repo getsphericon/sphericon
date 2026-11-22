@@ -37,8 +37,8 @@ const (
 	FieldEventProperties = "event_properties"
 	// FieldEndedAt holds the string denoting the ended_at field in the database.
 	FieldEndedAt = "ended_at"
-	// FieldCurrentStep holds the string denoting the current_step field in the database.
-	FieldCurrentStep = "current_step"
+	// FieldCurrentStepID holds the string denoting the current_step_id field in the database.
+	FieldCurrentStepID = "current_step_id"
 	// FieldResumeAt holds the string denoting the resume_at field in the database.
 	FieldResumeAt = "resume_at"
 	// FieldFailureKind holds the string denoting the failure_kind field in the database.
@@ -101,7 +101,7 @@ var Columns = []string{
 	FieldEventAction,
 	FieldEventProperties,
 	FieldEndedAt,
-	FieldCurrentStep,
+	FieldCurrentStepID,
 	FieldResumeAt,
 	FieldFailureKind,
 	FieldFailureStatus,
@@ -127,10 +127,6 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultBeganAt holds the default value on creation for the "began_at" field.
 	DefaultBeganAt func() time.Time
-	// DefaultCurrentStep holds the default value on creation for the "current_step" field.
-	DefaultCurrentStep int
-	// CurrentStepValidator is a validator for the "current_step" field. It is called by the builders before save.
-	CurrentStepValidator func(int) error
 )
 
 // Status defines the type for the "status" enum field.
@@ -246,9 +242,9 @@ func ByEndedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEndedAt, opts...).ToFunc()
 }
 
-// ByCurrentStep orders the results by the current_step field.
-func ByCurrentStep(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldCurrentStep, opts...).ToFunc()
+// ByCurrentStepID orders the results by the current_step_id field.
+func ByCurrentStepID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCurrentStepID, opts...).ToFunc()
 }
 
 // ByResumeAt orders the results by the resume_at field.

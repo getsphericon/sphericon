@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
@@ -109,9 +110,17 @@ func move(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID int64,
 
 // moved fires t on one Enrollment as move does, and returns the System event that records the
 // end, nil for a move that records none: the caller publishes it in the transaction of the move.
+// An end other than a completion leaves the Step the Enrollment stood on (leaveOnEnd).
 func moved(ctx context.Context, s *ent.Scoped, runID int64, t trigger, endedAt time.Time, extra func(*ent.AutomationRunScopedUpdate)) (*events.EnrollmentChange, error) {
 	if err := machine(s, runID, endedAt, extra).FireCtx(ctx, t); err != nil {
 		return nil, err
+	}
+	// A completion leaves its last Step with how it did it (completeOn); any other end leaves the
+	// Step the Enrollment stood on in the same move, with no outcome (ADR 0124).
+	if t != triggerComplete {
+		if err := leaveOnEnd(ctx, s, runID, endedAt); err != nil {
+			return nil, err
+		}
 	}
 	action, recorded := endingEvents[t]
 	if !recorded {
@@ -159,14 +168,15 @@ func stale(err error) bool {
 	return errors.Is(err, lifecycle.ErrInvalidTransition) || ent.IsNotFound(err)
 }
 
-// advanceRun moves an active Enrollment standing on step from to step to, parking it until resumeAt
-// (nil: no wait). It is a compare-and-swap on `active` and on the current step, so a step cannot
-// overwrite an exit and a job delivered twice cannot move the Enrollment twice:
-// lifecycle.ErrInvalidTransition when the Enrollment is no longer active or no longer on from.
-func advanceRun(ctx context.Context, s *ent.Scoped, runID int64, from, to int, resumeAt *time.Time) error {
+// advanceRun moves an active Enrollment standing on the Step of the id from to the Step of the id
+// to, parking it until resumeAt (nil: no wait). It is a compare-and-swap on `active` and on the
+// current Step, so a step cannot overwrite an exit and a job delivered twice cannot move the
+// Enrollment twice: lifecycle.ErrInvalidTransition when the Enrollment is no longer active or no
+// longer on from.
+func advanceRun(ctx context.Context, s *ent.Scoped, runID int64, from, to automationstep.ID, resumeAt *time.Time) error {
 	u := s.AutomationRun().Update().
-		Where(automationrun.ID(runID), automationrun.StatusEQ(automationrun.StatusActive), automationrun.CurrentStep(from)).
-		SetCurrentStep(to)
+		Where(automationrun.ID(runID), automationrun.StatusEQ(automationrun.StatusActive), automationrun.CurrentStepID(from)).
+		SetCurrentStepID(to)
 	if resumeAt != nil {
 		u.SetResumeAt(*resumeAt)
 	} else {
@@ -183,10 +193,18 @@ func advanceRun(ctx context.Context, s *ent.Scoped, runID int64, from, to int, r
 }
 
 // completeRun ends the Enrollment `completed` at now, the caller's clock, and records
-// automation.completed through pub. lifecycle.ErrInvalidTransition when it is no longer active (an
-// exit won), which the step executor treats as a finished step.
-func completeRun(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID int64, now time.Time) error {
-	return move(ctx, s, pub, runID, triggerComplete, now, nil)
+// automation.completed through pub. at is the Step it completes on, the last one it left, or ""
+// for an Enrollment of a version of no Steps: the move is a compare-and-swap on that Step too, so
+// a job delivered twice completes it once. lifecycle.ErrInvalidTransition when it is no longer
+// active (an exit won) or no longer on at, which the step executor treats as a finished step.
+func completeRun(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID int64, at automationstep.ID, now time.Time) error {
+	return move(ctx, s, pub, runID, triggerComplete, now, func(u *ent.AutomationRunScopedUpdate) {
+		if at == "" {
+			u.Where(automationrun.CurrentStepIDIsNil())
+			return
+		}
+		u.Where(automationrun.CurrentStepID(at))
+	})
 }
 
 // failRun ends the Enrollment `failed` at now, the caller's clock, keeping the reason. It records no

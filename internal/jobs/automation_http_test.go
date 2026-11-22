@@ -15,6 +15,7 @@ import (
 
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertype"
+	"github.com/samber/lo"
 	standardwebhooks "github.com/standard-webhooks/standard-webhooks/libraries/go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -150,20 +152,34 @@ func (h *httpStepHarness) worker(allow webhook.Allowlist) *jobs.RunHTTPStepWorke
 
 // attempt works the HTTP step as river's attempt-th try; the last one is the job's MaxAttempts.
 func (h *httpStepHarness) attempt(w *jobs.RunHTTPStepWorker, runID int64, attempt int) error {
+	return h.attemptStep(w, runID, h.httpStepOf(runID), attempt)
+}
+
+// attemptStep is attempt on the job that names step, for an Enrollment whose Step can no longer
+// be read.
+func (h *httpStepHarness) attemptStep(w *jobs.RunHTTPStepWorker, runID int64, step automationstep.ID, attempt int) error {
 	return w.Work(h.workCtx(), &river.Job[automations.RunHTTPStepArgs]{
 		JobRow: &rivertype.JobRow{Attempt: attempt, MaxAttempts: automations.RunHTTPStepArgs{}.InsertOpts().MaxAttempts, CreatedAt: h.clock},
-		Args:   automations.RunHTTPStepArgs{RunID: runID},
+		Args:   automations.RunHTTPStepArgs{RunID: runID, StepID: step},
 	})
+}
+
+// httpStepOf is the id of the HTTP step of the Enrollment's version, its first Step in every
+// Automation these tests run.
+func (h *httpStepHarness) httpStepOf(runID int64) automationstep.ID {
+	run := h.DB.AutomationRun.GetX(context.Background(), runID)
+	st, _ := automationstep.First(h.DB.AutomationVersion.GetX(context.Background(), run.VersionID).Steps)
+	return st.ID
 }
 
 func (h *httpStepHarness) run(runID int64) *automationrunView {
 	r := h.DB.AutomationRun.GetX(context.Background(), runID)
-	return &automationrunView{status: r.Status, step: r.CurrentStep, kind: r.FailureKind, httpStatus: r.FailureStatus, excerpt: r.FailureExcerpt}
+	return &automationrunView{status: r.Status, step: lo.FromPtr(r.CurrentStepID), kind: r.FailureKind, httpStatus: r.FailureStatus, excerpt: r.FailureExcerpt}
 }
 
 type automationrunView struct {
 	status     automationrun.Status
-	step       int
+	step       automationstep.ID
 	kind       *automationrun.FailureKind
 	httpStatus *int
 	excerpt    *string
@@ -187,7 +203,7 @@ func TestHTTPStepContinuesAfterA2xxSigned(t *testing.T) {
 
 	r := h.run(runID)
 	assert.Equal(t, automationrun.StatusActive, r.status)
-	assert.Equal(t, 1, r.step, "the Enrollment moved past the HTTP step")
+	assert.Equal(t, h.StepIDAt(t, runID, 1), r.step, "the Enrollment moved past the HTTP step")
 	assert.Equal(t, []map[string]any{stepJob(t, h.TestEnv, runID, 1)}, queuedSteps(t, h.TestEnv), "and its next step is queued")
 }
 
@@ -215,7 +231,7 @@ func TestHTTPStepWithoutASecretIsUnsigned(t *testing.T) {
 	calls := h.rcv.received()
 	require.Len(t, calls, 1)
 	assert.Empty(t, calls[0].header.Get(standardwebhooks.HeaderWebhookSignature))
-	assert.Equal(t, 1, h.run(runID).step)
+	assert.Equal(t, h.StepIDAt(t, runID, 1), h.run(runID).step)
 }
 
 func TestHTTPStepDeliveredAgainAfterSuccessMakesNoNewCallOrNextJob(t *testing.T) {
@@ -229,7 +245,7 @@ func TestHTTPStepDeliveredAgainAfterSuccessMakesNoNewCallOrNextJob(t *testing.T)
 	calls := h.rcv.received()
 	assert.Len(t, calls, 1)
 	r := h.run(runID)
-	assert.Equal(t, 1, r.step)
+	assert.Equal(t, h.StepIDAt(t, runID, 1), r.step)
 	queued := queuedSteps(t, h.TestEnv)
 	assert.Equal(t, []map[string]any{stepJob(t, h.TestEnv, runID, 1)}, queued)
 }
@@ -246,7 +262,7 @@ func TestHTTPStepFailsTheEnrollmentWhenRetriesAreSpent(t *testing.T) {
 	require.Error(t, h.attempt(w, runID, automations.RunHTTPStepArgs{}.InsertOpts().MaxAttempts))
 	r := h.run(runID)
 	assert.Equal(t, automationrun.StatusFailed, r.status)
-	assert.Equal(t, 0, r.step, "nothing is skipped")
+	assert.Equal(t, h.StepIDAt(t, runID, 0), r.step, "nothing is skipped")
 	require.NotNil(t, r.kind)
 	assert.Equal(t, automationrun.FailureKindHTTPStatus, *r.kind)
 	assert.Equal(t, http.StatusServiceUnavailable, *r.httpStatus)
@@ -256,7 +272,7 @@ func TestHTTPStepFailsTheEnrollmentWhenRetriesAreSpent(t *testing.T) {
 	require.Len(t, calls, 2)
 	firstID := calls[0].header.Get(standardwebhooks.HeaderWebhookID)
 	retryID := calls[1].header.Get(standardwebhooks.HeaderWebhookID)
-	assert.Equal(t, fmt.Sprintf("automation_%d_0", runID), firstID)
+	assert.Equal(t, fmt.Sprintf("automation_%d_01900000-0000-0000-0000-000000000001", runID), firstID, "the run and the HTTP Step's id")
 	assert.Equal(t, firstID, retryID, "an ordinary retry retains the external request identity")
 }
 
@@ -327,7 +343,7 @@ func TestHTTPStepRateLimitEndsAtTheRetryHorizon(t *testing.T) {
 
 	err := w.Work(h.workCtx(), &river.Job[automations.RunHTTPStepArgs]{
 		JobRow: &rivertype.JobRow{Attempt: 1, MaxAttempts: 3, CreatedAt: h.clock.Add(-webhook.HookRetryHorizon)},
-		Args:   automations.RunHTTPStepArgs{RunID: runID},
+		Args:   automations.RunHTTPStepArgs{RunID: runID, StepID: h.StepIDAt(t, runID, 0)},
 	})
 
 	var cancelled *rivertype.JobCancelError
@@ -341,14 +357,15 @@ func TestHTTPStepRateLimitEndsAtTheRetryHorizon(t *testing.T) {
 func TestHTTPStepOfAnErasedContactSendsNothing(t *testing.T) {
 	h := newHTTPStepHarness(t)
 	runID := int64(fixtures.AutomationRunQuahogHookID)
+	step := h.httpStepOf(runID)
 	h.Feed(t, func(tx *ent.Client) error {
 		return tx.Contact.DeleteOneID(fixtures.ContactQuahogQuinnID).Exec(context.Background())
 	})
 
-	require.NoError(t, h.attempt(h.worker(h.rcv.allow), runID, 1))
+	require.NoError(t, h.attemptStep(h.worker(h.rcv.allow), runID, step, 1))
 	assert.Empty(t, h.rcv.received())
 
-	require.NoError(t, h.attempt(h.worker(h.rcv.allow), 424242, 1), "an erased run ends the job too")
+	require.NoError(t, h.attemptStep(h.worker(h.rcv.allow), 424242, step, 1), "an erased run ends the job too")
 }
 
 func TestHTTPStepRunsOnAQueueOfItsOwn(t *testing.T) {
@@ -384,7 +401,7 @@ func TestHTTPStepOnAnExitedRunCallsNothingAndQueuesNothing(t *testing.T) {
 	assert.Empty(t, h.rcv.received(), "no call after an exit")
 	r := h.run(runID)
 	assert.Equal(t, automationrun.StatusExited, r.status)
-	assert.Equal(t, 0, r.step)
+	assert.Equal(t, h.StepIDAt(t, runID, 0), r.step)
 	assert.Empty(t, queuedSteps(t, h.TestEnv))
 }
 
@@ -395,7 +412,7 @@ func TestAStepJobExecutedTwiceOnAnHTTPStepQueuesTheCallOnce(t *testing.T) {
 	runID := int64(fixtures.AutomationRunQuahogHookID)
 	h.reachHTTPStep(t, runID)
 
-	require.NoError(t, h.stepper().Step(t.Context(), h.DB.Scoped(fixtures.QuahogID), runID, 0))
+	require.NoError(t, h.stepper().Step(t.Context(), h.DB.Scoped(fixtures.QuahogID), runID, h.StepIDAt(t, runID, 0)))
 
 	assert.Equal(t, []map[string]any{stepJob(t, h.TestEnv, runID, 0)}, h.JobsOf(t, automations.RunHTTPStepArgs{}.Kind()))
 }

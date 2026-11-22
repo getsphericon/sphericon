@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
@@ -896,6 +897,21 @@ func (_c *WorkspaceCreate) AddAutomationRuns(v ...*AutomationRun) *WorkspaceCrea
 		ids[i] = v[i].ID
 	}
 	return _c.AddAutomationRunIDs(ids...)
+}
+
+// AddAutomationStepRecordIDs adds the "automation_step_records" edge to the AutomationStepRecord entity by IDs.
+func (_c *WorkspaceCreate) AddAutomationStepRecordIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddAutomationStepRecordIDs(ids...)
+	return _c
+}
+
+// AddAutomationStepRecords adds the "automation_step_records" edges to the AutomationStepRecord entity.
+func (_c *WorkspaceCreate) AddAutomationStepRecords(v ...*AutomationStepRecord) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddAutomationStepRecordIDs(ids...)
 }
 
 // AddRuleIDs adds the "rules" edge to the Rule entity by IDs.
@@ -1998,6 +2014,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automationrun.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.AutomationStepRecordsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationStepRecordsTable,
+			Columns: []string{workspace.AutomationStepRecordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationsteprecord.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

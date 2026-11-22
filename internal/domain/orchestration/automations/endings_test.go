@@ -82,7 +82,7 @@ func TestTheGoalEventEndsTheEnrollmentAsGoalReached(t *testing.T) {
 	handEvent(t, env, contactID, recoveryGoal, time.Now())
 	ended, err := s.AutomationRun().Get(ctx, runID)
 	require.NoError(t, err)
-	require.NoError(t, testhelper.Module[*automations.StepExecution](env).Step(ctx, s, runID, ended.CurrentStep))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).Step(ctx, s, runID, lo.FromPtr(ended.CurrentStepID)))
 
 	status := statusOf(t, env, runID)
 	assert.Equal(t, automationrun.StatusGoalReached, status)
@@ -101,6 +101,27 @@ func TestAnExitEventEndsTheEnrollmentAsExited(t *testing.T) {
 
 	assert.Equal(t, automationrun.StatusExited, exited)
 	assert.Equal(t, automationrun.StatusExited, afterTheGoal, "an ended Enrollment stays as it ended")
+}
+
+// An Enrollment that ends on a Step through an exit or its goal leaves that Step when it ends, in
+// the same move (ADR 0124): its record keeps no outcome, the Enrollment's end says why.
+func TestAnEnrollmentEndedByAnEventLeavesTheStepItStoodOn(t *testing.T) {
+	for _, action := range []string{recoveryExit, recoveryGoal} {
+		t.Run(action, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			runID, contactID := recoveryRun(t, env)
+			at := time.Now().Add(-time.Minute).Truncate(time.Microsecond)
+
+			handEvent(t, env, contactID, action, at)
+
+			records, err := testhelper.Module[*automations.Module](env).StepRecords(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationPaymentRecoveryID, runID)
+			require.NoError(t, err)
+			require.Len(t, records, 1)
+			require.NotNil(t, records[0].LeftAt, "the Step it stood on is left")
+			assert.WithinDuration(t, at, *records[0].LeftAt, 0, "when the Event that ended it occurred")
+			assert.Nil(t, records[0].Outcome, "the Enrollment's end says why")
+		})
+	}
 }
 
 // An Enrollment begins when its triggering Event occurred: history from before then, loaded or
@@ -188,7 +209,7 @@ func TestAStepEndsAnEnrollmentAtTheStepExecutionsClock(t *testing.T) {
 	steps := automations.NewStepExecution(env.Bus, env.OutboundModule(), testhelper.Module[*contacts.Module](env), noFence, env.Cipher, nil, func() time.Time { return at })
 
 	// The Enrollment walks its two tag steps and completes.
-	require.NoError(t, steps.Step(ctx, s, fixtures.AutomationRunTagOnEngagementAliceID, 0))
+	require.NoError(t, steps.Step(ctx, s, fixtures.AutomationRunTagOnEngagementAliceID, env.StepIDAt(t, fixtures.AutomationRunTagOnEngagementAliceID, 0)))
 	env.RunQueuedSteps(t, steps)
 
 	run, err := env.DB.AutomationRun.Get(ctx, fixtures.AutomationRunTagOnEngagementAliceID)

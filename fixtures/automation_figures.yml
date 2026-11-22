@@ -1,10 +1,11 @@
-# What the pruned messages of an Automation's send steps counted (ADR 0143): the report adds these
-# to what its live messages count.
+# What the pruned messages of an Automation's send steps counted (ADR 0143), by version and Step id
+# (ADR 0122): the report adds these to what its live messages count.
 - {
     id: 1, # fixture: AutomationFigureAcme
     automation_id: 106,
     workspace_id: 1,
-    step: 0,
+    version_id: 106,
+    step_id: '2a17428c-014b-5b9e-866e-a08363b2780d',
     sent: 3,
     skipped: 1,
     delivered: 2,
@@ -18,7 +19,8 @@
     id: 900, # fixture: AutomationFigureGlobex
     automation_id: 900,
     workspace_id: 2,
-    step: 0,
+    version_id: 901,
+    step_id: 'e79a8d05-4974-56ef-ab76-3d777a91a4bd',
     sent: 1,
     skipped: 0,
     delivered: 0,

@@ -3,6 +3,7 @@ package external_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"testing"
@@ -14,6 +15,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -182,43 +184,51 @@ func TestExternalAutomationEmailStepsCarryTheDocument(t *testing.T) {
 
 	res, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name: "Authored", TriggerEvent: "authored.signup",
-		Steps: []externalapi.AutomationStepInput{{
-			Type:    externalapi.AutomationStepTypeEmail,
-			Subject: externalapi.NewOptString("Hi"),
+		Steps: testhelper.ExternalPathEdit(externalapi.EmailStepInput{
+			Subject: "Hi",
 			Doc:     externalapi.NewOptEditorDocument(paragraphDoc("Hello {{ first_name }}")),
-		}},
+		}),
 	})
 	require.NoError(t, err)
-	step := res.Draft.Value.Steps[0]
-	assert.Contains(t, step.Body.Value, "Hello {{ first_name }}")
+	step := res.Draft.Value.Steps.Steps[0].OneOf.EmailStep
+	assert.Contains(t, step.Body, "Hello {{ first_name }}")
 	assert.True(t, step.Doc.Set, "the step carries its document")
 	assert.Equal(t, emaildoc.EditorVersion(), step.EditorVersion.Value)
 
 	// Read, change the document, write it back (without the body).
-	step.Body = externalapi.OptString{}
-	step.EditorVersion = externalapi.OptString{}
-	step.Doc = externalapi.NewOptEditorDocument(paragraphDoc("Second"))
-	upd, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: []externalapi.AutomationStepInput{testhelper.Resend[externalapi.AutomationStepInput](t, &step)}},
+	written := resendEmailStep(t, step)
+	written.Body = externalapi.OptString{}
+	written.Doc = externalapi.NewOptEditorDocument(paragraphDoc("Second"))
+	upd, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: testhelper.ExternalPathEdit(written)},
 		externalapi.AutomationsUpdateParams{ID: res.ID})
 	require.NoError(t, err)
-	assert.Contains(t, upd.Draft.Value.Steps[0].Body.Value, "Second")
-	assert.True(t, upd.Draft.Value.Steps[0].Doc.Set)
+	second := upd.Draft.Value.Steps.Steps[0].OneOf.EmailStep
+	assert.Contains(t, second.Body, "Second")
+	assert.True(t, second.Doc.Set)
 
 	// Writing the body with the document is refused, naming the step.
-	_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: []externalapi.AutomationStepInput{testhelper.Resend[externalapi.AutomationStepInput](t, &upd.Draft.Value.Steps[0])}},
+	_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: testhelper.ExternalPathEdit(resendEmailStep(t, second))},
 		externalapi.AutomationsUpdateParams{ID: res.ID})
 	refused := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
-	assert.Contains(t, refused.Detail.Or(""), "step 1")
+	assert.Contains(t, refused.Detail.Or(""), fmt.Sprintf("step %s (email)", second.ID))
 
 	// An invalid document refuses the save; the stored step is unchanged.
-	bad := testhelper.Resend[externalapi.AutomationStepInput](t, &upd.Draft.Value.Steps[0])
+	bad := resendEmailStep(t, second)
 	bad.Body = externalapi.OptString{}
 	bad.Doc = externalapi.NewOptEditorDocument(badHeadingDoc())
-	_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: []externalapi.AutomationStepInput{bad}},
+	_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: testhelper.ExternalPathEdit(bad)},
 		externalapi.AutomationsUpdateParams{ID: res.ID})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 	stored := testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID))
-	assert.Contains(t, stored[0].Body, "Second")
+	assert.Contains(t, stored.Steps[0].Payload.(automationstep.Email).Body, "Second")
+}
+
+// resendEmailStep is an email step read back as the step a write sends: the editor version is the
+// save's own, so it is left out.
+func resendEmailStep(t *testing.T, step externalapi.EmailStep) externalapi.EmailStepInput {
+	t.Helper()
+	step.EditorVersion = externalapi.OptString{}
+	return testhelper.Resend[externalapi.EmailStepInput](t, &step)
 }
 
 func TestExternalEmailLintTakesADocument(t *testing.T) {

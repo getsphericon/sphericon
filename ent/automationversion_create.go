@@ -73,7 +73,7 @@ func (_c *AutomationVersionCreate) SetVersion(v int) *AutomationVersionCreate {
 }
 
 // SetSteps sets the "steps" field.
-func (_c *AutomationVersionCreate) SetSteps(v []automationstep.Step) *AutomationVersionCreate {
+func (_c *AutomationVersionCreate) SetSteps(v automationstep.Path) *AutomationVersionCreate {
 	_c.mutation.SetSteps(v)
 	return _c
 }
@@ -177,10 +177,6 @@ func (_c *AutomationVersionCreate) defaults() {
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		v := automationversion.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
-	}
-	if _, ok := _c.mutation.Steps(); !ok {
-		v := automationversion.DefaultSteps
-		_c.mutation.SetSteps(v)
 	}
 	if _, ok := _c.mutation.ExitEvents(); !ok {
 		v := automationversion.DefaultExitEvents
@@ -425,7 +421,7 @@ func (u *AutomationVersionUpsert) UpdateAutomationID() *AutomationVersionUpsert 
 }
 
 // SetSteps sets the "steps" field.
-func (u *AutomationVersionUpsert) SetSteps(v []automationstep.Step) *AutomationVersionUpsert {
+func (u *AutomationVersionUpsert) SetSteps(v automationstep.Path) *AutomationVersionUpsert {
 	u.Set(automationversion.FieldSteps, v)
 	return u
 }
@@ -575,7 +571,7 @@ func (u *AutomationVersionUpsertOne) UpdateAutomationID() *AutomationVersionUpse
 }
 
 // SetSteps sets the "steps" field.
-func (u *AutomationVersionUpsertOne) SetSteps(v []automationstep.Step) *AutomationVersionUpsertOne {
+func (u *AutomationVersionUpsertOne) SetSteps(v automationstep.Path) *AutomationVersionUpsertOne {
 	return u.Update(func(s *AutomationVersionUpsert) {
 		s.SetSteps(v)
 	})
@@ -900,7 +896,7 @@ func (u *AutomationVersionUpsertBulk) UpdateAutomationID() *AutomationVersionUps
 }
 
 // SetSteps sets the "steps" field.
-func (u *AutomationVersionUpsertBulk) SetSteps(v []automationstep.Step) *AutomationVersionUpsertBulk {
+func (u *AutomationVersionUpsertBulk) SetSteps(v automationstep.Path) *AutomationVersionUpsertBulk {
 	return u.Update(func(s *AutomationVersionUpsert) {
 		s.SetSteps(v)
 	})

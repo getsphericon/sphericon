@@ -8,20 +8,32 @@ import {
   handleSiteAutomationsRevert,
   handleSiteEnrollmentsList,
   handleSiteIntegrationsGet,
+  handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteAutomationResource, AutomationResults } from '../../generated/site/types.gen.ts'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
-import { emailIntegration, page, TIMESTAMPS, testId } from '../../test/payloads.ts'
+import {
+  emailIntegration,
+  page,
+  stepId,
+  testId,
+  TIMESTAMPS,
+  workspace,
+} from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
+import { formatDateTime } from '../../utils/datetime.ts'
 import { AutomationDetailPage } from './detail.tsx'
 
 const MOUNT = routeMount(automationsDetailRoute, {
   workspaceId: 'TestWs01',
   automationId: testId(1),
 })
+
+// When the wait an Enrollment stands on is due.
+const WAIT_DUE = '2026-03-20T09:30:00Z'
 
 const NO_REVENUE = { reportingCurrency: 'USD', orders: 0, amount: 0 }
 
@@ -65,7 +77,7 @@ test('shows the automation and the contacts enrolled in it', async () => {
           triggerEvent: 'contact.created',
           exitEvents: [],
           goalEvent: null,
-          steps: [],
+          steps: { id: stepId(1), steps: [] },
         },
         draft: null,
         revision: 1,
@@ -83,6 +95,7 @@ test('shows the automation and the contacts enrolled in it', async () => {
         revenue: { reportingCurrency: 'USD', orders: 0, amount: 0 },
         links: [],
         steps: [],
+        versionSteps: [],
         results: NO_RESULTS,
       },
     }),
@@ -94,11 +107,19 @@ test('shows the automation and the contacts enrolled in it', async () => {
             automationId: testId(1),
             contactId: testId(42),
             status: 'completed',
-            currentStep: 1,
+            ...TIMESTAMPS,
+          },
+          {
+            id: testId(6),
+            automationId: testId(1),
+            contactId: testId(43),
+            status: 'active',
+            currentStepId: stepId(2),
+            resumeAt: WAIT_DUE,
             ...TIMESTAMPS,
           },
         ],
-        1,
+        2,
       ),
     }),
   )
@@ -108,6 +129,9 @@ test('shows the automation and the contacts enrolled in it', async () => {
   await expect.element(screen.getByText('Welcome series')).toBeInTheDocument()
   await expect.element(screen.getByText(testId(42))).toBeInTheDocument()
   await expect.element(screen.getByRole('cell', { name: 'Completed' })).toBeInTheDocument()
+  // An Enrollment on a wait shows when the wait is due.
+  await expect.element(screen.getByRole('cell', { name: 'Waiting until' })).toBeInTheDocument()
+  await expect.element(screen.getByText(formatDateTime(WAIT_DUE, 'en'))).toBeInTheDocument()
 })
 
 test('shows the opens, the clicks and the clicked links of the automation', async () => {
@@ -122,7 +146,7 @@ test('shows the opens, the clicks and the clicked links of the automation', asyn
           triggerEvent: 'contact.created',
           exitEvents: [],
           goalEvent: null,
-          steps: [],
+          steps: { id: stepId(1), steps: [] },
         },
         draft: null,
         revision: 1,
@@ -143,6 +167,7 @@ test('shows the opens, the clicks and the clicked links of the automation', asyn
           { url: 'https://dest.test/b', clicks: 2 },
         ],
         steps: [],
+        versionSteps: [],
         results: NO_RESULTS,
       },
     }),
@@ -177,7 +202,7 @@ test('marks an inactive automation as inactive', async () => {
           triggerEvent: 'contact.created',
           exitEvents: [],
           goalEvent: null,
-          steps: [],
+          steps: { id: stepId(1), steps: [] },
         },
         draft: null,
         revision: 1,
@@ -195,6 +220,7 @@ test('marks an inactive automation as inactive', async () => {
         revenue: { reportingCurrency: 'USD', orders: 0, amount: 0 },
         links: [],
         steps: [],
+        versionSteps: [],
         results: NO_RESULTS,
       },
     }),
@@ -227,7 +253,7 @@ test('shows the orders and the net revenue credited to the automation', async ()
           triggerEvent: 'contact.created',
           exitEvents: [],
           goalEvent: null,
-          steps: [],
+          steps: { id: stepId(1), steps: [] },
         },
         draft: null,
         revision: 1,
@@ -245,6 +271,7 @@ test('shows the orders and the net revenue credited to the automation', async ()
         revenue: { reportingCurrency: 'USD', orders: 4, amount: 12000 },
         links: [],
         steps: [],
+        versionSteps: [],
         results: NO_RESULTS,
       },
     }),
@@ -270,7 +297,7 @@ test('shows no orders or revenue on the automation until the first order sets th
           triggerEvent: 'contact.created',
           exitEvents: [],
           goalEvent: null,
-          steps: [],
+          steps: { id: stepId(1), steps: [] },
         },
         draft: null,
         revision: 1,
@@ -288,6 +315,7 @@ test('shows no orders or revenue on the automation until the first order sets th
         revenue: { reportingCurrency: null, orders: 0, amount: 0 },
         links: [],
         steps: [],
+        versionSteps: [],
         results: NO_RESULTS,
       },
     }),
@@ -306,13 +334,19 @@ const PENDING: SiteAutomationResource = {
   id: testId(1),
   name: 'Welcome series',
   status: 'active',
-  live: { number: 1, triggerEvent: 'signup', exitEvents: [], goalEvent: null, steps: [] },
+  live: {
+    number: 1,
+    triggerEvent: 'signup',
+    exitEvents: [],
+    goalEvent: null,
+    steps: { id: stepId(1), steps: [] },
+  },
   draft: {
     number: 2,
     triggerEvent: 'signup',
     exitEvents: [],
     goalEvent: null,
-    steps: [{ type: 'wait', seconds: 60 }],
+    steps: { id: stepId(1), steps: [{ id: stepId(11), type: 'wait', seconds: 60 }] },
   },
   revision: 1,
   ...TIMESTAMPS,
@@ -330,6 +364,7 @@ const NO_FIGURES = {
   revenue: { reportingCurrency: 'USD', orders: 0, amount: 0 },
   links: [],
   steps: [],
+  versionSteps: [],
   results: NO_RESULTS,
 }
 
@@ -343,18 +378,31 @@ test('shows what the live version does, its exit and goal events included, not t
           triggerEvent: 'signup',
           exitEvents: ['account_closed'],
           goalEvent: 'course_started',
-          steps: [
-            { type: 'email', subject: 'Welcome aboard' },
-            { type: 'email', subject: 'Second look', integrationId: testId(21) },
-            { type: 'apply_tag', tag: 'onboarded' },
-          ],
+          steps: {
+            id: stepId(1),
+            steps: [
+              { id: stepId(11), type: 'email', subject: 'Welcome aboard', body: '' },
+              {
+                id: stepId(12),
+                type: 'email',
+                subject: 'Second look',
+                body: '',
+                integrationId: testId(21),
+              },
+              { id: stepId(13), type: 'apply_tag', tag: 'onboarded' },
+              { id: stepId(14), type: 'end' },
+            ],
+          },
         },
         draft: {
           number: 2,
           triggerEvent: 'course_completed',
           exitEvents: [],
           goalEvent: null,
-          steps: [{ type: 'http' }],
+          steps: {
+            id: stepId(1),
+            steps: [{ id: stepId(11), type: 'http', body: '{}', headers: [], hasSecret: false }],
+          },
         },
       },
     }),
@@ -374,6 +422,7 @@ test('shows what the live version does, its exit and goal events included, not t
     .element(screen.getByText('Send email: Second look · Mailgun relay'))
     .toBeInTheDocument()
   await expect.element(screen.getByText('Apply tag: onboarded')).toBeInTheDocument()
+  await expect.element(screen.getByText('End', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('course_completed')).not.toBeInTheDocument()
   await expect.element(screen.getByText('Call a URL')).not.toBeInTheDocument()
 })
@@ -388,7 +437,18 @@ test('a send step through a deleted Integration names it as deleted', async () =
           triggerEvent: 'signup',
           exitEvents: [],
           goalEvent: null,
-          steps: [{ type: 'email', subject: 'Second look', integrationId: testId(21) }],
+          steps: {
+            id: stepId(1),
+            steps: [
+              {
+                id: stepId(11),
+                type: 'email',
+                subject: 'Second look',
+                body: '',
+                integrationId: testId(21),
+              },
+            ],
+          },
         },
       },
     }),
@@ -557,26 +617,53 @@ test('the period picked shows the results of that period', async () => {
   await expect.element(screen.getByText('Previous 30 days: 3 (+33.33%)')).not.toBeInTheDocument()
 })
 
-test('shows what each send step sent and skipped, by its position', async () => {
+test('shows what each send step sent and skipped, by its id across versions, named by the live version', async () => {
+  const live = {
+    number: 2,
+    triggerEvent: 'signup',
+    exitEvents: [],
+    goalEvent: null,
+    steps: {
+      id: stepId(1),
+      steps: [
+        { id: stepId(11), type: 'email' as const, subject: 'Welcome aboard', body: '' },
+        { id: stepId(12), type: 'wait' as const, seconds: 60 },
+      ],
+    },
+  }
   worker.use(
-    handleSiteAutomationsGet({ body: { ...PENDING, draft: null } }),
+    handleSiteAutomationsGet({ body: { ...PENDING, live, draft: null } }),
     handleSiteAutomationReportsGet({
       body: {
         ...NO_FIGURES,
         steps: [
-          { step: 0, sent: 41, skipped: 3 },
-          { step: 2, sent: 17, skipped: 29 },
+          { stepId: stepId(11), sent: 41, skipped: 3 },
+          { stepId: stepId(13), sent: 17, skipped: 29 },
+        ],
+        versionSteps: [
+          { version: 1, stepId: stepId(13), sent: 17, skipped: 29 },
+          { version: 1, stepId: stepId(11), sent: 20, skipped: 3 },
+          { version: 2, stepId: stepId(11), sent: 21, skipped: 0 },
         ],
       },
     }),
     handleSiteEnrollmentsList({ body: page([], 0) }),
+    // The live version sends email: the page reads the Workspace's postal address (ADR 0156).
+    handleSiteWorkspacesList({ body: [workspace()] }),
   )
 
   const { screen } = await renderWithRouter(<AutomationDetailPage />, MOUNT)
 
   await expect.element(screen.getByText('Send steps')).toBeInTheDocument()
-  await expect.element(screen.getByRole('row', { name: '1 41 3' })).toBeInTheDocument()
-  await expect.element(screen.getByRole('row', { name: '3 17 29' })).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('row', { name: '1. Send email: Welcome aboard 41 3' }))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('row', { name: 'Not in the live version 17 29' }))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('row', { name: '2 1. Send email: Welcome aboard 21 0' }))
+    .toBeInTheDocument()
 })
 
 test('an archived automation is read-only: it offers no edit and no publish', async () => {
@@ -592,7 +679,7 @@ test('an archived automation is read-only: it offers no edit and no publish', as
           triggerEvent: 'contact.created',
           exitEvents: [],
           goalEvent: null,
-          steps: [],
+          steps: { id: stepId(1), steps: [] },
         },
         archivedAt: TIMESTAMPS.updatedAt,
         revision: 1,
@@ -610,6 +697,7 @@ test('an archived automation is read-only: it offers no edit and no publish', as
         revenue: { reportingCurrency: 'USD', orders: 0, amount: 0 },
         links: [],
         steps: [],
+        versionSteps: [],
         results: NO_RESULTS,
       },
     }),

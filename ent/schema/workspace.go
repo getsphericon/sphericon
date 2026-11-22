@@ -214,6 +214,7 @@ func (Workspace) Edges() []ent.Edge {
 		edge.To("automations", Automation.Type),
 		edge.To("automation_versions", AutomationVersion.Type),
 		edge.To("automation_runs", AutomationRun.Type),
+		edge.To("automation_step_records", AutomationStepRecord.Type),
 		edge.To("rules", Rule.Type),
 		edge.To("rule_versions", RuleVersion.Type),
 		edge.To("rule_version_triggers", RuleVersionTrigger.Type),

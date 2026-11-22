@@ -6,25 +6,26 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 // AddPruned counts the Automation messages message retention deletes into their Automations'
-// figures, one row per step position (ADR 0143), in the transaction that deletes them: the use
+// figures, one row per version and Step id (ADR 0143, ADR 0122), in the transaction that deletes them: the use
 // case internal/usecase/messageretention runs it. It counts as the report does, sent and skipped by
 // step and the delivery stamps whatever the status, so the report reads the same figures after the
 // prune as before. Run alone, it would count messages twice.
 func (m *Module) AddPruned(ctx context.Context, s *ent.Scoped, msgs []*ent.OutboundMessage) error {
 	type key struct {
-		automation int64
-		step       int
+		automation, version int64
+		step                automationstep.ID
 	}
 	byStep := map[key]*counts{}
 	var order []key
 	for _, m := range msgs {
-		if m.AutomationID == nil || m.AutomationStep == nil {
-			continue // the provenance check makes both required on an Automation message
+		if m.AutomationID == nil || m.AutomationVersionID == nil || m.AutomationStepID == nil {
+			continue // the provenance check makes them required on an Automation message
 		}
-		k := key{automation: *m.AutomationID, step: *m.AutomationStep}
+		k := key{automation: *m.AutomationID, version: *m.AutomationVersionID, step: *m.AutomationStepID}
 		c := byStep[k]
 		if c == nil {
 			c = &counts{}
@@ -36,10 +37,10 @@ func (m *Module) AddPruned(ctx context.Context, s *ent.Scoped, msgs []*ent.Outbo
 	for _, k := range order {
 		c := byStep[k]
 		err := s.AutomationFigure().Create().
-			SetAutomationID(k.automation).SetStep(k.step).
+			SetAutomationID(k.automation).SetVersionID(k.version).SetStepID(k.step).
 			SetSent(c.sent).SetSkipped(c.skipped).SetDelivered(c.delivered).
 			SetBounced(c.bounced).SetComplained(c.complained).SetCaptured(c.captured).
-			OnConflictColumns(automationfigure.FieldWorkspaceID, automationfigure.FieldAutomationID, automationfigure.FieldStep).
+			OnConflictColumns(automationfigure.FieldWorkspaceID, automationfigure.FieldAutomationID, automationfigure.FieldVersionID, automationfigure.FieldStepID).
 			Update(func(u *ent.AutomationFigureScopedUpsert) {
 				u.AddSent(c.sent).AddSkipped(c.skipped).AddDelivered(c.delivered).
 					AddBounced(c.bounced).AddComplained(c.complained).AddCaptured(c.captured).

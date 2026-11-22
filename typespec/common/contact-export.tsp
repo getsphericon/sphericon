@@ -262,8 +262,8 @@ model ContactExportOutboundMessage {
   /** Automation that produced the message */
   automationId?: EntityId | null;
 
-  /** Step of the automation that produced the message */
-  automationStep?: int32 | null;
+  /** Id of the automation Step that produced the message, the same in every version */
+  automationStepId?: string | null;
 
   /** Template the message was rendered from */
   templateId?: EntityId | null;

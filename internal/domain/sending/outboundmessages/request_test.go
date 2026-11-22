@@ -35,7 +35,7 @@ func TestRequestConstructorsDeduplicateTheSameLogicalSend(t *testing.T) {
 			return req
 		},
 		"automation step": func() outboundmessages.Request {
-			return outboundmessages.AutomationStep(automation, run, 0, nil, contact, outboundmessages.EmailContent{Subject: "Hi", Body: "<p>Hi</p>"})
+			return outboundmessages.AutomationStep(automation, run, welcomeFirstEmailStepID, nil, contact, outboundmessages.EmailContent{Subject: "Hi", Body: "<p>Hi</p>"})
 		},
 		"transactional with a client key": func() outboundmessages.Request {
 			return outboundmessages.Transactional(outboundmessages.TransactionalMessage{
@@ -77,8 +77,8 @@ func TestTransactionalWithoutClientKeyIsAlwaysANewSend(t *testing.T) {
 	assert.NotEqual(t, first.MessageID, second.MessageID)
 }
 
-// Sends already recorded under the old key formats must still deduplicate after an
-// upgrade, so the stored formats are pinned here.
+// Sends already recorded under the stored key formats must still deduplicate after an upgrade, so
+// the stored formats are pinned here: an Automation step's names its run and its Step id (ADR 0122).
 func TestConstructorsKeepTheStoredKeyFormats(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
@@ -93,9 +93,9 @@ func TestConstructorsKeepTheStoredKeyFormats(t *testing.T) {
 	recipient, err := outboundmessages.BroadcastRecipient(bc, rec, contact)
 	require.NoError(t, err)
 	for want, req := range map[string]outboundmessages.Request{
-		fmt.Sprintf("broadcast:%d", rec.ID): recipient,
-		"automation:1000:2":                 outboundmessages.AutomationStep(automation, run, 2, nil, contact, outboundmessages.EmailContent{Subject: "Hi", Body: "<p>Hi</p>"}),
-		"transactional:k1":                  outboundmessages.Transactional(outboundmessages.TransactionalMessage{ClientKey: "k1", Destination: "a@example.com"}),
+		fmt.Sprintf("broadcast:%d", rec.ID):                    recipient,
+		"automation:1000:9c2251c9-031a-5e1e-b3a5-d4d37085ffe8": outboundmessages.AutomationStep(automation, run, "9c2251c9-031a-5e1e-b3a5-d4d37085ffe8", nil, contact, outboundmessages.EmailContent{Subject: "Hi", Body: "<p>Hi</p>"}),
+		"transactional:k1":                                     outboundmessages.Transactional(outboundmessages.TransactionalMessage{ClientKey: "k1", Destination: "a@example.com"}),
 	} {
 		res, err := newModule(env, time.Now).Send(ctx, s, req)
 		require.NoError(t, err)
@@ -103,3 +103,6 @@ func TestConstructorsKeepTheStoredKeyFormats(t *testing.T) {
 		assert.Equal(t, want, env.DB.OutboundMessage.GetX(ctx, res.MessageID).IdempotencyKey)
 	}
 }
+
+// welcomeFirstEmailStepID is the id of the first email Step of the fixture Welcome series.
+const welcomeFirstEmailStepID = "8cdd0b49-43f8-527f-8de5-aa77c9a36138"

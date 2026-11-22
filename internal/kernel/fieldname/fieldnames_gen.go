@@ -59,7 +59,6 @@ const (
 	Destination           = "destination"
 	Doc                   = "doc"
 	Domain                = "domain"
-	EditorVersion         = "editorVersion"
 	Email                 = "email"
 	Enabled               = "enabled"
 	Endpoint              = "endpoint"

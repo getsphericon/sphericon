@@ -79,6 +79,13 @@ func TestAnErasureRemovesThePersonsDataAndKeepsTheFactsAnonymous(t *testing.T) {
 	// An Enrollment's copy of the Event it began on (#752) is of the Contact's runs alone.
 	copies := env.DB.AutomationRun.Query().Where(automationrun.WorkspaceID(fixtures.InitechID), automationrun.EventPropertiesNotNil())
 	require.True(t, copies.Clone().ExistX(ctx), "the erasable run holds a copy of its triggering Event")
+	// The Enrollment's Step records, read as the automations module shows them (ADR 0124).
+	stepRecords := func() ([]*ent.AutomationStepRecord, error) {
+		return testhelper.Module[*automations.Module](env).StepRecords(ctx, env.DB.Scoped(fixtures.InitechID), fixtures.AutomationInitechID, fixtures.AutomationRunErasableID)
+	}
+	kept, err := stepRecords()
+	require.NoError(t, err)
+	require.NotEmpty(t, kept, "the erasable run keeps a record of the Step it stands on")
 
 	eraseErasable(t, env)
 
@@ -90,6 +97,8 @@ func TestAnErasureRemovesThePersonsDataAndKeepsTheFactsAnonymous(t *testing.T) {
 	assert.Equal(t, []int64{fixtures.ContactBystanderID}, linked, "the tag stays, only the bystander keeps it")
 	assert.False(t, env.DB.Confirmation.Query().Where(confirmation.ID(fixtures.ConfirmationErasableID)).ExistX(ctx), "confirmation")
 	assert.False(t, env.DB.AutomationRun.Query().Where(automationrun.ID(fixtures.AutomationRunErasableID)).ExistX(ctx), "automation runs")
+	_, err = stepRecords()
+	require.ErrorIs(t, err, automations.ErrEnrollmentNotFound, "the run goes, and its Step records with it")
 
 	// Events: customer-tracked and marketing.confirmed are deleted ...
 	for _, id := range []int64{

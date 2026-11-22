@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
@@ -240,6 +241,22 @@ func (s *Scoped) verifyAutomationRun(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("AutomationRun: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyAutomationStepRecord fails with ErrNotInWorkspace unless every id is a AutomationStepRecord of the Workspace.
+func (s *Scoped) verifyAutomationStepRecord(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.AutomationStepRecord.Query().Where(s.inAutomationStepRecord(automationsteprecord.IDIn(ids...))...).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("AutomationStepRecord: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -4884,6 +4901,15 @@ func (s *Scoped) checkAutomationFigure(ctx context.Context, ms ...*AutomationFig
 			return fmt.Errorf("automation: %w", err)
 		}
 	}
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.VersionIDs()...)
+		}
+		if err := s.verifyAutomationVersion(ctx, ids); err != nil {
+			return fmt.Errorf("version: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -5033,13 +5059,21 @@ func (x *AutomationFigureScopedCreate) SetAutomationID(v int64) *AutomationFigur
 
 const RoleOf_AutomationFigureScopedCreate_SetAutomationID = RoleStep
 
-// SetStep sets the "step" field.
-func (x *AutomationFigureScopedCreate) SetStep(v int) *AutomationFigureScopedCreate {
-	x.set = append(x.set, func(b *AutomationFigureCreate) { b.SetStep(v) })
+// SetVersionID sets the "version_id" field.
+func (x *AutomationFigureScopedCreate) SetVersionID(v int64) *AutomationFigureScopedCreate {
+	x.set = append(x.set, func(b *AutomationFigureCreate) { b.SetVersionID(v) })
 	return x
 }
 
-const RoleOf_AutomationFigureScopedCreate_SetStep = RoleStep
+const RoleOf_AutomationFigureScopedCreate_SetVersionID = RoleStep
+
+// SetStepID sets the "step_id" field.
+func (x *AutomationFigureScopedCreate) SetStepID(v automationstep.ID) *AutomationFigureScopedCreate {
+	x.set = append(x.set, func(b *AutomationFigureCreate) { b.SetStepID(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedCreate_SetStepID = RoleStep
 
 // SetSent sets the "sent" field.
 func (x *AutomationFigureScopedCreate) SetSent(v int) *AutomationFigureScopedCreate {
@@ -5156,6 +5190,14 @@ func (x *AutomationFigureScopedCreate) SetAutomation(v *Automation) *AutomationF
 }
 
 const RoleOf_AutomationFigureScopedCreate_SetAutomation = RoleStep
+
+// SetVersion sets the "version" edge to the AutomationVersion entity.
+func (x *AutomationFigureScopedCreate) SetVersion(v *AutomationVersion) *AutomationFigureScopedCreate {
+	x.set = append(x.set, func(b *AutomationFigureCreate) { b.SetVersion(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedCreate_SetVersion = RoleStep
 
 const (
 	TypeOf_AutomationFigureScopedCreate                        = TypeScopedCreate
@@ -6403,23 +6445,23 @@ func (x *AutomationRunScopedCreate) SetNillableEndedAt(v *time.Time) *Automation
 
 const RoleOf_AutomationRunScopedCreate_SetNillableEndedAt = RoleStep
 
-// SetCurrentStep sets the "current_step" field.
-func (x *AutomationRunScopedCreate) SetCurrentStep(v int) *AutomationRunScopedCreate {
-	x.set = append(x.set, func(b *AutomationRunCreate) { b.SetCurrentStep(v) })
+// SetCurrentStepID sets the "current_step_id" field.
+func (x *AutomationRunScopedCreate) SetCurrentStepID(v automationstep.ID) *AutomationRunScopedCreate {
+	x.set = append(x.set, func(b *AutomationRunCreate) { b.SetCurrentStepID(v) })
 	return x
 }
 
-const RoleOf_AutomationRunScopedCreate_SetCurrentStep = RoleStep
+const RoleOf_AutomationRunScopedCreate_SetCurrentStepID = RoleStep
 
-// SetNillableCurrentStep sets the "current_step" field if the given value is not nil.
-func (x *AutomationRunScopedCreate) SetNillableCurrentStep(v *int) *AutomationRunScopedCreate {
+// SetNillableCurrentStepID sets the "current_step_id" field if the given value is not nil.
+func (x *AutomationRunScopedCreate) SetNillableCurrentStepID(v *automationstep.ID) *AutomationRunScopedCreate {
 	if v != nil {
-		x.SetCurrentStep(*v)
+		x.SetCurrentStepID(*v)
 	}
 	return x
 }
 
-const RoleOf_AutomationRunScopedCreate_SetNillableCurrentStep = RoleStep
+const RoleOf_AutomationRunScopedCreate_SetNillableCurrentStepID = RoleStep
 
 // SetResumeAt sets the "resume_at" field.
 func (x *AutomationRunScopedCreate) SetResumeAt(v time.Time) *AutomationRunScopedCreate {
@@ -6714,29 +6756,29 @@ func (u *AutomationRunScopedUpsert) ClearEndedAt() *AutomationRunScopedUpsert {
 
 const RoleOf_AutomationRunScopedUpsert_ClearEndedAt = RoleStep
 
-// SetCurrentStep sets the "current_step" field.
-func (u *AutomationRunScopedUpsert) SetCurrentStep(v int) *AutomationRunScopedUpsert {
-	u.u.Set(automationrun.FieldCurrentStep, v)
+// SetCurrentStepID sets the "current_step_id" field.
+func (u *AutomationRunScopedUpsert) SetCurrentStepID(v automationstep.ID) *AutomationRunScopedUpsert {
+	u.u.Set(automationrun.FieldCurrentStepID, v)
 	return u
 }
 
-const RoleOf_AutomationRunScopedUpsert_SetCurrentStep = RoleStep
+const RoleOf_AutomationRunScopedUpsert_SetCurrentStepID = RoleStep
 
-// AddCurrentStep adds v to the "current_step" field.
-func (u *AutomationRunScopedUpsert) AddCurrentStep(v int) *AutomationRunScopedUpsert {
-	u.u.Add(automationrun.FieldCurrentStep, v)
+// UpdateCurrentStepID sets the "current_step_id" field to the value that was provided on create.
+func (u *AutomationRunScopedUpsert) UpdateCurrentStepID() *AutomationRunScopedUpsert {
+	u.u.SetExcluded(automationrun.FieldCurrentStepID)
 	return u
 }
 
-const RoleOf_AutomationRunScopedUpsert_AddCurrentStep = RoleStep
+const RoleOf_AutomationRunScopedUpsert_UpdateCurrentStepID = RoleStep
 
-// UpdateCurrentStep sets the "current_step" field to the value that was provided on create.
-func (u *AutomationRunScopedUpsert) UpdateCurrentStep() *AutomationRunScopedUpsert {
-	u.u.SetExcluded(automationrun.FieldCurrentStep)
+// ClearCurrentStepID clears the value of the "current_step_id" field.
+func (u *AutomationRunScopedUpsert) ClearCurrentStepID() *AutomationRunScopedUpsert {
+	u.u.SetNull(automationrun.FieldCurrentStepID)
 	return u
 }
 
-const RoleOf_AutomationRunScopedUpsert_UpdateCurrentStep = RoleStep
+const RoleOf_AutomationRunScopedUpsert_ClearCurrentStepID = RoleStep
 
 // SetResumeAt sets the "resume_at" field.
 func (u *AutomationRunScopedUpsert) SetResumeAt(v time.Time) *AutomationRunScopedUpsert {
@@ -7151,31 +7193,31 @@ func (x *AutomationRunScopedUpdateOne) ClearEndedAt() *AutomationRunScopedUpdate
 
 const RoleOf_AutomationRunScopedUpdateOne_ClearEndedAt = RoleStep
 
-// SetCurrentStep sets the "current_step" field.
-func (x *AutomationRunScopedUpdateOne) SetCurrentStep(v int) *AutomationRunScopedUpdateOne {
-	x.set = append(x.set, func(b *AutomationRunUpdateOne) { b.SetCurrentStep(v) })
+// SetCurrentStepID sets the "current_step_id" field.
+func (x *AutomationRunScopedUpdateOne) SetCurrentStepID(v automationstep.ID) *AutomationRunScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationRunUpdateOne) { b.SetCurrentStepID(v) })
 	return x
 }
 
-const RoleOf_AutomationRunScopedUpdateOne_SetCurrentStep = RoleStep
+const RoleOf_AutomationRunScopedUpdateOne_SetCurrentStepID = RoleStep
 
-// SetNillableCurrentStep sets the "current_step" field if the given value is not nil.
-func (x *AutomationRunScopedUpdateOne) SetNillableCurrentStep(v *int) *AutomationRunScopedUpdateOne {
+// SetNillableCurrentStepID sets the "current_step_id" field if the given value is not nil.
+func (x *AutomationRunScopedUpdateOne) SetNillableCurrentStepID(v *automationstep.ID) *AutomationRunScopedUpdateOne {
 	if v != nil {
-		x.SetCurrentStep(*v)
+		x.SetCurrentStepID(*v)
 	}
 	return x
 }
 
-const RoleOf_AutomationRunScopedUpdateOne_SetNillableCurrentStep = RoleStep
+const RoleOf_AutomationRunScopedUpdateOne_SetNillableCurrentStepID = RoleStep
 
-// AddCurrentStep adds value to the "current_step" field.
-func (x *AutomationRunScopedUpdateOne) AddCurrentStep(v int) *AutomationRunScopedUpdateOne {
-	x.set = append(x.set, func(b *AutomationRunUpdateOne) { b.AddCurrentStep(v) })
+// ClearCurrentStepID clears the value of the "current_step_id" field.
+func (x *AutomationRunScopedUpdateOne) ClearCurrentStepID() *AutomationRunScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationRunUpdateOne) { b.ClearCurrentStepID() })
 	return x
 }
 
-const RoleOf_AutomationRunScopedUpdateOne_AddCurrentStep = RoleStep
+const RoleOf_AutomationRunScopedUpdateOne_ClearCurrentStepID = RoleStep
 
 // SetResumeAt sets the "resume_at" field.
 func (x *AutomationRunScopedUpdateOne) SetResumeAt(v time.Time) *AutomationRunScopedUpdateOne {
@@ -7530,31 +7572,31 @@ func (x *AutomationRunScopedUpdate) ClearEndedAt() *AutomationRunScopedUpdate {
 
 const RoleOf_AutomationRunScopedUpdate_ClearEndedAt = RoleStep
 
-// SetCurrentStep sets the "current_step" field.
-func (x *AutomationRunScopedUpdate) SetCurrentStep(v int) *AutomationRunScopedUpdate {
-	x.set = append(x.set, func(b *AutomationRunUpdate) { b.SetCurrentStep(v) })
+// SetCurrentStepID sets the "current_step_id" field.
+func (x *AutomationRunScopedUpdate) SetCurrentStepID(v automationstep.ID) *AutomationRunScopedUpdate {
+	x.set = append(x.set, func(b *AutomationRunUpdate) { b.SetCurrentStepID(v) })
 	return x
 }
 
-const RoleOf_AutomationRunScopedUpdate_SetCurrentStep = RoleStep
+const RoleOf_AutomationRunScopedUpdate_SetCurrentStepID = RoleStep
 
-// SetNillableCurrentStep sets the "current_step" field if the given value is not nil.
-func (x *AutomationRunScopedUpdate) SetNillableCurrentStep(v *int) *AutomationRunScopedUpdate {
+// SetNillableCurrentStepID sets the "current_step_id" field if the given value is not nil.
+func (x *AutomationRunScopedUpdate) SetNillableCurrentStepID(v *automationstep.ID) *AutomationRunScopedUpdate {
 	if v != nil {
-		x.SetCurrentStep(*v)
+		x.SetCurrentStepID(*v)
 	}
 	return x
 }
 
-const RoleOf_AutomationRunScopedUpdate_SetNillableCurrentStep = RoleStep
+const RoleOf_AutomationRunScopedUpdate_SetNillableCurrentStepID = RoleStep
 
-// AddCurrentStep adds value to the "current_step" field.
-func (x *AutomationRunScopedUpdate) AddCurrentStep(v int) *AutomationRunScopedUpdate {
-	x.set = append(x.set, func(b *AutomationRunUpdate) { b.AddCurrentStep(v) })
+// ClearCurrentStepID clears the value of the "current_step_id" field.
+func (x *AutomationRunScopedUpdate) ClearCurrentStepID() *AutomationRunScopedUpdate {
+	x.set = append(x.set, func(b *AutomationRunUpdate) { b.ClearCurrentStepID() })
 	return x
 }
 
-const RoleOf_AutomationRunScopedUpdate_AddCurrentStep = RoleStep
+const RoleOf_AutomationRunScopedUpdate_ClearCurrentStepID = RoleStep
 
 // SetResumeAt sets the "resume_at" field.
 func (x *AutomationRunScopedUpdate) SetResumeAt(v time.Time) *AutomationRunScopedUpdate {
@@ -7757,6 +7799,1044 @@ const (
 	RoleOf_AutomationRunScopedUpdate_Modify = RoleStep
 	RoleOf_AutomationRunScopedUpdate_Save   = RoleStep
 	RoleOf_AutomationRunScopedUpdate_Exec   = RoleStep
+)
+
+// AutomationStepRecordScoped reaches AutomationStepRecord entities of one Workspace.
+type AutomationStepRecordScoped struct{ s *Scoped }
+
+// AutomationStepRecord returns the AutomationStepRecord entities of the Workspace.
+func (s *Scoped) AutomationStepRecord() *AutomationStepRecordScoped {
+	return &AutomationStepRecordScoped{s: s}
+}
+
+const (
+	TypeOf_AutomationStepRecordScoped             = TypeWrapper
+	EntityOf_AutomationStepRecordScoped           = "AutomationStepRecord"
+	RoleOf_Scoped_AutomationStepRecord            = RoleNone
+	RoleOf_AutomationStepRecordScoped_Query       = RoleRead
+	RoleOf_AutomationStepRecordScoped_Get         = RoleRead
+	RoleOf_AutomationStepRecordScoped_DeleteOneID = RoleStart
+	RoleOf_AutomationStepRecordScoped_UpdateOneID = RoleStart
+	RoleOf_AutomationStepRecordScoped_Delete      = RoleStart
+	RoleOf_AutomationStepRecordScoped_Create      = RoleStart
+	RoleOf_AutomationStepRecordScoped_CreateBulk  = RoleStart
+	RoleOf_AutomationStepRecordScoped_Update      = RoleStart
+)
+
+// inAutomationStepRecord confines predicates of AutomationStepRecord rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inAutomationStepRecord(ps ...predicate.AutomationStepRecord) []predicate.AutomationStepRecord {
+	return append([]predicate.AutomationStepRecord{automationsteprecord.WorkspaceID(s.ws)}, ps...)
+}
+
+// Query returns a AutomationStepRecord query already confined to the Workspace.
+func (t *AutomationStepRecordScoped) Query() *AutomationStepRecordQuery {
+	return t.s.c.AutomationStepRecord.Query().Where(t.s.inAutomationStepRecord()...)
+}
+
+// Get returns the AutomationStepRecord with the id; a row of another Workspace is not found.
+func (t *AutomationStepRecordScoped) Get(ctx context.Context, id int64) (*AutomationStepRecord, error) {
+	return t.Query().Where(automationsteprecord.ID(id)).Only(ctx)
+}
+
+// writeAutomationStepRecord runs a write of AutomationStepRecord rows: run builds it on the client of the scope it is
+// given and executes it, and reaches no other client. The
+// entity is not audited, so run gets the scope itself.
+func (s *Scoped) writeAutomationStepRecord(ctx context.Context, verb string, where []predicate.AutomationStepRecord, unchanged unchangedRows, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, unchanged
+	_, err := run(s)
+	return err
+}
+
+// checkAutomationStepRecord verifies every reference the mutations set against the Workspace of s, one query per
+// reference for all of them.
+func (s *Scoped) checkAutomationStepRecord(ctx context.Context, ms ...*AutomationStepRecordMutation) error {
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.RunIDs()...)
+		}
+		if err := s.verifyAutomationRun(ctx, ids); err != nil {
+			return fmt.Errorf("run: %w", err)
+		}
+	}
+	return nil
+}
+
+// AutomationStepRecordScopedDeleteOne deletes one AutomationStepRecord: it keeps the row's id and its fences, and builds the
+// ent delete on the client the delete runs on.
+type AutomationStepRecordScopedDeleteOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.AutomationStepRecord
+}
+
+// DeleteOneID deletes the AutomationStepRecord with the id; a row of another Workspace is not found.
+func (t *AutomationStepRecordScoped) DeleteOneID(id int64) *AutomationStepRecordScopedDeleteOne {
+	return &AutomationStepRecordScopedDeleteOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *AutomationStepRecordScopedDeleteOne) Where(ps ...predicate.AutomationStepRecord) *AutomationStepRecordScopedDeleteOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_AutomationStepRecordScopedDeleteOne       = TypeScopedDelete
+	EntityOf_AutomationStepRecordScopedDeleteOne     = "AutomationStepRecord"
+	RoleOf_AutomationStepRecordScopedDeleteOne_Where = RoleStep
+	RoleOf_AutomationStepRecordScopedDeleteOne_Exec  = RoleStep
+)
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *AutomationStepRecordScopedDeleteOne) Exec(ctx context.Context) error {
+	where := x.s.inAutomationStepRecord(x.where...)
+	return x.s.writeAutomationStepRecord(ctx, "delete", append([]predicate.AutomationStepRecord{automationsteprecord.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
+		return nil, s.c.AutomationStepRecord.DeleteOneID(x.id).Where(where...).Exec(ctx)
+	})
+}
+
+// AutomationStepRecordScopedDelete deletes the AutomationStepRecord rows of one Workspace that match its predicates, which it
+// keeps until the delete is built on the client it runs on.
+type AutomationStepRecordScopedDelete struct {
+	s     *Scoped
+	where []predicate.AutomationStepRecord
+}
+
+// Delete deletes the AutomationStepRecord entities of the Workspace that match the predicates.
+func (t *AutomationStepRecordScoped) Delete() *AutomationStepRecordScopedDelete {
+	return &AutomationStepRecordScopedDelete{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *AutomationStepRecordScopedDelete) Where(ps ...predicate.AutomationStepRecord) *AutomationStepRecordScopedDelete {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_AutomationStepRecordScopedDelete       = TypeScopedDelete
+	EntityOf_AutomationStepRecordScopedDelete     = "AutomationStepRecord"
+	RoleOf_AutomationStepRecordScopedDelete_Where = RoleStep
+	RoleOf_AutomationStepRecordScopedDelete_Exec  = RoleStep
+)
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *AutomationStepRecordScopedDelete) Exec(ctx context.Context) (int, error) {
+	where := x.s.inAutomationStepRecord(x.where...)
+	var n int
+	err := x.s.writeAutomationStepRecord(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		var err error
+		n, err = s.c.AutomationStepRecord.Delete().Where(where...).Exec(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// ---------------------------------------------------------------- create
+
+// AutomationStepRecordScopedCreate creates a AutomationStepRecord of one Workspace. It has no way to name a Workspace: it
+// keeps what its setters set and builds the ent create, in its Workspace, on the client the create
+// runs on.
+type AutomationStepRecordScopedCreate struct {
+	s   *Scoped
+	set []func(*AutomationStepRecordCreate)
+}
+
+// Create starts a AutomationStepRecord in the Workspace.
+func (t *AutomationStepRecordScoped) Create() *AutomationStepRecordScopedCreate {
+	return &AutomationStepRecordScopedCreate{s: t.s}
+}
+
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *AutomationStepRecordScopedCreate) raw(s *Scoped) *AutomationStepRecordCreate {
+	b := s.c.AutomationStepRecord.Create().SetWorkspaceID(s.ws)
+	for _, set := range x.set {
+		set(b)
+	}
+	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *AutomationStepRecordScopedCreate) build(ctx context.Context, s *Scoped) (*AutomationStepRecordCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkAutomationStepRecord(ctx, b.Mutation()))
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *AutomationStepRecordScopedCreate) SetCreatedAt(v time.Time) *AutomationStepRecordScopedCreate {
+	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetCreatedAt(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetCreatedAt = RoleStep
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *AutomationStepRecordScopedCreate) SetNillableCreatedAt(v *time.Time) *AutomationStepRecordScopedCreate {
+	if v != nil {
+		x.SetCreatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetNillableCreatedAt = RoleStep
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *AutomationStepRecordScopedCreate) SetUpdatedAt(v time.Time) *AutomationStepRecordScopedCreate {
+	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetUpdatedAt = RoleStep
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *AutomationStepRecordScopedCreate) SetNillableUpdatedAt(v *time.Time) *AutomationStepRecordScopedCreate {
+	if v != nil {
+		x.SetUpdatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetNillableUpdatedAt = RoleStep
+
+// SetRunID sets the "run_id" field.
+func (x *AutomationStepRecordScopedCreate) SetRunID(v int64) *AutomationStepRecordScopedCreate {
+	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetRunID(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetRunID = RoleStep
+
+// SetStepID sets the "step_id" field.
+func (x *AutomationStepRecordScopedCreate) SetStepID(v automationstep.ID) *AutomationStepRecordScopedCreate {
+	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetStepID(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetStepID = RoleStep
+
+// SetReachedAt sets the "reached_at" field.
+func (x *AutomationStepRecordScopedCreate) SetReachedAt(v time.Time) *AutomationStepRecordScopedCreate {
+	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetReachedAt(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetReachedAt = RoleStep
+
+// SetLeftAt sets the "left_at" field.
+func (x *AutomationStepRecordScopedCreate) SetLeftAt(v time.Time) *AutomationStepRecordScopedCreate {
+	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetLeftAt(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetLeftAt = RoleStep
+
+// SetNillableLeftAt sets the "left_at" field if the given value is not nil.
+func (x *AutomationStepRecordScopedCreate) SetNillableLeftAt(v *time.Time) *AutomationStepRecordScopedCreate {
+	if v != nil {
+		x.SetLeftAt(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetNillableLeftAt = RoleStep
+
+// SetOutcome sets the "outcome" field.
+func (x *AutomationStepRecordScopedCreate) SetOutcome(v automationsteprecord.Outcome) *AutomationStepRecordScopedCreate {
+	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetOutcome(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetOutcome = RoleStep
+
+// SetNillableOutcome sets the "outcome" field if the given value is not nil.
+func (x *AutomationStepRecordScopedCreate) SetNillableOutcome(v *automationsteprecord.Outcome) *AutomationStepRecordScopedCreate {
+	if v != nil {
+		x.SetOutcome(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetNillableOutcome = RoleStep
+
+// SetSkipReason sets the "skip_reason" field.
+func (x *AutomationStepRecordScopedCreate) SetSkipReason(v skipreason.Reason) *AutomationStepRecordScopedCreate {
+	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetSkipReason(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetSkipReason = RoleStep
+
+// SetNillableSkipReason sets the "skip_reason" field if the given value is not nil.
+func (x *AutomationStepRecordScopedCreate) SetNillableSkipReason(v *skipreason.Reason) *AutomationStepRecordScopedCreate {
+	if v != nil {
+		x.SetSkipReason(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetNillableSkipReason = RoleStep
+
+// SetDueAt sets the "due_at" field.
+func (x *AutomationStepRecordScopedCreate) SetDueAt(v time.Time) *AutomationStepRecordScopedCreate {
+	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetDueAt(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetDueAt = RoleStep
+
+// SetNillableDueAt sets the "due_at" field if the given value is not nil.
+func (x *AutomationStepRecordScopedCreate) SetNillableDueAt(v *time.Time) *AutomationStepRecordScopedCreate {
+	if v != nil {
+		x.SetDueAt(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetNillableDueAt = RoleStep
+
+// SetRun sets the "run" edge to the AutomationRun entity.
+func (x *AutomationStepRecordScopedCreate) SetRun(v *AutomationRun) *AutomationStepRecordScopedCreate {
+	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetRun(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetRun = RoleStep
+
+const (
+	TypeOf_AutomationStepRecordScopedCreate                        = TypeScopedCreate
+	EntityOf_AutomationStepRecordScopedCreate                      = "AutomationStepRecord"
+	RoleOf_AutomationStepRecordScopedCreate_Save                   = RoleStep
+	RoleOf_AutomationStepRecordScopedCreate_Exec                   = RoleStep
+	RoleOf_AutomationStepRecordScopedCreate_OnConflictColumns      = RoleStart
+	RoleOf_AutomationStepRecordScopedCreate_OnConflictColumnsWhere = RoleStart
+)
+
+// Save verifies the references against the Workspace, then creates the AutomationStepRecord.
+func (x *AutomationStepRecordScopedCreate) Save(ctx context.Context) (*AutomationStepRecord, error) {
+	var created *AutomationStepRecord
+	err := x.s.writeAutomationStepRecord(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = b.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *AutomationStepRecordScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// AutomationStepRecordScopedCreateBulk creates several AutomationStepRecord entities of one Workspace at once.
+type AutomationStepRecordScopedCreateBulk struct {
+	s  *Scoped
+	xs []*AutomationStepRecordScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *AutomationStepRecordScoped) CreateBulk(xs ...*AutomationStepRecordScopedCreate) *AutomationStepRecordScopedCreateBulk {
+	return &AutomationStepRecordScopedCreateBulk{s: t.s, xs: xs}
+}
+
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *AutomationStepRecordScopedCreateBulk) refuseForeign() error {
+	for _, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return fmt.Errorf("AutomationStepRecord: builder of another scope: %w", ErrNotInWorkspace)
+		}
+	}
+	return nil
+}
+
+// build makes the ent bulk create on the client of s, every create of it in the Workspace, and
+// verifies the references of all of them, one query per reference rather than one per row.
+func (b *AutomationStepRecordScopedCreateBulk) build(ctx context.Context, s *Scoped) (*AutomationStepRecordCreateBulk, error) {
+	builders := make([]*AutomationStepRecordCreate, len(b.xs))
+	ms := make([]*AutomationStepRecordMutation, len(b.xs))
+	for i, x := range b.xs {
+		builders[i] = x.raw(s)
+		ms[i] = builders[i].Mutation()
+	}
+	if err := s.checkAutomationStepRecord(ctx, ms...); err != nil {
+		return nil, err
+	}
+	return s.c.AutomationStepRecord.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the AutomationStepRecord entities.
+func (b *AutomationStepRecordScopedCreateBulk) Save(ctx context.Context) ([]*AutomationStepRecord, error) {
+	if err := b.refuseForeign(); err != nil {
+		return nil, err
+	}
+	var created []*AutomationStepRecord
+	err := b.s.writeAutomationStepRecord(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = raw.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *AutomationStepRecordScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_AutomationStepRecordScopedCreateBulk                   = TypeScopedCreate
+	EntityOf_AutomationStepRecordScopedCreateBulk                 = "AutomationStepRecord"
+	RoleOf_AutomationStepRecordScopedCreateBulk_Save              = RoleStep
+	RoleOf_AutomationStepRecordScopedCreateBulk_Exec              = RoleStep
+	RoleOf_AutomationStepRecordScopedCreateBulk_OnConflictColumns = RoleStart
+)
+
+// ---------------------------------------------------------------- upsert
+
+// AutomationStepRecordScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type AutomationStepRecordScopedUpsert struct{ u *sql.UpdateSet }
+
+const (
+	TypeOf_AutomationStepRecordScopedUpsert   = TypeScopedUpsert
+	EntityOf_AutomationStepRecordScopedUpsert = "AutomationStepRecord"
+)
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *AutomationStepRecordScopedUpsert) SetUpdatedAt(v time.Time) *AutomationStepRecordScopedUpsert {
+	u.u.Set(automationsteprecord.FieldUpdatedAt, v)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_SetUpdatedAt = RoleStep
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *AutomationStepRecordScopedUpsert) UpdateUpdatedAt() *AutomationStepRecordScopedUpsert {
+	u.u.SetExcluded(automationsteprecord.FieldUpdatedAt)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_UpdateUpdatedAt = RoleStep
+
+// SetLeftAt sets the "left_at" field.
+func (u *AutomationStepRecordScopedUpsert) SetLeftAt(v time.Time) *AutomationStepRecordScopedUpsert {
+	u.u.Set(automationsteprecord.FieldLeftAt, v)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_SetLeftAt = RoleStep
+
+const SetsState_AutomationStepRecordScopedUpsert_SetLeftAt = "LeftAt"
+
+// UpdateLeftAt sets the "left_at" field to the value that was provided on create.
+func (u *AutomationStepRecordScopedUpsert) UpdateLeftAt() *AutomationStepRecordScopedUpsert {
+	u.u.SetExcluded(automationsteprecord.FieldLeftAt)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_UpdateLeftAt = RoleStep
+
+const SetsState_AutomationStepRecordScopedUpsert_UpdateLeftAt = "LeftAt"
+
+// ClearLeftAt clears the value of the "left_at" field.
+func (u *AutomationStepRecordScopedUpsert) ClearLeftAt() *AutomationStepRecordScopedUpsert {
+	u.u.SetNull(automationsteprecord.FieldLeftAt)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_ClearLeftAt = RoleStep
+
+const ClearsState_AutomationStepRecordScopedUpsert_ClearLeftAt = "LeftAt"
+
+// SetOutcome sets the "outcome" field.
+func (u *AutomationStepRecordScopedUpsert) SetOutcome(v automationsteprecord.Outcome) *AutomationStepRecordScopedUpsert {
+	u.u.Set(automationsteprecord.FieldOutcome, v)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_SetOutcome = RoleStep
+
+const SetsState_AutomationStepRecordScopedUpsert_SetOutcome = "Outcome"
+
+// UpdateOutcome sets the "outcome" field to the value that was provided on create.
+func (u *AutomationStepRecordScopedUpsert) UpdateOutcome() *AutomationStepRecordScopedUpsert {
+	u.u.SetExcluded(automationsteprecord.FieldOutcome)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_UpdateOutcome = RoleStep
+
+const SetsState_AutomationStepRecordScopedUpsert_UpdateOutcome = "Outcome"
+
+// ClearOutcome clears the value of the "outcome" field.
+func (u *AutomationStepRecordScopedUpsert) ClearOutcome() *AutomationStepRecordScopedUpsert {
+	u.u.SetNull(automationsteprecord.FieldOutcome)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_ClearOutcome = RoleStep
+
+const ClearsState_AutomationStepRecordScopedUpsert_ClearOutcome = "Outcome"
+
+// SetSkipReason sets the "skip_reason" field.
+func (u *AutomationStepRecordScopedUpsert) SetSkipReason(v skipreason.Reason) *AutomationStepRecordScopedUpsert {
+	u.u.Set(automationsteprecord.FieldSkipReason, v)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_SetSkipReason = RoleStep
+
+// UpdateSkipReason sets the "skip_reason" field to the value that was provided on create.
+func (u *AutomationStepRecordScopedUpsert) UpdateSkipReason() *AutomationStepRecordScopedUpsert {
+	u.u.SetExcluded(automationsteprecord.FieldSkipReason)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_UpdateSkipReason = RoleStep
+
+// ClearSkipReason clears the value of the "skip_reason" field.
+func (u *AutomationStepRecordScopedUpsert) ClearSkipReason() *AutomationStepRecordScopedUpsert {
+	u.u.SetNull(automationsteprecord.FieldSkipReason)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_ClearSkipReason = RoleStep
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *AutomationStepRecordScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(automationsteprecord.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// AutomationStepRecordScopedUpsertOne is the "upsert" of one AutomationStepRecord: the create it was started on, which a setter
+// called later still changes, and what to do on a conflict.
+type AutomationStepRecordScopedUpsertOne struct {
+	x        *AutomationStepRecordScopedCreate
+	conflict []sql.ConflictOption
+	set      []func(*AutomationStepRecordUpsertOne)
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+const (
+	TypeOf_AutomationStepRecordScopedUpsertOne                 = TypeScopedUpsert
+	EntityOf_AutomationStepRecordScopedUpsertOne               = "AutomationStepRecord"
+	RoleOf_AutomationStepRecordScopedUpsertOne_UpdateNewValues = RoleStep
+	RoleOf_AutomationStepRecordScopedUpsertOne_Ignore          = RoleStep
+	RoleOf_AutomationStepRecordScopedUpsertOne_DoNothing       = RoleStep
+	RoleOf_AutomationStepRecordScopedUpsertOne_Update          = RoleStep
+	RoleOf_AutomationStepRecordScopedUpsertOne_Exec            = RoleStep
+	RoleOf_AutomationStepRecordScopedUpsertOne_ID              = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *AutomationStepRecordScopedCreate) OnConflictColumns(columns ...string) *AutomationStepRecordScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *AutomationStepRecordScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *AutomationStepRecordScopedUpsertOne {
+	return &AutomationStepRecordScopedUpsertOne{x: x, conflict: (&AutomationStepRecordScoped{s: x.s}).conflictOptions(columns, target)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *AutomationStepRecordScopedUpsertOne) UpdateNewValues() *AutomationStepRecordScopedUpsertOne {
+	u.set = append(u.set, func(r *AutomationStepRecordUpsertOne) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *AutomationStepRecordScopedUpsertOne) Ignore() *AutomationStepRecordScopedUpsertOne {
+	u.set = append(u.set, func(r *AutomationStepRecordUpsertOne) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *AutomationStepRecordScopedUpsertOne) DoNothing() *AutomationStepRecordScopedUpsertOne {
+	u.set = append(u.set, func(r *AutomationStepRecordUpsertOne) { r.DoNothing() })
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *AutomationStepRecordScopedUpsertOne) Update(set func(*AutomationStepRecordScopedUpsert)) *AutomationStepRecordScopedUpsertOne {
+	u.set = append(u.set, func(r *AutomationStepRecordUpsertOne) {
+		r.Update(func(s *AutomationStepRecordUpsert) { set(&AutomationStepRecordScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// build makes the ent upsert on the client of s and verifies the create's references.
+func (u *AutomationStepRecordScopedUpsertOne) build(ctx context.Context, s *Scoped) (*AutomationStepRecordUpsertOne, error) {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	r := b.OnConflict(u.conflict...)
+	for _, set := range u.set {
+		set(r)
+	}
+	return r, nil
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *AutomationStepRecordScopedUpsertOne) Exec(ctx context.Context) error {
+	_, err := u.ID(ctx)
+	return err
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *AutomationStepRecordScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	var id int64
+	err := u.x.s.writeAutomationStepRecord(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		r, err := u.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if id, err = r.ID(ctx); err != nil {
+			return nil, err
+		}
+		return []int64{id}, nil
+	})
+	return written(id, err)
+}
+
+// AutomationStepRecordScopedUpsertBulk is the "upsert" of several AutomationStepRecord entities.
+type AutomationStepRecordScopedUpsertBulk struct {
+	b       *AutomationStepRecordScopedCreateBulk
+	t       *AutomationStepRecordScoped
+	columns []string
+	set     []func(*AutomationStepRecordUpsertBulk)
+}
+
+const (
+	TypeOf_AutomationStepRecordScopedUpsertBulk                 = TypeScopedUpsert
+	EntityOf_AutomationStepRecordScopedUpsertBulk               = "AutomationStepRecord"
+	RoleOf_AutomationStepRecordScopedUpsertBulk_UpdateNewValues = RoleStep
+	RoleOf_AutomationStepRecordScopedUpsertBulk_Ignore          = RoleStep
+	RoleOf_AutomationStepRecordScopedUpsertBulk_DoNothing       = RoleStep
+	RoleOf_AutomationStepRecordScopedUpsertBulk_Update          = RoleStep
+	RoleOf_AutomationStepRecordScopedUpsertBulk_Exec            = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *AutomationStepRecordScopedCreateBulk) OnConflictColumns(columns ...string) *AutomationStepRecordScopedUpsertBulk {
+	return &AutomationStepRecordScopedUpsertBulk{b: b, t: &AutomationStepRecordScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *AutomationStepRecordScopedUpsertBulk) UpdateNewValues() *AutomationStepRecordScopedUpsertBulk {
+	u.set = append(u.set, func(r *AutomationStepRecordUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *AutomationStepRecordScopedUpsertBulk) Ignore() *AutomationStepRecordScopedUpsertBulk {
+	u.set = append(u.set, func(r *AutomationStepRecordUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *AutomationStepRecordScopedUpsertBulk) DoNothing() *AutomationStepRecordScopedUpsertBulk {
+	u.set = append(u.set, func(r *AutomationStepRecordUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *AutomationStepRecordScopedUpsertBulk) Update(set func(*AutomationStepRecordScopedUpsert)) *AutomationStepRecordScopedUpsertBulk {
+	u.set = append(u.set, func(r *AutomationStepRecordUpsertBulk) {
+		r.Update(func(s *AutomationStepRecordUpsert) { set(&AutomationStepRecordScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *AutomationStepRecordScopedUpsertBulk) Exec(ctx context.Context) error {
+	if err := u.b.refuseForeign(); err != nil {
+		return err
+	}
+	return u.b.s.writeAutomationStepRecord(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := u.b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+		for _, set := range u.set {
+			set(r)
+		}
+		return nil, r.Exec(ctx)
+	})
+}
+
+// ---------------------------------------------------------------- update
+
+// AutomationStepRecordScopedUpdateOne updates one AutomationStepRecord. It has no way to move the row to another Workspace: it
+// keeps the row's id, its fences and what its setters set, and builds the ent update on the client
+// the update runs on.
+type AutomationStepRecordScopedUpdateOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.AutomationStepRecord
+	set   []func(*AutomationStepRecordUpdateOne)
+}
+
+// UpdateOneID updates the AutomationStepRecord with the id; a row of another Workspace is not found.
+func (t *AutomationStepRecordScoped) UpdateOneID(id int64) *AutomationStepRecordScopedUpdateOne {
+	return &AutomationStepRecordScopedUpdateOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *AutomationStepRecordScopedUpdateOne) Where(ps ...predicate.AutomationStepRecord) *AutomationStepRecordScopedUpdateOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *AutomationStepRecordScopedUpdateOne) SetUpdatedAt(v time.Time) *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_SetUpdatedAt = RoleStep
+
+// SetLeftAt sets the "left_at" field.
+func (x *AutomationStepRecordScopedUpdateOne) SetLeftAt(v time.Time) *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.SetLeftAt(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_SetLeftAt = RoleStep
+
+const SetsState_AutomationStepRecordScopedUpdateOne_SetLeftAt = "LeftAt"
+
+// SetNillableLeftAt sets the "left_at" field if the given value is not nil.
+func (x *AutomationStepRecordScopedUpdateOne) SetNillableLeftAt(v *time.Time) *AutomationStepRecordScopedUpdateOne {
+	if v != nil {
+		x.SetLeftAt(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_SetNillableLeftAt = RoleStep
+
+const SetsState_AutomationStepRecordScopedUpdateOne_SetNillableLeftAt = "LeftAt"
+
+// ClearLeftAt clears the value of the "left_at" field.
+func (x *AutomationStepRecordScopedUpdateOne) ClearLeftAt() *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.ClearLeftAt() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_ClearLeftAt = RoleStep
+
+const ClearsState_AutomationStepRecordScopedUpdateOne_ClearLeftAt = "LeftAt"
+
+// SetOutcome sets the "outcome" field.
+func (x *AutomationStepRecordScopedUpdateOne) SetOutcome(v automationsteprecord.Outcome) *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.SetOutcome(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_SetOutcome = RoleStep
+
+const SetsState_AutomationStepRecordScopedUpdateOne_SetOutcome = "Outcome"
+
+// SetNillableOutcome sets the "outcome" field if the given value is not nil.
+func (x *AutomationStepRecordScopedUpdateOne) SetNillableOutcome(v *automationsteprecord.Outcome) *AutomationStepRecordScopedUpdateOne {
+	if v != nil {
+		x.SetOutcome(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_SetNillableOutcome = RoleStep
+
+const SetsState_AutomationStepRecordScopedUpdateOne_SetNillableOutcome = "Outcome"
+
+// ClearOutcome clears the value of the "outcome" field.
+func (x *AutomationStepRecordScopedUpdateOne) ClearOutcome() *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.ClearOutcome() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_ClearOutcome = RoleStep
+
+const ClearsState_AutomationStepRecordScopedUpdateOne_ClearOutcome = "Outcome"
+
+// SetSkipReason sets the "skip_reason" field.
+func (x *AutomationStepRecordScopedUpdateOne) SetSkipReason(v skipreason.Reason) *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.SetSkipReason(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_SetSkipReason = RoleStep
+
+// SetNillableSkipReason sets the "skip_reason" field if the given value is not nil.
+func (x *AutomationStepRecordScopedUpdateOne) SetNillableSkipReason(v *skipreason.Reason) *AutomationStepRecordScopedUpdateOne {
+	if v != nil {
+		x.SetSkipReason(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_SetNillableSkipReason = RoleStep
+
+// ClearSkipReason clears the value of the "skip_reason" field.
+func (x *AutomationStepRecordScopedUpdateOne) ClearSkipReason() *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.ClearSkipReason() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_ClearSkipReason = RoleStep
+
+// Save verifies the references against the Workspace, then updates the AutomationStepRecord.
+func (x *AutomationStepRecordScopedUpdateOne) Save(ctx context.Context) (*AutomationStepRecord, error) {
+	return x.save(ctx, "update", skipUnchanged)
+}
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *AutomationStepRecordScopedUpdateOne) build(ctx context.Context, s *Scoped) (*AutomationStepRecordUpdateOne, error) {
+	b := s.c.AutomationStepRecord.UpdateOneID(x.id).Where(s.inAutomationStepRecord(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkAutomationStepRecord(ctx, b.Mutation()))
+}
+
+// save is Save under a verb, doing with an unchanged row what unchanged says.
+func (x *AutomationStepRecordScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*AutomationStepRecord, error) {
+	where := x.s.inAutomationStepRecord(x.where...)
+	var updated *AutomationStepRecord
+	err := x.s.writeAutomationStepRecord(ctx, verb, append([]predicate.AutomationStepRecord{automationsteprecord.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		updated, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(updated, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *AutomationStepRecordScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_AutomationStepRecordScopedUpdateOne       = TypeScopedUpdate
+	EntityOf_AutomationStepRecordScopedUpdateOne     = "AutomationStepRecord"
+	RoleOf_AutomationStepRecordScopedUpdateOne_Where = RoleStep
+	RoleOf_AutomationStepRecordScopedUpdateOne_Save  = RoleStep
+	RoleOf_AutomationStepRecordScopedUpdateOne_Exec  = RoleStep
+)
+
+// AutomationStepRecordScopedUpdate is a conditional bulk update of one Workspace: it keeps its predicates and
+// what its setters and modifiers set, and builds the ent update on the client the update runs on.
+type AutomationStepRecordScopedUpdate struct {
+	s     *Scoped
+	where []predicate.AutomationStepRecord
+	set   []func(*AutomationStepRecordUpdate)
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the AutomationStepRecord entities of the Workspace that match the predicates.
+func (t *AutomationStepRecordScoped) Update() *AutomationStepRecordScopedUpdate {
+	return &AutomationStepRecordScopedUpdate{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *AutomationStepRecordScopedUpdate) Where(ps ...predicate.AutomationStepRecord) *AutomationStepRecordScopedUpdate {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *AutomationStepRecordScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *AutomationStepRecordScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(automationsteprecord.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.set = append(x.set, func(b *AutomationStepRecordUpdate) {
+			b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+		})
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *AutomationStepRecordScopedUpdate) SetUpdatedAt(v time.Time) *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_SetUpdatedAt = RoleStep
+
+// SetLeftAt sets the "left_at" field.
+func (x *AutomationStepRecordScopedUpdate) SetLeftAt(v time.Time) *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.SetLeftAt(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_SetLeftAt = RoleStep
+
+const SetsState_AutomationStepRecordScopedUpdate_SetLeftAt = "LeftAt"
+
+// SetNillableLeftAt sets the "left_at" field if the given value is not nil.
+func (x *AutomationStepRecordScopedUpdate) SetNillableLeftAt(v *time.Time) *AutomationStepRecordScopedUpdate {
+	if v != nil {
+		x.SetLeftAt(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_SetNillableLeftAt = RoleStep
+
+const SetsState_AutomationStepRecordScopedUpdate_SetNillableLeftAt = "LeftAt"
+
+// ClearLeftAt clears the value of the "left_at" field.
+func (x *AutomationStepRecordScopedUpdate) ClearLeftAt() *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.ClearLeftAt() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_ClearLeftAt = RoleStep
+
+const ClearsState_AutomationStepRecordScopedUpdate_ClearLeftAt = "LeftAt"
+
+// SetOutcome sets the "outcome" field.
+func (x *AutomationStepRecordScopedUpdate) SetOutcome(v automationsteprecord.Outcome) *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.SetOutcome(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_SetOutcome = RoleStep
+
+const SetsState_AutomationStepRecordScopedUpdate_SetOutcome = "Outcome"
+
+// SetNillableOutcome sets the "outcome" field if the given value is not nil.
+func (x *AutomationStepRecordScopedUpdate) SetNillableOutcome(v *automationsteprecord.Outcome) *AutomationStepRecordScopedUpdate {
+	if v != nil {
+		x.SetOutcome(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_SetNillableOutcome = RoleStep
+
+const SetsState_AutomationStepRecordScopedUpdate_SetNillableOutcome = "Outcome"
+
+// ClearOutcome clears the value of the "outcome" field.
+func (x *AutomationStepRecordScopedUpdate) ClearOutcome() *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.ClearOutcome() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_ClearOutcome = RoleStep
+
+const ClearsState_AutomationStepRecordScopedUpdate_ClearOutcome = "Outcome"
+
+// SetSkipReason sets the "skip_reason" field.
+func (x *AutomationStepRecordScopedUpdate) SetSkipReason(v skipreason.Reason) *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.SetSkipReason(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_SetSkipReason = RoleStep
+
+// SetNillableSkipReason sets the "skip_reason" field if the given value is not nil.
+func (x *AutomationStepRecordScopedUpdate) SetNillableSkipReason(v *skipreason.Reason) *AutomationStepRecordScopedUpdate {
+	if v != nil {
+		x.SetSkipReason(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_SetNillableSkipReason = RoleStep
+
+// ClearSkipReason clears the value of the "skip_reason" field.
+func (x *AutomationStepRecordScopedUpdate) ClearSkipReason() *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.ClearSkipReason() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_ClearSkipReason = RoleStep
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *AutomationStepRecordScopedUpdate) build(ctx context.Context, s *Scoped) (*AutomationStepRecordUpdate, error) {
+	b := s.c.AutomationStepRecord.Update().Where(s.inAutomationStepRecord(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkAutomationStepRecord(ctx, b.Mutation()))
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *AutomationStepRecordScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	where := x.s.inAutomationStepRecord(x.where...)
+	var n int
+	err := x.s.writeAutomationStepRecord(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		n, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// Exec is like Save, discarding the count.
+func (x *AutomationStepRecordScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_AutomationStepRecordScopedUpdate        = TypeScopedUpdate
+	EntityOf_AutomationStepRecordScopedUpdate      = "AutomationStepRecord"
+	RoleOf_AutomationStepRecordScopedUpdate_Where  = RoleStep
+	RoleOf_AutomationStepRecordScopedUpdate_Modify = RoleStep
+	RoleOf_AutomationStepRecordScopedUpdate_Save   = RoleStep
+	RoleOf_AutomationStepRecordScopedUpdate_Exec   = RoleStep
 )
 
 // AutomationVersionScoped reaches AutomationVersion entities of one Workspace.
@@ -7983,7 +9063,7 @@ func (x *AutomationVersionScopedCreate) SetVersion(v int) *AutomationVersionScop
 const RoleOf_AutomationVersionScopedCreate_SetVersion = RoleStep
 
 // SetSteps sets the "steps" field.
-func (x *AutomationVersionScopedCreate) SetSteps(v []automationstep.Step) *AutomationVersionScopedCreate {
+func (x *AutomationVersionScopedCreate) SetSteps(v automationstep.Path) *AutomationVersionScopedCreate {
 	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetSteps(v) })
 	return x
 }
@@ -8186,7 +9266,7 @@ func (u *AutomationVersionScopedUpsert) UpdateAutomationID() *AutomationVersionS
 const RoleOf_AutomationVersionScopedUpsert_UpdateAutomationID = RoleStep
 
 // SetSteps sets the "steps" field.
-func (u *AutomationVersionScopedUpsert) SetSteps(v []automationstep.Step) *AutomationVersionScopedUpsert {
+func (u *AutomationVersionScopedUpsert) SetSteps(v automationstep.Path) *AutomationVersionScopedUpsert {
 	u.u.Set(automationversion.FieldSteps, v)
 	return u
 }
@@ -8483,20 +9563,22 @@ func (x *AutomationVersionScopedUpdateOne) SetNillableAutomationID(v *int64) *Au
 const RoleOf_AutomationVersionScopedUpdateOne_SetNillableAutomationID = RoleStep
 
 // SetSteps sets the "steps" field.
-func (x *AutomationVersionScopedUpdateOne) SetSteps(v []automationstep.Step) *AutomationVersionScopedUpdateOne {
+func (x *AutomationVersionScopedUpdateOne) SetSteps(v automationstep.Path) *AutomationVersionScopedUpdateOne {
 	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetSteps(v) })
 	return x
 }
 
 const RoleOf_AutomationVersionScopedUpdateOne_SetSteps = RoleStep
 
-// AppendSteps appends value to the "steps" field.
-func (x *AutomationVersionScopedUpdateOne) AppendSteps(v []automationstep.Step) *AutomationVersionScopedUpdateOne {
-	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.AppendSteps(v) })
+// SetNillableSteps sets the "steps" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdateOne) SetNillableSteps(v *automationstep.Path) *AutomationVersionScopedUpdateOne {
+	if v != nil {
+		x.SetSteps(*v)
+	}
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdateOne_AppendSteps = RoleStep
+const RoleOf_AutomationVersionScopedUpdateOne_SetNillableSteps = RoleStep
 
 // SetTriggerEvent sets the "trigger_event" field.
 func (x *AutomationVersionScopedUpdateOne) SetTriggerEvent(v string) *AutomationVersionScopedUpdateOne {
@@ -8724,20 +9806,22 @@ func (x *AutomationVersionScopedUpdate) SetNillableAutomationID(v *int64) *Autom
 const RoleOf_AutomationVersionScopedUpdate_SetNillableAutomationID = RoleStep
 
 // SetSteps sets the "steps" field.
-func (x *AutomationVersionScopedUpdate) SetSteps(v []automationstep.Step) *AutomationVersionScopedUpdate {
+func (x *AutomationVersionScopedUpdate) SetSteps(v automationstep.Path) *AutomationVersionScopedUpdate {
 	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetSteps(v) })
 	return x
 }
 
 const RoleOf_AutomationVersionScopedUpdate_SetSteps = RoleStep
 
-// AppendSteps appends value to the "steps" field.
-func (x *AutomationVersionScopedUpdate) AppendSteps(v []automationstep.Step) *AutomationVersionScopedUpdate {
-	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.AppendSteps(v) })
+// SetNillableSteps sets the "steps" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdate) SetNillableSteps(v *automationstep.Path) *AutomationVersionScopedUpdate {
+	if v != nil {
+		x.SetSteps(*v)
+	}
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdate_AppendSteps = RoleStep
+const RoleOf_AutomationVersionScopedUpdate_SetNillableSteps = RoleStep
 
 // SetTriggerEvent sets the "trigger_event" field.
 func (x *AutomationVersionScopedUpdate) SetTriggerEvent(v string) *AutomationVersionScopedUpdate {
@@ -40931,6 +42015,15 @@ func (s *Scoped) checkOutboundMessage(ctx context.Context, ms ...*OutboundMessag
 	{
 		var ids []int64
 		for _, m := range ms {
+			ids = append(ids, m.AutomationVersionIDs()...)
+		}
+		if err := s.verifyAutomationVersion(ctx, ids); err != nil {
+			return fmt.Errorf("automation_version: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, m := range ms {
 			ids = append(ids, m.IntegrationIDs()...)
 		}
 		if err := s.verifyIntegration(ctx, ids); err != nil {
@@ -41544,23 +42637,41 @@ func (x *OutboundMessageScopedCreate) SetNillableAutomationRunID(v *int64) *Outb
 
 const RoleOf_OutboundMessageScopedCreate_SetNillableAutomationRunID = RoleStep
 
-// SetAutomationStep sets the "automation_step" field.
-func (x *OutboundMessageScopedCreate) SetAutomationStep(v int) *OutboundMessageScopedCreate {
-	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetAutomationStep(v) })
+// SetAutomationVersionID sets the "automation_version_id" field.
+func (x *OutboundMessageScopedCreate) SetAutomationVersionID(v int64) *OutboundMessageScopedCreate {
+	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetAutomationVersionID(v) })
 	return x
 }
 
-const RoleOf_OutboundMessageScopedCreate_SetAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedCreate_SetAutomationVersionID = RoleStep
 
-// SetNillableAutomationStep sets the "automation_step" field if the given value is not nil.
-func (x *OutboundMessageScopedCreate) SetNillableAutomationStep(v *int) *OutboundMessageScopedCreate {
+// SetNillableAutomationVersionID sets the "automation_version_id" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableAutomationVersionID(v *int64) *OutboundMessageScopedCreate {
 	if v != nil {
-		x.SetAutomationStep(*v)
+		x.SetAutomationVersionID(*v)
 	}
 	return x
 }
 
-const RoleOf_OutboundMessageScopedCreate_SetNillableAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedCreate_SetNillableAutomationVersionID = RoleStep
+
+// SetAutomationStepID sets the "automation_step_id" field.
+func (x *OutboundMessageScopedCreate) SetAutomationStepID(v automationstep.ID) *OutboundMessageScopedCreate {
+	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetAutomationStepID(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetAutomationStepID = RoleStep
+
+// SetNillableAutomationStepID sets the "automation_step_id" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableAutomationStepID(v *automationstep.ID) *OutboundMessageScopedCreate {
+	if v != nil {
+		x.SetAutomationStepID(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetNillableAutomationStepID = RoleStep
 
 // SetIntegrationID sets the "integration_id" field.
 func (x *OutboundMessageScopedCreate) SetIntegrationID(v int64) *OutboundMessageScopedCreate {
@@ -41683,6 +42794,14 @@ func (x *OutboundMessageScopedCreate) SetAutomation(v *Automation) *OutboundMess
 }
 
 const RoleOf_OutboundMessageScopedCreate_SetAutomation = RoleStep
+
+// SetAutomationVersion sets the "automation_version" edge to the AutomationVersion entity.
+func (x *OutboundMessageScopedCreate) SetAutomationVersion(v *AutomationVersion) *OutboundMessageScopedCreate {
+	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetAutomationVersion(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetAutomationVersion = RoleStep
 
 // SetIntegration sets the "integration" edge to the Integration entity.
 func (x *OutboundMessageScopedCreate) SetIntegration(v *Integration) *OutboundMessageScopedCreate {
@@ -42343,37 +43462,45 @@ func (u *OutboundMessageScopedUpsert) ClearAutomationRunID() *OutboundMessageSco
 
 const RoleOf_OutboundMessageScopedUpsert_ClearAutomationRunID = RoleStep
 
-// SetAutomationStep sets the "automation_step" field.
-func (u *OutboundMessageScopedUpsert) SetAutomationStep(v int) *OutboundMessageScopedUpsert {
-	u.u.Set(outboundmessage.FieldAutomationStep, v)
+// UpdateAutomationVersionID sets the "automation_version_id" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateAutomationVersionID() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldAutomationVersionID)
 	return u
 }
 
-const RoleOf_OutboundMessageScopedUpsert_SetAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpsert_UpdateAutomationVersionID = RoleStep
 
-// AddAutomationStep adds v to the "automation_step" field.
-func (u *OutboundMessageScopedUpsert) AddAutomationStep(v int) *OutboundMessageScopedUpsert {
-	u.u.Add(outboundmessage.FieldAutomationStep, v)
+// ClearAutomationVersionID clears the value of the "automation_version_id" field.
+func (u *OutboundMessageScopedUpsert) ClearAutomationVersionID() *OutboundMessageScopedUpsert {
+	u.u.SetNull(outboundmessage.FieldAutomationVersionID)
 	return u
 }
 
-const RoleOf_OutboundMessageScopedUpsert_AddAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpsert_ClearAutomationVersionID = RoleStep
 
-// UpdateAutomationStep sets the "automation_step" field to the value that was provided on create.
-func (u *OutboundMessageScopedUpsert) UpdateAutomationStep() *OutboundMessageScopedUpsert {
-	u.u.SetExcluded(outboundmessage.FieldAutomationStep)
+// SetAutomationStepID sets the "automation_step_id" field.
+func (u *OutboundMessageScopedUpsert) SetAutomationStepID(v automationstep.ID) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldAutomationStepID, v)
 	return u
 }
 
-const RoleOf_OutboundMessageScopedUpsert_UpdateAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpsert_SetAutomationStepID = RoleStep
 
-// ClearAutomationStep clears the value of the "automation_step" field.
-func (u *OutboundMessageScopedUpsert) ClearAutomationStep() *OutboundMessageScopedUpsert {
-	u.u.SetNull(outboundmessage.FieldAutomationStep)
+// UpdateAutomationStepID sets the "automation_step_id" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateAutomationStepID() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldAutomationStepID)
 	return u
 }
 
-const RoleOf_OutboundMessageScopedUpsert_ClearAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpsert_UpdateAutomationStepID = RoleStep
+
+// ClearAutomationStepID clears the value of the "automation_step_id" field.
+func (u *OutboundMessageScopedUpsert) ClearAutomationStepID() *OutboundMessageScopedUpsert {
+	u.u.SetNull(outboundmessage.FieldAutomationStepID)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_ClearAutomationStepID = RoleStep
 
 // UpdateIntegrationID sets the "integration_id" field to the value that was provided on create.
 func (u *OutboundMessageScopedUpsert) UpdateIntegrationID() *OutboundMessageScopedUpsert {
@@ -43238,39 +44365,57 @@ func (x *OutboundMessageScopedUpdateOne) ClearAutomationRunID() *OutboundMessage
 
 const RoleOf_OutboundMessageScopedUpdateOne_ClearAutomationRunID = RoleStep
 
-// SetAutomationStep sets the "automation_step" field.
-func (x *OutboundMessageScopedUpdateOne) SetAutomationStep(v int) *OutboundMessageScopedUpdateOne {
-	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetAutomationStep(v) })
+// SetAutomationVersionID sets the "automation_version_id" field.
+func (x *OutboundMessageScopedUpdateOne) SetAutomationVersionID(v int64) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetAutomationVersionID(v) })
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdateOne_SetAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpdateOne_SetAutomationVersionID = RoleStep
 
-// SetNillableAutomationStep sets the "automation_step" field if the given value is not nil.
-func (x *OutboundMessageScopedUpdateOne) SetNillableAutomationStep(v *int) *OutboundMessageScopedUpdateOne {
+// SetNillableAutomationVersionID sets the "automation_version_id" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableAutomationVersionID(v *int64) *OutboundMessageScopedUpdateOne {
 	if v != nil {
-		x.SetAutomationStep(*v)
+		x.SetAutomationVersionID(*v)
 	}
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdateOne_SetNillableAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpdateOne_SetNillableAutomationVersionID = RoleStep
 
-// AddAutomationStep adds value to the "automation_step" field.
-func (x *OutboundMessageScopedUpdateOne) AddAutomationStep(v int) *OutboundMessageScopedUpdateOne {
-	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.AddAutomationStep(v) })
+// ClearAutomationVersionID clears the value of the "automation_version_id" field.
+func (x *OutboundMessageScopedUpdateOne) ClearAutomationVersionID() *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.ClearAutomationVersionID() })
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdateOne_AddAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpdateOne_ClearAutomationVersionID = RoleStep
 
-// ClearAutomationStep clears the value of the "automation_step" field.
-func (x *OutboundMessageScopedUpdateOne) ClearAutomationStep() *OutboundMessageScopedUpdateOne {
-	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.ClearAutomationStep() })
+// SetAutomationStepID sets the "automation_step_id" field.
+func (x *OutboundMessageScopedUpdateOne) SetAutomationStepID(v automationstep.ID) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetAutomationStepID(v) })
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdateOne_ClearAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpdateOne_SetAutomationStepID = RoleStep
+
+// SetNillableAutomationStepID sets the "automation_step_id" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableAutomationStepID(v *automationstep.ID) *OutboundMessageScopedUpdateOne {
+	if v != nil {
+		x.SetAutomationStepID(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetNillableAutomationStepID = RoleStep
+
+// ClearAutomationStepID clears the value of the "automation_step_id" field.
+func (x *OutboundMessageScopedUpdateOne) ClearAutomationStepID() *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.ClearAutomationStepID() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_ClearAutomationStepID = RoleStep
 
 // SetIntegrationID sets the "integration_id" field.
 func (x *OutboundMessageScopedUpdateOne) SetIntegrationID(v int64) *OutboundMessageScopedUpdateOne {
@@ -43447,6 +44592,22 @@ func (x *OutboundMessageScopedUpdateOne) ClearAutomation() *OutboundMessageScope
 }
 
 const RoleOf_OutboundMessageScopedUpdateOne_ClearAutomation = RoleStep
+
+// SetAutomationVersion sets the "automation_version" edge to the AutomationVersion entity.
+func (x *OutboundMessageScopedUpdateOne) SetAutomationVersion(v *AutomationVersion) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetAutomationVersion(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetAutomationVersion = RoleStep
+
+// ClearAutomationVersion clears the "automation_version" edge to the AutomationVersion entity.
+func (x *OutboundMessageScopedUpdateOne) ClearAutomationVersion() *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.ClearAutomationVersion() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_ClearAutomationVersion = RoleStep
 
 // SetIntegration sets the "integration" edge to the Integration entity.
 func (x *OutboundMessageScopedUpdateOne) SetIntegration(v *Integration) *OutboundMessageScopedUpdateOne {
@@ -44195,39 +45356,57 @@ func (x *OutboundMessageScopedUpdate) ClearAutomationRunID() *OutboundMessageSco
 
 const RoleOf_OutboundMessageScopedUpdate_ClearAutomationRunID = RoleStep
 
-// SetAutomationStep sets the "automation_step" field.
-func (x *OutboundMessageScopedUpdate) SetAutomationStep(v int) *OutboundMessageScopedUpdate {
-	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetAutomationStep(v) })
+// SetAutomationVersionID sets the "automation_version_id" field.
+func (x *OutboundMessageScopedUpdate) SetAutomationVersionID(v int64) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetAutomationVersionID(v) })
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdate_SetAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpdate_SetAutomationVersionID = RoleStep
 
-// SetNillableAutomationStep sets the "automation_step" field if the given value is not nil.
-func (x *OutboundMessageScopedUpdate) SetNillableAutomationStep(v *int) *OutboundMessageScopedUpdate {
+// SetNillableAutomationVersionID sets the "automation_version_id" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableAutomationVersionID(v *int64) *OutboundMessageScopedUpdate {
 	if v != nil {
-		x.SetAutomationStep(*v)
+		x.SetAutomationVersionID(*v)
 	}
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdate_SetNillableAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpdate_SetNillableAutomationVersionID = RoleStep
 
-// AddAutomationStep adds value to the "automation_step" field.
-func (x *OutboundMessageScopedUpdate) AddAutomationStep(v int) *OutboundMessageScopedUpdate {
-	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.AddAutomationStep(v) })
+// ClearAutomationVersionID clears the value of the "automation_version_id" field.
+func (x *OutboundMessageScopedUpdate) ClearAutomationVersionID() *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.ClearAutomationVersionID() })
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdate_AddAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpdate_ClearAutomationVersionID = RoleStep
 
-// ClearAutomationStep clears the value of the "automation_step" field.
-func (x *OutboundMessageScopedUpdate) ClearAutomationStep() *OutboundMessageScopedUpdate {
-	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.ClearAutomationStep() })
+// SetAutomationStepID sets the "automation_step_id" field.
+func (x *OutboundMessageScopedUpdate) SetAutomationStepID(v automationstep.ID) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetAutomationStepID(v) })
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdate_ClearAutomationStep = RoleStep
+const RoleOf_OutboundMessageScopedUpdate_SetAutomationStepID = RoleStep
+
+// SetNillableAutomationStepID sets the "automation_step_id" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableAutomationStepID(v *automationstep.ID) *OutboundMessageScopedUpdate {
+	if v != nil {
+		x.SetAutomationStepID(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetNillableAutomationStepID = RoleStep
+
+// ClearAutomationStepID clears the value of the "automation_step_id" field.
+func (x *OutboundMessageScopedUpdate) ClearAutomationStepID() *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.ClearAutomationStepID() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_ClearAutomationStepID = RoleStep
 
 // SetIntegrationID sets the "integration_id" field.
 func (x *OutboundMessageScopedUpdate) SetIntegrationID(v int64) *OutboundMessageScopedUpdate {
@@ -44404,6 +45583,22 @@ func (x *OutboundMessageScopedUpdate) ClearAutomation() *OutboundMessageScopedUp
 }
 
 const RoleOf_OutboundMessageScopedUpdate_ClearAutomation = RoleStep
+
+// SetAutomationVersion sets the "automation_version" edge to the AutomationVersion entity.
+func (x *OutboundMessageScopedUpdate) SetAutomationVersion(v *AutomationVersion) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetAutomationVersion(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetAutomationVersion = RoleStep
+
+// ClearAutomationVersion clears the "automation_version" edge to the AutomationVersion entity.
+func (x *OutboundMessageScopedUpdate) ClearAutomationVersion() *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.ClearAutomationVersion() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_ClearAutomationVersion = RoleStep
 
 // SetIntegration sets the "integration" edge to the Integration entity.
 func (x *OutboundMessageScopedUpdate) SetIntegration(v *Integration) *OutboundMessageScopedUpdate {

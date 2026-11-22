@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
@@ -114,6 +115,8 @@ type Client struct {
 	AutomationFigure *AutomationFigureClient
 	// AutomationRun is the client for interacting with the AutomationRun builders.
 	AutomationRun *AutomationRunClient
+	// AutomationStepRecord is the client for interacting with the AutomationStepRecord builders.
+	AutomationStepRecord *AutomationStepRecordClient
 	// AutomationVersion is the client for interacting with the AutomationVersion builders.
 	AutomationVersion *AutomationVersionClient
 	// Binding is the client for interacting with the Binding builders.
@@ -275,6 +278,7 @@ func (c *Client) init() {
 	c.Automation = NewAutomationClient(c.config)
 	c.AutomationFigure = NewAutomationFigureClient(c.config)
 	c.AutomationRun = NewAutomationRunClient(c.config)
+	c.AutomationStepRecord = NewAutomationStepRecordClient(c.config)
 	c.AutomationVersion = NewAutomationVersionClient(c.config)
 	c.Binding = NewBindingClient(c.config)
 	c.BrandKit = NewBrandKitClient(c.config)
@@ -445,6 +449,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Automation:               NewAutomationClient(cfg),
 		AutomationFigure:         NewAutomationFigureClient(cfg),
 		AutomationRun:            NewAutomationRunClient(cfg),
+		AutomationStepRecord:     NewAutomationStepRecordClient(cfg),
 		AutomationVersion:        NewAutomationVersionClient(cfg),
 		Binding:                  NewBindingClient(cfg),
 		BrandKit:                 NewBrandKitClient(cfg),
@@ -542,6 +547,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Automation:               NewAutomationClient(cfg),
 		AutomationFigure:         NewAutomationFigureClient(cfg),
 		AutomationRun:            NewAutomationRunClient(cfg),
+		AutomationStepRecord:     NewAutomationStepRecordClient(cfg),
 		AutomationVersion:        NewAutomationVersionClient(cfg),
 		Binding:                  NewBindingClient(cfg),
 		BrandKit:                 NewBrandKitClient(cfg),
@@ -644,12 +650,12 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationFigure,
-		c.AutomationRun, c.AutomationVersion, c.Binding, c.BrandKit, c.Broadcast,
-		c.BroadcastFigure, c.BroadcastRecipient, c.CapturedMessage, c.Confirmation,
-		c.ConsentRecord, c.ConsentStamp, c.Contact, c.ContactTag, c.CustomField,
-		c.DefaultSendCap, c.EmailTemplate, c.Erasure, c.Event, c.EventJournalEntry,
-		c.EventReceipt, c.HeldOrderEvent, c.Hold, c.IdentitySecret,
-		c.InstanceAuditEntry, c.InstanceState, c.Integration,
+		c.AutomationRun, c.AutomationStepRecord, c.AutomationVersion, c.Binding,
+		c.BrandKit, c.Broadcast, c.BroadcastFigure, c.BroadcastRecipient,
+		c.CapturedMessage, c.Confirmation, c.ConsentRecord, c.ConsentStamp, c.Contact,
+		c.ContactTag, c.CustomField, c.DefaultSendCap, c.EmailTemplate, c.Erasure,
+		c.Event, c.EventJournalEntry, c.EventReceipt, c.HeldOrderEvent, c.Hold,
+		c.IdentitySecret, c.InstanceAuditEntry, c.InstanceState, c.Integration,
 		c.IntegrationProviderState, c.Invitation, c.JoinDomain, c.LegalDocumentDraft,
 		c.LegalDocumentVersion, c.Membership, c.OAuthClient, c.OAuthCode,
 		c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage, c.Passkey,
@@ -671,12 +677,12 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationFigure,
-		c.AutomationRun, c.AutomationVersion, c.Binding, c.BrandKit, c.Broadcast,
-		c.BroadcastFigure, c.BroadcastRecipient, c.CapturedMessage, c.Confirmation,
-		c.ConsentRecord, c.ConsentStamp, c.Contact, c.ContactTag, c.CustomField,
-		c.DefaultSendCap, c.EmailTemplate, c.Erasure, c.Event, c.EventJournalEntry,
-		c.EventReceipt, c.HeldOrderEvent, c.Hold, c.IdentitySecret,
-		c.InstanceAuditEntry, c.InstanceState, c.Integration,
+		c.AutomationRun, c.AutomationStepRecord, c.AutomationVersion, c.Binding,
+		c.BrandKit, c.Broadcast, c.BroadcastFigure, c.BroadcastRecipient,
+		c.CapturedMessage, c.Confirmation, c.ConsentRecord, c.ConsentStamp, c.Contact,
+		c.ContactTag, c.CustomField, c.DefaultSendCap, c.EmailTemplate, c.Erasure,
+		c.Event, c.EventJournalEntry, c.EventReceipt, c.HeldOrderEvent, c.Hold,
+		c.IdentitySecret, c.InstanceAuditEntry, c.InstanceState, c.Integration,
 		c.IntegrationProviderState, c.Invitation, c.JoinDomain, c.LegalDocumentDraft,
 		c.LegalDocumentVersion, c.Membership, c.OAuthClient, c.OAuthCode,
 		c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage, c.Passkey,
@@ -708,6 +714,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.AutomationFigure.mutate(ctx, m)
 	case *AutomationRunMutation:
 		return c.AutomationRun.mutate(ctx, m)
+	case *AutomationStepRecordMutation:
+		return c.AutomationStepRecord.mutate(ctx, m)
 	case *AutomationVersionMutation:
 		return c.AutomationVersion.mutate(ctx, m)
 	case *BindingMutation:
@@ -1673,6 +1681,22 @@ func (c *AutomationFigureClient) QueryAutomation(_m *AutomationFigure) *Automati
 	return query
 }
 
+// QueryVersion queries the version edge of a AutomationFigure.
+func (c *AutomationFigureClient) QueryVersion(_m *AutomationFigure) *AutomationVersionQuery {
+	query := (&AutomationVersionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automationfigure.Table, automationfigure.FieldID, id),
+			sqlgraph.To(automationversion.Table, automationversion.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, automationfigure.VersionTable, automationfigure.VersionColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *AutomationFigureClient) Hooks() []Hook {
 	return c.hooks.AutomationFigure
@@ -1892,6 +1916,171 @@ func (c *AutomationRunClient) mutate(ctx context.Context, m *AutomationRunMutati
 		return (&AutomationRunDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown AutomationRun mutation op: %q", m.Op())
+	}
+}
+
+// AutomationStepRecordClient is a client for the AutomationStepRecord schema.
+type AutomationStepRecordClient struct {
+	config
+}
+
+// NewAutomationStepRecordClient returns a client for the AutomationStepRecord from the given config.
+func NewAutomationStepRecordClient(c config) *AutomationStepRecordClient {
+	return &AutomationStepRecordClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `automationsteprecord.Hooks(f(g(h())))`.
+func (c *AutomationStepRecordClient) Use(hooks ...Hook) {
+	c.hooks.AutomationStepRecord = append(c.hooks.AutomationStepRecord, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `automationsteprecord.Intercept(f(g(h())))`.
+func (c *AutomationStepRecordClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AutomationStepRecord = append(c.inters.AutomationStepRecord, interceptors...)
+}
+
+// Create returns a builder for creating a AutomationStepRecord entity.
+func (c *AutomationStepRecordClient) Create() *AutomationStepRecordCreate {
+	mutation := newAutomationStepRecordMutation(c.config, OpCreate)
+	return &AutomationStepRecordCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AutomationStepRecord entities.
+func (c *AutomationStepRecordClient) CreateBulk(builders ...*AutomationStepRecordCreate) *AutomationStepRecordCreateBulk {
+	return &AutomationStepRecordCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AutomationStepRecordClient) MapCreateBulk(slice any, setFunc func(*AutomationStepRecordCreate, int)) *AutomationStepRecordCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AutomationStepRecordCreateBulk{err: fmt.Errorf("calling to AutomationStepRecordClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AutomationStepRecordCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AutomationStepRecordCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AutomationStepRecord.
+func (c *AutomationStepRecordClient) Update() *AutomationStepRecordUpdate {
+	mutation := newAutomationStepRecordMutation(c.config, OpUpdate)
+	return &AutomationStepRecordUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AutomationStepRecordClient) UpdateOne(_m *AutomationStepRecord) *AutomationStepRecordUpdateOne {
+	mutation := newAutomationStepRecordMutation(c.config, OpUpdateOne, withAutomationStepRecord(_m))
+	return &AutomationStepRecordUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AutomationStepRecordClient) UpdateOneID(id int64) *AutomationStepRecordUpdateOne {
+	mutation := newAutomationStepRecordMutation(c.config, OpUpdateOne, withAutomationStepRecordID(id))
+	return &AutomationStepRecordUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AutomationStepRecord.
+func (c *AutomationStepRecordClient) Delete() *AutomationStepRecordDelete {
+	mutation := newAutomationStepRecordMutation(c.config, OpDelete)
+	return &AutomationStepRecordDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AutomationStepRecordClient) DeleteOne(_m *AutomationStepRecord) *AutomationStepRecordDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AutomationStepRecordClient) DeleteOneID(id int64) *AutomationStepRecordDeleteOne {
+	builder := c.Delete().Where(automationsteprecord.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AutomationStepRecordDeleteOne{builder}
+}
+
+// Query returns a query builder for AutomationStepRecord.
+func (c *AutomationStepRecordClient) Query() *AutomationStepRecordQuery {
+	return &AutomationStepRecordQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAutomationStepRecord},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AutomationStepRecord entity by its id.
+func (c *AutomationStepRecordClient) Get(ctx context.Context, id int64) (*AutomationStepRecord, error) {
+	return c.Query().Where(automationsteprecord.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AutomationStepRecordClient) GetX(ctx context.Context, id int64) *AutomationStepRecord {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a AutomationStepRecord.
+func (c *AutomationStepRecordClient) QueryWorkspace(_m *AutomationStepRecord) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automationsteprecord.Table, automationsteprecord.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, automationsteprecord.WorkspaceTable, automationsteprecord.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryRun queries the run edge of a AutomationStepRecord.
+func (c *AutomationStepRecordClient) QueryRun(_m *AutomationStepRecord) *AutomationRunQuery {
+	query := (&AutomationRunClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automationsteprecord.Table, automationsteprecord.FieldID, id),
+			sqlgraph.To(automationrun.Table, automationrun.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, automationsteprecord.RunTable, automationsteprecord.RunColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *AutomationStepRecordClient) Hooks() []Hook {
+	return c.hooks.AutomationStepRecord
+}
+
+// Interceptors returns the client interceptors.
+func (c *AutomationStepRecordClient) Interceptors() []Interceptor {
+	return c.inters.AutomationStepRecord
+}
+
+func (c *AutomationStepRecordClient) mutate(ctx context.Context, m *AutomationStepRecordMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AutomationStepRecordCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AutomationStepRecordUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AutomationStepRecordUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AutomationStepRecordDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AutomationStepRecord mutation op: %q", m.Op())
 	}
 }
 
@@ -8141,6 +8330,22 @@ func (c *OutboundMessageClient) QueryAutomation(_m *OutboundMessage) *Automation
 	return query
 }
 
+// QueryAutomationVersion queries the automation_version edge of a OutboundMessage.
+func (c *OutboundMessageClient) QueryAutomationVersion(_m *OutboundMessage) *AutomationVersionQuery {
+	query := (&AutomationVersionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(outboundmessage.Table, outboundmessage.FieldID, id),
+			sqlgraph.To(automationversion.Table, automationversion.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, outboundmessage.AutomationVersionTable, outboundmessage.AutomationVersionColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryIntegration queries the integration edge of a OutboundMessage.
 func (c *OutboundMessageClient) QueryIntegration(_m *OutboundMessage) *IntegrationQuery {
 	query := (&IntegrationClient{config: c.config}).Query()
@@ -14199,6 +14404,22 @@ func (c *WorkspaceClient) QueryAutomationRuns(_m *Workspace) *AutomationRunQuery
 	return query
 }
 
+// QueryAutomationStepRecords queries the automation_step_records edge of a Workspace.
+func (c *WorkspaceClient) QueryAutomationStepRecords(_m *Workspace) *AutomationStepRecordQuery {
+	query := (&AutomationStepRecordClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(automationsteprecord.Table, automationsteprecord.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.AutomationStepRecordsTable, workspace.AutomationStepRecordsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryRules queries the rules edge of a Workspace.
 func (c *WorkspaceClient) QueryRules(_m *Workspace) *RuleQuery {
 	query := (&RuleClient{config: c.config}).Query()
@@ -14697,38 +14918,38 @@ func (c *WorkspaceStandingClient) mutate(ctx context.Context, m *WorkspaceStandi
 type (
 	hooks struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationFigure, AutomationRun,
-		AutomationVersion, Binding, BrandKit, Broadcast, BroadcastFigure,
-		BroadcastRecipient, CapturedMessage, Confirmation, ConsentRecord, ConsentStamp,
-		Contact, ContactTag, CustomField, DefaultSendCap, EmailTemplate, Erasure,
-		Event, EventJournalEntry, EventReceipt, HeldOrderEvent, Hold, IdentitySecret,
-		InstanceAuditEntry, InstanceState, Integration, IntegrationProviderState,
-		Invitation, JoinDomain, LegalDocumentDraft, LegalDocumentVersion, Membership,
-		OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
-		OutboundMessage, Passkey, PasskeyChallenge, PendingSignup, PrivateRelayRange,
-		ProviderLimiter, RecoveryCode, Rule, RuleFiring, RuleVersion,
-		RuleVersionTrigger, SchemaState, SecondFactor, Segment, SendCapLimiter,
-		SendingDomain, ServiceCredential, SignupItem, SignupSurveyResponse,
-		StaffMember, StartToken, Suppression, Tag, TrackedLink, TrackingDomain,
-		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
-		Visitor, WebhookEndpoint, WebhookEndpointHealth, Workspace,
+		AutomationStepRecord, AutomationVersion, Binding, BrandKit, Broadcast,
+		BroadcastFigure, BroadcastRecipient, CapturedMessage, Confirmation,
+		ConsentRecord, ConsentStamp, Contact, ContactTag, CustomField, DefaultSendCap,
+		EmailTemplate, Erasure, Event, EventJournalEntry, EventReceipt, HeldOrderEvent,
+		Hold, IdentitySecret, InstanceAuditEntry, InstanceState, Integration,
+		IntegrationProviderState, Invitation, JoinDomain, LegalDocumentDraft,
+		LegalDocumentVersion, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
+		Order, OrderMovement, OutboundMessage, Passkey, PasskeyChallenge,
+		PendingSignup, PrivateRelayRange, ProviderLimiter, RecoveryCode, Rule,
+		RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState, SecondFactor,
+		Segment, SendCapLimiter, SendingDomain, ServiceCredential, SignupItem,
+		SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag, TrackedLink,
+		TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
+		UserTombstone, Visitor, WebhookEndpoint, WebhookEndpointHealth, Workspace,
 		WorkspaceStanding []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationFigure, AutomationRun,
-		AutomationVersion, Binding, BrandKit, Broadcast, BroadcastFigure,
-		BroadcastRecipient, CapturedMessage, Confirmation, ConsentRecord, ConsentStamp,
-		Contact, ContactTag, CustomField, DefaultSendCap, EmailTemplate, Erasure,
-		Event, EventJournalEntry, EventReceipt, HeldOrderEvent, Hold, IdentitySecret,
-		InstanceAuditEntry, InstanceState, Integration, IntegrationProviderState,
-		Invitation, JoinDomain, LegalDocumentDraft, LegalDocumentVersion, Membership,
-		OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
-		OutboundMessage, Passkey, PasskeyChallenge, PendingSignup, PrivateRelayRange,
-		ProviderLimiter, RecoveryCode, Rule, RuleFiring, RuleVersion,
-		RuleVersionTrigger, SchemaState, SecondFactor, Segment, SendCapLimiter,
-		SendingDomain, ServiceCredential, SignupItem, SignupSurveyResponse,
-		StaffMember, StartToken, Suppression, Tag, TrackedLink, TrackingDomain,
-		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
-		Visitor, WebhookEndpoint, WebhookEndpointHealth, Workspace,
+		AutomationStepRecord, AutomationVersion, Binding, BrandKit, Broadcast,
+		BroadcastFigure, BroadcastRecipient, CapturedMessage, Confirmation,
+		ConsentRecord, ConsentStamp, Contact, ContactTag, CustomField, DefaultSendCap,
+		EmailTemplate, Erasure, Event, EventJournalEntry, EventReceipt, HeldOrderEvent,
+		Hold, IdentitySecret, InstanceAuditEntry, InstanceState, Integration,
+		IntegrationProviderState, Invitation, JoinDomain, LegalDocumentDraft,
+		LegalDocumentVersion, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
+		Order, OrderMovement, OutboundMessage, Passkey, PasskeyChallenge,
+		PendingSignup, PrivateRelayRange, ProviderLimiter, RecoveryCode, Rule,
+		RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState, SecondFactor,
+		Segment, SendCapLimiter, SendingDomain, ServiceCredential, SignupItem,
+		SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag, TrackedLink,
+		TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
+		UserTombstone, Visitor, WebhookEndpoint, WebhookEndpointHealth, Workspace,
 		WorkspaceStanding []ent.Interceptor
 	}
 )

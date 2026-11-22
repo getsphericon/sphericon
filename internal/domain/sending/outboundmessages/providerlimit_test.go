@@ -247,7 +247,7 @@ func TestAutomationAndBroadcastSendsShareOneLimit(t *testing.T) {
 	limited(t, env, new(1), nil)
 
 	auto := marketing(t, env, "auto:1", fixtures.ContactAliceID)
-	auto.Ref = outboundmessages.AutomationRef{AutomationID: fixtures.AutomationHoldDemoID}
+	auto.Ref = outboundmessages.AutomationRef{AutomationID: fixtures.AutomationHoldDemoID, VersionID: fixtures.AutomationHoldDemoVersionID, StepID: "1c7f087b-436d-5b5a-b11e-da4433bba846"}
 	auto.Source = eligibility.AutomationSource(fixtures.AutomationHoldDemoID)
 	res, err := m.Send(context.Background(), acme(env), auto)
 	require.NoError(t, err)

@@ -9,10 +9,15 @@ import {
   handleSiteIntegrationsList,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteAutomationResource, AutomationStep } from '../../generated/site/types.gen.ts'
+import type {
+  AutomationPathInput,
+  AutomationStep,
+  SiteAutomationResource,
+} from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import {
   emailIntegration,
+  stepId,
   TIMESTAMPS,
   testId,
   workspace as workspacePayload,
@@ -28,8 +33,10 @@ const EDIT_ROUTE = routeMount(automationsEditRoute, {
 })
 
 const STEP: AutomationStep = {
+  id: stepId(11),
   type: 'sms',
   text: 'Hi {{ first_name }}',
+  linkTracking: true,
   integrationId: testId(41),
 }
 
@@ -68,7 +75,13 @@ function stored(steps: AutomationStep[]): SiteAutomationResource {
     name: 'Cart reminder',
     status: 'inactive',
     live: null,
-    draft: { number: 1, triggerEvent: 'cart_abandoned', exitEvents: [], goalEvent: null, steps },
+    draft: {
+      number: 1,
+      triggerEvent: 'cart_abandoned',
+      exitEvents: [],
+      goalEvent: null,
+      steps: { id: stepId(1), steps },
+    },
     revision: 1,
     ...TIMESTAMPS,
   }
@@ -83,14 +96,12 @@ function flowNode(index: number) {
 }
 
 test('an SMS step round-trips: its Integration and text load, an edit saves them back', async () => {
-  const bodies: { steps?: AutomationStep[] }[] = []
-  let current = stored([STEP])
+  const bodies: { steps?: AutomationPathInput }[] = []
+  const current = stored([STEP])
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(current)),
     handleSiteAutomationsUpdate(async ({ request }) => {
-      const body = await request.json()
-      bodies.push(body)
-      current = stored(body.steps ?? [STEP])
+      bodies.push(await request.json())
       return HttpResponse.json(current)
     }),
     handleSiteIntegrationsList({ body: INTEGRATIONS }),
@@ -121,6 +132,16 @@ test('an SMS step round-trips: its Integration and text load, an edit saves them
   await expect
     .poll(() => bodies.map((body) => body.steps))
     .toEqual([
-      [{ type: 'sms', text: 'Your cart is waiting: {{ unsubscribe_url }}', linkTracking: false }],
+      {
+        id: stepId(1),
+        steps: [
+          {
+            id: stepId(11),
+            type: 'sms',
+            text: 'Your cart is waiting: {{ unsubscribe_url }}',
+            linkTracking: false,
+          },
+        ],
+      },
     ])
 })

@@ -7,6 +7,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
@@ -30,7 +31,8 @@ type MessageRow struct {
 	BroadcastID       *publicid.ID       `json:"broadcast_id"`
 	AutomationID      *publicid.ID       `json:"automation_id"`
 	AutomationRunID   *publicid.ID       `json:"automation_run_id"`
-	AutomationStep    *int               `json:"automation_step"`
+	AutomationVersion *int               `json:"automation_version"`
+	AutomationStepID  *string            `json:"automation_step_id"`
 	IntegrationID     *publicid.ID       `json:"integration_id"`
 	TemplateID        *publicid.ID       `json:"template_id"`
 	SendingSource     *string            `json:"sending_source"`
@@ -66,7 +68,8 @@ func messageRow(m *ent.OutboundMessage) MessageRow {
 		BroadcastID:       publicid.Ptr(m.BroadcastID),
 		AutomationID:      publicid.Ptr(m.AutomationID),
 		AutomationRunID:   publicid.Ptr(m.AutomationRunID),
-		AutomationStep:    m.AutomationStep,
+		AutomationVersion: versionNumber(m),
+		AutomationStepID:  (*string)(m.AutomationStepID),
 		IntegrationID:     publicid.Ptr(m.IntegrationID),
 		TemplateID:        publicid.Ptr(m.TemplateID),
 		SendingSource:     m.SendingSource,
@@ -87,6 +90,15 @@ func messageRow(m *ent.OutboundMessage) MessageRow {
 	}
 }
 
+// versionNumber is the number of the Automation version that sent the message, loaded with it; nil
+// for a message of no Automation.
+func versionNumber(m *ent.OutboundMessage) *int {
+	if m.Edges.AutomationVersion == nil {
+		return nil
+	}
+	return &m.Edges.AutomationVersion.Version
+}
+
 // Messages serves a page of the Workspace's Outbound messages stream.
 func (st *Streams) Messages(ctx context.Context, s *ent.Scoped, token string, limit int) (Page, error) {
 	if !st.offered() {
@@ -95,6 +107,9 @@ func (st *Streams) Messages(ctx context.Context, s *ent.Scoped, token string, li
 	return Read(token, limit, func(after Cursor, n int) ([]MessageRow, error) {
 		rows, err := s.OutboundMessage().Query().
 			Where(predicate.OutboundMessage(Seek(after))).
+			WithAutomationVersion(func(q *ent.AutomationVersionQuery) {
+				q.Select(automationversion.FieldVersion)
+			}).
 			Order(Order).
 			Limit(n).
 			All(ctx)

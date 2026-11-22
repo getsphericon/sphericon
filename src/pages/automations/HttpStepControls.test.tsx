@@ -25,13 +25,13 @@ const EDIT_ROUTE = routeMount(automationsEditRoute, {
 const schema = {
   type: 'object',
   properties: {
-    stepId: { type: 'string' },
+    stored: { type: 'string' },
     headers: { type: 'string', format: HTTP_HEADERS_FORMAT },
     body: { type: 'string', format: HTTP_BODY_FORMAT },
   },
 }
 
-const stepData = z.object({ stepId: z.string(), headers: z.string(), body: z.string() })
+const stepData = z.object({ stored: z.string(), headers: z.string(), body: z.string() })
 type StepData = z.infer<typeof stepData>
 
 // One field of the HTTP step's form, as the properties panel renders it: the app's control
@@ -57,7 +57,7 @@ function StepField({
 }
 
 test('headers are rows: added, edited and removed, at most five', async () => {
-  let latest: StepData = { stepId: '', headers: '[]', body: '{}' }
+  let latest: StepData = { stored: '', headers: '[]', body: '{}' }
   const { screen } = await renderWithRouter(
     <StepField
       field="headers"
@@ -86,11 +86,11 @@ test('headers are rows: added, edited and removed, at most five', async () => {
   await expect.poll(() => headersOf(latest.headers)).toHaveLength(4)
 })
 
-test('a saved header shows its name and keeps its value when left empty', async () => {
+test('a header of a stored step shows its name and keeps its value when left empty', async () => {
   const { screen } = await renderWithRouter(
     <StepField
       field="headers"
-      data={{ stepId: '01J', headers: '[{"name":"X-Key"}]', body: '{}' }}
+      data={{ stored: 'stored', headers: '[{"name":"X-Key"}]', body: '{}' }}
     />,
     EDIT_ROUTE,
   )
@@ -130,7 +130,7 @@ test('a dry run renders the body being edited for a contact, sending nothing', a
   const { screen } = await renderWithRouter(
     <StepField
       field="body"
-      data={{ stepId: '', headers: '[]', body: '{"email":"{{ email }}"}' }}
+      data={{ stored: '', headers: '[]', body: '{"email":"{{ email }}"}' }}
     />,
     EDIT_ROUTE,
   )
@@ -151,7 +151,7 @@ test('a dry run shows why the body is refused', async () => {
     }),
   )
   const { screen } = await renderWithRouter(
-    <StepField field="body" data={{ stepId: '', headers: '[]', body: '{' }} />,
+    <StepField field="body" data={{ stored: '', headers: '[]', body: '{' }} />,
     EDIT_ROUTE,
   )
 
@@ -164,7 +164,7 @@ test('a dry run shows why the body is refused', async () => {
 })
 
 test('the body is edited as text', async () => {
-  let latest: StepData = { stepId: '', headers: '[]', body: '' }
+  let latest: StepData = { stored: '', headers: '[]', body: '' }
   worker.use(contacts)
   const { screen } = await renderWithRouter(
     <StepField
@@ -204,7 +204,7 @@ test('a contact without an email is offered by its id, and a failed dry run says
     handleSiteAutomationsDryRunHttpStep(() => problem(500, { detail: 'renderer down' })),
   )
   const { screen } = await renderWithRouter(
-    <StepField field="body" data={{ stepId: '', headers: '[]', body: '{}' }} />,
+    <StepField field="body" data={{ stored: '', headers: '[]', body: '{}' }} />,
     EDIT_ROUTE,
   )
 

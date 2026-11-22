@@ -4,12 +4,11 @@ import {
   siteAutomationsRevert,
   siteAutomationsUpdate,
 } from '../../generated/site/sdk.gen.ts'
-import { AutomationStepType } from '../../generated/site/types.gen.ts'
 import type {
   SiteAutomationResource,
   SiteAutomationsUpdateData,
 } from '../../generated/site/types.gen.ts'
-import { graphToSteps, linearGraphNodes, stepsToGraph } from './definition.ts'
+import { graphToSteps, stepsToGraph } from './definition.ts'
 import type { AutomationGraph } from './definition.ts'
 import { automationSnapshot } from './leaveSnapshot.ts'
 
@@ -21,7 +20,6 @@ export interface AutomationContent {
 interface Submission {
   // The revision is the session's base, added when the Save is sent (ADR 0119).
   body: Omit<SiteAutomationsUpdateData['body'], 'revision'> & { name: string }
-  graph: AutomationGraph
   fingerprint: string
   dropped: number
 }
@@ -42,59 +40,15 @@ export function automationSubmission(name: string, graph: AutomationGraph): Subm
   }
   return {
     body: structuredClone({ name: name.trim(), triggerEvent, ...definition }),
-    graph: captured,
     fingerprint: automationSnapshot(name, captured),
     dropped,
   }
 }
 
-interface HttpIdentity {
-  nodeId: string
-  previous: unknown
-  assigned: string
-}
-
-// A receipt can enrich still-present submitted nodes, never a replacement node or editable data.
-export function applyHttpIdentities(nodes: AutomationGraph['nodes'], identities: HttpIdentity[]) {
-  const byNode = new Map(identities.map((identity) => [identity.nodeId, identity]))
-  return nodes.map((node) => {
-    const identity = byNode.get(node.id)
-    if (
-      !identity ||
-      node.data.type !== AutomationStepType.HTTP ||
-      node.data.properties.stepId !== identity.previous
-    ) {
-      return node
-    }
-    return {
-      ...node,
-      data: { ...node.data, properties: { ...node.data.properties, stepId: identity.assigned } },
-    }
-  })
-}
-
+// The receipt of a Save: the stored Automation and the fingerprint of what was sent. Every Step
+// was sent with the id it keeps (its node's), so the receipt adds nothing to the canvas.
 function acknowledge(submission: Submission, resource: SiteAutomationResource) {
-  const version = resource.draft ?? resource.live
-  const httpSteps = version?.steps.filter((step) => step.type === 'http') ?? []
-  const httpNodes = linearGraphNodes(submission.graph).filter(
-    (node) => node.data.type === AutomationStepType.HTTP,
-  )
-  const identities = httpNodes.flatMap((node, index): HttpIdentity[] => {
-    const assigned = httpSteps[index]?.id
-    return assigned ? [{ nodeId: node.id, previous: node.data.properties.stepId, assigned }] : []
-  })
-  const graph = {
-    ...submission.graph,
-    nodes: applyHttpIdentities(submission.graph.nodes, identities),
-  }
-  return {
-    resource,
-    fingerprint:
-      identities.length === 0
-        ? submission.fingerprint
-        : automationSnapshot(submission.body.name, graph),
-    identities,
-  }
+  return { resource, fingerprint: submission.fingerprint }
 }
 
 interface AutomationSubject {
@@ -132,21 +86,8 @@ export const automationAdapter = {
     return data
   },
   acknowledge,
-  // A receipt enriches still-present submitted nodes with their stored identity. Newer fields,
-  // positions and edges stay as edited, and the canvas is not reloaded.
-  fold: (current: AutomationContent, receipt: ReturnType<typeof acknowledge>) => ({
-    content:
-      receipt.identities.length === 0
-        ? current
-        : {
-            ...current,
-            graph: {
-              ...current.graph,
-              nodes: applyHttpIdentities(current.graph.nodes, receipt.identities),
-            },
-          },
-    replaces: false,
-  }),
+  // Newer fields, positions and edges stay as edited, and the canvas is not reloaded.
+  fold: (current: AutomationContent) => ({ content: current, replaces: false }),
   operations: {
     PUBLISH: {
       request: async ({

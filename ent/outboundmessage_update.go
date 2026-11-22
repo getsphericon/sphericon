@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/contact"
@@ -22,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
@@ -496,30 +498,43 @@ func (_u *OutboundMessageUpdate) ClearAutomationRunID() *OutboundMessageUpdate {
 	return _u
 }
 
-// SetAutomationStep sets the "automation_step" field.
-func (_u *OutboundMessageUpdate) SetAutomationStep(v int) *OutboundMessageUpdate {
-	_u.mutation.ResetAutomationStep()
-	_u.mutation.SetAutomationStep(v)
+// SetAutomationVersionID sets the "automation_version_id" field.
+func (_u *OutboundMessageUpdate) SetAutomationVersionID(v int64) *OutboundMessageUpdate {
+	_u.mutation.SetAutomationVersionID(v)
 	return _u
 }
 
-// SetNillableAutomationStep sets the "automation_step" field if the given value is not nil.
-func (_u *OutboundMessageUpdate) SetNillableAutomationStep(v *int) *OutboundMessageUpdate {
+// SetNillableAutomationVersionID sets the "automation_version_id" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableAutomationVersionID(v *int64) *OutboundMessageUpdate {
 	if v != nil {
-		_u.SetAutomationStep(*v)
+		_u.SetAutomationVersionID(*v)
 	}
 	return _u
 }
 
-// AddAutomationStep adds value to the "automation_step" field.
-func (_u *OutboundMessageUpdate) AddAutomationStep(v int) *OutboundMessageUpdate {
-	_u.mutation.AddAutomationStep(v)
+// ClearAutomationVersionID clears the value of the "automation_version_id" field.
+func (_u *OutboundMessageUpdate) ClearAutomationVersionID() *OutboundMessageUpdate {
+	_u.mutation.ClearAutomationVersionID()
 	return _u
 }
 
-// ClearAutomationStep clears the value of the "automation_step" field.
-func (_u *OutboundMessageUpdate) ClearAutomationStep() *OutboundMessageUpdate {
-	_u.mutation.ClearAutomationStep()
+// SetAutomationStepID sets the "automation_step_id" field.
+func (_u *OutboundMessageUpdate) SetAutomationStepID(v automationstep.ID) *OutboundMessageUpdate {
+	_u.mutation.SetAutomationStepID(v)
+	return _u
+}
+
+// SetNillableAutomationStepID sets the "automation_step_id" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableAutomationStepID(v *automationstep.ID) *OutboundMessageUpdate {
+	if v != nil {
+		_u.SetAutomationStepID(*v)
+	}
+	return _u
+}
+
+// ClearAutomationStepID clears the value of the "automation_step_id" field.
+func (_u *OutboundMessageUpdate) ClearAutomationStepID() *OutboundMessageUpdate {
+	_u.mutation.ClearAutomationStepID()
 	return _u
 }
 
@@ -633,6 +648,11 @@ func (_u *OutboundMessageUpdate) SetAutomation(v *Automation) *OutboundMessageUp
 	return _u.SetAutomationID(v.ID)
 }
 
+// SetAutomationVersion sets the "automation_version" edge to the AutomationVersion entity.
+func (_u *OutboundMessageUpdate) SetAutomationVersion(v *AutomationVersion) *OutboundMessageUpdate {
+	return _u.SetAutomationVersionID(v.ID)
+}
+
 // SetIntegration sets the "integration" edge to the Integration entity.
 func (_u *OutboundMessageUpdate) SetIntegration(v *Integration) *OutboundMessageUpdate {
 	return _u.SetIntegrationID(v.ID)
@@ -699,6 +719,12 @@ func (_u *OutboundMessageUpdate) ClearBroadcast() *OutboundMessageUpdate {
 // ClearAutomation clears the "automation" edge to the Automation entity.
 func (_u *OutboundMessageUpdate) ClearAutomation() *OutboundMessageUpdate {
 	_u.mutation.ClearAutomation()
+	return _u
+}
+
+// ClearAutomationVersion clears the "automation_version" edge to the AutomationVersion entity.
+func (_u *OutboundMessageUpdate) ClearAutomationVersion() *OutboundMessageUpdate {
+	_u.mutation.ClearAutomationVersion()
 	return _u
 }
 
@@ -908,14 +934,11 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 	if value, ok := _u.mutation.Captured(); ok {
 		_spec.SetField(outboundmessage.FieldCaptured, field.TypeBool, value)
 	}
-	if value, ok := _u.mutation.AutomationStep(); ok {
-		_spec.SetField(outboundmessage.FieldAutomationStep, field.TypeInt, value)
+	if value, ok := _u.mutation.AutomationStepID(); ok {
+		_spec.SetField(outboundmessage.FieldAutomationStepID, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.AddedAutomationStep(); ok {
-		_spec.AddField(outboundmessage.FieldAutomationStep, field.TypeInt, value)
-	}
-	if _u.mutation.AutomationStepCleared() {
-		_spec.ClearField(outboundmessage.FieldAutomationStep, field.TypeInt)
+	if _u.mutation.AutomationStepIDCleared() {
+		_spec.ClearField(outboundmessage.FieldAutomationStepID, field.TypeString)
 	}
 	if value, ok := _u.mutation.RequestDigest(); ok {
 		_spec.SetField(outboundmessage.FieldRequestDigest, field.TypeString, value)
@@ -1057,6 +1080,35 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automation.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.AutomationVersionCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.AutomationVersionTable,
+			Columns: []string{outboundmessage.AutomationVersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AutomationVersionIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.AutomationVersionTable,
+			Columns: []string{outboundmessage.AutomationVersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1687,30 +1739,43 @@ func (_u *OutboundMessageUpdateOne) ClearAutomationRunID() *OutboundMessageUpdat
 	return _u
 }
 
-// SetAutomationStep sets the "automation_step" field.
-func (_u *OutboundMessageUpdateOne) SetAutomationStep(v int) *OutboundMessageUpdateOne {
-	_u.mutation.ResetAutomationStep()
-	_u.mutation.SetAutomationStep(v)
+// SetAutomationVersionID sets the "automation_version_id" field.
+func (_u *OutboundMessageUpdateOne) SetAutomationVersionID(v int64) *OutboundMessageUpdateOne {
+	_u.mutation.SetAutomationVersionID(v)
 	return _u
 }
 
-// SetNillableAutomationStep sets the "automation_step" field if the given value is not nil.
-func (_u *OutboundMessageUpdateOne) SetNillableAutomationStep(v *int) *OutboundMessageUpdateOne {
+// SetNillableAutomationVersionID sets the "automation_version_id" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableAutomationVersionID(v *int64) *OutboundMessageUpdateOne {
 	if v != nil {
-		_u.SetAutomationStep(*v)
+		_u.SetAutomationVersionID(*v)
 	}
 	return _u
 }
 
-// AddAutomationStep adds value to the "automation_step" field.
-func (_u *OutboundMessageUpdateOne) AddAutomationStep(v int) *OutboundMessageUpdateOne {
-	_u.mutation.AddAutomationStep(v)
+// ClearAutomationVersionID clears the value of the "automation_version_id" field.
+func (_u *OutboundMessageUpdateOne) ClearAutomationVersionID() *OutboundMessageUpdateOne {
+	_u.mutation.ClearAutomationVersionID()
 	return _u
 }
 
-// ClearAutomationStep clears the value of the "automation_step" field.
-func (_u *OutboundMessageUpdateOne) ClearAutomationStep() *OutboundMessageUpdateOne {
-	_u.mutation.ClearAutomationStep()
+// SetAutomationStepID sets the "automation_step_id" field.
+func (_u *OutboundMessageUpdateOne) SetAutomationStepID(v automationstep.ID) *OutboundMessageUpdateOne {
+	_u.mutation.SetAutomationStepID(v)
+	return _u
+}
+
+// SetNillableAutomationStepID sets the "automation_step_id" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableAutomationStepID(v *automationstep.ID) *OutboundMessageUpdateOne {
+	if v != nil {
+		_u.SetAutomationStepID(*v)
+	}
+	return _u
+}
+
+// ClearAutomationStepID clears the value of the "automation_step_id" field.
+func (_u *OutboundMessageUpdateOne) ClearAutomationStepID() *OutboundMessageUpdateOne {
+	_u.mutation.ClearAutomationStepID()
 	return _u
 }
 
@@ -1824,6 +1889,11 @@ func (_u *OutboundMessageUpdateOne) SetAutomation(v *Automation) *OutboundMessag
 	return _u.SetAutomationID(v.ID)
 }
 
+// SetAutomationVersion sets the "automation_version" edge to the AutomationVersion entity.
+func (_u *OutboundMessageUpdateOne) SetAutomationVersion(v *AutomationVersion) *OutboundMessageUpdateOne {
+	return _u.SetAutomationVersionID(v.ID)
+}
+
 // SetIntegration sets the "integration" edge to the Integration entity.
 func (_u *OutboundMessageUpdateOne) SetIntegration(v *Integration) *OutboundMessageUpdateOne {
 	return _u.SetIntegrationID(v.ID)
@@ -1890,6 +1960,12 @@ func (_u *OutboundMessageUpdateOne) ClearBroadcast() *OutboundMessageUpdateOne {
 // ClearAutomation clears the "automation" edge to the Automation entity.
 func (_u *OutboundMessageUpdateOne) ClearAutomation() *OutboundMessageUpdateOne {
 	_u.mutation.ClearAutomation()
+	return _u
+}
+
+// ClearAutomationVersion clears the "automation_version" edge to the AutomationVersion entity.
+func (_u *OutboundMessageUpdateOne) ClearAutomationVersion() *OutboundMessageUpdateOne {
+	_u.mutation.ClearAutomationVersion()
 	return _u
 }
 
@@ -2129,14 +2205,11 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 	if value, ok := _u.mutation.Captured(); ok {
 		_spec.SetField(outboundmessage.FieldCaptured, field.TypeBool, value)
 	}
-	if value, ok := _u.mutation.AutomationStep(); ok {
-		_spec.SetField(outboundmessage.FieldAutomationStep, field.TypeInt, value)
+	if value, ok := _u.mutation.AutomationStepID(); ok {
+		_spec.SetField(outboundmessage.FieldAutomationStepID, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.AddedAutomationStep(); ok {
-		_spec.AddField(outboundmessage.FieldAutomationStep, field.TypeInt, value)
-	}
-	if _u.mutation.AutomationStepCleared() {
-		_spec.ClearField(outboundmessage.FieldAutomationStep, field.TypeInt)
+	if _u.mutation.AutomationStepIDCleared() {
+		_spec.ClearField(outboundmessage.FieldAutomationStepID, field.TypeString)
 	}
 	if value, ok := _u.mutation.RequestDigest(); ok {
 		_spec.SetField(outboundmessage.FieldRequestDigest, field.TypeString, value)
@@ -2278,6 +2351,35 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automation.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.AutomationVersionCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.AutomationVersionTable,
+			Columns: []string{outboundmessage.AutomationVersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AutomationVersionIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   outboundmessage.AutomationVersionTable,
+			Columns: []string{outboundmessage.AutomationVersionColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationversion.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

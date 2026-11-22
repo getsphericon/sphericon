@@ -23,7 +23,7 @@ import type {
 import { zUpdateRuleInput } from '../../generated/site/zod.gen.ts'
 import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/edit.tsx'
 import { Route as rulesCreateRoute } from '../../routes/workspaces/$workspaceId/rules/new.tsx'
-import { EMPTY_CONDITION, page, testId, TIMESTAMPS } from '../../test/payloads.ts'
+import { EMPTY_CONDITION, page, stepId, testId, TIMESTAMPS } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { requestGate } from '../../test/requestGate.ts'
 import { routeMount } from '../../test/routeMount.ts'
@@ -205,7 +205,13 @@ const automation = (id: string, name: string): SiteAutomationResource => ({
   id,
   name,
   status: 'active',
-  live: { number: 1, triggerEvent: 'signed_up', exitEvents: [], goalEvent: null, steps: [] },
+  live: {
+    number: 1,
+    triggerEvent: 'signed_up',
+    exitEvents: [],
+    goalEvent: null,
+    steps: { id: stepId(1), steps: [] },
+  },
   draft: null,
   revision: 1,
   ...TIMESTAMPS,

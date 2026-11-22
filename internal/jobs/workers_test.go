@@ -557,20 +557,18 @@ func TestEvaluateTriggerAndRunStepWorkers(t *testing.T) {
 	require.Len(t, e.JobsOf(t, automations.RunStepArgs{}.Kind()), 1, "the Enrollment is queued with its first step")
 	run := e.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID), automationrun.ContactID(c.ID)).OnlyX(ctx)
 
-	// Step 1 sends and queues the next step; the wait step queues a delayed one; the last
-	// step finishes the run without queueing more.
+	// Step 1 sends and moves onto the wait, whose job is queued for its due moment; the wait,
+	// past it, queues the last step; the last step completes the run without queueing more.
 	w := jobs.NewRunStepWorker(e.DB, stepperOf(e.TestEnv, resolvingTo(e.sender)))
-	require.NoError(t, w.Work(ctx, job(automations.RunStepArgs{RunID: run.ID, Step: 0})))
+	require.NoError(t, w.Work(ctx, job(automations.RunStepArgs{RunID: run.ID, StepID: e.StepIDAt(t, run.ID, 0)})))
 	assert.Len(t, e.sender.sent, 1)
-	assert.Len(t, e.JobsOf(t, automations.RunStepArgs{}.Kind()), 2)
-	require.NoError(t, w.Work(ctx, job(automations.RunStepArgs{RunID: run.ID, Step: 1})))
-	assert.Len(t, e.JobsOf(t, automations.RunStepArgs{}.Kind()), 3, "the wait step queues a delayed follow-up")
-	require.NoError(t, w.Work(ctx, job(automations.RunStepArgs{RunID: run.ID, Step: 2})))
+	assert.Len(t, e.JobsOf(t, automations.RunStepArgs{}.Kind()), 2, "reaching the wait queues its delayed job")
+	require.NoError(t, w.Work(ctx, job(automations.RunStepArgs{RunID: run.ID, StepID: e.StepIDAt(t, run.ID, 1)})))
+	assert.Len(t, e.JobsOf(t, automations.RunStepArgs{}.Kind()), 3)
+	require.NoError(t, w.Work(ctx, job(automations.RunStepArgs{RunID: run.ID, StepID: e.StepIDAt(t, run.ID, 2)})))
 	assert.Len(t, e.sender.sent, 2)
-	assert.Len(t, e.JobsOf(t, automations.RunStepArgs{}.Kind()), 4)
-	require.NoError(t, w.Work(ctx, job(automations.RunStepArgs{RunID: run.ID, Step: 3})))
 	assert.Equal(t, automationrun.StatusCompleted, e.DB.AutomationRun.GetX(ctx, run.ID).Status)
-	assert.Len(t, e.JobsOf(t, automations.RunStepArgs{}.Kind()), 4, "a finished run queues nothing")
+	assert.Len(t, e.JobsOf(t, automations.RunStepArgs{}.Kind()), 3, "a finished run queues nothing")
 
 	// An unknown run (erased with its Contact) is finished, not retried.
 	require.NoError(t, w.Work(ctx, job(automations.RunStepArgs{RunID: 424242})))

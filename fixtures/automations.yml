@@ -198,8 +198,9 @@
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
 
-# A tag step an exit Event can end: the race of the two for one Contact takes the Contact's lock
-# first on both sides (#811). Trigger and exit unused elsewhere.
+# A tag step an exit Event can end, then a wait that holds the Enrollment active after it: the race
+# of the two for one Contact takes the Contact's lock first on both sides (#811). Trigger and exit
+# unused elsewhere.
 - id: 5567 # fixture: AutomationJobsTagWithExit
   revision: 1
   name: Jobs tag with exit
@@ -215,6 +216,16 @@
   name: Jobs emails then tag
   status: active
   live_version_id: 5568
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+# Ends its path early with an End (ADR 0124). Steps in automation_versions.yml.
+- id: 5590 # fixture: AutomationJobsEndsEarly
+  revision: 1
+  name: Jobs ends early
+  status: active
+  live_version_id: 5590
   workspace_id: 1
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
@@ -298,6 +309,17 @@
   name: HTTP execution
   status: inactive
   live_version_id: 5580
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+
+# The HTTP execution's HTTP step under the same id, below a wait (ADR 0122): its call's id names the
+# run and the Step id wherever the Step stands.
+- id: 5581 # fixture: AutomationHTTPBelowAWait
+  revision: 1
+  name: HTTP below a wait
+  status: inactive
+  live_version_id: 5581
   workspace_id: 1
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'

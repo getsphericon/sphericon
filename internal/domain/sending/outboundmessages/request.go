@@ -12,6 +12,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
 
@@ -70,21 +71,23 @@ func BroadcastRecipient(b *ent.Broadcast, rec *ent.BroadcastRecipient, c *ent.Co
 	}, nil
 }
 
-// AutomationStep is the Request for the send step at index step of an Automation run: its content,
-// on the content's Channel, through the Integration the step names (nil: that Channel's default,
-// ADR 0081). The Destination is the Contact's on that Channel; a Contact with none is Skipped
-// with skipreason.NoDestination, recorded for the step like any other skip. Each Automation
-// is its own unsubscribe Sending source; the unsubscribe click exits the enrollment (ADR 0001). The
-// message binds the Event the run began on as `event` (#752).
-func AutomationStep(a *ent.Automation, run *ent.AutomationRun, step int, integrationID *int64, c *ent.Contact, content Content) Request {
+// AutomationStep is the Request for the send Step stepID of the version an Automation run stands
+// on: its content, on the content's Channel, through the Integration the step names (nil: that
+// Channel's default, ADR 0081). The Destination is the Contact's on that Channel; a Contact with
+// none is Skipped with skipreason.NoDestination, recorded for the step like any other skip. Each
+// Automation is its own unsubscribe Sending source; the unsubscribe click exits the enrollment (ADR
+// 0001). The message binds the Event the run began on as `event` (#752). Its key names the run and
+// the Step id, which every version keeps, so a Step inserted above it never changes the key (ADR
+// 0122).
+func AutomationStep(a *ent.Automation, run *ent.AutomationRun, stepID automationstep.ID, integrationID *int64, c *ent.Contact, content Content) Request {
 	return Request{
-		Key:           fmt.Sprintf("automation:%d:%d", run.ID, step),
+		Key:           fmt.Sprintf("automation:%d:%s", run.ID, stepID),
 		Destination:   contactDestination(content.Channel(), c),
 		Contact:       c,
 		Source:        eligibility.AutomationSource(a.ID),
 		Content:       content,
 		Track:         true,
-		Ref:           AutomationRef{AutomationID: a.ID, RunID: run.ID, Step: step},
+		Ref:           AutomationRef{AutomationID: a.ID, VersionID: run.VersionID, RunID: run.ID, StepID: stepID},
 		IntegrationID: integrationID,
 		Variables:     EnrollmentVariables(run),
 	}

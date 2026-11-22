@@ -1,7 +1,6 @@
 import { Badge, Group, Stack, Text, Title } from '@mantine/core'
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 
 import { DraftControls } from '../../components/DraftControls.tsx'
@@ -16,12 +15,7 @@ import {
   siteEnrollmentsListOptions,
   siteIntegrationsGetOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { AutomationStepType } from '../../generated/site/types.gen.ts'
-import type {
-  AutomationStep,
-  AutomationVersion,
-  EnrollmentResource,
-} from '../../generated/site/types.gen.ts'
+import type { AutomationVersion, EnrollmentResource } from '../../generated/site/types.gen.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
@@ -32,6 +26,7 @@ import type { FieldColumn } from '../../utils/tableColumns.ts'
 import { AutomationReport } from './AutomationReport.tsx'
 import { AutomationStatusBadge } from './AutomationStatusBadge.tsx'
 import { automationDraftActions } from './draftActions.ts'
+import { stepLabel } from './stepLabel.ts'
 
 // The Integration a send step sends through, by name (its id until the name loads), and said to
 // be deleted when it is: a deleted one stays readable by id for what names it.
@@ -45,21 +40,6 @@ function IntegrationName({ workspaceId, id }: { workspaceId: string; id: string 
   return integration.discardedAt
     ? t(($) => $.automations.integrationDeleted, { name: integration.name })
     : integration.name
-}
-
-// A step by its kind, with the subject of an email or the Tag of a tag step.
-function stepLabel(t: TFunction, step: AutomationStep): string {
-  const kind = {
-    [AutomationStepType.EMAIL]: t(($) => $.automations.stepEmail),
-    [AutomationStepType.TELEGRAM]: t(($) => $.automations.stepTelegram),
-    [AutomationStepType.SMS]: t(($) => $.automations.stepSms),
-    [AutomationStepType.WAIT]: t(($) => $.automations.stepWait),
-    [AutomationStepType.APPLY_TAG]: t(($) => $.automations.stepApplyTag),
-    [AutomationStepType.REMOVE_TAG]: t(($) => $.automations.stepRemoveTag),
-    [AutomationStepType.HTTP]: t(($) => $.automations.stepHttp),
-  }[step.type]
-  const detail = step.type === AutomationStepType.EMAIL ? step.subject : step.tag
-  return detail ? `${kind}: ${detail}` : kind
 }
 
 // What the live version does: its number, its Trigger, its exit and goal events and its steps in
@@ -108,10 +88,10 @@ function AutomationVersionSummary({
         <Text size="sm" c="dimmed">
           {t(($) => $.automations.stepsLabel)}
         </Text>
-        {version.steps.map((step, index) => (
-          <Badge key={index} variant="light">
+        {version.steps.steps.map((step) => (
+          <Badge key={step.id} variant="light">
             {stepLabel(t, step)}
-            {step.integrationId ? (
+            {'integrationId' in step && step.integrationId ? (
               <>
                 {' · '}
                 <IntegrationName workspaceId={workspaceId} id={step.integrationId} />
@@ -148,7 +128,7 @@ function AutomationDetail() {
   ).data
   // The version Publish arms: the draft, else the live version made active again (ADR 0156).
   const armed = automation.draft ?? automation.live
-  const sendsEmail = armed?.steps.some((step) => step.type === AutomationStepType.EMAIL)
+  const sendsEmail = armed?.steps.steps.some((step) => step.type === 'email')
 
   return (
     <Stack>
@@ -189,7 +169,11 @@ function AutomationDetail() {
         <AutomationVersionSummary workspaceId={workspaceId} version={automation.live} />
       ) : null}
 
-      <AutomationReport workspaceId={workspaceId} automationId={automationId} />
+      <AutomationReport
+        workspaceId={workspaceId}
+        automationId={automationId}
+        liveSteps={automation.live?.steps.steps ?? []}
+      />
 
       <PagedTable
         page={page}
@@ -216,6 +200,12 @@ function AutomationDetail() {
             accessor: 'createdAt',
             title: t(($) => $.automations.enrolledAt),
             render: (record) => formatDateTime(record.createdAt),
+          },
+          {
+            // The due moment of the wait the Enrollment stands on (ADR 0124); empty elsewhere.
+            accessor: 'resumeAt',
+            title: t(($) => $.automations.waitingUntil),
+            render: (record) => (record.resumeAt ? formatDateTime(record.resumeAt) : null),
           },
         ]}
         onRowClick={(record) =>

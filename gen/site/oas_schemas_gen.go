@@ -439,6 +439,154 @@ func (s *ApplyTagInput) SetName(val Name) {
 	s.Name = val
 }
 
+// A Step that applies a Tag to the enrolled Contact.
+// Ref: #/components/schemas/ApplyTagStep
+type ApplyTagStep struct {
+	// The Step's id.
+	ID   StepId           `json:"id"`
+	Type ApplyTagStepType `json:"type"`
+	// The Tag's name.
+	Tag string `json:"tag"`
+}
+
+// GetID returns the value of ID.
+func (s *ApplyTagStep) GetID() StepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *ApplyTagStep) GetType() ApplyTagStepType {
+	return s.Type
+}
+
+// GetTag returns the value of Tag.
+func (s *ApplyTagStep) GetTag() string {
+	return s.Tag
+}
+
+// SetID sets the value of ID.
+func (s *ApplyTagStep) SetID(val StepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *ApplyTagStep) SetType(val ApplyTagStepType) {
+	s.Type = val
+}
+
+// SetTag sets the value of Tag.
+func (s *ApplyTagStep) SetTag(val string) {
+	s.Tag = val
+}
+
+// A Step that applies a Tag, as a request writes it.
+// Ref: #/components/schemas/ApplyTagStepInput
+type ApplyTagStepInput struct {
+	// The Step's id; omitted, the Step is given one.
+	ID   OptStepId             `json:"id"`
+	Type ApplyTagStepInputType `json:"type"`
+	// The Tag's name; a blank one is refused.
+	Tag string `json:"tag"`
+}
+
+// GetID returns the value of ID.
+func (s *ApplyTagStepInput) GetID() OptStepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *ApplyTagStepInput) GetType() ApplyTagStepInputType {
+	return s.Type
+}
+
+// GetTag returns the value of Tag.
+func (s *ApplyTagStepInput) GetTag() string {
+	return s.Tag
+}
+
+// SetID sets the value of ID.
+func (s *ApplyTagStepInput) SetID(val OptStepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *ApplyTagStepInput) SetType(val ApplyTagStepInputType) {
+	s.Type = val
+}
+
+// SetTag sets the value of Tag.
+func (s *ApplyTagStepInput) SetTag(val string) {
+	s.Tag = val
+}
+
+type ApplyTagStepInputType string
+
+const (
+	ApplyTagStepInputTypeApplyTag ApplyTagStepInputType = "apply_tag"
+)
+
+// AllValues returns all ApplyTagStepInputType values.
+func (ApplyTagStepInputType) AllValues() []ApplyTagStepInputType {
+	return []ApplyTagStepInputType{
+		ApplyTagStepInputTypeApplyTag,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ApplyTagStepInputType) MarshalText() ([]byte, error) {
+	switch s {
+	case ApplyTagStepInputTypeApplyTag:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ApplyTagStepInputType) UnmarshalText(data []byte) error {
+	switch ApplyTagStepInputType(data) {
+	case ApplyTagStepInputTypeApplyTag:
+		*s = ApplyTagStepInputTypeApplyTag
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type ApplyTagStepType string
+
+const (
+	ApplyTagStepTypeApplyTag ApplyTagStepType = "apply_tag"
+)
+
+// AllValues returns all ApplyTagStepType values.
+func (ApplyTagStepType) AllValues() []ApplyTagStepType {
+	return []ApplyTagStepType{
+		ApplyTagStepTypeApplyTag,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ApplyTagStepType) MarshalText() ([]byte, error) {
+	switch s {
+	case ApplyTagStepTypeApplyTag:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ApplyTagStepType) UnmarshalText(data []byte) error {
+	switch ApplyTagStepType(data) {
+	case ApplyTagStepTypeApplyTag:
+		*s = ApplyTagStepTypeApplyTag
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A test of a Contact's text attribute.
 // Ref: #/components/schemas/AttributeLeaf
 type AttributeLeaf struct {
@@ -1782,6 +1930,64 @@ func (s *AutomationHttpHeaderInput) SetValue(val OptString) {
 	s.Value = val
 }
 
+// A path of Steps, in the order an Enrollment walks them. A version's Steps are its root path.
+// Ref: #/components/schemas/AutomationPath
+type AutomationPath struct {
+	// The path's id.
+	ID StepId `json:"id"`
+	// The path's Steps, in order.
+	Steps []AutomationStep `json:"steps"`
+}
+
+// GetID returns the value of ID.
+func (s *AutomationPath) GetID() StepId {
+	return s.ID
+}
+
+// GetSteps returns the value of Steps.
+func (s *AutomationPath) GetSteps() []AutomationStep {
+	return s.Steps
+}
+
+// SetID sets the value of ID.
+func (s *AutomationPath) SetID(val StepId) {
+	s.ID = val
+}
+
+// SetSteps sets the value of Steps.
+func (s *AutomationPath) SetSteps(val []AutomationStep) {
+	s.Steps = val
+}
+
+// A path of Steps, as a request writes it.
+// Ref: #/components/schemas/AutomationPathInput
+type AutomationPathInput struct {
+	// The path's id; omitted, the path is given one.
+	ID OptStepId `json:"id"`
+	// The path's Steps, in order.
+	Steps []AutomationStepInput `json:"steps"`
+}
+
+// GetID returns the value of ID.
+func (s *AutomationPathInput) GetID() OptStepId {
+	return s.ID
+}
+
+// GetSteps returns the value of Steps.
+func (s *AutomationPathInput) GetSteps() []AutomationStepInput {
+	return s.Steps
+}
+
+// SetID sets the value of ID.
+func (s *AutomationPathInput) SetID(val OptStepId) {
+	s.ID = val
+}
+
+// SetSteps sets the value of Steps.
+func (s *AutomationPathInput) SetSteps(val []AutomationStepInput) {
+	s.Steps = val
+}
+
 // One period of an automation's results. Each count is what happened in the period: an enrollment
 // counts as entered on the Report day it began and under its outcome on the Report day it ended,
 // whenever it began, so an enrollment still running counts as entered only.
@@ -1924,9 +2130,13 @@ type AutomationReport struct {
 	Links []LinkClicks `json:"links"`
 	// What the automation's enrollments did over the chosen period and the period before it.
 	Results AutomationResults `json:"results"`
-	// The send steps' messages by step position, in step order: one entry per position any of the
-	// automation's messages was sent from, across its versions.
+	// The send Steps' messages by Step id, each summed over every version that had the Step and sorted by
+	// the newest of those versions, then by its place there: one entry per Step any of the automation's
+	// messages was sent from.
 	Steps []AutomationStepFigures `json:"steps"`
+	// The send Steps' messages by version and Step id, in version order and, within a version, in its Step
+	// order.
+	VersionSteps []AutomationVersionStepFigures `json:"versionSteps"`
 }
 
 // GetOpens returns the value of Opens.
@@ -1979,6 +2189,11 @@ func (s *AutomationReport) GetSteps() []AutomationStepFigures {
 	return s.Steps
 }
 
+// GetVersionSteps returns the value of VersionSteps.
+func (s *AutomationReport) GetVersionSteps() []AutomationVersionStepFigures {
+	return s.VersionSteps
+}
+
 // SetOpens sets the value of Opens.
 func (s *AutomationReport) SetOpens(val int32) {
 	s.Opens = val
@@ -2027,6 +2242,11 @@ func (s *AutomationReport) SetResults(val AutomationResults) {
 // SetSteps sets the value of Steps.
 func (s *AutomationReport) SetSteps(val []AutomationStepFigures) {
 	s.Steps = val
+}
+
+// SetVersionSteps sets the value of VersionSteps.
+func (s *AutomationReport) SetVersionSteps(val []AutomationVersionStepFigures) {
+	s.VersionSteps = val
 }
 
 // The length of the period an automation's results are read over, in Report days (ADR 0057), today
@@ -2262,280 +2482,27 @@ func (s *AutomationStatus) UnmarshalText(data []byte) error {
 	}
 }
 
-// One node in an automation's ordered, linear sequence. A flat shape: email steps carry subject/body,
-// wait steps carry seconds, tag steps carry the tag name.
+// One Step of an automation, by `type`.
 // Ref: #/components/schemas/AutomationStep
 type AutomationStep struct {
-	// Step kind.
-	Type AutomationStepType `json:"type"`
-	// Email subject (email steps).
-	Subject OptString `json:"subject"`
-	// Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: strings JSON-escaped,
-	// up to 64 KiB, must render to valid JSON, also with every tag empty). Both bind the Contact's fields
-	// plus `event.action` and `event.properties`: the Event the Enrollment began on (the one a Rule fired
-	// on, when a Rule enrolled), copied when it began; empty when no Event began it.
-	Body OptString `json:"body"`
-	// The editor's JSON document an email step's body was built from, an opaque object checked by the
-	// server against the schema `email_schema` returns. Write it instead of `body` (both is a 422): the
-	// server renders the body from it in the same save, and a document that cannot be rendered refuses the
-	// whole save, naming the step. Writing only a body clears the step's document.
-	Doc OptEditorDocument `json:"doc"`
-	// Version of the editor that rendered the document (email steps, read only).
-	EditorVersion OptString `json:"editorVersion"`
-	// Delay before the next step, in seconds (wait steps).
-	Seconds OptInt32 `json:"seconds"`
-	// Tag name to apply to or remove from the enrolled contact (apply_tag and remove_tag steps).
-	Tag OptString `json:"tag"`
-	// Step id (HTTP steps). Assigned on save; send it back on edit so the step keeps its secrets.
-	ID OptString `json:"id"`
-	// Hook URL to POST to (HTTP steps). A secret: never returned. Omit it when editing to keep the stored
-	// URL. Up to 2 KiB, http or https.
-	URL OptString `json:"url"`
-	// Up to 5 request headers (HTTP steps). On read, only the names are returned.
-	Headers []AutomationHttpHeader `json:"headers"`
-	// Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned.
-	// Omit it when editing to keep the stored secret.
-	Secret OptSigningSecret `json:"secret"`
-	// Remove the signing secret on save (HTTP steps).
-	ClearSecret OptBool `json:"clearSecret"`
-	// Whether a signing secret is stored (HTTP steps, read only).
-	HasSecret OptBool `json:"hasSecret"`
-	// The Integration a send step sends through (email, Telegram and SMS steps), of the step's Channel;
-	// null or omitted is that Channel's default. Each send step names its own, so one automation may send
-	// through several (ADR 0081).
-	IntegrationId OptNilEntityId `json:"integrationId"`
-	// The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a
-	// with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are
-	// escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer
-	// one is refused.
-	//
-	// The text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and
-	// `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the
-	// Contact's phone with nothing appended, each http(s) link a short tracked link on the Tracking domain
-	// unless `linkTracking` is false; the save refuses a text over the part limit, its links counted as
-	// short links.
-	Text OptString `json:"text"`
-	// The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it
-	// is the person's Channel-wide Telegram opt-out; empty or omitted adds no button.
-	UnsubscribeButton OptString `json:"unsubscribeButton"`
-	// An https image sent with a Telegram step; the text becomes its caption. Omitted or empty for a text
-	// message.
-	ImageUrl OptString `json:"imageUrl"`
-	// Up to 8 link buttons under a Telegram step's message, one per row, in order.
-	Buttons []TelegramButton `json:"buttons"`
-	// Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an
-	// image.
-	LinkPreview OptBool `json:"linkPreview"`
-	// Whether the links of an SMS step's text go out as short tracked links, whose clicks record
-	// `sms.clicked` (ADR 0083). On when omitted.
-	LinkTracking OptBool `json:"linkTracking"`
+	OneOf AutomationStepSum
 }
 
-// GetType returns the value of Type.
-func (s *AutomationStep) GetType() AutomationStepType {
-	return s.Type
+// GetOneOf returns the value of OneOf.
+func (s *AutomationStep) GetOneOf() AutomationStepSum {
+	return s.OneOf
 }
 
-// GetSubject returns the value of Subject.
-func (s *AutomationStep) GetSubject() OptString {
-	return s.Subject
+// SetOneOf sets the value of OneOf.
+func (s *AutomationStep) SetOneOf(val AutomationStepSum) {
+	s.OneOf = val
 }
 
-// GetBody returns the value of Body.
-func (s *AutomationStep) GetBody() OptString {
-	return s.Body
-}
-
-// GetDoc returns the value of Doc.
-func (s *AutomationStep) GetDoc() OptEditorDocument {
-	return s.Doc
-}
-
-// GetEditorVersion returns the value of EditorVersion.
-func (s *AutomationStep) GetEditorVersion() OptString {
-	return s.EditorVersion
-}
-
-// GetSeconds returns the value of Seconds.
-func (s *AutomationStep) GetSeconds() OptInt32 {
-	return s.Seconds
-}
-
-// GetTag returns the value of Tag.
-func (s *AutomationStep) GetTag() OptString {
-	return s.Tag
-}
-
-// GetID returns the value of ID.
-func (s *AutomationStep) GetID() OptString {
-	return s.ID
-}
-
-// GetURL returns the value of URL.
-func (s *AutomationStep) GetURL() OptString {
-	return s.URL
-}
-
-// GetHeaders returns the value of Headers.
-func (s *AutomationStep) GetHeaders() []AutomationHttpHeader {
-	return s.Headers
-}
-
-// GetSecret returns the value of Secret.
-func (s *AutomationStep) GetSecret() OptSigningSecret {
-	return s.Secret
-}
-
-// GetClearSecret returns the value of ClearSecret.
-func (s *AutomationStep) GetClearSecret() OptBool {
-	return s.ClearSecret
-}
-
-// GetHasSecret returns the value of HasSecret.
-func (s *AutomationStep) GetHasSecret() OptBool {
-	return s.HasSecret
-}
-
-// GetIntegrationId returns the value of IntegrationId.
-func (s *AutomationStep) GetIntegrationId() OptNilEntityId {
-	return s.IntegrationId
-}
-
-// GetText returns the value of Text.
-func (s *AutomationStep) GetText() OptString {
-	return s.Text
-}
-
-// GetUnsubscribeButton returns the value of UnsubscribeButton.
-func (s *AutomationStep) GetUnsubscribeButton() OptString {
-	return s.UnsubscribeButton
-}
-
-// GetImageUrl returns the value of ImageUrl.
-func (s *AutomationStep) GetImageUrl() OptString {
-	return s.ImageUrl
-}
-
-// GetButtons returns the value of Buttons.
-func (s *AutomationStep) GetButtons() []TelegramButton {
-	return s.Buttons
-}
-
-// GetLinkPreview returns the value of LinkPreview.
-func (s *AutomationStep) GetLinkPreview() OptBool {
-	return s.LinkPreview
-}
-
-// GetLinkTracking returns the value of LinkTracking.
-func (s *AutomationStep) GetLinkTracking() OptBool {
-	return s.LinkTracking
-}
-
-// SetType sets the value of Type.
-func (s *AutomationStep) SetType(val AutomationStepType) {
-	s.Type = val
-}
-
-// SetSubject sets the value of Subject.
-func (s *AutomationStep) SetSubject(val OptString) {
-	s.Subject = val
-}
-
-// SetBody sets the value of Body.
-func (s *AutomationStep) SetBody(val OptString) {
-	s.Body = val
-}
-
-// SetDoc sets the value of Doc.
-func (s *AutomationStep) SetDoc(val OptEditorDocument) {
-	s.Doc = val
-}
-
-// SetEditorVersion sets the value of EditorVersion.
-func (s *AutomationStep) SetEditorVersion(val OptString) {
-	s.EditorVersion = val
-}
-
-// SetSeconds sets the value of Seconds.
-func (s *AutomationStep) SetSeconds(val OptInt32) {
-	s.Seconds = val
-}
-
-// SetTag sets the value of Tag.
-func (s *AutomationStep) SetTag(val OptString) {
-	s.Tag = val
-}
-
-// SetID sets the value of ID.
-func (s *AutomationStep) SetID(val OptString) {
-	s.ID = val
-}
-
-// SetURL sets the value of URL.
-func (s *AutomationStep) SetURL(val OptString) {
-	s.URL = val
-}
-
-// SetHeaders sets the value of Headers.
-func (s *AutomationStep) SetHeaders(val []AutomationHttpHeader) {
-	s.Headers = val
-}
-
-// SetSecret sets the value of Secret.
-func (s *AutomationStep) SetSecret(val OptSigningSecret) {
-	s.Secret = val
-}
-
-// SetClearSecret sets the value of ClearSecret.
-func (s *AutomationStep) SetClearSecret(val OptBool) {
-	s.ClearSecret = val
-}
-
-// SetHasSecret sets the value of HasSecret.
-func (s *AutomationStep) SetHasSecret(val OptBool) {
-	s.HasSecret = val
-}
-
-// SetIntegrationId sets the value of IntegrationId.
-func (s *AutomationStep) SetIntegrationId(val OptNilEntityId) {
-	s.IntegrationId = val
-}
-
-// SetText sets the value of Text.
-func (s *AutomationStep) SetText(val OptString) {
-	s.Text = val
-}
-
-// SetUnsubscribeButton sets the value of UnsubscribeButton.
-func (s *AutomationStep) SetUnsubscribeButton(val OptString) {
-	s.UnsubscribeButton = val
-}
-
-// SetImageUrl sets the value of ImageUrl.
-func (s *AutomationStep) SetImageUrl(val OptString) {
-	s.ImageUrl = val
-}
-
-// SetButtons sets the value of Buttons.
-func (s *AutomationStep) SetButtons(val []TelegramButton) {
-	s.Buttons = val
-}
-
-// SetLinkPreview sets the value of LinkPreview.
-func (s *AutomationStep) SetLinkPreview(val OptBool) {
-	s.LinkPreview = val
-}
-
-// SetLinkTracking sets the value of LinkTracking.
-func (s *AutomationStep) SetLinkTracking(val OptBool) {
-	s.LinkTracking = val
-}
-
-// The messages of the send step at one position.
+// The messages of one send Step, over every version that had it.
 // Ref: #/components/schemas/AutomationStepFigures
 type AutomationStepFigures struct {
-	// The step's position, 0 for the first step.
-	Step int32 `json:"step"`
+	// The Step's id, the same in every version.
+	StepId StepId `json:"stepId"`
 	// Messages the provider accepted.
 	Sent int32 `json:"sent"`
 	// Messages skipped: the contact had no address on the step's Channel, had opted out of it, or was
@@ -2543,9 +2510,9 @@ type AutomationStepFigures struct {
 	Skipped int32 `json:"skipped"`
 }
 
-// GetStep returns the value of Step.
-func (s *AutomationStepFigures) GetStep() int32 {
-	return s.Step
+// GetStepId returns the value of StepId.
+func (s *AutomationStepFigures) GetStepId() StepId {
+	return s.StepId
 }
 
 // GetSent returns the value of Sent.
@@ -2558,9 +2525,9 @@ func (s *AutomationStepFigures) GetSkipped() int32 {
 	return s.Skipped
 }
 
-// SetStep sets the value of Step.
-func (s *AutomationStepFigures) SetStep(val int32) {
-	s.Step = val
+// SetStepId sets the value of StepId.
+func (s *AutomationStepFigures) SetStepId(val StepId) {
+	s.StepId = val
 }
 
 // SetSent sets the value of Sent.
@@ -2573,351 +2540,478 @@ func (s *AutomationStepFigures) SetSkipped(val int32) {
 	s.Skipped = val
 }
 
-// One node in an automation's ordered, linear sequence. A flat shape: email steps carry subject/body,
-// wait steps carry seconds, tag steps carry the tag name.
+// One Step of an automation, by `type`, as a request writes it. A field of another kind is refused.
 // Ref: #/components/schemas/AutomationStepInput
 type AutomationStepInput struct {
-	// Step kind.
-	Type AutomationStepType `json:"type"`
-	// Email subject (email steps).
-	Subject OptString `json:"subject"`
-	// Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: strings JSON-escaped,
-	// up to 64 KiB, must render to valid JSON, also with every tag empty). Both bind the Contact's fields
-	// plus `event.action` and `event.properties`: the Event the Enrollment began on (the one a Rule fired
-	// on, when a Rule enrolled), copied when it began; empty when no Event began it.
-	Body OptString `json:"body"`
-	// The editor's JSON document an email step's body was built from, an opaque object checked by the
-	// server against the schema `email_schema` returns. Write it instead of `body` (both is a 422): the
-	// server renders the body from it in the same save, and a document that cannot be rendered refuses the
-	// whole save, naming the step. Writing only a body clears the step's document.
-	Doc OptEditorDocument `json:"doc"`
-	// Version of the editor that rendered the document (email steps, read only).
-	EditorVersion OptString `json:"editorVersion"`
-	// Delay before the next step, in seconds (wait steps).
-	Seconds OptInt32 `json:"seconds"`
-	// Tag name to apply to or remove from the enrolled contact (apply_tag and remove_tag steps).
-	Tag OptString `json:"tag"`
-	// Step id (HTTP steps). Assigned on save; send it back on edit so the step keeps its secrets.
-	ID OptString `json:"id"`
-	// Hook URL to POST to (HTTP steps). A secret: never returned. Omit it when editing to keep the stored
-	// URL. Up to 2 KiB, http or https.
-	URL OptString `json:"url"`
-	// Up to 5 request headers (HTTP steps). On read, only the names are returned.
-	Headers []AutomationHttpHeaderInput `json:"headers"`
-	// Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned.
-	// Omit it when editing to keep the stored secret.
-	Secret OptSigningSecret `json:"secret"`
-	// Remove the signing secret on save (HTTP steps).
-	ClearSecret OptBool `json:"clearSecret"`
-	// Whether a signing secret is stored (HTTP steps, read only).
-	HasSecret OptBool `json:"hasSecret"`
-	// The Integration a send step sends through (email, Telegram and SMS steps), of the step's Channel;
-	// null or omitted is that Channel's default. Each send step names its own, so one automation may send
-	// through several (ADR 0081).
-	IntegrationId OptNilEntityId `json:"integrationId"`
-	// The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a
-	// with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are
-	// escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer
-	// one is refused.
-	//
-	// The text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and
-	// `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the
-	// Contact's phone with nothing appended, each http(s) link a short tracked link on the Tracking domain
-	// unless `linkTracking` is false; the save refuses a text over the part limit, its links counted as
-	// short links.
-	Text OptString `json:"text"`
-	// The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it
-	// is the person's Channel-wide Telegram opt-out; empty or omitted adds no button.
-	UnsubscribeButton OptString `json:"unsubscribeButton"`
-	// An https image sent with a Telegram step; the text becomes its caption. Omitted or empty for a text
-	// message.
-	ImageUrl OptString `json:"imageUrl"`
-	// Up to 8 link buttons under a Telegram step's message, one per row, in order.
-	Buttons []TelegramButtonInput `json:"buttons"`
-	// Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an
-	// image.
-	LinkPreview OptBool `json:"linkPreview"`
-	// Whether the links of an SMS step's text go out as short tracked links, whose clicks record
-	// `sms.clicked` (ADR 0083). On when omitted.
-	LinkTracking OptBool `json:"linkTracking"`
+	OneOf AutomationStepInputSum
 }
 
-// GetType returns the value of Type.
-func (s *AutomationStepInput) GetType() AutomationStepType {
-	return s.Type
+// GetOneOf returns the value of OneOf.
+func (s *AutomationStepInput) GetOneOf() AutomationStepInputSum {
+	return s.OneOf
 }
 
-// GetSubject returns the value of Subject.
-func (s *AutomationStepInput) GetSubject() OptString {
-	return s.Subject
+// SetOneOf sets the value of OneOf.
+func (s *AutomationStepInput) SetOneOf(val AutomationStepInputSum) {
+	s.OneOf = val
 }
 
-// GetBody returns the value of Body.
-func (s *AutomationStepInput) GetBody() OptString {
-	return s.Body
+// AutomationStepInputSum represents sum type.
+type AutomationStepInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type               AutomationStepInputSumType
+	EmailStepInput     EmailStepInput
+	TelegramStepInput  TelegramStepInput
+	SmsStepInput       SmsStepInput
+	WaitStepInput      WaitStepInput
+	ApplyTagStepInput  ApplyTagStepInput
+	RemoveTagStepInput RemoveTagStepInput
+	HttpStepInput      HttpStepInput
+	EndStepInput       EndStepInput
 }
 
-// GetDoc returns the value of Doc.
-func (s *AutomationStepInput) GetDoc() OptEditorDocument {
-	return s.Doc
-}
+// AutomationStepInputSumType is oneOf type of AutomationStepInputSum.
+type AutomationStepInputSumType string
 
-// GetEditorVersion returns the value of EditorVersion.
-func (s *AutomationStepInput) GetEditorVersion() OptString {
-	return s.EditorVersion
-}
-
-// GetSeconds returns the value of Seconds.
-func (s *AutomationStepInput) GetSeconds() OptInt32 {
-	return s.Seconds
-}
-
-// GetTag returns the value of Tag.
-func (s *AutomationStepInput) GetTag() OptString {
-	return s.Tag
-}
-
-// GetID returns the value of ID.
-func (s *AutomationStepInput) GetID() OptString {
-	return s.ID
-}
-
-// GetURL returns the value of URL.
-func (s *AutomationStepInput) GetURL() OptString {
-	return s.URL
-}
-
-// GetHeaders returns the value of Headers.
-func (s *AutomationStepInput) GetHeaders() []AutomationHttpHeaderInput {
-	return s.Headers
-}
-
-// GetSecret returns the value of Secret.
-func (s *AutomationStepInput) GetSecret() OptSigningSecret {
-	return s.Secret
-}
-
-// GetClearSecret returns the value of ClearSecret.
-func (s *AutomationStepInput) GetClearSecret() OptBool {
-	return s.ClearSecret
-}
-
-// GetHasSecret returns the value of HasSecret.
-func (s *AutomationStepInput) GetHasSecret() OptBool {
-	return s.HasSecret
-}
-
-// GetIntegrationId returns the value of IntegrationId.
-func (s *AutomationStepInput) GetIntegrationId() OptNilEntityId {
-	return s.IntegrationId
-}
-
-// GetText returns the value of Text.
-func (s *AutomationStepInput) GetText() OptString {
-	return s.Text
-}
-
-// GetUnsubscribeButton returns the value of UnsubscribeButton.
-func (s *AutomationStepInput) GetUnsubscribeButton() OptString {
-	return s.UnsubscribeButton
-}
-
-// GetImageUrl returns the value of ImageUrl.
-func (s *AutomationStepInput) GetImageUrl() OptString {
-	return s.ImageUrl
-}
-
-// GetButtons returns the value of Buttons.
-func (s *AutomationStepInput) GetButtons() []TelegramButtonInput {
-	return s.Buttons
-}
-
-// GetLinkPreview returns the value of LinkPreview.
-func (s *AutomationStepInput) GetLinkPreview() OptBool {
-	return s.LinkPreview
-}
-
-// GetLinkTracking returns the value of LinkTracking.
-func (s *AutomationStepInput) GetLinkTracking() OptBool {
-	return s.LinkTracking
-}
-
-// SetType sets the value of Type.
-func (s *AutomationStepInput) SetType(val AutomationStepType) {
-	s.Type = val
-}
-
-// SetSubject sets the value of Subject.
-func (s *AutomationStepInput) SetSubject(val OptString) {
-	s.Subject = val
-}
-
-// SetBody sets the value of Body.
-func (s *AutomationStepInput) SetBody(val OptString) {
-	s.Body = val
-}
-
-// SetDoc sets the value of Doc.
-func (s *AutomationStepInput) SetDoc(val OptEditorDocument) {
-	s.Doc = val
-}
-
-// SetEditorVersion sets the value of EditorVersion.
-func (s *AutomationStepInput) SetEditorVersion(val OptString) {
-	s.EditorVersion = val
-}
-
-// SetSeconds sets the value of Seconds.
-func (s *AutomationStepInput) SetSeconds(val OptInt32) {
-	s.Seconds = val
-}
-
-// SetTag sets the value of Tag.
-func (s *AutomationStepInput) SetTag(val OptString) {
-	s.Tag = val
-}
-
-// SetID sets the value of ID.
-func (s *AutomationStepInput) SetID(val OptString) {
-	s.ID = val
-}
-
-// SetURL sets the value of URL.
-func (s *AutomationStepInput) SetURL(val OptString) {
-	s.URL = val
-}
-
-// SetHeaders sets the value of Headers.
-func (s *AutomationStepInput) SetHeaders(val []AutomationHttpHeaderInput) {
-	s.Headers = val
-}
-
-// SetSecret sets the value of Secret.
-func (s *AutomationStepInput) SetSecret(val OptSigningSecret) {
-	s.Secret = val
-}
-
-// SetClearSecret sets the value of ClearSecret.
-func (s *AutomationStepInput) SetClearSecret(val OptBool) {
-	s.ClearSecret = val
-}
-
-// SetHasSecret sets the value of HasSecret.
-func (s *AutomationStepInput) SetHasSecret(val OptBool) {
-	s.HasSecret = val
-}
-
-// SetIntegrationId sets the value of IntegrationId.
-func (s *AutomationStepInput) SetIntegrationId(val OptNilEntityId) {
-	s.IntegrationId = val
-}
-
-// SetText sets the value of Text.
-func (s *AutomationStepInput) SetText(val OptString) {
-	s.Text = val
-}
-
-// SetUnsubscribeButton sets the value of UnsubscribeButton.
-func (s *AutomationStepInput) SetUnsubscribeButton(val OptString) {
-	s.UnsubscribeButton = val
-}
-
-// SetImageUrl sets the value of ImageUrl.
-func (s *AutomationStepInput) SetImageUrl(val OptString) {
-	s.ImageUrl = val
-}
-
-// SetButtons sets the value of Buttons.
-func (s *AutomationStepInput) SetButtons(val []TelegramButtonInput) {
-	s.Buttons = val
-}
-
-// SetLinkPreview sets the value of LinkPreview.
-func (s *AutomationStepInput) SetLinkPreview(val OptBool) {
-	s.LinkPreview = val
-}
-
-// SetLinkTracking sets the value of LinkTracking.
-func (s *AutomationStepInput) SetLinkTracking(val OptBool) {
-	s.LinkTracking = val
-}
-
-// Kind of automation step.
-// Ref: #/components/schemas/AutomationStepType
-type AutomationStepType string
-
+// Possible values for AutomationStepInputSumType.
 const (
-	AutomationStepTypeEmail     AutomationStepType = "email"
-	AutomationStepTypeTelegram  AutomationStepType = "telegram"
-	AutomationStepTypeSMS       AutomationStepType = "sms"
-	AutomationStepTypeWait      AutomationStepType = "wait"
-	AutomationStepTypeApplyTag  AutomationStepType = "apply_tag"
-	AutomationStepTypeRemoveTag AutomationStepType = "remove_tag"
-	AutomationStepTypeHTTP      AutomationStepType = "http"
+	EmailStepInputAutomationStepInputSum     AutomationStepInputSumType = "email"
+	TelegramStepInputAutomationStepInputSum  AutomationStepInputSumType = "telegram"
+	SmsStepInputAutomationStepInputSum       AutomationStepInputSumType = "sms"
+	WaitStepInputAutomationStepInputSum      AutomationStepInputSumType = "wait"
+	ApplyTagStepInputAutomationStepInputSum  AutomationStepInputSumType = "apply_tag"
+	RemoveTagStepInputAutomationStepInputSum AutomationStepInputSumType = "remove_tag"
+	HttpStepInputAutomationStepInputSum      AutomationStepInputSumType = "http"
+	EndStepInputAutomationStepInputSum       AutomationStepInputSumType = "end"
 )
 
-// AllValues returns all AutomationStepType values.
-func (AutomationStepType) AllValues() []AutomationStepType {
-	return []AutomationStepType{
-		AutomationStepTypeEmail,
-		AutomationStepTypeTelegram,
-		AutomationStepTypeSMS,
-		AutomationStepTypeWait,
-		AutomationStepTypeApplyTag,
-		AutomationStepTypeRemoveTag,
-		AutomationStepTypeHTTP,
-	}
+// IsEmailStepInput reports whether AutomationStepInputSum is EmailStepInput.
+func (s AutomationStepInputSum) IsEmailStepInput() bool {
+	return s.Type == EmailStepInputAutomationStepInputSum
 }
 
-// MarshalText implements encoding.TextMarshaler.
-func (s AutomationStepType) MarshalText() ([]byte, error) {
-	switch s {
-	case AutomationStepTypeEmail:
-		return []byte(s), nil
-	case AutomationStepTypeTelegram:
-		return []byte(s), nil
-	case AutomationStepTypeSMS:
-		return []byte(s), nil
-	case AutomationStepTypeWait:
-		return []byte(s), nil
-	case AutomationStepTypeApplyTag:
-		return []byte(s), nil
-	case AutomationStepTypeRemoveTag:
-		return []byte(s), nil
-	case AutomationStepTypeHTTP:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
+// IsTelegramStepInput reports whether AutomationStepInputSum is TelegramStepInput.
+func (s AutomationStepInputSum) IsTelegramStepInput() bool {
+	return s.Type == TelegramStepInputAutomationStepInputSum
 }
 
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *AutomationStepType) UnmarshalText(data []byte) error {
-	switch AutomationStepType(data) {
-	case AutomationStepTypeEmail:
-		*s = AutomationStepTypeEmail
-		return nil
-	case AutomationStepTypeTelegram:
-		*s = AutomationStepTypeTelegram
-		return nil
-	case AutomationStepTypeSMS:
-		*s = AutomationStepTypeSMS
-		return nil
-	case AutomationStepTypeWait:
-		*s = AutomationStepTypeWait
-		return nil
-	case AutomationStepTypeApplyTag:
-		*s = AutomationStepTypeApplyTag
-		return nil
-	case AutomationStepTypeRemoveTag:
-		*s = AutomationStepTypeRemoveTag
-		return nil
-	case AutomationStepTypeHTTP:
-		*s = AutomationStepTypeHTTP
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
+// IsSmsStepInput reports whether AutomationStepInputSum is SmsStepInput.
+func (s AutomationStepInputSum) IsSmsStepInput() bool {
+	return s.Type == SmsStepInputAutomationStepInputSum
+}
+
+// IsWaitStepInput reports whether AutomationStepInputSum is WaitStepInput.
+func (s AutomationStepInputSum) IsWaitStepInput() bool {
+	return s.Type == WaitStepInputAutomationStepInputSum
+}
+
+// IsApplyTagStepInput reports whether AutomationStepInputSum is ApplyTagStepInput.
+func (s AutomationStepInputSum) IsApplyTagStepInput() bool {
+	return s.Type == ApplyTagStepInputAutomationStepInputSum
+}
+
+// IsRemoveTagStepInput reports whether AutomationStepInputSum is RemoveTagStepInput.
+func (s AutomationStepInputSum) IsRemoveTagStepInput() bool {
+	return s.Type == RemoveTagStepInputAutomationStepInputSum
+}
+
+// IsHttpStepInput reports whether AutomationStepInputSum is HttpStepInput.
+func (s AutomationStepInputSum) IsHttpStepInput() bool {
+	return s.Type == HttpStepInputAutomationStepInputSum
+}
+
+// IsEndStepInput reports whether AutomationStepInputSum is EndStepInput.
+func (s AutomationStepInputSum) IsEndStepInput() bool {
+	return s.Type == EndStepInputAutomationStepInputSum
+}
+
+// SetEmailStepInput sets AutomationStepInputSum to EmailStepInput.
+func (s *AutomationStepInputSum) SetEmailStepInput(v EmailStepInput) {
+	s.Type = EmailStepInputAutomationStepInputSum
+	s.EmailStepInput = v
+}
+
+// GetEmailStepInput returns EmailStepInput and true boolean if AutomationStepInputSum is EmailStepInput.
+func (s AutomationStepInputSum) GetEmailStepInput() (v EmailStepInput, ok bool) {
+	if !s.IsEmailStepInput() {
+		return v, false
 	}
+	return s.EmailStepInput, true
+}
+
+// NewEmailStepInputAutomationStepInputSum returns new AutomationStepInputSum from EmailStepInput.
+func NewEmailStepInputAutomationStepInputSum(v EmailStepInput) AutomationStepInputSum {
+	var s AutomationStepInputSum
+	s.SetEmailStepInput(v)
+	return s
+}
+
+// SetTelegramStepInput sets AutomationStepInputSum to TelegramStepInput.
+func (s *AutomationStepInputSum) SetTelegramStepInput(v TelegramStepInput) {
+	s.Type = TelegramStepInputAutomationStepInputSum
+	s.TelegramStepInput = v
+}
+
+// GetTelegramStepInput returns TelegramStepInput and true boolean if AutomationStepInputSum is TelegramStepInput.
+func (s AutomationStepInputSum) GetTelegramStepInput() (v TelegramStepInput, ok bool) {
+	if !s.IsTelegramStepInput() {
+		return v, false
+	}
+	return s.TelegramStepInput, true
+}
+
+// NewTelegramStepInputAutomationStepInputSum returns new AutomationStepInputSum from TelegramStepInput.
+func NewTelegramStepInputAutomationStepInputSum(v TelegramStepInput) AutomationStepInputSum {
+	var s AutomationStepInputSum
+	s.SetTelegramStepInput(v)
+	return s
+}
+
+// SetSmsStepInput sets AutomationStepInputSum to SmsStepInput.
+func (s *AutomationStepInputSum) SetSmsStepInput(v SmsStepInput) {
+	s.Type = SmsStepInputAutomationStepInputSum
+	s.SmsStepInput = v
+}
+
+// GetSmsStepInput returns SmsStepInput and true boolean if AutomationStepInputSum is SmsStepInput.
+func (s AutomationStepInputSum) GetSmsStepInput() (v SmsStepInput, ok bool) {
+	if !s.IsSmsStepInput() {
+		return v, false
+	}
+	return s.SmsStepInput, true
+}
+
+// NewSmsStepInputAutomationStepInputSum returns new AutomationStepInputSum from SmsStepInput.
+func NewSmsStepInputAutomationStepInputSum(v SmsStepInput) AutomationStepInputSum {
+	var s AutomationStepInputSum
+	s.SetSmsStepInput(v)
+	return s
+}
+
+// SetWaitStepInput sets AutomationStepInputSum to WaitStepInput.
+func (s *AutomationStepInputSum) SetWaitStepInput(v WaitStepInput) {
+	s.Type = WaitStepInputAutomationStepInputSum
+	s.WaitStepInput = v
+}
+
+// GetWaitStepInput returns WaitStepInput and true boolean if AutomationStepInputSum is WaitStepInput.
+func (s AutomationStepInputSum) GetWaitStepInput() (v WaitStepInput, ok bool) {
+	if !s.IsWaitStepInput() {
+		return v, false
+	}
+	return s.WaitStepInput, true
+}
+
+// NewWaitStepInputAutomationStepInputSum returns new AutomationStepInputSum from WaitStepInput.
+func NewWaitStepInputAutomationStepInputSum(v WaitStepInput) AutomationStepInputSum {
+	var s AutomationStepInputSum
+	s.SetWaitStepInput(v)
+	return s
+}
+
+// SetApplyTagStepInput sets AutomationStepInputSum to ApplyTagStepInput.
+func (s *AutomationStepInputSum) SetApplyTagStepInput(v ApplyTagStepInput) {
+	s.Type = ApplyTagStepInputAutomationStepInputSum
+	s.ApplyTagStepInput = v
+}
+
+// GetApplyTagStepInput returns ApplyTagStepInput and true boolean if AutomationStepInputSum is ApplyTagStepInput.
+func (s AutomationStepInputSum) GetApplyTagStepInput() (v ApplyTagStepInput, ok bool) {
+	if !s.IsApplyTagStepInput() {
+		return v, false
+	}
+	return s.ApplyTagStepInput, true
+}
+
+// NewApplyTagStepInputAutomationStepInputSum returns new AutomationStepInputSum from ApplyTagStepInput.
+func NewApplyTagStepInputAutomationStepInputSum(v ApplyTagStepInput) AutomationStepInputSum {
+	var s AutomationStepInputSum
+	s.SetApplyTagStepInput(v)
+	return s
+}
+
+// SetRemoveTagStepInput sets AutomationStepInputSum to RemoveTagStepInput.
+func (s *AutomationStepInputSum) SetRemoveTagStepInput(v RemoveTagStepInput) {
+	s.Type = RemoveTagStepInputAutomationStepInputSum
+	s.RemoveTagStepInput = v
+}
+
+// GetRemoveTagStepInput returns RemoveTagStepInput and true boolean if AutomationStepInputSum is RemoveTagStepInput.
+func (s AutomationStepInputSum) GetRemoveTagStepInput() (v RemoveTagStepInput, ok bool) {
+	if !s.IsRemoveTagStepInput() {
+		return v, false
+	}
+	return s.RemoveTagStepInput, true
+}
+
+// NewRemoveTagStepInputAutomationStepInputSum returns new AutomationStepInputSum from RemoveTagStepInput.
+func NewRemoveTagStepInputAutomationStepInputSum(v RemoveTagStepInput) AutomationStepInputSum {
+	var s AutomationStepInputSum
+	s.SetRemoveTagStepInput(v)
+	return s
+}
+
+// SetHttpStepInput sets AutomationStepInputSum to HttpStepInput.
+func (s *AutomationStepInputSum) SetHttpStepInput(v HttpStepInput) {
+	s.Type = HttpStepInputAutomationStepInputSum
+	s.HttpStepInput = v
+}
+
+// GetHttpStepInput returns HttpStepInput and true boolean if AutomationStepInputSum is HttpStepInput.
+func (s AutomationStepInputSum) GetHttpStepInput() (v HttpStepInput, ok bool) {
+	if !s.IsHttpStepInput() {
+		return v, false
+	}
+	return s.HttpStepInput, true
+}
+
+// NewHttpStepInputAutomationStepInputSum returns new AutomationStepInputSum from HttpStepInput.
+func NewHttpStepInputAutomationStepInputSum(v HttpStepInput) AutomationStepInputSum {
+	var s AutomationStepInputSum
+	s.SetHttpStepInput(v)
+	return s
+}
+
+// SetEndStepInput sets AutomationStepInputSum to EndStepInput.
+func (s *AutomationStepInputSum) SetEndStepInput(v EndStepInput) {
+	s.Type = EndStepInputAutomationStepInputSum
+	s.EndStepInput = v
+}
+
+// GetEndStepInput returns EndStepInput and true boolean if AutomationStepInputSum is EndStepInput.
+func (s AutomationStepInputSum) GetEndStepInput() (v EndStepInput, ok bool) {
+	if !s.IsEndStepInput() {
+		return v, false
+	}
+	return s.EndStepInput, true
+}
+
+// NewEndStepInputAutomationStepInputSum returns new AutomationStepInputSum from EndStepInput.
+func NewEndStepInputAutomationStepInputSum(v EndStepInput) AutomationStepInputSum {
+	var s AutomationStepInputSum
+	s.SetEndStepInput(v)
+	return s
+}
+
+// AutomationStepSum represents sum type.
+type AutomationStepSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type          AutomationStepSumType
+	EmailStep     EmailStep
+	TelegramStep  TelegramStep
+	SmsStep       SmsStep
+	WaitStep      WaitStep
+	ApplyTagStep  ApplyTagStep
+	RemoveTagStep RemoveTagStep
+	HttpStep      HttpStep
+	EndStep       EndStep
+}
+
+// AutomationStepSumType is oneOf type of AutomationStepSum.
+type AutomationStepSumType string
+
+// Possible values for AutomationStepSumType.
+const (
+	EmailStepAutomationStepSum     AutomationStepSumType = "email"
+	TelegramStepAutomationStepSum  AutomationStepSumType = "telegram"
+	SmsStepAutomationStepSum       AutomationStepSumType = "sms"
+	WaitStepAutomationStepSum      AutomationStepSumType = "wait"
+	ApplyTagStepAutomationStepSum  AutomationStepSumType = "apply_tag"
+	RemoveTagStepAutomationStepSum AutomationStepSumType = "remove_tag"
+	HttpStepAutomationStepSum      AutomationStepSumType = "http"
+	EndStepAutomationStepSum       AutomationStepSumType = "end"
+)
+
+// IsEmailStep reports whether AutomationStepSum is EmailStep.
+func (s AutomationStepSum) IsEmailStep() bool { return s.Type == EmailStepAutomationStepSum }
+
+// IsTelegramStep reports whether AutomationStepSum is TelegramStep.
+func (s AutomationStepSum) IsTelegramStep() bool { return s.Type == TelegramStepAutomationStepSum }
+
+// IsSmsStep reports whether AutomationStepSum is SmsStep.
+func (s AutomationStepSum) IsSmsStep() bool { return s.Type == SmsStepAutomationStepSum }
+
+// IsWaitStep reports whether AutomationStepSum is WaitStep.
+func (s AutomationStepSum) IsWaitStep() bool { return s.Type == WaitStepAutomationStepSum }
+
+// IsApplyTagStep reports whether AutomationStepSum is ApplyTagStep.
+func (s AutomationStepSum) IsApplyTagStep() bool { return s.Type == ApplyTagStepAutomationStepSum }
+
+// IsRemoveTagStep reports whether AutomationStepSum is RemoveTagStep.
+func (s AutomationStepSum) IsRemoveTagStep() bool { return s.Type == RemoveTagStepAutomationStepSum }
+
+// IsHttpStep reports whether AutomationStepSum is HttpStep.
+func (s AutomationStepSum) IsHttpStep() bool { return s.Type == HttpStepAutomationStepSum }
+
+// IsEndStep reports whether AutomationStepSum is EndStep.
+func (s AutomationStepSum) IsEndStep() bool { return s.Type == EndStepAutomationStepSum }
+
+// SetEmailStep sets AutomationStepSum to EmailStep.
+func (s *AutomationStepSum) SetEmailStep(v EmailStep) {
+	s.Type = EmailStepAutomationStepSum
+	s.EmailStep = v
+}
+
+// GetEmailStep returns EmailStep and true boolean if AutomationStepSum is EmailStep.
+func (s AutomationStepSum) GetEmailStep() (v EmailStep, ok bool) {
+	if !s.IsEmailStep() {
+		return v, false
+	}
+	return s.EmailStep, true
+}
+
+// NewEmailStepAutomationStepSum returns new AutomationStepSum from EmailStep.
+func NewEmailStepAutomationStepSum(v EmailStep) AutomationStepSum {
+	var s AutomationStepSum
+	s.SetEmailStep(v)
+	return s
+}
+
+// SetTelegramStep sets AutomationStepSum to TelegramStep.
+func (s *AutomationStepSum) SetTelegramStep(v TelegramStep) {
+	s.Type = TelegramStepAutomationStepSum
+	s.TelegramStep = v
+}
+
+// GetTelegramStep returns TelegramStep and true boolean if AutomationStepSum is TelegramStep.
+func (s AutomationStepSum) GetTelegramStep() (v TelegramStep, ok bool) {
+	if !s.IsTelegramStep() {
+		return v, false
+	}
+	return s.TelegramStep, true
+}
+
+// NewTelegramStepAutomationStepSum returns new AutomationStepSum from TelegramStep.
+func NewTelegramStepAutomationStepSum(v TelegramStep) AutomationStepSum {
+	var s AutomationStepSum
+	s.SetTelegramStep(v)
+	return s
+}
+
+// SetSmsStep sets AutomationStepSum to SmsStep.
+func (s *AutomationStepSum) SetSmsStep(v SmsStep) {
+	s.Type = SmsStepAutomationStepSum
+	s.SmsStep = v
+}
+
+// GetSmsStep returns SmsStep and true boolean if AutomationStepSum is SmsStep.
+func (s AutomationStepSum) GetSmsStep() (v SmsStep, ok bool) {
+	if !s.IsSmsStep() {
+		return v, false
+	}
+	return s.SmsStep, true
+}
+
+// NewSmsStepAutomationStepSum returns new AutomationStepSum from SmsStep.
+func NewSmsStepAutomationStepSum(v SmsStep) AutomationStepSum {
+	var s AutomationStepSum
+	s.SetSmsStep(v)
+	return s
+}
+
+// SetWaitStep sets AutomationStepSum to WaitStep.
+func (s *AutomationStepSum) SetWaitStep(v WaitStep) {
+	s.Type = WaitStepAutomationStepSum
+	s.WaitStep = v
+}
+
+// GetWaitStep returns WaitStep and true boolean if AutomationStepSum is WaitStep.
+func (s AutomationStepSum) GetWaitStep() (v WaitStep, ok bool) {
+	if !s.IsWaitStep() {
+		return v, false
+	}
+	return s.WaitStep, true
+}
+
+// NewWaitStepAutomationStepSum returns new AutomationStepSum from WaitStep.
+func NewWaitStepAutomationStepSum(v WaitStep) AutomationStepSum {
+	var s AutomationStepSum
+	s.SetWaitStep(v)
+	return s
+}
+
+// SetApplyTagStep sets AutomationStepSum to ApplyTagStep.
+func (s *AutomationStepSum) SetApplyTagStep(v ApplyTagStep) {
+	s.Type = ApplyTagStepAutomationStepSum
+	s.ApplyTagStep = v
+}
+
+// GetApplyTagStep returns ApplyTagStep and true boolean if AutomationStepSum is ApplyTagStep.
+func (s AutomationStepSum) GetApplyTagStep() (v ApplyTagStep, ok bool) {
+	if !s.IsApplyTagStep() {
+		return v, false
+	}
+	return s.ApplyTagStep, true
+}
+
+// NewApplyTagStepAutomationStepSum returns new AutomationStepSum from ApplyTagStep.
+func NewApplyTagStepAutomationStepSum(v ApplyTagStep) AutomationStepSum {
+	var s AutomationStepSum
+	s.SetApplyTagStep(v)
+	return s
+}
+
+// SetRemoveTagStep sets AutomationStepSum to RemoveTagStep.
+func (s *AutomationStepSum) SetRemoveTagStep(v RemoveTagStep) {
+	s.Type = RemoveTagStepAutomationStepSum
+	s.RemoveTagStep = v
+}
+
+// GetRemoveTagStep returns RemoveTagStep and true boolean if AutomationStepSum is RemoveTagStep.
+func (s AutomationStepSum) GetRemoveTagStep() (v RemoveTagStep, ok bool) {
+	if !s.IsRemoveTagStep() {
+		return v, false
+	}
+	return s.RemoveTagStep, true
+}
+
+// NewRemoveTagStepAutomationStepSum returns new AutomationStepSum from RemoveTagStep.
+func NewRemoveTagStepAutomationStepSum(v RemoveTagStep) AutomationStepSum {
+	var s AutomationStepSum
+	s.SetRemoveTagStep(v)
+	return s
+}
+
+// SetHttpStep sets AutomationStepSum to HttpStep.
+func (s *AutomationStepSum) SetHttpStep(v HttpStep) {
+	s.Type = HttpStepAutomationStepSum
+	s.HttpStep = v
+}
+
+// GetHttpStep returns HttpStep and true boolean if AutomationStepSum is HttpStep.
+func (s AutomationStepSum) GetHttpStep() (v HttpStep, ok bool) {
+	if !s.IsHttpStep() {
+		return v, false
+	}
+	return s.HttpStep, true
+}
+
+// NewHttpStepAutomationStepSum returns new AutomationStepSum from HttpStep.
+func NewHttpStepAutomationStepSum(v HttpStep) AutomationStepSum {
+	var s AutomationStepSum
+	s.SetHttpStep(v)
+	return s
+}
+
+// SetEndStep sets AutomationStepSum to EndStep.
+func (s *AutomationStepSum) SetEndStep(v EndStep) {
+	s.Type = EndStepAutomationStepSum
+	s.EndStep = v
+}
+
+// GetEndStep returns EndStep and true boolean if AutomationStepSum is EndStep.
+func (s AutomationStepSum) GetEndStep() (v EndStep, ok bool) {
+	if !s.IsEndStep() {
+		return v, false
+	}
+	return s.EndStep, true
+}
+
+// NewEndStepAutomationStepSum returns new AutomationStepSum from EndStep.
+func NewEndStepAutomationStepSum(v EndStep) AutomationStepSum {
+	var s AutomationStepSum
+	s.SetEndStep(v)
+	return s
 }
 
 // One version of an automation's definition: what publishing makes it do (ADR 0065).
@@ -2933,8 +3027,8 @@ type AutomationVersion struct {
 	// Event action that ends an active enrollment as goal_reached (e.g. "payment_succeeded"); null when
 	// there is none.
 	GoalEvent NilString `json:"goalEvent"`
-	// The ordered, linear steps.
-	Steps []AutomationStep `json:"steps"`
+	// The version's Steps: its root path.
+	Steps AutomationPath `json:"steps"`
 }
 
 // GetNumber returns the value of Number.
@@ -2958,7 +3052,7 @@ func (s *AutomationVersion) GetGoalEvent() NilString {
 }
 
 // GetSteps returns the value of Steps.
-func (s *AutomationVersion) GetSteps() []AutomationStep {
+func (s *AutomationVersion) GetSteps() AutomationPath {
 	return s.Steps
 }
 
@@ -2983,8 +3077,61 @@ func (s *AutomationVersion) SetGoalEvent(val NilString) {
 }
 
 // SetSteps sets the value of Steps.
-func (s *AutomationVersion) SetSteps(val []AutomationStep) {
+func (s *AutomationVersion) SetSteps(val AutomationPath) {
 	s.Steps = val
+}
+
+// The messages one version's send Step sent.
+// Ref: #/components/schemas/AutomationVersionStepFigures
+type AutomationVersionStepFigures struct {
+	// The version's number.
+	Version int32 `json:"version"`
+	// The Step's id.
+	StepId StepId `json:"stepId"`
+	// Messages the provider accepted.
+	Sent int32 `json:"sent"`
+	// Messages skipped, as in AutomationStepFigures.
+	Skipped int32 `json:"skipped"`
+}
+
+// GetVersion returns the value of Version.
+func (s *AutomationVersionStepFigures) GetVersion() int32 {
+	return s.Version
+}
+
+// GetStepId returns the value of StepId.
+func (s *AutomationVersionStepFigures) GetStepId() StepId {
+	return s.StepId
+}
+
+// GetSent returns the value of Sent.
+func (s *AutomationVersionStepFigures) GetSent() int32 {
+	return s.Sent
+}
+
+// GetSkipped returns the value of Skipped.
+func (s *AutomationVersionStepFigures) GetSkipped() int32 {
+	return s.Skipped
+}
+
+// SetVersion sets the value of Version.
+func (s *AutomationVersionStepFigures) SetVersion(val int32) {
+	s.Version = val
+}
+
+// SetStepId sets the value of StepId.
+func (s *AutomationVersionStepFigures) SetStepId(val StepId) {
+	s.StepId = val
+}
+
+// SetSent sets the value of Sent.
+func (s *AutomationVersionStepFigures) SetSent(val int32) {
+	s.Sent = val
+}
+
+// SetSkipped sets the value of Skipped.
+func (s *AutomationVersionStepFigures) SetSkipped(val int32) {
+	s.Skipped = val
 }
 
 // A test of the Contact's date of birth.
@@ -4826,8 +4973,8 @@ type ContactExportOutboundMessage struct {
 	BroadcastId OptNilEntityId `json:"broadcastId"`
 	// Automation that produced the message.
 	AutomationId OptNilEntityId `json:"automationId"`
-	// Step of the automation that produced the message.
-	AutomationStep OptNilInt32 `json:"automationStep"`
+	// Id of the automation Step that produced the message, the same in every version.
+	AutomationStepId OptNilString `json:"automationStepId"`
 	// Template the message was rendered from.
 	TemplateId OptNilEntityId `json:"templateId"`
 	// Creation timestamp.
@@ -4944,9 +5091,9 @@ func (s *ContactExportOutboundMessage) GetAutomationId() OptNilEntityId {
 	return s.AutomationId
 }
 
-// GetAutomationStep returns the value of AutomationStep.
-func (s *ContactExportOutboundMessage) GetAutomationStep() OptNilInt32 {
-	return s.AutomationStep
+// GetAutomationStepId returns the value of AutomationStepId.
+func (s *ContactExportOutboundMessage) GetAutomationStepId() OptNilString {
+	return s.AutomationStepId
 }
 
 // GetTemplateId returns the value of TemplateId.
@@ -5069,9 +5216,9 @@ func (s *ContactExportOutboundMessage) SetAutomationId(val OptNilEntityId) {
 	s.AutomationId = val
 }
 
-// SetAutomationStep sets the value of AutomationStep.
-func (s *ContactExportOutboundMessage) SetAutomationStep(val OptNilInt32) {
-	s.AutomationStep = val
+// SetAutomationStepId sets the value of AutomationStepId.
+func (s *ContactExportOutboundMessage) SetAutomationStepId(val OptNilString) {
+	s.AutomationStepId = val
 }
 
 // SetTemplateId sets the value of TemplateId.
@@ -5394,8 +5541,9 @@ type CreateAutomationInput struct {
 	ExitEvents []string `json:"exitEvents"`
 	// Event action that ends an active enrollment as goal_reached; it may be neither the trigger nor an
 	// exit event. Null or omitted is none.
-	GoalEvent OptNilString          `json:"goalEvent"`
-	Steps     []AutomationStepInput `json:"steps"`
+	GoalEvent OptNilString `json:"goalEvent"`
+	// The version's Steps: its root path.
+	Steps OptAutomationPathInput `json:"steps"`
 }
 
 // GetName returns the value of Name.
@@ -5419,7 +5567,7 @@ func (s *CreateAutomationInput) GetGoalEvent() OptNilString {
 }
 
 // GetSteps returns the value of Steps.
-func (s *CreateAutomationInput) GetSteps() []AutomationStepInput {
+func (s *CreateAutomationInput) GetSteps() OptAutomationPathInput {
 	return s.Steps
 }
 
@@ -5444,7 +5592,7 @@ func (s *CreateAutomationInput) SetGoalEvent(val OptNilString) {
 }
 
 // SetSteps sets the value of Steps.
-func (s *CreateAutomationInput) SetSteps(val []AutomationStepInput) {
+func (s *CreateAutomationInput) SetSteps(val OptAutomationPathInput) {
 	s.Steps = val
 }
 
@@ -6846,6 +6994,371 @@ func (s *EmailBroadcastContentInputChannel) UnmarshalText(data []byte) error {
 	}
 }
 
+// A Step that sends an email through the Integration it names.
+// Ref: #/components/schemas/EmailStep
+type EmailStep struct {
+	// The Step's id.
+	ID   StepId        `json:"id"`
+	Type EmailStepType `json:"type"`
+	// Email subject.
+	Subject string `json:"subject"`
+	// Email body as HTML. Binds the Contact's fields plus `event.action` and `event.properties`: the Event
+	// the Enrollment began on (the one a Rule fired on, when a Rule enrolled), copied when it began; empty
+	// when no Event began it.
+	Body string `json:"body"`
+	// The editor's JSON document the body was built from; absent when the body was written as HTML.
+	Doc OptEditorDocument `json:"doc"`
+	// Version of the editor that rendered the document; absent with it.
+	EditorVersion OptString `json:"editorVersion"`
+	// The Integration the Step sends through, of the email Channel; absent is the Channel's default. Each
+	// send step names its own, so one automation may send through several (ADR 0081).
+	IntegrationId OptEntityId `json:"integrationId"`
+}
+
+// GetID returns the value of ID.
+func (s *EmailStep) GetID() StepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *EmailStep) GetType() EmailStepType {
+	return s.Type
+}
+
+// GetSubject returns the value of Subject.
+func (s *EmailStep) GetSubject() string {
+	return s.Subject
+}
+
+// GetBody returns the value of Body.
+func (s *EmailStep) GetBody() string {
+	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *EmailStep) GetDoc() OptEditorDocument {
+	return s.Doc
+}
+
+// GetEditorVersion returns the value of EditorVersion.
+func (s *EmailStep) GetEditorVersion() OptString {
+	return s.EditorVersion
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *EmailStep) GetIntegrationId() OptEntityId {
+	return s.IntegrationId
+}
+
+// SetID sets the value of ID.
+func (s *EmailStep) SetID(val StepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *EmailStep) SetType(val EmailStepType) {
+	s.Type = val
+}
+
+// SetSubject sets the value of Subject.
+func (s *EmailStep) SetSubject(val string) {
+	s.Subject = val
+}
+
+// SetBody sets the value of Body.
+func (s *EmailStep) SetBody(val string) {
+	s.Body = val
+}
+
+// SetDoc sets the value of Doc.
+func (s *EmailStep) SetDoc(val OptEditorDocument) {
+	s.Doc = val
+}
+
+// SetEditorVersion sets the value of EditorVersion.
+func (s *EmailStep) SetEditorVersion(val OptString) {
+	s.EditorVersion = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *EmailStep) SetIntegrationId(val OptEntityId) {
+	s.IntegrationId = val
+}
+
+// A Step that sends an email, as a request writes it.
+// Ref: #/components/schemas/EmailStepInput
+type EmailStepInput struct {
+	// The Step's id; omitted, the Step is given one.
+	ID   OptStepId          `json:"id"`
+	Type EmailStepInputType `json:"type"`
+	// Email subject.
+	Subject string `json:"subject"`
+	// Email body as HTML, bound as on a stored email Step. Write it or `doc`, not both (both is a 422).
+	// Writing only a body clears the Step's document.
+	Body OptString `json:"body"`
+	// The editor's JSON document, an opaque object checked by the server against the schema `email_schema`
+	// returns. The server renders the body from it in the same save, and a document that cannot be
+	// rendered refuses the whole save, naming the Step.
+	Doc OptEditorDocument `json:"doc"`
+	// The Integration the Step sends through, of the email Channel; null or omitted is the Channel's
+	// default.
+	IntegrationId OptNilEntityId `json:"integrationId"`
+}
+
+// GetID returns the value of ID.
+func (s *EmailStepInput) GetID() OptStepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *EmailStepInput) GetType() EmailStepInputType {
+	return s.Type
+}
+
+// GetSubject returns the value of Subject.
+func (s *EmailStepInput) GetSubject() string {
+	return s.Subject
+}
+
+// GetBody returns the value of Body.
+func (s *EmailStepInput) GetBody() OptString {
+	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *EmailStepInput) GetDoc() OptEditorDocument {
+	return s.Doc
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *EmailStepInput) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
+
+// SetID sets the value of ID.
+func (s *EmailStepInput) SetID(val OptStepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *EmailStepInput) SetType(val EmailStepInputType) {
+	s.Type = val
+}
+
+// SetSubject sets the value of Subject.
+func (s *EmailStepInput) SetSubject(val string) {
+	s.Subject = val
+}
+
+// SetBody sets the value of Body.
+func (s *EmailStepInput) SetBody(val OptString) {
+	s.Body = val
+}
+
+// SetDoc sets the value of Doc.
+func (s *EmailStepInput) SetDoc(val OptEditorDocument) {
+	s.Doc = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *EmailStepInput) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
+}
+
+type EmailStepInputType string
+
+const (
+	EmailStepInputTypeEmail EmailStepInputType = "email"
+)
+
+// AllValues returns all EmailStepInputType values.
+func (EmailStepInputType) AllValues() []EmailStepInputType {
+	return []EmailStepInputType{
+		EmailStepInputTypeEmail,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EmailStepInputType) MarshalText() ([]byte, error) {
+	switch s {
+	case EmailStepInputTypeEmail:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EmailStepInputType) UnmarshalText(data []byte) error {
+	switch EmailStepInputType(data) {
+	case EmailStepInputTypeEmail:
+		*s = EmailStepInputTypeEmail
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type EmailStepType string
+
+const (
+	EmailStepTypeEmail EmailStepType = "email"
+)
+
+// AllValues returns all EmailStepType values.
+func (EmailStepType) AllValues() []EmailStepType {
+	return []EmailStepType{
+		EmailStepTypeEmail,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EmailStepType) MarshalText() ([]byte, error) {
+	switch s {
+	case EmailStepTypeEmail:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EmailStepType) UnmarshalText(data []byte) error {
+	switch EmailStepType(data) {
+	case EmailStepTypeEmail:
+		*s = EmailStepTypeEmail
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A Step that finishes its path and ends the Enrollment as `completed` at once (ADR 0124): a path
+// stops early by design, which is no exit. It is the last Step of its path.
+// Ref: #/components/schemas/EndStep
+type EndStep struct {
+	// The Step's id.
+	ID   StepId      `json:"id"`
+	Type EndStepType `json:"type"`
+}
+
+// GetID returns the value of ID.
+func (s *EndStep) GetID() StepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *EndStep) GetType() EndStepType {
+	return s.Type
+}
+
+// SetID sets the value of ID.
+func (s *EndStep) SetID(val StepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *EndStep) SetType(val EndStepType) {
+	s.Type = val
+}
+
+// A Step that finishes its path, as a request writes it. A Step after it in the same path refuses the
+// save, naming that Step.
+// Ref: #/components/schemas/EndStepInput
+type EndStepInput struct {
+	// The Step's id; omitted, the Step is given one.
+	ID   OptStepId        `json:"id"`
+	Type EndStepInputType `json:"type"`
+}
+
+// GetID returns the value of ID.
+func (s *EndStepInput) GetID() OptStepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *EndStepInput) GetType() EndStepInputType {
+	return s.Type
+}
+
+// SetID sets the value of ID.
+func (s *EndStepInput) SetID(val OptStepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *EndStepInput) SetType(val EndStepInputType) {
+	s.Type = val
+}
+
+type EndStepInputType string
+
+const (
+	EndStepInputTypeEnd EndStepInputType = "end"
+)
+
+// AllValues returns all EndStepInputType values.
+func (EndStepInputType) AllValues() []EndStepInputType {
+	return []EndStepInputType{
+		EndStepInputTypeEnd,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EndStepInputType) MarshalText() ([]byte, error) {
+	switch s {
+	case EndStepInputTypeEnd:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EndStepInputType) UnmarshalText(data []byte) error {
+	switch EndStepInputType(data) {
+	case EndStepInputTypeEnd:
+		*s = EndStepInputTypeEnd
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type EndStepType string
+
+const (
+	EndStepTypeEnd EndStepType = "end"
+)
+
+// AllValues returns all EndStepType values.
+func (EndStepType) AllValues() []EndStepType {
+	return []EndStepType{
+		EndStepTypeEnd,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EndStepType) MarshalText() ([]byte, error) {
+	switch s {
+	case EndStepTypeEnd:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EndStepType) UnmarshalText(data []byte) error {
+	switch EndStepType(data) {
+	case EndStepTypeEnd:
+		*s = EndStepTypeEnd
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // What an HTTP step recorded when it failed an Enrollment; absent on any other Enrollment.
 // Ref: #/components/schemas/EnrollmentFailure
 type EnrollmentFailure struct {
@@ -6966,9 +7479,10 @@ type EnrollmentResource struct {
 	ContactId EntityId `json:"contactId"`
 	// Where the Enrollment is.
 	Status EnrollmentStatus `json:"status"`
-	// Index of the next step to run (0-based).
-	CurrentStep int32 `json:"currentStep"`
-	// When a waiting Enrollment runs its next step.
+	// Id of the Step of its version the Enrollment stands on (ADR 0122): a wait while it waits, the Step
+	// it ended on once it ended; absent only for a version of no Steps.
+	CurrentStepId OptStepId `json:"currentStepId"`
+	// When the wait the Enrollment stands on is due: computed once, when it reached the wait (ADR 0124).
 	ResumeAt OptTimestamp `json:"resumeAt"`
 	// Present on a failed Enrollment whose failure an HTTP step recorded.
 	Failure OptEnrollmentFailure `json:"failure"`
@@ -6998,9 +7512,9 @@ func (s *EnrollmentResource) GetStatus() EnrollmentStatus {
 	return s.Status
 }
 
-// GetCurrentStep returns the value of CurrentStep.
-func (s *EnrollmentResource) GetCurrentStep() int32 {
-	return s.CurrentStep
+// GetCurrentStepId returns the value of CurrentStepId.
+func (s *EnrollmentResource) GetCurrentStepId() OptStepId {
+	return s.CurrentStepId
 }
 
 // GetResumeAt returns the value of ResumeAt.
@@ -7043,9 +7557,9 @@ func (s *EnrollmentResource) SetStatus(val EnrollmentStatus) {
 	s.Status = val
 }
 
-// SetCurrentStep sets the value of CurrentStep.
-func (s *EnrollmentResource) SetCurrentStep(val int32) {
-	s.CurrentStep = val
+// SetCurrentStepId sets the value of CurrentStepId.
+func (s *EnrollmentResource) SetCurrentStepId(val OptStepId) {
+	s.CurrentStepId = val
 }
 
 // SetResumeAt sets the value of ResumeAt.
@@ -7687,6 +8201,231 @@ func (s *HoldReason) UnmarshalText(data []byte) error {
 		return nil
 	case HoldReasonProviderRefused:
 		*s = HoldReasonProviderRefused
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A Step that POSTs a JSON body to a hook URL (ADR 0039). Its URL, header values and signing secret
+// are secrets: never returned.
+// Ref: #/components/schemas/HttpStep
+type HttpStep struct {
+	// The Step's id: send it back on edit so the Step keeps its secrets.
+	ID   StepId       `json:"id"`
+	Type HttpStepType `json:"type"`
+	// The Liquid JSON request body, bound as an email Step's body is.
+	Body string `json:"body"`
+	// The request headers, by name only.
+	Headers []AutomationHttpHeader `json:"headers"`
+	// Whether a signing secret is stored.
+	HasSecret bool `json:"hasSecret"`
+}
+
+// GetID returns the value of ID.
+func (s *HttpStep) GetID() StepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *HttpStep) GetType() HttpStepType {
+	return s.Type
+}
+
+// GetBody returns the value of Body.
+func (s *HttpStep) GetBody() string {
+	return s.Body
+}
+
+// GetHeaders returns the value of Headers.
+func (s *HttpStep) GetHeaders() []AutomationHttpHeader {
+	return s.Headers
+}
+
+// GetHasSecret returns the value of HasSecret.
+func (s *HttpStep) GetHasSecret() bool {
+	return s.HasSecret
+}
+
+// SetID sets the value of ID.
+func (s *HttpStep) SetID(val StepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *HttpStep) SetType(val HttpStepType) {
+	s.Type = val
+}
+
+// SetBody sets the value of Body.
+func (s *HttpStep) SetBody(val string) {
+	s.Body = val
+}
+
+// SetHeaders sets the value of Headers.
+func (s *HttpStep) SetHeaders(val []AutomationHttpHeader) {
+	s.Headers = val
+}
+
+// SetHasSecret sets the value of HasSecret.
+func (s *HttpStep) SetHasSecret(val bool) {
+	s.HasSecret = val
+}
+
+// A Step that POSTs a JSON body to a hook URL, as a request writes it. A secret omitted keeps the
+// stored value of the Step with the same id.
+// Ref: #/components/schemas/HttpStepInput
+type HttpStepInput struct {
+	// The Step's id; omitted, the Step is given one. Send the id it was read with so the Step keeps its
+	// secrets.
+	ID   OptStepId         `json:"id"`
+	Type HttpStepInputType `json:"type"`
+	// The Liquid JSON request body: strings JSON-escaped, up to 64 KiB, must render to valid JSON, also
+	// with every tag empty.
+	Body string `json:"body"`
+	// Hook URL to POST to. Omit it when editing to keep the stored URL. Up to 2 KiB, http or https.
+	URL OptString `json:"url"`
+	// Up to 5 request headers.
+	Headers []AutomationHttpHeaderInput `json:"headers"`
+	// Signing secret: when set, the request is signed with Standard Webhooks. Omit it when editing to keep
+	// the stored secret.
+	Secret OptSigningSecret `json:"secret"`
+	// Remove the signing secret on save.
+	ClearSecret OptBool `json:"clearSecret"`
+}
+
+// GetID returns the value of ID.
+func (s *HttpStepInput) GetID() OptStepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *HttpStepInput) GetType() HttpStepInputType {
+	return s.Type
+}
+
+// GetBody returns the value of Body.
+func (s *HttpStepInput) GetBody() string {
+	return s.Body
+}
+
+// GetURL returns the value of URL.
+func (s *HttpStepInput) GetURL() OptString {
+	return s.URL
+}
+
+// GetHeaders returns the value of Headers.
+func (s *HttpStepInput) GetHeaders() []AutomationHttpHeaderInput {
+	return s.Headers
+}
+
+// GetSecret returns the value of Secret.
+func (s *HttpStepInput) GetSecret() OptSigningSecret {
+	return s.Secret
+}
+
+// GetClearSecret returns the value of ClearSecret.
+func (s *HttpStepInput) GetClearSecret() OptBool {
+	return s.ClearSecret
+}
+
+// SetID sets the value of ID.
+func (s *HttpStepInput) SetID(val OptStepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *HttpStepInput) SetType(val HttpStepInputType) {
+	s.Type = val
+}
+
+// SetBody sets the value of Body.
+func (s *HttpStepInput) SetBody(val string) {
+	s.Body = val
+}
+
+// SetURL sets the value of URL.
+func (s *HttpStepInput) SetURL(val OptString) {
+	s.URL = val
+}
+
+// SetHeaders sets the value of Headers.
+func (s *HttpStepInput) SetHeaders(val []AutomationHttpHeaderInput) {
+	s.Headers = val
+}
+
+// SetSecret sets the value of Secret.
+func (s *HttpStepInput) SetSecret(val OptSigningSecret) {
+	s.Secret = val
+}
+
+// SetClearSecret sets the value of ClearSecret.
+func (s *HttpStepInput) SetClearSecret(val OptBool) {
+	s.ClearSecret = val
+}
+
+type HttpStepInputType string
+
+const (
+	HttpStepInputTypeHTTP HttpStepInputType = "http"
+)
+
+// AllValues returns all HttpStepInputType values.
+func (HttpStepInputType) AllValues() []HttpStepInputType {
+	return []HttpStepInputType{
+		HttpStepInputTypeHTTP,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s HttpStepInputType) MarshalText() ([]byte, error) {
+	switch s {
+	case HttpStepInputTypeHTTP:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *HttpStepInputType) UnmarshalText(data []byte) error {
+	switch HttpStepInputType(data) {
+	case HttpStepInputTypeHTTP:
+		*s = HttpStepInputTypeHTTP
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type HttpStepType string
+
+const (
+	HttpStepTypeHTTP HttpStepType = "http"
+)
+
+// AllValues returns all HttpStepType values.
+func (HttpStepType) AllValues() []HttpStepType {
+	return []HttpStepType{
+		HttpStepTypeHTTP,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s HttpStepType) MarshalText() ([]byte, error) {
+	switch s {
+	case HttpStepTypeHTTP:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *HttpStepType) UnmarshalText(data []byte) error {
+	switch HttpStepType(data) {
+	case HttpStepTypeHTTP:
+		*s = HttpStepTypeHTTP
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -9785,6 +10524,52 @@ func (o OptAutomationHttpErrorKind) Or(d AutomationHttpErrorKind) AutomationHttp
 	return d
 }
 
+// NewOptAutomationPathInput returns new OptAutomationPathInput with value set to v.
+func NewOptAutomationPathInput(v AutomationPathInput) OptAutomationPathInput {
+	return OptAutomationPathInput{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptAutomationPathInput is optional AutomationPathInput.
+type OptAutomationPathInput struct {
+	Value AutomationPathInput
+	Set   bool
+}
+
+// IsSet returns true if OptAutomationPathInput was set.
+func (o OptAutomationPathInput) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptAutomationPathInput) Reset() {
+	var v AutomationPathInput
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptAutomationPathInput) SetTo(v AutomationPathInput) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptAutomationPathInput) Get() (v AutomationPathInput, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptAutomationPathInput) Or(d AutomationPathInput) AutomationPathInput {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptBool returns new OptBool with value set to v.
 func NewOptBool(v bool) OptBool {
 	return OptBool{
@@ -11059,74 +11844,6 @@ func (o OptNilImageUrl) Get() (v ImageUrl, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilImageUrl) Or(d ImageUrl) ImageUrl {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptNilInt32 returns new OptNilInt32 with value set to v.
-func NewOptNilInt32(v int32) OptNilInt32 {
-	return OptNilInt32{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilInt32 is optional nullable int32.
-type OptNilInt32 struct {
-	Value int32
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilInt32 was set.
-func (o OptNilInt32) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilInt32) Reset() {
-	var v int32
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilInt32) SetTo(v int32) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilInt32) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilInt32) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v int32
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilInt32) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilInt32) Get() (v int32, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilInt32) Or(d int32) int32 {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -13307,6 +14024,52 @@ func (o OptSortDirection) Or(d SortDirection) SortDirection {
 	return d
 }
 
+// NewOptStepId returns new OptStepId with value set to v.
+func NewOptStepId(v StepId) OptStepId {
+	return OptStepId{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptStepId is optional StepId.
+type OptStepId struct {
+	Value StepId
+	Set   bool
+}
+
+// IsSet returns true if OptStepId was set.
+func (o OptStepId) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptStepId) Reset() {
+	var v StepId
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptStepId) SetTo(v StepId) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptStepId) Get() (v StepId, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptStepId) Or(d StepId) StepId {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptString returns new OptString with value set to v.
 func NewOptString(v string) OptString {
 	return OptString{
@@ -15148,6 +15911,154 @@ func (s *RateTriple) SetRate(val NilFloat64) {
 }
 
 type RegionalFormat string
+
+// A Step that removes a Tag from the enrolled Contact.
+// Ref: #/components/schemas/RemoveTagStep
+type RemoveTagStep struct {
+	// The Step's id.
+	ID   StepId            `json:"id"`
+	Type RemoveTagStepType `json:"type"`
+	// The Tag's name.
+	Tag string `json:"tag"`
+}
+
+// GetID returns the value of ID.
+func (s *RemoveTagStep) GetID() StepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *RemoveTagStep) GetType() RemoveTagStepType {
+	return s.Type
+}
+
+// GetTag returns the value of Tag.
+func (s *RemoveTagStep) GetTag() string {
+	return s.Tag
+}
+
+// SetID sets the value of ID.
+func (s *RemoveTagStep) SetID(val StepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *RemoveTagStep) SetType(val RemoveTagStepType) {
+	s.Type = val
+}
+
+// SetTag sets the value of Tag.
+func (s *RemoveTagStep) SetTag(val string) {
+	s.Tag = val
+}
+
+// A Step that removes a Tag, as a request writes it.
+// Ref: #/components/schemas/RemoveTagStepInput
+type RemoveTagStepInput struct {
+	// The Step's id; omitted, the Step is given one.
+	ID   OptStepId              `json:"id"`
+	Type RemoveTagStepInputType `json:"type"`
+	// The Tag's name; a blank one is refused.
+	Tag string `json:"tag"`
+}
+
+// GetID returns the value of ID.
+func (s *RemoveTagStepInput) GetID() OptStepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *RemoveTagStepInput) GetType() RemoveTagStepInputType {
+	return s.Type
+}
+
+// GetTag returns the value of Tag.
+func (s *RemoveTagStepInput) GetTag() string {
+	return s.Tag
+}
+
+// SetID sets the value of ID.
+func (s *RemoveTagStepInput) SetID(val OptStepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *RemoveTagStepInput) SetType(val RemoveTagStepInputType) {
+	s.Type = val
+}
+
+// SetTag sets the value of Tag.
+func (s *RemoveTagStepInput) SetTag(val string) {
+	s.Tag = val
+}
+
+type RemoveTagStepInputType string
+
+const (
+	RemoveTagStepInputTypeRemoveTag RemoveTagStepInputType = "remove_tag"
+)
+
+// AllValues returns all RemoveTagStepInputType values.
+func (RemoveTagStepInputType) AllValues() []RemoveTagStepInputType {
+	return []RemoveTagStepInputType{
+		RemoveTagStepInputTypeRemoveTag,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s RemoveTagStepInputType) MarshalText() ([]byte, error) {
+	switch s {
+	case RemoveTagStepInputTypeRemoveTag:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *RemoveTagStepInputType) UnmarshalText(data []byte) error {
+	switch RemoveTagStepInputType(data) {
+	case RemoveTagStepInputTypeRemoveTag:
+		*s = RemoveTagStepInputTypeRemoveTag
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type RemoveTagStepType string
+
+const (
+	RemoveTagStepTypeRemoveTag RemoveTagStepType = "remove_tag"
+)
+
+// AllValues returns all RemoveTagStepType values.
+func (RemoveTagStepType) AllValues() []RemoveTagStepType {
+	return []RemoveTagStepType{
+		RemoveTagStepTypeRemoveTag,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s RemoveTagStepType) MarshalText() ([]byte, error) {
+	switch s {
+	case RemoveTagStepTypeRemoveTag:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *RemoveTagStepType) UnmarshalText(data []byte) error {
+	switch RemoveTagStepType(data) {
+	case RemoveTagStepTypeRemoveTag:
+		*s = RemoveTagStepTypeRemoveTag
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 type RetentionDays int32
 
@@ -31303,6 +32214,207 @@ func (s *SmsOptOut) SetOptedOutAt(val Timestamp) {
 	s.OptedOutAt = val
 }
 
+// A Step that sends an SMS through the Integration it names.
+// Ref: #/components/schemas/SmsStep
+type SmsStep struct {
+	// The Step's id.
+	ID   StepId      `json:"id"`
+	Type SmsStepType `json:"type"`
+	// The text: plain text with Liquid merge tags (the Contact's fields, `event.action` and
+	// `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the
+	// Contact's phone with nothing appended.
+	Text string `json:"text"`
+	// Whether the links of the text go out as short tracked links, whose clicks record `sms.clicked` (ADR
+	// 0083).
+	LinkTracking bool `json:"linkTracking"`
+	// The Integration the Step sends through, of the SMS Channel; absent is the Channel's default.
+	IntegrationId OptEntityId `json:"integrationId"`
+}
+
+// GetID returns the value of ID.
+func (s *SmsStep) GetID() StepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *SmsStep) GetType() SmsStepType {
+	return s.Type
+}
+
+// GetText returns the value of Text.
+func (s *SmsStep) GetText() string {
+	return s.Text
+}
+
+// GetLinkTracking returns the value of LinkTracking.
+func (s *SmsStep) GetLinkTracking() bool {
+	return s.LinkTracking
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *SmsStep) GetIntegrationId() OptEntityId {
+	return s.IntegrationId
+}
+
+// SetID sets the value of ID.
+func (s *SmsStep) SetID(val StepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *SmsStep) SetType(val SmsStepType) {
+	s.Type = val
+}
+
+// SetText sets the value of Text.
+func (s *SmsStep) SetText(val string) {
+	s.Text = val
+}
+
+// SetLinkTracking sets the value of LinkTracking.
+func (s *SmsStep) SetLinkTracking(val bool) {
+	s.LinkTracking = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *SmsStep) SetIntegrationId(val OptEntityId) {
+	s.IntegrationId = val
+}
+
+// A Step that sends an SMS, as a request writes it.
+// Ref: #/components/schemas/SmsStepInput
+type SmsStepInput struct {
+	// The Step's id; omitted, the Step is given one.
+	ID   OptStepId        `json:"id"`
+	Type SmsStepInputType `json:"type"`
+	// The text, as on a stored SMS Step: each http(s) link a short tracked link on the Tracking domain
+	// unless `linkTracking` is false; the save refuses a text over the part limit, its links counted as
+	// short links.
+	Text string `json:"text"`
+	// Whether the links of the text go out as short tracked links (ADR 0083). On when omitted.
+	LinkTracking OptBool `json:"linkTracking"`
+	// The Integration the Step sends through, of the SMS Channel; null or omitted is the Channel's default.
+	IntegrationId OptNilEntityId `json:"integrationId"`
+}
+
+// GetID returns the value of ID.
+func (s *SmsStepInput) GetID() OptStepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *SmsStepInput) GetType() SmsStepInputType {
+	return s.Type
+}
+
+// GetText returns the value of Text.
+func (s *SmsStepInput) GetText() string {
+	return s.Text
+}
+
+// GetLinkTracking returns the value of LinkTracking.
+func (s *SmsStepInput) GetLinkTracking() OptBool {
+	return s.LinkTracking
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *SmsStepInput) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
+
+// SetID sets the value of ID.
+func (s *SmsStepInput) SetID(val OptStepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *SmsStepInput) SetType(val SmsStepInputType) {
+	s.Type = val
+}
+
+// SetText sets the value of Text.
+func (s *SmsStepInput) SetText(val string) {
+	s.Text = val
+}
+
+// SetLinkTracking sets the value of LinkTracking.
+func (s *SmsStepInput) SetLinkTracking(val OptBool) {
+	s.LinkTracking = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *SmsStepInput) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
+}
+
+type SmsStepInputType string
+
+const (
+	SmsStepInputTypeSMS SmsStepInputType = "sms"
+)
+
+// AllValues returns all SmsStepInputType values.
+func (SmsStepInputType) AllValues() []SmsStepInputType {
+	return []SmsStepInputType{
+		SmsStepInputTypeSMS,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SmsStepInputType) MarshalText() ([]byte, error) {
+	switch s {
+	case SmsStepInputTypeSMS:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SmsStepInputType) UnmarshalText(data []byte) error {
+	switch SmsStepInputType(data) {
+	case SmsStepInputTypeSMS:
+		*s = SmsStepInputTypeSMS
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type SmsStepType string
+
+const (
+	SmsStepTypeSMS SmsStepType = "sms"
+)
+
+// AllValues returns all SmsStepType values.
+func (SmsStepType) AllValues() []SmsStepType {
+	return []SmsStepType{
+		SmsStepTypeSMS,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SmsStepType) MarshalText() ([]byte, error) {
+	switch s {
+	case SmsStepTypeSMS:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SmsStepType) UnmarshalText(data []byte) error {
+	switch SmsStepType(data) {
+	case SmsStepTypeSMS:
+		*s = SmsStepTypeSMS
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // SMTP config without the password.
 // Ref: #/components/schemas/SmtpConfig
 type SmtpConfig struct {
@@ -31596,6 +32708,8 @@ func (s *SortDirection) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
+
+type StepId string
 
 // A Channel a destination can be suppressed on.
 // Ref: #/components/schemas/SuppressionChannel
@@ -32425,6 +33539,280 @@ func (s *TelegramStartLinkResource) SetURL(val string) {
 // SetExpiresAt sets the value of ExpiresAt.
 func (s *TelegramStartLinkResource) SetExpiresAt(val Timestamp) {
 	s.ExpiresAt = val
+}
+
+// A Step that sends a Telegram message through the Integration it names.
+// Ref: #/components/schemas/TelegramStep
+type TelegramStep struct {
+	// The Step's id.
+	ID   StepId           `json:"id"`
+	Type TelegramStepType `json:"type"`
+	// The message: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s)
+	// href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. With an
+	// image, its caption.
+	Text string `json:"text"`
+	// The label of an unsubscribe button under the message; absent for none.
+	UnsubscribeButton OptString `json:"unsubscribeButton"`
+	// The https image sent with the message; absent for a text message.
+	ImageUrl OptString `json:"imageUrl"`
+	// The link buttons under the message, one per row, in order.
+	Buttons []TelegramButton `json:"buttons"`
+	// Whether a link in the text unfolds a preview; no effect with an image.
+	LinkPreview bool `json:"linkPreview"`
+	// The Integration the Step sends through, of the Telegram Channel; absent is the Channel's default.
+	IntegrationId OptEntityId `json:"integrationId"`
+}
+
+// GetID returns the value of ID.
+func (s *TelegramStep) GetID() StepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *TelegramStep) GetType() TelegramStepType {
+	return s.Type
+}
+
+// GetText returns the value of Text.
+func (s *TelegramStep) GetText() string {
+	return s.Text
+}
+
+// GetUnsubscribeButton returns the value of UnsubscribeButton.
+func (s *TelegramStep) GetUnsubscribeButton() OptString {
+	return s.UnsubscribeButton
+}
+
+// GetImageUrl returns the value of ImageUrl.
+func (s *TelegramStep) GetImageUrl() OptString {
+	return s.ImageUrl
+}
+
+// GetButtons returns the value of Buttons.
+func (s *TelegramStep) GetButtons() []TelegramButton {
+	return s.Buttons
+}
+
+// GetLinkPreview returns the value of LinkPreview.
+func (s *TelegramStep) GetLinkPreview() bool {
+	return s.LinkPreview
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *TelegramStep) GetIntegrationId() OptEntityId {
+	return s.IntegrationId
+}
+
+// SetID sets the value of ID.
+func (s *TelegramStep) SetID(val StepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *TelegramStep) SetType(val TelegramStepType) {
+	s.Type = val
+}
+
+// SetText sets the value of Text.
+func (s *TelegramStep) SetText(val string) {
+	s.Text = val
+}
+
+// SetUnsubscribeButton sets the value of UnsubscribeButton.
+func (s *TelegramStep) SetUnsubscribeButton(val OptString) {
+	s.UnsubscribeButton = val
+}
+
+// SetImageUrl sets the value of ImageUrl.
+func (s *TelegramStep) SetImageUrl(val OptString) {
+	s.ImageUrl = val
+}
+
+// SetButtons sets the value of Buttons.
+func (s *TelegramStep) SetButtons(val []TelegramButton) {
+	s.Buttons = val
+}
+
+// SetLinkPreview sets the value of LinkPreview.
+func (s *TelegramStep) SetLinkPreview(val bool) {
+	s.LinkPreview = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *TelegramStep) SetIntegrationId(val OptEntityId) {
+	s.IntegrationId = val
+}
+
+// A Step that sends a Telegram message, as a request writes it.
+// Ref: #/components/schemas/TelegramStepInput
+type TelegramStepInput struct {
+	// The Step's id; omitted, the Step is given one.
+	ID   OptStepId             `json:"id"`
+	Type TelegramStepInputType `json:"type"`
+	// The message, as on a stored Telegram Step. Up to 4096 characters as written, or 1024 with an image
+	// (its caption): publishing a longer one is refused.
+	Text string `json:"text"`
+	// The label of an unsubscribe button under the message, up to 64 characters. Pressing it is the
+	// person's Channel-wide Telegram opt-out; empty or omitted adds no button.
+	UnsubscribeButton OptString `json:"unsubscribeButton"`
+	// An https image sent with the message; the text becomes its caption. Omitted or empty for a text
+	// message.
+	ImageUrl OptString `json:"imageUrl"`
+	// Up to 8 link buttons under the message, one per row, in order.
+	Buttons []TelegramButtonInput `json:"buttons"`
+	// Whether a link in the text unfolds a preview. On when omitted; no effect with an image.
+	LinkPreview OptBool `json:"linkPreview"`
+	// The Integration the Step sends through, of the Telegram Channel; null or omitted is the Channel's
+	// default.
+	IntegrationId OptNilEntityId `json:"integrationId"`
+}
+
+// GetID returns the value of ID.
+func (s *TelegramStepInput) GetID() OptStepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *TelegramStepInput) GetType() TelegramStepInputType {
+	return s.Type
+}
+
+// GetText returns the value of Text.
+func (s *TelegramStepInput) GetText() string {
+	return s.Text
+}
+
+// GetUnsubscribeButton returns the value of UnsubscribeButton.
+func (s *TelegramStepInput) GetUnsubscribeButton() OptString {
+	return s.UnsubscribeButton
+}
+
+// GetImageUrl returns the value of ImageUrl.
+func (s *TelegramStepInput) GetImageUrl() OptString {
+	return s.ImageUrl
+}
+
+// GetButtons returns the value of Buttons.
+func (s *TelegramStepInput) GetButtons() []TelegramButtonInput {
+	return s.Buttons
+}
+
+// GetLinkPreview returns the value of LinkPreview.
+func (s *TelegramStepInput) GetLinkPreview() OptBool {
+	return s.LinkPreview
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *TelegramStepInput) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
+
+// SetID sets the value of ID.
+func (s *TelegramStepInput) SetID(val OptStepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *TelegramStepInput) SetType(val TelegramStepInputType) {
+	s.Type = val
+}
+
+// SetText sets the value of Text.
+func (s *TelegramStepInput) SetText(val string) {
+	s.Text = val
+}
+
+// SetUnsubscribeButton sets the value of UnsubscribeButton.
+func (s *TelegramStepInput) SetUnsubscribeButton(val OptString) {
+	s.UnsubscribeButton = val
+}
+
+// SetImageUrl sets the value of ImageUrl.
+func (s *TelegramStepInput) SetImageUrl(val OptString) {
+	s.ImageUrl = val
+}
+
+// SetButtons sets the value of Buttons.
+func (s *TelegramStepInput) SetButtons(val []TelegramButtonInput) {
+	s.Buttons = val
+}
+
+// SetLinkPreview sets the value of LinkPreview.
+func (s *TelegramStepInput) SetLinkPreview(val OptBool) {
+	s.LinkPreview = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *TelegramStepInput) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
+}
+
+type TelegramStepInputType string
+
+const (
+	TelegramStepInputTypeTelegram TelegramStepInputType = "telegram"
+)
+
+// AllValues returns all TelegramStepInputType values.
+func (TelegramStepInputType) AllValues() []TelegramStepInputType {
+	return []TelegramStepInputType{
+		TelegramStepInputTypeTelegram,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TelegramStepInputType) MarshalText() ([]byte, error) {
+	switch s {
+	case TelegramStepInputTypeTelegram:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TelegramStepInputType) UnmarshalText(data []byte) error {
+	switch TelegramStepInputType(data) {
+	case TelegramStepInputTypeTelegram:
+		*s = TelegramStepInputTypeTelegram
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type TelegramStepType string
+
+const (
+	TelegramStepTypeTelegram TelegramStepType = "telegram"
+)
+
+// AllValues returns all TelegramStepType values.
+func (TelegramStepType) AllValues() []TelegramStepType {
+	return []TelegramStepType{
+		TelegramStepTypeTelegram,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TelegramStepType) MarshalText() ([]byte, error) {
+	switch s {
+	case TelegramStepTypeTelegram:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TelegramStepType) UnmarshalText(data []byte) error {
+	switch TelegramStepType(data) {
+	case TelegramStepTypeTelegram:
+		*s = TelegramStepTypeTelegram
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 // Request body for a test send: where the preview goes, in the field of the broadcast's Channel. The
@@ -33308,8 +34696,9 @@ type UpdateAutomationInput struct {
 	// Event actions that end an active enrollment early; replaces the list, omitted keeps it.
 	ExitEvents []string `json:"exitEvents"`
 	// Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it.
-	GoalEvent OptNilString          `json:"goalEvent"`
-	Steps     []AutomationStepInput `json:"steps"`
+	GoalEvent OptNilString `json:"goalEvent"`
+	// The version's Steps: its root path.
+	Steps OptAutomationPathInput `json:"steps"`
 }
 
 // GetRevision returns the value of Revision.
@@ -33338,7 +34727,7 @@ func (s *UpdateAutomationInput) GetGoalEvent() OptNilString {
 }
 
 // GetSteps returns the value of Steps.
-func (s *UpdateAutomationInput) GetSteps() []AutomationStepInput {
+func (s *UpdateAutomationInput) GetSteps() OptAutomationPathInput {
 	return s.Steps
 }
 
@@ -33368,7 +34757,7 @@ func (s *UpdateAutomationInput) SetGoalEvent(val OptNilString) {
 }
 
 // SetSteps sets the value of Steps.
-func (s *UpdateAutomationInput) SetSteps(val []AutomationStepInput) {
+func (s *UpdateAutomationInput) SetSteps(val OptAutomationPathInput) {
 	s.Steps = val
 }
 
@@ -33952,6 +35341,154 @@ func (s *UsedByKind) UnmarshalText(data []byte) error {
 }
 
 type UserName string
+
+// A Step that waits before the next one.
+// Ref: #/components/schemas/WaitStep
+type WaitStep struct {
+	// The Step's id.
+	ID   StepId       `json:"id"`
+	Type WaitStepType `json:"type"`
+	// Delay before the next Step, in seconds.
+	Seconds int32 `json:"seconds"`
+}
+
+// GetID returns the value of ID.
+func (s *WaitStep) GetID() StepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *WaitStep) GetType() WaitStepType {
+	return s.Type
+}
+
+// GetSeconds returns the value of Seconds.
+func (s *WaitStep) GetSeconds() int32 {
+	return s.Seconds
+}
+
+// SetID sets the value of ID.
+func (s *WaitStep) SetID(val StepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *WaitStep) SetType(val WaitStepType) {
+	s.Type = val
+}
+
+// SetSeconds sets the value of Seconds.
+func (s *WaitStep) SetSeconds(val int32) {
+	s.Seconds = val
+}
+
+// A Step that waits before the next one, as a request writes it.
+// Ref: #/components/schemas/WaitStepInput
+type WaitStepInput struct {
+	// The Step's id; omitted, the Step is given one.
+	ID   OptStepId         `json:"id"`
+	Type WaitStepInputType `json:"type"`
+	// Delay before the next Step, in seconds; a negative one is refused.
+	Seconds int32 `json:"seconds"`
+}
+
+// GetID returns the value of ID.
+func (s *WaitStepInput) GetID() OptStepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *WaitStepInput) GetType() WaitStepInputType {
+	return s.Type
+}
+
+// GetSeconds returns the value of Seconds.
+func (s *WaitStepInput) GetSeconds() int32 {
+	return s.Seconds
+}
+
+// SetID sets the value of ID.
+func (s *WaitStepInput) SetID(val OptStepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *WaitStepInput) SetType(val WaitStepInputType) {
+	s.Type = val
+}
+
+// SetSeconds sets the value of Seconds.
+func (s *WaitStepInput) SetSeconds(val int32) {
+	s.Seconds = val
+}
+
+type WaitStepInputType string
+
+const (
+	WaitStepInputTypeWait WaitStepInputType = "wait"
+)
+
+// AllValues returns all WaitStepInputType values.
+func (WaitStepInputType) AllValues() []WaitStepInputType {
+	return []WaitStepInputType{
+		WaitStepInputTypeWait,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WaitStepInputType) MarshalText() ([]byte, error) {
+	switch s {
+	case WaitStepInputTypeWait:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WaitStepInputType) UnmarshalText(data []byte) error {
+	switch WaitStepInputType(data) {
+	case WaitStepInputTypeWait:
+		*s = WaitStepInputTypeWait
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type WaitStepType string
+
+const (
+	WaitStepTypeWait WaitStepType = "wait"
+)
+
+// AllValues returns all WaitStepType values.
+func (WaitStepType) AllValues() []WaitStepType {
+	return []WaitStepType{
+		WaitStepTypeWait,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WaitStepType) MarshalText() ([]byte, error) {
+	switch s {
+	case WaitStepTypeWait:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WaitStepType) UnmarshalText(data []byte) error {
+	switch WaitStepType(data) {
+	case WaitStepTypeWait:
+		*s = WaitStepTypeWait
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 // Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the receiver
 // answered 410 Gone) and `persistent_failure` (deliveries failed for longer than the window). Absent

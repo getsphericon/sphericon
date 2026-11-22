@@ -79,7 +79,7 @@ const (
 )
 
 // HTTPCallHeaders are the headers of an http Action or step.
-// From site RuleActionInput.headers, site AutomationStepInput.headers.
+// From site RuleActionInput.headers, site HttpStepInput.headers.
 const (
 	HTTPCallHeadersMaxItems = 5
 )
@@ -212,13 +212,13 @@ const (
 )
 
 // TelegramButtons are the buttons of a Telegram message.
-// From site TelegramBroadcastContentInput.buttons, site AutomationStepInput.buttons.
+// From site TelegramBroadcastContentInput.buttons, site TelegramStepInput.buttons.
 const (
 	TelegramButtonsMaxItems = 8
 )
 
 // TelegramUnsubscribeButton is the label of a Telegram message's unsubscribe button.
-// From site TelegramBroadcastContentInput.unsubscribeButton, site AutomationStepInput.unsubscribeButton.
+// From site TelegramBroadcastContentInput.unsubscribeButton, site TelegramStepInput.unsubscribeButton.
 const (
 	TelegramUnsubscribeButtonMaxLength = 64
 )

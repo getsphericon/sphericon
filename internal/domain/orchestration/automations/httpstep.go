@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/oklog/ulid/v2"
-
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
@@ -74,61 +72,47 @@ func (m *Module) DryRun(ctx context.Context, s *ent.Scoped, contactID int64, bod
 
 // openHTTP decrypts a stored HTTP step's URL, header values and secret with the cipher that sealed
 // them.
-func openHTTP(cipher *secrets.Cipher, s automationstep.Step) (httpcall.Opened, error) {
+func openHTTP(cipher *secrets.Cipher, s automationstep.HTTP) (httpcall.Opened, error) {
 	return httpcall.Open(cipher, spec(s))
 }
 
-func spec(s automationstep.Step) httpcall.Spec {
+func spec(s automationstep.HTTP) httpcall.Spec {
 	return httpcall.Spec{URL: s.URL, Headers: s.Headers, Body: s.Body, Secret: s.Secret, ClearSecret: s.ClearSecret}
 }
 
-func invalid(format string, a ...any) error {
-	return ErrInvalidStep.With(fmt.Sprintf(format, a...))
-}
-
-// sealSteps validates the steps and turns every HTTP step into its stored form:
-// URL, header values and secret encrypted per field. What the author did not resend
-// (an empty URL, header value or secret) is copied, as stored ciphertext, from the
-// stored step with the same id.
-func (m *Module) sealSteps(steps, stored []automationstep.Step) ([]automationstep.Step, error) {
-	prev := map[string]automationstep.Step{}
+// sealSteps validates the steps, refusing one by its id and kind, and turns every HTTP step into its stored form: URL, header
+// values and secret encrypted per field. What the author did not resend (an empty URL, header
+// value or secret) is copied, as stored ciphertext, from the stored HTTP step with the same id
+// (ADR 0122): a step whose id the stored ones do not hold is new and keeps nothing.
+func (m *Module) sealSteps(steps, stored automationstep.Path) (automationstep.Path, error) {
+	prev := map[automationstep.ID]automationstep.HTTP{}
 	for _, st := range automationstep.All(stored) {
-		if st.Type == automationstep.HTTP {
-			prev[st.ID] = *st
+		if h, ok := st.Payload.(automationstep.HTTP); ok {
+			prev[st.ID] = h
 		}
 	}
-	seen := map[string]bool{}
+	calls := 0
 	return automationstep.Map(steps, func(_ int, st *automationstep.Step) (automationstep.Step, error) {
-		s := *st
-		if s.Type != automationstep.HTTP {
-			return s, nil
+		h, ok := st.Payload.(automationstep.HTTP)
+		if !ok {
+			return *st, nil
 		}
-		if len(seen) >= MaxHTTPStepsPerAutomation {
-			return automationstep.Step{}, invalid("an automation has at most %d http steps", MaxHTTPStepsPerAutomation)
+		if calls >= MaxHTTPStepsPerAutomation {
+			return automationstep.Step{}, refuse(st, fmt.Sprintf("an automation has at most %d http steps", MaxHTTPStepsPerAutomation))
 		}
-		p, known := prev[s.ID]
-		sealed, err := m.sealHTTP(s, p, known && s.ID != "")
-		if err != nil {
-			return automationstep.Step{}, err
+		calls++
+		sealed, err := m.sealHTTP(h, prev[st.ID])
+		if bad, ok := errors.AsType[httpcall.InvalidError](err); ok {
+			return automationstep.Step{}, refuse(st, bad.Error())
 		}
-		if seen[sealed.ID] {
-			return automationstep.Step{}, invalid("duplicate http step id")
-		}
-		seen[sealed.ID] = true
-		return sealed, nil
+		return automationstep.Step{ID: st.ID, Payload: sealed}, err
 	})
 }
 
-func (m *Module) sealHTTP(s, prev automationstep.Step, known bool) (automationstep.Step, error) {
-	out := automationstep.Step{Type: automationstep.HTTP, ID: s.ID}
-	if !known {
-		prev = automationstep.Step{}
-		out.ID = ulid.Make().String()
-	}
+func (m *Module) sealHTTP(s, prev automationstep.HTTP) (automationstep.HTTP, error) {
 	sealed, err := httpcall.Seal(m.cipher, spec(s), spec(prev), "http step")
-	if bad, ok := errors.AsType[httpcall.InvalidError](err); ok {
-		return out, invalid("%s", bad)
+	if err != nil {
+		return automationstep.HTTP{}, err
 	}
-	out.URL, out.Headers, out.Body, out.Secret = sealed.URL, sealed.Headers, sealed.Body, sealed.Secret
-	return out, err
+	return automationstep.HTTP{URL: sealed.URL, Headers: sealed.Headers, Body: sealed.Body, Secret: sealed.Secret}, err
 }

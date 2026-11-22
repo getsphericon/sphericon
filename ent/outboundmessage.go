@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/contact"
@@ -18,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
@@ -83,8 +85,10 @@ type OutboundMessage struct {
 	AutomationID *int64 `json:"automation_id,omitempty"`
 	// AutomationRunID holds the value of the "automation_run_id" field.
 	AutomationRunID *int64 `json:"automation_run_id,omitempty"`
-	// AutomationStep holds the value of the "automation_step" field.
-	AutomationStep *int `json:"automation_step,omitempty"`
+	// AutomationVersionID holds the value of the "automation_version_id" field.
+	AutomationVersionID *int64 `json:"automation_version_id,omitempty"`
+	// AutomationStepID holds the value of the "automation_step_id" field.
+	AutomationStepID *automationstep.ID `json:"automation_step_id,omitempty"`
 	// IntegrationID holds the value of the "integration_id" field.
 	IntegrationID *int64 `json:"integration_id,omitempty"`
 	// TemplateID holds the value of the "template_id" field.
@@ -111,6 +115,8 @@ type OutboundMessageEdges struct {
 	Broadcast *Broadcast `json:"broadcast,omitempty"`
 	// Automation holds the value of the automation edge.
 	Automation *Automation `json:"automation,omitempty"`
+	// AutomationVersion holds the value of the automation_version edge.
+	AutomationVersion *AutomationVersion `json:"automation_version,omitempty"`
 	// Integration holds the value of the integration edge.
 	Integration *Integration `json:"integration,omitempty"`
 	// BroadcastRecipient holds the value of the broadcast_recipient edge.
@@ -123,7 +129,7 @@ type OutboundMessageEdges struct {
 	Template *EmailTemplate `json:"template,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [9]bool
+	loadedTypes [10]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -168,12 +174,23 @@ func (e OutboundMessageEdges) AutomationOrErr() (*Automation, error) {
 	return nil, &NotLoadedError{edge: "automation"}
 }
 
+// AutomationVersionOrErr returns the AutomationVersion value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e OutboundMessageEdges) AutomationVersionOrErr() (*AutomationVersion, error) {
+	if e.AutomationVersion != nil {
+		return e.AutomationVersion, nil
+	} else if e.loadedTypes[4] {
+		return nil, &NotFoundError{label: automationversion.Label}
+	}
+	return nil, &NotLoadedError{edge: "automation_version"}
+}
+
 // IntegrationOrErr returns the Integration value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e OutboundMessageEdges) IntegrationOrErr() (*Integration, error) {
 	if e.Integration != nil {
 		return e.Integration, nil
-	} else if e.loadedTypes[4] {
+	} else if e.loadedTypes[5] {
 		return nil, &NotFoundError{label: integration.Label}
 	}
 	return nil, &NotLoadedError{edge: "integration"}
@@ -184,7 +201,7 @@ func (e OutboundMessageEdges) IntegrationOrErr() (*Integration, error) {
 func (e OutboundMessageEdges) BroadcastRecipientOrErr() (*BroadcastRecipient, error) {
 	if e.BroadcastRecipient != nil {
 		return e.BroadcastRecipient, nil
-	} else if e.loadedTypes[5] {
+	} else if e.loadedTypes[6] {
 		return nil, &NotFoundError{label: broadcastrecipient.Label}
 	}
 	return nil, &NotLoadedError{edge: "broadcast_recipient"}
@@ -195,7 +212,7 @@ func (e OutboundMessageEdges) BroadcastRecipientOrErr() (*BroadcastRecipient, er
 func (e OutboundMessageEdges) AutomationRunOrErr() (*AutomationRun, error) {
 	if e.AutomationRun != nil {
 		return e.AutomationRun, nil
-	} else if e.loadedTypes[6] {
+	} else if e.loadedTypes[7] {
 		return nil, &NotFoundError{label: automationrun.Label}
 	}
 	return nil, &NotLoadedError{edge: "automation_run"}
@@ -206,7 +223,7 @@ func (e OutboundMessageEdges) AutomationRunOrErr() (*AutomationRun, error) {
 func (e OutboundMessageEdges) ContactOrErr() (*Contact, error) {
 	if e.Contact != nil {
 		return e.Contact, nil
-	} else if e.loadedTypes[7] {
+	} else if e.loadedTypes[8] {
 		return nil, &NotFoundError{label: contact.Label}
 	}
 	return nil, &NotLoadedError{edge: "contact"}
@@ -217,7 +234,7 @@ func (e OutboundMessageEdges) ContactOrErr() (*Contact, error) {
 func (e OutboundMessageEdges) TemplateOrErr() (*EmailTemplate, error) {
 	if e.Template != nil {
 		return e.Template, nil
-	} else if e.loadedTypes[8] {
+	} else if e.loadedTypes[9] {
 		return nil, &NotFoundError{label: emailtemplate.Label}
 	}
 	return nil, &NotLoadedError{edge: "template"}
@@ -230,9 +247,9 @@ func (*OutboundMessage) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case outboundmessage.FieldCaptured:
 			values[i] = new(sql.NullBool)
-		case outboundmessage.FieldID, outboundmessage.FieldWorkspaceID, outboundmessage.FieldContactID, outboundmessage.FieldBroadcastID, outboundmessage.FieldBroadcastRecipientID, outboundmessage.FieldAutomationID, outboundmessage.FieldAutomationRunID, outboundmessage.FieldAutomationStep, outboundmessage.FieldIntegrationID, outboundmessage.FieldTemplateID:
+		case outboundmessage.FieldID, outboundmessage.FieldWorkspaceID, outboundmessage.FieldContactID, outboundmessage.FieldBroadcastID, outboundmessage.FieldBroadcastRecipientID, outboundmessage.FieldAutomationID, outboundmessage.FieldAutomationRunID, outboundmessage.FieldAutomationVersionID, outboundmessage.FieldIntegrationID, outboundmessage.FieldTemplateID:
 			values[i] = new(sql.NullInt64)
-		case outboundmessage.FieldKind, outboundmessage.FieldIdempotencyKey, outboundmessage.FieldChannel, outboundmessage.FieldDestination, outboundmessage.FieldSendingSource, outboundmessage.FieldSendingDomain, outboundmessage.FieldProviderMessageID, outboundmessage.FieldStatus, outboundmessage.FieldSkippedReason, outboundmessage.FieldFailure, outboundmessage.FieldUndeliveredCode, outboundmessage.FieldRequestDigest, outboundmessage.FieldSubject, outboundmessage.FieldAppOrigin:
+		case outboundmessage.FieldKind, outboundmessage.FieldIdempotencyKey, outboundmessage.FieldChannel, outboundmessage.FieldDestination, outboundmessage.FieldSendingSource, outboundmessage.FieldSendingDomain, outboundmessage.FieldProviderMessageID, outboundmessage.FieldStatus, outboundmessage.FieldSkippedReason, outboundmessage.FieldFailure, outboundmessage.FieldUndeliveredCode, outboundmessage.FieldAutomationStepID, outboundmessage.FieldRequestDigest, outboundmessage.FieldSubject, outboundmessage.FieldAppOrigin:
 			values[i] = new(sql.NullString)
 		case outboundmessage.FieldCreatedAt, outboundmessage.FieldUpdatedAt, outboundmessage.FieldClaimedAt, outboundmessage.FieldSentAt, outboundmessage.FieldDeliveredAt, outboundmessage.FieldBouncedAt, outboundmessage.FieldComplainedAt, outboundmessage.FieldUndeliveredAt, outboundmessage.FieldOpenedAt, outboundmessage.FieldClickedAt:
 			values[i] = new(sql.NullTime)
@@ -443,12 +460,19 @@ func (_m *OutboundMessage) assignValues(columns []string, values []any) error {
 				_m.AutomationRunID = new(int64)
 				*_m.AutomationRunID = value.Int64
 			}
-		case outboundmessage.FieldAutomationStep:
+		case outboundmessage.FieldAutomationVersionID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field automation_step", values[i])
+				return fmt.Errorf("unexpected type %T for field automation_version_id", values[i])
 			} else if value.Valid {
-				_m.AutomationStep = new(int)
-				*_m.AutomationStep = int(value.Int64)
+				_m.AutomationVersionID = new(int64)
+				*_m.AutomationVersionID = value.Int64
+			}
+		case outboundmessage.FieldAutomationStepID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field automation_step_id", values[i])
+			} else if value.Valid {
+				_m.AutomationStepID = new(automationstep.ID)
+				*_m.AutomationStepID = automationstep.ID(value.String)
 			}
 		case outboundmessage.FieldIntegrationID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -516,6 +540,11 @@ func (_m *OutboundMessage) QueryBroadcast() *BroadcastQuery {
 // QueryAutomation queries the "automation" edge of the OutboundMessage entity.
 func (_m *OutboundMessage) QueryAutomation() *AutomationQuery {
 	return NewOutboundMessageClient(_m.config).QueryAutomation(_m)
+}
+
+// QueryAutomationVersion queries the "automation_version" edge of the OutboundMessage entity.
+func (_m *OutboundMessage) QueryAutomationVersion() *AutomationVersionQuery {
+	return NewOutboundMessageClient(_m.config).QueryAutomationVersion(_m)
 }
 
 // QueryIntegration queries the "integration" edge of the OutboundMessage entity.
@@ -686,8 +715,13 @@ func (_m *OutboundMessage) String() string {
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
-	if v := _m.AutomationStep; v != nil {
-		builder.WriteString("automation_step=")
+	if v := _m.AutomationVersionID; v != nil {
+		builder.WriteString("automation_version_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.AutomationStepID; v != nil {
+		builder.WriteString("automation_step_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")

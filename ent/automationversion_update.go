@@ -69,14 +69,16 @@ func (_u *AutomationVersionUpdate) SetNillableAutomationID(v *int64) *Automation
 }
 
 // SetSteps sets the "steps" field.
-func (_u *AutomationVersionUpdate) SetSteps(v []automationstep.Step) *AutomationVersionUpdate {
+func (_u *AutomationVersionUpdate) SetSteps(v automationstep.Path) *AutomationVersionUpdate {
 	_u.mutation.SetSteps(v)
 	return _u
 }
 
-// AppendSteps appends value to the "steps" field.
-func (_u *AutomationVersionUpdate) AppendSteps(v []automationstep.Step) *AutomationVersionUpdate {
-	_u.mutation.AppendSteps(v)
+// SetNillableSteps sets the "steps" field if the given value is not nil.
+func (_u *AutomationVersionUpdate) SetNillableSteps(v *automationstep.Path) *AutomationVersionUpdate {
+	if v != nil {
+		_u.SetSteps(*v)
+	}
 	return _u
 }
 
@@ -260,11 +262,6 @@ func (_u *AutomationVersionUpdate) sqlSave(ctx context.Context) (_node int, err 
 	if value, ok := _u.mutation.Steps(); ok {
 		_spec.SetField(automationversion.FieldSteps, field.TypeJSON, value)
 	}
-	if value, ok := _u.mutation.AppendedSteps(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, automationversion.FieldSteps, value)
-		})
-	}
 	if value, ok := _u.mutation.TriggerEvent(); ok {
 		_spec.SetField(automationversion.FieldTriggerEvent, field.TypeString, value)
 	}
@@ -442,14 +439,16 @@ func (_u *AutomationVersionUpdateOne) SetNillableAutomationID(v *int64) *Automat
 }
 
 // SetSteps sets the "steps" field.
-func (_u *AutomationVersionUpdateOne) SetSteps(v []automationstep.Step) *AutomationVersionUpdateOne {
+func (_u *AutomationVersionUpdateOne) SetSteps(v automationstep.Path) *AutomationVersionUpdateOne {
 	_u.mutation.SetSteps(v)
 	return _u
 }
 
-// AppendSteps appends value to the "steps" field.
-func (_u *AutomationVersionUpdateOne) AppendSteps(v []automationstep.Step) *AutomationVersionUpdateOne {
-	_u.mutation.AppendSteps(v)
+// SetNillableSteps sets the "steps" field if the given value is not nil.
+func (_u *AutomationVersionUpdateOne) SetNillableSteps(v *automationstep.Path) *AutomationVersionUpdateOne {
+	if v != nil {
+		_u.SetSteps(*v)
+	}
 	return _u
 }
 
@@ -662,11 +661,6 @@ func (_u *AutomationVersionUpdateOne) sqlSave(ctx context.Context) (_node *Autom
 	}
 	if value, ok := _u.mutation.Steps(); ok {
 		_spec.SetField(automationversion.FieldSteps, field.TypeJSON, value)
-	}
-	if value, ok := _u.mutation.AppendedSteps(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, automationversion.FieldSteps, value)
-		})
 	}
 	if value, ok := _u.mutation.TriggerEvent(); ok {
 		_spec.SetField(automationversion.FieldTriggerEvent, field.TypeString, value)

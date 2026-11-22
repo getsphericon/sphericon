@@ -13,14 +13,14 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { headersOf, headersText } from './definition.ts'
+import { STORED } from './nodeProperties.ts'
 
 // The step's headers as rows, as a Rule's http Action edits them. Only the names of saved headers
-// come back from the server, so a saved step (one with an id) keeps a header whose value is left
-// empty.
+// come back from the server, so a stored step keeps a header whose value is left empty.
 export function HttpHeadersControl(props: ControlProps) {
   const { data, label, path } = props
   const { core } = useJsonForms()
-  const saved = typeof core?.data?.stepId === 'string' && core.data.stepId !== ''
+  const saved = core?.data?.stored === STORED
 
   return (
     <Stack gap={4}>

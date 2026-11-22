@@ -10,7 +10,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteAutomationResource, AutomationVersion } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
-import { testId, workspace } from '../../test/payloads.ts'
+import { stepId, testId, workspace } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
@@ -36,7 +36,7 @@ const DRAFT: AutomationVersion = {
   triggerEvent: 'email.clicked',
   exitEvents: [],
   goalEvent: null,
-  steps: [{ type: 'wait', seconds: 60 }],
+  steps: { id: stepId(1), steps: [{ id: stepId(11), type: 'wait', seconds: 60 }] },
 }
 const STORED: SiteAutomationResource = {
   revision: 1,
@@ -97,7 +97,13 @@ const NO_ADDRESS = workspace({ postalAddress: '' })
 test('an email step on the canvas shows the missing postal address with a link to the setting', async () => {
   const withEmail: SiteAutomationResource = {
     ...STORED,
-    draft: { ...DRAFT, steps: [{ type: 'email', subject: 'Hi', body: '<p>Hi</p>' }] },
+    draft: {
+      ...DRAFT,
+      steps: {
+        id: stepId(1),
+        steps: [{ id: stepId(11), type: 'email', subject: 'Hi', body: '<p>Hi</p>' }],
+      },
+    },
   }
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(withEmail)),
