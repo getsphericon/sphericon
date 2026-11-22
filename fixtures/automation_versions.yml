@@ -116,7 +116,7 @@
   automation_id: 900
   trigger_event: globex_trigger
   version: 2
-  steps: '{"id":"a731a7fd-f38f-5634-b021-9d10c84eef98","steps":[]}'
+  steps: '{"id":"a731a7fd-f38f-5634-b021-9d10c84eef98","steps":[{"id":"9c1f6a52-3d4e-4b8a-9f00-000000000900","type":"wait","seconds":3600}]}'
   workspace_id: 2
   created_at: '2026-01-02 00:00:00'
   updated_at: '2026-01-02 00:00:00'
