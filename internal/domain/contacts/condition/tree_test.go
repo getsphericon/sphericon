@@ -87,3 +87,14 @@ func moment(op string, at time.Time) leaf { return leaf{"kind": "moment", "opera
 func withinLast(days int) leaf { return leaf{"kind": "withinLast", "days": days} }
 
 func presence(op string) leaf { return leaf{"kind": "presence", "operator": op} }
+
+// filterOf is an Event filter: the and-group of entries.
+func filterOf(entries ...any) conditiontree.EventFilter {
+	return conditiontree.EventFilter{Group: opsGroup(entries...)}
+}
+
+// prop is a property test of a filter, which has no subject: it tests the one Event (or line) the
+// filter is about.
+func prop(key string, test leaf) leaf {
+	return leaf{"kind": "property", "key": key, "test": test}
+}

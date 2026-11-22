@@ -1,8 +1,9 @@
 // Package conditiontree is a Condition as it is stored (ADR 0169): the root Group of the tree of
 // tests on a Contact, the type of the document the Condition columns hold. Each place a Condition
 // is used has a type of its own over the same document, since each admits its own leaves (ADR
-// 0181): a Segment's (Segment) and a Rule's (Rule). internal/domain/contacts/condition decodes the
-// tree of each place and compiles it to a Contact predicate. Its vocabulary (the kinds of entry, test
+// 0181): a Segment's (Segment), a Rule's (Rule) and an Event matcher's filter (EventFilter).
+// internal/domain/contacts/condition decodes the tree of each place and compiles a Segment's and a
+// Rule's to a Contact predicate, a filter to an SQL/JSON path (ADR 0180). Its vocabulary (the kinds of entry, test
 // and source each place and leaf admits, the operators, the attributes) is generated from the
 // contract.
 package conditiontree
@@ -25,8 +26,16 @@ type Segment struct{ Group }
 // Rule is a Rule's Condition: a Segment's leaves, and tests of the triggering Event's properties.
 type Rule struct{ Group }
 
+// EventFilter is an Event matcher's filter (ADR 0133, ADR 0180): property tests of the one Event
+// it is about, which name no subject, under groups.
+type EventFilter struct{ Group }
+
+// EventFilterKinds is every Kind an Event filter admits. The contract gains the filter's type with
+// the first body that carries one; until then the list is written here.
+var EventFilterKinds = []Kind{KindGroup, KindProperty}
+
 // Place is the type of a Condition of one place.
-type Place interface{ Segment | Rule }
+type Place interface{ Segment | Rule | EventFilter }
 
 // Empty is the Condition with no tests, which matches every Contact.
 func Empty() Group {

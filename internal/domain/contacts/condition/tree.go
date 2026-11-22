@@ -73,11 +73,11 @@ type eventCountLeaf struct {
 	withinDays *int
 }
 
-// propertyLeaf tests the property key of its source by a text, presence or number test.
+// propertyLeaf tests the property key of the triggering Event, the one source a Rule's property
+// test reads, by a text, presence or number test.
 type propertyLeaf struct {
-	source conditiontree.Source
-	key    string
-	test   test
+	key  string
+	test propertyTest
 }
 
 func (group) isNode()           {}
@@ -156,14 +156,8 @@ func (g group) leaves() iter.Seq[node] {
 // reads the tree alone: whether a named Custom field exists, and whether its test fits the field's
 // type, are the compiler's checks.
 func decode(g conditiontree.Group, p place) (group, error) {
-	if g.Kind != conditiontree.KindGroup {
-		return group{}, fmt.Errorf("unknown group kind %q", g.Kind)
-	}
-	if !slices.Contains(conditiontree.Combinators, g.Combinator) {
-		return group{}, fmt.Errorf("unknown combinator %q", g.Combinator)
-	}
-	if g.Entries == nil {
-		return group{}, errors.New("group entries are required")
+	if err := checkGroup(g); err != nil {
+		return group{}, err
 	}
 	d := group{combinator: g.Combinator, not: g.Not, entries: make([]node, 0, len(g.Entries))}
 	for i, raw := range g.Entries {
@@ -174,6 +168,21 @@ func decode(g conditiontree.Group, p place) (group, error) {
 		d.entries = append(d.entries, n)
 	}
 	return d, nil
+}
+
+// checkGroup refuses a group whose kind or combinator is unknown, and one without its entries,
+// which is never read as the empty group that matches every Contact.
+func checkGroup(g conditiontree.Group) error {
+	if g.Kind != conditiontree.KindGroup {
+		return fmt.Errorf("unknown group kind %q", g.Kind)
+	}
+	if !slices.Contains(conditiontree.Combinators, g.Combinator) {
+		return fmt.Errorf("unknown combinator %q", g.Combinator)
+	}
+	if g.Entries == nil {
+		return errors.New("group entries are required")
+	}
+	return nil
 }
 
 // decodeSkipping is the stored Condition as the readers of what it names see it: an entry decode
@@ -299,14 +308,27 @@ func decodeProperty(e entry) (node, error) {
 	if e.Of == nil || !slices.Contains(conditiontree.RuleSources, e.Of.Kind) {
 		return nil, errors.New("a property test reads the triggering Event's properties")
 	}
-	if e.Key == "" {
-		return nil, errors.New("property key is required")
-	}
-	t, err := decodeTest(e.Test, conditiontree.PropertyTests)
+	key, t, err := decodePropertyTest(e)
 	if err != nil {
 		return nil, err
 	}
-	return propertyLeaf{source: e.Of.Kind, key: e.Key, test: t}, nil
+	return propertyLeaf{key: key, test: t}, nil
+}
+
+// decodePropertyTest reads the key and the test of a property test, whatever its subject.
+func decodePropertyTest(e entry) (string, propertyTest, error) {
+	if e.Key == "" {
+		return "", nil, errors.New("property key is required")
+	}
+	t, err := decodeTest(e.Test, conditiontree.PropertyTests)
+	if err != nil {
+		return "", nil, err
+	}
+	pt, ok := t.(propertyTest)
+	if !ok {
+		return "", nil, fmt.Errorf("unsupported test %T for a property", t)
+	}
+	return e.Key, pt, nil
 }
 
 // hasOrNot is the presence test of a Tag, Telegram or SMS leaf: has or doesNotHave.

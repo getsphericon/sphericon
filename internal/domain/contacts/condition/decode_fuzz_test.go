@@ -45,3 +45,28 @@ func FuzzDecodeReadsAnyDocument(f *testing.F) {
 		assert.True(t, fits || strings.Contains(entry, "plan"), "%q misfits a field it does not test", entry)
 	})
 }
+
+// A filter is a document a client wrote, compiled to a path Postgres parses. Whatever its entries,
+// the compiler gives a path in filter form with its variables as one JSON object, or an error,
+// never both.
+func FuzzCompileEventFilterReadsAnyDocument(f *testing.F) {
+	f.Add(`{"kind":"property","key":"tag","test":{"kind":"text","operator":"eq","value":"vip"}}`)
+	f.Add(`{"kind":"property","key":"url","test":{"kind":"text","operator":"contains","value":"\") || (\""}}`)
+	f.Add(`{"kind":"property","key":"total","test":{"kind":"number","operator":"gte","value":9.5}}`)
+	f.Add(`{"kind":"property","key":"coupon","test":{"kind":"presence","operator":"notSet"}}`)
+	f.Add(`{"kind":"group","combinator":"or","not":true,"entries":[{"kind":"property","key":"a","test":{"kind":"text","operator":"beginsWith","value":"x"}}]}`)
+	f.Add(`{"kind":"property","of":{"kind":"trigger"},"key":"tag","test":{"kind":"text","operator":"eq","value":"vip"}}`)
+	f.Add(`{"kind":"tag","name":"vip","operator":"has"}`)
+	f.Add(`{"kind":"group","combinator":"and","entries":"nope"}`)
+	f.Add(`42`)
+
+	f.Fuzz(func(t *testing.T, entry string) {
+		g := conditiontree.Group{Kind: conditiontree.KindGroup, Combinator: conditiontree.And, Entries: []json.RawMessage{json.RawMessage(entry)}}
+
+		path, err := condition.CompileEventFilter(conditiontree.EventFilter{Group: g})
+
+		compiled := strings.HasPrefix(path.Text, "strict $ ? (") && json.Valid(path.Vars)
+		assert.NotEqual(t, err == nil, path.Text == "", "%q: a path or an error, never both nor neither", entry)
+		assert.Equal(t, err == nil, compiled, "%q: %q %s", entry, path.Text, path.Vars)
+	})
+}
