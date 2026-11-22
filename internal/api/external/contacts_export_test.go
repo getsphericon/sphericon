@@ -112,8 +112,10 @@ func TestExternalContactsExportMembersCoverEveryStoredColumn(t *testing.T) {
 	// The name's key is the name lower-cased (tagname): the name itself is exported.
 	covered(reflect.TypeFor[externalapi.ContactExportTag](), tag.Columns, "workspace_id", "updated_at", tag.FieldNameKey)
 	covered(reflect.TypeFor[externalapi.ContactExportVisitor](), visitor.Columns, "workspace_id", "contact_id", "updated_at")
+	// Whether a Connection without mcp:send wrote the Event (ADR 0132) says what the Event may start,
+	// nothing about the person.
 	covered(reflect.TypeFor[externalapi.ContactExportEvent](), event.Columns, "workspace_id", "contact_id", "updated_at",
-		event.FieldMachine, event.FieldCaptured, event.FieldBroadcastID, event.FieldAutomationID, event.FieldURL)
+		event.FieldMachine, event.FieldCaptured, event.FieldBroadcastID, event.FieldAutomationID, event.FieldURL, event.FieldSendLocked)
 	covered(reflect.TypeFor[externalapi.ContactExportUnsubscribe](), unsubscribe.Columns, "workspace_id", "contact_id", "updated_at")
 	covered(reflect.TypeFor[externalapi.ContactExportSuppression](), suppression.Columns, "workspace_id", "contact_id", "updated_at")
 	covered(reflect.TypeFor[externalapi.ContactExportConfirmation](), confirmation.Columns, "workspace_id", "contact_id", "updated_at")

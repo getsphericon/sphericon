@@ -254,6 +254,20 @@ func (_c *EventCreate) SetNillableBackfill(v *bool) *EventCreate {
 	return _c
 }
 
+// SetSendLocked sets the "send_locked" field.
+func (_c *EventCreate) SetSendLocked(v bool) *EventCreate {
+	_c.mutation.SetSendLocked(v)
+	return _c
+}
+
+// SetNillableSendLocked sets the "send_locked" field if the given value is not nil.
+func (_c *EventCreate) SetNillableSendLocked(v *bool) *EventCreate {
+	if v != nil {
+		_c.SetSendLocked(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *EventCreate) SetID(v int64) *EventCreate {
 	_c.mutation.SetID(v)
@@ -339,6 +353,10 @@ func (_c *EventCreate) defaults() {
 		v := event.DefaultBackfill
 		_c.mutation.SetBackfill(v)
 	}
+	if _, ok := _c.mutation.SendLocked(); !ok {
+		v := event.DefaultSendLocked
+		_c.mutation.SetSendLocked(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -371,6 +389,9 @@ func (_c *EventCreate) check() error {
 	}
 	if _, ok := _c.mutation.Backfill(); !ok {
 		return &ValidationError{Name: "backfill", err: errors.New(`ent: missing required field "Event.backfill"`)}
+	}
+	if _, ok := _c.mutation.SendLocked(); !ok {
+		return &ValidationError{Name: "send_locked", err: errors.New(`ent: missing required field "Event.send_locked"`)}
 	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "Event.workspace"`)}
@@ -463,6 +484,10 @@ func (_c *EventCreate) createSpec() (*Event, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Backfill(); ok {
 		_spec.SetField(event.FieldBackfill, field.TypeBool, value)
 		_node.Backfill = value
+	}
+	if value, ok := _c.mutation.SendLocked(); ok {
+		_spec.SetField(event.FieldSendLocked, field.TypeBool, value)
+		_node.SendLocked = value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -822,6 +847,9 @@ func (u *EventUpsertOne) UpdateNewValues() *EventUpsertOne {
 		}
 		if _, exists := u.create.mutation.Backfill(); exists {
 			s.SetIgnore(event.FieldBackfill)
+		}
+		if _, exists := u.create.mutation.SendLocked(); exists {
+			s.SetIgnore(event.FieldSendLocked)
 		}
 	}))
 	return u
@@ -1291,6 +1319,9 @@ func (u *EventUpsertBulk) UpdateNewValues() *EventUpsertBulk {
 			}
 			if _, exists := b.mutation.Backfill(); exists {
 				s.SetIgnore(event.FieldBackfill)
+			}
+			if _, exists := b.mutation.SendLocked(); exists {
+				s.SetIgnore(event.FieldSendLocked)
 			}
 		}
 	}))

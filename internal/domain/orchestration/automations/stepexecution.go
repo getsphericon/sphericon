@@ -116,7 +116,9 @@ type EnrollOnRuleInput struct {
 // open-triggered Automation cannot feed itself (ADR 0053); it still ends an Enrollment, so a click
 // in the Automation's own email can be its goal. The Event's OccurredAt is when it occurred, which
 // an Event without one does not say, so it is refused. Every Enrollment it makes copies the stored
-// Event's action and properties, read once (originOf, #752).
+// Event's action and properties, read once (originOf, #752). An Event a write through a Connection
+// without mcp:send published (Event.SendLocked) ends Enrollments as any other, and enrolls no one:
+// it starts nothing that sends (ADR 0132).
 func (m *StepExecution) OnEvent(ctx context.Context, s *ent.Scoped, in OnEventInput) error {
 	contactID, ev := in.ContactID, in.Event
 	if ev.OccurredAt.IsZero() {
@@ -125,7 +127,7 @@ func (m *StepExecution) OnEvent(ctx context.Context, s *ent.Scoped, in OnEventIn
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		return m.endOnEvent(ctx, ts, pub, contactID, ev.Action, ev.OccurredAt)
 	})
-	if err != nil {
+	if err != nil || ev.SendLocked {
 		return err
 	}
 	triggered, err := triggeredBy(ctx, s, ev.Action)

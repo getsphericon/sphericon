@@ -814,3 +814,46 @@
   workspace_id: 96
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+
+# Halcyon (workspace 99): one Automation on each Event a write through a Connection publishes, each
+# parking its Contact on a wait, and a course whose exit and goal Events end Ida's Enrollment.
+- id: 9900 # fixture: AutomationHalcyonOnSignal
+  revision: 1
+  name: On agent signal
+  status: active
+  live_version_id: 9900
+  workspace_id: 99
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 9901 # fixture: AutomationHalcyonOnTagged
+  revision: 1
+  name: On contact tagged
+  status: active
+  live_version_id: 9901
+  workspace_id: 99
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 9902 # fixture: AutomationHalcyonOnFieldChanged
+  revision: 1
+  name: On contact field changed
+  status: active
+  live_version_id: 9902
+  workspace_id: 99
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 9903 # fixture: AutomationHalcyonOnCreated
+  revision: 1
+  name: On contact created
+  status: active
+  live_version_id: 9903
+  workspace_id: 99
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 9904 # fixture: AutomationHalcyonCourse
+  revision: 1
+  name: Course
+  status: active
+  live_version_id: 9904
+  workspace_id: 99
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'

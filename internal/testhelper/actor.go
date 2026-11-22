@@ -120,8 +120,15 @@ const fixtureOAuthClientID = 1
 // given scopes.
 func (env *TestEnv) ConnectionBearer(t *testing.T, email string, scopes ...apitokens.Scope) string {
 	t.Helper()
+	return env.ConnectionBearerIn(t, fixtures.AcmeID, email, scopes...)
+}
+
+// ConnectionBearerIn is ConnectionBearer for the Membership of the User with email in another
+// fixture Workspace.
+func (env *TestEnv) ConnectionBearerIn(t *testing.T, workspaceID int64, email string, scopes ...apitokens.Scope) string {
+	t.Helper()
 	m, err := env.DB.Membership.Query().
-		Where(membership.WorkspaceID(fixtures.AcmeID), membership.HasUserWith(user.EmailEqualFold(email))).
+		Where(membership.WorkspaceID(workspaceID), membership.HasUserWith(user.EmailEqualFold(email))).
 		Only(t.Context())
 	require.NoError(t, err)
 	prefix := credentials.GenerateTokenPrefix()
@@ -129,7 +136,7 @@ func (env *TestEnv) ConnectionBearer(t *testing.T, email string, scopes ...apito
 	// test writes: as ScopedBearerFor, a Connection of exactly the scopes the caller names.
 	_, err = env.DB.ApiToken.Create().
 		SetName("Fixture Connector").SetPrefix(prefix).SetSecretHash(credentials.HashSecret(secret)).SetScopes(scopeStrings(scopes)).
-		SetWorkspaceID(fixtures.AcmeID).SetMembershipID(m.ID).SetOauthClientID(fixtureOAuthClientID).
+		SetWorkspaceID(workspaceID).SetMembershipID(m.ID).SetOauthClientID(fixtureOAuthClientID).
 		Save(t.Context())
 	require.NoError(t, err)
 	return credentials.TokenValue(prefix, secret)

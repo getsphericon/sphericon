@@ -102,3 +102,11 @@
   workspace_id: 20
   created_at: '{{daysAgo 80}}'
   updated_at: '{{daysAgo 80}}'
+# Halcyon (workspace 99): receives every Event.
+- id: 9900 # fixture: WebhookHalcyon
+  revision: 1
+  url: https://hooks.halcyon.test/sphericon
+  secret_encrypted: '{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}'
+  workspace_id: 99
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'

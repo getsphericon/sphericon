@@ -26888,6 +26888,7 @@ type EventMutation struct {
 	captured          *bool
 	url               *string
 	backfill          *bool
+	send_locked       *bool
 	clearedFields     map[string]struct{}
 	workspace         *int64
 	clearedworkspace  bool
@@ -27784,6 +27785,42 @@ func (m *EventMutation) ResetBackfill() {
 	m.backfill = nil
 }
 
+// SetSendLocked sets the "send_locked" field.
+func (m *EventMutation) SetSendLocked(b bool) {
+	m.send_locked = &b
+}
+
+// SendLocked returns the value of the "send_locked" field in the mutation.
+func (m *EventMutation) SendLocked() (r bool, exists bool) {
+	v := m.send_locked
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSendLocked returns the old "send_locked" field's value of the Event entity.
+// If the Event object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EventMutation) OldSendLocked(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSendLocked is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSendLocked requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSendLocked: %w", err)
+	}
+	return oldValue.SendLocked, nil
+}
+
+// ResetSendLocked resets all changes to the "send_locked" field.
+func (m *EventMutation) ResetSendLocked() {
+	m.send_locked = nil
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *EventMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -27926,7 +27963,7 @@ func (m *EventMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EventMutation) Fields() []string {
-	fields := make([]string, 0, 18)
+	fields := make([]string, 0, 19)
 	if m.created_at != nil {
 		fields = append(fields, event.FieldCreatedAt)
 	}
@@ -27981,6 +28018,9 @@ func (m *EventMutation) Fields() []string {
 	if m.backfill != nil {
 		fields = append(fields, event.FieldBackfill)
 	}
+	if m.send_locked != nil {
+		fields = append(fields, event.FieldSendLocked)
+	}
 	return fields
 }
 
@@ -28025,6 +28065,8 @@ func (m *EventMutation) Field(name string) (ent.Value, bool) {
 		return m.URL()
 	case event.FieldBackfill:
 		return m.Backfill()
+	case event.FieldSendLocked:
+		return m.SendLocked()
 	}
 	return nil, false
 }
@@ -28070,6 +28112,8 @@ func (m *EventMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldURL(ctx)
 	case event.FieldBackfill:
 		return m.OldBackfill(ctx)
+	case event.FieldSendLocked:
+		return m.OldSendLocked(ctx)
 	}
 	return nil, fmt.Errorf("unknown Event field %s", name)
 }
@@ -28204,6 +28248,13 @@ func (m *EventMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetBackfill(v)
+		return nil
+	case event.FieldSendLocked:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSendLocked(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Event field %s", name)
@@ -28373,6 +28424,9 @@ func (m *EventMutation) ResetField(name string) error {
 		return nil
 	case event.FieldBackfill:
 		m.ResetBackfill()
+		return nil
+	case event.FieldSendLocked:
+		m.ResetSendLocked()
 		return nil
 	}
 	return fmt.Errorf("unknown Event field %s", name)

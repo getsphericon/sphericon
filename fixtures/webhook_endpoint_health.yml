@@ -74,3 +74,8 @@
   workspace_id: 20
   created_at: '{{daysAgo 80}}'
   updated_at: '{{daysAgo 80}}'
+- id: 9900
+  webhook_endpoint_id: 9900
+  workspace_id: 99
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'

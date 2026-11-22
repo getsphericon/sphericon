@@ -58,6 +58,8 @@ type Event struct {
 	URL *string `json:"url,omitempty"`
 	// Backfill holds the value of the "backfill" field.
 	Backfill bool `json:"backfill,omitempty"`
+	// SendLocked holds the value of the "send_locked" field.
+	SendLocked bool `json:"send_locked,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the EventQuery when eager-loading is set.
 	Edges        EventEdges `json:"edges"`
@@ -130,7 +132,7 @@ func (*Event) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case event.FieldProperties:
 			values[i] = new([]byte)
-		case event.FieldMachine, event.FieldCaptured, event.FieldBackfill:
+		case event.FieldMachine, event.FieldCaptured, event.FieldBackfill, event.FieldSendLocked:
 			values[i] = new(sql.NullBool)
 		case event.FieldID, event.FieldWorkspaceID, event.FieldContactID, event.FieldBroadcastID, event.FieldAutomationID:
 			values[i] = new(sql.NullInt64)
@@ -277,6 +279,12 @@ func (_m *Event) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Backfill = value.Bool
 			}
+		case event.FieldSendLocked:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field send_locked", values[i])
+			} else if value.Valid {
+				_m.SendLocked = value.Bool
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -402,6 +410,9 @@ func (_m *Event) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("backfill=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Backfill))
+	builder.WriteString(", ")
+	builder.WriteString("send_locked=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SendLocked))
 	builder.WriteByte(')')
 	return builder.String()
 }

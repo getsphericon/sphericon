@@ -45,6 +45,12 @@ type EvaluateRulesWorker struct {
 	mod *rules.Module
 }
 
+// NewEvaluateRulesWorker builds the worker that hands an Event of a Contact to the Rules
+// (rules.Module.Evaluate) over the raw client the job entry point scopes from.
+func NewEvaluateRulesWorker(client *ent.Client, mod *rules.Module) *EvaluateRulesWorker {
+	return &EvaluateRulesWorker{ent: client, mod: mod}
+}
+
 func (w *EvaluateRulesWorker) Work(ctx context.Context, job *river.Job[EvaluateRulesArgs]) error {
 	// Job entry point (ADR 0017): the scope is built from the loaded Contact's Workspace, not
 	// from the job argument.

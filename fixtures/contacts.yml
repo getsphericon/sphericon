@@ -2022,3 +2022,13 @@
   workspace_id: 96
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+
+# Halcyon (workspace 99): the Contact the send-lock tests write about, enrolled in the course.
+- id: 9900 # fixture: ContactHalcyonIda
+  source: manual
+  revision: 1
+  subject_id: ida
+  email: ida@halcyon.example
+  workspace_id: 99
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

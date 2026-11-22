@@ -1570,3 +1570,17 @@
   began_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
+
+# Halcyon (workspace 99): Ida's Enrollment in the course, begun a day ago and waiting, which its
+# exit and goal Events end.
+- id: 9900 # fixture: AutomationRunHalcyonCourseIda
+  automation_id: 9904
+  version_id: 9904
+  contact_id: 9900
+  workspace_id: 99
+  status: active
+  current_step_id: 'f33e81f9-3cb6-4901-adaa-330def6e8b41'
+  resume_at: '{{daysAhead 6}}'
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
