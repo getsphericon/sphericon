@@ -1090,16 +1090,6 @@ func SourceNotIn(vs ...Source) predicate.Contact {
 	return predicate.Contact(sql.FieldNotIn(FieldSource, vs...))
 }
 
-// SourceIsNil applies the IsNil predicate on the "source" field.
-func SourceIsNil() predicate.Contact {
-	return predicate.Contact(sql.FieldIsNull(FieldSource))
-}
-
-// SourceNotNil applies the NotNil predicate on the "source" field.
-func SourceNotNil() predicate.Contact {
-	return predicate.Contact(sql.FieldNotNull(FieldSource))
-}
-
 // CustomFieldsIsNil applies the IsNil predicate on the "custom_fields" field.
 func CustomFieldsIsNil() predicate.Contact {
 	return predicate.Contact(sql.FieldIsNull(FieldCustomFields))

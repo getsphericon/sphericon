@@ -100,7 +100,6 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend revision
 // goverter:extend optNilString
 // goverter:extend optNilSendCap
-// goverter:extend optNilContactSource
 // goverter:extend optNilOptOutVia
 // goverter:extend optNilSmsConfirmation
 // goverter:extend optNilSmsOptOut
@@ -901,10 +900,6 @@ func ruleResults(c Converter, stored string) []externalapi.RuleActionResult {
 			Detail: optNonEmpty(r.Detail),
 		}
 	})
-}
-
-func optNilContactSource(c Converter, v *contact.Source) externalapi.OptNilContactExportSource {
-	return convert.OptVia[externalapi.OptNilContactExportSource](v, c.ContactExportSourceToResource)
 }
 
 // optNilSmsConfirmation is absent exactly when the phone has no SMS Confirmation.

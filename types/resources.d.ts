@@ -199,8 +199,7 @@ export default interface Resources {
       "sources": {
         "api": "API",
         "manual": "Manual",
-        "tracker": "Tracker",
-        "unknown": "Unknown"
+        "tracker": "Tracker"
       },
       "subscribedPeople": {
         "current": "Subscribed now",

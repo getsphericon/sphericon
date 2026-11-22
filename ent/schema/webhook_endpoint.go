@@ -53,7 +53,7 @@ func (WebhookEndpoint) Fields() []ent.Field {
 			Nillable(),
 		// An explicit owner enable starts a new health generation. A delivery loaded before
 		// that reset can finish its HTTP request, but its result cannot change this run.
-		// Null is the initial generation, so existing endpoints need no backfill.
+		// Null is the initial generation, before any enable.
 		field.Int64("health_generation").
 			Optional().
 			Nillable().

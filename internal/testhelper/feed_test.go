@@ -29,7 +29,7 @@ func TestAFeedWriteIsRecordedAsABusTransactionRecordsIt(t *testing.T) {
 
 			env.Feed(t, func(tx *ent.Client) error {
 				// test writes: the contacts-peak hook fires on this Contact write
-				return tx.Scoped(fixtures.AcmeID).Contact().Create().SetEmail("fed@example.com").Exec(t.Context())
+				return tx.Scoped(fixtures.AcmeID).Contact().Create().SetSource(contact.SourceManual).SetEmail("fed@example.com").Exec(t.Context())
 			})
 
 			peak, err := s.Usage().Query().Where(entusage.Metric(string(usages.Contacts))).Only(t.Context())

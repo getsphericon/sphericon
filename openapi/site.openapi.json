@@ -12104,7 +12104,7 @@
       },
       "ContactExportContact": {
         "type": "object",
-        "required": ["id", "createdAt", "updatedAt"],
+        "required": ["id", "source", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -12186,8 +12186,7 @@
                 "$ref": "#/components/schemas/ContactExportSource"
               }
             ],
-            "nullable": true,
-            "description": "The door the contact came through; absent for a contact that predates the field"
+            "description": "The door the contact came through"
           },
           "createdAt": {
             "allOf": [
@@ -18273,7 +18272,7 @@
           "emailSubject": {
             "type": "string",
             "nullable": true,
-            "description": "The subject the Contact received on the email the event is about, merge tags filled; null for\nan event that is about no email, or whose email kept no subject (sent before it was kept, or\nerased with the Contact)"
+            "description": "The subject the Contact received on the email the event is about, merge tags filled; null for\nan event that is about no email, or whose email kept no subject (erased with the Contact)"
           },
           "occurredAt": {
             "allOf": [
@@ -18775,7 +18774,7 @@
       },
       "SiteMembershipResource": {
         "type": "object",
-        "required": ["id", "userId", "email", "name", "role", "createdAt"],
+        "required": ["id", "userId", "email", "name", "role", "source", "createdAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -18819,7 +18818,7 @@
                 "$ref": "#/components/schemas/SiteMembershipSource"
               }
             ],
-            "description": "How the member got in; absent for a member from before it was recorded"
+            "description": "How the member got in"
           },
           "createdAt": {
             "allOf": [
@@ -18844,7 +18843,7 @@
       },
       "SiteNewPeoplePoint": {
         "type": "object",
-        "required": ["date", "manual", "api", "tracker", "unknown"],
+        "required": ["date", "manual", "api", "tracker"],
         "properties": {
           "date": {
             "type": "string",
@@ -18864,11 +18863,6 @@
             "type": "integer",
             "format": "int32",
             "description": "Contacts created by the tracker that day"
-          },
-          "unknown": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Contacts that predate the Contact source"
           }
         },
         "description": "One Report day of the New people report: the Contacts created that day by the door they\ncame through, zero-filled across the range."

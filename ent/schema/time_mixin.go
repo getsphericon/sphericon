@@ -10,8 +10,8 @@ import (
 )
 
 // TimeMixin gives every entity created_at and updated_at (ADR 0017), including
-// append-only ones, for uniformity. The database default lets the columns be
-// added to tables that already hold rows.
+// append-only ones, for uniformity. The database default stamps a row written outside ent,
+// as the fixture loader writes them.
 type TimeMixin struct {
 	mixin.Schema
 }

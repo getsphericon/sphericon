@@ -190,7 +190,7 @@ func TestScopedUpsert(t *testing.T) {
 		err := env.Bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 			var err error
 			// test writes: the scoped wrapper is the subject
-			id, err = tx.Scoped(acme).Contact().Create().SetEmail(fixtures.ContactAliceEmail).SetFirstName("Alicia").
+			id, err = tx.Scoped(acme).Contact().Create().SetSource(contact.SourceManual).SetEmail(fixtures.ContactAliceEmail).SetFirstName("Alicia").
 				OnConflictColumns(contact.FieldEmail, contact.FieldWorkspaceID).
 				Update(func(u *ent.ContactScopedUpsert) { u.UpdateFirstName() }).
 				ID(ctx)

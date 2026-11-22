@@ -1809,8 +1809,7 @@ export const zSiteNewPeoplePoint = z.object({
   date: z.string(),
   manual: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   api: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  tracker: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  unknown: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+  tracker: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
 /**
@@ -3070,7 +3069,7 @@ export const zContactExportContact = z.object({
   city: z.exactOptional(z.string().nullable()),
   avatar: z.exactOptional(z.string().nullable()),
   customFields: z.exactOptional(zJsonObject.nullable()),
-  source: z.exactOptional(zContactExportSource.nullable()),
+  source: zContactExportSource,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
 });
@@ -3651,7 +3650,7 @@ export const zSiteMembershipResource = z.object({
   email: zEmailAddress,
   name: z.string(),
   role: zSiteMembershipRole,
-  source: z.exactOptional(zSiteMembershipSource),
+  source: zSiteMembershipSource,
   createdAt: zTimestamp
 });
 

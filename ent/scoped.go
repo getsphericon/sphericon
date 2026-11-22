@@ -20647,16 +20647,6 @@ func (x *ContactScopedCreate) SetSource(v contact.Source) *ContactScopedCreate {
 
 const RoleOf_ContactScopedCreate_SetSource = RoleStep
 
-// SetNillableSource sets the "source" field if the given value is not nil.
-func (x *ContactScopedCreate) SetNillableSource(v *contact.Source) *ContactScopedCreate {
-	if v != nil {
-		x.SetSource(*v)
-	}
-	return x
-}
-
-const RoleOf_ContactScopedCreate_SetNillableSource = RoleStep
-
 // SetCustomFields sets the "custom_fields" field.
 func (x *ContactScopedCreate) SetCustomFields(v map[string]interface{}) *ContactScopedCreate {
 	x.set = append(x.set, func(b *ContactCreate) { b.SetCustomFields(v) })
@@ -37052,16 +37042,6 @@ func (x *MembershipScopedCreate) SetSource(v membership.Source) *MembershipScope
 
 const RoleOf_MembershipScopedCreate_SetSource = RoleStep
 
-// SetNillableSource sets the "source" field if the given value is not nil.
-func (x *MembershipScopedCreate) SetNillableSource(v *membership.Source) *MembershipScopedCreate {
-	if v != nil {
-		x.SetSource(*v)
-	}
-	return x
-}
-
-const RoleOf_MembershipScopedCreate_SetNillableSource = RoleStep
-
 // SetSecondFactorRemindedAt sets the "second_factor_reminded_at" field.
 func (x *MembershipScopedCreate) SetSecondFactorRemindedAt(v time.Time) *MembershipScopedCreate {
 	x.set = append(x.set, func(b *MembershipCreate) { b.SetSecondFactorRemindedAt(v) })
@@ -37296,14 +37276,6 @@ func (u *MembershipScopedUpsert) UpdateSource() *MembershipScopedUpsert {
 }
 
 const RoleOf_MembershipScopedUpsert_UpdateSource = RoleStep
-
-// ClearSource clears the value of the "source" field.
-func (u *MembershipScopedUpsert) ClearSource() *MembershipScopedUpsert {
-	u.u.SetNull(membership.FieldSource)
-	return u
-}
-
-const RoleOf_MembershipScopedUpsert_ClearSource = RoleStep
 
 // SetSecondFactorRemindedAt sets the "second_factor_reminded_at" field.
 func (u *MembershipScopedUpsert) SetSecondFactorRemindedAt(v time.Time) *MembershipScopedUpsert {
@@ -37590,14 +37562,6 @@ func (x *MembershipScopedUpdateOne) SetNillableSource(v *membership.Source) *Mem
 
 const RoleOf_MembershipScopedUpdateOne_SetNillableSource = RoleStep
 
-// ClearSource clears the value of the "source" field.
-func (x *MembershipScopedUpdateOne) ClearSource() *MembershipScopedUpdateOne {
-	x.set = append(x.set, func(b *MembershipUpdateOne) { b.ClearSource() })
-	return x
-}
-
-const RoleOf_MembershipScopedUpdateOne_ClearSource = RoleStep
-
 // SetSecondFactorRemindedAt sets the "second_factor_reminded_at" field.
 func (x *MembershipScopedUpdateOne) SetSecondFactorRemindedAt(v time.Time) *MembershipScopedUpdateOne {
 	x.set = append(x.set, func(b *MembershipUpdateOne) { b.SetSecondFactorRemindedAt(v) })
@@ -37864,14 +37828,6 @@ func (x *MembershipScopedUpdate) SetNillableSource(v *membership.Source) *Member
 }
 
 const RoleOf_MembershipScopedUpdate_SetNillableSource = RoleStep
-
-// ClearSource clears the value of the "source" field.
-func (x *MembershipScopedUpdate) ClearSource() *MembershipScopedUpdate {
-	x.set = append(x.set, func(b *MembershipUpdate) { b.ClearSource() })
-	return x
-}
-
-const RoleOf_MembershipScopedUpdate_ClearSource = RoleStep
 
 // SetSecondFactorRemindedAt sets the "second_factor_reminded_at" field.
 func (x *MembershipScopedUpdate) SetSecondFactorRemindedAt(v time.Time) *MembershipScopedUpdate {

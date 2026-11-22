@@ -998,7 +998,7 @@ func (c *ConverterImpl) ContactToExport(source *ent.Contact) site.ContactExportC
 		siteapiContactExportContact.City = optNilString((*source).City)
 		siteapiContactExportContact.Avatar = optNilString((*source).Avatar)
 		siteapiContactExportContact.CustomFields = jsonObject((*source).CustomFields)
-		siteapiContactExportContact.Source = optNilContactSource(c, (*source).Source)
+		siteapiContactExportContact.Source = c.ContactExportSourceToResource((*source).Source)
 		siteapiContactExportContact.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiContactExportContact.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -1569,7 +1569,7 @@ func (c *ConverterImpl) MembershipToResource(source *ent.Membership) site.SiteMe
 			siteapiSiteMembershipResource.Name = *pString2
 		}
 		siteapiSiteMembershipResource.Role = c.MembershipRoleToResource((*source).Role)
-		siteapiSiteMembershipResource.Source = optMembershipSource(c, (*source).Source)
+		siteapiSiteMembershipResource.Source = c.MembershipSourceToResource((*source).Source)
 		siteapiSiteMembershipResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiSiteMembershipResource
@@ -2928,7 +2928,6 @@ func (c *ConverterImpl) analyticsreportNewPeoplePointToSiteapiSiteNewPeoplePoint
 	siteapiSiteNewPeoplePoint.Manual = count(source.Manual)
 	siteapiSiteNewPeoplePoint.API = count(source.API)
 	siteapiSiteNewPeoplePoint.Tracker = count(source.Tracker)
-	siteapiSiteNewPeoplePoint.Unknown = count(source.Unknown)
 	return siteapiSiteNewPeoplePoint
 }
 func (c *ConverterImpl) analyticsreportOwnerClicksToSiteapiSiteAnalyticsLinkOwner(source analyticsreport.OwnerClicks) site.SiteAnalyticsLinkOwner {

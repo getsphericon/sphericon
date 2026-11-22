@@ -1654,9 +1654,9 @@ export type ContactExportContact = {
    */
   customFields?: JsonObject | null;
   /**
-   * The door the contact came through; absent for a contact that predates the field
+   * The door the contact came through
    */
-  source?: ContactExportSource | null;
+  source: ContactExportSource;
   /**
    * Creation timestamp
    */

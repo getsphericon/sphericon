@@ -39,6 +39,7 @@ const member: SiteMembershipResource = {
   email: 'ann@example.com',
   name: 'Ann',
   role: 'member',
+  source: 'invitation',
   createdAt: '2026-01-01T00:00:00Z',
 }
 
@@ -75,7 +76,7 @@ test('lists members and pending invitations', async () => {
   await expect.element(screen.getByText('new@example.com')).toBeInTheDocument()
 })
 
-test('labels how each member got in and leaves a member from before it unlabelled', async () => {
+test('labels how each member got in', async () => {
   const joined: SiteMembershipResource = {
     ...member,
     id: testId(2),
@@ -88,7 +89,7 @@ test('labels how each member got in and leaves a member from before it unlabelle
   const { screen } = await renderWithRouter(<MembersSection workspace={workspace} />)
 
   await expect.element(screen.getByText('Joined by domain')).toBeInTheDocument()
-  await expect.element(screen.getByText('Invited')).not.toBeInTheDocument()
+  await expect.element(screen.getByText('Invited')).toBeInTheDocument()
 })
 
 test('invites a member and reveals the invite link', async () => {

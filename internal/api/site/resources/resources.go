@@ -98,7 +98,6 @@ import (
 // goverter:extend revision
 // goverter:extend nilFloat64
 // goverter:extend optNilString
-// goverter:extend optNilContactSource
 // goverter:extend optNilOptOutVia
 // goverter:extend optNilHoldReason
 // goverter:extend omitEmpty
@@ -143,7 +142,6 @@ import (
 // goverter:extend optEmail
 // goverter:extend optBool
 // goverter:extend optEditorDocument
-// goverter:extend optMembershipSource
 // goverter:extend optMessageRevenue
 // goverter:extend optAttentionSubject
 // goverter:extend optAbuseWarning
@@ -1102,10 +1100,6 @@ func optEmail(v string) siteapi.OptEmailAddress {
 	return siteapi.NewOptEmailAddress(siteapi.EmailAddress(v))
 }
 
-func optMembershipSource(c Converter, v *membership.Source) siteapi.OptSiteMembershipSource {
-	return convert.OptVia[siteapi.OptSiteMembershipSource](v, c.MembershipSourceToResource)
-}
-
 // optConsentDecision is a User's current answer to an optional consent, absent with none; it is
 // never `shown`, which only a notice is.
 func optConsentDecision(c Converter, v *consentrecord.Decision) siteapi.OptSiteOptionalConsentDecision {
@@ -1311,10 +1305,6 @@ func ruleResults(c Converter, stored string) []siteapi.RuleActionResult {
 			Detail: optNonEmpty(r.Detail),
 		}
 	})
-}
-
-func optNilContactSource(c Converter, v *contact.Source) siteapi.OptNilContactExportSource {
-	return convert.OptVia[siteapi.OptNilContactExportSource](v, c.ContactExportSourceToResource)
 }
 
 func optNilOptOutVia(c Converter, v *unsubscribe.Via) siteapi.OptNilOptOutVia {

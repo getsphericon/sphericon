@@ -667,7 +667,7 @@ func (c *ConverterImpl) ContactToExport(source *ent.Contact) external.ContactExp
 		externalapiContactExportContact.City = optNilString((*source).City)
 		externalapiContactExportContact.Avatar = optNilString((*source).Avatar)
 		externalapiContactExportContact.CustomFields = jsonObject((*source).CustomFields)
-		externalapiContactExportContact.Source = optNilContactSource(c, (*source).Source)
+		externalapiContactExportContact.Source = c.ContactExportSourceToResource((*source).Source)
 		externalapiContactExportContact.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiContactExportContact.UpdatedAt = timestamp((*source).UpdatedAt)
 	}

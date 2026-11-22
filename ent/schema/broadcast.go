@@ -48,12 +48,10 @@ func (Broadcast) Fields() []ent.Field {
 		field.String(NameColumn).
 			NotEmpty(),
 		// The Channel the Broadcast sends on, set when it is created and never changed: a
-		// Broadcast is never converted to another Channel (ADR 0080). Every write sets it; the
-		// column default only fills the rows that predate it.
+		// Broadcast is never converted to another Channel (ADR 0080).
 		field.Enum("channel").
 			GoType(channels.Channel("")).
-			Immutable().
-			Annotations(entsql.Default("email")),
+			Immutable(),
 		// Email's content: set on an email Broadcast, unset on any other (broadcastContents).
 		field.String("subject").
 			Optional().

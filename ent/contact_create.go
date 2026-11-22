@@ -237,14 +237,6 @@ func (_c *ContactCreate) SetSource(v contact.Source) *ContactCreate {
 	return _c
 }
 
-// SetNillableSource sets the "source" field if the given value is not nil.
-func (_c *ContactCreate) SetNillableSource(v *contact.Source) *ContactCreate {
-	if v != nil {
-		_c.SetSource(*v)
-	}
-	return _c
-}
-
 // SetCustomFields sets the "custom_fields" field.
 func (_c *ContactCreate) SetCustomFields(v map[string]interface{}) *ContactCreate {
 	_c.mutation.SetCustomFields(v)
@@ -420,6 +412,9 @@ func (_c *ContactCreate) check() error {
 			return &ValidationError{Name: "revision", err: fmt.Errorf(`ent: validator failed for field "Contact.revision": %w`, err)}
 		}
 	}
+	if _, ok := _c.mutation.Source(); !ok {
+		return &ValidationError{Name: "source", err: errors.New(`ent: missing required field "Contact.source"`)}
+	}
 	if v, ok := _c.mutation.Source(); ok {
 		if err := contact.SourceValidator(v); err != nil {
 			return &ValidationError{Name: "source", err: fmt.Errorf(`ent: validator failed for field "Contact.source": %w`, err)}
@@ -519,7 +514,7 @@ func (_c *ContactCreate) createSpec() (*Contact, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := _c.mutation.Source(); ok {
 		_spec.SetField(contact.FieldSource, field.TypeEnum, value)
-		_node.Source = &value
+		_node.Source = value
 	}
 	if value, ok := _c.mutation.CustomFields(); ok {
 		_spec.SetField(contact.FieldCustomFields, field.TypeJSON, value)

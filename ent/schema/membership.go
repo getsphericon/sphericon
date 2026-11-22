@@ -40,11 +40,9 @@ func (Membership) Fields() []ent.Field {
 		// A reminder counts for the grace it falls in, so a requirement switched off and
 		// on again reminds anew.
 		// How the person got in: the Workspace's creator, an accepted Invitation, or a
-		// proven address on a Join domain. Null for a Membership from before it was recorded.
+		// proven address on a Join domain.
 		field.Enum("source").
-			Values("creator", "invitation", "domain").
-			Optional().
-			Nillable(),
+			Values("creator", "invitation", "domain"),
 		field.Time("second_factor_reminded_at").
 			Annotations(Attribute("when the last reminder went out; the reminder job claims a send by its value")).
 			Optional().

@@ -7725,7 +7725,7 @@
       },
       "ContactExportContact": {
         "type": "object",
-        "required": ["id", "createdAt", "updatedAt"],
+        "required": ["id", "source", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -7807,8 +7807,7 @@
                 "$ref": "#/components/schemas/ContactExportSource"
               }
             ],
-            "nullable": true,
-            "description": "The door the contact came through; absent for a contact that predates the field"
+            "description": "The door the contact came through"
           },
           "createdAt": {
             "allOf": [

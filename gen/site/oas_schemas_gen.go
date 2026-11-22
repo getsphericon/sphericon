@@ -4331,8 +4331,8 @@ type ContactExportContact struct {
 	Avatar OptNilString `json:"avatar"`
 	// Typed custom field values keyed by the field's machine key.
 	CustomFields OptNilJsonObject `json:"customFields"`
-	// The door the contact came through; absent for a contact that predates the field.
-	Source OptNilContactExportSource `json:"source"`
+	// The door the contact came through.
+	Source ContactExportSource `json:"source"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -4405,7 +4405,7 @@ func (s *ContactExportContact) GetCustomFields() OptNilJsonObject {
 }
 
 // GetSource returns the value of Source.
-func (s *ContactExportContact) GetSource() OptNilContactExportSource {
+func (s *ContactExportContact) GetSource() ContactExportSource {
 	return s.Source
 }
 
@@ -4485,7 +4485,7 @@ func (s *ContactExportContact) SetCustomFields(val OptNilJsonObject) {
 }
 
 // SetSource sets the value of Source.
-func (s *ContactExportContact) SetSource(val OptNilContactExportSource) {
+func (s *ContactExportContact) SetSource(val ContactExportSource) {
 	s.Source = val
 }
 
@@ -10589,74 +10589,6 @@ func (o OptNilAbuseWarning) Or(d AbuseWarning) AbuseWarning {
 	return d
 }
 
-// NewOptNilContactExportSource returns new OptNilContactExportSource with value set to v.
-func NewOptNilContactExportSource(v ContactExportSource) OptNilContactExportSource {
-	return OptNilContactExportSource{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilContactExportSource is optional nullable ContactExportSource.
-type OptNilContactExportSource struct {
-	Value ContactExportSource
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilContactExportSource was set.
-func (o OptNilContactExportSource) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilContactExportSource) Reset() {
-	var v ContactExportSource
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilContactExportSource) SetTo(v ContactExportSource) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilContactExportSource) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilContactExportSource) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v ContactExportSource
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilContactExportSource) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilContactExportSource) Get() (v ContactExportSource, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilContactExportSource) Or(d ContactExportSource) ContactExportSource {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
 // NewOptNilCountryCode returns new OptNilCountryCode with value set to v.
 func NewOptNilCountryCode(v CountryCode) OptNilCountryCode {
 	return OptNilCountryCode{
@@ -13001,52 +12933,6 @@ func (o OptSiteBroadcastsOrder) Get() (v SiteBroadcastsOrder, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptSiteBroadcastsOrder) Or(d SiteBroadcastsOrder) SiteBroadcastsOrder {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptSiteMembershipSource returns new OptSiteMembershipSource with value set to v.
-func NewOptSiteMembershipSource(v SiteMembershipSource) OptSiteMembershipSource {
-	return OptSiteMembershipSource{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteMembershipSource is optional SiteMembershipSource.
-type OptSiteMembershipSource struct {
-	Value SiteMembershipSource
-	Set   bool
-}
-
-// IsSet returns true if OptSiteMembershipSource was set.
-func (o OptSiteMembershipSource) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteMembershipSource) Reset() {
-	var v SiteMembershipSource
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteMembershipSource) SetTo(v SiteMembershipSource) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteMembershipSource) Get() (v SiteMembershipSource, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteMembershipSource) Or(d SiteMembershipSource) SiteMembershipSource {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -23910,8 +23796,7 @@ type SiteEventResource struct {
 	// Arbitrary event properties.
 	Properties OptNilJsonObject `json:"properties"`
 	// The subject the Contact received on the email the event is about, merge tags filled; null for an
-	// event that is about no email, or whose email kept no subject (sent before it was kept, or erased
-	// with the Contact).
+	// event that is about no email, or whose email kept no subject (erased with the Contact).
 	EmailSubject OptNilString `json:"emailSubject"`
 	// When the event happened: the time the source gave, or when it was published if it gave none.
 	OccurredAt Timestamp `json:"occurredAt"`
@@ -25020,8 +24905,8 @@ type SiteMembershipResource struct {
 	Name string `json:"name"`
 	// The member's role in this workspace.
 	Role SiteMembershipRole `json:"role"`
-	// How the member got in; absent for a member from before it was recorded.
-	Source OptSiteMembershipSource `json:"source"`
+	// How the member got in.
+	Source SiteMembershipSource `json:"source"`
 	// When the member joined.
 	CreatedAt Timestamp `json:"createdAt"`
 }
@@ -25052,7 +24937,7 @@ func (s *SiteMembershipResource) GetRole() SiteMembershipRole {
 }
 
 // GetSource returns the value of Source.
-func (s *SiteMembershipResource) GetSource() OptSiteMembershipSource {
+func (s *SiteMembershipResource) GetSource() SiteMembershipSource {
 	return s.Source
 }
 
@@ -25087,7 +24972,7 @@ func (s *SiteMembershipResource) SetRole(val SiteMembershipRole) {
 }
 
 // SetSource sets the value of Source.
-func (s *SiteMembershipResource) SetSource(val OptSiteMembershipSource) {
+func (s *SiteMembershipResource) SetSource(val SiteMembershipSource) {
 	s.Source = val
 }
 
@@ -25214,8 +25099,6 @@ type SiteNewPeoplePoint struct {
 	API int32 `json:"api"`
 	// Contacts created by the tracker that day.
 	Tracker int32 `json:"tracker"`
-	// Contacts that predate the Contact source.
-	Unknown int32 `json:"unknown"`
 }
 
 // GetDate returns the value of Date.
@@ -25238,11 +25121,6 @@ func (s *SiteNewPeoplePoint) GetTracker() int32 {
 	return s.Tracker
 }
 
-// GetUnknown returns the value of Unknown.
-func (s *SiteNewPeoplePoint) GetUnknown() int32 {
-	return s.Unknown
-}
-
 // SetDate sets the value of Date.
 func (s *SiteNewPeoplePoint) SetDate(val string) {
 	s.Date = val
@@ -25261,11 +25139,6 @@ func (s *SiteNewPeoplePoint) SetAPI(val int32) {
 // SetTracker sets the value of Tracker.
 func (s *SiteNewPeoplePoint) SetTracker(val int32) {
 	s.Tracker = val
-}
-
-// SetUnknown sets the value of Unknown.
-func (s *SiteNewPeoplePoint) SetUnknown(val int32) {
-	s.Unknown = val
 }
 
 // New people: Contacts created in the selected range, per Report day and by Contact source.

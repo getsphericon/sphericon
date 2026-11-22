@@ -92,7 +92,7 @@ func TestTheVerifyLinkJoinsTheWorkspaceOfTheAddressDomainAndLandsThere(t *testin
 	joined := acmeMembersNamed(acmeMembers(t, env.SiteActor(t, fixtures.OwnerJohnEmail)), "newbie@acme.com")
 	require.Len(t, joined, 1)
 	assert.Equal(t, siteapi.SiteMembershipRoleMember, joined[0].Role)
-	assert.Equal(t, siteapi.NewOptSiteMembershipSource(siteapi.SiteMembershipSourceDomain), joined[0].Source)
+	assert.Equal(t, siteapi.SiteMembershipSourceDomain, joined[0].Source)
 }
 
 func TestAJoinerStillGetsAPersonalWorkspaceOfTheirOwn(t *testing.T) {

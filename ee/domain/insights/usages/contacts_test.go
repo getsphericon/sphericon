@@ -44,7 +44,7 @@ func addContact(t *testing.T, env *testhelper.TestEnv, email string) int64 {
 	var id int64
 	env.Feed(t, func(tx *ent.Client) error {
 		// test writes: the contacts-peak hook fires on this Contact write
-		c := tx.Scoped(fixtures.AcmeID).Contact().Create()
+		c := tx.Scoped(fixtures.AcmeID).Contact().Create().SetSource(contact.SourceManual)
 		if email != "" {
 			c.SetEmail(email)
 		} else {
@@ -152,7 +152,7 @@ func TestAPlainClientRefusesAContactChangeThatCanMoveThePeak(t *testing.T) {
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
 	// test writes: the guard refuses this Contact write before it reaches the table
-	require.ErrorIs(t, acme.Contact().Create().SetEmail("plain@example.com").Exec(t.Context()), usages.ErrNeedsTransaction)
+	require.ErrorIs(t, acme.Contact().Create().SetSource(contact.SourceManual).SetEmail("plain@example.com").Exec(t.Context()), usages.ErrNeedsTransaction)
 	require.ErrorIs(t, acme.Contact().UpdateOneID(fixtures.ContactAliceID).SetEmail("alice-new@example.com").Exec(t.Context()), usages.ErrNeedsTransaction)
 	require.ErrorIs(t, acme.Contact().UpdateOneID(fixtures.ContactAliceID).ClearEmail().Exec(t.Context()), usages.ErrNeedsTransaction)
 	require.ErrorIs(t, acme.Contact().DeleteOneID(fixtures.ContactBobID).Exec(t.Context()), usages.ErrNeedsTransaction)
@@ -163,7 +163,7 @@ func TestAPlainClientLetsAContactChangeThatCannotMoveThePeakThrough(t *testing.T
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
 	// test writes: an anonymous Contact and a name change, which the guard lets through
-	require.NoError(t, acme.Contact().Create().SetSubjectID("anonymous-"+t.Name()).Exec(t.Context()))
+	require.NoError(t, acme.Contact().Create().SetSource(contact.SourceManual).SetSubjectID("anonymous-"+t.Name()).Exec(t.Context()))
 	require.NoError(t, acme.Contact().UpdateOneID(fixtures.ContactAliceID).SetFirstName("Alicia").Exec(t.Context()))
 }
 
@@ -171,7 +171,7 @@ func TestAPlainClientRefusesNoContactChangeWithoutTheStaffLicense(t *testing.T) 
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 
 	// test writes: without the license there is no peak, so the guard lets the write through
-	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Contact().Create().SetEmail("unlicensed@example.com").Exec(t.Context()))
+	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Contact().Create().SetSource(contact.SourceManual).SetEmail("unlicensed@example.com").Exec(t.Context()))
 }
 
 func TestContactsIsNotMaintainedWithoutTheStaffLicense(t *testing.T) {
@@ -209,7 +209,7 @@ func TestContactsPeakIsNotKeptForAWorkspaceInItsDeletionWindow(t *testing.T) {
 
 	env.Feed(t, func(tx *ent.Client) error {
 		// test writes: the contacts-peak hook fires on this Contact write
-		return tx.Scoped(fixtures.BluthID).Contact().Create().SetEmail("late@bluth.test").Exec(t.Context())
+		return tx.Scoped(fixtures.BluthID).Contact().Create().SetSource(contact.SourceManual).SetEmail("late@bluth.test").Exec(t.Context())
 	})
 
 	after, err := s.Usage().Query().Count(t.Context())
@@ -228,7 +228,7 @@ func TestContactsPeakCountsContactsAddedAtOnce(t *testing.T) {
 		return testhelper.Writer{Name: email, Run: func() error {
 			return env.Bus.WithinScopedTx(t.Context(), s, func(ts *ent.Scoped, _ events.Publisher) error {
 				// test writes: the contacts-peak hook fires on this Contact write
-				return ts.Contact().Create().SetEmail(email).Exec(t.Context())
+				return ts.Contact().Create().SetSource(contact.SourceManual).SetEmail(email).Exec(t.Context())
 			})
 		}}
 	}
@@ -276,7 +276,7 @@ func TestContactsPeakLockWaitsForNoRowLock(t *testing.T) {
 func addThenRename(t *testing.T, ts *ent.Scoped, email string, added chan<- struct{}, other <-chan struct{}) error {
 	t.Helper()
 	// test writes: the contacts-peak hook fires on this Contact write
-	if err := ts.Contact().Create().SetEmail(email).Exec(t.Context()); err != nil {
+	if err := ts.Contact().Create().SetSource(contact.SourceManual).SetEmail(email).Exec(t.Context()); err != nil {
 		return err
 	}
 	close(added)
@@ -298,7 +298,7 @@ func renameThenAdd(t *testing.T, ts *ent.Scoped, email string, other <-chan stru
 		return err
 	}
 	// test writes: the contacts-peak hook fires on this Contact write
-	if err := ts.Contact().Create().SetEmail(email).Exec(t.Context()); err != nil {
+	if err := ts.Contact().Create().SetSource(contact.SourceManual).SetEmail(email).Exec(t.Context()); err != nil {
 		return err
 	}
 	close(added)

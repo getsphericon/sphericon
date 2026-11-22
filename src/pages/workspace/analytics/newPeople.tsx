@@ -58,7 +58,6 @@ function NewPeopleReport() {
             { name: 'manual', label: t(($) => $.analytics.sources.manual), color: 'blue.6' },
             { name: 'api', label: t(($) => $.analytics.sources.api), color: 'teal.6' },
             { name: 'tracker', label: t(($) => $.analytics.sources.tracker), color: 'grape.6' },
-            { name: 'unknown', label: t(($) => $.analytics.sources.unknown), color: 'gray.5' },
           ]}
         />
       )}

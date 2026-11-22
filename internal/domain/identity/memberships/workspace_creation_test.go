@@ -48,7 +48,7 @@ func TestAWorkspaceIsCreatedWithItsOwnerItsStartingSendCapAndItsAuditEntry(t *te
 	require.Len(t, members, 1)
 	assert.EqualValues(t, fixtures.UmbrellaOwnerRitaID, members[0].UserID)
 	assert.Equal(t, membership.RoleOwner, members[0].Role)
-	assert.Equal(t, membership.SourceCreator, lo.FromPtr(members[0].Source))
+	assert.Equal(t, membership.SourceCreator, members[0].Source)
 
 	entry, err := env.DB.AuditEntry.Query().
 		Where(auditentry.WorkspaceID(ws.ID), auditentry.Action(events.ActionWorkspaceCreate)).Only(ctx)
