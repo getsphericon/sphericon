@@ -387,6 +387,9 @@ const (
 	RoleOf_AutomationFigureClient_QueryAutomation       = RoleRead
 	RoleOf_AutomationFigure_QueryAutomation             = RoleRead
 	RoleOf_AutomationFigureQuery_QueryAutomation        = RoleRead
+	RoleOf_AutomationFigureClient_QueryVersion          = RoleRead
+	RoleOf_AutomationFigure_QueryVersion                = RoleRead
+	RoleOf_AutomationFigureQuery_QueryVersion           = RoleRead
 	RoleOf_AutomationFigure_Update                      = RoleStart
 	RoleOf_AutomationFigureCreate_OnConflict            = RoleStart
 	RoleOf_AutomationFigureCreate_OnConflictColumns     = RoleStart
@@ -2894,6 +2897,9 @@ const (
 	RoleOf_OutboundMessageClient_QueryAutomation         = RoleRead
 	RoleOf_OutboundMessage_QueryAutomation               = RoleRead
 	RoleOf_OutboundMessageQuery_QueryAutomation          = RoleRead
+	RoleOf_OutboundMessageClient_QueryAutomationVersion  = RoleRead
+	RoleOf_OutboundMessage_QueryAutomationVersion        = RoleRead
+	RoleOf_OutboundMessageQuery_QueryAutomationVersion   = RoleRead
 	RoleOf_OutboundMessageClient_QueryIntegration        = RoleRead
 	RoleOf_OutboundMessage_QueryIntegration              = RoleRead
 	RoleOf_OutboundMessageQuery_QueryIntegration         = RoleRead

@@ -517,10 +517,16 @@ export type AutomationReport = {
    */
   results: AutomationResults;
   /**
-   * The send steps' messages by step position, in step order: one entry per position any of the
-   * automation's messages was sent from, across its versions
+   * The send Steps' messages by Step id, each summed over every version that had the Step and
+   * sorted by the newest of those versions, then by its place there: one entry per Step any of the
+   * automation's messages was sent from
    */
   steps: Array<AutomationStepFigures>;
+  /**
+   * The send Steps' messages by version and Step id, in version order and, within a version, in
+   * its Step order
+   */
+  versionSteps: Array<AutomationVersionStepFigures>;
 };
 
 /**
@@ -695,13 +701,13 @@ export type AutomationStep = ({
 } & EndStep);
 
 /**
- * The messages of the send step at one position
+ * The messages of one send Step, over every version that had it
  */
 export type AutomationStepFigures = {
   /**
-   * The step's position, 0 for the first step
+   * The Step's id, the same in every version
    */
-  step: number;
+  stepId: StepId;
   /**
    * Messages the provider accepted
    */
@@ -760,6 +766,28 @@ export type AutomationVersion = {
    * The version's Steps: its root path
    */
   steps: AutomationPath;
+};
+
+/**
+ * The messages one version's send Step sent
+ */
+export type AutomationVersionStepFigures = {
+  /**
+   * The version's number
+   */
+  version: number;
+  /**
+   * The Step's id
+   */
+  stepId: StepId;
+  /**
+   * Messages the provider accepted
+   */
+  sent: number;
+  /**
+   * Messages skipped, as in AutomationStepFigures
+   */
+  skipped: number;
 };
 
 /**
@@ -1748,9 +1776,9 @@ export type ContactExportOutboundMessage = {
    */
   automationId?: EntityId | null;
   /**
-   * Step of the automation that produced the message
+   * Id of the automation Step that produced the message, the same in every version
    */
-  automationStep?: number | null;
+  automationStepId?: string | null;
   /**
    * Template the message was rendered from
    */
@@ -3218,9 +3246,13 @@ export type ExportMessageRow = {
    */
   automation_run_id: EntityId | null;
   /**
-   * The step of the Automation that sent the message
+   * The number of the Automation version that sent the message
    */
-  automation_step: number | null;
+  automation_version: number | null;
+  /**
+   * The id of the Automation Step that sent the message, the same in every version
+   */
+  automation_step_id: string | null;
   /**
    * The Integration the message went out through
    */

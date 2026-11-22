@@ -187,6 +187,12 @@ func (c *ConverterImpl) AutomationReportToResource(source automations.Report) ex
 			externalapiAutomationReport.Steps[j] = c.automationsStepFiguresToExternalapiAutomationStepFigures(source.Steps[j])
 		}
 	}
+	if source.VersionSteps != nil {
+		externalapiAutomationReport.VersionSteps = make([]external.AutomationVersionStepFigures, len(source.VersionSteps))
+		for k := 0; k < len(source.VersionSteps); k++ {
+			externalapiAutomationReport.VersionSteps[k] = c.automationsVersionStepFiguresToExternalapiAutomationVersionStepFigures(source.VersionSteps[k])
+		}
+	}
 	return externalapiAutomationReport
 }
 func (c *ConverterImpl) AutomationResultsPointToResource(source automations.ResultsPoint) external.AutomationResultsPoint {
@@ -1104,7 +1110,7 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) ext
 		externalapiContactExportOutboundMessage.Captured = (*source).Captured
 		externalapiContactExportOutboundMessage.BroadcastId = optNilEntityID((*source).BroadcastID)
 		externalapiContactExportOutboundMessage.AutomationId = optNilEntityID((*source).AutomationID)
-		externalapiContactExportOutboundMessage.AutomationStep = optNilInt32((*source).AutomationStep)
+		externalapiContactExportOutboundMessage.AutomationStepId = optNilString((*source).AutomationStepID)
 		externalapiContactExportOutboundMessage.TemplateId = optNilEntityID((*source).TemplateID)
 		externalapiContactExportOutboundMessage.CreatedAt = timestamp((*source).CreatedAt)
 	}
@@ -1921,10 +1927,18 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) external.Work
 }
 func (c *ConverterImpl) automationsStepFiguresToExternalapiAutomationStepFigures(source automations.StepFigures) external.AutomationStepFigures {
 	var externalapiAutomationStepFigures external.AutomationStepFigures
-	externalapiAutomationStepFigures.Step = count(source.Step)
+	externalapiAutomationStepFigures.StepId = external.StepId(source.StepID)
 	externalapiAutomationStepFigures.Sent = count(source.Sent)
 	externalapiAutomationStepFigures.Skipped = count(source.Skipped)
 	return externalapiAutomationStepFigures
+}
+func (c *ConverterImpl) automationsVersionStepFiguresToExternalapiAutomationVersionStepFigures(source automations.VersionStepFigures) external.AutomationVersionStepFigures {
+	var externalapiAutomationVersionStepFigures external.AutomationVersionStepFigures
+	externalapiAutomationVersionStepFigures.Version = count(source.Version)
+	externalapiAutomationVersionStepFigures.StepId = external.StepId(source.StepID)
+	externalapiAutomationVersionStepFigures.Sent = count(source.Sent)
+	externalapiAutomationVersionStepFigures.Skipped = count(source.Skipped)
+	return externalapiAutomationVersionStepFigures
 }
 func (c *ConverterImpl) emaildocAgentAttrToExternalapiEmailSchemaAttribute(source emaildoc.AgentAttr) external.EmailSchemaAttribute {
 	var externalapiEmailSchemaAttribute external.EmailSchemaAttribute

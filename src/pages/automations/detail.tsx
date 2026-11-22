@@ -1,7 +1,6 @@
 import { Badge, Group, Stack, Text, Title } from '@mantine/core'
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 
 import { DraftControls } from '../../components/DraftControls.tsx'
@@ -16,11 +15,7 @@ import {
   siteEnrollmentsListOptions,
   siteIntegrationsGetOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type {
-  AutomationStep,
-  AutomationVersion,
-  EnrollmentResource,
-} from '../../generated/site/types.gen.ts'
+import type { AutomationVersion, EnrollmentResource } from '../../generated/site/types.gen.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
@@ -31,6 +26,7 @@ import type { FieldColumn } from '../../utils/tableColumns.ts'
 import { AutomationReport } from './AutomationReport.tsx'
 import { AutomationStatusBadge } from './AutomationStatusBadge.tsx'
 import { automationDraftActions } from './draftActions.ts'
+import { stepLabel } from './stepLabel.ts'
 
 // The Integration a send step sends through, by name (its id until the name loads), and said to
 // be deleted when it is: a deleted one stays readable by id for what names it.
@@ -44,40 +40,6 @@ function IntegrationName({ workspaceId, id }: { workspaceId: string; id: string 
   return integration.discardedAt
     ? t(($) => $.automations.integrationDeleted, { name: integration.name })
     : integration.name
-}
-
-// A step by its kind, with the subject of an email or the Tag of a tag step.
-function stepLabel(t: TFunction, step: AutomationStep): string {
-  const kind: Record<AutomationStep['type'], string> = {
-    email: t(($) => $.automations.stepEmail),
-    telegram: t(($) => $.automations.stepTelegram),
-    sms: t(($) => $.automations.stepSms),
-    wait: t(($) => $.automations.stepWait),
-    apply_tag: t(($) => $.automations.stepApplyTag),
-    remove_tag: t(($) => $.automations.stepRemoveTag),
-    http: t(($) => $.automations.stepHttp),
-    end: t(($) => $.automations.stepEnd),
-  }
-  const detail = stepDetail(step)
-  return detail ? `${kind[step.type]}: ${detail}` : kind[step.type]
-}
-
-// What a step says beside its kind: an email's subject, a tag step's Tag.
-function stepDetail(step: AutomationStep): string {
-  switch (step.type) {
-    case 'email':
-      return step.subject
-    case 'apply_tag':
-    case 'remove_tag':
-      return step.tag
-    case 'end':
-    case 'http':
-    case 'sms':
-    case 'telegram':
-    case 'wait':
-    default:
-      return ''
-  }
 }
 
 // What the live version does: its number, its Trigger, its exit and goal events and its steps in
@@ -207,7 +169,11 @@ function AutomationDetail() {
         <AutomationVersionSummary workspaceId={workspaceId} version={automation.live} />
       ) : null}
 
-      <AutomationReport workspaceId={workspaceId} automationId={automationId} />
+      <AutomationReport
+        workspaceId={workspaceId}
+        automationId={automationId}
+        liveSteps={automation.live?.steps.steps ?? []}
+      />
 
       <PagedTable
         page={page}

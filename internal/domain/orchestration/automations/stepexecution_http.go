@@ -74,7 +74,9 @@ func (m *StepExecution) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in Execu
 	sendErr := m.fence(ctx, s, run.ID, func(ctx context.Context) error {
 		return webhook.Post(ctx, m.client, webhook.Call{
 			URL: opened.URL, Secret: opened.Secret, Headers: opened.Headers, Body: []byte(body), At: m.now(),
-			ID: fmt.Sprintf("automation_%d_%d", run.ID, positionOf(version.Steps, step)),
+			// The run and the id of the Step the Enrollment stands on, which every version keeps
+			// (ADR 0122).
+			ID: fmt.Sprintf("automation_%d_%s", run.ID, step),
 		})
 	})
 	if stale(sendErr) {

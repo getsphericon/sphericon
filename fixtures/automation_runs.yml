@@ -1082,6 +1082,18 @@
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
 
+# The Enrollment of the HTTP step below a wait, standing on the HTTP step.
+- id: 5581 # fixture: AutomationRunHTTPBelowAWait
+  automation_id: 5581
+  version_id: 5581
+  contact_id: 1
+  workspace_id: 1
+  status: active
+  current_step_id: '01900000-0000-0000-0000-000000000001'
+  began_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+
 # Payment recovery (108): Isabella's active Enrollment, begun a day ago, which its exit and goal
 # Events end (internal/domain/orchestration/automations).
 - id: 7500 # fixture: AutomationRunRecoveryActive

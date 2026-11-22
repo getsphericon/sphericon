@@ -3167,19 +3167,28 @@ func (s *AutomationReport) encodeFields(e *jx.Encoder) {
 		}
 		e.ArrEnd()
 	}
+	{
+		e.FieldStart("versionSteps")
+		e.ArrStart()
+		for _, elem := range s.VersionSteps {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
 }
 
-var jsonFieldsNameOfAutomationReport = [10]string{
-	0: "opens",
-	1: "clicks",
-	2: "delivered",
-	3: "bounced",
-	4: "complained",
-	5: "captured",
-	6: "revenue",
-	7: "links",
-	8: "results",
-	9: "steps",
+var jsonFieldsNameOfAutomationReport = [11]string{
+	0:  "opens",
+	1:  "clicks",
+	2:  "delivered",
+	3:  "bounced",
+	4:  "complained",
+	5:  "captured",
+	6:  "revenue",
+	7:  "links",
+	8:  "results",
+	9:  "steps",
+	10: "versionSteps",
 }
 
 // Decode decodes AutomationReport from json.
@@ -3319,6 +3328,24 @@ func (s *AutomationReport) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"steps\"")
 			}
+		case "versionSteps":
+			requiredBitSet[1] |= 1 << 2
+			if err := func() error {
+				s.VersionSteps = make([]AutomationVersionStepFigures, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem AutomationVersionStepFigures
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.VersionSteps = append(s.VersionSteps, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"versionSteps\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -3330,7 +3357,7 @@ func (s *AutomationReport) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b11111111,
-		0b00000011,
+		0b00000111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -4071,8 +4098,8 @@ func (s *AutomationStepFigures) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *AutomationStepFigures) encodeFields(e *jx.Encoder) {
 	{
-		e.FieldStart("step")
-		e.Int32(s.Step)
+		e.FieldStart("stepId")
+		s.StepId.Encode(e)
 	}
 	{
 		e.FieldStart("sent")
@@ -4085,7 +4112,7 @@ func (s *AutomationStepFigures) encodeFields(e *jx.Encoder) {
 }
 
 var jsonFieldsNameOfAutomationStepFigures = [3]string{
-	0: "step",
+	0: "stepId",
 	1: "sent",
 	2: "skipped",
 }
@@ -4099,17 +4126,15 @@ func (s *AutomationStepFigures) Decode(d *jx.Decoder) error {
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
-		case "step":
+		case "stepId":
 			requiredBitSet[0] |= 1 << 0
 			if err := func() error {
-				v, err := d.Int32()
-				s.Step = int32(v)
-				if err != nil {
+				if err := s.StepId.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"step\"")
+				return errors.Wrap(err, "decode field \"stepId\"")
 			}
 		case "sent":
 			requiredBitSet[0] |= 1 << 1
@@ -5055,6 +5080,151 @@ func (s *AutomationVersion) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *AutomationVersion) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *AutomationVersionStepFigures) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *AutomationVersionStepFigures) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("version")
+		e.Int32(s.Version)
+	}
+	{
+		e.FieldStart("stepId")
+		s.StepId.Encode(e)
+	}
+	{
+		e.FieldStart("sent")
+		e.Int32(s.Sent)
+	}
+	{
+		e.FieldStart("skipped")
+		e.Int32(s.Skipped)
+	}
+}
+
+var jsonFieldsNameOfAutomationVersionStepFigures = [4]string{
+	0: "version",
+	1: "stepId",
+	2: "sent",
+	3: "skipped",
+}
+
+// Decode decodes AutomationVersionStepFigures from json.
+func (s *AutomationVersionStepFigures) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode AutomationVersionStepFigures to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "version":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Int32()
+				s.Version = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"version\"")
+			}
+		case "stepId":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.StepId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"stepId\"")
+			}
+		case "sent":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Int32()
+				s.Sent = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"sent\"")
+			}
+		case "skipped":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Int32()
+				s.Skipped = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"skipped\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode AutomationVersionStepFigures")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00001111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfAutomationVersionStepFigures) {
+					name = jsonFieldsNameOfAutomationVersionStepFigures[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *AutomationVersionStepFigures) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *AutomationVersionStepFigures) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -10798,9 +10968,9 @@ func (s *ContactExportOutboundMessage) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.AutomationStep.Set {
-			e.FieldStart("automationStep")
-			s.AutomationStep.Encode(e)
+		if s.AutomationStepId.Set {
+			e.FieldStart("automationStepId")
+			s.AutomationStepId.Encode(e)
 		}
 	}
 	{
@@ -10838,7 +11008,7 @@ var jsonFieldsNameOfContactExportOutboundMessage = [25]string{
 	19: "captured",
 	20: "broadcastId",
 	21: "automationId",
-	22: "automationStep",
+	22: "automationStepId",
 	23: "templateId",
 	24: "createdAt",
 }
@@ -11082,15 +11252,15 @@ func (s *ContactExportOutboundMessage) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"automationId\"")
 			}
-		case "automationStep":
+		case "automationStepId":
 			if err := func() error {
-				s.AutomationStep.Reset()
-				if err := s.AutomationStep.Decode(d); err != nil {
+				s.AutomationStepId.Reset()
+				if err := s.AutomationStepId.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"automationStep\"")
+				return errors.Wrap(err, "decode field \"automationStepId\"")
 			}
 		case "templateId":
 			if err := func() error {
@@ -25106,57 +25276,6 @@ func (s OptNilImageUrl) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptNilImageUrl) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes int32 as json.
-func (o OptNilInt32) Encode(e *jx.Encoder) {
-	if !o.Set {
-		return
-	}
-	if o.Null {
-		e.Null()
-		return
-	}
-	e.Int32(int32(o.Value))
-}
-
-// Decode decodes int32 from json.
-func (o *OptNilInt32) Decode(d *jx.Decoder) error {
-	if o == nil {
-		return errors.New("invalid: unable to decode OptNilInt32 to nil")
-	}
-	if d.Next() == jx.Null {
-		if err := d.Null(); err != nil {
-			return err
-		}
-
-		var v int32
-		o.Value = v
-		o.Set = true
-		o.Null = true
-		return nil
-	}
-	o.Set = true
-	o.Null = false
-	v, err := d.Int32()
-	if err != nil {
-		return err
-	}
-	o.Value = int32(v)
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s OptNilInt32) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *OptNilInt32) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

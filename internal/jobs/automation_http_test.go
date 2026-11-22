@@ -272,7 +272,7 @@ func TestHTTPStepFailsTheEnrollmentWhenRetriesAreSpent(t *testing.T) {
 	require.Len(t, calls, 2)
 	firstID := calls[0].header.Get(standardwebhooks.HeaderWebhookID)
 	retryID := calls[1].header.Get(standardwebhooks.HeaderWebhookID)
-	assert.Equal(t, fmt.Sprintf("automation_%d_0", runID), firstID)
+	assert.Equal(t, fmt.Sprintf("automation_%d_01900000-0000-0000-0000-000000000001", runID), firstID, "the run and the HTTP Step's id")
 	assert.Equal(t, firstID, retryID, "an ordinary retry retains the external request identity")
 }
 

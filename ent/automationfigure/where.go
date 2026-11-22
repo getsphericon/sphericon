@@ -75,9 +75,14 @@ func AutomationID(v int64) predicate.AutomationFigure {
 	return predicate.AutomationFigure(sql.FieldEQ(FieldAutomationID, v))
 }
 
-// Step applies equality check predicate on the "step" field. It's identical to StepEQ.
-func Step(v int) predicate.AutomationFigure {
-	return predicate.AutomationFigure(sql.FieldEQ(FieldStep, v))
+// VersionID applies equality check predicate on the "version_id" field. It's identical to VersionIDEQ.
+func VersionID(v int64) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldVersionID, v))
+}
+
+// StepID applies equality check predicate on the "step_id" field. It's identical to StepIDEQ.
+func StepID(v string) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldStepID, v))
 }
 
 // Sent applies equality check predicate on the "sent" field. It's identical to SentEQ.
@@ -230,44 +235,89 @@ func AutomationIDNotIn(vs ...int64) predicate.AutomationFigure {
 	return predicate.AutomationFigure(sql.FieldNotIn(FieldAutomationID, vs...))
 }
 
-// StepEQ applies the EQ predicate on the "step" field.
-func StepEQ(v int) predicate.AutomationFigure {
-	return predicate.AutomationFigure(sql.FieldEQ(FieldStep, v))
+// VersionIDEQ applies the EQ predicate on the "version_id" field.
+func VersionIDEQ(v int64) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldVersionID, v))
 }
 
-// StepNEQ applies the NEQ predicate on the "step" field.
-func StepNEQ(v int) predicate.AutomationFigure {
-	return predicate.AutomationFigure(sql.FieldNEQ(FieldStep, v))
+// VersionIDNEQ applies the NEQ predicate on the "version_id" field.
+func VersionIDNEQ(v int64) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNEQ(FieldVersionID, v))
 }
 
-// StepIn applies the In predicate on the "step" field.
-func StepIn(vs ...int) predicate.AutomationFigure {
-	return predicate.AutomationFigure(sql.FieldIn(FieldStep, vs...))
+// VersionIDIn applies the In predicate on the "version_id" field.
+func VersionIDIn(vs ...int64) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldIn(FieldVersionID, vs...))
 }
 
-// StepNotIn applies the NotIn predicate on the "step" field.
-func StepNotIn(vs ...int) predicate.AutomationFigure {
-	return predicate.AutomationFigure(sql.FieldNotIn(FieldStep, vs...))
+// VersionIDNotIn applies the NotIn predicate on the "version_id" field.
+func VersionIDNotIn(vs ...int64) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNotIn(FieldVersionID, vs...))
 }
 
-// StepGT applies the GT predicate on the "step" field.
-func StepGT(v int) predicate.AutomationFigure {
-	return predicate.AutomationFigure(sql.FieldGT(FieldStep, v))
+// StepIDEQ applies the EQ predicate on the "step_id" field.
+func StepIDEQ(v string) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEQ(FieldStepID, v))
 }
 
-// StepGTE applies the GTE predicate on the "step" field.
-func StepGTE(v int) predicate.AutomationFigure {
-	return predicate.AutomationFigure(sql.FieldGTE(FieldStep, v))
+// StepIDNEQ applies the NEQ predicate on the "step_id" field.
+func StepIDNEQ(v string) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNEQ(FieldStepID, v))
 }
 
-// StepLT applies the LT predicate on the "step" field.
-func StepLT(v int) predicate.AutomationFigure {
-	return predicate.AutomationFigure(sql.FieldLT(FieldStep, v))
+// StepIDIn applies the In predicate on the "step_id" field.
+func StepIDIn(vs ...string) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldIn(FieldStepID, vs...))
 }
 
-// StepLTE applies the LTE predicate on the "step" field.
-func StepLTE(v int) predicate.AutomationFigure {
-	return predicate.AutomationFigure(sql.FieldLTE(FieldStep, v))
+// StepIDNotIn applies the NotIn predicate on the "step_id" field.
+func StepIDNotIn(vs ...string) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldNotIn(FieldStepID, vs...))
+}
+
+// StepIDGT applies the GT predicate on the "step_id" field.
+func StepIDGT(v string) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldGT(FieldStepID, v))
+}
+
+// StepIDGTE applies the GTE predicate on the "step_id" field.
+func StepIDGTE(v string) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldGTE(FieldStepID, v))
+}
+
+// StepIDLT applies the LT predicate on the "step_id" field.
+func StepIDLT(v string) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldLT(FieldStepID, v))
+}
+
+// StepIDLTE applies the LTE predicate on the "step_id" field.
+func StepIDLTE(v string) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldLTE(FieldStepID, v))
+}
+
+// StepIDContains applies the Contains predicate on the "step_id" field.
+func StepIDContains(v string) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldContains(FieldStepID, v))
+}
+
+// StepIDHasPrefix applies the HasPrefix predicate on the "step_id" field.
+func StepIDHasPrefix(v string) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldHasPrefix(FieldStepID, v))
+}
+
+// StepIDHasSuffix applies the HasSuffix predicate on the "step_id" field.
+func StepIDHasSuffix(v string) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldHasSuffix(FieldStepID, v))
+}
+
+// StepIDEqualFold applies the EqualFold predicate on the "step_id" field.
+func StepIDEqualFold(v string) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldEqualFold(FieldStepID, v))
+}
+
+// StepIDContainsFold applies the ContainsFold predicate on the "step_id" field.
+func StepIDContainsFold(v string) predicate.AutomationFigure {
+	return predicate.AutomationFigure(sql.FieldContainsFold(FieldStepID, v))
 }
 
 // SentEQ applies the EQ predicate on the "sent" field.
@@ -548,6 +598,29 @@ func HasAutomation() predicate.AutomationFigure {
 func HasAutomationWith(preds ...predicate.Automation) predicate.AutomationFigure {
 	return predicate.AutomationFigure(func(s *sql.Selector) {
 		step := newAutomationStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasVersion applies the HasEdge predicate on the "version" edge.
+func HasVersion() predicate.AutomationFigure {
+	return predicate.AutomationFigure(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, VersionTable, VersionColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasVersionWith applies the HasEdge predicate on the "version" edge with a given conditions (other predicates).
+func HasVersionWith(preds ...predicate.AutomationVersion) predicate.AutomationFigure {
+	return predicate.AutomationFigure(func(s *sql.Selector) {
+		step := newVersionStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

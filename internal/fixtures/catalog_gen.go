@@ -87,6 +87,12 @@ const (
 	AutomationGothamResultsName = "Gotham results"
 	// AutomationGothamResultsVersionID is from fixtures/automation_versions.
 	AutomationGothamResultsVersionID = 6100
+	// AutomationHTTPBelowAWaitID is from fixtures/automations.
+	AutomationHTTPBelowAWaitID = 5581
+	// AutomationHTTPBelowAWaitName is from fixtures/automations.
+	AutomationHTTPBelowAWaitName = "HTTP below a wait"
+	// AutomationHTTPBelowAWaitVersionID is from fixtures/automation_versions.
+	AutomationHTTPBelowAWaitVersionID = 5581
 	// AutomationHTTPExecutionID is from fixtures/automations.
 	AutomationHTTPExecutionID = 5580
 	// AutomationHTTPExecutionName is from fixtures/automations.
@@ -501,6 +507,8 @@ const (
 	AutomationRunErasableHTTPFailedID = 3001
 	// AutomationRunErasableID is from fixtures/automation_runs.
 	AutomationRunErasableID = 3000
+	// AutomationRunHTTPBelowAWaitID is from fixtures/automation_runs.
+	AutomationRunHTTPBelowAWaitID = 5581
 	// AutomationRunHTTPFailedID is from fixtures/automation_runs.
 	AutomationRunHTTPFailedID = 1101
 	// AutomationRunHTTPPendingID is from fixtures/automation_runs.

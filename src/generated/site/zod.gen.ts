@@ -252,15 +252,6 @@ export const zAutomationResultsPoint = z.object({
 export const zAutomationStatus = z.enum(['active', 'inactive']);
 
 /**
- * The messages of the send step at one position
- */
-export const zAutomationStepFigures = z.object({
-  step: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  sent: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  skipped: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
-});
-
-/**
  * The Channel a Broadcast sends on, fixed when it is created (ADR 0080)
  */
 export const zBroadcastChannel = z.enum([
@@ -735,22 +726,6 @@ export const zAutomationResults = z.object({
   current: zAutomationPeriodResults,
   previous: zAutomationPeriodResults,
   series: z.array(zAutomationResultsPoint)
-});
-
-/**
- * An automation's engagement figures over its whole history and its results over a period
- */
-export const zAutomationReport = z.object({
-  opens: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  clicks: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  delivered: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  bounced: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  complained: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  captured: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  revenue: zMessageRevenue,
-  links: z.array(zLinkClicks),
-  results: zAutomationResults,
-  steps: z.array(zAutomationStepFigures)
 });
 
 /**
@@ -2543,6 +2518,42 @@ export const zApplyTagStepInput = z.strictObject({
 });
 
 /**
+ * The messages of one send Step, over every version that had it
+ */
+export const zAutomationStepFigures = z.object({
+  stepId: zStepId,
+  sent: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  skipped: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * The messages one version's send Step sent
+ */
+export const zAutomationVersionStepFigures = z.object({
+  version: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  stepId: zStepId,
+  sent: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  skipped: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * An automation's engagement figures over its whole history and its results over a period
+ */
+export const zAutomationReport = z.object({
+  opens: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  clicks: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  delivered: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  bounced: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  complained: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  captured: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  revenue: zMessageRevenue,
+  links: z.array(zLinkClicks),
+  results: zAutomationResults,
+  steps: z.array(zAutomationStepFigures),
+  versionSteps: z.array(zAutomationVersionStepFigures)
+});
+
+/**
  * A Step that sends an email through the Integration it names
  */
 export const zEmailStep = z.object({
@@ -3189,7 +3200,7 @@ export const zContactExportOutboundMessage = z.object({
   captured: z.boolean(),
   broadcastId: z.exactOptional(zEntityId.nullable()),
   automationId: z.exactOptional(zEntityId.nullable()),
-  automationStep: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable()),
+  automationStepId: z.exactOptional(z.string().nullable()),
   templateId: z.exactOptional(zEntityId.nullable()),
   createdAt: zTimestamp
 });

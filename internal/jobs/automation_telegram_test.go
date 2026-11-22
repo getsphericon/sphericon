@@ -119,7 +119,7 @@ func TestAMixedSequenceSendsTheEmailsAndRecordsTheTelegramSkipForAContactWithNoB
 	assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(t.Context(), runID).Status)
 	skipped := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).OnlyX(t.Context())
 	assert.Equal(t, skipreason.NoDestination, *skipped.SkippedReason)
-	assert.Equal(t, 1, *skipped.AutomationStep)
+	assert.Equal(t, env.StepIDAt(t, runID, 1), *skipped.AutomationStepID)
 	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramSent, nil))
 }
 

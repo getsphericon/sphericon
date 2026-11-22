@@ -2,6 +2,7 @@ package automations_test
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -322,4 +323,26 @@ func TestHTTPExecutionStopsWhenTheResponseCrossesTheRateLimitHorizon(t *testing.
 	assert.Equal(t, automationrun.StatusFailed, run.Status)
 	require.NotNil(t, run.FailureStatus)
 	assert.Equal(t, http.StatusTooManyRequests, *run.FailureStatus)
+}
+
+// callIDs is a receiver that answers 200 and keeps the webhook id of each call.
+type callIDs struct{ ids []string }
+
+func (c *callIDs) Do(r *http.Request) (*http.Response, error) {
+	c.ids = append(c.ids, r.Header.Get("Webhook-Id"))
+	return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(""))}, nil
+}
+
+// An HTTP call's id names the run and the Step id, not where the Step stands (ADR 0122): the
+// HTTP step below a wait is called under the id it has first in another Automation's version.
+func TestHTTPCallIDNamesTheRunAndTheStepWhereverItStands(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	receiver := &callIDs{}
+	exec := automations.NewStepExecution(env.Bus, env.OutboundModule(), testhelper.Module[*contacts.Module](env), noFence, env.Cipher, receiver, executionNow)
+
+	_, err := exec.ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: fixtures.AutomationRunHTTPBelowAWaitID, Step: env.StepIDAt(t, fixtures.AutomationRunHTTPBelowAWaitID, 1), Attempt: executionAttempt()})
+	require.NoError(t, err)
+
+	assert.Equal(t, []string{fmt.Sprintf("automation_%d_01900000-0000-0000-0000-000000000001", fixtures.AutomationRunHTTPBelowAWaitID)}, receiver.ids)
 }

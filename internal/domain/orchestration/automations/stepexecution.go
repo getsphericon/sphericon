@@ -268,7 +268,9 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 
 	default:
 		if _, sends := st.Kind().Channel(); sends {
-			return m.send(ctx, s, a, run, at, SendStep{Index: positionOf(version.Steps, step), Step: *st})
+			// The send names its Step by the id the Enrollment stands on (ADR 0122): the send
+			// reads no position.
+			return m.send(ctx, s, a, run, at, SendStep{Step: *st})
 		}
 		return m.fail(ctx, s, run.ID, fmt.Errorf("unknown step type %q", st.Kind()))
 	}
@@ -307,7 +309,7 @@ func (m *StepExecution) send(ctx context.Context, s *ent.Scoped, a *ent.Automati
 	var res outboundmessages.Result
 	err = m.fence(ctx, s, run.ID, func(ctx context.Context) error {
 		var sendErr error
-		res, sendErr = m.out.Send(ctx, s, outboundmessages.AutomationStep(a, run, st.Index, st.Step.Integration(), c, content))
+		res, sendErr = m.out.Send(ctx, s, outboundmessages.AutomationStep(a, run, at.step, st.Step.Integration(), c, content))
 		return sendErr
 	})
 	if stale(err) {
@@ -343,7 +345,7 @@ func (m *StepExecution) send(ctx context.Context, s *ent.Scoped, a *ent.Automati
 			// one else): it is recorded Failed, and the sequence goes on (ADR 0079).
 			return m.advance(ctx, s, run.ID, at, stepMove{})
 		}
-		return m.fail(ctx, s, run.ID, fmt.Errorf("%s step %d: %s", st.Step.Kind(), st.Index, res.Failure))
+		return m.fail(ctx, s, run.ID, fmt.Errorf("%s step %s: %s", st.Step.Kind(), at.step, res.Failure))
 	}
 }
 
@@ -371,17 +373,6 @@ func (p place) next() string {
 		return ""
 	}
 	return st.ID
-}
-
-// positionOf is where the Step of the id stands in the path, 0 for the first: an Automation's
-// message and an HTTP step's call still name a Step by its position.
-func positionOf(steps automationstep.Path, id string) int {
-	for pos, st := range automationstep.All(steps) {
-		if st.ID == id {
-			return pos
-		}
-	}
-	return -1
 }
 
 // advance moves the Enrollment from the Step it stands on to the next one, or past the last Step

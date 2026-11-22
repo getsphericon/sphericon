@@ -352,6 +352,15 @@
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
 
+- id: 5581 # fixture: AutomationHTTPBelowAWaitVersion
+  automation_id: 5581
+  trigger_event: http_below_a_wait
+  version: 1
+  steps: '{"id":"9d5f3a40-6c1e-4b8a-a7d2-3e0f5b9c1a24","steps":[{"id":"5e2b7c91-0d4a-4f63-8b15-c7a9e2d40f18","type":"wait","seconds":60},{"id":"01900000-0000-0000-0000-000000000001","type":"http","url":"{{ encrypt "https://hooks.example.com/notify" }}","body":"{}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"}]}'
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+
 - id: 7310 # fixture: AutomationSealedDraftVersion
   automation_id: 7310
   trigger_event: sealed_draft

@@ -160,7 +160,6 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend optNilEntityID
 // goverter:extend optEntityID
 // goverter:extend optStepID
-// goverter:extend optNilInt32
 // goverter:extend jsonObject
 // goverter:extend segmentCondition
 // goverter:extend ruleCondition
@@ -674,10 +673,6 @@ func providerLimitSource(c Converter, v providerlimit.Source) externalapi.NilPro
 		return externalapi.NilProviderLimitSource{Null: true}
 	}
 	return externalapi.NewNilProviderLimitSource(c.ProviderLimitSourceToResource(v))
-}
-
-func optNilInt32(v *int) externalapi.OptNilInt32 {
-	return convert.Opt[externalapi.OptNilInt32](convert.Int32Ptr(v))
 }
 
 // jsonObject renders a stored JSON object (custom fields, event properties): absent when it has

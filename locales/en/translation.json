@@ -450,11 +450,13 @@
     "stepEmail": "Send email",
     "stepEnd": "End",
     "stepFigures": {
-      "hint": "What each send step sent and skipped, across every version. A contact skipped at a step (no address, opted out of the channel, or suppressed) moves on to the next step.",
+      "hint": "What each send step sent and skipped, across every version that had it, and each version's share. A contact skipped at a step (no address, opted out of the channel, or suppressed) moves on to the next step.",
+      "notLive": "Not in the live version",
       "sent": "Sent",
       "skipped": "Skipped",
       "step": "Step",
-      "title": "Send steps"
+      "title": "Send steps",
+      "version": "Version"
     },
     "stepHttp": "Call a URL",
     "stepRemoveTag": "Remove tag",

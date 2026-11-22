@@ -9,7 +9,7 @@ import (
 	"entgo.io/ent/schema/index"
 )
 
-// AutomationFigure is what one step position of an Automation sent before message retention
+// AutomationFigure is what one send Step of an Automation version sent before message retention
 // deleted its Outbound messages (ADR 0143): each pruned batch adds its counts here in the
 // transaction that deletes it, so the Automation's report adds these to what its live messages
 // count and reads what it read before the prune.
@@ -34,8 +34,11 @@ func (AutomationFigure) Fields() []ent.Field {
 			Immutable(),
 		field.Int64("automation_id").
 			Immutable(),
-		// The position of the send step, as an Automation message's automation_step.
-		field.Int("step").
+		// The version and the Step id of the send Step, as an Automation message's
+		// automation_version_id and automation_step_id (ADR 0122).
+		field.Int64("version_id").
+			Immutable(),
+		field.String("step_id").
 			Immutable(),
 		// The counts the report reads from the messages: sent and skipped by step, and the
 		// delivery stamps.
@@ -51,13 +54,17 @@ func (AutomationFigure) Fields() []ent.Field {
 func (AutomationFigure) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("automation", Automation.Type).Field("automation_id").Unique().Required().Immutable(),
+		edge.To("version", AutomationVersion.Type).Field("version_id").Unique().Required().Immutable(),
 	}
 }
 
 func (AutomationFigure) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("workspace_id", "automation_id", "step").
+		index.Fields("workspace_id", "automation_id", "version_id", "step_id").
 			Unique().
-			StorageKey("automation_figures_workspace_id_automation_id_step"),
+			StorageKey("automation_figures_workspace_automation_version_step"),
+		// The version foreign key's index.
+		index.Fields("workspace_id", "version_id").
+			StorageKey("automation_figures_workspace_id_version_id"),
 	}
 }
