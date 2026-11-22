@@ -12,6 +12,7 @@ import type {
   CustomFieldConditionTests,
   SiteCustomFieldResource,
 } from '../../generated/site/types.gen.ts'
+import { i18n } from '../../i18n.ts'
 import { TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { withinLastOperator } from './condition.ts'
 import {
@@ -23,6 +24,7 @@ import {
 } from './fieldOperators.ts'
 
 const names = (operators: Operator[]) => operators.map((operator) => operator.name)
+const t = i18n.t
 
 const field = (
   type: CustomFieldType,
@@ -61,7 +63,7 @@ const renewsAt = field(CustomFieldType.DATETIME, {
 })
 
 test('a number Custom field offers text eq and neq, the number comparisons and presence', () => {
-  const offered = operatorsOf(seats)
+  const offered = operatorsOf(t, seats)
 
   expect(names(offered)).toEqual([
     TextOperator.EQ,
@@ -75,7 +77,7 @@ test('a number Custom field offers text eq and neq, the number comparisons and p
 })
 
 test('a string Custom field offers the text operators it takes and presence', () => {
-  const offered = operatorsOf(plan)
+  const offered = operatorsOf(t, plan)
 
   expect(names(offered)).toEqual([
     TextOperator.EQ,
@@ -86,7 +88,7 @@ test('a string Custom field offers the text operators it takes and presence', ()
 })
 
 test('a datetime Custom field offers the moment operators, the window of days and presence', () => {
-  const offered = operatorsOf(renewsAt)
+  const offered = operatorsOf(t, renewsAt)
 
   expect(names(offered)).toEqual([
     MomentOperator.BEFORE,
@@ -97,15 +99,15 @@ test('a datetime Custom field offers the moment operators, the window of days an
 })
 
 test('a presence test takes no value on a Custom field or an attribute', () => {
-  const onField = operatorsOf(plan).find((operator) => operator.name === 'set')
-  const onAttribute = attributeOperators.filter((operator) => operator.arity === 'unary')
+  const onField = operatorsOf(t, plan).find((operator) => operator.name === 'set')
+  const onAttribute = attributeOperators(t).filter((operator) => operator.arity === 'unary')
 
   expect(onField?.arity).toBe('unary')
   expect(names(onAttribute)).toEqual([PresenceOperator.SET, PresenceOperator.NOT_SET])
 })
 
 test('an Event property is tested as text, compared as a number or tested for presence, never as a moment', () => {
-  const property = names(propertyOperators)
+  const property = names(propertyOperators(t))
 
   expect(property).toEqual([
     TextOperator.EQ,
@@ -119,6 +121,12 @@ test('an Event property is tested as text, compared as a number or tested for pr
     PresenceOperator.SET,
     PresenceOperator.NOT_SET,
   ])
+})
+
+test('an operator is named from the catalog by its test', () => {
+  const onAttribute = attributeOperators(t).map((operator) => operator.label)
+
+  expect(onAttribute).toEqual(['is', 'is not', 'contains', 'begins with', 'is set', 'is not set'])
 })
 
 test('a comparison and a window take a number, before and after a day, a text test its field’s', () => {

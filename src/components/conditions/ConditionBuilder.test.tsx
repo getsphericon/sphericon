@@ -231,7 +231,7 @@ test('adding a rule emits the typed Condition', async () => {
     entries: [
       {
         kind: 'attribute',
-        attribute: 'subject_id',
+        attribute: 'email',
         test: { kind: 'text', operator: 'eq', value: '' },
       },
     ],

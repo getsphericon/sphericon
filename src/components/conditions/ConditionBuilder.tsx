@@ -1,6 +1,7 @@
 import { Button, Group, Stack, Text } from '@mantine/core'
 import { QueryBuilderMantine } from '@react-querybuilder/mantine'
 import { useMutation, useQuery } from '@tanstack/react-query'
+import type { TFunction } from 'i18next'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { QueryBuilder } from 'react-querybuilder'
@@ -27,6 +28,7 @@ import {
   toCondition,
   toDraft,
   toQuery,
+  unnamed,
 } from './condition.ts'
 import type { ConditionDraft, ConditionPlace } from './condition.ts'
 import { ConditionValueEditor } from './ConditionValueEditor.tsx'
@@ -44,57 +46,69 @@ import {
 // Event conditions count the action (per-field overrides the global operator set): the presets
 // "performed" and "not performed", or at least / at most a number of times. EventCountEditor
 // edits the count and the window in days (blank = ever).
-const eventOperators: Operator[] = [
-  { name: eventPresets.performed, label: 'performed' },
-  { name: eventPresets.notPerformed, label: 'not performed' },
-  { name: EventCountOperator.AT_LEAST, label: 'at least (times)' },
-  { name: EventCountOperator.AT_MOST, label: 'at most (times)' },
-]
-
-const attributeLabels: Record<ContactAttribute, string> = {
-  [ContactAttribute.SUBJECT_ID]: 'Subject ID',
-  [ContactAttribute.EMAIL]: 'Email',
-  [ContactAttribute.PHONE]: 'Phone',
-  [ContactAttribute.FIRST_NAME]: 'First name',
-  [ContactAttribute.LAST_NAME]: 'Last name',
-  [ContactAttribute.TIME_ZONE]: 'Time zone',
-  [ContactAttribute.COUNTRY]: 'Country',
-  [ContactAttribute.LOCALE]: 'Locale',
-  [ContactAttribute.CITY]: 'City',
+function eventOperators(t: TFunction): Operator[] {
+  return [
+    { name: eventPresets.performed, label: t(($) => $.conditions.eventOperators.performed) },
+    { name: eventPresets.notPerformed, label: t(($) => $.conditions.eventOperators.notPerformed) },
+    { name: EventCountOperator.AT_LEAST, label: t(($) => $.conditions.eventOperators.atLeast) },
+    { name: EventCountOperator.AT_MOST, label: t(($) => $.conditions.eventOperators.atMost) },
+  ]
 }
 
 // The Contact's leaves: its text attributes, its birthday, its Tags, and whether it can be reached
 // on Telegram or by SMS.
-const contactFields: Field[] = [
-  ...Object.entries(attributeLabels).map(([name, label]) => ({
-    name,
-    label,
-    operators: attributeOperators,
-  })),
-  { name: subjectFields.birthday, label: 'Birthday', operators: birthdayOperators },
-  // Whether the Contact has the Tag typed as the value.
-  { name: subjectFields.tag, label: 'Tag', operators: tagOperators },
-  // Whether a Telegram chat is bound to the Contact or its Visitors: no value to type.
-  {
-    name: subjectFields.telegram,
-    label: 'Telegram',
-    operators: haveOperators,
-    defaultOperator: HasOperator.HAS,
-  },
-  // Whether the Contact's phone can be texted (it has an SMS Confirmation and no SMS opt-out): no
-  // value to type.
-  {
-    name: subjectFields.sms,
-    label: 'SMS',
-    operators: haveOperators,
-    defaultOperator: HasOperator.HAS,
-  },
-]
+function contactFields(t: TFunction): Field[] {
+  return [
+    ...Object.values(ContactAttribute).map((attribute) => ({
+      name: attribute,
+      label: t(($) => $.conditions.attributes[attribute]),
+      operators: attributeOperators(t),
+    })),
+    {
+      name: subjectFields.birthday,
+      label: t(($) => $.conditions.fields.birthday),
+      operators: birthdayOperators(t),
+    },
+    // Whether the Contact has the Tag typed as the value.
+    {
+      name: subjectFields.tag,
+      label: t(($) => $.conditions.fields.tag),
+      operators: tagOperators(t),
+    },
+    // Whether a Telegram chat is bound to the Contact or its Visitors: no value to type.
+    {
+      name: subjectFields.telegram,
+      label: t(($) => $.conditions.fields.telegram),
+      operators: haveOperators(t),
+      defaultOperator: HasOperator.HAS,
+    },
+    // Whether the Contact's phone can be texted (it has an SMS Confirmation and no SMS opt-out): no
+    // value to type.
+    {
+      name: subjectFields.sms,
+      label: t(($) => $.conditions.fields.sms),
+      operators: haveOperators(t),
+      defaultOperator: HasOperator.HAS,
+    },
+  ]
+}
 
 // A Rule's Condition also tests a property of the Event that fired it, its key typed beside it.
-const placeFields: Record<ConditionPlace, Field[]> = {
-  segment: [],
-  rule: [{ name: subjectFields.property, label: 'Event property', operators: propertyOperators }],
+function placeFields(t: TFunction, place: ConditionPlace): Field[] {
+  switch (place) {
+    case 'segment':
+      return []
+    case 'rule':
+      return [
+        {
+          name: subjectFields.property,
+          label: t(($) => $.conditions.fields.property),
+          operators: propertyOperators(t),
+        },
+      ]
+    default:
+      return unnamed(place)
+  }
 }
 
 interface ConditionBuilderProps {
@@ -141,7 +155,7 @@ export function ConditionBuilder({
     const customFields = (customFieldsQuery.data?.items ?? []).map<Field>((f) => ({
       name: customFieldId(f.key),
       label: f.name,
-      operators: operatorsOf(f),
+      operators: operatorsOf(t, f),
       inputType: inputTypeOfField(f),
     }))
     // A System event reads as its name ("Opened an email"); a customer's action as it was tracked.
@@ -149,10 +163,10 @@ export function ConditionBuilder({
       name: `${eventFieldPrefix}${action}`,
       label:
         labelOf(action) === action ? t(($) => $.segments.didEvent, { action }) : labelOf(action),
-      operators: eventOperators,
+      operators: eventOperators(t),
       defaultOperator: eventPresets.performed,
     }))
-    return [...contactFields, ...customFields, ...eventFields, ...placeFields[place]]
+    return [...contactFields(t), ...customFields, ...eventFields, ...placeFields(t, place)]
   }, [actionsQuery.data, customFieldsQuery.data, labelOf, t, place])
 
   return (
@@ -160,7 +174,7 @@ export function ConditionBuilder({
       <QueryBuilderMantine>
         <QueryBuilder
           fields={fields}
-          operators={attributeOperators}
+          operators={attributeOperators(t)}
           getInputType={(_field, operator, { fieldData }) => inputTypeOf(operator, fieldData)}
           defaultQuery={initialQuery}
           enableMountQueryChange={false}

@@ -1,5 +1,4 @@
-import { conditionSchemas, emptyGroup } from '../../components/conditions/condition.ts'
-import { zCreateSegmentInput } from '../../generated/site/zod.gen.ts'
+import { emptyGroup, placeInputSchemas } from '../../components/conditions/condition.ts'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import type { SegmentValues } from './SegmentForm.tsx'
 
@@ -11,9 +10,4 @@ const blankSegment: SegmentValues = {
   condition: emptyGroup,
 }
 
-// The generated create input reaches the Condition through a lazy schema typed any, so it is given
-// the Segment's typed Condition schema.
-export const segmentSchema = resourceFormSchema(
-  zCreateSegmentInput.extend({ condition: conditionSchemas.segment }),
-  blankSegment,
-)
+export const segmentSchema = resourceFormSchema(placeInputSchemas.segment, blankSegment)

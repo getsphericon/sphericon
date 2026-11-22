@@ -35,7 +35,13 @@ import type {
   WithinLastTestInput,
 } from '../../generated/site/types.gen.ts'
 import {
+  zAttributeTestInput,
+  zBirthdayTestInput,
+  zCreateRuleInput,
+  zCreateSegmentInput,
+  zCustomFieldTestInput,
   zEventLeaf,
+  zPropertyTestInput,
   zRuleConditionInput,
   zSegmentConditionInput,
 } from '../../generated/site/zod.gen.ts'
@@ -77,9 +83,12 @@ export function customFieldId(key: string): string {
   return `${customFieldIdPrefix}${key}`
 }
 
-const attributeByName = new Map<string, ContactAttribute>(
-  Object.values(ContactAttribute).map((attribute) => [attribute, attribute]),
-)
+// byName reads a name as a value of a generated enum, or as undefined.
+function byName<T extends string>(values: Record<string, T>) {
+  return new Map<string, T>(Object.values(values).map((value) => [value, value]))
+}
+
+const attributeByName = byName(ContactAttribute)
 
 // An event leaf is edited as a builder rule on the field "event:<action>" whose value holds the
 // count and the window. "Performed" and "not performed" are the builder's presets over the leaf:
@@ -109,9 +118,7 @@ export function eventCountOf(times?: number, withinDays?: number): EventCount {
   }
 }
 
-const eventOperatorByName = new Map<string, EventCountOperator>(
-  Object.values(EventCountOperator).map((operator) => [operator, operator]),
-)
+const eventOperatorByName = byName(EventCountOperator)
 
 // isCountOperator tells the builder's atLeast and atMost, which take a count, from the presets.
 export function isCountOperator(operator: string): boolean {
@@ -157,6 +164,54 @@ export function propertyValueOf(key: string, value: unknown): PropertyValue {
 // API's, and the names of the typed tests are disjoint, so the operator alone tells the test.
 export const withinLastOperator = 'withinLast'
 
+// A builder operator as the test it names: every operator of the contract's typed tests by its
+// name, read once from the generated enums, and withinLast.
+export type NamedOperator =
+  | { kind: 'text'; operator: TextOperator }
+  | { kind: 'number'; operator: NumberOperator }
+  | { kind: 'moment'; operator: MomentOperator }
+  | { kind: 'withinLast' }
+  | { kind: 'presence'; operator: PresenceOperator }
+export type TestKind = NamedOperator['kind']
+
+// Every test's operators, each named by its builder operator, in the contract's order of each enum.
+export const testOperators: { [K in TestKind]: Extract<NamedOperator, { kind: K }>[] } = {
+  text: Object.values(TextOperator).map((operator) => ({ kind: 'text', operator })),
+  number: Object.values(NumberOperator).map((operator) => ({ kind: 'number', operator })),
+  moment: Object.values(MomentOperator).map((operator) => ({ kind: 'moment', operator })),
+  withinLast: [{ kind: 'withinLast' }],
+  presence: Object.values(PresenceOperator).map((operator) => ({ kind: 'presence', operator })),
+}
+
+// The builder operator's name of a test's operator.
+export function operatorName(named: NamedOperator): string {
+  return named.kind === 'withinLast' ? withinLastOperator : named.operator
+}
+
+const operatorsByName = new Map<string, NamedOperator>(
+  Object.values(testOperators).flatMap((operators: NamedOperator[]) =>
+    operators.map((named): [string, NamedOperator] => [operatorName(named), named]),
+  ),
+)
+
+// namedOperator is the test a builder operator names, or undefined for one that names none (an
+// event count's, a Tag's).
+export function namedOperator(operator: string): NamedOperator | undefined {
+  return operatorsByName.get(operator)
+}
+
+// The kinds of test each leaf takes, in the contract's order: its generated test union's. A Custom
+// field's type narrows its own further, which the server lists per field and checks at save.
+function kindsOf(union: { options: readonly { shape: { kind: { value: TestKind } } }[] }) {
+  return union.options.map((option) => option.shape.kind.value)
+}
+export const leafTests = {
+  attribute: kindsOf(zAttributeTestInput),
+  birthday: kindsOf(zBirthdayTestInput),
+  customField: kindsOf(zCustomFieldTestInput),
+  property: kindsOf(zPropertyTestInput),
+}
+
 type AnyTest =
   | TextTestInput
   | NumberTestInput
@@ -191,7 +246,7 @@ function dayOfSide(test: MomentTestInput, timeZone?: string): string {
 
 // A leaf or test of a kind the switch over the kinds does not name: tsc refuses the call once a
 // kind is added to the contract and not here.
-function unnamed(kind: never): never {
+export function unnamed(kind: never): never {
   throw new Error(`a Condition entry of no known kind: ${JSON.stringify(kind)}`)
 }
 
@@ -276,13 +331,6 @@ type NodeDraft =
   | ConditionDraft
 export type ConditionDraft = Omit<RuleConditionInput, 'entries'> & { entries: NodeDraft[] }
 
-function byName<T extends string>(values: Record<string, T>) {
-  return new Map<string, T>(Object.values(values).map((value) => [value, value]))
-}
-const textOperatorByName = byName(TextOperator)
-const numberOperatorByName = byName(NumberOperator)
-const momentOperatorByName = byName(MomentOperator)
-const presenceOperatorByName = byName(PresenceOperator)
 const hasOperatorByName = byName(HasOperator)
 const combinatorByName = byName(ConditionCombinator)
 
@@ -311,36 +359,40 @@ function textOf(value: unknown): string {
 // toTest reads the test a builder operator names, with the value it compares with, or undefined
 // for an operator that names no test.
 function toTest(operator: string, value: unknown, timeZone?: string): TestDraft | undefined {
-  const text = textOperatorByName.get(operator)
-  if (text !== undefined) {
-    return { kind: 'text', operator: text, value: textOf(value) }
+  const named = namedOperator(operator)
+  if (named === undefined) {
+    return undefined
   }
-  const compared = numberOperatorByName.get(operator)
-  if (compared !== undefined) {
-    const number = numberOf(value)
-    return {
-      kind: 'number',
-      operator: compared,
-      ...(number === undefined ? {} : { value: number }),
+  switch (named.kind) {
+    case 'text':
+      return { kind: 'text', operator: named.operator, value: textOf(value) }
+    case 'number': {
+      const number = numberOf(value)
+      return {
+        kind: 'number',
+        operator: named.operator,
+        ...(number === undefined ? {} : { value: number }),
+      }
     }
+    case 'moment': {
+      const at = momentOfSide(named.operator, value, timeZone)
+      return { kind: 'moment', operator: named.operator, ...(at === undefined ? {} : { at }) }
+    }
+    case 'withinLast': {
+      const days = numberOf(value)
+      return { kind: 'withinLast', ...(days === undefined ? {} : { days }) }
+    }
+    case 'presence':
+      return { kind: 'presence', operator: named.operator }
+    default:
+      return unnamed(named)
   }
-  const side = momentOperatorByName.get(operator)
-  if (side !== undefined) {
-    const at = momentOfSide(side, value, timeZone)
-    return { kind: 'moment', operator: side, ...(at === undefined ? {} : { at }) }
-  }
-  if (operator === withinLastOperator) {
-    const days = numberOf(value)
-    return { kind: 'withinLast', ...(days === undefined ? {} : { days }) }
-  }
-  const presence = presenceOperatorByName.get(operator)
-  return presence === undefined ? undefined : { kind: 'presence', operator: presence }
 }
 
-// The tests a leaf takes, besides what a Custom field's type takes, which is checked at save.
-const attributeTests = new Set<TestDraft['kind']>(['text', 'presence'])
-const birthdayTests = new Set<TestDraft['kind']>(['moment', 'withinLast'])
-const propertyTests = new Set<TestDraft['kind']>(['text', 'number', 'presence'])
+// takes reads the test a builder operator names as a test the leaf takes, or undefined.
+function takes(kinds: readonly TestKind[], test: TestDraft | undefined): TestDraft | undefined {
+  return test !== undefined && kinds.includes(test.kind) ? test : undefined
+}
 
 function boundOf(rule: RuleType, count: EventCount) {
   const operator = eventOperatorByName.get(rule.operator)
@@ -360,62 +412,84 @@ function toEventLeaf(action: string, rule: RuleType): NodeDraft[] {
   return [{ kind: 'event', action, ...bound, ...span }]
 }
 
-function toHaveLeaf(rule: RuleType): NodeDraft[] {
+type HaveKind = 'tag' | 'telegram' | 'sms'
+
+function toHaveLeaf(kind: HaveKind, rule: RuleType): NodeDraft[] {
   const operator = hasOperatorByName.get(rule.operator)
   if (operator === undefined) {
     return []
   }
-  switch (rule.field) {
-    case subjectFields.tag:
-      return [{ kind: 'tag', name: textOf(rule.value), operator }]
-    case subjectFields.telegram:
-      return [{ kind: 'telegram', operator }]
+  switch (kind) {
+    case 'tag':
+      return [{ kind, name: textOf(rule.value), operator }]
+    case 'telegram':
+    case 'sms':
+      return [{ kind, operator }]
     default:
-      return [{ kind: 'sms', operator }]
+      return unnamed(kind)
   }
 }
 
 function toPropertyLeaf(rule: RuleType, timeZone?: string): NodeDraft[] {
   const { key, value } = propertyValue(rule.value)
-  const test = toTest(rule.operator, value, timeZone)
-  if (test === undefined || !propertyTests.has(test.kind)) {
+  const test = takes(leafTests.property, toTest(rule.operator, value, timeZone))
+  if (test === undefined) {
     return []
   }
   return [{ kind: 'property', of: { kind: 'trigger' }, ...(key === '' ? {} : { key }), test }]
+}
+
+type LeafKind = Exclude<NodeDraft['kind'], 'group'>
+
+const subjectKinds = new Map<string, LeafKind>(
+  Object.values(subjectFields).map((field) => [field, field]),
+)
+
+// leafKindOf is the kind of leaf a builder field edits, or undefined for a field that names none.
+function leafKindOf(field: string): LeafKind | undefined {
+  if (field.startsWith(eventFieldPrefix)) {
+    return 'event'
+  }
+  if (field.startsWith(customFieldIdPrefix)) {
+    return 'customField'
+  }
+  return attributeByName.has(field) ? 'attribute' : subjectKinds.get(field)
 }
 
 // toLeaf reads a builder rule as the leaf its field and operator name, or as nothing when they
 // name none.
 function toLeaf(rule: RuleType, timeZone?: string): NodeDraft[] {
   const { field } = rule
-  if (field.startsWith(eventFieldPrefix)) {
-    return toEventLeaf(field.slice(eventFieldPrefix.length), rule)
-  }
-  if (
-    field === subjectFields.tag ||
-    field === subjectFields.telegram ||
-    field === subjectFields.sms
-  ) {
-    return toHaveLeaf(rule)
-  }
-  if (field === subjectFields.property) {
-    return toPropertyLeaf(rule, timeZone)
-  }
-  const test = toTest(rule.operator, rule.value, timeZone)
-  if (test === undefined) {
+  const kind = leafKindOf(field)
+  if (kind === undefined) {
     return []
   }
-  if (field.startsWith(customFieldIdPrefix)) {
-    return [{ kind: 'customField', key: field.slice(customFieldIdPrefix.length), test }]
+  switch (kind) {
+    case 'event':
+      return toEventLeaf(field.slice(eventFieldPrefix.length), rule)
+    case 'tag':
+    case 'telegram':
+    case 'sms':
+      return toHaveLeaf(kind, rule)
+    case 'property':
+      return toPropertyLeaf(rule, timeZone)
+    case 'customField': {
+      const test = takes(leafTests.customField, toTest(rule.operator, rule.value, timeZone))
+      const key = field.slice(customFieldIdPrefix.length)
+      return test === undefined ? [] : [{ kind, key, test }]
+    }
+    case 'birthday': {
+      const test = takes(leafTests.birthday, toTest(rule.operator, rule.value, timeZone))
+      return test === undefined ? [] : [{ kind, test }]
+    }
+    case 'attribute': {
+      const attribute = attributeByName.get(field)
+      const test = takes(leafTests.attribute, toTest(rule.operator, rule.value, timeZone))
+      return attribute === undefined || test === undefined ? [] : [{ kind, attribute, test }]
+    }
+    default:
+      return unnamed(kind)
   }
-  if (field === subjectFields.birthday) {
-    return birthdayTests.has(test.kind) ? [{ kind: 'birthday', test }] : []
-  }
-  const attribute = attributeByName.get(field)
-  if (attribute === undefined || !attributeTests.has(test.kind)) {
-    return []
-  }
-  return [{ kind: 'attribute', attribute, test }]
 }
 
 export function toDraft(query: RuleGroupType, timeZone?: string): ConditionDraft {
@@ -435,11 +509,20 @@ export function toDraft(query: RuleGroupType, timeZone?: string): ConditionDraft
   }
 }
 
-// Each place's Condition schema, typed: the generated one reaches a group's entries through a lazy
-// schema typed any, so a form's schema takes its Condition from here.
-export const conditionSchemas: { [P in ConditionPlace]: z.ZodType<PlaceConditions[P]> } = {
+// Each place's Condition schema, typed.
+const conditionSchemas: { [P in ConditionPlace]: z.ZodType<PlaceConditions[P]> } = {
   segment: zSegmentConditionInput,
   rule: zRuleConditionInput,
+}
+
+// The create input of a Segment and of a Rule, with the place's typed Condition schema: the
+// generated input schema reaches its Condition through a lazy schema typed any (the zod generator
+// types a reference to a schema it has not emitted yet so, and has no setting that changes it at
+// @hey-api/openapi-ts next-20260930, the newest), so a form takes its schema from here. This is the
+// one place that works around it.
+export const placeInputSchemas = {
+  segment: zCreateSegmentInput.extend({ condition: conditionSchemas.segment }),
+  rule: zCreateRuleInput.extend({ condition: conditionSchemas.rule }),
 }
 
 // toCondition is the draft as the place's Condition, or undefined while a count, a number, a day,

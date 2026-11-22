@@ -1,8 +1,7 @@
-import { conditionSchemas, emptyGroup } from '../../components/conditions/condition.ts'
+import { emptyGroup, placeInputSchemas } from '../../components/conditions/condition.ts'
 import { based, draftGuards } from '../../editing/editorSession.ts'
 import { siteRulesPublish, siteRulesRevert } from '../../generated/site/sdk.gen.ts'
 import type { SiteRuleResource } from '../../generated/site/types.gen.ts'
-import { zCreateRuleInput } from '../../generated/site/zod.gen.ts'
 import type { ResourceEditOperation } from '../../resources/defineResource.tsx'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import type { RuleValues } from './RuleForm.tsx'
@@ -11,10 +10,9 @@ import type { RuleValues } from './RuleForm.tsx'
 // matches every Contact. A new Rule has no Actions yet.
 const blankRule: RuleValues = { name: '', triggerEvents: [], condition: emptyGroup, actions: [] }
 
-// The generated create input reaches the Condition through a lazy schema typed any, so it is given
-// the Rule's typed Condition schema, which the editor always sends.
+// The editor always sends the Rule's Condition.
 export const ruleSchema = resourceFormSchema(
-  zCreateRuleInput.extend({ condition: conditionSchemas.rule }).required({ actions: true }),
+  placeInputSchemas.rule.required({ actions: true }),
   blankRule,
 )
 
