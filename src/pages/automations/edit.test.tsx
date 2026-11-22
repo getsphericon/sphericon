@@ -191,6 +191,12 @@ test('a version holding an End opens read-only, drawing the End and offering no 
     .toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
   await expect.element(screen.getByLabelText('Name', { exact: false })).toBeDisabled()
+  await expect.element(screen.getByText('End', { exact: true }).first()).toBeInTheDocument()
+  await page.elementLocator(flowNode(2)).click()
+  await screen.getByText('Properties').click()
+  await expect
+    .element(screen.getByText('This version ends a path with an End step', { exact: false }))
+    .toBeInTheDocument()
 })
 
 const AUTHORED_DOC = {

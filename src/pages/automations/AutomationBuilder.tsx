@@ -286,12 +286,15 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
 
   const form = useAutomationBarForm(automation.name)
 
+  // An End is not in the palette (useHoldsEnd), so its label is named beside the palette's.
   const labels = useMemo(
-    () =>
-      Object.fromEntries(
+    () => ({
+      ...Object.fromEntries(
         nodeTypes.flatMap((item) => ('type' in item ? [[item.type, item.label]] : [])),
       ),
-    [nodeTypes],
+      ['end' satisfies StepKind]: t(($) => $.automations.stepEnd),
+    }),
+    [nodeTypes, t],
   )
   const initialGraph = useMemo(() => stepsToGraph(edited, edited.steps, labels), [edited, labels])
   const outcomeTexts = automationOutcomeTexts(t)
