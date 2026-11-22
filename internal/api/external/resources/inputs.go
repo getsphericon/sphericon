@@ -391,6 +391,8 @@ func automationStepIn(c Inputs, in *externalapi.AutomationStepInput) automations
 		return automationstep.Step{ID: stepIDIn(s.RemoveTagStepInput.ID), Payload: c.RemoveTagStepIn(s.RemoveTagStepInput)}
 	case externalapi.HttpStepInputAutomationStepInputSum:
 		return automationstep.Step{ID: stepIDIn(s.HttpStepInput.ID), Payload: c.HttpStepIn(s.HttpStepInput)}
+	case externalapi.EndStepInputAutomationStepInputSum:
+		return automationstep.Step{ID: stepIDIn(s.EndStepInput.ID), Payload: automationstep.End{}}
 	default:
 		return automationstep.Step{} // the save refuses a Step of no kind
 	}

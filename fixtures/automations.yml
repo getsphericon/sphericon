@@ -220,6 +220,16 @@
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
 
+# Ends its path early with an End (ADR 0124). Steps in automation_versions.yml.
+- id: 5590 # fixture: AutomationJobsEndsEarly
+  revision: 1
+  name: Jobs ends early
+  status: active
+  live_version_id: 5590
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
 # Starts on an open: the tracking tests open the mail of another Automation to enroll a Contact here,
 # and open this one's own mail to show it never enrolls itself (ADR 0053).
 - id: 5570 # fixture: AutomationOnOpen

@@ -199,3 +199,20 @@ func mapFailingAt(steps automationstep.Path, failAt int) (automationstep.Path, i
 	})
 	return out, visited, err
 }
+
+// An End finishes its path (ADR 0124): the first Step after one is found, and a path whose End is
+// its last Step, or that holds none, has none.
+func TestAfterEndFindsTheFirstStepThatFollowsAnEnd(t *testing.T) {
+	end := automationstep.Step{ID: "e", Payload: automationstep.End{}}
+	wait := automationstep.Step{ID: "w", Payload: automationstep.Wait{Seconds: 60}}
+	tag := automationstep.Step{ID: "t", Payload: automationstep.ApplyTag{Tag: "vip"}}
+
+	after, found := automationstep.AfterEnd(automationstep.Root(wait, end, tag, end))
+	_, endLast := automationstep.AfterEnd(automationstep.Root(wait, tag, end))
+	_, noEnd := automationstep.AfterEnd(automationstep.Root(wait, tag))
+
+	require.True(t, found)
+	assert.Equal(t, "t", after.ID)
+	assert.False(t, endLast)
+	assert.False(t, noEnd)
+}

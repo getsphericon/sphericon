@@ -376,6 +376,7 @@ test('shows what the live version does, its exit and goal events included, not t
                 integrationId: testId(21),
               },
               { id: stepId(13), type: 'apply_tag', tag: 'onboarded' },
+              { id: stepId(14), type: 'end' },
             ],
           },
         },
@@ -407,6 +408,7 @@ test('shows what the live version does, its exit and goal events included, not t
     .element(screen.getByText('Send email: Second look · Mailgun relay'))
     .toBeInTheDocument()
   await expect.element(screen.getByText('Apply tag: onboarded')).toBeInTheDocument()
+  await expect.element(screen.getByText('End', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('course_completed')).not.toBeInTheDocument()
   await expect.element(screen.getByText('Call a URL')).not.toBeInTheDocument()
 })

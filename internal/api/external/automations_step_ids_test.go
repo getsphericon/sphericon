@@ -42,6 +42,8 @@ func externalStepID(st *externalapi.AutomationStep) string {
 		return string(s.HttpStep.ID)
 	case externalapi.TelegramStepAutomationStepSum:
 		return string(s.TelegramStep.ID)
+	case externalapi.EndStepAutomationStepSum:
+		return string(s.EndStep.ID)
 	default:
 		return string(s.SmsStep.ID)
 	}

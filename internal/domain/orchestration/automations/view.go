@@ -14,7 +14,7 @@ type PathView struct {
 }
 
 // StepView is a stored Step as the API shows it, one type per kind (EmailView, TelegramView,
-// SMSView, WaitView, TagView, HTTPView): each holds its kind's fields only, the defaults it was
+// SMSView, WaitView, TagView, HTTPView, EndView): each holds its kind's fields only, the defaults it was
 // stored without filled in. An HTTP step is masked: its URL, header values and signing secret
 // never leave the server, only the header names and whether a secret is set.
 type StepView interface{ stepView() }
@@ -75,12 +75,19 @@ type HTTPView struct {
 	HasSecret bool
 }
 
+// EndView is an End: its id and kind, nothing else (ADR 0124).
+type EndView struct {
+	ID   string
+	Type automationstep.Kind
+}
+
 func (EmailView) stepView()    {}
 func (TelegramView) stepView() {}
 func (SMSView) stepView()      {}
 func (WaitView) stepView()     {}
 func (TagView) stepView()      {}
 func (HTTPView) stepView()     {}
+func (EndView) stepView()      {}
 
 // HeaderName is a header of an HTTP step without its value.
 type HeaderName struct {
@@ -100,6 +107,8 @@ func viewOf(st *automationstep.Step) StepView {
 	switch s := st.Payload.(type) {
 	case automationstep.Wait:
 		return WaitView{ID: st.ID, Type: st.Kind(), Seconds: s.Seconds}
+	case automationstep.End:
+		return EndView{ID: st.ID, Type: st.Kind()}
 	case automationstep.ApplyTag:
 		return TagView{ID: st.ID, Type: st.Kind(), Tag: s.Tag}
 	case automationstep.RemoveTag:

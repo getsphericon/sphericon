@@ -56,6 +56,7 @@ function stepLabel(t: TFunction, step: AutomationStep): string {
     apply_tag: t(($) => $.automations.stepApplyTag),
     remove_tag: t(($) => $.automations.stepRemoveTag),
     http: t(($) => $.automations.stepHttp),
+    end: t(($) => $.automations.stepEnd),
   }
   const detail = stepDetail(step)
   return detail ? `${kind[step.type]}: ${detail}` : kind[step.type]
@@ -69,6 +70,7 @@ function stepDetail(step: AutomationStep): string {
     case 'apply_tag':
     case 'remove_tag':
       return step.tag
+    case 'end':
     case 'http':
     case 'sms':
     case 'telegram':

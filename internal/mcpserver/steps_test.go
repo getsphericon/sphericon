@@ -27,7 +27,8 @@ func TestMCPReadsAnAutomationVersionBackAsItsStepsInOrder(t *testing.T) {
 	require.NoError(t, json.Unmarshal([]byte(`{"steps":[
 		{"type":"email","subject":"Welcome","body":"<p>Hi</p>"},
 		{"type":"wait","seconds":3600},
-		{"type":"apply_tag","tag":"welcomed"}
+		{"type":"apply_tag","tag":"welcomed"},
+		{"type":"end"}
 	]}`), &steps))
 	created := call(t, s, "automations_create", map[string]any{"name": "Agent's welcome", "triggerEvent": "signup", "steps": steps})
 	require.False(t, created.IsError, text(t, created))
@@ -47,13 +48,13 @@ func TestMCPReadsAnAutomationVersionBackAsItsStepsInOrder(t *testing.T) {
 	require.NoError(t, json.Unmarshal([]byte(text(t, got)), &read))
 	path := read.Draft.Steps
 	assert.NotEmpty(t, path.ID, "the root path has an id")
-	require.Len(t, path.Steps, 3)
+	require.Len(t, path.Steps, 4)
 	kinds := make([]any, len(path.Steps))
 	for i, st := range path.Steps {
 		kinds[i] = st["type"]
 		assert.NotEmpty(t, st["id"], "step %d has an id", i+1)
 	}
-	assert.Equal(t, []any{"email", "wait", "apply_tag"}, kinds)
+	assert.Equal(t, []any{"email", "wait", "apply_tag", "end"}, kinds)
 	assert.Equal(t, "Welcome", path.Steps[0]["subject"])
 	assert.InDelta(t, 3600, path.Steps[1]["seconds"], 0)
 	assert.NotContains(t, path.Steps[1], "subject", "a Step carries only its kind's fields")
@@ -82,6 +83,7 @@ func TestMCPToolCarriesTheStepUnionInDefs(t *testing.T) {
 	assert.Equal(t, "#/$defs/AutomationPathInput", refOf(schema.Properties["steps"]))
 	assert.Equal(t, "#/$defs/AutomationStepInput", steps["items"].(map[string]any)["$ref"])
 	assert.Equal(t, "#/$defs/WaitStepInput", mapping["wait"])
-	assert.Len(t, mapping, 7, "every kind of Step")
+	assert.Len(t, mapping, 8, "every kind of Step")
+	assert.Equal(t, "#/$defs/EndStepInput", mapping["end"])
 	assert.Empty(t, unresolvedRefs(raw, schema.Defs))
 }

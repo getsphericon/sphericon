@@ -46,6 +46,8 @@ func siteStepIDs(p siteapi.AutomationPath) []string {
 			ids[i] = string(s.RemoveTagStep.ID)
 		case siteapi.HttpStepAutomationStepSum:
 			ids[i] = string(s.HttpStep.ID)
+		case siteapi.EndStepAutomationStepSum:
+			ids[i] = string(s.EndStep.ID)
 		}
 	}
 	return ids

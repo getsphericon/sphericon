@@ -42,6 +42,8 @@ func SiteStep(st any) siteapi.AutomationStepInput {
 		return siteapi.AutomationStepInput{OneOf: siteapi.NewRemoveTagStepInputAutomationStepInputSum(v)}
 	case siteapi.HttpStepInput:
 		return siteapi.AutomationStepInput{OneOf: siteapi.NewHttpStepInputAutomationStepInputSum(v)}
+	case siteapi.EndStepInput:
+		return siteapi.AutomationStepInput{OneOf: siteapi.NewEndStepInputAutomationStepInputSum(v)}
 	default:
 		panic(fmt.Sprintf("testhelper: %T is not a site Step", st))
 	}
@@ -80,6 +82,8 @@ func ExternalStep(st any) externalapi.AutomationStepInput {
 		return externalapi.AutomationStepInput{OneOf: externalapi.NewRemoveTagStepInputAutomationStepInputSum(v)}
 	case externalapi.HttpStepInput:
 		return externalapi.AutomationStepInput{OneOf: externalapi.NewHttpStepInputAutomationStepInputSum(v)}
+	case externalapi.EndStepInput:
+		return externalapi.AutomationStepInput{OneOf: externalapi.NewEndStepInputAutomationStepInputSum(v)}
 	default:
 		panic(fmt.Sprintf("testhelper: %T is not an external Step", st))
 	}

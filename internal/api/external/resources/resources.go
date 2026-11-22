@@ -102,6 +102,8 @@ func automationStepViews(c Converter, views []automations.StepView) []externalap
 			}
 		case automations.HTTPView:
 			sum = externalapi.NewHttpStepAutomationStepSum(c.HttpStepToResource(v))
+		case automations.EndView:
+			sum = externalapi.NewEndStepAutomationStepSum(c.EndStepToResource(v))
 		}
 		out = append(out, externalapi.AutomationStep{OneOf: sum})
 	}
@@ -124,6 +126,7 @@ func removeTagStepType(automationstep.Kind) externalapi.RemoveTagStepType {
 	return externalapi.RemoveTagStepTypeRemoveTag
 }
 func httpStepType(automationstep.Kind) externalapi.HttpStepType { return externalapi.HttpStepTypeHTTP }
+func endStepType(automationstep.Kind) externalapi.EndStepType   { return externalapi.EndStepTypeEnd }
 
 func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 	return convert.OptObject[externalapi.OptEditorDocument](convert.DocObject[externalapi.EditorDocument](doc))
@@ -196,6 +199,7 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend applyTagStepType
 // goverter:extend removeTagStepType
 // goverter:extend httpStepType
+// goverter:extend endStepType
 // goverter:extend telegramContentChannel
 // goverter:extend smsContentChannel
 type Converter interface {
@@ -321,6 +325,7 @@ type Converter interface {
 	ApplyTagStepToResource(source automations.TagView) externalapi.ApplyTagStep
 	RemoveTagStepToResource(source automations.TagView) externalapi.RemoveTagStep
 	HttpStepToResource(source automations.HTTPView) externalapi.HttpStep
+	EndStepToResource(source automations.EndView) externalapi.EndStep
 	// goverter:ignore Value
 	AutomationHttpHeaderToResource(source automations.HeaderName) externalapi.AutomationHttpHeader
 	TelegramButtonToResource(source telegramrender.Button) externalapi.TelegramButton

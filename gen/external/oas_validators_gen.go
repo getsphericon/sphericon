@@ -1147,6 +1147,11 @@ func (s AutomationStepInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case EndStepInputAutomationStepInputSum:
+		if err := s.EndStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -1186,6 +1191,11 @@ func (s AutomationStepSum) Validate() error {
 		return nil
 	case HttpStepAutomationStepSum:
 		if err := s.HttpStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case EndStepAutomationStepSum:
+		if err := s.EndStep.Validate(); err != nil {
 			return err
 		}
 		return nil
@@ -4021,6 +4031,70 @@ func (s EmailStepInputType) Validate() error {
 func (s EmailStepType) Validate() error {
 	switch s {
 	case "email":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *EndStep) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *EndStepInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s EndStepInputType) Validate() error {
+	switch s {
+	case "end":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s EndStepType) Validate() error {
+	switch s {
+	case "end":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

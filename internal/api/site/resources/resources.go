@@ -131,6 +131,7 @@ import (
 // goverter:extend applyTagStepType
 // goverter:extend removeTagStepType
 // goverter:extend httpStepType
+// goverter:extend endStepType
 // goverter:extend segmentCondition
 // goverter:extend ruleCondition
 // goverter:extend ruleActions
@@ -416,6 +417,7 @@ type Converter interface {
 	ApplyTagStepToResource(source automations.TagView) siteapi.ApplyTagStep
 	RemoveTagStepToResource(source automations.TagView) siteapi.RemoveTagStep
 	HttpStepToResource(source automations.HTTPView) siteapi.HttpStep
+	EndStepToResource(source automations.EndView) siteapi.EndStep
 	// goverter:ignore Value
 	AutomationHttpHeaderToResource(source automations.HeaderName) siteapi.AutomationHttpHeader
 	TelegramButtonToResource(source telegramrender.Button) siteapi.TelegramButton
@@ -1109,6 +1111,8 @@ func automationStepViews(c Converter, views []automations.StepView) []siteapi.Au
 			}
 		case automations.HTTPView:
 			sum = siteapi.NewHttpStepAutomationStepSum(c.HttpStepToResource(v))
+		case automations.EndView:
+			sum = siteapi.NewEndStepAutomationStepSum(c.EndStepToResource(v))
 		}
 		out = append(out, siteapi.AutomationStep{OneOf: sum})
 	}
@@ -1129,6 +1133,7 @@ func removeTagStepType(automationstep.Kind) siteapi.RemoveTagStepType {
 	return siteapi.RemoveTagStepTypeRemoveTag
 }
 func httpStepType(automationstep.Kind) siteapi.HttpStepType { return siteapi.HttpStepTypeHTTP }
+func endStepType(automationstep.Kind) siteapi.EndStepType   { return siteapi.EndStepTypeEnd }
 
 func optEditorDocument(doc json.RawMessage) siteapi.OptEditorDocument {
 	return convert.OptObject[siteapi.OptEditorDocument](convert.DocObject[siteapi.EditorDocument](doc))

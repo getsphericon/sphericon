@@ -1118,6 +1118,12 @@ func (c *ConverterImpl) EmailTemplatesToResources(source []*ent.EmailTemplate) [
 	}
 	return siteapiSiteEmailTemplateResourceList
 }
+func (c *ConverterImpl) EndStepToResource(source automations.EndView) site.EndStep {
+	var siteapiEndStep site.EndStep
+	siteapiEndStep.ID = site.StepId(source.ID)
+	siteapiEndStep.Type = endStepType(source.Type)
+	return siteapiEndStep
+}
 func (c *ConverterImpl) EnrollmentFailureKindToResource(source automationrun.FailureKind) site.EnrollmentFailureKind {
 	var siteapiEnrollmentFailureKind site.EnrollmentFailureKind
 	switch source {

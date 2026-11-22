@@ -2568,6 +2568,24 @@ export const zEmailStepInput = z.strictObject({
 });
 
 /**
+ * A Step that finishes its path and ends the Enrollment as `completed` at once (ADR 0124): a path
+ * stops early by design, which is no exit. It is the last Step of its path.
+ */
+export const zEndStep = z.object({
+  id: zStepId,
+  type: z.enum(['end'])
+});
+
+/**
+ * A Step that finishes its path, as a request writes it. A Step after it in the same path refuses
+ * the save, naming that Step.
+ */
+export const zEndStepInput = z.strictObject({
+  id: z.exactOptional(zStepId),
+  type: z.enum(['end'])
+});
+
+/**
  * A Step that POSTs a JSON body to a hook URL (ADR 0039). Its URL, header values and signing secret are secrets: never returned.
  */
 export const zHttpStep = z.object({
@@ -4214,7 +4232,8 @@ export const zAutomationStep = z.discriminatedUnion('type', [
   zWaitStep.extend({ type: z.literal('wait') }),
   zApplyTagStep.extend({ type: z.literal('apply_tag') }),
   zRemoveTagStep.extend({ type: z.literal('remove_tag') }),
-  zHttpStep.extend({ type: z.literal('http') })
+  zHttpStep.extend({ type: z.literal('http') }),
+  zEndStep.extend({ type: z.literal('end') })
 ]);
 
 /**
@@ -4271,7 +4290,8 @@ export const zAutomationStepInput = z.discriminatedUnion('type', [
   zWaitStepInput.extend({ type: z.literal('wait') }),
   zApplyTagStepInput.extend({ type: z.literal('apply_tag') }),
   zRemoveTagStepInput.extend({ type: z.literal('remove_tag') }),
-  zHttpStepInput.extend({ type: z.literal('http') })
+  zHttpStepInput.extend({ type: z.literal('http') }),
+  zEndStepInput.extend({ type: z.literal('end') })
 ]);
 
 /**

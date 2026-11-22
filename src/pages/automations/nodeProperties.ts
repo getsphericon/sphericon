@@ -30,6 +30,7 @@ export interface NodeProperties {
   http: { stored: '' | typeof STORED; url: string; headers: string; body: string; secret: string }
   wait: { seconds: number }
   tag: { tag: string }
+  end: Record<string, never>
 }
 
 // The properties of a node as read back: any of them may be missing or of another type.
