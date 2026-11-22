@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
@@ -156,6 +157,7 @@ func checkColumn(t, c string) error {
 			automation.Table:               automation.ValidColumn,
 			automationfigure.Table:         automationfigure.ValidColumn,
 			automationrun.Table:            automationrun.ValidColumn,
+			automationsteprecord.Table:     automationsteprecord.ValidColumn,
 			automationversion.Table:        automationversion.ValidColumn,
 			binding.Table:                  binding.ValidColumn,
 			brandkit.Table:                 brandkit.ValidColumn,

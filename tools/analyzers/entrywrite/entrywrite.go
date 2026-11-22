@@ -68,6 +68,7 @@ var owners = map[string]string{
 	"Automation":               "internal/domain/orchestration/automations",
 	"AutomationFigure":         "internal/domain/orchestration/automations",
 	"AutomationRun":            "internal/domain/orchestration/automations",
+	"AutomationStepRecord":     "internal/domain/orchestration/automations",
 	"AutomationVersion":        "internal/domain/orchestration/automations",
 	"Binding":                  "internal/domain/sending/bindings",
 	"BrandKit":                 "internal/domain/content/brandkits",

@@ -203,10 +203,11 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 		<-gate
 	}
 	slack := testhelper.LatestSteps(ctx, t, e.env.DB, fixtures.AutomationNotifySlackID)
+	// A wait after the call keeps the Enrollment active once the call moves it on, for the exit.
 	steps := automationstep.Root(automationstep.Step{ID: slack.Steps[0].ID, Payload: automationstep.HTTP{
 		URL: rcv.srv.URL, Body: `{"ok":true}`,
 		Headers: []httpheader.Header{{Name: "Authorization"}},
-	}})
+	}}, automationstep.New(automationstep.Wait{Seconds: 3600}))
 	bus := e.bus(t)
 	mod := testhelper.Module[*automations.Module](e.env)
 	_, err := mod.Update(ctx, e.scoped, fixtures.AutomationNotifySlackID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, e.scoped, fixtures.AutomationNotifySlackID), Steps: &steps})

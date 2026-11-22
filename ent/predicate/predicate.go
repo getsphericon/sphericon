@@ -24,6 +24,9 @@ type AutomationFigure func(*sql.Selector)
 // AutomationRun is the predicate function for automationrun builders.
 type AutomationRun func(*sql.Selector)
 
+// AutomationStepRecord is the predicate function for automationsteprecord builders.
+type AutomationStepRecord func(*sql.Selector)
+
 // AutomationVersion is the predicate function for automationversion builders.
 type AutomationVersion func(*sql.Selector)
 

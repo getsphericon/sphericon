@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
@@ -271,6 +272,21 @@ func init() {
 	automationrunDescBeganAt := automationrunFields[5].Descriptor()
 	// automationrun.DefaultBeganAt holds the default value on creation for the began_at field.
 	automationrun.DefaultBeganAt = automationrunDescBeganAt.Default.(func() time.Time)
+	automationsteprecordMixin := schema.AutomationStepRecord{}.Mixin()
+	automationsteprecordMixinFields0 := automationsteprecordMixin[0].Fields()
+	_ = automationsteprecordMixinFields0
+	automationsteprecordFields := schema.AutomationStepRecord{}.Fields()
+	_ = automationsteprecordFields
+	// automationsteprecordDescCreatedAt is the schema descriptor for created_at field.
+	automationsteprecordDescCreatedAt := automationsteprecordMixinFields0[0].Descriptor()
+	// automationsteprecord.DefaultCreatedAt holds the default value on creation for the created_at field.
+	automationsteprecord.DefaultCreatedAt = automationsteprecordDescCreatedAt.Default.(func() time.Time)
+	// automationsteprecordDescUpdatedAt is the schema descriptor for updated_at field.
+	automationsteprecordDescUpdatedAt := automationsteprecordMixinFields0[1].Descriptor()
+	// automationsteprecord.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	automationsteprecord.DefaultUpdatedAt = automationsteprecordDescUpdatedAt.Default.(func() time.Time)
+	// automationsteprecord.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	automationsteprecord.UpdateDefaultUpdatedAt = automationsteprecordDescUpdatedAt.UpdateDefault.(func() time.Time)
 	automationversionMixin := schema.AutomationVersion{}.Mixin()
 	automationversionMixinFields0 := automationversionMixin[0].Fields()
 	_ = automationversionMixinFields0

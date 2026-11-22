@@ -21,7 +21,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
-	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -52,7 +51,9 @@ func executionAttempt() httpcall.Attempt {
 	return httpcall.Attempt{Number: 1, Limit: 3, CreatedAt: now}
 }
 
-func TestHTTPExecutionAdvancesTheEnrollmentAndQueuesItsNextStep(t *testing.T) {
+// The fixture HTTP step is its version's last: a call that succeeds leaves it and completes the
+// Enrollment in the same move, on that Step, with nothing queued after it.
+func TestHTTPExecutionOnTheLastStepCompletesTheEnrollment(t *testing.T) {
 	env := testhelper.Setup(t)
 	runID := int64(fixtures.AutomationRunHTTPPendingID)
 	s := env.DB.Scoped(fixtures.AcmeID)
@@ -63,10 +64,10 @@ func TestHTTPExecutionAdvancesTheEnrollmentAndQueuesItsNextStep(t *testing.T) {
 	assert.Equal(t, httpcall.Execution{}, decision)
 	run, err := s.AutomationRun().Get(t.Context(), runID)
 	require.NoError(t, err)
-	assert.Equal(t, automationrun.StatusActive, run.Status)
-	assert.Equal(t, env.StepIDAt(t, runID, 1), lo.FromPtr(run.CurrentStepID))
+	assert.Equal(t, automationrun.StatusCompleted, run.Status)
+	assert.Equal(t, env.StepIDAt(t, runID, 0), lo.FromPtr(run.CurrentStepID))
 	queued := env.JobsOf(t, automations.RunStepArgs{}.Kind())
-	assert.Equal(t, []map[string]any{{"run_id": float64(runID), "step_id": env.StepIDAt(t, runID, 1), jobkind.WorkspaceArg: float64(run.WorkspaceID)}}, queued)
+	assert.Empty(t, queued)
 }
 
 func TestHTTPExecutionKeepsTemporaryFailuresActiveUntilRecovery(t *testing.T) {
@@ -94,9 +95,9 @@ func TestHTTPExecutionKeepsTemporaryFailuresActiveUntilRecovery(t *testing.T) {
 	assert.Equal(t, httpcall.Execution{}, decision)
 	run, err = s.AutomationRun().Get(t.Context(), runID)
 	require.NoError(t, err)
-	assert.Equal(t, env.StepIDAt(t, runID, 1), lo.FromPtr(run.CurrentStepID))
+	assert.Equal(t, automationrun.StatusCompleted, run.Status, "the recovered call left the last Step")
 	queued = env.JobsOf(t, automations.RunStepArgs{}.Kind())
-	assert.Equal(t, []map[string]any{{"run_id": float64(runID), "step_id": env.StepIDAt(t, runID, 1), jobkind.WorkspaceArg: float64(run.WorkspaceID)}}, queued)
+	assert.Empty(t, queued)
 }
 
 func TestHTTPExecutionRecordsPermanentRefusalsAndCancels(t *testing.T) {
@@ -207,7 +208,8 @@ func TestHTTPExecutionKeepsTheEnrollmentsPinnedVersionAfterPublish(t *testing.T)
 	assert.Equal(t, httpcall.Execution{}, decision)
 	run, err := s.AutomationRun().Get(t.Context(), runID)
 	require.NoError(t, err)
-	assert.Equal(t, env.StepIDAt(t, runID, 1), lo.FromPtr(run.CurrentStepID), "the original HTTP Step still ran")
+	assert.Equal(t, automationrun.StatusCompleted, run.Status, "the original HTTP Step still ran")
+	assert.Equal(t, env.StepIDAt(t, runID, 0), lo.FromPtr(run.CurrentStepID))
 	assert.Equal(t, int64(fixtures.AutomationHTTPExecutionVersionID), run.VersionID)
 }
 
@@ -280,10 +282,10 @@ func TestHTTPExecutionIgnoresAnAlreadyAdvancedStep(t *testing.T) {
 	assert.Equal(t, httpcall.Execution{}, decision)
 	run, err := s.AutomationRun().Get(t.Context(), runID)
 	require.NoError(t, err)
-	assert.Equal(t, automationrun.StatusActive, run.Status)
-	assert.Equal(t, env.StepIDAt(t, runID, 1), lo.FromPtr(run.CurrentStepID))
+	assert.Equal(t, automationrun.StatusCompleted, run.Status, "the late attempt fails nothing")
+	assert.Equal(t, env.StepIDAt(t, runID, 0), lo.FromPtr(run.CurrentStepID))
 	queued := env.JobsOf(t, automations.RunStepArgs{}.Kind())
-	assert.Equal(t, []map[string]any{{"run_id": float64(runID), "step_id": env.StepIDAt(t, runID, 1), jobkind.WorkspaceArg: float64(run.WorkspaceID)}}, queued)
+	assert.Empty(t, queued)
 }
 
 func TestHTTPExecutionIgnoresErasedWork(t *testing.T) {

@@ -81,6 +81,18 @@ func (f AutomationRunFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AutomationRunMutation", m)
 }
 
+// The AutomationStepRecordFunc type is an adapter to allow the use of ordinary
+// function as AutomationStepRecord mutator.
+type AutomationStepRecordFunc func(context.Context, *ent.AutomationStepRecordMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AutomationStepRecordFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AutomationStepRecordMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AutomationStepRecordMutation", m)
+}
+
 // The AutomationVersionFunc type is an adapter to allow the use of ordinary
 // function as AutomationVersion mutator.
 type AutomationVersionFunc func(context.Context, *ent.AutomationVersionMutation) (ent.Value, error)

@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
@@ -118,6 +119,7 @@ const (
 	TypeAutomation               = "Automation"
 	TypeAutomationFigure         = "AutomationFigure"
 	TypeAutomationRun            = "AutomationRun"
+	TypeAutomationStepRecord     = "AutomationStepRecord"
 	TypeAutomationVersion        = "AutomationVersion"
 	TypeBinding                  = "Binding"
 	TypeBrandKit                 = "BrandKit"
@@ -7350,6 +7352,1006 @@ func (m *AutomationRunMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown AutomationRun edge %s", name)
+}
+
+// AutomationStepRecordMutation represents an operation that mutates the AutomationStepRecord nodes in the graph.
+type AutomationStepRecordMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int64
+	created_at       *time.Time
+	updated_at       *time.Time
+	step_id          *string
+	reached_at       *time.Time
+	left_at          *time.Time
+	outcome          *automationsteprecord.Outcome
+	skip_reason      *skipreason.Reason
+	due_at           *time.Time
+	clearedFields    map[string]struct{}
+	workspace        *int64
+	clearedworkspace bool
+	run              *int64
+	clearedrun       bool
+	done             bool
+	oldValue         func(context.Context) (*AutomationStepRecord, error)
+	predicates       []predicate.AutomationStepRecord
+}
+
+var _ ent.Mutation = (*AutomationStepRecordMutation)(nil)
+
+// automationsteprecordOption allows management of the mutation configuration using functional options.
+type automationsteprecordOption func(*AutomationStepRecordMutation)
+
+// newAutomationStepRecordMutation creates new mutation for the AutomationStepRecord entity.
+func newAutomationStepRecordMutation(c config, op Op, opts ...automationsteprecordOption) *AutomationStepRecordMutation {
+	m := &AutomationStepRecordMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeAutomationStepRecord,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withAutomationStepRecordID sets the ID field of the mutation.
+func withAutomationStepRecordID(id int64) automationsteprecordOption {
+	return func(m *AutomationStepRecordMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *AutomationStepRecord
+		)
+		m.oldValue = func(ctx context.Context) (*AutomationStepRecord, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().AutomationStepRecord.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withAutomationStepRecord sets the old AutomationStepRecord of the mutation.
+func withAutomationStepRecord(node *AutomationStepRecord) automationsteprecordOption {
+	return func(m *AutomationStepRecordMutation) {
+		m.oldValue = func(context.Context) (*AutomationStepRecord, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m AutomationStepRecordMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m AutomationStepRecordMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of AutomationStepRecord entities.
+func (m *AutomationStepRecordMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *AutomationStepRecordMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *AutomationStepRecordMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().AutomationStepRecord.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *AutomationStepRecordMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *AutomationStepRecordMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the AutomationStepRecord entity.
+// If the AutomationStepRecord object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationStepRecordMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *AutomationStepRecordMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *AutomationStepRecordMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *AutomationStepRecordMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the AutomationStepRecord entity.
+// If the AutomationStepRecord object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationStepRecordMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *AutomationStepRecordMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *AutomationStepRecordMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *AutomationStepRecordMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the AutomationStepRecord entity.
+// If the AutomationStepRecord object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationStepRecordMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *AutomationStepRecordMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetRunID sets the "run_id" field.
+func (m *AutomationStepRecordMutation) SetRunID(i int64) {
+	m.run = &i
+}
+
+// RunID returns the value of the "run_id" field in the mutation.
+func (m *AutomationStepRecordMutation) RunID() (r int64, exists bool) {
+	v := m.run
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRunID returns the old "run_id" field's value of the AutomationStepRecord entity.
+// If the AutomationStepRecord object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationStepRecordMutation) OldRunID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRunID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRunID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRunID: %w", err)
+	}
+	return oldValue.RunID, nil
+}
+
+// ResetRunID resets all changes to the "run_id" field.
+func (m *AutomationStepRecordMutation) ResetRunID() {
+	m.run = nil
+}
+
+// SetStepID sets the "step_id" field.
+func (m *AutomationStepRecordMutation) SetStepID(s string) {
+	m.step_id = &s
+}
+
+// StepID returns the value of the "step_id" field in the mutation.
+func (m *AutomationStepRecordMutation) StepID() (r string, exists bool) {
+	v := m.step_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStepID returns the old "step_id" field's value of the AutomationStepRecord entity.
+// If the AutomationStepRecord object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationStepRecordMutation) OldStepID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStepID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStepID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStepID: %w", err)
+	}
+	return oldValue.StepID, nil
+}
+
+// ResetStepID resets all changes to the "step_id" field.
+func (m *AutomationStepRecordMutation) ResetStepID() {
+	m.step_id = nil
+}
+
+// SetReachedAt sets the "reached_at" field.
+func (m *AutomationStepRecordMutation) SetReachedAt(t time.Time) {
+	m.reached_at = &t
+}
+
+// ReachedAt returns the value of the "reached_at" field in the mutation.
+func (m *AutomationStepRecordMutation) ReachedAt() (r time.Time, exists bool) {
+	v := m.reached_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReachedAt returns the old "reached_at" field's value of the AutomationStepRecord entity.
+// If the AutomationStepRecord object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationStepRecordMutation) OldReachedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReachedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReachedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReachedAt: %w", err)
+	}
+	return oldValue.ReachedAt, nil
+}
+
+// ResetReachedAt resets all changes to the "reached_at" field.
+func (m *AutomationStepRecordMutation) ResetReachedAt() {
+	m.reached_at = nil
+}
+
+// SetLeftAt sets the "left_at" field.
+func (m *AutomationStepRecordMutation) SetLeftAt(t time.Time) {
+	m.left_at = &t
+}
+
+// LeftAt returns the value of the "left_at" field in the mutation.
+func (m *AutomationStepRecordMutation) LeftAt() (r time.Time, exists bool) {
+	v := m.left_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLeftAt returns the old "left_at" field's value of the AutomationStepRecord entity.
+// If the AutomationStepRecord object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationStepRecordMutation) OldLeftAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLeftAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLeftAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLeftAt: %w", err)
+	}
+	return oldValue.LeftAt, nil
+}
+
+// ClearLeftAt clears the value of the "left_at" field.
+func (m *AutomationStepRecordMutation) ClearLeftAt() {
+	m.left_at = nil
+	m.clearedFields[automationsteprecord.FieldLeftAt] = struct{}{}
+}
+
+// LeftAtCleared returns if the "left_at" field was cleared in this mutation.
+func (m *AutomationStepRecordMutation) LeftAtCleared() bool {
+	_, ok := m.clearedFields[automationsteprecord.FieldLeftAt]
+	return ok
+}
+
+// ResetLeftAt resets all changes to the "left_at" field.
+func (m *AutomationStepRecordMutation) ResetLeftAt() {
+	m.left_at = nil
+	delete(m.clearedFields, automationsteprecord.FieldLeftAt)
+}
+
+// SetOutcome sets the "outcome" field.
+func (m *AutomationStepRecordMutation) SetOutcome(a automationsteprecord.Outcome) {
+	m.outcome = &a
+}
+
+// Outcome returns the value of the "outcome" field in the mutation.
+func (m *AutomationStepRecordMutation) Outcome() (r automationsteprecord.Outcome, exists bool) {
+	v := m.outcome
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOutcome returns the old "outcome" field's value of the AutomationStepRecord entity.
+// If the AutomationStepRecord object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationStepRecordMutation) OldOutcome(ctx context.Context) (v *automationsteprecord.Outcome, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOutcome is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOutcome requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOutcome: %w", err)
+	}
+	return oldValue.Outcome, nil
+}
+
+// ClearOutcome clears the value of the "outcome" field.
+func (m *AutomationStepRecordMutation) ClearOutcome() {
+	m.outcome = nil
+	m.clearedFields[automationsteprecord.FieldOutcome] = struct{}{}
+}
+
+// OutcomeCleared returns if the "outcome" field was cleared in this mutation.
+func (m *AutomationStepRecordMutation) OutcomeCleared() bool {
+	_, ok := m.clearedFields[automationsteprecord.FieldOutcome]
+	return ok
+}
+
+// ResetOutcome resets all changes to the "outcome" field.
+func (m *AutomationStepRecordMutation) ResetOutcome() {
+	m.outcome = nil
+	delete(m.clearedFields, automationsteprecord.FieldOutcome)
+}
+
+// SetSkipReason sets the "skip_reason" field.
+func (m *AutomationStepRecordMutation) SetSkipReason(s skipreason.Reason) {
+	m.skip_reason = &s
+}
+
+// SkipReason returns the value of the "skip_reason" field in the mutation.
+func (m *AutomationStepRecordMutation) SkipReason() (r skipreason.Reason, exists bool) {
+	v := m.skip_reason
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkipReason returns the old "skip_reason" field's value of the AutomationStepRecord entity.
+// If the AutomationStepRecord object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationStepRecordMutation) OldSkipReason(ctx context.Context) (v *skipreason.Reason, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkipReason is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkipReason requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkipReason: %w", err)
+	}
+	return oldValue.SkipReason, nil
+}
+
+// ClearSkipReason clears the value of the "skip_reason" field.
+func (m *AutomationStepRecordMutation) ClearSkipReason() {
+	m.skip_reason = nil
+	m.clearedFields[automationsteprecord.FieldSkipReason] = struct{}{}
+}
+
+// SkipReasonCleared returns if the "skip_reason" field was cleared in this mutation.
+func (m *AutomationStepRecordMutation) SkipReasonCleared() bool {
+	_, ok := m.clearedFields[automationsteprecord.FieldSkipReason]
+	return ok
+}
+
+// ResetSkipReason resets all changes to the "skip_reason" field.
+func (m *AutomationStepRecordMutation) ResetSkipReason() {
+	m.skip_reason = nil
+	delete(m.clearedFields, automationsteprecord.FieldSkipReason)
+}
+
+// SetDueAt sets the "due_at" field.
+func (m *AutomationStepRecordMutation) SetDueAt(t time.Time) {
+	m.due_at = &t
+}
+
+// DueAt returns the value of the "due_at" field in the mutation.
+func (m *AutomationStepRecordMutation) DueAt() (r time.Time, exists bool) {
+	v := m.due_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDueAt returns the old "due_at" field's value of the AutomationStepRecord entity.
+// If the AutomationStepRecord object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationStepRecordMutation) OldDueAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDueAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDueAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDueAt: %w", err)
+	}
+	return oldValue.DueAt, nil
+}
+
+// ClearDueAt clears the value of the "due_at" field.
+func (m *AutomationStepRecordMutation) ClearDueAt() {
+	m.due_at = nil
+	m.clearedFields[automationsteprecord.FieldDueAt] = struct{}{}
+}
+
+// DueAtCleared returns if the "due_at" field was cleared in this mutation.
+func (m *AutomationStepRecordMutation) DueAtCleared() bool {
+	_, ok := m.clearedFields[automationsteprecord.FieldDueAt]
+	return ok
+}
+
+// ResetDueAt resets all changes to the "due_at" field.
+func (m *AutomationStepRecordMutation) ResetDueAt() {
+	m.due_at = nil
+	delete(m.clearedFields, automationsteprecord.FieldDueAt)
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *AutomationStepRecordMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[automationsteprecord.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *AutomationStepRecordMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *AutomationStepRecordMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *AutomationStepRecordMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// ClearRun clears the "run" edge to the AutomationRun entity.
+func (m *AutomationStepRecordMutation) ClearRun() {
+	m.clearedrun = true
+	m.clearedFields[automationsteprecord.FieldRunID] = struct{}{}
+}
+
+// RunCleared reports if the "run" edge to the AutomationRun entity was cleared.
+func (m *AutomationStepRecordMutation) RunCleared() bool {
+	return m.clearedrun
+}
+
+// RunIDs returns the "run" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// RunID instead. It exists only for internal usage by the builders.
+func (m *AutomationStepRecordMutation) RunIDs() (ids []int64) {
+	if id := m.run; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetRun resets all changes to the "run" edge.
+func (m *AutomationStepRecordMutation) ResetRun() {
+	m.run = nil
+	m.clearedrun = false
+}
+
+// Where appends a list predicates to the AutomationStepRecordMutation builder.
+func (m *AutomationStepRecordMutation) Where(ps ...predicate.AutomationStepRecord) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the AutomationStepRecordMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *AutomationStepRecordMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.AutomationStepRecord, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *AutomationStepRecordMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *AutomationStepRecordMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (AutomationStepRecord).
+func (m *AutomationStepRecordMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *AutomationStepRecordMutation) Fields() []string {
+	fields := make([]string, 0, 10)
+	if m.created_at != nil {
+		fields = append(fields, automationsteprecord.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, automationsteprecord.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, automationsteprecord.FieldWorkspaceID)
+	}
+	if m.run != nil {
+		fields = append(fields, automationsteprecord.FieldRunID)
+	}
+	if m.step_id != nil {
+		fields = append(fields, automationsteprecord.FieldStepID)
+	}
+	if m.reached_at != nil {
+		fields = append(fields, automationsteprecord.FieldReachedAt)
+	}
+	if m.left_at != nil {
+		fields = append(fields, automationsteprecord.FieldLeftAt)
+	}
+	if m.outcome != nil {
+		fields = append(fields, automationsteprecord.FieldOutcome)
+	}
+	if m.skip_reason != nil {
+		fields = append(fields, automationsteprecord.FieldSkipReason)
+	}
+	if m.due_at != nil {
+		fields = append(fields, automationsteprecord.FieldDueAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *AutomationStepRecordMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case automationsteprecord.FieldCreatedAt:
+		return m.CreatedAt()
+	case automationsteprecord.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case automationsteprecord.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case automationsteprecord.FieldRunID:
+		return m.RunID()
+	case automationsteprecord.FieldStepID:
+		return m.StepID()
+	case automationsteprecord.FieldReachedAt:
+		return m.ReachedAt()
+	case automationsteprecord.FieldLeftAt:
+		return m.LeftAt()
+	case automationsteprecord.FieldOutcome:
+		return m.Outcome()
+	case automationsteprecord.FieldSkipReason:
+		return m.SkipReason()
+	case automationsteprecord.FieldDueAt:
+		return m.DueAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *AutomationStepRecordMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case automationsteprecord.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case automationsteprecord.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case automationsteprecord.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case automationsteprecord.FieldRunID:
+		return m.OldRunID(ctx)
+	case automationsteprecord.FieldStepID:
+		return m.OldStepID(ctx)
+	case automationsteprecord.FieldReachedAt:
+		return m.OldReachedAt(ctx)
+	case automationsteprecord.FieldLeftAt:
+		return m.OldLeftAt(ctx)
+	case automationsteprecord.FieldOutcome:
+		return m.OldOutcome(ctx)
+	case automationsteprecord.FieldSkipReason:
+		return m.OldSkipReason(ctx)
+	case automationsteprecord.FieldDueAt:
+		return m.OldDueAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown AutomationStepRecord field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AutomationStepRecordMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case automationsteprecord.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case automationsteprecord.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case automationsteprecord.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case automationsteprecord.FieldRunID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRunID(v)
+		return nil
+	case automationsteprecord.FieldStepID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStepID(v)
+		return nil
+	case automationsteprecord.FieldReachedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReachedAt(v)
+		return nil
+	case automationsteprecord.FieldLeftAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLeftAt(v)
+		return nil
+	case automationsteprecord.FieldOutcome:
+		v, ok := value.(automationsteprecord.Outcome)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOutcome(v)
+		return nil
+	case automationsteprecord.FieldSkipReason:
+		v, ok := value.(skipreason.Reason)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkipReason(v)
+		return nil
+	case automationsteprecord.FieldDueAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDueAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AutomationStepRecord field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *AutomationStepRecordMutation) AddedFields() []string {
+	var fields []string
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *AutomationStepRecordMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AutomationStepRecordMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown AutomationStepRecord numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *AutomationStepRecordMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(automationsteprecord.FieldLeftAt) {
+		fields = append(fields, automationsteprecord.FieldLeftAt)
+	}
+	if m.FieldCleared(automationsteprecord.FieldOutcome) {
+		fields = append(fields, automationsteprecord.FieldOutcome)
+	}
+	if m.FieldCleared(automationsteprecord.FieldSkipReason) {
+		fields = append(fields, automationsteprecord.FieldSkipReason)
+	}
+	if m.FieldCleared(automationsteprecord.FieldDueAt) {
+		fields = append(fields, automationsteprecord.FieldDueAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *AutomationStepRecordMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *AutomationStepRecordMutation) ClearField(name string) error {
+	switch name {
+	case automationsteprecord.FieldLeftAt:
+		m.ClearLeftAt()
+		return nil
+	case automationsteprecord.FieldOutcome:
+		m.ClearOutcome()
+		return nil
+	case automationsteprecord.FieldSkipReason:
+		m.ClearSkipReason()
+		return nil
+	case automationsteprecord.FieldDueAt:
+		m.ClearDueAt()
+		return nil
+	}
+	return fmt.Errorf("unknown AutomationStepRecord nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *AutomationStepRecordMutation) ResetField(name string) error {
+	switch name {
+	case automationsteprecord.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case automationsteprecord.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case automationsteprecord.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case automationsteprecord.FieldRunID:
+		m.ResetRunID()
+		return nil
+	case automationsteprecord.FieldStepID:
+		m.ResetStepID()
+		return nil
+	case automationsteprecord.FieldReachedAt:
+		m.ResetReachedAt()
+		return nil
+	case automationsteprecord.FieldLeftAt:
+		m.ResetLeftAt()
+		return nil
+	case automationsteprecord.FieldOutcome:
+		m.ResetOutcome()
+		return nil
+	case automationsteprecord.FieldSkipReason:
+		m.ResetSkipReason()
+		return nil
+	case automationsteprecord.FieldDueAt:
+		m.ResetDueAt()
+		return nil
+	}
+	return fmt.Errorf("unknown AutomationStepRecord field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *AutomationStepRecordMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.workspace != nil {
+		edges = append(edges, automationsteprecord.EdgeWorkspace)
+	}
+	if m.run != nil {
+		edges = append(edges, automationsteprecord.EdgeRun)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *AutomationStepRecordMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case automationsteprecord.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	case automationsteprecord.EdgeRun:
+		if id := m.run; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *AutomationStepRecordMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *AutomationStepRecordMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *AutomationStepRecordMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedworkspace {
+		edges = append(edges, automationsteprecord.EdgeWorkspace)
+	}
+	if m.clearedrun {
+		edges = append(edges, automationsteprecord.EdgeRun)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *AutomationStepRecordMutation) EdgeCleared(name string) bool {
+	switch name {
+	case automationsteprecord.EdgeWorkspace:
+		return m.clearedworkspace
+	case automationsteprecord.EdgeRun:
+		return m.clearedrun
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *AutomationStepRecordMutation) ClearEdge(name string) error {
+	switch name {
+	case automationsteprecord.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	case automationsteprecord.EdgeRun:
+		m.ClearRun()
+		return nil
+	}
+	return fmt.Errorf("unknown AutomationStepRecord unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *AutomationStepRecordMutation) ResetEdge(name string) error {
+	switch name {
+	case automationsteprecord.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	case automationsteprecord.EdgeRun:
+		m.ResetRun()
+		return nil
+	}
+	return fmt.Errorf("unknown AutomationStepRecord edge %s", name)
 }
 
 // AutomationVersionMutation represents an operation that mutates the AutomationVersion nodes in the graph.
@@ -75785,6 +76787,9 @@ type WorkspaceMutation struct {
 	automation_runs                    map[int64]struct{}
 	removedautomation_runs             map[int64]struct{}
 	clearedautomation_runs             bool
+	automation_step_records            map[int64]struct{}
+	removedautomation_step_records     map[int64]struct{}
+	clearedautomation_step_records     bool
 	rules                              map[int64]struct{}
 	removedrules                       map[int64]struct{}
 	clearedrules                       bool
@@ -78902,6 +79907,60 @@ func (m *WorkspaceMutation) ResetAutomationRuns() {
 	m.removedautomation_runs = nil
 }
 
+// AddAutomationStepRecordIDs adds the "automation_step_records" edge to the AutomationStepRecord entity by ids.
+func (m *WorkspaceMutation) AddAutomationStepRecordIDs(ids ...int64) {
+	if m.automation_step_records == nil {
+		m.automation_step_records = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.automation_step_records[ids[i]] = struct{}{}
+	}
+}
+
+// ClearAutomationStepRecords clears the "automation_step_records" edge to the AutomationStepRecord entity.
+func (m *WorkspaceMutation) ClearAutomationStepRecords() {
+	m.clearedautomation_step_records = true
+}
+
+// AutomationStepRecordsCleared reports if the "automation_step_records" edge to the AutomationStepRecord entity was cleared.
+func (m *WorkspaceMutation) AutomationStepRecordsCleared() bool {
+	return m.clearedautomation_step_records
+}
+
+// RemoveAutomationStepRecordIDs removes the "automation_step_records" edge to the AutomationStepRecord entity by IDs.
+func (m *WorkspaceMutation) RemoveAutomationStepRecordIDs(ids ...int64) {
+	if m.removedautomation_step_records == nil {
+		m.removedautomation_step_records = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.automation_step_records, ids[i])
+		m.removedautomation_step_records[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedAutomationStepRecords returns the removed IDs of the "automation_step_records" edge to the AutomationStepRecord entity.
+func (m *WorkspaceMutation) RemovedAutomationStepRecordsIDs() (ids []int64) {
+	for id := range m.removedautomation_step_records {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// AutomationStepRecordsIDs returns the "automation_step_records" edge IDs in the mutation.
+func (m *WorkspaceMutation) AutomationStepRecordsIDs() (ids []int64) {
+	for id := range m.automation_step_records {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetAutomationStepRecords resets all changes to the "automation_step_records" edge.
+func (m *WorkspaceMutation) ResetAutomationStepRecords() {
+	m.automation_step_records = nil
+	m.clearedautomation_step_records = false
+	m.removedautomation_step_records = nil
+}
+
 // AddRuleIDs adds the "rules" edge to the Rule entity by ids.
 func (m *WorkspaceMutation) AddRuleIDs(ids ...int64) {
 	if m.rules == nil {
@@ -80698,7 +81757,7 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WorkspaceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 51)
+	edges := make([]string, 0, 52)
 	if m.contacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -80791,6 +81850,9 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	}
 	if m.automation_runs != nil {
 		edges = append(edges, workspace.EdgeAutomationRuns)
+	}
+	if m.automation_step_records != nil {
+		edges = append(edges, workspace.EdgeAutomationStepRecords)
 	}
 	if m.rules != nil {
 		edges = append(edges, workspace.EdgeRules)
@@ -81045,6 +82107,12 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeAutomationStepRecords:
+		ids := make([]ent.Value, 0, len(m.automation_step_records))
+		for id := range m.automation_step_records {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeRules:
 		ids := make([]ent.Value, 0, len(m.rules))
 		for id := range m.rules {
@@ -81169,7 +82237,7 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WorkspaceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 51)
+	edges := make([]string, 0, 52)
 	if m.removedcontacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -81262,6 +82330,9 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	}
 	if m.removedautomation_runs != nil {
 		edges = append(edges, workspace.EdgeAutomationRuns)
+	}
+	if m.removedautomation_step_records != nil {
+		edges = append(edges, workspace.EdgeAutomationStepRecords)
 	}
 	if m.removedrules != nil {
 		edges = append(edges, workspace.EdgeRules)
@@ -81513,6 +82584,12 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeAutomationStepRecords:
+		ids := make([]ent.Value, 0, len(m.removedautomation_step_records))
+		for id := range m.removedautomation_step_records {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeRules:
 		ids := make([]ent.Value, 0, len(m.removedrules))
 		for id := range m.removedrules {
@@ -81633,7 +82710,7 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WorkspaceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 51)
+	edges := make([]string, 0, 52)
 	if m.clearedcontacts {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -81726,6 +82803,9 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	}
 	if m.clearedautomation_runs {
 		edges = append(edges, workspace.EdgeAutomationRuns)
+	}
+	if m.clearedautomation_step_records {
+		edges = append(edges, workspace.EdgeAutomationStepRecords)
 	}
 	if m.clearedrules {
 		edges = append(edges, workspace.EdgeRules)
@@ -81856,6 +82936,8 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearedautomation_versions
 	case workspace.EdgeAutomationRuns:
 		return m.clearedautomation_runs
+	case workspace.EdgeAutomationStepRecords:
+		return m.clearedautomation_step_records
 	case workspace.EdgeRules:
 		return m.clearedrules
 	case workspace.EdgeRuleVersions:
@@ -82007,6 +83089,9 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 		return nil
 	case workspace.EdgeAutomationRuns:
 		m.ResetAutomationRuns()
+		return nil
+	case workspace.EdgeAutomationStepRecords:
+		m.ResetAutomationStepRecords()
 		return nil
 	case workspace.EdgeRules:
 		m.ResetRules()

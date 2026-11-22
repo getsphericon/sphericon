@@ -35,15 +35,6 @@ func TestRunStepOutcomes(t *testing.T) {
 		assert.Empty(t, queuedSteps(t, env))
 	})
 
-	t.Run("a run past its last step completes", func(t *testing.T) {
-		env := testhelper.Setup(t)
-		id := int64(fixtures.AutomationRunJobsEmptyStepsID)
-		queueStep(t, env, id)
-		env.RunQueuedSteps(t, stepperOf(env, resolvingTo(&fakeSender{})))
-		assert.Equal(t, automationrun.StatusCompleted, runStatus(t.Context(), t, env, id))
-		assert.Empty(t, queuedSteps(t, env))
-	})
-
 	t.Run("a contact without an email completes the run", func(t *testing.T) {
 		env := testhelper.Setup(t)
 		id := int64(fixtures.AutomationRunJobsNoEmailID)

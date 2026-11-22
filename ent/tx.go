@@ -26,6 +26,8 @@ type Tx struct {
 	AutomationFigure *AutomationFigureClient
 	// AutomationRun is the client for interacting with the AutomationRun builders.
 	AutomationRun *AutomationRunClient
+	// AutomationStepRecord is the client for interacting with the AutomationStepRecord builders.
+	AutomationStepRecord *AutomationStepRecordClient
 	// AutomationVersion is the client for interacting with the AutomationVersion builders.
 	AutomationVersion *AutomationVersionClient
 	// Binding is the client for interacting with the Binding builders.
@@ -307,6 +309,7 @@ func (tx *Tx) init() {
 	tx.Automation = NewAutomationClient(tx.config)
 	tx.AutomationFigure = NewAutomationFigureClient(tx.config)
 	tx.AutomationRun = NewAutomationRunClient(tx.config)
+	tx.AutomationStepRecord = NewAutomationStepRecordClient(tx.config)
 	tx.AutomationVersion = NewAutomationVersionClient(tx.config)
 	tx.Binding = NewBindingClient(tx.config)
 	tx.BrandKit = NewBrandKitClient(tx.config)

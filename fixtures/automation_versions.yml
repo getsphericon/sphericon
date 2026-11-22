@@ -247,7 +247,7 @@
   trigger_event: job_tag_exit
   exit_events: '["job_tag_exit_left"]'
   version: 1
-  steps: '{"id":"6380e4b0-689c-502b-a01c-6739df482695","steps":[{"id":"be03287b-4566-5639-a398-598a69bbf334","type":"apply_tag","tag":"tag-race"}]}'
+  steps: '{"id":"6380e4b0-689c-502b-a01c-6739df482695","steps":[{"id":"be03287b-4566-5639-a398-598a69bbf334","type":"apply_tag","tag":"tag-race"},{"id":"7b525217-bd37-51e2-b3bc-fbc574804c16","type":"wait","seconds":3600}]}'
   workspace_id: 1
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'

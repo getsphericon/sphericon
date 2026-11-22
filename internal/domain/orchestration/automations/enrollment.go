@@ -180,7 +180,14 @@ func (m *StepExecution) enroll(ctx context.Context, s *ent.Scoped, pub events.Pu
 	if err != nil {
 		return 0, false, err
 	}
-	runID, inserted, err := begin(ctx, s, held, a, o)
+	// The Enrollment reaches its first Step as it is made; a wait there is due from now (ADR 0124).
+	now := m.now()
+	first, stepping := automationstep.First(a.row.Edges.LiveVersion.Steps)
+	var due *time.Time
+	if stepping && !ended {
+		due = dueOf(first, now)
+	}
+	runID, inserted, err := begin(ctx, s, held, a, o, due)
 	if err != nil || !inserted {
 		return 0, false, err
 	}
@@ -193,13 +200,23 @@ func (m *StepExecution) enroll(ctx context.Context, s *ent.Scoped, pub events.Pu
 	if err := publishEnrollment(ctx, s, pub, systemevent.AutomationEnrolled, begun); err != nil {
 		return 0, false, err
 	}
-	if !ended {
-		return runID, true, nil
+	if ended {
+		if err := move(ctx, s, pub, runID, ending, endedAt, nil); err != nil {
+			return 0, false, err
+		}
+		return runID, false, nil
 	}
-	if err := move(ctx, s, pub, runID, ending, endedAt, nil); err != nil {
+	if !stepping {
+		// A version of no Steps has nothing to run: the Enrollment completes as it begins.
+		if err := completeRun(ctx, s, pub, runID, "", now); err != nil {
+			return 0, false, err
+		}
+		return runID, false, nil
+	}
+	if err := reach(ctx, s, runID, first.ID, now, due); err != nil {
 		return 0, false, err
 	}
-	return runID, false, nil
+	return runID, true, nil
 }
 
 // lockContact locks the Contact's row to the end of the transaction s is bound to (contactlock):
@@ -240,15 +257,16 @@ func shareLive(ctx context.Context, s *ent.Scoped, automationID int64) (liveShar
 
 // begin writes the Enrollment of the Contact held in the Automation a, on a's live version, both
 // locked to the end of the transaction (ADR 0099, ADR 0108), standing on that version's first Step
-// (none for a version of no Steps, where its first job completes it). A Contact enrolls in an
-// Automation once: an Enrollment already there is the answer, and nothing is written (inserted
-// false).
-func begin(ctx context.Context, s *ent.Scoped, held contactlock.Locked, a liveShared, o origin) (runID int64, inserted bool, err error) {
+// (none for a version of no Steps) and parked there until due when that Step is a wait. A Contact
+// enrolls in an Automation once: an Enrollment already there is the answer, and nothing is written
+// (inserted false).
+func begin(ctx context.Context, s *ent.Scoped, held contactlock.Locked, a liveShared, o origin, due *time.Time) (runID int64, inserted bool, err error) {
 	create := s.AutomationRun().Create().
 		SetAutomationID(a.row.ID).
 		SetVersionID(*a.row.LiveVersionID).
 		SetContactID(held.Contact().ID).
-		SetBeganAt(o.OccurredAt)
+		SetBeganAt(o.OccurredAt).
+		SetNillableResumeAt(due)
 	if first, ok := automationstep.First(a.row.Edges.LiveVersion.Steps); ok {
 		create.SetCurrentStepID(first.ID)
 	}

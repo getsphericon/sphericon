@@ -233,6 +233,12 @@ function AutomationDetail() {
             title: t(($) => $.automations.enrolledAt),
             render: (record) => formatDateTime(record.createdAt),
           },
+          {
+            // The due moment of the wait the Enrollment stands on (ADR 0124); empty elsewhere.
+            accessor: 'resumeAt',
+            title: t(($) => $.automations.waitingUntil),
+            render: (record) => (record.resumeAt ? formatDateTime(record.resumeAt) : null),
+          },
         ]}
         onRowClick={(record) =>
           void navigate({

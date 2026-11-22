@@ -33,10 +33,10 @@ func (positionalHTTPStepArgs) InsertOpts() river.InsertOpts {
 }
 
 // An Enrollment's position becomes the id of the Step at that position in its version (ADR
-// 0122); one past the last Step names none and is left to the job of its position, which names
-// none either and completes it. Every step job still to run names the id of the Step at its
-// position, and an HTTP-step call queued by position is still the one call of its Step: the step
-// job delivered again finds it and queues no second call.
+// 0122); one past the last Step names none (the Step records migration after it completes it).
+// Every step job still to run names the id of the Step at its position, and an HTTP-step call
+// queued by position is still the one call of its Step: the step job delivered again finds it and
+// queues no second call.
 func TestTheEnrollmentStepIDMigrationNamesEachEnrollmentsAndJobsStepByID(t *testing.T) {
 	sqlDB := testhelper.SchemaBefore(t, "enrollment_step_id", filepath.Join("testdata", "enrollment_step_id"))
 	rc := testhelper.RiverClientOn(t, sqlDB)
@@ -50,7 +50,7 @@ func TestTheEnrollmentStepIDMigrationNamesEachEnrollmentsAndJobsStepByID(t *test
 	stepOf := func(id int64) string { return lo.FromPtr(runs.GetX(t.Context(), id).CurrentStepID) }
 	assert.Equal(t, "00000000-0000-4000-8000-000000000103", stepOf(1), "the Step at its position")
 	assert.Empty(t, stepOf(2), "past the last Step: none")
-	assert.Equal(t, automationrun.StatusActive, runs.GetX(t.Context(), 2).Status, "left to its job")
+	assert.Equal(t, automationrun.StatusCompleted, runs.GetX(t.Context(), 2).Status, "completed by the Step records migration after it")
 	assert.Empty(t, stepOf(3))
 	assert.Equal(t, "00000000-0000-4000-8000-000000000201", stepOf(4))
 

@@ -133,6 +133,8 @@ const (
 	EdgeAutomationVersions = "automation_versions"
 	// EdgeAutomationRuns holds the string denoting the automation_runs edge name in mutations.
 	EdgeAutomationRuns = "automation_runs"
+	// EdgeAutomationStepRecords holds the string denoting the automation_step_records edge name in mutations.
+	EdgeAutomationStepRecords = "automation_step_records"
 	// EdgeRules holds the string denoting the rules edge name in mutations.
 	EdgeRules = "rules"
 	// EdgeRuleVersions holds the string denoting the rule_versions edge name in mutations.
@@ -399,6 +401,13 @@ const (
 	AutomationRunsInverseTable = "automation_runs"
 	// AutomationRunsColumn is the table column denoting the automation_runs relation/edge.
 	AutomationRunsColumn = "workspace_id"
+	// AutomationStepRecordsTable is the table that holds the automation_step_records relation/edge.
+	AutomationStepRecordsTable = "automation_step_records"
+	// AutomationStepRecordsInverseTable is the table name for the AutomationStepRecord entity.
+	// It exists in this package in order to avoid circular dependency with the "automationsteprecord" package.
+	AutomationStepRecordsInverseTable = "automation_step_records"
+	// AutomationStepRecordsColumn is the table column denoting the automation_step_records relation/edge.
+	AutomationStepRecordsColumn = "workspace_id"
 	// RulesTable is the table that holds the rules relation/edge.
 	RulesTable = "rules"
 	// RulesInverseTable is the table name for the Rule entity.
@@ -1243,6 +1252,20 @@ func ByAutomationRuns(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByAutomationStepRecordsCount orders the results by automation_step_records count.
+func ByAutomationStepRecordsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newAutomationStepRecordsStep(), opts...)
+	}
+}
+
+// ByAutomationStepRecords orders the results by automation_step_records terms.
+func ByAutomationStepRecords(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAutomationStepRecordsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByRulesCount orders the results by rules count.
 func ByRulesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -1737,6 +1760,13 @@ func newAutomationRunsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AutomationRunsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, AutomationRunsTable, AutomationRunsColumn),
+	)
+}
+func newAutomationStepRecordsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AutomationStepRecordsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, AutomationStepRecordsTable, AutomationStepRecordsColumn),
 	)
 }
 func newRulesStep() *sqlgraph.Step {

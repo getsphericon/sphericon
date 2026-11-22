@@ -1,0 +1,434 @@
+# What each active Enrollment of automation_runs.yml kept of the Step it stands on (ADR 0124): reached
+# when its cursor last moved, and, on a wait, the due moment its resume_at holds. An Enrollment that
+# moves on from its Step stamps this record, so every active Enrollment standing on a Step has one.
+- id: 1005
+  run_id: 1005
+  workspace_id: 1
+  step_id: '3ed5d656-fbc5-5616-909d-81ccb4b7e673'
+  reached_at: '{{hoursAgo 5}}'
+  due_at: '{{daysAhead 1}}'
+  created_at: '{{hoursAgo 5}}'
+  updated_at: '{{hoursAgo 5}}'
+- id: 1006
+  run_id: 1006
+  workspace_id: 1
+  step_id: '3ed5d656-fbc5-5616-909d-81ccb4b7e673'
+  reached_at: '{{hoursAgo 8}}'
+  due_at: '{{daysAhead 2}}'
+  created_at: '{{hoursAgo 8}}'
+  updated_at: '{{hoursAgo 8}}'
+- id: 1014
+  run_id: 1014
+  workspace_id: 1
+  step_id: 'a3674b70-bdee-5ddb-a9d5-589de0a512a6'
+  reached_at: '{{hoursAgo 3}}'
+  created_at: '{{hoursAgo 3}}'
+  updated_at: '{{hoursAgo 3}}'
+- id: 1201
+  run_id: 1201
+  workspace_id: 1
+  step_id: '66d828ed-0d8d-53fa-beb4-cc4fc8872d20'
+  reached_at: '{{daysAgo 20}}'
+  due_at: '{{daysAhead 1}}'
+  created_at: '{{daysAgo 20}}'
+  updated_at: '{{daysAgo 20}}'
+- id: 1100
+  run_id: 1100
+  workspace_id: 1
+  step_id: 'aac3cecf-b9d7-57c6-ab50-1e4b1c35e1d3'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 3000 # fixture: StepRecordErasable
+  run_id: 3000
+  workspace_id: 3
+  step_id: '42ba7642-d13f-55bb-8dfe-56d6b7ca7bdf'
+  reached_at: '2026-01-02 00:00:00'
+  due_at: '{{daysAhead 1}}'
+  created_at: '2026-01-02 00:00:00'
+  updated_at: '2026-01-02 00:00:00'
+- id: 5560
+  run_id: 5560
+  workspace_id: 1
+  step_id: 'f01c9741-df06-5a0d-9e34-87e0650a86d3'
+  reached_at: '{{daysAgo 3}}'
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 5561
+  run_id: 5561
+  workspace_id: 1
+  step_id: 'f01c9741-df06-5a0d-9e34-87e0650a86d3'
+  reached_at: '{{daysAgo 3}}'
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 5568
+  run_id: 5568
+  workspace_id: 1
+  step_id: 'f43c7b0b-6f3c-585f-8912-3374cd1c2282'
+  reached_at: '{{daysAgo 3}}'
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 20003
+  run_id: 20003
+  workspace_id: 20
+  step_id: '74b58ea5-0f08-5810-9098-afd475faa894'
+  reached_at: '{{hoursAgo 168}}'
+  created_at: '{{hoursAgo 168}}'
+  updated_at: '{{hoursAgo 168}}'
+- id: 20007
+  run_id: 20007
+  workspace_id: 20
+  step_id: '74b58ea5-0f08-5810-9098-afd475faa894'
+  reached_at: '{{hoursAgo 528}}'
+  created_at: '{{hoursAgo 528}}'
+  updated_at: '{{hoursAgo 528}}'
+- id: 20014
+  run_id: 20014
+  workspace_id: 20
+  step_id: '85ab67b3-1ce5-523d-93f1-ea12391be7c6'
+  reached_at: '{{hoursAgo 168}}'
+  created_at: '{{hoursAgo 168}}'
+  updated_at: '{{hoursAgo 168}}'
+- id: 20018
+  run_id: 20018
+  workspace_id: 20
+  step_id: '85ab67b3-1ce5-523d-93f1-ea12391be7c6'
+  reached_at: '{{hoursAgo 528}}'
+  created_at: '{{hoursAgo 528}}'
+  updated_at: '{{hoursAgo 528}}'
+- id: 20025
+  run_id: 20025
+  workspace_id: 20
+  step_id: 'd432314c-8004-596f-9e50-35eed60ff25d'
+  reached_at: '{{hoursAgo 168}}'
+  created_at: '{{hoursAgo 168}}'
+  updated_at: '{{hoursAgo 168}}'
+- id: 20028
+  run_id: 20028
+  workspace_id: 20
+  step_id: 'd432314c-8004-596f-9e50-35eed60ff25d'
+  reached_at: '{{hoursAgo 528}}'
+  created_at: '{{hoursAgo 528}}'
+  updated_at: '{{hoursAgo 528}}'
+- id: 20035
+  run_id: 20035
+  workspace_id: 20
+  step_id: 'bacbe2f4-6580-5acc-94e4-513f26530515'
+  reached_at: '{{hoursAgo 168}}'
+  created_at: '{{hoursAgo 168}}'
+  updated_at: '{{hoursAgo 168}}'
+- id: 20039
+  run_id: 20039
+  workspace_id: 20
+  step_id: 'bacbe2f4-6580-5acc-94e4-513f26530515'
+  reached_at: '{{hoursAgo 528}}'
+  created_at: '{{hoursAgo 528}}'
+  updated_at: '{{hoursAgo 528}}'
+- id: 20046
+  run_id: 20046
+  workspace_id: 20
+  step_id: 'b633df4a-9d71-5747-8e6d-ac7e659056e0'
+  reached_at: '{{hoursAgo 168}}'
+  created_at: '{{hoursAgo 168}}'
+  updated_at: '{{hoursAgo 168}}'
+- id: 20050
+  run_id: 20050
+  workspace_id: 20
+  step_id: 'b633df4a-9d71-5747-8e6d-ac7e659056e0'
+  reached_at: '{{hoursAgo 528}}'
+  created_at: '{{hoursAgo 528}}'
+  updated_at: '{{hoursAgo 528}}'
+- id: 6103
+  run_id: 6103
+  workspace_id: 61
+  step_id: '339a0cff-c0e7-5700-9cd8-68c1ce0f3bc6'
+  reached_at: '2026-03-14 12:00:00+00'
+  created_at: '2026-03-14 12:00:00+00'
+  updated_at: '2026-03-14 12:00:00+00'
+- id: 5580
+  run_id: 5580
+  workspace_id: 1
+  step_id: '01900000-0000-0000-0000-000000000001'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7500
+  run_id: 7500
+  workspace_id: 1
+  step_id: 'a5a7184a-a358-5884-bba4-52f54f15fcd6'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7550
+  run_id: 7550
+  workspace_id: 1
+  step_id: 'f01c9741-df06-5a0d-9e34-87e0650a86d3'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7551
+  run_id: 7551
+  workspace_id: 1
+  step_id: 'aee222c5-d115-5800-8a8a-ae8ebc943ece'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7501
+  run_id: 7501
+  workspace_id: 1
+  step_id: '25c87cec-7274-585a-ace4-2a10156a61d5'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7502
+  run_id: 7502
+  workspace_id: 1
+  step_id: '8a0ed285-75ee-57a6-9cda-d61c2c6f232e'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7503
+  run_id: 7503
+  workspace_id: 1
+  step_id: '922bf13e-144b-5d30-bcbc-98018b69aa82'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7504
+  run_id: 7504
+  workspace_id: 1
+  step_id: 'f0a055ad-859d-545e-82fe-20ae592d73dd'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7505
+  run_id: 7505
+  workspace_id: 1
+  step_id: 'bee260ed-7708-59e2-821e-bf792e779767'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7506
+  run_id: 7506
+  workspace_id: 1
+  step_id: 'f5c9e355-3ab8-50ec-bb37-6c1b61b7d0fb'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7507
+  run_id: 7507
+  workspace_id: 1
+  step_id: 'bcfc96ba-42f0-5fa7-80a9-f96bb830fe0b'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7508
+  run_id: 7508
+  workspace_id: 1
+  step_id: 'd58129f9-5595-5ed4-80d0-f3d27e768373'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7509
+  run_id: 7509
+  workspace_id: 1
+  step_id: 'c8e7867c-7e77-5e7e-9db2-f20c5abeca39'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7510
+  run_id: 7510
+  workspace_id: 1
+  step_id: 'a6d773ba-f9b5-56f9-898c-121d8888acd8'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7511
+  run_id: 7511
+  workspace_id: 1
+  step_id: '98de79e5-acef-5933-9389-cb1a8657495a'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7512
+  run_id: 7512
+  workspace_id: 1
+  step_id: 'c8fc3bb4-c049-5b2f-882e-a269977ee912'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7513
+  run_id: 7513
+  workspace_id: 1
+  step_id: 'd027263d-51b0-5606-afd6-2ca6507468d2'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7514
+  run_id: 7514
+  workspace_id: 1
+  step_id: 'cffcda44-0da1-5922-ac3a-4369b5e525c8'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7515
+  run_id: 7515
+  workspace_id: 1
+  step_id: '84650ea0-aec0-53dc-942a-eddf07902340'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7516
+  run_id: 7516
+  workspace_id: 1
+  step_id: '26022d63-133d-56dd-bff4-e2e6770499d0'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7517
+  run_id: 7517
+  workspace_id: 1
+  step_id: '9c0ed87f-4a58-5815-8a3f-080b7b27792b'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7518
+  run_id: 7518
+  workspace_id: 1
+  step_id: 'fb198dcc-e05d-5605-9234-ca6d8c5bb554'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7519
+  run_id: 7519
+  workspace_id: 1
+  step_id: 'f396644b-153c-5b3e-af33-ae7a0dcec62d'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7520
+  run_id: 7520
+  workspace_id: 1
+  step_id: '7a3f1b17-c5a1-5188-823f-530e47479389'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7521
+  run_id: 7521
+  workspace_id: 1
+  step_id: '7a3f1b17-c5a1-5188-823f-530e47479389'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7522
+  run_id: 7522
+  workspace_id: 1
+  step_id: '7a3f1b17-c5a1-5188-823f-530e47479389'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7523
+  run_id: 7523
+  workspace_id: 1
+  step_id: '6760b6b3-f12e-5e06-9ea9-c72ba0e0708f'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7524
+  run_id: 7524
+  workspace_id: 1
+  step_id: 'd7656dd2-b7d5-5f2d-9cf0-c7e46eed7845'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7525
+  run_id: 7525
+  workspace_id: 1
+  step_id: 'bb0a20b9-5ad9-51c8-b149-01d656dadba2'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7526
+  run_id: 7526
+  workspace_id: 1
+  step_id: '6c90e8d6-e31e-50e2-b2da-404fce424d8e'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7527
+  run_id: 7527
+  workspace_id: 1
+  step_id: '6bff6db5-e42d-5908-91ef-9d6bf6c77029'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7400
+  run_id: 7400
+  workspace_id: 83
+  step_id: '869ddbf7-26ec-5702-964e-22500550002a'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7800
+  run_id: 7800
+  workspace_id: 1
+  step_id: '11bbd2a8-1c74-5ea8-8d63-b2bb27f4f0c6'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7801
+  run_id: 7801
+  workspace_id: 1
+  step_id: '11bbd2a8-1c74-5ea8-8d63-b2bb27f4f0c6'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7802
+  run_id: 7802
+  workspace_id: 1
+  step_id: '11bbd2a8-1c74-5ea8-8d63-b2bb27f4f0c6'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7803
+  run_id: 7803
+  workspace_id: 1
+  step_id: '11bbd2a8-1c74-5ea8-8d63-b2bb27f4f0c6'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7650
+  run_id: 7650
+  workspace_id: 92
+  step_id: '01900000-0000-0000-0000-000000000001'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7651
+  run_id: 7651
+  workspace_id: 92
+  step_id: '01900000-0000-0000-0000-000000000001'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7652
+  run_id: 7652
+  workspace_id: 92
+  step_id: '01900000-0000-0000-0000-000000000001'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7653
+  run_id: 7653
+  workspace_id: 92
+  step_id: '01900000-0000-0000-0000-000000000001'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
+- id: 7654
+  run_id: 7654
+  workspace_id: 92
+  step_id: '01900000-0000-0000-0000-000000000001'
+  reached_at: '{{daysAgo 1}}'
+  created_at: '{{daysAgo 1}}'
+  updated_at: '{{daysAgo 1}}'
