@@ -103,6 +103,27 @@ func TestAnExitEventEndsTheEnrollmentAsExited(t *testing.T) {
 	assert.Equal(t, automationrun.StatusExited, afterTheGoal, "an ended Enrollment stays as it ended")
 }
 
+// An Enrollment that ends on a Step through an exit or its goal leaves that Step when it ends, in
+// the same move (ADR 0124): its record keeps no outcome, the Enrollment's end says why.
+func TestAnEnrollmentEndedByAnEventLeavesTheStepItStoodOn(t *testing.T) {
+	for _, action := range []string{recoveryExit, recoveryGoal} {
+		t.Run(action, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			runID, contactID := recoveryRun(t, env)
+			at := time.Now().Add(-time.Minute).Truncate(time.Microsecond)
+
+			handEvent(t, env, contactID, action, at)
+
+			records, err := testhelper.Module[*automations.Module](env).StepRecords(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationPaymentRecoveryID, runID)
+			require.NoError(t, err)
+			require.Len(t, records, 1)
+			require.NotNil(t, records[0].LeftAt, "the Step it stood on is left")
+			assert.WithinDuration(t, at, *records[0].LeftAt, 0, "when the Event that ended it occurred")
+			assert.Nil(t, records[0].Outcome, "the Enrollment's end says why")
+		})
+	}
+}
+
 // An Enrollment begins when its triggering Event occurred: history from before then, loaded or
 // sent late, does not end it.
 func TestAnEventThatOccurredBeforeTheEnrollmentBeganEndsNothing(t *testing.T) {

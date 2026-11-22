@@ -234,7 +234,7 @@ var (
 				Symbol:     "automation_figures_automation_versions_version",
 				Columns:    []*schema.Column{AutomationFiguresColumns[11]},
 				RefColumns: []*schema.Column{AutomationVersionsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "automation_figures_workspaces_automation_figures",
@@ -3538,7 +3538,7 @@ func init() {
 		Table: "automation_step_records",
 	}
 	AutomationStepRecordsTable.Annotation.Checks = map[string]string{
-		"automation_step_records_left_check":        "(left_at IS NULL) = (outcome IS NULL)",
+		"automation_step_records_left_check":        "outcome IS NULL OR left_at IS NOT NULL",
 		"automation_step_records_outcome_check":     "outcome IN ('done', 'skipped')",
 		"automation_step_records_reason_check":      "outcome IS NOT NULL OR skip_reason IS NULL",
 		"automation_step_records_skip_reason_check": "skip_reason IN ('suppressed', 'unsubscribed_everything', 'unsubscribed_source', 'unconfirmed', 'no_destination', 'contact_erased', 'no_local_time', 'frequency_cap')",

@@ -54,7 +54,10 @@ func (AutomationFigure) Fields() []ent.Field {
 func (AutomationFigure) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("automation", Automation.Type).Field("automation_id").Unique().Required().Immutable(),
-		edge.To("version", AutomationVersion.Type).Field("version_id").Unique().Required().Immutable(),
+		// A figure stands for the Automation messages of the version it replaced, so the version is
+		// kept while one names it, as it is while a message does (RESTRICT).
+		edge.To("version", AutomationVersion.Type).Field("version_id").Unique().Required().Immutable().
+			Annotations(entsql.OnDelete(entsql.Restrict)),
 	}
 }
 

@@ -109,9 +109,17 @@ func move(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID int64,
 
 // moved fires t on one Enrollment as move does, and returns the System event that records the
 // end, nil for a move that records none: the caller publishes it in the transaction of the move.
+// An end other than a completion leaves the Step the Enrollment stood on (leaveOnEnd).
 func moved(ctx context.Context, s *ent.Scoped, runID int64, t trigger, endedAt time.Time, extra func(*ent.AutomationRunScopedUpdate)) (*events.EnrollmentChange, error) {
 	if err := machine(s, runID, endedAt, extra).FireCtx(ctx, t); err != nil {
 		return nil, err
+	}
+	// A completion leaves its last Step with how it did it (completeOn); any other end leaves the
+	// Step the Enrollment stood on in the same move, with no outcome (ADR 0124).
+	if t != triggerComplete {
+		if err := leaveOnEnd(ctx, s, runID, endedAt); err != nil {
+			return nil, err
+		}
 	}
 	action, recorded := endingEvents[t]
 	if !recorded {

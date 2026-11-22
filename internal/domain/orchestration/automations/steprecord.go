@@ -2,6 +2,7 @@ package automations
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
@@ -45,25 +47,45 @@ func reach(ctx context.Context, s *ent.Scoped, runID int64, stepID string, now t
 }
 
 // leave records that the Enrollment runID left the Step of the id at now: skipped for why when
-// why is set, done otherwise.
+// why is set, done otherwise. The left moment is a latch (ADR 0109), written once with the
+// outcome; the caller has moved the Enrollment off the Step, so a record already left, or none, is
+// a broken invariant, not a lost race.
 func leave(ctx context.Context, s *ent.Scoped, runID int64, stepID string, now time.Time, why skipreason.Reason) error {
-	u := s.AutomationStepRecord().Update().
-		Where(
-			automationsteprecord.RunID(runID),
-			automationsteprecord.StepID(stepID),
-			automationsteprecord.LeftAtIsNil(),
-		).
-		SetLeftAt(now).
-		SetOutcome(automationsteprecord.OutcomeDone)
-	if why != "" {
-		u.SetOutcome(automationsteprecord.OutcomeSkipped).SetSkipReason(why)
+	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		u := s.AutomationStepRecord().Update().
+			Where(
+				automationsteprecord.RunID(runID),
+				automationsteprecord.StepID(stepID),
+				automationsteprecord.LeftAtIsNil(),
+			).
+			SetLeftAt(now).
+			SetOutcome(automationsteprecord.OutcomeDone)
+		if why != "" {
+			u.SetOutcome(automationsteprecord.OutcomeSkipped).SetSkipReason(why)
+		}
+		n, err := u.Save(ctx)
+		return n > 0, err
+	})
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		return fmt.Errorf("leave step %s of run %d: the Enrollment has no open record of it", stepID, runID)
 	}
-	n, err := u.Save(ctx)
-	if err != nil {
-		return err
+	return err
+}
+
+// leaveOnEnd records that the Enrollment runID, ended at endedAt through an exit, its goal or a
+// failure, left the Step it stood on then, with no outcome: its end says why. An Enrollment made
+// already ended, or one of a version of no Steps, stands on no Step it reached, so it has no open
+// record and nothing is left.
+func leaveOnEnd(ctx context.Context, s *ent.Scoped, runID int64, endedAt time.Time) error {
+	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		n, err := s.AutomationStepRecord().Update().
+			Where(automationsteprecord.RunID(runID), automationsteprecord.LeftAtIsNil()).
+			SetLeftAt(endedAt).
+			Save(ctx)
+		return n > 0, err
+	})
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		return nil
 	}
-	if n == 0 {
-		return fmt.Errorf("leave step %s of run %d: the Enrollment has no record of reaching it", stepID, runID)
-	}
-	return nil
+	return err
 }

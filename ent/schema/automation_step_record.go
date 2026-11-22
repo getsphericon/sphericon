@@ -21,11 +21,12 @@ type AutomationStepRecord struct {
 	ent.Schema
 }
 
-// Annotations adds to the enum checks that a Step record is left exactly when it has an outcome,
-// and that only a skipped Step says why.
+// Annotations adds to the enum checks that only a left Step record has an outcome (one the
+// Enrollment ended on through an exit, a goal, a failure or an unsubscribe is left with none), and
+// that only a skipped Step says why.
 func (AutomationStepRecord) Annotations() []schema.Annotation {
 	a := TableWithEnumChecks("automation_step_records", AutomationStepRecord{}.Fields())
-	a.Checks["automation_step_records_left_check"] = "(left_at IS NULL) = (outcome IS NULL)"
+	a.Checks["automation_step_records_left_check"] = "outcome IS NULL OR left_at IS NOT NULL"
 	a.Checks["automation_step_records_reason_check"] = "outcome IS NOT NULL OR skip_reason IS NULL"
 	a.Checks["automation_step_records_skipped_check"] = variantCheck("outcome", stepOutcome)
 	return []schema.Annotation{a}
@@ -55,16 +56,19 @@ func (AutomationStepRecord) Fields() []ent.Field {
 		field.Time("reached_at").
 			Annotations(Attribute("records when the Enrollment reached the Step, in the move its cursor's compare-and-set decides")).
 			Immutable(),
-		// Null while the Enrollment stands on the Step, and on one that ended there (an exit, a
-		// goal, a failure): its ended_at says when.
+		// Null while the Enrollment stands on the Step. Set once, when it leaves the Step: by the
+		// move that takes it on, or by the end of the Enrollment on it.
 		field.Time("left_at").
-			Annotations(Attribute("records when the Enrollment left the Step, in the move its cursor's compare-and-set decides")).
+			Annotations(Latch()).
 			Optional().
 			Nillable(),
 		// done: the Step did its work (a send's own result is its Outbound message's). skipped:
-		// the Enrollment moved on without it, for skip_reason.
+		// the Enrollment moved on without it, for skip_reason. Null on a Step the Enrollment ended
+		// on through an exit, a goal, a failure or an unsubscribe: its end says why. Written in
+		// the latch of left_at, never after it.
 		field.Enum("outcome").
 			Values("done", "skipped").
+			Annotations(Latch()).
 			Optional().
 			Nillable(),
 		// Why a skipped Step was skipped; the reasons are skipreason's, the one closed list (ADR

@@ -8242,6 +8242,8 @@ func (u *AutomationStepRecordScopedUpsert) SetLeftAt(v time.Time) *AutomationSte
 
 const RoleOf_AutomationStepRecordScopedUpsert_SetLeftAt = RoleStep
 
+const SetsState_AutomationStepRecordScopedUpsert_SetLeftAt = "LeftAt"
+
 // UpdateLeftAt sets the "left_at" field to the value that was provided on create.
 func (u *AutomationStepRecordScopedUpsert) UpdateLeftAt() *AutomationStepRecordScopedUpsert {
 	u.u.SetExcluded(automationsteprecord.FieldLeftAt)
@@ -8249,6 +8251,8 @@ func (u *AutomationStepRecordScopedUpsert) UpdateLeftAt() *AutomationStepRecordS
 }
 
 const RoleOf_AutomationStepRecordScopedUpsert_UpdateLeftAt = RoleStep
+
+const SetsState_AutomationStepRecordScopedUpsert_UpdateLeftAt = "LeftAt"
 
 // ClearLeftAt clears the value of the "left_at" field.
 func (u *AutomationStepRecordScopedUpsert) ClearLeftAt() *AutomationStepRecordScopedUpsert {
@@ -8258,6 +8262,8 @@ func (u *AutomationStepRecordScopedUpsert) ClearLeftAt() *AutomationStepRecordSc
 
 const RoleOf_AutomationStepRecordScopedUpsert_ClearLeftAt = RoleStep
 
+const ClearsState_AutomationStepRecordScopedUpsert_ClearLeftAt = "LeftAt"
+
 // SetOutcome sets the "outcome" field.
 func (u *AutomationStepRecordScopedUpsert) SetOutcome(v automationsteprecord.Outcome) *AutomationStepRecordScopedUpsert {
 	u.u.Set(automationsteprecord.FieldOutcome, v)
@@ -8265,6 +8271,8 @@ func (u *AutomationStepRecordScopedUpsert) SetOutcome(v automationsteprecord.Out
 }
 
 const RoleOf_AutomationStepRecordScopedUpsert_SetOutcome = RoleStep
+
+const SetsState_AutomationStepRecordScopedUpsert_SetOutcome = "Outcome"
 
 // UpdateOutcome sets the "outcome" field to the value that was provided on create.
 func (u *AutomationStepRecordScopedUpsert) UpdateOutcome() *AutomationStepRecordScopedUpsert {
@@ -8274,6 +8282,8 @@ func (u *AutomationStepRecordScopedUpsert) UpdateOutcome() *AutomationStepRecord
 
 const RoleOf_AutomationStepRecordScopedUpsert_UpdateOutcome = RoleStep
 
+const SetsState_AutomationStepRecordScopedUpsert_UpdateOutcome = "Outcome"
+
 // ClearOutcome clears the value of the "outcome" field.
 func (u *AutomationStepRecordScopedUpsert) ClearOutcome() *AutomationStepRecordScopedUpsert {
 	u.u.SetNull(automationsteprecord.FieldOutcome)
@@ -8281,6 +8291,8 @@ func (u *AutomationStepRecordScopedUpsert) ClearOutcome() *AutomationStepRecordS
 }
 
 const RoleOf_AutomationStepRecordScopedUpsert_ClearOutcome = RoleStep
+
+const ClearsState_AutomationStepRecordScopedUpsert_ClearOutcome = "Outcome"
 
 // SetSkipReason sets the "skip_reason" field.
 func (u *AutomationStepRecordScopedUpsert) SetSkipReason(v skipreason.Reason) *AutomationStepRecordScopedUpsert {
@@ -8521,6 +8533,8 @@ func (x *AutomationStepRecordScopedUpdateOne) SetLeftAt(v time.Time) *Automation
 
 const RoleOf_AutomationStepRecordScopedUpdateOne_SetLeftAt = RoleStep
 
+const SetsState_AutomationStepRecordScopedUpdateOne_SetLeftAt = "LeftAt"
+
 // SetNillableLeftAt sets the "left_at" field if the given value is not nil.
 func (x *AutomationStepRecordScopedUpdateOne) SetNillableLeftAt(v *time.Time) *AutomationStepRecordScopedUpdateOne {
 	if v != nil {
@@ -8531,6 +8545,8 @@ func (x *AutomationStepRecordScopedUpdateOne) SetNillableLeftAt(v *time.Time) *A
 
 const RoleOf_AutomationStepRecordScopedUpdateOne_SetNillableLeftAt = RoleStep
 
+const SetsState_AutomationStepRecordScopedUpdateOne_SetNillableLeftAt = "LeftAt"
+
 // ClearLeftAt clears the value of the "left_at" field.
 func (x *AutomationStepRecordScopedUpdateOne) ClearLeftAt() *AutomationStepRecordScopedUpdateOne {
 	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.ClearLeftAt() })
@@ -8539,6 +8555,8 @@ func (x *AutomationStepRecordScopedUpdateOne) ClearLeftAt() *AutomationStepRecor
 
 const RoleOf_AutomationStepRecordScopedUpdateOne_ClearLeftAt = RoleStep
 
+const ClearsState_AutomationStepRecordScopedUpdateOne_ClearLeftAt = "LeftAt"
+
 // SetOutcome sets the "outcome" field.
 func (x *AutomationStepRecordScopedUpdateOne) SetOutcome(v automationsteprecord.Outcome) *AutomationStepRecordScopedUpdateOne {
 	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.SetOutcome(v) })
@@ -8546,6 +8564,8 @@ func (x *AutomationStepRecordScopedUpdateOne) SetOutcome(v automationsteprecord.
 }
 
 const RoleOf_AutomationStepRecordScopedUpdateOne_SetOutcome = RoleStep
+
+const SetsState_AutomationStepRecordScopedUpdateOne_SetOutcome = "Outcome"
 
 // SetNillableOutcome sets the "outcome" field if the given value is not nil.
 func (x *AutomationStepRecordScopedUpdateOne) SetNillableOutcome(v *automationsteprecord.Outcome) *AutomationStepRecordScopedUpdateOne {
@@ -8557,6 +8577,8 @@ func (x *AutomationStepRecordScopedUpdateOne) SetNillableOutcome(v *automationst
 
 const RoleOf_AutomationStepRecordScopedUpdateOne_SetNillableOutcome = RoleStep
 
+const SetsState_AutomationStepRecordScopedUpdateOne_SetNillableOutcome = "Outcome"
+
 // ClearOutcome clears the value of the "outcome" field.
 func (x *AutomationStepRecordScopedUpdateOne) ClearOutcome() *AutomationStepRecordScopedUpdateOne {
 	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.ClearOutcome() })
@@ -8564,6 +8586,8 @@ func (x *AutomationStepRecordScopedUpdateOne) ClearOutcome() *AutomationStepReco
 }
 
 const RoleOf_AutomationStepRecordScopedUpdateOne_ClearOutcome = RoleStep
+
+const ClearsState_AutomationStepRecordScopedUpdateOne_ClearOutcome = "Outcome"
 
 // SetSkipReason sets the "skip_reason" field.
 func (x *AutomationStepRecordScopedUpdateOne) SetSkipReason(v skipreason.Reason) *AutomationStepRecordScopedUpdateOne {
@@ -8690,6 +8714,8 @@ func (x *AutomationStepRecordScopedUpdate) SetLeftAt(v time.Time) *AutomationSte
 
 const RoleOf_AutomationStepRecordScopedUpdate_SetLeftAt = RoleStep
 
+const SetsState_AutomationStepRecordScopedUpdate_SetLeftAt = "LeftAt"
+
 // SetNillableLeftAt sets the "left_at" field if the given value is not nil.
 func (x *AutomationStepRecordScopedUpdate) SetNillableLeftAt(v *time.Time) *AutomationStepRecordScopedUpdate {
 	if v != nil {
@@ -8700,6 +8726,8 @@ func (x *AutomationStepRecordScopedUpdate) SetNillableLeftAt(v *time.Time) *Auto
 
 const RoleOf_AutomationStepRecordScopedUpdate_SetNillableLeftAt = RoleStep
 
+const SetsState_AutomationStepRecordScopedUpdate_SetNillableLeftAt = "LeftAt"
+
 // ClearLeftAt clears the value of the "left_at" field.
 func (x *AutomationStepRecordScopedUpdate) ClearLeftAt() *AutomationStepRecordScopedUpdate {
 	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.ClearLeftAt() })
@@ -8708,6 +8736,8 @@ func (x *AutomationStepRecordScopedUpdate) ClearLeftAt() *AutomationStepRecordSc
 
 const RoleOf_AutomationStepRecordScopedUpdate_ClearLeftAt = RoleStep
 
+const ClearsState_AutomationStepRecordScopedUpdate_ClearLeftAt = "LeftAt"
+
 // SetOutcome sets the "outcome" field.
 func (x *AutomationStepRecordScopedUpdate) SetOutcome(v automationsteprecord.Outcome) *AutomationStepRecordScopedUpdate {
 	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.SetOutcome(v) })
@@ -8715,6 +8745,8 @@ func (x *AutomationStepRecordScopedUpdate) SetOutcome(v automationsteprecord.Out
 }
 
 const RoleOf_AutomationStepRecordScopedUpdate_SetOutcome = RoleStep
+
+const SetsState_AutomationStepRecordScopedUpdate_SetOutcome = "Outcome"
 
 // SetNillableOutcome sets the "outcome" field if the given value is not nil.
 func (x *AutomationStepRecordScopedUpdate) SetNillableOutcome(v *automationsteprecord.Outcome) *AutomationStepRecordScopedUpdate {
@@ -8726,6 +8758,8 @@ func (x *AutomationStepRecordScopedUpdate) SetNillableOutcome(v *automationstepr
 
 const RoleOf_AutomationStepRecordScopedUpdate_SetNillableOutcome = RoleStep
 
+const SetsState_AutomationStepRecordScopedUpdate_SetNillableOutcome = "Outcome"
+
 // ClearOutcome clears the value of the "outcome" field.
 func (x *AutomationStepRecordScopedUpdate) ClearOutcome() *AutomationStepRecordScopedUpdate {
 	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.ClearOutcome() })
@@ -8733,6 +8767,8 @@ func (x *AutomationStepRecordScopedUpdate) ClearOutcome() *AutomationStepRecordS
 }
 
 const RoleOf_AutomationStepRecordScopedUpdate_ClearOutcome = RoleStep
+
+const ClearsState_AutomationStepRecordScopedUpdate_ClearOutcome = "Outcome"
 
 // SetSkipReason sets the "skip_reason" field.
 func (x *AutomationStepRecordScopedUpdate) SetSkipReason(v skipreason.Reason) *AutomationStepRecordScopedUpdate {
