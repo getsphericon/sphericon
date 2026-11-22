@@ -195,6 +195,70 @@ func (s *ApplyTagInput) Validate() error {
 	return nil
 }
 
+func (s *ApplyTagStep) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *ApplyTagStepInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s ApplyTagStepInputType) Validate() error {
+	switch s {
+	case "apply_tag":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s ApplyTagStepType) Validate() error {
+	switch s {
+	case "apply_tag":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *AttributeLeaf) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -689,6 +753,86 @@ func (s AutomationHttpErrorKind) Validate() error {
 	}
 }
 
+func (s *AutomationPath) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if s.Steps == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Steps {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "steps",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *AutomationPathInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if s.Steps == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Steps {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "steps",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s *AutomationPeriodResults) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -927,99 +1071,13 @@ func (s *AutomationStep) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
-		if err := s.Type.Validate(); err != nil {
+		if err := s.OneOf.Validate(); err != nil {
 			return err
 		}
 		return nil
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
-			Name:  "type",
-			Error: err,
-		})
-	}
-	if err := func() error {
-		if s.Headers == nil {
-			return nil // optional
-		}
-		if err := (validate.Array{
-			MinLength:    0,
-			MinLengthSet: false,
-			MaxLength:    5,
-			MaxLengthSet: true,
-		}).ValidateLength(len(s.Headers)); err != nil {
-			return errors.Wrap(err, "array")
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "headers",
-			Error: err,
-		})
-	}
-	if err := func() error {
-		if value, ok := s.Secret.Get(); ok {
-			if err := func() error {
-				if err := value.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "secret",
-			Error: err,
-		})
-	}
-	if err := func() error {
-		if value, ok := s.UnsubscribeButton.Get(); ok {
-			if err := func() error {
-				if err := (validate.String{
-					MinLength:     0,
-					MinLengthSet:  false,
-					MaxLength:     64,
-					MaxLengthSet:  true,
-					Email:         false,
-					Hostname:      false,
-					Regex:         nil,
-					MinNumeric:    0,
-					MinNumericSet: false,
-					MaxNumeric:    0,
-					MaxNumericSet: false,
-				}).Validate(string(value)); err != nil {
-					return errors.Wrap(err, "string")
-				}
-				return nil
-			}(); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "unsubscribeButton",
-			Error: err,
-		})
-	}
-	if err := func() error {
-		if s.Buttons == nil {
-			return nil // optional
-		}
-		if err := (validate.Array{
-			MinLength:    0,
-			MinLengthSet: false,
-			MaxLength:    8,
-			MaxLengthSet: true,
-		}).ValidateLength(len(s.Buttons)); err != nil {
-			return errors.Wrap(err, "array")
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "buttons",
+			Name:  "OneOf",
 			Error: err,
 		})
 	}
@@ -1036,99 +1094,13 @@ func (s *AutomationStepInput) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
-		if err := s.Type.Validate(); err != nil {
+		if err := s.OneOf.Validate(); err != nil {
 			return err
 		}
 		return nil
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
-			Name:  "type",
-			Error: err,
-		})
-	}
-	if err := func() error {
-		if s.Headers == nil {
-			return nil // optional
-		}
-		if err := (validate.Array{
-			MinLength:    0,
-			MinLengthSet: false,
-			MaxLength:    5,
-			MaxLengthSet: true,
-		}).ValidateLength(len(s.Headers)); err != nil {
-			return errors.Wrap(err, "array")
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "headers",
-			Error: err,
-		})
-	}
-	if err := func() error {
-		if value, ok := s.Secret.Get(); ok {
-			if err := func() error {
-				if err := value.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "secret",
-			Error: err,
-		})
-	}
-	if err := func() error {
-		if value, ok := s.UnsubscribeButton.Get(); ok {
-			if err := func() error {
-				if err := (validate.String{
-					MinLength:     0,
-					MinLengthSet:  false,
-					MaxLength:     64,
-					MaxLengthSet:  true,
-					Email:         false,
-					Hostname:      false,
-					Regex:         nil,
-					MinNumeric:    0,
-					MinNumericSet: false,
-					MaxNumeric:    0,
-					MaxNumericSet: false,
-				}).Validate(string(value)); err != nil {
-					return errors.Wrap(err, "string")
-				}
-				return nil
-			}(); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "unsubscribeButton",
-			Error: err,
-		})
-	}
-	if err := func() error {
-		if s.Buttons == nil {
-			return nil // optional
-		}
-		if err := (validate.Array{
-			MinLength:    0,
-			MinLengthSet: false,
-			MaxLength:    8,
-			MaxLengthSet: true,
-		}).ValidateLength(len(s.Buttons)); err != nil {
-			return errors.Wrap(err, "array")
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "buttons",
+			Name:  "OneOf",
 			Error: err,
 		})
 	}
@@ -1138,24 +1110,87 @@ func (s *AutomationStepInput) Validate() error {
 	return nil
 }
 
-func (s AutomationStepType) Validate() error {
-	switch s {
-	case "email":
+func (s AutomationStepInputSum) Validate() error {
+	switch s.Type {
+	case EmailStepInputAutomationStepInputSum:
+		if err := s.EmailStepInput.Validate(); err != nil {
+			return err
+		}
 		return nil
-	case "telegram":
+	case TelegramStepInputAutomationStepInputSum:
+		if err := s.TelegramStepInput.Validate(); err != nil {
+			return err
+		}
 		return nil
-	case "sms":
+	case SmsStepInputAutomationStepInputSum:
+		if err := s.SmsStepInput.Validate(); err != nil {
+			return err
+		}
 		return nil
-	case "wait":
+	case WaitStepInputAutomationStepInputSum:
+		if err := s.WaitStepInput.Validate(); err != nil {
+			return err
+		}
 		return nil
-	case "apply_tag":
+	case ApplyTagStepInputAutomationStepInputSum:
+		if err := s.ApplyTagStepInput.Validate(); err != nil {
+			return err
+		}
 		return nil
-	case "remove_tag":
+	case RemoveTagStepInputAutomationStepInputSum:
+		if err := s.RemoveTagStepInput.Validate(); err != nil {
+			return err
+		}
 		return nil
-	case "http":
+	case HttpStepInputAutomationStepInputSum:
+		if err := s.HttpStepInput.Validate(); err != nil {
+			return err
+		}
 		return nil
 	default:
-		return errors.Errorf("invalid value: %v", s)
+		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
+func (s AutomationStepSum) Validate() error {
+	switch s.Type {
+	case EmailStepAutomationStepSum:
+		if err := s.EmailStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case TelegramStepAutomationStepSum:
+		if err := s.TelegramStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case SmsStepAutomationStepSum:
+		if err := s.SmsStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case WaitStepAutomationStepSum:
+		if err := s.WaitStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case ApplyTagStepAutomationStepSum:
+		if err := s.ApplyTagStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case RemoveTagStepAutomationStepSum:
+		if err := s.RemoveTagStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case HttpStepAutomationStepSum:
+		if err := s.HttpStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
 	}
 }
 
@@ -1177,25 +1212,8 @@ func (s *AutomationVersion) Validate() error {
 		})
 	}
 	if err := func() error {
-		if s.Steps == nil {
-			return errors.New("nil is invalid value")
-		}
-		var failures []validate.FieldError
-		for i, elem := range s.Steps {
-			if err := func() error {
-				if err := elem.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				failures = append(failures, validate.FieldError{
-					Name:  fmt.Sprintf("[%d]", i),
-					Error: err,
-				})
-			}
-		}
-		if len(failures) > 0 {
-			return &validate.Error{Fields: failures}
+		if err := s.Steps.Validate(); err != nil {
+			return err
 		}
 		return nil
 	}(); err != nil {
@@ -2696,22 +2714,15 @@ func (s *CreateAutomationInput) Validate() error {
 		})
 	}
 	if err := func() error {
-		var failures []validate.FieldError
-		for i, elem := range s.Steps {
+		if value, ok := s.Steps.Get(); ok {
 			if err := func() error {
-				if err := elem.Validate(); err != nil {
+				if err := value.Validate(); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				failures = append(failures, validate.FieldError{
-					Name:  fmt.Sprintf("[%d]", i),
-					Error: err,
-				})
+				return err
 			}
-		}
-		if len(failures) > 0 {
-			return &validate.Error{Fields: failures}
 		}
 		return nil
 	}(); err != nil {
@@ -3952,6 +3963,70 @@ func (s *EmailSchemaResult) Validate() error {
 	return nil
 }
 
+func (s *EmailStep) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *EmailStepInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s EmailStepInputType) Validate() error {
+	switch s {
+	case "email":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s EmailStepType) Validate() error {
+	switch s {
+	case "email":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *EnrollmentFailure) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -4428,6 +4503,118 @@ func (s HoldReason) Validate() error {
 	case "provider_stopped":
 		return nil
 	case "provider_refused":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *HttpStep) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Headers == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "headers",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *HttpStepInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Headers == nil {
+			return nil // optional
+		}
+		if err := (validate.Array{
+			MinLength:    0,
+			MinLengthSet: false,
+			MaxLength:    5,
+			MaxLengthSet: true,
+		}).ValidateLength(len(s.Headers)); err != nil {
+			return errors.Wrap(err, "array")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "headers",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Secret.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "secret",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s HttpStepInputType) Validate() error {
+	switch s {
+	case "http":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s HttpStepType) Validate() error {
+	switch s {
+	case "http":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -5929,6 +6116,70 @@ func (s *RecordEventsInput) Validate() error {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
+}
+
+func (s *RemoveTagStep) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *RemoveTagStepInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s RemoveTagStepInputType) Validate() error {
+	switch s {
+	case "remove_tag":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s RemoveTagStepType) Validate() error {
+	switch s {
+	case "remove_tag":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s Revision) Validate() error {
@@ -8063,6 +8314,70 @@ func (s *SmsOptOut) Validate() error {
 	return nil
 }
 
+func (s *SmsStep) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *SmsStepInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SmsStepInputType) Validate() error {
+	switch s {
+	case "sms":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s SmsStepType) Validate() error {
+	switch s {
+	case "sms":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *SmtpConfig) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -8638,6 +8953,130 @@ func (s TelegramLeafKind) Validate() error {
 	}
 }
 
+func (s *TelegramStep) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Buttons == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "buttons",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *TelegramStepInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.UnsubscribeButton.Get(); ok {
+			if err := func() error {
+				if err := (validate.String{
+					MinLength:     0,
+					MinLengthSet:  false,
+					MaxLength:     64,
+					MaxLengthSet:  true,
+					Email:         false,
+					Hostname:      false,
+					Regex:         nil,
+					MinNumeric:    0,
+					MinNumericSet: false,
+					MaxNumeric:    0,
+					MaxNumericSet: false,
+				}).Validate(string(value)); err != nil {
+					return errors.Wrap(err, "string")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "unsubscribeButton",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Buttons == nil {
+			return nil // optional
+		}
+		if err := (validate.Array{
+			MinLength:    0,
+			MinLengthSet: false,
+			MaxLength:    8,
+			MaxLengthSet: true,
+		}).ValidateLength(len(s.Buttons)); err != nil {
+			return errors.Wrap(err, "array")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "buttons",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s TelegramStepInputType) Validate() error {
+	switch s {
+	case "telegram":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s TelegramStepType) Validate() error {
+	switch s {
+	case "telegram":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *TemplateResource) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -9150,22 +9589,15 @@ func (s *UpdateAutomationInput) Validate() error {
 		})
 	}
 	if err := func() error {
-		var failures []validate.FieldError
-		for i, elem := range s.Steps {
+		if value, ok := s.Steps.Get(); ok {
 			if err := func() error {
-				if err := elem.Validate(); err != nil {
+				if err := value.Validate(); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				failures = append(failures, validate.FieldError{
-					Name:  fmt.Sprintf("[%d]", i),
-					Error: err,
-				})
+				return err
 			}
-		}
-		if len(failures) > 0 {
-			return &validate.Error{Fields: failures}
 		}
 		return nil
 	}(); err != nil {
@@ -9998,6 +10430,70 @@ func (s UsedByKind) Validate() error {
 	case "rule":
 		return nil
 	case "enrollment":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *WaitStep) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *WaitStepInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s WaitStepInputType) Validate() error {
+	switch s {
+	case "wait":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s WaitStepType) Validate() error {
+	switch s {
+	case "wait":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

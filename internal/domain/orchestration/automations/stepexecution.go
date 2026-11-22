@@ -228,25 +228,21 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 		return m.complete(ctx, s, run.ID)
 	}
 
-	switch st.Type {
+	switch p := st.Payload.(type) {
 	case automationstep.Wait:
-		resume := m.now().Add(time.Duration(st.Seconds) * time.Second)
+		resume := m.now().Add(time.Duration(p.Seconds) * time.Second)
 		return m.advance(ctx, s, run.ID, step, stepMove{resumeAt: &resume})
 
-	case automationstep.ApplyTag, automationstep.RemoveTag:
-		// A tag step changes the Contact's Tags and moves straight on; it sends nothing. It
-		// writes the Contact's row, so it locks the Contact before it moves the Enrollment, in
-		// the order an exit takes them (lockContact, #811). The move comes before
-		// the change, so a step that lost a race tags nothing, and the change commits with it.
-		// The change is the `system` actor's (ADR 0022): a Tag the step creates is audited.
-		return m.advance(ctx, s, run.ID, step, stepMove{contactID: run.ContactID, with: func(ts *ent.Scoped, _ events.Publisher) error {
-			sys := m.out.AsSystem(ts)
-			if st.Type == automationstep.ApplyTag {
-				_, err := m.contacts.ApplyTagIn(ctx, sys, run.ContactID, st.Tag)
-				return err
-			}
-			return m.contacts.RemoveTagIn(ctx, sys, run.ContactID, st.Tag)
-		}})
+	case automationstep.ApplyTag:
+		return m.tag(ctx, s, run, step, func(sys *ent.Scoped) error {
+			_, err := m.contacts.ApplyTagIn(ctx, sys, run.ContactID, p.Tag)
+			return err
+		})
+
+	case automationstep.RemoveTag:
+		return m.tag(ctx, s, run, step, func(sys *ent.Scoped) error {
+			return m.contacts.RemoveTagIn(ctx, sys, run.ContactID, p.Tag)
+		})
 
 	case automationstep.HTTP:
 		// The call runs on its own queue (ADR 0039); the job queued here makes it and moves
@@ -254,11 +250,22 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 		return m.enqueue(ctx, s, RunHTTPStepArgs{WorkspaceID: s.WorkspaceID(), RunID: run.ID, Step: step}, nil)
 
 	default:
-		if _, sends := st.Type.Channel(); sends {
+		if _, sends := st.Kind().Channel(); sends {
 			return m.send(ctx, s, a, run, SendStep{Index: step, Step: *st})
 		}
-		return m.fail(ctx, s, run.ID, fmt.Errorf("unknown step type %q", st.Type))
+		return m.fail(ctx, s, run.ID, fmt.Errorf("unknown step type %q", st.Kind()))
 	}
+}
+
+// tag runs a tag step: change changes the Contact's Tags, and the Enrollment moves straight on;
+// it sends nothing. It writes the Contact's row, so it locks the Contact before it moves the
+// Enrollment, in the order an exit takes them (lockContact, #811). The move comes before the
+// change, so a step that lost a race tags nothing, and the change commits with it. The change is
+// the `system` actor's (ADR 0022): a Tag the step creates is audited.
+func (m *StepExecution) tag(ctx context.Context, s *ent.Scoped, run *ent.AutomationRun, step int, change func(sys *ent.Scoped) error) error {
+	return m.advance(ctx, s, run.ID, step, stepMove{contactID: run.ContactID, with: func(ts *ent.Scoped, _ events.Publisher) error {
+		return change(m.out.AsSystem(ts))
+	}})
 }
 
 // send executes a send step: one Outbound send of the step's content on its Channel, through the
@@ -283,7 +290,7 @@ func (m *StepExecution) send(ctx context.Context, s *ent.Scoped, a *ent.Automati
 	var res outboundmessages.Result
 	err = m.fence(ctx, s, run.ID, func(ctx context.Context) error {
 		var sendErr error
-		res, sendErr = m.out.Send(ctx, s, outboundmessages.AutomationStep(a, run, st.Index, st.Step.IntegrationID, c, content))
+		res, sendErr = m.out.Send(ctx, s, outboundmessages.AutomationStep(a, run, st.Index, st.Step.Integration(), c, content))
 		return sendErr
 	})
 	if stale(err) {
@@ -319,7 +326,7 @@ func (m *StepExecution) send(ctx context.Context, s *ent.Scoped, a *ent.Automati
 			// one else): it is recorded Failed, and the sequence goes on (ADR 0079).
 			return m.advance(ctx, s, run.ID, st.Index, stepMove{})
 		}
-		return m.fail(ctx, s, run.ID, fmt.Errorf("%s step %d: %s", st.Step.Type, st.Index, res.Failure))
+		return m.fail(ctx, s, run.ID, fmt.Errorf("%s step %d: %s", st.Step.Kind(), st.Index, res.Failure))
 	}
 }
 

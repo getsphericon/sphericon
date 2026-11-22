@@ -11,7 +11,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteAutomationResource, AutomationResults } from '../../generated/site/types.gen.ts'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
-import { emailIntegration, page, TIMESTAMPS, testId } from '../../test/payloads.ts'
+import { emailIntegration, page, stepId, testId, TIMESTAMPS } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -65,7 +65,7 @@ test('shows the automation and the contacts enrolled in it', async () => {
           triggerEvent: 'contact.created',
           exitEvents: [],
           goalEvent: null,
-          steps: [],
+          steps: { id: stepId(1), steps: [] },
         },
         draft: null,
         revision: 1,
@@ -122,7 +122,7 @@ test('shows the opens, the clicks and the clicked links of the automation', asyn
           triggerEvent: 'contact.created',
           exitEvents: [],
           goalEvent: null,
-          steps: [],
+          steps: { id: stepId(1), steps: [] },
         },
         draft: null,
         revision: 1,
@@ -177,7 +177,7 @@ test('marks an inactive automation as inactive', async () => {
           triggerEvent: 'contact.created',
           exitEvents: [],
           goalEvent: null,
-          steps: [],
+          steps: { id: stepId(1), steps: [] },
         },
         draft: null,
         revision: 1,
@@ -227,7 +227,7 @@ test('shows the orders and the net revenue credited to the automation', async ()
           triggerEvent: 'contact.created',
           exitEvents: [],
           goalEvent: null,
-          steps: [],
+          steps: { id: stepId(1), steps: [] },
         },
         draft: null,
         revision: 1,
@@ -270,7 +270,7 @@ test('shows no orders or revenue on the automation until the first order sets th
           triggerEvent: 'contact.created',
           exitEvents: [],
           goalEvent: null,
-          steps: [],
+          steps: { id: stepId(1), steps: [] },
         },
         draft: null,
         revision: 1,
@@ -306,13 +306,19 @@ const PENDING: SiteAutomationResource = {
   id: testId(1),
   name: 'Welcome series',
   status: 'active',
-  live: { number: 1, triggerEvent: 'signup', exitEvents: [], goalEvent: null, steps: [] },
+  live: {
+    number: 1,
+    triggerEvent: 'signup',
+    exitEvents: [],
+    goalEvent: null,
+    steps: { id: stepId(1), steps: [] },
+  },
   draft: {
     number: 2,
     triggerEvent: 'signup',
     exitEvents: [],
     goalEvent: null,
-    steps: [{ type: 'wait', seconds: 60 }],
+    steps: { id: stepId(1), steps: [{ id: stepId(11), type: 'wait', seconds: 60 }] },
   },
   revision: 1,
   ...TIMESTAMPS,
@@ -343,18 +349,30 @@ test('shows what the live version does, its exit and goal events included, not t
           triggerEvent: 'signup',
           exitEvents: ['account_closed'],
           goalEvent: 'course_started',
-          steps: [
-            { type: 'email', subject: 'Welcome aboard' },
-            { type: 'email', subject: 'Second look', integrationId: testId(21) },
-            { type: 'apply_tag', tag: 'onboarded' },
-          ],
+          steps: {
+            id: stepId(1),
+            steps: [
+              { id: stepId(11), type: 'email', subject: 'Welcome aboard', body: '' },
+              {
+                id: stepId(12),
+                type: 'email',
+                subject: 'Second look',
+                body: '',
+                integrationId: testId(21),
+              },
+              { id: stepId(13), type: 'apply_tag', tag: 'onboarded' },
+            ],
+          },
         },
         draft: {
           number: 2,
           triggerEvent: 'course_completed',
           exitEvents: [],
           goalEvent: null,
-          steps: [{ type: 'http' }],
+          steps: {
+            id: stepId(1),
+            steps: [{ id: stepId(11), type: 'http', body: '{}', headers: [], hasSecret: false }],
+          },
         },
       },
     }),
@@ -388,7 +406,18 @@ test('a send step through a deleted Integration names it as deleted', async () =
           triggerEvent: 'signup',
           exitEvents: [],
           goalEvent: null,
-          steps: [{ type: 'email', subject: 'Second look', integrationId: testId(21) }],
+          steps: {
+            id: stepId(1),
+            steps: [
+              {
+                id: stepId(11),
+                type: 'email',
+                subject: 'Second look',
+                body: '',
+                integrationId: testId(21),
+              },
+            ],
+          },
         },
       },
     }),
@@ -592,7 +621,7 @@ test('an archived automation is read-only: it offers no edit and no publish', as
           triggerEvent: 'contact.created',
           exitEvents: [],
           goalEvent: null,
-          steps: [],
+          steps: { id: stepId(1), steps: [] },
         },
         archivedAt: TIMESTAMPS.updatedAt,
         revision: 1,

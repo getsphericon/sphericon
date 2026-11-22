@@ -19,31 +19,37 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func TestStoredStepsKeepOnlyTheFieldsOfEachStepType(t *testing.T) {
-	def := automations.StoredSteps([]automationstep.Step{
-		{Type: automationstep.Email, Subject: "Hi", Body: "b", Seconds: 9, Tag: "stray"},
-		{Type: automationstep.Wait, Seconds: 30, Subject: "stray"},
-		{Type: automationstep.ApplyTag, Tag: "  vip ", Body: "stray"},
-		{Type: automationstep.RemoveTag, Tag: "old"},
-		{Subject: "untyped steps are emails"},
-	})
-	assert.JSONEq(t, `[
-		{"type":"email","subject":"Hi","body":"b"},
-		{"type":"wait","seconds":30},
-		{"type":"apply_tag","tag":"vip"},
-		{"type":"remove_tag","tag":"old"},
-		{"type":"email","subject":"untyped steps are emails"}
-	]`, testhelper.Document(t, def))
+// A step is stored with its id, its kind and its kind's fields, a tag name and a Telegram step's
+// image trimmed, an SMS step's link tracking only when it is off and an email step's editor
+// version only with its document.
+func TestStoredStepsKeepTheIDAndTheFieldsOfEachStepKind(t *testing.T) {
+	def := automations.StoredSteps(automationstep.Path{ID: "p", Steps: []automationstep.Step{
+		{ID: "a", Payload: automationstep.Email{Subject: "Hi", Body: "b", EditorVersion: "stray"}},
+		{ID: "b", Payload: automationstep.Wait{Seconds: 30}},
+		{ID: "c", Payload: automationstep.ApplyTag{Tag: "  vip "}},
+		{ID: "d", Payload: automationstep.RemoveTag{Tag: "old"}},
+		{ID: "e", Payload: automationstep.SMS{Text: "Hi", LinkTracking: new(true)}},
+		{ID: "f", Payload: automationstep.HTTP{Body: "{}", URL: "sealed", ClearSecret: true}},
+	}})
+	assert.JSONEq(t, `{"id":"p","steps":[
+		{"id":"a","type":"email","subject":"Hi","body":"b"},
+		{"id":"b","type":"wait","seconds":30},
+		{"id":"c","type":"apply_tag","tag":"vip"},
+		{"id":"d","type":"remove_tag","tag":"old"},
+		{"id":"e","type":"sms","text":"Hi"},
+		{"id":"f","type":"http","url":"sealed","body":"{}"}
+	]}`, testhelper.Document(t, def))
 
-	assert.Equal(t, []automationstep.Step{}, automations.StoredSteps(nil), "no steps are an empty list, never null")
+	none := automations.StoredSteps(automationstep.Path{ID: "p"})
+	assert.Equal(t, []automationstep.Step{}, none.Steps, "no steps are an empty list, never null")
 }
 
 // An email step's body is stored as it was written (ADR 0118).
 func TestStoredStepsKeepAnEmailStepBodyAsWritten(t *testing.T) {
-	def := automations.StoredSteps([]automationstep.Step{
-		{Type: automationstep.Email, Subject: "Hi", Body: `<p onclick="track()">Hi {{ first_name }}</p><form action="https://example.com/s"></form>`},
-	})
-	assert.JSONEq(t, `[{"type":"email","subject":"Hi","body":"<p onclick=\"track()\">Hi {{ first_name }}</p><form action=\"https://example.com/s\"></form>"}]`, testhelper.Document(t, def))
+	def := automations.StoredSteps(automationstep.Path{ID: "p", Steps: []automationstep.Step{
+		{ID: "a", Payload: automationstep.Email{Subject: "Hi", Body: `<p onclick="track()">Hi {{ first_name }}</p><form action="https://example.com/s"></form>`}},
+	}})
+	assert.JSONEq(t, `{"id":"p","steps":[{"id":"a","type":"email","subject":"Hi","body":"<p onclick=\"track()\">Hi {{ first_name }}</p><form action=\"https://example.com/s\"></form>"}]}`, testhelper.Document(t, def))
 }
 
 func TestCreateStoresAnInactiveAutomationWithEncodedSteps(t *testing.T) {
@@ -53,12 +59,12 @@ func TestCreateStoresAnInactiveAutomationWithEncodedSteps(t *testing.T) {
 
 	a, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{
 		Name: "Onboarding", TriggerEvent: "signup",
-		Steps: []automationstep.Step{{Type: automationstep.ApplyTag, Tag: " new "}, {Type: automationstep.Wait, Seconds: 5}},
+		Steps: steps(automationstep.ApplyTag{Tag: " new "}, automationstep.Wait{Seconds: 5}),
 	})
 	require.NoError(t, err)
 	assert.Equal(t, automation.StatusInactive, a.Status)
 	assert.EqualValues(t, fixtures.AcmeID, a.WorkspaceID)
-	assert.Equal(t, []automationstep.Step{{Type: automationstep.ApplyTag, Tag: "new"}, {Type: automationstep.Wait, Seconds: 5}}, draftSteps(t, a))
+	assert.Equal(t, []automationstep.Payload{automationstep.ApplyTag{Tag: "new"}, automationstep.Wait{Seconds: 5}}, draftSteps(t, a))
 	live, draft := automations.LiveAndDraft(a)
 	assert.Nil(t, live, "nothing is live until it is published")
 	assert.Equal(t, "signup", draft.TriggerEvent)
@@ -82,16 +88,21 @@ func TestInvalidStepsAreRefusedAndNothingIsStored(t *testing.T) {
 	ctx := context.Background()
 	before := automationNames(t, env)
 
-	for name, steps := range map[string][]automationstep.Step{
-		"unknown type":        {{Type: "sms"}},
-		"negative wait":       {{Type: automationstep.Wait, Seconds: -1}},
-		"apply_tag blank tag": {{Type: automationstep.ApplyTag, Tag: "  "}},
-		"remove_tag no tag":   {{Type: automationstep.RemoveTag}},
+	for name, refused := range map[string]*automationstep.Path{
+		"no kind":             {Steps: []automationstep.Step{{}}},
+		"negative wait":       steps(automationstep.Wait{Seconds: -1}),
+		"apply_tag blank tag": steps(automationstep.ApplyTag{Tag: "  "}),
+		"remove_tag no tag":   steps(automationstep.RemoveTag{}),
+		"malformed id":        {Steps: []automationstep.Step{{ID: "step-1", Payload: automationstep.Wait{}}}},
+		"duplicate id": {Steps: []automationstep.Step{
+			{ID: "0f6b8d1e-6c2a-4a55-8f7e-3c1d2b4a5e61", Payload: automationstep.Wait{}},
+			{ID: "0f6b8d1e-6c2a-4a55-8f7e-3c1d2b4a5e61", Payload: automationstep.Wait{}},
+		}},
 	} {
-		_, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{Name: "x", TriggerEvent: "y", Steps: steps})
+		_, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{Name: "x", TriggerEvent: "y", Steps: refused})
 		require.ErrorIs(t, err, automations.ErrInvalidStep, name)
 
-		_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID), Steps: &steps})
+		_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID), Steps: refused})
 		require.ErrorIs(t, err, automations.ErrInvalidStep, "update: "+name)
 	}
 
@@ -128,9 +139,9 @@ func TestUpdateChangesOnlyWhatIsGivenAndKeepsTheStatus(t *testing.T) {
 	assert.Equal(t, draftSteps(t, before), draftSteps(t, renamed), "steps untouched when not given")
 	assert.Equal(t, before.Status, renamed.Status)
 
-	resteps, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), before.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), before.ID), Steps: &[]automationstep.Step{{Type: automationstep.Wait, Seconds: 1}}})
+	resteps, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), before.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), before.ID), Steps: steps(automationstep.Wait{Seconds: 1})})
 	require.NoError(t, err)
-	assert.Equal(t, []automationstep.Step{{Type: automationstep.Wait, Seconds: 1}}, draftSteps(t, resteps))
+	assert.Equal(t, []automationstep.Payload{automationstep.Wait{Seconds: 1}}, draftSteps(t, resteps))
 }
 
 func TestPublishAndDeactivateFlipTheStatus(t *testing.T) {
@@ -241,8 +252,8 @@ func TestUsingTagCountsTheLiveVersionAndTheDraftOfKeptAutomations(t *testing.T) 
 	live := using()
 	assert.Equal(t, []string{fixtures.AutomationTagOnEngagementName}, live, "its live version removes the Tag")
 
-	tagging := []automationstep.Step{{Type: automationstep.ApplyTag, Tag: fixtures.TagVipName}}
-	_, err := m.Update(ctx, acme, fixtures.AutomationWinBackID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationWinBackID), Steps: &tagging})
+	tagging := steps(automationstep.ApplyTag{Tag: fixtures.TagVipName})
+	_, err := m.Update(ctx, acme, fixtures.AutomationWinBackID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationWinBackID), Steps: tagging})
 	require.NoError(t, err)
 	drafted := using()
 	assert.ElementsMatch(t, []string{fixtures.AutomationWinBackName, fixtures.AutomationTagOnEngagementName}, drafted, "a draft names it too")
@@ -253,8 +264,8 @@ func TestUsingTagCountsTheLiveVersionAndTheDraftOfKeptAutomations(t *testing.T) 
 }
 
 // emailVia is an email step sending through the Integration id names, nil for the default.
-func emailVia(id *int64) automationstep.Step {
-	return automationstep.Step{Type: automationstep.Email, Subject: "Hi", Body: "<p>Hello</p>", IntegrationID: id}
+func emailVia(id *int64) automationstep.Email {
+	return automationstep.Email{Subject: "Hi", Body: "<p>Hello</p>", IntegrationID: id}
 }
 
 func TestEachEmailStepSavesTheIntegrationItSendsThrough(t *testing.T) {
@@ -266,7 +277,7 @@ func TestEachEmailStepSavesTheIntegrationItSendsThrough(t *testing.T) {
 
 	a, err := m.Create(ctx, acme, automations.CreateInput{
 		Name: "Onboarding", TriggerEvent: "signup",
-		Steps: []automationstep.Step{emailVia(&mailgun), {Type: automationstep.Wait, Seconds: 60}, emailVia(nil)},
+		Steps: steps(emailVia(&mailgun), automationstep.Wait{Seconds: 60}, emailVia(nil)),
 	})
 	require.NoError(t, err)
 	created := draftIntegrations(t, a)
@@ -275,7 +286,7 @@ func TestEachEmailStepSavesTheIntegrationItSendsThrough(t *testing.T) {
 	require.NoError(t, err)
 	kept := draftIntegrations(t, renamed)
 
-	moved, err := m.Update(ctx, acme, a.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, a.ID), Steps: &[]automationstep.Step{emailVia(nil), emailVia(&smtp)}})
+	moved, err := m.Update(ctx, acme, a.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, a.ID), Steps: steps(emailVia(nil), emailVia(&smtp))})
 	require.NoError(t, err)
 	rewritten := draftIntegrations(t, moved)
 
@@ -293,11 +304,11 @@ func TestAnAutomationRefusesAStepIntegrationThatIsMissingOrArchived(t *testing.T
 	before := automationNames(t, env)
 
 	for name, id := range map[string]int64{"unknown": 999999, "archived": fixtures.IntegrationAcmeMailgunID} {
-		steps := []automationstep.Step{emailVia(nil), emailVia(&id)}
-		_, err := m.Create(ctx, acme, automations.CreateInput{Name: "X", TriggerEvent: "signup", Steps: steps})
+		sending := steps(emailVia(nil), emailVia(&id))
+		_, err := m.Create(ctx, acme, automations.CreateInput{Name: "X", TriggerEvent: "signup", Steps: sending})
 		require.ErrorIs(t, err, automations.ErrIntegrationNotFound, name)
 
-		_, err = m.Update(ctx, acme, fixtures.AutomationWelcomeSeriesID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationWelcomeSeriesID), Steps: &steps})
+		_, err = m.Update(ctx, acme, fixtures.AutomationWelcomeSeriesID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationWelcomeSeriesID), Steps: sending})
 		require.ErrorIs(t, err, automations.ErrIntegrationNotFound, name)
 	}
 	assert.Equal(t, before, automationNames(t, env), "a refused save stores nothing")
@@ -305,7 +316,11 @@ func TestAnAutomationRefusesAStepIntegrationThatIsMissingOrArchived(t *testing.T
 
 // stepIntegrations is the Integration each step of the version names, nil for none.
 func stepIntegrations(v *ent.AutomationVersion) []*int64 {
-	return lo.Map(automations.Views(v.Steps), func(view automations.StepView, _ int) *int64 { return view.IntegrationID })
+	out := []*int64{}
+	for _, st := range automationstep.All(v.Steps) {
+		out = append(out, st.Integration())
+	}
+	return out
 }
 
 // draftIntegrations is the Integration each step of the Automation's draft names, nil for none.

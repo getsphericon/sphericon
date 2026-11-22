@@ -3,9 +3,18 @@
 // read them back, and the controls write the siblings of their own property, each by these names,
 // so a misspelt one fails to compile instead of being saved as nothing.
 
+import type { AutomationStep } from '../../generated/site/types.gen.ts'
+
+// A Step's kind: the palette `type` of its node.
+export type StepKind = AutomationStep['type']
+
 // A switch a node turns off: OFF when it is off, '' when it is on (the default).
 export const OFF = 'off'
 type Switch = '' | typeof OFF
+
+// An HTTP step loaded from the server is STORED: a header it holds without a value keeps the stored
+// one. A step dropped on the canvas is '' until the canvas is loaded again.
+export const STORED = 'stored'
 
 export interface NodeProperties {
   email: { integrationId: string; subject: string; body: string; doc: string }
@@ -18,7 +27,7 @@ export interface NodeProperties {
     linkPreview: Switch
   }
   sms: { integrationId: string; text: string; linkTracking: Switch }
-  http: { stepId: string; url: string; headers: string; body: string; secret: string }
+  http: { stored: '' | typeof STORED; url: string; headers: string; body: string; secret: string }
   wait: { seconds: number }
   tag: { tag: string }
 }

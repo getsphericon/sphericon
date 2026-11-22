@@ -12,12 +12,12 @@ import {
 import { siteAutomationsGet } from '../../generated/site/sdk.gen.ts'
 import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
 import { zUpdateAutomationInput } from '../../generated/site/zod.gen.ts'
-import { testId } from '../../test/payloads.ts'
+import { stepId, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { worker } from '../../test/worker.ts'
 import { stepsToGraph } from './definition.ts'
 import type { AutomationGraph } from './definition.ts'
-import { applyHttpIdentities, automationSubmission, editorSession } from './editorSession.ts'
+import { automationSubmission, editorSession } from './editorSession.ts'
 import { automationSnapshot } from './leaveSnapshot.ts'
 
 const PATH = { workspaceId: 'TestWs01', id: testId(5) }
@@ -26,7 +26,7 @@ const DRAFT = {
   triggerEvent: 'email.clicked',
   exitEvents: [],
   goalEvent: null,
-  steps: [],
+  steps: { id: stepId(1), steps: [] },
 }
 const RESOURCE: SiteAutomationResource = {
   revision: 1,
@@ -38,7 +38,7 @@ const RESOURCE: SiteAutomationResource = {
   createdAt: '2026-01-01T00:00:00Z',
   updatedAt: '2026-01-01T00:00:00Z',
 }
-const GRAPH = stepsToGraph(DRAFT, [], {})
+const GRAPH = stepsToGraph(DRAFT, DRAFT.steps, {})
 const sessions = new Set<ActorRefFrom<typeof editorSession>>()
 
 function startSession() {
@@ -73,7 +73,8 @@ function httpNode(graph: AutomationGraph) {
   return node
 }
 
-// The API's write-only HTTP fields can be omitted only when the step ID identifies a stored step.
+// The API's write-only HTTP fields can be omitted only when the Step's id names a stored step, whose
+// id the server keeps.
 function httpServer() {
   const received = Promise.withResolvers<undefined>()
   const release = Promise.withResolvers<undefined>()
@@ -82,12 +83,12 @@ function httpServer() {
     handleSiteAutomationsGet(() => HttpResponse.json(stored)),
     handleSiteAutomationsUpdate(async ({ request }) => {
       const body = zUpdateAutomationInput.parse(await request.json())
-      const step = body.steps?.[0]
-      if (step?.type !== 'http') {
-        return problem(422, 'Expected an HTTP step')
+      const step = body.steps?.steps[0]
+      if (step?.type !== 'http' || step.id === undefined) {
+        return problem(422, 'Expected an HTTP step with its id')
       }
-      const previous = stored.draft?.steps[0]
-      const known = step.id !== undefined && step.id === previous?.id
+      const previous = stored.draft?.steps.steps[0]
+      const known = previous?.type === 'http' && step.id === previous.id
       if (!known && !step.url) {
         return problem(422, 'A new HTTP step needs a URL')
       }
@@ -98,14 +99,18 @@ function httpServer() {
         name: body.name ?? RESOURCE.name,
         draft: {
           ...DRAFT,
-          steps: [
-            {
-              type: 'http',
-              id: '01ASSIGNED',
-              body: step.body ?? '{}',
-              hasSecret: Boolean(step.secret) || (known && previous.hasSecret === true),
-            },
-          ],
+          steps: {
+            id: stepId(1),
+            steps: [
+              {
+                type: 'http',
+                id: step.id,
+                body: step.body,
+                headers: [],
+                hasSecret: Boolean(step.secret) || (known && previous.hasSecret),
+              },
+            ],
+          },
         },
       }
       return HttpResponse.json(stored)
@@ -184,24 +189,30 @@ test('a refresh updates lifecycle metadata without replacing content or its rece
   expect(actor.getSnapshot().can({ type: 'REVERT' })).toBe(false)
 })
 
-test('two Saves retain an HTTP identity and its stored secret while preserving newer content', async () => {
-  const graph = stepsToGraph(DRAFT, [{ type: 'http', body: '{}' }], {})
+test('two Saves keep an HTTP step by its id and its stored secret while preserving newer content', async () => {
+  // A node dropped on the canvas: its id, which the SDK minted, is the Step's from the first Save.
+  const graph = stepsToGraph(
+    DRAFT,
+    {
+      id: stepId(1),
+      steps: [{ id: stepId(7), type: 'http', body: '{}', headers: [], hasSecret: false }],
+    },
+    {},
+  )
   const node = httpNode(graph)
   node.data.properties.url = 'https://example.com/hook'
   node.data.properties.secret = `whsec_${btoa('submitted')}`
   const server = httpServer()
   const actor = startSession()
-  const identities = Promise.withResolvers<Parameters<typeof applyHttpIdentities>[1]>()
-  actor.on('accepted', (notice) => identities.resolve(notice.identities ?? []))
   actor.send({ type: 'SAVE', submission: capture('HTTP flow', graph) })
   await server.received.promise
   node.data.properties.body = '{"newer":true}'
   server.release.resolve(undefined)
   const first = await waitFor(actor, (state) => state.matches('idle'))
-  const current = { ...graph, nodes: applyHttpIdentities(graph.nodes, await identities.promise) }
+  const current = graph
   const currentHttp = httpNode(current)
   expect(currentHttp.data.properties.body).toBe('{"newer":true}')
-  expect(currentHttp.data.properties.stepId).toBe('01ASSIGNED')
+  expect(currentHttp.id).toBe(stepId(7))
   expect(automationSnapshot('HTTP flow', current)).not.toBe(first.context.saved)
   currentHttp.data.properties.url = ''
   currentHttp.data.properties.secret = ''
@@ -210,7 +221,7 @@ test('two Saves retain an HTTP identity and its stored secret while preserving n
   const { data: persisted } = await siteAutomationsGet({ path: PATH, throwOnError: true })
   expect(second.context.result).toBe('success')
   expect(second.context.saved).toBe(automationSnapshot('HTTP flow', current))
-  expect(persisted.draft?.steps).toEqual([
-    { type: 'http', id: '01ASSIGNED', body: '{"newer":true}', hasSecret: true },
+  expect(persisted.draft?.steps.steps).toEqual([
+    { type: 'http', id: stepId(7), body: '{"newer":true}', headers: [], hasSecret: true },
   ])
 })

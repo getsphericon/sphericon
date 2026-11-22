@@ -188,8 +188,9 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   `/service` and the telemetry report are not closed, and a closed model a response also reaches
   fails the compile (`closed-in-response`): one schema would close the response too. Such a shape
   is a template instantiated twice, the response's model
-  under its plain name and the request's as `…Input` (`ConditionOf<Node>`, `AutomationStepOf`),
-  or `model XInput is X` for a leaf; a test that edits what it read and sends it back goes through
+  under its plain name and the request's as `…Input` (`ConditionOf<Node>`), a model and its
+  `…Input` declared each on its own when the two differ (`EmailStep`, `EmailStepInput`), or `model
+  XInput is X` for a leaf; a test that edits what it read and sends it back goes through
   the wire with `testhelper.Resend`. The server
   answers an undeclared property with a 400 whose field errors name its path, an array's item by
   its index (`content.subjct`, `condition.entries.1.name`). ogen's errors name the keys only, so

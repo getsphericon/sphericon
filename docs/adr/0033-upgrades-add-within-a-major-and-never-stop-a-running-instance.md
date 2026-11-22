@@ -10,6 +10,10 @@ status: accepted
 > saves in the old shape is refused by the database (a CHECK requires the typed group's `entries`),
 > so that save fails rather than widens.
 
+> **Amended by [[0122-an-automation-branches-into-nested-paths-that-rejoin]]:** the same Major's
+> Upgrade rewrites every Automation version's steps as a root path with ids; the old release cannot
+> read a rewritten version, and the database refuses its save of steps in the old shape.
+
 A self-hosted Instance is upgraded by whoever runs it, often several releases late, while customer
 sites keep sending events to it. So an Upgrade has to work from any release, and neither it nor a
 failed one may take a running Instance down: the tracker would lose the events of that window. The

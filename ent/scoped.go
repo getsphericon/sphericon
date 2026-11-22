@@ -7983,7 +7983,7 @@ func (x *AutomationVersionScopedCreate) SetVersion(v int) *AutomationVersionScop
 const RoleOf_AutomationVersionScopedCreate_SetVersion = RoleStep
 
 // SetSteps sets the "steps" field.
-func (x *AutomationVersionScopedCreate) SetSteps(v []automationstep.Step) *AutomationVersionScopedCreate {
+func (x *AutomationVersionScopedCreate) SetSteps(v automationstep.Path) *AutomationVersionScopedCreate {
 	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetSteps(v) })
 	return x
 }
@@ -8186,7 +8186,7 @@ func (u *AutomationVersionScopedUpsert) UpdateAutomationID() *AutomationVersionS
 const RoleOf_AutomationVersionScopedUpsert_UpdateAutomationID = RoleStep
 
 // SetSteps sets the "steps" field.
-func (u *AutomationVersionScopedUpsert) SetSteps(v []automationstep.Step) *AutomationVersionScopedUpsert {
+func (u *AutomationVersionScopedUpsert) SetSteps(v automationstep.Path) *AutomationVersionScopedUpsert {
 	u.u.Set(automationversion.FieldSteps, v)
 	return u
 }
@@ -8483,20 +8483,22 @@ func (x *AutomationVersionScopedUpdateOne) SetNillableAutomationID(v *int64) *Au
 const RoleOf_AutomationVersionScopedUpdateOne_SetNillableAutomationID = RoleStep
 
 // SetSteps sets the "steps" field.
-func (x *AutomationVersionScopedUpdateOne) SetSteps(v []automationstep.Step) *AutomationVersionScopedUpdateOne {
+func (x *AutomationVersionScopedUpdateOne) SetSteps(v automationstep.Path) *AutomationVersionScopedUpdateOne {
 	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetSteps(v) })
 	return x
 }
 
 const RoleOf_AutomationVersionScopedUpdateOne_SetSteps = RoleStep
 
-// AppendSteps appends value to the "steps" field.
-func (x *AutomationVersionScopedUpdateOne) AppendSteps(v []automationstep.Step) *AutomationVersionScopedUpdateOne {
-	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.AppendSteps(v) })
+// SetNillableSteps sets the "steps" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdateOne) SetNillableSteps(v *automationstep.Path) *AutomationVersionScopedUpdateOne {
+	if v != nil {
+		x.SetSteps(*v)
+	}
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdateOne_AppendSteps = RoleStep
+const RoleOf_AutomationVersionScopedUpdateOne_SetNillableSteps = RoleStep
 
 // SetTriggerEvent sets the "trigger_event" field.
 func (x *AutomationVersionScopedUpdateOne) SetTriggerEvent(v string) *AutomationVersionScopedUpdateOne {
@@ -8724,20 +8726,22 @@ func (x *AutomationVersionScopedUpdate) SetNillableAutomationID(v *int64) *Autom
 const RoleOf_AutomationVersionScopedUpdate_SetNillableAutomationID = RoleStep
 
 // SetSteps sets the "steps" field.
-func (x *AutomationVersionScopedUpdate) SetSteps(v []automationstep.Step) *AutomationVersionScopedUpdate {
+func (x *AutomationVersionScopedUpdate) SetSteps(v automationstep.Path) *AutomationVersionScopedUpdate {
 	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetSteps(v) })
 	return x
 }
 
 const RoleOf_AutomationVersionScopedUpdate_SetSteps = RoleStep
 
-// AppendSteps appends value to the "steps" field.
-func (x *AutomationVersionScopedUpdate) AppendSteps(v []automationstep.Step) *AutomationVersionScopedUpdate {
-	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.AppendSteps(v) })
+// SetNillableSteps sets the "steps" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdate) SetNillableSteps(v *automationstep.Path) *AutomationVersionScopedUpdate {
+	if v != nil {
+		x.SetSteps(*v)
+	}
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdate_AppendSteps = RoleStep
+const RoleOf_AutomationVersionScopedUpdate_SetNillableSteps = RoleStep
 
 // SetTriggerEvent sets the "trigger_event" field.
 func (x *AutomationVersionScopedUpdate) SetTriggerEvent(v string) *AutomationVersionScopedUpdate {

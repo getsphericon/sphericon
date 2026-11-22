@@ -24,19 +24,19 @@ func TestExternalAnSMSStepIsPublishedAndKeepsItsIntegrationInUse(t *testing.T) {
 	a, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name:         "Cart reminder",
 		TriggerEvent: "cart_abandoned",
-		Steps: []externalapi.AutomationStepInput{{
-			Type:          externalapi.AutomationStepTypeSMS,
-			Text:          externalapi.NewOptString("Your cart is waiting, {{ first_name }}"),
+		Steps: testhelper.ExternalPathEdit(externalapi.SmsStepInput{
+			Text:          "Your cart is waiting, {{ first_name }}",
 			IntegrationId: externalapi.NewOptNilEntityId(externalapi.EntityId(twilio)),
-		}},
+		}),
 	})
 	require.NoError(t, err)
-	require.Len(t, a.Draft.Value.Steps, 1)
-	step := a.Draft.Value.Steps[0]
-	assert.Equal(t, externalapi.AutomationStepTypeSMS, step.Type)
-	assert.Equal(t, "Your cart is waiting, {{ first_name }}", step.Text.Or(""))
+	require.Len(t, a.Draft.Value.Steps.Steps, 1)
+	read := a.Draft.Value.Steps.Steps[0].OneOf
+	require.Equal(t, externalapi.SmsStepAutomationStepSum, read.Type)
+	step := read.SmsStep
+	assert.Equal(t, "Your cart is waiting, {{ first_name }}", step.Text)
 	assert.Equal(t, externalapi.EntityId(twilio), step.IntegrationId.Value)
-	assert.False(t, step.Subject.Set, "an SMS step carries no email field")
+	assert.True(t, step.LinkTracking, "links are tracked unless the step turns it off")
 
 	_, err = c.AutomationsPublish(ctx, &externalapi.RevisionInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(a.ID)))}, externalapi.AutomationsPublishParams{ID: a.ID})
 	require.NoError(t, err)
@@ -52,7 +52,7 @@ func TestExternalAnSMSStepWithNoTextIsRefused(t *testing.T) {
 
 	_, err := c.AutomationsCreate(t.Context(), &externalapi.CreateAutomationInput{
 		Name: "Blank", TriggerEvent: "cart_abandoned",
-		Steps: []externalapi.AutomationStepInput{{Type: externalapi.AutomationStepTypeSMS}},
+		Steps: testhelper.ExternalPathEdit(externalapi.SmsStepInput{Text: "  "}),
 	})
 
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)

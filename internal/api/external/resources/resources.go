@@ -73,15 +73,57 @@ func automationVersionOrNull(c Converter, v *ent.AutomationVersion) externalapi.
 	return externalapi.NewNilAutomationVersion(c.AutomationVersionToResource(v))
 }
 
-// automationSteps maps a version's steps into the typed steps DTO, through the automations module's
+// automationPath maps a version's steps into the typed path DTO, through the automations module's
 // masked view of each step.
-func automationSteps(c Converter, steps []automationstep.Step) []externalapi.AutomationStep {
-	return c.AutomationStepsToResources(automations.Views(steps))
+func automationPath(c Converter, steps automationstep.Path) externalapi.AutomationPath {
+	return c.AutomationPathToResource(automations.View(steps))
 }
 
-func optBool(v *bool) externalapi.OptBool {
-	return convert.Opt[externalapi.OptBool](v)
+// automationStepViews wraps each Step's view in the arm of its kind: a oneOf is beyond goverter,
+// so only the switch is written here.
+func automationStepViews(c Converter, views []automations.StepView) []externalapi.AutomationStep {
+	out := make([]externalapi.AutomationStep, 0, len(views))
+	for _, v := range views {
+		var sum externalapi.AutomationStepSum
+		switch v := v.(type) {
+		case automations.EmailView:
+			sum = externalapi.NewEmailStepAutomationStepSum(c.EmailStepToResource(v))
+		case automations.TelegramView:
+			sum = externalapi.NewTelegramStepAutomationStepSum(c.TelegramStepToResource(v))
+		case automations.SMSView:
+			sum = externalapi.NewSmsStepAutomationStepSum(c.SmsStepToResource(v))
+		case automations.WaitView:
+			sum = externalapi.NewWaitStepAutomationStepSum(c.WaitStepToResource(v))
+		case automations.TagView:
+			if v.Type == automationstep.KindApplyTag {
+				sum = externalapi.NewApplyTagStepAutomationStepSum(c.ApplyTagStepToResource(v))
+			} else {
+				sum = externalapi.NewRemoveTagStepAutomationStepSum(c.RemoveTagStepToResource(v))
+			}
+		case automations.HTTPView:
+			sum = externalapi.NewHttpStepAutomationStepSum(c.HttpStepToResource(v))
+		}
+		out = append(out, externalapi.AutomationStep{OneOf: sum})
+	}
+	return out
 }
+
+// The discriminators of the Step arms.
+func emailStepType(automationstep.Kind) externalapi.EmailStepType {
+	return externalapi.EmailStepTypeEmail
+}
+func telegramStepType(automationstep.Kind) externalapi.TelegramStepType {
+	return externalapi.TelegramStepTypeTelegram
+}
+func smsStepType(automationstep.Kind) externalapi.SmsStepType   { return externalapi.SmsStepTypeSMS }
+func waitStepType(automationstep.Kind) externalapi.WaitStepType { return externalapi.WaitStepTypeWait }
+func applyTagStepType(automationstep.Kind) externalapi.ApplyTagStepType {
+	return externalapi.ApplyTagStepTypeApplyTag
+}
+func removeTagStepType(automationstep.Kind) externalapi.RemoveTagStepType {
+	return externalapi.RemoveTagStepTypeRemoveTag
+}
+func httpStepType(automationstep.Kind) externalapi.HttpStepType { return externalapi.HttpStepTypeHTTP }
 
 func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 	return convert.OptObject[externalapi.OptEditorDocument](convert.DocObject[externalapi.EditorDocument](doc))
@@ -113,6 +155,7 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend optNilDate
 // goverter:extend optNilTimestamp
 // goverter:extend optNilEntityID
+// goverter:extend optEntityID
 // goverter:extend optNilInt32
 // goverter:extend jsonObject
 // goverter:extend segmentCondition
@@ -131,7 +174,6 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend optTimestamp
 // goverter:extend optInt32
 // goverter:extend optString
-// goverter:extend optBool
 // goverter:extend optEditorDocument
 // goverter:extend optTrackingReason
 // goverter:extend optSkippedReason
@@ -144,6 +186,15 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend nilFloat32
 // goverter:extend nilFloat64
 // goverter:extend emailContentChannel
+// goverter:extend automationPath
+// goverter:extend automationStepViews
+// goverter:extend emailStepType
+// goverter:extend telegramStepType
+// goverter:extend smsStepType
+// goverter:extend waitStepType
+// goverter:extend applyTagStepType
+// goverter:extend removeTagStepType
+// goverter:extend httpStepType
 // goverter:extend telegramContentChannel
 // goverter:extend smsContentChannel
 type Converter interface {
@@ -254,15 +305,21 @@ type Converter interface {
 	// The stored definition string (the executor's JSON format) is decoded into the typed steps
 	// DTO at this boundary. The contract names the version "number".
 	// goverter:map Version Number | count
-	// goverter:map Steps | automationSteps
+	// goverter:map Steps | automationPath
 	AutomationVersionToResource(source *ent.AutomationVersion) externalapi.AutomationVersion
-	// A step is the module's masked view: what it hides is never mapped.
-	// goverter:ignore URL
-	// goverter:ignore Secret
-	// goverter:ignore ClearSecret
+	// goverter:map Steps | automationStepViews
+	AutomationPathToResource(source automations.PathView) externalapi.AutomationPath
+	// The arms of a Step, the module's masked view of each kind, which automationStepViews wraps.
 	// goverter:map IntegrationID IntegrationId
-	AutomationStepToResource(source automations.StepView) externalapi.AutomationStep
-	AutomationStepsToResources(source []automations.StepView) []externalapi.AutomationStep
+	EmailStepToResource(source automations.EmailView) externalapi.EmailStep
+	// goverter:map IntegrationID IntegrationId
+	TelegramStepToResource(source automations.TelegramView) externalapi.TelegramStep
+	// goverter:map IntegrationID IntegrationId
+	SmsStepToResource(source automations.SMSView) externalapi.SmsStep
+	WaitStepToResource(source automations.WaitView) externalapi.WaitStep
+	ApplyTagStepToResource(source automations.TagView) externalapi.ApplyTagStep
+	RemoveTagStepToResource(source automations.TagView) externalapi.RemoveTagStep
+	HttpStepToResource(source automations.HTTPView) externalapi.HttpStep
 	// goverter:ignore Value
 	AutomationHttpHeaderToResource(source automations.HeaderName) externalapi.AutomationHttpHeader
 	TelegramButtonToResource(source telegramrender.Button) externalapi.TelegramButton
@@ -480,8 +537,6 @@ type Converter interface {
 	// goverter:enum:transform value
 	AutomationStatusToResource(source automation.Status) externalapi.AutomationStatus
 	// goverter:enum:transform value
-	AutomationStepTypeToResource(source automationstep.Kind) externalapi.AutomationStepType
-	// goverter:enum:transform value
 	BroadcastStatusToResource(source broadcast.Status) externalapi.BroadcastStatus
 	// goverter:enum:transform value
 	BroadcastChannelToResource(source channels.Channel) externalapi.BroadcastChannel
@@ -692,6 +747,11 @@ func optNilString(v *string) externalapi.OptNilString {
 
 func optNilEmailAddress(v *string) externalapi.OptNilEmailAddress {
 	return convert.Opt[externalapi.OptNilEmailAddress]((*externalapi.EmailAddress)(v))
+}
+
+// optEntityID is an id absent when there is none.
+func optEntityID(v *int64) externalapi.OptEntityId {
+	return convert.Opt[externalapi.OptEntityId]((*externalapi.EntityId)(v))
 }
 
 func optNilEntityID(v *int64) externalapi.OptNilEntityId {

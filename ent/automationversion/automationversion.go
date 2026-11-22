@@ -7,7 +7,6 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 const (
@@ -97,8 +96,6 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// VersionValidator is a validator for the "version" field. It is called by the builders before save.
 	VersionValidator func(int) error
-	// DefaultSteps holds the default value on creation for the "steps" field.
-	DefaultSteps []automationstep.Step
 	// DefaultExitEvents holds the default value on creation for the "exit_events" field.
 	DefaultExitEvents []string
 )

@@ -35,7 +35,8 @@ var Majors = []Major{
 	{Major: 1, Floor: "v0.0.0"},
 	// workspaces.ingest_key dropped: every Integration has its own hook key (ADR 0037).
 	{Major: 2, Floor: "v0.1.2"},
-	// Every stored Condition rewritten to the typed tree of its place (ADR 0181).
+	// Every stored Condition rewritten to the typed tree of its place (ADR 0181), and every
+	// Automation version's steps to a root path with ids (ADR 0122).
 	typedConditionsMajor,
 }
 

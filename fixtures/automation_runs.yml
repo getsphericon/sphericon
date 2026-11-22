@@ -368,17 +368,6 @@
     updated_at: '{{daysAgo 3}}',
   }
 - {
-    id: 5566, # fixture: AutomationRunJobsUnknownStep
-    automation_id: 5563,
-    version_id: 55632,
-    contact_id: 2,
-    workspace_id: 1,
-    status: active,
-    current_step: 0,
-    created_at: '{{daysAgo 3}}',
-    updated_at: '{{daysAgo 3}}',
-  }
-- {
     id: 5567, # fixture: AutomationRunJobsEmptySteps
     automation_id: 5563,
     version_id: 55633,

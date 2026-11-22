@@ -315,8 +315,6 @@ const (
 	AutomationJobsTelegramWelcomeBackName = "Jobs telegram welcome back"
 	// AutomationJobsTelegramWelcomeBackVersionID is from fixtures/automation_versions.
 	AutomationJobsTelegramWelcomeBackVersionID = 7507
-	// AutomationJobsUnknownStepVersionID is from fixtures/automation_versions.
-	AutomationJobsUnknownStepVersionID = 55632
 	// AutomationJobsWaitFirstID is from fixtures/automations.
 	AutomationJobsWaitFirstID = 5562
 	// AutomationJobsWaitFirstName is from fixtures/automations.
@@ -581,8 +579,6 @@ const (
 	AutomationRunJobsTelegramUnsubscribeLinkBobID = 7507
 	// AutomationRunJobsTelegramWelcomeBackBobID is from fixtures/automation_runs.
 	AutomationRunJobsTelegramWelcomeBackBobID = 7508
-	// AutomationRunJobsUnknownStepID is from fixtures/automation_runs.
-	AutomationRunJobsUnknownStepID = 5566
 	// AutomationRunMeridianArchivedFailedID is from fixtures/automation_runs.
 	AutomationRunMeridianArchivedFailedID = 7404
 	// AutomationRunMeridianEnrolledID is from fixtures/automation_runs.

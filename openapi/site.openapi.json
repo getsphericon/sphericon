@@ -10797,6 +10797,53 @@
         "description": "Request body for applying a tag to a contact",
         "additionalProperties": false
       },
+      "ApplyTagStep": {
+        "type": "object",
+        "required": ["id", "type", "tag"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["apply_tag"]
+          },
+          "tag": {
+            "type": "string",
+            "description": "The Tag's name"
+          }
+        },
+        "description": "A Step that applies a Tag to the enrolled Contact"
+      },
+      "ApplyTagStepInput": {
+        "type": "object",
+        "required": ["type", "tag"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id; omitted, the Step is given one"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["apply_tag"]
+          },
+          "tag": {
+            "type": "string",
+            "description": "The Tag's name; a blank one is refused"
+          }
+        },
+        "description": "A Step that applies a Tag, as a request writes it",
+        "additionalProperties": false
+      },
       "AttributeLeaf": {
         "type": "object",
         "required": ["kind", "attribute", "test"],
@@ -11169,6 +11216,51 @@
         "description": "One request header of an HTTP step. The value is a secret: it is never returned.",
         "additionalProperties": false
       },
+      "AutomationPath": {
+        "type": "object",
+        "required": ["id", "steps"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The path's id"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationStep"
+            },
+            "description": "The path's Steps, in order"
+          }
+        },
+        "description": "A path of Steps, in the order an Enrollment walks them. A version's Steps are its root path."
+      },
+      "AutomationPathInput": {
+        "type": "object",
+        "required": ["steps"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The path's id; omitted, the path is given one"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationStepInput"
+            },
+            "description": "The path's Steps, in order"
+          }
+        },
+        "description": "A path of Steps, as a request writes it",
+        "additionalProperties": false
+      },
       "AutomationPeriodResults": {
         "type": "object",
         "required": [
@@ -11429,118 +11521,42 @@
       },
       "AutomationStep": {
         "type": "object",
-        "required": ["type"],
-        "properties": {
-          "type": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/AutomationStepType"
-              }
-            ],
-            "description": "Step kind"
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EmailStep"
           },
-          "subject": {
-            "type": "string",
-            "description": "Email subject (email steps)"
+          {
+            "$ref": "#/components/schemas/TelegramStep"
           },
-          "body": {
-            "type": "string",
-            "description": "Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: strings JSON-escaped, up to 64 KiB, must render to valid JSON, also with every tag empty). Both bind the Contact's fields plus `event.action` and `event.properties`: the Event the Enrollment began on (the one a Rule fired on, when a Rule enrolled), copied when it began; empty when no Event began it"
+          {
+            "$ref": "#/components/schemas/SmsStep"
           },
-          "doc": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EditorDocument"
-              }
-            ],
-            "description": "The editor's JSON document an email step's body was built from, an opaque object checked by the\nserver against the schema `email_schema` returns. Write it instead of `body` (both is a 422): the\nserver renders the body from it in the same save, and a document that cannot be rendered refuses\nthe whole save, naming the step. Writing only a body clears the step's document."
+          {
+            "$ref": "#/components/schemas/WaitStep"
           },
-          "editorVersion": {
-            "type": "string",
-            "description": "Version of the editor that rendered the document (email steps, read only)"
+          {
+            "$ref": "#/components/schemas/ApplyTagStep"
           },
-          "seconds": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Delay before the next step, in seconds (wait steps)"
+          {
+            "$ref": "#/components/schemas/RemoveTagStep"
           },
-          "tag": {
-            "type": "string",
-            "description": "Tag name to apply to or remove from the enrolled contact (apply_tag and remove_tag steps)"
-          },
-          "id": {
-            "type": "string",
-            "description": "Step id (HTTP steps). Assigned on save; send it back on edit so the step keeps its secrets."
-          },
-          "url": {
-            "type": "string",
-            "description": "Hook URL to POST to (HTTP steps). A secret: never returned. Omit it when editing to keep the stored URL. Up to 2 KiB, http or https."
-          },
-          "headers": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AutomationHttpHeader"
-            },
-            "maxItems": 5,
-            "description": "Up to 5 request headers (HTTP steps). On read, only the names are returned."
-          },
-          "secret": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SigningSecret"
-              }
-            ],
-            "description": "Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned. Omit it when editing to keep the stored secret."
-          },
-          "clearSecret": {
-            "type": "boolean",
-            "description": "Remove the signing secret on save (HTTP steps)"
-          },
-          "hasSecret": {
-            "type": "boolean",
-            "description": "Whether a signing secret is stored (HTTP steps, read only)"
-          },
-          "integrationId": {
-            "type": "string",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EntityId"
-              }
-            ],
-            "nullable": true,
-            "description": "The Integration a send step sends through (email, Telegram and SMS steps), of the step's Channel; null or\nomitted is that Channel's default. Each send step names its own, so one automation may send\nthrough several (ADR 0081)."
-          },
-          "text": {
-            "type": "string",
-            "description": "The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer one is refused.\n\nThe text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the Contact's phone with nothing appended, each http(s) link a short tracked link on the Tracking domain unless `linkTracking` is false; the save refuses a text over the part limit, its links counted as short links."
-          },
-          "unsubscribeButton": {
-            "type": "string",
-            "maxLength": 64,
-            "description": "The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it is the person's Channel-wide Telegram opt-out; empty or omitted adds no button."
-          },
-          "imageUrl": {
-            "type": "string",
-            "description": "An https image sent with a Telegram step; the text becomes its caption. Omitted or empty for a text message."
-          },
-          "buttons": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TelegramButton"
-            },
-            "maxItems": 8,
-            "description": "Up to 8 link buttons under a Telegram step's message, one per row, in order."
-          },
-          "linkPreview": {
-            "type": "boolean",
-            "description": "Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an image."
-          },
-          "linkTracking": {
-            "type": "boolean",
-            "description": "Whether the links of an SMS step's text go out as short tracked links, whose clicks record `sms.clicked` (ADR 0083). On when omitted."
+          {
+            "$ref": "#/components/schemas/HttpStep"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "email": "#/components/schemas/EmailStep",
+            "telegram": "#/components/schemas/TelegramStep",
+            "sms": "#/components/schemas/SmsStep",
+            "wait": "#/components/schemas/WaitStep",
+            "apply_tag": "#/components/schemas/ApplyTagStep",
+            "remove_tag": "#/components/schemas/RemoveTagStep",
+            "http": "#/components/schemas/HttpStep"
           }
         },
-        "description": "One node in an automation's ordered, linear sequence. A flat shape: email\nsteps carry subject/body, wait steps carry seconds, tag steps carry the tag name."
+        "description": "One Step of an automation, by `type`"
       },
       "AutomationStepFigures": {
         "type": "object",
@@ -11566,124 +11582,42 @@
       },
       "AutomationStepInput": {
         "type": "object",
-        "required": ["type"],
-        "properties": {
-          "type": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/AutomationStepType"
-              }
-            ],
-            "description": "Step kind"
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EmailStepInput"
           },
-          "subject": {
-            "type": "string",
-            "description": "Email subject (email steps)"
+          {
+            "$ref": "#/components/schemas/TelegramStepInput"
           },
-          "body": {
-            "type": "string",
-            "description": "Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: strings JSON-escaped, up to 64 KiB, must render to valid JSON, also with every tag empty). Both bind the Contact's fields plus `event.action` and `event.properties`: the Event the Enrollment began on (the one a Rule fired on, when a Rule enrolled), copied when it began; empty when no Event began it"
+          {
+            "$ref": "#/components/schemas/SmsStepInput"
           },
-          "doc": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EditorDocument"
-              }
-            ],
-            "description": "The editor's JSON document an email step's body was built from, an opaque object checked by the\nserver against the schema `email_schema` returns. Write it instead of `body` (both is a 422): the\nserver renders the body from it in the same save, and a document that cannot be rendered refuses\nthe whole save, naming the step. Writing only a body clears the step's document."
+          {
+            "$ref": "#/components/schemas/WaitStepInput"
           },
-          "editorVersion": {
-            "type": "string",
-            "description": "Version of the editor that rendered the document (email steps, read only)"
+          {
+            "$ref": "#/components/schemas/ApplyTagStepInput"
           },
-          "seconds": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Delay before the next step, in seconds (wait steps)"
+          {
+            "$ref": "#/components/schemas/RemoveTagStepInput"
           },
-          "tag": {
-            "type": "string",
-            "description": "Tag name to apply to or remove from the enrolled contact (apply_tag and remove_tag steps)"
-          },
-          "id": {
-            "type": "string",
-            "description": "Step id (HTTP steps). Assigned on save; send it back on edit so the step keeps its secrets."
-          },
-          "url": {
-            "type": "string",
-            "description": "Hook URL to POST to (HTTP steps). A secret: never returned. Omit it when editing to keep the stored URL. Up to 2 KiB, http or https."
-          },
-          "headers": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AutomationHttpHeaderInput"
-            },
-            "maxItems": 5,
-            "description": "Up to 5 request headers (HTTP steps). On read, only the names are returned."
-          },
-          "secret": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SigningSecret"
-              }
-            ],
-            "description": "Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned. Omit it when editing to keep the stored secret."
-          },
-          "clearSecret": {
-            "type": "boolean",
-            "description": "Remove the signing secret on save (HTTP steps)"
-          },
-          "hasSecret": {
-            "type": "boolean",
-            "description": "Whether a signing secret is stored (HTTP steps, read only)"
-          },
-          "integrationId": {
-            "type": "string",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EntityId"
-              }
-            ],
-            "nullable": true,
-            "description": "The Integration a send step sends through (email, Telegram and SMS steps), of the step's Channel; null or\nomitted is that Channel's default. Each send step names its own, so one automation may send\nthrough several (ADR 0081)."
-          },
-          "text": {
-            "type": "string",
-            "description": "The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer one is refused.\n\nThe text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the Contact's phone with nothing appended, each http(s) link a short tracked link on the Tracking domain unless `linkTracking` is false; the save refuses a text over the part limit, its links counted as short links."
-          },
-          "unsubscribeButton": {
-            "type": "string",
-            "maxLength": 64,
-            "description": "The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it is the person's Channel-wide Telegram opt-out; empty or omitted adds no button."
-          },
-          "imageUrl": {
-            "type": "string",
-            "description": "An https image sent with a Telegram step; the text becomes its caption. Omitted or empty for a text message."
-          },
-          "buttons": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TelegramButtonInput"
-            },
-            "maxItems": 8,
-            "description": "Up to 8 link buttons under a Telegram step's message, one per row, in order."
-          },
-          "linkPreview": {
-            "type": "boolean",
-            "description": "Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an image."
-          },
-          "linkTracking": {
-            "type": "boolean",
-            "description": "Whether the links of an SMS step's text go out as short tracked links, whose clicks record `sms.clicked` (ADR 0083). On when omitted."
+          {
+            "$ref": "#/components/schemas/HttpStepInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "email": "#/components/schemas/EmailStepInput",
+            "telegram": "#/components/schemas/TelegramStepInput",
+            "sms": "#/components/schemas/SmsStepInput",
+            "wait": "#/components/schemas/WaitStepInput",
+            "apply_tag": "#/components/schemas/ApplyTagStepInput",
+            "remove_tag": "#/components/schemas/RemoveTagStepInput",
+            "http": "#/components/schemas/HttpStepInput"
           }
         },
-        "description": "One node in an automation's ordered, linear sequence. A flat shape: email\nsteps carry subject/body, wait steps carry seconds, tag steps carry the tag name.",
-        "additionalProperties": false
-      },
-      "AutomationStepType": {
-        "type": "string",
-        "enum": ["email", "telegram", "sms", "wait", "apply_tag", "remove_tag", "http"],
-        "description": "Kind of automation step"
+        "description": "One Step of an automation, by `type`, as a request writes it. A field of another kind is refused."
       },
       "AutomationVersion": {
         "type": "object",
@@ -11711,11 +11645,12 @@
             "description": "Event action that ends an active enrollment as goal_reached (e.g. \"payment_succeeded\"); null\nwhen there is none"
           },
           "steps": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AutomationStep"
-            },
-            "description": "The ordered, linear steps"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationPath"
+              }
+            ],
+            "description": "The version's Steps: its root path"
           }
         },
         "description": "One version of an automation's definition: what publishing makes it do (ADR 0065)"
@@ -12746,10 +12681,12 @@
             "description": "Event action that ends an active enrollment as goal_reached; it may be neither the trigger nor\nan exit event. Null or omitted is none."
           },
           "steps": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AutomationStepInput"
-            }
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationPathInput"
+              }
+            ],
+            "description": "The version's Steps: its root path"
           }
         },
         "description": "Request body for creating an automation (always created inactive)",
@@ -13419,6 +13356,99 @@
         "description": "Email's content of a Broadcast (ADR 0078). On create an omitted field takes its default; on\nupdate an omitted field keeps its value and null clears it.",
         "additionalProperties": false
       },
+      "EmailStep": {
+        "type": "object",
+        "required": ["id", "type", "subject", "body"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["email"]
+          },
+          "subject": {
+            "type": "string",
+            "description": "Email subject"
+          },
+          "body": {
+            "type": "string",
+            "description": "Email body as HTML. Binds the Contact's fields plus `event.action` and `event.properties`: the Event the Enrollment began on (the one a Rule fired on, when a Rule enrolled), copied when it began; empty when no Event began it"
+          },
+          "doc": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EditorDocument"
+              }
+            ],
+            "description": "The editor's JSON document the body was built from; absent when the body was written as HTML"
+          },
+          "editorVersion": {
+            "type": "string",
+            "description": "Version of the editor that rendered the document; absent with it"
+          },
+          "integrationId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The Integration the Step sends through, of the email Channel; absent is the Channel's default. Each send step names its own, so one automation may send through several (ADR 0081)."
+          }
+        },
+        "description": "A Step that sends an email through the Integration it names"
+      },
+      "EmailStepInput": {
+        "type": "object",
+        "required": ["type", "subject"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id; omitted, the Step is given one"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["email"]
+          },
+          "subject": {
+            "type": "string",
+            "description": "Email subject"
+          },
+          "body": {
+            "type": "string",
+            "description": "Email body as HTML, bound as on a stored email Step. Write it or `doc`, not both (both is a 422). Writing only a body clears the Step's document."
+          },
+          "doc": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EditorDocument"
+              }
+            ],
+            "description": "The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the body from it in the same save, and a document that cannot be rendered refuses the whole save, naming the Step."
+          },
+          "integrationId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Integration the Step sends through, of the email Channel; null or omitted is the Channel's default"
+          }
+        },
+        "description": "A Step that sends an email, as a request writes it",
+        "additionalProperties": false
+      },
       "EnrollmentFailure": {
         "type": "object",
         "required": ["kind"],
@@ -13742,6 +13772,88 @@
           "provider_refused"
         ],
         "description": "Why a send is held (a Hold). A hold is reversible and not a failure: a held Broadcast keeps its\nstatus and its remaining recipients send once it lifts, and an Automation's email steps wait."
+      },
+      "HttpStep": {
+        "type": "object",
+        "required": ["id", "type", "body", "headers", "hasSecret"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id: send it back on edit so the Step keeps its secrets"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["http"]
+          },
+          "body": {
+            "type": "string",
+            "description": "The Liquid JSON request body, bound as an email Step's body is"
+          },
+          "headers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationHttpHeader"
+            },
+            "description": "The request headers, by name only"
+          },
+          "hasSecret": {
+            "type": "boolean",
+            "description": "Whether a signing secret is stored"
+          }
+        },
+        "description": "A Step that POSTs a JSON body to a hook URL (ADR 0039). Its URL, header values and signing secret are secrets: never returned."
+      },
+      "HttpStepInput": {
+        "type": "object",
+        "required": ["type", "body"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id; omitted, the Step is given one. Send the id it was read with so the Step keeps its secrets."
+          },
+          "type": {
+            "type": "string",
+            "enum": ["http"]
+          },
+          "body": {
+            "type": "string",
+            "description": "The Liquid JSON request body: strings JSON-escaped, up to 64 KiB, must render to valid JSON, also with every tag empty"
+          },
+          "url": {
+            "type": "string",
+            "description": "Hook URL to POST to. Omit it when editing to keep the stored URL. Up to 2 KiB, http or https."
+          },
+          "headers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationHttpHeaderInput"
+            },
+            "maxItems": 5,
+            "description": "Up to 5 request headers"
+          },
+          "secret": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SigningSecret"
+              }
+            ],
+            "description": "Signing secret: when set, the request is signed with Standard Webhooks. Omit it when editing to keep the stored secret."
+          },
+          "clearSecret": {
+            "type": "boolean",
+            "description": "Remove the signing secret on save"
+          }
+        },
+        "description": "A Step that POSTs a JSON body to a hook URL, as a request writes it. A secret omitted keeps the stored value of the Step with the same id.",
+        "additionalProperties": false
       },
       "ImageUrl": {
         "type": "string",
@@ -14507,6 +14619,53 @@
         "type": "string",
         "maxLength": 35,
         "description": "A BCP 47 tag, with its region, that a User picks for how the app shows dates, times and\nnumbers (`en-GB`, `de-DE`). A malformed tag is refused by the handler (422)."
+      },
+      "RemoveTagStep": {
+        "type": "object",
+        "required": ["id", "type", "tag"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["remove_tag"]
+          },
+          "tag": {
+            "type": "string",
+            "description": "The Tag's name"
+          }
+        },
+        "description": "A Step that removes a Tag from the enrolled Contact"
+      },
+      "RemoveTagStepInput": {
+        "type": "object",
+        "required": ["type", "tag"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id; omitted, the Step is given one"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["remove_tag"]
+          },
+          "tag": {
+            "type": "string",
+            "description": "The Tag's name; a blank one is refused"
+          }
+        },
+        "description": "A Step that removes a Tag, as a request writes it",
+        "additionalProperties": false
       },
       "RetentionDays": {
         "type": "integer",
@@ -21547,6 +21706,79 @@
         },
         "description": "The opt-out of a contact's phone from every SMS of the Workspace: when, and how the person stopped"
       },
+      "SmsStep": {
+        "type": "object",
+        "required": ["id", "type", "text", "linkTracking"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["sms"]
+          },
+          "text": {
+            "type": "string",
+            "description": "The text: plain text with Liquid merge tags (the Contact's fields, `event.action` and `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the Contact's phone with nothing appended."
+          },
+          "linkTracking": {
+            "type": "boolean",
+            "description": "Whether the links of the text go out as short tracked links, whose clicks record `sms.clicked` (ADR 0083)"
+          },
+          "integrationId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The Integration the Step sends through, of the SMS Channel; absent is the Channel's default"
+          }
+        },
+        "description": "A Step that sends an SMS through the Integration it names"
+      },
+      "SmsStepInput": {
+        "type": "object",
+        "required": ["type", "text"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id; omitted, the Step is given one"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["sms"]
+          },
+          "text": {
+            "type": "string",
+            "description": "The text, as on a stored SMS Step: each http(s) link a short tracked link on the Tracking domain unless `linkTracking` is false; the save refuses a text over the part limit, its links counted as short links."
+          },
+          "linkTracking": {
+            "type": "boolean",
+            "description": "Whether the links of the text go out as short tracked links (ADR 0083). On when omitted."
+          },
+          "integrationId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Integration the Step sends through, of the SMS Channel; null or omitted is the Channel's default"
+          }
+        },
+        "description": "A Step that sends an SMS, as a request writes it",
+        "additionalProperties": false
+      },
       "SmtpConfig": {
         "type": "object",
         "required": ["kind", "host", "port", "from"],
@@ -21633,6 +21865,10 @@
         "type": "string",
         "enum": ["asc", "desc"],
         "description": "Direction of a list's order. Only the surfaces with a sortable list import this file, so the\nothers do not carry an unused schema."
+      },
+      "StepId": {
+        "type": "string",
+        "description": "The id of a Step or a path: a UUID in its lowercase text form, kept by every version of the\nautomation. A client mints it when it creates the Step or path and sends it back on every save;\none sent without an id is given one. Unique within a version, Steps and paths together."
       },
       "SuppressionChannel": {
         "type": "string",
@@ -21929,6 +22165,111 @@
           }
         },
         "description": "A Telegram start link: the person who opens it and presses Start binds their chat to the contact it was issued for. The link works once."
+      },
+      "TelegramStep": {
+        "type": "object",
+        "required": ["id", "type", "text", "buttons", "linkPreview"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["telegram"]
+          },
+          "text": {
+            "type": "string",
+            "description": "The message: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. With an image, its caption."
+          },
+          "unsubscribeButton": {
+            "type": "string",
+            "description": "The label of an unsubscribe button under the message; absent for none"
+          },
+          "imageUrl": {
+            "type": "string",
+            "description": "The https image sent with the message; absent for a text message"
+          },
+          "buttons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TelegramButton"
+            },
+            "description": "The link buttons under the message, one per row, in order"
+          },
+          "linkPreview": {
+            "type": "boolean",
+            "description": "Whether a link in the text unfolds a preview; no effect with an image"
+          },
+          "integrationId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The Integration the Step sends through, of the Telegram Channel; absent is the Channel's default"
+          }
+        },
+        "description": "A Step that sends a Telegram message through the Integration it names"
+      },
+      "TelegramStepInput": {
+        "type": "object",
+        "required": ["type", "text"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id; omitted, the Step is given one"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["telegram"]
+          },
+          "text": {
+            "type": "string",
+            "description": "The message, as on a stored Telegram Step. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer one is refused."
+          },
+          "unsubscribeButton": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "The label of an unsubscribe button under the message, up to 64 characters. Pressing it is the person's Channel-wide Telegram opt-out; empty or omitted adds no button."
+          },
+          "imageUrl": {
+            "type": "string",
+            "description": "An https image sent with the message; the text becomes its caption. Omitted or empty for a text message."
+          },
+          "buttons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TelegramButtonInput"
+            },
+            "maxItems": 8,
+            "description": "Up to 8 link buttons under the message, one per row, in order."
+          },
+          "linkPreview": {
+            "type": "boolean",
+            "description": "Whether a link in the text unfolds a preview. On when omitted; no effect with an image."
+          },
+          "integrationId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Integration the Step sends through, of the Telegram Channel; null or omitted is the Channel's default"
+          }
+        },
+        "description": "A Step that sends a Telegram message, as a request writes it",
+        "additionalProperties": false
       },
       "TestSendBroadcastInput": {
         "type": "object",
@@ -22281,10 +22622,12 @@
             "description": "Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it"
           },
           "steps": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AutomationStepInput"
-            }
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationPathInput"
+              }
+            ],
+            "description": "The version's Steps: its root path"
           }
         },
         "description": "Request body for updating an automation. The name changes at once; the trigger, exit and\ngoal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live\nversion's, and only publishing makes the draft live.",
@@ -22727,6 +23070,55 @@
         "type": "string",
         "maxLength": 100,
         "description": "What a User is called, as a person sets it: at most 100 characters. Surrounding spaces are\ntrimmed; an empty name, or one with a control, line-breaking or invisible character, is refused\nby the handler (422), which applies the same limit to a Sign-in provider's name."
+      },
+      "WaitStep": {
+        "type": "object",
+        "required": ["id", "type", "seconds"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["wait"]
+          },
+          "seconds": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Delay before the next Step, in seconds"
+          }
+        },
+        "description": "A Step that waits before the next one"
+      },
+      "WaitStepInput": {
+        "type": "object",
+        "required": ["type", "seconds"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id; omitted, the Step is given one"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["wait"]
+          },
+          "seconds": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Delay before the next Step, in seconds; a negative one is refused"
+          }
+        },
+        "description": "A Step that waits before the next one, as a request writes it",
+        "additionalProperties": false
       },
       "WebhookDisabledReason": {
         "type": "string",

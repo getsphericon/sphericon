@@ -83,7 +83,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpointhealth"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/ent/workspacestanding"
-	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 )
@@ -299,10 +298,6 @@ func init() {
 	automationversionDescVersion := automationversionMixinFields2[1].Descriptor()
 	// automationversion.VersionValidator is a validator for the "version" field. It is called by the builders before save.
 	automationversion.VersionValidator = automationversionDescVersion.Validators[0].(func(int) error)
-	// automationversionDescSteps is the schema descriptor for steps field.
-	automationversionDescSteps := automationversionFields[1].Descriptor()
-	// automationversion.DefaultSteps holds the default value on creation for the steps field.
-	automationversion.DefaultSteps = automationversionDescSteps.Default.([]automationstep.Step)
 	// automationversionDescExitEvents is the schema descriptor for exit_events field.
 	automationversionDescExitEvents := automationversionFields[3].Descriptor()
 	// automationversion.DefaultExitEvents holds the default value on creation for the exit_events field.

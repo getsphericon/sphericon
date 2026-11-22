@@ -46,7 +46,7 @@ func smsAutomation(t *testing.T, env *testhelper.TestEnv, steps ...automationste
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 	created, err := m.Create(ctx, s, automations.CreateInput{
-		Name: "Cart reminder", TriggerEvent: smsTrigger, ExitEvents: []string{}, Steps: steps,
+		Name: "Cart reminder", TriggerEvent: smsTrigger, ExitEvents: []string{}, Steps: new(automationstep.Root(steps...)),
 	})
 	require.NoError(t, err)
 	_, err = m.Publish(ctx, s, created.ID, testhelper.AutomationRevisionIn(ctx, t, s, created.ID))
@@ -57,7 +57,7 @@ func smsAutomation(t *testing.T, env *testhelper.TestEnv, steps ...automationste
 // smsStep is an SMS step through the connected account.
 func smsStep(account testhelper.TwilioAccount, text string) automationstep.Step {
 	id := int64(account.Integration.ID)
-	return automationstep.Step{Type: automationstep.SMS, IntegrationID: &id, Text: text}
+	return automationstep.New(automationstep.SMS{IntegrationID: &id, Text: text})
 }
 
 // confirmSMS records the Confirmation an API client asserts for the number.

@@ -546,6 +546,336 @@ func (s *ApplyTagInput) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *ApplyTagStep) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ApplyTagStep) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("id")
+		s.ID.Encode(e)
+	}
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		e.FieldStart("tag")
+		e.Str(s.Tag)
+	}
+}
+
+var jsonFieldsNameOfApplyTagStep = [3]string{
+	0: "id",
+	1: "type",
+	2: "tag",
+}
+
+// Decode decodes ApplyTagStep from json.
+func (s *ApplyTagStep) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ApplyTagStep to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "type":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "tag":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Tag = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"tag\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ApplyTagStep")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfApplyTagStep) {
+					name = jsonFieldsNameOfApplyTagStep[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ApplyTagStep) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ApplyTagStep) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ApplyTagStepInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ApplyTagStepInput) encodeFields(e *jx.Encoder) {
+	{
+		if s.ID.Set {
+			e.FieldStart("id")
+			s.ID.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		e.FieldStart("tag")
+		e.Str(s.Tag)
+	}
+}
+
+var jsonFieldsNameOfApplyTagStepInput = [3]string{
+	0: "id",
+	1: "type",
+	2: "tag",
+}
+
+// Decode decodes ApplyTagStepInput from json.
+func (s *ApplyTagStepInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ApplyTagStepInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			if err := func() error {
+				s.ID.Reset()
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "type":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "tag":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Tag = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"tag\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ApplyTagStepInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000110,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfApplyTagStepInput) {
+					name = jsonFieldsNameOfApplyTagStepInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ApplyTagStepInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ApplyTagStepInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ApplyTagStepInputType as json.
+func (s ApplyTagStepInputType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ApplyTagStepInputType from json.
+func (s *ApplyTagStepInputType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ApplyTagStepInputType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ApplyTagStepInputType(v) {
+	case ApplyTagStepInputTypeApplyTag:
+		*s = ApplyTagStepInputTypeApplyTag
+	default:
+		*s = ApplyTagStepInputType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ApplyTagStepInputType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ApplyTagStepInputType) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ApplyTagStepType as json.
+func (s ApplyTagStepType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ApplyTagStepType from json.
+func (s *ApplyTagStepType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ApplyTagStepType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ApplyTagStepType(v) {
+	case ApplyTagStepTypeApplyTag:
+		*s = ApplyTagStepTypeApplyTag
+	default:
+		*s = ApplyTagStepType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ApplyTagStepType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ApplyTagStepType) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *AttributeLeaf) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -2308,6 +2638,250 @@ func (s *AutomationHttpHeaderInput) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *AutomationPath) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *AutomationPath) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("id")
+		s.ID.Encode(e)
+	}
+	{
+		e.FieldStart("steps")
+		e.ArrStart()
+		for _, elem := range s.Steps {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+}
+
+var jsonFieldsNameOfAutomationPath = [2]string{
+	0: "id",
+	1: "steps",
+}
+
+// Decode decodes AutomationPath from json.
+func (s *AutomationPath) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode AutomationPath to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "steps":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				s.Steps = make([]AutomationStep, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem AutomationStep
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Steps = append(s.Steps, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"steps\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode AutomationPath")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfAutomationPath) {
+					name = jsonFieldsNameOfAutomationPath[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *AutomationPath) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *AutomationPath) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *AutomationPathInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *AutomationPathInput) encodeFields(e *jx.Encoder) {
+	{
+		if s.ID.Set {
+			e.FieldStart("id")
+			s.ID.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("steps")
+		e.ArrStart()
+		for _, elem := range s.Steps {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+}
+
+var jsonFieldsNameOfAutomationPathInput = [2]string{
+	0: "id",
+	1: "steps",
+}
+
+// Decode decodes AutomationPathInput from json.
+func (s *AutomationPathInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode AutomationPathInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			if err := func() error {
+				s.ID.Reset()
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "steps":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				s.Steps = make([]AutomationStepInput, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem AutomationStepInput
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Steps = append(s.Steps, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"steps\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode AutomationPathInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000010,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfAutomationPathInput) {
+					name = jsonFieldsNameOfAutomationPathInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *AutomationPathInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *AutomationPathInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *AutomationPeriodResults) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -3446,420 +4020,29 @@ func (s *AutomationStep) Encode(e *jx.Encoder) {
 
 // encodeFields encodes fields.
 func (s *AutomationStep) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("type")
-		s.Type.Encode(e)
-	}
-	{
-		if s.Subject.Set {
-			e.FieldStart("subject")
-			s.Subject.Encode(e)
-		}
-	}
-	{
-		if s.Body.Set {
-			e.FieldStart("body")
-			s.Body.Encode(e)
-		}
-	}
-	{
-		if s.Doc.Set {
-			e.FieldStart("doc")
-			s.Doc.Encode(e)
-		}
-	}
-	{
-		if s.EditorVersion.Set {
-			e.FieldStart("editorVersion")
-			s.EditorVersion.Encode(e)
-		}
-	}
-	{
-		if s.Seconds.Set {
-			e.FieldStart("seconds")
-			s.Seconds.Encode(e)
-		}
-	}
-	{
-		if s.Tag.Set {
-			e.FieldStart("tag")
-			s.Tag.Encode(e)
-		}
-	}
-	{
-		if s.ID.Set {
-			e.FieldStart("id")
-			s.ID.Encode(e)
-		}
-	}
-	{
-		if s.URL.Set {
-			e.FieldStart("url")
-			s.URL.Encode(e)
-		}
-	}
-	{
-		if s.Headers != nil {
-			e.FieldStart("headers")
-			e.ArrStart()
-			for _, elem := range s.Headers {
-				elem.Encode(e)
-			}
-			e.ArrEnd()
-		}
-	}
-	{
-		if s.Secret.Set {
-			e.FieldStart("secret")
-			s.Secret.Encode(e)
-		}
-	}
-	{
-		if s.ClearSecret.Set {
-			e.FieldStart("clearSecret")
-			s.ClearSecret.Encode(e)
-		}
-	}
-	{
-		if s.HasSecret.Set {
-			e.FieldStart("hasSecret")
-			s.HasSecret.Encode(e)
-		}
-	}
-	{
-		if s.IntegrationId.Set {
-			e.FieldStart("integrationId")
-			s.IntegrationId.Encode(e)
-		}
-	}
-	{
-		if s.Text.Set {
-			e.FieldStart("text")
-			s.Text.Encode(e)
-		}
-	}
-	{
-		if s.UnsubscribeButton.Set {
-			e.FieldStart("unsubscribeButton")
-			s.UnsubscribeButton.Encode(e)
-		}
-	}
-	{
-		if s.ImageUrl.Set {
-			e.FieldStart("imageUrl")
-			s.ImageUrl.Encode(e)
-		}
-	}
-	{
-		if s.Buttons != nil {
-			e.FieldStart("buttons")
-			e.ArrStart()
-			for _, elem := range s.Buttons {
-				elem.Encode(e)
-			}
-			e.ArrEnd()
-		}
-	}
-	{
-		if s.LinkPreview.Set {
-			e.FieldStart("linkPreview")
-			s.LinkPreview.Encode(e)
-		}
-	}
-	{
-		if s.LinkTracking.Set {
-			e.FieldStart("linkTracking")
-			s.LinkTracking.Encode(e)
-		}
-	}
+	s.OneOf.encodeFields(e)
 }
 
-var jsonFieldsNameOfAutomationStep = [20]string{
-	0:  "type",
-	1:  "subject",
-	2:  "body",
-	3:  "doc",
-	4:  "editorVersion",
-	5:  "seconds",
-	6:  "tag",
-	7:  "id",
-	8:  "url",
-	9:  "headers",
-	10: "secret",
-	11: "clearSecret",
-	12: "hasSecret",
-	13: "integrationId",
-	14: "text",
-	15: "unsubscribeButton",
-	16: "imageUrl",
-	17: "buttons",
-	18: "linkPreview",
-	19: "linkTracking",
-}
+var jsonFieldsNameOfAutomationStep = [0]string{}
 
 // Decode decodes AutomationStep from json.
 func (s *AutomationStep) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode AutomationStep to nil")
 	}
-	var requiredBitSet [3]uint8
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return s.OneOf.Decode(d)
+	}); err != nil {
+		return errors.Wrap(err, "decode field OneOf")
+	}
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
-		case "type":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				if err := s.Type.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"type\"")
-			}
-		case "subject":
-			if err := func() error {
-				s.Subject.Reset()
-				if err := s.Subject.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"subject\"")
-			}
-		case "body":
-			if err := func() error {
-				s.Body.Reset()
-				if err := s.Body.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"body\"")
-			}
-		case "doc":
-			if err := func() error {
-				s.Doc.Reset()
-				if err := s.Doc.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"doc\"")
-			}
-		case "editorVersion":
-			if err := func() error {
-				s.EditorVersion.Reset()
-				if err := s.EditorVersion.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"editorVersion\"")
-			}
-		case "seconds":
-			if err := func() error {
-				s.Seconds.Reset()
-				if err := s.Seconds.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"seconds\"")
-			}
-		case "tag":
-			if err := func() error {
-				s.Tag.Reset()
-				if err := s.Tag.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"tag\"")
-			}
-		case "id":
-			if err := func() error {
-				s.ID.Reset()
-				if err := s.ID.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"id\"")
-			}
-		case "url":
-			if err := func() error {
-				s.URL.Reset()
-				if err := s.URL.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"url\"")
-			}
-		case "headers":
-			if err := func() error {
-				s.Headers = make([]AutomationHttpHeader, 0)
-				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem AutomationHttpHeader
-					if err := elem.Decode(d); err != nil {
-						return err
-					}
-					s.Headers = append(s.Headers, elem)
-					return nil
-				}); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"headers\"")
-			}
-		case "secret":
-			if err := func() error {
-				s.Secret.Reset()
-				if err := s.Secret.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"secret\"")
-			}
-		case "clearSecret":
-			if err := func() error {
-				s.ClearSecret.Reset()
-				if err := s.ClearSecret.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"clearSecret\"")
-			}
-		case "hasSecret":
-			if err := func() error {
-				s.HasSecret.Reset()
-				if err := s.HasSecret.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"hasSecret\"")
-			}
-		case "integrationId":
-			if err := func() error {
-				s.IntegrationId.Reset()
-				if err := s.IntegrationId.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"integrationId\"")
-			}
-		case "text":
-			if err := func() error {
-				s.Text.Reset()
-				if err := s.Text.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"text\"")
-			}
-		case "unsubscribeButton":
-			if err := func() error {
-				s.UnsubscribeButton.Reset()
-				if err := s.UnsubscribeButton.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"unsubscribeButton\"")
-			}
-		case "imageUrl":
-			if err := func() error {
-				s.ImageUrl.Reset()
-				if err := s.ImageUrl.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"imageUrl\"")
-			}
-		case "buttons":
-			if err := func() error {
-				s.Buttons = make([]TelegramButton, 0)
-				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem TelegramButton
-					if err := elem.Decode(d); err != nil {
-						return err
-					}
-					s.Buttons = append(s.Buttons, elem)
-					return nil
-				}); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"buttons\"")
-			}
-		case "linkPreview":
-			if err := func() error {
-				s.LinkPreview.Reset()
-				if err := s.LinkPreview.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"linkPreview\"")
-			}
-		case "linkTracking":
-			if err := func() error {
-				s.LinkTracking.Reset()
-				if err := s.LinkTracking.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"linkTracking\"")
-			}
 		default:
 			return d.Skip()
 		}
-		return nil
 	}); err != nil {
 		return errors.Wrap(err, "decode AutomationStep")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [3]uint8{
-		0b00000001,
-		0b00000000,
-		0b00000000,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfAutomationStep) {
-					name = jsonFieldsNameOfAutomationStep[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
 	}
 
 	return nil
@@ -4017,420 +4200,29 @@ func (s *AutomationStepInput) Encode(e *jx.Encoder) {
 
 // encodeFields encodes fields.
 func (s *AutomationStepInput) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("type")
-		s.Type.Encode(e)
-	}
-	{
-		if s.Subject.Set {
-			e.FieldStart("subject")
-			s.Subject.Encode(e)
-		}
-	}
-	{
-		if s.Body.Set {
-			e.FieldStart("body")
-			s.Body.Encode(e)
-		}
-	}
-	{
-		if s.Doc.Set {
-			e.FieldStart("doc")
-			s.Doc.Encode(e)
-		}
-	}
-	{
-		if s.EditorVersion.Set {
-			e.FieldStart("editorVersion")
-			s.EditorVersion.Encode(e)
-		}
-	}
-	{
-		if s.Seconds.Set {
-			e.FieldStart("seconds")
-			s.Seconds.Encode(e)
-		}
-	}
-	{
-		if s.Tag.Set {
-			e.FieldStart("tag")
-			s.Tag.Encode(e)
-		}
-	}
-	{
-		if s.ID.Set {
-			e.FieldStart("id")
-			s.ID.Encode(e)
-		}
-	}
-	{
-		if s.URL.Set {
-			e.FieldStart("url")
-			s.URL.Encode(e)
-		}
-	}
-	{
-		if s.Headers != nil {
-			e.FieldStart("headers")
-			e.ArrStart()
-			for _, elem := range s.Headers {
-				elem.Encode(e)
-			}
-			e.ArrEnd()
-		}
-	}
-	{
-		if s.Secret.Set {
-			e.FieldStart("secret")
-			s.Secret.Encode(e)
-		}
-	}
-	{
-		if s.ClearSecret.Set {
-			e.FieldStart("clearSecret")
-			s.ClearSecret.Encode(e)
-		}
-	}
-	{
-		if s.HasSecret.Set {
-			e.FieldStart("hasSecret")
-			s.HasSecret.Encode(e)
-		}
-	}
-	{
-		if s.IntegrationId.Set {
-			e.FieldStart("integrationId")
-			s.IntegrationId.Encode(e)
-		}
-	}
-	{
-		if s.Text.Set {
-			e.FieldStart("text")
-			s.Text.Encode(e)
-		}
-	}
-	{
-		if s.UnsubscribeButton.Set {
-			e.FieldStart("unsubscribeButton")
-			s.UnsubscribeButton.Encode(e)
-		}
-	}
-	{
-		if s.ImageUrl.Set {
-			e.FieldStart("imageUrl")
-			s.ImageUrl.Encode(e)
-		}
-	}
-	{
-		if s.Buttons != nil {
-			e.FieldStart("buttons")
-			e.ArrStart()
-			for _, elem := range s.Buttons {
-				elem.Encode(e)
-			}
-			e.ArrEnd()
-		}
-	}
-	{
-		if s.LinkPreview.Set {
-			e.FieldStart("linkPreview")
-			s.LinkPreview.Encode(e)
-		}
-	}
-	{
-		if s.LinkTracking.Set {
-			e.FieldStart("linkTracking")
-			s.LinkTracking.Encode(e)
-		}
-	}
+	s.OneOf.encodeFields(e)
 }
 
-var jsonFieldsNameOfAutomationStepInput = [20]string{
-	0:  "type",
-	1:  "subject",
-	2:  "body",
-	3:  "doc",
-	4:  "editorVersion",
-	5:  "seconds",
-	6:  "tag",
-	7:  "id",
-	8:  "url",
-	9:  "headers",
-	10: "secret",
-	11: "clearSecret",
-	12: "hasSecret",
-	13: "integrationId",
-	14: "text",
-	15: "unsubscribeButton",
-	16: "imageUrl",
-	17: "buttons",
-	18: "linkPreview",
-	19: "linkTracking",
-}
+var jsonFieldsNameOfAutomationStepInput = [0]string{}
 
 // Decode decodes AutomationStepInput from json.
 func (s *AutomationStepInput) Decode(d *jx.Decoder) error {
 	if s == nil {
 		return errors.New("invalid: unable to decode AutomationStepInput to nil")
 	}
-	var requiredBitSet [3]uint8
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return s.OneOf.Decode(d)
+	}); err != nil {
+		return errors.Wrap(err, "decode field OneOf")
+	}
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
-		case "type":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				if err := s.Type.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"type\"")
-			}
-		case "subject":
-			if err := func() error {
-				s.Subject.Reset()
-				if err := s.Subject.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"subject\"")
-			}
-		case "body":
-			if err := func() error {
-				s.Body.Reset()
-				if err := s.Body.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"body\"")
-			}
-		case "doc":
-			if err := func() error {
-				s.Doc.Reset()
-				if err := s.Doc.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"doc\"")
-			}
-		case "editorVersion":
-			if err := func() error {
-				s.EditorVersion.Reset()
-				if err := s.EditorVersion.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"editorVersion\"")
-			}
-		case "seconds":
-			if err := func() error {
-				s.Seconds.Reset()
-				if err := s.Seconds.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"seconds\"")
-			}
-		case "tag":
-			if err := func() error {
-				s.Tag.Reset()
-				if err := s.Tag.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"tag\"")
-			}
-		case "id":
-			if err := func() error {
-				s.ID.Reset()
-				if err := s.ID.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"id\"")
-			}
-		case "url":
-			if err := func() error {
-				s.URL.Reset()
-				if err := s.URL.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"url\"")
-			}
-		case "headers":
-			if err := func() error {
-				s.Headers = make([]AutomationHttpHeaderInput, 0)
-				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem AutomationHttpHeaderInput
-					if err := elem.Decode(d); err != nil {
-						return err
-					}
-					s.Headers = append(s.Headers, elem)
-					return nil
-				}); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"headers\"")
-			}
-		case "secret":
-			if err := func() error {
-				s.Secret.Reset()
-				if err := s.Secret.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"secret\"")
-			}
-		case "clearSecret":
-			if err := func() error {
-				s.ClearSecret.Reset()
-				if err := s.ClearSecret.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"clearSecret\"")
-			}
-		case "hasSecret":
-			if err := func() error {
-				s.HasSecret.Reset()
-				if err := s.HasSecret.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"hasSecret\"")
-			}
-		case "integrationId":
-			if err := func() error {
-				s.IntegrationId.Reset()
-				if err := s.IntegrationId.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"integrationId\"")
-			}
-		case "text":
-			if err := func() error {
-				s.Text.Reset()
-				if err := s.Text.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"text\"")
-			}
-		case "unsubscribeButton":
-			if err := func() error {
-				s.UnsubscribeButton.Reset()
-				if err := s.UnsubscribeButton.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"unsubscribeButton\"")
-			}
-		case "imageUrl":
-			if err := func() error {
-				s.ImageUrl.Reset()
-				if err := s.ImageUrl.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"imageUrl\"")
-			}
-		case "buttons":
-			if err := func() error {
-				s.Buttons = make([]TelegramButtonInput, 0)
-				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem TelegramButtonInput
-					if err := elem.Decode(d); err != nil {
-						return err
-					}
-					s.Buttons = append(s.Buttons, elem)
-					return nil
-				}); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"buttons\"")
-			}
-		case "linkPreview":
-			if err := func() error {
-				s.LinkPreview.Reset()
-				if err := s.LinkPreview.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"linkPreview\"")
-			}
-		case "linkTracking":
-			if err := func() error {
-				s.LinkTracking.Reset()
-				if err := s.LinkTracking.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"linkTracking\"")
-			}
 		default:
-			return errors.Errorf("unexpected field %q", k)
+			return d.Skip()
 		}
-		return nil
 	}); err != nil {
 		return errors.Wrap(err, "decode AutomationStepInput")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [3]uint8{
-		0b00000001,
-		0b00000000,
-		0b00000000,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfAutomationStepInput) {
-					name = jsonFieldsNameOfAutomationStepInput[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
 	}
 
 	return nil
@@ -4449,52 +4241,612 @@ func (s *AutomationStepInput) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
-// Encode encodes AutomationStepType as json.
-func (s AutomationStepType) Encode(e *jx.Encoder) {
-	e.Str(string(s))
+// Encode encodes AutomationStepInputSum as json.
+func (s AutomationStepInputSum) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
 }
 
-// Decode decodes AutomationStepType from json.
-func (s *AutomationStepType) Decode(d *jx.Decoder) error {
+func (s AutomationStepInputSum) encodeFields(e *jx.Encoder) {
+	switch s.Type {
+	case EmailStepInputAutomationStepInputSum:
+		e.FieldStart("type")
+		e.Str("email")
+		{
+			s := s.EmailStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("subject")
+				e.Str(s.Subject)
+			}
+			{
+				if s.Body.Set {
+					e.FieldStart("body")
+					s.Body.Encode(e)
+				}
+			}
+			{
+				if s.Doc.Set {
+					e.FieldStart("doc")
+					s.Doc.Encode(e)
+				}
+			}
+			{
+				if s.IntegrationId.Set {
+					e.FieldStart("integrationId")
+					s.IntegrationId.Encode(e)
+				}
+			}
+		}
+	case TelegramStepInputAutomationStepInputSum:
+		e.FieldStart("type")
+		e.Str("telegram")
+		{
+			s := s.TelegramStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("text")
+				e.Str(s.Text)
+			}
+			{
+				if s.UnsubscribeButton.Set {
+					e.FieldStart("unsubscribeButton")
+					s.UnsubscribeButton.Encode(e)
+				}
+			}
+			{
+				if s.ImageUrl.Set {
+					e.FieldStart("imageUrl")
+					s.ImageUrl.Encode(e)
+				}
+			}
+			{
+				if s.Buttons != nil {
+					e.FieldStart("buttons")
+					e.ArrStart()
+					for _, elem := range s.Buttons {
+						elem.Encode(e)
+					}
+					e.ArrEnd()
+				}
+			}
+			{
+				if s.LinkPreview.Set {
+					e.FieldStart("linkPreview")
+					s.LinkPreview.Encode(e)
+				}
+			}
+			{
+				if s.IntegrationId.Set {
+					e.FieldStart("integrationId")
+					s.IntegrationId.Encode(e)
+				}
+			}
+		}
+	case SmsStepInputAutomationStepInputSum:
+		e.FieldStart("type")
+		e.Str("sms")
+		{
+			s := s.SmsStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("text")
+				e.Str(s.Text)
+			}
+			{
+				if s.LinkTracking.Set {
+					e.FieldStart("linkTracking")
+					s.LinkTracking.Encode(e)
+				}
+			}
+			{
+				if s.IntegrationId.Set {
+					e.FieldStart("integrationId")
+					s.IntegrationId.Encode(e)
+				}
+			}
+		}
+	case WaitStepInputAutomationStepInputSum:
+		e.FieldStart("type")
+		e.Str("wait")
+		{
+			s := s.WaitStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("seconds")
+				e.Int32(s.Seconds)
+			}
+		}
+	case ApplyTagStepInputAutomationStepInputSum:
+		e.FieldStart("type")
+		e.Str("apply_tag")
+		{
+			s := s.ApplyTagStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("tag")
+				e.Str(s.Tag)
+			}
+		}
+	case RemoveTagStepInputAutomationStepInputSum:
+		e.FieldStart("type")
+		e.Str("remove_tag")
+		{
+			s := s.RemoveTagStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("tag")
+				e.Str(s.Tag)
+			}
+		}
+	case HttpStepInputAutomationStepInputSum:
+		e.FieldStart("type")
+		e.Str("http")
+		{
+			s := s.HttpStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("body")
+				e.Str(s.Body)
+			}
+			{
+				if s.URL.Set {
+					e.FieldStart("url")
+					s.URL.Encode(e)
+				}
+			}
+			{
+				if s.Headers != nil {
+					e.FieldStart("headers")
+					e.ArrStart()
+					for _, elem := range s.Headers {
+						elem.Encode(e)
+					}
+					e.ArrEnd()
+				}
+			}
+			{
+				if s.Secret.Set {
+					e.FieldStart("secret")
+					s.Secret.Encode(e)
+				}
+			}
+			{
+				if s.ClearSecret.Set {
+					e.FieldStart("clearSecret")
+					s.ClearSecret.Encode(e)
+				}
+			}
+		}
+	}
+}
+
+// Decode decodes AutomationStepInputSum from json.
+func (s *AutomationStepInputSum) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode AutomationStepType to nil")
+		return errors.New("invalid: unable to decode AutomationStepInputSum to nil")
 	}
-	v, err := d.StrBytes()
-	if err != nil {
-		return err
-	}
-	// Try to use constant string.
-	switch AutomationStepType(v) {
-	case AutomationStepTypeEmail:
-		*s = AutomationStepTypeEmail
-	case AutomationStepTypeTelegram:
-		*s = AutomationStepTypeTelegram
-	case AutomationStepTypeSMS:
-		*s = AutomationStepTypeSMS
-	case AutomationStepTypeWait:
-		*s = AutomationStepTypeWait
-	case AutomationStepTypeApplyTag:
-		*s = AutomationStepTypeApplyTag
-	case AutomationStepTypeRemoveTag:
-		*s = AutomationStepTypeRemoveTag
-	case AutomationStepTypeHTTP:
-		*s = AutomationStepTypeHTTP
-	default:
-		*s = AutomationStepType(v)
+	// Sum type discriminator.
+	if typ := d.Next(); typ != jx.Object {
+		return errors.Errorf("unexpected json type %q", typ)
 	}
 
+	var found bool
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return d.ObjBytes(func(d *jx.Decoder, key []byte) error {
+			if found {
+				return d.Skip()
+			}
+			switch string(key) {
+			case "type":
+				typ, err := d.Str()
+				if err != nil {
+					return err
+				}
+				switch typ {
+				case "email":
+					s.Type = EmailStepInputAutomationStepInputSum
+					found = true
+				case "telegram":
+					s.Type = TelegramStepInputAutomationStepInputSum
+					found = true
+				case "sms":
+					s.Type = SmsStepInputAutomationStepInputSum
+					found = true
+				case "wait":
+					s.Type = WaitStepInputAutomationStepInputSum
+					found = true
+				case "apply_tag":
+					s.Type = ApplyTagStepInputAutomationStepInputSum
+					found = true
+				case "remove_tag":
+					s.Type = RemoveTagStepInputAutomationStepInputSum
+					found = true
+				case "http":
+					s.Type = HttpStepInputAutomationStepInputSum
+					found = true
+				default:
+					return errors.Errorf("unknown type %s", typ)
+				}
+				return nil
+			}
+			return d.Skip()
+		})
+	}); err != nil {
+		return errors.Wrap(err, "capture")
+	}
+	if !found {
+		return errors.New("unable to detect sum type variant")
+	}
+	switch s.Type {
+	case EmailStepInputAutomationStepInputSum:
+		if err := s.EmailStepInput.Decode(d); err != nil {
+			return err
+		}
+	case TelegramStepInputAutomationStepInputSum:
+		if err := s.TelegramStepInput.Decode(d); err != nil {
+			return err
+		}
+	case SmsStepInputAutomationStepInputSum:
+		if err := s.SmsStepInput.Decode(d); err != nil {
+			return err
+		}
+	case WaitStepInputAutomationStepInputSum:
+		if err := s.WaitStepInput.Decode(d); err != nil {
+			return err
+		}
+	case ApplyTagStepInputAutomationStepInputSum:
+		if err := s.ApplyTagStepInput.Decode(d); err != nil {
+			return err
+		}
+	case RemoveTagStepInputAutomationStepInputSum:
+		if err := s.RemoveTagStepInput.Decode(d); err != nil {
+			return err
+		}
+	case HttpStepInputAutomationStepInputSum:
+		if err := s.HttpStepInput.Decode(d); err != nil {
+			return err
+		}
+	default:
+		return errors.Errorf("inferred invalid type: %s", s.Type)
+	}
 	return nil
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s AutomationStepType) MarshalJSON() ([]byte, error) {
+func (s AutomationStepInputSum) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *AutomationStepType) UnmarshalJSON(data []byte) error {
+func (s *AutomationStepInputSum) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes AutomationStepSum as json.
+func (s AutomationStepSum) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+func (s AutomationStepSum) encodeFields(e *jx.Encoder) {
+	switch s.Type {
+	case EmailStepAutomationStepSum:
+		e.FieldStart("type")
+		e.Str("email")
+		{
+			s := s.EmailStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("subject")
+				e.Str(s.Subject)
+			}
+			{
+				e.FieldStart("body")
+				e.Str(s.Body)
+			}
+			{
+				if s.Doc.Set {
+					e.FieldStart("doc")
+					s.Doc.Encode(e)
+				}
+			}
+			{
+				if s.EditorVersion.Set {
+					e.FieldStart("editorVersion")
+					s.EditorVersion.Encode(e)
+				}
+			}
+			{
+				if s.IntegrationId.Set {
+					e.FieldStart("integrationId")
+					s.IntegrationId.Encode(e)
+				}
+			}
+		}
+	case TelegramStepAutomationStepSum:
+		e.FieldStart("type")
+		e.Str("telegram")
+		{
+			s := s.TelegramStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("text")
+				e.Str(s.Text)
+			}
+			{
+				if s.UnsubscribeButton.Set {
+					e.FieldStart("unsubscribeButton")
+					s.UnsubscribeButton.Encode(e)
+				}
+			}
+			{
+				if s.ImageUrl.Set {
+					e.FieldStart("imageUrl")
+					s.ImageUrl.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("buttons")
+				e.ArrStart()
+				for _, elem := range s.Buttons {
+					elem.Encode(e)
+				}
+				e.ArrEnd()
+			}
+			{
+				e.FieldStart("linkPreview")
+				e.Bool(s.LinkPreview)
+			}
+			{
+				if s.IntegrationId.Set {
+					e.FieldStart("integrationId")
+					s.IntegrationId.Encode(e)
+				}
+			}
+		}
+	case SmsStepAutomationStepSum:
+		e.FieldStart("type")
+		e.Str("sms")
+		{
+			s := s.SmsStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("text")
+				e.Str(s.Text)
+			}
+			{
+				e.FieldStart("linkTracking")
+				e.Bool(s.LinkTracking)
+			}
+			{
+				if s.IntegrationId.Set {
+					e.FieldStart("integrationId")
+					s.IntegrationId.Encode(e)
+				}
+			}
+		}
+	case WaitStepAutomationStepSum:
+		e.FieldStart("type")
+		e.Str("wait")
+		{
+			s := s.WaitStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("seconds")
+				e.Int32(s.Seconds)
+			}
+		}
+	case ApplyTagStepAutomationStepSum:
+		e.FieldStart("type")
+		e.Str("apply_tag")
+		{
+			s := s.ApplyTagStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("tag")
+				e.Str(s.Tag)
+			}
+		}
+	case RemoveTagStepAutomationStepSum:
+		e.FieldStart("type")
+		e.Str("remove_tag")
+		{
+			s := s.RemoveTagStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("tag")
+				e.Str(s.Tag)
+			}
+		}
+	case HttpStepAutomationStepSum:
+		e.FieldStart("type")
+		e.Str("http")
+		{
+			s := s.HttpStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("body")
+				e.Str(s.Body)
+			}
+			{
+				e.FieldStart("headers")
+				e.ArrStart()
+				for _, elem := range s.Headers {
+					elem.Encode(e)
+				}
+				e.ArrEnd()
+			}
+			{
+				e.FieldStart("hasSecret")
+				e.Bool(s.HasSecret)
+			}
+		}
+	}
+}
+
+// Decode decodes AutomationStepSum from json.
+func (s *AutomationStepSum) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode AutomationStepSum to nil")
+	}
+	// Sum type discriminator.
+	if typ := d.Next(); typ != jx.Object {
+		return errors.Errorf("unexpected json type %q", typ)
+	}
+
+	var found bool
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return d.ObjBytes(func(d *jx.Decoder, key []byte) error {
+			if found {
+				return d.Skip()
+			}
+			switch string(key) {
+			case "type":
+				typ, err := d.Str()
+				if err != nil {
+					return err
+				}
+				switch typ {
+				case "email":
+					s.Type = EmailStepAutomationStepSum
+					found = true
+				case "telegram":
+					s.Type = TelegramStepAutomationStepSum
+					found = true
+				case "sms":
+					s.Type = SmsStepAutomationStepSum
+					found = true
+				case "wait":
+					s.Type = WaitStepAutomationStepSum
+					found = true
+				case "apply_tag":
+					s.Type = ApplyTagStepAutomationStepSum
+					found = true
+				case "remove_tag":
+					s.Type = RemoveTagStepAutomationStepSum
+					found = true
+				case "http":
+					s.Type = HttpStepAutomationStepSum
+					found = true
+				default:
+					return errors.Errorf("unknown type %s", typ)
+				}
+				return nil
+			}
+			return d.Skip()
+		})
+	}); err != nil {
+		return errors.Wrap(err, "capture")
+	}
+	if !found {
+		return errors.New("unable to detect sum type variant")
+	}
+	switch s.Type {
+	case EmailStepAutomationStepSum:
+		if err := s.EmailStep.Decode(d); err != nil {
+			return err
+		}
+	case TelegramStepAutomationStepSum:
+		if err := s.TelegramStep.Decode(d); err != nil {
+			return err
+		}
+	case SmsStepAutomationStepSum:
+		if err := s.SmsStep.Decode(d); err != nil {
+			return err
+		}
+	case WaitStepAutomationStepSum:
+		if err := s.WaitStep.Decode(d); err != nil {
+			return err
+		}
+	case ApplyTagStepAutomationStepSum:
+		if err := s.ApplyTagStep.Decode(d); err != nil {
+			return err
+		}
+	case RemoveTagStepAutomationStepSum:
+		if err := s.RemoveTagStep.Decode(d); err != nil {
+			return err
+		}
+	case HttpStepAutomationStepSum:
+		if err := s.HttpStep.Decode(d); err != nil {
+			return err
+		}
+	default:
+		return errors.Errorf("inferred invalid type: %s", s.Type)
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s AutomationStepSum) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *AutomationStepSum) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -4530,11 +4882,7 @@ func (s *AutomationVersion) encodeFields(e *jx.Encoder) {
 	}
 	{
 		e.FieldStart("steps")
-		e.ArrStart()
-		for _, elem := range s.Steps {
-			elem.Encode(e)
-		}
-		e.ArrEnd()
+		s.Steps.Encode(e)
 	}
 }
 
@@ -4612,15 +4960,7 @@ func (s *AutomationVersion) Decode(d *jx.Decoder) error {
 		case "steps":
 			requiredBitSet[0] |= 1 << 4
 			if err := func() error {
-				s.Steps = make([]AutomationStep, 0)
-				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem AutomationStep
-					if err := elem.Decode(d); err != nil {
-						return err
-					}
-					s.Steps = append(s.Steps, elem)
-					return nil
-				}); err != nil {
+				if err := s.Steps.Decode(d); err != nil {
 					return err
 				}
 				return nil
@@ -12299,13 +12639,9 @@ func (s *CreateAutomationInput) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.Steps != nil {
+		if s.Steps.Set {
 			e.FieldStart("steps")
-			e.ArrStart()
-			for _, elem := range s.Steps {
-				elem.Encode(e)
-			}
-			e.ArrEnd()
+			s.Steps.Encode(e)
 		}
 	}
 }
@@ -12380,15 +12716,8 @@ func (s *CreateAutomationInput) Decode(d *jx.Decoder) error {
 			}
 		case "steps":
 			if err := func() error {
-				s.Steps = make([]AutomationStepInput, 0)
-				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem AutomationStepInput
-					if err := elem.Decode(d); err != nil {
-						return err
-					}
-					s.Steps = append(s.Steps, elem)
-					return nil
-				}); err != nil {
+				s.Steps.Reset()
+				if err := s.Steps.Decode(d); err != nil {
 					return err
 				}
 				return nil
@@ -17198,6 +17527,455 @@ func (s *EmailSchemaTypeAttrs) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *EmailStep) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *EmailStep) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("id")
+		s.ID.Encode(e)
+	}
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		e.FieldStart("subject")
+		e.Str(s.Subject)
+	}
+	{
+		e.FieldStart("body")
+		e.Str(s.Body)
+	}
+	{
+		if s.Doc.Set {
+			e.FieldStart("doc")
+			s.Doc.Encode(e)
+		}
+	}
+	{
+		if s.EditorVersion.Set {
+			e.FieldStart("editorVersion")
+			s.EditorVersion.Encode(e)
+		}
+	}
+	{
+		if s.IntegrationId.Set {
+			e.FieldStart("integrationId")
+			s.IntegrationId.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfEmailStep = [7]string{
+	0: "id",
+	1: "type",
+	2: "subject",
+	3: "body",
+	4: "doc",
+	5: "editorVersion",
+	6: "integrationId",
+}
+
+// Decode decodes EmailStep from json.
+func (s *EmailStep) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode EmailStep to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "type":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "subject":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Subject = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"subject\"")
+			}
+		case "body":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Str()
+				s.Body = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"body\"")
+			}
+		case "doc":
+			if err := func() error {
+				s.Doc.Reset()
+				if err := s.Doc.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"doc\"")
+			}
+		case "editorVersion":
+			if err := func() error {
+				s.EditorVersion.Reset()
+				if err := s.EditorVersion.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"editorVersion\"")
+			}
+		case "integrationId":
+			if err := func() error {
+				s.IntegrationId.Reset()
+				if err := s.IntegrationId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"integrationId\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode EmailStep")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00001111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfEmailStep) {
+					name = jsonFieldsNameOfEmailStep[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *EmailStep) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *EmailStep) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *EmailStepInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *EmailStepInput) encodeFields(e *jx.Encoder) {
+	{
+		if s.ID.Set {
+			e.FieldStart("id")
+			s.ID.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		e.FieldStart("subject")
+		e.Str(s.Subject)
+	}
+	{
+		if s.Body.Set {
+			e.FieldStart("body")
+			s.Body.Encode(e)
+		}
+	}
+	{
+		if s.Doc.Set {
+			e.FieldStart("doc")
+			s.Doc.Encode(e)
+		}
+	}
+	{
+		if s.IntegrationId.Set {
+			e.FieldStart("integrationId")
+			s.IntegrationId.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfEmailStepInput = [6]string{
+	0: "id",
+	1: "type",
+	2: "subject",
+	3: "body",
+	4: "doc",
+	5: "integrationId",
+}
+
+// Decode decodes EmailStepInput from json.
+func (s *EmailStepInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode EmailStepInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			if err := func() error {
+				s.ID.Reset()
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "type":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "subject":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Subject = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"subject\"")
+			}
+		case "body":
+			if err := func() error {
+				s.Body.Reset()
+				if err := s.Body.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"body\"")
+			}
+		case "doc":
+			if err := func() error {
+				s.Doc.Reset()
+				if err := s.Doc.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"doc\"")
+			}
+		case "integrationId":
+			if err := func() error {
+				s.IntegrationId.Reset()
+				if err := s.IntegrationId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"integrationId\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode EmailStepInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000110,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfEmailStepInput) {
+					name = jsonFieldsNameOfEmailStepInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *EmailStepInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *EmailStepInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes EmailStepInputType as json.
+func (s EmailStepInputType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes EmailStepInputType from json.
+func (s *EmailStepInputType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode EmailStepInputType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch EmailStepInputType(v) {
+	case EmailStepInputTypeEmail:
+		*s = EmailStepInputTypeEmail
+	default:
+		*s = EmailStepInputType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s EmailStepInputType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *EmailStepInputType) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes EmailStepType as json.
+func (s EmailStepType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes EmailStepType from json.
+func (s *EmailStepType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode EmailStepType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch EmailStepType(v) {
+	case EmailStepTypeEmail:
+		*s = EmailStepTypeEmail
+	default:
+		*s = EmailStepType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s EmailStepType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *EmailStepType) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *EnrollmentFailure) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -19010,6 +19788,459 @@ func (s HoldReason) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *HoldReason) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *HttpStep) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *HttpStep) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("id")
+		s.ID.Encode(e)
+	}
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		e.FieldStart("body")
+		e.Str(s.Body)
+	}
+	{
+		e.FieldStart("headers")
+		e.ArrStart()
+		for _, elem := range s.Headers {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+	{
+		e.FieldStart("hasSecret")
+		e.Bool(s.HasSecret)
+	}
+}
+
+var jsonFieldsNameOfHttpStep = [5]string{
+	0: "id",
+	1: "type",
+	2: "body",
+	3: "headers",
+	4: "hasSecret",
+}
+
+// Decode decodes HttpStep from json.
+func (s *HttpStep) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode HttpStep to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "type":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "body":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Body = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"body\"")
+			}
+		case "headers":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				s.Headers = make([]AutomationHttpHeader, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem AutomationHttpHeader
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Headers = append(s.Headers, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"headers\"")
+			}
+		case "hasSecret":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Bool()
+				s.HasSecret = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"hasSecret\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode HttpStep")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00011111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfHttpStep) {
+					name = jsonFieldsNameOfHttpStep[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *HttpStep) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *HttpStep) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *HttpStepInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *HttpStepInput) encodeFields(e *jx.Encoder) {
+	{
+		if s.ID.Set {
+			e.FieldStart("id")
+			s.ID.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		e.FieldStart("body")
+		e.Str(s.Body)
+	}
+	{
+		if s.URL.Set {
+			e.FieldStart("url")
+			s.URL.Encode(e)
+		}
+	}
+	{
+		if s.Headers != nil {
+			e.FieldStart("headers")
+			e.ArrStart()
+			for _, elem := range s.Headers {
+				elem.Encode(e)
+			}
+			e.ArrEnd()
+		}
+	}
+	{
+		if s.Secret.Set {
+			e.FieldStart("secret")
+			s.Secret.Encode(e)
+		}
+	}
+	{
+		if s.ClearSecret.Set {
+			e.FieldStart("clearSecret")
+			s.ClearSecret.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfHttpStepInput = [7]string{
+	0: "id",
+	1: "type",
+	2: "body",
+	3: "url",
+	4: "headers",
+	5: "secret",
+	6: "clearSecret",
+}
+
+// Decode decodes HttpStepInput from json.
+func (s *HttpStepInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode HttpStepInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			if err := func() error {
+				s.ID.Reset()
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "type":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "body":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Body = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"body\"")
+			}
+		case "url":
+			if err := func() error {
+				s.URL.Reset()
+				if err := s.URL.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"url\"")
+			}
+		case "headers":
+			if err := func() error {
+				s.Headers = make([]AutomationHttpHeaderInput, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem AutomationHttpHeaderInput
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Headers = append(s.Headers, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"headers\"")
+			}
+		case "secret":
+			if err := func() error {
+				s.Secret.Reset()
+				if err := s.Secret.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"secret\"")
+			}
+		case "clearSecret":
+			if err := func() error {
+				s.ClearSecret.Reset()
+				if err := s.ClearSecret.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"clearSecret\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode HttpStepInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000110,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfHttpStepInput) {
+					name = jsonFieldsNameOfHttpStepInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *HttpStepInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *HttpStepInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes HttpStepInputType as json.
+func (s HttpStepInputType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes HttpStepInputType from json.
+func (s *HttpStepInputType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode HttpStepInputType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch HttpStepInputType(v) {
+	case HttpStepInputTypeHTTP:
+		*s = HttpStepInputTypeHTTP
+	default:
+		*s = HttpStepInputType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s HttpStepInputType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *HttpStepInputType) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes HttpStepType as json.
+func (s HttpStepType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes HttpStepType from json.
+func (s *HttpStepType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode HttpStepType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch HttpStepType(v) {
+	case HttpStepTypeHTTP:
+		*s = HttpStepTypeHTTP
+	default:
+		*s = HttpStepType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s HttpStepType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *HttpStepType) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -22651,6 +23882,39 @@ func (s *OptAutomationHttpErrorKind) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes AutomationPathInput as json.
+func (o OptAutomationPathInput) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes AutomationPathInput from json.
+func (o *OptAutomationPathInput) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptAutomationPathInput to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptAutomationPathInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptAutomationPathInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes bool as json.
 func (o OptBool) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -24548,6 +25812,39 @@ func (s OptSigningSecret) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptSigningSecret) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StepId as json.
+func (o OptStepId) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes StepId from json.
+func (o *OptStepId) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptStepId to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptStepId) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptStepId) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -27421,6 +28718,336 @@ func (s *RecordEventsInput) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *RecordEventsInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *RemoveTagStep) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *RemoveTagStep) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("id")
+		s.ID.Encode(e)
+	}
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		e.FieldStart("tag")
+		e.Str(s.Tag)
+	}
+}
+
+var jsonFieldsNameOfRemoveTagStep = [3]string{
+	0: "id",
+	1: "type",
+	2: "tag",
+}
+
+// Decode decodes RemoveTagStep from json.
+func (s *RemoveTagStep) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode RemoveTagStep to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "type":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "tag":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Tag = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"tag\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode RemoveTagStep")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfRemoveTagStep) {
+					name = jsonFieldsNameOfRemoveTagStep[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *RemoveTagStep) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *RemoveTagStep) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *RemoveTagStepInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *RemoveTagStepInput) encodeFields(e *jx.Encoder) {
+	{
+		if s.ID.Set {
+			e.FieldStart("id")
+			s.ID.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		e.FieldStart("tag")
+		e.Str(s.Tag)
+	}
+}
+
+var jsonFieldsNameOfRemoveTagStepInput = [3]string{
+	0: "id",
+	1: "type",
+	2: "tag",
+}
+
+// Decode decodes RemoveTagStepInput from json.
+func (s *RemoveTagStepInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode RemoveTagStepInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			if err := func() error {
+				s.ID.Reset()
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "type":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "tag":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Tag = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"tag\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode RemoveTagStepInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000110,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfRemoveTagStepInput) {
+					name = jsonFieldsNameOfRemoveTagStepInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *RemoveTagStepInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *RemoveTagStepInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes RemoveTagStepInputType as json.
+func (s RemoveTagStepInputType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes RemoveTagStepInputType from json.
+func (s *RemoveTagStepInputType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode RemoveTagStepInputType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch RemoveTagStepInputType(v) {
+	case RemoveTagStepInputTypeRemoveTag:
+		*s = RemoveTagStepInputTypeRemoveTag
+	default:
+		*s = RemoveTagStepInputType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s RemoveTagStepInputType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *RemoveTagStepInputType) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes RemoveTagStepType as json.
+func (s RemoveTagStepType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes RemoveTagStepType from json.
+func (s *RemoveTagStepType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode RemoveTagStepType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch RemoveTagStepType(v) {
+	case RemoveTagStepTypeRemoveTag:
+		*s = RemoveTagStepTypeRemoveTag
+	default:
+		*s = RemoveTagStepType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s RemoveTagStepType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *RemoveTagStepType) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -35740,6 +37367,404 @@ func (s *SmsOptOut) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *SmsStep) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SmsStep) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("id")
+		s.ID.Encode(e)
+	}
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		e.FieldStart("text")
+		e.Str(s.Text)
+	}
+	{
+		e.FieldStart("linkTracking")
+		e.Bool(s.LinkTracking)
+	}
+	{
+		if s.IntegrationId.Set {
+			e.FieldStart("integrationId")
+			s.IntegrationId.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfSmsStep = [5]string{
+	0: "id",
+	1: "type",
+	2: "text",
+	3: "linkTracking",
+	4: "integrationId",
+}
+
+// Decode decodes SmsStep from json.
+func (s *SmsStep) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SmsStep to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "type":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "text":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Text = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"text\"")
+			}
+		case "linkTracking":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Bool()
+				s.LinkTracking = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"linkTracking\"")
+			}
+		case "integrationId":
+			if err := func() error {
+				s.IntegrationId.Reset()
+				if err := s.IntegrationId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"integrationId\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SmsStep")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00001111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSmsStep) {
+					name = jsonFieldsNameOfSmsStep[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SmsStep) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SmsStep) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SmsStepInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SmsStepInput) encodeFields(e *jx.Encoder) {
+	{
+		if s.ID.Set {
+			e.FieldStart("id")
+			s.ID.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		e.FieldStart("text")
+		e.Str(s.Text)
+	}
+	{
+		if s.LinkTracking.Set {
+			e.FieldStart("linkTracking")
+			s.LinkTracking.Encode(e)
+		}
+	}
+	{
+		if s.IntegrationId.Set {
+			e.FieldStart("integrationId")
+			s.IntegrationId.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfSmsStepInput = [5]string{
+	0: "id",
+	1: "type",
+	2: "text",
+	3: "linkTracking",
+	4: "integrationId",
+}
+
+// Decode decodes SmsStepInput from json.
+func (s *SmsStepInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SmsStepInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			if err := func() error {
+				s.ID.Reset()
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "type":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "text":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Text = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"text\"")
+			}
+		case "linkTracking":
+			if err := func() error {
+				s.LinkTracking.Reset()
+				if err := s.LinkTracking.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"linkTracking\"")
+			}
+		case "integrationId":
+			if err := func() error {
+				s.IntegrationId.Reset()
+				if err := s.IntegrationId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"integrationId\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SmsStepInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000110,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSmsStepInput) {
+					name = jsonFieldsNameOfSmsStepInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SmsStepInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SmsStepInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SmsStepInputType as json.
+func (s SmsStepInputType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SmsStepInputType from json.
+func (s *SmsStepInputType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SmsStepInputType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SmsStepInputType(v) {
+	case SmsStepInputTypeSMS:
+		*s = SmsStepInputTypeSMS
+	default:
+		*s = SmsStepInputType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SmsStepInputType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SmsStepInputType) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SmsStepType as json.
+func (s SmsStepType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SmsStepType from json.
+func (s *SmsStepType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SmsStepType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SmsStepType(v) {
+	case SmsStepTypeSMS:
+		*s = SmsStepTypeSMS
+	default:
+		*s = SmsStepType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SmsStepType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SmsStepType) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *SmtpConfig) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -36293,6 +38318,46 @@ func (s *SoleOwnedWorkspace) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SoleOwnedWorkspace) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StepId as json.
+func (s StepId) Encode(e *jx.Encoder) {
+	unwrapped := string(s)
+
+	e.Str(unwrapped)
+}
+
+// Decode decodes StepId from json.
+func (s *StepId) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StepId to nil")
+	}
+	var unwrapped string
+	if err := func() error {
+		v, err := d.Str()
+		unwrapped = string(v)
+		if err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = StepId(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s StepId) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StepId) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -38741,6 +40806,527 @@ func (s *TelegramStartLinkResource) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *TelegramStep) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *TelegramStep) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("id")
+		s.ID.Encode(e)
+	}
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		e.FieldStart("text")
+		e.Str(s.Text)
+	}
+	{
+		if s.UnsubscribeButton.Set {
+			e.FieldStart("unsubscribeButton")
+			s.UnsubscribeButton.Encode(e)
+		}
+	}
+	{
+		if s.ImageUrl.Set {
+			e.FieldStart("imageUrl")
+			s.ImageUrl.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("buttons")
+		e.ArrStart()
+		for _, elem := range s.Buttons {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+	{
+		e.FieldStart("linkPreview")
+		e.Bool(s.LinkPreview)
+	}
+	{
+		if s.IntegrationId.Set {
+			e.FieldStart("integrationId")
+			s.IntegrationId.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfTelegramStep = [8]string{
+	0: "id",
+	1: "type",
+	2: "text",
+	3: "unsubscribeButton",
+	4: "imageUrl",
+	5: "buttons",
+	6: "linkPreview",
+	7: "integrationId",
+}
+
+// Decode decodes TelegramStep from json.
+func (s *TelegramStep) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode TelegramStep to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "type":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "text":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Text = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"text\"")
+			}
+		case "unsubscribeButton":
+			if err := func() error {
+				s.UnsubscribeButton.Reset()
+				if err := s.UnsubscribeButton.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"unsubscribeButton\"")
+			}
+		case "imageUrl":
+			if err := func() error {
+				s.ImageUrl.Reset()
+				if err := s.ImageUrl.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"imageUrl\"")
+			}
+		case "buttons":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				s.Buttons = make([]TelegramButton, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem TelegramButton
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Buttons = append(s.Buttons, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"buttons\"")
+			}
+		case "linkPreview":
+			requiredBitSet[0] |= 1 << 6
+			if err := func() error {
+				v, err := d.Bool()
+				s.LinkPreview = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"linkPreview\"")
+			}
+		case "integrationId":
+			if err := func() error {
+				s.IntegrationId.Reset()
+				if err := s.IntegrationId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"integrationId\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode TelegramStep")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b01100111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfTelegramStep) {
+					name = jsonFieldsNameOfTelegramStep[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *TelegramStep) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *TelegramStep) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *TelegramStepInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *TelegramStepInput) encodeFields(e *jx.Encoder) {
+	{
+		if s.ID.Set {
+			e.FieldStart("id")
+			s.ID.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		e.FieldStart("text")
+		e.Str(s.Text)
+	}
+	{
+		if s.UnsubscribeButton.Set {
+			e.FieldStart("unsubscribeButton")
+			s.UnsubscribeButton.Encode(e)
+		}
+	}
+	{
+		if s.ImageUrl.Set {
+			e.FieldStart("imageUrl")
+			s.ImageUrl.Encode(e)
+		}
+	}
+	{
+		if s.Buttons != nil {
+			e.FieldStart("buttons")
+			e.ArrStart()
+			for _, elem := range s.Buttons {
+				elem.Encode(e)
+			}
+			e.ArrEnd()
+		}
+	}
+	{
+		if s.LinkPreview.Set {
+			e.FieldStart("linkPreview")
+			s.LinkPreview.Encode(e)
+		}
+	}
+	{
+		if s.IntegrationId.Set {
+			e.FieldStart("integrationId")
+			s.IntegrationId.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfTelegramStepInput = [8]string{
+	0: "id",
+	1: "type",
+	2: "text",
+	3: "unsubscribeButton",
+	4: "imageUrl",
+	5: "buttons",
+	6: "linkPreview",
+	7: "integrationId",
+}
+
+// Decode decodes TelegramStepInput from json.
+func (s *TelegramStepInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode TelegramStepInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			if err := func() error {
+				s.ID.Reset()
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "type":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "text":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Str()
+				s.Text = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"text\"")
+			}
+		case "unsubscribeButton":
+			if err := func() error {
+				s.UnsubscribeButton.Reset()
+				if err := s.UnsubscribeButton.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"unsubscribeButton\"")
+			}
+		case "imageUrl":
+			if err := func() error {
+				s.ImageUrl.Reset()
+				if err := s.ImageUrl.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"imageUrl\"")
+			}
+		case "buttons":
+			if err := func() error {
+				s.Buttons = make([]TelegramButtonInput, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem TelegramButtonInput
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Buttons = append(s.Buttons, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"buttons\"")
+			}
+		case "linkPreview":
+			if err := func() error {
+				s.LinkPreview.Reset()
+				if err := s.LinkPreview.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"linkPreview\"")
+			}
+		case "integrationId":
+			if err := func() error {
+				s.IntegrationId.Reset()
+				if err := s.IntegrationId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"integrationId\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode TelegramStepInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000110,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfTelegramStepInput) {
+					name = jsonFieldsNameOfTelegramStepInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *TelegramStepInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *TelegramStepInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes TelegramStepInputType as json.
+func (s TelegramStepInputType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes TelegramStepInputType from json.
+func (s *TelegramStepInputType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode TelegramStepInputType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch TelegramStepInputType(v) {
+	case TelegramStepInputTypeTelegram:
+		*s = TelegramStepInputTypeTelegram
+	default:
+		*s = TelegramStepInputType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s TelegramStepInputType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *TelegramStepInputType) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes TelegramStepType as json.
+func (s TelegramStepType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes TelegramStepType from json.
+func (s *TelegramStepType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode TelegramStepType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch TelegramStepType(v) {
+	case TelegramStepTypeTelegram:
+		*s = TelegramStepTypeTelegram
+	default:
+		*s = TelegramStepType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s TelegramStepType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *TelegramStepType) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *TemplateResource) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -41076,13 +43662,9 @@ func (s *UpdateAutomationInput) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.Steps != nil {
+		if s.Steps.Set {
 			e.FieldStart("steps")
-			e.ArrStart()
-			for _, elem := range s.Steps {
-				elem.Encode(e)
-			}
-			e.ArrEnd()
+			s.Steps.Encode(e)
 		}
 	}
 }
@@ -41166,15 +43748,8 @@ func (s *UpdateAutomationInput) Decode(d *jx.Decoder) error {
 			}
 		case "steps":
 			if err := func() error {
-				s.Steps = make([]AutomationStepInput, 0)
-				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem AutomationStepInput
-					if err := elem.Decode(d); err != nil {
-						return err
-					}
-					s.Steps = append(s.Steps, elem)
-					return nil
-				}); err != nil {
+				s.Steps.Reset()
+				if err := s.Steps.Decode(d); err != nil {
 					return err
 				}
 				return nil
@@ -43435,6 +46010,336 @@ func (s UsedByKind) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *UsedByKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *WaitStep) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *WaitStep) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("id")
+		s.ID.Encode(e)
+	}
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		e.FieldStart("seconds")
+		e.Int32(s.Seconds)
+	}
+}
+
+var jsonFieldsNameOfWaitStep = [3]string{
+	0: "id",
+	1: "type",
+	2: "seconds",
+}
+
+// Decode decodes WaitStep from json.
+func (s *WaitStep) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitStep to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "type":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "seconds":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Int32()
+				s.Seconds = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"seconds\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode WaitStep")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfWaitStep) {
+					name = jsonFieldsNameOfWaitStep[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *WaitStep) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitStep) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *WaitStepInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *WaitStepInput) encodeFields(e *jx.Encoder) {
+	{
+		if s.ID.Set {
+			e.FieldStart("id")
+			s.ID.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		e.FieldStart("seconds")
+		e.Int32(s.Seconds)
+	}
+}
+
+var jsonFieldsNameOfWaitStepInput = [3]string{
+	0: "id",
+	1: "type",
+	2: "seconds",
+}
+
+// Decode decodes WaitStepInput from json.
+func (s *WaitStepInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitStepInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			if err := func() error {
+				s.ID.Reset()
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "type":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "seconds":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Int32()
+				s.Seconds = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"seconds\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode WaitStepInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000110,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfWaitStepInput) {
+					name = jsonFieldsNameOfWaitStepInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *WaitStepInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitStepInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes WaitStepInputType as json.
+func (s WaitStepInputType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes WaitStepInputType from json.
+func (s *WaitStepInputType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitStepInputType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch WaitStepInputType(v) {
+	case WaitStepInputTypeWait:
+		*s = WaitStepInputTypeWait
+	default:
+		*s = WaitStepInputType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s WaitStepInputType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitStepInputType) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes WaitStepType as json.
+func (s WaitStepType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes WaitStepType from json.
+func (s *WaitStepType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitStepType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch WaitStepType(v) {
+	case WaitStepTypeWait:
+		*s = WaitStepTypeWait
+	default:
+		*s = WaitStepType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s WaitStepType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitStepType) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

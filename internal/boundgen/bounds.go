@@ -72,7 +72,7 @@ var Bounds = []Bound{
 		Name: "HTTPCallHeaders", Doc: "are the headers of an http Action or step.",
 		Spec: site, Schema: "RuleActionInput", Property: "headers", Owners: []string{httpcallOwner},
 	},
-	{Name: "HTTPCallHeaders", Spec: site, Schema: "AutomationStepInput", Property: "headers"},
+	{Name: "HTTPCallHeaders", Spec: site, Schema: "HttpStepInput", Property: "headers"},
 	{
 		Name: contactCity, Doc: "is a Contact's city.",
 		Spec: external, Schema: "UpsertContactInput", Property: city, Owners: []string{contactOwner},
@@ -164,13 +164,13 @@ var Bounds = []Bound{
 		Spec: site, Schema: "TelegramBroadcastContentInput", Property: "buttons",
 		Owners: []string{"internal/kernel/telegramrender"},
 	},
-	{Name: "TelegramButtons", Spec: site, Schema: "AutomationStepInput", Property: "buttons"},
+	{Name: "TelegramButtons", Spec: site, Schema: "TelegramStepInput", Property: "buttons"},
 	{
 		Name: "TelegramUnsubscribeButton", Doc: "is the label of a Telegram message's unsubscribe button.",
 		Spec: site, Schema: "TelegramBroadcastContentInput", Property: "unsubscribeButton",
 		Owners: []string{"internal/kernel/telegramrender"},
 	},
-	{Name: "TelegramUnsubscribeButton", Spec: site, Schema: "AutomationStepInput", Property: "unsubscribeButton"},
+	{Name: "TelegramUnsubscribeButton", Spec: site, Schema: "TelegramStepInput", Property: "unsubscribeButton"},
 	{
 		Name: "VisitorID", Doc: "is the tracker's id of a Visitor, the device an Event, an Identify or a start link names.",
 		Spec: collect, Schema: "CollectEventInput", Property: "visitorId", Owners: []string{"Visitor"},

@@ -201,10 +201,11 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 		close(started)
 		<-gate
 	}
-	steps := []automationstep.Step{{
-		Type: automationstep.HTTP, ID: "01J00000000000000000000001", URL: rcv.srv.URL, Body: `{"ok":true}`,
+	slack := testhelper.LatestSteps(ctx, t, e.env.DB, fixtures.AutomationNotifySlackID)
+	steps := automationstep.Root(automationstep.Step{ID: slack.Steps[0].ID, Payload: automationstep.HTTP{
+		URL: rcv.srv.URL, Body: `{"ok":true}`,
 		Headers: []httpheader.Header{{Name: "Authorization"}},
-	}}
+	}})
 	bus := e.bus(t)
 	mod := testhelper.Module[*automations.Module](e.env)
 	_, err := mod.Update(ctx, e.scoped, fixtures.AutomationNotifySlackID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, e.scoped, fixtures.AutomationNotifySlackID), Steps: &steps})

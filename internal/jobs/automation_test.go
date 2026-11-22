@@ -422,11 +422,11 @@ func TestAutomationEnrollmentFinishesOnItsOwnVersionAfterAnEdit(t *testing.T) {
 
 	// The owner edits the steps: a wait is inserted ahead and the email is reworded. Were the
 	// Enrollment to read the live steps, its index 1 would now be the new wait.
-	_, err := mod.Update(ctx, acme, fixtures.AutomationJobsEditableID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationJobsEditableID), Steps: &[]automationstep.Step{
-		{Type: automationstep.Wait, Seconds: 1},
-		{Type: automationstep.Wait, Seconds: 2},
-		{Type: automationstep.Email, Subject: "New steps", Body: "<p>new</p>"},
-	}})
+	_, err := mod.Update(ctx, acme, fixtures.AutomationJobsEditableID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationJobsEditableID), Steps: new(automationstep.Root(
+		automationstep.New(automationstep.Wait{Seconds: 1}),
+		automationstep.New(automationstep.Wait{Seconds: 2}),
+		automationstep.New(automationstep.Email{Subject: "New steps", Body: "<p>new</p>"}),
+	))})
 	require.NoError(t, err)
 	_, err = mod.Publish(ctx, acme, fixtures.AutomationJobsEditableID, testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationJobsEditableID))
 	require.NoError(t, err)

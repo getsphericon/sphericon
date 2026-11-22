@@ -44,14 +44,6 @@ func TestRunStepOutcomes(t *testing.T) {
 		assert.Empty(t, queuedSteps(t, env))
 	})
 
-	t.Run("an unknown step type fails the run", func(t *testing.T) {
-		env := testhelper.Setup(t)
-		id := int64(fixtures.AutomationRunJobsUnknownStepID)
-		err := stepOnce(t, env, stepperOf(env, resolvingTo(&fakeSender{})), id)
-		require.ErrorContains(t, err, "unknown step type")
-		assert.Equal(t, automationrun.StatusFailed, runStatus(t.Context(), t, env, id))
-	})
-
 	t.Run("a contact without an email completes the run", func(t *testing.T) {
 		env := testhelper.Setup(t)
 		id := int64(fixtures.AutomationRunJobsNoEmailID)

@@ -12,7 +12,7 @@ import (
 )
 
 // LatestSteps are the stored steps of the Automation's newest version.
-func LatestSteps(ctx context.Context, t *testing.T, db *ent.Client, automationID int64) []automationstep.Step {
+func LatestSteps(ctx context.Context, t *testing.T, db *ent.Client, automationID int64) automationstep.Path {
 	t.Helper()
 	v, err := db.AutomationVersion.Query().
 		Where(automationversion.AutomationID(automationID)).

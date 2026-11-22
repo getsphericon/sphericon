@@ -22,10 +22,10 @@ func TestSiteAutomationsCRUDPublishAndDeactivate(t *testing.T) {
 	created, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
 		Name:         "Welcome series",
 		TriggerEvent: systemevent.ContactCreated,
-		Steps: []siteapi.AutomationStepInput{
-			{Type: siteapi.AutomationStepTypeEmail, Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString("<p></p>")},
-			{Type: siteapi.AutomationStepTypeWait, Seconds: siteapi.NewOptInt32(3600)},
-		},
+		Steps: testhelper.SitePathEdit(
+			siteapi.EmailStepInput{Subject: "Hi", Body: siteapi.NewOptString("<p></p>")},
+			siteapi.WaitStepInput{Seconds: 3600},
+		),
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	res := created
@@ -35,11 +35,12 @@ func TestSiteAutomationsCRUDPublishAndDeactivate(t *testing.T) {
 
 	// Steps round-trip through the typed contract (stored as the executor's JSON
 	// string, decoded back into the typed DTO).
-	require.Len(t, res.Draft.Value.Steps, 2)
-	assert.Equal(t, siteapi.AutomationStepTypeEmail, res.Draft.Value.Steps[0].Type)
-	assert.Equal(t, "Hi", res.Draft.Value.Steps[0].Subject.Or(""))
-	assert.Equal(t, siteapi.AutomationStepTypeWait, res.Draft.Value.Steps[1].Type)
-	assert.Equal(t, int32(3600), res.Draft.Value.Steps[1].Seconds.Or(0))
+	steps := res.Draft.Value.Steps.Steps
+	require.Len(t, steps, 2)
+	assert.Equal(t, siteapi.EmailStepAutomationStepSum, steps[0].OneOf.Type)
+	assert.Equal(t, "Hi", steps[0].OneOf.EmailStep.Subject)
+	assert.Equal(t, siteapi.WaitStepAutomationStepSum, steps[1].OneOf.Type)
+	assert.Equal(t, int32(3600), steps[1].OneOf.WaitStep.Seconds)
 
 	// Publish / deactivate flip the status.
 	act, err := c.SiteAutomationsPublish(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID)))}, siteapi.SiteAutomationsPublishParams{WorkspaceId: workspaceID, ID: res.ID})

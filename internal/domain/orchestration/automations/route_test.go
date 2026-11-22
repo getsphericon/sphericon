@@ -26,7 +26,7 @@ func TestPublishIsRefusedWhileAnyStepsIntegrationCannotSend(t *testing.T) {
 
 	ses := int64(fixtures.IntegrationAcmeSesID)
 	edited, err := m.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationHoldDemoID),
-		Steps: &[]automationstep.Step{emailVia(nil), {Type: automationstep.Wait, Seconds: 60}, emailVia(&ses)},
+		Steps: steps(emailVia(nil), automationstep.Wait{Seconds: 60}, emailVia(&ses)),
 	})
 	require.NoError(t, err, "a draft may name a disabled Integration")
 	_, draft := automations.LiveAndDraft(edited)
@@ -50,7 +50,7 @@ func TestResumingAnAutomationIsRefusedOnceItsIntegrationCannotSend(t *testing.T)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 	mailgun := int64(fixtures.IntegrationAcmeMailgunID)
-	_, err := m.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationHoldDemoID), Steps: &[]automationstep.Step{emailVia(&mailgun)}})
+	_, err := m.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationHoldDemoID), Steps: steps(emailVia(&mailgun))})
 	require.NoError(t, err)
 	_, err = m.Publish(ctx, s, fixtures.AutomationHoldDemoID, testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationHoldDemoID))
 	require.NoError(t, err, "the Integration can send when it is published")
@@ -73,7 +73,7 @@ func TestPublishWithoutASendStepDoesNotAskTheRoute(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 	_, err := m.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationHoldDemoID),
-		Steps: &[]automationstep.Step{{Type: automationstep.Wait, Seconds: 60}},
+		Steps: steps(automationstep.Wait{Seconds: 60}),
 	})
 	require.NoError(t, err)
 

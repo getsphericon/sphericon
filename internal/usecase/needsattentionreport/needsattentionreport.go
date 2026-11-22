@@ -316,14 +316,14 @@ func (m *UseCase) automationsCannotSend(ctx context.Context, s *ent.Scoped, _ ti
 		steps := automations.SendSteps(a.Edges.LiveVersion)
 		for i := range steps {
 			st := &steps[i]
-			key := choice{st.Channel(), lo.FromPtr(st.Step.IntegrationID)}
+			key := choice{st.Channel(), lo.FromPtr(st.Step.Integration())}
 			hold, asked := holdOf[key]
 			if !asked {
 				content, err := st.Content()
 				if err != nil {
 					return nil, err
 				}
-				if hold, err = m.out.Preflight(ctx, s, content, st.Step.IntegrationID); err != nil {
+				if hold, err = m.out.Preflight(ctx, s, content, st.Step.Integration()); err != nil {
 					return nil, err
 				}
 				holdOf[key] = hold

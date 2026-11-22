@@ -154,7 +154,7 @@ func TestAStopSkipsTheNextTelegramStepAndTheEmailStepsStillSend(t *testing.T) {
 	bot := boundBob(t, env)
 	automationID := telegramAutomation(t, env,
 		telegramStep(bot, "Telegram"),
-		automationstep.Step{Type: automationstep.Email, Subject: "Still here", Body: "<p>mail</p>"},
+		automationstep.New(automationstep.Email{Subject: "Still here", Body: "<p>mail</p>"}),
 	)
 	env.PostTelegramUpdate(t, bot, said(1001, optOutUser, "/stop"))
 	runID := enrollVia(t, env, automationID, fixtures.ContactBobID)
@@ -237,8 +237,8 @@ func TestADeactivatedUserLosesTheBindingAndHasNoOptOut(t *testing.T) {
 func TestAPressOnTheUnsubscribeButtonIsAttributedAndAnswered(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := boundBob(t, env)
-	step := telegramStep(bot, "Hello")
-	step.UnsubscribeButton = "Stop messages"
+	id := int64(bot.Integration.ID)
+	step := automationstep.New(automationstep.Telegram{IntegrationID: &id, Text: "Hello", UnsubscribeButton: "Stop messages"})
 	automationID := telegramAutomation(t, env, step)
 	runID := enrollVia(t, env, automationID, fixtures.ContactBobID)
 	runSteps(t, env)

@@ -36,26 +36,26 @@ func SecretSweeps(c *ent.Client) []secrets.Sweep {
 }
 
 // guardedSteps is the steps of the Automation version id, written on its Automation's revision.
-func guardedSteps(c *ent.Client, id int64) secrets.Guarded[[]automationstep.Step] {
+func guardedSteps(c *ent.Client, id int64) secrets.Guarded[automationstep.Path] {
 	var owner, workspace int64
-	return secrets.Guarded[[]automationstep.Step]{
+	return secrets.Guarded[automationstep.Path]{
 		// The Automation is read first: an edit between the two reads leaves an older revision with
 		// the edited steps, and the write misses.
-		Read: func(ctx context.Context) ([]automationstep.Step, int64, error) {
+		Read: func(ctx context.Context) (automationstep.Path, int64, error) {
 			a, err := c.Automation.Query().Where(automation.HasVersionsWith(automationversion.ID(id))).Only(ctx)
 			if ent.IsNotFound(err) {
-				return nil, 0, secrets.ErrRowGone
+				return automationstep.Path{}, 0, secrets.ErrRowGone
 			}
 			if err != nil {
-				return nil, 0, err
+				return automationstep.Path{}, 0, err
 			}
 			owner, workspace = a.ID, a.WorkspaceID
 			v, err := c.AutomationVersion.Get(ctx, id)
 			if ent.IsNotFound(err) {
-				return nil, 0, secrets.ErrRowGone
+				return automationstep.Path{}, 0, secrets.ErrRowGone
 			}
 			if err != nil {
-				return nil, 0, err
+				return automationstep.Path{}, 0, err
 			}
 			return v.Steps, a.Revision, nil
 		},
@@ -63,7 +63,7 @@ func guardedSteps(c *ent.Client, id int64) secrets.Guarded[[]automationstep.Step
 		// An edit holds the Workspace's lock from its read of the version to its write, and writes
 		// back the secrets it read: the write takes the lock or leaves the version to the next run,
 		// and under it lands only while the Automation has the revision read.
-		Write: func(ctx context.Context, steps []automationstep.Step, revision int64) (bool, error) {
+		Write: func(ctx context.Context, steps automationstep.Path, revision int64) (bool, error) {
 			tx, err := c.Tx(ctx)
 			if err != nil {
 				return false, err
@@ -85,22 +85,22 @@ func guardedSteps(c *ent.Client, id int64) secrets.Guarded[[]automationstep.Step
 
 // rewrapSteps rewraps the sealed fields of an Automation version's HTTP steps: the URL, the header
 // values and the signing secret, each sealed on its own (ADR 0039).
-func rewrapSteps(cipher *secrets.Cipher, steps []automationstep.Step) (sealed []automationstep.Step, changed bool, err error) {
+func rewrapSteps(cipher *secrets.Cipher, steps automationstep.Path) (sealed automationstep.Path, changed bool, err error) {
 	sealed, err = automationstep.Map(steps, func(_ int, st *automationstep.Step) (automationstep.Step, error) {
-		s := *st
-		if s.Type != automationstep.HTTP {
-			return s, nil
+		h, ok := st.Payload.(automationstep.HTTP)
+		if !ok {
+			return *st, nil
 		}
-		s.Headers = slices.Clone(s.Headers)
-		did, err := httpcall.Rewrap(cipher, &s.URL, &s.Secret, s.Headers)
+		h.Headers = slices.Clone(h.Headers)
+		did, err := httpcall.Rewrap(cipher, &h.URL, &h.Secret, h.Headers)
 		if err != nil {
 			return automationstep.Step{}, err
 		}
 		changed = changed || did
-		return s, nil
+		return automationstep.Step{ID: st.ID, Payload: h}, nil
 	})
 	if err != nil {
-		return nil, false, err
+		return automationstep.Path{}, false, err
 	}
 	return sealed, changed, nil
 }

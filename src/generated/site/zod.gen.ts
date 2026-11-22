@@ -261,19 +261,6 @@ export const zAutomationStepFigures = z.object({
 });
 
 /**
- * Kind of automation step
- */
-export const zAutomationStepType = z.enum([
-  'email',
-  'telegram',
-  'sms',
-  'wait',
-  'apply_tag',
-  'remove_tag',
-  'http'
-]);
-
-/**
  * The Channel a Broadcast sends on, fixed when it is created (ADR 0080)
  */
 export const zBroadcastChannel = z.enum([
@@ -2531,6 +2518,120 @@ export const zSmtpConfigInput = z.strictObject({
 export const zSortDirection = z.enum(['asc', 'desc']);
 
 /**
+ * The id of a Step or a path: a UUID in its lowercase text form, kept by every version of the
+ * automation. A client mints it when it creates the Step or path and sends it back on every save;
+ * one sent without an id is given one. Unique within a version, Steps and paths together.
+ */
+export const zStepId = z.string();
+
+/**
+ * A Step that applies a Tag to the enrolled Contact
+ */
+export const zApplyTagStep = z.object({
+  id: zStepId,
+  type: z.enum(['apply_tag']),
+  tag: z.string()
+});
+
+/**
+ * A Step that applies a Tag, as a request writes it
+ */
+export const zApplyTagStepInput = z.strictObject({
+  id: z.exactOptional(zStepId),
+  type: z.enum(['apply_tag']),
+  tag: z.string()
+});
+
+/**
+ * A Step that sends an email through the Integration it names
+ */
+export const zEmailStep = z.object({
+  id: zStepId,
+  type: z.enum(['email']),
+  subject: z.string(),
+  body: z.string(),
+  doc: z.exactOptional(zEditorDocument),
+  editorVersion: z.exactOptional(z.string()),
+  integrationId: z.exactOptional(zEntityId)
+});
+
+/**
+ * A Step that sends an email, as a request writes it
+ */
+export const zEmailStepInput = z.strictObject({
+  id: z.exactOptional(zStepId),
+  type: z.enum(['email']),
+  subject: z.string(),
+  body: z.exactOptional(z.string()),
+  doc: z.exactOptional(zEditorDocument),
+  integrationId: z.exactOptional(zEntityId.nullable())
+});
+
+/**
+ * A Step that POSTs a JSON body to a hook URL (ADR 0039). Its URL, header values and signing secret are secrets: never returned.
+ */
+export const zHttpStep = z.object({
+  id: zStepId,
+  type: z.enum(['http']),
+  body: z.string(),
+  headers: z.array(zAutomationHttpHeader),
+  hasSecret: z.boolean()
+});
+
+/**
+ * A Step that POSTs a JSON body to a hook URL, as a request writes it. A secret omitted keeps the stored value of the Step with the same id.
+ */
+export const zHttpStepInput = z.strictObject({
+  id: z.exactOptional(zStepId),
+  type: z.enum(['http']),
+  body: z.string(),
+  url: z.exactOptional(z.string()),
+  headers: z.exactOptional(z.array(zAutomationHttpHeaderInput).max(5)),
+  secret: z.exactOptional(zSigningSecret),
+  clearSecret: z.exactOptional(z.boolean())
+});
+
+/**
+ * A Step that removes a Tag from the enrolled Contact
+ */
+export const zRemoveTagStep = z.object({
+  id: zStepId,
+  type: z.enum(['remove_tag']),
+  tag: z.string()
+});
+
+/**
+ * A Step that removes a Tag, as a request writes it
+ */
+export const zRemoveTagStepInput = z.strictObject({
+  id: z.exactOptional(zStepId),
+  type: z.enum(['remove_tag']),
+  tag: z.string()
+});
+
+/**
+ * A Step that sends an SMS through the Integration it names
+ */
+export const zSmsStep = z.object({
+  id: zStepId,
+  type: z.enum(['sms']),
+  text: z.string(),
+  linkTracking: z.boolean(),
+  integrationId: z.exactOptional(zEntityId)
+});
+
+/**
+ * A Step that sends an SMS, as a request writes it
+ */
+export const zSmsStepInput = z.strictObject({
+  id: z.exactOptional(zStepId),
+  type: z.enum(['sms']),
+  text: z.string(),
+  linkTracking: z.exactOptional(z.boolean()),
+  integrationId: z.exactOptional(zEntityId.nullable())
+});
+
+/**
  * A Channel a destination can be suppressed on
  */
 export const zSuppressionChannel = z.enum([
@@ -2626,44 +2727,6 @@ export const zTelegramButton = z.object({
 });
 
 /**
- * One node in an automation's ordered, linear sequence. A flat shape: email
- * steps carry subject/body, wait steps carry seconds, tag steps carry the tag name.
- */
-export const zAutomationStep = z.object({
-  type: zAutomationStepType,
-  subject: z.exactOptional(z.string()),
-  body: z.exactOptional(z.string()),
-  doc: z.exactOptional(zEditorDocument),
-  editorVersion: z.exactOptional(z.string()),
-  seconds: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  tag: z.exactOptional(z.string()),
-  id: z.exactOptional(z.string()),
-  url: z.exactOptional(z.string()),
-  headers: z.exactOptional(z.array(zAutomationHttpHeader).max(5)),
-  secret: z.exactOptional(zSigningSecret),
-  clearSecret: z.exactOptional(z.boolean()),
-  hasSecret: z.exactOptional(z.boolean()),
-  integrationId: z.exactOptional(zEntityId.nullable()),
-  text: z.exactOptional(z.string()),
-  unsubscribeButton: z.exactOptional(z.string().max(64)),
-  imageUrl: z.exactOptional(z.string()),
-  buttons: z.exactOptional(z.array(zTelegramButton).max(8)),
-  linkPreview: z.exactOptional(z.boolean()),
-  linkTracking: z.exactOptional(z.boolean())
-});
-
-/**
- * One version of an automation's definition: what publishing makes it do (ADR 0065)
- */
-export const zAutomationVersion = z.object({
-  number: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  triggerEvent: z.string(),
-  exitEvents: z.array(z.string()),
-  goalEvent: z.string().nullable(),
-  steps: z.array(zAutomationStep)
-});
-
-/**
  * Telegram's content of a Broadcast as stored
  */
 export const zTelegramBroadcastContent = z.object({
@@ -2690,44 +2753,6 @@ export const zBroadcastContent = z.discriminatedUnion('channel', [
 export const zTelegramButtonInput = z.strictObject({
   label: z.string(),
   url: z.string()
-});
-
-/**
- * One node in an automation's ordered, linear sequence. A flat shape: email
- * steps carry subject/body, wait steps carry seconds, tag steps carry the tag name.
- */
-export const zAutomationStepInput = z.strictObject({
-  type: zAutomationStepType,
-  subject: z.exactOptional(z.string()),
-  body: z.exactOptional(z.string()),
-  doc: z.exactOptional(zEditorDocument),
-  editorVersion: z.exactOptional(z.string()),
-  seconds: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  tag: z.exactOptional(z.string()),
-  id: z.exactOptional(z.string()),
-  url: z.exactOptional(z.string()),
-  headers: z.exactOptional(z.array(zAutomationHttpHeaderInput).max(5)),
-  secret: z.exactOptional(zSigningSecret),
-  clearSecret: z.exactOptional(z.boolean()),
-  hasSecret: z.exactOptional(z.boolean()),
-  integrationId: z.exactOptional(zEntityId.nullable()),
-  text: z.exactOptional(z.string()),
-  unsubscribeButton: z.exactOptional(z.string().max(64)),
-  imageUrl: z.exactOptional(z.string()),
-  buttons: z.exactOptional(z.array(zTelegramButtonInput).max(8)),
-  linkPreview: z.exactOptional(z.boolean()),
-  linkTracking: z.exactOptional(z.boolean())
-});
-
-/**
- * Request body for creating an automation (always created inactive)
- */
-export const zCreateAutomationInput = z.strictObject({
-  name: zName,
-  triggerEvent: z.string(),
-  exitEvents: z.exactOptional(z.array(z.string())),
-  goalEvent: z.exactOptional(z.string().nullable()),
-  steps: z.exactOptional(z.array(zAutomationStepInput))
 });
 
 /**
@@ -2794,6 +2819,34 @@ export const zTelegramLeaf = z.object({
 export const zTelegramLeafInput = z.strictObject({
   kind: z.enum(['telegram']),
   operator: zHasOperator
+});
+
+/**
+ * A Step that sends a Telegram message through the Integration it names
+ */
+export const zTelegramStep = z.object({
+  id: zStepId,
+  type: z.enum(['telegram']),
+  text: z.string(),
+  unsubscribeButton: z.exactOptional(z.string()),
+  imageUrl: z.exactOptional(z.string()),
+  buttons: z.array(zTelegramButton),
+  linkPreview: z.boolean(),
+  integrationId: z.exactOptional(zEntityId)
+});
+
+/**
+ * A Step that sends a Telegram message, as a request writes it
+ */
+export const zTelegramStepInput = z.strictObject({
+  id: z.exactOptional(zStepId),
+  type: z.enum(['telegram']),
+  text: z.string(),
+  unsubscribeButton: z.exactOptional(z.string().max(64)),
+  imageUrl: z.exactOptional(z.string()),
+  buttons: z.exactOptional(z.array(zTelegramButtonInput).max(8)),
+  linkPreview: z.exactOptional(z.boolean()),
+  integrationId: z.exactOptional(zEntityId.nullable())
 });
 
 /**
@@ -3342,22 +3395,6 @@ export const zSiteAttentionItem = z.object({
  */
 export const zSiteAttentionList = z.object({
   items: z.array(zSiteAttentionItem)
-});
-
-/**
- * Automation resource used by the site UI
- */
-export const zSiteAutomationResource = z.object({
-  id: zEntityId,
-  name: z.string(),
-  status: zAutomationStatus,
-  live: zAutomationVersion.nullable(),
-  draft: zAutomationVersion.nullable(),
-  archivedAt: z.exactOptional(zTimestamp.nullable()),
-  revenue: z.exactOptional(zMessageRevenue),
-  revision: zRevision,
-  createdAt: zTimestamp,
-  updatedAt: zTimestamp
 });
 
 /**
@@ -4017,20 +4054,6 @@ export const zCreateIntegrationInput = z.strictObject({
 });
 
 /**
- * Request body for updating an automation. The name changes at once; the trigger, exit and
- * goal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live
- * version's, and only publishing makes the draft live.
- */
-export const zUpdateAutomationInput = z.strictObject({
-  revision: zRevision,
-  name: z.exactOptional(zName),
-  triggerEvent: z.exactOptional(z.string()),
-  exitEvents: z.exactOptional(z.array(z.string())),
-  goalEvent: z.exactOptional(z.string().nullable()),
-  steps: z.exactOptional(z.array(zAutomationStepInput))
-});
-
-/**
  * Request body for updating a draft broadcast: an omitted field keeps its value, null clears it
  */
 export const zUpdateBroadcastInput = z.strictObject({
@@ -4170,6 +4193,118 @@ export const zSiteUpdateMeInput = z.strictObject({
   regionalFormat: z.exactOptional(zRegionalFormat.nullable()),
   currentPassword: z.exactOptional(z.string()),
   newPassword: z.exactOptional(z.string())
+});
+
+/**
+ * A Step that waits before the next one
+ */
+export const zWaitStep = z.object({
+  id: zStepId,
+  type: z.enum(['wait']),
+  seconds: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * One Step of an automation, by `type`
+ */
+export const zAutomationStep = z.discriminatedUnion('type', [
+  zEmailStep.extend({ type: z.literal('email') }),
+  zTelegramStep.extend({ type: z.literal('telegram') }),
+  zSmsStep.extend({ type: z.literal('sms') }),
+  zWaitStep.extend({ type: z.literal('wait') }),
+  zApplyTagStep.extend({ type: z.literal('apply_tag') }),
+  zRemoveTagStep.extend({ type: z.literal('remove_tag') }),
+  zHttpStep.extend({ type: z.literal('http') })
+]);
+
+/**
+ * A path of Steps, in the order an Enrollment walks them. A version's Steps are its root path.
+ */
+export const zAutomationPath = z.object({
+  id: zStepId,
+  steps: z.array(zAutomationStep)
+});
+
+/**
+ * One version of an automation's definition: what publishing makes it do (ADR 0065)
+ */
+export const zAutomationVersion = z.object({
+  number: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  triggerEvent: z.string(),
+  exitEvents: z.array(z.string()),
+  goalEvent: z.string().nullable(),
+  steps: zAutomationPath
+});
+
+/**
+ * Automation resource used by the site UI
+ */
+export const zSiteAutomationResource = z.object({
+  id: zEntityId,
+  name: z.string(),
+  status: zAutomationStatus,
+  live: zAutomationVersion.nullable(),
+  draft: zAutomationVersion.nullable(),
+  archivedAt: z.exactOptional(zTimestamp.nullable()),
+  revenue: z.exactOptional(zMessageRevenue),
+  revision: zRevision,
+  createdAt: zTimestamp,
+  updatedAt: zTimestamp
+});
+
+/**
+ * A Step that waits before the next one, as a request writes it
+ */
+export const zWaitStepInput = z.strictObject({
+  id: z.exactOptional(zStepId),
+  type: z.enum(['wait']),
+  seconds: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * One Step of an automation, by `type`, as a request writes it. A field of another kind is refused.
+ */
+export const zAutomationStepInput = z.discriminatedUnion('type', [
+  zEmailStepInput.extend({ type: z.literal('email') }),
+  zTelegramStepInput.extend({ type: z.literal('telegram') }),
+  zSmsStepInput.extend({ type: z.literal('sms') }),
+  zWaitStepInput.extend({ type: z.literal('wait') }),
+  zApplyTagStepInput.extend({ type: z.literal('apply_tag') }),
+  zRemoveTagStepInput.extend({ type: z.literal('remove_tag') }),
+  zHttpStepInput.extend({ type: z.literal('http') })
+]);
+
+/**
+ * A path of Steps, as a request writes it
+ */
+export const zAutomationPathInput = z.strictObject({
+  id: z.exactOptional(zStepId),
+  steps: z.array(zAutomationStepInput)
+});
+
+/**
+ * Request body for creating an automation (always created inactive)
+ */
+export const zCreateAutomationInput = z.strictObject({
+  name: zName,
+  triggerEvent: z.string(),
+  exitEvents: z.exactOptional(z.array(z.string())),
+  goalEvent: z.exactOptional(z.string().nullable()),
+  steps: z.exactOptional(zAutomationPathInput)
+});
+
+/**
+ * Request body for updating an automation. The name changes at once; the trigger, exit and
+ * goal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live
+ * version's, and only publishing makes the draft live.
+ */
+export const zUpdateAutomationInput = z.strictObject({
+  revision: zRevision,
+  name: z.exactOptional(zName),
+  triggerEvent: z.exactOptional(z.string()),
+  exitEvents: z.exactOptional(z.array(z.string())),
+  goalEvent: z.exactOptional(z.string().nullable()),
+  steps: z.exactOptional(zAutomationPathInput)
 });
 
 /**

@@ -40,7 +40,7 @@ func telegramAutomation(t *testing.T, env *testhelper.TestEnv, steps ...automati
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 	created, err := m.Create(ctx, s, automations.CreateInput{
-		Name: "Telegram welcome", TriggerEvent: systemevent.TelegramBound, ExitEvents: []string{}, Steps: steps,
+		Name: "Telegram welcome", TriggerEvent: systemevent.TelegramBound, ExitEvents: []string{}, Steps: new(automationstep.Root(steps...)),
 	})
 	require.NoError(t, err)
 	_, err = m.Publish(ctx, s, created.ID, testhelper.AutomationRevisionIn(ctx, t, s, created.ID))
@@ -51,7 +51,7 @@ func telegramAutomation(t *testing.T, env *testhelper.TestEnv, steps ...automati
 // telegramStep is a Telegram step through the bot.
 func telegramStep(bot testhelper.TelegramBot, text string) automationstep.Step {
 	id := int64(bot.Integration.ID)
-	return automationstep.Step{Type: automationstep.Telegram, IntegrationID: &id, Text: text}
+	return automationstep.New(automationstep.Telegram{IntegrationID: &id, Text: text})
 }
 
 // runSteps drives the queued steps through the harness's own Outbound module.
@@ -179,8 +179,10 @@ func TestARenderedCaptionOverTheCaptionLimitFails(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
 	env.DB.Contact.UpdateOneID(fixtures.ContactBobID).SetFirstName(strings.Repeat("x", 100)).ExecX(t.Context())
-	step := telegramStep(bot, strings.Repeat("a", 950)+"{{ first_name }}")
-	step.ImageURL = "https://cdn.example.com/a.png"
+	id := int64(bot.Integration.ID)
+	step := automationstep.New(automationstep.Telegram{
+		IntegrationID: &id, Text: strings.Repeat("a", 950) + "{{ first_name }}", ImageURL: "https://cdn.example.com/a.png",
+	})
 	automationID := telegramAutomation(t, env, step)
 	env.BindTelegram(t, bot, fixtures.ContactBobID, 555051, 555051)
 	runID := enrollVia(t, env, automationID, fixtures.ContactBobID)

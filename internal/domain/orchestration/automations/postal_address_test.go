@@ -59,7 +59,7 @@ func TestAnSMSOnlyAutomationIsPublishedWithoutAPostalAddress(t *testing.T) {
 	m := testhelper.Module[*automations.Module](env)
 	twilio := int64(env.AcmeTwilio(t).Integration.ID)
 	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID),
-		Steps: &[]automationstep.Step{{Type: automationstep.Wait, Seconds: 60}, smsVia(&twilio, "Hi")},
+		Steps: steps(automationstep.Wait{Seconds: 60}, smsVia(&twilio, "Hi")),
 	})
 	require.NoError(t, err)
 	env.ClearPostalAddress(t, fixtures.AcmeID)

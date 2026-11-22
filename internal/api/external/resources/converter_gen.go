@@ -40,7 +40,6 @@ import (
 	messaging "github.com/getsphericon/sphericon/internal/infra/messaging"
 	webhook "github.com/getsphericon/sphericon/internal/infra/webhook"
 	addresscheck "github.com/getsphericon/sphericon/internal/kernel/addresscheck"
-	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	emaildoc "github.com/getsphericon/sphericon/internal/kernel/emaildoc"
@@ -83,6 +82,13 @@ func (c *ConverterImpl) ApiTokensToInfos(source []*ent.ApiToken) []external.ApiT
 	}
 	return externalapiApiTokenInfoList
 }
+func (c *ConverterImpl) ApplyTagStepToResource(source automations.TagView) external.ApplyTagStep {
+	var externalapiApplyTagStep external.ApplyTagStep
+	externalapiApplyTagStep.ID = external.StepId(source.ID)
+	externalapiApplyTagStep.Type = applyTagStepType(source.Type)
+	externalapiApplyTagStep.Tag = source.Tag
+	return externalapiApplyTagStep
+}
 func (c *ConverterImpl) AuditActorToResource(source auditlog.View) external.AuditActor {
 	var externalapiAuditActor external.AuditActor
 	externalapiAuditActor.Kind = external.AuditActorKind(source.ActorKind)
@@ -123,6 +129,12 @@ func (c *ConverterImpl) AutomationHttpHeaderToResource(source automations.Header
 	externalapiAutomationHttpHeader.Name = source.Name
 	// externalapiAutomationHttpHeader.Value: ignore
 	return externalapiAutomationHttpHeader
+}
+func (c *ConverterImpl) AutomationPathToResource(source automations.PathView) external.AutomationPath {
+	var externalapiAutomationPath external.AutomationPath
+	externalapiAutomationPath.ID = external.StepId(source.ID)
+	externalapiAutomationPath.Steps = automationStepViews(c, source.Steps)
+	return externalapiAutomationPath
 }
 func (c *ConverterImpl) AutomationPeriodResultsToResource(source automations.PeriodResults) external.AutomationPeriodResults {
 	var externalapiAutomationPeriodResults external.AutomationPeriodResults
@@ -213,72 +225,6 @@ func (c *ConverterImpl) AutomationStatusToResource(source automation.Status) ext
 	}
 	return externalapiAutomationStatus
 }
-func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) external.AutomationStep {
-	var externalapiAutomationStep external.AutomationStep
-	externalapiAutomationStep.Type = c.AutomationStepTypeToResource(source.Type)
-	externalapiAutomationStep.Subject = optString(source.Subject)
-	externalapiAutomationStep.Body = optString(source.Body)
-	externalapiAutomationStep.Doc = optEditorDocument(source.Doc)
-	externalapiAutomationStep.EditorVersion = optString(source.EditorVersion)
-	externalapiAutomationStep.Seconds = optInt32(source.Seconds)
-	externalapiAutomationStep.Tag = optString(source.Tag)
-	externalapiAutomationStep.ID = optString(source.ID)
-	// externalapiAutomationStep.URL: ignore
-	if source.Headers != nil {
-		externalapiAutomationStep.Headers = make([]external.AutomationHttpHeader, len(source.Headers))
-		for i := 0; i < len(source.Headers); i++ {
-			externalapiAutomationStep.Headers[i] = c.AutomationHttpHeaderToResource(source.Headers[i])
-		}
-	}
-	// externalapiAutomationStep.Secret: ignore
-	// externalapiAutomationStep.ClearSecret: ignore
-	externalapiAutomationStep.HasSecret = optBool(source.HasSecret)
-	externalapiAutomationStep.IntegrationId = optNilEntityID(source.IntegrationID)
-	externalapiAutomationStep.Text = optString(source.Text)
-	externalapiAutomationStep.UnsubscribeButton = optString(source.UnsubscribeButton)
-	externalapiAutomationStep.ImageUrl = optString(source.ImageURL)
-	if source.Buttons != nil {
-		externalapiAutomationStep.Buttons = make([]external.TelegramButton, len(source.Buttons))
-		for j := 0; j < len(source.Buttons); j++ {
-			externalapiAutomationStep.Buttons[j] = c.TelegramButtonToResource(source.Buttons[j])
-		}
-	}
-	externalapiAutomationStep.LinkPreview = optBool(source.LinkPreview)
-	externalapiAutomationStep.LinkTracking = optBool(source.LinkTracking)
-	return externalapiAutomationStep
-}
-func (c *ConverterImpl) AutomationStepTypeToResource(source automationstep.Kind) external.AutomationStepType {
-	var externalapiAutomationStepType external.AutomationStepType
-	switch source {
-	case automationstep.ApplyTag:
-		externalapiAutomationStepType = external.AutomationStepTypeApplyTag
-	case automationstep.Email:
-		externalapiAutomationStepType = external.AutomationStepTypeEmail
-	case automationstep.HTTP:
-		externalapiAutomationStepType = external.AutomationStepTypeHTTP
-	case automationstep.RemoveTag:
-		externalapiAutomationStepType = external.AutomationStepTypeRemoveTag
-	case automationstep.SMS:
-		externalapiAutomationStepType = external.AutomationStepTypeSMS
-	case automationstep.Telegram:
-		externalapiAutomationStepType = external.AutomationStepTypeTelegram
-	case automationstep.Wait:
-		externalapiAutomationStepType = external.AutomationStepTypeWait
-	default:
-		panic(fmt.Sprintf("unexpected enum element: %v", source))
-	}
-	return externalapiAutomationStepType
-}
-func (c *ConverterImpl) AutomationStepsToResources(source []automations.StepView) []external.AutomationStep {
-	var externalapiAutomationStepList []external.AutomationStep
-	if source != nil {
-		externalapiAutomationStepList = make([]external.AutomationStep, len(source))
-		for i := 0; i < len(source); i++ {
-			externalapiAutomationStepList[i] = c.AutomationStepToResource(source[i])
-		}
-	}
-	return externalapiAutomationStepList
-}
 func (c *ConverterImpl) AutomationToResource(source *ent.Automation) external.AutomationResource {
 	var externalapiAutomationResource external.AutomationResource
 	if source != nil {
@@ -306,7 +252,7 @@ func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersio
 			}
 		}
 		externalapiAutomationVersion.GoalEvent = nilString((*source).GoalEvent)
-		externalapiAutomationVersion.Steps = automationSteps(c, (*source).Steps)
+		externalapiAutomationVersion.Steps = automationPath(c, (*source).Steps)
 	}
 	return externalapiAutomationVersion
 }
@@ -805,6 +751,17 @@ func (c *ConverterImpl) EmailSchemaTypeToResource(source emaildoc.AgentType) ext
 	externalapiEmailSchemaType.Attrs = c.mapStringEmaildocAgentAttrToExternalapiEmailSchemaTypeAttrs(source.Attrs)
 	return externalapiEmailSchemaType
 }
+func (c *ConverterImpl) EmailStepToResource(source automations.EmailView) external.EmailStep {
+	var externalapiEmailStep external.EmailStep
+	externalapiEmailStep.ID = external.StepId(source.ID)
+	externalapiEmailStep.Type = emailStepType(source.Type)
+	externalapiEmailStep.Subject = source.Subject
+	externalapiEmailStep.Body = source.Body
+	externalapiEmailStep.Doc = optEditorDocument(source.Doc)
+	externalapiEmailStep.EditorVersion = optString(source.EditorVersion)
+	externalapiEmailStep.IntegrationId = optEntityID(source.IntegrationID)
+	return externalapiEmailStep
+}
 func (c *ConverterImpl) EmailTemplateToResource(source *ent.EmailTemplate) external.TemplateResource {
 	var externalapiTemplateResource external.TemplateResource
 	if source != nil {
@@ -947,6 +904,20 @@ func (c *ConverterImpl) HoldReasonToResource(source holdreason.Reason) external.
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return externalapiHoldReason
+}
+func (c *ConverterImpl) HttpStepToResource(source automations.HTTPView) external.HttpStep {
+	var externalapiHttpStep external.HttpStep
+	externalapiHttpStep.ID = external.StepId(source.ID)
+	externalapiHttpStep.Type = httpStepType(source.Type)
+	externalapiHttpStep.Body = source.Body
+	if source.Headers != nil {
+		externalapiHttpStep.Headers = make([]external.AutomationHttpHeader, len(source.Headers))
+		for i := 0; i < len(source.Headers); i++ {
+			externalapiHttpStep.Headers[i] = c.AutomationHttpHeaderToResource(source.Headers[i])
+		}
+	}
+	externalapiHttpStep.HasSecret = source.HasSecret
+	return externalapiHttpStep
 }
 func (c *ConverterImpl) IntegrationChannelToResource(source channels.Channel) external.IntegrationChannel {
 	var externalapiIntegrationChannel external.IntegrationChannel
@@ -1210,6 +1181,13 @@ func (c *ConverterImpl) RateToTriple(source reputation.Rate) external.RateTriple
 	externalapiRateTriple.Denominator = count(source.Denominator)
 	externalapiRateTriple.Rate = nilFloat64(source.Rate)
 	return externalapiRateTriple
+}
+func (c *ConverterImpl) RemoveTagStepToResource(source automations.TagView) external.RemoveTagStep {
+	var externalapiRemoveTagStep external.RemoveTagStep
+	externalapiRemoveTagStep.ID = external.StepId(source.ID)
+	externalapiRemoveTagStep.Type = removeTagStepType(source.Type)
+	externalapiRemoveTagStep.Tag = source.Tag
+	return externalapiRemoveTagStep
 }
 func (c *ConverterImpl) RuleActionStatusToResource(source rules.Outcome) external.RuleActionStatus {
 	var externalapiRuleActionStatus external.RuleActionStatus
@@ -1550,6 +1528,15 @@ func (c *ConverterImpl) SmsOptOutToResource(source *confirmations.SMSOptOut) ext
 	}
 	return externalapiSmsOptOut
 }
+func (c *ConverterImpl) SmsStepToResource(source automations.SMSView) external.SmsStep {
+	var externalapiSmsStep external.SmsStep
+	externalapiSmsStep.ID = external.StepId(source.ID)
+	externalapiSmsStep.Type = smsStepType(source.Type)
+	externalapiSmsStep.Text = source.Text
+	externalapiSmsStep.LinkTracking = source.LinkTracking
+	externalapiSmsStep.IntegrationId = optEntityID(source.IntegrationID)
+	return externalapiSmsStep
+}
 func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) external.SmtpConfig {
 	var externalapiSmtpConfig external.SmtpConfig
 	externalapiSmtpConfig.Kind = smtpConfigKind(source)
@@ -1694,6 +1681,23 @@ func (c *ConverterImpl) TelegramConfigToResource(source integrations.RedactedTel
 	externalapiTelegramConfig.Username = source.Username
 	return externalapiTelegramConfig
 }
+func (c *ConverterImpl) TelegramStepToResource(source automations.TelegramView) external.TelegramStep {
+	var externalapiTelegramStep external.TelegramStep
+	externalapiTelegramStep.ID = external.StepId(source.ID)
+	externalapiTelegramStep.Type = telegramStepType(source.Type)
+	externalapiTelegramStep.Text = source.Text
+	externalapiTelegramStep.UnsubscribeButton = optString(source.UnsubscribeButton)
+	externalapiTelegramStep.ImageUrl = optString(source.ImageURL)
+	if source.Buttons != nil {
+		externalapiTelegramStep.Buttons = make([]external.TelegramButton, len(source.Buttons))
+		for i := 0; i < len(source.Buttons); i++ {
+			externalapiTelegramStep.Buttons[i] = c.TelegramButtonToResource(source.Buttons[i])
+		}
+	}
+	externalapiTelegramStep.LinkPreview = source.LinkPreview
+	externalapiTelegramStep.IntegrationId = optEntityID(source.IntegrationID)
+	return externalapiTelegramStep
+}
 func (c *ConverterImpl) TemplatesListPage(source pagination.Page[*ent.EmailTemplate]) *external.TemplatesListOK {
 	var externalapiTemplatesListOK external.TemplatesListOK
 	externalapiTemplatesListOK.Items = c.EmailTemplatesToResources(source.Items)
@@ -1830,6 +1834,13 @@ func (c *ConverterImpl) VisitorToExport(source *ent.Visitor) external.ContactExp
 		externalapiContactExportVisitor.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return externalapiContactExportVisitor
+}
+func (c *ConverterImpl) WaitStepToResource(source automations.WaitView) external.WaitStep {
+	var externalapiWaitStep external.WaitStep
+	externalapiWaitStep.ID = external.StepId(source.ID)
+	externalapiWaitStep.Type = waitStepType(source.Type)
+	externalapiWaitStep.Seconds = count(source.Seconds)
+	return externalapiWaitStep
 }
 func (c *ConverterImpl) WebhookDisabledReasonToResource(source webhookendpoint.DisabledReason) external.WebhookDisabledReason {
 	var externalapiWebhookDisabledReason external.WebhookDisabledReason

@@ -15,11 +15,8 @@ import (
 )
 
 // emailStepVia is an email step through the Integration id names; an unset one is the default.
-func emailStepVia(id externalapi.OptNilEntityId) externalapi.AutomationStepInput {
-	return externalapi.AutomationStepInput{
-		Type: externalapi.AutomationStepTypeEmail, Subject: externalapi.NewOptString("Hi"),
-		Body: externalapi.NewOptString("<p>Hi</p>"), IntegrationId: id,
-	}
+func emailStepVia(id externalapi.OptNilEntityId) externalapi.EmailStepInput {
+	return externalapi.EmailStepInput{Subject: "Hi", Body: externalapi.NewOptString("<p>Hi</p>"), IntegrationId: id}
 }
 
 // /api names the Integration of each send step like /site does: saved with the step, read back on
@@ -32,21 +29,21 @@ func TestExternalAutomationStepsNameTheirIntegration(t *testing.T) {
 
 	res, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name: "Onboarding", TriggerEvent: "signup",
-		Steps: []externalapi.AutomationStepInput{emailStepVia(mailgun), emailStepVia(externalapi.OptNilEntityId{})},
+		Steps: testhelper.ExternalPathEdit(emailStepVia(mailgun), emailStepVia(externalapi.OptNilEntityId{})),
 	})
 	require.NoError(t, err)
-	steps := res.Draft.Value.Steps
+	steps := res.Draft.Value.Steps.Steps
 
 	bad := externalapi.NewOptNilEntityId(entityIDString(fixtures.IntegrationGlobexID)) // another Workspace's
 	_, refusedCreate := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
-		Name: "x", TriggerEvent: "signup", Steps: []externalapi.AutomationStepInput{emailStepVia(bad)},
+		Name: "x", TriggerEvent: "signup", Steps: testhelper.ExternalPathEdit(emailStepVia(bad)),
 	})
-	_, refusedUpdate := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: []externalapi.AutomationStepInput{emailStepVia(bad)}},
+	_, refusedUpdate := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: testhelper.ExternalPathEdit(emailStepVia(bad))},
 		externalapi.AutomationsUpdateParams{ID: res.ID})
 
 	require.Len(t, steps, 2)
-	assert.EqualValues(t, fixtures.IntegrationAcmeMailgunID, steps[0].IntegrationId.Or(0), "the first step through the relay")
-	assert.False(t, steps[1].IntegrationId.Set, "the second step names none: the default")
+	assert.EqualValues(t, fixtures.IntegrationAcmeMailgunID, steps[0].OneOf.EmailStep.IntegrationId.Or(0), "the first step through the relay")
+	assert.False(t, steps[1].OneOf.EmailStep.IntegrationId.Set, "the second step names none: the default")
 	testhelper.ExternalRefusal(t, refusedCreate, http.StatusUnprocessableEntity)
 	testhelper.ExternalRefusal(t, refusedUpdate, http.StatusUnprocessableEntity)
 }

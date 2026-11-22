@@ -11,7 +11,7 @@ import {
 import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { Route as settingsRoute } from '../../routes/workspaces/$workspaceId/settings/index.tsx'
-import { testId } from '../../test/payloads.ts'
+import { stepId, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -35,7 +35,13 @@ const WELCOME: SiteAutomationResource = {
   id: testId(1),
   name: 'Welcome flow',
   status: 'active',
-  live: { number: 1, triggerEvent: 'contact.created', exitEvents: [], goalEvent: null, steps: [] },
+  live: {
+    number: 1,
+    triggerEvent: 'contact.created',
+    exitEvents: [],
+    goalEvent: null,
+    steps: { id: stepId(1), steps: [] },
+  },
   draft: null,
   revenue: { reportingCurrency: 'USD', orders: 2, amount: 9900 },
   createdAt: NOW,
@@ -47,7 +53,13 @@ const NURTURE: SiteAutomationResource = {
   name: 'Nurture flow',
   status: 'inactive',
   live: null,
-  draft: { number: 1, triggerEvent: 'email.opened', exitEvents: [], goalEvent: null, steps: [] },
+  draft: {
+    number: 1,
+    triggerEvent: 'email.opened',
+    exitEvents: [],
+    goalEvent: null,
+    steps: { id: stepId(1), steps: [] },
+  },
   revenue: { reportingCurrency: null, orders: 0, amount: 0 },
 }
 

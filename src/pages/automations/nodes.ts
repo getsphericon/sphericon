@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
-import { AutomationStepType, SystemEventAction } from '../../generated/site/types.gen.ts'
+import { SystemEventAction } from '../../generated/site/types.gen.ts'
 import { zSigningSecret } from '../../generated/site/zod.gen.ts'
 import {
   CONTACT_CHANGE_ACTIONS,
@@ -16,12 +16,12 @@ import {
 import { HTTP_BODY_FORMAT, HTTP_HEADERS_FORMAT } from './httpFormat.ts'
 import { integrationFormat } from './integrationFormat.ts'
 import { MESSAGE_FORMAT } from './messageFormat.ts'
-import type { NodeProperties } from './nodeProperties.ts'
+import type { NodeProperties, StepKind } from './nodeProperties.ts'
 import { SMS_TEXT_FORMAT } from './smsFormat.ts'
 import { TELEGRAM_TEXT_FORMAT } from './telegramFormat.ts'
 import { EXIT_EVENTS_FORMAT, GOAL_EVENT_FORMAT, TRIGGER_EVENT_FORMAT } from './triggerFormat.ts'
 
-// The palette `type` of a Step's node is its AutomationStepType, stored on `node.data.type`
+// The palette `type` of a Step's node is its Step's kind (StepKind), stored on `node.data.type`
 // and read by the graph ↔ definition converters to tell the steps apart.
 // The Trigger is not a Step: it is the canvas's start node and is saved as the automation's
 // trigger event, never in the steps.
@@ -67,10 +67,12 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         description: t(($) => $.automations.triggerHint),
         // The exit events are held one per line and the goal event as text ('' for none): the
         // SDK's schema has no list of strings.
+        // pathId is the id of the root path the steps hang from, '' until the server gives one.
         defaultPropertiesData: {
           triggerEvent: DEFAULT_TRIGGER_EVENT,
           exitEvents: '',
           goalEvent: '',
+          pathId: '',
         },
         schema: {
           type: 'object',
@@ -104,7 +106,7 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         } satisfies UISchema,
       },
       {
-        type: AutomationStepType.EMAIL,
+        type: 'email' satisfies StepKind,
         icon: EMAIL_NODE_ICON,
         label: t(($) => $.automations.stepEmail),
         description: t(($) => $.automations.emailNodeDescription),
@@ -161,7 +163,7 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         } satisfies UISchema,
       },
       {
-        type: AutomationStepType.TELEGRAM,
+        type: 'telegram' satisfies StepKind,
         icon: TELEGRAM_NODE_ICON,
         label: t(($) => $.automations.stepTelegram),
         description: t(($) => $.automations.telegramNodeDescription),
@@ -215,7 +217,7 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         } satisfies UISchema,
       },
       {
-        type: AutomationStepType.SMS,
+        type: 'sms' satisfies StepKind,
         icon: SMS_NODE_ICON,
         label: t(($) => $.automations.stepSms),
         description: t(($) => $.automations.smsNodeDescription),
@@ -264,7 +266,7 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         } satisfies UISchema,
       },
       {
-        type: AutomationStepType.WAIT,
+        type: 'wait' satisfies StepKind,
         icon: WAIT_NODE_ICON,
         label: t(($) => $.automations.stepWait),
         description: t(($) => $.automations.waitNodeDescription),
@@ -295,12 +297,12 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         } satisfies UISchema,
       },
       {
-        type: AutomationStepType.HTTP,
+        type: 'http' satisfies StepKind,
         icon: HTTP_NODE_ICON,
         label: t(($) => $.automations.stepHttp),
         description: t(($) => $.automations.httpNodeDescription),
         defaultPropertiesData: {
-          stepId: '',
+          stored: '',
           url: '',
           headers: '[]',
           body: '{}',
@@ -361,12 +363,12 @@ export function useAutomationNodeTypes(): PaletteItem[] {
       },
       ...[
         {
-          type: AutomationStepType.APPLY_TAG,
+          type: 'apply_tag' satisfies StepKind,
           label: t(($) => $.automations.stepApplyTag),
           description: t(($) => $.automations.applyTagNodeDescription),
         },
         {
-          type: AutomationStepType.REMOVE_TAG,
+          type: 'remove_tag' satisfies StepKind,
           label: t(($) => $.automations.stepRemoveTag),
           description: t(($) => $.automations.removeTagNodeDescription),
         },

@@ -7376,8 +7376,7 @@ type AutomationVersionMutation struct {
 	updated_at        *time.Time
 	version           *int
 	addversion        *int
-	steps             *[]automationstep.Step
-	appendsteps       []automationstep.Step
+	steps             *automationstep.Path
 	trigger_event     *string
 	exit_events       *[]string
 	appendexit_events []string
@@ -7700,13 +7699,12 @@ func (m *AutomationVersionMutation) ResetVersion() {
 }
 
 // SetSteps sets the "steps" field.
-func (m *AutomationVersionMutation) SetSteps(a []automationstep.Step) {
+func (m *AutomationVersionMutation) SetSteps(a automationstep.Path) {
 	m.steps = &a
-	m.appendsteps = nil
 }
 
 // Steps returns the value of the "steps" field in the mutation.
-func (m *AutomationVersionMutation) Steps() (r []automationstep.Step, exists bool) {
+func (m *AutomationVersionMutation) Steps() (r automationstep.Path, exists bool) {
 	v := m.steps
 	if v == nil {
 		return
@@ -7717,7 +7715,7 @@ func (m *AutomationVersionMutation) Steps() (r []automationstep.Step, exists boo
 // OldSteps returns the old "steps" field's value of the AutomationVersion entity.
 // If the AutomationVersion object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AutomationVersionMutation) OldSteps(ctx context.Context) (v []automationstep.Step, err error) {
+func (m *AutomationVersionMutation) OldSteps(ctx context.Context) (v automationstep.Path, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldSteps is only allowed on UpdateOne operations")
 	}
@@ -7731,23 +7729,9 @@ func (m *AutomationVersionMutation) OldSteps(ctx context.Context) (v []automatio
 	return oldValue.Steps, nil
 }
 
-// AppendSteps adds a to the "steps" field.
-func (m *AutomationVersionMutation) AppendSteps(a []automationstep.Step) {
-	m.appendsteps = append(m.appendsteps, a...)
-}
-
-// AppendedSteps returns the list of values that were appended to the "steps" field in this mutation.
-func (m *AutomationVersionMutation) AppendedSteps() ([]automationstep.Step, bool) {
-	if len(m.appendsteps) == 0 {
-		return nil, false
-	}
-	return m.appendsteps, true
-}
-
 // ResetSteps resets all changes to the "steps" field.
 func (m *AutomationVersionMutation) ResetSteps() {
 	m.steps = nil
-	m.appendsteps = nil
 }
 
 // SetTriggerEvent sets the "trigger_event" field.
@@ -8154,7 +8138,7 @@ func (m *AutomationVersionMutation) SetField(name string, value ent.Value) error
 		m.SetVersion(v)
 		return nil
 	case automationversion.FieldSteps:
-		v, ok := value.([]automationstep.Step)
+		v, ok := value.(automationstep.Path)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

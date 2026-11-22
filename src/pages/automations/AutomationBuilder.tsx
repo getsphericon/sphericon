@@ -34,7 +34,6 @@ import { ChangedNotice } from '../../editing/ChangedNotice.tsx'
 import { useEditorEffects } from '../../editing/useEditorEffects.ts'
 import { useEditorSession } from '../../editing/useEditorSession.ts'
 import { siteAutomationsGetQueryKey } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { AutomationStepType } from '../../generated/site/types.gen.ts'
 import type { SiteAutomationResource, AutomationVersion } from '../../generated/site/types.gen.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
@@ -51,6 +50,7 @@ import {
 } from './integrationRenderer.ts'
 import { LeaveGuard } from './LeaveGuard.tsx'
 import { messageRenderer } from './messageRenderer.ts'
+import type { StepKind } from './nodeProperties.ts'
 import { useAutomationNodeTypes } from './nodes.ts'
 import { smsTextRenderer } from './smsRenderer.ts'
 import { telegramTextRenderer } from './telegramRenderer.ts'
@@ -242,7 +242,7 @@ function BuilderBar({
 // the canvas holds an email step, saved or not: Publish is refused until the Workspace has one.
 function CanvasPostalAddressNotice({ workspaceId }: { workspaceId: string }) {
   const sendsEmail = useStore((state) =>
-    state.nodes.some((node) => node.data.type === AutomationStepType.EMAIL),
+    state.nodes.some((node) => node.data.type === ('email' satisfies StepKind)),
   )
   return sendsEmail ? <PostalAddressNotice workspaceId={workspaceId} /> : null
 }

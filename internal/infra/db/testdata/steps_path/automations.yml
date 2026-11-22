@@ -1,0 +1,18 @@
+# An Automation with a live version and a draft, and one with no steps yet.
+- id: 1
+  revision: 1
+  name: Welcome
+  status: active
+  live_version_id: 1
+  draft_version_id: 2
+  workspace_id: 1
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 2
+  revision: 1
+  name: Empty
+  status: inactive
+  draft_version_id: 3
+  workspace_id: 1
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

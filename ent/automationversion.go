@@ -32,7 +32,7 @@ type AutomationVersion struct {
 	// Version holds the value of the "version" field.
 	Version int `json:"version,omitempty"`
 	// Steps holds the value of the "steps" field.
-	Steps []automationstep.Step `json:"steps,omitempty"`
+	Steps automationstep.Path `json:"steps,omitempty"`
 	// TriggerEvent holds the value of the "trigger_event" field.
 	TriggerEvent string `json:"trigger_event,omitempty"`
 	// ExitEvents holds the value of the "exit_events" field.

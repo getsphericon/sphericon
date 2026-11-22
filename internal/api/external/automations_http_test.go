@@ -21,20 +21,21 @@ func TestExternalHTTPStepIsMaskedOnRead(t *testing.T) {
 
 	res, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name: "Notify", TriggerEvent: "signup",
-		Steps: []externalapi.AutomationStepInput{{
-			Type: externalapi.AutomationStepTypeHTTP, Body: externalapi.NewOptString(`{"a":1}`),
+		Steps: testhelper.ExternalPathEdit(externalapi.HttpStepInput{
+			Body:    `{"a":1}`,
 			URL:     externalapi.NewOptString("https://hooks.example.com/SECRETPATH"),
 			Headers: []externalapi.AutomationHttpHeaderInput{{Name: "X-Key", Value: externalapi.NewOptString("hunter2")}},
 			Secret:  externalapi.NewOptSigningSecret(externalapi.SigningSecret(testhelper.SigningSecret("http"))),
-		}},
+		}),
 	})
 	require.NoError(t, err)
-	step := res.Draft.Value.Steps[0]
-	assert.True(t, step.HasSecret.Or(false))
-	assert.False(t, step.URL.Set)
-	assert.False(t, step.Secret.Set)
+	step := res.Draft.Value.Steps.Steps[0].OneOf.HttpStep
+	assert.True(t, step.HasSecret)
 	require.Len(t, step.Headers, 1)
 	assert.False(t, step.Headers[0].Value.Set)
+	read := testhelper.JSONOf(t, &res.Draft.Value.Steps)
+	assert.NotContains(t, read, "SECRETPATH", "the URL is never returned")
+	assert.NotContains(t, read, "hunter2", "a header value is never returned")
 }
 
 func TestExternalHTTPStepDryRunNeedsAutomationsWriteAndContactsRead(t *testing.T) {

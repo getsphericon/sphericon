@@ -23,7 +23,7 @@ type AutomationVersion struct {
 func (AutomationVersion) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entsql.Annotation{Table: "automation_versions", Checks: map[string]string{
-			"automation_versions_steps_check": jsonCheck("steps", "array"),
+			"automation_versions_steps_check": stepsCheck("steps"),
 		}},
 	}
 }
@@ -40,14 +40,15 @@ func (AutomationVersion) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		// The steps (automationstep.Step), a jsonb array (ADR 0169): [{"type":"email","subject":..,"body":<html>,"integrationId":N},
-		// {"type":"wait","seconds":N}]. A send step's integrationId is the Integration it sends
-		// through, absent for its Channel's default (ADR 0081). Sensitive: HTTP steps carry sealed URL, header
-		// values and secret (ADR 0039). The version is not audited itself: the Automation's own
-		// entries say it was archived or restored.
-		field.JSON("steps", []automationstep.Step{}).
-			Default([]automationstep.Step{}).
-			Annotations(Sensitive{}, entsql.Default("[]")),
+		// The steps (automationstep.Path), a jsonb object (ADR 0169): the root path of Steps
+		// (ADR 0122) with the id every version keeps, {"id":<uuid>,"steps":[{"id":<uuid>,
+		// "type":"email","subject":..,"body":<html>,"integrationId":N},{"id":<uuid>,"type":"wait",
+		// "seconds":N}]}. A send step's integrationId is the Integration it sends through, absent for
+		// its Channel's default (ADR 0081). Every version is written with its steps, so the column has
+		// no default. Sensitive: HTTP steps carry sealed URL, header values and secret (ADR 0039). The
+		// version is not audited itself: the Automation's own entries say it was archived or restored.
+		field.JSON("steps", automationstep.Path{}).
+			Annotations(Sensitive{}),
 		// The Event.action that enrolls a contact (e.g. "contact.created", "email.opened", a
 		// custom collect event).
 		field.String("trigger_event"),

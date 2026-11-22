@@ -45,7 +45,11 @@ func (m *StepExecution) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in Execu
 		return httpcall.Execution{}, err
 	}
 	st, ok := automationstep.At(version.Steps, step)
-	if !ok || st.Type != automationstep.HTTP {
+	if !ok {
+		return httpcall.Execution{}, nil
+	}
+	call, ok := st.Payload.(automationstep.HTTP)
+	if !ok {
 		return httpcall.Execution{}, nil
 	}
 	c, err := s.Contact().Get(ctx, run.ContactID)
@@ -55,11 +59,11 @@ func (m *StepExecution) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in Execu
 	if err != nil {
 		return httpcall.Execution{}, err
 	}
-	opened, err := openHTTP(m.cipher, *st)
+	opened, err := openHTTP(m.cipher, call)
 	if err != nil {
 		return httpcall.Execution{}, err
 	}
-	body, err := renderBody(st.Body, c, run)
+	body, err := renderBody(call.Body, c, run)
 	if err != nil {
 		return m.failHTTP(ctx, s, run.ID, failure{Kind: automationrun.FailureKindInvalidBody}, httpcall.Execution{Cancel: err})
 	}

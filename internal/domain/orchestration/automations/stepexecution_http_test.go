@@ -167,9 +167,10 @@ func TestHTTPExecutionCancelsAnInvalidRenderedBody(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	version, err := s.AutomationVersion().Get(t.Context(), fixtures.AutomationHTTPExecutionVersionID)
 	require.NoError(t, err)
-	steps := version.Steps
-	steps[0].Body = `{"n": {{ first_name | default: 1 }}}`
-	err = s.AutomationVersion().UpdateOneID(version.ID).SetSteps(steps).Exec(t.Context())
+	call := version.Steps.Steps[0].Payload.(automationstep.HTTP)
+	call.Body = `{"n": {{ first_name | default: 1 }}}`
+	version.Steps.Steps[0].Payload = call
+	err = s.AutomationVersion().UpdateOneID(version.ID).SetSteps(version.Steps).Exec(t.Context())
 	require.NoError(t, err)
 	runID := int64(fixtures.AutomationRunHTTPPendingID)
 
@@ -193,8 +194,8 @@ func TestHTTPExecutionKeepsTheEnrollmentsPinnedVersionAfterPublish(t *testing.T)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	runID := int64(fixtures.AutomationRunHTTPPendingID)
 	a := testhelper.Module[*automations.Module](env)
-	steps := []automationstep.Step{{Type: automationstep.ApplyTag, Tag: "replaced-http"}}
-	_, err := a.Update(t.Context(), s, fixtures.AutomationHTTPExecutionID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHTTPExecutionID), Steps: &steps})
+	replaced := steps(automationstep.ApplyTag{Tag: "replaced-http"})
+	_, err := a.Update(t.Context(), s, fixtures.AutomationHTTPExecutionID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHTTPExecutionID), Steps: replaced})
 	require.NoError(t, err)
 	_, err = a.Publish(t.Context(), s, fixtures.AutomationHTTPExecutionID, testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHTTPExecutionID))
 	require.NoError(t, err)

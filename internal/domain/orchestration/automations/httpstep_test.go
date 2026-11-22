@@ -26,12 +26,13 @@ var stepSecret = testhelper.SigningSecret("step")
 const slackBody = `{"text": "New signup: {{ first_name }} {{ last_name }}", "email": "{{ email }}"}`
 
 // openStored decrypts a stored HTTP step's URL, header values and secret, as its call opens them.
-func openStored(cipher *secrets.Cipher, s automationstep.Step) (httpcall.Opened, error) {
+func openStored(cipher *secrets.Cipher, p automationstep.Payload) (httpcall.Opened, error) {
+	s := p.(automationstep.HTTP)
 	return httpcall.Open(cipher, httpcall.Spec{URL: s.URL, Headers: s.Headers, Secret: s.Secret})
 }
 
-func httpStep(url string) automationstep.Step {
-	return automationstep.Step{Type: automationstep.HTTP, URL: url, Body: slackBody}
+func httpStep(url string) automationstep.HTTP {
+	return automationstep.HTTP{URL: url, Body: slackBody}
 }
 
 // Fixtures: Babel's Contact with quotes in both names, the last one an attempt to add a key.
@@ -92,7 +93,7 @@ func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 	bigBody.Body = `{"a":"` + strings.Repeat("a", 64<<10) + `"}`
 	notHTTP := httpStep("ftp://hooks.example.com/x")
 	noURL := httpStep("")
-	tooMany := make([]automationstep.Step, 11)
+	tooMany := make([]automationstep.Payload, 11)
 	for i := range tooMany {
 		tooMany[i] = httpStep("https://hooks.example.com/x")
 	}
@@ -103,7 +104,7 @@ func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 	notBase64 := httpStep("https://hooks.example.com/x")
 	notBase64.Secret = "whsec_not base64"
 
-	for name, steps := range map[string][]automationstep.Step{
+	for name, refused := range map[string][]automationstep.Payload{
 		"invalid json":      {invalidJSON},
 		"url over 2 KiB":    {longURL},
 		"body over 64 KiB":  {bigBody},
@@ -114,18 +115,18 @@ func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 		"an empty secret":   {emptySecret},
 		"a secret no key":   {notBase64},
 	} {
-		_, err := m.Create(ctx, acme, automations.CreateInput{Name: name, TriggerEvent: "signup", Steps: steps})
+		_, err := m.Create(ctx, acme, automations.CreateInput{Name: name, TriggerEvent: "signup", Steps: steps(refused...)})
 		require.ErrorIs(t, err, automations.ErrInvalidStep, name)
 	}
 
 	five := httpStep("https://hooks.example.com/x")
 	five.Headers = headers(5)
-	ten := make([]automationstep.Step, 10)
+	ten := make([]automationstep.Payload, 10)
 	for i := range ten {
 		ten[i] = httpStep("https://hooks.example.com/x")
 	}
-	for name, steps := range map[string][]automationstep.Step{"five headers": {five}, "ten steps": ten} {
-		_, err := m.Create(ctx, acme, automations.CreateInput{Name: name, TriggerEvent: "signup", Steps: steps})
+	for name, kept := range map[string][]automationstep.Payload{"five headers": {five}, "ten steps": ten} {
+		_, err := m.Create(ctx, acme, automations.CreateInput{Name: name, TriggerEvent: "signup", Steps: steps(kept...)})
 		assert.NoError(t, err, name)
 	}
 }
@@ -143,7 +144,7 @@ func TestFixtureHTTPStepOpensAndItsBodyRenders(t *testing.T) {
 	assert.Equal(t, "https://hooks.slack.com/services/T000/B000/XXXX", opened.URL)
 	assert.Equal(t, "Bearer slack-demo-token", opened.Headers["Authorization"])
 
-	res, err := m.DryRun(context.Background(), acme, fixtures.ContactAliceID, steps[0].Body)
+	res, err := m.DryRun(context.Background(), acme, fixtures.ContactAliceID, steps[0].(automationstep.HTTP).Body)
 	require.NoError(t, err)
 	assert.JSONEq(t, `{"text": "New signup: Alice Smith"}`, res.Body)
 }
@@ -158,51 +159,66 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	step.Headers = []httpheader.Header{{Name: "Authorization", Value: "Bearer hunter2"}}
 	step.Secret = stepSecret
 	created, err := m.Create(ctx, acme, automations.CreateInput{
-		Name: "Notify", TriggerEvent: "signup", Steps: []automationstep.Step{{Type: automationstep.Wait, Seconds: 1}, step},
+		Name: "Notify", TriggerEvent: "signup", Steps: steps(automationstep.Wait{Seconds: 1}, step),
 	})
 	require.NoError(t, err)
 	for _, secret := range []string{"SECRETPATH", "hunter2", stepSecret} {
-		assert.NotContains(t, created.Edges.DraftVersion.Steps, secret)
+		assert.NotContains(t, testhelper.Document(t, created.Edges.DraftVersion.Steps), secret)
 	}
 
-	stored := draftSteps(t, created)
-	require.NotEmpty(t, stored[1].ID, "a new HTTP step gets an id")
+	_, draft := automations.LiveAndDraft(created)
+	id := pathOf(t, draft).Steps[1].ID
+	stored := draftSteps(t, created)[1].(automationstep.HTTP)
+	require.NotEmpty(t, id, "a new HTTP step gets an id")
 
 	// An edit that resends only the id, with a new body, keeps URL, headers and secret.
-	edit := automationstep.Step{
-		Type: automationstep.HTTP, ID: stored[1].ID, Body: `{"edited":true}`,
-		Headers: []httpheader.Header{{Name: "Authorization"}},
-	}
-	updated, err := m.Update(ctx, acme, created.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, created.ID), Steps: &[]automationstep.Step{edit}})
+	edit := automationstep.Step{ID: id, Payload: automationstep.HTTP{
+		Body: `{"edited":true}`, Headers: []httpheader.Header{{Name: "Authorization"}},
+	}}
+	updated, err := m.Update(ctx, acme, created.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, created.ID), Steps: new(automationstep.Root(edit))})
 	require.NoError(t, err)
-	after := draftSteps(t, updated)
-	assert.Equal(t, stored[1].URL, after[0].URL, "the stored ciphertext is copied, not re-sealed")
-	assert.Equal(t, stored[1].Secret, after[0].Secret)
-	assert.Equal(t, stored[1].Headers, after[0].Headers)
-	assert.Equal(t, `{"edited":true}`, after[0].Body)
+	after := draftSteps(t, updated)[0].(automationstep.HTTP)
+	assert.Equal(t, stored.URL, after.URL, "the stored ciphertext is copied, not re-sealed")
+	assert.Equal(t, stored.Secret, after.Secret)
+	assert.Equal(t, stored.Headers, after.Headers)
+	assert.Equal(t, `{"edited":true}`, after.Body)
 
-	opened, err := openStored(env.Cipher, after[0])
+	opened, err := openStored(env.Cipher, after)
 	require.NoError(t, err)
 	assert.Equal(t, "https://hooks.slack.com/services/T000/SECRETPATH", opened.URL)
 	assert.Equal(t, map[string]string{"Authorization": "Bearer hunter2"}, opened.Headers)
 	assert.Equal(t, stepSecret, opened.Secret)
 
 	// A new URL, header and a cleared secret replace what was stored.
-	replace := automationstep.Step{
-		Type: automationstep.HTTP, ID: stored[1].ID, URL: "https://hooks.zapier.com/a", Body: slackBody,
-		Headers: []httpheader.Header{{Name: "X-Key", Value: "k"}}, ClearSecret: true,
-	}
-	updated, err = m.Update(ctx, acme, created.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, created.ID), Steps: &[]automationstep.Step{replace}})
+	replace := automationstep.Step{ID: id, Payload: automationstep.HTTP{
+		URL: "https://hooks.zapier.com/a", Body: slackBody, Headers: []httpheader.Header{{Name: "X-Key", Value: "k"}}, ClearSecret: true,
+	}}
+	updated, err = m.Update(ctx, acme, created.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, created.ID), Steps: new(automationstep.Root(replace))})
 	require.NoError(t, err)
-	after = draftSteps(t, updated)
-	opened, err = openStored(env.Cipher, after[0])
+	opened, err = openStored(env.Cipher, draftSteps(t, updated)[0])
 	require.NoError(t, err)
 	assert.Equal(t, "https://hooks.zapier.com/a", opened.URL)
 	assert.Equal(t, map[string]string{"X-Key": "k"}, opened.Headers)
 	assert.Empty(t, opened.Secret)
 
 	// A header with no stored value to keep is refused.
-	bad := automationstep.Step{Type: automationstep.HTTP, ID: stored[1].ID, Body: slackBody, Headers: []httpheader.Header{{Name: "Nope"}}}
-	_, err = m.Update(ctx, acme, created.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, created.ID), Steps: &[]automationstep.Step{bad}})
+	bad := automationstep.Step{ID: id, Payload: automationstep.HTTP{Body: slackBody, Headers: []httpheader.Header{{Name: "Nope"}}}}
+	_, err = m.Update(ctx, acme, created.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, created.ID), Steps: new(automationstep.Root(bad))})
 	assert.ErrorIs(t, err, automations.ErrInvalidStep)
+}
+
+// An HTTP step sent with an id the stored steps do not hold is a new step: it keeps no secret of
+// another step, so a new step without a URL is refused (ADR 0122: secrets are matched by Step id).
+func TestAnHTTPStepWithAnUnknownIDKeepsNoStoredSecret(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := testhelper.Module[*automations.Module](env)
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	ctx := context.Background()
+	created, err := m.Create(ctx, acme, automations.CreateInput{Name: "Notify", TriggerEvent: "signup", Steps: steps(httpStep("https://hooks.example.com/x"))})
+	require.NoError(t, err)
+
+	other := automationstep.Step{ID: automationstep.NewID(), Payload: automationstep.HTTP{Body: slackBody}}
+	_, err = m.Update(ctx, acme, created.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, created.ID), Steps: new(automationstep.Root(other))})
+
+	require.ErrorIs(t, err, automations.ErrInvalidStep)
 }

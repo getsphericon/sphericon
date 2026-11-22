@@ -31,9 +31,7 @@ func TestSiteAutomationsErrorBranches(t *testing.T) {
 
 		before, err := env.DB.Automation.Query().Count(ctx)
 		require.NoError(t, err)
-		bad := &siteapi.CreateAutomationInput{Name: "x", TriggerEvent: systemevent.ContactCreated, Steps: []siteapi.AutomationStepInput{
-			{Type: siteapi.AutomationStepTypeApplyTag},
-		}}
+		bad := &siteapi.CreateAutomationInput{Name: "x", TriggerEvent: systemevent.ContactCreated, Steps: testhelper.SitePathEdit(siteapi.ApplyTagStepInput{Tag: "  "})}
 		_, err = c.SiteAutomationsCreate(ctx, bad, siteapi.SiteAutomationsCreateParams{WorkspaceId: acme})
 		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity, "a tag step without a tag is invalid")
 		after, err := env.DB.Automation.Query().Count(ctx)
@@ -62,22 +60,18 @@ func TestSiteAutomationsErrorBranches(t *testing.T) {
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
 		_, err = c.SiteAutomationsUpdate(ctx, rename, siteapi.SiteAutomationsUpdateParams{WorkspaceId: acme, ID: missing})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
-		_, err = c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(known))), Steps: []siteapi.AutomationStepInput{
-			{Type: siteapi.AutomationStepTypeRemoveTag},
-		}}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: acme, ID: known})
+		_, err = c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(known))), Steps: testhelper.SitePathEdit(siteapi.RemoveTagStepInput{Tag: "  "})}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: acme, ID: known})
 		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
 		// Valid step edit round-trips.
 		r5, err := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(known))),
-			Name: siteapi.NewOptName("Renamed"),
-			Steps: []siteapi.AutomationStepInput{
-				{Type: siteapi.AutomationStepTypeWait, Seconds: siteapi.NewOptInt32(60)},
-			},
+			Name:  siteapi.NewOptName("Renamed"),
+			Steps: testhelper.SitePathEdit(siteapi.WaitStepInput{Seconds: 60}),
 		}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: acme, ID: known})
 		require.NoError(t, err)
 		upd := r5
 		assert.Equal(t, "Renamed", upd.Name)
-		require.Len(t, upd.Draft.Value.Steps, 1)
+		require.Len(t, upd.Draft.Value.Steps.Steps, 1)
 		stored, err := env.DB.Automation.Get(ctx, fixtures.AutomationWelcomeSeriesID)
 		require.NoError(t, err)
 		assert.Equal(t, "Renamed", stored.Name)

@@ -103,3 +103,6 @@ export function emailIntegration(
 // and the number padded with zeros, so a test reads which row it names, the generated schemas
 // accept it, and, never all digits like a real id, the router keeps it a string.
 export const testId = (n: number) => 'test' + String(n).padStart(18, '0')
+
+// A Step's or a path's id: a UUID in its lowercase text form, as the canvas and the server mint them.
+export const stepId = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`

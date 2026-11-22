@@ -41,9 +41,7 @@ func TestSiteRefusesContentThatCannotRender(t *testing.T) {
 
 	_, err = c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
 		Name: "Broken", TriggerEvent: systemevent.ContactCreated,
-		Steps: []siteapi.AutomationStepInput{
-			{Type: siteapi.AutomationStepTypeEmail, Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString("<p>hi</p></div>")},
-		},
+		Steps: testhelper.SitePathEdit(siteapi.EmailStepInput{Subject: "Hi", Body: siteapi.NewOptString("<p>hi</p></div>")}),
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	refusedAutomation := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refusedAutomation.Detail.Or(""), "</div> closes nothing")

@@ -14,7 +14,7 @@ import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
 import { zUpdateAutomationInput } from '../../generated/site/zod.gen.ts'
 import { editorSessionRaces } from '../../test/editorSessionRaces.ts'
 import type { RaceRig } from '../../test/editorSessionRaces.ts'
-import { testId } from '../../test/payloads.ts'
+import { stepId, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { requestGate } from '../../test/requestGate.ts'
 import { worker } from '../../test/worker.ts'
@@ -31,7 +31,7 @@ const DRAFT = {
   triggerEvent: 'email.clicked',
   exitEvents: [],
   goalEvent: null,
-  steps: [],
+  steps: { id: stepId(1), steps: [] },
 }
 const RESOURCE: SiteAutomationResource = {
   revision: 1,
@@ -43,7 +43,7 @@ const RESOURCE: SiteAutomationResource = {
   createdAt: '2026-01-01T00:00:00Z',
   updatedAt: '2026-01-01T00:00:00Z',
 }
-const GRAPH = stepsToGraph(DRAFT, [], {})
+const GRAPH = stepsToGraph(DRAFT, DRAFT.steps, {})
 const sessions = new Set<ActorRefFrom<typeof editorSession>>()
 
 afterEach(() => {
@@ -189,7 +189,7 @@ function withProperties(
   return { ...content, graph: { ...content.graph, nodes } }
 }
 
-test('Save folds the stored HTTP identity into a canvas edited meanwhile, without reloading it', async () => {
+test('Save leaves a canvas edited meanwhile as edited, each node keeping its Step id, without reloading it', async () => {
   const gate = requestGate()
   worker.use(
     handleSiteAutomationsUpdate(async () => {
@@ -198,13 +198,23 @@ test('Save folds the stored HTTP identity into a canvas edited meanwhile, withou
         ...RESOURCE,
         draft: {
           ...DRAFT,
-          steps: [{ type: 'http', id: '01ASSIGNED', body: '{}', hasSecret: false }],
+          steps: {
+            id: stepId(1),
+            steps: [{ type: 'http', id: stepId(7), body: '{}', headers: [], hasSecret: false }],
+          },
         },
       })
     }),
   )
-  const graph = stepsToGraph(DRAFT, [{ type: 'http', body: '{}' }], {})
-  const httpId = graph.nodes[1]?.id ?? ''
+  const graph = stepsToGraph(
+    DRAFT,
+    {
+      id: stepId(1),
+      steps: [{ id: stepId(7), type: 'http', body: '{}', headers: [], hasSecret: false }],
+    },
+    {},
+  )
+  const httpId = stepId(7)
   const canvas = startCanvas(graph)
   canvas.edit((content) => withProperties(content, httpId, { url: 'https://example.com/hook' }))
   canvas.actor.send({ type: 'SAVE', submission: capture(canvas.read()) })
@@ -214,7 +224,7 @@ test('Save folds the stored HTTP identity into a canvas edited meanwhile, withou
   const settled = await waitFor(canvas.actor, (state) => state.matches('idle'))
   const http = canvas.read().graph.nodes[1]
   const current = automationAdapter.fingerprint(canvas.read())
-  expect(http?.data.properties.stepId).toBe('01ASSIGNED')
+  expect(http?.id).toBe(stepId(7))
   expect(http?.data.properties.body).toBe('{"newer":true}')
   expect(current).not.toBe(settled.context.saved)
   expect(settled.context.content.revision).toBe(0)

@@ -34,22 +34,22 @@ func TestExternalAutomationsRead(t *testing.T) {
 	assert.Equal(t, "Welcome series", a.Name)
 	assert.Equal(t, externalapi.AutomationStatusActive, a.Status)
 	live, draft := a.Live.Value, a.Draft.Value
-	require.Len(t, live.Steps, 3)
+	require.Len(t, live.Steps.Steps, 3)
 	assert.EqualValues(t, 1, live.Number)
 	assert.Equal(t, "signup", live.TriggerEvent)
-	assert.Equal(t, "Welcome to CodeBasics", live.Steps[0].Subject.Or(""))
-	assert.Equal(t, externalapi.AutomationStepTypeWait, live.Steps[1].Type)
-	assert.EqualValues(t, 86400, live.Steps[1].Seconds.Or(0))
+	assert.Equal(t, "Welcome to CodeBasics", live.Steps.Steps[0].OneOf.EmailStep.Subject)
+	assert.Equal(t, externalapi.WaitStepAutomationStepSum, live.Steps.Steps[1].OneOf.Type)
+	assert.EqualValues(t, 86400, live.Steps.Steps[1].OneOf.WaitStep.Seconds)
 	assert.EqualValues(t, 2, draft.Number, "the draft is the version above live")
-	assert.Equal(t, "Welcome aboard CodeBasics", draft.Steps[0].Subject.Or(""))
+	assert.Equal(t, "Welcome aboard CodeBasics", draft.Steps.Steps[0].OneOf.EmailStep.Subject)
 
 	tagged, err := c.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: entityIDString(fixtures.AutomationTagOnEngagementID)})
 	require.NoError(t, err)
-	steps := tagged.Live.Value.Steps
+	steps := tagged.Live.Value.Steps.Steps
 	require.Len(t, steps, 2)
-	assert.Equal(t, externalapi.AutomationStepTypeApplyTag, steps[0].Type)
-	assert.Equal(t, "engaged", steps[0].Tag.Or(""))
-	assert.Equal(t, externalapi.AutomationStepTypeRemoveTag, steps[1].Type)
+	assert.Equal(t, externalapi.ApplyTagStepAutomationStepSum, steps[0].OneOf.Type)
+	assert.Equal(t, "engaged", steps[0].OneOf.ApplyTagStep.Tag)
+	assert.Equal(t, externalapi.RemoveTagStepAutomationStepSum, steps[1].OneOf.Type)
 
 	_, err = c.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: 999999})
 	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
@@ -69,34 +69,34 @@ func TestExternalAutomationsCreateUpdateDelete(t *testing.T) {
 	a, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name:         "Tag newcomers",
 		TriggerEvent: "newcomer",
-		Steps: []externalapi.AutomationStepInput{
-			{Type: externalapi.AutomationStepTypeApplyTag, Tag: externalapi.NewOptString("newcomer")},
-			{Type: externalapi.AutomationStepTypeWait, Seconds: externalapi.NewOptInt32(60)},
-		},
+		Steps: testhelper.ExternalPathEdit(
+			externalapi.ApplyTagStepInput{Tag: "newcomer"},
+			externalapi.WaitStepInput{Seconds: 60},
+		),
 	})
 	require.NoError(t, err)
 	assert.Equal(t, externalapi.AutomationStatusInactive, a.Status)
 	assert.True(t, a.Live.Null, "nothing is live until it is published")
-	require.Len(t, a.Draft.Value.Steps, 2)
-	assert.Equal(t, "newcomer", a.Draft.Value.Steps[0].Tag.Or(""))
+	require.Len(t, a.Draft.Value.Steps.Steps, 2)
+	assert.Equal(t, "newcomer", a.Draft.Value.Steps.Steps[0].OneOf.ApplyTagStep.Tag)
 
 	_, err = c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name: "Bad", TriggerEvent: "x",
-		Steps: []externalapi.AutomationStepInput{{Type: externalapi.AutomationStepTypeApplyTag, Tag: externalapi.NewOptString("  ")}},
+		Steps: testhelper.ExternalPathEdit(externalapi.ApplyTagStepInput{Tag: "  "}),
 	})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
 	updated, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(a.ID))),
 		Name:  externalapi.NewOptName("Tag newcomers 2"),
-		Steps: []externalapi.AutomationStepInput{{Type: externalapi.AutomationStepTypeRemoveTag, Tag: externalapi.NewOptString("vip")}},
+		Steps: testhelper.ExternalPathEdit(externalapi.RemoveTagStepInput{Tag: "vip"}),
 	}, externalapi.AutomationsUpdateParams{ID: a.ID})
 	require.NoError(t, err)
 	assert.Equal(t, "Tag newcomers 2", updated.Name)
-	require.Len(t, updated.Draft.Value.Steps, 1)
-	assert.Equal(t, externalapi.AutomationStepTypeRemoveTag, updated.Draft.Value.Steps[0].Type)
+	require.Len(t, updated.Draft.Value.Steps.Steps, 1)
+	assert.Equal(t, externalapi.RemoveTagStepAutomationStepSum, updated.Draft.Value.Steps.Steps[0].OneOf.Type)
 
 	_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(a.ID))),
-		Steps: []externalapi.AutomationStepInput{{Type: externalapi.AutomationStepTypeApplyTag}},
+		Steps: testhelper.ExternalPathEdit(externalapi.WaitStepInput{Seconds: -1}),
 	}, externalapi.AutomationsUpdateParams{ID: a.ID})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 

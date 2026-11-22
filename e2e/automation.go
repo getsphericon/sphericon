@@ -33,11 +33,7 @@ func (w *Workspace) PublishAutomation(a Automation) int64 {
 	res, err := w.api.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name:         externalapi.Name(a.Name),
 		TriggerEvent: a.TriggerEvent,
-		Steps: []externalapi.AutomationStepInput{{
-			Type:    externalapi.AutomationStepTypeEmail,
-			Subject: externalapi.NewOptString(a.Subject),
-			Body:    externalapi.NewOptString(a.Body),
-		}},
+		Steps:        rootPath(emailStep(externalapi.EmailStepInput{Subject: a.Subject, Body: externalapi.NewOptString(a.Body)})),
 	})
 	created := ok[externalapi.AutomationResource](w.t, "create automation", res, err)
 
@@ -73,11 +69,10 @@ func (w *Workspace) PublishAuthoredAutomation(a AuthoredAutomation) {
 	res, err := w.api.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name:         externalapi.Name("e2e authored automation " + uniq()),
 		TriggerEvent: a.TriggerEvent,
-		Steps: []externalapi.AutomationStepInput{{
-			Type:    externalapi.AutomationStepTypeEmail,
-			Subject: externalapi.NewOptString(a.Subject),
+		Steps: rootPath(emailStep(externalapi.EmailStepInput{
+			Subject: a.Subject,
 			Doc:     externalapi.NewOptEditorDocument(docObject[externalapi.EditorDocument](w.t, doc)),
-		}},
+		})),
 	})
 	created := ok[externalapi.AutomationResource](w.t, "create authored automation", res, err)
 	published, err := w.api.AutomationsPublish(ctx, &externalapi.RevisionInput{Revision: created.Revision}, externalapi.AutomationsPublishParams{ID: created.ID})
@@ -102,10 +97,9 @@ type HTTPAutomation struct {
 func (w *Workspace) PublishHTTPAutomation(a HTTPAutomation) {
 	w.t.Helper()
 	ctx := w.t.Context()
-	httpStep := externalapi.AutomationStepInput{
-		Type: externalapi.AutomationStepTypeHTTP,
+	httpStep := externalapi.HttpStepInput{
 		URL:  externalapi.NewOptString(a.Hook.URL),
-		Body: externalapi.NewOptString(a.Body),
+		Body: a.Body,
 	}
 	if a.Hook.Secret != "" {
 		httpStep.Secret = externalapi.NewOptSigningSecret(externalapi.SigningSecret(a.Hook.Secret))
@@ -113,17 +107,27 @@ func (w *Workspace) PublishHTTPAutomation(a HTTPAutomation) {
 	res, err := w.api.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name:         externalapi.Name("e2e http automation " + uniq()),
 		TriggerEvent: a.TriggerEvent,
-		Steps: []externalapi.AutomationStepInput{httpStep, {
-			Type:    externalapi.AutomationStepTypeEmail,
-			Subject: externalapi.NewOptString(a.Subject),
-			Body:    externalapi.NewOptString(a.EmailBody),
-		}},
+		Steps: rootPath(
+			externalapi.AutomationStepInput{OneOf: externalapi.NewHttpStepInputAutomationStepInputSum(httpStep)},
+			emailStep(externalapi.EmailStepInput{Subject: a.Subject, Body: externalapi.NewOptString(a.EmailBody)}),
+		),
 	})
 	created := ok[externalapi.AutomationResource](w.t, "create automation", res, err)
 
 	published, err := w.api.AutomationsPublish(ctx, &externalapi.RevisionInput{Revision: created.Revision}, externalapi.AutomationsPublishParams{ID: created.ID})
 	got := ok[externalapi.AutomationResource](w.t, "publish automation", published, err)
 	require.Equal(w.t, externalapi.AutomationStatusActive, got.Status)
+}
+
+// rootPath is a version's Steps as a write sends them: the root path, its id and theirs left to
+// the server.
+func rootPath(steps ...externalapi.AutomationStepInput) externalapi.OptAutomationPathInput {
+	return externalapi.NewOptAutomationPathInput(externalapi.AutomationPathInput{Steps: steps})
+}
+
+// emailStep is an email step as a member of the Step union.
+func emailStep(st externalapi.EmailStepInput) externalapi.AutomationStepInput {
+	return externalapi.AutomationStepInput{OneOf: externalapi.NewEmailStepInputAutomationStepInputSum(st)}
 }
 
 // RecordEvent records an event for the Contact with the given email through the

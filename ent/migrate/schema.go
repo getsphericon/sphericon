@@ -334,7 +334,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "version", Type: field.TypeInt},
-		{Name: "steps", Type: field.TypeJSON, Default: "[]"},
+		{Name: "steps", Type: field.TypeJSON},
 		{Name: "trigger_event", Type: field.TypeString},
 		{Name: "exit_events", Type: field.TypeJSON, Default: "[]"},
 		{Name: "goal_event", Type: field.TypeString, Nullable: true},
@@ -3471,7 +3471,7 @@ func init() {
 		Table: "automation_versions",
 	}
 	AutomationVersionsTable.Annotation.Checks = map[string]string{
-		"automation_versions_steps_check": "jsonb_typeof(steps) = 'array'",
+		"automation_versions_steps_check": "COALESCE(jsonb_typeof(steps -> 'steps') = 'array', false)",
 	}
 	BindingsTable.ForeignKeys[0].RefTable = ContactsTable
 	BindingsTable.ForeignKeys[1].RefTable = IntegrationsTable

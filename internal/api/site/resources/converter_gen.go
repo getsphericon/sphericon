@@ -49,7 +49,6 @@ import (
 	trackingdomains "github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	messaging "github.com/getsphericon/sphericon/internal/infra/messaging"
 	webhook "github.com/getsphericon/sphericon/internal/infra/webhook"
-	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	deferralcause "github.com/getsphericon/sphericon/internal/kernel/deferralcause"
@@ -222,6 +221,13 @@ func (c *ConverterImpl) AnalyticsSubscribedPeopleToResource(source *analyticsrep
 	}
 	return pSiteapiSiteAnalyticsSubscribedPeople
 }
+func (c *ConverterImpl) ApplyTagStepToResource(source automations.TagView) site.ApplyTagStep {
+	var siteapiApplyTagStep site.ApplyTagStep
+	siteapiApplyTagStep.ID = site.StepId(source.ID)
+	siteapiApplyTagStep.Type = applyTagStepType(source.Type)
+	siteapiApplyTagStep.Tag = source.Tag
+	return siteapiApplyTagStep
+}
 func (c *ConverterImpl) AttentionItemsToResources(source []needsattentionreport.Item) []site.SiteAttentionItem {
 	var siteapiSiteAttentionItemList []site.SiteAttentionItem
 	siteapiSiteAttentionItemList = make([]site.SiteAttentionItem, len(source))
@@ -354,6 +360,12 @@ func (c *ConverterImpl) AutomationHttpHeaderToResource(source automations.Header
 	// siteapiAutomationHttpHeader.Value: ignore
 	return siteapiAutomationHttpHeader
 }
+func (c *ConverterImpl) AutomationPathToResource(source automations.PathView) site.AutomationPath {
+	var siteapiAutomationPath site.AutomationPath
+	siteapiAutomationPath.ID = site.StepId(source.ID)
+	siteapiAutomationPath.Steps = automationStepViews(c, source.Steps)
+	return siteapiAutomationPath
+}
 func (c *ConverterImpl) AutomationPeriodResultsToResource(source automations.PeriodResults) site.AutomationPeriodResults {
 	var siteapiAutomationPeriodResults site.AutomationPeriodResults
 	siteapiAutomationPeriodResults.Entered = count(source.ResultCounts.Entered)
@@ -438,72 +450,6 @@ func (c *ConverterImpl) AutomationStatusToResource(source automation.Status) sit
 	}
 	return siteapiAutomationStatus
 }
-func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) site.AutomationStep {
-	var siteapiAutomationStep site.AutomationStep
-	siteapiAutomationStep.Type = c.AutomationStepTypeToResource(source.Type)
-	siteapiAutomationStep.Subject = optString(source.Subject)
-	siteapiAutomationStep.Body = optString(source.Body)
-	siteapiAutomationStep.Doc = optEditorDocument(source.Doc)
-	siteapiAutomationStep.EditorVersion = optString(source.EditorVersion)
-	siteapiAutomationStep.Seconds = optInt32(source.Seconds)
-	siteapiAutomationStep.Tag = optString(source.Tag)
-	siteapiAutomationStep.ID = optString(source.ID)
-	// siteapiAutomationStep.URL: ignore
-	if source.Headers != nil {
-		siteapiAutomationStep.Headers = make([]site.AutomationHttpHeader, len(source.Headers))
-		for i := 0; i < len(source.Headers); i++ {
-			siteapiAutomationStep.Headers[i] = c.AutomationHttpHeaderToResource(source.Headers[i])
-		}
-	}
-	// siteapiAutomationStep.Secret: ignore
-	// siteapiAutomationStep.ClearSecret: ignore
-	siteapiAutomationStep.HasSecret = optBool(source.HasSecret)
-	siteapiAutomationStep.IntegrationId = optNilEntityID(source.IntegrationID)
-	siteapiAutomationStep.Text = optString(source.Text)
-	siteapiAutomationStep.UnsubscribeButton = optString(source.UnsubscribeButton)
-	siteapiAutomationStep.ImageUrl = optString(source.ImageURL)
-	if source.Buttons != nil {
-		siteapiAutomationStep.Buttons = make([]site.TelegramButton, len(source.Buttons))
-		for j := 0; j < len(source.Buttons); j++ {
-			siteapiAutomationStep.Buttons[j] = c.TelegramButtonToResource(source.Buttons[j])
-		}
-	}
-	siteapiAutomationStep.LinkPreview = optBool(source.LinkPreview)
-	siteapiAutomationStep.LinkTracking = optBool(source.LinkTracking)
-	return siteapiAutomationStep
-}
-func (c *ConverterImpl) AutomationStepTypeToResource(source automationstep.Kind) site.AutomationStepType {
-	var siteapiAutomationStepType site.AutomationStepType
-	switch source {
-	case automationstep.ApplyTag:
-		siteapiAutomationStepType = site.AutomationStepTypeApplyTag
-	case automationstep.Email:
-		siteapiAutomationStepType = site.AutomationStepTypeEmail
-	case automationstep.HTTP:
-		siteapiAutomationStepType = site.AutomationStepTypeHTTP
-	case automationstep.RemoveTag:
-		siteapiAutomationStepType = site.AutomationStepTypeRemoveTag
-	case automationstep.SMS:
-		siteapiAutomationStepType = site.AutomationStepTypeSMS
-	case automationstep.Telegram:
-		siteapiAutomationStepType = site.AutomationStepTypeTelegram
-	case automationstep.Wait:
-		siteapiAutomationStepType = site.AutomationStepTypeWait
-	default:
-		panic(fmt.Sprintf("unexpected enum element: %v", source))
-	}
-	return siteapiAutomationStepType
-}
-func (c *ConverterImpl) AutomationStepsToResources(source []automations.StepView) []site.AutomationStep {
-	var siteapiAutomationStepList []site.AutomationStep
-	if source != nil {
-		siteapiAutomationStepList = make([]site.AutomationStep, len(source))
-		for i := 0; i < len(source); i++ {
-			siteapiAutomationStepList[i] = c.AutomationStepToResource(source[i])
-		}
-	}
-	return siteapiAutomationStepList
-}
 func (c *ConverterImpl) AutomationToResource(source *ent.Automation) site.SiteAutomationResource {
 	var siteapiSiteAutomationResource site.SiteAutomationResource
 	if source != nil {
@@ -532,7 +478,7 @@ func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersio
 			}
 		}
 		siteapiAutomationVersion.GoalEvent = nilString((*source).GoalEvent)
-		siteapiAutomationVersion.Steps = automationSteps(c, (*source).Steps)
+		siteapiAutomationVersion.Steps = automationPath(c, (*source).Steps)
 	}
 	return siteapiAutomationVersion
 }
@@ -1137,6 +1083,17 @@ func (c *ConverterImpl) EmailBroadcastContentToResource(source *ent.Broadcast) s
 	}
 	return siteapiEmailBroadcastContent
 }
+func (c *ConverterImpl) EmailStepToResource(source automations.EmailView) site.EmailStep {
+	var siteapiEmailStep site.EmailStep
+	siteapiEmailStep.ID = site.StepId(source.ID)
+	siteapiEmailStep.Type = emailStepType(source.Type)
+	siteapiEmailStep.Subject = source.Subject
+	siteapiEmailStep.Body = source.Body
+	siteapiEmailStep.Doc = optEditorDocument(source.Doc)
+	siteapiEmailStep.EditorVersion = optString(source.EditorVersion)
+	siteapiEmailStep.IntegrationId = optEntityID(source.IntegrationID)
+	return siteapiEmailStep
+}
 func (c *ConverterImpl) EmailTemplateToResource(source *ent.EmailTemplate) site.SiteEmailTemplateResource {
 	var siteapiSiteEmailTemplateResource site.SiteEmailTemplateResource
 	if source != nil {
@@ -1318,6 +1275,20 @@ func (c *ConverterImpl) HoldsToResources(source []*ent.Hold) []site.SiteWorkspac
 		siteapiSiteWorkspaceHoldList[i] = c.HoldToResource(source[i])
 	}
 	return siteapiSiteWorkspaceHoldList
+}
+func (c *ConverterImpl) HttpStepToResource(source automations.HTTPView) site.HttpStep {
+	var siteapiHttpStep site.HttpStep
+	siteapiHttpStep.ID = site.StepId(source.ID)
+	siteapiHttpStep.Type = httpStepType(source.Type)
+	siteapiHttpStep.Body = source.Body
+	if source.Headers != nil {
+		siteapiHttpStep.Headers = make([]site.AutomationHttpHeader, len(source.Headers))
+		for i := 0; i < len(source.Headers); i++ {
+			siteapiHttpStep.Headers[i] = c.AutomationHttpHeaderToResource(source.Headers[i])
+		}
+	}
+	siteapiHttpStep.HasSecret = source.HasSecret
+	return siteapiHttpStep
 }
 func (c *ConverterImpl) IdentitiesToResources(source []*ent.UserIdentity) []site.SiteLinkedIdentity {
 	var siteapiSiteLinkedIdentityList []site.SiteLinkedIdentity
@@ -1980,6 +1951,13 @@ func (c *ConverterImpl) ProviderLimitWarningToResource(source providerlimit.Warn
 	}
 	return siteapiProviderLimitWarning
 }
+func (c *ConverterImpl) RemoveTagStepToResource(source automations.TagView) site.RemoveTagStep {
+	var siteapiRemoveTagStep site.RemoveTagStep
+	siteapiRemoveTagStep.ID = site.StepId(source.ID)
+	siteapiRemoveTagStep.Type = removeTagStepType(source.Type)
+	siteapiRemoveTagStep.Tag = source.Tag
+	return siteapiRemoveTagStep
+}
 func (c *ConverterImpl) RequiredPermissionsToResource(source map[string]memberships.Permission) site.SiteOAuthAuthorizationRequestRequiredPermissions {
 	var siteapiSiteOAuthAuthorizationRequestRequiredPermissions site.SiteOAuthAuthorizationRequestRequiredPermissions
 	siteapiSiteOAuthAuthorizationRequestRequiredPermissions = make(site.SiteOAuthAuthorizationRequestRequiredPermissions, len(source))
@@ -2398,6 +2376,15 @@ func (c *ConverterImpl) SmsOptOutToResource(source *confirmations.SMSOptOut) sit
 	}
 	return siteapiSmsOptOut
 }
+func (c *ConverterImpl) SmsStepToResource(source automations.SMSView) site.SmsStep {
+	var siteapiSmsStep site.SmsStep
+	siteapiSmsStep.ID = site.StepId(source.ID)
+	siteapiSmsStep.Type = smsStepType(source.Type)
+	siteapiSmsStep.Text = source.Text
+	siteapiSmsStep.LinkTracking = source.LinkTracking
+	siteapiSmsStep.IntegrationId = optEntityID(source.IntegrationID)
+	return siteapiSmsStep
+}
 func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) site.SmtpConfig {
 	var siteapiSmtpConfig site.SmtpConfig
 	siteapiSmtpConfig.Kind = smtpConfigKind(source)
@@ -2560,6 +2547,23 @@ func (c *ConverterImpl) TelegramConfigToResource(source integrations.RedactedTel
 	siteapiTelegramConfig.BotId = source.BotID
 	siteapiTelegramConfig.Username = source.Username
 	return siteapiTelegramConfig
+}
+func (c *ConverterImpl) TelegramStepToResource(source automations.TelegramView) site.TelegramStep {
+	var siteapiTelegramStep site.TelegramStep
+	siteapiTelegramStep.ID = site.StepId(source.ID)
+	siteapiTelegramStep.Type = telegramStepType(source.Type)
+	siteapiTelegramStep.Text = source.Text
+	siteapiTelegramStep.UnsubscribeButton = optString(source.UnsubscribeButton)
+	siteapiTelegramStep.ImageUrl = optString(source.ImageURL)
+	if source.Buttons != nil {
+		siteapiTelegramStep.Buttons = make([]site.TelegramButton, len(source.Buttons))
+		for i := 0; i < len(source.Buttons); i++ {
+			siteapiTelegramStep.Buttons[i] = c.TelegramButtonToResource(source.Buttons[i])
+		}
+	}
+	siteapiTelegramStep.LinkPreview = source.LinkPreview
+	siteapiTelegramStep.IntegrationId = optEntityID(source.IntegrationID)
+	return siteapiTelegramStep
 }
 func (c *ConverterImpl) TemplatesListPage(source pagination.Page[*ent.EmailTemplate]) *site.SiteTemplatesListOK {
 	var siteapiSiteTemplatesListOK site.SiteTemplatesListOK
@@ -2765,6 +2769,13 @@ func (c *ConverterImpl) VisitorToExport(source *ent.Visitor) site.ContactExportV
 		siteapiContactExportVisitor.CreatedAt = timestamp((*source).CreatedAt)
 	}
 	return siteapiContactExportVisitor
+}
+func (c *ConverterImpl) WaitStepToResource(source automations.WaitView) site.WaitStep {
+	var siteapiWaitStep site.WaitStep
+	siteapiWaitStep.ID = site.StepId(source.ID)
+	siteapiWaitStep.Type = waitStepType(source.Type)
+	siteapiWaitStep.Seconds = count(source.Seconds)
+	return siteapiWaitStep
 }
 func (c *ConverterImpl) WebhookDisabledReasonToResource(source webhookendpoint.DisabledReason) site.WebhookDisabledReason {
 	var siteapiWebhookDisabledReason site.WebhookDisabledReason

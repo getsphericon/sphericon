@@ -9,9 +9,14 @@ import {
   handleSiteIntegrationsList,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteAutomationResource, AutomationStep } from '../../generated/site/types.gen.ts'
+import type {
+  AutomationPathInput,
+  AutomationStep,
+  EmailStep,
+  SiteAutomationResource,
+} from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
-import { emailIntegration, TIMESTAMPS, testId, workspace } from '../../test/payloads.ts'
+import { emailIntegration, stepId, TIMESTAMPS, testId, workspace } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
@@ -22,8 +27,8 @@ const EDIT_ROUTE = routeMount(automationsEditRoute, {
   automationId: testId(5),
 })
 
-const FIRST: AutomationStep = { type: 'email', subject: 'Hi', body: '<p>Hi</p>' }
-const SECOND: AutomationStep = { type: 'email', subject: 'Bye', body: '<p>Bye</p>' }
+const FIRST: EmailStep = { id: stepId(11), type: 'email', subject: 'Hi', body: '<p>Hi</p>' }
+const SECOND: EmailStep = { id: stepId(12), type: 'email', subject: 'Bye', body: '<p>Bye</p>' }
 
 // The automation as stored with these steps in its draft.
 function storedWith(steps: AutomationStep[]): SiteAutomationResource {
@@ -32,7 +37,13 @@ function storedWith(steps: AutomationStep[]): SiteAutomationResource {
     name: 'Welcome flow',
     status: 'inactive',
     live: null,
-    draft: { number: 1, triggerEvent: 'email.clicked', exitEvents: [], goalEvent: null, steps },
+    draft: {
+      number: 1,
+      triggerEvent: 'email.clicked',
+      exitEvents: [],
+      goalEvent: null,
+      steps: { id: stepId(1), steps },
+    },
     revision: 1,
     ...TIMESTAMPS,
   }
@@ -53,17 +64,15 @@ function flowNode(index: number) {
   return node
 }
 
-// Renders the editor over the stored steps, recording the body of every save, which the server
-// stores and answers with.
+// Renders the editor over the stored steps, recording the body of every save; the canvas keeps
+// what it saved, so the server answers with the Automation as loaded.
 async function editing(steps: AutomationStep[]) {
-  const bodies: { steps?: AutomationStep[] }[] = []
-  let stored = storedWith(steps)
+  const bodies: { steps?: AutomationPathInput }[] = []
+  const stored = storedWith(steps)
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(stored)),
     handleSiteAutomationsUpdate(async ({ request }) => {
-      const body = await request.json()
-      bodies.push(body)
-      stored = storedWith(body.steps ?? steps)
+      bodies.push(await request.json())
       return HttpResponse.json(stored)
     }),
     handleSiteIntegrationsList({ body: INTEGRATIONS }),
@@ -98,7 +107,7 @@ test('each email step picks its own Integration among the email ones, and saves 
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect
-    .poll(() => bodies.map((body) => body.steps))
+    .poll(() => bodies.map((body) => body.steps?.steps))
     .toEqual([[{ ...FIRST, integrationId: testId(21) }, SECOND]])
 })
 
@@ -110,7 +119,7 @@ test('a step loaded with its Integration shows it, and saving sends it back on t
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect
-    .poll(() => bodies.map((body) => body.steps))
+    .poll(() => bodies.map((body) => body.steps?.steps))
     .toEqual([[{ ...FIRST, integrationId: testId(21) }, SECOND]])
 })
 
@@ -122,5 +131,5 @@ test('choosing the default again saves the step without an Integration', async (
   await screen.getByRole('option', { name: 'Workspace default' }).click()
   await screen.getByRole('button', { name: 'Save' }).click()
 
-  await expect.poll(() => bodies.map((body) => body.steps)).toEqual([[FIRST]])
+  await expect.poll(() => bodies.map((body) => body.steps?.steps)).toEqual([[FIRST]])
 })

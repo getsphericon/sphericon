@@ -21,12 +21,12 @@ func TestASaveOnARevisionAlreadyMovedPastIsRefused(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	read := env.AutomationRevision(ctx, t, fixtures.AutomationWinBackID)
-	first := []automationstep.Step{{Type: automationstep.ApplyTag, Tag: "first"}}
-	second := []automationstep.Step{{Type: automationstep.ApplyTag, Tag: "second"}}
+	first := []automationstep.Payload{automationstep.ApplyTag{Tag: "first"}}
+	second := []automationstep.Payload{automationstep.ApplyTag{Tag: "second"}}
 
-	saved, err := m.Update(ctx, s, fixtures.AutomationWinBackID, automations.UpdateInput{Revision: read, Steps: &first})
+	saved, err := m.Update(ctx, s, fixtures.AutomationWinBackID, automations.UpdateInput{Revision: read, Steps: steps(first...)})
 	require.NoError(t, err)
-	_, err = m.Update(ctx, s, fixtures.AutomationWinBackID, automations.UpdateInput{Revision: read, Steps: &second})
+	_, err = m.Update(ctx, s, fixtures.AutomationWinBackID, automations.UpdateInput{Revision: read, Steps: steps(second...)})
 
 	require.ErrorIs(t, err, automations.ErrRevisionChanged)
 	stored, err := m.Get(ctx, s, fixtures.AutomationWinBackID)
@@ -44,13 +44,13 @@ func TestARenameAndADraftEditMoveTheRevisionOnce(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	read := env.AutomationRevision(ctx, t, fixtures.AutomationWinBackID)
 	name := "Renamed"
-	steps := []automationstep.Step{{Type: automationstep.ApplyTag, Tag: "renamed"}}
+	renamed := []automationstep.Payload{automationstep.ApplyTag{Tag: "renamed"}}
 
-	saved, err := m.Update(ctx, s, fixtures.AutomationWinBackID, automations.UpdateInput{Revision: read, Name: &name, Steps: &steps})
+	saved, err := m.Update(ctx, s, fixtures.AutomationWinBackID, automations.UpdateInput{Revision: read, Name: &name, Steps: steps(renamed...)})
 
 	require.NoError(t, err)
 	assert.Equal(t, "Renamed", saved.Name)
-	assert.Equal(t, steps, draftSteps(t, saved))
+	assert.Equal(t, renamed, draftSteps(t, saved))
 	assert.Equal(t, read+1, saved.Revision)
 }
 

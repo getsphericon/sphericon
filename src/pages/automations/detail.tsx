@@ -16,7 +16,6 @@ import {
   siteEnrollmentsListOptions,
   siteIntegrationsGetOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { AutomationStepType } from '../../generated/site/types.gen.ts'
 import type {
   AutomationStep,
   AutomationVersion,
@@ -49,17 +48,34 @@ function IntegrationName({ workspaceId, id }: { workspaceId: string; id: string 
 
 // A step by its kind, with the subject of an email or the Tag of a tag step.
 function stepLabel(t: TFunction, step: AutomationStep): string {
-  const kind = {
-    [AutomationStepType.EMAIL]: t(($) => $.automations.stepEmail),
-    [AutomationStepType.TELEGRAM]: t(($) => $.automations.stepTelegram),
-    [AutomationStepType.SMS]: t(($) => $.automations.stepSms),
-    [AutomationStepType.WAIT]: t(($) => $.automations.stepWait),
-    [AutomationStepType.APPLY_TAG]: t(($) => $.automations.stepApplyTag),
-    [AutomationStepType.REMOVE_TAG]: t(($) => $.automations.stepRemoveTag),
-    [AutomationStepType.HTTP]: t(($) => $.automations.stepHttp),
-  }[step.type]
-  const detail = step.type === AutomationStepType.EMAIL ? step.subject : step.tag
-  return detail ? `${kind}: ${detail}` : kind
+  const kind: Record<AutomationStep['type'], string> = {
+    email: t(($) => $.automations.stepEmail),
+    telegram: t(($) => $.automations.stepTelegram),
+    sms: t(($) => $.automations.stepSms),
+    wait: t(($) => $.automations.stepWait),
+    apply_tag: t(($) => $.automations.stepApplyTag),
+    remove_tag: t(($) => $.automations.stepRemoveTag),
+    http: t(($) => $.automations.stepHttp),
+  }
+  const detail = stepDetail(step)
+  return detail ? `${kind[step.type]}: ${detail}` : kind[step.type]
+}
+
+// What a step says beside its kind: an email's subject, a tag step's Tag.
+function stepDetail(step: AutomationStep): string {
+  switch (step.type) {
+    case 'email':
+      return step.subject
+    case 'apply_tag':
+    case 'remove_tag':
+      return step.tag
+    case 'http':
+    case 'sms':
+    case 'telegram':
+    case 'wait':
+    default:
+      return ''
+  }
 }
 
 // What the live version does: its number, its Trigger, its exit and goal events and its steps in
@@ -108,10 +124,10 @@ function AutomationVersionSummary({
         <Text size="sm" c="dimmed">
           {t(($) => $.automations.stepsLabel)}
         </Text>
-        {version.steps.map((step, index) => (
-          <Badge key={index} variant="light">
+        {version.steps.steps.map((step) => (
+          <Badge key={step.id} variant="light">
             {stepLabel(t, step)}
-            {step.integrationId ? (
+            {'integrationId' in step && step.integrationId ? (
               <>
                 {' · '}
                 <IntegrationName workspaceId={workspaceId} id={step.integrationId} />
@@ -148,7 +164,7 @@ function AutomationDetail() {
   ).data
   // The version Publish arms: the draft, else the live version made active again (ADR 0156).
   const armed = automation.draft ?? automation.live
-  const sendsEmail = armed?.steps.some((step) => step.type === AutomationStepType.EMAIL)
+  const sendsEmail = armed?.steps.steps.some((step) => step.type === 'email')
 
   return (
     <Stack>

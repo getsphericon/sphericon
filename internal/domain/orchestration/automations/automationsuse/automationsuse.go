@@ -53,8 +53,15 @@ func namesTag(v *ent.AutomationVersion, name string) bool {
 		return false
 	}
 	for _, st := range automationstep.All(v.Steps) {
-		if (st.Type == automationstep.ApplyTag || st.Type == automationstep.RemoveTag) && tagname.Same(st.Tag, name) {
-			return true
+		switch p := st.Payload.(type) {
+		case automationstep.ApplyTag:
+			if tagname.Same(p.Tag, name) {
+				return true
+			}
+		case automationstep.RemoveTag:
+			if tagname.Same(p.Tag, name) {
+				return true
+			}
 		}
 	}
 	return false
@@ -78,11 +85,11 @@ func (m *Module) LiveSends(ctx context.Context, l *ent.WorkspaceLocked) ([]liveu
 		user := liveuse.User{Kind: liveuse.Automation, ID: a.ID, Name: a.Name}
 		for _, v := range a.Edges.Versions {
 			for _, st := range automationstep.All(v.Steps) {
-				ch, ok := st.Type.Channel()
+				ch, ok := st.Kind().Channel()
 				if !ok {
 					continue
 				}
-				integ, err := through.Of(ctx, ch, st.IntegrationID)
+				integ, err := through.Of(ctx, ch, st.Integration())
 				if err != nil {
 					return nil, err
 				}

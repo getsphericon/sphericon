@@ -30,21 +30,47 @@ func versionsOf(t *testing.T, env *testhelper.TestEnv, automationID int64) []int
 	return out
 }
 
-// stepsOf is the steps of a version the test expects to exist.
-func stepsOf(t *testing.T, v *ent.AutomationVersion) []automationstep.Step {
+// pathOf is the steps of a version the test expects to exist.
+func pathOf(t *testing.T, v *ent.AutomationVersion) automationstep.Path {
 	t.Helper()
 	require.NotNil(t, v)
 	return v.Steps
 }
 
-// liveSteps and draftSteps are the steps of an Automation's live version and of its draft.
-func liveSteps(t *testing.T, a *ent.Automation) []automationstep.Step {
+// stepsOf is what each step of a version the test expects to exist does, in order, without the
+// ids the save gave them.
+func stepsOf(t *testing.T, v *ent.AutomationVersion) []automationstep.Payload {
+	t.Helper()
+	return payloadsOf(pathOf(t, v))
+}
+
+// payloadsOf is what each step of the path does, in order.
+func payloadsOf(p automationstep.Path) []automationstep.Payload {
+	out := []automationstep.Payload{}
+	for _, st := range automationstep.All(p) {
+		out = append(out, st.Payload)
+	}
+	return out
+}
+
+// steps is a root path of the payloads given, for a save that gives the path and its steps their
+// ids.
+func steps(payloads ...automationstep.Payload) *automationstep.Path {
+	p := automationstep.Root()
+	for _, payload := range payloads {
+		p.Steps = append(p.Steps, automationstep.New(payload))
+	}
+	return &p
+}
+
+// liveSteps and draftSteps are what the steps of an Automation's live version and of its draft do.
+func liveSteps(t *testing.T, a *ent.Automation) []automationstep.Payload {
 	t.Helper()
 	live, _ := automations.LiveAndDraft(a)
 	return stepsOf(t, live)
 }
 
-func draftSteps(t *testing.T, a *ent.Automation) []automationstep.Step {
+func draftSteps(t *testing.T, a *ent.Automation) []automationstep.Payload {
 	t.Helper()
 	_, draft := automations.LiveAndDraft(a)
 	return stepsOf(t, draft)
@@ -77,10 +103,10 @@ func TestEditingALiveAutomationWritesADraftAndEnrollsOnTheLiveVersion(t *testing
 	require.NoError(t, err)
 	published := liveSteps(t, before)
 
-	_, err = m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: &[]automationstep.Step{{Type: automationstep.Wait, Seconds: 60}}, TriggerEvent: new("hold_demo_edited")})
+	_, err = m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: steps(automationstep.Wait{Seconds: 60}), TriggerEvent: new("hold_demo_edited")})
 	require.NoError(t, err)
-	edited := []automationstep.Step{{Type: automationstep.Wait, Seconds: 120}}
-	updated, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: &edited})
+	edited := []automationstep.Payload{automationstep.Wait{Seconds: 120}}
+	updated, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: steps(edited...)})
 	require.NoError(t, err)
 
 	assert.Equal(t, edited, draftSteps(t, updated))
@@ -97,7 +123,8 @@ func TestEditingALiveAutomationWritesADraftAndEnrollsOnTheLiveVersion(t *testing
 	assert.Equal(t, 1, versionOfRun(t, env, runID), "the Enrollment begins on the live version")
 }
 
-// Saving the live steps again creates no draft: steps compare in the form a version stores them.
+// Saving the live steps again, with their ids, creates no draft: steps compare in the form a
+// version stores them.
 func TestSavingUnchangedStepsStoresNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*automations.Module](env)
@@ -105,7 +132,8 @@ func TestSavingUnchangedStepsStoresNothing(t *testing.T) {
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	before, err := m.Get(ctx, acme, fixtures.AutomationHoldDemoID)
 	require.NoError(t, err)
-	same := liveSteps(t, before)
+	live, _ := automations.LiveAndDraft(before)
+	same := pathOf(t, live)
 
 	updated, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: &same, TriggerEvent: new("hold_demo")})
 	require.NoError(t, err)
@@ -124,8 +152,8 @@ func TestPublishMakesTheDraftLiveAndInFlightEnrollmentsKeepTheirVersion(t *testi
 	_, err := enrollNow(t, env, acme, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID)
 	require.NoError(t, err)
 	first := runOf(t, env, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID)
-	edited := []automationstep.Step{{Type: automationstep.Wait, Seconds: 99}}
-	_, err = m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: &edited})
+	edited := []automationstep.Payload{automationstep.Wait{Seconds: 99}}
+	_, err = m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: steps(edited...)})
 	require.NoError(t, err)
 
 	published, err := m.Publish(ctx, acme, fixtures.AutomationHoldDemoID, testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID))
@@ -157,7 +185,7 @@ func TestPublishRefusesADraftWhoseIntegrationIsArchived(t *testing.T) {
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	mailgun := int64(fixtures.IntegrationAcmeMailgunID)
-	_, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: &[]automationstep.Step{emailVia(&mailgun)}})
+	_, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: steps(emailVia(&mailgun))})
 	require.NoError(t, err)
 	require.NoError(t, acme.Integration().Discard(ctx, fixtures.IntegrationAcmeMailgunID, time.Now()))
 

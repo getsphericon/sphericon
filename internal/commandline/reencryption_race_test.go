@@ -89,19 +89,21 @@ func TestReencryptRacingAnAutomationEditKeepsTheEdit(t *testing.T) {
 	draft := env.DB.AutomationVersion.GetX(ctx, fixtures.AutomationSealedDraftVersionID)
 	rotation, retired := rotated(t)
 	env.DB.AutomationVersion.Intercept(raceOnRead(func(v *ent.AutomationVersion) int64 { return v.ID }, draft.ID, func() {
-		_, err := module.Update(ctx, acme, fixtures.AutomationSealedDraftID, automations.UpdateInput{Revision: env.AutomationRevision(ctx, t, fixtures.AutomationSealedDraftID), Steps: &[]automationstep.Step{{
-			Type: automationstep.HTTP, ID: draft.Steps[0].ID, Body: `{"v":2}`,
-		}}})
+		_, err := module.Update(ctx, acme, fixtures.AutomationSealedDraftID, automations.UpdateInput{Revision: env.AutomationRevision(ctx, t, fixtures.AutomationSealedDraftID), Steps: new(automationstep.Root(automationstep.Step{
+			ID: draft.Steps.Steps[0].ID, Payload: automationstep.HTTP{Body: `{"v":2}`},
+		}))})
 		require.NoError(t, err)
 	}))
 
 	_, err := reencrypt(ctx, env, rotation, &bytes.Buffer{})
 	require.NoError(t, err)
 
-	stored := env.DB.AutomationVersion.GetX(ctx, draft.ID).Steps
+	stored := env.DB.AutomationVersion.GetX(ctx, draft.ID).Steps.Steps
 	require.Len(t, stored, 1)
-	assert.JSONEq(t, `{"v":2}`, stored[0].Body, "the edit stays")
-	url, err := retired.Decrypt(stored[0].URL)
+	call, ok := stored[0].Payload.(automationstep.HTTP)
+	require.True(t, ok)
+	assert.JSONEq(t, `{"v":2}`, call.Body, "the edit stays")
+	url, err := retired.Decrypt(call.URL)
 	require.NoError(t, err, "the edited draft is sealed under the new key")
 	assert.Equal(t, "https://hooks.example.com/sealed", string(url))
 }

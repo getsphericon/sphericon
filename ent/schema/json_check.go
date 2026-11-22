@@ -31,3 +31,10 @@ func conditionEntriesCheck(column string) string {
 // emptyConditionSQL is the empty Condition (conditiontree.Empty) as the default a column gives a
 // row written without one: the group with no tests, which matches every Contact.
 var emptyConditionSQL = string(lo.Must(json.Marshal(conditiontree.Empty())))
+
+// stepsCheck is the CHECK that an Automation version's steps are a path (automationstep.Path, ADR
+// 0122): an object with its Steps as a list. The array a release before the path writes, and a path
+// without its list, are refused, so the comparison is never NULL.
+func stepsCheck(column string) string {
+	return fmt.Sprintf("COALESCE(jsonb_typeof(%[1]s -> 'steps') = 'array', false)", column)
+}
