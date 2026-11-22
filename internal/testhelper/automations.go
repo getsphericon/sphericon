@@ -25,7 +25,7 @@ func LatestSteps(ctx context.Context, t *testing.T, db *ent.Client, automationID
 
 // StepIDAt is the id of the Step at pos of the version the Enrollment runID began on, 0 for the
 // first; "" past its last Step.
-func (env *TestEnv) StepIDAt(t *testing.T, runID int64, pos int) string {
+func (env *TestEnv) StepIDAt(t *testing.T, runID int64, pos int) automationstep.ID {
 	t.Helper()
 	run, err := env.DB.AutomationRun.Get(t.Context(), runID)
 	require.NoError(t, err)
@@ -41,7 +41,7 @@ func (env *TestEnv) StepIDAt(t *testing.T, runID int64, pos int) string {
 
 // CurrentStepID is the id of the Step the Enrollment runID stands on, "" for none (a version of no
 // Steps).
-func (env *TestEnv) CurrentStepID(t *testing.T, runID int64) string {
+func (env *TestEnv) CurrentStepID(t *testing.T, runID int64) automationstep.ID {
 	t.Helper()
 	run, err := env.DB.AutomationRun.Get(t.Context(), runID)
 	require.NoError(t, err)

@@ -3,6 +3,7 @@ package outboundmessages
 import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 // Ref is the surface record a message is sent for, and through it the message's kind: a
@@ -41,7 +42,7 @@ type AutomationRef struct {
 	AutomationID int64
 	VersionID    int64
 	RunID        int64
-	StepID       string
+	StepID       automationstep.ID
 }
 
 func (AutomationRef) Kind() outboundmessage.Kind { return outboundmessage.KindAutomation }

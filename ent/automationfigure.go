@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 // AutomationFigure is the model entity for the AutomationFigure schema.
@@ -31,7 +32,7 @@ type AutomationFigure struct {
 	// VersionID holds the value of the "version_id" field.
 	VersionID int64 `json:"version_id,omitempty"`
 	// StepID holds the value of the "step_id" field.
-	StepID string `json:"step_id,omitempty"`
+	StepID automationstep.ID `json:"step_id,omitempty"`
 	// Sent holds the value of the "sent" field.
 	Sent int `json:"sent,omitempty"`
 	// Skipped holds the value of the "skipped" field.
@@ -162,7 +163,7 @@ func (_m *AutomationFigure) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field step_id", values[i])
 			} else if value.Valid {
-				_m.StepID = value.String
+				_m.StepID = automationstep.ID(value.String)
 			}
 		case automationfigure.FieldSent:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -267,7 +268,7 @@ func (_m *AutomationFigure) String() string {
 	builder.WriteString(fmt.Sprintf("%v", _m.VersionID))
 	builder.WriteString(", ")
 	builder.WriteString("step_id=")
-	builder.WriteString(_m.StepID)
+	builder.WriteString(fmt.Sprintf("%v", _m.StepID))
 	builder.WriteString(", ")
 	builder.WriteString("sent=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Sent))

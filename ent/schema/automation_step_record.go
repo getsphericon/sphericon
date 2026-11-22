@@ -9,6 +9,8 @@ import (
 	"entgo.io/ent/schema/index"
 
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
+
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 // AutomationStepRecord is what an Enrollment keeps of one Step it reached (ADR 0124): when it
@@ -52,6 +54,7 @@ func (AutomationStepRecord) Fields() []ent.Field {
 			Immutable(),
 		// The id of the Step in the Enrollment's version (ADR 0122).
 		field.String("step_id").
+			GoType(automationstep.ID("")).
 			Immutable(),
 		field.Time("reached_at").
 			Annotations(Attribute("records when the Enrollment reached the Step, in the move its cursor's compare-and-set decides")).

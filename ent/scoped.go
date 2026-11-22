@@ -5068,7 +5068,7 @@ func (x *AutomationFigureScopedCreate) SetVersionID(v int64) *AutomationFigureSc
 const RoleOf_AutomationFigureScopedCreate_SetVersionID = RoleStep
 
 // SetStepID sets the "step_id" field.
-func (x *AutomationFigureScopedCreate) SetStepID(v string) *AutomationFigureScopedCreate {
+func (x *AutomationFigureScopedCreate) SetStepID(v automationstep.ID) *AutomationFigureScopedCreate {
 	x.set = append(x.set, func(b *AutomationFigureCreate) { b.SetStepID(v) })
 	return x
 }
@@ -6446,7 +6446,7 @@ func (x *AutomationRunScopedCreate) SetNillableEndedAt(v *time.Time) *Automation
 const RoleOf_AutomationRunScopedCreate_SetNillableEndedAt = RoleStep
 
 // SetCurrentStepID sets the "current_step_id" field.
-func (x *AutomationRunScopedCreate) SetCurrentStepID(v string) *AutomationRunScopedCreate {
+func (x *AutomationRunScopedCreate) SetCurrentStepID(v automationstep.ID) *AutomationRunScopedCreate {
 	x.set = append(x.set, func(b *AutomationRunCreate) { b.SetCurrentStepID(v) })
 	return x
 }
@@ -6454,7 +6454,7 @@ func (x *AutomationRunScopedCreate) SetCurrentStepID(v string) *AutomationRunSco
 const RoleOf_AutomationRunScopedCreate_SetCurrentStepID = RoleStep
 
 // SetNillableCurrentStepID sets the "current_step_id" field if the given value is not nil.
-func (x *AutomationRunScopedCreate) SetNillableCurrentStepID(v *string) *AutomationRunScopedCreate {
+func (x *AutomationRunScopedCreate) SetNillableCurrentStepID(v *automationstep.ID) *AutomationRunScopedCreate {
 	if v != nil {
 		x.SetCurrentStepID(*v)
 	}
@@ -6757,7 +6757,7 @@ func (u *AutomationRunScopedUpsert) ClearEndedAt() *AutomationRunScopedUpsert {
 const RoleOf_AutomationRunScopedUpsert_ClearEndedAt = RoleStep
 
 // SetCurrentStepID sets the "current_step_id" field.
-func (u *AutomationRunScopedUpsert) SetCurrentStepID(v string) *AutomationRunScopedUpsert {
+func (u *AutomationRunScopedUpsert) SetCurrentStepID(v automationstep.ID) *AutomationRunScopedUpsert {
 	u.u.Set(automationrun.FieldCurrentStepID, v)
 	return u
 }
@@ -7194,7 +7194,7 @@ func (x *AutomationRunScopedUpdateOne) ClearEndedAt() *AutomationRunScopedUpdate
 const RoleOf_AutomationRunScopedUpdateOne_ClearEndedAt = RoleStep
 
 // SetCurrentStepID sets the "current_step_id" field.
-func (x *AutomationRunScopedUpdateOne) SetCurrentStepID(v string) *AutomationRunScopedUpdateOne {
+func (x *AutomationRunScopedUpdateOne) SetCurrentStepID(v automationstep.ID) *AutomationRunScopedUpdateOne {
 	x.set = append(x.set, func(b *AutomationRunUpdateOne) { b.SetCurrentStepID(v) })
 	return x
 }
@@ -7202,7 +7202,7 @@ func (x *AutomationRunScopedUpdateOne) SetCurrentStepID(v string) *AutomationRun
 const RoleOf_AutomationRunScopedUpdateOne_SetCurrentStepID = RoleStep
 
 // SetNillableCurrentStepID sets the "current_step_id" field if the given value is not nil.
-func (x *AutomationRunScopedUpdateOne) SetNillableCurrentStepID(v *string) *AutomationRunScopedUpdateOne {
+func (x *AutomationRunScopedUpdateOne) SetNillableCurrentStepID(v *automationstep.ID) *AutomationRunScopedUpdateOne {
 	if v != nil {
 		x.SetCurrentStepID(*v)
 	}
@@ -7573,7 +7573,7 @@ func (x *AutomationRunScopedUpdate) ClearEndedAt() *AutomationRunScopedUpdate {
 const RoleOf_AutomationRunScopedUpdate_ClearEndedAt = RoleStep
 
 // SetCurrentStepID sets the "current_step_id" field.
-func (x *AutomationRunScopedUpdate) SetCurrentStepID(v string) *AutomationRunScopedUpdate {
+func (x *AutomationRunScopedUpdate) SetCurrentStepID(v automationstep.ID) *AutomationRunScopedUpdate {
 	x.set = append(x.set, func(b *AutomationRunUpdate) { b.SetCurrentStepID(v) })
 	return x
 }
@@ -7581,7 +7581,7 @@ func (x *AutomationRunScopedUpdate) SetCurrentStepID(v string) *AutomationRunSco
 const RoleOf_AutomationRunScopedUpdate_SetCurrentStepID = RoleStep
 
 // SetNillableCurrentStepID sets the "current_step_id" field if the given value is not nil.
-func (x *AutomationRunScopedUpdate) SetNillableCurrentStepID(v *string) *AutomationRunScopedUpdate {
+func (x *AutomationRunScopedUpdate) SetNillableCurrentStepID(v *automationstep.ID) *AutomationRunScopedUpdate {
 	if v != nil {
 		x.SetCurrentStepID(*v)
 	}
@@ -8010,7 +8010,7 @@ func (x *AutomationStepRecordScopedCreate) SetRunID(v int64) *AutomationStepReco
 const RoleOf_AutomationStepRecordScopedCreate_SetRunID = RoleStep
 
 // SetStepID sets the "step_id" field.
-func (x *AutomationStepRecordScopedCreate) SetStepID(v string) *AutomationStepRecordScopedCreate {
+func (x *AutomationStepRecordScopedCreate) SetStepID(v automationstep.ID) *AutomationStepRecordScopedCreate {
 	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetStepID(v) })
 	return x
 }
@@ -42656,7 +42656,7 @@ func (x *OutboundMessageScopedCreate) SetNillableAutomationVersionID(v *int64) *
 const RoleOf_OutboundMessageScopedCreate_SetNillableAutomationVersionID = RoleStep
 
 // SetAutomationStepID sets the "automation_step_id" field.
-func (x *OutboundMessageScopedCreate) SetAutomationStepID(v string) *OutboundMessageScopedCreate {
+func (x *OutboundMessageScopedCreate) SetAutomationStepID(v automationstep.ID) *OutboundMessageScopedCreate {
 	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetAutomationStepID(v) })
 	return x
 }
@@ -42664,7 +42664,7 @@ func (x *OutboundMessageScopedCreate) SetAutomationStepID(v string) *OutboundMes
 const RoleOf_OutboundMessageScopedCreate_SetAutomationStepID = RoleStep
 
 // SetNillableAutomationStepID sets the "automation_step_id" field if the given value is not nil.
-func (x *OutboundMessageScopedCreate) SetNillableAutomationStepID(v *string) *OutboundMessageScopedCreate {
+func (x *OutboundMessageScopedCreate) SetNillableAutomationStepID(v *automationstep.ID) *OutboundMessageScopedCreate {
 	if v != nil {
 		x.SetAutomationStepID(*v)
 	}
@@ -43479,7 +43479,7 @@ func (u *OutboundMessageScopedUpsert) ClearAutomationVersionID() *OutboundMessag
 const RoleOf_OutboundMessageScopedUpsert_ClearAutomationVersionID = RoleStep
 
 // SetAutomationStepID sets the "automation_step_id" field.
-func (u *OutboundMessageScopedUpsert) SetAutomationStepID(v string) *OutboundMessageScopedUpsert {
+func (u *OutboundMessageScopedUpsert) SetAutomationStepID(v automationstep.ID) *OutboundMessageScopedUpsert {
 	u.u.Set(outboundmessage.FieldAutomationStepID, v)
 	return u
 }
@@ -44392,7 +44392,7 @@ func (x *OutboundMessageScopedUpdateOne) ClearAutomationVersionID() *OutboundMes
 const RoleOf_OutboundMessageScopedUpdateOne_ClearAutomationVersionID = RoleStep
 
 // SetAutomationStepID sets the "automation_step_id" field.
-func (x *OutboundMessageScopedUpdateOne) SetAutomationStepID(v string) *OutboundMessageScopedUpdateOne {
+func (x *OutboundMessageScopedUpdateOne) SetAutomationStepID(v automationstep.ID) *OutboundMessageScopedUpdateOne {
 	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetAutomationStepID(v) })
 	return x
 }
@@ -44400,7 +44400,7 @@ func (x *OutboundMessageScopedUpdateOne) SetAutomationStepID(v string) *Outbound
 const RoleOf_OutboundMessageScopedUpdateOne_SetAutomationStepID = RoleStep
 
 // SetNillableAutomationStepID sets the "automation_step_id" field if the given value is not nil.
-func (x *OutboundMessageScopedUpdateOne) SetNillableAutomationStepID(v *string) *OutboundMessageScopedUpdateOne {
+func (x *OutboundMessageScopedUpdateOne) SetNillableAutomationStepID(v *automationstep.ID) *OutboundMessageScopedUpdateOne {
 	if v != nil {
 		x.SetAutomationStepID(*v)
 	}
@@ -45383,7 +45383,7 @@ func (x *OutboundMessageScopedUpdate) ClearAutomationVersionID() *OutboundMessag
 const RoleOf_OutboundMessageScopedUpdate_ClearAutomationVersionID = RoleStep
 
 // SetAutomationStepID sets the "automation_step_id" field.
-func (x *OutboundMessageScopedUpdate) SetAutomationStepID(v string) *OutboundMessageScopedUpdate {
+func (x *OutboundMessageScopedUpdate) SetAutomationStepID(v automationstep.ID) *OutboundMessageScopedUpdate {
 	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetAutomationStepID(v) })
 	return x
 }
@@ -45391,7 +45391,7 @@ func (x *OutboundMessageScopedUpdate) SetAutomationStepID(v string) *OutboundMes
 const RoleOf_OutboundMessageScopedUpdate_SetAutomationStepID = RoleStep
 
 // SetNillableAutomationStepID sets the "automation_step_id" field if the given value is not nil.
-func (x *OutboundMessageScopedUpdate) SetNillableAutomationStepID(v *string) *OutboundMessageScopedUpdate {
+func (x *OutboundMessageScopedUpdate) SetNillableAutomationStepID(v *automationstep.ID) *OutboundMessageScopedUpdate {
 	if v != nil {
 		x.SetAutomationStepID(*v)
 	}

@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
@@ -29,7 +30,7 @@ type AutomationStepRecord struct {
 	// RunID holds the value of the "run_id" field.
 	RunID int64 `json:"run_id,omitempty"`
 	// StepID holds the value of the "step_id" field.
-	StepID string `json:"step_id,omitempty"`
+	StepID automationstep.ID `json:"step_id,omitempty"`
 	// ReachedAt holds the value of the "reached_at" field.
 	ReachedAt time.Time `json:"reached_at,omitempty"`
 	// LeftAt holds the value of the "left_at" field.
@@ -139,7 +140,7 @@ func (_m *AutomationStepRecord) assignValues(columns []string, values []any) err
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field step_id", values[i])
 			} else if value.Valid {
-				_m.StepID = value.String
+				_m.StepID = automationstep.ID(value.String)
 			}
 		case automationsteprecord.FieldReachedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -234,7 +235,7 @@ func (_m *AutomationStepRecord) String() string {
 	builder.WriteString(fmt.Sprintf("%v", _m.RunID))
 	builder.WriteString(", ")
 	builder.WriteString("step_id=")
-	builder.WriteString(_m.StepID)
+	builder.WriteString(fmt.Sprintf("%v", _m.StepID))
 	builder.WriteString(", ")
 	builder.WriteString("reached_at=")
 	builder.WriteString(_m.ReachedAt.Format(time.ANSIC))

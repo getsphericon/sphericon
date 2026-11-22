@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
@@ -331,7 +332,7 @@ func TestClaimRecordsTheRefOfItsKindOnTheMessage(t *testing.T) {
 				assert.Equal(t, int64(fixtures.AutomationWelcomeSeriesID), *row.AutomationID)
 				assert.Equal(t, int64(fixtures.AutomationRunWelcomeCompletedID), *row.AutomationRunID)
 				assert.Equal(t, int64(fixtures.AutomationWelcomeSeriesVersionID), *row.AutomationVersionID)
-				assert.Equal(t, "9c2251c9-031a-5e1e-b3a5-d4d37085ffe8", *row.AutomationStepID)
+				assert.Equal(t, automationstep.ID("9c2251c9-031a-5e1e-b3a5-d4d37085ffe8"), *row.AutomationStepID)
 				assert.Nil(t, row.BroadcastID)
 				assert.Nil(t, row.TemplateID)
 			},

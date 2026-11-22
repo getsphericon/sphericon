@@ -1680,7 +1680,7 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) sit
 		siteapiContactExportOutboundMessage.Captured = (*source).Captured
 		siteapiContactExportOutboundMessage.BroadcastId = optNilEntityID((*source).BroadcastID)
 		siteapiContactExportOutboundMessage.AutomationId = optNilEntityID((*source).AutomationID)
-		siteapiContactExportOutboundMessage.AutomationStepId = optNilString((*source).AutomationStepID)
+		siteapiContactExportOutboundMessage.AutomationStepId = optNilStepID((*source).AutomationStepID)
 		siteapiContactExportOutboundMessage.TemplateId = optNilEntityID((*source).TemplateID)
 		siteapiContactExportOutboundMessage.CreatedAt = timestamp((*source).CreatedAt)
 	}

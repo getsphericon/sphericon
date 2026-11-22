@@ -9,6 +9,8 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 // AutomationRun is one contact's progress through an Automation. The unique
@@ -85,6 +87,7 @@ func (AutomationRun) Fields() []ent.Field {
 		// ADR 0124), and the move that leaves the last Step completes the Enrollment there, so a
 		// terminal Enrollment keeps the Step it ended on. Null only for a version of no Steps.
 		field.String("current_step_id").
+			GoType(automationstep.ID("")).
 			Optional().
 			Nillable(),
 		field.Time("resume_at").

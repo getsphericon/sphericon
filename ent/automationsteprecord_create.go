@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
@@ -66,7 +67,7 @@ func (_c *AutomationStepRecordCreate) SetRunID(v int64) *AutomationStepRecordCre
 }
 
 // SetStepID sets the "step_id" field.
-func (_c *AutomationStepRecordCreate) SetStepID(v string) *AutomationStepRecordCreate {
+func (_c *AutomationStepRecordCreate) SetStepID(v automationstep.ID) *AutomationStepRecordCreate {
 	_c.mutation.SetStepID(v)
 	return _c
 }

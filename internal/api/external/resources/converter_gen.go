@@ -1110,7 +1110,7 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) ext
 		externalapiContactExportOutboundMessage.Captured = (*source).Captured
 		externalapiContactExportOutboundMessage.BroadcastId = optNilEntityID((*source).BroadcastID)
 		externalapiContactExportOutboundMessage.AutomationId = optNilEntityID((*source).AutomationID)
-		externalapiContactExportOutboundMessage.AutomationStepId = optNilString((*source).AutomationStepID)
+		externalapiContactExportOutboundMessage.AutomationStepId = optNilStepID((*source).AutomationStepID)
 		externalapiContactExportOutboundMessage.TemplateId = optNilEntityID((*source).TemplateID)
 		externalapiContactExportOutboundMessage.CreatedAt = timestamp((*source).CreatedAt)
 	}

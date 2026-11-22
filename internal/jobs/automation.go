@@ -103,5 +103,5 @@ func (w *RunStepWorker) Work(ctx context.Context, job *river.Job[automations.Run
 	if err != nil {
 		return err
 	}
-	return w.mod.Step(ctx, w.ent.Scoped(run.WorkspaceID), run.ID, job.Args.Step)
+	return w.mod.Step(ctx, w.ent.Scoped(run.WorkspaceID), run.ID, job.Args.StepID)
 }

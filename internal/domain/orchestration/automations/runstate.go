@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
@@ -172,7 +173,7 @@ func stale(err error) bool {
 // current Step, so a step cannot overwrite an exit and a job delivered twice cannot move the
 // Enrollment twice: lifecycle.ErrInvalidTransition when the Enrollment is no longer active or no
 // longer on from.
-func advanceRun(ctx context.Context, s *ent.Scoped, runID int64, from, to string, resumeAt *time.Time) error {
+func advanceRun(ctx context.Context, s *ent.Scoped, runID int64, from, to automationstep.ID, resumeAt *time.Time) error {
 	u := s.AutomationRun().Update().
 		Where(automationrun.ID(runID), automationrun.StatusEQ(automationrun.StatusActive), automationrun.CurrentStepID(from)).
 		SetCurrentStepID(to)
@@ -196,7 +197,7 @@ func advanceRun(ctx context.Context, s *ent.Scoped, runID int64, from, to string
 // for an Enrollment of a version of no Steps: the move is a compare-and-swap on that Step too, so
 // a job delivered twice completes it once. lifecycle.ErrInvalidTransition when it is no longer
 // active (an exit won) or no longer on at, which the step executor treats as a finished step.
-func completeRun(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID int64, at string, now time.Time) error {
+func completeRun(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID int64, at automationstep.ID, now time.Time) error {
 	return move(ctx, s, pub, runID, triggerComplete, now, func(u *ent.AutomationRunScopedUpdate) {
 		if at == "" {
 			u.Where(automationrun.CurrentStepIDIsNil())

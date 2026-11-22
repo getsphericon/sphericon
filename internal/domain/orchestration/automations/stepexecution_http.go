@@ -17,7 +17,7 @@ import (
 // it is expected to stand on, and the queue's attempt data.
 type ExecuteHTTPInput struct {
 	RunID   int64
-	Step    string
+	StepID  automationstep.ID
 	Attempt httpcall.Attempt
 }
 
@@ -29,7 +29,7 @@ type ExecuteHTTPInput struct {
 // (httpcall.Execution): zero for completed or stale work. A final failure is recorded on the
 // Enrollment before it returns Cancel or an exhausted Retry.
 func (m *StepExecution) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in ExecuteHTTPInput) (httpcall.Execution, error) {
-	step, attempt := in.Step, in.Attempt
+	step, attempt := in.StepID, in.Attempt
 	run, err := s.AutomationRun().Get(ctx, in.RunID)
 	if ent.IsNotFound(err) {
 		return httpcall.Execution{}, nil

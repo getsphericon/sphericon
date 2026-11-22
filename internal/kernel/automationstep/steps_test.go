@@ -55,7 +55,7 @@ func TestAStoredPathRoundTripsWithItsIDsAndKinds(t *testing.T) {
 	for _, st := range automationstep.All(p) {
 		kinds = append(kinds, st.Kind())
 	}
-	assert.Equal(t, "5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1a01", p.ID)
+	assert.Equal(t, automationstep.ID("5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1a01"), p.ID)
 	assert.Equal(t, []automationstep.Kind{automationstep.KindEmail, automationstep.KindWait, automationstep.KindApplyTag, automationstep.KindHTTP}, kinds)
 	assert.Equal(t, automationstep.Email{Subject: "Hi", Body: "<p>Hi</p>", IntegrationID: new(int64(7))}, p.Steps[0].Payload)
 	written, err := json.Marshal(p)
@@ -82,9 +82,9 @@ func TestAStoredStepRefusesAFieldOfAnotherKindAndAnUnknownKind(t *testing.T) {
 
 // Each Step and the path without an id is given a new one; an id given is kept.
 func TestIdentifyGivesAnIDToEachStepAndPathWithoutOne(t *testing.T) {
-	kept := "5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1a02"
-	minted := []string{"5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1aa1", "5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1aa2"}
-	mint := func() string {
+	kept := automationstep.ID("5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1a02")
+	minted := []automationstep.ID{"5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1aa1", "5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1aa2"}
+	mint := func() automationstep.ID {
 		id := minted[0]
 		minted = minted[1:]
 		return id
@@ -97,17 +97,17 @@ func TestIdentifyGivesAnIDToEachStepAndPathWithoutOne(t *testing.T) {
 	out, err := automationstep.Identify(in, mint)
 
 	require.NoError(t, err)
-	assert.Equal(t, "5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1aa1", out.ID)
+	assert.Equal(t, automationstep.ID("5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1aa1"), out.ID)
 	assert.Equal(t, kept, out.Steps[0].ID)
-	assert.Equal(t, "5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1aa2", out.Steps[1].ID)
+	assert.Equal(t, automationstep.ID("5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1aa2"), out.Steps[1].ID)
 	assert.Empty(t, in.Steps[1].ID, "the path given is left as it was")
 }
 
 // An id that is not a UUID in its lowercase text form, and an id two Steps or a Step and the
 // path share, are refused.
 func TestIdentifyRefusesAMalformedOrRepeatedID(t *testing.T) {
-	id := "5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1a02"
-	mint := func() string { return "5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1aa1" }
+	id := automationstep.ID("5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1a02")
+	mint := func() automationstep.ID { return "5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1aa1" }
 	for name, p := range map[string]automationstep.Path{
 		"not a uuid":         automationstep.Root(automationstep.Step{ID: "step-1", Payload: automationstep.Wait{}}),
 		"upper case":         automationstep.Root(automationstep.Step{ID: "5B0C6A52-4F0E-4F65-9A70-0D4A1C0E1A02", Payload: automationstep.Wait{}}),

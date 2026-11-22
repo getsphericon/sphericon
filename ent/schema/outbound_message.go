@@ -12,6 +12,8 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
+
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 // OutboundMessage is the durable record of one Outbound send (ADR 0015): one row per
@@ -172,7 +174,7 @@ func (OutboundMessage) Fields() []ent.Field {
 		// its id in every version, so a Step inserted above it in a later version moves neither its
 		// report nor its key.
 		field.Int64("automation_version_id").Optional().Nillable(),
-		field.String("automation_step_id").Optional().Nillable(),
+		field.String("automation_step_id").GoType(automationstep.ID("")).Optional().Nillable(),
 		// The Integration the message went out through (ADR 0023), its sent count over 24 hours is the
 		// Integration's usage. Nil when the sender had no Integration row.
 		field.Int64("integration_id").Optional().Nillable(),

@@ -8,6 +8,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 // ID filters vertices based on their ID field.
@@ -101,8 +102,9 @@ func EndedAt(v time.Time) predicate.AutomationRun {
 }
 
 // CurrentStepID applies equality check predicate on the "current_step_id" field. It's identical to CurrentStepIDEQ.
-func CurrentStepID(v string) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldEQ(FieldCurrentStepID, v))
+func CurrentStepID(v automationstep.ID) predicate.AutomationRun {
+	vc := string(v)
+	return predicate.AutomationRun(sql.FieldEQ(FieldCurrentStepID, vc))
 }
 
 // ResumeAt applies equality check predicate on the "resume_at" field. It's identical to ResumeAtEQ.
@@ -476,58 +478,75 @@ func EndedAtNotNil() predicate.AutomationRun {
 }
 
 // CurrentStepIDEQ applies the EQ predicate on the "current_step_id" field.
-func CurrentStepIDEQ(v string) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldEQ(FieldCurrentStepID, v))
+func CurrentStepIDEQ(v automationstep.ID) predicate.AutomationRun {
+	vc := string(v)
+	return predicate.AutomationRun(sql.FieldEQ(FieldCurrentStepID, vc))
 }
 
 // CurrentStepIDNEQ applies the NEQ predicate on the "current_step_id" field.
-func CurrentStepIDNEQ(v string) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldNEQ(FieldCurrentStepID, v))
+func CurrentStepIDNEQ(v automationstep.ID) predicate.AutomationRun {
+	vc := string(v)
+	return predicate.AutomationRun(sql.FieldNEQ(FieldCurrentStepID, vc))
 }
 
 // CurrentStepIDIn applies the In predicate on the "current_step_id" field.
-func CurrentStepIDIn(vs ...string) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldIn(FieldCurrentStepID, vs...))
+func CurrentStepIDIn(vs ...automationstep.ID) predicate.AutomationRun {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = string(vs[i])
+	}
+	return predicate.AutomationRun(sql.FieldIn(FieldCurrentStepID, v...))
 }
 
 // CurrentStepIDNotIn applies the NotIn predicate on the "current_step_id" field.
-func CurrentStepIDNotIn(vs ...string) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldNotIn(FieldCurrentStepID, vs...))
+func CurrentStepIDNotIn(vs ...automationstep.ID) predicate.AutomationRun {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = string(vs[i])
+	}
+	return predicate.AutomationRun(sql.FieldNotIn(FieldCurrentStepID, v...))
 }
 
 // CurrentStepIDGT applies the GT predicate on the "current_step_id" field.
-func CurrentStepIDGT(v string) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldGT(FieldCurrentStepID, v))
+func CurrentStepIDGT(v automationstep.ID) predicate.AutomationRun {
+	vc := string(v)
+	return predicate.AutomationRun(sql.FieldGT(FieldCurrentStepID, vc))
 }
 
 // CurrentStepIDGTE applies the GTE predicate on the "current_step_id" field.
-func CurrentStepIDGTE(v string) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldGTE(FieldCurrentStepID, v))
+func CurrentStepIDGTE(v automationstep.ID) predicate.AutomationRun {
+	vc := string(v)
+	return predicate.AutomationRun(sql.FieldGTE(FieldCurrentStepID, vc))
 }
 
 // CurrentStepIDLT applies the LT predicate on the "current_step_id" field.
-func CurrentStepIDLT(v string) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldLT(FieldCurrentStepID, v))
+func CurrentStepIDLT(v automationstep.ID) predicate.AutomationRun {
+	vc := string(v)
+	return predicate.AutomationRun(sql.FieldLT(FieldCurrentStepID, vc))
 }
 
 // CurrentStepIDLTE applies the LTE predicate on the "current_step_id" field.
-func CurrentStepIDLTE(v string) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldLTE(FieldCurrentStepID, v))
+func CurrentStepIDLTE(v automationstep.ID) predicate.AutomationRun {
+	vc := string(v)
+	return predicate.AutomationRun(sql.FieldLTE(FieldCurrentStepID, vc))
 }
 
 // CurrentStepIDContains applies the Contains predicate on the "current_step_id" field.
-func CurrentStepIDContains(v string) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldContains(FieldCurrentStepID, v))
+func CurrentStepIDContains(v automationstep.ID) predicate.AutomationRun {
+	vc := string(v)
+	return predicate.AutomationRun(sql.FieldContains(FieldCurrentStepID, vc))
 }
 
 // CurrentStepIDHasPrefix applies the HasPrefix predicate on the "current_step_id" field.
-func CurrentStepIDHasPrefix(v string) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldHasPrefix(FieldCurrentStepID, v))
+func CurrentStepIDHasPrefix(v automationstep.ID) predicate.AutomationRun {
+	vc := string(v)
+	return predicate.AutomationRun(sql.FieldHasPrefix(FieldCurrentStepID, vc))
 }
 
 // CurrentStepIDHasSuffix applies the HasSuffix predicate on the "current_step_id" field.
-func CurrentStepIDHasSuffix(v string) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldHasSuffix(FieldCurrentStepID, v))
+func CurrentStepIDHasSuffix(v automationstep.ID) predicate.AutomationRun {
+	vc := string(v)
+	return predicate.AutomationRun(sql.FieldHasSuffix(FieldCurrentStepID, vc))
 }
 
 // CurrentStepIDIsNil applies the IsNil predicate on the "current_step_id" field.
@@ -541,13 +560,15 @@ func CurrentStepIDNotNil() predicate.AutomationRun {
 }
 
 // CurrentStepIDEqualFold applies the EqualFold predicate on the "current_step_id" field.
-func CurrentStepIDEqualFold(v string) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldEqualFold(FieldCurrentStepID, v))
+func CurrentStepIDEqualFold(v automationstep.ID) predicate.AutomationRun {
+	vc := string(v)
+	return predicate.AutomationRun(sql.FieldEqualFold(FieldCurrentStepID, vc))
 }
 
 // CurrentStepIDContainsFold applies the ContainsFold predicate on the "current_step_id" field.
-func CurrentStepIDContainsFold(v string) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldContainsFold(FieldCurrentStepID, v))
+func CurrentStepIDContainsFold(v automationstep.ID) predicate.AutomationRun {
+	vc := string(v)
+	return predicate.AutomationRun(sql.FieldContainsFold(FieldCurrentStepID, vc))
 }
 
 // ResumeAtEQ applies the EQ predicate on the "resume_at" field.

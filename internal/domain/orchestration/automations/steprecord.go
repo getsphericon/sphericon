@@ -37,7 +37,7 @@ func dueOf(st *automationstep.Step, now time.Time) *time.Time {
 
 // reach records that the Enrollment runID reached the Step of the id at now, due at due (a wait's
 // due moment, nil for any other Step).
-func reach(ctx context.Context, s *ent.Scoped, runID int64, stepID string, now time.Time, due *time.Time) error {
+func reach(ctx context.Context, s *ent.Scoped, runID int64, stepID automationstep.ID, now time.Time, due *time.Time) error {
 	return s.AutomationStepRecord().Create().
 		SetRunID(runID).
 		SetStepID(stepID).
@@ -50,7 +50,7 @@ func reach(ctx context.Context, s *ent.Scoped, runID int64, stepID string, now t
 // why is set, done otherwise. The left moment is a latch (ADR 0109), written once with the
 // outcome; the caller has moved the Enrollment off the Step, so a record already left, or none, is
 // a broken invariant, not a lost race.
-func leave(ctx context.Context, s *ent.Scoped, runID int64, stepID string, now time.Time, why skipreason.Reason) error {
+func leave(ctx context.Context, s *ent.Scoped, runID int64, stepID automationstep.ID, now time.Time, why skipreason.Reason) error {
 	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
 		u := s.AutomationStepRecord().Update().
 			Where(

@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
@@ -518,13 +519,13 @@ func (_u *OutboundMessageUpdate) ClearAutomationVersionID() *OutboundMessageUpda
 }
 
 // SetAutomationStepID sets the "automation_step_id" field.
-func (_u *OutboundMessageUpdate) SetAutomationStepID(v string) *OutboundMessageUpdate {
+func (_u *OutboundMessageUpdate) SetAutomationStepID(v automationstep.ID) *OutboundMessageUpdate {
 	_u.mutation.SetAutomationStepID(v)
 	return _u
 }
 
 // SetNillableAutomationStepID sets the "automation_step_id" field if the given value is not nil.
-func (_u *OutboundMessageUpdate) SetNillableAutomationStepID(v *string) *OutboundMessageUpdate {
+func (_u *OutboundMessageUpdate) SetNillableAutomationStepID(v *automationstep.ID) *OutboundMessageUpdate {
 	if v != nil {
 		_u.SetAutomationStepID(*v)
 	}
@@ -1759,13 +1760,13 @@ func (_u *OutboundMessageUpdateOne) ClearAutomationVersionID() *OutboundMessageU
 }
 
 // SetAutomationStepID sets the "automation_step_id" field.
-func (_u *OutboundMessageUpdateOne) SetAutomationStepID(v string) *OutboundMessageUpdateOne {
+func (_u *OutboundMessageUpdateOne) SetAutomationStepID(v automationstep.ID) *OutboundMessageUpdateOne {
 	_u.mutation.SetAutomationStepID(v)
 	return _u
 }
 
 // SetNillableAutomationStepID sets the "automation_step_id" field if the given value is not nil.
-func (_u *OutboundMessageUpdateOne) SetNillableAutomationStepID(v *string) *OutboundMessageUpdateOne {
+func (_u *OutboundMessageUpdateOne) SetNillableAutomationStepID(v *automationstep.ID) *OutboundMessageUpdateOne {
 	if v != nil {
 		_u.SetAutomationStepID(*v)
 	}

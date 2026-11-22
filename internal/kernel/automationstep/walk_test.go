@@ -63,7 +63,7 @@ func TestAllOfNoStepsVisitsNothing(t *testing.T) {
 // withIDs gives each Step of the path a distinct id, as a stored version holds them.
 func withIDs(p automationstep.Path) automationstep.Path {
 	for i := range p.Steps {
-		p.Steps[i].ID = "step-" + strconv.Itoa(i)
+		p.Steps[i].ID = stepID(i)
 	}
 	return p
 }
@@ -72,7 +72,7 @@ func TestFirstIsTheFirstStepOfThePath(t *testing.T) {
 	steps := withIDs(automationstep.Root(automationstep.New(automationstep.Wait{Seconds: 60}), automationstep.New(automationstep.ApplyTag{Tag: "vip"})))
 	st, ok := automationstep.First(steps)
 	require.True(t, ok)
-	assert.Equal(t, "step-0", st.ID)
+	assert.Equal(t, automationstep.ID("step-0"), st.ID)
 	_, ok = automationstep.First(automationstep.Root())
 	assert.False(t, ok, "a path of no Steps has no first Step")
 }
@@ -96,11 +96,11 @@ func TestNextIsTheFollowingStepOfThePath(t *testing.T) {
 		steps := withIDs(stepsGen().Filter(func(p automationstep.Path) bool { return len(p.Steps) > 1 }).Draw(rt, "steps"))
 		last := len(steps.Steps) - 1
 		pos := rapid.IntRange(0, last-1).Draw(rt, "pos")
-		next, ok := automationstep.Next(steps, "step-"+strconv.Itoa(pos))
+		next, ok := automationstep.Next(steps, stepID(pos))
 		require.True(rt, ok)
-		assert.Equal(rt, "step-"+strconv.Itoa(pos+1), next.ID)
+		assert.Equal(rt, stepID(pos+1), next.ID)
 		assert.Equal(rt, 60*(pos+2), seconds(next))
-		_, ok = automationstep.Next(steps, "step-"+strconv.Itoa(last))
+		_, ok = automationstep.Next(steps, stepID(last))
 		assert.False(rt, ok, "the last Step has no next")
 	})
 	single := withIDs(automationstep.Root(automationstep.New(automationstep.Wait{Seconds: 60})))
@@ -212,7 +212,10 @@ func TestAfterEndFindsTheFirstStepThatFollowsAnEnd(t *testing.T) {
 	_, noEnd := automationstep.AfterEnd(automationstep.Root(wait, tag))
 
 	require.True(t, found)
-	assert.Equal(t, "t", after.ID)
+	assert.Equal(t, automationstep.ID("t"), after.ID)
 	assert.False(t, endLast)
 	assert.False(t, noEnd)
 }
+
+// stepID is the id withIDs gives the Step at pos.
+func stepID(pos int) automationstep.ID { return automationstep.ID("step-" + strconv.Itoa(pos)) }

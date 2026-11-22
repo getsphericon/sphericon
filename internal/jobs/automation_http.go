@@ -36,7 +36,7 @@ func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[automations
 		return err
 	}
 	s := w.ent.Scoped(run.WorkspaceID)
-	decision, err := w.step.ExecuteHTTP(ctx, s, automations.ExecuteHTTPInput{RunID: run.ID, Step: job.Args.Step, Attempt: hookAttempt(job.JobRow)})
+	decision, err := w.step.ExecuteHTTP(ctx, s, automations.ExecuteHTTPInput{RunID: run.ID, StepID: job.Args.StepID, Attempt: hookAttempt(job.JobRow)})
 	if err != nil {
 		return err
 	}

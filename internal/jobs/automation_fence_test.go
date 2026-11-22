@@ -223,7 +223,7 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	go func() {
 		workDone <- w.Work(workCtx, &river.Job[automations.RunHTTPStepArgs]{
 			JobRow: &rivertype.JobRow{Attempt: 1, MaxAttempts: automations.RunHTTPStepArgs{}.InsertOpts().MaxAttempts, CreatedAt: time.Now()},
-			Args:   automations.RunHTTPStepArgs{RunID: runID, Step: call},
+			Args:   automations.RunHTTPStepArgs{RunID: runID, StepID: call},
 		})
 	}()
 	testhelper.Receive(t, started, "the work starts")

@@ -7,6 +7,8 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 // AutomationFigure is what one send Step of an Automation version sent before message retention
@@ -39,6 +41,7 @@ func (AutomationFigure) Fields() []ent.Field {
 		field.Int64("version_id").
 			Immutable(),
 		field.String("step_id").
+			GoType(automationstep.ID("")).
 			Immutable(),
 		// The counts the report reads from the messages: sent and skipped by step, and the
 		// delivery stamps.

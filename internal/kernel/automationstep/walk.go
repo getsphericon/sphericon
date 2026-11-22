@@ -28,7 +28,7 @@ func First(p Path) (*Step, bool) {
 
 // Find is the Step of the id, false when the path holds none: an Enrollment names the Step it
 // stands on by its id, which every version keeps (ADR 0122).
-func Find(p Path, id string) (*Step, bool) {
+func Find(p Path, id ID) (*Step, bool) {
 	for _, st := range All(p) {
 		if st.ID == id {
 			return st, true
@@ -39,7 +39,7 @@ func Find(p Path, id string) (*Step, bool) {
 
 // Next is the Step an Enrollment reaches after the one of the id: the following Step of the path.
 // False after the last Step, where the Enrollment completes, and for an id the path does not hold.
-func Next(p Path, id string) (*Step, bool) {
+func Next(p Path, id ID) (*Step, bool) {
 	found := false
 	for _, st := range All(p) {
 		if found {

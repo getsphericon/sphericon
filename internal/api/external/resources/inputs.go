@@ -362,7 +362,7 @@ func automationPathPtrIn(c Inputs, o externalapi.OptAutomationPathInput) *automa
 
 // stepIDIn is the id a Step or a path is written with, "" when the request leaves it to the
 // server.
-func stepIDIn(o externalapi.OptStepId) string { return string(o.Or("")) }
+func stepIDIn(o externalapi.OptStepId) automationstep.ID { return automationstep.ID(o.Or("")) }
 
 // automationStepsIn maps a path's Steps onto the module's, each by automationStepIn.
 func automationStepsIn(c Inputs, in []externalapi.AutomationStepInput) []automationstep.Step {

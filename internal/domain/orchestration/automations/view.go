@@ -9,7 +9,7 @@ import (
 
 // PathView is a stored path as the API shows it: its id and a view of each of its Steps, in order.
 type PathView struct {
-	ID    string
+	ID    automationstep.ID
 	Steps []StepView
 }
 
@@ -22,7 +22,7 @@ type StepView interface{ stepView() }
 // EmailView is an email step. Doc is its editor document and EditorVersion the editor that
 // rendered it; a step written as HTML has neither. IntegrationID is nil for the Channel's default.
 type EmailView struct {
-	ID            string
+	ID            automationstep.ID
 	Type          automationstep.Kind
 	Subject, Body string
 	Doc           json.RawMessage
@@ -33,7 +33,7 @@ type EmailView struct {
 // TelegramView is a Telegram step: its message, its image and unsubscribe button (nil for none),
 // its buttons and whether a link unfolds a preview.
 type TelegramView struct {
-	ID                string
+	ID                automationstep.ID
 	Type              automationstep.Kind
 	Text              string
 	ImageURL          *string
@@ -45,7 +45,7 @@ type TelegramView struct {
 
 // SMSView is an SMS step: its text and whether its links go out as short tracked links.
 type SMSView struct {
-	ID            string
+	ID            automationstep.ID
 	Type          automationstep.Kind
 	Text          string
 	LinkTracking  bool
@@ -54,21 +54,21 @@ type SMSView struct {
 
 // WaitView is a wait step.
 type WaitView struct {
-	ID      string
+	ID      automationstep.ID
 	Type    automationstep.Kind
 	Seconds int
 }
 
 // TagView is an apply tag or a remove tag step, as Type says.
 type TagView struct {
-	ID   string
+	ID   automationstep.ID
 	Type automationstep.Kind
 	Tag  string
 }
 
 // HTTPView is an HTTP step without its secrets.
 type HTTPView struct {
-	ID        string
+	ID        automationstep.ID
 	Type      automationstep.Kind
 	Body      string
 	Headers   []HeaderName
@@ -77,7 +77,7 @@ type HTTPView struct {
 
 // EndView is an End: its id and kind, nothing else (ADR 0124).
 type EndView struct {
-	ID   string
+	ID   automationstep.ID
 	Type automationstep.Kind
 }
 

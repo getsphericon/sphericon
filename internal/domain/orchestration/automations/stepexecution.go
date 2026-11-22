@@ -22,15 +22,15 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
-// RunStepArgs is the job that executes one step of one Enrollment. Step is the id of the Step
+// RunStepArgs is the job that executes one step of one Enrollment. StepID is the id of the Step
 // the job expects the Enrollment to stand on (ADR 0122): a job delivered again after its step moved
 // the Enrollment finds it elsewhere and ends quietly. The args carry the run id, so Erasure can
 // delete a queued step by it (ADR 0021): renaming `run_id` breaks that purge.
 type RunStepArgs struct {
 	jobkind.Workspace
 
-	RunID int64  `json:"run_id"`
-	Step  string `json:"step_id"`
+	RunID  int64             `json:"run_id"`
+	StepID automationstep.ID `json:"step_id"`
 }
 
 func (RunStepArgs) Kind() string { return jobkind.RunStep.Kind }
@@ -41,8 +41,8 @@ func (RunStepArgs) Kind() string { return jobkind.RunStep.Kind }
 type RunHTTPStepArgs struct {
 	jobkind.Workspace
 
-	RunID int64  `json:"run_id"`
-	Step  string `json:"step_id"`
+	RunID  int64             `json:"run_id"`
+	StepID automationstep.ID `json:"step_id"`
 }
 
 func (RunHTTPStepArgs) Kind() string { return jobkind.HTTPStep.Kind }
@@ -188,7 +188,7 @@ func (m *StepExecution) start(ctx context.Context, s *ent.Scoped, makeEnrollment
 			return err
 		}
 		// A first Step that is a wait is due later: its job runs then.
-		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: runID, Step: lo.FromPtr(run.CurrentStepID)}, scheduled(run.ResumeAt))
+		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: runID, StepID: lo.FromPtr(run.CurrentStepID)}, scheduled(run.ResumeAt))
 	})
 	return made, err
 }
@@ -203,7 +203,7 @@ func (m *StepExecution) start(ctx context.Context, s *ent.Scoped, makeEnrollment
 // hold fails it. A send step is one Outbound send under the Automation's Sending source
 // (ADR 0015): the Outbound module owns eligibility, the unsubscribe footer and the send record, and
 // Step only turns its Outcome into the Enrollment's next state.
-func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, step string) error {
+func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, step automationstep.ID) error {
 	run, err := s.AutomationRun().Get(ctx, runID)
 	if ent.IsNotFound(err) {
 		return nil
@@ -262,7 +262,7 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 	case automationstep.HTTP:
 		// The call runs on its own queue (ADR 0039); the job queued here makes it and moves
 		// the Enrollment on through ExecuteHTTP.
-		return m.enqueue(ctx, s, RunHTTPStepArgs{WorkspaceID: s.WorkspaceID(), RunID: run.ID, Step: step}, nil)
+		return m.enqueue(ctx, s, RunHTTPStepArgs{WorkspaceID: s.WorkspaceID(), RunID: run.ID, StepID: step}, nil)
 
 	default:
 		if _, sends := st.Kind().Channel(); sends {
@@ -362,7 +362,7 @@ type stepMove struct {
 // that holds it.
 type place struct {
 	steps automationstep.Path
-	step  string
+	step  automationstep.ID
 }
 
 // advance moves the Enrollment off the Step it stands on, in one transaction with mv's own writes
@@ -404,7 +404,7 @@ func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64,
 		if err := reach(ctx, ts, runID, next.ID, now, due); err != nil {
 			return err
 		}
-		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: runID, Step: next.ID}, scheduled(due))
+		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: runID, StepID: next.ID}, scheduled(due))
 	})
 	return quiet(err)
 }
@@ -420,7 +420,7 @@ func (m *StepExecution) end(ctx context.Context, s *ent.Scoped, runID int64, at 
 
 // completeOn completes the Enrollment on the Step of the id, which it leaves at now (skipped for
 // why when why is set), in the transaction s is bound to.
-func completeOn(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID int64, step string, now time.Time, why skipreason.Reason) error {
+func completeOn(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID int64, step automationstep.ID, now time.Time, why skipreason.Reason) error {
 	if err := completeRun(ctx, s, pub, runID, step, now); err != nil {
 		return err
 	}
@@ -428,8 +428,8 @@ func completeOn(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID 
 }
 
 // requeue queues the same step again for at.
-func (m *StepExecution) requeue(ctx context.Context, s *ent.Scoped, runID int64, step string, at time.Time) error {
-	return m.enqueue(ctx, s, RunStepArgs{WorkspaceID: s.WorkspaceID(), RunID: runID, Step: step}, &at)
+func (m *StepExecution) requeue(ctx context.Context, s *ent.Scoped, runID int64, step automationstep.ID, at time.Time) error {
+	return m.enqueue(ctx, s, RunStepArgs{WorkspaceID: s.WorkspaceID(), RunID: runID, StepID: step}, &at)
 }
 
 func (m *StepExecution) enqueue(ctx context.Context, s *ent.Scoped, args river.JobArgs, at *time.Time) error {

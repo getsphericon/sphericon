@@ -69,7 +69,7 @@ func messageRow(m *ent.OutboundMessage) MessageRow {
 		AutomationID:      publicid.Ptr(m.AutomationID),
 		AutomationRunID:   publicid.Ptr(m.AutomationRunID),
 		AutomationVersion: versionNumber(m),
-		AutomationStepID:  m.AutomationStepID,
+		AutomationStepID:  (*string)(m.AutomationStepID),
 		IntegrationID:     publicid.Ptr(m.IntegrationID),
 		TemplateID:        publicid.Ptr(m.TemplateID),
 		SendingSource:     m.SendingSource,

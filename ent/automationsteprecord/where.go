@@ -8,6 +8,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
@@ -77,8 +78,9 @@ func RunID(v int64) predicate.AutomationStepRecord {
 }
 
 // StepID applies equality check predicate on the "step_id" field. It's identical to StepIDEQ.
-func StepID(v string) predicate.AutomationStepRecord {
-	return predicate.AutomationStepRecord(sql.FieldEQ(FieldStepID, v))
+func StepID(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldEQ(FieldStepID, vc))
 }
 
 // ReachedAt applies equality check predicate on the "reached_at" field. It's identical to ReachedAtEQ.
@@ -217,68 +219,87 @@ func RunIDNotIn(vs ...int64) predicate.AutomationStepRecord {
 }
 
 // StepIDEQ applies the EQ predicate on the "step_id" field.
-func StepIDEQ(v string) predicate.AutomationStepRecord {
-	return predicate.AutomationStepRecord(sql.FieldEQ(FieldStepID, v))
+func StepIDEQ(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldEQ(FieldStepID, vc))
 }
 
 // StepIDNEQ applies the NEQ predicate on the "step_id" field.
-func StepIDNEQ(v string) predicate.AutomationStepRecord {
-	return predicate.AutomationStepRecord(sql.FieldNEQ(FieldStepID, v))
+func StepIDNEQ(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldNEQ(FieldStepID, vc))
 }
 
 // StepIDIn applies the In predicate on the "step_id" field.
-func StepIDIn(vs ...string) predicate.AutomationStepRecord {
-	return predicate.AutomationStepRecord(sql.FieldIn(FieldStepID, vs...))
+func StepIDIn(vs ...automationstep.ID) predicate.AutomationStepRecord {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = string(vs[i])
+	}
+	return predicate.AutomationStepRecord(sql.FieldIn(FieldStepID, v...))
 }
 
 // StepIDNotIn applies the NotIn predicate on the "step_id" field.
-func StepIDNotIn(vs ...string) predicate.AutomationStepRecord {
-	return predicate.AutomationStepRecord(sql.FieldNotIn(FieldStepID, vs...))
+func StepIDNotIn(vs ...automationstep.ID) predicate.AutomationStepRecord {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = string(vs[i])
+	}
+	return predicate.AutomationStepRecord(sql.FieldNotIn(FieldStepID, v...))
 }
 
 // StepIDGT applies the GT predicate on the "step_id" field.
-func StepIDGT(v string) predicate.AutomationStepRecord {
-	return predicate.AutomationStepRecord(sql.FieldGT(FieldStepID, v))
+func StepIDGT(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldGT(FieldStepID, vc))
 }
 
 // StepIDGTE applies the GTE predicate on the "step_id" field.
-func StepIDGTE(v string) predicate.AutomationStepRecord {
-	return predicate.AutomationStepRecord(sql.FieldGTE(FieldStepID, v))
+func StepIDGTE(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldGTE(FieldStepID, vc))
 }
 
 // StepIDLT applies the LT predicate on the "step_id" field.
-func StepIDLT(v string) predicate.AutomationStepRecord {
-	return predicate.AutomationStepRecord(sql.FieldLT(FieldStepID, v))
+func StepIDLT(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldLT(FieldStepID, vc))
 }
 
 // StepIDLTE applies the LTE predicate on the "step_id" field.
-func StepIDLTE(v string) predicate.AutomationStepRecord {
-	return predicate.AutomationStepRecord(sql.FieldLTE(FieldStepID, v))
+func StepIDLTE(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldLTE(FieldStepID, vc))
 }
 
 // StepIDContains applies the Contains predicate on the "step_id" field.
-func StepIDContains(v string) predicate.AutomationStepRecord {
-	return predicate.AutomationStepRecord(sql.FieldContains(FieldStepID, v))
+func StepIDContains(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldContains(FieldStepID, vc))
 }
 
 // StepIDHasPrefix applies the HasPrefix predicate on the "step_id" field.
-func StepIDHasPrefix(v string) predicate.AutomationStepRecord {
-	return predicate.AutomationStepRecord(sql.FieldHasPrefix(FieldStepID, v))
+func StepIDHasPrefix(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldHasPrefix(FieldStepID, vc))
 }
 
 // StepIDHasSuffix applies the HasSuffix predicate on the "step_id" field.
-func StepIDHasSuffix(v string) predicate.AutomationStepRecord {
-	return predicate.AutomationStepRecord(sql.FieldHasSuffix(FieldStepID, v))
+func StepIDHasSuffix(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldHasSuffix(FieldStepID, vc))
 }
 
 // StepIDEqualFold applies the EqualFold predicate on the "step_id" field.
-func StepIDEqualFold(v string) predicate.AutomationStepRecord {
-	return predicate.AutomationStepRecord(sql.FieldEqualFold(FieldStepID, v))
+func StepIDEqualFold(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldEqualFold(FieldStepID, vc))
 }
 
 // StepIDContainsFold applies the ContainsFold predicate on the "step_id" field.
-func StepIDContainsFold(v string) predicate.AutomationStepRecord {
-	return predicate.AutomationStepRecord(sql.FieldContainsFold(FieldStepID, v))
+func StepIDContainsFold(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldContainsFold(FieldStepID, vc))
 }
 
 // ReachedAtEQ applies the EQ predicate on the "reached_at" field.

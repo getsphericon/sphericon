@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 // AutomationRunCreate is the builder for creating a AutomationRun entity.
@@ -141,13 +142,13 @@ func (_c *AutomationRunCreate) SetNillableEndedAt(v *time.Time) *AutomationRunCr
 }
 
 // SetCurrentStepID sets the "current_step_id" field.
-func (_c *AutomationRunCreate) SetCurrentStepID(v string) *AutomationRunCreate {
+func (_c *AutomationRunCreate) SetCurrentStepID(v automationstep.ID) *AutomationRunCreate {
 	_c.mutation.SetCurrentStepID(v)
 	return _c
 }
 
 // SetNillableCurrentStepID sets the "current_step_id" field if the given value is not nil.
-func (_c *AutomationRunCreate) SetNillableCurrentStepID(v *string) *AutomationRunCreate {
+func (_c *AutomationRunCreate) SetNillableCurrentStepID(v *automationstep.ID) *AutomationRunCreate {
 	if v != nil {
 		_c.SetCurrentStepID(*v)
 	}
@@ -629,7 +630,7 @@ func (u *AutomationRunUpsert) ClearEndedAt() *AutomationRunUpsert {
 }
 
 // SetCurrentStepID sets the "current_step_id" field.
-func (u *AutomationRunUpsert) SetCurrentStepID(v string) *AutomationRunUpsert {
+func (u *AutomationRunUpsert) SetCurrentStepID(v automationstep.ID) *AutomationRunUpsert {
 	u.Set(automationrun.FieldCurrentStepID, v)
 	return u
 }
@@ -890,7 +891,7 @@ func (u *AutomationRunUpsertOne) ClearEndedAt() *AutomationRunUpsertOne {
 }
 
 // SetCurrentStepID sets the "current_step_id" field.
-func (u *AutomationRunUpsertOne) SetCurrentStepID(v string) *AutomationRunUpsertOne {
+func (u *AutomationRunUpsertOne) SetCurrentStepID(v automationstep.ID) *AutomationRunUpsertOne {
 	return u.Update(func(s *AutomationRunUpsert) {
 		s.SetCurrentStepID(v)
 	})
@@ -1333,7 +1334,7 @@ func (u *AutomationRunUpsertBulk) ClearEndedAt() *AutomationRunUpsertBulk {
 }
 
 // SetCurrentStepID sets the "current_step_id" field.
-func (u *AutomationRunUpsertBulk) SetCurrentStepID(v string) *AutomationRunUpsertBulk {
+func (u *AutomationRunUpsertBulk) SetCurrentStepID(v automationstep.ID) *AutomationRunUpsertBulk {
 	return u.Update(func(s *AutomationRunUpsert) {
 		s.SetCurrentStepID(v)
 	})

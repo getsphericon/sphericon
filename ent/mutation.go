@@ -4630,7 +4630,7 @@ type AutomationFigureMutation struct {
 	id                *int64
 	created_at        *time.Time
 	updated_at        *time.Time
-	step_id           *string
+	step_id           *automationstep.ID
 	sent              *int
 	addsent           *int
 	skipped           *int
@@ -4940,12 +4940,12 @@ func (m *AutomationFigureMutation) ResetVersionID() {
 }
 
 // SetStepID sets the "step_id" field.
-func (m *AutomationFigureMutation) SetStepID(s string) {
-	m.step_id = &s
+func (m *AutomationFigureMutation) SetStepID(a automationstep.ID) {
+	m.step_id = &a
 }
 
 // StepID returns the value of the "step_id" field in the mutation.
-func (m *AutomationFigureMutation) StepID() (r string, exists bool) {
+func (m *AutomationFigureMutation) StepID() (r automationstep.ID, exists bool) {
 	v := m.step_id
 	if v == nil {
 		return
@@ -4956,7 +4956,7 @@ func (m *AutomationFigureMutation) StepID() (r string, exists bool) {
 // OldStepID returns the old "step_id" field's value of the AutomationFigure entity.
 // If the AutomationFigure object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AutomationFigureMutation) OldStepID(ctx context.Context) (v string, err error) {
+func (m *AutomationFigureMutation) OldStepID(ctx context.Context) (v automationstep.ID, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldStepID is only allowed on UpdateOne operations")
 	}
@@ -5573,7 +5573,7 @@ func (m *AutomationFigureMutation) SetField(name string, value ent.Value) error 
 		m.SetVersionID(v)
 		return nil
 	case automationfigure.FieldStepID:
-		v, ok := value.(string)
+		v, ok := value.(automationstep.ID)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -5908,7 +5908,7 @@ type AutomationRunMutation struct {
 	event_action      *string
 	event_properties  *map[string]interface{}
 	ended_at          *time.Time
-	current_step_id   *string
+	current_step_id   *automationstep.ID
 	resume_at         *time.Time
 	failure_kind      *automationrun.FailureKind
 	failure_status    *int
@@ -6468,12 +6468,12 @@ func (m *AutomationRunMutation) ResetEndedAt() {
 }
 
 // SetCurrentStepID sets the "current_step_id" field.
-func (m *AutomationRunMutation) SetCurrentStepID(s string) {
-	m.current_step_id = &s
+func (m *AutomationRunMutation) SetCurrentStepID(a automationstep.ID) {
+	m.current_step_id = &a
 }
 
 // CurrentStepID returns the value of the "current_step_id" field in the mutation.
-func (m *AutomationRunMutation) CurrentStepID() (r string, exists bool) {
+func (m *AutomationRunMutation) CurrentStepID() (r automationstep.ID, exists bool) {
 	v := m.current_step_id
 	if v == nil {
 		return
@@ -6484,7 +6484,7 @@ func (m *AutomationRunMutation) CurrentStepID() (r string, exists bool) {
 // OldCurrentStepID returns the old "current_step_id" field's value of the AutomationRun entity.
 // If the AutomationRun object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AutomationRunMutation) OldCurrentStepID(ctx context.Context) (v *string, err error) {
+func (m *AutomationRunMutation) OldCurrentStepID(ctx context.Context) (v *automationstep.ID, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldCurrentStepID is only allowed on UpdateOne operations")
 	}
@@ -7092,7 +7092,7 @@ func (m *AutomationRunMutation) SetField(name string, value ent.Value) error {
 		m.SetEndedAt(v)
 		return nil
 	case automationrun.FieldCurrentStepID:
-		v, ok := value.(string)
+		v, ok := value.(automationstep.ID)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -7429,7 +7429,7 @@ type AutomationStepRecordMutation struct {
 	id               *int64
 	created_at       *time.Time
 	updated_at       *time.Time
-	step_id          *string
+	step_id          *automationstep.ID
 	reached_at       *time.Time
 	left_at          *time.Time
 	outcome          *automationsteprecord.Outcome
@@ -7694,12 +7694,12 @@ func (m *AutomationStepRecordMutation) ResetRunID() {
 }
 
 // SetStepID sets the "step_id" field.
-func (m *AutomationStepRecordMutation) SetStepID(s string) {
-	m.step_id = &s
+func (m *AutomationStepRecordMutation) SetStepID(a automationstep.ID) {
+	m.step_id = &a
 }
 
 // StepID returns the value of the "step_id" field in the mutation.
-func (m *AutomationStepRecordMutation) StepID() (r string, exists bool) {
+func (m *AutomationStepRecordMutation) StepID() (r automationstep.ID, exists bool) {
 	v := m.step_id
 	if v == nil {
 		return
@@ -7710,7 +7710,7 @@ func (m *AutomationStepRecordMutation) StepID() (r string, exists bool) {
 // OldStepID returns the old "step_id" field's value of the AutomationStepRecord entity.
 // If the AutomationStepRecord object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AutomationStepRecordMutation) OldStepID(ctx context.Context) (v string, err error) {
+func (m *AutomationStepRecordMutation) OldStepID(ctx context.Context) (v automationstep.ID, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldStepID is only allowed on UpdateOne operations")
 	}
@@ -8175,7 +8175,7 @@ func (m *AutomationStepRecordMutation) SetField(name string, value ent.Value) er
 		m.SetRunID(v)
 		return nil
 	case automationsteprecord.FieldStepID:
-		v, ok := value.(string)
+		v, ok := value.(automationstep.ID)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -45348,7 +45348,7 @@ type OutboundMessageMutation struct {
 	opened_at                  *time.Time
 	clicked_at                 *time.Time
 	captured                   *bool
-	automation_step_id         *string
+	automation_step_id         *automationstep.ID
 	request_digest             *string
 	subject                    *string
 	app_origin                 *string
@@ -46788,12 +46788,12 @@ func (m *OutboundMessageMutation) ResetAutomationVersionID() {
 }
 
 // SetAutomationStepID sets the "automation_step_id" field.
-func (m *OutboundMessageMutation) SetAutomationStepID(s string) {
-	m.automation_step_id = &s
+func (m *OutboundMessageMutation) SetAutomationStepID(a automationstep.ID) {
+	m.automation_step_id = &a
 }
 
 // AutomationStepID returns the value of the "automation_step_id" field in the mutation.
-func (m *OutboundMessageMutation) AutomationStepID() (r string, exists bool) {
+func (m *OutboundMessageMutation) AutomationStepID() (r automationstep.ID, exists bool) {
 	v := m.automation_step_id
 	if v == nil {
 		return
@@ -46804,7 +46804,7 @@ func (m *OutboundMessageMutation) AutomationStepID() (r string, exists bool) {
 // OldAutomationStepID returns the old "automation_step_id" field's value of the OutboundMessage entity.
 // If the OutboundMessage object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *OutboundMessageMutation) OldAutomationStepID(ctx context.Context) (v *string, err error) {
+func (m *OutboundMessageMutation) OldAutomationStepID(ctx context.Context) (v *automationstep.ID, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldAutomationStepID is only allowed on UpdateOne operations")
 	}
@@ -47888,7 +47888,7 @@ func (m *OutboundMessageMutation) SetField(name string, value ent.Value) error {
 		m.SetAutomationVersionID(v)
 		return nil
 	case outboundmessage.FieldAutomationStepID:
-		v, ok := value.(string)
+		v, ok := value.(automationstep.ID)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

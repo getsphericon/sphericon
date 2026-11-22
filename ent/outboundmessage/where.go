@@ -8,6 +8,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
@@ -183,8 +184,9 @@ func AutomationVersionID(v int64) predicate.OutboundMessage {
 }
 
 // AutomationStepID applies equality check predicate on the "automation_step_id" field. It's identical to AutomationStepIDEQ.
-func AutomationStepID(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldEQ(FieldAutomationStepID, v))
+func AutomationStepID(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldEQ(FieldAutomationStepID, vc))
 }
 
 // IntegrationID applies equality check predicate on the "integration_id" field. It's identical to IntegrationIDEQ.
@@ -1518,58 +1520,75 @@ func AutomationVersionIDNotNil() predicate.OutboundMessage {
 }
 
 // AutomationStepIDEQ applies the EQ predicate on the "automation_step_id" field.
-func AutomationStepIDEQ(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldEQ(FieldAutomationStepID, v))
+func AutomationStepIDEQ(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldEQ(FieldAutomationStepID, vc))
 }
 
 // AutomationStepIDNEQ applies the NEQ predicate on the "automation_step_id" field.
-func AutomationStepIDNEQ(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldNEQ(FieldAutomationStepID, v))
+func AutomationStepIDNEQ(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldNEQ(FieldAutomationStepID, vc))
 }
 
 // AutomationStepIDIn applies the In predicate on the "automation_step_id" field.
-func AutomationStepIDIn(vs ...string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldIn(FieldAutomationStepID, vs...))
+func AutomationStepIDIn(vs ...automationstep.ID) predicate.OutboundMessage {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = string(vs[i])
+	}
+	return predicate.OutboundMessage(sql.FieldIn(FieldAutomationStepID, v...))
 }
 
 // AutomationStepIDNotIn applies the NotIn predicate on the "automation_step_id" field.
-func AutomationStepIDNotIn(vs ...string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldNotIn(FieldAutomationStepID, vs...))
+func AutomationStepIDNotIn(vs ...automationstep.ID) predicate.OutboundMessage {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = string(vs[i])
+	}
+	return predicate.OutboundMessage(sql.FieldNotIn(FieldAutomationStepID, v...))
 }
 
 // AutomationStepIDGT applies the GT predicate on the "automation_step_id" field.
-func AutomationStepIDGT(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldGT(FieldAutomationStepID, v))
+func AutomationStepIDGT(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldGT(FieldAutomationStepID, vc))
 }
 
 // AutomationStepIDGTE applies the GTE predicate on the "automation_step_id" field.
-func AutomationStepIDGTE(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldGTE(FieldAutomationStepID, v))
+func AutomationStepIDGTE(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldGTE(FieldAutomationStepID, vc))
 }
 
 // AutomationStepIDLT applies the LT predicate on the "automation_step_id" field.
-func AutomationStepIDLT(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldLT(FieldAutomationStepID, v))
+func AutomationStepIDLT(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldLT(FieldAutomationStepID, vc))
 }
 
 // AutomationStepIDLTE applies the LTE predicate on the "automation_step_id" field.
-func AutomationStepIDLTE(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldLTE(FieldAutomationStepID, v))
+func AutomationStepIDLTE(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldLTE(FieldAutomationStepID, vc))
 }
 
 // AutomationStepIDContains applies the Contains predicate on the "automation_step_id" field.
-func AutomationStepIDContains(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldContains(FieldAutomationStepID, v))
+func AutomationStepIDContains(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldContains(FieldAutomationStepID, vc))
 }
 
 // AutomationStepIDHasPrefix applies the HasPrefix predicate on the "automation_step_id" field.
-func AutomationStepIDHasPrefix(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldHasPrefix(FieldAutomationStepID, v))
+func AutomationStepIDHasPrefix(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldHasPrefix(FieldAutomationStepID, vc))
 }
 
 // AutomationStepIDHasSuffix applies the HasSuffix predicate on the "automation_step_id" field.
-func AutomationStepIDHasSuffix(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldHasSuffix(FieldAutomationStepID, v))
+func AutomationStepIDHasSuffix(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldHasSuffix(FieldAutomationStepID, vc))
 }
 
 // AutomationStepIDIsNil applies the IsNil predicate on the "automation_step_id" field.
@@ -1583,13 +1602,15 @@ func AutomationStepIDNotNil() predicate.OutboundMessage {
 }
 
 // AutomationStepIDEqualFold applies the EqualFold predicate on the "automation_step_id" field.
-func AutomationStepIDEqualFold(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldEqualFold(FieldAutomationStepID, v))
+func AutomationStepIDEqualFold(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldEqualFold(FieldAutomationStepID, vc))
 }
 
 // AutomationStepIDContainsFold applies the ContainsFold predicate on the "automation_step_id" field.
-func AutomationStepIDContainsFold(v string) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldContainsFold(FieldAutomationStepID, v))
+func AutomationStepIDContainsFold(v automationstep.ID) predicate.OutboundMessage {
+	vc := string(v)
+	return predicate.OutboundMessage(sql.FieldContainsFold(FieldAutomationStepID, vc))
 }
 
 // IntegrationIDEQ applies the EQ predicate on the "integration_id" field.

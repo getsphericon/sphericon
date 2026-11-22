@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
@@ -87,7 +88,7 @@ type OutboundMessage struct {
 	// AutomationVersionID holds the value of the "automation_version_id" field.
 	AutomationVersionID *int64 `json:"automation_version_id,omitempty"`
 	// AutomationStepID holds the value of the "automation_step_id" field.
-	AutomationStepID *string `json:"automation_step_id,omitempty"`
+	AutomationStepID *automationstep.ID `json:"automation_step_id,omitempty"`
 	// IntegrationID holds the value of the "integration_id" field.
 	IntegrationID *int64 `json:"integration_id,omitempty"`
 	// TemplateID holds the value of the "template_id" field.
@@ -470,8 +471,8 @@ func (_m *OutboundMessage) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field automation_step_id", values[i])
 			} else if value.Valid {
-				_m.AutomationStepID = new(string)
-				*_m.AutomationStepID = value.String
+				_m.AutomationStepID = new(automationstep.ID)
+				*_m.AutomationStepID = automationstep.ID(value.String)
 			}
 		case outboundmessage.FieldIntegrationID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -721,7 +722,7 @@ func (_m *OutboundMessage) String() string {
 	builder.WriteString(", ")
 	if v := _m.AutomationStepID; v != nil {
 		builder.WriteString("automation_step_id=")
-		builder.WriteString(*v)
+		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
 	if v := _m.IntegrationID; v != nil {

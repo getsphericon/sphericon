@@ -48,11 +48,15 @@ func (k Kind) Channel() (channels.Channel, bool) {
 	}
 }
 
+// ID is the id of a Step or a path, which every version keeps (ADR 0122): an Enrollment, a job, a
+// Step record and an Automation message name a Step by it. It is a UUID in its lowercase text form.
+type ID string
+
 // Path is a path of Steps, in the order an Enrollment walks them, with the id every version keeps
 // (ADR 0122, ADR 0124). A version's Steps are its root path: the type of the document the
 // automation_versions.steps column holds (ADR 0169).
 type Path struct {
-	ID    string `json:"id"`
+	ID    ID     `json:"id"`
 	Steps []Step `json:"steps"`
 }
 
@@ -68,7 +72,7 @@ func Root(steps ...Step) Path {
 // its kind's own type. It is stored as one object, the id and the kind (`type`) beside the fields
 // of its kind; a field of another kind is refused when it is read.
 type Step struct {
-	ID      string
+	ID      ID
 	Payload Payload
 }
 
@@ -238,7 +242,7 @@ func (s *Step) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &fields); err != nil {
 		return err
 	}
-	var id string
+	var id ID
 	var kind Kind
 	if raw, ok := fields["id"]; ok {
 		if err := json.Unmarshal(raw, &id); err != nil {
@@ -283,18 +287,18 @@ func SendsEmail(p Path) bool {
 var ErrBadID = errors.New("automationstep: bad id")
 
 // NewID mints the id of a Step or a path.
-func NewID() string { return uuid.NewString() }
+func NewID() ID { return ID(uuid.NewString()) }
 
 // Identify gives the path, and each of its Steps, that has no id one from mint, and keeps an id
 // it holds. An id that is not a UUID in its lowercase text form, or that two of them share, is
 // ErrBadID, naming the Step (1-based) or the path. The path given is left as it was.
-func Identify(p Path, mint func() string) (Path, error) {
-	seen := map[string]bool{}
-	claim := func(id, what string) (string, error) {
+func Identify(p Path, mint func() ID) (Path, error) {
+	seen := map[ID]bool{}
+	claim := func(id ID, what string) (ID, error) {
 		if id == "" {
 			id = mint()
 		}
-		if parsed, err := uuid.Parse(id); err != nil || parsed.String() != id {
+		if parsed, err := uuid.Parse(string(id)); err != nil || parsed.String() != string(id) {
 			return "", fmt.Errorf("%w: %s: %q is not a lowercase UUID", ErrBadID, what, id)
 		}
 		if seen[id] {

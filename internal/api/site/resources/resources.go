@@ -98,6 +98,7 @@ import (
 // goverter:extend revision
 // goverter:extend nilFloat64
 // goverter:extend optNilString
+// goverter:extend optNilStepID
 // goverter:extend optNilOptOutVia
 // goverter:extend optNilHoldReason
 // goverter:extend omitEmpty
@@ -998,8 +999,13 @@ func optNilEmailAddress(v *string) siteapi.OptNilEmailAddress {
 }
 
 // optStepID is a Step id absent when there is none.
-func optStepID(v *string) siteapi.OptStepId {
+func optStepID(v *automationstep.ID) siteapi.OptStepId {
 	return convert.Opt[siteapi.OptStepId]((*siteapi.StepId)(v))
+}
+
+// optNilStepID is the Step id an Automation message names, null for another kind of message.
+func optNilStepID(v *automationstep.ID) siteapi.OptNilString {
+	return convert.Opt[siteapi.OptNilString]((*string)(v))
 }
 
 // optEntityID is an id absent when there is none.

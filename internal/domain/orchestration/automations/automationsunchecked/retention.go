@@ -6,6 +6,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 // AddPruned counts the Automation messages message retention deletes into their Automations'
@@ -16,7 +17,7 @@ import (
 func (m *Module) AddPruned(ctx context.Context, s *ent.Scoped, msgs []*ent.OutboundMessage) error {
 	type key struct {
 		automation, version int64
-		step                string
+		step                automationstep.ID
 	}
 	byStep := map[key]*counts{}
 	var order []key

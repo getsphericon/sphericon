@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 // AutomationRun is the model entity for the AutomationRun schema.
@@ -45,7 +46,7 @@ type AutomationRun struct {
 	// EndedAt holds the value of the "ended_at" field.
 	EndedAt *time.Time `json:"ended_at,omitempty"`
 	// CurrentStepID holds the value of the "current_step_id" field.
-	CurrentStepID *string `json:"current_step_id,omitempty"`
+	CurrentStepID *automationstep.ID `json:"current_step_id,omitempty"`
 	// ResumeAt holds the value of the "resume_at" field.
 	ResumeAt *time.Time `json:"resume_at,omitempty"`
 	// FailureKind holds the value of the "failure_kind" field.
@@ -227,8 +228,8 @@ func (_m *AutomationRun) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field current_step_id", values[i])
 			} else if value.Valid {
-				_m.CurrentStepID = new(string)
-				*_m.CurrentStepID = value.String
+				_m.CurrentStepID = new(automationstep.ID)
+				*_m.CurrentStepID = automationstep.ID(value.String)
 			}
 		case automationrun.FieldResumeAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -353,7 +354,7 @@ func (_m *AutomationRun) String() string {
 	builder.WriteString(", ")
 	if v := _m.CurrentStepID; v != nil {
 		builder.WriteString("current_step_id=")
-		builder.WriteString(*v)
+		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
 	if v := _m.ResumeAt; v != nil {

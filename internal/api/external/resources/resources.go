@@ -144,6 +144,7 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend timestamp
 // goverter:extend revision
 // goverter:extend optNilString
+// goverter:extend optNilStepID
 // goverter:extend optNilSendCap
 // goverter:extend optNilOptOutVia
 // goverter:extend optNilSmsConfirmation
@@ -750,8 +751,13 @@ func optNilEmailAddress(v *string) externalapi.OptNilEmailAddress {
 }
 
 // optStepID is a Step id absent when there is none.
-func optStepID(v *string) externalapi.OptStepId {
+func optStepID(v *automationstep.ID) externalapi.OptStepId {
 	return convert.Opt[externalapi.OptStepId]((*externalapi.StepId)(v))
+}
+
+// optNilStepID is the Step id an Automation message names, null for another kind of message.
+func optNilStepID(v *automationstep.ID) externalapi.OptNilString {
+	return convert.Opt[externalapi.OptNilString]((*string)(v))
 }
 
 // optEntityID is an id absent when there is none.

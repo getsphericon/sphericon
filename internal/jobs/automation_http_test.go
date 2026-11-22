@@ -157,16 +157,16 @@ func (h *httpStepHarness) attempt(w *jobs.RunHTTPStepWorker, runID int64, attemp
 
 // attemptStep is attempt on the job that names step, for an Enrollment whose Step can no longer
 // be read.
-func (h *httpStepHarness) attemptStep(w *jobs.RunHTTPStepWorker, runID int64, step string, attempt int) error {
+func (h *httpStepHarness) attemptStep(w *jobs.RunHTTPStepWorker, runID int64, step automationstep.ID, attempt int) error {
 	return w.Work(h.workCtx(), &river.Job[automations.RunHTTPStepArgs]{
 		JobRow: &rivertype.JobRow{Attempt: attempt, MaxAttempts: automations.RunHTTPStepArgs{}.InsertOpts().MaxAttempts, CreatedAt: h.clock},
-		Args:   automations.RunHTTPStepArgs{RunID: runID, Step: step},
+		Args:   automations.RunHTTPStepArgs{RunID: runID, StepID: step},
 	})
 }
 
 // httpStepOf is the id of the HTTP step of the Enrollment's version, its first Step in every
 // Automation these tests run.
-func (h *httpStepHarness) httpStepOf(runID int64) string {
+func (h *httpStepHarness) httpStepOf(runID int64) automationstep.ID {
 	run := h.DB.AutomationRun.GetX(context.Background(), runID)
 	st, _ := automationstep.First(h.DB.AutomationVersion.GetX(context.Background(), run.VersionID).Steps)
 	return st.ID
@@ -179,7 +179,7 @@ func (h *httpStepHarness) run(runID int64) *automationrunView {
 
 type automationrunView struct {
 	status     automationrun.Status
-	step       string
+	step       automationstep.ID
 	kind       *automationrun.FailureKind
 	httpStatus *int
 	excerpt    *string
@@ -343,7 +343,7 @@ func TestHTTPStepRateLimitEndsAtTheRetryHorizon(t *testing.T) {
 
 	err := w.Work(h.workCtx(), &river.Job[automations.RunHTTPStepArgs]{
 		JobRow: &rivertype.JobRow{Attempt: 1, MaxAttempts: 3, CreatedAt: h.clock.Add(-webhook.HookRetryHorizon)},
-		Args:   automations.RunHTTPStepArgs{RunID: runID, Step: h.StepIDAt(t, runID, 0)},
+		Args:   automations.RunHTTPStepArgs{RunID: runID, StepID: h.StepIDAt(t, runID, 0)},
 	})
 
 	var cancelled *rivertype.JobCancelError

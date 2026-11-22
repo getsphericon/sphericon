@@ -12,6 +12,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
 
@@ -78,7 +79,7 @@ func BroadcastRecipient(b *ent.Broadcast, rec *ent.BroadcastRecipient, c *ent.Co
 // 0001). The message binds the Event the run began on as `event` (#752). Its key names the run and
 // the Step id, which every version keeps, so a Step inserted above it never changes the key (ADR
 // 0122).
-func AutomationStep(a *ent.Automation, run *ent.AutomationRun, stepID string, integrationID *int64, c *ent.Contact, content Content) Request {
+func AutomationStep(a *ent.Automation, run *ent.AutomationRun, stepID automationstep.ID, integrationID *int64, c *ent.Contact, content Content) Request {
 	return Request{
 		Key:           fmt.Sprintf("automation:%d:%s", run.ID, stepID),
 		Destination:   contactDestination(content.Channel(), c),

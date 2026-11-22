@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 // AutomationRunUpdate is the builder for updating AutomationRun entities.
@@ -130,13 +131,13 @@ func (_u *AutomationRunUpdate) ClearEndedAt() *AutomationRunUpdate {
 }
 
 // SetCurrentStepID sets the "current_step_id" field.
-func (_u *AutomationRunUpdate) SetCurrentStepID(v string) *AutomationRunUpdate {
+func (_u *AutomationRunUpdate) SetCurrentStepID(v automationstep.ID) *AutomationRunUpdate {
 	_u.mutation.SetCurrentStepID(v)
 	return _u
 }
 
 // SetNillableCurrentStepID sets the "current_step_id" field if the given value is not nil.
-func (_u *AutomationRunUpdate) SetNillableCurrentStepID(v *string) *AutomationRunUpdate {
+func (_u *AutomationRunUpdate) SetNillableCurrentStepID(v *automationstep.ID) *AutomationRunUpdate {
 	if v != nil {
 		_u.SetCurrentStepID(*v)
 	}
@@ -652,13 +653,13 @@ func (_u *AutomationRunUpdateOne) ClearEndedAt() *AutomationRunUpdateOne {
 }
 
 // SetCurrentStepID sets the "current_step_id" field.
-func (_u *AutomationRunUpdateOne) SetCurrentStepID(v string) *AutomationRunUpdateOne {
+func (_u *AutomationRunUpdateOne) SetCurrentStepID(v automationstep.ID) *AutomationRunUpdateOne {
 	_u.mutation.SetCurrentStepID(v)
 	return _u
 }
 
 // SetNillableCurrentStepID sets the "current_step_id" field if the given value is not nil.
-func (_u *AutomationRunUpdateOne) SetNillableCurrentStepID(v *string) *AutomationRunUpdateOne {
+func (_u *AutomationRunUpdateOne) SetNillableCurrentStepID(v *automationstep.ID) *AutomationRunUpdateOne {
 	if v != nil {
 		_u.SetCurrentStepID(*v)
 	}

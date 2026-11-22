@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 // AutomationFigureCreate is the builder for creating a AutomationFigure entity.
@@ -72,7 +73,7 @@ func (_c *AutomationFigureCreate) SetVersionID(v int64) *AutomationFigureCreate 
 }
 
 // SetStepID sets the "step_id" field.
-func (_c *AutomationFigureCreate) SetStepID(v string) *AutomationFigureCreate {
+func (_c *AutomationFigureCreate) SetStepID(v automationstep.ID) *AutomationFigureCreate {
 	_c.mutation.SetStepID(v)
 	return _c
 }

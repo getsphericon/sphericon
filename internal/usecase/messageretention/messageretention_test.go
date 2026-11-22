@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/messageretention"
 )
@@ -131,7 +132,7 @@ func TestPrunedMessagesStayUnderTheirVersionAndStep(t *testing.T) {
 
 	_, figures := reports(t, env)
 
-	firstEmail := "2a17428c-014b-5b9e-866e-a08363b2780d"
+	firstEmail := automationstep.ID("2a17428c-014b-5b9e-866e-a08363b2780d")
 	drip := figures[fixtures.AutomationOnboardingDripID]
 	assert.Equal(t, []automations.VersionStepFigures{
 		{Version: 1, StepID: firstEmail, Sent: 4, Skipped: 1},

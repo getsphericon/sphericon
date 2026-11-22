@@ -4,7 +4,6 @@ import (
 	"cmp"
 	"context"
 	"slices"
-	"strings"
 
 	"github.com/samber/lo"
 
@@ -52,7 +51,7 @@ type Report struct {
 // StepFigures is what one send Step sent and skipped over every version of the Automation that had
 // it: a skip moves the Enrollment on (ADR 0081), so the report shows each Step's skips.
 type StepFigures struct {
-	StepID        string
+	StepID        automationstep.ID
 	Sent, Skipped int
 }
 
@@ -60,7 +59,7 @@ type StepFigures struct {
 // version's number.
 type VersionStepFigures struct {
 	Version       int
-	StepID        string
+	StepID        automationstep.ID
 	Sent, Skipped int
 }
 
@@ -130,7 +129,7 @@ func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64, p Report
 // versionStep names a send Step of one version: the version's row id and the Step's id.
 type versionStep struct {
 	versionID int64
-	stepID    string
+	stepID    automationstep.ID
 }
 
 // sentSkipped is what a send Step sent and skipped.
@@ -170,7 +169,7 @@ func countsOf(sent map[versionStep]*sentSkipped, k versionStep) *sentSkipped {
 func sentByStep(ctx context.Context, s *ent.Scoped, id int64) (map[versionStep]*sentSkipped, error) {
 	var rows []struct {
 		VersionID int64                  `json:"automation_version_id"`
-		StepID    string                 `json:"automation_step_id"`
+		StepID    automationstep.ID      `json:"automation_step_id"`
 		Status    outboundmessage.Status `json:"status"`
 		Count     int                    `json:"count"`
 	}
@@ -212,7 +211,7 @@ func stepFiguresOf(ctx context.Context, s *ent.Scoped, id int64, sent map[versio
 	}
 	byVersion := make([][]VersionStepFigures, 0, len(versions))
 	for _, v := range versions {
-		place := map[string]int{}
+		place := map[automationstep.ID]int{}
 		for pos, st := range automationstep.All(v.Steps) {
 			place[st.ID] = pos
 		}
@@ -223,13 +222,13 @@ func stepFiguresOf(ctx context.Context, s *ent.Scoped, id int64, sent map[versio
 			}
 		}
 		slices.SortFunc(figures, func(a, b VersionStepFigures) int {
-			return cmp.Or(cmp.Compare(placeOf(place, a.StepID), placeOf(place, b.StepID)), strings.Compare(a.StepID, b.StepID))
+			return cmp.Or(cmp.Compare(placeOf(place, a.StepID), placeOf(place, b.StepID)), cmp.Compare(a.StepID, b.StepID))
 		})
 		byVersion = append(byVersion, figures)
 	}
 	report.VersionSteps = append([]VersionStepFigures{}, slices.Concat(byVersion...)...)
 	report.Steps = []StepFigures{}
-	sums := map[string]int{}
+	sums := map[automationstep.ID]int{}
 	for _, figures := range slices.Backward(byVersion) {
 		for _, f := range figures {
 			i, ok := sums[f.StepID]
@@ -247,7 +246,7 @@ func stepFiguresOf(ctx context.Context, s *ent.Scoped, id int64, sent map[versio
 
 // placeOf is the Step's place in a version, after every Step it holds when it holds none of that
 // id.
-func placeOf(place map[string]int, stepID string) int {
+func placeOf(place map[automationstep.ID]int, stepID automationstep.ID) int {
 	if pos, ok := place[stepID]; ok {
 		return pos
 	}

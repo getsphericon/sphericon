@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
@@ -417,13 +418,13 @@ func (_c *OutboundMessageCreate) SetNillableAutomationVersionID(v *int64) *Outbo
 }
 
 // SetAutomationStepID sets the "automation_step_id" field.
-func (_c *OutboundMessageCreate) SetAutomationStepID(v string) *OutboundMessageCreate {
+func (_c *OutboundMessageCreate) SetAutomationStepID(v automationstep.ID) *OutboundMessageCreate {
 	_c.mutation.SetAutomationStepID(v)
 	return _c
 }
 
 // SetNillableAutomationStepID sets the "automation_step_id" field if the given value is not nil.
-func (_c *OutboundMessageCreate) SetNillableAutomationStepID(v *string) *OutboundMessageCreate {
+func (_c *OutboundMessageCreate) SetNillableAutomationStepID(v *automationstep.ID) *OutboundMessageCreate {
 	if v != nil {
 		_c.SetAutomationStepID(*v)
 	}
@@ -1475,7 +1476,7 @@ func (u *OutboundMessageUpsert) ClearAutomationVersionID() *OutboundMessageUpser
 }
 
 // SetAutomationStepID sets the "automation_step_id" field.
-func (u *OutboundMessageUpsert) SetAutomationStepID(v string) *OutboundMessageUpsert {
+func (u *OutboundMessageUpsert) SetAutomationStepID(v automationstep.ID) *OutboundMessageUpsert {
 	u.Set(outboundmessage.FieldAutomationStepID, v)
 	return u
 }
@@ -2129,7 +2130,7 @@ func (u *OutboundMessageUpsertOne) ClearAutomationVersionID() *OutboundMessageUp
 }
 
 // SetAutomationStepID sets the "automation_step_id" field.
-func (u *OutboundMessageUpsertOne) SetAutomationStepID(v string) *OutboundMessageUpsertOne {
+func (u *OutboundMessageUpsertOne) SetAutomationStepID(v automationstep.ID) *OutboundMessageUpsertOne {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.SetAutomationStepID(v)
 	})
@@ -2964,7 +2965,7 @@ func (u *OutboundMessageUpsertBulk) ClearAutomationVersionID() *OutboundMessageU
 }
 
 // SetAutomationStepID sets the "automation_step_id" field.
-func (u *OutboundMessageUpsertBulk) SetAutomationStepID(v string) *OutboundMessageUpsertBulk {
+func (u *OutboundMessageUpsertBulk) SetAutomationStepID(v automationstep.ID) *OutboundMessageUpsertBulk {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.SetAutomationStepID(v)
 	})

@@ -58,7 +58,7 @@ func stepperAt(env *testhelper.TestEnv, mod *outboundmessages.Module, now func()
 func queueStep(t *testing.T, env *testhelper.TestEnv, runID int64) {
 	t.Helper()
 	run := env.DB.AutomationRun.GetX(t.Context(), runID)
-	env.EnqueueJob(t, automations.RunStepArgs{WorkspaceID: run.WorkspaceID, RunID: runID, Step: lo.FromPtr(run.CurrentStepID)})
+	env.EnqueueJob(t, automations.RunStepArgs{WorkspaceID: run.WorkspaceID, RunID: runID, StepID: lo.FromPtr(run.CurrentStepID)})
 }
 
 // stepOnce executes the step an Enrollment of Acme stands on, and returns what the step returned.
@@ -78,14 +78,14 @@ func queuedSteps(t *testing.T, env *testhelper.TestEnv) []map[string]any {
 func stepJob(t *testing.T, env *testhelper.TestEnv, runID int64, pos int) map[string]any {
 	t.Helper()
 	run := env.DB.AutomationRun.GetX(t.Context(), runID)
-	return map[string]any{"run_id": float64(runID), "step_id": env.StepIDAt(t, runID, pos), jobkind.WorkspaceArg: float64(run.WorkspaceID)}
+	return map[string]any{"run_id": float64(runID), "step_id": string(env.StepIDAt(t, runID, pos)), jobkind.WorkspaceArg: float64(run.WorkspaceID)}
 }
 
 // stepAt is the args of the queued job of the Step the Enrollment runID stands on now.
 func stepAt(t *testing.T, env *testhelper.TestEnv, runID int64) map[string]any {
 	t.Helper()
 	run := env.DB.AutomationRun.GetX(t.Context(), runID)
-	return map[string]any{"run_id": float64(runID), "step_id": lo.FromPtr(run.CurrentStepID), jobkind.WorkspaceArg: float64(run.WorkspaceID)}
+	return map[string]any{"run_id": float64(runID), "step_id": string(lo.FromPtr(run.CurrentStepID)), jobkind.WorkspaceArg: float64(run.WorkspaceID)}
 }
 
 // stepRecordsOf is what the Enrollment runID of Acme kept of the Steps it reached, read through the
@@ -294,8 +294,8 @@ func TestEachStepAnEnrollmentPassesHasAStepRecordAndTheLastCompletesIt(t *testin
 	assert.Equal(t, automationrun.StatusCompleted, run.Status, "leaving the last Step completed the Enrollment")
 	assert.Equal(t, env.StepIDAt(t, runID, 2), lo.FromPtr(run.CurrentStepID), "it ended on its last Step")
 	assert.Empty(t, queuedSteps(t, env), "nothing is queued after the last Step")
-	assert.Equal(t, []string{env.StepIDAt(t, runID, 0), env.StepIDAt(t, runID, 1), env.StepIDAt(t, runID, 2)},
-		lo.Map(records, func(r *ent.AutomationStepRecord, _ int) string { return r.StepID }))
+	assert.Equal(t, []automationstep.ID{env.StepIDAt(t, runID, 0), env.StepIDAt(t, runID, 1), env.StepIDAt(t, runID, 2)},
+		lo.Map(records, func(r *ent.AutomationStepRecord, _ int) automationstep.ID { return r.StepID }))
 	assert.Equal(t, []bool{true, true, true}, lo.Map(records, func(r *ent.AutomationStepRecord, _ int) bool { return r.LeftAt != nil }), "each Step was left")
 	assert.Equal(t, []automationsteprecord.Outcome{automationsteprecord.OutcomeDone, automationsteprecord.OutcomeDone, automationsteprecord.OutcomeDone},
 		lo.Map(records, func(r *ent.AutomationStepRecord, _ int) automationsteprecord.Outcome { return lo.FromPtr(r.Outcome) }))
@@ -575,8 +575,8 @@ func TestAnEndCompletesTheEnrollmentAndTheStepsAfterItDoNotRun(t *testing.T) {
 	assert.True(t, before, "the Step before the End runs")
 	assert.False(t, after, "the Step after the End does not run")
 	records := stepRecordsOf(t, env, runID)
-	assert.Equal(t, []string{env.StepIDAt(t, runID, 0), env.StepIDAt(t, runID, 1)},
-		lo.Map(records, func(r *ent.AutomationStepRecord, _ int) string { return r.StepID }), "the End leaves a Step record, the Step after it none")
+	assert.Equal(t, []automationstep.ID{env.StepIDAt(t, runID, 0), env.StepIDAt(t, runID, 1)},
+		lo.Map(records, func(r *ent.AutomationStepRecord, _ int) automationstep.ID { return r.StepID }), "the End leaves a Step record, the Step after it none")
 	assert.Equal(t, []bool{true, true}, lo.Map(records, func(r *ent.AutomationStepRecord, _ int) bool { return r.LeftAt != nil }), "the End is left as it completes the Enrollment")
 	assert.Equal(t, env.StepIDAt(t, runID, 1), lo.FromPtr(run.CurrentStepID), "it ended on the End")
 }

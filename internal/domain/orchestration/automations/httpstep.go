@@ -89,7 +89,7 @@ func invalid(format string, a ...any) error {
 // value or secret) is copied, as stored ciphertext, from the stored HTTP step with the same id
 // (ADR 0122): a step whose id the stored ones do not hold is new and keeps nothing.
 func (m *Module) sealSteps(steps, stored automationstep.Path) (automationstep.Path, error) {
-	prev := map[string]automationstep.HTTP{}
+	prev := map[automationstep.ID]automationstep.HTTP{}
 	for _, st := range automationstep.All(stored) {
 		if h, ok := st.Payload.(automationstep.HTTP); ok {
 			prev[st.ID] = h
