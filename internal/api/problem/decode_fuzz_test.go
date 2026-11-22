@@ -212,7 +212,10 @@ func TestAFailureNestedWithinTheSearchNamesEveryItem(t *testing.T) {
 
 // A body that decodes but holds a value outside the contract (an operator its test does not take,
 // an attribute the Contact has not) names it by its path, the item of every array on the way
-// included, as a body that does not decode does.
+// included, as a body that does not decode does. The path passes through two arrays' items and two
+// unions (a place's entry and a leaf's test), so it pins the names ogen's generated validators give
+// an item (`[<index>]`) and a union's variant (`OneOf`), which the path is read from: an ogen that
+// renames either fails here.
 func TestAValueOutsideTheContractNamesItsPath(t *testing.T) {
 	const body = `{"name":"x","condition":{"kind":"group","combinator":"and","entries":[
 		{"kind":"tag","name":"v","operator":"has"},

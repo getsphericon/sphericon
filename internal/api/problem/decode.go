@@ -106,6 +106,11 @@ func quoted(pattern *regexp.Regexp, message string) (string, bool) {
 	return name, err == nil
 }
 
+// ogen's validators report a refused field as a validate.FieldError, whose only path is its Name:
+// ogen (v1.25) has no structured path, so the two names below are read from its generated
+// validators. TestAValueOutsideTheContractNamesItsPath pins both on a generated type: an upgrade
+// of ogen that renames either fails it.
+
 // unionWrapper is the name ogen's validators give the field that holds a union's variant, a
 // field of the generated type that is no key of the body.
 const unionWrapper = "OneOf"
