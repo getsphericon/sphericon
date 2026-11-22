@@ -15,17 +15,22 @@ import {
   handleSiteBroadcastsTestSend,
   handleSiteBroadcastsUpdate,
   handleSiteIntegrationsList,
+  handleSiteSegmentsGet,
   handleSiteSegmentsList,
   handleSiteSegmentsPreview,
   handleSiteSendingDomainsList,
   handleSiteTemplatesList,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteIntegrationResource } from '../../generated/site/types.gen.ts'
+import type {
+  SegmentCondition,
+  SiteIntegrationResource,
+  SiteSegmentResource,
+} from '../../generated/site/types.gen.ts'
 import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
 import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspaceId/broadcasts/new.tsx'
-import { testId, workspace as workspacePayload } from '../../test/payloads.ts'
+import { page, TIMESTAMPS, testId, workspace as workspacePayload } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { requestGate } from '../../test/requestGate.ts'
@@ -718,6 +723,49 @@ test('scheduling first shows the recipients counted now, without a Send cap', as
   expect(bodies).toEqual([])
   await screen.getByRole('button', { name: 'Schedule broadcast' }).click()
   await expect.poll(() => bodies).toHaveLength(1)
+})
+
+// A Broadcast to a Segment through a chosen Integration is counted by the Segment's Condition as it
+// is now, on that Integration: the figure Schedule answers too.
+const VIPS: SegmentCondition = {
+  kind: 'group',
+  combinator: 'and',
+  entries: [{ kind: 'tag', name: 'vip', operator: 'has' }],
+}
+
+const VIP_SEGMENT: SiteSegmentResource = {
+  id: testId(9),
+  name: 'VIPs',
+  condition: VIPS,
+  revision: 3,
+  ...TIMESTAMPS,
+}
+
+test("scheduling a Segment's broadcast counts the Segment's recipients on its Integration", async () => {
+  const previews: unknown[] = []
+  serve('draft')
+  worker.use(
+    handleSiteBroadcastsGet(() =>
+      HttpResponse.json({
+        ...broadcast('draft'),
+        segmentId: VIP_SEGMENT.id,
+        integrationId: testId(21),
+      }),
+    ),
+    handleSiteSegmentsList({ body: page([VIP_SEGMENT]) }),
+    handleSiteSegmentsGet({ body: VIP_SEGMENT }),
+    handleSiteSegmentsPreview(async ({ request }) => {
+      previews.push(await request.json())
+      return HttpResponse.json({ count: 40, recipients: 37 })
+    }),
+  )
+  const { screen } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+
+  await screen.getByLabelText('Schedule for').fill('2030-05-06T07:08')
+  await screen.getByRole('button', { name: 'Schedule', exact: true }).click()
+
+  await expect.element(screen.getByText(/37 recipients/)).toBeVisible()
+  expect(previews).toEqual([{ condition: VIPS, channel: 'email', integrationId: testId(21) }])
 })
 
 test('a refused Send now shows the error toast and stays on the page', async () => {
