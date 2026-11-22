@@ -2,6 +2,7 @@ package automations
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
@@ -94,25 +95,29 @@ type HeaderName struct {
 	Name string
 }
 
-// View is the view of a version's steps.
-func View(stored automationstep.Path) PathView {
+// View is the view of a version's steps. A Step of a kind with no view fails it: it is never
+// shown as an empty Step.
+func View(stored automationstep.Path) (PathView, error) {
 	views := make([]StepView, 0, len(stored.Steps))
 	for _, st := range automationstep.All(stored) {
-		views = append(views, viewOf(st))
+		v := viewOf(st)
+		if v == nil {
+			return PathView{}, fmt.Errorf("automations: step %s of kind %q has no view", st.ID, st.Kind())
+		}
+		views = append(views, v)
 	}
-	return PathView{ID: stored.ID, Steps: views}
+	return PathView{ID: stored.ID, Steps: views}, nil
 }
 
+// viewOf is the view of the Step, nil for a kind with none.
 func viewOf(st *automationstep.Step) StepView {
 	switch s := st.Payload.(type) {
 	case automationstep.Wait:
 		return WaitView{ID: st.ID, Type: st.Kind(), Seconds: s.Seconds}
 	case automationstep.End:
 		return EndView{ID: st.ID, Type: st.Kind()}
-	case automationstep.ApplyTag:
-		return TagView{ID: st.ID, Type: st.Kind(), Tag: s.Tag}
-	case automationstep.RemoveTag:
-		return TagView{ID: st.ID, Type: st.Kind(), Tag: s.Tag}
+	case automationstep.Tagging:
+		return TagView{ID: st.ID, Type: st.Kind(), Tag: s.TagName()}
 	case automationstep.HTTP:
 		v := HTTPView{ID: st.ID, Type: st.Kind(), Body: s.Body, HasSecret: s.Secret != "", Headers: make([]HeaderName, len(s.Headers))}
 		for i, h := range s.Headers {

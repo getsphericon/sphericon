@@ -130,11 +130,15 @@ func (c *ConverterImpl) AutomationHttpHeaderToResource(source automations.Header
 	// externalapiAutomationHttpHeader.Value: ignore
 	return externalapiAutomationHttpHeader
 }
-func (c *ConverterImpl) AutomationPathToResource(source automations.PathView) external.AutomationPath {
+func (c *ConverterImpl) AutomationPathToResource(source automations.PathView) (external.AutomationPath, error) {
 	var externalapiAutomationPath external.AutomationPath
 	externalapiAutomationPath.ID = external.StepId(source.ID)
-	externalapiAutomationPath.Steps = automationStepViews(c, source.Steps)
-	return externalapiAutomationPath
+	externalapiAutomationStepList, err := automationStepViews(c, source.Steps)
+	if err != nil {
+		return externalapiAutomationPath, err
+	}
+	externalapiAutomationPath.Steps = externalapiAutomationStepList
+	return externalapiAutomationPath, nil
 }
 func (c *ConverterImpl) AutomationPeriodResultsToResource(source automations.PeriodResults) external.AutomationPeriodResults {
 	var externalapiAutomationPeriodResults external.AutomationPeriodResults
@@ -231,22 +235,30 @@ func (c *ConverterImpl) AutomationStatusToResource(source automation.Status) ext
 	}
 	return externalapiAutomationStatus
 }
-func (c *ConverterImpl) AutomationToResource(source *ent.Automation) external.AutomationResource {
+func (c *ConverterImpl) AutomationToResource(source *ent.Automation) (external.AutomationResource, error) {
 	var externalapiAutomationResource external.AutomationResource
 	if source != nil {
 		externalapiAutomationResource.ID = external.EntityId((*source).ID)
 		externalapiAutomationResource.Name = (*source).Name
 		externalapiAutomationResource.Status = c.AutomationStatusToResource((*source).Status)
-		externalapiAutomationResource.Live = automationVersionOrNull(c, (*source).Edges.LiveVersion)
-		externalapiAutomationResource.Draft = automationVersionOrNull(c, (*source).Edges.DraftVersion)
+		externalapiNilAutomationVersion, err := automationVersionOrNull(c, (*source).Edges.LiveVersion)
+		if err != nil {
+			return externalapiAutomationResource, err
+		}
+		externalapiAutomationResource.Live = externalapiNilAutomationVersion
+		externalapiNilAutomationVersion2, err := automationVersionOrNull(c, (*source).Edges.DraftVersion)
+		if err != nil {
+			return externalapiAutomationResource, err
+		}
+		externalapiAutomationResource.Draft = externalapiNilAutomationVersion2
 		externalapiAutomationResource.ArchivedAt = optNilTimestamp((*source).ArchivedAt)
 		externalapiAutomationResource.Revision = revision((*source).Revision)
 		externalapiAutomationResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiAutomationResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
-	return externalapiAutomationResource
+	return externalapiAutomationResource, nil
 }
-func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersion) external.AutomationVersion {
+func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersion) (external.AutomationVersion, error) {
 	var externalapiAutomationVersion external.AutomationVersion
 	if source != nil {
 		externalapiAutomationVersion.Number = count((*source).Version)
@@ -258,26 +270,38 @@ func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersio
 			}
 		}
 		externalapiAutomationVersion.GoalEvent = nilString((*source).GoalEvent)
-		externalapiAutomationVersion.Steps = automationPath(c, (*source).Steps)
+		externalapiAutomationPath, err := automationPath(c, (*source).Steps)
+		if err != nil {
+			return externalapiAutomationVersion, err
+		}
+		externalapiAutomationVersion.Steps = externalapiAutomationPath
 	}
-	return externalapiAutomationVersion
+	return externalapiAutomationVersion, nil
 }
-func (c *ConverterImpl) AutomationsListPage(source pagination.Page[*ent.Automation]) *external.AutomationsListOK {
+func (c *ConverterImpl) AutomationsListPage(source pagination.Page[*ent.Automation]) (*external.AutomationsListOK, error) {
 	var externalapiAutomationsListOK external.AutomationsListOK
-	externalapiAutomationsListOK.Items = c.AutomationsToResources(source.Items)
+	externalapiAutomationResourceList, err := c.AutomationsToResources(source.Items)
+	if err != nil {
+		return nil, err
+	}
+	externalapiAutomationsListOK.Items = externalapiAutomationResourceList
 	externalapiAutomationsListOK.Page = count(source.Page)
 	externalapiAutomationsListOK.PageSize = count(source.PageSize)
 	externalapiAutomationsListOK.TotalItems = count(source.TotalItems)
 	externalapiAutomationsListOK.TotalPages = count(source.TotalPages)
-	return &externalapiAutomationsListOK
+	return &externalapiAutomationsListOK, nil
 }
-func (c *ConverterImpl) AutomationsToResources(source []*ent.Automation) []external.AutomationResource {
+func (c *ConverterImpl) AutomationsToResources(source []*ent.Automation) ([]external.AutomationResource, error) {
 	var externalapiAutomationResourceList []external.AutomationResource
 	externalapiAutomationResourceList = make([]external.AutomationResource, len(source))
 	for i := 0; i < len(source); i++ {
-		externalapiAutomationResourceList[i] = c.AutomationToResource(source[i])
+		externalapiAutomationResource, err := c.AutomationToResource(source[i])
+		if err != nil {
+			return nil, err
+		}
+		externalapiAutomationResourceList[i] = externalapiAutomationResource
 	}
-	return externalapiAutomationResourceList
+	return externalapiAutomationResourceList, nil
 }
 func (c *ConverterImpl) BrandKitToResource(source brandkits.Kit) external.BrandKitResource {
 	var externalapiBrandKitResource external.BrandKitResource

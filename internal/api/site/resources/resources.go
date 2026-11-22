@@ -6,6 +6,7 @@ package resources
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -389,21 +390,21 @@ type Converter interface {
 	// The revenue is summed from Order Movements, which the mapper cannot see: an Automation the
 	// automations module read with its revenue maps through AutomationWithRevenueToResource.
 	// goverter:ignore Revenue
-	AutomationToResource(source *ent.Automation) siteapi.SiteAutomationResource
+	AutomationToResource(source *ent.Automation) (siteapi.SiteAutomationResource, error)
 	// An Automation with the revenue the automations module read for it (ADR 0064).
 	// goverter:autoMap Automation
 	// goverter:map Automation.Edges.LiveVersion Live | automationVersionOrNull
 	// goverter:map Automation.Edges.DraftVersion Draft | automationVersionOrNull
-	AutomationWithRevenueToResource(source automations.WithRevenue) siteapi.SiteAutomationResource
+	AutomationWithRevenueToResource(source automations.WithRevenue) (siteapi.SiteAutomationResource, error)
 	// goverter:useEmptyOnNil:slice
-	AutomationsWithRevenueToResources(source []automations.WithRevenue) []siteapi.SiteAutomationResource
+	AutomationsWithRevenueToResources(source []automations.WithRevenue) ([]siteapi.SiteAutomationResource, error)
 	// The stored definition string (the executor's JSON format) is decoded into the typed steps
 	// DTO at this boundary. The contract names the version "number".
 	// goverter:map Version Number | count
 	// goverter:map Steps | automationPath
-	AutomationVersionToResource(source *ent.AutomationVersion) siteapi.AutomationVersion
+	AutomationVersionToResource(source *ent.AutomationVersion) (siteapi.AutomationVersion, error)
 	// goverter:map Steps | automationStepViews
-	AutomationPathToResource(source automations.PathView) siteapi.AutomationPath
+	AutomationPathToResource(source automations.PathView) (siteapi.AutomationPath, error)
 	// The arms of a Step, the module's masked view of each kind, which automationStepViews wraps.
 	// goverter:map IntegrationID IntegrationId
 	EmailStepToResource(source automations.EmailView) siteapi.EmailStep
@@ -695,7 +696,7 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	SuppressionsListPage(source pagination.Page[*ent.Suppression]) *siteapi.SiteSuppressionsListOK
 	// goverter:useEmptyOnNil:slice
-	AutomationsListPage(source pagination.Page[automations.WithRevenue]) *siteapi.SiteAutomationsListOK
+	AutomationsListPage(source pagination.Page[automations.WithRevenue]) (*siteapi.SiteAutomationsListOK, error)
 	// goverter:useEmptyOnNil:slice
 	EventsListPage(source pagination.Page[*ent.Event]) *siteapi.SiteEventsListOK
 	// goverter:useEmptyOnNil:slice
@@ -1074,22 +1075,31 @@ func nilTimestamp(v *time.Time) siteapi.NilTimestamp {
 }
 
 // automationVersionOrNull is a version of the Automation, or null when it has none.
-func automationVersionOrNull(c Converter, v *ent.AutomationVersion) siteapi.NilAutomationVersion {
+func automationVersionOrNull(c Converter, v *ent.AutomationVersion) (siteapi.NilAutomationVersion, error) {
 	if v == nil {
-		return siteapi.NilAutomationVersion{Null: true}
+		return siteapi.NilAutomationVersion{Null: true}, nil
 	}
-	return siteapi.NewNilAutomationVersion(c.AutomationVersionToResource(v))
+	res, err := c.AutomationVersionToResource(v)
+	if err != nil {
+		return siteapi.NilAutomationVersion{}, err
+	}
+	return siteapi.NewNilAutomationVersion(res), nil
 }
 
 // automationPath maps a version's steps into the typed path DTO, through the automations module's
 // masked view of each step.
-func automationPath(c Converter, steps automationstep.Path) siteapi.AutomationPath {
-	return c.AutomationPathToResource(automations.View(steps))
+func automationPath(c Converter, steps automationstep.Path) (siteapi.AutomationPath, error) {
+	view, err := automations.View(steps)
+	if err != nil {
+		return siteapi.AutomationPath{}, err
+	}
+	return c.AutomationPathToResource(view)
 }
 
 // automationStepViews wraps each Step's view in the arm of its kind: a oneOf is beyond goverter,
-// so only the switch is written here.
-func automationStepViews(c Converter, views []automations.StepView) []siteapi.AutomationStep {
+// so only the switch is written here. A view with no arm fails the response, never shown as an
+// empty Step.
+func automationStepViews(c Converter, views []automations.StepView) ([]siteapi.AutomationStep, error) {
 	out := make([]siteapi.AutomationStep, 0, len(views))
 	for _, v := range views {
 		var sum siteapi.AutomationStepSum
@@ -1103,19 +1113,25 @@ func automationStepViews(c Converter, views []automations.StepView) []siteapi.Au
 		case automations.WaitView:
 			sum = siteapi.NewWaitStepAutomationStepSum(c.WaitStepToResource(v))
 		case automations.TagView:
-			if v.Type == automationstep.KindApplyTag {
+			// The module shows both tag kinds as one view; the union has an arm for each.
+			switch v.Type {
+			case automationstep.KindApplyTag:
 				sum = siteapi.NewApplyTagStepAutomationStepSum(c.ApplyTagStepToResource(v))
-			} else {
+			case automationstep.KindRemoveTag:
 				sum = siteapi.NewRemoveTagStepAutomationStepSum(c.RemoveTagStepToResource(v))
+			default:
+				return nil, fmt.Errorf("a tag step view of kind %q has no arm", v.Type)
 			}
 		case automations.HTTPView:
 			sum = siteapi.NewHttpStepAutomationStepSum(c.HttpStepToResource(v))
 		case automations.EndView:
 			sum = siteapi.NewEndStepAutomationStepSum(c.EndStepToResource(v))
+		default:
+			return nil, fmt.Errorf("the step view %T has no arm", v)
 		}
 		out = append(out, siteapi.AutomationStep{OneOf: sum})
 	}
-	return out
+	return out, nil
 }
 
 // The discriminators of the Step arms.

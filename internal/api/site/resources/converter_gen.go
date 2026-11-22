@@ -360,11 +360,15 @@ func (c *ConverterImpl) AutomationHttpHeaderToResource(source automations.Header
 	// siteapiAutomationHttpHeader.Value: ignore
 	return siteapiAutomationHttpHeader
 }
-func (c *ConverterImpl) AutomationPathToResource(source automations.PathView) site.AutomationPath {
+func (c *ConverterImpl) AutomationPathToResource(source automations.PathView) (site.AutomationPath, error) {
 	var siteapiAutomationPath site.AutomationPath
 	siteapiAutomationPath.ID = site.StepId(source.ID)
-	siteapiAutomationPath.Steps = automationStepViews(c, source.Steps)
-	return siteapiAutomationPath
+	siteapiAutomationStepList, err := automationStepViews(c, source.Steps)
+	if err != nil {
+		return siteapiAutomationPath, err
+	}
+	siteapiAutomationPath.Steps = siteapiAutomationStepList
+	return siteapiAutomationPath, nil
 }
 func (c *ConverterImpl) AutomationPeriodResultsToResource(source automations.PeriodResults) site.AutomationPeriodResults {
 	var siteapiAutomationPeriodResults site.AutomationPeriodResults
@@ -456,23 +460,31 @@ func (c *ConverterImpl) AutomationStatusToResource(source automation.Status) sit
 	}
 	return siteapiAutomationStatus
 }
-func (c *ConverterImpl) AutomationToResource(source *ent.Automation) site.SiteAutomationResource {
+func (c *ConverterImpl) AutomationToResource(source *ent.Automation) (site.SiteAutomationResource, error) {
 	var siteapiSiteAutomationResource site.SiteAutomationResource
 	if source != nil {
 		siteapiSiteAutomationResource.ID = site.EntityId((*source).ID)
 		siteapiSiteAutomationResource.Name = (*source).Name
 		siteapiSiteAutomationResource.Status = c.AutomationStatusToResource((*source).Status)
-		siteapiSiteAutomationResource.Live = automationVersionOrNull(c, (*source).Edges.LiveVersion)
-		siteapiSiteAutomationResource.Draft = automationVersionOrNull(c, (*source).Edges.DraftVersion)
+		siteapiNilAutomationVersion, err := automationVersionOrNull(c, (*source).Edges.LiveVersion)
+		if err != nil {
+			return siteapiSiteAutomationResource, err
+		}
+		siteapiSiteAutomationResource.Live = siteapiNilAutomationVersion
+		siteapiNilAutomationVersion2, err := automationVersionOrNull(c, (*source).Edges.DraftVersion)
+		if err != nil {
+			return siteapiSiteAutomationResource, err
+		}
+		siteapiSiteAutomationResource.Draft = siteapiNilAutomationVersion2
 		siteapiSiteAutomationResource.ArchivedAt = optNilTimestamp((*source).ArchivedAt)
 		// siteapiSiteAutomationResource.Revenue: ignore
 		siteapiSiteAutomationResource.Revision = revision((*source).Revision)
 		siteapiSiteAutomationResource.CreatedAt = timestamp((*source).CreatedAt)
 		siteapiSiteAutomationResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
-	return siteapiSiteAutomationResource
+	return siteapiSiteAutomationResource, nil
 }
-func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersion) site.AutomationVersion {
+func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersion) (site.AutomationVersion, error) {
 	var siteapiAutomationVersion site.AutomationVersion
 	if source != nil {
 		siteapiAutomationVersion.Number = count((*source).Version)
@@ -484,11 +496,15 @@ func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersio
 			}
 		}
 		siteapiAutomationVersion.GoalEvent = nilString((*source).GoalEvent)
-		siteapiAutomationVersion.Steps = automationPath(c, (*source).Steps)
+		siteapiAutomationPath, err := automationPath(c, (*source).Steps)
+		if err != nil {
+			return siteapiAutomationVersion, err
+		}
+		siteapiAutomationVersion.Steps = siteapiAutomationPath
 	}
-	return siteapiAutomationVersion
+	return siteapiAutomationVersion, nil
 }
-func (c *ConverterImpl) AutomationWithRevenueToResource(source automations.WithRevenue) site.SiteAutomationResource {
+func (c *ConverterImpl) AutomationWithRevenueToResource(source automations.WithRevenue) (site.SiteAutomationResource, error) {
 	var siteapiSiteAutomationResource site.SiteAutomationResource
 	var pInt64 *int64
 	if source.Automation != nil {
@@ -515,12 +531,20 @@ func (c *ConverterImpl) AutomationWithRevenueToResource(source automations.WithR
 	if source.Automation != nil {
 		pEntAutomationVersion = source.Automation.Edges.LiveVersion
 	}
-	siteapiSiteAutomationResource.Live = automationVersionOrNull(c, pEntAutomationVersion)
+	siteapiNilAutomationVersion, err := automationVersionOrNull(c, pEntAutomationVersion)
+	if err != nil {
+		return siteapiSiteAutomationResource, err
+	}
+	siteapiSiteAutomationResource.Live = siteapiNilAutomationVersion
 	var pEntAutomationVersion2 *ent.AutomationVersion
 	if source.Automation != nil {
 		pEntAutomationVersion2 = source.Automation.Edges.DraftVersion
 	}
-	siteapiSiteAutomationResource.Draft = automationVersionOrNull(c, pEntAutomationVersion2)
+	siteapiNilAutomationVersion2, err := automationVersionOrNull(c, pEntAutomationVersion2)
+	if err != nil {
+		return siteapiSiteAutomationResource, err
+	}
+	siteapiSiteAutomationResource.Draft = siteapiNilAutomationVersion2
 	var pTimeTime *time.Time
 	if source.Automation != nil {
 		pTimeTime = source.Automation.ArchivedAt
@@ -544,24 +568,32 @@ func (c *ConverterImpl) AutomationWithRevenueToResource(source automations.WithR
 		pTimeTime3 = &source.Automation.UpdatedAt
 	}
 	siteapiSiteAutomationResource.UpdatedAt = timestampOf(pTimeTime3)
-	return siteapiSiteAutomationResource
+	return siteapiSiteAutomationResource, nil
 }
-func (c *ConverterImpl) AutomationsListPage(source pagination.Page[automations.WithRevenue]) *site.SiteAutomationsListOK {
+func (c *ConverterImpl) AutomationsListPage(source pagination.Page[automations.WithRevenue]) (*site.SiteAutomationsListOK, error) {
 	var siteapiSiteAutomationsListOK site.SiteAutomationsListOK
-	siteapiSiteAutomationsListOK.Items = c.AutomationsWithRevenueToResources(source.Items)
+	siteapiSiteAutomationResourceList, err := c.AutomationsWithRevenueToResources(source.Items)
+	if err != nil {
+		return nil, err
+	}
+	siteapiSiteAutomationsListOK.Items = siteapiSiteAutomationResourceList
 	siteapiSiteAutomationsListOK.Page = count(source.Page)
 	siteapiSiteAutomationsListOK.PageSize = count(source.PageSize)
 	siteapiSiteAutomationsListOK.TotalItems = count(source.TotalItems)
 	siteapiSiteAutomationsListOK.TotalPages = count(source.TotalPages)
-	return &siteapiSiteAutomationsListOK
+	return &siteapiSiteAutomationsListOK, nil
 }
-func (c *ConverterImpl) AutomationsWithRevenueToResources(source []automations.WithRevenue) []site.SiteAutomationResource {
+func (c *ConverterImpl) AutomationsWithRevenueToResources(source []automations.WithRevenue) ([]site.SiteAutomationResource, error) {
 	var siteapiSiteAutomationResourceList []site.SiteAutomationResource
 	siteapiSiteAutomationResourceList = make([]site.SiteAutomationResource, len(source))
 	for i := 0; i < len(source); i++ {
-		siteapiSiteAutomationResourceList[i] = c.AutomationWithRevenueToResource(source[i])
+		siteapiSiteAutomationResource, err := c.AutomationWithRevenueToResource(source[i])
+		if err != nil {
+			return nil, err
+		}
+		siteapiSiteAutomationResourceList[i] = siteapiSiteAutomationResource
 	}
-	return siteapiSiteAutomationResourceList
+	return siteapiSiteAutomationResourceList, nil
 }
 func (c *ConverterImpl) BindingToResource(source bindings.Chat) site.SiteBindingResource {
 	var siteapiSiteBindingResource site.SiteBindingResource

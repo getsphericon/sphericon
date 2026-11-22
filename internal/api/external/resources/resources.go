@@ -6,6 +6,7 @@ package resources
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -66,22 +67,31 @@ import (
 )
 
 // automationVersionOrNull is a version of the Automation, or null when it has none.
-func automationVersionOrNull(c Converter, v *ent.AutomationVersion) externalapi.NilAutomationVersion {
+func automationVersionOrNull(c Converter, v *ent.AutomationVersion) (externalapi.NilAutomationVersion, error) {
 	if v == nil {
-		return externalapi.NilAutomationVersion{Null: true}
+		return externalapi.NilAutomationVersion{Null: true}, nil
 	}
-	return externalapi.NewNilAutomationVersion(c.AutomationVersionToResource(v))
+	res, err := c.AutomationVersionToResource(v)
+	if err != nil {
+		return externalapi.NilAutomationVersion{}, err
+	}
+	return externalapi.NewNilAutomationVersion(res), nil
 }
 
 // automationPath maps a version's steps into the typed path DTO, through the automations module's
 // masked view of each step.
-func automationPath(c Converter, steps automationstep.Path) externalapi.AutomationPath {
-	return c.AutomationPathToResource(automations.View(steps))
+func automationPath(c Converter, steps automationstep.Path) (externalapi.AutomationPath, error) {
+	view, err := automations.View(steps)
+	if err != nil {
+		return externalapi.AutomationPath{}, err
+	}
+	return c.AutomationPathToResource(view)
 }
 
 // automationStepViews wraps each Step's view in the arm of its kind: a oneOf is beyond goverter,
-// so only the switch is written here.
-func automationStepViews(c Converter, views []automations.StepView) []externalapi.AutomationStep {
+// so only the switch is written here. A view with no arm fails the response, never shown as an
+// empty Step.
+func automationStepViews(c Converter, views []automations.StepView) ([]externalapi.AutomationStep, error) {
 	out := make([]externalapi.AutomationStep, 0, len(views))
 	for _, v := range views {
 		var sum externalapi.AutomationStepSum
@@ -95,19 +105,25 @@ func automationStepViews(c Converter, views []automations.StepView) []externalap
 		case automations.WaitView:
 			sum = externalapi.NewWaitStepAutomationStepSum(c.WaitStepToResource(v))
 		case automations.TagView:
-			if v.Type == automationstep.KindApplyTag {
+			// The module shows both tag kinds as one view; the union has an arm for each.
+			switch v.Type {
+			case automationstep.KindApplyTag:
 				sum = externalapi.NewApplyTagStepAutomationStepSum(c.ApplyTagStepToResource(v))
-			} else {
+			case automationstep.KindRemoveTag:
 				sum = externalapi.NewRemoveTagStepAutomationStepSum(c.RemoveTagStepToResource(v))
+			default:
+				return nil, fmt.Errorf("a tag step view of kind %q has no arm", v.Type)
 			}
 		case automations.HTTPView:
 			sum = externalapi.NewHttpStepAutomationStepSum(c.HttpStepToResource(v))
 		case automations.EndView:
 			sum = externalapi.NewEndStepAutomationStepSum(c.EndStepToResource(v))
+		default:
+			return nil, fmt.Errorf("the step view %T has no arm", v)
 		}
 		out = append(out, externalapi.AutomationStep{OneOf: sum})
 	}
-	return out
+	return out, nil
 }
 
 // The discriminators of the Step arms.
@@ -303,16 +319,16 @@ type Converter interface {
 	// The live version and the draft are the edges the automations module loads (ADR 0065).
 	// goverter:map Edges.LiveVersion Live | automationVersionOrNull
 	// goverter:map Edges.DraftVersion Draft | automationVersionOrNull
-	AutomationToResource(source *ent.Automation) externalapi.AutomationResource
+	AutomationToResource(source *ent.Automation) (externalapi.AutomationResource, error)
 	// goverter:useEmptyOnNil:slice
-	AutomationsToResources(source []*ent.Automation) []externalapi.AutomationResource
+	AutomationsToResources(source []*ent.Automation) ([]externalapi.AutomationResource, error)
 	// The stored definition string (the executor's JSON format) is decoded into the typed steps
 	// DTO at this boundary. The contract names the version "number".
 	// goverter:map Version Number | count
 	// goverter:map Steps | automationPath
-	AutomationVersionToResource(source *ent.AutomationVersion) externalapi.AutomationVersion
+	AutomationVersionToResource(source *ent.AutomationVersion) (externalapi.AutomationVersion, error)
 	// goverter:map Steps | automationStepViews
-	AutomationPathToResource(source automations.PathView) externalapi.AutomationPath
+	AutomationPathToResource(source automations.PathView) (externalapi.AutomationPath, error)
 	// The arms of a Step, the module's masked view of each kind, which automationStepViews wraps.
 	// goverter:map IntegrationID IntegrationId
 	EmailStepToResource(source automations.EmailView) externalapi.EmailStep
@@ -489,7 +505,7 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	BroadcastsListPage(source pagination.Page[*ent.Broadcast]) *externalapi.BroadcastsListOK
 	// goverter:useEmptyOnNil:slice
-	AutomationsListPage(source pagination.Page[*ent.Automation]) *externalapi.AutomationsListOK
+	AutomationsListPage(source pagination.Page[*ent.Automation]) (*externalapi.AutomationsListOK, error)
 	// goverter:useEmptyOnNil:slice
 	EnrollmentsListPage(source pagination.Page[*ent.AutomationRun]) *externalapi.EnrollmentsListOK
 	// goverter:useEmptyOnNil:slice
