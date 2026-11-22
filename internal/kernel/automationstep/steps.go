@@ -198,7 +198,7 @@ type End struct{}
 
 func (p Email) Integration() *int64    { return p.IntegrationID }
 func (p Telegram) Integration() *int64 { return p.IntegrationID }
-func (p SMS) Integration() *int64      { return p.IntegrationID }
+func (s SMS) Integration() *int64      { return s.IntegrationID }
 
 func (p Email) Stored() Payload {
 	if len(p.Doc) == 0 {
@@ -212,11 +212,11 @@ func (p Telegram) Stored() Payload {
 	return p
 }
 
-func (p SMS) Stored() Payload {
-	if p.TracksLinks() {
-		p.LinkTracking = nil // on is the default, stored as nothing
+func (s SMS) Stored() Payload {
+	if s.TracksLinks() {
+		s.LinkTracking = nil // on is the default, stored as nothing
 	}
-	return p
+	return s
 }
 
 func (p Wait) Stored() Payload      { return p }

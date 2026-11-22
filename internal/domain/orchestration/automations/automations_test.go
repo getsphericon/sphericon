@@ -114,7 +114,7 @@ func TestInvalidStepsAreRefusedAndNothingIsStored(t *testing.T) {
 	} {
 		_, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{Name: "x", TriggerEvent: "y", Steps: c.refused})
 		require.ErrorIs(t, err, automations.ErrInvalidStep, name)
-		assert.ErrorContains(t, err, c.names, name)
+		require.ErrorContains(t, err, c.names, name)
 
 		_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID), Steps: c.refused})
 		require.ErrorIs(t, err, automations.ErrInvalidStep, "update: "+name)

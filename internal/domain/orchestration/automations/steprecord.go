@@ -57,6 +57,7 @@ func leave(ctx context.Context, s *ent.Scoped, runID int64, stepID automationste
 				automationsteprecord.RunID(runID),
 				automationsteprecord.StepID(stepID),
 				automationsteprecord.LeftAtIsNil(),
+				automationsteprecord.OutcomeIsNil(),
 			).
 			SetLeftAt(now).
 			SetOutcome(automationsteprecord.OutcomeDone)

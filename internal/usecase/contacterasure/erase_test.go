@@ -98,7 +98,7 @@ func TestAnErasureRemovesThePersonsDataAndKeepsTheFactsAnonymous(t *testing.T) {
 	assert.False(t, env.DB.Confirmation.Query().Where(confirmation.ID(fixtures.ConfirmationErasableID)).ExistX(ctx), "confirmation")
 	assert.False(t, env.DB.AutomationRun.Query().Where(automationrun.ID(fixtures.AutomationRunErasableID)).ExistX(ctx), "automation runs")
 	_, err = stepRecords()
-	assert.ErrorIs(t, err, automations.ErrEnrollmentNotFound, "the run goes, and its Step records with it")
+	require.ErrorIs(t, err, automations.ErrEnrollmentNotFound, "the run goes, and its Step records with it")
 
 	// Events: customer-tracked and marketing.confirmed are deleted ...
 	for _, id := range []int64{
