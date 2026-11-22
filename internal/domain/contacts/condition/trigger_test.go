@@ -30,35 +30,6 @@ func triggerMatches(t require.TestingT, s *ent.Scoped, g conditiontree.Rule, pro
 	return ok
 }
 
-// One table of the text and presence tests serves a Contact attribute (SQL) and an Event property
-// (Go): for any attribute, test, operand and Contact, the two sides agree.
-func TestOperatorsAgreeOnTheContactSideAndTheEventSide(t *testing.T) {
-	env := testhelper.Setup(t)
-	s := env.DB.Scoped(fixtures.OscorpID)
-	contacts, err := s.Contact().Query().All(context.Background())
-	require.NoError(t, err)
-	require.NotEmpty(t, contacts)
-	attributes := map[string]func(*ent.Contact) *string{
-		"first_name": func(c *ent.Contact) *string { return c.FirstName },
-		"phone":      func(c *ent.Contact) *string { return c.Phone },
-	}
-
-	rapid.Check(t, func(rt *rapid.T) {
-		field := rapid.SampledFrom([]string{"first_name", "phone"}).Draw(rt, "field")
-		want := rapid.SampledFrom([]string{"Anna", "anna", "ELL", "an", "", "zzz"}).Draw(rt, "operand")
-		texts := lo.Map(siteapi.TextOperator("").AllValues(), func(op siteapi.TextOperator, _ int) leaf { return text(string(op), want) })
-		presences := lo.Map(siteapi.PresenceOperator("").AllValues(), func(op siteapi.PresenceOperator, _ int) leaf { return presence(string(op)) })
-		test := rapid.SampledFrom(append(texts, presences...)).Draw(rt, "test")
-		c := rapid.SampledFrom(contacts).Draw(rt, "contact")
-		have := asProperty(attributes[field](c))
-
-		viaSQL := triggerMatches(rt, s, ruleOf(attribute(field, test)), nil, c.ID)
-		viaGo := triggerMatches(rt, s, ruleOf(property("k", test)), map[string]any{"k": have}, c.ID)
-
-		assert.Equal(rt, viaSQL, viaGo, "%s %v on %v", field, test, have)
-	})
-}
-
 func TestPropertyTestHoldsForAStringOfThatKey(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
@@ -133,12 +104,4 @@ func TestARulesPropertyTestTakesAnyKey(t *testing.T) {
 
 	require.NoError(t, anyKey)
 	require.ErrorContains(t, noKey, "property key is required")
-}
-
-// asProperty is an attribute as an Event property: its text, or JSON null when the attribute is null.
-func asProperty(v *string) any {
-	if v == nil {
-		return nil
-	}
-	return *v
 }

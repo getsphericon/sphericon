@@ -9,10 +9,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"pgregory.net/rapid"
 
 	"github.com/getsphericon/sphericon/ent/customfield"
-	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
@@ -134,32 +132,6 @@ func TestDateLeafComparesInstantsWhateverTheirZone(t *testing.T) {
 	zoned := emailsIn(t, env, fixtures.WonkaID, segmentOf(customField(seenAt, moment("before", elsewhere))))
 
 	assert.Equal(t, utc, zoned)
-}
-
-// The numeric family is one table for a number Custom field (SQL) and a number property of the
-// triggering Event (Go): for any operator, operand and Contact, alone or negated, the two agree.
-func TestNumberLeavesAgreeOnTheContactSideAndTheEventSide(t *testing.T) {
-	env := testhelper.Setup(t)
-	s := env.DB.Scoped(fixtures.WonkaID)
-	contacts, err := s.Contact().Query().All(context.Background())
-	require.NoError(t, err)
-	require.NotEmpty(t, contacts)
-
-	rapid.Check(t, func(rt *rapid.T) {
-		op := rapid.SampledFrom(siteapi.NumberOperator("").AllValues()).Draw(rt, "operator")
-		want := rapid.SampledFrom([]float64{-1000, -2.5, 0, 9, 9.5, 10, 10.5}).Draw(rt, "operand")
-		not := rapid.Bool().Draw(rt, "not")
-		c := rapid.SampledFrom(contacts).Draw(rt, "contact")
-		// The Contact's Custom fields are the Event's properties: the same value under the same key.
-		test := number(string(op), want)
-		onContact := conditiontree.Rule{Group: groupOf(conditiontree.And, not, customField(score, test))}
-		onEvent := conditiontree.Rule{Group: groupOf(conditiontree.And, not, property(score, test))}
-
-		viaSQL := triggerMatches(rt, s, onContact, nil, c.ID)
-		viaGo := triggerMatches(rt, s, onEvent, c.CustomFields, c.ID)
-
-		assert.Equal(rt, viaSQL, viaGo, "not=%v %s %v on %v", not, op, want, c.CustomFields)
-	})
 }
 
 // A collected Event keeps its numbers as json.Number; a stored one decodes them to float64.

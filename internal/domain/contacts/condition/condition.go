@@ -5,9 +5,13 @@
 // combinator, a negation and their entries, whose leaves test a Contact attribute, the birthday, a
 // Tag, Telegram and SMS reachability, a Custom field, a count of the Contact's Events or, in a
 // Rule, a property of the triggering Event, each by a test typed by the value it reads (text,
-// presence, number, moment or the last days). What each place, leaf and test admits, and every
-// operator, is the contract's vocabulary generated into package conditiontree; what an operator
-// means is a switch over its values here. Everything else here works on that tree.
+// presence, number, moment or the last days). An Event matcher's filter is a tree of property tests
+// alone, compiled to one SQL/JSON path (filter.go, ADR 0180), and a Rule's property tests run as the
+// same path on the triggering Event's properties: no property test is evaluated in Go. What each
+// place, leaf and test admits, and every operator, is the contract's vocabulary generated into
+// package conditiontree (the filter's kinds are written there until the contract carries a
+// filter); what an operator means is a switch over its values here. Everything else here works on
+// that tree.
 //
 // A leaf is built from ent's generated predicates wherever one exists: the core
 // attributes (contact.EmailEQ …) and Tags (contact.HasTagsWith). An event count is a correlated
@@ -108,16 +112,24 @@ func (m *Module) Compile(ctx context.Context, s *ent.Scoped, g conditiontree.Seg
 }
 
 // RulePredicate compiles a Rule's Condition for the Workspace of s, with tests of the triggering
-// Event's properties allowed. They are evaluated in memory against props, the properties of
-// the Event that fired the Rule, and folded into the tree as constants before the rest compiles
-// to a predicate (the Event's row may not exist yet). A key the Event lacks, or a value of
-// another type, makes the leaf false. Any key is valid, so props may be nil to only validate.
+// Event's properties allowed. props, the properties of the Event that fired the Rule (whose row
+// may not exist yet), are a JSON object bound to the query, and each such test is its SQL/JSON path
+// on them (ADR 0180), so Postgres decides it with the rest of the tree. A key the Event lacks, or a
+// value of another type, makes the leaf false. Any key is valid, so props may be nil to only
+// validate.
 func (m *Module) RulePredicate(ctx context.Context, s *ent.Scoped, g conditiontree.Rule, props map[string]any) (predicate.Contact, error) {
 	tree, err := decode(g.Group, rulePlace)
 	if err != nil {
 		return nil, err
 	}
-	return (&compiler{s: s, now: m.now(), trigger: props}).group(ctx, tree)
+	if props == nil {
+		props = map[string]any{}
+	}
+	trigger, err := json.Marshal(props)
+	if err != nil {
+		return nil, fmt.Errorf("encode the triggering Event's properties: %w", err)
+	}
+	return (&compiler{s: s, now: m.now(), trigger: trigger}).group(ctx, tree)
 }
 
 // compiler holds what one compilation needs: the Workspace's Custom field keys are
@@ -128,9 +140,9 @@ type compiler struct {
 	keys map[string]customfield.Type
 	// loc is the Workspace time zone, loaded by the first moment test that needs it.
 	loc *time.Location
-	// trigger is the properties of the Event a Rule's tests of the triggering Event read; nil in a
-	// Segment, whose tree holds no such test.
-	trigger map[string]any
+	// trigger is the properties of the Event a Rule's tests of the triggering Event read, a JSON
+	// object; nil in a Segment, whose tree holds no such test.
+	trigger json.RawMessage
 }
 
 func (c *compiler) group(ctx context.Context, g group) (predicate.Contact, error) {
@@ -183,7 +195,7 @@ func (c *compiler) node(ctx context.Context, n node) (predicate.Contact, error) 
 	case eventCountLeaf:
 		return c.event(l), nil
 	case propertyLeaf:
-		return c.property(l), nil
+		return c.property(l)
 	default:
 		return nil, fmt.Errorf("unknown leaf %T", n)
 	}
@@ -226,43 +238,16 @@ func (c *compiler) since(days int) time.Time {
 	return since
 }
 
-// everyone and nobody are the predicates every Contact and no Contact satisfies. everyone is an
-// explicit TRUE, not an empty contact.And(), which writes nothing and so is lost under a NOT.
-var (
-	everyone = predicate.Contact(func(s *sql.Selector) { s.Where(sql.Not(sql.False())) })
-	nobody   = predicate.Contact(func(s *sql.Selector) { s.Where(sql.False()) })
-)
-
-// property is a test of one property of its source, decided here, in memory, and made the
-// constant predicate "everyone" or "no one" for the rest of the tree. A key the source lacks fails
-// the test.
-func (c *compiler) property(l propertyLeaf) predicate.Contact {
-	// A source that is not the triggering Event has no properties here: its tests fail.
-	var properties map[string]any
-	if l.source == conditiontree.SourceTrigger {
-		properties = c.trigger
+// property is a test of one property of the triggering Event: its SQL/JSON path, the one a filter
+// compiles to (ADR 0180), on the Event's properties bound to the query.
+func (c *compiler) property(l propertyLeaf) (predicate.Contact, error) {
+	b := newPathBuilder()
+	path, err := b.path(b.property(l.key, l.test))
+	if err != nil {
+		return nil, err
 	}
-	have, present := properties[l.key]
-	if present && holds(l.test, have) {
-		return everyone
-	}
-	return nobody
-}
-
-// holds reports whether a property's value, present in the Event, passes the test: a text,
-// presence or number test, the ones decode reads for a property.
-func holds(t test, have any) bool {
-	switch t := t.(type) {
-	case textTest:
-		return t.meaning.event(have, t.value)
-	case presenceTest:
-		return t.event(have)
-	case numberTest:
-		n, ok := number(have)
-		return ok && t.meaning.holds(n, t.value)
-	default:
-		return false
-	}
+	on := Document(c.trigger)
+	return predicate.Contact(func(s *sql.Selector) { s.Where(path.On(on)) }), nil
 }
 
 // location is the Workspace time zone, in which a datetime Custom field's value without an offset
@@ -314,7 +299,7 @@ func jsonPath(key string, at target, filter string, vars map[string]any) (predic
 		// raw sql: ent has no jsonpath predicate, and its JSON comparisons (sqljson.ValueGT …) cast
 		// the value, which fails the whole query on one Contact's value of another type. A jsonpath
 		// filter in silent mode is false there instead; COALESCE makes a missing key or column false,
-		// not NULL, so a negated group holds for it as for a Rule's folded leaf. The key, the filter
+		// not NULL, so a negated group holds for it as for a Rule's property test. The key, the filter
 		// and the operands are bound arguments.
 		s.Where(sql.P(func(b *sql.Builder) {
 			b.WriteString("COALESCE(jsonb_path_exists(")
@@ -416,7 +401,7 @@ func (c *compiler) custom(ctx context.Context, l customFieldLeaf) (predicate.Con
 	}
 	switch test := l.test.(type) {
 	case numberTest:
-		return jsonPath(l.key, asIs, test.meaning.filter, map[string]any{"v": test.value})
+		return jsonPath(l.key, asIs, test.meaning.filter(), map[string]any{"v": test.value})
 	case momentTest:
 		return c.customMoment(ctx, l.key, test)
 	case withinLastTest:
