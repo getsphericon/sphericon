@@ -3,6 +3,9 @@ run:
   # Lint the end-to-end suite too (e2e/ is behind this build tag, ADR 0024).
   build-tags:
     - e2e
+  # A second run (an editor's, an agent's, check:be beside them) waits for the lock instead of
+  # exiting with "parallel golangci-lint is running".
+  allow-serial-runners: true
 formatters:
   enable:
     - gofmt
@@ -136,7 +139,10 @@ linters:
       # A switch with a default says what happens to every other member; it is checked only for
       # the enums this repository defines, not for html.TokenType, reflect.Kind or yaml.Kind.
       default-signifies-exhaustive: true
-      ignore-types: ^(reflect\.Kind|golang\.org/x/net/html\.TokenType|go\.yaml\.in/yaml/v4/internal/libyaml\.Kind)$
+      ignore-types:
+        - ^reflect\.Kind$
+        - ^golang\.org/x/net/html\.TokenType$
+        - ^go\.yaml\.in/yaml/v4/internal/libyaml\.Kind$
     sloglint:
       # Where a context is in scope, a line is logged with it (slog.*Context), so the logger
       # tags the line with the request id and the correlation id it carries.
@@ -321,7 +327,6 @@ linters:
     # tabulated, not a count of how many `if` a function may hold.
     cyclop:
       max-complexity: 30
-      skip-tests: true
     gocognit:
       min-complexity: 40
     funlen:
@@ -359,6 +364,10 @@ linters:
         linters:
           - forbidigo
         text: the Instance reads one clock
+      # The cyclop limit is for the code a test exercises, not for a test's own table and setup.
+      - path: _test\.go$
+        linters:
+          - cyclop
       # The reads of the wall clock the Instance keeps (#1172): the container provides app.Clock
       # from it; the access log and the document runtime measure a duration on it; httprate's
       # windows run on it, so its reset header counts from it; the doctor and a CLI command run
