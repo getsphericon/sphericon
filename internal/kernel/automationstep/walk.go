@@ -51,14 +51,19 @@ func Next(p Path, id ID) (*Step, bool) {
 }
 
 // AfterEnd is the first Step that follows an End in its path, false when every End is the last
-// Step of its path (ADR 0124): an End finishes its path, so a Step after it would never run.
+// Step of its path (ADR 0124): an End finishes its path, so a Step after it would never run. Each
+// path is checked on its own (afterEndIn): an End finishes the path that holds it, not the path
+// around its fork, so a fork's paths, once they come, are each checked by a call of their own.
 func AfterEnd(p Path) (*Step, bool) {
-	ended := false
-	for _, st := range All(p) {
-		if ended {
-			return st, true
+	return afterEndIn(p)
+}
+
+// afterEndIn is the first Step that follows an End among the Steps of the path p itself.
+func afterEndIn(p Path) (*Step, bool) {
+	for i := range p.Steps {
+		if p.Steps[i].Kind() == KindEnd && i+1 < len(p.Steps) {
+			return &p.Steps[i+1], true
 		}
-		ended = st.Kind() == KindEnd
 	}
 	return nil, false
 }
