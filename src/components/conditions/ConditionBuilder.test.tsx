@@ -132,6 +132,25 @@ test("a Segment's builder offers no test of the triggering Event", async () => {
   await expect.element(screen.getByRole('button', { name: 'Preview segment' })).toBeInTheDocument()
 })
 
+// An event field reads as its action: a System event by its words, a tracked action by its name.
+test('an event field names a System event by its words and a tracked action as it was tracked', async () => {
+  serve()
+  worker.use(handleSiteEventsActions({ body: { actions: ['purchase', 'email.opened'] } }))
+  const { screen } = await renderWithRouter(
+    <ConditionBuilder
+      workspaceId="TestWs01"
+      place="segment"
+      initialValue={emailContains}
+      onChange={vi.fn<() => void>()}
+    />,
+  )
+
+  await screen.getByTestId('fields').click()
+
+  await expect.element(screen.getByRole('option', { name: 'Opened an email' })).toBeVisible()
+  await expect.element(screen.getByRole('option', { name: 'Did "purchase"' })).toBeVisible()
+})
+
 test("a Rule's builder offers the test of the triggering Event, with its key, and no segment preview", async () => {
   serve()
   const onChange = vi.fn<(draft: ConditionDraft) => void>()
