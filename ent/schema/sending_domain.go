@@ -91,7 +91,7 @@ func (SendingDomain) Fields() []ent.Field {
 func (SendingDomain) Indexes() []ent.Index {
 	return []ent.Index{
 		// One kept row per (workspace, domain): an archived row does not hold the name
-		// (ADR 0049). The migration builds it CONCURRENTLY (ADR 0033).
+		// (ADR 0049). A migration that adds it builds it CONCURRENTLY (ADR 0033).
 		index.Fields("workspace_id", "domain").
 			Unique().
 			Annotations(entsql.IndexWhere("discarded_at IS NULL")),

@@ -63,7 +63,7 @@ func (JoinDomain) Indexes() []ent.Index {
 		index.Fields("workspace_id", "domain").
 			Unique(),
 		// A domain is verified by one Workspace across the Instance; pending claims never
-		// block anyone. The migration builds it CONCURRENTLY (ADR 0033).
+		// block anyone. A migration that adds it builds it CONCURRENTLY (ADR 0033).
 		index.Fields("domain").
 			Unique().
 			Annotations(entsql.IndexWhere("verified_at IS NOT NULL")),

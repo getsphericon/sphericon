@@ -21,9 +21,8 @@ func conditionCheck(column string) string {
 }
 
 // conditionEntriesCheck is the CHECK that a Condition's group holds its entries as a list (ADR
-// 0181): a tree without them (the shape a release before the typed tree writes, under `rules`) or
-// with null ones would read as the empty group, which matches every Contact. A missing key is
-// refused too, so the comparison is never NULL; a NULL Condition passes.
+// 0181): a tree without them, or with null ones, would read as the empty group, which matches every
+// Contact. A missing key is refused too, so the comparison is never NULL; a NULL Condition passes.
 func conditionEntriesCheck(column string) string {
 	return fmt.Sprintf("%[1]s IS NULL OR COALESCE(jsonb_typeof(%[1]s -> 'entries') = 'array', false)", column)
 }

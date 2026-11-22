@@ -31,7 +31,8 @@ func (SchemaState) Fields() []ent.Field {
 			StorageKey("id").
 			Immutable(),
 		// Major is the schema's Major as a counter: 1 for the first, plus one for each
-		// destructive migration. Releases map to it through internal/infra/db's table of Majors.
+		// destructive migration and each history collapse (ADR 0047). Releases map to it through
+		// internal/infra/db's table of Majors.
 		field.Int("major"),
 		// Floor is the oldest release (a semver tag such as v0.4.7) that still runs on
 		// this schema: the last release of the previous Major.

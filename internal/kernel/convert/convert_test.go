@@ -231,7 +231,7 @@ func (o *optGroup) SetTo(v group) { o.v, o.set = v, true }
 
 func TestOptDocumentReadsADocumentByTheModelsDecoderAndLeavesOneItRefusesAbsent(t *testing.T) {
 	read := convert.OptDocument[optGroup, group](map[string]any{"entries": []int{1, 2}})
-	refused := convert.OptDocument[optGroup, group](map[string]any{"rules": []int{1}})
+	refused := convert.OptDocument[optGroup, group](map[string]any{"items": []int{1}})
 
 	assert.Equal(t, optGroup{v: group{Entries: []int{1, 2}}, set: true}, read)
 	assert.Equal(t, optGroup{}, refused)
