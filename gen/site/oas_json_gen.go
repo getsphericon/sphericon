@@ -4118,6 +4118,18 @@ func (s AutomationStepInputSum) encodeFields(e *jx.Encoder) {
 				}
 			}
 		}
+	case EndStepInputAutomationStepInputSum:
+		e.FieldStart("type")
+		e.Str("end")
+		{
+			s := s.EndStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+		}
 	}
 }
 
@@ -4165,6 +4177,9 @@ func (s *AutomationStepInputSum) Decode(d *jx.Decoder) error {
 				case "http":
 					s.Type = HttpStepInputAutomationStepInputSum
 					found = true
+				case "end":
+					s.Type = EndStepInputAutomationStepInputSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -4205,6 +4220,10 @@ func (s *AutomationStepInputSum) Decode(d *jx.Decoder) error {
 		}
 	case HttpStepInputAutomationStepInputSum:
 		if err := s.HttpStepInput.Decode(d); err != nil {
+			return err
+		}
+	case EndStepInputAutomationStepInputSum:
+		if err := s.EndStepInput.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -4407,6 +4426,16 @@ func (s AutomationStepSum) encodeFields(e *jx.Encoder) {
 				e.Bool(s.HasSecret)
 			}
 		}
+	case EndStepAutomationStepSum:
+		e.FieldStart("type")
+		e.Str("end")
+		{
+			s := s.EndStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+		}
 	}
 }
 
@@ -4454,6 +4483,9 @@ func (s *AutomationStepSum) Decode(d *jx.Decoder) error {
 				case "http":
 					s.Type = HttpStepAutomationStepSum
 					found = true
+				case "end":
+					s.Type = EndStepAutomationStepSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -4494,6 +4526,10 @@ func (s *AutomationStepSum) Decode(d *jx.Decoder) error {
 		}
 	case HttpStepAutomationStepSum:
 		if err := s.HttpStep.Decode(d); err != nil {
+			return err
+		}
+	case EndStepAutomationStepSum:
+		if err := s.EndStep.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -12788,6 +12824,302 @@ func (s EmailStepType) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *EmailStepType) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *EndStep) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *EndStep) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("id")
+		s.ID.Encode(e)
+	}
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfEndStep = [2]string{
+	0: "id",
+	1: "type",
+}
+
+// Decode decodes EndStep from json.
+func (s *EndStep) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode EndStep to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "type":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode EndStep")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfEndStep) {
+					name = jsonFieldsNameOfEndStep[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *EndStep) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *EndStep) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *EndStepInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *EndStepInput) encodeFields(e *jx.Encoder) {
+	{
+		if s.ID.Set {
+			e.FieldStart("id")
+			s.ID.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfEndStepInput = [2]string{
+	0: "id",
+	1: "type",
+}
+
+// Decode decodes EndStepInput from json.
+func (s *EndStepInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode EndStepInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			if err := func() error {
+				s.ID.Reset()
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "type":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode EndStepInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000010,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfEndStepInput) {
+					name = jsonFieldsNameOfEndStepInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *EndStepInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *EndStepInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes EndStepInputType as json.
+func (s EndStepInputType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes EndStepInputType from json.
+func (s *EndStepInputType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode EndStepInputType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch EndStepInputType(v) {
+	case EndStepInputTypeEnd:
+		*s = EndStepInputTypeEnd
+	default:
+		*s = EndStepInputType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s EndStepInputType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *EndStepInputType) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes EndStepType as json.
+func (s EndStepType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes EndStepType from json.
+func (s *EndStepType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode EndStepType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch EndStepType(v) {
+	case EndStepTypeEnd:
+		*s = EndStepTypeEnd
+	default:
+		*s = EndStepType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s EndStepType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *EndStepType) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

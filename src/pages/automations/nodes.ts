@@ -39,6 +39,9 @@ export const WAIT_NODE_ICON = 'Timer'
 export const TAG_NODE_ICON: WBIcon = 'Tag'
 export const HTTP_NODE_ICON: WBIcon = 'WebhooksLogo'
 export const TRIGGER_NODE_ICON: WBIcon = 'Lightning'
+// An End (ADR 0124) is drawn when a version holds one, but is not in the palette: this canvas
+// cannot place one yet, and a version holding one opens read-only.
+export const END_NODE_ICON: WBIcon = 'FlagCheckered'
 
 export const TRIGGER_EVENTS = [
   SystemEventAction.CONTACT_CREATED,

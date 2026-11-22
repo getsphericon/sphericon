@@ -485,6 +485,23 @@ func TestPublishingAStepInsertedAboveLeavesTheEnrollmentOnItsStep(t *testing.T) 
 	assert.False(t, env.DB.Tag.Query().Where(tag.Name("inserted")).ExistX(ctx), "the Step inserted above is not run for it")
 }
 
+// An End completes the Enrollment at once (ADR 0124): it ends `completed`, no exit, and the Steps
+// its path holds after the End never run for it.
+func TestAnEndCompletesTheEnrollmentAndTheStepsAfterItDoNotRun(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	runID := enrollVia(t, env, fixtures.AutomationJobsEndsEarlyID, fixtures.ContactAliceID)
+
+	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(&fakeSender{})))
+
+	run := env.DB.AutomationRun.GetX(ctx, runID)
+	before := env.DB.Tag.Query().Where(tag.Name("before-end")).ExistX(ctx)
+	after := env.DB.Tag.Query().Where(tag.Name("after-end")).ExistX(ctx)
+	assert.Equal(t, automationrun.StatusCompleted, run.Status)
+	assert.True(t, before, "the Step before the End runs")
+	assert.False(t, after, "the Step after the End does not run")
+}
+
 // An Event from an Automation's own email never enrolls the Contact into that Automation, so an
 // `email.opened` Automation cannot be fed by the mail it sends; another Automation on the same
 // trigger still enrolls (ADR 0053).

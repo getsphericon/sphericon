@@ -666,7 +666,9 @@ export type AutomationStep = ({
   type: 'remove_tag';
 } & RemoveTagStep) | ({
   type: 'http';
-} & HttpStep);
+} & HttpStep) | ({
+  type: 'end';
+} & EndStep);
 
 /**
  * The messages of the send step at one position
@@ -704,7 +706,9 @@ export type AutomationStepInput = ({
   type: 'remove_tag';
 } & RemoveTagStepInput) | ({
   type: 'http';
-} & HttpStepInput);
+} & HttpStepInput) | ({
+  type: 'end';
+} & EndStepInput);
 
 /**
  * One version of an automation's definition: what publishing makes it do (ADR 0065)
@@ -1964,6 +1968,30 @@ export type EmailStepInput = {
    * The Integration the Step sends through, of the email Channel; null or omitted is the Channel's default
    */
   integrationId?: EntityId | null;
+};
+
+/**
+ * A Step that finishes its path and ends the Enrollment as `completed` at once (ADR 0124): a path
+ * stops early by design, which is no exit. It is the last Step of its path.
+ */
+export type EndStep = {
+  /**
+   * The Step's id
+   */
+  id: StepId;
+  type: 'end';
+};
+
+/**
+ * A Step that finishes its path, as a request writes it. A Step after it in the same path refuses
+ * the save, naming that Step.
+ */
+export type EndStepInput = {
+  /**
+   * The Step's id; omitted, the Step is given one
+   */
+  id?: StepId;
+  type: 'end';
 };
 
 /**

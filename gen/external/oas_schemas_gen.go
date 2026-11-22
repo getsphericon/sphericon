@@ -2665,6 +2665,7 @@ type AutomationStepInputSum struct {
 	ApplyTagStepInput  ApplyTagStepInput
 	RemoveTagStepInput RemoveTagStepInput
 	HttpStepInput      HttpStepInput
+	EndStepInput       EndStepInput
 }
 
 // AutomationStepInputSumType is oneOf type of AutomationStepInputSum.
@@ -2679,6 +2680,7 @@ const (
 	ApplyTagStepInputAutomationStepInputSum  AutomationStepInputSumType = "apply_tag"
 	RemoveTagStepInputAutomationStepInputSum AutomationStepInputSumType = "remove_tag"
 	HttpStepInputAutomationStepInputSum      AutomationStepInputSumType = "http"
+	EndStepInputAutomationStepInputSum       AutomationStepInputSumType = "end"
 )
 
 // IsEmailStepInput reports whether AutomationStepInputSum is EmailStepInput.
@@ -2714,6 +2716,11 @@ func (s AutomationStepInputSum) IsRemoveTagStepInput() bool {
 // IsHttpStepInput reports whether AutomationStepInputSum is HttpStepInput.
 func (s AutomationStepInputSum) IsHttpStepInput() bool {
 	return s.Type == HttpStepInputAutomationStepInputSum
+}
+
+// IsEndStepInput reports whether AutomationStepInputSum is EndStepInput.
+func (s AutomationStepInputSum) IsEndStepInput() bool {
+	return s.Type == EndStepInputAutomationStepInputSum
 }
 
 // SetEmailStepInput sets AutomationStepInputSum to EmailStepInput.
@@ -2863,6 +2870,27 @@ func NewHttpStepInputAutomationStepInputSum(v HttpStepInput) AutomationStepInput
 	return s
 }
 
+// SetEndStepInput sets AutomationStepInputSum to EndStepInput.
+func (s *AutomationStepInputSum) SetEndStepInput(v EndStepInput) {
+	s.Type = EndStepInputAutomationStepInputSum
+	s.EndStepInput = v
+}
+
+// GetEndStepInput returns EndStepInput and true boolean if AutomationStepInputSum is EndStepInput.
+func (s AutomationStepInputSum) GetEndStepInput() (v EndStepInput, ok bool) {
+	if !s.IsEndStepInput() {
+		return v, false
+	}
+	return s.EndStepInput, true
+}
+
+// NewEndStepInputAutomationStepInputSum returns new AutomationStepInputSum from EndStepInput.
+func NewEndStepInputAutomationStepInputSum(v EndStepInput) AutomationStepInputSum {
+	var s AutomationStepInputSum
+	s.SetEndStepInput(v)
+	return s
+}
+
 // AutomationStepSum represents sum type.
 type AutomationStepSum struct {
 	// Type selects the active sum variant, switch on this field.
@@ -2874,6 +2902,7 @@ type AutomationStepSum struct {
 	ApplyTagStep  ApplyTagStep
 	RemoveTagStep RemoveTagStep
 	HttpStep      HttpStep
+	EndStep       EndStep
 }
 
 // AutomationStepSumType is oneOf type of AutomationStepSum.
@@ -2888,6 +2917,7 @@ const (
 	ApplyTagStepAutomationStepSum  AutomationStepSumType = "apply_tag"
 	RemoveTagStepAutomationStepSum AutomationStepSumType = "remove_tag"
 	HttpStepAutomationStepSum      AutomationStepSumType = "http"
+	EndStepAutomationStepSum       AutomationStepSumType = "end"
 )
 
 // IsEmailStep reports whether AutomationStepSum is EmailStep.
@@ -2910,6 +2940,9 @@ func (s AutomationStepSum) IsRemoveTagStep() bool { return s.Type == RemoveTagSt
 
 // IsHttpStep reports whether AutomationStepSum is HttpStep.
 func (s AutomationStepSum) IsHttpStep() bool { return s.Type == HttpStepAutomationStepSum }
+
+// IsEndStep reports whether AutomationStepSum is EndStep.
+func (s AutomationStepSum) IsEndStep() bool { return s.Type == EndStepAutomationStepSum }
 
 // SetEmailStep sets AutomationStepSum to EmailStep.
 func (s *AutomationStepSum) SetEmailStep(v EmailStep) {
@@ -3055,6 +3088,27 @@ func (s AutomationStepSum) GetHttpStep() (v HttpStep, ok bool) {
 func NewHttpStepAutomationStepSum(v HttpStep) AutomationStepSum {
 	var s AutomationStepSum
 	s.SetHttpStep(v)
+	return s
+}
+
+// SetEndStep sets AutomationStepSum to EndStep.
+func (s *AutomationStepSum) SetEndStep(v EndStep) {
+	s.Type = EndStepAutomationStepSum
+	s.EndStep = v
+}
+
+// GetEndStep returns EndStep and true boolean if AutomationStepSum is EndStep.
+func (s AutomationStepSum) GetEndStep() (v EndStep, ok bool) {
+	if !s.IsEndStep() {
+		return v, false
+	}
+	return s.EndStep, true
+}
+
+// NewEndStepAutomationStepSum returns new AutomationStepSum from EndStep.
+func NewEndStepAutomationStepSum(v EndStep) AutomationStepSum {
+	var s AutomationStepSum
+	s.SetEndStep(v)
 	return s
 }
 
@@ -9615,6 +9669,132 @@ func (s *EmailStepType) UnmarshalText(data []byte) error {
 	switch EmailStepType(data) {
 	case EmailStepTypeEmail:
 		*s = EmailStepTypeEmail
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A Step that finishes its path and ends the Enrollment as `completed` at once (ADR 0124): a path
+// stops early by design, which is no exit. It is the last Step of its path.
+// Ref: #/components/schemas/EndStep
+type EndStep struct {
+	// The Step's id.
+	ID   StepId      `json:"id"`
+	Type EndStepType `json:"type"`
+}
+
+// GetID returns the value of ID.
+func (s *EndStep) GetID() StepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *EndStep) GetType() EndStepType {
+	return s.Type
+}
+
+// SetID sets the value of ID.
+func (s *EndStep) SetID(val StepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *EndStep) SetType(val EndStepType) {
+	s.Type = val
+}
+
+// A Step that finishes its path, as a request writes it. A Step after it in the same path refuses the
+// save, naming that Step.
+// Ref: #/components/schemas/EndStepInput
+type EndStepInput struct {
+	// The Step's id; omitted, the Step is given one.
+	ID   OptStepId        `json:"id"`
+	Type EndStepInputType `json:"type"`
+}
+
+// GetID returns the value of ID.
+func (s *EndStepInput) GetID() OptStepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *EndStepInput) GetType() EndStepInputType {
+	return s.Type
+}
+
+// SetID sets the value of ID.
+func (s *EndStepInput) SetID(val OptStepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *EndStepInput) SetType(val EndStepInputType) {
+	s.Type = val
+}
+
+type EndStepInputType string
+
+const (
+	EndStepInputTypeEnd EndStepInputType = "end"
+)
+
+// AllValues returns all EndStepInputType values.
+func (EndStepInputType) AllValues() []EndStepInputType {
+	return []EndStepInputType{
+		EndStepInputTypeEnd,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EndStepInputType) MarshalText() ([]byte, error) {
+	switch s {
+	case EndStepInputTypeEnd:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EndStepInputType) UnmarshalText(data []byte) error {
+	switch EndStepInputType(data) {
+	case EndStepInputTypeEnd:
+		*s = EndStepInputTypeEnd
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type EndStepType string
+
+const (
+	EndStepTypeEnd EndStepType = "end"
+)
+
+// AllValues returns all EndStepType values.
+func (EndStepType) AllValues() []EndStepType {
+	return []EndStepType{
+		EndStepTypeEnd,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EndStepType) MarshalText() ([]byte, error) {
+	switch s {
+	case EndStepTypeEnd:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EndStepType) UnmarshalText(data []byte) error {
+	switch EndStepType(data) {
+	case EndStepTypeEnd:
+		*s = EndStepTypeEnd
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

@@ -50,6 +50,19 @@ func Next(p Path, id string) (*Step, bool) {
 	return nil, false
 }
 
+// AfterEnd is the first Step that follows an End in its path, false when every End is the last
+// Step of its path (ADR 0124): an End finishes its path, so a Step after it would never run.
+func AfterEnd(p Path) (*Step, bool) {
+	ended := false
+	for _, st := range All(p) {
+		if ended {
+			return st, true
+		}
+		ended = st.Kind() == KindEnd
+	}
+	return nil, false
+}
+
 // Map returns the path with each Step, in order, replaced by what rewrite makes of it, each in the
 // place of the Step it was made from; the path keeps its id. Map writes nothing into the path
 // given, and rewrite is handed the version's own Step, which it does not change either. No Steps

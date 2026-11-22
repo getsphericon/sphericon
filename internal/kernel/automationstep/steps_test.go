@@ -121,3 +121,19 @@ func TestIdentifyRefusesAMalformedOrRepeatedID(t *testing.T) {
 		})
 	}
 }
+
+// An End holds nothing but its id and kind (ADR 0124): it is stored as such and read back, and a
+// field beside them is refused.
+func TestAStoredEndHoldsNoFieldsOfItsOwn(t *testing.T) {
+	stored := `{"id":"5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1a02","type":"end"}`
+	var st automationstep.Step
+	require.NoError(t, json.Unmarshal([]byte(stored), &st))
+	written, err := json.Marshal(st)
+	require.NoError(t, err)
+	var extra automationstep.Step
+	refused := json.Unmarshal([]byte(`{"id":"5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1a02","type":"end","seconds":60}`), &extra)
+
+	assert.Equal(t, automationstep.KindEnd, st.Kind())
+	assert.JSONEq(t, stored, string(written))
+	assert.Error(t, refused)
+}

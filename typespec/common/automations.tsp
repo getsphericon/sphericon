@@ -293,6 +293,24 @@ model HttpStepInput {
   clearSecret?: boolean;
 }
 
+/** A Step that finishes its path and ends the Enrollment as `completed` at once (ADR 0124): a path
+ * stops early by design, which is no exit. It is the last Step of its path. */
+model EndStep {
+  /** The Step's id */
+  id: StepId;
+
+  type: "end";
+}
+
+/** A Step that finishes its path, as a request writes it. A Step after it in the same path refuses
+ * the save, naming that Step. */
+model EndStepInput {
+  /** The Step's id; omitted, the Step is given one */
+  id?: StepId;
+
+  type: "end";
+}
+
 /** One Step of an automation, by `type` */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "type" })
 union AutomationStep {
@@ -303,6 +321,7 @@ union AutomationStep {
   apply_tag: ApplyTagStep,
   remove_tag: RemoveTagStep,
   http: HttpStep,
+  end: EndStep,
 }
 
 /** One Step of an automation, by `type`, as a request writes it. A field of another kind is refused. */
@@ -315,6 +334,7 @@ union AutomationStepInput {
   apply_tag: ApplyTagStepInput,
   remove_tag: RemoveTagStepInput,
   http: HttpStepInput,
+  end: EndStepInput,
 }
 
 /** A path of Steps, in the order an Enrollment walks them. A version's Steps are its root path. */

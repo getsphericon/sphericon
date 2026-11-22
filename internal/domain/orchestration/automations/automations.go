@@ -173,6 +173,7 @@ func validate(steps automationstep.Path, linkLength int) error {
 			if strings.TrimSpace(s.Tag) == "" {
 				return ErrInvalidStep
 			}
+		case automationstep.End:
 		default:
 			return ErrInvalidStep
 		}
@@ -188,6 +189,15 @@ func identify(steps automationstep.Path) (automationstep.Path, error) {
 		return automationstep.Path{}, ErrInvalidStep.With(strings.TrimPrefix(err.Error(), automationstep.ErrBadID.Error()+": "))
 	}
 	return out, err
+}
+
+// checkEnds refuses a Step that follows an End in its path, naming it by its id and kind: an End
+// finishes its path (ADR 0124), so the Step would never run. The steps carry their ids (identify).
+func checkEnds(steps automationstep.Path) error {
+	if st, after := automationstep.AfterEnd(steps); after {
+		return ErrInvalidStep.With(fmt.Sprintf("step %s (%s) comes after an end step, which finishes its path", st.ID, st.Kind()))
+	}
+	return nil
 }
 
 // SendStep is a send step of a version, where it stands and what it sends through.
@@ -548,6 +558,9 @@ func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.Automati
 		}
 		steps, err := identify(*e.steps)
 		if err != nil {
+			return definition{}, err
+		}
+		if err := checkEnds(steps); err != nil {
 			return definition{}, err
 		}
 		// Each Integration the steps name is checked once, however many steps send through it.

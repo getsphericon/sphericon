@@ -20,6 +20,7 @@ import { OFF, STORED } from './nodeProperties.ts'
 import type { NodeProperties, ReadProperties, StepKind } from './nodeProperties.ts'
 import {
   EMAIL_NODE_ICON,
+  END_NODE_ICON,
   HTTP_NODE_ICON,
   SMS_NODE_ICON,
   TAG_NODE_ICON,
@@ -63,6 +64,7 @@ const STEP_ICON: Record<StepKind, WBIcon> = {
   apply_tag: TAG_NODE_ICON,
   remove_tag: TAG_NODE_ICON,
   http: HTTP_NODE_ICON,
+  end: END_NODE_ICON,
 }
 
 // A Telegram step's content, as the form holds it: every value a string.
@@ -103,6 +105,10 @@ function stepProperties(step: AutomationStep): NodeProperties[keyof NodeProperti
     }
     case 'telegram':
       return telegramProperties(step)
+    case 'end': {
+      const end: NodeProperties['end'] = {}
+      return end
+    }
     case 'sms': {
       const sms: NodeProperties['sms'] = {
         integrationId: step.integrationId ?? '',
@@ -295,6 +301,9 @@ function nodeToStep(node: WorkflowBuilderNode): AutomationStepInput | null {
       return telegramStep(id, props)
     case 'sms':
       return smsStep(id, props)
+    // An End holds nothing but its id: the canvas cannot place one, but keeps one it read.
+    case 'end':
+      return { id, type: 'end' }
     case 'email': {
       // A message written in the editor is saved as its document alone (the server builds the
       // body; sending both is a 422), and one written as HTML as its body alone. A step that names

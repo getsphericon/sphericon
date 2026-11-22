@@ -29,6 +29,7 @@ const (
 	KindApplyTag  Kind = "apply_tag"
 	KindRemoveTag Kind = "remove_tag"
 	KindHTTP      Kind = "http"
+	KindEnd       Kind = "end"
 )
 
 // Channel is the Channel a send step of the kind sends on (ADR 0081: the step's kind fixes its
@@ -74,8 +75,8 @@ type Step struct {
 // New is a Step with no id yet: Identify gives it one.
 func New(p Payload) Step { return Step{Payload: p} }
 
-// Payload is what a Step does, one type per kind: Email, Telegram, SMS, Wait, ApplyTag, RemoveTag
-// and HTTP.
+// Payload is what a Step does, one type per kind: Email, Telegram, SMS, Wait, ApplyTag, RemoveTag,
+// HTTP and End.
 type Payload interface {
 	Kind() Kind
 }
@@ -170,6 +171,10 @@ type HTTP struct {
 	ClearSecret bool                `json:"-"`
 }
 
+// End finishes its path and ends the Enrollment as completed at once (ADR 0124): a path stops early
+// by design, which is no exit. It holds nothing but its id, and it is the last Step of its path.
+type End struct{}
+
 func (Email) Kind() Kind     { return KindEmail }
 func (Telegram) Kind() Kind  { return KindTelegram }
 func (SMS) Kind() Kind       { return KindSMS }
@@ -177,6 +182,7 @@ func (Wait) Kind() Kind      { return KindWait }
 func (ApplyTag) Kind() Kind  { return KindApplyTag }
 func (RemoveTag) Kind() Kind { return KindRemoveTag }
 func (HTTP) Kind() Kind      { return KindHTTP }
+func (End) Kind() Kind       { return KindEnd }
 
 // decoders read the fields of each kind's payload, refusing any field the kind does not hold.
 var decoders = map[Kind]func([]byte) (Payload, error){
@@ -187,6 +193,7 @@ var decoders = map[Kind]func([]byte) (Payload, error){
 	KindApplyTag:  decodeAs[ApplyTag],
 	KindRemoveTag: decodeAs[RemoveTag],
 	KindHTTP:      decodeAs[HTTP],
+	KindEnd:       decodeAs[End],
 }
 
 func decodeAs[P Payload](b []byte) (Payload, error) {

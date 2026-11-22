@@ -137,6 +137,12 @@ const (
 	AutomationJobsEmailsThenTagVersionID = 5568
 	// AutomationJobsEmptyVersionID is from fixtures/automation_versions.
 	AutomationJobsEmptyVersionID = 55633
+	// AutomationJobsEndsEarlyID is from fixtures/automations.
+	AutomationJobsEndsEarlyID = 5590
+	// AutomationJobsEndsEarlyName is from fixtures/automations.
+	AutomationJobsEndsEarlyName = "Jobs ends early"
+	// AutomationJobsEndsEarlyVersionID is from fixtures/automation_versions.
+	AutomationJobsEndsEarlyVersionID = 5590
 	// AutomationJobsGreetingID is from fixtures/automations.
 	AutomationJobsGreetingID = 5560
 	// AutomationJobsGreetingInactiveID is from fixtures/automations.

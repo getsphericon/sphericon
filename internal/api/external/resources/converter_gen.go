@@ -785,6 +785,12 @@ func (c *ConverterImpl) EmailTemplatesToResources(source []*ent.EmailTemplate) [
 	}
 	return externalapiTemplateResourceList
 }
+func (c *ConverterImpl) EndStepToResource(source automations.EndView) external.EndStep {
+	var externalapiEndStep external.EndStep
+	externalapiEndStep.ID = external.StepId(source.ID)
+	externalapiEndStep.Type = endStepType(source.Type)
+	return externalapiEndStep
+}
 func (c *ConverterImpl) EnrollmentFailureKindToResource(source automationrun.FailureKind) external.EnrollmentFailureKind {
 	var externalapiEnrollmentFailureKind external.EnrollmentFailureKind
 	switch source {

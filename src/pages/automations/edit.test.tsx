@@ -168,6 +168,31 @@ function withSteps(steps: AutomationVersion['steps']['steps']): AutomationVersio
   }
 }
 
+// An End (ADR 0124) is drawn, but this canvas cannot edit around one yet: a version holding one
+// opens read-only, with nothing to save that could drop it.
+test('a version holding an End opens read-only, drawing the End and offering no save', async () => {
+  worker.use(
+    handleSiteAutomationsGet({
+      body: {
+        ...STORED,
+        draft: withSteps([
+          { id: stepId(11), type: 'wait', seconds: 60 },
+          { id: stepId(12), type: 'end' },
+        ]),
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+
+  await expect.poll(() => flowNode(2)).toBeInstanceOf(Element)
+  await expect
+    .element(screen.getByText('This version ends a path with an End step', { exact: false }))
+    .toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
+  await expect.element(screen.getByLabelText('Name', { exact: false })).toBeDisabled()
+})
+
 const AUTHORED_DOC = {
   type: 'doc',
   content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hello' }] }],

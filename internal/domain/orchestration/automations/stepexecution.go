@@ -198,8 +198,8 @@ func (m *StepExecution) start(ctx context.Context, s *ent.Scoped, makeEnrollment
 // take that step: it is erased with its Contact (ADR 0021), has left `active`, or stands elsewhere
 // than step because this job was delivered twice or a competing writer moved it. A step that
 // runs before the Enrollment's recorded resume time queues itself for that time and does
-// nothing else. An Enrollment past the last Step of its path (step "") completes; a Step id its
-// version does not hold fails it. A send step is one Outbound send under the Automation's Sending source
+// nothing else. An Enrollment past the last Step of its path (step "") completes, as does one on an
+// End; a Step id its version does not hold fails it. A send step is one Outbound send under the Automation's Sending source
 // (ADR 0015): the Outbound module owns eligibility, the unsubscribe footer and the send record, and
 // Step only turns its Outcome into the Enrollment's next state.
 func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, step string) error {
@@ -255,6 +255,11 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 		return m.tag(ctx, s, run, at, func(sys *ent.Scoped) error {
 			return m.contacts.RemoveTagIn(ctx, sys, run.ContactID, p.Tag)
 		})
+
+	case automationstep.End:
+		// An End finishes the path and completes the Enrollment at once (ADR 0124): whatever
+		// its path holds after it is never reached.
+		return m.complete(ctx, s, run.ID)
 
 	case automationstep.HTTP:
 		// The call runs on its own queue (ADR 0039); the job queued here makes it and moves

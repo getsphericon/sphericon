@@ -129,6 +129,14 @@ test('graphToSteps round-trips a stored trigger and chain, each Step and the pat
   })
 })
 
+test('an End the canvas reads is saved back with its id: a save never drops it', () => {
+  const ended = path([...STEPS, { id: stepId(15), type: 'end' }])
+
+  const { steps } = graphToSteps(stepsToGraph(on('email.opened'), ended, {}))
+
+  expect(steps).toEqual(ended)
+})
+
 test('a node dropped on the canvas is saved with its node id, beside the stored steps', () => {
   const graph = stepsToGraph(on('contact.created'), path(STEPS.slice(0, 1)), {})
   const added = node(stepId(99), 'wait', { seconds: 60 })
