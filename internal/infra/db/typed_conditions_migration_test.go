@@ -3,6 +3,7 @@ package db_test
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"path/filepath"
 	"testing"
 	"time"
@@ -203,7 +204,8 @@ type unmappable struct {
 }
 
 // A stored tree the migration cannot map (a field the typed tree has no leaf for, an operator its
-// value cannot take, a test of the triggering Event in a Segment's copy) stops it with one error
+// value cannot take, a test of the triggering Event in a Segment's copy, a date leaf without its
+// moment, a tree typed at some depths and old at others) stops it with one error
 // naming every such row, and nothing is rewritten: a Condition that maps keeps its old shape and the
 // schema stays at its Major, so the Self-hoster can fix the rows on the running release and retry.
 func TestTheTypedConditionsMigrationNamesEveryConditionItCannotMapAndRewritesNothing(t *testing.T) {
@@ -219,14 +221,57 @@ func TestTheTypedConditionsMigrationNamesEveryConditionItCannotMapAndRewritesNot
 	})
 	assert.Equal(t, []unmappable{
 		{table: "segments", id: 1, workspaceID: 1},
+		{table: "segments", id: 3, workspaceID: 1},
+		{table: "segments", id: 4, workspaceID: 1},
+		{table: "segments", id: 5, workspaceID: 1},
 		{table: "rule_versions", id: 5, workspaceID: 2},
 		{table: "broadcasts", id: 3, workspaceID: 1},
 	}, named)
 	assert.Contains(t, err.Error(), `segments 1 (Workspace 1): entry 0: entry 0: unknown field "nope"`)
+	assert.Contains(t, err.Error(), `segments 3 (Workspace 1): the tree mixes typed groups (entries) with old ones (rules)`)
+	assert.Contains(t, err.Error(), `segments 4 (Workspace 1): the tree mixes typed groups (entries) with old ones (rules)`)
+	assert.Contains(t, err.Error(), `segments 5 (Workspace 1): entry 0: date leaf moment is required`)
 	status, err := db.Status(ctx, sqlDB)
 	require.NoError(t, err)
 	assert.Less(t, status.Current, int64(db.TypedConditionsVersion), "the migration is still to run")
 	assert.Equal(t, 2, status.State.Major)
 	mappable := entclient.Core.New(sqlDB).Segment.GetX(ctx, 2).Condition
 	assert.Nil(t, mappable.Entries, "a Condition that maps is left in its old shape")
+}
+
+// Running the rewrite again over what it wrote changes nothing: every Condition is typed at every
+// depth, so it is left as it is (ADR 0033: a Go migration is idempotent, so a re-run after an
+// interrupted Upgrade finishes it).
+func TestTheTypedConditionsRewriteRunAgainChangesNothing(t *testing.T) {
+	sqlDB := typedConditionsBefore(t, "typed_conditions")
+	ctx := t.Context()
+	_, err := db.Migrate(ctx, sqlDB)
+	require.NoError(t, err)
+	client := entclient.Core.New(sqlDB)
+	first := storedTrees(t, client)
+
+	tx, err := sqlDB.BeginTx(ctx, nil)
+	require.NoError(t, err)
+	require.NoError(t, db.RewriteTypedConditions(ctx, tx))
+	require.NoError(t, tx.Commit())
+
+	second := storedTrees(t, client)
+	assert.Equal(t, first, second)
+}
+
+// storedTrees is every stored Condition as its JSON, by table and id.
+func storedTrees(t *testing.T, client *ent.Client) map[string]string {
+	t.Helper()
+	ctx := t.Context()
+	out := map[string]string{}
+	for _, s := range client.Segment.Query().AllX(ctx) {
+		out[fmt.Sprintf("segments %d", s.ID)] = testhelper.Document(t, s.Condition)
+	}
+	for _, v := range client.RuleVersion.Query().AllX(ctx) {
+		out[fmt.Sprintf("rule_versions %d", v.ID)] = testhelper.Document(t, v.Condition)
+	}
+	for _, b := range client.Broadcast.Query().AllX(ctx) {
+		out[fmt.Sprintf("broadcasts %d", b.ID)] = testhelper.Document(t, b.Condition)
+	}
+	return out
 }

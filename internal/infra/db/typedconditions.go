@@ -57,9 +57,8 @@ type UnmappableCondition struct {
 }
 
 // UnmappableConditionsError stops the migration when any stored Condition cannot be rewritten:
-// it names every such row, and nothing is rewritten. Each already fails on the release that
-// stored it (a preview, a send, a Rule's evaluation), so the Self-hoster edits or archives it
-// there and runs the Upgrade again.
+// it names every such row, and nothing is rewritten. The Self-hoster edits or archives each on the
+// running release and runs the Upgrade again.
 type UnmappableConditionsError struct {
 	Conditions []UnmappableCondition
 }
@@ -70,7 +69,7 @@ func (e *UnmappableConditionsError) Error() string {
 		rows[i] = fmt.Sprintf("%s %d (Workspace %d): %s", c.Table, c.ID, c.WorkspaceID, c.Reason)
 	}
 	return fmt.Sprintf("%d stored Conditions cannot be rewritten to the typed tree, so none was: %s. "+
-		"Each fails on the running release too: edit or archive it there, then run the Upgrade again",
+		"Edit or archive each on the running release, then run the Upgrade again",
 		len(e.Conditions), strings.Join(rows, "; "))
 }
 
@@ -87,11 +86,12 @@ type rewrite struct {
 	doc []byte
 }
 
-// typedConditions rewrites every stored Condition to the typed tree (ADR 0181) and moves the
-// schema to typedConditionsMajor, since an older release cannot read the typed tree. It maps every
-// row before it writes one, so a tree it cannot map stops it with nothing rewritten. A Condition
-// already typed is left as it is, so a second run changes nothing.
-func typedConditions(ctx context.Context, tx *sql.Tx) error {
+// RewriteTypedConditions is the Go migration TypedConditionsVersion: it rewrites every stored
+// Condition to the typed tree (ADR 0181) and moves the schema to typedConditionsMajor, since an
+// older release cannot read the typed tree. It maps every row before it writes one, so a tree it
+// cannot map stops it with nothing rewritten. A Condition typed at every depth is left as it is, so
+// a second run changes nothing (ADR 0033), which its test runs it again to see.
+func RewriteTypedConditions(ctx context.Context, tx *sql.Tx) error {
 	var rewrites []rewrite
 	var unmappable []UnmappableCondition
 	for _, col := range conditionColumns {

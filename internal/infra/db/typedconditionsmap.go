@@ -117,8 +117,8 @@ type oldGroup struct {
 }
 
 // The stored leaves before ADR 0181, each read as the decode read it: a `rule` leaf's value is
-// text ("" when it has none), a `number` leaf's a number and a `date` leaf's moment a time (the
-// zero time when it has none). A number and a moment are kept as written.
+// text ("" when it has none), a `number` leaf's a number and a `date` leaf's moment a time. A
+// number and a moment are kept as written.
 type (
 	oldRule struct {
 		Field    string `json:"field"`
@@ -221,26 +221,55 @@ type (
 )
 
 // typedCondition is the stored Condition doc of place p as the typed tree, or nil when it already
-// is one (a group whose entries are `entries`, not `rules`), which a run interrupted after its
-// rewrite leaves. It refuses a tree it cannot map, naming the entry ("entry 0: entry 2: …").
+// is one at every depth (each group's entries are `entries`, none `rules`), which a run interrupted
+// after its rewrite leaves. It refuses a tree it cannot map, naming the entry ("entry 0: entry 2:
+// …"), and a tree typed at some depths and old at others, which neither reading maps whole.
 func typedCondition(doc []byte, p conditionPlace) ([]byte, error) {
-	var keys map[string]json.RawMessage
-	if err := json.Unmarshal(doc, &keys); err != nil {
-		return nil, fmt.Errorf("malformed condition: %w", err)
-	}
-	_, old := keys["rules"]
-	if _, typed := keys["entries"]; typed && !old {
+	typed, old := groupShapes(doc)
+	switch {
+	case typed > 0 && old > 0:
+		return nil, errors.New("the tree mixes typed groups (entries) with old ones (rules)")
+	case typed > 0:
 		return nil, nil
 	}
 	var g oldGroup
 	if err := json.Unmarshal(doc, &g); err != nil {
 		return nil, fmt.Errorf("malformed group: %w", err)
 	}
-	typed, err := mapGroup(g, p)
+	typedTree, err := mapGroup(g, p)
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(typed)
+	return json.Marshal(typedTree)
+}
+
+// groupShapes counts the groups of a stored tree, at any depth, in each shape: a typed one holds
+// `entries`, an old one `rules` (a group with both counts as both). What is no group counts nothing.
+func groupShapes(doc json.RawMessage) (typed, old int) {
+	var keys map[string]json.RawMessage
+	if json.Unmarshal(doc, &keys) != nil {
+		return 0, 0
+	}
+	var kind string
+	if json.Unmarshal(keys["kind"], &kind) != nil || kind != kindGroup {
+		return 0, 0
+	}
+	for key, count := range map[string]*int{"entries": &typed, "rules": &old} {
+		list, ok := keys[key]
+		if !ok {
+			continue
+		}
+		*count++
+		var items []json.RawMessage
+		if json.Unmarshal(list, &items) != nil {
+			continue
+		}
+		for _, item := range items {
+			t, o := groupShapes(item)
+			typed, old = typed+t, old+o
+		}
+	}
+	return typed, old
 }
 
 // mapGroup maps a group and its entries.
@@ -422,23 +451,20 @@ func mapNumber(l oldNumber, p conditionPlace) (any, error) {
 	}
 }
 
-// zeroMoment is the moment a date leaf without one was read as.
-var zeroMoment = json.RawMessage(`"0001-01-01T00:00:00Z"`)
-
-// mapDate maps a `date` leaf: the moment test of the birthday or a Custom field.
+// mapDate maps a `date` leaf: the moment test of the birthday or a Custom field. A leaf without its
+// moment has no typed test: the typed tree requires `at`.
 func mapDate(l oldDate) (any, error) {
 	if !oldSides[oldWord(l.Operator)] {
 		return nil, fmt.Errorf("unsupported operator %q for date leaf", l.Operator)
 	}
-	at := zeroMoment
-	var moment time.Time
-	if len(l.At) > 0 && string(l.At) != "null" {
-		if err := json.Unmarshal(l.At, &moment); err != nil {
-			return nil, fmt.Errorf("malformed date leaf: %w", err)
-		}
-		at = l.At
+	if len(l.At) == 0 || string(l.At) == "null" {
+		return nil, errors.New("date leaf moment is required")
 	}
-	return momentLeaf(l.Field, typedMoment{Kind: "moment", Operator: l.Operator, At: at})
+	var moment time.Time
+	if err := json.Unmarshal(l.At, &moment); err != nil {
+		return nil, fmt.Errorf("malformed date leaf: %w", err)
+	}
+	return momentLeaf(l.Field, typedMoment{Kind: "moment", Operator: l.Operator, At: l.At})
 }
 
 // mapDateWithin maps a `dateWithin` leaf: the test of the last days of the birthday or a Custom
