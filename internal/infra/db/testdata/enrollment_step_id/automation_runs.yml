@@ -1,0 +1,40 @@
+# Enrollments by position: one on a Step, one active past the last Step (the job of its position
+# completes it), one completed past the end, one on an HTTP step.
+- id: 1
+  automation_id: 1
+  version_id: 1
+  contact_id: 1
+  workspace_id: 1
+  status: active
+  current_step: 2
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 2
+  automation_id: 1
+  version_id: 1
+  contact_id: 2
+  workspace_id: 1
+  status: active
+  current_step: 3
+  resume_at: '2026-01-02 00:00:00'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 3
+  automation_id: 1
+  version_id: 1
+  contact_id: 3
+  workspace_id: 1
+  status: completed
+  current_step: 3
+  ended_at: '2026-01-01 00:00:00'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 4
+  automation_id: 2
+  version_id: 2
+  contact_id: 4
+  workspace_id: 1
+  status: active
+  current_step: 0
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

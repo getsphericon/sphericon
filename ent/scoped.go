@@ -6403,23 +6403,23 @@ func (x *AutomationRunScopedCreate) SetNillableEndedAt(v *time.Time) *Automation
 
 const RoleOf_AutomationRunScopedCreate_SetNillableEndedAt = RoleStep
 
-// SetCurrentStep sets the "current_step" field.
-func (x *AutomationRunScopedCreate) SetCurrentStep(v int) *AutomationRunScopedCreate {
-	x.set = append(x.set, func(b *AutomationRunCreate) { b.SetCurrentStep(v) })
+// SetCurrentStepID sets the "current_step_id" field.
+func (x *AutomationRunScopedCreate) SetCurrentStepID(v string) *AutomationRunScopedCreate {
+	x.set = append(x.set, func(b *AutomationRunCreate) { b.SetCurrentStepID(v) })
 	return x
 }
 
-const RoleOf_AutomationRunScopedCreate_SetCurrentStep = RoleStep
+const RoleOf_AutomationRunScopedCreate_SetCurrentStepID = RoleStep
 
-// SetNillableCurrentStep sets the "current_step" field if the given value is not nil.
-func (x *AutomationRunScopedCreate) SetNillableCurrentStep(v *int) *AutomationRunScopedCreate {
+// SetNillableCurrentStepID sets the "current_step_id" field if the given value is not nil.
+func (x *AutomationRunScopedCreate) SetNillableCurrentStepID(v *string) *AutomationRunScopedCreate {
 	if v != nil {
-		x.SetCurrentStep(*v)
+		x.SetCurrentStepID(*v)
 	}
 	return x
 }
 
-const RoleOf_AutomationRunScopedCreate_SetNillableCurrentStep = RoleStep
+const RoleOf_AutomationRunScopedCreate_SetNillableCurrentStepID = RoleStep
 
 // SetResumeAt sets the "resume_at" field.
 func (x *AutomationRunScopedCreate) SetResumeAt(v time.Time) *AutomationRunScopedCreate {
@@ -6714,29 +6714,29 @@ func (u *AutomationRunScopedUpsert) ClearEndedAt() *AutomationRunScopedUpsert {
 
 const RoleOf_AutomationRunScopedUpsert_ClearEndedAt = RoleStep
 
-// SetCurrentStep sets the "current_step" field.
-func (u *AutomationRunScopedUpsert) SetCurrentStep(v int) *AutomationRunScopedUpsert {
-	u.u.Set(automationrun.FieldCurrentStep, v)
+// SetCurrentStepID sets the "current_step_id" field.
+func (u *AutomationRunScopedUpsert) SetCurrentStepID(v string) *AutomationRunScopedUpsert {
+	u.u.Set(automationrun.FieldCurrentStepID, v)
 	return u
 }
 
-const RoleOf_AutomationRunScopedUpsert_SetCurrentStep = RoleStep
+const RoleOf_AutomationRunScopedUpsert_SetCurrentStepID = RoleStep
 
-// AddCurrentStep adds v to the "current_step" field.
-func (u *AutomationRunScopedUpsert) AddCurrentStep(v int) *AutomationRunScopedUpsert {
-	u.u.Add(automationrun.FieldCurrentStep, v)
+// UpdateCurrentStepID sets the "current_step_id" field to the value that was provided on create.
+func (u *AutomationRunScopedUpsert) UpdateCurrentStepID() *AutomationRunScopedUpsert {
+	u.u.SetExcluded(automationrun.FieldCurrentStepID)
 	return u
 }
 
-const RoleOf_AutomationRunScopedUpsert_AddCurrentStep = RoleStep
+const RoleOf_AutomationRunScopedUpsert_UpdateCurrentStepID = RoleStep
 
-// UpdateCurrentStep sets the "current_step" field to the value that was provided on create.
-func (u *AutomationRunScopedUpsert) UpdateCurrentStep() *AutomationRunScopedUpsert {
-	u.u.SetExcluded(automationrun.FieldCurrentStep)
+// ClearCurrentStepID clears the value of the "current_step_id" field.
+func (u *AutomationRunScopedUpsert) ClearCurrentStepID() *AutomationRunScopedUpsert {
+	u.u.SetNull(automationrun.FieldCurrentStepID)
 	return u
 }
 
-const RoleOf_AutomationRunScopedUpsert_UpdateCurrentStep = RoleStep
+const RoleOf_AutomationRunScopedUpsert_ClearCurrentStepID = RoleStep
 
 // SetResumeAt sets the "resume_at" field.
 func (u *AutomationRunScopedUpsert) SetResumeAt(v time.Time) *AutomationRunScopedUpsert {
@@ -7151,31 +7151,31 @@ func (x *AutomationRunScopedUpdateOne) ClearEndedAt() *AutomationRunScopedUpdate
 
 const RoleOf_AutomationRunScopedUpdateOne_ClearEndedAt = RoleStep
 
-// SetCurrentStep sets the "current_step" field.
-func (x *AutomationRunScopedUpdateOne) SetCurrentStep(v int) *AutomationRunScopedUpdateOne {
-	x.set = append(x.set, func(b *AutomationRunUpdateOne) { b.SetCurrentStep(v) })
+// SetCurrentStepID sets the "current_step_id" field.
+func (x *AutomationRunScopedUpdateOne) SetCurrentStepID(v string) *AutomationRunScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationRunUpdateOne) { b.SetCurrentStepID(v) })
 	return x
 }
 
-const RoleOf_AutomationRunScopedUpdateOne_SetCurrentStep = RoleStep
+const RoleOf_AutomationRunScopedUpdateOne_SetCurrentStepID = RoleStep
 
-// SetNillableCurrentStep sets the "current_step" field if the given value is not nil.
-func (x *AutomationRunScopedUpdateOne) SetNillableCurrentStep(v *int) *AutomationRunScopedUpdateOne {
+// SetNillableCurrentStepID sets the "current_step_id" field if the given value is not nil.
+func (x *AutomationRunScopedUpdateOne) SetNillableCurrentStepID(v *string) *AutomationRunScopedUpdateOne {
 	if v != nil {
-		x.SetCurrentStep(*v)
+		x.SetCurrentStepID(*v)
 	}
 	return x
 }
 
-const RoleOf_AutomationRunScopedUpdateOne_SetNillableCurrentStep = RoleStep
+const RoleOf_AutomationRunScopedUpdateOne_SetNillableCurrentStepID = RoleStep
 
-// AddCurrentStep adds value to the "current_step" field.
-func (x *AutomationRunScopedUpdateOne) AddCurrentStep(v int) *AutomationRunScopedUpdateOne {
-	x.set = append(x.set, func(b *AutomationRunUpdateOne) { b.AddCurrentStep(v) })
+// ClearCurrentStepID clears the value of the "current_step_id" field.
+func (x *AutomationRunScopedUpdateOne) ClearCurrentStepID() *AutomationRunScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationRunUpdateOne) { b.ClearCurrentStepID() })
 	return x
 }
 
-const RoleOf_AutomationRunScopedUpdateOne_AddCurrentStep = RoleStep
+const RoleOf_AutomationRunScopedUpdateOne_ClearCurrentStepID = RoleStep
 
 // SetResumeAt sets the "resume_at" field.
 func (x *AutomationRunScopedUpdateOne) SetResumeAt(v time.Time) *AutomationRunScopedUpdateOne {
@@ -7530,31 +7530,31 @@ func (x *AutomationRunScopedUpdate) ClearEndedAt() *AutomationRunScopedUpdate {
 
 const RoleOf_AutomationRunScopedUpdate_ClearEndedAt = RoleStep
 
-// SetCurrentStep sets the "current_step" field.
-func (x *AutomationRunScopedUpdate) SetCurrentStep(v int) *AutomationRunScopedUpdate {
-	x.set = append(x.set, func(b *AutomationRunUpdate) { b.SetCurrentStep(v) })
+// SetCurrentStepID sets the "current_step_id" field.
+func (x *AutomationRunScopedUpdate) SetCurrentStepID(v string) *AutomationRunScopedUpdate {
+	x.set = append(x.set, func(b *AutomationRunUpdate) { b.SetCurrentStepID(v) })
 	return x
 }
 
-const RoleOf_AutomationRunScopedUpdate_SetCurrentStep = RoleStep
+const RoleOf_AutomationRunScopedUpdate_SetCurrentStepID = RoleStep
 
-// SetNillableCurrentStep sets the "current_step" field if the given value is not nil.
-func (x *AutomationRunScopedUpdate) SetNillableCurrentStep(v *int) *AutomationRunScopedUpdate {
+// SetNillableCurrentStepID sets the "current_step_id" field if the given value is not nil.
+func (x *AutomationRunScopedUpdate) SetNillableCurrentStepID(v *string) *AutomationRunScopedUpdate {
 	if v != nil {
-		x.SetCurrentStep(*v)
+		x.SetCurrentStepID(*v)
 	}
 	return x
 }
 
-const RoleOf_AutomationRunScopedUpdate_SetNillableCurrentStep = RoleStep
+const RoleOf_AutomationRunScopedUpdate_SetNillableCurrentStepID = RoleStep
 
-// AddCurrentStep adds value to the "current_step" field.
-func (x *AutomationRunScopedUpdate) AddCurrentStep(v int) *AutomationRunScopedUpdate {
-	x.set = append(x.set, func(b *AutomationRunUpdate) { b.AddCurrentStep(v) })
+// ClearCurrentStepID clears the value of the "current_step_id" field.
+func (x *AutomationRunScopedUpdate) ClearCurrentStepID() *AutomationRunScopedUpdate {
+	x.set = append(x.set, func(b *AutomationRunUpdate) { b.ClearCurrentStepID() })
 	return x
 }
 
-const RoleOf_AutomationRunScopedUpdate_AddCurrentStep = RoleStep
+const RoleOf_AutomationRunScopedUpdate_ClearCurrentStepID = RoleStep
 
 // SetResumeAt sets the "resume_at" field.
 func (x *AutomationRunScopedUpdate) SetResumeAt(v time.Time) *AutomationRunScopedUpdate {

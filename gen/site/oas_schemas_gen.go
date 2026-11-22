@@ -7232,8 +7232,9 @@ type EnrollmentResource struct {
 	ContactId EntityId `json:"contactId"`
 	// Where the Enrollment is.
 	Status EnrollmentStatus `json:"status"`
-	// Index of the next step to run (0-based).
-	CurrentStep int32 `json:"currentStep"`
+	// Id of the Step of its version the Enrollment stands on, the next to run (ADR 0122); absent once it
+	// has passed the last Step, and on an Enrollment that ended there.
+	CurrentStepId OptStepId `json:"currentStepId"`
 	// When a waiting Enrollment runs its next step.
 	ResumeAt OptTimestamp `json:"resumeAt"`
 	// Present on a failed Enrollment whose failure an HTTP step recorded.
@@ -7264,9 +7265,9 @@ func (s *EnrollmentResource) GetStatus() EnrollmentStatus {
 	return s.Status
 }
 
-// GetCurrentStep returns the value of CurrentStep.
-func (s *EnrollmentResource) GetCurrentStep() int32 {
-	return s.CurrentStep
+// GetCurrentStepId returns the value of CurrentStepId.
+func (s *EnrollmentResource) GetCurrentStepId() OptStepId {
+	return s.CurrentStepId
 }
 
 // GetResumeAt returns the value of ResumeAt.
@@ -7309,9 +7310,9 @@ func (s *EnrollmentResource) SetStatus(val EnrollmentStatus) {
 	s.Status = val
 }
 
-// SetCurrentStep sets the value of CurrentStep.
-func (s *EnrollmentResource) SetCurrentStep(val int32) {
-	s.CurrentStep = val
+// SetCurrentStepId sets the value of CurrentStepId.
+func (s *EnrollmentResource) SetCurrentStepId(val OptStepId) {
+	s.CurrentStepId = val
 }
 
 // SetResumeAt sets the value of ResumeAt.

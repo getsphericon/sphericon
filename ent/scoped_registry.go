@@ -404,7 +404,9 @@ func ScopedEntities() []*ScopedEntity {
 				if src.EndedAt != nil {
 					b.SetEndedAt(*src.EndedAt)
 				}
-				b.SetCurrentStep(src.CurrentStep)
+				if src.CurrentStepID != nil {
+					b.SetCurrentStepID(*src.CurrentStepID)
+				}
 				if src.ResumeAt != nil {
 					b.SetResumeAt(*src.ResumeAt)
 				}

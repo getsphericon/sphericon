@@ -69,7 +69,7 @@ func TestRunStepOutcomes(t *testing.T) {
 		require.NoError(t, err)
 		fs := &fakeSender{}
 		require.True(t, env.RunNextStep(t, stepperOf(env, resolvingTo(fs))))
-		assert.Equal(t, []map[string]any{stepJob(t, env, id, env.DB.AutomationRun.GetX(t.Context(), id).CurrentStep)}, queuedSteps(t, env), "the same step is queued again")
+		assert.Equal(t, []map[string]any{stepAt(t, env, id)}, queuedSteps(t, env), "the same step is queued again")
 		assert.True(t, env.JobSchedules(t, automations.RunStepArgs{}.Kind())[0].After(time.Now().Add(10*time.Minute)))
 		assert.Empty(t, fs.sent)
 		assert.Equal(t, automationrun.StatusActive, runStatus(t.Context(), t, env, id), "the enrollment is unchanged")

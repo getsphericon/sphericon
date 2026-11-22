@@ -44,8 +44,8 @@ type AutomationRun struct {
 	EventProperties map[string]interface{} `json:"event_properties,omitempty"`
 	// EndedAt holds the value of the "ended_at" field.
 	EndedAt *time.Time `json:"ended_at,omitempty"`
-	// CurrentStep holds the value of the "current_step" field.
-	CurrentStep int `json:"current_step,omitempty"`
+	// CurrentStepID holds the value of the "current_step_id" field.
+	CurrentStepID *string `json:"current_step_id,omitempty"`
 	// ResumeAt holds the value of the "resume_at" field.
 	ResumeAt *time.Time `json:"resume_at,omitempty"`
 	// FailureKind holds the value of the "failure_kind" field.
@@ -126,9 +126,9 @@ func (*AutomationRun) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case automationrun.FieldEventProperties:
 			values[i] = new([]byte)
-		case automationrun.FieldID, automationrun.FieldWorkspaceID, automationrun.FieldAutomationID, automationrun.FieldContactID, automationrun.FieldVersionID, automationrun.FieldCurrentStep, automationrun.FieldFailureStatus:
+		case automationrun.FieldID, automationrun.FieldWorkspaceID, automationrun.FieldAutomationID, automationrun.FieldContactID, automationrun.FieldVersionID, automationrun.FieldFailureStatus:
 			values[i] = new(sql.NullInt64)
-		case automationrun.FieldStatus, automationrun.FieldEventAction, automationrun.FieldFailureKind, automationrun.FieldFailureExcerpt:
+		case automationrun.FieldStatus, automationrun.FieldEventAction, automationrun.FieldCurrentStepID, automationrun.FieldFailureKind, automationrun.FieldFailureExcerpt:
 			values[i] = new(sql.NullString)
 		case automationrun.FieldCreatedAt, automationrun.FieldUpdatedAt, automationrun.FieldBeganAt, automationrun.FieldEndedAt, automationrun.FieldResumeAt:
 			values[i] = new(sql.NullTime)
@@ -223,11 +223,12 @@ func (_m *AutomationRun) assignValues(columns []string, values []any) error {
 				_m.EndedAt = new(time.Time)
 				*_m.EndedAt = value.Time
 			}
-		case automationrun.FieldCurrentStep:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field current_step", values[i])
+		case automationrun.FieldCurrentStepID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field current_step_id", values[i])
 			} else if value.Valid {
-				_m.CurrentStep = int(value.Int64)
+				_m.CurrentStepID = new(string)
+				*_m.CurrentStepID = value.String
 			}
 		case automationrun.FieldResumeAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -350,8 +351,10 @@ func (_m *AutomationRun) String() string {
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")
-	builder.WriteString("current_step=")
-	builder.WriteString(fmt.Sprintf("%v", _m.CurrentStep))
+	if v := _m.CurrentStepID; v != nil {
+		builder.WriteString("current_step_id=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", ")
 	if v := _m.ResumeAt; v != nil {
 		builder.WriteString("resume_at=")

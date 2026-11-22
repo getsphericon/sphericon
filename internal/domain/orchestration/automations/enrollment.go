@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
@@ -238,14 +239,19 @@ func shareLive(ctx context.Context, s *ent.Scoped, automationID int64) (liveShar
 }
 
 // begin writes the Enrollment of the Contact held in the Automation a, on a's live version, both
-// locked to the end of the transaction (ADR 0099, ADR 0108). A Contact enrolls in an Automation
-// once: an Enrollment already there is the answer, and nothing is written (inserted false).
+// locked to the end of the transaction (ADR 0099, ADR 0108), standing on that version's first Step
+// (none for a version of no Steps, where its first job completes it). A Contact enrolls in an
+// Automation once: an Enrollment already there is the answer, and nothing is written (inserted
+// false).
 func begin(ctx context.Context, s *ent.Scoped, held contactlock.Locked, a liveShared, o origin) (runID int64, inserted bool, err error) {
 	create := s.AutomationRun().Create().
 		SetAutomationID(a.row.ID).
 		SetVersionID(*a.row.LiveVersionID).
 		SetContactID(held.Contact().ID).
 		SetBeganAt(o.OccurredAt)
+	if first, ok := automationstep.First(a.row.Edges.LiveVersion.Steps); ok {
+		create.SetCurrentStepID(first.ID)
+	}
 	if o.Action != "" {
 		create.SetEventAction(o.Action)
 	}

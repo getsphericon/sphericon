@@ -51,8 +51,8 @@ model EnrollmentResource {
   /** Where the Enrollment is */
   status: EnrollmentStatus;
 
-  /** Index of the next step to run (0-based) */
-  currentStep: int32;
+  /** Id of the Step of its version the Enrollment stands on, the next to run (ADR 0122); absent once it has passed the last Step, and on an Enrollment that ended there */
+  currentStepId?: StepId;
 
   /** When a waiting Enrollment runs its next step */
   resumeAt?: Timestamp;

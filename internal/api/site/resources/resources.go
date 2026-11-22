@@ -106,6 +106,7 @@ import (
 // goverter:extend optNilEmailAddress
 // goverter:extend optNilEntityID
 // goverter:extend optEntityID
+// goverter:extend optStepID
 // goverter:extend optNilTimeZone
 // goverter:extend optNilCountry
 // goverter:extend optNilLocale
@@ -999,6 +1000,11 @@ func optNilString(v *string) siteapi.OptNilString {
 
 func optNilEmailAddress(v *string) siteapi.OptNilEmailAddress {
 	return convert.Opt[siteapi.OptNilEmailAddress]((*siteapi.EmailAddress)(v))
+}
+
+// optStepID is a Step id absent when there is none.
+func optStepID(v *string) siteapi.OptStepId {
+	return convert.Opt[siteapi.OptStepId]((*siteapi.StepId)(v))
 }
 
 // optEntityID is an id absent when there is none.

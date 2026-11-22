@@ -82,7 +82,7 @@ func TestTheGoalEventEndsTheEnrollmentAsGoalReached(t *testing.T) {
 	handEvent(t, env, contactID, recoveryGoal, time.Now())
 	ended, err := s.AutomationRun().Get(ctx, runID)
 	require.NoError(t, err)
-	require.NoError(t, testhelper.Module[*automations.StepExecution](env).Step(ctx, s, runID, ended.CurrentStep))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).Step(ctx, s, runID, lo.FromPtr(ended.CurrentStepID)))
 
 	status := statusOf(t, env, runID)
 	assert.Equal(t, automationrun.StatusGoalReached, status)
@@ -188,7 +188,7 @@ func TestAStepEndsAnEnrollmentAtTheStepExecutionsClock(t *testing.T) {
 	steps := automations.NewStepExecution(env.Bus, env.OutboundModule(), testhelper.Module[*contacts.Module](env), noFence, env.Cipher, nil, func() time.Time { return at })
 
 	// The Enrollment walks its two tag steps and completes.
-	require.NoError(t, steps.Step(ctx, s, fixtures.AutomationRunTagOnEngagementAliceID, 0))
+	require.NoError(t, steps.Step(ctx, s, fixtures.AutomationRunTagOnEngagementAliceID, env.StepIDAt(t, fixtures.AutomationRunTagOnEngagementAliceID, 0)))
 	env.RunQueuedSteps(t, steps)
 
 	run, err := env.DB.AutomationRun.Get(ctx, fixtures.AutomationRunTagOnEngagementAliceID)

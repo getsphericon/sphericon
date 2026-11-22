@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -118,7 +119,7 @@ func TestAHeldIntegrationStopsOnlyTheStepsThatSendThroughIt(t *testing.T) {
 			assert.Equal(t, []int64{fixtures.IntegrationAcmeDefaultID}, through, "nothing fell back to the default")
 			run := env.DB.AutomationRun.GetX(ctx, runID)
 			assert.Equal(t, automationrun.StatusActive, run.Status)
-			assert.Equal(t, 2, run.CurrentStep, "the Enrollment waits at the held step")
+			assert.Equal(t, env.StepIDAt(t, runID, 2), lo.FromPtr(run.CurrentStepID), "the Enrollment waits at the held step")
 			assert.Equal(t, []map[string]any{stepJob(t, env, runID, 2)}, queuedSteps(t, env), "the held step is asked again later")
 			assert.NotContains(t, tagNames(t, env, fixtures.ContactAliceID), "walked-past")
 		})

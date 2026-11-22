@@ -254,7 +254,7 @@ var (
 		{Name: "event_action", Type: field.TypeString, Nullable: true},
 		{Name: "event_properties", Type: field.TypeJSON, Nullable: true},
 		{Name: "ended_at", Type: field.TypeTime, Nullable: true},
-		{Name: "current_step", Type: field.TypeInt, Default: 0},
+		{Name: "current_step_id", Type: field.TypeString, Nullable: true},
 		{Name: "resume_at", Type: field.TypeTime, Nullable: true},
 		{Name: "failure_kind", Type: field.TypeEnum, Nullable: true, Enums: []string{"invalid_body", "timeout", "blocked_address", "http_status", "network"}},
 		{Name: "failure_status", Type: field.TypeInt, Nullable: true},

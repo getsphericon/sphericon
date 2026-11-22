@@ -94,7 +94,6 @@ test('shows the automation and the contacts enrolled in it', async () => {
             automationId: testId(1),
             contactId: testId(42),
             status: 'completed',
-            currentStep: 1,
             ...TIMESTAMPS,
           },
         ],

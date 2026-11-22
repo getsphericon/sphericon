@@ -60,23 +60,54 @@ func TestAllOfNoStepsVisitsNothing(t *testing.T) {
 	}
 }
 
-func TestAtFindsTheStepAtAPosition(t *testing.T) {
-	tag := automationstep.New(automationstep.ApplyTag{Tag: "vip"})
-	steps := automationstep.Root(automationstep.New(automationstep.Wait{Seconds: 60}), tag)
-	st, ok := automationstep.At(steps, 1)
-	assert.True(t, ok)
-	assert.Equal(t, tag, *st)
+// withIDs gives each Step of the path a distinct id, as a stored version holds them.
+func withIDs(p automationstep.Path) automationstep.Path {
+	for i := range p.Steps {
+		p.Steps[i].ID = "step-" + strconv.Itoa(i)
+	}
+	return p
 }
 
-// A position before the first Step or past the last names none: an Enrollment past the last Step
-// has finished.
-func TestAtFindsNothingOutsideTheSteps(t *testing.T) {
+func TestFirstIsTheFirstStepOfThePath(t *testing.T) {
+	steps := withIDs(automationstep.Root(automationstep.New(automationstep.Wait{Seconds: 60}), automationstep.New(automationstep.ApplyTag{Tag: "vip"})))
+	st, ok := automationstep.First(steps)
+	require.True(t, ok)
+	assert.Equal(t, "step-0", st.ID)
+	_, ok = automationstep.First(automationstep.Root())
+	assert.False(t, ok, "a path of no Steps has no first Step")
+}
+
+func TestFindFindsTheStepOfAnID(t *testing.T) {
+	tag := automationstep.New(automationstep.ApplyTag{Tag: "vip"})
+	steps := withIDs(automationstep.Root(automationstep.New(automationstep.Wait{Seconds: 60}), tag))
+	st, ok := automationstep.Find(steps, "step-1")
+	require.True(t, ok)
+	assert.Equal(t, automationstep.Step{ID: "step-1", Payload: tag.Payload}, *st)
+	_, ok = automationstep.Find(steps, "step-9")
+	assert.False(t, ok, "an id the version does not hold names no Step")
+	_, ok = automationstep.Find(steps, "")
+	assert.False(t, ok)
+}
+
+// The Step after another is the following Step of the root path; the last Step has none, where an
+// Enrollment finishes, and neither has an id the path does not hold.
+func TestNextIsTheFollowingStepOfThePath(t *testing.T) {
 	rapid.Check(t, func(rt *rapid.T) {
-		steps := stepsGen().Draw(rt, "steps")
-		pos := rapid.OneOf(rapid.IntRange(-5, -1), rapid.IntRange(len(steps.Steps), len(steps.Steps)+5)).Draw(rt, "pos")
-		_, ok := automationstep.At(steps, pos)
-		assert.False(rt, ok)
+		steps := withIDs(stepsGen().Filter(func(p automationstep.Path) bool { return len(p.Steps) > 1 }).Draw(rt, "steps"))
+		last := len(steps.Steps) - 1
+		pos := rapid.IntRange(0, last-1).Draw(rt, "pos")
+		next, ok := automationstep.Next(steps, "step-"+strconv.Itoa(pos))
+		require.True(rt, ok)
+		assert.Equal(rt, "step-"+strconv.Itoa(pos+1), next.ID)
+		assert.Equal(rt, 60*(pos+2), seconds(next))
+		_, ok = automationstep.Next(steps, "step-"+strconv.Itoa(last))
+		assert.False(rt, ok, "the last Step has no next")
 	})
+	single := withIDs(automationstep.Root(automationstep.New(automationstep.Wait{Seconds: 60})))
+	_, ok := automationstep.Next(single, "step-0")
+	assert.False(t, ok, "the only Step is the last")
+	_, ok = automationstep.Next(single, "elsewhere")
+	assert.False(t, ok)
 }
 
 func TestMapRewritesEachStepInPlace(t *testing.T) {

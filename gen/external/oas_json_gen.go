@@ -18175,8 +18175,10 @@ func (s *EnrollmentResource) encodeFields(e *jx.Encoder) {
 		s.Status.Encode(e)
 	}
 	{
-		e.FieldStart("currentStep")
-		e.Int32(s.CurrentStep)
+		if s.CurrentStepId.Set {
+			e.FieldStart("currentStepId")
+			s.CurrentStepId.Encode(e)
+		}
 	}
 	{
 		if s.ResumeAt.Set {
@@ -18205,7 +18207,7 @@ var jsonFieldsNameOfEnrollmentResource = [9]string{
 	1: "automationId",
 	2: "contactId",
 	3: "status",
-	4: "currentStep",
+	4: "currentStepId",
 	5: "resumeAt",
 	6: "failure",
 	7: "createdAt",
@@ -18261,17 +18263,15 @@ func (s *EnrollmentResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"status\"")
 			}
-		case "currentStep":
-			requiredBitSet[0] |= 1 << 4
+		case "currentStepId":
 			if err := func() error {
-				v, err := d.Int32()
-				s.CurrentStep = int32(v)
-				if err != nil {
+				s.CurrentStepId.Reset()
+				if err := s.CurrentStepId.Decode(d); err != nil {
 					return err
 				}
 				return nil
 			}(); err != nil {
-				return errors.Wrap(err, "decode field \"currentStep\"")
+				return errors.Wrap(err, "decode field \"currentStepId\"")
 			}
 		case "resumeAt":
 			if err := func() error {
@@ -18323,7 +18323,7 @@ func (s *EnrollmentResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
-		0b10011111,
+		0b10001111,
 		0b00000001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
