@@ -145,6 +145,23 @@ func TestGuardLetsAnyBinaryMigrateAnEmptyDatabase(t *testing.T) {
 	require.NoError(t, err)
 }
 
+// A database from before the state table (the releases of Major 1 before it, v0.1.x) holds the
+// app's tables and no state row: it is Major 1, so a binary two Majors ahead refuses it as a
+// skipped Major, not as an empty database it may migrate.
+func TestGuardRefusesADatabaseFromBeforeTheStateTableAsMajorOne(t *testing.T) {
+	sqlDB := openEmpty(t)
+	_, err := db.MigrateFS(t.Context(), sqlDB, fstest.MapFS{
+		"20200101000000_v01.sql": {Data: []byte("-- +goose Up\nCREATE TABLE \"workspaces\" (\"id\" bigint PRIMARY KEY);\n")},
+	})
+	require.NoError(t, err)
+
+	err = guard("v0.6.0", true).Check(t.Context(), sqlDB)
+
+	var refusal *db.RefusalError
+	require.ErrorAs(t, err, &refusal)
+	assert.Contains(t, err.Error(), "skipped a Major: the database is at Major 1 and this binary at Major 3")
+}
+
 // A build with no release (go run, a dev image) is never older than a floor.
 func TestGuardLetsADevelopmentBuildStart(t *testing.T) {
 	sqlDB := migratedAt(t, 3, "v0.5.2")

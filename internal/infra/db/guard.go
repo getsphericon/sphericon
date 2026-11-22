@@ -57,8 +57,12 @@ func ReadState(ctx context.Context, sqlDB *sql.DB) (SchemaState, error) {
 	return state, err
 }
 
-// readState is ReadState, and whether the database has no state table at all: an empty one, since
-// the first migration creates the table with its row.
+// readState is ReadState, and whether the database is empty: none of the app's tables exists yet,
+// so its migrations create it at the binary's own Major. A database without the state table is not
+// empty for that alone: the releases of Major 1 before the table (v0.1.x) left the app's tables
+// without it, and the migrations of this history that sort before 20261024175209_init, which creates
+// the table with the app's tables (the outbox's and river's), create none of them. The Workspace table, which every release's
+// schema has, tells the two apart.
 func readState(ctx context.Context, sqlDB *sql.DB) (state SchemaState, empty bool, err error) {
 	client := ent.NewClient(ent.Driver(entsql.OpenDB(dialect.Postgres, sqlDB)))
 	row, err := client.SchemaState.Get(ctx, 1)
@@ -66,7 +70,15 @@ func readState(ctx context.Context, sqlDB *sql.DB) (state SchemaState, empty boo
 	case err == nil:
 		return SchemaState{Major: row.Major, Floor: row.Floor}, false, nil
 	case isUndefinedTable(err):
-		return initialState, true, nil
+		_, probe := client.Workspace.Query().Exist(ctx)
+		switch {
+		case probe == nil:
+			return initialState, false, nil
+		case isUndefinedTable(probe):
+			return initialState, true, nil
+		default:
+			return SchemaState{}, false, fmt.Errorf("read schema state: look for the app's tables: %w", probe)
+		}
 	case ent.IsNotFound(err):
 		return initialState, false, nil
 	default:
