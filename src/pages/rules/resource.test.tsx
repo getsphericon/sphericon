@@ -543,3 +543,67 @@ test("a Rule's Condition edited in the builder is saved in the typed shape it wa
       },
     ])
 })
+
+// A property's key cleared in the builder leaves a Condition the Rule cannot hold yet: Save refuses
+// it, and saves once the key is typed again.
+test("a Rule's Condition with a property's key cleared is refused, then saves once it is typed", async () => {
+  const bodies: unknown[] = []
+  const keyed: RuleCondition = {
+    kind: 'group',
+    combinator: 'and',
+    entries: [
+      {
+        kind: 'property',
+        of: { kind: 'trigger' },
+        key: 'url',
+        test: { kind: 'text', operator: 'beginsWith', value: '/pricing' },
+      },
+    ],
+  }
+  serveCatalogue()
+  worker.use(
+    handleSiteRulesGet({
+      body: {
+        ...STORED,
+        draft: { number: 1, triggerEvents: ['signed_up'], condition: keyed, actions: [] },
+      },
+    }),
+    handleSiteRulesUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(STORED)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<RuleEditPage />, EDIT_ROUTE)
+  const key = screen.getByLabelText('Event property name')
+  await expect.element(key).toHaveValue('url')
+  await key.fill('')
+  await screen.getByRole('button', { name: 'Save' }).click()
+  await expect.element(screen.getByText('This field is required')).toBeInTheDocument()
+  expect(bodies).toEqual([])
+
+  await key.fill('path')
+  await screen.getByRole('button', { name: 'Save' }).click()
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        revision: 1,
+        name: 'Tag signups',
+        triggerEvents: ['signed_up'],
+        condition: {
+          kind: 'group',
+          combinator: 'and',
+          entries: [
+            {
+              kind: 'property',
+              of: { kind: 'trigger' },
+              key: 'path',
+              test: { kind: 'text', operator: 'beginsWith', value: '/pricing' },
+            },
+          ],
+        },
+        actions: [],
+      },
+    ])
+})
