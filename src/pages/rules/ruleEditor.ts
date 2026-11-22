@@ -1,18 +1,26 @@
+import * as z from 'zod'
+
 import { emptyGroup, placeInputSchemas } from '../../components/conditions/condition.ts'
 import { based, draftGuards } from '../../editing/editorSession.ts'
 import { siteRulesPublish, siteRulesRevert } from '../../generated/site/sdk.gen.ts'
 import type { SiteRuleResource } from '../../generated/site/types.gen.ts'
+import { zRuleActionInput } from '../../generated/site/zod.gen.ts'
 import type { ResourceEditOperation } from '../../resources/defineResource.tsx'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
+import { ofItsKind } from './actions.ts'
 import type { RuleValues } from './RuleForm.tsx'
 
 // A Rule's Condition is optional on the wire; the editor always holds one, and the empty group
 // matches every Contact. A new Rule has no Actions yet.
 const blankRule: RuleValues = { name: '', triggerEvents: [], condition: emptyGroup, actions: [] }
 
-// The editor always sends the Rule's Condition.
+// The editor always sends the Rule's Condition and its Actions, each with its own kind's fields
+// alone, read before the generated schema checks them: a field left from the kind an Action was
+// is neither sent nor refused.
 export const ruleSchema = resourceFormSchema(
-  placeInputSchemas.rule.required({ actions: true }),
+  placeInputSchemas.rule.extend({
+    actions: z.array(z.preprocess(ofItsKind, zRuleActionInput)),
+  }),
   blankRule,
 )
 

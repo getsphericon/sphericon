@@ -251,6 +251,87 @@ test('an enroll action picks one of the automations and saves it', async () => {
     ])
 })
 
+// An Action switched to another kind sends that kind's fields alone, never the Tag or the
+// Automation of the kind it was.
+test('an action switched from a tag to an enrollment saves the automation alone', async () => {
+  const bodies: unknown[] = []
+  serveCatalogue()
+  worker.use(
+    handleSiteAutomationsList({ body: page([automation(testId(5), 'Welcome flow')], 1) }),
+    handleSiteRulesGet({ body: STORED }),
+    handleSiteRulesUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(STORED)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<RuleEditPage />, EDIT_ROUTE)
+
+  await expect.element(screen.getByLabelText('Tag')).toHaveValue('new')
+  await screen.getByRole('combobox', { name: 'Action' }).click()
+  await screen.getByRole('option', { name: 'Enroll in automation' }).click()
+  await screen.getByRole('combobox', { name: 'Automation' }).click()
+  await screen.getByRole('option', { name: 'Welcome flow' }).click()
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        revision: 1,
+        name: 'Tag signups',
+        triggerEvents: ['signed_up'],
+        condition: CONDITION,
+        actions: [{ type: 'enroll_automation', automationId: testId(5) }],
+      },
+    ])
+})
+
+test('an action switched from an enrollment to a tag saves the tag alone', async () => {
+  const bodies: unknown[] = []
+  serveCatalogue()
+  worker.use(
+    handleSiteAutomationsList({ body: page([automation(testId(5), 'Welcome flow')], 1) }),
+    handleSiteRulesGet({
+      body: {
+        ...STORED,
+        draft: {
+          number: 1,
+          triggerEvents: ['signed_up'],
+          condition: CONDITION,
+          actions: [{ type: 'enroll_automation', automationId: testId(5) }],
+        },
+      },
+    }),
+    handleSiteRulesUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(STORED)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<RuleEditPage />, EDIT_ROUTE)
+
+  await expect
+    .element(screen.getByRole('combobox', { name: 'Automation' }))
+    .toHaveValue('Welcome flow')
+  await screen.getByRole('combobox', { name: 'Action' }).click()
+  await screen.getByRole('option', { name: 'Apply tag' }).click()
+  await screen.getByLabelText('Tag').fill('vip')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([
+      {
+        revision: 1,
+        name: 'Tag signups',
+        triggerEvents: ['signed_up'],
+        condition: CONDITION,
+        actions: [{ type: 'apply_tag', tag: 'vip' }],
+      },
+    ])
+})
+
 test('trying the rule on a recorded event shows whether it would fire and which actions would run', async () => {
   const bodies: unknown[] = []
   serveCatalogue()

@@ -30,3 +30,16 @@ test("a Rule's payload carries the Rule's typed Condition", () => {
   >().toEqualTypeOf<RuleConditionInput>()
   expect(payload.condition.entries).toHaveLength(1)
 })
+
+// A field left from the kind an Action was is dropped before the generated schema checks it: it is
+// neither sent nor refused, even when it would not pass as its own kind's.
+test("an action is sent with its own kind's fields alone", () => {
+  const payload = ruleSchema.update.parse({
+    name: 'Tag signups',
+    triggerEvents: ['signed_up'],
+    condition: { kind: 'group', combinator: 'and', entries: [] },
+    actions: [{ type: 'apply_tag', tag: 'vip', automationId: 'x', secret: 'not a secret' }],
+  })
+
+  expect(payload.actions).toEqual([{ type: 'apply_tag', tag: 'vip' }])
+})
