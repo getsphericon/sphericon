@@ -126,3 +126,16 @@ func TestResultsOfAnotherWorkspacesAutomationAreNotFound(t *testing.T) {
 
 	require.ErrorIs(t, err, automations.ErrNotFound)
 }
+
+// A period counts the distinct Contacts among the Enrollments that began in it, and the skipped
+// entries by reason by the Report day of the moment each would have begun (ADR 0127).
+func TestResultsCountTheContactsAndTheSkippedEntriesByReason(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	results := resultsAt(t, env, fixtures.AutomationGothamResultsID, automations.ReportPeriod7Days, gothamToday)
+
+	assert.Equal(t, 4, results.Current.Contacts)
+	assert.Equal(t, 3, results.Previous.Contacts)
+	assert.Equal(t, automations.SkippedCounts{ActiveEnrollment: 2, Once: 1}, results.Current.Skipped)
+	assert.Equal(t, automations.SkippedCounts{Once: 1}, results.Previous.Skipped, "the entry of 25 February is in neither period")
+}

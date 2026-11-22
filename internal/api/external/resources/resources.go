@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -423,6 +424,9 @@ type Converter interface {
 
 	// goverter:map . Failure | enrollmentFailure
 	EnrollmentToResource(source *ent.AutomationRun) externalapi.EnrollmentResource
+	// The store names the triggering Event's source id; the contract says whose it is.
+	// goverter:map SourceID EventSourceId
+	SkippedEntryToResource(source *ent.AutomationSkippedEntry) externalapi.SkippedEntryResource
 	// goverter:useEmptyOnNil:slice
 	EnrollmentsToResources(source []*ent.AutomationRun) []externalapi.EnrollmentResource
 
@@ -507,6 +511,8 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	AutomationsListPage(source pagination.Page[*ent.Automation]) (*externalapi.AutomationsListOK, error)
 	// goverter:useEmptyOnNil:slice
+	SkippedEntriesListPage(source pagination.Page[*ent.AutomationSkippedEntry]) *externalapi.SkippedEntriesListOK
+	// goverter:useEmptyOnNil:slice
 	EnrollmentsListPage(source pagination.Page[*ent.AutomationRun]) *externalapi.EnrollmentsListOK
 	// goverter:useEmptyOnNil:slice
 	RulesListPage(source pagination.Page[*ent.Rule]) (*externalapi.RulesListOK, error)
@@ -575,6 +581,8 @@ type Converter interface {
 	EnrollmentFailureKindToResource(source automationrun.FailureKind) externalapi.EnrollmentFailureKind
 	// goverter:enum:transform value
 	EnrollmentStatusToResource(source automationrun.Status) externalapi.EnrollmentStatus
+	// goverter:enum:transform value
+	SkippedEntryReasonToResource(source automationskippedentry.Reason) externalapi.SkippedEntryReason
 	// goverter:enum:transform value
 	IntegrationChannelToResource(source channels.Channel) externalapi.IntegrationChannel
 	// goverter:enum:transform value

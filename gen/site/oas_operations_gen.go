@@ -162,6 +162,7 @@ const (
 	SiteSendingDomainsVerifyOperation                  OperationName = "SiteSendingDomainsVerify"
 	SiteSetupChecklistGetOperation                     OperationName = "SiteSetupChecklistGet"
 	SiteSignupSurveySubmitOperation                    OperationName = "SiteSignupSurveySubmit"
+	SiteSkippedEntriesListOperation                    OperationName = "SiteSkippedEntriesList"
 	SiteSmsConsentsConfirmOperation                    OperationName = "SiteSmsConsentsConfirm"
 	SiteSmsConsentsGetOperation                        OperationName = "SiteSmsConsentsGet"
 	SiteSmsConsentsOptOutOperation                     OperationName = "SiteSmsConsentsOptOut"

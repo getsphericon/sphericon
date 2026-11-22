@@ -8,6 +8,7 @@ import {
   handleSiteAutomationsRevert,
   handleSiteEnrollmentsList,
   handleSiteIntegrationsGet,
+  handleSiteSkippedEntriesList,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteAutomationResource, AutomationResults } from '../../generated/site/types.gen.ts'
@@ -48,6 +49,8 @@ const NO_RESULTS: AutomationResults = {
     failed: 0,
     from: '2026-02-16',
     to: '2026-03-17',
+    contacts: 0,
+    skipped: { activeEnrollment: 0, once: 0 },
     averageDurationSeconds: null,
     revenue: NO_REVENUE,
   },
@@ -59,6 +62,8 @@ const NO_RESULTS: AutomationResults = {
     failed: 0,
     from: '2026-01-17',
     to: '2026-02-15',
+    contacts: 0,
+    skipped: { activeEnrollment: 0, once: 0 },
     averageDurationSeconds: null,
     revenue: NO_REVENUE,
   },
@@ -549,6 +554,8 @@ const MONTH: AutomationResults = {
     failed: 1,
     from: '2026-02-16',
     to: '2026-03-17',
+    contacts: 4,
+    skipped: { activeEnrollment: 2, once: 7 },
     averageDurationSeconds: 85_050,
     revenue: { reportingCurrency: 'USD', orders: 1, amount: 3500 },
   },
@@ -560,6 +567,8 @@ const MONTH: AutomationResults = {
     failed: 0,
     from: '2026-01-17',
     to: '2026-02-15',
+    contacts: 2,
+    skipped: { activeEnrollment: 1, once: 5 },
     averageDurationSeconds: 57_600,
     revenue: { reportingCurrency: 'USD', orders: 1, amount: 2500 },
   },
@@ -596,6 +605,53 @@ test('shows what the enrollments did in the period against the period before', a
   await expect.element(screen.getByText('Previous 30 days: 16h (+47.66%)')).toBeInTheDocument()
   await expect.element(screen.getByText('$35.00')).toBeInTheDocument()
   await expect.element(screen.getByText('Previous 30 days: $25.00 (+40%)')).toBeInTheDocument()
+  await expect.element(screen.getByText('Contacts', { exact: true })).toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 2 (+100%)')).toBeInTheDocument()
+  await expect.element(screen.getByText('Skipped: an enrollment was active')).toBeInTheDocument()
+  await expect.element(screen.getByText('Skipped: enrolled before')).toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 5 (+40%)')).toBeInTheDocument()
+})
+
+test('lists the skipped entries, each with its reason, and filters them by contact', async () => {
+  worker.use(
+    handleSiteAutomationsGet({ body: PENDING }),
+    handleSiteAutomationReportsGet({ body: { ...NO_FIGURES, results: NO_RESULTS } }),
+    handleSiteEnrollmentsList({ body: page([], 0) }),
+    handleSiteSkippedEntriesList(({ request }) => {
+      const contactId = new URL(request.url).searchParams.get('contactId')
+      const all = [
+        {
+          id: testId(1),
+          automationId: testId(1),
+          contactId: testId(7),
+          reason: 'once' as const,
+          eventSourceId: 'evt-7',
+          occurredAt: '2026-03-16T10:00:00Z',
+          createdAt: '2026-03-16T10:00:01Z',
+        },
+        {
+          id: testId(2),
+          automationId: testId(1),
+          contactId: testId(8),
+          reason: 'active_enrollment' as const,
+          eventSourceId: 'evt-8',
+          occurredAt: '2026-03-15T10:00:00Z',
+          createdAt: '2026-03-15T10:00:01Z',
+        },
+      ]
+      const items = all.filter((e) => contactId === null || e.contactId === contactId)
+      return HttpResponse.json(page(items, items.length))
+    }),
+  )
+  const { screen } = await renderWithRouter(<AutomationDetailPage />, MOUNT)
+
+  await screen.getByRole('button', { name: 'Skipped entries' }).click()
+
+  await expect.element(screen.getByText('An enrollment was active')).toBeInTheDocument()
+  await expect.element(screen.getByText('Enrolled before')).toBeInTheDocument()
+  await screen.getByLabelText('Contact ID').fill(testId(8))
+  await expect.element(screen.getByText('Enrolled before')).not.toBeInTheDocument()
+  await expect.element(screen.getByText('An enrollment was active')).toBeInTheDocument()
 })
 
 test('the period picked shows the results of that period', async () => {

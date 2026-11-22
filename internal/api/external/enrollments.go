@@ -24,3 +24,11 @@ func (h *Handlers) EnrollmentsGet(ctx context.Context, params externalapi.Enroll
 	res := mapper.EnrollmentToResource(r)
 	return &res, nil
 }
+
+func (h *Handlers) SkippedEntriesList(ctx context.Context, params externalapi.SkippedEntriesListParams) (*externalapi.SkippedEntriesListOK, error) {
+	page, err := h.automations.SkippedEntries(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize), inputs.SkippedEntriesFilter(params))
+	if err != nil {
+		return nil, err
+	}
+	return mapper.SkippedEntriesListPage(page), nil
+}

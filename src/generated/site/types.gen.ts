@@ -485,6 +485,16 @@ export type AutomationPeriodResults = {
    */
   to: string;
   /**
+   * Distinct contacts among the enrollments that began in the period: fewer than `entered` when a
+   * contact entered more than once
+   */
+  contacts: number;
+  /**
+   * Entries the entry checks refused in the period, by reason (ADR 0127), each on the Report day of
+   * the moment it would have begun
+   */
+  skipped: AutomationSkippedCounts;
+  /**
    * Mean time in whole seconds from the beginning to the end of the enrollments that ended in
    * the period, whatever their outcome; null when none ended
    */
@@ -643,6 +653,20 @@ export type AutomationResultsPoint = {
    * The Report day, `YYYY-MM-DD` in the Workspace time zone
    */
   date: string;
+};
+
+/**
+ * How many entries into an automation were skipped, by reason
+ */
+export type AutomationSkippedCounts = {
+  /**
+   * Entries whose Event occurred while an enrollment of the contact was active
+   */
+  activeEnrollment: number;
+  /**
+   * Entries of a contact enrolled in the automation before, which enrolls a contact once
+   */
+  once: number;
 };
 
 /**
@@ -7763,6 +7787,60 @@ export type SiteWorkspaceTimezoneInput = {
 };
 
 /**
+ * Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127):
+ * `active_enrollment` (the triggering Event occurred while an enrollment of the contact was active)
+ * or `once` (the contact had an enrollment in the automation before).
+ */
+export const SkippedEntryReason = { ACTIVE_ENROLLMENT: 'active_enrollment', ONCE: 'once' } as const;
+
+/**
+ * Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127):
+ * `active_enrollment` (the triggering Event occurred while an enrollment of the contact was active)
+ * or `once` (the contact had an enrollment in the automation before).
+ */
+export type SkippedEntryReason = typeof SkippedEntryReason[keyof typeof SkippedEntryReason];
+
+/**
+ * An entry of a contact into an automation that its entry checks refused. Erased with the contact,
+ * and kept for the Event retention window.
+ */
+export type SkippedEntryResource = {
+  /**
+   * Unique identifier
+   */
+  id: EntityId;
+  /**
+   * The automation the contact was not enrolled in
+   */
+  automationId: EntityId;
+  /**
+   * The contact
+   */
+  contactId: EntityId;
+  /**
+   * Why the entry was skipped
+   */
+  reason: SkippedEntryReason;
+  /**
+   * The source id of the triggering Event (its dedupKey when it had one); absent when a rule's
+   * enroll action tried
+   */
+  eventSourceId?: string;
+  /**
+   * The rule firing whose enroll action tried; absent when the automation's trigger did
+   */
+  firingId?: EntityId;
+  /**
+   * When the enrollment would have begun: when its Event occurred
+   */
+  occurredAt: Timestamp;
+  /**
+   * When the entry was skipped
+   */
+  createdAt: Timestamp;
+};
+
+/**
  * Why an Outbound message was Skipped: final for its Destination, never retried. The first four
  * are Send-eligibility's; a client switches over the list.
  */
@@ -12230,6 +12308,73 @@ export type SiteAutomationReportsGetResponses = {
 };
 
 export type SiteAutomationReportsGetResponse = SiteAutomationReportsGetResponses[keyof SiteAutomationReportsGetResponses];
+
+export type SiteSkippedEntriesListData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    automationId: EntityId;
+  };
+  query?: {
+    /**
+     * Page number (1-based)
+     */
+    page?: number;
+    /**
+     * Page size
+     */
+    pageSize?: number;
+    /**
+     * Only the skipped entries of this contact
+     */
+    contactId?: EntityId;
+  };
+  url: '/workspaces/{workspaceId}/automations/{automationId}/skipped-entries';
+};
+
+export type SiteSkippedEntriesListErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteSkippedEntriesListError = SiteSkippedEntriesListErrors[keyof SiteSkippedEntriesListErrors];
+
+export type SiteSkippedEntriesListResponses = {
+  /**
+   * Paginated response
+   */
+  200: {
+    /**
+     * List of items
+     */
+    items: Array<SkippedEntryResource>;
+    /**
+     * Page number (1-based)
+     */
+    page: number;
+    /**
+     * Page size
+     */
+    pageSize: number;
+    /**
+     * Total number of elements
+     */
+    totalItems: number;
+    /**
+     * Total number of pages
+     */
+    totalPages: number;
+  };
+};
+
+export type SiteSkippedEntriesListResponse = SiteSkippedEntriesListResponses[keyof SiteSkippedEntriesListResponses];
 
 export type SiteAutomationsGetData = {
   body?: never;

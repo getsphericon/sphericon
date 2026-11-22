@@ -168,6 +168,7 @@ var operationAccess = map[siteapi.OperationName]access{
 	siteapi.SiteSendingDomainsVerifyOperation:                  {workspace: true, permissions: []memberships.Permission{memberships.PermSendingDomainsManage}},
 	siteapi.SiteSetupChecklistGetOperation:                     {workspace: true},
 	siteapi.SiteSignupSurveySubmitOperation:                    {},
+	siteapi.SiteSkippedEntriesListOperation:                    {workspace: true},
 	siteapi.SiteSmsConsentsConfirmOperation:                    {workspace: true},
 	siteapi.SiteSmsConsentsGetOperation:                        {workspace: true},
 	siteapi.SiteSmsConsentsOptOutOperation:                     {workspace: true},

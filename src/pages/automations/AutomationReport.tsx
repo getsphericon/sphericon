@@ -16,6 +16,7 @@ import type {
 import { zAutomationReportPeriod } from '../../generated/site/zod.gen.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
 import { formatMessageRevenue } from '../../utils/messageRevenue.ts'
+import { SkippedEntries } from './SkippedEntries.tsx'
 import { reportedStepLabel } from './stepLabel.ts'
 
 const PERIODS = zAutomationReportPeriod.options
@@ -57,6 +58,11 @@ function ResultsFigures({ results }: { results: AutomationResults }) {
           previous.entered,
         )}
         {count(
+          t(($) => $.automations.results.contacts),
+          current.contacts,
+          previous.contacts,
+        )}
+        {count(
           t(($) => $.automations.results.completed),
           current.completed,
           previous.completed,
@@ -75,6 +81,16 @@ function ResultsFigures({ results }: { results: AutomationResults }) {
           t(($) => $.automations.results.failed),
           current.failed,
           previous.failed,
+        )}
+        {count(
+          t(($) => $.automations.results.skippedActiveEnrollment),
+          current.skipped.activeEnrollment,
+          previous.skipped.activeEnrollment,
+        )}
+        {count(
+          t(($) => $.automations.results.skippedOnce),
+          current.skipped.once,
+          previous.skipped.once,
         )}
         <StatCard
           label={t(($) => $.automations.results.averageDuration)}
@@ -246,15 +262,18 @@ export function AutomationReport({
       <Stack gap="xs">
         <Group justify="space-between" wrap="wrap">
           <Title order={5}>{t(($) => $.automations.results.title)}</Title>
-          <SegmentedControl
-            size="xs"
-            value={period ?? ''}
-            onChange={(value) => setPicked(PERIODS.find((p) => p === value))}
-            data={PERIODS.map((p) => ({
-              value: p,
-              label: t(($) => $.automations.results.periods[p]),
-            }))}
-          />
+          <Group gap="xs">
+            <SkippedEntries workspaceId={workspaceId} automationId={automationId} />
+            <SegmentedControl
+              size="xs"
+              value={period ?? ''}
+              onChange={(value) => setPicked(PERIODS.find((p) => p === value))}
+              data={PERIODS.map((p) => ({
+                value: p,
+                label: t(($) => $.automations.results.periods[p]),
+              }))}
+            />
+          </Group>
         </Group>
         {reportQuery.isError && (
           <ApiErrorAlert

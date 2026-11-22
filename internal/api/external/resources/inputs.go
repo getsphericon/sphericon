@@ -133,6 +133,9 @@ type Inputs interface {
 	BroadcastSetSegment(source *externalapi.SetBroadcastSegmentInput) broadcasts.SetSegmentInput
 	// goverter:map AutomationId AutomationID
 	EnrollmentsFilter(source externalapi.EnrollmentsListParams) automations.EnrollmentsFilter
+	// goverter:map AutomationId AutomationID
+	// goverter:map ContactId ContactID | entityIDIn
+	SkippedEntriesFilter(source externalapi.SkippedEntriesListParams) automations.SkippedEntriesFilter
 	// The Contact a Data export names by its id or its email.
 	ContactExport(source externalapi.ContactsExportParams) dataexport.OpenInput
 

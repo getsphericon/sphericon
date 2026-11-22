@@ -1155,6 +1155,13 @@ type Handler interface {
 	//
 	// POST /me/signup-survey
 	SiteSignupSurveySubmit(ctx context.Context, req *SiteSignupSurveyInput) error
+	// SiteSkippedEntriesList implements SiteSkippedEntries_list operation.
+	//
+	// List an automation's skipped entries, newest first: the entries its entry checks refused, each with
+	// its reason.
+	//
+	// GET /workspaces/{workspaceId}/automations/{automationId}/skipped-entries
+	SiteSkippedEntriesList(ctx context.Context, params SiteSkippedEntriesListParams) (*SiteSkippedEntriesListOK, error)
 	// SiteSmsConsentsConfirm implements SiteSmsConsents_confirm operation.
 	//
 	// Record consent the contact's phone gave outside sphericon, as an `imported` SMS Confirmation with

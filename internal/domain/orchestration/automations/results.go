@@ -9,6 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 )
@@ -49,12 +50,31 @@ type PeriodResults struct {
 
 	// From and To are its first and last Report day, YYYY-MM-DD.
 	From, To string
+	// Contacts is how many distinct Contacts the Enrollments that began in the period enrolled.
+	Contacts int
+	// Skipped is the entries the entry checks refused in the period, by reason (ADR 0127), each on
+	// the Report day of the moment it would have begun.
+	Skipped SkippedCounts
 	// AverageDuration is the mean time from beginning to end of the Enrollments that ended in the
 	// period, whatever their outcome; nil when none did. An active Enrollment has no duration yet.
 	AverageDuration *time.Duration
 	// Revenue is what the Automation earned in the period (ADR 0064): the Orders credited to it
 	// that were completed then, and the net revenue of the Movements of its Orders then.
 	Revenue orders.Revenue
+}
+
+// SkippedCounts is how many entries were skipped for each reason.
+type SkippedCounts struct {
+	ActiveEnrollment, Once int
+}
+
+func (c *SkippedCounts) add(reason automationskippedentry.Reason, n int) {
+	switch reason {
+	case automationskippedentry.ReasonActiveEnrollment:
+		c.ActiveEnrollment += n
+	case automationskippedentry.ReasonOnce:
+		c.Once += n
+	}
 }
 
 // ResultsPoint is one Report day of Results.
@@ -194,10 +214,48 @@ func (m *Module) periodResultsOf(ctx context.Context, s *ent.Scoped, id int64, w
 		d := time.Duration(math.Round(*avg[0].Seconds)) * time.Second
 		out.AverageDuration = &d
 	}
+	if out.Contacts, err = contactsBegun(ctx, s, id, w); err != nil {
+		return PeriodResults{}, err
+	}
+	if out.Skipped, err = skippedIn(ctx, s, id, w); err != nil {
+		return PeriodResults{}, err
+	}
 	revenue, err := m.revenues.CreditedToAutomationsOver(ctx, s, w, id)
 	if err != nil {
 		return PeriodResults{}, err
 	}
 	out.Revenue = revenue.Of(id)
 	return out, nil
+}
+
+// contactsBegun counts the distinct Contacts of the Automation's Enrollments that began in the
+// window.
+func contactsBegun(ctx context.Context, s *ent.Scoped, id int64, w reportday.Window) (int, error) {
+	return s.AutomationRun().Query().
+		Where(automationrun.AutomationID(id), automationrun.BeganAtGTE(w.Since), automationrun.BeganAtLT(w.Until)).
+		Unique(true).
+		Select(automationrun.FieldContactID).
+		Count(ctx)
+}
+
+// skippedIn counts the Automation's skipped entries whose moment falls in the window, by reason.
+func skippedIn(ctx context.Context, s *ent.Scoped, id int64, w reportday.Window) (SkippedCounts, error) {
+	var rows []struct {
+		Reason automationskippedentry.Reason `json:"reason"`
+		Count  int                           `json:"count"`
+	}
+	err := s.AutomationSkippedEntry().Query().
+		Where(
+			automationskippedentry.AutomationID(id),
+			automationskippedentry.OccurredAtGTE(w.Since),
+			automationskippedentry.OccurredAtLT(w.Until),
+		).
+		GroupBy(automationskippedentry.FieldReason).
+		Aggregate(ent.Count()).
+		Scan(ctx, &rows)
+	var out SkippedCounts
+	for _, r := range rows {
+		out.add(r.Reason, r.Count)
+	}
+	return out, err
 }

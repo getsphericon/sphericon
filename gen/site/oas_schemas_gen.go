@@ -2008,6 +2008,12 @@ type AutomationPeriodResults struct {
 	From string `json:"from"`
 	// The period's last Report day, included.
 	To string `json:"to"`
+	// Distinct contacts among the enrollments that began in the period: fewer than `entered` when a
+	// contact entered more than once.
+	Contacts int32 `json:"contacts"`
+	// Entries the entry checks refused in the period, by reason (ADR 0127), each on the Report day of the
+	// moment it would have begun.
+	Skipped AutomationSkippedCounts `json:"skipped"`
 	// Mean time in whole seconds from the beginning to the end of the enrollments that ended in the
 	// period, whatever their outcome; null when none ended.
 	AverageDurationSeconds NilInt64 `json:"averageDurationSeconds"`
@@ -2049,6 +2055,16 @@ func (s *AutomationPeriodResults) GetFrom() string {
 // GetTo returns the value of To.
 func (s *AutomationPeriodResults) GetTo() string {
 	return s.To
+}
+
+// GetContacts returns the value of Contacts.
+func (s *AutomationPeriodResults) GetContacts() int32 {
+	return s.Contacts
+}
+
+// GetSkipped returns the value of Skipped.
+func (s *AutomationPeriodResults) GetSkipped() AutomationSkippedCounts {
+	return s.Skipped
 }
 
 // GetAverageDurationSeconds returns the value of AverageDurationSeconds.
@@ -2094,6 +2110,16 @@ func (s *AutomationPeriodResults) SetFrom(val string) {
 // SetTo sets the value of To.
 func (s *AutomationPeriodResults) SetTo(val string) {
 	s.To = val
+}
+
+// SetContacts sets the value of Contacts.
+func (s *AutomationPeriodResults) SetContacts(val int32) {
+	s.Contacts = val
+}
+
+// SetSkipped sets the value of Skipped.
+func (s *AutomationPeriodResults) SetSkipped(val AutomationSkippedCounts) {
+	s.Skipped = val
 }
 
 // SetAverageDurationSeconds sets the value of AverageDurationSeconds.
@@ -2437,6 +2463,35 @@ func (s *AutomationResultsPoint) SetFailed(val int32) {
 // SetDate sets the value of Date.
 func (s *AutomationResultsPoint) SetDate(val string) {
 	s.Date = val
+}
+
+// How many entries into an automation were skipped, by reason.
+// Ref: #/components/schemas/AutomationSkippedCounts
+type AutomationSkippedCounts struct {
+	// Entries whose Event occurred while an enrollment of the contact was active.
+	ActiveEnrollment int32 `json:"activeEnrollment"`
+	// Entries of a contact enrolled in the automation before, which enrolls a contact once.
+	Once int32 `json:"once"`
+}
+
+// GetActiveEnrollment returns the value of ActiveEnrollment.
+func (s *AutomationSkippedCounts) GetActiveEnrollment() int32 {
+	return s.ActiveEnrollment
+}
+
+// GetOnce returns the value of Once.
+func (s *AutomationSkippedCounts) GetOnce() int32 {
+	return s.Once
+}
+
+// SetActiveEnrollment sets the value of ActiveEnrollment.
+func (s *AutomationSkippedCounts) SetActiveEnrollment(val int32) {
+	s.ActiveEnrollment = val
+}
+
+// SetOnce sets the value of Once.
+func (s *AutomationSkippedCounts) SetOnce(val int32) {
+	s.Once = val
 }
 
 // Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody.
@@ -29608,6 +29663,70 @@ func (s *SiteSignupSurveyInput) SetHeardFromOther(val OptString) {
 // SiteSignupSurveySubmitNoContent is response for SiteSignupSurveySubmit operation.
 type SiteSignupSurveySubmitNoContent struct{}
 
+// Paginated response.
+type SiteSkippedEntriesListOK struct {
+	// List of items.
+	Items []SkippedEntryResource `json:"items"`
+	// Page number (1-based).
+	Page int32 `json:"page"`
+	// Page size.
+	PageSize int32 `json:"pageSize"`
+	// Total number of elements.
+	TotalItems int32 `json:"totalItems"`
+	// Total number of pages.
+	TotalPages int32 `json:"totalPages"`
+}
+
+// GetItems returns the value of Items.
+func (s *SiteSkippedEntriesListOK) GetItems() []SkippedEntryResource {
+	return s.Items
+}
+
+// GetPage returns the value of Page.
+func (s *SiteSkippedEntriesListOK) GetPage() int32 {
+	return s.Page
+}
+
+// GetPageSize returns the value of PageSize.
+func (s *SiteSkippedEntriesListOK) GetPageSize() int32 {
+	return s.PageSize
+}
+
+// GetTotalItems returns the value of TotalItems.
+func (s *SiteSkippedEntriesListOK) GetTotalItems() int32 {
+	return s.TotalItems
+}
+
+// GetTotalPages returns the value of TotalPages.
+func (s *SiteSkippedEntriesListOK) GetTotalPages() int32 {
+	return s.TotalPages
+}
+
+// SetItems sets the value of Items.
+func (s *SiteSkippedEntriesListOK) SetItems(val []SkippedEntryResource) {
+	s.Items = val
+}
+
+// SetPage sets the value of Page.
+func (s *SiteSkippedEntriesListOK) SetPage(val int32) {
+	s.Page = val
+}
+
+// SetPageSize sets the value of PageSize.
+func (s *SiteSkippedEntriesListOK) SetPageSize(val int32) {
+	s.PageSize = val
+}
+
+// SetTotalItems sets the value of TotalItems.
+func (s *SiteSkippedEntriesListOK) SetTotalItems(val int32) {
+	s.TotalItems = val
+}
+
+// SetTotalPages sets the value of TotalPages.
+func (s *SiteSkippedEntriesListOK) SetTotalPages(val int32) {
+	s.TotalPages = val
+}
+
 // The longest text the SMS provider sends (Twilio: 1,600 characters in GSM-7, 700 in UCS-2).
 // Ref: #/components/schemas/SiteSmsLengthLimit
 type SiteSmsLengthLimit struct {
@@ -31656,6 +31775,154 @@ func (s *SiteWorkspaceTimezoneInput) SetTimezone(val TimeZoneName) {
 
 // SiteWorkspacesLeaveNoContent is response for SiteWorkspacesLeave operation.
 type SiteWorkspacesLeaveNoContent struct{}
+
+// Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127):
+// `active_enrollment` (the triggering Event occurred while an enrollment of the contact was active) or
+// `once` (the contact had an enrollment in the automation before).
+// Ref: #/components/schemas/SkippedEntryReason
+type SkippedEntryReason string
+
+const (
+	SkippedEntryReasonActiveEnrollment SkippedEntryReason = "active_enrollment"
+	SkippedEntryReasonOnce             SkippedEntryReason = "once"
+)
+
+// AllValues returns all SkippedEntryReason values.
+func (SkippedEntryReason) AllValues() []SkippedEntryReason {
+	return []SkippedEntryReason{
+		SkippedEntryReasonActiveEnrollment,
+		SkippedEntryReasonOnce,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SkippedEntryReason) MarshalText() ([]byte, error) {
+	switch s {
+	case SkippedEntryReasonActiveEnrollment:
+		return []byte(s), nil
+	case SkippedEntryReasonOnce:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SkippedEntryReason) UnmarshalText(data []byte) error {
+	switch SkippedEntryReason(data) {
+	case SkippedEntryReasonActiveEnrollment:
+		*s = SkippedEntryReasonActiveEnrollment
+		return nil
+	case SkippedEntryReasonOnce:
+		*s = SkippedEntryReasonOnce
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// An entry of a contact into an automation that its entry checks refused. Erased with the contact, and
+// kept for the Event retention window.
+// Ref: #/components/schemas/SkippedEntryResource
+type SkippedEntryResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// The automation the contact was not enrolled in.
+	AutomationId EntityId `json:"automationId"`
+	// The contact.
+	ContactId EntityId `json:"contactId"`
+	// Why the entry was skipped.
+	Reason SkippedEntryReason `json:"reason"`
+	// The source id of the triggering Event (its dedupKey when it had one); absent when a rule's enroll
+	// action tried.
+	EventSourceId OptString `json:"eventSourceId"`
+	// The rule firing whose enroll action tried; absent when the automation's trigger did.
+	FiringId OptEntityId `json:"firingId"`
+	// When the enrollment would have begun: when its Event occurred.
+	OccurredAt Timestamp `json:"occurredAt"`
+	// When the entry was skipped.
+	CreatedAt Timestamp `json:"createdAt"`
+}
+
+// GetID returns the value of ID.
+func (s *SkippedEntryResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetAutomationId returns the value of AutomationId.
+func (s *SkippedEntryResource) GetAutomationId() EntityId {
+	return s.AutomationId
+}
+
+// GetContactId returns the value of ContactId.
+func (s *SkippedEntryResource) GetContactId() EntityId {
+	return s.ContactId
+}
+
+// GetReason returns the value of Reason.
+func (s *SkippedEntryResource) GetReason() SkippedEntryReason {
+	return s.Reason
+}
+
+// GetEventSourceId returns the value of EventSourceId.
+func (s *SkippedEntryResource) GetEventSourceId() OptString {
+	return s.EventSourceId
+}
+
+// GetFiringId returns the value of FiringId.
+func (s *SkippedEntryResource) GetFiringId() OptEntityId {
+	return s.FiringId
+}
+
+// GetOccurredAt returns the value of OccurredAt.
+func (s *SkippedEntryResource) GetOccurredAt() Timestamp {
+	return s.OccurredAt
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SkippedEntryResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// SetID sets the value of ID.
+func (s *SkippedEntryResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetAutomationId sets the value of AutomationId.
+func (s *SkippedEntryResource) SetAutomationId(val EntityId) {
+	s.AutomationId = val
+}
+
+// SetContactId sets the value of ContactId.
+func (s *SkippedEntryResource) SetContactId(val EntityId) {
+	s.ContactId = val
+}
+
+// SetReason sets the value of Reason.
+func (s *SkippedEntryResource) SetReason(val SkippedEntryReason) {
+	s.Reason = val
+}
+
+// SetEventSourceId sets the value of EventSourceId.
+func (s *SkippedEntryResource) SetEventSourceId(val OptString) {
+	s.EventSourceId = val
+}
+
+// SetFiringId sets the value of FiringId.
+func (s *SkippedEntryResource) SetFiringId(val OptEntityId) {
+	s.FiringId = val
+}
+
+// SetOccurredAt sets the value of OccurredAt.
+func (s *SkippedEntryResource) SetOccurredAt(val Timestamp) {
+	s.OccurredAt = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SkippedEntryResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
 
 // Why an Outbound message was Skipped: final for its Destination, never retried. The first four are
 // Send-eligibility's; a client switches over the list.

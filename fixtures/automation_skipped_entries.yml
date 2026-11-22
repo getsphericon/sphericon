@@ -68,3 +68,60 @@
     created_at: '{{daysAgo 1}}',
     updated_at: '{{daysAgo 1}}',
   }
+# Gotham results (America/New_York): read on 17 March over 7 days, three skipped entries fall in the
+# current period (11-17 March), one in the previous one, and one before both.
+- {
+    id: 6100,
+    automation_id: 6100,
+    contact_id: 20049,
+    workspace_id: 61,
+    source_id: 'fixture:skipped-gotham-6100',
+    reason: once,
+    occurred_at: '2026-03-13 12:00:00+00',
+    created_at: '2026-03-13 12:00:00+00',
+    updated_at: '2026-03-13 12:00:00+00',
+  }
+- {
+    id: 6101,
+    automation_id: 6100,
+    contact_id: 20052,
+    workspace_id: 61,
+    source_id: 'fixture:skipped-gotham-6101',
+    reason: active_enrollment,
+    occurred_at: '2026-03-15 12:00:00+00',
+    created_at: '2026-03-15 12:00:00+00',
+    updated_at: '2026-03-15 12:00:00+00',
+  }
+- {
+    id: 6102,
+    automation_id: 6100,
+    contact_id: 20050,
+    workspace_id: 61,
+    source_id: 'fixture:skipped-gotham-6102',
+    reason: active_enrollment,
+    occurred_at: '2026-03-16 12:00:00+00',
+    created_at: '2026-03-16 12:00:00+00',
+    updated_at: '2026-03-16 12:00:00+00',
+  }
+- {
+    id: 6103,
+    automation_id: 6100,
+    contact_id: 20054,
+    workspace_id: 61,
+    source_id: 'fixture:skipped-gotham-6103',
+    reason: once,
+    occurred_at: '2026-03-10 12:00:00+00',
+    created_at: '2026-03-10 12:00:00+00',
+    updated_at: '2026-03-10 12:00:00+00',
+  }
+- {
+    id: 6104,
+    automation_id: 6100,
+    contact_id: 20100,
+    workspace_id: 61,
+    source_id: 'fixture:skipped-gotham-6104',
+    reason: once,
+    occurred_at: '2026-02-25 12:00:00+00',
+    created_at: '2026-02-25 12:00:00+00',
+    updated_at: '2026-02-25 12:00:00+00',
+  }

@@ -528,6 +528,12 @@ func (c *InputsImpl) SendingDomainUpdate(source *external.UpdateSendingDomainInp
 	}
 	return sendingdomainsUpdateInput
 }
+func (c *InputsImpl) SkippedEntriesFilter(source external.SkippedEntriesListParams) automations.SkippedEntriesFilter {
+	var automationsSkippedEntriesFilter automations.SkippedEntriesFilter
+	automationsSkippedEntriesFilter.AutomationID = int64(source.AutomationId)
+	automationsSkippedEntriesFilter.ContactID = entityIDIn(source.ContactId)
+	return automationsSkippedEntriesFilter
+}
 func (c *InputsImpl) SmsBroadcastContentIn(source external.SmsBroadcastContentInput) broadcasts.SMSContentInput {
 	var broadcastsSMSContentInput broadcasts.SMSContentInput
 	broadcastsSMSContentInput.Text = stringPtrIn(source.Text)

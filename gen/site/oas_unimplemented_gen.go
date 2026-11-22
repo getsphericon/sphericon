@@ -1628,6 +1628,16 @@ func (UnimplementedHandler) SiteSignupSurveySubmit(ctx context.Context, req *Sit
 	return ht.ErrNotImplemented
 }
 
+// SiteSkippedEntriesList implements SiteSkippedEntries_list operation.
+//
+// List an automation's skipped entries, newest first: the entries its entry checks refused, each with
+// its reason.
+//
+// GET /workspaces/{workspaceId}/automations/{automationId}/skipped-entries
+func (UnimplementedHandler) SiteSkippedEntriesList(ctx context.Context, params SiteSkippedEntriesListParams) (r *SiteSkippedEntriesListOK, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteSmsConsentsConfirm implements SiteSmsConsents_confirm operation.
 //
 // Record consent the contact's phone gave outside sphericon, as an `imported` SMS Confirmation with

@@ -454,6 +454,14 @@ model AutomationPeriodResults {
   /** The period's last Report day, included */
   to: string;
 
+  /** Distinct contacts among the enrollments that began in the period: fewer than `entered` when a
+   * contact entered more than once */
+  contacts: int32;
+
+  /** Entries the entry checks refused in the period, by reason (ADR 0127), each on the Report day of
+   * the moment it would have begun */
+  skipped: AutomationSkippedCounts;
+
   /** Mean time in whole seconds from the beginning to the end of the enrollments that ended in
    * the period, whatever their outcome; null when none ended */
   averageDurationSeconds: int64 | null;
@@ -461,6 +469,15 @@ model AutomationPeriodResults {
   /** The orders credited to the automation that were completed in the period, and the net change
    * of its revenue in the period: every Movement of a credited Order counts on its own day (ADR 0064) */
   revenue: MessageRevenue;
+}
+
+/** How many entries into an automation were skipped, by reason */
+model AutomationSkippedCounts {
+  /** Entries whose Event occurred while an enrollment of the contact was active */
+  activeEnrollment: int32;
+
+  /** Entries of a contact enrolled in the automation before, which enrolls a contact once */
+  once: int32;
 }
 
 /** One Report day of an automation's results */

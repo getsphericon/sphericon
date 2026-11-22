@@ -992,6 +992,15 @@ Contact has one active Enrollment at a time, or one per value of the version's *
 an entry caused by a chain that passed through the same Automation is skipped.
 _Avoid_: Re-entry setting, frequency, recurrence (that is a date Trigger's)
 
+**Skipped entry**:
+An entry into an Automation that its entry checks refused, recorded with the Contact, the triggering
+Event or the Rule Firing that tried, the reason (an active Enrollment at the Event's moment, `once`,
+and the reasons of the Entry policy) and the moment it would have begun. One per Automation and
+Event (or Firing); kept as long as the analytical Events and erased with its Contact. The
+Automation report counts them by reason. An Event its Trigger's filter misses is no entry and is not
+recorded.
+_Avoid_: Rejected enrollment, failed entry, skipped send (that is a send step's)
+
 **Enrollment key**:
 A property of an Automation version's Trigger Event (`order_id`) by whose value a Contact may have
 several active Enrollments at once, one per value: a series per order. An exit, goal or awaited Event

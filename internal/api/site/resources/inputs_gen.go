@@ -892,6 +892,12 @@ func (c *InputsImpl) SignupSurvey(source *site.SiteSignupSurveyInput) signupsurv
 	}
 	return signupsurveyresponsesAnswers
 }
+func (c *InputsImpl) SkippedEntriesFilter(source site.SiteSkippedEntriesListParams) automations.SkippedEntriesFilter {
+	var automationsSkippedEntriesFilter automations.SkippedEntriesFilter
+	automationsSkippedEntriesFilter.AutomationID = int64(source.AutomationId)
+	automationsSkippedEntriesFilter.ContactID = entityIDIn(source.ContactId)
+	return automationsSkippedEntriesFilter
+}
 func (c *InputsImpl) SmsBroadcastContentIn(source site.SmsBroadcastContentInput) broadcasts.SMSContentInput {
 	var broadcastsSMSContentInput broadcasts.SMSContentInput
 	broadcastsSMSContentInput.Text = stringPtrIn(source.Text)
