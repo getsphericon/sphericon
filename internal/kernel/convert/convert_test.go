@@ -221,18 +221,11 @@ func (g *group) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// optGroup mimics an ogen OptGroup.
-type optGroup struct {
-	v   group
-	set bool
-}
+func TestDocumentReadsADocumentByTheModelsDecoderAndFailsOnOneItRefuses(t *testing.T) {
+	read, err := convert.Document[group](map[string]any{"entries": []int{1, 2}})
+	require.NoError(t, err)
+	_, refused := convert.Document[group](map[string]any{"items": []int{1}})
 
-func (o *optGroup) SetTo(v group) { o.v, o.set = v, true }
-
-func TestOptDocumentReadsADocumentByTheModelsDecoderAndLeavesOneItRefusesAbsent(t *testing.T) {
-	read := convert.OptDocument[optGroup, group](map[string]any{"entries": []int{1, 2}})
-	refused := convert.OptDocument[optGroup, group](map[string]any{"items": []int{1}})
-
-	assert.Equal(t, optGroup{v: group{Entries: []int{1, 2}}, set: true}, read)
-	assert.Equal(t, optGroup{}, refused)
+	assert.Equal(t, group{Entries: []int{1, 2}}, read)
+	require.ErrorContains(t, refused, "entries are required")
 }

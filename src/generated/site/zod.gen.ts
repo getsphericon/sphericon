@@ -4500,7 +4500,7 @@ export const zRuleConditionNodeInput = z.discriminatedUnion('kind', [
 export const zRuleVersion = z.object({
   number: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   triggerEvents: z.array(z.string()),
-  condition: z.exactOptional(zRuleCondition),
+  condition: zRuleCondition,
   actions: z.array(zRuleAction)
 });
 
@@ -4585,7 +4585,7 @@ export const zSiteRuleResource = z.object({
 export const zSiteSegmentResource = z.object({
   id: zEntityId,
   name: z.string(),
-  condition: z.exactOptional(zSegmentCondition),
+  condition: zSegmentCondition,
   archivedAt: z.exactOptional(zTimestamp.nullable()),
   revision: zRevision,
   createdAt: zTimestamp,

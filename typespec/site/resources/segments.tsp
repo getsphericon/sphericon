@@ -18,7 +18,7 @@ model SiteSegmentResource {
   name: string;
 
   /** Segment condition: the tree of tests; an empty group matches all contacts */
-  condition?: SegmentCondition;
+  condition: SegmentCondition;
 
   /** When the segment was archived; null while it is kept */
   archivedAt?: Timestamp | null;

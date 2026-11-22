@@ -10,7 +10,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteRuleResource } from '../../generated/site/types.gen.ts'
 import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/edit.tsx'
-import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
+import { EMPTY_CONDITION, page, testId, TIMESTAMPS } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
@@ -24,6 +24,7 @@ const STORED: SiteRuleResource = {
   live: null,
   draft: {
     number: 1,
+    condition: EMPTY_CONDITION,
     triggerEvents: ['signed_up'],
     actions: [
       {

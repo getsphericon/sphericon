@@ -14,7 +14,7 @@ func (h *Handlers) SiteRulesList(ctx context.Context, params siteapi.SiteRulesLi
 	if err != nil {
 		return nil, err
 	}
-	return mapper.RulesListPage(page), nil
+	return mapper.RulesListPage(page)
 }
 
 // SiteRulesCreate always stores a draft.
@@ -29,7 +29,10 @@ func (h *Handlers) SiteRulesCreate(ctx context.Context, req *siteapi.CreateRuleI
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.RuleToResource(r)
+	res, err := mapper.RuleToResource(r)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -40,7 +43,10 @@ func (h *Handlers) SiteRulesGet(ctx context.Context, params siteapi.SiteRulesGet
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.RuleToResource(r)
+	res, err := mapper.RuleToResource(r)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -55,7 +61,10 @@ func (h *Handlers) SiteRulesUpdate(ctx context.Context, req *siteapi.UpdateRuleI
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.RuleToResource(r)
+	res, err := mapper.RuleToResource(r)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -78,7 +87,10 @@ func (h *Handlers) SiteRulesPublish(ctx context.Context, req *siteapi.RevisionIn
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.RuleToResource(r)
+	res, err := mapper.RuleToResource(r)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -90,7 +102,10 @@ func (h *Handlers) SiteRulesRevert(ctx context.Context, req *siteapi.RevisionInp
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.RuleToResource(r)
+	res, err := mapper.RuleToResource(r)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -102,7 +117,10 @@ func (h *Handlers) SiteRulesDeactivate(ctx context.Context, params siteapi.SiteR
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.RuleToResource(r)
+	res, err := mapper.RuleToResource(r)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 

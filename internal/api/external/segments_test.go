@@ -156,7 +156,7 @@ func TestExternalSegmentsStoreAnEventCount(t *testing.T) {
 	require.NoError(t, err)
 	stored, err := c.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: created.ID})
 	require.NoError(t, err)
-	sentJSON, readJSON := testhelper.JSONOf(t, &sent), testhelper.JSONOf(t, &stored.Condition.Value)
+	sentJSON, readJSON := testhelper.JSONOf(t, &sent), testhelper.JSONOf(t, &stored.Condition)
 
 	assert.JSONEq(t, sentJSON, readJSON)
 }
@@ -194,7 +194,7 @@ func TestExternalSegmentsStoreANumberLeaf(t *testing.T) {
 	require.NoError(t, err)
 	stored, err := c.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: created.ID})
 	require.NoError(t, err)
-	sentJSON, readJSON := testhelper.JSONOf(t, &sent), testhelper.JSONOf(t, &stored.Condition.Value)
+	sentJSON, readJSON := testhelper.JSONOf(t, &sent), testhelper.JSONOf(t, &stored.Condition)
 
 	assert.JSONEq(t, sentJSON, readJSON)
 }

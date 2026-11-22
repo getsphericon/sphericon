@@ -5,7 +5,7 @@ import {
   handleSiteSegmentsGet,
 } from '../../generated/site/msw.gen.ts'
 import { Route as segmentsDetailRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/index.tsx'
-import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
+import { EMPTY_CONDITION, page, testId, TIMESTAMPS } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
@@ -16,7 +16,13 @@ const MOUNT = routeMount(segmentsDetailRoute, { workspaceId: 'TestWs01', segment
 test('shows the segment name and the contacts it matches', async () => {
   worker.use(
     handleSiteSegmentsGet({
-      body: { id: testId(1), name: 'VIP customers', revision: 1, ...TIMESTAMPS },
+      body: {
+        id: testId(1),
+        name: 'VIP customers',
+        condition: EMPTY_CONDITION,
+        revision: 1,
+        ...TIMESTAMPS,
+      },
     }),
     handleSiteSegmentContactsList({
       body: page(

@@ -25,7 +25,7 @@ func (w *Workspace) SaveSegment(condition string) Segment {
 		Condition: conditionOf[siteapi.SegmentConditionInput](w.t, condition),
 	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: siteapi.WorkspaceId(w.publicID)})
 	saved := ok[siteapi.SiteSegmentResource](w.t, "create segment", res, err)
-	requireCondition(w.t, condition, &saved.Condition.Value)
+	requireCondition(w.t, condition, &saved.Condition)
 	return Segment{ID: saved.ID}
 }
 
@@ -41,7 +41,7 @@ func (w *Workspace) EditSegment(s Segment, condition string) {
 		Condition: siteapi.NewOptSegmentConditionInput(conditionOf[siteapi.SegmentConditionInput](w.t, condition)),
 	}, siteapi.SiteSegmentsUpdateParams{WorkspaceId: ws, ID: s.ID})
 	saved := ok[siteapi.SiteSegmentResource](w.t, "edit segment", res, err)
-	requireCondition(w.t, condition, &saved.Condition.Value)
+	requireCondition(w.t, condition, &saved.Condition)
 }
 
 // conditionOf is a Condition written as JSON, as the console's builder sends it.

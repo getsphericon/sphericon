@@ -16,7 +16,7 @@ func (h *Handlers) SiteSegmentsList(ctx context.Context, params siteapi.SiteSegm
 		return nil, err
 	}
 
-	return mapper.SegmentsListPage(page), nil
+	return mapper.SegmentsListPage(page)
 }
 
 func (h *Handlers) SiteSegmentsCreate(ctx context.Context, req *siteapi.CreateSegmentInput, _ siteapi.SiteSegmentsCreateParams) (*siteapi.SiteSegmentResource, error) {
@@ -30,7 +30,10 @@ func (h *Handlers) SiteSegmentsCreate(ctx context.Context, req *siteapi.CreateSe
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.SegmentToResource(s)
+	res, err := mapper.SegmentToResource(s)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -42,7 +45,10 @@ func (h *Handlers) SiteSegmentsGet(ctx context.Context, params siteapi.SiteSegme
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.SegmentToResource(s)
+	res, err := mapper.SegmentToResource(s)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -58,7 +64,10 @@ func (h *Handlers) SiteSegmentsUpdate(ctx context.Context, req *siteapi.UpdateSe
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.SegmentToResource(s)
+	res, err := mapper.SegmentToResource(s)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -72,7 +81,10 @@ func (h *Handlers) SiteSegmentsArchive(ctx context.Context, params siteapi.SiteS
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.SegmentToResource(s)
+	res, err := mapper.SegmentToResource(s)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 
@@ -85,7 +97,10 @@ func (h *Handlers) SiteSegmentsUnarchive(ctx context.Context, params siteapi.Sit
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.SegmentToResource(s)
+	res, err := mapper.SegmentToResource(s)
+	if err != nil {
+		return nil, err
+	}
 	return &res, nil
 }
 

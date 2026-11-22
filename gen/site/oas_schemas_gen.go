@@ -12547,52 +12547,6 @@ func (o OptProblemDetailsFields) Or(d ProblemDetailsFields) ProblemDetailsFields
 	return d
 }
 
-// NewOptRuleCondition returns new OptRuleCondition with value set to v.
-func NewOptRuleCondition(v RuleCondition) OptRuleCondition {
-	return OptRuleCondition{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptRuleCondition is optional RuleCondition.
-type OptRuleCondition struct {
-	Value RuleCondition
-	Set   bool
-}
-
-// IsSet returns true if OptRuleCondition was set.
-func (o OptRuleCondition) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptRuleCondition) Reset() {
-	var v RuleCondition
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptRuleCondition) SetTo(v RuleCondition) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptRuleCondition) Get() (v RuleCondition, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptRuleCondition) Or(d RuleCondition) RuleCondition {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
 // NewOptRuleConditionInput returns new OptRuleConditionInput with value set to v.
 func NewOptRuleConditionInput(v RuleConditionInput) OptRuleConditionInput {
 	return OptRuleConditionInput{
@@ -12633,52 +12587,6 @@ func (o OptRuleConditionInput) Get() (v RuleConditionInput, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptRuleConditionInput) Or(d RuleConditionInput) RuleConditionInput {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptSegmentCondition returns new OptSegmentCondition with value set to v.
-func NewOptSegmentCondition(v SegmentCondition) OptSegmentCondition {
-	return OptSegmentCondition{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSegmentCondition is optional SegmentCondition.
-type OptSegmentCondition struct {
-	Value SegmentCondition
-	Set   bool
-}
-
-// IsSet returns true if OptSegmentCondition was set.
-func (o OptSegmentCondition) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSegmentCondition) Reset() {
-	var v SegmentCondition
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSegmentCondition) SetTo(v SegmentCondition) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSegmentCondition) Get() (v SegmentCondition, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSegmentCondition) Or(d SegmentCondition) SegmentCondition {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -17088,8 +16996,8 @@ type RuleVersion struct {
 	Number int32 `json:"number"`
 	// The Event actions that make the Rule fire; any one of them does.
 	TriggerEvents []string `json:"triggerEvents"`
-	// The Contact must match this condition for the Rule to fire; absent means every Contact.
-	Condition OptRuleCondition `json:"condition"`
+	// The Contact must match this condition for the Rule to fire; an empty group matches every Contact.
+	Condition RuleCondition `json:"condition"`
 	// The Rule's ordered Actions.
 	Actions []RuleAction `json:"actions"`
 }
@@ -17105,7 +17013,7 @@ func (s *RuleVersion) GetTriggerEvents() []string {
 }
 
 // GetCondition returns the value of Condition.
-func (s *RuleVersion) GetCondition() OptRuleCondition {
+func (s *RuleVersion) GetCondition() RuleCondition {
 	return s.Condition
 }
 
@@ -17125,7 +17033,7 @@ func (s *RuleVersion) SetTriggerEvents(val []string) {
 }
 
 // SetCondition sets the value of Condition.
-func (s *RuleVersion) SetCondition(val OptRuleCondition) {
+func (s *RuleVersion) SetCondition(val RuleCondition) {
 	s.Condition = val
 }
 
@@ -28078,7 +27986,7 @@ type SiteSegmentResource struct {
 	// Segment name.
 	Name string `json:"name"`
 	// Segment condition: the tree of tests; an empty group matches all contacts.
-	Condition OptSegmentCondition `json:"condition"`
+	Condition SegmentCondition `json:"condition"`
 	// When the segment was archived; null while it is kept.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// The revision of the state this answer shows (ADR 0119): an update names it.
@@ -28100,7 +28008,7 @@ func (s *SiteSegmentResource) GetName() string {
 }
 
 // GetCondition returns the value of Condition.
-func (s *SiteSegmentResource) GetCondition() OptSegmentCondition {
+func (s *SiteSegmentResource) GetCondition() SegmentCondition {
 	return s.Condition
 }
 
@@ -28135,7 +28043,7 @@ func (s *SiteSegmentResource) SetName(val string) {
 }
 
 // SetCondition sets the value of Condition.
-func (s *SiteSegmentResource) SetCondition(val OptSegmentCondition) {
+func (s *SiteSegmentResource) SetCondition(val SegmentCondition) {
 	s.Condition = val
 }
 

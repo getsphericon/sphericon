@@ -112,7 +112,7 @@ func (w *Workspace) requireRuleCondition(condition string, draft siteapi.NilRule
 		return
 	}
 	require.False(w.t, draft.Null, "the write leaves a draft")
-	requireCondition(w.t, condition, &draft.Value.Condition.Value)
+	requireCondition(w.t, condition, &draft.Value.Condition)
 }
 
 // Visit is what the tracking snippet does on a customer's site: it identifies the visitor as the

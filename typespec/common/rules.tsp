@@ -68,8 +68,8 @@ model RuleVersion {
   /** The Event actions that make the Rule fire; any one of them does */
   triggerEvents: string[];
 
-  /** The Contact must match this condition for the Rule to fire; absent means every Contact */
-  condition?: RuleCondition;
+  /** The Contact must match this condition for the Rule to fire; an empty group matches every Contact */
+  condition: RuleCondition;
 
   /** The Rule's ordered Actions */
   actions: RuleAction[];

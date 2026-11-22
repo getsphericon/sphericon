@@ -14,7 +14,7 @@ import {
 import type { SiteEventResource, SiteRuleResource } from '../../generated/site/types.gen.ts'
 import { useSchemaForm } from '../../resources/schemaForm.ts'
 import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/edit.tsx'
-import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
+import { EMPTY_CONDITION, page, testId, TIMESTAMPS } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -30,7 +30,12 @@ const STORED: SiteRuleResource = {
   name: 'Tag signups',
   status: 'inactive',
   live: null,
-  draft: { number: 1, triggerEvents: ['signed_up'], actions: [{ type: 'apply_tag', tag: 'new' }] },
+  draft: {
+    number: 1,
+    condition: EMPTY_CONDITION,
+    triggerEvents: ['signed_up'],
+    actions: [{ type: 'apply_tag', tag: 'new' }],
+  },
   revision: 1,
   ...TIMESTAMPS,
 }
@@ -148,6 +153,7 @@ test('the add header button disappears at the limit of five headers', async () =
     ...STORED,
     draft: {
       number: 1,
+      condition: EMPTY_CONDITION,
       triggerEvents: ['signed_up'],
       actions: [
         { type: 'http', id: HTTP_ID, headers: ['a', 'b', 'c', 'd', 'e'].map((name) => ({ name })) },
@@ -186,6 +192,7 @@ test("a refusal of an action's fields shows under them and focuses the first", a
     ...STORED,
     draft: {
       number: 1,
+      condition: EMPTY_CONDITION,
       triggerEvents: ['signed_up'],
       actions: [
         { type: 'apply_tag', tag: 'new' },

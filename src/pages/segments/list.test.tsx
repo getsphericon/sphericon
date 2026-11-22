@@ -7,7 +7,7 @@ import {
   handleSiteSegmentsUnarchive,
 } from '../../generated/site/msw.gen.ts'
 import { Route as segmentsRoute } from '../../routes/workspaces/$workspaceId/segments/index.tsx'
-import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
+import { EMPTY_CONDITION, page, testId, TIMESTAMPS } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -18,8 +18,20 @@ const WORKSPACE_ID = { workspaceId: 'TestWs01' }
 const LIST_ROUTE = routeMount(segmentsRoute, WORKSPACE_ID)
 const ARCHIVED_ROUTE = { ...LIST_ROUTE, initialPath: `${LIST_ROUTE.initialPath}?archived=true` }
 
-const VIPS = { id: testId(1), name: 'VIP customers', revision: 1, ...TIMESTAMPS }
-const TRIAL = { id: testId(2), name: 'Trial users', revision: 1, ...TIMESTAMPS }
+const VIPS = {
+  id: testId(1),
+  name: 'VIP customers',
+  condition: EMPTY_CONDITION,
+  revision: 1,
+  ...TIMESTAMPS,
+}
+const TRIAL = {
+  id: testId(2),
+  name: 'Trial users',
+  condition: EMPTY_CONDITION,
+  revision: 1,
+  ...TIMESTAMPS,
+}
 
 test('lists the workspace segments', async () => {
   worker.use(handleSiteSegmentsList({ body: page([VIPS, TRIAL], 2) }))
