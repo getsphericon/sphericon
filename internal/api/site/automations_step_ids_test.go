@@ -1,6 +1,7 @@
 package site_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -58,4 +59,79 @@ func TestSiteAutomationVersionIsARootPathOfTypedStepsWithIDs(t *testing.T) {
 	assert.NotEmpty(t, got[0])
 	assert.NotContains(t, ids, got[0], "an added Step gets an id of its own")
 	assert.Equal(t, ids, got[1:], "each Step keeps the id it was saved with")
+}
+
+const siteKeptStepID = "0f6b8d1e-6c2a-4a55-8f7e-3c1d2b4a5e61"
+
+// A malformed id, and one two Steps (or a Step and the path) share, refuse the save, naming the
+// Step by its id and kind.
+func TestSiteAutomationRefusesAMalformedOrDuplicateStepID(t *testing.T) {
+	cases := map[string]struct {
+		path  siteapi.AutomationPathInput
+		names string
+	}{
+		"malformed": {
+			testhelper.SitePath(siteapi.WaitStepInput{ID: siteapi.NewOptStepId("step-1"), Seconds: 60}),
+			`step "step-1" (wait)`,
+		},
+		"duplicate": {
+			testhelper.SitePath(
+				siteapi.WaitStepInput{ID: siteapi.NewOptStepId(siteKeptStepID), Seconds: 60},
+				siteapi.ApplyTagStepInput{ID: siteapi.NewOptStepId(siteKeptStepID), Tag: "vip"},
+			),
+			"step " + siteKeptStepID + " (apply_tag)",
+		},
+		"shared with the path": {
+			siteapi.AutomationPathInput{
+				ID:    siteapi.NewOptStepId(siteKeptStepID),
+				Steps: []siteapi.AutomationStepInput{testhelper.SiteStep(siteapi.WaitStepInput{ID: siteapi.NewOptStepId(siteKeptStepID), Seconds: 60})},
+			},
+			"step " + siteKeptStepID + " (wait)",
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+
+			_, err := c.SiteAutomationsCreate(t.Context(), &siteapi.CreateAutomationInput{
+				Name: "Bad ids", TriggerEvent: "signup", Steps: siteapi.NewOptAutomationPathInput(tc.path),
+			}, siteapi.SiteAutomationsCreateParams{WorkspaceId: siteapi.WorkspaceId(fixtures.AcmePublicID)})
+
+			refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
+			assert.Contains(t, refused.Detail.Value, tc.names)
+		})
+	}
+}
+
+// A Step is closed (ADR 0148): a field nobody declares, and a field of another kind, are a 400
+// naming the path of the property, the Step by its index.
+func TestSiteAutomationRefusesAFieldItsStepKindDoesNotHold(t *testing.T) {
+	cases := []struct {
+		name  string
+		field string
+	}{
+		{"unknown", "nope"},
+		{"of another kind", "seconds"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			edited := env.SiteActorVia(t, fixtures.OwnerJohnEmail, testhelper.EditBody(func(body map[string]any) {
+				steps := body["steps"].(map[string]any)["steps"].([]any)
+				steps[1].(map[string]any)[tc.field] = 5
+			}))
+
+			_, err := edited.SiteAutomationsCreate(t.Context(), &siteapi.CreateAutomationInput{
+				Name: "Closed", TriggerEvent: "signup",
+				Steps: testhelper.SitePathEdit(
+					siteapi.WaitStepInput{Seconds: 60},
+					siteapi.ApplyTagStepInput{Tag: "vip"},
+				),
+			}, siteapi.SiteAutomationsCreateParams{WorkspaceId: siteapi.WorkspaceId(fixtures.AcmePublicID)})
+
+			refused := testhelper.SiteRefusal(t, err, http.StatusBadRequest)
+			assert.Contains(t, refused.Errors.Or(nil), "steps.steps.1."+tc.field)
+		})
+	}
 }
