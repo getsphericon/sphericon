@@ -174,7 +174,7 @@ func TestAnErasureIsAllOrNothing(t *testing.T) {
 	isContact := func(_ context.Context, m ent.Mutation) bool { return m.Type() == ent.TypeContact }
 	deletesAContact := hook.And(isContact, hook.HasOp(ent.OpDelete|ent.OpDeleteOne))
 	env.Bus.Use(hook.If(hook.FixedError(errDown), deletesAContact))
-	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID, Action: "x"})
+	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID, Action: "x", OccurredAt: time.Now(), SourceID: "evt-1"})
 	env.EnqueueJob(t, jobs.EvaluateRulesArgs{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID, Action: "rule_initech", SourceID: "evt-1"})
 	env.EnqueueJob(t, automations.RunHTTPStepArgs{WorkspaceID: fixtures.InitechID, RunID: fixtures.AutomationRunErasableID})
 

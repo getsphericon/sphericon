@@ -50,8 +50,7 @@ import (
 // close a cycle Postgres does not see.
 
 // Event is an Event the Automations react to, as its trigger job hands it on (#751, #752): its
-// action, the id its row is stored under (events.Envelope.SourceID; empty in a job of a release
-// before #752) and when it occurred.
+// action, the id its row is stored under (events.Envelope.SourceID) and when it occurred.
 type Event struct {
 	Action     string
 	SourceID   string
@@ -69,8 +68,8 @@ type origin struct {
 
 // originOf is the origin of an Event: its action and occurred_at, and the properties of the row
 // stored with its source id, bounded as a Rule sees them (events.BoundedProperties). The row is
-// stored before the trigger job is queued (#751); a job without a source id, or an Event no longer
-// stored (Retention or an Erasure removed it), gives no properties.
+// stored before the trigger job is queued (#751); an Event no longer stored (Retention or an Erasure
+// removed it) gives no properties.
 func originOf(ctx context.Context, s *ent.Scoped, ev Event) (origin, error) {
 	o := origin{Action: ev.Action, OccurredAt: ev.OccurredAt}
 	stored, err := storedEvent(ctx, s, ev.SourceID)
@@ -83,9 +82,6 @@ func originOf(ctx context.Context, s *ent.Scoped, ev Event) (origin, error) {
 
 // storedEvent is the Event stored with sourceID, nil when there is none.
 func storedEvent(ctx context.Context, s *ent.Scoped, sourceID string) (*ent.Event, error) {
-	if sourceID == "" {
-		return nil, nil
-	}
 	stored, err := s.Event().Query().Where(event.SourceID(sourceID)).Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil, nil
