@@ -152,10 +152,11 @@ func TestSavingAnSMSStepOverTwiliosLengthLimitIsRefused(t *testing.T) {
 		Steps: steps(smsVia(nil, atLimit)),
 	})
 	require.NoError(t, err)
+	over := automationstep.Root(automationstep.Step{ID: "5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1b01", Payload: smsVia(nil, atLimit+"я")})
 	_, err = m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID),
-		Steps: steps(smsVia(nil, atLimit+"я")),
+		Steps: &over,
 	})
 
 	require.ErrorIs(t, err, automations.ErrInvalidStep)
-	assert.ErrorContains(t, err, "step 1: the text is 701 characters in UCS-2 (11 segments); it may take 700 characters in UCS-2 at most")
+	assert.ErrorContains(t, err, "step 5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1b01 (sms): the text is 701 characters in UCS-2 (11 segments); it may take 700 characters in UCS-2 at most")
 }

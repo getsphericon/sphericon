@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"strconv"
 
 	"github.com/google/uuid"
 
@@ -164,6 +165,16 @@ type RemoveTag struct {
 	Tag string `json:"tag"`
 }
 
+// Tagging is a Step that applies or removes a Tag, ApplyTag or RemoveTag: what the two share.
+type Tagging interface {
+	Payload
+	// TagName is the name of the Tag the Step applies or removes.
+	TagName() string
+}
+
+func (p ApplyTag) TagName() string  { return p.Tag }
+func (p RemoveTag) TagName() string { return p.Tag }
+
 // HTTP calls a hook (ADR 0039) with a Liquid JSON Body. Stored, URL, header values and Secret are
 // ciphertext, sealed per field; in a step being saved, an empty one keeps the stored value of the
 // step with the same id, and ClearSecret drops the signing secret.
@@ -283,36 +294,53 @@ func SendsEmail(p Path) bool {
 }
 
 // ErrBadID is a Step's or a path's id that is not a UUID in its lowercase text form, or that
-// another Step or path of the version holds too.
+// another Step or path of the version holds too. Identify returns it as a *BadIDError.
 var ErrBadID = errors.New("automationstep: bad id")
+
+// BadIDError is a refused id: Detail names the Step by its id and kind, or the path, and says
+// why. It is ErrBadID (errors.Is).
+type BadIDError struct {
+	Detail string
+}
+
+func (e *BadIDError) Error() string { return ErrBadID.Error() + ": " + e.Detail }
+
+func (e *BadIDError) Unwrap() error { return ErrBadID }
 
 // NewID mints the id of a Step or a path.
 func NewID() ID { return ID(uuid.NewString()) }
 
 // Identify gives the path, and each of its Steps, that has no id one from mint, and keeps an id
-// it holds. An id that is not a UUID in its lowercase text form, or that two of them share, is
-// ErrBadID, naming the Step (1-based) or the path. The path given is left as it was.
+// it holds. An id that is not a UUID in its lowercase text form, or that two of them share, is a
+// *BadIDError naming the Step by its id and kind, or the path. The path given is left as it was.
 func Identify(p Path, mint func() ID) (Path, error) {
 	seen := map[ID]bool{}
-	claim := func(id ID, what string) (ID, error) {
+	// claim keeps or mints the id of the Step st, or of the path for nil.
+	claim := func(id ID, st *Step) (ID, error) {
 		if id == "" {
 			id = mint()
 		}
+		name := func(id string) string {
+			if st == nil {
+				return "the path " + id
+			}
+			return fmt.Sprintf("step %s (%s)", id, st.Kind())
+		}
 		if parsed, err := uuid.Parse(string(id)); err != nil || parsed.String() != string(id) {
-			return "", fmt.Errorf("%w: %s: %q is not a lowercase UUID", ErrBadID, what, id)
+			return "", &BadIDError{Detail: name(strconv.Quote(string(id))) + ": the id is not a lowercase UUID"}
 		}
 		if seen[id] {
-			return "", fmt.Errorf("%w: %s: id %s is used twice in the version", ErrBadID, what, id)
+			return "", &BadIDError{Detail: name(string(id)) + ": the id is used twice in the version"}
 		}
 		seen[id] = true
 		return id, nil
 	}
-	root, err := claim(p.ID, "the path")
+	root, err := claim(p.ID, nil)
 	if err != nil {
 		return Path{}, err
 	}
-	out, err := Map(p, func(pos int, st *Step) (Step, error) {
-		id, err := claim(st.ID, fmt.Sprintf("step %d", pos+1))
+	out, err := Map(p, func(_ int, st *Step) (Step, error) {
+		id, err := claim(st.ID, st)
 		return Step{ID: id, Payload: st.Payload}, err
 	})
 	if err != nil {

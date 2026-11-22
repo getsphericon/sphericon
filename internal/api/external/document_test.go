@@ -3,6 +3,7 @@ package external_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"testing"
@@ -209,7 +210,7 @@ func TestExternalAutomationEmailStepsCarryTheDocument(t *testing.T) {
 	_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: testhelper.ExternalPathEdit(resendEmailStep(t, second))},
 		externalapi.AutomationsUpdateParams{ID: res.ID})
 	refused := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
-	assert.Contains(t, refused.Detail.Or(""), "step 1")
+	assert.Contains(t, refused.Detail.Or(""), fmt.Sprintf("step %s (email)", second.ID))
 
 	// An invalid document refuses the save; the stored step is unchanged.
 	bad := resendEmailStep(t, second)

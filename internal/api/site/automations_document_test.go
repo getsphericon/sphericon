@@ -78,15 +78,17 @@ func TestSiteAutomationInvalidDocumentRefusesTheWholeSaveNamingTheStep(t *testin
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	bad := map[string]jx.Raw{"type": jx.Raw(`"doc"`), "content": jx.Raw(`[{"type":"heading","attrs":{"level":9},"content":[{"type":"text","text":"x"}]}]`)}
+	broken := docStep("Broken", bad)
+	broken.ID = siteapi.NewOptStepId("5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1b02")
 	_, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
 		Name: "Refused", TriggerEvent: "refused.signup",
 		Steps: testhelper.SitePathEdit(
 			docStep("Fine", paragraphDoc("Fine")),
-			docStep("Broken", bad),
+			broken,
 		),
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
-	assert.Contains(t, refused.Detail.Value, "step 2")
+	assert.Contains(t, refused.Detail.Value, "step 5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1b02 (email)")
 
 	// Both a body and a document on one step is refused too.
 	both := docStep("Both", paragraphDoc("x"))

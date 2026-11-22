@@ -125,70 +125,69 @@ func storedPayload(payload automationstep.Payload) automationstep.Payload {
 	}
 }
 
-// validate checks each step on its own. linkLength is the length of the Workspace's short tracked
-// links, what an SMS step's links count as.
+// refuse is ErrInvalidStep naming the Step by its id and kind (ADR 0122), and why.
+func refuse(st *automationstep.Step, why string) error {
+	return ErrInvalidStep.With(fmt.Sprintf("step %s (%s): %s", st.ID, st.Kind(), why))
+}
+
+// validate checks each step on its own; the steps carry their ids (identify). linkLength is the
+// length of the Workspace's short tracked links, what an SMS step's links count as.
 func validate(steps automationstep.Path, linkLength int) error {
-	for i, st := range automationstep.All(steps) {
+	for _, st := range automationstep.All(steps) {
 		switch s := st.Payload.(type) {
 		case automationstep.Email:
 			if err := emailrender.Lint(s.Subject, s.Body, nil).Error; err != nil {
-				return ErrInvalidStep.With(err.Error())
+				return refuse(st, err.Error())
 			}
 		case automationstep.Telegram:
 			if strings.TrimSpace(s.Text) == "" {
-				return ErrInvalidStep.With("a Telegram step needs a text")
+				return refuse(st, "a Telegram step needs a text")
 			}
-			if err := telegramrender.Check(s.Text); err != nil {
-				return ErrInvalidStep.With(err.Error())
-			}
-			if err := telegramrender.CheckUnsubscribeButton(s.UnsubscribeButton); err != nil {
-				return ErrInvalidStep.With(err.Error())
-			}
-			if err := telegramrender.CheckImage(s.ImageURL); err != nil {
-				return ErrInvalidStep.With(err.Error())
-			}
-			if err := telegramrender.CheckButtons(s.Buttons); err != nil {
-				return ErrInvalidStep.With(err.Error())
+			for _, err := range []error{
+				telegramrender.Check(s.Text),
+				telegramrender.CheckUnsubscribeButton(s.UnsubscribeButton),
+				telegramrender.CheckImage(s.ImageURL),
+				telegramrender.CheckButtons(s.Buttons),
+			} {
+				if err != nil {
+					return refuse(st, err.Error())
+				}
 			}
 		case automationstep.SMS:
 			if strings.TrimSpace(s.Text) == "" {
-				return ErrInvalidStep.With("an SMS step needs a text")
+				return refuse(st, "an SMS step needs a text")
 			}
 			if err := smsrender.Check(s.Text); err != nil {
-				return ErrInvalidStep.With(err.Error())
+				return refuse(st, err.Error())
 			}
 			// Twilio is the one SMS provider, so its length limit is the one a text is held to. Its
 			// links count as the short links they go out as, unless the step keeps them.
 			if err := smsrender.CheckLength(s.Text, twilio.MaxLength, lo.Ternary(s.TracksLinks(), linkLength, 0)); err != nil {
-				return ErrInvalidStep.With(fmt.Sprintf("step %d: %s", i+1, err))
+				return refuse(st, err.Error())
 			}
 		case automationstep.HTTP:
 		case automationstep.Wait:
 			if s.Seconds < 0 {
-				return ErrInvalidStep
+				return refuse(st, "a wait cannot be negative")
 			}
-		case automationstep.ApplyTag:
-			if strings.TrimSpace(s.Tag) == "" {
-				return ErrInvalidStep
-			}
-		case automationstep.RemoveTag:
-			if strings.TrimSpace(s.Tag) == "" {
-				return ErrInvalidStep
+		case automationstep.Tagging:
+			if strings.TrimSpace(s.TagName()) == "" {
+				return refuse(st, "a tag step needs a tag name")
 			}
 		case automationstep.End:
 		default:
-			return ErrInvalidStep
+			return refuse(st, "the step has no known kind")
 		}
 	}
 	return nil
 }
 
 // identify gives the path and each step without an id one, keeping the ids sent; a malformed id
-// or one used twice in the version refuses the save (ADR 0122).
+// or one used twice in the version refuses the save, naming the Step or the path (ADR 0122).
 func identify(steps automationstep.Path) (automationstep.Path, error) {
 	out, err := automationstep.Identify(steps, automationstep.NewID)
-	if errors.Is(err, automationstep.ErrBadID) {
-		return automationstep.Path{}, ErrInvalidStep.With(strings.TrimPrefix(err.Error(), automationstep.ErrBadID.Error()+": "))
+	if bad, ok := errors.AsType[*automationstep.BadIDError](err); ok {
+		return automationstep.Path{}, ErrInvalidStep.With(bad.Detail)
 	}
 	return out, err
 }
@@ -197,16 +196,14 @@ func identify(steps automationstep.Path) (automationstep.Path, error) {
 // finishes its path (ADR 0124), so the Step would never run. The steps carry their ids (identify).
 func checkEnds(steps automationstep.Path) error {
 	if st, after := automationstep.AfterEnd(steps); after {
-		return ErrInvalidStep.With(fmt.Sprintf("step %s (%s) comes after an end step, which finishes its path", st.ID, st.Kind()))
+		return refuse(st, "it comes after an end step, which finishes its path")
 	}
 	return nil
 }
 
-// SendStep is a send step of a version, where it stands and what it sends through.
+// SendStep is a send step of a version: the Step, named by its id, and what it sends through.
 type SendStep struct {
-	// Index is the step's position in the version, 0 for the first.
-	Index int
-	Step  automationstep.Step
+	Step automationstep.Step
 }
 
 // Channel is the Channel the step sends on.
@@ -237,9 +234,9 @@ func (s SendStep) Content() (outboundmessages.Content, error) {
 // SendSteps are the send steps of the version, in step order.
 func SendSteps(v *ent.AutomationVersion) []SendStep {
 	var out []SendStep
-	for i, st := range automationstep.All(v.Steps) {
+	for _, st := range automationstep.All(v.Steps) {
 		if _, sends := st.Kind().Channel(); sends {
-			out = append(out, SendStep{Index: i, Step: *st})
+			out = append(out, SendStep{Step: *st})
 		}
 	}
 	return out
@@ -283,10 +280,15 @@ func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer, o
 
 // build renders every email step that holds a document to its body, in the same save (ADR 0040,
 // the Template rules): a step with a document and a body is refused, and a document that cannot
-// be rendered refuses the whole save, naming the step (1-based). A step with no document is
-// left as it is, so a body-only write stores no document.
-func (m *Module) build(ctx context.Context, steps automationstep.Path) (automationstep.Path, error) {
-	return automationstep.Map(steps, func(i int, st *automationstep.Step) (automationstep.Step, error) {
+// be rendered refuses the whole save, naming the step by its id and kind. A step with no document
+// is left as it is, so a body-only write stores no document. The steps are identified first
+// (identify), so every refusal of the save can name its Step.
+func (m *Module) build(ctx context.Context, written automationstep.Path) (automationstep.Path, error) {
+	steps, err := identify(written)
+	if err != nil {
+		return automationstep.Path{}, err
+	}
+	return automationstep.Map(steps, func(_ int, st *automationstep.Step) (automationstep.Step, error) {
 		s, ok := st.Payload.(automationstep.Email)
 		if !ok || len(s.Doc) == 0 {
 			return *st, nil
@@ -298,9 +300,9 @@ func (m *Module) build(ctx context.Context, steps automationstep.Path) (automati
 		c, err := emailrender.ResolveContent(ctx, m.renderer, &s.Subject, body, s.Doc, errBodyAndDoc)
 		switch {
 		case errors.Is(err, errBodyAndDoc):
-			return automationstep.Step{}, ErrInvalidStep.With(fmt.Sprintf("step %d: write a body or a doc, not both", i+1))
+			return automationstep.Step{}, refuse(st, "write a body or a doc, not both")
 		case errors.Is(err, emailrender.ErrInvalidContent):
-			return automationstep.Step{}, ErrInvalidStep.With(fmt.Sprintf("step %d: %s", i+1, err))
+			return automationstep.Step{}, refuse(st, err.Error())
 		case err != nil:
 			return automationstep.Step{}, err
 		}
@@ -555,11 +557,9 @@ func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.Automati
 		if err != nil {
 			return definition{}, err
 		}
-		if err := validate(*e.steps, linkLength); err != nil {
-			return definition{}, err
-		}
-		steps, err := identify(*e.steps)
-		if err != nil {
+		// The steps carry their ids: build identified them.
+		steps := *e.steps
+		if err := validate(steps, linkLength); err != nil {
 			return definition{}, err
 		}
 		if err := checkEnds(steps); err != nil {
@@ -650,7 +650,7 @@ func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent
 			continue
 		}
 		if err := telegramrender.CheckWritten(tg.Text, tg.ImageURL != ""); err != nil {
-			return ErrInvalidStep.With(fmt.Sprintf("step %d: %s", st.Index+1, err))
+			return refuse(&st.Step, err.Error())
 		}
 	}
 	type routeKey struct {

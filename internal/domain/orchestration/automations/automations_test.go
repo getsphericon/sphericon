@@ -88,21 +88,35 @@ func TestInvalidStepsAreRefusedAndNothingIsStored(t *testing.T) {
 	ctx := context.Background()
 	before := automationNames(t, env)
 
-	for name, refused := range map[string]*automationstep.Path{
-		"no kind":             {Steps: []automationstep.Step{{}}},
-		"negative wait":       steps(automationstep.Wait{Seconds: -1}),
-		"apply_tag blank tag": steps(automationstep.ApplyTag{Tag: "  "}),
-		"remove_tag no tag":   steps(automationstep.RemoveTag{}),
-		"malformed id":        {Steps: []automationstep.Step{{ID: "step-1", Payload: automationstep.Wait{}}}},
-		"duplicate id": {Steps: []automationstep.Step{
-			{ID: "0f6b8d1e-6c2a-4a55-8f7e-3c1d2b4a5e61", Payload: automationstep.Wait{}},
-			{ID: "0f6b8d1e-6c2a-4a55-8f7e-3c1d2b4a5e61", Payload: automationstep.Wait{}},
-		}},
+	const id = "0f6b8d1e-6c2a-4a55-8f7e-3c1d2b4a5e61"
+	one := func(p automationstep.Payload) *automationstep.Path {
+		path := automationstep.Root(automationstep.Step{ID: id, Payload: p})
+		return &path
+	}
+	// Each refusal names the Step by its id and kind (ADR 0122).
+	for name, c := range map[string]struct {
+		refused *automationstep.Path
+		names   string
+	}{
+		"no kind":             {refused: &automationstep.Path{Steps: []automationstep.Step{{}}}},
+		"negative wait":       {one(automationstep.Wait{Seconds: -1}), "step " + id + " (wait)"},
+		"apply_tag blank tag": {one(automationstep.ApplyTag{Tag: "  "}), "step " + id + " (apply_tag)"},
+		"remove_tag no tag":   {one(automationstep.RemoveTag{}), "step " + id + " (remove_tag)"},
+		"empty telegram":      {one(automationstep.Telegram{}), "step " + id + " (telegram)"},
+		"malformed id": {
+			&automationstep.Path{Steps: []automationstep.Step{{ID: "step-1", Payload: automationstep.Wait{}}}},
+			`step "step-1" (wait)`,
+		},
+		"duplicate id": {
+			&automationstep.Path{Steps: []automationstep.Step{{ID: id, Payload: automationstep.Wait{}}, {ID: id, Payload: automationstep.ApplyTag{Tag: "vip"}}}},
+			"step " + id + " (apply_tag)",
+		},
 	} {
-		_, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{Name: "x", TriggerEvent: "y", Steps: refused})
+		_, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{Name: "x", TriggerEvent: "y", Steps: c.refused})
 		require.ErrorIs(t, err, automations.ErrInvalidStep, name)
+		assert.ErrorContains(t, err, c.names, name)
 
-		_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID), Steps: refused})
+		_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID), Steps: c.refused})
 		require.ErrorIs(t, err, automations.ErrInvalidStep, "update: "+name)
 	}
 

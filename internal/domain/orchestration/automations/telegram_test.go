@@ -103,13 +103,15 @@ func TestPublishIsRefusedForACaptionOverTheLimitAsWritten(t *testing.T) {
 	m := testhelper.Module[*automations.Module](env)
 	step := telegramVia(nil, strings.Repeat("a", 1025))
 	step.ImageURL = "https://cdn.example.com/a.png"
-	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID), Steps: steps(step)})
+	caption := automationstep.Root(automationstep.Step{ID: "5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1b03", Payload: step})
+	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID), Steps: &caption})
 	require.NoError(t, err, "saving warns, it does not refuse")
 
 	_, err = m.Publish(t.Context(), s, fixtures.AutomationHoldDemoID, testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID))
 
 	require.ErrorIs(t, err, automations.ErrInvalidStep)
 	assert.Contains(t, err.Error(), "1025")
+	assert.Contains(t, err.Error(), "step 5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1b03 (telegram)", "the refusal names the Step by its id and kind")
 }
 
 func TestATelegramStepRefusesABadImageAndBadButtons(t *testing.T) {
