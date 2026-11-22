@@ -11,7 +11,7 @@ import type { StaffSignupItemResource } from '../generated/staff/types.gen.ts'
 
 // The answers a sign-up form sends for the Sign-up items it showed (ADR 0062): each item at the
 // version shown, a box ticked only when the person ticked it, a notice only named. Undefined with
-// no items, so the form sends what it sent before items existed.
+// no items: the form then sends none.
 export function signupItemAnswers(
   items: readonly SiteSignupItem[],
   ticked: Readonly<Record<string, boolean>>,

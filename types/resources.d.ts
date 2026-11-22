@@ -272,7 +272,6 @@ export default interface Resources {
       "integrationCreate": "Created an integration",
       "integrationDelete": "Deleted an integration",
       "integrationDiscard": "Deleted an integration",
-      "integrationRestore": "Restored an integration",
       "integrationUpdate": "Changed an integration",
       "invitationAccept": "Accepted an invitation",
       "invitationCreate": "Invited a person",

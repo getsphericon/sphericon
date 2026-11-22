@@ -2304,7 +2304,7 @@ const (
 	// IntegrationAcmeSesImpliedIngestKey is from fixtures/integrations.
 	IntegrationAcmeSesImpliedIngestKey = "omik_test_integrationacmesesimplied"
 	// IntegrationAcmeSesImpliedName is from fixtures/integrations.
-	IntegrationAcmeSesImpliedName = "Amazon SES (made before Presets, names none)"
+	IntegrationAcmeSesImpliedName = "Amazon SES (names no Preset)"
 	// IntegrationAcmeSesImpliedProvider is from fixtures/integrations.
 	IntegrationAcmeSesImpliedProvider = "ses"
 	// IntegrationAcmeSesIngestKey is from fixtures/integrations.
