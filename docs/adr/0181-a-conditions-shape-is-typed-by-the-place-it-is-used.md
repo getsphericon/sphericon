@@ -11,8 +11,6 @@ build: [1674, 1675, 1676, 1677, 1678, 1679]
 > messages is refused) and [[0136-a-wait-for-event-keeps-the-event-that-ended-it-for-later-steps]]
 > (`awaited:<name>.<key>`) and [[0161-an-http-steps-json-response-is-kept-for-later-steps]]
 > (`http:<name>.<key>`), on top of [[0180-a-property-test-runs-in-postgres-as-one-sql-json-path]].
-> It also makes an exception to [[0033-upgrades-add-within-a-major-and-never-stop-a-running-instance]]
-> (a release inside a Major runs on the schema of any other release of it): see Consequences.
 
 ## Context
 
@@ -64,8 +62,9 @@ to parse.
   count of `email.opened`, `email.clicked`, `sms.clicked` or `telegram.clicked` (with or without a
   filter, ADR 0123) or the test of an Enrollment's own message (ADR 0122). One function says so, and
   both the Publish check of a Branch's unknown path (ADR 0124) and the editor use it.
-- **Stored Conditions are rewritten** to the new shape by one migration; no reader of the old shape
-  is kept.
+- **No stored Condition is carried over**: no migration rewrites one and no reader of the old shape
+  is kept. The project has no installed Instance, so the migration history is collapsed (ADR 0047)
+  and every database starts again with the typed tree.
 
 ## Consequences
 
@@ -74,23 +73,11 @@ to parse.
   ogen and the TS generator, before the trees are moved onto it.
 - The runtime refusals of a misplaced leaf are deleted, and their tests become tests that the
   schema refuses the leaf.
-- The migration that rewrites the stored Conditions starts a Major. A release before it cannot read
-  the typed tree, and no reader of the old shape is kept, so the migration adds the next Major and
-  its floor (ADR 0033), and a release older than the floor refuses to start on the rewritten data.
-  The floor does not protect against the move: it is the last release before it, which ADR 0033
-  lets start on the next Major, and a release already running is not checked at all. The release
-  before the move misreads the new shape silently: it reads a rewritten
-  Condition as the empty group, which matches every Contact, so a Segment's preview counts
-  everyone, a Broadcast due in that window goes to every Contact and every Rule fires on every
-  Event of its Trigger. A Condition that release saves after the migration is in the old shape, its
-  entries under `rules`: the database refuses it, since a CHECK on each Condition column requires
-  the group's `entries` as a list (added after the rewrite), so the save fails instead of storing a
-  tree the new release, which refuses a group without `entries` too, would read as matching every
-  Contact. The reads still misread, so the Upgrade stops the old release before the migration runs and
-  does not start it again: the new release is the first to serve on the rewritten data. The pull
-  request that lands the move is a breaking change whose `Upgrade:` line says so. Here the promise
-  that a running Instance is never stopped does not hold; keeping it would need the release
-  before the move to read the typed shape, the compatibility reader this ADR rules out.
+- There is no migration of stored Conditions: the history collapse resets every database, which
+  starts with the typed tree, and the guard of ADR 0033 refuses a database from before it instead
+  of reading its Conditions. A CHECK on each Condition column requires the group's `entries` as a
+  list, as the decoder does, so a tree without them is refused at the save, never stored to read as
+  the empty group that matches every Contact.
 
 ## Considered options
 

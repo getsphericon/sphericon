@@ -667,7 +667,7 @@ func (c *ConverterImpl) ContactToExport(source *ent.Contact) external.ContactExp
 		externalapiContactExportContact.City = optNilString((*source).City)
 		externalapiContactExportContact.Avatar = optNilString((*source).Avatar)
 		externalapiContactExportContact.CustomFields = jsonObject((*source).CustomFields)
-		externalapiContactExportContact.Source = optNilContactSource(c, (*source).Source)
+		externalapiContactExportContact.Source = c.ContactExportSourceToResource((*source).Source)
 		externalapiContactExportContact.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiContactExportContact.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
@@ -1318,78 +1318,110 @@ func (c *ConverterImpl) RuleStatusToResource(source rule.Status) external.RuleSt
 	}
 	return externalapiRuleStatus
 }
-func (c *ConverterImpl) RuleToResource(source *ent.Rule) external.RuleResource {
+func (c *ConverterImpl) RuleToResource(source *ent.Rule) (external.RuleResource, error) {
 	var externalapiRuleResource external.RuleResource
 	if source != nil {
 		externalapiRuleResource.ID = external.EntityId((*source).ID)
 		externalapiRuleResource.Name = (*source).Name
 		externalapiRuleResource.Status = c.RuleStatusToResource((*source).Status)
-		externalapiRuleResource.Live = ruleVersionOrNull(c, (*source).Edges.LiveVersion)
-		externalapiRuleResource.Draft = ruleVersionOrNull(c, (*source).Edges.DraftVersion)
+		externalapiNilRuleVersion, err := ruleVersionOrNull(c, (*source).Edges.LiveVersion)
+		if err != nil {
+			return externalapiRuleResource, err
+		}
+		externalapiRuleResource.Live = externalapiNilRuleVersion
+		externalapiNilRuleVersion2, err := ruleVersionOrNull(c, (*source).Edges.DraftVersion)
+		if err != nil {
+			return externalapiRuleResource, err
+		}
+		externalapiRuleResource.Draft = externalapiNilRuleVersion2
 		externalapiRuleResource.ActivatedAt = optNilTimestamp((*source).ActivatedAt)
 		externalapiRuleResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
 		externalapiRuleResource.Revision = revision((*source).Revision)
 		externalapiRuleResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiRuleResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
-	return externalapiRuleResource
+	return externalapiRuleResource, nil
 }
-func (c *ConverterImpl) RuleVersionToResource(source *ent.RuleVersion) external.RuleVersion {
+func (c *ConverterImpl) RuleVersionToResource(source *ent.RuleVersion) (external.RuleVersion, error) {
 	var externalapiRuleVersion external.RuleVersion
 	if source != nil {
 		externalapiRuleVersion.Number = count((*source).Version)
 		externalapiRuleVersion.TriggerEvents = ruleTriggerEvents(source)
-		externalapiRuleVersion.Condition = ruleCondition((*source).Condition)
+		externalapiRuleCondition, err := ruleCondition((*source).Condition)
+		if err != nil {
+			return externalapiRuleVersion, err
+		}
+		externalapiRuleVersion.Condition = externalapiRuleCondition
 		externalapiRuleVersion.Actions = ruleActions(c, (*source).Actions)
 	}
-	return externalapiRuleVersion
+	return externalapiRuleVersion, nil
 }
-func (c *ConverterImpl) RulesListPage(source pagination.Page[*ent.Rule]) *external.RulesListOK {
+func (c *ConverterImpl) RulesListPage(source pagination.Page[*ent.Rule]) (*external.RulesListOK, error) {
 	var externalapiRulesListOK external.RulesListOK
-	externalapiRulesListOK.Items = c.RulesToResources(source.Items)
+	externalapiRuleResourceList, err := c.RulesToResources(source.Items)
+	if err != nil {
+		return nil, err
+	}
+	externalapiRulesListOK.Items = externalapiRuleResourceList
 	externalapiRulesListOK.Page = count(source.Page)
 	externalapiRulesListOK.PageSize = count(source.PageSize)
 	externalapiRulesListOK.TotalItems = count(source.TotalItems)
 	externalapiRulesListOK.TotalPages = count(source.TotalPages)
-	return &externalapiRulesListOK
+	return &externalapiRulesListOK, nil
 }
-func (c *ConverterImpl) RulesToResources(source []*ent.Rule) []external.RuleResource {
+func (c *ConverterImpl) RulesToResources(source []*ent.Rule) ([]external.RuleResource, error) {
 	var externalapiRuleResourceList []external.RuleResource
 	externalapiRuleResourceList = make([]external.RuleResource, len(source))
 	for i := 0; i < len(source); i++ {
-		externalapiRuleResourceList[i] = c.RuleToResource(source[i])
+		externalapiRuleResource, err := c.RuleToResource(source[i])
+		if err != nil {
+			return nil, err
+		}
+		externalapiRuleResourceList[i] = externalapiRuleResource
 	}
-	return externalapiRuleResourceList
+	return externalapiRuleResourceList, nil
 }
-func (c *ConverterImpl) SegmentToResource(source *ent.Segment) external.SegmentResource {
+func (c *ConverterImpl) SegmentToResource(source *ent.Segment) (external.SegmentResource, error) {
 	var externalapiSegmentResource external.SegmentResource
 	if source != nil {
 		externalapiSegmentResource.ID = external.EntityId((*source).ID)
 		externalapiSegmentResource.Name = (*source).Name
-		externalapiSegmentResource.Condition = segmentCondition((*source).Condition)
+		externalapiSegmentCondition, err := segmentCondition((*source).Condition)
+		if err != nil {
+			return externalapiSegmentResource, err
+		}
+		externalapiSegmentResource.Condition = externalapiSegmentCondition
 		externalapiSegmentResource.ArchivedAt = optNilTimestamp((*source).ArchivedAt)
 		externalapiSegmentResource.Revision = revision((*source).Revision)
 		externalapiSegmentResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiSegmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
-	return externalapiSegmentResource
+	return externalapiSegmentResource, nil
 }
-func (c *ConverterImpl) SegmentsListPage(source pagination.Page[*ent.Segment]) *external.SegmentsListOK {
+func (c *ConverterImpl) SegmentsListPage(source pagination.Page[*ent.Segment]) (*external.SegmentsListOK, error) {
 	var externalapiSegmentsListOK external.SegmentsListOK
-	externalapiSegmentsListOK.Items = c.SegmentsToResources(source.Items)
+	externalapiSegmentResourceList, err := c.SegmentsToResources(source.Items)
+	if err != nil {
+		return nil, err
+	}
+	externalapiSegmentsListOK.Items = externalapiSegmentResourceList
 	externalapiSegmentsListOK.Page = count(source.Page)
 	externalapiSegmentsListOK.PageSize = count(source.PageSize)
 	externalapiSegmentsListOK.TotalItems = count(source.TotalItems)
 	externalapiSegmentsListOK.TotalPages = count(source.TotalPages)
-	return &externalapiSegmentsListOK
+	return &externalapiSegmentsListOK, nil
 }
-func (c *ConverterImpl) SegmentsToResources(source []*ent.Segment) []external.SegmentResource {
+func (c *ConverterImpl) SegmentsToResources(source []*ent.Segment) ([]external.SegmentResource, error) {
 	var externalapiSegmentResourceList []external.SegmentResource
 	externalapiSegmentResourceList = make([]external.SegmentResource, len(source))
 	for i := 0; i < len(source); i++ {
-		externalapiSegmentResourceList[i] = c.SegmentToResource(source[i])
+		externalapiSegmentResource, err := c.SegmentToResource(source[i])
+		if err != nil {
+			return nil, err
+		}
+		externalapiSegmentResourceList[i] = externalapiSegmentResource
 	}
-	return externalapiSegmentResourceList
+	return externalapiSegmentResourceList, nil
 }
 func (c *ConverterImpl) SendCapStatusToResource(source *providerlimit.SendCapStatus) external.OptNilSendCap {
 	return optNilSendCap(c, source)

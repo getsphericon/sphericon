@@ -3,7 +3,6 @@ package db
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -108,18 +107,6 @@ func boundLockWaits(src []byte) []byte {
 		}
 	}
 	return out.Bytes()
-}
-
-// lockBounded is a Go migration's transaction step with its lock waits bounded as a SQL
-// migration's are.
-func lockBounded(step func(context.Context, *sql.Tx) error) func(context.Context, *sql.Tx) error {
-	return func(ctx context.Context, tx *sql.Tx) error {
-		// raw sql: a session setting, which ent cannot express.
-		if _, err := tx.ExecContext(ctx, setLockTimeout); err != nil {
-			return err
-		}
-		return step(ctx, tx)
-	}
 }
 
 type memFile struct {

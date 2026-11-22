@@ -9,7 +9,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { RuleFiringResource, SiteRuleResource } from '../../generated/site/types.gen.ts'
 import { Route as rulesDetailRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/index.tsx'
-import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
+import { EMPTY_CONDITION, page, testId, TIMESTAMPS } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -23,7 +23,12 @@ const RULE: SiteRuleResource = {
   name: 'Tag signups',
   status: 'inactive',
   live: null,
-  draft: { number: 1, triggerEvents: ['signed_up'], actions: [{ type: 'apply_tag', tag: 'new' }] },
+  draft: {
+    number: 1,
+    condition: EMPTY_CONDITION,
+    triggerEvents: ['signed_up'],
+    actions: [{ type: 'apply_tag', tag: 'new' }],
+  },
   revision: 1,
   ...TIMESTAMPS,
 }
@@ -32,9 +37,15 @@ const RULE: SiteRuleResource = {
 const EDITED: SiteRuleResource = {
   ...RULE,
   status: 'active',
-  live: { number: 1, triggerEvents: ['signed_up'], actions: [{ type: 'apply_tag', tag: 'new' }] },
+  live: {
+    number: 1,
+    condition: EMPTY_CONDITION,
+    triggerEvents: ['signed_up'],
+    actions: [{ type: 'apply_tag', tag: 'new' }],
+  },
   draft: {
     number: 2,
+    condition: EMPTY_CONDITION,
     triggerEvents: ['signed_up'],
     actions: [{ type: 'apply_tag', tag: 'newer' }],
   },

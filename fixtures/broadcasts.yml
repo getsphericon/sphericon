@@ -3,6 +3,7 @@
 # in outbound_messages.yml (a broadcast's figures are derived from them); their sent_at values are spread across the last ~70
 # days so the analytics time series has bars in both the 30d and 90d windows.
 - id: 100 # fixture: BroadcastDraft
+  channel: email
   revision: 1
   name: Summer sale teaser
   subject: "A summer treat is coming \U0001F31E"
@@ -14,6 +15,7 @@
   created_at: '{{daysAgo 10}}'
   updated_at: '{{daysAgo 2}}'
 - id: 101 # fixture: BroadcastScheduled
+  channel: email
   revision: 1
   name: New SQL course launch
   subject: "The SQL course is live \U0001F680"
@@ -26,6 +28,7 @@
   created_at: '{{daysAgo 5}}'
   updated_at: '{{daysAgo 1}}'
 - id: 102 # fixture: BroadcastSending
+  channel: email
   revision: 1
   name: Weekly digest #24
   subject: Your weekly learning digest
@@ -37,6 +40,7 @@
   created_at: '{{daysAgo 1}}'
   updated_at: '{{hoursAgo 1}}'
 - id: 103 # fixture: BroadcastFailed
+  channel: email
   revision: 1
   name: Broken send (provider error)
   subject: Oops
@@ -52,6 +56,7 @@
 # Draft targeting segment 103 (matches no contact) — the empty-audience case:
 # sending it finalizes straight to "sent" with zero recipients.
 - id: 104 # fixture: BroadcastEmptyAudience
+  channel: email
   revision: 1
   name: Empty audience send
   subject: Nobody home
@@ -66,6 +71,7 @@
 # Draft targeting segment 100 ("plan = pro") — the rule-segment audience case:
 # only pro-plan contacts are recipients.
 - id: 105 # fixture: BroadcastProSegment
+  channel: email
   revision: 1
   name: Pro plan perks
   subject: Your pro perks
@@ -81,6 +87,7 @@
 # Drafts to the Contacts with no Telegram chat: a plain email, and one that invites them with a link
 # to start the Workspace's bot (the telegram_start_url tag).
 - id: 7410 # fixture: BroadcastWithoutTelegram
+  channel: email
   revision: 1
   name: News for email readers
   subject: News by email
@@ -93,6 +100,7 @@
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
 - id: 7411 # fixture: BroadcastTelegramInvite
+  channel: email
   revision: 1
   name: Join us on Telegram
   subject: Join us on Telegram
@@ -107,6 +115,7 @@
 
 # --- Sent campaigns (drive analytics) ---
 - id: 200 # fixture: BroadcastSent
+  channel: email
   revision: 1
   name: Python crash course is here
   subject: Python crash course is here
@@ -119,6 +128,7 @@
   created_at: '{{daysAgo 4}}'
   updated_at: '{{daysAgo 3}}'
 - id: 201 # fixture: BroadcastSentNineDaysAgo
+  channel: email
   revision: 1
   name: Top 5 SQL mistakes to avoid
   subject: Top 5 SQL mistakes to avoid
@@ -131,6 +141,7 @@
   created_at: '{{daysAgo 10}}'
   updated_at: '{{daysAgo 9}}'
 - id: 202
+  channel: email
   revision: 1
   name: Build your first API
   subject: Build your first API
@@ -143,6 +154,7 @@
   created_at: '{{daysAgo 17}}'
   updated_at: '{{daysAgo 16}}'
 - id: 203
+  channel: email
   revision: 1
   name: DevOps roadmap 2026
   subject: DevOps roadmap 2026
@@ -155,6 +167,7 @@
   created_at: '{{daysAgo 25}}'
   updated_at: '{{daysAgo 24}}'
 - id: 204
+  channel: email
   revision: 1
   name: Frontend layout masterclass
   subject: Frontend layout masterclass
@@ -167,6 +180,7 @@
   created_at: '{{daysAgo 41}}'
   updated_at: '{{daysAgo 40}}'
 - id: 205
+  channel: email
   revision: 1
   name: Career switch stories
   subject: Career switch stories
@@ -181,6 +195,7 @@
 # Written in the editor: the body is the renderer's output for doc, committed because fixtures load
 # without the save path; a golden test (internal/fixtures) asserts they agree.
 - id: 106 # fixture: BroadcastAuthored
+  channel: email
   revision: 1
   name: Product update announcement
   subject: What is new at CodeBasics
@@ -196,6 +211,7 @@
 # Archived (ADR 0100): a sent broadcast put aside. It has no recipients, so it adds
 # nothing to the analytics figures.
 - id: 107 # fixture: BroadcastArchived
+  channel: email
   revision: 1
   name: Old product tour
   subject: A tour of the product
@@ -212,6 +228,7 @@
 # Sent through an archived Integration (ADR 0049): its report keeps naming that Integration. It has
 # no recipients, so it adds nothing to the analytics figures.
 - id: 108 # fixture: BroadcastSentViaArchivedIntegration
+  channel: email
   revision: 1
   name: Spring digest
   subject: Your spring digest
@@ -228,6 +245,7 @@
 # Scheduled to its own Segment, with the Condition it copied from it then (ADR 0065); the Segment was
 # edited since, so the copy alone names the Tag renewal-due, which stays in use while this is armed.
 - id: 109 # fixture: BroadcastScheduledRenewal
+  channel: email
   revision: 1
   name: Renewal reminder
   subject: Your renewal is coming up
@@ -245,6 +263,7 @@
 # Scheduled from an address on its own Sending domain, so archiving that domain is refused while
 # this Broadcast is live.
 - id: 110 # fixture: BroadcastScheduledFromLaunchDomain
+  channel: email
   revision: 1
   name: Launch announcement
   subject: We are launching
@@ -260,6 +279,7 @@
 
 # A draft whose saved From domain lost its verification: still editable, its From marked "not verified".
 - id: 111 # fixture: BroadcastDraftFromLostDomain
+  channel: email
   revision: 1
   name: Lapsed domain draft
   subject: Still a draft
@@ -288,6 +308,7 @@
 # cancelled and no message. Its recipients are in broadcast_recipients.yml; it has no message, so the
 # analytics of Acme's sends do not count it.
 - id: 113 # fixture: BroadcastCancelled
+  channel: email
   revision: 1
   name: Spring promo (stopped)
   subject: Spring promo
@@ -341,6 +362,7 @@
 # three unengaged messages of the last 30 hours in outbound_messages.yml (107, 109, 110), which count
 # in the Integrations' usage and in every analytics window's cohort.
 - id: 7343 # fixture: BroadcastRecentSends
+  channel: email
   revision: 1
   name: This week's news
   subject: This week
@@ -355,6 +377,7 @@
 
 # --- Globex (workspace 2) foreign row — DO NOT change ---
 - id: 900 # fixture: BroadcastGlobex
+  channel: email
   revision: 1
   name: Globex only
   subject: Globex only
@@ -369,6 +392,7 @@
 # Globex's archived email Broadcast: the Broadcast of its one usage message (901 in
 # outbound_messages.yml), the marketing message in every analytics window's cohort.
 - id: 7344 # fixture: BroadcastGlobexRecentSends
+  channel: email
   revision: 1
   name: Globex news
   subject: Globex news
@@ -385,6 +409,7 @@
 # shows: the Broadcast a test's own Broadcast send in those Workspaces points at, since every
 # Broadcast message names its Broadcast (outboundmessages.BroadcastRef).
 - id: 7345 # fixture: BroadcastUmbrellaTestSends
+  channel: email
   revision: 1
   name: Umbrella test sends
   subject: News
@@ -397,6 +422,7 @@
   created_at: '{{daysAgo 400}}'
   updated_at: '{{daysAgo 400}}'
 - id: 7346 # fixture: BroadcastPinewoodTestSends
+  channel: email
   revision: 1
   name: Pinewood test sends
   subject: News
@@ -412,6 +438,7 @@
 # Hooli (workspace 5): a draft, the only row besides its owner, for a Test send that must leave the
 # Setup checklist's last step todo.
 - id: 910 # fixture: BroadcastHooli
+  channel: email
   revision: 1
   name: Hooli only
   subject: Hooli only
@@ -425,6 +452,7 @@
 
 # Initech (workspace 3).
 - id: 300 # fixture: BroadcastInitech
+  channel: email
   revision: 1
   name: Initech newsletter
   subject: Initech news
@@ -441,6 +469,7 @@
 # 301 still has ContactBystander pending after ContactErasable goes; 302 has only
 # ContactErasable pending, so erasing it settles the Broadcast.
 - id: 301 # fixture: BroadcastInitechSending
+  channel: email
   revision: 1
   name: Initech launch
   subject: Initech launch
@@ -452,6 +481,7 @@
   created_at: '2026-01-03 00:00:00'
   updated_at: '2026-01-03 00:00:00'
 - id: 302 # fixture: BroadcastInitechSendingSolo
+  channel: email
   revision: 1
   name: Initech reminder
   subject: Initech reminder
@@ -465,6 +495,7 @@
 
 # --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
 - id: 20001
+  channel: email
   revision: 1
   name: 'Welcome to Brightpath'
   subject: 'Welcome to Brightpath, here is where to start'
@@ -477,6 +508,7 @@
   created_at: '{{hoursAgo 1920}}'
   updated_at: '{{hoursAgo 1872}}'
 - id: 20002
+  channel: email
   revision: 1
   name: '5 study habits that stick'
   subject: '5 study habits that actually stick'
@@ -489,6 +521,7 @@
   created_at: '{{hoursAgo 1296}}'
   updated_at: '{{hoursAgo 1248}}'
 - id: 20003
+  channel: email
   revision: 1
   name: 'New course: SQL for analysts'
   subject: 'SQL for analysts is live'
@@ -501,6 +534,7 @@
   created_at: '{{hoursAgo 840}}'
   updated_at: '{{hoursAgo 792}}'
 - id: 20004
+  channel: email
   revision: 1
   name: 'Autumn learning digest #12'
   subject: 'Your autumn learning digest'
@@ -513,6 +547,7 @@
   created_at: '{{hoursAgo 504}}'
   updated_at: '{{hoursAgo 456}}'
 - id: 20005
+  channel: email
   revision: 1
   name: 'October progress report'
   subject: 'Your October progress report'
@@ -525,6 +560,7 @@
   created_at: '{{hoursAgo 264}}'
   updated_at: '{{hoursAgo 216}}'
 - id: 20006
+  channel: email
   revision: 1
   name: 'Intro to Data Science is live'
   subject: 'Intro to Data Science is live: 20% off this week'
@@ -537,6 +573,7 @@
   created_at: '{{hoursAgo 120}}'
   updated_at: '{{hoursAgo 72}}'
 - id: 20007
+  channel: email
   revision: 1
   name: 'Black Friday early access'
   subject: 'Early access starts Monday'
@@ -551,6 +588,7 @@
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 1}}'
 - id: 20008
+  channel: email
   revision: 1
   name: 'Pro plan: what you get'
   subject: 'Everything in Brightpath Pro'
@@ -566,6 +604,7 @@
 # Acme: a sent Broadcast whose one recipient (Alice) has not engaged yet, for the tracking
 # endpoint tests (open, click, unsubscribe), which record engagement on it.
 - id: 5700 # fixture: BroadcastSentUntracked
+  channel: email
   revision: 1
   name: Tracking sample
   subject: Tracking sample
@@ -581,6 +620,7 @@
 # Gotham (workspace 61): the Broadcast whose eight sends fall on the edges of the two daylight-saving
 # days of 2026 (recipients and their messages in broadcast_recipients.yml and outbound_messages.yml).
 - id: 20009 # fixture: BroadcastGothamDaylightSaving
+  channel: email
   revision: 1
   name: Daylight saving edges
   subject: Daylight saving edges
@@ -595,6 +635,7 @@
 
 # --- Brightpath (workspace 20): the demo's states beyond the first pass (ids 21001+) ---
 - id: 21001
+  channel: email
   revision: 1
   name: 'Spring launch (SES outage)'
   subject: 'Spring launch: three new courses'
@@ -611,6 +652,7 @@
 # Capton (workspace 63): two Broadcasts scheduled within the next day to the same three Contacts, with
 # the Condition they copied (ADR 0065). They draw from one Send cap bucket (#939).
 - id: 21100 # fixture: BroadcastCaptonSooner
+  channel: email
   revision: 1
   name: Capton morning sale
   subject: Morning sale
@@ -623,6 +665,7 @@
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
 - id: 21101 # fixture: BroadcastCaptonLater
+  channel: email
   revision: 1
   name: Capton evening sale
   subject: Evening sale
@@ -637,6 +680,7 @@
 # Sending to the same three Contacts, none sent yet, and held for a Workspace-level reason, which is
 # no item of Needs attention: it draws nothing from the Send cap bucket until a test lifts the hold.
 - id: 21102 # fixture: BroadcastCaptonSending
+  channel: email
   revision: 1
   name: Capton clearance
   subject: Clearance
@@ -654,6 +698,7 @@
 # held for a Workspace-level reason (the layout's), and the failed one is a failure, not a hold.
 # Scheduled and sending with no From and no Integration: they go through the default, from its From.
 - id: 7400 # fixture: BroadcastMeridianScheduled
+  channel: email
   revision: 1
   name: Meridian launch
   subject: Meridian launch
@@ -664,6 +709,7 @@
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 1}}'
 - id: 7401 # fixture: BroadcastMeridianSending
+  channel: email
   revision: 1
   name: Meridian digest
   subject: Meridian digest
@@ -674,6 +720,7 @@
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 1}}'
 - id: 7402 # fixture: BroadcastMeridianNamed
+  channel: email
   revision: 1
   name: Meridian relayed
   subject: Meridian relayed
@@ -686,6 +733,7 @@
   updated_at: '{{daysAgo 1}}'
 # From an address of its own: the scheduled one uses news.meridian.test, the failed one nothing.
 - id: 7403 # fixture: BroadcastMeridianFromNews
+  channel: email
   revision: 1
   name: Meridian newsletter
   subject: Meridian newsletter
@@ -699,6 +747,7 @@
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 1}}'
 - id: 7404 # fixture: BroadcastMeridianFailedFromMail
+  channel: email
   revision: 1
   name: Meridian failed send
   subject: Meridian failed send
@@ -713,6 +762,7 @@
   updated_at: '{{daysAgo 1}}'
 # No From of its own, through the Relay: it sends from the Relay's From.
 - id: 7405 # fixture: BroadcastMeridianViaRelay
+  channel: email
   revision: 1
   name: Meridian via relay
   subject: Meridian via relay
@@ -739,6 +789,7 @@
 # The Broadcasts of the revenue tenants: Bazaar's and Mercado's earned the Orders of orders.yml,
 # Emporium's and Souk's are what the clicks of events.yml carry.
 - id: 7200 # fixture: BroadcastBazaar
+  channel: email
   revision: 1
   name: Bazaar sale
   subject: Bazaar sale
@@ -751,6 +802,7 @@
   created_at: '{{daysAgo 7}}'
   updated_at: '{{daysAgo 6}}'
 - id: 7201 # fixture: BroadcastEmporium
+  channel: email
   revision: 1
   name: Emporium sale
   subject: Emporium sale
@@ -763,6 +815,7 @@
   created_at: '{{daysAgo 41}}'
   updated_at: '{{daysAgo 40}}'
 - id: 7202 # fixture: BroadcastMercado
+  channel: email
   revision: 1
   name: Mercado sale
   subject: Mercado sale
@@ -775,6 +828,7 @@
   created_at: '{{daysAgo 7}}'
   updated_at: '{{daysAgo 6}}'
 - id: 7203 # fixture: BroadcastSouk
+  channel: email
   revision: 1
   name: Souk sale
   subject: Souk sale

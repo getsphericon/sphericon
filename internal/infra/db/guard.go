@@ -30,13 +30,12 @@ type Major struct {
 // Majors lists every Major this binary knows, oldest first; the last is the Major of its own
 // schema. A destructive migration adds an entry here and writes the same pair to the state
 // row (a test compares the two). `sphericon upgrade` walks it: the last release of Major N is
-// the Floor of Major N+1.
+// the Floor of Major N+1. The first is where this binary's migrations begin: a database of an
+// older Major has no migration to it, and the guard refuses it.
 var Majors = []Major{
-	{Major: 1, Floor: "v0.0.0"},
-	// workspaces.ingest_key dropped: every Integration has its own hook key (ADR 0037).
-	{Major: 2, Floor: "v0.1.2"},
-	// Every stored Condition rewritten to the typed tree of its place (ADR 0181).
-	typedConditionsMajor,
+	// The migration history collapsed into one init (ADR 0047): no database of Majors 1 to 3 is
+	// migrated. The floor is the last release before the collapse.
+	{Major: 4, Floor: "v0.7.0"},
 }
 
 // SchemaState is the state row: the database's Major and the oldest release that still runs
@@ -46,12 +45,12 @@ type SchemaState struct {
 	Floor string
 }
 
-// initialState is what a database from before the row holds, in effect: Major 1, any release.
+// initialState is what a database without the row holds, in effect: Major 1, any release.
 var initialState = SchemaState{Major: 1, Floor: "v0.0.0"}
 
-// ReadState reads the state row. A database with no row yet (empty, or migrated before the row
-// existed) is Major 1. It only reads, so a client without the application's hooks (which act on
-// writes) reads it as the wiring's would.
+// ReadState reads the state row. A database with no row (empty, or made by a release before the
+// row existed) is Major 1. It only reads, so a client without the application's hooks (which act
+// on writes) reads it as the wiring's would.
 func ReadState(ctx context.Context, sqlDB *sql.DB) (SchemaState, error) {
 	state, _, err := readState(ctx, sqlDB)
 	return state, err
@@ -59,10 +58,9 @@ func ReadState(ctx context.Context, sqlDB *sql.DB) (SchemaState, error) {
 
 // readState is ReadState, and whether the database is empty: none of the app's tables exists yet,
 // so its migrations create it at the binary's own Major. A database without the state table is not
-// empty for that alone: the releases of Major 1 before the table (v0.1.x) left the app's tables
-// without it, and the migrations of this history that sort before 20261024175209_init, which creates
-// the table with the app's tables (the outbox's and river's), create none of them. The Workspace table, which every release's
-// schema has, tells the two apart.
+// empty for that alone: the releases before the table (v0.1.x) left the app's tables without it,
+// and river's migrations, which sort before the init that creates the table with the app's tables,
+// create none of them. The Workspace table, which every release's schema has, tells the two apart.
 func readState(ctx context.Context, sqlDB *sql.DB) (state SchemaState, empty bool, err error) {
 	client := ent.NewClient(ent.Driver(entsql.OpenDB(dialect.Postgres, sqlDB)))
 	row, err := client.SchemaState.Get(ctx, 1)
@@ -106,6 +104,8 @@ type Guard struct {
 }
 
 // Check reads the state row and refuses (with a *RefusalError) when the binary cannot run:
+//   - the database is of a Major older than the first of the table: no migration of this binary
+//     leads from it (the history before was collapsed, ADR 0047), so it needs a new database;
 //   - it is older than the floor (a rollback past a removal), whatever the Major;
 //   - the database is two or more Majors behind it (a skipped Major): install the last
 //     release of the database's Major first;
@@ -130,6 +130,12 @@ func (g Guard) Check(ctx context.Context, sqlDB *sql.DB) error {
 	who := fmt.Sprintf("sphericon %s (commit %s, built %s)", g.Build.Version, g.Build.Commit, g.Build.Date)
 	tail := " Upgrade guide: " + UpgradeGuideURL
 
+	if first := majors[0].Major; state.Major < first {
+		return &RefusalError{message: fmt.Sprintf(
+			"%s cannot run on this database: it is at Major %d, and this binary's migrations begin at Major %d, so no release upgrades it. "+
+				"Back it up and run on a new database (in development `mise run db:reset`).%s",
+			who, state.Major, first, tail)}
+	}
 	if semver.IsValid(g.Build.Version) && semver.IsValid(state.Floor) && semver.Compare(g.Build.Version, state.Floor) < 0 {
 		return &RefusalError{message: fmt.Sprintf(
 			"%s is older than the database allows: its schema is Major %d and needs %s or newer.%s",

@@ -10,8 +10,8 @@ import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import { ofItsKind } from './actions.ts'
 import type { RuleValues } from './RuleForm.tsx'
 
-// A Rule's Condition is optional on the wire; the editor always holds one, and the empty group
-// matches every Contact. A new Rule has no Actions yet.
+// A Rule version always holds its Condition; a new Rule starts with the empty group, which matches
+// every Contact, and no Actions yet.
 const blankRule: RuleValues = { name: '', triggerEvents: [], condition: emptyGroup, actions: [] }
 
 // The editor always sends the Rule's Condition and its Actions, each with its own kind's fields

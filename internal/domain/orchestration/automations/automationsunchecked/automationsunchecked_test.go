@@ -2,6 +2,7 @@ package automationsunchecked_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -35,8 +36,8 @@ func TestCancelPendingRemovesTheContactsQueuedCallsAndKeepsOthers(t *testing.T) 
 		env.EnqueueJob(t, automations.RunStepArgs{WorkspaceID: fixtures.InitechID, RunID: id})
 		env.EnqueueJob(t, automations.RunHTTPStepArgs{WorkspaceID: fixtures.InitechID, RunID: id})
 	}
-	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID, Action: "x"})
-	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactBystanderID, Action: "x"})
+	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID, Action: "x", OccurredAt: time.Now(), SourceID: "evt-1"})
+	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactBystanderID, Action: "x", OccurredAt: time.Now(), SourceID: "evt-2"})
 
 	require.NoError(t, cancelFor(t, env, fixtures.ContactErasableID))
 

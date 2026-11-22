@@ -1654,9 +1654,9 @@ export type ContactExportContact = {
    */
   customFields?: JsonObject | null;
   /**
-   * The door the contact came through; absent for a contact that predates the field
+   * The door the contact came through
    */
-  source?: ContactExportSource | null;
+  source: ContactExportSource;
   /**
    * Creation timestamp
    */
@@ -4633,9 +4633,9 @@ export type RuleVersion = {
    */
   triggerEvents: Array<string>;
   /**
-   * The Contact must match this condition for the Rule to fire; absent means every Contact
+   * The Contact must match this condition for the Rule to fire; an empty group matches every Contact
    */
-  condition?: RuleCondition;
+  condition: RuleCondition;
   /**
    * The Rule's ordered Actions
    */
@@ -4753,7 +4753,7 @@ export type SegmentResource = {
   /**
    * Segment condition: the tree of tests; an empty group matches all contacts
    */
-  condition?: SegmentCondition;
+  condition: SegmentCondition;
   /**
    * When the segment was archived; null while it is kept
    */

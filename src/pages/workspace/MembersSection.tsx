@@ -141,7 +141,7 @@ function MembersTabs({
             {
               accessor: 'source',
               title: t(($) => $.settings.members.sourceLabel),
-              render: ({ source }) => (source ? t(($) => $.settings.members.source[source]) : null),
+              render: ({ source }) => t(($) => $.settings.members.source[source]),
             },
             {
               accessor: 'actions',

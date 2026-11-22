@@ -5812,8 +5812,8 @@ type ContactExportContact struct {
 	Avatar OptNilString `json:"avatar"`
 	// Typed custom field values keyed by the field's machine key.
 	CustomFields OptNilJsonObject `json:"customFields"`
-	// The door the contact came through; absent for a contact that predates the field.
-	Source OptNilContactExportSource `json:"source"`
+	// The door the contact came through.
+	Source ContactExportSource `json:"source"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
 	// Last update timestamp.
@@ -5886,7 +5886,7 @@ func (s *ContactExportContact) GetCustomFields() OptNilJsonObject {
 }
 
 // GetSource returns the value of Source.
-func (s *ContactExportContact) GetSource() OptNilContactExportSource {
+func (s *ContactExportContact) GetSource() ContactExportSource {
 	return s.Source
 }
 
@@ -5966,7 +5966,7 @@ func (s *ContactExportContact) SetCustomFields(val OptNilJsonObject) {
 }
 
 // SetSource sets the value of Source.
-func (s *ContactExportContact) SetSource(val OptNilContactExportSource) {
+func (s *ContactExportContact) SetSource(val ContactExportSource) {
 	s.Source = val
 }
 
@@ -13409,74 +13409,6 @@ func (o OptName) Or(d Name) Name {
 	return d
 }
 
-// NewOptNilContactExportSource returns new OptNilContactExportSource with value set to v.
-func NewOptNilContactExportSource(v ContactExportSource) OptNilContactExportSource {
-	return OptNilContactExportSource{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilContactExportSource is optional nullable ContactExportSource.
-type OptNilContactExportSource struct {
-	Value ContactExportSource
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilContactExportSource was set.
-func (o OptNilContactExportSource) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilContactExportSource) Reset() {
-	var v ContactExportSource
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilContactExportSource) SetTo(v ContactExportSource) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilContactExportSource) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilContactExportSource) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v ContactExportSource
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilContactExportSource) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilContactExportSource) Get() (v ContactExportSource, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilContactExportSource) Or(d ContactExportSource) ContactExportSource {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
 // NewOptNilCountryCode returns new OptNilCountryCode with value set to v.
 func NewOptNilCountryCode(v CountryCode) OptNilCountryCode {
 	return OptNilCountryCode{
@@ -15163,52 +15095,6 @@ func (o OptProblemDetailsFields) Or(d ProblemDetailsFields) ProblemDetailsFields
 	return d
 }
 
-// NewOptRuleCondition returns new OptRuleCondition with value set to v.
-func NewOptRuleCondition(v RuleCondition) OptRuleCondition {
-	return OptRuleCondition{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptRuleCondition is optional RuleCondition.
-type OptRuleCondition struct {
-	Value RuleCondition
-	Set   bool
-}
-
-// IsSet returns true if OptRuleCondition was set.
-func (o OptRuleCondition) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptRuleCondition) Reset() {
-	var v RuleCondition
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptRuleCondition) SetTo(v RuleCondition) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptRuleCondition) Get() (v RuleCondition, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptRuleCondition) Or(d RuleCondition) RuleCondition {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
 // NewOptRuleConditionInput returns new OptRuleConditionInput with value set to v.
 func NewOptRuleConditionInput(v RuleConditionInput) OptRuleConditionInput {
 	return OptRuleConditionInput{
@@ -15249,52 +15135,6 @@ func (o OptRuleConditionInput) Get() (v RuleConditionInput, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptRuleConditionInput) Or(d RuleConditionInput) RuleConditionInput {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptSegmentCondition returns new OptSegmentCondition with value set to v.
-func NewOptSegmentCondition(v SegmentCondition) OptSegmentCondition {
-	return OptSegmentCondition{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSegmentCondition is optional SegmentCondition.
-type OptSegmentCondition struct {
-	Value SegmentCondition
-	Set   bool
-}
-
-// IsSet returns true if OptSegmentCondition was set.
-func (o OptSegmentCondition) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSegmentCondition) Reset() {
-	var v SegmentCondition
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSegmentCondition) SetTo(v SegmentCondition) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSegmentCondition) Get() (v SegmentCondition, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSegmentCondition) Or(d SegmentCondition) SegmentCondition {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -18871,8 +18711,8 @@ type RuleVersion struct {
 	Number int32 `json:"number"`
 	// The Event actions that make the Rule fire; any one of them does.
 	TriggerEvents []string `json:"triggerEvents"`
-	// The Contact must match this condition for the Rule to fire; absent means every Contact.
-	Condition OptRuleCondition `json:"condition"`
+	// The Contact must match this condition for the Rule to fire; an empty group matches every Contact.
+	Condition RuleCondition `json:"condition"`
 	// The Rule's ordered Actions.
 	Actions []RuleAction `json:"actions"`
 }
@@ -18888,7 +18728,7 @@ func (s *RuleVersion) GetTriggerEvents() []string {
 }
 
 // GetCondition returns the value of Condition.
-func (s *RuleVersion) GetCondition() OptRuleCondition {
+func (s *RuleVersion) GetCondition() RuleCondition {
 	return s.Condition
 }
 
@@ -18908,7 +18748,7 @@ func (s *RuleVersion) SetTriggerEvents(val []string) {
 }
 
 // SetCondition sets the value of Condition.
-func (s *RuleVersion) SetCondition(val OptRuleCondition) {
+func (s *RuleVersion) SetCondition(val RuleCondition) {
 	s.Condition = val
 }
 
@@ -19698,7 +19538,7 @@ type SegmentResource struct {
 	// Segment name.
 	Name string `json:"name"`
 	// Segment condition: the tree of tests; an empty group matches all contacts.
-	Condition OptSegmentCondition `json:"condition"`
+	Condition SegmentCondition `json:"condition"`
 	// When the segment was archived; null while it is kept.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// The revision of the state this answer shows (ADR 0119): an update names it.
@@ -19720,7 +19560,7 @@ func (s *SegmentResource) GetName() string {
 }
 
 // GetCondition returns the value of Condition.
-func (s *SegmentResource) GetCondition() OptSegmentCondition {
+func (s *SegmentResource) GetCondition() SegmentCondition {
 	return s.Condition
 }
 
@@ -19755,7 +19595,7 @@ func (s *SegmentResource) SetName(val string) {
 }
 
 // SetCondition sets the value of Condition.
-func (s *SegmentResource) SetCondition(val OptSegmentCondition) {
+func (s *SegmentResource) SetCondition(val SegmentCondition) {
 	s.Condition = val
 }
 

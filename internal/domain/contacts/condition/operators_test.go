@@ -166,16 +166,16 @@ func TestCompileRefusesMalformedEntries(t *testing.T) {
 	require.ErrorContains(t, nested, "entry 0: entry 0: tag name is required", "an error deep in a nested group names its path")
 }
 
-// A group without its entries (the tree before ADR 0181 kept them under `rules`) is refused at any
-// depth, never read as the empty group that matches every Contact.
+// A group without its entries is refused at any depth, never read as the empty group that matches
+// every Contact.
 func TestCompileRefusesAGroupWithoutEntries(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	ws := env.DB.Scoped(fixtures.AcmeID)
 	var root conditiontree.Segment
-	require.NoError(t, json.Unmarshal([]byte(`{"kind":"group","combinator":"and","rules":[]}`), &root))
+	require.NoError(t, json.Unmarshal([]byte(`{"kind":"group","combinator":"and"}`), &root))
 	nestedGroup := conditiontree.Group{Kind: conditiontree.KindGroup, Combinator: conditiontree.And, Entries: []json.RawMessage{
-		json.RawMessage(`{"kind":"group","combinator":"or","rules":[{"kind":"rule","field":"email","operator":"eq","value":"x"}]}`),
+		json.RawMessage(`{"kind":"group","combinator":"or","entries":null}`),
 	}}
 
 	_, atTheRoot := condition.New(time.Now).Compile(ctx, ws, root)

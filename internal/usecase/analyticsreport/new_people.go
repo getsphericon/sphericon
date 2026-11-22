@@ -18,10 +18,9 @@ type NewPeople struct {
 }
 
 // NewPeoplePoint is one Report day of the New people report, zero-filled across the window.
-// Unknown counts the Contacts that predate the Contact source.
 type NewPeoplePoint struct {
-	Date                          string
-	Manual, API, Tracker, Unknown int
+	Date                 string
+	Manual, API, Tracker int
 }
 
 // NewPeople reports the Contacts of the Workspace behind s created in the window.
@@ -31,9 +30,9 @@ func (m *UseCase) NewPeople(ctx context.Context, s *ent.Scoped, w Window) (*NewP
 		return nil, err
 	}
 	var rows []struct {
-		Day    string          `sql:"day"`
-		Source *contact.Source `sql:"source"`
-		Count  int             `sql:"count"`
+		Day    string         `sql:"day"`
+		Source contact.Source `sql:"source"`
+		Count  int            `sql:"count"`
 	}
 	err = s.Contact().Query().
 		Where(contact.CreatedAtGTE(days.Since), contact.CreatedAtLT(days.Until)).
@@ -50,14 +49,12 @@ func (m *UseCase) NewPeople(ctx context.Context, s *ent.Scoped, w Window) (*NewP
 	report := &NewPeople{}
 	for _, r := range rows {
 		p := byDay[r.Day]
-		switch {
-		case r.Source == nil:
-			p.Unknown += r.Count
-		case *r.Source == contact.SourceManual:
+		switch r.Source {
+		case contact.SourceManual:
 			p.Manual += r.Count
-		case *r.Source == contact.SourceAPI:
+		case contact.SourceAPI:
 			p.API += r.Count
-		case *r.Source == contact.SourceTracker:
+		case contact.SourceTracker:
 			p.Tracker += r.Count
 		}
 		byDay[r.Day] = p

@@ -3,6 +3,7 @@ package automations_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -52,33 +53,16 @@ func TestAnEventOverTheBoundGivesNoPropertiesToCopy(t *testing.T) {
 	assert.Nil(t, runs[0].EventProperties)
 }
 
-// A trigger job of a release before #752 names no stored Event: the Enrollment keeps the action and
-// no properties.
-func TestATriggerWithoutASourceIDGivesNoProperties(t *testing.T) {
+// An Event that does not say when it occurred is refused: the Enrollment it would make would not
+// know when it began.
+func TestAnEventWithoutItsTimeIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	ev := eventOf(t, env, fixtures.EventPaymentFailedID)
-	ev.SourceID = ""
+	ev.OccurredAt = time.Time{}
 	in := automations.OnEventInput{ContactID: fixtures.ContactPaymentFailedID, Event: ev}
 
-	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(context.Background(), env.DB.Scoped(fixtures.AcmeID), in))
+	err := testhelper.Module[*automations.StepExecution](env).OnEvent(context.Background(), env.DB.Scoped(fixtures.AcmeID), in)
 
-	runs := runsOf(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID)
-	require.Len(t, runs, 1)
-	assert.Equal(t, new(fixtures.EventPaymentFailedAction), runs[0].EventAction)
-	assert.Nil(t, runs[0].EventProperties)
-}
-
-// An Enrollment no Event began (a Rule's whose Event is no longer stored) keeps no copy: its
-// `event` is empty.
-func TestAnEnrollmentNoEventBeganKeepsNoCopy(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-
-	_, err := enrollNow(t, env, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID)
-	require.NoError(t, err)
-	run, err := env.DB.AutomationRun.Get(ctx, runOf(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID))
-	require.NoError(t, err)
-
-	assert.Nil(t, run.EventAction)
-	assert.Nil(t, run.EventProperties)
+	require.Error(t, err)
+	assert.Empty(t, runsOf(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID))
 }

@@ -16,7 +16,7 @@ import { zUpdateRuleInput } from '../../generated/site/zod.gen.ts'
 import { resourceEditorAdapter, withRevision } from '../../resources/resourceEditor.ts'
 import { editorSessionRaces } from '../../test/editorSessionRaces.ts'
 import type { RaceRig } from '../../test/editorSessionRaces.ts'
-import { TIMESTAMPS, testId } from '../../test/payloads.ts'
+import { EMPTY_CONDITION, testId, TIMESTAMPS } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { requestGate } from '../../test/requestGate.ts'
 import { worker } from '../../test/worker.ts'
@@ -40,9 +40,15 @@ const RESOURCE: SiteRuleResource = {
   id: testId(7),
   name: 'Tag signups',
   status: 'active',
-  live: { number: 1, triggerEvents: ['signed_up'], actions: [{ type: 'apply_tag', tag: 'live' }] },
+  live: {
+    number: 1,
+    condition: EMPTY_CONDITION,
+    triggerEvents: ['signed_up'],
+    actions: [{ type: 'apply_tag', tag: 'live' }],
+  },
   draft: {
     number: 2,
+    condition: EMPTY_CONDITION,
     triggerEvents: ['signed_up'],
     actions: [{ type: 'apply_tag', tag: 'drafted' }],
   },
@@ -130,6 +136,7 @@ function serve({ refuse }: { refuse: boolean }) {
         name: (name ?? server.name).trim(),
         draft: {
           number: server.draft?.number ?? 2,
+          condition: definition.condition ?? EMPTY_CONDITION,
           triggerEvents: definition.triggerEvents ?? [],
           actions: definition.actions ?? [],
         },

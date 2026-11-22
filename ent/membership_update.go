@@ -95,12 +95,6 @@ func (_u *MembershipUpdate) SetNillableSource(v *membership.Source) *MembershipU
 	return _u
 }
 
-// ClearSource clears the value of the "source" field.
-func (_u *MembershipUpdate) ClearSource() *MembershipUpdate {
-	_u.mutation.ClearSource()
-	return _u
-}
-
 // SetSecondFactorRemindedAt sets the "second_factor_reminded_at" field.
 func (_u *MembershipUpdate) SetSecondFactorRemindedAt(v time.Time) *MembershipUpdate {
 	_u.mutation.SetSecondFactorRemindedAt(v)
@@ -303,9 +297,6 @@ func (_u *MembershipUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if value, ok := _u.mutation.Source(); ok {
 		_spec.SetField(membership.FieldSource, field.TypeEnum, value)
-	}
-	if _u.mutation.SourceCleared() {
-		_spec.ClearField(membership.FieldSource, field.TypeEnum)
 	}
 	if value, ok := _u.mutation.SecondFactorRemindedAt(); ok {
 		_spec.SetField(membership.FieldSecondFactorRemindedAt, field.TypeTime, value)
@@ -545,12 +536,6 @@ func (_u *MembershipUpdateOne) SetNillableSource(v *membership.Source) *Membersh
 	return _u
 }
 
-// ClearSource clears the value of the "source" field.
-func (_u *MembershipUpdateOne) ClearSource() *MembershipUpdateOne {
-	_u.mutation.ClearSource()
-	return _u
-}
-
 // SetSecondFactorRemindedAt sets the "second_factor_reminded_at" field.
 func (_u *MembershipUpdateOne) SetSecondFactorRemindedAt(v time.Time) *MembershipUpdateOne {
 	_u.mutation.SetSecondFactorRemindedAt(v)
@@ -783,9 +768,6 @@ func (_u *MembershipUpdateOne) sqlSave(ctx context.Context) (_node *Membership, 
 	}
 	if value, ok := _u.mutation.Source(); ok {
 		_spec.SetField(membership.FieldSource, field.TypeEnum, value)
-	}
-	if _u.mutation.SourceCleared() {
-		_spec.ClearField(membership.FieldSource, field.TypeEnum)
 	}
 	if value, ok := _u.mutation.SecondFactorRemindedAt(); ok {
 		_spec.SetField(membership.FieldSecondFactorRemindedAt, field.TypeTime, value)

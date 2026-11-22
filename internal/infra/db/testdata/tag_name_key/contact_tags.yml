@@ -1,6 +1,0 @@
-- { contact_id: 1, tag_id: 2, workspace_id: 1 }
-- { contact_id: 1, tag_id: 3, workspace_id: 1 }
-- { contact_id: 1, tag_id: 4, workspace_id: 1 }
-- { contact_id: 1, tag_id: 6, workspace_id: 1 }
-- { contact_id: 2, tag_id: 3, workspace_id: 1 }
-- { contact_id: 3, tag_id: 7, workspace_id: 2 }

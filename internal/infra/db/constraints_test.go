@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/db"
@@ -104,7 +105,7 @@ func TestWriteReturnsAnyOtherViolationUnchanged(t *testing.T) {
 		}},
 		"a check violation": {tags, pgerrcode.CheckViolation, func(tx *ent.Client) error {
 			// test writes: a Contact whose address the lowercase CHECK refuses.
-			return tx.Contact.Create().SetWorkspaceID(fixtures.AcmeID).SetEmail("Upper@Example.com").Exec(t.Context())
+			return tx.Contact.Create().SetSource(contact.SourceManual).SetWorkspaceID(fixtures.AcmeID).SetEmail("Upper@Example.com").Exec(t.Context())
 		}},
 	}
 	for name, c := range cases {

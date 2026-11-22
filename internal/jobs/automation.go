@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/riverqueue/river"
@@ -23,13 +24,12 @@ type EvaluateTriggerArgs struct {
 	// SourceAutomationID is the Automation whose email the Event came from, 0 for any other Event.
 	SourceAutomationID int64 `json:"source_automation_id,omitempty"`
 	// OccurredAt is when the Event happened: it ends only the Enrollments that began by then, and
-	// an Enrollment it makes begins then. Zero in a job of a release before #751 (automations.StepExecution.OnEvent).
+	// an Enrollment it makes begins then. Required.
 	OccurredAt time.Time `json:"occurred_at"`
 	// SourceID is the id the Event's row is stored under (events.Envelope.SourceID): an Enrollment
 	// the job makes copies that row's properties (#752). The properties themselves stay on the row,
-	// which Erasure removes, and never ride in the job. Empty in a job of a release before #752: no
-	// properties.
-	SourceID string `json:"source_id,omitempty"`
+	// which Erasure removes, and never ride in the job. Required.
+	SourceID string `json:"source_id"`
 }
 
 func (EvaluateTriggerArgs) Kind() string { return jobkind.EvaluateTrigger.Kind }
@@ -52,7 +52,14 @@ func NewEvaluateTriggerWorker(client *ent.Client, steps *automations.StepExecuti
 	return &EvaluateTriggerWorker{ent: client, steps: steps}
 }
 
+// errTriggerWithoutEvent fails a trigger evaluation that does not name its Event: when it occurred
+// and the id its row is stored under, which every job carries.
+var errTriggerWithoutEvent = errors.New("the trigger evaluation names no Event: occurred_at and source_id are required")
+
 func (w *EvaluateTriggerWorker) Work(ctx context.Context, job *river.Job[EvaluateTriggerArgs]) error {
+	if job.Args.OccurredAt.IsZero() || job.Args.SourceID == "" {
+		return errTriggerWithoutEvent
+	}
 	// Job entry point (ADR 0017): the scope is built from the loaded contact's
 	// Workspace, not from the job argument.
 	// Only its Workspace is read: the module reads the Contact again in its own scope.

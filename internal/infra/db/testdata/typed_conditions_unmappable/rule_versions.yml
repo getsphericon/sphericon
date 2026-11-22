@@ -1,9 +1,0 @@
-# A Rule version of another Workspace that asks a Custom field for an operator its value cannot take.
-- id: 5
-  rule_id: 1
-  version: 1
-  condition: '{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"has","value":"pro"}]}'
-  actions: '[]'
-  workspace_id: 2
-  created_at: '2026-01-01 00:00:00'
-  updated_at: '2026-01-01 00:00:00'

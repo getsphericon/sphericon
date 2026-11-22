@@ -50,7 +50,7 @@ type Contact struct {
 	// Avatar holds the value of the "avatar" field.
 	Avatar *string `json:"avatar,omitempty"`
 	// Source holds the value of the "source" field.
-	Source *contact.Source `json:"source,omitempty"`
+	Source contact.Source `json:"source,omitempty"`
 	// CustomFields holds the value of the "custom_fields" field.
 	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -295,8 +295,7 @@ func (_m *Contact) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field source", values[i])
 			} else if value.Valid {
-				_m.Source = new(contact.Source)
-				*_m.Source = contact.Source(value.String)
+				_m.Source = contact.Source(value.String)
 			}
 		case contact.FieldCustomFields:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -449,10 +448,8 @@ func (_m *Contact) String() string {
 		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")
-	if v := _m.Source; v != nil {
-		builder.WriteString("source=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
+	builder.WriteString("source=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Source))
 	builder.WriteString(", ")
 	builder.WriteString("custom_fields=")
 	builder.WriteString(fmt.Sprintf("%v", _m.CustomFields))

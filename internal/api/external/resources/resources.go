@@ -100,7 +100,6 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend revision
 // goverter:extend optNilString
 // goverter:extend optNilSendCap
-// goverter:extend optNilContactSource
 // goverter:extend optNilOptOutVia
 // goverter:extend optNilSmsConfirmation
 // goverter:extend optNilSmsOptOut
@@ -199,9 +198,9 @@ type Converter interface {
 	ApiTokenToInfo(source *ent.ApiToken) externalapi.ApiTokenInfo
 	// goverter:useEmptyOnNil:slice
 	ApiTokensToInfos(source []*ent.ApiToken) []externalapi.ApiTokenInfo
-	SegmentToResource(source *ent.Segment) externalapi.SegmentResource
+	SegmentToResource(source *ent.Segment) (externalapi.SegmentResource, error)
 	// goverter:useEmptyOnNil:slice
-	SegmentsToResources(source []*ent.Segment) []externalapi.SegmentResource
+	SegmentsToResources(source []*ent.Segment) ([]externalapi.SegmentResource, error)
 	EmailTemplateToResource(source *ent.EmailTemplate) externalapi.TemplateResource
 	// goverter:useEmptyOnNil:slice
 	EmailTemplatesToResources(source []*ent.EmailTemplate) []externalapi.TemplateResource
@@ -325,15 +324,15 @@ type Converter interface {
 	// The live version and the draft are the edges the rules module loads (ADR 0065).
 	// goverter:map Edges.LiveVersion Live | ruleVersionOrNull
 	// goverter:map Edges.DraftVersion Draft | ruleVersionOrNull
-	RuleToResource(source *ent.Rule) externalapi.RuleResource
+	RuleToResource(source *ent.Rule) (externalapi.RuleResource, error)
 	// goverter:useEmptyOnNil:slice
-	RulesToResources(source []*ent.Rule) []externalapi.RuleResource
+	RulesToResources(source []*ent.Rule) ([]externalapi.RuleResource, error)
 
 	// The contract numbers a version; its Trigger events are the rows of its `triggers` edge,
 	// loaded with it, and the stored actions JSON is decoded into the typed Actions.
 	// goverter:map Version Number
 	// goverter:map . TriggerEvents | ruleTriggerEvents
-	RuleVersionToResource(source *ent.RuleVersion) externalapi.RuleVersion
+	RuleVersionToResource(source *ent.RuleVersion) (externalapi.RuleVersion, error)
 
 	// The store names the Event's source id; the contract says whose it is.
 	// goverter:map SourceID EventSourceId
@@ -421,7 +420,7 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	ContactsListPage(source pagination.Page[*ent.Contact]) *externalapi.ContactsListOK
 	// goverter:useEmptyOnNil:slice
-	SegmentsListPage(source pagination.Page[*ent.Segment]) *externalapi.SegmentsListOK
+	SegmentsListPage(source pagination.Page[*ent.Segment]) (*externalapi.SegmentsListOK, error)
 	// goverter:useEmptyOnNil:slice
 	TemplatesListPage(source pagination.Page[*ent.EmailTemplate]) *externalapi.TemplatesListOK
 	// goverter:useEmptyOnNil:slice
@@ -431,7 +430,7 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	EnrollmentsListPage(source pagination.Page[*ent.AutomationRun]) *externalapi.EnrollmentsListOK
 	// goverter:useEmptyOnNil:slice
-	RulesListPage(source pagination.Page[*ent.Rule]) *externalapi.RulesListOK
+	RulesListPage(source pagination.Page[*ent.Rule]) (*externalapi.RulesListOK, error)
 	// goverter:useEmptyOnNil:slice
 	RuleFiringsListPage(source pagination.Page[*ent.RuleFiring]) *externalapi.RuleFiringsListOK
 	// goverter:useEmptyOnNil:slice
@@ -720,15 +719,15 @@ func optNilTimestamp(v *time.Time) externalapi.OptNilTimestamp {
 	return convert.Opt[externalapi.OptNilTimestamp]((*externalapi.Timestamp)(v))
 }
 
-// segmentCondition maps a Segment's Condition into the typed DTO. One that no longer decodes as the
-// typed tree is absent, so one bad row does not fail the whole response.
-func segmentCondition(g conditiontree.Segment) externalapi.OptSegmentCondition {
-	return convert.OptDocument[externalapi.OptSegmentCondition, externalapi.SegmentCondition](g)
+// segmentCondition maps a Segment's Condition into the typed DTO. A stored Condition is checked when it
+// is written, so one that does not decode is a broken row, and it fails the response.
+func segmentCondition(g conditiontree.Segment) (externalapi.SegmentCondition, error) {
+	return convert.Document[externalapi.SegmentCondition](g)
 }
 
-// ruleCondition maps a Rule's Condition into the typed DTO, absent as segmentCondition's.
-func ruleCondition(g conditiontree.Rule) externalapi.OptRuleCondition {
-	return convert.OptDocument[externalapi.OptRuleCondition, externalapi.RuleCondition](g)
+// ruleCondition maps a Rule's Condition into the typed DTO, failing as segmentCondition does.
+func ruleCondition(g conditiontree.Rule) (externalapi.RuleCondition, error) {
+	return convert.Document[externalapi.RuleCondition](g)
 }
 
 func optTimestamp(v *time.Time) externalapi.OptTimestamp {
@@ -848,11 +847,15 @@ func webhookEnabled(e ent.WebhookEndpoint) bool { return e.DisabledAt == nil }
 func ruleTriggerEvents(v *ent.RuleVersion) []string { return rules.Triggers(v) }
 
 // ruleVersionOrNull is a version of the Rule, or null when it has none.
-func ruleVersionOrNull(c Converter, v *ent.RuleVersion) externalapi.NilRuleVersion {
+func ruleVersionOrNull(c Converter, v *ent.RuleVersion) (externalapi.NilRuleVersion, error) {
 	if v == nil {
-		return externalapi.NilRuleVersion{Null: true}
+		return externalapi.NilRuleVersion{Null: true}, nil
 	}
-	return externalapi.NewNilRuleVersion(c.RuleVersionToResource(v))
+	version, err := c.RuleVersionToResource(v)
+	if err != nil {
+		return externalapi.NilRuleVersion{}, err
+	}
+	return externalapi.NewNilRuleVersion(version), nil
 }
 
 // optNonEmpty is a text that is absent when empty.
@@ -897,10 +900,6 @@ func ruleResults(c Converter, stored string) []externalapi.RuleActionResult {
 			Detail: optNonEmpty(r.Detail),
 		}
 	})
-}
-
-func optNilContactSource(c Converter, v *contact.Source) externalapi.OptNilContactExportSource {
-	return convert.OptVia[externalapi.OptNilContactExportSource](v, c.ContactExportSourceToResource)
 }
 
 // optNilSmsConfirmation is absent exactly when the phone has no SMS Confirmation.

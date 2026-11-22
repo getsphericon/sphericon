@@ -35,7 +35,7 @@
 - id: 5 # fixture: IntegrationAcmeSesImplied
   revision: 1
   ingest_key: omik_test_integrationacmesesimplied
-  name: Amazon SES (made before Presets, names none)
+  name: Amazon SES (names no Preset)
   channel: email
   provider: ses
   config_encrypted: '{{ encrypt "{\"region\":\"eu-west-1\",\"accessKeyId\":\"AKIAIMPLIED\",\"from\":\"hello@codebasics.dev\"}" }}'
@@ -105,8 +105,8 @@
   workspace_id: 2
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
-# A row that names no topic cannot be saved any more (the `ses` Preset requires one); it stands
-# for one stored before that, and the hook must still refuse its notifications.
+# A row that names no topic cannot be saved (the `ses` Preset requires one); the hook still fails
+# closed on it and refuses its notifications.
 - id: 901 # fixture: IntegrationGlobexSesNoTopic
   revision: 1
   ingest_key: omik_test_integrationglobexsesnotopic

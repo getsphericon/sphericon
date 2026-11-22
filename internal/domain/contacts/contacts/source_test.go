@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -28,9 +27,9 @@ func TestACreatedContactKeepsTheDoorItCameThrough(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, batch.Items[0].Err)
 
-	assert.Equal(t, contact.SourceManual, lo.FromPtr(byHand.Source))
-	assert.Equal(t, contact.SourceAPI, lo.FromPtr(viaAPI.Contact.Source))
-	assert.Equal(t, contact.SourceAPI, lo.FromPtr(batch.Items[0].Value.Contact.Source))
+	assert.Equal(t, contact.SourceManual, byHand.Source)
+	assert.Equal(t, contact.SourceAPI, viaAPI.Contact.Source)
+	assert.Equal(t, contact.SourceAPI, batch.Items[0].Value.Contact.Source)
 }
 
 func TestALaterUpsertLeavesTheSourceUnchanged(t *testing.T) {
@@ -42,13 +41,5 @@ func TestALaterUpsertLeavesTheSourceUnchanged(t *testing.T) {
 
 	assert.False(t, again.Created)
 	assert.EqualValues(t, fixtures.ContactStarkManualID, again.Contact.ID)
-	assert.Equal(t, contact.SourceManual, lo.FromPtr(again.Contact.Source))
-}
-
-func TestAContactThatPredatesTheFieldHasNoSource(t *testing.T) {
-	env := testhelper.Setup(t)
-	alice, err := env.DB.Scoped(fixtures.AcmeID).Contact().Get(context.Background(), fixtures.ContactAliceID)
-	require.NoError(t, err)
-
-	assert.Nil(t, alice.Source)
+	assert.Equal(t, contact.SourceManual, again.Contact.Source)
 }

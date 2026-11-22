@@ -11,6 +11,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // Three Majors: the last release of Major 1 is v0.4.7, of Major 2 is v0.5.2.
@@ -44,8 +46,8 @@ func heldState(t *testing.T, sqlDB *sql.DB) db.SchemaState {
 	return st
 }
 
-// The first migrations leave the state row: Major 1, every release runs on it. The binary's
-// table of Majors ends at the Major its migrations write.
+// The migrations leave the state row, and the binary's table of Majors ends at the Major and the
+// floor they write.
 func TestMigrateLeavesTheSchemaStateRowTheBinaryExpects(t *testing.T) {
 	sqlDB := openEmpty(t)
 	_, err := db.Migrate(t.Context(), sqlDB)
@@ -145,21 +147,61 @@ func TestGuardLetsAnyBinaryMigrateAnEmptyDatabase(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// A database from before the state table (the releases of Major 1 before it, v0.1.x) holds the
-// app's tables and no state row: it is Major 1, so a binary two Majors ahead refuses it as a
-// skipped Major, not as an empty database it may migrate.
-func TestGuardRefusesADatabaseFromBeforeTheStateTableAsMajorOne(t *testing.T) {
-	sqlDB := openEmpty(t)
-	_, err := db.MigrateFS(t.Context(), sqlDB, fstest.MapFS{
+// A database of a Major older than the first of the binary's table has no migration to the
+// binary's schema (the history before it was collapsed): it is refused, auto-migrate or not, and
+// left as it is, never migrated over.
+func TestGuardRefusesADatabaseOfAMajorBeforeTheTableAndNamesANewDatabase(t *testing.T) {
+	sqlDB := migratedAt(t, 2, "v0.4.7")
+	collapsed := []db.Major{{Major: 3, Floor: "v0.5.2"}}
+
+	for _, g := range []db.Guard{
+		{Build: guard("v0.6.0", true).Build, AutoMigrate: true, Majors: collapsed},
+		{Build: guard("dev", false).Build, AllowPending: true, Majors: collapsed},
+	} {
+		err := g.Check(t.Context(), sqlDB)
+
+		var refusal *db.RefusalError
+		require.ErrorAs(t, err, &refusal)
+		assert.Contains(t, err.Error(), "it is at Major 2, and this binary's migrations begin at Major 3")
+		assert.Contains(t, err.Error(), "mise run db:reset")
+		assert.Contains(t, err.Error(), db.UpgradeGuideURL)
+	}
+	assert.Equal(t, db.SchemaState{Major: 2, Floor: "v0.4.7"}, heldState(t, sqlDB))
+}
+
+// A database a release before the collapse left (Major 3, the typed Conditions on main before it)
+// is refused by this binary's own table, even one Major behind with auto-migrate on.
+func TestGuardRefusesADatabaseFromBeforeTheCollapse(t *testing.T) {
+	sqlDB := migratedAt(t, 3, "v0.7.0")
+
+	err := db.Guard{Build: guard("v0.8.0", true).Build, AutoMigrate: true}.Check(t.Context(), sqlDB)
+
+	var refusal *db.RefusalError
+	require.ErrorAs(t, err, &refusal)
+	assert.Contains(t, err.Error(), "it is at Major 3")
+}
+
+// A database from before the state table (the releases before it, v0.1.x) holds the app's tables
+// and no state row: it is Major 1, not an empty database to migrate, so `migrate` refuses it and
+// applies nothing.
+func TestMigrateRefusesADatabaseFromBeforeTheStateTableAndAppliesNothing(t *testing.T) {
+	url := testhelper.EmptyDBURL(t)
+	sqlDB, err := sql.Open("pgx", url)
+	require.NoError(t, err)
+	t.Cleanup(func() { cleanup.Close(sqlDB, "sqlDB") })
+	_, err = db.MigrateFS(t.Context(), sqlDB, fstest.MapFS{
 		"20200101000000_v01.sql": {Data: []byte("-- +goose Up\nCREATE TABLE \"workspaces\" (\"id\" bigint PRIMARY KEY);\n")},
 	})
 	require.NoError(t, err)
 
-	err = guard("v0.6.0", true).Check(t.Context(), sqlDB)
+	_, err = db.ApplyMigrations(t.Context(), url)
 
 	var refusal *db.RefusalError
 	require.ErrorAs(t, err, &refusal)
-	assert.Contains(t, err.Error(), "skipped a Major: the database is at Major 1 and this binary at Major 3")
+	assert.Contains(t, err.Error(), "it is at Major 1")
+	st, err := db.Status(t.Context(), sqlDB)
+	require.NoError(t, err)
+	assert.Zero(t, st.Current, "no migration ran")
 }
 
 // A build with no release (go run, a dev image) is never older than a floor.

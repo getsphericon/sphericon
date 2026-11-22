@@ -189,9 +189,6 @@ model SiteNewPeoplePoint {
 
   /** Contacts created by the tracker that day */
   tracker: int32;
-
-  /** Contacts that predate the Contact source */
-  `unknown`: int32;
 }
 
 /** New people: Contacts created in the selected range, per Report day and by Contact source */

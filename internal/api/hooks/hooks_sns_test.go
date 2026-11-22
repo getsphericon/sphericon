@@ -165,8 +165,8 @@ func TestSESHookCountsOutcomesAndDedupesRedelivery(t *testing.T) {
 	assert.InDelta(t, 1, scrape.Value(t, "email_send_outcomes_total", map[string]string{"provider": "ses", "status": "complaint"}), 0)
 }
 
-// An SES Integration that names no Preset (made before Presets existed) reads its callbacks
-// with `ses`: the Preset is implied by the provider.
+// An SES Integration that names no Preset reads its callbacks with `ses`: the Preset is implied by
+// the provider.
 func TestSESHookIsImpliedForAnSESIntegrationWithNoPreset(t *testing.T) {
 	env := setupHooks(t)
 

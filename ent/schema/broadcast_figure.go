@@ -43,10 +43,8 @@ func (BroadcastFigure) Fields() []ent.Field {
 		field.Int("skipped").NonNegative().Immutable(),
 		field.Int("failed").NonNegative().Immutable(),
 		field.Int("pending").NonNegative().Immutable(),
-		// The recipients a cancelled Broadcast left unsent (ADR 0150); none on any other. The
-		// database default fills the rows frozen before the column; a write always sets it.
-		field.Int("cancelled").NonNegative().Immutable().
-			Annotations(entsql.Default("0")),
+		// The recipients a cancelled Broadcast left unsent (ADR 0150); none on any other.
+		field.Int("cancelled").NonNegative().Immutable(),
 		field.Int("delivered").NonNegative().Immutable(),
 		field.Int("undelivered").NonNegative().Immutable(),
 		field.Int("bounced").NonNegative().Immutable(),

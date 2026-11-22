@@ -98,7 +98,6 @@ import (
 // goverter:extend revision
 // goverter:extend nilFloat64
 // goverter:extend optNilString
-// goverter:extend optNilContactSource
 // goverter:extend optNilOptOutVia
 // goverter:extend optNilHoldReason
 // goverter:extend omitEmpty
@@ -143,7 +142,6 @@ import (
 // goverter:extend optEmail
 // goverter:extend optBool
 // goverter:extend optEditorDocument
-// goverter:extend optMembershipSource
 // goverter:extend optMessageRevenue
 // goverter:extend optAttentionSubject
 // goverter:extend optAbuseWarning
@@ -167,9 +165,9 @@ type Converter interface {
 	ContactToResource(source *ent.Contact) siteapi.SiteContactResource
 	// goverter:useEmptyOnNil:slice
 	ContactsToResources(source []*ent.Contact) []siteapi.SiteContactResource
-	SegmentToResource(source *ent.Segment) siteapi.SiteSegmentResource
+	SegmentToResource(source *ent.Segment) (siteapi.SiteSegmentResource, error)
 	// goverter:useEmptyOnNil:slice
-	SegmentsToResources(source []*ent.Segment) []siteapi.SiteSegmentResource
+	SegmentsToResources(source []*ent.Segment) ([]siteapi.SiteSegmentResource, error)
 	TokenToResource(source *ent.ApiToken) siteapi.SiteApiTokenResource
 	// goverter:useEmptyOnNil:slice
 	TokensToResources(source []*ent.ApiToken) []siteapi.SiteApiTokenResource
@@ -527,15 +525,15 @@ type Converter interface {
 	// The live version and the draft are the edges the rules module loads (ADR 0065).
 	// goverter:map Edges.LiveVersion Live | ruleVersionOrNull
 	// goverter:map Edges.DraftVersion Draft | ruleVersionOrNull
-	RuleToResource(source *ent.Rule) siteapi.SiteRuleResource
+	RuleToResource(source *ent.Rule) (siteapi.SiteRuleResource, error)
 	// goverter:useEmptyOnNil:slice
-	RulesToResources(source []*ent.Rule) []siteapi.SiteRuleResource
+	RulesToResources(source []*ent.Rule) ([]siteapi.SiteRuleResource, error)
 
 	// The contract numbers a version; its Trigger events are the rows of its `triggers` edge,
 	// loaded with it, and the stored actions JSON is decoded into the typed Actions.
 	// goverter:map Version Number
 	// goverter:map . TriggerEvents | ruleTriggerEvents
-	RuleVersionToResource(source *ent.RuleVersion) siteapi.RuleVersion
+	RuleVersionToResource(source *ent.RuleVersion) (siteapi.RuleVersion, error)
 
 	// The store names the Event's source id; the contract says whose it is.
 	// goverter:map SourceID EventSourceId
@@ -660,7 +658,7 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	SegmentContactsListPage(source pagination.Page[*ent.Contact]) *siteapi.SiteSegmentContactsListOK
 	// goverter:useEmptyOnNil:slice
-	SegmentsListPage(source pagination.Page[*ent.Segment]) *siteapi.SiteSegmentsListOK
+	SegmentsListPage(source pagination.Page[*ent.Segment]) (*siteapi.SiteSegmentsListOK, error)
 	// goverter:useEmptyOnNil:slice
 	CustomFieldsListPage(source pagination.Page[*ent.CustomField]) *siteapi.SiteCustomFieldsListOK
 	// goverter:useEmptyOnNil:slice
@@ -674,7 +672,7 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	EnrollmentsListPage(source pagination.Page[*ent.AutomationRun]) *siteapi.SiteEnrollmentsListOK
 	// goverter:useEmptyOnNil:slice
-	RulesListPage(source pagination.Page[*ent.Rule]) *siteapi.SiteRulesListOK
+	RulesListPage(source pagination.Page[*ent.Rule]) (*siteapi.SiteRulesListOK, error)
 	// goverter:useEmptyOnNil:slice
 	RuleFiringsListPage(source pagination.Page[*ent.RuleFiring]) *siteapi.SiteRuleFiringsListOK
 	// goverter:useEmptyOnNil:slice
@@ -1071,15 +1069,15 @@ func optEditorDocument(doc json.RawMessage) siteapi.OptEditorDocument {
 	return convert.OptObject[siteapi.OptEditorDocument](convert.DocObject[siteapi.EditorDocument](doc))
 }
 
-// segmentCondition maps a Segment's Condition into the typed DTO. One that no longer decodes as the
-// typed tree is absent, so one bad row does not fail the whole response.
-func segmentCondition(g conditiontree.Segment) siteapi.OptSegmentCondition {
-	return convert.OptDocument[siteapi.OptSegmentCondition, siteapi.SegmentCondition](g)
+// segmentCondition maps a Segment's Condition into the typed DTO. A stored Condition is checked when it
+// is written, so one that does not decode is a broken row, and it fails the response.
+func segmentCondition(g conditiontree.Segment) (siteapi.SegmentCondition, error) {
+	return convert.Document[siteapi.SegmentCondition](g)
 }
 
-// ruleCondition maps a Rule's Condition into the typed DTO, absent as segmentCondition's.
-func ruleCondition(g conditiontree.Rule) siteapi.OptRuleCondition {
-	return convert.OptDocument[siteapi.OptRuleCondition, siteapi.RuleCondition](g)
+// ruleCondition maps a Rule's Condition into the typed DTO, failing as segmentCondition does.
+func ruleCondition(g conditiontree.Rule) (siteapi.RuleCondition, error) {
+	return convert.Document[siteapi.RuleCondition](g)
 }
 
 func optTimestamp(v *time.Time) siteapi.OptTimestamp {
@@ -1100,10 +1098,6 @@ func optEmail(v string) siteapi.OptEmailAddress {
 		return siteapi.OptEmailAddress{}
 	}
 	return siteapi.NewOptEmailAddress(siteapi.EmailAddress(v))
-}
-
-func optMembershipSource(c Converter, v *membership.Source) siteapi.OptSiteMembershipSource {
-	return convert.OptVia[siteapi.OptSiteMembershipSource](v, c.MembershipSourceToResource)
 }
 
 // optConsentDecision is a User's current answer to an optional consent, absent with none; it is
@@ -1260,11 +1254,15 @@ func webhookEnabled(e ent.WebhookEndpoint) bool { return e.DisabledAt == nil }
 func ruleTriggerEvents(v *ent.RuleVersion) []string { return rules.Triggers(v) }
 
 // ruleVersionOrNull is a version of the Rule, or null when it has none.
-func ruleVersionOrNull(c Converter, v *ent.RuleVersion) siteapi.NilRuleVersion {
+func ruleVersionOrNull(c Converter, v *ent.RuleVersion) (siteapi.NilRuleVersion, error) {
 	if v == nil {
-		return siteapi.NilRuleVersion{Null: true}
+		return siteapi.NilRuleVersion{Null: true}, nil
 	}
-	return siteapi.NewNilRuleVersion(c.RuleVersionToResource(v))
+	version, err := c.RuleVersionToResource(v)
+	if err != nil {
+		return siteapi.NilRuleVersion{}, err
+	}
+	return siteapi.NewNilRuleVersion(version), nil
 }
 
 // optNonEmpty is a text that is absent when empty.
@@ -1307,10 +1305,6 @@ func ruleResults(c Converter, stored string) []siteapi.RuleActionResult {
 			Detail: optNonEmpty(r.Detail),
 		}
 	})
-}
-
-func optNilContactSource(c Converter, v *contact.Source) siteapi.OptNilContactExportSource {
-	return convert.OptVia[siteapi.OptNilContactExportSource](v, c.ContactExportSourceToResource)
 }
 
 func optNilOptOutVia(c Converter, v *unsubscribe.Via) siteapi.OptNilOptOutVia {

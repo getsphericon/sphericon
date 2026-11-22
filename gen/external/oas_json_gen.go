@@ -9462,10 +9462,8 @@ func (s *ContactExportContact) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.Source.Set {
-			e.FieldStart("source")
-			s.Source.Encode(e)
-		}
+		e.FieldStart("source")
+		s.Source.Encode(e)
 	}
 	{
 		e.FieldStart("createdAt")
@@ -9636,8 +9634,8 @@ func (s *ContactExportContact) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"customFields\"")
 			}
 		case "source":
+			requiredBitSet[1] |= 1 << 5
 			if err := func() error {
-				s.Source.Reset()
 				if err := s.Source.Decode(d); err != nil {
 					return err
 				}
@@ -9676,7 +9674,7 @@ func (s *ContactExportContact) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b00000001,
-		0b11000000,
+		0b11100000,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -23119,55 +23117,6 @@ func (s *OptName) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
-// Encode encodes ContactExportSource as json.
-func (o OptNilContactExportSource) Encode(e *jx.Encoder) {
-	if !o.Set {
-		return
-	}
-	if o.Null {
-		e.Null()
-		return
-	}
-	e.Str(string(o.Value))
-}
-
-// Decode decodes ContactExportSource from json.
-func (o *OptNilContactExportSource) Decode(d *jx.Decoder) error {
-	if o == nil {
-		return errors.New("invalid: unable to decode OptNilContactExportSource to nil")
-	}
-	if d.Next() == jx.Null {
-		if err := d.Null(); err != nil {
-			return err
-		}
-
-		var v ContactExportSource
-		o.Value = v
-		o.Set = true
-		o.Null = true
-		return nil
-	}
-	o.Set = true
-	o.Null = false
-	if err := o.Value.Decode(d); err != nil {
-		return err
-	}
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s OptNilContactExportSource) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *OptNilContactExportSource) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
 // Encode encodes CountryCode as json.
 func (o OptNilCountryCode) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -24387,39 +24336,6 @@ func (s *OptProblemDetailsFields) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
-// Encode encodes RuleCondition as json.
-func (o OptRuleCondition) Encode(e *jx.Encoder) {
-	if !o.Set {
-		return
-	}
-	o.Value.Encode(e)
-}
-
-// Decode decodes RuleCondition from json.
-func (o *OptRuleCondition) Decode(d *jx.Decoder) error {
-	if o == nil {
-		return errors.New("invalid: unable to decode OptRuleCondition to nil")
-	}
-	o.Set = true
-	if err := o.Value.Decode(d); err != nil {
-		return err
-	}
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s OptRuleCondition) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *OptRuleCondition) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
 // Encode encodes RuleConditionInput as json.
 func (o OptRuleConditionInput) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -24449,39 +24365,6 @@ func (s OptRuleConditionInput) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptRuleConditionInput) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode encodes SegmentCondition as json.
-func (o OptSegmentCondition) Encode(e *jx.Encoder) {
-	if !o.Set {
-		return
-	}
-	o.Value.Encode(e)
-}
-
-// Decode decodes SegmentCondition from json.
-func (o *OptSegmentCondition) Decode(d *jx.Decoder) error {
-	if o == nil {
-		return errors.New("invalid: unable to decode OptSegmentCondition to nil")
-	}
-	o.Set = true
-	if err := o.Value.Decode(d); err != nil {
-		return err
-	}
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s OptSegmentCondition) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *OptSegmentCondition) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -30896,10 +30779,8 @@ func (s *RuleVersion) encodeFields(e *jx.Encoder) {
 		e.ArrEnd()
 	}
 	{
-		if s.Condition.Set {
-			e.FieldStart("condition")
-			s.Condition.Encode(e)
-		}
+		e.FieldStart("condition")
+		s.Condition.Encode(e)
 	}
 	{
 		e.FieldStart("actions")
@@ -30960,8 +30841,8 @@ func (s *RuleVersion) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"triggerEvents\"")
 			}
 		case "condition":
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
-				s.Condition.Reset()
 				if err := s.Condition.Decode(d); err != nil {
 					return err
 				}
@@ -30997,7 +30878,7 @@ func (s *RuleVersion) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00001011,
+		0b00001111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -32314,10 +32195,8 @@ func (s *SegmentResource) encodeFields(e *jx.Encoder) {
 		e.Str(s.Name)
 	}
 	{
-		if s.Condition.Set {
-			e.FieldStart("condition")
-			s.Condition.Encode(e)
-		}
+		e.FieldStart("condition")
+		s.Condition.Encode(e)
 	}
 	{
 		if s.ArchivedAt.Set {
@@ -32381,8 +32260,8 @@ func (s *SegmentResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"name\"")
 			}
 		case "condition":
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
-				s.Condition.Reset()
 				if err := s.Condition.Decode(d); err != nil {
 					return err
 				}
@@ -32440,7 +32319,7 @@ func (s *SegmentResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b01110011,
+		0b01110111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

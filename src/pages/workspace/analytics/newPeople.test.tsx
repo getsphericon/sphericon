@@ -16,8 +16,8 @@ const mount = { ...base, initialPath: `${base.initialPath}?range=30d` }
 const report = {
   total: 7,
   timeseries: [
-    { date: '2026-03-07', manual: 3, api: 2, tracker: 1, unknown: 1 },
-    { date: '2026-03-08', manual: 0, api: 0, tracker: 0, unknown: 0 },
+    { date: '2026-03-07', manual: 3, api: 2, tracker: 2 },
+    { date: '2026-03-08', manual: 0, api: 0, tracker: 0 },
   ],
 }
 
@@ -28,7 +28,7 @@ test('shows how many people joined in the window and the legend of the sources',
 
   await expect.element(screen.getByText('7', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('Manual')).toBeInTheDocument()
-  await expect.element(screen.getByText('Unknown')).toBeInTheDocument()
+  await expect.element(screen.getByText('Tracker')).toBeInTheDocument()
 })
 
 test('reads the section window from the URL', async () => {

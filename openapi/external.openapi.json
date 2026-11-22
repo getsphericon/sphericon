@@ -7725,7 +7725,7 @@
       },
       "ContactExportContact": {
         "type": "object",
-        "required": ["id", "createdAt", "updatedAt"],
+        "required": ["id", "source", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -7807,8 +7807,7 @@
                 "$ref": "#/components/schemas/ContactExportSource"
               }
             ],
-            "nullable": true,
-            "description": "The door the contact came through; absent for a contact that predates the field"
+            "description": "The door the contact came through"
           },
           "createdAt": {
             "allOf": [
@@ -12207,7 +12206,7 @@
       },
       "RuleVersion": {
         "type": "object",
-        "required": ["number", "triggerEvents", "actions"],
+        "required": ["number", "triggerEvents", "condition", "actions"],
         "properties": {
           "number": {
             "type": "integer",
@@ -12227,7 +12226,7 @@
                 "$ref": "#/components/schemas/RuleCondition"
               }
             ],
-            "description": "The Contact must match this condition for the Rule to fire; absent means every Contact"
+            "description": "The Contact must match this condition for the Rule to fire; an empty group matches every Contact"
           },
           "actions": {
             "type": "array",
@@ -12412,7 +12411,7 @@
       },
       "SegmentResource": {
         "type": "object",
-        "required": ["id", "name", "revision", "createdAt", "updatedAt"],
+        "required": ["id", "name", "condition", "revision", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [

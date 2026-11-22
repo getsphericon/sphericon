@@ -49,15 +49,12 @@ func (m *Module) IsOrderAction(action string) bool { return IsOrderAction(action
 
 // Prepare runs before the transaction of Record, on its own: the first Order Completed a
 // Workspace reads makes its currency the Reporting currency while none is set. A repeat finds one
-// set and changes nothing; an Event Record will not read changes nothing either.
+// set and changes nothing.
 func (m *Module) Prepare(ctx context.Context, s *ent.Scoped, in events.OrderEvent) error {
 	if in.Action != ActionCompleted {
 		return nil
 	}
 	parsed, err := Parse(in.Action, in.Properties, nil)
-	if IsRefusal(err) {
-		return nil // Record logs it
-	}
 	if err != nil {
 		return err
 	}
@@ -85,12 +82,6 @@ func (m *Module) Record(ctx context.Context, s *ent.Scoped, in events.OrderEvent
 		return m.adjust(ctx, s, in)
 	}
 	parsed, err := Parse(in.Action, in.Properties, nil)
-	if IsRefusal(err) {
-		// Ingest refuses these, so this Event was stored before the rule it breaks; retrying it
-		// would fail the same way.
-		slog.WarnContext(ctx, "order event not read", "reason", err.Error(), "event_id", in.EventID)
-		return nil
-	}
 	if err != nil {
 		return err
 	}
@@ -174,6 +165,9 @@ func (m *Module) adjust(ctx context.Context, s *ent.Scoped, in events.OrderEvent
 	}
 	parsed, err := Parse(in.Action, in.Properties, &found.Currency)
 	if IsRefusal(err) {
+		// Ingest checked an Event without a currency only as a number while its Order was not
+		// known; the Order recorded since may have fewer places. It is not read, as a held one
+		// is not (applyHeld).
 		slog.WarnContext(ctx, "order event not read", "reason", err.Error(), "event_id", in.EventID)
 		return nil
 	}

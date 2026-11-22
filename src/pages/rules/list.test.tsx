@@ -9,7 +9,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteRuleResource } from '../../generated/site/types.gen.ts'
 import { Route as rulesRoute } from '../../routes/workspaces/$workspaceId/rules/index.tsx'
-import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
+import { EMPTY_CONDITION, page, testId, TIMESTAMPS } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -25,6 +25,7 @@ const WELCOME: SiteRuleResource = {
   live: null,
   draft: {
     number: 1,
+    condition: EMPTY_CONDITION,
     triggerEvents: ['signed_up', 'trial_started'],
     actions: [{ type: 'apply_tag', tag: 'new' }],
   },

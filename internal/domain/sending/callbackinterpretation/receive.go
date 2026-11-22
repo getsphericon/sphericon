@@ -106,8 +106,7 @@ func (m *Module) Receive(ctx context.Context, in Callback) error {
 }
 
 // presetNameOf is the Preset an Integration's callbacks are read with: the one it names, and for
-// an SES Integration that names none, `ses` (it is implied, so an Integration made before Presets
-// existed keeps receiving its bounces). "" when it reads none.
+// an SES Integration that names none, `ses` (it is implied by the provider). "" when it reads none.
 func presetNameOf(row *ent.Integration) string {
 	switch {
 	case row.Preset != nil:

@@ -147,7 +147,7 @@ func TestAnOwnerAddedRemovedOrTransferredPutsTheWorkspaceBackInTheFeed(t *testin
 	var added *ent.Membership
 	initech(func(s *ent.Scoped) (err error) {
 		// test writes: the Workspace feed hook fires on this write
-		added, err = s.Membership().Create().SetUserID(fixtures.MemberMaryID).SetRole(entmembership.RoleOwner).Save(t.Context())
+		added, err = s.Membership().Create().SetSource(entmembership.SourceInvitation).SetUserID(fixtures.MemberMaryID).SetRole(entmembership.RoleOwner).Save(t.Context())
 		return err
 	})
 	got, saved := feedFrom(t, c, saved)
@@ -190,7 +190,7 @@ func TestAMemberJoiningOrLeavingIsNotAChangeOfOwners(t *testing.T) {
 	h.env.Feed(t, func(tx *ent.Client) error {
 		initech := tx.Scoped(fixtures.InitechID)
 		// test writes: the Workspace feed hook fires on this write
-		m, err := initech.Membership().Create().SetUserID(fixtures.MemberMaryID).SetRole(entmembership.RoleMember).Save(t.Context())
+		m, err := initech.Membership().Create().SetSource(entmembership.SourceInvitation).SetUserID(fixtures.MemberMaryID).SetRole(entmembership.RoleMember).Save(t.Context())
 		if err != nil {
 			return err
 		}
