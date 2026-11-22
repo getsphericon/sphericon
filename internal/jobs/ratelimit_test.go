@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/riverqueue/river"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -163,13 +164,13 @@ func TestAutomationStepDefersWhenTransactionalTrafficSpendsTheLimit(t *testing.T
 		assert.GreaterOrEqual(t, env.JobSchedules(t, automations.RunStepArgs{}.Kind())[0].Sub(before), 3*time.Second, "pushed out by the Transactional debt")
 		run := env.DB.AutomationRun.GetX(ctx, runID)
 		assert.Equal(t, automationrun.StatusActive, run.Status)
-		assert.Zero(t, run.CurrentStep, "the enrollment keeps its place")
+		assert.Equal(t, env.StepIDAt(t, runID, 0), lo.FromPtr(run.CurrentStepID), "the enrollment keeps its place")
 		assert.Len(t, fs.sent, 3, "the step has not sent")
 
 		testhelper.Elapse(3 * time.Second)
 		require.True(t, env.RunNextStep(t, step))
 		assert.Len(t, fs.sent, 4, "the step sends once capacity returns")
-		assert.Equal(t, 1, env.DB.AutomationRun.GetX(ctx, runID).CurrentStep)
+		assert.Equal(t, env.StepIDAt(t, runID, 1), env.CurrentStepID(t, runID))
 	})
 }
 
@@ -199,7 +200,7 @@ func TestAutomationStepDeferredBySendCapAsksAgainWithinTheBound(t *testing.T) {
 		assert.LessOrEqual(t, wait, 10*time.Minute, "asks again within the bound, not after a day")
 		run := env.DB.AutomationRun.GetX(ctx, runID)
 		assert.Equal(t, automationrun.StatusActive, run.Status)
-		assert.Zero(t, run.CurrentStep, "the enrollment keeps its place")
+		assert.Equal(t, env.StepIDAt(t, runID, 0), lo.FromPtr(run.CurrentStepID), "the enrollment keeps its place")
 		assert.Empty(t, fs.sent, "the step has not sent")
 	})
 }

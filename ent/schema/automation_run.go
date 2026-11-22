@@ -13,8 +13,8 @@ import (
 
 // AutomationRun is one contact's progress through an Automation. The unique
 // (automation_id, contact_id) index enforces enroll-once-ever (re-enrollment is
-// a deliberate non-feature for the MVP). current_step points at the next step to
-// execute; resume_at is set while waiting.
+// a deliberate non-feature for the MVP). current_step_id names the Step to execute
+// next; resume_at is set while waiting.
 type AutomationRun struct {
 	ent.Schema
 }
@@ -37,8 +37,8 @@ func (AutomationRun) Fields() []ent.Field {
 		field.Int64("automation_id"),
 		// The Enrollment dies with its Contact (ON DELETE CASCADE; Erasure deletes it).
 		field.Int64("contact_id"),
-		// The Automation version the Enrollment began on (ADR 0049): current_step indexes
-		// its steps, and the worker reads them from it, so an edit never moves the step an
+		// The Automation version the Enrollment began on (ADR 0049): current_step_id names one
+		// of its Steps, and the worker reads them from it, so an edit never moves the Step an
 		// Enrollment stands on.
 		field.Int64("version_id"),
 		// exited: the enrollment left early (e.g. an unsubscribe, a suppression or an exit
@@ -79,9 +79,14 @@ func (AutomationRun) Fields() []ent.Field {
 			Annotations(Attribute(reasonWithStatus)).
 			Optional().
 			Nillable(),
-		field.Int("current_step").
-			Default(0).
-			NonNegative(),
+		// The id of the Step of its version the Enrollment stands on, the Step its next job
+		// executes (ADR 0122): an id every version keeps, so a Step inserted above it in a later
+		// version moves nothing. Null once the Enrollment has stood past the last Step of its
+		// path, where the job that finds it there completes it. A terminal Enrollment keeps the
+		// Step it ended on.
+		field.String("current_step_id").
+			Optional().
+			Nillable(),
 		field.Time("resume_at").
 			Annotations(Attribute("the wake-up time of a waiting run, written with its status by its machine")).
 			Optional().

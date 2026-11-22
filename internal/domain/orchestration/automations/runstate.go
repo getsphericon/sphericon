@@ -159,14 +159,19 @@ func stale(err error) bool {
 	return errors.Is(err, lifecycle.ErrInvalidTransition) || ent.IsNotFound(err)
 }
 
-// advanceRun moves an active Enrollment standing on step from to step to, parking it until resumeAt
-// (nil: no wait). It is a compare-and-swap on `active` and on the current step, so a step cannot
-// overwrite an exit and a job delivered twice cannot move the Enrollment twice:
-// lifecycle.ErrInvalidTransition when the Enrollment is no longer active or no longer on from.
-func advanceRun(ctx context.Context, s *ent.Scoped, runID int64, from, to int, resumeAt *time.Time) error {
+// advanceRun moves an active Enrollment standing on the Step of the id from to the Step of the id
+// to, or past the last Step of its path when to is "", parking it until resumeAt (nil: no wait).
+// It is a compare-and-swap on `active` and on the current Step, so a step cannot overwrite an exit
+// and a job delivered twice cannot move the Enrollment twice: lifecycle.ErrInvalidTransition when
+// the Enrollment is no longer active or no longer on from.
+func advanceRun(ctx context.Context, s *ent.Scoped, runID int64, from, to string, resumeAt *time.Time) error {
 	u := s.AutomationRun().Update().
-		Where(automationrun.ID(runID), automationrun.StatusEQ(automationrun.StatusActive), automationrun.CurrentStep(from)).
-		SetCurrentStep(to)
+		Where(automationrun.ID(runID), automationrun.StatusEQ(automationrun.StatusActive), automationrun.CurrentStepID(from))
+	if to == "" {
+		u.ClearCurrentStepID()
+	} else {
+		u.SetCurrentStepID(to)
+	}
 	if resumeAt != nil {
 		u.SetResumeAt(*resumeAt)
 	} else {

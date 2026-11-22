@@ -103,7 +103,7 @@ func TestAGoalEventHandledWhileTheEnrollmentCommitsEndsIt(t *testing.T) {
 		Only(ctx)
 	require.NoError(t, err)
 	fs := &fakeSender{}
-	require.NoError(t, e.stepper(t, fs).Step(ctx, e.scoped, run.ID, 0))
+	require.NoError(t, e.stepper(t, fs).Step(ctx, e.scoped, run.ID, e.env.StepIDAt(t, run.ID, 0)))
 	after, err := e.client.AutomationRun.Get(ctx, run.ID)
 	require.NoError(t, err)
 

@@ -175,7 +175,7 @@ func TestAMixedSequenceSendsTheEmailsAndRecordsTheSMSSkipForAContactWithNoPhone(
 	assert.Equal(t, automationrun.StatusCompleted, run.Status)
 	skipped := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).OnlyX(t.Context())
 	assert.Equal(t, skipreason.NoDestination, lo.FromPtr(skipped.SkippedReason))
-	assert.Equal(t, stepIDAt(t, env, runID, 1), lo.FromPtr(skipped.AutomationStepID))
+	assert.Equal(t, env.StepIDAt(t, runID, 1), lo.FromPtr(skipped.AutomationStepID))
 }
 
 // The unsubscribe link of a text is the number's Channel-wide opt-out (ADR 0077): a person who
@@ -264,6 +264,6 @@ func TestASTOPBetweenTwoTextsOfAnEnrollmentSkipsTheSecond(t *testing.T) {
 	run := env.DB.AutomationRun.GetX(ctx, runID)
 	assert.Equal(t, automationrun.StatusCompleted, run.Status)
 	second := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).OnlyX(ctx)
-	assert.Equal(t, stepIDAt(t, env, runID, 1), lo.FromPtr(second.AutomationStepID))
+	assert.Equal(t, env.StepIDAt(t, runID, 1), lo.FromPtr(second.AutomationStepID))
 	assert.Equal(t, skipreason.UnsubscribedEverything, lo.FromPtr(second.SkippedReason))
 }

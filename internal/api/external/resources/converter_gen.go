@@ -835,7 +835,7 @@ func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) external
 		externalapiEnrollmentResource.AutomationId = external.EntityId((*source).AutomationID)
 		externalapiEnrollmentResource.ContactId = external.EntityId((*source).ContactID)
 		externalapiEnrollmentResource.Status = c.EnrollmentStatusToResource((*source).Status)
-		externalapiEnrollmentResource.CurrentStep = count((*source).CurrentStep)
+		externalapiEnrollmentResource.CurrentStepId = optStepID((*source).CurrentStepID)
 		externalapiEnrollmentResource.ResumeAt = optTimestamp((*source).ResumeAt)
 		externalapiEnrollmentResource.Failure = enrollmentFailure(c, (*source))
 		externalapiEnrollmentResource.CreatedAt = timestamp((*source).CreatedAt)

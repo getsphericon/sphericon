@@ -18,13 +18,34 @@ func All(p Path) iter.Seq2[int, *Step] {
 	}
 }
 
-// At is the Step at the position, false when the version has none there: before its first Step or
-// past its last, where an Enrollment has finished.
-func At(p Path, pos int) (*Step, bool) {
-	for i, st := range All(p) {
-		if i == pos {
+// First is the first Step of the path, where an Enrollment begins; false for a path of no Steps.
+func First(p Path) (*Step, bool) {
+	for _, st := range All(p) {
+		return st, true
+	}
+	return nil, false
+}
+
+// Find is the Step of the id, false when the path holds none: an Enrollment names the Step it
+// stands on by its id, which every version keeps (ADR 0122).
+func Find(p Path, id string) (*Step, bool) {
+	for _, st := range All(p) {
+		if st.ID == id {
 			return st, true
 		}
+	}
+	return nil, false
+}
+
+// Next is the Step an Enrollment reaches after the one of the id: the following Step of the path.
+// False after the last Step, where the Enrollment completes, and for an id the path does not hold.
+func Next(p Path, id string) (*Step, bool) {
+	found := false
+	for _, st := range All(p) {
+		if found {
+			return st, true
+		}
+		found = st.ID == id
 	}
 	return nil, false
 }

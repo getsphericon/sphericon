@@ -560,15 +560,15 @@ func TestEvaluateTriggerAndRunStepWorkers(t *testing.T) {
 	// Step 1 sends and queues the next step; the wait step queues a delayed one; the last
 	// step finishes the run without queueing more.
 	w := jobs.NewRunStepWorker(e.DB, stepperOf(e.TestEnv, resolvingTo(e.sender)))
-	require.NoError(t, w.Work(ctx, job(automations.RunStepArgs{RunID: run.ID, Step: 0})))
+	require.NoError(t, w.Work(ctx, job(automations.RunStepArgs{RunID: run.ID, Step: e.StepIDAt(t, run.ID, 0)})))
 	assert.Len(t, e.sender.sent, 1)
 	assert.Len(t, e.JobsOf(t, automations.RunStepArgs{}.Kind()), 2)
-	require.NoError(t, w.Work(ctx, job(automations.RunStepArgs{RunID: run.ID, Step: 1})))
+	require.NoError(t, w.Work(ctx, job(automations.RunStepArgs{RunID: run.ID, Step: e.StepIDAt(t, run.ID, 1)})))
 	assert.Len(t, e.JobsOf(t, automations.RunStepArgs{}.Kind()), 3, "the wait step queues a delayed follow-up")
-	require.NoError(t, w.Work(ctx, job(automations.RunStepArgs{RunID: run.ID, Step: 2})))
+	require.NoError(t, w.Work(ctx, job(automations.RunStepArgs{RunID: run.ID, Step: e.StepIDAt(t, run.ID, 2)})))
 	assert.Len(t, e.sender.sent, 2)
 	assert.Len(t, e.JobsOf(t, automations.RunStepArgs{}.Kind()), 4)
-	require.NoError(t, w.Work(ctx, job(automations.RunStepArgs{RunID: run.ID, Step: 3})))
+	require.NoError(t, w.Work(ctx, job(automations.RunStepArgs{RunID: run.ID, Step: e.StepIDAt(t, run.ID, 3)})))
 	assert.Equal(t, automationrun.StatusCompleted, e.DB.AutomationRun.GetX(ctx, run.ID).Status)
 	assert.Len(t, e.JobsOf(t, automations.RunStepArgs{}.Kind()), 4, "a finished run queues nothing")
 

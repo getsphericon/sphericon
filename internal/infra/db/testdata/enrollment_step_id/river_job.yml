@@ -1,0 +1,56 @@
+# Step jobs the release before queued, naming a position: the step of run 1, the first job of run
+# 4 (no step: the first), run 2's past the last Step, one of an Enrollment gone with its Contact,
+# one left running by the stopped release and one completed. The test queues run 4's HTTP-step
+# call through river, unique by the key river derives from its old args.
+- id: 1
+  kind: automation_run_step
+  queue: default
+  state: scheduled
+  args: '{"workspaceId": 1, "run_id": 1, "step": 2}'
+  max_attempts: 25
+  priority: 1
+  attempt: 0
+- id: 2
+  kind: automation_run_step
+  queue: default
+  state: available
+  args: '{"workspaceId": 1, "run_id": 4}'
+  max_attempts: 25
+  priority: 1
+  attempt: 0
+- id: 3
+  kind: automation_run_step
+  queue: default
+  state: scheduled
+  args: '{"workspaceId": 1, "run_id": 2, "step": 3}'
+  max_attempts: 25
+  priority: 1
+  attempt: 0
+- id: 4
+  kind: automation_run_step
+  queue: default
+  state: retryable
+  args: '{"workspaceId": 1, "run_id": 99, "step": 1}'
+  max_attempts: 25
+  priority: 1
+  attempt: 1
+  attempted_at: '2026-01-01 00:00:00'
+- id: 5
+  kind: automation_run_step
+  queue: default
+  state: running
+  args: '{"workspaceId": 1, "run_id": 1, "step": 1}'
+  max_attempts: 25
+  priority: 1
+  attempt: 1
+  attempted_at: '2026-01-01 00:00:00'
+- id: 6
+  kind: automation_run_step
+  queue: default
+  state: completed
+  args: '{"workspaceId": 1, "run_id": 1, "step": 0}'
+  max_attempts: 25
+  priority: 1
+  attempt: 1
+  attempted_at: '2026-01-01 00:00:00'
+  finalized_at: '2026-01-01 00:00:00'

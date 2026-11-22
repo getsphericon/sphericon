@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
@@ -11,11 +13,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
-// ExecuteHTTPInput is one attempt at the call of an HTTP step: the Enrollment, the step it is
-// expected to be at, and the queue's attempt data.
+// ExecuteHTTPInput is one attempt at the call of an HTTP step: the Enrollment, the id of the Step
+// it is expected to stand on, and the queue's attempt data.
 type ExecuteHTTPInput struct {
 	RunID   int64
-	Step    int
+	Step    string
 	Attempt httpcall.Attempt
 }
 
@@ -37,14 +39,14 @@ func (m *StepExecution) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in Execu
 	}
 	if live, err := isActive(ctx, s, run.ID); err != nil {
 		return httpcall.Execution{}, err
-	} else if !live || run.CurrentStep != step {
+	} else if !live || lo.FromPtr(run.CurrentStepID) != step {
 		return httpcall.Execution{}, nil
 	}
 	version, err := s.AutomationVersion().Get(ctx, run.VersionID)
 	if err != nil {
 		return httpcall.Execution{}, err
 	}
-	st, ok := automationstep.At(version.Steps, step)
+	st, ok := automationstep.Find(version.Steps, step)
 	if !ok {
 		return httpcall.Execution{}, nil
 	}
@@ -72,15 +74,16 @@ func (m *StepExecution) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in Execu
 	sendErr := m.fence(ctx, s, run.ID, func(ctx context.Context) error {
 		return webhook.Post(ctx, m.client, webhook.Call{
 			URL: opened.URL, Secret: opened.Secret, Headers: opened.Headers, Body: []byte(body), At: m.now(),
-			// The run and the Step id, which every version keeps (ADR 0122).
-			ID: fmt.Sprintf("automation_%d_%s", run.ID, st.ID),
+			// The run and the id of the Step the Enrollment stands on, which every version keeps
+			// (ADR 0122).
+			ID: fmt.Sprintf("automation_%d_%s", run.ID, step),
 		})
 	})
 	if stale(sendErr) {
 		return httpcall.Execution{}, nil
 	}
 	if sendErr == nil {
-		return httpcall.Execution{}, m.advance(ctx, s, run.ID, step, stepMove{})
+		return httpcall.Execution{}, m.advance(ctx, s, run.ID, place{steps: version.Steps, step: step}, stepMove{})
 	}
 	decision := httpcall.OneOff.Decide(sendErr, attempt, m.now())
 	switch {

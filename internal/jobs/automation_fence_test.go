@@ -159,9 +159,10 @@ func TestExitDuringAnEmailStepWaitsForTheSendAndNothingFollows(t *testing.T) {
 	stepper := e.stepper(t, bs)
 	runID := e.enrolledNow(t, fixtures.AutomationWelcomeSeriesID, fixtures.ContactAliceID)
 
+	first := e.env.StepIDAt(t, runID, 0)
 	stepDone := make(chan error, 1)
 	go func() {
-		stepDone <- stepper.Step(ctx, e.scoped, runID, 0)
+		stepDone <- stepper.Step(ctx, e.scoped, runID, first)
 	}()
 	testhelper.Receive(t, bs.started, "the send starts")
 	require.True(t, e.runRowIsLocked(t, runID), "an in-flight send holds the Enrollment")
@@ -181,7 +182,7 @@ func TestExitDuringAnEmailStepWaitsForTheSendAndNothingFollows(t *testing.T) {
 	assert.Equal(t, automationrun.StatusExited, e.client.AutomationRun.GetX(ctx, runID).Status)
 	assert.Len(t, bs.sent, 1, "exactly one mail for the step")
 
-	require.NoError(t, stepper.Step(ctx, e.scoped, runID, 0))
+	require.NoError(t, stepper.Step(ctx, e.scoped, runID, first))
 	assert.Len(t, bs.sent, 1, "no later step sends")
 }
 
@@ -216,11 +217,12 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	runID := e.enrolledNow(t, fixtures.AutomationNotifySlackID, fixtures.ContactAliceID)
 	w := jobs.NewRunHTTPStepWorker(e.client, automations.NewStepExecution(bus, nil, testhelper.Module[*contacts.Module](e.env), e.fence, cipher, webhook.NewClientAllowing(2*time.Second, rcv.allow), time.Now), lowestDraw)
 
+	call := e.env.StepIDAt(t, runID, 0)
 	workDone := make(chan error, 1)
 	go func() {
 		workDone <- w.Work(workCtx, &river.Job[automations.RunHTTPStepArgs]{
 			JobRow: &rivertype.JobRow{Attempt: 1, MaxAttempts: automations.RunHTTPStepArgs{}.InsertOpts().MaxAttempts, CreatedAt: time.Now()},
-			Args:   automations.RunHTTPStepArgs{RunID: runID},
+			Args:   automations.RunHTTPStepArgs{RunID: runID, Step: call},
 		})
 	}()
 	testhelper.Receive(t, started, "the work starts")

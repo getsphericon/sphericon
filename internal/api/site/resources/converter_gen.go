@@ -1168,7 +1168,7 @@ func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) site.Enr
 		siteapiEnrollmentResource.AutomationId = site.EntityId((*source).AutomationID)
 		siteapiEnrollmentResource.ContactId = site.EntityId((*source).ContactID)
 		siteapiEnrollmentResource.Status = c.EnrollmentStatusToResource((*source).Status)
-		siteapiEnrollmentResource.CurrentStep = count((*source).CurrentStep)
+		siteapiEnrollmentResource.CurrentStepId = optStepID((*source).CurrentStepID)
 		siteapiEnrollmentResource.ResumeAt = optTimestamp((*source).ResumeAt)
 		siteapiEnrollmentResource.Failure = enrollmentFailure(c, (*source))
 		siteapiEnrollmentResource.CreatedAt = timestamp((*source).CreatedAt)

@@ -271,12 +271,6 @@ func init() {
 	automationrunDescBeganAt := automationrunFields[5].Descriptor()
 	// automationrun.DefaultBeganAt holds the default value on creation for the began_at field.
 	automationrun.DefaultBeganAt = automationrunDescBeganAt.Default.(func() time.Time)
-	// automationrunDescCurrentStep is the schema descriptor for current_step field.
-	automationrunDescCurrentStep := automationrunFields[9].Descriptor()
-	// automationrun.DefaultCurrentStep holds the default value on creation for the current_step field.
-	automationrun.DefaultCurrentStep = automationrunDescCurrentStep.Default.(int)
-	// automationrun.CurrentStepValidator is a validator for the "current_step" field. It is called by the builders before save.
-	automationrun.CurrentStepValidator = automationrunDescCurrentStep.Validators[0].(func(int) error)
 	automationversionMixin := schema.AutomationVersion{}.Mixin()
 	automationversionMixinFields0 := automationversionMixin[0].Fields()
 	_ = automationversionMixinFields0

@@ -5906,8 +5906,7 @@ type AutomationRunMutation struct {
 	event_action      *string
 	event_properties  *map[string]interface{}
 	ended_at          *time.Time
-	current_step      *int
-	addcurrent_step   *int
+	current_step_id   *string
 	resume_at         *time.Time
 	failure_kind      *automationrun.FailureKind
 	failure_status    *int
@@ -6466,60 +6465,53 @@ func (m *AutomationRunMutation) ResetEndedAt() {
 	delete(m.clearedFields, automationrun.FieldEndedAt)
 }
 
-// SetCurrentStep sets the "current_step" field.
-func (m *AutomationRunMutation) SetCurrentStep(i int) {
-	m.current_step = &i
-	m.addcurrent_step = nil
+// SetCurrentStepID sets the "current_step_id" field.
+func (m *AutomationRunMutation) SetCurrentStepID(s string) {
+	m.current_step_id = &s
 }
 
-// CurrentStep returns the value of the "current_step" field in the mutation.
-func (m *AutomationRunMutation) CurrentStep() (r int, exists bool) {
-	v := m.current_step
+// CurrentStepID returns the value of the "current_step_id" field in the mutation.
+func (m *AutomationRunMutation) CurrentStepID() (r string, exists bool) {
+	v := m.current_step_id
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldCurrentStep returns the old "current_step" field's value of the AutomationRun entity.
+// OldCurrentStepID returns the old "current_step_id" field's value of the AutomationRun entity.
 // If the AutomationRun object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AutomationRunMutation) OldCurrentStep(ctx context.Context) (v int, err error) {
+func (m *AutomationRunMutation) OldCurrentStepID(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCurrentStep is only allowed on UpdateOne operations")
+		return v, errors.New("OldCurrentStepID is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCurrentStep requires an ID field in the mutation")
+		return v, errors.New("OldCurrentStepID requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCurrentStep: %w", err)
+		return v, fmt.Errorf("querying old value for OldCurrentStepID: %w", err)
 	}
-	return oldValue.CurrentStep, nil
+	return oldValue.CurrentStepID, nil
 }
 
-// AddCurrentStep adds i to the "current_step" field.
-func (m *AutomationRunMutation) AddCurrentStep(i int) {
-	if m.addcurrent_step != nil {
-		*m.addcurrent_step += i
-	} else {
-		m.addcurrent_step = &i
-	}
+// ClearCurrentStepID clears the value of the "current_step_id" field.
+func (m *AutomationRunMutation) ClearCurrentStepID() {
+	m.current_step_id = nil
+	m.clearedFields[automationrun.FieldCurrentStepID] = struct{}{}
 }
 
-// AddedCurrentStep returns the value that was added to the "current_step" field in this mutation.
-func (m *AutomationRunMutation) AddedCurrentStep() (r int, exists bool) {
-	v := m.addcurrent_step
-	if v == nil {
-		return
-	}
-	return *v, true
+// CurrentStepIDCleared returns if the "current_step_id" field was cleared in this mutation.
+func (m *AutomationRunMutation) CurrentStepIDCleared() bool {
+	_, ok := m.clearedFields[automationrun.FieldCurrentStepID]
+	return ok
 }
 
-// ResetCurrentStep resets all changes to the "current_step" field.
-func (m *AutomationRunMutation) ResetCurrentStep() {
-	m.current_step = nil
-	m.addcurrent_step = nil
+// ResetCurrentStepID resets all changes to the "current_step_id" field.
+func (m *AutomationRunMutation) ResetCurrentStepID() {
+	m.current_step_id = nil
+	delete(m.clearedFields, automationrun.FieldCurrentStepID)
 }
 
 // SetResumeAt sets the "resume_at" field.
@@ -6915,8 +6907,8 @@ func (m *AutomationRunMutation) Fields() []string {
 	if m.ended_at != nil {
 		fields = append(fields, automationrun.FieldEndedAt)
 	}
-	if m.current_step != nil {
-		fields = append(fields, automationrun.FieldCurrentStep)
+	if m.current_step_id != nil {
+		fields = append(fields, automationrun.FieldCurrentStepID)
 	}
 	if m.resume_at != nil {
 		fields = append(fields, automationrun.FieldResumeAt)
@@ -6960,8 +6952,8 @@ func (m *AutomationRunMutation) Field(name string) (ent.Value, bool) {
 		return m.EventProperties()
 	case automationrun.FieldEndedAt:
 		return m.EndedAt()
-	case automationrun.FieldCurrentStep:
-		return m.CurrentStep()
+	case automationrun.FieldCurrentStepID:
+		return m.CurrentStepID()
 	case automationrun.FieldResumeAt:
 		return m.ResumeAt()
 	case automationrun.FieldFailureKind:
@@ -7001,8 +6993,8 @@ func (m *AutomationRunMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldEventProperties(ctx)
 	case automationrun.FieldEndedAt:
 		return m.OldEndedAt(ctx)
-	case automationrun.FieldCurrentStep:
-		return m.OldCurrentStep(ctx)
+	case automationrun.FieldCurrentStepID:
+		return m.OldCurrentStepID(ctx)
 	case automationrun.FieldResumeAt:
 		return m.OldResumeAt(ctx)
 	case automationrun.FieldFailureKind:
@@ -7097,12 +7089,12 @@ func (m *AutomationRunMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetEndedAt(v)
 		return nil
-	case automationrun.FieldCurrentStep:
-		v, ok := value.(int)
+	case automationrun.FieldCurrentStepID:
+		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetCurrentStep(v)
+		m.SetCurrentStepID(v)
 		return nil
 	case automationrun.FieldResumeAt:
 		v, ok := value.(time.Time)
@@ -7140,9 +7132,6 @@ func (m *AutomationRunMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *AutomationRunMutation) AddedFields() []string {
 	var fields []string
-	if m.addcurrent_step != nil {
-		fields = append(fields, automationrun.FieldCurrentStep)
-	}
 	if m.addfailure_status != nil {
 		fields = append(fields, automationrun.FieldFailureStatus)
 	}
@@ -7154,8 +7143,6 @@ func (m *AutomationRunMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *AutomationRunMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case automationrun.FieldCurrentStep:
-		return m.AddedCurrentStep()
 	case automationrun.FieldFailureStatus:
 		return m.AddedFailureStatus()
 	}
@@ -7167,13 +7154,6 @@ func (m *AutomationRunMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *AutomationRunMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case automationrun.FieldCurrentStep:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddCurrentStep(v)
-		return nil
 	case automationrun.FieldFailureStatus:
 		v, ok := value.(int)
 		if !ok {
@@ -7197,6 +7177,9 @@ func (m *AutomationRunMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(automationrun.FieldEndedAt) {
 		fields = append(fields, automationrun.FieldEndedAt)
+	}
+	if m.FieldCleared(automationrun.FieldCurrentStepID) {
+		fields = append(fields, automationrun.FieldCurrentStepID)
 	}
 	if m.FieldCleared(automationrun.FieldResumeAt) {
 		fields = append(fields, automationrun.FieldResumeAt)
@@ -7232,6 +7215,9 @@ func (m *AutomationRunMutation) ClearField(name string) error {
 		return nil
 	case automationrun.FieldEndedAt:
 		m.ClearEndedAt()
+		return nil
+	case automationrun.FieldCurrentStepID:
+		m.ClearCurrentStepID()
 		return nil
 	case automationrun.FieldResumeAt:
 		m.ClearResumeAt()
@@ -7286,8 +7272,8 @@ func (m *AutomationRunMutation) ResetField(name string) error {
 	case automationrun.FieldEndedAt:
 		m.ResetEndedAt()
 		return nil
-	case automationrun.FieldCurrentStep:
-		m.ResetCurrentStep()
+	case automationrun.FieldCurrentStepID:
+		m.ResetCurrentStepID()
 		return nil
 	case automationrun.FieldResumeAt:
 		m.ResetResumeAt()

@@ -100,9 +100,9 @@ func EndedAt(v time.Time) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldEQ(FieldEndedAt, v))
 }
 
-// CurrentStep applies equality check predicate on the "current_step" field. It's identical to CurrentStepEQ.
-func CurrentStep(v int) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldEQ(FieldCurrentStep, v))
+// CurrentStepID applies equality check predicate on the "current_step_id" field. It's identical to CurrentStepIDEQ.
+func CurrentStepID(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldCurrentStepID, v))
 }
 
 // ResumeAt applies equality check predicate on the "resume_at" field. It's identical to ResumeAtEQ.
@@ -475,44 +475,79 @@ func EndedAtNotNil() predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldNotNull(FieldEndedAt))
 }
 
-// CurrentStepEQ applies the EQ predicate on the "current_step" field.
-func CurrentStepEQ(v int) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldEQ(FieldCurrentStep, v))
+// CurrentStepIDEQ applies the EQ predicate on the "current_step_id" field.
+func CurrentStepIDEQ(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldCurrentStepID, v))
 }
 
-// CurrentStepNEQ applies the NEQ predicate on the "current_step" field.
-func CurrentStepNEQ(v int) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldNEQ(FieldCurrentStep, v))
+// CurrentStepIDNEQ applies the NEQ predicate on the "current_step_id" field.
+func CurrentStepIDNEQ(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNEQ(FieldCurrentStepID, v))
 }
 
-// CurrentStepIn applies the In predicate on the "current_step" field.
-func CurrentStepIn(vs ...int) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldIn(FieldCurrentStep, vs...))
+// CurrentStepIDIn applies the In predicate on the "current_step_id" field.
+func CurrentStepIDIn(vs ...string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIn(FieldCurrentStepID, vs...))
 }
 
-// CurrentStepNotIn applies the NotIn predicate on the "current_step" field.
-func CurrentStepNotIn(vs ...int) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldNotIn(FieldCurrentStep, vs...))
+// CurrentStepIDNotIn applies the NotIn predicate on the "current_step_id" field.
+func CurrentStepIDNotIn(vs ...string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotIn(FieldCurrentStepID, vs...))
 }
 
-// CurrentStepGT applies the GT predicate on the "current_step" field.
-func CurrentStepGT(v int) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldGT(FieldCurrentStep, v))
+// CurrentStepIDGT applies the GT predicate on the "current_step_id" field.
+func CurrentStepIDGT(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldGT(FieldCurrentStepID, v))
 }
 
-// CurrentStepGTE applies the GTE predicate on the "current_step" field.
-func CurrentStepGTE(v int) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldGTE(FieldCurrentStep, v))
+// CurrentStepIDGTE applies the GTE predicate on the "current_step_id" field.
+func CurrentStepIDGTE(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldGTE(FieldCurrentStepID, v))
 }
 
-// CurrentStepLT applies the LT predicate on the "current_step" field.
-func CurrentStepLT(v int) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldLT(FieldCurrentStep, v))
+// CurrentStepIDLT applies the LT predicate on the "current_step_id" field.
+func CurrentStepIDLT(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldLT(FieldCurrentStepID, v))
 }
 
-// CurrentStepLTE applies the LTE predicate on the "current_step" field.
-func CurrentStepLTE(v int) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldLTE(FieldCurrentStep, v))
+// CurrentStepIDLTE applies the LTE predicate on the "current_step_id" field.
+func CurrentStepIDLTE(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldLTE(FieldCurrentStepID, v))
+}
+
+// CurrentStepIDContains applies the Contains predicate on the "current_step_id" field.
+func CurrentStepIDContains(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldContains(FieldCurrentStepID, v))
+}
+
+// CurrentStepIDHasPrefix applies the HasPrefix predicate on the "current_step_id" field.
+func CurrentStepIDHasPrefix(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldHasPrefix(FieldCurrentStepID, v))
+}
+
+// CurrentStepIDHasSuffix applies the HasSuffix predicate on the "current_step_id" field.
+func CurrentStepIDHasSuffix(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldHasSuffix(FieldCurrentStepID, v))
+}
+
+// CurrentStepIDIsNil applies the IsNil predicate on the "current_step_id" field.
+func CurrentStepIDIsNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIsNull(FieldCurrentStepID))
+}
+
+// CurrentStepIDNotNil applies the NotNil predicate on the "current_step_id" field.
+func CurrentStepIDNotNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotNull(FieldCurrentStepID))
+}
+
+// CurrentStepIDEqualFold applies the EqualFold predicate on the "current_step_id" field.
+func CurrentStepIDEqualFold(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEqualFold(FieldCurrentStepID, v))
+}
+
+// CurrentStepIDContainsFold applies the ContainsFold predicate on the "current_step_id" field.
+func CurrentStepIDContainsFold(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldContainsFold(FieldCurrentStepID, v))
 }
 
 // ResumeAtEQ applies the EQ predicate on the "resume_at" field.

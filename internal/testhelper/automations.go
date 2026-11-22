@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -20,4 +21,28 @@ func LatestSteps(ctx context.Context, t *testing.T, db *ent.Client, automationID
 		First(ctx)
 	require.NoError(t, err)
 	return v.Steps
+}
+
+// StepIDAt is the id of the Step at pos of the version the Enrollment runID began on, 0 for the
+// first; "" past its last Step, where the Enrollment names none.
+func (env *TestEnv) StepIDAt(t *testing.T, runID int64, pos int) string {
+	t.Helper()
+	run, err := env.DB.AutomationRun.Get(t.Context(), runID)
+	require.NoError(t, err)
+	v, err := env.DB.AutomationVersion.Get(t.Context(), run.VersionID)
+	require.NoError(t, err)
+	for i, st := range automationstep.All(v.Steps) {
+		if i == pos {
+			return st.ID
+		}
+	}
+	return ""
+}
+
+// CurrentStepID is the id of the Step the Enrollment runID stands on, "" past its last Step.
+func (env *TestEnv) CurrentStepID(t *testing.T, runID int64) string {
+	t.Helper()
+	run, err := env.DB.AutomationRun.Get(t.Context(), runID)
+	require.NoError(t, err)
+	return lo.FromPtr(run.CurrentStepID)
 }

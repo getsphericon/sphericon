@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -73,7 +74,8 @@ func TestATagStepAndAnExitOfOneContactNeverDeadlock(t *testing.T) {
 			ctx := context.Background()
 			runID, exit := enrolledForTheExit(t, e)
 			stepper := e.stepper(t, &fakeSender{})
-			step := testhelper.Writer{Name: "step", Run: func() error { return stepper.Step(ctx, e.scoped, runID, 0) }}
+			first := e.env.StepIDAt(t, runID, 0)
+			step := testhelper.Writer{Name: "step", Run: func() error { return stepper.Step(ctx, e.scoped, runID, first) }}
 
 			errs := queuedOnTheContact(t, e, fixtures.ContactAliceID, tc.queue(step, exit)...)
 			require.Equal(t, map[string]error{"step": nil, "exit": nil}, errs, "neither side is aborted")
@@ -87,7 +89,7 @@ func TestATagStepAndAnExitOfOneContactNeverDeadlock(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.Equal(t, automationrun.StatusExited, run.Status)
-			assert.Equal(t, tc.wantStep, run.CurrentStep)
+			assert.Equal(t, e.env.StepIDAt(t, runID, tc.wantStep), lo.FromPtr(run.CurrentStepID))
 			assert.Equal(t, tc.wantTagged, tagged)
 		})
 	}

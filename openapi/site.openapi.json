@@ -13520,15 +13520,7 @@
       },
       "EnrollmentResource": {
         "type": "object",
-        "required": [
-          "id",
-          "automationId",
-          "contactId",
-          "status",
-          "currentStep",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "automationId", "contactId", "status", "createdAt", "updatedAt"],
         "properties": {
           "id": {
             "allOf": [
@@ -13562,10 +13554,13 @@
             ],
             "description": "Where the Enrollment is"
           },
-          "currentStep": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Index of the next step to run (0-based)"
+          "currentStepId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "Id of the Step of its version the Enrollment stands on, the next to run (ADR 0122); absent once it has passed the last Step, and on an Enrollment that ended there"
           },
           "resumeAt": {
             "allOf": [
