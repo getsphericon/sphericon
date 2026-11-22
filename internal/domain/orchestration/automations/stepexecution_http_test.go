@@ -124,6 +124,11 @@ func TestHTTPExecutionRecordsPermanentRefusalsAndCancels(t *testing.T) {
 	assert.Equal(t, "gone", *run.FailureExcerpt)
 	queued := env.JobsOf(t, automations.RunStepArgs{}.Kind())
 	assert.Empty(t, queued)
+	records, err := testhelper.Module[*automations.Module](env).StepRecords(t.Context(), s, run.AutomationID, runID)
+	require.NoError(t, err)
+	require.Len(t, records, 1)
+	assert.NotNil(t, records[0].LeftAt, "the HTTP step it failed on is left with the failure")
+	assert.Nil(t, records[0].Outcome, "the Enrollment's end says why")
 }
 
 func TestHTTPExecutionRecordsTheExhaustedFailureAndReturnsItsRetry(t *testing.T) {

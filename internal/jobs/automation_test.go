@@ -169,6 +169,10 @@ func TestAutomationExitsOnUnsubscribe(t *testing.T) {
 	assert.Empty(t, fs.sent, "ineligible destination receives no email")
 	assert.Equal(t, automationrun.StatusExited, env.DB.AutomationRun.GetX(ctx, runID).Status)
 	assert.Empty(t, queuedSteps(t, env), "an exit queues no further step")
+	records := stepRecordsOf(t, env, runID)
+	require.Len(t, records, 1)
+	assert.NotNil(t, records[0].LeftAt, "the send it exited on is left with the exit")
+	assert.Nil(t, records[0].Outcome, "the Enrollment's end says why")
 }
 
 // A per-source opt-out is scoped: unsubscribing from "broadcasts" does not block

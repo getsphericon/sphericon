@@ -99,7 +99,7 @@ func (m *StepExecution) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in Execu
 }
 
 func (m *StepExecution) failHTTP(ctx context.Context, s *ent.Scoped, runID int64, f failure, decision httpcall.Execution) (httpcall.Execution, error) {
-	if err := quiet(failRun(ctx, s, runID, m.now(), f)); err != nil {
+	if err := quiet(m.failIn(ctx, s, runID, f)); err != nil {
 		return httpcall.Execution{}, err
 	}
 	return decision, nil

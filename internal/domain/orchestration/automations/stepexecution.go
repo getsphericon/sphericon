@@ -446,9 +446,10 @@ func scheduled(at *time.Time) *river.InsertOpts {
 }
 
 // fail ends the Enrollment `failed` and returns cause for the job, or nothing when the run
-// had already left `active`. A failed write is returned with the cause, never dropped.
+// had already left `active`. A failed write is returned with the cause, never dropped. The end and
+// the leaving of the Step it stood on commit in one transaction.
 func (m *StepExecution) fail(ctx context.Context, s *ent.Scoped, runID int64, cause error) error {
-	err := failRun(ctx, s, runID, m.now(), failure{})
+	err := m.failIn(ctx, s, runID, failure{})
 	if stale(err) {
 		return nil
 	}
@@ -456,6 +457,15 @@ func (m *StepExecution) fail(ctx context.Context, s *ent.Scoped, runID int64, ca
 		return errors.Join(cause, fmt.Errorf("fail run %d: %w", runID, err))
 	}
 	return cause
+}
+
+// failIn ends the Enrollment `failed` with f in a transaction of its own, so the end and the
+// leaving of the Step it stood on commit together (moved).
+func (m *StepExecution) failIn(ctx context.Context, s *ent.Scoped, runID int64, f failure) error {
+	now := m.now()
+	return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		return failRun(ctx, ts, runID, now, f)
+	})
 }
 
 // quiet turns a write on an Enrollment that is gone or no longer active (an exit won while the
