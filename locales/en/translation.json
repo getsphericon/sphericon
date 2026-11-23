@@ -423,7 +423,7 @@
       "exited": "Exited",
       "failed": "Failed",
       "goalReached": "Reached goal",
-      "hint": "What the enrollments did from {{from}} to {{to}}: an enrollment counts as entered on the day it began and under its outcome on the day it ended. The average duration is over the enrollments that ended, whatever the outcome; orders and revenue are those credited to this automation in the period. Contacts are the distinct contacts among those entered. A skipped entry, refused because an enrollment was active when its event occurred or because the contact was enrolled before, counts on the day its event occurred.",
+      "hint": "What the enrollments did from {{from}} to {{to}}: an enrollment counts as entered on the day it began and under its outcome on the day it ended. The average duration is over the enrollments that ended, whatever the outcome; orders and revenue are those credited to this automation in the period. Contacts are the distinct contacts among those entered. A skipped entry, refused because the chain of events that caused it already passed through this automation, because an enrollment was active when its event occurred or because the contact was enrolled before, counts on the day its event occurred.",
       "loadError": "Failed to load the results",
       "orders": "Orders in the period",
       "periods": {
@@ -435,6 +435,7 @@
       "previous": "Previous {{period}}",
       "revenue": "Revenue in the period",
       "skippedActiveEnrollment": "Skipped: an enrollment was active",
+      "skippedCycle": "Skipped: a cycle",
       "skippedOnce": "Skipped: enrolled before",
       "title": "Results"
     },
@@ -447,6 +448,7 @@
     "skippedEntryReason": "Reason",
     "skippedReason": {
       "active_enrollment": "An enrollment was active",
+      "cycle": "Caused by this automation",
       "once": "Enrolled before"
     },
     "smsNodeDescription": "Send a text message to the contact's phone.",

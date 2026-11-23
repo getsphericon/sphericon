@@ -2391,6 +2391,8 @@ func (c *ConverterImpl) SkippedEntryReasonToResource(source automationskippedent
 	switch source {
 	case automationskippedentry.ReasonActiveEnrollment:
 		siteapiSkippedEntryReason = site.SkippedEntryReasonActiveEnrollment
+	case automationskippedentry.ReasonCycle:
+		siteapiSkippedEntryReason = site.SkippedEntryReasonCycle
 	case automationskippedentry.ReasonOnce:
 		siteapiSkippedEntryReason = site.SkippedEntryReasonOnce
 	default:
@@ -3062,6 +3064,7 @@ func (c *ConverterImpl) analyticsreportSubscribedPointToSiteapiSiteAnalyticsSubs
 }
 func (c *ConverterImpl) automationsSkippedCountsToSiteapiAutomationSkippedCounts(source automations.SkippedCounts) site.AutomationSkippedCounts {
 	var siteapiAutomationSkippedCounts site.AutomationSkippedCounts
+	siteapiAutomationSkippedCounts.Cycle = count(source.Cycle)
 	siteapiAutomationSkippedCounts.ActiveEnrollment = count(source.ActiveEnrollment)
 	siteapiAutomationSkippedCounts.Once = count(source.Once)
 	return siteapiAutomationSkippedCounts

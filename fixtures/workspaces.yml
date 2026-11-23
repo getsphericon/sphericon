@@ -565,3 +565,15 @@
     Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# Ouroboros: the cycle guard (ADR 0127). Automations whose Steps cause each other's Triggers, kept
+# off every other Workspace so that no other test's Tags or completions start them.
+- id: 1553 # fixture: Ouroboros
+  revision: 1
+  name: Ouroboros
+  public_id: OuroW153
+  collect_key: omck_test_ouroboros_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"slices"
 	"time"
 
 	"github.com/riverqueue/river"
@@ -91,31 +90,34 @@ func NewStepExecution(bus *events.Bus, out *outboundmessages.Module, people *con
 		locks: contactlock.New()}
 }
 
-// OnEventInput is an Event of a Contact handed to the Automations: the Contact, the Event, and the
-// Automation whose own email the Event came from (0 for any other Event).
+// OnEventInput is an Event of a Contact handed to the Automations: the Contact and the Event.
 type OnEventInput struct {
-	ContactID          int64
-	Event              Event
-	SourceAutomationID int64
+	ContactID int64
+	Event     Event
 }
 
 // EnrollOnRuleInput is a Rule's Action that enrolls a Contact: the Automation, the Contact, the
-// Firing whose Action it is and the source id of the Event the Rule fired on.
+// Firing whose Action it is, the source id of the Event the Rule fired on, and the Automations the
+// chain of that Event passed through (events.Envelope.Automations, ADR 0127), which the entry
+// skips as `cycle` when they name the Automation.
 type EnrollOnRuleInput struct {
 	AutomationID int64
 	ContactID    int64
 	FiringID     int64
 	SourceID     string
+	Chain        []int64
 }
 
 // OnEvent is what an Event of the Contact does to the Automations (#751): it first ends the
 // Contact's active Enrollments whose version names the action as an exit or goal event
 // (endOnEvent, in a transaction of its own, which it needs for the Contact's lock),
 // then enrolls the Contact into every active Automation whose live version's Trigger is the action
-// (ADR 0065), one transaction per Automation (enrollOnTrigger). An Event from an Automation's own
-// email (in.SourceAutomationID) never enrolls the Contact into that Automation, so an
-// open-triggered Automation cannot feed itself (ADR 0053); it still ends an Enrollment, so a click
-// in the Automation's own email can be its goal. The Event's OccurredAt is when it occurred, which
+// (ADR 0065), one transaction per Automation (enrollOnTrigger). Each entry runs the entry checks,
+// which skip one whose Event's chain already passed through the Automation (Event.Chain, `cycle`):
+// its own Tag or lifecycle Event never enrolls the Contact again. An open or click of the
+// Automation's own message carries no chain: it runs the same checks, and one active Enrollment at
+// a time and the Entry policy bound it (ADR 0053 as amended, ADR 0127). The Event's OccurredAt is
+// when it occurred, which
 // an Event without one does not say, so it is refused. Every Enrollment it makes copies the stored
 // Event's action and properties, read once (originOf, #752). An Event a write through a Connection
 // without mcp:send published (Event.SendLocked) ends Enrollments as any other, and enrolls no one:
@@ -135,7 +137,6 @@ func (m *StepExecution) OnEvent(ctx context.Context, s *ent.Scoped, in OnEventIn
 	if err != nil {
 		return err
 	}
-	triggered = slices.DeleteFunc(triggered, func(id int64) bool { return id == in.SourceAutomationID })
 	if len(triggered) == 0 {
 		return nil
 	}
@@ -205,7 +206,8 @@ func (m *StepExecution) start(ctx context.Context, s *ent.Scoped, makeEnrollment
 // moment it moves the Enrollment on. An End completes it at once. A Step id its version does not
 // hold fails it. A send step is one Outbound send under the Automation's Sending source
 // (ADR 0015): the Outbound module owns eligibility, the unsubscribe footer and the send record, and
-// Step only turns its Outcome into the Enrollment's next state.
+// Step only turns its Outcome into the Enrollment's next state. Whatever the Step publishes carries
+// the Enrollment's chain (ADR 0127).
 func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, step automationstep.ID) error {
 	run, err := s.AutomationRun().Get(ctx, runID)
 	if ent.IsNotFound(err) {
@@ -214,6 +216,9 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 	if err != nil {
 		return fmt.Errorf("load run %d: %w", runID, err)
 	}
+	// What the Step publishes is published on behalf of the Enrollment: it carries the chain the
+	// Enrollment keeps, however long it waited (ADR 0127).
+	ctx = events.PassingThrough(ctx, run.Chain...)
 	// The lifecycle table decides whether the Enrollment can still move: a step that finds it
 	// exited, completed or failed stops before it sends, tags or advances.
 	if live, err := isActive(ctx, s, run.ID); err != nil {

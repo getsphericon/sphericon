@@ -37,6 +37,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/app"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/identity/noticedelivery"
@@ -501,7 +502,13 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		add[recordedArgs](tb, p, txDB, ws, recordedWorker{})
 		add(tb, p, txDB, ws, jobs.NewWebhookEventWorker(client, edition.Webhooks(jobs.NewWebhookDispatcher())))
 		add(tb, p, txDB, ws, jobs.NewEvaluateTriggerWorker(client, do.MustInvoke[*automations.StepExecution](injector)))
+		// The Steps of the Enrollments the trigger makes, so a test follows a chain of Automations
+		// through the jobs that carry it.
+		add(tb, p, txDB, ws, jobs.NewRunStepWorker(client, do.MustInvoke[*automations.StepExecution](injector)))
 		add(tb, p, txDB, ws, jobs.NewEvaluateRulesWorker(client, do.MustInvoke[*rules.Module](injector)))
+		// The Actions of the Firings the evaluation makes, so a chain runs through a Rule too.
+		add(tb, p, txDB, ws, jobs.NewRunRuleActionsWorker(client, do.MustInvoke[*rules.Module](injector),
+			jobs.RuleActionRunners(do.MustInvoke[*outboundmessages.Module](injector), do.MustInvoke[*contacts.Module](injector), do.MustInvoke[*automations.StepExecution](injector))))
 		add(tb, p, txDB, ws, eejobs.NewEntryEventWorker(edition.Audit))
 		add(tb, p, txDB, ws, eejobs.NewErasureEventWorker(edition.Erasures))
 		return p

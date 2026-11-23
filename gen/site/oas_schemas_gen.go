@@ -2468,10 +2468,17 @@ func (s *AutomationResultsPoint) SetDate(val string) {
 // How many entries into an automation were skipped, by reason.
 // Ref: #/components/schemas/AutomationSkippedCounts
 type AutomationSkippedCounts struct {
+	// Entries caused by a chain of events that already passed through the automation.
+	Cycle int32 `json:"cycle"`
 	// Entries whose Event occurred while an enrollment of the contact was active.
 	ActiveEnrollment int32 `json:"activeEnrollment"`
 	// Entries of a contact enrolled in the automation before, which enrolls a contact once.
 	Once int32 `json:"once"`
+}
+
+// GetCycle returns the value of Cycle.
+func (s *AutomationSkippedCounts) GetCycle() int32 {
+	return s.Cycle
 }
 
 // GetActiveEnrollment returns the value of ActiveEnrollment.
@@ -2482,6 +2489,11 @@ func (s *AutomationSkippedCounts) GetActiveEnrollment() int32 {
 // GetOnce returns the value of Once.
 func (s *AutomationSkippedCounts) GetOnce() int32 {
 	return s.Once
+}
+
+// SetCycle sets the value of Cycle.
+func (s *AutomationSkippedCounts) SetCycle(val int32) {
+	s.Cycle = val
 }
 
 // SetActiveEnrollment sets the value of ActiveEnrollment.
@@ -31777,12 +31789,14 @@ func (s *SiteWorkspaceTimezoneInput) SetTimezone(val TimeZoneName) {
 type SiteWorkspacesLeaveNoContent struct{}
 
 // Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127):
+// `cycle` (the chain of events that caused it already passed through the automation),
 // `active_enrollment` (the triggering Event occurred while an enrollment of the contact was active) or
 // `once` (the contact had an enrollment in the automation before).
 // Ref: #/components/schemas/SkippedEntryReason
 type SkippedEntryReason string
 
 const (
+	SkippedEntryReasonCycle            SkippedEntryReason = "cycle"
 	SkippedEntryReasonActiveEnrollment SkippedEntryReason = "active_enrollment"
 	SkippedEntryReasonOnce             SkippedEntryReason = "once"
 )
@@ -31790,6 +31804,7 @@ const (
 // AllValues returns all SkippedEntryReason values.
 func (SkippedEntryReason) AllValues() []SkippedEntryReason {
 	return []SkippedEntryReason{
+		SkippedEntryReasonCycle,
 		SkippedEntryReasonActiveEnrollment,
 		SkippedEntryReasonOnce,
 	}
@@ -31798,6 +31813,8 @@ func (SkippedEntryReason) AllValues() []SkippedEntryReason {
 // MarshalText implements encoding.TextMarshaler.
 func (s SkippedEntryReason) MarshalText() ([]byte, error) {
 	switch s {
+	case SkippedEntryReasonCycle:
+		return []byte(s), nil
 	case SkippedEntryReasonActiveEnrollment:
 		return []byte(s), nil
 	case SkippedEntryReasonOnce:
@@ -31810,6 +31827,9 @@ func (s SkippedEntryReason) MarshalText() ([]byte, error) {
 // UnmarshalText implements encoding.TextUnmarshaler.
 func (s *SkippedEntryReason) UnmarshalText(data []byte) error {
 	switch SkippedEntryReason(data) {
+	case SkippedEntryReasonCycle:
+		*s = SkippedEntryReasonCycle
+		return nil
 	case SkippedEntryReasonActiveEnrollment:
 		*s = SkippedEntryReasonActiveEnrollment
 		return nil

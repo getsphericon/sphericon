@@ -273,6 +273,10 @@ func init() {
 	automationrunDescBeganAt := automationrunFields[5].Descriptor()
 	// automationrun.DefaultBeganAt holds the default value on creation for the began_at field.
 	automationrun.DefaultBeganAt = automationrunDescBeganAt.Default.(func() time.Time)
+	// automationrunDescChain is the schema descriptor for chain field.
+	automationrunDescChain := automationrunFields[10].Descriptor()
+	// automationrun.DefaultChain holds the default value on creation for the chain field.
+	automationrun.DefaultChain = automationrunDescChain.Default.([]int64)
 	automationskippedentryMixin := schema.AutomationSkippedEntry{}.Mixin()
 	automationskippedentryMixinFields0 := automationskippedentryMixin[0].Fields()
 	_ = automationskippedentryMixinFields0

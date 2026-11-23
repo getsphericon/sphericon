@@ -1541,6 +1541,8 @@ func (c *ConverterImpl) SkippedEntryReasonToResource(source automationskippedent
 	switch source {
 	case automationskippedentry.ReasonActiveEnrollment:
 		externalapiSkippedEntryReason = external.SkippedEntryReasonActiveEnrollment
+	case automationskippedentry.ReasonCycle:
+		externalapiSkippedEntryReason = external.SkippedEntryReasonCycle
 	case automationskippedentry.ReasonOnce:
 		externalapiSkippedEntryReason = external.SkippedEntryReasonOnce
 	default:
@@ -2024,6 +2026,7 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) external.Work
 }
 func (c *ConverterImpl) automationsSkippedCountsToExternalapiAutomationSkippedCounts(source automations.SkippedCounts) external.AutomationSkippedCounts {
 	var externalapiAutomationSkippedCounts external.AutomationSkippedCounts
+	externalapiAutomationSkippedCounts.Cycle = count(source.Cycle)
 	externalapiAutomationSkippedCounts.ActiveEnrollment = count(source.ActiveEnrollment)
 	externalapiAutomationSkippedCounts.Once = count(source.Once)
 	return externalapiAutomationSkippedCounts

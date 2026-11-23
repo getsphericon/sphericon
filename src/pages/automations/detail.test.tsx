@@ -50,7 +50,7 @@ const NO_RESULTS: AutomationResults = {
     from: '2026-02-16',
     to: '2026-03-17',
     contacts: 0,
-    skipped: { activeEnrollment: 0, once: 0 },
+    skipped: { cycle: 0, activeEnrollment: 0, once: 0 },
     averageDurationSeconds: null,
     revenue: NO_REVENUE,
   },
@@ -63,7 +63,7 @@ const NO_RESULTS: AutomationResults = {
     from: '2026-01-17',
     to: '2026-02-15',
     contacts: 0,
-    skipped: { activeEnrollment: 0, once: 0 },
+    skipped: { cycle: 0, activeEnrollment: 0, once: 0 },
     averageDurationSeconds: null,
     revenue: NO_REVENUE,
   },
@@ -555,7 +555,7 @@ const MONTH: AutomationResults = {
     from: '2026-02-16',
     to: '2026-03-17',
     contacts: 4,
-    skipped: { activeEnrollment: 2, once: 7 },
+    skipped: { cycle: 6, activeEnrollment: 2, once: 7 },
     averageDurationSeconds: 85_050,
     revenue: { reportingCurrency: 'USD', orders: 1, amount: 3500 },
   },
@@ -568,7 +568,7 @@ const MONTH: AutomationResults = {
     from: '2026-01-17',
     to: '2026-02-15',
     contacts: 2,
-    skipped: { activeEnrollment: 1, once: 5 },
+    skipped: { cycle: 3, activeEnrollment: 1, once: 5 },
     averageDurationSeconds: 57_600,
     revenue: { reportingCurrency: 'USD', orders: 1, amount: 2500 },
   },
@@ -607,6 +607,8 @@ test('shows what the enrollments did in the period against the period before', a
   await expect.element(screen.getByText('Previous 30 days: $25.00 (+40%)')).toBeInTheDocument()
   await expect.element(screen.getByText('Contacts', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('Previous 30 days: 2 (+100%)')).toBeInTheDocument()
+  await expect.element(screen.getByText('Skipped: a cycle')).toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 3 (+100%)')).toBeInTheDocument()
   await expect.element(screen.getByText('Skipped: an enrollment was active')).toBeInTheDocument()
   await expect.element(screen.getByText('Skipped: enrolled before')).toBeInTheDocument()
   await expect.element(screen.getByText('Previous 30 days: 5 (+40%)')).toBeInTheDocument()

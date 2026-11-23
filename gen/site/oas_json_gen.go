@@ -3704,6 +3704,10 @@ func (s *AutomationSkippedCounts) Encode(e *jx.Encoder) {
 // encodeFields encodes fields.
 func (s *AutomationSkippedCounts) encodeFields(e *jx.Encoder) {
 	{
+		e.FieldStart("cycle")
+		e.Int32(s.Cycle)
+	}
+	{
 		e.FieldStart("activeEnrollment")
 		e.Int32(s.ActiveEnrollment)
 	}
@@ -3713,9 +3717,10 @@ func (s *AutomationSkippedCounts) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfAutomationSkippedCounts = [2]string{
-	0: "activeEnrollment",
-	1: "once",
+var jsonFieldsNameOfAutomationSkippedCounts = [3]string{
+	0: "cycle",
+	1: "activeEnrollment",
+	2: "once",
 }
 
 // Decode decodes AutomationSkippedCounts from json.
@@ -3727,8 +3732,20 @@ func (s *AutomationSkippedCounts) Decode(d *jx.Decoder) error {
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
-		case "activeEnrollment":
+		case "cycle":
 			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Int32()
+				s.Cycle = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"cycle\"")
+			}
+		case "activeEnrollment":
+			requiredBitSet[0] |= 1 << 1
 			if err := func() error {
 				v, err := d.Int32()
 				s.ActiveEnrollment = int32(v)
@@ -3740,7 +3757,7 @@ func (s *AutomationSkippedCounts) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"activeEnrollment\"")
 			}
 		case "once":
-			requiredBitSet[0] |= 1 << 1
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
 				v, err := d.Int32()
 				s.Once = int32(v)
@@ -3761,7 +3778,7 @@ func (s *AutomationSkippedCounts) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000011,
+		0b00000111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -57084,6 +57101,8 @@ func (s *SkippedEntryReason) Decode(d *jx.Decoder) error {
 	}
 	// Try to use constant string.
 	switch SkippedEntryReason(v) {
+	case SkippedEntryReasonCycle:
+		*s = SkippedEntryReasonCycle
 	case SkippedEntryReasonActiveEnrollment:
 		*s = SkippedEntryReasonActiveEnrollment
 	case SkippedEntryReasonOnce:

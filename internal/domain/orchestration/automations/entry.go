@@ -3,6 +3,7 @@ package automations
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -29,16 +30,24 @@ import (
 //
 // entryChecks holds the ones built, in that order; a check that comes takes its place among them.
 //
+// A cycle is an entry whose cause already passed through the Automation: the Event, or the Event a
+// Rule fired on, names it among the Automations its chain passed through (events.Envelope.Automations),
+// so the Automation's own Tag, its own lifecycle Event or B enrolling back into A never enrolls the
+// Contact again, however long the chain waited.
+//
 // The "other" Enrollments leave out the one the entry's own Event or Firing made: an Event handled
 // again finds the Enrollment it began, which is no reason to skip it, and the insert's ON CONFLICT
 // makes nothing (one Enrollment per Automation and Event, or Firing). An Enrollment made already
 // ended, by an exit or goal Event recorded before it, counts like any other.
 
-// entryCase is what an entry check judges: the moment the entry would begin (its Event's
-// occurred_at) and the Contact's other Enrollments in the Automation.
+// entryCase is what an entry check judges: the Automation, the Automations its cause's chain passed
+// through, the moment the entry would begin (its Event's occurred_at) and the Contact's other
+// Enrollments in the Automation.
 type entryCase struct {
-	at     time.Time
-	others []*ent.AutomationRun
+	automationID int64
+	chain        []int64
+	at           time.Time
+	others       []*ent.AutomationRun
 }
 
 // entryCheck is one entry check: the reason it skips the entry, or false when it lets it through.
@@ -46,8 +55,17 @@ type entryCheck func(c entryCase) (automationskippedentry.Reason, bool)
 
 // entryChecks are the entry checks built, in the order they run.
 var entryChecks = []entryCheck{
+	cycle,
 	activeEnrollment,
 	onceEver,
+}
+
+// cycle skips an entry whose cause's chain already passed through the Automation.
+func cycle(c entryCase) (automationskippedentry.Reason, bool) {
+	if slices.Contains(c.chain, c.automationID) {
+		return automationskippedentry.ReasonCycle, true
+	}
+	return "", false
 }
 
 // activeEnrollment skips an entry whose moment falls while another Enrollment of the Contact was
@@ -82,7 +100,7 @@ func judgeEntry(ctx context.Context, s *ent.Scoped, automationID, contactID int6
 	if err != nil {
 		return "", false, err
 	}
-	c := entryCase{at: o.OccurredAt, others: others}
+	c := entryCase{automationID: automationID, chain: o.Chain, at: o.OccurredAt, others: others}
 	for _, check := range entryChecks {
 		if reason, skipped := check(c); skipped {
 			return reason, true, nil

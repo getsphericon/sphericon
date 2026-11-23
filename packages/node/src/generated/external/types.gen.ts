@@ -684,6 +684,10 @@ export type AutomationResultsPoint = {
  */
 export type AutomationSkippedCounts = {
   /**
+   * Entries caused by a chain of events that already passed through the automation
+   */
+  cycle: number;
+  /**
    * Entries whose Event occurred while an enrollment of the contact was active
    */
   activeEnrollment: number;
@@ -5178,13 +5182,19 @@ export type SigningSecret = string;
 
 /**
  * Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127):
+ * `cycle` (the chain of events that caused it already passed through the automation),
  * `active_enrollment` (the triggering Event occurred while an enrollment of the contact was active)
  * or `once` (the contact had an enrollment in the automation before).
  */
-export const SkippedEntryReason = { ACTIVE_ENROLLMENT: 'active_enrollment', ONCE: 'once' } as const;
+export const SkippedEntryReason = {
+  CYCLE: 'cycle',
+  ACTIVE_ENROLLMENT: 'active_enrollment',
+  ONCE: 'once'
+} as const;
 
 /**
  * Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127):
+ * `cycle` (the chain of events that caused it already passed through the automation),
  * `active_enrollment` (the triggering Event occurred while an enrollment of the contact was active)
  * or `once` (the contact had an enrollment in the automation before).
  */

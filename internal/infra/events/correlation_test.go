@@ -40,6 +40,29 @@ func TestAnEventCarriesItsChain(t *testing.T) {
 	assert.NotEqual(t, "req-chain", alone.CorrelationID)
 }
 
+// What is published on behalf of an Enrollment carries the Automations its chain passed through
+// (ADR 0127), and what is published while handling such an event inherits them, with the
+// Automations added on the way.
+func TestAnEventCarriesTheAutomationsItsChainPassedThrough(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := logging.WithRequestID(t.Context(), "req-automations")
+
+	publishIn(events.PassingThrough(ctx, 7, 3, 7), t, env, "first@example.com")
+	first := lastCreated(t, env)
+	publishIn(events.Handling(t.Context(), first), t, env, "second@example.com")
+	second := lastCreated(t, env)
+	publishIn(events.PassingThrough(events.Handling(t.Context(), second), 5), t, env, "third@example.com")
+	third := lastCreated(t, env)
+	publishIn(ctx, t, env, "alone@example.com")
+	alone := lastCreated(t, env)
+
+	assert.Equal(t, []int64{3, 7}, first.Automations)
+	assert.Equal(t, "req-automations", first.CorrelationID, "the Automations leave the chain as it is")
+	assert.Equal(t, []int64{3, 7}, second.Automations, "an event published while handling another inherits them")
+	assert.Equal(t, []int64{3, 5, 7}, third.Automations)
+	assert.Empty(t, alone.Automations, "an event of the same request outside the chain carries none")
+}
+
 // publishIn publishes a ContactCreated in ctx.
 func publishIn(ctx context.Context, t *testing.T, env *testhelper.TestEnv, email string) {
 	t.Helper()
@@ -87,4 +110,36 @@ func TestAJobKeepsTheChainItWasQueuedIn(t *testing.T) {
 	require.NotEmpty(t, published)
 	assert.Equal(t, "01JROOT", published[len(published)-1].CorrelationID)
 	assert.Equal(t, "01JPARENT", published[len(published)-1].CausationID)
+}
+
+// A job queued while handling an event that passed through Automations keeps them, and an event the
+// job publishes carries them.
+func TestAJobKeepsTheAutomationsItsChainPassedThrough(t *testing.T) {
+	ctx := context.Background()
+	env := testhelper.Setup(t, testhelper.Committed())
+	sqlDB, bus := env.SQLDB, env.Bus
+	cfg := &river.Config{Middleware: []rivertype.Middleware{events.JobCorrelation()}}
+	inserter, err := river.NewClient(riverdatabasesql.New(sqlDB), cfg)
+	require.NoError(t, err)
+	tx, err := sqlDB.BeginTx(ctx, nil)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = tx.Rollback() })
+	parent := events.Envelope{ID: "01JPARENT", CorrelationID: "01JROOT", Automations: []int64{4, 9}}
+	queued, err := inserter.InsertTx(events.Handling(ctx, parent), tx, chainedArgs{}, nil)
+	require.NoError(t, err)
+	var during []int64
+	w := rivertest.NewWorker(t, riverdatabasesql.New(sqlDB), cfg, river.WorkFunc(func(ctx context.Context, _ *river.Job[chainedArgs]) error {
+		during = events.AutomationsOf(ctx)
+		return bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
+			return pub.Publish(ctx, &events.ContactCreated{WorkspaceID: fixtures.AcmeID, ContactID: 7, Email: "job@example.com"})
+		})
+	}))
+
+	_, err = w.WorkJob(ctx, t, tx, queued.Job)
+
+	require.NoError(t, err)
+	assert.Equal(t, []int64{4, 9}, during, "the job's work reads them")
+	published := env.QueuedEnvelopes(t, systemevent.ContactCreated)
+	require.NotEmpty(t, published)
+	assert.Equal(t, []int64{4, 9}, published[len(published)-1].Automations)
 }

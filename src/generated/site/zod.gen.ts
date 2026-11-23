@@ -250,6 +250,7 @@ export const zAutomationResultsPoint = z.object({
  * How many entries into an automation were skipped, by reason
  */
 export const zAutomationSkippedCounts = z.object({
+  cycle: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   activeEnrollment: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   once: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
@@ -2410,10 +2411,15 @@ export const zSiteVerifyEmailInput = z.strictObject({
 
 /**
  * Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127):
+ * `cycle` (the chain of events that caused it already passed through the automation),
  * `active_enrollment` (the triggering Event occurred while an enrollment of the contact was active)
  * or `once` (the contact had an enrollment in the automation before).
  */
-export const zSkippedEntryReason = z.enum(['active_enrollment', 'once']);
+export const zSkippedEntryReason = z.enum([
+  'cycle',
+  'active_enrollment',
+  'once'
+]);
 
 /**
  * Why an Outbound message was Skipped: final for its Destination, never retried. The first four

@@ -83,6 +83,11 @@ function ResultsFigures({ results }: { results: AutomationResults }) {
           previous.failed,
         )}
         {count(
+          t(($) => $.automations.results.skippedCycle),
+          current.skipped.cycle,
+          previous.skipped.cycle,
+        )}
+        {count(
           t(($) => $.automations.results.skippedActiveEnrollment),
           current.skipped.activeEnrollment,
           previous.skipped.activeEnrollment,
