@@ -29,8 +29,8 @@ type PruneSkippedEntriesWorker struct {
 
 // NewPruneSkippedEntriesWorker builds the prune of the skipped entries into the Automations of the
 // module, older than retention (0 disables it).
-func NewPruneSkippedEntriesWorker(automations *automations.Module, client *ent.Client, retention time.Duration) *PruneSkippedEntriesWorker {
-	return &PruneSkippedEntriesWorker{automations: automations, ent: client, retention: retention}
+func NewPruneSkippedEntriesWorker(module *automations.Module, client *ent.Client, retention time.Duration) *PruneSkippedEntriesWorker {
+	return &PruneSkippedEntriesWorker{automations: module, ent: client, retention: retention}
 }
 
 func (w *PruneSkippedEntriesWorker) Work(ctx context.Context, _ *river.Job[PruneSkippedEntriesArgs]) error {
