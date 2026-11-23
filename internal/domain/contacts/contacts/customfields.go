@@ -3,6 +3,7 @@ package contacts
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"slices"
 	"time"
 
@@ -118,6 +119,15 @@ func (m *Module) CustomField(ctx context.Context, s *ent.Scoped, id int64) (*ent
 // The catalogue is small and unpaginated.
 func (m *Module) CustomFields(ctx context.Context, s *ent.Scoped) ([]*ent.CustomField, error) {
 	return s.CustomField().Query().Order(ent.Asc(customfield.FieldKey)).All(ctx)
+}
+
+// HasCustomField reports whether the Workspace's Custom field catalogue has a field of the key.
+func (m *Module) HasCustomField(ctx context.Context, s *ent.Scoped, key string) (bool, error) {
+	ok, err := s.CustomField().Query().Where(customfield.Key(key)).Exist(ctx)
+	if err != nil {
+		return false, fmt.Errorf("look up custom field %q: %w", key, err)
+	}
+	return ok, nil
 }
 
 // inferFieldType maps a JSON-decoded value to a CustomField type. Numbers decode to

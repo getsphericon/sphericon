@@ -11,6 +11,7 @@ package tags
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
@@ -82,6 +83,16 @@ func (m *Module) EnsureIn(ctx context.Context, s *ent.Scoped, name string) (*ent
 		return nil, err
 	}
 	return s.Tag().Query().Where(Named(name)).Only(ctx)
+}
+
+// Stored reports whether the Workspace has a Tag stored under exactly name, its case included: the
+// name its contact.tagged and contact.untagged Events carry.
+func (m *Module) Stored(ctx context.Context, s *ent.Scoped, name string) (bool, error) {
+	ok, err := s.Tag().Query().Where(tag.Name(name)).Exist(ctx)
+	if err != nil {
+		return false, fmt.Errorf("look up tag %q: %w", name, err)
+	}
+	return ok, nil
 }
 
 // Named is the predicate of the Tag called name, whatever its case (tagname).

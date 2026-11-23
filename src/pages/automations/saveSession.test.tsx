@@ -8,6 +8,7 @@ import {
   handleSiteAutomationsRevert,
   handleSiteAutomationsUpdate,
   handleSiteEnrollmentsList,
+  handleSiteEventsPropertyKeys,
   handleSiteIntegrationsList,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteAutomationResource, AutomationVersion } from '../../generated/site/types.gen.ts'
@@ -22,7 +23,12 @@ import { AutomationEditPage } from './edit.tsx'
 const EDIT_ROUTE = routeMount(Route, { workspaceId: 'TestWs01', automationId: testId(5) })
 const LIVE: AutomationVersion = {
   number: 1,
-  triggerEvent: 'email.clicked',
+  trigger: {
+    kind: 'event' as const,
+    action: 'email.clicked',
+    entryPolicy: 'once' as const,
+    cooldown: 3600,
+  },
   exitEvents: [],
   goalEvent: null,
   steps: { id: stepId(1), steps: [] },
@@ -39,9 +45,11 @@ const STORED: SiteAutomationResource = {
   updatedAt: '2026-01-01T00:00:00Z',
 }
 
+// No Enrollments, Integrations or recent property keys of the Trigger's action.
 function noEnrollmentsOrIntegrations() {
   worker.use(
     handleSiteIntegrationsList({ body: [] }),
+    handleSiteEventsPropertyKeys({ body: { keys: [] } }),
     handleSiteEnrollmentsList({
       body: { items: [], page: 1, pageSize: 25, totalItems: 0, totalPages: 0 },
     }),
@@ -72,7 +80,15 @@ test.each([
       stored = {
         ...STORED,
         name: 'Submitted name',
-        draft: { ...DRAFT, triggerEvent: 'course_completed' },
+        draft: {
+          ...DRAFT,
+          trigger: {
+            kind: 'event' as const,
+            action: 'course_completed',
+            entryPolicy: 'once' as const,
+            cooldown: 3600,
+          },
+        },
       }
       return HttpResponse.json(stored)
     }),
@@ -83,7 +99,11 @@ test.each([
   await screen.getByText('Properties').click()
   await screen.getByRole('combobox', { name: 'Trigger Event' }).fill('course_completed')
   await screen.getByLabelText('Name', { exact: false }).fill('Submitted name')
-  await screen.getByRole('button', { name: 'Save' }).click()
+  // The Trigger's panel covers the toolbar: the Save is a click dispatched on it.
+  screen
+    .getByRole('button', { name: 'Save' })
+    .element()
+    .dispatchEvent(new MouseEvent('click', { bubbles: true }))
   await received.promise
   await expect.element(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
   await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeDisabled()
@@ -119,7 +139,11 @@ test('a refused save preserves newer edits and the previous acknowledged content
   )
   const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
   await screen.getByLabelText('Name', { exact: false }).fill('Submitted name')
-  await screen.getByRole('button', { name: 'Save' }).click()
+  // The Trigger's panel covers the toolbar: the Save is a click dispatched on it.
+  screen
+    .getByRole('button', { name: 'Save' })
+    .element()
+    .dispatchEvent(new MouseEvent('click', { bubbles: true }))
   await received.promise
   await expect.element(screen.getByRole('button', { name: 'Revert' })).toBeDisabled()
   await screen.getByLabelText('Name', { exact: false }).fill('Newer local name')
@@ -140,7 +164,18 @@ test('Revert replaces local content with live and prevents editing during the op
   noEnrollmentsOrIntegrations()
   worker.use(
     handleSiteAutomationsGet({
-      body: { ...STORED, draft: { ...DRAFT, triggerEvent: 'course_completed' } },
+      body: {
+        ...STORED,
+        draft: {
+          ...DRAFT,
+          trigger: {
+            kind: 'event' as const,
+            action: 'course_completed',
+            entryPolicy: 'once' as const,
+            cooldown: 3600,
+          },
+        },
+      },
     }),
     handleSiteAutomationsRevert(async () => {
       received.resolve(undefined)
@@ -154,7 +189,11 @@ test('Revert replaces local content with live and prevents editing during the op
   await screen.getByText('Properties').click()
   await screen.getByRole('combobox', { name: 'Trigger Event' }).fill('unsaved_event')
   await screen.getByLabelText('Name', { exact: false }).fill('Unsaved local name')
-  await screen.getByRole('button', { name: 'Revert' }).click()
+  // The Trigger's panel covers the toolbar: the Revert is a click dispatched on it.
+  screen
+    .getByRole('button', { name: 'Revert' })
+    .element()
+    .dispatchEvent(new MouseEvent('click', { bubbles: true }))
   const confirmation = screen.getByRole('dialog', { name: 'Revert without saving?' })
   await expect
     .element(confirmation.getByText('Your changes to this automation are not saved.'))
@@ -183,7 +222,15 @@ test('Revert replaces local content with live and prevents editing during the op
 test('Publish serializes operations and preserves the current canvas', async () => {
   const received = Promise.withResolvers<undefined>()
   const release = Promise.withResolvers<undefined>()
-  const draft = { ...DRAFT, triggerEvent: 'course_completed' }
+  const draft = {
+    ...DRAFT,
+    trigger: {
+      kind: 'event' as const,
+      action: 'course_completed',
+      entryPolicy: 'once' as const,
+      cooldown: 3600,
+    },
+  }
   noEnrollmentsOrIntegrations()
   worker.use(
     handleSiteAutomationsGet({ body: { ...STORED, draft } }),

@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
@@ -68,6 +69,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
@@ -241,6 +243,22 @@ func (s *Scoped) verifyAutomationRun(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("AutomationRun: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyAutomationSkippedEntry fails with ErrNotInWorkspace unless every id is a AutomationSkippedEntry of the Workspace.
+func (s *Scoped) verifyAutomationSkippedEntry(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.AutomationSkippedEntry.Query().Where(s.inAutomationSkippedEntry(automationskippedentry.IDIn(ids...))...).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("AutomationSkippedEntry: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -6200,6 +6218,15 @@ func (s *Scoped) checkAutomationRun(ctx context.Context, ms ...*AutomationRunMut
 			return fmt.Errorf("contact: %w", err)
 		}
 	}
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.FiringIDs()...)
+		}
+		if err := s.verifyRuleFiring(ctx, ids); err != nil {
+			return fmt.Errorf("firing: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -6427,6 +6454,76 @@ func (x *AutomationRunScopedCreate) SetEventProperties(v map[string]interface{})
 
 const RoleOf_AutomationRunScopedCreate_SetEventProperties = RoleStep
 
+// SetTriggerSourceID sets the "trigger_source_id" field.
+func (x *AutomationRunScopedCreate) SetTriggerSourceID(v string) *AutomationRunScopedCreate {
+	x.set = append(x.set, func(b *AutomationRunCreate) { b.SetTriggerSourceID(v) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedCreate_SetTriggerSourceID = RoleStep
+
+// SetNillableTriggerSourceID sets the "trigger_source_id" field if the given value is not nil.
+func (x *AutomationRunScopedCreate) SetNillableTriggerSourceID(v *string) *AutomationRunScopedCreate {
+	if v != nil {
+		x.SetTriggerSourceID(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationRunScopedCreate_SetNillableTriggerSourceID = RoleStep
+
+// SetFiringID sets the "firing_id" field.
+func (x *AutomationRunScopedCreate) SetFiringID(v int64) *AutomationRunScopedCreate {
+	x.set = append(x.set, func(b *AutomationRunCreate) { b.SetFiringID(v) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedCreate_SetFiringID = RoleStep
+
+// SetNillableFiringID sets the "firing_id" field if the given value is not nil.
+func (x *AutomationRunScopedCreate) SetNillableFiringID(v *int64) *AutomationRunScopedCreate {
+	if v != nil {
+		x.SetFiringID(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationRunScopedCreate_SetNillableFiringID = RoleStep
+
+// SetChain sets the "chain" field.
+func (x *AutomationRunScopedCreate) SetChain(v []int64) *AutomationRunScopedCreate {
+	x.set = append(x.set, func(b *AutomationRunCreate) { b.SetChain(v) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedCreate_SetChain = RoleStep
+
+// SetOrdinal sets the "ordinal" field.
+func (x *AutomationRunScopedCreate) SetOrdinal(v int) *AutomationRunScopedCreate {
+	x.set = append(x.set, func(b *AutomationRunCreate) { b.SetOrdinal(v) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedCreate_SetOrdinal = RoleStep
+
+// SetKeyValue sets the "key_value" field.
+func (x *AutomationRunScopedCreate) SetKeyValue(v string) *AutomationRunScopedCreate {
+	x.set = append(x.set, func(b *AutomationRunCreate) { b.SetKeyValue(v) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedCreate_SetKeyValue = RoleStep
+
+// SetNillableKeyValue sets the "key_value" field if the given value is not nil.
+func (x *AutomationRunScopedCreate) SetNillableKeyValue(v *string) *AutomationRunScopedCreate {
+	if v != nil {
+		x.SetKeyValue(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationRunScopedCreate_SetNillableKeyValue = RoleStep
+
 // SetEndedAt sets the "ended_at" field.
 func (x *AutomationRunScopedCreate) SetEndedAt(v time.Time) *AutomationRunScopedCreate {
 	x.set = append(x.set, func(b *AutomationRunCreate) { b.SetEndedAt(v) })
@@ -6558,6 +6655,14 @@ func (x *AutomationRunScopedCreate) SetContact(v *Contact) *AutomationRunScopedC
 }
 
 const RoleOf_AutomationRunScopedCreate_SetContact = RoleStep
+
+// SetFiring sets the "firing" edge to the RuleFiring entity.
+func (x *AutomationRunScopedCreate) SetFiring(v *RuleFiring) *AutomationRunScopedCreate {
+	x.set = append(x.set, func(b *AutomationRunCreate) { b.SetFiring(v) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedCreate_SetFiring = RoleStep
 
 const (
 	TypeOf_AutomationRunScopedCreate                        = TypeScopedCreate
@@ -7799,6 +7904,786 @@ const (
 	RoleOf_AutomationRunScopedUpdate_Modify = RoleStep
 	RoleOf_AutomationRunScopedUpdate_Save   = RoleStep
 	RoleOf_AutomationRunScopedUpdate_Exec   = RoleStep
+)
+
+// AutomationSkippedEntryScoped reaches AutomationSkippedEntry entities of one Workspace.
+type AutomationSkippedEntryScoped struct{ s *Scoped }
+
+// AutomationSkippedEntry returns the AutomationSkippedEntry entities of the Workspace.
+func (s *Scoped) AutomationSkippedEntry() *AutomationSkippedEntryScoped {
+	return &AutomationSkippedEntryScoped{s: s}
+}
+
+const (
+	TypeOf_AutomationSkippedEntryScoped             = TypeWrapper
+	EntityOf_AutomationSkippedEntryScoped           = "AutomationSkippedEntry"
+	RoleOf_Scoped_AutomationSkippedEntry            = RoleNone
+	RoleOf_AutomationSkippedEntryScoped_Query       = RoleRead
+	RoleOf_AutomationSkippedEntryScoped_Get         = RoleRead
+	RoleOf_AutomationSkippedEntryScoped_DeleteOneID = RoleStart
+	RoleOf_AutomationSkippedEntryScoped_UpdateOneID = RoleStart
+	RoleOf_AutomationSkippedEntryScoped_Delete      = RoleStart
+	RoleOf_AutomationSkippedEntryScoped_Create      = RoleStart
+	RoleOf_AutomationSkippedEntryScoped_CreateBulk  = RoleStart
+	RoleOf_AutomationSkippedEntryScoped_Update      = RoleStart
+)
+
+// inAutomationSkippedEntry confines predicates of AutomationSkippedEntry rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inAutomationSkippedEntry(ps ...predicate.AutomationSkippedEntry) []predicate.AutomationSkippedEntry {
+	return append([]predicate.AutomationSkippedEntry{automationskippedentry.WorkspaceID(s.ws)}, ps...)
+}
+
+// Query returns a AutomationSkippedEntry query already confined to the Workspace.
+func (t *AutomationSkippedEntryScoped) Query() *AutomationSkippedEntryQuery {
+	return t.s.c.AutomationSkippedEntry.Query().Where(t.s.inAutomationSkippedEntry()...)
+}
+
+// Get returns the AutomationSkippedEntry with the id; a row of another Workspace is not found.
+func (t *AutomationSkippedEntryScoped) Get(ctx context.Context, id int64) (*AutomationSkippedEntry, error) {
+	return t.Query().Where(automationskippedentry.ID(id)).Only(ctx)
+}
+
+// writeAutomationSkippedEntry runs a write of AutomationSkippedEntry rows: run builds it on the client of the scope it is
+// given and executes it, and reaches no other client. The
+// entity is not audited, so run gets the scope itself.
+func (s *Scoped) writeAutomationSkippedEntry(ctx context.Context, verb string, where []predicate.AutomationSkippedEntry, unchanged unchangedRows, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, unchanged
+	_, err := run(s)
+	return err
+}
+
+// checkAutomationSkippedEntry verifies every reference the mutations set against the Workspace of s, one query per
+// reference for all of them.
+func (s *Scoped) checkAutomationSkippedEntry(ctx context.Context, ms ...*AutomationSkippedEntryMutation) error {
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.AutomationIDs()...)
+		}
+		if err := s.verifyAutomation(ctx, ids); err != nil {
+			return fmt.Errorf("automation: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.ContactIDs()...)
+		}
+		if err := s.verifyContact(ctx, ids); err != nil {
+			return fmt.Errorf("contact: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.FiringIDs()...)
+		}
+		if err := s.verifyRuleFiring(ctx, ids); err != nil {
+			return fmt.Errorf("firing: %w", err)
+		}
+	}
+	return nil
+}
+
+// AutomationSkippedEntryScopedDeleteOne deletes one AutomationSkippedEntry: it keeps the row's id and its fences, and builds the
+// ent delete on the client the delete runs on.
+type AutomationSkippedEntryScopedDeleteOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.AutomationSkippedEntry
+}
+
+// DeleteOneID deletes the AutomationSkippedEntry with the id; a row of another Workspace is not found.
+func (t *AutomationSkippedEntryScoped) DeleteOneID(id int64) *AutomationSkippedEntryScopedDeleteOne {
+	return &AutomationSkippedEntryScopedDeleteOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *AutomationSkippedEntryScopedDeleteOne) Where(ps ...predicate.AutomationSkippedEntry) *AutomationSkippedEntryScopedDeleteOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_AutomationSkippedEntryScopedDeleteOne       = TypeScopedDelete
+	EntityOf_AutomationSkippedEntryScopedDeleteOne     = "AutomationSkippedEntry"
+	RoleOf_AutomationSkippedEntryScopedDeleteOne_Where = RoleStep
+	RoleOf_AutomationSkippedEntryScopedDeleteOne_Exec  = RoleStep
+)
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *AutomationSkippedEntryScopedDeleteOne) Exec(ctx context.Context) error {
+	where := x.s.inAutomationSkippedEntry(x.where...)
+	return x.s.writeAutomationSkippedEntry(ctx, "delete", append([]predicate.AutomationSkippedEntry{automationskippedentry.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
+		return nil, s.c.AutomationSkippedEntry.DeleteOneID(x.id).Where(where...).Exec(ctx)
+	})
+}
+
+// AutomationSkippedEntryScopedDelete deletes the AutomationSkippedEntry rows of one Workspace that match its predicates, which it
+// keeps until the delete is built on the client it runs on.
+type AutomationSkippedEntryScopedDelete struct {
+	s     *Scoped
+	where []predicate.AutomationSkippedEntry
+}
+
+// Delete deletes the AutomationSkippedEntry entities of the Workspace that match the predicates.
+func (t *AutomationSkippedEntryScoped) Delete() *AutomationSkippedEntryScopedDelete {
+	return &AutomationSkippedEntryScopedDelete{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *AutomationSkippedEntryScopedDelete) Where(ps ...predicate.AutomationSkippedEntry) *AutomationSkippedEntryScopedDelete {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_AutomationSkippedEntryScopedDelete       = TypeScopedDelete
+	EntityOf_AutomationSkippedEntryScopedDelete     = "AutomationSkippedEntry"
+	RoleOf_AutomationSkippedEntryScopedDelete_Where = RoleStep
+	RoleOf_AutomationSkippedEntryScopedDelete_Exec  = RoleStep
+)
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *AutomationSkippedEntryScopedDelete) Exec(ctx context.Context) (int, error) {
+	where := x.s.inAutomationSkippedEntry(x.where...)
+	var n int
+	err := x.s.writeAutomationSkippedEntry(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		var err error
+		n, err = s.c.AutomationSkippedEntry.Delete().Where(where...).Exec(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// ---------------------------------------------------------------- create
+
+// AutomationSkippedEntryScopedCreate creates a AutomationSkippedEntry of one Workspace. It has no way to name a Workspace: it
+// keeps what its setters set and builds the ent create, in its Workspace, on the client the create
+// runs on.
+type AutomationSkippedEntryScopedCreate struct {
+	s   *Scoped
+	set []func(*AutomationSkippedEntryCreate)
+}
+
+// Create starts a AutomationSkippedEntry in the Workspace.
+func (t *AutomationSkippedEntryScoped) Create() *AutomationSkippedEntryScopedCreate {
+	return &AutomationSkippedEntryScopedCreate{s: t.s}
+}
+
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *AutomationSkippedEntryScopedCreate) raw(s *Scoped) *AutomationSkippedEntryCreate {
+	b := s.c.AutomationSkippedEntry.Create().SetWorkspaceID(s.ws)
+	for _, set := range x.set {
+		set(b)
+	}
+	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *AutomationSkippedEntryScopedCreate) build(ctx context.Context, s *Scoped) (*AutomationSkippedEntryCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkAutomationSkippedEntry(ctx, b.Mutation()))
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *AutomationSkippedEntryScopedCreate) SetCreatedAt(v time.Time) *AutomationSkippedEntryScopedCreate {
+	x.set = append(x.set, func(b *AutomationSkippedEntryCreate) { b.SetCreatedAt(v) })
+	return x
+}
+
+const RoleOf_AutomationSkippedEntryScopedCreate_SetCreatedAt = RoleStep
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *AutomationSkippedEntryScopedCreate) SetNillableCreatedAt(v *time.Time) *AutomationSkippedEntryScopedCreate {
+	if v != nil {
+		x.SetCreatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationSkippedEntryScopedCreate_SetNillableCreatedAt = RoleStep
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *AutomationSkippedEntryScopedCreate) SetUpdatedAt(v time.Time) *AutomationSkippedEntryScopedCreate {
+	x.set = append(x.set, func(b *AutomationSkippedEntryCreate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_AutomationSkippedEntryScopedCreate_SetUpdatedAt = RoleStep
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *AutomationSkippedEntryScopedCreate) SetNillableUpdatedAt(v *time.Time) *AutomationSkippedEntryScopedCreate {
+	if v != nil {
+		x.SetUpdatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationSkippedEntryScopedCreate_SetNillableUpdatedAt = RoleStep
+
+// SetAutomationID sets the "automation_id" field.
+func (x *AutomationSkippedEntryScopedCreate) SetAutomationID(v int64) *AutomationSkippedEntryScopedCreate {
+	x.set = append(x.set, func(b *AutomationSkippedEntryCreate) { b.SetAutomationID(v) })
+	return x
+}
+
+const RoleOf_AutomationSkippedEntryScopedCreate_SetAutomationID = RoleStep
+
+// SetContactID sets the "contact_id" field.
+func (x *AutomationSkippedEntryScopedCreate) SetContactID(v int64) *AutomationSkippedEntryScopedCreate {
+	x.set = append(x.set, func(b *AutomationSkippedEntryCreate) { b.SetContactID(v) })
+	return x
+}
+
+const RoleOf_AutomationSkippedEntryScopedCreate_SetContactID = RoleStep
+
+// SetSourceID sets the "source_id" field.
+func (x *AutomationSkippedEntryScopedCreate) SetSourceID(v string) *AutomationSkippedEntryScopedCreate {
+	x.set = append(x.set, func(b *AutomationSkippedEntryCreate) { b.SetSourceID(v) })
+	return x
+}
+
+const RoleOf_AutomationSkippedEntryScopedCreate_SetSourceID = RoleStep
+
+// SetNillableSourceID sets the "source_id" field if the given value is not nil.
+func (x *AutomationSkippedEntryScopedCreate) SetNillableSourceID(v *string) *AutomationSkippedEntryScopedCreate {
+	if v != nil {
+		x.SetSourceID(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationSkippedEntryScopedCreate_SetNillableSourceID = RoleStep
+
+// SetFiringID sets the "firing_id" field.
+func (x *AutomationSkippedEntryScopedCreate) SetFiringID(v int64) *AutomationSkippedEntryScopedCreate {
+	x.set = append(x.set, func(b *AutomationSkippedEntryCreate) { b.SetFiringID(v) })
+	return x
+}
+
+const RoleOf_AutomationSkippedEntryScopedCreate_SetFiringID = RoleStep
+
+// SetNillableFiringID sets the "firing_id" field if the given value is not nil.
+func (x *AutomationSkippedEntryScopedCreate) SetNillableFiringID(v *int64) *AutomationSkippedEntryScopedCreate {
+	if v != nil {
+		x.SetFiringID(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationSkippedEntryScopedCreate_SetNillableFiringID = RoleStep
+
+// SetReason sets the "reason" field.
+func (x *AutomationSkippedEntryScopedCreate) SetReason(v automationskippedentry.Reason) *AutomationSkippedEntryScopedCreate {
+	x.set = append(x.set, func(b *AutomationSkippedEntryCreate) { b.SetReason(v) })
+	return x
+}
+
+const RoleOf_AutomationSkippedEntryScopedCreate_SetReason = RoleStep
+
+// SetOccurredAt sets the "occurred_at" field.
+func (x *AutomationSkippedEntryScopedCreate) SetOccurredAt(v time.Time) *AutomationSkippedEntryScopedCreate {
+	x.set = append(x.set, func(b *AutomationSkippedEntryCreate) { b.SetOccurredAt(v) })
+	return x
+}
+
+const RoleOf_AutomationSkippedEntryScopedCreate_SetOccurredAt = RoleStep
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (x *AutomationSkippedEntryScopedCreate) SetAutomation(v *Automation) *AutomationSkippedEntryScopedCreate {
+	x.set = append(x.set, func(b *AutomationSkippedEntryCreate) { b.SetAutomation(v) })
+	return x
+}
+
+const RoleOf_AutomationSkippedEntryScopedCreate_SetAutomation = RoleStep
+
+// SetContact sets the "contact" edge to the Contact entity.
+func (x *AutomationSkippedEntryScopedCreate) SetContact(v *Contact) *AutomationSkippedEntryScopedCreate {
+	x.set = append(x.set, func(b *AutomationSkippedEntryCreate) { b.SetContact(v) })
+	return x
+}
+
+const RoleOf_AutomationSkippedEntryScopedCreate_SetContact = RoleStep
+
+// SetFiring sets the "firing" edge to the RuleFiring entity.
+func (x *AutomationSkippedEntryScopedCreate) SetFiring(v *RuleFiring) *AutomationSkippedEntryScopedCreate {
+	x.set = append(x.set, func(b *AutomationSkippedEntryCreate) { b.SetFiring(v) })
+	return x
+}
+
+const RoleOf_AutomationSkippedEntryScopedCreate_SetFiring = RoleStep
+
+const (
+	TypeOf_AutomationSkippedEntryScopedCreate                        = TypeScopedCreate
+	EntityOf_AutomationSkippedEntryScopedCreate                      = "AutomationSkippedEntry"
+	RoleOf_AutomationSkippedEntryScopedCreate_Save                   = RoleStep
+	RoleOf_AutomationSkippedEntryScopedCreate_Exec                   = RoleStep
+	RoleOf_AutomationSkippedEntryScopedCreate_OnConflictColumns      = RoleStart
+	RoleOf_AutomationSkippedEntryScopedCreate_OnConflictColumnsWhere = RoleStart
+)
+
+// Save verifies the references against the Workspace, then creates the AutomationSkippedEntry.
+func (x *AutomationSkippedEntryScopedCreate) Save(ctx context.Context) (*AutomationSkippedEntry, error) {
+	var created *AutomationSkippedEntry
+	err := x.s.writeAutomationSkippedEntry(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = b.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *AutomationSkippedEntryScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// AutomationSkippedEntryScopedCreateBulk creates several AutomationSkippedEntry entities of one Workspace at once.
+type AutomationSkippedEntryScopedCreateBulk struct {
+	s  *Scoped
+	xs []*AutomationSkippedEntryScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *AutomationSkippedEntryScoped) CreateBulk(xs ...*AutomationSkippedEntryScopedCreate) *AutomationSkippedEntryScopedCreateBulk {
+	return &AutomationSkippedEntryScopedCreateBulk{s: t.s, xs: xs}
+}
+
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *AutomationSkippedEntryScopedCreateBulk) refuseForeign() error {
+	for _, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return fmt.Errorf("AutomationSkippedEntry: builder of another scope: %w", ErrNotInWorkspace)
+		}
+	}
+	return nil
+}
+
+// build makes the ent bulk create on the client of s, every create of it in the Workspace, and
+// verifies the references of all of them, one query per reference rather than one per row.
+func (b *AutomationSkippedEntryScopedCreateBulk) build(ctx context.Context, s *Scoped) (*AutomationSkippedEntryCreateBulk, error) {
+	builders := make([]*AutomationSkippedEntryCreate, len(b.xs))
+	ms := make([]*AutomationSkippedEntryMutation, len(b.xs))
+	for i, x := range b.xs {
+		builders[i] = x.raw(s)
+		ms[i] = builders[i].Mutation()
+	}
+	if err := s.checkAutomationSkippedEntry(ctx, ms...); err != nil {
+		return nil, err
+	}
+	return s.c.AutomationSkippedEntry.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the AutomationSkippedEntry entities.
+func (b *AutomationSkippedEntryScopedCreateBulk) Save(ctx context.Context) ([]*AutomationSkippedEntry, error) {
+	if err := b.refuseForeign(); err != nil {
+		return nil, err
+	}
+	var created []*AutomationSkippedEntry
+	err := b.s.writeAutomationSkippedEntry(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = raw.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *AutomationSkippedEntryScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_AutomationSkippedEntryScopedCreateBulk                   = TypeScopedCreate
+	EntityOf_AutomationSkippedEntryScopedCreateBulk                 = "AutomationSkippedEntry"
+	RoleOf_AutomationSkippedEntryScopedCreateBulk_Save              = RoleStep
+	RoleOf_AutomationSkippedEntryScopedCreateBulk_Exec              = RoleStep
+	RoleOf_AutomationSkippedEntryScopedCreateBulk_OnConflictColumns = RoleStart
+)
+
+// ---------------------------------------------------------------- upsert
+
+// AutomationSkippedEntryScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type AutomationSkippedEntryScopedUpsert struct{ u *sql.UpdateSet }
+
+const (
+	TypeOf_AutomationSkippedEntryScopedUpsert   = TypeScopedUpsert
+	EntityOf_AutomationSkippedEntryScopedUpsert = "AutomationSkippedEntry"
+)
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *AutomationSkippedEntryScopedUpsert) SetUpdatedAt(v time.Time) *AutomationSkippedEntryScopedUpsert {
+	u.u.Set(automationskippedentry.FieldUpdatedAt, v)
+	return u
+}
+
+const RoleOf_AutomationSkippedEntryScopedUpsert_SetUpdatedAt = RoleStep
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *AutomationSkippedEntryScopedUpsert) UpdateUpdatedAt() *AutomationSkippedEntryScopedUpsert {
+	u.u.SetExcluded(automationskippedentry.FieldUpdatedAt)
+	return u
+}
+
+const RoleOf_AutomationSkippedEntryScopedUpsert_UpdateUpdatedAt = RoleStep
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *AutomationSkippedEntryScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(automationskippedentry.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// AutomationSkippedEntryScopedUpsertOne is the "upsert" of one AutomationSkippedEntry: the create it was started on, which a setter
+// called later still changes, and what to do on a conflict.
+type AutomationSkippedEntryScopedUpsertOne struct {
+	x        *AutomationSkippedEntryScopedCreate
+	conflict []sql.ConflictOption
+	set      []func(*AutomationSkippedEntryUpsertOne)
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+const (
+	TypeOf_AutomationSkippedEntryScopedUpsertOne                 = TypeScopedUpsert
+	EntityOf_AutomationSkippedEntryScopedUpsertOne               = "AutomationSkippedEntry"
+	RoleOf_AutomationSkippedEntryScopedUpsertOne_UpdateNewValues = RoleStep
+	RoleOf_AutomationSkippedEntryScopedUpsertOne_Ignore          = RoleStep
+	RoleOf_AutomationSkippedEntryScopedUpsertOne_DoNothing       = RoleStep
+	RoleOf_AutomationSkippedEntryScopedUpsertOne_Update          = RoleStep
+	RoleOf_AutomationSkippedEntryScopedUpsertOne_Exec            = RoleStep
+	RoleOf_AutomationSkippedEntryScopedUpsertOne_ID              = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *AutomationSkippedEntryScopedCreate) OnConflictColumns(columns ...string) *AutomationSkippedEntryScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *AutomationSkippedEntryScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *AutomationSkippedEntryScopedUpsertOne {
+	return &AutomationSkippedEntryScopedUpsertOne{x: x, conflict: (&AutomationSkippedEntryScoped{s: x.s}).conflictOptions(columns, target)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *AutomationSkippedEntryScopedUpsertOne) UpdateNewValues() *AutomationSkippedEntryScopedUpsertOne {
+	u.set = append(u.set, func(r *AutomationSkippedEntryUpsertOne) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *AutomationSkippedEntryScopedUpsertOne) Ignore() *AutomationSkippedEntryScopedUpsertOne {
+	u.set = append(u.set, func(r *AutomationSkippedEntryUpsertOne) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *AutomationSkippedEntryScopedUpsertOne) DoNothing() *AutomationSkippedEntryScopedUpsertOne {
+	u.set = append(u.set, func(r *AutomationSkippedEntryUpsertOne) { r.DoNothing() })
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *AutomationSkippedEntryScopedUpsertOne) Update(set func(*AutomationSkippedEntryScopedUpsert)) *AutomationSkippedEntryScopedUpsertOne {
+	u.set = append(u.set, func(r *AutomationSkippedEntryUpsertOne) {
+		r.Update(func(s *AutomationSkippedEntryUpsert) { set(&AutomationSkippedEntryScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// build makes the ent upsert on the client of s and verifies the create's references.
+func (u *AutomationSkippedEntryScopedUpsertOne) build(ctx context.Context, s *Scoped) (*AutomationSkippedEntryUpsertOne, error) {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	r := b.OnConflict(u.conflict...)
+	for _, set := range u.set {
+		set(r)
+	}
+	return r, nil
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *AutomationSkippedEntryScopedUpsertOne) Exec(ctx context.Context) error {
+	_, err := u.ID(ctx)
+	return err
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *AutomationSkippedEntryScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	var id int64
+	err := u.x.s.writeAutomationSkippedEntry(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		r, err := u.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if id, err = r.ID(ctx); err != nil {
+			return nil, err
+		}
+		return []int64{id}, nil
+	})
+	return written(id, err)
+}
+
+// AutomationSkippedEntryScopedUpsertBulk is the "upsert" of several AutomationSkippedEntry entities.
+type AutomationSkippedEntryScopedUpsertBulk struct {
+	b       *AutomationSkippedEntryScopedCreateBulk
+	t       *AutomationSkippedEntryScoped
+	columns []string
+	set     []func(*AutomationSkippedEntryUpsertBulk)
+}
+
+const (
+	TypeOf_AutomationSkippedEntryScopedUpsertBulk                 = TypeScopedUpsert
+	EntityOf_AutomationSkippedEntryScopedUpsertBulk               = "AutomationSkippedEntry"
+	RoleOf_AutomationSkippedEntryScopedUpsertBulk_UpdateNewValues = RoleStep
+	RoleOf_AutomationSkippedEntryScopedUpsertBulk_Ignore          = RoleStep
+	RoleOf_AutomationSkippedEntryScopedUpsertBulk_DoNothing       = RoleStep
+	RoleOf_AutomationSkippedEntryScopedUpsertBulk_Update          = RoleStep
+	RoleOf_AutomationSkippedEntryScopedUpsertBulk_Exec            = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *AutomationSkippedEntryScopedCreateBulk) OnConflictColumns(columns ...string) *AutomationSkippedEntryScopedUpsertBulk {
+	return &AutomationSkippedEntryScopedUpsertBulk{b: b, t: &AutomationSkippedEntryScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *AutomationSkippedEntryScopedUpsertBulk) UpdateNewValues() *AutomationSkippedEntryScopedUpsertBulk {
+	u.set = append(u.set, func(r *AutomationSkippedEntryUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *AutomationSkippedEntryScopedUpsertBulk) Ignore() *AutomationSkippedEntryScopedUpsertBulk {
+	u.set = append(u.set, func(r *AutomationSkippedEntryUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *AutomationSkippedEntryScopedUpsertBulk) DoNothing() *AutomationSkippedEntryScopedUpsertBulk {
+	u.set = append(u.set, func(r *AutomationSkippedEntryUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *AutomationSkippedEntryScopedUpsertBulk) Update(set func(*AutomationSkippedEntryScopedUpsert)) *AutomationSkippedEntryScopedUpsertBulk {
+	u.set = append(u.set, func(r *AutomationSkippedEntryUpsertBulk) {
+		r.Update(func(s *AutomationSkippedEntryUpsert) { set(&AutomationSkippedEntryScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *AutomationSkippedEntryScopedUpsertBulk) Exec(ctx context.Context) error {
+	if err := u.b.refuseForeign(); err != nil {
+		return err
+	}
+	return u.b.s.writeAutomationSkippedEntry(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := u.b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+		for _, set := range u.set {
+			set(r)
+		}
+		return nil, r.Exec(ctx)
+	})
+}
+
+// ---------------------------------------------------------------- update
+
+// AutomationSkippedEntryScopedUpdateOne updates one AutomationSkippedEntry. It has no way to move the row to another Workspace: it
+// keeps the row's id, its fences and what its setters set, and builds the ent update on the client
+// the update runs on.
+type AutomationSkippedEntryScopedUpdateOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.AutomationSkippedEntry
+	set   []func(*AutomationSkippedEntryUpdateOne)
+}
+
+// UpdateOneID updates the AutomationSkippedEntry with the id; a row of another Workspace is not found.
+func (t *AutomationSkippedEntryScoped) UpdateOneID(id int64) *AutomationSkippedEntryScopedUpdateOne {
+	return &AutomationSkippedEntryScopedUpdateOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *AutomationSkippedEntryScopedUpdateOne) Where(ps ...predicate.AutomationSkippedEntry) *AutomationSkippedEntryScopedUpdateOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *AutomationSkippedEntryScopedUpdateOne) SetUpdatedAt(v time.Time) *AutomationSkippedEntryScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationSkippedEntryUpdateOne) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_AutomationSkippedEntryScopedUpdateOne_SetUpdatedAt = RoleStep
+
+// Save verifies the references against the Workspace, then updates the AutomationSkippedEntry.
+func (x *AutomationSkippedEntryScopedUpdateOne) Save(ctx context.Context) (*AutomationSkippedEntry, error) {
+	return x.save(ctx, "update", skipUnchanged)
+}
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *AutomationSkippedEntryScopedUpdateOne) build(ctx context.Context, s *Scoped) (*AutomationSkippedEntryUpdateOne, error) {
+	b := s.c.AutomationSkippedEntry.UpdateOneID(x.id).Where(s.inAutomationSkippedEntry(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkAutomationSkippedEntry(ctx, b.Mutation()))
+}
+
+// save is Save under a verb, doing with an unchanged row what unchanged says.
+func (x *AutomationSkippedEntryScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*AutomationSkippedEntry, error) {
+	where := x.s.inAutomationSkippedEntry(x.where...)
+	var updated *AutomationSkippedEntry
+	err := x.s.writeAutomationSkippedEntry(ctx, verb, append([]predicate.AutomationSkippedEntry{automationskippedentry.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		updated, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(updated, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *AutomationSkippedEntryScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_AutomationSkippedEntryScopedUpdateOne       = TypeScopedUpdate
+	EntityOf_AutomationSkippedEntryScopedUpdateOne     = "AutomationSkippedEntry"
+	RoleOf_AutomationSkippedEntryScopedUpdateOne_Where = RoleStep
+	RoleOf_AutomationSkippedEntryScopedUpdateOne_Save  = RoleStep
+	RoleOf_AutomationSkippedEntryScopedUpdateOne_Exec  = RoleStep
+)
+
+// AutomationSkippedEntryScopedUpdate is a conditional bulk update of one Workspace: it keeps its predicates and
+// what its setters and modifiers set, and builds the ent update on the client the update runs on.
+type AutomationSkippedEntryScopedUpdate struct {
+	s     *Scoped
+	where []predicate.AutomationSkippedEntry
+	set   []func(*AutomationSkippedEntryUpdate)
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the AutomationSkippedEntry entities of the Workspace that match the predicates.
+func (t *AutomationSkippedEntryScoped) Update() *AutomationSkippedEntryScopedUpdate {
+	return &AutomationSkippedEntryScopedUpdate{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *AutomationSkippedEntryScopedUpdate) Where(ps ...predicate.AutomationSkippedEntry) *AutomationSkippedEntryScopedUpdate {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *AutomationSkippedEntryScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *AutomationSkippedEntryScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(automationskippedentry.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.set = append(x.set, func(b *AutomationSkippedEntryUpdate) {
+			b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+		})
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *AutomationSkippedEntryScopedUpdate) SetUpdatedAt(v time.Time) *AutomationSkippedEntryScopedUpdate {
+	x.set = append(x.set, func(b *AutomationSkippedEntryUpdate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_AutomationSkippedEntryScopedUpdate_SetUpdatedAt = RoleStep
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *AutomationSkippedEntryScopedUpdate) build(ctx context.Context, s *Scoped) (*AutomationSkippedEntryUpdate, error) {
+	b := s.c.AutomationSkippedEntry.Update().Where(s.inAutomationSkippedEntry(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkAutomationSkippedEntry(ctx, b.Mutation()))
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *AutomationSkippedEntryScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	where := x.s.inAutomationSkippedEntry(x.where...)
+	var n int
+	err := x.s.writeAutomationSkippedEntry(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		n, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// Exec is like Save, discarding the count.
+func (x *AutomationSkippedEntryScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_AutomationSkippedEntryScopedUpdate        = TypeScopedUpdate
+	EntityOf_AutomationSkippedEntryScopedUpdate      = "AutomationSkippedEntry"
+	RoleOf_AutomationSkippedEntryScopedUpdate_Where  = RoleStep
+	RoleOf_AutomationSkippedEntryScopedUpdate_Modify = RoleStep
+	RoleOf_AutomationSkippedEntryScopedUpdate_Save   = RoleStep
+	RoleOf_AutomationSkippedEntryScopedUpdate_Exec   = RoleStep
 )
 
 // AutomationStepRecordScoped reaches AutomationStepRecord entities of one Workspace.
@@ -9070,39 +9955,91 @@ func (x *AutomationVersionScopedCreate) SetSteps(v automationstep.Path) *Automat
 
 const RoleOf_AutomationVersionScopedCreate_SetSteps = RoleStep
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (x *AutomationVersionScopedCreate) SetTriggerEvent(v string) *AutomationVersionScopedCreate {
-	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetTriggerEvent(v) })
+// SetTriggerAction sets the "trigger_action" field.
+func (x *AutomationVersionScopedCreate) SetTriggerAction(v string) *AutomationVersionScopedCreate {
+	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetTriggerAction(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedCreate_SetTriggerEvent = RoleStep
+const RoleOf_AutomationVersionScopedCreate_SetTriggerAction = RoleStep
 
-// SetExitEvents sets the "exit_events" field.
-func (x *AutomationVersionScopedCreate) SetExitEvents(v []string) *AutomationVersionScopedCreate {
-	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetExitEvents(v) })
+// SetTriggerFilter sets the "trigger_filter" field.
+func (x *AutomationVersionScopedCreate) SetTriggerFilter(v *conditiontree.EventFilter) *AutomationVersionScopedCreate {
+	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetTriggerFilter(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedCreate_SetExitEvents = RoleStep
+const RoleOf_AutomationVersionScopedCreate_SetTriggerFilter = RoleStep
 
-// SetGoalEvent sets the "goal_event" field.
-func (x *AutomationVersionScopedCreate) SetGoalEvent(v string) *AutomationVersionScopedCreate {
-	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetGoalEvent(v) })
+// SetExits sets the "exits" field.
+func (x *AutomationVersionScopedCreate) SetExits(v []eventmatcher.Matcher) *AutomationVersionScopedCreate {
+	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetExits(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedCreate_SetGoalEvent = RoleStep
+const RoleOf_AutomationVersionScopedCreate_SetExits = RoleStep
 
-// SetNillableGoalEvent sets the "goal_event" field if the given value is not nil.
-func (x *AutomationVersionScopedCreate) SetNillableGoalEvent(v *string) *AutomationVersionScopedCreate {
+// SetGoal sets the "goal" field.
+func (x *AutomationVersionScopedCreate) SetGoal(v *eventmatcher.Matcher) *AutomationVersionScopedCreate {
+	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetGoal(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedCreate_SetGoal = RoleStep
+
+// SetEntryPolicy sets the "entry_policy" field.
+func (x *AutomationVersionScopedCreate) SetEntryPolicy(v automationversion.EntryPolicy) *AutomationVersionScopedCreate {
+	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetEntryPolicy(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedCreate_SetEntryPolicy = RoleStep
+
+// SetNillableEntryPolicy sets the "entry_policy" field if the given value is not nil.
+func (x *AutomationVersionScopedCreate) SetNillableEntryPolicy(v *automationversion.EntryPolicy) *AutomationVersionScopedCreate {
 	if v != nil {
-		x.SetGoalEvent(*v)
+		x.SetEntryPolicy(*v)
 	}
 	return x
 }
 
-const RoleOf_AutomationVersionScopedCreate_SetNillableGoalEvent = RoleStep
+const RoleOf_AutomationVersionScopedCreate_SetNillableEntryPolicy = RoleStep
+
+// SetCooldownSeconds sets the "cooldown_seconds" field.
+func (x *AutomationVersionScopedCreate) SetCooldownSeconds(v int) *AutomationVersionScopedCreate {
+	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetCooldownSeconds(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedCreate_SetCooldownSeconds = RoleStep
+
+// SetNillableCooldownSeconds sets the "cooldown_seconds" field if the given value is not nil.
+func (x *AutomationVersionScopedCreate) SetNillableCooldownSeconds(v *int) *AutomationVersionScopedCreate {
+	if v != nil {
+		x.SetCooldownSeconds(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationVersionScopedCreate_SetNillableCooldownSeconds = RoleStep
+
+// SetEnrollmentKey sets the "enrollment_key" field.
+func (x *AutomationVersionScopedCreate) SetEnrollmentKey(v string) *AutomationVersionScopedCreate {
+	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetEnrollmentKey(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedCreate_SetEnrollmentKey = RoleStep
+
+// SetNillableEnrollmentKey sets the "enrollment_key" field if the given value is not nil.
+func (x *AutomationVersionScopedCreate) SetNillableEnrollmentKey(v *string) *AutomationVersionScopedCreate {
+	if v != nil {
+		x.SetEnrollmentKey(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationVersionScopedCreate_SetNillableEnrollmentKey = RoleStep
 
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (x *AutomationVersionScopedCreate) SetAutomation(v *Automation) *AutomationVersionScopedCreate {
@@ -9281,61 +10218,149 @@ func (u *AutomationVersionScopedUpsert) UpdateSteps() *AutomationVersionScopedUp
 
 const RoleOf_AutomationVersionScopedUpsert_UpdateSteps = RoleStep
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (u *AutomationVersionScopedUpsert) SetTriggerEvent(v string) *AutomationVersionScopedUpsert {
-	u.u.Set(automationversion.FieldTriggerEvent, v)
+// SetTriggerAction sets the "trigger_action" field.
+func (u *AutomationVersionScopedUpsert) SetTriggerAction(v string) *AutomationVersionScopedUpsert {
+	u.u.Set(automationversion.FieldTriggerAction, v)
 	return u
 }
 
-const RoleOf_AutomationVersionScopedUpsert_SetTriggerEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpsert_SetTriggerAction = RoleStep
 
-// UpdateTriggerEvent sets the "trigger_event" field to the value that was provided on create.
-func (u *AutomationVersionScopedUpsert) UpdateTriggerEvent() *AutomationVersionScopedUpsert {
-	u.u.SetExcluded(automationversion.FieldTriggerEvent)
+// UpdateTriggerAction sets the "trigger_action" field to the value that was provided on create.
+func (u *AutomationVersionScopedUpsert) UpdateTriggerAction() *AutomationVersionScopedUpsert {
+	u.u.SetExcluded(automationversion.FieldTriggerAction)
 	return u
 }
 
-const RoleOf_AutomationVersionScopedUpsert_UpdateTriggerEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpsert_UpdateTriggerAction = RoleStep
 
-// SetExitEvents sets the "exit_events" field.
-func (u *AutomationVersionScopedUpsert) SetExitEvents(v []string) *AutomationVersionScopedUpsert {
-	u.u.Set(automationversion.FieldExitEvents, v)
+// SetTriggerFilter sets the "trigger_filter" field.
+func (u *AutomationVersionScopedUpsert) SetTriggerFilter(v *conditiontree.EventFilter) *AutomationVersionScopedUpsert {
+	u.u.Set(automationversion.FieldTriggerFilter, v)
 	return u
 }
 
-const RoleOf_AutomationVersionScopedUpsert_SetExitEvents = RoleStep
+const RoleOf_AutomationVersionScopedUpsert_SetTriggerFilter = RoleStep
 
-// UpdateExitEvents sets the "exit_events" field to the value that was provided on create.
-func (u *AutomationVersionScopedUpsert) UpdateExitEvents() *AutomationVersionScopedUpsert {
-	u.u.SetExcluded(automationversion.FieldExitEvents)
+// UpdateTriggerFilter sets the "trigger_filter" field to the value that was provided on create.
+func (u *AutomationVersionScopedUpsert) UpdateTriggerFilter() *AutomationVersionScopedUpsert {
+	u.u.SetExcluded(automationversion.FieldTriggerFilter)
 	return u
 }
 
-const RoleOf_AutomationVersionScopedUpsert_UpdateExitEvents = RoleStep
+const RoleOf_AutomationVersionScopedUpsert_UpdateTriggerFilter = RoleStep
 
-// SetGoalEvent sets the "goal_event" field.
-func (u *AutomationVersionScopedUpsert) SetGoalEvent(v string) *AutomationVersionScopedUpsert {
-	u.u.Set(automationversion.FieldGoalEvent, v)
+// ClearTriggerFilter clears the value of the "trigger_filter" field.
+func (u *AutomationVersionScopedUpsert) ClearTriggerFilter() *AutomationVersionScopedUpsert {
+	u.u.SetNull(automationversion.FieldTriggerFilter)
 	return u
 }
 
-const RoleOf_AutomationVersionScopedUpsert_SetGoalEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpsert_ClearTriggerFilter = RoleStep
 
-// UpdateGoalEvent sets the "goal_event" field to the value that was provided on create.
-func (u *AutomationVersionScopedUpsert) UpdateGoalEvent() *AutomationVersionScopedUpsert {
-	u.u.SetExcluded(automationversion.FieldGoalEvent)
+// SetExits sets the "exits" field.
+func (u *AutomationVersionScopedUpsert) SetExits(v []eventmatcher.Matcher) *AutomationVersionScopedUpsert {
+	u.u.Set(automationversion.FieldExits, v)
 	return u
 }
 
-const RoleOf_AutomationVersionScopedUpsert_UpdateGoalEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpsert_SetExits = RoleStep
 
-// ClearGoalEvent clears the value of the "goal_event" field.
-func (u *AutomationVersionScopedUpsert) ClearGoalEvent() *AutomationVersionScopedUpsert {
-	u.u.SetNull(automationversion.FieldGoalEvent)
+// UpdateExits sets the "exits" field to the value that was provided on create.
+func (u *AutomationVersionScopedUpsert) UpdateExits() *AutomationVersionScopedUpsert {
+	u.u.SetExcluded(automationversion.FieldExits)
 	return u
 }
 
-const RoleOf_AutomationVersionScopedUpsert_ClearGoalEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpsert_UpdateExits = RoleStep
+
+// SetGoal sets the "goal" field.
+func (u *AutomationVersionScopedUpsert) SetGoal(v *eventmatcher.Matcher) *AutomationVersionScopedUpsert {
+	u.u.Set(automationversion.FieldGoal, v)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_SetGoal = RoleStep
+
+// UpdateGoal sets the "goal" field to the value that was provided on create.
+func (u *AutomationVersionScopedUpsert) UpdateGoal() *AutomationVersionScopedUpsert {
+	u.u.SetExcluded(automationversion.FieldGoal)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_UpdateGoal = RoleStep
+
+// ClearGoal clears the value of the "goal" field.
+func (u *AutomationVersionScopedUpsert) ClearGoal() *AutomationVersionScopedUpsert {
+	u.u.SetNull(automationversion.FieldGoal)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_ClearGoal = RoleStep
+
+// SetEntryPolicy sets the "entry_policy" field.
+func (u *AutomationVersionScopedUpsert) SetEntryPolicy(v automationversion.EntryPolicy) *AutomationVersionScopedUpsert {
+	u.u.Set(automationversion.FieldEntryPolicy, v)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_SetEntryPolicy = RoleStep
+
+// UpdateEntryPolicy sets the "entry_policy" field to the value that was provided on create.
+func (u *AutomationVersionScopedUpsert) UpdateEntryPolicy() *AutomationVersionScopedUpsert {
+	u.u.SetExcluded(automationversion.FieldEntryPolicy)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_UpdateEntryPolicy = RoleStep
+
+// SetCooldownSeconds sets the "cooldown_seconds" field.
+func (u *AutomationVersionScopedUpsert) SetCooldownSeconds(v int) *AutomationVersionScopedUpsert {
+	u.u.Set(automationversion.FieldCooldownSeconds, v)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_SetCooldownSeconds = RoleStep
+
+// AddCooldownSeconds adds v to the "cooldown_seconds" field.
+func (u *AutomationVersionScopedUpsert) AddCooldownSeconds(v int) *AutomationVersionScopedUpsert {
+	u.u.Add(automationversion.FieldCooldownSeconds, v)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_AddCooldownSeconds = RoleStep
+
+// UpdateCooldownSeconds sets the "cooldown_seconds" field to the value that was provided on create.
+func (u *AutomationVersionScopedUpsert) UpdateCooldownSeconds() *AutomationVersionScopedUpsert {
+	u.u.SetExcluded(automationversion.FieldCooldownSeconds)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_UpdateCooldownSeconds = RoleStep
+
+// SetEnrollmentKey sets the "enrollment_key" field.
+func (u *AutomationVersionScopedUpsert) SetEnrollmentKey(v string) *AutomationVersionScopedUpsert {
+	u.u.Set(automationversion.FieldEnrollmentKey, v)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_SetEnrollmentKey = RoleStep
+
+// UpdateEnrollmentKey sets the "enrollment_key" field to the value that was provided on create.
+func (u *AutomationVersionScopedUpsert) UpdateEnrollmentKey() *AutomationVersionScopedUpsert {
+	u.u.SetExcluded(automationversion.FieldEnrollmentKey)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_UpdateEnrollmentKey = RoleStep
+
+// ClearEnrollmentKey clears the value of the "enrollment_key" field.
+func (u *AutomationVersionScopedUpsert) ClearEnrollmentKey() *AutomationVersionScopedUpsert {
+	u.u.SetNull(automationversion.FieldEnrollmentKey)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_ClearEnrollmentKey = RoleStep
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
 // target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
@@ -9580,65 +10605,141 @@ func (x *AutomationVersionScopedUpdateOne) SetNillableSteps(v *automationstep.Pa
 
 const RoleOf_AutomationVersionScopedUpdateOne_SetNillableSteps = RoleStep
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (x *AutomationVersionScopedUpdateOne) SetTriggerEvent(v string) *AutomationVersionScopedUpdateOne {
-	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetTriggerEvent(v) })
+// SetTriggerAction sets the "trigger_action" field.
+func (x *AutomationVersionScopedUpdateOne) SetTriggerAction(v string) *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetTriggerAction(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdateOne_SetTriggerEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpdateOne_SetTriggerAction = RoleStep
 
-// SetNillableTriggerEvent sets the "trigger_event" field if the given value is not nil.
-func (x *AutomationVersionScopedUpdateOne) SetNillableTriggerEvent(v *string) *AutomationVersionScopedUpdateOne {
+// SetNillableTriggerAction sets the "trigger_action" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdateOne) SetNillableTriggerAction(v *string) *AutomationVersionScopedUpdateOne {
 	if v != nil {
-		x.SetTriggerEvent(*v)
+		x.SetTriggerAction(*v)
 	}
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdateOne_SetNillableTriggerEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpdateOne_SetNillableTriggerAction = RoleStep
 
-// SetExitEvents sets the "exit_events" field.
-func (x *AutomationVersionScopedUpdateOne) SetExitEvents(v []string) *AutomationVersionScopedUpdateOne {
-	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetExitEvents(v) })
+// SetTriggerFilter sets the "trigger_filter" field.
+func (x *AutomationVersionScopedUpdateOne) SetTriggerFilter(v *conditiontree.EventFilter) *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetTriggerFilter(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdateOne_SetExitEvents = RoleStep
+const RoleOf_AutomationVersionScopedUpdateOne_SetTriggerFilter = RoleStep
 
-// AppendExitEvents appends value to the "exit_events" field.
-func (x *AutomationVersionScopedUpdateOne) AppendExitEvents(v []string) *AutomationVersionScopedUpdateOne {
-	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.AppendExitEvents(v) })
+// ClearTriggerFilter clears the value of the "trigger_filter" field.
+func (x *AutomationVersionScopedUpdateOne) ClearTriggerFilter() *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.ClearTriggerFilter() })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdateOne_AppendExitEvents = RoleStep
+const RoleOf_AutomationVersionScopedUpdateOne_ClearTriggerFilter = RoleStep
 
-// SetGoalEvent sets the "goal_event" field.
-func (x *AutomationVersionScopedUpdateOne) SetGoalEvent(v string) *AutomationVersionScopedUpdateOne {
-	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetGoalEvent(v) })
+// SetExits sets the "exits" field.
+func (x *AutomationVersionScopedUpdateOne) SetExits(v []eventmatcher.Matcher) *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetExits(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdateOne_SetGoalEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpdateOne_SetExits = RoleStep
 
-// SetNillableGoalEvent sets the "goal_event" field if the given value is not nil.
-func (x *AutomationVersionScopedUpdateOne) SetNillableGoalEvent(v *string) *AutomationVersionScopedUpdateOne {
+// AppendExits appends value to the "exits" field.
+func (x *AutomationVersionScopedUpdateOne) AppendExits(v []eventmatcher.Matcher) *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.AppendExits(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdateOne_AppendExits = RoleStep
+
+// SetGoal sets the "goal" field.
+func (x *AutomationVersionScopedUpdateOne) SetGoal(v *eventmatcher.Matcher) *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetGoal(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdateOne_SetGoal = RoleStep
+
+// ClearGoal clears the value of the "goal" field.
+func (x *AutomationVersionScopedUpdateOne) ClearGoal() *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.ClearGoal() })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdateOne_ClearGoal = RoleStep
+
+// SetEntryPolicy sets the "entry_policy" field.
+func (x *AutomationVersionScopedUpdateOne) SetEntryPolicy(v automationversion.EntryPolicy) *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetEntryPolicy(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdateOne_SetEntryPolicy = RoleStep
+
+// SetNillableEntryPolicy sets the "entry_policy" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdateOne) SetNillableEntryPolicy(v *automationversion.EntryPolicy) *AutomationVersionScopedUpdateOne {
 	if v != nil {
-		x.SetGoalEvent(*v)
+		x.SetEntryPolicy(*v)
 	}
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdateOne_SetNillableGoalEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpdateOne_SetNillableEntryPolicy = RoleStep
 
-// ClearGoalEvent clears the value of the "goal_event" field.
-func (x *AutomationVersionScopedUpdateOne) ClearGoalEvent() *AutomationVersionScopedUpdateOne {
-	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.ClearGoalEvent() })
+// SetCooldownSeconds sets the "cooldown_seconds" field.
+func (x *AutomationVersionScopedUpdateOne) SetCooldownSeconds(v int) *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetCooldownSeconds(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdateOne_ClearGoalEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpdateOne_SetCooldownSeconds = RoleStep
+
+// SetNillableCooldownSeconds sets the "cooldown_seconds" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdateOne) SetNillableCooldownSeconds(v *int) *AutomationVersionScopedUpdateOne {
+	if v != nil {
+		x.SetCooldownSeconds(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdateOne_SetNillableCooldownSeconds = RoleStep
+
+// AddCooldownSeconds adds value to the "cooldown_seconds" field.
+func (x *AutomationVersionScopedUpdateOne) AddCooldownSeconds(v int) *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.AddCooldownSeconds(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdateOne_AddCooldownSeconds = RoleStep
+
+// SetEnrollmentKey sets the "enrollment_key" field.
+func (x *AutomationVersionScopedUpdateOne) SetEnrollmentKey(v string) *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetEnrollmentKey(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdateOne_SetEnrollmentKey = RoleStep
+
+// SetNillableEnrollmentKey sets the "enrollment_key" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdateOne) SetNillableEnrollmentKey(v *string) *AutomationVersionScopedUpdateOne {
+	if v != nil {
+		x.SetEnrollmentKey(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdateOne_SetNillableEnrollmentKey = RoleStep
+
+// ClearEnrollmentKey clears the value of the "enrollment_key" field.
+func (x *AutomationVersionScopedUpdateOne) ClearEnrollmentKey() *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.ClearEnrollmentKey() })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdateOne_ClearEnrollmentKey = RoleStep
 
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (x *AutomationVersionScopedUpdateOne) SetAutomation(v *Automation) *AutomationVersionScopedUpdateOne {
@@ -9823,65 +10924,141 @@ func (x *AutomationVersionScopedUpdate) SetNillableSteps(v *automationstep.Path)
 
 const RoleOf_AutomationVersionScopedUpdate_SetNillableSteps = RoleStep
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (x *AutomationVersionScopedUpdate) SetTriggerEvent(v string) *AutomationVersionScopedUpdate {
-	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetTriggerEvent(v) })
+// SetTriggerAction sets the "trigger_action" field.
+func (x *AutomationVersionScopedUpdate) SetTriggerAction(v string) *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetTriggerAction(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdate_SetTriggerEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpdate_SetTriggerAction = RoleStep
 
-// SetNillableTriggerEvent sets the "trigger_event" field if the given value is not nil.
-func (x *AutomationVersionScopedUpdate) SetNillableTriggerEvent(v *string) *AutomationVersionScopedUpdate {
+// SetNillableTriggerAction sets the "trigger_action" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdate) SetNillableTriggerAction(v *string) *AutomationVersionScopedUpdate {
 	if v != nil {
-		x.SetTriggerEvent(*v)
+		x.SetTriggerAction(*v)
 	}
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdate_SetNillableTriggerEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpdate_SetNillableTriggerAction = RoleStep
 
-// SetExitEvents sets the "exit_events" field.
-func (x *AutomationVersionScopedUpdate) SetExitEvents(v []string) *AutomationVersionScopedUpdate {
-	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetExitEvents(v) })
+// SetTriggerFilter sets the "trigger_filter" field.
+func (x *AutomationVersionScopedUpdate) SetTriggerFilter(v *conditiontree.EventFilter) *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetTriggerFilter(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdate_SetExitEvents = RoleStep
+const RoleOf_AutomationVersionScopedUpdate_SetTriggerFilter = RoleStep
 
-// AppendExitEvents appends value to the "exit_events" field.
-func (x *AutomationVersionScopedUpdate) AppendExitEvents(v []string) *AutomationVersionScopedUpdate {
-	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.AppendExitEvents(v) })
+// ClearTriggerFilter clears the value of the "trigger_filter" field.
+func (x *AutomationVersionScopedUpdate) ClearTriggerFilter() *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.ClearTriggerFilter() })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdate_AppendExitEvents = RoleStep
+const RoleOf_AutomationVersionScopedUpdate_ClearTriggerFilter = RoleStep
 
-// SetGoalEvent sets the "goal_event" field.
-func (x *AutomationVersionScopedUpdate) SetGoalEvent(v string) *AutomationVersionScopedUpdate {
-	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetGoalEvent(v) })
+// SetExits sets the "exits" field.
+func (x *AutomationVersionScopedUpdate) SetExits(v []eventmatcher.Matcher) *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetExits(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdate_SetGoalEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpdate_SetExits = RoleStep
 
-// SetNillableGoalEvent sets the "goal_event" field if the given value is not nil.
-func (x *AutomationVersionScopedUpdate) SetNillableGoalEvent(v *string) *AutomationVersionScopedUpdate {
+// AppendExits appends value to the "exits" field.
+func (x *AutomationVersionScopedUpdate) AppendExits(v []eventmatcher.Matcher) *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.AppendExits(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdate_AppendExits = RoleStep
+
+// SetGoal sets the "goal" field.
+func (x *AutomationVersionScopedUpdate) SetGoal(v *eventmatcher.Matcher) *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetGoal(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdate_SetGoal = RoleStep
+
+// ClearGoal clears the value of the "goal" field.
+func (x *AutomationVersionScopedUpdate) ClearGoal() *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.ClearGoal() })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdate_ClearGoal = RoleStep
+
+// SetEntryPolicy sets the "entry_policy" field.
+func (x *AutomationVersionScopedUpdate) SetEntryPolicy(v automationversion.EntryPolicy) *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetEntryPolicy(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdate_SetEntryPolicy = RoleStep
+
+// SetNillableEntryPolicy sets the "entry_policy" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdate) SetNillableEntryPolicy(v *automationversion.EntryPolicy) *AutomationVersionScopedUpdate {
 	if v != nil {
-		x.SetGoalEvent(*v)
+		x.SetEntryPolicy(*v)
 	}
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdate_SetNillableGoalEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpdate_SetNillableEntryPolicy = RoleStep
 
-// ClearGoalEvent clears the value of the "goal_event" field.
-func (x *AutomationVersionScopedUpdate) ClearGoalEvent() *AutomationVersionScopedUpdate {
-	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.ClearGoalEvent() })
+// SetCooldownSeconds sets the "cooldown_seconds" field.
+func (x *AutomationVersionScopedUpdate) SetCooldownSeconds(v int) *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetCooldownSeconds(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdate_ClearGoalEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpdate_SetCooldownSeconds = RoleStep
+
+// SetNillableCooldownSeconds sets the "cooldown_seconds" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdate) SetNillableCooldownSeconds(v *int) *AutomationVersionScopedUpdate {
+	if v != nil {
+		x.SetCooldownSeconds(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdate_SetNillableCooldownSeconds = RoleStep
+
+// AddCooldownSeconds adds value to the "cooldown_seconds" field.
+func (x *AutomationVersionScopedUpdate) AddCooldownSeconds(v int) *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.AddCooldownSeconds(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdate_AddCooldownSeconds = RoleStep
+
+// SetEnrollmentKey sets the "enrollment_key" field.
+func (x *AutomationVersionScopedUpdate) SetEnrollmentKey(v string) *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetEnrollmentKey(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdate_SetEnrollmentKey = RoleStep
+
+// SetNillableEnrollmentKey sets the "enrollment_key" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdate) SetNillableEnrollmentKey(v *string) *AutomationVersionScopedUpdate {
+	if v != nil {
+		x.SetEnrollmentKey(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdate_SetNillableEnrollmentKey = RoleStep
+
+// ClearEnrollmentKey clears the value of the "enrollment_key" field.
+func (x *AutomationVersionScopedUpdate) ClearEnrollmentKey() *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.ClearEnrollmentKey() })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdate_ClearEnrollmentKey = RoleStep
 
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (x *AutomationVersionScopedUpdate) SetAutomation(v *Automation) *AutomationVersionScopedUpdate {
@@ -27928,6 +29105,24 @@ func (x *EventScopedCreate) SetNillableBackfill(v *bool) *EventScopedCreate {
 }
 
 const RoleOf_EventScopedCreate_SetNillableBackfill = RoleStep
+
+// SetSendLocked sets the "send_locked" field.
+func (x *EventScopedCreate) SetSendLocked(v bool) *EventScopedCreate {
+	x.set = append(x.set, func(b *EventCreate) { b.SetSendLocked(v) })
+	return x
+}
+
+const RoleOf_EventScopedCreate_SetSendLocked = RoleStep
+
+// SetNillableSendLocked sets the "send_locked" field if the given value is not nil.
+func (x *EventScopedCreate) SetNillableSendLocked(v *bool) *EventScopedCreate {
+	if v != nil {
+		x.SetSendLocked(*v)
+	}
+	return x
+}
+
+const RoleOf_EventScopedCreate_SetNillableSendLocked = RoleStep
 
 // SetContact sets the "contact" edge to the Contact entity.
 func (x *EventScopedCreate) SetContact(v *Contact) *EventScopedCreate {

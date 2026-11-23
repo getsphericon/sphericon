@@ -26,7 +26,7 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	created, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
-		Name: "Authored", TriggerEvent: "authored.signup",
+		Name: "Authored", Trigger: testhelper.SiteTrigger("authored.signup"),
 		Steps: testhelper.SitePathEdit(
 			docStep("Hi {{ first_name }}", paragraphDoc("Hello {{ first_name }}")),
 			siteapi.WaitStepInput{Seconds: 60},
@@ -81,7 +81,7 @@ func TestSiteAutomationInvalidDocumentRefusesTheWholeSaveNamingTheStep(t *testin
 	broken := docStep("Broken", bad)
 	broken.ID = siteapi.NewOptStepId("5b0c6a52-4f0e-4f65-9a70-0d4a1c0e1b02")
 	_, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
-		Name: "Refused", TriggerEvent: "refused.signup",
+		Name: "Refused", Trigger: testhelper.SiteTrigger("refused.signup"),
 		Steps: testhelper.SitePathEdit(
 			docStep("Fine", paragraphDoc("Fine")),
 			broken,
@@ -94,14 +94,14 @@ func TestSiteAutomationInvalidDocumentRefusesTheWholeSaveNamingTheStep(t *testin
 	both := docStep("Both", paragraphDoc("x"))
 	both.Body = siteapi.NewOptString("<p>x</p>")
 	_, err = c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
-		Name: "Both", TriggerEvent: "both.signup", Steps: testhelper.SitePathEdit(both),
+		Name: "Both", Trigger: testhelper.SiteTrigger("both.signup"), Steps: testhelper.SitePathEdit(both),
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
 	n, err := env.DB.Automation.Query().Count(ctx)
 	require.NoError(t, err)
 	listed := n
-	_, err = c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{Name: "Probe", TriggerEvent: "probe.signup"}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
+	_, err = c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{Name: "Probe", Trigger: testhelper.SiteTrigger("probe.signup")}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	assert.Equal(t, listed+1, env.DB.Automation.Query().CountX(ctx), "the refused saves stored nothing")
 }
@@ -115,7 +115,7 @@ func TestSiteAutomationDocumentSavedAgainIsNoChange(t *testing.T) {
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	step := docStep("Hi", paragraphDoc("Hello {{ first_name }}"))
 	created, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
-		Name: "Saved twice", TriggerEvent: "saved.twice", Steps: testhelper.SitePathEdit(step),
+		Name: "Saved twice", Trigger: testhelper.SiteTrigger("saved.twice"), Steps: testhelper.SitePathEdit(step),
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	// The same Step saved again, under the ids it was given.

@@ -16,6 +16,7 @@ export default defineConfig({
       'analytics.range.*',
       'automations.enrollmentStatus.*',
       'automations.failureKind.*',
+      'automations.skippedReason.*',
       'capturedMessages.surfaces.*',
       'conditions.attributes.*',
       'conditions.hasOperators.*',

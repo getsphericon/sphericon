@@ -291,6 +291,11 @@ func (h *ExternalSecurityHandler) authenticate(ctx context.Context, t externalap
 		Connection:  token.OauthClientID != nil,
 		Scoped:      h.bus.Act(h.ent.Scoped(token.WorkspaceID), actor),
 	}
+	if SendLocked(auth) {
+		// What a Connection without mcp:send writes starts nothing that sends (ADR 0132): the
+		// events its writes publish carry the mark, and the Contact write reads it from ctx.
+		ctx = events.SendLocked(ctx)
+	}
 	return WithTokenAuth(ctx, auth), nil
 }
 

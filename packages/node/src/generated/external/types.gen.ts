@@ -465,6 +465,16 @@ export type AutomationPeriodResults = {
    */
   to: string;
   /**
+   * Distinct contacts among the enrollments that began in the period: fewer than `entered` when a
+   * contact entered more than once
+   */
+  contacts: number;
+  /**
+   * Entries the entry checks refused in the period, by reason (ADR 0127), each on the Report day of
+   * the moment it would have begun
+   */
+  skipped: AutomationSkippedCounts;
+  /**
    * Mean time in whole seconds from the beginning to the end of the enrollments that ended in
    * the period, whatever their outcome; null when none ended
    */
@@ -670,6 +680,37 @@ export type AutomationResultsPoint = {
 };
 
 /**
+ * How many entries into an automation were skipped, by reason
+ */
+export type AutomationSkippedCounts = {
+  /**
+   * Entries caused by a chain of events that already passed through the automation
+   */
+  cycle: number;
+  /**
+   * Entries whose Event occurred while an enrollment of the contact was active
+   */
+  activeEnrollment: number;
+  /**
+   * Entries of a contact enrolled in the automation before, which enrolls a contact once
+   */
+  once: number;
+  /**
+   * Entries sooner after the beginning of the contact's previous enrollment than the cooldown
+   */
+  cooldown: number;
+  /**
+   * Entries whose Event lacked the property the automation's Enrollment key names
+   */
+  noEnrollmentKey: number;
+  /**
+   * Entries of a contact that had 10 active enrollments in the keyed automation, or 10 begun in a
+   * day
+   */
+  enrollmentCeiling: number;
+};
+
+/**
  * Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody
  */
 export const AutomationStatus = { ACTIVE: 'active', INACTIVE: 'inactive' } as const;
@@ -741,6 +782,16 @@ export type AutomationStepInput = ({
 } & EndStepInput);
 
 /**
+ * What enrolls a Contact in an automation, by `kind`: an Event matcher
+ */
+export type AutomationTrigger = EventTrigger;
+
+/**
+ * What enrolls a Contact in an automation, by `kind`: an Event matcher
+ */
+export type AutomationTriggerInput = EventTriggerInput;
+
+/**
  * One version of an automation's definition: what publishing makes it do (ADR 0065)
  */
 export type AutomationVersion = {
@@ -749,19 +800,19 @@ export type AutomationVersion = {
    */
   number: number;
   /**
-   * Event action that enrolls a contact (e.g. "contact.created", "email.opened")
+   * What enrolls a contact
    */
-  triggerEvent: string;
+  trigger: AutomationTrigger;
   /**
-   * Event actions that end an active enrollment early, as exited (e.g. "plan_downgraded"). Only
-   * an Event that occurred once the enrollment began counts; machine opens and clicks never do.
+   * The Event matchers that end an active enrollment early, as exited. Only an Event that
+   * occurred once the enrollment began counts; machine opens and clicks never do.
    */
-  exitEvents: Array<string>;
+  exitEvents: Array<EventMatcher>;
   /**
-   * Event action that ends an active enrollment as goal_reached (e.g. "payment_succeeded"); null
-   * when there is none
+   * The Event matcher that ends an active enrollment as goal_reached; an Event that matches it and
+   * an exit reaches the goal. Null when there is none.
    */
-  goalEvent: string | null;
+  goalEvent: EventMatcher | null;
   /**
    * The version's Steps: its root path
    */
@@ -1994,18 +2045,20 @@ export type CreateApiTokenResponse = {
  */
 export type CreateAutomationInput = {
   name: Name;
-  triggerEvent: string;
   /**
-   * Event actions that end an active enrollment early; none of them may be the trigger. Each
-   * follows the trigger's rule: any customer action, and of the email events only opened, clicked
-   * and unsubscribed.
+   * What enrolls a contact
    */
-  exitEvents?: Array<string>;
+  trigger: AutomationTriggerInput;
   /**
-   * Event action that ends an active enrollment as goal_reached; it may be neither the trigger nor
-   * an exit event. Null or omitted is none.
+   * The Event matchers that end an active enrollment early. They may share an action with the
+   * trigger, with each other and with the goal.
    */
-  goalEvent?: string | null;
+  exitEvents?: Array<EventMatcherInput>;
+  /**
+   * The Event matcher that ends an active enrollment as goal_reached; it may share an action with
+   * the trigger and the exits. Null or omitted is none.
+   */
+  goalEvent?: EventMatcherInput | null;
   /**
    * The version's Steps: its root path
    */
@@ -2779,6 +2832,16 @@ export type EnrollmentResource = {
    */
   status: EnrollmentStatus;
   /**
+   * Which of the contact's enrollments in the automation it is: 1 for the first, plus one for each
+   * after it, an enrollment that ended as it was made included
+   */
+  ordinal: number;
+  /**
+   * The value of the automation's Enrollment key the triggering Event carried, the property's
+   * string form (ADR 0165); absent for an automation with no key
+   */
+  keyValue?: string;
+  /**
    * Id of the Step of its version the Enrollment stands on (ADR 0122): a wait while it waits, the Step it ended on once it ended; absent only for a version of no Steps
    */
   currentStepId?: StepId;
@@ -2824,6 +2887,30 @@ export type EnrollmentStatus = typeof EnrollmentStatus[keyof typeof EnrollmentSt
  * malformed id from a valid one without trying it.
  */
 export type EntityId = string;
+
+/**
+ * The least time, in whole seconds, from the beginning of a contact's previous enrollment in an
+ * automation to the beginning of the next, under the `again` entry policy: at least one hour
+ */
+export type EntryCooldown = number;
+
+/**
+ * Whether an automation enrolls a contact again (ADR 0127): `once` enrolls a contact at most once,
+ * ever; `again` enrolls it again once its previous enrollment ended, however it ended, and the
+ * cooldown from that enrollment's beginning passed. Either way a contact has at most one active
+ * enrollment in an automation, or one per value of its Enrollment key, by which the policy and the
+ * cooldown then count.
+ */
+export const EntryPolicy = { ONCE: 'once', AGAIN: 'again' } as const;
+
+/**
+ * Whether an automation enrolls a contact again (ADR 0127): `once` enrolls a contact at most once,
+ * ever; `again` enrolls it again once its previous enrollment ended, however it ended, and the
+ * cooldown from that enrollment's beginning passed. Either way a contact has at most one active
+ * enrollment in an automation, or one per value of its Enrollment key, by which the policy and the
+ * cooldown then count.
+ */
+export type EntryPolicy = typeof EntryPolicy[keyof typeof EntryPolicy];
 
 /**
  * Distinct event action
@@ -2872,6 +2959,66 @@ export const EventCountOperator = { AT_LEAST: 'atLeast', AT_MOST: 'atMost' } as 
  * How an event count is bounded: at least `times`, or at most `times`
  */
 export type EventCountOperator = typeof EventCountOperator[keyof typeof EventCountOperator];
+
+/**
+ * An Event matcher's filter (ADR 0133): the tests of the Event's own properties it holds. A
+ * property the Event lacks, or holds with another type, fails its test, so a `not` over it holds.
+ */
+export type EventFilter = {
+  kind: 'group';
+  /**
+   * How the entries combine
+   */
+  combinator: ConditionCombinator;
+  /**
+   * Negate the whole group
+   */
+  not?: boolean;
+  /**
+   * The group's tests and nested groups
+   */
+  entries: Array<EventFilterNode>;
+};
+
+/**
+ * An Event matcher's filter (ADR 0133): the tests of the Event's own properties it holds. A
+ * property the Event lacks, or holds with another type, fails its test, so a `not` over it holds.
+ */
+export type EventFilterInput = {
+  kind: 'group';
+  /**
+   * How the entries combine
+   */
+  combinator: ConditionCombinator;
+  /**
+   * Negate the whole group
+   */
+  not?: boolean;
+  /**
+   * The group's tests and nested groups
+   */
+  entries: Array<EventFilterNodeInput>;
+};
+
+/**
+ * An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is
+ * about, or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133).
+ */
+export type EventFilterNode = ({
+  kind: 'group';
+} & EventFilter) | ({
+  kind: 'property';
+} & FilterPropertyLeaf);
+
+/**
+ * An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is
+ * about, or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133).
+ */
+export type EventFilterNodeInput = ({
+  kind: 'group';
+} & EventFilterInput) | ({
+  kind: 'property';
+} & FilterPropertyLeafInput);
 
 /**
  * Event payload
@@ -2960,6 +3107,115 @@ export type EventLeafInput = {
    * Count only the Events of the last this many days; absent counts all time
    */
   withinDays?: number;
+};
+
+/**
+ * An Event matcher that ends an enrollment (ADR 0133): an action, and an optional filter on that
+ * Event's own properties, so `order.closed` where `status` is `cancelled` exits and the same action
+ * where `status` is `paid` reaches the goal. The Event that began the enrollment never ends it.
+ */
+export type EventMatcher = {
+  /**
+   * The Event action (e.g. "plan_downgraded", "contact.tagged"). Any customer action; of the
+   * email events only opened, clicked and unsubscribed.
+   */
+  action: string;
+  /**
+   * The tests of the Event's own properties it must pass; absent, every Event of the action
+   * matches. The `tag` of contact.tagged and contact.untagged and the `key` of
+   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace.
+   */
+  filter?: EventFilter;
+};
+
+/**
+ * An Event matcher that ends an enrollment (ADR 0133), as a request writes it
+ */
+export type EventMatcherInput = {
+  /**
+   * The Event action (e.g. "plan_downgraded", "contact.tagged"). Any customer action; of the
+   * email events only opened, clicked and unsubscribed.
+   */
+  action: string;
+  /**
+   * The tests of the Event's own properties it must pass; omitted, every Event of the action
+   * matches. The `tag` of contact.tagged and contact.untagged and the `key` of
+   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace.
+   */
+  filter?: EventFilterInput;
+};
+
+/**
+ * A Trigger that enrolls a Contact on an Event (ADR 0133): its action, and an optional filter on
+ * that Event's own properties, so `order.completed` where `status` is `paid` starts on paid orders
+ * only. An Event that fails the filter is no entry: it enrolls no one and is not a skipped entry.
+ */
+export type EventTrigger = {
+  kind: 'event';
+  /**
+   * The Event action that enrolls (e.g. "contact.created", "email.opened", "order.completed").
+   * Any customer action; of the email events only opened, clicked and unsubscribed.
+   */
+  action: string;
+  /**
+   * The tests of the Event's own properties it must pass; absent, every Event of the action
+   * enrolls. The `tag` of contact.tagged and contact.untagged and the `key` of
+   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace.
+   */
+  filter?: EventFilter;
+  /**
+   * Whether a contact enrolls again, after its previous enrollment ended, on a later Event or a
+   * rule's enroll action
+   */
+  entryPolicy: EntryPolicy;
+  /**
+   * Under `again`, the least time in seconds from the beginning of a contact's previous
+   * enrollment to the next; an entry sooner is skipped as `cooldown`
+   */
+  cooldown: EntryCooldown;
+  /**
+   * The Enrollment key (ADR 0165): a property of the triggering Event, such as `order_id`, by
+   * whose value a contact may have several active enrollments at once, one per value; the entry
+   * policy and the cooldown count per value. An Event without the property enrolls no one and is
+   * skipped as `no_enrollment_key`; a contact has at most 10 active enrollments and 10 begun in a
+   * day, past which an entry is skipped as `enrollment_ceiling`. An exit or goal Event carrying the
+   * property ends only the enrollment of its value. Absent, a contact has one active enrollment.
+   */
+  enrollmentKey?: string;
+};
+
+/**
+ * A Trigger that enrolls a Contact on an Event (ADR 0133), as a request writes it
+ */
+export type EventTriggerInput = {
+  kind: 'event';
+  /**
+   * The Event action that enrolls (e.g. "contact.created", "email.opened", "order.completed").
+   * Any customer action; of the email events only opened, clicked and unsubscribed.
+   */
+  action: string;
+  /**
+   * The tests of the Event's own properties it must pass; omitted, every Event of the action
+   * enrolls. The `tag` of contact.tagged and contact.untagged and the `key` of
+   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace.
+   */
+  filter?: EventFilterInput;
+  /**
+   * Whether a contact enrolls again, after its previous enrollment ended, on a later Event or a
+   * rule's enroll action; omitted is `once`
+   */
+  entryPolicy?: EntryPolicy;
+  /**
+   * Under `again`, the least time in seconds from the beginning of a contact's previous
+   * enrollment to the next, at least 3600; omitted is 3600
+   */
+  cooldown?: EntryCooldown;
+  /**
+   * The Enrollment key (ADR 0165): the name of a property of the triggering Event, such as
+   * `order_id`, by whose value a contact may have several active enrollments at once, one per
+   * value; a property name, checked for form only. Omitted, a contact has one active enrollment.
+   */
+  enrollmentKey?: string;
 };
 
 /**
@@ -3321,6 +3577,40 @@ export type ExportMessageRow = {
    * Last change timestamp: the cursor column and the version of the row
    */
   updated_at: Timestamp;
+};
+
+/**
+ * A test of one property of the Event or line a filter is about, its key in a field of its own,
+ * so a key holding a dot is one key. It names no subject: a filter tests the one object it is
+ * about.
+ */
+export type FilterPropertyLeaf = {
+  kind: 'property';
+  /**
+   * The property's key
+   */
+  key: string;
+  /**
+   * What it asks of the property's value
+   */
+  test: PropertyTest;
+};
+
+/**
+ * A test of one property of the Event or line a filter is about, its key in a field of its own,
+ * so a key holding a dot is one key. It names no subject: a filter tests the one object it is
+ * about.
+ */
+export type FilterPropertyLeafInput = {
+  kind: 'property';
+  /**
+   * The property's key
+   */
+  key: string;
+  /**
+   * What it asks of the property's value
+   */
+  test: PropertyTestInput;
 };
 
 /**
@@ -5153,6 +5443,79 @@ export type SetupScope = typeof SetupScope[keyof typeof SetupScope];
 export type SigningSecret = string;
 
 /**
+ * Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127,
+ * ADR 0165), in their order: `no_enrollment_key` (the automation has an Enrollment key and the
+ * triggering Event lacks its property), `cycle` (the chain of events that caused it already passed
+ * through the automation), `active_enrollment` (the triggering Event occurred while an enrollment
+ * of the contact for the key value was active, or one is active still), `once` (the contact had an
+ * enrollment for the key value in the automation before, under the `once` entry policy),
+ * `cooldown` (under `again`, the cooldown from the beginning of the contact's previous enrollment
+ * for the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10
+ * active enrollments, or 10 begun in a day).
+ */
+export const SkippedEntryReason = {
+  NO_ENROLLMENT_KEY: 'no_enrollment_key',
+  CYCLE: 'cycle',
+  ACTIVE_ENROLLMENT: 'active_enrollment',
+  ONCE: 'once',
+  COOLDOWN: 'cooldown',
+  ENROLLMENT_CEILING: 'enrollment_ceiling'
+} as const;
+
+/**
+ * Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127,
+ * ADR 0165), in their order: `no_enrollment_key` (the automation has an Enrollment key and the
+ * triggering Event lacks its property), `cycle` (the chain of events that caused it already passed
+ * through the automation), `active_enrollment` (the triggering Event occurred while an enrollment
+ * of the contact for the key value was active, or one is active still), `once` (the contact had an
+ * enrollment for the key value in the automation before, under the `once` entry policy),
+ * `cooldown` (under `again`, the cooldown from the beginning of the contact's previous enrollment
+ * for the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10
+ * active enrollments, or 10 begun in a day).
+ */
+export type SkippedEntryReason = typeof SkippedEntryReason[keyof typeof SkippedEntryReason];
+
+/**
+ * An entry of a contact into an automation that its entry checks refused. Erased with the contact,
+ * and kept for the Event retention window.
+ */
+export type SkippedEntryResource = {
+  /**
+   * Unique identifier
+   */
+  id: EntityId;
+  /**
+   * The automation the contact was not enrolled in
+   */
+  automationId: EntityId;
+  /**
+   * The contact
+   */
+  contactId: EntityId;
+  /**
+   * Why the entry was skipped
+   */
+  reason: SkippedEntryReason;
+  /**
+   * The source id of the triggering Event (its dedupKey when it had one); absent when a rule's
+   * enroll action tried
+   */
+  eventSourceId?: string;
+  /**
+   * The rule firing whose enroll action tried; absent when the automation's trigger did
+   */
+  firingId?: EntityId;
+  /**
+   * When the enrollment would have begun: when its Event occurred
+   */
+  occurredAt: Timestamp;
+  /**
+   * When the entry was skipped
+   */
+  createdAt: Timestamp;
+};
+
+/**
  * Why an Outbound message was Skipped: final for its Destination, never retried. The first four
  * are Send-eligibility's; a client switches over the list.
  */
@@ -6121,15 +6484,20 @@ export type UpdateAutomationInput = {
    */
   revision: Revision;
   name?: Name;
-  triggerEvent?: string;
   /**
-   * Event actions that end an active enrollment early; replaces the list, omitted keeps it
+   * What enrolls a contact; replaces the Trigger, its filter, entry policy, cooldown and
+   * Enrollment key with it, and omitted keeps it
    */
-  exitEvents?: Array<string>;
+  trigger?: AutomationTriggerInput;
   /**
-   * Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it
+   * The Event matchers that end an active enrollment early; replaces the list, omitted keeps it
    */
-  goalEvent?: string | null;
+  exitEvents?: Array<EventMatcherInput>;
+  /**
+   * The Event matcher that ends an active enrollment as goal_reached; null removes it, omitted
+   * keeps it
+   */
+  goalEvent?: EventMatcherInput | null;
   /**
    * The version's Steps: its root path
    */
@@ -7326,6 +7694,72 @@ export type EnrollmentsGetResponses = {
 };
 
 export type EnrollmentsGetResponse = EnrollmentsGetResponses[keyof EnrollmentsGetResponses];
+
+export type SkippedEntriesListData = {
+  body?: never;
+  path: {
+    automationId: EntityId;
+  };
+  query?: {
+    /**
+     * Page number (1-based)
+     */
+    page?: number;
+    /**
+     * Page size
+     */
+    pageSize?: number;
+    /**
+     * Only the skipped entries of this contact
+     */
+    contactId?: EntityId;
+  };
+  url: '/automations/{automationId}/skipped-entries';
+};
+
+export type SkippedEntriesListErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SkippedEntriesListError = SkippedEntriesListErrors[keyof SkippedEntriesListErrors];
+
+export type SkippedEntriesListResponses = {
+  /**
+   * Paginated response
+   */
+  200: {
+    /**
+     * List of items
+     */
+    items: Array<SkippedEntryResource>;
+    /**
+     * Page number (1-based)
+     */
+    page: number;
+    /**
+     * Page size
+     */
+    pageSize: number;
+    /**
+     * Total number of elements
+     */
+    totalItems: number;
+    /**
+     * Total number of pages
+     */
+    totalPages: number;
+  };
+};
+
+export type SkippedEntriesListResponse = SkippedEntriesListResponses[keyof SkippedEntriesListResponses];
 
 export type AutomationsGetData = {
   body?: never;

@@ -28,3 +28,20 @@ namespace SiteEnrollments {
     @path enrollmentId: EntityId,
   ): EnrollmentResource | Problem;
 }
+
+@route("/workspaces/{workspaceId}/automations/{automationId}/skipped-entries")
+@tag("Site Automations")
+namespace SiteSkippedEntries {
+  /** List an automation's skipped entries, newest first: the entries its entry checks refused, each
+   * with its reason */
+  @get
+  @requiresPermissions(#[])
+  op list(
+    @path workspaceId: WorkspaceId,
+    @path automationId: EntityId,
+    ...PageQuery,
+
+    /** Only the skipped entries of this contact */
+    @query contactId?: EntityId,
+  ): Page<SkippedEntryResource> | Problem;
+}

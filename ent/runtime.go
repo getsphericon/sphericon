@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
@@ -85,6 +86,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/ent/workspacestanding"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 )
 
@@ -272,6 +274,25 @@ func init() {
 	automationrunDescBeganAt := automationrunFields[5].Descriptor()
 	// automationrun.DefaultBeganAt holds the default value on creation for the began_at field.
 	automationrun.DefaultBeganAt = automationrunDescBeganAt.Default.(func() time.Time)
+	// automationrunDescChain is the schema descriptor for chain field.
+	automationrunDescChain := automationrunFields[10].Descriptor()
+	// automationrun.DefaultChain holds the default value on creation for the chain field.
+	automationrun.DefaultChain = automationrunDescChain.Default.([]int64)
+	automationskippedentryMixin := schema.AutomationSkippedEntry{}.Mixin()
+	automationskippedentryMixinFields0 := automationskippedentryMixin[0].Fields()
+	_ = automationskippedentryMixinFields0
+	automationskippedentryFields := schema.AutomationSkippedEntry{}.Fields()
+	_ = automationskippedentryFields
+	// automationskippedentryDescCreatedAt is the schema descriptor for created_at field.
+	automationskippedentryDescCreatedAt := automationskippedentryMixinFields0[0].Descriptor()
+	// automationskippedentry.DefaultCreatedAt holds the default value on creation for the created_at field.
+	automationskippedentry.DefaultCreatedAt = automationskippedentryDescCreatedAt.Default.(func() time.Time)
+	// automationskippedentryDescUpdatedAt is the schema descriptor for updated_at field.
+	automationskippedentryDescUpdatedAt := automationskippedentryMixinFields0[1].Descriptor()
+	// automationskippedentry.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	automationskippedentry.DefaultUpdatedAt = automationskippedentryDescUpdatedAt.Default.(func() time.Time)
+	// automationskippedentry.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	automationskippedentry.UpdateDefaultUpdatedAt = automationskippedentryDescUpdatedAt.UpdateDefault.(func() time.Time)
 	automationsteprecordMixin := schema.AutomationStepRecord{}.Mixin()
 	automationsteprecordMixinFields0 := automationsteprecordMixin[0].Fields()
 	_ = automationsteprecordMixinFields0
@@ -308,10 +329,14 @@ func init() {
 	automationversionDescVersion := automationversionMixinFields2[1].Descriptor()
 	// automationversion.VersionValidator is a validator for the "version" field. It is called by the builders before save.
 	automationversion.VersionValidator = automationversionDescVersion.Validators[0].(func(int) error)
-	// automationversionDescExitEvents is the schema descriptor for exit_events field.
-	automationversionDescExitEvents := automationversionFields[3].Descriptor()
-	// automationversion.DefaultExitEvents holds the default value on creation for the exit_events field.
-	automationversion.DefaultExitEvents = automationversionDescExitEvents.Default.([]string)
+	// automationversionDescExits is the schema descriptor for exits field.
+	automationversionDescExits := automationversionFields[4].Descriptor()
+	// automationversion.DefaultExits holds the default value on creation for the exits field.
+	automationversion.DefaultExits = automationversionDescExits.Default.([]eventmatcher.Matcher)
+	// automationversionDescCooldownSeconds is the schema descriptor for cooldown_seconds field.
+	automationversionDescCooldownSeconds := automationversionFields[7].Descriptor()
+	// automationversion.DefaultCooldownSeconds holds the default value on creation for the cooldown_seconds field.
+	automationversion.DefaultCooldownSeconds = automationversionDescCooldownSeconds.Default.(int)
 	bindingMixin := schema.Binding{}.Mixin()
 	bindingMixinFields0 := bindingMixin[0].Fields()
 	_ = bindingMixinFields0
@@ -737,6 +762,10 @@ func init() {
 	eventDescBackfill := eventFields[15].Descriptor()
 	// event.DefaultBackfill holds the default value on creation for the backfill field.
 	event.DefaultBackfill = eventDescBackfill.Default.(bool)
+	// eventDescSendLocked is the schema descriptor for send_locked field.
+	eventDescSendLocked := eventFields[16].Descriptor()
+	// event.DefaultSendLocked holds the default value on creation for the send_locked field.
+	event.DefaultSendLocked = eventDescSendLocked.Default.(bool)
 	eventjournalentryMixin := schema.EventJournalEntry{}.Mixin()
 	eventjournalentryMixinFields0 := eventjournalentryMixin[0].Fields()
 	_ = eventjournalentryMixinFields0

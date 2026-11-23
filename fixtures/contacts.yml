@@ -2022,3 +2022,31 @@
   workspace_id: 96
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+
+# Halcyon (workspace 99): the Contact the send-lock tests write about, enrolled in the course.
+- id: 9900 # fixture: ContactHalcyonIda
+  source: manual
+  revision: 1
+  subject_id: ida
+  email: ida@halcyon.example
+  workspace_id: 99
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+
+# Ouroboros (workspace 1553): the Contacts the cycle guard's chains run through.
+- id: 15530 # fixture: ContactOuroborosUma
+  source: manual
+  revision: 1
+  subject_id: uma
+  email: uma@ouroboros.example
+  workspace_id: 1553
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 15531 # fixture: ContactOuroborosOtto
+  source: manual
+  revision: 1
+  subject_id: otto
+  email: otto@ouroboros.example
+  workspace_id: 1553
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

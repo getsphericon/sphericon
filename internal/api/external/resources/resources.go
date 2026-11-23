@@ -23,6 +23,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationskippedentry"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -58,6 +60,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
@@ -326,6 +329,9 @@ type Converter interface {
 	// DTO at this boundary. The contract names the version "number".
 	// goverter:map Version Number | count
 	// goverter:map Steps | automationPath
+	// goverter:map . Trigger | automationTrigger
+	// goverter:map . ExitEvents | automationExits
+	// goverter:map Goal GoalEvent | automationGoal
 	AutomationVersionToResource(source *ent.AutomationVersion) (externalapi.AutomationVersion, error)
 	// goverter:map Steps | automationStepViews
 	AutomationPathToResource(source automations.PathView) (externalapi.AutomationPath, error)
@@ -381,6 +387,8 @@ type Converter interface {
 	// goverter:map BotID BotId
 	TelegramConfigToResource(source integrations.RedactedTelegram) externalapi.TelegramConfig
 	// goverter:enum:transform value
+	EntryPolicyToResource(source automationversion.EntryPolicy) externalapi.EntryPolicy
+	// goverter:enum:transform value
 	SmsFromKindToResource(source messaging.SMSFromKind) externalapi.SmsFromKind
 	// goverter:map . Kind | twilioConfigKind
 	// goverter:map AccountSID AccountSid
@@ -423,6 +431,9 @@ type Converter interface {
 
 	// goverter:map . Failure | enrollmentFailure
 	EnrollmentToResource(source *ent.AutomationRun) externalapi.EnrollmentResource
+	// The store names the triggering Event's source id; the contract says whose it is.
+	// goverter:map SourceID EventSourceId
+	SkippedEntryToResource(source *ent.AutomationSkippedEntry) externalapi.SkippedEntryResource
 	// goverter:useEmptyOnNil:slice
 	EnrollmentsToResources(source []*ent.AutomationRun) []externalapi.EnrollmentResource
 
@@ -507,6 +518,8 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	AutomationsListPage(source pagination.Page[*ent.Automation]) (*externalapi.AutomationsListOK, error)
 	// goverter:useEmptyOnNil:slice
+	SkippedEntriesListPage(source pagination.Page[*ent.AutomationSkippedEntry]) *externalapi.SkippedEntriesListOK
+	// goverter:useEmptyOnNil:slice
 	EnrollmentsListPage(source pagination.Page[*ent.AutomationRun]) *externalapi.EnrollmentsListOK
 	// goverter:useEmptyOnNil:slice
 	RulesListPage(source pagination.Page[*ent.Rule]) (*externalapi.RulesListOK, error)
@@ -575,6 +588,8 @@ type Converter interface {
 	EnrollmentFailureKindToResource(source automationrun.FailureKind) externalapi.EnrollmentFailureKind
 	// goverter:enum:transform value
 	EnrollmentStatusToResource(source automationrun.Status) externalapi.EnrollmentStatus
+	// goverter:enum:transform value
+	SkippedEntryReasonToResource(source automationskippedentry.Reason) externalapi.SkippedEntryReason
 	// goverter:enum:transform value
 	IntegrationChannelToResource(source channels.Channel) externalapi.IntegrationChannel
 	// goverter:enum:transform value
@@ -811,6 +826,65 @@ func optNilTimestamp(v *time.Time) externalapi.OptNilTimestamp {
 // is written, so one that does not decode is a broken row, and it fails the response.
 func segmentCondition(g conditiontree.Segment) (externalapi.SegmentCondition, error) {
 	return convert.Document[externalapi.SegmentCondition](g)
+}
+
+// automationTrigger maps a version's Trigger into the typed DTO by its kind: an Event matcher whose
+// filter is checked as a stored Condition is (convert.Document).
+func automationTrigger(c Converter, v *ent.AutomationVersion) (externalapi.AutomationTrigger, error) {
+	m := automations.TriggerOf(v)
+	ev := externalapi.EventTrigger{
+		Kind: externalapi.EventTriggerKindEvent, Action: m.Action,
+		EntryPolicy: c.EntryPolicyToResource(v.EntryPolicy), Cooldown: externalapi.EntryCooldown(narrow.Int32(v.CooldownSeconds)),
+		EnrollmentKey: optString(v.EnrollmentKey),
+	}
+	if m.Filter != nil {
+		f, err := convert.Document[externalapi.EventFilter](*m.Filter)
+		if err != nil {
+			return externalapi.AutomationTrigger{}, err
+		}
+		ev.Filter = externalapi.NewOptEventFilter(f)
+	}
+	return externalapi.AutomationTrigger{OneOf: externalapi.NewEventTriggerAutomationTriggerSum(ev)}, nil
+}
+
+// eventMatcher maps an exit or goal event into the typed DTO, its filter checked as a stored
+// Condition is (convert.Document).
+func eventMatcher(m eventmatcher.Matcher) (externalapi.EventMatcher, error) {
+	out := externalapi.EventMatcher{Action: m.Action}
+	if m.Filter != nil {
+		f, err := convert.Document[externalapi.EventFilter](*m.Filter)
+		if err != nil {
+			return externalapi.EventMatcher{}, err
+		}
+		out.Filter = externalapi.NewOptEventFilter(f)
+	}
+	return out, nil
+}
+
+// automationExits maps a version's exit events into the typed DTO; never nil.
+func automationExits(v *ent.AutomationVersion) ([]externalapi.EventMatcher, error) {
+	exits := automations.ExitsOf(v)
+	out := make([]externalapi.EventMatcher, len(exits))
+	for i, e := range exits {
+		m, err := eventMatcher(e)
+		if err != nil {
+			return nil, err
+		}
+		out[i] = m
+	}
+	return out, nil
+}
+
+// automationGoal maps a version's goal event into the typed DTO: null when there is none.
+func automationGoal(goal *eventmatcher.Matcher) (externalapi.NilEventMatcher, error) {
+	if goal == nil {
+		return externalapi.NilEventMatcher{Null: true}, nil
+	}
+	m, err := eventMatcher(*goal)
+	if err != nil {
+		return externalapi.NilEventMatcher{}, err
+	}
+	return externalapi.NewNilEventMatcher(m), nil
 }
 
 // ruleCondition maps a Rule's Condition into the typed DTO, failing as segmentCondition does.

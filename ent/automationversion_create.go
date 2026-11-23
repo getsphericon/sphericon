@@ -16,6 +16,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 )
 
 // AutomationVersionCreate is the builder for creating a AutomationVersion entity.
@@ -78,28 +80,68 @@ func (_c *AutomationVersionCreate) SetSteps(v automationstep.Path) *AutomationVe
 	return _c
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (_c *AutomationVersionCreate) SetTriggerEvent(v string) *AutomationVersionCreate {
-	_c.mutation.SetTriggerEvent(v)
+// SetTriggerAction sets the "trigger_action" field.
+func (_c *AutomationVersionCreate) SetTriggerAction(v string) *AutomationVersionCreate {
+	_c.mutation.SetTriggerAction(v)
 	return _c
 }
 
-// SetExitEvents sets the "exit_events" field.
-func (_c *AutomationVersionCreate) SetExitEvents(v []string) *AutomationVersionCreate {
-	_c.mutation.SetExitEvents(v)
+// SetTriggerFilter sets the "trigger_filter" field.
+func (_c *AutomationVersionCreate) SetTriggerFilter(v *conditiontree.EventFilter) *AutomationVersionCreate {
+	_c.mutation.SetTriggerFilter(v)
 	return _c
 }
 
-// SetGoalEvent sets the "goal_event" field.
-func (_c *AutomationVersionCreate) SetGoalEvent(v string) *AutomationVersionCreate {
-	_c.mutation.SetGoalEvent(v)
+// SetExits sets the "exits" field.
+func (_c *AutomationVersionCreate) SetExits(v []eventmatcher.Matcher) *AutomationVersionCreate {
+	_c.mutation.SetExits(v)
 	return _c
 }
 
-// SetNillableGoalEvent sets the "goal_event" field if the given value is not nil.
-func (_c *AutomationVersionCreate) SetNillableGoalEvent(v *string) *AutomationVersionCreate {
+// SetGoal sets the "goal" field.
+func (_c *AutomationVersionCreate) SetGoal(v *eventmatcher.Matcher) *AutomationVersionCreate {
+	_c.mutation.SetGoal(v)
+	return _c
+}
+
+// SetEntryPolicy sets the "entry_policy" field.
+func (_c *AutomationVersionCreate) SetEntryPolicy(v automationversion.EntryPolicy) *AutomationVersionCreate {
+	_c.mutation.SetEntryPolicy(v)
+	return _c
+}
+
+// SetNillableEntryPolicy sets the "entry_policy" field if the given value is not nil.
+func (_c *AutomationVersionCreate) SetNillableEntryPolicy(v *automationversion.EntryPolicy) *AutomationVersionCreate {
 	if v != nil {
-		_c.SetGoalEvent(*v)
+		_c.SetEntryPolicy(*v)
+	}
+	return _c
+}
+
+// SetCooldownSeconds sets the "cooldown_seconds" field.
+func (_c *AutomationVersionCreate) SetCooldownSeconds(v int) *AutomationVersionCreate {
+	_c.mutation.SetCooldownSeconds(v)
+	return _c
+}
+
+// SetNillableCooldownSeconds sets the "cooldown_seconds" field if the given value is not nil.
+func (_c *AutomationVersionCreate) SetNillableCooldownSeconds(v *int) *AutomationVersionCreate {
+	if v != nil {
+		_c.SetCooldownSeconds(*v)
+	}
+	return _c
+}
+
+// SetEnrollmentKey sets the "enrollment_key" field.
+func (_c *AutomationVersionCreate) SetEnrollmentKey(v string) *AutomationVersionCreate {
+	_c.mutation.SetEnrollmentKey(v)
+	return _c
+}
+
+// SetNillableEnrollmentKey sets the "enrollment_key" field if the given value is not nil.
+func (_c *AutomationVersionCreate) SetNillableEnrollmentKey(v *string) *AutomationVersionCreate {
+	if v != nil {
+		_c.SetEnrollmentKey(*v)
 	}
 	return _c
 }
@@ -178,9 +220,17 @@ func (_c *AutomationVersionCreate) defaults() {
 		v := automationversion.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
-	if _, ok := _c.mutation.ExitEvents(); !ok {
-		v := automationversion.DefaultExitEvents
-		_c.mutation.SetExitEvents(v)
+	if _, ok := _c.mutation.Exits(); !ok {
+		v := automationversion.DefaultExits
+		_c.mutation.SetExits(v)
+	}
+	if _, ok := _c.mutation.EntryPolicy(); !ok {
+		v := automationversion.DefaultEntryPolicy
+		_c.mutation.SetEntryPolicy(v)
+	}
+	if _, ok := _c.mutation.CooldownSeconds(); !ok {
+		v := automationversion.DefaultCooldownSeconds
+		_c.mutation.SetCooldownSeconds(v)
 	}
 }
 
@@ -209,11 +259,22 @@ func (_c *AutomationVersionCreate) check() error {
 	if _, ok := _c.mutation.Steps(); !ok {
 		return &ValidationError{Name: "steps", err: errors.New(`ent: missing required field "AutomationVersion.steps"`)}
 	}
-	if _, ok := _c.mutation.TriggerEvent(); !ok {
-		return &ValidationError{Name: "trigger_event", err: errors.New(`ent: missing required field "AutomationVersion.trigger_event"`)}
+	if _, ok := _c.mutation.TriggerAction(); !ok {
+		return &ValidationError{Name: "trigger_action", err: errors.New(`ent: missing required field "AutomationVersion.trigger_action"`)}
 	}
-	if _, ok := _c.mutation.ExitEvents(); !ok {
-		return &ValidationError{Name: "exit_events", err: errors.New(`ent: missing required field "AutomationVersion.exit_events"`)}
+	if _, ok := _c.mutation.Exits(); !ok {
+		return &ValidationError{Name: "exits", err: errors.New(`ent: missing required field "AutomationVersion.exits"`)}
+	}
+	if _, ok := _c.mutation.EntryPolicy(); !ok {
+		return &ValidationError{Name: "entry_policy", err: errors.New(`ent: missing required field "AutomationVersion.entry_policy"`)}
+	}
+	if v, ok := _c.mutation.EntryPolicy(); ok {
+		if err := automationversion.EntryPolicyValidator(v); err != nil {
+			return &ValidationError{Name: "entry_policy", err: fmt.Errorf(`ent: validator failed for field "AutomationVersion.entry_policy": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.CooldownSeconds(); !ok {
+		return &ValidationError{Name: "cooldown_seconds", err: errors.New(`ent: missing required field "AutomationVersion.cooldown_seconds"`)}
 	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "AutomationVersion.workspace"`)}
@@ -270,17 +331,33 @@ func (_c *AutomationVersionCreate) createSpec() (*AutomationVersion, *sqlgraph.C
 		_spec.SetField(automationversion.FieldSteps, field.TypeJSON, value)
 		_node.Steps = value
 	}
-	if value, ok := _c.mutation.TriggerEvent(); ok {
-		_spec.SetField(automationversion.FieldTriggerEvent, field.TypeString, value)
-		_node.TriggerEvent = value
+	if value, ok := _c.mutation.TriggerAction(); ok {
+		_spec.SetField(automationversion.FieldTriggerAction, field.TypeString, value)
+		_node.TriggerAction = value
 	}
-	if value, ok := _c.mutation.ExitEvents(); ok {
-		_spec.SetField(automationversion.FieldExitEvents, field.TypeJSON, value)
-		_node.ExitEvents = value
+	if value, ok := _c.mutation.TriggerFilter(); ok {
+		_spec.SetField(automationversion.FieldTriggerFilter, field.TypeJSON, value)
+		_node.TriggerFilter = value
 	}
-	if value, ok := _c.mutation.GoalEvent(); ok {
-		_spec.SetField(automationversion.FieldGoalEvent, field.TypeString, value)
-		_node.GoalEvent = &value
+	if value, ok := _c.mutation.Exits(); ok {
+		_spec.SetField(automationversion.FieldExits, field.TypeJSON, value)
+		_node.Exits = value
+	}
+	if value, ok := _c.mutation.Goal(); ok {
+		_spec.SetField(automationversion.FieldGoal, field.TypeJSON, value)
+		_node.Goal = value
+	}
+	if value, ok := _c.mutation.EntryPolicy(); ok {
+		_spec.SetField(automationversion.FieldEntryPolicy, field.TypeEnum, value)
+		_node.EntryPolicy = value
+	}
+	if value, ok := _c.mutation.CooldownSeconds(); ok {
+		_spec.SetField(automationversion.FieldCooldownSeconds, field.TypeInt, value)
+		_node.CooldownSeconds = value
+	}
+	if value, ok := _c.mutation.EnrollmentKey(); ok {
+		_spec.SetField(automationversion.FieldEnrollmentKey, field.TypeString, value)
+		_node.EnrollmentKey = &value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -432,45 +509,111 @@ func (u *AutomationVersionUpsert) UpdateSteps() *AutomationVersionUpsert {
 	return u
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (u *AutomationVersionUpsert) SetTriggerEvent(v string) *AutomationVersionUpsert {
-	u.Set(automationversion.FieldTriggerEvent, v)
+// SetTriggerAction sets the "trigger_action" field.
+func (u *AutomationVersionUpsert) SetTriggerAction(v string) *AutomationVersionUpsert {
+	u.Set(automationversion.FieldTriggerAction, v)
 	return u
 }
 
-// UpdateTriggerEvent sets the "trigger_event" field to the value that was provided on create.
-func (u *AutomationVersionUpsert) UpdateTriggerEvent() *AutomationVersionUpsert {
-	u.SetExcluded(automationversion.FieldTriggerEvent)
+// UpdateTriggerAction sets the "trigger_action" field to the value that was provided on create.
+func (u *AutomationVersionUpsert) UpdateTriggerAction() *AutomationVersionUpsert {
+	u.SetExcluded(automationversion.FieldTriggerAction)
 	return u
 }
 
-// SetExitEvents sets the "exit_events" field.
-func (u *AutomationVersionUpsert) SetExitEvents(v []string) *AutomationVersionUpsert {
-	u.Set(automationversion.FieldExitEvents, v)
+// SetTriggerFilter sets the "trigger_filter" field.
+func (u *AutomationVersionUpsert) SetTriggerFilter(v *conditiontree.EventFilter) *AutomationVersionUpsert {
+	u.Set(automationversion.FieldTriggerFilter, v)
 	return u
 }
 
-// UpdateExitEvents sets the "exit_events" field to the value that was provided on create.
-func (u *AutomationVersionUpsert) UpdateExitEvents() *AutomationVersionUpsert {
-	u.SetExcluded(automationversion.FieldExitEvents)
+// UpdateTriggerFilter sets the "trigger_filter" field to the value that was provided on create.
+func (u *AutomationVersionUpsert) UpdateTriggerFilter() *AutomationVersionUpsert {
+	u.SetExcluded(automationversion.FieldTriggerFilter)
 	return u
 }
 
-// SetGoalEvent sets the "goal_event" field.
-func (u *AutomationVersionUpsert) SetGoalEvent(v string) *AutomationVersionUpsert {
-	u.Set(automationversion.FieldGoalEvent, v)
+// ClearTriggerFilter clears the value of the "trigger_filter" field.
+func (u *AutomationVersionUpsert) ClearTriggerFilter() *AutomationVersionUpsert {
+	u.SetNull(automationversion.FieldTriggerFilter)
 	return u
 }
 
-// UpdateGoalEvent sets the "goal_event" field to the value that was provided on create.
-func (u *AutomationVersionUpsert) UpdateGoalEvent() *AutomationVersionUpsert {
-	u.SetExcluded(automationversion.FieldGoalEvent)
+// SetExits sets the "exits" field.
+func (u *AutomationVersionUpsert) SetExits(v []eventmatcher.Matcher) *AutomationVersionUpsert {
+	u.Set(automationversion.FieldExits, v)
 	return u
 }
 
-// ClearGoalEvent clears the value of the "goal_event" field.
-func (u *AutomationVersionUpsert) ClearGoalEvent() *AutomationVersionUpsert {
-	u.SetNull(automationversion.FieldGoalEvent)
+// UpdateExits sets the "exits" field to the value that was provided on create.
+func (u *AutomationVersionUpsert) UpdateExits() *AutomationVersionUpsert {
+	u.SetExcluded(automationversion.FieldExits)
+	return u
+}
+
+// SetGoal sets the "goal" field.
+func (u *AutomationVersionUpsert) SetGoal(v *eventmatcher.Matcher) *AutomationVersionUpsert {
+	u.Set(automationversion.FieldGoal, v)
+	return u
+}
+
+// UpdateGoal sets the "goal" field to the value that was provided on create.
+func (u *AutomationVersionUpsert) UpdateGoal() *AutomationVersionUpsert {
+	u.SetExcluded(automationversion.FieldGoal)
+	return u
+}
+
+// ClearGoal clears the value of the "goal" field.
+func (u *AutomationVersionUpsert) ClearGoal() *AutomationVersionUpsert {
+	u.SetNull(automationversion.FieldGoal)
+	return u
+}
+
+// SetEntryPolicy sets the "entry_policy" field.
+func (u *AutomationVersionUpsert) SetEntryPolicy(v automationversion.EntryPolicy) *AutomationVersionUpsert {
+	u.Set(automationversion.FieldEntryPolicy, v)
+	return u
+}
+
+// UpdateEntryPolicy sets the "entry_policy" field to the value that was provided on create.
+func (u *AutomationVersionUpsert) UpdateEntryPolicy() *AutomationVersionUpsert {
+	u.SetExcluded(automationversion.FieldEntryPolicy)
+	return u
+}
+
+// SetCooldownSeconds sets the "cooldown_seconds" field.
+func (u *AutomationVersionUpsert) SetCooldownSeconds(v int) *AutomationVersionUpsert {
+	u.Set(automationversion.FieldCooldownSeconds, v)
+	return u
+}
+
+// UpdateCooldownSeconds sets the "cooldown_seconds" field to the value that was provided on create.
+func (u *AutomationVersionUpsert) UpdateCooldownSeconds() *AutomationVersionUpsert {
+	u.SetExcluded(automationversion.FieldCooldownSeconds)
+	return u
+}
+
+// AddCooldownSeconds adds v to the "cooldown_seconds" field.
+func (u *AutomationVersionUpsert) AddCooldownSeconds(v int) *AutomationVersionUpsert {
+	u.Add(automationversion.FieldCooldownSeconds, v)
+	return u
+}
+
+// SetEnrollmentKey sets the "enrollment_key" field.
+func (u *AutomationVersionUpsert) SetEnrollmentKey(v string) *AutomationVersionUpsert {
+	u.Set(automationversion.FieldEnrollmentKey, v)
+	return u
+}
+
+// UpdateEnrollmentKey sets the "enrollment_key" field to the value that was provided on create.
+func (u *AutomationVersionUpsert) UpdateEnrollmentKey() *AutomationVersionUpsert {
+	u.SetExcluded(automationversion.FieldEnrollmentKey)
+	return u
+}
+
+// ClearEnrollmentKey clears the value of the "enrollment_key" field.
+func (u *AutomationVersionUpsert) ClearEnrollmentKey() *AutomationVersionUpsert {
+	u.SetNull(automationversion.FieldEnrollmentKey)
 	return u
 }
 
@@ -584,52 +727,129 @@ func (u *AutomationVersionUpsertOne) UpdateSteps() *AutomationVersionUpsertOne {
 	})
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (u *AutomationVersionUpsertOne) SetTriggerEvent(v string) *AutomationVersionUpsertOne {
+// SetTriggerAction sets the "trigger_action" field.
+func (u *AutomationVersionUpsertOne) SetTriggerAction(v string) *AutomationVersionUpsertOne {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.SetTriggerEvent(v)
+		s.SetTriggerAction(v)
 	})
 }
 
-// UpdateTriggerEvent sets the "trigger_event" field to the value that was provided on create.
-func (u *AutomationVersionUpsertOne) UpdateTriggerEvent() *AutomationVersionUpsertOne {
+// UpdateTriggerAction sets the "trigger_action" field to the value that was provided on create.
+func (u *AutomationVersionUpsertOne) UpdateTriggerAction() *AutomationVersionUpsertOne {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.UpdateTriggerEvent()
+		s.UpdateTriggerAction()
 	})
 }
 
-// SetExitEvents sets the "exit_events" field.
-func (u *AutomationVersionUpsertOne) SetExitEvents(v []string) *AutomationVersionUpsertOne {
+// SetTriggerFilter sets the "trigger_filter" field.
+func (u *AutomationVersionUpsertOne) SetTriggerFilter(v *conditiontree.EventFilter) *AutomationVersionUpsertOne {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.SetExitEvents(v)
+		s.SetTriggerFilter(v)
 	})
 }
 
-// UpdateExitEvents sets the "exit_events" field to the value that was provided on create.
-func (u *AutomationVersionUpsertOne) UpdateExitEvents() *AutomationVersionUpsertOne {
+// UpdateTriggerFilter sets the "trigger_filter" field to the value that was provided on create.
+func (u *AutomationVersionUpsertOne) UpdateTriggerFilter() *AutomationVersionUpsertOne {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.UpdateExitEvents()
+		s.UpdateTriggerFilter()
 	})
 }
 
-// SetGoalEvent sets the "goal_event" field.
-func (u *AutomationVersionUpsertOne) SetGoalEvent(v string) *AutomationVersionUpsertOne {
+// ClearTriggerFilter clears the value of the "trigger_filter" field.
+func (u *AutomationVersionUpsertOne) ClearTriggerFilter() *AutomationVersionUpsertOne {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.SetGoalEvent(v)
+		s.ClearTriggerFilter()
 	})
 }
 
-// UpdateGoalEvent sets the "goal_event" field to the value that was provided on create.
-func (u *AutomationVersionUpsertOne) UpdateGoalEvent() *AutomationVersionUpsertOne {
+// SetExits sets the "exits" field.
+func (u *AutomationVersionUpsertOne) SetExits(v []eventmatcher.Matcher) *AutomationVersionUpsertOne {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.UpdateGoalEvent()
+		s.SetExits(v)
 	})
 }
 
-// ClearGoalEvent clears the value of the "goal_event" field.
-func (u *AutomationVersionUpsertOne) ClearGoalEvent() *AutomationVersionUpsertOne {
+// UpdateExits sets the "exits" field to the value that was provided on create.
+func (u *AutomationVersionUpsertOne) UpdateExits() *AutomationVersionUpsertOne {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.ClearGoalEvent()
+		s.UpdateExits()
+	})
+}
+
+// SetGoal sets the "goal" field.
+func (u *AutomationVersionUpsertOne) SetGoal(v *eventmatcher.Matcher) *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetGoal(v)
+	})
+}
+
+// UpdateGoal sets the "goal" field to the value that was provided on create.
+func (u *AutomationVersionUpsertOne) UpdateGoal() *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateGoal()
+	})
+}
+
+// ClearGoal clears the value of the "goal" field.
+func (u *AutomationVersionUpsertOne) ClearGoal() *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.ClearGoal()
+	})
+}
+
+// SetEntryPolicy sets the "entry_policy" field.
+func (u *AutomationVersionUpsertOne) SetEntryPolicy(v automationversion.EntryPolicy) *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetEntryPolicy(v)
+	})
+}
+
+// UpdateEntryPolicy sets the "entry_policy" field to the value that was provided on create.
+func (u *AutomationVersionUpsertOne) UpdateEntryPolicy() *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateEntryPolicy()
+	})
+}
+
+// SetCooldownSeconds sets the "cooldown_seconds" field.
+func (u *AutomationVersionUpsertOne) SetCooldownSeconds(v int) *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetCooldownSeconds(v)
+	})
+}
+
+// AddCooldownSeconds adds v to the "cooldown_seconds" field.
+func (u *AutomationVersionUpsertOne) AddCooldownSeconds(v int) *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.AddCooldownSeconds(v)
+	})
+}
+
+// UpdateCooldownSeconds sets the "cooldown_seconds" field to the value that was provided on create.
+func (u *AutomationVersionUpsertOne) UpdateCooldownSeconds() *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateCooldownSeconds()
+	})
+}
+
+// SetEnrollmentKey sets the "enrollment_key" field.
+func (u *AutomationVersionUpsertOne) SetEnrollmentKey(v string) *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetEnrollmentKey(v)
+	})
+}
+
+// UpdateEnrollmentKey sets the "enrollment_key" field to the value that was provided on create.
+func (u *AutomationVersionUpsertOne) UpdateEnrollmentKey() *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateEnrollmentKey()
+	})
+}
+
+// ClearEnrollmentKey clears the value of the "enrollment_key" field.
+func (u *AutomationVersionUpsertOne) ClearEnrollmentKey() *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.ClearEnrollmentKey()
 	})
 }
 
@@ -909,52 +1129,129 @@ func (u *AutomationVersionUpsertBulk) UpdateSteps() *AutomationVersionUpsertBulk
 	})
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (u *AutomationVersionUpsertBulk) SetTriggerEvent(v string) *AutomationVersionUpsertBulk {
+// SetTriggerAction sets the "trigger_action" field.
+func (u *AutomationVersionUpsertBulk) SetTriggerAction(v string) *AutomationVersionUpsertBulk {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.SetTriggerEvent(v)
+		s.SetTriggerAction(v)
 	})
 }
 
-// UpdateTriggerEvent sets the "trigger_event" field to the value that was provided on create.
-func (u *AutomationVersionUpsertBulk) UpdateTriggerEvent() *AutomationVersionUpsertBulk {
+// UpdateTriggerAction sets the "trigger_action" field to the value that was provided on create.
+func (u *AutomationVersionUpsertBulk) UpdateTriggerAction() *AutomationVersionUpsertBulk {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.UpdateTriggerEvent()
+		s.UpdateTriggerAction()
 	})
 }
 
-// SetExitEvents sets the "exit_events" field.
-func (u *AutomationVersionUpsertBulk) SetExitEvents(v []string) *AutomationVersionUpsertBulk {
+// SetTriggerFilter sets the "trigger_filter" field.
+func (u *AutomationVersionUpsertBulk) SetTriggerFilter(v *conditiontree.EventFilter) *AutomationVersionUpsertBulk {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.SetExitEvents(v)
+		s.SetTriggerFilter(v)
 	})
 }
 
-// UpdateExitEvents sets the "exit_events" field to the value that was provided on create.
-func (u *AutomationVersionUpsertBulk) UpdateExitEvents() *AutomationVersionUpsertBulk {
+// UpdateTriggerFilter sets the "trigger_filter" field to the value that was provided on create.
+func (u *AutomationVersionUpsertBulk) UpdateTriggerFilter() *AutomationVersionUpsertBulk {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.UpdateExitEvents()
+		s.UpdateTriggerFilter()
 	})
 }
 
-// SetGoalEvent sets the "goal_event" field.
-func (u *AutomationVersionUpsertBulk) SetGoalEvent(v string) *AutomationVersionUpsertBulk {
+// ClearTriggerFilter clears the value of the "trigger_filter" field.
+func (u *AutomationVersionUpsertBulk) ClearTriggerFilter() *AutomationVersionUpsertBulk {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.SetGoalEvent(v)
+		s.ClearTriggerFilter()
 	})
 }
 
-// UpdateGoalEvent sets the "goal_event" field to the value that was provided on create.
-func (u *AutomationVersionUpsertBulk) UpdateGoalEvent() *AutomationVersionUpsertBulk {
+// SetExits sets the "exits" field.
+func (u *AutomationVersionUpsertBulk) SetExits(v []eventmatcher.Matcher) *AutomationVersionUpsertBulk {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.UpdateGoalEvent()
+		s.SetExits(v)
 	})
 }
 
-// ClearGoalEvent clears the value of the "goal_event" field.
-func (u *AutomationVersionUpsertBulk) ClearGoalEvent() *AutomationVersionUpsertBulk {
+// UpdateExits sets the "exits" field to the value that was provided on create.
+func (u *AutomationVersionUpsertBulk) UpdateExits() *AutomationVersionUpsertBulk {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.ClearGoalEvent()
+		s.UpdateExits()
+	})
+}
+
+// SetGoal sets the "goal" field.
+func (u *AutomationVersionUpsertBulk) SetGoal(v *eventmatcher.Matcher) *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetGoal(v)
+	})
+}
+
+// UpdateGoal sets the "goal" field to the value that was provided on create.
+func (u *AutomationVersionUpsertBulk) UpdateGoal() *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateGoal()
+	})
+}
+
+// ClearGoal clears the value of the "goal" field.
+func (u *AutomationVersionUpsertBulk) ClearGoal() *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.ClearGoal()
+	})
+}
+
+// SetEntryPolicy sets the "entry_policy" field.
+func (u *AutomationVersionUpsertBulk) SetEntryPolicy(v automationversion.EntryPolicy) *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetEntryPolicy(v)
+	})
+}
+
+// UpdateEntryPolicy sets the "entry_policy" field to the value that was provided on create.
+func (u *AutomationVersionUpsertBulk) UpdateEntryPolicy() *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateEntryPolicy()
+	})
+}
+
+// SetCooldownSeconds sets the "cooldown_seconds" field.
+func (u *AutomationVersionUpsertBulk) SetCooldownSeconds(v int) *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetCooldownSeconds(v)
+	})
+}
+
+// AddCooldownSeconds adds v to the "cooldown_seconds" field.
+func (u *AutomationVersionUpsertBulk) AddCooldownSeconds(v int) *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.AddCooldownSeconds(v)
+	})
+}
+
+// UpdateCooldownSeconds sets the "cooldown_seconds" field to the value that was provided on create.
+func (u *AutomationVersionUpsertBulk) UpdateCooldownSeconds() *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateCooldownSeconds()
+	})
+}
+
+// SetEnrollmentKey sets the "enrollment_key" field.
+func (u *AutomationVersionUpsertBulk) SetEnrollmentKey(v string) *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetEnrollmentKey(v)
+	})
+}
+
+// UpdateEnrollmentKey sets the "enrollment_key" field to the value that was provided on create.
+func (u *AutomationVersionUpsertBulk) UpdateEnrollmentKey() *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateEnrollmentKey()
+	})
+}
+
+// ClearEnrollmentKey clears the value of the "enrollment_key" field.
+func (u *AutomationVersionUpsertBulk) ClearEnrollmentKey() *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.ClearEnrollmentKey()
 	})
 }
 

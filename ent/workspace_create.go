@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
@@ -807,6 +808,21 @@ func (_c *WorkspaceCreate) AddAutomationFigures(v ...*AutomationFigure) *Workspa
 		ids[i] = v[i].ID
 	}
 	return _c.AddAutomationFigureIDs(ids...)
+}
+
+// AddAutomationSkippedEntryIDs adds the "automation_skipped_entries" edge to the AutomationSkippedEntry entity by IDs.
+func (_c *WorkspaceCreate) AddAutomationSkippedEntryIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddAutomationSkippedEntryIDs(ids...)
+	return _c
+}
+
+// AddAutomationSkippedEntries adds the "automation_skipped_entries" edges to the AutomationSkippedEntry entity.
+func (_c *WorkspaceCreate) AddAutomationSkippedEntries(v ...*AutomationSkippedEntry) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddAutomationSkippedEntryIDs(ids...)
 }
 
 // AddEmailTemplateIDs adds the "email_templates" edge to the EmailTemplate entity by IDs.
@@ -1918,6 +1934,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(automationfigure.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.AutomationSkippedEntriesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationSkippedEntriesTable,
+			Columns: []string{workspace.AutomationSkippedEntriesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationskippedentry.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

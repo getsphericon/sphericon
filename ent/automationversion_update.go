@@ -18,6 +18,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 )
 
 // AutomationVersionUpdate is the builder for updating AutomationVersion entities.
@@ -82,49 +84,108 @@ func (_u *AutomationVersionUpdate) SetNillableSteps(v *automationstep.Path) *Aut
 	return _u
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (_u *AutomationVersionUpdate) SetTriggerEvent(v string) *AutomationVersionUpdate {
-	_u.mutation.SetTriggerEvent(v)
+// SetTriggerAction sets the "trigger_action" field.
+func (_u *AutomationVersionUpdate) SetTriggerAction(v string) *AutomationVersionUpdate {
+	_u.mutation.SetTriggerAction(v)
 	return _u
 }
 
-// SetNillableTriggerEvent sets the "trigger_event" field if the given value is not nil.
-func (_u *AutomationVersionUpdate) SetNillableTriggerEvent(v *string) *AutomationVersionUpdate {
+// SetNillableTriggerAction sets the "trigger_action" field if the given value is not nil.
+func (_u *AutomationVersionUpdate) SetNillableTriggerAction(v *string) *AutomationVersionUpdate {
 	if v != nil {
-		_u.SetTriggerEvent(*v)
+		_u.SetTriggerAction(*v)
 	}
 	return _u
 }
 
-// SetExitEvents sets the "exit_events" field.
-func (_u *AutomationVersionUpdate) SetExitEvents(v []string) *AutomationVersionUpdate {
-	_u.mutation.SetExitEvents(v)
+// SetTriggerFilter sets the "trigger_filter" field.
+func (_u *AutomationVersionUpdate) SetTriggerFilter(v *conditiontree.EventFilter) *AutomationVersionUpdate {
+	_u.mutation.SetTriggerFilter(v)
 	return _u
 }
 
-// AppendExitEvents appends value to the "exit_events" field.
-func (_u *AutomationVersionUpdate) AppendExitEvents(v []string) *AutomationVersionUpdate {
-	_u.mutation.AppendExitEvents(v)
+// ClearTriggerFilter clears the value of the "trigger_filter" field.
+func (_u *AutomationVersionUpdate) ClearTriggerFilter() *AutomationVersionUpdate {
+	_u.mutation.ClearTriggerFilter()
 	return _u
 }
 
-// SetGoalEvent sets the "goal_event" field.
-func (_u *AutomationVersionUpdate) SetGoalEvent(v string) *AutomationVersionUpdate {
-	_u.mutation.SetGoalEvent(v)
+// SetExits sets the "exits" field.
+func (_u *AutomationVersionUpdate) SetExits(v []eventmatcher.Matcher) *AutomationVersionUpdate {
+	_u.mutation.SetExits(v)
 	return _u
 }
 
-// SetNillableGoalEvent sets the "goal_event" field if the given value is not nil.
-func (_u *AutomationVersionUpdate) SetNillableGoalEvent(v *string) *AutomationVersionUpdate {
+// AppendExits appends value to the "exits" field.
+func (_u *AutomationVersionUpdate) AppendExits(v []eventmatcher.Matcher) *AutomationVersionUpdate {
+	_u.mutation.AppendExits(v)
+	return _u
+}
+
+// SetGoal sets the "goal" field.
+func (_u *AutomationVersionUpdate) SetGoal(v *eventmatcher.Matcher) *AutomationVersionUpdate {
+	_u.mutation.SetGoal(v)
+	return _u
+}
+
+// ClearGoal clears the value of the "goal" field.
+func (_u *AutomationVersionUpdate) ClearGoal() *AutomationVersionUpdate {
+	_u.mutation.ClearGoal()
+	return _u
+}
+
+// SetEntryPolicy sets the "entry_policy" field.
+func (_u *AutomationVersionUpdate) SetEntryPolicy(v automationversion.EntryPolicy) *AutomationVersionUpdate {
+	_u.mutation.SetEntryPolicy(v)
+	return _u
+}
+
+// SetNillableEntryPolicy sets the "entry_policy" field if the given value is not nil.
+func (_u *AutomationVersionUpdate) SetNillableEntryPolicy(v *automationversion.EntryPolicy) *AutomationVersionUpdate {
 	if v != nil {
-		_u.SetGoalEvent(*v)
+		_u.SetEntryPolicy(*v)
 	}
 	return _u
 }
 
-// ClearGoalEvent clears the value of the "goal_event" field.
-func (_u *AutomationVersionUpdate) ClearGoalEvent() *AutomationVersionUpdate {
-	_u.mutation.ClearGoalEvent()
+// SetCooldownSeconds sets the "cooldown_seconds" field.
+func (_u *AutomationVersionUpdate) SetCooldownSeconds(v int) *AutomationVersionUpdate {
+	_u.mutation.ResetCooldownSeconds()
+	_u.mutation.SetCooldownSeconds(v)
+	return _u
+}
+
+// SetNillableCooldownSeconds sets the "cooldown_seconds" field if the given value is not nil.
+func (_u *AutomationVersionUpdate) SetNillableCooldownSeconds(v *int) *AutomationVersionUpdate {
+	if v != nil {
+		_u.SetCooldownSeconds(*v)
+	}
+	return _u
+}
+
+// AddCooldownSeconds adds value to the "cooldown_seconds" field.
+func (_u *AutomationVersionUpdate) AddCooldownSeconds(v int) *AutomationVersionUpdate {
+	_u.mutation.AddCooldownSeconds(v)
+	return _u
+}
+
+// SetEnrollmentKey sets the "enrollment_key" field.
+func (_u *AutomationVersionUpdate) SetEnrollmentKey(v string) *AutomationVersionUpdate {
+	_u.mutation.SetEnrollmentKey(v)
+	return _u
+}
+
+// SetNillableEnrollmentKey sets the "enrollment_key" field if the given value is not nil.
+func (_u *AutomationVersionUpdate) SetNillableEnrollmentKey(v *string) *AutomationVersionUpdate {
+	if v != nil {
+		_u.SetEnrollmentKey(*v)
+	}
+	return _u
+}
+
+// ClearEnrollmentKey clears the value of the "enrollment_key" field.
+func (_u *AutomationVersionUpdate) ClearEnrollmentKey() *AutomationVersionUpdate {
+	_u.mutation.ClearEnrollmentKey()
 	return _u
 }
 
@@ -229,6 +290,11 @@ func (_u *AutomationVersionUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *AutomationVersionUpdate) check() error {
+	if v, ok := _u.mutation.EntryPolicy(); ok {
+		if err := automationversion.EntryPolicyValidator(v); err != nil {
+			return &ValidationError{Name: "entry_policy", err: fmt.Errorf(`ent: validator failed for field "AutomationVersion.entry_policy": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "AutomationVersion.workspace"`)
 	}
@@ -262,22 +328,43 @@ func (_u *AutomationVersionUpdate) sqlSave(ctx context.Context) (_node int, err 
 	if value, ok := _u.mutation.Steps(); ok {
 		_spec.SetField(automationversion.FieldSteps, field.TypeJSON, value)
 	}
-	if value, ok := _u.mutation.TriggerEvent(); ok {
-		_spec.SetField(automationversion.FieldTriggerEvent, field.TypeString, value)
+	if value, ok := _u.mutation.TriggerAction(); ok {
+		_spec.SetField(automationversion.FieldTriggerAction, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.ExitEvents(); ok {
-		_spec.SetField(automationversion.FieldExitEvents, field.TypeJSON, value)
+	if value, ok := _u.mutation.TriggerFilter(); ok {
+		_spec.SetField(automationversion.FieldTriggerFilter, field.TypeJSON, value)
 	}
-	if value, ok := _u.mutation.AppendedExitEvents(); ok {
+	if _u.mutation.TriggerFilterCleared() {
+		_spec.ClearField(automationversion.FieldTriggerFilter, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.Exits(); ok {
+		_spec.SetField(automationversion.FieldExits, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedExits(); ok {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, automationversion.FieldExitEvents, value)
+			sqljson.Append(u, automationversion.FieldExits, value)
 		})
 	}
-	if value, ok := _u.mutation.GoalEvent(); ok {
-		_spec.SetField(automationversion.FieldGoalEvent, field.TypeString, value)
+	if value, ok := _u.mutation.Goal(); ok {
+		_spec.SetField(automationversion.FieldGoal, field.TypeJSON, value)
 	}
-	if _u.mutation.GoalEventCleared() {
-		_spec.ClearField(automationversion.FieldGoalEvent, field.TypeString)
+	if _u.mutation.GoalCleared() {
+		_spec.ClearField(automationversion.FieldGoal, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.EntryPolicy(); ok {
+		_spec.SetField(automationversion.FieldEntryPolicy, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.CooldownSeconds(); ok {
+		_spec.SetField(automationversion.FieldCooldownSeconds, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedCooldownSeconds(); ok {
+		_spec.AddField(automationversion.FieldCooldownSeconds, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.EnrollmentKey(); ok {
+		_spec.SetField(automationversion.FieldEnrollmentKey, field.TypeString, value)
+	}
+	if _u.mutation.EnrollmentKeyCleared() {
+		_spec.ClearField(automationversion.FieldEnrollmentKey, field.TypeString)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -452,49 +539,108 @@ func (_u *AutomationVersionUpdateOne) SetNillableSteps(v *automationstep.Path) *
 	return _u
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (_u *AutomationVersionUpdateOne) SetTriggerEvent(v string) *AutomationVersionUpdateOne {
-	_u.mutation.SetTriggerEvent(v)
+// SetTriggerAction sets the "trigger_action" field.
+func (_u *AutomationVersionUpdateOne) SetTriggerAction(v string) *AutomationVersionUpdateOne {
+	_u.mutation.SetTriggerAction(v)
 	return _u
 }
 
-// SetNillableTriggerEvent sets the "trigger_event" field if the given value is not nil.
-func (_u *AutomationVersionUpdateOne) SetNillableTriggerEvent(v *string) *AutomationVersionUpdateOne {
+// SetNillableTriggerAction sets the "trigger_action" field if the given value is not nil.
+func (_u *AutomationVersionUpdateOne) SetNillableTriggerAction(v *string) *AutomationVersionUpdateOne {
 	if v != nil {
-		_u.SetTriggerEvent(*v)
+		_u.SetTriggerAction(*v)
 	}
 	return _u
 }
 
-// SetExitEvents sets the "exit_events" field.
-func (_u *AutomationVersionUpdateOne) SetExitEvents(v []string) *AutomationVersionUpdateOne {
-	_u.mutation.SetExitEvents(v)
+// SetTriggerFilter sets the "trigger_filter" field.
+func (_u *AutomationVersionUpdateOne) SetTriggerFilter(v *conditiontree.EventFilter) *AutomationVersionUpdateOne {
+	_u.mutation.SetTriggerFilter(v)
 	return _u
 }
 
-// AppendExitEvents appends value to the "exit_events" field.
-func (_u *AutomationVersionUpdateOne) AppendExitEvents(v []string) *AutomationVersionUpdateOne {
-	_u.mutation.AppendExitEvents(v)
+// ClearTriggerFilter clears the value of the "trigger_filter" field.
+func (_u *AutomationVersionUpdateOne) ClearTriggerFilter() *AutomationVersionUpdateOne {
+	_u.mutation.ClearTriggerFilter()
 	return _u
 }
 
-// SetGoalEvent sets the "goal_event" field.
-func (_u *AutomationVersionUpdateOne) SetGoalEvent(v string) *AutomationVersionUpdateOne {
-	_u.mutation.SetGoalEvent(v)
+// SetExits sets the "exits" field.
+func (_u *AutomationVersionUpdateOne) SetExits(v []eventmatcher.Matcher) *AutomationVersionUpdateOne {
+	_u.mutation.SetExits(v)
 	return _u
 }
 
-// SetNillableGoalEvent sets the "goal_event" field if the given value is not nil.
-func (_u *AutomationVersionUpdateOne) SetNillableGoalEvent(v *string) *AutomationVersionUpdateOne {
+// AppendExits appends value to the "exits" field.
+func (_u *AutomationVersionUpdateOne) AppendExits(v []eventmatcher.Matcher) *AutomationVersionUpdateOne {
+	_u.mutation.AppendExits(v)
+	return _u
+}
+
+// SetGoal sets the "goal" field.
+func (_u *AutomationVersionUpdateOne) SetGoal(v *eventmatcher.Matcher) *AutomationVersionUpdateOne {
+	_u.mutation.SetGoal(v)
+	return _u
+}
+
+// ClearGoal clears the value of the "goal" field.
+func (_u *AutomationVersionUpdateOne) ClearGoal() *AutomationVersionUpdateOne {
+	_u.mutation.ClearGoal()
+	return _u
+}
+
+// SetEntryPolicy sets the "entry_policy" field.
+func (_u *AutomationVersionUpdateOne) SetEntryPolicy(v automationversion.EntryPolicy) *AutomationVersionUpdateOne {
+	_u.mutation.SetEntryPolicy(v)
+	return _u
+}
+
+// SetNillableEntryPolicy sets the "entry_policy" field if the given value is not nil.
+func (_u *AutomationVersionUpdateOne) SetNillableEntryPolicy(v *automationversion.EntryPolicy) *AutomationVersionUpdateOne {
 	if v != nil {
-		_u.SetGoalEvent(*v)
+		_u.SetEntryPolicy(*v)
 	}
 	return _u
 }
 
-// ClearGoalEvent clears the value of the "goal_event" field.
-func (_u *AutomationVersionUpdateOne) ClearGoalEvent() *AutomationVersionUpdateOne {
-	_u.mutation.ClearGoalEvent()
+// SetCooldownSeconds sets the "cooldown_seconds" field.
+func (_u *AutomationVersionUpdateOne) SetCooldownSeconds(v int) *AutomationVersionUpdateOne {
+	_u.mutation.ResetCooldownSeconds()
+	_u.mutation.SetCooldownSeconds(v)
+	return _u
+}
+
+// SetNillableCooldownSeconds sets the "cooldown_seconds" field if the given value is not nil.
+func (_u *AutomationVersionUpdateOne) SetNillableCooldownSeconds(v *int) *AutomationVersionUpdateOne {
+	if v != nil {
+		_u.SetCooldownSeconds(*v)
+	}
+	return _u
+}
+
+// AddCooldownSeconds adds value to the "cooldown_seconds" field.
+func (_u *AutomationVersionUpdateOne) AddCooldownSeconds(v int) *AutomationVersionUpdateOne {
+	_u.mutation.AddCooldownSeconds(v)
+	return _u
+}
+
+// SetEnrollmentKey sets the "enrollment_key" field.
+func (_u *AutomationVersionUpdateOne) SetEnrollmentKey(v string) *AutomationVersionUpdateOne {
+	_u.mutation.SetEnrollmentKey(v)
+	return _u
+}
+
+// SetNillableEnrollmentKey sets the "enrollment_key" field if the given value is not nil.
+func (_u *AutomationVersionUpdateOne) SetNillableEnrollmentKey(v *string) *AutomationVersionUpdateOne {
+	if v != nil {
+		_u.SetEnrollmentKey(*v)
+	}
+	return _u
+}
+
+// ClearEnrollmentKey clears the value of the "enrollment_key" field.
+func (_u *AutomationVersionUpdateOne) ClearEnrollmentKey() *AutomationVersionUpdateOne {
+	_u.mutation.ClearEnrollmentKey()
 	return _u
 }
 
@@ -612,6 +758,11 @@ func (_u *AutomationVersionUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *AutomationVersionUpdateOne) check() error {
+	if v, ok := _u.mutation.EntryPolicy(); ok {
+		if err := automationversion.EntryPolicyValidator(v); err != nil {
+			return &ValidationError{Name: "entry_policy", err: fmt.Errorf(`ent: validator failed for field "AutomationVersion.entry_policy": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "AutomationVersion.workspace"`)
 	}
@@ -662,22 +813,43 @@ func (_u *AutomationVersionUpdateOne) sqlSave(ctx context.Context) (_node *Autom
 	if value, ok := _u.mutation.Steps(); ok {
 		_spec.SetField(automationversion.FieldSteps, field.TypeJSON, value)
 	}
-	if value, ok := _u.mutation.TriggerEvent(); ok {
-		_spec.SetField(automationversion.FieldTriggerEvent, field.TypeString, value)
+	if value, ok := _u.mutation.TriggerAction(); ok {
+		_spec.SetField(automationversion.FieldTriggerAction, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.ExitEvents(); ok {
-		_spec.SetField(automationversion.FieldExitEvents, field.TypeJSON, value)
+	if value, ok := _u.mutation.TriggerFilter(); ok {
+		_spec.SetField(automationversion.FieldTriggerFilter, field.TypeJSON, value)
 	}
-	if value, ok := _u.mutation.AppendedExitEvents(); ok {
+	if _u.mutation.TriggerFilterCleared() {
+		_spec.ClearField(automationversion.FieldTriggerFilter, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.Exits(); ok {
+		_spec.SetField(automationversion.FieldExits, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedExits(); ok {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, automationversion.FieldExitEvents, value)
+			sqljson.Append(u, automationversion.FieldExits, value)
 		})
 	}
-	if value, ok := _u.mutation.GoalEvent(); ok {
-		_spec.SetField(automationversion.FieldGoalEvent, field.TypeString, value)
+	if value, ok := _u.mutation.Goal(); ok {
+		_spec.SetField(automationversion.FieldGoal, field.TypeJSON, value)
 	}
-	if _u.mutation.GoalEventCleared() {
-		_spec.ClearField(automationversion.FieldGoalEvent, field.TypeString)
+	if _u.mutation.GoalCleared() {
+		_spec.ClearField(automationversion.FieldGoal, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.EntryPolicy(); ok {
+		_spec.SetField(automationversion.FieldEntryPolicy, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.CooldownSeconds(); ok {
+		_spec.SetField(automationversion.FieldCooldownSeconds, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedCooldownSeconds(); ok {
+		_spec.AddField(automationversion.FieldCooldownSeconds, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.EnrollmentKey(); ok {
+		_spec.SetField(automationversion.FieldEnrollmentKey, field.TypeString, value)
+	}
+	if _u.mutation.EnrollmentKeyCleared() {
+		_spec.ClearField(automationversion.FieldEnrollmentKey, field.TypeString)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

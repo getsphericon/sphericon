@@ -108,7 +108,7 @@ func triggerOf(t *testing.T, env *testhelper.TestEnv, automationID int64) string
 	if versionID == nil {
 		versionID = a.DraftVersionID
 	}
-	return env.DB.AutomationVersion.GetX(ctx, *versionID).TriggerEvent
+	return env.DB.AutomationVersion.GetX(ctx, *versionID).TriggerAction
 }
 
 // enrollVia enrolls the Contact through the Automation's own trigger and returns its one run.
@@ -153,26 +153,6 @@ func TestAutomationEnrollAndRun(t *testing.T) {
 	// Two email steps mean two send facts for this contact.
 	sent := env.QueuedCount(t, systemevent.EmailSent, map[string]any{"email": *alice.Email})
 	assert.Equal(t, 2, sent)
-}
-
-// An opt-out from this Automation's own source exits the Enrollment instead of sending: an
-// unsubscribe from the Automation ends it, whichever Channel it came from (ADR 0081). Leo opted out
-// of the Welcome series' own sending source.
-func TestAutomationExitsOnUnsubscribe(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-	runID := enrollVia(t, env, fixtures.AutomationWelcomeSeriesID, fixtures.ContactOptedOutOfWelcomeID)
-
-	fs := &fakeSender{}
-	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))
-
-	assert.Empty(t, fs.sent, "ineligible destination receives no email")
-	assert.Equal(t, automationrun.StatusExited, env.DB.AutomationRun.GetX(ctx, runID).Status)
-	assert.Empty(t, queuedSteps(t, env), "an exit queues no further step")
-	records := stepRecordsOf(t, env, runID)
-	require.Len(t, records, 1)
-	assert.NotNil(t, records[0].LeftAt, "the send it exited on is left with the exit")
-	assert.Nil(t, records[0].Outcome, "the Enrollment's end says why")
 }
 
 // A per-source opt-out is scoped: unsubscribing from "broadcasts" does not block
@@ -585,25 +565,9 @@ func TestAnEndCompletesTheEnrollmentAndTheStepsAfterItDoNotRun(t *testing.T) {
 	assert.Equal(t, env.StepIDAt(t, runID, 1), lo.FromPtr(run.CurrentStepID), "it ended on the End")
 }
 
-// An Event from an Automation's own email never enrolls the Contact into that Automation, so an
-// `email.opened` Automation cannot be fed by the mail it sends; another Automation on the same
-// trigger still enrolls (ADR 0053).
-func TestAnAutomationIsNotStartedByItsOwnEmail(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := t.Context()
-	acme := env.DB.Scoped(fixtures.AcmeID)
-
-	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(ctx, acme, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: systemevent.EmailOpened, OccurredAt: time.Now()}, SourceAutomationID: fixtures.AutomationOnOpenID}))
-	assert.Empty(t, enrollmentsOf(t, env, fixtures.AutomationOnOpenID, fixtures.ContactAliceID), "the open of its own email enrolls nobody")
-
-	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(ctx, acme, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: systemevent.EmailOpened, OccurredAt: time.Now()}, SourceAutomationID: fixtures.AutomationWelcomeSeriesID}))
-	assert.Len(t, enrollmentsOf(t, env, fixtures.AutomationOnOpenID, fixtures.ContactAliceID), 1, "the open of another Automation's email starts On open")
-}
-
 // The goal event ends the Enrollment before its next step, which then sends nothing (#751). The
 // payment occurred after the failure but before the job that enrolled was run, and still counts:
-// the Enrollment began when the failure occurred. A click or other Event from the Automation's own
-// email counts too: it ends, it only never enrolls.
+// the Enrollment began when the failure occurred.
 func TestAGoalEventEndsTheEnrollmentBeforeItsNextStep(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
@@ -614,7 +578,7 @@ func TestAGoalEventEndsTheEnrollmentBeforeItsNextStep(t *testing.T) {
 	enrolled := enrollmentsOf(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactAliceID)
 	require.Len(t, enrolled, 1)
 
-	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(ctx, acme, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "payment_succeeded", OccurredAt: paid}, SourceAutomationID: fixtures.AutomationPaymentRecoveryID}))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(ctx, acme, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "payment_succeeded", OccurredAt: paid}}))
 	fs := &fakeSender{}
 	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))
 

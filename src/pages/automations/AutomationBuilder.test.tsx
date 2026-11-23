@@ -5,6 +5,7 @@ import {
   handleSiteAutomationsGet,
   handleSiteAutomationsUpdate,
   handleSiteEnrollmentsList,
+  handleSiteEventsPropertyKeys,
   handleSiteIntegrationsList,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
@@ -33,7 +34,7 @@ const EDIT_ROUTE = routeMount(automationsEditRoute, {
 const NOW = '2026-01-01T00:00:00Z'
 const DRAFT: AutomationVersion = {
   number: 1,
-  triggerEvent: 'email.clicked',
+  trigger: { kind: 'event', action: 'email.clicked', entryPolicy: 'once', cooldown: 3600 },
   exitEvents: [],
   goalEvent: null,
   steps: { id: stepId(1), steps: [{ id: stepId(11), type: 'wait', seconds: 60 }] },
@@ -52,6 +53,7 @@ const STORED: SiteAutomationResource = {
 test('the builder shows the SDK strings and the app strings inside it as text, not keys', async () => {
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(STORED)),
+    handleSiteEventsPropertyKeys({ body: { keys: [] } }),
     handleSiteIntegrationsList({ body: [] }),
     handleSiteEnrollmentsList({
       body: { items: [], page: 1, pageSize: 25, totalItems: 0, totalPages: 0 },

@@ -132,6 +132,8 @@ type WorkspaceEdges struct {
 	BroadcastFigures []*BroadcastFigure `json:"broadcast_figures,omitempty"`
 	// AutomationFigures holds the value of the automation_figures edge.
 	AutomationFigures []*AutomationFigure `json:"automation_figures,omitempty"`
+	// AutomationSkippedEntries holds the value of the automation_skipped_entries edge.
+	AutomationSkippedEntries []*AutomationSkippedEntry `json:"automation_skipped_entries,omitempty"`
 	// EmailTemplates holds the value of the email_templates edge.
 	EmailTemplates []*EmailTemplate `json:"email_templates,omitempty"`
 	// BrandKits holds the value of the brand_kits edge.
@@ -188,7 +190,7 @@ type WorkspaceEdges struct {
 	Standing *WorkspaceStanding `json:"standing,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [53]bool
+	loadedTypes [54]bool
 }
 
 // ContactsOrErr returns the Contacts value or an error if the edge
@@ -425,10 +427,19 @@ func (e WorkspaceEdges) AutomationFiguresOrErr() ([]*AutomationFigure, error) {
 	return nil, &NotLoadedError{edge: "automation_figures"}
 }
 
+// AutomationSkippedEntriesOrErr returns the AutomationSkippedEntries value or an error if the edge
+// was not loaded in eager-loading.
+func (e WorkspaceEdges) AutomationSkippedEntriesOrErr() ([]*AutomationSkippedEntry, error) {
+	if e.loadedTypes[26] {
+		return e.AutomationSkippedEntries, nil
+	}
+	return nil, &NotLoadedError{edge: "automation_skipped_entries"}
+}
+
 // EmailTemplatesOrErr returns the EmailTemplates value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) EmailTemplatesOrErr() ([]*EmailTemplate, error) {
-	if e.loadedTypes[26] {
+	if e.loadedTypes[27] {
 		return e.EmailTemplates, nil
 	}
 	return nil, &NotLoadedError{edge: "email_templates"}
@@ -437,7 +448,7 @@ func (e WorkspaceEdges) EmailTemplatesOrErr() ([]*EmailTemplate, error) {
 // BrandKitsOrErr returns the BrandKits value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) BrandKitsOrErr() ([]*BrandKit, error) {
-	if e.loadedTypes[27] {
+	if e.loadedTypes[28] {
 		return e.BrandKits, nil
 	}
 	return nil, &NotLoadedError{edge: "brand_kits"}
@@ -446,7 +457,7 @@ func (e WorkspaceEdges) BrandKitsOrErr() ([]*BrandKit, error) {
 // IdentitySecretsOrErr returns the IdentitySecrets value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) IdentitySecretsOrErr() ([]*IdentitySecret, error) {
-	if e.loadedTypes[28] {
+	if e.loadedTypes[29] {
 		return e.IdentitySecrets, nil
 	}
 	return nil, &NotLoadedError{edge: "identity_secrets"}
@@ -455,7 +466,7 @@ func (e WorkspaceEdges) IdentitySecretsOrErr() ([]*IdentitySecret, error) {
 // AutomationsOrErr returns the Automations value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) AutomationsOrErr() ([]*Automation, error) {
-	if e.loadedTypes[29] {
+	if e.loadedTypes[30] {
 		return e.Automations, nil
 	}
 	return nil, &NotLoadedError{edge: "automations"}
@@ -464,7 +475,7 @@ func (e WorkspaceEdges) AutomationsOrErr() ([]*Automation, error) {
 // AutomationVersionsOrErr returns the AutomationVersions value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) AutomationVersionsOrErr() ([]*AutomationVersion, error) {
-	if e.loadedTypes[30] {
+	if e.loadedTypes[31] {
 		return e.AutomationVersions, nil
 	}
 	return nil, &NotLoadedError{edge: "automation_versions"}
@@ -473,7 +484,7 @@ func (e WorkspaceEdges) AutomationVersionsOrErr() ([]*AutomationVersion, error) 
 // AutomationRunsOrErr returns the AutomationRuns value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) AutomationRunsOrErr() ([]*AutomationRun, error) {
-	if e.loadedTypes[31] {
+	if e.loadedTypes[32] {
 		return e.AutomationRuns, nil
 	}
 	return nil, &NotLoadedError{edge: "automation_runs"}
@@ -482,7 +493,7 @@ func (e WorkspaceEdges) AutomationRunsOrErr() ([]*AutomationRun, error) {
 // AutomationStepRecordsOrErr returns the AutomationStepRecords value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) AutomationStepRecordsOrErr() ([]*AutomationStepRecord, error) {
-	if e.loadedTypes[32] {
+	if e.loadedTypes[33] {
 		return e.AutomationStepRecords, nil
 	}
 	return nil, &NotLoadedError{edge: "automation_step_records"}
@@ -491,7 +502,7 @@ func (e WorkspaceEdges) AutomationStepRecordsOrErr() ([]*AutomationStepRecord, e
 // RulesOrErr returns the Rules value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) RulesOrErr() ([]*Rule, error) {
-	if e.loadedTypes[33] {
+	if e.loadedTypes[34] {
 		return e.Rules, nil
 	}
 	return nil, &NotLoadedError{edge: "rules"}
@@ -500,7 +511,7 @@ func (e WorkspaceEdges) RulesOrErr() ([]*Rule, error) {
 // RuleVersionsOrErr returns the RuleVersions value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) RuleVersionsOrErr() ([]*RuleVersion, error) {
-	if e.loadedTypes[34] {
+	if e.loadedTypes[35] {
 		return e.RuleVersions, nil
 	}
 	return nil, &NotLoadedError{edge: "rule_versions"}
@@ -509,7 +520,7 @@ func (e WorkspaceEdges) RuleVersionsOrErr() ([]*RuleVersion, error) {
 // RuleVersionTriggersOrErr returns the RuleVersionTriggers value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) RuleVersionTriggersOrErr() ([]*RuleVersionTrigger, error) {
-	if e.loadedTypes[35] {
+	if e.loadedTypes[36] {
 		return e.RuleVersionTriggers, nil
 	}
 	return nil, &NotLoadedError{edge: "rule_version_triggers"}
@@ -518,7 +529,7 @@ func (e WorkspaceEdges) RuleVersionTriggersOrErr() ([]*RuleVersionTrigger, error
 // RuleFiringsOrErr returns the RuleFirings value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) RuleFiringsOrErr() ([]*RuleFiring, error) {
-	if e.loadedTypes[36] {
+	if e.loadedTypes[37] {
 		return e.RuleFirings, nil
 	}
 	return nil, &NotLoadedError{edge: "rule_firings"}
@@ -527,7 +538,7 @@ func (e WorkspaceEdges) RuleFiringsOrErr() ([]*RuleFiring, error) {
 // WebhookEndpointsOrErr returns the WebhookEndpoints value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) WebhookEndpointsOrErr() ([]*WebhookEndpoint, error) {
-	if e.loadedTypes[37] {
+	if e.loadedTypes[38] {
 		return e.WebhookEndpoints, nil
 	}
 	return nil, &NotLoadedError{edge: "webhook_endpoints"}
@@ -536,7 +547,7 @@ func (e WorkspaceEdges) WebhookEndpointsOrErr() ([]*WebhookEndpoint, error) {
 // SuppressionsOrErr returns the Suppressions value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) SuppressionsOrErr() ([]*Suppression, error) {
-	if e.loadedTypes[38] {
+	if e.loadedTypes[39] {
 		return e.Suppressions, nil
 	}
 	return nil, &NotLoadedError{edge: "suppressions"}
@@ -545,7 +556,7 @@ func (e WorkspaceEdges) SuppressionsOrErr() ([]*Suppression, error) {
 // UnsubscribesOrErr returns the Unsubscribes value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) UnsubscribesOrErr() ([]*Unsubscribe, error) {
-	if e.loadedTypes[39] {
+	if e.loadedTypes[40] {
 		return e.Unsubscribes, nil
 	}
 	return nil, &NotLoadedError{edge: "unsubscribes"}
@@ -554,7 +565,7 @@ func (e WorkspaceEdges) UnsubscribesOrErr() ([]*Unsubscribe, error) {
 // ConfirmationsOrErr returns the Confirmations value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) ConfirmationsOrErr() ([]*Confirmation, error) {
-	if e.loadedTypes[40] {
+	if e.loadedTypes[41] {
 		return e.Confirmations, nil
 	}
 	return nil, &NotLoadedError{edge: "confirmations"}
@@ -563,7 +574,7 @@ func (e WorkspaceEdges) ConfirmationsOrErr() ([]*Confirmation, error) {
 // ConsentStampsOrErr returns the ConsentStamps value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) ConsentStampsOrErr() ([]*ConsentStamp, error) {
-	if e.loadedTypes[41] {
+	if e.loadedTypes[42] {
 		return e.ConsentStamps, nil
 	}
 	return nil, &NotLoadedError{edge: "consent_stamps"}
@@ -572,7 +583,7 @@ func (e WorkspaceEdges) ConsentStampsOrErr() ([]*ConsentStamp, error) {
 // OutboundMessagesOrErr returns the OutboundMessages value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) OutboundMessagesOrErr() ([]*OutboundMessage, error) {
-	if e.loadedTypes[42] {
+	if e.loadedTypes[43] {
 		return e.OutboundMessages, nil
 	}
 	return nil, &NotLoadedError{edge: "outbound_messages"}
@@ -581,7 +592,7 @@ func (e WorkspaceEdges) OutboundMessagesOrErr() ([]*OutboundMessage, error) {
 // TrackedLinksOrErr returns the TrackedLinks value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) TrackedLinksOrErr() ([]*TrackedLink, error) {
-	if e.loadedTypes[43] {
+	if e.loadedTypes[44] {
 		return e.TrackedLinks, nil
 	}
 	return nil, &NotLoadedError{edge: "tracked_links"}
@@ -590,7 +601,7 @@ func (e WorkspaceEdges) TrackedLinksOrErr() ([]*TrackedLink, error) {
 // CapturedMessagesOrErr returns the CapturedMessages value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) CapturedMessagesOrErr() ([]*CapturedMessage, error) {
-	if e.loadedTypes[44] {
+	if e.loadedTypes[45] {
 		return e.CapturedMessages, nil
 	}
 	return nil, &NotLoadedError{edge: "captured_messages"}
@@ -599,7 +610,7 @@ func (e WorkspaceEdges) CapturedMessagesOrErr() ([]*CapturedMessage, error) {
 // MembershipsOrErr returns the Memberships value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) MembershipsOrErr() ([]*Membership, error) {
-	if e.loadedTypes[45] {
+	if e.loadedTypes[46] {
 		return e.Memberships, nil
 	}
 	return nil, &NotLoadedError{edge: "memberships"}
@@ -608,7 +619,7 @@ func (e WorkspaceEdges) MembershipsOrErr() ([]*Membership, error) {
 // InvitationsOrErr returns the Invitations value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) InvitationsOrErr() ([]*Invitation, error) {
-	if e.loadedTypes[46] {
+	if e.loadedTypes[47] {
 		return e.Invitations, nil
 	}
 	return nil, &NotLoadedError{edge: "invitations"}
@@ -617,7 +628,7 @@ func (e WorkspaceEdges) InvitationsOrErr() ([]*Invitation, error) {
 // AuditEntriesOrErr returns the AuditEntries value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) AuditEntriesOrErr() ([]*AuditEntry, error) {
-	if e.loadedTypes[47] {
+	if e.loadedTypes[48] {
 		return e.AuditEntries, nil
 	}
 	return nil, &NotLoadedError{edge: "audit_entries"}
@@ -626,7 +637,7 @@ func (e WorkspaceEdges) AuditEntriesOrErr() ([]*AuditEntry, error) {
 // ErasuresOrErr returns the Erasures value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) ErasuresOrErr() ([]*Erasure, error) {
-	if e.loadedTypes[48] {
+	if e.loadedTypes[49] {
 		return e.Erasures, nil
 	}
 	return nil, &NotLoadedError{edge: "erasures"}
@@ -635,7 +646,7 @@ func (e WorkspaceEdges) ErasuresOrErr() ([]*Erasure, error) {
 // UsagesOrErr returns the Usages value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) UsagesOrErr() ([]*Usage, error) {
-	if e.loadedTypes[49] {
+	if e.loadedTypes[50] {
 		return e.Usages, nil
 	}
 	return nil, &NotLoadedError{edge: "usages"}
@@ -644,7 +655,7 @@ func (e WorkspaceEdges) UsagesOrErr() ([]*Usage, error) {
 // IntegrationProviderStatesOrErr returns the IntegrationProviderStates value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) IntegrationProviderStatesOrErr() ([]*IntegrationProviderState, error) {
-	if e.loadedTypes[50] {
+	if e.loadedTypes[51] {
 		return e.IntegrationProviderStates, nil
 	}
 	return nil, &NotLoadedError{edge: "integration_provider_states"}
@@ -653,7 +664,7 @@ func (e WorkspaceEdges) IntegrationProviderStatesOrErr() ([]*IntegrationProvider
 // WebhookEndpointHealthsOrErr returns the WebhookEndpointHealths value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) WebhookEndpointHealthsOrErr() ([]*WebhookEndpointHealth, error) {
-	if e.loadedTypes[51] {
+	if e.loadedTypes[52] {
 		return e.WebhookEndpointHealths, nil
 	}
 	return nil, &NotLoadedError{edge: "webhook_endpoint_healths"}
@@ -664,7 +675,7 @@ func (e WorkspaceEdges) WebhookEndpointHealthsOrErr() ([]*WebhookEndpointHealth,
 func (e WorkspaceEdges) StandingOrErr() (*WorkspaceStanding, error) {
 	if e.Standing != nil {
 		return e.Standing, nil
-	} else if e.loadedTypes[52] {
+	} else if e.loadedTypes[53] {
 		return nil, &NotFoundError{label: workspacestanding.Label}
 	}
 	return nil, &NotLoadedError{edge: "standing"}
@@ -1023,6 +1034,11 @@ func (_m *Workspace) QueryBroadcastFigures() *BroadcastFigureQuery {
 // QueryAutomationFigures queries the "automation_figures" edge of the Workspace entity.
 func (_m *Workspace) QueryAutomationFigures() *AutomationFigureQuery {
 	return NewWorkspaceClient(_m.config).QueryAutomationFigures(_m)
+}
+
+// QueryAutomationSkippedEntries queries the "automation_skipped_entries" edge of the Workspace entity.
+func (_m *Workspace) QueryAutomationSkippedEntries() *AutomationSkippedEntryQuery {
+	return NewWorkspaceClient(_m.config).QueryAutomationSkippedEntries(_m)
 }
 
 // QueryEmailTemplates queries the "email_templates" edge of the Workspace entity.

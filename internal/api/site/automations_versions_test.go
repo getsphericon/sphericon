@@ -35,16 +35,16 @@ func TestSiteAutomationsReadLiveAndDraftAndUpdateWritesTheDraft(t *testing.T) {
 	assert.True(t, before.Draft.Null, "a published Automation with no edit has no draft")
 
 	_, err := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(id))),
-		Name:         siteapi.NewOptName("Hold demo, edited"),
-		TriggerEvent: siteapi.NewOptString("hold_demo_v2"),
-		Steps:        testhelper.SitePathEdit(siteapi.WaitStepInput{Seconds: 60}),
+		Name:    siteapi.NewOptName("Hold demo, edited"),
+		Trigger: siteapi.NewOptAutomationTriggerInput(testhelper.SiteTrigger("hold_demo_v2")),
+		Steps:   testhelper.SitePathEdit(siteapi.WaitStepInput{Seconds: 60}),
 	}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: id})
 	require.NoError(t, err)
 	edited := get()
 	assert.Equal(t, "Hold demo, edited", edited.Name, "the name is not versioned")
 	assert.Equal(t, before.Live.Value, edited.Live.Value, "the live version is untouched")
 	assert.EqualValues(t, 2, edited.Draft.Value.Number)
-	assert.Equal(t, "hold_demo_v2", edited.Draft.Value.TriggerEvent)
+	assert.Equal(t, "hold_demo_v2", edited.Draft.Value.Trigger.OneOf.EventTrigger.Action)
 	draftSteps := edited.Draft.Value.Steps.Steps
 	require.Len(t, draftSteps, 1)
 	assert.Equal(t, siteapi.WaitStepAutomationStepSum, draftSteps[0].OneOf.Type)

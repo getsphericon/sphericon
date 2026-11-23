@@ -28,7 +28,7 @@ func TestExternalAutomationStepsNameTheirIntegration(t *testing.T) {
 	mailgun := externalapi.NewOptNilEntityId(entityIDString(fixtures.IntegrationAcmeMailgunID))
 
 	res, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
-		Name: "Onboarding", TriggerEvent: "signup",
+		Name: "Onboarding", Trigger: testhelper.ExternalTrigger("signup"),
 		Steps: testhelper.ExternalPathEdit(emailStepVia(mailgun), emailStepVia(externalapi.OptNilEntityId{})),
 	})
 	require.NoError(t, err)
@@ -36,7 +36,7 @@ func TestExternalAutomationStepsNameTheirIntegration(t *testing.T) {
 
 	bad := externalapi.NewOptNilEntityId(entityIDString(fixtures.IntegrationGlobexID)) // another Workspace's
 	_, refusedCreate := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
-		Name: "x", TriggerEvent: "signup", Steps: testhelper.ExternalPathEdit(emailStepVia(bad)),
+		Name: "x", Trigger: testhelper.ExternalTrigger("signup"), Steps: testhelper.ExternalPathEdit(emailStepVia(bad)),
 	})
 	_, refusedUpdate := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: testhelper.ExternalPathEdit(emailStepVia(bad))},
 		externalapi.AutomationsUpdateParams{ID: res.ID})

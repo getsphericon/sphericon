@@ -80,14 +80,19 @@ func Version(v int) predicate.AutomationVersion {
 	return predicate.AutomationVersion(sql.FieldEQ(FieldVersion, v))
 }
 
-// TriggerEvent applies equality check predicate on the "trigger_event" field. It's identical to TriggerEventEQ.
-func TriggerEvent(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldEQ(FieldTriggerEvent, v))
+// TriggerAction applies equality check predicate on the "trigger_action" field. It's identical to TriggerActionEQ.
+func TriggerAction(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldEQ(FieldTriggerAction, v))
 }
 
-// GoalEvent applies equality check predicate on the "goal_event" field. It's identical to GoalEventEQ.
-func GoalEvent(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldEQ(FieldGoalEvent, v))
+// CooldownSeconds applies equality check predicate on the "cooldown_seconds" field. It's identical to CooldownSecondsEQ.
+func CooldownSeconds(v int) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldEQ(FieldCooldownSeconds, v))
+}
+
+// EnrollmentKey applies equality check predicate on the "enrollment_key" field. It's identical to EnrollmentKeyEQ.
+func EnrollmentKey(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldEQ(FieldEnrollmentKey, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -250,144 +255,224 @@ func VersionLTE(v int) predicate.AutomationVersion {
 	return predicate.AutomationVersion(sql.FieldLTE(FieldVersion, v))
 }
 
-// TriggerEventEQ applies the EQ predicate on the "trigger_event" field.
-func TriggerEventEQ(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldEQ(FieldTriggerEvent, v))
+// TriggerActionEQ applies the EQ predicate on the "trigger_action" field.
+func TriggerActionEQ(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldEQ(FieldTriggerAction, v))
 }
 
-// TriggerEventNEQ applies the NEQ predicate on the "trigger_event" field.
-func TriggerEventNEQ(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldNEQ(FieldTriggerEvent, v))
+// TriggerActionNEQ applies the NEQ predicate on the "trigger_action" field.
+func TriggerActionNEQ(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNEQ(FieldTriggerAction, v))
 }
 
-// TriggerEventIn applies the In predicate on the "trigger_event" field.
-func TriggerEventIn(vs ...string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldIn(FieldTriggerEvent, vs...))
+// TriggerActionIn applies the In predicate on the "trigger_action" field.
+func TriggerActionIn(vs ...string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldIn(FieldTriggerAction, vs...))
 }
 
-// TriggerEventNotIn applies the NotIn predicate on the "trigger_event" field.
-func TriggerEventNotIn(vs ...string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldNotIn(FieldTriggerEvent, vs...))
+// TriggerActionNotIn applies the NotIn predicate on the "trigger_action" field.
+func TriggerActionNotIn(vs ...string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNotIn(FieldTriggerAction, vs...))
 }
 
-// TriggerEventGT applies the GT predicate on the "trigger_event" field.
-func TriggerEventGT(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldGT(FieldTriggerEvent, v))
+// TriggerActionGT applies the GT predicate on the "trigger_action" field.
+func TriggerActionGT(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldGT(FieldTriggerAction, v))
 }
 
-// TriggerEventGTE applies the GTE predicate on the "trigger_event" field.
-func TriggerEventGTE(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldGTE(FieldTriggerEvent, v))
+// TriggerActionGTE applies the GTE predicate on the "trigger_action" field.
+func TriggerActionGTE(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldGTE(FieldTriggerAction, v))
 }
 
-// TriggerEventLT applies the LT predicate on the "trigger_event" field.
-func TriggerEventLT(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldLT(FieldTriggerEvent, v))
+// TriggerActionLT applies the LT predicate on the "trigger_action" field.
+func TriggerActionLT(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldLT(FieldTriggerAction, v))
 }
 
-// TriggerEventLTE applies the LTE predicate on the "trigger_event" field.
-func TriggerEventLTE(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldLTE(FieldTriggerEvent, v))
+// TriggerActionLTE applies the LTE predicate on the "trigger_action" field.
+func TriggerActionLTE(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldLTE(FieldTriggerAction, v))
 }
 
-// TriggerEventContains applies the Contains predicate on the "trigger_event" field.
-func TriggerEventContains(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldContains(FieldTriggerEvent, v))
+// TriggerActionContains applies the Contains predicate on the "trigger_action" field.
+func TriggerActionContains(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldContains(FieldTriggerAction, v))
 }
 
-// TriggerEventHasPrefix applies the HasPrefix predicate on the "trigger_event" field.
-func TriggerEventHasPrefix(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldHasPrefix(FieldTriggerEvent, v))
+// TriggerActionHasPrefix applies the HasPrefix predicate on the "trigger_action" field.
+func TriggerActionHasPrefix(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldHasPrefix(FieldTriggerAction, v))
 }
 
-// TriggerEventHasSuffix applies the HasSuffix predicate on the "trigger_event" field.
-func TriggerEventHasSuffix(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldHasSuffix(FieldTriggerEvent, v))
+// TriggerActionHasSuffix applies the HasSuffix predicate on the "trigger_action" field.
+func TriggerActionHasSuffix(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldHasSuffix(FieldTriggerAction, v))
 }
 
-// TriggerEventEqualFold applies the EqualFold predicate on the "trigger_event" field.
-func TriggerEventEqualFold(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldEqualFold(FieldTriggerEvent, v))
+// TriggerActionEqualFold applies the EqualFold predicate on the "trigger_action" field.
+func TriggerActionEqualFold(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldEqualFold(FieldTriggerAction, v))
 }
 
-// TriggerEventContainsFold applies the ContainsFold predicate on the "trigger_event" field.
-func TriggerEventContainsFold(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldContainsFold(FieldTriggerEvent, v))
+// TriggerActionContainsFold applies the ContainsFold predicate on the "trigger_action" field.
+func TriggerActionContainsFold(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldContainsFold(FieldTriggerAction, v))
 }
 
-// GoalEventEQ applies the EQ predicate on the "goal_event" field.
-func GoalEventEQ(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldEQ(FieldGoalEvent, v))
+// TriggerFilterIsNil applies the IsNil predicate on the "trigger_filter" field.
+func TriggerFilterIsNil() predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldIsNull(FieldTriggerFilter))
 }
 
-// GoalEventNEQ applies the NEQ predicate on the "goal_event" field.
-func GoalEventNEQ(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldNEQ(FieldGoalEvent, v))
+// TriggerFilterNotNil applies the NotNil predicate on the "trigger_filter" field.
+func TriggerFilterNotNil() predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNotNull(FieldTriggerFilter))
 }
 
-// GoalEventIn applies the In predicate on the "goal_event" field.
-func GoalEventIn(vs ...string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldIn(FieldGoalEvent, vs...))
+// GoalIsNil applies the IsNil predicate on the "goal" field.
+func GoalIsNil() predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldIsNull(FieldGoal))
 }
 
-// GoalEventNotIn applies the NotIn predicate on the "goal_event" field.
-func GoalEventNotIn(vs ...string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldNotIn(FieldGoalEvent, vs...))
+// GoalNotNil applies the NotNil predicate on the "goal" field.
+func GoalNotNil() predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNotNull(FieldGoal))
 }
 
-// GoalEventGT applies the GT predicate on the "goal_event" field.
-func GoalEventGT(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldGT(FieldGoalEvent, v))
+// EntryPolicyEQ applies the EQ predicate on the "entry_policy" field.
+func EntryPolicyEQ(v EntryPolicy) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldEQ(FieldEntryPolicy, v))
 }
 
-// GoalEventGTE applies the GTE predicate on the "goal_event" field.
-func GoalEventGTE(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldGTE(FieldGoalEvent, v))
+// EntryPolicyNEQ applies the NEQ predicate on the "entry_policy" field.
+func EntryPolicyNEQ(v EntryPolicy) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNEQ(FieldEntryPolicy, v))
 }
 
-// GoalEventLT applies the LT predicate on the "goal_event" field.
-func GoalEventLT(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldLT(FieldGoalEvent, v))
+// EntryPolicyIn applies the In predicate on the "entry_policy" field.
+func EntryPolicyIn(vs ...EntryPolicy) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldIn(FieldEntryPolicy, vs...))
 }
 
-// GoalEventLTE applies the LTE predicate on the "goal_event" field.
-func GoalEventLTE(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldLTE(FieldGoalEvent, v))
+// EntryPolicyNotIn applies the NotIn predicate on the "entry_policy" field.
+func EntryPolicyNotIn(vs ...EntryPolicy) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNotIn(FieldEntryPolicy, vs...))
 }
 
-// GoalEventContains applies the Contains predicate on the "goal_event" field.
-func GoalEventContains(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldContains(FieldGoalEvent, v))
+// CooldownSecondsEQ applies the EQ predicate on the "cooldown_seconds" field.
+func CooldownSecondsEQ(v int) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldEQ(FieldCooldownSeconds, v))
 }
 
-// GoalEventHasPrefix applies the HasPrefix predicate on the "goal_event" field.
-func GoalEventHasPrefix(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldHasPrefix(FieldGoalEvent, v))
+// CooldownSecondsNEQ applies the NEQ predicate on the "cooldown_seconds" field.
+func CooldownSecondsNEQ(v int) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNEQ(FieldCooldownSeconds, v))
 }
 
-// GoalEventHasSuffix applies the HasSuffix predicate on the "goal_event" field.
-func GoalEventHasSuffix(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldHasSuffix(FieldGoalEvent, v))
+// CooldownSecondsIn applies the In predicate on the "cooldown_seconds" field.
+func CooldownSecondsIn(vs ...int) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldIn(FieldCooldownSeconds, vs...))
 }
 
-// GoalEventIsNil applies the IsNil predicate on the "goal_event" field.
-func GoalEventIsNil() predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldIsNull(FieldGoalEvent))
+// CooldownSecondsNotIn applies the NotIn predicate on the "cooldown_seconds" field.
+func CooldownSecondsNotIn(vs ...int) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNotIn(FieldCooldownSeconds, vs...))
 }
 
-// GoalEventNotNil applies the NotNil predicate on the "goal_event" field.
-func GoalEventNotNil() predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldNotNull(FieldGoalEvent))
+// CooldownSecondsGT applies the GT predicate on the "cooldown_seconds" field.
+func CooldownSecondsGT(v int) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldGT(FieldCooldownSeconds, v))
 }
 
-// GoalEventEqualFold applies the EqualFold predicate on the "goal_event" field.
-func GoalEventEqualFold(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldEqualFold(FieldGoalEvent, v))
+// CooldownSecondsGTE applies the GTE predicate on the "cooldown_seconds" field.
+func CooldownSecondsGTE(v int) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldGTE(FieldCooldownSeconds, v))
 }
 
-// GoalEventContainsFold applies the ContainsFold predicate on the "goal_event" field.
-func GoalEventContainsFold(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldContainsFold(FieldGoalEvent, v))
+// CooldownSecondsLT applies the LT predicate on the "cooldown_seconds" field.
+func CooldownSecondsLT(v int) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldLT(FieldCooldownSeconds, v))
+}
+
+// CooldownSecondsLTE applies the LTE predicate on the "cooldown_seconds" field.
+func CooldownSecondsLTE(v int) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldLTE(FieldCooldownSeconds, v))
+}
+
+// EnrollmentKeyEQ applies the EQ predicate on the "enrollment_key" field.
+func EnrollmentKeyEQ(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldEQ(FieldEnrollmentKey, v))
+}
+
+// EnrollmentKeyNEQ applies the NEQ predicate on the "enrollment_key" field.
+func EnrollmentKeyNEQ(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNEQ(FieldEnrollmentKey, v))
+}
+
+// EnrollmentKeyIn applies the In predicate on the "enrollment_key" field.
+func EnrollmentKeyIn(vs ...string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldIn(FieldEnrollmentKey, vs...))
+}
+
+// EnrollmentKeyNotIn applies the NotIn predicate on the "enrollment_key" field.
+func EnrollmentKeyNotIn(vs ...string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNotIn(FieldEnrollmentKey, vs...))
+}
+
+// EnrollmentKeyGT applies the GT predicate on the "enrollment_key" field.
+func EnrollmentKeyGT(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldGT(FieldEnrollmentKey, v))
+}
+
+// EnrollmentKeyGTE applies the GTE predicate on the "enrollment_key" field.
+func EnrollmentKeyGTE(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldGTE(FieldEnrollmentKey, v))
+}
+
+// EnrollmentKeyLT applies the LT predicate on the "enrollment_key" field.
+func EnrollmentKeyLT(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldLT(FieldEnrollmentKey, v))
+}
+
+// EnrollmentKeyLTE applies the LTE predicate on the "enrollment_key" field.
+func EnrollmentKeyLTE(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldLTE(FieldEnrollmentKey, v))
+}
+
+// EnrollmentKeyContains applies the Contains predicate on the "enrollment_key" field.
+func EnrollmentKeyContains(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldContains(FieldEnrollmentKey, v))
+}
+
+// EnrollmentKeyHasPrefix applies the HasPrefix predicate on the "enrollment_key" field.
+func EnrollmentKeyHasPrefix(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldHasPrefix(FieldEnrollmentKey, v))
+}
+
+// EnrollmentKeyHasSuffix applies the HasSuffix predicate on the "enrollment_key" field.
+func EnrollmentKeyHasSuffix(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldHasSuffix(FieldEnrollmentKey, v))
+}
+
+// EnrollmentKeyIsNil applies the IsNil predicate on the "enrollment_key" field.
+func EnrollmentKeyIsNil() predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldIsNull(FieldEnrollmentKey))
+}
+
+// EnrollmentKeyNotNil applies the NotNil predicate on the "enrollment_key" field.
+func EnrollmentKeyNotNil() predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNotNull(FieldEnrollmentKey))
+}
+
+// EnrollmentKeyEqualFold applies the EqualFold predicate on the "enrollment_key" field.
+func EnrollmentKeyEqualFold(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldEqualFold(FieldEnrollmentKey, v))
+}
+
+// EnrollmentKeyContainsFold applies the ContainsFold predicate on the "enrollment_key" field.
+func EnrollmentKeyContainsFold(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldContainsFold(FieldEnrollmentKey, v))
 }
 
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.

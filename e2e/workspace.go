@@ -32,6 +32,7 @@ var tokenScopes = scopeStrings(
 	externalapi.ApiTokenScopeContactsRead, externalapi.ApiTokenScopeContactsWrite, externalapi.ApiTokenScopeContactsExport,
 	externalapi.ApiTokenScopeBroadcastsRead, externalapi.ApiTokenScopeBroadcastsWrite, externalapi.ApiTokenScopeBroadcastsSend,
 	externalapi.ApiTokenScopeAutomationsRead, externalapi.ApiTokenScopeAutomationsWrite, externalapi.ApiTokenScopeAutomationsPublish,
+	externalapi.ApiTokenScopeEnrollmentsRead,
 	externalapi.ApiTokenScopeEventsWrite, externalapi.ApiTokenScopeWebhooksWrite,
 )
 

@@ -123,3 +123,69 @@ func unresolvedRefs(doc []byte, defs map[string]map[string]any) []string {
 	walk(v, false)
 	return out
 }
+
+// An agent writes a Trigger as an Event matcher and reads it back as it wrote it; a test of the
+// Contact in its filter is refused, naming the leaf's path (ADR 0133, ADR 0181).
+func TestMCPWritesTheTriggerAsAnEventMatcher(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite))
+	const trigger = `{"kind":"event","action":"order.completed","filter":{"kind":"group","combinator":"and","entries":[
+		{"kind":"property","key":"status","test":{"kind":"text","operator":"eq","value":"paid"}}
+	]}}`
+	var matcher, misplaced map[string]any
+	require.NoError(t, json.Unmarshal([]byte(trigger), &matcher))
+	require.NoError(t, json.Unmarshal([]byte(`{"kind":"event","action":"order.completed","filter":{"kind":"group","combinator":"and","entries":[
+		{"kind":"tag","name":"vip","operator":"has"}
+	]}}`), &misplaced))
+
+	created := call(t, s, "automations_create", map[string]any{"name": "Paid orders", "trigger": matcher})
+	require.False(t, created.IsError, text(t, created))
+	var made struct {
+		ID    string `json:"id"`
+		Draft struct {
+			Trigger json.RawMessage `json:"trigger"`
+		} `json:"draft"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(text(t, created)), &made))
+	refused := call(t, s, "automations_create", map[string]any{"name": "Misplaced", "trigger": misplaced})
+
+	readBack := strings.TrimSuffix(trigger, "}") + `,"entryPolicy":"once","cooldown":3600}`
+	assert.JSONEq(t, readBack, string(made.Draft.Trigger))
+	assert.True(t, refused.IsError)
+	assert.Contains(t, text(t, refused), "trigger.filter.entries.0")
+}
+
+// An agent writes exit and goal events as Event matchers and reads them back as it wrote them; a
+// test of the Contact in a goal's filter is refused, naming the leaf's path (ADR 0133, ADR 0181).
+func TestMCPWritesExitAndGoalEventsAsEventMatchers(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite))
+	const exits = `[{"action":"order.closed","filter":{"kind":"group","combinator":"and","entries":[
+		{"kind":"property","key":"status","test":{"kind":"text","operator":"eq","value":"cancelled"}}
+	]}}]`
+	const goal = `{"action":"order.closed"}`
+	var exitList []any
+	var goalMatcher, misplaced map[string]any
+	require.NoError(t, json.Unmarshal([]byte(exits), &exitList))
+	require.NoError(t, json.Unmarshal([]byte(goal), &goalMatcher))
+	require.NoError(t, json.Unmarshal([]byte(`{"action":"order.closed","filter":{"kind":"group","combinator":"and","entries":[
+		{"kind":"tag","name":"vip","operator":"has"}
+	]}}`), &misplaced))
+	trigger := map[string]any{"kind": "event", "action": "order.placed"}
+
+	created := call(t, s, "automations_create", map[string]any{"name": "Orders", "trigger": trigger, "exitEvents": exitList, "goalEvent": goalMatcher})
+	require.False(t, created.IsError, text(t, created))
+	var made struct {
+		Draft struct {
+			ExitEvents json.RawMessage `json:"exitEvents"`
+			GoalEvent  json.RawMessage `json:"goalEvent"`
+		} `json:"draft"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(text(t, created)), &made))
+	refused := call(t, s, "automations_create", map[string]any{"name": "Misplaced", "trigger": trigger, "goalEvent": misplaced})
+
+	assert.JSONEq(t, exits, string(made.Draft.ExitEvents))
+	assert.JSONEq(t, goal, string(made.Draft.GoalEvent))
+	assert.True(t, refused.IsError)
+	assert.Contains(t, text(t, refused), "goalEvent.filter.entries.0")
+}

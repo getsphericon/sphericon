@@ -622,6 +622,13 @@ type Handler interface {
 	//
 	// POST /sending-domains/{id}/verify
 	SendingDomainsVerify(ctx context.Context, params SendingDomainsVerifyParams) (*SendingDomainResource, error)
+	// SkippedEntriesList implements SkippedEntries_list operation.
+	//
+	// List an automation's skipped entries, newest first: the entries its entry checks refused, each with
+	// its reason. Needs the automations:read scope.
+	//
+	// GET /automations/{automationId}/skipped-entries
+	SkippedEntriesList(ctx context.Context, params SkippedEntriesListParams) (*SkippedEntriesListOK, error)
 	// SmsConsentsGet implements SmsConsents_get operation.
 	//
 	// Read whether a contact's phone may be texted: its SMS Confirmation (when and how the number

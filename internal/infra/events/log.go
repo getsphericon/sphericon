@@ -2,6 +2,8 @@ package events
 
 import (
 	"context"
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -10,7 +12,7 @@ import (
 )
 
 // The reads of the Event log (GLOSSARY): the bus owns the Events (ADR 0102), so the app and the
-// API list them, filter them and name their distinct actions here. Recording a customer's Event
+// API list them, filter them and name their distinct actions and recent property keys here. Recording a customer's Event
 // is the Event recording, internal/domain/contacts/eventrecording.
 
 // LogFilter narrows the Events ListLog returns; a zero field does not filter.
@@ -53,6 +55,32 @@ func DistinctActions(ctx context.Context, s *ent.Scoped) ([]string, error) {
 		Order(ent.Asc(event.FieldAction)).
 		GroupBy(event.FieldAction).
 		Strings(ctx)
+}
+
+// propertyKeysSample is how many of an action's most recent Events PropertyKeys reads.
+const propertyKeysSample = 50
+
+// PropertyKeys returns the top-level property keys of the Workspace's most recent Events of the
+// action (the propertyKeysSample latest by occurred_at, which the action's index serves), distinct
+// and sorted: the suggestions of the Enrollment key picker (ADR 0165). Property keys have no
+// catalogue, so this is a hint drawn from what was recorded, never a check.
+func PropertyKeys(ctx context.Context, s *ent.Scoped, action string) ([]string, error) {
+	recent, err := s.Event().Query().
+		Where(event.Action(action)).
+		Order(ent.Desc(event.FieldOccurredAt), ent.Desc(event.FieldID)).
+		Limit(propertyKeysSample).
+		Select(event.FieldProperties).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	keys := map[string]bool{}
+	for _, e := range recent {
+		for key := range e.Properties {
+			keys[key] = true
+		}
+	}
+	return slices.Sorted(maps.Keys(keys)), nil
 }
 
 // OutboundMessageID is the Outbound message an email Event is about, from the id the send or the

@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
@@ -115,6 +116,8 @@ type Client struct {
 	AutomationFigure *AutomationFigureClient
 	// AutomationRun is the client for interacting with the AutomationRun builders.
 	AutomationRun *AutomationRunClient
+	// AutomationSkippedEntry is the client for interacting with the AutomationSkippedEntry builders.
+	AutomationSkippedEntry *AutomationSkippedEntryClient
 	// AutomationStepRecord is the client for interacting with the AutomationStepRecord builders.
 	AutomationStepRecord *AutomationStepRecordClient
 	// AutomationVersion is the client for interacting with the AutomationVersion builders.
@@ -278,6 +281,7 @@ func (c *Client) init() {
 	c.Automation = NewAutomationClient(c.config)
 	c.AutomationFigure = NewAutomationFigureClient(c.config)
 	c.AutomationRun = NewAutomationRunClient(c.config)
+	c.AutomationSkippedEntry = NewAutomationSkippedEntryClient(c.config)
 	c.AutomationStepRecord = NewAutomationStepRecordClient(c.config)
 	c.AutomationVersion = NewAutomationVersionClient(c.config)
 	c.Binding = NewBindingClient(c.config)
@@ -449,6 +453,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Automation:               NewAutomationClient(cfg),
 		AutomationFigure:         NewAutomationFigureClient(cfg),
 		AutomationRun:            NewAutomationRunClient(cfg),
+		AutomationSkippedEntry:   NewAutomationSkippedEntryClient(cfg),
 		AutomationStepRecord:     NewAutomationStepRecordClient(cfg),
 		AutomationVersion:        NewAutomationVersionClient(cfg),
 		Binding:                  NewBindingClient(cfg),
@@ -547,6 +552,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Automation:               NewAutomationClient(cfg),
 		AutomationFigure:         NewAutomationFigureClient(cfg),
 		AutomationRun:            NewAutomationRunClient(cfg),
+		AutomationSkippedEntry:   NewAutomationSkippedEntryClient(cfg),
 		AutomationStepRecord:     NewAutomationStepRecordClient(cfg),
 		AutomationVersion:        NewAutomationVersionClient(cfg),
 		Binding:                  NewBindingClient(cfg),
@@ -650,23 +656,23 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationFigure,
-		c.AutomationRun, c.AutomationStepRecord, c.AutomationVersion, c.Binding,
-		c.BrandKit, c.Broadcast, c.BroadcastFigure, c.BroadcastRecipient,
-		c.CapturedMessage, c.Confirmation, c.ConsentRecord, c.ConsentStamp, c.Contact,
-		c.ContactTag, c.CustomField, c.DefaultSendCap, c.EmailTemplate, c.Erasure,
-		c.Event, c.EventJournalEntry, c.EventReceipt, c.HeldOrderEvent, c.Hold,
-		c.IdentitySecret, c.InstanceAuditEntry, c.InstanceState, c.Integration,
-		c.IntegrationProviderState, c.Invitation, c.JoinDomain, c.LegalDocumentDraft,
-		c.LegalDocumentVersion, c.Membership, c.OAuthClient, c.OAuthCode,
-		c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage, c.Passkey,
-		c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter,
-		c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion, c.RuleVersionTrigger,
-		c.SchemaState, c.SecondFactor, c.Segment, c.SendCapLimiter, c.SendingDomain,
-		c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse, c.StaffMember,
-		c.StartToken, c.Suppression, c.Tag, c.TrackedLink, c.TrackingDomain,
-		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
-		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.WebhookEndpointHealth,
-		c.Workspace, c.WorkspaceStanding,
+		c.AutomationRun, c.AutomationSkippedEntry, c.AutomationStepRecord,
+		c.AutomationVersion, c.Binding, c.BrandKit, c.Broadcast, c.BroadcastFigure,
+		c.BroadcastRecipient, c.CapturedMessage, c.Confirmation, c.ConsentRecord,
+		c.ConsentStamp, c.Contact, c.ContactTag, c.CustomField, c.DefaultSendCap,
+		c.EmailTemplate, c.Erasure, c.Event, c.EventJournalEntry, c.EventReceipt,
+		c.HeldOrderEvent, c.Hold, c.IdentitySecret, c.InstanceAuditEntry,
+		c.InstanceState, c.Integration, c.IntegrationProviderState, c.Invitation,
+		c.JoinDomain, c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership,
+		c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement,
+		c.OutboundMessage, c.Passkey, c.PasskeyChallenge, c.PendingSignup,
+		c.PrivateRelayRange, c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring,
+		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.SecondFactor, c.Segment,
+		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
+		c.SignupSurveyResponse, c.StaffMember, c.StartToken, c.Suppression, c.Tag,
+		c.TrackedLink, c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage,
+		c.User, c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint,
+		c.WebhookEndpointHealth, c.Workspace, c.WorkspaceStanding,
 	} {
 		n.Use(hooks...)
 	}
@@ -677,23 +683,23 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationFigure,
-		c.AutomationRun, c.AutomationStepRecord, c.AutomationVersion, c.Binding,
-		c.BrandKit, c.Broadcast, c.BroadcastFigure, c.BroadcastRecipient,
-		c.CapturedMessage, c.Confirmation, c.ConsentRecord, c.ConsentStamp, c.Contact,
-		c.ContactTag, c.CustomField, c.DefaultSendCap, c.EmailTemplate, c.Erasure,
-		c.Event, c.EventJournalEntry, c.EventReceipt, c.HeldOrderEvent, c.Hold,
-		c.IdentitySecret, c.InstanceAuditEntry, c.InstanceState, c.Integration,
-		c.IntegrationProviderState, c.Invitation, c.JoinDomain, c.LegalDocumentDraft,
-		c.LegalDocumentVersion, c.Membership, c.OAuthClient, c.OAuthCode,
-		c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage, c.Passkey,
-		c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter,
-		c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion, c.RuleVersionTrigger,
-		c.SchemaState, c.SecondFactor, c.Segment, c.SendCapLimiter, c.SendingDomain,
-		c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse, c.StaffMember,
-		c.StartToken, c.Suppression, c.Tag, c.TrackedLink, c.TrackingDomain,
-		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
-		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.WebhookEndpointHealth,
-		c.Workspace, c.WorkspaceStanding,
+		c.AutomationRun, c.AutomationSkippedEntry, c.AutomationStepRecord,
+		c.AutomationVersion, c.Binding, c.BrandKit, c.Broadcast, c.BroadcastFigure,
+		c.BroadcastRecipient, c.CapturedMessage, c.Confirmation, c.ConsentRecord,
+		c.ConsentStamp, c.Contact, c.ContactTag, c.CustomField, c.DefaultSendCap,
+		c.EmailTemplate, c.Erasure, c.Event, c.EventJournalEntry, c.EventReceipt,
+		c.HeldOrderEvent, c.Hold, c.IdentitySecret, c.InstanceAuditEntry,
+		c.InstanceState, c.Integration, c.IntegrationProviderState, c.Invitation,
+		c.JoinDomain, c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership,
+		c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement,
+		c.OutboundMessage, c.Passkey, c.PasskeyChallenge, c.PendingSignup,
+		c.PrivateRelayRange, c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring,
+		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.SecondFactor, c.Segment,
+		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
+		c.SignupSurveyResponse, c.StaffMember, c.StartToken, c.Suppression, c.Tag,
+		c.TrackedLink, c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage,
+		c.User, c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint,
+		c.WebhookEndpointHealth, c.Workspace, c.WorkspaceStanding,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -714,6 +720,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.AutomationFigure.mutate(ctx, m)
 	case *AutomationRunMutation:
 		return c.AutomationRun.mutate(ctx, m)
+	case *AutomationSkippedEntryMutation:
+		return c.AutomationSkippedEntry.mutate(ctx, m)
 	case *AutomationStepRecordMutation:
 		return c.AutomationStepRecord.mutate(ctx, m)
 	case *AutomationVersionMutation:
@@ -1894,6 +1902,22 @@ func (c *AutomationRunClient) QueryContact(_m *AutomationRun) *ContactQuery {
 	return query
 }
 
+// QueryFiring queries the firing edge of a AutomationRun.
+func (c *AutomationRunClient) QueryFiring(_m *AutomationRun) *RuleFiringQuery {
+	query := (&RuleFiringClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automationrun.Table, automationrun.FieldID, id),
+			sqlgraph.To(rulefiring.Table, rulefiring.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, automationrun.FiringTable, automationrun.FiringColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *AutomationRunClient) Hooks() []Hook {
 	return c.hooks.AutomationRun
@@ -1916,6 +1940,203 @@ func (c *AutomationRunClient) mutate(ctx context.Context, m *AutomationRunMutati
 		return (&AutomationRunDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown AutomationRun mutation op: %q", m.Op())
+	}
+}
+
+// AutomationSkippedEntryClient is a client for the AutomationSkippedEntry schema.
+type AutomationSkippedEntryClient struct {
+	config
+}
+
+// NewAutomationSkippedEntryClient returns a client for the AutomationSkippedEntry from the given config.
+func NewAutomationSkippedEntryClient(c config) *AutomationSkippedEntryClient {
+	return &AutomationSkippedEntryClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `automationskippedentry.Hooks(f(g(h())))`.
+func (c *AutomationSkippedEntryClient) Use(hooks ...Hook) {
+	c.hooks.AutomationSkippedEntry = append(c.hooks.AutomationSkippedEntry, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `automationskippedentry.Intercept(f(g(h())))`.
+func (c *AutomationSkippedEntryClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AutomationSkippedEntry = append(c.inters.AutomationSkippedEntry, interceptors...)
+}
+
+// Create returns a builder for creating a AutomationSkippedEntry entity.
+func (c *AutomationSkippedEntryClient) Create() *AutomationSkippedEntryCreate {
+	mutation := newAutomationSkippedEntryMutation(c.config, OpCreate)
+	return &AutomationSkippedEntryCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AutomationSkippedEntry entities.
+func (c *AutomationSkippedEntryClient) CreateBulk(builders ...*AutomationSkippedEntryCreate) *AutomationSkippedEntryCreateBulk {
+	return &AutomationSkippedEntryCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AutomationSkippedEntryClient) MapCreateBulk(slice any, setFunc func(*AutomationSkippedEntryCreate, int)) *AutomationSkippedEntryCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AutomationSkippedEntryCreateBulk{err: fmt.Errorf("calling to AutomationSkippedEntryClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AutomationSkippedEntryCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AutomationSkippedEntryCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AutomationSkippedEntry.
+func (c *AutomationSkippedEntryClient) Update() *AutomationSkippedEntryUpdate {
+	mutation := newAutomationSkippedEntryMutation(c.config, OpUpdate)
+	return &AutomationSkippedEntryUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AutomationSkippedEntryClient) UpdateOne(_m *AutomationSkippedEntry) *AutomationSkippedEntryUpdateOne {
+	mutation := newAutomationSkippedEntryMutation(c.config, OpUpdateOne, withAutomationSkippedEntry(_m))
+	return &AutomationSkippedEntryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AutomationSkippedEntryClient) UpdateOneID(id int64) *AutomationSkippedEntryUpdateOne {
+	mutation := newAutomationSkippedEntryMutation(c.config, OpUpdateOne, withAutomationSkippedEntryID(id))
+	return &AutomationSkippedEntryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AutomationSkippedEntry.
+func (c *AutomationSkippedEntryClient) Delete() *AutomationSkippedEntryDelete {
+	mutation := newAutomationSkippedEntryMutation(c.config, OpDelete)
+	return &AutomationSkippedEntryDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AutomationSkippedEntryClient) DeleteOne(_m *AutomationSkippedEntry) *AutomationSkippedEntryDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AutomationSkippedEntryClient) DeleteOneID(id int64) *AutomationSkippedEntryDeleteOne {
+	builder := c.Delete().Where(automationskippedentry.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AutomationSkippedEntryDeleteOne{builder}
+}
+
+// Query returns a query builder for AutomationSkippedEntry.
+func (c *AutomationSkippedEntryClient) Query() *AutomationSkippedEntryQuery {
+	return &AutomationSkippedEntryQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAutomationSkippedEntry},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AutomationSkippedEntry entity by its id.
+func (c *AutomationSkippedEntryClient) Get(ctx context.Context, id int64) (*AutomationSkippedEntry, error) {
+	return c.Query().Where(automationskippedentry.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AutomationSkippedEntryClient) GetX(ctx context.Context, id int64) *AutomationSkippedEntry {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a AutomationSkippedEntry.
+func (c *AutomationSkippedEntryClient) QueryWorkspace(_m *AutomationSkippedEntry) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automationskippedentry.Table, automationskippedentry.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, automationskippedentry.WorkspaceTable, automationskippedentry.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAutomation queries the automation edge of a AutomationSkippedEntry.
+func (c *AutomationSkippedEntryClient) QueryAutomation(_m *AutomationSkippedEntry) *AutomationQuery {
+	query := (&AutomationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automationskippedentry.Table, automationskippedentry.FieldID, id),
+			sqlgraph.To(automation.Table, automation.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, automationskippedentry.AutomationTable, automationskippedentry.AutomationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryContact queries the contact edge of a AutomationSkippedEntry.
+func (c *AutomationSkippedEntryClient) QueryContact(_m *AutomationSkippedEntry) *ContactQuery {
+	query := (&ContactClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automationskippedentry.Table, automationskippedentry.FieldID, id),
+			sqlgraph.To(contact.Table, contact.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, automationskippedentry.ContactTable, automationskippedentry.ContactColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryFiring queries the firing edge of a AutomationSkippedEntry.
+func (c *AutomationSkippedEntryClient) QueryFiring(_m *AutomationSkippedEntry) *RuleFiringQuery {
+	query := (&RuleFiringClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(automationskippedentry.Table, automationskippedentry.FieldID, id),
+			sqlgraph.To(rulefiring.Table, rulefiring.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, automationskippedentry.FiringTable, automationskippedentry.FiringColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *AutomationSkippedEntryClient) Hooks() []Hook {
+	return c.hooks.AutomationSkippedEntry
+}
+
+// Interceptors returns the client interceptors.
+func (c *AutomationSkippedEntryClient) Interceptors() []Interceptor {
+	return c.inters.AutomationSkippedEntry
+}
+
+func (c *AutomationSkippedEntryClient) mutate(ctx context.Context, m *AutomationSkippedEntryMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AutomationSkippedEntryCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AutomationSkippedEntryUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AutomationSkippedEntryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AutomationSkippedEntryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AutomationSkippedEntry mutation op: %q", m.Op())
 	}
 }
 
@@ -14308,6 +14529,22 @@ func (c *WorkspaceClient) QueryAutomationFigures(_m *Workspace) *AutomationFigur
 	return query
 }
 
+// QueryAutomationSkippedEntries queries the automation_skipped_entries edge of a Workspace.
+func (c *WorkspaceClient) QueryAutomationSkippedEntries(_m *Workspace) *AutomationSkippedEntryQuery {
+	query := (&AutomationSkippedEntryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(automationskippedentry.Table, automationskippedentry.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.AutomationSkippedEntriesTable, workspace.AutomationSkippedEntriesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryEmailTemplates queries the email_templates edge of a Workspace.
 func (c *WorkspaceClient) QueryEmailTemplates(_m *Workspace) *EmailTemplateQuery {
 	query := (&EmailTemplateClient{config: c.config}).Query()
@@ -14918,39 +15155,39 @@ func (c *WorkspaceStandingClient) mutate(ctx context.Context, m *WorkspaceStandi
 type (
 	hooks struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationFigure, AutomationRun,
-		AutomationStepRecord, AutomationVersion, Binding, BrandKit, Broadcast,
-		BroadcastFigure, BroadcastRecipient, CapturedMessage, Confirmation,
-		ConsentRecord, ConsentStamp, Contact, ContactTag, CustomField, DefaultSendCap,
-		EmailTemplate, Erasure, Event, EventJournalEntry, EventReceipt, HeldOrderEvent,
-		Hold, IdentitySecret, InstanceAuditEntry, InstanceState, Integration,
-		IntegrationProviderState, Invitation, JoinDomain, LegalDocumentDraft,
-		LegalDocumentVersion, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
-		Order, OrderMovement, OutboundMessage, Passkey, PasskeyChallenge,
-		PendingSignup, PrivateRelayRange, ProviderLimiter, RecoveryCode, Rule,
-		RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState, SecondFactor,
-		Segment, SendCapLimiter, SendingDomain, ServiceCredential, SignupItem,
-		SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag, TrackedLink,
-		TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
-		UserTombstone, Visitor, WebhookEndpoint, WebhookEndpointHealth, Workspace,
-		WorkspaceStanding []ent.Hook
+		AutomationSkippedEntry, AutomationStepRecord, AutomationVersion, Binding,
+		BrandKit, Broadcast, BroadcastFigure, BroadcastRecipient, CapturedMessage,
+		Confirmation, ConsentRecord, ConsentStamp, Contact, ContactTag, CustomField,
+		DefaultSendCap, EmailTemplate, Erasure, Event, EventJournalEntry, EventReceipt,
+		HeldOrderEvent, Hold, IdentitySecret, InstanceAuditEntry, InstanceState,
+		Integration, IntegrationProviderState, Invitation, JoinDomain,
+		LegalDocumentDraft, LegalDocumentVersion, Membership, OAuthClient, OAuthCode,
+		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, Passkey,
+		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
+		RecoveryCode, Rule, RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState,
+		SecondFactor, Segment, SendCapLimiter, SendingDomain, ServiceCredential,
+		SignupItem, SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag,
+		TrackedLink, TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User,
+		UserIdentity, UserTombstone, Visitor, WebhookEndpoint, WebhookEndpointHealth,
+		Workspace, WorkspaceStanding []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationFigure, AutomationRun,
-		AutomationStepRecord, AutomationVersion, Binding, BrandKit, Broadcast,
-		BroadcastFigure, BroadcastRecipient, CapturedMessage, Confirmation,
-		ConsentRecord, ConsentStamp, Contact, ContactTag, CustomField, DefaultSendCap,
-		EmailTemplate, Erasure, Event, EventJournalEntry, EventReceipt, HeldOrderEvent,
-		Hold, IdentitySecret, InstanceAuditEntry, InstanceState, Integration,
-		IntegrationProviderState, Invitation, JoinDomain, LegalDocumentDraft,
-		LegalDocumentVersion, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
-		Order, OrderMovement, OutboundMessage, Passkey, PasskeyChallenge,
-		PendingSignup, PrivateRelayRange, ProviderLimiter, RecoveryCode, Rule,
-		RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState, SecondFactor,
-		Segment, SendCapLimiter, SendingDomain, ServiceCredential, SignupItem,
-		SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag, TrackedLink,
-		TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
-		UserTombstone, Visitor, WebhookEndpoint, WebhookEndpointHealth, Workspace,
-		WorkspaceStanding []ent.Interceptor
+		AutomationSkippedEntry, AutomationStepRecord, AutomationVersion, Binding,
+		BrandKit, Broadcast, BroadcastFigure, BroadcastRecipient, CapturedMessage,
+		Confirmation, ConsentRecord, ConsentStamp, Contact, ContactTag, CustomField,
+		DefaultSendCap, EmailTemplate, Erasure, Event, EventJournalEntry, EventReceipt,
+		HeldOrderEvent, Hold, IdentitySecret, InstanceAuditEntry, InstanceState,
+		Integration, IntegrationProviderState, Invitation, JoinDomain,
+		LegalDocumentDraft, LegalDocumentVersion, Membership, OAuthClient, OAuthCode,
+		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, Passkey,
+		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
+		RecoveryCode, Rule, RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState,
+		SecondFactor, Segment, SendCapLimiter, SendingDomain, ServiceCredential,
+		SignupItem, SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag,
+		TrackedLink, TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User,
+		UserIdentity, UserTombstone, Visitor, WebhookEndpoint, WebhookEndpointHealth,
+		Workspace, WorkspaceStanding []ent.Interceptor
 	}
 )
 

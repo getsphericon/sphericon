@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
@@ -103,6 +104,7 @@ type WorkspaceQuery struct {
 	withBroadcastRecipients       *BroadcastRecipientQuery
 	withBroadcastFigures          *BroadcastFigureQuery
 	withAutomationFigures         *AutomationFigureQuery
+	withAutomationSkippedEntries  *AutomationSkippedEntryQuery
 	withEmailTemplates            *EmailTemplateQuery
 	withBrandKits                 *BrandKitQuery
 	withIdentitySecrets           *IdentitySecretQuery
@@ -732,6 +734,28 @@ func (_q *WorkspaceQuery) QueryAutomationFigures() *AutomationFigureQuery {
 			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
 			sqlgraph.To(automationfigure.Table, automationfigure.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, workspace.AutomationFiguresTable, workspace.AutomationFiguresColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryAutomationSkippedEntries chains the current query on the "automation_skipped_entries" edge.
+func (_q *WorkspaceQuery) QueryAutomationSkippedEntries() *AutomationSkippedEntryQuery {
+	query := (&AutomationSkippedEntryClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(automationskippedentry.Table, automationskippedentry.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.AutomationSkippedEntriesTable, workspace.AutomationSkippedEntriesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -1551,6 +1575,7 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withBroadcastRecipients:       _q.withBroadcastRecipients.Clone(),
 		withBroadcastFigures:          _q.withBroadcastFigures.Clone(),
 		withAutomationFigures:         _q.withAutomationFigures.Clone(),
+		withAutomationSkippedEntries:  _q.withAutomationSkippedEntries.Clone(),
 		withEmailTemplates:            _q.withEmailTemplates.Clone(),
 		withBrandKits:                 _q.withBrandKits.Clone(),
 		withIdentitySecrets:           _q.withIdentitySecrets.Clone(),
@@ -1868,6 +1893,17 @@ func (_q *WorkspaceQuery) WithAutomationFigures(opts ...func(*AutomationFigureQu
 		opt(query)
 	}
 	_q.withAutomationFigures = query
+	return _q
+}
+
+// WithAutomationSkippedEntries tells the query-builder to eager-load the nodes that are connected to
+// the "automation_skipped_entries" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithAutomationSkippedEntries(opts ...func(*AutomationSkippedEntryQuery)) *WorkspaceQuery {
+	query := (&AutomationSkippedEntryClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withAutomationSkippedEntries = query
 	return _q
 }
 
@@ -2246,7 +2282,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [53]bool{
+		loadedTypes = [54]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
@@ -2273,6 +2309,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			_q.withBroadcastRecipients != nil,
 			_q.withBroadcastFigures != nil,
 			_q.withAutomationFigures != nil,
+			_q.withAutomationSkippedEntries != nil,
 			_q.withEmailTemplates != nil,
 			_q.withBrandKits != nil,
 			_q.withIdentitySecrets != nil,
@@ -2507,6 +2544,15 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			func(n *Workspace) { n.Edges.AutomationFigures = []*AutomationFigure{} },
 			func(n *Workspace, e *AutomationFigure) {
 				n.Edges.AutomationFigures = append(n.Edges.AutomationFigures, e)
+			}); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withAutomationSkippedEntries; query != nil {
+		if err := _q.loadAutomationSkippedEntries(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.AutomationSkippedEntries = []*AutomationSkippedEntry{} },
+			func(n *Workspace, e *AutomationSkippedEntry) {
+				n.Edges.AutomationSkippedEntries = append(n.Edges.AutomationSkippedEntries, e)
 			}); err != nil {
 			return nil, err
 		}
@@ -3480,6 +3526,36 @@ func (_q *WorkspaceQuery) loadAutomationFigures(ctx context.Context, query *Auto
 	}
 	query.Where(predicate.AutomationFigure(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(workspace.AutomationFiguresColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadAutomationSkippedEntries(ctx context.Context, query *AutomationSkippedEntryQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *AutomationSkippedEntry)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(automationskippedentry.FieldWorkspaceID)
+	}
+	query.Where(predicate.AutomationSkippedEntry(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.AutomationSkippedEntriesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

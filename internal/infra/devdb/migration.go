@@ -8,6 +8,7 @@ import (
 	"os"
 	"slices"
 
+	"ariga.io/atlas/sql/postgres"
 	atlas "ariga.io/atlas/sql/schema"
 	"ariga.io/atlas/sql/sqlclient"
 	"ariga.io/atlas/sql/sqltool"
@@ -16,6 +17,7 @@ import (
 	"github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/getsphericon/sphericon/ent/migrate"
+	entschema "github.com/getsphericon/sphericon/ent/schema"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 )
 
@@ -95,13 +97,14 @@ func GenerateMigration(ctx context.Context, dir, diffURL, name string) (err erro
 // the schema as ent writes it differs from the same schema read back, and every such difference
 // would land in the migration.
 //
-// It also applies tenantKeys to the ent schema, and puts back the column a composite SET NULL key
+// It also applies tenantKeys and withNullsNotDistinct to the ent schema, and puts back the column a composite SET NULL key
 // clears on both sides, which Atlas reads as a bare SET NULL: on the database's from stored, on the
 // ent schema's from tenantKeys.
 func normalized(ctx context.Context, n atlas.Normalizer, stored map[string]atlas.ReferenceOption) schema.DiffHook {
 	return func(next schema.Differ) schema.Differ {
 		return schema.DiffFunc(func(current, desired *atlas.Schema) ([]atlas.Change, error) {
 			actions := tenantKeys(desired)
+			withNullsNotDistinct(desired)
 			normal, err := n.NormalizeSchema(ctx, desired)
 			if err != nil {
 				return nil, fmt.Errorf("normalize the ent schema: %w", err)
@@ -158,4 +161,16 @@ func setNullActions(ctx context.Context, diffDB *sql.DB) (_ map[string]atlas.Ref
 		out[name] = setNullOf(columns)
 	}
 	return out, rows.Err()
+}
+
+// withNullsNotDistinct makes the unique indexes the ent schema names (entschema.NullsNotDistinct)
+// count their NULLs as one value, which ent's index annotation cannot say.
+func withNullsNotDistinct(s *atlas.Schema) {
+	for _, t := range s.Tables {
+		for _, idx := range t.Indexes {
+			if idx.Unique && entschema.NullsNotDistinct(idx.Name) {
+				idx.AddAttrs(&postgres.IndexNullsDistinct{V: false})
+			}
+		}
+	}
 }

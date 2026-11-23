@@ -19,6 +19,9 @@
       "name": "Enrollments"
     },
     {
+      "name": "Automations"
+    },
+    {
       "name": "Rules"
     },
     {
@@ -59,9 +62,6 @@
     },
     {
       "name": "Segments"
-    },
-    {
-      "name": "Automations"
     },
     {
       "name": "Broadcasts"
@@ -643,6 +643,96 @@
         },
         "tags": ["Enrollments"],
         "x-required-scopes": ["enrollments:read"]
+      }
+    },
+    "/automations/{automationId}/skipped-entries": {
+      "get": {
+        "operationId": "SkippedEntries_list",
+        "description": "List an automation's skipped entries, newest first: the entries its entry checks refused, each\nwith its reason. Needs the automations:read scope.",
+        "parameters": [
+          {
+            "name": "automationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/PageQuery.page"
+          },
+          {
+            "$ref": "#/components/parameters/PageQuery.pageSize"
+          },
+          {
+            "name": "contactId",
+            "in": "query",
+            "required": false,
+            "description": "Only the skipped entries of this contact",
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SkippedEntryResource"
+                      },
+                      "description": "List of items"
+                    },
+                    "page": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Page number (1-based)"
+                    },
+                    "pageSize": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Page size"
+                    },
+                    "totalItems": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Total number of elements"
+                    },
+                    "totalPages": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Total number of pages"
+                    }
+                  },
+                  "description": "Paginated response"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Automations"],
+        "x-required-scopes": ["automations:read"],
+        "x-mcp": {
+          "name": "automations_skipped_entries_list"
+        }
       }
     },
     "/automations/{id}": {
@@ -6132,6 +6222,8 @@
           "failed",
           "from",
           "to",
+          "contacts",
+          "skipped",
           "averageDurationSeconds",
           "revenue"
         ],
@@ -6168,6 +6260,19 @@
           "to": {
             "type": "string",
             "description": "The period's last Report day, included"
+          },
+          "contacts": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Distinct contacts among the enrollments that began in the period: fewer than `entered` when a\ncontact entered more than once"
+          },
+          "skipped": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationSkippedCounts"
+              }
+            ],
+            "description": "Entries the entry checks refused in the period, by reason (ADR 0127), each on the Report day of\nthe moment it would have begun"
           },
           "averageDurationSeconds": {
             "type": "integer",
@@ -6464,6 +6569,50 @@
         },
         "description": "One Report day of an automation's results"
       },
+      "AutomationSkippedCounts": {
+        "type": "object",
+        "required": [
+          "cycle",
+          "activeEnrollment",
+          "once",
+          "cooldown",
+          "noEnrollmentKey",
+          "enrollmentCeiling"
+        ],
+        "properties": {
+          "cycle": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Entries caused by a chain of events that already passed through the automation"
+          },
+          "activeEnrollment": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Entries whose Event occurred while an enrollment of the contact was active"
+          },
+          "once": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Entries of a contact enrolled in the automation before, which enrolls a contact once"
+          },
+          "cooldown": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Entries sooner after the beginning of the contact's previous enrollment than the cooldown"
+          },
+          "noEnrollmentKey": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Entries whose Event lacked the property the automation's Enrollment key names"
+          },
+          "enrollmentCeiling": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Entries of a contact that had 10 active enrollments in the keyed automation, or 10 begun in a\nday"
+          }
+        },
+        "description": "How many entries into an automation were skipped, by reason"
+      },
       "AutomationStatus": {
         "type": "string",
         "enum": ["active", "inactive"],
@@ -6580,30 +6729,69 @@
         },
         "description": "One Step of an automation, by `type`, as a request writes it. A field of another kind is refused."
       },
+      "AutomationTrigger": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EventTrigger"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "event": "#/components/schemas/EventTrigger"
+          }
+        },
+        "description": "What enrolls a Contact in an automation, by `kind`: an Event matcher"
+      },
+      "AutomationTriggerInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EventTriggerInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "event": "#/components/schemas/EventTriggerInput"
+          }
+        },
+        "description": "What enrolls a Contact in an automation, by `kind`: an Event matcher"
+      },
       "AutomationVersion": {
         "type": "object",
-        "required": ["number", "triggerEvent", "exitEvents", "goalEvent", "steps"],
+        "required": ["number", "trigger", "exitEvents", "goalEvent", "steps"],
         "properties": {
           "number": {
             "type": "integer",
             "format": "int32",
             "description": "1 for the first version, plus one per version after it"
           },
-          "triggerEvent": {
-            "type": "string",
-            "description": "Event action that enrolls a contact (e.g. \"contact.created\", \"email.opened\")"
+          "trigger": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationTrigger"
+              }
+            ],
+            "description": "What enrolls a contact"
           },
           "exitEvents": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/EventMatcher"
             },
-            "description": "Event actions that end an active enrollment early, as exited (e.g. \"plan_downgraded\"). Only\nan Event that occurred once the enrollment began counts; machine opens and clicks never do."
+            "description": "The Event matchers that end an active enrollment early, as exited. Only an Event that\noccurred once the enrollment began counts; machine opens and clicks never do."
           },
           "goalEvent": {
-            "type": "string",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventMatcher"
+              }
+            ],
             "nullable": true,
-            "description": "Event action that ends an active enrollment as goal_reached (e.g. \"payment_succeeded\"); null\nwhen there is none"
+            "description": "The Event matcher that ends an active enrollment as goal_reached; an Event that matches it and\nan exit reaches the goal. Null when there is none."
           },
           "steps": {
             "allOf": [
@@ -8499,25 +8687,35 @@
       },
       "CreateAutomationInput": {
         "type": "object",
-        "required": ["name", "triggerEvent"],
+        "required": ["name", "trigger"],
         "properties": {
           "name": {
             "$ref": "#/components/schemas/Name"
           },
-          "triggerEvent": {
-            "type": "string"
+          "trigger": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationTriggerInput"
+              }
+            ],
+            "description": "What enrolls a contact"
           },
           "exitEvents": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/EventMatcherInput"
             },
-            "description": "Event actions that end an active enrollment early; none of them may be the trigger. Each\nfollows the trigger's rule: any customer action, and of the email events only opened, clicked\nand unsubscribed."
+            "description": "The Event matchers that end an active enrollment early. They may share an action with the\ntrigger, with each other and with the goal."
           },
           "goalEvent": {
-            "type": "string",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventMatcherInput"
+              }
+            ],
             "nullable": true,
-            "description": "Event action that ends an active enrollment as goal_reached; it may be neither the trigger nor\nan exit event. Null or omitted is none."
+            "description": "The Event matcher that ends an active enrollment as goal_reached; it may share an action with\nthe trigger and the exits. Null or omitted is none."
           },
           "steps": {
             "allOf": [
@@ -9605,7 +9803,15 @@
       },
       "EnrollmentResource": {
         "type": "object",
-        "required": ["id", "automationId", "contactId", "status", "createdAt", "updatedAt"],
+        "required": [
+          "id",
+          "automationId",
+          "contactId",
+          "status",
+          "ordinal",
+          "createdAt",
+          "updatedAt"
+        ],
         "properties": {
           "id": {
             "allOf": [
@@ -9638,6 +9844,16 @@
               }
             ],
             "description": "Where the Enrollment is"
+          },
+          "ordinal": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Which of the contact's enrollments in the automation it is: 1 for the first, plus one for each\nafter it, an enrollment that ended as it was made included"
+          },
+          "keyValue": {
+            "type": "string",
+            "description": "The value of the automation's Enrollment key the triggering Event carried, the property's\nstring form (ADR 0165); absent for an automation with no key",
+            "x-untrusted": true
           },
           "currentStepId": {
             "allOf": [
@@ -9693,6 +9909,17 @@
         "description": "A primary key as a client sees it (ADR 0142): the key sealed under the Instance's id key and\nwritten as 22 base62 characters, which say nothing about how many rows a table holds or when\none was made. The servers open it back into the key: a malformed id is refused as a 400 before\na handler runs. The pattern says the same in the contract, so a client (or a fuzzer) can tell a\nmalformed id from a valid one without trying it.",
         "x-ogen-type": "github.com/getsphericon/sphericon/internal/kernel/publicid.ID"
       },
+      "EntryCooldown": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 3600,
+        "description": "The least time, in whole seconds, from the beginning of a contact's previous enrollment in an\nautomation to the beginning of the next, under the `again` entry policy: at least one hour"
+      },
+      "EntryPolicy": {
+        "type": "string",
+        "enum": ["once", "again"],
+        "description": "Whether an automation enrolls a contact again (ADR 0127): `once` enrolls a contact at most once,\never; `again` enrolls it again once its previous enrollment ended, however it ended, and the\ncooldown from that enrollment's beginning passed. Either way a contact has at most one active\nenrollment in an automation, or one per value of its Enrollment key, by which the policy and the\ncooldown then count."
+      },
       "EventActionResource": {
         "type": "object",
         "required": ["action"],
@@ -9738,6 +9965,105 @@
         "type": "string",
         "enum": ["atLeast", "atMost"],
         "description": "How an event count is bounded: at least `times`, or at most `times`"
+      },
+      "EventFilter": {
+        "type": "object",
+        "required": ["kind", "combinator", "entries"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["group"]
+          },
+          "combinator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConditionCombinator"
+              }
+            ],
+            "description": "How the entries combine"
+          },
+          "not": {
+            "type": "boolean",
+            "description": "Negate the whole group"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventFilterNode"
+            },
+            "description": "The group's tests and nested groups"
+          }
+        },
+        "description": "An Event matcher's filter (ADR 0133): the tests of the Event's own properties it holds. A\nproperty the Event lacks, or holds with another type, fails its test, so a `not` over it holds."
+      },
+      "EventFilterInput": {
+        "type": "object",
+        "required": ["kind", "combinator", "entries"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["group"]
+          },
+          "combinator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConditionCombinator"
+              }
+            ],
+            "description": "How the entries combine"
+          },
+          "not": {
+            "type": "boolean",
+            "description": "Negate the whole group"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventFilterNodeInput"
+            },
+            "description": "The group's tests and nested groups"
+          }
+        },
+        "description": "An Event matcher's filter (ADR 0133): the tests of the Event's own properties it holds. A\nproperty the Event lacks, or holds with another type, fails its test, so a `not` over it holds.",
+        "additionalProperties": false
+      },
+      "EventFilterNode": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EventFilter"
+          },
+          {
+            "$ref": "#/components/schemas/FilterPropertyLeaf"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "property": "#/components/schemas/FilterPropertyLeaf",
+            "group": "#/components/schemas/EventFilter"
+          }
+        },
+        "description": "An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is\nabout, or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133)."
+      },
+      "EventFilterNodeInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EventFilterInput"
+          },
+          {
+            "$ref": "#/components/schemas/FilterPropertyLeafInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "property": "#/components/schemas/FilterPropertyLeafInput",
+            "group": "#/components/schemas/EventFilterInput"
+          }
+        },
+        "description": "An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is\nabout, or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133)."
       },
       "EventInput": {
         "type": "object",
@@ -9868,6 +10194,134 @@
           }
         },
         "description": "A count of how many times a Contact performed an Event action, over all time or within the\nlast `withinDays` days. Performed is atLeast 1, not performed is atMost 0; \"exactly\" is a group of\nboth. Engagement Events made by software (machine opens and clicks) are not counted. A window\nlonger than Event retention is capped by it: expired Events are no longer counted.",
+        "additionalProperties": false
+      },
+      "EventMatcher": {
+        "type": "object",
+        "required": ["action"],
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "The Event action (e.g. \"plan_downgraded\", \"contact.tagged\"). Any customer action; of the\nemail events only opened, clicked and unsubscribed."
+          },
+          "filter": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventFilter"
+              }
+            ],
+            "description": "The tests of the Event's own properties it must pass; absent, every Event of the action\nmatches. The `tag` of contact.tagged and contact.untagged and the `key` of\ncontact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace."
+          }
+        },
+        "description": "An Event matcher that ends an enrollment (ADR 0133): an action, and an optional filter on that\nEvent's own properties, so `order.closed` where `status` is `cancelled` exits and the same action\nwhere `status` is `paid` reaches the goal. The Event that began the enrollment never ends it."
+      },
+      "EventMatcherInput": {
+        "type": "object",
+        "required": ["action"],
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "The Event action (e.g. \"plan_downgraded\", \"contact.tagged\"). Any customer action; of the\nemail events only opened, clicked and unsubscribed."
+          },
+          "filter": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventFilterInput"
+              }
+            ],
+            "description": "The tests of the Event's own properties it must pass; omitted, every Event of the action\nmatches. The `tag` of contact.tagged and contact.untagged and the `key` of\ncontact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace."
+          }
+        },
+        "description": "An Event matcher that ends an enrollment (ADR 0133), as a request writes it",
+        "additionalProperties": false
+      },
+      "EventTrigger": {
+        "type": "object",
+        "required": ["kind", "action", "entryPolicy", "cooldown"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["event"]
+          },
+          "action": {
+            "type": "string",
+            "description": "The Event action that enrolls (e.g. \"contact.created\", \"email.opened\", \"order.completed\").\nAny customer action; of the email events only opened, clicked and unsubscribed."
+          },
+          "filter": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventFilter"
+              }
+            ],
+            "description": "The tests of the Event's own properties it must pass; absent, every Event of the action\nenrolls. The `tag` of contact.tagged and contact.untagged and the `key` of\ncontact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace."
+          },
+          "entryPolicy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntryPolicy"
+              }
+            ],
+            "description": "Whether a contact enrolls again, after its previous enrollment ended, on a later Event or a\nrule's enroll action"
+          },
+          "cooldown": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntryCooldown"
+              }
+            ],
+            "description": "Under `again`, the least time in seconds from the beginning of a contact's previous\nenrollment to the next; an entry sooner is skipped as `cooldown`"
+          },
+          "enrollmentKey": {
+            "type": "string",
+            "description": "The Enrollment key (ADR 0165): a property of the triggering Event, such as `order_id`, by\nwhose value a contact may have several active enrollments at once, one per value; the entry\npolicy and the cooldown count per value. An Event without the property enrolls no one and is\nskipped as `no_enrollment_key`; a contact has at most 10 active enrollments and 10 begun in a\nday, past which an entry is skipped as `enrollment_ceiling`. An exit or goal Event carrying the\nproperty ends only the enrollment of its value. Absent, a contact has one active enrollment."
+          }
+        },
+        "description": "A Trigger that enrolls a Contact on an Event (ADR 0133): its action, and an optional filter on\nthat Event's own properties, so `order.completed` where `status` is `paid` starts on paid orders\nonly. An Event that fails the filter is no entry: it enrolls no one and is not a skipped entry."
+      },
+      "EventTriggerInput": {
+        "type": "object",
+        "required": ["kind", "action"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["event"]
+          },
+          "action": {
+            "type": "string",
+            "description": "The Event action that enrolls (e.g. \"contact.created\", \"email.opened\", \"order.completed\").\nAny customer action; of the email events only opened, clicked and unsubscribed."
+          },
+          "filter": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventFilterInput"
+              }
+            ],
+            "description": "The tests of the Event's own properties it must pass; omitted, every Event of the action\nenrolls. The `tag` of contact.tagged and contact.untagged and the `key` of\ncontact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace."
+          },
+          "entryPolicy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntryPolicy"
+              }
+            ],
+            "description": "Whether a contact enrolls again, after its previous enrollment ended, on a later Event or a\nrule's enroll action; omitted is `once`",
+            "default": "once"
+          },
+          "cooldown": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntryCooldown"
+              }
+            ],
+            "description": "Under `again`, the least time in seconds from the beginning of a contact's previous\nenrollment to the next, at least 3600; omitted is 3600",
+            "default": 3600
+          },
+          "enrollmentKey": {
+            "type": "string",
+            "description": "The Enrollment key (ADR 0165): the name of a property of the triggering Event, such as\n`order_id`, by whose value a contact may have several active enrollments at once, one per\nvalue; a property name, checked for form only. Omitted, a contact has one active enrollment."
+          }
+        },
+        "description": "A Trigger that enrolls a Contact on an Event (ADR 0133), as a request writes it",
         "additionalProperties": false
       },
       "ExportAuditRow": {
@@ -10540,6 +10994,53 @@
           }
         },
         "description": "One row of the Outbound messages stream: the delivery record of one send, whichever\nsurface asked for it. It carries provenance and outcome only, never a subject or a body.\nA row is delivered again whenever it changes (a status change, an Erasure clearing the\ndestination and the Contact)."
+      },
+      "FilterPropertyLeaf": {
+        "type": "object",
+        "required": ["kind", "key", "test"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["property"]
+          },
+          "key": {
+            "type": "string",
+            "description": "The property's key"
+          },
+          "test": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PropertyTest"
+              }
+            ],
+            "description": "What it asks of the property's value"
+          }
+        },
+        "description": "A test of one property of the Event or line a filter is about, its key in a field of its own,\nso a key holding a dot is one key. It names no subject: a filter tests the one object it is\nabout."
+      },
+      "FilterPropertyLeafInput": {
+        "type": "object",
+        "required": ["kind", "key", "test"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["property"]
+          },
+          "key": {
+            "type": "string",
+            "description": "The property's key"
+          },
+          "test": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PropertyTestInput"
+              }
+            ],
+            "description": "What it asks of the property's value"
+          }
+        },
+        "description": "A test of one property of the Event or line a filter is about, its key in a field of its own,\nso a key holding a dot is one key. It names no subject: a filter tests the one object it is\nabout.",
+        "additionalProperties": false
       },
       "GrantableScope": {
         "type": "string",
@@ -13164,6 +13665,86 @@
         "pattern": "^(?:whsec_)?(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})$",
         "description": "A Standard Webhooks signing secret: a non-empty base64 key, usually prefixed `whsec_`, such as\n`whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw`."
       },
+      "SkippedEntryReason": {
+        "type": "string",
+        "enum": [
+          "no_enrollment_key",
+          "cycle",
+          "active_enrollment",
+          "once",
+          "cooldown",
+          "enrollment_ceiling"
+        ],
+        "description": "Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127,\nADR 0165), in their order: `no_enrollment_key` (the automation has an Enrollment key and the\ntriggering Event lacks its property), `cycle` (the chain of events that caused it already passed\nthrough the automation), `active_enrollment` (the triggering Event occurred while an enrollment\nof the contact for the key value was active, or one is active still), `once` (the contact had an\nenrollment for the key value in the automation before, under the `once` entry policy),\n`cooldown` (under `again`, the cooldown from the beginning of the contact's previous enrollment\nfor the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10\nactive enrollments, or 10 begun in a day)."
+      },
+      "SkippedEntryResource": {
+        "type": "object",
+        "required": ["id", "automationId", "contactId", "reason", "occurredAt", "createdAt"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "automationId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The automation the contact was not enrolled in"
+          },
+          "contactId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The contact"
+          },
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SkippedEntryReason"
+              }
+            ],
+            "description": "Why the entry was skipped"
+          },
+          "eventSourceId": {
+            "type": "string",
+            "description": "The source id of the triggering Event (its dedupKey when it had one); absent when a rule's\nenroll action tried",
+            "x-untrusted": true
+          },
+          "firingId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The rule firing whose enroll action tried; absent when the automation's trigger did"
+          },
+          "occurredAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the enrollment would have begun: when its Event occurred"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the entry was skipped"
+          }
+        },
+        "description": "An entry of a contact into an automation that its entry checks refused. Erased with the contact,\nand kept for the Event retention window."
+      },
       "SkippedReason": {
         "type": "string",
         "enum": [
@@ -14431,20 +15012,30 @@
           "name": {
             "$ref": "#/components/schemas/Name"
           },
-          "triggerEvent": {
-            "type": "string"
+          "trigger": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationTriggerInput"
+              }
+            ],
+            "description": "What enrolls a contact; replaces the Trigger, its filter, entry policy, cooldown and\nEnrollment key with it, and omitted keeps it"
           },
           "exitEvents": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/EventMatcherInput"
             },
-            "description": "Event actions that end an active enrollment early; replaces the list, omitted keeps it"
+            "description": "The Event matchers that end an active enrollment early; replaces the list, omitted keeps it"
           },
           "goalEvent": {
-            "type": "string",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventMatcherInput"
+              }
+            ],
             "nullable": true,
-            "description": "Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it"
+            "description": "The Event matcher that ends an active enrollment as goal_reached; null removes it, omitted\nkeeps it"
           },
           "steps": {
             "allOf": [

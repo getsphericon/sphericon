@@ -5,7 +5,8 @@ import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
 import { SystemEventAction } from '../../generated/site/types.gen.ts'
-import { zSigningSecret } from '../../generated/site/zod.gen.ts'
+import { zEntryCooldown, zSigningSecret } from '../../generated/site/zod.gen.ts'
+import { boundsOf } from '../../utils/bounds.ts'
 import {
   CONTACT_CHANGE_ACTIONS,
   EMAIL_ENGAGEMENT_ACTIONS,
@@ -19,7 +20,15 @@ import { MESSAGE_FORMAT } from './messageFormat.ts'
 import type { NodeProperties, StepKind } from './nodeProperties.ts'
 import { SMS_TEXT_FORMAT } from './smsFormat.ts'
 import { TELEGRAM_TEXT_FORMAT } from './telegramFormat.ts'
-import { EXIT_EVENTS_FORMAT, GOAL_EVENT_FORMAT, TRIGGER_EVENT_FORMAT } from './triggerFormat.ts'
+import {
+  COOLDOWN_FORMAT,
+  ENROLLMENT_KEY_FORMAT,
+  ENTRY_POLICY_FORMAT,
+  EXIT_EVENTS_FORMAT,
+  GOAL_EVENT_FORMAT,
+  TRIGGER_EVENT_FORMAT,
+  TRIGGER_FILTER_FORMAT,
+} from './triggerFormat.ts'
 
 // The palette `type` of a Step's node is its Step's kind (StepKind), stored on `node.data.type`
 // and read by the graph ↔ definition converters to tell the steps apart.
@@ -53,6 +62,10 @@ export const TRIGGER_EVENTS = [
 ] as const
 export const DEFAULT_TRIGGER_EVENT = TRIGGER_EVENTS[0]
 
+// A new Trigger's cooldown in seconds: the contract's floor, an hour, which is also the cooldown the
+// server gives a Trigger written without one (ADR 0127).
+const NEW_TRIGGER_COOLDOWN = boundsOf(zEntryCooldown).min
+
 // useAutomationNodeTypes builds the palette definitions for the visual builder.
 // Memoized so the array keeps a stable reference across renders — the SDK
 // overwrites its module-level palette holder whenever this reference changes.
@@ -68,11 +81,16 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         isStartNode: true,
         label: t(($) => $.automations.stepTrigger),
         description: t(($) => $.automations.triggerHint),
-        // The exit events are held one per line and the goal event as text ('' for none): the
-        // SDK's schema has no list of strings.
+        // The Trigger's filter is held as JSON text ('' for none), its Entry policy, its cooldown as
+        // text of seconds (ADR 0127), its Enrollment key as text ('' for none, ADR 0165), the exit events and the goal event as the JSON text of their
+        // drafts ('' for none, definition.ts): the SDK's schema has no list of objects.
         // pathId is the id of the root path the steps hang from, '' until the server gives one.
         defaultPropertiesData: {
           triggerEvent: DEFAULT_TRIGGER_EVENT,
+          triggerFilter: '',
+          entryPolicy: 'once',
+          cooldown: String(NEW_TRIGGER_COOLDOWN),
+          enrollmentKey: '',
           exitEvents: '',
           goalEvent: '',
           pathId: '',
@@ -86,6 +104,26 @@ export function useAutomationNodeTypes(): PaletteItem[] {
               type: 'string',
               label: t(($) => $.automations.triggerLabel),
               format: TRIGGER_EVENT_FORMAT,
+            },
+            triggerFilter: {
+              type: 'string',
+              label: t(($) => $.automations.triggerFilterLabel),
+              format: TRIGGER_FILTER_FORMAT,
+            },
+            entryPolicy: {
+              type: 'string',
+              label: t(($) => $.automations.entryPolicyLabel),
+              format: ENTRY_POLICY_FORMAT,
+            },
+            cooldown: {
+              type: 'string',
+              label: t(($) => $.automations.cooldownLabel),
+              format: COOLDOWN_FORMAT,
+            },
+            enrollmentKey: {
+              type: 'string',
+              label: t(($) => $.automations.enrollmentKeyLabel),
+              format: ENROLLMENT_KEY_FORMAT,
             },
             exitEvents: {
               type: 'string',
@@ -103,6 +141,30 @@ export function useAutomationNodeTypes(): PaletteItem[] {
           type: 'VerticalLayout',
           elements: [
             { type: 'Text', scope: '#/properties/triggerEvent', placeholder: '' },
+            { type: 'Text', scope: '#/properties/triggerFilter', placeholder: '' },
+            {
+              type: 'Text',
+              scope: '#/properties/entryPolicy',
+              label: t(($) => $.automations.entryPolicyLabel),
+              placeholder: '',
+            },
+            {
+              type: 'Text',
+              scope: '#/properties/cooldown',
+              label: t(($) => $.automations.cooldownLabel),
+              placeholder: '',
+              // The cooldown applies under `again` alone (ADR 0127).
+              rule: {
+                effect: 'SHOW',
+                condition: { scope: '#/properties/entryPolicy', schema: { const: 'again' } },
+              },
+            },
+            {
+              type: 'Text',
+              scope: '#/properties/enrollmentKey',
+              label: t(($) => $.automations.enrollmentKeyLabel),
+              placeholder: '',
+            },
             { type: 'Text', scope: '#/properties/exitEvents', placeholder: '' },
             { type: 'Text', scope: '#/properties/goalEvent', placeholder: '' },
           ],

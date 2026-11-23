@@ -160,8 +160,8 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewEvaluateTriggerWorker(entClient, stepper))
 	river.AddWorker(workers, NewRunStepWorker(entClient, stepper))
 	river.AddWorker(workers, NewLateNoticeWorker(entClient, deps.Callbacks))
-	river.AddWorker(workers, &EvaluateRulesWorker{ent: entClient, mod: deps.Rules})
-	river.AddWorker(workers, &RunRuleActionsWorker{ent: entClient, mod: deps.Rules, runners: RuleActionRunners(mod, deps.Contacts, stepper)})
+	river.AddWorker(workers, NewEvaluateRulesWorker(entClient, deps.Rules))
+	river.AddWorker(workers, NewRunRuleActionsWorker(entClient, deps.Rules, RuleActionRunners(mod, deps.Contacts, stepper)))
 	river.AddWorker(workers, NewRunRuleHTTPWorker(entClient, deps.Rules, rand.Float64))
 	river.AddWorker(workers, NewRunHTTPStepWorker(entClient, stepper, rand.Float64))
 	river.AddWorker(workers, NewDeliverWebhookWorker(entClient, cipher, webhook.NewClientAllowing(webhook.DeliveryTimeout, deps.OutboundAllow), now, rand.Float64, bus))
@@ -182,6 +182,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewPurgeAuthAttemptsWorker(entClient, now))
 	river.AddWorker(workers, NewRefreshPrivateRelayWorker(deps.Machine))
 	river.AddWorker(workers, NewPruneEventsWorker(entClient, deps.Rules, deps.Retention.Events, now))
+	river.AddWorker(workers, NewPruneSkippedEntriesWorker(stepper, entClient, deps.Retention.Events))
 	river.AddWorker(workers, NewPruneMessagesWorker(deps.MessageRetention))
 	river.AddWorker(workers, NewPruneWorkspaceMessagesWorker(deps.MessageRetention))
 	river.AddWorker(workers, NewPruneCapturedMessagesWorker(deps.CapturedMessages, deps.Retention.CapturedMessages))
@@ -345,6 +346,8 @@ func periodicJobs(extra []*river.PeriodicJob) []*river.PeriodicJob {
 		every(privateRelayRefreshInterval, RefreshPrivateRelayArgs{}),
 		// Delete expired analytical Events (ADR 0019).
 		dailyUTC(3, PruneEventsArgs{}),
+		// Delete the skipped entries into Automations past the same window (ADR 0127).
+		dailyUTC(3, PruneSkippedEntriesArgs{}),
 		// Delete expired Outbound messages, keeping their figures (ADR 0143).
 		dailyUTC(5, PruneMessagesArgs{}),
 		// Erase Workspaces whose 30-day deletion window has passed (ADR 0043).

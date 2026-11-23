@@ -93,24 +93,28 @@ func triggers(_ events.Envelope, ev events.DomainEvent) bool {
 }
 
 // firesRules wants what triggers wants, except an event a Rule's Action published (its envelope
-// carries CausedBy): Rules never chain (ADR 0054).
+// carries CausedBy): Rules never chain (ADR 0054); and an event a write through a Connection
+// without mcp:send published (its envelope carries SendLocked), which starts nothing that sends
+// (ADR 0132).
 func firesRules(env events.Envelope, ev events.DomainEvent) bool {
-	return env.CausedBy == "" && triggers(env, ev)
+	return env.CausedBy == "" && !env.SendLocked && triggers(env, ev)
 }
 
 // evaluateTrigger is the automations consumer's job: the evaluation of the Event against the
 // Automations (EvaluateTriggerArgs), on its semantic action, so a Trigger can be "contact.created"
 // or a customer's "page_view". The Event's row is stored by the publish that queues it, so the
 // evaluation finds it among the Contact's.
+// A marked Event (Envelope.SendLocked) is evaluated too: it enrolls no one, but it still ends an
+// Enrollment as an exit or goal event.
 func evaluateTrigger(env events.Envelope, ev events.DomainEvent) river.JobArgs {
 	p, _ := events.ProjectionOf(ev)
 	return EvaluateTriggerArgs{
-		WorkspaceID:        env.WorkspaceID,
-		ContactID:          p.ContactID,
-		Action:             p.Action,
-		SourceAutomationID: p.AutomationID,
-		OccurredAt:         env.OccurredAt,
-		SourceID:           env.SourceID(),
+		WorkspaceID: env.WorkspaceID,
+		ContactID:   p.ContactID,
+		Action:      p.Action,
+		OccurredAt:  env.OccurredAt,
+		SourceID:    env.SourceID(),
+		SendLocked:  env.SendLocked,
 	}
 }
 

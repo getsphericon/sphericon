@@ -355,21 +355,133 @@ model AutomationPathInput {
   steps: AutomationStepInput[];
 }
 
+/** Whether an automation enrolls a contact again (ADR 0127): `once` enrolls a contact at most once,
+ * ever; `again` enrolls it again once its previous enrollment ended, however it ended, and the
+ * cooldown from that enrollment's beginning passed. Either way a contact has at most one active
+ * enrollment in an automation, or one per value of its Enrollment key, by which the policy and the
+ * cooldown then count. */
+enum EntryPolicy {
+  once,
+  again,
+}
+
+/** The least time, in whole seconds, from the beginning of a contact's previous enrollment in an
+ * automation to the beginning of the next, under the `again` entry policy: at least one hour */
+@minValue(3600)
+scalar EntryCooldown extends int32;
+
+/** A Trigger that enrolls a Contact on an Event (ADR 0133): its action, and an optional filter on
+ * that Event's own properties, so `order.completed` where `status` is `paid` starts on paid orders
+ * only. An Event that fails the filter is no entry: it enrolls no one and is not a skipped entry. */
+model EventTrigger {
+  kind: "event";
+
+  /** The Event action that enrolls (e.g. "contact.created", "email.opened", "order.completed").
+   * Any customer action; of the email events only opened, clicked and unsubscribed. */
+  action: string;
+
+  /** The tests of the Event's own properties it must pass; absent, every Event of the action
+   * enrolls. The `tag` of contact.tagged and contact.untagged and the `key` of
+   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. */
+  filter?: EventFilter;
+
+  /** Whether a contact enrolls again, after its previous enrollment ended, on a later Event or a
+   * rule's enroll action */
+  entryPolicy: EntryPolicy;
+
+  /** Under `again`, the least time in seconds from the beginning of a contact's previous
+   * enrollment to the next; an entry sooner is skipped as `cooldown` */
+  cooldown: EntryCooldown;
+
+  /** The Enrollment key (ADR 0165): a property of the triggering Event, such as `order_id`, by
+   * whose value a contact may have several active enrollments at once, one per value; the entry
+   * policy and the cooldown count per value. An Event without the property enrolls no one and is
+   * skipped as `no_enrollment_key`; a contact has at most 10 active enrollments and 10 begun in a
+   * day, past which an entry is skipped as `enrollment_ceiling`. An exit or goal Event carrying the
+   * property ends only the enrollment of its value. Absent, a contact has one active enrollment. */
+  enrollmentKey?: string;
+}
+
+/** A Trigger that enrolls a Contact on an Event (ADR 0133), as a request writes it */
+model EventTriggerInput {
+  kind: "event";
+
+  /** The Event action that enrolls (e.g. "contact.created", "email.opened", "order.completed").
+   * Any customer action; of the email events only opened, clicked and unsubscribed. */
+  action: string;
+
+  /** The tests of the Event's own properties it must pass; omitted, every Event of the action
+   * enrolls. The `tag` of contact.tagged and contact.untagged and the `key` of
+   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. */
+  filter?: EventFilterInput;
+
+  /** Whether a contact enrolls again, after its previous enrollment ended, on a later Event or a
+   * rule's enroll action; omitted is `once` */
+  entryPolicy?: EntryPolicy = EntryPolicy.once;
+
+  /** Under `again`, the least time in seconds from the beginning of a contact's previous
+   * enrollment to the next, at least 3600; omitted is 3600 */
+  cooldown?: EntryCooldown = 3600;
+
+  /** The Enrollment key (ADR 0165): the name of a property of the triggering Event, such as
+   * `order_id`, by whose value a contact may have several active enrollments at once, one per
+   * value; a property name, checked for form only. Omitted, a contact has one active enrollment. */
+  enrollmentKey?: string;
+}
+
+/** What enrolls a Contact in an automation, by `kind`: an Event matcher */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union AutomationTrigger {
+  event: EventTrigger,
+}
+
+/** What enrolls a Contact in an automation, by `kind`: an Event matcher */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union AutomationTriggerInput {
+  event: EventTriggerInput,
+}
+
+/** An Event matcher that ends an enrollment (ADR 0133): an action, and an optional filter on that
+ * Event's own properties, so `order.closed` where `status` is `cancelled` exits and the same action
+ * where `status` is `paid` reaches the goal. The Event that began the enrollment never ends it. */
+model EventMatcher {
+  /** The Event action (e.g. "plan_downgraded", "contact.tagged"). Any customer action; of the
+   * email events only opened, clicked and unsubscribed. */
+  action: string;
+
+  /** The tests of the Event's own properties it must pass; absent, every Event of the action
+   * matches. The `tag` of contact.tagged and contact.untagged and the `key` of
+   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. */
+  filter?: EventFilter;
+}
+
+/** An Event matcher that ends an enrollment (ADR 0133), as a request writes it */
+model EventMatcherInput {
+  /** The Event action (e.g. "plan_downgraded", "contact.tagged"). Any customer action; of the
+   * email events only opened, clicked and unsubscribed. */
+  action: string;
+
+  /** The tests of the Event's own properties it must pass; omitted, every Event of the action
+   * matches. The `tag` of contact.tagged and contact.untagged and the `key` of
+   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. */
+  filter?: EventFilterInput;
+}
+
 /** One version of an automation's definition: what publishing makes it do (ADR 0065) */
 model AutomationVersion {
   /** 1 for the first version, plus one per version after it */
   number: int32;
 
-  /** Event action that enrolls a contact (e.g. "contact.created", "email.opened") */
-  triggerEvent: string;
+  /** What enrolls a contact */
+  trigger: AutomationTrigger;
 
-  /** Event actions that end an active enrollment early, as exited (e.g. "plan_downgraded"). Only
-   * an Event that occurred once the enrollment began counts; machine opens and clicks never do. */
-  exitEvents: string[];
+  /** The Event matchers that end an active enrollment early, as exited. Only an Event that
+   * occurred once the enrollment began counts; machine opens and clicks never do. */
+  exitEvents: EventMatcher[];
 
-  /** Event action that ends an active enrollment as goal_reached (e.g. "payment_succeeded"); null
-   * when there is none */
-  goalEvent: string | null;
+  /** The Event matcher that ends an active enrollment as goal_reached; an Event that matches it and
+   * an exit reaches the goal. Null when there is none. */
+  goalEvent: EventMatcher | null;
 
   /** The version's Steps: its root path */
   steps: AutomationPath;
@@ -378,16 +490,17 @@ model AutomationVersion {
 /** Request body for creating an automation (always created inactive) */
 model CreateAutomationInput {
   name: Name;
-  triggerEvent: string;
 
-  /** Event actions that end an active enrollment early; none of them may be the trigger. Each
-   * follows the trigger's rule: any customer action, and of the email events only opened, clicked
-   * and unsubscribed. */
-  exitEvents?: string[];
+  /** What enrolls a contact */
+  trigger: AutomationTriggerInput;
 
-  /** Event action that ends an active enrollment as goal_reached; it may be neither the trigger nor
-   * an exit event. Null or omitted is none. */
-  goalEvent?: string | null;
+  /** The Event matchers that end an active enrollment early. They may share an action with the
+   * trigger, with each other and with the goal. */
+  exitEvents?: EventMatcherInput[];
+
+  /** The Event matcher that ends an active enrollment as goal_reached; it may share an action with
+   * the trigger and the exits. Null or omitted is none. */
+  goalEvent?: EventMatcherInput | null;
 
   /** The version's Steps: its root path */
   steps?: AutomationPathInput;
@@ -401,13 +514,17 @@ model UpdateAutomationInput {
   revision: Revision;
 
   name?: Name;
-  triggerEvent?: string;
 
-  /** Event actions that end an active enrollment early; replaces the list, omitted keeps it */
-  exitEvents?: string[];
+  /** What enrolls a contact; replaces the Trigger, its filter, entry policy, cooldown and
+   * Enrollment key with it, and omitted keeps it */
+  trigger?: AutomationTriggerInput;
 
-  /** Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it */
-  goalEvent?: string | null;
+  /** The Event matchers that end an active enrollment early; replaces the list, omitted keeps it */
+  exitEvents?: EventMatcherInput[];
+
+  /** The Event matcher that ends an active enrollment as goal_reached; null removes it, omitted
+   * keeps it */
+  goalEvent?: EventMatcherInput | null;
 
   /** The version's Steps: its root path */
   steps?: AutomationPathInput;
@@ -454,6 +571,14 @@ model AutomationPeriodResults {
   /** The period's last Report day, included */
   to: string;
 
+  /** Distinct contacts among the enrollments that began in the period: fewer than `entered` when a
+   * contact entered more than once */
+  contacts: int32;
+
+  /** Entries the entry checks refused in the period, by reason (ADR 0127), each on the Report day of
+   * the moment it would have begun */
+  skipped: AutomationSkippedCounts;
+
   /** Mean time in whole seconds from the beginning to the end of the enrollments that ended in
    * the period, whatever their outcome; null when none ended */
   averageDurationSeconds: int64 | null;
@@ -461,6 +586,28 @@ model AutomationPeriodResults {
   /** The orders credited to the automation that were completed in the period, and the net change
    * of its revenue in the period: every Movement of a credited Order counts on its own day (ADR 0064) */
   revenue: MessageRevenue;
+}
+
+/** How many entries into an automation were skipped, by reason */
+model AutomationSkippedCounts {
+  /** Entries caused by a chain of events that already passed through the automation */
+  cycle: int32;
+
+  /** Entries whose Event occurred while an enrollment of the contact was active */
+  activeEnrollment: int32;
+
+  /** Entries of a contact enrolled in the automation before, which enrolls a contact once */
+  once: int32;
+
+  /** Entries sooner after the beginning of the contact's previous enrollment than the cooldown */
+  cooldown: int32;
+
+  /** Entries whose Event lacked the property the automation's Enrollment key names */
+  noEnrollmentKey: int32;
+
+  /** Entries of a contact that had 10 active enrollments in the keyed automation, or 10 begun in a
+   * day */
+  enrollmentCeiling: int32;
 }
 
 /** One Report day of an automation's results */

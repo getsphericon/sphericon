@@ -89,6 +89,29 @@
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
 
+# Repeat entry (ADR 0127): under `again` with a day's cooldown, Alice enrolled twice, the first
+# exited and the second completed (automation_runs.yml). Inactive, trigger unused elsewhere.
+- id: 15540 # fixture: AutomationRepeatPurchase
+  revision: 1
+  name: Repeat purchase
+  status: inactive
+  live_version_id: 15540
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+# Enrollment key (ADR 0165): a post-purchase series keyed by order_id, in which Alice runs one
+# Enrollment per order, A and B, both active (automation_runs.yml). Inactive, trigger unused
+# elsewhere.
+- id: 15550 # fixture: AutomationOrderSeries
+  revision: 1
+  name: Order series
+  status: inactive
+  live_version_id: 15550
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+
 # Globex (workspace 2).
 - id: 900 # fixture: AutomationGlobex
   revision: 1
@@ -814,3 +837,113 @@
   workspace_id: 96
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+
+# Halcyon (workspace 99): one Automation on each Event a write through a Connection publishes, each
+# parking its Contact on a wait, and a course whose exit and goal Events end Ida's Enrollment.
+- id: 9900 # fixture: AutomationHalcyonOnSignal
+  revision: 1
+  name: On agent signal
+  status: active
+  live_version_id: 9900
+  workspace_id: 99
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 9901 # fixture: AutomationHalcyonOnTagged
+  revision: 1
+  name: On contact tagged
+  status: active
+  live_version_id: 9901
+  workspace_id: 99
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 9902 # fixture: AutomationHalcyonOnFieldChanged
+  revision: 1
+  name: On contact field changed
+  status: active
+  live_version_id: 9902
+  workspace_id: 99
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 9903 # fixture: AutomationHalcyonOnCreated
+  revision: 1
+  name: On contact created
+  status: active
+  live_version_id: 9903
+  workspace_id: 99
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 9904 # fixture: AutomationHalcyonCourse
+  revision: 1
+  name: Course
+  status: active
+  live_version_id: 9904
+  workspace_id: 99
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+# Ouroboros (workspace 1553): Automations whose Steps cause each other's Triggers (ADR 0127). All are
+# active; a test deactivates the ones its chain is not about.
+- id: 15530 # fixture: AutomationOuroborosUntagRing
+  revision: 1
+  name: Untag ring on tag
+  status: active
+  live_version_id: 15530
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 15531 # fixture: AutomationOuroborosTagRing
+  revision: 1
+  name: Tag ring on untag
+  status: active
+  live_version_id: 15531
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 15532 # fixture: AutomationOuroborosWaitThenUntagRing
+  revision: 1
+  name: Wait, then untag ring on tag
+  status: active
+  live_version_id: 15532
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 15533 # fixture: AutomationOuroborosSelfTagger
+  revision: 1
+  name: Tag self on tag
+  status: active
+  live_version_id: 15533
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 15534 # fixture: AutomationOuroborosStarter
+  revision: 1
+  name: Start
+  status: active
+  live_version_id: 15534
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 15535 # fixture: AutomationOuroborosOnCompleted
+  revision: 1
+  name: On a completion
+  status: active
+  live_version_id: 15535
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 15536 # fixture: AutomationOuroborosOnClick
+  revision: 1
+  name: On a click
+  status: active
+  live_version_id: 15536
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 15537 # fixture: AutomationOuroborosGoal
+  revision: 1
+  name: Goal
+  status: active
+  live_version_id: 15537
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'

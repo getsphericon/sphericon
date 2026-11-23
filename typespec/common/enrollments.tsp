@@ -51,6 +51,15 @@ model EnrollmentResource {
   /** Where the Enrollment is */
   status: EnrollmentStatus;
 
+  /** Which of the contact's enrollments in the automation it is: 1 for the first, plus one for each
+   * after it, an enrollment that ended as it was made included */
+  ordinal: int32;
+
+  /** The value of the automation's Enrollment key the triggering Event carried, the property's
+   * string form (ADR 0165); absent for an automation with no key */
+  @untrusted
+  keyValue?: string;
+
   /** Id of the Step of its version the Enrollment stands on (ADR 0122): a wait while it waits, the Step it ended on once it ended; absent only for a version of no Steps */
   currentStepId?: StepId;
 
@@ -65,4 +74,54 @@ model EnrollmentResource {
 
   /** Last update timestamp */
   updatedAt: Timestamp;
+}
+
+/**
+ * Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127,
+ * ADR 0165), in their order: `no_enrollment_key` (the automation has an Enrollment key and the
+ * triggering Event lacks its property), `cycle` (the chain of events that caused it already passed
+ * through the automation), `active_enrollment` (the triggering Event occurred while an enrollment
+ * of the contact for the key value was active, or one is active still), `once` (the contact had an
+ * enrollment for the key value in the automation before, under the `once` entry policy),
+ * `cooldown` (under `again`, the cooldown from the beginning of the contact's previous enrollment
+ * for the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10
+ * active enrollments, or 10 begun in a day).
+ */
+enum SkippedEntryReason {
+  no_enrollment_key: "no_enrollment_key",
+  cycle: "cycle",
+  active_enrollment: "active_enrollment",
+  once: "once",
+  cooldown: "cooldown",
+  enrollment_ceiling: "enrollment_ceiling",
+}
+
+/** An entry of a contact into an automation that its entry checks refused. Erased with the contact,
+ * and kept for the Event retention window. */
+model SkippedEntryResource {
+  /** Unique identifier */
+  id: EntityId;
+
+  /** The automation the contact was not enrolled in */
+  automationId: EntityId;
+
+  /** The contact */
+  contactId: EntityId;
+
+  /** Why the entry was skipped */
+  reason: SkippedEntryReason;
+
+  /** The source id of the triggering Event (its dedupKey when it had one); absent when a rule's
+   * enroll action tried */
+  @untrusted
+  eventSourceId?: string;
+
+  /** The rule firing whose enroll action tried; absent when the automation's trigger did */
+  firingId?: EntityId;
+
+  /** When the enrollment would have begun: when its Event occurred */
+  occurredAt: Timestamp;
+
+  /** When the entry was skipped */
+  createdAt: Timestamp;
 }

@@ -13,18 +13,26 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
-// AutomationRun is one contact's progress through an Automation. The unique
-// (automation_id, contact_id) index enforces enroll-once-ever (re-enrollment is
-// a deliberate non-feature for the MVP). current_step_id names the Step it stands on;
-// resume_at is when the wait it stands on is due.
+// AutomationRun is one contact's progress through an Automation, an Enrollment. A Contact may have
+// several in an Automation, one after another (ADR 0127): at most one active per key value, the
+// partial unique index over active Enrollments, and each numbered by its ordinal. Whether a Contact
+// enrolls again is the Entry policy of the version, judged under the Contact's lock. One Event, or
+// one Rule Firing, enrolls a Contact in an Automation at most once (ADR 0127): the unique indexes on
+// the triggering Event's source id and on the Firing. chain names the Automations the chain that
+// made it passed through, its own included. current_step_id names the Step it stands on; resume_at
+// is when the wait it stands on is due.
 type AutomationRun struct {
 	ent.Schema
 }
 
+// Annotations adds to the enum checks that an Enrollment began on an Event's Trigger or on a Rule's
+// Firing, never both, that its chain is a list and that its ordinal counts from one.
 func (AutomationRun) Annotations() []schema.Annotation {
-	return []schema.Annotation{
-		TableWithEnumChecks("automation_runs", AutomationRun{}.Fields()),
-	}
+	a := TableWithEnumChecks("automation_runs", AutomationRun{}.Fields())
+	a.Checks["automation_runs_entry_check"] = "trigger_source_id IS NULL OR firing_id IS NULL"
+	a.Checks["automation_runs_chain_check"] = jsonCheck("chain", "array")
+	a.Checks["automation_runs_ordinal_check"] = "ordinal >= 1"
+	return []schema.Annotation{a}
 }
 
 func (AutomationRun) Mixin() []ent.Mixin {
@@ -71,6 +79,48 @@ func (AutomationRun) Fields() []ent.Field {
 			Immutable(),
 		field.JSON("event_properties", map[string]any{}).
 			Optional().
+			Immutable(),
+		// The source id of the Event whose Trigger began the Enrollment (events.Envelope.SourceID,
+		// ADR 0127): one Event enrolls a Contact in an Automation once. A snapshot, without a key:
+		// Retention (ADR 0019) and an Erasure remove the Event, and the Enrollment keeps its id.
+		// Null for an Enrollment a Rule made.
+		field.String("trigger_source_id").
+			Optional().
+			Nillable().
+			Immutable(),
+		// The Rule Firing whose Enroll Action made the Enrollment (ADR 0127): one Firing enrolls a
+		// Contact in an Automation once. Cleared when retention prunes the Firing (SET NULL), and
+		// null for an Enrollment a Trigger began.
+		field.Int64("firing_id").
+			Optional().
+			Nillable().
+			Immutable(),
+		// The ids of the Automations the chain that made the Enrollment passed through, its own
+		// included, ascending (ADR 0127): the list of the Event or the Firing's Event that caused
+		// it, and its Automation. Everything published on behalf of the Enrollment carries it
+		// (events.Envelope.Automations), and an entry whose cause names the Automation is skipped
+		// as `cycle`; a Step resumed after a wait reads it here. A snapshot, without keys: an
+		// Automation it names may be archived or gone, and the list still says where the chain
+		// went.
+		field.JSON("chain", []int64{}).
+			Default([]int64{}).
+			Immutable().
+			Annotations(entsql.Default("[]")),
+		// Which of the Contact's Enrollments in the Automation it is (ADR 0127): 1 for the first,
+		// plus one for each after it, counted under the Contact's lock when it is made. An
+		// Enrollment made already ended counts like any other. A Split's draw reads it, so a
+		// Contact is not held on one path for good.
+		field.Int("ordinal").
+			Immutable(),
+		// The value of the version's Enrollment key the triggering Event carried (ADR 0165), the
+		// property's string form as Postgres reads it (properties ->> key): one active Enrollment
+		// per value, the partial unique index. Null for a version with no key, so a Contact has one
+		// active Enrollment in the Automation (NULLS NOT DISTINCT). An exit or goal Event carrying
+		// the property ends only the Enrollment of its value. Personal data: it goes with the row
+		// on Erasure (ADR 0021).
+		field.String("key_value").
+			Optional().
+			Nillable().
 			Immutable(),
 		// When the Enrollment left `active` (#753): written by the one move out of it
 		// (internal/automations, runstate.go), together with the terminal status, and never again.
@@ -124,16 +174,35 @@ func (AutomationRun) Edges() []ent.Edge {
 			Unique(),
 		edge.To("contact", Contact.Type).Field("contact_id").Required().Unique().
 			Annotations(entsql.OnDelete(entsql.Cascade)),
+		edge.To("firing", RuleFiring.Type).Field("firing_id").Unique().Immutable().
+			Annotations(entsql.OnDelete(entsql.SetNull)),
 	}
 }
 
 func (AutomationRun) Indexes() []ent.Index {
 	return []ent.Index{
-		// One run per Automation and Contact; the leading workspace_id also serves the Automation's
-		// composite foreign key.
-		index.Fields("workspace_id", "automation_id", "contact_id").
+		// One active Enrollment per Automation, Contact and key value (ADR 0127, ADR 0165), a null
+		// key value one value (NullsNotDistinct): the entry checks find none under the Contact's
+		// lock before they make one.
+		index.Fields("workspace_id", "automation_id", "contact_id", "key_value").
 			Unique().
-			StorageKey("automation_runs_workspace_id_automation_id_contact_id"),
+			Annotations(entsql.IndexWhere("status = 'active'")).
+			StorageKey(ActiveEnrollmentIndex),
+		// The Contact's Enrollments in the Automation, numbered: the entry checks read them, and
+		// one ordinal is one Enrollment.
+		index.Fields("workspace_id", "automation_id", "contact_id", "ordinal").
+			Unique().
+			StorageKey("automation_runs_workspace_automation_contact_ordinal"),
+		// One Enrollment per Automation and triggering Event, and per Automation and Rule Firing
+		// (ADR 0127): a redelivered Event or a Firing run again makes nothing.
+		index.Fields("workspace_id", "automation_id", "trigger_source_id").
+			Unique().
+			StorageKey("automation_runs_workspace_automation_trigger_source"),
+		index.Fields("workspace_id", "automation_id", "firing_id").
+			Unique().
+			StorageKey("automation_runs_workspace_automation_firing"),
+		// The firing foreign key's index.
+		index.Fields("workspace_id", "firing_id"),
 		// Erasure reaches runs by contact; the leading workspace_id also serves workspace scans.
 		index.Fields("workspace_id", "contact_id"),
 		// The contact foreign key's index: deleting a Contact finds its runs by it.
@@ -143,7 +212,13 @@ func (AutomationRun) Indexes() []ent.Index {
 		index.Fields("workspace_id", "version_id"),
 		// Back an Automation's Results: its Enrollments that began, and those that ended, in a
 		// window, so the report reads the window and not every Enrollment the Automation ever had.
+		// The leading workspace_id and automation_id also serve the Automation's composite foreign
+		// key.
 		index.Fields("workspace_id", "automation_id", "began_at"),
 		index.Fields("workspace_id", "automation_id", "ended_at"),
 	}
 }
+
+// ActiveEnrollmentIndex is the partial unique index of a Contact's active Enrollment in an
+// Automation per key value.
+const ActiveEnrollmentIndex = "automation_runs_active_enrollment"

@@ -1,0 +1,127 @@
+# Entries into an Automation its entry checks refused (ADR 0127), one per Automation and Event.
+# Liam completed the Welcome series and came back: `once`. Emma's second trigger came while her
+# Enrollment ran: `active_enrollment`. One 500 days old expires with the analytical Events (ADR 0019).
+- {
+    id: 1, # fixture: SkippedEntryWelcomeLiam
+    automation_id: 100,
+    contact_id: 100,
+    workspace_id: 1,
+    source_id: 'fixture:skipped-welcome-liam',
+    reason: once,
+    occurred_at: '{{daysAgo 1}}',
+    created_at: '{{daysAgo 1}}',
+    updated_at: '{{daysAgo 1}}',
+  }
+- {
+    id: 2, # fixture: SkippedEntryWelcomeEmma
+    automation_id: 100,
+    contact_id: 101,
+    workspace_id: 1,
+    source_id: 'fixture:skipped-welcome-emma',
+    reason: active_enrollment,
+    occurred_at: '{{daysAgo 3}}',
+    created_at: '{{daysAgo 3}}',
+    updated_at: '{{daysAgo 3}}',
+  }
+- {
+    id: 3, # fixture: SkippedEntryExpired
+    automation_id: 100,
+    contact_id: 100,
+    workspace_id: 1,
+    source_id: 'fixture:skipped-expired',
+    reason: once,
+    occurred_at: '{{daysAgo 500}}',
+    created_at: '{{daysAgo 500}}',
+    updated_at: '{{daysAgo 500}}',
+  }
+- {
+    id: 900, # fixture: SkippedEntryGlobex
+    automation_id: 900,
+    contact_id: 900,
+    workspace_id: 2,
+    source_id: 'fixture:skipped-globex',
+    reason: once,
+    occurred_at: '{{daysAgo 1}}',
+    created_at: '{{daysAgo 1}}',
+    updated_at: '{{daysAgo 1}}',
+  }
+# Initech: the erasable Contact's skipped entry goes with it on Erasure; the bystander's stays.
+- {
+    id: 300, # fixture: SkippedEntryErasable
+    automation_id: 300,
+    contact_id: 300,
+    workspace_id: 3,
+    source_id: 'fixture:skipped-erasable',
+    reason: once,
+    occurred_at: '{{daysAgo 1}}',
+    created_at: '{{daysAgo 1}}',
+    updated_at: '{{daysAgo 1}}',
+  }
+- {
+    id: 301, # fixture: SkippedEntryBystander
+    automation_id: 300,
+    contact_id: 301,
+    workspace_id: 3,
+    source_id: 'fixture:skipped-bystander',
+    reason: once,
+    occurred_at: '{{daysAgo 1}}',
+    created_at: '{{daysAgo 1}}',
+    updated_at: '{{daysAgo 1}}',
+  }
+# Gotham results (America/New_York): read on 17 March over 7 days, three skipped entries fall in the
+# current period (11-17 March), one in the previous one, and one before both.
+- {
+    id: 6100,
+    automation_id: 6100,
+    contact_id: 20049,
+    workspace_id: 61,
+    source_id: 'fixture:skipped-gotham-6100',
+    reason: once,
+    occurred_at: '2026-03-13 12:00:00+00',
+    created_at: '2026-03-13 12:00:00+00',
+    updated_at: '2026-03-13 12:00:00+00',
+  }
+- {
+    id: 6101,
+    automation_id: 6100,
+    contact_id: 20052,
+    workspace_id: 61,
+    source_id: 'fixture:skipped-gotham-6101',
+    reason: active_enrollment,
+    occurred_at: '2026-03-15 12:00:00+00',
+    created_at: '2026-03-15 12:00:00+00',
+    updated_at: '2026-03-15 12:00:00+00',
+  }
+- {
+    id: 6102,
+    automation_id: 6100,
+    contact_id: 20050,
+    workspace_id: 61,
+    source_id: 'fixture:skipped-gotham-6102',
+    reason: active_enrollment,
+    occurred_at: '2026-03-16 12:00:00+00',
+    created_at: '2026-03-16 12:00:00+00',
+    updated_at: '2026-03-16 12:00:00+00',
+  }
+- {
+    id: 6103,
+    automation_id: 6100,
+    contact_id: 20054,
+    workspace_id: 61,
+    source_id: 'fixture:skipped-gotham-6103',
+    reason: once,
+    occurred_at: '2026-03-10 12:00:00+00',
+    created_at: '2026-03-10 12:00:00+00',
+    updated_at: '2026-03-10 12:00:00+00',
+  }
+- {
+    id: 6104,
+    automation_id: 6100,
+    contact_id: 20100,
+    workspace_id: 61,
+    source_id: 'fixture:skipped-gotham-6104',
+    reason: once,
+    occurred_at: '2026-02-25 12:00:00+00',
+    created_at: '2026-02-25 12:00:00+00',
+    updated_at: '2026-02-25 12:00:00+00',
+  }

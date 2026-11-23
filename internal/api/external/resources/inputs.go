@@ -6,6 +6,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
@@ -26,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
@@ -133,6 +135,9 @@ type Inputs interface {
 	BroadcastSetSegment(source *externalapi.SetBroadcastSegmentInput) broadcasts.SetSegmentInput
 	// goverter:map AutomationId AutomationID
 	EnrollmentsFilter(source externalapi.EnrollmentsListParams) automations.EnrollmentsFilter
+	// goverter:map AutomationId AutomationID
+	// goverter:map ContactId ContactID | entityIDIn
+	SkippedEntriesFilter(source externalapi.SkippedEntriesListParams) automations.SkippedEntriesFilter
 	// The Contact a Data export names by its id or its email.
 	ContactExport(source externalapi.ContactsExportParams) dataexport.OpenInput
 
@@ -187,8 +192,16 @@ type Inputs interface {
 	RemoveTagStepIn(source externalapi.RemoveTagStepInput) automationstep.RemoveTag
 	HttpStepIn(source externalapi.HttpStepInput) automationstep.HTTP
 	TelegramButton(source externalapi.TelegramButtonInput) telegramrender.Button
-	AutomationCreate(source *externalapi.CreateAutomationInput) automations.CreateInput
-	AutomationUpdate(source *externalapi.UpdateAutomationInput) automations.UpdateInput
+	// goverter:map Trigger | automationTriggerIn
+	// goverter:map Trigger Entry | automationEntryIn
+	// goverter:map ExitEvents | automationExitsIn
+	// goverter:map GoalEvent | automationGoalIn
+	AutomationCreate(source *externalapi.CreateAutomationInput) (automations.CreateInput, error)
+	// goverter:map Trigger | automationTriggerPtrIn
+	// goverter:map Trigger Entry | automationEntryPtrIn
+	// goverter:map ExitEvents | automationExitsPtrIn
+	// goverter:map GoalEvent | automationGoalPatch
+	AutomationUpdate(source *externalapi.UpdateAutomationInput) (automations.UpdateInput, error)
 
 	RuleActions(source []externalapi.RuleActionInput) []ruleaction.Action
 	// goverter:map Condition | ruleConditionIn
@@ -218,6 +231,10 @@ type Inputs interface {
 	RuleActionType(source externalapi.RuleActionType) ruleaction.Type
 	// goverter:enum:transform value
 	BroadcastChannel(source externalapi.BroadcastChannel) channels.Channel
+	// ent's EntryPolicy has a Default constant beside EntryPolicyOnce, so every member is mapped.
+	// goverter:enum:map EventTriggerInputEntryPolicyOnce EntryPolicyOnce
+	// goverter:enum:map EventTriggerInputEntryPolicyAgain EntryPolicyAgain
+	EntryPolicy(source externalapi.EventTriggerInputEntryPolicy) automationversion.EntryPolicy
 	// goverter:enum:transform value
 	SuppressionChannel(source externalapi.SuppressionChannel) channels.Channel
 	// goverter:enum:transform value
@@ -410,6 +427,125 @@ func ruleActionsPtrIn(c Inputs, actions []externalapi.RuleActionInput) *[]ruleac
 // segmentConditionIn is a Segment's Condition the request may leave out; nil when it is absent.
 func segmentConditionIn(o externalapi.OptSegmentConditionInput) (*conditiontree.Segment, error) {
 	return condition.FromOptionalDTO[conditiontree.Segment](o)
+}
+
+// automationTriggerIn is the Trigger a write gives, by its kind: an Event matcher, its filter the
+// stored Condition of the place (ADR 0169). A oneOf is beyond goverter, so the switch is written
+// here; a Trigger of no kind is no matcher, which the save refuses.
+func automationTriggerIn(t externalapi.AutomationTriggerInput) (eventmatcher.Matcher, error) {
+	if t.OneOf.Type != externalapi.EventTriggerInputAutomationTriggerInputSum {
+		return eventmatcher.Matcher{}, nil
+	}
+	ev := t.OneOf.EventTriggerInput
+	filter, err := condition.FromOptionalDTO[conditiontree.EventFilter](ev.Filter)
+	if err != nil {
+		return eventmatcher.Matcher{}, err
+	}
+	return eventmatcher.Matcher{Action: ev.Action, Filter: filter}, nil
+}
+
+// automationEntryIn is the Entry policy and the Enrollment key a write gives with its Trigger, an
+// Event Trigger's: an omitted field is left to the module's default, which for the key is none.
+func automationEntryIn(c Inputs, t externalapi.AutomationTriggerInput) automations.Entry {
+	if t.OneOf.Type != externalapi.EventTriggerInputAutomationTriggerInputSum {
+		return automations.Entry{}
+	}
+	ev := t.OneOf.EventTriggerInput
+	var e automations.Entry
+	if policy, ok := ev.EntryPolicy.Get(); ok {
+		e.Policy = c.EntryPolicy(policy)
+	}
+	if cooldown, ok := ev.Cooldown.Get(); ok {
+		e.CooldownSeconds = new(int(cooldown))
+	}
+	if key, ok := ev.EnrollmentKey.Get(); ok {
+		e.Key = &key
+	}
+	return e
+}
+
+// automationEntryPtrIn is the Entry policy an update replaces with its Trigger: omitted (nil) with
+// the Trigger keeps the stored one.
+func automationEntryPtrIn(c Inputs, o externalapi.OptAutomationTriggerInput) *automations.Entry {
+	t, ok := o.Get()
+	if !ok {
+		return nil
+	}
+	return new(automationEntryIn(c, t))
+}
+
+// eventMatcherIn is an exit or goal event a write gives: an Event matcher, its filter the stored
+// Condition of the Event filter's place (ADR 0133, ADR 0169).
+func eventMatcherIn(m externalapi.EventMatcherInput) (eventmatcher.Matcher, error) {
+	filter, err := condition.FromOptionalDTO[conditiontree.EventFilter](m.Filter)
+	if err != nil {
+		return eventmatcher.Matcher{}, err
+	}
+	return eventmatcher.Matcher{Action: m.Action, Filter: filter}, nil
+}
+
+// automationExitsIn is the exit events a write gives; nil when it gives none.
+func automationExitsIn(exits []externalapi.EventMatcherInput) ([]eventmatcher.Matcher, error) {
+	if exits == nil {
+		return nil, nil
+	}
+	out := make([]eventmatcher.Matcher, len(exits))
+	for i, e := range exits {
+		m, err := eventMatcherIn(e)
+		if err != nil {
+			return nil, err
+		}
+		out[i] = m
+	}
+	return out, nil
+}
+
+// automationExitsPtrIn is the exit events an update replaces: an omitted list (nil) keeps the
+// stored ones, an empty list removes them.
+func automationExitsPtrIn(exits []externalapi.EventMatcherInput) (*[]eventmatcher.Matcher, error) {
+	out, err := automationExitsIn(exits)
+	if err != nil || out == nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// automationGoalIn is the goal event a write gives; nil for null or omitted, which is none.
+func automationGoalIn(o externalapi.OptNilEventMatcherInput) (*eventmatcher.Matcher, error) {
+	g, ok := o.Get()
+	if !ok {
+		return nil, nil
+	}
+	m, err := eventMatcherIn(g)
+	if err != nil {
+		return nil, err
+	}
+	return &m, nil
+}
+
+// automationGoalPatch is the goal event an update writes: omitted keeps it, null removes it.
+func automationGoalPatch(o externalapi.OptNilEventMatcherInput) (patch.Field[eventmatcher.Matcher], error) {
+	g, err := automationGoalIn(o)
+	if err != nil {
+		return patch.Keep[eventmatcher.Matcher](), err
+	}
+	if g == nil {
+		return patch.Of(eventmatcher.Matcher{}, o.IsSet(), true), nil
+	}
+	return patch.Set(*g), nil
+}
+
+// automationTriggerPtrIn is the Trigger an update replaces: omitted (nil) keeps the stored one.
+func automationTriggerPtrIn(o externalapi.OptAutomationTriggerInput) (*eventmatcher.Matcher, error) {
+	t, ok := o.Get()
+	if !ok {
+		return nil, nil
+	}
+	m, err := automationTriggerIn(t)
+	if err != nil {
+		return nil, err
+	}
+	return &m, nil
 }
 
 // ruleConditionIn is a Rule's Condition the request may leave out; nil when it is absent.

@@ -393,3 +393,20 @@ func causeOf(ctx context.Context) string {
 	cause, _ := ctx.Value(causeKey{}).(string)
 	return cause
 }
+
+type sendLockKey struct{}
+
+// SendLocked returns ctx for a write made through a Connection without mcp:send (ADR 0132): an
+// event published in it carries the mark on its envelope (Envelope.SendLocked), and a marked Event
+// enrolls no one and fires no Rule, so what such a Connection writes starts nothing that sends. Like
+// CausedBy, it is not carried into the jobs the write queues.
+func SendLocked(ctx context.Context) context.Context {
+	return context.WithValue(ctx, sendLockKey{}, true)
+}
+
+// IsSendLocked reports whether ctx is that of a write made through a Connection without mcp:send
+// (SendLocked): what is written in it is marked, the Contact as the events it publishes.
+func IsSendLocked(ctx context.Context) bool {
+	locked, _ := ctx.Value(sendLockKey{}).(bool)
+	return locked
+}

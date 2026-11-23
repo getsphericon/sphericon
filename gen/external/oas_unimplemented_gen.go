@@ -894,6 +894,16 @@ func (UnimplementedHandler) SendingDomainsVerify(ctx context.Context, params Sen
 	return r, ht.ErrNotImplemented
 }
 
+// SkippedEntriesList implements SkippedEntries_list operation.
+//
+// List an automation's skipped entries, newest first: the entries its entry checks refused, each with
+// its reason. Needs the automations:read scope.
+//
+// GET /automations/{automationId}/skipped-entries
+func (UnimplementedHandler) SkippedEntriesList(ctx context.Context, params SkippedEntriesListParams) (r *SkippedEntriesListOK, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SmsConsentsGet implements SmsConsents_get operation.
 //
 // Read whether a contact's phone may be texted: its SMS Confirmation (when and how the number

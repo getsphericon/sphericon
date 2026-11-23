@@ -1,0 +1,5 @@
+- id: 1
+  workspace_id: 1
+  source: manual
+  revision: 1
+  email: liam@example.com

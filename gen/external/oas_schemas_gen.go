@@ -2005,6 +2005,12 @@ type AutomationPeriodResults struct {
 	From string `json:"from"`
 	// The period's last Report day, included.
 	To string `json:"to"`
+	// Distinct contacts among the enrollments that began in the period: fewer than `entered` when a
+	// contact entered more than once.
+	Contacts int32 `json:"contacts"`
+	// Entries the entry checks refused in the period, by reason (ADR 0127), each on the Report day of the
+	// moment it would have begun.
+	Skipped AutomationSkippedCounts `json:"skipped"`
 	// Mean time in whole seconds from the beginning to the end of the enrollments that ended in the
 	// period, whatever their outcome; null when none ended.
 	AverageDurationSeconds NilInt64 `json:"averageDurationSeconds"`
@@ -2046,6 +2052,16 @@ func (s *AutomationPeriodResults) GetFrom() string {
 // GetTo returns the value of To.
 func (s *AutomationPeriodResults) GetTo() string {
 	return s.To
+}
+
+// GetContacts returns the value of Contacts.
+func (s *AutomationPeriodResults) GetContacts() int32 {
+	return s.Contacts
+}
+
+// GetSkipped returns the value of Skipped.
+func (s *AutomationPeriodResults) GetSkipped() AutomationSkippedCounts {
+	return s.Skipped
 }
 
 // GetAverageDurationSeconds returns the value of AverageDurationSeconds.
@@ -2091,6 +2107,16 @@ func (s *AutomationPeriodResults) SetFrom(val string) {
 // SetTo sets the value of To.
 func (s *AutomationPeriodResults) SetTo(val string) {
 	s.To = val
+}
+
+// SetContacts sets the value of Contacts.
+func (s *AutomationPeriodResults) SetContacts(val int32) {
+	s.Contacts = val
+}
+
+// SetSkipped sets the value of Skipped.
+func (s *AutomationPeriodResults) SetSkipped(val AutomationSkippedCounts) {
+	s.Skipped = val
 }
 
 // SetAverageDurationSeconds sets the value of AverageDurationSeconds.
@@ -2549,6 +2575,83 @@ func (s *AutomationResultsPoint) SetFailed(val int32) {
 // SetDate sets the value of Date.
 func (s *AutomationResultsPoint) SetDate(val string) {
 	s.Date = val
+}
+
+// How many entries into an automation were skipped, by reason.
+// Ref: #/components/schemas/AutomationSkippedCounts
+type AutomationSkippedCounts struct {
+	// Entries caused by a chain of events that already passed through the automation.
+	Cycle int32 `json:"cycle"`
+	// Entries whose Event occurred while an enrollment of the contact was active.
+	ActiveEnrollment int32 `json:"activeEnrollment"`
+	// Entries of a contact enrolled in the automation before, which enrolls a contact once.
+	Once int32 `json:"once"`
+	// Entries sooner after the beginning of the contact's previous enrollment than the cooldown.
+	Cooldown int32 `json:"cooldown"`
+	// Entries whose Event lacked the property the automation's Enrollment key names.
+	NoEnrollmentKey int32 `json:"noEnrollmentKey"`
+	// Entries of a contact that had 10 active enrollments in the keyed automation, or 10 begun in a day.
+	EnrollmentCeiling int32 `json:"enrollmentCeiling"`
+}
+
+// GetCycle returns the value of Cycle.
+func (s *AutomationSkippedCounts) GetCycle() int32 {
+	return s.Cycle
+}
+
+// GetActiveEnrollment returns the value of ActiveEnrollment.
+func (s *AutomationSkippedCounts) GetActiveEnrollment() int32 {
+	return s.ActiveEnrollment
+}
+
+// GetOnce returns the value of Once.
+func (s *AutomationSkippedCounts) GetOnce() int32 {
+	return s.Once
+}
+
+// GetCooldown returns the value of Cooldown.
+func (s *AutomationSkippedCounts) GetCooldown() int32 {
+	return s.Cooldown
+}
+
+// GetNoEnrollmentKey returns the value of NoEnrollmentKey.
+func (s *AutomationSkippedCounts) GetNoEnrollmentKey() int32 {
+	return s.NoEnrollmentKey
+}
+
+// GetEnrollmentCeiling returns the value of EnrollmentCeiling.
+func (s *AutomationSkippedCounts) GetEnrollmentCeiling() int32 {
+	return s.EnrollmentCeiling
+}
+
+// SetCycle sets the value of Cycle.
+func (s *AutomationSkippedCounts) SetCycle(val int32) {
+	s.Cycle = val
+}
+
+// SetActiveEnrollment sets the value of ActiveEnrollment.
+func (s *AutomationSkippedCounts) SetActiveEnrollment(val int32) {
+	s.ActiveEnrollment = val
+}
+
+// SetOnce sets the value of Once.
+func (s *AutomationSkippedCounts) SetOnce(val int32) {
+	s.Once = val
+}
+
+// SetCooldown sets the value of Cooldown.
+func (s *AutomationSkippedCounts) SetCooldown(val int32) {
+	s.Cooldown = val
+}
+
+// SetNoEnrollmentKey sets the value of NoEnrollmentKey.
+func (s *AutomationSkippedCounts) SetNoEnrollmentKey(val int32) {
+	s.NoEnrollmentKey = val
+}
+
+// SetEnrollmentCeiling sets the value of EnrollmentCeiling.
+func (s *AutomationSkippedCounts) SetEnrollmentCeiling(val int32) {
+	s.EnrollmentCeiling = val
 }
 
 // Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody.
@@ -3126,19 +3229,133 @@ func NewEndStepAutomationStepSum(v EndStep) AutomationStepSum {
 	return s
 }
 
+// What enrolls a Contact in an automation, by `kind`: an Event matcher.
+// Ref: #/components/schemas/AutomationTrigger
+type AutomationTrigger struct {
+	OneOf AutomationTriggerSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *AutomationTrigger) GetOneOf() AutomationTriggerSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *AutomationTrigger) SetOneOf(val AutomationTriggerSum) {
+	s.OneOf = val
+}
+
+// What enrolls a Contact in an automation, by `kind`: an Event matcher.
+// Ref: #/components/schemas/AutomationTriggerInput
+type AutomationTriggerInput struct {
+	OneOf AutomationTriggerInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *AutomationTriggerInput) GetOneOf() AutomationTriggerInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *AutomationTriggerInput) SetOneOf(val AutomationTriggerInputSum) {
+	s.OneOf = val
+}
+
+// AutomationTriggerInputSum represents sum type.
+type AutomationTriggerInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type              AutomationTriggerInputSumType
+	EventTriggerInput EventTriggerInput
+}
+
+// AutomationTriggerInputSumType is oneOf type of AutomationTriggerInputSum.
+type AutomationTriggerInputSumType string
+
+// Possible values for AutomationTriggerInputSumType.
+const (
+	EventTriggerInputAutomationTriggerInputSum AutomationTriggerInputSumType = "event"
+)
+
+// IsEventTriggerInput reports whether AutomationTriggerInputSum is EventTriggerInput.
+func (s AutomationTriggerInputSum) IsEventTriggerInput() bool {
+	return s.Type == EventTriggerInputAutomationTriggerInputSum
+}
+
+// SetEventTriggerInput sets AutomationTriggerInputSum to EventTriggerInput.
+func (s *AutomationTriggerInputSum) SetEventTriggerInput(v EventTriggerInput) {
+	s.Type = EventTriggerInputAutomationTriggerInputSum
+	s.EventTriggerInput = v
+}
+
+// GetEventTriggerInput returns EventTriggerInput and true boolean if AutomationTriggerInputSum is EventTriggerInput.
+func (s AutomationTriggerInputSum) GetEventTriggerInput() (v EventTriggerInput, ok bool) {
+	if !s.IsEventTriggerInput() {
+		return v, false
+	}
+	return s.EventTriggerInput, true
+}
+
+// NewEventTriggerInputAutomationTriggerInputSum returns new AutomationTriggerInputSum from EventTriggerInput.
+func NewEventTriggerInputAutomationTriggerInputSum(v EventTriggerInput) AutomationTriggerInputSum {
+	var s AutomationTriggerInputSum
+	s.SetEventTriggerInput(v)
+	return s
+}
+
+// AutomationTriggerSum represents sum type.
+type AutomationTriggerSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type         AutomationTriggerSumType
+	EventTrigger EventTrigger
+}
+
+// AutomationTriggerSumType is oneOf type of AutomationTriggerSum.
+type AutomationTriggerSumType string
+
+// Possible values for AutomationTriggerSumType.
+const (
+	EventTriggerAutomationTriggerSum AutomationTriggerSumType = "event"
+)
+
+// IsEventTrigger reports whether AutomationTriggerSum is EventTrigger.
+func (s AutomationTriggerSum) IsEventTrigger() bool {
+	return s.Type == EventTriggerAutomationTriggerSum
+}
+
+// SetEventTrigger sets AutomationTriggerSum to EventTrigger.
+func (s *AutomationTriggerSum) SetEventTrigger(v EventTrigger) {
+	s.Type = EventTriggerAutomationTriggerSum
+	s.EventTrigger = v
+}
+
+// GetEventTrigger returns EventTrigger and true boolean if AutomationTriggerSum is EventTrigger.
+func (s AutomationTriggerSum) GetEventTrigger() (v EventTrigger, ok bool) {
+	if !s.IsEventTrigger() {
+		return v, false
+	}
+	return s.EventTrigger, true
+}
+
+// NewEventTriggerAutomationTriggerSum returns new AutomationTriggerSum from EventTrigger.
+func NewEventTriggerAutomationTriggerSum(v EventTrigger) AutomationTriggerSum {
+	var s AutomationTriggerSum
+	s.SetEventTrigger(v)
+	return s
+}
+
 // One version of an automation's definition: what publishing makes it do (ADR 0065).
 // Ref: #/components/schemas/AutomationVersion
 type AutomationVersion struct {
 	// 1 for the first version, plus one per version after it.
 	Number int32 `json:"number"`
-	// Event action that enrolls a contact (e.g. "contact.created", "email.opened").
-	TriggerEvent string `json:"triggerEvent"`
-	// Event actions that end an active enrollment early, as exited (e.g. "plan_downgraded"). Only an Event
-	// that occurred once the enrollment began counts; machine opens and clicks never do.
-	ExitEvents []string `json:"exitEvents"`
-	// Event action that ends an active enrollment as goal_reached (e.g. "payment_succeeded"); null when
-	// there is none.
-	GoalEvent NilString `json:"goalEvent"`
+	// What enrolls a contact.
+	Trigger AutomationTrigger `json:"trigger"`
+	// The Event matchers that end an active enrollment early, as exited. Only an Event that occurred once
+	// the enrollment began counts; machine opens and clicks never do.
+	ExitEvents []EventMatcher `json:"exitEvents"`
+	// The Event matcher that ends an active enrollment as goal_reached; an Event that matches it and an
+	// exit reaches the goal. Null when there is none.
+	GoalEvent NilEventMatcher `json:"goalEvent"`
 	// The version's Steps: its root path.
 	Steps AutomationPath `json:"steps"`
 }
@@ -3148,18 +3365,18 @@ func (s *AutomationVersion) GetNumber() int32 {
 	return s.Number
 }
 
-// GetTriggerEvent returns the value of TriggerEvent.
-func (s *AutomationVersion) GetTriggerEvent() string {
-	return s.TriggerEvent
+// GetTrigger returns the value of Trigger.
+func (s *AutomationVersion) GetTrigger() AutomationTrigger {
+	return s.Trigger
 }
 
 // GetExitEvents returns the value of ExitEvents.
-func (s *AutomationVersion) GetExitEvents() []string {
+func (s *AutomationVersion) GetExitEvents() []EventMatcher {
 	return s.ExitEvents
 }
 
 // GetGoalEvent returns the value of GoalEvent.
-func (s *AutomationVersion) GetGoalEvent() NilString {
+func (s *AutomationVersion) GetGoalEvent() NilEventMatcher {
 	return s.GoalEvent
 }
 
@@ -3173,18 +3390,18 @@ func (s *AutomationVersion) SetNumber(val int32) {
 	s.Number = val
 }
 
-// SetTriggerEvent sets the value of TriggerEvent.
-func (s *AutomationVersion) SetTriggerEvent(val string) {
-	s.TriggerEvent = val
+// SetTrigger sets the value of Trigger.
+func (s *AutomationVersion) SetTrigger(val AutomationTrigger) {
+	s.Trigger = val
 }
 
 // SetExitEvents sets the value of ExitEvents.
-func (s *AutomationVersion) SetExitEvents(val []string) {
+func (s *AutomationVersion) SetExitEvents(val []EventMatcher) {
 	s.ExitEvents = val
 }
 
 // SetGoalEvent sets the value of GoalEvent.
-func (s *AutomationVersion) SetGoalEvent(val NilString) {
+func (s *AutomationVersion) SetGoalEvent(val NilEventMatcher) {
 	s.GoalEvent = val
 }
 
@@ -7388,14 +7605,15 @@ func (s *CreateApiTokenResponse) SetTokenInfo(val ApiTokenInfo) {
 // Request body for creating an automation (always created inactive).
 // Ref: #/components/schemas/CreateAutomationInput
 type CreateAutomationInput struct {
-	Name         Name   `json:"name"`
-	TriggerEvent string `json:"triggerEvent"`
-	// Event actions that end an active enrollment early; none of them may be the trigger. Each follows the
-	// trigger's rule: any customer action, and of the email events only opened, clicked and unsubscribed.
-	ExitEvents []string `json:"exitEvents"`
-	// Event action that ends an active enrollment as goal_reached; it may be neither the trigger nor an
-	// exit event. Null or omitted is none.
-	GoalEvent OptNilString `json:"goalEvent"`
+	Name Name `json:"name"`
+	// What enrolls a contact.
+	Trigger AutomationTriggerInput `json:"trigger"`
+	// The Event matchers that end an active enrollment early. They may share an action with the trigger,
+	// with each other and with the goal.
+	ExitEvents []EventMatcherInput `json:"exitEvents"`
+	// The Event matcher that ends an active enrollment as goal_reached; it may share an action with the
+	// trigger and the exits. Null or omitted is none.
+	GoalEvent OptNilEventMatcherInput `json:"goalEvent"`
 	// The version's Steps: its root path.
 	Steps OptAutomationPathInput `json:"steps"`
 }
@@ -7405,18 +7623,18 @@ func (s *CreateAutomationInput) GetName() Name {
 	return s.Name
 }
 
-// GetTriggerEvent returns the value of TriggerEvent.
-func (s *CreateAutomationInput) GetTriggerEvent() string {
-	return s.TriggerEvent
+// GetTrigger returns the value of Trigger.
+func (s *CreateAutomationInput) GetTrigger() AutomationTriggerInput {
+	return s.Trigger
 }
 
 // GetExitEvents returns the value of ExitEvents.
-func (s *CreateAutomationInput) GetExitEvents() []string {
+func (s *CreateAutomationInput) GetExitEvents() []EventMatcherInput {
 	return s.ExitEvents
 }
 
 // GetGoalEvent returns the value of GoalEvent.
-func (s *CreateAutomationInput) GetGoalEvent() OptNilString {
+func (s *CreateAutomationInput) GetGoalEvent() OptNilEventMatcherInput {
 	return s.GoalEvent
 }
 
@@ -7430,18 +7648,18 @@ func (s *CreateAutomationInput) SetName(val Name) {
 	s.Name = val
 }
 
-// SetTriggerEvent sets the value of TriggerEvent.
-func (s *CreateAutomationInput) SetTriggerEvent(val string) {
-	s.TriggerEvent = val
+// SetTrigger sets the value of Trigger.
+func (s *CreateAutomationInput) SetTrigger(val AutomationTriggerInput) {
+	s.Trigger = val
 }
 
 // SetExitEvents sets the value of ExitEvents.
-func (s *CreateAutomationInput) SetExitEvents(val []string) {
+func (s *CreateAutomationInput) SetExitEvents(val []EventMatcherInput) {
 	s.ExitEvents = val
 }
 
 // SetGoalEvent sets the value of GoalEvent.
-func (s *CreateAutomationInput) SetGoalEvent(val OptNilString) {
+func (s *CreateAutomationInput) SetGoalEvent(val OptNilEventMatcherInput) {
 	s.GoalEvent = val
 }
 
@@ -9988,6 +10206,12 @@ type EnrollmentResource struct {
 	ContactId EntityId `json:"contactId"`
 	// Where the Enrollment is.
 	Status EnrollmentStatus `json:"status"`
+	// Which of the contact's enrollments in the automation it is: 1 for the first, plus one for each after
+	// it, an enrollment that ended as it was made included.
+	Ordinal int32 `json:"ordinal"`
+	// The value of the automation's Enrollment key the triggering Event carried, the property's string
+	// form (ADR 0165); absent for an automation with no key.
+	KeyValue OptString `json:"keyValue"`
 	// Id of the Step of its version the Enrollment stands on (ADR 0122): a wait while it waits, the Step
 	// it ended on once it ended; absent only for a version of no Steps.
 	CurrentStepId OptStepId `json:"currentStepId"`
@@ -10019,6 +10243,16 @@ func (s *EnrollmentResource) GetContactId() EntityId {
 // GetStatus returns the value of Status.
 func (s *EnrollmentResource) GetStatus() EnrollmentStatus {
 	return s.Status
+}
+
+// GetOrdinal returns the value of Ordinal.
+func (s *EnrollmentResource) GetOrdinal() int32 {
+	return s.Ordinal
+}
+
+// GetKeyValue returns the value of KeyValue.
+func (s *EnrollmentResource) GetKeyValue() OptString {
+	return s.KeyValue
 }
 
 // GetCurrentStepId returns the value of CurrentStepId.
@@ -10064,6 +10298,16 @@ func (s *EnrollmentResource) SetContactId(val EntityId) {
 // SetStatus sets the value of Status.
 func (s *EnrollmentResource) SetStatus(val EnrollmentStatus) {
 	s.Status = val
+}
+
+// SetOrdinal sets the value of Ordinal.
+func (s *EnrollmentResource) SetOrdinal(val int32) {
+	s.Ordinal = val
+}
+
+// SetKeyValue sets the value of KeyValue.
+func (s *EnrollmentResource) SetKeyValue(val OptString) {
+	s.KeyValue = val
 }
 
 // SetCurrentStepId sets the value of CurrentStepId.
@@ -10220,6 +10464,55 @@ func (s *EnrollmentsListOK) SetTotalPages(val int32) {
 }
 
 type EntityId publicid.ID
+
+type EntryCooldown int32
+
+// Whether an automation enrolls a contact again (ADR 0127): `once` enrolls a contact at most once,
+// ever; `again` enrolls it again once its previous enrollment ended, however it ended, and the
+// cooldown from that enrollment's beginning passed. Either way a contact has at most one active
+// enrollment in an automation, or one per value of its Enrollment key, by which the policy and the
+// cooldown then count.
+// Ref: #/components/schemas/EntryPolicy
+type EntryPolicy string
+
+const (
+	EntryPolicyOnce  EntryPolicy = "once"
+	EntryPolicyAgain EntryPolicy = "again"
+)
+
+// AllValues returns all EntryPolicy values.
+func (EntryPolicy) AllValues() []EntryPolicy {
+	return []EntryPolicy{
+		EntryPolicyOnce,
+		EntryPolicyAgain,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EntryPolicy) MarshalText() ([]byte, error) {
+	switch s {
+	case EntryPolicyOnce:
+		return []byte(s), nil
+	case EntryPolicyAgain:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EntryPolicy) UnmarshalText(data []byte) error {
+	switch EntryPolicy(data) {
+	case EntryPolicyOnce:
+		*s = EntryPolicyOnce
+		return nil
+	case EntryPolicyAgain:
+		*s = EntryPolicyAgain
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 // Distinct event action.
 // Ref: #/components/schemas/EventActionResource
@@ -10427,6 +10720,350 @@ func (s *EventCountOperator) UnmarshalText(data []byte) error {
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
+}
+
+// An Event matcher's filter (ADR 0133): the tests of the Event's own properties it holds. A property
+// the Event lacks, or holds with another type, fails its test, so a `not` over it holds.
+// Ref: #/components/schemas/EventFilter
+type EventFilter struct {
+	Kind EventFilterKind `json:"kind"`
+	// How the entries combine.
+	Combinator ConditionCombinator `json:"combinator"`
+	// Negate the whole group.
+	Not OptBool `json:"not"`
+	// The group's tests and nested groups.
+	Entries []EventFilterNode `json:"entries"`
+}
+
+// GetKind returns the value of Kind.
+func (s *EventFilter) GetKind() EventFilterKind {
+	return s.Kind
+}
+
+// GetCombinator returns the value of Combinator.
+func (s *EventFilter) GetCombinator() ConditionCombinator {
+	return s.Combinator
+}
+
+// GetNot returns the value of Not.
+func (s *EventFilter) GetNot() OptBool {
+	return s.Not
+}
+
+// GetEntries returns the value of Entries.
+func (s *EventFilter) GetEntries() []EventFilterNode {
+	return s.Entries
+}
+
+// SetKind sets the value of Kind.
+func (s *EventFilter) SetKind(val EventFilterKind) {
+	s.Kind = val
+}
+
+// SetCombinator sets the value of Combinator.
+func (s *EventFilter) SetCombinator(val ConditionCombinator) {
+	s.Combinator = val
+}
+
+// SetNot sets the value of Not.
+func (s *EventFilter) SetNot(val OptBool) {
+	s.Not = val
+}
+
+// SetEntries sets the value of Entries.
+func (s *EventFilter) SetEntries(val []EventFilterNode) {
+	s.Entries = val
+}
+
+// An Event matcher's filter (ADR 0133): the tests of the Event's own properties it holds. A property
+// the Event lacks, or holds with another type, fails its test, so a `not` over it holds.
+// Ref: #/components/schemas/EventFilterInput
+type EventFilterInput struct {
+	Kind EventFilterInputKind `json:"kind"`
+	// How the entries combine.
+	Combinator ConditionCombinator `json:"combinator"`
+	// Negate the whole group.
+	Not OptBool `json:"not"`
+	// The group's tests and nested groups.
+	Entries []EventFilterNodeInput `json:"entries"`
+}
+
+// GetKind returns the value of Kind.
+func (s *EventFilterInput) GetKind() EventFilterInputKind {
+	return s.Kind
+}
+
+// GetCombinator returns the value of Combinator.
+func (s *EventFilterInput) GetCombinator() ConditionCombinator {
+	return s.Combinator
+}
+
+// GetNot returns the value of Not.
+func (s *EventFilterInput) GetNot() OptBool {
+	return s.Not
+}
+
+// GetEntries returns the value of Entries.
+func (s *EventFilterInput) GetEntries() []EventFilterNodeInput {
+	return s.Entries
+}
+
+// SetKind sets the value of Kind.
+func (s *EventFilterInput) SetKind(val EventFilterInputKind) {
+	s.Kind = val
+}
+
+// SetCombinator sets the value of Combinator.
+func (s *EventFilterInput) SetCombinator(val ConditionCombinator) {
+	s.Combinator = val
+}
+
+// SetNot sets the value of Not.
+func (s *EventFilterInput) SetNot(val OptBool) {
+	s.Not = val
+}
+
+// SetEntries sets the value of Entries.
+func (s *EventFilterInput) SetEntries(val []EventFilterNodeInput) {
+	s.Entries = val
+}
+
+type EventFilterInputKind string
+
+const (
+	EventFilterInputKindGroup EventFilterInputKind = "group"
+)
+
+// AllValues returns all EventFilterInputKind values.
+func (EventFilterInputKind) AllValues() []EventFilterInputKind {
+	return []EventFilterInputKind{
+		EventFilterInputKindGroup,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EventFilterInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case EventFilterInputKindGroup:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EventFilterInputKind) UnmarshalText(data []byte) error {
+	switch EventFilterInputKind(data) {
+	case EventFilterInputKindGroup:
+		*s = EventFilterInputKindGroup
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type EventFilterKind string
+
+const (
+	EventFilterKindGroup EventFilterKind = "group"
+)
+
+// AllValues returns all EventFilterKind values.
+func (EventFilterKind) AllValues() []EventFilterKind {
+	return []EventFilterKind{
+		EventFilterKindGroup,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EventFilterKind) MarshalText() ([]byte, error) {
+	switch s {
+	case EventFilterKindGroup:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EventFilterKind) UnmarshalText(data []byte) error {
+	switch EventFilterKind(data) {
+	case EventFilterKindGroup:
+		*s = EventFilterKindGroup
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is about,
+// or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133).
+// Ref: #/components/schemas/EventFilterNode
+type EventFilterNode struct {
+	OneOf EventFilterNodeSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *EventFilterNode) GetOneOf() EventFilterNodeSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *EventFilterNode) SetOneOf(val EventFilterNodeSum) {
+	s.OneOf = val
+}
+
+// An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is about,
+// or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133).
+// Ref: #/components/schemas/EventFilterNodeInput
+type EventFilterNodeInput struct {
+	OneOf EventFilterNodeInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *EventFilterNodeInput) GetOneOf() EventFilterNodeInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *EventFilterNodeInput) SetOneOf(val EventFilterNodeInputSum) {
+	s.OneOf = val
+}
+
+// EventFilterNodeInputSum represents sum type.
+type EventFilterNodeInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                    EventFilterNodeInputSumType
+	EventFilterInput        EventFilterInput
+	FilterPropertyLeafInput FilterPropertyLeafInput
+}
+
+// EventFilterNodeInputSumType is oneOf type of EventFilterNodeInputSum.
+type EventFilterNodeInputSumType string
+
+// Possible values for EventFilterNodeInputSumType.
+const (
+	EventFilterInputEventFilterNodeInputSum        EventFilterNodeInputSumType = "group"
+	FilterPropertyLeafInputEventFilterNodeInputSum EventFilterNodeInputSumType = "property"
+)
+
+// IsEventFilterInput reports whether EventFilterNodeInputSum is EventFilterInput.
+func (s EventFilterNodeInputSum) IsEventFilterInput() bool {
+	return s.Type == EventFilterInputEventFilterNodeInputSum
+}
+
+// IsFilterPropertyLeafInput reports whether EventFilterNodeInputSum is FilterPropertyLeafInput.
+func (s EventFilterNodeInputSum) IsFilterPropertyLeafInput() bool {
+	return s.Type == FilterPropertyLeafInputEventFilterNodeInputSum
+}
+
+// SetEventFilterInput sets EventFilterNodeInputSum to EventFilterInput.
+func (s *EventFilterNodeInputSum) SetEventFilterInput(v EventFilterInput) {
+	s.Type = EventFilterInputEventFilterNodeInputSum
+	s.EventFilterInput = v
+}
+
+// GetEventFilterInput returns EventFilterInput and true boolean if EventFilterNodeInputSum is EventFilterInput.
+func (s EventFilterNodeInputSum) GetEventFilterInput() (v EventFilterInput, ok bool) {
+	if !s.IsEventFilterInput() {
+		return v, false
+	}
+	return s.EventFilterInput, true
+}
+
+// NewEventFilterInputEventFilterNodeInputSum returns new EventFilterNodeInputSum from EventFilterInput.
+func NewEventFilterInputEventFilterNodeInputSum(v EventFilterInput) EventFilterNodeInputSum {
+	var s EventFilterNodeInputSum
+	s.SetEventFilterInput(v)
+	return s
+}
+
+// SetFilterPropertyLeafInput sets EventFilterNodeInputSum to FilterPropertyLeafInput.
+func (s *EventFilterNodeInputSum) SetFilterPropertyLeafInput(v FilterPropertyLeafInput) {
+	s.Type = FilterPropertyLeafInputEventFilterNodeInputSum
+	s.FilterPropertyLeafInput = v
+}
+
+// GetFilterPropertyLeafInput returns FilterPropertyLeafInput and true boolean if EventFilterNodeInputSum is FilterPropertyLeafInput.
+func (s EventFilterNodeInputSum) GetFilterPropertyLeafInput() (v FilterPropertyLeafInput, ok bool) {
+	if !s.IsFilterPropertyLeafInput() {
+		return v, false
+	}
+	return s.FilterPropertyLeafInput, true
+}
+
+// NewFilterPropertyLeafInputEventFilterNodeInputSum returns new EventFilterNodeInputSum from FilterPropertyLeafInput.
+func NewFilterPropertyLeafInputEventFilterNodeInputSum(v FilterPropertyLeafInput) EventFilterNodeInputSum {
+	var s EventFilterNodeInputSum
+	s.SetFilterPropertyLeafInput(v)
+	return s
+}
+
+// EventFilterNodeSum represents sum type.
+type EventFilterNodeSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type               EventFilterNodeSumType
+	EventFilter        EventFilter
+	FilterPropertyLeaf FilterPropertyLeaf
+}
+
+// EventFilterNodeSumType is oneOf type of EventFilterNodeSum.
+type EventFilterNodeSumType string
+
+// Possible values for EventFilterNodeSumType.
+const (
+	EventFilterEventFilterNodeSum        EventFilterNodeSumType = "group"
+	FilterPropertyLeafEventFilterNodeSum EventFilterNodeSumType = "property"
+)
+
+// IsEventFilter reports whether EventFilterNodeSum is EventFilter.
+func (s EventFilterNodeSum) IsEventFilter() bool { return s.Type == EventFilterEventFilterNodeSum }
+
+// IsFilterPropertyLeaf reports whether EventFilterNodeSum is FilterPropertyLeaf.
+func (s EventFilterNodeSum) IsFilterPropertyLeaf() bool {
+	return s.Type == FilterPropertyLeafEventFilterNodeSum
+}
+
+// SetEventFilter sets EventFilterNodeSum to EventFilter.
+func (s *EventFilterNodeSum) SetEventFilter(v EventFilter) {
+	s.Type = EventFilterEventFilterNodeSum
+	s.EventFilter = v
+}
+
+// GetEventFilter returns EventFilter and true boolean if EventFilterNodeSum is EventFilter.
+func (s EventFilterNodeSum) GetEventFilter() (v EventFilter, ok bool) {
+	if !s.IsEventFilter() {
+		return v, false
+	}
+	return s.EventFilter, true
+}
+
+// NewEventFilterEventFilterNodeSum returns new EventFilterNodeSum from EventFilter.
+func NewEventFilterEventFilterNodeSum(v EventFilter) EventFilterNodeSum {
+	var s EventFilterNodeSum
+	s.SetEventFilter(v)
+	return s
+}
+
+// SetFilterPropertyLeaf sets EventFilterNodeSum to FilterPropertyLeaf.
+func (s *EventFilterNodeSum) SetFilterPropertyLeaf(v FilterPropertyLeaf) {
+	s.Type = FilterPropertyLeafEventFilterNodeSum
+	s.FilterPropertyLeaf = v
+}
+
+// GetFilterPropertyLeaf returns FilterPropertyLeaf and true boolean if EventFilterNodeSum is FilterPropertyLeaf.
+func (s EventFilterNodeSum) GetFilterPropertyLeaf() (v FilterPropertyLeaf, ok bool) {
+	if !s.IsFilterPropertyLeaf() {
+		return v, false
+	}
+	return s.FilterPropertyLeaf, true
+}
+
+// NewFilterPropertyLeafEventFilterNodeSum returns new EventFilterNodeSum from FilterPropertyLeaf.
+func NewFilterPropertyLeafEventFilterNodeSum(v FilterPropertyLeaf) EventFilterNodeSum {
+	var s EventFilterNodeSum
+	s.SetFilterPropertyLeaf(v)
+	return s
 }
 
 // Event payload.
@@ -10722,6 +11359,353 @@ func (s *EventLeafKind) UnmarshalText(data []byte) error {
 	}
 }
 
+// An Event matcher that ends an enrollment (ADR 0133): an action, and an optional filter on that
+// Event's own properties, so `order.closed` where `status` is `cancelled` exits and the same action
+// where `status` is `paid` reaches the goal. The Event that began the enrollment never ends it.
+// Ref: #/components/schemas/EventMatcher
+type EventMatcher struct {
+	// The Event action (e.g. "plan_downgraded", "contact.tagged"). Any customer action; of the email
+	// events only opened, clicked and unsubscribed.
+	Action string `json:"action"`
+	// The tests of the Event's own properties it must pass; absent, every Event of the action matches. The
+	// `tag` of contact.tagged and contact.untagged and the `key` of contact.field_changed, tested by eq or
+	// neq, must name a Tag or Custom field of the Workspace.
+	Filter OptEventFilter `json:"filter"`
+}
+
+// GetAction returns the value of Action.
+func (s *EventMatcher) GetAction() string {
+	return s.Action
+}
+
+// GetFilter returns the value of Filter.
+func (s *EventMatcher) GetFilter() OptEventFilter {
+	return s.Filter
+}
+
+// SetAction sets the value of Action.
+func (s *EventMatcher) SetAction(val string) {
+	s.Action = val
+}
+
+// SetFilter sets the value of Filter.
+func (s *EventMatcher) SetFilter(val OptEventFilter) {
+	s.Filter = val
+}
+
+// An Event matcher that ends an enrollment (ADR 0133), as a request writes it.
+// Ref: #/components/schemas/EventMatcherInput
+type EventMatcherInput struct {
+	// The Event action (e.g. "plan_downgraded", "contact.tagged"). Any customer action; of the email
+	// events only opened, clicked and unsubscribed.
+	Action string `json:"action"`
+	// The tests of the Event's own properties it must pass; omitted, every Event of the action matches.
+	// The `tag` of contact.tagged and contact.untagged and the `key` of contact.field_changed, tested by
+	// eq or neq, must name a Tag or Custom field of the Workspace.
+	Filter OptEventFilterInput `json:"filter"`
+}
+
+// GetAction returns the value of Action.
+func (s *EventMatcherInput) GetAction() string {
+	return s.Action
+}
+
+// GetFilter returns the value of Filter.
+func (s *EventMatcherInput) GetFilter() OptEventFilterInput {
+	return s.Filter
+}
+
+// SetAction sets the value of Action.
+func (s *EventMatcherInput) SetAction(val string) {
+	s.Action = val
+}
+
+// SetFilter sets the value of Filter.
+func (s *EventMatcherInput) SetFilter(val OptEventFilterInput) {
+	s.Filter = val
+}
+
+// A Trigger that enrolls a Contact on an Event (ADR 0133): its action, and an optional filter on that
+// Event's own properties, so `order.completed` where `status` is `paid` starts on paid orders only. An
+// Event that fails the filter is no entry: it enrolls no one and is not a skipped entry.
+// Ref: #/components/schemas/EventTrigger
+type EventTrigger struct {
+	Kind EventTriggerKind `json:"kind"`
+	// The Event action that enrolls (e.g. "contact.created", "email.opened", "order.completed"). Any
+	// customer action; of the email events only opened, clicked and unsubscribed.
+	Action string `json:"action"`
+	// The tests of the Event's own properties it must pass; absent, every Event of the action enrolls. The
+	// `tag` of contact.tagged and contact.untagged and the `key` of contact.field_changed, tested by eq or
+	// neq, must name a Tag or Custom field of the Workspace.
+	Filter OptEventFilter `json:"filter"`
+	// Whether a contact enrolls again, after its previous enrollment ended, on a later Event or a rule's
+	// enroll action.
+	EntryPolicy EntryPolicy `json:"entryPolicy"`
+	// Under `again`, the least time in seconds from the beginning of a contact's previous enrollment to
+	// the next; an entry sooner is skipped as `cooldown`.
+	Cooldown EntryCooldown `json:"cooldown"`
+	// The Enrollment key (ADR 0165): a property of the triggering Event, such as `order_id`, by whose
+	// value a contact may have several active enrollments at once, one per value; the entry policy and the
+	// cooldown count per value. An Event without the property enrolls no one and is skipped as
+	// `no_enrollment_key`; a contact has at most 10 active enrollments and 10 begun in a day, past which
+	// an entry is skipped as `enrollment_ceiling`. An exit or goal Event carrying the property ends only
+	// the enrollment of its value. Absent, a contact has one active enrollment.
+	EnrollmentKey OptString `json:"enrollmentKey"`
+}
+
+// GetKind returns the value of Kind.
+func (s *EventTrigger) GetKind() EventTriggerKind {
+	return s.Kind
+}
+
+// GetAction returns the value of Action.
+func (s *EventTrigger) GetAction() string {
+	return s.Action
+}
+
+// GetFilter returns the value of Filter.
+func (s *EventTrigger) GetFilter() OptEventFilter {
+	return s.Filter
+}
+
+// GetEntryPolicy returns the value of EntryPolicy.
+func (s *EventTrigger) GetEntryPolicy() EntryPolicy {
+	return s.EntryPolicy
+}
+
+// GetCooldown returns the value of Cooldown.
+func (s *EventTrigger) GetCooldown() EntryCooldown {
+	return s.Cooldown
+}
+
+// GetEnrollmentKey returns the value of EnrollmentKey.
+func (s *EventTrigger) GetEnrollmentKey() OptString {
+	return s.EnrollmentKey
+}
+
+// SetKind sets the value of Kind.
+func (s *EventTrigger) SetKind(val EventTriggerKind) {
+	s.Kind = val
+}
+
+// SetAction sets the value of Action.
+func (s *EventTrigger) SetAction(val string) {
+	s.Action = val
+}
+
+// SetFilter sets the value of Filter.
+func (s *EventTrigger) SetFilter(val OptEventFilter) {
+	s.Filter = val
+}
+
+// SetEntryPolicy sets the value of EntryPolicy.
+func (s *EventTrigger) SetEntryPolicy(val EntryPolicy) {
+	s.EntryPolicy = val
+}
+
+// SetCooldown sets the value of Cooldown.
+func (s *EventTrigger) SetCooldown(val EntryCooldown) {
+	s.Cooldown = val
+}
+
+// SetEnrollmentKey sets the value of EnrollmentKey.
+func (s *EventTrigger) SetEnrollmentKey(val OptString) {
+	s.EnrollmentKey = val
+}
+
+// A Trigger that enrolls a Contact on an Event (ADR 0133), as a request writes it.
+// Ref: #/components/schemas/EventTriggerInput
+type EventTriggerInput struct {
+	Kind EventTriggerInputKind `json:"kind"`
+	// The Event action that enrolls (e.g. "contact.created", "email.opened", "order.completed"). Any
+	// customer action; of the email events only opened, clicked and unsubscribed.
+	Action string `json:"action"`
+	// The tests of the Event's own properties it must pass; omitted, every Event of the action enrolls.
+	// The `tag` of contact.tagged and contact.untagged and the `key` of contact.field_changed, tested by
+	// eq or neq, must name a Tag or Custom field of the Workspace.
+	Filter OptEventFilterInput `json:"filter"`
+	// Whether a contact enrolls again, after its previous enrollment ended, on a later Event or a rule's
+	// enroll action; omitted is `once`.
+	EntryPolicy OptEventTriggerInputEntryPolicy `json:"entryPolicy"`
+	// Under `again`, the least time in seconds from the beginning of a contact's previous enrollment to
+	// the next, at least 3600; omitted is 3600.
+	Cooldown OptInt32 `json:"cooldown"`
+	// The Enrollment key (ADR 0165): the name of a property of the triggering Event, such as `order_id`,
+	// by whose value a contact may have several active enrollments at once, one per value; a property
+	// name, checked for form only. Omitted, a contact has one active enrollment.
+	EnrollmentKey OptString `json:"enrollmentKey"`
+}
+
+// GetKind returns the value of Kind.
+func (s *EventTriggerInput) GetKind() EventTriggerInputKind {
+	return s.Kind
+}
+
+// GetAction returns the value of Action.
+func (s *EventTriggerInput) GetAction() string {
+	return s.Action
+}
+
+// GetFilter returns the value of Filter.
+func (s *EventTriggerInput) GetFilter() OptEventFilterInput {
+	return s.Filter
+}
+
+// GetEntryPolicy returns the value of EntryPolicy.
+func (s *EventTriggerInput) GetEntryPolicy() OptEventTriggerInputEntryPolicy {
+	return s.EntryPolicy
+}
+
+// GetCooldown returns the value of Cooldown.
+func (s *EventTriggerInput) GetCooldown() OptInt32 {
+	return s.Cooldown
+}
+
+// GetEnrollmentKey returns the value of EnrollmentKey.
+func (s *EventTriggerInput) GetEnrollmentKey() OptString {
+	return s.EnrollmentKey
+}
+
+// SetKind sets the value of Kind.
+func (s *EventTriggerInput) SetKind(val EventTriggerInputKind) {
+	s.Kind = val
+}
+
+// SetAction sets the value of Action.
+func (s *EventTriggerInput) SetAction(val string) {
+	s.Action = val
+}
+
+// SetFilter sets the value of Filter.
+func (s *EventTriggerInput) SetFilter(val OptEventFilterInput) {
+	s.Filter = val
+}
+
+// SetEntryPolicy sets the value of EntryPolicy.
+func (s *EventTriggerInput) SetEntryPolicy(val OptEventTriggerInputEntryPolicy) {
+	s.EntryPolicy = val
+}
+
+// SetCooldown sets the value of Cooldown.
+func (s *EventTriggerInput) SetCooldown(val OptInt32) {
+	s.Cooldown = val
+}
+
+// SetEnrollmentKey sets the value of EnrollmentKey.
+func (s *EventTriggerInput) SetEnrollmentKey(val OptString) {
+	s.EnrollmentKey = val
+}
+
+// Merged schema.
+type EventTriggerInputEntryPolicy string
+
+const (
+	EventTriggerInputEntryPolicyOnce  EventTriggerInputEntryPolicy = "once"
+	EventTriggerInputEntryPolicyAgain EventTriggerInputEntryPolicy = "again"
+)
+
+// AllValues returns all EventTriggerInputEntryPolicy values.
+func (EventTriggerInputEntryPolicy) AllValues() []EventTriggerInputEntryPolicy {
+	return []EventTriggerInputEntryPolicy{
+		EventTriggerInputEntryPolicyOnce,
+		EventTriggerInputEntryPolicyAgain,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EventTriggerInputEntryPolicy) MarshalText() ([]byte, error) {
+	switch s {
+	case EventTriggerInputEntryPolicyOnce:
+		return []byte(s), nil
+	case EventTriggerInputEntryPolicyAgain:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EventTriggerInputEntryPolicy) UnmarshalText(data []byte) error {
+	switch EventTriggerInputEntryPolicy(data) {
+	case EventTriggerInputEntryPolicyOnce:
+		*s = EventTriggerInputEntryPolicyOnce
+		return nil
+	case EventTriggerInputEntryPolicyAgain:
+		*s = EventTriggerInputEntryPolicyAgain
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type EventTriggerInputKind string
+
+const (
+	EventTriggerInputKindEvent EventTriggerInputKind = "event"
+)
+
+// AllValues returns all EventTriggerInputKind values.
+func (EventTriggerInputKind) AllValues() []EventTriggerInputKind {
+	return []EventTriggerInputKind{
+		EventTriggerInputKindEvent,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EventTriggerInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case EventTriggerInputKindEvent:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EventTriggerInputKind) UnmarshalText(data []byte) error {
+	switch EventTriggerInputKind(data) {
+	case EventTriggerInputKindEvent:
+		*s = EventTriggerInputKindEvent
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type EventTriggerKind string
+
+const (
+	EventTriggerKindEvent EventTriggerKind = "event"
+)
+
+// AllValues returns all EventTriggerKind values.
+func (EventTriggerKind) AllValues() []EventTriggerKind {
+	return []EventTriggerKind{
+		EventTriggerKindEvent,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EventTriggerKind) MarshalText() ([]byte, error) {
+	switch s {
+	case EventTriggerKindEvent:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EventTriggerKind) UnmarshalText(data []byte) error {
+	switch EventTriggerKind(data) {
+	case EventTriggerKindEvent:
+		*s = EventTriggerKindEvent
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // EventsCreateNoContent is response for EventsCreate operation.
 type EventsCreateNoContent struct{}
 
@@ -10923,6 +11907,156 @@ func (s *ExportMessagesOKHeaders) SetXNextCursor(val string) {
 // SetResponse sets the value of Response.
 func (s *ExportMessagesOKHeaders) SetResponse(val ExportMessagesOK) {
 	s.Response = val
+}
+
+// A test of one property of the Event or line a filter is about, its key in a field of its own, so a
+// key holding a dot is one key. It names no subject: a filter tests the one object it is about.
+// Ref: #/components/schemas/FilterPropertyLeaf
+type FilterPropertyLeaf struct {
+	Kind FilterPropertyLeafKind `json:"kind"`
+	// The property's key.
+	Key string `json:"key"`
+	// What it asks of the property's value.
+	Test PropertyTest `json:"test"`
+}
+
+// GetKind returns the value of Kind.
+func (s *FilterPropertyLeaf) GetKind() FilterPropertyLeafKind {
+	return s.Kind
+}
+
+// GetKey returns the value of Key.
+func (s *FilterPropertyLeaf) GetKey() string {
+	return s.Key
+}
+
+// GetTest returns the value of Test.
+func (s *FilterPropertyLeaf) GetTest() PropertyTest {
+	return s.Test
+}
+
+// SetKind sets the value of Kind.
+func (s *FilterPropertyLeaf) SetKind(val FilterPropertyLeafKind) {
+	s.Kind = val
+}
+
+// SetKey sets the value of Key.
+func (s *FilterPropertyLeaf) SetKey(val string) {
+	s.Key = val
+}
+
+// SetTest sets the value of Test.
+func (s *FilterPropertyLeaf) SetTest(val PropertyTest) {
+	s.Test = val
+}
+
+// A test of one property of the Event or line a filter is about, its key in a field of its own, so a
+// key holding a dot is one key. It names no subject: a filter tests the one object it is about.
+// Ref: #/components/schemas/FilterPropertyLeafInput
+type FilterPropertyLeafInput struct {
+	Kind FilterPropertyLeafInputKind `json:"kind"`
+	// The property's key.
+	Key string `json:"key"`
+	// What it asks of the property's value.
+	Test PropertyTestInput `json:"test"`
+}
+
+// GetKind returns the value of Kind.
+func (s *FilterPropertyLeafInput) GetKind() FilterPropertyLeafInputKind {
+	return s.Kind
+}
+
+// GetKey returns the value of Key.
+func (s *FilterPropertyLeafInput) GetKey() string {
+	return s.Key
+}
+
+// GetTest returns the value of Test.
+func (s *FilterPropertyLeafInput) GetTest() PropertyTestInput {
+	return s.Test
+}
+
+// SetKind sets the value of Kind.
+func (s *FilterPropertyLeafInput) SetKind(val FilterPropertyLeafInputKind) {
+	s.Kind = val
+}
+
+// SetKey sets the value of Key.
+func (s *FilterPropertyLeafInput) SetKey(val string) {
+	s.Key = val
+}
+
+// SetTest sets the value of Test.
+func (s *FilterPropertyLeafInput) SetTest(val PropertyTestInput) {
+	s.Test = val
+}
+
+type FilterPropertyLeafInputKind string
+
+const (
+	FilterPropertyLeafInputKindProperty FilterPropertyLeafInputKind = "property"
+)
+
+// AllValues returns all FilterPropertyLeafInputKind values.
+func (FilterPropertyLeafInputKind) AllValues() []FilterPropertyLeafInputKind {
+	return []FilterPropertyLeafInputKind{
+		FilterPropertyLeafInputKindProperty,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s FilterPropertyLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case FilterPropertyLeafInputKindProperty:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *FilterPropertyLeafInputKind) UnmarshalText(data []byte) error {
+	switch FilterPropertyLeafInputKind(data) {
+	case FilterPropertyLeafInputKindProperty:
+		*s = FilterPropertyLeafInputKindProperty
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type FilterPropertyLeafKind string
+
+const (
+	FilterPropertyLeafKindProperty FilterPropertyLeafKind = "property"
+)
+
+// AllValues returns all FilterPropertyLeafKind values.
+func (FilterPropertyLeafKind) AllValues() []FilterPropertyLeafKind {
+	return []FilterPropertyLeafKind{
+		FilterPropertyLeafKindProperty,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s FilterPropertyLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case FilterPropertyLeafKindProperty:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *FilterPropertyLeafKind) UnmarshalText(data []byte) error {
+	switch FilterPropertyLeafKind(data) {
+	case FilterPropertyLeafKindProperty:
+		*s = FilterPropertyLeafKindProperty
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 // Whether a Contact has something: a Tag, a Telegram chat, a phone that can be texted.
@@ -12751,6 +13885,51 @@ func (o NilEntityId) Or(d EntityId) EntityId {
 	return d
 }
 
+// NewNilEventMatcher returns new NilEventMatcher with value set to v.
+func NewNilEventMatcher(v EventMatcher) NilEventMatcher {
+	return NilEventMatcher{
+		Value: v,
+	}
+}
+
+// NilEventMatcher is nullable EventMatcher.
+type NilEventMatcher struct {
+	Value EventMatcher
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilEventMatcher) SetTo(v EventMatcher) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilEventMatcher) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilEventMatcher) SetToNull() {
+	o.Null = true
+	var v EventMatcher
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilEventMatcher) Get() (v EventMatcher, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilEventMatcher) Or(d EventMatcher) EventMatcher {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewNilFloat32 returns new NilFloat32 with value set to v.
 func NewNilFloat32(v float32) NilFloat32 {
 	return NilFloat32{
@@ -13458,6 +14637,52 @@ func (o OptAutomationPathInput) Or(d AutomationPathInput) AutomationPathInput {
 	return d
 }
 
+// NewOptAutomationTriggerInput returns new OptAutomationTriggerInput with value set to v.
+func NewOptAutomationTriggerInput(v AutomationTriggerInput) OptAutomationTriggerInput {
+	return OptAutomationTriggerInput{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptAutomationTriggerInput is optional AutomationTriggerInput.
+type OptAutomationTriggerInput struct {
+	Value AutomationTriggerInput
+	Set   bool
+}
+
+// IsSet returns true if OptAutomationTriggerInput was set.
+func (o OptAutomationTriggerInput) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptAutomationTriggerInput) Reset() {
+	var v AutomationTriggerInput
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptAutomationTriggerInput) SetTo(v AutomationTriggerInput) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptAutomationTriggerInput) Get() (v AutomationTriggerInput, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptAutomationTriggerInput) Or(d AutomationTriggerInput) AutomationTriggerInput {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptAutomationsReportPeriod returns new OptAutomationsReportPeriod with value set to v.
 func NewOptAutomationsReportPeriod(v AutomationsReportPeriod) OptAutomationsReportPeriod {
 	return OptAutomationsReportPeriod{
@@ -14010,6 +15235,144 @@ func (o OptEntityId) Or(d EntityId) EntityId {
 	return d
 }
 
+// NewOptEventFilter returns new OptEventFilter with value set to v.
+func NewOptEventFilter(v EventFilter) OptEventFilter {
+	return OptEventFilter{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptEventFilter is optional EventFilter.
+type OptEventFilter struct {
+	Value EventFilter
+	Set   bool
+}
+
+// IsSet returns true if OptEventFilter was set.
+func (o OptEventFilter) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptEventFilter) Reset() {
+	var v EventFilter
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptEventFilter) SetTo(v EventFilter) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptEventFilter) Get() (v EventFilter, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptEventFilter) Or(d EventFilter) EventFilter {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptEventFilterInput returns new OptEventFilterInput with value set to v.
+func NewOptEventFilterInput(v EventFilterInput) OptEventFilterInput {
+	return OptEventFilterInput{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptEventFilterInput is optional EventFilterInput.
+type OptEventFilterInput struct {
+	Value EventFilterInput
+	Set   bool
+}
+
+// IsSet returns true if OptEventFilterInput was set.
+func (o OptEventFilterInput) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptEventFilterInput) Reset() {
+	var v EventFilterInput
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptEventFilterInput) SetTo(v EventFilterInput) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptEventFilterInput) Get() (v EventFilterInput, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptEventFilterInput) Or(d EventFilterInput) EventFilterInput {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptEventTriggerInputEntryPolicy returns new OptEventTriggerInputEntryPolicy with value set to v.
+func NewOptEventTriggerInputEntryPolicy(v EventTriggerInputEntryPolicy) OptEventTriggerInputEntryPolicy {
+	return OptEventTriggerInputEntryPolicy{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptEventTriggerInputEntryPolicy is optional EventTriggerInputEntryPolicy.
+type OptEventTriggerInputEntryPolicy struct {
+	Value EventTriggerInputEntryPolicy
+	Set   bool
+}
+
+// IsSet returns true if OptEventTriggerInputEntryPolicy was set.
+func (o OptEventTriggerInputEntryPolicy) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptEventTriggerInputEntryPolicy) Reset() {
+	var v EventTriggerInputEntryPolicy
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptEventTriggerInputEntryPolicy) SetTo(v EventTriggerInputEntryPolicy) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptEventTriggerInputEntryPolicy) Get() (v EventTriggerInputEntryPolicy, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptEventTriggerInputEntryPolicy) Or(d EventTriggerInputEntryPolicy) EventTriggerInputEntryPolicy {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptInt32 returns new OptInt32 with value set to v.
 func NewOptInt32(v int32) OptInt32 {
 	return OptInt32{
@@ -14528,6 +15891,74 @@ func (o OptNilEntityId) Get() (v EntityId, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilEntityId) Or(d EntityId) EntityId {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilEventMatcherInput returns new OptNilEventMatcherInput with value set to v.
+func NewOptNilEventMatcherInput(v EventMatcherInput) OptNilEventMatcherInput {
+	return OptNilEventMatcherInput{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilEventMatcherInput is optional nullable EventMatcherInput.
+type OptNilEventMatcherInput struct {
+	Value EventMatcherInput
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilEventMatcherInput was set.
+func (o OptNilEventMatcherInput) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilEventMatcherInput) Reset() {
+	var v EventMatcherInput
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilEventMatcherInput) SetTo(v EventMatcherInput) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilEventMatcherInput) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilEventMatcherInput) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v EventMatcherInput
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilEventMatcherInput) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilEventMatcherInput) Get() (v EventMatcherInput, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilEventMatcherInput) Or(d EventMatcherInput) EventMatcherInput {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -21427,6 +22858,252 @@ func (s *SetTrackingDomainInput) SetHost(val string) {
 
 type SigningSecret string
 
+// Paginated response.
+type SkippedEntriesListOK struct {
+	// List of items.
+	Items []SkippedEntryResource `json:"items"`
+	// Page number (1-based).
+	Page int32 `json:"page"`
+	// Page size.
+	PageSize int32 `json:"pageSize"`
+	// Total number of elements.
+	TotalItems int32 `json:"totalItems"`
+	// Total number of pages.
+	TotalPages int32 `json:"totalPages"`
+}
+
+// GetItems returns the value of Items.
+func (s *SkippedEntriesListOK) GetItems() []SkippedEntryResource {
+	return s.Items
+}
+
+// GetPage returns the value of Page.
+func (s *SkippedEntriesListOK) GetPage() int32 {
+	return s.Page
+}
+
+// GetPageSize returns the value of PageSize.
+func (s *SkippedEntriesListOK) GetPageSize() int32 {
+	return s.PageSize
+}
+
+// GetTotalItems returns the value of TotalItems.
+func (s *SkippedEntriesListOK) GetTotalItems() int32 {
+	return s.TotalItems
+}
+
+// GetTotalPages returns the value of TotalPages.
+func (s *SkippedEntriesListOK) GetTotalPages() int32 {
+	return s.TotalPages
+}
+
+// SetItems sets the value of Items.
+func (s *SkippedEntriesListOK) SetItems(val []SkippedEntryResource) {
+	s.Items = val
+}
+
+// SetPage sets the value of Page.
+func (s *SkippedEntriesListOK) SetPage(val int32) {
+	s.Page = val
+}
+
+// SetPageSize sets the value of PageSize.
+func (s *SkippedEntriesListOK) SetPageSize(val int32) {
+	s.PageSize = val
+}
+
+// SetTotalItems sets the value of TotalItems.
+func (s *SkippedEntriesListOK) SetTotalItems(val int32) {
+	s.TotalItems = val
+}
+
+// SetTotalPages sets the value of TotalPages.
+func (s *SkippedEntriesListOK) SetTotalPages(val int32) {
+	s.TotalPages = val
+}
+
+// Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127, ADR
+// 0165), in their order: `no_enrollment_key` (the automation has an Enrollment key and the triggering
+// Event lacks its property), `cycle` (the chain of events that caused it already passed through the
+// automation), `active_enrollment` (the triggering Event occurred while an enrollment of the contact
+// for the key value was active, or one is active still), `once` (the contact had an enrollment for the
+// key value in the automation before, under the `once` entry policy), `cooldown` (under `again`, the
+// cooldown from the beginning of the contact's previous enrollment for the key value had not passed)
+// or `enrollment_ceiling` (the keyed automation's contact had 10 active enrollments, or 10 begun in a
+// day).
+// Ref: #/components/schemas/SkippedEntryReason
+type SkippedEntryReason string
+
+const (
+	SkippedEntryReasonNoEnrollmentKey   SkippedEntryReason = "no_enrollment_key"
+	SkippedEntryReasonCycle             SkippedEntryReason = "cycle"
+	SkippedEntryReasonActiveEnrollment  SkippedEntryReason = "active_enrollment"
+	SkippedEntryReasonOnce              SkippedEntryReason = "once"
+	SkippedEntryReasonCooldown          SkippedEntryReason = "cooldown"
+	SkippedEntryReasonEnrollmentCeiling SkippedEntryReason = "enrollment_ceiling"
+)
+
+// AllValues returns all SkippedEntryReason values.
+func (SkippedEntryReason) AllValues() []SkippedEntryReason {
+	return []SkippedEntryReason{
+		SkippedEntryReasonNoEnrollmentKey,
+		SkippedEntryReasonCycle,
+		SkippedEntryReasonActiveEnrollment,
+		SkippedEntryReasonOnce,
+		SkippedEntryReasonCooldown,
+		SkippedEntryReasonEnrollmentCeiling,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SkippedEntryReason) MarshalText() ([]byte, error) {
+	switch s {
+	case SkippedEntryReasonNoEnrollmentKey:
+		return []byte(s), nil
+	case SkippedEntryReasonCycle:
+		return []byte(s), nil
+	case SkippedEntryReasonActiveEnrollment:
+		return []byte(s), nil
+	case SkippedEntryReasonOnce:
+		return []byte(s), nil
+	case SkippedEntryReasonCooldown:
+		return []byte(s), nil
+	case SkippedEntryReasonEnrollmentCeiling:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SkippedEntryReason) UnmarshalText(data []byte) error {
+	switch SkippedEntryReason(data) {
+	case SkippedEntryReasonNoEnrollmentKey:
+		*s = SkippedEntryReasonNoEnrollmentKey
+		return nil
+	case SkippedEntryReasonCycle:
+		*s = SkippedEntryReasonCycle
+		return nil
+	case SkippedEntryReasonActiveEnrollment:
+		*s = SkippedEntryReasonActiveEnrollment
+		return nil
+	case SkippedEntryReasonOnce:
+		*s = SkippedEntryReasonOnce
+		return nil
+	case SkippedEntryReasonCooldown:
+		*s = SkippedEntryReasonCooldown
+		return nil
+	case SkippedEntryReasonEnrollmentCeiling:
+		*s = SkippedEntryReasonEnrollmentCeiling
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// An entry of a contact into an automation that its entry checks refused. Erased with the contact, and
+// kept for the Event retention window.
+// Ref: #/components/schemas/SkippedEntryResource
+type SkippedEntryResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// The automation the contact was not enrolled in.
+	AutomationId EntityId `json:"automationId"`
+	// The contact.
+	ContactId EntityId `json:"contactId"`
+	// Why the entry was skipped.
+	Reason SkippedEntryReason `json:"reason"`
+	// The source id of the triggering Event (its dedupKey when it had one); absent when a rule's enroll
+	// action tried.
+	EventSourceId OptString `json:"eventSourceId"`
+	// The rule firing whose enroll action tried; absent when the automation's trigger did.
+	FiringId OptEntityId `json:"firingId"`
+	// When the enrollment would have begun: when its Event occurred.
+	OccurredAt Timestamp `json:"occurredAt"`
+	// When the entry was skipped.
+	CreatedAt Timestamp `json:"createdAt"`
+}
+
+// GetID returns the value of ID.
+func (s *SkippedEntryResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetAutomationId returns the value of AutomationId.
+func (s *SkippedEntryResource) GetAutomationId() EntityId {
+	return s.AutomationId
+}
+
+// GetContactId returns the value of ContactId.
+func (s *SkippedEntryResource) GetContactId() EntityId {
+	return s.ContactId
+}
+
+// GetReason returns the value of Reason.
+func (s *SkippedEntryResource) GetReason() SkippedEntryReason {
+	return s.Reason
+}
+
+// GetEventSourceId returns the value of EventSourceId.
+func (s *SkippedEntryResource) GetEventSourceId() OptString {
+	return s.EventSourceId
+}
+
+// GetFiringId returns the value of FiringId.
+func (s *SkippedEntryResource) GetFiringId() OptEntityId {
+	return s.FiringId
+}
+
+// GetOccurredAt returns the value of OccurredAt.
+func (s *SkippedEntryResource) GetOccurredAt() Timestamp {
+	return s.OccurredAt
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SkippedEntryResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// SetID sets the value of ID.
+func (s *SkippedEntryResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetAutomationId sets the value of AutomationId.
+func (s *SkippedEntryResource) SetAutomationId(val EntityId) {
+	s.AutomationId = val
+}
+
+// SetContactId sets the value of ContactId.
+func (s *SkippedEntryResource) SetContactId(val EntityId) {
+	s.ContactId = val
+}
+
+// SetReason sets the value of Reason.
+func (s *SkippedEntryResource) SetReason(val SkippedEntryReason) {
+	s.Reason = val
+}
+
+// SetEventSourceId sets the value of EventSourceId.
+func (s *SkippedEntryResource) SetEventSourceId(val OptString) {
+	s.EventSourceId = val
+}
+
+// SetFiringId sets the value of FiringId.
+func (s *SkippedEntryResource) SetFiringId(val OptEntityId) {
+	s.FiringId = val
+}
+
+// SetOccurredAt sets the value of OccurredAt.
+func (s *SkippedEntryResource) SetOccurredAt(val Timestamp) {
+	s.OccurredAt = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SkippedEntryResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
 // Why an Outbound message was Skipped: final for its Destination, never retried. The first four are
 // Send-eligibility's; a client switches over the list.
 // Ref: #/components/schemas/SkippedReason
@@ -24950,13 +26627,15 @@ func (s *UnsubscribeResource) SetCreatedAt(val Timestamp) {
 // Ref: #/components/schemas/UpdateAutomationInput
 type UpdateAutomationInput struct {
 	// The automation's `revision` the edit was made on (ADR 0119): the one it was read with.
-	Revision     Revision  `json:"revision"`
-	Name         OptName   `json:"name"`
-	TriggerEvent OptString `json:"triggerEvent"`
-	// Event actions that end an active enrollment early; replaces the list, omitted keeps it.
-	ExitEvents []string `json:"exitEvents"`
-	// Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it.
-	GoalEvent OptNilString `json:"goalEvent"`
+	Revision Revision `json:"revision"`
+	Name     OptName  `json:"name"`
+	// What enrolls a contact; replaces the Trigger, its filter, entry policy, cooldown and Enrollment key
+	// with it, and omitted keeps it.
+	Trigger OptAutomationTriggerInput `json:"trigger"`
+	// The Event matchers that end an active enrollment early; replaces the list, omitted keeps it.
+	ExitEvents []EventMatcherInput `json:"exitEvents"`
+	// The Event matcher that ends an active enrollment as goal_reached; null removes it, omitted keeps it.
+	GoalEvent OptNilEventMatcherInput `json:"goalEvent"`
 	// The version's Steps: its root path.
 	Steps OptAutomationPathInput `json:"steps"`
 }
@@ -24971,18 +26650,18 @@ func (s *UpdateAutomationInput) GetName() OptName {
 	return s.Name
 }
 
-// GetTriggerEvent returns the value of TriggerEvent.
-func (s *UpdateAutomationInput) GetTriggerEvent() OptString {
-	return s.TriggerEvent
+// GetTrigger returns the value of Trigger.
+func (s *UpdateAutomationInput) GetTrigger() OptAutomationTriggerInput {
+	return s.Trigger
 }
 
 // GetExitEvents returns the value of ExitEvents.
-func (s *UpdateAutomationInput) GetExitEvents() []string {
+func (s *UpdateAutomationInput) GetExitEvents() []EventMatcherInput {
 	return s.ExitEvents
 }
 
 // GetGoalEvent returns the value of GoalEvent.
-func (s *UpdateAutomationInput) GetGoalEvent() OptNilString {
+func (s *UpdateAutomationInput) GetGoalEvent() OptNilEventMatcherInput {
 	return s.GoalEvent
 }
 
@@ -25001,18 +26680,18 @@ func (s *UpdateAutomationInput) SetName(val OptName) {
 	s.Name = val
 }
 
-// SetTriggerEvent sets the value of TriggerEvent.
-func (s *UpdateAutomationInput) SetTriggerEvent(val OptString) {
-	s.TriggerEvent = val
+// SetTrigger sets the value of Trigger.
+func (s *UpdateAutomationInput) SetTrigger(val OptAutomationTriggerInput) {
+	s.Trigger = val
 }
 
 // SetExitEvents sets the value of ExitEvents.
-func (s *UpdateAutomationInput) SetExitEvents(val []string) {
+func (s *UpdateAutomationInput) SetExitEvents(val []EventMatcherInput) {
 	s.ExitEvents = val
 }
 
 // SetGoalEvent sets the value of GoalEvent.
-func (s *UpdateAutomationInput) SetGoalEvent(val OptNilString) {
+func (s *UpdateAutomationInput) SetGoalEvent(val OptNilEventMatcherInput) {
 	s.GoalEvent = val
 }
 

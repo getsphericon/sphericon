@@ -21,6 +21,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationskippedentry"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -78,6 +80,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
@@ -402,6 +405,9 @@ type Converter interface {
 	// DTO at this boundary. The contract names the version "number".
 	// goverter:map Version Number | count
 	// goverter:map Steps | automationPath
+	// goverter:map . Trigger | automationTrigger
+	// goverter:map . ExitEvents | automationExits
+	// goverter:map Goal GoalEvent | automationGoal
 	AutomationVersionToResource(source *ent.AutomationVersion) (siteapi.AutomationVersion, error)
 	// goverter:map Steps | automationStepViews
 	AutomationPathToResource(source automations.PathView) (siteapi.AutomationPath, error)
@@ -439,6 +445,8 @@ type Converter interface {
 	// goverter:map . Kind | telegramConfigKind
 	// goverter:map BotID BotId
 	TelegramConfigToResource(source integrations.RedactedTelegram) siteapi.TelegramConfig
+	// goverter:enum:transform value
+	EntryPolicyToResource(source automationversion.EntryPolicy) siteapi.EntryPolicy
 	// goverter:enum:transform value
 	SmsFromKindToResource(source messaging.SMSFromKind) siteapi.SmsFromKind
 	// goverter:map . Kind | twilioConfigKind
@@ -563,6 +571,9 @@ type Converter interface {
 
 	// goverter:map . Failure | enrollmentFailure
 	EnrollmentToResource(source *ent.AutomationRun) siteapi.EnrollmentResource
+	// The store names the triggering Event's source id; the contract says whose it is.
+	// goverter:map SourceID EventSourceId
+	SkippedEntryToResource(source *ent.AutomationSkippedEntry) siteapi.SkippedEntryResource
 	// goverter:useEmptyOnNil:slice
 	EnrollmentsToResources(source []*ent.AutomationRun) []siteapi.EnrollmentResource
 
@@ -688,6 +699,8 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	CapturedMessagesListPage(source pagination.Page[*ent.CapturedMessage]) *siteapi.SiteCapturedMessagesListOK
 	// goverter:useEmptyOnNil:slice
+	SkippedEntriesListPage(source pagination.Page[*ent.AutomationSkippedEntry]) *siteapi.SiteSkippedEntriesListOK
+	// goverter:useEmptyOnNil:slice
 	EnrollmentsListPage(source pagination.Page[*ent.AutomationRun]) *siteapi.SiteEnrollmentsListOK
 	// goverter:useEmptyOnNil:slice
 	RulesListPage(source pagination.Page[*ent.Rule]) (*siteapi.SiteRulesListOK, error)
@@ -756,6 +769,8 @@ type Converter interface {
 	EnrollmentFailureKindToResource(source automationrun.FailureKind) siteapi.EnrollmentFailureKind
 	// goverter:enum:transform value
 	EnrollmentStatusToResource(source automationrun.Status) siteapi.EnrollmentStatus
+	// goverter:enum:transform value
+	SkippedEntryReasonToResource(source automationskippedentry.Reason) siteapi.SkippedEntryReason
 	// goverter:enum:transform value
 	IntegrationChannelToResource(source channels.Channel) siteapi.IntegrationChannel
 	// goverter:enum:transform value
@@ -1158,6 +1173,65 @@ func optEditorDocument(doc json.RawMessage) siteapi.OptEditorDocument {
 // is written, so one that does not decode is a broken row, and it fails the response.
 func segmentCondition(g conditiontree.Segment) (siteapi.SegmentCondition, error) {
 	return convert.Document[siteapi.SegmentCondition](g)
+}
+
+// automationTrigger maps a version's Trigger into the typed DTO by its kind: an Event matcher whose
+// filter is checked as a stored Condition is (convert.Document).
+func automationTrigger(c Converter, v *ent.AutomationVersion) (siteapi.AutomationTrigger, error) {
+	m := automations.TriggerOf(v)
+	ev := siteapi.EventTrigger{
+		Kind: siteapi.EventTriggerKindEvent, Action: m.Action,
+		EntryPolicy: c.EntryPolicyToResource(v.EntryPolicy), Cooldown: siteapi.EntryCooldown(narrow.Int32(v.CooldownSeconds)),
+		EnrollmentKey: optString(v.EnrollmentKey),
+	}
+	if m.Filter != nil {
+		f, err := convert.Document[siteapi.EventFilter](*m.Filter)
+		if err != nil {
+			return siteapi.AutomationTrigger{}, err
+		}
+		ev.Filter = siteapi.NewOptEventFilter(f)
+	}
+	return siteapi.AutomationTrigger{OneOf: siteapi.NewEventTriggerAutomationTriggerSum(ev)}, nil
+}
+
+// eventMatcher maps an exit or goal event into the typed DTO, its filter checked as a stored
+// Condition is (convert.Document).
+func eventMatcher(m eventmatcher.Matcher) (siteapi.EventMatcher, error) {
+	out := siteapi.EventMatcher{Action: m.Action}
+	if m.Filter != nil {
+		f, err := convert.Document[siteapi.EventFilter](*m.Filter)
+		if err != nil {
+			return siteapi.EventMatcher{}, err
+		}
+		out.Filter = siteapi.NewOptEventFilter(f)
+	}
+	return out, nil
+}
+
+// automationExits maps a version's exit events into the typed DTO; never nil.
+func automationExits(v *ent.AutomationVersion) ([]siteapi.EventMatcher, error) {
+	exits := automations.ExitsOf(v)
+	out := make([]siteapi.EventMatcher, len(exits))
+	for i, e := range exits {
+		m, err := eventMatcher(e)
+		if err != nil {
+			return nil, err
+		}
+		out[i] = m
+	}
+	return out, nil
+}
+
+// automationGoal maps a version's goal event into the typed DTO: null when there is none.
+func automationGoal(goal *eventmatcher.Matcher) (siteapi.NilEventMatcher, error) {
+	if goal == nil {
+		return siteapi.NilEventMatcher{Null: true}, nil
+	}
+	m, err := eventMatcher(*goal)
+	if err != nil {
+		return siteapi.NilEventMatcher{}, err
+	}
+	return siteapi.NewNilEventMatcher(m), nil
 }
 
 // ruleCondition maps a Rule's Condition into the typed DTO, failing as segmentCondition does.

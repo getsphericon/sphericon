@@ -1251,6 +1251,19 @@ func encodeSendingDomainsVerifyResponse(response *SendingDomainResource, w http.
 	return nil
 }
 
+func encodeSkippedEntriesListResponse(response *SkippedEntriesListOK, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
 func encodeSmsConsentsGetResponse(response *SmsConsent, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)

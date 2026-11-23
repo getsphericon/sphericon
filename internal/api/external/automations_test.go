@@ -36,7 +36,7 @@ func TestExternalAutomationsRead(t *testing.T) {
 	live, draft := a.Live.Value, a.Draft.Value
 	require.Len(t, live.Steps.Steps, 3)
 	assert.EqualValues(t, 1, live.Number)
-	assert.Equal(t, "signup", live.TriggerEvent)
+	assert.Equal(t, "signup", live.Trigger.OneOf.EventTrigger.Action)
 	assert.Equal(t, "Welcome to CodeBasics", live.Steps.Steps[0].OneOf.EmailStep.Subject)
 	assert.Equal(t, externalapi.WaitStepAutomationStepSum, live.Steps.Steps[1].OneOf.Type)
 	assert.EqualValues(t, 86400, live.Steps.Steps[1].OneOf.WaitStep.Seconds)
@@ -67,8 +67,8 @@ func TestExternalAutomationsCreateUpdateDelete(t *testing.T) {
 	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite, apitokens.ScopeAutomationsPublish)
 
 	a, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
-		Name:         "Tag newcomers",
-		TriggerEvent: "newcomer",
+		Name:    "Tag newcomers",
+		Trigger: testhelper.ExternalTrigger("newcomer"),
 		Steps: testhelper.ExternalPathEdit(
 			externalapi.ApplyTagStepInput{Tag: "newcomer"},
 			externalapi.WaitStepInput{Seconds: 60},
@@ -81,7 +81,7 @@ func TestExternalAutomationsCreateUpdateDelete(t *testing.T) {
 	assert.Equal(t, "newcomer", a.Draft.Value.Steps.Steps[0].OneOf.ApplyTagStep.Tag)
 
 	_, err = c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
-		Name: "Bad", TriggerEvent: "x",
+		Name: "Bad", Trigger: testhelper.ExternalTrigger("x"),
 		Steps: testhelper.ExternalPathEdit(externalapi.ApplyTagStepInput{Tag: "  "}),
 	})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
@@ -106,7 +106,7 @@ func TestExternalAutomationsCreateUpdateDelete(t *testing.T) {
 	require.NoError(t, err, "archiving it again changes nothing")
 
 	readOnly := env.ExternalScoped(t, apitokens.ScopeAutomationsRead)
-	_, err = readOnly.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{Name: "x", TriggerEvent: "y"})
+	_, err = readOnly.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{Name: "x", Trigger: testhelper.ExternalTrigger("y")})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 }
 

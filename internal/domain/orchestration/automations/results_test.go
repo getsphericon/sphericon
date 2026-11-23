@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
@@ -24,7 +25,7 @@ var gothamToday = time.Date(2026, 3, 17, 12, 0, 0, 0, time.UTC)
 
 func resultsAt(t *testing.T, env *testhelper.TestEnv, id int64, p automations.ReportPeriod, now time.Time) automations.Results {
 	t.Helper()
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), linkclick.New(), testhelper.Module[*rules.Module](env), func() time.Time { return now })
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), linkclick.New(), testhelper.Module[*rules.Module](env), testhelper.Module[*contacts.Module](env), func() time.Time { return now })
 	report, err := m.ReportOf(context.Background(), env.DB.Scoped(fixtures.GothamID), id, p)
 	require.NoError(t, err)
 	return report.Results
@@ -125,4 +126,17 @@ func TestResultsOfAnotherWorkspacesAutomationAreNotFound(t *testing.T) {
 	_, err := m.ReportOf(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationGothamResultsID, automations.ReportPeriod7Days)
 
 	require.ErrorIs(t, err, automations.ErrNotFound)
+}
+
+// A period counts the distinct Contacts among the Enrollments that began in it, and the skipped
+// entries by reason by the Report day of the moment each would have begun (ADR 0127).
+func TestResultsCountTheContactsAndTheSkippedEntriesByReason(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	results := resultsAt(t, env, fixtures.AutomationGothamResultsID, automations.ReportPeriod7Days, gothamToday)
+
+	assert.Equal(t, 4, results.Current.Contacts)
+	assert.Equal(t, 3, results.Previous.Contacts)
+	assert.Equal(t, automations.SkippedCounts{ActiveEnrollment: 2, Once: 1}, results.Current.Skipped)
+	assert.Equal(t, automations.SkippedCounts{Once: 1}, results.Previous.Skipped, "the entry of 25 February is in neither period")
 }

@@ -14,6 +14,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 )
 
 // AutomationVersion is the model entity for the AutomationVersion schema.
@@ -33,12 +35,20 @@ type AutomationVersion struct {
 	Version int `json:"version,omitempty"`
 	// Steps holds the value of the "steps" field.
 	Steps automationstep.Path `json:"steps,omitempty"`
-	// TriggerEvent holds the value of the "trigger_event" field.
-	TriggerEvent string `json:"trigger_event,omitempty"`
-	// ExitEvents holds the value of the "exit_events" field.
-	ExitEvents []string `json:"exit_events,omitempty"`
-	// GoalEvent holds the value of the "goal_event" field.
-	GoalEvent *string `json:"goal_event,omitempty"`
+	// TriggerAction holds the value of the "trigger_action" field.
+	TriggerAction string `json:"trigger_action,omitempty"`
+	// TriggerFilter holds the value of the "trigger_filter" field.
+	TriggerFilter *conditiontree.EventFilter `json:"trigger_filter,omitempty"`
+	// Exits holds the value of the "exits" field.
+	Exits []eventmatcher.Matcher `json:"exits,omitempty"`
+	// Goal holds the value of the "goal" field.
+	Goal *eventmatcher.Matcher `json:"goal,omitempty"`
+	// EntryPolicy holds the value of the "entry_policy" field.
+	EntryPolicy automationversion.EntryPolicy `json:"entry_policy,omitempty"`
+	// CooldownSeconds holds the value of the "cooldown_seconds" field.
+	CooldownSeconds int `json:"cooldown_seconds,omitempty"`
+	// EnrollmentKey holds the value of the "enrollment_key" field.
+	EnrollmentKey *string `json:"enrollment_key,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AutomationVersionQuery when eager-loading is set.
 	Edges        AutomationVersionEdges `json:"edges"`
@@ -94,11 +104,11 @@ func (*AutomationVersion) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case automationversion.FieldSteps, automationversion.FieldExitEvents:
+		case automationversion.FieldSteps, automationversion.FieldTriggerFilter, automationversion.FieldExits, automationversion.FieldGoal:
 			values[i] = new([]byte)
-		case automationversion.FieldID, automationversion.FieldWorkspaceID, automationversion.FieldAutomationID, automationversion.FieldVersion:
+		case automationversion.FieldID, automationversion.FieldWorkspaceID, automationversion.FieldAutomationID, automationversion.FieldVersion, automationversion.FieldCooldownSeconds:
 			values[i] = new(sql.NullInt64)
-		case automationversion.FieldTriggerEvent, automationversion.FieldGoalEvent:
+		case automationversion.FieldTriggerAction, automationversion.FieldEntryPolicy, automationversion.FieldEnrollmentKey:
 			values[i] = new(sql.NullString)
 		case automationversion.FieldCreatedAt, automationversion.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -161,26 +171,54 @@ func (_m *AutomationVersion) assignValues(columns []string, values []any) error 
 					return fmt.Errorf("unmarshal field steps: %w", err)
 				}
 			}
-		case automationversion.FieldTriggerEvent:
+		case automationversion.FieldTriggerAction:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field trigger_event", values[i])
+				return fmt.Errorf("unexpected type %T for field trigger_action", values[i])
 			} else if value.Valid {
-				_m.TriggerEvent = value.String
+				_m.TriggerAction = value.String
 			}
-		case automationversion.FieldExitEvents:
+		case automationversion.FieldTriggerFilter:
 			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field exit_events", values[i])
+				return fmt.Errorf("unexpected type %T for field trigger_filter", values[i])
 			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &_m.ExitEvents); err != nil {
-					return fmt.Errorf("unmarshal field exit_events: %w", err)
+				if err := json.Unmarshal(*value, &_m.TriggerFilter); err != nil {
+					return fmt.Errorf("unmarshal field trigger_filter: %w", err)
 				}
 			}
-		case automationversion.FieldGoalEvent:
+		case automationversion.FieldExits:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field exits", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Exits); err != nil {
+					return fmt.Errorf("unmarshal field exits: %w", err)
+				}
+			}
+		case automationversion.FieldGoal:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field goal", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Goal); err != nil {
+					return fmt.Errorf("unmarshal field goal: %w", err)
+				}
+			}
+		case automationversion.FieldEntryPolicy:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field goal_event", values[i])
+				return fmt.Errorf("unexpected type %T for field entry_policy", values[i])
 			} else if value.Valid {
-				_m.GoalEvent = new(string)
-				*_m.GoalEvent = value.String
+				_m.EntryPolicy = automationversion.EntryPolicy(value.String)
+			}
+		case automationversion.FieldCooldownSeconds:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field cooldown_seconds", values[i])
+			} else if value.Valid {
+				_m.CooldownSeconds = int(value.Int64)
+			}
+		case automationversion.FieldEnrollmentKey:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field enrollment_key", values[i])
+			} else if value.Valid {
+				_m.EnrollmentKey = new(string)
+				*_m.EnrollmentKey = value.String
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -251,14 +289,26 @@ func (_m *AutomationVersion) String() string {
 	builder.WriteString("steps=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Steps))
 	builder.WriteString(", ")
-	builder.WriteString("trigger_event=")
-	builder.WriteString(_m.TriggerEvent)
+	builder.WriteString("trigger_action=")
+	builder.WriteString(_m.TriggerAction)
 	builder.WriteString(", ")
-	builder.WriteString("exit_events=")
-	builder.WriteString(fmt.Sprintf("%v", _m.ExitEvents))
+	builder.WriteString("trigger_filter=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TriggerFilter))
 	builder.WriteString(", ")
-	if v := _m.GoalEvent; v != nil {
-		builder.WriteString("goal_event=")
+	builder.WriteString("exits=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Exits))
+	builder.WriteString(", ")
+	builder.WriteString("goal=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Goal))
+	builder.WriteString(", ")
+	builder.WriteString("entry_policy=")
+	builder.WriteString(fmt.Sprintf("%v", _m.EntryPolicy))
+	builder.WriteString(", ")
+	builder.WriteString("cooldown_seconds=")
+	builder.WriteString(fmt.Sprintf("%v", _m.CooldownSeconds))
+	builder.WriteString(", ")
+	if v := _m.EnrollmentKey; v != nil {
+		builder.WriteString("enrollment_key=")
 		builder.WriteString(*v)
 	}
 	builder.WriteByte(')')

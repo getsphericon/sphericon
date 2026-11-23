@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -46,7 +47,7 @@ func smsAutomation(t *testing.T, env *testhelper.TestEnv, steps ...automationste
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 	created, err := m.Create(ctx, s, automations.CreateInput{
-		Name: "Cart reminder", TriggerEvent: smsTrigger, ExitEvents: []string{}, Steps: new(automationstep.Root(steps...)),
+		Name: "Cart reminder", Trigger: eventmatcher.Matcher{Action: smsTrigger}, ExitEvents: []eventmatcher.Matcher{}, Steps: new(automationstep.Root(steps...)),
 	})
 	require.NoError(t, err)
 	_, err = m.Publish(ctx, s, created.ID, testhelper.AutomationRevisionIn(ctx, t, s, created.ID))

@@ -45,6 +45,12 @@ type EvaluateRulesWorker struct {
 	mod *rules.Module
 }
 
+// NewEvaluateRulesWorker builds the worker that hands an Event of a Contact to the Rules
+// (rules.Module.Evaluate) over the raw client the job entry point scopes from.
+func NewEvaluateRulesWorker(client *ent.Client, mod *rules.Module) *EvaluateRulesWorker {
+	return &EvaluateRulesWorker{ent: client, mod: mod}
+}
+
 func (w *EvaluateRulesWorker) Work(ctx context.Context, job *river.Job[EvaluateRulesArgs]) error {
 	// Job entry point (ADR 0017): the scope is built from the loaded Contact's Workspace, not
 	// from the job argument.
@@ -78,6 +84,12 @@ type RunRuleActionsWorker struct {
 	runners rules.ActionRunners
 }
 
+// NewRunRuleActionsWorker builds the worker that runs a Firing's Actions (rules.Module.RunActions)
+// through runners (RuleActionRunners).
+func NewRunRuleActionsWorker(client *ent.Client, mod *rules.Module, runners rules.ActionRunners) *RunRuleActionsWorker {
+	return &RunRuleActionsWorker{ent: client, mod: mod, runners: runners}
+}
+
 func (w *RunRuleActionsWorker) Work(ctx context.Context, job *river.Job[rules.ActionsArgs]) error {
 	// Job entry point (ADR 0017): the scope is built from the Workspace of the loaded Firing.
 	f, err := w.ent.RuleFiring.Get(ctx, job.Args.FiringID)
@@ -101,21 +113,26 @@ func RuleActionRunners(mod *outboundmessages.Module, tagging *contacts.Module, s
 }
 
 // enrollAction enrolls the Contact in an Automation through the same Enrollment an Automation's
-// trigger uses: once ever, fenced (ADR 0046), beginning when the Event the Rule fired on occurred
-// (automations.StepExecution.EnrollOnRule). The Enrollment decides under its lock whether the
-// Automation may enroll anybody; its refusal ends the Action (actionResult). A Contact already
-// enrolled is Skipped, not Failed. The Enrollment and the job that starts stepping it commit
-// together, so a retry never finds an enrolled Contact whose run never started.
+// trigger uses: by its entry checks and Entry policy, fenced (ADR 0046, ADR 0127), beginning when
+// the Event the Rule fired on occurred (automations.StepExecution.EnrollOnRule). The Enrollment
+// decides under its lock whether the Automation may enroll anybody; its refusal ends the Action
+// (actionResult). An entry the checks refuse is Skipped, not Failed, naming the reason they
+// recorded, and so is a Firing run again whose Enrollment is there already. The Enrollment and the
+// job that starts stepping it commit together, so a retry never finds an enrolled Contact whose run
+// never started.
 type enrollAction struct {
 	steps *automations.StepExecution
 }
 
 func (a enrollAction) Run(ctx context.Context, s *ent.Scoped, in rules.ActionInput) (rules.Result, error) {
-	enrolled, err := a.steps.EnrollOnRule(ctx, s, automations.EnrollOnRuleInput{
-		AutomationID: in.Action.AutomationID, ContactID: in.ContactID, SourceID: in.Firing.SourceID,
+	// The Automations the chain of the Event the Rule fired on passed through ride in the job's
+	// metadata (events.JobCorrelation): the entry skips one that names the Automation (ADR 0127).
+	made, err := a.steps.EnrollOnRule(ctx, s, automations.EnrollOnRuleInput{
+		AutomationID: in.Action.AutomationID, ContactID: in.ContactID, FiringID: in.Firing.ID, SourceID: in.Firing.SourceID,
+		Chain: events.AutomationsOf(ctx),
 	})
-	if err == nil && !enrolled {
-		return rules.Result{Status: rules.Skipped, Detail: "the contact is already enrolled"}, nil
+	if err == nil && !made.Enrolled {
+		return rules.Result{Status: rules.Skipped, Detail: made.SkipDetail()}, nil
 	}
 	return actionResult(err)
 }

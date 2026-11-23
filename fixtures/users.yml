@@ -452,3 +452,12 @@
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
   email_proven_at: '2026-01-01 00:00:00'
+# Halcyon's owner, whose Connections the send-lock tests write through (ADR 0132).
+- id: 9900 # fixture: HalcyonOwnerHal
+  name: Hal
+  email: hal@halcyon.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+  email_proven_at: '2026-01-01 00:00:00'

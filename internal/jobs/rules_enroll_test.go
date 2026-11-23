@@ -64,7 +64,7 @@ func TestAnAutomationDeactivatedAfterTheRuleJobsCheckEnrollsNobody(t *testing.T)
 	made, err := testhelper.Module[*automations.StepExecution](env).EnrollOnRule(ctx, s, automations.EnrollOnRuleInput{AutomationID: fixtures.AutomationJobsGreetingID, ContactID: fixtures.ContactBobID, SourceID: "evt-deactivated"})
 
 	require.ErrorIs(t, err, automations.ErrInactive)
-	assert.False(t, made)
+	assert.False(t, made.Enrolled)
 	enrolled := env.DB.AutomationRun.Query().
 		Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID), automationrun.ContactID(fixtures.ContactBobID)).
 		ExistX(ctx)
@@ -78,12 +78,14 @@ func TestRuleActionSkipsAContactAlreadyEnrolled(t *testing.T) {
 	}
 	before := greeting()
 
-	// Carol was enrolled in the greeting before: it is once ever, even though that run is over.
+	// Carol was enrolled in the greeting before: under `once` it enrolls her once, even though that
+	// run is over, and the result names the reason the entry checks recorded.
 	f := runFiring(t, env, fixtures.RuleFiringEnrollGreetingCarolID)
 
 	res := resultsOf(t, f)
 	require.Len(t, res, 1)
 	assert.Equal(t, rules.Skipped, res[0].Status)
+	assert.Equal(t, "the entry was skipped: once", res[0].Detail)
 	assert.Equal(t, before, greeting())
 	assert.Empty(t, env.JobsOf(t, jobkind.RunStep.Kind))
 }

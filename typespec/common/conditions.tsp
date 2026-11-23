@@ -316,6 +316,19 @@ model PropertyLeafOf<Of, Test> {
   test: Test;
 }
 
+/** A test of one property of the Event or line a filter is about, its key in a field of its own,
+ * so a key holding a dot is one key. It names no subject: a filter tests the one object it is
+ * about. */
+model FilterPropertyLeafOf<Test> {
+  kind: "property";
+
+  /** The property's key */
+  key: string;
+
+  /** What it asks of the property's value */
+  test: Test;
+}
+
 model AttributeLeaf is AttributeLeafOf<AttributeTest>;
 model AttributeLeafInput is AttributeLeafOf<AttributeTestInput>;
 model BirthdayLeaf is BirthdayLeafOf<BirthdayTest>;
@@ -331,6 +344,8 @@ model RulePropertyLeafInput is PropertyLeafOf<
   RulePropertySourceInput,
   PropertyTestInput
 >;
+model FilterPropertyLeaf is FilterPropertyLeafOf<PropertyTest>;
+model FilterPropertyLeafInput is FilterPropertyLeafOf<PropertyTestInput>;
 
 /** A group of a Condition: its entries combined with and/or, optionally negated. An empty group
  * matches every Contact (an empty negated group matches none). */
@@ -419,6 +434,30 @@ model RuleCondition is ConditionOf<RuleConditionNode>;
 
 /** A Rule's Condition: the tree of tests the Contact and the Event that fired the Rule match */
 model RuleConditionInput is ConditionOf<RuleConditionNodeInput>;
+
+/** An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is
+ * about, or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133). */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union EventFilterNode {
+  group: EventFilter,
+  property: FilterPropertyLeaf,
+}
+
+/** An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is
+ * about, or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133). */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union EventFilterNodeInput {
+  group: EventFilterInput,
+  property: FilterPropertyLeafInput,
+}
+
+/** An Event matcher's filter (ADR 0133): the tests of the Event's own properties it holds. A
+ * property the Event lacks, or holds with another type, fails its test, so a `not` over it holds. */
+model EventFilter is ConditionOf<EventFilterNode>;
+
+/** An Event matcher's filter (ADR 0133): the tests of the Event's own properties it holds. A
+ * property the Event lacks, or holds with another type, fails its test, so a `not` over it holds. */
+model EventFilterInput is ConditionOf<EventFilterNodeInput>;
 
 /** The tests a Condition's Custom field test takes on a field of one type, each with the
  * operators it takes there; an empty list is a test the type does not take */

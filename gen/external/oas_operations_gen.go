@@ -95,6 +95,7 @@ const (
 	SendingDomainsListOperation        OperationName = "SendingDomainsList"
 	SendingDomainsUpdateOperation      OperationName = "SendingDomainsUpdate"
 	SendingDomainsVerifyOperation      OperationName = "SendingDomainsVerify"
+	SkippedEntriesListOperation        OperationName = "SkippedEntriesList"
 	SmsConsentsGetOperation            OperationName = "SmsConsentsGet"
 	SuppressionsCreateOperation        OperationName = "SuppressionsCreate"
 	TagsApplyOperation                 OperationName = "TagsApply"

@@ -51,7 +51,7 @@ func TestAnAutomationTriggeredByAnSMSOptOutEnrollsItsContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	account := env.AcmeTwilio(t)
-	env.DB.AutomationVersion.UpdateOneID(fixtures.AutomationOnSmsUndeliveredVersionID).SetTriggerEvent(systemevent.SmsUnsubscribed).ExecX(ctx)
+	env.DB.AutomationVersion.UpdateOneID(fixtures.AutomationOnSmsUndeliveredVersionID).SetTriggerAction(systemevent.SmsUnsubscribed).ExecX(ctx)
 	textIn(t, env, account, "SM0402", fixtures.ContactTexterPhone, "STOP")
 	onlyEnvelope(t, env, systemevent.SmsUnsubscribed)
 	triggers := triggersOn(t, env, systemevent.SmsUnsubscribed)

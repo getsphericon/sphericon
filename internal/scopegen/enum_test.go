@@ -93,6 +93,8 @@ func TestGenerateConditionKindsListsWhatEachUnionAdmitsInItsOrder(t *testing.T) 
 	  "discriminator":{"propertyName":"kind","mapping":{"tag":"#/components/schemas/TagLeaf","group":"#/components/schemas/SegmentCondition"}}},
 	 "RuleConditionNode":{"oneOf":[{"$ref":"#/components/schemas/RuleCondition"},{"$ref":"#/components/schemas/TagLeaf"},{"$ref":"#/components/schemas/RulePropertyLeaf"}],
 	  "discriminator":{"propertyName":"kind","mapping":{"property":"#/components/schemas/RulePropertyLeaf","tag":"#/components/schemas/TagLeaf","group":"#/components/schemas/RuleCondition"}}},
+	 "EventFilterNode":{"oneOf":[{"$ref":"#/components/schemas/EventFilter"},{"$ref":"#/components/schemas/EventPropertyLeaf"}],
+	  "discriminator":{"propertyName":"kind","mapping":{"property":"#/components/schemas/EventPropertyLeaf","group":"#/components/schemas/EventFilter"}}},
 	 "AttributeTest":{"oneOf":[{"$ref":"#/components/schemas/TextTest"}],"discriminator":{"propertyName":"kind","mapping":{"text":"#/components/schemas/TextTest"}}},
 	 "BirthdayTest":{"oneOf":[{"$ref":"#/components/schemas/WithinLastTest"}],"discriminator":{"propertyName":"kind","mapping":{"withinLast":"#/components/schemas/WithinLastTest"}}},
 	 "CustomFieldTest":{"oneOf":[{"$ref":"#/components/schemas/TextTest"},{"$ref":"#/components/schemas/WithinLastTest"}],
@@ -108,6 +110,7 @@ func TestGenerateConditionKindsListsWhatEachUnionAdmitsInItsOrder(t *testing.T) 
 	require.Regexp(t, `KindProperty\s+Kind = "property"`, out)
 	require.Regexp(t, `var SegmentKinds = \[\]Kind\{\s+KindGroup,\s+KindTag,\s+\}`, out)
 	require.Regexp(t, `var RuleKinds = \[\]Kind\{\s+KindGroup,\s+KindTag,\s+KindProperty,\s+\}`, out)
+	require.Regexp(t, `var EventFilterKinds = \[\]Kind\{\s+KindGroup,\s+KindProperty,\s+\}`, out)
 	require.Regexp(t, `var CustomFieldTests = \[\]TestKind\{\s+TestText,\s+TestWithinLast,\s+\}`, out)
 	require.Regexp(t, `var RuleSources = \[\]Source\{\s+SourceTrigger,\s+\}`, out)
 }

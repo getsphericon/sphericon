@@ -170,8 +170,8 @@ _Avoid_: Alias, merge, reconcile
 
 **Event**:
 An append-only record that something happened (an `action`, optional properties, at a time).
-What happened never changes: its action, its time and whether it was a Backfill or Machine
-engagement are fixed when it is recorded. Who it was about may: it is attached to a Contact by
+What happened never changes: its action, its time and whether it was a Backfill, Machine
+engagement or written through a Connection without `mcp:send` are fixed when it is recorded. Who it was about may: it is attached to a Contact by
 **stable identity resolved at ingest** — not by email — and carries denormalized identity
 snapshot fields for debugging; **Identify** later stitches an anonymous Event onto its Contact,
 and **Erasure** strips the identity and the personal data from the Events it keeps. The link is a
@@ -342,8 +342,8 @@ A workspace-scoped, stateless reaction: when any of its **Trigger events** is re
 Contact and the Rule's Condition holds for that Contact and Event, its Actions run at once, in
 order. No delay, no Enrollment and no message to a Contact; those belong to an Automation. Fires on every
 matching Event, only going forward, and at most once per Event (a **Firing** records what ran).
-An Event with no Contact, a machine Event, and an Event caused by a Rule's own Action trigger no
-Rule. Actions: apply Tag, remove Tag, **Set field**, HTTP call, **Enroll** in an Automation and
+An Event with no Contact, a machine Event, an Event caused by a Rule's own Action, and an Event
+written through a Connection without `mcp:send` (which enrolls no one either) trigger no Rule. Actions: apply Tag, remove Tag, **Set field**, HTTP call, **Enroll** in an Automation and
 **Notify**, the same as an Automation's Steps of those kinds. What it does is
 its live **Rule version**; an edit writes a draft, and only **Publish** makes it live.
 _Avoid_: Workflow, flow, hook, automation (an Automation is sequential and stateful)
@@ -991,6 +991,15 @@ Enrollment has ended, after a cooldown counted from its beginning, one hour at l
 Contact has one active Enrollment at a time, or one per value of the version's **Enrollment key**, and
 an entry caused by a chain that passed through the same Automation is skipped.
 _Avoid_: Re-entry setting, frequency, recurrence (that is a date Trigger's)
+
+**Skipped entry**:
+An entry into an Automation that its entry checks refused, recorded with the Contact, the triggering
+Event or the Rule Firing that tried, the reason (an active Enrollment at the Event's moment, `once`,
+and the reasons of the Entry policy) and the moment it would have begun. One per Automation and
+Event (or Firing); kept as long as the analytical Events and erased with its Contact. The
+Automation report counts them by reason. An Event its Trigger's filter misses is no entry and is not
+recorded.
+_Avoid_: Rejected enrollment, failed entry, skipped send (that is a send step's)
 
 **Enrollment key**:
 A property of an Automation version's Trigger Event (`order_id`) by whose value a Contact may have

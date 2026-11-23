@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
@@ -124,6 +125,60 @@ func (_c *AutomationRunCreate) SetNillableEventAction(v *string) *AutomationRunC
 // SetEventProperties sets the "event_properties" field.
 func (_c *AutomationRunCreate) SetEventProperties(v map[string]interface{}) *AutomationRunCreate {
 	_c.mutation.SetEventProperties(v)
+	return _c
+}
+
+// SetTriggerSourceID sets the "trigger_source_id" field.
+func (_c *AutomationRunCreate) SetTriggerSourceID(v string) *AutomationRunCreate {
+	_c.mutation.SetTriggerSourceID(v)
+	return _c
+}
+
+// SetNillableTriggerSourceID sets the "trigger_source_id" field if the given value is not nil.
+func (_c *AutomationRunCreate) SetNillableTriggerSourceID(v *string) *AutomationRunCreate {
+	if v != nil {
+		_c.SetTriggerSourceID(*v)
+	}
+	return _c
+}
+
+// SetFiringID sets the "firing_id" field.
+func (_c *AutomationRunCreate) SetFiringID(v int64) *AutomationRunCreate {
+	_c.mutation.SetFiringID(v)
+	return _c
+}
+
+// SetNillableFiringID sets the "firing_id" field if the given value is not nil.
+func (_c *AutomationRunCreate) SetNillableFiringID(v *int64) *AutomationRunCreate {
+	if v != nil {
+		_c.SetFiringID(*v)
+	}
+	return _c
+}
+
+// SetChain sets the "chain" field.
+func (_c *AutomationRunCreate) SetChain(v []int64) *AutomationRunCreate {
+	_c.mutation.SetChain(v)
+	return _c
+}
+
+// SetOrdinal sets the "ordinal" field.
+func (_c *AutomationRunCreate) SetOrdinal(v int) *AutomationRunCreate {
+	_c.mutation.SetOrdinal(v)
+	return _c
+}
+
+// SetKeyValue sets the "key_value" field.
+func (_c *AutomationRunCreate) SetKeyValue(v string) *AutomationRunCreate {
+	_c.mutation.SetKeyValue(v)
+	return _c
+}
+
+// SetNillableKeyValue sets the "key_value" field if the given value is not nil.
+func (_c *AutomationRunCreate) SetNillableKeyValue(v *string) *AutomationRunCreate {
+	if v != nil {
+		_c.SetKeyValue(*v)
+	}
 	return _c
 }
 
@@ -237,6 +292,11 @@ func (_c *AutomationRunCreate) SetContact(v *Contact) *AutomationRunCreate {
 	return _c.SetContactID(v.ID)
 }
 
+// SetFiring sets the "firing" edge to the RuleFiring entity.
+func (_c *AutomationRunCreate) SetFiring(v *RuleFiring) *AutomationRunCreate {
+	return _c.SetFiringID(v.ID)
+}
+
 // Mutation returns the AutomationRunMutation object of the builder.
 func (_c *AutomationRunCreate) Mutation() *AutomationRunMutation {
 	return _c.mutation
@@ -288,6 +348,10 @@ func (_c *AutomationRunCreate) defaults() {
 		v := automationrun.DefaultBeganAt()
 		_c.mutation.SetBeganAt(v)
 	}
+	if _, ok := _c.mutation.Chain(); !ok {
+		v := automationrun.DefaultChain
+		_c.mutation.SetChain(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -320,6 +384,12 @@ func (_c *AutomationRunCreate) check() error {
 	}
 	if _, ok := _c.mutation.BeganAt(); !ok {
 		return &ValidationError{Name: "began_at", err: errors.New(`ent: missing required field "AutomationRun.began_at"`)}
+	}
+	if _, ok := _c.mutation.Chain(); !ok {
+		return &ValidationError{Name: "chain", err: errors.New(`ent: missing required field "AutomationRun.chain"`)}
+	}
+	if _, ok := _c.mutation.Ordinal(); !ok {
+		return &ValidationError{Name: "ordinal", err: errors.New(`ent: missing required field "AutomationRun.ordinal"`)}
 	}
 	if v, ok := _c.mutation.FailureKind(); ok {
 		if err := automationrun.FailureKindValidator(v); err != nil {
@@ -394,6 +464,22 @@ func (_c *AutomationRunCreate) createSpec() (*AutomationRun, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.EventProperties(); ok {
 		_spec.SetField(automationrun.FieldEventProperties, field.TypeJSON, value)
 		_node.EventProperties = value
+	}
+	if value, ok := _c.mutation.TriggerSourceID(); ok {
+		_spec.SetField(automationrun.FieldTriggerSourceID, field.TypeString, value)
+		_node.TriggerSourceID = &value
+	}
+	if value, ok := _c.mutation.Chain(); ok {
+		_spec.SetField(automationrun.FieldChain, field.TypeJSON, value)
+		_node.Chain = value
+	}
+	if value, ok := _c.mutation.Ordinal(); ok {
+		_spec.SetField(automationrun.FieldOrdinal, field.TypeInt, value)
+		_node.Ordinal = value
+	}
+	if value, ok := _c.mutation.KeyValue(); ok {
+		_spec.SetField(automationrun.FieldKeyValue, field.TypeString, value)
+		_node.KeyValue = &value
 	}
 	if value, ok := _c.mutation.EndedAt(); ok {
 		_spec.SetField(automationrun.FieldEndedAt, field.TypeTime, value)
@@ -485,6 +571,23 @@ func (_c *AutomationRunCreate) createSpec() (*AutomationRun, *sqlgraph.CreateSpe
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.ContactID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.FiringIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   automationrun.FiringTable,
+			Columns: []string{automationrun.FiringColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(rulefiring.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.FiringID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -753,6 +856,21 @@ func (u *AutomationRunUpsertOne) UpdateNewValues() *AutomationRunUpsertOne {
 		}
 		if _, exists := u.create.mutation.EventProperties(); exists {
 			s.SetIgnore(automationrun.FieldEventProperties)
+		}
+		if _, exists := u.create.mutation.TriggerSourceID(); exists {
+			s.SetIgnore(automationrun.FieldTriggerSourceID)
+		}
+		if _, exists := u.create.mutation.FiringID(); exists {
+			s.SetIgnore(automationrun.FieldFiringID)
+		}
+		if _, exists := u.create.mutation.Chain(); exists {
+			s.SetIgnore(automationrun.FieldChain)
+		}
+		if _, exists := u.create.mutation.Ordinal(); exists {
+			s.SetIgnore(automationrun.FieldOrdinal)
+		}
+		if _, exists := u.create.mutation.KeyValue(); exists {
+			s.SetIgnore(automationrun.FieldKeyValue)
 		}
 	}))
 	return u
@@ -1195,6 +1313,21 @@ func (u *AutomationRunUpsertBulk) UpdateNewValues() *AutomationRunUpsertBulk {
 			}
 			if _, exists := b.mutation.EventProperties(); exists {
 				s.SetIgnore(automationrun.FieldEventProperties)
+			}
+			if _, exists := b.mutation.TriggerSourceID(); exists {
+				s.SetIgnore(automationrun.FieldTriggerSourceID)
+			}
+			if _, exists := b.mutation.FiringID(); exists {
+				s.SetIgnore(automationrun.FieldFiringID)
+			}
+			if _, exists := b.mutation.Chain(); exists {
+				s.SetIgnore(automationrun.FieldChain)
+			}
+			if _, exists := b.mutation.Ordinal(); exists {
+				s.SetIgnore(automationrun.FieldOrdinal)
+			}
+			if _, exists := b.mutation.KeyValue(); exists {
+				s.SetIgnore(automationrun.FieldKeyValue)
 			}
 		}
 	}))

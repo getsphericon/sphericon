@@ -9,6 +9,8 @@ import (
 	ent "github.com/getsphericon/sphericon/ent"
 	automation "github.com/getsphericon/sphericon/ent/automation"
 	automationrun "github.com/getsphericon/sphericon/ent/automationrun"
+	automationskippedentry "github.com/getsphericon/sphericon/ent/automationskippedentry"
+	automationversion "github.com/getsphericon/sphericon/ent/automationversion"
 	broadcast "github.com/getsphericon/sphericon/ent/broadcast"
 	capturedmessage "github.com/getsphericon/sphericon/ent/capturedmessage"
 	confirmation "github.com/getsphericon/sphericon/ent/confirmation"
@@ -149,6 +151,8 @@ func (c *ConverterImpl) AutomationPeriodResultsToResource(source automations.Per
 	externalapiAutomationPeriodResults.Failed = count(source.ResultCounts.Failed)
 	externalapiAutomationPeriodResults.From = source.From
 	externalapiAutomationPeriodResults.To = source.To
+	externalapiAutomationPeriodResults.Contacts = count(source.Contacts)
+	externalapiAutomationPeriodResults.Skipped = c.automationsSkippedCountsToExternalapiAutomationSkippedCounts(source.Skipped)
 	externalapiAutomationPeriodResults.AverageDurationSeconds = durationSeconds(source.AverageDuration)
 	externalapiAutomationPeriodResults.Revenue = c.MessageRevenueToResource(source.Revenue)
 	return externalapiAutomationPeriodResults
@@ -262,14 +266,21 @@ func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersio
 	var externalapiAutomationVersion external.AutomationVersion
 	if source != nil {
 		externalapiAutomationVersion.Number = count((*source).Version)
-		externalapiAutomationVersion.TriggerEvent = (*source).TriggerEvent
-		if (*source).ExitEvents != nil {
-			externalapiAutomationVersion.ExitEvents = make([]string, len((*source).ExitEvents))
-			for i := 0; i < len((*source).ExitEvents); i++ {
-				externalapiAutomationVersion.ExitEvents[i] = (*source).ExitEvents[i]
-			}
+		externalapiAutomationTrigger, err := automationTrigger(c, source)
+		if err != nil {
+			return externalapiAutomationVersion, err
 		}
-		externalapiAutomationVersion.GoalEvent = nilString((*source).GoalEvent)
+		externalapiAutomationVersion.Trigger = externalapiAutomationTrigger
+		externalapiEventMatcherList, err := automationExits(source)
+		if err != nil {
+			return externalapiAutomationVersion, err
+		}
+		externalapiAutomationVersion.ExitEvents = externalapiEventMatcherList
+		externalapiNilEventMatcher, err := automationGoal((*source).Goal)
+		if err != nil {
+			return externalapiAutomationVersion, err
+		}
+		externalapiAutomationVersion.GoalEvent = externalapiNilEventMatcher
 		externalapiAutomationPath, err := automationPath(c, (*source).Steps)
 		if err != nil {
 			return externalapiAutomationVersion, err
@@ -865,6 +876,8 @@ func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) external
 		externalapiEnrollmentResource.AutomationId = external.EntityId((*source).AutomationID)
 		externalapiEnrollmentResource.ContactId = external.EntityId((*source).ContactID)
 		externalapiEnrollmentResource.Status = c.EnrollmentStatusToResource((*source).Status)
+		externalapiEnrollmentResource.Ordinal = count((*source).Ordinal)
+		externalapiEnrollmentResource.KeyValue = optString((*source).KeyValue)
 		externalapiEnrollmentResource.CurrentStepId = optStepID((*source).CurrentStepID)
 		externalapiEnrollmentResource.ResumeAt = optTimestamp((*source).ResumeAt)
 		externalapiEnrollmentResource.Failure = enrollmentFailure(c, (*source))
@@ -889,6 +902,19 @@ func (c *ConverterImpl) EnrollmentsToResources(source []*ent.AutomationRun) []ex
 		externalapiEnrollmentResourceList[i] = c.EnrollmentToResource(source[i])
 	}
 	return externalapiEnrollmentResourceList
+}
+func (c *ConverterImpl) EntryPolicyToResource(source automationversion.EntryPolicy) external.EntryPolicy {
+	var externalapiEntryPolicy external.EntryPolicy
+	switch source {
+	case automationversion.DefaultEntryPolicy:
+		externalapiEntryPolicy = external.EntryPolicyOnce
+	case automationversion.EntryPolicyAgain:
+		externalapiEntryPolicy = external.EntryPolicyAgain
+	// Skipped EntryPolicyOnce(once) -> EntryPolicyOnce(once) because it duplicates DefaultEntryPolicy(once) -> EntryPolicyOnce(once)
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiEntryPolicy
 }
 func (c *ConverterImpl) EventActionsListPage(source pagination.Page[string]) *external.EventActionsListOK {
 	var externalapiEventActionsListOK external.EventActionsListOK
@@ -1521,6 +1547,52 @@ func (c *ConverterImpl) SesConfigToResource(source integrations.RedactedSES) ext
 	externalapiSesConfig.ConfigurationSetMissing = source.ConfigurationSetMissing
 	return externalapiSesConfig
 }
+func (c *ConverterImpl) SkippedEntriesListPage(source pagination.Page[*ent.AutomationSkippedEntry]) *external.SkippedEntriesListOK {
+	var externalapiSkippedEntriesListOK external.SkippedEntriesListOK
+	externalapiSkippedEntriesListOK.Items = make([]external.SkippedEntryResource, len(source.Items))
+	for i := 0; i < len(source.Items); i++ {
+		externalapiSkippedEntriesListOK.Items[i] = c.SkippedEntryToResource(source.Items[i])
+	}
+	externalapiSkippedEntriesListOK.Page = count(source.Page)
+	externalapiSkippedEntriesListOK.PageSize = count(source.PageSize)
+	externalapiSkippedEntriesListOK.TotalItems = count(source.TotalItems)
+	externalapiSkippedEntriesListOK.TotalPages = count(source.TotalPages)
+	return &externalapiSkippedEntriesListOK
+}
+func (c *ConverterImpl) SkippedEntryReasonToResource(source automationskippedentry.Reason) external.SkippedEntryReason {
+	var externalapiSkippedEntryReason external.SkippedEntryReason
+	switch source {
+	case automationskippedentry.ReasonActiveEnrollment:
+		externalapiSkippedEntryReason = external.SkippedEntryReasonActiveEnrollment
+	case automationskippedentry.ReasonCooldown:
+		externalapiSkippedEntryReason = external.SkippedEntryReasonCooldown
+	case automationskippedentry.ReasonCycle:
+		externalapiSkippedEntryReason = external.SkippedEntryReasonCycle
+	case automationskippedentry.ReasonEnrollmentCeiling:
+		externalapiSkippedEntryReason = external.SkippedEntryReasonEnrollmentCeiling
+	case automationskippedentry.ReasonNoEnrollmentKey:
+		externalapiSkippedEntryReason = external.SkippedEntryReasonNoEnrollmentKey
+	case automationskippedentry.ReasonOnce:
+		externalapiSkippedEntryReason = external.SkippedEntryReasonOnce
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiSkippedEntryReason
+}
+func (c *ConverterImpl) SkippedEntryToResource(source *ent.AutomationSkippedEntry) external.SkippedEntryResource {
+	var externalapiSkippedEntryResource external.SkippedEntryResource
+	if source != nil {
+		externalapiSkippedEntryResource.ID = external.EntityId((*source).ID)
+		externalapiSkippedEntryResource.AutomationId = external.EntityId((*source).AutomationID)
+		externalapiSkippedEntryResource.ContactId = external.EntityId((*source).ContactID)
+		externalapiSkippedEntryResource.Reason = c.SkippedEntryReasonToResource((*source).Reason)
+		externalapiSkippedEntryResource.EventSourceId = optString((*source).SourceID)
+		externalapiSkippedEntryResource.FiringId = optEntityID((*source).FiringID)
+		externalapiSkippedEntryResource.OccurredAt = timestamp((*source).OccurredAt)
+		externalapiSkippedEntryResource.CreatedAt = timestamp((*source).CreatedAt)
+	}
+	return externalapiSkippedEntryResource
+}
 func (c *ConverterImpl) SkippedReasonToResource(source skipreason.Reason) external.SkippedReason {
 	var externalapiSkippedReason external.SkippedReason
 	switch source {
@@ -1980,6 +2052,16 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) external.Work
 		externalapiWorkspaceResource.Revision = revision((*source).Revision)
 	}
 	return externalapiWorkspaceResource
+}
+func (c *ConverterImpl) automationsSkippedCountsToExternalapiAutomationSkippedCounts(source automations.SkippedCounts) external.AutomationSkippedCounts {
+	var externalapiAutomationSkippedCounts external.AutomationSkippedCounts
+	externalapiAutomationSkippedCounts.Cycle = count(source.Cycle)
+	externalapiAutomationSkippedCounts.ActiveEnrollment = count(source.ActiveEnrollment)
+	externalapiAutomationSkippedCounts.Once = count(source.Once)
+	externalapiAutomationSkippedCounts.Cooldown = count(source.Cooldown)
+	externalapiAutomationSkippedCounts.NoEnrollmentKey = count(source.NoEnrollmentKey)
+	externalapiAutomationSkippedCounts.EnrollmentCeiling = count(source.EnrollmentCeiling)
+	return externalapiAutomationSkippedCounts
 }
 func (c *ConverterImpl) automationsStepFiguresToExternalapiAutomationStepFigures(source automations.StepFigures) external.AutomationStepFigures {
 	var externalapiAutomationStepFigures external.AutomationStepFigures

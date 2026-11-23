@@ -99,6 +99,36 @@ const (
 	AutomationHTTPExecutionName = "HTTP execution"
 	// AutomationHTTPExecutionVersionID is from fixtures/automation_versions.
 	AutomationHTTPExecutionVersionID = 5580
+	// AutomationHalcyonCourseID is from fixtures/automations.
+	AutomationHalcyonCourseID = 9904
+	// AutomationHalcyonCourseName is from fixtures/automations.
+	AutomationHalcyonCourseName = "Course"
+	// AutomationHalcyonCourseVersionID is from fixtures/automation_versions.
+	AutomationHalcyonCourseVersionID = 9904
+	// AutomationHalcyonOnCreatedID is from fixtures/automations.
+	AutomationHalcyonOnCreatedID = 9903
+	// AutomationHalcyonOnCreatedName is from fixtures/automations.
+	AutomationHalcyonOnCreatedName = "On contact created"
+	// AutomationHalcyonOnCreatedVersionID is from fixtures/automation_versions.
+	AutomationHalcyonOnCreatedVersionID = 9903
+	// AutomationHalcyonOnFieldChangedID is from fixtures/automations.
+	AutomationHalcyonOnFieldChangedID = 9902
+	// AutomationHalcyonOnFieldChangedName is from fixtures/automations.
+	AutomationHalcyonOnFieldChangedName = "On contact field changed"
+	// AutomationHalcyonOnFieldChangedVersionID is from fixtures/automation_versions.
+	AutomationHalcyonOnFieldChangedVersionID = 9902
+	// AutomationHalcyonOnSignalID is from fixtures/automations.
+	AutomationHalcyonOnSignalID = 9900
+	// AutomationHalcyonOnSignalName is from fixtures/automations.
+	AutomationHalcyonOnSignalName = "On agent signal"
+	// AutomationHalcyonOnSignalVersionID is from fixtures/automation_versions.
+	AutomationHalcyonOnSignalVersionID = 9900
+	// AutomationHalcyonOnTaggedID is from fixtures/automations.
+	AutomationHalcyonOnTaggedID = 9901
+	// AutomationHalcyonOnTaggedName is from fixtures/automations.
+	AutomationHalcyonOnTaggedName = "On contact tagged"
+	// AutomationHalcyonOnTaggedVersionID is from fixtures/automation_versions.
+	AutomationHalcyonOnTaggedVersionID = 9901
 	// AutomationHoldDemoID is from fixtures/automations.
 	AutomationHoldDemoID = 103
 	// AutomationHoldDemoName is from fixtures/automations.
@@ -463,6 +493,60 @@ const (
 	AutomationOnboardingDripVersion1ID = 106
 	// AutomationOnboardingDripVersion2ID is from fixtures/automation_versions.
 	AutomationOnboardingDripVersion2ID = 1060
+	// AutomationOrderSeriesID is from fixtures/automations.
+	AutomationOrderSeriesID = 15550
+	// AutomationOrderSeriesName is from fixtures/automations.
+	AutomationOrderSeriesName = "Order series"
+	// AutomationOrderSeriesVersionID is from fixtures/automation_versions.
+	AutomationOrderSeriesVersionID = 15550
+	// AutomationOuroborosGoalID is from fixtures/automations.
+	AutomationOuroborosGoalID = 15537
+	// AutomationOuroborosGoalName is from fixtures/automations.
+	AutomationOuroborosGoalName = "Goal"
+	// AutomationOuroborosGoalVersionID is from fixtures/automation_versions.
+	AutomationOuroborosGoalVersionID = 15537
+	// AutomationOuroborosOnClickID is from fixtures/automations.
+	AutomationOuroborosOnClickID = 15536
+	// AutomationOuroborosOnClickName is from fixtures/automations.
+	AutomationOuroborosOnClickName = "On a click"
+	// AutomationOuroborosOnClickVersionID is from fixtures/automation_versions.
+	AutomationOuroborosOnClickVersionID = 15536
+	// AutomationOuroborosOnCompletedID is from fixtures/automations.
+	AutomationOuroborosOnCompletedID = 15535
+	// AutomationOuroborosOnCompletedName is from fixtures/automations.
+	AutomationOuroborosOnCompletedName = "On a completion"
+	// AutomationOuroborosOnCompletedVersionID is from fixtures/automation_versions.
+	AutomationOuroborosOnCompletedVersionID = 15535
+	// AutomationOuroborosSelfTaggerID is from fixtures/automations.
+	AutomationOuroborosSelfTaggerID = 15533
+	// AutomationOuroborosSelfTaggerName is from fixtures/automations.
+	AutomationOuroborosSelfTaggerName = "Tag self on tag"
+	// AutomationOuroborosSelfTaggerVersionID is from fixtures/automation_versions.
+	AutomationOuroborosSelfTaggerVersionID = 15533
+	// AutomationOuroborosStarterID is from fixtures/automations.
+	AutomationOuroborosStarterID = 15534
+	// AutomationOuroborosStarterName is from fixtures/automations.
+	AutomationOuroborosStarterName = "Start"
+	// AutomationOuroborosStarterVersionID is from fixtures/automation_versions.
+	AutomationOuroborosStarterVersionID = 15534
+	// AutomationOuroborosTagRingID is from fixtures/automations.
+	AutomationOuroborosTagRingID = 15531
+	// AutomationOuroborosTagRingName is from fixtures/automations.
+	AutomationOuroborosTagRingName = "Tag ring on untag"
+	// AutomationOuroborosTagRingVersionID is from fixtures/automation_versions.
+	AutomationOuroborosTagRingVersionID = 15531
+	// AutomationOuroborosUntagRingID is from fixtures/automations.
+	AutomationOuroborosUntagRingID = 15530
+	// AutomationOuroborosUntagRingName is from fixtures/automations.
+	AutomationOuroborosUntagRingName = "Untag ring on tag"
+	// AutomationOuroborosUntagRingVersionID is from fixtures/automation_versions.
+	AutomationOuroborosUntagRingVersionID = 15530
+	// AutomationOuroborosWaitThenUntagRingID is from fixtures/automations.
+	AutomationOuroborosWaitThenUntagRingID = 15532
+	// AutomationOuroborosWaitThenUntagRingName is from fixtures/automations.
+	AutomationOuroborosWaitThenUntagRingName = "Wait, then untag ring on tag"
+	// AutomationOuroborosWaitThenUntagRingVersionID is from fixtures/automation_versions.
+	AutomationOuroborosWaitThenUntagRingVersionID = 15532
 	// AutomationPaymentRecoveryID is from fixtures/automations.
 	AutomationPaymentRecoveryID = 108
 	// AutomationPaymentRecoveryName is from fixtures/automations.
@@ -499,6 +583,12 @@ const (
 	AutomationQuahogHookUnsignedVersionID = 7652
 	// AutomationQuahogHookVersionID is from fixtures/automation_versions.
 	AutomationQuahogHookVersionID = 7653
+	// AutomationRepeatPurchaseID is from fixtures/automations.
+	AutomationRepeatPurchaseID = 15540
+	// AutomationRepeatPurchaseName is from fixtures/automations.
+	AutomationRepeatPurchaseName = "Repeat purchase"
+	// AutomationRepeatPurchaseVersionID is from fixtures/automation_versions.
+	AutomationRepeatPurchaseVersionID = 15540
 	// AutomationRunArchivedErasableID is from fixtures/automation_runs.
 	AutomationRunArchivedErasableID = 3003
 	// AutomationRunBystanderHTTPFailedID is from fixtures/automation_runs.
@@ -513,6 +603,8 @@ const (
 	AutomationRunHTTPFailedID = 1101
 	// AutomationRunHTTPPendingID is from fixtures/automation_runs.
 	AutomationRunHTTPPendingID = 5580
+	// AutomationRunHalcyonCourseIdaID is from fixtures/automation_runs.
+	AutomationRunHalcyonCourseIdaID = 9900
 	// AutomationRunJobsBrokenTemplateID is from fixtures/automation_runs.
 	AutomationRunJobsBrokenTemplateID = 5568
 	// AutomationRunJobsEmailsThenTagAliceID is from fixtures/automation_runs.
@@ -607,6 +699,10 @@ const (
 	AutomationRunOnboardingOnVersion1ID = 1200
 	// AutomationRunOnboardingOnVersion2ID is from fixtures/automation_runs.
 	AutomationRunOnboardingOnVersion2ID = 1202
+	// AutomationRunOrderSeriesAID is from fixtures/automation_runs.
+	AutomationRunOrderSeriesAID = 15550
+	// AutomationRunOrderSeriesBID is from fixtures/automation_runs.
+	AutomationRunOrderSeriesBID = 15551
 	// AutomationRunQuahogHookEventID is from fixtures/automation_runs.
 	AutomationRunQuahogHookEventID = 7651
 	// AutomationRunQuahogHookID is from fixtures/automation_runs.
@@ -619,6 +715,10 @@ const (
 	AutomationRunQuahogHookUnsignedID = 7652
 	// AutomationRunRecoveryActiveID is from fixtures/automation_runs.
 	AutomationRunRecoveryActiveID = 7500
+	// AutomationRunRepeatPurchaseFirstID is from fixtures/automation_runs.
+	AutomationRunRepeatPurchaseFirstID = 15540
+	// AutomationRunRepeatPurchaseSecondID is from fixtures/automation_runs.
+	AutomationRunRepeatPurchaseSecondID = 15541
 	// AutomationRunTagOnEngagementAliceID is from fixtures/automation_runs.
 	AutomationRunTagOnEngagementAliceID = 1100
 	// AutomationRunWelcomeCompletedID is from fixtures/automation_runs.
@@ -1321,6 +1421,10 @@ const (
 	ContactGlobexReaderEmail = "reader@globex.test"
 	// ContactGlobexReaderID is from fixtures/contacts.
 	ContactGlobexReaderID = 901
+	// ContactHalcyonIdaEmail is from fixtures/contacts.
+	ContactHalcyonIdaEmail = "ida@halcyon.example"
+	// ContactHalcyonIdaID is from fixtures/contacts.
+	ContactHalcyonIdaID = 9900
 	// ContactHoldDemoEmail is from fixtures/contacts.
 	ContactHoldDemoEmail = "hold.demo@codebasics.dev"
 	// ContactHoldDemoID is from fixtures/contacts.
@@ -1423,6 +1527,14 @@ const (
 	ContactOptedOutOfWelcomeEmail = "leo.devops@codebasics.dev"
 	// ContactOptedOutOfWelcomeID is from fixtures/contacts.
 	ContactOptedOutOfWelcomeID = 128
+	// ContactOuroborosOttoEmail is from fixtures/contacts.
+	ContactOuroborosOttoEmail = "otto@ouroboros.example"
+	// ContactOuroborosOttoID is from fixtures/contacts.
+	ContactOuroborosOttoID = 15531
+	// ContactOuroborosUmaEmail is from fixtures/contacts.
+	ContactOuroborosUmaEmail = "uma@ouroboros.example"
+	// ContactOuroborosUmaID is from fixtures/contacts.
+	ContactOuroborosUmaID = 15530
 	// ContactPaidBeforeEnrolledEmail is from fixtures/contacts.
 	ContactPaidBeforeEnrolledEmail = "paid.early@codebasics.dev"
 	// ContactPaidBeforeEnrolledID is from fixtures/contacts.
@@ -1525,6 +1637,12 @@ const (
 	CustomFieldGlobexKey = "globex_only"
 	// CustomFieldGlobexName is from fixtures/custom_fields.
 	CustomFieldGlobexName = "Globex only"
+	// CustomFieldHalcyonMoodID is from fixtures/custom_fields.
+	CustomFieldHalcyonMoodID = 9900
+	// CustomFieldHalcyonMoodKey is from fixtures/custom_fields.
+	CustomFieldHalcyonMoodKey = "mood"
+	// CustomFieldHalcyonMoodName is from fixtures/custom_fields.
+	CustomFieldHalcyonMoodName = "Mood"
 	// CustomFieldInitrodeInjectionID is from fixtures/custom_fields.
 	CustomFieldInitrodeInjectionID = 5504
 	// CustomFieldInitrodeInjectionKey is from fixtures/custom_fields.
@@ -2121,6 +2239,24 @@ const (
 	GringottsPublicID = "GrngtW98"
 	// GringottsReeseMembershipID is from fixtures/memberships.
 	GringottsReeseMembershipID = 7955
+	// HalcyonCollectKey is from fixtures/workspaces.
+	HalcyonCollectKey = "omck_test_halcyon_collect_key"
+	// HalcyonHalMembershipID is from fixtures/memberships.
+	HalcyonHalMembershipID = 9900
+	// HalcyonID is from fixtures/workspaces.
+	HalcyonID = 99
+	// HalcyonName is from fixtures/workspaces.
+	HalcyonName = "Halcyon"
+	// HalcyonOwnerHalEmail is from fixtures/users.
+	HalcyonOwnerHalEmail = "hal@halcyon.test"
+	// HalcyonOwnerHalID is from fixtures/users.
+	HalcyonOwnerHalID = 9900
+	// HalcyonOwnerHalName is from fixtures/users.
+	HalcyonOwnerHalName = "Hal"
+	// HalcyonOwnerHalPassword is from fixtures/users.
+	HalcyonOwnerHalPassword = "password"
+	// HalcyonPublicID is from fixtures/workspaces.
+	HalcyonPublicID = "HalcnW99"
 	// HeldOrderEventAcmeEventID is from fixtures/held_order_events.
 	HeldOrderEventAcmeEventID = "fixture-held-event-1"
 	// HeldOrderEventAcmeID is from fixtures/held_order_events.
@@ -2973,6 +3109,14 @@ const (
 	OscorpName = "Oscorp"
 	// OscorpPublicID is from fixtures/workspaces.
 	OscorpPublicID = "OscorW57"
+	// OuroborosCollectKey is from fixtures/workspaces.
+	OuroborosCollectKey = "omck_test_ouroboros_collect_key"
+	// OuroborosID is from fixtures/workspaces.
+	OuroborosID = 1553
+	// OuroborosName is from fixtures/workspaces.
+	OuroborosName = "Ouroboros"
+	// OuroborosPublicID is from fixtures/workspaces.
+	OuroborosPublicID = "OuroW153"
 	// OutboundMessageAutomationComplainedDestination is from fixtures/outbound_messages.
 	OutboundMessageAutomationComplainedDestination = "bob.automation@example.com"
 	// OutboundMessageAutomationComplainedID is from fixtures/outbound_messages.
@@ -3419,6 +3563,12 @@ const (
 	RuleHTTPExecutionTwoActionsVersionID = 141
 	// RuleHTTPExecutionVersionID is from fixtures/rule_versions.
 	RuleHTTPExecutionVersionID = 140
+	// RuleHalcyonAgentWritesID is from fixtures/rules.
+	RuleHalcyonAgentWritesID = 9900
+	// RuleHalcyonAgentWritesName is from fixtures/rules.
+	RuleHalcyonAgentWritesName = "React to what is written"
+	// RuleHalcyonAgentWritesVersionID is from fixtures/rule_versions.
+	RuleHalcyonAgentWritesVersionID = 9900
 	// RuleInactiveID is from fixtures/rules.
 	RuleInactiveID = 102
 	// RuleInactiveName is from fixtures/rules.
@@ -3435,6 +3585,12 @@ const (
 	RuleNoActionsID = 7300
 	// RuleNoActionsName is from fixtures/rules.
 	RuleNoActionsName = "Draft with no actions"
+	// RuleOuroborosEnrollOnGoalID is from fixtures/rules.
+	RuleOuroborosEnrollOnGoalID = 15530
+	// RuleOuroborosEnrollOnGoalName is from fixtures/rules.
+	RuleOuroborosEnrollOnGoalName = "Enroll on a goal"
+	// RuleOuroborosEnrollOnGoalVersionID is from fixtures/rule_versions.
+	RuleOuroborosEnrollOnGoalVersionID = 15530
 	// RulePromotersID is from fixtures/rules.
 	RulePromotersID = 130
 	// RulePromotersName is from fixtures/rules.
@@ -3781,6 +3937,18 @@ const (
 	SiriusOwnerOrionPassword = "password"
 	// SiriusPublicID is from fixtures/workspaces.
 	SiriusPublicID = "SiriuW72"
+	// SkippedEntryBystanderID is from fixtures/automation_skipped_entries.
+	SkippedEntryBystanderID = 301
+	// SkippedEntryErasableID is from fixtures/automation_skipped_entries.
+	SkippedEntryErasableID = 300
+	// SkippedEntryExpiredID is from fixtures/automation_skipped_entries.
+	SkippedEntryExpiredID = 3
+	// SkippedEntryGlobexID is from fixtures/automation_skipped_entries.
+	SkippedEntryGlobexID = 900
+	// SkippedEntryWelcomeEmmaID is from fixtures/automation_skipped_entries.
+	SkippedEntryWelcomeEmmaID = 2
+	// SkippedEntryWelcomeLiamID is from fixtures/automation_skipped_entries.
+	SkippedEntryWelcomeLiamID = 1
 	// SoleOwnerDoraEmail is from fixtures/users.
 	SoleOwnerDoraEmail = "dora@piedpiper.test"
 	// SoleOwnerDoraID is from fixtures/users.
@@ -4413,6 +4581,10 @@ const (
 	WebhookGlobexID = 900
 	// WebhookGlobexURL is from fixtures/webhook_endpoints.
 	WebhookGlobexURL = "https://globex.example/hook"
+	// WebhookHalcyonID is from fixtures/webhook_endpoints.
+	WebhookHalcyonID = 9900
+	// WebhookHalcyonURL is from fixtures/webhook_endpoints.
+	WebhookHalcyonURL = "https://hooks.halcyon.test/sphericon"
 	// WebhookInitechAuditID is from fixtures/webhook_endpoints.
 	WebhookInitechAuditID = 301
 	// WebhookInitechAuditURL is from fixtures/webhook_endpoints.

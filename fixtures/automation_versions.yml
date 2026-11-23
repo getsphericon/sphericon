@@ -9,7 +9,7 @@
 
 - id: 100 # fixture: AutomationWelcomeSeriesVersion
   automation_id: 100
-  trigger_event: signup
+  trigger_action: signup
   version: 1
   steps: '{"id":"0c684f87-8c81-53e5-bee6-7ade106aea44","steps":[{"id":"8cdd0b49-43f8-527f-8de5-aa77c9a36138","type":"email","subject":"Welcome to CodeBasics","body":"<p>Glad you are here.</p>"},{"id":"3ed5d656-fbc5-5616-909d-81ccb4b7e673","type":"wait","seconds":86400},{"id":"9c2251c9-031a-5e1e-b3a5-d4d37085ffe8","type":"email","subject":"Pick your first course","body":"<p>Here is how to begin.</p>"}]}'
   workspace_id: 1
@@ -20,7 +20,7 @@
 # reworded the first email; Enrollments still begin on version 1, the live one.
 - id: 1001 # fixture: AutomationWelcomeSeriesDraftVersion
   automation_id: 100
-  trigger_event: signup
+  trigger_action: signup
   version: 2
   steps: '{"id":"0c684f87-8c81-53e5-bee6-7ade106aea44","steps":[{"id":"8cdd0b49-43f8-527f-8de5-aa77c9a36138","type":"email","subject":"Welcome aboard CodeBasics","body":"<p>Glad you are here.</p>"},{"id":"3ed5d656-fbc5-5616-909d-81ccb4b7e673","type":"wait","seconds":86400},{"id":"9c2251c9-031a-5e1e-b3a5-d4d37085ffe8","type":"email","subject":"Pick your first course","body":"<p>Here is how to begin.</p>"}]}'
   workspace_id: 1
@@ -29,7 +29,7 @@
 
 - id: 101
   automation_id: 101
-  trigger_event: course_completed
+  trigger_action: course_completed
   version: 1
   steps: '{"id":"c74a98c7-1265-5f37-8fb6-7024e161bd94","steps":[{"id":"a3674b70-bdee-5ddb-a9d5-589de0a512a6","type":"email","subject":"You finished a course!","body":"<p>On to the next one.</p>"}]}'
   workspace_id: 1
@@ -38,7 +38,7 @@
 
 - id: 102 # fixture: AutomationWinBackVersion
   automation_id: 102
-  trigger_event: subscription_cancelled
+  trigger_action: subscription_cancelled
   version: 1
   steps: '{"id":"53e76805-97bc-5c59-b7b1-58384faf2da4","steps":[{"id":"e4f3b41f-422b-5f18-a945-57c11331bcd9","type":"wait","seconds":604800},{"id":"e8082001-6b87-5552-8370-aae0ae62559a","type":"email","subject":"We miss you","body":"<p>Your courses are waiting.</p>"}]}'
   workspace_id: 1
@@ -47,7 +47,7 @@
 
 - id: 103 # fixture: AutomationHoldDemoVersion
   automation_id: 103
-  trigger_event: hold_demo
+  trigger_action: hold_demo
   version: 1
   steps: '{"id":"1b49b1ff-ae25-5de2-97d2-2cb1ae6577e6","steps":[{"id":"1c7f087b-436d-5b5a-b11e-da4433bba846","type":"email","subject":"Hello from the hold demo","body":"<p>Hello there.</p>"}]}'
   workspace_id: 1
@@ -56,7 +56,7 @@
 
 - id: 104 # fixture: AutomationTagOnEngagementVersion
   automation_id: 104
-  trigger_event: tag_demo
+  trigger_action: tag_demo
   version: 1
   steps: '{"id":"51a58035-dc3e-5125-b5d3-f5022733c370","steps":[{"id":"aac3cecf-b9d7-57c6-ab50-1e4b1c35e1d3","type":"apply_tag","tag":"engaged"},{"id":"d016b34c-df26-548f-976f-1b0644326c59","type":"remove_tag","tag":"vip"}]}'
   workspace_id: 1
@@ -65,7 +65,7 @@
 
 - id: 105 # fixture: AutomationNotifySlackVersion
   automation_id: 105
-  trigger_event: http_demo
+  trigger_action: http_demo
   version: 1
   steps: '{"id":"f6fe4f32-9c43-584b-9848-fbb9d3f688d5","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","url":"{{ encrypt "https://hooks.slack.com/services/T000/B000/XXXX" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer slack-demo-token" }}"}],"body":"{\"text\": \"New signup: {{ "{{ first_name }} {{ last_name }}" }}\"}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"}]}'
   workspace_id: 1
@@ -74,7 +74,7 @@
 
 - id: 106 # fixture: AutomationOnboardingDripVersion1
   automation_id: 106
-  trigger_event: onboarding_drip
+  trigger_action: onboarding_drip
   version: 1
   steps: '{"id":"38b9eff3-39d7-544a-b250-75cb5a5ede08","steps":[{"id":"2a17428c-014b-5b9e-866e-a08363b2780d","type":"email","subject":"Welcome aboard","body":"<p>Here is your first step.</p>"},{"id":"66d828ed-0d8d-53fa-beb4-cc4fc8872d20","type":"wait","seconds":3600},{"id":"df02307e-9ead-5f9d-9d14-e237c6c4c660","type":"email","subject":"Day one tips","body":"<p>Three things to try.</p>"}]}'
   workspace_id: 1
@@ -83,7 +83,7 @@
 
 - id: 1060 # fixture: AutomationOnboardingDripVersion2
   automation_id: 106
-  trigger_event: onboarding_drip
+  trigger_action: onboarding_drip
   version: 2
   steps: '{"id":"38b9eff3-39d7-544a-b250-75cb5a5ede08","steps":[{"id":"2a17428c-014b-5b9e-866e-a08363b2780d","type":"email","subject":"Welcome aboard, again","body":"<p>A shorter start.</p>"},{"id":"66d828ed-0d8d-53fa-beb4-cc4fc8872d20","type":"email","subject":"Day one tips","body":"<p>Three things to try.</p>"}]}'
   workspace_id: 1
@@ -94,7 +94,7 @@
 # Automation already has a version 1: the lowest id here is version 2, so the copy is accepted.
 - id: 107 # fixture: AutomationArchivedVersion
   automation_id: 107
-  trigger_event: referral_nudge
+  trigger_action: referral_nudge
   version: 1
   steps: '{"id":"09ac617a-95f5-536a-b025-6ed4a06c41a2","steps":[{"id":"32abca1c-072b-5c15-ac28-d6b3a8113edf","type":"wait","seconds":3600}]}'
   workspace_id: 1
@@ -103,18 +103,41 @@
 
 - id: 108 # fixture: AutomationPaymentRecoveryVersion
   automation_id: 108
-  trigger_event: payment_failed
-  exit_events: '["account_closed","plan_downgraded","email.clicked"]'
-  goal_event: payment_succeeded
+  trigger_action: payment_failed
+  exits: '[{"action":"account_closed"},{"action":"plan_downgraded"},{"action":"email.clicked"}]'
+  goal: '{"action":"payment_succeeded"}'
   version: 1
   steps: '{"id":"5d83ae50-1844-587e-b5e8-85dfaf9434a6","steps":[{"id":"a5a7184a-a358-5884-bba4-52f54f15fcd6","type":"email","subject":"Your payment did not go through","body":"<p>Your payment of {{ "{{ event.properties.amount }}" }} for {{ "{{ event.properties.plan }}" }} did not go through. Please update your card{{ "{{ event.properties.card_hint }}" }}.</p>"},{"id":"512e4016-0f5c-56ec-ab8f-a80a506f8793","type":"wait","seconds":86400},{"id":"a435e554-67ac-55bc-b531-44ae57df6158","type":"email","subject":"Last reminder","body":"<p>Your plan is on hold.</p>"}]}'
   workspace_id: 1
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
 
+- id: 15540 # fixture: AutomationRepeatPurchaseVersion
+  automation_id: 15540
+  trigger_action: repeat_purchase_made
+  entry_policy: again
+  cooldown_seconds: 86400
+  exits: '[{"action":"repeat_purchase_refunded"}]'
+  version: 1
+  steps: '{"id":"6f4b2f8e-6c1e-5a43-9d1c-15540a000001","steps":[{"id":"6f4b2f8e-6c1e-5a43-9d1c-15540a000002","type":"wait","seconds":86400}]}'
+  workspace_id: 1
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+- id: 15550 # fixture: AutomationOrderSeriesVersion
+  automation_id: 15550
+  trigger_action: order_series_placed
+  enrollment_key: order_id
+  exits: '[{"action":"order_series_cancelled"}]'
+  version: 1
+  steps: '{"id":"6f4b2f8e-6c1e-5a43-9d1c-15550a000001","steps":[{"id":"6f4b2f8e-6c1e-5a43-9d1c-15550a000002","type":"wait","seconds":2592000}]}'
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+
 - id: 900
   automation_id: 900
-  trigger_event: globex_trigger
+  trigger_action: globex_trigger
   version: 2
   steps: '{"id":"a731a7fd-f38f-5634-b021-9d10c84eef98","steps":[{"id":"9c1f6a52-3d4e-4b8a-9f00-000000000900","type":"wait","seconds":3600}]}'
   workspace_id: 2
@@ -123,7 +146,7 @@
 
 - id: 901
   automation_id: 900
-  trigger_event: globex_trigger
+  trigger_action: globex_trigger
   version: 1
   steps: '{"id":"a731a7fd-f38f-5634-b021-9d10c84eef98","steps":[]}'
   workspace_id: 2
@@ -132,7 +155,7 @@
 
 - id: 300 # fixture: AutomationInitechVersion
   automation_id: 300
-  trigger_event: initech_signup
+  trigger_action: initech_signup
   version: 1
   steps: '{"id":"12b40a3e-60b4-5d93-b444-a25a941dc05a","steps":[{"id":"42ba7642-d13f-55bb-8dfe-56d6b7ca7bdf","type":"wait","seconds":86400}]}'
   workspace_id: 3
@@ -141,7 +164,7 @@
 
 - id: 301 # fixture: AutomationInitechHTTPVersion
   automation_id: 301
-  trigger_event: initech_hook
+  trigger_action: initech_hook
   version: 1
   steps: '{"id":"5d78ee8e-19ed-58f6-baf1-ead51fa45509","steps":[{"id":"01900000-0000-0000-0000-000000000002","type":"http","url":"{{ encrypt "https://hooks.initech.test/services/T000/B000/XXXX" }}","headers":[],"body":"{\"email\": \"{{ "{{ email }}" }}\"}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"}]}'
   workspace_id: 3
@@ -150,7 +173,7 @@
 
 - id: 302 # fixture: AutomationInitechArchivedVersion
   automation_id: 302
-  trigger_event: initech_retired
+  trigger_action: initech_retired
   version: 1
   steps: '{"id":"0550ed62-b198-57a1-aae4-8411003f0183","steps":[{"id":"992a22c1-654e-5583-b963-3640a9d03578","type":"wait","seconds":86400}]}'
   workspace_id: 3
@@ -161,7 +184,7 @@
 
 - id: 5560 # fixture: AutomationJobsGreetingVersion
   automation_id: 5560
-  trigger_event: job_greeting
+  trigger_action: job_greeting
   version: 1
   steps: '{"id":"16093587-597d-5071-9104-4a89c54fd653","steps":[{"id":"773dd70f-bb4b-585e-9b46-5d520730b648","type":"email","subject":"Hi {{ "{{ first_name }}" }}","body":"<p>Hi {{ "{{ first_name }}" }}</p>"},{"id":"330f5a00-93de-55b6-96cd-30a1b1a7ac59","type":"wait","seconds":3600},{"id":"ed51b4f5-7130-56e0-a7cb-02d155061033","type":"email","subject":"Hi {{ "{{ first_name }}" }}","body":"<p>Hi {{ "{{ first_name }}" }}</p>"}]}'
   workspace_id: 1
@@ -170,7 +193,7 @@
 
 - id: 5561 # fixture: AutomationJobsSingleEmailVersion
   automation_id: 5561
-  trigger_event: job_single_email
+  trigger_action: job_single_email
   version: 1
   steps: '{"id":"6946dc45-4ba3-5b3e-8c02-7d1b4e9fb54a","steps":[{"id":"f01c9741-df06-5a0d-9e34-87e0650a86d3","type":"email","subject":"Hi {{ "{{ first_name }}" }}","body":"<p>Hi {{ "{{ first_name }}" }}</p>"}]}'
   workspace_id: 1
@@ -179,7 +202,7 @@
 
 - id: 5562 # fixture: AutomationJobsWaitFirstVersion
   automation_id: 5562
-  trigger_event: job_wait_first
+  trigger_action: job_wait_first
   version: 1
   steps: '{"id":"76e6f5fa-d94a-537c-9201-7aa2f69dd9a6","steps":[{"id":"e56de4d8-43e8-54a7-ab16-fed5210bd92b","type":"wait","seconds":3600},{"id":"9416b0aa-d3bb-5e25-92b1-805736e2d4c1","type":"email","subject":"Hi {{ "{{ first_name }}" }}","body":"<p>Hi {{ "{{ first_name }}" }}</p>"}]}'
   workspace_id: 1
@@ -190,7 +213,7 @@
 # Enrollments began on.
 - id: 5563
   automation_id: 5563
-  trigger_event: job_branches
+  trigger_action: job_branches
   version: 1
   steps: '{"id":"ef6624b2-d8a2-5a8b-854a-6e3dd09dcbc4","steps":[]}'
   workspace_id: 1
@@ -199,7 +222,7 @@
 
 - id: 55633 # fixture: AutomationJobsEmptyVersion
   automation_id: 5563
-  trigger_event: job_branches
+  trigger_action: job_branches
   version: 3
   steps: '{"id":"ef6624b2-d8a2-5a8b-854a-6e3dd09dcbc4","steps":[]}'
   workspace_id: 1
@@ -208,7 +231,7 @@
 
 - id: 55634 # fixture: AutomationJobsBrokenTemplateVersion
   automation_id: 5563
-  trigger_event: job_branches
+  trigger_action: job_branches
   version: 4
   steps: '{"id":"ef6624b2-d8a2-5a8b-854a-6e3dd09dcbc4","steps":[{"id":"f43c7b0b-6f3c-585f-8912-3374cd1c2282","type":"email","subject":"{% if x %}open","body":"<p>Hi</p>"}]}'
   workspace_id: 1
@@ -217,7 +240,7 @@
 
 - id: 5564 # fixture: AutomationJobsEditableVersion
   automation_id: 5564
-  trigger_event: job_editable
+  trigger_action: job_editable
   version: 1
   steps: '{"id":"74b2d694-5f66-5667-929a-6a73b8cf654d","steps":[{"id":"2fd049e8-5926-569c-9786-fd2f06d61247","type":"wait","seconds":60},{"id":"e8ca8a35-46c4-53e4-bc98-00181ff0a38d","type":"email","subject":"Old steps","body":"<p>old</p>"}]}'
   workspace_id: 1
@@ -226,7 +249,7 @@
 
 - id: 5565 # fixture: AutomationJobsSystemTagVersion
   automation_id: 5565
-  trigger_event: job_system_tag
+  trigger_action: job_system_tag
   version: 1
   steps: '{"id":"a3c8aad9-298e-5a3e-a905-392242866fd5","steps":[{"id":"aee222c5-d115-5800-8a8a-ae8ebc943ece","type":"apply_tag","tag":"system-made"}]}'
   workspace_id: 1
@@ -235,7 +258,7 @@
 
 - id: 5566
   automation_id: 5566
-  trigger_event: job_greeting
+  trigger_action: job_greeting
   version: 1
   steps: '{"id":"9b21b45d-5909-5c36-ba13-83f78142e114","steps":[{"id":"cc92275d-1d8f-59af-b91e-7b642e5186ef","type":"email","subject":"Hi {{ "{{ first_name }}" }}","body":"<p>Hi {{ "{{ first_name }}" }}</p>"}]}'
   workspace_id: 1
@@ -244,8 +267,8 @@
 
 - id: 5567 # fixture: AutomationJobsTagWithExitVersion
   automation_id: 5567
-  trigger_event: job_tag_exit
-  exit_events: '["job_tag_exit_left"]'
+  trigger_action: job_tag_exit
+  exits: '[{"action":"job_tag_exit_left"}]'
   version: 1
   steps: '{"id":"6380e4b0-689c-502b-a01c-6739df482695","steps":[{"id":"be03287b-4566-5639-a398-598a69bbf334","type":"apply_tag","tag":"tag-race"},{"id":"7b525217-bd37-51e2-b3bc-fbc574804c16","type":"wait","seconds":3600}]}'
   workspace_id: 1
@@ -256,7 +279,7 @@
 # step: a Contact whose emails are skipped walks past them to the tag (ADR 0081).
 - id: 5568 # fixture: AutomationJobsEmailsThenTagVersion
   automation_id: 5568
-  trigger_event: job_emails_then_tag
+  trigger_action: job_emails_then_tag
   version: 1
   steps: '{"id":"c333f53b-e88a-50a3-8db9-51d8c34d6703","steps":[{"id":"11bbd2a8-1c74-5ea8-8d63-b2bb27f4f0c6","type":"email","subject":"First","body":"<p>First</p>"},{"id":"9cb989e2-5003-5b16-be06-651934156e8e","type":"wait","seconds":3600},{"id":"5c33d45c-1063-576c-b4d6-673ee91ac7f2","type":"email","subject":"Second","body":"<p>Second</p>","integrationId":21},{"id":"25c65426-6497-5222-99b8-6980b6df39dd","type":"apply_tag","tag":"walked-past"}]}'
   workspace_id: 1
@@ -267,7 +290,7 @@
 # Enrollment at once, whatever its path holds after it (ADR 0124).
 - id: 5590 # fixture: AutomationJobsEndsEarlyVersion
   automation_id: 5590
-  trigger_event: job_ends_early
+  trigger_action: job_ends_early
   version: 1
   steps: '{"id":"bba2a0fe-bd67-4ea1-aec2-4a6728cd41e6","steps":[{"id":"c2398f66-473f-4905-9f1a-6cbc18844b90","type":"apply_tag","tag":"before-end"},{"id":"5a415a9d-1353-4b5f-a2e3-5554b218c7fc","type":"end"},{"id":"a5788e00-5268-417c-a1e3-6faccb116215","type":"apply_tag","tag":"after-end"}]}'
   workspace_id: 1
@@ -277,7 +300,7 @@
 # --- Brightpath (workspace 20): demo workspace behind the screenshots on getsphericon.com ---
 - id: 20001
   automation_id: 20001
-  trigger_event: signup
+  trigger_action: signup
   version: 1
   steps: '{"id":"44393346-51d1-5ab6-aa80-b24d66ed7d21","steps":[{"id":"0538edba-f0b5-5f3f-87e0-8dfa66206e43","type":"email","subject":"Welcome to Brightpath","body":"<p>Glad you are here.</p>"},{"id":"74b58ea5-0f08-5810-9098-afd475faa894","type":"wait","seconds":86400},{"id":"196d345e-e477-5ce7-a37d-47ac44e523cd","type":"email","subject":"Pick your first course","body":"<p>Here is how to begin.</p>"},{"id":"1472bdde-a977-5bd7-9f51-e6047d1c8527","type":"wait","seconds":259200},{"id":"ed19e340-3339-57b2-a7af-1bc77cc65e29","type":"email","subject":"How is it going?","body":"<p>Need a hand?</p>"}]}'
   workspace_id: 20
@@ -285,7 +308,7 @@
   updated_at: '{{hoursAgo 2400}}'
 - id: 20002
   automation_id: 20002
-  trigger_event: viewed_pricing
+  trigger_action: viewed_pricing
   version: 1
   steps: '{"id":"06e7b821-bda6-56bb-9b2f-439564a6cad9","steps":[{"id":"4526adc2-1adb-5e7d-8102-60f46443a0c8","type":"wait","seconds":172800},{"id":"85ab67b3-1ce5-523d-93f1-ea12391be7c6","type":"email","subject":"Questions about pricing?","body":"<p>Reply to this email.</p>"}]}'
   workspace_id: 20
@@ -293,7 +316,7 @@
   updated_at: '{{hoursAgo 1440}}'
 - id: 20003
   automation_id: 20003
-  trigger_event: course_completed
+  trigger_action: course_completed
   version: 1
   steps: '{"id":"3a5abc96-c337-5c2c-8735-a342530f5c1e","steps":[{"id":"cab56256-4b52-5766-8dda-e6dd8d75222a","type":"email","subject":"You finished a course!","body":"<p>On to the next one.</p>"},{"id":"d432314c-8004-596f-9e50-35eed60ff25d","type":"apply_tag","tag":"vip"}]}'
   workspace_id: 20
@@ -301,7 +324,7 @@
   updated_at: '{{hoursAgo 1800}}'
 - id: 20004
   automation_id: 20004
-  trigger_event: subscription_cancelled
+  trigger_action: subscription_cancelled
   version: 1
   steps: '{"id":"ed08b5b3-5cb2-5852-9ddd-c38bc2790c08","steps":[{"id":"a389bb75-f630-5414-9963-4e183e14b156","type":"wait","seconds":604800},{"id":"bacbe2f4-6580-5acc-94e4-513f26530515","type":"email","subject":"We miss you","body":"<p>Your courses are waiting.</p>"}]}'
   workspace_id: 20
@@ -309,7 +332,7 @@
   updated_at: '{{hoursAgo 960}}'
 - id: 20005
   automation_id: 20005
-  trigger_event: lesson_completed
+  trigger_action: lesson_completed
   version: 1
   steps: '{"id":"aca227a9-b2c1-5b10-ad5f-c38da68b2f79","steps":[{"id":"b633df4a-9d71-5747-8e6d-ac7e659056e0","type":"apply_tag","tag":"vip"}]}'
   workspace_id: 20
@@ -317,7 +340,7 @@
   updated_at: '{{hoursAgo 720}}'
 - id: 20006
   automation_id: 20006
-  trigger_event: black_friday_optin
+  trigger_action: black_friday_optin
   version: 1
   steps: '{"id":"285fea4f-1bca-528c-8d4f-c8beda112697","steps":[{"id":"c1fd5adb-0921-5c8d-8e8f-3701848f8b26","type":"email","subject":"Early access starts Monday","body":"<p>Mark your calendar.</p>"},{"id":"655f62bd-5b41-5f0d-b96c-320cbaf06b6d","type":"wait","seconds":172800},{"id":"faa8194b-bfef-5d65-859c-e6ed262b0358","type":"email","subject":"Last chance for early access","body":"<p>Ends tonight.</p>"}]}'
   workspace_id: 20
@@ -326,7 +349,7 @@
 
 - id: 5570 # fixture: AutomationOnOpenVersion
   automation_id: 5570
-  trigger_event: 'email.opened'
+  trigger_action: 'email.opened'
   version: 1
   steps: '{"id":"5f3184c2-6e1d-58e4-989d-813a692291ff","steps":[{"id":"9c8accb8-0333-5f0e-8108-46788c73bdcb","type":"email","subject":"Thanks for reading","body":"<p>Thanks for reading</p>"}]}'
   workspace_id: 1
@@ -335,8 +358,8 @@
 
 - id: 6100 # fixture: AutomationGothamResultsVersion
   automation_id: 6100
-  trigger_event: gotham_results_trigger
-  goal_event: gotham_results_goal
+  trigger_action: gotham_results_trigger
+  goal: '{"action":"gotham_results_goal"}'
   version: 1
   steps: '{"id":"13f7f404-6a55-57e5-ba18-6ac5b7c47f14","steps":[{"id":"339a0cff-c0e7-5700-9cd8-68c1ce0f3bc6","type":"wait","seconds":86400}]}'
   workspace_id: 61
@@ -345,7 +368,7 @@
 
 - id: 5580 # fixture: AutomationHTTPExecutionVersion
   automation_id: 5580
-  trigger_event: http_execution
+  trigger_action: http_execution
   version: 1
   steps: '{"id":"c66b2a87-7977-5684-b108-0d3d4a14613a","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","url":"{{ encrypt "https://hooks.example.com/notify" }}","body":"{}"}]}'
   workspace_id: 1
@@ -354,7 +377,7 @@
 
 - id: 5581 # fixture: AutomationHTTPBelowAWaitVersion
   automation_id: 5581
-  trigger_event: http_below_a_wait
+  trigger_action: http_below_a_wait
   version: 1
   steps: '{"id":"9d5f3a40-6c1e-4b8a-a7d2-3e0f5b9c1a24","steps":[{"id":"5e2b7c91-0d4a-4f63-8b15-c7a9e2d40f18","type":"wait","seconds":60},{"id":"01900000-0000-0000-0000-000000000001","type":"http","url":"{{ encrypt "https://hooks.example.com/notify" }}","body":"{}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"}]}'
   workspace_id: 1
@@ -363,7 +386,7 @@
 
 - id: 7310 # fixture: AutomationSealedDraftVersion
   automation_id: 7310
-  trigger_event: sealed_draft
+  trigger_action: sealed_draft
   version: 1
   steps: '{"id":"4708af4f-e58f-5901-ba4c-ff441e25287a","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","url":"{{ encrypt "https://hooks.example.com/sealed" }}","body":"{\"v\":1}"}]}'
   workspace_id: 1
@@ -376,7 +399,7 @@
 # inactive Automation still runs. Triggers are unique to them.
 - id: 7500 # fixture: AutomationJobsTelegramHelloVersion
   automation_id: 7500
-  trigger_event: job_telegram_hello
+  trigger_action: job_telegram_hello
   version: 1
   steps: '{"id":"b76dd6f5-38da-543d-b133-f4acf9653d4f","steps":[{"id":"25c87cec-7274-585a-ace4-2a10156a61d5","type":"telegram","integrationId":9,"text":"Hello"}]}'
   workspace_id: 1
@@ -384,7 +407,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7501 # fixture: AutomationJobsTelegramHelloAgainVersion
   automation_id: 7501
-  trigger_event: job_telegram_hello_again
+  trigger_action: job_telegram_hello_again
   version: 1
   steps: '{"id":"0231ce1e-9075-5aed-98e7-97730d2a8b65","steps":[{"id":"8a0ed285-75ee-57a6-9cda-d61c2c6f232e","type":"telegram","integrationId":9,"text":"Hello"},{"id":"751ebc4a-2e92-5a0e-98ca-7f872dd42d1c","type":"telegram","integrationId":9,"text":"Again"}]}'
   workspace_id: 1
@@ -392,7 +415,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7502 # fixture: AutomationJobsTelegramEscapedVersion
   automation_id: 7502
-  trigger_event: job_telegram_escaped
+  trigger_action: job_telegram_escaped
   version: 1
   steps: '{"id":"52d434fd-003d-5a4e-a308-74418a0abfe8","steps":[{"id":"922bf13e-144b-5d30-bcbc-98018b69aa82","type":"telegram","integrationId":9,"text":"Hi {{ "{{ first_name }}" }}, <b>welcome</b><script>x()</script>"}]}'
   workspace_id: 1
@@ -400,7 +423,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7503 # fixture: AutomationJobsTelegramBetweenEmailsVersion
   automation_id: 7503
-  trigger_event: job_telegram_between_emails
+  trigger_action: job_telegram_between_emails
   version: 1
   steps: '{"id":"5d63a75f-8e00-55e0-9acf-83f1d2a8b367","steps":[{"id":"f0a055ad-859d-545e-82fe-20ae592d73dd","type":"email","subject":"First","body":"<p>one</p>"},{"id":"79de6091-9f0a-50fd-8580-83c2a74a8f1c","type":"telegram","integrationId":9,"text":"Telegram"},{"id":"259497fd-c584-54fb-b78d-79e508802a8a","type":"email","subject":"Last","body":"<p>two</p>"}]}'
   workspace_id: 1
@@ -408,7 +431,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7504 # fixture: AutomationJobsTelegramPhotoVersion
   automation_id: 7504
-  trigger_event: job_telegram_photo
+  trigger_action: job_telegram_photo
   version: 1
   steps: '{"id":"3b45dcd6-b566-5380-8f38-cb93522273a7","steps":[{"id":"bee260ed-7708-59e2-821e-bf792e779767","type":"telegram","integrationId":9,"text":"Look <b>here</b>","imageUrl":"https://cdn.example.com/a.png","buttons":[{"label":"Open","url":"https://example.com/a"},{"label":"More","url":"https://example.com/b"}]}]}'
   workspace_id: 1
@@ -416,7 +439,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7505 # fixture: AutomationJobsTelegramPreviewOffVersion
   automation_id: 7505
-  trigger_event: job_telegram_preview_off
+  trigger_action: job_telegram_preview_off
   version: 1
   steps: '{"id":"c7e2279a-ed04-5ee9-9ff2-14f6f4c10f86","steps":[{"id":"f5c9e355-3ab8-50ec-bb37-6c1b61b7d0fb","type":"telegram","integrationId":9,"text":"See https://example.com","linkPreview":false},{"id":"8614754a-0ebb-5b2b-a25a-0a3a00e372e6","type":"telegram","integrationId":9,"text":"See https://example.com"}]}'
   workspace_id: 1
@@ -424,7 +447,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7506 # fixture: AutomationJobsTelegramUnsubscribeLinkVersion
   automation_id: 7506
-  trigger_event: job_telegram_unsubscribe_link
+  trigger_action: job_telegram_unsubscribe_link
   version: 1
   steps: '{"id":"a73913ea-2224-5079-87cc-5e2be2300e98","steps":[{"id":"bcfc96ba-42f0-5fa7-80a9-f96bb830fe0b","type":"telegram","integrationId":9,"text":"<a href=\"{{ "{{ unsubscribe_url }}" }}\">stop</a>"}]}'
   workspace_id: 1
@@ -432,7 +455,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7507 # fixture: AutomationJobsTelegramWelcomeBackVersion
   automation_id: 7507
-  trigger_event: job_telegram_welcome_back
+  trigger_action: job_telegram_welcome_back
   version: 1
   steps: '{"id":"7c287247-16f4-5058-b2e0-775436ea7d4c","steps":[{"id":"d58129f9-5595-5ed4-80d0-f3d27e768373","type":"telegram","integrationId":9,"text":"Welcome back"}]}'
   workspace_id: 1
@@ -440,7 +463,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7508 # fixture: AutomationJobsTelegramStartTagVersion
   automation_id: 7508
-  trigger_event: job_telegram_start_tag
+  trigger_action: job_telegram_start_tag
   version: 1
   steps: '{"id":"f7110744-8576-5837-8b9c-76c6a4ace21d","steps":[{"id":"c8e7867c-7e77-5e7e-9db2-f20c5abeca39","type":"telegram","integrationId":9,"text":"Another chat: {{ "{{ telegram_start_url }}" }}"}]}'
   workspace_id: 1
@@ -448,7 +471,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7509 # fixture: AutomationJobsTelegramStartTagJoinVersion
   automation_id: 7509
-  trigger_event: job_telegram_start_tag_join
+  trigger_action: job_telegram_start_tag_join
   version: 1
   steps: '{"id":"532a9903-bf71-58d4-b2e0-2349138d179f","steps":[{"id":"a6d773ba-f9b5-56f9-898c-121d8888acd8","type":"telegram","integrationId":9,"text":"Join: [{{ "{{ telegram_start_url }}" }}]"}]}'
   workspace_id: 1
@@ -456,7 +479,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7510 # fixture: AutomationJobsTelegramNoTagVersion
   automation_id: 7510
-  trigger_event: job_telegram_no_tag
+  trigger_action: job_telegram_no_tag
   version: 1
   steps: '{"id":"a2319f0f-b228-5b2a-942e-5b1a850e6257","steps":[{"id":"98de79e5-acef-5933-9389-cb1a8657495a","type":"telegram","integrationId":9,"text":"No tag here"}]}'
   workspace_id: 1
@@ -464,7 +487,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7511 # fixture: AutomationJobsTelegramLinkAndButtonVersion
   automation_id: 7511
-  trigger_event: job_telegram_link_and_button
+  trigger_action: job_telegram_link_and_button
   version: 1
   steps: '{"id":"5817acda-510e-5a75-a7c1-d38fd55af630","steps":[{"id":"c8fc3bb4-c049-5b2f-882e-a269977ee912","type":"telegram","integrationId":9,"text":"Read <a href=\"https://shop.test/offer?a=1&b=2\">the offer</a> now","buttons":[{"label":"Open","url":"https://shop.test/button"}]}]}'
   workspace_id: 1
@@ -472,7 +495,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7512 # fixture: AutomationJobsTelegramSameURLVersion
   automation_id: 7512
-  trigger_event: job_telegram_same_url
+  trigger_action: job_telegram_same_url
   version: 1
   steps: '{"id":"ad9eac87-c830-5848-ab4e-575ec8fb3b1d","steps":[{"id":"d027263d-51b0-5606-afd6-2ca6507468d2","type":"telegram","integrationId":9,"text":"<a href=\"https://shop.test/button\">one</a> and <a href=\"https://shop.test/button\">two</a>","buttons":[{"label":"Open","url":"https://shop.test/button"}]}]}'
   workspace_id: 1
@@ -480,7 +503,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7513 # fixture: AutomationJobsTelegramOfferAndStopVersion
   automation_id: 7513
-  trigger_event: job_telegram_offer_and_stop
+  trigger_action: job_telegram_offer_and_stop
   version: 1
   steps: '{"id":"fd594673-b392-5e08-ac55-8b8353a822bf","steps":[{"id":"cffcda44-0da1-5922-ac3a-4369b5e525c8","type":"telegram","integrationId":9,"text":"<a href=\"https://shop.test/offer?a=1&b=2\">offer</a> <a href=\"{{ "{{ unsubscribe_url }}" }}\">stop</a>"}]}'
   workspace_id: 1
@@ -488,7 +511,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7514 # fixture: AutomationJobsTelegramOfferVersion
   automation_id: 7514
-  trigger_event: job_telegram_offer
+  trigger_action: job_telegram_offer
   version: 1
   steps: '{"id":"24271915-6335-5099-8366-75bc08b3aae4","steps":[{"id":"84650ea0-aec0-53dc-942a-eddf07902340","type":"telegram","integrationId":9,"text":"<a href=\"https://shop.test/offer?a=1&b=2\">offer</a>"}]}'
   workspace_id: 1
@@ -496,7 +519,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7515 # fixture: AutomationJobsSMSHelloVersion
   automation_id: 7515
-  trigger_event: job_sms_hello
+  trigger_action: job_sms_hello
   version: 1
   steps: '{"id":"40479428-b635-576d-a4d4-3ac9b263d4e4","steps":[{"id":"26022d63-133d-56dd-bff4-e2e6770499d0","type":"sms","integrationId":8,"text":"Hello"}]}'
   workspace_id: 1
@@ -504,7 +527,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7516 # fixture: AutomationJobsSMSHelloAgainVersion
   automation_id: 7516
-  trigger_event: job_sms_hello_again
+  trigger_action: job_sms_hello_again
   version: 1
   steps: '{"id":"10bd3067-10c8-501c-ad3d-727437e022b5","steps":[{"id":"9c0ed87f-4a58-5815-8a3f-080b7b27792b","type":"sms","integrationId":8,"text":"Hello"},{"id":"cf029fc6-0094-5b81-b9a6-f29653676a81","type":"sms","integrationId":8,"text":"Again"}]}'
   workspace_id: 1
@@ -512,7 +535,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7517 # fixture: AutomationJobsSMSHelloThenTagVersion
   automation_id: 7517
-  trigger_event: job_sms_hello_then_tag
+  trigger_action: job_sms_hello_then_tag
   version: 1
   steps: '{"id":"306265b7-4db1-5cc3-bf62-cafe043057c3","steps":[{"id":"fb198dcc-e05d-5605-9234-ca6d8c5bb554","type":"sms","integrationId":8,"text":"Hello"},{"id":"e1e77066-722c-5195-be70-9bd9268ae807","type":"apply_tag","tag":"texted"}]}'
   workspace_id: 1
@@ -520,7 +543,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7518 # fixture: AutomationJobsSMSRenderedVersion
   automation_id: 7518
-  trigger_event: job_sms_rendered
+  trigger_action: job_sms_rendered
   version: 1
   steps: '{"id":"53120c53-f589-517a-9a84-390dd83e1a1b","steps":[{"id":"f396644b-153c-5b3e-af33-ae7a0dcec62d","type":"sms","integrationId":8,"text":"Hi {{ "{{ first_name }}" }} & co, your cart <is> waiting"}]}'
   workspace_id: 1
@@ -528,7 +551,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7519 # fixture: AutomationJobsSMSHiThenTagVersion
   automation_id: 7519
-  trigger_event: job_sms_hi_then_tag
+  trigger_action: job_sms_hi_then_tag
   version: 1
   steps: '{"id":"b7bb153f-e6e3-5750-999e-b0c9934c3ba1","steps":[{"id":"7a3f1b17-c5a1-5188-823f-530e47479389","type":"sms","integrationId":8,"text":"Hi"},{"id":"d016ed94-8165-5a67-bbf3-d40d41f6d621","type":"apply_tag","tag":"reminded"}]}'
   workspace_id: 1
@@ -536,7 +559,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7520 # fixture: AutomationJobsSMSBetweenEmailsVersion
   automation_id: 7520
-  trigger_event: job_sms_between_emails
+  trigger_action: job_sms_between_emails
   version: 1
   steps: '{"id":"82e995bf-a5f7-55b9-8aeb-a24afc2c2fdf","steps":[{"id":"6760b6b3-f12e-5e06-9ea9-c72ba0e0708f","type":"email","subject":"First","body":"<p>one</p>"},{"id":"46bf4f05-5397-5da4-b313-c2595a25a611","type":"sms","integrationId":8,"text":"Text"},{"id":"20d8d55c-1b5e-55c5-8b38-ead95f62606f","type":"email","subject":"Last","body":"<p>two</p>"}]}'
   workspace_id: 1
@@ -544,7 +567,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7521 # fixture: AutomationJobsSMSStopLinkVersion
   automation_id: 7521
-  trigger_event: job_sms_stop_link
+  trigger_action: job_sms_stop_link
   version: 1
   steps: '{"id":"6191095d-2f82-558a-b674-a336aea27004","steps":[{"id":"d7656dd2-b7d5-5f2d-9cf0-c7e46eed7845","type":"sms","integrationId":8,"text":"Stop: {{ "{{ unsubscribe_url }}" }}"}]}'
   workspace_id: 1
@@ -552,7 +575,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7522 # fixture: AutomationJobsSMSFirstSecondVersion
   automation_id: 7522
-  trigger_event: job_sms_first_second
+  trigger_action: job_sms_first_second
   version: 1
   steps: '{"id":"08959b23-067e-5f90-9e0d-c8616e78bd2a","steps":[{"id":"bb0a20b9-5ad9-51c8-b149-01d656dadba2","type":"sms","integrationId":8,"text":"First"},{"id":"91efe2f1-ee5f-5eda-806a-fbb80397f2e7","type":"sms","integrationId":8,"text":"Second"}]}'
   workspace_id: 1
@@ -560,7 +583,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7523 # fixture: AutomationJobsSMSCartVersion
   automation_id: 7523
-  trigger_event: job_sms_cart
+  trigger_action: job_sms_cart
   version: 1
   steps: '{"id":"5d291359-54b5-5250-ae29-f881718d11aa","steps":[{"id":"6c90e8d6-e31e-50e2-b2da-404fce424d8e","type":"sms","integrationId":8,"text":"Your cart: https://shop.test/cart"}]}'
   workspace_id: 1
@@ -568,7 +591,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7524 # fixture: AutomationJobsSMSCartUntrackedVersion
   automation_id: 7524
-  trigger_event: job_sms_cart_untracked
+  trigger_action: job_sms_cart_untracked
   version: 1
   steps: '{"id":"62595096-a79f-5fed-a9e9-6b1ebca51809","steps":[{"id":"6bff6db5-e42d-5908-91ef-9d6bf6c77029","type":"sms","integrationId":8,"text":"Your cart: https://shop.test/cart","linkTracking":false}]}'
   workspace_id: 1
@@ -578,7 +601,7 @@
 # Meridian (workspace 83): the versions of its Automations.
 - id: 7400 # fixture: AutomationMeridianWelcomeVersion
   automation_id: 7400
-  trigger_event: meridian_welcome
+  trigger_action: meridian_welcome
   version: 1
   steps: '{"id":"3b339941-9407-506e-92c5-cf0719b597d7","steps":[{"id":"b0c990c1-9321-59ea-a0c0-8bd43a1dc468","type":"email","subject":"Hello","body":"<p>Hello</p>"}]}'
   workspace_id: 83
@@ -586,7 +609,7 @@
   updated_at: '2026-01-01 00:00:00'
 - id: 7401 # fixture: AutomationMeridianViaRelayVersion
   automation_id: 7401
-  trigger_event: meridian_relay
+  trigger_action: meridian_relay
   version: 1
   steps: '{"id":"f6229db1-8297-55a2-b123-5b2388fa258e","steps":[{"id":"f24992c3-9825-5df5-aca5-3d112fe7b465","type":"email","integrationId":7401,"subject":"Hello","body":"<p>Hello</p>"}]}'
   workspace_id: 83
@@ -594,7 +617,7 @@
   updated_at: '2026-01-01 00:00:00'
 - id: 7402 # fixture: AutomationMeridianDraftOnlyVersion
   automation_id: 7402
-  trigger_event: meridian_draft_only
+  trigger_action: meridian_draft_only
   version: 1
   steps: '{"id":"67f64052-aee1-56d2-a836-b30112adcdd2","steps":[{"id":"9dc0cb54-b3fe-5a2a-a7a0-529acb38a99f","type":"wait","seconds":60}]}'
   workspace_id: 83
@@ -602,7 +625,7 @@
   updated_at: '2026-01-01 00:00:00'
 - id: 7403 # fixture: AutomationMeridianDraftOnlyDraftVersion
   automation_id: 7402
-  trigger_event: meridian_draft_only
+  trigger_action: meridian_draft_only
   version: 2
   steps: '{"id":"67f64052-aee1-56d2-a836-b30112adcdd2","steps":[{"id":"9dc0cb54-b3fe-5a2a-a7a0-529acb38a99f","type":"email","integrationId":7403,"subject":"Hello","body":"<p>Hello</p>"}]}'
   workspace_id: 83
@@ -610,7 +633,7 @@
   updated_at: '2026-01-01 00:00:00'
 - id: 7404 # fixture: AutomationMeridianNoEmailVersion
   automation_id: 7403
-  trigger_event: meridian_no_email
+  trigger_action: meridian_no_email
   version: 1
   steps: '{"id":"cef668e9-38c9-5207-a8f7-988ae44afffa","steps":[{"id":"ebedb3d7-a2d0-5241-87db-03ec457a82ce","type":"http","body":"email"},{"id":"d0a30be6-aaec-5334-9f3c-de4ec861c903","type":"apply_tag","tag":"email"}]}'
   workspace_id: 83
@@ -618,7 +641,7 @@
   updated_at: '2026-01-01 00:00:00'
 - id: 7405 # fixture: AutomationMeridianNoEmailDraftVersion
   automation_id: 7403
-  trigger_event: meridian_no_email
+  trigger_action: meridian_no_email
   version: 2
   steps: '{"id":"cef668e9-38c9-5207-a8f7-988ae44afffa","steps":[{"id":"ebedb3d7-a2d0-5241-87db-03ec457a82ce","type":"email","integrationId":7404,"subject":"Hello","body":"<p>Hello</p>"}]}'
   workspace_id: 83
@@ -626,7 +649,7 @@
   updated_at: '2026-01-01 00:00:00'
 - id: 7406 # fixture: AutomationMeridianInactiveVersion
   automation_id: 7404
-  trigger_event: meridian_inactive
+  trigger_action: meridian_inactive
   version: 1
   steps: '{"id":"505f06cf-cadd-533f-8c51-2ae406baf369","steps":[{"id":"738351ae-a313-58c2-b089-d0f7acfd12d5","type":"email","integrationId":7405,"subject":"Hello","body":"<p>Hello</p>"}]}'
   workspace_id: 83
@@ -634,7 +657,7 @@
   updated_at: '2026-01-01 00:00:00'
 - id: 7407 # fixture: AutomationMeridianInactiveDraftVersion
   automation_id: 7404
-  trigger_event: meridian_inactive
+  trigger_action: meridian_inactive
   version: 2
   steps: '{"id":"505f06cf-cadd-533f-8c51-2ae406baf369","steps":[{"id":"738351ae-a313-58c2-b089-d0f7acfd12d5","type":"email","integrationId":7405,"subject":"Hello","body":"<p>Hello</p>"}]}'
   workspace_id: 83
@@ -642,7 +665,7 @@
   updated_at: '2026-01-01 00:00:00'
 - id: 7408 # fixture: AutomationMeridianArchivedVersion
   automation_id: 7405
-  trigger_event: meridian_archived
+  trigger_action: meridian_archived
   version: 1
   steps: '{"id":"506c1181-0a46-5160-b723-6b09bb2df93f","steps":[{"id":"a03540d1-893c-56cf-a1b3-1aca3b32baff","type":"email","integrationId":7406,"subject":"Hello","body":"<p>Hello</p>"}]}'
   workspace_id: 83
@@ -650,7 +673,7 @@
   updated_at: '2026-01-01 00:00:00'
 - id: 7409 # fixture: AutomationMeridianArchivedDraftVersion
   automation_id: 7405
-  trigger_event: meridian_archived
+  trigger_action: meridian_archived
   version: 2
   steps: '{"id":"506c1181-0a46-5160-b723-6b09bb2df93f","steps":[{"id":"a03540d1-893c-56cf-a1b3-1aca3b32baff","type":"email","integrationId":7406,"subject":"Hello","body":"<p>Hello</p>"}]}'
   workspace_id: 83
@@ -658,7 +681,7 @@
   updated_at: '2026-01-01 00:00:00'
 - id: 7410 # fixture: AutomationMeridianEnrolledVersion
   automation_id: 7406
-  trigger_event: meridian_enrolled
+  trigger_action: meridian_enrolled
   version: 1
   steps: '{"id":"a2c92605-2205-5048-b4b7-de7da99a1ebf","steps":[{"id":"869ddbf7-26ec-5702-964e-22500550002a","type":"email","integrationId":7407,"subject":"Hello","body":"<p>Hello</p>"}]}'
   workspace_id: 83
@@ -666,7 +689,7 @@
   updated_at: '2026-01-01 00:00:00'
 - id: 7411 # fixture: AutomationMeridianEmptyVersion
   automation_id: 7407
-  trigger_event: meridian_empty
+  trigger_action: meridian_empty
   version: 1
   steps: '{"id":"f86e2e73-d56e-5526-a2e7-469c7c4bcacd","steps":[]}'
   workspace_id: 83
@@ -674,7 +697,7 @@
   updated_at: '2026-01-01 00:00:00'
 - id: 7412 # fixture: AutomationMeridianStoppedVersion
   automation_id: 7408
-  trigger_event: meridian_stopped
+  trigger_action: meridian_stopped
   version: 1
   steps: '{"id":"90452168-d1c6-58e6-a2bc-adf339ac0ab7","steps":[{"id":"cbd3c5a8-df39-559b-a1e7-9bd26e4d8e3b","type":"email","integrationId":7410,"subject":"Hello","body":"<p>Hello</p>"}]}'
   workspace_id: 83
@@ -684,7 +707,7 @@
 # The versions of the system-event Trigger automations: one wait step each.
 - id: 7420 # fixture: AutomationOnContactTaggedVersion
   automation_id: 7420
-  trigger_event: contact.tagged
+  trigger_action: contact.tagged
   version: 1
   steps: '{"id":"3eaab05e-631f-5582-99d7-c6d8b5a39523","steps":[{"id":"f938fa5a-4647-5b67-861e-6830a9cd250b","type":"wait","seconds":3600}]}'
   workspace_id: 1
@@ -692,7 +715,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7421 # fixture: AutomationOnMarketingConfirmedVersion
   automation_id: 7421
-  trigger_event: marketing.confirmed
+  trigger_action: marketing.confirmed
   version: 1
   steps: '{"id":"dc6968c6-59b7-553a-82ed-3eb5c1230310","steps":[{"id":"8c88ccf0-8c3a-5798-82e2-990030695b8d","type":"wait","seconds":3600}]}'
   workspace_id: 1
@@ -700,7 +723,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7422 # fixture: AutomationOnSmsReceivedVersion
   automation_id: 7422
-  trigger_event: sms.received
+  trigger_action: sms.received
   version: 1
   steps: '{"id":"42d3a48b-84ef-58f3-a48c-d3fc06f373b4","steps":[{"id":"dbd833f0-fef6-5eef-8fc5-d0b816dcbaf7","type":"wait","seconds":3600}]}'
   workspace_id: 1
@@ -708,7 +731,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7423 # fixture: AutomationOnSmsClickedVersion
   automation_id: 7423
-  trigger_event: sms.clicked
+  trigger_action: sms.clicked
   version: 1
   steps: '{"id":"8b0b6da4-4a55-56a7-8c29-299c6ce912f9","steps":[{"id":"511eeae6-74ab-58b5-ab67-e923678cccef","type":"wait","seconds":3600}]}'
   workspace_id: 1
@@ -716,7 +739,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7424 # fixture: AutomationOnSmsUndeliveredVersion
   automation_id: 7424
-  trigger_event: sms.undelivered
+  trigger_action: sms.undelivered
   version: 1
   steps: '{"id":"94ebba48-d466-5df3-84d2-e11b511b56df","steps":[{"id":"8de0fa0c-4879-5e79-8188-91331a68a4fe","type":"wait","seconds":3600}]}'
   workspace_id: 1
@@ -724,7 +747,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7425 # fixture: AutomationOnTelegramReceivedVersion
   automation_id: 7425
-  trigger_event: telegram.received
+  trigger_action: telegram.received
   version: 1
   steps: '{"id":"c8ad03ac-e631-54f0-abf2-8a4bc4844d9e","steps":[{"id":"938e096f-acc5-5fb3-97f2-b81defe79205","type":"wait","seconds":3600}]}'
   workspace_id: 1
@@ -732,7 +755,7 @@
   updated_at: '{{daysAgo 12}}'
 - id: 7426 # fixture: AutomationOnTelegramClickedVersion
   automation_id: 7426
-  trigger_event: telegram.clicked
+  trigger_action: telegram.clicked
   version: 1
   steps: '{"id":"d2fee385-a605-586a-be14-e32af9cb157d","steps":[{"id":"ced46901-a8a5-5022-a1ac-6ffc14cb288a","type":"wait","seconds":3600}]}'
   workspace_id: 1
@@ -741,7 +764,7 @@
 
 - id: 7200
   automation_id: 7200
-  trigger_event: emporium_revenue_trigger
+  trigger_action: emporium_revenue_trigger
   version: 1
   steps: '{"id":"548a1e34-f5b3-563c-be53-8fec039be7ac","steps":[{"id":"a2fd4329-e801-5ccf-9ace-082f4415334d","type":"wait","seconds":86400}]}'
   workspace_id: 76
@@ -749,7 +772,7 @@
   updated_at: '2026-01-01 00:00:00'
 - id: 7201
   automation_id: 7201
-  trigger_event: emporium_clicks_trigger
+  trigger_action: emporium_clicks_trigger
   version: 1
   steps: '{"id":"06a8859b-fa96-5baa-a4b3-55171a47b1c6","steps":[{"id":"0245f8a8-d748-5892-a036-75c8761fefa4","type":"wait","seconds":86400}]}'
   workspace_id: 76
@@ -757,7 +780,7 @@
   updated_at: '2026-01-01 00:00:00'
 - id: 7700
   automation_id: 7700
-  trigger_event: list_probe_alpha
+  trigger_action: list_probe_alpha
   version: 1
   steps: '{"id":"14ac1dd4-d97b-52d7-918d-2cfca0eaff65","steps":[{"id":"1d3c14bd-1c77-507c-abb1-c48326af4a90","type":"wait","seconds":60}]}'
   workspace_id: 94
@@ -765,7 +788,7 @@
   updated_at: '{{daysAgo 3}}'
 - id: 7701
   automation_id: 7701
-  trigger_event: list_probe_beta
+  trigger_action: list_probe_beta
   version: 1
   steps: '{"id":"3d47a6ea-c1e8-5abc-a489-023e5998d9a1","steps":[{"id":"e05a2262-8e23-5bd2-b67d-50ccf21b506a","type":"wait","seconds":60}]}'
   workspace_id: 94
@@ -773,7 +796,7 @@
   updated_at: '{{daysAgo 2}}'
 - id: 7702
   automation_id: 7702
-  trigger_event: list_probe_gamma
+  trigger_action: list_probe_gamma
   version: 1
   steps: '{"id":"24d5e0de-6da9-51da-8043-4b4da258138d","steps":[{"id":"63ad06a5-e5aa-55d1-9b5b-cfce66017daf","type":"wait","seconds":60}]}'
   workspace_id: 94
@@ -783,7 +806,7 @@
 # Quahog (workspace 92): the versions of its HTTP Automations.
 - id: 7650 # fixture: AutomationQuahogHookSignedVersion
   automation_id: 7650
-  trigger_event: quahog_hook_7650
+  trigger_action: quahog_hook_7650
   version: 1
   steps: '{"id":"93193733-579f-5722-9ab7-e4d1bacd8f1a","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","url":"{{ encrypt "http://hooks.quahog.test/notify" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer slack-demo-token" }}"}],"body":"{\"email\":\"{{ "{{ email }}" }}\"}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"},{"id":"050e1a8e-6605-5238-90d8-02ba37b97cd8","type":"apply_tag","tag":"notified"}]}'
   workspace_id: 92
@@ -791,7 +814,7 @@
   updated_at: '{{daysAgo 3}}'
 - id: 7651 # fixture: AutomationQuahogHookEventVersion
   automation_id: 7651
-  trigger_event: quahog_hook_7651
+  trigger_action: quahog_hook_7651
   version: 1
   steps: '{"id":"6be9e0a9-8d01-5217-81ab-39c4cbd9ff46","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","url":"{{ encrypt "http://hooks.quahog.test/notify" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer slack-demo-token" }}"}],"body":"{\"action\":\"{{ "{{ event.action }}" }}\",\"amount\":\"{{ "{{ event.properties.amount }}" }}\",\"plan\":\"{{ "{{ event.properties.plan }}" }}\",\"missing\":\"{{ "{{ event.properties.missing }}" }}\"}"},{"id":"e1bf54b4-30a5-5c49-880b-5f489102b7f1","type":"apply_tag","tag":"notified"}]}'
   workspace_id: 92
@@ -799,7 +822,7 @@
   updated_at: '{{daysAgo 3}}'
 - id: 7652 # fixture: AutomationQuahogHookUnsignedVersion
   automation_id: 7652
-  trigger_event: quahog_hook_7652
+  trigger_action: quahog_hook_7652
   version: 1
   steps: '{"id":"7d08bc60-0d2c-51d9-b01c-d28f8aa12f33","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","url":"{{ encrypt "http://hooks.quahog.test/notify" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer slack-demo-token" }}"}],"body":"{\"ok\":true}"},{"id":"a8072e5d-1a73-5f1c-867f-00d36f23f9b2","type":"apply_tag","tag":"notified"}]}'
   workspace_id: 92
@@ -807,7 +830,7 @@
   updated_at: '{{daysAgo 3}}'
 - id: 7653 # fixture: AutomationQuahogHookVersion
   automation_id: 7653
-  trigger_event: quahog_hook_7653
+  trigger_action: quahog_hook_7653
   version: 1
   steps: '{"id":"d9cf6e50-3e65-5948-93c4-7221fdad81ad","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","url":"{{ encrypt "http://hooks.quahog.test/notify" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer slack-demo-token" }}"}],"body":"{\"ok\":true}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"},{"id":"a5977361-0951-5219-9335-44cdf83364b4","type":"apply_tag","tag":"notified"}]}'
   workspace_id: 92
@@ -815,7 +838,7 @@
   updated_at: '{{daysAgo 3}}'
 - id: 7654 # fixture: AutomationQuahogHookNumberVersion
   automation_id: 7654
-  trigger_event: quahog_hook_7654
+  trigger_action: quahog_hook_7654
   version: 1
   steps: '{"id":"62149480-1db6-5d0e-b6d5-a98cddee6528","steps":[{"id":"01900000-0000-0000-0000-000000000001","type":"http","url":"{{ encrypt "http://hooks.quahog.test/notify" }}","headers":[{"name":"Authorization","value":"{{ encrypt "Bearer slack-demo-token" }}"}],"body":"{\"n\": {{ "{{ first_name | default: 1 }}" }}}","secret":"{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}"},{"id":"8fc263f2-31c6-581e-9517-005ee1615a6f","type":"apply_tag","tag":"notified"}]}'
   workspace_id: 92
@@ -823,9 +846,120 @@
   updated_at: '{{daysAgo 3}}'
 - id: 7740 # fixture: AutomationLacunaOnSmsUndeliveredVersion
   automation_id: 7740
-  trigger_event: sms.undelivered
+  trigger_action: sms.undelivered
   version: 1
   steps: '{"id":"0f100a00-206e-5c41-81a9-94595c36d25b","steps":[{"id":"722d5797-daf9-5206-824d-5f335d5603fe","type":"wait","seconds":3600}]}'
   workspace_id: 96
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+
+# Halcyon (workspace 99): the versions of its Automations, one wait step each.
+- id: 9900 # fixture: AutomationHalcyonOnSignalVersion
+  automation_id: 9900
+  trigger_action: agent_signal
+  version: 1
+  steps: '{"id":"b3cd86ec-ebc8-4bbb-a3f6-d9bc6718fcb8","steps":[{"id":"38247095-1131-4ad4-bec9-05ee10d51f16","type":"wait","seconds":3600}]}'
+  workspace_id: 99
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 9901 # fixture: AutomationHalcyonOnTaggedVersion
+  automation_id: 9901
+  trigger_action: contact.tagged
+  version: 1
+  steps: '{"id":"46638e2d-94bc-4b31-907c-55a2c410edf4","steps":[{"id":"c1e94f53-945c-402b-b109-6ea2924271cf","type":"wait","seconds":3600}]}'
+  workspace_id: 99
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 9902 # fixture: AutomationHalcyonOnFieldChangedVersion
+  automation_id: 9902
+  trigger_action: contact.field_changed
+  version: 1
+  steps: '{"id":"6416c315-fe51-4c8a-afc9-486f6f62c5bf","steps":[{"id":"75008d0e-bcc6-4ef8-a73a-18aef4ef68b9","type":"wait","seconds":3600}]}'
+  workspace_id: 99
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 9903 # fixture: AutomationHalcyonOnCreatedVersion
+  automation_id: 9903
+  trigger_action: contact.created
+  version: 1
+  steps: '{"id":"c5ffe7f9-3173-4d11-8cdc-387cad95a11e","steps":[{"id":"23082334-5ef6-452f-b315-fe188d6e9df1","type":"wait","seconds":3600}]}'
+  workspace_id: 99
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 9904 # fixture: AutomationHalcyonCourseVersion
+  automation_id: 9904
+  trigger_action: halcyon_course
+  exits: '[{"action":"halcyon_left"}]'
+  goal: '{"action":"halcyon_paid"}'
+  version: 1
+  steps: '{"id":"12d649cb-5c93-4051-b722-6cf8f2094ff1","steps":[{"id":"f33e81f9-3cb6-4901-adaa-330def6e8b41","type":"wait","seconds":604800}]}'
+  workspace_id: 99
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+
+# Ouroboros (workspace 1553): the versions of the cycle guard's Automations.
+- id: 15530 # fixture: AutomationOuroborosUntagRingVersion
+  automation_id: 15530
+  trigger_action: contact.tagged
+  version: 1
+  steps: '{"id":"10d5a412-74b6-4c5b-8332-a48dead168e3","steps":[{"id":"c0a65a64-8ed8-4435-999c-c62f2361f2b1","type":"remove_tag","tag":"ring"}]}'
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 15531 # fixture: AutomationOuroborosTagRingVersion
+  automation_id: 15531
+  trigger_action: contact.untagged
+  version: 1
+  steps: '{"id":"de97ce90-0054-4764-b1f9-f3f7fe4260b3","steps":[{"id":"04685c57-fb79-4a61-b131-e16d5cbe473e","type":"apply_tag","tag":"ring"}]}'
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 15532 # fixture: AutomationOuroborosWaitThenUntagRingVersion
+  automation_id: 15532
+  trigger_action: contact.tagged
+  version: 1
+  steps: '{"id":"5b97de16-74df-4164-ab54-a00db2675556","steps":[{"id":"f6e5afab-bc58-4feb-8e2d-f48a48ce65e8","type":"wait","seconds":3600},{"id":"ef781e78-5beb-4e8b-9510-fc55b4388167","type":"remove_tag","tag":"ring"}]}'
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 15533 # fixture: AutomationOuroborosSelfTaggerVersion
+  automation_id: 15533
+  trigger_action: contact.tagged
+  version: 1
+  steps: '{"id":"1ee0916c-ab76-4e46-93f6-871a159ab20e","steps":[{"id":"0f68fcd4-e58f-4490-99ea-aa1015cc9359","type":"apply_tag","tag":"self"},{"id":"053740c6-927f-477c-a8b7-f6ab8a631fa8","type":"wait","seconds":3600}]}'
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 15534 # fixture: AutomationOuroborosStarterVersion
+  automation_id: 15534
+  trigger_action: ouro_start
+  version: 1
+  steps: '{"id":"a4ba772b-5667-407a-a24a-09f7193755c5","steps":[]}'
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 15535 # fixture: AutomationOuroborosOnCompletedVersion
+  automation_id: 15535
+  trigger_action: automation.completed
+  version: 1
+  steps: '{"id":"1ccc48cb-eb38-46c9-8a4b-b0998313a0f5","steps":[]}'
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 15536 # fixture: AutomationOuroborosOnClickVersion
+  automation_id: 15536
+  trigger_action: email.clicked
+  version: 1
+  steps: '{"id":"b41bd6ba-d3c8-4507-a2dd-3086d539e425","steps":[{"id":"ff98b46d-d5c6-433b-bd2c-7fbbddbbcf11","type":"wait","seconds":3600}]}'
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 15537 # fixture: AutomationOuroborosGoalVersion
+  automation_id: 15537
+  trigger_action: ouro_go
+  goal: '{"action":"ouro_paid"}'
+  version: 1
+  steps: '{"id":"28fcf195-7160-4ad1-89c1-19f2e40af8df","steps":[{"id":"6c1698db-e732-4f2e-b821-5213098fe479","type":"wait","seconds":3600}]}'
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'

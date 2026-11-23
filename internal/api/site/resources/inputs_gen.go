@@ -5,6 +5,7 @@ package resources
 
 import (
 	"fmt"
+	automationversion "github.com/getsphericon/sphericon/ent/automationversion"
 	broadcast "github.com/getsphericon/sphericon/ent/broadcast"
 	invitation "github.com/getsphericon/sphericon/ent/invitation"
 	membership "github.com/getsphericon/sphericon/ent/membership"
@@ -79,21 +80,29 @@ func (c *InputsImpl) ApplyTagStepIn(source site.ApplyTagStepInput) automationste
 	automationstepApplyTag.Tag = source.Tag
 	return automationstepApplyTag
 }
-func (c *InputsImpl) AutomationCreate(source *site.CreateAutomationInput) automations.CreateInput {
+func (c *InputsImpl) AutomationCreate(source *site.CreateAutomationInput) (automations.CreateInput, error) {
 	var automationsCreateInput automations.CreateInput
 	if source != nil {
 		automationsCreateInput.Name = nameIn((*source).Name)
-		automationsCreateInput.TriggerEvent = (*source).TriggerEvent
-		if (*source).ExitEvents != nil {
-			automationsCreateInput.ExitEvents = make([]string, len((*source).ExitEvents))
-			for i := 0; i < len((*source).ExitEvents); i++ {
-				automationsCreateInput.ExitEvents[i] = (*source).ExitEvents[i]
-			}
+		eventmatcherMatcher, err := automationTriggerIn((*source).Trigger)
+		if err != nil {
+			return automationsCreateInput, err
 		}
-		automationsCreateInput.GoalEvent = nilStringPtrIn((*source).GoalEvent)
+		automationsCreateInput.Trigger = eventmatcherMatcher
+		automationsCreateInput.Entry = automationEntryIn(c, (*source).Trigger)
+		eventmatcherMatcherList, err := automationExitsIn((*source).ExitEvents)
+		if err != nil {
+			return automationsCreateInput, err
+		}
+		automationsCreateInput.ExitEvents = eventmatcherMatcherList
+		pEventmatcherMatcher, err := automationGoalIn((*source).GoalEvent)
+		if err != nil {
+			return automationsCreateInput, err
+		}
+		automationsCreateInput.GoalEvent = pEventmatcherMatcher
 		automationsCreateInput.Steps = automationPathPtrIn(c, (*source).Steps)
 	}
-	return automationsCreateInput
+	return automationsCreateInput, nil
 }
 func (c *InputsImpl) AutomationPath(source site.AutomationPathInput) automationstep.Path {
 	var automationstepPath automationstep.Path
@@ -131,17 +140,30 @@ func (c *InputsImpl) AutomationState(source site.SiteAutomationState) automation
 	}
 	return automationsState
 }
-func (c *InputsImpl) AutomationUpdate(source *site.UpdateAutomationInput) automations.UpdateInput {
+func (c *InputsImpl) AutomationUpdate(source *site.UpdateAutomationInput) (automations.UpdateInput, error) {
 	var automationsUpdateInput automations.UpdateInput
 	if source != nil {
 		automationsUpdateInput.Revision = revisionIn((*source).Revision)
 		automationsUpdateInput.Name = namePtrIn((*source).Name)
-		automationsUpdateInput.TriggerEvent = stringPtrIn((*source).TriggerEvent)
-		automationsUpdateInput.ExitEvents = listPtrIn((*source).ExitEvents)
-		automationsUpdateInput.GoalEvent = nilStringPatch((*source).GoalEvent)
+		pEventmatcherMatcher, err := automationTriggerPtrIn((*source).Trigger)
+		if err != nil {
+			return automationsUpdateInput, err
+		}
+		automationsUpdateInput.Trigger = pEventmatcherMatcher
+		automationsUpdateInput.Entry = automationEntryPtrIn(c, (*source).Trigger)
+		pEventmatcherMatcherList, err := automationExitsPtrIn((*source).ExitEvents)
+		if err != nil {
+			return automationsUpdateInput, err
+		}
+		automationsUpdateInput.ExitEvents = pEventmatcherMatcherList
+		patchField, err := automationGoalPatch((*source).GoalEvent)
+		if err != nil {
+			return automationsUpdateInput, err
+		}
+		automationsUpdateInput.GoalEvent = patchField
 		automationsUpdateInput.Steps = automationPathPtrIn(c, (*source).Steps)
 	}
-	return automationsUpdateInput
+	return automationsUpdateInput, nil
 }
 func (c *InputsImpl) AutomationsListFilter(source site.SiteAutomationsListParams) automations.ListFilter {
 	var automationsListFilter automations.ListFilter
@@ -409,6 +431,18 @@ func (c *InputsImpl) EnrollmentsFilter(source site.SiteEnrollmentsListParams) au
 	automationsEnrollmentsFilter.AutomationID = int64(source.AutomationId)
 	automationsEnrollmentsFilter.Status = enrollmentStatusIn(source.Status)
 	return automationsEnrollmentsFilter
+}
+func (c *InputsImpl) EntryPolicy(source site.EventTriggerInputEntryPolicy) automationversion.EntryPolicy {
+	var automationversionEntryPolicy automationversion.EntryPolicy
+	switch source {
+	case site.EventTriggerInputEntryPolicyAgain:
+		automationversionEntryPolicy = automationversion.EntryPolicyAgain
+	case site.EventTriggerInputEntryPolicyOnce:
+		automationversionEntryPolicy = automationversion.EntryPolicyOnce
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return automationversionEntryPolicy
 }
 func (c *InputsImpl) HttpStepIn(source site.HttpStepInput) automationstep.HTTP {
 	var automationstepHTTP automationstep.HTTP
@@ -891,6 +925,12 @@ func (c *InputsImpl) SignupSurvey(source *site.SiteSignupSurveyInput) signupsurv
 		signupsurveyresponsesAnswers.HeardFromOther = stringPtrIn((*source).HeardFromOther)
 	}
 	return signupsurveyresponsesAnswers
+}
+func (c *InputsImpl) SkippedEntriesFilter(source site.SiteSkippedEntriesListParams) automations.SkippedEntriesFilter {
+	var automationsSkippedEntriesFilter automations.SkippedEntriesFilter
+	automationsSkippedEntriesFilter.AutomationID = int64(source.AutomationId)
+	automationsSkippedEntriesFilter.ContactID = entityIDIn(source.ContactId)
+	return automationsSkippedEntriesFilter
 }
 func (c *InputsImpl) SmsBroadcastContentIn(source site.SmsBroadcastContentInput) broadcasts.SMSContentInput {
 	var broadcastsSMSContentInput broadcasts.SMSContentInput

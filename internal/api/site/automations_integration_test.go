@@ -30,7 +30,7 @@ func TestSiteAutomationStepsNameTheirIntegration(t *testing.T) {
 	mailgun := siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationAcmeMailgunID))
 
 	created, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
-		Name: "Onboarding", TriggerEvent: "signup",
+		Name: "Onboarding", Trigger: testhelper.SiteTrigger("signup"),
 		Steps: testhelper.SitePathEdit(siteEmailStepVia(mailgun), siteEmailStepVia(siteapi.OptNilEntityId{})),
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
@@ -63,7 +63,7 @@ func TestSiteAutomationsRefuseAStepsUnknownIntegration(t *testing.T) {
 	steps := testhelper.SitePathEdit(siteEmailStepVia(siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationGlobexID)))) // another Workspace's
 	draftBefore := env.DB.AutomationVersion.GetX(ctx, fixtures.AutomationWelcomeSeriesDraftVersionID).Steps
 
-	_, create := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{Name: "x", TriggerEvent: "signup", Steps: steps},
+	_, create := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{Name: "x", Trigger: testhelper.SiteTrigger("signup"), Steps: steps},
 		siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	_, update := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(idStr(fixtures.AutomationWelcomeSeriesID)))), Steps: steps},
 		siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: idStr(fixtures.AutomationWelcomeSeriesID)})

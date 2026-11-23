@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -26,21 +27,21 @@ func TestSmsReceivedTriggersExitsAndCompletesButSmsSentDoesNot(t *testing.T) {
 	received, confirmed, sent := systemevent.SmsReceived, systemevent.SmsConfirmed, systemevent.SmsSent
 
 	onReply, err := m.Create(t.Context(), s, automations.CreateInput{
-		Name: "Reply", TriggerEvent: received, ExitEvents: []string{systemevent.ContactTagged}, GoalEvent: &confirmed,
+		Name: "Reply", Trigger: eventmatcher.Matcher{Action: received}, ExitEvents: []eventmatcher.Matcher{{Action: systemevent.ContactTagged}}, GoalEvent: &eventmatcher.Matcher{Action: confirmed},
 	})
 	require.NoError(t, err)
 	assert.NotZero(t, onReply.ID)
 	ending, err := m.Create(t.Context(), s, automations.CreateInput{
-		Name: "Ends on a reply", TriggerEvent: confirmed, ExitEvents: []string{received},
+		Name: "Ends on a reply", Trigger: eventmatcher.Matcher{Action: confirmed}, ExitEvents: []eventmatcher.Matcher{{Action: received}},
 	})
 	require.NoError(t, err)
 	assert.NotZero(t, ending.ID)
 
-	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Sent", TriggerEvent: sent, ExitEvents: []string{}})
+	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Sent", Trigger: eventmatcher.Matcher{Action: sent}, ExitEvents: []eventmatcher.Matcher{}})
 	require.ErrorIs(t, err, automations.ErrInvalidTrigger)
-	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Exit", TriggerEvent: received, ExitEvents: []string{sent}})
+	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Exit", Trigger: eventmatcher.Matcher{Action: received}, ExitEvents: []eventmatcher.Matcher{{Action: sent}}})
 	require.ErrorIs(t, err, automations.ErrInvalidExitEvent)
-	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Goal", TriggerEvent: received, ExitEvents: []string{}, GoalEvent: &sent})
+	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Goal", Trigger: eventmatcher.Matcher{Action: received}, ExitEvents: []eventmatcher.Matcher{}, GoalEvent: &eventmatcher.Matcher{Action: sent}})
 	require.ErrorIs(t, err, automations.ErrInvalidGoalEvent)
 }
 
@@ -53,12 +54,12 @@ func TestSmsDeliveredAndUndeliveredTriggerExitAndComplete(t *testing.T) {
 	delivered, undelivered := systemevent.SmsDelivered, systemevent.SmsUndelivered
 
 	onUndelivered, err := m.Create(t.Context(), s, automations.CreateInput{
-		Name: "Undelivered", TriggerEvent: undelivered, ExitEvents: []string{delivered},
+		Name: "Undelivered", Trigger: eventmatcher.Matcher{Action: undelivered}, ExitEvents: []eventmatcher.Matcher{{Action: delivered}},
 	})
 	require.NoError(t, err)
 	assert.NotZero(t, onUndelivered.ID)
 	onDelivered, err := m.Create(t.Context(), s, automations.CreateInput{
-		Name: "Delivered", TriggerEvent: delivered, ExitEvents: []string{}, GoalEvent: &undelivered,
+		Name: "Delivered", Trigger: eventmatcher.Matcher{Action: delivered}, ExitEvents: []eventmatcher.Matcher{}, GoalEvent: &eventmatcher.Matcher{Action: undelivered},
 	})
 	require.NoError(t, err)
 	assert.NotZero(t, onDelivered.ID)
@@ -73,12 +74,12 @@ func TestSmsUnsubscribedTriggersAndExits(t *testing.T) {
 	unsubscribed, confirmed := systemevent.SmsUnsubscribed, systemevent.SmsConfirmed
 
 	onStop, err := m.Create(t.Context(), s, automations.CreateInput{
-		Name: "Unsubscribed", TriggerEvent: unsubscribed, ExitEvents: []string{confirmed},
+		Name: "Unsubscribed", Trigger: eventmatcher.Matcher{Action: unsubscribed}, ExitEvents: []eventmatcher.Matcher{{Action: confirmed}},
 	})
 	require.NoError(t, err)
 	assert.NotZero(t, onStop.ID)
 	onConsent, err := m.Create(t.Context(), s, automations.CreateInput{
-		Name: "Confirmed", TriggerEvent: confirmed, ExitEvents: []string{unsubscribed},
+		Name: "Confirmed", Trigger: eventmatcher.Matcher{Action: confirmed}, ExitEvents: []eventmatcher.Matcher{{Action: unsubscribed}},
 	})
 	require.NoError(t, err)
 	assert.NotZero(t, onConsent.ID)

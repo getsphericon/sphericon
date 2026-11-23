@@ -1,9 +1,7 @@
 package condition
 
 import (
-	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent/contact"
@@ -16,22 +14,12 @@ import (
 // generated values: a value the contract adds and nothing here means fails the exhaustive lint,
 // and a value outside the contract is refused.
 
-// textOperator is what one operator of a text test means in the two places a Condition is
-// evaluated: contact compiles it to a predicate on a Contact attribute (SQL), event runs it in Go
-// on a property of the triggering Event. They are one value so a Contact leaf and a Rule's test of
-// the triggering Event mean the same by the same operator;
-// TestOperatorsAgreeOnTheContactSideAndTheEventSide runs the same cases through both.
+// textOperator is what one operator of a text test means in the two places it is evaluated:
+// contact compiles it to a predicate on a Contact attribute, path to the comparison of a property's
+// value @, a string, in an SQL/JSON path (ADR 0180).
 type textOperator struct {
 	contact func(f textField, want string) predicate.Contact
-	// event reports whether the property's value, present in the Event, passes. Only a string
-	// can: a value of another type fails every operator.
-	event func(have any, want string) bool
-}
-
-// text returns the property as a string, false for any other type (JSON null included).
-func text(have any) (string, bool) {
-	s, ok := have.(string)
-	return s, ok
+	path    func(b *pathBuilder, key, want string) string
 }
 
 // textOperatorOf is what op means, or a refusal of an operator outside the contract.
@@ -40,47 +28,63 @@ func textOperatorOf(op conditiontree.TextOperator) (textOperator, error) {
 	case conditiontree.TextEq:
 		return textOperator{
 			contact: func(f textField, want string) predicate.Contact { return f.eq(want) },
-			event:   func(have any, want string) bool { s, ok := text(have); return ok && s == want },
+			path:    func(b *pathBuilder, _, want string) string { return "@ == " + b.bind(want) },
 		}, nil
 	case conditiontree.TextNeq:
 		return textOperator{
 			contact: func(f textField, want string) predicate.Contact { return f.neq(want) },
-			event:   func(have any, want string) bool { s, ok := text(have); return ok && s != want },
+			path:    func(b *pathBuilder, _, want string) string { return "@ != " + b.bind(want) },
 		}, nil
 	case conditiontree.TextContains:
+		// A case-insensitive substring. The path has no operator for it that takes a variable
+		// (like_regex takes its pattern only as a literal), so the statement decides it beside the
+		// path and hands the path the answer (pathBuilder.contains).
 		return textOperator{
 			contact: func(f textField, want string) predicate.Contact { return f.contains(want) },
-			event: func(have any, want string) bool {
-				s, ok := text(have)
-				return ok && strings.Contains(strings.ToLower(s), strings.ToLower(want))
-			},
+			path:    func(b *pathBuilder, key, want string) string { return b.contains(key, want) + " == true" },
 		}, nil
 	case conditiontree.TextBeginsWith:
 		return textOperator{
 			contact: func(f textField, want string) predicate.Contact { return f.beginsWith(want) },
-			event:   func(have any, want string) bool { s, ok := text(have); return ok && strings.HasPrefix(s, want) },
+			path:    func(b *pathBuilder, _, want string) string { return "@ starts with " + b.bind(want) },
 		}, nil
 	}
 	return textOperator{}, fmt.Errorf("unknown text operator %q", op)
 }
 
-// contact is the presence test of a Contact's text attribute: set or null. Like textOperator, it
-// means the same as event, its test of a property of the triggering Event.
+// propertyTest is a test a property test takes (text, presence or number), written as the
+// predicate on the value @ of the property key in an SQL/JSON path. Each guards the value's type
+// first.
+type propertyTest interface {
+	test
+	path(b *pathBuilder, key string) string
+}
+
+// path holds for a string that compares with the test's value by its operator.
+func (t textTest) path(b *pathBuilder, key string) string {
+	return `@.type() == "string" && ` + t.meaning.path(b, key, t.value)
+}
+
+// path holds for a number that compares with the test's value by its operator.
+func (t numberTest) path(b *pathBuilder, _ string) string {
+	return `@.type() == "number" && @ ` + t.meaning.op + " " + b.bind(t.value)
+}
+
+// path is the presence test of a property the object holds: set is a string, not set is JSON
+// null, as on a Contact attribute, whose value is text or null.
+func (p presenceTest) path(*pathBuilder, string) string {
+	if p.set {
+		return `@.type() == "string"`
+	}
+	return `@.type() == "null"`
+}
+
+// contact is the presence test of a Contact's text attribute: set or null.
 func (p presenceTest) contact(f textField) predicate.Contact {
 	if p.set {
 		return f.notNull
 	}
 	return f.null
-}
-
-// event is the presence test of a property present in the triggering Event: set is a text value,
-// not set is JSON null.
-func (p presenceTest) event(have any) bool {
-	if p.set {
-		_, ok := text(have)
-		return ok
-	}
-	return have == nil
 }
 
 // operator is the operator of a value's presence test, set or notSet: the one the table of what
@@ -92,44 +96,28 @@ func (p presenceTest) operator() conditiontree.PresenceOperator {
 	return conditiontree.PresenceNotSet
 }
 
-// comparison is what one operator of a number test means in the two places it is evaluated: filter
-// is its jsonpath test of a number Custom field's value @ against the operand $v (SQL), holds runs
-// it in Go on a number property of the triggering Event. One value, so a Segment's leaf and a Rule's
-// test of the triggering Event mean the same by the same operator;
-// TestNumberLeavesAgreeOnTheContactSideAndTheEventSide runs the same cases through both.
+// comparison is what one operator of a number test means: op is its comparison of a JSON number @
+// with another in an SQL/JSON path, the value of a number Custom field and a number property alike.
 type comparison struct {
-	filter string
-	holds  func(have, want float64) bool
+	op string
 }
+
+// filter is the comparison of @ with the operand $v.
+func (c comparison) filter() string { return "@ " + c.op + " $v" }
 
 // comparisonOf is what op means, or a refusal of an operator outside the contract.
 func comparisonOf(op conditiontree.NumberOperator) (comparison, error) {
 	switch op {
 	case conditiontree.NumberGt:
-		return comparison{filter: "@ > $v", holds: func(have, want float64) bool { return have > want }}, nil
+		return comparison{op: ">"}, nil
 	case conditiontree.NumberGte:
-		return comparison{filter: "@ >= $v", holds: func(have, want float64) bool { return have >= want }}, nil
+		return comparison{op: ">="}, nil
 	case conditiontree.NumberLt:
-		return comparison{filter: "@ < $v", holds: func(have, want float64) bool { return have < want }}, nil
+		return comparison{op: "<"}, nil
 	case conditiontree.NumberLte:
-		return comparison{filter: "@ <= $v", holds: func(have, want float64) bool { return have <= want }}, nil
+		return comparison{op: "<="}, nil
 	}
 	return comparison{}, fmt.Errorf("unknown number operator %q", op)
-}
-
-// number returns the property as a number, false for any other type: encoding/json decodes a
-// JSON number to float64, or to json.Number when the decoder keeps numbers (UseNumber), as
-// collection does.
-func number(have any) (float64, bool) {
-	switch v := have.(type) {
-	case float64:
-		return v, true
-	case json.Number:
-		f, err := v.Float64()
-		return f, err == nil
-	default:
-		return 0, false
-	}
 }
 
 // A datetime Custom field's value @ is a moment in one of two kinds, and each is compared only with

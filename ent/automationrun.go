@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
@@ -43,6 +44,16 @@ type AutomationRun struct {
 	EventAction *string `json:"event_action,omitempty"`
 	// EventProperties holds the value of the "event_properties" field.
 	EventProperties map[string]interface{} `json:"event_properties,omitempty"`
+	// TriggerSourceID holds the value of the "trigger_source_id" field.
+	TriggerSourceID *string `json:"trigger_source_id,omitempty"`
+	// FiringID holds the value of the "firing_id" field.
+	FiringID *int64 `json:"firing_id,omitempty"`
+	// Chain holds the value of the "chain" field.
+	Chain []int64 `json:"chain,omitempty"`
+	// Ordinal holds the value of the "ordinal" field.
+	Ordinal int `json:"ordinal,omitempty"`
+	// KeyValue holds the value of the "key_value" field.
+	KeyValue *string `json:"key_value,omitempty"`
 	// EndedAt holds the value of the "ended_at" field.
 	EndedAt *time.Time `json:"ended_at,omitempty"`
 	// CurrentStepID holds the value of the "current_step_id" field.
@@ -71,9 +82,11 @@ type AutomationRunEdges struct {
 	Version *AutomationVersion `json:"version,omitempty"`
 	// Contact holds the value of the contact edge.
 	Contact *Contact `json:"contact,omitempty"`
+	// Firing holds the value of the firing edge.
+	Firing *RuleFiring `json:"firing,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -120,16 +133,27 @@ func (e AutomationRunEdges) ContactOrErr() (*Contact, error) {
 	return nil, &NotLoadedError{edge: "contact"}
 }
 
+// FiringOrErr returns the Firing value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e AutomationRunEdges) FiringOrErr() (*RuleFiring, error) {
+	if e.Firing != nil {
+		return e.Firing, nil
+	} else if e.loadedTypes[4] {
+		return nil, &NotFoundError{label: rulefiring.Label}
+	}
+	return nil, &NotLoadedError{edge: "firing"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*AutomationRun) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case automationrun.FieldEventProperties:
+		case automationrun.FieldEventProperties, automationrun.FieldChain:
 			values[i] = new([]byte)
-		case automationrun.FieldID, automationrun.FieldWorkspaceID, automationrun.FieldAutomationID, automationrun.FieldContactID, automationrun.FieldVersionID, automationrun.FieldFailureStatus:
+		case automationrun.FieldID, automationrun.FieldWorkspaceID, automationrun.FieldAutomationID, automationrun.FieldContactID, automationrun.FieldVersionID, automationrun.FieldFiringID, automationrun.FieldOrdinal, automationrun.FieldFailureStatus:
 			values[i] = new(sql.NullInt64)
-		case automationrun.FieldStatus, automationrun.FieldEventAction, automationrun.FieldCurrentStepID, automationrun.FieldFailureKind, automationrun.FieldFailureExcerpt:
+		case automationrun.FieldStatus, automationrun.FieldEventAction, automationrun.FieldTriggerSourceID, automationrun.FieldKeyValue, automationrun.FieldCurrentStepID, automationrun.FieldFailureKind, automationrun.FieldFailureExcerpt:
 			values[i] = new(sql.NullString)
 		case automationrun.FieldCreatedAt, automationrun.FieldUpdatedAt, automationrun.FieldBeganAt, automationrun.FieldEndedAt, automationrun.FieldResumeAt:
 			values[i] = new(sql.NullTime)
@@ -217,6 +241,41 @@ func (_m *AutomationRun) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field event_properties: %w", err)
 				}
 			}
+		case automationrun.FieldTriggerSourceID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field trigger_source_id", values[i])
+			} else if value.Valid {
+				_m.TriggerSourceID = new(string)
+				*_m.TriggerSourceID = value.String
+			}
+		case automationrun.FieldFiringID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field firing_id", values[i])
+			} else if value.Valid {
+				_m.FiringID = new(int64)
+				*_m.FiringID = value.Int64
+			}
+		case automationrun.FieldChain:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field chain", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Chain); err != nil {
+					return fmt.Errorf("unmarshal field chain: %w", err)
+				}
+			}
+		case automationrun.FieldOrdinal:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field ordinal", values[i])
+			} else if value.Valid {
+				_m.Ordinal = int(value.Int64)
+			}
+		case automationrun.FieldKeyValue:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field key_value", values[i])
+			} else if value.Valid {
+				_m.KeyValue = new(string)
+				*_m.KeyValue = value.String
+			}
 		case automationrun.FieldEndedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field ended_at", values[i])
@@ -292,6 +351,11 @@ func (_m *AutomationRun) QueryContact() *ContactQuery {
 	return NewAutomationRunClient(_m.config).QueryContact(_m)
 }
 
+// QueryFiring queries the "firing" edge of the AutomationRun entity.
+func (_m *AutomationRun) QueryFiring() *RuleFiringQuery {
+	return NewAutomationRunClient(_m.config).QueryFiring(_m)
+}
+
 // Update returns a builder for updating this AutomationRun.
 // Note that you need to call AutomationRun.Unwrap() before calling this method if this AutomationRun
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -346,6 +410,27 @@ func (_m *AutomationRun) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("event_properties=")
 	builder.WriteString(fmt.Sprintf("%v", _m.EventProperties))
+	builder.WriteString(", ")
+	if v := _m.TriggerSourceID; v != nil {
+		builder.WriteString("trigger_source_id=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.FiringID; v != nil {
+		builder.WriteString("firing_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("chain=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Chain))
+	builder.WriteString(", ")
+	builder.WriteString("ordinal=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Ordinal))
+	builder.WriteString(", ")
+	if v := _m.KeyValue; v != nil {
+		builder.WriteString("key_value=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", ")
 	if v := _m.EndedAt; v != nil {
 		builder.WriteString("ended_at=")

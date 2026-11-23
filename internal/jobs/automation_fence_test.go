@@ -119,9 +119,9 @@ func (e *realEnv) enrolledNow(t *testing.T, automationID, contactID int64) int64
 	t.Helper()
 	ctx := context.Background()
 	in := automations.EnrollOnRuleInput{AutomationID: automationID, ContactID: contactID}
-	enrolled, err := e.enrollments().EnrollOnRule(ctx, e.scoped, in)
+	made, err := e.enrollments().EnrollOnRule(ctx, e.scoped, in)
 	require.NoError(t, err)
-	require.True(t, enrolled)
+	require.True(t, made.Enrolled)
 	run, err := e.client.AutomationRun.Query().
 		Where(automationrun.AutomationID(automationID), automationrun.ContactID(contactID)).
 		Only(ctx)

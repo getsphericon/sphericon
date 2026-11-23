@@ -22,7 +22,7 @@ func TestSiteAutomationVersionIsARootPathOfTypedStepsWithIDs(t *testing.T) {
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	created, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
-		Name: "Ids", TriggerEvent: "signup",
+		Name: "Ids", Trigger: testhelper.SiteTrigger("signup"),
 		Steps: testhelper.SitePathEdit(
 			siteapi.EmailStepInput{Subject: "Hi", Body: siteapi.NewOptString("<p>Hi</p>")},
 			siteapi.WaitStepInput{Seconds: 60},
@@ -95,7 +95,7 @@ func TestSiteAutomationRefusesAMalformedOrDuplicateStepID(t *testing.T) {
 			c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 			_, err := c.SiteAutomationsCreate(t.Context(), &siteapi.CreateAutomationInput{
-				Name: "Bad ids", TriggerEvent: "signup", Steps: siteapi.NewOptAutomationPathInput(tc.path),
+				Name: "Bad ids", Trigger: testhelper.SiteTrigger("signup"), Steps: siteapi.NewOptAutomationPathInput(tc.path),
 			}, siteapi.SiteAutomationsCreateParams{WorkspaceId: siteapi.WorkspaceId(fixtures.AcmePublicID)})
 
 			refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
@@ -123,7 +123,7 @@ func TestSiteAutomationRefusesAFieldItsStepKindDoesNotHold(t *testing.T) {
 			}))
 
 			_, err := edited.SiteAutomationsCreate(t.Context(), &siteapi.CreateAutomationInput{
-				Name: "Closed", TriggerEvent: "signup",
+				Name: "Closed", Trigger: testhelper.SiteTrigger("signup"),
 				Steps: testhelper.SitePathEdit(
 					siteapi.WaitStepInput{Seconds: 60},
 					siteapi.ApplyTagStepInput{Tag: "vip"},

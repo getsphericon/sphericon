@@ -100,11 +100,22 @@ type Envelope struct {
 	// that carries it, so Rules never chain (ADR 0054). The Action's work runs in a context
 	// CausedBy made, which the publisher stamps it from.
 	CausedBy string `json:"causedBy,omitempty"`
+	// SendLocked marks an event a write through a Connection without mcp:send published (ADR
+	// 0132): the write's context made by SendLocked, which the publisher stamps it from. Such an
+	// event enrolls no one and fires no Rule, but still ends an Enrollment as an exit or goal event
+	// and still reaches the Webhook endpoints: the mark only stops sends from starting. Its stored
+	// Event keeps it (events.send_locked).
+	SendLocked bool `json:"sendLocked,omitempty"`
 	// CorrelationID is shared by every event of one chain: what a request, or the handling of
 	// an event, published (correlation.go). CausationID is the id of the event whose handling
 	// published this one, empty at the start of a chain.
 	CorrelationID string `json:"correlationId,omitempty"`
 	CausationID   string `json:"causationId,omitempty"`
+	// Automations are the ids of the Automations the event's chain passed through (ADR 0127),
+	// ascending: an event published on behalf of an Enrollment names its Automation and the ones
+	// before it, and one published while handling such an event inherits them (correlation.go). An
+	// Automation never enrolls a Contact on an event that names it (`cycle`).
+	Automations []int64 `json:"automations,omitempty"`
 }
 
 // SourceID is the id the Event's row is stored under (events.source_id): the event name and
@@ -135,7 +146,8 @@ type Projection struct {
 	VisitorID string
 	// AutomationID is the Automation the Event came from (→ events.automation_id): the one whose
 	// email it is about, or whose Enrollment of the Contact began or ended; 0 for any other Event.
-	// An Automation never starts from an Event of its own (ADR 0053).
+	// An author filters a Trigger by it to leave the Automation's own Events out; the cycle guard
+	// reads the chain (Envelope.Automations), not this (ADR 0053 as amended, ADR 0127).
 	AutomationID int64
 	// BroadcastID is the Broadcast whose email the Event came from (→ events.broadcast_id), 0 for
 	// any other Event.
