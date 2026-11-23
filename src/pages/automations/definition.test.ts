@@ -40,7 +40,7 @@ function node(id: string, type: string, properties: Record<string, unknown>): Wo
   }
 }
 
-const TRIGGER = node('trigger', 'trigger', { triggerEvent: 'email.opened', pathId: ROOT })
+const TRIGGER = node('trigger', 'trigger', { triggerAction: 'email.opened', pathId: ROOT })
 
 // A Trigger on the event, with no exit and no goal event.
 function on(action: string): AutomationTrigger {
@@ -75,7 +75,7 @@ test('stepsToGraph starts the chain with the Trigger node, linked to each step b
   expect(nodes[0]?.data).toMatchObject({
     type: 'trigger',
     isStartNode: true,
-    properties: { triggerEvent: 'email.opened', pathId: ROOT },
+    properties: { triggerAction: 'email.opened', pathId: ROOT },
   })
   expect(nodes[0]?.deletable).toBe(false)
   expect(nodes.slice(1).map((n) => n.data.properties)).toEqual([
@@ -167,7 +167,7 @@ test('a node dropped on the canvas is saved with its node id, beside the stored 
 })
 
 test('a Trigger with no path id saves the steps without one: the server gives it', () => {
-  const graph = { nodes: [node('trigger', 'trigger', { triggerEvent: 'paid' })], edges: [] }
+  const graph = { nodes: [node('trigger', 'trigger', { triggerAction: 'paid' })], edges: [] }
 
   expect(graphToSteps(graph).steps).toEqual({ steps: [] })
 })
@@ -505,14 +505,14 @@ test("the Trigger's filter rides on its node as JSON text and round-trips into t
   const graph = stepsToGraph(trigger, path([]), {})
 
   expect(graph.nodes[0]?.data.properties).toMatchObject({
-    triggerEvent: 'order.completed',
+    triggerAction: 'order.completed',
     triggerFilter: JSON.stringify(PAID),
   })
   expect(graphToSteps(graph)).toMatchObject({ trigger: trigger.trigger, filterIncomplete: false })
 })
 
 test('a Trigger with an empty filter, or none, saves no filter', () => {
-  const empty = node('trigger', 'trigger', { triggerEvent: 'order.completed', triggerFilter: '' })
+  const empty = node('trigger', 'trigger', { triggerAction: 'order.completed', triggerFilter: '' })
 
   expect(graphToSteps({ nodes: [empty], edges: [] })).toMatchObject({
     trigger: { kind: 'event', action: 'order.completed', entryPolicy: 'once' },
@@ -527,7 +527,7 @@ test('a filter still being typed is flagged and left out of the saved Trigger', 
     entries: [{ kind: 'property', test: { kind: 'text', operator: 'eq', value: 'paid' } }],
   }
   const typing = node('trigger', 'trigger', {
-    triggerEvent: 'order.completed',
+    triggerAction: 'order.completed',
     triggerFilter: JSON.stringify(blankKey),
   })
 
@@ -551,7 +551,7 @@ test("the Trigger's Entry policy and cooldown ride on its node and round-trip in
 
 test('a Trigger node without a cooldown leaves it to the server, and an unknown policy is once', () => {
   const bare = node('trigger', 'trigger', {
-    triggerEvent: 'order.completed',
+    triggerAction: 'order.completed',
     entryPolicy: 'sometimes',
     cooldown: '',
   })
@@ -603,7 +603,7 @@ test('the Trigger node carries the exit and goal events as matchers, which round
 
 test('an exit with a blank action is dropped, a goal with one is none, and actions are trimmed', () => {
   const root = node('trigger', 'trigger', {
-    triggerEvent: 'paid',
+    triggerAction: 'paid',
     exitEvents: endingsText([
       { action: ' refunded ', filterText: '' },
       { action: '  ', filterText: '' },
@@ -618,7 +618,7 @@ test('an exit with a blank action is dropped, a goal with one is none, and actio
 })
 
 test('no goal is an empty text, and an unreadable text of exits or goal is none', () => {
-  const root = node('trigger', 'trigger', { triggerEvent: 'paid', exitEvents: 'x', goalEvent: '' })
+  const root = node('trigger', 'trigger', { triggerAction: 'paid', exitEvents: 'x', goalEvent: '' })
 
   expect(goalText(null)).toBe('')
   expect(graphToSteps({ nodes: [root], edges: [] })).toMatchObject({
@@ -633,11 +633,11 @@ test("an exit's or the goal's filter still being typed is flagged and left out o
     entries: [{ kind: 'property', test: { kind: 'text', operator: 'eq', value: 'paid' } }],
   })
   const exitTyping = node('trigger', 'trigger', {
-    triggerEvent: 'order.placed',
+    triggerAction: 'order.placed',
     exitEvents: endingsText([{ action: 'order.closed', filterText: blankKey }]),
   })
   const goalTyping = node('trigger', 'trigger', {
-    triggerEvent: 'order.placed',
+    triggerAction: 'order.placed',
     goalEvent: goalText({ action: 'order.closed', filterText: blankKey }),
   })
 
@@ -672,7 +672,10 @@ test("the Trigger's Enrollment key rides on its node and round-trips into the sa
     goalEvent: null,
   }
   const graph = stepsToGraph(trigger, path([]), {})
-  const blank = node('trigger', 'trigger', { triggerEvent: 'order.completed', enrollmentKey: '  ' })
+  const blank = node('trigger', 'trigger', {
+    triggerAction: 'order.completed',
+    enrollmentKey: '  ',
+  })
 
   expect(graph.nodes[0]?.data.properties).toMatchObject({ enrollmentKey: 'order_id' })
   expect(graphToSteps(graph).trigger).toEqual(trigger.trigger)

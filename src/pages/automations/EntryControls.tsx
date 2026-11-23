@@ -71,7 +71,7 @@ export function EnrollmentKeyControl(props: ControlProps) {
   const { core } = useJsonForms()
   const node: Record<string, unknown> =
     typeof core?.data === 'object' && core.data !== null ? core.data : {}
-  const action = typeof node.triggerEvent === 'string' ? node.triggerEvent.trim() : ''
+  const action = typeof node.triggerAction === 'string' ? node.triggerAction.trim() : ''
   const keys = useQuery({
     ...siteEventsPropertyKeysOptions({ path: { workspaceId }, query: { action } }),
     enabled: action !== '',

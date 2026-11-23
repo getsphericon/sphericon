@@ -103,7 +103,7 @@ test.each([
   // The Trigger's edit reaches the canvas store, which the Save reads, a moment later.
   await expect
     .poll(() => canvasProperties('trigger'))
-    .toMatchObject({ triggerEvent: 'course_completed' })
+    .toMatchObject({ triggerAction: 'course_completed' })
   // The Trigger's panel covers the toolbar: the Save is a click dispatched on it.
   screen
     .getByRole('button', { name: 'Save' })
