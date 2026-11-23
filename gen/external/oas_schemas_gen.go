@@ -26629,8 +26629,8 @@ type UpdateAutomationInput struct {
 	// The automation's `revision` the edit was made on (ADR 0119): the one it was read with.
 	Revision Revision `json:"revision"`
 	Name     OptName  `json:"name"`
-	// What enrolls a contact; replaces the Trigger, its filter, entry policy and cooldown with it, and
-	// omitted keeps it.
+	// What enrolls a contact; replaces the Trigger, its filter, entry policy, cooldown and Enrollment key
+	// with it, and omitted keeps it.
 	Trigger OptAutomationTriggerInput `json:"trigger"`
 	// The Event matchers that end an active enrollment early; replaces the list, omitted keeps it.
 	ExitEvents []EventMatcherInput `json:"exitEvents"`

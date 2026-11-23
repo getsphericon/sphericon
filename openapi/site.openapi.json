@@ -23332,7 +23332,7 @@
                 "$ref": "#/components/schemas/AutomationTriggerInput"
               }
             ],
-            "description": "What enrolls a contact; replaces the Trigger, its filter, entry policy and cooldown with it,\nand omitted keeps it"
+            "description": "What enrolls a contact; replaces the Trigger, its filter, entry policy, cooldown and\nEnrollment key with it, and omitted keeps it"
           },
           "exitEvents": {
             "type": "array",

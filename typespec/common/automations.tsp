@@ -515,8 +515,8 @@ model UpdateAutomationInput {
 
   name?: Name;
 
-  /** What enrolls a contact; replaces the Trigger, its filter, entry policy and cooldown with it,
-   * and omitted keeps it */
+  /** What enrolls a contact; replaces the Trigger, its filter, entry policy, cooldown and
+   * Enrollment key with it, and omitted keeps it */
   trigger?: AutomationTriggerInput;
 
   /** The Event matchers that end an active enrollment early; replaces the list, omitted keeps it */
