@@ -25,3 +25,12 @@ func (h *Handlers) SiteEnrollmentsGet(ctx context.Context, params siteapi.SiteEn
 	res := mapper.EnrollmentToResource(r)
 	return &res, nil
 }
+
+func (h *Handlers) SiteSkippedEntriesList(ctx context.Context, params siteapi.SiteSkippedEntriesListParams) (*siteapi.SiteSkippedEntriesListOK, error) {
+	ws := workspaceScope(ctx)
+	page, err := h.automations.SkippedEntries(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), inputs.SkippedEntriesFilter(params))
+	if err != nil {
+		return nil, err
+	}
+	return mapper.SkippedEntriesListPage(page), nil
+}

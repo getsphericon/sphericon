@@ -81,6 +81,18 @@ func (f AutomationRunFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AutomationRunMutation", m)
 }
 
+// The AutomationSkippedEntryFunc type is an adapter to allow the use of ordinary
+// function as AutomationSkippedEntry mutator.
+type AutomationSkippedEntryFunc func(context.Context, *ent.AutomationSkippedEntryMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AutomationSkippedEntryFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AutomationSkippedEntryMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AutomationSkippedEntryMutation", m)
+}
+
 // The AutomationStepRecordFunc type is an adapter to allow the use of ordinary
 // function as AutomationStepRecord mutator.
 type AutomationStepRecordFunc func(context.Context, *ent.AutomationStepRecordMutation) (ent.Value, error)

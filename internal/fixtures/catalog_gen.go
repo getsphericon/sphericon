@@ -3847,6 +3847,18 @@ const (
 	SiriusOwnerOrionPassword = "password"
 	// SiriusPublicID is from fixtures/workspaces.
 	SiriusPublicID = "SiriuW72"
+	// SkippedEntryBystanderID is from fixtures/automation_skipped_entries.
+	SkippedEntryBystanderID = 301
+	// SkippedEntryErasableID is from fixtures/automation_skipped_entries.
+	SkippedEntryErasableID = 300
+	// SkippedEntryExpiredID is from fixtures/automation_skipped_entries.
+	SkippedEntryExpiredID = 3
+	// SkippedEntryGlobexID is from fixtures/automation_skipped_entries.
+	SkippedEntryGlobexID = 900
+	// SkippedEntryWelcomeEmmaID is from fixtures/automation_skipped_entries.
+	SkippedEntryWelcomeEmmaID = 2
+	// SkippedEntryWelcomeLiamID is from fixtures/automation_skipped_entries.
+	SkippedEntryWelcomeLiamID = 1
 	// SoleOwnerDoraEmail is from fixtures/users.
 	SoleOwnerDoraEmail = "dora@piedpiper.test"
 	// SoleOwnerDoraID is from fixtures/users.

@@ -54,6 +54,18 @@ func TestExternalAutomationReportReadsThirtyDaysByDefault(t *testing.T) {
 	assert.Len(t, report.Results.Series, 30)
 }
 
+// The report shows the skipped entries of the period by reason (ADR 0127): Liam's `once` a day ago
+// and Emma's `active_enrollment` three days ago; the one 500 days old is in no period.
+func TestExternalAutomationReportShowsTheSkippedEntriesByReason(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead)
+
+	report := automationReport(t, c, externalapi.AutomationsReportParams{ID: entityIDString(fixtures.AutomationWelcomeSeriesID)})
+
+	assert.Equal(t, externalapi.AutomationSkippedCounts{ActiveEnrollment: 1, Once: 1}, report.Results.Current.Skipped)
+	assert.Equal(t, externalapi.AutomationSkippedCounts{}, report.Results.Previous.Skipped)
+}
+
 func TestExternalAutomationReportNeedsTheReadScopeAndTheTokensWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()

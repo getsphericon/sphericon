@@ -100,6 +100,7 @@ var ExternalOperationScopes = map[externalapi.OperationName][]apitokens.Scope{
 	externalapi.SendingDomainsListOperation:        {apitokens.ScopeSendingDomainsRead},
 	externalapi.SendingDomainsUpdateOperation:      {apitokens.ScopeSendingDomainsWrite},
 	externalapi.SendingDomainsVerifyOperation:      {apitokens.ScopeSendingDomainsWrite},
+	externalapi.SkippedEntriesListOperation:        {apitokens.ScopeAutomationsRead},
 	externalapi.SmsConsentsGetOperation:            {apitokens.ScopeContactsRead},
 	externalapi.SuppressionsCreateOperation:        {apitokens.ScopeSuppressionsWrite},
 	externalapi.TagsApplyOperation:                 {apitokens.ScopeContactsWrite},

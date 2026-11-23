@@ -99,11 +99,12 @@ type OnEventInput struct {
 	SourceAutomationID int64
 }
 
-// EnrollOnRuleInput is a Rule's Action that enrolls a Contact: the Automation, the Contact and
-// the source id of the Event the Rule fired on.
+// EnrollOnRuleInput is a Rule's Action that enrolls a Contact: the Automation, the Contact, the
+// Firing whose Action it is and the source id of the Event the Rule fired on.
 type EnrollOnRuleInput struct {
 	AutomationID int64
 	ContactID    int64
+	FiringID     int64
 	SourceID     string
 }
 
@@ -158,7 +159,7 @@ func (m *StepExecution) OnEvent(ctx context.Context, s *ent.Scoped, in OnEventIn
 // ended at once is made, with no step queued (enrollOnRule).
 func (m *StepExecution) EnrollOnRule(ctx context.Context, s *ent.Scoped, in EnrollOnRuleInput) (bool, error) {
 	return m.start(ctx, s, func(ts *ent.Scoped, pub events.Publisher) (int64, bool, error) {
-		return m.enrollOnRule(ctx, ts, pub, in.AutomationID, in.ContactID, in.SourceID, m.now())
+		return m.enrollOnRule(ctx, ts, pub, in, m.now())
 	})
 }
 

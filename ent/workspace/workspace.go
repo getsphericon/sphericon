@@ -121,6 +121,8 @@ const (
 	EdgeBroadcastFigures = "broadcast_figures"
 	// EdgeAutomationFigures holds the string denoting the automation_figures edge name in mutations.
 	EdgeAutomationFigures = "automation_figures"
+	// EdgeAutomationSkippedEntries holds the string denoting the automation_skipped_entries edge name in mutations.
+	EdgeAutomationSkippedEntries = "automation_skipped_entries"
 	// EdgeEmailTemplates holds the string denoting the email_templates edge name in mutations.
 	EdgeEmailTemplates = "email_templates"
 	// EdgeBrandKits holds the string denoting the brand_kits edge name in mutations.
@@ -359,6 +361,13 @@ const (
 	AutomationFiguresInverseTable = "automation_figures"
 	// AutomationFiguresColumn is the table column denoting the automation_figures relation/edge.
 	AutomationFiguresColumn = "workspace_id"
+	// AutomationSkippedEntriesTable is the table that holds the automation_skipped_entries relation/edge.
+	AutomationSkippedEntriesTable = "automation_skipped_entries"
+	// AutomationSkippedEntriesInverseTable is the table name for the AutomationSkippedEntry entity.
+	// It exists in this package in order to avoid circular dependency with the "automationskippedentry" package.
+	AutomationSkippedEntriesInverseTable = "automation_skipped_entries"
+	// AutomationSkippedEntriesColumn is the table column denoting the automation_skipped_entries relation/edge.
+	AutomationSkippedEntriesColumn = "workspace_id"
 	// EmailTemplatesTable is the table that holds the email_templates relation/edge.
 	EmailTemplatesTable = "email_templates"
 	// EmailTemplatesInverseTable is the table name for the EmailTemplate entity.
@@ -1168,6 +1177,20 @@ func ByAutomationFigures(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption
 	}
 }
 
+// ByAutomationSkippedEntriesCount orders the results by automation_skipped_entries count.
+func ByAutomationSkippedEntriesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newAutomationSkippedEntriesStep(), opts...)
+	}
+}
+
+// ByAutomationSkippedEntries orders the results by automation_skipped_entries terms.
+func ByAutomationSkippedEntries(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAutomationSkippedEntriesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByEmailTemplatesCount orders the results by email_templates count.
 func ByEmailTemplatesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -1718,6 +1741,13 @@ func newAutomationFiguresStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AutomationFiguresInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, AutomationFiguresTable, AutomationFiguresColumn),
+	)
+}
+func newAutomationSkippedEntriesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AutomationSkippedEntriesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, AutomationSkippedEntriesTable, AutomationSkippedEntriesColumn),
 	)
 }
 func newEmailTemplatesStep() *sqlgraph.Step {

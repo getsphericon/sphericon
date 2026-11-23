@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -563,6 +564,9 @@ type Converter interface {
 
 	// goverter:map . Failure | enrollmentFailure
 	EnrollmentToResource(source *ent.AutomationRun) siteapi.EnrollmentResource
+	// The store names the triggering Event's source id; the contract says whose it is.
+	// goverter:map SourceID EventSourceId
+	SkippedEntryToResource(source *ent.AutomationSkippedEntry) siteapi.SkippedEntryResource
 	// goverter:useEmptyOnNil:slice
 	EnrollmentsToResources(source []*ent.AutomationRun) []siteapi.EnrollmentResource
 
@@ -688,6 +692,8 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	CapturedMessagesListPage(source pagination.Page[*ent.CapturedMessage]) *siteapi.SiteCapturedMessagesListOK
 	// goverter:useEmptyOnNil:slice
+	SkippedEntriesListPage(source pagination.Page[*ent.AutomationSkippedEntry]) *siteapi.SiteSkippedEntriesListOK
+	// goverter:useEmptyOnNil:slice
 	EnrollmentsListPage(source pagination.Page[*ent.AutomationRun]) *siteapi.SiteEnrollmentsListOK
 	// goverter:useEmptyOnNil:slice
 	RulesListPage(source pagination.Page[*ent.Rule]) (*siteapi.SiteRulesListOK, error)
@@ -756,6 +762,8 @@ type Converter interface {
 	EnrollmentFailureKindToResource(source automationrun.FailureKind) siteapi.EnrollmentFailureKind
 	// goverter:enum:transform value
 	EnrollmentStatusToResource(source automationrun.Status) siteapi.EnrollmentStatus
+	// goverter:enum:transform value
+	SkippedEntryReasonToResource(source automationskippedentry.Reason) siteapi.SkippedEntryReason
 	// goverter:enum:transform value
 	IntegrationChannelToResource(source channels.Channel) siteapi.IntegrationChannel
 	// goverter:enum:transform value

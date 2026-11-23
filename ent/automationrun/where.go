@@ -96,6 +96,16 @@ func EventAction(v string) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldEQ(FieldEventAction, v))
 }
 
+// TriggerSourceID applies equality check predicate on the "trigger_source_id" field. It's identical to TriggerSourceIDEQ.
+func TriggerSourceID(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldTriggerSourceID, v))
+}
+
+// FiringID applies equality check predicate on the "firing_id" field. It's identical to FiringIDEQ.
+func FiringID(v int64) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldFiringID, v))
+}
+
 // EndedAt applies equality check predicate on the "ended_at" field. It's identical to EndedAtEQ.
 func EndedAt(v time.Time) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldEQ(FieldEndedAt, v))
@@ -425,6 +435,111 @@ func EventPropertiesIsNil() predicate.AutomationRun {
 // EventPropertiesNotNil applies the NotNil predicate on the "event_properties" field.
 func EventPropertiesNotNil() predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldNotNull(FieldEventProperties))
+}
+
+// TriggerSourceIDEQ applies the EQ predicate on the "trigger_source_id" field.
+func TriggerSourceIDEQ(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldTriggerSourceID, v))
+}
+
+// TriggerSourceIDNEQ applies the NEQ predicate on the "trigger_source_id" field.
+func TriggerSourceIDNEQ(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNEQ(FieldTriggerSourceID, v))
+}
+
+// TriggerSourceIDIn applies the In predicate on the "trigger_source_id" field.
+func TriggerSourceIDIn(vs ...string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIn(FieldTriggerSourceID, vs...))
+}
+
+// TriggerSourceIDNotIn applies the NotIn predicate on the "trigger_source_id" field.
+func TriggerSourceIDNotIn(vs ...string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotIn(FieldTriggerSourceID, vs...))
+}
+
+// TriggerSourceIDGT applies the GT predicate on the "trigger_source_id" field.
+func TriggerSourceIDGT(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldGT(FieldTriggerSourceID, v))
+}
+
+// TriggerSourceIDGTE applies the GTE predicate on the "trigger_source_id" field.
+func TriggerSourceIDGTE(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldGTE(FieldTriggerSourceID, v))
+}
+
+// TriggerSourceIDLT applies the LT predicate on the "trigger_source_id" field.
+func TriggerSourceIDLT(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldLT(FieldTriggerSourceID, v))
+}
+
+// TriggerSourceIDLTE applies the LTE predicate on the "trigger_source_id" field.
+func TriggerSourceIDLTE(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldLTE(FieldTriggerSourceID, v))
+}
+
+// TriggerSourceIDContains applies the Contains predicate on the "trigger_source_id" field.
+func TriggerSourceIDContains(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldContains(FieldTriggerSourceID, v))
+}
+
+// TriggerSourceIDHasPrefix applies the HasPrefix predicate on the "trigger_source_id" field.
+func TriggerSourceIDHasPrefix(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldHasPrefix(FieldTriggerSourceID, v))
+}
+
+// TriggerSourceIDHasSuffix applies the HasSuffix predicate on the "trigger_source_id" field.
+func TriggerSourceIDHasSuffix(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldHasSuffix(FieldTriggerSourceID, v))
+}
+
+// TriggerSourceIDIsNil applies the IsNil predicate on the "trigger_source_id" field.
+func TriggerSourceIDIsNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIsNull(FieldTriggerSourceID))
+}
+
+// TriggerSourceIDNotNil applies the NotNil predicate on the "trigger_source_id" field.
+func TriggerSourceIDNotNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotNull(FieldTriggerSourceID))
+}
+
+// TriggerSourceIDEqualFold applies the EqualFold predicate on the "trigger_source_id" field.
+func TriggerSourceIDEqualFold(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEqualFold(FieldTriggerSourceID, v))
+}
+
+// TriggerSourceIDContainsFold applies the ContainsFold predicate on the "trigger_source_id" field.
+func TriggerSourceIDContainsFold(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldContainsFold(FieldTriggerSourceID, v))
+}
+
+// FiringIDEQ applies the EQ predicate on the "firing_id" field.
+func FiringIDEQ(v int64) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldFiringID, v))
+}
+
+// FiringIDNEQ applies the NEQ predicate on the "firing_id" field.
+func FiringIDNEQ(v int64) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNEQ(FieldFiringID, v))
+}
+
+// FiringIDIn applies the In predicate on the "firing_id" field.
+func FiringIDIn(vs ...int64) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIn(FieldFiringID, vs...))
+}
+
+// FiringIDNotIn applies the NotIn predicate on the "firing_id" field.
+func FiringIDNotIn(vs ...int64) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotIn(FieldFiringID, vs...))
+}
+
+// FiringIDIsNil applies the IsNil predicate on the "firing_id" field.
+func FiringIDIsNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIsNull(FieldFiringID))
+}
+
+// FiringIDNotNil applies the NotNil predicate on the "firing_id" field.
+func FiringIDNotNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotNull(FieldFiringID))
 }
 
 // EndedAtEQ applies the EQ predicate on the "ended_at" field.
@@ -860,6 +975,29 @@ func HasContact() predicate.AutomationRun {
 func HasContactWith(preds ...predicate.Contact) predicate.AutomationRun {
 	return predicate.AutomationRun(func(s *sql.Selector) {
 		step := newContactStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasFiring applies the HasEdge predicate on the "firing" edge.
+func HasFiring() predicate.AutomationRun {
+	return predicate.AutomationRun(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, FiringTable, FiringColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasFiringWith applies the HasEdge predicate on the "firing" edge with a given conditions (other predicates).
+func HasFiringWith(preds ...predicate.RuleFiring) predicate.AutomationRun {
+	return predicate.AutomationRun(func(s *sql.Selector) {
+		step := newFiringStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

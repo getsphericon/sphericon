@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
@@ -119,6 +120,7 @@ const (
 	TypeAutomation               = "Automation"
 	TypeAutomationFigure         = "AutomationFigure"
 	TypeAutomationRun            = "AutomationRun"
+	TypeAutomationSkippedEntry   = "AutomationSkippedEntry"
 	TypeAutomationStepRecord     = "AutomationStepRecord"
 	TypeAutomationVersion        = "AutomationVersion"
 	TypeBinding                  = "Binding"
@@ -5907,6 +5909,7 @@ type AutomationRunMutation struct {
 	began_at          *time.Time
 	event_action      *string
 	event_properties  *map[string]interface{}
+	trigger_source_id *string
 	ended_at          *time.Time
 	current_step_id   *automationstep.ID
 	resume_at         *time.Time
@@ -5923,6 +5926,8 @@ type AutomationRunMutation struct {
 	clearedversion    bool
 	contact           *int64
 	clearedcontact    bool
+	firing            *int64
+	clearedfiring     bool
 	done              bool
 	oldValue          func(context.Context) (*AutomationRun, error)
 	predicates        []predicate.AutomationRun
@@ -6418,6 +6423,104 @@ func (m *AutomationRunMutation) ResetEventProperties() {
 	delete(m.clearedFields, automationrun.FieldEventProperties)
 }
 
+// SetTriggerSourceID sets the "trigger_source_id" field.
+func (m *AutomationRunMutation) SetTriggerSourceID(s string) {
+	m.trigger_source_id = &s
+}
+
+// TriggerSourceID returns the value of the "trigger_source_id" field in the mutation.
+func (m *AutomationRunMutation) TriggerSourceID() (r string, exists bool) {
+	v := m.trigger_source_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTriggerSourceID returns the old "trigger_source_id" field's value of the AutomationRun entity.
+// If the AutomationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationRunMutation) OldTriggerSourceID(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTriggerSourceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTriggerSourceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTriggerSourceID: %w", err)
+	}
+	return oldValue.TriggerSourceID, nil
+}
+
+// ClearTriggerSourceID clears the value of the "trigger_source_id" field.
+func (m *AutomationRunMutation) ClearTriggerSourceID() {
+	m.trigger_source_id = nil
+	m.clearedFields[automationrun.FieldTriggerSourceID] = struct{}{}
+}
+
+// TriggerSourceIDCleared returns if the "trigger_source_id" field was cleared in this mutation.
+func (m *AutomationRunMutation) TriggerSourceIDCleared() bool {
+	_, ok := m.clearedFields[automationrun.FieldTriggerSourceID]
+	return ok
+}
+
+// ResetTriggerSourceID resets all changes to the "trigger_source_id" field.
+func (m *AutomationRunMutation) ResetTriggerSourceID() {
+	m.trigger_source_id = nil
+	delete(m.clearedFields, automationrun.FieldTriggerSourceID)
+}
+
+// SetFiringID sets the "firing_id" field.
+func (m *AutomationRunMutation) SetFiringID(i int64) {
+	m.firing = &i
+}
+
+// FiringID returns the value of the "firing_id" field in the mutation.
+func (m *AutomationRunMutation) FiringID() (r int64, exists bool) {
+	v := m.firing
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFiringID returns the old "firing_id" field's value of the AutomationRun entity.
+// If the AutomationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationRunMutation) OldFiringID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFiringID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFiringID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFiringID: %w", err)
+	}
+	return oldValue.FiringID, nil
+}
+
+// ClearFiringID clears the value of the "firing_id" field.
+func (m *AutomationRunMutation) ClearFiringID() {
+	m.firing = nil
+	m.clearedFields[automationrun.FieldFiringID] = struct{}{}
+}
+
+// FiringIDCleared returns if the "firing_id" field was cleared in this mutation.
+func (m *AutomationRunMutation) FiringIDCleared() bool {
+	_, ok := m.clearedFields[automationrun.FieldFiringID]
+	return ok
+}
+
+// ResetFiringID resets all changes to the "firing_id" field.
+func (m *AutomationRunMutation) ResetFiringID() {
+	m.firing = nil
+	delete(m.clearedFields, automationrun.FieldFiringID)
+}
+
 // SetEndedAt sets the "ended_at" field.
 func (m *AutomationRunMutation) SetEndedAt(t time.Time) {
 	m.ended_at = &t
@@ -6841,6 +6944,33 @@ func (m *AutomationRunMutation) ResetContact() {
 	m.clearedcontact = false
 }
 
+// ClearFiring clears the "firing" edge to the RuleFiring entity.
+func (m *AutomationRunMutation) ClearFiring() {
+	m.clearedfiring = true
+	m.clearedFields[automationrun.FieldFiringID] = struct{}{}
+}
+
+// FiringCleared reports if the "firing" edge to the RuleFiring entity was cleared.
+func (m *AutomationRunMutation) FiringCleared() bool {
+	return m.FiringIDCleared() || m.clearedfiring
+}
+
+// FiringIDs returns the "firing" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// FiringID instead. It exists only for internal usage by the builders.
+func (m *AutomationRunMutation) FiringIDs() (ids []int64) {
+	if id := m.firing; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetFiring resets all changes to the "firing" edge.
+func (m *AutomationRunMutation) ResetFiring() {
+	m.firing = nil
+	m.clearedfiring = false
+}
+
 // Where appends a list predicates to the AutomationRunMutation builder.
 func (m *AutomationRunMutation) Where(ps ...predicate.AutomationRun) {
 	m.predicates = append(m.predicates, ps...)
@@ -6875,7 +7005,7 @@ func (m *AutomationRunMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationRunMutation) Fields() []string {
-	fields := make([]string, 0, 16)
+	fields := make([]string, 0, 18)
 	if m.created_at != nil {
 		fields = append(fields, automationrun.FieldCreatedAt)
 	}
@@ -6905,6 +7035,12 @@ func (m *AutomationRunMutation) Fields() []string {
 	}
 	if m.event_properties != nil {
 		fields = append(fields, automationrun.FieldEventProperties)
+	}
+	if m.trigger_source_id != nil {
+		fields = append(fields, automationrun.FieldTriggerSourceID)
+	}
+	if m.firing != nil {
+		fields = append(fields, automationrun.FieldFiringID)
 	}
 	if m.ended_at != nil {
 		fields = append(fields, automationrun.FieldEndedAt)
@@ -6952,6 +7088,10 @@ func (m *AutomationRunMutation) Field(name string) (ent.Value, bool) {
 		return m.EventAction()
 	case automationrun.FieldEventProperties:
 		return m.EventProperties()
+	case automationrun.FieldTriggerSourceID:
+		return m.TriggerSourceID()
+	case automationrun.FieldFiringID:
+		return m.FiringID()
 	case automationrun.FieldEndedAt:
 		return m.EndedAt()
 	case automationrun.FieldCurrentStepID:
@@ -6993,6 +7133,10 @@ func (m *AutomationRunMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldEventAction(ctx)
 	case automationrun.FieldEventProperties:
 		return m.OldEventProperties(ctx)
+	case automationrun.FieldTriggerSourceID:
+		return m.OldTriggerSourceID(ctx)
+	case automationrun.FieldFiringID:
+		return m.OldFiringID(ctx)
 	case automationrun.FieldEndedAt:
 		return m.OldEndedAt(ctx)
 	case automationrun.FieldCurrentStepID:
@@ -7083,6 +7227,20 @@ func (m *AutomationRunMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetEventProperties(v)
+		return nil
+	case automationrun.FieldTriggerSourceID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTriggerSourceID(v)
+		return nil
+	case automationrun.FieldFiringID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFiringID(v)
 		return nil
 	case automationrun.FieldEndedAt:
 		v, ok := value.(time.Time)
@@ -7177,6 +7335,12 @@ func (m *AutomationRunMutation) ClearedFields() []string {
 	if m.FieldCleared(automationrun.FieldEventProperties) {
 		fields = append(fields, automationrun.FieldEventProperties)
 	}
+	if m.FieldCleared(automationrun.FieldTriggerSourceID) {
+		fields = append(fields, automationrun.FieldTriggerSourceID)
+	}
+	if m.FieldCleared(automationrun.FieldFiringID) {
+		fields = append(fields, automationrun.FieldFiringID)
+	}
 	if m.FieldCleared(automationrun.FieldEndedAt) {
 		fields = append(fields, automationrun.FieldEndedAt)
 	}
@@ -7214,6 +7378,12 @@ func (m *AutomationRunMutation) ClearField(name string) error {
 		return nil
 	case automationrun.FieldEventProperties:
 		m.ClearEventProperties()
+		return nil
+	case automationrun.FieldTriggerSourceID:
+		m.ClearTriggerSourceID()
+		return nil
+	case automationrun.FieldFiringID:
+		m.ClearFiringID()
 		return nil
 	case automationrun.FieldEndedAt:
 		m.ClearEndedAt()
@@ -7271,6 +7441,12 @@ func (m *AutomationRunMutation) ResetField(name string) error {
 	case automationrun.FieldEventProperties:
 		m.ResetEventProperties()
 		return nil
+	case automationrun.FieldTriggerSourceID:
+		m.ResetTriggerSourceID()
+		return nil
+	case automationrun.FieldFiringID:
+		m.ResetFiringID()
+		return nil
 	case automationrun.FieldEndedAt:
 		m.ResetEndedAt()
 		return nil
@@ -7295,7 +7471,7 @@ func (m *AutomationRunMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *AutomationRunMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.workspace != nil {
 		edges = append(edges, automationrun.EdgeWorkspace)
 	}
@@ -7307,6 +7483,9 @@ func (m *AutomationRunMutation) AddedEdges() []string {
 	}
 	if m.contact != nil {
 		edges = append(edges, automationrun.EdgeContact)
+	}
+	if m.firing != nil {
+		edges = append(edges, automationrun.EdgeFiring)
 	}
 	return edges
 }
@@ -7331,13 +7510,17 @@ func (m *AutomationRunMutation) AddedIDs(name string) []ent.Value {
 		if id := m.contact; id != nil {
 			return []ent.Value{*id}
 		}
+	case automationrun.EdgeFiring:
+		if id := m.firing; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *AutomationRunMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	return edges
 }
 
@@ -7349,7 +7532,7 @@ func (m *AutomationRunMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *AutomationRunMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.clearedworkspace {
 		edges = append(edges, automationrun.EdgeWorkspace)
 	}
@@ -7361,6 +7544,9 @@ func (m *AutomationRunMutation) ClearedEdges() []string {
 	}
 	if m.clearedcontact {
 		edges = append(edges, automationrun.EdgeContact)
+	}
+	if m.clearedfiring {
+		edges = append(edges, automationrun.EdgeFiring)
 	}
 	return edges
 }
@@ -7377,6 +7563,8 @@ func (m *AutomationRunMutation) EdgeCleared(name string) bool {
 		return m.clearedversion
 	case automationrun.EdgeContact:
 		return m.clearedcontact
+	case automationrun.EdgeFiring:
+		return m.clearedfiring
 	}
 	return false
 }
@@ -7396,6 +7584,9 @@ func (m *AutomationRunMutation) ClearEdge(name string) error {
 		return nil
 	case automationrun.EdgeContact:
 		m.ClearContact()
+		return nil
+	case automationrun.EdgeFiring:
+		m.ClearFiring()
 		return nil
 	}
 	return fmt.Errorf("unknown AutomationRun unique edge %s", name)
@@ -7417,8 +7608,1011 @@ func (m *AutomationRunMutation) ResetEdge(name string) error {
 	case automationrun.EdgeContact:
 		m.ResetContact()
 		return nil
+	case automationrun.EdgeFiring:
+		m.ResetFiring()
+		return nil
 	}
 	return fmt.Errorf("unknown AutomationRun edge %s", name)
+}
+
+// AutomationSkippedEntryMutation represents an operation that mutates the AutomationSkippedEntry nodes in the graph.
+type AutomationSkippedEntryMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *int64
+	created_at        *time.Time
+	updated_at        *time.Time
+	source_id         *string
+	reason            *automationskippedentry.Reason
+	occurred_at       *time.Time
+	clearedFields     map[string]struct{}
+	workspace         *int64
+	clearedworkspace  bool
+	automation        *int64
+	clearedautomation bool
+	contact           *int64
+	clearedcontact    bool
+	firing            *int64
+	clearedfiring     bool
+	done              bool
+	oldValue          func(context.Context) (*AutomationSkippedEntry, error)
+	predicates        []predicate.AutomationSkippedEntry
+}
+
+var _ ent.Mutation = (*AutomationSkippedEntryMutation)(nil)
+
+// automationskippedentryOption allows management of the mutation configuration using functional options.
+type automationskippedentryOption func(*AutomationSkippedEntryMutation)
+
+// newAutomationSkippedEntryMutation creates new mutation for the AutomationSkippedEntry entity.
+func newAutomationSkippedEntryMutation(c config, op Op, opts ...automationskippedentryOption) *AutomationSkippedEntryMutation {
+	m := &AutomationSkippedEntryMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeAutomationSkippedEntry,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withAutomationSkippedEntryID sets the ID field of the mutation.
+func withAutomationSkippedEntryID(id int64) automationskippedentryOption {
+	return func(m *AutomationSkippedEntryMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *AutomationSkippedEntry
+		)
+		m.oldValue = func(ctx context.Context) (*AutomationSkippedEntry, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().AutomationSkippedEntry.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withAutomationSkippedEntry sets the old AutomationSkippedEntry of the mutation.
+func withAutomationSkippedEntry(node *AutomationSkippedEntry) automationskippedentryOption {
+	return func(m *AutomationSkippedEntryMutation) {
+		m.oldValue = func(context.Context) (*AutomationSkippedEntry, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m AutomationSkippedEntryMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m AutomationSkippedEntryMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of AutomationSkippedEntry entities.
+func (m *AutomationSkippedEntryMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *AutomationSkippedEntryMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *AutomationSkippedEntryMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().AutomationSkippedEntry.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *AutomationSkippedEntryMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *AutomationSkippedEntryMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the AutomationSkippedEntry entity.
+// If the AutomationSkippedEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationSkippedEntryMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *AutomationSkippedEntryMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *AutomationSkippedEntryMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *AutomationSkippedEntryMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the AutomationSkippedEntry entity.
+// If the AutomationSkippedEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationSkippedEntryMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *AutomationSkippedEntryMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *AutomationSkippedEntryMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *AutomationSkippedEntryMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the AutomationSkippedEntry entity.
+// If the AutomationSkippedEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationSkippedEntryMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *AutomationSkippedEntryMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetAutomationID sets the "automation_id" field.
+func (m *AutomationSkippedEntryMutation) SetAutomationID(i int64) {
+	m.automation = &i
+}
+
+// AutomationID returns the value of the "automation_id" field in the mutation.
+func (m *AutomationSkippedEntryMutation) AutomationID() (r int64, exists bool) {
+	v := m.automation
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAutomationID returns the old "automation_id" field's value of the AutomationSkippedEntry entity.
+// If the AutomationSkippedEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationSkippedEntryMutation) OldAutomationID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAutomationID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAutomationID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAutomationID: %w", err)
+	}
+	return oldValue.AutomationID, nil
+}
+
+// ResetAutomationID resets all changes to the "automation_id" field.
+func (m *AutomationSkippedEntryMutation) ResetAutomationID() {
+	m.automation = nil
+}
+
+// SetContactID sets the "contact_id" field.
+func (m *AutomationSkippedEntryMutation) SetContactID(i int64) {
+	m.contact = &i
+}
+
+// ContactID returns the value of the "contact_id" field in the mutation.
+func (m *AutomationSkippedEntryMutation) ContactID() (r int64, exists bool) {
+	v := m.contact
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldContactID returns the old "contact_id" field's value of the AutomationSkippedEntry entity.
+// If the AutomationSkippedEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationSkippedEntryMutation) OldContactID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldContactID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldContactID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldContactID: %w", err)
+	}
+	return oldValue.ContactID, nil
+}
+
+// ResetContactID resets all changes to the "contact_id" field.
+func (m *AutomationSkippedEntryMutation) ResetContactID() {
+	m.contact = nil
+}
+
+// SetSourceID sets the "source_id" field.
+func (m *AutomationSkippedEntryMutation) SetSourceID(s string) {
+	m.source_id = &s
+}
+
+// SourceID returns the value of the "source_id" field in the mutation.
+func (m *AutomationSkippedEntryMutation) SourceID() (r string, exists bool) {
+	v := m.source_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSourceID returns the old "source_id" field's value of the AutomationSkippedEntry entity.
+// If the AutomationSkippedEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationSkippedEntryMutation) OldSourceID(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSourceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSourceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSourceID: %w", err)
+	}
+	return oldValue.SourceID, nil
+}
+
+// ClearSourceID clears the value of the "source_id" field.
+func (m *AutomationSkippedEntryMutation) ClearSourceID() {
+	m.source_id = nil
+	m.clearedFields[automationskippedentry.FieldSourceID] = struct{}{}
+}
+
+// SourceIDCleared returns if the "source_id" field was cleared in this mutation.
+func (m *AutomationSkippedEntryMutation) SourceIDCleared() bool {
+	_, ok := m.clearedFields[automationskippedentry.FieldSourceID]
+	return ok
+}
+
+// ResetSourceID resets all changes to the "source_id" field.
+func (m *AutomationSkippedEntryMutation) ResetSourceID() {
+	m.source_id = nil
+	delete(m.clearedFields, automationskippedentry.FieldSourceID)
+}
+
+// SetFiringID sets the "firing_id" field.
+func (m *AutomationSkippedEntryMutation) SetFiringID(i int64) {
+	m.firing = &i
+}
+
+// FiringID returns the value of the "firing_id" field in the mutation.
+func (m *AutomationSkippedEntryMutation) FiringID() (r int64, exists bool) {
+	v := m.firing
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFiringID returns the old "firing_id" field's value of the AutomationSkippedEntry entity.
+// If the AutomationSkippedEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationSkippedEntryMutation) OldFiringID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFiringID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFiringID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFiringID: %w", err)
+	}
+	return oldValue.FiringID, nil
+}
+
+// ClearFiringID clears the value of the "firing_id" field.
+func (m *AutomationSkippedEntryMutation) ClearFiringID() {
+	m.firing = nil
+	m.clearedFields[automationskippedentry.FieldFiringID] = struct{}{}
+}
+
+// FiringIDCleared returns if the "firing_id" field was cleared in this mutation.
+func (m *AutomationSkippedEntryMutation) FiringIDCleared() bool {
+	_, ok := m.clearedFields[automationskippedentry.FieldFiringID]
+	return ok
+}
+
+// ResetFiringID resets all changes to the "firing_id" field.
+func (m *AutomationSkippedEntryMutation) ResetFiringID() {
+	m.firing = nil
+	delete(m.clearedFields, automationskippedentry.FieldFiringID)
+}
+
+// SetReason sets the "reason" field.
+func (m *AutomationSkippedEntryMutation) SetReason(a automationskippedentry.Reason) {
+	m.reason = &a
+}
+
+// Reason returns the value of the "reason" field in the mutation.
+func (m *AutomationSkippedEntryMutation) Reason() (r automationskippedentry.Reason, exists bool) {
+	v := m.reason
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReason returns the old "reason" field's value of the AutomationSkippedEntry entity.
+// If the AutomationSkippedEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationSkippedEntryMutation) OldReason(ctx context.Context) (v automationskippedentry.Reason, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReason is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReason requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReason: %w", err)
+	}
+	return oldValue.Reason, nil
+}
+
+// ResetReason resets all changes to the "reason" field.
+func (m *AutomationSkippedEntryMutation) ResetReason() {
+	m.reason = nil
+}
+
+// SetOccurredAt sets the "occurred_at" field.
+func (m *AutomationSkippedEntryMutation) SetOccurredAt(t time.Time) {
+	m.occurred_at = &t
+}
+
+// OccurredAt returns the value of the "occurred_at" field in the mutation.
+func (m *AutomationSkippedEntryMutation) OccurredAt() (r time.Time, exists bool) {
+	v := m.occurred_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOccurredAt returns the old "occurred_at" field's value of the AutomationSkippedEntry entity.
+// If the AutomationSkippedEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationSkippedEntryMutation) OldOccurredAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOccurredAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOccurredAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOccurredAt: %w", err)
+	}
+	return oldValue.OccurredAt, nil
+}
+
+// ResetOccurredAt resets all changes to the "occurred_at" field.
+func (m *AutomationSkippedEntryMutation) ResetOccurredAt() {
+	m.occurred_at = nil
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *AutomationSkippedEntryMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[automationskippedentry.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *AutomationSkippedEntryMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *AutomationSkippedEntryMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *AutomationSkippedEntryMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// ClearAutomation clears the "automation" edge to the Automation entity.
+func (m *AutomationSkippedEntryMutation) ClearAutomation() {
+	m.clearedautomation = true
+	m.clearedFields[automationskippedentry.FieldAutomationID] = struct{}{}
+}
+
+// AutomationCleared reports if the "automation" edge to the Automation entity was cleared.
+func (m *AutomationSkippedEntryMutation) AutomationCleared() bool {
+	return m.clearedautomation
+}
+
+// AutomationIDs returns the "automation" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// AutomationID instead. It exists only for internal usage by the builders.
+func (m *AutomationSkippedEntryMutation) AutomationIDs() (ids []int64) {
+	if id := m.automation; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetAutomation resets all changes to the "automation" edge.
+func (m *AutomationSkippedEntryMutation) ResetAutomation() {
+	m.automation = nil
+	m.clearedautomation = false
+}
+
+// ClearContact clears the "contact" edge to the Contact entity.
+func (m *AutomationSkippedEntryMutation) ClearContact() {
+	m.clearedcontact = true
+	m.clearedFields[automationskippedentry.FieldContactID] = struct{}{}
+}
+
+// ContactCleared reports if the "contact" edge to the Contact entity was cleared.
+func (m *AutomationSkippedEntryMutation) ContactCleared() bool {
+	return m.clearedcontact
+}
+
+// ContactIDs returns the "contact" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ContactID instead. It exists only for internal usage by the builders.
+func (m *AutomationSkippedEntryMutation) ContactIDs() (ids []int64) {
+	if id := m.contact; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetContact resets all changes to the "contact" edge.
+func (m *AutomationSkippedEntryMutation) ResetContact() {
+	m.contact = nil
+	m.clearedcontact = false
+}
+
+// ClearFiring clears the "firing" edge to the RuleFiring entity.
+func (m *AutomationSkippedEntryMutation) ClearFiring() {
+	m.clearedfiring = true
+	m.clearedFields[automationskippedentry.FieldFiringID] = struct{}{}
+}
+
+// FiringCleared reports if the "firing" edge to the RuleFiring entity was cleared.
+func (m *AutomationSkippedEntryMutation) FiringCleared() bool {
+	return m.FiringIDCleared() || m.clearedfiring
+}
+
+// FiringIDs returns the "firing" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// FiringID instead. It exists only for internal usage by the builders.
+func (m *AutomationSkippedEntryMutation) FiringIDs() (ids []int64) {
+	if id := m.firing; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetFiring resets all changes to the "firing" edge.
+func (m *AutomationSkippedEntryMutation) ResetFiring() {
+	m.firing = nil
+	m.clearedfiring = false
+}
+
+// Where appends a list predicates to the AutomationSkippedEntryMutation builder.
+func (m *AutomationSkippedEntryMutation) Where(ps ...predicate.AutomationSkippedEntry) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the AutomationSkippedEntryMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *AutomationSkippedEntryMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.AutomationSkippedEntry, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *AutomationSkippedEntryMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *AutomationSkippedEntryMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (AutomationSkippedEntry).
+func (m *AutomationSkippedEntryMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *AutomationSkippedEntryMutation) Fields() []string {
+	fields := make([]string, 0, 9)
+	if m.created_at != nil {
+		fields = append(fields, automationskippedentry.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, automationskippedentry.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, automationskippedentry.FieldWorkspaceID)
+	}
+	if m.automation != nil {
+		fields = append(fields, automationskippedentry.FieldAutomationID)
+	}
+	if m.contact != nil {
+		fields = append(fields, automationskippedentry.FieldContactID)
+	}
+	if m.source_id != nil {
+		fields = append(fields, automationskippedentry.FieldSourceID)
+	}
+	if m.firing != nil {
+		fields = append(fields, automationskippedentry.FieldFiringID)
+	}
+	if m.reason != nil {
+		fields = append(fields, automationskippedentry.FieldReason)
+	}
+	if m.occurred_at != nil {
+		fields = append(fields, automationskippedentry.FieldOccurredAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *AutomationSkippedEntryMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case automationskippedentry.FieldCreatedAt:
+		return m.CreatedAt()
+	case automationskippedentry.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case automationskippedentry.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case automationskippedentry.FieldAutomationID:
+		return m.AutomationID()
+	case automationskippedentry.FieldContactID:
+		return m.ContactID()
+	case automationskippedentry.FieldSourceID:
+		return m.SourceID()
+	case automationskippedentry.FieldFiringID:
+		return m.FiringID()
+	case automationskippedentry.FieldReason:
+		return m.Reason()
+	case automationskippedentry.FieldOccurredAt:
+		return m.OccurredAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *AutomationSkippedEntryMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case automationskippedentry.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case automationskippedentry.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case automationskippedentry.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case automationskippedentry.FieldAutomationID:
+		return m.OldAutomationID(ctx)
+	case automationskippedentry.FieldContactID:
+		return m.OldContactID(ctx)
+	case automationskippedentry.FieldSourceID:
+		return m.OldSourceID(ctx)
+	case automationskippedentry.FieldFiringID:
+		return m.OldFiringID(ctx)
+	case automationskippedentry.FieldReason:
+		return m.OldReason(ctx)
+	case automationskippedentry.FieldOccurredAt:
+		return m.OldOccurredAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown AutomationSkippedEntry field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AutomationSkippedEntryMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case automationskippedentry.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case automationskippedentry.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case automationskippedentry.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case automationskippedentry.FieldAutomationID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAutomationID(v)
+		return nil
+	case automationskippedentry.FieldContactID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetContactID(v)
+		return nil
+	case automationskippedentry.FieldSourceID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSourceID(v)
+		return nil
+	case automationskippedentry.FieldFiringID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFiringID(v)
+		return nil
+	case automationskippedentry.FieldReason:
+		v, ok := value.(automationskippedentry.Reason)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReason(v)
+		return nil
+	case automationskippedentry.FieldOccurredAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOccurredAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AutomationSkippedEntry field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *AutomationSkippedEntryMutation) AddedFields() []string {
+	var fields []string
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *AutomationSkippedEntryMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AutomationSkippedEntryMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown AutomationSkippedEntry numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *AutomationSkippedEntryMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(automationskippedentry.FieldSourceID) {
+		fields = append(fields, automationskippedentry.FieldSourceID)
+	}
+	if m.FieldCleared(automationskippedentry.FieldFiringID) {
+		fields = append(fields, automationskippedentry.FieldFiringID)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *AutomationSkippedEntryMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *AutomationSkippedEntryMutation) ClearField(name string) error {
+	switch name {
+	case automationskippedentry.FieldSourceID:
+		m.ClearSourceID()
+		return nil
+	case automationskippedentry.FieldFiringID:
+		m.ClearFiringID()
+		return nil
+	}
+	return fmt.Errorf("unknown AutomationSkippedEntry nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *AutomationSkippedEntryMutation) ResetField(name string) error {
+	switch name {
+	case automationskippedentry.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case automationskippedentry.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case automationskippedentry.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case automationskippedentry.FieldAutomationID:
+		m.ResetAutomationID()
+		return nil
+	case automationskippedentry.FieldContactID:
+		m.ResetContactID()
+		return nil
+	case automationskippedentry.FieldSourceID:
+		m.ResetSourceID()
+		return nil
+	case automationskippedentry.FieldFiringID:
+		m.ResetFiringID()
+		return nil
+	case automationskippedentry.FieldReason:
+		m.ResetReason()
+		return nil
+	case automationskippedentry.FieldOccurredAt:
+		m.ResetOccurredAt()
+		return nil
+	}
+	return fmt.Errorf("unknown AutomationSkippedEntry field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *AutomationSkippedEntryMutation) AddedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.workspace != nil {
+		edges = append(edges, automationskippedentry.EdgeWorkspace)
+	}
+	if m.automation != nil {
+		edges = append(edges, automationskippedentry.EdgeAutomation)
+	}
+	if m.contact != nil {
+		edges = append(edges, automationskippedentry.EdgeContact)
+	}
+	if m.firing != nil {
+		edges = append(edges, automationskippedentry.EdgeFiring)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *AutomationSkippedEntryMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case automationskippedentry.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	case automationskippedentry.EdgeAutomation:
+		if id := m.automation; id != nil {
+			return []ent.Value{*id}
+		}
+	case automationskippedentry.EdgeContact:
+		if id := m.contact; id != nil {
+			return []ent.Value{*id}
+		}
+	case automationskippedentry.EdgeFiring:
+		if id := m.firing; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *AutomationSkippedEntryMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 4)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *AutomationSkippedEntryMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *AutomationSkippedEntryMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.clearedworkspace {
+		edges = append(edges, automationskippedentry.EdgeWorkspace)
+	}
+	if m.clearedautomation {
+		edges = append(edges, automationskippedentry.EdgeAutomation)
+	}
+	if m.clearedcontact {
+		edges = append(edges, automationskippedentry.EdgeContact)
+	}
+	if m.clearedfiring {
+		edges = append(edges, automationskippedentry.EdgeFiring)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *AutomationSkippedEntryMutation) EdgeCleared(name string) bool {
+	switch name {
+	case automationskippedentry.EdgeWorkspace:
+		return m.clearedworkspace
+	case automationskippedentry.EdgeAutomation:
+		return m.clearedautomation
+	case automationskippedentry.EdgeContact:
+		return m.clearedcontact
+	case automationskippedentry.EdgeFiring:
+		return m.clearedfiring
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *AutomationSkippedEntryMutation) ClearEdge(name string) error {
+	switch name {
+	case automationskippedentry.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	case automationskippedentry.EdgeAutomation:
+		m.ClearAutomation()
+		return nil
+	case automationskippedentry.EdgeContact:
+		m.ClearContact()
+		return nil
+	case automationskippedentry.EdgeFiring:
+		m.ClearFiring()
+		return nil
+	}
+	return fmt.Errorf("unknown AutomationSkippedEntry unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *AutomationSkippedEntryMutation) ResetEdge(name string) error {
+	switch name {
+	case automationskippedentry.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	case automationskippedentry.EdgeAutomation:
+		m.ResetAutomation()
+		return nil
+	case automationskippedentry.EdgeContact:
+		m.ResetContact()
+		return nil
+	case automationskippedentry.EdgeFiring:
+		m.ResetFiring()
+		return nil
+	}
+	return fmt.Errorf("unknown AutomationSkippedEntry edge %s", name)
 }
 
 // AutomationStepRecordMutation represents an operation that mutates the AutomationStepRecord nodes in the graph.
@@ -76937,6 +78131,9 @@ type WorkspaceMutation struct {
 	automation_figures                 map[int64]struct{}
 	removedautomation_figures          map[int64]struct{}
 	clearedautomation_figures          bool
+	automation_skipped_entries         map[int64]struct{}
+	removedautomation_skipped_entries  map[int64]struct{}
+	clearedautomation_skipped_entries  bool
 	email_templates                    map[int64]struct{}
 	removedemail_templates             map[int64]struct{}
 	clearedemail_templates             bool
@@ -79751,6 +80948,60 @@ func (m *WorkspaceMutation) ResetAutomationFigures() {
 	m.removedautomation_figures = nil
 }
 
+// AddAutomationSkippedEntryIDs adds the "automation_skipped_entries" edge to the AutomationSkippedEntry entity by ids.
+func (m *WorkspaceMutation) AddAutomationSkippedEntryIDs(ids ...int64) {
+	if m.automation_skipped_entries == nil {
+		m.automation_skipped_entries = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.automation_skipped_entries[ids[i]] = struct{}{}
+	}
+}
+
+// ClearAutomationSkippedEntries clears the "automation_skipped_entries" edge to the AutomationSkippedEntry entity.
+func (m *WorkspaceMutation) ClearAutomationSkippedEntries() {
+	m.clearedautomation_skipped_entries = true
+}
+
+// AutomationSkippedEntriesCleared reports if the "automation_skipped_entries" edge to the AutomationSkippedEntry entity was cleared.
+func (m *WorkspaceMutation) AutomationSkippedEntriesCleared() bool {
+	return m.clearedautomation_skipped_entries
+}
+
+// RemoveAutomationSkippedEntryIDs removes the "automation_skipped_entries" edge to the AutomationSkippedEntry entity by IDs.
+func (m *WorkspaceMutation) RemoveAutomationSkippedEntryIDs(ids ...int64) {
+	if m.removedautomation_skipped_entries == nil {
+		m.removedautomation_skipped_entries = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.automation_skipped_entries, ids[i])
+		m.removedautomation_skipped_entries[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedAutomationSkippedEntries returns the removed IDs of the "automation_skipped_entries" edge to the AutomationSkippedEntry entity.
+func (m *WorkspaceMutation) RemovedAutomationSkippedEntriesIDs() (ids []int64) {
+	for id := range m.removedautomation_skipped_entries {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// AutomationSkippedEntriesIDs returns the "automation_skipped_entries" edge IDs in the mutation.
+func (m *WorkspaceMutation) AutomationSkippedEntriesIDs() (ids []int64) {
+	for id := range m.automation_skipped_entries {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetAutomationSkippedEntries resets all changes to the "automation_skipped_entries" edge.
+func (m *WorkspaceMutation) ResetAutomationSkippedEntries() {
+	m.automation_skipped_entries = nil
+	m.clearedautomation_skipped_entries = false
+	m.removedautomation_skipped_entries = nil
+}
+
 // AddEmailTemplateIDs adds the "email_templates" edge to the EmailTemplate entity by ids.
 func (m *WorkspaceMutation) AddEmailTemplateIDs(ids ...int64) {
 	if m.email_templates == nil {
@@ -81925,7 +83176,7 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WorkspaceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 52)
+	edges := make([]string, 0, 53)
 	if m.contacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -82000,6 +83251,9 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	}
 	if m.automation_figures != nil {
 		edges = append(edges, workspace.EdgeAutomationFigures)
+	}
+	if m.automation_skipped_entries != nil {
+		edges = append(edges, workspace.EdgeAutomationSkippedEntries)
 	}
 	if m.email_templates != nil {
 		edges = append(edges, workspace.EdgeEmailTemplates)
@@ -82239,6 +83493,12 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeAutomationSkippedEntries:
+		ids := make([]ent.Value, 0, len(m.automation_skipped_entries))
+		for id := range m.automation_skipped_entries {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeEmailTemplates:
 		ids := make([]ent.Value, 0, len(m.email_templates))
 		for id := range m.email_templates {
@@ -82405,7 +83665,7 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WorkspaceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 52)
+	edges := make([]string, 0, 53)
 	if m.removedcontacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -82480,6 +83740,9 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	}
 	if m.removedautomation_figures != nil {
 		edges = append(edges, workspace.EdgeAutomationFigures)
+	}
+	if m.removedautomation_skipped_entries != nil {
+		edges = append(edges, workspace.EdgeAutomationSkippedEntries)
 	}
 	if m.removedemail_templates != nil {
 		edges = append(edges, workspace.EdgeEmailTemplates)
@@ -82716,6 +83979,12 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeAutomationSkippedEntries:
+		ids := make([]ent.Value, 0, len(m.removedautomation_skipped_entries))
+		for id := range m.removedautomation_skipped_entries {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeEmailTemplates:
 		ids := make([]ent.Value, 0, len(m.removedemail_templates))
 		for id := range m.removedemail_templates {
@@ -82878,7 +84147,7 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WorkspaceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 52)
+	edges := make([]string, 0, 53)
 	if m.clearedcontacts {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -82953,6 +84222,9 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	}
 	if m.clearedautomation_figures {
 		edges = append(edges, workspace.EdgeAutomationFigures)
+	}
+	if m.clearedautomation_skipped_entries {
+		edges = append(edges, workspace.EdgeAutomationSkippedEntries)
 	}
 	if m.clearedemail_templates {
 		edges = append(edges, workspace.EdgeEmailTemplates)
@@ -83092,6 +84364,8 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearedbroadcast_figures
 	case workspace.EdgeAutomationFigures:
 		return m.clearedautomation_figures
+	case workspace.EdgeAutomationSkippedEntries:
+		return m.clearedautomation_skipped_entries
 	case workspace.EdgeEmailTemplates:
 		return m.clearedemail_templates
 	case workspace.EdgeBrandKits:
@@ -83239,6 +84513,9 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 		return nil
 	case workspace.EdgeAutomationFigures:
 		m.ResetAutomationFigures()
+		return nil
+	case workspace.EdgeAutomationSkippedEntries:
+		m.ResetAutomationSkippedEntries()
 		return nil
 	case workspace.EdgeEmailTemplates:
 		m.ResetEmailTemplates()

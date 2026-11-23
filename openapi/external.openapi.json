@@ -19,6 +19,9 @@
       "name": "Enrollments"
     },
     {
+      "name": "Automations"
+    },
+    {
       "name": "Rules"
     },
     {
@@ -59,9 +62,6 @@
     },
     {
       "name": "Segments"
-    },
-    {
-      "name": "Automations"
     },
     {
       "name": "Broadcasts"
@@ -643,6 +643,96 @@
         },
         "tags": ["Enrollments"],
         "x-required-scopes": ["enrollments:read"]
+      }
+    },
+    "/automations/{automationId}/skipped-entries": {
+      "get": {
+        "operationId": "SkippedEntries_list",
+        "description": "List an automation's skipped entries, newest first: the entries its entry checks refused, each\nwith its reason. Needs the automations:read scope.",
+        "parameters": [
+          {
+            "name": "automationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/PageQuery.page"
+          },
+          {
+            "$ref": "#/components/parameters/PageQuery.pageSize"
+          },
+          {
+            "name": "contactId",
+            "in": "query",
+            "required": false,
+            "description": "Only the skipped entries of this contact",
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["items", "page", "pageSize", "totalItems", "totalPages"],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SkippedEntryResource"
+                      },
+                      "description": "List of items"
+                    },
+                    "page": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Page number (1-based)"
+                    },
+                    "pageSize": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Page size"
+                    },
+                    "totalItems": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Total number of elements"
+                    },
+                    "totalPages": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "Total number of pages"
+                    }
+                  },
+                  "description": "Paginated response"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Automations"],
+        "x-required-scopes": ["automations:read"],
+        "x-mcp": {
+          "name": "automations_skipped_entries_list"
+        }
       }
     },
     "/automations/{id}": {
@@ -6132,6 +6222,8 @@
           "failed",
           "from",
           "to",
+          "contacts",
+          "skipped",
           "averageDurationSeconds",
           "revenue"
         ],
@@ -6168,6 +6260,19 @@
           "to": {
             "type": "string",
             "description": "The period's last Report day, included"
+          },
+          "contacts": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Distinct contacts among the enrollments that began in the period: fewer than `entered` when a\ncontact entered more than once"
+          },
+          "skipped": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationSkippedCounts"
+              }
+            ],
+            "description": "Entries the entry checks refused in the period, by reason (ADR 0127), each on the Report day of\nthe moment it would have begun"
           },
           "averageDurationSeconds": {
             "type": "integer",
@@ -6463,6 +6568,23 @@
           }
         },
         "description": "One Report day of an automation's results"
+      },
+      "AutomationSkippedCounts": {
+        "type": "object",
+        "required": ["activeEnrollment", "once"],
+        "properties": {
+          "activeEnrollment": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Entries whose Event occurred while an enrollment of the contact was active"
+          },
+          "once": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Entries of a contact enrolled in the automation before, which enrolls a contact once"
+          }
+        },
+        "description": "How many entries into an automation were skipped, by reason"
       },
       "AutomationStatus": {
         "type": "string",
@@ -13163,6 +13285,79 @@
         "type": "string",
         "pattern": "^(?:whsec_)?(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})$",
         "description": "A Standard Webhooks signing secret: a non-empty base64 key, usually prefixed `whsec_`, such as\n`whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw`."
+      },
+      "SkippedEntryReason": {
+        "type": "string",
+        "enum": ["active_enrollment", "once"],
+        "description": "Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127):\n`active_enrollment` (the triggering Event occurred while an enrollment of the contact was active)\nor `once` (the contact had an enrollment in the automation before)."
+      },
+      "SkippedEntryResource": {
+        "type": "object",
+        "required": ["id", "automationId", "contactId", "reason", "occurredAt", "createdAt"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "automationId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The automation the contact was not enrolled in"
+          },
+          "contactId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The contact"
+          },
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SkippedEntryReason"
+              }
+            ],
+            "description": "Why the entry was skipped"
+          },
+          "eventSourceId": {
+            "type": "string",
+            "description": "The source id of the triggering Event (its dedupKey when it had one); absent when a rule's\nenroll action tried",
+            "x-untrusted": true
+          },
+          "firingId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The rule firing whose enroll action tried; absent when the automation's trigger did"
+          },
+          "occurredAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the enrollment would have begun: when its Event occurred"
+          },
+          "createdAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the entry was skipped"
+          }
+        },
+        "description": "An entry of a contact into an automation that its entry checks refused. Erased with the contact,\nand kept for the Event retention window."
       },
       "SkippedReason": {
         "type": "string",

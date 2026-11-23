@@ -8,6 +8,7 @@ import (
 	ent "github.com/getsphericon/sphericon/ent"
 	automation "github.com/getsphericon/sphericon/ent/automation"
 	automationrun "github.com/getsphericon/sphericon/ent/automationrun"
+	automationskippedentry "github.com/getsphericon/sphericon/ent/automationskippedentry"
 	broadcast "github.com/getsphericon/sphericon/ent/broadcast"
 	capturedmessage "github.com/getsphericon/sphericon/ent/capturedmessage"
 	confirmation "github.com/getsphericon/sphericon/ent/confirmation"
@@ -379,6 +380,8 @@ func (c *ConverterImpl) AutomationPeriodResultsToResource(source automations.Per
 	siteapiAutomationPeriodResults.Failed = count(source.ResultCounts.Failed)
 	siteapiAutomationPeriodResults.From = source.From
 	siteapiAutomationPeriodResults.To = source.To
+	siteapiAutomationPeriodResults.Contacts = count(source.Contacts)
+	siteapiAutomationPeriodResults.Skipped = c.automationsSkippedCountsToSiteapiAutomationSkippedCounts(source.Skipped)
 	siteapiAutomationPeriodResults.AverageDurationSeconds = durationSeconds(source.AverageDuration)
 	siteapiAutomationPeriodResults.Revenue = c.MessageRevenueToResource(source.Revenue)
 	return siteapiAutomationPeriodResults
@@ -2371,6 +2374,44 @@ func (c *ConverterImpl) SignupItemsToSite(source []signupitems.Document) []site.
 	}
 	return siteapiSiteSignupItemList
 }
+func (c *ConverterImpl) SkippedEntriesListPage(source pagination.Page[*ent.AutomationSkippedEntry]) *site.SiteSkippedEntriesListOK {
+	var siteapiSiteSkippedEntriesListOK site.SiteSkippedEntriesListOK
+	siteapiSiteSkippedEntriesListOK.Items = make([]site.SkippedEntryResource, len(source.Items))
+	for i := 0; i < len(source.Items); i++ {
+		siteapiSiteSkippedEntriesListOK.Items[i] = c.SkippedEntryToResource(source.Items[i])
+	}
+	siteapiSiteSkippedEntriesListOK.Page = count(source.Page)
+	siteapiSiteSkippedEntriesListOK.PageSize = count(source.PageSize)
+	siteapiSiteSkippedEntriesListOK.TotalItems = count(source.TotalItems)
+	siteapiSiteSkippedEntriesListOK.TotalPages = count(source.TotalPages)
+	return &siteapiSiteSkippedEntriesListOK
+}
+func (c *ConverterImpl) SkippedEntryReasonToResource(source automationskippedentry.Reason) site.SkippedEntryReason {
+	var siteapiSkippedEntryReason site.SkippedEntryReason
+	switch source {
+	case automationskippedentry.ReasonActiveEnrollment:
+		siteapiSkippedEntryReason = site.SkippedEntryReasonActiveEnrollment
+	case automationskippedentry.ReasonOnce:
+		siteapiSkippedEntryReason = site.SkippedEntryReasonOnce
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiSkippedEntryReason
+}
+func (c *ConverterImpl) SkippedEntryToResource(source *ent.AutomationSkippedEntry) site.SkippedEntryResource {
+	var siteapiSkippedEntryResource site.SkippedEntryResource
+	if source != nil {
+		siteapiSkippedEntryResource.ID = site.EntityId((*source).ID)
+		siteapiSkippedEntryResource.AutomationId = site.EntityId((*source).AutomationID)
+		siteapiSkippedEntryResource.ContactId = site.EntityId((*source).ContactID)
+		siteapiSkippedEntryResource.Reason = c.SkippedEntryReasonToResource((*source).Reason)
+		siteapiSkippedEntryResource.EventSourceId = optString((*source).SourceID)
+		siteapiSkippedEntryResource.FiringId = optEntityID((*source).FiringID)
+		siteapiSkippedEntryResource.OccurredAt = timestamp((*source).OccurredAt)
+		siteapiSkippedEntryResource.CreatedAt = timestamp((*source).CreatedAt)
+	}
+	return siteapiSkippedEntryResource
+}
 func (c *ConverterImpl) SkippedReasonToResource(source skipreason.Reason) site.SkippedReason {
 	var siteapiSkippedReason site.SkippedReason
 	switch source {
@@ -3018,6 +3059,12 @@ func (c *ConverterImpl) analyticsreportSubscribedPointToSiteapiSiteAnalyticsSubs
 	siteapiSiteAnalyticsSubscribedPoint.Unsubscribed = count(source.Unsubscribed)
 	siteapiSiteAnalyticsSubscribedPoint.Net = count(source.Net)
 	return siteapiSiteAnalyticsSubscribedPoint
+}
+func (c *ConverterImpl) automationsSkippedCountsToSiteapiAutomationSkippedCounts(source automations.SkippedCounts) site.AutomationSkippedCounts {
+	var siteapiAutomationSkippedCounts site.AutomationSkippedCounts
+	siteapiAutomationSkippedCounts.ActiveEnrollment = count(source.ActiveEnrollment)
+	siteapiAutomationSkippedCounts.Once = count(source.Once)
+	return siteapiAutomationSkippedCounts
 }
 func (c *ConverterImpl) automationsStepFiguresToSiteapiAutomationStepFigures(source automations.StepFigures) site.AutomationStepFigures {
 	var siteapiAutomationStepFigures site.AutomationStepFigures

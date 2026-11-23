@@ -182,6 +182,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewPurgeAuthAttemptsWorker(entClient, now))
 	river.AddWorker(workers, NewRefreshPrivateRelayWorker(deps.Machine))
 	river.AddWorker(workers, NewPruneEventsWorker(entClient, deps.Rules, deps.Retention.Events, now))
+	river.AddWorker(workers, NewPruneSkippedEntriesWorker(stepper, entClient, deps.Retention.Events))
 	river.AddWorker(workers, NewPruneMessagesWorker(deps.MessageRetention))
 	river.AddWorker(workers, NewPruneWorkspaceMessagesWorker(deps.MessageRetention))
 	river.AddWorker(workers, NewPruneCapturedMessagesWorker(deps.CapturedMessages, deps.Retention.CapturedMessages))
@@ -345,6 +346,8 @@ func periodicJobs(extra []*river.PeriodicJob) []*river.PeriodicJob {
 		every(privateRelayRefreshInterval, RefreshPrivateRelayArgs{}),
 		// Delete expired analytical Events (ADR 0019).
 		dailyUTC(3, PruneEventsArgs{}),
+		// Delete the skipped entries into Automations past the same window (ADR 0127).
+		dailyUTC(3, PruneSkippedEntriesArgs{}),
 		// Delete expired Outbound messages, keeping their figures (ADR 0143).
 		dailyUTC(5, PruneMessagesArgs{}),
 		// Erase Workspaces whose 30-day deletion window has passed (ADR 0043).

@@ -25,3 +25,19 @@ namespace Enrollments {
     | EnrollmentResource
     | Problem;
 }
+
+@route("/automations/{automationId}/skipped-entries")
+@tag("Automations")
+namespace SkippedEntries {
+  /** List an automation's skipped entries, newest first: the entries its entry checks refused, each
+   * with its reason. Needs the automations:read scope. */
+  @get
+  @requiresScopes(#[ApiTokenScope.automationsRead])
+  op list(
+    @path automationId: EntityId,
+    ...PageQuery,
+
+    /** Only the skipped entries of this contact */
+    @query contactId?: EntityId,
+  ): Page<SkippedEntryResource> | Problem;
+}

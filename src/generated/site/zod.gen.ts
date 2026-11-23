@@ -247,6 +247,14 @@ export const zAutomationResultsPoint = z.object({
 });
 
 /**
+ * How many entries into an automation were skipped, by reason
+ */
+export const zAutomationSkippedCounts = z.object({
+  activeEnrollment: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  once: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
  * Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody
  */
 export const zAutomationStatus = z.enum(['active', 'inactive']);
@@ -713,6 +721,8 @@ export const zAutomationPeriodResults = z.object({
   failed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   from: z.string(),
   to: z.string(),
+  contacts: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  skipped: zAutomationSkippedCounts,
   averageDurationSeconds: z.string().regex(/^[0-9]+$/).nullable(),
   revenue: zMessageRevenue
 });
@@ -2399,6 +2409,13 @@ export const zSiteVerifyEmailInput = z.strictObject({
 });
 
 /**
+ * Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127):
+ * `active_enrollment` (the triggering Event occurred while an enrollment of the contact was active)
+ * or `once` (the contact had an enrollment in the automation before).
+ */
+export const zSkippedEntryReason = z.enum(['active_enrollment', 'once']);
+
+/**
  * Why an Outbound message was Skipped: final for its Destination, never retried. The first four
  * are Send-eligibility's; a client switches over the list.
  */
@@ -3858,6 +3875,21 @@ export const zSiteWorkspaceHold = z.object({
   message: z.string(),
   since: zTimestamp,
   actionUrl: z.exactOptional(z.string().nullable())
+});
+
+/**
+ * An entry of a contact into an automation that its entry checks refused. Erased with the contact,
+ * and kept for the Event retention window.
+ */
+export const zSkippedEntryResource = z.object({
+  id: zEntityId,
+  automationId: zEntityId,
+  contactId: zEntityId,
+  reason: zSkippedEntryReason,
+  eventSourceId: z.exactOptional(z.string()),
+  firingId: z.exactOptional(zEntityId),
+  occurredAt: zTimestamp,
+  createdAt: zTimestamp
 });
 
 /**
@@ -5897,6 +5929,28 @@ export const zSiteAutomationReportsGetQuery = z.object({
  * The request has succeeded.
  */
 export const zSiteAutomationReportsGetResponse = zAutomationReport;
+
+export const zSiteSkippedEntriesListPath = z.object({
+  workspaceId: zWorkspaceId,
+  automationId: zEntityId
+});
+
+export const zSiteSkippedEntriesListQuery = z.object({
+  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().gte(1).lte(100).optional().default(25),
+  contactId: z.exactOptional(zEntityId)
+});
+
+/**
+ * Paginated response
+ */
+export const zSiteSkippedEntriesListResponse = z.object({
+  items: z.array(zSkippedEntryResource),
+  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  totalItems: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
 
 export const zSiteAutomationsGetPath = z.object({
   workspaceId: zWorkspaceId,

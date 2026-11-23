@@ -461,11 +461,85 @@ const (
 	RoleOf_AutomationRunClient_QueryContact          = RoleRead
 	RoleOf_AutomationRun_QueryContact                = RoleRead
 	RoleOf_AutomationRunQuery_QueryContact           = RoleRead
+	RoleOf_AutomationRunClient_QueryFiring           = RoleRead
+	RoleOf_AutomationRun_QueryFiring                 = RoleRead
+	RoleOf_AutomationRunQuery_QueryFiring            = RoleRead
 	RoleOf_AutomationRun_Update                      = RoleStart
 	RoleOf_AutomationRunCreate_OnConflict            = RoleStart
 	RoleOf_AutomationRunCreate_OnConflictColumns     = RoleStart
 	RoleOf_AutomationRunCreateBulk_OnConflict        = RoleStart
 	RoleOf_AutomationRunCreateBulk_OnConflictColumns = RoleStart
+)
+
+// The types ent generates for AutomationSkippedEntry.
+const (
+	TypeOf_AutomationSkippedEntry             = TypeEntity
+	TypeOf_AutomationSkippedEntries           = TypeOther
+	TypeOf_AutomationSkippedEntryEdges        = TypeOther
+	EntityOf_AutomationSkippedEntryEdges      = "AutomationSkippedEntry"
+	TypeOf_AutomationSkippedEntryMutation     = TypeOther
+	TypeOf_AutomationSkippedEntryClient       = TypeClient
+	TypeOf_AutomationSkippedEntryQuery        = TypeQuery
+	TypeOf_AutomationSkippedEntrySelect       = TypeQuery
+	TypeOf_AutomationSkippedEntryGroupBy      = TypeQuery
+	TypeOf_AutomationSkippedEntryCreate       = TypeCreate
+	TypeOf_AutomationSkippedEntryCreateBulk   = TypeCreate
+	TypeOf_AutomationSkippedEntryUpdate       = TypeUpdate
+	TypeOf_AutomationSkippedEntryUpdateOne    = TypeUpdate
+	TypeOf_AutomationSkippedEntryDelete       = TypeDelete
+	TypeOf_AutomationSkippedEntryDeleteOne    = TypeDelete
+	TypeOf_AutomationSkippedEntryUpsert       = TypeUpsert
+	TypeOf_AutomationSkippedEntryUpsertOne    = TypeUpsert
+	TypeOf_AutomationSkippedEntryUpsertBulk   = TypeUpsert
+	EntityOf_AutomationSkippedEntries         = "AutomationSkippedEntry"
+	EntityOf_AutomationSkippedEntry           = "AutomationSkippedEntry"
+	EntityOf_AutomationSkippedEntryMutation   = "AutomationSkippedEntry"
+	EntityOf_AutomationSkippedEntryClient     = "AutomationSkippedEntry"
+	EntityOf_AutomationSkippedEntryQuery      = "AutomationSkippedEntry"
+	EntityOf_AutomationSkippedEntrySelect     = "AutomationSkippedEntry"
+	EntityOf_AutomationSkippedEntryGroupBy    = "AutomationSkippedEntry"
+	EntityOf_AutomationSkippedEntryCreate     = "AutomationSkippedEntry"
+	EntityOf_AutomationSkippedEntryCreateBulk = "AutomationSkippedEntry"
+	EntityOf_AutomationSkippedEntryUpdate     = "AutomationSkippedEntry"
+	EntityOf_AutomationSkippedEntryUpdateOne  = "AutomationSkippedEntry"
+	EntityOf_AutomationSkippedEntryDelete     = "AutomationSkippedEntry"
+	EntityOf_AutomationSkippedEntryDeleteOne  = "AutomationSkippedEntry"
+	EntityOf_AutomationSkippedEntryUpsert     = "AutomationSkippedEntry"
+	EntityOf_AutomationSkippedEntryUpsertOne  = "AutomationSkippedEntry"
+	EntityOf_AutomationSkippedEntryUpsertBulk = "AutomationSkippedEntry"
+)
+
+// The reads and the writes ent's methods for AutomationSkippedEntry start.
+const (
+	RoleOf_AutomationSkippedEntryClient_Create                = RoleStart
+	RoleOf_AutomationSkippedEntryClient_CreateBulk            = RoleStart
+	RoleOf_AutomationSkippedEntryClient_MapCreateBulk         = RoleStart
+	RoleOf_AutomationSkippedEntryClient_Update                = RoleStart
+	RoleOf_AutomationSkippedEntryClient_UpdateOne             = RoleStart
+	RoleOf_AutomationSkippedEntryClient_Delete                = RoleStart
+	RoleOf_AutomationSkippedEntryClient_Query                 = RoleRead
+	RoleOf_AutomationSkippedEntryClient_UpdateOneID           = RoleStart
+	RoleOf_AutomationSkippedEntryClient_DeleteOne             = RoleStart
+	RoleOf_AutomationSkippedEntryClient_DeleteOneID           = RoleStart
+	RoleOf_AutomationSkippedEntryClient_Get                   = RoleRead
+	RoleOf_AutomationSkippedEntryClient_GetX                  = RoleRead
+	RoleOf_AutomationSkippedEntryClient_QueryWorkspace        = RoleRead
+	RoleOf_AutomationSkippedEntry_QueryWorkspace              = RoleRead
+	RoleOf_AutomationSkippedEntryQuery_QueryWorkspace         = RoleRead
+	RoleOf_AutomationSkippedEntryClient_QueryAutomation       = RoleRead
+	RoleOf_AutomationSkippedEntry_QueryAutomation             = RoleRead
+	RoleOf_AutomationSkippedEntryQuery_QueryAutomation        = RoleRead
+	RoleOf_AutomationSkippedEntryClient_QueryContact          = RoleRead
+	RoleOf_AutomationSkippedEntry_QueryContact                = RoleRead
+	RoleOf_AutomationSkippedEntryQuery_QueryContact           = RoleRead
+	RoleOf_AutomationSkippedEntryClient_QueryFiring           = RoleRead
+	RoleOf_AutomationSkippedEntry_QueryFiring                 = RoleRead
+	RoleOf_AutomationSkippedEntryQuery_QueryFiring            = RoleRead
+	RoleOf_AutomationSkippedEntry_Update                      = RoleStart
+	RoleOf_AutomationSkippedEntryCreate_OnConflict            = RoleStart
+	RoleOf_AutomationSkippedEntryCreate_OnConflictColumns     = RoleStart
+	RoleOf_AutomationSkippedEntryCreateBulk_OnConflict        = RoleStart
+	RoleOf_AutomationSkippedEntryCreateBulk_OnConflictColumns = RoleStart
 )
 
 // The types ent generates for AutomationStepRecord.
@@ -5227,6 +5301,9 @@ const (
 	RoleOf_WorkspaceClient_QueryAutomationFigures         = RoleRead
 	RoleOf_Workspace_QueryAutomationFigures               = RoleRead
 	RoleOf_WorkspaceQuery_QueryAutomationFigures          = RoleRead
+	RoleOf_WorkspaceClient_QueryAutomationSkippedEntries  = RoleRead
+	RoleOf_Workspace_QueryAutomationSkippedEntries        = RoleRead
+	RoleOf_WorkspaceQuery_QueryAutomationSkippedEntries   = RoleRead
 	RoleOf_WorkspaceClient_QueryEmailTemplates            = RoleRead
 	RoleOf_Workspace_QueryEmailTemplates                  = RoleRead
 	RoleOf_WorkspaceQuery_QueryEmailTemplates             = RoleRead

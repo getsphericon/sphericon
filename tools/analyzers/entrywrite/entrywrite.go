@@ -71,6 +71,7 @@ var owners = map[string]string{
 	"Automation":               automationsPath,
 	"AutomationFigure":         automationsPath,
 	"AutomationRun":            automationsPath,
+	"AutomationSkippedEntry":   automationsPath,
 	"AutomationStepRecord":     automationsPath,
 	"AutomationVersion":        automationsPath,
 	"Binding":                  "internal/domain/sending/bindings",

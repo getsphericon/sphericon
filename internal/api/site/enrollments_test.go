@@ -47,3 +47,25 @@ func TestSiteEnrollmentsShowWhyAnEnrollmentFailed(t *testing.T) {
 	})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
+
+// The console reads an Automation's skipped entries, filtered by Contact (ADR 0127).
+func TestSiteSkippedEntriesOfAContact(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.MemberMaryEmail)
+	ctx := context.Background()
+
+	listed, err := c.SiteSkippedEntriesList(ctx, siteapi.SiteSkippedEntriesListParams{
+		WorkspaceId:  fixtures.AcmePublicID,
+		AutomationId: siteapi.EntityId(fixtures.AutomationWelcomeSeriesID),
+		ContactId:    siteapi.NewOptEntityId(siteapi.EntityId(fixtures.ContactEmmaID)),
+	})
+	require.NoError(t, err)
+	require.Len(t, listed.Items, 1)
+	assert.Equal(t, siteapi.EntityId(fixtures.SkippedEntryWelcomeEmmaID), listed.Items[0].ID)
+	assert.Equal(t, siteapi.SkippedEntryReasonActiveEnrollment, listed.Items[0].Reason)
+
+	_, err = c.SiteSkippedEntriesList(ctx, siteapi.SiteSkippedEntriesListParams{
+		WorkspaceId: fixtures.AcmePublicID, AutomationId: siteapi.EntityId(fixtures.AutomationGlobexID),
+	})
+	testhelper.SiteRefusal(t, err, http.StatusNotFound)
+}

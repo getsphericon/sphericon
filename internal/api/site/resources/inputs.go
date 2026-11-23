@@ -203,6 +203,9 @@ type Inputs interface {
 	AutomationsListFilter(source siteapi.SiteAutomationsListParams) automations.ListFilter
 	// goverter:map AutomationId AutomationID
 	EnrollmentsFilter(source siteapi.SiteEnrollmentsListParams) automations.EnrollmentsFilter
+	// goverter:map AutomationId AutomationID
+	// goverter:map ContactId ContactID | entityIDIn
+	SkippedEntriesFilter(source siteapi.SiteSkippedEntriesListParams) automations.SkippedEntriesFilter
 	// The Contact a Data export names by its id or its email.
 	ContactExport(source siteapi.SiteContactsExportParams) dataexport.OpenInput
 

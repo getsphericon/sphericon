@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
@@ -272,6 +273,21 @@ func init() {
 	automationrunDescBeganAt := automationrunFields[5].Descriptor()
 	// automationrun.DefaultBeganAt holds the default value on creation for the began_at field.
 	automationrun.DefaultBeganAt = automationrunDescBeganAt.Default.(func() time.Time)
+	automationskippedentryMixin := schema.AutomationSkippedEntry{}.Mixin()
+	automationskippedentryMixinFields0 := automationskippedentryMixin[0].Fields()
+	_ = automationskippedentryMixinFields0
+	automationskippedentryFields := schema.AutomationSkippedEntry{}.Fields()
+	_ = automationskippedentryFields
+	// automationskippedentryDescCreatedAt is the schema descriptor for created_at field.
+	automationskippedentryDescCreatedAt := automationskippedentryMixinFields0[0].Descriptor()
+	// automationskippedentry.DefaultCreatedAt holds the default value on creation for the created_at field.
+	automationskippedentry.DefaultCreatedAt = automationskippedentryDescCreatedAt.Default.(func() time.Time)
+	// automationskippedentryDescUpdatedAt is the schema descriptor for updated_at field.
+	automationskippedentryDescUpdatedAt := automationskippedentryMixinFields0[1].Descriptor()
+	// automationskippedentry.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	automationskippedentry.DefaultUpdatedAt = automationskippedentryDescUpdatedAt.Default.(func() time.Time)
+	// automationskippedentry.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	automationskippedentry.UpdateDefaultUpdatedAt = automationskippedentryDescUpdatedAt.UpdateDefault.(func() time.Time)
 	automationsteprecordMixin := schema.AutomationStepRecord{}.Mixin()
 	automationsteprecordMixinFields0 := automationsteprecordMixin[0].Fields()
 	_ = automationsteprecordMixinFields0

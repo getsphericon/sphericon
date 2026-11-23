@@ -24,6 +24,9 @@ type AutomationFigure func(*sql.Selector)
 // AutomationRun is the predicate function for automationrun builders.
 type AutomationRun func(*sql.Selector)
 
+// AutomationSkippedEntry is the predicate function for automationskippedentry builders.
+type AutomationSkippedEntry func(*sql.Selector)
+
 // AutomationStepRecord is the predicate function for automationsteprecord builders.
 type AutomationStepRecord func(*sql.Selector)
 

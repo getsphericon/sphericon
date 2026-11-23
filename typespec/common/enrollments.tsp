@@ -66,3 +66,43 @@ model EnrollmentResource {
   /** Last update timestamp */
   updatedAt: Timestamp;
 }
+
+/**
+ * Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127):
+ * `active_enrollment` (the triggering Event occurred while an enrollment of the contact was active)
+ * or `once` (the contact had an enrollment in the automation before).
+ */
+enum SkippedEntryReason {
+  active_enrollment: "active_enrollment",
+  once: "once",
+}
+
+/** An entry of a contact into an automation that its entry checks refused. Erased with the contact,
+ * and kept for the Event retention window. */
+model SkippedEntryResource {
+  /** Unique identifier */
+  id: EntityId;
+
+  /** The automation the contact was not enrolled in */
+  automationId: EntityId;
+
+  /** The contact */
+  contactId: EntityId;
+
+  /** Why the entry was skipped */
+  reason: SkippedEntryReason;
+
+  /** The source id of the triggering Event (its dedupKey when it had one); absent when a rule's
+   * enroll action tried */
+  @untrusted
+  eventSourceId?: string;
+
+  /** The rule firing whose enroll action tried; absent when the automation's trigger did */
+  firingId?: EntityId;
+
+  /** When the enrollment would have begun: when its Event occurred */
+  occurredAt: Timestamp;
+
+  /** When the entry was skipped */
+  createdAt: Timestamp;
+}

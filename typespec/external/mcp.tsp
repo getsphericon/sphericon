@@ -37,6 +37,7 @@ namespace Sphericon;
 @@mcp(Auth.meGet, #{ name: "whoami" });
 @@mcp(Events.create, #{ name: "events_record" });
 @@mcp(EventActions.list, #{ name: "events_actions_list" });
+@@mcp(SkippedEntries.list, #{ name: "automations_skipped_entries_list" });
 @@mcp(ContactsBatch.upsert, #{ name: "contacts_upsert_batch" });
 @@mcp(EventsBatch.submit, #{ name: "events_record_batch" });
 
