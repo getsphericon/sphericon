@@ -69,7 +69,7 @@ func lastClick(ctx context.Context, s *ent.Scoped, contactID int64, since, until
 	}
 	messageID, ok := events.ClickedMessageID(e)
 	if !ok {
-		return nil, nil // an id that is no message's: nothing to credit
+		return nil, nil // a key with no id of a message, which the recorder never writes: nothing to credit
 	}
 	return &click{broadcastID: lo.FromPtr(e.BroadcastID), automationID: lo.FromPtr(e.AutomationID), messageID: messageID, at: e.OccurredAt}, nil
 }
