@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"fmt"
+
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
@@ -8,6 +10,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 )
 
@@ -21,14 +24,15 @@ type AutomationVersion struct {
 	ent.Schema
 }
 
+// Annotations adds to the enum checks the shape of the steps and of the Trigger's filter, and the
+// cooldown's floor (ADR 0127).
 func (AutomationVersion) Annotations() []schema.Annotation {
-	return []schema.Annotation{
-		entsql.Annotation{Table: "automation_versions", Checks: map[string]string{
-			"automation_versions_steps_check":                  stepsCheck("steps"),
-			"automation_versions_trigger_filter_check":         conditionCheck("trigger_filter"),
-			"automation_versions_trigger_filter_entries_check": conditionEntriesCheck("trigger_filter"),
-		}},
-	}
+	a := TableWithEnumChecks("automation_versions", AutomationVersion{}.Fields())
+	a.Checks["automation_versions_steps_check"] = stepsCheck("steps")
+	a.Checks["automation_versions_trigger_filter_check"] = conditionCheck("trigger_filter")
+	a.Checks["automation_versions_trigger_filter_entries_check"] = conditionEntriesCheck("trigger_filter")
+	a.Checks["automation_versions_cooldown_check"] = fmt.Sprintf("cooldown_seconds >= %d", bounds.EntryCooldownMin)
+	return []schema.Annotation{a}
 }
 
 func (AutomationVersion) Mixin() []ent.Mixin {
@@ -69,6 +73,17 @@ func (AutomationVersion) Fields() []ent.Field {
 		field.String("goal_event").
 			Optional().
 			Nillable(),
+		// The Entry policy of the Event Trigger (ADR 0127): `once` enrolls a Contact in the
+		// Automation at most once, ever; `again` enrolls it again once its previous Enrollment
+		// ended and cooldown_seconds passed since that Enrollment began. The policy of the version
+		// an Enrollment would begin on decides, for every way in.
+		field.Enum("entry_policy").
+			Values("once", "again").
+			Default("once"),
+		// The least time in seconds from the beginning of a Contact's previous Enrollment in the
+		// Automation to the next under `again`: at least an hour, which is also its default.
+		field.Int("cooldown_seconds").
+			Default(bounds.TriggerCooldownDefault),
 	}
 }
 

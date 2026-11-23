@@ -6497,6 +6497,32 @@ func (x *AutomationRunScopedCreate) SetChain(v []int64) *AutomationRunScopedCrea
 
 const RoleOf_AutomationRunScopedCreate_SetChain = RoleStep
 
+// SetOrdinal sets the "ordinal" field.
+func (x *AutomationRunScopedCreate) SetOrdinal(v int) *AutomationRunScopedCreate {
+	x.set = append(x.set, func(b *AutomationRunCreate) { b.SetOrdinal(v) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedCreate_SetOrdinal = RoleStep
+
+// SetKeyValue sets the "key_value" field.
+func (x *AutomationRunScopedCreate) SetKeyValue(v string) *AutomationRunScopedCreate {
+	x.set = append(x.set, func(b *AutomationRunCreate) { b.SetKeyValue(v) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedCreate_SetKeyValue = RoleStep
+
+// SetNillableKeyValue sets the "key_value" field if the given value is not nil.
+func (x *AutomationRunScopedCreate) SetNillableKeyValue(v *string) *AutomationRunScopedCreate {
+	if v != nil {
+		x.SetKeyValue(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationRunScopedCreate_SetNillableKeyValue = RoleStep
+
 // SetEndedAt sets the "ended_at" field.
 func (x *AutomationRunScopedCreate) SetEndedAt(v time.Time) *AutomationRunScopedCreate {
 	x.set = append(x.set, func(b *AutomationRunCreate) { b.SetEndedAt(v) })
@@ -9970,6 +9996,42 @@ func (x *AutomationVersionScopedCreate) SetNillableGoalEvent(v *string) *Automat
 
 const RoleOf_AutomationVersionScopedCreate_SetNillableGoalEvent = RoleStep
 
+// SetEntryPolicy sets the "entry_policy" field.
+func (x *AutomationVersionScopedCreate) SetEntryPolicy(v automationversion.EntryPolicy) *AutomationVersionScopedCreate {
+	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetEntryPolicy(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedCreate_SetEntryPolicy = RoleStep
+
+// SetNillableEntryPolicy sets the "entry_policy" field if the given value is not nil.
+func (x *AutomationVersionScopedCreate) SetNillableEntryPolicy(v *automationversion.EntryPolicy) *AutomationVersionScopedCreate {
+	if v != nil {
+		x.SetEntryPolicy(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationVersionScopedCreate_SetNillableEntryPolicy = RoleStep
+
+// SetCooldownSeconds sets the "cooldown_seconds" field.
+func (x *AutomationVersionScopedCreate) SetCooldownSeconds(v int) *AutomationVersionScopedCreate {
+	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetCooldownSeconds(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedCreate_SetCooldownSeconds = RoleStep
+
+// SetNillableCooldownSeconds sets the "cooldown_seconds" field if the given value is not nil.
+func (x *AutomationVersionScopedCreate) SetNillableCooldownSeconds(v *int) *AutomationVersionScopedCreate {
+	if v != nil {
+		x.SetCooldownSeconds(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationVersionScopedCreate_SetNillableCooldownSeconds = RoleStep
+
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (x *AutomationVersionScopedCreate) SetAutomation(v *Automation) *AutomationVersionScopedCreate {
 	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetAutomation(v) })
@@ -10226,6 +10288,46 @@ func (u *AutomationVersionScopedUpsert) ClearGoalEvent() *AutomationVersionScope
 }
 
 const RoleOf_AutomationVersionScopedUpsert_ClearGoalEvent = RoleStep
+
+// SetEntryPolicy sets the "entry_policy" field.
+func (u *AutomationVersionScopedUpsert) SetEntryPolicy(v automationversion.EntryPolicy) *AutomationVersionScopedUpsert {
+	u.u.Set(automationversion.FieldEntryPolicy, v)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_SetEntryPolicy = RoleStep
+
+// UpdateEntryPolicy sets the "entry_policy" field to the value that was provided on create.
+func (u *AutomationVersionScopedUpsert) UpdateEntryPolicy() *AutomationVersionScopedUpsert {
+	u.u.SetExcluded(automationversion.FieldEntryPolicy)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_UpdateEntryPolicy = RoleStep
+
+// SetCooldownSeconds sets the "cooldown_seconds" field.
+func (u *AutomationVersionScopedUpsert) SetCooldownSeconds(v int) *AutomationVersionScopedUpsert {
+	u.u.Set(automationversion.FieldCooldownSeconds, v)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_SetCooldownSeconds = RoleStep
+
+// AddCooldownSeconds adds v to the "cooldown_seconds" field.
+func (u *AutomationVersionScopedUpsert) AddCooldownSeconds(v int) *AutomationVersionScopedUpsert {
+	u.u.Add(automationversion.FieldCooldownSeconds, v)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_AddCooldownSeconds = RoleStep
+
+// UpdateCooldownSeconds sets the "cooldown_seconds" field to the value that was provided on create.
+func (u *AutomationVersionScopedUpsert) UpdateCooldownSeconds() *AutomationVersionScopedUpsert {
+	u.u.SetExcluded(automationversion.FieldCooldownSeconds)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_UpdateCooldownSeconds = RoleStep
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
 // target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
@@ -10546,6 +10648,50 @@ func (x *AutomationVersionScopedUpdateOne) ClearGoalEvent() *AutomationVersionSc
 
 const RoleOf_AutomationVersionScopedUpdateOne_ClearGoalEvent = RoleStep
 
+// SetEntryPolicy sets the "entry_policy" field.
+func (x *AutomationVersionScopedUpdateOne) SetEntryPolicy(v automationversion.EntryPolicy) *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetEntryPolicy(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdateOne_SetEntryPolicy = RoleStep
+
+// SetNillableEntryPolicy sets the "entry_policy" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdateOne) SetNillableEntryPolicy(v *automationversion.EntryPolicy) *AutomationVersionScopedUpdateOne {
+	if v != nil {
+		x.SetEntryPolicy(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdateOne_SetNillableEntryPolicy = RoleStep
+
+// SetCooldownSeconds sets the "cooldown_seconds" field.
+func (x *AutomationVersionScopedUpdateOne) SetCooldownSeconds(v int) *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetCooldownSeconds(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdateOne_SetCooldownSeconds = RoleStep
+
+// SetNillableCooldownSeconds sets the "cooldown_seconds" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdateOne) SetNillableCooldownSeconds(v *int) *AutomationVersionScopedUpdateOne {
+	if v != nil {
+		x.SetCooldownSeconds(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdateOne_SetNillableCooldownSeconds = RoleStep
+
+// AddCooldownSeconds adds value to the "cooldown_seconds" field.
+func (x *AutomationVersionScopedUpdateOne) AddCooldownSeconds(v int) *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.AddCooldownSeconds(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdateOne_AddCooldownSeconds = RoleStep
+
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (x *AutomationVersionScopedUpdateOne) SetAutomation(v *Automation) *AutomationVersionScopedUpdateOne {
 	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetAutomation(v) })
@@ -10804,6 +10950,50 @@ func (x *AutomationVersionScopedUpdate) ClearGoalEvent() *AutomationVersionScope
 }
 
 const RoleOf_AutomationVersionScopedUpdate_ClearGoalEvent = RoleStep
+
+// SetEntryPolicy sets the "entry_policy" field.
+func (x *AutomationVersionScopedUpdate) SetEntryPolicy(v automationversion.EntryPolicy) *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetEntryPolicy(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdate_SetEntryPolicy = RoleStep
+
+// SetNillableEntryPolicy sets the "entry_policy" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdate) SetNillableEntryPolicy(v *automationversion.EntryPolicy) *AutomationVersionScopedUpdate {
+	if v != nil {
+		x.SetEntryPolicy(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdate_SetNillableEntryPolicy = RoleStep
+
+// SetCooldownSeconds sets the "cooldown_seconds" field.
+func (x *AutomationVersionScopedUpdate) SetCooldownSeconds(v int) *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetCooldownSeconds(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdate_SetCooldownSeconds = RoleStep
+
+// SetNillableCooldownSeconds sets the "cooldown_seconds" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdate) SetNillableCooldownSeconds(v *int) *AutomationVersionScopedUpdate {
+	if v != nil {
+		x.SetCooldownSeconds(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdate_SetNillableCooldownSeconds = RoleStep
+
+// AddCooldownSeconds adds value to the "cooldown_seconds" field.
+func (x *AutomationVersionScopedUpdate) AddCooldownSeconds(v int) *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.AddCooldownSeconds(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdate_AddCooldownSeconds = RoleStep
 
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (x *AutomationVersionScopedUpdate) SetAutomation(v *Automation) *AutomationVersionScopedUpdate {

@@ -252,7 +252,8 @@ export const zAutomationResultsPoint = z.object({
 export const zAutomationSkippedCounts = z.object({
   cycle: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   activeEnrollment: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  once: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+  once: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  cooldown: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
 /**
@@ -506,6 +507,20 @@ export const zDryRunHttpStepInput = z.strictObject({
 export const zDryRunRuleInput = z.strictObject({
   eventId: zEntityId
 });
+
+/**
+ * The least time, in whole seconds, from the beginning of a contact's previous enrollment in an
+ * automation to the beginning of the next, under the `again` entry policy: at least one hour
+ */
+export const zEntryCooldown = z.int().gte(3600).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' });
+
+/**
+ * Whether an automation enrolls a contact again (ADR 0127): `once` enrolls a contact at most once,
+ * ever; `again` enrolls it again once its previous enrollment ended, however it ended, and the
+ * cooldown from that enrollment's beginning passed. Either way a contact has at most one active
+ * enrollment in an automation.
+ */
+export const zEntryPolicy = z.enum(['once', 'again']);
 
 /**
  * How an event count is bounded: at least `times`, or at most `times`
@@ -2412,13 +2427,16 @@ export const zSiteVerifyEmailInput = z.strictObject({
 /**
  * Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127):
  * `cycle` (the chain of events that caused it already passed through the automation),
- * `active_enrollment` (the triggering Event occurred while an enrollment of the contact was active)
- * or `once` (the contact had an enrollment in the automation before).
+ * `active_enrollment` (the triggering Event occurred while an enrollment of the contact was
+ * active, or one is active still), `once` (the contact had an enrollment in the automation before,
+ * under the `once` entry policy) or `cooldown` (under `again`, the cooldown from the beginning of
+ * the contact's previous enrollment had not passed).
  */
 export const zSkippedEntryReason = z.enum([
   'cycle',
   'active_enrollment',
-  'once'
+  'once',
+  'cooldown'
 ]);
 
 /**
@@ -3317,6 +3335,7 @@ export const zEnrollmentResource = z.object({
   automationId: zEntityId,
   contactId: zEntityId,
   status: zEnrollmentStatus,
+  ordinal: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   currentStepId: z.exactOptional(zStepId),
   resumeAt: z.exactOptional(zTimestamp),
   failure: z.exactOptional(zEnrollmentFailure),
@@ -4695,7 +4714,9 @@ export const zEventFilterNodeInput = z.discriminatedUnion('kind', [
 export const zEventTrigger = z.object({
   kind: z.enum(['event']),
   action: z.string(),
-  filter: z.exactOptional(zEventFilter)
+  filter: z.exactOptional(zEventFilter),
+  entryPolicy: zEntryPolicy,
+  cooldown: zEntryCooldown
 });
 
 /**
@@ -4704,7 +4725,9 @@ export const zEventTrigger = z.object({
 export const zEventTriggerInput = z.strictObject({
   kind: z.enum(['event']),
   action: z.string(),
-  filter: z.exactOptional(zEventFilterInput)
+  filter: z.exactOptional(zEventFilterInput),
+  entryPolicy: z.exactOptional(zEntryPolicy),
+  cooldown: z.exactOptional(zEntryCooldown)
 });
 
 /**

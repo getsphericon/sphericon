@@ -3,6 +3,18 @@
 package externalapi
 
 // setDefaults set default value of fields.
+func (s *EventTriggerInput) setDefaults() {
+	{
+		val := EventTriggerInputEntryPolicy("once")
+		s.EntryPolicy.SetTo(val)
+	}
+	{
+		val := int32(3600)
+		s.Cooldown.SetTo(val)
+	}
+}
+
+// setDefaults set default value of fields.
 func (s *SendTransactionalEmailInput) setDefaults() {
 	{
 		val := bool(false)

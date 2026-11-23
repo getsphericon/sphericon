@@ -6,10 +6,12 @@ import (
 	"slices"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationskippedentry"
-	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/drain"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
@@ -30,6 +32,8 @@ import (
 //
 // The first is enrollOnTrigger's admission, before the others are judged (matchesEvent);
 // entryChecks holds the others built, in that order; a check that comes takes its place among them.
+// `once` and the cooldown are the Entry policy of the version the Enrollment would begin on: `once`
+// refuses any earlier Enrollment, `again` refuses one within the cooldown of another's beginning.
 //
 // A cycle is an entry whose cause already passed through the Automation: the Event, or the Event a
 // Rule fired on, names it among the Automations its chain passed through (events.Envelope.Automations),
@@ -39,13 +43,17 @@ import (
 // The "other" Enrollments leave out the one the entry's own Event or Firing made: an Event handled
 // again finds the Enrollment it began, which is no reason to skip it, and the insert's ON CONFLICT
 // makes nothing (one Enrollment per Automation and Event, or Firing). An Enrollment made already
-// ended, by an exit or goal Event recorded before it, counts like any other.
+// ended, by an exit or goal Event recorded before it, counts like any other, for the checks and for
+// the ordinal.
 
-// entryCase is what an entry check judges: the Automation, the Automations its cause's chain passed
-// through, the moment the entry would begin (its Event's occurred_at) and the Contact's other
-// Enrollments in the Automation.
+// entryCase is what an entry check judges: the Automation, the Entry policy and cooldown of the
+// version the Enrollment would begin on, the Automations its cause's chain passed through, the
+// moment the entry would begin (its Event's occurred_at) and the Contact's other Enrollments in the
+// Automation.
 type entryCase struct {
 	automationID int64
+	policy       automationversion.EntryPolicy
+	cooldown     time.Duration
 	chain        []int64
 	at           time.Time
 	others       []*ent.AutomationRun
@@ -59,6 +67,7 @@ var entryChecks = []entryCheck{
 	cycle,
 	activeEnrollment,
 	onceEver,
+	cooldown,
 }
 
 // cycle skips an entry whose cause's chain already passed through the Automation.
@@ -72,54 +81,94 @@ func cycle(c entryCase) (automationskippedentry.Reason, bool) {
 // activeEnrollment skips an entry whose moment falls while another Enrollment of the Contact was
 // active: begun at that moment or before and not ended by then. It judges the Event's moment, not
 // the handling's, so a late or backdated Event does not start a second run of what it happened
-// during.
+// during. An Enrollment still active skips it too, whenever it began: a Contact has at most one
+// active Enrollment in an Automation, so an Event older than that Enrollment does not start another
+// beside it.
 func activeEnrollment(c entryCase) (automationskippedentry.Reason, bool) {
 	for _, run := range c.others {
 		begun := !run.BeganAt.After(c.at)
 		ongoing := run.EndedAt == nil || c.at.Before(*run.EndedAt)
-		if begun && ongoing {
+		if run.Status == automationrun.StatusActive || begun && ongoing {
 			return automationskippedentry.ReasonActiveEnrollment, true
 		}
 	}
 	return "", false
 }
 
-// onceEver skips an entry of a Contact that had any other Enrollment in the Automation: the `once`
-// Entry policy, the only one built.
+// onceEver skips, under the `once` Entry policy, an entry of a Contact that had any other
+// Enrollment in the Automation.
 func onceEver(c entryCase) (automationskippedentry.Reason, bool) {
-	if len(c.others) > 0 {
+	if c.policy == automationversion.EntryPolicyOnce && len(c.others) > 0 {
 		return automationskippedentry.ReasonOnce, true
 	}
 	return "", false
 }
 
-// judgeEntry runs the entry checks on the Contact's entry into the Automation of the origin o and
-// returns the reason of the first that refuses it, or false when every one lets it through.
-func judgeEntry(ctx context.Context, s *ent.Scoped, automationID, contactID int64, o origin) (automationskippedentry.Reason, bool, error) {
-	where := append([]predicate.AutomationRun{automationrun.AutomationID(automationID), automationrun.ContactID(contactID)}, notMadeBy(o)...)
-	others, err := s.AutomationRun().Query().Where(where...).All(ctx)
-	if err != nil {
-		return "", false, err
+// cooldown skips, under the `again` Entry policy, an entry whose moment is less than the cooldown
+// from another Enrollment's beginning: it caps how often a Contact enrolls, whatever the length of
+// the path. The distance counts either way, so a backdated Event does not slip in just before an
+// Enrollment begun after it either.
+func cooldown(c entryCase) (automationskippedentry.Reason, bool) {
+	if c.policy != automationversion.EntryPolicyAgain {
+		return "", false
 	}
-	c := entryCase{automationID: automationID, chain: o.Chain, at: o.OccurredAt, others: others}
-	for _, check := range entryChecks {
-		if reason, skipped := check(c); skipped {
-			return reason, true, nil
+	for _, run := range c.others {
+		if c.at.Sub(run.BeganAt).Abs() < c.cooldown {
+			return automationskippedentry.ReasonCooldown, true
 		}
 	}
-	return "", false, nil
+	return "", false
 }
 
-// notMadeBy leaves out the Enrollment the origin's Event or Firing made; an origin with neither
-// made none.
-func notMadeBy(o origin) []predicate.AutomationRun {
+// entry is what the entry checks made of an entry: the reason of the first that refused it, when
+// skipped, and the ordinal the Enrollment it makes takes otherwise.
+type entry struct {
+	reason  automationskippedentry.Reason
+	skipped bool
+	ordinal int
+}
+
+// judgeEntry runs the entry checks on the Contact's entry, for the origin o, into the Automation
+// whose live version v the Enrollment would begin on. Every Enrollment of the Contact in the
+// Automation counts for the ordinal, the one o's own Event or Firing made included: the insert of
+// an entry handled again makes nothing.
+func judgeEntry(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, contactID int64, o origin) (entry, error) {
+	runs, err := s.AutomationRun().Query().
+		Where(automationrun.AutomationID(v.AutomationID), automationrun.ContactID(contactID)).
+		All(ctx)
+	if err != nil {
+		return entry{}, err
+	}
+	c := entryCase{
+		automationID: v.AutomationID,
+		policy:       v.EntryPolicy,
+		cooldown:     time.Duration(v.CooldownSeconds) * time.Second,
+		chain:        o.Chain,
+		at:           o.OccurredAt,
+		others:       lo.Reject(runs, func(run *ent.AutomationRun, _ int) bool { return madeBy(run, o) }),
+	}
+	next := entry{ordinal: 1}
+	if len(runs) > 0 {
+		next.ordinal = lo.MaxBy(runs, func(a, b *ent.AutomationRun) bool { return a.Ordinal > b.Ordinal }).Ordinal + 1
+	}
+	for _, check := range entryChecks {
+		if reason, skipped := check(c); skipped {
+			return entry{reason: reason, skipped: true}, nil
+		}
+	}
+	return next, nil
+}
+
+// madeBy is whether the origin's Event or Firing made the Enrollment; an origin with neither made
+// none.
+func madeBy(run *ent.AutomationRun, o origin) bool {
 	switch {
 	case o.SourceID != "":
-		return []predicate.AutomationRun{automationrun.Or(automationrun.TriggerSourceIDIsNil(), automationrun.TriggerSourceIDNEQ(o.SourceID))}
+		return lo.FromPtr(run.TriggerSourceID) == o.SourceID
 	case o.FiringID != 0:
-		return []predicate.AutomationRun{automationrun.Or(automationrun.FiringIDIsNil(), automationrun.FiringIDNEQ(o.FiringID))}
+		return lo.FromPtr(run.FiringID) == o.FiringID
 	}
-	return nil
+	return false
 }
 
 // recordSkip records the Contact's entry into the Automation of the origin o as skipped for the
@@ -150,9 +199,9 @@ func recordSkip(ctx context.Context, s *ent.Scoped, automationID, contactID int6
 // The unique constraints of the entry identities (ADR 0106): no client can break them.
 var _ = db.Declare(
 	db.Fault("automation_runs_workspace_automation_trigger_source",
-		"an Event belongs to one Contact, so a second Enrollment on it conflicts on the Automation and the Contact too, the insert's ON CONFLICT target"),
+		"an Enrollment on an Event is written with ON CONFLICT DO NOTHING on this index: an Event handled again makes nothing"),
 	db.Fault("automation_runs_workspace_automation_firing",
-		"a Firing belongs to one Contact, so a second Enrollment on it conflicts on the Automation and the Contact too, the insert's ON CONFLICT target"),
+		"an Enrollment on a Firing is written with ON CONFLICT DO NOTHING on this index: a Firing run again makes nothing"),
 	db.Fault("automation_skipped_entries_workspace_automation_source",
 		"a skipped entry of an Event is written with ON CONFLICT DO NOTHING on this index"),
 	db.Fault("automation_skipped_entries_workspace_automation_firing",

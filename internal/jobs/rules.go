@@ -7,6 +7,7 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
@@ -113,11 +114,13 @@ func RuleActionRunners(mod *outboundmessages.Module, tagging *contacts.Module, s
 }
 
 // enrollAction enrolls the Contact in an Automation through the same Enrollment an Automation's
-// trigger uses: once ever, fenced (ADR 0046), beginning when the Event the Rule fired on occurred
-// (automations.StepExecution.EnrollOnRule). The Enrollment decides under its lock whether the
-// Automation may enroll anybody; its refusal ends the Action (actionResult). A Contact already
-// enrolled is Skipped, not Failed. The Enrollment and the job that starts stepping it commit
-// together, so a retry never finds an enrolled Contact whose run never started.
+// trigger uses: by its entry checks and Entry policy, fenced (ADR 0046, ADR 0127), beginning when
+// the Event the Rule fired on occurred (automations.StepExecution.EnrollOnRule). The Enrollment
+// decides under its lock whether the Automation may enroll anybody; its refusal ends the Action
+// (actionResult). An entry the checks refuse is Skipped, not Failed, naming the reason they
+// recorded, and so is a Firing run again whose Enrollment is there already. The Enrollment and the
+// job that starts stepping it commit together, so a retry never finds an enrolled Contact whose run
+// never started.
 type enrollAction struct {
 	steps *automations.StepExecution
 }
@@ -125,14 +128,23 @@ type enrollAction struct {
 func (a enrollAction) Run(ctx context.Context, s *ent.Scoped, in rules.ActionInput) (rules.Result, error) {
 	// The Automations the chain of the Event the Rule fired on passed through ride in the job's
 	// metadata (events.JobCorrelation): the entry skips one that names the Automation (ADR 0127).
-	enrolled, err := a.steps.EnrollOnRule(ctx, s, automations.EnrollOnRuleInput{
+	made, err := a.steps.EnrollOnRule(ctx, s, automations.EnrollOnRuleInput{
 		AutomationID: in.Action.AutomationID, ContactID: in.ContactID, FiringID: in.Firing.ID, SourceID: in.Firing.SourceID,
 		Chain: events.AutomationsOf(ctx),
 	})
-	if err == nil && !enrolled {
-		return rules.Result{Status: rules.Skipped, Detail: "the contact is already enrolled"}, nil
+	if err == nil && !made.Enrolled {
+		return rules.Result{Status: rules.Skipped, Detail: enrollSkipDetail(made.Skipped)}, nil
 	}
 	return actionResult(err)
+}
+
+// enrollSkipDetail says why an Enroll Action made no Enrollment: the reason the entry checks
+// recorded, or none for a Firing whose Enrollment is there already.
+func enrollSkipDetail(reason automationskippedentry.Reason) string {
+	if reason == "" {
+		return "the contact is already enrolled by this firing"
+	}
+	return "the entry was skipped: " + string(reason)
 }
 
 // tagAction applies or removes a Tag. The change is the `system` actor's (ADR 0022), as an

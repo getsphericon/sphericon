@@ -50,6 +50,10 @@ type AutomationRun struct {
 	FiringID *int64 `json:"firing_id,omitempty"`
 	// Chain holds the value of the "chain" field.
 	Chain []int64 `json:"chain,omitempty"`
+	// Ordinal holds the value of the "ordinal" field.
+	Ordinal int `json:"ordinal,omitempty"`
+	// KeyValue holds the value of the "key_value" field.
+	KeyValue *string `json:"key_value,omitempty"`
 	// EndedAt holds the value of the "ended_at" field.
 	EndedAt *time.Time `json:"ended_at,omitempty"`
 	// CurrentStepID holds the value of the "current_step_id" field.
@@ -147,9 +151,9 @@ func (*AutomationRun) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case automationrun.FieldEventProperties, automationrun.FieldChain:
 			values[i] = new([]byte)
-		case automationrun.FieldID, automationrun.FieldWorkspaceID, automationrun.FieldAutomationID, automationrun.FieldContactID, automationrun.FieldVersionID, automationrun.FieldFiringID, automationrun.FieldFailureStatus:
+		case automationrun.FieldID, automationrun.FieldWorkspaceID, automationrun.FieldAutomationID, automationrun.FieldContactID, automationrun.FieldVersionID, automationrun.FieldFiringID, automationrun.FieldOrdinal, automationrun.FieldFailureStatus:
 			values[i] = new(sql.NullInt64)
-		case automationrun.FieldStatus, automationrun.FieldEventAction, automationrun.FieldTriggerSourceID, automationrun.FieldCurrentStepID, automationrun.FieldFailureKind, automationrun.FieldFailureExcerpt:
+		case automationrun.FieldStatus, automationrun.FieldEventAction, automationrun.FieldTriggerSourceID, automationrun.FieldKeyValue, automationrun.FieldCurrentStepID, automationrun.FieldFailureKind, automationrun.FieldFailureExcerpt:
 			values[i] = new(sql.NullString)
 		case automationrun.FieldCreatedAt, automationrun.FieldUpdatedAt, automationrun.FieldBeganAt, automationrun.FieldEndedAt, automationrun.FieldResumeAt:
 			values[i] = new(sql.NullTime)
@@ -258,6 +262,19 @@ func (_m *AutomationRun) assignValues(columns []string, values []any) error {
 				if err := json.Unmarshal(*value, &_m.Chain); err != nil {
 					return fmt.Errorf("unmarshal field chain: %w", err)
 				}
+			}
+		case automationrun.FieldOrdinal:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field ordinal", values[i])
+			} else if value.Valid {
+				_m.Ordinal = int(value.Int64)
+			}
+		case automationrun.FieldKeyValue:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field key_value", values[i])
+			} else if value.Valid {
+				_m.KeyValue = new(string)
+				*_m.KeyValue = value.String
 			}
 		case automationrun.FieldEndedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -406,6 +423,14 @@ func (_m *AutomationRun) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("chain=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Chain))
+	builder.WriteString(", ")
+	builder.WriteString("ordinal=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Ordinal))
+	builder.WriteString(", ")
+	if v := _m.KeyValue; v != nil {
+		builder.WriteString("key_value=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", ")
 	if v := _m.EndedAt; v != nil {
 		builder.WriteString("ended_at=")

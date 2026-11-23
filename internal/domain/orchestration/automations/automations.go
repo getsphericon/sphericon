@@ -8,6 +8,7 @@
 package automations
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -20,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
@@ -33,10 +35,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/jsonvalue"
 	"github.com/getsphericon/sphericon/internal/kernel/optional"
@@ -401,12 +405,39 @@ func normalizeGoal(goal *string) *string {
 	return &g
 }
 
+// Entry is the Entry policy of a version's Event Trigger (ADR 0127): Policy, `once` (the default,
+// empty) or `again`, and CooldownSeconds, under `again` the least time from the beginning of a
+// Contact's previous Enrollment to the next, nil for the default and at least an hour.
+type Entry struct {
+	Policy          automationversion.EntryPolicy
+	CooldownSeconds *int
+}
+
+// normalizeEntry turns an Entry policy into its stored form, the defaults filled in, and refuses a
+// cooldown under the floor (bounds.EntryCooldown).
+func normalizeEntry(e Entry) (automationversion.EntryPolicy, int, error) {
+	policy := cmp.Or(e.Policy, automationversion.DefaultEntryPolicy)
+	if err := automationversion.EntryPolicyValidator(policy); err != nil {
+		return "", 0, ErrInvalidTrigger.With(fmt.Sprintf("%q is not an entry policy", policy))
+	}
+	cooldown := bounds.TriggerCooldownDefault
+	if e.CooldownSeconds != nil {
+		cooldown = *e.CooldownSeconds
+	}
+	if err := validation.Min(fieldname.Cooldown, cooldown, bounds.EntryCooldownMin); err != nil {
+		return "", 0, err
+	}
+	return policy, cooldown, nil
+}
+
 // CreateInput is the data for a new Automation. It is always created inactive: publishing is a
 // separate, send-class operation (ADR 0065).
 type CreateInput struct {
 	Name string
 	// Trigger is what enrolls a Contact: an Event matcher (ADR 0133).
 	Trigger eventmatcher.Matcher
+	// Entry is the Trigger's Entry policy; its zero value is the defaults.
+	Entry Entry
 	// ExitEvents end an active Enrollment early and GoalEvent ends it as having reached its goal;
 	// nil is none.
 	ExitEvents []string
@@ -423,6 +454,9 @@ type UpdateInput struct {
 	Name     *string
 	// Trigger replaces the Trigger, its filter with it; nil leaves it alone.
 	Trigger *eventmatcher.Matcher
+	// Entry replaces the Trigger's Entry policy, which a request writes with the Trigger; nil
+	// leaves it alone.
+	Entry *Entry
 	// ExitEvents replaces the exit events; nil leaves them alone.
 	ExitEvents *[]string
 	// GoalEvent sets the goal event, and a clear removes it.
@@ -470,7 +504,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 		}
 		return a.ID, nil
 	}
-	e := edit{trigger: &in.Trigger, exits: &in.ExitEvents, goal: patch.FromPtr(in.GoalEvent)}
+	e := edit{trigger: &in.Trigger, entry: &in.Entry, exits: &in.ExitEvents, goal: patch.FromPtr(in.GoalEvent)}
 	if in.Steps != nil {
 		e.steps = &steps
 	}
@@ -490,7 +524,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		return nil, err
 	}
 	in.Name = name
-	e := edit{trigger: in.Trigger, exits: in.ExitEvents, goal: in.GoalEvent}
+	e := edit{trigger: in.Trigger, entry: in.Entry, exits: in.ExitEvents, goal: in.GoalEvent}
 	if in.Steps != nil {
 		built, err := m.build(ctx, *in.Steps)
 		if err != nil {
@@ -505,19 +539,23 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 // (their documents rendered) before the transaction.
 type edit struct {
 	trigger *eventmatcher.Matcher
+	entry   *Entry
 	exits   *[]string
 	goal    patch.Field[string]
 	steps   *automationstep.Path
 }
 
-// definition is the content of an Automation version as stored: its Trigger, the events that end
-// an Enrollment early (exits) and the one that ends it as having reached its goal (nil for none),
-// and its sealed steps, each send step naming its Integration.
+// definition is the content of an Automation version as stored: its Trigger with its Entry policy
+// and cooldown in seconds, the events that end an Enrollment early (exits) and the one that ends it
+// as having reached its goal (nil for none), and its sealed steps, each send step naming its
+// Integration.
 type definition struct {
-	trigger eventmatcher.Matcher
-	exits   []string
-	goal    *string
-	steps   automationstep.Path
+	trigger  eventmatcher.Matcher
+	policy   automationversion.EntryPolicy
+	cooldown int
+	exits    []string
+	goal     *string
+	steps    automationstep.Path
 }
 
 // versioned is the Automation's part of the lifecycle (versioneddefinition.Definition).
@@ -532,13 +570,23 @@ func (versioned) Store(s *ent.Scoped) ent.VersionedStore[ent.Automation, ent.Aut
 // steps, each send step's Integration kept (not archived). An HTTP step that names one of the
 // base's steps by ID keeps the secrets it does not resend.
 func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.AutomationVersion, e edit) (definition, error) {
-	def := definition{exits: []string{}, steps: automationstep.Path{ID: automationstep.NewID(), Steps: []automationstep.Step{}}}
+	def := definition{
+		policy: automationversion.DefaultEntryPolicy, cooldown: bounds.TriggerCooldownDefault,
+		exits: []string{}, steps: automationstep.Path{ID: automationstep.NewID(), Steps: []automationstep.Step{}},
+	}
 	var stored automationstep.Path
 	if base != nil {
 		def, stored = definitionOf(base), base.Steps
 	}
 	if e.trigger != nil {
 		def.trigger = normalizeTrigger(*e.trigger)
+	}
+	if e.entry != nil {
+		policy, cooldown, err := normalizeEntry(*e.entry)
+		if err != nil {
+			return definition{}, err
+		}
+		def.policy, def.cooldown = policy, cooldown
 	}
 	if e.exits != nil {
 		def.exits = normalizeExits(*e.exits)
@@ -595,14 +643,19 @@ func TriggerOf(v *ent.AutomationVersion) eventmatcher.Matcher {
 
 // definitionOf is the definition a version holds.
 func definitionOf(v *ent.AutomationVersion) definition {
-	return definition{trigger: TriggerOf(v), exits: normalizeExits(v.ExitEvents), goal: v.GoalEvent, steps: v.Steps}
+	return definition{
+		trigger: TriggerOf(v), policy: v.EntryPolicy, cooldown: v.CooldownSeconds,
+		exits: normalizeExits(v.ExitEvents), goal: v.GoalEvent, steps: v.Steps,
+	}
 }
 
 // Equal compares the Trigger's filter and the steps by value (ADR 0169): a document spelled with its
 // keys in another order is the same document.
 func (versioned) Equal(v *ent.AutomationVersion, def definition) bool {
 	held := definitionOf(v)
-	return held.trigger.Action == def.trigger.Action && jsonvalue.Same(held.trigger.Filter, def.trigger.Filter) && slices.Equal(held.exits, def.exits) && optional.Equal(held.goal, def.goal) &&
+	return held.trigger.Action == def.trigger.Action && jsonvalue.Same(held.trigger.Filter, def.trigger.Filter) &&
+		held.policy == def.policy && held.cooldown == def.cooldown &&
+		slices.Equal(held.exits, def.exits) && optional.Equal(held.goal, def.goal) &&
 		jsonvalue.Same(held.steps, def.steps)
 }
 
@@ -610,6 +663,8 @@ func (versioned) Write(ctx context.Context, l *ent.WorkspaceLocked, id int64, nu
 	if draft != nil {
 		upd := l.AutomationVersion().UpdateOneID(draft.ID).
 			SetTriggerAction(def.trigger.Action).
+			SetEntryPolicy(def.policy).
+			SetCooldownSeconds(def.cooldown).
 			SetExitEvents(def.exits).
 			SetNillableGoalEvent(def.goal).
 			SetSteps(def.steps)
@@ -627,6 +682,8 @@ func (versioned) Write(ctx context.Context, l *ent.WorkspaceLocked, id int64, nu
 		SetAutomationID(id).
 		SetVersion(number).
 		SetTriggerAction(def.trigger.Action).
+		SetEntryPolicy(def.policy).
+		SetCooldownSeconds(def.cooldown).
 		SetExitEvents(def.exits).
 		SetNillableGoalEvent(def.goal).
 		SetSteps(def.steps)

@@ -2474,6 +2474,8 @@ type AutomationSkippedCounts struct {
 	ActiveEnrollment int32 `json:"activeEnrollment"`
 	// Entries of a contact enrolled in the automation before, which enrolls a contact once.
 	Once int32 `json:"once"`
+	// Entries sooner after the beginning of the contact's previous enrollment than the cooldown.
+	Cooldown int32 `json:"cooldown"`
 }
 
 // GetCycle returns the value of Cycle.
@@ -2491,6 +2493,11 @@ func (s *AutomationSkippedCounts) GetOnce() int32 {
 	return s.Once
 }
 
+// GetCooldown returns the value of Cooldown.
+func (s *AutomationSkippedCounts) GetCooldown() int32 {
+	return s.Cooldown
+}
+
 // SetCycle sets the value of Cycle.
 func (s *AutomationSkippedCounts) SetCycle(val int32) {
 	s.Cycle = val
@@ -2504,6 +2511,11 @@ func (s *AutomationSkippedCounts) SetActiveEnrollment(val int32) {
 // SetOnce sets the value of Once.
 func (s *AutomationSkippedCounts) SetOnce(val int32) {
 	s.Once = val
+}
+
+// SetCooldown sets the value of Cooldown.
+func (s *AutomationSkippedCounts) SetCooldown(val int32) {
+	s.Cooldown = val
 }
 
 // Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody.
@@ -7661,6 +7673,9 @@ type EnrollmentResource struct {
 	ContactId EntityId `json:"contactId"`
 	// Where the Enrollment is.
 	Status EnrollmentStatus `json:"status"`
+	// Which of the contact's enrollments in the automation it is: 1 for the first, plus one for each after
+	// it, an enrollment that ended as it was made included.
+	Ordinal int32 `json:"ordinal"`
 	// Id of the Step of its version the Enrollment stands on (ADR 0122): a wait while it waits, the Step
 	// it ended on once it ended; absent only for a version of no Steps.
 	CurrentStepId OptStepId `json:"currentStepId"`
@@ -7692,6 +7707,11 @@ func (s *EnrollmentResource) GetContactId() EntityId {
 // GetStatus returns the value of Status.
 func (s *EnrollmentResource) GetStatus() EnrollmentStatus {
 	return s.Status
+}
+
+// GetOrdinal returns the value of Ordinal.
+func (s *EnrollmentResource) GetOrdinal() int32 {
+	return s.Ordinal
 }
 
 // GetCurrentStepId returns the value of CurrentStepId.
@@ -7737,6 +7757,11 @@ func (s *EnrollmentResource) SetContactId(val EntityId) {
 // SetStatus sets the value of Status.
 func (s *EnrollmentResource) SetStatus(val EnrollmentStatus) {
 	s.Status = val
+}
+
+// SetOrdinal sets the value of Ordinal.
+func (s *EnrollmentResource) SetOrdinal(val int32) {
+	s.Ordinal = val
 }
 
 // SetCurrentStepId sets the value of CurrentStepId.
@@ -7829,6 +7854,54 @@ func (s *EnrollmentStatus) UnmarshalText(data []byte) error {
 }
 
 type EntityId publicid.ID
+
+type EntryCooldown int32
+
+// Whether an automation enrolls a contact again (ADR 0127): `once` enrolls a contact at most once,
+// ever; `again` enrolls it again once its previous enrollment ended, however it ended, and the
+// cooldown from that enrollment's beginning passed. Either way a contact has at most one active
+// enrollment in an automation.
+// Ref: #/components/schemas/EntryPolicy
+type EntryPolicy string
+
+const (
+	EntryPolicyOnce  EntryPolicy = "once"
+	EntryPolicyAgain EntryPolicy = "again"
+)
+
+// AllValues returns all EntryPolicy values.
+func (EntryPolicy) AllValues() []EntryPolicy {
+	return []EntryPolicy{
+		EntryPolicyOnce,
+		EntryPolicyAgain,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EntryPolicy) MarshalText() ([]byte, error) {
+	switch s {
+	case EntryPolicyOnce:
+		return []byte(s), nil
+	case EntryPolicyAgain:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EntryPolicy) UnmarshalText(data []byte) error {
+	switch EntryPolicy(data) {
+	case EntryPolicyOnce:
+		*s = EntryPolicyOnce
+		return nil
+	case EntryPolicyAgain:
+		*s = EntryPolicyAgain
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
 
 // How an event count is bounded: at least `times`, or at most `times`.
 // Ref: #/components/schemas/EventCountOperator
@@ -8432,6 +8505,12 @@ type EventTrigger struct {
 	// `tag` of contact.tagged and contact.untagged and the `key` of contact.field_changed, tested by eq or
 	// neq, must name a Tag or Custom field of the Workspace.
 	Filter OptEventFilter `json:"filter"`
+	// Whether a contact enrolls again, after its previous enrollment ended, on a later Event or a rule's
+	// enroll action.
+	EntryPolicy EntryPolicy `json:"entryPolicy"`
+	// Under `again`, the least time in seconds from the beginning of a contact's previous enrollment to
+	// the next; an entry sooner is skipped as `cooldown`.
+	Cooldown EntryCooldown `json:"cooldown"`
 }
 
 // GetKind returns the value of Kind.
@@ -8449,6 +8528,16 @@ func (s *EventTrigger) GetFilter() OptEventFilter {
 	return s.Filter
 }
 
+// GetEntryPolicy returns the value of EntryPolicy.
+func (s *EventTrigger) GetEntryPolicy() EntryPolicy {
+	return s.EntryPolicy
+}
+
+// GetCooldown returns the value of Cooldown.
+func (s *EventTrigger) GetCooldown() EntryCooldown {
+	return s.Cooldown
+}
+
 // SetKind sets the value of Kind.
 func (s *EventTrigger) SetKind(val EventTriggerKind) {
 	s.Kind = val
@@ -8464,6 +8553,16 @@ func (s *EventTrigger) SetFilter(val OptEventFilter) {
 	s.Filter = val
 }
 
+// SetEntryPolicy sets the value of EntryPolicy.
+func (s *EventTrigger) SetEntryPolicy(val EntryPolicy) {
+	s.EntryPolicy = val
+}
+
+// SetCooldown sets the value of Cooldown.
+func (s *EventTrigger) SetCooldown(val EntryCooldown) {
+	s.Cooldown = val
+}
+
 // A Trigger that enrolls a Contact on an Event (ADR 0133), as a request writes it.
 // Ref: #/components/schemas/EventTriggerInput
 type EventTriggerInput struct {
@@ -8475,6 +8574,12 @@ type EventTriggerInput struct {
 	// The `tag` of contact.tagged and contact.untagged and the `key` of contact.field_changed, tested by
 	// eq or neq, must name a Tag or Custom field of the Workspace.
 	Filter OptEventFilterInput `json:"filter"`
+	// Whether a contact enrolls again, after its previous enrollment ended, on a later Event or a rule's
+	// enroll action; omitted is `once`.
+	EntryPolicy OptEventTriggerInputEntryPolicy `json:"entryPolicy"`
+	// Under `again`, the least time in seconds from the beginning of a contact's previous enrollment to
+	// the next, at least 3600; omitted is 3600.
+	Cooldown OptInt32 `json:"cooldown"`
 }
 
 // GetKind returns the value of Kind.
@@ -8492,6 +8597,16 @@ func (s *EventTriggerInput) GetFilter() OptEventFilterInput {
 	return s.Filter
 }
 
+// GetEntryPolicy returns the value of EntryPolicy.
+func (s *EventTriggerInput) GetEntryPolicy() OptEventTriggerInputEntryPolicy {
+	return s.EntryPolicy
+}
+
+// GetCooldown returns the value of Cooldown.
+func (s *EventTriggerInput) GetCooldown() OptInt32 {
+	return s.Cooldown
+}
+
 // SetKind sets the value of Kind.
 func (s *EventTriggerInput) SetKind(val EventTriggerInputKind) {
 	s.Kind = val
@@ -8505,6 +8620,58 @@ func (s *EventTriggerInput) SetAction(val string) {
 // SetFilter sets the value of Filter.
 func (s *EventTriggerInput) SetFilter(val OptEventFilterInput) {
 	s.Filter = val
+}
+
+// SetEntryPolicy sets the value of EntryPolicy.
+func (s *EventTriggerInput) SetEntryPolicy(val OptEventTriggerInputEntryPolicy) {
+	s.EntryPolicy = val
+}
+
+// SetCooldown sets the value of Cooldown.
+func (s *EventTriggerInput) SetCooldown(val OptInt32) {
+	s.Cooldown = val
+}
+
+// Merged schema.
+type EventTriggerInputEntryPolicy string
+
+const (
+	EventTriggerInputEntryPolicyOnce  EventTriggerInputEntryPolicy = "once"
+	EventTriggerInputEntryPolicyAgain EventTriggerInputEntryPolicy = "again"
+)
+
+// AllValues returns all EventTriggerInputEntryPolicy values.
+func (EventTriggerInputEntryPolicy) AllValues() []EventTriggerInputEntryPolicy {
+	return []EventTriggerInputEntryPolicy{
+		EventTriggerInputEntryPolicyOnce,
+		EventTriggerInputEntryPolicyAgain,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EventTriggerInputEntryPolicy) MarshalText() ([]byte, error) {
+	switch s {
+	case EventTriggerInputEntryPolicyOnce:
+		return []byte(s), nil
+	case EventTriggerInputEntryPolicyAgain:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EventTriggerInputEntryPolicy) UnmarshalText(data []byte) error {
+	switch EventTriggerInputEntryPolicy(data) {
+	case EventTriggerInputEntryPolicyOnce:
+		*s = EventTriggerInputEntryPolicyOnce
+		return nil
+	case EventTriggerInputEntryPolicyAgain:
+		*s = EventTriggerInputEntryPolicyAgain
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 type EventTriggerInputKind string
@@ -12040,6 +12207,52 @@ func (o OptEventFilterInput) Get() (v EventFilterInput, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptEventFilterInput) Or(d EventFilterInput) EventFilterInput {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptEventTriggerInputEntryPolicy returns new OptEventTriggerInputEntryPolicy with value set to v.
+func NewOptEventTriggerInputEntryPolicy(v EventTriggerInputEntryPolicy) OptEventTriggerInputEntryPolicy {
+	return OptEventTriggerInputEntryPolicy{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptEventTriggerInputEntryPolicy is optional EventTriggerInputEntryPolicy.
+type OptEventTriggerInputEntryPolicy struct {
+	Value EventTriggerInputEntryPolicy
+	Set   bool
+}
+
+// IsSet returns true if OptEventTriggerInputEntryPolicy was set.
+func (o OptEventTriggerInputEntryPolicy) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptEventTriggerInputEntryPolicy) Reset() {
+	var v EventTriggerInputEntryPolicy
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptEventTriggerInputEntryPolicy) SetTo(v EventTriggerInputEntryPolicy) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptEventTriggerInputEntryPolicy) Get() (v EventTriggerInputEntryPolicy, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptEventTriggerInputEntryPolicy) Or(d EventTriggerInputEntryPolicy) EventTriggerInputEntryPolicy {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -32693,8 +32906,10 @@ type SiteWorkspacesLeaveNoContent struct{}
 
 // Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127):
 // `cycle` (the chain of events that caused it already passed through the automation),
-// `active_enrollment` (the triggering Event occurred while an enrollment of the contact was active) or
-// `once` (the contact had an enrollment in the automation before).
+// `active_enrollment` (the triggering Event occurred while an enrollment of the contact was active, or
+// one is active still), `once` (the contact had an enrollment in the automation before, under the
+// `once` entry policy) or `cooldown` (under `again`, the cooldown from the beginning of the contact's
+// previous enrollment had not passed).
 // Ref: #/components/schemas/SkippedEntryReason
 type SkippedEntryReason string
 
@@ -32702,6 +32917,7 @@ const (
 	SkippedEntryReasonCycle            SkippedEntryReason = "cycle"
 	SkippedEntryReasonActiveEnrollment SkippedEntryReason = "active_enrollment"
 	SkippedEntryReasonOnce             SkippedEntryReason = "once"
+	SkippedEntryReasonCooldown         SkippedEntryReason = "cooldown"
 )
 
 // AllValues returns all SkippedEntryReason values.
@@ -32710,6 +32926,7 @@ func (SkippedEntryReason) AllValues() []SkippedEntryReason {
 		SkippedEntryReasonCycle,
 		SkippedEntryReasonActiveEnrollment,
 		SkippedEntryReasonOnce,
+		SkippedEntryReasonCooldown,
 	}
 }
 
@@ -32721,6 +32938,8 @@ func (s SkippedEntryReason) MarshalText() ([]byte, error) {
 	case SkippedEntryReasonActiveEnrollment:
 		return []byte(s), nil
 	case SkippedEntryReasonOnce:
+		return []byte(s), nil
+	case SkippedEntryReasonCooldown:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -32738,6 +32957,9 @@ func (s *SkippedEntryReason) UnmarshalText(data []byte) error {
 		return nil
 	case SkippedEntryReasonOnce:
 		*s = SkippedEntryReasonOnce
+		return nil
+	case SkippedEntryReasonCooldown:
+		*s = SkippedEntryReasonCooldown
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -35882,7 +36104,8 @@ type UpdateAutomationInput struct {
 	// The automation's `revision` the edit was made on (ADR 0119): the one it was read with.
 	Revision Revision `json:"revision"`
 	Name     OptName  `json:"name"`
-	// What enrolls a contact; replaces the Trigger, its filter with it, and omitted keeps it.
+	// What enrolls a contact; replaces the Trigger, its filter, entry policy and cooldown with it, and
+	// omitted keeps it.
 	Trigger OptAutomationTriggerInput `json:"trigger"`
 	// Event actions that end an active enrollment early; replaces the list, omitted keeps it.
 	ExitEvents []string `json:"exitEvents"`

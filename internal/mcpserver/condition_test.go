@@ -149,7 +149,8 @@ func TestMCPWritesTheTriggerAsAnEventMatcher(t *testing.T) {
 	require.NoError(t, json.Unmarshal([]byte(text(t, created)), &made))
 	refused := call(t, s, "automations_create", map[string]any{"name": "Misplaced", "trigger": misplaced})
 
-	assert.JSONEq(t, trigger, string(made.Draft.Trigger))
+	readBack := strings.TrimSuffix(trigger, "}") + `,"entryPolicy":"once","cooldown":3600}`
+	assert.JSONEq(t, readBack, string(made.Draft.Trigger))
 	assert.True(t, refused.IsError)
 	assert.Contains(t, text(t, refused), "trigger.filter.entries.0")
 }

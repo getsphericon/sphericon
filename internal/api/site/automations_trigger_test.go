@@ -44,10 +44,10 @@ func TestSiteTriggerIsReadBackAsAnEventMatcher(t *testing.T) {
 		siteapi.SiteAutomationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: created.ID})
 	require.NoError(t, err)
 
-	want := `{"kind":"event","action":"order.completed","filter":` + eventFilterOfEveryTest + `}`
+	want := `{"kind":"event","action":"order.completed","filter":` + eventFilterOfEveryTest + `,"entryPolicy":"once","cooldown":3600}`
 	assert.JSONEq(t, want, testhelper.JSONOf(t, &created.Draft.Value.Trigger))
 	assert.JSONEq(t, want, testhelper.JSONOf(t, &read.Draft.Value.Trigger))
-	assert.JSONEq(t, `{"kind":"event","action":"order.refunded"}`, testhelper.JSONOf(t, &unfiltered.Draft.Value.Trigger))
+	assert.JSONEq(t, `{"kind":"event","action":"order.refunded","entryPolicy":"once","cooldown":3600}`, testhelper.JSONOf(t, &unfiltered.Draft.Value.Trigger))
 }
 
 // A filter says which Event, never which Contact: a test of the Contact has no value in the

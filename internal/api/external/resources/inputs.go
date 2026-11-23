@@ -6,6 +6,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
@@ -192,8 +193,10 @@ type Inputs interface {
 	HttpStepIn(source externalapi.HttpStepInput) automationstep.HTTP
 	TelegramButton(source externalapi.TelegramButtonInput) telegramrender.Button
 	// goverter:map Trigger | automationTriggerIn
+	// goverter:map Trigger Entry | automationEntryIn
 	AutomationCreate(source *externalapi.CreateAutomationInput) (automations.CreateInput, error)
 	// goverter:map Trigger | automationTriggerPtrIn
+	// goverter:map Trigger Entry | automationEntryPtrIn
 	AutomationUpdate(source *externalapi.UpdateAutomationInput) (automations.UpdateInput, error)
 
 	RuleActions(source []externalapi.RuleActionInput) []ruleaction.Action
@@ -431,6 +434,33 @@ func automationTriggerIn(t externalapi.AutomationTriggerInput) (eventmatcher.Mat
 		return eventmatcher.Matcher{}, err
 	}
 	return eventmatcher.Matcher{Action: ev.Action, Filter: filter}, nil
+}
+
+// automationEntryIn is the Entry policy a write gives with its Trigger, an Event Trigger's: an
+// omitted field is left to the module's default.
+func automationEntryIn(t externalapi.AutomationTriggerInput) automations.Entry {
+	if t.OneOf.Type != externalapi.EventTriggerInputAutomationTriggerInputSum {
+		return automations.Entry{}
+	}
+	ev := t.OneOf.EventTriggerInput
+	var e automations.Entry
+	if policy, ok := ev.EntryPolicy.Get(); ok {
+		e.Policy = automationversion.EntryPolicy(policy)
+	}
+	if cooldown, ok := ev.Cooldown.Get(); ok {
+		e.CooldownSeconds = new(int(cooldown))
+	}
+	return e
+}
+
+// automationEntryPtrIn is the Entry policy an update replaces with its Trigger: omitted (nil) with
+// the Trigger keeps the stored one.
+func automationEntryPtrIn(o externalapi.OptAutomationTriggerInput) *automations.Entry {
+	t, ok := o.Get()
+	if !ok {
+		return nil
+	}
+	return new(automationEntryIn(t))
 }
 
 // automationTriggerPtrIn is the Trigger an update replaces: omitted (nil) keeps the stored one.

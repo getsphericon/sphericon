@@ -111,6 +111,34 @@ func (_c *AutomationVersionCreate) SetNillableGoalEvent(v *string) *AutomationVe
 	return _c
 }
 
+// SetEntryPolicy sets the "entry_policy" field.
+func (_c *AutomationVersionCreate) SetEntryPolicy(v automationversion.EntryPolicy) *AutomationVersionCreate {
+	_c.mutation.SetEntryPolicy(v)
+	return _c
+}
+
+// SetNillableEntryPolicy sets the "entry_policy" field if the given value is not nil.
+func (_c *AutomationVersionCreate) SetNillableEntryPolicy(v *automationversion.EntryPolicy) *AutomationVersionCreate {
+	if v != nil {
+		_c.SetEntryPolicy(*v)
+	}
+	return _c
+}
+
+// SetCooldownSeconds sets the "cooldown_seconds" field.
+func (_c *AutomationVersionCreate) SetCooldownSeconds(v int) *AutomationVersionCreate {
+	_c.mutation.SetCooldownSeconds(v)
+	return _c
+}
+
+// SetNillableCooldownSeconds sets the "cooldown_seconds" field if the given value is not nil.
+func (_c *AutomationVersionCreate) SetNillableCooldownSeconds(v *int) *AutomationVersionCreate {
+	if v != nil {
+		_c.SetCooldownSeconds(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *AutomationVersionCreate) SetID(v int64) *AutomationVersionCreate {
 	_c.mutation.SetID(v)
@@ -189,6 +217,14 @@ func (_c *AutomationVersionCreate) defaults() {
 		v := automationversion.DefaultExitEvents
 		_c.mutation.SetExitEvents(v)
 	}
+	if _, ok := _c.mutation.EntryPolicy(); !ok {
+		v := automationversion.DefaultEntryPolicy
+		_c.mutation.SetEntryPolicy(v)
+	}
+	if _, ok := _c.mutation.CooldownSeconds(); !ok {
+		v := automationversion.DefaultCooldownSeconds
+		_c.mutation.SetCooldownSeconds(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -221,6 +257,17 @@ func (_c *AutomationVersionCreate) check() error {
 	}
 	if _, ok := _c.mutation.ExitEvents(); !ok {
 		return &ValidationError{Name: "exit_events", err: errors.New(`ent: missing required field "AutomationVersion.exit_events"`)}
+	}
+	if _, ok := _c.mutation.EntryPolicy(); !ok {
+		return &ValidationError{Name: "entry_policy", err: errors.New(`ent: missing required field "AutomationVersion.entry_policy"`)}
+	}
+	if v, ok := _c.mutation.EntryPolicy(); ok {
+		if err := automationversion.EntryPolicyValidator(v); err != nil {
+			return &ValidationError{Name: "entry_policy", err: fmt.Errorf(`ent: validator failed for field "AutomationVersion.entry_policy": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.CooldownSeconds(); !ok {
+		return &ValidationError{Name: "cooldown_seconds", err: errors.New(`ent: missing required field "AutomationVersion.cooldown_seconds"`)}
 	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "AutomationVersion.workspace"`)}
@@ -292,6 +339,14 @@ func (_c *AutomationVersionCreate) createSpec() (*AutomationVersion, *sqlgraph.C
 	if value, ok := _c.mutation.GoalEvent(); ok {
 		_spec.SetField(automationversion.FieldGoalEvent, field.TypeString, value)
 		_node.GoalEvent = &value
+	}
+	if value, ok := _c.mutation.EntryPolicy(); ok {
+		_spec.SetField(automationversion.FieldEntryPolicy, field.TypeEnum, value)
+		_node.EntryPolicy = value
+	}
+	if value, ok := _c.mutation.CooldownSeconds(); ok {
+		_spec.SetField(automationversion.FieldCooldownSeconds, field.TypeInt, value)
+		_node.CooldownSeconds = value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -503,6 +558,36 @@ func (u *AutomationVersionUpsert) ClearGoalEvent() *AutomationVersionUpsert {
 	return u
 }
 
+// SetEntryPolicy sets the "entry_policy" field.
+func (u *AutomationVersionUpsert) SetEntryPolicy(v automationversion.EntryPolicy) *AutomationVersionUpsert {
+	u.Set(automationversion.FieldEntryPolicy, v)
+	return u
+}
+
+// UpdateEntryPolicy sets the "entry_policy" field to the value that was provided on create.
+func (u *AutomationVersionUpsert) UpdateEntryPolicy() *AutomationVersionUpsert {
+	u.SetExcluded(automationversion.FieldEntryPolicy)
+	return u
+}
+
+// SetCooldownSeconds sets the "cooldown_seconds" field.
+func (u *AutomationVersionUpsert) SetCooldownSeconds(v int) *AutomationVersionUpsert {
+	u.Set(automationversion.FieldCooldownSeconds, v)
+	return u
+}
+
+// UpdateCooldownSeconds sets the "cooldown_seconds" field to the value that was provided on create.
+func (u *AutomationVersionUpsert) UpdateCooldownSeconds() *AutomationVersionUpsert {
+	u.SetExcluded(automationversion.FieldCooldownSeconds)
+	return u
+}
+
+// AddCooldownSeconds adds v to the "cooldown_seconds" field.
+func (u *AutomationVersionUpsert) AddCooldownSeconds(v int) *AutomationVersionUpsert {
+	u.Add(automationversion.FieldCooldownSeconds, v)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -680,6 +765,41 @@ func (u *AutomationVersionUpsertOne) UpdateGoalEvent() *AutomationVersionUpsertO
 func (u *AutomationVersionUpsertOne) ClearGoalEvent() *AutomationVersionUpsertOne {
 	return u.Update(func(s *AutomationVersionUpsert) {
 		s.ClearGoalEvent()
+	})
+}
+
+// SetEntryPolicy sets the "entry_policy" field.
+func (u *AutomationVersionUpsertOne) SetEntryPolicy(v automationversion.EntryPolicy) *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetEntryPolicy(v)
+	})
+}
+
+// UpdateEntryPolicy sets the "entry_policy" field to the value that was provided on create.
+func (u *AutomationVersionUpsertOne) UpdateEntryPolicy() *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateEntryPolicy()
+	})
+}
+
+// SetCooldownSeconds sets the "cooldown_seconds" field.
+func (u *AutomationVersionUpsertOne) SetCooldownSeconds(v int) *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetCooldownSeconds(v)
+	})
+}
+
+// AddCooldownSeconds adds v to the "cooldown_seconds" field.
+func (u *AutomationVersionUpsertOne) AddCooldownSeconds(v int) *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.AddCooldownSeconds(v)
+	})
+}
+
+// UpdateCooldownSeconds sets the "cooldown_seconds" field to the value that was provided on create.
+func (u *AutomationVersionUpsertOne) UpdateCooldownSeconds() *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateCooldownSeconds()
 	})
 }
 
@@ -1026,6 +1146,41 @@ func (u *AutomationVersionUpsertBulk) UpdateGoalEvent() *AutomationVersionUpsert
 func (u *AutomationVersionUpsertBulk) ClearGoalEvent() *AutomationVersionUpsertBulk {
 	return u.Update(func(s *AutomationVersionUpsert) {
 		s.ClearGoalEvent()
+	})
+}
+
+// SetEntryPolicy sets the "entry_policy" field.
+func (u *AutomationVersionUpsertBulk) SetEntryPolicy(v automationversion.EntryPolicy) *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetEntryPolicy(v)
+	})
+}
+
+// UpdateEntryPolicy sets the "entry_policy" field to the value that was provided on create.
+func (u *AutomationVersionUpsertBulk) UpdateEntryPolicy() *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateEntryPolicy()
+	})
+}
+
+// SetCooldownSeconds sets the "cooldown_seconds" field.
+func (u *AutomationVersionUpsertBulk) SetCooldownSeconds(v int) *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetCooldownSeconds(v)
+	})
+}
+
+// AddCooldownSeconds adds v to the "cooldown_seconds" field.
+func (u *AutomationVersionUpsertBulk) AddCooldownSeconds(v int) *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.AddCooldownSeconds(v)
+	})
+}
+
+// UpdateCooldownSeconds sets the "cooldown_seconds" field to the value that was provided on create.
+func (u *AutomationVersionUpsertBulk) UpdateCooldownSeconds() *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateCooldownSeconds()
 	})
 }
 

@@ -5912,6 +5912,9 @@ type AutomationRunMutation struct {
 	trigger_source_id *string
 	chain             *[]int64
 	appendchain       []int64
+	ordinal           *int
+	addordinal        *int
+	key_value         *string
 	ended_at          *time.Time
 	current_step_id   *automationstep.ID
 	resume_at         *time.Time
@@ -6574,6 +6577,111 @@ func (m *AutomationRunMutation) ResetChain() {
 	m.appendchain = nil
 }
 
+// SetOrdinal sets the "ordinal" field.
+func (m *AutomationRunMutation) SetOrdinal(i int) {
+	m.ordinal = &i
+	m.addordinal = nil
+}
+
+// Ordinal returns the value of the "ordinal" field in the mutation.
+func (m *AutomationRunMutation) Ordinal() (r int, exists bool) {
+	v := m.ordinal
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOrdinal returns the old "ordinal" field's value of the AutomationRun entity.
+// If the AutomationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationRunMutation) OldOrdinal(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOrdinal is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOrdinal requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOrdinal: %w", err)
+	}
+	return oldValue.Ordinal, nil
+}
+
+// AddOrdinal adds i to the "ordinal" field.
+func (m *AutomationRunMutation) AddOrdinal(i int) {
+	if m.addordinal != nil {
+		*m.addordinal += i
+	} else {
+		m.addordinal = &i
+	}
+}
+
+// AddedOrdinal returns the value that was added to the "ordinal" field in this mutation.
+func (m *AutomationRunMutation) AddedOrdinal() (r int, exists bool) {
+	v := m.addordinal
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetOrdinal resets all changes to the "ordinal" field.
+func (m *AutomationRunMutation) ResetOrdinal() {
+	m.ordinal = nil
+	m.addordinal = nil
+}
+
+// SetKeyValue sets the "key_value" field.
+func (m *AutomationRunMutation) SetKeyValue(s string) {
+	m.key_value = &s
+}
+
+// KeyValue returns the value of the "key_value" field in the mutation.
+func (m *AutomationRunMutation) KeyValue() (r string, exists bool) {
+	v := m.key_value
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKeyValue returns the old "key_value" field's value of the AutomationRun entity.
+// If the AutomationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationRunMutation) OldKeyValue(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKeyValue is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKeyValue requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKeyValue: %w", err)
+	}
+	return oldValue.KeyValue, nil
+}
+
+// ClearKeyValue clears the value of the "key_value" field.
+func (m *AutomationRunMutation) ClearKeyValue() {
+	m.key_value = nil
+	m.clearedFields[automationrun.FieldKeyValue] = struct{}{}
+}
+
+// KeyValueCleared returns if the "key_value" field was cleared in this mutation.
+func (m *AutomationRunMutation) KeyValueCleared() bool {
+	_, ok := m.clearedFields[automationrun.FieldKeyValue]
+	return ok
+}
+
+// ResetKeyValue resets all changes to the "key_value" field.
+func (m *AutomationRunMutation) ResetKeyValue() {
+	m.key_value = nil
+	delete(m.clearedFields, automationrun.FieldKeyValue)
+}
+
 // SetEndedAt sets the "ended_at" field.
 func (m *AutomationRunMutation) SetEndedAt(t time.Time) {
 	m.ended_at = &t
@@ -7058,7 +7166,7 @@ func (m *AutomationRunMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationRunMutation) Fields() []string {
-	fields := make([]string, 0, 19)
+	fields := make([]string, 0, 21)
 	if m.created_at != nil {
 		fields = append(fields, automationrun.FieldCreatedAt)
 	}
@@ -7097,6 +7205,12 @@ func (m *AutomationRunMutation) Fields() []string {
 	}
 	if m.chain != nil {
 		fields = append(fields, automationrun.FieldChain)
+	}
+	if m.ordinal != nil {
+		fields = append(fields, automationrun.FieldOrdinal)
+	}
+	if m.key_value != nil {
+		fields = append(fields, automationrun.FieldKeyValue)
 	}
 	if m.ended_at != nil {
 		fields = append(fields, automationrun.FieldEndedAt)
@@ -7150,6 +7264,10 @@ func (m *AutomationRunMutation) Field(name string) (ent.Value, bool) {
 		return m.FiringID()
 	case automationrun.FieldChain:
 		return m.Chain()
+	case automationrun.FieldOrdinal:
+		return m.Ordinal()
+	case automationrun.FieldKeyValue:
+		return m.KeyValue()
 	case automationrun.FieldEndedAt:
 		return m.EndedAt()
 	case automationrun.FieldCurrentStepID:
@@ -7197,6 +7315,10 @@ func (m *AutomationRunMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldFiringID(ctx)
 	case automationrun.FieldChain:
 		return m.OldChain(ctx)
+	case automationrun.FieldOrdinal:
+		return m.OldOrdinal(ctx)
+	case automationrun.FieldKeyValue:
+		return m.OldKeyValue(ctx)
 	case automationrun.FieldEndedAt:
 		return m.OldEndedAt(ctx)
 	case automationrun.FieldCurrentStepID:
@@ -7309,6 +7431,20 @@ func (m *AutomationRunMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetChain(v)
 		return nil
+	case automationrun.FieldOrdinal:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOrdinal(v)
+		return nil
+	case automationrun.FieldKeyValue:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKeyValue(v)
+		return nil
 	case automationrun.FieldEndedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -7359,6 +7495,9 @@ func (m *AutomationRunMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *AutomationRunMutation) AddedFields() []string {
 	var fields []string
+	if m.addordinal != nil {
+		fields = append(fields, automationrun.FieldOrdinal)
+	}
 	if m.addfailure_status != nil {
 		fields = append(fields, automationrun.FieldFailureStatus)
 	}
@@ -7370,6 +7509,8 @@ func (m *AutomationRunMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *AutomationRunMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case automationrun.FieldOrdinal:
+		return m.AddedOrdinal()
 	case automationrun.FieldFailureStatus:
 		return m.AddedFailureStatus()
 	}
@@ -7381,6 +7522,13 @@ func (m *AutomationRunMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *AutomationRunMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case automationrun.FieldOrdinal:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddOrdinal(v)
+		return nil
 	case automationrun.FieldFailureStatus:
 		v, ok := value.(int)
 		if !ok {
@@ -7407,6 +7555,9 @@ func (m *AutomationRunMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(automationrun.FieldFiringID) {
 		fields = append(fields, automationrun.FieldFiringID)
+	}
+	if m.FieldCleared(automationrun.FieldKeyValue) {
+		fields = append(fields, automationrun.FieldKeyValue)
 	}
 	if m.FieldCleared(automationrun.FieldEndedAt) {
 		fields = append(fields, automationrun.FieldEndedAt)
@@ -7451,6 +7602,9 @@ func (m *AutomationRunMutation) ClearField(name string) error {
 		return nil
 	case automationrun.FieldFiringID:
 		m.ClearFiringID()
+		return nil
+	case automationrun.FieldKeyValue:
+		m.ClearKeyValue()
 		return nil
 	case automationrun.FieldEndedAt:
 		m.ClearEndedAt()
@@ -7516,6 +7670,12 @@ func (m *AutomationRunMutation) ResetField(name string) error {
 		return nil
 	case automationrun.FieldChain:
 		m.ResetChain()
+		return nil
+	case automationrun.FieldOrdinal:
+		m.ResetOrdinal()
+		return nil
+	case automationrun.FieldKeyValue:
+		m.ResetKeyValue()
 		return nil
 	case automationrun.FieldEndedAt:
 		m.ResetEndedAt()
@@ -9688,30 +9848,33 @@ func (m *AutomationStepRecordMutation) ResetEdge(name string) error {
 // AutomationVersionMutation represents an operation that mutates the AutomationVersion nodes in the graph.
 type AutomationVersionMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *int64
-	created_at        *time.Time
-	updated_at        *time.Time
-	version           *int
-	addversion        *int
-	steps             *automationstep.Path
-	trigger_action    *string
-	trigger_filter    **conditiontree.EventFilter
-	exit_events       *[]string
-	appendexit_events []string
-	goal_event        *string
-	clearedFields     map[string]struct{}
-	workspace         *int64
-	clearedworkspace  bool
-	automation        *int64
-	clearedautomation bool
-	runs              map[int64]struct{}
-	removedruns       map[int64]struct{}
-	clearedruns       bool
-	done              bool
-	oldValue          func(context.Context) (*AutomationVersion, error)
-	predicates        []predicate.AutomationVersion
+	op                  Op
+	typ                 string
+	id                  *int64
+	created_at          *time.Time
+	updated_at          *time.Time
+	version             *int
+	addversion          *int
+	steps               *automationstep.Path
+	trigger_action      *string
+	trigger_filter      **conditiontree.EventFilter
+	exit_events         *[]string
+	appendexit_events   []string
+	goal_event          *string
+	entry_policy        *automationversion.EntryPolicy
+	cooldown_seconds    *int
+	addcooldown_seconds *int
+	clearedFields       map[string]struct{}
+	workspace           *int64
+	clearedworkspace    bool
+	automation          *int64
+	clearedautomation   bool
+	runs                map[int64]struct{}
+	removedruns         map[int64]struct{}
+	clearedruns         bool
+	done                bool
+	oldValue            func(context.Context) (*AutomationVersion, error)
+	predicates          []predicate.AutomationVersion
 }
 
 var _ ent.Mutation = (*AutomationVersionMutation)(nil)
@@ -10239,6 +10402,98 @@ func (m *AutomationVersionMutation) ResetGoalEvent() {
 	delete(m.clearedFields, automationversion.FieldGoalEvent)
 }
 
+// SetEntryPolicy sets the "entry_policy" field.
+func (m *AutomationVersionMutation) SetEntryPolicy(ap automationversion.EntryPolicy) {
+	m.entry_policy = &ap
+}
+
+// EntryPolicy returns the value of the "entry_policy" field in the mutation.
+func (m *AutomationVersionMutation) EntryPolicy() (r automationversion.EntryPolicy, exists bool) {
+	v := m.entry_policy
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEntryPolicy returns the old "entry_policy" field's value of the AutomationVersion entity.
+// If the AutomationVersion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationVersionMutation) OldEntryPolicy(ctx context.Context) (v automationversion.EntryPolicy, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEntryPolicy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEntryPolicy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEntryPolicy: %w", err)
+	}
+	return oldValue.EntryPolicy, nil
+}
+
+// ResetEntryPolicy resets all changes to the "entry_policy" field.
+func (m *AutomationVersionMutation) ResetEntryPolicy() {
+	m.entry_policy = nil
+}
+
+// SetCooldownSeconds sets the "cooldown_seconds" field.
+func (m *AutomationVersionMutation) SetCooldownSeconds(i int) {
+	m.cooldown_seconds = &i
+	m.addcooldown_seconds = nil
+}
+
+// CooldownSeconds returns the value of the "cooldown_seconds" field in the mutation.
+func (m *AutomationVersionMutation) CooldownSeconds() (r int, exists bool) {
+	v := m.cooldown_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCooldownSeconds returns the old "cooldown_seconds" field's value of the AutomationVersion entity.
+// If the AutomationVersion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationVersionMutation) OldCooldownSeconds(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCooldownSeconds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCooldownSeconds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCooldownSeconds: %w", err)
+	}
+	return oldValue.CooldownSeconds, nil
+}
+
+// AddCooldownSeconds adds i to the "cooldown_seconds" field.
+func (m *AutomationVersionMutation) AddCooldownSeconds(i int) {
+	if m.addcooldown_seconds != nil {
+		*m.addcooldown_seconds += i
+	} else {
+		m.addcooldown_seconds = &i
+	}
+}
+
+// AddedCooldownSeconds returns the value that was added to the "cooldown_seconds" field in this mutation.
+func (m *AutomationVersionMutation) AddedCooldownSeconds() (r int, exists bool) {
+	v := m.addcooldown_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCooldownSeconds resets all changes to the "cooldown_seconds" field.
+func (m *AutomationVersionMutation) ResetCooldownSeconds() {
+	m.cooldown_seconds = nil
+	m.addcooldown_seconds = nil
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *AutomationVersionMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -10381,7 +10636,7 @@ func (m *AutomationVersionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationVersionMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 12)
 	if m.created_at != nil {
 		fields = append(fields, automationversion.FieldCreatedAt)
 	}
@@ -10412,6 +10667,12 @@ func (m *AutomationVersionMutation) Fields() []string {
 	if m.goal_event != nil {
 		fields = append(fields, automationversion.FieldGoalEvent)
 	}
+	if m.entry_policy != nil {
+		fields = append(fields, automationversion.FieldEntryPolicy)
+	}
+	if m.cooldown_seconds != nil {
+		fields = append(fields, automationversion.FieldCooldownSeconds)
+	}
 	return fields
 }
 
@@ -10440,6 +10701,10 @@ func (m *AutomationVersionMutation) Field(name string) (ent.Value, bool) {
 		return m.ExitEvents()
 	case automationversion.FieldGoalEvent:
 		return m.GoalEvent()
+	case automationversion.FieldEntryPolicy:
+		return m.EntryPolicy()
+	case automationversion.FieldCooldownSeconds:
+		return m.CooldownSeconds()
 	}
 	return nil, false
 }
@@ -10469,6 +10734,10 @@ func (m *AutomationVersionMutation) OldField(ctx context.Context, name string) (
 		return m.OldExitEvents(ctx)
 	case automationversion.FieldGoalEvent:
 		return m.OldGoalEvent(ctx)
+	case automationversion.FieldEntryPolicy:
+		return m.OldEntryPolicy(ctx)
+	case automationversion.FieldCooldownSeconds:
+		return m.OldCooldownSeconds(ctx)
 	}
 	return nil, fmt.Errorf("unknown AutomationVersion field %s", name)
 }
@@ -10548,6 +10817,20 @@ func (m *AutomationVersionMutation) SetField(name string, value ent.Value) error
 		}
 		m.SetGoalEvent(v)
 		return nil
+	case automationversion.FieldEntryPolicy:
+		v, ok := value.(automationversion.EntryPolicy)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEntryPolicy(v)
+		return nil
+	case automationversion.FieldCooldownSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCooldownSeconds(v)
+		return nil
 	}
 	return fmt.Errorf("unknown AutomationVersion field %s", name)
 }
@@ -10559,6 +10842,9 @@ func (m *AutomationVersionMutation) AddedFields() []string {
 	if m.addversion != nil {
 		fields = append(fields, automationversion.FieldVersion)
 	}
+	if m.addcooldown_seconds != nil {
+		fields = append(fields, automationversion.FieldCooldownSeconds)
+	}
 	return fields
 }
 
@@ -10569,6 +10855,8 @@ func (m *AutomationVersionMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case automationversion.FieldVersion:
 		return m.AddedVersion()
+	case automationversion.FieldCooldownSeconds:
+		return m.AddedCooldownSeconds()
 	}
 	return nil, false
 }
@@ -10584,6 +10872,13 @@ func (m *AutomationVersionMutation) AddField(name string, value ent.Value) error
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddVersion(v)
+		return nil
+	case automationversion.FieldCooldownSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCooldownSeconds(v)
 		return nil
 	}
 	return fmt.Errorf("unknown AutomationVersion numeric field %s", name)
@@ -10656,6 +10951,12 @@ func (m *AutomationVersionMutation) ResetField(name string) error {
 		return nil
 	case automationversion.FieldGoalEvent:
 		m.ResetGoalEvent()
+		return nil
+	case automationversion.FieldEntryPolicy:
+		m.ResetEntryPolicy()
+		return nil
+	case automationversion.FieldCooldownSeconds:
+		m.ResetCooldownSeconds()
 		return nil
 	}
 	return fmt.Errorf("unknown AutomationVersion field %s", name)

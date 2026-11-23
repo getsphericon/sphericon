@@ -229,6 +229,14 @@ var Bounds = []Bound{
 	},
 	{Name: "RuleTriggerEvents", Spec: site, Schema: "UpdateRuleInput", Property: "triggerEvents"},
 	{
+		Name: "EntryCooldown", Doc: "is the least time in seconds from the beginning of a Contact's previous Enrollment in an Automation to the next (ADR 0127).",
+		Spec: site, Schema: "EntryCooldown", Owners: []string{"AutomationVersion"},
+	},
+	{
+		Name: "TriggerCooldown", Doc: "is the cooldown of an Event Trigger written without one (ADR 0127).",
+		Spec: site, Schema: "EventTriggerInput", Property: "cooldown", Owners: []string{"AutomationVersion"},
+	},
+	{
 		Name: "ConditionWithinDays", Doc: "is how many days back a condition looks: an Event count's window or a moment's within the last days.",
 		Spec: site, Schema: "EventLeafInput", Property: "withinDays",
 		Owners: []string{"internal/domain/contacts/condition"},

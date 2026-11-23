@@ -332,6 +332,10 @@ func init() {
 	automationversionDescExitEvents := automationversionFields[4].Descriptor()
 	// automationversion.DefaultExitEvents holds the default value on creation for the exit_events field.
 	automationversion.DefaultExitEvents = automationversionDescExitEvents.Default.([]string)
+	// automationversionDescCooldownSeconds is the schema descriptor for cooldown_seconds field.
+	automationversionDescCooldownSeconds := automationversionFields[7].Descriptor()
+	// automationversion.DefaultCooldownSeconds holds the default value on creation for the cooldown_seconds field.
+	automationversion.DefaultCooldownSeconds = automationversionDescCooldownSeconds.Default.(int)
 	bindingMixin := schema.Binding{}.Mixin()
 	bindingMixinFields0 := bindingMixin[0].Fields()
 	_ = bindingMixinFields0

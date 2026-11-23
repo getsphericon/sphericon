@@ -41,6 +41,10 @@ const (
 	FieldFiringID = "firing_id"
 	// FieldChain holds the string denoting the chain field in the database.
 	FieldChain = "chain"
+	// FieldOrdinal holds the string denoting the ordinal field in the database.
+	FieldOrdinal = "ordinal"
+	// FieldKeyValue holds the string denoting the key_value field in the database.
+	FieldKeyValue = "key_value"
 	// FieldEndedAt holds the string denoting the ended_at field in the database.
 	FieldEndedAt = "ended_at"
 	// FieldCurrentStepID holds the string denoting the current_step_id field in the database.
@@ -118,6 +122,8 @@ var Columns = []string{
 	FieldTriggerSourceID,
 	FieldFiringID,
 	FieldChain,
+	FieldOrdinal,
+	FieldKeyValue,
 	FieldEndedAt,
 	FieldCurrentStepID,
 	FieldResumeAt,
@@ -265,6 +271,16 @@ func ByTriggerSourceID(opts ...sql.OrderTermOption) OrderOption {
 // ByFiringID orders the results by the firing_id field.
 func ByFiringID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFiringID, opts...).ToFunc()
+}
+
+// ByOrdinal orders the results by the ordinal field.
+func ByOrdinal(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOrdinal, opts...).ToFunc()
+}
+
+// ByKeyValue orders the results by the key_value field.
+func ByKeyValue(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldKeyValue, opts...).ToFunc()
 }
 
 // ByEndedAt orders the results by the ended_at field.

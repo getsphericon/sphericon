@@ -3715,12 +3715,17 @@ func (s *AutomationSkippedCounts) encodeFields(e *jx.Encoder) {
 		e.FieldStart("once")
 		e.Int32(s.Once)
 	}
+	{
+		e.FieldStart("cooldown")
+		e.Int32(s.Cooldown)
+	}
 }
 
-var jsonFieldsNameOfAutomationSkippedCounts = [3]string{
+var jsonFieldsNameOfAutomationSkippedCounts = [4]string{
 	0: "cycle",
 	1: "activeEnrollment",
 	2: "once",
+	3: "cooldown",
 }
 
 // Decode decodes AutomationSkippedCounts from json.
@@ -3768,6 +3773,18 @@ func (s *AutomationSkippedCounts) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"once\"")
 			}
+		case "cooldown":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Int32()
+				s.Cooldown = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"cooldown\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -3778,7 +3795,7 @@ func (s *AutomationSkippedCounts) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000111,
+		0b00001111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -4862,6 +4879,18 @@ func (s AutomationTriggerInputSum) encodeFields(e *jx.Encoder) {
 					s.Filter.Encode(e)
 				}
 			}
+			{
+				if s.EntryPolicy.Set {
+					e.FieldStart("entryPolicy")
+					s.EntryPolicy.Encode(e)
+				}
+			}
+			{
+				if s.Cooldown.Set {
+					e.FieldStart("cooldown")
+					s.Cooldown.Encode(e)
+				}
+			}
 		}
 	}
 }
@@ -4952,6 +4981,14 @@ func (s AutomationTriggerSum) encodeFields(e *jx.Encoder) {
 					e.FieldStart("filter")
 					s.Filter.Encode(e)
 				}
+			}
+			{
+				e.FieldStart("entryPolicy")
+				s.EntryPolicy.Encode(e)
+			}
+			{
+				e.FieldStart("cooldown")
+				s.Cooldown.Encode(e)
 			}
 		}
 	}
@@ -13932,6 +13969,10 @@ func (s *EnrollmentResource) encodeFields(e *jx.Encoder) {
 		s.Status.Encode(e)
 	}
 	{
+		e.FieldStart("ordinal")
+		e.Int32(s.Ordinal)
+	}
+	{
 		if s.CurrentStepId.Set {
 			e.FieldStart("currentStepId")
 			s.CurrentStepId.Encode(e)
@@ -13959,16 +14000,17 @@ func (s *EnrollmentResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfEnrollmentResource = [9]string{
+var jsonFieldsNameOfEnrollmentResource = [10]string{
 	0: "id",
 	1: "automationId",
 	2: "contactId",
 	3: "status",
-	4: "currentStepId",
-	5: "resumeAt",
-	6: "failure",
-	7: "createdAt",
-	8: "updatedAt",
+	4: "ordinal",
+	5: "currentStepId",
+	6: "resumeAt",
+	7: "failure",
+	8: "createdAt",
+	9: "updatedAt",
 }
 
 // Decode decodes EnrollmentResource from json.
@@ -14020,6 +14062,18 @@ func (s *EnrollmentResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"status\"")
 			}
+		case "ordinal":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Int32()
+				s.Ordinal = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"ordinal\"")
+			}
 		case "currentStepId":
 			if err := func() error {
 				s.CurrentStepId.Reset()
@@ -14051,7 +14105,7 @@ func (s *EnrollmentResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"failure\"")
 			}
 		case "createdAt":
-			requiredBitSet[0] |= 1 << 7
+			requiredBitSet[1] |= 1 << 0
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -14061,7 +14115,7 @@ func (s *EnrollmentResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[1] |= 1 << 0
+			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -14080,8 +14134,8 @@ func (s *EnrollmentResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
-		0b10001111,
-		0b00000001,
+		0b00011111,
+		0b00000011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -14209,6 +14263,86 @@ func (s EntityId) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *EntityId) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes EntryCooldown as json.
+func (s EntryCooldown) Encode(e *jx.Encoder) {
+	unwrapped := int32(s)
+
+	e.Int32(unwrapped)
+}
+
+// Decode decodes EntryCooldown from json.
+func (s *EntryCooldown) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode EntryCooldown to nil")
+	}
+	var unwrapped int32
+	if err := func() error {
+		v, err := d.Int32()
+		unwrapped = int32(v)
+		if err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return errors.Wrap(err, "alias")
+	}
+	*s = EntryCooldown(unwrapped)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s EntryCooldown) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *EntryCooldown) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes EntryPolicy as json.
+func (s EntryPolicy) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes EntryPolicy from json.
+func (s *EntryPolicy) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode EntryPolicy to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch EntryPolicy(v) {
+	case EntryPolicyOnce:
+		*s = EntryPolicyOnce
+	case EntryPolicyAgain:
+		*s = EntryPolicyAgain
+	default:
+		*s = EntryPolicy(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s EntryPolicy) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *EntryPolicy) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -15394,12 +15528,22 @@ func (s *EventTrigger) encodeFields(e *jx.Encoder) {
 			s.Filter.Encode(e)
 		}
 	}
+	{
+		e.FieldStart("entryPolicy")
+		s.EntryPolicy.Encode(e)
+	}
+	{
+		e.FieldStart("cooldown")
+		s.Cooldown.Encode(e)
+	}
 }
 
-var jsonFieldsNameOfEventTrigger = [3]string{
+var jsonFieldsNameOfEventTrigger = [5]string{
 	0: "kind",
 	1: "action",
 	2: "filter",
+	3: "entryPolicy",
+	4: "cooldown",
 }
 
 // Decode decodes EventTrigger from json.
@@ -15443,6 +15587,26 @@ func (s *EventTrigger) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"filter\"")
 			}
+		case "entryPolicy":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				if err := s.EntryPolicy.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"entryPolicy\"")
+			}
+		case "cooldown":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				if err := s.Cooldown.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"cooldown\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -15453,7 +15617,7 @@ func (s *EventTrigger) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000011,
+		0b00011011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -15522,12 +15686,26 @@ func (s *EventTriggerInput) encodeFields(e *jx.Encoder) {
 			s.Filter.Encode(e)
 		}
 	}
+	{
+		if s.EntryPolicy.Set {
+			e.FieldStart("entryPolicy")
+			s.EntryPolicy.Encode(e)
+		}
+	}
+	{
+		if s.Cooldown.Set {
+			e.FieldStart("cooldown")
+			s.Cooldown.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfEventTriggerInput = [3]string{
+var jsonFieldsNameOfEventTriggerInput = [5]string{
 	0: "kind",
 	1: "action",
 	2: "filter",
+	3: "entryPolicy",
+	4: "cooldown",
 }
 
 // Decode decodes EventTriggerInput from json.
@@ -15536,6 +15714,7 @@ func (s *EventTriggerInput) Decode(d *jx.Decoder) error {
 		return errors.New("invalid: unable to decode EventTriggerInput to nil")
 	}
 	var requiredBitSet [1]uint8
+	s.setDefaults()
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
 		switch string(k) {
@@ -15570,6 +15749,26 @@ func (s *EventTriggerInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"filter\"")
+			}
+		case "entryPolicy":
+			if err := func() error {
+				s.EntryPolicy.Reset()
+				if err := s.EntryPolicy.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"entryPolicy\"")
+			}
+		case "cooldown":
+			if err := func() error {
+				s.Cooldown.Reset()
+				if err := s.Cooldown.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"cooldown\"")
 			}
 		default:
 			return errors.Errorf("unexpected field %q", k)
@@ -15623,6 +15822,46 @@ func (s *EventTriggerInput) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *EventTriggerInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes EventTriggerInputEntryPolicy as json.
+func (s EventTriggerInputEntryPolicy) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes EventTriggerInputEntryPolicy from json.
+func (s *EventTriggerInputEntryPolicy) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode EventTriggerInputEntryPolicy to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch EventTriggerInputEntryPolicy(v) {
+	case EventTriggerInputEntryPolicyOnce:
+		*s = EventTriggerInputEntryPolicyOnce
+	case EventTriggerInputEntryPolicyAgain:
+		*s = EventTriggerInputEntryPolicyAgain
+	default:
+		*s = EventTriggerInputEntryPolicy(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s EventTriggerInputEntryPolicy) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *EventTriggerInputEntryPolicy) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -20319,6 +20558,39 @@ func (s OptEventFilterInput) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptEventFilterInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes EventTriggerInputEntryPolicy as json.
+func (o OptEventTriggerInputEntryPolicy) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	e.Str(string(o.Value))
+}
+
+// Decode decodes EventTriggerInputEntryPolicy from json.
+func (o *OptEventTriggerInputEntryPolicy) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptEventTriggerInputEntryPolicy to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptEventTriggerInputEntryPolicy) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptEventTriggerInputEntryPolicy) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -58866,6 +59138,8 @@ func (s *SkippedEntryReason) Decode(d *jx.Decoder) error {
 		*s = SkippedEntryReasonActiveEnrollment
 	case SkippedEntryReasonOnce:
 		*s = SkippedEntryReasonOnce
+	case SkippedEntryReasonCooldown:
+		*s = SkippedEntryReasonCooldown
 	default:
 		*s = SkippedEntryReason(v)
 	}

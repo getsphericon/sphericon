@@ -10,6 +10,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
@@ -112,7 +113,8 @@ type EnrollOnRuleInput struct {
 // Contact's active Enrollments whose version names the action as an exit or goal event
 // (endOnEvent, in a transaction of its own, which it needs for the Contact's lock),
 // then enrolls the Contact into every active Automation whose live version's Trigger is the action
-// (ADR 0065), one transaction per Automation (enrollOnTrigger). Each entry runs the entry checks,
+// (ADR 0065), one transaction per Automation (enrollOnTrigger), again after an earlier Enrollment
+// ended when the version's Entry policy is `again` (ADR 0127). Each entry runs the entry checks,
 // which skip one whose Event's chain already passed through the Automation (Event.Chain, `cycle`):
 // its own Tag or lifecycle Event never enrolls the Contact again. An open or click of the
 // Automation's own message carries no chain: it runs the same checks, and one active Enrollment at
@@ -152,14 +154,23 @@ func (m *StepExecution) OnEvent(ctx context.Context, s *ent.Scoped, in OnEventIn
 	return nil
 }
 
+// EnrollOnRuleResult is what a Rule's Enroll Action made: whether an Enrollment was made and, when
+// the entry checks refused it, why (the reason its skipped entry records). Neither is set for a
+// Firing run again whose Enrollment is there already.
+type EnrollOnRuleResult struct {
+	Enrolled bool
+	Skipped  automationskippedentry.Reason
+}
+
 // EnrollOnRule enrolls the Contact in the Automation for a Rule's Action that fired on the Event
-// stored with in.SourceID, once ever (ADR 0046), and queues the job of its first step in the same
-// transaction: a failed queue insert leaves no Enrollment that nothing will move, and a retry
-// starts over. It reports false, and queues nothing, when the Contact was enrolled before or
-// another writer won the race. An Enrollment an exit or goal Event recorded since that Event
-// ended at once is made, with no step queued (enrollOnRule).
-func (m *StepExecution) EnrollOnRule(ctx context.Context, s *ent.Scoped, in EnrollOnRuleInput) (bool, error) {
-	return m.start(ctx, s, func(ts *ent.Scoped, pub events.Publisher) (int64, bool, error) {
+// stored with in.SourceID, by the entry checks and the Entry policy of the live version as a Trigger
+// does (ADR 0127), and queues the job of its first step in the same transaction: a failed queue
+// insert leaves no Enrollment that nothing will move, and a retry starts over. It reports no
+// Enrollment, and queues nothing, when the entry checks refused it (with their reason) or the Firing
+// made one already. An Enrollment an exit or goal Event recorded since that Event ended at once is
+// made, with no step queued (enrollOnRule).
+func (m *StepExecution) EnrollOnRule(ctx context.Context, s *ent.Scoped, in EnrollOnRuleInput) (EnrollOnRuleResult, error) {
+	return m.start(ctx, s, func(ts *ent.Scoped, pub events.Publisher) (int64, bool, automationskippedentry.Reason, error) {
 		return m.enrollOnRule(ctx, ts, pub, in, m.now())
 	})
 }
@@ -167,8 +178,8 @@ func (m *StepExecution) EnrollOnRule(ctx context.Context, s *ent.Scoped, in Enro
 // startOnTrigger is enrollOnRule for the Event of the origin (originOf): it enrolls
 // nobody unless, when the Enrollment is made, the Automation is still active and started by that
 // Event's action in its live version (enrollOnTrigger).
-func (m *StepExecution) startOnTrigger(ctx context.Context, s *ent.Scoped, automationID, contactID int64, o origin) (bool, error) {
-	return m.start(ctx, s, func(ts *ent.Scoped, pub events.Publisher) (int64, bool, error) {
+func (m *StepExecution) startOnTrigger(ctx context.Context, s *ent.Scoped, automationID, contactID int64, o origin) (EnrollOnRuleResult, error) {
+	return m.start(ctx, s, func(ts *ent.Scoped, pub events.Publisher) (int64, bool, automationskippedentry.Reason, error) {
 		return m.enrollOnTrigger(ctx, ts, pub, automationID, contactID, o)
 	})
 }
@@ -176,14 +187,15 @@ func (m *StepExecution) startOnTrigger(ctx context.Context, s *ent.Scoped, autom
 // start makes the Enrollment makeEnrollment makes and, when a step is to run, queues the job of its first
 // step, the one the Enrollment begins on, in one transaction: the transaction the Contact's lock is
 // held in until both commit.
-func (m *StepExecution) start(ctx context.Context, s *ent.Scoped, makeEnrollment func(ts *ent.Scoped, pub events.Publisher) (int64, bool, error)) (bool, error) {
-	made := false
+func (m *StepExecution) start(ctx context.Context, s *ent.Scoped, makeEnrollment func(ts *ent.Scoped, pub events.Publisher) (int64, bool, automationskippedentry.Reason, error)) (EnrollOnRuleResult, error) {
+	var made EnrollOnRuleResult
 	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher, q events.Enqueuer) error {
-		runID, stepping, err := makeEnrollment(ts, pub)
+		runID, stepping, skip, err := makeEnrollment(ts, pub)
+		made = EnrollOnRuleResult{Skipped: skip}
 		if err != nil || runID == 0 {
 			return err
 		}
-		made = true
+		made.Enrolled = true
 		if !stepping {
 			return nil
 		}
@@ -194,7 +206,10 @@ func (m *StepExecution) start(ctx context.Context, s *ent.Scoped, makeEnrollment
 		// A first Step that is a wait is due later: its job runs then.
 		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: runID, StepID: lo.FromPtr(run.CurrentStepID)}, scheduled(run.ResumeAt))
 	})
-	return made, err
+	if err != nil {
+		return EnrollOnRuleResult{}, err
+	}
+	return made, nil
 }
 
 // Step executes the Step of the id step of the Enrollment runID and queues what follows it, in one
@@ -298,9 +313,11 @@ func (m *StepExecution) tag(ctx context.Context, s *ent.Scoped, run *ent.Automat
 // send record; send only turns its Outcome into the Enrollment's next state. A Hold or a Deferral
 // asks again later at the same step, so a held Integration stops only the Enrollments standing on
 // the steps that send through it. A Skipped send moves on to the next step, the skip recorded on
-// the step's Outbound message for its report, except an unsubscribe from this Automation, which
-// exits the Enrollment. A Failed send fails the Enrollment, except one the provider refused for
-// that message alone (Result.MessageOnly), which moves on too.
+// the step's Outbound message for its report, whatever its reason: an unsubscribe from this
+// Automation too, which exited the Enrollment active when it arrived and skips the sends of a later
+// one to the Destination that refused it, while its other Steps run (ADR 0081, ADR 0127). A Failed
+// send fails the Enrollment, except one the provider refused for that message alone
+// (Result.MessageOnly), which moves on too.
 func (m *StepExecution) send(ctx context.Context, s *ent.Scoped, a *ent.Automation, run *ent.AutomationRun, at place, st SendStep) error {
 	content, err := st.Content()
 	if err != nil {
@@ -335,16 +352,9 @@ func (m *StepExecution) send(ctx context.Context, s *ent.Scoped, a *ent.Automati
 		// step never sends twice.
 		return m.advance(ctx, s, run.ID, at, stepMove{})
 	case outboundmessages.Skipped:
-		if res.SkippedReason == skipreason.UnsubscribedSource {
-			// The Contact unsubscribed from this Automation: that exits the Enrollment, from
-			// whichever Channel it came (ADR 0081).
-			return quiet(m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-				return exitRun(ctx, m.bus, ts, run.ID, m.now())
-			}))
-		}
-		// No Destination on the step's Channel, an opt-out from the Channel or a Suppression: the
-		// sequence goes on with its next step, so one Channel's absence never ends it, and the
-		// step's record says why it was skipped.
+		// No Destination on the step's Channel, an opt-out from the Channel or from this
+		// Automation, or a Suppression: the sequence goes on with its next step, so one Channel's
+		// absence never ends it, and the step's record says why it was skipped.
 		return m.advance(ctx, s, run.ID, at, stepMove{skipped: res.SkippedReason})
 	default: // outboundmessages.Failed
 		if res.MessageOnly() {

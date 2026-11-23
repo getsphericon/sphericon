@@ -20,7 +20,8 @@ const paidOrderFilter = `{"kind":"group","combinator":"and","entries":[
 	{"kind":"property","key":"status","test":{"kind":"text","operator":"eq","value":"paid"}}
 ]}`
 
-// The Trigger round-trips through /api as {kind: "event", action, filter} (ADR 0133).
+// The Trigger round-trips through /api as {kind: "event", action, filter} (ADR 0133), with the
+// default Entry policy when it was written without one (ADR 0127).
 func TestExternalTriggerIsReadBackAsAnEventMatcher(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
@@ -32,7 +33,7 @@ func TestExternalTriggerIsReadBackAsAnEventMatcher(t *testing.T) {
 	read, err := c.AutomationsGet(ctx, externalapi.AutomationsGetParams{ID: created.ID})
 	require.NoError(t, err)
 
-	assert.JSONEq(t, `{"kind":"event","action":"order.completed","filter":`+paidOrderFilter+`}`, testhelper.JSONOf(t, &read.Draft.Value.Trigger))
+	assert.JSONEq(t, `{"kind":"event","action":"order.completed","filter":`+paidOrderFilter+`,"entryPolicy":"once","cooldown":3600}`, testhelper.JSONOf(t, &read.Draft.Value.Trigger))
 }
 
 // A test of the Contact in a filter, and a field the Trigger does not declare, are refused with a

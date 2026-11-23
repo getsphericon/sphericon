@@ -1173,7 +1173,10 @@ func segmentCondition(g conditiontree.Segment) (siteapi.SegmentCondition, error)
 // filter is checked as a stored Condition is (convert.Document).
 func automationTrigger(v *ent.AutomationVersion) (siteapi.AutomationTrigger, error) {
 	m := automations.TriggerOf(v)
-	ev := siteapi.EventTrigger{Kind: siteapi.EventTriggerKindEvent, Action: m.Action}
+	ev := siteapi.EventTrigger{
+		Kind: siteapi.EventTriggerKindEvent, Action: m.Action,
+		EntryPolicy: siteapi.EntryPolicy(v.EntryPolicy), Cooldown: siteapi.EntryCooldown(narrow.Int32(v.CooldownSeconds)),
+	}
 	if m.Filter != nil {
 		f, err := convert.Document[siteapi.EventFilter](*m.Filter)
 		if err != nil {

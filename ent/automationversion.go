@@ -42,6 +42,10 @@ type AutomationVersion struct {
 	ExitEvents []string `json:"exit_events,omitempty"`
 	// GoalEvent holds the value of the "goal_event" field.
 	GoalEvent *string `json:"goal_event,omitempty"`
+	// EntryPolicy holds the value of the "entry_policy" field.
+	EntryPolicy automationversion.EntryPolicy `json:"entry_policy,omitempty"`
+	// CooldownSeconds holds the value of the "cooldown_seconds" field.
+	CooldownSeconds int `json:"cooldown_seconds,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AutomationVersionQuery when eager-loading is set.
 	Edges        AutomationVersionEdges `json:"edges"`
@@ -99,9 +103,9 @@ func (*AutomationVersion) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case automationversion.FieldSteps, automationversion.FieldTriggerFilter, automationversion.FieldExitEvents:
 			values[i] = new([]byte)
-		case automationversion.FieldID, automationversion.FieldWorkspaceID, automationversion.FieldAutomationID, automationversion.FieldVersion:
+		case automationversion.FieldID, automationversion.FieldWorkspaceID, automationversion.FieldAutomationID, automationversion.FieldVersion, automationversion.FieldCooldownSeconds:
 			values[i] = new(sql.NullInt64)
-		case automationversion.FieldTriggerAction, automationversion.FieldGoalEvent:
+		case automationversion.FieldTriggerAction, automationversion.FieldGoalEvent, automationversion.FieldEntryPolicy:
 			values[i] = new(sql.NullString)
 		case automationversion.FieldCreatedAt, automationversion.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -193,6 +197,18 @@ func (_m *AutomationVersion) assignValues(columns []string, values []any) error 
 				_m.GoalEvent = new(string)
 				*_m.GoalEvent = value.String
 			}
+		case automationversion.FieldEntryPolicy:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field entry_policy", values[i])
+			} else if value.Valid {
+				_m.EntryPolicy = automationversion.EntryPolicy(value.String)
+			}
+		case automationversion.FieldCooldownSeconds:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field cooldown_seconds", values[i])
+			} else if value.Valid {
+				_m.CooldownSeconds = int(value.Int64)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -275,6 +291,12 @@ func (_m *AutomationVersion) String() string {
 		builder.WriteString("goal_event=")
 		builder.WriteString(*v)
 	}
+	builder.WriteString(", ")
+	builder.WriteString("entry_policy=")
+	builder.WriteString(fmt.Sprintf("%v", _m.EntryPolicy))
+	builder.WriteString(", ")
+	builder.WriteString("cooldown_seconds=")
+	builder.WriteString(fmt.Sprintf("%v", _m.CooldownSeconds))
 	builder.WriteByte(')')
 	return builder.String()
 }

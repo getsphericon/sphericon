@@ -826,7 +826,10 @@ func segmentCondition(g conditiontree.Segment) (externalapi.SegmentCondition, er
 // filter is checked as a stored Condition is (convert.Document).
 func automationTrigger(v *ent.AutomationVersion) (externalapi.AutomationTrigger, error) {
 	m := automations.TriggerOf(v)
-	ev := externalapi.EventTrigger{Kind: externalapi.EventTriggerKindEvent, Action: m.Action}
+	ev := externalapi.EventTrigger{
+		Kind: externalapi.EventTriggerKindEvent, Action: m.Action,
+		EntryPolicy: externalapi.EntryPolicy(v.EntryPolicy), Cooldown: externalapi.EntryCooldown(narrow.Int32(v.CooldownSeconds)),
+	}
 	if m.Filter != nil {
 		f, err := convert.Document[externalapi.EventFilter](*m.Filter)
 		if err != nil {

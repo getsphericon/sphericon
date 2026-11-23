@@ -162,6 +162,26 @@ func (_c *AutomationRunCreate) SetChain(v []int64) *AutomationRunCreate {
 	return _c
 }
 
+// SetOrdinal sets the "ordinal" field.
+func (_c *AutomationRunCreate) SetOrdinal(v int) *AutomationRunCreate {
+	_c.mutation.SetOrdinal(v)
+	return _c
+}
+
+// SetKeyValue sets the "key_value" field.
+func (_c *AutomationRunCreate) SetKeyValue(v string) *AutomationRunCreate {
+	_c.mutation.SetKeyValue(v)
+	return _c
+}
+
+// SetNillableKeyValue sets the "key_value" field if the given value is not nil.
+func (_c *AutomationRunCreate) SetNillableKeyValue(v *string) *AutomationRunCreate {
+	if v != nil {
+		_c.SetKeyValue(*v)
+	}
+	return _c
+}
+
 // SetEndedAt sets the "ended_at" field.
 func (_c *AutomationRunCreate) SetEndedAt(v time.Time) *AutomationRunCreate {
 	_c.mutation.SetEndedAt(v)
@@ -368,6 +388,9 @@ func (_c *AutomationRunCreate) check() error {
 	if _, ok := _c.mutation.Chain(); !ok {
 		return &ValidationError{Name: "chain", err: errors.New(`ent: missing required field "AutomationRun.chain"`)}
 	}
+	if _, ok := _c.mutation.Ordinal(); !ok {
+		return &ValidationError{Name: "ordinal", err: errors.New(`ent: missing required field "AutomationRun.ordinal"`)}
+	}
 	if v, ok := _c.mutation.FailureKind(); ok {
 		if err := automationrun.FailureKindValidator(v); err != nil {
 			return &ValidationError{Name: "failure_kind", err: fmt.Errorf(`ent: validator failed for field "AutomationRun.failure_kind": %w`, err)}
@@ -449,6 +472,14 @@ func (_c *AutomationRunCreate) createSpec() (*AutomationRun, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.Chain(); ok {
 		_spec.SetField(automationrun.FieldChain, field.TypeJSON, value)
 		_node.Chain = value
+	}
+	if value, ok := _c.mutation.Ordinal(); ok {
+		_spec.SetField(automationrun.FieldOrdinal, field.TypeInt, value)
+		_node.Ordinal = value
+	}
+	if value, ok := _c.mutation.KeyValue(); ok {
+		_spec.SetField(automationrun.FieldKeyValue, field.TypeString, value)
+		_node.KeyValue = &value
 	}
 	if value, ok := _c.mutation.EndedAt(); ok {
 		_spec.SetField(automationrun.FieldEndedAt, field.TypeTime, value)
@@ -834,6 +865,12 @@ func (u *AutomationRunUpsertOne) UpdateNewValues() *AutomationRunUpsertOne {
 		}
 		if _, exists := u.create.mutation.Chain(); exists {
 			s.SetIgnore(automationrun.FieldChain)
+		}
+		if _, exists := u.create.mutation.Ordinal(); exists {
+			s.SetIgnore(automationrun.FieldOrdinal)
+		}
+		if _, exists := u.create.mutation.KeyValue(); exists {
+			s.SetIgnore(automationrun.FieldKeyValue)
 		}
 	}))
 	return u
@@ -1285,6 +1322,12 @@ func (u *AutomationRunUpsertBulk) UpdateNewValues() *AutomationRunUpsertBulk {
 			}
 			if _, exists := b.mutation.Chain(); exists {
 				s.SetIgnore(automationrun.FieldChain)
+			}
+			if _, exists := b.mutation.Ordinal(); exists {
+				s.SetIgnore(automationrun.FieldOrdinal)
+			}
+			if _, exists := b.mutation.KeyValue(); exists {
+				s.SetIgnore(automationrun.FieldKeyValue)
 			}
 		}
 	}))

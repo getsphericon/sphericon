@@ -3,6 +3,7 @@
 package automationversion
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -34,6 +35,10 @@ const (
 	FieldExitEvents = "exit_events"
 	// FieldGoalEvent holds the string denoting the goal_event field in the database.
 	FieldGoalEvent = "goal_event"
+	// FieldEntryPolicy holds the string denoting the entry_policy field in the database.
+	FieldEntryPolicy = "entry_policy"
+	// FieldCooldownSeconds holds the string denoting the cooldown_seconds field in the database.
+	FieldCooldownSeconds = "cooldown_seconds"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// EdgeAutomation holds the string denoting the automation edge name in mutations.
@@ -78,6 +83,8 @@ var Columns = []string{
 	FieldTriggerFilter,
 	FieldExitEvents,
 	FieldGoalEvent,
+	FieldEntryPolicy,
+	FieldCooldownSeconds,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -101,7 +108,35 @@ var (
 	VersionValidator func(int) error
 	// DefaultExitEvents holds the default value on creation for the "exit_events" field.
 	DefaultExitEvents []string
+	// DefaultCooldownSeconds holds the default value on creation for the "cooldown_seconds" field.
+	DefaultCooldownSeconds int
 )
+
+// EntryPolicy defines the type for the "entry_policy" enum field.
+type EntryPolicy string
+
+// EntryPolicyOnce is the default value of the EntryPolicy enum.
+const DefaultEntryPolicy = EntryPolicyOnce
+
+// EntryPolicy values.
+const (
+	EntryPolicyOnce  EntryPolicy = "once"
+	EntryPolicyAgain EntryPolicy = "again"
+)
+
+func (ep EntryPolicy) String() string {
+	return string(ep)
+}
+
+// EntryPolicyValidator is a validator for the "entry_policy" field enum values. It is called by the builders before save.
+func EntryPolicyValidator(ep EntryPolicy) error {
+	switch ep {
+	case EntryPolicyOnce, EntryPolicyAgain:
+		return nil
+	default:
+		return fmt.Errorf("automationversion: invalid enum value for entry_policy field: %q", ep)
+	}
+}
 
 // OrderOption defines the ordering options for the AutomationVersion queries.
 type OrderOption func(*sql.Selector)
@@ -144,6 +179,16 @@ func ByTriggerAction(opts ...sql.OrderTermOption) OrderOption {
 // ByGoalEvent orders the results by the goal_event field.
 func ByGoalEvent(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldGoalEvent, opts...).ToFunc()
+}
+
+// ByEntryPolicy orders the results by the entry_policy field.
+func ByEntryPolicy(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEntryPolicy, opts...).ToFunc()
+}
+
+// ByCooldownSeconds orders the results by the cooldown_seconds field.
+func ByCooldownSeconds(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCooldownSeconds, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.

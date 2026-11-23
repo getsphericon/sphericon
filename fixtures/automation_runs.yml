@@ -1,11 +1,13 @@
 # Workspace acme (id 1). Enrollments across the active automations (100, 101) with
-# every run status represented. Unique (automation_id, contact_id) — one row per pair.
+# every run status represented. Each row is its Contact's first Enrollment in its Automation
+# (ordinal 1).
 # Welcome series (100): completed / active(waiting) / exited / failed
 - {
     id: 1000, # fixture: AutomationRunWelcomeCompleted
     automation_id: 100,
     version_id: 100,
     contact_id: 100,
+    ordinal: 1,
     workspace_id: 1,
     status: completed,
     created_at: '{{daysAgo 2}}',
@@ -16,6 +18,7 @@
     automation_id: 100,
     version_id: 100,
     contact_id: 101,
+    ordinal: 1,
     workspace_id: 1,
     status: completed,
     created_at: '{{daysAgo 4}}',
@@ -26,6 +29,7 @@
     automation_id: 100,
     version_id: 100,
     contact_id: 102,
+    ordinal: 1,
     workspace_id: 1,
     status: completed,
     created_at: '{{daysAgo 6}}',
@@ -36,6 +40,7 @@
     automation_id: 100,
     version_id: 100,
     contact_id: 103,
+    ordinal: 1,
     workspace_id: 1,
     status: completed,
     created_at: '{{daysAgo 9}}',
@@ -46,6 +51,7 @@
     automation_id: 100,
     version_id: 100,
     contact_id: 105,
+    ordinal: 1,
     workspace_id: 1,
     status: completed,
     created_at: '{{daysAgo 15}}',
@@ -56,6 +62,7 @@
     automation_id: 100,
     version_id: 100,
     contact_id: 104,
+    ordinal: 1,
     workspace_id: 1,
     status: active,
     current_step_id: '3ed5d656-fbc5-5616-909d-81ccb4b7e673',
@@ -68,6 +75,7 @@
     automation_id: 100,
     version_id: 100,
     contact_id: 106,
+    ordinal: 1,
     workspace_id: 1,
     status: active,
     current_step_id: '3ed5d656-fbc5-5616-909d-81ccb4b7e673',
@@ -80,6 +88,7 @@
     automation_id: 100,
     version_id: 100,
     contact_id: 108,
+    ordinal: 1,
     workspace_id: 1,
     status: exited,
     current_step_id: '3ed5d656-fbc5-5616-909d-81ccb4b7e673',
@@ -91,6 +100,7 @@
     automation_id: 100,
     version_id: 100,
     contact_id: 109,
+    ordinal: 1,
     workspace_id: 1,
     status: failed,
     current_step_id: '9c2251c9-031a-5e1e-b3a5-d4d37085ffe8',
@@ -103,6 +113,7 @@
     automation_id: 101,
     version_id: 101,
     contact_id: 110,
+    ordinal: 1,
     workspace_id: 1,
     status: completed,
     created_at: '{{daysAgo 16}}',
@@ -113,6 +124,7 @@
     automation_id: 101,
     version_id: 101,
     contact_id: 111,
+    ordinal: 1,
     workspace_id: 1,
     status: completed,
     created_at: '{{daysAgo 14}}',
@@ -123,6 +135,7 @@
     automation_id: 101,
     version_id: 101,
     contact_id: 112,
+    ordinal: 1,
     workspace_id: 1,
     status: completed,
     created_at: '{{daysAgo 10}}',
@@ -133,6 +146,7 @@
     automation_id: 101,
     version_id: 101,
     contact_id: 115,
+    ordinal: 1,
     workspace_id: 1,
     status: completed,
     created_at: '{{daysAgo 7}}',
@@ -143,6 +157,7 @@
     automation_id: 101,
     version_id: 101,
     contact_id: 113,
+    ordinal: 1,
     workspace_id: 1,
     status: exited,
     current_step_id: 'a3674b70-bdee-5ddb-a9d5-589de0a512a6',
@@ -154,6 +169,7 @@
     automation_id: 101,
     version_id: 101,
     contact_id: 114,
+    ordinal: 1,
     workspace_id: 1,
     status: active,
     current_step_id: 'a3674b70-bdee-5ddb-a9d5-589de0a512a6',
@@ -167,6 +183,7 @@
     automation_id: 106,
     version_id: 106,
     contact_id: 128,
+    ordinal: 1,
     workspace_id: 1,
     status: completed,
     created_at: '{{daysAgo 30}}',
@@ -177,6 +194,7 @@
     automation_id: 106,
     version_id: 106,
     contact_id: 129,
+    ordinal: 1,
     workspace_id: 1,
     status: active,
     current_step_id: '66d828ed-0d8d-53fa-beb4-cc4fc8872d20',
@@ -189,6 +207,7 @@
     automation_id: 106,
     version_id: 1060,
     contact_id: 130,
+    ordinal: 1,
     workspace_id: 1,
     status: completed,
     created_at: '{{daysAgo 3}}',
@@ -201,6 +220,7 @@
     automation_id: 104,
     version_id: 104,
     contact_id: 1,
+    ordinal: 1,
     workspace_id: 1,
     status: active,
     current_step_id: 'aac3cecf-b9d7-57c6-ab50-1e4b1c35e1d3',
@@ -215,6 +235,7 @@
     automation_id: 105,
     version_id: 105,
     contact_id: 107,
+    ordinal: 1,
     workspace_id: 1,
     status: failed,
     current_step_id: '01900000-0000-0000-0000-000000000001',
@@ -231,6 +252,7 @@
     automation_id: 900,
     version_id: 900,
     contact_id: 900,
+    ordinal: 1,
     workspace_id: 2,
     status: completed,
     created_at: '2026-01-01 00:00:00',
@@ -244,6 +266,7 @@
     automation_id: 300,
     version_id: 300,
     contact_id: 300,
+    ordinal: 1,
     workspace_id: 3,
     status: active,
     event_action: invoice_overdue,
@@ -261,6 +284,7 @@
     automation_id: 301,
     version_id: 301,
     contact_id: 300,
+    ordinal: 1,
     workspace_id: 3,
     status: failed,
     current_step_id: '01900000-0000-0000-0000-000000000002',
@@ -275,6 +299,7 @@
     automation_id: 301,
     version_id: 301,
     contact_id: 301,
+    ordinal: 1,
     workspace_id: 3,
     status: failed,
     current_step_id: '01900000-0000-0000-0000-000000000002',
@@ -291,6 +316,7 @@
     automation_id: 302,
     version_id: 302,
     contact_id: 300,
+    ordinal: 1,
     workspace_id: 3,
     status: completed,
     created_at: '2026-01-02 00:00:00',
@@ -303,6 +329,7 @@
     automation_id: 5561,
     version_id: 5561,
     contact_id: 5560,
+    ordinal: 1,
     workspace_id: 1,
     status: active,
     current_step_id: 'f01c9741-df06-5a0d-9e34-87e0650a86d3',
@@ -314,6 +341,7 @@
     automation_id: 5561,
     version_id: 5561,
     contact_id: 3,
+    ordinal: 1,
     workspace_id: 1,
     status: active,
     current_step_id: 'f01c9741-df06-5a0d-9e34-87e0650a86d3',
@@ -325,6 +353,7 @@
     automation_id: 5561,
     version_id: 5561,
     contact_id: 1,
+    ordinal: 1,
     workspace_id: 1,
     status: exited,
     current_step_id: 'f01c9741-df06-5a0d-9e34-87e0650a86d3',
@@ -336,6 +365,7 @@
     automation_id: 5565,
     version_id: 5565,
     contact_id: 2,
+    ordinal: 1,
     workspace_id: 1,
     status: exited,
     current_step_id: 'aee222c5-d115-5800-8a8a-ae8ebc943ece',
@@ -347,8 +377,11 @@
     automation_id: 5560,
     version_id: 5560,
     contact_id: 3,
+    ordinal: 1,
     workspace_id: 1,
     status: exited,
+    began_at: '{{daysAgo 3}}',
+    ended_at: '{{daysAgo 3}}',
     current_step_id: '330f5a00-93de-55b6-96cd-30a1b1a7ac59',
     created_at: '{{daysAgo 3}}',
     updated_at: '{{daysAgo 3}}',
@@ -358,6 +391,7 @@
     automation_id: 5563,
     version_id: 55633,
     contact_id: 3,
+    ordinal: 1,
     workspace_id: 1,
     status: completed,
     created_at: '{{daysAgo 3}}',
@@ -368,6 +402,7 @@
     automation_id: 5563,
     version_id: 55634,
     contact_id: 100,
+    ordinal: 1,
     workspace_id: 1,
     status: active,
     current_step_id: 'f43c7b0b-6f3c-585f-8912-3374cd1c2282',
@@ -382,6 +417,7 @@
   automation_id: 20001
   version_id: 20001
   contact_id: 20034
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 48}}'
@@ -392,6 +428,7 @@
   automation_id: 20001
   version_id: 20001
   contact_id: 20037
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 120}}'
@@ -402,6 +439,7 @@
   automation_id: 20001
   version_id: 20001
   contact_id: 20040
+  ordinal: 1
   workspace_id: 20
   status: 'active'
   current_step_id: '74b58ea5-0f08-5810-9098-afd475faa894'
@@ -412,6 +450,7 @@
   automation_id: 20001
   version_id: 20001
   contact_id: 20043
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 264}}'
@@ -422,6 +461,7 @@
   automation_id: 20001
   version_id: 20001
   contact_id: 20001
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 408}}'
@@ -432,6 +472,7 @@
   automation_id: 20001
   version_id: 20001
   contact_id: 20004
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 480}}'
@@ -442,6 +483,7 @@
   automation_id: 20001
   version_id: 20001
   contact_id: 20007
+  ordinal: 1
   workspace_id: 20
   status: 'active'
   current_step_id: '74b58ea5-0f08-5810-9098-afd475faa894'
@@ -452,6 +494,7 @@
   automation_id: 20001
   version_id: 20001
   contact_id: 20010
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 624}}'
@@ -462,6 +505,7 @@
   automation_id: 20001
   version_id: 20001
   contact_id: 20013
+  ordinal: 1
   workspace_id: 20
   status: 'exited'
   current_step_id: '74b58ea5-0f08-5810-9098-afd475faa894'
@@ -473,6 +517,7 @@
   automation_id: 20001
   version_id: 20001
   contact_id: 20016
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 768}}'
@@ -483,6 +528,7 @@
   automation_id: 20001
   version_id: 20001
   contact_id: 20019
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 840}}'
@@ -493,6 +539,7 @@
   automation_id: 20002
   version_id: 20002
   contact_id: 20035
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 48}}'
@@ -503,6 +550,7 @@
   automation_id: 20002
   version_id: 20002
   contact_id: 20038
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 120}}'
@@ -513,6 +561,7 @@
   automation_id: 20002
   version_id: 20002
   contact_id: 20041
+  ordinal: 1
   workspace_id: 20
   status: 'active'
   current_step_id: '85ab67b3-1ce5-523d-93f1-ea12391be7c6'
@@ -523,6 +572,7 @@
   automation_id: 20002
   version_id: 20002
   contact_id: 20044
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 264}}'
@@ -533,6 +583,7 @@
   automation_id: 20002
   version_id: 20002
   contact_id: 20002
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 408}}'
@@ -543,6 +594,7 @@
   automation_id: 20002
   version_id: 20002
   contact_id: 20005
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 480}}'
@@ -553,6 +605,7 @@
   automation_id: 20002
   version_id: 20002
   contact_id: 20008
+  ordinal: 1
   workspace_id: 20
   status: 'active'
   current_step_id: '85ab67b3-1ce5-523d-93f1-ea12391be7c6'
@@ -563,6 +616,7 @@
   automation_id: 20002
   version_id: 20002
   contact_id: 20011
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 624}}'
@@ -573,6 +627,7 @@
   automation_id: 20002
   version_id: 20002
   contact_id: 20014
+  ordinal: 1
   workspace_id: 20
   status: 'exited'
   current_step_id: '85ab67b3-1ce5-523d-93f1-ea12391be7c6'
@@ -584,6 +639,7 @@
   automation_id: 20002
   version_id: 20002
   contact_id: 20017
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 768}}'
@@ -594,6 +650,7 @@
   automation_id: 20002
   version_id: 20002
   contact_id: 20020
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 840}}'
@@ -604,6 +661,7 @@
   automation_id: 20003
   version_id: 20003
   contact_id: 20036
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 48}}'
@@ -614,6 +672,7 @@
   automation_id: 20003
   version_id: 20003
   contact_id: 20039
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 120}}'
@@ -624,6 +683,7 @@
   automation_id: 20003
   version_id: 20003
   contact_id: 20042
+  ordinal: 1
   workspace_id: 20
   status: 'active'
   current_step_id: 'd432314c-8004-596f-9e50-35eed60ff25d'
@@ -634,6 +694,7 @@
   automation_id: 20003
   version_id: 20003
   contact_id: 20003
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 408}}'
@@ -644,6 +705,7 @@
   automation_id: 20003
   version_id: 20003
   contact_id: 20006
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 480}}'
@@ -654,6 +716,7 @@
   automation_id: 20003
   version_id: 20003
   contact_id: 20009
+  ordinal: 1
   workspace_id: 20
   status: 'active'
   current_step_id: 'd432314c-8004-596f-9e50-35eed60ff25d'
@@ -664,6 +727,7 @@
   automation_id: 20003
   version_id: 20003
   contact_id: 20012
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 624}}'
@@ -674,6 +738,7 @@
   automation_id: 20003
   version_id: 20003
   contact_id: 20015
+  ordinal: 1
   workspace_id: 20
   status: 'exited'
   current_step_id: 'd432314c-8004-596f-9e50-35eed60ff25d'
@@ -685,6 +750,7 @@
   automation_id: 20003
   version_id: 20003
   contact_id: 20018
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 768}}'
@@ -695,6 +761,7 @@
   automation_id: 20003
   version_id: 20003
   contact_id: 20021
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 840}}'
@@ -705,6 +772,7 @@
   automation_id: 20004
   version_id: 20004
   contact_id: 20037
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 48}}'
@@ -715,6 +783,7 @@
   automation_id: 20004
   version_id: 20004
   contact_id: 20040
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 120}}'
@@ -725,6 +794,7 @@
   automation_id: 20004
   version_id: 20004
   contact_id: 20043
+  ordinal: 1
   workspace_id: 20
   status: 'active'
   current_step_id: 'bacbe2f4-6580-5acc-94e4-513f26530515'
@@ -735,6 +805,7 @@
   automation_id: 20004
   version_id: 20004
   contact_id: 20001
+  ordinal: 1
   workspace_id: 20
   status: 'exited'
   current_step_id: 'bacbe2f4-6580-5acc-94e4-513f26530515'
@@ -746,6 +817,7 @@
   automation_id: 20004
   version_id: 20004
   contact_id: 20004
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 408}}'
@@ -756,6 +828,7 @@
   automation_id: 20004
   version_id: 20004
   contact_id: 20007
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 480}}'
@@ -766,6 +839,7 @@
   automation_id: 20004
   version_id: 20004
   contact_id: 20010
+  ordinal: 1
   workspace_id: 20
   status: 'active'
   current_step_id: 'bacbe2f4-6580-5acc-94e4-513f26530515'
@@ -776,6 +850,7 @@
   automation_id: 20004
   version_id: 20004
   contact_id: 20013
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 624}}'
@@ -786,6 +861,7 @@
   automation_id: 20004
   version_id: 20004
   contact_id: 20016
+  ordinal: 1
   workspace_id: 20
   status: 'exited'
   current_step_id: 'bacbe2f4-6580-5acc-94e4-513f26530515'
@@ -797,6 +873,7 @@
   automation_id: 20004
   version_id: 20004
   contact_id: 20019
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 768}}'
@@ -807,6 +884,7 @@
   automation_id: 20004
   version_id: 20004
   contact_id: 20022
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 840}}'
@@ -817,6 +895,7 @@
   automation_id: 20005
   version_id: 20005
   contact_id: 20038
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 48}}'
@@ -827,6 +906,7 @@
   automation_id: 20005
   version_id: 20005
   contact_id: 20041
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 120}}'
@@ -837,6 +917,7 @@
   automation_id: 20005
   version_id: 20005
   contact_id: 20044
+  ordinal: 1
   workspace_id: 20
   status: 'active'
   current_step_id: 'b633df4a-9d71-5747-8e6d-ac7e659056e0'
@@ -847,6 +928,7 @@
   automation_id: 20005
   version_id: 20005
   contact_id: 20002
+  ordinal: 1
   workspace_id: 20
   status: 'exited'
   began_at: '{{hoursAgo 336}}'
@@ -857,6 +939,7 @@
   automation_id: 20005
   version_id: 20005
   contact_id: 20005
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 408}}'
@@ -867,6 +950,7 @@
   automation_id: 20005
   version_id: 20005
   contact_id: 20008
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 480}}'
@@ -877,6 +961,7 @@
   automation_id: 20005
   version_id: 20005
   contact_id: 20011
+  ordinal: 1
   workspace_id: 20
   status: 'active'
   current_step_id: 'b633df4a-9d71-5747-8e6d-ac7e659056e0'
@@ -887,6 +972,7 @@
   automation_id: 20005
   version_id: 20005
   contact_id: 20014
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 624}}'
@@ -897,6 +983,7 @@
   automation_id: 20005
   version_id: 20005
   contact_id: 20017
+  ordinal: 1
   workspace_id: 20
   status: 'exited'
   began_at: '{{hoursAgo 696}}'
@@ -907,6 +994,7 @@
   automation_id: 20005
   version_id: 20005
   contact_id: 20020
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 768}}'
@@ -917,6 +1005,7 @@
   automation_id: 20005
   version_id: 20005
   contact_id: 20023
+  ordinal: 1
   workspace_id: 20
   status: 'completed'
   began_at: '{{hoursAgo 840}}'
@@ -929,6 +1018,7 @@
   automation_id: 20003
   version_id: 20003
   contact_id: 20004
+  ordinal: 1
   status: 'failed'
   failure_kind: 'http_status'
   failure_status: 502
@@ -942,6 +1032,7 @@
   automation_id: 20003
   version_id: 20003
   contact_id: 20005
+  ordinal: 1
   status: 'failed'
   failure_kind: 'timeout'
   failure_excerpt: 'The request to https://crm.brightpath.example/hooks/contacts timed out after 10s'
@@ -954,6 +1045,7 @@
   automation_id: 20003
   version_id: 20003
   contact_id: 20007
+  ordinal: 1
   status: 'failed'
   failure_kind: 'network'
   failure_excerpt: 'dial tcp: lookup crm.brightpath.example: no such host'
@@ -971,6 +1063,7 @@
   automation_id: 6100
   version_id: 6100
   contact_id: 20049
+  ordinal: 1
   workspace_id: 61
   status: completed
   began_at: '2026-03-11 04:00:00+00'
@@ -982,6 +1075,7 @@
   automation_id: 6100
   version_id: 6100
   contact_id: 20050
+  ordinal: 1
   workspace_id: 61
   status: goal_reached
   current_step_id: '339a0cff-c0e7-5700-9cd8-68c1ce0f3bc6'
@@ -994,6 +1088,7 @@
   automation_id: 6100
   version_id: 6100
   contact_id: 20051
+  ordinal: 1
   workspace_id: 61
   status: exited
   current_step_id: '339a0cff-c0e7-5700-9cd8-68c1ce0f3bc6'
@@ -1006,6 +1101,7 @@
   automation_id: 6100
   version_id: 6100
   contact_id: 20052
+  ordinal: 1
   workspace_id: 61
   status: active
   current_step_id: '339a0cff-c0e7-5700-9cd8-68c1ce0f3bc6'
@@ -1017,6 +1113,7 @@
   automation_id: 6100
   version_id: 6100
   contact_id: 20053
+  ordinal: 1
   workspace_id: 61
   status: failed
   current_step_id: '339a0cff-c0e7-5700-9cd8-68c1ce0f3bc6'
@@ -1029,6 +1126,7 @@
   automation_id: 6100
   version_id: 6100
   contact_id: 20054
+  ordinal: 1
   workspace_id: 61
   status: completed
   began_at: '2026-03-10 04:00:00+00'
@@ -1040,6 +1138,7 @@
   automation_id: 6100
   version_id: 6100
   contact_id: 20055
+  ordinal: 1
   workspace_id: 61
   status: exited
   current_step_id: '339a0cff-c0e7-5700-9cd8-68c1ce0f3bc6'
@@ -1052,6 +1151,7 @@
   automation_id: 6100
   version_id: 6100
   contact_id: 20056
+  ordinal: 1
   workspace_id: 61
   status: goal_reached
   current_step_id: '339a0cff-c0e7-5700-9cd8-68c1ce0f3bc6'
@@ -1064,6 +1164,7 @@
   automation_id: 6100
   version_id: 6100
   contact_id: 20100
+  ordinal: 1
   workspace_id: 61
   status: completed
   began_at: '2026-02-20 12:00:00+00'
@@ -1076,6 +1177,7 @@
   automation_id: 5580
   version_id: 5580
   contact_id: 1
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: '01900000-0000-0000-0000-000000000001'
@@ -1088,6 +1190,7 @@
   automation_id: 5581
   version_id: 5581
   contact_id: 1
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: '01900000-0000-0000-0000-000000000001'
@@ -1101,6 +1204,7 @@
   automation_id: 108
   version_id: 108
   contact_id: 107
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: 'a5a7184a-a358-5884-bba4-52f54f15fcd6'
@@ -1114,6 +1218,7 @@
   automation_id: 5561
   version_id: 5561
   contact_id: 100
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: 'f01c9741-df06-5a0d-9e34-87e0650a86d3'
@@ -1124,6 +1229,7 @@
   automation_id: 5565
   version_id: 5565
   contact_id: 1
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: 'aee222c5-d115-5800-8a8a-ae8ebc943ece'
@@ -1139,6 +1245,7 @@
   automation_id: 7500
   version_id: 7500
   contact_id: 2
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: '25c87cec-7274-585a-ace4-2a10156a61d5'
@@ -1149,6 +1256,7 @@
   automation_id: 7501
   version_id: 7501
   contact_id: 2
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: '8a0ed285-75ee-57a6-9cda-d61c2c6f232e'
@@ -1159,6 +1267,7 @@
   automation_id: 7502
   version_id: 7502
   contact_id: 2
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: '922bf13e-144b-5d30-bcbc-98018b69aa82'
@@ -1169,6 +1278,7 @@
   automation_id: 7503
   version_id: 7503
   contact_id: 2
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: 'f0a055ad-859d-545e-82fe-20ae592d73dd'
@@ -1179,6 +1289,7 @@
   automation_id: 7504
   version_id: 7504
   contact_id: 2
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: 'bee260ed-7708-59e2-821e-bf792e779767'
@@ -1189,6 +1300,7 @@
   automation_id: 7505
   version_id: 7505
   contact_id: 2
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: 'f5c9e355-3ab8-50ec-bb37-6c1b61b7d0fb'
@@ -1199,6 +1311,7 @@
   automation_id: 7506
   version_id: 7506
   contact_id: 2
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: 'bcfc96ba-42f0-5fa7-80a9-f96bb830fe0b'
@@ -1209,6 +1322,7 @@
   automation_id: 7507
   version_id: 7507
   contact_id: 2
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: 'd58129f9-5595-5ed4-80d0-f3d27e768373'
@@ -1219,6 +1333,7 @@
   automation_id: 7508
   version_id: 7508
   contact_id: 2
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: 'c8e7867c-7e77-5e7e-9db2-f20c5abeca39'
@@ -1229,6 +1344,7 @@
   automation_id: 7509
   version_id: 7509
   contact_id: 2
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: 'a6d773ba-f9b5-56f9-898c-121d8888acd8'
@@ -1239,6 +1355,7 @@
   automation_id: 7510
   version_id: 7510
   contact_id: 2
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: '98de79e5-acef-5933-9389-cb1a8657495a'
@@ -1249,6 +1366,7 @@
   automation_id: 7511
   version_id: 7511
   contact_id: 2
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: 'c8fc3bb4-c049-5b2f-882e-a269977ee912'
@@ -1259,6 +1377,7 @@
   automation_id: 7512
   version_id: 7512
   contact_id: 2
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: 'd027263d-51b0-5606-afd6-2ca6507468d2'
@@ -1269,6 +1388,7 @@
   automation_id: 7513
   version_id: 7513
   contact_id: 2
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: 'cffcda44-0da1-5922-ac3a-4369b5e525c8'
@@ -1279,6 +1399,7 @@
   automation_id: 7514
   version_id: 7514
   contact_id: 100
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: '84650ea0-aec0-53dc-942a-eddf07902340'
@@ -1289,6 +1410,7 @@
   automation_id: 7515
   version_id: 7515
   contact_id: 7504
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: '26022d63-133d-56dd-bff4-e2e6770499d0'
@@ -1299,6 +1421,7 @@
   automation_id: 7516
   version_id: 7516
   contact_id: 7504
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: '9c0ed87f-4a58-5815-8a3f-080b7b27792b'
@@ -1309,6 +1432,7 @@
   automation_id: 7517
   version_id: 7517
   contact_id: 7504
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: 'fb198dcc-e05d-5605-9234-ca6d8c5bb554'
@@ -1319,6 +1443,7 @@
   automation_id: 7518
   version_id: 7518
   contact_id: 7504
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: 'f396644b-153c-5b3e-af33-ae7a0dcec62d'
@@ -1329,6 +1454,7 @@
   automation_id: 7519
   version_id: 7519
   contact_id: 2
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: '7a3f1b17-c5a1-5188-823f-530e47479389'
@@ -1339,6 +1465,7 @@
   automation_id: 7519
   version_id: 7519
   contact_id: 810
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: '7a3f1b17-c5a1-5188-823f-530e47479389'
@@ -1349,6 +1476,7 @@
   automation_id: 7519
   version_id: 7519
   contact_id: 7505
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: '7a3f1b17-c5a1-5188-823f-530e47479389'
@@ -1359,6 +1487,7 @@
   automation_id: 7520
   version_id: 7520
   contact_id: 2
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: '6760b6b3-f12e-5e06-9ea9-c72ba0e0708f'
@@ -1369,6 +1498,7 @@
   automation_id: 7521
   version_id: 7521
   contact_id: 7504
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: 'd7656dd2-b7d5-5f2d-9cf0-c7e46eed7845'
@@ -1379,6 +1509,7 @@
   automation_id: 7522
   version_id: 7522
   contact_id: 7504
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: 'bb0a20b9-5ad9-51c8-b149-01d656dadba2'
@@ -1389,6 +1520,7 @@
   automation_id: 7523
   version_id: 7523
   contact_id: 7504
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: '6c90e8d6-e31e-50e2-b2da-404fce424d8e'
@@ -1399,6 +1531,7 @@
   automation_id: 7524
   version_id: 7524
   contact_id: 7504
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: '6bff6db5-e42d-5908-91ef-9d6bf6c77029'
@@ -1412,6 +1545,7 @@
     automation_id: 7406,
     version_id: 7410,
     contact_id: 7400,
+    ordinal: 1,
     workspace_id: 83,
     status: active,
     current_step_id: '869ddbf7-26ec-5702-964e-22500550002a',
@@ -1425,6 +1559,7 @@
     automation_id: 7400,
     version_id: 7400,
     contact_id: 7401,
+    ordinal: 1,
     workspace_id: 83,
     status: failed,
     current_step_id: 'b0c990c1-9321-59ea-a0c0-8bd43a1dc468',
@@ -1438,6 +1573,7 @@
     automation_id: 7400,
     version_id: 7400,
     contact_id: 7402,
+    ordinal: 1,
     workspace_id: 83,
     status: failed,
     current_step_id: 'b0c990c1-9321-59ea-a0c0-8bd43a1dc468',
@@ -1451,6 +1587,7 @@
     automation_id: 7400,
     version_id: 7400,
     contact_id: 7403,
+    ordinal: 1,
     workspace_id: 83,
     status: failed,
     current_step_id: 'b0c990c1-9321-59ea-a0c0-8bd43a1dc468',
@@ -1464,6 +1601,7 @@
     automation_id: 7405,
     version_id: 7408,
     contact_id: 7401,
+    ordinal: 1,
     workspace_id: 83,
     status: failed,
     current_step_id: 'a03540d1-893c-56cf-a1b3-1aca3b32baff',
@@ -1479,6 +1617,7 @@
   automation_id: 5568
   version_id: 5568
   contact_id: 1
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: '11bbd2a8-1c74-5ea8-8d63-b2bb27f4f0c6'
@@ -1489,6 +1628,7 @@
   automation_id: 5568
   version_id: 5568
   contact_id: 5560
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: '11bbd2a8-1c74-5ea8-8d63-b2bb27f4f0c6'
@@ -1499,6 +1639,7 @@
   automation_id: 5568
   version_id: 5568
   contact_id: 109
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: '11bbd2a8-1c74-5ea8-8d63-b2bb27f4f0c6'
@@ -1509,6 +1650,7 @@
   automation_id: 5568
   version_id: 5568
   contact_id: 121
+  ordinal: 1
   workspace_id: 1
   status: active
   current_step_id: '11bbd2a8-1c74-5ea8-8d63-b2bb27f4f0c6'
@@ -1522,6 +1664,7 @@
   automation_id: 7650
   version_id: 7650
   contact_id: 7650
+  ordinal: 1
   workspace_id: 92
   status: active
   current_step_id: '01900000-0000-0000-0000-000000000001'
@@ -1532,6 +1675,7 @@
   automation_id: 7651
   version_id: 7651
   contact_id: 7650
+  ordinal: 1
   workspace_id: 92
   status: active
   current_step_id: '01900000-0000-0000-0000-000000000001'
@@ -1544,6 +1688,7 @@
   automation_id: 7652
   version_id: 7652
   contact_id: 7650
+  ordinal: 1
   workspace_id: 92
   status: active
   current_step_id: '01900000-0000-0000-0000-000000000001'
@@ -1554,6 +1699,7 @@
   automation_id: 7653
   version_id: 7653
   contact_id: 7650
+  ordinal: 1
   workspace_id: 92
   status: active
   current_step_id: '01900000-0000-0000-0000-000000000001'
@@ -1564,6 +1710,7 @@
   automation_id: 7654
   version_id: 7654
   contact_id: 7650
+  ordinal: 1
   workspace_id: 92
   status: active
   current_step_id: '01900000-0000-0000-0000-000000000001'
@@ -1577,6 +1724,7 @@
   automation_id: 9904
   version_id: 9904
   contact_id: 9900
+  ordinal: 1
   workspace_id: 99
   status: active
   current_step_id: 'f33e81f9-3cb6-4901-adaa-330def6e8b41'
@@ -1584,3 +1732,32 @@
   began_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
+# Repeat purchase (15540, under `again`): Alice's two Enrollments, one after the other.
+- {
+    id: 15540, # fixture: AutomationRunRepeatPurchaseFirst
+    automation_id: 15540,
+    version_id: 15540,
+    contact_id: 1,
+    ordinal: 1,
+    workspace_id: 1,
+    status: exited,
+    current_step_id: '6f4b2f8e-6c1e-5a43-9d1c-15540a000002',
+    began_at: '{{daysAgo 10}}',
+    ended_at: '{{daysAgo 9}}',
+    created_at: '{{daysAgo 10}}',
+    updated_at: '{{daysAgo 9}}',
+  }
+- {
+    id: 15541, # fixture: AutomationRunRepeatPurchaseSecond
+    automation_id: 15540,
+    version_id: 15540,
+    contact_id: 1,
+    ordinal: 2,
+    workspace_id: 1,
+    status: completed,
+    current_step_id: '6f4b2f8e-6c1e-5a43-9d1c-15540a000002',
+    began_at: '{{daysAgo 4}}',
+    ended_at: '{{daysAgo 3}}',
+    created_at: '{{daysAgo 4}}',
+    updated_at: '{{daysAgo 3}}',
+  }

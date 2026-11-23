@@ -88,6 +88,7 @@ func (c *InputsImpl) AutomationCreate(source *site.CreateAutomationInput) (autom
 			return automationsCreateInput, err
 		}
 		automationsCreateInput.Trigger = eventmatcherMatcher
+		automationsCreateInput.Entry = automationEntryIn((*source).Trigger)
 		if (*source).ExitEvents != nil {
 			automationsCreateInput.ExitEvents = make([]string, len((*source).ExitEvents))
 			for i := 0; i < len((*source).ExitEvents); i++ {
@@ -145,6 +146,7 @@ func (c *InputsImpl) AutomationUpdate(source *site.UpdateAutomationInput) (autom
 			return automationsUpdateInput, err
 		}
 		automationsUpdateInput.Trigger = pEventmatcherMatcher
+		automationsUpdateInput.Entry = automationEntryPtrIn((*source).Trigger)
 		automationsUpdateInput.ExitEvents = listPtrIn((*source).ExitEvents)
 		automationsUpdateInput.GoalEvent = nilStringPatch((*source).GoalEvent)
 		automationsUpdateInput.Steps = automationPathPtrIn(c, (*source).Steps)

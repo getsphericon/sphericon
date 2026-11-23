@@ -54,10 +54,12 @@ func (AutomationSkippedEntry) Fields() []ent.Field {
 			Immutable(),
 		// Why the entry was refused, by the first entry check that refused it: `cycle` (the chain
 		// that caused it passed through the Automation already), `active_enrollment` (an
-		// Enrollment of the Contact was active at the Event's moment) or `once` (the Contact had
-		// an Enrollment in the Automation before).
+		// Enrollment of the Contact was active at the Event's moment, or is active still), `once`
+		// (the Contact had an Enrollment in the Automation before, under the `once` Entry policy)
+		// or `cooldown` (under `again`, the cooldown from another Enrollment's beginning had not
+		// passed).
 		field.Enum("reason").
-			Values("cycle", "active_enrollment", "once").
+			Values("cycle", "active_enrollment", "once", "cooldown").
 			Immutable(),
 		// When the entry would have begun, as an Enrollment's began_at: the occurred_at of its Event
 		// (of the Event the Rule fired on). The report counts it on this moment's Report day.

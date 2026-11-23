@@ -294,6 +294,18 @@ const (
 	RuleTriggerEventsMinItems = 1
 )
 
+// EntryCooldown is the least time in seconds from the beginning of a Contact's previous Enrollment in an Automation to the next (ADR 0127).
+// From site EntryCooldown.
+const (
+	EntryCooldownMin = 3600
+)
+
+// TriggerCooldown is the cooldown of an Event Trigger written without one (ADR 0127).
+// From site EventTriggerInput.cooldown.
+const (
+	TriggerCooldownDefault = 3600
+)
+
 // ConditionWithinDays is how many days back a condition looks: an Event count's window or a moment's within the last days.
 // From site EventLeafInput.withinDays, site WithinLastTestInput.days.
 const (
@@ -405,6 +417,8 @@ var Owners = map[string][]string{
 	"IdentifyLocaleMaxLength":            {"internal/usecase/visitoridentification"},
 	"ConsentDestinationMaxLength":        {"Confirmation", "Suppression", "Unsubscribe"},
 	"RuleTriggerEventsMinItems":          {"Rule"},
+	"EntryCooldownMin":                   {"AutomationVersion"},
+	"TriggerCooldownDefault":             {"AutomationVersion"},
 	"ConditionWithinDaysMin":             {"internal/domain/contacts/condition"},
 	"ConditionEventTimesMin":             {"internal/domain/contacts/condition"},
 	"SigningSecretPattern":               {"internal/infra/httpcall"},
