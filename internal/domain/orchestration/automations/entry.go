@@ -186,6 +186,7 @@ func judgeEntry(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, co
 		return entry{}, err
 	}
 	all := lo.Reject(runs, func(run *ent.AutomationRun, _ int) bool { return o.Cause.made(run) })
+	others := lo.Filter(all, func(run *ent.AutomationRun, _ int) bool { return optional.Equal(run.KeyValue, o.KeyValue) })
 	c := entryCase{
 		automationID: v.AutomationID,
 		policy:       v.EntryPolicy,
@@ -194,7 +195,7 @@ func judgeEntry(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, co
 		keyValue:     o.KeyValue,
 		chain:        o.Chain,
 		at:           o.OccurredAt,
-		others:       lo.Filter(all, func(run *ent.AutomationRun, _ int) bool { return optional.Equal(run.KeyValue, o.KeyValue) }),
+		others:       others,
 		all:          all,
 	}
 	next := entry{ordinal: 1}
@@ -207,7 +208,8 @@ func judgeEntry(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, co
 		return next, nil
 	}
 	for _, check := range entryChecks {
-		if reason, skipped := check(c); skipped {
+		reason, skipped := check(c)
+		if skipped {
 			return entry{reason: reason, skipped: true}, nil
 		}
 	}
