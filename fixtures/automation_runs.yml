@@ -1761,3 +1761,34 @@
     created_at: '{{daysAgo 4}}',
     updated_at: '{{daysAgo 3}}',
   }
+# Order series (15550, keyed by order_id): Alice's Enrollments for orders A and B, both waiting.
+- {
+    id: 15550, # fixture: AutomationRunOrderSeriesA
+    automation_id: 15550,
+    version_id: 15550,
+    contact_id: 1,
+    ordinal: 1,
+    key_value: A,
+    workspace_id: 1,
+    status: active,
+    current_step_id: '6f4b2f8e-6c1e-5a43-9d1c-15550a000002',
+    resume_at: '{{daysAhead 28}}',
+    began_at: '{{daysAgo 2}}',
+    created_at: '{{daysAgo 2}}',
+    updated_at: '{{daysAgo 2}}',
+  }
+- {
+    id: 15551, # fixture: AutomationRunOrderSeriesB
+    automation_id: 15550,
+    version_id: 15550,
+    contact_id: 1,
+    ordinal: 2,
+    key_value: B,
+    workspace_id: 1,
+    status: active,
+    current_step_id: '6f4b2f8e-6c1e-5a43-9d1c-15550a000002',
+    resume_at: '{{daysAhead 29}}',
+    began_at: '{{daysAgo 1}}',
+    created_at: '{{daysAgo 1}}',
+    updated_at: '{{daysAgo 1}}',
+  }

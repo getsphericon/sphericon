@@ -493,6 +493,12 @@ const (
 	AutomationOnboardingDripVersion1ID = 106
 	// AutomationOnboardingDripVersion2ID is from fixtures/automation_versions.
 	AutomationOnboardingDripVersion2ID = 1060
+	// AutomationOrderSeriesID is from fixtures/automations.
+	AutomationOrderSeriesID = 15550
+	// AutomationOrderSeriesName is from fixtures/automations.
+	AutomationOrderSeriesName = "Order series"
+	// AutomationOrderSeriesVersionID is from fixtures/automation_versions.
+	AutomationOrderSeriesVersionID = 15550
 	// AutomationOuroborosGoalID is from fixtures/automations.
 	AutomationOuroborosGoalID = 15537
 	// AutomationOuroborosGoalName is from fixtures/automations.
@@ -693,6 +699,10 @@ const (
 	AutomationRunOnboardingOnVersion1ID = 1200
 	// AutomationRunOnboardingOnVersion2ID is from fixtures/automation_runs.
 	AutomationRunOnboardingOnVersion2ID = 1202
+	// AutomationRunOrderSeriesAID is from fixtures/automation_runs.
+	AutomationRunOrderSeriesAID = 15550
+	// AutomationRunOrderSeriesBID is from fixtures/automation_runs.
+	AutomationRunOrderSeriesBID = 15551
 	// AutomationRunQuahogHookEventID is from fixtures/automation_runs.
 	AutomationRunQuahogHookEventID = 7651
 	// AutomationRunQuahogHookID is from fixtures/automation_runs.

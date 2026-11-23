@@ -2,11 +2,12 @@ import type { JsonFormsRendererExtension } from '@workflowbuilder/sdk'
 
 import { appRenderer } from './appRenderer.ts'
 import { ExitEventsControl, GoalEventControl } from './EndEventControls.tsx'
-import { CooldownControl, EntryPolicyControl } from './EntryControls.tsx'
+import { CooldownControl, EnrollmentKeyControl, EntryPolicyControl } from './EntryControls.tsx'
 import { TriggerControl } from './TriggerControl.tsx'
 import { TriggerFilterControl } from './TriggerFilterControl.tsx'
 import {
   COOLDOWN_FORMAT,
+  ENROLLMENT_KEY_FORMAT,
   ENTRY_POLICY_FORMAT,
   EXIT_EVENTS_FORMAT,
   GOAL_EVENT_FORMAT,
@@ -37,4 +38,8 @@ export const entryPolicyRenderer: JsonFormsRendererExtension = appRenderer(
 export const cooldownRenderer: JsonFormsRendererExtension = appRenderer(
   COOLDOWN_FORMAT,
   CooldownControl,
+)
+export const enrollmentKeyRenderer: JsonFormsRendererExtension = appRenderer(
+  ENROLLMENT_KEY_FORMAT,
+  EnrollmentKeyControl,
 )

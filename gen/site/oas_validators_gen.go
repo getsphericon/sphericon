@@ -9615,6 +9615,29 @@ func (s *SiteEventActionsResult) Validate() error {
 	return nil
 }
 
+func (s *SiteEventPropertyKeysResult) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if s.Keys == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "keys",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s *SiteEventsListOK) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -13271,6 +13294,8 @@ func (s *SiteWorkspaceTimezoneInput) Validate() error {
 
 func (s SkippedEntryReason) Validate() error {
 	switch s {
+	case "no_enrollment_key":
+		return nil
 	case "cycle":
 		return nil
 	case "active_enrollment":
@@ -13278,6 +13303,8 @@ func (s SkippedEntryReason) Validate() error {
 	case "once":
 		return nil
 	case "cooldown":
+		return nil
+	case "enrollment_ceiling":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

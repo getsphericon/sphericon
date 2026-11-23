@@ -604,6 +604,9 @@ func ScopedEntities() []*ScopedEntity {
 				}
 				b.SetEntryPolicy(src.EntryPolicy)
 				b.SetCooldownSeconds(src.CooldownSeconds)
+				if src.EnrollmentKey != nil {
+					b.SetEnrollmentKey(*src.EnrollmentKey)
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

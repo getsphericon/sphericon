@@ -126,6 +126,55 @@ func (w *Workspace) PublishHTTPAutomation(a HTTPAutomation) {
 	require.Equal(w.t, externalapi.AutomationStatusActive, got.Status)
 }
 
+// KeyedAutomation is what a scenario chooses about an Automation keyed by an Event property (ADR
+// 0165): one email step, then a month's wait that keeps each Enrollment active, ended early by the
+// exit event.
+type KeyedAutomation struct {
+	TriggerEvent string
+	// Key is the property of the trigger event each Enrollment runs for, one per value.
+	Key       string
+	ExitEvent string
+	// Subject may name the Enrollment's event (`{{ event.properties.order_id }}`).
+	Subject string
+}
+
+// PublishKeyedAutomation creates the keyed Automation and publishes it. It returns its id.
+func (w *Workspace) PublishKeyedAutomation(a KeyedAutomation) externalapi.EntityId {
+	w.t.Helper()
+	ctx := w.t.Context()
+	res, err := w.api.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
+		Name: externalapi.Name("e2e keyed automation " + uniq()),
+		Trigger: externalapi.AutomationTriggerInput{OneOf: externalapi.NewEventTriggerInputAutomationTriggerInputSum(externalapi.EventTriggerInput{
+			Kind: externalapi.EventTriggerInputKindEvent, Action: a.TriggerEvent, EnrollmentKey: externalapi.NewOptString(a.Key),
+		})},
+		ExitEvents: []externalapi.EventMatcherInput{{Action: a.ExitEvent}},
+		Steps: rootPath(
+			emailStep(externalapi.EmailStepInput{Subject: a.Subject, Body: externalapi.NewOptString(HTML("Thank you for your order"))}),
+			externalapi.AutomationStepInput{OneOf: externalapi.NewWaitStepInputAutomationStepInputSum(externalapi.WaitStepInput{
+				Type: externalapi.WaitStepInputTypeWait, Seconds: 30 * 24 * 3600,
+			})},
+		),
+	})
+	created := ok[externalapi.AutomationResource](w.t, "create keyed automation", res, err)
+	published, err := w.api.AutomationsPublish(ctx, &externalapi.RevisionInput{Revision: created.Revision}, externalapi.AutomationsPublishParams{ID: created.ID})
+	got := ok[externalapi.AutomationResource](w.t, "publish keyed automation", published, err)
+	require.Equal(w.t, externalapi.AutomationStatusActive, got.Status)
+	return got.ID
+}
+
+// EnrollmentsByKey is the status of each Enrollment of the Automation, by its key value, read
+// through the public API.
+func (w *Workspace) EnrollmentsByKey(automationID externalapi.EntityId) map[string]externalapi.EnrollmentStatus {
+	w.t.Helper()
+	listed, err := w.api.EnrollmentsList(w.t.Context(), externalapi.EnrollmentsListParams{AutomationId: automationID})
+	require.NoError(w.t, err, "list enrollments")
+	byKey := map[string]externalapi.EnrollmentStatus{}
+	for i := range listed.Items {
+		byKey[listed.Items[i].KeyValue.Or("")] = listed.Items[i].Status
+	}
+	return byKey
+}
+
 // rootPath is a version's Steps as a write sends them: the root path, its id and theirs left to
 // the server.
 func rootPath(steps ...externalapi.AutomationStepInput) externalapi.OptAutomationPathInput {
@@ -146,6 +195,28 @@ func (w *Workspace) RecordEvent(email, action string) {
 			SubjectId: "subject-" + email,
 			Action:    action,
 			Email:     externalapi.NewOptNilEmailAddress(externalapi.EmailAddress(email)),
+		}},
+	})
+	require.NoError(w.t, err, "record event")
+}
+
+// RecordEventWith records an event with the properties for the Contact with the given email
+// through the public API, each property a string. Ingest is accept-then-process: observe the effect
+// with Inbox.Wait.
+func (w *Workspace) RecordEventWith(email, action string, properties map[string]string) {
+	w.t.Helper()
+	props := externalapi.JsonObject{}
+	for key, value := range properties {
+		raw, err := json.Marshal(value)
+		require.NoError(w.t, err)
+		props[key] = raw
+	}
+	err := w.api.EventsCreate(w.t.Context(), &externalapi.RecordEventsInput{
+		Events: []externalapi.EventInput{{
+			SubjectId:  "subject-" + email,
+			Action:     action,
+			Email:      externalapi.NewOptNilEmailAddress(externalapi.EmailAddress(email)),
+			Properties: externalapi.NewOptNilJsonObject(props),
 		}},
 	})
 	require.NoError(w.t, err, "record event")

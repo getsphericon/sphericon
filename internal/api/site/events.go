@@ -47,3 +47,13 @@ func (h *Handlers) SiteEventsActions(ctx context.Context, _ siteapi.SiteEventsAc
 	}
 	return &siteapi.SiteEventActionsResult{Actions: actions}, nil
 }
+
+// SiteEventsPropertyKeys returns the property keys of the action's most recent events, distinct
+// and sorted: the Enrollment key picker's suggestions (ADR 0165).
+func (h *Handlers) SiteEventsPropertyKeys(ctx context.Context, params siteapi.SiteEventsPropertyKeysParams) (*siteapi.SiteEventPropertyKeysResult, error) {
+	keys, err := events.PropertyKeys(ctx, workspaceScope(ctx), params.Action)
+	if err != nil {
+		return nil, err
+	}
+	return &siteapi.SiteEventPropertyKeysResult{Keys: keys}, nil
+}

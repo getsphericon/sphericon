@@ -47,6 +47,8 @@ type AutomationVersion struct {
 	EntryPolicy automationversion.EntryPolicy `json:"entry_policy,omitempty"`
 	// CooldownSeconds holds the value of the "cooldown_seconds" field.
 	CooldownSeconds int `json:"cooldown_seconds,omitempty"`
+	// EnrollmentKey holds the value of the "enrollment_key" field.
+	EnrollmentKey *string `json:"enrollment_key,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AutomationVersionQuery when eager-loading is set.
 	Edges        AutomationVersionEdges `json:"edges"`
@@ -106,7 +108,7 @@ func (*AutomationVersion) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case automationversion.FieldID, automationversion.FieldWorkspaceID, automationversion.FieldAutomationID, automationversion.FieldVersion, automationversion.FieldCooldownSeconds:
 			values[i] = new(sql.NullInt64)
-		case automationversion.FieldTriggerAction, automationversion.FieldEntryPolicy:
+		case automationversion.FieldTriggerAction, automationversion.FieldEntryPolicy, automationversion.FieldEnrollmentKey:
 			values[i] = new(sql.NullString)
 		case automationversion.FieldCreatedAt, automationversion.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -211,6 +213,13 @@ func (_m *AutomationVersion) assignValues(columns []string, values []any) error 
 			} else if value.Valid {
 				_m.CooldownSeconds = int(value.Int64)
 			}
+		case automationversion.FieldEnrollmentKey:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field enrollment_key", values[i])
+			} else if value.Valid {
+				_m.EnrollmentKey = new(string)
+				*_m.EnrollmentKey = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -297,6 +306,11 @@ func (_m *AutomationVersion) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("cooldown_seconds=")
 	builder.WriteString(fmt.Sprintf("%v", _m.CooldownSeconds))
+	builder.WriteString(", ")
+	if v := _m.EnrollmentKey; v != nil {
+		builder.WriteString("enrollment_key=")
+		builder.WriteString(*v)
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -2588,6 +2588,10 @@ type AutomationSkippedCounts struct {
 	Once int32 `json:"once"`
 	// Entries sooner after the beginning of the contact's previous enrollment than the cooldown.
 	Cooldown int32 `json:"cooldown"`
+	// Entries whose Event lacked the property the automation's Enrollment key names.
+	NoEnrollmentKey int32 `json:"noEnrollmentKey"`
+	// Entries of a contact that had 10 active enrollments in the keyed automation, or 10 begun in a day.
+	EnrollmentCeiling int32 `json:"enrollmentCeiling"`
 }
 
 // GetCycle returns the value of Cycle.
@@ -2610,6 +2614,16 @@ func (s *AutomationSkippedCounts) GetCooldown() int32 {
 	return s.Cooldown
 }
 
+// GetNoEnrollmentKey returns the value of NoEnrollmentKey.
+func (s *AutomationSkippedCounts) GetNoEnrollmentKey() int32 {
+	return s.NoEnrollmentKey
+}
+
+// GetEnrollmentCeiling returns the value of EnrollmentCeiling.
+func (s *AutomationSkippedCounts) GetEnrollmentCeiling() int32 {
+	return s.EnrollmentCeiling
+}
+
 // SetCycle sets the value of Cycle.
 func (s *AutomationSkippedCounts) SetCycle(val int32) {
 	s.Cycle = val
@@ -2628,6 +2642,16 @@ func (s *AutomationSkippedCounts) SetOnce(val int32) {
 // SetCooldown sets the value of Cooldown.
 func (s *AutomationSkippedCounts) SetCooldown(val int32) {
 	s.Cooldown = val
+}
+
+// SetNoEnrollmentKey sets the value of NoEnrollmentKey.
+func (s *AutomationSkippedCounts) SetNoEnrollmentKey(val int32) {
+	s.NoEnrollmentKey = val
+}
+
+// SetEnrollmentCeiling sets the value of EnrollmentCeiling.
+func (s *AutomationSkippedCounts) SetEnrollmentCeiling(val int32) {
+	s.EnrollmentCeiling = val
 }
 
 // Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody.
@@ -10185,6 +10209,9 @@ type EnrollmentResource struct {
 	// Which of the contact's enrollments in the automation it is: 1 for the first, plus one for each after
 	// it, an enrollment that ended as it was made included.
 	Ordinal int32 `json:"ordinal"`
+	// The value of the automation's Enrollment key the triggering Event carried, the property's string
+	// form (ADR 0165); absent for an automation with no key.
+	KeyValue OptString `json:"keyValue"`
 	// Id of the Step of its version the Enrollment stands on (ADR 0122): a wait while it waits, the Step
 	// it ended on once it ended; absent only for a version of no Steps.
 	CurrentStepId OptStepId `json:"currentStepId"`
@@ -10221,6 +10248,11 @@ func (s *EnrollmentResource) GetStatus() EnrollmentStatus {
 // GetOrdinal returns the value of Ordinal.
 func (s *EnrollmentResource) GetOrdinal() int32 {
 	return s.Ordinal
+}
+
+// GetKeyValue returns the value of KeyValue.
+func (s *EnrollmentResource) GetKeyValue() OptString {
+	return s.KeyValue
 }
 
 // GetCurrentStepId returns the value of CurrentStepId.
@@ -10271,6 +10303,11 @@ func (s *EnrollmentResource) SetStatus(val EnrollmentStatus) {
 // SetOrdinal sets the value of Ordinal.
 func (s *EnrollmentResource) SetOrdinal(val int32) {
 	s.Ordinal = val
+}
+
+// SetKeyValue sets the value of KeyValue.
+func (s *EnrollmentResource) SetKeyValue(val OptString) {
+	s.KeyValue = val
 }
 
 // SetCurrentStepId sets the value of CurrentStepId.
@@ -10433,7 +10470,8 @@ type EntryCooldown int32
 // Whether an automation enrolls a contact again (ADR 0127): `once` enrolls a contact at most once,
 // ever; `again` enrolls it again once its previous enrollment ended, however it ended, and the
 // cooldown from that enrollment's beginning passed. Either way a contact has at most one active
-// enrollment in an automation.
+// enrollment in an automation, or one per value of its Enrollment key, by which the policy and the
+// cooldown then count.
 // Ref: #/components/schemas/EntryPolicy
 type EntryPolicy string
 
@@ -11406,6 +11444,13 @@ type EventTrigger struct {
 	// Under `again`, the least time in seconds from the beginning of a contact's previous enrollment to
 	// the next; an entry sooner is skipped as `cooldown`.
 	Cooldown EntryCooldown `json:"cooldown"`
+	// The Enrollment key (ADR 0165): a property of the triggering Event, such as `order_id`, by whose
+	// value a contact may have several active enrollments at once, one per value; the entry policy and the
+	// cooldown count per value. An Event without the property enrolls no one and is skipped as
+	// `no_enrollment_key`; a contact has at most 10 active enrollments and 10 begun in a day, past which
+	// an entry is skipped as `enrollment_ceiling`. An exit or goal Event carrying the property ends only
+	// the enrollment of its value. Absent, a contact has one active enrollment.
+	EnrollmentKey OptString `json:"enrollmentKey"`
 }
 
 // GetKind returns the value of Kind.
@@ -11433,6 +11478,11 @@ func (s *EventTrigger) GetCooldown() EntryCooldown {
 	return s.Cooldown
 }
 
+// GetEnrollmentKey returns the value of EnrollmentKey.
+func (s *EventTrigger) GetEnrollmentKey() OptString {
+	return s.EnrollmentKey
+}
+
 // SetKind sets the value of Kind.
 func (s *EventTrigger) SetKind(val EventTriggerKind) {
 	s.Kind = val
@@ -11458,6 +11508,11 @@ func (s *EventTrigger) SetCooldown(val EntryCooldown) {
 	s.Cooldown = val
 }
 
+// SetEnrollmentKey sets the value of EnrollmentKey.
+func (s *EventTrigger) SetEnrollmentKey(val OptString) {
+	s.EnrollmentKey = val
+}
+
 // A Trigger that enrolls a Contact on an Event (ADR 0133), as a request writes it.
 // Ref: #/components/schemas/EventTriggerInput
 type EventTriggerInput struct {
@@ -11475,6 +11530,10 @@ type EventTriggerInput struct {
 	// Under `again`, the least time in seconds from the beginning of a contact's previous enrollment to
 	// the next, at least 3600; omitted is 3600.
 	Cooldown OptInt32 `json:"cooldown"`
+	// The Enrollment key (ADR 0165): the name of a property of the triggering Event, such as `order_id`,
+	// by whose value a contact may have several active enrollments at once, one per value; a property
+	// name, checked for form only. Omitted, a contact has one active enrollment.
+	EnrollmentKey OptString `json:"enrollmentKey"`
 }
 
 // GetKind returns the value of Kind.
@@ -11502,6 +11561,11 @@ func (s *EventTriggerInput) GetCooldown() OptInt32 {
 	return s.Cooldown
 }
 
+// GetEnrollmentKey returns the value of EnrollmentKey.
+func (s *EventTriggerInput) GetEnrollmentKey() OptString {
+	return s.EnrollmentKey
+}
+
 // SetKind sets the value of Kind.
 func (s *EventTriggerInput) SetKind(val EventTriggerInputKind) {
 	s.Kind = val
@@ -11525,6 +11589,11 @@ func (s *EventTriggerInput) SetEntryPolicy(val OptEventTriggerInputEntryPolicy) 
 // SetCooldown sets the value of Cooldown.
 func (s *EventTriggerInput) SetCooldown(val OptInt32) {
 	s.Cooldown = val
+}
+
+// SetEnrollmentKey sets the value of EnrollmentKey.
+func (s *EventTriggerInput) SetEnrollmentKey(val OptString) {
+	s.EnrollmentKey = val
 }
 
 // Merged schema.
@@ -22853,35 +22922,44 @@ func (s *SkippedEntriesListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
-// Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127):
-// `cycle` (the chain of events that caused it already passed through the automation),
-// `active_enrollment` (the triggering Event occurred while an enrollment of the contact was active, or
-// one is active still), `once` (the contact had an enrollment in the automation before, under the
-// `once` entry policy) or `cooldown` (under `again`, the cooldown from the beginning of the contact's
-// previous enrollment had not passed).
+// Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127, ADR
+// 0165), in their order: `no_enrollment_key` (the automation has an Enrollment key and the triggering
+// Event lacks its property), `cycle` (the chain of events that caused it already passed through the
+// automation), `active_enrollment` (the triggering Event occurred while an enrollment of the contact
+// for the key value was active, or one is active still), `once` (the contact had an enrollment for the
+// key value in the automation before, under the `once` entry policy), `cooldown` (under `again`, the
+// cooldown from the beginning of the contact's previous enrollment for the key value had not passed)
+// or `enrollment_ceiling` (the keyed automation's contact had 10 active enrollments, or 10 begun in a
+// day).
 // Ref: #/components/schemas/SkippedEntryReason
 type SkippedEntryReason string
 
 const (
-	SkippedEntryReasonCycle            SkippedEntryReason = "cycle"
-	SkippedEntryReasonActiveEnrollment SkippedEntryReason = "active_enrollment"
-	SkippedEntryReasonOnce             SkippedEntryReason = "once"
-	SkippedEntryReasonCooldown         SkippedEntryReason = "cooldown"
+	SkippedEntryReasonNoEnrollmentKey   SkippedEntryReason = "no_enrollment_key"
+	SkippedEntryReasonCycle             SkippedEntryReason = "cycle"
+	SkippedEntryReasonActiveEnrollment  SkippedEntryReason = "active_enrollment"
+	SkippedEntryReasonOnce              SkippedEntryReason = "once"
+	SkippedEntryReasonCooldown          SkippedEntryReason = "cooldown"
+	SkippedEntryReasonEnrollmentCeiling SkippedEntryReason = "enrollment_ceiling"
 )
 
 // AllValues returns all SkippedEntryReason values.
 func (SkippedEntryReason) AllValues() []SkippedEntryReason {
 	return []SkippedEntryReason{
+		SkippedEntryReasonNoEnrollmentKey,
 		SkippedEntryReasonCycle,
 		SkippedEntryReasonActiveEnrollment,
 		SkippedEntryReasonOnce,
 		SkippedEntryReasonCooldown,
+		SkippedEntryReasonEnrollmentCeiling,
 	}
 }
 
 // MarshalText implements encoding.TextMarshaler.
 func (s SkippedEntryReason) MarshalText() ([]byte, error) {
 	switch s {
+	case SkippedEntryReasonNoEnrollmentKey:
+		return []byte(s), nil
 	case SkippedEntryReasonCycle:
 		return []byte(s), nil
 	case SkippedEntryReasonActiveEnrollment:
@@ -22889,6 +22967,8 @@ func (s SkippedEntryReason) MarshalText() ([]byte, error) {
 	case SkippedEntryReasonOnce:
 		return []byte(s), nil
 	case SkippedEntryReasonCooldown:
+		return []byte(s), nil
+	case SkippedEntryReasonEnrollmentCeiling:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -22898,6 +22978,9 @@ func (s SkippedEntryReason) MarshalText() ([]byte, error) {
 // UnmarshalText implements encoding.TextUnmarshaler.
 func (s *SkippedEntryReason) UnmarshalText(data []byte) error {
 	switch SkippedEntryReason(data) {
+	case SkippedEntryReasonNoEnrollmentKey:
+		*s = SkippedEntryReasonNoEnrollmentKey
+		return nil
 	case SkippedEntryReasonCycle:
 		*s = SkippedEntryReasonCycle
 		return nil
@@ -22909,6 +22992,9 @@ func (s *SkippedEntryReason) UnmarshalText(data []byte) error {
 		return nil
 	case SkippedEntryReasonCooldown:
 		*s = SkippedEntryReasonCooldown
+		return nil
+	case SkippedEntryReasonEnrollmentCeiling:
+		*s = SkippedEntryReasonEnrollmentCeiling
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

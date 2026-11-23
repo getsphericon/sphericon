@@ -169,6 +169,26 @@ func (_u *AutomationVersionUpdate) AddCooldownSeconds(v int) *AutomationVersionU
 	return _u
 }
 
+// SetEnrollmentKey sets the "enrollment_key" field.
+func (_u *AutomationVersionUpdate) SetEnrollmentKey(v string) *AutomationVersionUpdate {
+	_u.mutation.SetEnrollmentKey(v)
+	return _u
+}
+
+// SetNillableEnrollmentKey sets the "enrollment_key" field if the given value is not nil.
+func (_u *AutomationVersionUpdate) SetNillableEnrollmentKey(v *string) *AutomationVersionUpdate {
+	if v != nil {
+		_u.SetEnrollmentKey(*v)
+	}
+	return _u
+}
+
+// ClearEnrollmentKey clears the value of the "enrollment_key" field.
+func (_u *AutomationVersionUpdate) ClearEnrollmentKey() *AutomationVersionUpdate {
+	_u.mutation.ClearEnrollmentKey()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *AutomationVersionUpdate) SetWorkspace(v *Workspace) *AutomationVersionUpdate {
 	return _u.SetWorkspaceID(v.ID)
@@ -339,6 +359,12 @@ func (_u *AutomationVersionUpdate) sqlSave(ctx context.Context) (_node int, err 
 	}
 	if value, ok := _u.mutation.AddedCooldownSeconds(); ok {
 		_spec.AddField(automationversion.FieldCooldownSeconds, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.EnrollmentKey(); ok {
+		_spec.SetField(automationversion.FieldEnrollmentKey, field.TypeString, value)
+	}
+	if _u.mutation.EnrollmentKeyCleared() {
+		_spec.ClearField(automationversion.FieldEnrollmentKey, field.TypeString)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -598,6 +624,26 @@ func (_u *AutomationVersionUpdateOne) AddCooldownSeconds(v int) *AutomationVersi
 	return _u
 }
 
+// SetEnrollmentKey sets the "enrollment_key" field.
+func (_u *AutomationVersionUpdateOne) SetEnrollmentKey(v string) *AutomationVersionUpdateOne {
+	_u.mutation.SetEnrollmentKey(v)
+	return _u
+}
+
+// SetNillableEnrollmentKey sets the "enrollment_key" field if the given value is not nil.
+func (_u *AutomationVersionUpdateOne) SetNillableEnrollmentKey(v *string) *AutomationVersionUpdateOne {
+	if v != nil {
+		_u.SetEnrollmentKey(*v)
+	}
+	return _u
+}
+
+// ClearEnrollmentKey clears the value of the "enrollment_key" field.
+func (_u *AutomationVersionUpdateOne) ClearEnrollmentKey() *AutomationVersionUpdateOne {
+	_u.mutation.ClearEnrollmentKey()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *AutomationVersionUpdateOne) SetWorkspace(v *Workspace) *AutomationVersionUpdateOne {
 	return _u.SetWorkspaceID(v.ID)
@@ -798,6 +844,12 @@ func (_u *AutomationVersionUpdateOne) sqlSave(ctx context.Context) (_node *Autom
 	}
 	if value, ok := _u.mutation.AddedCooldownSeconds(); ok {
 		_spec.AddField(automationversion.FieldCooldownSeconds, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.EnrollmentKey(); ok {
+		_spec.SetField(automationversion.FieldEnrollmentKey, field.TypeString, value)
+	}
+	if _u.mutation.EnrollmentKeyCleared() {
+		_spec.ClearField(automationversion.FieldEnrollmentKey, field.TypeString)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

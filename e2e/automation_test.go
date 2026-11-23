@@ -4,8 +4,12 @@ package e2e
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	externalapi "github.com/getsphericon/sphericon/gen/external"
 
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
@@ -109,4 +113,34 @@ func TestOpenedAutomationEmailStartsAnotherAutomation(t *testing.T) {
 	})
 	w.OpenMail(second)
 	w.Inbox.Wait(Match{To: to, Subject: "Third email"})
+}
+
+// A series keyed by order_id runs once per order (ADR 0165): each order's Event enrolls its own
+// Enrollment, which sends its own message, and a cancel of one order ends only its series.
+func TestAKeyedSeriesSendsOneMessagePerOrderAndACancelEndsOnlyItsOwn(t *testing.T) {
+	t.Parallel()
+	w := env.NewWorkspace(t).Ready()
+	to := w.NewRecipient()
+	w.ImportContacts(to)
+	automationID := w.PublishKeyedAutomation(KeyedAutomation{
+		TriggerEvent: "e2e.order_placed",
+		Key:          "order_id",
+		ExitEvent:    "e2e.order_cancelled",
+		Subject:      "Order {{ event.properties.order_id }} confirmed",
+	})
+
+	w.RecordEventWith(to, "e2e.order_placed", map[string]string{"order_id": "A-1"})
+	w.RecordEventWith(to, "e2e.order_placed", map[string]string{"order_id": "B-2"})
+
+	assert.Equal(t, "Order A-1 confirmed", w.Inbox.Wait(Match{To: to, Subject: "Order A-1 confirmed"}).Subject)
+	assert.Equal(t, "Order B-2 confirmed", w.Inbox.Wait(Match{To: to, Subject: "Order B-2 confirmed"}).Subject)
+
+	w.RecordEventWith(to, "e2e.order_cancelled", map[string]string{"order_id": "A-1"})
+
+	want := map[string]externalapi.EnrollmentStatus{"A-1": externalapi.EnrollmentStatusExited, "B-2": externalapi.EnrollmentStatusActive}
+	require.Eventually(t, func() bool {
+		got := w.EnrollmentsByKey(automationID)
+		return got["A-1"] == want["A-1"] && got["B-2"] == want["B-2"]
+	}, EmailTimeout, 100*time.Millisecond, "the cancel of A-1 never ended its series alone")
+	assert.Equal(t, want, w.EnrollmentsByKey(automationID))
 }

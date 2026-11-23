@@ -519,8 +519,8 @@ func automationTriggerIn(t siteapi.AutomationTriggerInput) (eventmatcher.Matcher
 	return eventmatcher.Matcher{Action: ev.Action, Filter: filter}, nil
 }
 
-// automationEntryIn is the Entry policy a write gives with its Trigger, an Event Trigger's: an
-// omitted field is left to the module's default.
+// automationEntryIn is the Entry policy and the Enrollment key a write gives with its Trigger, an
+// Event Trigger's: an omitted field is left to the module's default, which for the key is none.
 func automationEntryIn(t siteapi.AutomationTriggerInput) automations.Entry {
 	if t.OneOf.Type != siteapi.EventTriggerInputAutomationTriggerInputSum {
 		return automations.Entry{}
@@ -532,6 +532,9 @@ func automationEntryIn(t siteapi.AutomationTriggerInput) automations.Entry {
 	}
 	if cooldown, ok := ev.Cooldown.Get(); ok {
 		e.CooldownSeconds = new(int(cooldown))
+	}
+	if key, ok := ev.EnrollmentKey.Get(); ok {
+		e.Key = &key
 	}
 	return e
 }

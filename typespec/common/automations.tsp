@@ -358,7 +358,8 @@ model AutomationPathInput {
 /** Whether an automation enrolls a contact again (ADR 0127): `once` enrolls a contact at most once,
  * ever; `again` enrolls it again once its previous enrollment ended, however it ended, and the
  * cooldown from that enrollment's beginning passed. Either way a contact has at most one active
- * enrollment in an automation. */
+ * enrollment in an automation, or one per value of its Enrollment key, by which the policy and the
+ * cooldown then count. */
 enum EntryPolicy {
   once,
   again,
@@ -391,6 +392,14 @@ model EventTrigger {
   /** Under `again`, the least time in seconds from the beginning of a contact's previous
    * enrollment to the next; an entry sooner is skipped as `cooldown` */
   cooldown: EntryCooldown;
+
+  /** The Enrollment key (ADR 0165): a property of the triggering Event, such as `order_id`, by
+   * whose value a contact may have several active enrollments at once, one per value; the entry
+   * policy and the cooldown count per value. An Event without the property enrolls no one and is
+   * skipped as `no_enrollment_key`; a contact has at most 10 active enrollments and 10 begun in a
+   * day, past which an entry is skipped as `enrollment_ceiling`. An exit or goal Event carrying the
+   * property ends only the enrollment of its value. Absent, a contact has one active enrollment. */
+  enrollmentKey?: string;
 }
 
 /** A Trigger that enrolls a Contact on an Event (ADR 0133), as a request writes it */
@@ -413,6 +422,11 @@ model EventTriggerInput {
   /** Under `again`, the least time in seconds from the beginning of a contact's previous
    * enrollment to the next, at least 3600; omitted is 3600 */
   cooldown?: EntryCooldown = 3600;
+
+  /** The Enrollment key (ADR 0165): the name of a property of the triggering Event, such as
+   * `order_id`, by whose value a contact may have several active enrollments at once, one per
+   * value; a property name, checked for form only. Omitted, a contact has one active enrollment. */
+  enrollmentKey?: string;
 }
 
 /** What enrolls a Contact in an automation, by `kind`: an Event matcher */
@@ -587,6 +601,13 @@ model AutomationSkippedCounts {
 
   /** Entries sooner after the beginning of the contact's previous enrollment than the cooldown */
   cooldown: int32;
+
+  /** Entries whose Event lacked the property the automation's Enrollment key names */
+  noEnrollmentKey: int32;
+
+  /** Entries of a contact that had 10 active enrollments in the keyed automation, or 10 begun in a
+   * day */
+  enrollmentCeiling: int32;
 }
 
 /** One Report day of an automation's results */

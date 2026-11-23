@@ -57,6 +57,7 @@ import { smsTextRenderer } from './smsRenderer.ts'
 import { telegramTextRenderer } from './telegramRenderer.ts'
 import {
   cooldownRenderer,
+  enrollmentKeyRenderer,
   entryPolicyRenderer,
   exitEventsRenderer,
   goalEventRenderer,
@@ -85,6 +86,7 @@ const jsonForm = {
     triggerFilterRenderer,
     entryPolicyRenderer,
     cooldownRenderer,
+    enrollmentKeyRenderer,
     exitEventsRenderer,
     goalEventRenderer,
     httpHeadersRenderer,

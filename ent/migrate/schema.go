@@ -380,7 +380,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "source_id", Type: field.TypeString, Nullable: true},
-		{Name: "reason", Type: field.TypeEnum, Enums: []string{"cycle", "active_enrollment", "once", "cooldown"}},
+		{Name: "reason", Type: field.TypeEnum, Enums: []string{"no_enrollment_key", "cycle", "active_enrollment", "once", "cooldown", "enrollment_ceiling"}},
 		{Name: "occurred_at", Type: field.TypeTime},
 		{Name: "automation_id", Type: field.TypeInt64},
 		{Name: "contact_id", Type: field.TypeInt64},
@@ -505,6 +505,7 @@ var (
 		{Name: "goal", Type: field.TypeJSON, Nullable: true},
 		{Name: "entry_policy", Type: field.TypeEnum, Enums: []string{"once", "again"}, Default: "once"},
 		{Name: "cooldown_seconds", Type: field.TypeInt, Default: 3600},
+		{Name: "enrollment_key", Type: field.TypeString, Nullable: true},
 		{Name: "automation_id", Type: field.TypeInt64},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
@@ -516,13 +517,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "automation_versions_automations_versions",
-				Columns:    []*schema.Column{AutomationVersionsColumns[11]},
+				Columns:    []*schema.Column{AutomationVersionsColumns[12]},
 				RefColumns: []*schema.Column{AutomationsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "automation_versions_workspaces_automation_versions",
-				Columns:    []*schema.Column{AutomationVersionsColumns[12]},
+				Columns:    []*schema.Column{AutomationVersionsColumns[13]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -531,17 +532,17 @@ var (
 			{
 				Name:    "automation_versions_workspace_id_automation_id_version",
 				Unique:  true,
-				Columns: []*schema.Column{AutomationVersionsColumns[12], AutomationVersionsColumns[11], AutomationVersionsColumns[3]},
+				Columns: []*schema.Column{AutomationVersionsColumns[13], AutomationVersionsColumns[12], AutomationVersionsColumns[3]},
 			},
 			{
 				Name:    "automationversion_automation_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationVersionsColumns[11]},
+				Columns: []*schema.Column{AutomationVersionsColumns[12]},
 			},
 			{
 				Name:    "automationversion_workspace_id_trigger_action",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationVersionsColumns[12], AutomationVersionsColumns[5]},
+				Columns: []*schema.Column{AutomationVersionsColumns[13], AutomationVersionsColumns[5]},
 			},
 		},
 	}
@@ -3661,7 +3662,7 @@ func init() {
 	}
 	AutomationSkippedEntriesTable.Annotation.Checks = map[string]string{
 		"automation_skipped_entries_entry_check":  "source_id IS NULL OR firing_id IS NULL",
-		"automation_skipped_entries_reason_check": "reason IN ('cycle', 'active_enrollment', 'once', 'cooldown')",
+		"automation_skipped_entries_reason_check": "reason IN ('no_enrollment_key', 'cycle', 'active_enrollment', 'once', 'cooldown', 'enrollment_ceiling')",
 	}
 	AutomationStepRecordsTable.ForeignKeys[0].RefTable = AutomationRunsTable
 	AutomationStepRecordsTable.ForeignKeys[1].RefTable = WorkspacesTable
@@ -3682,6 +3683,7 @@ func init() {
 	}
 	AutomationVersionsTable.Annotation.Checks = map[string]string{
 		"automation_versions_cooldown_check":               "cooldown_seconds >= 3600",
+		"automation_versions_enrollment_key_check":         "enrollment_key IS NULL OR enrollment_key <> ''",
 		"automation_versions_entry_policy_check":           "entry_policy IN ('once', 'again')",
 		"automation_versions_exits_check":                  "jsonb_typeof(exits) = 'array'",
 		"automation_versions_goal_check":                   "jsonb_typeof(goal) = 'object'",

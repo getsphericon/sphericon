@@ -147,7 +147,8 @@ const TRIGGER_NODE_ID = 'trigger'
 export type AutomationTrigger = Pick<AutomationVersion, 'trigger' | 'exitEvents' | 'goalEvent'>
 
 // The canvas holds the Trigger's action as text and its filter as JSON text ('' for none), its
-// Entry policy and its cooldown as text of seconds (ADR 0127), the exit events as the JSON text of
+// Entry policy and its cooldown as text of seconds (ADR 0127), its Enrollment key as text ('' for
+// none, ADR 0165), the exit events as the JSON text of
 // their drafts, the goal event as the JSON text of its draft ('' for
 // none), and the id of the root path the steps hang from.
 function triggerProperties(trigger: AutomationTrigger, pathId: string): Record<string, unknown> {
@@ -156,6 +157,7 @@ function triggerProperties(trigger: AutomationTrigger, pathId: string): Record<s
     triggerFilter: trigger.trigger.filter ? filterText(trigger.trigger.filter) : '',
     entryPolicy: trigger.trigger.entryPolicy,
     cooldown: String(trigger.trigger.cooldown),
+    enrollmentKey: trigger.trigger.enrollmentKey ?? '',
     exitEvents: endingsText(trigger.exitEvents.map((exit) => endingDraft(exit))),
     goalEvent: goalText(trigger.goalEvent === null ? null : endingDraft(trigger.goalEvent)),
     pathId,
@@ -264,8 +266,9 @@ function matcherOf(
   return { matcher: { ...matcher, filter: parsed.data }, incomplete: false }
 }
 
-// triggerOf reads the Trigger off the node: its matcher (matcherOf), its Entry policy and its
-// cooldown, one left empty being the server's default.
+// triggerOf reads the Trigger off the node: its matcher (matcherOf), its Entry policy, its
+// cooldown, one left empty being the server's default, and its Enrollment key trimmed, a blank one
+// being none.
 function triggerOf(properties: Record<string, unknown>): {
   trigger: AutomationTriggerInput
   incomplete: boolean
@@ -282,6 +285,10 @@ function triggerOf(properties: Record<string, unknown>): {
   const cooldown = cooldownOf(properties.cooldown)
   if (cooldown !== undefined) {
     trigger.cooldown = cooldown
+  }
+  const key = asText(properties.enrollmentKey).trim()
+  if (key !== '') {
+    trigger.enrollmentKey = key
   }
   return { trigger, incomplete }
 }

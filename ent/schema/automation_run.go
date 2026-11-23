@@ -113,10 +113,11 @@ func (AutomationRun) Fields() []ent.Field {
 		field.Int("ordinal").
 			Immutable(),
 		// The value of the version's Enrollment key the triggering Event carried (ADR 0165), the
-		// one active Enrollment per value the partial unique index allows; null for a version with
-		// no key, which every version is until the Enrollment key is built, so a Contact has one
-		// active Enrollment in the Automation (NULLS NOT DISTINCT). Personal data: it goes with the
-		// row on Erasure (ADR 0021).
+		// property's string form as Postgres reads it (properties ->> key): one active Enrollment
+		// per value, the partial unique index. Null for a version with no key, so a Contact has one
+		// active Enrollment in the Automation (NULLS NOT DISTINCT). An exit or goal Event carrying
+		// the property ends only the Enrollment of its value. Personal data: it goes with the row
+		// on Erasure (ADR 0021).
 		field.String("key_value").
 			Optional().
 			Nillable().

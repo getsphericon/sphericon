@@ -402,29 +402,46 @@ func normalizeGoal(goal *eventmatcher.Matcher) *eventmatcher.Matcher {
 	return &g
 }
 
-// Entry is the Entry policy of a version's Event Trigger (ADR 0127): Policy, `once` (the default,
-// empty) or `again`, and CooldownSeconds, under `again` the least time from the beginning of a
-// Contact's previous Enrollment to the next, nil for the default and at least an hour.
+// Entry is how a version's Event Trigger enrolls (ADR 0127, ADR 0165): Policy, `once` (the
+// default, empty) or `again`; CooldownSeconds, under `again` the least time from the beginning of a
+// Contact's previous Enrollment to the next, nil for the default and at least an hour; and Key, the
+// Enrollment key, the name of a property of the triggering Event by whose value a Contact may have
+// several active Enrollments, nil for none.
 type Entry struct {
 	Policy          automationversion.EntryPolicy
 	CooldownSeconds *int
+	Key             *string
 }
 
-// normalizeEntry turns an Entry policy into its stored form, the defaults filled in, and refuses a
-// cooldown under the floor (bounds.EntryCooldown).
-func normalizeEntry(e Entry) (automationversion.EntryPolicy, int, error) {
+// normalizeEntry turns an Entry into its stored form, the defaults filled in, and refuses a
+// cooldown under the floor (bounds.EntryCooldown) and an Enrollment key that is no property name
+// (condition.CheckPropertyKey, the form a filter's keys have).
+func normalizeEntry(e Entry) (entrySettings, error) {
 	policy := cmp.Or(e.Policy, automationversion.DefaultEntryPolicy)
 	if err := automationversion.EntryPolicyValidator(policy); err != nil {
-		return "", 0, ErrInvalidTrigger.With(fmt.Sprintf("%q is not an entry policy", policy))
+		return entrySettings{}, ErrInvalidTrigger.With(fmt.Sprintf("%q is not an entry policy", policy))
 	}
 	cooldown := bounds.TriggerCooldownDefault
 	if e.CooldownSeconds != nil {
 		cooldown = *e.CooldownSeconds
 	}
 	if err := validation.Min(fieldname.Cooldown, cooldown, bounds.EntryCooldownMin); err != nil {
-		return "", 0, err
+		return entrySettings{}, err
 	}
-	return policy, cooldown, nil
+	if e.Key != nil {
+		if err := condition.CheckPropertyKey(*e.Key); err != nil {
+			return entrySettings{}, ErrInvalidTrigger.With("the enrollment key: " + err.Error())
+		}
+	}
+	return entrySettings{policy: policy, cooldown: cooldown, key: e.Key}, nil
+}
+
+// entrySettings is an Entry as a version stores it: the policy, the cooldown in seconds and the
+// Enrollment key, nil for none.
+type entrySettings struct {
+	policy   automationversion.EntryPolicy
+	cooldown int
+	key      *string
 }
 
 // sameMatcher reports whether two Event matchers match the same Events by what they say: one action
@@ -547,17 +564,16 @@ type edit struct {
 	steps   *automationstep.Path
 }
 
-// definition is the content of an Automation version as stored: its Trigger with its Entry policy
-// and cooldown in seconds, the Event matchers that end an Enrollment early (exits) and the one that
+// definition is the content of an Automation version as stored: its Trigger with its Entry policy,
+// cooldown in seconds and Enrollment key, the Event matchers that end an Enrollment early (exits) and the one that
 // ends it as having reached its goal (nil for none), and its sealed steps, each send step naming its
 // Integration.
 type definition struct {
-	trigger  eventmatcher.Matcher
-	policy   automationversion.EntryPolicy
-	cooldown int
-	exits    []eventmatcher.Matcher
-	goal     *eventmatcher.Matcher
-	steps    automationstep.Path
+	trigger eventmatcher.Matcher
+	entry   entrySettings
+	exits   []eventmatcher.Matcher
+	goal    *eventmatcher.Matcher
+	steps   automationstep.Path
 }
 
 // versioned is the Automation's part of the lifecycle (versioneddefinition.Definition).
@@ -573,7 +589,7 @@ func (versioned) Store(s *ent.Scoped) ent.VersionedStore[ent.Automation, ent.Aut
 // base's steps by ID keeps the secrets it does not resend.
 func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.AutomationVersion, e edit) (definition, error) {
 	def := definition{
-		policy: automationversion.DefaultEntryPolicy, cooldown: bounds.TriggerCooldownDefault,
+		entry: entrySettings{policy: automationversion.DefaultEntryPolicy, cooldown: bounds.TriggerCooldownDefault},
 		exits: []eventmatcher.Matcher{}, steps: automationstep.Path{ID: automationstep.NewID(), Steps: []automationstep.Step{}},
 	}
 	var stored automationstep.Path
@@ -584,11 +600,11 @@ func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.Automati
 		def.trigger = normalizeMatcher(*e.trigger)
 	}
 	if e.entry != nil {
-		policy, cooldown, err := normalizeEntry(*e.entry)
+		settings, err := normalizeEntry(*e.entry)
 		if err != nil {
 			return definition{}, err
 		}
-		def.policy, def.cooldown = policy, cooldown
+		def.entry = settings
 	}
 	if e.exits != nil {
 		def.exits = normalizeExits(*e.exits)
@@ -673,8 +689,9 @@ func ExitsOf(v *ent.AutomationVersion) []eventmatcher.Matcher {
 // definitionOf is the definition a version holds.
 func definitionOf(v *ent.AutomationVersion) definition {
 	return definition{
-		trigger: TriggerOf(v), policy: v.EntryPolicy, cooldown: v.CooldownSeconds,
-		exits: ExitsOf(v), goal: v.Goal, steps: v.Steps,
+		trigger: TriggerOf(v),
+		entry:   entrySettings{policy: v.EntryPolicy, cooldown: v.CooldownSeconds, key: v.EnrollmentKey},
+		exits:   ExitsOf(v), goal: v.Goal, steps: v.Steps,
 	}
 }
 
@@ -683,7 +700,7 @@ func definitionOf(v *ent.AutomationVersion) definition {
 func (versioned) Equal(v *ent.AutomationVersion, def definition) bool {
 	held := definitionOf(v)
 	return sameMatcher(held.trigger, def.trigger) &&
-		held.policy == def.policy && held.cooldown == def.cooldown &&
+		held.entry.policy == def.entry.policy && held.entry.cooldown == def.entry.cooldown && optional.Equal(held.entry.key, def.entry.key) &&
 		slices.EqualFunc(held.exits, def.exits, sameMatcher) &&
 		optional.EqualFunc(held.goal, def.goal, sameMatcher) &&
 		jsonvalue.Same(held.steps, def.steps)
@@ -693,10 +710,15 @@ func (versioned) Write(ctx context.Context, l *ent.WorkspaceLocked, id int64, nu
 	if draft != nil {
 		upd := l.AutomationVersion().UpdateOneID(draft.ID).
 			SetTriggerAction(def.trigger.Action).
-			SetEntryPolicy(def.policy).
-			SetCooldownSeconds(def.cooldown).
+			SetEntryPolicy(def.entry.policy).
+			SetCooldownSeconds(def.entry.cooldown).
 			SetExits(def.exits).
 			SetSteps(def.steps)
+		if def.entry.key == nil {
+			upd.ClearEnrollmentKey()
+		} else {
+			upd.SetEnrollmentKey(*def.entry.key)
+		}
 		if def.goal == nil {
 			upd.ClearGoal()
 		} else {
@@ -713,8 +735,9 @@ func (versioned) Write(ctx context.Context, l *ent.WorkspaceLocked, id int64, nu
 		SetAutomationID(id).
 		SetVersion(number).
 		SetTriggerAction(def.trigger.Action).
-		SetEntryPolicy(def.policy).
-		SetCooldownSeconds(def.cooldown).
+		SetEntryPolicy(def.entry.policy).
+		SetCooldownSeconds(def.entry.cooldown).
+		SetNillableEnrollmentKey(def.entry.key).
 		SetExits(def.exits).
 		SetSteps(def.steps)
 	if def.trigger.Filter != nil {

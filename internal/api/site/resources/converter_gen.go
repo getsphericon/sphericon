@@ -1217,6 +1217,7 @@ func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) site.Enr
 		siteapiEnrollmentResource.ContactId = site.EntityId((*source).ContactID)
 		siteapiEnrollmentResource.Status = c.EnrollmentStatusToResource((*source).Status)
 		siteapiEnrollmentResource.Ordinal = count((*source).Ordinal)
+		siteapiEnrollmentResource.KeyValue = optString((*source).KeyValue)
 		siteapiEnrollmentResource.CurrentStepId = optStepID((*source).CurrentStepID)
 		siteapiEnrollmentResource.ResumeAt = optTimestamp((*source).ResumeAt)
 		siteapiEnrollmentResource.Failure = enrollmentFailure(c, (*source))
@@ -2403,6 +2404,10 @@ func (c *ConverterImpl) SkippedEntryReasonToResource(source automationskippedent
 		siteapiSkippedEntryReason = site.SkippedEntryReasonCooldown
 	case automationskippedentry.ReasonCycle:
 		siteapiSkippedEntryReason = site.SkippedEntryReasonCycle
+	case automationskippedentry.ReasonEnrollmentCeiling:
+		siteapiSkippedEntryReason = site.SkippedEntryReasonEnrollmentCeiling
+	case automationskippedentry.ReasonNoEnrollmentKey:
+		siteapiSkippedEntryReason = site.SkippedEntryReasonNoEnrollmentKey
 	case automationskippedentry.ReasonOnce:
 		siteapiSkippedEntryReason = site.SkippedEntryReasonOnce
 	default:
@@ -3078,6 +3083,8 @@ func (c *ConverterImpl) automationsSkippedCountsToSiteapiAutomationSkippedCounts
 	siteapiAutomationSkippedCounts.ActiveEnrollment = count(source.ActiveEnrollment)
 	siteapiAutomationSkippedCounts.Once = count(source.Once)
 	siteapiAutomationSkippedCounts.Cooldown = count(source.Cooldown)
+	siteapiAutomationSkippedCounts.NoEnrollmentKey = count(source.NoEnrollmentKey)
+	siteapiAutomationSkippedCounts.EnrollmentCeiling = count(source.EnrollmentCeiling)
 	return siteapiAutomationSkippedCounts
 }
 func (c *ConverterImpl) automationsStepFiguresToSiteapiAutomationStepFigures(source automations.StepFigures) site.AutomationStepFigures {

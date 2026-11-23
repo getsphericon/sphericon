@@ -50,7 +50,14 @@ const NO_RESULTS: AutomationResults = {
     from: '2026-02-16',
     to: '2026-03-17',
     contacts: 0,
-    skipped: { cycle: 0, activeEnrollment: 0, once: 0, cooldown: 0 },
+    skipped: {
+      cycle: 0,
+      activeEnrollment: 0,
+      once: 0,
+      cooldown: 0,
+      noEnrollmentKey: 0,
+      enrollmentCeiling: 0,
+    },
     averageDurationSeconds: null,
     revenue: NO_REVENUE,
   },
@@ -63,7 +70,14 @@ const NO_RESULTS: AutomationResults = {
     from: '2026-01-17',
     to: '2026-02-15',
     contacts: 0,
-    skipped: { cycle: 0, activeEnrollment: 0, once: 0, cooldown: 0 },
+    skipped: {
+      cycle: 0,
+      activeEnrollment: 0,
+      once: 0,
+      cooldown: 0,
+      noEnrollmentKey: 0,
+      enrollmentCeiling: 0,
+    },
     averageDurationSeconds: null,
     revenue: NO_REVENUE,
   },
@@ -607,7 +621,14 @@ const MONTH: AutomationResults = {
     from: '2026-02-16',
     to: '2026-03-17',
     contacts: 4,
-    skipped: { cycle: 6, activeEnrollment: 2, once: 7, cooldown: 10 },
+    skipped: {
+      cycle: 6,
+      activeEnrollment: 2,
+      once: 7,
+      cooldown: 10,
+      noEnrollmentKey: 12,
+      enrollmentCeiling: 3,
+    },
     averageDurationSeconds: 85_050,
     revenue: { reportingCurrency: 'USD', orders: 1, amount: 3500 },
   },
@@ -620,7 +641,14 @@ const MONTH: AutomationResults = {
     from: '2026-01-17',
     to: '2026-02-15',
     contacts: 2,
-    skipped: { cycle: 3, activeEnrollment: 1, once: 5, cooldown: 4 },
+    skipped: {
+      cycle: 3,
+      activeEnrollment: 1,
+      once: 5,
+      cooldown: 4,
+      noEnrollmentKey: 8,
+      enrollmentCeiling: 1,
+    },
     averageDurationSeconds: 57_600,
     revenue: { reportingCurrency: 'USD', orders: 1, amount: 2500 },
   },
@@ -666,6 +694,12 @@ test('shows what the enrollments did in the period against the period before', a
   await expect.element(screen.getByText('Previous 30 days: 5 (+40%)')).toBeInTheDocument()
   await expect.element(screen.getByText('Skipped: within the cooldown')).toBeInTheDocument()
   await expect.element(screen.getByText('Previous 30 days: 4 (+150%)')).toBeInTheDocument()
+  await expect.element(screen.getByText('Skipped: no enrollment key')).toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 8 (+50%)')).toBeInTheDocument()
+  await expect
+    .element(screen.getByText('Skipped: too many enrollments of one contact'))
+    .toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 1 (+200%)')).toBeInTheDocument()
 })
 
 test('lists the skipped entries, each with its reason, and filters them by contact', async () => {

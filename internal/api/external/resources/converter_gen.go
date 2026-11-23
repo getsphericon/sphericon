@@ -876,6 +876,7 @@ func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) external
 		externalapiEnrollmentResource.ContactId = external.EntityId((*source).ContactID)
 		externalapiEnrollmentResource.Status = c.EnrollmentStatusToResource((*source).Status)
 		externalapiEnrollmentResource.Ordinal = count((*source).Ordinal)
+		externalapiEnrollmentResource.KeyValue = optString((*source).KeyValue)
 		externalapiEnrollmentResource.CurrentStepId = optStepID((*source).CurrentStepID)
 		externalapiEnrollmentResource.ResumeAt = optTimestamp((*source).ResumeAt)
 		externalapiEnrollmentResource.Failure = enrollmentFailure(c, (*source))
@@ -1553,6 +1554,10 @@ func (c *ConverterImpl) SkippedEntryReasonToResource(source automationskippedent
 		externalapiSkippedEntryReason = external.SkippedEntryReasonCooldown
 	case automationskippedentry.ReasonCycle:
 		externalapiSkippedEntryReason = external.SkippedEntryReasonCycle
+	case automationskippedentry.ReasonEnrollmentCeiling:
+		externalapiSkippedEntryReason = external.SkippedEntryReasonEnrollmentCeiling
+	case automationskippedentry.ReasonNoEnrollmentKey:
+		externalapiSkippedEntryReason = external.SkippedEntryReasonNoEnrollmentKey
 	case automationskippedentry.ReasonOnce:
 		externalapiSkippedEntryReason = external.SkippedEntryReasonOnce
 	default:
@@ -2040,6 +2045,8 @@ func (c *ConverterImpl) automationsSkippedCountsToExternalapiAutomationSkippedCo
 	externalapiAutomationSkippedCounts.ActiveEnrollment = count(source.ActiveEnrollment)
 	externalapiAutomationSkippedCounts.Once = count(source.Once)
 	externalapiAutomationSkippedCounts.Cooldown = count(source.Cooldown)
+	externalapiAutomationSkippedCounts.NoEnrollmentKey = count(source.NoEnrollmentKey)
+	externalapiAutomationSkippedCounts.EnrollmentCeiling = count(source.EnrollmentCeiling)
 	return externalapiAutomationSkippedCounts
 }
 func (c *ConverterImpl) automationsStepFiguresToExternalapiAutomationStepFigures(source automations.StepFigures) external.AutomationStepFigures {

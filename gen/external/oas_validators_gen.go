@@ -8886,6 +8886,8 @@ func (s *SkippedEntriesListOK) Validate() error {
 
 func (s SkippedEntryReason) Validate() error {
 	switch s {
+	case "no_enrollment_key":
+		return nil
 	case "cycle":
 		return nil
 	case "active_enrollment":
@@ -8893,6 +8895,8 @@ func (s SkippedEntryReason) Validate() error {
 	case "once":
 		return nil
 	case "cooldown":
+		return nil
+	case "enrollment_ceiling":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

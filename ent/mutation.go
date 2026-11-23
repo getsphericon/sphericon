@@ -9865,6 +9865,7 @@ type AutomationVersionMutation struct {
 	entry_policy        *automationversion.EntryPolicy
 	cooldown_seconds    *int
 	addcooldown_seconds *int
+	enrollment_key      *string
 	clearedFields       map[string]struct{}
 	workspace           *int64
 	clearedworkspace    bool
@@ -10495,6 +10496,55 @@ func (m *AutomationVersionMutation) ResetCooldownSeconds() {
 	m.addcooldown_seconds = nil
 }
 
+// SetEnrollmentKey sets the "enrollment_key" field.
+func (m *AutomationVersionMutation) SetEnrollmentKey(s string) {
+	m.enrollment_key = &s
+}
+
+// EnrollmentKey returns the value of the "enrollment_key" field in the mutation.
+func (m *AutomationVersionMutation) EnrollmentKey() (r string, exists bool) {
+	v := m.enrollment_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEnrollmentKey returns the old "enrollment_key" field's value of the AutomationVersion entity.
+// If the AutomationVersion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationVersionMutation) OldEnrollmentKey(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEnrollmentKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEnrollmentKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEnrollmentKey: %w", err)
+	}
+	return oldValue.EnrollmentKey, nil
+}
+
+// ClearEnrollmentKey clears the value of the "enrollment_key" field.
+func (m *AutomationVersionMutation) ClearEnrollmentKey() {
+	m.enrollment_key = nil
+	m.clearedFields[automationversion.FieldEnrollmentKey] = struct{}{}
+}
+
+// EnrollmentKeyCleared returns if the "enrollment_key" field was cleared in this mutation.
+func (m *AutomationVersionMutation) EnrollmentKeyCleared() bool {
+	_, ok := m.clearedFields[automationversion.FieldEnrollmentKey]
+	return ok
+}
+
+// ResetEnrollmentKey resets all changes to the "enrollment_key" field.
+func (m *AutomationVersionMutation) ResetEnrollmentKey() {
+	m.enrollment_key = nil
+	delete(m.clearedFields, automationversion.FieldEnrollmentKey)
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *AutomationVersionMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -10637,7 +10687,7 @@ func (m *AutomationVersionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationVersionMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, automationversion.FieldCreatedAt)
 	}
@@ -10674,6 +10724,9 @@ func (m *AutomationVersionMutation) Fields() []string {
 	if m.cooldown_seconds != nil {
 		fields = append(fields, automationversion.FieldCooldownSeconds)
 	}
+	if m.enrollment_key != nil {
+		fields = append(fields, automationversion.FieldEnrollmentKey)
+	}
 	return fields
 }
 
@@ -10706,6 +10759,8 @@ func (m *AutomationVersionMutation) Field(name string) (ent.Value, bool) {
 		return m.EntryPolicy()
 	case automationversion.FieldCooldownSeconds:
 		return m.CooldownSeconds()
+	case automationversion.FieldEnrollmentKey:
+		return m.EnrollmentKey()
 	}
 	return nil, false
 }
@@ -10739,6 +10794,8 @@ func (m *AutomationVersionMutation) OldField(ctx context.Context, name string) (
 		return m.OldEntryPolicy(ctx)
 	case automationversion.FieldCooldownSeconds:
 		return m.OldCooldownSeconds(ctx)
+	case automationversion.FieldEnrollmentKey:
+		return m.OldEnrollmentKey(ctx)
 	}
 	return nil, fmt.Errorf("unknown AutomationVersion field %s", name)
 }
@@ -10832,6 +10889,13 @@ func (m *AutomationVersionMutation) SetField(name string, value ent.Value) error
 		}
 		m.SetCooldownSeconds(v)
 		return nil
+	case automationversion.FieldEnrollmentKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEnrollmentKey(v)
+		return nil
 	}
 	return fmt.Errorf("unknown AutomationVersion field %s", name)
 }
@@ -10895,6 +10959,9 @@ func (m *AutomationVersionMutation) ClearedFields() []string {
 	if m.FieldCleared(automationversion.FieldGoal) {
 		fields = append(fields, automationversion.FieldGoal)
 	}
+	if m.FieldCleared(automationversion.FieldEnrollmentKey) {
+		fields = append(fields, automationversion.FieldEnrollmentKey)
+	}
 	return fields
 }
 
@@ -10914,6 +10981,9 @@ func (m *AutomationVersionMutation) ClearField(name string) error {
 		return nil
 	case automationversion.FieldGoal:
 		m.ClearGoal()
+		return nil
+	case automationversion.FieldEnrollmentKey:
+		m.ClearEnrollmentKey()
 		return nil
 	}
 	return fmt.Errorf("unknown AutomationVersion nullable field %s", name)
@@ -10958,6 +11028,9 @@ func (m *AutomationVersionMutation) ResetField(name string) error {
 		return nil
 	case automationversion.FieldCooldownSeconds:
 		m.ResetCooldownSeconds()
+		return nil
+	case automationversion.FieldEnrollmentKey:
+		m.ResetEnrollmentKey()
 		return nil
 	}
 	return fmt.Errorf("unknown AutomationVersion field %s", name)

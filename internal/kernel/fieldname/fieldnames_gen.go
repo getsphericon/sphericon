@@ -64,6 +64,7 @@ const (
 	Enabled               = "enabled"
 	Endpoint              = "endpoint"
 	EnrollmentID          = "enrollmentId"
+	EnrollmentKey         = "enrollmentKey"
 	Entries               = "entries"
 	EntryPolicy           = "entryPolicy"
 	Error                 = "error"

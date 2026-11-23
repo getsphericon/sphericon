@@ -22,6 +22,7 @@ import { SMS_TEXT_FORMAT } from './smsFormat.ts'
 import { TELEGRAM_TEXT_FORMAT } from './telegramFormat.ts'
 import {
   COOLDOWN_FORMAT,
+  ENROLLMENT_KEY_FORMAT,
   ENTRY_POLICY_FORMAT,
   EXIT_EVENTS_FORMAT,
   GOAL_EVENT_FORMAT,
@@ -81,7 +82,7 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         label: t(($) => $.automations.stepTrigger),
         description: t(($) => $.automations.triggerHint),
         // The Trigger's filter is held as JSON text ('' for none), its Entry policy, its cooldown as
-        // text of seconds (ADR 0127), the exit events and the goal event as the JSON text of their
+        // text of seconds (ADR 0127), its Enrollment key as text ('' for none, ADR 0165), the exit events and the goal event as the JSON text of their
         // drafts ('' for none, definition.ts): the SDK's schema has no list of objects.
         // pathId is the id of the root path the steps hang from, '' until the server gives one.
         defaultPropertiesData: {
@@ -89,6 +90,7 @@ export function useAutomationNodeTypes(): PaletteItem[] {
           triggerFilter: '',
           entryPolicy: 'once',
           cooldown: String(NEW_TRIGGER_COOLDOWN),
+          enrollmentKey: '',
           exitEvents: '',
           goalEvent: '',
           pathId: '',
@@ -117,6 +119,11 @@ export function useAutomationNodeTypes(): PaletteItem[] {
               type: 'string',
               label: t(($) => $.automations.cooldownLabel),
               format: COOLDOWN_FORMAT,
+            },
+            enrollmentKey: {
+              type: 'string',
+              label: t(($) => $.automations.enrollmentKeyLabel),
+              format: ENROLLMENT_KEY_FORMAT,
             },
             exitEvents: {
               type: 'string',
@@ -151,6 +158,12 @@ export function useAutomationNodeTypes(): PaletteItem[] {
                 effect: 'SHOW',
                 condition: { scope: '#/properties/entryPolicy', schema: { const: 'again' } },
               },
+            },
+            {
+              type: 'Text',
+              scope: '#/properties/enrollmentKey',
+              label: t(($) => $.automations.enrollmentKeyLabel),
+              placeholder: '',
             },
             { type: 'Text', scope: '#/properties/exitEvents', placeholder: '' },
             { type: 'Text', scope: '#/properties/goalEvent', placeholder: '' },
