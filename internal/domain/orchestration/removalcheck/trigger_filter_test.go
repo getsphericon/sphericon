@@ -27,9 +27,9 @@ func namingTrigger(t *testing.T, action, key, value string) eventmatcher.Matcher
 		"kind": "property", "key": key, "test": map[string]any{"kind": "text", "operator": "eq", "value": value},
 	})
 	require.NoError(t, err)
-	return eventmatcher.Matcher{Action: action, Filter: &conditiontree.EventFilter{Group: conditiontree.Group{
+	return eventmatcher.Matcher{Action: action, Filter: &conditiontree.EventFilter{
 		Kind: conditiontree.KindGroup, Combinator: conditiontree.And, Entries: []json.RawMessage{leaf},
-	}}}
+	}}
 }
 
 // filteredOn makes an Automation of the Workspace whose Trigger is trigger, live when published and

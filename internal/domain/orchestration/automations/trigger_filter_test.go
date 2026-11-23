@@ -26,7 +26,7 @@ func propertyEq(t *testing.T, key, value string) *conditiontree.EventFilter {
 		"kind": "property", "key": key, "test": map[string]any{"kind": "text", "operator": "eq", "value": value},
 	})
 	require.NoError(t, err)
-	return &conditiontree.EventFilter{Group: conditiontree.Group{Kind: conditiontree.KindGroup, Combinator: conditiontree.And, Entries: []json.RawMessage{leaf}}}
+	return &conditiontree.EventFilter{Kind: conditiontree.KindGroup, Combinator: conditiontree.And, Entries: []json.RawMessage{leaf}}
 }
 
 // liveOn creates an Automation of no Steps whose Trigger is the matcher and publishes it, so it

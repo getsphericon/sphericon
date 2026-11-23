@@ -98,7 +98,7 @@ func TestAPublishThatFiltersTheTriggerBetweenPickingAndEnrollingEnrollsNobody(t 
 		"kind": "property", "key": "plan", "test": map[string]any{"kind": "text", "operator": "eq", "value": "pro"},
 	})
 	require.NoError(t, err)
-	filter := &conditiontree.EventFilter{Group: conditiontree.Group{Kind: conditiontree.KindGroup, Combinator: conditiontree.And, Entries: []json.RawMessage{leaf}}}
+	filter := &conditiontree.EventFilter{Kind: conditiontree.KindGroup, Combinator: conditiontree.And, Entries: []json.RawMessage{leaf}}
 
 	runs := raceThePick(t, func(ctx context.Context, mod *automations.Module, s *ent.Scoped) error {
 		_, updated := mod.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationHoldDemoID), Trigger: &eventmatcher.Matcher{Action: "hold_demo", Filter: filter}})

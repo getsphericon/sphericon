@@ -29,7 +29,7 @@ func TestAHistoricEventPassingTheTriggerFilterEnrollsNoOne(t *testing.T) {
 		"kind": "property", "key": "status", "test": map[string]any{"kind": "text", "operator": "eq", "value": "paid"},
 	})
 	require.NoError(t, err)
-	filter := &conditiontree.EventFilter{Group: conditiontree.Group{Kind: conditiontree.KindGroup, Combinator: conditiontree.And, Entries: []json.RawMessage{leaf}}}
+	filter := &conditiontree.EventFilter{Kind: conditiontree.KindGroup, Combinator: conditiontree.And, Entries: []json.RawMessage{leaf}}
 	mod := testhelper.Module[*automations.Module](env)
 	a, err := mod.Create(ctx, acme, automations.CreateInput{Name: "Paid orders", Trigger: eventmatcher.Matcher{Action: "order.completed", Filter: filter}})
 	require.NoError(t, err)
