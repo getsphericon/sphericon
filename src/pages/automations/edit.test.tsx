@@ -1,3 +1,4 @@
+import { useStore } from '@workflowbuilder/sdk'
 import { HttpResponse } from 'msw'
 import { beforeEach, expect, test } from 'vitest'
 import { page } from 'vitest/browser'
@@ -309,11 +310,20 @@ test('a filter left half-typed is dropped when the Trigger is opened again, and 
   await expect.element(screen.getByText('Trigger Filter')).not.toBeInTheDocument()
   flowNode(0).dispatchEvent(new MouseEvent('click', { bubbles: true }))
   await expect.element(screen.getByText('Trigger Filter')).toBeInTheDocument()
+  const save = screen.getByRole('button', { name: 'Save' })
+  // The panel drops the half-typed filter on mount; the Save reads the canvas store, which takes it a
+  // moment later.
+  await expect
+    .poll(() =>
+      useStore
+        .getState()
+        .nodes.map((node) => (node.data.properties as Record<string, unknown>).triggerFilter)
+        .filter((filter) => filter !== undefined),
+    )
+    .toEqual([''])
+  await expect.element(save).toBeEnabled()
   // The Trigger's panel covers the toolbar: the Save is a click dispatched on it.
-  screen
-    .getByRole('button', { name: 'Save' })
-    .element()
-    .dispatchEvent(new MouseEvent('click', { bubbles: true }))
+  save.element().dispatchEvent(new MouseEvent('click', { bubbles: true }))
 
   await expect
     .poll(() => bodies)
