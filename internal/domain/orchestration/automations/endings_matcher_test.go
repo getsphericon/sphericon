@@ -191,7 +191,9 @@ func TestAnEnrollmentIsMadeEndedByTheFirstMatchingEventSinceItsTrigger(t *testin
 // firedOn publishes a Rule that enrolls Contacts in the Automation on the action and has it fire on
 // the last stored Event of that action for the Contact. It returns the Firing's id and the Event's
 // source id.
-func firedOn(t *testing.T, env *testhelper.TestEnv, automationID, contactID int64, action string) (int64, string) {
+func firedOn(
+	t *testing.T, env *testhelper.TestEnv, automationID, contactID int64, action string,
+) (firingID int64, sourceID string) {
 	t.Helper()
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
@@ -205,7 +207,7 @@ func firedOn(t *testing.T, env *testhelper.TestEnv, automationID, contactID int6
 	require.NoError(t, err)
 	stored := env.StoredEvents(t, action)
 	require.NotEmpty(t, stored)
-	sourceID := *stored[len(stored)-1].SourceID
+	sourceID = *stored[len(stored)-1].SourceID
 	fired, err := m.Evaluate(ctx, s, rules.Event{ContactID: contactID, Action: action, SourceID: sourceID, RecordedAt: time.Now()})
 	require.NoError(t, err)
 	require.Len(t, fired, 1)
