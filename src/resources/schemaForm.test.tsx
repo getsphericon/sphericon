@@ -241,10 +241,16 @@ async function press(
   document.addEventListener('pointerdown', record, { capture: true, once: true })
   const session = cdp()
   await session.send('Input.dispatchMouseEvent', { ...at({ x, y }), type: 'mouseMoved' })
-  await session.send('Input.dispatchMouseEvent', { ...at({ x, y }), type: 'mousePressed' })
-  await whileDown?.(pointerId)
-  await session.send('Input.dispatchMouseEvent', { ...at(releaseAt), type: 'mouseMoved' })
-  await session.send('Input.dispatchMouseEvent', { ...at(releaseAt), type: 'mouseReleased' })
+  try {
+    await session.send('Input.dispatchMouseEvent', { ...at({ x, y }), type: 'mousePressed' })
+    await whileDown?.(pointerId)
+  } finally {
+    // A failed check must not leave the mouse button down or the listener on the page for the next
+    // test.
+    document.removeEventListener('pointerdown', record, { capture: true })
+    await session.send('Input.dispatchMouseEvent', { ...at(releaseAt), type: 'mouseMoved' })
+    await session.send('Input.dispatchMouseEvent', { ...at(releaseAt), type: 'mouseReleased' })
+  }
 }
 
 function topEdgeOf(button: Element) {
