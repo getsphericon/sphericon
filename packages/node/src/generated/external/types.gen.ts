@@ -765,6 +765,16 @@ export type AutomationStepInput = ({
 } & EndStepInput);
 
 /**
+ * What enrolls a Contact in an automation, by `kind`: an Event matcher
+ */
+export type AutomationTrigger = EventTrigger;
+
+/**
+ * What enrolls a Contact in an automation, by `kind`: an Event matcher
+ */
+export type AutomationTriggerInput = EventTriggerInput;
+
+/**
  * One version of an automation's definition: what publishing makes it do (ADR 0065)
  */
 export type AutomationVersion = {
@@ -773,9 +783,9 @@ export type AutomationVersion = {
    */
   number: number;
   /**
-   * Event action that enrolls a contact (e.g. "contact.created", "email.opened")
+   * What enrolls a contact
    */
-  triggerEvent: string;
+  trigger: AutomationTrigger;
   /**
    * Event actions that end an active enrollment early, as exited (e.g. "plan_downgraded"). Only
    * an Event that occurred once the enrollment began counts; machine opens and clicks never do.
@@ -2018,7 +2028,10 @@ export type CreateApiTokenResponse = {
  */
 export type CreateAutomationInput = {
   name: Name;
-  triggerEvent: string;
+  /**
+   * What enrolls a contact
+   */
+  trigger: AutomationTriggerInput;
   /**
    * Event actions that end an active enrollment early; none of them may be the trigger. Each
    * follows the trigger's rule: any customer action, and of the email events only opened, clicked
@@ -2898,6 +2911,66 @@ export const EventCountOperator = { AT_LEAST: 'atLeast', AT_MOST: 'atMost' } as 
 export type EventCountOperator = typeof EventCountOperator[keyof typeof EventCountOperator];
 
 /**
+ * An Event matcher's filter (ADR 0133): the tests of the Event's own properties it holds. A
+ * property the Event lacks, or holds with another type, fails its test, so a `not` over it holds.
+ */
+export type EventFilter = {
+  kind: 'group';
+  /**
+   * How the entries combine
+   */
+  combinator: ConditionCombinator;
+  /**
+   * Negate the whole group
+   */
+  not?: boolean;
+  /**
+   * The group's tests and nested groups
+   */
+  entries: Array<EventFilterNode>;
+};
+
+/**
+ * An Event matcher's filter (ADR 0133): the tests of the Event's own properties it holds. A
+ * property the Event lacks, or holds with another type, fails its test, so a `not` over it holds.
+ */
+export type EventFilterInput = {
+  kind: 'group';
+  /**
+   * How the entries combine
+   */
+  combinator: ConditionCombinator;
+  /**
+   * Negate the whole group
+   */
+  not?: boolean;
+  /**
+   * The group's tests and nested groups
+   */
+  entries: Array<EventFilterNodeInput>;
+};
+
+/**
+ * An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is
+ * about, or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133).
+ */
+export type EventFilterNode = ({
+  kind: 'group';
+} & EventFilter) | ({
+  kind: 'property';
+} & FilterPropertyLeaf);
+
+/**
+ * An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is
+ * about, or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133).
+ */
+export type EventFilterNodeInput = ({
+  kind: 'group';
+} & EventFilterInput) | ({
+  kind: 'property';
+} & FilterPropertyLeafInput);
+
+/**
  * Event payload
  */
 export type EventInput = {
@@ -2984,6 +3057,44 @@ export type EventLeafInput = {
    * Count only the Events of the last this many days; absent counts all time
    */
   withinDays?: number;
+};
+
+/**
+ * A Trigger that enrolls a Contact on an Event (ADR 0133): its action, and an optional filter on
+ * that Event's own properties, so `order.completed` where `status` is `paid` starts on paid orders
+ * only. An Event that fails the filter is no entry: it enrolls no one and is not a skipped entry.
+ */
+export type EventTrigger = {
+  kind: 'event';
+  /**
+   * The Event action that enrolls (e.g. "contact.created", "email.opened", "order.completed").
+   * Any customer action; of the email events only opened, clicked and unsubscribed.
+   */
+  action: string;
+  /**
+   * The tests of the Event's own properties it must pass; absent, every Event of the action
+   * enrolls. The `tag` of contact.tagged and contact.untagged and the `key` of
+   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace.
+   */
+  filter?: EventFilter;
+};
+
+/**
+ * A Trigger that enrolls a Contact on an Event (ADR 0133), as a request writes it
+ */
+export type EventTriggerInput = {
+  kind: 'event';
+  /**
+   * The Event action that enrolls (e.g. "contact.created", "email.opened", "order.completed").
+   * Any customer action; of the email events only opened, clicked and unsubscribed.
+   */
+  action: string;
+  /**
+   * The tests of the Event's own properties it must pass; omitted, every Event of the action
+   * enrolls. The `tag` of contact.tagged and contact.untagged and the `key` of
+   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace.
+   */
+  filter?: EventFilterInput;
 };
 
 /**
@@ -3345,6 +3456,40 @@ export type ExportMessageRow = {
    * Last change timestamp: the cursor column and the version of the row
    */
   updated_at: Timestamp;
+};
+
+/**
+ * A test of one property of the Event or line a filter is about, its key in a field of its own,
+ * so a key holding a dot is one key. It names no subject: a filter tests the one object it is
+ * about.
+ */
+export type FilterPropertyLeaf = {
+  kind: 'property';
+  /**
+   * The property's key
+   */
+  key: string;
+  /**
+   * What it asks of the property's value
+   */
+  test: PropertyTest;
+};
+
+/**
+ * A test of one property of the Event or line a filter is about, its key in a field of its own,
+ * so a key holding a dot is one key. It names no subject: a filter tests the one object it is
+ * about.
+ */
+export type FilterPropertyLeafInput = {
+  kind: 'property';
+  /**
+   * The property's key
+   */
+  key: string;
+  /**
+   * What it asks of the property's value
+   */
+  test: PropertyTestInput;
 };
 
 /**
@@ -6199,7 +6344,10 @@ export type UpdateAutomationInput = {
    */
   revision: Revision;
   name?: Name;
-  triggerEvent?: string;
+  /**
+   * What enrolls a contact; replaces the Trigger, its filter with it, and omitted keeps it
+   */
+  trigger?: AutomationTriggerInput;
   /**
    * Event actions that end an active enrollment early; replaces the list, omitted keeps it
    */

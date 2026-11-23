@@ -2,6 +2,7 @@ package jobs_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 	"time"
@@ -13,6 +14,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -80,7 +83,25 @@ func TestADeactivateBetweenPickingAndEnrollingEnrollsNobody(t *testing.T) {
 // live version again and, started by another action now, it enrolls nobody.
 func TestAPublishThatMovesTheTriggerBetweenPickingAndEnrollingEnrollsNobody(t *testing.T) {
 	runs := raceThePick(t, func(ctx context.Context, mod *automations.Module, s *ent.Scoped) error {
-		_, updated := mod.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationHoldDemoID), TriggerEvent: new("hold_demo_moved")})
+		_, updated := mod.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationHoldDemoID), Trigger: &eventmatcher.Matcher{Action: "hold_demo_moved"}})
+		_, published := mod.Publish(ctx, s, fixtures.AutomationHoldDemoID, testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationHoldDemoID))
+		return errors.Join(updated, published)
+	})
+
+	assert.Empty(t, runs)
+}
+
+// A Publish that gives the Trigger a filter the Event misses can land there too: under the lock the
+// Enrollment runs the live version's filter again and enrolls nobody.
+func TestAPublishThatFiltersTheTriggerBetweenPickingAndEnrollingEnrollsNobody(t *testing.T) {
+	leaf, err := json.Marshal(map[string]any{
+		"kind": "property", "key": "plan", "test": map[string]any{"kind": "text", "operator": "eq", "value": "pro"},
+	})
+	require.NoError(t, err)
+	filter := &conditiontree.EventFilter{Group: conditiontree.Group{Kind: conditiontree.KindGroup, Combinator: conditiontree.And, Entries: []json.RawMessage{leaf}}}
+
+	runs := raceThePick(t, func(ctx context.Context, mod *automations.Module, s *ent.Scoped) error {
+		_, updated := mod.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationHoldDemoID), Trigger: &eventmatcher.Matcher{Action: "hold_demo", Filter: filter}})
 		_, published := mod.Publish(ctx, s, fixtures.AutomationHoldDemoID, testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationHoldDemoID))
 		return errors.Join(updated, published)
 	})

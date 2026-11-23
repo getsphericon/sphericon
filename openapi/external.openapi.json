@@ -6702,18 +6702,52 @@
         },
         "description": "One Step of an automation, by `type`, as a request writes it. A field of another kind is refused."
       },
+      "AutomationTrigger": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EventTrigger"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "event": "#/components/schemas/EventTrigger"
+          }
+        },
+        "description": "What enrolls a Contact in an automation, by `kind`: an Event matcher"
+      },
+      "AutomationTriggerInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EventTriggerInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "event": "#/components/schemas/EventTriggerInput"
+          }
+        },
+        "description": "What enrolls a Contact in an automation, by `kind`: an Event matcher"
+      },
       "AutomationVersion": {
         "type": "object",
-        "required": ["number", "triggerEvent", "exitEvents", "goalEvent", "steps"],
+        "required": ["number", "trigger", "exitEvents", "goalEvent", "steps"],
         "properties": {
           "number": {
             "type": "integer",
             "format": "int32",
             "description": "1 for the first version, plus one per version after it"
           },
-          "triggerEvent": {
-            "type": "string",
-            "description": "Event action that enrolls a contact (e.g. \"contact.created\", \"email.opened\")"
+          "trigger": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationTrigger"
+              }
+            ],
+            "description": "What enrolls a contact"
           },
           "exitEvents": {
             "type": "array",
@@ -8621,13 +8655,18 @@
       },
       "CreateAutomationInput": {
         "type": "object",
-        "required": ["name", "triggerEvent"],
+        "required": ["name", "trigger"],
         "properties": {
           "name": {
             "$ref": "#/components/schemas/Name"
           },
-          "triggerEvent": {
-            "type": "string"
+          "trigger": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationTriggerInput"
+              }
+            ],
+            "description": "What enrolls a contact"
           },
           "exitEvents": {
             "type": "array",
@@ -9861,6 +9900,105 @@
         "enum": ["atLeast", "atMost"],
         "description": "How an event count is bounded: at least `times`, or at most `times`"
       },
+      "EventFilter": {
+        "type": "object",
+        "required": ["kind", "combinator", "entries"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["group"]
+          },
+          "combinator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConditionCombinator"
+              }
+            ],
+            "description": "How the entries combine"
+          },
+          "not": {
+            "type": "boolean",
+            "description": "Negate the whole group"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventFilterNode"
+            },
+            "description": "The group's tests and nested groups"
+          }
+        },
+        "description": "An Event matcher's filter (ADR 0133): the tests of the Event's own properties it holds. A\nproperty the Event lacks, or holds with another type, fails its test, so a `not` over it holds."
+      },
+      "EventFilterInput": {
+        "type": "object",
+        "required": ["kind", "combinator", "entries"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["group"]
+          },
+          "combinator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConditionCombinator"
+              }
+            ],
+            "description": "How the entries combine"
+          },
+          "not": {
+            "type": "boolean",
+            "description": "Negate the whole group"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventFilterNodeInput"
+            },
+            "description": "The group's tests and nested groups"
+          }
+        },
+        "description": "An Event matcher's filter (ADR 0133): the tests of the Event's own properties it holds. A\nproperty the Event lacks, or holds with another type, fails its test, so a `not` over it holds.",
+        "additionalProperties": false
+      },
+      "EventFilterNode": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EventFilter"
+          },
+          {
+            "$ref": "#/components/schemas/FilterPropertyLeaf"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "property": "#/components/schemas/FilterPropertyLeaf",
+            "group": "#/components/schemas/EventFilter"
+          }
+        },
+        "description": "An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is\nabout, or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133)."
+      },
+      "EventFilterNodeInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EventFilterInput"
+          },
+          {
+            "$ref": "#/components/schemas/FilterPropertyLeafInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "property": "#/components/schemas/FilterPropertyLeafInput",
+            "group": "#/components/schemas/EventFilterInput"
+          }
+        },
+        "description": "An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is\nabout, or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133)."
+      },
       "EventInput": {
         "type": "object",
         "required": ["subjectId", "action"],
@@ -9990,6 +10128,53 @@
           }
         },
         "description": "A count of how many times a Contact performed an Event action, over all time or within the\nlast `withinDays` days. Performed is atLeast 1, not performed is atMost 0; \"exactly\" is a group of\nboth. Engagement Events made by software (machine opens and clicks) are not counted. A window\nlonger than Event retention is capped by it: expired Events are no longer counted.",
+        "additionalProperties": false
+      },
+      "EventTrigger": {
+        "type": "object",
+        "required": ["kind", "action"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["event"]
+          },
+          "action": {
+            "type": "string",
+            "description": "The Event action that enrolls (e.g. \"contact.created\", \"email.opened\", \"order.completed\").\nAny customer action; of the email events only opened, clicked and unsubscribed."
+          },
+          "filter": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventFilter"
+              }
+            ],
+            "description": "The tests of the Event's own properties it must pass; absent, every Event of the action\nenrolls. The `tag` of contact.tagged and contact.untagged and the `key` of\ncontact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace."
+          }
+        },
+        "description": "A Trigger that enrolls a Contact on an Event (ADR 0133): its action, and an optional filter on\nthat Event's own properties, so `order.completed` where `status` is `paid` starts on paid orders\nonly. An Event that fails the filter is no entry: it enrolls no one and is not a skipped entry."
+      },
+      "EventTriggerInput": {
+        "type": "object",
+        "required": ["kind", "action"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["event"]
+          },
+          "action": {
+            "type": "string",
+            "description": "The Event action that enrolls (e.g. \"contact.created\", \"email.opened\", \"order.completed\").\nAny customer action; of the email events only opened, clicked and unsubscribed."
+          },
+          "filter": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventFilterInput"
+              }
+            ],
+            "description": "The tests of the Event's own properties it must pass; omitted, every Event of the action\nenrolls. The `tag` of contact.tagged and contact.untagged and the `key` of\ncontact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace."
+          }
+        },
+        "description": "A Trigger that enrolls a Contact on an Event (ADR 0133), as a request writes it",
         "additionalProperties": false
       },
       "ExportAuditRow": {
@@ -10662,6 +10847,53 @@
           }
         },
         "description": "One row of the Outbound messages stream: the delivery record of one send, whichever\nsurface asked for it. It carries provenance and outcome only, never a subject or a body.\nA row is delivered again whenever it changes (a status change, an Erasure clearing the\ndestination and the Contact)."
+      },
+      "FilterPropertyLeaf": {
+        "type": "object",
+        "required": ["kind", "key", "test"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["property"]
+          },
+          "key": {
+            "type": "string",
+            "description": "The property's key"
+          },
+          "test": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PropertyTest"
+              }
+            ],
+            "description": "What it asks of the property's value"
+          }
+        },
+        "description": "A test of one property of the Event or line a filter is about, its key in a field of its own,\nso a key holding a dot is one key. It names no subject: a filter tests the one object it is\nabout."
+      },
+      "FilterPropertyLeafInput": {
+        "type": "object",
+        "required": ["kind", "key", "test"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["property"]
+          },
+          "key": {
+            "type": "string",
+            "description": "The property's key"
+          },
+          "test": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PropertyTestInput"
+              }
+            ],
+            "description": "What it asks of the property's value"
+          }
+        },
+        "description": "A test of one property of the Event or line a filter is about, its key in a field of its own,\nso a key holding a dot is one key. It names no subject: a filter tests the one object it is\nabout.",
+        "additionalProperties": false
       },
       "GrantableScope": {
         "type": "string",
@@ -14626,8 +14858,13 @@
           "name": {
             "$ref": "#/components/schemas/Name"
           },
-          "triggerEvent": {
-            "type": "string"
+          "trigger": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationTriggerInput"
+              }
+            ],
+            "description": "What enrolls a contact; replaces the Trigger, its filter with it, and omitted keeps it"
           },
           "exitEvents": {
             "type": "array",

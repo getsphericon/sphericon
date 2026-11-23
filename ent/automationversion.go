@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 )
 
 // AutomationVersion is the model entity for the AutomationVersion schema.
@@ -33,8 +34,10 @@ type AutomationVersion struct {
 	Version int `json:"version,omitempty"`
 	// Steps holds the value of the "steps" field.
 	Steps automationstep.Path `json:"steps,omitempty"`
-	// TriggerEvent holds the value of the "trigger_event" field.
-	TriggerEvent string `json:"trigger_event,omitempty"`
+	// TriggerAction holds the value of the "trigger_action" field.
+	TriggerAction string `json:"trigger_action,omitempty"`
+	// TriggerFilter holds the value of the "trigger_filter" field.
+	TriggerFilter *conditiontree.EventFilter `json:"trigger_filter,omitempty"`
 	// ExitEvents holds the value of the "exit_events" field.
 	ExitEvents []string `json:"exit_events,omitempty"`
 	// GoalEvent holds the value of the "goal_event" field.
@@ -94,11 +97,11 @@ func (*AutomationVersion) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case automationversion.FieldSteps, automationversion.FieldExitEvents:
+		case automationversion.FieldSteps, automationversion.FieldTriggerFilter, automationversion.FieldExitEvents:
 			values[i] = new([]byte)
 		case automationversion.FieldID, automationversion.FieldWorkspaceID, automationversion.FieldAutomationID, automationversion.FieldVersion:
 			values[i] = new(sql.NullInt64)
-		case automationversion.FieldTriggerEvent, automationversion.FieldGoalEvent:
+		case automationversion.FieldTriggerAction, automationversion.FieldGoalEvent:
 			values[i] = new(sql.NullString)
 		case automationversion.FieldCreatedAt, automationversion.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -161,11 +164,19 @@ func (_m *AutomationVersion) assignValues(columns []string, values []any) error 
 					return fmt.Errorf("unmarshal field steps: %w", err)
 				}
 			}
-		case automationversion.FieldTriggerEvent:
+		case automationversion.FieldTriggerAction:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field trigger_event", values[i])
+				return fmt.Errorf("unexpected type %T for field trigger_action", values[i])
 			} else if value.Valid {
-				_m.TriggerEvent = value.String
+				_m.TriggerAction = value.String
+			}
+		case automationversion.FieldTriggerFilter:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field trigger_filter", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.TriggerFilter); err != nil {
+					return fmt.Errorf("unmarshal field trigger_filter: %w", err)
+				}
 			}
 		case automationversion.FieldExitEvents:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -251,8 +262,11 @@ func (_m *AutomationVersion) String() string {
 	builder.WriteString("steps=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Steps))
 	builder.WriteString(", ")
-	builder.WriteString("trigger_event=")
-	builder.WriteString(_m.TriggerEvent)
+	builder.WriteString("trigger_action=")
+	builder.WriteString(_m.TriggerAction)
+	builder.WriteString(", ")
+	builder.WriteString("trigger_filter=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TriggerFilter))
 	builder.WriteString(", ")
 	builder.WriteString("exit_events=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ExitEvents))

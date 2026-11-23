@@ -80,11 +80,11 @@ func TestPairRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 		{
 			name: "invalid trigger", want: "invalid trigger: ", head: len("invalid trigger: "),
 			site: func(c *siteapi.Client) error {
-				return refusalOf(c.SiteAutomationsCreate(t.Context(), &siteapi.CreateAutomationInput{Name: "x", TriggerEvent: systemevent.EmailSent},
+				return refusalOf(c.SiteAutomationsCreate(t.Context(), &siteapi.CreateAutomationInput{Name: "x", Trigger: testhelper.SiteTrigger(systemevent.EmailSent)},
 					siteapi.SiteAutomationsCreateParams{WorkspaceId: ws}))
 			},
 			ext: func(c *externalapi.Client) error {
-				return refusalOf(c.AutomationsCreate(t.Context(), &externalapi.CreateAutomationInput{Name: "x", TriggerEvent: systemevent.EmailSent}))
+				return refusalOf(c.AutomationsCreate(t.Context(), &externalapi.CreateAutomationInput{Name: "x", Trigger: testhelper.ExternalTrigger(systemevent.EmailSent)}))
 			},
 		},
 		{

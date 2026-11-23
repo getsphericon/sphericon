@@ -8,6 +8,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 )
 
 // AutomationVersion is one copy of an Automation's definition: its Trigger, exit and goal events
@@ -23,7 +24,9 @@ type AutomationVersion struct {
 func (AutomationVersion) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entsql.Annotation{Table: "automation_versions", Checks: map[string]string{
-			"automation_versions_steps_check": stepsCheck("steps"),
+			"automation_versions_steps_check":                  stepsCheck("steps"),
+			"automation_versions_trigger_filter_check":         conditionCheck("trigger_filter"),
+			"automation_versions_trigger_filter_entries_check": conditionEntriesCheck("trigger_filter"),
 		}},
 	}
 }
@@ -49,9 +52,15 @@ func (AutomationVersion) Fields() []ent.Field {
 		// version is not audited itself: the Automation's own entries say it was archived or restored.
 		field.JSON("steps", automationstep.Path{}).
 			Annotations(Sensitive{}),
-		// The Event.action that enrolls a contact (e.g. "contact.created", "email.opened", a
-		// custom collect event).
-		field.String("trigger_event"),
+		// The version's Trigger is an Event matcher (ADR 0133, eventmatcher.Matcher): the
+		// Event.action that enrolls a Contact (e.g. "contact.created", "email.opened", a custom
+		// collect event), a column of its own for the hot lookup of the live versions an action
+		// starts, and the filter on that Event's own properties (conditiontree.EventFilter), a
+		// jsonb object (ADR 0169) that Postgres runs as one SQL/JSON path (ADR 0180). NULL is no
+		// filter: every Event of the action enrolls.
+		field.String("trigger_action"),
+		field.JSON("trigger_filter", &conditiontree.EventFilter{}).
+			Optional(),
 		// The Event actions that end an active Enrollment on this version early (`exited`), and
 		// the one that ends it as having reached its goal (`goal_reached`); none is the trigger.
 		field.JSON("exit_events", []string{}).
@@ -72,6 +81,6 @@ func (AutomationVersion) Edges() []ent.Edge {
 func (AutomationVersion) Indexes() []ent.Index {
 	return []ent.Index{
 		// Trigger lookup: the live versions for a given event action.
-		index.Fields("workspace_id", "trigger_event"),
+		index.Fields("workspace_id", "trigger_action"),
 	}
 }

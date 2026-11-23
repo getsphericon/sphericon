@@ -355,13 +355,55 @@ model AutomationPathInput {
   steps: AutomationStepInput[];
 }
 
+/** A Trigger that enrolls a Contact on an Event (ADR 0133): its action, and an optional filter on
+ * that Event's own properties, so `order.completed` where `status` is `paid` starts on paid orders
+ * only. An Event that fails the filter is no entry: it enrolls no one and is not a skipped entry. */
+model EventTrigger {
+  kind: "event";
+
+  /** The Event action that enrolls (e.g. "contact.created", "email.opened", "order.completed").
+   * Any customer action; of the email events only opened, clicked and unsubscribed. */
+  action: string;
+
+  /** The tests of the Event's own properties it must pass; absent, every Event of the action
+   * enrolls. The `tag` of contact.tagged and contact.untagged and the `key` of
+   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. */
+  filter?: EventFilter;
+}
+
+/** A Trigger that enrolls a Contact on an Event (ADR 0133), as a request writes it */
+model EventTriggerInput {
+  kind: "event";
+
+  /** The Event action that enrolls (e.g. "contact.created", "email.opened", "order.completed").
+   * Any customer action; of the email events only opened, clicked and unsubscribed. */
+  action: string;
+
+  /** The tests of the Event's own properties it must pass; omitted, every Event of the action
+   * enrolls. The `tag` of contact.tagged and contact.untagged and the `key` of
+   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. */
+  filter?: EventFilterInput;
+}
+
+/** What enrolls a Contact in an automation, by `kind`: an Event matcher */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union AutomationTrigger {
+  event: EventTrigger,
+}
+
+/** What enrolls a Contact in an automation, by `kind`: an Event matcher */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union AutomationTriggerInput {
+  event: EventTriggerInput,
+}
+
 /** One version of an automation's definition: what publishing makes it do (ADR 0065) */
 model AutomationVersion {
   /** 1 for the first version, plus one per version after it */
   number: int32;
 
-  /** Event action that enrolls a contact (e.g. "contact.created", "email.opened") */
-  triggerEvent: string;
+  /** What enrolls a contact */
+  trigger: AutomationTrigger;
 
   /** Event actions that end an active enrollment early, as exited (e.g. "plan_downgraded"). Only
    * an Event that occurred once the enrollment began counts; machine opens and clicks never do. */
@@ -378,7 +420,9 @@ model AutomationVersion {
 /** Request body for creating an automation (always created inactive) */
 model CreateAutomationInput {
   name: Name;
-  triggerEvent: string;
+
+  /** What enrolls a contact */
+  trigger: AutomationTriggerInput;
 
   /** Event actions that end an active enrollment early; none of them may be the trigger. Each
    * follows the trigger's rule: any customer action, and of the email events only opened, clicked
@@ -401,7 +445,9 @@ model UpdateAutomationInput {
   revision: Revision;
 
   name?: Name;
-  triggerEvent?: string;
+
+  /** What enrolls a contact; replaces the Trigger, its filter with it, and omitted keeps it */
+  trigger?: AutomationTriggerInput;
 
   /** Event actions that end an active enrollment early; replaces the list, omitted keeps it */
   exitEvents?: string[];

@@ -131,7 +131,7 @@ func (m *StepExecution) OnEvent(ctx context.Context, s *ent.Scoped, in OnEventIn
 	if err != nil || ev.SendLocked {
 		return err
 	}
-	triggered, err := triggeredBy(ctx, s, ev.Action)
+	triggered, err := triggeredBy(ctx, s, ev)
 	if err != nil {
 		return err
 	}

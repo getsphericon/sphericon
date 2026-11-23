@@ -27,7 +27,8 @@ import (
 //  6. the cooldown from the previous Enrollment's beginning (`cooldown`);
 //  7. a keyed version's ceiling (`enrollment_ceiling`).
 //
-// entryChecks holds the ones built, in that order; a check that comes takes its place among them.
+// The first is enrollOnTrigger's admission, before the others are judged (matchesEvent);
+// entryChecks holds the others built, in that order; a check that comes takes its place among them.
 //
 // The "other" Enrollments leave out the one the entry's own Event or Firing made: an Event handled
 // again finds the Enrollment it began, which is no reason to skip it, and the insert's ON CONFLICT

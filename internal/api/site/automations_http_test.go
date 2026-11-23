@@ -28,7 +28,7 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 	body := `{"text":"{{ first_name }}"}`
 
 	created, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
-		Name: "Notify Slack", TriggerEvent: "signup",
+		Name: "Notify Slack", Trigger: testhelper.SiteTrigger("signup"),
 		Steps: testhelper.SitePathEdit(siteapi.HttpStepInput{
 			Body:    body,
 			URL:     siteapi.NewOptString("https://hooks.slack.com/services/T0/SECRETPATH"),
@@ -123,7 +123,7 @@ func TestSiteHTTPStepRefusedAtSaveIsUnprocessable(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	_, err := c.SiteAutomationsCreate(context.Background(), &siteapi.CreateAutomationInput{
-		Name: "Bad", TriggerEvent: "signup",
+		Name: "Bad", Trigger: testhelper.SiteTrigger("signup"),
 		Steps: testhelper.SitePathEdit(siteapi.HttpStepInput{
 			URL:  siteapi.NewOptString("https://hooks.example.com/x"),
 			Body: `{"a": {{ nope }}}`,
@@ -139,16 +139,16 @@ func TestSiteAutomationRefusesInfrastructureEventsAsTrigger(t *testing.T) {
 	params := siteapi.SiteAutomationsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 
 	for _, trigger := range []string{systemevent.EmailDelivered, systemevent.EmailDelayed, systemevent.EmailDropped, systemevent.EmailBounced, systemevent.EmailComplained, systemevent.EmailSent} {
-		_, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{Name: siteapi.Name("From " + trigger), TriggerEvent: trigger}, params)
+		_, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{Name: siteapi.Name("From " + trigger), Trigger: testhelper.SiteTrigger(trigger)}, params)
 		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity, trigger)
 	}
 
 	for _, trigger := range []string{systemevent.EmailOpened, systemevent.EmailClicked, systemevent.EmailUnsubscribed} {
-		_, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{Name: siteapi.Name("From " + trigger), TriggerEvent: trigger}, params)
+		_, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{Name: siteapi.Name("From " + trigger), Trigger: testhelper.SiteTrigger(trigger)}, params)
 		require.NoError(t, err, trigger)
 	}
 
-	_, err := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(idStr(fixtures.AutomationWinBackID)))), TriggerEvent: siteapi.NewOptString(systemevent.EmailBounced)},
+	_, err := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(idStr(fixtures.AutomationWinBackID)))), Trigger: siteapi.NewOptAutomationTriggerInput(testhelper.SiteTrigger(systemevent.EmailBounced))},
 		siteapi.SiteAutomationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AutomationWinBackID)})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }

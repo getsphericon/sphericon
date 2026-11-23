@@ -327,6 +327,7 @@ type Converter interface {
 	// DTO at this boundary. The contract names the version "number".
 	// goverter:map Version Number | count
 	// goverter:map Steps | automationPath
+	// goverter:map . Trigger | automationTrigger
 	AutomationVersionToResource(source *ent.AutomationVersion) (externalapi.AutomationVersion, error)
 	// goverter:map Steps | automationStepViews
 	AutomationPathToResource(source automations.PathView) (externalapi.AutomationPath, error)
@@ -819,6 +820,21 @@ func optNilTimestamp(v *time.Time) externalapi.OptNilTimestamp {
 // is written, so one that does not decode is a broken row, and it fails the response.
 func segmentCondition(g conditiontree.Segment) (externalapi.SegmentCondition, error) {
 	return convert.Document[externalapi.SegmentCondition](g)
+}
+
+// automationTrigger maps a version's Trigger into the typed DTO by its kind: an Event matcher whose
+// filter is checked as a stored Condition is (convert.Document).
+func automationTrigger(v *ent.AutomationVersion) (externalapi.AutomationTrigger, error) {
+	m := automations.TriggerOf(v)
+	ev := externalapi.EventTrigger{Kind: externalapi.EventTriggerKindEvent, Action: m.Action}
+	if m.Filter != nil {
+		f, err := convert.Document[externalapi.EventFilter](*m.Filter)
+		if err != nil {
+			return externalapi.AutomationTrigger{}, err
+		}
+		ev.Filter = externalapi.NewOptEventFilter(f)
+	}
+	return externalapi.AutomationTrigger{OneOf: externalapi.NewEventTriggerAutomationTriggerSum(ev)}, nil
 }
 
 // ruleCondition maps a Rule's Condition into the typed DTO, failing as segmentCondition does.

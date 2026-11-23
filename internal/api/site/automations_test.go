@@ -20,8 +20,8 @@ func TestSiteAutomationsCRUDPublishAndDeactivate(t *testing.T) {
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	created, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
-		Name:         "Welcome series",
-		TriggerEvent: systemevent.ContactCreated,
+		Name:    "Welcome series",
+		Trigger: testhelper.SiteTrigger(systemevent.ContactCreated),
 		Steps: testhelper.SitePathEdit(
 			siteapi.EmailStepInput{Subject: "Hi", Body: siteapi.NewOptString("<p></p>")},
 			siteapi.WaitStepInput{Seconds: 3600},
@@ -31,7 +31,7 @@ func TestSiteAutomationsCRUDPublishAndDeactivate(t *testing.T) {
 	res := created
 	assert.Equal(t, "Welcome series", res.Name)
 	assert.Equal(t, siteapi.AutomationStatusInactive, res.Status)
-	assert.Equal(t, systemevent.ContactCreated, res.Draft.Value.TriggerEvent)
+	assert.Equal(t, systemevent.ContactCreated, res.Draft.Value.Trigger.OneOf.EventTrigger.Action)
 
 	// Steps round-trip through the typed contract (stored as the executor's JSON
 	// string, decoded back into the typed DTO).

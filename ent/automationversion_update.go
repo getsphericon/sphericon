@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 )
 
 // AutomationVersionUpdate is the builder for updating AutomationVersion entities.
@@ -82,17 +83,29 @@ func (_u *AutomationVersionUpdate) SetNillableSteps(v *automationstep.Path) *Aut
 	return _u
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (_u *AutomationVersionUpdate) SetTriggerEvent(v string) *AutomationVersionUpdate {
-	_u.mutation.SetTriggerEvent(v)
+// SetTriggerAction sets the "trigger_action" field.
+func (_u *AutomationVersionUpdate) SetTriggerAction(v string) *AutomationVersionUpdate {
+	_u.mutation.SetTriggerAction(v)
 	return _u
 }
 
-// SetNillableTriggerEvent sets the "trigger_event" field if the given value is not nil.
-func (_u *AutomationVersionUpdate) SetNillableTriggerEvent(v *string) *AutomationVersionUpdate {
+// SetNillableTriggerAction sets the "trigger_action" field if the given value is not nil.
+func (_u *AutomationVersionUpdate) SetNillableTriggerAction(v *string) *AutomationVersionUpdate {
 	if v != nil {
-		_u.SetTriggerEvent(*v)
+		_u.SetTriggerAction(*v)
 	}
+	return _u
+}
+
+// SetTriggerFilter sets the "trigger_filter" field.
+func (_u *AutomationVersionUpdate) SetTriggerFilter(v *conditiontree.EventFilter) *AutomationVersionUpdate {
+	_u.mutation.SetTriggerFilter(v)
+	return _u
+}
+
+// ClearTriggerFilter clears the value of the "trigger_filter" field.
+func (_u *AutomationVersionUpdate) ClearTriggerFilter() *AutomationVersionUpdate {
+	_u.mutation.ClearTriggerFilter()
 	return _u
 }
 
@@ -262,8 +275,14 @@ func (_u *AutomationVersionUpdate) sqlSave(ctx context.Context) (_node int, err 
 	if value, ok := _u.mutation.Steps(); ok {
 		_spec.SetField(automationversion.FieldSteps, field.TypeJSON, value)
 	}
-	if value, ok := _u.mutation.TriggerEvent(); ok {
-		_spec.SetField(automationversion.FieldTriggerEvent, field.TypeString, value)
+	if value, ok := _u.mutation.TriggerAction(); ok {
+		_spec.SetField(automationversion.FieldTriggerAction, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.TriggerFilter(); ok {
+		_spec.SetField(automationversion.FieldTriggerFilter, field.TypeJSON, value)
+	}
+	if _u.mutation.TriggerFilterCleared() {
+		_spec.ClearField(automationversion.FieldTriggerFilter, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.ExitEvents(); ok {
 		_spec.SetField(automationversion.FieldExitEvents, field.TypeJSON, value)
@@ -452,17 +471,29 @@ func (_u *AutomationVersionUpdateOne) SetNillableSteps(v *automationstep.Path) *
 	return _u
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (_u *AutomationVersionUpdateOne) SetTriggerEvent(v string) *AutomationVersionUpdateOne {
-	_u.mutation.SetTriggerEvent(v)
+// SetTriggerAction sets the "trigger_action" field.
+func (_u *AutomationVersionUpdateOne) SetTriggerAction(v string) *AutomationVersionUpdateOne {
+	_u.mutation.SetTriggerAction(v)
 	return _u
 }
 
-// SetNillableTriggerEvent sets the "trigger_event" field if the given value is not nil.
-func (_u *AutomationVersionUpdateOne) SetNillableTriggerEvent(v *string) *AutomationVersionUpdateOne {
+// SetNillableTriggerAction sets the "trigger_action" field if the given value is not nil.
+func (_u *AutomationVersionUpdateOne) SetNillableTriggerAction(v *string) *AutomationVersionUpdateOne {
 	if v != nil {
-		_u.SetTriggerEvent(*v)
+		_u.SetTriggerAction(*v)
 	}
+	return _u
+}
+
+// SetTriggerFilter sets the "trigger_filter" field.
+func (_u *AutomationVersionUpdateOne) SetTriggerFilter(v *conditiontree.EventFilter) *AutomationVersionUpdateOne {
+	_u.mutation.SetTriggerFilter(v)
+	return _u
+}
+
+// ClearTriggerFilter clears the value of the "trigger_filter" field.
+func (_u *AutomationVersionUpdateOne) ClearTriggerFilter() *AutomationVersionUpdateOne {
+	_u.mutation.ClearTriggerFilter()
 	return _u
 }
 
@@ -662,8 +693,14 @@ func (_u *AutomationVersionUpdateOne) sqlSave(ctx context.Context) (_node *Autom
 	if value, ok := _u.mutation.Steps(); ok {
 		_spec.SetField(automationversion.FieldSteps, field.TypeJSON, value)
 	}
-	if value, ok := _u.mutation.TriggerEvent(); ok {
-		_spec.SetField(automationversion.FieldTriggerEvent, field.TypeString, value)
+	if value, ok := _u.mutation.TriggerAction(); ok {
+		_spec.SetField(automationversion.FieldTriggerAction, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.TriggerFilter(); ok {
+		_spec.SetField(automationversion.FieldTriggerFilter, field.TypeJSON, value)
+	}
+	if _u.mutation.TriggerFilterCleared() {
+		_spec.ClearField(automationversion.FieldTriggerFilter, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.ExitEvents(); ok {
 		_spec.SetField(automationversion.FieldExitEvents, field.TypeJSON, value)

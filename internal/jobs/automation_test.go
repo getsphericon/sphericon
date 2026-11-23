@@ -108,7 +108,7 @@ func triggerOf(t *testing.T, env *testhelper.TestEnv, automationID int64) string
 	if versionID == nil {
 		versionID = a.DraftVersionID
 	}
-	return env.DB.AutomationVersion.GetX(ctx, *versionID).TriggerEvent
+	return env.DB.AutomationVersion.GetX(ctx, *versionID).TriggerAction
 }
 
 // enrollVia enrolls the Contact through the Automation's own trigger and returns its one run.

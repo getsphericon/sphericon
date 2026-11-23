@@ -38,6 +38,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
@@ -246,8 +247,10 @@ type Inputs interface {
 	RemoveTagStepIn(source siteapi.RemoveTagStepInput) automationstep.RemoveTag
 	HttpStepIn(source siteapi.HttpStepInput) automationstep.HTTP
 	TelegramButton(source siteapi.TelegramButtonInput) telegramrender.Button
-	AutomationCreate(source *siteapi.CreateAutomationInput) automations.CreateInput
-	AutomationUpdate(source *siteapi.UpdateAutomationInput) automations.UpdateInput
+	// goverter:map Trigger | automationTriggerIn
+	AutomationCreate(source *siteapi.CreateAutomationInput) (automations.CreateInput, error)
+	// goverter:map Trigger | automationTriggerPtrIn
+	AutomationUpdate(source *siteapi.UpdateAutomationInput) (automations.UpdateInput, error)
 
 	RuleActions(source []siteapi.RuleActionInput) []ruleaction.Action
 	// goverter:map Condition | ruleConditionIn
@@ -492,6 +495,34 @@ func ruleActionsPtrIn(c Inputs, actions []siteapi.RuleActionInput) *[]ruleaction
 // segmentConditionIn is a Segment's Condition the request may leave out; nil when it is absent.
 func segmentConditionIn(o siteapi.OptSegmentConditionInput) (*conditiontree.Segment, error) {
 	return condition.FromOptionalDTO[conditiontree.Segment](o)
+}
+
+// automationTriggerIn is the Trigger a write gives, by its kind: an Event matcher, its filter the
+// stored Condition of the place (ADR 0169). A oneOf is beyond goverter, so the switch is written
+// here; a Trigger of no kind is no matcher, which the save refuses.
+func automationTriggerIn(t siteapi.AutomationTriggerInput) (eventmatcher.Matcher, error) {
+	if t.OneOf.Type != siteapi.EventTriggerInputAutomationTriggerInputSum {
+		return eventmatcher.Matcher{}, nil
+	}
+	ev := t.OneOf.EventTriggerInput
+	filter, err := condition.FromOptionalDTO[conditiontree.EventFilter](ev.Filter)
+	if err != nil {
+		return eventmatcher.Matcher{}, err
+	}
+	return eventmatcher.Matcher{Action: ev.Action, Filter: filter}, nil
+}
+
+// automationTriggerPtrIn is the Trigger an update replaces: omitted (nil) keeps the stored one.
+func automationTriggerPtrIn(o siteapi.OptAutomationTriggerInput) (*eventmatcher.Matcher, error) {
+	t, ok := o.Get()
+	if !ok {
+		return nil, nil
+	}
+	m, err := automationTriggerIn(t)
+	if err != nil {
+		return nil, err
+	}
+	return &m, nil
 }
 
 // ruleConditionIn is a Rule's Condition the request may leave out; nil when it is absent.

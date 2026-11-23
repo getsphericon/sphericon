@@ -403,6 +403,7 @@ type Converter interface {
 	// DTO at this boundary. The contract names the version "number".
 	// goverter:map Version Number | count
 	// goverter:map Steps | automationPath
+	// goverter:map . Trigger | automationTrigger
 	AutomationVersionToResource(source *ent.AutomationVersion) (siteapi.AutomationVersion, error)
 	// goverter:map Steps | automationStepViews
 	AutomationPathToResource(source automations.PathView) (siteapi.AutomationPath, error)
@@ -1166,6 +1167,21 @@ func optEditorDocument(doc json.RawMessage) siteapi.OptEditorDocument {
 // is written, so one that does not decode is a broken row, and it fails the response.
 func segmentCondition(g conditiontree.Segment) (siteapi.SegmentCondition, error) {
 	return convert.Document[siteapi.SegmentCondition](g)
+}
+
+// automationTrigger maps a version's Trigger into the typed DTO by its kind: an Event matcher whose
+// filter is checked as a stored Condition is (convert.Document).
+func automationTrigger(v *ent.AutomationVersion) (siteapi.AutomationTrigger, error) {
+	m := automations.TriggerOf(v)
+	ev := siteapi.EventTrigger{Kind: siteapi.EventTriggerKindEvent, Action: m.Action}
+	if m.Filter != nil {
+		f, err := convert.Document[siteapi.EventFilter](*m.Filter)
+		if err != nil {
+			return siteapi.AutomationTrigger{}, err
+		}
+		ev.Filter = siteapi.NewOptEventFilter(f)
+	}
+	return siteapi.AutomationTrigger{OneOf: siteapi.NewEventTriggerAutomationTriggerSum(ev)}, nil
 }
 
 // ruleCondition maps a Rule's Condition into the typed DTO, failing as segmentCondition does.

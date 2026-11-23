@@ -9920,13 +9920,21 @@ func (x *AutomationVersionScopedCreate) SetSteps(v automationstep.Path) *Automat
 
 const RoleOf_AutomationVersionScopedCreate_SetSteps = RoleStep
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (x *AutomationVersionScopedCreate) SetTriggerEvent(v string) *AutomationVersionScopedCreate {
-	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetTriggerEvent(v) })
+// SetTriggerAction sets the "trigger_action" field.
+func (x *AutomationVersionScopedCreate) SetTriggerAction(v string) *AutomationVersionScopedCreate {
+	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetTriggerAction(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedCreate_SetTriggerEvent = RoleStep
+const RoleOf_AutomationVersionScopedCreate_SetTriggerAction = RoleStep
+
+// SetTriggerFilter sets the "trigger_filter" field.
+func (x *AutomationVersionScopedCreate) SetTriggerFilter(v *conditiontree.EventFilter) *AutomationVersionScopedCreate {
+	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetTriggerFilter(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedCreate_SetTriggerFilter = RoleStep
 
 // SetExitEvents sets the "exit_events" field.
 func (x *AutomationVersionScopedCreate) SetExitEvents(v []string) *AutomationVersionScopedCreate {
@@ -10131,21 +10139,45 @@ func (u *AutomationVersionScopedUpsert) UpdateSteps() *AutomationVersionScopedUp
 
 const RoleOf_AutomationVersionScopedUpsert_UpdateSteps = RoleStep
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (u *AutomationVersionScopedUpsert) SetTriggerEvent(v string) *AutomationVersionScopedUpsert {
-	u.u.Set(automationversion.FieldTriggerEvent, v)
+// SetTriggerAction sets the "trigger_action" field.
+func (u *AutomationVersionScopedUpsert) SetTriggerAction(v string) *AutomationVersionScopedUpsert {
+	u.u.Set(automationversion.FieldTriggerAction, v)
 	return u
 }
 
-const RoleOf_AutomationVersionScopedUpsert_SetTriggerEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpsert_SetTriggerAction = RoleStep
 
-// UpdateTriggerEvent sets the "trigger_event" field to the value that was provided on create.
-func (u *AutomationVersionScopedUpsert) UpdateTriggerEvent() *AutomationVersionScopedUpsert {
-	u.u.SetExcluded(automationversion.FieldTriggerEvent)
+// UpdateTriggerAction sets the "trigger_action" field to the value that was provided on create.
+func (u *AutomationVersionScopedUpsert) UpdateTriggerAction() *AutomationVersionScopedUpsert {
+	u.u.SetExcluded(automationversion.FieldTriggerAction)
 	return u
 }
 
-const RoleOf_AutomationVersionScopedUpsert_UpdateTriggerEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpsert_UpdateTriggerAction = RoleStep
+
+// SetTriggerFilter sets the "trigger_filter" field.
+func (u *AutomationVersionScopedUpsert) SetTriggerFilter(v *conditiontree.EventFilter) *AutomationVersionScopedUpsert {
+	u.u.Set(automationversion.FieldTriggerFilter, v)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_SetTriggerFilter = RoleStep
+
+// UpdateTriggerFilter sets the "trigger_filter" field to the value that was provided on create.
+func (u *AutomationVersionScopedUpsert) UpdateTriggerFilter() *AutomationVersionScopedUpsert {
+	u.u.SetExcluded(automationversion.FieldTriggerFilter)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_UpdateTriggerFilter = RoleStep
+
+// ClearTriggerFilter clears the value of the "trigger_filter" field.
+func (u *AutomationVersionScopedUpsert) ClearTriggerFilter() *AutomationVersionScopedUpsert {
+	u.u.SetNull(automationversion.FieldTriggerFilter)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_ClearTriggerFilter = RoleStep
 
 // SetExitEvents sets the "exit_events" field.
 func (u *AutomationVersionScopedUpsert) SetExitEvents(v []string) *AutomationVersionScopedUpsert {
@@ -10430,23 +10462,39 @@ func (x *AutomationVersionScopedUpdateOne) SetNillableSteps(v *automationstep.Pa
 
 const RoleOf_AutomationVersionScopedUpdateOne_SetNillableSteps = RoleStep
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (x *AutomationVersionScopedUpdateOne) SetTriggerEvent(v string) *AutomationVersionScopedUpdateOne {
-	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetTriggerEvent(v) })
+// SetTriggerAction sets the "trigger_action" field.
+func (x *AutomationVersionScopedUpdateOne) SetTriggerAction(v string) *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetTriggerAction(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdateOne_SetTriggerEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpdateOne_SetTriggerAction = RoleStep
 
-// SetNillableTriggerEvent sets the "trigger_event" field if the given value is not nil.
-func (x *AutomationVersionScopedUpdateOne) SetNillableTriggerEvent(v *string) *AutomationVersionScopedUpdateOne {
+// SetNillableTriggerAction sets the "trigger_action" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdateOne) SetNillableTriggerAction(v *string) *AutomationVersionScopedUpdateOne {
 	if v != nil {
-		x.SetTriggerEvent(*v)
+		x.SetTriggerAction(*v)
 	}
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdateOne_SetNillableTriggerEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpdateOne_SetNillableTriggerAction = RoleStep
+
+// SetTriggerFilter sets the "trigger_filter" field.
+func (x *AutomationVersionScopedUpdateOne) SetTriggerFilter(v *conditiontree.EventFilter) *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetTriggerFilter(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdateOne_SetTriggerFilter = RoleStep
+
+// ClearTriggerFilter clears the value of the "trigger_filter" field.
+func (x *AutomationVersionScopedUpdateOne) ClearTriggerFilter() *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.ClearTriggerFilter() })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdateOne_ClearTriggerFilter = RoleStep
 
 // SetExitEvents sets the "exit_events" field.
 func (x *AutomationVersionScopedUpdateOne) SetExitEvents(v []string) *AutomationVersionScopedUpdateOne {
@@ -10673,23 +10721,39 @@ func (x *AutomationVersionScopedUpdate) SetNillableSteps(v *automationstep.Path)
 
 const RoleOf_AutomationVersionScopedUpdate_SetNillableSteps = RoleStep
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (x *AutomationVersionScopedUpdate) SetTriggerEvent(v string) *AutomationVersionScopedUpdate {
-	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetTriggerEvent(v) })
+// SetTriggerAction sets the "trigger_action" field.
+func (x *AutomationVersionScopedUpdate) SetTriggerAction(v string) *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetTriggerAction(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdate_SetTriggerEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpdate_SetTriggerAction = RoleStep
 
-// SetNillableTriggerEvent sets the "trigger_event" field if the given value is not nil.
-func (x *AutomationVersionScopedUpdate) SetNillableTriggerEvent(v *string) *AutomationVersionScopedUpdate {
+// SetNillableTriggerAction sets the "trigger_action" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdate) SetNillableTriggerAction(v *string) *AutomationVersionScopedUpdate {
 	if v != nil {
-		x.SetTriggerEvent(*v)
+		x.SetTriggerAction(*v)
 	}
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdate_SetNillableTriggerEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpdate_SetNillableTriggerAction = RoleStep
+
+// SetTriggerFilter sets the "trigger_filter" field.
+func (x *AutomationVersionScopedUpdate) SetTriggerFilter(v *conditiontree.EventFilter) *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetTriggerFilter(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdate_SetTriggerFilter = RoleStep
+
+// ClearTriggerFilter clears the value of the "trigger_filter" field.
+func (x *AutomationVersionScopedUpdate) ClearTriggerFilter() *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.ClearTriggerFilter() })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdate_ClearTriggerFilter = RoleStep
 
 // SetExitEvents sets the "exit_events" field.
 func (x *AutomationVersionScopedUpdate) SetExitEvents(v []string) *AutomationVersionScopedUpdate {

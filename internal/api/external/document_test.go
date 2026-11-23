@@ -183,7 +183,7 @@ func TestExternalAutomationEmailStepsCarryTheDocument(t *testing.T) {
 	ctx := context.Background()
 
 	res, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
-		Name: "Authored", TriggerEvent: "authored.signup",
+		Name: "Authored", Trigger: testhelper.ExternalTrigger("authored.signup"),
 		Steps: testhelper.ExternalPathEdit(externalapi.EmailStepInput{
 			Subject: "Hi",
 			Doc:     externalapi.NewOptEditorDocument(paragraphDoc("Hello {{ first_name }}")),

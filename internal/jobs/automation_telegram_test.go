@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -40,7 +41,7 @@ func telegramAutomation(t *testing.T, env *testhelper.TestEnv, steps ...automati
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 	created, err := m.Create(ctx, s, automations.CreateInput{
-		Name: "Telegram welcome", TriggerEvent: systemevent.TelegramBound, ExitEvents: []string{}, Steps: new(automationstep.Root(steps...)),
+		Name: "Telegram welcome", Trigger: eventmatcher.Matcher{Action: systemevent.TelegramBound}, ExitEvents: []string{}, Steps: new(automationstep.Root(steps...)),
 	})
 	require.NoError(t, err)
 	_, err = m.Publish(ctx, s, created.ID, testhelper.AutomationRevisionIn(ctx, t, s, created.ID))

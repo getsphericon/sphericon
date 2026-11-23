@@ -491,7 +491,11 @@ func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersio
 	var siteapiAutomationVersion site.AutomationVersion
 	if source != nil {
 		siteapiAutomationVersion.Number = count((*source).Version)
-		siteapiAutomationVersion.TriggerEvent = (*source).TriggerEvent
+		siteapiAutomationTrigger, err := automationTrigger(source)
+		if err != nil {
+			return siteapiAutomationVersion, err
+		}
+		siteapiAutomationVersion.Trigger = siteapiAutomationTrigger
 		if (*source).ExitEvents != nil {
 			siteapiAutomationVersion.ExitEvents = make([]string, len((*source).ExitEvents))
 			for i := 0; i < len((*source).ExitEvents); i++ {

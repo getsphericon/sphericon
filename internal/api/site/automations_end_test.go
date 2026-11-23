@@ -22,7 +22,7 @@ func TestSiteAutomationKeepsAnEndThatFinishesItsPath(t *testing.T) {
 	ctx := t.Context()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	created, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
-		Name: "Ends", TriggerEvent: "signup",
+		Name: "Ends", Trigger: testhelper.SiteTrigger("signup"),
 		Steps: testhelper.SitePathEdit(
 			siteapi.WaitStepInput{Seconds: 60},
 			siteapi.EndStepInput{ID: siteapi.NewOptStepId(endStepID)},
@@ -56,7 +56,7 @@ func TestSiteAutomationRefusesAStepAfterAnEnd(t *testing.T) {
 	after := "0f6b8d1e-6c2a-4a55-8f7e-3c1d2b4a5e72"
 
 	_, err := c.SiteAutomationsCreate(t.Context(), &siteapi.CreateAutomationInput{
-		Name: "After the end", TriggerEvent: "signup",
+		Name: "After the end", Trigger: testhelper.SiteTrigger("signup"),
 		Steps: testhelper.SitePathEdit(
 			siteapi.EndStepInput{},
 			siteapi.ApplyTagStepInput{ID: siteapi.NewOptStepId(siteapi.StepId(after)), Tag: "never"},

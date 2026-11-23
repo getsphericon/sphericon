@@ -20,7 +20,11 @@ func (h *Handlers) SiteAutomationsList(ctx context.Context, params siteapi.SiteA
 func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.CreateAutomationInput, _ siteapi.SiteAutomationsCreateParams) (*siteapi.SiteAutomationResource, error) {
 	ws := workspaceScope(ctx)
 
-	a, err := h.automations.Create(ctx, ws, inputs.AutomationCreate(req))
+	in, err := inputs.AutomationCreate(req)
+	if err != nil {
+		return nil, err
+	}
+	a, err := h.automations.Create(ctx, ws, in)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +53,11 @@ func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.Updat
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
-	a, err := h.automations.Update(ctx, ws, id, inputs.AutomationUpdate(req))
+	in, err := inputs.AutomationUpdate(req)
+	if err != nil {
+		return nil, err
+	}
+	a, err := h.automations.Update(ctx, ws, id, in)
 	if err != nil {
 		return nil, err
 	}

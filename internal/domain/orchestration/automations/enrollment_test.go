@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -178,7 +179,7 @@ func TestAnEventEnrollsOnlyWhileTheAutomationIsActiveOnThatTrigger(t *testing.T)
 	m := testhelper.Module[*automations.Module](env)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	_, err := m.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationHoldDemoID), TriggerEvent: new("hold_demo_moved")})
+	_, err := m.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationHoldDemoID), Trigger: &eventmatcher.Matcher{Action: "hold_demo_moved"}})
 	require.NoError(t, err)
 	_, err = m.Publish(ctx, s, fixtures.AutomationHoldDemoID, testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationHoldDemoID))
 	require.NoError(t, err)

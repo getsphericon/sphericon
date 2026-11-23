@@ -30,7 +30,7 @@ func TestMCPReadsAnAutomationVersionBackAsItsStepsInOrder(t *testing.T) {
 		{"type":"apply_tag","tag":"welcomed"},
 		{"type":"end"}
 	]}`), &steps))
-	created := call(t, s, "automations_create", map[string]any{"name": "Agent's welcome", "triggerEvent": "signup", "steps": steps})
+	created := call(t, s, "automations_create", map[string]any{"name": "Agent's welcome", "trigger": map[string]any{"kind": "event", "action": "signup"}, "steps": steps})
 	require.False(t, created.IsError, text(t, created))
 	var made struct {
 		ID string `json:"id"`
