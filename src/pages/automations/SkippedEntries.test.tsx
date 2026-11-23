@@ -99,3 +99,56 @@ test('a contact with no skipped entries offers to clear the filter', async () =>
   await expect.element(screen.getByText('No skipped entries of this contact')).toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Clear filter' })).toBeInTheDocument()
 })
+
+test('an automation that skipped no entry says so, with no filter to clear', async () => {
+  worker.use(handleSiteSkippedEntriesList({ body: page([], 0) }))
+
+  const { screen } = await renderWithRouter(<SkippedEntriesPage />, ROUTE)
+
+  await expect.element(screen.getByText('No entries were skipped')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Clear filter' })).not.toBeInTheDocument()
+})
+
+test('Clear filter empties the field and drops the contact from the URL search', async () => {
+  serveEntries()
+
+  const { screen, navigate } = await renderWithRouter(<SkippedEntriesPage />, {
+    ...ROUTE,
+    initialPath: `${ROUTE.initialPath}?contactId=${testId(9)}`,
+  })
+  await screen.getByRole('button', { name: 'Clear filter' }).click()
+
+  await expect.element(screen.getByRole('textbox', { name: 'Contact ID' })).toHaveValue('')
+  expect(searches(navigate, { contactId: testId(9) })).toContainEqual({
+    contactId: undefined,
+    page: undefined,
+  })
+})
+
+test('choosing a row opens its contact', async () => {
+  serveEntries()
+
+  const { screen, navigate } = await renderWithRouter(<SkippedEntriesPage />, ROUTE)
+  await screen.getByText('Enrolled before').click()
+
+  expect(navigate).toHaveBeenCalledWith(
+    expect.objectContaining({
+      to: '/workspaces/$workspaceId/contacts/$contactId',
+      params: { workspaceId: 'TestWs01', contactId: testId(7) },
+    }),
+  )
+})
+
+test('going back to another contact in the URL search puts it in the field', async () => {
+  serveEntries()
+
+  const { screen, router } = await renderWithRouter(<SkippedEntriesPage />, {
+    ...ROUTE,
+    initialPath: `${ROUTE.initialPath}?contactId=${testId(8)}`,
+  })
+  await expect.element(screen.getByRole('textbox', { name: 'Contact ID' })).toHaveValue(testId(8))
+  router.history.push(`${ROUTE.initialPath}?contactId=${testId(7)}`)
+
+  await expect.element(screen.getByRole('textbox', { name: 'Contact ID' })).toHaveValue(testId(7))
+  await expect.element(screen.getByText('Enrolled before')).toBeInTheDocument()
+})

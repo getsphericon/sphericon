@@ -715,3 +715,33 @@ test('an archived automation opens its page instead of the builder', async () =>
     })
   await expect.element(screen.getByRole('button', { name: 'Save' })).not.toBeInTheDocument()
 })
+
+test('saving sends the exit events added on the canvas, less the one removed', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    handleSiteAutomationsGet({ body: STORED }),
+    handleSiteAutomationsUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(STORED)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+  await expect.poll(() => flowNode(0)).toBeInstanceOf(Element)
+  await page.elementLocator(flowNode(0)).click()
+  await screen.getByText('Properties').click()
+  await screen.getByRole('button', { name: 'Add exit event' }).click()
+  await screen.getByRole('combobox', { name: 'Event', exact: true }).fill('order.cancelled')
+  await screen.getByRole('button', { name: 'Add exit event' }).click()
+  await screen.getByRole('combobox', { name: 'Event', exact: true }).last().fill('order.refunded')
+  await screen.getByRole('button', { name: 'Remove' }).first().click()
+  // The form's last change reaches the node a moment later: a click on the panel lets it land. The
+  // exits lengthen the panel over the bar, so the Save is clicked by an event dispatched on it.
+  await screen.getByText('Exit Events').click()
+  screen
+    .getByRole('button', { name: 'Save' })
+    .element()
+    .dispatchEvent(new MouseEvent('click', { bubbles: true }))
+
+  await expect.poll(() => bodies).toMatchObject([{ exitEvents: [{ action: 'order.refunded' }] }])
+})
