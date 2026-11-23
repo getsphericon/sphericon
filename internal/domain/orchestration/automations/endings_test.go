@@ -2,6 +2,7 @@ package automations_test
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -284,7 +285,7 @@ func TestAnEnrollmentEndsByTheEventsOfTheVersionItStandsOn(t *testing.T) {
 	runID, contactID := recoveryRun(t, env)
 
 	_, err := m.Update(ctx, s, fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationPaymentRecoveryID),
-		ExitEvents: &[]string{"card_removed"}, GoalEvent: patch.Clear[string](),
+		ExitEvents: &[]eventmatcher.Matcher{{Action: "card_removed"}}, GoalEvent: patch.Clear[eventmatcher.Matcher](),
 	})
 	require.NoError(t, err)
 	_, err = m.Publish(ctx, s, fixtures.AutomationPaymentRecoveryID, testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationPaymentRecoveryID))
@@ -326,32 +327,41 @@ func TestARuleEnrollmentWithoutItsStoredEventBeginsNow(t *testing.T) {
 func TestCreateKeepsExitAndGoalEventsInTheDraft(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*automations.Module](env)
-	goal := " subscription_expanded "
+	paid := propertyEq(t, "status", "paid")
 
 	created, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{
 		Name: "Upsell", Trigger: eventmatcher.Matcher{Action: "plan_limit_reached"},
-		ExitEvents: []string{"account_closed", " account_closed", systemevent.EmailUnsubscribed}, GoalEvent: &goal,
+		ExitEvents: []eventmatcher.Matcher{
+			{Action: "account_closed"}, {Action: " account_closed"}, {Action: "account_closed", Filter: paid}, {Action: systemevent.EmailUnsubscribed},
+		},
+		GoalEvent: &eventmatcher.Matcher{Action: " subscription_expanded "},
 	})
 	require.NoError(t, err)
 
 	_, draft := automations.LiveAndDraft(created)
 	require.NotNil(t, draft)
-	assert.Equal(t, []string{"account_closed", systemevent.EmailUnsubscribed}, draft.ExitEvents, "trimmed, a repeat kept once")
-	assert.Equal(t, new("subscription_expanded"), draft.GoalEvent)
+	want, err := json.Marshal([]eventmatcher.Matcher{{Action: "account_closed"}, {Action: "account_closed", Filter: paid}, {Action: systemevent.EmailUnsubscribed}})
+	require.NoError(t, err)
+	exits, err := json.Marshal(draft.Exits)
+	require.NoError(t, err)
+	assert.JSONEq(t, string(want), string(exits), "trimmed, a repeat kept once, the same action with a filter kept")
+	assert.Equal(t, &eventmatcher.Matcher{Action: "subscription_expanded"}, draft.Goal)
 }
 
 func TestCreateRefusesAnExitOrGoalEventThatCannotEndAnEnrollment(t *testing.T) {
+	trigger := eventmatcher.Matcher{Action: "payment_failed"}
 	cases := []struct {
 		name string
 		in   automations.CreateInput
 		want error
 	}{
-		{"an exit equal to the trigger", automations.CreateInput{Trigger: eventmatcher.Matcher{Action: "payment_failed"}, ExitEvents: []string{"payment_failed"}}, automations.ErrInvalidExitEvent},
-		{"an empty exit", automations.CreateInput{Trigger: eventmatcher.Matcher{Action: "payment_failed"}, ExitEvents: []string{" "}}, automations.ErrInvalidExitEvent},
-		{"an infrastructure exit", automations.CreateInput{Trigger: eventmatcher.Matcher{Action: "payment_failed"}, ExitEvents: []string{systemevent.EmailSent}}, automations.ErrInvalidExitEvent},
-		{"a goal equal to the trigger", automations.CreateInput{Trigger: eventmatcher.Matcher{Action: "payment_failed"}, GoalEvent: new("payment_failed")}, automations.ErrInvalidGoalEvent},
-		{"an infrastructure goal", automations.CreateInput{Trigger: eventmatcher.Matcher{Action: "payment_failed"}, GoalEvent: new(systemevent.EmailDelivered)}, automations.ErrInvalidGoalEvent},
-		{"a goal that is also an exit", automations.CreateInput{Trigger: eventmatcher.Matcher{Action: "payment_failed"}, ExitEvents: []string{"paid"}, GoalEvent: new("paid")}, automations.ErrInvalidGoalEvent},
+		{"an empty exit", automations.CreateInput{Trigger: trigger, ExitEvents: []eventmatcher.Matcher{{Action: " "}}}, automations.ErrInvalidExitEvent},
+		{"an infrastructure exit", automations.CreateInput{Trigger: trigger, ExitEvents: []eventmatcher.Matcher{{Action: systemevent.EmailSent}}}, automations.ErrInvalidExitEvent},
+		{"an infrastructure goal", automations.CreateInput{Trigger: trigger, GoalEvent: &eventmatcher.Matcher{Action: systemevent.EmailDelivered}}, automations.ErrInvalidGoalEvent},
+		{"an exit naming a Tag the Workspace lacks", automations.CreateInput{Trigger: trigger,
+			ExitEvents: []eventmatcher.Matcher{{Action: systemevent.ContactTagged, Filter: propertyEq(t, "tag", "no-such-tag")}}}, automations.ErrInvalidExitEvent},
+		{"a goal naming a Custom field the Workspace lacks", automations.CreateInput{Trigger: trigger,
+			GoalEvent: &eventmatcher.Matcher{Action: systemevent.ContactFieldChanged, Filter: propertyEq(t, "key", "no_such_field")}}, automations.ErrInvalidGoalEvent},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -366,9 +376,35 @@ func TestCreateRefusesAnExitOrGoalEventThatCannotEndAnEnrollment(t *testing.T) {
 	}
 }
 
-// The edit is checked against the definition it makes: a new trigger equal to a stored exit
-// event is refused, though the edit names no exit event.
-func TestUpdateRefusesATriggerEqualToAStoredExitEvent(t *testing.T) {
+// An exit or goal event may share the Trigger's action, and the goal an exit's (ADR 0133): the
+// Enrollment's own triggering Event never ends it, and an Event matching both reaches the goal.
+func TestASaveAcceptsExitAndGoalEventsSharingAnAction(t *testing.T) {
+	trigger := eventmatcher.Matcher{Action: "payment_failed"}
+	cases := []struct {
+		name string
+		in   automations.CreateInput
+	}{
+		{"an exit on the trigger's action", automations.CreateInput{Trigger: trigger, ExitEvents: []eventmatcher.Matcher{trigger}}},
+		{"a goal on the trigger's action", automations.CreateInput{Trigger: trigger, GoalEvent: &trigger}},
+		{"a goal on an exit's action", automations.CreateInput{Trigger: trigger,
+			ExitEvents: []eventmatcher.Matcher{{Action: "paid"}}, GoalEvent: &eventmatcher.Matcher{Action: "paid"}}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			m := testhelper.Module[*automations.Module](env)
+			tc.in.Name = "Accepted"
+
+			_, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), tc.in)
+
+			require.NoError(t, err)
+		})
+	}
+}
+
+// The edit is checked against the definition it makes: a new Trigger on a stored exit event's
+// action is accepted, though the edit names no exit event.
+func TestUpdateAcceptsATriggerOnAStoredExitEventsAction(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*automations.Module](env)
 
@@ -376,7 +412,7 @@ func TestUpdateRefusesATriggerEqualToAStoredExitEvent(t *testing.T) {
 		Trigger: &eventmatcher.Matcher{Action: recoveryExit},
 	})
 
-	require.ErrorIs(t, err, automations.ErrInvalidExitEvent)
+	require.NoError(t, err)
 }
 
 // Exit and goal events are the definition (ADR 0065): editing them writes the draft and leaves the
@@ -388,19 +424,19 @@ func TestEditingExitAndGoalEventsWritesTheDraft(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	updated, err := m.Update(ctx, s, fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationPaymentRecoveryID),
-		ExitEvents: &[]string{}, GoalEvent: patch.Set("invoice_paid"),
+		ExitEvents: &[]eventmatcher.Matcher{}, GoalEvent: patch.Set(eventmatcher.Matcher{Action: "invoice_paid"}),
 	})
 	require.NoError(t, err)
 
 	live, draft := automations.LiveAndDraft(updated)
 	require.NotNil(t, draft)
-	assert.Empty(t, draft.ExitEvents)
-	assert.Equal(t, new("invoice_paid"), draft.GoalEvent)
-	assert.Equal(t, []string{recoveryExit, "plan_downgraded", systemevent.EmailClicked}, live.ExitEvents)
-	assert.Equal(t, new(recoveryGoal), live.GoalEvent)
+	assert.Empty(t, draft.Exits)
+	assert.Equal(t, &eventmatcher.Matcher{Action: "invoice_paid"}, draft.Goal)
+	assert.Equal(t, []eventmatcher.Matcher{{Action: recoveryExit}, {Action: "plan_downgraded"}, {Action: systemevent.EmailClicked}}, live.Exits)
+	assert.Equal(t, &eventmatcher.Matcher{Action: recoveryGoal}, live.Goal)
 
-	cleared, err := m.Update(ctx, s, fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationPaymentRecoveryID), GoalEvent: patch.Clear[string]()})
+	cleared, err := m.Update(ctx, s, fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationPaymentRecoveryID), GoalEvent: patch.Clear[eventmatcher.Matcher]()})
 	require.NoError(t, err)
 	_, draft = automations.LiveAndDraft(cleared)
-	assert.Nil(t, draft.GoalEvent)
+	assert.Nil(t, draft.Goal)
 }

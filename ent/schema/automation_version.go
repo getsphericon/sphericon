@@ -9,9 +9,10 @@ import (
 	"entgo.io/ent/schema/index"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 )
 
-// AutomationVersion is one copy of an Automation's definition: its Trigger, exit and goal events
+// AutomationVersion is one copy of an Automation's definition: its Trigger, exit and goal matchers
 // and steps (ADR 0049, ADR 0065, GLOSSARY: Automation version). Each send step names its own
 // Integration inside the steps (ADR 0081). The Automation points at its live version
 // and at its draft, the one version above live. An Enrollment begins on the live version and
@@ -27,6 +28,8 @@ func (AutomationVersion) Annotations() []schema.Annotation {
 			"automation_versions_steps_check":                  stepsCheck("steps"),
 			"automation_versions_trigger_filter_check":         conditionCheck("trigger_filter"),
 			"automation_versions_trigger_filter_entries_check": conditionEntriesCheck("trigger_filter"),
+			"automation_versions_exits_check":                  jsonCheck("exits", "array"),
+			"automation_versions_goal_check":                   jsonCheck("goal", "object"),
 		}},
 	}
 }
@@ -61,14 +64,17 @@ func (AutomationVersion) Fields() []ent.Field {
 		field.String("trigger_action"),
 		field.JSON("trigger_filter", &conditiontree.EventFilter{}).
 			Optional(),
-		// The Event actions that end an active Enrollment on this version early (`exited`), and
-		// the one that ends it as having reached its goal (`goal_reached`); none is the trigger.
-		field.JSON("exit_events", []string{}).
-			Default([]string{}).
+		// The Event matchers that end an active Enrollment on this version early (`exited`), a
+		// jsonb list (ADR 0169), and the one that ends it as having reached its goal
+		// (`goal_reached`), a jsonb object, NULL for none (ADR 0133, eventmatcher.Matcher). Each is
+		// an action and an optional filter on that Event's own properties; they may share an action
+		// with the Trigger and with each other, and an Event matching the goal and an exit reaches
+		// the goal.
+		field.JSON("exits", []eventmatcher.Matcher{}).
+			Default([]eventmatcher.Matcher{}).
 			Annotations(entsql.Default("[]")),
-		field.String("goal_event").
-			Optional().
-			Nillable(),
+		field.JSON("goal", &eventmatcher.Matcher{}).
+			Optional(),
 	}
 }
 

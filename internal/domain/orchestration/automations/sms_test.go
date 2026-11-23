@@ -27,21 +27,21 @@ func TestSmsReceivedTriggersExitsAndCompletesButSmsSentDoesNot(t *testing.T) {
 	received, confirmed, sent := systemevent.SmsReceived, systemevent.SmsConfirmed, systemevent.SmsSent
 
 	onReply, err := m.Create(t.Context(), s, automations.CreateInput{
-		Name: "Reply", Trigger: eventmatcher.Matcher{Action: received}, ExitEvents: []string{systemevent.ContactTagged}, GoalEvent: &confirmed,
+		Name: "Reply", Trigger: eventmatcher.Matcher{Action: received}, ExitEvents: []eventmatcher.Matcher{{Action: systemevent.ContactTagged}}, GoalEvent: &eventmatcher.Matcher{Action: confirmed},
 	})
 	require.NoError(t, err)
 	assert.NotZero(t, onReply.ID)
 	ending, err := m.Create(t.Context(), s, automations.CreateInput{
-		Name: "Ends on a reply", Trigger: eventmatcher.Matcher{Action: confirmed}, ExitEvents: []string{received},
+		Name: "Ends on a reply", Trigger: eventmatcher.Matcher{Action: confirmed}, ExitEvents: []eventmatcher.Matcher{{Action: received}},
 	})
 	require.NoError(t, err)
 	assert.NotZero(t, ending.ID)
 
-	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Sent", Trigger: eventmatcher.Matcher{Action: sent}, ExitEvents: []string{}})
+	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Sent", Trigger: eventmatcher.Matcher{Action: sent}, ExitEvents: []eventmatcher.Matcher{}})
 	require.ErrorIs(t, err, automations.ErrInvalidTrigger)
-	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Exit", Trigger: eventmatcher.Matcher{Action: received}, ExitEvents: []string{sent}})
+	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Exit", Trigger: eventmatcher.Matcher{Action: received}, ExitEvents: []eventmatcher.Matcher{{Action: sent}}})
 	require.ErrorIs(t, err, automations.ErrInvalidExitEvent)
-	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Goal", Trigger: eventmatcher.Matcher{Action: received}, ExitEvents: []string{}, GoalEvent: &sent})
+	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Goal", Trigger: eventmatcher.Matcher{Action: received}, ExitEvents: []eventmatcher.Matcher{}, GoalEvent: &eventmatcher.Matcher{Action: sent}})
 	require.ErrorIs(t, err, automations.ErrInvalidGoalEvent)
 }
 
@@ -54,12 +54,12 @@ func TestSmsDeliveredAndUndeliveredTriggerExitAndComplete(t *testing.T) {
 	delivered, undelivered := systemevent.SmsDelivered, systemevent.SmsUndelivered
 
 	onUndelivered, err := m.Create(t.Context(), s, automations.CreateInput{
-		Name: "Undelivered", Trigger: eventmatcher.Matcher{Action: undelivered}, ExitEvents: []string{delivered},
+		Name: "Undelivered", Trigger: eventmatcher.Matcher{Action: undelivered}, ExitEvents: []eventmatcher.Matcher{{Action: delivered}},
 	})
 	require.NoError(t, err)
 	assert.NotZero(t, onUndelivered.ID)
 	onDelivered, err := m.Create(t.Context(), s, automations.CreateInput{
-		Name: "Delivered", Trigger: eventmatcher.Matcher{Action: delivered}, ExitEvents: []string{}, GoalEvent: &undelivered,
+		Name: "Delivered", Trigger: eventmatcher.Matcher{Action: delivered}, ExitEvents: []eventmatcher.Matcher{}, GoalEvent: &eventmatcher.Matcher{Action: undelivered},
 	})
 	require.NoError(t, err)
 	assert.NotZero(t, onDelivered.ID)
@@ -74,12 +74,12 @@ func TestSmsUnsubscribedTriggersAndExits(t *testing.T) {
 	unsubscribed, confirmed := systemevent.SmsUnsubscribed, systemevent.SmsConfirmed
 
 	onStop, err := m.Create(t.Context(), s, automations.CreateInput{
-		Name: "Unsubscribed", Trigger: eventmatcher.Matcher{Action: unsubscribed}, ExitEvents: []string{confirmed},
+		Name: "Unsubscribed", Trigger: eventmatcher.Matcher{Action: unsubscribed}, ExitEvents: []eventmatcher.Matcher{{Action: confirmed}},
 	})
 	require.NoError(t, err)
 	assert.NotZero(t, onStop.ID)
 	onConsent, err := m.Create(t.Context(), s, automations.CreateInput{
-		Name: "Confirmed", Trigger: eventmatcher.Matcher{Action: confirmed}, ExitEvents: []string{unsubscribed},
+		Name: "Confirmed", Trigger: eventmatcher.Matcher{Action: confirmed}, ExitEvents: []eventmatcher.Matcher{{Action: unsubscribed}},
 	})
 	require.NoError(t, err)
 	assert.NotZero(t, onConsent.ID)

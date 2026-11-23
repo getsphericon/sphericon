@@ -88,13 +88,16 @@ func (c *InputsImpl) AutomationCreate(source *site.CreateAutomationInput) (autom
 			return automationsCreateInput, err
 		}
 		automationsCreateInput.Trigger = eventmatcherMatcher
-		if (*source).ExitEvents != nil {
-			automationsCreateInput.ExitEvents = make([]string, len((*source).ExitEvents))
-			for i := 0; i < len((*source).ExitEvents); i++ {
-				automationsCreateInput.ExitEvents[i] = (*source).ExitEvents[i]
-			}
+		eventmatcherMatcherList, err := automationExitsIn((*source).ExitEvents)
+		if err != nil {
+			return automationsCreateInput, err
 		}
-		automationsCreateInput.GoalEvent = nilStringPtrIn((*source).GoalEvent)
+		automationsCreateInput.ExitEvents = eventmatcherMatcherList
+		pEventmatcherMatcher, err := automationGoalIn((*source).GoalEvent)
+		if err != nil {
+			return automationsCreateInput, err
+		}
+		automationsCreateInput.GoalEvent = pEventmatcherMatcher
 		automationsCreateInput.Steps = automationPathPtrIn(c, (*source).Steps)
 	}
 	return automationsCreateInput, nil
@@ -145,8 +148,16 @@ func (c *InputsImpl) AutomationUpdate(source *site.UpdateAutomationInput) (autom
 			return automationsUpdateInput, err
 		}
 		automationsUpdateInput.Trigger = pEventmatcherMatcher
-		automationsUpdateInput.ExitEvents = listPtrIn((*source).ExitEvents)
-		automationsUpdateInput.GoalEvent = nilStringPatch((*source).GoalEvent)
+		pEventmatcherMatcherList, err := automationExitsPtrIn((*source).ExitEvents)
+		if err != nil {
+			return automationsUpdateInput, err
+		}
+		automationsUpdateInput.ExitEvents = pEventmatcherMatcherList
+		patchField, err := automationGoalPatch((*source).GoalEvent)
+		if err != nil {
+			return automationsUpdateInput, err
+		}
+		automationsUpdateInput.GoalEvent = patchField
 		automationsUpdateInput.Steps = automationPathPtrIn(c, (*source).Steps)
 	}
 	return automationsUpdateInput, nil

@@ -1,0 +1,5 @@
+- id: 1
+  revision: 1
+  name: Acme
+  public_id: acme0001
+  collect_key: acme0001

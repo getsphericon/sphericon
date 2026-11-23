@@ -491,8 +491,8 @@ var (
 		{Name: "steps", Type: field.TypeJSON},
 		{Name: "trigger_action", Type: field.TypeString},
 		{Name: "trigger_filter", Type: field.TypeJSON, Nullable: true},
-		{Name: "exit_events", Type: field.TypeJSON, Default: "[]"},
-		{Name: "goal_event", Type: field.TypeString, Nullable: true},
+		{Name: "exits", Type: field.TypeJSON, Default: "[]"},
+		{Name: "goal", Type: field.TypeJSON, Nullable: true},
 		{Name: "automation_id", Type: field.TypeInt64},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
@@ -3668,6 +3668,8 @@ func init() {
 		Table: "automation_versions",
 	}
 	AutomationVersionsTable.Annotation.Checks = map[string]string{
+		"automation_versions_exits_check":                  "jsonb_typeof(exits) = 'array'",
+		"automation_versions_goal_check":                   "jsonb_typeof(goal) = 'object'",
 		"automation_versions_steps_check":                  "COALESCE(jsonb_typeof(steps -> 'steps') = 'array', false)",
 		"automation_versions_trigger_filter_check":         "jsonb_typeof(trigger_filter) = 'object'",
 		"automation_versions_trigger_filter_entries_check": "trigger_filter IS NULL OR COALESCE(jsonb_typeof(trigger_filter -> 'entries') = 'array', false)",

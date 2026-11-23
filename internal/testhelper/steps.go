@@ -1,7 +1,11 @@
 package testhelper
 
 import (
+	"encoding/json"
 	"fmt"
+	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -105,4 +109,39 @@ func ExternalTrigger(action string, filter ...externalapi.EventFilterInput) exte
 		ev.Filter = externalapi.NewOptEventFilterInput(filter[0])
 	}
 	return externalapi.AutomationTriggerInput{OneOf: externalapi.NewEventTriggerInputAutomationTriggerInputSum(ev)}
+}
+
+// SiteMatcher is an exit or goal event for a site API write: the action, and the filter when one is
+// given (ADR 0133).
+func SiteMatcher(action string, filter ...siteapi.EventFilterInput) siteapi.EventMatcherInput {
+	m := siteapi.EventMatcherInput{Action: action}
+	if len(filter) > 0 {
+		m.Filter = siteapi.NewOptEventFilterInput(filter[0])
+	}
+	return m
+}
+
+// ExternalMatcher is SiteMatcher for the external API.
+func ExternalMatcher(action string, filter ...externalapi.EventFilterInput) externalapi.EventMatcherInput {
+	m := externalapi.EventMatcherInput{Action: action}
+	if len(filter) > 0 {
+		m.Filter = externalapi.NewOptEventFilterInput(filter[0])
+	}
+	return m
+}
+
+// JSONOfEach is the JSON array of the values, each encoded by its own MarshalJSON: a list of
+// contract values read back, to compare with what was written.
+func JSONOfEach[T any, PT interface {
+	*T
+	json.Marshaler
+}](tb testing.TB, values []T) string {
+	tb.Helper()
+	raw := make([]json.RawMessage, len(values))
+	for i := range values {
+		raw[i] = json.RawMessage(JSONOf(tb, PT(&values[i])))
+	}
+	out, err := json.Marshal(raw)
+	require.NoError(tb, err)
+	return string(out)
 }
