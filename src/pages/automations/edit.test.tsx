@@ -138,6 +138,37 @@ test('saving from the builder sends the edited name, the trigger and the canvas 
   await expect.element(screen.getByText('Automation updated')).toBeInTheDocument()
 })
 
+test('the Trigger card sets the Entry policy and, under again, the cooldown in hours, which the save sends in seconds', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    handleSiteAutomationsGet({ body: STORED }),
+    handleSiteAutomationsUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(STORED)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+  await expect.poll(() => flowNode(0)).toBeInstanceOf(Element)
+  await page.elementLocator(flowNode(0)).click()
+  await screen.getByText('Properties').click()
+  await expect.element(screen.getByLabelText('Cooldown, hours')).not.toBeInTheDocument()
+  await screen.getByRole('combobox', { name: 'Enroll a contact' }).click()
+  await screen.getByRole('option', { name: 'Again after each enrollment ends' }).click()
+  await screen.getByLabelText('Cooldown, hours').fill('24')
+  // The panel, grown with the cooldown, covers the toolbar: a click inside the panel leaves the
+  // value, and the Save is a click dispatched on it.
+  await screen.getByText('Trigger Filter', { exact: true }).click()
+  screen
+    .getByRole('button', { name: 'Save' })
+    .element()
+    .dispatchEvent(new MouseEvent('click', { bubbles: true }))
+
+  await expect
+    .poll(() => bodies)
+    .toMatchObject([{ trigger: { kind: 'event', entryPolicy: 'again', cooldown: 86_400 } }])
+})
+
 test('saving sends the trigger event typed on the canvas, a custom one included', async () => {
   const bodies: unknown[] = []
   worker.use(

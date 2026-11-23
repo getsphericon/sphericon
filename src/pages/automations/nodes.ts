@@ -135,10 +135,16 @@ export function useAutomationNodeTypes(): PaletteItem[] {
           elements: [
             { type: 'Text', scope: '#/properties/triggerEvent', placeholder: '' },
             { type: 'Text', scope: '#/properties/triggerFilter', placeholder: '' },
-            { type: 'Text', scope: '#/properties/entryPolicy', placeholder: '' },
+            {
+              type: 'Text',
+              scope: '#/properties/entryPolicy',
+              label: t(($) => $.automations.entryPolicyLabel),
+              placeholder: '',
+            },
             {
               type: 'Text',
               scope: '#/properties/cooldown',
+              label: t(($) => $.automations.cooldownLabel),
               placeholder: '',
               // The cooldown applies under `again` alone (ADR 0127).
               rule: {
