@@ -22,10 +22,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
-	"github.com/getsphericon/sphericon/ent/customfield"
-	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/domain/content/versioneddefinition"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
@@ -232,7 +232,10 @@ type Module struct {
 	clicks   *linkclick.Module
 	rules    *rules.Module
 	revenues *orders.Revenues
-	life     *versioneddefinition.Lifecycle[ent.Automation, ent.AutomationVersion, edit, definition]
+	// tags and people read the Tag and Custom field catalogues an Event filter names (checkNamed).
+	tags   *tags.Module
+	people *contacts.Module
+	life   *versioneddefinition.Lifecycle[ent.Automation, ent.AutomationVersion, edit, definition]
 	// now is the Instance clock a report's period ends by, an activation is dated by and an
 	// Enrollment's exit is.
 	now func() time.Time
@@ -244,11 +247,11 @@ type Module struct {
 // and records an Enrollment's exit in the transaction Exit is given; the renderer builds an email
 // step's body from its document; out is Outbound send, whose Send route Publish asks whether the
 // Automation's email steps can send; clicks counts the Link clicks of its report; enrollers reads
-// the Rules that enroll Contacts in an Automation, which hold it against its Archive; now is the
-// Instance clock.
-func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer, out *outboundmessages.Module, clicks *linkclick.Module, enrollers *rules.Module, now func() time.Time) *Module {
-	m := &Module{cipher: cipher, bus: bus, renderer: renderer, out: out, clicks: clicks, rules: enrollers, now: now,
-		revenues: orders.NewRevenues()}
+// the Rules that enroll Contacts in an Automation, which hold it against its Archive; people is the
+// contacts module, whose Custom field catalogue an Event filter names; now is the Instance clock.
+func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer, out *outboundmessages.Module, clicks *linkclick.Module, enrollers *rules.Module, people *contacts.Module, now func() time.Time) *Module {
+	m := &Module{cipher: cipher, bus: bus, renderer: renderer, out: out, clicks: clicks, rules: enrollers, people: people, now: now,
+		revenues: orders.NewRevenues(), tags: tags.New()}
 	m.life = versioneddefinition.New(bus, versioned{m: m}, versioneddefinition.Errors{
 		NotFound:         ErrNotFound,
 		Archived:         ErrArchived,
@@ -616,19 +619,19 @@ func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.Automati
 		}
 	}
 	if e.trigger != nil {
-		if err := checkNamed(ctx, ts, def.trigger, ErrInvalidTrigger); err != nil {
+		if err := v.m.checkNamed(ctx, ts, def.trigger, ErrInvalidTrigger); err != nil {
 			return definition{}, err
 		}
 	}
 	if e.exits != nil {
 		for _, exit := range def.exits {
-			if err := checkNamed(ctx, ts, exit, ErrInvalidExitEvent); err != nil {
+			if err := v.m.checkNamed(ctx, ts, exit, ErrInvalidExitEvent); err != nil {
 				return definition{}, err
 			}
 		}
 	}
 	if e.goal.Changes() && def.goal != nil {
-		if err := checkNamed(ctx, ts, *def.goal, ErrInvalidGoalEvent); err != nil {
+		if err := v.m.checkNamed(ctx, ts, *def.goal, ErrInvalidGoalEvent); err != nil {
 			return definition{}, err
 		}
 	}
@@ -876,14 +879,14 @@ func checkIntegration(ctx context.Context, s *ent.Scoped, id *int64) error {
 // checkNamed refuses, with refusal, an Event matcher whose filter names a Tag or Custom field the
 // Workspace's catalogue lacks (condition.NamedDefinitions, ADR 0133): such a filter would never
 // match. A Tag is named as the Event carries it, by its stored name, so another spelling of it is
-// refused too.
-func checkNamed(ctx context.Context, s *ent.Scoped, m eventmatcher.Matcher, refusal *validation.RefusalError) error {
-	if m.Filter == nil {
+// refused too. The catalogues are their owners' (tags, contacts).
+func (m *Module) checkNamed(ctx context.Context, s *ent.Scoped, matcher eventmatcher.Matcher, refusal *validation.RefusalError) error {
+	if matcher.Filter == nil {
 		return nil
 	}
-	named := condition.NamedDefinitions(m.Action, *m.Filter)
+	named := condition.NamedDefinitions(matcher.Action, *matcher.Filter)
 	for _, name := range named.Tags {
-		ok, err := s.Tag().Query().Where(tag.Name(name)).Exist(ctx)
+		ok, err := m.tags.Stored(ctx, s, name)
 		if err != nil {
 			return err
 		}
@@ -892,7 +895,7 @@ func checkNamed(ctx context.Context, s *ent.Scoped, m eventmatcher.Matcher, refu
 		}
 	}
 	for _, key := range named.CustomFields {
-		ok, err := s.CustomField().Query().Where(customfield.Key(key)).Exist(ctx)
+		ok, err := m.people.HasCustomField(ctx, s, key)
 		if err != nil {
 			return err
 		}
