@@ -3117,6 +3117,64 @@ const (
 	OuroborosName = "Ouroboros"
 	// OuroborosPublicID is from fixtures/workspaces.
 	OuroborosPublicID = "OuroW153"
+	// OutboundBazaarID is from fixtures/outbound_messages.
+	OutboundBazaarID = 7270
+	// OutboundEmporiumAutomationClickDestination is from fixtures/outbound_messages.
+	OutboundEmporiumAutomationClickDestination = "automation@emporium.test"
+	// OutboundEmporiumAutomationClickID is from fixtures/outbound_messages.
+	OutboundEmporiumAutomationClickID = 7241
+	// OutboundEmporiumBroadcastClickDestination is from fixtures/outbound_messages.
+	OutboundEmporiumBroadcastClickDestination = "broadcast@emporium.test"
+	// OutboundEmporiumBroadcastClickID is from fixtures/outbound_messages.
+	OutboundEmporiumBroadcastClickID = 7210
+	// OutboundEmporiumClickerNoneDestination is from fixtures/outbound_messages.
+	OutboundEmporiumClickerNoneDestination = "none@emporium.test"
+	// OutboundEmporiumClickerNoneID is from fixtures/outbound_messages.
+	OutboundEmporiumClickerNoneID = 7217
+	// OutboundEmporiumEmailAfterSmsDestination is from fixtures/outbound_messages.
+	OutboundEmporiumEmailAfterSmsDestination = "email-after-sms@emporium.test"
+	// OutboundEmporiumEmailAfterSmsID is from fixtures/outbound_messages.
+	OutboundEmporiumEmailAfterSmsID = 7223
+	// OutboundEmporiumEmailAfterTelegramDestination is from fixtures/outbound_messages.
+	OutboundEmporiumEmailAfterTelegramDestination = "email-after-tg@emporium.test"
+	// OutboundEmporiumEmailAfterTelegramID is from fixtures/outbound_messages.
+	OutboundEmporiumEmailAfterTelegramID = 7220
+	// OutboundEmporiumEmailBeforeSmsMachineDestination is from fixtures/outbound_messages.
+	OutboundEmporiumEmailBeforeSmsMachineDestination = "sms-machine@emporium.test"
+	// OutboundEmporiumEmailBeforeSmsMachineID is from fixtures/outbound_messages.
+	OutboundEmporiumEmailBeforeSmsMachineID = 7224
+	// OutboundEmporiumEmailBeforeTelegramMachineDestination is from fixtures/outbound_messages.
+	OutboundEmporiumEmailBeforeTelegramMachineDestination = "tg-machine@emporium.test"
+	// OutboundEmporiumEmailBeforeTelegramMachineID is from fixtures/outbound_messages.
+	OutboundEmporiumEmailBeforeTelegramMachineID = 7221
+	// OutboundEmporiumLaterWinsDestination is from fixtures/outbound_messages.
+	OutboundEmporiumLaterWinsDestination = "later@emporium.test"
+	// OutboundEmporiumLaterWinsID is from fixtures/outbound_messages.
+	OutboundEmporiumLaterWinsID = 7212
+	// OutboundEmporiumPrunedDestination is from fixtures/outbound_messages.
+	OutboundEmporiumPrunedDestination = "pruned@emporium.test"
+	// OutboundEmporiumPrunedID is from fixtures/outbound_messages.
+	OutboundEmporiumPrunedID = 7218
+	// OutboundEmporiumRevenueID is from fixtures/outbound_messages.
+	OutboundEmporiumRevenueID = 7271
+	// OutboundEmporiumSameTimeDestination is from fixtures/outbound_messages.
+	OutboundEmporiumSameTimeDestination = "sametime@emporium.test"
+	// OutboundEmporiumSameTimeID is from fixtures/outbound_messages.
+	OutboundEmporiumSameTimeID = 7243
+	// OutboundEmporiumSmsClickDestination is from fixtures/outbound_messages.
+	OutboundEmporiumSmsClickDestination = "+14155557222"
+	// OutboundEmporiumSmsClickID is from fixtures/outbound_messages.
+	OutboundEmporiumSmsClickID = 7252
+	// OutboundEmporiumSoftwareAutomationDestination is from fixtures/outbound_messages.
+	OutboundEmporiumSoftwareAutomationDestination = "software@emporium.test"
+	// OutboundEmporiumSoftwareAutomationID is from fixtures/outbound_messages.
+	OutboundEmporiumSoftwareAutomationID = 7244
+	// OutboundEmporiumTelegramClickDestination is from fixtures/outbound_messages.
+	OutboundEmporiumTelegramClickDestination = "9007219"
+	// OutboundEmporiumTelegramClickID is from fixtures/outbound_messages.
+	OutboundEmporiumTelegramClickID = 7249
+	// OutboundMercadoID is from fixtures/outbound_messages.
+	OutboundMercadoID = 7272
 	// OutboundMessageAutomationComplainedDestination is from fixtures/outbound_messages.
 	OutboundMessageAutomationComplainedDestination = "bob.automation@example.com"
 	// OutboundMessageAutomationComplainedID is from fixtures/outbound_messages.
@@ -3203,6 +3261,10 @@ const (
 	OutboundMessageWelcomeID = 100
 	// OutboundMessageWelcomeSubject is from fixtures/outbound_messages.
 	OutboundMessageWelcomeSubject = "Welcome to Hexlet"
+	// OutboundSoukClickDestination is from fixtures/outbound_messages.
+	OutboundSoukClickDestination = "buyer@souk.test"
+	// OutboundSoukClickID is from fixtures/outbound_messages.
+	OutboundSoukClickID = 7273
 	// OutboundTexterSmsDestination is from fixtures/outbound_messages.
 	OutboundTexterSmsDestination = "+14155550810"
 	// OutboundTexterSmsID is from fixtures/outbound_messages.

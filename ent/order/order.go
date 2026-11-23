@@ -32,6 +32,8 @@ const (
 	FieldAutomationID = "automation_id"
 	// FieldCreditedClickAt holds the string denoting the credited_click_at field in the database.
 	FieldCreditedClickAt = "credited_click_at"
+	// FieldCreditedMessageID holds the string denoting the credited_message_id field in the database.
+	FieldCreditedMessageID = "credited_message_id"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// EdgeContact holds the string denoting the contact edge name in mutations.
@@ -93,6 +95,7 @@ var Columns = []string{
 	FieldBroadcastID,
 	FieldAutomationID,
 	FieldCreditedClickAt,
+	FieldCreditedMessageID,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -169,6 +172,11 @@ func ByAutomationID(opts ...sql.OrderTermOption) OrderOption {
 // ByCreditedClickAt orders the results by the credited_click_at field.
 func ByCreditedClickAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCreditedClickAt, opts...).ToFunc()
+}
+
+// ByCreditedMessageID orders the results by the credited_message_id field.
+func ByCreditedMessageID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreditedMessageID, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.
