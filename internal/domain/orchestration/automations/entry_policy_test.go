@@ -292,3 +292,24 @@ func TestTheCooldownCountsFromTheBeginningOfThePreviousEnrollment(t *testing.T) 
 	assert.Equal(t, new("evt-second"), runs[1].TriggerSourceID)
 	assert.Empty(t, skippedOf(t, env, automationID, c.ID))
 }
+
+// Under `again`, an Event handled again after the Enrollment it made ended and the next began is
+// no new entry: it makes nothing and records no skip, and so is a Firing run again.
+func TestAnEntryHandledAgainUnderAgainRecordsNothing(t *testing.T) {
+	env := testhelper.Setup(t)
+	automationID := againAutomation(t, env)
+	c := enrollable(t, env.DB.Scoped(fixtures.AcmeID), 0)
+	first := moment(300)
+	handSourcedEvent(t, env, c.ID, repeatTrigger, "evt-first", first)
+	handSourcedEvent(t, env, c.ID, repeatExit, "evt-refund", moment(280))
+	made := enrollOnFiringResult(t, env, automationID, c.ID, fixtures.RuleFiringDoneID)
+
+	handSourcedEvent(t, env, c.ID, repeatTrigger, "evt-first", first)
+	again := enrollOnFiringResult(t, env, automationID, c.ID, fixtures.RuleFiringDoneID)
+
+	assert.True(t, made.Enrolled)
+	assert.Equal(t, automations.EnrollOnRuleResult{}, again)
+	runs := runsOf(t, env, automationID, c.ID)
+	assert.Len(t, runs, 2)
+	assert.Empty(t, skippedOf(t, env, automationID, c.ID))
+}

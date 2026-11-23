@@ -129,9 +129,9 @@ type entry struct {
 }
 
 // judgeEntry runs the entry checks on the Contact's entry, for the origin o, into the Automation
-// whose live version v the Enrollment would begin on. Every Enrollment of the Contact in the
-// Automation counts for the ordinal, the one o's own Event or Firing made included: the insert of
-// an entry handled again makes nothing.
+// whose live version v the Enrollment would begin on. An entry whose Event or Firing made an
+// Enrollment already is handled again: no check judges it, and the insert makes nothing, so a
+// redelivery records no skip whatever came after its Enrollment.
 func judgeEntry(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, contactID int64, o origin) (entry, error) {
 	runs, err := s.AutomationRun().Query().
 		Where(automationrun.AutomationID(v.AutomationID), automationrun.ContactID(contactID)).
@@ -150,6 +150,11 @@ func judgeEntry(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, co
 	next := entry{ordinal: 1}
 	if len(runs) > 0 {
 		next.ordinal = lo.MaxBy(runs, func(a, b *ent.AutomationRun) bool { return a.Ordinal > b.Ordinal }).Ordinal + 1
+	}
+	if len(c.others) < len(runs) {
+		// The entry's Event or Firing made an Enrollment already: handled again, it is no new
+		// entry to judge, and the insert makes nothing.
+		return next, nil
 	}
 	for _, check := range entryChecks {
 		if reason, skipped := check(c); skipped {

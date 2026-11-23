@@ -617,37 +617,46 @@ func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.Automati
 		}
 	}
 	if e.steps != nil {
-		linkLength, err := v.m.out.ShortLinkLength(ctx, ts)
+		steps, err := v.mergeSteps(ctx, ts, *e.steps, stored)
 		if err != nil {
 			return definition{}, err
 		}
-		// The steps carry their ids: build identified them.
-		steps := *e.steps
-		if err := validate(steps, linkLength); err != nil {
-			return definition{}, err
-		}
-		if err := checkEnds(steps); err != nil {
-			return definition{}, err
-		}
-		// Each Integration the steps name is checked once, however many steps send through it.
-		var named []int64
-		for _, st := range automationstep.All(steps) {
-			if id := st.Integration(); id != nil {
-				named = append(named, *id)
-			}
-		}
-		for _, id := range lo.Uniq(named) {
-			if err := checkIntegration(ctx, ts, &id); err != nil {
-				return definition{}, err
-			}
-		}
-		sealed, err := v.m.sealSteps(steps, stored)
-		if err != nil {
-			return definition{}, err
-		}
-		def.steps = StoredSteps(sealed)
+		def.steps = steps
 	}
 	return def, nil
+}
+
+// mergeSteps validates the steps an edit writes, each send step's Integration kept (not archived),
+// and seals them over the stored ones: an HTTP step that names one of them by ID keeps the secrets
+// it does not resend. The steps carry their ids: build identified them.
+func (v versioned) mergeSteps(ctx context.Context, ts *ent.Scoped, steps, stored automationstep.Path) (automationstep.Path, error) {
+	linkLength, err := v.m.out.ShortLinkLength(ctx, ts)
+	if err != nil {
+		return automationstep.Path{}, err
+	}
+	if err := validate(steps, linkLength); err != nil {
+		return automationstep.Path{}, err
+	}
+	if err := checkEnds(steps); err != nil {
+		return automationstep.Path{}, err
+	}
+	// Each Integration the steps name is checked once, however many steps send through it.
+	var named []int64
+	for _, st := range automationstep.All(steps) {
+		if id := st.Integration(); id != nil {
+			named = append(named, *id)
+		}
+	}
+	for _, id := range lo.Uniq(named) {
+		if err := checkIntegration(ctx, ts, &id); err != nil {
+			return automationstep.Path{}, err
+		}
+	}
+	sealed, err := v.m.sealSteps(steps, stored)
+	if err != nil {
+		return automationstep.Path{}, err
+	}
+	return StoredSteps(sealed), nil
 }
 
 // TriggerOf is the version's Trigger: the Event matcher its action and filter columns hold.
