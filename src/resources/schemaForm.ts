@@ -1,6 +1,7 @@
 import { schemaResolver, useForm } from '@mantine/form'
 import { omit } from 'es-toolkit'
 import { useEffect, useId, useRef } from 'react'
+import type { FocusEvent } from 'react'
 import * as z from 'zod'
 
 import { getFieldErrors } from '../utils/apiErrors.ts'
@@ -25,11 +26,13 @@ export type SchemaForm<TValues extends object, TOutput> = Omit<
 //
 // Validation follows docs/standards/ui.md: a field is not validated when the form opens, it is
 // validated when it loses focus, an error that shows is re-checked on each keystroke, and a failed
-// submit focuses the first invalid field in the page's order. A field that loses focus to the press
-// of its own form's submit button is not validated then but when the press is over: the error would
-// push the button down and the press would come up beside it, with no click and no submit. The
-// press may end with no submit (it is dragged off the button, or the browser's own validation of
-// a required field stops it), so the field is checked when the press ends either way.
+// submit focuses the first invalid field in the page's order. A field that loses focus to a mouse
+// press on its own form's submit button is not validated then but when the press is over: the error
+// would push the button down and the press would come up beside it, with no click and no submit.
+// The press may end with no submit (it is dragged off the button, the browser cancels it, or the
+// browser's own validation of a required field stops it), so the field is checked when the press
+// ends, unless the form was submitted: the submit has checked it, and a form that sets errors of
+// its own on submit must keep them.
 //
 // A refusal from the server follows the same rules (docs/standards/ui.md, Errors): showFieldErrors
 // puts each message of the problem's `errors` under the field the form renders for its path, and
@@ -48,38 +51,56 @@ export function useSchemaForm<TValues extends object, TOutput>(
   // field never lands on another form's field with the same path. Mantine takes letters, digits and
   // dashes only, so each other character of the React id becomes a dash, which keeps ids apart.
   const name = `form${useId().replaceAll(/[^a-zA-Z0-9-]/g, '-')}`
-  // The submit button a mouse or finger is down on, from before the field loses focus to the press
-  // coming up. A button is not focused by a press in every browser, so the focus cannot tell.
+  // The submit button the main mouse button is down on, from before the field loses focus to the
+  // press coming up. A button is not focused by a press in every browser, so the focus cannot tell.
   const pressedSubmit = useRef<HTMLButtonElement | HTMLInputElement | null>(null)
-  // The fields that lost focus to that press: their blur validation waits for its end.
+  // The fields that lost focus to that press, and their form: their blur validation waits for its
+  // end and is dropped when the form is submitted first.
   const skippedBlurs = useRef(new Set<string>())
+  const skippedForm = useRef<HTMLFormElement | null>(null)
   const validateField = useRef<(path: string) => unknown>(() => undefined)
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined
     const down = (event: PointerEvent) => {
       const target = event.target instanceof Element ? event.target : null
+      const control =
+        event.pointerType === 'mouse' && event.button === 0
+          ? target?.closest<HTMLButtonElement | HTMLInputElement>('button, input')
+          : null
+      // A button with no type submits; an image input submits too.
       pressedSubmit.current =
-        target?.closest<HTMLButtonElement | HTMLInputElement>(
-          'button[type="submit"], input[type="submit"]',
-        ) ?? null
+        control?.type === 'submit' || control?.type === 'image' ? control : null
     }
     const up = () => {
       pressedSubmit.current = null
-      const paths = [...skippedBlurs.current]
-      skippedBlurs.current.clear()
+      if (skippedBlurs.current.size === 0) {
+        return
+      }
       // After the click that ends the press, so an error that shifts the layout cannot take it.
-      setTimeout(() => {
+      timer = setTimeout(() => {
+        const paths = [...skippedBlurs.current]
+        skippedBlurs.current.clear()
         for (const path of paths) {
           validateField.current(path)
         }
       }, 0)
     }
+    // A capture listener sees the submit whether or not the form goes through form.onSubmit.
+    const submitted = (event: SubmitEvent) => {
+      if (event.target === skippedForm.current) {
+        skippedBlurs.current.clear()
+      }
+    }
     document.addEventListener('pointerdown', down, true)
     document.addEventListener('pointerup', up, true)
     document.addEventListener('pointercancel', up, true)
+    document.addEventListener('submit', submitted, true)
     return () => {
+      clearTimeout(timer)
       document.removeEventListener('pointerdown', down, true)
       document.removeEventListener('pointerup', up, true)
       document.removeEventListener('pointercancel', up, true)
+      document.removeEventListener('submit', submitted, true)
     }
   }, [])
   const form = useForm<TValues, TOutput>({
@@ -94,11 +115,12 @@ export function useSchemaForm<TValues extends object, TOutput>(
       return {
         // A field with no focus handling (a radio) has no onBlur to wrap.
         ...(onBlur && {
-          onBlur: (event: React.FocusEvent<HTMLElement & { form?: HTMLFormElement | null }>) => {
+          onBlur: (event: FocusEvent<HTMLElement & { form?: HTMLFormElement | null }>) => {
             const pressed = pressedSubmit.current
             if (!pressed?.form || pressed.form !== event.target.form) {
               onBlur(event)
             } else {
+              skippedForm.current = pressed.form
               skippedBlurs.current.add(field)
             }
           },
