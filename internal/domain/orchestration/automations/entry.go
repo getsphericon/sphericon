@@ -187,7 +187,7 @@ func judgeEntry(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, co
 	if err != nil {
 		return entry{}, err
 	}
-	all := lo.Reject(runs, func(run *ent.AutomationRun, _ int) bool { return madeBy(run, o) })
+	all := lo.Reject(runs, func(run *ent.AutomationRun, _ int) bool { return o.Cause.made(run) })
 	c := entryCase{
 		automationID: v.AutomationID,
 		policy:       v.EntryPolicy,
@@ -216,18 +216,6 @@ func judgeEntry(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, co
 	return next, nil
 }
 
-// madeBy is whether the origin's Event or Firing made the Enrollment; an origin with neither made
-// none.
-func madeBy(run *ent.AutomationRun, o origin) bool {
-	switch {
-	case o.SourceID != "":
-		return lo.FromPtr(run.TriggerSourceID) == o.SourceID
-	case o.FiringID != 0:
-		return lo.FromPtr(run.FiringID) == o.FiringID
-	}
-	return false
-}
-
 // recordSkip records the Contact's entry into the Automation of the origin o as skipped for the
 // reason, once per Automation and Event (or Firing): an entry handled again records nothing new.
 func recordSkip(ctx context.Context, s *ent.Scoped, automationID, contactID int64, o origin, reason automationskippedentry.Reason) error {
@@ -236,19 +224,7 @@ func recordSkip(ctx context.Context, s *ent.Scoped, automationID, contactID int6
 		SetContactID(contactID).
 		SetReason(reason).
 		SetOccurredAt(o.OccurredAt)
-	var err error
-	switch {
-	case o.SourceID != "":
-		err = create.SetSourceID(o.SourceID).
-			OnConflictColumns(automationskippedentry.FieldWorkspaceID, automationskippedentry.FieldAutomationID, automationskippedentry.FieldSourceID).
-			DoNothing().Exec(ctx)
-	case o.FiringID != 0:
-		err = create.SetFiringID(o.FiringID).
-			OnConflictColumns(automationskippedentry.FieldWorkspaceID, automationskippedentry.FieldAutomationID, automationskippedentry.FieldFiringID).
-			DoNothing().Exec(ctx)
-	default:
-		err = create.Exec(ctx)
-	}
+	err := o.Cause.insertSkip(ctx, create)
 	_, err = db.Inserted(err)
 	return err
 }

@@ -8993,8 +8993,8 @@ export type UpdateAutomationInput = {
   revision: Revision;
   name?: Name;
   /**
-   * What enrolls a contact; replaces the Trigger, its filter, entry policy and cooldown with it,
-   * and omitted keeps it
+   * What enrolls a contact; replaces the Trigger, its filter, entry policy, cooldown and
+   * Enrollment key with it, and omitted keeps it
    */
   trigger?: AutomationTriggerInput;
   /**

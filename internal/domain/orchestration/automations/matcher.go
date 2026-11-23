@@ -2,6 +2,7 @@ package automations
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
@@ -25,12 +26,16 @@ func matching(m eventmatcher.Matcher) (predicate.Event, error) {
 	return event.And(preds...), nil
 }
 
-// matchesEvent is whether the Event stored with sourceID matches m, an Event of m's action that the
-// trigger job hands on: the entry-time filter check of a Trigger, and of an exit or goal the
-// Event may end an Enrollment by. A matcher with no filter matches every
-// Event of its action without reading the row, which may be gone (Retention, an Erasure); one with
-// a filter runs it on the stored row's properties, and an Event no longer stored matches none.
-func matchesEvent(ctx context.Context, s *ent.Scoped, m eventmatcher.Matcher, sourceID string) (bool, error) {
+// matchesEvent is whether a stored Event of the action, the one row names, matches m: the
+// entry-time filter check of a Trigger, the check of an exit or goal the Event a trigger job hands on
+// may end an Enrollment by (row by its source id), and the check of the row an ending query found
+// (row by its id). An Event of another action matches none. A matcher with no filter matches every
+// Event of its action without reading the row, which may be gone (Retention, an Erasure); one with a
+// filter runs it on the stored row's properties, and an Event no longer stored matches none.
+func matchesEvent(ctx context.Context, s *ent.Scoped, m eventmatcher.Matcher, action string, row predicate.Event) (bool, error) {
+	if m.Action != action {
+		return false, nil
+	}
 	if m.Filter == nil {
 		return true, nil
 	}
@@ -38,15 +43,9 @@ func matchesEvent(ctx context.Context, s *ent.Scoped, m eventmatcher.Matcher, so
 	if err != nil {
 		return false, err
 	}
-	return s.Event().Query().Where(event.SourceID(sourceID), p).Exist(ctx)
-}
-
-// matchesRow is whether the stored Event with the id matches m: the row an ending query found,
-// asked whether it is the goal's too.
-func matchesRow(ctx context.Context, s *ent.Scoped, m eventmatcher.Matcher, id int64) (bool, error) {
-	p, err := matching(m)
+	matched, err := s.Event().Query().Where(row, p).Exist(ctx)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("match stored event: %w", err)
 	}
-	return s.Event().Query().Where(event.ID(id), p).Exist(ctx)
+	return matched, nil
 }

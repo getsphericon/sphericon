@@ -8,7 +8,6 @@ import {
   handleSiteAutomationsRevert,
   handleSiteEnrollmentsList,
   handleSiteIntegrationsGet,
-  handleSiteSkippedEntriesList,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteAutomationResource, AutomationResults } from '../../generated/site/types.gen.ts'
@@ -700,48 +699,6 @@ test('shows what the enrollments did in the period against the period before', a
     .element(screen.getByText('Skipped: too many enrollments of one contact'))
     .toBeInTheDocument()
   await expect.element(screen.getByText('Previous 30 days: 1 (+200%)')).toBeInTheDocument()
-})
-
-test('lists the skipped entries, each with its reason, and filters them by contact', async () => {
-  worker.use(
-    handleSiteAutomationsGet({ body: PENDING }),
-    handleSiteAutomationReportsGet({ body: { ...NO_FIGURES, results: NO_RESULTS } }),
-    handleSiteEnrollmentsList({ body: page([], 0) }),
-    handleSiteSkippedEntriesList(({ request }) => {
-      const contactId = new URL(request.url).searchParams.get('contactId')
-      const all = [
-        {
-          id: testId(1),
-          automationId: testId(1),
-          contactId: testId(7),
-          reason: 'once' as const,
-          eventSourceId: 'evt-7',
-          occurredAt: '2026-03-16T10:00:00Z',
-          createdAt: '2026-03-16T10:00:01Z',
-        },
-        {
-          id: testId(2),
-          automationId: testId(1),
-          contactId: testId(8),
-          reason: 'active_enrollment' as const,
-          eventSourceId: 'evt-8',
-          occurredAt: '2026-03-15T10:00:00Z',
-          createdAt: '2026-03-15T10:00:01Z',
-        },
-      ]
-      const items = all.filter((e) => contactId === null || e.contactId === contactId)
-      return HttpResponse.json(page(items, items.length))
-    }),
-  )
-  const { screen } = await renderWithRouter(<AutomationDetailPage />, MOUNT)
-
-  await screen.getByRole('button', { name: 'Skipped entries' }).click()
-
-  await expect.element(screen.getByText('An enrollment was active')).toBeInTheDocument()
-  await expect.element(screen.getByText('Enrolled before')).toBeInTheDocument()
-  await screen.getByLabelText('Contact ID').fill(testId(8))
-  await expect.element(screen.getByText('Enrolled before')).not.toBeInTheDocument()
-  await expect.element(screen.getByText('An enrollment was active')).toBeInTheDocument()
 })
 
 test('the period picked shows the results of that period', async () => {

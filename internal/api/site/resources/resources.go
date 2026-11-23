@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationskippedentry"
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -444,6 +445,8 @@ type Converter interface {
 	// goverter:map . Kind | telegramConfigKind
 	// goverter:map BotID BotId
 	TelegramConfigToResource(source integrations.RedactedTelegram) siteapi.TelegramConfig
+	// goverter:enum:transform value
+	EntryPolicyToResource(source automationversion.EntryPolicy) siteapi.EntryPolicy
 	// goverter:enum:transform value
 	SmsFromKindToResource(source messaging.SMSFromKind) siteapi.SmsFromKind
 	// goverter:map . Kind | twilioConfigKind
@@ -1174,11 +1177,11 @@ func segmentCondition(g conditiontree.Segment) (siteapi.SegmentCondition, error)
 
 // automationTrigger maps a version's Trigger into the typed DTO by its kind: an Event matcher whose
 // filter is checked as a stored Condition is (convert.Document).
-func automationTrigger(v *ent.AutomationVersion) (siteapi.AutomationTrigger, error) {
+func automationTrigger(c Converter, v *ent.AutomationVersion) (siteapi.AutomationTrigger, error) {
 	m := automations.TriggerOf(v)
 	ev := siteapi.EventTrigger{
 		Kind: siteapi.EventTriggerKindEvent, Action: m.Action,
-		EntryPolicy: siteapi.EntryPolicy(v.EntryPolicy), Cooldown: siteapi.EntryCooldown(narrow.Int32(v.CooldownSeconds)),
+		EntryPolicy: c.EntryPolicyToResource(v.EntryPolicy), Cooldown: siteapi.EntryCooldown(narrow.Int32(v.CooldownSeconds)),
 		EnrollmentKey: optString(v.EnrollmentKey),
 	}
 	if m.Filter != nil {

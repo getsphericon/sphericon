@@ -16,7 +16,7 @@ import type {
 import { zAutomationReportPeriod } from '../../generated/site/zod.gen.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
 import { formatMessageRevenue } from '../../utils/messageRevenue.ts'
-import { SkippedEntries } from './SkippedEntries.tsx'
+import { SkippedEntriesLink } from './SkippedEntries.tsx'
 import { reportedStepLabel } from './stepLabel.ts'
 
 const PERIODS = zAutomationReportPeriod.options
@@ -283,7 +283,7 @@ export function AutomationReport({
         <Group justify="space-between" wrap="wrap">
           <Title order={5}>{t(($) => $.automations.results.title)}</Title>
           <Group gap="xs">
-            <SkippedEntries workspaceId={workspaceId} automationId={automationId} />
+            <SkippedEntriesLink workspaceId={workspaceId} automationId={automationId} />
             <SegmentedControl
               size="xs"
               value={period ?? ''}

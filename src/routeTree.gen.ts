@@ -83,6 +83,7 @@ import { Route as ConsoleAuthedEnterpriseWorkspacesIndexRouteImport } from './ro
 import { Route as ConsoleAuthedEnterpriseWorkspacesWorkspaceIdRouteImport } from './routes/console/_authed/_enterprise/workspaces.$workspaceId.tsx'
 import { Route as WorkspacesWorkspaceIdAutomationsAutomationIdIndexRouteImport } from './routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { Route as WorkspacesWorkspaceIdAutomationsAutomationIdEditRouteImport } from './routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
+import { Route as WorkspacesWorkspaceIdAutomationsAutomationIdSkippedEntriesRouteImport } from './routes/workspaces/$workspaceId/automations/$automationId/skipped-entries.tsx'
 import { Route as WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRouteImport } from './routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
 import { Route as WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRouteImport } from './routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { Route as WorkspacesWorkspaceIdCapturedMessagesMessageIdIndexRouteImport } from './routes/workspaces/$workspaceId/captured-messages/$messageId/index.tsx'
@@ -718,6 +719,16 @@ const WorkspacesWorkspaceIdAutomationsAutomationIdEditRoute =
       (d) => d.Route,
     ),
   )
+const WorkspacesWorkspaceIdAutomationsAutomationIdSkippedEntriesRoute =
+  WorkspacesWorkspaceIdAutomationsAutomationIdSkippedEntriesRouteImport.update({
+    id: '/automations/$automationId/skipped-entries',
+    path: '/automations/$automationId/skipped-entries',
+    getParentRoute: () => WorkspacesWorkspaceIdRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/workspaces/$workspaceId/automations/$automationId/skipped-entries.lazy.tsx').then(
+      (d) => d.Route,
+    ),
+  )
 const WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRoute =
   WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRouteImport.update({
     id: '/broadcasts/$broadcastId/edit',
@@ -889,6 +900,7 @@ export interface FileRoutesByFullPath {
   '/workspaces/$workspaceId/transactional-emails/': typeof WorkspacesWorkspaceIdTransactionalEmailsIndexRoute
   '/console/workspaces/$workspaceId': typeof ConsoleAuthedEnterpriseWorkspacesWorkspaceIdRoute
   '/workspaces/$workspaceId/automations/$automationId/edit': typeof WorkspacesWorkspaceIdAutomationsAutomationIdEditRoute
+  '/workspaces/$workspaceId/automations/$automationId/skipped-entries': typeof WorkspacesWorkspaceIdAutomationsAutomationIdSkippedEntriesRoute
   '/workspaces/$workspaceId/broadcasts/$broadcastId/edit': typeof WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRoute
   '/workspaces/$workspaceId/broadcasts/$broadcastId/report': typeof WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRoute
   '/workspaces/$workspaceId/contacts/$contactId/edit': typeof WorkspacesWorkspaceIdContactsContactIdEditRoute
@@ -967,6 +979,7 @@ export interface FileRoutesByTo {
   '/workspaces/$workspaceId/transactional-emails': typeof WorkspacesWorkspaceIdTransactionalEmailsIndexRoute
   '/console/workspaces/$workspaceId': typeof ConsoleAuthedEnterpriseWorkspacesWorkspaceIdRoute
   '/workspaces/$workspaceId/automations/$automationId/edit': typeof WorkspacesWorkspaceIdAutomationsAutomationIdEditRoute
+  '/workspaces/$workspaceId/automations/$automationId/skipped-entries': typeof WorkspacesWorkspaceIdAutomationsAutomationIdSkippedEntriesRoute
   '/workspaces/$workspaceId/broadcasts/$broadcastId/edit': typeof WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRoute
   '/workspaces/$workspaceId/broadcasts/$broadcastId/report': typeof WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRoute
   '/workspaces/$workspaceId/contacts/$contactId/edit': typeof WorkspacesWorkspaceIdContactsContactIdEditRoute
@@ -1053,6 +1066,7 @@ export interface FileRoutesById {
   '/workspaces/$workspaceId/transactional-emails/': typeof WorkspacesWorkspaceIdTransactionalEmailsIndexRoute
   '/console/_authed/_enterprise/workspaces/$workspaceId': typeof ConsoleAuthedEnterpriseWorkspacesWorkspaceIdRoute
   '/workspaces/$workspaceId/automations/$automationId/edit': typeof WorkspacesWorkspaceIdAutomationsAutomationIdEditRoute
+  '/workspaces/$workspaceId/automations/$automationId/skipped-entries': typeof WorkspacesWorkspaceIdAutomationsAutomationIdSkippedEntriesRoute
   '/workspaces/$workspaceId/broadcasts/$broadcastId/edit': typeof WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRoute
   '/workspaces/$workspaceId/broadcasts/$broadcastId/report': typeof WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRoute
   '/workspaces/$workspaceId/contacts/$contactId/edit': typeof WorkspacesWorkspaceIdContactsContactIdEditRoute
@@ -1138,6 +1152,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/transactional-emails/'
     | '/console/workspaces/$workspaceId'
     | '/workspaces/$workspaceId/automations/$automationId/edit'
+    | '/workspaces/$workspaceId/automations/$automationId/skipped-entries'
     | '/workspaces/$workspaceId/broadcasts/$broadcastId/edit'
     | '/workspaces/$workspaceId/broadcasts/$broadcastId/report'
     | '/workspaces/$workspaceId/contacts/$contactId/edit'
@@ -1216,6 +1231,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/transactional-emails'
     | '/console/workspaces/$workspaceId'
     | '/workspaces/$workspaceId/automations/$automationId/edit'
+    | '/workspaces/$workspaceId/automations/$automationId/skipped-entries'
     | '/workspaces/$workspaceId/broadcasts/$broadcastId/edit'
     | '/workspaces/$workspaceId/broadcasts/$broadcastId/report'
     | '/workspaces/$workspaceId/contacts/$contactId/edit'
@@ -1301,6 +1317,7 @@ export interface FileRouteTypes {
     | '/workspaces/$workspaceId/transactional-emails/'
     | '/console/_authed/_enterprise/workspaces/$workspaceId'
     | '/workspaces/$workspaceId/automations/$automationId/edit'
+    | '/workspaces/$workspaceId/automations/$automationId/skipped-entries'
     | '/workspaces/$workspaceId/broadcasts/$broadcastId/edit'
     | '/workspaces/$workspaceId/broadcasts/$broadcastId/report'
     | '/workspaces/$workspaceId/contacts/$contactId/edit'
@@ -1854,6 +1871,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspacesWorkspaceIdAutomationsAutomationIdEditRouteImport
       parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
     }
+    '/workspaces/$workspaceId/automations/$automationId/skipped-entries': {
+      id: '/workspaces/$workspaceId/automations/$automationId/skipped-entries'
+      path: '/automations/$automationId/skipped-entries'
+      fullPath: '/workspaces/$workspaceId/automations/$automationId/skipped-entries'
+      preLoaderRoute: typeof WorkspacesWorkspaceIdAutomationsAutomationIdSkippedEntriesRouteImport
+      parentRoute: typeof WorkspacesWorkspaceIdRouteRoute
+    }
     '/workspaces/$workspaceId/broadcasts/$broadcastId/edit': {
       id: '/workspaces/$workspaceId/broadcasts/$broadcastId/edit'
       path: '/broadcasts/$broadcastId/edit'
@@ -2090,6 +2114,7 @@ interface WorkspacesWorkspaceIdRouteRouteChildren {
   WorkspacesWorkspaceIdTemplatesIndexRoute: typeof WorkspacesWorkspaceIdTemplatesIndexRoute
   WorkspacesWorkspaceIdTransactionalEmailsIndexRoute: typeof WorkspacesWorkspaceIdTransactionalEmailsIndexRoute
   WorkspacesWorkspaceIdAutomationsAutomationIdEditRoute: typeof WorkspacesWorkspaceIdAutomationsAutomationIdEditRoute
+  WorkspacesWorkspaceIdAutomationsAutomationIdSkippedEntriesRoute: typeof WorkspacesWorkspaceIdAutomationsAutomationIdSkippedEntriesRoute
   WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRoute: typeof WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRoute
   WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRoute: typeof WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRoute
   WorkspacesWorkspaceIdContactsContactIdEditRoute: typeof WorkspacesWorkspaceIdContactsContactIdEditRoute
@@ -2141,6 +2166,8 @@ const WorkspacesWorkspaceIdRouteRouteChildren: WorkspacesWorkspaceIdRouteRouteCh
       WorkspacesWorkspaceIdTransactionalEmailsIndexRoute,
     WorkspacesWorkspaceIdAutomationsAutomationIdEditRoute:
       WorkspacesWorkspaceIdAutomationsAutomationIdEditRoute,
+    WorkspacesWorkspaceIdAutomationsAutomationIdSkippedEntriesRoute:
+      WorkspacesWorkspaceIdAutomationsAutomationIdSkippedEntriesRoute,
     WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRoute:
       WorkspacesWorkspaceIdBroadcastsBroadcastIdEditRoute,
     WorkspacesWorkspaceIdBroadcastsBroadcastIdReportRoute:

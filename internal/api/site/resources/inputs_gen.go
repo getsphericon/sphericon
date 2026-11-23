@@ -5,6 +5,7 @@ package resources
 
 import (
 	"fmt"
+	automationversion "github.com/getsphericon/sphericon/ent/automationversion"
 	broadcast "github.com/getsphericon/sphericon/ent/broadcast"
 	invitation "github.com/getsphericon/sphericon/ent/invitation"
 	membership "github.com/getsphericon/sphericon/ent/membership"
@@ -88,7 +89,7 @@ func (c *InputsImpl) AutomationCreate(source *site.CreateAutomationInput) (autom
 			return automationsCreateInput, err
 		}
 		automationsCreateInput.Trigger = eventmatcherMatcher
-		automationsCreateInput.Entry = automationEntryIn((*source).Trigger)
+		automationsCreateInput.Entry = automationEntryIn(c, (*source).Trigger)
 		eventmatcherMatcherList, err := automationExitsIn((*source).ExitEvents)
 		if err != nil {
 			return automationsCreateInput, err
@@ -149,7 +150,7 @@ func (c *InputsImpl) AutomationUpdate(source *site.UpdateAutomationInput) (autom
 			return automationsUpdateInput, err
 		}
 		automationsUpdateInput.Trigger = pEventmatcherMatcher
-		automationsUpdateInput.Entry = automationEntryPtrIn((*source).Trigger)
+		automationsUpdateInput.Entry = automationEntryPtrIn(c, (*source).Trigger)
 		pEventmatcherMatcherList, err := automationExitsPtrIn((*source).ExitEvents)
 		if err != nil {
 			return automationsUpdateInput, err
@@ -430,6 +431,18 @@ func (c *InputsImpl) EnrollmentsFilter(source site.SiteEnrollmentsListParams) au
 	automationsEnrollmentsFilter.AutomationID = int64(source.AutomationId)
 	automationsEnrollmentsFilter.Status = enrollmentStatusIn(source.Status)
 	return automationsEnrollmentsFilter
+}
+func (c *InputsImpl) EntryPolicy(source site.EventTriggerInputEntryPolicy) automationversion.EntryPolicy {
+	var automationversionEntryPolicy automationversion.EntryPolicy
+	switch source {
+	case site.EventTriggerInputEntryPolicyAgain:
+		automationversionEntryPolicy = automationversion.EntryPolicyAgain
+	case site.EventTriggerInputEntryPolicyOnce:
+		automationversionEntryPolicy = automationversion.EntryPolicyOnce
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return automationversionEntryPolicy
 }
 func (c *InputsImpl) HttpStepIn(source site.HttpStepInput) automationstep.HTTP {
 	var automationstepHTTP automationstep.HTTP
