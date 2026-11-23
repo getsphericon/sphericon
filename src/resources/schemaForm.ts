@@ -54,6 +54,9 @@ export function useSchemaForm<TValues extends object, TOutput>(
   // The submit button the main mouse button is down on, from before the field loses focus to the
   // press coming up. A button is not focused by a press in every browser, so the focus cannot tell.
   const pressedSubmit = useRef<HTMLButtonElement | HTMLInputElement | null>(null)
+  // The pointer of that press: only its own pointerup or pointercancel ends it, not a finger or a pen
+  // lifted meanwhile.
+  const pressPointer = useRef<number | null>(null)
   // The fields that lost focus to that press, and their form: their blur validation waits for its
   // end and is dropped when the form is submitted first.
   const skippedBlurs = useRef(new Set<string>())
@@ -62,17 +65,22 @@ export function useSchemaForm<TValues extends object, TOutput>(
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined
     const down = (event: PointerEvent) => {
+      if (event.pointerType !== 'mouse' || event.button !== 0) {
+        return
+      }
       const target = event.target instanceof Element ? event.target : null
-      const control =
-        event.pointerType === 'mouse' && event.button === 0
-          ? target?.closest<HTMLButtonElement | HTMLInputElement>('button, input')
-          : null
+      const control = target?.closest<HTMLButtonElement | HTMLInputElement>('button, input')
       // A button with no type submits; an image input submits too.
       pressedSubmit.current =
         control?.type === 'submit' || control?.type === 'image' ? control : null
+      pressPointer.current = event.pointerId
     }
-    const up = () => {
+    const up = (event: PointerEvent) => {
+      if (event.pointerId !== pressPointer.current) {
+        return
+      }
       pressedSubmit.current = null
+      pressPointer.current = null
       if (skippedBlurs.current.size === 0) {
         return
       }

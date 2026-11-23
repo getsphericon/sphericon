@@ -1,5 +1,6 @@
 import { Button, Checkbox, Select, TextInput } from '@mantine/core'
 import { useState } from 'react'
+import type { SubmitEvent } from 'react'
 import { expect, test } from 'vitest'
 import { cdp, userEvent } from 'vitest/browser'
 import * as z from 'zod'
@@ -211,8 +212,8 @@ test('a refusal of a field only another form renders is handed back, not placed 
 })
 
 // press is a mouse press on a point of the page: the button goes down, the page may move under the
-// pointer (a blur shows an error and the layout shifts), `whileDown` runs with the button held, and
-// the button comes up where it went down, or at `releaseAt`. A click that lands on an element in one
+// pointer (a blur shows an error and the layout shifts), `whileDown` runs with the button held (it
+// gets the press's pointerId), and the button comes up where it went down, or at `releaseAt`. A click that lands on an element in one
 // piece (locator.click) cannot show that.
 async function press(
   x: number,
@@ -220,7 +221,10 @@ async function press(
   {
     releaseAt = { x, y },
     whileDown,
-  }: { releaseAt?: { x: number; y: number }; whileDown?: () => Promise<void> } = {},
+  }: {
+    releaseAt?: { x: number; y: number }
+    whileDown?: (pointerId: number) => Promise<void>
+  } = {},
 ) {
   const frame = window.frameElement?.getBoundingClientRect()
   const scale = frame ? frame.width / window.innerWidth : 1
@@ -230,10 +234,15 @@ async function press(
     button: 'left' as const,
     clickCount: 1,
   })
+  let pointerId = 0
+  const record = (event: PointerEvent) => {
+    pointerId = event.pointerId
+  }
+  document.addEventListener('pointerdown', record, { capture: true, once: true })
   const session = cdp()
   await session.send('Input.dispatchMouseEvent', { ...at({ x, y }), type: 'mouseMoved' })
   await session.send('Input.dispatchMouseEvent', { ...at({ x, y }), type: 'mousePressed' })
-  await whileDown?.()
+  await whileDown?.(pointerId)
   await session.send('Input.dispatchMouseEvent', { ...at(releaseAt), type: 'mouseMoved' })
   await session.send('Input.dispatchMouseEvent', { ...at(releaseAt), type: 'mouseReleased' })
 }
@@ -244,6 +253,14 @@ function topEdgeOf(button: Element) {
 }
 
 const emailError = 'Enter a valid email address.'
+
+// afterDeferred waits until a task the hook deferred with setTimeout(0) before it has run: timers
+// with the same delay run in the order they were set.
+async function afterDeferred() {
+  await new Promise<void>((resolve) => {
+    setTimeout(resolve, 0)
+  })
+}
 const otherLabel = 'Save other'
 const pixel = 'data:image/gif;base64,R0lGODlhAQABAAAAACw='
 
@@ -297,11 +314,47 @@ test('a press the browser cancels checks the field it left without waiting for t
 
   await press(x, y, {
     releaseAt: { x, y: y - 60 },
-    whileDown: async () => {
-      button.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true, isPrimary: true }))
+    whileDown: async (pointerId) => {
+      await afterDeferred()
+      expect(screen.getByText(emailError).query()).toBeNull()
+
+      button.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true, pointerId }))
+
       await expect.element(screen.getByText(emailError)).toBeInTheDocument()
     },
   })
+})
+
+// A finger or a pen lifted while the mouse holds the submit button does not end the mouse's press.
+test('another pointer coming up does not end the press on the submit button', async () => {
+  const { screen, email } = await open()
+  await email.click()
+  const button = screen.getByRole('button', { name: submitLabel }).element()
+  const { x, y } = topEdgeOf(button)
+
+  await press(x, y, {
+    whileDown: async (pointerId) => {
+      button.dispatchEvent(
+        new PointerEvent('pointerdown', {
+          bubbles: true,
+          pointerId: pointerId + 1,
+          pointerType: 'touch',
+        }),
+      )
+      button.dispatchEvent(
+        new PointerEvent('pointerup', {
+          bubbles: true,
+          pointerId: pointerId + 1,
+          pointerType: 'touch',
+        }),
+      )
+      await afterDeferred()
+      expect(screen.getByText(emailError).query()).toBeNull()
+    },
+  })
+
+  await expect.element(screen.getByText(emailError)).toBeInTheDocument()
+  await expect.element(screen.getByText('Name is required.')).toBeInTheDocument()
 })
 
 // Only a press on the field's own form waits: another form's submit button does not submit it.
@@ -333,33 +386,34 @@ test('a field left for another form’s submit button is checked when it loses f
   })
 })
 
-// A form that checks a field by a rule of its own sets that error on submit (ProviderLimitForm):
-// the check of the field the press left must not run after the submit and clear it.
+// A form that checks a field by a rule of its own sets that error in its own submit handler and
+// stops there, before form.onSubmit (ProviderLimitForm): the check of the field the press left must
+// not run after the submit and clear it.
 function OwnRuleForm() {
   const form = useSchemaForm(z.object({ maxPerDay: z.string() }), { maxPerDay: '' })
+  const submit = (event: SubmitEvent<HTMLFormElement>) => {
+    if (!form.values.maxPerDay) {
+      event.preventDefault()
+      form.setErrors({ maxPerDay: 'Max per day is required.' })
+      return
+    }
+    form.onSubmit(() => undefined)(event)
+  }
   return (
-    <form
-      onSubmit={form.onSubmit(({ maxPerDay }) => {
-        if (!maxPerDay) {
-          form.setErrors({ maxPerDay: 'Max per day is required.' })
-        }
-      })}
-    >
+    <form onSubmit={submit}>
       <TextInput label="Max per day" {...form.getInputProps('maxPerDay')} />
       <Button type="submit">{submitLabel}</Button>
     </form>
   )
 }
 
-test('an error the form sets on submit stays after a press that left a field', async () => {
+test('an error the form sets in its own submit handler stays after a press that left a field', async () => {
   const screen = await renderWithProviders(<OwnRuleForm />)
   await screen.getByLabelText('Max per day').click()
   const { x, y } = topEdgeOf(screen.getByRole('button', { name: submitLabel }).element())
 
   await press(x, y)
-  await new Promise<void>((resolve) => {
-    setTimeout(resolve, 50)
-  })
+  await afterDeferred()
 
   await expect.element(screen.getByText('Max per day is required.')).toBeInTheDocument()
 })
