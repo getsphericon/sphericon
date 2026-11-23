@@ -13,6 +13,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteAutomationResource, AutomationVersion } from '../../generated/site/types.gen.ts'
 import { Route } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
+import { canvasProperties } from '../../test/canvas.ts'
 import { stepId, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -99,6 +100,10 @@ test.each([
   await screen.getByText('Properties').click()
   await screen.getByRole('combobox', { name: 'Trigger Event' }).fill('course_completed')
   await screen.getByLabelText('Name', { exact: false }).fill('Submitted name')
+  // The Trigger's edit reaches the canvas store, which the Save reads, a moment later.
+  await expect
+    .poll(() => canvasProperties('trigger'))
+    .toMatchObject({ triggerEvent: 'course_completed' })
   // The Trigger's panel covers the toolbar: the Save is a click dispatched on it.
   screen
     .getByRole('button', { name: 'Save' })

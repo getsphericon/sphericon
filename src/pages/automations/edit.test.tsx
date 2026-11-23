@@ -1,4 +1,3 @@
-import { useStore } from '@workflowbuilder/sdk'
 import { HttpResponse } from 'msw'
 import { beforeEach, expect, test } from 'vitest'
 import { page } from 'vitest/browser'
@@ -16,11 +15,13 @@ import {
 import type { SiteAutomationResource, AutomationVersion } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
+import { canvasProperties } from '../../test/canvas.ts'
 import { stepId, testId, workspace } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
+import { endingsOf } from './definition.ts'
 import { AutomationEditPage } from './edit.tsx'
 
 const EDIT_ROUTE = routeMount(automationsEditRoute, {
@@ -161,8 +162,12 @@ test('the Trigger card sets the Entry policy and, under again, the cooldown in h
   await screen.getByRole('option', { name: 'Again after each enrollment ends' }).click()
   await screen.getByLabelText('Cooldown, hours').fill('24')
   // The panel, grown with the cooldown, covers the toolbar: a click inside the panel leaves the
-  // value, and the Save is a click dispatched on it.
+  // value, and the Save is a click dispatched on it once the canvas store, which it reads, holds
+  // the edit.
   await screen.getByText('Trigger Filter', { exact: true }).click()
+  await expect
+    .poll(() => canvasProperties('trigger'))
+    .toMatchObject({ entryPolicy: 'again', cooldown: '86400' })
   screen
     .getByRole('button', { name: 'Save' })
     .element()
@@ -194,8 +199,10 @@ test('the Trigger card suggests the property keys of recent events of its action
   await screen.getByText('Properties').click()
   await screen.getByRole('combobox', { name: 'Enrollment key' }).click()
   await screen.getByRole('option', { name: 'order_id' }).click()
-  // A click inside the panel leaves the value, and the Save is a click dispatched on it.
+  // A click inside the panel leaves the value, and the Save is a click dispatched on it once the
+  // canvas store, which it reads, holds the edit.
   await screen.getByText('Trigger Filter', { exact: true }).click()
+  await expect.poll(() => canvasProperties('trigger')).toMatchObject({ enrollmentKey: 'order_id' })
   screen
     .getByRole('button', { name: 'Save' })
     .element()
@@ -225,8 +232,11 @@ test('saving sends the trigger event typed on the canvas, a custom one included'
   await screen.getByText('Properties').click()
   await screen.getByRole('combobox', { name: 'Trigger Event' }).fill('course_completed')
   // The Trigger's panel covers the toolbar: a click inside the panel leaves the value, and the Save
-  // is a click dispatched on it.
+  // is a click dispatched on it once the canvas store, which it reads, holds the edit.
   await screen.getByText('Trigger Filter', { exact: true }).click()
+  await expect
+    .poll(() => canvasProperties('trigger'))
+    .toMatchObject({ triggerEvent: 'course_completed' })
   screen
     .getByRole('button', { name: 'Save' })
     .element()
@@ -260,8 +270,14 @@ test("saving sends the Trigger's filter edited on the canvas with the Event's pr
   await screen.getByLabelText('Event property name').fill('status')
   await screen.getByTestId('value-editor').fill('paid')
   // The panel, grown with the filter, covers the toolbar: a click inside the panel leaves the value,
-  // and the Save is a click dispatched on it.
+  // and the Save is a click dispatched on it once the canvas store, which it reads, holds the edit.
   await screen.getByText('Trigger Filter', { exact: true }).click()
+  await expect
+    .poll(() => canvasProperties('trigger'))
+    .toMatchObject({
+      triggerEvent: 'order.completed',
+      triggerFilter: expect.stringContaining('paid'),
+    })
   screen
     .getByRole('button', { name: 'Save' })
     .element()
@@ -313,14 +329,7 @@ test('a filter left half-typed is dropped when the Trigger is opened again, and 
   const save = screen.getByRole('button', { name: 'Save' })
   // The panel drops the half-typed filter on mount; the Save reads the canvas store, which takes it a
   // moment later.
-  await expect
-    .poll(() =>
-      useStore
-        .getState()
-        .nodes.map((node) => (node.data.properties as Record<string, unknown>).triggerFilter)
-        .filter((filter) => filter !== undefined),
-    )
-    .toEqual([''])
+  await expect.poll(() => canvasProperties('trigger')).toMatchObject({ triggerFilter: '' })
   await expect.element(save).toBeEnabled()
   // The Trigger's panel covers the toolbar: the Save is a click dispatched on it.
   save.element().dispatchEvent(new MouseEvent('click', { bubbles: true }))
@@ -379,10 +388,13 @@ test('saving sends a goal event added on the canvas, an Event matcher with its f
   await screen.getByRole('button', { name: /Rule/ }).last().click()
   await screen.getByLabelText('Event property name').fill('status')
   await screen.getByTestId('value-editor').fill('paid')
-  // The form's last change reaches the node a moment later: a click on the panel lets it land, as a
-  // person's move to the Save does. The goal's editor lengthens the panel over the bar, so the Save
-  // is clicked by an event dispatched on it.
+  // The form's last change reaches the canvas store, which the Save reads, a moment later. The
+  // goal's editor lengthens the panel over the bar, so the Save is clicked by an event dispatched
+  // on it.
   await screen.getByText('Goal Event').click()
+  await expect
+    .poll(() => canvasProperties('trigger'))
+    .toMatchObject({ goalEvent: expect.stringMatching(/order\.closed.*paid/) })
   screen
     .getByRole('button', { name: 'Save' })
     .element()
@@ -735,9 +747,12 @@ test('saving sends the exit events added on the canvas, less the one removed', a
   await screen.getByRole('button', { name: 'Add exit event' }).click()
   await screen.getByRole('combobox', { name: 'Event', exact: true }).last().fill('order.refunded')
   await screen.getByRole('button', { name: 'Remove' }).first().click()
-  // The form's last change reaches the node a moment later: a click on the panel lets it land. The
+  // The form's last change reaches the canvas store, which the Save reads, a moment later. The
   // exits lengthen the panel over the bar, so the Save is clicked by an event dispatched on it.
   await screen.getByText('Exit Events').click()
+  await expect
+    .poll(() => endingsOf(String(canvasProperties('trigger')?.exitEvents)))
+    .toMatchObject([{ action: 'order.refunded' }])
   screen
     .getByRole('button', { name: 'Save' })
     .element()

@@ -15,6 +15,7 @@ import type {
   SiteAutomationResource,
 } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
+import { canvasProperties } from '../../test/canvas.ts'
 import {
   emailIntegration,
   stepId,
@@ -127,6 +128,14 @@ test('an SMS step round-trips: its Integration and text load, an edit saves them
   await screen.getByText('Insert a merge tag').click()
   await screen.getByRole('menuitem', { name: 'unsubscribe_url' }).click()
   await screen.getByText('Track links').click({ force: true })
+  // The edit reaches the canvas store, which the Save reads, a moment later.
+  await expect
+    .poll(() => canvasProperties(STEP.id))
+    .toMatchObject({
+      integrationId: '',
+      text: 'Your cart is waiting: {{ unsubscribe_url }}',
+      linkTracking: 'off',
+    })
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect
