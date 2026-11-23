@@ -247,9 +247,8 @@ func TestFilterKeyIsMatchedLiterally(t *testing.T) {
 	}
 }
 
-// like_regex takes its pattern only as a literal, so contains writes its operand into the path:
-// whatever the operand holds (a quote, a backslash, the path's syntax, a regular expression), it is
-// one literal, matched as plain text.
+// A contains test matches its operand as plain text, whatever it holds (a quote, a backslash, the
+// path's syntax, a regular expression, a LIKE pattern).
 func TestFilterContainsMatchesItsOperandLiterally(t *testing.T) {
 	env := testhelper.Setup(t)
 	for name, operand := range map[string]string{
@@ -259,6 +258,7 @@ func TestFilterContainsMatchesItsOperandLiterally(t *testing.T) {
 		"a star":              `a*b`,
 		"a breakout":          `") || exists(@) || ("`,
 		"a pattern":           `^.*$`,
+		"a LIKE pattern":      `100%_off`,
 		"a unicode character": "café <tag> & ü",
 		"a line break":        "a\nb",
 	} {
@@ -273,6 +273,15 @@ func TestFilterContainsMatchesItsOperandLiterally(t *testing.T) {
 		assert.True(t, hit, name)
 		assert.False(t, miss, name)
 	}
+}
+
+// The operand of a contains test is no part of the path: like_regex would take it only as a literal
+// written into the path, so it is bound to the statement instead, as every other value is.
+func TestFilterContainsOperandIsNotSplicedIntoThePath(t *testing.T) {
+	path, err := condition.CompileEventFilter(filterOf(prop("k", text("contains", "operand_one"))))
+	require.NoError(t, err)
+
+	assert.NotContains(t, path.Text, "operand_one")
 }
 
 // An empty operand is in every text, as on a Contact's attribute, and in nothing else.

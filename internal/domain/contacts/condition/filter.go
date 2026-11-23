@@ -90,11 +90,21 @@ func decodeFilterEntry(raw json.RawMessage) (filterNode, error) {
 // runs on: an Event's properties, an Order's line, the properties of the Event a Rule handles.
 type Path struct {
 	// Text is the path in filter form, strict $ ? (…). It holds the filter's structure and no key
-	// or value of it, but the operand of a contains test: like_regex takes only a literal, which
-	// is written as a JSON string and matched literally (flag q).
+	// or value of it.
 	Text string
 	// Vars is the path's variables, a JSON object: the keys and values the filter tests.
 	Vars json.RawMessage
+	// contains are the filter's contains tests, which the statement decides on the object and
+	// hands the path as variables of their own (pathBuilder.contains).
+	contains []containsTest
+}
+
+// containsTest is a contains test of the property key with the operand, whose answer on the object
+// is the path's variable name.
+type containsTest struct {
+	name    string
+	key     string
+	operand string
 }
 
 // CompileEventFilter reads an Event matcher's filter, refusing a tree it cannot read (an entry
@@ -120,9 +130,32 @@ func (p Path) On(target func(b *sql.Builder)) *sql.Predicate {
 	return sql.P(func(b *sql.Builder) {
 		b.WriteString("COALESCE(jsonb_path_exists(COALESCE(")
 		target(b)
-		b.WriteString(", '{}'::jsonb), ").Arg(p.Text).WriteString("::jsonpath, ").Arg(string(p.Vars)).
-			WriteString("::jsonb, true), false)")
+		b.WriteString(", '{}'::jsonb), ").Arg(p.Text).WriteString("::jsonpath, ")
+		p.vars(b, target)
+		b.WriteString(", true), false)")
 	})
+}
+
+// vars writes the path's variables: the bound object of the keys and values, and the answer of each
+// contains test on target, a boolean. A contains test holds where the object's property key is a
+// text that holds the operand, whatever their case: both bound arguments, compared by strpos, so no
+// character of either is read as a pattern. A property that is no text, or is missing, answers
+// false, and the path's own guard of its type fails the test there too.
+func (p Path) vars(b *sql.Builder, target func(b *sql.Builder)) {
+	if len(p.contains) == 0 {
+		b.Arg(string(p.Vars)).WriteString("::jsonb")
+		return
+	}
+	b.WriteString("(").Arg(string(p.Vars)).WriteString("::jsonb || jsonb_build_object(")
+	for i, c := range p.contains {
+		if i > 0 {
+			b.WriteString(", ")
+		}
+		b.Arg(c.name).WriteString("::text, COALESCE(strpos(lower(")
+		target(b)
+		b.WriteString(" ->> ").Arg(c.key).WriteString("::text), lower(").Arg(c.operand).WriteString("::text)) > 0, false)")
+	}
+	b.WriteString("))")
 }
 
 // Document is the target of a path that is a JSON object given with the query, bound as one of
@@ -134,10 +167,11 @@ func Document(doc json.RawMessage) func(b *sql.Builder) {
 }
 
 // pathBuilder writes the expressions of a path and binds the keys and values they test as its
-// variables, $v0, $v1, …, so that none is spliced into it.
+// variables, $v0, $v1, …, and the answers of its contains tests as $c0, $c1, …, so that none is
+// spliced into it.
 type pathBuilder struct {
-	vars map[string]any
-	err  error
+	vars  map[string]any
+	tests []containsTest
 }
 
 func newPathBuilder() *pathBuilder { return &pathBuilder{vars: map[string]any{}} }
@@ -149,14 +183,12 @@ func (b *pathBuilder) bind(v any) string {
 	return "$" + name
 }
 
-// literal writes s as a string literal of the path, in JSON's escapes, which the path's own
-// string literals read alike. Only an operator that takes no variable writes one.
-func (b *pathBuilder) literal(s string) string {
-	quoted, err := json.Marshal(s)
-	if err != nil {
-		b.err = errors.Join(b.err, fmt.Errorf("encode operand: %w", err))
-	}
-	return string(quoted)
+// contains makes the contains test of the property key with the operand a variable of the path,
+// which the statement answers (Path.vars), and returns its name.
+func (b *pathBuilder) contains(key, operand string) string {
+	name := "c" + strconv.Itoa(len(b.tests))
+	b.tests = append(b.tests, containsTest{name: name, key: key, operand: operand})
+	return "$" + name
 }
 
 // always is a predicate every object holds, which an empty group is: the path has no true literal.
@@ -200,20 +232,17 @@ func (b *pathBuilder) node(n filterNode) string {
 // would keep. An object @ that is no object (JSON null, a list) holds no property: the guard
 // before keyvalue, which fails on it, keeps the test false there rather than unknown.
 func (b *pathBuilder) property(key string, t propertyTest) string {
-	return `@.type() == "object" && exists(@.keyvalue() ? (@.key == ` + b.bind(key) + ").value ? (" + t.path(b) + "))"
+	return `@.type() == "object" && exists(@.keyvalue() ? (@.key == ` + b.bind(key) + ").value ? (" + t.path(b, key) + "))"
 }
 
 // path is the path of the filter predicate expr, with the variables bound so far. In strict mode
 // a list is not unwrapped, so a list that holds a matching value is no match.
 func (b *pathBuilder) path(expr string) (Path, error) {
-	if b.err != nil {
-		return Path{}, b.err
-	}
 	vars, err := json.Marshal(b.vars)
 	if err != nil {
 		return Path{}, fmt.Errorf("encode path variables: %w", err)
 	}
-	return Path{Text: "strict $ ? (" + expr + ")", Vars: vars}, nil
+	return Path{Text: "strict $ ? (" + expr + ")", Vars: vars, contains: b.tests}, nil
 }
 
 // Definitions is what an Event matcher's filter names in the Workspace's catalogue (ADR 0133): the

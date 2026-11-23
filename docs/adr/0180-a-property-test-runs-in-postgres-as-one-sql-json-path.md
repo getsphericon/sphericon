@@ -42,9 +42,11 @@ value.
   of the filter are passed as the path's variables, never spliced into it. Each test is guarded so
   that a value of another type fails it (the path's own result for a type mismatch is unknown, and
   `!` keeps unknown), so a `not` over a test that fails matches, as ADR 0133 says. `eq` and `neq`
-  compare text, `contains` is a case-insensitive literal match (`like_regex` with the `q` and `i`
-  flags, as `contains` ignores case today), `beginsWith` is `starts with`, and the number comparisons
-  compare a JSON number. Nobody writes a path: it is what the compiler emits.
+  compare text, `contains` is a case-insensitive literal match (as `contains` ignores case today),
+  `beginsWith` is `starts with`, and the number comparisons compare a JSON number. The path has no
+  substring test that takes a variable (`like_regex` takes its pattern only as a literal), so the
+  statement decides each `contains` beside the path, `strpos` over the lowered property and the
+  lowered operand, both bound, and passes the answer in as one more variable. Nobody writes a path: it is what the compiler emits.
 - **It runs where the object is.** On `events.properties` inside an `event` leaf's count; on an
   Order's lines inside an `order` test; and on a `jsonb` parameter of the query for the properties of
   the Event a Rule handles, of the Event a Trigger, an exit, a goal or a Wait for event matches, of

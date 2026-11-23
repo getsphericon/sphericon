@@ -19,7 +19,7 @@ import (
 // value @, a string, in an SQL/JSON path (ADR 0180).
 type textOperator struct {
 	contact func(f textField, want string) predicate.Contact
-	path    func(b *pathBuilder, want string) string
+	path    func(b *pathBuilder, key, want string) string
 }
 
 // textOperatorOf is what op means, or a refusal of an operator outside the contract.
@@ -28,51 +28,51 @@ func textOperatorOf(op conditiontree.TextOperator) (textOperator, error) {
 	case conditiontree.TextEq:
 		return textOperator{
 			contact: func(f textField, want string) predicate.Contact { return f.eq(want) },
-			path:    func(b *pathBuilder, want string) string { return "@ == " + b.bind(want) },
+			path:    func(b *pathBuilder, _, want string) string { return "@ == " + b.bind(want) },
 		}, nil
 	case conditiontree.TextNeq:
 		return textOperator{
 			contact: func(f textField, want string) predicate.Contact { return f.neq(want) },
-			path:    func(b *pathBuilder, want string) string { return "@ != " + b.bind(want) },
+			path:    func(b *pathBuilder, _, want string) string { return "@ != " + b.bind(want) },
 		}, nil
 	case conditiontree.TextContains:
-		// A case-insensitive substring: like_regex takes its pattern only as a literal, which the
-		// flag q reads as plain text, never as a regular expression.
+		// A case-insensitive substring. The path has no operator for it that takes a variable
+		// (like_regex takes its pattern only as a literal), so the statement decides it beside the
+		// path and hands the path the answer (pathBuilder.contains).
 		return textOperator{
 			contact: func(f textField, want string) predicate.Contact { return f.contains(want) },
-			path: func(b *pathBuilder, want string) string {
-				return "@ like_regex " + b.literal(want) + ` flag "qi"`
-			},
+			path:    func(b *pathBuilder, key, want string) string { return b.contains(key, want) + " == true" },
 		}, nil
 	case conditiontree.TextBeginsWith:
 		return textOperator{
 			contact: func(f textField, want string) predicate.Contact { return f.beginsWith(want) },
-			path:    func(b *pathBuilder, want string) string { return "@ starts with " + b.bind(want) },
+			path:    func(b *pathBuilder, _, want string) string { return "@ starts with " + b.bind(want) },
 		}, nil
 	}
 	return textOperator{}, fmt.Errorf("unknown text operator %q", op)
 }
 
 // propertyTest is a test a property test takes (text, presence or number), written as the
-// predicate on the property's value @ in an SQL/JSON path. Each guards the value's type first.
+// predicate on the value @ of the property key in an SQL/JSON path. Each guards the value's type
+// first.
 type propertyTest interface {
 	test
-	path(b *pathBuilder) string
+	path(b *pathBuilder, key string) string
 }
 
 // path holds for a string that compares with the test's value by its operator.
-func (t textTest) path(b *pathBuilder) string {
-	return `@.type() == "string" && ` + t.meaning.path(b, t.value)
+func (t textTest) path(b *pathBuilder, key string) string {
+	return `@.type() == "string" && ` + t.meaning.path(b, key, t.value)
 }
 
 // path holds for a number that compares with the test's value by its operator.
-func (t numberTest) path(b *pathBuilder) string {
+func (t numberTest) path(b *pathBuilder, _ string) string {
 	return `@.type() == "number" && @ ` + t.meaning.op + " " + b.bind(t.value)
 }
 
 // path is the presence test of a property the object holds: set is a string, not set is JSON
 // null, as on a Contact attribute, whose value is text or null.
-func (p presenceTest) path(*pathBuilder) string {
+func (p presenceTest) path(*pathBuilder, string) string {
 	if p.set {
 		return `@.type() == "string"`
 	}
