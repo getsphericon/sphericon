@@ -28,14 +28,20 @@ type EraseInput struct {
 	Destination string
 	// Standing reports whether the opt-out of the Destination from source still stands.
 	Standing func(ctx context.Context, source string) (bool, error)
+	// TrackingDenied reports whether a `denied` Engagement tracking consent of the Destination
+	// still stands (ADR 0120); nil when the Channel keeps none.
+	TrackingDenied func(ctx context.Context) (bool, error)
 }
 
 // Erase is the consent stamp part of the Erasure of a Contact that held in.Destination on
 // in.Channel, run inside the Erasure's transaction. The stamps follow the opt-outs (ADR 0154):
 // where an opt-out of a sending source still stands (in.Standing reports it), the time the person
 // stopped keeps ordering the observations that come later, kept by what the stamp is stored by
-// (consentstamps.Stored: the number's hash on sms, the Destination elsewhere); otherwise nothing of
-// the stamp stays, and neither does the time of a Confirmation, whose proof the Erasure deletes.
+// (consentstamps.Stored: the number's hash on sms, the Destination elsewhere), and so does the time
+// of a tracking `denied` the Erasure keeps (in.TrackingDenied); nothing else of the stamp stays:
+// not the time of a Confirmation, whose proof the Erasure deletes, nor that of a tracking
+// `granted`, which it deletes too, so an older refusal of a Contact made again is not superseded
+// by a grant that is gone.
 func (m *Module) Erase(ctx context.Context, s *ent.Scoped, in EraseInput) error {
 	if in.Destination == "" {
 		return nil
@@ -47,19 +53,41 @@ func (m *Module) Erase(ctx context.Context, s *ent.Scoped, in EraseInput) error 
 	if err != nil {
 		return fmt.Errorf("find consent stamps: %w", err)
 	}
+	denied, err := trackingDenied(ctx, in)
+	if err != nil {
+		return err
+	}
 	for _, row := range rows {
 		stands, err := in.Standing(ctx, row.SendingSource)
 		if err != nil {
 			return err
 		}
-		if stands && row.OptOutOccurredAt != nil {
-			err = s.ConsentStamp().UpdateOneID(row.ID).ClearConfirmationOccurredAt().Exec(ctx)
-		} else {
+		keepStop := stands && row.OptOutOccurredAt != nil
+		keepRefusal := denied && row.EngagementTrackingOccurredAt != nil
+		switch {
+		case !keepStop && !keepRefusal:
 			err = s.ConsentStamp().DeleteOneID(row.ID).Exec(ctx)
+		default:
+			update := s.ConsentStamp().UpdateOneID(row.ID).ClearConfirmationOccurredAt()
+			if !keepStop {
+				update.ClearOptOutOccurredAt().ClearOptOutIntegrationID().ClearOptOutSequence()
+			}
+			if !keepRefusal {
+				update.ClearEngagementTrackingOccurredAt()
+			}
+			err = update.Exec(ctx)
 		}
 		if err != nil {
 			return fmt.Errorf("erase consent stamp: %w", err)
 		}
 	}
 	return nil
+}
+
+// trackingDenied is whether in's Destination keeps a tracking `denied`.
+func trackingDenied(ctx context.Context, in EraseInput) (bool, error) {
+	if in.TrackingDenied == nil {
+		return false, nil
+	}
+	return in.TrackingDenied(ctx)
 }

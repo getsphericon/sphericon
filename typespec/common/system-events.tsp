@@ -104,6 +104,24 @@ enum SystemEventAction {
   /** The Contact's number opted out of the Workspace's SMS marketing */
   smsUnsubscribed: "sms.unsubscribed",
 
-  /** A stop or a start of the Contact occurred before the consent standing, and changed nothing */
+  /** The Contact's email address agreed to have its opens and clicks tracked */
+  emailEngagementTrackingGranted: "email.engagement_tracking_granted",
+
+  /** The Contact's email address refused to have its opens and clicks tracked */
+  emailEngagementTrackingDenied: "email.engagement_tracking_denied",
+
+  /** The Contact's phone number agreed to have its link clicks tracked */
+  smsEngagementTrackingGranted: "sms.engagement_tracking_granted",
+
+  /** The Contact's phone number refused to have its link clicks tracked */
+  smsEngagementTrackingDenied: "sms.engagement_tracking_denied",
+
+  /** The Contact's Telegram chat agreed to have its link clicks tracked */
+  telegramEngagementTrackingGranted: "telegram.engagement_tracking_granted",
+
+  /** The Contact's Telegram chat refused to have its link clicks tracked */
+  telegramEngagementTrackingDenied: "telegram.engagement_tracking_denied",
+
+  /** A consent observation of the Contact occurred before the consent standing, and changed nothing */
   contactConsentSuperseded: "contact.consent_superseded",
 }

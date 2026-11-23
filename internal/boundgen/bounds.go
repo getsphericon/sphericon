@@ -217,10 +217,11 @@ var Bounds = []Bound{
 		Owners: []string{"internal/usecase/visitoridentification"},
 	},
 	{
-		Name: "ConsentDestination", Doc: "is the address or phone a Consent fact (a Confirmation, a Suppression, an Unsubscribe) is about.",
+		Name: "ConsentDestination", Doc: "is the address or phone a Consent fact (a Confirmation, a Suppression, an Unsubscribe, an Engagement tracking consent) is about.",
 		Spec: external, Schema: "CreateConfirmationInput", Property: "destination",
-		Owners: []string{"Confirmation", "Suppression", "Unsubscribe"},
+		Owners: []string{"Confirmation", "Suppression", "Unsubscribe", "EngagementTrackingConsent"},
 	},
+	{Name: "ConsentDestination", Spec: external, Schema: "RecordEngagementTrackingInput", Property: "destination"},
 	{Name: "ConsentDestination", Spec: external, Schema: "CreateSuppressionInput", Property: "destination"},
 	{Name: "ConsentDestination", Spec: external, Schema: "CreateUnsubscribeInput", Property: "destination"},
 	{

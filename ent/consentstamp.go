@@ -39,6 +39,8 @@ type ConsentStamp struct {
 	OptOutSequence *int64 `json:"opt_out_sequence,omitempty"`
 	// ConfirmationOccurredAt holds the value of the "confirmation_occurred_at" field.
 	ConfirmationOccurredAt *time.Time `json:"confirmation_occurred_at,omitempty"`
+	// EngagementTrackingOccurredAt holds the value of the "engagement_tracking_occurred_at" field.
+	EngagementTrackingOccurredAt *time.Time `json:"engagement_tracking_occurred_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ConsentStampQuery when eager-loading is set.
 	Edges        ConsentStampEdges `json:"edges"`
@@ -74,7 +76,7 @@ func (*ConsentStamp) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case consentstamp.FieldChannel, consentstamp.FieldDestination, consentstamp.FieldSendingSource:
 			values[i] = new(sql.NullString)
-		case consentstamp.FieldCreatedAt, consentstamp.FieldUpdatedAt, consentstamp.FieldOptOutOccurredAt, consentstamp.FieldConfirmationOccurredAt:
+		case consentstamp.FieldCreatedAt, consentstamp.FieldUpdatedAt, consentstamp.FieldOptOutOccurredAt, consentstamp.FieldConfirmationOccurredAt, consentstamp.FieldEngagementTrackingOccurredAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -161,6 +163,13 @@ func (_m *ConsentStamp) assignValues(columns []string, values []any) error {
 				_m.ConfirmationOccurredAt = new(time.Time)
 				*_m.ConfirmationOccurredAt = value.Time
 			}
+		case consentstamp.FieldEngagementTrackingOccurredAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field engagement_tracking_occurred_at", values[i])
+			} else if value.Valid {
+				_m.EngagementTrackingOccurredAt = new(time.Time)
+				*_m.EngagementTrackingOccurredAt = value.Time
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -237,6 +246,11 @@ func (_m *ConsentStamp) String() string {
 	builder.WriteString(", ")
 	if v := _m.ConfirmationOccurredAt; v != nil {
 		builder.WriteString("confirmation_occurred_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.EngagementTrackingOccurredAt; v != nil {
+		builder.WriteString("engagement_tracking_occurred_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteByte(')')

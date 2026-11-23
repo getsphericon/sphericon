@@ -8,23 +8,26 @@ package events
 // telegram.received and sms.received (the person's own words) and the Contact's own changes. The
 // telegram.* System events are kept like email's, bound and unbound included: they say a Contact's
 // chat came and went, and with the Contact and the Destination dropped they are counts; the sms.*
-// ones are kept like their email twins, and contact.consent_superseded like an unsubscribe.
+// ones are kept like their email twins, and contact.consent_superseded like an unsubscribe. An
+// Engagement tracking refusal is kept like an unsubscribe and its grant deleted like a
+// Confirmation's proof (ADR 0120).
 type keptOnErasure interface {
 	keptOnErasure()
 }
 
-func (*ContactCreated) keptOnErasure()       {}
-func (*EmailEngagement) keptOnErasure()      {}
-func (*EmailDelivery) keptOnErasure()        {}
-func (*BindingChange) keptOnErasure()        {}
-func (*TelegramSent) keptOnErasure()         {}
-func (*TelegramClicked) keptOnErasure()      {}
-func (*TelegramUnsubscribed) keptOnErasure() {}
-func (*SmsSent) keptOnErasure()              {}
-func (*SmsDelivery) keptOnErasure()          {}
-func (*SmsClicked) keptOnErasure()           {}
-func (*SmsUnsubscribed) keptOnErasure()      {}
-func (*ConsentSuperseded) keptOnErasure()    {}
+func (*ContactCreated) keptOnErasure()           {}
+func (*EmailEngagement) keptOnErasure()          {}
+func (*EmailDelivery) keptOnErasure()            {}
+func (*BindingChange) keptOnErasure()            {}
+func (*TelegramSent) keptOnErasure()             {}
+func (*TelegramClicked) keptOnErasure()          {}
+func (*TelegramUnsubscribed) keptOnErasure()     {}
+func (*SmsSent) keptOnErasure()                  {}
+func (*SmsDelivery) keptOnErasure()              {}
+func (*SmsClicked) keptOnErasure()               {}
+func (*SmsUnsubscribed) keptOnErasure()          {}
+func (*ConsentSuperseded) keptOnErasure()        {}
+func (*EngagementTrackingDenied) keptOnErasure() {}
 
 // keptOnErasureActions are the actions whose Events a Contact's Erasure keeps (keptOnErasure).
 var keptOnErasureActions = func() map[string]bool {

@@ -40,6 +40,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts/contactsunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking/engagementtrackingunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions/suppressionsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes/unsubscribesunchecked"
@@ -188,13 +190,17 @@ type UseCase struct {
 	confirmations *confirmationsunchecked.Module
 	// chats reads the Telegram users Bound to the Contact.
 	chats *bindings.Chats
+	// tracking reads the Engagement tracking consent whose refusals an Erasure keeps, and
+	// trackingSteps deletes its grants.
+	tracking      *engagementtracking.Module
+	trackingSteps *engagementtrackingunchecked.Module
 }
 
 // New builds the Contact erasure use case over the bus whose transaction every erasure runs in,
 // the Broadcasts whose pending work it cancels, the contacts module whose unchecked removal of the
-// Contact row it builds, the opt-outs whose standing stops it keeps and the chats whose Bindings
-// to the Contact it reads; now is the Instance clock the Broadcasts' unchecked operations read.
-func New(bus *events.Bus, catalogue *broadcasts.Module, people *contacts.Module, unsubs *unsubscribes.Module, chats *bindings.Chats, now func() time.Time) *UseCase {
+// Contact row it builds, the opt-outs whose standing stops it keeps, the chats whose Bindings
+// to the Contact it reads and the Engagement tracking consent whose refusals it keeps; now is the Instance clock the Broadcasts' unchecked operations read.
+func New(bus *events.Bus, catalogue *broadcasts.Module, people *contacts.Module, unsubs *unsubscribes.Module, chats *bindings.Chats, tracking *engagementtracking.Module, now func() time.Time) *UseCase {
 	return &UseCase{
 		bus: bus, broadcasts: broadcastsunchecked.New(catalogue, bus, now), unsubs: unsubs,
 		automations: automationsunchecked.New(bus), rules: rulesunchecked.New(bus),
@@ -208,6 +214,8 @@ func New(bus *events.Bus, catalogue *broadcasts.Module, people *contacts.Module,
 		suppressions:  suppressionsunchecked.New(),
 		confirmations: confirmationsunchecked.New(),
 		chats:         chats,
+		tracking:      tracking,
+		trackingSteps: engagementtrackingunchecked.New(),
 	}
 }
 
@@ -274,6 +282,8 @@ func (u *UseCase) steps() []step {
 			return pub.PurgeWebhookJobs(ctx, s.WorkspaceID(), t.ContactID, t.destinations())
 		},
 		u.eraseConsentStamps,
+		// The tracking grants of the subject's addresses; their refusals stay (ADR 0120).
+		u.eraseTracking,
 		// The Outbound message module deletes the short links of the Contact's messages, before
 		// anonymizeDelivery clears the contact_id they are found by.
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
@@ -282,7 +292,7 @@ func (u *UseCase) steps() []step {
 		// The bus, which stores the Events, deletes the subject's customer-tracked Events and
 		// anonymizes its system Events in place.
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-			return eventsunchecked.EraseSubject(ctx, s, t.ContactID, t.Phone, t.VisitorIDs)
+			return eventsunchecked.EraseSubject(ctx, s, t.ContactID, t.Phone, t.Destinations, t.VisitorIDs)
 		},
 		// The Visitors, and with them their Bindings and Start tokens. Telegram opt-outs are not
 		// here: they are keyed by the user id and stay.

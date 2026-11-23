@@ -10,6 +10,7 @@ import (
 	"pgregory.net/rapid"
 
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
@@ -22,7 +23,7 @@ import (
 // address finds what the address itself finds.
 func TestLookupIgnoresPaddingAndCase(t *testing.T) {
 	env := testhelper.Setup(t)
-	erasure := contacterasure.New(env.Bus, testhelper.Module[*broadcasts.Module](env), testhelper.Module[*contacts.Module](env), testhelper.Module[*unsubscribes.Module](env), testhelper.Module[*bindings.Chats](env), time.Now)
+	erasure := contacterasure.New(env.Bus, testhelper.Module[*broadcasts.Module](env), testhelper.Module[*contacts.Module](env), testhelper.Module[*unsubscribes.Module](env), testhelper.Module[*bindings.Chats](env), testhelper.Module[*engagementtracking.Module](env), time.Now)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	want, err := erasure.Lookup(t.Context(), acme, fixtures.ContactAliceEmail)
 	require.NoError(t, err)
@@ -42,7 +43,7 @@ func TestLookupIgnoresPaddingAndCase(t *testing.T) {
 // Whatever comes in, a lookup either reads the address or refuses it as ErrInvalidEmail.
 func TestLookupReadsAnAddressOrRefusesIt(t *testing.T) {
 	env := testhelper.Setup(t)
-	erasure := contacterasure.New(env.Bus, testhelper.Module[*broadcasts.Module](env), testhelper.Module[*contacts.Module](env), testhelper.Module[*unsubscribes.Module](env), testhelper.Module[*bindings.Chats](env), time.Now)
+	erasure := contacterasure.New(env.Bus, testhelper.Module[*broadcasts.Module](env), testhelper.Module[*contacts.Module](env), testhelper.Module[*unsubscribes.Module](env), testhelper.Module[*bindings.Chats](env), testhelper.Module[*engagementtracking.Module](env), time.Now)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
 	rapid.Check(t, func(rt *rapid.T) {

@@ -185,3 +185,64 @@ namespace SmsConsents {
   @requiresScopes(#[ApiTokenScope.contactsRead])
   op get(@path contactId: EntityId): SmsConsent | Problem;
 }
+
+/** An Engagement tracking consent the customer collected for a Destination (ADR 0120), recorded as `imported` */
+model RecordEngagementTrackingInput {
+  /** The Channel the consent is for. Only `email` is accepted yet */
+  channel: EngagementTrackingChannel;
+
+  /** The Destination that consented or refused: an email address on `email` */
+  @maxLength(320)
+  destination: string;
+
+  ...EngagementTrackingObservationInput;
+}
+
+/** What became of an Engagement tracking observation: it set the consent (`applied`), or it occurred before the consent standing and changed nothing (`superseded`, recorded in the contact's history as `contact.consent_superseded`) */
+enum EngagementTrackingOutcome {
+  applied,
+  superseded,
+}
+
+/** The answer to an Engagement tracking observation: what became of it, and the consent that stands after it */
+model EngagementTrackingObservationResult {
+  /** Whether the observation set the consent */
+  outcome: EngagementTrackingOutcome;
+
+  /** The Destination's consent after the observation */
+  consent: EngagementTrackingConsent;
+}
+
+// A refusal of tracking applies from anyone; a grant applies only where no refusal stands, since
+// only the person lifts a refusal (ADR 0121). There is deliberately no operation that lifts a
+// `denied`: do not add one.
+@tag("Consent")
+namespace EngagementTracking {
+  /**
+   * Record whether a destination agreed to have its opens and clicks tracked, as an `imported`
+   * consent collected outside sphericon (a consent banner, an account setting). A `denied` always
+   * applies, and is kept in the immutable `email.engagement_tracking_denied` event; a `granted` is
+   * kept in `email.engagement_tracking_granted` and is refused with a conflict over a standing
+   * `denied`: only the person can lift a refusal. An observation that occurred before the consent
+   * standing changes nothing and is answered as `superseded`; of two of the same moment the
+   * refusal wins.
+   */
+  @route("/engagement-tracking-consents")
+  @post
+  @requiresScopes(#[ApiTokenScope.contactsWrite])
+  op create(@body body: RecordEngagementTrackingInput):
+    | EngagementTrackingObservationResult
+    | Problem;
+
+  /**
+   * Read whether each Destination of a contact (its email address) is tracked: the consent
+   * recorded with who recorded it, or `default` where none is, with what it means now. The consent
+   * is keyed by the Destination, so it follows the address the contact has now.
+   */
+  @route("/contacts/{contactId}/engagement-tracking")
+  @get
+  @requiresScopes(#[ApiTokenScope.contactsRead])
+  op getForContact(@path contactId: EntityId):
+    | ContactEngagementTracking
+    | Problem;
+}

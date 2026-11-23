@@ -12,6 +12,10 @@ const (
 	ObservationStop = "stop"
 	// ObservationStart gave it again: a START, an unblock, a bot started.
 	ObservationStart = "start"
+	// ObservationTrackingDenied refused Engagement tracking consent, ObservationTrackingGranted
+	// gave it (ADR 0120).
+	ObservationTrackingDenied  = "tracking_denied"
+	ObservationTrackingGranted = "tracking_granted"
 )
 
 // ConsentSuperseded is a Consent observation of a Contact that occurred before the consent state
@@ -19,8 +23,9 @@ const (
 // a STOP the person sent later, a stop older than the return that lifted it. It is the observation's
 // place in the Contact's consent history, at the time it occurred; none of the reactions to a
 // transition run for it, and it names no Broadcast. Channel is the observation's, Observation is
-// ObservationStop or ObservationStart, Via how a stop came (one of UnsubscribedBy*, "" for a
-// start). Phone is the number of an SMS observation. DedupID derives from the observation's, so a
+// ObservationStop or ObservationStart, or for Engagement tracking consent ObservationTrackingDenied
+// or ObservationTrackingGranted with its Provenance, Via how a stop came (one of UnsubscribedBy*,
+// "" for a start). Phone is the number of an SMS observation. DedupID derives from the observation's, so a
 // redelivery records nothing twice.
 type ConsentSuperseded struct {
 	WorkspaceID   int64     `json:"workspaceId"`
@@ -30,6 +35,7 @@ type ConsentSuperseded struct {
 	Channel       string    `json:"channel"`
 	Observation   string    `json:"observation"`
 	Via           string    `json:"via,omitempty"`
+	Provenance    string    `json:"provenance,omitempty"`
 	IntegrationID int64     `json:"integrationId,omitempty"`
 	DedupID       string    `json:"dedupId,omitempty"`
 	ObservedAt    time.Time `json:"observedAt"`
@@ -42,9 +48,8 @@ func (e *ConsentSuperseded) EventID() string            { return e.DedupID }
 func (e *ConsentSuperseded) ObservationTime() time.Time { return e.ObservedAt }
 func (e *ConsentSuperseded) Project() Projection {
 	props := map[string]any{"channel": e.Channel, "observation": e.Observation}
-	if e.Via != "" {
-		props["via"] = e.Via
-	}
+	setNonZero(props, "via", e.Via)
+	setNonZero(props, "provenance", e.Provenance)
 	setNonZero(props, "integrationId", e.IntegrationID)
 	return Projection{
 		Subject: e.Email, Action: systemevent.ContactConsentSuperseded, Email: e.Email, Phone: e.Phone, ContactID: e.ContactID,

@@ -38,6 +38,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
@@ -168,6 +169,7 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend optNilOptOutVia
 // goverter:extend optNilSmsConfirmation
 // goverter:extend optNilSmsOptOut
+// goverter:extend optNilEngagementTrackingProvenance
 // goverter:extend optNilHoldReason
 // goverter:extend optNilEmailAddress
 // goverter:extend optNilTimeZone
@@ -490,6 +492,21 @@ type Converter interface {
 	SmsOptOutToResource(source *confirmations.SMSOptOut) externalapi.SmsOptOut
 	// goverter:map CreatedAt ConfirmedAt
 	SmsConfirmationToResource(source *ent.Confirmation) externalapi.SmsConfirmation
+
+	// The Engagement tracking consent of a Destination (ADR 0120), and what an observation did.
+	EngagementTrackingConsentToResource(source engagementtracking.Consent) externalapi.EngagementTrackingConsent
+	ContactEngagementTrackingToResource(source engagementtracking.ContactConsents) externalapi.ContactEngagementTracking
+	EngagementTrackingRecordedToResource(source engagementtracking.Recorded) externalapi.EngagementTrackingObservationResult
+	// goverter:enum:transform value
+	EngagementTrackingChannelToResource(source channels.Channel) externalapi.EngagementTrackingChannel
+	// goverter:enum:transform value
+	EngagementTrackingReadingToResource(source engagementtracking.Reading) externalapi.EngagementTrackingReading
+	// goverter:enum:transform value
+	EngagementTrackingProvenanceToResource(source engagementtracking.Provenance) externalapi.EngagementTrackingProvenance
+	// goverter:enum:transform value
+	EngagementTrackingDecisionToResource(source engagementtracking.Decision) externalapi.EngagementTrackingDecision
+	// goverter:enum:transform value
+	EngagementTrackingOutcomeToResource(source engagementtracking.Outcome) externalapi.EngagementTrackingOutcome
 
 	// The Data export members (ADR 0021): the contract's typed projection of the
 	// stored rows, so the ent JSON tags are never the public format.
@@ -1082,6 +1099,10 @@ func optNilSmsOptOut(c Converter, v *confirmations.SMSOptOut) externalapi.OptNil
 
 func optNilOptOutVia(c Converter, v *unsubscribe.Via) externalapi.OptNilOptOutVia {
 	return convert.OptVia[externalapi.OptNilOptOutVia](v, c.OptOutViaToResource)
+}
+
+func optNilEngagementTrackingProvenance(c Converter, v *engagementtracking.Provenance) externalapi.OptNilEngagementTrackingProvenance {
+	return convert.OptVia[externalapi.OptNilEngagementTrackingProvenance](v, c.EngagementTrackingProvenanceToResource)
 }
 
 func optNilHoldReason(c Converter, v *holdreason.Reason) externalapi.OptNilHoldReason {

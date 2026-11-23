@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eventrecording"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
@@ -89,6 +90,7 @@ type Handlers struct {
 	unsubscribe   *unsubscriberecording.UseCase
 	suppressions  *suppressions.Module
 	confirmations *confirmations.Module
+	tracking      *engagementtracking.Module
 	exports       *dataexport.Exporter
 }
 
@@ -141,6 +143,8 @@ type Deps struct {
 	Suppressions *suppressions.Module
 	// Confirmations records the consent a customer collected and reads a Contact's SMS consent.
 	Confirmations *confirmations.Module
+	// Tracking records and reads the Engagement tracking consent of the Destinations.
+	Tracking *engagementtracking.Module
 	// Exports is the Data export of a Contact (ADR 0021), projected onto this surface's contract
 	// (resources.ExportMapper).
 	Exports *dataexport.Exporter
@@ -157,7 +161,7 @@ func NewHandlers(d Deps) *Handlers {
 		broadcasts: d.Broadcasts, reputation: d.Reputation, tokens: d.Tokens,
 		audit: d.Audit, export: d.Export,
 		unsubscribe: d.Unsubscribe, suppressions: d.Suppressions, confirmations: d.Confirmations,
-		exports: d.Exports,
+		tracking: d.Tracking, exports: d.Exports,
 	}
 }
 

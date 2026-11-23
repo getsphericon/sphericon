@@ -101,6 +101,11 @@ func ConfirmationOccurredAt(v time.Time) predicate.ConsentStamp {
 	return predicate.ConsentStamp(sql.FieldEQ(FieldConfirmationOccurredAt, v))
 }
 
+// EngagementTrackingOccurredAt applies equality check predicate on the "engagement_tracking_occurred_at" field. It's identical to EngagementTrackingOccurredAtEQ.
+func EngagementTrackingOccurredAt(v time.Time) predicate.ConsentStamp {
+	return predicate.ConsentStamp(sql.FieldEQ(FieldEngagementTrackingOccurredAt, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.ConsentStamp {
 	return predicate.ConsentStamp(sql.FieldEQ(FieldCreatedAt, v))
@@ -559,6 +564,56 @@ func ConfirmationOccurredAtIsNil() predicate.ConsentStamp {
 // ConfirmationOccurredAtNotNil applies the NotNil predicate on the "confirmation_occurred_at" field.
 func ConfirmationOccurredAtNotNil() predicate.ConsentStamp {
 	return predicate.ConsentStamp(sql.FieldNotNull(FieldConfirmationOccurredAt))
+}
+
+// EngagementTrackingOccurredAtEQ applies the EQ predicate on the "engagement_tracking_occurred_at" field.
+func EngagementTrackingOccurredAtEQ(v time.Time) predicate.ConsentStamp {
+	return predicate.ConsentStamp(sql.FieldEQ(FieldEngagementTrackingOccurredAt, v))
+}
+
+// EngagementTrackingOccurredAtNEQ applies the NEQ predicate on the "engagement_tracking_occurred_at" field.
+func EngagementTrackingOccurredAtNEQ(v time.Time) predicate.ConsentStamp {
+	return predicate.ConsentStamp(sql.FieldNEQ(FieldEngagementTrackingOccurredAt, v))
+}
+
+// EngagementTrackingOccurredAtIn applies the In predicate on the "engagement_tracking_occurred_at" field.
+func EngagementTrackingOccurredAtIn(vs ...time.Time) predicate.ConsentStamp {
+	return predicate.ConsentStamp(sql.FieldIn(FieldEngagementTrackingOccurredAt, vs...))
+}
+
+// EngagementTrackingOccurredAtNotIn applies the NotIn predicate on the "engagement_tracking_occurred_at" field.
+func EngagementTrackingOccurredAtNotIn(vs ...time.Time) predicate.ConsentStamp {
+	return predicate.ConsentStamp(sql.FieldNotIn(FieldEngagementTrackingOccurredAt, vs...))
+}
+
+// EngagementTrackingOccurredAtGT applies the GT predicate on the "engagement_tracking_occurred_at" field.
+func EngagementTrackingOccurredAtGT(v time.Time) predicate.ConsentStamp {
+	return predicate.ConsentStamp(sql.FieldGT(FieldEngagementTrackingOccurredAt, v))
+}
+
+// EngagementTrackingOccurredAtGTE applies the GTE predicate on the "engagement_tracking_occurred_at" field.
+func EngagementTrackingOccurredAtGTE(v time.Time) predicate.ConsentStamp {
+	return predicate.ConsentStamp(sql.FieldGTE(FieldEngagementTrackingOccurredAt, v))
+}
+
+// EngagementTrackingOccurredAtLT applies the LT predicate on the "engagement_tracking_occurred_at" field.
+func EngagementTrackingOccurredAtLT(v time.Time) predicate.ConsentStamp {
+	return predicate.ConsentStamp(sql.FieldLT(FieldEngagementTrackingOccurredAt, v))
+}
+
+// EngagementTrackingOccurredAtLTE applies the LTE predicate on the "engagement_tracking_occurred_at" field.
+func EngagementTrackingOccurredAtLTE(v time.Time) predicate.ConsentStamp {
+	return predicate.ConsentStamp(sql.FieldLTE(FieldEngagementTrackingOccurredAt, v))
+}
+
+// EngagementTrackingOccurredAtIsNil applies the IsNil predicate on the "engagement_tracking_occurred_at" field.
+func EngagementTrackingOccurredAtIsNil() predicate.ConsentStamp {
+	return predicate.ConsentStamp(sql.FieldIsNull(FieldEngagementTrackingOccurredAt))
+}
+
+// EngagementTrackingOccurredAtNotNil applies the NotNil predicate on the "engagement_tracking_occurred_at" field.
+func EngagementTrackingOccurredAtNotNil() predicate.ConsentStamp {
+	return predicate.ConsentStamp(sql.FieldNotNull(FieldEngagementTrackingOccurredAt))
 }
 
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.

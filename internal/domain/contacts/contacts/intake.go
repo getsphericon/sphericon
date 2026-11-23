@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/addresscheck"
 	"github.com/getsphericon/sphericon/internal/kernel/batch"
@@ -19,7 +20,7 @@ import (
 )
 
 // IntakeInput is one row of a Contact intake (GLOSSARY, ADR 0022): the Contact it asserts and the
-// SMS consent it carries.
+// SMS and Engagement tracking consent it carries.
 type IntakeInput struct {
 	UpsertInput
 
@@ -27,6 +28,10 @@ type IntakeInput struct {
 	// import's consent columns): the row records an imported SMS Confirmation for the phone in
 	// the same transaction (ADR 0077). nil records none.
 	SMSConsent *confirmations.Evidence
+
+	// EngagementTracking is the Engagement tracking consent the Contact's Destinations gave
+	// outside sphericon (ADR 0120): the row records it as imported in the same transaction.
+	EngagementTracking engagementtracking.ContactObservations
 }
 
 // UpsertBatch is the Contact intake: it upserts each item in its own transaction, in order, so a
@@ -82,8 +87,8 @@ func (m *Module) mailVerdicts(ctx context.Context, items []IntakeInput) map[stri
 	return addresscheck.Domains(ctx, m.mail, domains)
 }
 
-// intake is one row in its own transaction: the address check, the Contact, then its SMS
-// consent.
+// intake is one row in its own transaction: the address check, the Contact, then its SMS and
+// Engagement tracking consent.
 func (m *Module) intake(ctx context.Context, s *ent.Scoped, src contact.Source, in IntakeInput, mail map[string]addresscheck.Verdict) (Result, error) {
 	var res Result
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
@@ -95,7 +100,10 @@ func (m *Module) intake(ctx context.Context, s *ent.Scoped, src contact.Source, 
 		if err != nil {
 			return err
 		}
-		return m.confirmSMS(ctx, ts, res, in.SMSConsent)
+		if err := m.confirmSMS(ctx, ts, res, in.SMSConsent); err != nil {
+			return err
+		}
+		return m.recordTracking(ctx, ts, res, in)
 	})
 	if err != nil {
 		return Result{}, err
@@ -137,4 +145,12 @@ func (m *Module) confirmSMS(ctx context.Context, s *ent.Scoped, res Result, ev *
 	number := lo.CoalesceOrEmpty(lo.FromPtr(res.Phone), lo.FromPtr(res.Contact.Phone))
 	_, err := m.confirmations.ConfirmContactSMSIn(ctx, s, number, *ev)
 	return err
+}
+
+// recordTracking records the Engagement tracking consent a row carries for the Contact's email
+// address: the row's, else the one the Contact has. Consent for an email without one is refused.
+// The consent was collected for the address the row names, as SMS consent for its phone.
+func (m *Module) recordTracking(ctx context.Context, s *ent.Scoped, res Result, in IntakeInput) error {
+	email := lo.CoalesceOrEmpty(emailcase.Of(lo.FromPtr(in.Email)), lo.FromPtr(res.Contact.Email))
+	return m.tracking.ImportIn(ctx, s, email, in.EngagementTracking)
 }

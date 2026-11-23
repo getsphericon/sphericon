@@ -38,6 +38,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/defaultsendcap"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
@@ -150,6 +151,8 @@ type Client struct {
 	DefaultSendCap *DefaultSendCapClient
 	// EmailTemplate is the client for interacting with the EmailTemplate builders.
 	EmailTemplate *EmailTemplateClient
+	// EngagementTrackingConsent is the client for interacting with the EngagementTrackingConsent builders.
+	EngagementTrackingConsent *EngagementTrackingConsentClient
 	// Erasure is the client for interacting with the Erasure builders.
 	Erasure *ErasureClient
 	// Event is the client for interacting with the Event builders.
@@ -298,6 +301,7 @@ func (c *Client) init() {
 	c.CustomField = NewCustomFieldClient(c.config)
 	c.DefaultSendCap = NewDefaultSendCapClient(c.config)
 	c.EmailTemplate = NewEmailTemplateClient(c.config)
+	c.EngagementTrackingConsent = NewEngagementTrackingConsentClient(c.config)
 	c.Erasure = NewErasureClient(c.config)
 	c.Event = NewEventClient(c.config)
 	c.EventJournalEntry = NewEventJournalEntryClient(c.config)
@@ -445,88 +449,89 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:                      ctx,
-		config:                   cfg,
-		ApiToken:                 NewApiTokenClient(cfg),
-		AuditEntry:               NewAuditEntryClient(cfg),
-		AuthAttempt:              NewAuthAttemptClient(cfg),
-		Automation:               NewAutomationClient(cfg),
-		AutomationFigure:         NewAutomationFigureClient(cfg),
-		AutomationRun:            NewAutomationRunClient(cfg),
-		AutomationSkippedEntry:   NewAutomationSkippedEntryClient(cfg),
-		AutomationStepRecord:     NewAutomationStepRecordClient(cfg),
-		AutomationVersion:        NewAutomationVersionClient(cfg),
-		Binding:                  NewBindingClient(cfg),
-		BrandKit:                 NewBrandKitClient(cfg),
-		Broadcast:                NewBroadcastClient(cfg),
-		BroadcastFigure:          NewBroadcastFigureClient(cfg),
-		BroadcastRecipient:       NewBroadcastRecipientClient(cfg),
-		CapturedMessage:          NewCapturedMessageClient(cfg),
-		Confirmation:             NewConfirmationClient(cfg),
-		ConsentRecord:            NewConsentRecordClient(cfg),
-		ConsentStamp:             NewConsentStampClient(cfg),
-		Contact:                  NewContactClient(cfg),
-		ContactTag:               NewContactTagClient(cfg),
-		CustomField:              NewCustomFieldClient(cfg),
-		DefaultSendCap:           NewDefaultSendCapClient(cfg),
-		EmailTemplate:            NewEmailTemplateClient(cfg),
-		Erasure:                  NewErasureClient(cfg),
-		Event:                    NewEventClient(cfg),
-		EventJournalEntry:        NewEventJournalEntryClient(cfg),
-		EventReceipt:             NewEventReceiptClient(cfg),
-		HeldOrderEvent:           NewHeldOrderEventClient(cfg),
-		Hold:                     NewHoldClient(cfg),
-		IdentitySecret:           NewIdentitySecretClient(cfg),
-		InstanceAuditEntry:       NewInstanceAuditEntryClient(cfg),
-		InstanceState:            NewInstanceStateClient(cfg),
-		Integration:              NewIntegrationClient(cfg),
-		IntegrationProviderState: NewIntegrationProviderStateClient(cfg),
-		Invitation:               NewInvitationClient(cfg),
-		JoinDomain:               NewJoinDomainClient(cfg),
-		LegalDocumentDraft:       NewLegalDocumentDraftClient(cfg),
-		LegalDocumentVersion:     NewLegalDocumentVersionClient(cfg),
-		Membership:               NewMembershipClient(cfg),
-		OAuthClient:              NewOAuthClientClient(cfg),
-		OAuthCode:                NewOAuthCodeClient(cfg),
-		OAuthRefreshToken:        NewOAuthRefreshTokenClient(cfg),
-		Order:                    NewOrderClient(cfg),
-		OrderMovement:            NewOrderMovementClient(cfg),
-		OutboundMessage:          NewOutboundMessageClient(cfg),
-		Passkey:                  NewPasskeyClient(cfg),
-		PasskeyChallenge:         NewPasskeyChallengeClient(cfg),
-		PendingSignup:            NewPendingSignupClient(cfg),
-		PrivateRelayRange:        NewPrivateRelayRangeClient(cfg),
-		ProviderLimiter:          NewProviderLimiterClient(cfg),
-		RecoveryCode:             NewRecoveryCodeClient(cfg),
-		Rule:                     NewRuleClient(cfg),
-		RuleFiring:               NewRuleFiringClient(cfg),
-		RuleVersion:              NewRuleVersionClient(cfg),
-		RuleVersionTrigger:       NewRuleVersionTriggerClient(cfg),
-		SchemaState:              NewSchemaStateClient(cfg),
-		SecondFactor:             NewSecondFactorClient(cfg),
-		Segment:                  NewSegmentClient(cfg),
-		SendCapLimiter:           NewSendCapLimiterClient(cfg),
-		SendingDomain:            NewSendingDomainClient(cfg),
-		ServiceCredential:        NewServiceCredentialClient(cfg),
-		SignupItem:               NewSignupItemClient(cfg),
-		SignupSurveyResponse:     NewSignupSurveyResponseClient(cfg),
-		StaffMember:              NewStaffMemberClient(cfg),
-		StartToken:               NewStartTokenClient(cfg),
-		Suppression:              NewSuppressionClient(cfg),
-		Tag:                      NewTagClient(cfg),
-		TrackedLink:              NewTrackedLinkClient(cfg),
-		TrackingDomain:           NewTrackingDomainClient(cfg),
-		TrackingHostChange:       NewTrackingHostChangeClient(cfg),
-		Unsubscribe:              NewUnsubscribeClient(cfg),
-		Usage:                    NewUsageClient(cfg),
-		User:                     NewUserClient(cfg),
-		UserIdentity:             NewUserIdentityClient(cfg),
-		UserTombstone:            NewUserTombstoneClient(cfg),
-		Visitor:                  NewVisitorClient(cfg),
-		WebhookEndpoint:          NewWebhookEndpointClient(cfg),
-		WebhookEndpointHealth:    NewWebhookEndpointHealthClient(cfg),
-		Workspace:                NewWorkspaceClient(cfg),
-		WorkspaceStanding:        NewWorkspaceStandingClient(cfg),
+		ctx:                       ctx,
+		config:                    cfg,
+		ApiToken:                  NewApiTokenClient(cfg),
+		AuditEntry:                NewAuditEntryClient(cfg),
+		AuthAttempt:               NewAuthAttemptClient(cfg),
+		Automation:                NewAutomationClient(cfg),
+		AutomationFigure:          NewAutomationFigureClient(cfg),
+		AutomationRun:             NewAutomationRunClient(cfg),
+		AutomationSkippedEntry:    NewAutomationSkippedEntryClient(cfg),
+		AutomationStepRecord:      NewAutomationStepRecordClient(cfg),
+		AutomationVersion:         NewAutomationVersionClient(cfg),
+		Binding:                   NewBindingClient(cfg),
+		BrandKit:                  NewBrandKitClient(cfg),
+		Broadcast:                 NewBroadcastClient(cfg),
+		BroadcastFigure:           NewBroadcastFigureClient(cfg),
+		BroadcastRecipient:        NewBroadcastRecipientClient(cfg),
+		CapturedMessage:           NewCapturedMessageClient(cfg),
+		Confirmation:              NewConfirmationClient(cfg),
+		ConsentRecord:             NewConsentRecordClient(cfg),
+		ConsentStamp:              NewConsentStampClient(cfg),
+		Contact:                   NewContactClient(cfg),
+		ContactTag:                NewContactTagClient(cfg),
+		CustomField:               NewCustomFieldClient(cfg),
+		DefaultSendCap:            NewDefaultSendCapClient(cfg),
+		EmailTemplate:             NewEmailTemplateClient(cfg),
+		EngagementTrackingConsent: NewEngagementTrackingConsentClient(cfg),
+		Erasure:                   NewErasureClient(cfg),
+		Event:                     NewEventClient(cfg),
+		EventJournalEntry:         NewEventJournalEntryClient(cfg),
+		EventReceipt:              NewEventReceiptClient(cfg),
+		HeldOrderEvent:            NewHeldOrderEventClient(cfg),
+		Hold:                      NewHoldClient(cfg),
+		IdentitySecret:            NewIdentitySecretClient(cfg),
+		InstanceAuditEntry:        NewInstanceAuditEntryClient(cfg),
+		InstanceState:             NewInstanceStateClient(cfg),
+		Integration:               NewIntegrationClient(cfg),
+		IntegrationProviderState:  NewIntegrationProviderStateClient(cfg),
+		Invitation:                NewInvitationClient(cfg),
+		JoinDomain:                NewJoinDomainClient(cfg),
+		LegalDocumentDraft:        NewLegalDocumentDraftClient(cfg),
+		LegalDocumentVersion:      NewLegalDocumentVersionClient(cfg),
+		Membership:                NewMembershipClient(cfg),
+		OAuthClient:               NewOAuthClientClient(cfg),
+		OAuthCode:                 NewOAuthCodeClient(cfg),
+		OAuthRefreshToken:         NewOAuthRefreshTokenClient(cfg),
+		Order:                     NewOrderClient(cfg),
+		OrderMovement:             NewOrderMovementClient(cfg),
+		OutboundMessage:           NewOutboundMessageClient(cfg),
+		Passkey:                   NewPasskeyClient(cfg),
+		PasskeyChallenge:          NewPasskeyChallengeClient(cfg),
+		PendingSignup:             NewPendingSignupClient(cfg),
+		PrivateRelayRange:         NewPrivateRelayRangeClient(cfg),
+		ProviderLimiter:           NewProviderLimiterClient(cfg),
+		RecoveryCode:              NewRecoveryCodeClient(cfg),
+		Rule:                      NewRuleClient(cfg),
+		RuleFiring:                NewRuleFiringClient(cfg),
+		RuleVersion:               NewRuleVersionClient(cfg),
+		RuleVersionTrigger:        NewRuleVersionTriggerClient(cfg),
+		SchemaState:               NewSchemaStateClient(cfg),
+		SecondFactor:              NewSecondFactorClient(cfg),
+		Segment:                   NewSegmentClient(cfg),
+		SendCapLimiter:            NewSendCapLimiterClient(cfg),
+		SendingDomain:             NewSendingDomainClient(cfg),
+		ServiceCredential:         NewServiceCredentialClient(cfg),
+		SignupItem:                NewSignupItemClient(cfg),
+		SignupSurveyResponse:      NewSignupSurveyResponseClient(cfg),
+		StaffMember:               NewStaffMemberClient(cfg),
+		StartToken:                NewStartTokenClient(cfg),
+		Suppression:               NewSuppressionClient(cfg),
+		Tag:                       NewTagClient(cfg),
+		TrackedLink:               NewTrackedLinkClient(cfg),
+		TrackingDomain:            NewTrackingDomainClient(cfg),
+		TrackingHostChange:        NewTrackingHostChangeClient(cfg),
+		Unsubscribe:               NewUnsubscribeClient(cfg),
+		Usage:                     NewUsageClient(cfg),
+		User:                      NewUserClient(cfg),
+		UserIdentity:              NewUserIdentityClient(cfg),
+		UserTombstone:             NewUserTombstoneClient(cfg),
+		Visitor:                   NewVisitorClient(cfg),
+		WebhookEndpoint:           NewWebhookEndpointClient(cfg),
+		WebhookEndpointHealth:     NewWebhookEndpointHealthClient(cfg),
+		Workspace:                 NewWorkspaceClient(cfg),
+		WorkspaceStanding:         NewWorkspaceStandingClient(cfg),
 	}, nil
 }
 
@@ -544,88 +549,89 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:                      ctx,
-		config:                   cfg,
-		ApiToken:                 NewApiTokenClient(cfg),
-		AuditEntry:               NewAuditEntryClient(cfg),
-		AuthAttempt:              NewAuthAttemptClient(cfg),
-		Automation:               NewAutomationClient(cfg),
-		AutomationFigure:         NewAutomationFigureClient(cfg),
-		AutomationRun:            NewAutomationRunClient(cfg),
-		AutomationSkippedEntry:   NewAutomationSkippedEntryClient(cfg),
-		AutomationStepRecord:     NewAutomationStepRecordClient(cfg),
-		AutomationVersion:        NewAutomationVersionClient(cfg),
-		Binding:                  NewBindingClient(cfg),
-		BrandKit:                 NewBrandKitClient(cfg),
-		Broadcast:                NewBroadcastClient(cfg),
-		BroadcastFigure:          NewBroadcastFigureClient(cfg),
-		BroadcastRecipient:       NewBroadcastRecipientClient(cfg),
-		CapturedMessage:          NewCapturedMessageClient(cfg),
-		Confirmation:             NewConfirmationClient(cfg),
-		ConsentRecord:            NewConsentRecordClient(cfg),
-		ConsentStamp:             NewConsentStampClient(cfg),
-		Contact:                  NewContactClient(cfg),
-		ContactTag:               NewContactTagClient(cfg),
-		CustomField:              NewCustomFieldClient(cfg),
-		DefaultSendCap:           NewDefaultSendCapClient(cfg),
-		EmailTemplate:            NewEmailTemplateClient(cfg),
-		Erasure:                  NewErasureClient(cfg),
-		Event:                    NewEventClient(cfg),
-		EventJournalEntry:        NewEventJournalEntryClient(cfg),
-		EventReceipt:             NewEventReceiptClient(cfg),
-		HeldOrderEvent:           NewHeldOrderEventClient(cfg),
-		Hold:                     NewHoldClient(cfg),
-		IdentitySecret:           NewIdentitySecretClient(cfg),
-		InstanceAuditEntry:       NewInstanceAuditEntryClient(cfg),
-		InstanceState:            NewInstanceStateClient(cfg),
-		Integration:              NewIntegrationClient(cfg),
-		IntegrationProviderState: NewIntegrationProviderStateClient(cfg),
-		Invitation:               NewInvitationClient(cfg),
-		JoinDomain:               NewJoinDomainClient(cfg),
-		LegalDocumentDraft:       NewLegalDocumentDraftClient(cfg),
-		LegalDocumentVersion:     NewLegalDocumentVersionClient(cfg),
-		Membership:               NewMembershipClient(cfg),
-		OAuthClient:              NewOAuthClientClient(cfg),
-		OAuthCode:                NewOAuthCodeClient(cfg),
-		OAuthRefreshToken:        NewOAuthRefreshTokenClient(cfg),
-		Order:                    NewOrderClient(cfg),
-		OrderMovement:            NewOrderMovementClient(cfg),
-		OutboundMessage:          NewOutboundMessageClient(cfg),
-		Passkey:                  NewPasskeyClient(cfg),
-		PasskeyChallenge:         NewPasskeyChallengeClient(cfg),
-		PendingSignup:            NewPendingSignupClient(cfg),
-		PrivateRelayRange:        NewPrivateRelayRangeClient(cfg),
-		ProviderLimiter:          NewProviderLimiterClient(cfg),
-		RecoveryCode:             NewRecoveryCodeClient(cfg),
-		Rule:                     NewRuleClient(cfg),
-		RuleFiring:               NewRuleFiringClient(cfg),
-		RuleVersion:              NewRuleVersionClient(cfg),
-		RuleVersionTrigger:       NewRuleVersionTriggerClient(cfg),
-		SchemaState:              NewSchemaStateClient(cfg),
-		SecondFactor:             NewSecondFactorClient(cfg),
-		Segment:                  NewSegmentClient(cfg),
-		SendCapLimiter:           NewSendCapLimiterClient(cfg),
-		SendingDomain:            NewSendingDomainClient(cfg),
-		ServiceCredential:        NewServiceCredentialClient(cfg),
-		SignupItem:               NewSignupItemClient(cfg),
-		SignupSurveyResponse:     NewSignupSurveyResponseClient(cfg),
-		StaffMember:              NewStaffMemberClient(cfg),
-		StartToken:               NewStartTokenClient(cfg),
-		Suppression:              NewSuppressionClient(cfg),
-		Tag:                      NewTagClient(cfg),
-		TrackedLink:              NewTrackedLinkClient(cfg),
-		TrackingDomain:           NewTrackingDomainClient(cfg),
-		TrackingHostChange:       NewTrackingHostChangeClient(cfg),
-		Unsubscribe:              NewUnsubscribeClient(cfg),
-		Usage:                    NewUsageClient(cfg),
-		User:                     NewUserClient(cfg),
-		UserIdentity:             NewUserIdentityClient(cfg),
-		UserTombstone:            NewUserTombstoneClient(cfg),
-		Visitor:                  NewVisitorClient(cfg),
-		WebhookEndpoint:          NewWebhookEndpointClient(cfg),
-		WebhookEndpointHealth:    NewWebhookEndpointHealthClient(cfg),
-		Workspace:                NewWorkspaceClient(cfg),
-		WorkspaceStanding:        NewWorkspaceStandingClient(cfg),
+		ctx:                       ctx,
+		config:                    cfg,
+		ApiToken:                  NewApiTokenClient(cfg),
+		AuditEntry:                NewAuditEntryClient(cfg),
+		AuthAttempt:               NewAuthAttemptClient(cfg),
+		Automation:                NewAutomationClient(cfg),
+		AutomationFigure:          NewAutomationFigureClient(cfg),
+		AutomationRun:             NewAutomationRunClient(cfg),
+		AutomationSkippedEntry:    NewAutomationSkippedEntryClient(cfg),
+		AutomationStepRecord:      NewAutomationStepRecordClient(cfg),
+		AutomationVersion:         NewAutomationVersionClient(cfg),
+		Binding:                   NewBindingClient(cfg),
+		BrandKit:                  NewBrandKitClient(cfg),
+		Broadcast:                 NewBroadcastClient(cfg),
+		BroadcastFigure:           NewBroadcastFigureClient(cfg),
+		BroadcastRecipient:        NewBroadcastRecipientClient(cfg),
+		CapturedMessage:           NewCapturedMessageClient(cfg),
+		Confirmation:              NewConfirmationClient(cfg),
+		ConsentRecord:             NewConsentRecordClient(cfg),
+		ConsentStamp:              NewConsentStampClient(cfg),
+		Contact:                   NewContactClient(cfg),
+		ContactTag:                NewContactTagClient(cfg),
+		CustomField:               NewCustomFieldClient(cfg),
+		DefaultSendCap:            NewDefaultSendCapClient(cfg),
+		EmailTemplate:             NewEmailTemplateClient(cfg),
+		EngagementTrackingConsent: NewEngagementTrackingConsentClient(cfg),
+		Erasure:                   NewErasureClient(cfg),
+		Event:                     NewEventClient(cfg),
+		EventJournalEntry:         NewEventJournalEntryClient(cfg),
+		EventReceipt:              NewEventReceiptClient(cfg),
+		HeldOrderEvent:            NewHeldOrderEventClient(cfg),
+		Hold:                      NewHoldClient(cfg),
+		IdentitySecret:            NewIdentitySecretClient(cfg),
+		InstanceAuditEntry:        NewInstanceAuditEntryClient(cfg),
+		InstanceState:             NewInstanceStateClient(cfg),
+		Integration:               NewIntegrationClient(cfg),
+		IntegrationProviderState:  NewIntegrationProviderStateClient(cfg),
+		Invitation:                NewInvitationClient(cfg),
+		JoinDomain:                NewJoinDomainClient(cfg),
+		LegalDocumentDraft:        NewLegalDocumentDraftClient(cfg),
+		LegalDocumentVersion:      NewLegalDocumentVersionClient(cfg),
+		Membership:                NewMembershipClient(cfg),
+		OAuthClient:               NewOAuthClientClient(cfg),
+		OAuthCode:                 NewOAuthCodeClient(cfg),
+		OAuthRefreshToken:         NewOAuthRefreshTokenClient(cfg),
+		Order:                     NewOrderClient(cfg),
+		OrderMovement:             NewOrderMovementClient(cfg),
+		OutboundMessage:           NewOutboundMessageClient(cfg),
+		Passkey:                   NewPasskeyClient(cfg),
+		PasskeyChallenge:          NewPasskeyChallengeClient(cfg),
+		PendingSignup:             NewPendingSignupClient(cfg),
+		PrivateRelayRange:         NewPrivateRelayRangeClient(cfg),
+		ProviderLimiter:           NewProviderLimiterClient(cfg),
+		RecoveryCode:              NewRecoveryCodeClient(cfg),
+		Rule:                      NewRuleClient(cfg),
+		RuleFiring:                NewRuleFiringClient(cfg),
+		RuleVersion:               NewRuleVersionClient(cfg),
+		RuleVersionTrigger:        NewRuleVersionTriggerClient(cfg),
+		SchemaState:               NewSchemaStateClient(cfg),
+		SecondFactor:              NewSecondFactorClient(cfg),
+		Segment:                   NewSegmentClient(cfg),
+		SendCapLimiter:            NewSendCapLimiterClient(cfg),
+		SendingDomain:             NewSendingDomainClient(cfg),
+		ServiceCredential:         NewServiceCredentialClient(cfg),
+		SignupItem:                NewSignupItemClient(cfg),
+		SignupSurveyResponse:      NewSignupSurveyResponseClient(cfg),
+		StaffMember:               NewStaffMemberClient(cfg),
+		StartToken:                NewStartTokenClient(cfg),
+		Suppression:               NewSuppressionClient(cfg),
+		Tag:                       NewTagClient(cfg),
+		TrackedLink:               NewTrackedLinkClient(cfg),
+		TrackingDomain:            NewTrackingDomainClient(cfg),
+		TrackingHostChange:        NewTrackingHostChangeClient(cfg),
+		Unsubscribe:               NewUnsubscribeClient(cfg),
+		Usage:                     NewUsageClient(cfg),
+		User:                      NewUserClient(cfg),
+		UserIdentity:              NewUserIdentityClient(cfg),
+		UserTombstone:             NewUserTombstoneClient(cfg),
+		Visitor:                   NewVisitorClient(cfg),
+		WebhookEndpoint:           NewWebhookEndpointClient(cfg),
+		WebhookEndpointHealth:     NewWebhookEndpointHealthClient(cfg),
+		Workspace:                 NewWorkspaceClient(cfg),
+		WorkspaceStanding:         NewWorkspaceStandingClient(cfg),
 	}, nil
 }
 
@@ -660,19 +666,20 @@ func (c *Client) Use(hooks ...Hook) {
 		c.AutomationVersion, c.Binding, c.BrandKit, c.Broadcast, c.BroadcastFigure,
 		c.BroadcastRecipient, c.CapturedMessage, c.Confirmation, c.ConsentRecord,
 		c.ConsentStamp, c.Contact, c.ContactTag, c.CustomField, c.DefaultSendCap,
-		c.EmailTemplate, c.Erasure, c.Event, c.EventJournalEntry, c.EventReceipt,
-		c.HeldOrderEvent, c.Hold, c.IdentitySecret, c.InstanceAuditEntry,
-		c.InstanceState, c.Integration, c.IntegrationProviderState, c.Invitation,
-		c.JoinDomain, c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership,
-		c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement,
-		c.OutboundMessage, c.Passkey, c.PasskeyChallenge, c.PendingSignup,
-		c.PrivateRelayRange, c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring,
-		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.SecondFactor, c.Segment,
-		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
-		c.SignupSurveyResponse, c.StaffMember, c.StartToken, c.Suppression, c.Tag,
-		c.TrackedLink, c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage,
-		c.User, c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint,
-		c.WebhookEndpointHealth, c.Workspace, c.WorkspaceStanding,
+		c.EmailTemplate, c.EngagementTrackingConsent, c.Erasure, c.Event,
+		c.EventJournalEntry, c.EventReceipt, c.HeldOrderEvent, c.Hold,
+		c.IdentitySecret, c.InstanceAuditEntry, c.InstanceState, c.Integration,
+		c.IntegrationProviderState, c.Invitation, c.JoinDomain, c.LegalDocumentDraft,
+		c.LegalDocumentVersion, c.Membership, c.OAuthClient, c.OAuthCode,
+		c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage, c.Passkey,
+		c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter,
+		c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion, c.RuleVersionTrigger,
+		c.SchemaState, c.SecondFactor, c.Segment, c.SendCapLimiter, c.SendingDomain,
+		c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse, c.StaffMember,
+		c.StartToken, c.Suppression, c.Tag, c.TrackedLink, c.TrackingDomain,
+		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
+		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.WebhookEndpointHealth,
+		c.Workspace, c.WorkspaceStanding,
 	} {
 		n.Use(hooks...)
 	}
@@ -687,19 +694,20 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.AutomationVersion, c.Binding, c.BrandKit, c.Broadcast, c.BroadcastFigure,
 		c.BroadcastRecipient, c.CapturedMessage, c.Confirmation, c.ConsentRecord,
 		c.ConsentStamp, c.Contact, c.ContactTag, c.CustomField, c.DefaultSendCap,
-		c.EmailTemplate, c.Erasure, c.Event, c.EventJournalEntry, c.EventReceipt,
-		c.HeldOrderEvent, c.Hold, c.IdentitySecret, c.InstanceAuditEntry,
-		c.InstanceState, c.Integration, c.IntegrationProviderState, c.Invitation,
-		c.JoinDomain, c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership,
-		c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement,
-		c.OutboundMessage, c.Passkey, c.PasskeyChallenge, c.PendingSignup,
-		c.PrivateRelayRange, c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring,
-		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.SecondFactor, c.Segment,
-		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
-		c.SignupSurveyResponse, c.StaffMember, c.StartToken, c.Suppression, c.Tag,
-		c.TrackedLink, c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage,
-		c.User, c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint,
-		c.WebhookEndpointHealth, c.Workspace, c.WorkspaceStanding,
+		c.EmailTemplate, c.EngagementTrackingConsent, c.Erasure, c.Event,
+		c.EventJournalEntry, c.EventReceipt, c.HeldOrderEvent, c.Hold,
+		c.IdentitySecret, c.InstanceAuditEntry, c.InstanceState, c.Integration,
+		c.IntegrationProviderState, c.Invitation, c.JoinDomain, c.LegalDocumentDraft,
+		c.LegalDocumentVersion, c.Membership, c.OAuthClient, c.OAuthCode,
+		c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage, c.Passkey,
+		c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter,
+		c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion, c.RuleVersionTrigger,
+		c.SchemaState, c.SecondFactor, c.Segment, c.SendCapLimiter, c.SendingDomain,
+		c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse, c.StaffMember,
+		c.StartToken, c.Suppression, c.Tag, c.TrackedLink, c.TrackingDomain,
+		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
+		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.WebhookEndpointHealth,
+		c.Workspace, c.WorkspaceStanding,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -754,6 +762,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.DefaultSendCap.mutate(ctx, m)
 	case *EmailTemplateMutation:
 		return c.EmailTemplate.mutate(ctx, m)
+	case *EngagementTrackingConsentMutation:
+		return c.EngagementTrackingConsent.mutate(ctx, m)
 	case *ErasureMutation:
 		return c.Erasure.mutate(ctx, m)
 	case *EventMutation:
@@ -4863,6 +4873,155 @@ func (c *EmailTemplateClient) mutate(ctx context.Context, m *EmailTemplateMutati
 		return (&EmailTemplateDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown EmailTemplate mutation op: %q", m.Op())
+	}
+}
+
+// EngagementTrackingConsentClient is a client for the EngagementTrackingConsent schema.
+type EngagementTrackingConsentClient struct {
+	config
+}
+
+// NewEngagementTrackingConsentClient returns a client for the EngagementTrackingConsent from the given config.
+func NewEngagementTrackingConsentClient(c config) *EngagementTrackingConsentClient {
+	return &EngagementTrackingConsentClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `engagementtrackingconsent.Hooks(f(g(h())))`.
+func (c *EngagementTrackingConsentClient) Use(hooks ...Hook) {
+	c.hooks.EngagementTrackingConsent = append(c.hooks.EngagementTrackingConsent, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `engagementtrackingconsent.Intercept(f(g(h())))`.
+func (c *EngagementTrackingConsentClient) Intercept(interceptors ...Interceptor) {
+	c.inters.EngagementTrackingConsent = append(c.inters.EngagementTrackingConsent, interceptors...)
+}
+
+// Create returns a builder for creating a EngagementTrackingConsent entity.
+func (c *EngagementTrackingConsentClient) Create() *EngagementTrackingConsentCreate {
+	mutation := newEngagementTrackingConsentMutation(c.config, OpCreate)
+	return &EngagementTrackingConsentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of EngagementTrackingConsent entities.
+func (c *EngagementTrackingConsentClient) CreateBulk(builders ...*EngagementTrackingConsentCreate) *EngagementTrackingConsentCreateBulk {
+	return &EngagementTrackingConsentCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *EngagementTrackingConsentClient) MapCreateBulk(slice any, setFunc func(*EngagementTrackingConsentCreate, int)) *EngagementTrackingConsentCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &EngagementTrackingConsentCreateBulk{err: fmt.Errorf("calling to EngagementTrackingConsentClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*EngagementTrackingConsentCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &EngagementTrackingConsentCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for EngagementTrackingConsent.
+func (c *EngagementTrackingConsentClient) Update() *EngagementTrackingConsentUpdate {
+	mutation := newEngagementTrackingConsentMutation(c.config, OpUpdate)
+	return &EngagementTrackingConsentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *EngagementTrackingConsentClient) UpdateOne(_m *EngagementTrackingConsent) *EngagementTrackingConsentUpdateOne {
+	mutation := newEngagementTrackingConsentMutation(c.config, OpUpdateOne, withEngagementTrackingConsent(_m))
+	return &EngagementTrackingConsentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *EngagementTrackingConsentClient) UpdateOneID(id int64) *EngagementTrackingConsentUpdateOne {
+	mutation := newEngagementTrackingConsentMutation(c.config, OpUpdateOne, withEngagementTrackingConsentID(id))
+	return &EngagementTrackingConsentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for EngagementTrackingConsent.
+func (c *EngagementTrackingConsentClient) Delete() *EngagementTrackingConsentDelete {
+	mutation := newEngagementTrackingConsentMutation(c.config, OpDelete)
+	return &EngagementTrackingConsentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *EngagementTrackingConsentClient) DeleteOne(_m *EngagementTrackingConsent) *EngagementTrackingConsentDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *EngagementTrackingConsentClient) DeleteOneID(id int64) *EngagementTrackingConsentDeleteOne {
+	builder := c.Delete().Where(engagementtrackingconsent.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &EngagementTrackingConsentDeleteOne{builder}
+}
+
+// Query returns a query builder for EngagementTrackingConsent.
+func (c *EngagementTrackingConsentClient) Query() *EngagementTrackingConsentQuery {
+	return &EngagementTrackingConsentQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeEngagementTrackingConsent},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a EngagementTrackingConsent entity by its id.
+func (c *EngagementTrackingConsentClient) Get(ctx context.Context, id int64) (*EngagementTrackingConsent, error) {
+	return c.Query().Where(engagementtrackingconsent.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *EngagementTrackingConsentClient) GetX(ctx context.Context, id int64) *EngagementTrackingConsent {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a EngagementTrackingConsent.
+func (c *EngagementTrackingConsentClient) QueryWorkspace(_m *EngagementTrackingConsent) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(engagementtrackingconsent.Table, engagementtrackingconsent.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, engagementtrackingconsent.WorkspaceTable, engagementtrackingconsent.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *EngagementTrackingConsentClient) Hooks() []Hook {
+	return c.hooks.EngagementTrackingConsent
+}
+
+// Interceptors returns the client interceptors.
+func (c *EngagementTrackingConsentClient) Interceptors() []Interceptor {
+	return c.inters.EngagementTrackingConsent
+}
+
+func (c *EngagementTrackingConsentClient) mutate(ctx context.Context, m *EngagementTrackingConsentMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&EngagementTrackingConsentCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&EngagementTrackingConsentUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&EngagementTrackingConsentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&EngagementTrackingConsentDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown EngagementTrackingConsent mutation op: %q", m.Op())
 	}
 }
 
@@ -14801,6 +14960,22 @@ func (c *WorkspaceClient) QueryConsentStamps(_m *Workspace) *ConsentStampQuery {
 	return query
 }
 
+// QueryEngagementTrackingConsents queries the engagement_tracking_consents edge of a Workspace.
+func (c *WorkspaceClient) QueryEngagementTrackingConsents(_m *Workspace) *EngagementTrackingConsentQuery {
+	query := (&EngagementTrackingConsentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(engagementtrackingconsent.Table, engagementtrackingconsent.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.EngagementTrackingConsentsTable, workspace.EngagementTrackingConsentsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryOutboundMessages queries the outbound_messages edge of a Workspace.
 func (c *WorkspaceClient) QueryOutboundMessages(_m *Workspace) *OutboundMessageQuery {
 	query := (&OutboundMessageClient{config: c.config}).Query()
@@ -15158,36 +15333,38 @@ type (
 		AutomationSkippedEntry, AutomationStepRecord, AutomationVersion, Binding,
 		BrandKit, Broadcast, BroadcastFigure, BroadcastRecipient, CapturedMessage,
 		Confirmation, ConsentRecord, ConsentStamp, Contact, ContactTag, CustomField,
-		DefaultSendCap, EmailTemplate, Erasure, Event, EventJournalEntry, EventReceipt,
-		HeldOrderEvent, Hold, IdentitySecret, InstanceAuditEntry, InstanceState,
-		Integration, IntegrationProviderState, Invitation, JoinDomain,
-		LegalDocumentDraft, LegalDocumentVersion, Membership, OAuthClient, OAuthCode,
-		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, Passkey,
-		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
-		RecoveryCode, Rule, RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState,
-		SecondFactor, Segment, SendCapLimiter, SendingDomain, ServiceCredential,
-		SignupItem, SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag,
-		TrackedLink, TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User,
-		UserIdentity, UserTombstone, Visitor, WebhookEndpoint, WebhookEndpointHealth,
-		Workspace, WorkspaceStanding []ent.Hook
+		DefaultSendCap, EmailTemplate, EngagementTrackingConsent, Erasure, Event,
+		EventJournalEntry, EventReceipt, HeldOrderEvent, Hold, IdentitySecret,
+		InstanceAuditEntry, InstanceState, Integration, IntegrationProviderState,
+		Invitation, JoinDomain, LegalDocumentDraft, LegalDocumentVersion, Membership,
+		OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
+		OutboundMessage, Passkey, PasskeyChallenge, PendingSignup, PrivateRelayRange,
+		ProviderLimiter, RecoveryCode, Rule, RuleFiring, RuleVersion,
+		RuleVersionTrigger, SchemaState, SecondFactor, Segment, SendCapLimiter,
+		SendingDomain, ServiceCredential, SignupItem, SignupSurveyResponse,
+		StaffMember, StartToken, Suppression, Tag, TrackedLink, TrackingDomain,
+		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
+		Visitor, WebhookEndpoint, WebhookEndpointHealth, Workspace,
+		WorkspaceStanding []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationFigure, AutomationRun,
 		AutomationSkippedEntry, AutomationStepRecord, AutomationVersion, Binding,
 		BrandKit, Broadcast, BroadcastFigure, BroadcastRecipient, CapturedMessage,
 		Confirmation, ConsentRecord, ConsentStamp, Contact, ContactTag, CustomField,
-		DefaultSendCap, EmailTemplate, Erasure, Event, EventJournalEntry, EventReceipt,
-		HeldOrderEvent, Hold, IdentitySecret, InstanceAuditEntry, InstanceState,
-		Integration, IntegrationProviderState, Invitation, JoinDomain,
-		LegalDocumentDraft, LegalDocumentVersion, Membership, OAuthClient, OAuthCode,
-		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, Passkey,
-		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
-		RecoveryCode, Rule, RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState,
-		SecondFactor, Segment, SendCapLimiter, SendingDomain, ServiceCredential,
-		SignupItem, SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag,
-		TrackedLink, TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User,
-		UserIdentity, UserTombstone, Visitor, WebhookEndpoint, WebhookEndpointHealth,
-		Workspace, WorkspaceStanding []ent.Interceptor
+		DefaultSendCap, EmailTemplate, EngagementTrackingConsent, Erasure, Event,
+		EventJournalEntry, EventReceipt, HeldOrderEvent, Hold, IdentitySecret,
+		InstanceAuditEntry, InstanceState, Integration, IntegrationProviderState,
+		Invitation, JoinDomain, LegalDocumentDraft, LegalDocumentVersion, Membership,
+		OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
+		OutboundMessage, Passkey, PasskeyChallenge, PendingSignup, PrivateRelayRange,
+		ProviderLimiter, RecoveryCode, Rule, RuleFiring, RuleVersion,
+		RuleVersionTrigger, SchemaState, SecondFactor, Segment, SendCapLimiter,
+		SendingDomain, ServiceCredential, SignupItem, SignupSurveyResponse,
+		StaffMember, StartToken, Suppression, Tag, TrackedLink, TrackingDomain,
+		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
+		Visitor, WebhookEndpoint, WebhookEndpointHealth, Workspace,
+		WorkspaceStanding []ent.Interceptor
 	}
 )
 

@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
@@ -248,6 +249,7 @@ func eraseSteps() []eraseStep {
 		stepOf((*ent.Scoped).Confirmation, confirmation.IDIn),
 		stepOf((*ent.Scoped).Unsubscribe, unsubscribe.IDIn),
 		stepOf((*ent.Scoped).ConsentStamp, consentstamp.IDIn),
+		stepOf((*ent.Scoped).EngagementTrackingConsent, engagementtrackingconsent.IDIn),
 		stepOf((*ent.Scoped).Suppression, suppression.IDIn),
 		stepOf((*ent.Scoped).Usage, usage.IDIn),
 		stepOf((*ent.Scoped).Hold, hold.IDIn),

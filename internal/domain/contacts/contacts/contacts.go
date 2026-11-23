@@ -34,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -175,17 +176,19 @@ type Module struct {
 	locks *contactlock.Module
 	// confirmations records the SMS consent an intake row carries.
 	confirmations *confirmations.Module
-	mail          addresscheck.Resolver
+	// tracking records the Engagement tracking consent an intake row carries.
+	tracking *engagementtracking.Module
+	mail     addresscheck.Resolver
 }
 
 // New builds the module. The bus opens the transaction of a change and publishes its System events
 // in the transaction its scope is bound to; catalogue is the Tags a Contact is given from; confs
 // records the SMS consent an intake row carries, over the same bus, dated by its clock: when it
-// reached the Workspace (ADR 0154); mail is the DNS the Contact intake reads an address's domain
-// from (ADR 0117), nil when there is none, so every domain is Unknown and the intake refuses no
-// address for its domain.
-func New(bus *events.Bus, catalogue *tags.Module, confs *confirmations.Module, mail addresscheck.Resolver) *Module {
-	return &Module{bus: bus, tags: catalogue, locks: contactlock.New(), confirmations: confs, mail: mail}
+// reached the Workspace (ADR 0154); tracking records its Engagement tracking consent; mail is the
+// DNS the Contact intake reads an address's domain from (ADR 0117), nil when there is none, so
+// every domain is Unknown and the intake refuses no address for its domain.
+func New(bus *events.Bus, catalogue *tags.Module, confs *confirmations.Module, tracking *engagementtracking.Module, mail addresscheck.Resolver) *Module {
+	return &Module{bus: bus, tags: catalogue, locks: contactlock.New(), confirmations: confs, tracking: tracking, mail: mail}
 }
 
 // Create makes a Contact from the given door (its Contact source, kept for good), gives it its

@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
@@ -1184,6 +1185,21 @@ func (_u *WorkspaceUpdate) AddConsentStamps(v ...*ConsentStamp) *WorkspaceUpdate
 	return _u.AddConsentStampIDs(ids...)
 }
 
+// AddEngagementTrackingConsentIDs adds the "engagement_tracking_consents" edge to the EngagementTrackingConsent entity by IDs.
+func (_u *WorkspaceUpdate) AddEngagementTrackingConsentIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddEngagementTrackingConsentIDs(ids...)
+	return _u
+}
+
+// AddEngagementTrackingConsents adds the "engagement_tracking_consents" edges to the EngagementTrackingConsent entity.
+func (_u *WorkspaceUpdate) AddEngagementTrackingConsents(v ...*EngagementTrackingConsent) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddEngagementTrackingConsentIDs(ids...)
+}
+
 // AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
 func (_u *WorkspaceUpdate) AddOutboundMessageIDs(ids ...int64) *WorkspaceUpdate {
 	_u.mutation.AddOutboundMessageIDs(ids...)
@@ -2238,6 +2254,27 @@ func (_u *WorkspaceUpdate) RemoveConsentStamps(v ...*ConsentStamp) *WorkspaceUpd
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveConsentStampIDs(ids...)
+}
+
+// ClearEngagementTrackingConsents clears all "engagement_tracking_consents" edges to the EngagementTrackingConsent entity.
+func (_u *WorkspaceUpdate) ClearEngagementTrackingConsents() *WorkspaceUpdate {
+	_u.mutation.ClearEngagementTrackingConsents()
+	return _u
+}
+
+// RemoveEngagementTrackingConsentIDs removes the "engagement_tracking_consents" edge to EngagementTrackingConsent entities by IDs.
+func (_u *WorkspaceUpdate) RemoveEngagementTrackingConsentIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveEngagementTrackingConsentIDs(ids...)
+	return _u
+}
+
+// RemoveEngagementTrackingConsents removes "engagement_tracking_consents" edges to EngagementTrackingConsent entities.
+func (_u *WorkspaceUpdate) RemoveEngagementTrackingConsents(v ...*EngagementTrackingConsent) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveEngagementTrackingConsentIDs(ids...)
 }
 
 // ClearOutboundMessages clears all "outbound_messages" edges to the OutboundMessage entity.
@@ -4603,6 +4640,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.EngagementTrackingConsentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.EngagementTrackingConsentsTable,
+			Columns: []string{workspace.EngagementTrackingConsentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(engagementtrackingconsent.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedEngagementTrackingConsentsIDs(); len(nodes) > 0 && !_u.mutation.EngagementTrackingConsentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.EngagementTrackingConsentsTable,
+			Columns: []string{workspace.EngagementTrackingConsentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(engagementtrackingconsent.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.EngagementTrackingConsentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.EngagementTrackingConsentsTable,
+			Columns: []string{workspace.EngagementTrackingConsentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(engagementtrackingconsent.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _u.mutation.OutboundMessagesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -6206,6 +6288,21 @@ func (_u *WorkspaceUpdateOne) AddConsentStamps(v ...*ConsentStamp) *WorkspaceUpd
 	return _u.AddConsentStampIDs(ids...)
 }
 
+// AddEngagementTrackingConsentIDs adds the "engagement_tracking_consents" edge to the EngagementTrackingConsent entity by IDs.
+func (_u *WorkspaceUpdateOne) AddEngagementTrackingConsentIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddEngagementTrackingConsentIDs(ids...)
+	return _u
+}
+
+// AddEngagementTrackingConsents adds the "engagement_tracking_consents" edges to the EngagementTrackingConsent entity.
+func (_u *WorkspaceUpdateOne) AddEngagementTrackingConsents(v ...*EngagementTrackingConsent) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddEngagementTrackingConsentIDs(ids...)
+}
+
 // AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
 func (_u *WorkspaceUpdateOne) AddOutboundMessageIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddOutboundMessageIDs(ids...)
@@ -7260,6 +7357,27 @@ func (_u *WorkspaceUpdateOne) RemoveConsentStamps(v ...*ConsentStamp) *Workspace
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveConsentStampIDs(ids...)
+}
+
+// ClearEngagementTrackingConsents clears all "engagement_tracking_consents" edges to the EngagementTrackingConsent entity.
+func (_u *WorkspaceUpdateOne) ClearEngagementTrackingConsents() *WorkspaceUpdateOne {
+	_u.mutation.ClearEngagementTrackingConsents()
+	return _u
+}
+
+// RemoveEngagementTrackingConsentIDs removes the "engagement_tracking_consents" edge to EngagementTrackingConsent entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveEngagementTrackingConsentIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveEngagementTrackingConsentIDs(ids...)
+	return _u
+}
+
+// RemoveEngagementTrackingConsents removes "engagement_tracking_consents" edges to EngagementTrackingConsent entities.
+func (_u *WorkspaceUpdateOne) RemoveEngagementTrackingConsents(v ...*EngagementTrackingConsent) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveEngagementTrackingConsentIDs(ids...)
 }
 
 // ClearOutboundMessages clears all "outbound_messages" edges to the OutboundMessage entity.
@@ -9648,6 +9766,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(consentstamp.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.EngagementTrackingConsentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.EngagementTrackingConsentsTable,
+			Columns: []string{workspace.EngagementTrackingConsentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(engagementtrackingconsent.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedEngagementTrackingConsentsIDs(); len(nodes) > 0 && !_u.mutation.EngagementTrackingConsentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.EngagementTrackingConsentsTable,
+			Columns: []string{workspace.EngagementTrackingConsentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(engagementtrackingconsent.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.EngagementTrackingConsentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.EngagementTrackingConsentsTable,
+			Columns: []string{workspace.EngagementTrackingConsentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(engagementtrackingconsent.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

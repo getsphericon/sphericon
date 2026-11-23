@@ -352,6 +352,25 @@ type Handler interface {
 	//
 	// POST /emails
 	EmailsSend(ctx context.Context, req *SendTransactionalEmailInput, params EmailsSendParams) (*SendTransactionalEmailResponse, error)
+	// EngagementTrackingCreate implements EngagementTracking_create operation.
+	//
+	// Record whether a destination agreed to have its opens and clicks tracked, as an `imported` consent
+	// collected outside sphericon (a consent banner, an account setting). A `denied` always applies, and
+	// is kept in the immutable `email.engagement_tracking_denied` event; a `granted` is kept in
+	// `email.engagement_tracking_granted` and is refused with a conflict over a standing `denied`: only
+	// the person can lift a refusal. An observation that occurred before the consent standing changes
+	// nothing and is answered as `superseded`; of two of the same moment the refusal wins.
+	//
+	// POST /engagement-tracking-consents
+	EngagementTrackingCreate(ctx context.Context, req *RecordEngagementTrackingInput) (*EngagementTrackingObservationResult, error)
+	// EngagementTrackingGetForContact implements EngagementTracking_getForContact operation.
+	//
+	// Read whether each Destination of a contact (its email address) is tracked: the consent recorded with
+	// who recorded it, or `default` where none is, with what it means now. The consent is keyed by the
+	// Destination, so it follows the address the contact has now.
+	//
+	// GET /contacts/{contactId}/engagement-tracking
+	EngagementTrackingGetForContact(ctx context.Context, params EngagementTrackingGetForContactParams) (*ContactEngagementTracking, error)
 	// EnrollmentsGet implements Enrollments_get operation.
 	//
 	// Get one Enrollment of an Automation. Needs the enrollments:read scope.
