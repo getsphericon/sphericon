@@ -77,7 +77,7 @@ function stored(steps: AutomationStep[]): SiteAutomationResource {
     live: null,
     draft: {
       number: 1,
-      triggerEvent: 'cart_abandoned',
+      trigger: { kind: 'event', action: 'cart_abandoned' },
       exitEvents: [],
       goalEvent: null,
       steps: { id: stepId(1), steps },

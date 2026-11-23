@@ -22,6 +22,8 @@ interface Submission {
   body: Omit<SiteAutomationsUpdateData['body'], 'revision'> & { name: string }
   fingerprint: string
   dropped: number
+  // The Trigger's filter is still being typed: there is no filter to save yet.
+  filterIncomplete: boolean
 }
 
 // Capture the persisted representation before any asynchronous work. SDK graph data can contain
@@ -34,14 +36,15 @@ export function automationSubmission(name: string, graph: AutomationGraph): Subm
     })),
     edges: graph.edges.map((edge) => ({ ...edge })),
   }
-  const { dropped, triggerEvent, ...definition } = graphToSteps(captured)
-  if (triggerEvent === null) {
+  const { dropped, trigger, filterIncomplete, ...definition } = graphToSteps(captured)
+  if (trigger === null) {
     return null
   }
   return {
-    body: structuredClone({ name: name.trim(), triggerEvent, ...definition }),
+    body: structuredClone({ name: name.trim(), trigger, ...definition }),
     fingerprint: automationSnapshot(name, captured),
     dropped,
+    filterIncomplete,
   }
 }
 

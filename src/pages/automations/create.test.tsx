@@ -25,7 +25,7 @@ test('creating an automation sends the trimmed name and the default trigger, the
           id: testId(7),
           name: 'Welcome',
           status: 'inactive',
-          triggerEvent: 'contact.created',
+          trigger: { kind: 'event', action: 'contact.created' },
           steps: [],
           createdAt: NOW,
           updatedAt: NOW,
@@ -44,7 +44,9 @@ test('creating an automation sends the trimmed name and the default trigger, the
   await screen.getByLabelText('Name', { exact: false }).fill('  Welcome  ')
   await screen.getByRole('button', { name: 'Continue' }).click()
 
-  await expect.poll(() => bodies).toEqual([{ name: 'Welcome', triggerEvent: 'contact.created' }])
+  await expect
+    .poll(() => bodies)
+    .toEqual([{ name: 'Welcome', trigger: { kind: 'event', action: 'contact.created' } }])
   await expect.element(screen.getByText('Automation created')).toBeInTheDocument()
   await expect.poll(() => navigate.mock.calls.length).toBe(1)
   expect(navigate.mock.calls[0]?.[0]).toMatchObject({

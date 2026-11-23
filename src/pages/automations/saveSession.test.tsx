@@ -22,7 +22,7 @@ import { AutomationEditPage } from './edit.tsx'
 const EDIT_ROUTE = routeMount(Route, { workspaceId: 'TestWs01', automationId: testId(5) })
 const LIVE: AutomationVersion = {
   number: 1,
-  triggerEvent: 'email.clicked',
+  trigger: { kind: 'event' as const, action: 'email.clicked' },
   exitEvents: [],
   goalEvent: null,
   steps: { id: stepId(1), steps: [] },
@@ -72,7 +72,7 @@ test.each([
       stored = {
         ...STORED,
         name: 'Submitted name',
-        draft: { ...DRAFT, triggerEvent: 'course_completed' },
+        draft: { ...DRAFT, trigger: { kind: 'event' as const, action: 'course_completed' } },
       }
       return HttpResponse.json(stored)
     }),
@@ -140,7 +140,10 @@ test('Revert replaces local content with live and prevents editing during the op
   noEnrollmentsOrIntegrations()
   worker.use(
     handleSiteAutomationsGet({
-      body: { ...STORED, draft: { ...DRAFT, triggerEvent: 'course_completed' } },
+      body: {
+        ...STORED,
+        draft: { ...DRAFT, trigger: { kind: 'event' as const, action: 'course_completed' } },
+      },
     }),
     handleSiteAutomationsRevert(async () => {
       received.resolve(undefined)
@@ -183,7 +186,7 @@ test('Revert replaces local content with live and prevents editing during the op
 test('Publish serializes operations and preserves the current canvas', async () => {
   const received = Promise.withResolvers<undefined>()
   const release = Promise.withResolvers<undefined>()
-  const draft = { ...DRAFT, triggerEvent: 'course_completed' }
+  const draft = { ...DRAFT, trigger: { kind: 'event' as const, action: 'course_completed' } }
   noEnrollmentsOrIntegrations()
   worker.use(
     handleSiteAutomationsGet({ body: { ...STORED, draft } }),

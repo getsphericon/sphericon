@@ -1,3 +1,4 @@
+import { omit } from 'es-toolkit'
 import { isRuleGroupType } from 'react-querybuilder'
 import type { RuleGroupType, RuleType } from 'react-querybuilder'
 import * as z from 'zod'
@@ -16,8 +17,12 @@ import type {
   AttributeLeafInput,
   BirthdayLeafInput,
   CustomFieldLeafInput,
+  EventFilter,
+  EventFilterInput,
+  EventFilterNode,
   EventLeaf,
   EventLeafInput,
+  FilterPropertyLeafInput,
   MomentTest,
   MomentTestInput,
   NumberTestInput,
@@ -40,6 +45,7 @@ import {
   zCreateRuleInput,
   zCreateSegmentInput,
   zCustomFieldTestInput,
+  zEventFilterInput,
   zEventLeaf,
   zPropertyTestInput,
   zRuleConditionInput,
@@ -48,15 +54,23 @@ import {
 import { dayOf, nextDay, startOfDay } from '../../utils/datetime.ts'
 
 // The places a Condition is edited in (ADR 0181): a Segment's tests the Contact, a Rule's also the
-// Event that fired it. Each place's generated schema decides what its Condition admits.
+// Event that fired it, and an Event matcher's filter only the properties of the one Event it is
+// about (ADR 0133). Each place's generated schema decides what its Condition admits.
 interface PlaceConditions {
   segment: SegmentConditionInput
   rule: RuleConditionInput
+  eventFilter: EventFilterInput
 }
 export type ConditionPlace = keyof PlaceConditions
 
-// A Condition the builder loads: a Segment's or a Rule's, as read or as sent.
-type AnyCondition = SegmentCondition | RuleCondition | SegmentConditionInput | RuleConditionInput
+// A Condition the builder loads: a Segment's, a Rule's or an Event filter, as read or as sent.
+export type AnyCondition =
+  | SegmentCondition
+  | RuleCondition
+  | EventFilter
+  | SegmentConditionInput
+  | RuleConditionInput
+  | EventFilterInput
 
 // The empty group matches every contact, in either place.
 export const emptyGroup = {
@@ -271,7 +285,10 @@ function testRule(test: AnyTest, timeZone?: string): Pick<RuleType, 'operator' |
   return rule
 }
 
-function toRule(node: Exclude<RuleConditionNode, { kind: 'group' }>, timeZone?: string): RuleType {
+function toRule(
+  node: Exclude<RuleConditionNode | EventFilterNode, { kind: 'group' }>,
+  timeZone?: string,
+): RuleType {
   let rule: RuleType
   switch (node.kind) {
     case 'attribute':
@@ -309,7 +326,7 @@ function toRule(node: Exclude<RuleConditionNode, { kind: 'group' }>, timeZone?: 
 // keeps its own state from then on, and toDraft reads it back. timeZone is the User time zone the
 // days of before and after are read in (ADR 0068), undefined for the browser's.
 export function toQuery(condition: AnyCondition, timeZone?: string): RuleGroupType {
-  const entries: readonly RuleConditionNode[] = condition.entries
+  const entries: readonly (RuleConditionNode | EventFilterNode)[] = condition.entries
   return {
     combinator: condition.combinator,
     ...(condition.not === undefined ? {} : { not: condition.not }),
@@ -339,6 +356,7 @@ type NodeDraft =
   | Tested<CustomFieldLeafInput>
   | Blank<EventLeafInput, 'times'>
   | Blank<Tested<RulePropertyLeafInput>, 'key'>
+  | Blank<Tested<FilterPropertyLeafInput>, 'key'>
   | ConditionDraft
 export type ConditionDraft = Omit<RuleConditionInput, 'entries'> & { entries: NodeDraft[] }
 
@@ -516,6 +534,7 @@ export function toDraft(query: RuleGroupType, timeZone?: string): ConditionDraft
 const conditionSchemas: { [P in ConditionPlace]: z.ZodType<PlaceConditions[P]> } = {
   segment: zSegmentConditionInput,
   rule: zRuleConditionInput,
+  eventFilter: zEventFilterInput,
 }
 
 // The create input of a Segment and of a Rule, with the place's typed Condition schema: the
@@ -530,11 +549,31 @@ export const placeInputSchemas = {
 
 // toCondition is the draft as the place's Condition, or undefined while a count, a number, a day,
 // a window or a property's key is blank, or while it holds what the place does not admit: the
-// generated schema decides.
+// generated schema decides. An Event filter's property tests name no subject (subjectless).
 export function toCondition<P extends ConditionPlace>(
   draft: ConditionDraft,
   place: P,
 ): PlaceConditions[P] | undefined {
-  const parsed = conditionSchemas[place].safeParse(draft)
+  const parsed = conditionSchemas[place].safeParse(
+    place === 'eventFilter' ? subjectless(draft) : draft,
+  )
   return parsed.success ? parsed.data : undefined
+}
+
+// subjectless is the draft with its property tests naming no subject, as an Event filter holds
+// them: the builder reads a property test as the triggering Event's, and a filter tests the one
+// Event it is about.
+export function subjectless(draft: ConditionDraft): ConditionDraft {
+  return {
+    ...draft,
+    entries: draft.entries.map((node): NodeDraft => {
+      if (node.kind === 'group') {
+        return subjectless(node)
+      }
+      if (node.kind === 'property' && 'of' in node) {
+        return omit(node, ['of'])
+      }
+      return node
+    }),
+  }
 }

@@ -37,7 +37,7 @@ const WELCOME: SiteAutomationResource = {
   status: 'active',
   live: {
     number: 1,
-    triggerEvent: 'contact.created',
+    trigger: { kind: 'event', action: 'contact.created' },
     exitEvents: [],
     goalEvent: null,
     steps: { id: stepId(1), steps: [] },
@@ -55,7 +55,7 @@ const NURTURE: SiteAutomationResource = {
   live: null,
   draft: {
     number: 1,
-    triggerEvent: 'email.opened',
+    trigger: { kind: 'event', action: 'email.opened' },
     exitEvents: [],
     goalEvent: null,
     steps: { id: stepId(1), steps: [] },

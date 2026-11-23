@@ -19,7 +19,12 @@ import { MESSAGE_FORMAT } from './messageFormat.ts'
 import type { NodeProperties, StepKind } from './nodeProperties.ts'
 import { SMS_TEXT_FORMAT } from './smsFormat.ts'
 import { TELEGRAM_TEXT_FORMAT } from './telegramFormat.ts'
-import { EXIT_EVENTS_FORMAT, GOAL_EVENT_FORMAT, TRIGGER_EVENT_FORMAT } from './triggerFormat.ts'
+import {
+  EXIT_EVENTS_FORMAT,
+  GOAL_EVENT_FORMAT,
+  TRIGGER_EVENT_FORMAT,
+  TRIGGER_FILTER_FORMAT,
+} from './triggerFormat.ts'
 
 // The palette `type` of a Step's node is its Step's kind (StepKind), stored on `node.data.type`
 // and read by the graph ↔ definition converters to tell the steps apart.
@@ -68,11 +73,12 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         isStartNode: true,
         label: t(($) => $.automations.stepTrigger),
         description: t(($) => $.automations.triggerHint),
-        // The exit events are held one per line and the goal event as text ('' for none): the
-        // SDK's schema has no list of strings.
+        // The Trigger's filter is held as JSON text ('' for none), the exit events one per line
+        // and the goal event as text ('' for none): the SDK's schema has no list of strings.
         // pathId is the id of the root path the steps hang from, '' until the server gives one.
         defaultPropertiesData: {
           triggerEvent: DEFAULT_TRIGGER_EVENT,
+          triggerFilter: '',
           exitEvents: '',
           goalEvent: '',
           pathId: '',
@@ -86,6 +92,11 @@ export function useAutomationNodeTypes(): PaletteItem[] {
               type: 'string',
               label: t(($) => $.automations.triggerLabel),
               format: TRIGGER_EVENT_FORMAT,
+            },
+            triggerFilter: {
+              type: 'string',
+              label: t(($) => $.automations.triggerFilterLabel),
+              format: TRIGGER_FILTER_FORMAT,
             },
             exitEvents: {
               type: 'string',
@@ -103,6 +114,7 @@ export function useAutomationNodeTypes(): PaletteItem[] {
           type: 'VerticalLayout',
           elements: [
             { type: 'Text', scope: '#/properties/triggerEvent', placeholder: '' },
+            { type: 'Text', scope: '#/properties/triggerFilter', placeholder: '' },
             { type: 'Text', scope: '#/properties/exitEvents', placeholder: '' },
             { type: 'Text', scope: '#/properties/goalEvent', placeholder: '' },
           ],

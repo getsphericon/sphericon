@@ -207,7 +207,7 @@ const automation = (id: string, name: string): SiteAutomationResource => ({
   status: 'active',
   live: {
     number: 1,
-    triggerEvent: 'signed_up',
+    trigger: { kind: 'event', action: 'signed_up' },
     exitEvents: [],
     goalEvent: null,
     steps: { id: stepId(1), steps: [] },

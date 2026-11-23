@@ -1,10 +1,10 @@
 import type { WorkflowBuilderEdge, WorkflowBuilderNode } from '@workflowbuilder/sdk'
 import { expect, test } from 'vitest'
 
-import type { AutomationPath } from '../../generated/site/types.gen.ts'
+import type { AutomationPath, EventFilterInput } from '../../generated/site/types.gen.ts'
 import { stepId, testId } from '../../test/payloads.ts'
 import { graphToSteps, stepsToGraph } from './definition.ts'
-import type { AutomationStep } from './definition.ts'
+import type { AutomationStep, AutomationTrigger } from './definition.ts'
 import { automationSnapshot } from './leaveSnapshot.ts'
 
 const ROOT = stepId(1)
@@ -33,8 +33,8 @@ function node(id: string, type: string, properties: Record<string, unknown>): Wo
 const TRIGGER = node('trigger', 'trigger', { triggerEvent: 'email.opened', pathId: ROOT })
 
 // A Trigger on the event, with no exit and no goal event.
-function on(triggerEvent: string) {
-  return { triggerEvent, exitEvents: [], goalEvent: null }
+function on(action: string): AutomationTrigger {
+  return { trigger: { kind: 'event', action }, exitEvents: [], goalEvent: null }
 }
 
 // A canvas of the Trigger followed by the nodes in a chain.
@@ -121,7 +121,8 @@ test('stepsToGraph of no steps is the Trigger alone', () => {
 
 test('graphToSteps round-trips a stored trigger and chain, each Step and the path keeping its id', () => {
   expect(graphToSteps(stepsToGraph(on('email.clicked'), path(STEPS), {}))).toEqual({
-    triggerEvent: 'email.clicked',
+    trigger: { kind: 'event', action: 'email.clicked' },
+    filterIncomplete: false,
     exitEvents: [],
     goalEvent: null,
     steps: path(STEPS),
@@ -193,7 +194,8 @@ test('an email step whose document was cleared is saved as its body alone', () =
 
 test('graphToSteps of a canvas without exactly one Trigger has no trigger event', () => {
   const none = {
-    triggerEvent: null,
+    trigger: null,
+    filterIncomplete: false,
     exitEvents: [],
     goalEvent: null,
     steps: { steps: [] },
@@ -247,7 +249,8 @@ test('graphToSteps reports nodes off the main chain as dropped', () => {
   }
 
   expect(graphToSteps(graph)).toEqual({
-    triggerEvent: 'email.opened',
+    trigger: { kind: 'event', action: 'email.opened' },
+    filterIncomplete: false,
     exitEvents: [],
     goalEvent: null,
     steps: {
@@ -291,7 +294,8 @@ test('an HTTP step keeps its id and header names but never carries a secret into
   // Resaving untouched resends no URL, header value or secret, so the server keeps them, matched
   // by the Step's id.
   expect(graphToSteps(stepsToGraph(on('contact.created'), path([stored]), {}))).toEqual({
-    triggerEvent: 'contact.created',
+    trigger: { kind: 'event', action: 'contact.created' },
+    filterIncomplete: false,
     exitEvents: [],
     goalEvent: null,
     steps: {
@@ -389,7 +393,8 @@ test('graphToSteps stops on a cycle instead of looping', () => {
   }
 
   expect(graphToSteps(graph)).toEqual({
-    triggerEvent: 'email.opened',
+    trigger: { kind: 'event', action: 'email.opened' },
+    filterIncomplete: false,
     exitEvents: [],
     goalEvent: null,
     steps: {
@@ -464,8 +469,8 @@ test('each email step keeps the Integration it names, and one that names none se
 })
 
 test('the Trigger node carries the exit and goal events, which round-trip', () => {
-  const trigger = {
-    triggerEvent: 'payment_failed',
+  const trigger: AutomationTrigger = {
+    trigger: { kind: 'event', action: 'payment_failed' },
     exitEvents: ['account_closed', 'plan_downgraded'],
     goalEvent: 'payment_succeeded',
   }
@@ -475,7 +480,12 @@ test('the Trigger node carries the exit and goal events, which round-trip', () =
     exitEvents: 'account_closed\nplan_downgraded',
     goalEvent: 'payment_succeeded',
   })
-  expect(graphToSteps(graph)).toEqual({ ...trigger, steps: path(STEPS), dropped: 0 })
+  expect(graphToSteps(graph)).toEqual({
+    ...trigger,
+    filterIncomplete: false,
+    steps: path(STEPS),
+    dropped: 0,
+  })
 })
 
 test('blank exit lines and a blank goal are none', () => {
@@ -487,4 +497,53 @@ test('blank exit lines and a blank goal are none', () => {
   const graph = { nodes: [root], edges: [] }
 
   expect(graphToSteps(graph)).toMatchObject({ exitEvents: ['refunded'], goalEvent: null })
+})
+
+const PAID: EventFilterInput = {
+  kind: 'group',
+  combinator: 'and',
+  entries: [
+    { kind: 'property', key: 'status', test: { kind: 'text', operator: 'eq', value: 'paid' } },
+  ],
+}
+
+test("the Trigger's filter rides on its node as JSON text and round-trips into the saved Trigger", () => {
+  const trigger: AutomationTrigger = {
+    trigger: { kind: 'event', action: 'order.completed', filter: PAID },
+    exitEvents: [],
+    goalEvent: null,
+  }
+  const graph = stepsToGraph(trigger, path([]), {})
+
+  expect(graph.nodes[0]?.data.properties).toMatchObject({
+    triggerEvent: 'order.completed',
+    triggerFilter: JSON.stringify(PAID),
+  })
+  expect(graphToSteps(graph)).toMatchObject({ trigger: trigger.trigger, filterIncomplete: false })
+})
+
+test('a Trigger with an empty filter, or none, saves no filter', () => {
+  const empty = node('trigger', 'trigger', { triggerEvent: 'order.completed', triggerFilter: '' })
+
+  expect(graphToSteps({ nodes: [empty], edges: [] })).toMatchObject({
+    trigger: { kind: 'event', action: 'order.completed' },
+    filterIncomplete: false,
+  })
+  expect(graphToSteps({ nodes: [empty], edges: [] }).trigger).not.toHaveProperty('filter')
+})
+
+test('a filter still being typed is flagged and left out of the saved Trigger', () => {
+  const blankKey = {
+    ...PAID,
+    entries: [{ kind: 'property', test: { kind: 'text', operator: 'eq', value: 'paid' } }],
+  }
+  const typing = node('trigger', 'trigger', {
+    triggerEvent: 'order.completed',
+    triggerFilter: JSON.stringify(blankKey),
+  })
+
+  const saved = graphToSteps({ nodes: [typing], edges: [] })
+
+  expect(saved.filterIncomplete).toBe(true)
+  expect(saved.trigger).toEqual({ kind: 'event', action: 'order.completed' })
 })

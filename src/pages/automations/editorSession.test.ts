@@ -23,7 +23,7 @@ import { automationSnapshot } from './leaveSnapshot.ts'
 const PATH = { workspaceId: 'TestWs01', id: testId(5) }
 const DRAFT = {
   number: 2,
-  triggerEvent: 'email.clicked',
+  trigger: { kind: 'event' as const, action: 'email.clicked' },
   exitEvents: [],
   goalEvent: null,
   steps: { id: stepId(1), steps: [] },

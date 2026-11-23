@@ -2972,6 +2972,17 @@ export const zPropertyTest = z.discriminatedUnion('kind', [
 ]);
 
 /**
+ * A test of one property of the Event or line a filter is about, its key in a field of its own,
+ * so a key holding a dot is one key. It names no subject: a filter tests the one object it is
+ * about.
+ */
+export const zFilterPropertyLeaf = z.object({
+  kind: z.enum(['property']),
+  key: z.string(),
+  test: zPropertyTest
+});
+
+/**
  * A test of a text value. On a Contact attribute or an Event's property, contains is a
  * case-insensitive substring. On a Custom field, contains holds when the field's value is a list
  * that holds `value`, and a number or boolean field's eq and neq compare the text of its value.
@@ -3009,6 +3020,17 @@ export const zPropertyTestInput = z.discriminatedUnion('kind', [
   zNumberTestInput.extend({ kind: z.literal('number') }),
   zPresenceTestInput.extend({ kind: z.literal('presence') })
 ]);
+
+/**
+ * A test of one property of the Event or line a filter is about, its key in a field of its own,
+ * so a key holding a dot is one key. It names no subject: a filter tests the one object it is
+ * about.
+ */
+export const zFilterPropertyLeafInput = z.strictObject({
+  kind: z.enum(['property']),
+  key: z.string(),
+  test: zPropertyTestInput
+});
 
 export const zTimeZoneName = z.string();
 
@@ -4287,33 +4309,6 @@ export const zAutomationPath = z.object({
 });
 
 /**
- * One version of an automation's definition: what publishing makes it do (ADR 0065)
- */
-export const zAutomationVersion = z.object({
-  number: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  triggerEvent: z.string(),
-  exitEvents: z.array(z.string()),
-  goalEvent: z.string().nullable(),
-  steps: zAutomationPath
-});
-
-/**
- * Automation resource used by the site UI
- */
-export const zSiteAutomationResource = z.object({
-  id: zEntityId,
-  name: z.string(),
-  status: zAutomationStatus,
-  live: zAutomationVersion.nullable(),
-  draft: zAutomationVersion.nullable(),
-  archivedAt: z.exactOptional(zTimestamp.nullable()),
-  revenue: z.exactOptional(zMessageRevenue),
-  revision: zRevision,
-  createdAt: zTimestamp,
-  updatedAt: zTimestamp
-});
-
-/**
  * A Step that waits before the next one, as a request writes it
  */
 export const zWaitStepInput = z.strictObject({
@@ -4342,31 +4337,6 @@ export const zAutomationStepInput = z.discriminatedUnion('type', [
 export const zAutomationPathInput = z.strictObject({
   id: z.exactOptional(zStepId),
   steps: z.array(zAutomationStepInput)
-});
-
-/**
- * Request body for creating an automation (always created inactive)
- */
-export const zCreateAutomationInput = z.strictObject({
-  name: zName,
-  triggerEvent: z.string(),
-  exitEvents: z.exactOptional(z.array(z.string())),
-  goalEvent: z.exactOptional(z.string().nullable()),
-  steps: z.exactOptional(zAutomationPathInput)
-});
-
-/**
- * Request body for updating an automation. The name changes at once; the trigger, exit and
- * goal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live
- * version's, and only publishing makes the draft live.
- */
-export const zUpdateAutomationInput = z.strictObject({
-  revision: zRevision,
-  name: z.exactOptional(zName),
-  triggerEvent: z.exactOptional(z.string()),
-  exitEvents: z.exactOptional(z.array(z.string())),
-  goalEvent: z.exactOptional(z.string().nullable()),
-  steps: z.exactOptional(zAutomationPathInput)
 });
 
 /**
@@ -4622,6 +4592,38 @@ export const zProblemDetails = z.object({
 });
 
 /**
+ * What enrolls a Contact in an automation, by `kind`: an Event matcher
+ */
+export const zAutomationTrigger = z.lazy((): any => zEventTrigger);
+
+/**
+ * What enrolls a Contact in an automation, by `kind`: an Event matcher
+ */
+export const zAutomationTriggerInput = z.lazy((): any => zEventTriggerInput);
+
+/**
+ * One version of an automation's definition: what publishing makes it do (ADR 0065)
+ */
+export const zAutomationVersion = z.object({
+  number: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  trigger: zAutomationTrigger,
+  exitEvents: z.array(z.string()),
+  goalEvent: z.string().nullable(),
+  steps: zAutomationPath
+});
+
+/**
+ * Request body for creating an automation (always created inactive)
+ */
+export const zCreateAutomationInput = z.strictObject({
+  name: zName,
+  trigger: zAutomationTriggerInput,
+  exitEvents: z.exactOptional(z.array(z.string())),
+  goalEvent: z.exactOptional(z.string().nullable()),
+  steps: z.exactOptional(zAutomationPathInput)
+});
+
+/**
  * Request body for creating a Rule: it is created inactive, with its definition as the draft
  */
 export const zCreateRuleInput = z.strictObject({
@@ -4637,6 +4639,66 @@ export const zCreateRuleInput = z.strictObject({
 export const zCreateSegmentInput = z.strictObject({
   name: zName,
   condition: z.lazy((): any => zSegmentConditionInput)
+});
+
+/**
+ * An Event matcher's filter (ADR 0133): the tests of the Event's own properties it holds. A
+ * property the Event lacks, or holds with another type, fails its test, so a `not` over it holds.
+ */
+export const zEventFilter = z.object({
+  kind: z.enum(['group']),
+  combinator: zConditionCombinator,
+  not: z.exactOptional(z.boolean()),
+  entries: z.array(z.lazy((): any => zEventFilterNode))
+});
+
+/**
+ * An Event matcher's filter (ADR 0133): the tests of the Event's own properties it holds. A
+ * property the Event lacks, or holds with another type, fails its test, so a `not` over it holds.
+ */
+export const zEventFilterInput = z.strictObject({
+  kind: z.enum(['group']),
+  combinator: zConditionCombinator,
+  not: z.exactOptional(z.boolean()),
+  entries: z.array(z.lazy((): any => zEventFilterNodeInput))
+});
+
+/**
+ * An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is
+ * about, or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133).
+ */
+export const zEventFilterNode = z.discriminatedUnion('kind', [
+  zEventFilter.extend({ kind: z.literal('group') }),
+  zFilterPropertyLeaf.extend({ kind: z.literal('property') })
+]);
+
+/**
+ * An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is
+ * about, or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133).
+ */
+export const zEventFilterNodeInput = z.discriminatedUnion('kind', [
+  zEventFilterInput.extend({ kind: z.literal('group') }),
+  zFilterPropertyLeafInput.extend({ kind: z.literal('property') })
+]);
+
+/**
+ * A Trigger that enrolls a Contact on an Event (ADR 0133): its action, and an optional filter on
+ * that Event's own properties, so `order.completed` where `status` is `paid` starts on paid orders
+ * only. An Event that fails the filter is no entry: it enrolls no one and is not a skipped entry.
+ */
+export const zEventTrigger = z.object({
+  kind: z.enum(['event']),
+  action: z.string(),
+  filter: z.exactOptional(zEventFilter)
+});
+
+/**
+ * A Trigger that enrolls a Contact on an Event (ADR 0133), as a request writes it
+ */
+export const zEventTriggerInput = z.strictObject({
+  kind: z.enum(['event']),
+  action: z.string(),
+  filter: z.exactOptional(zEventFilterInput)
 });
 
 /**
@@ -4752,6 +4814,22 @@ export const zSegmentConditionNodeInput = z.discriminatedUnion('kind', [
 ]);
 
 /**
+ * Automation resource used by the site UI
+ */
+export const zSiteAutomationResource = z.object({
+  id: zEntityId,
+  name: z.string(),
+  status: zAutomationStatus,
+  live: zAutomationVersion.nullable(),
+  draft: zAutomationVersion.nullable(),
+  archivedAt: z.exactOptional(zTimestamp.nullable()),
+  revenue: z.exactOptional(zMessageRevenue),
+  revision: zRevision,
+  createdAt: zTimestamp,
+  updatedAt: zTimestamp
+});
+
+/**
  * Request body for previewing a condition's segment
  */
 export const zSitePreviewSegmentInput = z.strictObject({
@@ -4787,6 +4865,20 @@ export const zSiteSegmentResource = z.object({
   revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
+});
+
+/**
+ * Request body for updating an automation. The name changes at once; the trigger, exit and
+ * goal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live
+ * version's, and only publishing makes the draft live.
+ */
+export const zUpdateAutomationInput = z.strictObject({
+  revision: zRevision,
+  name: z.exactOptional(zName),
+  trigger: z.exactOptional(zAutomationTriggerInput),
+  exitEvents: z.exactOptional(z.array(z.string())),
+  goalEvent: z.exactOptional(z.string().nullable()),
+  steps: z.exactOptional(zAutomationPathInput)
 });
 
 /**
@@ -5836,42 +5928,6 @@ export const zSiteAuditSetRetentionPath = z.object({
  */
 export const zSiteAuditSetRetentionResponse = zSiteAuditRetention;
 
-export const zSiteAutomationsListPath = z.object({
-  workspaceId: zWorkspaceId
-});
-
-export const zSiteAutomationsListQuery = z.object({
-  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
-  pageSize: z.int().gte(1).lte(100).optional().default(25),
-  archived: z.exactOptional(z.boolean()),
-  name: z.exactOptional(z.string()),
-  state: z.exactOptional(zSiteAutomationState),
-  sort: z.exactOptional(zSiteAutomationsSort),
-  direction: z.exactOptional(zSortDirection)
-});
-
-/**
- * Paginated response
- */
-export const zSiteAutomationsListResponse = z.object({
-  items: z.array(zSiteAutomationResource),
-  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  totalItems: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
-});
-
-export const zSiteAutomationsCreateBody = zCreateAutomationInput;
-
-export const zSiteAutomationsCreatePath = z.object({
-  workspaceId: zWorkspaceId
-});
-
-/**
- * The request has succeeded and a new resource has been created as a result.
- */
-export const zSiteAutomationsCreateResponse = zSiteAutomationResource;
-
 export const zSiteAutomationsDryRunHttpStepBody = zDryRunHttpStepInput;
 
 export const zSiteAutomationsDryRunHttpStepPath = z.object({
@@ -5951,82 +6007,6 @@ export const zSiteSkippedEntriesListResponse = z.object({
   totalItems: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
-
-export const zSiteAutomationsGetPath = z.object({
-  workspaceId: zWorkspaceId,
-  id: zEntityId
-});
-
-/**
- * The request has succeeded.
- */
-export const zSiteAutomationsGetResponse = zSiteAutomationResource;
-
-export const zSiteAutomationsUpdateBody = zUpdateAutomationInput;
-
-export const zSiteAutomationsUpdatePath = z.object({
-  workspaceId: zWorkspaceId,
-  id: zEntityId
-});
-
-/**
- * The request has succeeded.
- */
-export const zSiteAutomationsUpdateResponse = zSiteAutomationResource;
-
-export const zSiteAutomationsArchivePath = z.object({
-  workspaceId: zWorkspaceId,
-  id: zEntityId
-});
-
-/**
- * The request has succeeded.
- */
-export const zSiteAutomationsArchiveResponse = zSiteAutomationResource;
-
-export const zSiteAutomationsDeactivatePath = z.object({
-  workspaceId: zWorkspaceId,
-  id: zEntityId
-});
-
-/**
- * The request has succeeded.
- */
-export const zSiteAutomationsDeactivateResponse = zSiteAutomationResource;
-
-export const zSiteAutomationsPublishBody = zRevisionInput;
-
-export const zSiteAutomationsPublishPath = z.object({
-  workspaceId: zWorkspaceId,
-  id: zEntityId
-});
-
-/**
- * The request has succeeded.
- */
-export const zSiteAutomationsPublishResponse = zSiteAutomationResource;
-
-export const zSiteAutomationsRevertBody = zRevisionInput;
-
-export const zSiteAutomationsRevertPath = z.object({
-  workspaceId: zWorkspaceId,
-  id: zEntityId
-});
-
-/**
- * The request has succeeded.
- */
-export const zSiteAutomationsRevertResponse = zSiteAutomationResource;
-
-export const zSiteAutomationsUnarchivePath = z.object({
-  workspaceId: zWorkspaceId,
-  id: zEntityId
-});
-
-/**
- * The request has succeeded.
- */
-export const zSiteAutomationsUnarchiveResponse = zSiteAutomationResource;
 
 export const zSiteBrandKitGetPath = z.object({
   workspaceId: zWorkspaceId
@@ -7339,6 +7319,118 @@ export const zSiteWebhooksTestPath = z.object({
  * The request has succeeded.
  */
 export const zSiteWebhooksTestResponse = zWebhookTestResult;
+
+export const zSiteAutomationsListPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+export const zSiteAutomationsListQuery = z.object({
+  page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
+  pageSize: z.int().gte(1).lte(100).optional().default(25),
+  archived: z.exactOptional(z.boolean()),
+  name: z.exactOptional(z.string()),
+  state: z.exactOptional(zSiteAutomationState),
+  sort: z.exactOptional(zSiteAutomationsSort),
+  direction: z.exactOptional(zSortDirection)
+});
+
+/**
+ * Paginated response
+ */
+export const zSiteAutomationsListResponse = z.object({
+  items: z.array(zSiteAutomationResource),
+  page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  totalItems: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+export const zSiteAutomationsCreateBody = zCreateAutomationInput;
+
+export const zSiteAutomationsCreatePath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded and a new resource has been created as a result.
+ */
+export const zSiteAutomationsCreateResponse = zSiteAutomationResource;
+
+export const zSiteAutomationsGetPath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAutomationsGetResponse = zSiteAutomationResource;
+
+export const zSiteAutomationsUpdateBody = zUpdateAutomationInput;
+
+export const zSiteAutomationsUpdatePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAutomationsUpdateResponse = zSiteAutomationResource;
+
+export const zSiteAutomationsArchivePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAutomationsArchiveResponse = zSiteAutomationResource;
+
+export const zSiteAutomationsDeactivatePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAutomationsDeactivateResponse = zSiteAutomationResource;
+
+export const zSiteAutomationsPublishBody = zRevisionInput;
+
+export const zSiteAutomationsPublishPath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAutomationsPublishResponse = zSiteAutomationResource;
+
+export const zSiteAutomationsRevertBody = zRevisionInput;
+
+export const zSiteAutomationsRevertPath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAutomationsRevertResponse = zSiteAutomationResource;
+
+export const zSiteAutomationsUnarchivePath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteAutomationsUnarchiveResponse = zSiteAutomationResource;
 
 export const zSiteRulesListPath = z.object({
   workspaceId: zWorkspaceId

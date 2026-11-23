@@ -60,7 +60,10 @@ function AutomationVersionSummary({
         <Text size="sm" c="dimmed">
           {t(($) => $.automations.triggerColumn)}
         </Text>
-        <EventActionBadge action={version.triggerEvent} color="gray" />
+        <EventActionBadge action={version.trigger.action} color="gray" />
+        {version.trigger.filter ? (
+          <Text size="sm">{t(($) => $.automations.triggerFiltered)}</Text>
+        ) : null}
       </Group>
       <Group gap="xs">
         <Text size="sm" c="dimmed">

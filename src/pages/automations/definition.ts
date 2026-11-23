@@ -2,16 +2,19 @@ import { NodeType } from '@workflowbuilder/sdk'
 import type { WBIcon, WorkflowBuilderEdge, WorkflowBuilderNode } from '@workflowbuilder/sdk'
 import * as z from 'zod'
 
+import type { AnyCondition, ConditionDraft } from '../../components/conditions/condition.ts'
 import type {
   AutomationHttpHeader,
   AutomationPath,
   AutomationPathInput,
   AutomationStep,
   AutomationStepInput,
+  AutomationTriggerInput,
   AutomationVersion,
+  EventFilterInput,
   TelegramStep,
 } from '../../generated/site/types.gen.ts'
-import { zAutomationHttpHeader } from '../../generated/site/zod.gen.ts'
+import { zAutomationHttpHeader, zEventFilterInput } from '../../generated/site/zod.gen.ts'
 import { jsonText } from '../../utils/jsonText.ts'
 import { docCodec } from '../../utils/messageDoc.ts'
 import { buttonsCodec } from '../../utils/telegramButtons.ts'
@@ -132,19 +135,59 @@ function stepProperties(step: AutomationStep): NodeProperties[keyof NodeProperti
 
 const TRIGGER_NODE_ID = 'trigger'
 
-// What the Trigger node holds: the event that enrolls a Contact, the events that end an
-// Enrollment early and the one that ends it as having reached its goal (#751).
-export type AutomationTrigger = Pick<AutomationVersion, 'triggerEvent' | 'exitEvents' | 'goalEvent'>
+// What the Trigger node holds: the Event matcher that enrolls a Contact (ADR 0133), the events that
+// end an Enrollment early and the one that ends it as having reached its goal (#751).
+export type AutomationTrigger = Pick<AutomationVersion, 'trigger' | 'exitEvents' | 'goalEvent'>
 
-// The canvas holds the exit events as one line each, the goal event as text ('' for none), and
-// the id of the root path the steps hang from.
+// The canvas holds the Trigger's action as text and its filter as JSON text ('' for none), the exit
+// events as one line each, the goal event as text ('' for none), and the id of the root path the
+// steps hang from.
 function triggerProperties(trigger: AutomationTrigger, pathId: string): Record<string, unknown> {
   return {
-    triggerEvent: trigger.triggerEvent,
+    triggerEvent: trigger.trigger.action,
+    triggerFilter: trigger.trigger.filter ? filterText(trigger.trigger.filter) : '',
     exitEvents: trigger.exitEvents.join('\n'),
     goalEvent: trigger.goalEvent ?? '',
     pathId,
   }
+}
+
+// filterText is the Trigger node's text of a filter as the builder edits it (complete or not):
+// '' for an empty group, which tests nothing and is no filter, else its JSON.
+export function filterText(filter: AnyCondition | ConditionDraft): string {
+  return filter.entries.length === 0 && filter.not !== true ? '' : JSON.stringify(filter)
+}
+
+// The filter the Trigger node's text holds, as the builder loads it: a complete filter, or none
+// for '' and for a filter still being typed, which the builder then starts over.
+export function filterOf(text: string): EventFilterInput | undefined {
+  if (text === '') {
+    return undefined
+  }
+  const parsed = jsonText.pipe(zEventFilterInput).safeParse(text)
+  return parsed.success ? parsed.data : undefined
+}
+
+// triggerOf reads the Trigger off the node: its action and, when the filter's text holds a complete
+// filter, that filter. incomplete says the text holds a filter still being typed (a blank key or
+// number), which is no filter to save.
+function triggerOf(properties: Record<string, unknown>): {
+  trigger: AutomationTriggerInput
+  incomplete: boolean
+} {
+  const trigger: AutomationTriggerInput = {
+    kind: 'event',
+    action: asText(properties.triggerEvent),
+  }
+  const text = asText(properties.triggerFilter)
+  if (text === '') {
+    return { trigger, incomplete: false }
+  }
+  const parsed = jsonText.pipe(zEventFilterInput).safeParse(text)
+  if (!parsed.success) {
+    return { trigger, incomplete: true }
+  }
+  return { trigger: { ...trigger, filter: parsed.data }, incomplete: false }
 }
 
 // exitEventsOf reads the exit events off the Trigger node's lines, dropping blank ones.
@@ -326,10 +369,12 @@ function nodeToStep(node: WorkflowBuilderNode): AutomationStepInput | null {
 // exit and goal events and the root path's id off it and walks single outgoing edges from there
 // into the root path's ordered steps, each with its node's id.
 // The Trigger is not a Step. Branches are not supported yet: nodes off the main chain are
-// reported via `dropped` so the caller can warn instead of silently losing them. `triggerEvent`
-// is null when the canvas does not hold exactly one Trigger.
+// reported via `dropped` so the caller can warn instead of silently losing them. `trigger` is
+// null when the canvas does not hold exactly one Trigger; `filterIncomplete` says its filter is
+// still being typed, and is left out of `trigger`.
 export function graphToSteps(graph: AutomationGraph): {
-  triggerEvent: string | null
+  trigger: AutomationTriggerInput | null
+  filterIncomplete: boolean
   exitEvents: string[]
   goalEvent: string | null
   steps: AutomationPathInput
@@ -338,7 +383,14 @@ export function graphToSteps(graph: AutomationGraph): {
   const ordered = linearGraphNodes(graph)
   const [root] = ordered
   if (!root) {
-    return { triggerEvent: null, exitEvents: [], goalEvent: null, steps: { steps: [] }, dropped: 0 }
+    return {
+      trigger: null,
+      filterIncomplete: false,
+      exitEvents: [],
+      goalEvent: null,
+      steps: { steps: [] },
+      dropped: 0,
+    }
   }
   const steps = ordered.flatMap((node) => {
     const step = nodeToStep(node)
@@ -346,8 +398,10 @@ export function graphToSteps(graph: AutomationGraph): {
   })
   const goalEvent = asText(root.data.properties.goalEvent).trim()
   const pathId = asText(root.data.properties.pathId)
+  const { trigger, incomplete } = triggerOf(root.data.properties)
   return {
-    triggerEvent: asText(root.data.properties.triggerEvent),
+    trigger,
+    filterIncomplete: incomplete,
     exitEvents: exitEventsOf(asText(root.data.properties.exitEvents)),
     goalEvent: goalEvent === '' ? null : goalEvent,
     steps: pathId === '' ? { steps } : { id: pathId, steps },
