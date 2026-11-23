@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
@@ -77,6 +78,8 @@ type StepExecution struct {
 	contacts *contacts.Module
 	// locks takes the Contact's row lock that orders its Enrollments (lockContact).
 	locks *contactlock.Module
+	// firings reads which Event the Firing whose Enroll Action made an Enrollment fired on.
+	firings *rules.Firings
 }
 
 // NewStepExecution builds the Step execution. The bus runs a move and the job that follows it in
@@ -88,7 +91,7 @@ type StepExecution struct {
 // wait.
 func NewStepExecution(bus *events.Bus, out *outboundmessages.Module, people *contacts.Module, fence Fencer, cipher *secrets.Cipher, client webhook.Doer, now func() time.Time) *StepExecution {
 	return &StepExecution{bus: bus, out: out, contacts: people, fence: fence, cipher: cipher, client: client, now: now,
-		locks: contactlock.New()}
+		locks: contactlock.New(), firings: rules.NewFirings()}
 }
 
 // OnEventInput is an Event of a Contact handed to the Automations: the Contact and the Event.

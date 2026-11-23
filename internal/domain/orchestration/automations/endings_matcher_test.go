@@ -11,10 +11,12 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -184,4 +186,54 @@ func TestAnEnrollmentIsMadeEndedByTheFirstMatchingEventSinceItsTrigger(t *testin
 			assert.Equal(t, tc.want, status)
 		})
 	}
+}
+
+// firedOn publishes a Rule that enrolls Contacts in the Automation on the action and has it fire on
+// the last stored Event of that action for the Contact. It returns the Firing's id and the Event's
+// source id.
+func firedOn(t *testing.T, env *testhelper.TestEnv, automationID, contactID int64, action string) (int64, string) {
+	t.Helper()
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	m := testhelper.Module[*rules.Module](env)
+	r, err := m.Create(ctx, s, rules.CreateInput{
+		Name: "Enroll on " + action, TriggerEvents: []string{action},
+		Actions: []ruleaction.Action{{Type: ruleaction.Enroll, AutomationID: automationID}},
+	})
+	require.NoError(t, err)
+	_, err = m.Publish(ctx, s, r.ID, testhelper.RuleRevisionIn(ctx, t, s, r.ID))
+	require.NoError(t, err)
+	stored := env.StoredEvents(t, action)
+	require.NotEmpty(t, stored)
+	sourceID := *stored[len(stored)-1].SourceID
+	fired, err := m.Evaluate(ctx, s, rules.Event{ContactID: contactID, Action: action, SourceID: sourceID, RecordedAt: time.Now()})
+	require.NoError(t, err)
+	require.Len(t, fired, 1)
+	return fired[0], sourceID
+}
+
+// A Rule's Enroll Action that fired on an Event is begun by that Event as a Trigger's Enrollment is
+// by its own: an Automation whose goal is the Event's action is not made ended by it, nor ended
+// when the Event is handled again; the next such Event reaches the goal.
+func TestTheEventARuleFiredOnNeverEndsTheEnrollmentItMade(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.DB.Scoped(fixtures.AcmeID)
+	order := eventmatcher.Matcher{Action: "order.completed"}
+	id := liveEnding(t, env, eventmatcher.Matcher{Action: "order.placed"}, ending{goal: &order})
+	c := enrollable(t, s, 0)
+	handStored(t, env, c.ID, "order.completed", collected(c.ID, "order.completed", time.Now().Add(-time.Minute), nil))
+	firingID, sourceID := firedOn(t, env, id, c.ID, "order.completed")
+
+	_, err := testhelper.Module[*automations.StepExecution](env).EnrollOnRule(context.Background(), s,
+		automations.EnrollOnRuleInput{AutomationID: id, ContactID: c.ID, FiringID: firingID, SourceID: sourceID})
+	require.NoError(t, err)
+	asMade := onlyRunOf(t, env, id, c.ID)
+	handLast(t, env, c.ID, "order.completed")
+	handledAgain := onlyRunOf(t, env, id, c.ID)
+	handStored(t, env, c.ID, "order.completed", collected(c.ID, "order.completed", time.Now(), nil))
+	again := onlyRunOf(t, env, id, c.ID)
+
+	assert.Equal(t, automationrun.StatusActive, asMade)
+	assert.Equal(t, automationrun.StatusActive, handledAgain)
+	assert.Equal(t, automationrun.StatusGoalReached, again)
 }

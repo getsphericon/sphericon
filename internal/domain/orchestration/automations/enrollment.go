@@ -3,10 +3,9 @@ package automations
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"time"
-
-	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
@@ -72,23 +71,22 @@ type Event struct {
 
 // origin is what an Enrollment keeps of the Event it began on: when it occurred (began_at), and its
 // action and properties, which every step binds as `event` (#752). An origin with only OccurredAt
-// is an Enrollment no Event began: its `event` is empty. It also names what caused the entry, so
-// that one cause enrolls a Contact in an Automation once (ADR 0127): SourceID, the source id of the
-// Event whose Trigger it is, or FiringID, the Rule Firing whose Enroll Action it is. Chain is the
-// Automations the chain that caused the entry passed through (ADR 0127): the entry checks skip an
-// entry into one of them (`cycle`), and the Enrollment made keeps them with its own. Stored is the
-// source id of the stored Event the Enrollment begins on, the trigger's or the one the Rule fired
-// on, empty when none is: the Enrollment key's value is read from it (ADR 0165), into KeyValue
-// once the version the entry is judged on is known (nil when the Event lacks the property).
+// is an Enrollment no Event began: its `event` is empty. Cause names what caused the entry, so that
+// one cause enrolls a Contact in an Automation once (ADR 0127). Chain is the Automations the chain
+// that caused the entry passed through (ADR 0127): the entry checks skip an entry into one of them
+// (`cycle`), and the Enrollment made keeps them with its own. BegunOnSourceID is the source id of
+// the stored Event the Enrollment begins on, the trigger's or the one the Rule fired on, empty when
+// none is stored: that Event never ends the Enrollment (ADR 0133), and the Enrollment key's value
+// is read from it (ADR 0165), into KeyValue once the version the entry is judged on is known (nil
+// when the Event lacks the property).
 type origin struct {
-	Action     string
-	OccurredAt time.Time
-	Properties map[string]any
-	SourceID   string
-	FiringID   int64
-	Chain      []int64
-	Stored     string
-	KeyValue   *string
+	Action          string
+	OccurredAt      time.Time
+	Properties      map[string]any
+	Cause           cause
+	Chain           []int64
+	BegunOnSourceID string
+	KeyValue        *string
 }
 
 // originOf is the origin of an Event: its action and occurred_at, and the properties of the row
@@ -96,12 +94,12 @@ type origin struct {
 // stored before the trigger job is queued (#751); an Event no longer stored (Retention or an Erasure
 // removed it) gives no properties.
 func originOf(ctx context.Context, s *ent.Scoped, ev Event) (origin, error) {
-	o := origin{Action: ev.Action, OccurredAt: ev.OccurredAt, SourceID: ev.SourceID, Chain: ev.Chain}
+	o := origin{Action: ev.Action, OccurredAt: ev.OccurredAt, Cause: cause{sourceID: ev.SourceID}, Chain: ev.Chain}
 	stored, err := storedEvent(ctx, s, ev.SourceID)
 	if err != nil || stored == nil {
 		return o, err
 	}
-	o.Properties, o.Stored = events.BoundedProperties(stored.Properties), ev.SourceID
+	o.Properties, o.BegunOnSourceID = events.BoundedProperties(stored.Properties), ev.SourceID
 	return o, nil
 }
 
@@ -127,10 +125,10 @@ func (m *StepExecution) enrollOnRule(ctx context.Context, s *ent.Scoped, pub eve
 	if err != nil {
 		return 0, false, "", err
 	}
-	o := origin{OccurredAt: now, FiringID: in.FiringID, Chain: in.Chain}
+	o := origin{OccurredAt: now, Cause: cause{firingID: in.FiringID}, Chain: in.Chain}
 	if fired != nil {
 		o.Action, o.Properties, o.OccurredAt = fired.Action, events.BoundedProperties(fired.Properties), fired.OccurredAt
-		o.Stored = in.SourceID
+		o.BegunOnSourceID = in.SourceID
 	}
 	return m.enroll(ctx, s, pub, automationID, contactID, o, func(a *ent.Automation) (bool, error) {
 		if !active(a) {
@@ -154,7 +152,7 @@ func (m *StepExecution) enrollOnTrigger(ctx context.Context, s *ent.Scoped, pub 
 			return false, nil
 		}
 		// The first entry check: an Event its filter misses is no entry, and nothing is recorded.
-		return matchesEvent(ctx, s, TriggerOf(live), o.SourceID)
+		return matchesEvent(ctx, s, TriggerOf(live), o.Cause.sourceID)
 	})
 }
 
@@ -211,7 +209,7 @@ func (m *StepExecution) enroll(ctx context.Context, s *ent.Scoped, pub events.Pu
 		return 0, false, "", err
 	}
 	if key := a.row.Edges.LiveVersion.EnrollmentKey; key != nil {
-		if o.KeyValue, err = keyValueOf(ctx, s, o.Stored, *key); err != nil {
+		if o.KeyValue, err = keyValueOf(ctx, s, o.BegunOnSourceID, *key); err != nil {
 			return 0, false, "", err
 		}
 	}
@@ -305,7 +303,7 @@ func shareLive(ctx context.Context, s *ent.Scoped, automationID int64) (liveShar
 // locked to the end of the transaction (ADR 0099, ADR 0108), numbered ordinal among the Contact's
 // Enrollments in the Automation, standing on that version's first Step (none for a version of no
 // Steps) and parked there until due when that Step is a wait, keeping the chain of o with a's own
-// Automation (ADR 0127). One Event, or one Firing, enrolls a Contact in an Automation once: an
+// Automation (ADR 0127). One cause enrolls a Contact in an Automation once (cause.insertRun): an
 // Enrollment it made already is the answer, and nothing is written (inserted false).
 func begin(ctx context.Context, s *ent.Scoped, held contactlock.Locked, a liveShared, o origin, ordinal int, due *time.Time) (runID int64, inserted bool, err error) {
 	create := s.AutomationRun().Create().
@@ -323,26 +321,10 @@ func begin(ctx context.Context, s *ent.Scoped, held contactlock.Locked, a liveSh
 	if o.Action != "" {
 		create.SetEventAction(o.Action)
 	}
-	if o.SourceID != "" {
-		create.SetTriggerSourceID(o.SourceID)
-	}
-	if o.FiringID != 0 {
-		create.SetFiringID(o.FiringID)
-	}
 	if len(o.Properties) > 0 {
 		create.SetEventProperties(o.Properties)
 	}
-	switch {
-	case o.SourceID != "":
-		runID, err = create.OnConflictColumns(automationrun.FieldWorkspaceID, automationrun.FieldAutomationID, automationrun.FieldTriggerSourceID).DoNothing().ID(ctx)
-	case o.FiringID != 0:
-		runID, err = create.OnConflictColumns(automationrun.FieldWorkspaceID, automationrun.FieldAutomationID, automationrun.FieldFiringID).DoNothing().ID(ctx)
-	default:
-		var run *ent.AutomationRun
-		if run, err = create.Save(ctx); err == nil {
-			runID = run.ID
-		}
-	}
+	runID, err = o.Cause.insertRun(ctx, create)
 	inserted, err = db.Inserted(err)
 	return runID, inserted, err
 }
@@ -350,7 +332,8 @@ func begin(ctx context.Context, s *ent.Scoped, held contactlock.Locked, a liveSh
 // endedSince is the end the first exit or goal Event of the version recorded for the Contact since
 // the Event of o occurred makes, and when that Event occurred, if there is one (ADR 0133): an Event
 // of an exit's or the goal's action whose properties pass its filter, run in Postgres. The Event
-// that began the Enrollment (o's source id) never ends it, and a keyed Enrollment ends only on an
+// the Enrollment begins on (o.BegunOnSourceID: its Trigger's, or the one its Rule fired on) never
+// ends it, and a keyed Enrollment ends only on an
 // Event carrying none of the key or o's value (ofKey, ADR 0165). Like the trigger consumer it
 // leaves out loaded history and a machine open or click (ADR 0053); an exit and the goal at the
 // same moment are taken in the order they were recorded, and an Event matching both reaches the
@@ -378,8 +361,8 @@ func endedSince(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, co
 		event.OccurredAtGTE(o.OccurredAt),
 		event.Backfill(false),
 	}
-	if o.SourceID != "" {
-		where = append(where, event.Or(event.SourceIDIsNil(), event.SourceIDNEQ(o.SourceID)))
+	if o.BegunOnSourceID != "" {
+		where = append(where, event.Or(event.SourceIDIsNil(), event.SourceIDNEQ(o.BegunOnSourceID)))
 	}
 	if key := v.EnrollmentKey; key != nil && o.KeyValue != nil {
 		where = append(where, ofKey(*key, *o.KeyValue))
@@ -485,18 +468,9 @@ func (m *StepExecution) endOnEvent(ctx context.Context, s *ent.Scoped, pub event
 	}
 	values := map[string]*string{}
 	for _, run := range runs {
-		if ev.OccurredAt.Before(run.BeganAt) || begunBy(run, ev) {
-			continue
-		}
-		t, ends, err := endingOf(ctx, s, run.Edges.Version, ev)
+		t, ends, err := m.endingFor(ctx, s, run, ev, values)
 		if err != nil {
-			return err
-		}
-		if ends {
-			ends, err = endsKey(ctx, s, run, ev.SourceID, values)
-		}
-		if err != nil {
-			return err
+			return fmt.Errorf("end enrollment %d on event: %w", run.ID, err)
 		}
 		if !ends {
 			continue
@@ -513,10 +487,27 @@ func (m *StepExecution) endOnEvent(ctx context.Context, s *ent.Scoped, pub event
 	return nil
 }
 
-// begunBy reports whether the Event is the one that began the Enrollment, by the source id it keeps
-// (ADR 0133): that Event never ends it.
-func begunBy(run *ent.AutomationRun, ev Event) bool {
-	return ev.SourceID != "" && lo.FromPtr(run.TriggerSourceID) == ev.SourceID
+// endingFor is the move the Event makes on the active Enrollment run, whose version is loaded:
+// none when the Event occurred before the Enrollment began or is the one it began on (begunBy),
+// else its version's ending (endingOf), on a keyed Enrollment only when the Event may act on its
+// key value (endsKey). values caches the Event's key values across the Contact's Enrollments.
+func (m *StepExecution) endingFor(ctx context.Context, s *ent.Scoped, run *ent.AutomationRun, ev Event, values map[string]*string) (trigger, bool, error) {
+	if ev.OccurredAt.Before(run.BeganAt) {
+		return "", false, nil
+	}
+	t, ends, err := endingOf(ctx, s, run.Edges.Version, ev)
+	if err != nil || !ends {
+		return "", false, err
+	}
+	own, err := begunBy(ctx, s, m.firings, run, ev.SourceID)
+	if err != nil || own {
+		return "", false, err
+	}
+	ends, err = endsKey(ctx, s, run, ev.SourceID, values)
+	if err != nil || !ends {
+		return "", false, err
+	}
+	return t, true, nil
 }
 
 // endingOf is the move the Event makes on an Enrollment standing on the version: its goal when the
