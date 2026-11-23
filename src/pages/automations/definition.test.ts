@@ -3,7 +3,15 @@ import { expect, test } from 'vitest'
 
 import type { AutomationPath, EventFilterInput } from '../../generated/site/types.gen.ts'
 import { stepId, testId } from '../../test/payloads.ts'
-import { graphToSteps, stepsToGraph } from './definition.ts'
+import {
+  endingsOf,
+  endingsText,
+  goalOf,
+  goalText,
+  graphToSteps,
+  stepsToGraph,
+  withoutHalfTypedFilter,
+} from './definition.ts'
 import type { AutomationStep, AutomationTrigger } from './definition.ts'
 import { automationSnapshot } from './leaveSnapshot.ts'
 
@@ -468,37 +476,6 @@ test('each email step keeps the Integration it names, and one that names none se
   expect(graphToSteps(graph).steps).toEqual(path(steps))
 })
 
-test('the Trigger node carries the exit and goal events, which round-trip', () => {
-  const trigger: AutomationTrigger = {
-    trigger: { kind: 'event', action: 'payment_failed' },
-    exitEvents: ['account_closed', 'plan_downgraded'],
-    goalEvent: 'payment_succeeded',
-  }
-  const graph = stepsToGraph(trigger, path(STEPS), {})
-
-  expect(graph.nodes[0]?.data.properties).toMatchObject({
-    exitEvents: 'account_closed\nplan_downgraded',
-    goalEvent: 'payment_succeeded',
-  })
-  expect(graphToSteps(graph)).toEqual({
-    ...trigger,
-    filterIncomplete: false,
-    steps: path(STEPS),
-    dropped: 0,
-  })
-})
-
-test('blank exit lines and a blank goal are none', () => {
-  const root = node('trigger', 'trigger', {
-    triggerEvent: 'paid',
-    exitEvents: ' refunded \n\n  ',
-    goalEvent: ' ',
-  })
-  const graph = { nodes: [root], edges: [] }
-
-  expect(graphToSteps(graph)).toMatchObject({ exitEvents: ['refunded'], goalEvent: null })
-})
-
 const PAID: EventFilterInput = {
   kind: 'group',
   combinator: 'and',
@@ -546,4 +523,93 @@ test('a filter still being typed is flagged and left out of the saved Trigger', 
 
   expect(saved.filterIncomplete).toBe(true)
   expect(saved.trigger).toEqual({ kind: 'event', action: 'order.completed' })
+})
+
+const CANCELLED: EventFilterInput = {
+  ...PAID,
+  entries: [
+    { kind: 'property', key: 'status', test: { kind: 'text', operator: 'eq', value: 'cancelled' } },
+  ],
+}
+
+test('the Trigger node carries the exit and goal events as matchers, which round-trip', () => {
+  const trigger: AutomationTrigger = {
+    trigger: { kind: 'event', action: 'order.placed' },
+    exitEvents: [{ action: 'account_closed' }, { action: 'order.closed', filter: CANCELLED }],
+    goalEvent: { action: 'order.closed', filter: PAID },
+  }
+  const graph = stepsToGraph(trigger, path(STEPS), {})
+
+  expect(endingsOf(String(graph.nodes[0]?.data.properties.exitEvents))).toEqual([
+    { action: 'account_closed', filterText: '' },
+    { action: 'order.closed', filterText: JSON.stringify(CANCELLED) },
+  ])
+  expect(goalOf(String(graph.nodes[0]?.data.properties.goalEvent))).toEqual({
+    action: 'order.closed',
+    filterText: JSON.stringify(PAID),
+  })
+  expect(graphToSteps(graph)).toEqual({
+    ...trigger,
+    filterIncomplete: false,
+    steps: path(STEPS),
+    dropped: 0,
+  })
+})
+
+test('an exit with a blank action is dropped, a goal with one is none, and actions are trimmed', () => {
+  const root = node('trigger', 'trigger', {
+    triggerEvent: 'paid',
+    exitEvents: endingsText([
+      { action: ' refunded ', filterText: '' },
+      { action: '  ', filterText: '' },
+    ]),
+    goalEvent: goalText({ action: ' ', filterText: '' }),
+  })
+
+  expect(graphToSteps({ nodes: [root], edges: [] })).toMatchObject({
+    exitEvents: [{ action: 'refunded' }],
+    goalEvent: null,
+  })
+})
+
+test('no goal is an empty text, and an unreadable text of exits or goal is none', () => {
+  const root = node('trigger', 'trigger', { triggerEvent: 'paid', exitEvents: 'x', goalEvent: '' })
+
+  expect(goalText(null)).toBe('')
+  expect(graphToSteps({ nodes: [root], edges: [] })).toMatchObject({
+    exitEvents: [],
+    goalEvent: null,
+  })
+})
+
+test("an exit's or the goal's filter still being typed is flagged and left out of what is saved", () => {
+  const blankKey = JSON.stringify({
+    ...PAID,
+    entries: [{ kind: 'property', test: { kind: 'text', operator: 'eq', value: 'paid' } }],
+  })
+  const exitTyping = node('trigger', 'trigger', {
+    triggerEvent: 'order.placed',
+    exitEvents: endingsText([{ action: 'order.closed', filterText: blankKey }]),
+  })
+  const goalTyping = node('trigger', 'trigger', {
+    triggerEvent: 'order.placed',
+    goalEvent: goalText({ action: 'order.closed', filterText: blankKey }),
+  })
+
+  expect(graphToSteps({ nodes: [exitTyping], edges: [] })).toMatchObject({
+    filterIncomplete: true,
+    exitEvents: [{ action: 'order.closed' }],
+  })
+  expect(graphToSteps({ nodes: [goalTyping], edges: [] })).toMatchObject({
+    filterIncomplete: true,
+    goalEvent: { action: 'order.closed' },
+  })
+})
+
+test('a half-typed filter of an exit or goal is dropped, a complete one kept', () => {
+  const halfTyped = { action: 'order.closed', filterText: '{"kind":"group","entries":[{}' }
+  const complete = { action: 'order.closed', filterText: JSON.stringify(PAID) }
+
+  expect(withoutHalfTypedFilter(halfTyped)).toEqual({ action: 'order.closed', filterText: '' })
+  expect(withoutHalfTypedFilter(complete)).toEqual(complete)
 })

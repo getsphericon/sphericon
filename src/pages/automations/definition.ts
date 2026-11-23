@@ -12,6 +12,8 @@ import type {
   AutomationTriggerInput,
   AutomationVersion,
   EventFilterInput,
+  EventMatcher,
+  EventMatcherInput,
   TelegramStep,
 } from '../../generated/site/types.gen.ts'
 import { zAutomationHttpHeader, zEventFilterInput } from '../../generated/site/zod.gen.ts'
@@ -140,16 +142,51 @@ const TRIGGER_NODE_ID = 'trigger'
 export type AutomationTrigger = Pick<AutomationVersion, 'trigger' | 'exitEvents' | 'goalEvent'>
 
 // The canvas holds the Trigger's action as text and its filter as JSON text ('' for none), the exit
-// events as one line each, the goal event as text ('' for none), and the id of the root path the
-// steps hang from.
+// events as the JSON text of their drafts, the goal event as the JSON text of its draft ('' for
+// none), and the id of the root path the steps hang from.
 function triggerProperties(trigger: AutomationTrigger, pathId: string): Record<string, unknown> {
   return {
     triggerEvent: trigger.trigger.action,
     triggerFilter: trigger.trigger.filter ? filterText(trigger.trigger.filter) : '',
-    exitEvents: trigger.exitEvents.join('\n'),
-    goalEvent: trigger.goalEvent ?? '',
+    exitEvents: endingsText(trigger.exitEvents.map((exit) => endingDraft(exit))),
+    goalEvent: goalText(trigger.goalEvent === null ? null : endingDraft(trigger.goalEvent)),
     pathId,
   }
+}
+
+// An exit or goal event as the Trigger node holds it (ADR 0133): its action, and its filter's text
+// as the builder leaves it (filterText: '' for none, complete or still being typed).
+export type EndingDraft = Pick<EventMatcherInput, 'action'> & { filterText: string }
+
+const endingDraftSchema = z.object({ action: z.string(), filterText: z.string() })
+const endingsCodec = jsonText.pipe(z.array(endingDraftSchema))
+const goalCodec = jsonText.pipe(endingDraftSchema)
+
+// endingDraft is the draft of a stored exit or goal event.
+function endingDraft(matcher: EventMatcher): EndingDraft {
+  return { action: matcher.action, filterText: matcher.filter ? filterText(matcher.filter) : '' }
+}
+
+// endingsText is the Trigger node's text of its exit events.
+export function endingsText(drafts: EndingDraft[]): string {
+  return z.encode(endingsCodec, drafts)
+}
+
+// endingsOf reads the exit events' drafts off the Trigger node; an unreadable text is none.
+export function endingsOf(text: string): EndingDraft[] {
+  const parsed = endingsCodec.safeParse(text)
+  return parsed.success ? parsed.data : []
+}
+
+// goalText is the Trigger node's text of its goal event: '' for none.
+export function goalText(draft: EndingDraft | null): string {
+  return draft === null ? '' : z.encode(goalCodec, draft)
+}
+
+// goalOf reads the goal event's draft off the Trigger node: null for none or an unreadable text.
+export function goalOf(text: string): EndingDraft | null {
+  const parsed = goalCodec.safeParse(text)
+  return parsed.success ? parsed.data : null
 }
 
 // filterText is the Trigger node's text of a filter as the builder edits it (complete or not):
@@ -168,34 +205,69 @@ export function filterOf(text: string): EventFilterInput | undefined {
   return parsed.success ? parsed.data : undefined
 }
 
-// triggerOf reads the Trigger off the node: its action and, when the filter's text holds a complete
-// filter, that filter. incomplete says the text holds a filter still being typed (a blank key or
-// number), which is no filter to save.
+// withoutHalfTypedFilter is the draft with a filter still being typed dropped: the builder loads
+// only a complete filter, so the node drops the rest too when its panel opens again.
+export function withoutHalfTypedFilter(draft: EndingDraft): EndingDraft {
+  return draft.filterText !== '' && filterOf(draft.filterText) === undefined
+    ? { ...draft, filterText: '' }
+    : draft
+}
+
+// matcherOf reads an Event matcher off its action and its filter's text: the action trimmed and,
+// when the text holds a complete filter, that filter. incomplete says the text holds a filter still
+// being typed (a blank key or number), which is no filter to save.
+function matcherOf(
+  action: string,
+  text: string,
+): { matcher: EventMatcherInput; incomplete: boolean } {
+  const matcher: EventMatcherInput = { action: action.trim() }
+  if (text === '') {
+    return { matcher, incomplete: false }
+  }
+  const parsed = jsonText.pipe(zEventFilterInput).safeParse(text)
+  if (!parsed.success) {
+    return { matcher, incomplete: true }
+  }
+  return { matcher: { ...matcher, filter: parsed.data }, incomplete: false }
+}
+
+// triggerOf reads the Trigger off the node (matcherOf).
 function triggerOf(properties: Record<string, unknown>): {
   trigger: AutomationTriggerInput
   incomplete: boolean
 } {
-  const trigger: AutomationTriggerInput = {
-    kind: 'event',
-    action: asText(properties.triggerEvent),
-  }
-  const text = asText(properties.triggerFilter)
-  if (text === '') {
-    return { trigger, incomplete: false }
-  }
-  const parsed = jsonText.pipe(zEventFilterInput).safeParse(text)
-  if (!parsed.success) {
-    return { trigger, incomplete: true }
-  }
-  return { trigger: { ...trigger, filter: parsed.data }, incomplete: false }
+  const { matcher, incomplete } = matcherOf(
+    asText(properties.triggerEvent),
+    asText(properties.triggerFilter),
+  )
+  return { trigger: { kind: 'event', ...matcher }, incomplete }
 }
 
-// exitEventsOf reads the exit events off the Trigger node's lines, dropping blank ones.
-export function exitEventsOf(text: string): string[] {
-  return text
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line !== '')
+// endingRead is an exit or goal event read off its draft (matcherOf): none for no draft or a blank
+// action.
+function endingRead(
+  draft: EndingDraft | null,
+): { matcher: EventMatcherInput; incomplete: boolean }[] {
+  return draft === null || draft.action.trim() === ''
+    ? []
+    : [matcherOf(draft.action, draft.filterText)]
+}
+
+// endingsOfNode reads the exit and goal events off the Trigger node (matcherOf): an exit with a
+// blank action is dropped, a goal with one is none. incomplete says a filter of one of them is
+// still being typed.
+function endingsOfNode(properties: Record<string, unknown>): {
+  exitEvents: EventMatcherInput[]
+  goalEvent: EventMatcherInput | null
+  incomplete: boolean
+} {
+  const exits = endingsOf(asText(properties.exitEvents)).flatMap((draft) => endingRead(draft))
+  const [goal] = endingRead(goalOf(asText(properties.goalEvent)))
+  return {
+    exitEvents: exits.map(({ matcher }) => matcher),
+    goalEvent: goal?.matcher ?? null,
+    incomplete: [...exits, ...(goal ? [goal] : [])].some(({ incomplete }) => incomplete),
+  }
 }
 
 function labelOf(labels: Record<string, string>, type: string): { label?: string } {
@@ -370,13 +442,13 @@ function nodeToStep(node: WorkflowBuilderNode): AutomationStepInput | null {
 // into the root path's ordered steps, each with its node's id.
 // The Trigger is not a Step. Branches are not supported yet: nodes off the main chain are
 // reported via `dropped` so the caller can warn instead of silently losing them. `trigger` is
-// null when the canvas does not hold exactly one Trigger; `filterIncomplete` says its filter is
-// still being typed, and is left out of `trigger`.
+// null when the canvas does not hold exactly one Trigger; `filterIncomplete` says its filter, or an
+// exit's or the goal's, is still being typed, and is left out of what is saved.
 export function graphToSteps(graph: AutomationGraph): {
   trigger: AutomationTriggerInput | null
   filterIncomplete: boolean
-  exitEvents: string[]
-  goalEvent: string | null
+  exitEvents: EventMatcherInput[]
+  goalEvent: EventMatcherInput | null
   steps: AutomationPathInput
   dropped: number
 } {
@@ -396,14 +468,14 @@ export function graphToSteps(graph: AutomationGraph): {
     const step = nodeToStep(node)
     return step ? [step] : []
   })
-  const goalEvent = asText(root.data.properties.goalEvent).trim()
   const pathId = asText(root.data.properties.pathId)
   const { trigger, incomplete } = triggerOf(root.data.properties)
+  const endings = endingsOfNode(root.data.properties)
   return {
     trigger,
-    filterIncomplete: incomplete,
-    exitEvents: exitEventsOf(asText(root.data.properties.exitEvents)),
-    goalEvent: goalEvent === '' ? null : goalEvent,
+    filterIncomplete: incomplete || endings.incomplete,
+    exitEvents: endings.exitEvents,
+    goalEvent: endings.goalEvent,
     steps: pathId === '' ? { steps } : { id: pathId, steps },
     dropped: graph.nodes.length - ordered.length,
   }
