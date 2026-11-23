@@ -39,6 +39,8 @@ type Order struct {
 	AutomationID *int64 `json:"automation_id,omitempty"`
 	// CreditedClickAt holds the value of the "credited_click_at" field.
 	CreditedClickAt *time.Time `json:"credited_click_at,omitempty"`
+	// CreditedMessageID holds the value of the "credited_message_id" field.
+	CreditedMessageID *int64 `json:"credited_message_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the OrderQuery when eager-loading is set.
 	Edges        OrderEdges `json:"edges"`
@@ -120,7 +122,7 @@ func (*Order) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case order.FieldID, order.FieldWorkspaceID, order.FieldContactID, order.FieldBroadcastID, order.FieldAutomationID:
+		case order.FieldID, order.FieldWorkspaceID, order.FieldContactID, order.FieldBroadcastID, order.FieldAutomationID, order.FieldCreditedMessageID:
 			values[i] = new(sql.NullInt64)
 		case order.FieldOrderID, order.FieldCurrency:
 			values[i] = new(sql.NullString)
@@ -204,6 +206,13 @@ func (_m *Order) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.CreditedClickAt = new(time.Time)
 				*_m.CreditedClickAt = value.Time
+			}
+		case order.FieldCreditedMessageID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field credited_message_id", values[i])
+			} else if value.Valid {
+				_m.CreditedMessageID = new(int64)
+				*_m.CreditedMessageID = value.Int64
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -299,6 +308,11 @@ func (_m *Order) String() string {
 	if v := _m.CreditedClickAt; v != nil {
 		builder.WriteString("credited_click_at=")
 		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.CreditedMessageID; v != nil {
+		builder.WriteString("credited_message_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteByte(')')
 	return builder.String()

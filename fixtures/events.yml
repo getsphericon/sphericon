@@ -5600,7 +5600,7 @@
   contact_id: 7200
   email: buyer@souk.test
   action: email.clicked
-  properties: '{"broadcastId":7203,"url":"https://shop.test/"}'
+  properties: '{"outboundMessageId":7273,"broadcastId":7203,"url":"https://shop.test/"}'
   broadcast_id: 7203
   url: 'https://shop.test/'
   workspace_id: 78
@@ -5610,7 +5610,7 @@
   contact_id: 7210
   email: broadcast@emporium.test
   action: email.clicked
-  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  properties: '{"outboundMessageId":7210,"broadcastId":7201,"url":"https://shop.test/"}'
   broadcast_id: 7201
   url: 'https://shop.test/'
   workspace_id: 76
@@ -5620,7 +5620,7 @@
   contact_id: 7211
   email: automation@emporium.test
   action: email.clicked
-  properties: '{"automationId":7201,"url":"https://shop.test/"}'
+  properties: '{"outboundMessageId":7241,"automationId":7201,"url":"https://shop.test/"}'
   automation_id: 7201
   url: 'https://shop.test/'
   workspace_id: 76
@@ -5630,7 +5630,7 @@
   contact_id: 7212
   email: later@emporium.test
   action: email.clicked
-  properties: '{"automationId":7201,"url":"https://shop.test/"}'
+  properties: '{"outboundMessageId":7242,"automationId":7201,"url":"https://shop.test/"}'
   automation_id: 7201
   url: 'https://shop.test/'
   workspace_id: 76
@@ -5640,7 +5640,7 @@
   contact_id: 7212
   email: later@emporium.test
   action: email.clicked
-  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  properties: '{"outboundMessageId":7212,"broadcastId":7201,"url":"https://shop.test/"}'
   broadcast_id: 7201
   url: 'https://shop.test/'
   workspace_id: 76
@@ -5650,7 +5650,7 @@
   contact_id: 7212
   email: later@emporium.test
   action: email.clicked
-  properties: '{"automationId":7201,"url":"https://shop.test/"}'
+  properties: '{"outboundMessageId":7242,"automationId":7201,"url":"https://shop.test/"}'
   automation_id: 7201
   url: 'https://shop.test/'
   workspace_id: 76
@@ -5660,7 +5660,7 @@
   contact_id: 7213
   email: sametime@emporium.test
   action: email.clicked
-  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  properties: '{"outboundMessageId":7213,"broadcastId":7201,"url":"https://shop.test/"}'
   broadcast_id: 7201
   url: 'https://shop.test/'
   workspace_id: 76
@@ -5670,7 +5670,7 @@
   contact_id: 7213
   email: sametime@emporium.test
   action: email.clicked
-  properties: '{"automationId":7201,"url":"https://shop.test/"}'
+  properties: '{"outboundMessageId":7243,"automationId":7201,"url":"https://shop.test/"}'
   automation_id: 7201
   url: 'https://shop.test/'
   workspace_id: 76
@@ -5680,7 +5680,7 @@
   contact_id: 7214
   email: software@emporium.test
   action: email.clicked
-  properties: '{"automationId":7201,"url":"https://shop.test/"}'
+  properties: '{"outboundMessageId":7244,"automationId":7201,"url":"https://shop.test/"}'
   automation_id: 7201
   url: 'https://shop.test/'
   workspace_id: 76
@@ -5690,7 +5690,7 @@
   contact_id: 7214
   email: software@emporium.test
   action: email.clicked
-  properties: '{"broadcastId":7201,"url":"https://shop.test/","machine":true}'
+  properties: '{"outboundMessageId":7214,"broadcastId":7201,"url":"https://shop.test/","machine":true}'
   machine: true
   broadcast_id: 7201
   url: 'https://shop.test/'
@@ -5710,7 +5710,7 @@
   contact_id: 7215
   email: outside@emporium.test
   action: email.clicked
-  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  properties: '{"outboundMessageId":7215,"broadcastId":7201,"url":"https://shop.test/"}'
   broadcast_id: 7201
   url: 'https://shop.test/'
   workspace_id: 76
@@ -5720,7 +5720,7 @@
   contact_id: 7215
   email: outside@emporium.test
   action: email.clicked
-  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  properties: '{"outboundMessageId":7215,"broadcastId":7201,"url":"https://shop.test/"}'
   broadcast_id: 7201
   url: 'https://shop.test/'
   workspace_id: 76
@@ -5730,7 +5730,7 @@
   contact_id: 7216
   email: window@emporium.test
   action: email.clicked
-  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  properties: '{"outboundMessageId":7216,"broadcastId":7201,"url":"https://shop.test/"}'
   broadcast_id: 7201
   url: 'https://shop.test/'
   workspace_id: 76
@@ -5740,7 +5740,7 @@
   contact_id: 7218
   email: pruned@emporium.test
   action: email.clicked
-  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  properties: '{"outboundMessageId":7218,"broadcastId":7201,"url":"https://shop.test/"}'
   broadcast_id: 7201
   url: 'https://shop.test/'
   workspace_id: 76
@@ -5750,7 +5750,7 @@
   contact_id: 7219
   email: tg-after-email@emporium.test
   action: email.clicked
-  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  properties: '{"outboundMessageId":7219,"broadcastId":7201,"url":"https://shop.test/"}'
   broadcast_id: 7201
   url: 'https://shop.test/'
   workspace_id: 76
@@ -5760,7 +5760,7 @@
   contact_id: 7219
   email: tg-after-email@emporium.test
   action: telegram.clicked
-  properties: '{"automationId":7201,"url":"https://shop.test/"}'
+  properties: '{"outboundMessageId":7249,"automationId":7201,"url":"https://shop.test/"}'
   automation_id: 7201
   url: 'https://shop.test/'
   workspace_id: 76
@@ -5770,7 +5770,7 @@
   contact_id: 7220
   email: email-after-tg@emporium.test
   action: telegram.clicked
-  properties: '{"automationId":7201,"url":"https://shop.test/"}'
+  properties: '{"outboundMessageId":7250,"automationId":7201,"url":"https://shop.test/"}'
   automation_id: 7201
   url: 'https://shop.test/'
   workspace_id: 76
@@ -5780,7 +5780,7 @@
   contact_id: 7220
   email: email-after-tg@emporium.test
   action: email.clicked
-  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  properties: '{"outboundMessageId":7220,"broadcastId":7201,"url":"https://shop.test/"}'
   broadcast_id: 7201
   url: 'https://shop.test/'
   workspace_id: 76
@@ -5790,7 +5790,7 @@
   contact_id: 7221
   email: tg-machine@emporium.test
   action: email.clicked
-  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  properties: '{"outboundMessageId":7221,"broadcastId":7201,"url":"https://shop.test/"}'
   broadcast_id: 7201
   url: 'https://shop.test/'
   workspace_id: 76
@@ -5800,7 +5800,7 @@
   contact_id: 7221
   email: tg-machine@emporium.test
   action: telegram.clicked
-  properties: '{"automationId":7201,"url":"https://shop.test/","machine":true}'
+  properties: '{"outboundMessageId":7251,"automationId":7201,"url":"https://shop.test/","machine":true}'
   machine: true
   automation_id: 7201
   url: 'https://shop.test/'
@@ -5811,7 +5811,7 @@
   contact_id: 7222
   email: sms-after-email@emporium.test
   action: email.clicked
-  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  properties: '{"outboundMessageId":7222,"broadcastId":7201,"url":"https://shop.test/"}'
   broadcast_id: 7201
   url: 'https://shop.test/'
   workspace_id: 76
@@ -5821,7 +5821,7 @@
   contact_id: 7222
   email: sms-after-email@emporium.test
   action: sms.clicked
-  properties: '{"automationId":7201,"url":"https://shop.test/"}'
+  properties: '{"outboundMessageId":7252,"automationId":7201,"url":"https://shop.test/"}'
   automation_id: 7201
   url: 'https://shop.test/'
   workspace_id: 76
@@ -5831,7 +5831,7 @@
   contact_id: 7223
   email: email-after-sms@emporium.test
   action: sms.clicked
-  properties: '{"automationId":7201,"url":"https://shop.test/"}'
+  properties: '{"outboundMessageId":7253,"automationId":7201,"url":"https://shop.test/"}'
   automation_id: 7201
   url: 'https://shop.test/'
   workspace_id: 76
@@ -5841,7 +5841,7 @@
   contact_id: 7223
   email: email-after-sms@emporium.test
   action: email.clicked
-  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  properties: '{"outboundMessageId":7223,"broadcastId":7201,"url":"https://shop.test/"}'
   broadcast_id: 7201
   url: 'https://shop.test/'
   workspace_id: 76
@@ -5851,7 +5851,7 @@
   contact_id: 7224
   email: sms-machine@emporium.test
   action: email.clicked
-  properties: '{"broadcastId":7201,"url":"https://shop.test/"}'
+  properties: '{"outboundMessageId":7224,"broadcastId":7201,"url":"https://shop.test/"}'
   broadcast_id: 7201
   url: 'https://shop.test/'
   workspace_id: 76
@@ -5861,7 +5861,7 @@
   contact_id: 7224
   email: sms-machine@emporium.test
   action: sms.clicked
-  properties: '{"automationId":7201,"url":"https://shop.test/","machine":true}'
+  properties: '{"outboundMessageId":7254,"automationId":7201,"url":"https://shop.test/","machine":true}'
   machine: true
   automation_id: 7201
   url: 'https://shop.test/'

@@ -1966,6 +1966,7 @@ var (
 		{Name: "order_id", Type: field.TypeString},
 		{Name: "currency", Type: field.TypeString},
 		{Name: "credited_click_at", Type: field.TypeTime, Nullable: true},
+		{Name: "credited_message_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "broadcast_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "automation_id", Type: field.TypeInt64, Nullable: true},
@@ -1979,25 +1980,25 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "orders_contacts_orders",
-				Columns:    []*schema.Column{OrdersColumns[6]},
+				Columns:    []*schema.Column{OrdersColumns[7]},
 				RefColumns: []*schema.Column{ContactsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "orders_broadcasts_broadcast",
-				Columns:    []*schema.Column{OrdersColumns[7]},
+				Columns:    []*schema.Column{OrdersColumns[8]},
 				RefColumns: []*schema.Column{BroadcastsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "orders_automations_automation",
-				Columns:    []*schema.Column{OrdersColumns[8]},
+				Columns:    []*schema.Column{OrdersColumns[9]},
 				RefColumns: []*schema.Column{AutomationsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "orders_workspaces_orders",
-				Columns:    []*schema.Column{OrdersColumns[9]},
+				Columns:    []*schema.Column{OrdersColumns[10]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -2006,22 +2007,27 @@ var (
 			{
 				Name:    "order_workspace_id_order_id",
 				Unique:  true,
-				Columns: []*schema.Column{OrdersColumns[9], OrdersColumns[3]},
+				Columns: []*schema.Column{OrdersColumns[10], OrdersColumns[3]},
 			},
 			{
 				Name:    "order_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrdersColumns[9], OrdersColumns[6]},
+				Columns: []*schema.Column{OrdersColumns[10], OrdersColumns[7]},
 			},
 			{
 				Name:    "order_workspace_id_broadcast_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrdersColumns[9], OrdersColumns[7]},
+				Columns: []*schema.Column{OrdersColumns[10], OrdersColumns[8]},
 			},
 			{
 				Name:    "order_workspace_id_automation_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrdersColumns[9], OrdersColumns[8]},
+				Columns: []*schema.Column{OrdersColumns[10], OrdersColumns[9]},
+			},
+			{
+				Name:    "order_workspace_id_credited_message_id",
+				Unique:  false,
+				Columns: []*schema.Column{OrdersColumns[10], OrdersColumns[6]},
 			},
 		},
 	}
@@ -3923,7 +3929,7 @@ func init() {
 		Table: "orders",
 	}
 	OrdersTable.Annotation.Checks = map[string]string{
-		"orders_credit_check":    "(broadcast_id IS NULL OR automation_id IS NULL) AND (credited_click_at IS NULL) = (broadcast_id IS NULL AND automation_id IS NULL)",
+		"orders_credit_check":    "(broadcast_id IS NULL OR automation_id IS NULL) AND (credited_click_at IS NULL) = (broadcast_id IS NULL AND automation_id IS NULL) AND (credited_message_id IS NULL) = (broadcast_id IS NULL AND automation_id IS NULL)",
 		"orders_currency_format": "currency ~ '^[A-Z]{3}$'",
 	}
 	OrderMovementsTable.ForeignKeys[0].RefTable = OrdersTable

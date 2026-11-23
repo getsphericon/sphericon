@@ -1,0 +1,7 @@
+# An Order credited by a click before the credit named the message (ADR 0120).
+- id: 1
+  workspace_id: 1
+  order_id: O-1
+  currency: USD
+  broadcast_id: 1
+  credited_click_at: '2026-01-01 00:00:00+00'

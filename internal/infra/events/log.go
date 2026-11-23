@@ -6,8 +6,12 @@ import (
 	"slices"
 	"strings"
 
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqljson"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
@@ -90,6 +94,28 @@ func OutboundMessageID(e *ent.Event) (int64, bool) {
 	if !strings.HasPrefix(e.Action, "email.") {
 		return 0, false
 	}
+	return messageIDOf(e)
+}
+
+// ClickedMessageID is the Outbound message a click Event (ClickActions) was on, from the id the
+// recorder stamped on it; false for any other Event and for a click that names none.
+func ClickedMessageID(e *ent.Event) (int64, bool) {
+	if !slices.Contains(ClickActions, e.Action) {
+		return 0, false
+	}
+	return messageIDOf(e)
+}
+
+// NamesMessage narrows a query of Events to the ones that carry the id of an Outbound message.
+func NamesMessage() predicate.Event {
+	return func(selector *sql.Selector) {
+		selector.Where(sqljson.HasKey(selector.C(event.FieldProperties), sqljson.Path(outboundMessageIDProperty)))
+	}
+}
+
+// messageIDOf is the stored id of the Outbound message an Event names, a JSON number however it
+// was decoded.
+func messageIDOf(e *ent.Event) (int64, bool) {
 	switch id := e.Properties[outboundMessageIDProperty].(type) {
 	case float64:
 		return int64(id), id > 0
