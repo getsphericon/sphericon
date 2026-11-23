@@ -5,7 +5,8 @@ import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
 import { SystemEventAction } from '../../generated/site/types.gen.ts'
-import { zSigningSecret } from '../../generated/site/zod.gen.ts'
+import { zEntryCooldown, zSigningSecret } from '../../generated/site/zod.gen.ts'
+import { boundsOf } from '../../utils/bounds.ts'
 import {
   CONTACT_CHANGE_ACTIONS,
   EMAIL_ENGAGEMENT_ACTIONS,
@@ -20,6 +21,8 @@ import type { NodeProperties, StepKind } from './nodeProperties.ts'
 import { SMS_TEXT_FORMAT } from './smsFormat.ts'
 import { TELEGRAM_TEXT_FORMAT } from './telegramFormat.ts'
 import {
+  COOLDOWN_FORMAT,
+  ENTRY_POLICY_FORMAT,
   EXIT_EVENTS_FORMAT,
   GOAL_EVENT_FORMAT,
   TRIGGER_EVENT_FORMAT,
@@ -58,6 +61,10 @@ export const TRIGGER_EVENTS = [
 ] as const
 export const DEFAULT_TRIGGER_EVENT = TRIGGER_EVENTS[0]
 
+// A new Trigger's cooldown in seconds: the contract's floor, an hour, which is also the cooldown the
+// server gives a Trigger written without one (ADR 0127).
+const NEW_TRIGGER_COOLDOWN = boundsOf(zEntryCooldown).min
+
 // useAutomationNodeTypes builds the palette definitions for the visual builder.
 // Memoized so the array keeps a stable reference across renders — the SDK
 // overwrites its module-level palette holder whenever this reference changes.
@@ -73,12 +80,15 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         isStartNode: true,
         label: t(($) => $.automations.stepTrigger),
         description: t(($) => $.automations.triggerHint),
-        // The Trigger's filter is held as JSON text ('' for none), the exit events one per line
-        // and the goal event as text ('' for none): the SDK's schema has no list of strings.
-        // pathId is the id of the root path the steps hang from, '' until the server gives one.
+        // The Trigger's filter is held as JSON text ('' for none), its Entry policy, its cooldown as
+        // text of seconds (ADR 0127), the exit events one per line and the goal event as text ('' for
+        // none): the SDK's schema has no list of strings. pathId is the id of the root path the
+        // steps hang from, '' until the server gives one.
         defaultPropertiesData: {
           triggerEvent: DEFAULT_TRIGGER_EVENT,
           triggerFilter: '',
+          entryPolicy: 'once',
+          cooldown: String(NEW_TRIGGER_COOLDOWN),
           exitEvents: '',
           goalEvent: '',
           pathId: '',
@@ -98,6 +108,16 @@ export function useAutomationNodeTypes(): PaletteItem[] {
               label: t(($) => $.automations.triggerFilterLabel),
               format: TRIGGER_FILTER_FORMAT,
             },
+            entryPolicy: {
+              type: 'string',
+              label: t(($) => $.automations.entryPolicyLabel),
+              format: ENTRY_POLICY_FORMAT,
+            },
+            cooldown: {
+              type: 'string',
+              label: t(($) => $.automations.cooldownLabel),
+              format: COOLDOWN_FORMAT,
+            },
             exitEvents: {
               type: 'string',
               label: t(($) => $.automations.exitEventsLabel),
@@ -115,6 +135,17 @@ export function useAutomationNodeTypes(): PaletteItem[] {
           elements: [
             { type: 'Text', scope: '#/properties/triggerEvent', placeholder: '' },
             { type: 'Text', scope: '#/properties/triggerFilter', placeholder: '' },
+            { type: 'Text', scope: '#/properties/entryPolicy', placeholder: '' },
+            {
+              type: 'Text',
+              scope: '#/properties/cooldown',
+              placeholder: '',
+              // The cooldown applies under `again` alone (ADR 0127).
+              rule: {
+                effect: 'SHOW',
+                condition: { scope: '#/properties/entryPolicy', schema: { const: 'again' } },
+              },
+            },
             { type: 'Text', scope: '#/properties/exitEvents', placeholder: '' },
             { type: 'Text', scope: '#/properties/goalEvent', placeholder: '' },
           ],

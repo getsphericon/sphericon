@@ -60,7 +60,7 @@ function stored(steps: AutomationStep[]): SiteAutomationResource {
     live: null,
     draft: {
       number: 1,
-      trigger: { kind: 'event', action: 'telegram.bound' },
+      trigger: { kind: 'event', action: 'telegram.bound', entryPolicy: 'once', cooldown: 3600 },
       exitEvents: [],
       goalEvent: null,
       steps: { id: stepId(1), steps },

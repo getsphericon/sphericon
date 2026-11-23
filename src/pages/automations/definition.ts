@@ -11,10 +11,15 @@ import type {
   AutomationStepInput,
   AutomationTriggerInput,
   AutomationVersion,
+  EntryPolicy,
   EventFilterInput,
   TelegramStep,
 } from '../../generated/site/types.gen.ts'
-import { zAutomationHttpHeader, zEventFilterInput } from '../../generated/site/zod.gen.ts'
+import {
+  zAutomationHttpHeader,
+  zEntryPolicy,
+  zEventFilterInput,
+} from '../../generated/site/zod.gen.ts'
 import { jsonText } from '../../utils/jsonText.ts'
 import { docCodec } from '../../utils/messageDoc.ts'
 import { buttonsCodec } from '../../utils/telegramButtons.ts'
@@ -139,13 +144,15 @@ const TRIGGER_NODE_ID = 'trigger'
 // end an Enrollment early and the one that ends it as having reached its goal (#751).
 export type AutomationTrigger = Pick<AutomationVersion, 'trigger' | 'exitEvents' | 'goalEvent'>
 
-// The canvas holds the Trigger's action as text and its filter as JSON text ('' for none), the exit
-// events as one line each, the goal event as text ('' for none), and the id of the root path the
-// steps hang from.
+// The canvas holds the Trigger's action as text and its filter as JSON text ('' for none), its
+// Entry policy and its cooldown as text of seconds (ADR 0127), the exit events as one line each, the goal event
+// as text ('' for none), and the id of the root path the steps hang from.
 function triggerProperties(trigger: AutomationTrigger, pathId: string): Record<string, unknown> {
   return {
     triggerEvent: trigger.trigger.action,
     triggerFilter: trigger.trigger.filter ? filterText(trigger.trigger.filter) : '',
+    entryPolicy: trigger.trigger.entryPolicy,
+    cooldown: String(trigger.trigger.cooldown),
     exitEvents: trigger.exitEvents.join('\n'),
     goalEvent: trigger.goalEvent ?? '',
     pathId,
@@ -168,9 +175,35 @@ export function filterOf(text: string): EventFilterInput | undefined {
   return parsed.success ? parsed.data : undefined
 }
 
-// triggerOf reads the Trigger off the node: its action and, when the filter's text holds a complete
-// filter, that filter. incomplete says the text holds a filter still being typed (a blank key or
-// number), which is no filter to save.
+// entryPolicyOf reads an Entry policy off a node's value: `once` for anything that is none.
+export function entryPolicyOf(value: unknown): EntryPolicy {
+  const parsed = zEntryPolicy.safeParse(value)
+  return parsed.success ? parsed.data : 'once'
+}
+
+// cooldownHours shows a cooldown the node holds as text of seconds in hours, '' while none is set.
+export function cooldownHours(value: unknown): number | '' {
+  const seconds = cooldownOf(value)
+  return seconds === undefined ? '' : seconds / 3600
+}
+
+// cooldownSeconds turns the hours a person typed into the text of seconds the node holds, '' for
+// none.
+export function cooldownSeconds(hours: number | string): string {
+  return typeof hours === 'number' ? String(hours * 3600) : ''
+}
+
+// cooldownOf reads the cooldown in seconds off the node's text, none when it holds no number.
+function cooldownOf(value: unknown): number | undefined {
+  const text = asText(value).trim()
+  const seconds = Number(text)
+  return text === '' || !Number.isInteger(seconds) ? undefined : seconds
+}
+
+// triggerOf reads the Trigger off the node: its action, its Entry policy and cooldown (a cooldown
+// left empty is the server's default) and, when the filter's text holds a complete filter, that
+// filter. incomplete says the text holds a filter still being typed (a blank key or number), which
+// is no filter to save.
 function triggerOf(properties: Record<string, unknown>): {
   trigger: AutomationTriggerInput
   incomplete: boolean
@@ -178,6 +211,11 @@ function triggerOf(properties: Record<string, unknown>): {
   const trigger: AutomationTriggerInput = {
     kind: 'event',
     action: asText(properties.triggerEvent),
+    entryPolicy: entryPolicyOf(properties.entryPolicy),
+  }
+  const cooldown = cooldownOf(properties.cooldown)
+  if (cooldown !== undefined) {
+    trigger.cooldown = cooldown
   }
   const text = asText(properties.triggerFilter)
   if (text === '') {

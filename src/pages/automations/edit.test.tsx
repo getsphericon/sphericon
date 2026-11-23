@@ -50,7 +50,7 @@ test('loads the automation into the builder', async () => {
         live: null,
         draft: {
           number: 1,
-          trigger: { kind: 'event', action: 'email.clicked' },
+          trigger: { kind: 'event', action: 'email.clicked', entryPolicy: 'once', cooldown: 3600 },
           exitEvents: [],
           goalEvent: null,
           steps: { id: stepId(1), steps: [{ id: stepId(11), type: 'wait', seconds: 60 }] },
@@ -88,7 +88,7 @@ const STORED: SiteAutomationResource = {
   live: null,
   draft: {
     number: 1,
-    trigger: { kind: 'event', action: 'email.clicked' },
+    trigger: { kind: 'event', action: 'email.clicked', entryPolicy: 'once', cooldown: 3600 },
     exitEvents: [],
     goalEvent: null,
     steps: {
@@ -123,7 +123,7 @@ test('saving from the builder sends the edited name, the trigger and the canvas 
       {
         revision: 1,
         name: 'Renamed',
-        trigger: { kind: 'event', action: 'email.clicked' },
+        trigger: { kind: 'event', action: 'email.clicked', entryPolicy: 'once', cooldown: 3600 },
         exitEvents: [],
         goalEvent: null,
         steps: {
@@ -157,7 +157,11 @@ test('saving sends the trigger event typed on the canvas, a custom one included'
 
   await expect
     .poll(() => bodies)
-    .toMatchObject([{ trigger: { kind: 'event', action: 'course_completed' } }])
+    .toMatchObject([
+      {
+        trigger: { kind: 'event', action: 'course_completed', entryPolicy: 'once', cooldown: 3600 },
+      },
+    ])
 })
 
 test("saving sends the Trigger's filter edited on the canvas with the Event's property tests", async () => {
@@ -178,7 +182,13 @@ test("saving sends the Trigger's filter edited on the canvas with the Event's pr
   await screen.getByRole('button', { name: /Rule/ }).first().click()
   await screen.getByLabelText('Event property name').fill('status')
   await screen.getByTestId('value-editor').fill('paid')
-  await screen.getByRole('button', { name: 'Save' }).click()
+  // The panel, grown with the filter, covers the toolbar: a click inside the panel leaves the value,
+  // and the Save is a click dispatched on it.
+  await screen.getByText('Trigger Filter', { exact: true }).click()
+  screen
+    .getByRole('button', { name: 'Save' })
+    .element()
+    .dispatchEvent(new MouseEvent('click', { bubbles: true }))
 
   await expect
     .poll(() => bodies)
@@ -227,7 +237,11 @@ test('a filter left half-typed is dropped when the Trigger is opened again, and 
 
   await expect
     .poll(() => bodies)
-    .toEqual([expect.objectContaining({ trigger: { kind: 'event', action: 'email.clicked' } })])
+    .toEqual([
+      expect.objectContaining({
+        trigger: { kind: 'event', action: 'email.clicked', entryPolicy: 'once', cooldown: 3600 },
+      }),
+    ])
 })
 
 test("the filter of a Tag's Trigger offers the Workspace's Tags as the tag tested", async () => {
@@ -260,7 +274,7 @@ test("the filter of a Tag's Trigger offers the Workspace's Tags as the tag teste
 function withSteps(steps: AutomationVersion['steps']['steps']): AutomationVersion {
   return {
     number: 1,
-    trigger: { kind: 'event', action: 'email.clicked' },
+    trigger: { kind: 'event', action: 'email.clicked', entryPolicy: 'once', cooldown: 3600 },
     exitEvents: [],
     goalEvent: null,
     steps: { id: stepId(1), steps },
@@ -335,7 +349,7 @@ test('saving an email step written in the editor sends its document and no body'
       {
         revision: 1,
         name: 'Welcome flow',
-        trigger: { kind: 'event', action: 'email.clicked' },
+        trigger: { kind: 'event', action: 'email.clicked', entryPolicy: 'once', cooldown: 3600 },
         exitEvents: [],
         goalEvent: null,
         steps: {
@@ -369,6 +383,7 @@ test('shows no failed enrollments when none has a recorded reason', async () => 
             automationId: testId(5),
             contactId: testId(107),
             status: 'failed',
+            ordinal: 1,
             createdAt: NOW,
             updatedAt: NOW,
           },
@@ -410,6 +425,7 @@ test('lists the enrollments an HTTP step failed, with the reason and the respons
             automationId: testId(5),
             contactId: testId(107),
             status: 'failed',
+            ordinal: 1,
             failure: { kind: 'http_status', status: 503, excerpt: 'upstream unavailable' },
             createdAt: NOW,
             updatedAt: NOW,
@@ -488,14 +504,14 @@ test('the builder edits the draft and shows it pending above the live version', 
         status: 'active',
         live: {
           number: 1,
-          trigger: { kind: 'event', action: 'email.opened' },
+          trigger: { kind: 'event', action: 'email.opened', entryPolicy: 'once', cooldown: 3600 },
           exitEvents: [],
           goalEvent: null,
           steps: { id: stepId(1), steps: [] },
         },
         draft: {
           number: 2,
-          trigger: { kind: 'event', action: 'email.clicked' },
+          trigger: { kind: 'event', action: 'email.clicked', entryPolicy: 'once', cooldown: 3600 },
           exitEvents: [],
           goalEvent: null,
           steps: { id: stepId(1), steps: [] },

@@ -346,6 +346,8 @@
     "captured": "Captured, not delivered",
     "clicks": "Clicks",
     "complained": "Complained",
+    "cooldownHint": "The least time from the beginning of a contact's previous enrollment to the next.",
+    "cooldownLabel": "Cooldown, hours",
     "count_one": "{{count, number}} automation",
     "count_other": "{{count, number}} automations",
     "createdLabel": "Created",
@@ -369,6 +371,12 @@
       "goal_reached": "Reached goal"
     },
     "enrollmentsTitle": "Enrollments",
+    "entryPolicy": {
+      "again": "Again after each enrollment ends",
+      "once": "Once"
+    },
+    "entryPolicyHint": "Whether a contact who enrolled before enrolls again once that enrollment ended.",
+    "entryPolicyLabel": "Enroll a contact",
     "exitEventsHint": "Any of these events ends a contact's enrollment early. Leave empty for none.",
     "exitEventsLabel": "Exit events",
     "failedEnrollmentContact": "Contact",
@@ -435,6 +443,7 @@
       "previous": "Previous {{period}}",
       "revenue": "Revenue in the period",
       "skippedActiveEnrollment": "Skipped: an enrollment was active",
+      "skippedCooldown": "Skipped: within the cooldown",
       "skippedCycle": "Skipped: a cycle",
       "skippedOnce": "Skipped: enrolled before",
       "title": "Results"
@@ -448,6 +457,7 @@
     "skippedEntryReason": "Reason",
     "skippedReason": {
       "active_enrollment": "An enrollment was active",
+      "cooldown": "Within the cooldown",
       "cycle": "Caused by this automation",
       "once": "Enrolled before"
     },

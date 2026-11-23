@@ -5,3 +5,6 @@ export const TRIGGER_FILTER_FORMAT = 'trigger-filter'
 // The schema `format`s of the Trigger's exit events (one per line) and its goal event (#751).
 export const EXIT_EVENTS_FORMAT = 'exit-events'
 export const GOAL_EVENT_FORMAT = 'goal-event'
+// The schema `format`s of the Trigger's Entry policy and its cooldown in seconds (ADR 0127).
+export const ENTRY_POLICY_FORMAT = 'entry-policy'
+export const COOLDOWN_FORMAT = 'cooldown'

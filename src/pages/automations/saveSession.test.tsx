@@ -22,7 +22,12 @@ import { AutomationEditPage } from './edit.tsx'
 const EDIT_ROUTE = routeMount(Route, { workspaceId: 'TestWs01', automationId: testId(5) })
 const LIVE: AutomationVersion = {
   number: 1,
-  trigger: { kind: 'event' as const, action: 'email.clicked' },
+  trigger: {
+    kind: 'event' as const,
+    action: 'email.clicked',
+    entryPolicy: 'once' as const,
+    cooldown: 3600,
+  },
   exitEvents: [],
   goalEvent: null,
   steps: { id: stepId(1), steps: [] },
@@ -72,7 +77,15 @@ test.each([
       stored = {
         ...STORED,
         name: 'Submitted name',
-        draft: { ...DRAFT, trigger: { kind: 'event' as const, action: 'course_completed' } },
+        draft: {
+          ...DRAFT,
+          trigger: {
+            kind: 'event' as const,
+            action: 'course_completed',
+            entryPolicy: 'once' as const,
+            cooldown: 3600,
+          },
+        },
       }
       return HttpResponse.json(stored)
     }),
@@ -142,7 +155,15 @@ test('Revert replaces local content with live and prevents editing during the op
     handleSiteAutomationsGet({
       body: {
         ...STORED,
-        draft: { ...DRAFT, trigger: { kind: 'event' as const, action: 'course_completed' } },
+        draft: {
+          ...DRAFT,
+          trigger: {
+            kind: 'event' as const,
+            action: 'course_completed',
+            entryPolicy: 'once' as const,
+            cooldown: 3600,
+          },
+        },
       },
     }),
     handleSiteAutomationsRevert(async () => {
@@ -186,7 +207,15 @@ test('Revert replaces local content with live and prevents editing during the op
 test('Publish serializes operations and preserves the current canvas', async () => {
   const received = Promise.withResolvers<undefined>()
   const release = Promise.withResolvers<undefined>()
-  const draft = { ...DRAFT, trigger: { kind: 'event' as const, action: 'course_completed' } }
+  const draft = {
+    ...DRAFT,
+    trigger: {
+      kind: 'event' as const,
+      action: 'course_completed',
+      entryPolicy: 'once' as const,
+      cooldown: 3600,
+    },
+  }
   noEnrollmentsOrIntegrations()
   worker.use(
     handleSiteAutomationsGet({ body: { ...STORED, draft } }),

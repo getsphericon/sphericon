@@ -39,7 +39,7 @@ function storedWith(steps: AutomationStep[]): SiteAutomationResource {
     live: null,
     draft: {
       number: 1,
-      trigger: { kind: 'event', action: 'email.clicked' },
+      trigger: { kind: 'event', action: 'email.clicked', entryPolicy: 'once', cooldown: 3600 },
       exitEvents: [],
       goalEvent: null,
       steps: { id: stepId(1), steps },

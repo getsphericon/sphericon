@@ -347,6 +347,8 @@ export default interface Resources {
       "captured": "Captured, not delivered",
       "clicks": "Clicks",
       "complained": "Complained",
+      "cooldownHint": "The least time from the beginning of a contact's previous enrollment to the next.",
+      "cooldownLabel": "Cooldown, hours",
       "count": "{{count, number}} automation" | "{{count, number}} automations",
       "createTitle": "New automation",
       "createdLabel": "Created",
@@ -369,6 +371,12 @@ export default interface Resources {
         "goal_reached": "Reached goal"
       },
       "enrollmentsTitle": "Enrollments",
+      "entryPolicy": {
+        "again": "Again after each enrollment ends",
+        "once": "Once"
+      },
+      "entryPolicyHint": "Whether a contact who enrolled before enrolls again once that enrollment ended.",
+      "entryPolicyLabel": "Enroll a contact",
       "exitEventsHint": "Any of these events ends a contact's enrollment early. Leave empty for none.",
       "exitEventsLabel": "Exit events",
       "failedEnrollmentContact": "Contact",
@@ -435,6 +443,7 @@ export default interface Resources {
         "previous": "Previous {{period}}",
         "revenue": "Revenue in the period",
         "skippedActiveEnrollment": "Skipped: an enrollment was active",
+        "skippedCooldown": "Skipped: within the cooldown",
         "skippedCycle": "Skipped: a cycle",
         "skippedOnce": "Skipped: enrolled before",
         "title": "Results"
@@ -448,6 +457,7 @@ export default interface Resources {
       "skippedEntryReason": "Reason",
       "skippedReason": {
         "active_enrollment": "An enrollment was active",
+        "cooldown": "Within the cooldown",
         "cycle": "Caused by this automation",
         "once": "Enrolled before"
       },
