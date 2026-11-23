@@ -8,6 +8,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
@@ -37,6 +38,8 @@ func (m *StepExecution) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in Execu
 	if err != nil {
 		return httpcall.Execution{}, err
 	}
+	// What the move publishes carries the Enrollment's chain (ADR 0127).
+	ctx = events.PassingThrough(ctx, run.Chain...)
 	if live, err := isActive(ctx, s, run.ID); err != nil {
 		return httpcall.Execution{}, err
 	} else if !live || lo.FromPtr(run.CurrentStepID) != step {

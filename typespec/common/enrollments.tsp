@@ -69,10 +69,12 @@ model EnrollmentResource {
 
 /**
  * Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127):
+ * `cycle` (the chain of events that caused it already passed through the automation),
  * `active_enrollment` (the triggering Event occurred while an enrollment of the contact was active)
  * or `once` (the contact had an enrollment in the automation before).
  */
 enum SkippedEntryReason {
+  cycle: "cycle",
   active_enrollment: "active_enrollment",
   once: "once",
 }

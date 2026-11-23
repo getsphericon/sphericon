@@ -111,6 +111,7 @@ type Reason string
 
 // Reason values.
 const (
+	ReasonCycle            Reason = "cycle"
 	ReasonActiveEnrollment Reason = "active_enrollment"
 	ReasonOnce             Reason = "once"
 )
@@ -122,7 +123,7 @@ func (r Reason) String() string {
 // ReasonValidator is a validator for the "reason" field enum values. It is called by the builders before save.
 func ReasonValidator(r Reason) error {
 	switch r {
-	case ReasonActiveEnrollment, ReasonOnce:
+	case ReasonCycle, ReasonActiveEnrollment, ReasonOnce:
 		return nil
 	default:
 		return fmt.Errorf("automationskippedentry: invalid enum value for reason field: %q", r)

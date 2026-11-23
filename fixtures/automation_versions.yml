@@ -873,3 +873,70 @@
   workspace_id: 99
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
+
+# Ouroboros (workspace 1553): the versions of the cycle guard's Automations.
+- id: 15530 # fixture: AutomationOuroborosUntagRingVersion
+  automation_id: 15530
+  trigger_event: contact.tagged
+  version: 1
+  steps: '{"id":"10d5a412-74b6-4c5b-8332-a48dead168e3","steps":[{"id":"c0a65a64-8ed8-4435-999c-c62f2361f2b1","type":"remove_tag","tag":"ring"}]}'
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 15531 # fixture: AutomationOuroborosTagRingVersion
+  automation_id: 15531
+  trigger_event: contact.untagged
+  version: 1
+  steps: '{"id":"de97ce90-0054-4764-b1f9-f3f7fe4260b3","steps":[{"id":"04685c57-fb79-4a61-b131-e16d5cbe473e","type":"apply_tag","tag":"ring"}]}'
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 15532 # fixture: AutomationOuroborosWaitThenUntagRingVersion
+  automation_id: 15532
+  trigger_event: contact.tagged
+  version: 1
+  steps: '{"id":"5b97de16-74df-4164-ab54-a00db2675556","steps":[{"id":"f6e5afab-bc58-4feb-8e2d-f48a48ce65e8","type":"wait","seconds":3600},{"id":"ef781e78-5beb-4e8b-9510-fc55b4388167","type":"remove_tag","tag":"ring"}]}'
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 15533 # fixture: AutomationOuroborosSelfTaggerVersion
+  automation_id: 15533
+  trigger_event: contact.tagged
+  version: 1
+  steps: '{"id":"1ee0916c-ab76-4e46-93f6-871a159ab20e","steps":[{"id":"0f68fcd4-e58f-4490-99ea-aa1015cc9359","type":"apply_tag","tag":"self"},{"id":"053740c6-927f-477c-a8b7-f6ab8a631fa8","type":"wait","seconds":3600}]}'
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 15534 # fixture: AutomationOuroborosStarterVersion
+  automation_id: 15534
+  trigger_event: ouro_start
+  version: 1
+  steps: '{"id":"a4ba772b-5667-407a-a24a-09f7193755c5","steps":[]}'
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 15535 # fixture: AutomationOuroborosOnCompletedVersion
+  automation_id: 15535
+  trigger_event: automation.completed
+  version: 1
+  steps: '{"id":"1ccc48cb-eb38-46c9-8a4b-b0998313a0f5","steps":[]}'
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 15536 # fixture: AutomationOuroborosOnClickVersion
+  automation_id: 15536
+  trigger_event: email.clicked
+  version: 1
+  steps: '{"id":"b41bd6ba-d3c8-4507-a2dd-3086d539e425","steps":[{"id":"ff98b46d-d5c6-433b-bd2c-7fbbddbbcf11","type":"wait","seconds":3600}]}'
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'
+- id: 15537 # fixture: AutomationOuroborosGoalVersion
+  automation_id: 15537
+  trigger_event: ouro_go
+  goal_event: ouro_paid
+  version: 1
+  steps: '{"id":"28fcf195-7160-4ad1-89c1-19f2e40af8df","steps":[{"id":"6c1698db-e732-4f2e-b821-5213098fe479","type":"wait","seconds":3600}]}'
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'

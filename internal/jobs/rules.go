@@ -84,6 +84,12 @@ type RunRuleActionsWorker struct {
 	runners rules.ActionRunners
 }
 
+// NewRunRuleActionsWorker builds the worker that runs a Firing's Actions (rules.Module.RunActions)
+// through runners (RuleActionRunners).
+func NewRunRuleActionsWorker(client *ent.Client, mod *rules.Module, runners rules.ActionRunners) *RunRuleActionsWorker {
+	return &RunRuleActionsWorker{ent: client, mod: mod, runners: runners}
+}
+
 func (w *RunRuleActionsWorker) Work(ctx context.Context, job *river.Job[rules.ActionsArgs]) error {
 	// Job entry point (ADR 0017): the scope is built from the Workspace of the loaded Firing.
 	f, err := w.ent.RuleFiring.Get(ctx, job.Args.FiringID)
@@ -117,8 +123,11 @@ type enrollAction struct {
 }
 
 func (a enrollAction) Run(ctx context.Context, s *ent.Scoped, in rules.ActionInput) (rules.Result, error) {
+	// The Automations the chain of the Event the Rule fired on passed through ride in the job's
+	// metadata (events.JobCorrelation): the entry skips one that names the Automation (ADR 0127).
 	enrolled, err := a.steps.EnrollOnRule(ctx, s, automations.EnrollOnRuleInput{
 		AutomationID: in.Action.AutomationID, ContactID: in.ContactID, FiringID: in.Firing.ID, SourceID: in.Firing.SourceID,
+		Chain: events.AutomationsOf(ctx),
 	})
 	if err == nil && !enrolled {
 		return rules.Result{Status: rules.Skipped, Detail: "the contact is already enrolled"}, nil

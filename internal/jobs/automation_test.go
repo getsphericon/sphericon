@@ -585,25 +585,9 @@ func TestAnEndCompletesTheEnrollmentAndTheStepsAfterItDoNotRun(t *testing.T) {
 	assert.Equal(t, env.StepIDAt(t, runID, 1), lo.FromPtr(run.CurrentStepID), "it ended on the End")
 }
 
-// An Event from an Automation's own email never enrolls the Contact into that Automation, so an
-// `email.opened` Automation cannot be fed by the mail it sends; another Automation on the same
-// trigger still enrolls (ADR 0053).
-func TestAnAutomationIsNotStartedByItsOwnEmail(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := t.Context()
-	acme := env.DB.Scoped(fixtures.AcmeID)
-
-	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(ctx, acme, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: systemevent.EmailOpened, OccurredAt: time.Now()}, SourceAutomationID: fixtures.AutomationOnOpenID}))
-	assert.Empty(t, enrollmentsOf(t, env, fixtures.AutomationOnOpenID, fixtures.ContactAliceID), "the open of its own email enrolls nobody")
-
-	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(ctx, acme, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: systemevent.EmailOpened, OccurredAt: time.Now()}, SourceAutomationID: fixtures.AutomationWelcomeSeriesID}))
-	assert.Len(t, enrollmentsOf(t, env, fixtures.AutomationOnOpenID, fixtures.ContactAliceID), 1, "the open of another Automation's email starts On open")
-}
-
 // The goal event ends the Enrollment before its next step, which then sends nothing (#751). The
 // payment occurred after the failure but before the job that enrolled was run, and still counts:
-// the Enrollment began when the failure occurred. A click or other Event from the Automation's own
-// email counts too: it ends, it only never enrolls.
+// the Enrollment began when the failure occurred.
 func TestAGoalEventEndsTheEnrollmentBeforeItsNextStep(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
@@ -614,7 +598,7 @@ func TestAGoalEventEndsTheEnrollmentBeforeItsNextStep(t *testing.T) {
 	enrolled := enrollmentsOf(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactAliceID)
 	require.Len(t, enrolled, 1)
 
-	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(ctx, acme, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "payment_succeeded", OccurredAt: paid}, SourceAutomationID: fixtures.AutomationPaymentRecoveryID}))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(ctx, acme, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "payment_succeeded", OccurredAt: paid}}))
 	fs := &fakeSender{}
 	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))
 

@@ -11634,8 +11634,13 @@
       },
       "AutomationSkippedCounts": {
         "type": "object",
-        "required": ["activeEnrollment", "once"],
+        "required": ["cycle", "activeEnrollment", "once"],
         "properties": {
+          "cycle": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Entries caused by a chain of events that already passed through the automation"
+          },
           "activeEnrollment": {
             "type": "integer",
             "format": "int32",
@@ -21720,8 +21725,8 @@
       },
       "SkippedEntryReason": {
         "type": "string",
-        "enum": ["active_enrollment", "once"],
-        "description": "Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127):\n`active_enrollment` (the triggering Event occurred while an enrollment of the contact was active)\nor `once` (the contact had an enrollment in the automation before)."
+        "enum": ["cycle", "active_enrollment", "once"],
+        "description": "Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127):\n`cycle` (the chain of events that caused it already passed through the automation),\n`active_enrollment` (the triggering Event occurred while an enrollment of the contact was active)\nor `once` (the contact had an enrollment in the automation before)."
       },
       "SkippedEntryResource": {
         "type": "object",

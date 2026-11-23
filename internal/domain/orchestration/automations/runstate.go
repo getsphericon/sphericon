@@ -101,17 +101,31 @@ var endingEvents = map[trigger]string{
 // goal Event), else the caller's clock. The end is recorded as its System event through pub, in
 // the transaction of the move, so it is published iff this writer made the move.
 func move(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID int64, t trigger, endedAt time.Time, extra func(*ent.AutomationRunScopedUpdate)) error {
-	ev, err := moved(ctx, s, runID, t, endedAt, extra)
-	if err != nil || ev == nil {
+	end, err := moved(ctx, s, runID, t, endedAt, extra)
+	if err != nil || end == nil {
 		return err
 	}
-	return pub.Publish(ctx, ev)
+	return pub.Publish(end.in(ctx), end.change)
+}
+
+// lifecycleEvent is a System event of an Enrollment's lifecycle and the Enrollment's chain, which
+// it is published on behalf of (ADR 0127).
+type lifecycleEvent struct {
+	change *events.EnrollmentChange
+	chain  []int64
+}
+
+// in is ctx for publishing the event: it carries the Enrollment's chain besides what ctx's chain
+// passed through (the Event that ended the Enrollment, say).
+func (e *lifecycleEvent) in(ctx context.Context) context.Context {
+	return events.PassingThrough(ctx, e.chain...)
 }
 
 // moved fires t on one Enrollment as move does, and returns the System event that records the
-// end, nil for a move that records none: the caller publishes it in the transaction of the move.
+// end, nil for a move that records none: the caller publishes it in the transaction of the move,
+// in the Enrollment's chain (lifecycleEvent.in).
 // An end other than a completion leaves the Step the Enrollment stood on (leaveOnEnd).
-func moved(ctx context.Context, s *ent.Scoped, runID int64, t trigger, endedAt time.Time, extra func(*ent.AutomationRunScopedUpdate)) (*events.EnrollmentChange, error) {
+func moved(ctx context.Context, s *ent.Scoped, runID int64, t trigger, endedAt time.Time, extra func(*ent.AutomationRunScopedUpdate)) (*lifecycleEvent, error) {
 	if err := machine(s, runID, endedAt, extra).FireCtx(ctx, t); err != nil {
 		return nil, err
 	}
@@ -130,13 +144,13 @@ func moved(ctx context.Context, s *ent.Scoped, runID int64, t trigger, endedAt t
 	if err != nil {
 		return nil, err
 	}
-	return enrollmentChange(s, action, run), nil
+	return &lifecycleEvent{change: enrollmentChange(s, action, run), chain: run.Chain}, nil
 }
 
 // publishEnrollment records the System event action of the Enrollment run, whose Contact edge is
-// loaded.
+// loaded, in the Enrollment's chain (ADR 0127).
 func publishEnrollment(ctx context.Context, s *ent.Scoped, pub events.Publisher, action string, run *ent.AutomationRun) error {
-	return pub.Publish(ctx, enrollmentChange(s, action, run))
+	return pub.Publish(events.PassingThrough(ctx, run.Chain...), enrollmentChange(s, action, run))
 }
 
 // enrollmentChange is the System event action of the Enrollment run, whose Contact edge is loaded.
