@@ -170,6 +170,15 @@ type EnrollOnRuleResult struct {
 	Skipped  automationskippedentry.Reason
 }
 
+// SkipDetail says why the Action made no Enrollment, as the Rule's Firing records it: the reason the
+// entry checks recorded, or none for a Firing whose Enrollment is there already.
+func (r EnrollOnRuleResult) SkipDetail() string {
+	if r.Skipped == "" {
+		return "the contact is already enrolled by this firing"
+	}
+	return "the entry was skipped: " + string(r.Skipped)
+}
+
 // EnrollOnRule enrolls the Contact in the Automation for a Rule's Action that fired on the Event
 // stored with in.SourceID, by the entry checks and the Entry policy of the live version as a Trigger
 // does (ADR 0127), and queues the job of its first step in the same transaction: a failed queue

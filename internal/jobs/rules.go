@@ -7,7 +7,6 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
@@ -133,18 +132,9 @@ func (a enrollAction) Run(ctx context.Context, s *ent.Scoped, in rules.ActionInp
 		Chain: events.AutomationsOf(ctx),
 	})
 	if err == nil && !made.Enrolled {
-		return rules.Result{Status: rules.Skipped, Detail: enrollSkipDetail(made.Skipped)}, nil
+		return rules.Result{Status: rules.Skipped, Detail: made.SkipDetail()}, nil
 	}
 	return actionResult(err)
-}
-
-// enrollSkipDetail says why an Enroll Action made no Enrollment: the reason the entry checks
-// recorded, or none for a Firing whose Enrollment is there already.
-func enrollSkipDetail(reason automationskippedentry.Reason) string {
-	if reason == "" {
-		return "the contact is already enrolled by this firing"
-	}
-	return "the entry was skipped: " + string(reason)
 }
 
 // tagAction applies or removes a Tag. The change is the `system` actor's (ADR 0022), as an
