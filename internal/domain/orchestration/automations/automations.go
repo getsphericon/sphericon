@@ -68,10 +68,11 @@ var (
 	// ErrInvalidTrigger: the trigger is an infrastructure Event (a send or a delivery notice)
 	// that no Automation may start from (ADR 0053).
 	ErrInvalidTrigger = validation.Refuse("automations: invalid trigger", i18n.ErrorsAutomationTriggerInvalid)
-	// ErrInvalidExitEvent: an exit event is empty, an infrastructure Event, or the trigger itself.
+	// ErrInvalidExitEvent: an exit event's action is empty or an infrastructure Event, or its filter
+	// does not read as an Event filter or names a Tag or Custom field the Workspace lacks.
 	ErrInvalidExitEvent = validation.Refuse("automations: invalid exit event", i18n.ErrorsAutomationExitEventInvalid)
-	// ErrInvalidGoalEvent: the goal event is empty, an infrastructure Event, the trigger itself or
-	// one of the exit events.
+	// ErrInvalidGoalEvent: the goal event's action is empty or an infrastructure Event, or its filter
+	// does not read as an Event filter or names a Tag or Custom field the Workspace lacks.
 	ErrInvalidGoalEvent = validation.Refuse("automations: invalid goal event", i18n.ErrorsAutomationGoalEventInvalid)
 	// ErrIntegrationNotFound: the Integration does not exist in this Workspace or is archived.
 	ErrIntegrationNotFound = validation.Refuse("automations: integration not found", i18n.ErrorsAutomationIntegrationNotFound)
@@ -312,24 +313,25 @@ var smsTriggers = []string{
 	systemevent.SmsUnsubscribed,
 }
 
-// validateTrigger refuses a Trigger whose action is empty or an infrastructure Event, and one
-// whose filter does not read as an Event filter (condition.CompileEventFilter): an entry the
-// contract's type admits but the filter cannot hold, a property key that is empty, a test a
-// property does not take. A filter is bounded as a Rule's Condition is.
-func validateTrigger(trigger eventmatcher.Matcher) error {
-	if problem := eventProblem(trigger.Action); problem != "" {
-		return ErrInvalidTrigger.With(problem)
+// matcherProblem says why an Event matcher (ADR 0133) can neither start nor end an Automation: its
+// action is empty or an infrastructure Event (eventProblem), or its filter does not read as an Event
+// filter (condition.CompileEventFilter): an entry the contract's type admits but the filter cannot
+// hold, a property key that is empty, a test a property does not take. A filter is bounded as a
+// Rule's Condition is. Empty when it can.
+func matcherProblem(m eventmatcher.Matcher) string {
+	if problem := eventProblem(m.Action); problem != "" {
+		return problem
 	}
-	if trigger.Filter == nil {
-		return nil
+	if m.Filter == nil {
+		return ""
 	}
-	if size := trigger.Filter.Size(); size > rules.MaxConditionNodes {
-		return ErrInvalidTrigger.With(fmt.Sprintf("a filter has at most %d groups and tests, this one has %d", rules.MaxConditionNodes, size))
+	if size := m.Filter.Size(); size > rules.MaxConditionNodes {
+		return fmt.Sprintf("a filter has at most %d groups and tests, this one has %d", rules.MaxConditionNodes, size)
 	}
-	if _, err := condition.CompileEventFilter(*trigger.Filter); err != nil {
-		return ErrInvalidTrigger.With("the filter: " + err.Error())
+	if _, err := condition.CompileEventFilter(*m.Filter); err != nil {
+		return "the filter: " + err.Error()
 	}
-	return nil
+	return ""
 }
 
 // eventProblem says why the action can neither start nor end an Automation: it is empty, or an
@@ -351,57 +353,52 @@ func eventProblem(action string) string {
 	return ""
 }
 
-// validateEvents checks the definition's Trigger (validateTrigger), each exit event and the goal
-// event by the Trigger's rule (eventProblem), and refuses an exit or goal event equal to the
-// Trigger's action and a goal that is also an exit event: one Event would then both enroll and
-// end, or end two ways.
+// validateEvents checks each Event matcher of the definition (matcherProblem): its Trigger, its
+// exit events and its goal event. They may share an action (ADR 0133): an Enrollment's triggering
+// Event never ends it, and an Event matching the goal and an exit reaches the goal.
 func validateEvents(def definition) error {
-	if err := validateTrigger(def.trigger); err != nil {
-		return err
+	if problem := matcherProblem(def.trigger); problem != "" {
+		return ErrInvalidTrigger.With(problem)
 	}
-	trigger := strings.TrimSpace(def.trigger.Action)
 	for _, e := range def.exits {
-		if problem := eventProblem(e); problem != "" {
+		if problem := matcherProblem(e); problem != "" {
 			return ErrInvalidExitEvent.With(problem)
-		}
-		if e == trigger {
-			return ErrInvalidExitEvent.With(fmt.Sprintf("%q is the trigger", e))
 		}
 	}
 	if def.goal == nil {
 		return nil
 	}
-	goal := *def.goal
-	if problem := eventProblem(goal); problem != "" {
+	if problem := matcherProblem(*def.goal); problem != "" {
 		return ErrInvalidGoalEvent.With(problem)
-	}
-	if goal == trigger {
-		return ErrInvalidGoalEvent.With(fmt.Sprintf("%q is the trigger", goal))
-	}
-	if slices.Contains(def.exits, goal) {
-		return ErrInvalidGoalEvent.With(fmt.Sprintf("%q is also an exit event", goal))
 	}
 	return nil
 }
 
-// normalizeTrigger turns a Trigger into its stored form: its action trimmed.
-func normalizeTrigger(t eventmatcher.Matcher) eventmatcher.Matcher {
-	t.Action = strings.TrimSpace(t.Action)
-	return t
+// normalizeMatcher turns an Event matcher into its stored form: its action trimmed.
+func normalizeMatcher(m eventmatcher.Matcher) eventmatcher.Matcher {
+	m.Action = strings.TrimSpace(m.Action)
+	return m
 }
 
-// normalizeExits turns a list of exit events into its stored form: each trimmed, the first of a
-// repeat kept, never nil.
-func normalizeExits(actions []string) []string {
-	return lo.Uniq(lo.Map(actions, func(e string, _ int) string { return strings.TrimSpace(e) }))
+// normalizeExits turns a list of exit events into its stored form: each normalized, the first of a
+// repeat (the same action and the same filter) kept, never nil.
+func normalizeExits(exits []eventmatcher.Matcher) []eventmatcher.Matcher {
+	out := []eventmatcher.Matcher{}
+	for _, e := range exits {
+		e = normalizeMatcher(e)
+		if !slices.ContainsFunc(out, func(kept eventmatcher.Matcher) bool { return sameMatcher(kept, e) }) {
+			out = append(out, e)
+		}
+	}
+	return out
 }
 
-// normalizeGoal turns a goal event into its stored form: trimmed, nil for none.
-func normalizeGoal(goal *string) *string {
+// normalizeGoal turns a goal event into its stored form: normalized, nil for none.
+func normalizeGoal(goal *eventmatcher.Matcher) *eventmatcher.Matcher {
 	if goal == nil {
 		return nil
 	}
-	g := strings.TrimSpace(*goal)
+	g := normalizeMatcher(*goal)
 	return &g
 }
 
@@ -430,6 +427,12 @@ func normalizeEntry(e Entry) (automationversion.EntryPolicy, int, error) {
 	return policy, cooldown, nil
 }
 
+// sameMatcher reports whether two Event matchers match the same Events by what they say: one action
+// and the same filter by value (ADR 0169).
+func sameMatcher(a, b eventmatcher.Matcher) bool {
+	return a.Action == b.Action && jsonvalue.Same(a.Filter, b.Filter)
+}
+
 // CreateInput is the data for a new Automation. It is always created inactive: publishing is a
 // separate, send-class operation (ADR 0065).
 type CreateInput struct {
@@ -438,10 +441,10 @@ type CreateInput struct {
 	Trigger eventmatcher.Matcher
 	// Entry is the Trigger's Entry policy; its zero value is the defaults.
 	Entry Entry
-	// ExitEvents end an active Enrollment early and GoalEvent ends it as having reached its goal;
-	// nil is none.
-	ExitEvents []string
-	GoalEvent  *string
+	// ExitEvents end an active Enrollment early and GoalEvent ends it as having reached its goal,
+	// each an Event matcher (ADR 0133); nil is none.
+	ExitEvents []eventmatcher.Matcher
+	GoalEvent  *eventmatcher.Matcher
 	// Steps are the root path; nil is none.
 	Steps *automationstep.Path
 }
@@ -458,9 +461,9 @@ type UpdateInput struct {
 	// leaves it alone.
 	Entry *Entry
 	// ExitEvents replaces the exit events; nil leaves them alone.
-	ExitEvents *[]string
+	ExitEvents *[]eventmatcher.Matcher
 	// GoalEvent sets the goal event, and a clear removes it.
-	GoalEvent patch.Field[string]
+	GoalEvent patch.Field[eventmatcher.Matcher]
 	// Steps replaces the root path; nil leaves it alone.
 	Steps *automationstep.Path
 }
@@ -515,9 +518,8 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 // internal/domain/content/versioneddefinition): the fields left out keep the draft's, or the live version's when
 // there is no draft. The live version is never rewritten: the first edit above it creates the
 // draft, the next ones rewrite the draft in place. A definition equal to the draft's (or, with no
-// draft, the live version's) stores nothing. An edit of the Trigger, exit or goal events checks the
-// three together (validateEvents), so a new Trigger equal to a stored exit or goal event is refused
-// too. The status is untouched. An archived Automation is read-only: ErrArchived.
+// draft, the live version's) stores nothing. An edit of the Trigger, exit or goal events checks
+// each matcher (validateEvents); they may share an action. The status is untouched. An archived Automation is read-only: ErrArchived.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Automation, error) {
 	name, err := validation.NameOpt(in.Name)
 	if err != nil {
@@ -540,21 +542,21 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 type edit struct {
 	trigger *eventmatcher.Matcher
 	entry   *Entry
-	exits   *[]string
-	goal    patch.Field[string]
+	exits   *[]eventmatcher.Matcher
+	goal    patch.Field[eventmatcher.Matcher]
 	steps   *automationstep.Path
 }
 
 // definition is the content of an Automation version as stored: its Trigger with its Entry policy
-// and cooldown in seconds, the events that end an Enrollment early (exits) and the one that ends it
-// as having reached its goal (nil for none), and its sealed steps, each send step naming its
+// and cooldown in seconds, the Event matchers that end an Enrollment early (exits) and the one that
+// ends it as having reached its goal (nil for none), and its sealed steps, each send step naming its
 // Integration.
 type definition struct {
 	trigger  eventmatcher.Matcher
 	policy   automationversion.EntryPolicy
 	cooldown int
-	exits    []string
-	goal     *string
+	exits    []eventmatcher.Matcher
+	goal     *eventmatcher.Matcher
 	steps    automationstep.Path
 }
 
@@ -566,20 +568,20 @@ func (versioned) Store(s *ent.Scoped) ent.VersionedStore[ent.Automation, ent.Aut
 }
 
 // Merge lays the edit over the base version (nil for a new Automation) and validates what it
-// changes: the Trigger with the exit and goal events, checked together (validateEvents), and the
-// steps, each send step's Integration kept (not archived). An HTTP step that names one of the
+// changes: the Trigger, exit and goal events (validateEvents, and the definitions their filters
+// name, checkNamed), and the steps, each send step's Integration kept (not archived). An HTTP step that names one of the
 // base's steps by ID keeps the secrets it does not resend.
 func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.AutomationVersion, e edit) (definition, error) {
 	def := definition{
 		policy: automationversion.DefaultEntryPolicy, cooldown: bounds.TriggerCooldownDefault,
-		exits: []string{}, steps: automationstep.Path{ID: automationstep.NewID(), Steps: []automationstep.Step{}},
+		exits: []eventmatcher.Matcher{}, steps: automationstep.Path{ID: automationstep.NewID(), Steps: []automationstep.Step{}},
 	}
 	var stored automationstep.Path
 	if base != nil {
 		def, stored = definitionOf(base), base.Steps
 	}
 	if e.trigger != nil {
-		def.trigger = normalizeTrigger(*e.trigger)
+		def.trigger = normalizeMatcher(*e.trigger)
 	}
 	if e.entry != nil {
 		policy, cooldown, err := normalizeEntry(*e.entry)
@@ -598,7 +600,19 @@ func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.Automati
 		}
 	}
 	if e.trigger != nil {
-		if err := checkNamed(ctx, ts, def.trigger); err != nil {
+		if err := checkNamed(ctx, ts, def.trigger, ErrInvalidTrigger); err != nil {
+			return definition{}, err
+		}
+	}
+	if e.exits != nil {
+		for _, exit := range def.exits {
+			if err := checkNamed(ctx, ts, exit, ErrInvalidExitEvent); err != nil {
+				return definition{}, err
+			}
+		}
+	}
+	if e.goal.Changes() && def.goal != nil {
+		if err := checkNamed(ctx, ts, *def.goal, ErrInvalidGoalEvent); err != nil {
 			return definition{}, err
 		}
 	}
@@ -641,21 +655,28 @@ func TriggerOf(v *ent.AutomationVersion) eventmatcher.Matcher {
 	return eventmatcher.Matcher{Action: v.TriggerAction, Filter: v.TriggerFilter}
 }
 
+// ExitsOf is the version's exit events, the Event matchers that end an Enrollment on it early;
+// never nil.
+func ExitsOf(v *ent.AutomationVersion) []eventmatcher.Matcher {
+	return normalizeExits(v.Exits)
+}
+
 // definitionOf is the definition a version holds.
 func definitionOf(v *ent.AutomationVersion) definition {
 	return definition{
 		trigger: TriggerOf(v), policy: v.EntryPolicy, cooldown: v.CooldownSeconds,
-		exits: normalizeExits(v.ExitEvents), goal: v.GoalEvent, steps: v.Steps,
+		exits: ExitsOf(v), goal: v.Goal, steps: v.Steps,
 	}
 }
 
-// Equal compares the Trigger's filter and the steps by value (ADR 0169): a document spelled with its
-// keys in another order is the same document.
+// Equal compares the matchers' filters and the steps by value (ADR 0169): a document spelled with
+// its keys in another order is the same document.
 func (versioned) Equal(v *ent.AutomationVersion, def definition) bool {
 	held := definitionOf(v)
-	return held.trigger.Action == def.trigger.Action && jsonvalue.Same(held.trigger.Filter, def.trigger.Filter) &&
+	return sameMatcher(held.trigger, def.trigger) &&
 		held.policy == def.policy && held.cooldown == def.cooldown &&
-		slices.Equal(held.exits, def.exits) && optional.Equal(held.goal, def.goal) &&
+		slices.EqualFunc(held.exits, def.exits, sameMatcher) &&
+		optional.EqualFunc(held.goal, def.goal, sameMatcher) &&
 		jsonvalue.Same(held.steps, def.steps)
 }
 
@@ -665,11 +686,12 @@ func (versioned) Write(ctx context.Context, l *ent.WorkspaceLocked, id int64, nu
 			SetTriggerAction(def.trigger.Action).
 			SetEntryPolicy(def.policy).
 			SetCooldownSeconds(def.cooldown).
-			SetExitEvents(def.exits).
-			SetNillableGoalEvent(def.goal).
+			SetExits(def.exits).
 			SetSteps(def.steps)
 		if def.goal == nil {
-			upd.ClearGoalEvent()
+			upd.ClearGoal()
+		} else {
+			upd.SetGoal(def.goal)
 		}
 		if def.trigger.Filter == nil {
 			upd.ClearTriggerFilter()
@@ -684,11 +706,13 @@ func (versioned) Write(ctx context.Context, l *ent.WorkspaceLocked, id int64, nu
 		SetTriggerAction(def.trigger.Action).
 		SetEntryPolicy(def.policy).
 		SetCooldownSeconds(def.cooldown).
-		SetExitEvents(def.exits).
-		SetNillableGoalEvent(def.goal).
+		SetExits(def.exits).
 		SetSteps(def.steps)
 	if def.trigger.Filter != nil {
 		create.SetTriggerFilter(def.trigger.Filter)
+	}
+	if def.goal != nil {
+		create.SetGoal(def.goal)
 	}
 	created, err := create.Save(ctx)
 	if err != nil {
@@ -706,7 +730,7 @@ func (versioned) Write(ctx context.Context, l *ent.WorkspaceLocked, id int64, nu
 // Telegram's limit is refused too, and so is an email step while the Workspace has no postal
 // address for its footer (outboundmessages.ErrPostalAddressRequired, ADR 0156).
 func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent.AutomationVersion) error {
-	if err := validateEvents(definition{trigger: TriggerOf(version), exits: version.ExitEvents, goal: version.GoalEvent}); err != nil {
+	if err := validateEvents(definitionOf(version)); err != nil {
 		return err
 	}
 	sends := SendSteps(version)
@@ -817,21 +841,22 @@ func checkIntegration(ctx context.Context, s *ent.Scoped, id *int64) error {
 	return nil
 }
 
-// checkNamed refuses a Trigger whose filter names a Tag or Custom field the Workspace's catalogue
-// lacks (condition.NamedDefinitions, ADR 0133): such a filter would never match. A Tag is named
-// as the Event carries it, by its stored name, so another spelling of it is refused too.
-func checkNamed(ctx context.Context, s *ent.Scoped, trigger eventmatcher.Matcher) error {
-	if trigger.Filter == nil {
+// checkNamed refuses, with refusal, an Event matcher whose filter names a Tag or Custom field the
+// Workspace's catalogue lacks (condition.NamedDefinitions, ADR 0133): such a filter would never
+// match. A Tag is named as the Event carries it, by its stored name, so another spelling of it is
+// refused too.
+func checkNamed(ctx context.Context, s *ent.Scoped, m eventmatcher.Matcher, refusal *validation.RefusalError) error {
+	if m.Filter == nil {
 		return nil
 	}
-	named := condition.NamedDefinitions(trigger.Action, *trigger.Filter)
+	named := condition.NamedDefinitions(m.Action, *m.Filter)
 	for _, name := range named.Tags {
 		ok, err := s.Tag().Query().Where(tag.Name(name)).Exist(ctx)
 		if err != nil {
 			return err
 		}
 		if !ok {
-			return ErrInvalidTrigger.With(fmt.Sprintf("the filter names the Tag %q, which the Workspace does not have", name))
+			return refusal.With(fmt.Sprintf("the filter names the Tag %q, which the Workspace does not have", name))
 		}
 	}
 	for _, key := range named.CustomFields {
@@ -840,7 +865,7 @@ func checkNamed(ctx context.Context, s *ent.Scoped, trigger eventmatcher.Matcher
 			return err
 		}
 		if !ok {
-			return ErrInvalidTrigger.With(fmt.Sprintf("the filter names the Custom field %q, which the Workspace does not have", key))
+			return refusal.With(fmt.Sprintf("the filter names the Custom field %q, which the Workspace does not have", key))
 		}
 	}
 	return nil

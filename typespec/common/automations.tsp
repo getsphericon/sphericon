@@ -427,6 +427,32 @@ union AutomationTriggerInput {
   event: EventTriggerInput,
 }
 
+/** An Event matcher that ends an enrollment (ADR 0133): an action, and an optional filter on that
+ * Event's own properties, so `order.closed` where `status` is `cancelled` exits and the same action
+ * where `status` is `paid` reaches the goal. The Event that began the enrollment never ends it. */
+model EventMatcher {
+  /** The Event action (e.g. "plan_downgraded", "contact.tagged"). Any customer action; of the
+   * email events only opened, clicked and unsubscribed. */
+  action: string;
+
+  /** The tests of the Event's own properties it must pass; absent, every Event of the action
+   * matches. The `tag` of contact.tagged and contact.untagged and the `key` of
+   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. */
+  filter?: EventFilter;
+}
+
+/** An Event matcher that ends an enrollment (ADR 0133), as a request writes it */
+model EventMatcherInput {
+  /** The Event action (e.g. "plan_downgraded", "contact.tagged"). Any customer action; of the
+   * email events only opened, clicked and unsubscribed. */
+  action: string;
+
+  /** The tests of the Event's own properties it must pass; omitted, every Event of the action
+   * matches. The `tag` of contact.tagged and contact.untagged and the `key` of
+   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. */
+  filter?: EventFilterInput;
+}
+
 /** One version of an automation's definition: what publishing makes it do (ADR 0065) */
 model AutomationVersion {
   /** 1 for the first version, plus one per version after it */
@@ -435,13 +461,13 @@ model AutomationVersion {
   /** What enrolls a contact */
   trigger: AutomationTrigger;
 
-  /** Event actions that end an active enrollment early, as exited (e.g. "plan_downgraded"). Only
-   * an Event that occurred once the enrollment began counts; machine opens and clicks never do. */
-  exitEvents: string[];
+  /** The Event matchers that end an active enrollment early, as exited. Only an Event that
+   * occurred once the enrollment began counts; machine opens and clicks never do. */
+  exitEvents: EventMatcher[];
 
-  /** Event action that ends an active enrollment as goal_reached (e.g. "payment_succeeded"); null
-   * when there is none */
-  goalEvent: string | null;
+  /** The Event matcher that ends an active enrollment as goal_reached; an Event that matches it and
+   * an exit reaches the goal. Null when there is none. */
+  goalEvent: EventMatcher | null;
 
   /** The version's Steps: its root path */
   steps: AutomationPath;
@@ -454,14 +480,13 @@ model CreateAutomationInput {
   /** What enrolls a contact */
   trigger: AutomationTriggerInput;
 
-  /** Event actions that end an active enrollment early; none of them may be the trigger. Each
-   * follows the trigger's rule: any customer action, and of the email events only opened, clicked
-   * and unsubscribed. */
-  exitEvents?: string[];
+  /** The Event matchers that end an active enrollment early. They may share an action with the
+   * trigger, with each other and with the goal. */
+  exitEvents?: EventMatcherInput[];
 
-  /** Event action that ends an active enrollment as goal_reached; it may be neither the trigger nor
-   * an exit event. Null or omitted is none. */
-  goalEvent?: string | null;
+  /** The Event matcher that ends an active enrollment as goal_reached; it may share an action with
+   * the trigger and the exits. Null or omitted is none. */
+  goalEvent?: EventMatcherInput | null;
 
   /** The version's Steps: its root path */
   steps?: AutomationPathInput;
@@ -480,11 +505,12 @@ model UpdateAutomationInput {
    * and omitted keeps it */
   trigger?: AutomationTriggerInput;
 
-  /** Event actions that end an active enrollment early; replaces the list, omitted keeps it */
-  exitEvents?: string[];
+  /** The Event matchers that end an active enrollment early; replaces the list, omitted keeps it */
+  exitEvents?: EventMatcherInput[];
 
-  /** Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it */
-  goalEvent?: string | null;
+  /** The Event matcher that ends an active enrollment as goal_reached; null removes it, omitted
+   * keeps it */
+  goalEvent?: EventMatcherInput | null;
 
   /** The version's Steps: its root path */
   steps?: AutomationPathInput;

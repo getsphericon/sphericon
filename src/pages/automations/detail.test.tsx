@@ -423,8 +423,8 @@ test('shows what the live version does, its exit and goal events included, not t
             entryPolicy: 'once' as const,
             cooldown: 3600,
           },
-          exitEvents: ['account_closed'],
-          goalEvent: 'course_started',
+          exitEvents: [{ action: 'account_closed' }],
+          goalEvent: { action: 'course_started' },
           steps: {
             id: stepId(1),
             steps: [

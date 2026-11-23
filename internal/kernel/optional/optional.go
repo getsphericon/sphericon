@@ -8,3 +8,11 @@ func Equal[T comparable](a, b *T) bool {
 	}
 	return *a == *b
 }
+
+// EqualFunc reports whether a and b are both absent, or both present and equal by eq.
+func EqualFunc[T any](a, b *T, eq func(T, T) bool) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return eq(*a, *b)
+}

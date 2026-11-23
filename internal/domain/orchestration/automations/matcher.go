@@ -25,8 +25,9 @@ func matching(m eventmatcher.Matcher) (predicate.Event, error) {
 	return event.And(preds...), nil
 }
 
-// matchesEvent is the entry-time filter check: whether the Event stored with sourceID matches m,
-// an Event of m's action that the trigger job hands on. A matcher with no filter matches every
+// matchesEvent is whether the Event stored with sourceID matches m, an Event of m's action that the
+// trigger job hands on: the entry-time filter check of a Trigger, and of an exit or goal the
+// Event may end an Enrollment by. A matcher with no filter matches every
 // Event of its action without reading the row, which may be gone (Retention, an Erasure); one with
 // a filter runs it on the stored row's properties, and an Event no longer stored matches none.
 func matchesEvent(ctx context.Context, s *ent.Scoped, m eventmatcher.Matcher, sourceID string) (bool, error) {
@@ -38,4 +39,14 @@ func matchesEvent(ctx context.Context, s *ent.Scoped, m eventmatcher.Matcher, so
 		return false, err
 	}
 	return s.Event().Query().Where(event.SourceID(sourceID), p).Exist(ctx)
+}
+
+// matchesRow is whether the stored Event with the id matches m: the row an ending query found,
+// asked whether it is the goal's too.
+func matchesRow(ctx context.Context, s *ent.Scoped, m eventmatcher.Matcher, id int64) (bool, error) {
+	p, err := matching(m)
+	if err != nil {
+		return false, err
+	}
+	return s.Event().Query().Where(event.ID(id), p).Exist(ctx)
 }

@@ -86,6 +86,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/ent/workspacestanding"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 )
 
@@ -328,10 +329,10 @@ func init() {
 	automationversionDescVersion := automationversionMixinFields2[1].Descriptor()
 	// automationversion.VersionValidator is a validator for the "version" field. It is called by the builders before save.
 	automationversion.VersionValidator = automationversionDescVersion.Validators[0].(func(int) error)
-	// automationversionDescExitEvents is the schema descriptor for exit_events field.
-	automationversionDescExitEvents := automationversionFields[4].Descriptor()
-	// automationversion.DefaultExitEvents holds the default value on creation for the exit_events field.
-	automationversion.DefaultExitEvents = automationversionDescExitEvents.Default.([]string)
+	// automationversionDescExits is the schema descriptor for exits field.
+	automationversionDescExits := automationversionFields[4].Descriptor()
+	// automationversion.DefaultExits holds the default value on creation for the exits field.
+	automationversion.DefaultExits = automationversionDescExits.Default.([]eventmatcher.Matcher)
 	// automationversionDescCooldownSeconds is the schema descriptor for cooldown_seconds field.
 	automationversionDescCooldownSeconds := automationversionFields[7].Descriptor()
 	// automationversion.DefaultCooldownSeconds holds the default value on creation for the cooldown_seconds field.

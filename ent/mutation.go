@@ -98,6 +98,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
@@ -9858,9 +9859,9 @@ type AutomationVersionMutation struct {
 	steps               *automationstep.Path
 	trigger_action      *string
 	trigger_filter      **conditiontree.EventFilter
-	exit_events         *[]string
-	appendexit_events   []string
-	goal_event          *string
+	exits               *[]eventmatcher.Matcher
+	appendexits         []eventmatcher.Matcher
+	goal                **eventmatcher.Matcher
 	entry_policy        *automationversion.EntryPolicy
 	cooldown_seconds    *int
 	addcooldown_seconds *int
@@ -10302,104 +10303,104 @@ func (m *AutomationVersionMutation) ResetTriggerFilter() {
 	delete(m.clearedFields, automationversion.FieldTriggerFilter)
 }
 
-// SetExitEvents sets the "exit_events" field.
-func (m *AutomationVersionMutation) SetExitEvents(s []string) {
-	m.exit_events = &s
-	m.appendexit_events = nil
+// SetExits sets the "exits" field.
+func (m *AutomationVersionMutation) SetExits(e []eventmatcher.Matcher) {
+	m.exits = &e
+	m.appendexits = nil
 }
 
-// ExitEvents returns the value of the "exit_events" field in the mutation.
-func (m *AutomationVersionMutation) ExitEvents() (r []string, exists bool) {
-	v := m.exit_events
+// Exits returns the value of the "exits" field in the mutation.
+func (m *AutomationVersionMutation) Exits() (r []eventmatcher.Matcher, exists bool) {
+	v := m.exits
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldExitEvents returns the old "exit_events" field's value of the AutomationVersion entity.
+// OldExits returns the old "exits" field's value of the AutomationVersion entity.
 // If the AutomationVersion object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AutomationVersionMutation) OldExitEvents(ctx context.Context) (v []string, err error) {
+func (m *AutomationVersionMutation) OldExits(ctx context.Context) (v []eventmatcher.Matcher, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldExitEvents is only allowed on UpdateOne operations")
+		return v, errors.New("OldExits is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldExitEvents requires an ID field in the mutation")
+		return v, errors.New("OldExits requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldExitEvents: %w", err)
+		return v, fmt.Errorf("querying old value for OldExits: %w", err)
 	}
-	return oldValue.ExitEvents, nil
+	return oldValue.Exits, nil
 }
 
-// AppendExitEvents adds s to the "exit_events" field.
-func (m *AutomationVersionMutation) AppendExitEvents(s []string) {
-	m.appendexit_events = append(m.appendexit_events, s...)
+// AppendExits adds e to the "exits" field.
+func (m *AutomationVersionMutation) AppendExits(e []eventmatcher.Matcher) {
+	m.appendexits = append(m.appendexits, e...)
 }
 
-// AppendedExitEvents returns the list of values that were appended to the "exit_events" field in this mutation.
-func (m *AutomationVersionMutation) AppendedExitEvents() ([]string, bool) {
-	if len(m.appendexit_events) == 0 {
+// AppendedExits returns the list of values that were appended to the "exits" field in this mutation.
+func (m *AutomationVersionMutation) AppendedExits() ([]eventmatcher.Matcher, bool) {
+	if len(m.appendexits) == 0 {
 		return nil, false
 	}
-	return m.appendexit_events, true
+	return m.appendexits, true
 }
 
-// ResetExitEvents resets all changes to the "exit_events" field.
-func (m *AutomationVersionMutation) ResetExitEvents() {
-	m.exit_events = nil
-	m.appendexit_events = nil
+// ResetExits resets all changes to the "exits" field.
+func (m *AutomationVersionMutation) ResetExits() {
+	m.exits = nil
+	m.appendexits = nil
 }
 
-// SetGoalEvent sets the "goal_event" field.
-func (m *AutomationVersionMutation) SetGoalEvent(s string) {
-	m.goal_event = &s
+// SetGoal sets the "goal" field.
+func (m *AutomationVersionMutation) SetGoal(e *eventmatcher.Matcher) {
+	m.goal = &e
 }
 
-// GoalEvent returns the value of the "goal_event" field in the mutation.
-func (m *AutomationVersionMutation) GoalEvent() (r string, exists bool) {
-	v := m.goal_event
+// Goal returns the value of the "goal" field in the mutation.
+func (m *AutomationVersionMutation) Goal() (r *eventmatcher.Matcher, exists bool) {
+	v := m.goal
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldGoalEvent returns the old "goal_event" field's value of the AutomationVersion entity.
+// OldGoal returns the old "goal" field's value of the AutomationVersion entity.
 // If the AutomationVersion object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AutomationVersionMutation) OldGoalEvent(ctx context.Context) (v *string, err error) {
+func (m *AutomationVersionMutation) OldGoal(ctx context.Context) (v *eventmatcher.Matcher, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldGoalEvent is only allowed on UpdateOne operations")
+		return v, errors.New("OldGoal is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldGoalEvent requires an ID field in the mutation")
+		return v, errors.New("OldGoal requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldGoalEvent: %w", err)
+		return v, fmt.Errorf("querying old value for OldGoal: %w", err)
 	}
-	return oldValue.GoalEvent, nil
+	return oldValue.Goal, nil
 }
 
-// ClearGoalEvent clears the value of the "goal_event" field.
-func (m *AutomationVersionMutation) ClearGoalEvent() {
-	m.goal_event = nil
-	m.clearedFields[automationversion.FieldGoalEvent] = struct{}{}
+// ClearGoal clears the value of the "goal" field.
+func (m *AutomationVersionMutation) ClearGoal() {
+	m.goal = nil
+	m.clearedFields[automationversion.FieldGoal] = struct{}{}
 }
 
-// GoalEventCleared returns if the "goal_event" field was cleared in this mutation.
-func (m *AutomationVersionMutation) GoalEventCleared() bool {
-	_, ok := m.clearedFields[automationversion.FieldGoalEvent]
+// GoalCleared returns if the "goal" field was cleared in this mutation.
+func (m *AutomationVersionMutation) GoalCleared() bool {
+	_, ok := m.clearedFields[automationversion.FieldGoal]
 	return ok
 }
 
-// ResetGoalEvent resets all changes to the "goal_event" field.
-func (m *AutomationVersionMutation) ResetGoalEvent() {
-	m.goal_event = nil
-	delete(m.clearedFields, automationversion.FieldGoalEvent)
+// ResetGoal resets all changes to the "goal" field.
+func (m *AutomationVersionMutation) ResetGoal() {
+	m.goal = nil
+	delete(m.clearedFields, automationversion.FieldGoal)
 }
 
 // SetEntryPolicy sets the "entry_policy" field.
@@ -10661,11 +10662,11 @@ func (m *AutomationVersionMutation) Fields() []string {
 	if m.trigger_filter != nil {
 		fields = append(fields, automationversion.FieldTriggerFilter)
 	}
-	if m.exit_events != nil {
-		fields = append(fields, automationversion.FieldExitEvents)
+	if m.exits != nil {
+		fields = append(fields, automationversion.FieldExits)
 	}
-	if m.goal_event != nil {
-		fields = append(fields, automationversion.FieldGoalEvent)
+	if m.goal != nil {
+		fields = append(fields, automationversion.FieldGoal)
 	}
 	if m.entry_policy != nil {
 		fields = append(fields, automationversion.FieldEntryPolicy)
@@ -10697,10 +10698,10 @@ func (m *AutomationVersionMutation) Field(name string) (ent.Value, bool) {
 		return m.TriggerAction()
 	case automationversion.FieldTriggerFilter:
 		return m.TriggerFilter()
-	case automationversion.FieldExitEvents:
-		return m.ExitEvents()
-	case automationversion.FieldGoalEvent:
-		return m.GoalEvent()
+	case automationversion.FieldExits:
+		return m.Exits()
+	case automationversion.FieldGoal:
+		return m.Goal()
 	case automationversion.FieldEntryPolicy:
 		return m.EntryPolicy()
 	case automationversion.FieldCooldownSeconds:
@@ -10730,10 +10731,10 @@ func (m *AutomationVersionMutation) OldField(ctx context.Context, name string) (
 		return m.OldTriggerAction(ctx)
 	case automationversion.FieldTriggerFilter:
 		return m.OldTriggerFilter(ctx)
-	case automationversion.FieldExitEvents:
-		return m.OldExitEvents(ctx)
-	case automationversion.FieldGoalEvent:
-		return m.OldGoalEvent(ctx)
+	case automationversion.FieldExits:
+		return m.OldExits(ctx)
+	case automationversion.FieldGoal:
+		return m.OldGoal(ctx)
 	case automationversion.FieldEntryPolicy:
 		return m.OldEntryPolicy(ctx)
 	case automationversion.FieldCooldownSeconds:
@@ -10803,19 +10804,19 @@ func (m *AutomationVersionMutation) SetField(name string, value ent.Value) error
 		}
 		m.SetTriggerFilter(v)
 		return nil
-	case automationversion.FieldExitEvents:
-		v, ok := value.([]string)
+	case automationversion.FieldExits:
+		v, ok := value.([]eventmatcher.Matcher)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetExitEvents(v)
+		m.SetExits(v)
 		return nil
-	case automationversion.FieldGoalEvent:
-		v, ok := value.(string)
+	case automationversion.FieldGoal:
+		v, ok := value.(*eventmatcher.Matcher)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetGoalEvent(v)
+		m.SetGoal(v)
 		return nil
 	case automationversion.FieldEntryPolicy:
 		v, ok := value.(automationversion.EntryPolicy)
@@ -10891,8 +10892,8 @@ func (m *AutomationVersionMutation) ClearedFields() []string {
 	if m.FieldCleared(automationversion.FieldTriggerFilter) {
 		fields = append(fields, automationversion.FieldTriggerFilter)
 	}
-	if m.FieldCleared(automationversion.FieldGoalEvent) {
-		fields = append(fields, automationversion.FieldGoalEvent)
+	if m.FieldCleared(automationversion.FieldGoal) {
+		fields = append(fields, automationversion.FieldGoal)
 	}
 	return fields
 }
@@ -10911,8 +10912,8 @@ func (m *AutomationVersionMutation) ClearField(name string) error {
 	case automationversion.FieldTriggerFilter:
 		m.ClearTriggerFilter()
 		return nil
-	case automationversion.FieldGoalEvent:
-		m.ClearGoalEvent()
+	case automationversion.FieldGoal:
+		m.ClearGoal()
 		return nil
 	}
 	return fmt.Errorf("unknown AutomationVersion nullable field %s", name)
@@ -10946,11 +10947,11 @@ func (m *AutomationVersionMutation) ResetField(name string) error {
 	case automationversion.FieldTriggerFilter:
 		m.ResetTriggerFilter()
 		return nil
-	case automationversion.FieldExitEvents:
-		m.ResetExitEvents()
+	case automationversion.FieldExits:
+		m.ResetExits()
 		return nil
-	case automationversion.FieldGoalEvent:
-		m.ResetGoalEvent()
+	case automationversion.FieldGoal:
+		m.ResetGoal()
 		return nil
 	case automationversion.FieldEntryPolicy:
 		m.ResetEntryPolicy()

@@ -42,7 +42,7 @@ func againAutomation(t *testing.T, env *testhelper.TestEnv) int64 {
 	created, err := m.Create(ctx, s, automations.CreateInput{
 		Name: "Repeat purchase", Trigger: eventmatcher.Matcher{Action: repeatTrigger},
 		Entry:      automations.Entry{Policy: automationversion.EntryPolicyAgain},
-		ExitEvents: []string{repeatExit},
+		ExitEvents: []eventmatcher.Matcher{{Action: repeatExit}},
 		Steps:      new(automationstep.Root(automationstep.New(automationstep.Wait{Seconds: 30 * 24 * 3600}))),
 	})
 	require.NoError(t, err)

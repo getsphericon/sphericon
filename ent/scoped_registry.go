@@ -598,9 +598,9 @@ func ScopedEntities() []*ScopedEntity {
 				if !reflect.ValueOf(src.TriggerFilter).IsZero() {
 					b.SetTriggerFilter(src.TriggerFilter)
 				}
-				b.SetExitEvents(src.ExitEvents)
-				if src.GoalEvent != nil {
-					b.SetGoalEvent(*src.GoalEvent)
+				b.SetExits(src.Exits)
+				if !reflect.ValueOf(src.Goal).IsZero() {
+					b.SetGoal(src.Goal)
 				}
 				b.SetEntryPolicy(src.EntryPolicy)
 				b.SetCooldownSeconds(src.CooldownSeconds)

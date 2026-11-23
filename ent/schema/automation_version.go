@@ -12,9 +12,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 )
 
-// AutomationVersion is one copy of an Automation's definition: its Trigger, exit and goal events
+// AutomationVersion is one copy of an Automation's definition: its Trigger, exit and goal matchers
 // and steps (ADR 0049, ADR 0065, GLOSSARY: Automation version). Each send step names its own
 // Integration inside the steps (ADR 0081). The Automation points at its live version
 // and at its draft, the one version above live. An Enrollment begins on the live version and
@@ -24,13 +25,15 @@ type AutomationVersion struct {
 	ent.Schema
 }
 
-// Annotations adds to the enum checks the shape of the steps and of the Trigger's filter, and the
-// cooldown's floor (ADR 0127).
+// Annotations adds to the enum checks the shape of the steps, of the Trigger's filter and of the exit
+// and goal matchers, and the cooldown's floor (ADR 0127).
 func (AutomationVersion) Annotations() []schema.Annotation {
 	a := TableWithEnumChecks("automation_versions", AutomationVersion{}.Fields())
 	a.Checks["automation_versions_steps_check"] = stepsCheck("steps")
 	a.Checks["automation_versions_trigger_filter_check"] = conditionCheck("trigger_filter")
 	a.Checks["automation_versions_trigger_filter_entries_check"] = conditionEntriesCheck("trigger_filter")
+	a.Checks["automation_versions_exits_check"] = jsonCheck("exits", "array")
+	a.Checks["automation_versions_goal_check"] = jsonCheck("goal", "object")
 	a.Checks["automation_versions_cooldown_check"] = fmt.Sprintf("cooldown_seconds >= %d", bounds.EntryCooldownMin)
 	return []schema.Annotation{a}
 }
@@ -65,14 +68,17 @@ func (AutomationVersion) Fields() []ent.Field {
 		field.String("trigger_action"),
 		field.JSON("trigger_filter", &conditiontree.EventFilter{}).
 			Optional(),
-		// The Event actions that end an active Enrollment on this version early (`exited`), and
-		// the one that ends it as having reached its goal (`goal_reached`); none is the trigger.
-		field.JSON("exit_events", []string{}).
-			Default([]string{}).
+		// The Event matchers that end an active Enrollment on this version early (`exited`), a
+		// jsonb list (ADR 0169), and the one that ends it as having reached its goal
+		// (`goal_reached`), a jsonb object, NULL for none (ADR 0133, eventmatcher.Matcher). Each is
+		// an action and an optional filter on that Event's own properties; they may share an action
+		// with the Trigger and with each other, and an Event matching the goal and an exit reaches
+		// the goal.
+		field.JSON("exits", []eventmatcher.Matcher{}).
+			Default([]eventmatcher.Matcher{}).
 			Annotations(entsql.Default("[]")),
-		field.String("goal_event").
-			Optional().
-			Nillable(),
+		field.JSON("goal", &eventmatcher.Matcher{}).
+			Optional(),
 		// The Entry policy of the Event Trigger (ADR 0127): `once` enrolls a Contact in the
 		// Automation at most once, ever; `again` enrolls it again once its previous Enrollment
 		// ended and cooldown_seconds passed since that Enrollment began. The policy of the version

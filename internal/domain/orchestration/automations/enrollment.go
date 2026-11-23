@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
@@ -207,7 +208,7 @@ func (m *StepExecution) enroll(ctx context.Context, s *ent.Scoped, pub events.Pu
 	if judged.skipped {
 		return 0, false, judged.reason, recordSkip(ctx, s, automationID, contactID, o, judged.reason)
 	}
-	ending, endedAt, ended, err := endedSince(ctx, s, a.row.Edges.LiveVersion, contactID, o.OccurredAt)
+	ending, endedAt, ended, err := endedSince(ctx, s, a.row.Edges.LiveVersion, contactID, o)
 	if err != nil {
 		return 0, false, "", err
 	}
@@ -331,25 +332,40 @@ func begin(ctx context.Context, s *ent.Scoped, held contactlock.Locked, a liveSh
 	return runID, inserted, err
 }
 
-// endedSince is the end the first exit or goal Event of the version recorded for the Contact at
-// since or later makes, and when that Event occurred, if there is one. Like the trigger consumer it
-// leaves out loaded history and a machine open or click (ADR 0053); an exit and the goal at the
-// same moment are taken in the order they were recorded.
-func endedSince(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, contactID int64, since time.Time) (trigger, time.Time, bool, error) {
-	actions := slices.Clone(v.ExitEvents)
-	if v.GoalEvent != nil {
-		actions = append(actions, *v.GoalEvent)
+// endedSince is the end the first exit or goal Event of the version recorded for the Contact since
+// the Event of o occurred makes, and when that Event occurred, if there is one (ADR 0133): an Event
+// of an exit's or the goal's action whose properties pass its filter, run in Postgres. The Event
+// that began the Enrollment (o's source id) never ends it. Like the trigger consumer it leaves out
+// loaded history and a machine open or click (ADR 0053); an exit and the goal at the same moment
+// are taken in the order they were recorded, and an Event matching both reaches the goal.
+func endedSince(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, contactID int64, o origin) (trigger, time.Time, bool, error) {
+	exits, goal := ExitsOf(v), v.Goal
+	matchers := slices.Clone(exits)
+	if goal != nil {
+		matchers = append(matchers, *goal)
 	}
-	if len(actions) == 0 {
+	if len(matchers) == 0 {
 		return "", time.Time{}, false, nil
 	}
+	ending := make([]predicate.Event, 0, len(matchers))
+	for _, m := range matchers {
+		p, err := byHuman(m)
+		if err != nil {
+			return "", time.Time{}, false, err
+		}
+		ending = append(ending, p)
+	}
+	where := []predicate.Event{
+		event.ContactID(contactID),
+		event.Or(ending...),
+		event.OccurredAtGTE(o.OccurredAt),
+		event.Backfill(false),
+	}
+	if o.SourceID != "" {
+		where = append(where, event.Or(event.SourceIDIsNil(), event.SourceIDNEQ(o.SourceID)))
+	}
 	first, err := s.Event().Query().
-		Where(
-			event.ContactID(contactID),
-			event.Or(lo.Map(actions, func(action string, _ int) predicate.Event { return byHuman(action) })...),
-			event.OccurredAtGTE(since),
-			event.Backfill(false),
-		).
+		Where(where...).
 		Order(ent.Asc(event.FieldOccurredAt), ent.Asc(event.FieldID)).
 		First(ctx)
 	if ent.IsNotFound(err) {
@@ -358,17 +374,26 @@ func endedSince(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, co
 	if err != nil {
 		return "", time.Time{}, false, err
 	}
-	t, ends := endingBy(v, first.Action)
-	return t, first.OccurredAt, ends, nil
+	if goal != nil {
+		reached, err := matchesRow(ctx, s, *goal, first.ID)
+		if err != nil {
+			return "", time.Time{}, false, err
+		}
+		if reached {
+			return triggerReachGoal, first.OccurredAt, true, nil
+		}
+	}
+	return triggerExit, first.OccurredAt, true, nil
 }
 
-// byHuman matches the Events with the action, leaving out an open or a click a machine made (ADR
-// 0053).
-func byHuman(action string) predicate.Event {
-	if events.IsEngagement(action) {
-		return event.And(event.Action(action), events.HumanOnly())
+// byHuman matches the Events the matcher matches (matching), leaving out an open or a click a
+// machine made (ADR 0053).
+func byHuman(m eventmatcher.Matcher) (predicate.Event, error) {
+	p, err := matching(m)
+	if err != nil || !events.IsEngagement(m.Action) {
+		return p, err
 	}
-	return event.Action(action)
+	return event.And(p, events.HumanOnly()), nil
 }
 
 // Exit ends the Contact's active Enrollments in the Automation at the Instance clock's now (status
@@ -412,19 +437,19 @@ func exitRun(ctx context.Context, bus *events.Bus, s *ent.Scoped, runID int64, n
 	return bus.PublishIn(end.in(ctx), s, end.change)
 }
 
-// endOnEvent ends the Contact's active Enrollments that an Event with the action ends (#751): one
-// whose version names the action as its goal event reaches its goal (`goal_reached`), one whose
-// version lists it among its exit events leaves early (`exited`). Each Enrollment reads the version
-// it stands on, whatever the Automation's status or live version now. Only an Event that occurred
-// when the Enrollment began (the triggering Event's occurred_at) or later ends it, so loaded history
-// does not end a fresh Enrollment, and an Event that came after the trigger but was handled before
-// the Enrollment was made still does.
+// endOnEvent ends the Contact's active Enrollments that the Event ends (#751, ADR 0133, endingOf):
+// one whose version's goal matches it reaches its goal (`goal_reached`), one whose version has an
+// exit matching it leaves early (`exited`). Each Enrollment reads the version it stands on, whatever
+// the Automation's status or live version now. Only an Event that occurred when the Enrollment began
+// (the triggering Event's occurred_at) or later ends it, so loaded history does not end a fresh
+// Enrollment, and an Event that came after the trigger but was handled before the Enrollment was
+// made still does; the Event that began an Enrollment never ends it.
 // It matches by Contact alone, and an Enrollment another writer moved first is left alone; the
 // Contact's ended Enrollments, however many, are not read. It locks
 // the Contact first, as making an Enrollment does, so s is bound to a transaction: an Enrollment
 // being made meanwhile is either committed before the active ones are read, or made after this
 // transaction and finds the Event among the stored ones.
-func (m *StepExecution) endOnEvent(ctx context.Context, s *ent.Scoped, pub events.Publisher, contactID int64, action string, occurredAt time.Time) error {
+func (m *StepExecution) endOnEvent(ctx context.Context, s *ent.Scoped, pub events.Publisher, contactID int64, ev Event) error {
 	_, locked, err := m.lockContact(ctx, s, contactID)
 	if err != nil || !locked {
 		return err // a Contact erased since has no Enrollment left to end
@@ -437,15 +462,18 @@ func (m *StepExecution) endOnEvent(ctx context.Context, s *ent.Scoped, pub event
 		return err
 	}
 	for _, run := range runs {
-		if occurredAt.Before(run.BeganAt) {
+		if ev.OccurredAt.Before(run.BeganAt) || begunBy(run, ev) {
 			continue
 		}
-		t, ends := endingBy(run.Edges.Version, action)
+		t, ends, err := endingOf(ctx, s, run.Edges.Version, ev)
+		if err != nil {
+			return err
+		}
 		if !ends {
 			continue
 		}
 		// It ends when the Event that ends it occurred, on the clock its beginning was read on.
-		err := move(ctx, s, pub, run.ID, t, occurredAt, nil)
+		err = move(ctx, s, pub, run.ID, t, ev.OccurredAt, nil)
 		if errors.Is(err, lifecycle.ErrInvalidTransition) {
 			continue // another writer moved it out of active first
 		}
@@ -456,16 +484,32 @@ func (m *StepExecution) endOnEvent(ctx context.Context, s *ent.Scoped, pub event
 	return nil
 }
 
-// endingBy is the move an Event with the action makes on an Enrollment standing on the version:
-// its goal, one of its exits, or none.
-func endingBy(v *ent.AutomationVersion, action string) (trigger, bool) {
-	switch {
-	case v.GoalEvent != nil && *v.GoalEvent == action:
-		return triggerReachGoal, true
-	case slices.Contains(v.ExitEvents, action):
-		return triggerExit, true
+// begunBy reports whether the Event is the one that began the Enrollment, by the source id it keeps
+// (ADR 0133): that Event never ends it.
+func begunBy(run *ent.AutomationRun, ev Event) bool {
+	return ev.SourceID != "" && lo.FromPtr(run.TriggerSourceID) == ev.SourceID
+}
+
+// endingOf is the move the Event makes on an Enrollment standing on the version: its goal when the
+// goal matches it (matchesEvent, the filter run on the stored Event), else exited when one of its
+// exits does, else none. An Event matching the goal and an exit reaches the goal (ADR 0133).
+func endingOf(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, ev Event) (trigger, bool, error) {
+	if v.Goal != nil && v.Goal.Action == ev.Action {
+		reached, err := matchesEvent(ctx, s, *v.Goal, ev.SourceID)
+		if err != nil || reached {
+			return triggerReachGoal, reached, err
+		}
 	}
-	return "", false
+	for _, exit := range ExitsOf(v) {
+		if exit.Action != ev.Action {
+			continue
+		}
+		exited, err := matchesEvent(ctx, s, exit, ev.SourceID)
+		if err != nil || exited {
+			return triggerExit, exited, err
+		}
+	}
+	return "", false, nil
 }
 
 // triggeredBy lists the active Automations whose live version's Trigger the Event matches (ADR

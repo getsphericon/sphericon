@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 )
 
 const (
@@ -31,10 +32,10 @@ const (
 	FieldTriggerAction = "trigger_action"
 	// FieldTriggerFilter holds the string denoting the trigger_filter field in the database.
 	FieldTriggerFilter = "trigger_filter"
-	// FieldExitEvents holds the string denoting the exit_events field in the database.
-	FieldExitEvents = "exit_events"
-	// FieldGoalEvent holds the string denoting the goal_event field in the database.
-	FieldGoalEvent = "goal_event"
+	// FieldExits holds the string denoting the exits field in the database.
+	FieldExits = "exits"
+	// FieldGoal holds the string denoting the goal field in the database.
+	FieldGoal = "goal"
 	// FieldEntryPolicy holds the string denoting the entry_policy field in the database.
 	FieldEntryPolicy = "entry_policy"
 	// FieldCooldownSeconds holds the string denoting the cooldown_seconds field in the database.
@@ -81,8 +82,8 @@ var Columns = []string{
 	FieldSteps,
 	FieldTriggerAction,
 	FieldTriggerFilter,
-	FieldExitEvents,
-	FieldGoalEvent,
+	FieldExits,
+	FieldGoal,
 	FieldEntryPolicy,
 	FieldCooldownSeconds,
 }
@@ -106,8 +107,8 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// VersionValidator is a validator for the "version" field. It is called by the builders before save.
 	VersionValidator func(int) error
-	// DefaultExitEvents holds the default value on creation for the "exit_events" field.
-	DefaultExitEvents []string
+	// DefaultExits holds the default value on creation for the "exits" field.
+	DefaultExits []eventmatcher.Matcher
 	// DefaultCooldownSeconds holds the default value on creation for the "cooldown_seconds" field.
 	DefaultCooldownSeconds int
 )
@@ -174,11 +175,6 @@ func ByVersion(opts ...sql.OrderTermOption) OrderOption {
 // ByTriggerAction orders the results by the trigger_action field.
 func ByTriggerAction(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTriggerAction, opts...).ToFunc()
-}
-
-// ByGoalEvent orders the results by the goal_event field.
-func ByGoalEvent(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldGoalEvent, opts...).ToFunc()
 }
 
 // ByEntryPolicy orders the results by the entry_policy field.

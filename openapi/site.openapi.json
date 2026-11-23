@@ -11825,14 +11825,19 @@
           "exitEvents": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/EventMatcher"
             },
-            "description": "Event actions that end an active enrollment early, as exited (e.g. \"plan_downgraded\"). Only\nan Event that occurred once the enrollment began counts; machine opens and clicks never do."
+            "description": "The Event matchers that end an active enrollment early, as exited. Only an Event that\noccurred once the enrollment began counts; machine opens and clicks never do."
           },
           "goalEvent": {
-            "type": "string",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventMatcher"
+              }
+            ],
             "nullable": true,
-            "description": "Event action that ends an active enrollment as goal_reached (e.g. \"payment_succeeded\"); null\nwhen there is none"
+            "description": "The Event matcher that ends an active enrollment as goal_reached; an Event that matches it and\nan exit reaches the goal. Null when there is none."
           },
           "steps": {
             "allOf": [
@@ -12894,14 +12899,19 @@
           "exitEvents": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/EventMatcherInput"
             },
-            "description": "Event actions that end an active enrollment early; none of them may be the trigger. Each\nfollows the trigger's rule: any customer action, and of the email events only opened, clicked\nand unsubscribed."
+            "description": "The Event matchers that end an active enrollment early. They may share an action with the\ntrigger, with each other and with the goal."
           },
           "goalEvent": {
-            "type": "string",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventMatcherInput"
+              }
+            ],
             "nullable": true,
-            "description": "Event action that ends an active enrollment as goal_reached; it may be neither the trigger nor\nan exit event. Null or omitted is none."
+            "description": "The Event matcher that ends an active enrollment as goal_reached; it may share an action with\nthe trigger and the exits. Null or omitted is none."
           },
           "steps": {
             "allOf": [
@@ -14027,6 +14037,45 @@
           }
         },
         "description": "A count of how many times a Contact performed an Event action, over all time or within the\nlast `withinDays` days. Performed is atLeast 1, not performed is atMost 0; \"exactly\" is a group of\nboth. Engagement Events made by software (machine opens and clicks) are not counted. A window\nlonger than Event retention is capped by it: expired Events are no longer counted.",
+        "additionalProperties": false
+      },
+      "EventMatcher": {
+        "type": "object",
+        "required": ["action"],
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "The Event action (e.g. \"plan_downgraded\", \"contact.tagged\"). Any customer action; of the\nemail events only opened, clicked and unsubscribed."
+          },
+          "filter": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventFilter"
+              }
+            ],
+            "description": "The tests of the Event's own properties it must pass; absent, every Event of the action\nmatches. The `tag` of contact.tagged and contact.untagged and the `key` of\ncontact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace."
+          }
+        },
+        "description": "An Event matcher that ends an enrollment (ADR 0133): an action, and an optional filter on that\nEvent's own properties, so `order.closed` where `status` is `cancelled` exits and the same action\nwhere `status` is `paid` reaches the goal. The Event that began the enrollment never ends it."
+      },
+      "EventMatcherInput": {
+        "type": "object",
+        "required": ["action"],
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "The Event action (e.g. \"plan_downgraded\", \"contact.tagged\"). Any customer action; of the\nemail events only opened, clicked and unsubscribed."
+          },
+          "filter": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventFilterInput"
+              }
+            ],
+            "description": "The tests of the Event's own properties it must pass; omitted, every Event of the action\nmatches. The `tag` of contact.tagged and contact.untagged and the `key` of\ncontact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace."
+          }
+        },
+        "description": "An Event matcher that ends an enrollment (ADR 0133), as a request writes it",
         "additionalProperties": false
       },
       "EventTrigger": {
@@ -23193,14 +23242,19 @@
           "exitEvents": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/EventMatcherInput"
             },
-            "description": "Event actions that end an active enrollment early; replaces the list, omitted keeps it"
+            "description": "The Event matchers that end an active enrollment early; replaces the list, omitted keeps it"
           },
           "goalEvent": {
-            "type": "string",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventMatcherInput"
+              }
+            ],
             "nullable": true,
-            "description": "Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it"
+            "description": "The Event matcher that ends an active enrollment as goal_reached; null removes it, omitted\nkeeps it"
           },
           "steps": {
             "allOf": [

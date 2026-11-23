@@ -81,9 +81,9 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         label: t(($) => $.automations.stepTrigger),
         description: t(($) => $.automations.triggerHint),
         // The Trigger's filter is held as JSON text ('' for none), its Entry policy, its cooldown as
-        // text of seconds (ADR 0127), the exit events one per line and the goal event as text ('' for
-        // none): the SDK's schema has no list of strings. pathId is the id of the root path the
-        // steps hang from, '' until the server gives one.
+        // text of seconds (ADR 0127), the exit events and the goal event as the JSON text of their
+        // drafts ('' for none, definition.ts): the SDK's schema has no list of objects.
+        // pathId is the id of the root path the steps hang from, '' until the server gives one.
         defaultPropertiesData: {
           triggerEvent: DEFAULT_TRIGGER_EVENT,
           triggerFilter: '',

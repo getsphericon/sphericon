@@ -194,9 +194,13 @@ type Inputs interface {
 	TelegramButton(source externalapi.TelegramButtonInput) telegramrender.Button
 	// goverter:map Trigger | automationTriggerIn
 	// goverter:map Trigger Entry | automationEntryIn
+	// goverter:map ExitEvents | automationExitsIn
+	// goverter:map GoalEvent | automationGoalIn
 	AutomationCreate(source *externalapi.CreateAutomationInput) (automations.CreateInput, error)
 	// goverter:map Trigger | automationTriggerPtrIn
 	// goverter:map Trigger Entry | automationEntryPtrIn
+	// goverter:map ExitEvents | automationExitsPtrIn
+	// goverter:map GoalEvent | automationGoalPatch
 	AutomationUpdate(source *externalapi.UpdateAutomationInput) (automations.UpdateInput, error)
 
 	RuleActions(source []externalapi.RuleActionInput) []ruleaction.Action
@@ -461,6 +465,67 @@ func automationEntryPtrIn(o externalapi.OptAutomationTriggerInput) *automations.
 		return nil
 	}
 	return new(automationEntryIn(t))
+}
+
+// eventMatcherIn is an exit or goal event a write gives: an Event matcher, its filter the stored
+// Condition of the Event filter's place (ADR 0133, ADR 0169).
+func eventMatcherIn(m externalapi.EventMatcherInput) (eventmatcher.Matcher, error) {
+	filter, err := condition.FromOptionalDTO[conditiontree.EventFilter](m.Filter)
+	if err != nil {
+		return eventmatcher.Matcher{}, err
+	}
+	return eventmatcher.Matcher{Action: m.Action, Filter: filter}, nil
+}
+
+// automationExitsIn is the exit events a write gives; nil when it gives none.
+func automationExitsIn(exits []externalapi.EventMatcherInput) ([]eventmatcher.Matcher, error) {
+	if exits == nil {
+		return nil, nil
+	}
+	out := make([]eventmatcher.Matcher, len(exits))
+	for i, e := range exits {
+		m, err := eventMatcherIn(e)
+		if err != nil {
+			return nil, err
+		}
+		out[i] = m
+	}
+	return out, nil
+}
+
+// automationExitsPtrIn is the exit events an update replaces: an omitted list (nil) keeps the
+// stored ones, an empty list removes them.
+func automationExitsPtrIn(exits []externalapi.EventMatcherInput) (*[]eventmatcher.Matcher, error) {
+	out, err := automationExitsIn(exits)
+	if err != nil || out == nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// automationGoalIn is the goal event a write gives; nil for null or omitted, which is none.
+func automationGoalIn(o externalapi.OptNilEventMatcherInput) (*eventmatcher.Matcher, error) {
+	g, ok := o.Get()
+	if !ok {
+		return nil, nil
+	}
+	m, err := eventMatcherIn(g)
+	if err != nil {
+		return nil, err
+	}
+	return &m, nil
+}
+
+// automationGoalPatch is the goal event an update writes: omitted keeps it, null removes it.
+func automationGoalPatch(o externalapi.OptNilEventMatcherInput) (patch.Field[eventmatcher.Matcher], error) {
+	g, err := automationGoalIn(o)
+	if err != nil {
+		return patch.Keep[eventmatcher.Matcher](), err
+	}
+	if g == nil {
+		return patch.Of(eventmatcher.Matcher{}, o.IsSet(), true), nil
+	}
+	return patch.Set(*g), nil
 }
 
 // automationTriggerPtrIn is the Trigger an update replaces: omitted (nil) keeps the stored one.

@@ -104,8 +104,8 @@
 - id: 108 # fixture: AutomationPaymentRecoveryVersion
   automation_id: 108
   trigger_action: payment_failed
-  exit_events: '["account_closed","plan_downgraded","email.clicked"]'
-  goal_event: payment_succeeded
+  exits: '[{"action":"account_closed"},{"action":"plan_downgraded"},{"action":"email.clicked"}]'
+  goal: '{"action":"payment_succeeded"}'
   version: 1
   steps: '{"id":"5d83ae50-1844-587e-b5e8-85dfaf9434a6","steps":[{"id":"a5a7184a-a358-5884-bba4-52f54f15fcd6","type":"email","subject":"Your payment did not go through","body":"<p>Your payment of {{ "{{ event.properties.amount }}" }} for {{ "{{ event.properties.plan }}" }} did not go through. Please update your card{{ "{{ event.properties.card_hint }}" }}.</p>"},{"id":"512e4016-0f5c-56ec-ab8f-a80a506f8793","type":"wait","seconds":86400},{"id":"a435e554-67ac-55bc-b531-44ae57df6158","type":"email","subject":"Last reminder","body":"<p>Your plan is on hold.</p>"}]}'
   workspace_id: 1
@@ -117,7 +117,7 @@
   trigger_action: repeat_purchase_made
   entry_policy: again
   cooldown_seconds: 86400
-  exit_events: '["repeat_purchase_refunded"]'
+  exits: '[{"action":"repeat_purchase_refunded"}]'
   version: 1
   steps: '{"id":"6f4b2f8e-6c1e-5a43-9d1c-15540a000001","steps":[{"id":"6f4b2f8e-6c1e-5a43-9d1c-15540a000002","type":"wait","seconds":86400}]}'
   workspace_id: 1
@@ -257,7 +257,7 @@
 - id: 5567 # fixture: AutomationJobsTagWithExitVersion
   automation_id: 5567
   trigger_action: job_tag_exit
-  exit_events: '["job_tag_exit_left"]'
+  exits: '[{"action":"job_tag_exit_left"}]'
   version: 1
   steps: '{"id":"6380e4b0-689c-502b-a01c-6739df482695","steps":[{"id":"be03287b-4566-5639-a398-598a69bbf334","type":"apply_tag","tag":"tag-race"},{"id":"7b525217-bd37-51e2-b3bc-fbc574804c16","type":"wait","seconds":3600}]}'
   workspace_id: 1
@@ -348,7 +348,7 @@
 - id: 6100 # fixture: AutomationGothamResultsVersion
   automation_id: 6100
   trigger_action: gotham_results_trigger
-  goal_event: gotham_results_goal
+  goal: '{"action":"gotham_results_goal"}'
   version: 1
   steps: '{"id":"13f7f404-6a55-57e5-ba18-6ac5b7c47f14","steps":[{"id":"339a0cff-c0e7-5700-9cd8-68c1ce0f3bc6","type":"wait","seconds":86400}]}'
   workspace_id: 61
@@ -878,8 +878,8 @@
 - id: 9904 # fixture: AutomationHalcyonCourseVersion
   automation_id: 9904
   trigger_action: halcyon_course
-  exit_events: '["halcyon_left"]'
-  goal_event: halcyon_paid
+  exits: '[{"action":"halcyon_left"}]'
+  goal: '{"action":"halcyon_paid"}'
   version: 1
   steps: '{"id":"12d649cb-5c93-4051-b722-6cf8f2094ff1","steps":[{"id":"f33e81f9-3cb6-4901-adaa-330def6e8b41","type":"wait","seconds":604800}]}'
   workspace_id: 99
@@ -946,7 +946,7 @@
 - id: 15537 # fixture: AutomationOuroborosGoalVersion
   automation_id: 15537
   trigger_action: ouro_go
-  goal_event: ouro_paid
+  goal: '{"action":"ouro_paid"}'
   version: 1
   steps: '{"id":"28fcf195-7160-4ad1-89c1-19f2e40af8df","steps":[{"id":"6c1698db-e732-4f2e-b821-5213098fe479","type":"wait","seconds":3600}]}'
   workspace_id: 1553

@@ -79,6 +79,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
@@ -404,6 +405,8 @@ type Converter interface {
 	// goverter:map Version Number | count
 	// goverter:map Steps | automationPath
 	// goverter:map . Trigger | automationTrigger
+	// goverter:map . ExitEvents | automationExits
+	// goverter:map Goal GoalEvent | automationGoal
 	AutomationVersionToResource(source *ent.AutomationVersion) (siteapi.AutomationVersion, error)
 	// goverter:map Steps | automationStepViews
 	AutomationPathToResource(source automations.PathView) (siteapi.AutomationPath, error)
@@ -1185,6 +1188,46 @@ func automationTrigger(v *ent.AutomationVersion) (siteapi.AutomationTrigger, err
 		ev.Filter = siteapi.NewOptEventFilter(f)
 	}
 	return siteapi.AutomationTrigger{OneOf: siteapi.NewEventTriggerAutomationTriggerSum(ev)}, nil
+}
+
+// eventMatcher maps an exit or goal event into the typed DTO, its filter checked as a stored
+// Condition is (convert.Document).
+func eventMatcher(m eventmatcher.Matcher) (siteapi.EventMatcher, error) {
+	out := siteapi.EventMatcher{Action: m.Action}
+	if m.Filter != nil {
+		f, err := convert.Document[siteapi.EventFilter](*m.Filter)
+		if err != nil {
+			return siteapi.EventMatcher{}, err
+		}
+		out.Filter = siteapi.NewOptEventFilter(f)
+	}
+	return out, nil
+}
+
+// automationExits maps a version's exit events into the typed DTO; never nil.
+func automationExits(v *ent.AutomationVersion) ([]siteapi.EventMatcher, error) {
+	exits := automations.ExitsOf(v)
+	out := make([]siteapi.EventMatcher, len(exits))
+	for i, e := range exits {
+		m, err := eventMatcher(e)
+		if err != nil {
+			return nil, err
+		}
+		out[i] = m
+	}
+	return out, nil
+}
+
+// automationGoal maps a version's goal event into the typed DTO: null when there is none.
+func automationGoal(goal *eventmatcher.Matcher) (siteapi.NilEventMatcher, error) {
+	if goal == nil {
+		return siteapi.NilEventMatcher{Null: true}, nil
+	}
+	m, err := eventMatcher(*goal)
+	if err != nil {
+		return siteapi.NilEventMatcher{}, err
+	}
+	return siteapi.NewNilEventMatcher(m), nil
 }
 
 // ruleCondition maps a Rule's Condition into the typed DTO, failing as segmentCondition does.

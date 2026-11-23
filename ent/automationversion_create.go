@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 )
 
 // AutomationVersionCreate is the builder for creating a AutomationVersion entity.
@@ -91,23 +92,15 @@ func (_c *AutomationVersionCreate) SetTriggerFilter(v *conditiontree.EventFilter
 	return _c
 }
 
-// SetExitEvents sets the "exit_events" field.
-func (_c *AutomationVersionCreate) SetExitEvents(v []string) *AutomationVersionCreate {
-	_c.mutation.SetExitEvents(v)
+// SetExits sets the "exits" field.
+func (_c *AutomationVersionCreate) SetExits(v []eventmatcher.Matcher) *AutomationVersionCreate {
+	_c.mutation.SetExits(v)
 	return _c
 }
 
-// SetGoalEvent sets the "goal_event" field.
-func (_c *AutomationVersionCreate) SetGoalEvent(v string) *AutomationVersionCreate {
-	_c.mutation.SetGoalEvent(v)
-	return _c
-}
-
-// SetNillableGoalEvent sets the "goal_event" field if the given value is not nil.
-func (_c *AutomationVersionCreate) SetNillableGoalEvent(v *string) *AutomationVersionCreate {
-	if v != nil {
-		_c.SetGoalEvent(*v)
-	}
+// SetGoal sets the "goal" field.
+func (_c *AutomationVersionCreate) SetGoal(v *eventmatcher.Matcher) *AutomationVersionCreate {
+	_c.mutation.SetGoal(v)
 	return _c
 }
 
@@ -213,9 +206,9 @@ func (_c *AutomationVersionCreate) defaults() {
 		v := automationversion.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
-	if _, ok := _c.mutation.ExitEvents(); !ok {
-		v := automationversion.DefaultExitEvents
-		_c.mutation.SetExitEvents(v)
+	if _, ok := _c.mutation.Exits(); !ok {
+		v := automationversion.DefaultExits
+		_c.mutation.SetExits(v)
 	}
 	if _, ok := _c.mutation.EntryPolicy(); !ok {
 		v := automationversion.DefaultEntryPolicy
@@ -255,8 +248,8 @@ func (_c *AutomationVersionCreate) check() error {
 	if _, ok := _c.mutation.TriggerAction(); !ok {
 		return &ValidationError{Name: "trigger_action", err: errors.New(`ent: missing required field "AutomationVersion.trigger_action"`)}
 	}
-	if _, ok := _c.mutation.ExitEvents(); !ok {
-		return &ValidationError{Name: "exit_events", err: errors.New(`ent: missing required field "AutomationVersion.exit_events"`)}
+	if _, ok := _c.mutation.Exits(); !ok {
+		return &ValidationError{Name: "exits", err: errors.New(`ent: missing required field "AutomationVersion.exits"`)}
 	}
 	if _, ok := _c.mutation.EntryPolicy(); !ok {
 		return &ValidationError{Name: "entry_policy", err: errors.New(`ent: missing required field "AutomationVersion.entry_policy"`)}
@@ -332,13 +325,13 @@ func (_c *AutomationVersionCreate) createSpec() (*AutomationVersion, *sqlgraph.C
 		_spec.SetField(automationversion.FieldTriggerFilter, field.TypeJSON, value)
 		_node.TriggerFilter = value
 	}
-	if value, ok := _c.mutation.ExitEvents(); ok {
-		_spec.SetField(automationversion.FieldExitEvents, field.TypeJSON, value)
-		_node.ExitEvents = value
+	if value, ok := _c.mutation.Exits(); ok {
+		_spec.SetField(automationversion.FieldExits, field.TypeJSON, value)
+		_node.Exits = value
 	}
-	if value, ok := _c.mutation.GoalEvent(); ok {
-		_spec.SetField(automationversion.FieldGoalEvent, field.TypeString, value)
-		_node.GoalEvent = &value
+	if value, ok := _c.mutation.Goal(); ok {
+		_spec.SetField(automationversion.FieldGoal, field.TypeJSON, value)
+		_node.Goal = value
 	}
 	if value, ok := _c.mutation.EntryPolicy(); ok {
 		_spec.SetField(automationversion.FieldEntryPolicy, field.TypeEnum, value)
@@ -528,33 +521,33 @@ func (u *AutomationVersionUpsert) ClearTriggerFilter() *AutomationVersionUpsert 
 	return u
 }
 
-// SetExitEvents sets the "exit_events" field.
-func (u *AutomationVersionUpsert) SetExitEvents(v []string) *AutomationVersionUpsert {
-	u.Set(automationversion.FieldExitEvents, v)
+// SetExits sets the "exits" field.
+func (u *AutomationVersionUpsert) SetExits(v []eventmatcher.Matcher) *AutomationVersionUpsert {
+	u.Set(automationversion.FieldExits, v)
 	return u
 }
 
-// UpdateExitEvents sets the "exit_events" field to the value that was provided on create.
-func (u *AutomationVersionUpsert) UpdateExitEvents() *AutomationVersionUpsert {
-	u.SetExcluded(automationversion.FieldExitEvents)
+// UpdateExits sets the "exits" field to the value that was provided on create.
+func (u *AutomationVersionUpsert) UpdateExits() *AutomationVersionUpsert {
+	u.SetExcluded(automationversion.FieldExits)
 	return u
 }
 
-// SetGoalEvent sets the "goal_event" field.
-func (u *AutomationVersionUpsert) SetGoalEvent(v string) *AutomationVersionUpsert {
-	u.Set(automationversion.FieldGoalEvent, v)
+// SetGoal sets the "goal" field.
+func (u *AutomationVersionUpsert) SetGoal(v *eventmatcher.Matcher) *AutomationVersionUpsert {
+	u.Set(automationversion.FieldGoal, v)
 	return u
 }
 
-// UpdateGoalEvent sets the "goal_event" field to the value that was provided on create.
-func (u *AutomationVersionUpsert) UpdateGoalEvent() *AutomationVersionUpsert {
-	u.SetExcluded(automationversion.FieldGoalEvent)
+// UpdateGoal sets the "goal" field to the value that was provided on create.
+func (u *AutomationVersionUpsert) UpdateGoal() *AutomationVersionUpsert {
+	u.SetExcluded(automationversion.FieldGoal)
 	return u
 }
 
-// ClearGoalEvent clears the value of the "goal_event" field.
-func (u *AutomationVersionUpsert) ClearGoalEvent() *AutomationVersionUpsert {
-	u.SetNull(automationversion.FieldGoalEvent)
+// ClearGoal clears the value of the "goal" field.
+func (u *AutomationVersionUpsert) ClearGoal() *AutomationVersionUpsert {
+	u.SetNull(automationversion.FieldGoal)
 	return u
 }
 
@@ -733,38 +726,38 @@ func (u *AutomationVersionUpsertOne) ClearTriggerFilter() *AutomationVersionUpse
 	})
 }
 
-// SetExitEvents sets the "exit_events" field.
-func (u *AutomationVersionUpsertOne) SetExitEvents(v []string) *AutomationVersionUpsertOne {
+// SetExits sets the "exits" field.
+func (u *AutomationVersionUpsertOne) SetExits(v []eventmatcher.Matcher) *AutomationVersionUpsertOne {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.SetExitEvents(v)
+		s.SetExits(v)
 	})
 }
 
-// UpdateExitEvents sets the "exit_events" field to the value that was provided on create.
-func (u *AutomationVersionUpsertOne) UpdateExitEvents() *AutomationVersionUpsertOne {
+// UpdateExits sets the "exits" field to the value that was provided on create.
+func (u *AutomationVersionUpsertOne) UpdateExits() *AutomationVersionUpsertOne {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.UpdateExitEvents()
+		s.UpdateExits()
 	})
 }
 
-// SetGoalEvent sets the "goal_event" field.
-func (u *AutomationVersionUpsertOne) SetGoalEvent(v string) *AutomationVersionUpsertOne {
+// SetGoal sets the "goal" field.
+func (u *AutomationVersionUpsertOne) SetGoal(v *eventmatcher.Matcher) *AutomationVersionUpsertOne {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.SetGoalEvent(v)
+		s.SetGoal(v)
 	})
 }
 
-// UpdateGoalEvent sets the "goal_event" field to the value that was provided on create.
-func (u *AutomationVersionUpsertOne) UpdateGoalEvent() *AutomationVersionUpsertOne {
+// UpdateGoal sets the "goal" field to the value that was provided on create.
+func (u *AutomationVersionUpsertOne) UpdateGoal() *AutomationVersionUpsertOne {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.UpdateGoalEvent()
+		s.UpdateGoal()
 	})
 }
 
-// ClearGoalEvent clears the value of the "goal_event" field.
-func (u *AutomationVersionUpsertOne) ClearGoalEvent() *AutomationVersionUpsertOne {
+// ClearGoal clears the value of the "goal" field.
+func (u *AutomationVersionUpsertOne) ClearGoal() *AutomationVersionUpsertOne {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.ClearGoalEvent()
+		s.ClearGoal()
 	})
 }
 
@@ -1114,38 +1107,38 @@ func (u *AutomationVersionUpsertBulk) ClearTriggerFilter() *AutomationVersionUps
 	})
 }
 
-// SetExitEvents sets the "exit_events" field.
-func (u *AutomationVersionUpsertBulk) SetExitEvents(v []string) *AutomationVersionUpsertBulk {
+// SetExits sets the "exits" field.
+func (u *AutomationVersionUpsertBulk) SetExits(v []eventmatcher.Matcher) *AutomationVersionUpsertBulk {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.SetExitEvents(v)
+		s.SetExits(v)
 	})
 }
 
-// UpdateExitEvents sets the "exit_events" field to the value that was provided on create.
-func (u *AutomationVersionUpsertBulk) UpdateExitEvents() *AutomationVersionUpsertBulk {
+// UpdateExits sets the "exits" field to the value that was provided on create.
+func (u *AutomationVersionUpsertBulk) UpdateExits() *AutomationVersionUpsertBulk {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.UpdateExitEvents()
+		s.UpdateExits()
 	})
 }
 
-// SetGoalEvent sets the "goal_event" field.
-func (u *AutomationVersionUpsertBulk) SetGoalEvent(v string) *AutomationVersionUpsertBulk {
+// SetGoal sets the "goal" field.
+func (u *AutomationVersionUpsertBulk) SetGoal(v *eventmatcher.Matcher) *AutomationVersionUpsertBulk {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.SetGoalEvent(v)
+		s.SetGoal(v)
 	})
 }
 
-// UpdateGoalEvent sets the "goal_event" field to the value that was provided on create.
-func (u *AutomationVersionUpsertBulk) UpdateGoalEvent() *AutomationVersionUpsertBulk {
+// UpdateGoal sets the "goal" field to the value that was provided on create.
+func (u *AutomationVersionUpsertBulk) UpdateGoal() *AutomationVersionUpsertBulk {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.UpdateGoalEvent()
+		s.UpdateGoal()
 	})
 }
 
-// ClearGoalEvent clears the value of the "goal_event" field.
-func (u *AutomationVersionUpsertBulk) ClearGoalEvent() *AutomationVersionUpsertBulk {
+// ClearGoal clears the value of the "goal" field.
+func (u *AutomationVersionUpsertBulk) ClearGoal() *AutomationVersionUpsertBulk {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.ClearGoalEvent()
+		s.ClearGoal()
 	})
 }
 

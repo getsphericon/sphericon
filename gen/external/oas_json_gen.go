@@ -5414,7 +5414,7 @@ func (s *AutomationVersion) encodeFields(e *jx.Encoder) {
 		e.FieldStart("exitEvents")
 		e.ArrStart()
 		for _, elem := range s.ExitEvents {
-			e.Str(elem)
+			elem.Encode(e)
 		}
 		e.ArrEnd()
 	}
@@ -5470,12 +5470,10 @@ func (s *AutomationVersion) Decode(d *jx.Decoder) error {
 		case "exitEvents":
 			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
-				s.ExitEvents = make([]string, 0)
+				s.ExitEvents = make([]EventMatcher, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem string
-					v, err := d.Str()
-					elem = string(v)
-					if err != nil {
+					var elem EventMatcher
+					if err := elem.Decode(d); err != nil {
 						return err
 					}
 					s.ExitEvents = append(s.ExitEvents, elem)
@@ -13310,7 +13308,7 @@ func (s *CreateAutomationInput) encodeFields(e *jx.Encoder) {
 			e.FieldStart("exitEvents")
 			e.ArrStart()
 			for _, elem := range s.ExitEvents {
-				e.Str(elem)
+				elem.Encode(e)
 			}
 			e.ArrEnd()
 		}
@@ -13368,12 +13366,10 @@ func (s *CreateAutomationInput) Decode(d *jx.Decoder) error {
 			}
 		case "exitEvents":
 			if err := func() error {
-				s.ExitEvents = make([]string, 0)
+				s.ExitEvents = make([]EventMatcherInput, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem string
-					v, err := d.Str()
-					elem = string(v)
-					if err != nil {
+					var elem EventMatcherInput
+					if err := elem.Decode(d); err != nil {
 						return err
 					}
 					s.ExitEvents = append(s.ExitEvents, elem)
@@ -21499,6 +21495,232 @@ func (s *EventLeafKind) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *EventMatcher) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *EventMatcher) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("action")
+		e.Str(s.Action)
+	}
+	{
+		if s.Filter.Set {
+			e.FieldStart("filter")
+			s.Filter.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfEventMatcher = [2]string{
+	0: "action",
+	1: "filter",
+}
+
+// Decode decodes EventMatcher from json.
+func (s *EventMatcher) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode EventMatcher to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "action":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.Action = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"action\"")
+			}
+		case "filter":
+			if err := func() error {
+				s.Filter.Reset()
+				if err := s.Filter.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"filter\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode EventMatcher")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfEventMatcher) {
+					name = jsonFieldsNameOfEventMatcher[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *EventMatcher) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *EventMatcher) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *EventMatcherInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *EventMatcherInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("action")
+		e.Str(s.Action)
+	}
+	{
+		if s.Filter.Set {
+			e.FieldStart("filter")
+			s.Filter.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfEventMatcherInput = [2]string{
+	0: "action",
+	1: "filter",
+}
+
+// Decode decodes EventMatcherInput from json.
+func (s *EventMatcherInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode EventMatcherInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "action":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.Action = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"action\"")
+			}
+		case "filter":
+			if err := func() error {
+				s.Filter.Reset()
+				if err := s.Filter.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"filter\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode EventMatcherInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfEventMatcherInput) {
+					name = jsonFieldsNameOfEventMatcherInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *EventMatcherInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *EventMatcherInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *EventTrigger) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -25720,6 +25942,50 @@ func (s *NilEntityId) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes EventMatcher as json.
+func (o NilEventMatcher) Encode(e *jx.Encoder) {
+	if o.Null {
+		e.Null()
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes EventMatcher from json.
+func (o *NilEventMatcher) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode NilEventMatcher to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v EventMatcher
+		o.Value = v
+		o.Null = true
+		return nil
+	}
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s NilEventMatcher) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *NilEventMatcher) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes float32 as json.
 func (o NilFloat32) Encode(e *jx.Encoder) {
 	if o.Null {
@@ -27320,6 +27586,55 @@ func (s OptNilEntityId) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptNilEntityId) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes EventMatcherInput as json.
+func (o OptNilEventMatcherInput) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	if o.Null {
+		e.Null()
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes EventMatcherInput from json.
+func (o *OptNilEventMatcherInput) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptNilEventMatcherInput to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v EventMatcherInput
+		o.Value = v
+		o.Set = true
+		o.Null = true
+		return nil
+	}
+	o.Set = true
+	o.Null = false
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptNilEventMatcherInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptNilEventMatcherInput) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -46594,7 +46909,7 @@ func (s *UpdateAutomationInput) encodeFields(e *jx.Encoder) {
 			e.FieldStart("exitEvents")
 			e.ArrStart()
 			for _, elem := range s.ExitEvents {
-				e.Str(elem)
+				elem.Encode(e)
 			}
 			e.ArrEnd()
 		}
@@ -46663,12 +46978,10 @@ func (s *UpdateAutomationInput) Decode(d *jx.Decoder) error {
 			}
 		case "exitEvents":
 			if err := func() error {
-				s.ExitEvents = make([]string, 0)
+				s.ExitEvents = make([]EventMatcherInput, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem string
-					v, err := d.Str()
-					elem = string(v)
-					if err != nil {
+					var elem EventMatcherInput
+					if err := elem.Decode(d); err != nil {
 						return err
 					}
 					s.ExitEvents = append(s.ExitEvents, elem)
