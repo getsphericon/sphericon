@@ -203,6 +203,9 @@ func (_u *OrderUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.CreditedClickAtCleared() {
 		_spec.ClearField(order.FieldCreditedClickAt, field.TypeTime)
 	}
+	if _u.mutation.CreditedMessageIDCleared() {
+		_spec.ClearField(order.FieldCreditedMessageID, field.TypeInt64)
+	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -528,6 +531,9 @@ func (_u *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error)
 	}
 	if _u.mutation.CreditedClickAtCleared() {
 		_spec.ClearField(order.FieldCreditedClickAt, field.TypeTime)
+	}
+	if _u.mutation.CreditedMessageIDCleared() {
+		_spec.ClearField(order.FieldCreditedMessageID, field.TypeInt64)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

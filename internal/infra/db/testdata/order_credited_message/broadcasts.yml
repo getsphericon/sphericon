@@ -1,0 +1,11 @@
+- id: 1
+  workspace_id: 1
+  channel: email
+  revision: 1
+  name: Sale
+  subject: Sale
+  from_name: Acme
+  from_email: hello@acme.test
+  body: '<p>Sale.</p>'
+  status: sent
+  sent_at: '2026-01-01 00:00:00+00'

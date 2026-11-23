@@ -16,15 +16,17 @@ import (
 // Workspace's Attribution window. This file is the whole of it: which click counts, the window and the credit.
 
 // click is the click that earns an Order its credit: the Broadcast or the Automation (one is
-// set) whose message was clicked, and when.
+// set) whose message was clicked, that Outbound message, and when.
 type click struct {
 	broadcastID  int64
 	automationID int64
+	messageID    int64
 	at           time.Time
 }
 
 // credit sets on create the Broadcast or Automation of the latest click of the Contact before the
-// order's time and inside the Attribution window of windowDays. It is looked for once, here: a
+// order's time and inside the Attribution window of windowDays, with the message clicked and the
+// time of the click. It is looked for once, here: a
 // repeat of the Order Completed never reaches it, so a later change of the window or a click stored
 // afterwards, though dated before the order, changes nothing.
 func credit(ctx context.Context, s *ent.Scoped, create *ent.OrderScopedCreate, contactID int64, orderedAt time.Time, windowDays int) error {
@@ -40,19 +42,20 @@ func credit(ctx context.Context, s *ent.Scoped, create *ent.OrderScopedCreate, c
 	default:
 		return nil
 	}
-	create.SetCreditedClickAt(c.at)
+	create.SetCreditedClickAt(c.at).SetCreditedMessageID(c.messageID)
 	return nil
 }
 
-// lastClick is the latest human click Event (`email.clicked`, `telegram.clicked`, `sms.clicked`) of the Contact within [since, until] that
-// carries a Broadcast or an Automation; nil for none. A click flagged `machine` (ADR 0053) and a
-// click of neither (a Transactional send) are passed over; equal times go to the click Event
-// stored last.
+// lastClick is the latest human click Event (`email.clicked`, `telegram.clicked`, `sms.clicked`) of
+// the Contact within [since, until] that carries a Broadcast or an Automation and names its
+// Outbound message; nil for none. A click flagged `machine` (ADR 0053), a click of neither (a
+// Transactional send) and a click of no message are passed over; equal times go to the click
+// Event stored last.
 func lastClick(ctx context.Context, s *ent.Scoped, contactID int64, since, until time.Time) (*click, error) {
 	e, err := s.Event().Query().
 		Where(
 			event.ContactID(contactID), event.ActionIn(events.ClickActions...), events.HumanOnly(),
-			event.Or(event.BroadcastIDNotNil(), event.AutomationIDNotNil()),
+			event.Or(event.BroadcastIDNotNil(), event.AutomationIDNotNil()), events.NamesMessage(),
 			event.OccurredAtGTE(since), event.OccurredAtLTE(until),
 		).
 		// Latest first, ties to the Event stored last.
@@ -64,5 +67,9 @@ func lastClick(ctx context.Context, s *ent.Scoped, contactID int64, since, until
 	if err != nil {
 		return nil, err
 	}
-	return &click{broadcastID: lo.FromPtr(e.BroadcastID), automationID: lo.FromPtr(e.AutomationID), at: e.OccurredAt}, nil
+	messageID, ok := events.ClickedMessageID(e)
+	if !ok {
+		return nil, nil // a key with no id of a message, which the recorder never writes: nothing to credit
+	}
+	return &click{broadcastID: lo.FromPtr(e.BroadcastID), automationID: lo.FromPtr(e.AutomationID), messageID: messageID, at: e.OccurredAt}, nil
 }

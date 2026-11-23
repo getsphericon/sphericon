@@ -129,6 +129,20 @@ func (_c *OrderCreate) SetNillableCreditedClickAt(v *time.Time) *OrderCreate {
 	return _c
 }
 
+// SetCreditedMessageID sets the "credited_message_id" field.
+func (_c *OrderCreate) SetCreditedMessageID(v int64) *OrderCreate {
+	_c.mutation.SetCreditedMessageID(v)
+	return _c
+}
+
+// SetNillableCreditedMessageID sets the "credited_message_id" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableCreditedMessageID(v *int64) *OrderCreate {
+	if v != nil {
+		_c.SetCreditedMessageID(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *OrderCreate) SetID(v int64) *OrderCreate {
 	_c.mutation.SetID(v)
@@ -297,6 +311,10 @@ func (_c *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.CreditedClickAt(); ok {
 		_spec.SetField(order.FieldCreditedClickAt, field.TypeTime, value)
 		_node.CreditedClickAt = &value
+	}
+	if value, ok := _c.mutation.CreditedMessageID(); ok {
+		_spec.SetField(order.FieldCreditedMessageID, field.TypeInt64, value)
+		_node.CreditedMessageID = &value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -510,6 +528,9 @@ func (u *OrderUpsertOne) UpdateNewValues() *OrderUpsertOne {
 		}
 		if _, exists := u.create.mutation.CreditedClickAt(); exists {
 			s.SetIgnore(order.FieldCreditedClickAt)
+		}
+		if _, exists := u.create.mutation.CreditedMessageID(); exists {
+			s.SetIgnore(order.FieldCreditedMessageID)
 		}
 	}))
 	return u
@@ -790,6 +811,9 @@ func (u *OrderUpsertBulk) UpdateNewValues() *OrderUpsertBulk {
 			}
 			if _, exists := b.mutation.CreditedClickAt(); exists {
 				s.SetIgnore(order.FieldCreditedClickAt)
+			}
+			if _, exists := b.mutation.CreditedMessageID(); exists {
+				s.SetIgnore(order.FieldCreditedMessageID)
 			}
 		}
 	}))

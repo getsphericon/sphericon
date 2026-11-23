@@ -42606,6 +42606,24 @@ func (x *OrderScopedCreate) SetNillableCreditedClickAt(v *time.Time) *OrderScope
 
 const RoleOf_OrderScopedCreate_SetNillableCreditedClickAt = RoleStep
 
+// SetCreditedMessageID sets the "credited_message_id" field.
+func (x *OrderScopedCreate) SetCreditedMessageID(v int64) *OrderScopedCreate {
+	x.set = append(x.set, func(b *OrderCreate) { b.SetCreditedMessageID(v) })
+	return x
+}
+
+const RoleOf_OrderScopedCreate_SetCreditedMessageID = RoleStep
+
+// SetNillableCreditedMessageID sets the "credited_message_id" field if the given value is not nil.
+func (x *OrderScopedCreate) SetNillableCreditedMessageID(v *int64) *OrderScopedCreate {
+	if v != nil {
+		x.SetCreditedMessageID(*v)
+	}
+	return x
+}
+
+const RoleOf_OrderScopedCreate_SetNillableCreditedMessageID = RoleStep
+
 // SetContact sets the "contact" edge to the Contact entity.
 func (x *OrderScopedCreate) SetContact(v *Contact) *OrderScopedCreate {
 	x.set = append(x.set, func(b *OrderCreate) { b.SetContact(v) })

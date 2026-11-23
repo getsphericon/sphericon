@@ -65,6 +65,14 @@ func creditedTo(o *ent.Order) (broadcast, automation int64) {
 	return broadcast, automation
 }
 
+// creditedMessage is the Outbound message whose click earned the Order its credit, 0 for none.
+func creditedMessage(o *ent.Order) int64 {
+	if o.CreditedMessageID == nil {
+		return 0
+	}
+	return *o.CreditedMessageID
+}
+
 func TestAnOrderIsCreditedToTheBroadcastTheContactClicked(t *testing.T) {
 	env := testhelper.Setup(t)
 	click := env.DB.Event.GetX(t.Context(), fixtures.EventClickerBroadcastClickID)
@@ -74,6 +82,7 @@ func TestAnOrderIsCreditedToTheBroadcastTheContactClicked(t *testing.T) {
 	b, a := creditedTo(o)
 	assert.EqualValues(t, fixtures.BroadcastEmporiumID, b)
 	assert.Zero(t, a)
+	assert.EqualValues(t, fixtures.OutboundEmporiumBroadcastClickID, creditedMessage(o), "the email that was clicked")
 	require.NotNil(t, o.CreditedClickAt)
 	assert.WithinDuration(t, click.OccurredAt, *o.CreditedClickAt, 0, "the time of the click")
 }
@@ -81,30 +90,36 @@ func TestAnOrderIsCreditedToTheBroadcastTheContactClicked(t *testing.T) {
 func TestAnOrderIsCreditedToTheAutomationTheContactClicked(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	b, a := creditedTo(placeOrder(t, env, fixtures.ContactClickerAutomationID, "C-1"))
+	o := placeOrder(t, env, fixtures.ContactClickerAutomationID, "C-1")
 
+	b, a := creditedTo(o)
 	assert.Zero(t, b)
 	assert.EqualValues(t, fixtures.AutomationEmporiumClicksID, a)
+	assert.EqualValues(t, fixtures.OutboundEmporiumAutomationClickID, creditedMessage(o))
 }
 
 // Clicks: the Automation 3 and 4 days ago, the Broadcast 2 days ago.
 func TestTheLaterOfTwoClicksWinsWhateverCarriedIt(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	b, a := creditedTo(placeOrder(t, env, fixtures.ContactClickerLaterWinsID, "C-1"))
+	o := placeOrder(t, env, fixtures.ContactClickerLaterWinsID, "C-1")
 
+	b, a := creditedTo(o)
 	assert.EqualValues(t, fixtures.BroadcastEmporiumID, b)
 	assert.Zero(t, a)
+	assert.EqualValues(t, fixtures.OutboundEmporiumLaterWinsID, creditedMessage(o))
 }
 
 // Clicks: the Broadcast, then the Automation, stored in that order at one time a day ago.
 func TestOfTwoClicksAtTheSameTimeTheOneStoredLastWins(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	b, a := creditedTo(placeOrder(t, env, fixtures.ContactClickerSameTimeID, "C-1"))
+	o := placeOrder(t, env, fixtures.ContactClickerSameTimeID, "C-1")
 
+	b, a := creditedTo(o)
 	assert.Zero(t, b)
 	assert.EqualValues(t, fixtures.AutomationEmporiumClicksID, a)
+	assert.EqualValues(t, fixtures.OutboundEmporiumSameTimeID, creditedMessage(o))
 }
 
 // Clicks: the Automation 3 days ago, the Broadcast by software 2 days ago, a Transactional send
@@ -112,10 +127,33 @@ func TestOfTwoClicksAtTheSameTimeTheOneStoredLastWins(t *testing.T) {
 func TestAClickBySoftwareAndAClickOfNeitherCreditNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	b, a := creditedTo(placeOrder(t, env, fixtures.ContactClickerSoftwareID, "C-1"))
+	o := placeOrder(t, env, fixtures.ContactClickerSoftwareID, "C-1")
 
+	b, a := creditedTo(o)
 	assert.Zero(t, b, "the scanner's click is passed over")
 	assert.EqualValues(t, fixtures.AutomationEmporiumClicksID, a, "so is the click of no Broadcast or Automation")
+	assert.EqualValues(t, fixtures.OutboundEmporiumSoftwareAutomationID, creditedMessage(o))
+}
+
+// A click that names no Outbound message credits nothing, whatever it carries: only a click of a
+// message sent can earn a credit.
+func TestAClickOfNoMessageCreditsNothing(t *testing.T) {
+	env := testhelper.Setup(t)
+	require.NoError(t, env.Bus.WithinTx(t.Context(), func(_ *ent.Client, pub events.Publisher) error {
+		return pub.Publish(t.Context(), &events.EmailEngagement{
+			ObservedAt: ago(time.Hour), Action: systemevent.EmailClicked, WorkspaceID: fixtures.EmporiumID,
+			BroadcastID: fixtures.BroadcastEmporiumID, ContactID: fixtures.ContactClickerNoneID,
+			Email: fixtures.ContactClickerNoneEmail, URL: "https://shop.test/",
+		})
+	}))
+
+	o := placeOrder(t, env, fixtures.ContactClickerNoneID, "C-1")
+
+	b, a := creditedTo(o)
+	assert.Zero(t, b)
+	assert.Zero(t, a)
+	assert.Zero(t, creditedMessage(o))
+	assert.Nil(t, o.CreditedClickAt)
 }
 
 // Clicks: the Broadcast 6 days ago and a day ahead.
@@ -127,6 +165,7 @@ func TestAClickBeforeTheWindowOrAfterTheOrderCreditsNothing(t *testing.T) {
 	b, a := creditedTo(o)
 	assert.Zero(t, b, "a click six days old is outside the 5 days; one after the order is no cause of it")
 	assert.Zero(t, a)
+	assert.Zero(t, creditedMessage(o), "nor any message")
 	assert.Nil(t, o.CreditedClickAt)
 }
 
@@ -155,6 +194,7 @@ func TestAClickStoredAfterTheOrderCreditsNothingThoughDatedBeforeIt(t *testing.T
 		return pub.Publish(t.Context(), &events.EmailEngagement{
 			Action: systemevent.EmailClicked, WorkspaceID: fixtures.EmporiumID, BroadcastID: fixtures.BroadcastEmporiumID,
 			ContactID: fixtures.ContactClickerNoneID, Email: fixtures.ContactClickerNoneEmail, URL: "https://shop.test/",
+			OutboundMessageID: fixtures.OutboundEmporiumClickerNoneID,
 		})
 	}))
 	kept := record(t, env, ev) // the order again: the credit is not looked for a second time
@@ -165,6 +205,7 @@ func TestAClickStoredAfterTheOrderCreditsNothingThoughDatedBeforeIt(t *testing.T
 	assert.Zero(t, a)
 	b, _ = creditedTo(fresh)
 	assert.EqualValues(t, fixtures.BroadcastEmporiumID, b, "a new Order at the same time is credited by the click")
+	assert.EqualValues(t, fixtures.OutboundEmporiumClickerNoneID, creditedMessage(fresh))
 }
 
 func TestAnOrderOfNoKnownContactIsUnattributed(t *testing.T) {
@@ -206,6 +247,7 @@ func TestABackfilledOrderWhoseClickWasPrunedIsUnattributed(t *testing.T) {
 	first := record(t, env, completed("R-1", fixtures.ContactClickerPrunedID, ago(retention)))
 	b, _ := creditedTo(first)
 	require.EqualValues(t, fixtures.BroadcastEmporiumID, b, "while the click is kept it credits a Backfilled Order")
+	require.EqualValues(t, fixtures.OutboundEmporiumPrunedID, creditedMessage(first))
 
 	pruned, err := events.PruneEvents(t.Context(), env.DB, retention, 100, time.Now())
 	require.NoError(t, err)
@@ -215,6 +257,7 @@ func TestABackfilledOrderWhoseClickWasPrunedIsUnattributed(t *testing.T) {
 	b, a := creditedTo(second)
 	assert.Zero(t, b)
 	assert.Zero(t, a)
+	assert.Zero(t, creditedMessage(second))
 	assert.Nil(t, second.CreditedClickAt)
 }
 
@@ -225,22 +268,25 @@ func TestAnOrderIsCreditedToTheSourceOfTheLastClickWhateverTheChannel(t *testing
 		contactID  int64
 		broadcast  int64
 		automation int64
+		message    int64
 		why        string
 	}{
-		{"a Telegram click after an email click", fixtures.ContactClickerTelegramAfterEmailID, 0, fixtures.AutomationEmporiumClicksID, "the Telegram message's source"},
-		{"an email click after a Telegram click", fixtures.ContactClickerEmailAfterTelegramID, fixtures.BroadcastEmporiumID, 0, "the email's source"},
-		{"a Telegram click by software credits nothing", fixtures.ContactClickerTelegramMachineID, fixtures.BroadcastEmporiumID, 0, "the preview fetcher's click is passed over"},
-		{"an Order after an SMS click is credited to the SMS", fixtures.ContactClickerSmsAfterEmailID, 0, fixtures.AutomationEmporiumClicksID, "the SMS's source"},
-		{"a later email click takes the credit from an SMS click", fixtures.ContactClickerEmailAfterSmsID, fixtures.BroadcastEmporiumID, 0, "the email's source"},
-		{"an SMS link preview fetch credits nothing", fixtures.ContactClickerSmsMachineID, fixtures.BroadcastEmporiumID, 0, "the preview fetch is passed over"},
+		{"a Telegram click after an email click", fixtures.ContactClickerTelegramAfterEmailID, 0, fixtures.AutomationEmporiumClicksID, fixtures.OutboundEmporiumTelegramClickID, "the Telegram message's source"},
+		{"an email click after a Telegram click", fixtures.ContactClickerEmailAfterTelegramID, fixtures.BroadcastEmporiumID, 0, fixtures.OutboundEmporiumEmailAfterTelegramID, "the email's source"},
+		{"a Telegram click by software credits nothing", fixtures.ContactClickerTelegramMachineID, fixtures.BroadcastEmporiumID, 0, fixtures.OutboundEmporiumEmailBeforeTelegramMachineID, "the preview fetcher's click is passed over"},
+		{"an Order after an SMS click is credited to the SMS", fixtures.ContactClickerSmsAfterEmailID, 0, fixtures.AutomationEmporiumClicksID, fixtures.OutboundEmporiumSmsClickID, "the SMS's source"},
+		{"a later email click takes the credit from an SMS click", fixtures.ContactClickerEmailAfterSmsID, fixtures.BroadcastEmporiumID, 0, fixtures.OutboundEmporiumEmailAfterSmsID, "the email's source"},
+		{"an SMS link preview fetch credits nothing", fixtures.ContactClickerSmsMachineID, fixtures.BroadcastEmporiumID, 0, fixtures.OutboundEmporiumEmailBeforeSmsMachineID, "the preview fetch is passed over"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 
-			b, a := creditedTo(placeOrder(t, env, tc.contactID, "C-1"))
+			o := placeOrder(t, env, tc.contactID, "C-1")
 
+			b, a := creditedTo(o)
 			assert.Equal(t, tc.broadcast, b, tc.why)
 			assert.Equal(t, tc.automation, a, tc.why)
+			assert.Equal(t, tc.message, creditedMessage(o), "the message whose click it was")
 		})
 	}
 }

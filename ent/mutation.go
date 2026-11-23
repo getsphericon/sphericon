@@ -45813,29 +45813,31 @@ func (m *OAuthRefreshTokenMutation) ResetEdge(name string) error {
 // OrderMutation represents an operation that mutates the Order nodes in the graph.
 type OrderMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *int64
-	created_at        *time.Time
-	updated_at        *time.Time
-	order_id          *string
-	currency          *string
-	credited_click_at *time.Time
-	clearedFields     map[string]struct{}
-	workspace         *int64
-	clearedworkspace  bool
-	contact           *int64
-	clearedcontact    bool
-	broadcast         *int64
-	clearedbroadcast  bool
-	automation        *int64
-	clearedautomation bool
-	movements         map[int64]struct{}
-	removedmovements  map[int64]struct{}
-	clearedmovements  bool
-	done              bool
-	oldValue          func(context.Context) (*Order, error)
-	predicates        []predicate.Order
+	op                     Op
+	typ                    string
+	id                     *int64
+	created_at             *time.Time
+	updated_at             *time.Time
+	order_id               *string
+	currency               *string
+	credited_click_at      *time.Time
+	credited_message_id    *int64
+	addcredited_message_id *int64
+	clearedFields          map[string]struct{}
+	workspace              *int64
+	clearedworkspace       bool
+	contact                *int64
+	clearedcontact         bool
+	broadcast              *int64
+	clearedbroadcast       bool
+	automation             *int64
+	clearedautomation      bool
+	movements              map[int64]struct{}
+	removedmovements       map[int64]struct{}
+	clearedmovements       bool
+	done                   bool
+	oldValue               func(context.Context) (*Order, error)
+	predicates             []predicate.Order
 }
 
 var _ ent.Mutation = (*OrderMutation)(nil)
@@ -46318,6 +46320,76 @@ func (m *OrderMutation) ResetCreditedClickAt() {
 	delete(m.clearedFields, order.FieldCreditedClickAt)
 }
 
+// SetCreditedMessageID sets the "credited_message_id" field.
+func (m *OrderMutation) SetCreditedMessageID(i int64) {
+	m.credited_message_id = &i
+	m.addcredited_message_id = nil
+}
+
+// CreditedMessageID returns the value of the "credited_message_id" field in the mutation.
+func (m *OrderMutation) CreditedMessageID() (r int64, exists bool) {
+	v := m.credited_message_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreditedMessageID returns the old "credited_message_id" field's value of the Order entity.
+// If the Order object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrderMutation) OldCreditedMessageID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreditedMessageID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreditedMessageID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreditedMessageID: %w", err)
+	}
+	return oldValue.CreditedMessageID, nil
+}
+
+// AddCreditedMessageID adds i to the "credited_message_id" field.
+func (m *OrderMutation) AddCreditedMessageID(i int64) {
+	if m.addcredited_message_id != nil {
+		*m.addcredited_message_id += i
+	} else {
+		m.addcredited_message_id = &i
+	}
+}
+
+// AddedCreditedMessageID returns the value that was added to the "credited_message_id" field in this mutation.
+func (m *OrderMutation) AddedCreditedMessageID() (r int64, exists bool) {
+	v := m.addcredited_message_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCreditedMessageID clears the value of the "credited_message_id" field.
+func (m *OrderMutation) ClearCreditedMessageID() {
+	m.credited_message_id = nil
+	m.addcredited_message_id = nil
+	m.clearedFields[order.FieldCreditedMessageID] = struct{}{}
+}
+
+// CreditedMessageIDCleared returns if the "credited_message_id" field was cleared in this mutation.
+func (m *OrderMutation) CreditedMessageIDCleared() bool {
+	_, ok := m.clearedFields[order.FieldCreditedMessageID]
+	return ok
+}
+
+// ResetCreditedMessageID resets all changes to the "credited_message_id" field.
+func (m *OrderMutation) ResetCreditedMessageID() {
+	m.credited_message_id = nil
+	m.addcredited_message_id = nil
+	delete(m.clearedFields, order.FieldCreditedMessageID)
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *OrderMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -46514,7 +46586,7 @@ func (m *OrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OrderMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, order.FieldCreatedAt)
 	}
@@ -46542,6 +46614,9 @@ func (m *OrderMutation) Fields() []string {
 	if m.credited_click_at != nil {
 		fields = append(fields, order.FieldCreditedClickAt)
 	}
+	if m.credited_message_id != nil {
+		fields = append(fields, order.FieldCreditedMessageID)
+	}
 	return fields
 }
 
@@ -46568,6 +46643,8 @@ func (m *OrderMutation) Field(name string) (ent.Value, bool) {
 		return m.AutomationID()
 	case order.FieldCreditedClickAt:
 		return m.CreditedClickAt()
+	case order.FieldCreditedMessageID:
+		return m.CreditedMessageID()
 	}
 	return nil, false
 }
@@ -46595,6 +46672,8 @@ func (m *OrderMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldAutomationID(ctx)
 	case order.FieldCreditedClickAt:
 		return m.OldCreditedClickAt(ctx)
+	case order.FieldCreditedMessageID:
+		return m.OldCreditedMessageID(ctx)
 	}
 	return nil, fmt.Errorf("unknown Order field %s", name)
 }
@@ -46667,6 +46746,13 @@ func (m *OrderMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCreditedClickAt(v)
 		return nil
+	case order.FieldCreditedMessageID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreditedMessageID(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Order field %s", name)
 }
@@ -46675,6 +46761,9 @@ func (m *OrderMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *OrderMutation) AddedFields() []string {
 	var fields []string
+	if m.addcredited_message_id != nil {
+		fields = append(fields, order.FieldCreditedMessageID)
+	}
 	return fields
 }
 
@@ -46683,6 +46772,8 @@ func (m *OrderMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *OrderMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case order.FieldCreditedMessageID:
+		return m.AddedCreditedMessageID()
 	}
 	return nil, false
 }
@@ -46692,6 +46783,13 @@ func (m *OrderMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *OrderMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case order.FieldCreditedMessageID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCreditedMessageID(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Order numeric field %s", name)
 }
@@ -46711,6 +46809,9 @@ func (m *OrderMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(order.FieldCreditedClickAt) {
 		fields = append(fields, order.FieldCreditedClickAt)
+	}
+	if m.FieldCleared(order.FieldCreditedMessageID) {
+		fields = append(fields, order.FieldCreditedMessageID)
 	}
 	return fields
 }
@@ -46737,6 +46838,9 @@ func (m *OrderMutation) ClearField(name string) error {
 		return nil
 	case order.FieldCreditedClickAt:
 		m.ClearCreditedClickAt()
+		return nil
+	case order.FieldCreditedMessageID:
+		m.ClearCreditedMessageID()
 		return nil
 	}
 	return fmt.Errorf("unknown Order nullable field %s", name)
@@ -46772,6 +46876,9 @@ func (m *OrderMutation) ResetField(name string) error {
 		return nil
 	case order.FieldCreditedClickAt:
 		m.ResetCreditedClickAt()
+		return nil
+	case order.FieldCreditedMessageID:
+		m.ResetCreditedMessageID()
 		return nil
 	}
 	return fmt.Errorf("unknown Order field %s", name)

@@ -2,7 +2,7 @@
 -- The Engagement tracking consent of a Destination (ADR 0120): its derived row, keyed by the
 -- Destination, and the time the observation that set it occurred on the Destination's consent
 -- stamp (ADR 0154). ent's diff wrote both; the stamp's check is added NOT VALID and the next
--- migration (20261123192105) validates it, and rebuilds concurrently the retention index whose
+-- migration (20261123213105) validates it, and rebuilds concurrently the retention index whose
 -- predicate now leaves out the consent's evidentiary Events (ADR 0019).
 ALTER TABLE "consent_stamps" ADD COLUMN "engagement_tracking_occurred_at" timestamptz NULL;
 ALTER TABLE "consent_stamps" ADD CONSTRAINT "consent_stamps_engagement_tracking_check" CHECK (((sending_source)::text = 'everything'::text) OR (engagement_tracking_occurred_at IS NULL)) NOT VALID;

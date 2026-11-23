@@ -2080,6 +2080,9 @@ func ScopedEntities() []*ScopedEntity {
 				if src.CreditedClickAt != nil {
 					b.SetCreditedClickAt(*src.CreditedClickAt)
 				}
+				if src.CreditedMessageID != nil {
+					b.SetCreditedMessageID(*src.CreditedMessageID)
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err
