@@ -1190,6 +1190,19 @@ func encodeSiteEventsListResponse(response *SiteEventsListOK, w http.ResponseWri
 	return nil
 }
 
+func encodeSiteEventsPropertyKeysResponse(response *SiteEventPropertyKeysResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
 func encodeSiteIdentitiesLinkResponse(response *SiteIdentityLinkStartedHeaders, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")

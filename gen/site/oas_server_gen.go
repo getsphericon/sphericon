@@ -587,6 +587,13 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/events
 	SiteEventsList(ctx context.Context, params SiteEventsListParams) (*SiteEventsListOK, error)
+	// SiteEventsPropertyKeys implements SiteEvents_propertyKeys operation.
+	//
+	// The property keys of the most recent events of the action, distinct and sorted — powers the
+	// automation Trigger's Enrollment key picker.
+	//
+	// GET /workspaces/{workspaceId}/events/property-keys
+	SiteEventsPropertyKeys(ctx context.Context, params SiteEventsPropertyKeysParams) (*SiteEventPropertyKeysResult, error)
 	// SiteIdentitiesLink implements SiteIdentities_link operation.
 	//
 	// Start linking another Sign-in provider account to the authenticated User, proving the password (or a

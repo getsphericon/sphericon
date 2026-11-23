@@ -832,6 +832,7 @@ func automationTrigger(v *ent.AutomationVersion) (externalapi.AutomationTrigger,
 	ev := externalapi.EventTrigger{
 		Kind: externalapi.EventTriggerKindEvent, Action: m.Action,
 		EntryPolicy: externalapi.EntryPolicy(v.EntryPolicy), Cooldown: externalapi.EntryCooldown(narrow.Int32(v.CooldownSeconds)),
+		EnrollmentKey: optString(v.EnrollmentKey),
 	}
 	if m.Filter != nil {
 		f, err := convert.Document[externalapi.EventFilter](*m.Filter)

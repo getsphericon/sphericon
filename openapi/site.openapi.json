@@ -6510,6 +6510,51 @@
         "x-required-permissions": []
       }
     },
+    "/workspaces/{workspaceId}/events/property-keys": {
+      "get": {
+        "operationId": "SiteEvents_propertyKeys",
+        "description": "The property keys of the most recent events of the action, distinct and sorted — powers the\nautomation Trigger's Enrollment key picker",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SiteEventResourceParentKey"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "description": "The event action whose recent events are read",
+            "schema": {
+              "type": "string"
+            },
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteEventPropertyKeysResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Events"],
+        "x-required-permissions": []
+      }
+    },
     "/workspaces/{workspaceId}/identity-secret": {
       "get": {
         "operationId": "SiteIdentitySecret_get",
@@ -11634,7 +11679,14 @@
       },
       "AutomationSkippedCounts": {
         "type": "object",
-        "required": ["cycle", "activeEnrollment", "once", "cooldown"],
+        "required": [
+          "cycle",
+          "activeEnrollment",
+          "once",
+          "cooldown",
+          "noEnrollmentKey",
+          "enrollmentCeiling"
+        ],
         "properties": {
           "cycle": {
             "type": "integer",
@@ -11655,6 +11707,16 @@
             "type": "integer",
             "format": "int32",
             "description": "Entries sooner after the beginning of the contact's previous enrollment than the cooldown"
+          },
+          "noEnrollmentKey": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Entries whose Event lacked the property the automation's Enrollment key names"
+          },
+          "enrollmentCeiling": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Entries of a contact that had 10 active enrollments in the keyed automation, or 10 begun in a\nday"
           }
         },
         "description": "How many entries into an automation were skipped, by reason"
@@ -13799,6 +13861,11 @@
             "format": "int32",
             "description": "Which of the contact's enrollments in the automation it is: 1 for the first, plus one for each\nafter it, an enrollment that ended as it was made included"
           },
+          "keyValue": {
+            "type": "string",
+            "description": "The value of the automation's Enrollment key the triggering Event carried, the property's\nstring form (ADR 0165); absent for an automation with no key",
+            "x-untrusted": true
+          },
           "currentStepId": {
             "allOf": [
               {
@@ -13862,7 +13929,7 @@
       "EntryPolicy": {
         "type": "string",
         "enum": ["once", "again"],
-        "description": "Whether an automation enrolls a contact again (ADR 0127): `once` enrolls a contact at most once,\never; `again` enrolls it again once its previous enrollment ended, however it ended, and the\ncooldown from that enrollment's beginning passed. Either way a contact has at most one active\nenrollment in an automation."
+        "description": "Whether an automation enrolls a contact again (ADR 0127): `once` enrolls a contact at most once,\never; `again` enrolls it again once its previous enrollment ended, however it ended, and the\ncooldown from that enrollment's beginning passed. Either way a contact has at most one active\nenrollment in an automation, or one per value of its Enrollment key, by which the policy and the\ncooldown then count."
       },
       "EventCountOperator": {
         "type": "string",
@@ -14113,6 +14180,10 @@
               }
             ],
             "description": "Under `again`, the least time in seconds from the beginning of a contact's previous\nenrollment to the next; an entry sooner is skipped as `cooldown`"
+          },
+          "enrollmentKey": {
+            "type": "string",
+            "description": "The Enrollment key (ADR 0165): a property of the triggering Event, such as `order_id`, by\nwhose value a contact may have several active enrollments at once, one per value; the entry\npolicy and the cooldown count per value. An Event without the property enrolls no one and is\nskipped as `no_enrollment_key`; a contact has at most 10 active enrollments and 10 begun in a\nday, past which an entry is skipped as `enrollment_ceiling`. An exit or goal Event carrying the\nproperty ends only the enrollment of its value. Absent, a contact has one active enrollment."
           }
         },
         "description": "A Trigger that enrolls a Contact on an Event (ADR 0133): its action, and an optional filter on\nthat Event's own properties, so `order.completed` where `status` is `paid` starts on paid orders\nonly. An Event that fails the filter is no entry: it enrolls no one and is not a skipped entry."
@@ -14154,6 +14225,10 @@
             ],
             "description": "Under `again`, the least time in seconds from the beginning of a contact's previous\nenrollment to the next, at least 3600; omitted is 3600",
             "default": 3600
+          },
+          "enrollmentKey": {
+            "type": "string",
+            "description": "The Enrollment key (ADR 0165): the name of a property of the triggering Event, such as\n`order_id`, by whose value a contact may have several active enrollments at once, one per\nvalue; a property name, checked for form only. Omitted, a contact has one active enrollment."
           }
         },
         "description": "A Trigger that enrolls a Contact on an Event (ADR 0133), as a request writes it",
@@ -18951,6 +19026,19 @@
         },
         "description": "Distinct event actions seen in a workspace (for segment/filter pickers)"
       },
+      "SiteEventPropertyKeysResult": {
+        "type": "object",
+        "required": ["keys"],
+        "properties": {
+          "keys": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "The property keys seen on the most recent events of an action, sorted (for the Enrollment key\npicker): a hint, not a catalogue, since property keys have none"
+      },
       "SiteEventResource": {
         "type": "object",
         "required": ["id", "subjectId", "action", "occurredAt", "createdAt"],
@@ -22069,8 +22157,15 @@
       },
       "SkippedEntryReason": {
         "type": "string",
-        "enum": ["cycle", "active_enrollment", "once", "cooldown"],
-        "description": "Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127):\n`cycle` (the chain of events that caused it already passed through the automation),\n`active_enrollment` (the triggering Event occurred while an enrollment of the contact was\nactive, or one is active still), `once` (the contact had an enrollment in the automation before,\nunder the `once` entry policy) or `cooldown` (under `again`, the cooldown from the beginning of\nthe contact's previous enrollment had not passed)."
+        "enum": [
+          "no_enrollment_key",
+          "cycle",
+          "active_enrollment",
+          "once",
+          "cooldown",
+          "enrollment_ceiling"
+        ],
+        "description": "Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127,\nADR 0165), in their order: `no_enrollment_key` (the automation has an Enrollment key and the\ntriggering Event lacks its property), `cycle` (the chain of events that caused it already passed\nthrough the automation), `active_enrollment` (the triggering Event occurred while an enrollment\nof the contact for the key value was active, or one is active still), `once` (the contact had an\nenrollment for the key value in the automation before, under the `once` entry policy),\n`cooldown` (under `again`, the cooldown from the beginning of the contact's previous enrollment\nfor the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10\nactive enrollments, or 10 begun in a day)."
       },
       "SkippedEntryResource": {
         "type": "object",

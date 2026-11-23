@@ -4055,13 +4055,23 @@ func (s *AutomationSkippedCounts) encodeFields(e *jx.Encoder) {
 		e.FieldStart("cooldown")
 		e.Int32(s.Cooldown)
 	}
+	{
+		e.FieldStart("noEnrollmentKey")
+		e.Int32(s.NoEnrollmentKey)
+	}
+	{
+		e.FieldStart("enrollmentCeiling")
+		e.Int32(s.EnrollmentCeiling)
+	}
 }
 
-var jsonFieldsNameOfAutomationSkippedCounts = [4]string{
+var jsonFieldsNameOfAutomationSkippedCounts = [6]string{
 	0: "cycle",
 	1: "activeEnrollment",
 	2: "once",
 	3: "cooldown",
+	4: "noEnrollmentKey",
+	5: "enrollmentCeiling",
 }
 
 // Decode decodes AutomationSkippedCounts from json.
@@ -4121,6 +4131,30 @@ func (s *AutomationSkippedCounts) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"cooldown\"")
 			}
+		case "noEnrollmentKey":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				v, err := d.Int32()
+				s.NoEnrollmentKey = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"noEnrollmentKey\"")
+			}
+		case "enrollmentCeiling":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				v, err := d.Int32()
+				s.EnrollmentCeiling = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"enrollmentCeiling\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -4131,7 +4165,7 @@ func (s *AutomationSkippedCounts) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00001111,
+		0b00111111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -5227,6 +5261,12 @@ func (s AutomationTriggerInputSum) encodeFields(e *jx.Encoder) {
 					s.Cooldown.Encode(e)
 				}
 			}
+			{
+				if s.EnrollmentKey.Set {
+					e.FieldStart("enrollmentKey")
+					s.EnrollmentKey.Encode(e)
+				}
+			}
 		}
 	}
 }
@@ -5325,6 +5365,12 @@ func (s AutomationTriggerSum) encodeFields(e *jx.Encoder) {
 			{
 				e.FieldStart("cooldown")
 				s.Cooldown.Encode(e)
+			}
+			{
+				if s.EnrollmentKey.Set {
+					e.FieldStart("enrollmentKey")
+					s.EnrollmentKey.Encode(e)
+				}
 			}
 		}
 	}
@@ -19152,6 +19198,12 @@ func (s *EnrollmentResource) encodeFields(e *jx.Encoder) {
 		e.Int32(s.Ordinal)
 	}
 	{
+		if s.KeyValue.Set {
+			e.FieldStart("keyValue")
+			s.KeyValue.Encode(e)
+		}
+	}
+	{
 		if s.CurrentStepId.Set {
 			e.FieldStart("currentStepId")
 			s.CurrentStepId.Encode(e)
@@ -19179,17 +19231,18 @@ func (s *EnrollmentResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfEnrollmentResource = [10]string{
-	0: "id",
-	1: "automationId",
-	2: "contactId",
-	3: "status",
-	4: "ordinal",
-	5: "currentStepId",
-	6: "resumeAt",
-	7: "failure",
-	8: "createdAt",
-	9: "updatedAt",
+var jsonFieldsNameOfEnrollmentResource = [11]string{
+	0:  "id",
+	1:  "automationId",
+	2:  "contactId",
+	3:  "status",
+	4:  "ordinal",
+	5:  "keyValue",
+	6:  "currentStepId",
+	7:  "resumeAt",
+	8:  "failure",
+	9:  "createdAt",
+	10: "updatedAt",
 }
 
 // Decode decodes EnrollmentResource from json.
@@ -19253,6 +19306,16 @@ func (s *EnrollmentResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"ordinal\"")
 			}
+		case "keyValue":
+			if err := func() error {
+				s.KeyValue.Reset()
+				if err := s.KeyValue.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"keyValue\"")
+			}
 		case "currentStepId":
 			if err := func() error {
 				s.CurrentStepId.Reset()
@@ -19284,7 +19347,7 @@ func (s *EnrollmentResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"failure\"")
 			}
 		case "createdAt":
-			requiredBitSet[1] |= 1 << 0
+			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -19294,7 +19357,7 @@ func (s *EnrollmentResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[1] |= 1 << 2
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -19314,7 +19377,7 @@ func (s *EnrollmentResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b00011111,
-		0b00000011,
+		0b00000110,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -21751,14 +21814,21 @@ func (s *EventTrigger) encodeFields(e *jx.Encoder) {
 		e.FieldStart("cooldown")
 		s.Cooldown.Encode(e)
 	}
+	{
+		if s.EnrollmentKey.Set {
+			e.FieldStart("enrollmentKey")
+			s.EnrollmentKey.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfEventTrigger = [5]string{
+var jsonFieldsNameOfEventTrigger = [6]string{
 	0: "kind",
 	1: "action",
 	2: "filter",
 	3: "entryPolicy",
 	4: "cooldown",
+	5: "enrollmentKey",
 }
 
 // Decode decodes EventTrigger from json.
@@ -21821,6 +21891,16 @@ func (s *EventTrigger) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"cooldown\"")
+			}
+		case "enrollmentKey":
+			if err := func() error {
+				s.EnrollmentKey.Reset()
+				if err := s.EnrollmentKey.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"enrollmentKey\"")
 			}
 		default:
 			return d.Skip()
@@ -21913,14 +21993,21 @@ func (s *EventTriggerInput) encodeFields(e *jx.Encoder) {
 			s.Cooldown.Encode(e)
 		}
 	}
+	{
+		if s.EnrollmentKey.Set {
+			e.FieldStart("enrollmentKey")
+			s.EnrollmentKey.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfEventTriggerInput = [5]string{
+var jsonFieldsNameOfEventTriggerInput = [6]string{
 	0: "kind",
 	1: "action",
 	2: "filter",
 	3: "entryPolicy",
 	4: "cooldown",
+	5: "enrollmentKey",
 }
 
 // Decode decodes EventTriggerInput from json.
@@ -21984,6 +22071,16 @@ func (s *EventTriggerInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"cooldown\"")
+			}
+		case "enrollmentKey":
+			if err := func() error {
+				s.EnrollmentKey.Reset()
+				if err := s.EnrollmentKey.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"enrollmentKey\"")
 			}
 		default:
 			return errors.Errorf("unexpected field %q", k)
@@ -39308,6 +39405,8 @@ func (s *SkippedEntryReason) Decode(d *jx.Decoder) error {
 	}
 	// Try to use constant string.
 	switch SkippedEntryReason(v) {
+	case SkippedEntryReasonNoEnrollmentKey:
+		*s = SkippedEntryReasonNoEnrollmentKey
 	case SkippedEntryReasonCycle:
 		*s = SkippedEntryReasonCycle
 	case SkippedEntryReasonActiveEnrollment:
@@ -39316,6 +39415,8 @@ func (s *SkippedEntryReason) Decode(d *jx.Decoder) error {
 		*s = SkippedEntryReasonOnce
 	case SkippedEntryReasonCooldown:
 		*s = SkippedEntryReasonCooldown
+	case SkippedEntryReasonEnrollmentCeiling:
+		*s = SkippedEntryReasonEnrollmentCeiling
 	default:
 		*s = SkippedEntryReason(v)
 	}

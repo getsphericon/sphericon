@@ -1179,6 +1179,7 @@ func automationTrigger(v *ent.AutomationVersion) (siteapi.AutomationTrigger, err
 	ev := siteapi.EventTrigger{
 		Kind: siteapi.EventTriggerKindEvent, Action: m.Action,
 		EntryPolicy: siteapi.EntryPolicy(v.EntryPolicy), Cooldown: siteapi.EntryCooldown(narrow.Int32(v.CooldownSeconds)),
+		EnrollmentKey: optString(v.EnrollmentKey),
 	}
 	if m.Filter != nil {
 		f, err := convert.Document[siteapi.EventFilter](*m.Filter)

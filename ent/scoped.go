@@ -10023,6 +10023,24 @@ func (x *AutomationVersionScopedCreate) SetNillableCooldownSeconds(v *int) *Auto
 
 const RoleOf_AutomationVersionScopedCreate_SetNillableCooldownSeconds = RoleStep
 
+// SetEnrollmentKey sets the "enrollment_key" field.
+func (x *AutomationVersionScopedCreate) SetEnrollmentKey(v string) *AutomationVersionScopedCreate {
+	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetEnrollmentKey(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedCreate_SetEnrollmentKey = RoleStep
+
+// SetNillableEnrollmentKey sets the "enrollment_key" field if the given value is not nil.
+func (x *AutomationVersionScopedCreate) SetNillableEnrollmentKey(v *string) *AutomationVersionScopedCreate {
+	if v != nil {
+		x.SetEnrollmentKey(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationVersionScopedCreate_SetNillableEnrollmentKey = RoleStep
+
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (x *AutomationVersionScopedCreate) SetAutomation(v *Automation) *AutomationVersionScopedCreate {
 	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetAutomation(v) })
@@ -10319,6 +10337,30 @@ func (u *AutomationVersionScopedUpsert) UpdateCooldownSeconds() *AutomationVersi
 }
 
 const RoleOf_AutomationVersionScopedUpsert_UpdateCooldownSeconds = RoleStep
+
+// SetEnrollmentKey sets the "enrollment_key" field.
+func (u *AutomationVersionScopedUpsert) SetEnrollmentKey(v string) *AutomationVersionScopedUpsert {
+	u.u.Set(automationversion.FieldEnrollmentKey, v)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_SetEnrollmentKey = RoleStep
+
+// UpdateEnrollmentKey sets the "enrollment_key" field to the value that was provided on create.
+func (u *AutomationVersionScopedUpsert) UpdateEnrollmentKey() *AutomationVersionScopedUpsert {
+	u.u.SetExcluded(automationversion.FieldEnrollmentKey)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_UpdateEnrollmentKey = RoleStep
+
+// ClearEnrollmentKey clears the value of the "enrollment_key" field.
+func (u *AutomationVersionScopedUpsert) ClearEnrollmentKey() *AutomationVersionScopedUpsert {
+	u.u.SetNull(automationversion.FieldEnrollmentKey)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_ClearEnrollmentKey = RoleStep
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
 // target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
@@ -10673,6 +10715,32 @@ func (x *AutomationVersionScopedUpdateOne) AddCooldownSeconds(v int) *Automation
 
 const RoleOf_AutomationVersionScopedUpdateOne_AddCooldownSeconds = RoleStep
 
+// SetEnrollmentKey sets the "enrollment_key" field.
+func (x *AutomationVersionScopedUpdateOne) SetEnrollmentKey(v string) *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetEnrollmentKey(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdateOne_SetEnrollmentKey = RoleStep
+
+// SetNillableEnrollmentKey sets the "enrollment_key" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdateOne) SetNillableEnrollmentKey(v *string) *AutomationVersionScopedUpdateOne {
+	if v != nil {
+		x.SetEnrollmentKey(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdateOne_SetNillableEnrollmentKey = RoleStep
+
+// ClearEnrollmentKey clears the value of the "enrollment_key" field.
+func (x *AutomationVersionScopedUpdateOne) ClearEnrollmentKey() *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.ClearEnrollmentKey() })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdateOne_ClearEnrollmentKey = RoleStep
+
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (x *AutomationVersionScopedUpdateOne) SetAutomation(v *Automation) *AutomationVersionScopedUpdateOne {
 	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetAutomation(v) })
@@ -10965,6 +11033,32 @@ func (x *AutomationVersionScopedUpdate) AddCooldownSeconds(v int) *AutomationVer
 }
 
 const RoleOf_AutomationVersionScopedUpdate_AddCooldownSeconds = RoleStep
+
+// SetEnrollmentKey sets the "enrollment_key" field.
+func (x *AutomationVersionScopedUpdate) SetEnrollmentKey(v string) *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetEnrollmentKey(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdate_SetEnrollmentKey = RoleStep
+
+// SetNillableEnrollmentKey sets the "enrollment_key" field if the given value is not nil.
+func (x *AutomationVersionScopedUpdate) SetNillableEnrollmentKey(v *string) *AutomationVersionScopedUpdate {
+	if v != nil {
+		x.SetEnrollmentKey(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdate_SetNillableEnrollmentKey = RoleStep
+
+// ClearEnrollmentKey clears the value of the "enrollment_key" field.
+func (x *AutomationVersionScopedUpdate) ClearEnrollmentKey() *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.ClearEnrollmentKey() })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdate_ClearEnrollmentKey = RoleStep
 
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (x *AutomationVersionScopedUpdate) SetAutomation(v *Automation) *AutomationVersionScopedUpdate {

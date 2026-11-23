@@ -90,6 +90,11 @@ func CooldownSeconds(v int) predicate.AutomationVersion {
 	return predicate.AutomationVersion(sql.FieldEQ(FieldCooldownSeconds, v))
 }
 
+// EnrollmentKey applies equality check predicate on the "enrollment_key" field. It's identical to EnrollmentKeyEQ.
+func EnrollmentKey(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldEQ(FieldEnrollmentKey, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.AutomationVersion {
 	return predicate.AutomationVersion(sql.FieldEQ(FieldCreatedAt, v))
@@ -393,6 +398,81 @@ func CooldownSecondsLT(v int) predicate.AutomationVersion {
 // CooldownSecondsLTE applies the LTE predicate on the "cooldown_seconds" field.
 func CooldownSecondsLTE(v int) predicate.AutomationVersion {
 	return predicate.AutomationVersion(sql.FieldLTE(FieldCooldownSeconds, v))
+}
+
+// EnrollmentKeyEQ applies the EQ predicate on the "enrollment_key" field.
+func EnrollmentKeyEQ(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldEQ(FieldEnrollmentKey, v))
+}
+
+// EnrollmentKeyNEQ applies the NEQ predicate on the "enrollment_key" field.
+func EnrollmentKeyNEQ(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNEQ(FieldEnrollmentKey, v))
+}
+
+// EnrollmentKeyIn applies the In predicate on the "enrollment_key" field.
+func EnrollmentKeyIn(vs ...string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldIn(FieldEnrollmentKey, vs...))
+}
+
+// EnrollmentKeyNotIn applies the NotIn predicate on the "enrollment_key" field.
+func EnrollmentKeyNotIn(vs ...string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNotIn(FieldEnrollmentKey, vs...))
+}
+
+// EnrollmentKeyGT applies the GT predicate on the "enrollment_key" field.
+func EnrollmentKeyGT(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldGT(FieldEnrollmentKey, v))
+}
+
+// EnrollmentKeyGTE applies the GTE predicate on the "enrollment_key" field.
+func EnrollmentKeyGTE(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldGTE(FieldEnrollmentKey, v))
+}
+
+// EnrollmentKeyLT applies the LT predicate on the "enrollment_key" field.
+func EnrollmentKeyLT(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldLT(FieldEnrollmentKey, v))
+}
+
+// EnrollmentKeyLTE applies the LTE predicate on the "enrollment_key" field.
+func EnrollmentKeyLTE(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldLTE(FieldEnrollmentKey, v))
+}
+
+// EnrollmentKeyContains applies the Contains predicate on the "enrollment_key" field.
+func EnrollmentKeyContains(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldContains(FieldEnrollmentKey, v))
+}
+
+// EnrollmentKeyHasPrefix applies the HasPrefix predicate on the "enrollment_key" field.
+func EnrollmentKeyHasPrefix(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldHasPrefix(FieldEnrollmentKey, v))
+}
+
+// EnrollmentKeyHasSuffix applies the HasSuffix predicate on the "enrollment_key" field.
+func EnrollmentKeyHasSuffix(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldHasSuffix(FieldEnrollmentKey, v))
+}
+
+// EnrollmentKeyIsNil applies the IsNil predicate on the "enrollment_key" field.
+func EnrollmentKeyIsNil() predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldIsNull(FieldEnrollmentKey))
+}
+
+// EnrollmentKeyNotNil applies the NotNil predicate on the "enrollment_key" field.
+func EnrollmentKeyNotNil() predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNotNull(FieldEnrollmentKey))
+}
+
+// EnrollmentKeyEqualFold applies the EqualFold predicate on the "enrollment_key" field.
+func EnrollmentKeyEqualFold(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldEqualFold(FieldEnrollmentKey, v))
+}
+
+// EnrollmentKeyContainsFold applies the ContainsFold predicate on the "enrollment_key" field.
+func EnrollmentKeyContainsFold(v string) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldContainsFold(FieldEnrollmentKey, v))
 }
 
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.

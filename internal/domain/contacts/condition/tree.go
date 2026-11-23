@@ -315,10 +315,20 @@ func decodeProperty(e entry) (node, error) {
 	return propertyLeaf{key: key, test: t}, nil
 }
 
+// CheckPropertyKey checks the form of the key of an Event property: property keys have no
+// catalogue, so a key is checked for form only (ADR 0133), here, for a filter's tests and for an
+// Automation's Enrollment key (ADR 0165) alike.
+func CheckPropertyKey(key string) error {
+	if key == "" {
+		return errors.New("property key is required")
+	}
+	return nil
+}
+
 // decodePropertyTest reads the key and the test of a property test, whatever its subject.
 func decodePropertyTest(e entry) (string, propertyTest, error) {
-	if e.Key == "" {
-		return "", nil, errors.New("property key is required")
+	if err := CheckPropertyKey(e.Key); err != nil {
+		return "", nil, err
 	}
 	t, err := decodeTest(e.Test, conditiontree.PropertyTests)
 	if err != nil {

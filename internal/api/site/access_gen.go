@@ -90,6 +90,7 @@ var operationAccess = map[siteapi.OperationName]access{
 	siteapi.SiteEnrollmentsListOperation:                       {workspace: true},
 	siteapi.SiteEventsActionsOperation:                         {workspace: true},
 	siteapi.SiteEventsListOperation:                            {workspace: true},
+	siteapi.SiteEventsPropertyKeysOperation:                    {workspace: true},
 	siteapi.SiteIdentitiesLinkOperation:                        {},
 	siteapi.SiteIdentitiesListOperation:                        {},
 	siteapi.SiteIdentitiesUnlinkOperation:                      {},

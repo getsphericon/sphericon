@@ -40,6 +40,8 @@ const (
 	FieldEntryPolicy = "entry_policy"
 	// FieldCooldownSeconds holds the string denoting the cooldown_seconds field in the database.
 	FieldCooldownSeconds = "cooldown_seconds"
+	// FieldEnrollmentKey holds the string denoting the enrollment_key field in the database.
+	FieldEnrollmentKey = "enrollment_key"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// EdgeAutomation holds the string denoting the automation edge name in mutations.
@@ -86,6 +88,7 @@ var Columns = []string{
 	FieldGoal,
 	FieldEntryPolicy,
 	FieldCooldownSeconds,
+	FieldEnrollmentKey,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -185,6 +188,11 @@ func ByEntryPolicy(opts ...sql.OrderTermOption) OrderOption {
 // ByCooldownSeconds orders the results by the cooldown_seconds field.
 func ByCooldownSeconds(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCooldownSeconds, opts...).ToFunc()
+}
+
+// ByEnrollmentKey orders the results by the enrollment_key field.
+func ByEnrollmentKey(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEnrollmentKey, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.

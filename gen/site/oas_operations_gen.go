@@ -84,6 +84,7 @@ const (
 	SiteEnrollmentsListOperation                       OperationName = "SiteEnrollmentsList"
 	SiteEventsActionsOperation                         OperationName = "SiteEventsActions"
 	SiteEventsListOperation                            OperationName = "SiteEventsList"
+	SiteEventsPropertyKeysOperation                    OperationName = "SiteEventsPropertyKeys"
 	SiteIdentitiesLinkOperation                        OperationName = "SiteIdentitiesLink"
 	SiteIdentitiesListOperation                        OperationName = "SiteIdentitiesList"
 	SiteIdentitiesUnlinkOperation                      OperationName = "SiteIdentitiesUnlink"

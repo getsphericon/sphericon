@@ -44,6 +44,12 @@ model SiteEventActionsResult {
   actions: string[];
 }
 
+/** The property keys seen on the most recent events of an action, sorted (for the Enrollment key
+ * picker): a hint, not a catalogue, since property keys have none */
+model SiteEventPropertyKeysResult {
+  keys: string[];
+}
+
 // Read-only activity feed + an actions metadata collection action.
 // Nested via @parentResource + @autoRoute.
 @tag("Site Events")
@@ -78,4 +84,17 @@ namespace SiteEvents {
   op actions(...ResourceCollectionParameters<SiteEventResource>):
     | SiteEventActionsResult
     | Problem;
+
+  /** The property keys of the most recent events of the action, distinct and sorted — powers the
+   * automation Trigger's Enrollment key picker */
+  @collectionAction(SiteEventResource, "property-keys")
+  @get
+  @autoRoute
+  @requiresPermissions(#[])
+  op propertyKeys(
+    ...ResourceCollectionParameters<SiteEventResource>,
+
+    /** The event action whose recent events are read */
+    @query action: string,
+  ): SiteEventPropertyKeysResult | Problem;
 }

@@ -311,6 +311,26 @@ func TestUnsubscribeAutomationExitsEnrollment(t *testing.T) {
 		"the active enrollment is exited")
 }
 
+// An unsubscribe from a keyed Automation ends every one of the Contact's Enrollments in it, one per
+// order (ADR 0165): an opt-out is from the Sending source, not from one order.
+func TestUnsubscribeFromAKeyedAutomationExitsEveryEnrollment(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
+
+	req := httptest.NewRequestWithContext(ctx, http.MethodPost, unsubPath(t, env.Tracker, linktarget.Unsubscribe{
+		Channel: channels.Email,
+		Source:  eligibility.AutomationSource(fixtures.AutomationOrderSeriesID), Destination: *c.Email,
+		WorkspaceID: fixtures.AcmeID, ContactID: c.ID,
+	}), nil)
+	resp := env.Serve(req)
+
+	assert.Equal(t, http.StatusNoContent, resp.Code)
+	for _, id := range []int64{fixtures.AutomationRunOrderSeriesAID, fixtures.AutomationRunOrderSeriesBID} {
+		assert.Equal(t, automationrun.StatusExited, env.DB.AutomationRun.GetX(ctx, id).Status, "the Enrollment %d is exited", id)
+	}
+}
+
 // The confirm-page redirect carries an "unsubscribe from everything" escalation;
 // following it lands on a confirm page with no further escalation, and POSTing
 // both tokens records an everything-scoped opt-out alongside the source one — two

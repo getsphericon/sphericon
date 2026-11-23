@@ -26,7 +26,8 @@ import (
 )
 
 // Enrollment rules (GLOSSARY: Enrollment). A Contact has at most one active Enrollment in an
-// Automation, and whether it is enrolled again after one ended is the Entry policy of the version
+// Automation, or one per value of the version's Enrollment key (ADR 0165), and whether it is
+// enrolled again after one ended is the Entry policy of the version
 // it would begin on (ADR 0127): `once` enrolls it at most once, ever, `again` once more after each
 // end and the cooldown. The entry checks (entry.go) decide under the Contact's lock and record why
 // they refuse. These are package functions rather than Module methods because callers already hold
@@ -75,7 +76,10 @@ type Event struct {
 // that one cause enrolls a Contact in an Automation once (ADR 0127): SourceID, the source id of the
 // Event whose Trigger it is, or FiringID, the Rule Firing whose Enroll Action it is. Chain is the
 // Automations the chain that caused the entry passed through (ADR 0127): the entry checks skip an
-// entry into one of them (`cycle`), and the Enrollment made keeps them with its own.
+// entry into one of them (`cycle`), and the Enrollment made keeps them with its own. Stored is the
+// source id of the stored Event the Enrollment begins on, the trigger's or the one the Rule fired
+// on, empty when none is: the Enrollment key's value is read from it (ADR 0165), into KeyValue
+// once the version the entry is judged on is known (nil when the Event lacks the property).
 type origin struct {
 	Action     string
 	OccurredAt time.Time
@@ -83,6 +87,8 @@ type origin struct {
 	SourceID   string
 	FiringID   int64
 	Chain      []int64
+	Stored     string
+	KeyValue   *string
 }
 
 // originOf is the origin of an Event: its action and occurred_at, and the properties of the row
@@ -95,7 +101,7 @@ func originOf(ctx context.Context, s *ent.Scoped, ev Event) (origin, error) {
 	if err != nil || stored == nil {
 		return o, err
 	}
-	o.Properties = events.BoundedProperties(stored.Properties)
+	o.Properties, o.Stored = events.BoundedProperties(stored.Properties), ev.SourceID
 	return o, nil
 }
 
@@ -124,6 +130,7 @@ func (m *StepExecution) enrollOnRule(ctx context.Context, s *ent.Scoped, pub eve
 	o := origin{OccurredAt: now, FiringID: in.FiringID, Chain: in.Chain}
 	if fired != nil {
 		o.Action, o.Properties, o.OccurredAt = fired.Action, events.BoundedProperties(fired.Properties), fired.OccurredAt
+		o.Stored = in.SourceID
 	}
 	return m.enroll(ctx, s, pub, automationID, contactID, o, func(a *ent.Automation) (bool, error) {
 		if !active(a) {
@@ -168,7 +175,9 @@ var _ = db.Declare(
 
 // enroll makes the Enrollment that began on the Event of o when admits, called under the share lock
 // with the Automation and its live version, accepts it, and the entry checks let it through
-// (judgeEntry), and copies o's action and properties onto it (#752). admits answers whether the
+// (judgeEntry), and copies o's action and properties onto it (#752). A live version with an
+// Enrollment key reads the key's value from o's stored Event (keyValueOf) before the checks judge
+// the entry, and the Enrollment keeps it (ADR 0165). admits answers whether the
 // Enrollment is made: a refusal with an error returns that error, one without makes nothing and
 // returns none. An entry the checks refuse makes nothing and is recorded as skipped, with its
 // reason (skip). An exit or goal Event of the live version recorded for the Contact since o occurred
@@ -200,6 +209,11 @@ func (m *StepExecution) enroll(ctx context.Context, s *ent.Scoped, pub events.Pu
 	admitted, err := admits(a.row)
 	if err != nil || !admitted {
 		return 0, false, "", err
+	}
+	if key := a.row.Edges.LiveVersion.EnrollmentKey; key != nil {
+		if o.KeyValue, err = keyValueOf(ctx, s, o.Stored, *key); err != nil {
+			return 0, false, "", err
+		}
 	}
 	judged, err := judgeEntry(ctx, s, a.row.Edges.LiveVersion, contactID, o)
 	if err != nil {
@@ -301,6 +315,7 @@ func begin(ctx context.Context, s *ent.Scoped, held contactlock.Locked, a liveSh
 		SetOrdinal(ordinal).
 		SetBeganAt(o.OccurredAt).
 		SetChain(events.AutomationSet(o.Chain, a.row.ID)).
+		SetNillableKeyValue(o.KeyValue).
 		SetNillableResumeAt(due)
 	if first, ok := automationstep.First(a.row.Edges.LiveVersion.Steps); ok {
 		create.SetCurrentStepID(first.ID)
@@ -335,9 +350,11 @@ func begin(ctx context.Context, s *ent.Scoped, held contactlock.Locked, a liveSh
 // endedSince is the end the first exit or goal Event of the version recorded for the Contact since
 // the Event of o occurred makes, and when that Event occurred, if there is one (ADR 0133): an Event
 // of an exit's or the goal's action whose properties pass its filter, run in Postgres. The Event
-// that began the Enrollment (o's source id) never ends it. Like the trigger consumer it leaves out
-// loaded history and a machine open or click (ADR 0053); an exit and the goal at the same moment
-// are taken in the order they were recorded, and an Event matching both reaches the goal.
+// that began the Enrollment (o's source id) never ends it, and a keyed Enrollment ends only on an
+// Event carrying none of the key or o's value (ofKey, ADR 0165). Like the trigger consumer it
+// leaves out loaded history and a machine open or click (ADR 0053); an exit and the goal at the
+// same moment are taken in the order they were recorded, and an Event matching both reaches the
+// goal.
 func endedSince(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, contactID int64, o origin) (trigger, time.Time, bool, error) {
 	exits, goal := ExitsOf(v), v.Goal
 	matchers := slices.Clone(exits)
@@ -363,6 +380,9 @@ func endedSince(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, co
 	}
 	if o.SourceID != "" {
 		where = append(where, event.Or(event.SourceIDIsNil(), event.SourceIDNEQ(o.SourceID)))
+	}
+	if key := v.EnrollmentKey; key != nil && o.KeyValue != nil {
+		where = append(where, ofKey(*key, *o.KeyValue))
 	}
 	first, err := s.Event().Query().
 		Where(where...).
@@ -443,7 +463,9 @@ func exitRun(ctx context.Context, bus *events.Bus, s *ent.Scoped, runID int64, n
 // the Automation's status or live version now. Only an Event that occurred when the Enrollment began
 // (the triggering Event's occurred_at) or later ends it, so loaded history does not end a fresh
 // Enrollment, and an Event that came after the trigger but was handled before the Enrollment was
-// made still does; the Event that began an Enrollment never ends it.
+// made still does; the Event that began an Enrollment never ends it. An Enrollment of a keyed
+// version ends only on an Event carrying none of the key or its own value (endsKey, ADR 0165), so a
+// cancel of order A ends A's series and leaves B's, and a cancel naming no order ends both.
 // It matches by Contact alone, and an Enrollment another writer moved first is left alone; the
 // Contact's ended Enrollments, however many, are not read. It locks
 // the Contact first, as making an Enrollment does, so s is bound to a transaction: an Enrollment
@@ -461,11 +483,18 @@ func (m *StepExecution) endOnEvent(ctx context.Context, s *ent.Scoped, pub event
 	if err != nil {
 		return err
 	}
+	values := map[string]*string{}
 	for _, run := range runs {
 		if ev.OccurredAt.Before(run.BeganAt) || begunBy(run, ev) {
 			continue
 		}
 		t, ends, err := endingOf(ctx, s, run.Edges.Version, ev)
+		if err != nil {
+			return err
+		}
+		if ends {
+			ends, err = endsKey(ctx, s, run, ev.SourceID, values)
+		}
 		if err != nil {
 			return err
 		}

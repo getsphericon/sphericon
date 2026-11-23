@@ -253,7 +253,9 @@ export const zAutomationSkippedCounts = z.object({
   cycle: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   activeEnrollment: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   once: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  cooldown: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+  cooldown: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  noEnrollmentKey: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  enrollmentCeiling: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
 /**
@@ -518,7 +520,8 @@ export const zEntryCooldown = z.int().gte(3600).max(2147483647, { error: 'Invali
  * Whether an automation enrolls a contact again (ADR 0127): `once` enrolls a contact at most once,
  * ever; `again` enrolls it again once its previous enrollment ended, however it ended, and the
  * cooldown from that enrollment's beginning passed. Either way a contact has at most one active
- * enrollment in an automation.
+ * enrollment in an automation, or one per value of its Enrollment key, by which the policy and the
+ * cooldown then count.
  */
 export const zEntryPolicy = z.enum(['once', 'again']);
 
@@ -1684,6 +1687,14 @@ export const zSiteEventActionsResult = z.object({
 });
 
 /**
+ * The property keys seen on the most recent events of an action, sorted (for the Enrollment key
+ * picker): a hint, not a catalogue, since property keys have none
+ */
+export const zSiteEventPropertyKeysResult = z.object({
+  keys: z.array(z.string())
+});
+
+/**
  * Request a password-reset link (always accepted; no account enumeration)
  */
 export const zSiteForgotPasswordInput = z.strictObject({
@@ -2425,18 +2436,23 @@ export const zSiteVerifyEmailInput = z.strictObject({
 });
 
 /**
- * Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127):
- * `cycle` (the chain of events that caused it already passed through the automation),
- * `active_enrollment` (the triggering Event occurred while an enrollment of the contact was
- * active, or one is active still), `once` (the contact had an enrollment in the automation before,
- * under the `once` entry policy) or `cooldown` (under `again`, the cooldown from the beginning of
- * the contact's previous enrollment had not passed).
+ * Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127,
+ * ADR 0165), in their order: `no_enrollment_key` (the automation has an Enrollment key and the
+ * triggering Event lacks its property), `cycle` (the chain of events that caused it already passed
+ * through the automation), `active_enrollment` (the triggering Event occurred while an enrollment
+ * of the contact for the key value was active, or one is active still), `once` (the contact had an
+ * enrollment for the key value in the automation before, under the `once` entry policy),
+ * `cooldown` (under `again`, the cooldown from the beginning of the contact's previous enrollment
+ * for the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10
+ * active enrollments, or 10 begun in a day).
  */
 export const zSkippedEntryReason = z.enum([
+  'no_enrollment_key',
   'cycle',
   'active_enrollment',
   'once',
-  'cooldown'
+  'cooldown',
+  'enrollment_ceiling'
 ]);
 
 /**
@@ -3336,6 +3352,7 @@ export const zEnrollmentResource = z.object({
   contactId: zEntityId,
   status: zEnrollmentStatus,
   ordinal: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  keyValue: z.exactOptional(z.string()),
   currentStepId: z.exactOptional(zStepId),
   resumeAt: z.exactOptional(zTimestamp),
   failure: z.exactOptional(zEnrollmentFailure),
@@ -4734,7 +4751,8 @@ export const zEventTrigger = z.object({
   action: z.string(),
   filter: z.exactOptional(zEventFilter),
   entryPolicy: zEntryPolicy,
-  cooldown: zEntryCooldown
+  cooldown: zEntryCooldown,
+  enrollmentKey: z.exactOptional(z.string())
 });
 
 /**
@@ -4745,7 +4763,8 @@ export const zEventTriggerInput = z.strictObject({
   action: z.string(),
   filter: z.exactOptional(zEventFilterInput),
   entryPolicy: z.exactOptional(zEntryPolicy),
-  cooldown: z.exactOptional(zEntryCooldown)
+  cooldown: z.exactOptional(zEntryCooldown),
+  enrollmentKey: z.exactOptional(z.string())
 });
 
 /**
@@ -6620,6 +6639,19 @@ export const zSiteEventsActionsPath = z.object({
  * The request has succeeded.
  */
 export const zSiteEventsActionsResponse = zSiteEventActionsResult;
+
+export const zSiteEventsPropertyKeysPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+export const zSiteEventsPropertyKeysQuery = z.object({
+  action: z.string()
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteEventsPropertyKeysResponse = zSiteEventPropertyKeysResult;
 
 export const zSiteIdentitySecretGetPath = z.object({
   workspaceId: zWorkspaceId

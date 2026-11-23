@@ -699,6 +699,15 @@ export type AutomationSkippedCounts = {
    * Entries sooner after the beginning of the contact's previous enrollment than the cooldown
    */
   cooldown: number;
+  /**
+   * Entries whose Event lacked the property the automation's Enrollment key names
+   */
+  noEnrollmentKey: number;
+  /**
+   * Entries of a contact that had 10 active enrollments in the keyed automation, or 10 begun in a
+   * day
+   */
+  enrollmentCeiling: number;
 };
 
 /**
@@ -2828,6 +2837,11 @@ export type EnrollmentResource = {
    */
   ordinal: number;
   /**
+   * The value of the automation's Enrollment key the triggering Event carried, the property's
+   * string form (ADR 0165); absent for an automation with no key
+   */
+  keyValue?: string;
+  /**
    * Id of the Step of its version the Enrollment stands on (ADR 0122): a wait while it waits, the Step it ended on once it ended; absent only for a version of no Steps
    */
   currentStepId?: StepId;
@@ -2884,7 +2898,8 @@ export type EntryCooldown = number;
  * Whether an automation enrolls a contact again (ADR 0127): `once` enrolls a contact at most once,
  * ever; `again` enrolls it again once its previous enrollment ended, however it ended, and the
  * cooldown from that enrollment's beginning passed. Either way a contact has at most one active
- * enrollment in an automation.
+ * enrollment in an automation, or one per value of its Enrollment key, by which the policy and the
+ * cooldown then count.
  */
 export const EntryPolicy = { ONCE: 'once', AGAIN: 'again' } as const;
 
@@ -2892,7 +2907,8 @@ export const EntryPolicy = { ONCE: 'once', AGAIN: 'again' } as const;
  * Whether an automation enrolls a contact again (ADR 0127): `once` enrolls a contact at most once,
  * ever; `again` enrolls it again once its previous enrollment ended, however it ended, and the
  * cooldown from that enrollment's beginning passed. Either way a contact has at most one active
- * enrollment in an automation.
+ * enrollment in an automation, or one per value of its Enrollment key, by which the policy and the
+ * cooldown then count.
  */
 export type EntryPolicy = typeof EntryPolicy[keyof typeof EntryPolicy];
 
@@ -3157,6 +3173,15 @@ export type EventTrigger = {
    * enrollment to the next; an entry sooner is skipped as `cooldown`
    */
   cooldown: EntryCooldown;
+  /**
+   * The Enrollment key (ADR 0165): a property of the triggering Event, such as `order_id`, by
+   * whose value a contact may have several active enrollments at once, one per value; the entry
+   * policy and the cooldown count per value. An Event without the property enrolls no one and is
+   * skipped as `no_enrollment_key`; a contact has at most 10 active enrollments and 10 begun in a
+   * day, past which an entry is skipped as `enrollment_ceiling`. An exit or goal Event carrying the
+   * property ends only the enrollment of its value. Absent, a contact has one active enrollment.
+   */
+  enrollmentKey?: string;
 };
 
 /**
@@ -3185,6 +3210,12 @@ export type EventTriggerInput = {
    * enrollment to the next, at least 3600; omitted is 3600
    */
   cooldown?: EntryCooldown;
+  /**
+   * The Enrollment key (ADR 0165): the name of a property of the triggering Event, such as
+   * `order_id`, by whose value a contact may have several active enrollments at once, one per
+   * value; a property name, checked for form only. Omitted, a contact has one active enrollment.
+   */
+  enrollmentKey?: string;
 };
 
 /**
@@ -5412,27 +5443,35 @@ export type SetupScope = typeof SetupScope[keyof typeof SetupScope];
 export type SigningSecret = string;
 
 /**
- * Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127):
- * `cycle` (the chain of events that caused it already passed through the automation),
- * `active_enrollment` (the triggering Event occurred while an enrollment of the contact was
- * active, or one is active still), `once` (the contact had an enrollment in the automation before,
- * under the `once` entry policy) or `cooldown` (under `again`, the cooldown from the beginning of
- * the contact's previous enrollment had not passed).
+ * Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127,
+ * ADR 0165), in their order: `no_enrollment_key` (the automation has an Enrollment key and the
+ * triggering Event lacks its property), `cycle` (the chain of events that caused it already passed
+ * through the automation), `active_enrollment` (the triggering Event occurred while an enrollment
+ * of the contact for the key value was active, or one is active still), `once` (the contact had an
+ * enrollment for the key value in the automation before, under the `once` entry policy),
+ * `cooldown` (under `again`, the cooldown from the beginning of the contact's previous enrollment
+ * for the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10
+ * active enrollments, or 10 begun in a day).
  */
 export const SkippedEntryReason = {
+  NO_ENROLLMENT_KEY: 'no_enrollment_key',
   CYCLE: 'cycle',
   ACTIVE_ENROLLMENT: 'active_enrollment',
   ONCE: 'once',
-  COOLDOWN: 'cooldown'
+  COOLDOWN: 'cooldown',
+  ENROLLMENT_CEILING: 'enrollment_ceiling'
 } as const;
 
 /**
- * Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127):
- * `cycle` (the chain of events that caused it already passed through the automation),
- * `active_enrollment` (the triggering Event occurred while an enrollment of the contact was
- * active, or one is active still), `once` (the contact had an enrollment in the automation before,
- * under the `once` entry policy) or `cooldown` (under `again`, the cooldown from the beginning of
- * the contact's previous enrollment had not passed).
+ * Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127,
+ * ADR 0165), in their order: `no_enrollment_key` (the automation has an Enrollment key and the
+ * triggering Event lacks its property), `cycle` (the chain of events that caused it already passed
+ * through the automation), `active_enrollment` (the triggering Event occurred while an enrollment
+ * of the contact for the key value was active, or one is active still), `once` (the contact had an
+ * enrollment for the key value in the automation before, under the `once` entry policy),
+ * `cooldown` (under `again`, the cooldown from the beginning of the contact's previous enrollment
+ * for the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10
+ * active enrollments, or 10 begun in a day).
  */
 export type SkippedEntryReason = typeof SkippedEntryReason[keyof typeof SkippedEntryReason];
 

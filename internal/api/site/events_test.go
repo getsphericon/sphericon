@@ -105,3 +105,23 @@ func TestSiteEventsActionsUnknownWorkspace(t *testing.T) {
 	_, err := c.SiteEventsActions(context.Background(), siteapi.SiteEventsActionsParams{WorkspaceId: "NoSuchWs"})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }
+
+// SiteEventsPropertyKeys returns the property keys seen on the recent events of one action,
+// distinct and sorted: the Enrollment key picker's suggestions (fixture lesson_completed events
+// carry course and lesson).
+func TestSiteEventsPropertyKeysOfAnAction(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+
+	res, err := c.SiteEventsPropertyKeys(context.Background(), siteapi.SiteEventsPropertyKeysParams{
+		WorkspaceId: fixtures.AcmePublicID, Action: "lesson_completed",
+	})
+	require.NoError(t, err)
+	none, err := c.SiteEventsPropertyKeys(context.Background(), siteapi.SiteEventsPropertyKeysParams{
+		WorkspaceId: fixtures.AcmePublicID, Action: "never_recorded",
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, []string{"course", "lesson"}, res.Keys)
+	assert.Empty(t, none.Keys)
+}

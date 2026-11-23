@@ -26,7 +26,8 @@ type AutomationVersion struct {
 }
 
 // Annotations adds to the enum checks the shape of the steps, of the Trigger's filter and of the exit
-// and goal matchers, and the cooldown's floor (ADR 0127).
+// and goal matchers, the cooldown's floor (ADR 0127) and that an Enrollment key is no empty name
+// (ADR 0165).
 func (AutomationVersion) Annotations() []schema.Annotation {
 	a := TableWithEnumChecks("automation_versions", AutomationVersion{}.Fields())
 	a.Checks["automation_versions_steps_check"] = stepsCheck("steps")
@@ -35,6 +36,7 @@ func (AutomationVersion) Annotations() []schema.Annotation {
 	a.Checks["automation_versions_exits_check"] = jsonCheck("exits", "array")
 	a.Checks["automation_versions_goal_check"] = jsonCheck("goal", "object")
 	a.Checks["automation_versions_cooldown_check"] = fmt.Sprintf("cooldown_seconds >= %d", bounds.EntryCooldownMin)
+	a.Checks["automation_versions_enrollment_key_check"] = "enrollment_key IS NULL OR enrollment_key <> ''"
 	return []schema.Annotation{a}
 }
 
@@ -90,6 +92,14 @@ func (AutomationVersion) Fields() []ent.Field {
 		// Automation to the next under `again`: at least an hour, which is also its default.
 		field.Int("cooldown_seconds").
 			Default(bounds.TriggerCooldownDefault),
+		// The Enrollment key of the Event Trigger (ADR 0165): the name of a property of the
+		// triggering Event (`order_id`) by whose value a Contact may have several active
+		// Enrollments in the Automation, one per value, the Entry policy and the cooldown counting
+		// per value. NULL is no key: one active Enrollment per Contact. A property name is checked
+		// for form only, as a filter's keys are (ADR 0133).
+		field.String("enrollment_key").
+			Optional().
+			Nillable(),
 	}
 }
 

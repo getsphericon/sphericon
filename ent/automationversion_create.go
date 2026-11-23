@@ -132,6 +132,20 @@ func (_c *AutomationVersionCreate) SetNillableCooldownSeconds(v *int) *Automatio
 	return _c
 }
 
+// SetEnrollmentKey sets the "enrollment_key" field.
+func (_c *AutomationVersionCreate) SetEnrollmentKey(v string) *AutomationVersionCreate {
+	_c.mutation.SetEnrollmentKey(v)
+	return _c
+}
+
+// SetNillableEnrollmentKey sets the "enrollment_key" field if the given value is not nil.
+func (_c *AutomationVersionCreate) SetNillableEnrollmentKey(v *string) *AutomationVersionCreate {
+	if v != nil {
+		_c.SetEnrollmentKey(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *AutomationVersionCreate) SetID(v int64) *AutomationVersionCreate {
 	_c.mutation.SetID(v)
@@ -340,6 +354,10 @@ func (_c *AutomationVersionCreate) createSpec() (*AutomationVersion, *sqlgraph.C
 	if value, ok := _c.mutation.CooldownSeconds(); ok {
 		_spec.SetField(automationversion.FieldCooldownSeconds, field.TypeInt, value)
 		_node.CooldownSeconds = value
+	}
+	if value, ok := _c.mutation.EnrollmentKey(); ok {
+		_spec.SetField(automationversion.FieldEnrollmentKey, field.TypeString, value)
+		_node.EnrollmentKey = &value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -581,6 +599,24 @@ func (u *AutomationVersionUpsert) AddCooldownSeconds(v int) *AutomationVersionUp
 	return u
 }
 
+// SetEnrollmentKey sets the "enrollment_key" field.
+func (u *AutomationVersionUpsert) SetEnrollmentKey(v string) *AutomationVersionUpsert {
+	u.Set(automationversion.FieldEnrollmentKey, v)
+	return u
+}
+
+// UpdateEnrollmentKey sets the "enrollment_key" field to the value that was provided on create.
+func (u *AutomationVersionUpsert) UpdateEnrollmentKey() *AutomationVersionUpsert {
+	u.SetExcluded(automationversion.FieldEnrollmentKey)
+	return u
+}
+
+// ClearEnrollmentKey clears the value of the "enrollment_key" field.
+func (u *AutomationVersionUpsert) ClearEnrollmentKey() *AutomationVersionUpsert {
+	u.SetNull(automationversion.FieldEnrollmentKey)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -793,6 +829,27 @@ func (u *AutomationVersionUpsertOne) AddCooldownSeconds(v int) *AutomationVersio
 func (u *AutomationVersionUpsertOne) UpdateCooldownSeconds() *AutomationVersionUpsertOne {
 	return u.Update(func(s *AutomationVersionUpsert) {
 		s.UpdateCooldownSeconds()
+	})
+}
+
+// SetEnrollmentKey sets the "enrollment_key" field.
+func (u *AutomationVersionUpsertOne) SetEnrollmentKey(v string) *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetEnrollmentKey(v)
+	})
+}
+
+// UpdateEnrollmentKey sets the "enrollment_key" field to the value that was provided on create.
+func (u *AutomationVersionUpsertOne) UpdateEnrollmentKey() *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateEnrollmentKey()
+	})
+}
+
+// ClearEnrollmentKey clears the value of the "enrollment_key" field.
+func (u *AutomationVersionUpsertOne) ClearEnrollmentKey() *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.ClearEnrollmentKey()
 	})
 }
 
@@ -1174,6 +1231,27 @@ func (u *AutomationVersionUpsertBulk) AddCooldownSeconds(v int) *AutomationVersi
 func (u *AutomationVersionUpsertBulk) UpdateCooldownSeconds() *AutomationVersionUpsertBulk {
 	return u.Update(func(s *AutomationVersionUpsert) {
 		s.UpdateCooldownSeconds()
+	})
+}
+
+// SetEnrollmentKey sets the "enrollment_key" field.
+func (u *AutomationVersionUpsertBulk) SetEnrollmentKey(v string) *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetEnrollmentKey(v)
+	})
+}
+
+// UpdateEnrollmentKey sets the "enrollment_key" field to the value that was provided on create.
+func (u *AutomationVersionUpsertBulk) UpdateEnrollmentKey() *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateEnrollmentKey()
+	})
+}
+
+// ClearEnrollmentKey clears the value of the "enrollment_key" field.
+func (u *AutomationVersionUpsertBulk) ClearEnrollmentKey() *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.ClearEnrollmentKey()
 	})
 }
 

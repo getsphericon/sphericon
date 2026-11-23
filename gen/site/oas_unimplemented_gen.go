@@ -826,6 +826,16 @@ func (UnimplementedHandler) SiteEventsList(ctx context.Context, params SiteEvent
 	return r, ht.ErrNotImplemented
 }
 
+// SiteEventsPropertyKeys implements SiteEvents_propertyKeys operation.
+//
+// The property keys of the most recent events of the action, distinct and sorted — powers the
+// automation Trigger's Enrollment key picker.
+//
+// GET /workspaces/{workspaceId}/events/property-keys
+func (UnimplementedHandler) SiteEventsPropertyKeys(ctx context.Context, params SiteEventsPropertyKeysParams) (r *SiteEventPropertyKeysResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteIdentitiesLink implements SiteIdentities_link operation.
 //
 // Start linking another Sign-in provider account to the authenticated User, proving the password (or a
