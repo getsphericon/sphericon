@@ -231,6 +231,10 @@ type Inputs interface {
 	RuleActionType(source externalapi.RuleActionType) ruleaction.Type
 	// goverter:enum:transform value
 	BroadcastChannel(source externalapi.BroadcastChannel) channels.Channel
+	// ent's EntryPolicy has a Default constant beside EntryPolicyOnce, so every member is mapped.
+	// goverter:enum:map EventTriggerInputEntryPolicyOnce EntryPolicyOnce
+	// goverter:enum:map EventTriggerInputEntryPolicyAgain EntryPolicyAgain
+	EntryPolicy(source externalapi.EventTriggerInputEntryPolicy) automationversion.EntryPolicy
 	// goverter:enum:transform value
 	SuppressionChannel(source externalapi.SuppressionChannel) channels.Channel
 	// goverter:enum:transform value
@@ -442,14 +446,14 @@ func automationTriggerIn(t externalapi.AutomationTriggerInput) (eventmatcher.Mat
 
 // automationEntryIn is the Entry policy and the Enrollment key a write gives with its Trigger, an
 // Event Trigger's: an omitted field is left to the module's default, which for the key is none.
-func automationEntryIn(t externalapi.AutomationTriggerInput) automations.Entry {
+func automationEntryIn(c Inputs, t externalapi.AutomationTriggerInput) automations.Entry {
 	if t.OneOf.Type != externalapi.EventTriggerInputAutomationTriggerInputSum {
 		return automations.Entry{}
 	}
 	ev := t.OneOf.EventTriggerInput
 	var e automations.Entry
 	if policy, ok := ev.EntryPolicy.Get(); ok {
-		e.Policy = automationversion.EntryPolicy(policy)
+		e.Policy = c.EntryPolicy(policy)
 	}
 	if cooldown, ok := ev.Cooldown.Get(); ok {
 		e.CooldownSeconds = new(int(cooldown))
@@ -462,12 +466,12 @@ func automationEntryIn(t externalapi.AutomationTriggerInput) automations.Entry {
 
 // automationEntryPtrIn is the Entry policy an update replaces with its Trigger: omitted (nil) with
 // the Trigger keeps the stored one.
-func automationEntryPtrIn(o externalapi.OptAutomationTriggerInput) *automations.Entry {
+func automationEntryPtrIn(c Inputs, o externalapi.OptAutomationTriggerInput) *automations.Entry {
 	t, ok := o.Get()
 	if !ok {
 		return nil
 	}
-	return new(automationEntryIn(t))
+	return new(automationEntryIn(c, t))
 }
 
 // eventMatcherIn is an exit or goal event a write gives: an Event matcher, its filter the stored

@@ -9,6 +9,7 @@ import (
 	automation "github.com/getsphericon/sphericon/ent/automation"
 	automationrun "github.com/getsphericon/sphericon/ent/automationrun"
 	automationskippedentry "github.com/getsphericon/sphericon/ent/automationskippedentry"
+	automationversion "github.com/getsphericon/sphericon/ent/automationversion"
 	broadcast "github.com/getsphericon/sphericon/ent/broadcast"
 	capturedmessage "github.com/getsphericon/sphericon/ent/capturedmessage"
 	confirmation "github.com/getsphericon/sphericon/ent/confirmation"
@@ -491,7 +492,7 @@ func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersio
 	var siteapiAutomationVersion site.AutomationVersion
 	if source != nil {
 		siteapiAutomationVersion.Number = count((*source).Version)
-		siteapiAutomationTrigger, err := automationTrigger(source)
+		siteapiAutomationTrigger, err := automationTrigger(c, source)
 		if err != nil {
 			return siteapiAutomationVersion, err
 		}
@@ -1242,6 +1243,19 @@ func (c *ConverterImpl) EnrollmentsToResources(source []*ent.AutomationRun) []si
 		siteapiEnrollmentResourceList[i] = c.EnrollmentToResource(source[i])
 	}
 	return siteapiEnrollmentResourceList
+}
+func (c *ConverterImpl) EntryPolicyToResource(source automationversion.EntryPolicy) site.EntryPolicy {
+	var siteapiEntryPolicy site.EntryPolicy
+	switch source {
+	case automationversion.DefaultEntryPolicy:
+		siteapiEntryPolicy = site.EntryPolicyOnce
+	case automationversion.EntryPolicyAgain:
+		siteapiEntryPolicy = site.EntryPolicyAgain
+	// Skipped EntryPolicyOnce(once) -> EntryPolicyOnce(once) because it duplicates DefaultEntryPolicy(once) -> EntryPolicyOnce(once)
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiEntryPolicy
 }
 func (c *ConverterImpl) EventToExport(source *ent.Event) site.ContactExportEvent {
 	var siteapiContactExportEvent site.ContactExportEvent
