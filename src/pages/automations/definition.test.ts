@@ -4,6 +4,8 @@ import { expect, test } from 'vitest'
 import type { AutomationPath, EventFilterInput } from '../../generated/site/types.gen.ts'
 import { stepId, testId } from '../../test/payloads.ts'
 import {
+  cooldownHours,
+  cooldownSeconds,
   endingsOf,
   endingsText,
   goalOf,
@@ -42,7 +44,11 @@ const TRIGGER = node('trigger', 'trigger', { triggerEvent: 'email.opened', pathI
 
 // A Trigger on the event, with no exit and no goal event.
 function on(action: string): AutomationTrigger {
-  return { trigger: { kind: 'event', action }, exitEvents: [], goalEvent: null }
+  return {
+    trigger: { kind: 'event', action, entryPolicy: 'once', cooldown: 3600 },
+    exitEvents: [],
+    goalEvent: null,
+  }
 }
 
 // A canvas of the Trigger followed by the nodes in a chain.
@@ -129,7 +135,7 @@ test('stepsToGraph of no steps is the Trigger alone', () => {
 
 test('graphToSteps round-trips a stored trigger and chain, each Step and the path keeping its id', () => {
   expect(graphToSteps(stepsToGraph(on('email.clicked'), path(STEPS), {}))).toEqual({
-    trigger: { kind: 'event', action: 'email.clicked' },
+    trigger: { kind: 'event', action: 'email.clicked', entryPolicy: 'once', cooldown: 3600 },
     filterIncomplete: false,
     exitEvents: [],
     goalEvent: null,
@@ -257,7 +263,7 @@ test('graphToSteps reports nodes off the main chain as dropped', () => {
   }
 
   expect(graphToSteps(graph)).toEqual({
-    trigger: { kind: 'event', action: 'email.opened' },
+    trigger: { kind: 'event', action: 'email.opened', entryPolicy: 'once' },
     filterIncomplete: false,
     exitEvents: [],
     goalEvent: null,
@@ -302,7 +308,7 @@ test('an HTTP step keeps its id and header names but never carries a secret into
   // Resaving untouched resends no URL, header value or secret, so the server keeps them, matched
   // by the Step's id.
   expect(graphToSteps(stepsToGraph(on('contact.created'), path([stored]), {}))).toEqual({
-    trigger: { kind: 'event', action: 'contact.created' },
+    trigger: { kind: 'event', action: 'contact.created', entryPolicy: 'once', cooldown: 3600 },
     filterIncomplete: false,
     exitEvents: [],
     goalEvent: null,
@@ -401,7 +407,7 @@ test('graphToSteps stops on a cycle instead of looping', () => {
   }
 
   expect(graphToSteps(graph)).toEqual({
-    trigger: { kind: 'event', action: 'email.opened' },
+    trigger: { kind: 'event', action: 'email.opened', entryPolicy: 'once' },
     filterIncomplete: false,
     exitEvents: [],
     goalEvent: null,
@@ -486,7 +492,13 @@ const PAID: EventFilterInput = {
 
 test("the Trigger's filter rides on its node as JSON text and round-trips into the saved Trigger", () => {
   const trigger: AutomationTrigger = {
-    trigger: { kind: 'event', action: 'order.completed', filter: PAID },
+    trigger: {
+      kind: 'event',
+      action: 'order.completed',
+      filter: PAID,
+      entryPolicy: 'once',
+      cooldown: 3600,
+    },
     exitEvents: [],
     goalEvent: null,
   }
@@ -503,7 +515,7 @@ test('a Trigger with an empty filter, or none, saves no filter', () => {
   const empty = node('trigger', 'trigger', { triggerEvent: 'order.completed', triggerFilter: '' })
 
   expect(graphToSteps({ nodes: [empty], edges: [] })).toMatchObject({
-    trigger: { kind: 'event', action: 'order.completed' },
+    trigger: { kind: 'event', action: 'order.completed', entryPolicy: 'once' },
     filterIncomplete: false,
   })
   expect(graphToSteps({ nodes: [empty], edges: [] }).trigger).not.toHaveProperty('filter')
@@ -522,7 +534,40 @@ test('a filter still being typed is flagged and left out of the saved Trigger', 
   const saved = graphToSteps({ nodes: [typing], edges: [] })
 
   expect(saved.filterIncomplete).toBe(true)
-  expect(saved.trigger).toEqual({ kind: 'event', action: 'order.completed' })
+  expect(saved.trigger).toEqual({ kind: 'event', action: 'order.completed', entryPolicy: 'once' })
+})
+
+test("the Trigger's Entry policy and cooldown ride on its node and round-trip into the saved Trigger", () => {
+  const trigger: AutomationTrigger = {
+    trigger: { kind: 'event', action: 'order.completed', entryPolicy: 'again', cooldown: 7200 },
+    exitEvents: [],
+    goalEvent: null,
+  }
+  const graph = stepsToGraph(trigger, path([]), {})
+
+  expect(graph.nodes[0]?.data.properties).toMatchObject({ entryPolicy: 'again', cooldown: '7200' })
+  expect(graphToSteps(graph).trigger).toEqual(trigger.trigger)
+})
+
+test('a Trigger node without a cooldown leaves it to the server, and an unknown policy is once', () => {
+  const bare = node('trigger', 'trigger', {
+    triggerEvent: 'order.completed',
+    entryPolicy: 'sometimes',
+    cooldown: '',
+  })
+
+  expect(graphToSteps({ nodes: [bare], edges: [] }).trigger).toEqual({
+    kind: 'event',
+    action: 'order.completed',
+    entryPolicy: 'once',
+  })
+})
+
+test('the cooldown is typed in hours and held in seconds', () => {
+  expect(cooldownSeconds(3)).toBe('10800')
+  expect(cooldownHours('10800')).toBe(3)
+  expect(cooldownSeconds('')).toBe('')
+  expect(cooldownHours('')).toBe('')
 })
 
 const CANCELLED: EventFilterInput = {
@@ -534,7 +579,7 @@ const CANCELLED: EventFilterInput = {
 
 test('the Trigger node carries the exit and goal events as matchers, which round-trip', () => {
   const trigger: AutomationTrigger = {
-    trigger: { kind: 'event', action: 'order.placed' },
+    trigger: { kind: 'event', action: 'order.placed', entryPolicy: 'once', cooldown: 3600 },
     exitEvents: [{ action: 'account_closed' }, { action: 'order.closed', filter: CANCELLED }],
     goalEvent: { action: 'order.closed', filter: PAID },
   }

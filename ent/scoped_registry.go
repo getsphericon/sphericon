@@ -411,6 +411,10 @@ func ScopedEntities() []*ScopedEntity {
 					b.SetFiringID(remap("RuleFiring", *src.FiringID))
 				}
 				b.SetChain(src.Chain)
+				b.SetOrdinal(src.Ordinal)
+				if src.KeyValue != nil {
+					b.SetKeyValue(*src.KeyValue)
+				}
 				if src.EndedAt != nil {
 					b.SetEndedAt(*src.EndedAt)
 				}
@@ -598,6 +602,8 @@ func ScopedEntities() []*ScopedEntity {
 				if !reflect.ValueOf(src.Goal).IsZero() {
 					b.SetGoal(src.Goal)
 				}
+				b.SetEntryPolicy(src.EntryPolicy)
+				b.SetCooldownSeconds(src.CooldownSeconds)
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

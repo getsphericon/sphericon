@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -248,10 +249,12 @@ type Inputs interface {
 	HttpStepIn(source siteapi.HttpStepInput) automationstep.HTTP
 	TelegramButton(source siteapi.TelegramButtonInput) telegramrender.Button
 	// goverter:map Trigger | automationTriggerIn
+	// goverter:map Trigger Entry | automationEntryIn
 	// goverter:map ExitEvents | automationExitsIn
 	// goverter:map GoalEvent | automationGoalIn
 	AutomationCreate(source *siteapi.CreateAutomationInput) (automations.CreateInput, error)
 	// goverter:map Trigger | automationTriggerPtrIn
+	// goverter:map Trigger Entry | automationEntryPtrIn
 	// goverter:map ExitEvents | automationExitsPtrIn
 	// goverter:map GoalEvent | automationGoalPatch
 	AutomationUpdate(source *siteapi.UpdateAutomationInput) (automations.UpdateInput, error)
@@ -514,6 +517,33 @@ func automationTriggerIn(t siteapi.AutomationTriggerInput) (eventmatcher.Matcher
 		return eventmatcher.Matcher{}, err
 	}
 	return eventmatcher.Matcher{Action: ev.Action, Filter: filter}, nil
+}
+
+// automationEntryIn is the Entry policy a write gives with its Trigger, an Event Trigger's: an
+// omitted field is left to the module's default.
+func automationEntryIn(t siteapi.AutomationTriggerInput) automations.Entry {
+	if t.OneOf.Type != siteapi.EventTriggerInputAutomationTriggerInputSum {
+		return automations.Entry{}
+	}
+	ev := t.OneOf.EventTriggerInput
+	var e automations.Entry
+	if policy, ok := ev.EntryPolicy.Get(); ok {
+		e.Policy = automationversion.EntryPolicy(policy)
+	}
+	if cooldown, ok := ev.Cooldown.Get(); ok {
+		e.CooldownSeconds = new(int(cooldown))
+	}
+	return e
+}
+
+// automationEntryPtrIn is the Entry policy an update replaces with its Trigger: omitted (nil) with
+// the Trigger keeps the stored one.
+func automationEntryPtrIn(o siteapi.OptAutomationTriggerInput) *automations.Entry {
+	t, ok := o.Get()
+	if !ok {
+		return nil
+	}
+	return new(automationEntryIn(t))
 }
 
 // eventMatcherIn is an exit or goal event a write gives: an Event matcher, its filter the stored

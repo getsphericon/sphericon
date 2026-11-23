@@ -50,7 +50,7 @@ const NO_RESULTS: AutomationResults = {
     from: '2026-02-16',
     to: '2026-03-17',
     contacts: 0,
-    skipped: { cycle: 0, activeEnrollment: 0, once: 0 },
+    skipped: { cycle: 0, activeEnrollment: 0, once: 0, cooldown: 0 },
     averageDurationSeconds: null,
     revenue: NO_REVENUE,
   },
@@ -63,7 +63,7 @@ const NO_RESULTS: AutomationResults = {
     from: '2026-01-17',
     to: '2026-02-15',
     contacts: 0,
-    skipped: { cycle: 0, activeEnrollment: 0, once: 0 },
+    skipped: { cycle: 0, activeEnrollment: 0, once: 0, cooldown: 0 },
     averageDurationSeconds: null,
     revenue: NO_REVENUE,
   },
@@ -79,7 +79,12 @@ test('shows the automation and the contacts enrolled in it', async () => {
         status: 'active',
         live: {
           number: 1,
-          trigger: { kind: 'event' as const, action: 'contact.created' },
+          trigger: {
+            kind: 'event' as const,
+            action: 'contact.created',
+            entryPolicy: 'once' as const,
+            cooldown: 3600,
+          },
           exitEvents: [],
           goalEvent: null,
           steps: { id: stepId(1), steps: [] },
@@ -112,6 +117,7 @@ test('shows the automation and the contacts enrolled in it', async () => {
             automationId: testId(1),
             contactId: testId(42),
             status: 'completed',
+            ordinal: 1,
             ...TIMESTAMPS,
           },
           {
@@ -119,6 +125,7 @@ test('shows the automation and the contacts enrolled in it', async () => {
             automationId: testId(1),
             contactId: testId(43),
             status: 'active',
+            ordinal: 1,
             currentStepId: stepId(2),
             resumeAt: WAIT_DUE,
             ...TIMESTAMPS,
@@ -148,7 +155,12 @@ test('shows the opens, the clicks and the clicked links of the automation', asyn
         status: 'active',
         live: {
           number: 1,
-          trigger: { kind: 'event' as const, action: 'contact.created' },
+          trigger: {
+            kind: 'event' as const,
+            action: 'contact.created',
+            entryPolicy: 'once' as const,
+            cooldown: 3600,
+          },
           exitEvents: [],
           goalEvent: null,
           steps: { id: stepId(1), steps: [] },
@@ -204,7 +216,12 @@ test('marks an inactive automation as inactive', async () => {
         status: 'inactive',
         live: {
           number: 1,
-          trigger: { kind: 'event' as const, action: 'contact.created' },
+          trigger: {
+            kind: 'event' as const,
+            action: 'contact.created',
+            entryPolicy: 'once' as const,
+            cooldown: 3600,
+          },
           exitEvents: [],
           goalEvent: null,
           steps: { id: stepId(1), steps: [] },
@@ -255,7 +272,12 @@ test('shows the orders and the net revenue credited to the automation', async ()
         status: 'active',
         live: {
           number: 1,
-          trigger: { kind: 'event' as const, action: 'contact.created' },
+          trigger: {
+            kind: 'event' as const,
+            action: 'contact.created',
+            entryPolicy: 'once' as const,
+            cooldown: 3600,
+          },
           exitEvents: [],
           goalEvent: null,
           steps: { id: stepId(1), steps: [] },
@@ -299,7 +321,12 @@ test('shows no orders or revenue on the automation until the first order sets th
         status: 'active',
         live: {
           number: 1,
-          trigger: { kind: 'event' as const, action: 'contact.created' },
+          trigger: {
+            kind: 'event' as const,
+            action: 'contact.created',
+            entryPolicy: 'once' as const,
+            cooldown: 3600,
+          },
           exitEvents: [],
           goalEvent: null,
           steps: { id: stepId(1), steps: [] },
@@ -341,14 +368,24 @@ const PENDING: SiteAutomationResource = {
   status: 'active',
   live: {
     number: 1,
-    trigger: { kind: 'event' as const, action: 'signup' },
+    trigger: {
+      kind: 'event' as const,
+      action: 'signup',
+      entryPolicy: 'once' as const,
+      cooldown: 3600,
+    },
     exitEvents: [],
     goalEvent: null,
     steps: { id: stepId(1), steps: [] },
   },
   draft: {
     number: 2,
-    trigger: { kind: 'event' as const, action: 'signup' },
+    trigger: {
+      kind: 'event' as const,
+      action: 'signup',
+      entryPolicy: 'once' as const,
+      cooldown: 3600,
+    },
     exitEvents: [],
     goalEvent: null,
     steps: { id: stepId(1), steps: [{ id: stepId(11), type: 'wait', seconds: 60 }] },
@@ -380,7 +417,12 @@ test('shows what the live version does, its exit and goal events included, not t
         ...PENDING,
         live: {
           number: 1,
-          trigger: { kind: 'event' as const, action: 'signup' },
+          trigger: {
+            kind: 'event' as const,
+            action: 'signup',
+            entryPolicy: 'once' as const,
+            cooldown: 3600,
+          },
           exitEvents: [{ action: 'account_closed' }],
           goalEvent: { action: 'course_started' },
           steps: {
@@ -401,7 +443,12 @@ test('shows what the live version does, its exit and goal events included, not t
         },
         draft: {
           number: 2,
-          trigger: { kind: 'event' as const, action: 'course_completed' },
+          trigger: {
+            kind: 'event' as const,
+            action: 'course_completed',
+            entryPolicy: 'once' as const,
+            cooldown: 3600,
+          },
           exitEvents: [],
           goalEvent: null,
           steps: {
@@ -439,7 +486,12 @@ test('a send step through a deleted Integration names it as deleted', async () =
         ...PENDING,
         live: {
           number: 1,
-          trigger: { kind: 'event' as const, action: 'signup' },
+          trigger: {
+            kind: 'event' as const,
+            action: 'signup',
+            entryPolicy: 'once' as const,
+            cooldown: 3600,
+          },
           exitEvents: [],
           goalEvent: null,
           steps: {
@@ -555,7 +607,7 @@ const MONTH: AutomationResults = {
     from: '2026-02-16',
     to: '2026-03-17',
     contacts: 4,
-    skipped: { cycle: 6, activeEnrollment: 2, once: 7 },
+    skipped: { cycle: 6, activeEnrollment: 2, once: 7, cooldown: 10 },
     averageDurationSeconds: 85_050,
     revenue: { reportingCurrency: 'USD', orders: 1, amount: 3500 },
   },
@@ -568,7 +620,7 @@ const MONTH: AutomationResults = {
     from: '2026-01-17',
     to: '2026-02-15',
     contacts: 2,
-    skipped: { cycle: 3, activeEnrollment: 1, once: 5 },
+    skipped: { cycle: 3, activeEnrollment: 1, once: 5, cooldown: 4 },
     averageDurationSeconds: 57_600,
     revenue: { reportingCurrency: 'USD', orders: 1, amount: 2500 },
   },
@@ -612,6 +664,8 @@ test('shows what the enrollments did in the period against the period before', a
   await expect.element(screen.getByText('Skipped: an enrollment was active')).toBeInTheDocument()
   await expect.element(screen.getByText('Skipped: enrolled before')).toBeInTheDocument()
   await expect.element(screen.getByText('Previous 30 days: 5 (+40%)')).toBeInTheDocument()
+  await expect.element(screen.getByText('Skipped: within the cooldown')).toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 4 (+150%)')).toBeInTheDocument()
 })
 
 test('lists the skipped entries, each with its reason, and filters them by contact', async () => {
@@ -678,7 +732,12 @@ test('the period picked shows the results of that period', async () => {
 test('shows what each send step sent and skipped, by its id across versions, named by the live version', async () => {
   const live = {
     number: 2,
-    trigger: { kind: 'event' as const, action: 'signup' },
+    trigger: {
+      kind: 'event' as const,
+      action: 'signup',
+      entryPolicy: 'once' as const,
+      cooldown: 3600,
+    },
     exitEvents: [],
     goalEvent: null,
     steps: {
@@ -734,7 +793,12 @@ test('an archived automation is read-only: it offers no edit and no publish', as
         live: null,
         draft: {
           number: 1,
-          trigger: { kind: 'event' as const, action: 'contact.created' },
+          trigger: {
+            kind: 'event' as const,
+            action: 'contact.created',
+            entryPolicy: 'once' as const,
+            cooldown: 3600,
+          },
           exitEvents: [],
           goalEvent: null,
           steps: { id: stepId(1), steps: [] },

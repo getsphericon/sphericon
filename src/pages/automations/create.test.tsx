@@ -25,7 +25,12 @@ test('creating an automation sends the trimmed name and the default trigger, the
           id: testId(7),
           name: 'Welcome',
           status: 'inactive',
-          trigger: { kind: 'event', action: 'contact.created' },
+          trigger: {
+            kind: 'event',
+            action: 'contact.created',
+            entryPolicy: 'once',
+            cooldown: 3600,
+          },
           steps: [],
           createdAt: NOW,
           updatedAt: NOW,

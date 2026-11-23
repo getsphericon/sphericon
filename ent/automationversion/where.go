@@ -85,6 +85,11 @@ func TriggerAction(v string) predicate.AutomationVersion {
 	return predicate.AutomationVersion(sql.FieldEQ(FieldTriggerAction, v))
 }
 
+// CooldownSeconds applies equality check predicate on the "cooldown_seconds" field. It's identical to CooldownSecondsEQ.
+func CooldownSeconds(v int) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldEQ(FieldCooldownSeconds, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.AutomationVersion {
 	return predicate.AutomationVersion(sql.FieldEQ(FieldCreatedAt, v))
@@ -328,6 +333,66 @@ func GoalIsNil() predicate.AutomationVersion {
 // GoalNotNil applies the NotNil predicate on the "goal" field.
 func GoalNotNil() predicate.AutomationVersion {
 	return predicate.AutomationVersion(sql.FieldNotNull(FieldGoal))
+}
+
+// EntryPolicyEQ applies the EQ predicate on the "entry_policy" field.
+func EntryPolicyEQ(v EntryPolicy) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldEQ(FieldEntryPolicy, v))
+}
+
+// EntryPolicyNEQ applies the NEQ predicate on the "entry_policy" field.
+func EntryPolicyNEQ(v EntryPolicy) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNEQ(FieldEntryPolicy, v))
+}
+
+// EntryPolicyIn applies the In predicate on the "entry_policy" field.
+func EntryPolicyIn(vs ...EntryPolicy) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldIn(FieldEntryPolicy, vs...))
+}
+
+// EntryPolicyNotIn applies the NotIn predicate on the "entry_policy" field.
+func EntryPolicyNotIn(vs ...EntryPolicy) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNotIn(FieldEntryPolicy, vs...))
+}
+
+// CooldownSecondsEQ applies the EQ predicate on the "cooldown_seconds" field.
+func CooldownSecondsEQ(v int) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldEQ(FieldCooldownSeconds, v))
+}
+
+// CooldownSecondsNEQ applies the NEQ predicate on the "cooldown_seconds" field.
+func CooldownSecondsNEQ(v int) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNEQ(FieldCooldownSeconds, v))
+}
+
+// CooldownSecondsIn applies the In predicate on the "cooldown_seconds" field.
+func CooldownSecondsIn(vs ...int) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldIn(FieldCooldownSeconds, vs...))
+}
+
+// CooldownSecondsNotIn applies the NotIn predicate on the "cooldown_seconds" field.
+func CooldownSecondsNotIn(vs ...int) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldNotIn(FieldCooldownSeconds, vs...))
+}
+
+// CooldownSecondsGT applies the GT predicate on the "cooldown_seconds" field.
+func CooldownSecondsGT(v int) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldGT(FieldCooldownSeconds, v))
+}
+
+// CooldownSecondsGTE applies the GTE predicate on the "cooldown_seconds" field.
+func CooldownSecondsGTE(v int) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldGTE(FieldCooldownSeconds, v))
+}
+
+// CooldownSecondsLT applies the LT predicate on the "cooldown_seconds" field.
+func CooldownSecondsLT(v int) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldLT(FieldCooldownSeconds, v))
+}
+
+// CooldownSecondsLTE applies the LTE predicate on the "cooldown_seconds" field.
+func CooldownSecondsLTE(v int) predicate.AutomationVersion {
+	return predicate.AutomationVersion(sql.FieldLTE(FieldCooldownSeconds, v))
 }
 
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.

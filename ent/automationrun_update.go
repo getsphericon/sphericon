@@ -382,6 +382,9 @@ func (_u *AutomationRunUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	if _u.mutation.TriggerSourceIDCleared() {
 		_spec.ClearField(automationrun.FieldTriggerSourceID, field.TypeString)
 	}
+	if _u.mutation.KeyValueCleared() {
+		_spec.ClearField(automationrun.FieldKeyValue, field.TypeString)
+	}
 	if value, ok := _u.mutation.EndedAt(); ok {
 		_spec.SetField(automationrun.FieldEndedAt, field.TypeTime, value)
 	}
@@ -936,6 +939,9 @@ func (_u *AutomationRunUpdateOne) sqlSave(ctx context.Context) (_node *Automatio
 	}
 	if _u.mutation.TriggerSourceIDCleared() {
 		_spec.ClearField(automationrun.FieldTriggerSourceID, field.TypeString)
+	}
+	if _u.mutation.KeyValueCleared() {
+		_spec.ClearField(automationrun.FieldKeyValue, field.TypeString)
 	}
 	if value, ok := _u.mutation.EndedAt(); ok {
 		_spec.SetField(automationrun.FieldEndedAt, field.TypeTime, value)

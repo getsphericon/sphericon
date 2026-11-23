@@ -65,7 +65,7 @@ type PeriodResults struct {
 
 // SkippedCounts is how many entries were skipped for each reason.
 type SkippedCounts struct {
-	Cycle, ActiveEnrollment, Once int
+	Cycle, ActiveEnrollment, Once, Cooldown int
 }
 
 func (c *SkippedCounts) add(reason automationskippedentry.Reason, n int) {
@@ -76,6 +76,8 @@ func (c *SkippedCounts) add(reason automationskippedentry.Reason, n int) {
 		c.ActiveEnrollment += n
 	case automationskippedentry.ReasonOnce:
 		c.Once += n
+	case automationskippedentry.ReasonCooldown:
+		c.Cooldown += n
 	}
 }
 

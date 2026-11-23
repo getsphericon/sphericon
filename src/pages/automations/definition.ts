@@ -11,12 +11,17 @@ import type {
   AutomationStepInput,
   AutomationTriggerInput,
   AutomationVersion,
+  EntryPolicy,
   EventFilterInput,
   EventMatcher,
   EventMatcherInput,
   TelegramStep,
 } from '../../generated/site/types.gen.ts'
-import { zAutomationHttpHeader, zEventFilterInput } from '../../generated/site/zod.gen.ts'
+import {
+  zAutomationHttpHeader,
+  zEntryPolicy,
+  zEventFilterInput,
+} from '../../generated/site/zod.gen.ts'
 import { jsonText } from '../../utils/jsonText.ts'
 import { docCodec } from '../../utils/messageDoc.ts'
 import { buttonsCodec } from '../../utils/telegramButtons.ts'
@@ -141,13 +146,16 @@ const TRIGGER_NODE_ID = 'trigger'
 // end an Enrollment early and the one that ends it as having reached its goal (#751).
 export type AutomationTrigger = Pick<AutomationVersion, 'trigger' | 'exitEvents' | 'goalEvent'>
 
-// The canvas holds the Trigger's action as text and its filter as JSON text ('' for none), the exit
-// events as the JSON text of their drafts, the goal event as the JSON text of its draft ('' for
+// The canvas holds the Trigger's action as text and its filter as JSON text ('' for none), its
+// Entry policy and its cooldown as text of seconds (ADR 0127), the exit events as the JSON text of
+// their drafts, the goal event as the JSON text of its draft ('' for
 // none), and the id of the root path the steps hang from.
 function triggerProperties(trigger: AutomationTrigger, pathId: string): Record<string, unknown> {
   return {
     triggerEvent: trigger.trigger.action,
     triggerFilter: trigger.trigger.filter ? filterText(trigger.trigger.filter) : '',
+    entryPolicy: trigger.trigger.entryPolicy,
+    cooldown: String(trigger.trigger.cooldown),
     exitEvents: endingsText(trigger.exitEvents.map((exit) => endingDraft(exit))),
     goalEvent: goalText(trigger.goalEvent === null ? null : endingDraft(trigger.goalEvent)),
     pathId,
@@ -205,6 +213,31 @@ export function filterOf(text: string): EventFilterInput | undefined {
   return parsed.success ? parsed.data : undefined
 }
 
+// entryPolicyOf reads an Entry policy off a node's value: `once` for anything that is none.
+export function entryPolicyOf(value: unknown): EntryPolicy {
+  const parsed = zEntryPolicy.safeParse(value)
+  return parsed.success ? parsed.data : 'once'
+}
+
+// cooldownHours shows a cooldown the node holds as text of seconds in hours, '' while none is set.
+export function cooldownHours(value: unknown): number | '' {
+  const seconds = cooldownOf(value)
+  return seconds === undefined ? '' : seconds / 3600
+}
+
+// cooldownSeconds turns the hours a person typed into the text of seconds the node holds, '' for
+// none.
+export function cooldownSeconds(hours: number | string): string {
+  return typeof hours === 'number' ? String(hours * 3600) : ''
+}
+
+// cooldownOf reads the cooldown in seconds off the node's text, none when it holds no number.
+function cooldownOf(value: unknown): number | undefined {
+  const text = asText(value).trim()
+  const seconds = Number(text)
+  return text === '' || !Number.isInteger(seconds) ? undefined : seconds
+}
+
 // withoutHalfTypedFilter is the draft with a filter still being typed dropped: the builder loads
 // only a complete filter, so the node drops the rest too when its panel opens again.
 export function withoutHalfTypedFilter(draft: EndingDraft): EndingDraft {
@@ -231,7 +264,8 @@ function matcherOf(
   return { matcher: { ...matcher, filter: parsed.data }, incomplete: false }
 }
 
-// triggerOf reads the Trigger off the node (matcherOf).
+// triggerOf reads the Trigger off the node: its matcher (matcherOf), its Entry policy and its
+// cooldown, one left empty being the server's default.
 function triggerOf(properties: Record<string, unknown>): {
   trigger: AutomationTriggerInput
   incomplete: boolean
@@ -240,7 +274,16 @@ function triggerOf(properties: Record<string, unknown>): {
     asText(properties.triggerEvent),
     asText(properties.triggerFilter),
   )
-  return { trigger: { kind: 'event', ...matcher }, incomplete }
+  const trigger: AutomationTriggerInput = {
+    kind: 'event',
+    ...matcher,
+    entryPolicy: entryPolicyOf(properties.entryPolicy),
+  }
+  const cooldown = cooldownOf(properties.cooldown)
+  if (cooldown !== undefined) {
+    trigger.cooldown = cooldown
+  }
+  return { trigger, incomplete }
 }
 
 // endingRead is an exit or goal event read off its draft (matcherOf): none for no draft or a blank

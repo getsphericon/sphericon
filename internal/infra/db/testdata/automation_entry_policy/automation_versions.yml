@@ -1,0 +1,7 @@
+# A version before the Entry policy (ADR 0127): it has none.
+- id: 1
+  workspace_id: 1
+  automation_id: 1
+  version: 1
+  steps: '{"id":"0c684f87-8c81-53e5-bee6-7ade106aea44","steps":[]}'
+  trigger_action: signed_up

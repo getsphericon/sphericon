@@ -56,6 +56,8 @@ import { useAutomationNodeTypes } from './nodes.ts'
 import { smsTextRenderer } from './smsRenderer.ts'
 import { telegramTextRenderer } from './telegramRenderer.ts'
 import {
+  cooldownRenderer,
+  entryPolicyRenderer,
   exitEventsRenderer,
   goalEventRenderer,
   triggerFilterRenderer,
@@ -70,7 +72,7 @@ import builderStyles from '@workflowbuilder/sdk/style.css?inline'
 
 // The email step's message is edited by the editor, not a text field, a Telegram step's text has
 // its merge-tag picker and counter, an SMS step's its merge-tag picker, each send step's Integration is picked from its Channel's, the Trigger's event, exit events and goal event are typed with
-// suggestions and its filter is the Condition builder's, and an HTTP step's headers are rows and its body has a dry run. A stable reference.
+// suggestions, its filter is the Condition builder's, its Entry policy is picked and its cooldown typed in hours, and an HTTP step's headers are rows and its body has a dry run. A stable reference.
 const jsonForm = {
   renderers: [
     messageRenderer,
@@ -81,6 +83,8 @@ const jsonForm = {
     smsTextRenderer,
     triggerRenderer,
     triggerFilterRenderer,
+    entryPolicyRenderer,
+    cooldownRenderer,
     exitEventsRenderer,
     goalEventRenderer,
     httpHeadersRenderer,

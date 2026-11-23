@@ -355,6 +355,20 @@ model AutomationPathInput {
   steps: AutomationStepInput[];
 }
 
+/** Whether an automation enrolls a contact again (ADR 0127): `once` enrolls a contact at most once,
+ * ever; `again` enrolls it again once its previous enrollment ended, however it ended, and the
+ * cooldown from that enrollment's beginning passed. Either way a contact has at most one active
+ * enrollment in an automation. */
+enum EntryPolicy {
+  once,
+  again,
+}
+
+/** The least time, in whole seconds, from the beginning of a contact's previous enrollment in an
+ * automation to the beginning of the next, under the `again` entry policy: at least one hour */
+@minValue(3600)
+scalar EntryCooldown extends int32;
+
 /** A Trigger that enrolls a Contact on an Event (ADR 0133): its action, and an optional filter on
  * that Event's own properties, so `order.completed` where `status` is `paid` starts on paid orders
  * only. An Event that fails the filter is no entry: it enrolls no one and is not a skipped entry. */
@@ -369,6 +383,14 @@ model EventTrigger {
    * enrolls. The `tag` of contact.tagged and contact.untagged and the `key` of
    * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. */
   filter?: EventFilter;
+
+  /** Whether a contact enrolls again, after its previous enrollment ended, on a later Event or a
+   * rule's enroll action */
+  entryPolicy: EntryPolicy;
+
+  /** Under `again`, the least time in seconds from the beginning of a contact's previous
+   * enrollment to the next; an entry sooner is skipped as `cooldown` */
+  cooldown: EntryCooldown;
 }
 
 /** A Trigger that enrolls a Contact on an Event (ADR 0133), as a request writes it */
@@ -383,6 +405,14 @@ model EventTriggerInput {
    * enrolls. The `tag` of contact.tagged and contact.untagged and the `key` of
    * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. */
   filter?: EventFilterInput;
+
+  /** Whether a contact enrolls again, after its previous enrollment ended, on a later Event or a
+   * rule's enroll action; omitted is `once` */
+  entryPolicy?: EntryPolicy = EntryPolicy.once;
+
+  /** Under `again`, the least time in seconds from the beginning of a contact's previous
+   * enrollment to the next, at least 3600; omitted is 3600 */
+  cooldown?: EntryCooldown = 3600;
 }
 
 /** What enrolls a Contact in an automation, by `kind`: an Event matcher */
@@ -471,7 +501,8 @@ model UpdateAutomationInput {
 
   name?: Name;
 
-  /** What enrolls a contact; replaces the Trigger, its filter with it, and omitted keeps it */
+  /** What enrolls a contact; replaces the Trigger, its filter, entry policy and cooldown with it,
+   * and omitted keeps it */
   trigger?: AutomationTriggerInput;
 
   /** The Event matchers that end an active enrollment early; replaces the list, omitted keeps it */
@@ -553,6 +584,9 @@ model AutomationSkippedCounts {
 
   /** Entries of a contact enrolled in the automation before, which enrolls a contact once */
   once: int32;
+
+  /** Entries sooner after the beginning of the contact's previous enrollment than the cooldown */
+  cooldown: int32;
 }
 
 /** One Report day of an automation's results */

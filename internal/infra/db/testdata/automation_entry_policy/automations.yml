@@ -1,0 +1,6 @@
+- id: 1
+  workspace_id: 1
+  revision: 1
+  name: Welcome
+  status: active
+  live_version_id: 1

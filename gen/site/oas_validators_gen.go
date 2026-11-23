@@ -3156,6 +3156,35 @@ func (s EnrollmentStatus) Validate() error {
 	}
 }
 
+func (s EntryCooldown) Validate() error {
+	alias := (int32)(s)
+	if err := (validate.Int{
+		MinSet:        true,
+		Min:           3600,
+		MaxSet:        false,
+		Max:           0,
+		MinExclusive:  false,
+		MaxExclusive:  false,
+		MultipleOfSet: false,
+		MultipleOf:    0,
+		Pattern:       nil,
+	}).Validate(int64(alias)); err != nil {
+		return errors.Wrap(err, "int")
+	}
+	return nil
+}
+
+func (s EntryPolicy) Validate() error {
+	switch s {
+	case "once":
+		return nil
+	case "again":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s EventCountOperator) Validate() error {
 	switch s {
 	case "atLeast":
@@ -3668,6 +3697,28 @@ func (s *EventTrigger) Validate() error {
 			Error: err,
 		})
 	}
+	if err := func() error {
+		if err := s.EntryPolicy.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "entryPolicy",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Cooldown.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "cooldown",
+			Error: err,
+		})
+	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
 	}
@@ -3709,10 +3760,67 @@ func (s *EventTriggerInput) Validate() error {
 			Error: err,
 		})
 	}
+	if err := func() error {
+		if value, ok := s.EntryPolicy.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "entryPolicy",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Cooldown.Get(); ok {
+			if err := func() error {
+				if err := (validate.Int{
+					MinSet:        true,
+					Min:           3600,
+					MaxSet:        false,
+					Max:           0,
+					MinExclusive:  false,
+					MaxExclusive:  false,
+					MultipleOfSet: false,
+					MultipleOf:    0,
+					Pattern:       nil,
+				}).Validate(int64(value)); err != nil {
+					return errors.Wrap(err, "int")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "cooldown",
+			Error: err,
+		})
+	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
+}
+
+func (s EventTriggerInputEntryPolicy) Validate() error {
+	switch s {
+	case "once":
+		return nil
+	case "again":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s EventTriggerInputKind) Validate() error {
@@ -13168,6 +13276,8 @@ func (s SkippedEntryReason) Validate() error {
 	case "active_enrollment":
 		return nil
 	case "once":
+		return nil
+	case "cooldown":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

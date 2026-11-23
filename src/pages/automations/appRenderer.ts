@@ -11,12 +11,15 @@ export function appRenderer(
   format: string,
   control: ComponentType<ControlProps>,
 ): JsonFormsRendererExtension {
+  // A field its form's rule hides renders nothing.
   const field = (props: ControlProps) =>
-    createElement(
-      Fieldset,
-      // Convey disabled without native fieldset spacing changing the properties panel's size.
-      { disabled: !props.enabled, variant: 'unstyled', m: 0, miw: 0 },
-      createElement(control, props),
-    )
+    !props.visible
+      ? null
+      : createElement(
+          Fieldset,
+          // Convey disabled without native fieldset spacing changing the properties panel's size.
+          { disabled: !props.enabled, variant: 'unstyled', m: 0, miw: 0 },
+          createElement(control, props),
+        )
   return { tester: rankWith(100, formatIs(format)), renderer: withJsonFormsControlProps(field) }
 }

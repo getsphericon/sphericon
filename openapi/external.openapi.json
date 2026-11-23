@@ -6571,7 +6571,7 @@
       },
       "AutomationSkippedCounts": {
         "type": "object",
-        "required": ["cycle", "activeEnrollment", "once"],
+        "required": ["cycle", "activeEnrollment", "once", "cooldown"],
         "properties": {
           "cycle": {
             "type": "integer",
@@ -6587,6 +6587,11 @@
             "type": "integer",
             "format": "int32",
             "description": "Entries of a contact enrolled in the automation before, which enrolls a contact once"
+          },
+          "cooldown": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Entries sooner after the beginning of the contact's previous enrollment than the cooldown"
           }
         },
         "description": "How many entries into an automation were skipped, by reason"
@@ -9781,7 +9786,15 @@
       },
       "EnrollmentResource": {
         "type": "object",
-        "required": ["id", "automationId", "contactId", "status", "createdAt", "updatedAt"],
+        "required": [
+          "id",
+          "automationId",
+          "contactId",
+          "status",
+          "ordinal",
+          "createdAt",
+          "updatedAt"
+        ],
         "properties": {
           "id": {
             "allOf": [
@@ -9814,6 +9827,11 @@
               }
             ],
             "description": "Where the Enrollment is"
+          },
+          "ordinal": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Which of the contact's enrollments in the automation it is: 1 for the first, plus one for each\nafter it, an enrollment that ended as it was made included"
           },
           "currentStepId": {
             "allOf": [
@@ -9868,6 +9886,17 @@
         "pattern": "^[0-9A-Za-z]{22}$",
         "description": "A primary key as a client sees it (ADR 0142): the key sealed under the Instance's id key and\nwritten as 22 base62 characters, which say nothing about how many rows a table holds or when\none was made. The servers open it back into the key: a malformed id is refused as a 400 before\na handler runs. The pattern says the same in the contract, so a client (or a fuzzer) can tell a\nmalformed id from a valid one without trying it.",
         "x-ogen-type": "github.com/getsphericon/sphericon/internal/kernel/publicid.ID"
+      },
+      "EntryCooldown": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": 3600,
+        "description": "The least time, in whole seconds, from the beginning of a contact's previous enrollment in an\nautomation to the beginning of the next, under the `again` entry policy: at least one hour"
+      },
+      "EntryPolicy": {
+        "type": "string",
+        "enum": ["once", "again"],
+        "description": "Whether an automation enrolls a contact again (ADR 0127): `once` enrolls a contact at most once,\never; `again` enrolls it again once its previous enrollment ended, however it ended, and the\ncooldown from that enrollment's beginning passed. Either way a contact has at most one active\nenrollment in an automation."
       },
       "EventActionResource": {
         "type": "object",
@@ -10186,7 +10215,7 @@
       },
       "EventTrigger": {
         "type": "object",
-        "required": ["kind", "action"],
+        "required": ["kind", "action", "entryPolicy", "cooldown"],
         "properties": {
           "kind": {
             "type": "string",
@@ -10203,6 +10232,22 @@
               }
             ],
             "description": "The tests of the Event's own properties it must pass; absent, every Event of the action\nenrolls. The `tag` of contact.tagged and contact.untagged and the `key` of\ncontact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace."
+          },
+          "entryPolicy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntryPolicy"
+              }
+            ],
+            "description": "Whether a contact enrolls again, after its previous enrollment ended, on a later Event or a\nrule's enroll action"
+          },
+          "cooldown": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntryCooldown"
+              }
+            ],
+            "description": "Under `again`, the least time in seconds from the beginning of a contact's previous\nenrollment to the next; an entry sooner is skipped as `cooldown`"
           }
         },
         "description": "A Trigger that enrolls a Contact on an Event (ADR 0133): its action, and an optional filter on\nthat Event's own properties, so `order.completed` where `status` is `paid` starts on paid orders\nonly. An Event that fails the filter is no entry: it enrolls no one and is not a skipped entry."
@@ -10226,6 +10271,24 @@
               }
             ],
             "description": "The tests of the Event's own properties it must pass; omitted, every Event of the action\nenrolls. The `tag` of contact.tagged and contact.untagged and the `key` of\ncontact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace."
+          },
+          "entryPolicy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntryPolicy"
+              }
+            ],
+            "description": "Whether a contact enrolls again, after its previous enrollment ended, on a later Event or a\nrule's enroll action; omitted is `once`",
+            "default": "once"
+          },
+          "cooldown": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntryCooldown"
+              }
+            ],
+            "description": "Under `again`, the least time in seconds from the beginning of a contact's previous\nenrollment to the next, at least 3600; omitted is 3600",
+            "default": 3600
           }
         },
         "description": "A Trigger that enrolls a Contact on an Event (ADR 0133), as a request writes it",
@@ -13574,8 +13637,8 @@
       },
       "SkippedEntryReason": {
         "type": "string",
-        "enum": ["cycle", "active_enrollment", "once"],
-        "description": "Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127):\n`cycle` (the chain of events that caused it already passed through the automation),\n`active_enrollment` (the triggering Event occurred while an enrollment of the contact was active)\nor `once` (the contact had an enrollment in the automation before)."
+        "enum": ["cycle", "active_enrollment", "once", "cooldown"],
+        "description": "Why an entry into an automation was skipped, by the first entry check that refused it (ADR 0127):\n`cycle` (the chain of events that caused it already passed through the automation),\n`active_enrollment` (the triggering Event occurred while an enrollment of the contact was\nactive, or one is active still), `once` (the contact had an enrollment in the automation before,\nunder the `once` entry policy) or `cooldown` (under `again`, the cooldown from the beginning of\nthe contact's previous enrollment had not passed)."
       },
       "SkippedEntryResource": {
         "type": "object",
@@ -14918,7 +14981,7 @@
                 "$ref": "#/components/schemas/AutomationTriggerInput"
               }
             ],
-            "description": "What enrolls a contact; replaces the Trigger, its filter with it, and omitted keeps it"
+            "description": "What enrolls a contact; replaces the Trigger, its filter, entry policy and cooldown with it,\nand omitted keeps it"
           },
           "exitEvents": {
             "type": "array",

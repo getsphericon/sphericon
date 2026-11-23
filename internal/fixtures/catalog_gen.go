@@ -577,6 +577,12 @@ const (
 	AutomationQuahogHookUnsignedVersionID = 7652
 	// AutomationQuahogHookVersionID is from fixtures/automation_versions.
 	AutomationQuahogHookVersionID = 7653
+	// AutomationRepeatPurchaseID is from fixtures/automations.
+	AutomationRepeatPurchaseID = 15540
+	// AutomationRepeatPurchaseName is from fixtures/automations.
+	AutomationRepeatPurchaseName = "Repeat purchase"
+	// AutomationRepeatPurchaseVersionID is from fixtures/automation_versions.
+	AutomationRepeatPurchaseVersionID = 15540
 	// AutomationRunArchivedErasableID is from fixtures/automation_runs.
 	AutomationRunArchivedErasableID = 3003
 	// AutomationRunBystanderHTTPFailedID is from fixtures/automation_runs.
@@ -699,6 +705,10 @@ const (
 	AutomationRunQuahogHookUnsignedID = 7652
 	// AutomationRunRecoveryActiveID is from fixtures/automation_runs.
 	AutomationRunRecoveryActiveID = 7500
+	// AutomationRunRepeatPurchaseFirstID is from fixtures/automation_runs.
+	AutomationRunRepeatPurchaseFirstID = 15540
+	// AutomationRunRepeatPurchaseSecondID is from fixtures/automation_runs.
+	AutomationRunRepeatPurchaseSecondID = 15541
 	// AutomationRunTagOnEngagementAliceID is from fixtures/automation_runs.
 	AutomationRunTagOnEngagementAliceID = 1100
 	// AutomationRunWelcomeCompletedID is from fixtures/automation_runs.

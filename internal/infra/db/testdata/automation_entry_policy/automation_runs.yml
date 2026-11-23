@@ -1,0 +1,7 @@
+# An Enrollment before ordinals, the one its Contact could have in the Automation.
+- id: 1
+  workspace_id: 1
+  automation_id: 1
+  version_id: 1
+  contact_id: 1
+  status: completed

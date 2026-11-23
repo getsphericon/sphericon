@@ -36,7 +36,8 @@ func enrollable(t *testing.T, s *ent.Scoped, nth int) *ent.Contact {
 // the Enrollment begins now and no Event began it. It reports whether one was made.
 func enrollNow(t *testing.T, env *testhelper.TestEnv, s *ent.Scoped, automationID, contactID int64) (bool, error) {
 	t.Helper()
-	return testhelper.Module[*automations.StepExecution](env).EnrollOnRule(context.Background(), s, automations.EnrollOnRuleInput{AutomationID: automationID, ContactID: contactID})
+	made, err := testhelper.Module[*automations.StepExecution](env).EnrollOnRule(context.Background(), s, automations.EnrollOnRuleInput{AutomationID: automationID, ContactID: contactID})
+	return made.Enrolled, err
 }
 
 // runOf is the Contact's one Enrollment in the Automation.

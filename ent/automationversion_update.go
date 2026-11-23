@@ -134,6 +134,41 @@ func (_u *AutomationVersionUpdate) ClearGoal() *AutomationVersionUpdate {
 	return _u
 }
 
+// SetEntryPolicy sets the "entry_policy" field.
+func (_u *AutomationVersionUpdate) SetEntryPolicy(v automationversion.EntryPolicy) *AutomationVersionUpdate {
+	_u.mutation.SetEntryPolicy(v)
+	return _u
+}
+
+// SetNillableEntryPolicy sets the "entry_policy" field if the given value is not nil.
+func (_u *AutomationVersionUpdate) SetNillableEntryPolicy(v *automationversion.EntryPolicy) *AutomationVersionUpdate {
+	if v != nil {
+		_u.SetEntryPolicy(*v)
+	}
+	return _u
+}
+
+// SetCooldownSeconds sets the "cooldown_seconds" field.
+func (_u *AutomationVersionUpdate) SetCooldownSeconds(v int) *AutomationVersionUpdate {
+	_u.mutation.ResetCooldownSeconds()
+	_u.mutation.SetCooldownSeconds(v)
+	return _u
+}
+
+// SetNillableCooldownSeconds sets the "cooldown_seconds" field if the given value is not nil.
+func (_u *AutomationVersionUpdate) SetNillableCooldownSeconds(v *int) *AutomationVersionUpdate {
+	if v != nil {
+		_u.SetCooldownSeconds(*v)
+	}
+	return _u
+}
+
+// AddCooldownSeconds adds value to the "cooldown_seconds" field.
+func (_u *AutomationVersionUpdate) AddCooldownSeconds(v int) *AutomationVersionUpdate {
+	_u.mutation.AddCooldownSeconds(v)
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *AutomationVersionUpdate) SetWorkspace(v *Workspace) *AutomationVersionUpdate {
 	return _u.SetWorkspaceID(v.ID)
@@ -235,6 +270,11 @@ func (_u *AutomationVersionUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *AutomationVersionUpdate) check() error {
+	if v, ok := _u.mutation.EntryPolicy(); ok {
+		if err := automationversion.EntryPolicyValidator(v); err != nil {
+			return &ValidationError{Name: "entry_policy", err: fmt.Errorf(`ent: validator failed for field "AutomationVersion.entry_policy": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "AutomationVersion.workspace"`)
 	}
@@ -290,6 +330,15 @@ func (_u *AutomationVersionUpdate) sqlSave(ctx context.Context) (_node int, err 
 	}
 	if _u.mutation.GoalCleared() {
 		_spec.ClearField(automationversion.FieldGoal, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.EntryPolicy(); ok {
+		_spec.SetField(automationversion.FieldEntryPolicy, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.CooldownSeconds(); ok {
+		_spec.SetField(automationversion.FieldCooldownSeconds, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedCooldownSeconds(); ok {
+		_spec.AddField(automationversion.FieldCooldownSeconds, field.TypeInt, value)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -514,6 +563,41 @@ func (_u *AutomationVersionUpdateOne) ClearGoal() *AutomationVersionUpdateOne {
 	return _u
 }
 
+// SetEntryPolicy sets the "entry_policy" field.
+func (_u *AutomationVersionUpdateOne) SetEntryPolicy(v automationversion.EntryPolicy) *AutomationVersionUpdateOne {
+	_u.mutation.SetEntryPolicy(v)
+	return _u
+}
+
+// SetNillableEntryPolicy sets the "entry_policy" field if the given value is not nil.
+func (_u *AutomationVersionUpdateOne) SetNillableEntryPolicy(v *automationversion.EntryPolicy) *AutomationVersionUpdateOne {
+	if v != nil {
+		_u.SetEntryPolicy(*v)
+	}
+	return _u
+}
+
+// SetCooldownSeconds sets the "cooldown_seconds" field.
+func (_u *AutomationVersionUpdateOne) SetCooldownSeconds(v int) *AutomationVersionUpdateOne {
+	_u.mutation.ResetCooldownSeconds()
+	_u.mutation.SetCooldownSeconds(v)
+	return _u
+}
+
+// SetNillableCooldownSeconds sets the "cooldown_seconds" field if the given value is not nil.
+func (_u *AutomationVersionUpdateOne) SetNillableCooldownSeconds(v *int) *AutomationVersionUpdateOne {
+	if v != nil {
+		_u.SetCooldownSeconds(*v)
+	}
+	return _u
+}
+
+// AddCooldownSeconds adds value to the "cooldown_seconds" field.
+func (_u *AutomationVersionUpdateOne) AddCooldownSeconds(v int) *AutomationVersionUpdateOne {
+	_u.mutation.AddCooldownSeconds(v)
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *AutomationVersionUpdateOne) SetWorkspace(v *Workspace) *AutomationVersionUpdateOne {
 	return _u.SetWorkspaceID(v.ID)
@@ -628,6 +712,11 @@ func (_u *AutomationVersionUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *AutomationVersionUpdateOne) check() error {
+	if v, ok := _u.mutation.EntryPolicy(); ok {
+		if err := automationversion.EntryPolicyValidator(v); err != nil {
+			return &ValidationError{Name: "entry_policy", err: fmt.Errorf(`ent: validator failed for field "AutomationVersion.entry_policy": %w`, err)}
+		}
+	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "AutomationVersion.workspace"`)
 	}
@@ -700,6 +789,15 @@ func (_u *AutomationVersionUpdateOne) sqlSave(ctx context.Context) (_node *Autom
 	}
 	if _u.mutation.GoalCleared() {
 		_spec.ClearField(automationversion.FieldGoal, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.EntryPolicy(); ok {
+		_spec.SetField(automationversion.FieldEntryPolicy, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.CooldownSeconds(); ok {
+		_spec.SetField(automationversion.FieldCooldownSeconds, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedCooldownSeconds(); ok {
+		_spec.AddField(automationversion.FieldCooldownSeconds, field.TypeInt, value)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

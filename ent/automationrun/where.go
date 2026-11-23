@@ -106,6 +106,16 @@ func FiringID(v int64) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldEQ(FieldFiringID, v))
 }
 
+// Ordinal applies equality check predicate on the "ordinal" field. It's identical to OrdinalEQ.
+func Ordinal(v int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldOrdinal, v))
+}
+
+// KeyValue applies equality check predicate on the "key_value" field. It's identical to KeyValueEQ.
+func KeyValue(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldKeyValue, v))
+}
+
 // EndedAt applies equality check predicate on the "ended_at" field. It's identical to EndedAtEQ.
 func EndedAt(v time.Time) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldEQ(FieldEndedAt, v))
@@ -540,6 +550,121 @@ func FiringIDIsNil() predicate.AutomationRun {
 // FiringIDNotNil applies the NotNil predicate on the "firing_id" field.
 func FiringIDNotNil() predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldNotNull(FieldFiringID))
+}
+
+// OrdinalEQ applies the EQ predicate on the "ordinal" field.
+func OrdinalEQ(v int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldOrdinal, v))
+}
+
+// OrdinalNEQ applies the NEQ predicate on the "ordinal" field.
+func OrdinalNEQ(v int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNEQ(FieldOrdinal, v))
+}
+
+// OrdinalIn applies the In predicate on the "ordinal" field.
+func OrdinalIn(vs ...int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIn(FieldOrdinal, vs...))
+}
+
+// OrdinalNotIn applies the NotIn predicate on the "ordinal" field.
+func OrdinalNotIn(vs ...int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotIn(FieldOrdinal, vs...))
+}
+
+// OrdinalGT applies the GT predicate on the "ordinal" field.
+func OrdinalGT(v int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldGT(FieldOrdinal, v))
+}
+
+// OrdinalGTE applies the GTE predicate on the "ordinal" field.
+func OrdinalGTE(v int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldGTE(FieldOrdinal, v))
+}
+
+// OrdinalLT applies the LT predicate on the "ordinal" field.
+func OrdinalLT(v int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldLT(FieldOrdinal, v))
+}
+
+// OrdinalLTE applies the LTE predicate on the "ordinal" field.
+func OrdinalLTE(v int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldLTE(FieldOrdinal, v))
+}
+
+// KeyValueEQ applies the EQ predicate on the "key_value" field.
+func KeyValueEQ(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldKeyValue, v))
+}
+
+// KeyValueNEQ applies the NEQ predicate on the "key_value" field.
+func KeyValueNEQ(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNEQ(FieldKeyValue, v))
+}
+
+// KeyValueIn applies the In predicate on the "key_value" field.
+func KeyValueIn(vs ...string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIn(FieldKeyValue, vs...))
+}
+
+// KeyValueNotIn applies the NotIn predicate on the "key_value" field.
+func KeyValueNotIn(vs ...string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotIn(FieldKeyValue, vs...))
+}
+
+// KeyValueGT applies the GT predicate on the "key_value" field.
+func KeyValueGT(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldGT(FieldKeyValue, v))
+}
+
+// KeyValueGTE applies the GTE predicate on the "key_value" field.
+func KeyValueGTE(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldGTE(FieldKeyValue, v))
+}
+
+// KeyValueLT applies the LT predicate on the "key_value" field.
+func KeyValueLT(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldLT(FieldKeyValue, v))
+}
+
+// KeyValueLTE applies the LTE predicate on the "key_value" field.
+func KeyValueLTE(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldLTE(FieldKeyValue, v))
+}
+
+// KeyValueContains applies the Contains predicate on the "key_value" field.
+func KeyValueContains(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldContains(FieldKeyValue, v))
+}
+
+// KeyValueHasPrefix applies the HasPrefix predicate on the "key_value" field.
+func KeyValueHasPrefix(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldHasPrefix(FieldKeyValue, v))
+}
+
+// KeyValueHasSuffix applies the HasSuffix predicate on the "key_value" field.
+func KeyValueHasSuffix(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldHasSuffix(FieldKeyValue, v))
+}
+
+// KeyValueIsNil applies the IsNil predicate on the "key_value" field.
+func KeyValueIsNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIsNull(FieldKeyValue))
+}
+
+// KeyValueNotNil applies the NotNil predicate on the "key_value" field.
+func KeyValueNotNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotNull(FieldKeyValue))
+}
+
+// KeyValueEqualFold applies the EqualFold predicate on the "key_value" field.
+func KeyValueEqualFold(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEqualFold(FieldKeyValue, v))
+}
+
+// KeyValueContainsFold applies the ContainsFold predicate on the "key_value" field.
+func KeyValueContainsFold(v string) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldContainsFold(FieldKeyValue, v))
 }
 
 // EndedAtEQ applies the EQ predicate on the "ended_at" field.

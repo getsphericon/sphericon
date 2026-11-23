@@ -310,7 +310,7 @@ func TestARuleEnrollmentWithoutItsStoredEventBeginsNow(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	earliest := time.Now().Add(-time.Microsecond) // began_at is kept to the microsecond
 
-	enrolled, err := testhelper.Module[*automations.StepExecution](env).EnrollOnRule(ctx, s, automations.EnrollOnRuleInput{
+	made, err := testhelper.Module[*automations.StepExecution](env).EnrollOnRule(ctx, s, automations.EnrollOnRuleInput{
 		AutomationID: fixtures.AutomationPaymentRecoveryID, ContactID: fixtures.ContactPaidBeforeEnrolledID, SourceID: "evt-not-stored",
 	})
 	require.NoError(t, err)
@@ -319,7 +319,7 @@ func TestARuleEnrollmentWithoutItsStoredEventBeginsNow(t *testing.T) {
 	require.Len(t, runs, 1)
 	run := runs[0]
 
-	assert.True(t, enrolled)
+	assert.True(t, made.Enrolled)
 	assert.Equal(t, automationrun.StatusActive, run.Status)
 	assert.WithinRange(t, run.BeganAt, earliest, latest)
 }

@@ -114,10 +114,10 @@ func TestTheSameEventHandledTwiceMakesOneEnrollmentAndAtMostOneSkippedEntry(t *t
 // enrollOnFiring runs a Rule Firing's Enroll Action for the Contact in the Automation.
 func enrollOnFiring(t *testing.T, env *testhelper.TestEnv, automationID, contactID, firingID int64) bool {
 	t.Helper()
-	enrolled, err := testhelper.Module[*automations.StepExecution](env).EnrollOnRule(context.Background(), env.DB.Scoped(fixtures.AcmeID),
+	made, err := testhelper.Module[*automations.StepExecution](env).EnrollOnRule(context.Background(), env.DB.Scoped(fixtures.AcmeID),
 		automations.EnrollOnRuleInput{AutomationID: automationID, ContactID: contactID, FiringID: firingID, SourceID: "evt-not-stored"})
 	require.NoError(t, err)
-	return enrolled
+	return made.Enrolled
 }
 
 // A Rule Firing's Enroll Action run twice makes one Enrollment, and a Firing refused by the entry

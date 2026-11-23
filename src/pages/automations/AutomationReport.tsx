@@ -97,6 +97,11 @@ function ResultsFigures({ results }: { results: AutomationResults }) {
           current.skipped.once,
           previous.skipped.once,
         )}
+        {count(
+          t(($) => $.automations.results.skippedCooldown),
+          current.skipped.cooldown,
+          previous.skipped.cooldown,
+        )}
         <StatCard
           label={t(($) => $.automations.results.averageDuration)}
           value={duration === null ? '–' : formatDuration(duration)}

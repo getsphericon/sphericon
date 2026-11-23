@@ -155,26 +155,6 @@ func TestAutomationEnrollAndRun(t *testing.T) {
 	assert.Equal(t, 2, sent)
 }
 
-// An opt-out from this Automation's own source exits the Enrollment instead of sending: an
-// unsubscribe from the Automation ends it, whichever Channel it came from (ADR 0081). Leo opted out
-// of the Welcome series' own sending source.
-func TestAutomationExitsOnUnsubscribe(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-	runID := enrollVia(t, env, fixtures.AutomationWelcomeSeriesID, fixtures.ContactOptedOutOfWelcomeID)
-
-	fs := &fakeSender{}
-	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))
-
-	assert.Empty(t, fs.sent, "ineligible destination receives no email")
-	assert.Equal(t, automationrun.StatusExited, env.DB.AutomationRun.GetX(ctx, runID).Status)
-	assert.Empty(t, queuedSteps(t, env), "an exit queues no further step")
-	records := stepRecordsOf(t, env, runID)
-	require.Len(t, records, 1)
-	assert.NotNil(t, records[0].LeftAt, "the send it exited on is left with the exit")
-	assert.Nil(t, records[0].Outcome, "the Enrollment's end says why")
-}
-
 // A per-source opt-out is scoped: unsubscribing from "broadcasts" does not block
 // an automation (a different sending source). Bob is opted out of broadcasts only.
 func TestAutomationUnaffectedByBroadcastUnsubscribe(t *testing.T) {
