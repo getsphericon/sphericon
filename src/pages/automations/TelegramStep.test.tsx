@@ -15,6 +15,7 @@ import type {
   SiteAutomationResource,
 } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
+import { canvasProperties } from '../../test/canvas.ts'
 import { emailIntegration, stepId, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -115,6 +116,8 @@ test('a Telegram step round-trips: its bot and text load, an edit saves them bac
   await expect.element(screen.getByText('15 / 4,096')).toBeVisible()
   await text.fill('Welcome')
   await expect.element(screen.getByText('7 / 4,096')).toBeVisible()
+  // The edit reaches the canvas store, which the Save reads, a moment later.
+  await expect.poll(() => canvasProperties(STEP.id)).toMatchObject({ text: 'Welcome' })
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect
@@ -179,6 +182,14 @@ test('adding an image switches the counter to the caption limit, and buttons and
   await screen.getByRole('textbox', { name: 'Button 1 label' }).fill('Open')
   await screen.getByRole('textbox', { name: 'Button 1 URL' }).fill('https://example.com/a')
   await expect.element(screen.getByTestId('telegram-preview')).toHaveTextContent('Hello AlexOpen')
+  // The edit reaches the canvas store, which the Save reads, a moment later.
+  await expect
+    .poll(() => canvasProperties(STEP.id))
+    .toMatchObject({
+      imageUrl: 'https://cdn.example.com/a.png',
+      linkPreview: 'off',
+      buttons: expect.stringContaining('https://example.com/a'),
+    })
   // The open properties panel covers the toolbar at this viewport: deselect the node first.
   await page.elementLocator(canvasPane()).click({ position: { x: 5, y: 300 } })
   await screen.getByRole('button', { name: 'Save' }).click()
@@ -225,6 +236,10 @@ test('the unsubscribe button of a Telegram step is switched on with a label and 
   const label = screen.getByRole('textbox', { name: 'Button label' })
   await expect.element(label).toHaveValue('Unsubscribe')
   await label.fill('Stop messages')
+  // The edit reaches the canvas store, which the Save reads, a moment later.
+  await expect
+    .poll(() => canvasProperties(STEP.id))
+    .toMatchObject({ unsubscribeButton: 'Stop messages' })
   // The open properties panel covers the toolbar at this viewport: deselect the node first.
   await page.elementLocator(canvasPane()).click({ position: { x: 5, y: 300 } })
   await screen.getByRole('button', { name: 'Save' }).click()
@@ -255,6 +270,8 @@ test('a Telegram step with an unsubscribe button loads its label, and switching 
   await screen.getByText('Properties').click()
   await expect.element(screen.getByRole('textbox', { name: 'Button label' })).toHaveValue('Stop')
   await screen.getByText('Unsubscribe button', { exact: true }).click({ force: true })
+  // The edit reaches the canvas store, which the Save reads, a moment later.
+  await expect.poll(() => canvasProperties(STEP.id)).toMatchObject({ unsubscribeButton: '' })
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect.poll(() => bodies.map((body) => body.steps?.steps)).toEqual([[SENT]])

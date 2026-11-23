@@ -22,19 +22,19 @@ func (PruneSkippedEntriesArgs) Kind() string { return "automation_skipped_entrie
 type PruneSkippedEntriesWorker struct {
 	river.WorkerDefaults[PruneSkippedEntriesArgs]
 
-	steps     *automations.StepExecution
-	ent       *ent.Client
-	retention time.Duration
+	automations *automations.Module
+	ent         *ent.Client
+	retention   time.Duration
 }
 
-// NewPruneSkippedEntriesWorker builds the prune of the skipped entries steps records, older than
-// retention (0 disables it).
-func NewPruneSkippedEntriesWorker(steps *automations.StepExecution, client *ent.Client, retention time.Duration) *PruneSkippedEntriesWorker {
-	return &PruneSkippedEntriesWorker{steps: steps, ent: client, retention: retention}
+// NewPruneSkippedEntriesWorker builds the prune of the skipped entries into the Automations of the
+// module, older than retention (0 disables it).
+func NewPruneSkippedEntriesWorker(module *automations.Module, client *ent.Client, retention time.Duration) *PruneSkippedEntriesWorker {
+	return &PruneSkippedEntriesWorker{automations: module, ent: client, retention: retention}
 }
 
 func (w *PruneSkippedEntriesWorker) Work(ctx context.Context, _ *river.Job[PruneSkippedEntriesArgs]) error {
-	deleted, err := w.steps.PruneSkippedEntries(ctx, w.ent, w.retention, eventsRetentionBatch)
+	deleted, err := w.automations.PruneSkippedEntries(ctx, w.ent, w.retention, eventsRetentionBatch)
 	if err != nil {
 		return err
 	}

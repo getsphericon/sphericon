@@ -1,6 +1,5 @@
 import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
-import { page } from 'vitest/browser'
 
 import {
   handleSiteAutomationsGet,
@@ -16,6 +15,7 @@ import type {
   SiteAutomationResource,
 } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
+import { canvasProperties } from '../../test/canvas.ts'
 import { emailIntegration, stepId, TIMESTAMPS, testId, workspace } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -85,13 +85,15 @@ async function editing(steps: AutomationStep[]) {
   return { screen, bodies }
 }
 
-// Opens the properties of the step node at index and returns its Integration picker.
+// Opens the properties of the step node at index and returns its Integration picker. The panel of
+// a node opened before covers the nodes below it (at the test browser's width it sits at the
+// bottom): the node is picked by a click dispatched on it.
 async function integrationPickerOf(
   screen: Awaited<ReturnType<typeof editing>>['screen'],
   index: number,
 ) {
   await expect.poll(() => flowNode(index)).toBeInstanceOf(Element)
-  await page.elementLocator(flowNode(index)).click()
+  flowNode(index).dispatchEvent(new MouseEvent('click', { bubbles: true }))
   await screen.getByText('Properties').click()
   return screen.getByRole('combobox', { name: 'Integration' })
 }
@@ -104,6 +106,8 @@ test('each email step picks its own Integration among the email ones, and saves 
   await picker.click()
   await expect.element(screen.getByRole('option', { name: 'Text relay' })).not.toBeInTheDocument()
   await screen.getByRole('option', { name: 'Mailgun relay' }).click()
+  // The pick reaches the canvas store, which the Save reads, a moment later.
+  await expect.poll(() => canvasProperties(FIRST.id)).toMatchObject({ integrationId: testId(21) })
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect
@@ -129,6 +133,8 @@ test('choosing the default again saves the step without an Integration', async (
   const picker = await integrationPickerOf(screen, 1)
   await picker.click()
   await screen.getByRole('option', { name: 'Workspace default' }).click()
+  // The pick reaches the canvas store, which the Save reads, a moment later.
+  await expect.poll(() => canvasProperties(FIRST.id)).toMatchObject({ integrationId: '' })
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect.poll(() => bodies.map((body) => body.steps?.steps)).toEqual([[FIRST]])

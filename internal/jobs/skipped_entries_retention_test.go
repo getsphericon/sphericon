@@ -30,7 +30,7 @@ func welcomeSkipped(t *testing.T, env *testhelper.TestEnv) []int64 {
 // pruneSkippedEntries works the daily prune of skipped entries with the retention window.
 func pruneSkippedEntries(t *testing.T, env *testhelper.TestEnv, retention time.Duration) {
 	t.Helper()
-	w := jobs.NewPruneSkippedEntriesWorker(testhelper.Module[*automations.StepExecution](env), env.DB, retention)
+	w := jobs.NewPruneSkippedEntriesWorker(testhelper.Module[*automations.Module](env), env.DB, retention)
 	require.NoError(t, w.Work(context.Background(), job(jobs.PruneSkippedEntriesArgs{})))
 }
 
