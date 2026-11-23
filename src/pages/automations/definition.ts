@@ -153,7 +153,7 @@ export type AutomationTrigger = Pick<AutomationVersion, 'trigger' | 'exitEvents'
 // none), and the id of the root path the steps hang from.
 function triggerProperties(trigger: AutomationTrigger, pathId: string): Record<string, unknown> {
   return {
-    triggerAction: trigger.trigger.action,
+    triggerEvent: trigger.trigger.action,
     triggerFilter: trigger.trigger.filter ? filterText(trigger.trigger.filter) : '',
     entryPolicy: trigger.trigger.entryPolicy,
     cooldown: String(trigger.trigger.cooldown),
@@ -274,7 +274,7 @@ function triggerOf(properties: Record<string, unknown>): {
   incomplete: boolean
 } {
   const { matcher, incomplete } = matcherOf(
-    asText(properties.triggerAction),
+    asText(properties.triggerEvent),
     asText(properties.triggerFilter),
   )
   const trigger: AutomationTriggerInput = {

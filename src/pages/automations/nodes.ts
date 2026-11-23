@@ -86,7 +86,7 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         // drafts ('' for none, definition.ts): the SDK's schema has no list of objects.
         // pathId is the id of the root path the steps hang from, '' until the server gives one.
         defaultPropertiesData: {
-          triggerAction: DEFAULT_TRIGGER_EVENT,
+          triggerEvent: DEFAULT_TRIGGER_EVENT,
           triggerFilter: '',
           entryPolicy: 'once',
           cooldown: String(NEW_TRIGGER_COOLDOWN),
@@ -97,10 +97,10 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         },
         schema: {
           type: 'object',
-          required: ['triggerAction'],
+          required: ['triggerEvent'],
           properties: {
             ...sharedProperties,
-            triggerAction: {
+            triggerEvent: {
               type: 'string',
               label: t(($) => $.automations.triggerLabel),
               format: TRIGGER_EVENT_FORMAT,
@@ -140,7 +140,7 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         uischema: {
           type: 'VerticalLayout',
           elements: [
-            { type: 'Text', scope: '#/properties/triggerAction', placeholder: '' },
+            { type: 'Text', scope: '#/properties/triggerEvent', placeholder: '' },
             { type: 'Text', scope: '#/properties/triggerFilter', placeholder: '' },
             {
               type: 'Text',

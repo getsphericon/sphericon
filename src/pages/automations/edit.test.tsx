@@ -236,7 +236,7 @@ test('saving sends the trigger event typed on the canvas, a custom one included'
   await screen.getByText('Trigger Filter', { exact: true }).click()
   await expect
     .poll(() => canvasProperties('trigger'))
-    .toMatchObject({ triggerAction: 'course_completed' })
+    .toMatchObject({ triggerEvent: 'course_completed' })
   screen
     .getByRole('button', { name: 'Save' })
     .element()
@@ -275,7 +275,7 @@ test("saving sends the Trigger's filter edited on the canvas with the Event's pr
   await expect
     .poll(() => canvasProperties('trigger'))
     .toMatchObject({
-      triggerAction: 'order.completed',
+      triggerEvent: 'order.completed',
       triggerFilter: expect.stringContaining('paid'),
     })
   screen

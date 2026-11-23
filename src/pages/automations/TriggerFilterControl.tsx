@@ -19,7 +19,7 @@ export function TriggerFilterControl(props: ControlProps) {
   const { t } = useTranslation()
   const { core } = useJsonForms()
   const node = isRecord(core?.data) ? core.data : {}
-  const action = typeof node.triggerAction === 'string' ? node.triggerAction : ''
+  const action = typeof node.triggerEvent === 'string' ? node.triggerEvent : ''
   const text = typeof data === 'string' ? data : ''
   // A filter left half-typed when the panel closed loads as none, so the node drops it too: the
   // builder shows what the Save sends.
