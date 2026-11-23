@@ -126,11 +126,16 @@ type EnrollOnRuleInput struct {
 // an Event without one does not say, so it is refused. Every Enrollment it makes copies the stored
 // Event's action and properties, read once (originOf, #752). An Event a write through a Connection
 // without mcp:send published (Event.SendLocked) ends Enrollments as any other, and enrolls no one:
-// it starts nothing that sends (ADR 0132).
+// it starts nothing that sends (ADR 0132), and the lifecycle Events of the endings it makes
+// (automation.exited, automation.goal_reached) carry its mark, so they start nothing either.
 func (m *StepExecution) OnEvent(ctx context.Context, s *ent.Scoped, in OnEventInput) error {
 	contactID, ev := in.ContactID, in.Event
 	if ev.OccurredAt.IsZero() {
 		return errEventWithoutTime
+	}
+	if ev.SendLocked {
+		// The lifecycle Events its endings publish carry the mark on: they enroll no one either.
+		ctx = events.SendLocked(ctx)
 	}
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		return m.endOnEvent(ctx, ts, pub, contactID, ev)
