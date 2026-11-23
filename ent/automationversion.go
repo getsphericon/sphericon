@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 )
 
 // AutomationVersion is the model entity for the AutomationVersion schema.
@@ -38,10 +39,10 @@ type AutomationVersion struct {
 	TriggerAction string `json:"trigger_action,omitempty"`
 	// TriggerFilter holds the value of the "trigger_filter" field.
 	TriggerFilter *conditiontree.EventFilter `json:"trigger_filter,omitempty"`
-	// ExitEvents holds the value of the "exit_events" field.
-	ExitEvents []string `json:"exit_events,omitempty"`
-	// GoalEvent holds the value of the "goal_event" field.
-	GoalEvent *string `json:"goal_event,omitempty"`
+	// Exits holds the value of the "exits" field.
+	Exits []eventmatcher.Matcher `json:"exits,omitempty"`
+	// Goal holds the value of the "goal" field.
+	Goal *eventmatcher.Matcher `json:"goal,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AutomationVersionQuery when eager-loading is set.
 	Edges        AutomationVersionEdges `json:"edges"`
@@ -97,11 +98,11 @@ func (*AutomationVersion) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case automationversion.FieldSteps, automationversion.FieldTriggerFilter, automationversion.FieldExitEvents:
+		case automationversion.FieldSteps, automationversion.FieldTriggerFilter, automationversion.FieldExits, automationversion.FieldGoal:
 			values[i] = new([]byte)
 		case automationversion.FieldID, automationversion.FieldWorkspaceID, automationversion.FieldAutomationID, automationversion.FieldVersion:
 			values[i] = new(sql.NullInt64)
-		case automationversion.FieldTriggerAction, automationversion.FieldGoalEvent:
+		case automationversion.FieldTriggerAction:
 			values[i] = new(sql.NullString)
 		case automationversion.FieldCreatedAt, automationversion.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -178,20 +179,21 @@ func (_m *AutomationVersion) assignValues(columns []string, values []any) error 
 					return fmt.Errorf("unmarshal field trigger_filter: %w", err)
 				}
 			}
-		case automationversion.FieldExitEvents:
+		case automationversion.FieldExits:
 			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field exit_events", values[i])
+				return fmt.Errorf("unexpected type %T for field exits", values[i])
 			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &_m.ExitEvents); err != nil {
-					return fmt.Errorf("unmarshal field exit_events: %w", err)
+				if err := json.Unmarshal(*value, &_m.Exits); err != nil {
+					return fmt.Errorf("unmarshal field exits: %w", err)
 				}
 			}
-		case automationversion.FieldGoalEvent:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field goal_event", values[i])
-			} else if value.Valid {
-				_m.GoalEvent = new(string)
-				*_m.GoalEvent = value.String
+		case automationversion.FieldGoal:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field goal", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Goal); err != nil {
+					return fmt.Errorf("unmarshal field goal: %w", err)
+				}
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -268,13 +270,11 @@ func (_m *AutomationVersion) String() string {
 	builder.WriteString("trigger_filter=")
 	builder.WriteString(fmt.Sprintf("%v", _m.TriggerFilter))
 	builder.WriteString(", ")
-	builder.WriteString("exit_events=")
-	builder.WriteString(fmt.Sprintf("%v", _m.ExitEvents))
+	builder.WriteString("exits=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Exits))
 	builder.WriteString(", ")
-	if v := _m.GoalEvent; v != nil {
-		builder.WriteString("goal_event=")
-		builder.WriteString(*v)
-	}
+	builder.WriteString("goal=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Goal))
 	builder.WriteByte(')')
 	return builder.String()
 }

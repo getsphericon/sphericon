@@ -496,13 +496,16 @@ func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersio
 			return siteapiAutomationVersion, err
 		}
 		siteapiAutomationVersion.Trigger = siteapiAutomationTrigger
-		if (*source).ExitEvents != nil {
-			siteapiAutomationVersion.ExitEvents = make([]string, len((*source).ExitEvents))
-			for i := 0; i < len((*source).ExitEvents); i++ {
-				siteapiAutomationVersion.ExitEvents[i] = (*source).ExitEvents[i]
-			}
+		siteapiEventMatcherList, err := automationExits(source)
+		if err != nil {
+			return siteapiAutomationVersion, err
 		}
-		siteapiAutomationVersion.GoalEvent = nilString((*source).GoalEvent)
+		siteapiAutomationVersion.ExitEvents = siteapiEventMatcherList
+		siteapiNilEventMatcher, err := automationGoal((*source).Goal)
+		if err != nil {
+			return siteapiAutomationVersion, err
+		}
+		siteapiAutomationVersion.GoalEvent = siteapiNilEventMatcher
 		siteapiAutomationPath, err := automationPath(c, (*source).Steps)
 		if err != nil {
 			return siteapiAutomationVersion, err

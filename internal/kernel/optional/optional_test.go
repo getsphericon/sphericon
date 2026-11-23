@@ -20,3 +20,12 @@ func TestEqualComparesValuesNotPointers(t *testing.T) {
 	assert.False(t, optional.Equal(&a, &c))
 	assert.True(t, optional.Equal[int](nil, nil))
 }
+
+func TestEqualFuncComparesPresentValuesByItsFunction(t *testing.T) {
+	a, b := "Paid", "paid"
+	sameCase := func(x, y string) bool { return x == y }
+	assert.False(t, optional.EqualFunc(&a, &b, sameCase))
+	assert.True(t, optional.EqualFunc(&a, &a, sameCase))
+	assert.False(t, optional.EqualFunc(&a, nil, sameCase))
+	assert.True(t, optional.EqualFunc[string](nil, nil, sameCase))
+}

@@ -72,8 +72,14 @@ function AutomationVersionSummary({
         {version.exitEvents.length === 0 ? (
           <Text size="sm">{t(($) => $.automations.noEndEvent)}</Text>
         ) : (
-          version.exitEvents.map((event) => (
-            <EventActionBadge key={event} action={event} color="gray" />
+          // The server keeps one of each matcher, so its JSON is a key of its own.
+          version.exitEvents.map((exit) => (
+            <Group key={JSON.stringify(exit)} gap={4}>
+              <EventActionBadge action={exit.action} color="gray" />
+              {exit.filter ? (
+                <Text size="sm">{t(($) => $.automations.triggerFiltered)}</Text>
+              ) : null}
+            </Group>
           ))
         )}
       </Group>
@@ -84,7 +90,12 @@ function AutomationVersionSummary({
         {version.goalEvent === null ? (
           <Text size="sm">{t(($) => $.automations.noEndEvent)}</Text>
         ) : (
-          <EventActionBadge action={version.goalEvent} color="teal" />
+          <>
+            <EventActionBadge action={version.goalEvent.action} color="teal" />
+            {version.goalEvent.filter ? (
+              <Text size="sm">{t(($) => $.automations.triggerFiltered)}</Text>
+            ) : null}
+          </>
         )}
       </Group>
       <Group gap="xs">

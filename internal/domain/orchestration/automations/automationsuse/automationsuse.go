@@ -1,6 +1,6 @@
 // Package automationsuse reads the use the Automations make of a row: the Definition use of a kept
-// Automation's live version or draft that applies or removes a Tag, or whose Trigger's filter names
-// a Tag or a Custom field (ADR 0133), and the Live use of the versions that will still send (ADR
+// Automation's live version or draft that applies or removes a Tag, or whose Trigger's, exit's or
+// goal's filter names a Tag or a Custom field (ADR 0133), and the Live use of the versions that will still send (ADR
 // 0099). It is a reader of the Removal check
 // (internal/domain/orchestration/removalcheck), the one package easement lets import it, so every
 // removal that checks a row reads every holder, and which builds its Module. The automations
@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 )
 
 // Module is the automations module's reader of the use of a row (docs/architecture/modules.md).
@@ -33,20 +34,21 @@ type Module struct{}
 func New() *Module { return &Module{} }
 
 // UsingTag returns the Workspace's kept Automations whose live version or draft applies or
-// removes the Tag by its name, or whose Trigger's filter names it (ADR 0133), in id order (spec
+// removes the Tag by its name, or whose Trigger's, exit's or goal's filter names it (ADR 0133), in
+// id order (spec
 // #767, "In use"). An archived Automation takes no part in new work.
 func (m *Module) UsingTag(ctx context.Context, l *ent.WorkspaceLocked, name string) ([]*ent.Automation, error) {
 	return using(ctx, l, func(v *ent.AutomationVersion) bool {
-		return stepsTag(v, name) || slices.ContainsFunc(triggerNames(v).Tags, func(n string) bool { return tagname.Same(n, name) })
+		return stepsTag(v, name) || slices.ContainsFunc(matcherNames(v).Tags, func(n string) bool { return tagname.Same(n, name) })
 	})
 }
 
 // UsingCustomField returns the Workspace's kept Automations whose live version's or draft's
-// Trigger filter names the Custom field key (ADR 0133), in id order: a contact.field_changed
-// Trigger that tests its `key`.
+// Trigger, exit or goal filter names the Custom field key (ADR 0133), in id order: a
+// contact.field_changed matcher that tests its `key`.
 func (m *Module) UsingCustomField(ctx context.Context, l *ent.WorkspaceLocked, key string) ([]*ent.Automation, error) {
 	return using(ctx, l, func(v *ent.AutomationVersion) bool {
-		return slices.Contains(triggerNames(v).CustomFields, key)
+		return slices.Contains(matcherNames(v).CustomFields, key)
 	})
 }
 
@@ -77,14 +79,23 @@ func stepsTag(v *ent.AutomationVersion, name string) bool {
 	return false
 }
 
-// triggerNames is what the version's Trigger filter names in the catalogue
-// (condition.NamedDefinitions), nothing when it has no filter.
-func triggerNames(v *ent.AutomationVersion) condition.Definitions {
-	trigger := automations.TriggerOf(v)
-	if trigger.Filter == nil {
-		return condition.Definitions{}
+// matcherNames is what the filters of the version's Event matchers name in the catalogue
+// (condition.NamedDefinitions): its Trigger's, its exits' and its goal's.
+func matcherNames(v *ent.AutomationVersion) condition.Definitions {
+	matchers := append([]eventmatcher.Matcher{automations.TriggerOf(v)}, automations.ExitsOf(v)...)
+	if v.Goal != nil {
+		matchers = append(matchers, *v.Goal)
 	}
-	return condition.NamedDefinitions(trigger.Action, *trigger.Filter)
+	var named condition.Definitions
+	for _, m := range matchers {
+		if m.Filter == nil {
+			continue
+		}
+		d := condition.NamedDefinitions(m.Action, *m.Filter)
+		named.Tags = append(named.Tags, d.Tags...)
+		named.CustomFields = append(named.CustomFields, d.CustomFields...)
+	}
+	return named
 }
 
 // LiveSends returns the sends of the Automations in Live use (ADR 0099), in Automation id order:

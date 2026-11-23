@@ -109,7 +109,7 @@ type EnrollOnRuleInput struct {
 }
 
 // OnEvent is what an Event of the Contact does to the Automations (#751): it first ends the
-// Contact's active Enrollments whose version names the action as an exit or goal event
+// Contact's active Enrollments whose version has an exit or goal event matching it
 // (endOnEvent, in a transaction of its own, which it needs for the Contact's lock),
 // then enrolls the Contact into every active Automation whose live version's Trigger is the action
 // (ADR 0065), one transaction per Automation (enrollOnTrigger). Each entry runs the entry checks,
@@ -128,7 +128,7 @@ func (m *StepExecution) OnEvent(ctx context.Context, s *ent.Scoped, in OnEventIn
 		return errEventWithoutTime
 	}
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		return m.endOnEvent(ctx, ts, pub, contactID, ev.Action, ev.OccurredAt)
+		return m.endOnEvent(ctx, ts, pub, contactID, ev)
 	})
 	if err != nil || ev.SendLocked {
 		return err

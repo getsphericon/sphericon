@@ -3314,12 +3314,12 @@ type AutomationVersion struct {
 	Number int32 `json:"number"`
 	// What enrolls a contact.
 	Trigger AutomationTrigger `json:"trigger"`
-	// Event actions that end an active enrollment early, as exited (e.g. "plan_downgraded"). Only an Event
-	// that occurred once the enrollment began counts; machine opens and clicks never do.
-	ExitEvents []string `json:"exitEvents"`
-	// Event action that ends an active enrollment as goal_reached (e.g. "payment_succeeded"); null when
-	// there is none.
-	GoalEvent NilString `json:"goalEvent"`
+	// The Event matchers that end an active enrollment early, as exited. Only an Event that occurred once
+	// the enrollment began counts; machine opens and clicks never do.
+	ExitEvents []EventMatcher `json:"exitEvents"`
+	// The Event matcher that ends an active enrollment as goal_reached; an Event that matches it and an
+	// exit reaches the goal. Null when there is none.
+	GoalEvent NilEventMatcher `json:"goalEvent"`
 	// The version's Steps: its root path.
 	Steps AutomationPath `json:"steps"`
 }
@@ -3335,12 +3335,12 @@ func (s *AutomationVersion) GetTrigger() AutomationTrigger {
 }
 
 // GetExitEvents returns the value of ExitEvents.
-func (s *AutomationVersion) GetExitEvents() []string {
+func (s *AutomationVersion) GetExitEvents() []EventMatcher {
 	return s.ExitEvents
 }
 
 // GetGoalEvent returns the value of GoalEvent.
-func (s *AutomationVersion) GetGoalEvent() NilString {
+func (s *AutomationVersion) GetGoalEvent() NilEventMatcher {
 	return s.GoalEvent
 }
 
@@ -3360,12 +3360,12 @@ func (s *AutomationVersion) SetTrigger(val AutomationTrigger) {
 }
 
 // SetExitEvents sets the value of ExitEvents.
-func (s *AutomationVersion) SetExitEvents(val []string) {
+func (s *AutomationVersion) SetExitEvents(val []EventMatcher) {
 	s.ExitEvents = val
 }
 
 // SetGoalEvent sets the value of GoalEvent.
-func (s *AutomationVersion) SetGoalEvent(val NilString) {
+func (s *AutomationVersion) SetGoalEvent(val NilEventMatcher) {
 	s.GoalEvent = val
 }
 
@@ -7572,12 +7572,12 @@ type CreateAutomationInput struct {
 	Name Name `json:"name"`
 	// What enrolls a contact.
 	Trigger AutomationTriggerInput `json:"trigger"`
-	// Event actions that end an active enrollment early; none of them may be the trigger. Each follows the
-	// trigger's rule: any customer action, and of the email events only opened, clicked and unsubscribed.
-	ExitEvents []string `json:"exitEvents"`
-	// Event action that ends an active enrollment as goal_reached; it may be neither the trigger nor an
-	// exit event. Null or omitted is none.
-	GoalEvent OptNilString `json:"goalEvent"`
+	// The Event matchers that end an active enrollment early. They may share an action with the trigger,
+	// with each other and with the goal.
+	ExitEvents []EventMatcherInput `json:"exitEvents"`
+	// The Event matcher that ends an active enrollment as goal_reached; it may share an action with the
+	// trigger and the exits. Null or omitted is none.
+	GoalEvent OptNilEventMatcherInput `json:"goalEvent"`
 	// The version's Steps: its root path.
 	Steps OptAutomationPathInput `json:"steps"`
 }
@@ -7593,12 +7593,12 @@ func (s *CreateAutomationInput) GetTrigger() AutomationTriggerInput {
 }
 
 // GetExitEvents returns the value of ExitEvents.
-func (s *CreateAutomationInput) GetExitEvents() []string {
+func (s *CreateAutomationInput) GetExitEvents() []EventMatcherInput {
 	return s.ExitEvents
 }
 
 // GetGoalEvent returns the value of GoalEvent.
-func (s *CreateAutomationInput) GetGoalEvent() OptNilString {
+func (s *CreateAutomationInput) GetGoalEvent() OptNilEventMatcherInput {
 	return s.GoalEvent
 }
 
@@ -7618,12 +7618,12 @@ func (s *CreateAutomationInput) SetTrigger(val AutomationTriggerInput) {
 }
 
 // SetExitEvents sets the value of ExitEvents.
-func (s *CreateAutomationInput) SetExitEvents(val []string) {
+func (s *CreateAutomationInput) SetExitEvents(val []EventMatcherInput) {
 	s.ExitEvents = val
 }
 
 // SetGoalEvent sets the value of GoalEvent.
-func (s *CreateAutomationInput) SetGoalEvent(val OptNilString) {
+func (s *CreateAutomationInput) SetGoalEvent(val OptNilEventMatcherInput) {
 	s.GoalEvent = val
 }
 
@@ -11248,6 +11248,72 @@ func (s *EventLeafKind) UnmarshalText(data []byte) error {
 	}
 }
 
+// An Event matcher that ends an enrollment (ADR 0133): an action, and an optional filter on that
+// Event's own properties, so `order.closed` where `status` is `cancelled` exits and the same action
+// where `status` is `paid` reaches the goal. The Event that began the enrollment never ends it.
+// Ref: #/components/schemas/EventMatcher
+type EventMatcher struct {
+	// The Event action (e.g. "plan_downgraded", "contact.tagged"). Any customer action; of the email
+	// events only opened, clicked and unsubscribed.
+	Action string `json:"action"`
+	// The tests of the Event's own properties it must pass; absent, every Event of the action matches. The
+	// `tag` of contact.tagged and contact.untagged and the `key` of contact.field_changed, tested by eq or
+	// neq, must name a Tag or Custom field of the Workspace.
+	Filter OptEventFilter `json:"filter"`
+}
+
+// GetAction returns the value of Action.
+func (s *EventMatcher) GetAction() string {
+	return s.Action
+}
+
+// GetFilter returns the value of Filter.
+func (s *EventMatcher) GetFilter() OptEventFilter {
+	return s.Filter
+}
+
+// SetAction sets the value of Action.
+func (s *EventMatcher) SetAction(val string) {
+	s.Action = val
+}
+
+// SetFilter sets the value of Filter.
+func (s *EventMatcher) SetFilter(val OptEventFilter) {
+	s.Filter = val
+}
+
+// An Event matcher that ends an enrollment (ADR 0133), as a request writes it.
+// Ref: #/components/schemas/EventMatcherInput
+type EventMatcherInput struct {
+	// The Event action (e.g. "plan_downgraded", "contact.tagged"). Any customer action; of the email
+	// events only opened, clicked and unsubscribed.
+	Action string `json:"action"`
+	// The tests of the Event's own properties it must pass; omitted, every Event of the action matches.
+	// The `tag` of contact.tagged and contact.untagged and the `key` of contact.field_changed, tested by
+	// eq or neq, must name a Tag or Custom field of the Workspace.
+	Filter OptEventFilterInput `json:"filter"`
+}
+
+// GetAction returns the value of Action.
+func (s *EventMatcherInput) GetAction() string {
+	return s.Action
+}
+
+// GetFilter returns the value of Filter.
+func (s *EventMatcherInput) GetFilter() OptEventFilterInput {
+	return s.Filter
+}
+
+// SetAction sets the value of Action.
+func (s *EventMatcherInput) SetAction(val string) {
+	s.Action = val
+}
+
+// SetFilter sets the value of Filter.
+func (s *EventMatcherInput) SetFilter(val OptEventFilterInput) {
+	s.Filter = val
+}
+
 // A Trigger that enrolls a Contact on an Event (ADR 0133): its action, and an optional filter on that
 // Event's own properties, so `order.completed` where `status` is `paid` starts on paid orders only. An
 // Event that fails the filter is no entry: it enrolls no one and is not a skipped entry.
@@ -13583,6 +13649,51 @@ func (o NilEntityId) Or(d EntityId) EntityId {
 	return d
 }
 
+// NewNilEventMatcher returns new NilEventMatcher with value set to v.
+func NewNilEventMatcher(v EventMatcher) NilEventMatcher {
+	return NilEventMatcher{
+		Value: v,
+	}
+}
+
+// NilEventMatcher is nullable EventMatcher.
+type NilEventMatcher struct {
+	Value EventMatcher
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilEventMatcher) SetTo(v EventMatcher) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilEventMatcher) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilEventMatcher) SetToNull() {
+	o.Null = true
+	var v EventMatcher
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilEventMatcher) Get() (v EventMatcher, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilEventMatcher) Or(d EventMatcher) EventMatcher {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewNilFloat32 returns new NilFloat32 with value set to v.
 func NewNilFloat32(v float32) NilFloat32 {
 	return NilFloat32{
@@ -15498,6 +15609,74 @@ func (o OptNilEntityId) Get() (v EntityId, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilEntityId) Or(d EntityId) EntityId {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilEventMatcherInput returns new OptNilEventMatcherInput with value set to v.
+func NewOptNilEventMatcherInput(v EventMatcherInput) OptNilEventMatcherInput {
+	return OptNilEventMatcherInput{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilEventMatcherInput is optional nullable EventMatcherInput.
+type OptNilEventMatcherInput struct {
+	Value EventMatcherInput
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilEventMatcherInput was set.
+func (o OptNilEventMatcherInput) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilEventMatcherInput) Reset() {
+	var v EventMatcherInput
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilEventMatcherInput) SetTo(v EventMatcherInput) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilEventMatcherInput) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilEventMatcherInput) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v EventMatcherInput
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilEventMatcherInput) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilEventMatcherInput) Get() (v EventMatcherInput, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilEventMatcherInput) Or(d EventMatcherInput) EventMatcherInput {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -26144,10 +26323,10 @@ type UpdateAutomationInput struct {
 	Name     OptName  `json:"name"`
 	// What enrolls a contact; replaces the Trigger, its filter with it, and omitted keeps it.
 	Trigger OptAutomationTriggerInput `json:"trigger"`
-	// Event actions that end an active enrollment early; replaces the list, omitted keeps it.
-	ExitEvents []string `json:"exitEvents"`
-	// Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it.
-	GoalEvent OptNilString `json:"goalEvent"`
+	// The Event matchers that end an active enrollment early; replaces the list, omitted keeps it.
+	ExitEvents []EventMatcherInput `json:"exitEvents"`
+	// The Event matcher that ends an active enrollment as goal_reached; null removes it, omitted keeps it.
+	GoalEvent OptNilEventMatcherInput `json:"goalEvent"`
 	// The version's Steps: its root path.
 	Steps OptAutomationPathInput `json:"steps"`
 }
@@ -26168,12 +26347,12 @@ func (s *UpdateAutomationInput) GetTrigger() OptAutomationTriggerInput {
 }
 
 // GetExitEvents returns the value of ExitEvents.
-func (s *UpdateAutomationInput) GetExitEvents() []string {
+func (s *UpdateAutomationInput) GetExitEvents() []EventMatcherInput {
 	return s.ExitEvents
 }
 
 // GetGoalEvent returns the value of GoalEvent.
-func (s *UpdateAutomationInput) GetGoalEvent() OptNilString {
+func (s *UpdateAutomationInput) GetGoalEvent() OptNilEventMatcherInput {
 	return s.GoalEvent
 }
 
@@ -26198,12 +26377,12 @@ func (s *UpdateAutomationInput) SetTrigger(val OptAutomationTriggerInput) {
 }
 
 // SetExitEvents sets the value of ExitEvents.
-func (s *UpdateAutomationInput) SetExitEvents(val []string) {
+func (s *UpdateAutomationInput) SetExitEvents(val []EventMatcherInput) {
 	s.ExitEvents = val
 }
 
 // SetGoalEvent sets the value of GoalEvent.
-func (s *UpdateAutomationInput) SetGoalEvent(val OptNilString) {
+func (s *UpdateAutomationInput) SetGoalEvent(val OptNilEventMatcherInput) {
 	s.GoalEvent = val
 }
 

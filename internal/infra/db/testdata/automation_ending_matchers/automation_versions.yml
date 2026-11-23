@@ -1,0 +1,16 @@
+# Versions of the shape before Event matchers ended an Enrollment (ADR 0133): exit events a list of
+# actions, the goal event an action.
+- id: 1
+  workspace_id: 1
+  automation_id: 1
+  version: 1
+  steps: '{"id":"0b4f4a52-6f5e-4a8c-9a8e-2f1f4b7f0c11","steps":[]}'
+  trigger_action: payment_failed
+  exit_events: '["account_closed","plan_downgraded"]'
+  goal_event: payment_succeeded
+- id: 2
+  workspace_id: 1
+  automation_id: 1
+  version: 2
+  steps: '{"id":"0b4f4a52-6f5e-4a8c-9a8e-2f1f4b7f0c12","steps":[]}'
+  trigger_action: payment_failed

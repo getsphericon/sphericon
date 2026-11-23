@@ -4613,8 +4613,8 @@ export const zAutomationTriggerInput = z.lazy((): any => zEventTriggerInput);
 export const zAutomationVersion = z.object({
   number: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   trigger: zAutomationTrigger,
-  exitEvents: z.array(z.string()),
-  goalEvent: z.string().nullable(),
+  exitEvents: z.array(z.lazy((): any => zEventMatcher)),
+  goalEvent: z.lazy((): any => zEventMatcher).nullable(),
   steps: zAutomationPath
 });
 
@@ -4624,8 +4624,8 @@ export const zAutomationVersion = z.object({
 export const zCreateAutomationInput = z.strictObject({
   name: zName,
   trigger: zAutomationTriggerInput,
-  exitEvents: z.exactOptional(z.array(z.string())),
-  goalEvent: z.exactOptional(z.string().nullable()),
+  exitEvents: z.exactOptional(z.array(z.lazy((): any => zEventMatcherInput))),
+  goalEvent: z.exactOptional(z.lazy((): any => zEventMatcherInput).nullable()),
   steps: z.exactOptional(zAutomationPathInput)
 });
 
@@ -4686,6 +4686,24 @@ export const zEventFilterNodeInput = z.discriminatedUnion('kind', [
   zEventFilterInput.extend({ kind: z.literal('group') }),
   zFilterPropertyLeafInput.extend({ kind: z.literal('property') })
 ]);
+
+/**
+ * An Event matcher that ends an enrollment (ADR 0133): an action, and an optional filter on that
+ * Event's own properties, so `order.closed` where `status` is `cancelled` exits and the same action
+ * where `status` is `paid` reaches the goal. The Event that began the enrollment never ends it.
+ */
+export const zEventMatcher = z.object({
+  action: z.string(),
+  filter: z.exactOptional(zEventFilter)
+});
+
+/**
+ * An Event matcher that ends an enrollment (ADR 0133), as a request writes it
+ */
+export const zEventMatcherInput = z.strictObject({
+  action: z.string(),
+  filter: z.exactOptional(zEventFilterInput)
+});
 
 /**
  * A Trigger that enrolls a Contact on an Event (ADR 0133): its action, and an optional filter on
@@ -4882,8 +4900,8 @@ export const zUpdateAutomationInput = z.strictObject({
   revision: zRevision,
   name: z.exactOptional(zName),
   trigger: z.exactOptional(zAutomationTriggerInput),
-  exitEvents: z.exactOptional(z.array(z.string())),
-  goalEvent: z.exactOptional(z.string().nullable()),
+  exitEvents: z.exactOptional(z.array(zEventMatcherInput)),
+  goalEvent: z.exactOptional(zEventMatcherInput.nullable()),
   steps: z.exactOptional(zAutomationPathInput)
 });
 

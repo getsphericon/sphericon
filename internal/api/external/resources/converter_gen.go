@@ -270,13 +270,16 @@ func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersio
 			return externalapiAutomationVersion, err
 		}
 		externalapiAutomationVersion.Trigger = externalapiAutomationTrigger
-		if (*source).ExitEvents != nil {
-			externalapiAutomationVersion.ExitEvents = make([]string, len((*source).ExitEvents))
-			for i := 0; i < len((*source).ExitEvents); i++ {
-				externalapiAutomationVersion.ExitEvents[i] = (*source).ExitEvents[i]
-			}
+		externalapiEventMatcherList, err := automationExits(source)
+		if err != nil {
+			return externalapiAutomationVersion, err
 		}
-		externalapiAutomationVersion.GoalEvent = nilString((*source).GoalEvent)
+		externalapiAutomationVersion.ExitEvents = externalapiEventMatcherList
+		externalapiNilEventMatcher, err := automationGoal((*source).Goal)
+		if err != nil {
+			return externalapiAutomationVersion, err
+		}
+		externalapiAutomationVersion.GoalEvent = externalapiNilEventMatcher
 		externalapiAutomationPath, err := automationPath(c, (*source).Steps)
 		if err != nil {
 			return externalapiAutomationVersion, err

@@ -256,6 +256,57 @@ test("the filter of a Tag's Trigger offers the Workspace's Tags as the tag teste
   await expect.element(screen.getByRole('option', { name: 'trial' })).toBeVisible()
 })
 
+test('saving sends a goal event added on the canvas, an Event matcher with its filter', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    handleSiteAutomationsGet({ body: STORED }),
+    handleSiteAutomationsUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(STORED)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+  await expect.poll(() => flowNode(0)).toBeInstanceOf(Element)
+  await page.elementLocator(flowNode(0)).click()
+  await screen.getByText('Properties').click()
+  await screen.getByRole('button', { name: 'Add goal event' }).click()
+  await screen.getByRole('combobox', { name: 'Event', exact: true }).fill('order.closed')
+  await screen.getByRole('button', { name: /Rule/ }).last().click()
+  await screen.getByLabelText('Event property name').fill('status')
+  await screen.getByTestId('value-editor').fill('paid')
+  // The form's last change reaches the node a moment later: a click on the panel lets it land, as a
+  // person's move to the Save does. The goal's editor lengthens the panel over the bar, so the Save
+  // is clicked by an event dispatched on it.
+  await screen.getByText('Goal Event').click()
+  screen
+    .getByRole('button', { name: 'Save' })
+    .element()
+    .dispatchEvent(new MouseEvent('click', { bubbles: true }))
+
+  await expect
+    .poll(() => bodies)
+    .toMatchObject([
+      {
+        exitEvents: [],
+        goalEvent: {
+          action: 'order.closed',
+          filter: {
+            kind: 'group',
+            combinator: 'and',
+            entries: [
+              {
+                kind: 'property',
+                key: 'status',
+                test: { kind: 'text', operator: 'eq', value: 'paid' },
+              },
+            ],
+          },
+        },
+      },
+    ])
+})
+
 // withSteps is STORED's draft with other steps.
 function withSteps(steps: AutomationVersion['steps']['steps']): AutomationVersion {
   return {

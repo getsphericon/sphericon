@@ -69,6 +69,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
@@ -9944,31 +9945,21 @@ func (x *AutomationVersionScopedCreate) SetTriggerFilter(v *conditiontree.EventF
 
 const RoleOf_AutomationVersionScopedCreate_SetTriggerFilter = RoleStep
 
-// SetExitEvents sets the "exit_events" field.
-func (x *AutomationVersionScopedCreate) SetExitEvents(v []string) *AutomationVersionScopedCreate {
-	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetExitEvents(v) })
+// SetExits sets the "exits" field.
+func (x *AutomationVersionScopedCreate) SetExits(v []eventmatcher.Matcher) *AutomationVersionScopedCreate {
+	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetExits(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedCreate_SetExitEvents = RoleStep
+const RoleOf_AutomationVersionScopedCreate_SetExits = RoleStep
 
-// SetGoalEvent sets the "goal_event" field.
-func (x *AutomationVersionScopedCreate) SetGoalEvent(v string) *AutomationVersionScopedCreate {
-	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetGoalEvent(v) })
+// SetGoal sets the "goal" field.
+func (x *AutomationVersionScopedCreate) SetGoal(v *eventmatcher.Matcher) *AutomationVersionScopedCreate {
+	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetGoal(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedCreate_SetGoalEvent = RoleStep
-
-// SetNillableGoalEvent sets the "goal_event" field if the given value is not nil.
-func (x *AutomationVersionScopedCreate) SetNillableGoalEvent(v *string) *AutomationVersionScopedCreate {
-	if v != nil {
-		x.SetGoalEvent(*v)
-	}
-	return x
-}
-
-const RoleOf_AutomationVersionScopedCreate_SetNillableGoalEvent = RoleStep
+const RoleOf_AutomationVersionScopedCreate_SetGoal = RoleStep
 
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (x *AutomationVersionScopedCreate) SetAutomation(v *Automation) *AutomationVersionScopedCreate {
@@ -10187,45 +10178,45 @@ func (u *AutomationVersionScopedUpsert) ClearTriggerFilter() *AutomationVersionS
 
 const RoleOf_AutomationVersionScopedUpsert_ClearTriggerFilter = RoleStep
 
-// SetExitEvents sets the "exit_events" field.
-func (u *AutomationVersionScopedUpsert) SetExitEvents(v []string) *AutomationVersionScopedUpsert {
-	u.u.Set(automationversion.FieldExitEvents, v)
+// SetExits sets the "exits" field.
+func (u *AutomationVersionScopedUpsert) SetExits(v []eventmatcher.Matcher) *AutomationVersionScopedUpsert {
+	u.u.Set(automationversion.FieldExits, v)
 	return u
 }
 
-const RoleOf_AutomationVersionScopedUpsert_SetExitEvents = RoleStep
+const RoleOf_AutomationVersionScopedUpsert_SetExits = RoleStep
 
-// UpdateExitEvents sets the "exit_events" field to the value that was provided on create.
-func (u *AutomationVersionScopedUpsert) UpdateExitEvents() *AutomationVersionScopedUpsert {
-	u.u.SetExcluded(automationversion.FieldExitEvents)
+// UpdateExits sets the "exits" field to the value that was provided on create.
+func (u *AutomationVersionScopedUpsert) UpdateExits() *AutomationVersionScopedUpsert {
+	u.u.SetExcluded(automationversion.FieldExits)
 	return u
 }
 
-const RoleOf_AutomationVersionScopedUpsert_UpdateExitEvents = RoleStep
+const RoleOf_AutomationVersionScopedUpsert_UpdateExits = RoleStep
 
-// SetGoalEvent sets the "goal_event" field.
-func (u *AutomationVersionScopedUpsert) SetGoalEvent(v string) *AutomationVersionScopedUpsert {
-	u.u.Set(automationversion.FieldGoalEvent, v)
+// SetGoal sets the "goal" field.
+func (u *AutomationVersionScopedUpsert) SetGoal(v *eventmatcher.Matcher) *AutomationVersionScopedUpsert {
+	u.u.Set(automationversion.FieldGoal, v)
 	return u
 }
 
-const RoleOf_AutomationVersionScopedUpsert_SetGoalEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpsert_SetGoal = RoleStep
 
-// UpdateGoalEvent sets the "goal_event" field to the value that was provided on create.
-func (u *AutomationVersionScopedUpsert) UpdateGoalEvent() *AutomationVersionScopedUpsert {
-	u.u.SetExcluded(automationversion.FieldGoalEvent)
+// UpdateGoal sets the "goal" field to the value that was provided on create.
+func (u *AutomationVersionScopedUpsert) UpdateGoal() *AutomationVersionScopedUpsert {
+	u.u.SetExcluded(automationversion.FieldGoal)
 	return u
 }
 
-const RoleOf_AutomationVersionScopedUpsert_UpdateGoalEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpsert_UpdateGoal = RoleStep
 
-// ClearGoalEvent clears the value of the "goal_event" field.
-func (u *AutomationVersionScopedUpsert) ClearGoalEvent() *AutomationVersionScopedUpsert {
-	u.u.SetNull(automationversion.FieldGoalEvent)
+// ClearGoal clears the value of the "goal" field.
+func (u *AutomationVersionScopedUpsert) ClearGoal() *AutomationVersionScopedUpsert {
+	u.u.SetNull(automationversion.FieldGoal)
 	return u
 }
 
-const RoleOf_AutomationVersionScopedUpsert_ClearGoalEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpsert_ClearGoal = RoleStep
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
 // target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
@@ -10504,47 +10495,37 @@ func (x *AutomationVersionScopedUpdateOne) ClearTriggerFilter() *AutomationVersi
 
 const RoleOf_AutomationVersionScopedUpdateOne_ClearTriggerFilter = RoleStep
 
-// SetExitEvents sets the "exit_events" field.
-func (x *AutomationVersionScopedUpdateOne) SetExitEvents(v []string) *AutomationVersionScopedUpdateOne {
-	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetExitEvents(v) })
+// SetExits sets the "exits" field.
+func (x *AutomationVersionScopedUpdateOne) SetExits(v []eventmatcher.Matcher) *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetExits(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdateOne_SetExitEvents = RoleStep
+const RoleOf_AutomationVersionScopedUpdateOne_SetExits = RoleStep
 
-// AppendExitEvents appends value to the "exit_events" field.
-func (x *AutomationVersionScopedUpdateOne) AppendExitEvents(v []string) *AutomationVersionScopedUpdateOne {
-	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.AppendExitEvents(v) })
+// AppendExits appends value to the "exits" field.
+func (x *AutomationVersionScopedUpdateOne) AppendExits(v []eventmatcher.Matcher) *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.AppendExits(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdateOne_AppendExitEvents = RoleStep
+const RoleOf_AutomationVersionScopedUpdateOne_AppendExits = RoleStep
 
-// SetGoalEvent sets the "goal_event" field.
-func (x *AutomationVersionScopedUpdateOne) SetGoalEvent(v string) *AutomationVersionScopedUpdateOne {
-	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetGoalEvent(v) })
+// SetGoal sets the "goal" field.
+func (x *AutomationVersionScopedUpdateOne) SetGoal(v *eventmatcher.Matcher) *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetGoal(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdateOne_SetGoalEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpdateOne_SetGoal = RoleStep
 
-// SetNillableGoalEvent sets the "goal_event" field if the given value is not nil.
-func (x *AutomationVersionScopedUpdateOne) SetNillableGoalEvent(v *string) *AutomationVersionScopedUpdateOne {
-	if v != nil {
-		x.SetGoalEvent(*v)
-	}
+// ClearGoal clears the value of the "goal" field.
+func (x *AutomationVersionScopedUpdateOne) ClearGoal() *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.ClearGoal() })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdateOne_SetNillableGoalEvent = RoleStep
-
-// ClearGoalEvent clears the value of the "goal_event" field.
-func (x *AutomationVersionScopedUpdateOne) ClearGoalEvent() *AutomationVersionScopedUpdateOne {
-	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.ClearGoalEvent() })
-	return x
-}
-
-const RoleOf_AutomationVersionScopedUpdateOne_ClearGoalEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpdateOne_ClearGoal = RoleStep
 
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (x *AutomationVersionScopedUpdateOne) SetAutomation(v *Automation) *AutomationVersionScopedUpdateOne {
@@ -10763,47 +10744,37 @@ func (x *AutomationVersionScopedUpdate) ClearTriggerFilter() *AutomationVersionS
 
 const RoleOf_AutomationVersionScopedUpdate_ClearTriggerFilter = RoleStep
 
-// SetExitEvents sets the "exit_events" field.
-func (x *AutomationVersionScopedUpdate) SetExitEvents(v []string) *AutomationVersionScopedUpdate {
-	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetExitEvents(v) })
+// SetExits sets the "exits" field.
+func (x *AutomationVersionScopedUpdate) SetExits(v []eventmatcher.Matcher) *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetExits(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdate_SetExitEvents = RoleStep
+const RoleOf_AutomationVersionScopedUpdate_SetExits = RoleStep
 
-// AppendExitEvents appends value to the "exit_events" field.
-func (x *AutomationVersionScopedUpdate) AppendExitEvents(v []string) *AutomationVersionScopedUpdate {
-	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.AppendExitEvents(v) })
+// AppendExits appends value to the "exits" field.
+func (x *AutomationVersionScopedUpdate) AppendExits(v []eventmatcher.Matcher) *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.AppendExits(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdate_AppendExitEvents = RoleStep
+const RoleOf_AutomationVersionScopedUpdate_AppendExits = RoleStep
 
-// SetGoalEvent sets the "goal_event" field.
-func (x *AutomationVersionScopedUpdate) SetGoalEvent(v string) *AutomationVersionScopedUpdate {
-	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetGoalEvent(v) })
+// SetGoal sets the "goal" field.
+func (x *AutomationVersionScopedUpdate) SetGoal(v *eventmatcher.Matcher) *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetGoal(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdate_SetGoalEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpdate_SetGoal = RoleStep
 
-// SetNillableGoalEvent sets the "goal_event" field if the given value is not nil.
-func (x *AutomationVersionScopedUpdate) SetNillableGoalEvent(v *string) *AutomationVersionScopedUpdate {
-	if v != nil {
-		x.SetGoalEvent(*v)
-	}
+// ClearGoal clears the value of the "goal" field.
+func (x *AutomationVersionScopedUpdate) ClearGoal() *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.ClearGoal() })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdate_SetNillableGoalEvent = RoleStep
-
-// ClearGoalEvent clears the value of the "goal_event" field.
-func (x *AutomationVersionScopedUpdate) ClearGoalEvent() *AutomationVersionScopedUpdate {
-	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.ClearGoalEvent() })
-	return x
-}
-
-const RoleOf_AutomationVersionScopedUpdate_ClearGoalEvent = RoleStep
+const RoleOf_AutomationVersionScopedUpdate_ClearGoal = RoleStep
 
 // SetAutomation sets the "automation" edge to the Automation entity.
 func (x *AutomationVersionScopedUpdate) SetAutomation(v *Automation) *AutomationVersionScopedUpdate {
