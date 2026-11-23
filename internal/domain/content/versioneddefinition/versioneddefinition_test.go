@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -81,7 +82,7 @@ func automationVersion(v *ent.AutomationVersion) version {
 	if v == nil {
 		return version{}
 	}
-	return version{number: v.Version, mark: v.TriggerEvent}
+	return version{number: v.Version, mark: v.TriggerAction}
 }
 
 func automationView(a *ent.Automation, err error) (view, error) {
@@ -107,7 +108,7 @@ func automationKind(env *testhelper.TestEnv) kind {
 			return automationView(m.Update(ctx, s, id, automations.UpdateInput{Revision: automationRevision(ctx, s, id), Name: &name}))
 		},
 		edit: func(ctx context.Context, s *ent.Scoped, id int64, mark string) (view, error) {
-			return automationView(m.Update(ctx, s, id, automations.UpdateInput{Revision: automationRevision(ctx, s, id), TriggerEvent: &mark}))
+			return automationView(m.Update(ctx, s, id, automations.UpdateInput{Revision: automationRevision(ctx, s, id), Trigger: &eventmatcher.Matcher{Action: mark}}))
 		},
 		get: func(ctx context.Context, s *ent.Scoped, id int64) (view, error) {
 			return automationView(m.Get(ctx, s, id))

@@ -6,8 +6,8 @@ import { EventActionOption } from '../../components/EventActionName.tsx'
 import { useEventActionFilter } from '../../hooks/useEventActionLabel.ts'
 import { TRIGGER_EVENTS } from './nodes.ts'
 
-// The Trigger is any Event action a Workspace records, so the field takes free text and offers
-// the built-in events as suggestions.
+// The Trigger's action is any Event action a Workspace records, so the field takes free text and
+// offers the built-in events as suggestions.
 export function TriggerControl(props: ControlProps) {
   const { data, label, path } = props
   const { t } = useTranslation()

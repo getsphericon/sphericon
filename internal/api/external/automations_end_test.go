@@ -19,7 +19,7 @@ func TestExternalAutomationKeepsAnEndThatFinishesItsPath(t *testing.T) {
 	c := env.ExternalScoped(t, stepAuthorScopes...)
 
 	created, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
-		Name: "Ends", TriggerEvent: "signup",
+		Name: "Ends", Trigger: testhelper.ExternalTrigger("signup"),
 		Steps: externalapi.NewOptAutomationPathInput(testhelper.ExternalPath(
 			externalapi.WaitStepInput{Seconds: 60},
 			externalapi.EndStepInput{ID: externalapi.NewOptStepId(keptStepID)},
@@ -42,7 +42,7 @@ func TestExternalAutomationRefusesAStepAfterAnEnd(t *testing.T) {
 	c := env.ExternalScoped(t, stepAuthorScopes...)
 
 	_, err := c.AutomationsCreate(t.Context(), &externalapi.CreateAutomationInput{
-		Name: "After the end", TriggerEvent: "signup",
+		Name: "After the end", Trigger: testhelper.ExternalTrigger("signup"),
 		Steps: externalapi.NewOptAutomationPathInput(testhelper.ExternalPath(
 			externalapi.EndStepInput{},
 			externalapi.WaitStepInput{ID: externalapi.NewOptStepId(keptStepID), Seconds: 60},

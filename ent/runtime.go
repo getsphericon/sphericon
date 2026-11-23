@@ -329,7 +329,7 @@ func init() {
 	// automationversion.VersionValidator is a validator for the "version" field. It is called by the builders before save.
 	automationversion.VersionValidator = automationversionDescVersion.Validators[0].(func(int) error)
 	// automationversionDescExitEvents is the schema descriptor for exit_events field.
-	automationversionDescExitEvents := automationversionFields[3].Descriptor()
+	automationversionDescExitEvents := automationversionFields[4].Descriptor()
 	// automationversion.DefaultExitEvents holds the default value on creation for the exit_events field.
 	automationversion.DefaultExitEvents = automationversionDescExitEvents.Default.([]string)
 	bindingMixin := schema.Binding{}.Mixin()

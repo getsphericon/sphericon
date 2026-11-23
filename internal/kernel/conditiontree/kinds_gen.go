@@ -43,6 +43,12 @@ var RuleKinds = []Kind{
 	KindProperty,
 }
 
+// EventFilterKinds is every Kind an Event filter admits.
+var EventFilterKinds = []Kind{
+	KindGroup,
+	KindProperty,
+}
+
 // TestKind is the kind of a leaf's test: what it asks of the value the leaf reads.
 type TestKind string
 

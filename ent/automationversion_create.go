@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 )
 
 // AutomationVersionCreate is the builder for creating a AutomationVersion entity.
@@ -78,9 +79,15 @@ func (_c *AutomationVersionCreate) SetSteps(v automationstep.Path) *AutomationVe
 	return _c
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (_c *AutomationVersionCreate) SetTriggerEvent(v string) *AutomationVersionCreate {
-	_c.mutation.SetTriggerEvent(v)
+// SetTriggerAction sets the "trigger_action" field.
+func (_c *AutomationVersionCreate) SetTriggerAction(v string) *AutomationVersionCreate {
+	_c.mutation.SetTriggerAction(v)
+	return _c
+}
+
+// SetTriggerFilter sets the "trigger_filter" field.
+func (_c *AutomationVersionCreate) SetTriggerFilter(v *conditiontree.EventFilter) *AutomationVersionCreate {
+	_c.mutation.SetTriggerFilter(v)
 	return _c
 }
 
@@ -209,8 +216,8 @@ func (_c *AutomationVersionCreate) check() error {
 	if _, ok := _c.mutation.Steps(); !ok {
 		return &ValidationError{Name: "steps", err: errors.New(`ent: missing required field "AutomationVersion.steps"`)}
 	}
-	if _, ok := _c.mutation.TriggerEvent(); !ok {
-		return &ValidationError{Name: "trigger_event", err: errors.New(`ent: missing required field "AutomationVersion.trigger_event"`)}
+	if _, ok := _c.mutation.TriggerAction(); !ok {
+		return &ValidationError{Name: "trigger_action", err: errors.New(`ent: missing required field "AutomationVersion.trigger_action"`)}
 	}
 	if _, ok := _c.mutation.ExitEvents(); !ok {
 		return &ValidationError{Name: "exit_events", err: errors.New(`ent: missing required field "AutomationVersion.exit_events"`)}
@@ -270,9 +277,13 @@ func (_c *AutomationVersionCreate) createSpec() (*AutomationVersion, *sqlgraph.C
 		_spec.SetField(automationversion.FieldSteps, field.TypeJSON, value)
 		_node.Steps = value
 	}
-	if value, ok := _c.mutation.TriggerEvent(); ok {
-		_spec.SetField(automationversion.FieldTriggerEvent, field.TypeString, value)
-		_node.TriggerEvent = value
+	if value, ok := _c.mutation.TriggerAction(); ok {
+		_spec.SetField(automationversion.FieldTriggerAction, field.TypeString, value)
+		_node.TriggerAction = value
+	}
+	if value, ok := _c.mutation.TriggerFilter(); ok {
+		_spec.SetField(automationversion.FieldTriggerFilter, field.TypeJSON, value)
+		_node.TriggerFilter = value
 	}
 	if value, ok := _c.mutation.ExitEvents(); ok {
 		_spec.SetField(automationversion.FieldExitEvents, field.TypeJSON, value)
@@ -432,15 +443,33 @@ func (u *AutomationVersionUpsert) UpdateSteps() *AutomationVersionUpsert {
 	return u
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (u *AutomationVersionUpsert) SetTriggerEvent(v string) *AutomationVersionUpsert {
-	u.Set(automationversion.FieldTriggerEvent, v)
+// SetTriggerAction sets the "trigger_action" field.
+func (u *AutomationVersionUpsert) SetTriggerAction(v string) *AutomationVersionUpsert {
+	u.Set(automationversion.FieldTriggerAction, v)
 	return u
 }
 
-// UpdateTriggerEvent sets the "trigger_event" field to the value that was provided on create.
-func (u *AutomationVersionUpsert) UpdateTriggerEvent() *AutomationVersionUpsert {
-	u.SetExcluded(automationversion.FieldTriggerEvent)
+// UpdateTriggerAction sets the "trigger_action" field to the value that was provided on create.
+func (u *AutomationVersionUpsert) UpdateTriggerAction() *AutomationVersionUpsert {
+	u.SetExcluded(automationversion.FieldTriggerAction)
+	return u
+}
+
+// SetTriggerFilter sets the "trigger_filter" field.
+func (u *AutomationVersionUpsert) SetTriggerFilter(v *conditiontree.EventFilter) *AutomationVersionUpsert {
+	u.Set(automationversion.FieldTriggerFilter, v)
+	return u
+}
+
+// UpdateTriggerFilter sets the "trigger_filter" field to the value that was provided on create.
+func (u *AutomationVersionUpsert) UpdateTriggerFilter() *AutomationVersionUpsert {
+	u.SetExcluded(automationversion.FieldTriggerFilter)
+	return u
+}
+
+// ClearTriggerFilter clears the value of the "trigger_filter" field.
+func (u *AutomationVersionUpsert) ClearTriggerFilter() *AutomationVersionUpsert {
+	u.SetNull(automationversion.FieldTriggerFilter)
 	return u
 }
 
@@ -584,17 +613,38 @@ func (u *AutomationVersionUpsertOne) UpdateSteps() *AutomationVersionUpsertOne {
 	})
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (u *AutomationVersionUpsertOne) SetTriggerEvent(v string) *AutomationVersionUpsertOne {
+// SetTriggerAction sets the "trigger_action" field.
+func (u *AutomationVersionUpsertOne) SetTriggerAction(v string) *AutomationVersionUpsertOne {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.SetTriggerEvent(v)
+		s.SetTriggerAction(v)
 	})
 }
 
-// UpdateTriggerEvent sets the "trigger_event" field to the value that was provided on create.
-func (u *AutomationVersionUpsertOne) UpdateTriggerEvent() *AutomationVersionUpsertOne {
+// UpdateTriggerAction sets the "trigger_action" field to the value that was provided on create.
+func (u *AutomationVersionUpsertOne) UpdateTriggerAction() *AutomationVersionUpsertOne {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.UpdateTriggerEvent()
+		s.UpdateTriggerAction()
+	})
+}
+
+// SetTriggerFilter sets the "trigger_filter" field.
+func (u *AutomationVersionUpsertOne) SetTriggerFilter(v *conditiontree.EventFilter) *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetTriggerFilter(v)
+	})
+}
+
+// UpdateTriggerFilter sets the "trigger_filter" field to the value that was provided on create.
+func (u *AutomationVersionUpsertOne) UpdateTriggerFilter() *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateTriggerFilter()
+	})
+}
+
+// ClearTriggerFilter clears the value of the "trigger_filter" field.
+func (u *AutomationVersionUpsertOne) ClearTriggerFilter() *AutomationVersionUpsertOne {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.ClearTriggerFilter()
 	})
 }
 
@@ -909,17 +959,38 @@ func (u *AutomationVersionUpsertBulk) UpdateSteps() *AutomationVersionUpsertBulk
 	})
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (u *AutomationVersionUpsertBulk) SetTriggerEvent(v string) *AutomationVersionUpsertBulk {
+// SetTriggerAction sets the "trigger_action" field.
+func (u *AutomationVersionUpsertBulk) SetTriggerAction(v string) *AutomationVersionUpsertBulk {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.SetTriggerEvent(v)
+		s.SetTriggerAction(v)
 	})
 }
 
-// UpdateTriggerEvent sets the "trigger_event" field to the value that was provided on create.
-func (u *AutomationVersionUpsertBulk) UpdateTriggerEvent() *AutomationVersionUpsertBulk {
+// UpdateTriggerAction sets the "trigger_action" field to the value that was provided on create.
+func (u *AutomationVersionUpsertBulk) UpdateTriggerAction() *AutomationVersionUpsertBulk {
 	return u.Update(func(s *AutomationVersionUpsert) {
-		s.UpdateTriggerEvent()
+		s.UpdateTriggerAction()
+	})
+}
+
+// SetTriggerFilter sets the "trigger_filter" field.
+func (u *AutomationVersionUpsertBulk) SetTriggerFilter(v *conditiontree.EventFilter) *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.SetTriggerFilter(v)
+	})
+}
+
+// UpdateTriggerFilter sets the "trigger_filter" field to the value that was provided on create.
+func (u *AutomationVersionUpsertBulk) UpdateTriggerFilter() *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.UpdateTriggerFilter()
+	})
+}
+
+// ClearTriggerFilter clears the value of the "trigger_filter" field.
+func (u *AutomationVersionUpsertBulk) ClearTriggerFilter() *AutomationVersionUpsertBulk {
+	return u.Update(func(s *AutomationVersionUpsert) {
+		s.ClearTriggerFilter()
 	})
 }
 

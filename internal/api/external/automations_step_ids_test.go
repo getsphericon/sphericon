@@ -58,7 +58,7 @@ func TestExternalAutomationVersionIsARootPathOfTypedStepsWithIDs(t *testing.T) {
 	c := env.ExternalScoped(t, stepAuthorScopes...)
 
 	created, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
-		Name: "Ids", TriggerEvent: "signup",
+		Name: "Ids", Trigger: testhelper.ExternalTrigger("signup"),
 		Steps: externalapi.NewOptAutomationPathInput(testhelper.ExternalPath(
 			externalapi.EmailStepInput{Subject: "Hi", Body: externalapi.NewOptString("<p>Hi</p>")},
 			externalapi.WaitStepInput{Seconds: 60},
@@ -106,7 +106,7 @@ func TestExternalAutomationKeepsTheIDsAClientMints(t *testing.T) {
 	path.ID = externalapi.NewOptStepId(keptPathID)
 
 	created, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
-		Name: "Minted", TriggerEvent: "signup", Steps: externalapi.NewOptAutomationPathInput(path),
+		Name: "Minted", Trigger: testhelper.ExternalTrigger("signup"), Steps: externalapi.NewOptAutomationPathInput(path),
 	})
 	require.NoError(t, err)
 
@@ -134,7 +134,7 @@ func TestExternalAutomationRefusesAMalformedOrDuplicateStepID(t *testing.T) {
 			c := env.ExternalScoped(t, stepAuthorScopes...)
 
 			_, err := c.AutomationsCreate(t.Context(), &externalapi.CreateAutomationInput{
-				Name: "Bad ids", TriggerEvent: "signup", Steps: externalapi.NewOptAutomationPathInput(path),
+				Name: "Bad ids", Trigger: testhelper.ExternalTrigger("signup"), Steps: externalapi.NewOptAutomationPathInput(path),
 			})
 
 			testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
@@ -161,7 +161,7 @@ func TestExternalAutomationRefusesAFieldItsStepKindDoesNotHold(t *testing.T) {
 			}))
 
 			_, err := edited.AutomationsCreate(t.Context(), &externalapi.CreateAutomationInput{
-				Name: "Closed", TriggerEvent: "signup",
+				Name: "Closed", Trigger: testhelper.ExternalTrigger("signup"),
 				Steps: externalapi.NewOptAutomationPathInput(testhelper.ExternalPath(
 					externalapi.WaitStepInput{Seconds: 60},
 					externalapi.ApplyTagStepInput{Tag: "vip"},

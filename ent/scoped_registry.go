@@ -590,7 +590,10 @@ func ScopedEntities() []*ScopedEntity {
 				b.SetAutomationID(remap("Automation", src.AutomationID))
 				b.SetVersion(src.Version)
 				b.SetSteps(src.Steps)
-				b.SetTriggerEvent(src.TriggerEvent)
+				b.SetTriggerAction(src.TriggerAction)
+				if !reflect.ValueOf(src.TriggerFilter).IsZero() {
+					b.SetTriggerFilter(src.TriggerFilter)
+				}
 				b.SetExitEvents(src.ExitEvents)
 				if src.GoalEvent != nil {
 					b.SetGoalEvent(*src.GoalEvent)

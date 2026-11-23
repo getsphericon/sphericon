@@ -17,7 +17,6 @@ import {
   EventCountOperator,
   HasOperator,
 } from '../../generated/site/types.gen.ts'
-import type { RuleCondition, SegmentCondition } from '../../generated/site/types.gen.ts'
 import { useEventActionLabel } from '../../hooks/useEventActionLabel.ts'
 import { useTimeZone } from '../../hooks/useFormat.ts'
 import {
@@ -29,8 +28,9 @@ import {
   toDraft,
   toQuery,
 } from './condition.ts'
-import type { ConditionDraft, ConditionPlace } from './condition.ts'
+import type { AnyCondition, ConditionDraft, ConditionPlace } from './condition.ts'
 import { ConditionValueEditor } from './ConditionValueEditor.tsx'
+import type { PropertyValues, ValueEditorContext } from './ConditionValueEditor.tsx'
 import {
   attributeOperators,
   birthdayOperators,
@@ -92,17 +92,28 @@ function contactFields(t: TFunction): Field[] {
   ]
 }
 
-// The fields only one place offers: a Rule's Condition also tests a property of the Event that
-// fired it, its key typed beside it.
-const placeFields: Record<ConditionPlace, (t: TFunction) => Field[]> = {
-  segment: () => [],
-  rule: (t) => [
-    {
-      name: subjectFields.property,
-      label: t(($) => $.conditions.fields.property),
-      operators: propertyOperators(t),
-    },
-  ],
+// A property of the Event, its key typed beside it.
+function propertyField(t: TFunction): Field {
+  return {
+    name: subjectFields.property,
+    label: t(($) => $.conditions.fields.property),
+    operators: propertyOperators(t),
+  }
+}
+
+// The fields each place offers, given the Contact's (its attributes, Custom fields and history): a
+// Segment's tests the Contact, a Rule's also a property of the Event that fired it, and an Event
+// filter only the properties of the Event it is about.
+const placeFields: Record<ConditionPlace, (t: TFunction, contact: Field[]) => Field[]> = {
+  segment: (_t, contact) => contact,
+  rule: (t, contact) => [...contact, propertyField(t)],
+  eventFilter: (t) => [propertyField(t)],
+}
+
+// What a place reads of the Workspace's catalogue to offer the Contact's fields: an Event filter
+// offers none.
+function testsContact(place: ConditionPlace): boolean {
+  return place !== 'eventFilter'
 }
 
 interface ConditionBuilderProps {
@@ -110,13 +121,18 @@ interface ConditionBuilderProps {
   // The Condition the builder starts from. The builder keeps its own state from then on (an
   // operator the user picked stays picked, a count can be blank while it is typed), so a later
   // change of this value is not read: a form that loads another Condition remounts the builder.
-  initialValue: SegmentCondition | RuleCondition
+  initialValue: AnyCondition
   // Every edit, as a draft: toCondition is undefined while an event count, a number, a day or a
   // property's key is blank.
   onChange: (draft: ConditionDraft) => void
-  // Whose Condition it is (ADR 0181): the builder offers what the place admits. Only a Rule has an
-  // Event, whose properties it tests; only a Segment's Condition is previewed.
+  // Whose Condition it is (ADR 0181): the builder offers what the place admits. A Rule has an
+  // Event, whose properties it tests beside the Contact, an Event filter only the Event's
+  // properties; only a Segment's Condition is previewed.
   place: ConditionPlace
+  // The values offered for a property's text test, by the property's key: the names of the
+  // catalogue a property holds (an Event filter's `tag` of contact.tagged). A suggestion, not a
+  // limit: the server checks the name.
+  propertyValues?: PropertyValues
 }
 
 // ConditionBuilder is the visual Condition editor (react-querybuilder + the official
@@ -127,6 +143,7 @@ export function ConditionBuilder({
   initialValue,
   onChange,
   place,
+  propertyValues,
 }: ConditionBuilderProps) {
   const { t } = useTranslation()
   const labelOf = useEventActionLabel()
@@ -139,12 +156,18 @@ export function ConditionBuilder({
 
   // The workspace's distinct event actions become behavioral fields ("event:<action>"), each an
   // event leaf: a count of the action in the events log.
-  const actionsQuery = useQuery(siteEventsActionsOptions({ path: { workspaceId } }))
+  const actionsQuery = useQuery({
+    ...siteEventsActionsOptions({ path: { workspaceId } }),
+    enabled: testsContact(place),
+  })
   // The typed Custom field catalogue (ADR 0006) becomes targetable fields alongside the core
   // fields — one governed attribute list. Each offers the operators the server lists for its type,
   // per typed test; the operator picks the value input (inputTypeOf), a number field's own is a
   // number.
-  const customFieldsQuery = useQuery(siteCustomFieldsListOptions({ path: { workspaceId } }))
+  const customFieldsQuery = useQuery({
+    ...siteCustomFieldsListOptions({ path: { workspaceId } }),
+    enabled: testsContact(place),
+  })
   const fields = useMemo<Field[]>(() => {
     const customFields = (customFieldsQuery.data?.items ?? []).map<Field>((f) => ({
       name: customFieldId(f.key),
@@ -160,7 +183,7 @@ export function ConditionBuilder({
       operators: eventOperators(t),
       defaultOperator: eventPresets.performed,
     }))
-    return [...contactFields(t), ...customFields, ...eventFields, ...placeFields[place](t)]
+    return placeFields[place](t, [...contactFields(t), ...customFields, ...eventFields])
   }, [actionsQuery.data, customFieldsQuery.data, labelOf, t, place])
 
   return (
@@ -173,6 +196,9 @@ export function ConditionBuilder({
           defaultQuery={initialQuery}
           enableMountQueryChange={false}
           controlElements={{ valueEditor: ConditionValueEditor }}
+          context={
+            (propertyValues === undefined ? {} : { propertyValues }) satisfies ValueEditorContext
+          }
           onQueryChange={(q) => {
             const next = toDraft(q, timeZone)
             setDraft(next)

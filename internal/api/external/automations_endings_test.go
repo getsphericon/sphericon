@@ -23,7 +23,7 @@ func TestExternalAutomationExitAndGoalEvents(t *testing.T) {
 	ctx := context.Background()
 
 	created, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
-		Name: "Upsell", TriggerEvent: "plan_limit_reached",
+		Name: "Upsell", Trigger: testhelper.ExternalTrigger("plan_limit_reached"),
 		ExitEvents: []string{"account_closed"}, GoalEvent: externalapi.NewOptNilString("subscription_expanded"),
 	})
 	require.NoError(t, err)
@@ -31,7 +31,7 @@ func TestExternalAutomationExitAndGoalEvents(t *testing.T) {
 	assert.Equal(t, "subscription_expanded", created.Draft.Value.GoalEvent.Or(""))
 
 	_, err = c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
-		Name: "Bad", TriggerEvent: "plan_limit_reached", GoalEvent: externalapi.NewOptNilString("plan_limit_reached"),
+		Name: "Bad", Trigger: testhelper.ExternalTrigger("plan_limit_reached"), GoalEvent: externalapi.NewOptNilString("plan_limit_reached"),
 	})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 

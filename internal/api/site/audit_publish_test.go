@@ -77,7 +77,7 @@ func TestSiteAutomationPublishAndRevertAreAudited(t *testing.T) {
 
 	_, err := c.SiteAutomationsRevert(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(params.ID)))}, params)
 	require.NoError(t, err)
-	edited, err := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(siteapi.SiteAutomationsUpdateParams(params).ID))), TriggerEvent: siteapi.NewOptString("signup_edited")},
+	edited, err := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(siteapi.SiteAutomationsUpdateParams(params).ID))), Trigger: siteapi.NewOptAutomationTriggerInput(testhelper.SiteTrigger("signup_edited"))},
 		siteapi.SiteAutomationsUpdateParams(params))
 	require.NoError(t, err)
 	draft := edited.Draft.Value
@@ -103,7 +103,7 @@ func TestSiteAutomationDraftEditIsAudited(t *testing.T) {
 	params := siteapi.SiteAutomationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AutomationWelcomeSeriesID)}
 
 	revision := env.AutomationRevision(ctx, t, int64(params.ID))
-	_, err := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(revision), TriggerEvent: siteapi.NewOptString("signup_edited")}, params)
+	_, err := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(revision), Trigger: siteapi.NewOptAutomationTriggerInput(testhelper.SiteTrigger("signup_edited"))}, params)
 	require.NoError(t, err)
 
 	got := auditedVersionMoves(t, env, fixtures.AutomationWelcomeSeriesID)

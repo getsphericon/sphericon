@@ -40,7 +40,10 @@ export function AutomationCreateModal({
         onSubmit={form.onSubmit((values) =>
           createMutation.mutate({
             path: { workspaceId },
-            body: { name: values.name.trim(), triggerEvent: DEFAULT_TRIGGER_EVENT },
+            body: {
+              name: values.name.trim(),
+              trigger: { kind: 'event', action: DEFAULT_TRIGGER_EVENT },
+            },
           }),
         )}
       >

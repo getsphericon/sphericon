@@ -55,7 +55,12 @@ import type { StepKind } from './nodeProperties.ts'
 import { useAutomationNodeTypes } from './nodes.ts'
 import { smsTextRenderer } from './smsRenderer.ts'
 import { telegramTextRenderer } from './telegramRenderer.ts'
-import { exitEventsRenderer, goalEventRenderer, triggerRenderer } from './triggerRenderer.ts'
+import {
+  exitEventsRenderer,
+  goalEventRenderer,
+  triggerFilterRenderer,
+  triggerRenderer,
+} from './triggerRenderer.ts'
 
 // Imported as a raw string (not auto-injected): the SDK sheet carries unlayered
 // global resets and .mantine-* overrides that would leak app-wide. It is rendered
@@ -65,7 +70,7 @@ import builderStyles from '@workflowbuilder/sdk/style.css?inline'
 
 // The email step's message is edited by the editor, not a text field, a Telegram step's text has
 // its merge-tag picker and counter, an SMS step's its merge-tag picker, each send step's Integration is picked from its Channel's, the Trigger's event, exit events and goal event are typed with
-// suggestions, and an HTTP step's headers are rows and its body has a dry run. A stable reference.
+// suggestions and its filter is the Condition builder's, and an HTTP step's headers are rows and its body has a dry run. A stable reference.
 const jsonForm = {
   renderers: [
     messageRenderer,
@@ -75,6 +80,7 @@ const jsonForm = {
     smsIntegrationRenderer,
     smsTextRenderer,
     triggerRenderer,
+    triggerFilterRenderer,
     exitEventsRenderer,
     goalEventRenderer,
     httpHeadersRenderer,
@@ -347,6 +353,14 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
           color: 'red',
           title: t(($) => $.automations.triggerMissingTitle),
           message: t(($) => $.automations.triggerMissing),
+        })
+        return false
+      }
+      if (submission.filterIncomplete) {
+        notify({
+          color: 'red',
+          title: t(($) => $.automations.triggerFilterIncompleteTitle),
+          message: t(($) => $.automations.triggerFilterIncomplete),
         })
         return false
       }

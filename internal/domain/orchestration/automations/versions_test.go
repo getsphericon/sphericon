@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -103,7 +104,7 @@ func TestEditingALiveAutomationWritesADraftAndEnrollsOnTheLiveVersion(t *testing
 	require.NoError(t, err)
 	published := liveSteps(t, before)
 
-	_, err = m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: steps(automationstep.Wait{Seconds: 60}), TriggerEvent: new("hold_demo_edited")})
+	_, err = m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: steps(automationstep.Wait{Seconds: 60}), Trigger: &eventmatcher.Matcher{Action: "hold_demo_edited"}})
 	require.NoError(t, err)
 	edited := []automationstep.Payload{automationstep.Wait{Seconds: 120}}
 	updated, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: steps(edited...)})
@@ -112,8 +113,8 @@ func TestEditingALiveAutomationWritesADraftAndEnrollsOnTheLiveVersion(t *testing
 	assert.Equal(t, edited, draftSteps(t, updated))
 	assert.Equal(t, published, liveSteps(t, updated), "the live version is never rewritten")
 	live, draft := automations.LiveAndDraft(updated)
-	assert.Equal(t, "hold_demo", live.TriggerEvent)
-	assert.Equal(t, "hold_demo_edited", draft.TriggerEvent, "the second edit keeps the draft's Trigger")
+	assert.Equal(t, "hold_demo", live.TriggerAction)
+	assert.Equal(t, "hold_demo_edited", draft.TriggerAction, "the second edit keeps the draft's Trigger")
 	assert.Equal(t, []int{1, 2}, versionsOf(t, env, fixtures.AutomationHoldDemoID), "one draft, rewritten in place")
 
 	enrolled, err := enrollNow(t, env, acme, fixtures.AutomationHoldDemoID, fixtures.ContactAliceID)
@@ -135,7 +136,7 @@ func TestSavingUnchangedStepsStoresNothing(t *testing.T) {
 	live, _ := automations.LiveAndDraft(before)
 	same := pathOf(t, live)
 
-	updated, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: &same, TriggerEvent: new("hold_demo")})
+	updated, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: &same, Trigger: &eventmatcher.Matcher{Action: "hold_demo"}})
 	require.NoError(t, err)
 	_, draft := automations.LiveAndDraft(updated)
 	assert.Nil(t, draft)

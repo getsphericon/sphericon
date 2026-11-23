@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // An Event matcher's filter (ADR 0133) is a Condition of property tests only: the tests a Rule
@@ -213,4 +214,60 @@ func (b *pathBuilder) path(expr string) (Path, error) {
 		return Path{}, fmt.Errorf("encode path variables: %w", err)
 	}
 	return Path{Text: "strict $ ? (" + expr + ")", Vars: vars}, nil
+}
+
+// Definitions is what an Event matcher's filter names in the Workspace's catalogue (ADR 0133): the
+// Tags and the Custom fields whose names its tests compare the Event's own property with.
+type Definitions struct {
+	Tags         []string
+	CustomFields []string
+}
+
+// NamedDefinitions is what the filter of a matcher on action names (Definitions): the value of each
+// eq and neq test, at any depth, of the property of action that holds a definition's name, the
+// `tag` of contact.tagged and contact.untagged and the `key` of contact.field_changed. A contains or
+// beginsWith test names a pattern, not a definition. A filter that does not read names nothing.
+func NamedDefinitions(action string, f conditiontree.EventFilter) Definitions {
+	var d Definitions
+	switch action {
+	case systemevent.ContactTagged, systemevent.ContactUntagged:
+		d.Tags = namesOf(f, "tag")
+	case systemevent.ContactFieldChanged:
+		d.CustomFields = namesOf(f, "key")
+	}
+	return d
+}
+
+// namesOf is the values the filter's eq and neq tests of the property key compare it with, each
+// once, in the order they first appear.
+func namesOf(f conditiontree.EventFilter, key string) []string {
+	tree, err := decodeFilter(f.Group)
+	if err != nil {
+		return nil
+	}
+	var names []string
+	var walk func(g filterGroup)
+	walk = func(g filterGroup) {
+		for _, n := range g.entries {
+			switch n := n.(type) {
+			case filterGroup:
+				walk(n)
+			case filterLeaf:
+				t, ok := n.test.(textTest)
+				if ok && n.key == key && (t.op == conditiontree.TextEq || t.op == conditiontree.TextNeq) && !slices.Contains(names, t.value) {
+					names = append(names, t.value)
+				}
+			}
+		}
+	}
+	walk(tree)
+	return names
+}
+
+// Holds is the selector predicate that the path holds on the JSON object in column of the table the
+// selector reads: the properties of a stored Event.
+func (p Path) Holds(column string) func(*sql.Selector) {
+	return func(sel *sql.Selector) {
+		sel.Where(p.On(func(b *sql.Builder) { b.Ident(sel.C(column)) }))
+	}
 }

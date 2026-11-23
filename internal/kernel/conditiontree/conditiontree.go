@@ -30,10 +30,6 @@ type Rule struct{ Group }
 // it is about, which name no subject, under groups.
 type EventFilter struct{ Group }
 
-// EventFilterKinds is every Kind an Event filter admits. The contract gains the filter's type with
-// the first body that carries one; until then the list is written here.
-var EventFilterKinds = []Kind{KindGroup, KindProperty}
-
 // Place is the type of a Condition of one place.
 type Place interface{ Segment | Rule | EventFilter }
 

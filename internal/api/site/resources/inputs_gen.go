@@ -79,11 +79,15 @@ func (c *InputsImpl) ApplyTagStepIn(source site.ApplyTagStepInput) automationste
 	automationstepApplyTag.Tag = source.Tag
 	return automationstepApplyTag
 }
-func (c *InputsImpl) AutomationCreate(source *site.CreateAutomationInput) automations.CreateInput {
+func (c *InputsImpl) AutomationCreate(source *site.CreateAutomationInput) (automations.CreateInput, error) {
 	var automationsCreateInput automations.CreateInput
 	if source != nil {
 		automationsCreateInput.Name = nameIn((*source).Name)
-		automationsCreateInput.TriggerEvent = (*source).TriggerEvent
+		eventmatcherMatcher, err := automationTriggerIn((*source).Trigger)
+		if err != nil {
+			return automationsCreateInput, err
+		}
+		automationsCreateInput.Trigger = eventmatcherMatcher
 		if (*source).ExitEvents != nil {
 			automationsCreateInput.ExitEvents = make([]string, len((*source).ExitEvents))
 			for i := 0; i < len((*source).ExitEvents); i++ {
@@ -93,7 +97,7 @@ func (c *InputsImpl) AutomationCreate(source *site.CreateAutomationInput) automa
 		automationsCreateInput.GoalEvent = nilStringPtrIn((*source).GoalEvent)
 		automationsCreateInput.Steps = automationPathPtrIn(c, (*source).Steps)
 	}
-	return automationsCreateInput
+	return automationsCreateInput, nil
 }
 func (c *InputsImpl) AutomationPath(source site.AutomationPathInput) automationstep.Path {
 	var automationstepPath automationstep.Path
@@ -131,17 +135,21 @@ func (c *InputsImpl) AutomationState(source site.SiteAutomationState) automation
 	}
 	return automationsState
 }
-func (c *InputsImpl) AutomationUpdate(source *site.UpdateAutomationInput) automations.UpdateInput {
+func (c *InputsImpl) AutomationUpdate(source *site.UpdateAutomationInput) (automations.UpdateInput, error) {
 	var automationsUpdateInput automations.UpdateInput
 	if source != nil {
 		automationsUpdateInput.Revision = revisionIn((*source).Revision)
 		automationsUpdateInput.Name = namePtrIn((*source).Name)
-		automationsUpdateInput.TriggerEvent = stringPtrIn((*source).TriggerEvent)
+		pEventmatcherMatcher, err := automationTriggerPtrIn((*source).Trigger)
+		if err != nil {
+			return automationsUpdateInput, err
+		}
+		automationsUpdateInput.Trigger = pEventmatcherMatcher
 		automationsUpdateInput.ExitEvents = listPtrIn((*source).ExitEvents)
 		automationsUpdateInput.GoalEvent = nilStringPatch((*source).GoalEvent)
 		automationsUpdateInput.Steps = automationPathPtrIn(c, (*source).Steps)
 	}
-	return automationsUpdateInput
+	return automationsUpdateInput, nil
 }
 func (c *InputsImpl) AutomationsListFilter(source site.SiteAutomationsListParams) automations.ListFilter {
 	var automationsListFilter automations.ListFilter

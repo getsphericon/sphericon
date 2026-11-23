@@ -22,8 +22,8 @@ func TestExternalAnSMSStepIsPublishedAndKeepsItsIntegrationInUse(t *testing.T) {
 	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite, apitokens.ScopeAutomationsPublish, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
 
 	a, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
-		Name:         "Cart reminder",
-		TriggerEvent: "cart_abandoned",
+		Name:    "Cart reminder",
+		Trigger: testhelper.ExternalTrigger("cart_abandoned"),
 		Steps: testhelper.ExternalPathEdit(externalapi.SmsStepInput{
 			Text:          "Your cart is waiting, {{ first_name }}",
 			IntegrationId: externalapi.NewOptNilEntityId(externalapi.EntityId(twilio)),
@@ -51,7 +51,7 @@ func TestExternalAnSMSStepWithNoTextIsRefused(t *testing.T) {
 	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite)
 
 	_, err := c.AutomationsCreate(t.Context(), &externalapi.CreateAutomationInput{
-		Name: "Blank", TriggerEvent: "cart_abandoned",
+		Name: "Blank", Trigger: testhelper.ExternalTrigger("cart_abandoned"),
 		Steps: testhelper.ExternalPathEdit(externalapi.SmsStepInput{Text: "  "}),
 	})
 

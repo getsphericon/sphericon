@@ -489,7 +489,8 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "version", Type: field.TypeInt},
 		{Name: "steps", Type: field.TypeJSON},
-		{Name: "trigger_event", Type: field.TypeString},
+		{Name: "trigger_action", Type: field.TypeString},
+		{Name: "trigger_filter", Type: field.TypeJSON, Nullable: true},
 		{Name: "exit_events", Type: field.TypeJSON, Default: "[]"},
 		{Name: "goal_event", Type: field.TypeString, Nullable: true},
 		{Name: "automation_id", Type: field.TypeInt64},
@@ -503,13 +504,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "automation_versions_automations_versions",
-				Columns:    []*schema.Column{AutomationVersionsColumns[8]},
+				Columns:    []*schema.Column{AutomationVersionsColumns[9]},
 				RefColumns: []*schema.Column{AutomationsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "automation_versions_workspaces_automation_versions",
-				Columns:    []*schema.Column{AutomationVersionsColumns[9]},
+				Columns:    []*schema.Column{AutomationVersionsColumns[10]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -518,17 +519,17 @@ var (
 			{
 				Name:    "automation_versions_workspace_id_automation_id_version",
 				Unique:  true,
-				Columns: []*schema.Column{AutomationVersionsColumns[9], AutomationVersionsColumns[8], AutomationVersionsColumns[3]},
+				Columns: []*schema.Column{AutomationVersionsColumns[10], AutomationVersionsColumns[9], AutomationVersionsColumns[3]},
 			},
 			{
 				Name:    "automationversion_automation_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationVersionsColumns[8]},
+				Columns: []*schema.Column{AutomationVersionsColumns[9]},
 			},
 			{
-				Name:    "automationversion_workspace_id_trigger_event",
+				Name:    "automationversion_workspace_id_trigger_action",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationVersionsColumns[9], AutomationVersionsColumns[5]},
+				Columns: []*schema.Column{AutomationVersionsColumns[10], AutomationVersionsColumns[5]},
 			},
 		},
 	}
@@ -3667,7 +3668,9 @@ func init() {
 		Table: "automation_versions",
 	}
 	AutomationVersionsTable.Annotation.Checks = map[string]string{
-		"automation_versions_steps_check": "COALESCE(jsonb_typeof(steps -> 'steps') = 'array', false)",
+		"automation_versions_steps_check":                  "COALESCE(jsonb_typeof(steps -> 'steps') = 'array', false)",
+		"automation_versions_trigger_filter_check":         "jsonb_typeof(trigger_filter) = 'object'",
+		"automation_versions_trigger_filter_entries_check": "trigger_filter IS NULL OR COALESCE(jsonb_typeof(trigger_filter -> 'entries') = 'array', false)",
 	}
 	BindingsTable.ForeignKeys[0].RefTable = ContactsTable
 	BindingsTable.ForeignKeys[1].RefTable = IntegrationsTable

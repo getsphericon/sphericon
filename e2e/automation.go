@@ -31,9 +31,9 @@ func (w *Workspace) PublishAutomation(a Automation) int64 {
 		a.Name = "e2e automation " + uniq()
 	}
 	res, err := w.api.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
-		Name:         externalapi.Name(a.Name),
-		TriggerEvent: a.TriggerEvent,
-		Steps:        rootPath(emailStep(externalapi.EmailStepInput{Subject: a.Subject, Body: externalapi.NewOptString(a.Body)})),
+		Name:    externalapi.Name(a.Name),
+		Trigger: eventTrigger(a.TriggerEvent),
+		Steps:   rootPath(emailStep(externalapi.EmailStepInput{Subject: a.Subject, Body: externalapi.NewOptString(a.Body)})),
 	})
 	created := ok[externalapi.AutomationResource](w.t, "create automation", res, err)
 
@@ -41,6 +41,13 @@ func (w *Workspace) PublishAutomation(a Automation) int64 {
 	got := ok[externalapi.AutomationResource](w.t, "publish automation", published, err)
 	require.Equal(w.t, externalapi.AutomationStatusActive, got.Status)
 	return int64(got.ID)
+}
+
+// eventTrigger is the Trigger on the Event action, with no filter.
+func eventTrigger(action string) externalapi.AutomationTriggerInput {
+	return externalapi.AutomationTriggerInput{OneOf: externalapi.NewEventTriggerInputAutomationTriggerInputSum(
+		externalapi.EventTriggerInput{Kind: externalapi.EventTriggerInputKindEvent, Action: action},
+	)}
 }
 
 // AuthoredAutomation is what a scenario chooses about an Automation whose one email step is
@@ -67,8 +74,8 @@ func (w *Workspace) PublishAuthoredAutomation(a AuthoredAutomation) {
 	require.NoError(w.t, err)
 
 	res, err := w.api.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
-		Name:         externalapi.Name("e2e authored automation " + uniq()),
-		TriggerEvent: a.TriggerEvent,
+		Name:    externalapi.Name("e2e authored automation " + uniq()),
+		Trigger: eventTrigger(a.TriggerEvent),
 		Steps: rootPath(emailStep(externalapi.EmailStepInput{
 			Subject: a.Subject,
 			Doc:     externalapi.NewOptEditorDocument(docObject[externalapi.EditorDocument](w.t, doc)),
@@ -105,8 +112,8 @@ func (w *Workspace) PublishHTTPAutomation(a HTTPAutomation) {
 		httpStep.Secret = externalapi.NewOptSigningSecret(externalapi.SigningSecret(a.Hook.Secret))
 	}
 	res, err := w.api.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
-		Name:         externalapi.Name("e2e http automation " + uniq()),
-		TriggerEvent: a.TriggerEvent,
+		Name:    externalapi.Name("e2e http automation " + uniq()),
+		Trigger: eventTrigger(a.TriggerEvent),
 		Steps: rootPath(
 			externalapi.AutomationStepInput{OneOf: externalapi.NewHttpStepInputAutomationStepInputSum(httpStep)},
 			emailStep(externalapi.EmailStepInput{Subject: a.Subject, Body: externalapi.NewOptString(a.EmailBody)}),

@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -328,7 +329,7 @@ func TestCreateKeepsExitAndGoalEventsInTheDraft(t *testing.T) {
 	goal := " subscription_expanded "
 
 	created, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{
-		Name: "Upsell", TriggerEvent: "plan_limit_reached",
+		Name: "Upsell", Trigger: eventmatcher.Matcher{Action: "plan_limit_reached"},
 		ExitEvents: []string{"account_closed", " account_closed", systemevent.EmailUnsubscribed}, GoalEvent: &goal,
 	})
 	require.NoError(t, err)
@@ -345,12 +346,12 @@ func TestCreateRefusesAnExitOrGoalEventThatCannotEndAnEnrollment(t *testing.T) {
 		in   automations.CreateInput
 		want error
 	}{
-		{"an exit equal to the trigger", automations.CreateInput{TriggerEvent: "payment_failed", ExitEvents: []string{"payment_failed"}}, automations.ErrInvalidExitEvent},
-		{"an empty exit", automations.CreateInput{TriggerEvent: "payment_failed", ExitEvents: []string{" "}}, automations.ErrInvalidExitEvent},
-		{"an infrastructure exit", automations.CreateInput{TriggerEvent: "payment_failed", ExitEvents: []string{systemevent.EmailSent}}, automations.ErrInvalidExitEvent},
-		{"a goal equal to the trigger", automations.CreateInput{TriggerEvent: "payment_failed", GoalEvent: new("payment_failed")}, automations.ErrInvalidGoalEvent},
-		{"an infrastructure goal", automations.CreateInput{TriggerEvent: "payment_failed", GoalEvent: new(systemevent.EmailDelivered)}, automations.ErrInvalidGoalEvent},
-		{"a goal that is also an exit", automations.CreateInput{TriggerEvent: "payment_failed", ExitEvents: []string{"paid"}, GoalEvent: new("paid")}, automations.ErrInvalidGoalEvent},
+		{"an exit equal to the trigger", automations.CreateInput{Trigger: eventmatcher.Matcher{Action: "payment_failed"}, ExitEvents: []string{"payment_failed"}}, automations.ErrInvalidExitEvent},
+		{"an empty exit", automations.CreateInput{Trigger: eventmatcher.Matcher{Action: "payment_failed"}, ExitEvents: []string{" "}}, automations.ErrInvalidExitEvent},
+		{"an infrastructure exit", automations.CreateInput{Trigger: eventmatcher.Matcher{Action: "payment_failed"}, ExitEvents: []string{systemevent.EmailSent}}, automations.ErrInvalidExitEvent},
+		{"a goal equal to the trigger", automations.CreateInput{Trigger: eventmatcher.Matcher{Action: "payment_failed"}, GoalEvent: new("payment_failed")}, automations.ErrInvalidGoalEvent},
+		{"an infrastructure goal", automations.CreateInput{Trigger: eventmatcher.Matcher{Action: "payment_failed"}, GoalEvent: new(systemevent.EmailDelivered)}, automations.ErrInvalidGoalEvent},
+		{"a goal that is also an exit", automations.CreateInput{Trigger: eventmatcher.Matcher{Action: "payment_failed"}, ExitEvents: []string{"paid"}, GoalEvent: new("paid")}, automations.ErrInvalidGoalEvent},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -372,7 +373,7 @@ func TestUpdateRefusesATriggerEqualToAStoredExitEvent(t *testing.T) {
 	m := testhelper.Module[*automations.Module](env)
 
 	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationPaymentRecoveryID),
-		TriggerEvent: new(recoveryExit),
+		Trigger: &eventmatcher.Matcher{Action: recoveryExit},
 	})
 
 	require.ErrorIs(t, err, automations.ErrInvalidExitEvent)

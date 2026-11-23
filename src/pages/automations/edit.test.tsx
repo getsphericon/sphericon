@@ -8,6 +8,7 @@ import {
   handleSiteAutomationsUpdate,
   handleSiteEnrollmentsList,
   handleSiteIntegrationsList,
+  handleSiteTagsList,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteAutomationResource, AutomationVersion } from '../../generated/site/types.gen.ts'
@@ -49,7 +50,7 @@ test('loads the automation into the builder', async () => {
         live: null,
         draft: {
           number: 1,
-          triggerEvent: 'email.clicked',
+          trigger: { kind: 'event', action: 'email.clicked' },
           exitEvents: [],
           goalEvent: null,
           steps: { id: stepId(1), steps: [{ id: stepId(11), type: 'wait', seconds: 60 }] },
@@ -87,7 +88,7 @@ const STORED: SiteAutomationResource = {
   live: null,
   draft: {
     number: 1,
-    triggerEvent: 'email.clicked',
+    trigger: { kind: 'event', action: 'email.clicked' },
     exitEvents: [],
     goalEvent: null,
     steps: {
@@ -122,7 +123,7 @@ test('saving from the builder sends the edited name, the trigger and the canvas 
       {
         revision: 1,
         name: 'Renamed',
-        triggerEvent: 'email.clicked',
+        trigger: { kind: 'event', action: 'email.clicked' },
         exitEvents: [],
         goalEvent: null,
         steps: {
@@ -154,14 +155,112 @@ test('saving sends the trigger event typed on the canvas, a custom one included'
   await screen.getByRole('combobox', { name: 'Trigger Event' }).fill('course_completed')
   await screen.getByRole('button', { name: 'Save' }).click()
 
-  await expect.poll(() => bodies).toMatchObject([{ triggerEvent: 'course_completed' }])
+  await expect
+    .poll(() => bodies)
+    .toMatchObject([{ trigger: { kind: 'event', action: 'course_completed' } }])
+})
+
+test("saving sends the Trigger's filter edited on the canvas with the Event's property tests", async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    handleSiteAutomationsGet({ body: STORED }),
+    handleSiteAutomationsUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(STORED)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+  await expect.poll(() => flowNode(0)).toBeInstanceOf(Element)
+  await page.elementLocator(flowNode(0)).click()
+  await screen.getByText('Properties').click()
+  await screen.getByRole('combobox', { name: 'Trigger Event' }).fill('order.completed')
+  await screen.getByRole('button', { name: /Rule/ }).first().click()
+  await screen.getByLabelText('Event property name').fill('status')
+  await screen.getByTestId('value-editor').fill('paid')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toMatchObject([
+      {
+        trigger: {
+          kind: 'event',
+          action: 'order.completed',
+          filter: {
+            kind: 'group',
+            combinator: 'and',
+            entries: [
+              {
+                kind: 'property',
+                key: 'status',
+                test: { kind: 'text', operator: 'eq', value: 'paid' },
+              },
+            ],
+          },
+        },
+      },
+    ])
+})
+
+test('a filter left half-typed is dropped when the Trigger is opened again, and the Save sends none', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    handleSiteAutomationsGet({ body: STORED }),
+    handleSiteAutomationsUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(STORED)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+  await expect.poll(() => flowNode(0)).toBeInstanceOf(Element)
+  await page.elementLocator(flowNode(0)).click()
+  await screen.getByText('Properties').click()
+  await screen.getByRole('button', { name: /Rule/ }).first().click()
+  // The panel covers the canvas: each node is picked by a click dispatched on it.
+  flowNode(1).dispatchEvent(new MouseEvent('click', { bubbles: true }))
+  await expect.element(screen.getByText('Trigger Filter')).not.toBeInTheDocument()
+  flowNode(0).dispatchEvent(new MouseEvent('click', { bubbles: true }))
+  await expect.element(screen.getByText('Trigger Filter')).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([expect.objectContaining({ trigger: { kind: 'event', action: 'email.clicked' } })])
+})
+
+test("the filter of a Tag's Trigger offers the Workspace's Tags as the tag tested", async () => {
+  worker.use(
+    handleSiteAutomationsGet({ body: STORED }),
+    handleSiteTagsList({
+      body: {
+        items: [{ id: testId(1), name: 'trial', createdAt: NOW }],
+        page: 1,
+        pageSize: 100,
+        totalItems: 1,
+        totalPages: 1,
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+  await expect.poll(() => flowNode(0)).toBeInstanceOf(Element)
+  await page.elementLocator(flowNode(0)).click()
+  await screen.getByText('Properties').click()
+  await screen.getByRole('combobox', { name: 'Trigger Event' }).fill('contact.tagged')
+  await screen.getByRole('button', { name: /Rule/ }).first().click()
+  await screen.getByLabelText('Event property name').fill('tag')
+  await screen.getByRole('combobox', { name: 'Value' }).click()
+
+  await expect.element(screen.getByRole('option', { name: 'trial' })).toBeVisible()
 })
 
 // withSteps is STORED's draft with other steps.
 function withSteps(steps: AutomationVersion['steps']['steps']): AutomationVersion {
   return {
     number: 1,
-    triggerEvent: 'email.clicked',
+    trigger: { kind: 'event', action: 'email.clicked' },
     exitEvents: [],
     goalEvent: null,
     steps: { id: stepId(1), steps },
@@ -236,7 +335,7 @@ test('saving an email step written in the editor sends its document and no body'
       {
         revision: 1,
         name: 'Welcome flow',
-        triggerEvent: 'email.clicked',
+        trigger: { kind: 'event', action: 'email.clicked' },
         exitEvents: [],
         goalEvent: null,
         steps: {
@@ -389,14 +488,14 @@ test('the builder edits the draft and shows it pending above the live version', 
         status: 'active',
         live: {
           number: 1,
-          triggerEvent: 'email.opened',
+          trigger: { kind: 'event', action: 'email.opened' },
           exitEvents: [],
           goalEvent: null,
           steps: { id: stepId(1), steps: [] },
         },
         draft: {
           number: 2,
-          triggerEvent: 'email.clicked',
+          trigger: { kind: 'event', action: 'email.clicked' },
           exitEvents: [],
           goalEvent: null,
           steps: { id: stepId(1), steps: [] },

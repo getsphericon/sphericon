@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations/automationsuse"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -58,7 +59,7 @@ func TestCreateStoresAnInactiveAutomationWithEncodedSteps(t *testing.T) {
 	ctx := context.Background()
 
 	a, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{
-		Name: "Onboarding", TriggerEvent: "signup",
+		Name: "Onboarding", Trigger: eventmatcher.Matcher{Action: "signup"},
 		Steps: steps(automationstep.ApplyTag{Tag: " new "}, automationstep.Wait{Seconds: 5}),
 	})
 	require.NoError(t, err)
@@ -67,9 +68,9 @@ func TestCreateStoresAnInactiveAutomationWithEncodedSteps(t *testing.T) {
 	assert.Equal(t, []automationstep.Payload{automationstep.ApplyTag{Tag: "new"}, automationstep.Wait{Seconds: 5}}, draftSteps(t, a))
 	live, draft := automations.LiveAndDraft(a)
 	assert.Nil(t, live, "nothing is live until it is published")
-	assert.Equal(t, "signup", draft.TriggerEvent)
+	assert.Equal(t, "signup", draft.TriggerAction)
 
-	bare, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{Name: "No steps", TriggerEvent: "x"})
+	bare, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{Name: "No steps", Trigger: eventmatcher.Matcher{Action: "x"}})
 	require.NoError(t, err)
 	assert.Empty(t, draftSteps(t, bare))
 }
@@ -112,7 +113,7 @@ func TestInvalidStepsAreRefusedAndNothingIsStored(t *testing.T) {
 			"step " + id + " (apply_tag)",
 		},
 	} {
-		_, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{Name: "x", TriggerEvent: "y", Steps: c.refused})
+		_, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{Name: "x", Trigger: eventmatcher.Matcher{Action: "y"}, Steps: c.refused})
 		require.ErrorIs(t, err, automations.ErrInvalidStep, name)
 		require.ErrorContains(t, err, c.names, name)
 
@@ -145,11 +146,11 @@ func TestUpdateChangesOnlyWhatIsGivenAndKeepsTheStatus(t *testing.T) {
 	before, err := m.Get(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationWelcomeSeriesID)
 	require.NoError(t, err)
 
-	renamed, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), before.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), before.ID), Name: new("Renamed"), TriggerEvent: new("new.trigger")})
+	renamed, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), before.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), before.ID), Name: new("Renamed"), Trigger: &eventmatcher.Matcher{Action: "new.trigger"}})
 	require.NoError(t, err)
 	assert.Equal(t, "Renamed", renamed.Name)
 	_, draft := automations.LiveAndDraft(renamed)
-	assert.Equal(t, "new.trigger", draft.TriggerEvent)
+	assert.Equal(t, "new.trigger", draft.TriggerAction)
 	assert.Equal(t, draftSteps(t, before), draftSteps(t, renamed), "steps untouched when not given")
 	assert.Equal(t, before.Status, renamed.Status)
 
@@ -290,7 +291,7 @@ func TestEachEmailStepSavesTheIntegrationItSendsThrough(t *testing.T) {
 	mailgun, smtp := int64(fixtures.IntegrationAcmeMailgunID), int64(fixtures.IntegrationAcmeDefaultID)
 
 	a, err := m.Create(ctx, acme, automations.CreateInput{
-		Name: "Onboarding", TriggerEvent: "signup",
+		Name: "Onboarding", Trigger: eventmatcher.Matcher{Action: "signup"},
 		Steps: steps(emailVia(&mailgun), automationstep.Wait{Seconds: 60}, emailVia(nil)),
 	})
 	require.NoError(t, err)
@@ -319,7 +320,7 @@ func TestAnAutomationRefusesAStepIntegrationThatIsMissingOrArchived(t *testing.T
 
 	for name, id := range map[string]int64{"unknown": 999999, "archived": fixtures.IntegrationAcmeMailgunID} {
 		sending := steps(emailVia(nil), emailVia(&id))
-		_, err := m.Create(ctx, acme, automations.CreateInput{Name: "X", TriggerEvent: "signup", Steps: sending})
+		_, err := m.Create(ctx, acme, automations.CreateInput{Name: "X", Trigger: eventmatcher.Matcher{Action: "signup"}, Steps: sending})
 		require.ErrorIs(t, err, automations.ErrIntegrationNotFound, name)
 
 		_, err = m.Update(ctx, acme, fixtures.AutomationWelcomeSeriesID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationWelcomeSeriesID), Steps: sending})

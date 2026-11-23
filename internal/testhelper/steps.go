@@ -88,3 +88,21 @@ func ExternalStep(st any) externalapi.AutomationStepInput {
 		panic(fmt.Sprintf("testhelper: %T is not an external Step", st))
 	}
 }
+
+// SiteTrigger is a site API Trigger on the Event action, with the filter given or none.
+func SiteTrigger(action string, filter ...siteapi.EventFilterInput) siteapi.AutomationTriggerInput {
+	ev := siteapi.EventTriggerInput{Kind: siteapi.EventTriggerInputKindEvent, Action: action}
+	if len(filter) > 0 {
+		ev.Filter = siteapi.NewOptEventFilterInput(filter[0])
+	}
+	return siteapi.AutomationTriggerInput{OneOf: siteapi.NewEventTriggerInputAutomationTriggerInputSum(ev)}
+}
+
+// ExternalTrigger is SiteTrigger for the /api surface.
+func ExternalTrigger(action string, filter ...externalapi.EventFilterInput) externalapi.AutomationTriggerInput {
+	ev := externalapi.EventTriggerInput{Kind: externalapi.EventTriggerInputKindEvent, Action: action}
+	if len(filter) > 0 {
+		ev.Filter = externalapi.NewOptEventFilterInput(filter[0])
+	}
+	return externalapi.AutomationTriggerInput{OneOf: externalapi.NewEventTriggerInputAutomationTriggerInputSum(ev)}
+}

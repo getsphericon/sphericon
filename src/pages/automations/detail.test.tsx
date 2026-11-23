@@ -79,7 +79,7 @@ test('shows the automation and the contacts enrolled in it', async () => {
         status: 'active',
         live: {
           number: 1,
-          triggerEvent: 'contact.created',
+          trigger: { kind: 'event' as const, action: 'contact.created' },
           exitEvents: [],
           goalEvent: null,
           steps: { id: stepId(1), steps: [] },
@@ -148,7 +148,7 @@ test('shows the opens, the clicks and the clicked links of the automation', asyn
         status: 'active',
         live: {
           number: 1,
-          triggerEvent: 'contact.created',
+          trigger: { kind: 'event' as const, action: 'contact.created' },
           exitEvents: [],
           goalEvent: null,
           steps: { id: stepId(1), steps: [] },
@@ -204,7 +204,7 @@ test('marks an inactive automation as inactive', async () => {
         status: 'inactive',
         live: {
           number: 1,
-          triggerEvent: 'contact.created',
+          trigger: { kind: 'event' as const, action: 'contact.created' },
           exitEvents: [],
           goalEvent: null,
           steps: { id: stepId(1), steps: [] },
@@ -255,7 +255,7 @@ test('shows the orders and the net revenue credited to the automation', async ()
         status: 'active',
         live: {
           number: 1,
-          triggerEvent: 'contact.created',
+          trigger: { kind: 'event' as const, action: 'contact.created' },
           exitEvents: [],
           goalEvent: null,
           steps: { id: stepId(1), steps: [] },
@@ -299,7 +299,7 @@ test('shows no orders or revenue on the automation until the first order sets th
         status: 'active',
         live: {
           number: 1,
-          triggerEvent: 'contact.created',
+          trigger: { kind: 'event' as const, action: 'contact.created' },
           exitEvents: [],
           goalEvent: null,
           steps: { id: stepId(1), steps: [] },
@@ -341,14 +341,14 @@ const PENDING: SiteAutomationResource = {
   status: 'active',
   live: {
     number: 1,
-    triggerEvent: 'signup',
+    trigger: { kind: 'event' as const, action: 'signup' },
     exitEvents: [],
     goalEvent: null,
     steps: { id: stepId(1), steps: [] },
   },
   draft: {
     number: 2,
-    triggerEvent: 'signup',
+    trigger: { kind: 'event' as const, action: 'signup' },
     exitEvents: [],
     goalEvent: null,
     steps: { id: stepId(1), steps: [{ id: stepId(11), type: 'wait', seconds: 60 }] },
@@ -380,7 +380,7 @@ test('shows what the live version does, its exit and goal events included, not t
         ...PENDING,
         live: {
           number: 1,
-          triggerEvent: 'signup',
+          trigger: { kind: 'event' as const, action: 'signup' },
           exitEvents: ['account_closed'],
           goalEvent: 'course_started',
           steps: {
@@ -401,7 +401,7 @@ test('shows what the live version does, its exit and goal events included, not t
         },
         draft: {
           number: 2,
-          triggerEvent: 'course_completed',
+          trigger: { kind: 'event' as const, action: 'course_completed' },
           exitEvents: [],
           goalEvent: null,
           steps: {
@@ -439,7 +439,7 @@ test('a send step through a deleted Integration names it as deleted', async () =
         ...PENDING,
         live: {
           number: 1,
-          triggerEvent: 'signup',
+          trigger: { kind: 'event' as const, action: 'signup' },
           exitEvents: [],
           goalEvent: null,
           steps: {
@@ -678,7 +678,7 @@ test('the period picked shows the results of that period', async () => {
 test('shows what each send step sent and skipped, by its id across versions, named by the live version', async () => {
   const live = {
     number: 2,
-    triggerEvent: 'signup',
+    trigger: { kind: 'event' as const, action: 'signup' },
     exitEvents: [],
     goalEvent: null,
     steps: {
@@ -734,7 +734,7 @@ test('an archived automation is read-only: it offers no edit and no publish', as
         live: null,
         draft: {
           number: 1,
-          triggerEvent: 'contact.created',
+          trigger: { kind: 'event' as const, action: 'contact.created' },
           exitEvents: [],
           goalEvent: null,
           steps: { id: stepId(1), steps: [] },

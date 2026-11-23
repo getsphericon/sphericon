@@ -9696,7 +9696,8 @@ type AutomationVersionMutation struct {
 	version           *int
 	addversion        *int
 	steps             *automationstep.Path
-	trigger_event     *string
+	trigger_action    *string
+	trigger_filter    **conditiontree.EventFilter
 	exit_events       *[]string
 	appendexit_events []string
 	goal_event        *string
@@ -10053,40 +10054,89 @@ func (m *AutomationVersionMutation) ResetSteps() {
 	m.steps = nil
 }
 
-// SetTriggerEvent sets the "trigger_event" field.
-func (m *AutomationVersionMutation) SetTriggerEvent(s string) {
-	m.trigger_event = &s
+// SetTriggerAction sets the "trigger_action" field.
+func (m *AutomationVersionMutation) SetTriggerAction(s string) {
+	m.trigger_action = &s
 }
 
-// TriggerEvent returns the value of the "trigger_event" field in the mutation.
-func (m *AutomationVersionMutation) TriggerEvent() (r string, exists bool) {
-	v := m.trigger_event
+// TriggerAction returns the value of the "trigger_action" field in the mutation.
+func (m *AutomationVersionMutation) TriggerAction() (r string, exists bool) {
+	v := m.trigger_action
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldTriggerEvent returns the old "trigger_event" field's value of the AutomationVersion entity.
+// OldTriggerAction returns the old "trigger_action" field's value of the AutomationVersion entity.
 // If the AutomationVersion object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AutomationVersionMutation) OldTriggerEvent(ctx context.Context) (v string, err error) {
+func (m *AutomationVersionMutation) OldTriggerAction(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldTriggerEvent is only allowed on UpdateOne operations")
+		return v, errors.New("OldTriggerAction is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldTriggerEvent requires an ID field in the mutation")
+		return v, errors.New("OldTriggerAction requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldTriggerEvent: %w", err)
+		return v, fmt.Errorf("querying old value for OldTriggerAction: %w", err)
 	}
-	return oldValue.TriggerEvent, nil
+	return oldValue.TriggerAction, nil
 }
 
-// ResetTriggerEvent resets all changes to the "trigger_event" field.
-func (m *AutomationVersionMutation) ResetTriggerEvent() {
-	m.trigger_event = nil
+// ResetTriggerAction resets all changes to the "trigger_action" field.
+func (m *AutomationVersionMutation) ResetTriggerAction() {
+	m.trigger_action = nil
+}
+
+// SetTriggerFilter sets the "trigger_filter" field.
+func (m *AutomationVersionMutation) SetTriggerFilter(cf *conditiontree.EventFilter) {
+	m.trigger_filter = &cf
+}
+
+// TriggerFilter returns the value of the "trigger_filter" field in the mutation.
+func (m *AutomationVersionMutation) TriggerFilter() (r *conditiontree.EventFilter, exists bool) {
+	v := m.trigger_filter
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTriggerFilter returns the old "trigger_filter" field's value of the AutomationVersion entity.
+// If the AutomationVersion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationVersionMutation) OldTriggerFilter(ctx context.Context) (v *conditiontree.EventFilter, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTriggerFilter is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTriggerFilter requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTriggerFilter: %w", err)
+	}
+	return oldValue.TriggerFilter, nil
+}
+
+// ClearTriggerFilter clears the value of the "trigger_filter" field.
+func (m *AutomationVersionMutation) ClearTriggerFilter() {
+	m.trigger_filter = nil
+	m.clearedFields[automationversion.FieldTriggerFilter] = struct{}{}
+}
+
+// TriggerFilterCleared returns if the "trigger_filter" field was cleared in this mutation.
+func (m *AutomationVersionMutation) TriggerFilterCleared() bool {
+	_, ok := m.clearedFields[automationversion.FieldTriggerFilter]
+	return ok
+}
+
+// ResetTriggerFilter resets all changes to the "trigger_filter" field.
+func (m *AutomationVersionMutation) ResetTriggerFilter() {
+	m.trigger_filter = nil
+	delete(m.clearedFields, automationversion.FieldTriggerFilter)
 }
 
 // SetExitEvents sets the "exit_events" field.
@@ -10331,7 +10381,7 @@ func (m *AutomationVersionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationVersionMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, automationversion.FieldCreatedAt)
 	}
@@ -10350,8 +10400,11 @@ func (m *AutomationVersionMutation) Fields() []string {
 	if m.steps != nil {
 		fields = append(fields, automationversion.FieldSteps)
 	}
-	if m.trigger_event != nil {
-		fields = append(fields, automationversion.FieldTriggerEvent)
+	if m.trigger_action != nil {
+		fields = append(fields, automationversion.FieldTriggerAction)
+	}
+	if m.trigger_filter != nil {
+		fields = append(fields, automationversion.FieldTriggerFilter)
 	}
 	if m.exit_events != nil {
 		fields = append(fields, automationversion.FieldExitEvents)
@@ -10379,8 +10432,10 @@ func (m *AutomationVersionMutation) Field(name string) (ent.Value, bool) {
 		return m.Version()
 	case automationversion.FieldSteps:
 		return m.Steps()
-	case automationversion.FieldTriggerEvent:
-		return m.TriggerEvent()
+	case automationversion.FieldTriggerAction:
+		return m.TriggerAction()
+	case automationversion.FieldTriggerFilter:
+		return m.TriggerFilter()
 	case automationversion.FieldExitEvents:
 		return m.ExitEvents()
 	case automationversion.FieldGoalEvent:
@@ -10406,8 +10461,10 @@ func (m *AutomationVersionMutation) OldField(ctx context.Context, name string) (
 		return m.OldVersion(ctx)
 	case automationversion.FieldSteps:
 		return m.OldSteps(ctx)
-	case automationversion.FieldTriggerEvent:
-		return m.OldTriggerEvent(ctx)
+	case automationversion.FieldTriggerAction:
+		return m.OldTriggerAction(ctx)
+	case automationversion.FieldTriggerFilter:
+		return m.OldTriggerFilter(ctx)
 	case automationversion.FieldExitEvents:
 		return m.OldExitEvents(ctx)
 	case automationversion.FieldGoalEvent:
@@ -10463,12 +10520,19 @@ func (m *AutomationVersionMutation) SetField(name string, value ent.Value) error
 		}
 		m.SetSteps(v)
 		return nil
-	case automationversion.FieldTriggerEvent:
+	case automationversion.FieldTriggerAction:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetTriggerEvent(v)
+		m.SetTriggerAction(v)
+		return nil
+	case automationversion.FieldTriggerFilter:
+		v, ok := value.(*conditiontree.EventFilter)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTriggerFilter(v)
 		return nil
 	case automationversion.FieldExitEvents:
 		v, ok := value.([]string)
@@ -10529,6 +10593,9 @@ func (m *AutomationVersionMutation) AddField(name string, value ent.Value) error
 // mutation.
 func (m *AutomationVersionMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(automationversion.FieldTriggerFilter) {
+		fields = append(fields, automationversion.FieldTriggerFilter)
+	}
 	if m.FieldCleared(automationversion.FieldGoalEvent) {
 		fields = append(fields, automationversion.FieldGoalEvent)
 	}
@@ -10546,6 +10613,9 @@ func (m *AutomationVersionMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *AutomationVersionMutation) ClearField(name string) error {
 	switch name {
+	case automationversion.FieldTriggerFilter:
+		m.ClearTriggerFilter()
+		return nil
 	case automationversion.FieldGoalEvent:
 		m.ClearGoalEvent()
 		return nil
@@ -10575,8 +10645,11 @@ func (m *AutomationVersionMutation) ResetField(name string) error {
 	case automationversion.FieldSteps:
 		m.ResetSteps()
 		return nil
-	case automationversion.FieldTriggerEvent:
-		m.ResetTriggerEvent()
+	case automationversion.FieldTriggerAction:
+		m.ResetTriggerAction()
+		return nil
+	case automationversion.FieldTriggerFilter:
+		m.ResetTriggerFilter()
 		return nil
 	case automationversion.FieldExitEvents:
 		m.ResetExitEvents()

@@ -132,11 +132,17 @@ func (m *StepExecution) enrollOnRule(ctx context.Context, s *ent.Scoped, pub eve
 // Enrollment began when it occurred (#751) and keeps its action and properties (#752). The trigger
 // consumer picks the Automations before it enrolls, so a Publish that moved the Trigger, a
 // Deactivate or an Archive may have landed since: under the lock it enrolls nobody (runID 0) unless
-// the Automation is still kept, active and started by the action in its live version.
+// the Automation is still kept, active and its live version's Trigger matches the Event, its
+// action and its filter (matchesEvent): a filter miss is the first entry check, no entry and no
+// skipped entry (ADR 0133).
 func (m *StepExecution) enrollOnTrigger(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, o origin) (runID int64, enrolled bool, err error) {
 	return m.enroll(ctx, s, pub, automationID, contactID, o, func(a *ent.Automation) (bool, error) {
 		live := a.Edges.LiveVersion
-		return active(a) && live != nil && live.TriggerEvent == o.Action, nil
+		if !active(a) || live == nil || live.TriggerAction != o.Action {
+			return false, nil
+		}
+		// The first entry check: an Event its filter misses is no entry, and nothing is recorded.
+		return matchesEvent(ctx, s, TriggerOf(live), o.SourceID)
 	})
 }
 
@@ -438,13 +444,29 @@ func endingBy(v *ent.AutomationVersion, action string) (trigger, bool) {
 	return "", false
 }
 
-// triggeredBy lists the active Automations whose live version an Event with the action enrolls
-// into (ADR 0065).
-func triggeredBy(ctx context.Context, s *ent.Scoped, action string) ([]int64, error) {
-	return s.Automation().Query().
+// triggeredBy lists the active Automations whose live version's Trigger the Event matches (ADR
+// 0065, ADR 0133): the candidates by the action, the hot lookup the action's column serves, then
+// each candidate's filter run on the stored Event (matchesEvent).
+func triggeredBy(ctx context.Context, s *ent.Scoped, ev Event) ([]int64, error) {
+	candidates, err := s.Automation().Query().
 		Where(
 			automation.StatusEQ(automation.StatusActive),
-			automation.HasLiveVersionWith(automationversion.TriggerEvent(action)),
+			automation.HasLiveVersionWith(automationversion.TriggerAction(ev.Action)),
 		).
-		IDs(ctx)
+		WithLiveVersion().
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var ids []int64
+	for _, a := range candidates {
+		ok, err := matchesEvent(ctx, s, TriggerOf(a.Edges.LiveVersion), ev.SourceID)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			ids = append(ids, a.ID)
+		}
+	}
+	return ids, nil
 }

@@ -25,13 +25,13 @@ func TestSiteAutomationsErrorBranches(t *testing.T) {
 	missing := idStr(99999)
 
 	t.Run("create", func(t *testing.T) {
-		in := &siteapi.CreateAutomationInput{Name: "x", TriggerEvent: systemevent.ContactCreated}
+		in := &siteapi.CreateAutomationInput{Name: "x", Trigger: testhelper.SiteTrigger(systemevent.ContactCreated)}
 		_, err := c.SiteAutomationsCreate(ctx, in, siteapi.SiteAutomationsCreateParams{WorkspaceId: foreign})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
 		before, err := env.DB.Automation.Query().Count(ctx)
 		require.NoError(t, err)
-		bad := &siteapi.CreateAutomationInput{Name: "x", TriggerEvent: systemevent.ContactCreated, Steps: testhelper.SitePathEdit(siteapi.ApplyTagStepInput{Tag: "  "})}
+		bad := &siteapi.CreateAutomationInput{Name: "x", Trigger: testhelper.SiteTrigger(systemevent.ContactCreated), Steps: testhelper.SitePathEdit(siteapi.ApplyTagStepInput{Tag: "  "})}
 		_, err = c.SiteAutomationsCreate(ctx, bad, siteapi.SiteAutomationsCreateParams{WorkspaceId: acme})
 		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity, "a tag step without a tag is invalid")
 		after, err := env.DB.Automation.Query().Count(ctx)

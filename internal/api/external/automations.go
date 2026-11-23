@@ -19,7 +19,11 @@ func (h *Handlers) AutomationsList(ctx context.Context, params externalapi.Autom
 
 // AutomationsCreate always stores an inactive Automation: publishing is the send-class operation.
 func (h *Handlers) AutomationsCreate(ctx context.Context, req *externalapi.CreateAutomationInput) (*externalapi.AutomationResource, error) {
-	a, err := h.automations.Create(ctx, auth.TokenScoped(ctx), inputs.AutomationCreate(req))
+	in, err := inputs.AutomationCreate(req)
+	if err != nil {
+		return nil, err
+	}
+	a, err := h.automations.Create(ctx, auth.TokenScoped(ctx), in)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +49,11 @@ func (h *Handlers) AutomationsGet(ctx context.Context, params externalapi.Automa
 
 func (h *Handlers) AutomationsUpdate(ctx context.Context, req *externalapi.UpdateAutomationInput, params externalapi.AutomationsUpdateParams) (*externalapi.AutomationResource, error) {
 	id := int64(params.ID)
-	a, err := h.automations.Update(ctx, auth.TokenScoped(ctx), id, inputs.AutomationUpdate(req))
+	in, err := inputs.AutomationUpdate(req)
+	if err != nil {
+		return nil, err
+	}
+	a, err := h.automations.Update(ctx, auth.TokenScoped(ctx), id, in)
 	if err != nil {
 		return nil, err
 	}

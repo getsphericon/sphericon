@@ -153,6 +153,7 @@ var ConditionKinds = Table{
 			Unions: []Union{
 				{Schema: "SegmentConditionNode", List: "SegmentKinds", Doc: []string{"SegmentKinds is every Kind a Segment's Condition admits."}},
 				{Schema: "RuleConditionNode", List: "RuleKinds", Doc: []string{"RuleKinds is every Kind a Rule's Condition admits."}},
+				{Schema: "EventFilterNode", List: "EventFilterKinds", Doc: []string{"EventFilterKinds is every Kind an Event filter admits."}},
 			},
 		},
 		Discriminators{

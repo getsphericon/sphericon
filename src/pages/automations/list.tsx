@@ -328,11 +328,11 @@ export function AutomationsListPage() {
             render: (record) => <AutomationStatusBadge automation={record} withDraftDetails />,
           },
           {
-            accessor: 'triggerEvent',
+            accessor: 'trigger',
             title: t(($) => $.automations.triggerColumn),
             // What enrolls Contacts: the live version's Trigger, or the draft's before publishing.
             render: (record) => {
-              const trigger = (record.live ?? record.draft)?.triggerEvent
+              const trigger = (record.live ?? record.draft)?.trigger.action
               return trigger === undefined ? '-' : <EventActionName action={trigger} />
             },
           },

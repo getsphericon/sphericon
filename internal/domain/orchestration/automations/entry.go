@@ -28,7 +28,8 @@ import (
 //  6. the cooldown from the previous Enrollment's beginning (`cooldown`);
 //  7. a keyed version's ceiling (`enrollment_ceiling`).
 //
-// entryChecks holds the ones built, in that order; a check that comes takes its place among them.
+// The first is enrollOnTrigger's admission, before the others are judged (matchesEvent);
+// entryChecks holds the others built, in that order; a check that comes takes its place among them.
 //
 // A cycle is an entry whose cause already passed through the Automation: the Event, or the Event a
 // Rule fired on, names it among the Automations its chain passed through (events.Envelope.Automations),
