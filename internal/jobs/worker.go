@@ -118,7 +118,9 @@ type Deps struct {
 	SendingDomains *sendingdomains.Module
 	// StepExecution executes the steps of the Enrollments (the run_step and http_step jobs).
 	StepExecution *automations.StepExecution
-	JoinDomains   *joindomains.Module
+	// Automations prunes the skipped entries into Automations past the Events' window (ADR 0127).
+	Automations *automations.Module
+	JoinDomains *joindomains.Module
 	// Integrations reads an Integration's provider send quota (ADR 0023) and releases a deleted
 	// Telegram bot's webhook (ADR 0145).
 	Integrations *integrations.Module
@@ -182,7 +184,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewPurgeAuthAttemptsWorker(entClient, now))
 	river.AddWorker(workers, NewRefreshPrivateRelayWorker(deps.Machine))
 	river.AddWorker(workers, NewPruneEventsWorker(entClient, deps.Rules, deps.Retention.Events, now))
-	river.AddWorker(workers, NewPruneSkippedEntriesWorker(stepper, entClient, deps.Retention.Events))
+	river.AddWorker(workers, NewPruneSkippedEntriesWorker(deps.Automations, entClient, deps.Retention.Events))
 	river.AddWorker(workers, NewPruneMessagesWorker(deps.MessageRetention))
 	river.AddWorker(workers, NewPruneWorkspaceMessagesWorker(deps.MessageRetention))
 	river.AddWorker(workers, NewPruneCapturedMessagesWorker(deps.CapturedMessages, deps.Retention.CapturedMessages))

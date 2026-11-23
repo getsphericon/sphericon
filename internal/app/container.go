@@ -610,6 +610,7 @@ var jobsPackage = do.Package(
 			MessageRetention:  do.MustInvoke[*messageretention.UseCase](i),
 			SendingDomains:    do.MustInvoke[*sendingdomains.Module](i),
 			StepExecution:     do.MustInvoke[*automations.StepExecution](i),
+			Automations:       do.MustInvoke[*automations.Module](i),
 			JoinDomains:       do.MustInvoke[*joindomains.Module](i),
 			Integrations:      do.MustInvoke[*integrations.Module](i),
 			Chats:             do.MustInvoke[*bindings.Chats](i),
