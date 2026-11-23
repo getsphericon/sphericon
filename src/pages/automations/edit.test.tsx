@@ -203,6 +203,33 @@ test("saving sends the Trigger's filter edited on the canvas with the Event's pr
     ])
 })
 
+test('a filter left half-typed is dropped when the Trigger is opened again, and the Save sends none', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    handleSiteAutomationsGet({ body: STORED }),
+    handleSiteAutomationsUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(STORED)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+  await expect.poll(() => flowNode(0)).toBeInstanceOf(Element)
+  await page.elementLocator(flowNode(0)).click()
+  await screen.getByText('Properties').click()
+  await screen.getByRole('button', { name: /Rule/ }).first().click()
+  // The panel covers the canvas: each node is picked by a click dispatched on it.
+  flowNode(1).dispatchEvent(new MouseEvent('click', { bubbles: true }))
+  await expect.element(screen.getByText('Trigger Filter')).not.toBeInTheDocument()
+  flowNode(0).dispatchEvent(new MouseEvent('click', { bubbles: true }))
+  await expect.element(screen.getByText('Trigger Filter')).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([expect.objectContaining({ trigger: { kind: 'event', action: 'email.clicked' } })])
+})
+
 test("the filter of a Tag's Trigger offers the Workspace's Tags as the tag tested", async () => {
   worker.use(
     handleSiteAutomationsGet({ body: STORED }),
