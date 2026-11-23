@@ -188,7 +188,7 @@ model EngagementTrackingObservationInput {
   /** Whether the person agreed to have their opens and clicks tracked, or refused */
   state: EngagementTrackingState;
 
-  /** When the person gave or refused the consent; now when omitted. It may not be in the future */
+  /** When the person gave or refused the consent; now when omitted. A grant may not be in the future; a refusal dated in the future is taken as now */
   occurredAt?: Timestamp | null;
 }
 

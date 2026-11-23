@@ -92,8 +92,8 @@ var (
 	// ErrChannel refuses a Channel whose Destinations take no consent yet.
 	ErrChannel = validation.RefuseField(fieldname.Channel, "engagement tracking: only email takes a consent yet",
 		i18n.ErrorsEngagementTrackingChannel)
-	// ErrInFuture refuses an observation said to occur after now: it would outrank every real one.
-	ErrInFuture = validation.RefuseField(fieldname.OccurredAt, "engagement tracking: occurredAt must not be in the future",
+	// ErrInFuture refuses a grant said to occur after now: it would outrank every real refusal.
+	ErrInFuture = validation.RefuseField(fieldname.OccurredAt, "engagement tracking: occurredAt of a grant must not be in the future",
 		i18n.ErrorsEngagementTrackingInFuture)
 	// ErrNoEmail refuses a Contact's email consent for a Contact without an email address.
 	ErrNoEmail = validation.RefuseField(fieldname.Email, "engagement tracking: the contact has no email", i18n.ErrorsContactEmailMissing)
@@ -174,10 +174,11 @@ func (m *Module) Record(ctx context.Context, s *ent.Scoped, in RecordInput) (Rec
 // a `denied` applies from any provenance, a `granted` over a standing `denied` only from the
 // person's own page, else ErrRefusalStands. Then time (consentstamps): an observation older than
 // the one that set the consent changes nothing and is recorded as contact.consent_superseded for
-// the Contact holding the Destination (Superseded). An observation that changes the state or the
+// the Contact holding the Destination (Superseded), unless it agrees with the consent standing
+// (a replay of the same observation, say), which records nothing at all. An observation that changes the state or the
 // provenance writes the row and publishes its Channel's Event; one that repeats the consent
-// standing only moves its stamp. Only the Channels open today take one (ErrChannel), and an
-// observation in the future is ErrInFuture.
+// standing only moves its stamp. Only the Channels open today take one (ErrChannel), and a grant
+// in the future is ErrInFuture.
 func (m *Module) RecordIn(ctx context.Context, s *ent.Scoped, in RecordInput) (Recorded, error) {
 	in, err := m.checked(in)
 	if err != nil {
@@ -206,6 +207,9 @@ func (m *Module) RecordIn(ctx context.Context, s *ent.Scoped, in RecordInput) (R
 	}
 	outcome := Applied
 	switch {
+	case !admitted && standing != nil && standing.State == in.State:
+		// It agrees with the consent standing, set later or at the same moment (a replay): it
+		// changes nothing and is no history.
 	case !admitted:
 		outcome = Superseded
 		err = m.publishSuperseded(ctx, s, holder, in)
@@ -219,8 +223,8 @@ func (m *Module) RecordIn(ctx context.Context, s *ent.Scoped, in RecordInput) (R
 }
 
 // checked is in normalized, or its refusal: an open Channel, the Destination as the Channel's
-// Destinations are stored, a known state and provenance, and the time it occurred, now when it
-// states none and never after now.
+// Destinations are stored, a known state and provenance, and the time it occurred: now when it
+// states none, and never after now (a grant dated later is ErrInFuture, a refusal is taken as now).
 func (m *Module) checked(in RecordInput) (RecordInput, error) {
 	if !open[in.Channel] {
 		return RecordInput{}, ErrChannel
@@ -242,6 +246,9 @@ func (m *Module) checked(in RecordInput) (RecordInput, error) {
 	now := m.now()
 	switch {
 	case in.OccurredAt.IsZero():
+		in.OccurredAt = now
+	case in.OccurredAt.After(now) && in.State == Denied:
+		// A refusal is never bounced for a clock ahead of ours: it is taken as occurring now.
 		in.OccurredAt = now
 	case in.OccurredAt.After(now):
 		return RecordInput{}, ErrInFuture

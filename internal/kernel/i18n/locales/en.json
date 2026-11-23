@@ -373,7 +373,7 @@
   "errors.consent_superseded": "the number withdrew its consent after this one was given",
   "errors.engagement_tracking_refused": "the destination refused tracking, and only the person can lift a refusal",
   "errors.engagement_tracking_channel": "channel must be email: only an email address takes a tracking consent yet",
-  "errors.engagement_tracking_in_future": "occurredAt must not be in the future",
+  "errors.engagement_tracking_in_future": "occurredAt of a grant must not be in the future",
   "errors.engagement_tracking_state": "state must be granted or denied",
   "errors.engagement_tracking_provenance": "the consent's provenance is not one of page, manual, imported, onsite_form",
   "errors.contact_email_missing": "the contact has no email",

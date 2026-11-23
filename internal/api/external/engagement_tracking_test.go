@@ -253,3 +253,90 @@ func TestReadingTrackingConsentNeedsContactsReadAndStaysInTheWorkspace(t *testin
 	testhelper.ExternalRefusal(t, writer, http.StatusForbidden)
 	testhelper.ExternalRefusal(t, foreign, http.StatusNotFound)
 }
+
+// A replayed observation, the same state of the same moment, changes nothing and records nothing:
+// a sync that sends the consent on every run fills no history.
+func TestARepeatedObservationRecordsNothing(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite, apitokens.ScopeContactsRead)
+	_, err := c.EngagementTrackingCreate(t.Context(), trackingOf(fixtures.ContactAliceEmail, externalapi.EngagementTrackingStateGranted, trackingAt))
+	require.NoError(t, err)
+
+	again, err := c.EngagementTrackingCreate(t.Context(), trackingOf(fixtures.ContactAliceEmail, externalapi.EngagementTrackingStateGranted, trackingAt))
+
+	require.NoError(t, err)
+	assert.Equal(t, externalapi.EngagementTrackingOutcomeApplied, again.Outcome)
+	history := activity(t, env, fixtures.ContactAliceID, systemevent.ContactConsentSuperseded)
+	assert.Empty(t, history)
+	granted := activity(t, env, fixtures.ContactAliceID, systemevent.EmailEngagementTrackingGranted)
+	assert.Len(t, granted, 1)
+}
+
+// eventsOfAddress is the Events of Acme that name address, as a member finds them by it.
+func eventsOfAddress(t *testing.T, env *testhelper.TestEnv, address string) []siteapi.SiteEventResource {
+	t.Helper()
+	list, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteEventsList(t.Context(), siteapi.SiteEventsListParams{
+		WorkspaceId: fixtures.AcmePublicID, Email: siteapi.NewOptString(address),
+	})
+	require.NoError(t, err)
+	return list.Items
+}
+
+// The consent of an address recorded before any Contact held it is the Contact's once one does:
+// its Erasure deletes the grant's Event and keeps the refusal's without the address.
+func TestErasureReachesTheTrackingEventsOfAnAddressRecordedBeforeItsContact(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite, apitokens.ScopeContactsRead, apitokens.ScopeContactsErase)
+	refusing, granting := "tracking-early-no@example.com", "tracking-early-yes@example.com"
+	_, err := c.EngagementTrackingCreate(t.Context(), trackingOf(refusing, externalapi.EngagementTrackingStateDenied, trackingAt))
+	require.NoError(t, err)
+	_, err = c.EngagementTrackingCreate(t.Context(), trackingOf(granting, externalapi.EngagementTrackingStateGranted, trackingAt))
+	require.NoError(t, err)
+	before := len(eventsOfAddress(t, env, refusing)) + len(eventsOfAddress(t, env, granting))
+	_, err = c.ContactsCreate(t.Context(), &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress(externalapi.EmailAddress(refusing))})
+	require.NoError(t, err)
+	_, err = c.ContactsCreate(t.Context(), &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress(externalapi.EmailAddress(granting))})
+	require.NoError(t, err)
+
+	require.NoError(t, c.ContactsEraseBy(t.Context(), externalapi.ContactsEraseByParams{Email: externalapi.NewOptEmailAddress(externalapi.EmailAddress(refusing))}))
+	require.NoError(t, c.ContactsEraseBy(t.Context(), externalapi.ContactsEraseByParams{Email: externalapi.NewOptEmailAddress(externalapi.EmailAddress(granting))}))
+
+	assert.Equal(t, 2, before)
+	assert.Empty(t, eventsOfAddress(t, env, refusing))
+	assert.Empty(t, eventsOfAddress(t, env, granting))
+}
+
+// A refusal dated after now (a client clock ahead of ours) is not bounced: it applies as of now.
+func TestARefusalDatedInTheFutureAppliesAsOfNow(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite, apitokens.ScopeContactsRead)
+
+	refused, err := c.EngagementTrackingCreate(t.Context(), trackingOf(fixtures.ContactAliceEmail, externalapi.EngagementTrackingStateDenied, time.Now().Add(time.Hour)))
+
+	require.NoError(t, err)
+	assert.Equal(t, externalapi.EngagementTrackingReadingDenied, refused.Consent.State)
+	denied := activity(t, env, fixtures.ContactAliceID, systemevent.EmailEngagementTrackingDenied)
+	require.Len(t, denied, 1)
+	assert.False(t, time.Time(denied[0].OccurredAt).After(time.Now()), "dated now, not in the future")
+}
+
+// A batch item that grants over a standing refusal fails alone, with the refusal's words.
+func TestABatchItemGrantingOverARefusalFails(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite, apitokens.ScopeContactsRead)
+	_, err := c.EngagementTrackingCreate(t.Context(), trackingOf(fixtures.ContactAliceEmail, externalapi.EngagementTrackingStateDenied, trackingAt))
+	require.NoError(t, err)
+	grant := externalapi.NewOptContactEngagementTrackingInput(externalapi.ContactEngagementTrackingInput{
+		Email: externalapi.NewOptEngagementTrackingObservationInput(externalapi.EngagementTrackingObservationInput{State: externalapi.EngagementTrackingStateGranted}),
+	})
+
+	out, err := c.ContactsBatchUpsert(t.Context(), &externalapi.UpsertContactsInput{Contacts: []externalapi.UpsertContactInput{
+		{Email: externalapi.NewOptNilEmailAddress(fixtures.ContactAliceEmail), EngagementTracking: grant},
+	}})
+
+	require.NoError(t, err)
+	assert.Equal(t, externalapi.ContactBatchStatusFailed, out.Results[0].Status)
+	assert.Contains(t, out.Results[0].Error.Value, "only the person can lift a refusal")
+	read := emailTracking(t, c, fixtures.ContactAliceID)
+	assert.Equal(t, externalapi.EngagementTrackingReadingDenied, read.State)
+}

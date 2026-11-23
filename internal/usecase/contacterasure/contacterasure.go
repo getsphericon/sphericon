@@ -292,7 +292,7 @@ func (u *UseCase) steps() []step {
 		// The bus, which stores the Events, deletes the subject's customer-tracked Events and
 		// anonymizes its system Events in place.
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-			return eventsunchecked.EraseSubject(ctx, s, t.ContactID, t.Phone, t.VisitorIDs)
+			return eventsunchecked.EraseSubject(ctx, s, t.ContactID, t.Phone, t.Destinations, t.VisitorIDs)
 		},
 		// The Visitors, and with them their Bindings and Start tokens. Telegram opt-outs are not
 		// here: they are keyed by the user id and stay.

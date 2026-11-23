@@ -10297,7 +10297,8 @@ func (s *EngagementTrackingDecision) UnmarshalText(data []byte) error {
 type EngagementTrackingObservationInput struct {
 	// Whether the person agreed to have their opens and clicks tracked, or refused.
 	State EngagementTrackingState `json:"state"`
-	// When the person gave or refused the consent; now when omitted. It may not be in the future.
+	// When the person gave or refused the consent; now when omitted. A grant may not be in the future; a
+	// refusal dated in the future is taken as now.
 	OccurredAt OptNilTimestamp `json:"occurredAt"`
 }
 
@@ -19550,7 +19551,8 @@ type RecordEngagementTrackingInput struct {
 	Destination string `json:"destination"`
 	// Whether the person agreed to have their opens and clicks tracked, or refused.
 	State EngagementTrackingState `json:"state"`
-	// When the person gave or refused the consent; now when omitted. It may not be in the future.
+	// When the person gave or refused the consent; now when omitted. A grant may not be in the future; a
+	// refusal dated in the future is taken as now.
 	OccurredAt OptNilTimestamp `json:"occurredAt"`
 }
 

@@ -9966,7 +9966,7 @@
               }
             ],
             "nullable": true,
-            "description": "When the person gave or refused the consent; now when omitted. It may not be in the future"
+            "description": "When the person gave or refused the consent; now when omitted. A grant may not be in the future; a refusal dated in the future is taken as now"
           }
         },
         "description": "One Engagement tracking observation of a contact's Destination",
@@ -12478,7 +12478,7 @@
               }
             ],
             "nullable": true,
-            "description": "When the person gave or refused the consent; now when omitted. It may not be in the future"
+            "description": "When the person gave or refused the consent; now when omitted. A grant may not be in the future; a refusal dated in the future is taken as now"
           }
         },
         "description": "An Engagement tracking consent the customer collected for a Destination (ADR 0120), recorded as `imported`",
