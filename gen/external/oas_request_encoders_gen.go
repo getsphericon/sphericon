@@ -276,6 +276,20 @@ func encodeEmailsSendRequest(
 	return nil
 }
 
+func encodeEngagementTrackingCreateRequest(
+	req *RecordEngagementTrackingInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
 func encodeEventsBatchSubmitRequest(
 	req *RecordEventsBatchInput,
 	r *http.Request,

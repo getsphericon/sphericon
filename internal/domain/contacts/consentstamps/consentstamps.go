@@ -1,7 +1,7 @@
 // Package consentstamps orders the Consent observations of a Destination (ADR 0154): it keeps when
 // the observation that set each consent state occurred (its stamp), and lets a new observation
 // change that state only when it occurred later. The owners of the states (unsubscribes,
-// confirmations) ask it before they write, after their provenance checks: time orders only the
+// confirmations, engagementtracking) ask it before they write, after their provenance checks: time orders only the
 // observations allowed to replace each other. It and its Erasure step (consentstampsunchecked) are
 // the one place a ConsentStamp row is written, and each function runs inside the transaction s is
 // bound to.
@@ -50,6 +50,10 @@ const (
 	// Confirmation is the Confirmation state of a (Channel, Destination): a Confirmation, or the
 	// opt-out of everything that withdrew it. It is stamped on the `everything` source.
 	Confirmation
+	// EngagementTracking is the Engagement tracking consent of a (Channel, Destination): a
+	// `granted` or a `denied` (ADR 0120). It has no Sending source, so it is stamped on the
+	// `everything` source, as a Confirmation is.
+	EngagementTracking
 )
 
 // Key is what a consent state belongs to.
@@ -148,6 +152,8 @@ func (m *Module) Admit(ctx context.Context, s *ent.Scoped, in Observation) (bool
 		}
 	case Confirmation:
 		update.SetConfirmationOccurredAt(o.At)
+	case EngagementTracking:
+		update.SetEngagementTrackingOccurredAt(o.At)
 	}
 	if err := update.Exec(ctx); err != nil {
 		return false, fmt.Errorf("stamp the consent: %w", err)
@@ -172,6 +178,11 @@ func stampOf(row *ent.ConsentStamp, fact Fact) *Occurrence {
 			return nil
 		}
 		return &Occurrence{At: *row.ConfirmationOccurredAt}
+	case EngagementTracking:
+		if row.EngagementTrackingOccurredAt == nil {
+			return nil
+		}
+		return &Occurrence{At: *row.EngagementTrackingOccurredAt}
 	}
 	return nil
 }

@@ -132,6 +132,20 @@ func (_c *ConsentStampCreate) SetNillableConfirmationOccurredAt(v *time.Time) *C
 	return _c
 }
 
+// SetEngagementTrackingOccurredAt sets the "engagement_tracking_occurred_at" field.
+func (_c *ConsentStampCreate) SetEngagementTrackingOccurredAt(v time.Time) *ConsentStampCreate {
+	_c.mutation.SetEngagementTrackingOccurredAt(v)
+	return _c
+}
+
+// SetNillableEngagementTrackingOccurredAt sets the "engagement_tracking_occurred_at" field if the given value is not nil.
+func (_c *ConsentStampCreate) SetNillableEngagementTrackingOccurredAt(v *time.Time) *ConsentStampCreate {
+	if v != nil {
+		_c.SetEngagementTrackingOccurredAt(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *ConsentStampCreate) SetID(v int64) *ConsentStampCreate {
 	_c.mutation.SetID(v)
@@ -294,6 +308,10 @@ func (_c *ConsentStampCreate) createSpec() (*ConsentStamp, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.ConfirmationOccurredAt(); ok {
 		_spec.SetField(consentstamp.FieldConfirmationOccurredAt, field.TypeTime, value)
 		_node.ConfirmationOccurredAt = &value
+	}
+	if value, ok := _c.mutation.EngagementTrackingOccurredAt(); ok {
+		_spec.SetField(consentstamp.FieldEngagementTrackingOccurredAt, field.TypeTime, value)
+		_node.EngagementTrackingOccurredAt = &value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -481,6 +499,24 @@ func (u *ConsentStampUpsert) UpdateConfirmationOccurredAt() *ConsentStampUpsert 
 // ClearConfirmationOccurredAt clears the value of the "confirmation_occurred_at" field.
 func (u *ConsentStampUpsert) ClearConfirmationOccurredAt() *ConsentStampUpsert {
 	u.SetNull(consentstamp.FieldConfirmationOccurredAt)
+	return u
+}
+
+// SetEngagementTrackingOccurredAt sets the "engagement_tracking_occurred_at" field.
+func (u *ConsentStampUpsert) SetEngagementTrackingOccurredAt(v time.Time) *ConsentStampUpsert {
+	u.Set(consentstamp.FieldEngagementTrackingOccurredAt, v)
+	return u
+}
+
+// UpdateEngagementTrackingOccurredAt sets the "engagement_tracking_occurred_at" field to the value that was provided on create.
+func (u *ConsentStampUpsert) UpdateEngagementTrackingOccurredAt() *ConsentStampUpsert {
+	u.SetExcluded(consentstamp.FieldEngagementTrackingOccurredAt)
+	return u
+}
+
+// ClearEngagementTrackingOccurredAt clears the value of the "engagement_tracking_occurred_at" field.
+func (u *ConsentStampUpsert) ClearEngagementTrackingOccurredAt() *ConsentStampUpsert {
+	u.SetNull(consentstamp.FieldEngagementTrackingOccurredAt)
 	return u
 }
 
@@ -678,6 +714,27 @@ func (u *ConsentStampUpsertOne) UpdateConfirmationOccurredAt() *ConsentStampUpse
 func (u *ConsentStampUpsertOne) ClearConfirmationOccurredAt() *ConsentStampUpsertOne {
 	return u.Update(func(s *ConsentStampUpsert) {
 		s.ClearConfirmationOccurredAt()
+	})
+}
+
+// SetEngagementTrackingOccurredAt sets the "engagement_tracking_occurred_at" field.
+func (u *ConsentStampUpsertOne) SetEngagementTrackingOccurredAt(v time.Time) *ConsentStampUpsertOne {
+	return u.Update(func(s *ConsentStampUpsert) {
+		s.SetEngagementTrackingOccurredAt(v)
+	})
+}
+
+// UpdateEngagementTrackingOccurredAt sets the "engagement_tracking_occurred_at" field to the value that was provided on create.
+func (u *ConsentStampUpsertOne) UpdateEngagementTrackingOccurredAt() *ConsentStampUpsertOne {
+	return u.Update(func(s *ConsentStampUpsert) {
+		s.UpdateEngagementTrackingOccurredAt()
+	})
+}
+
+// ClearEngagementTrackingOccurredAt clears the value of the "engagement_tracking_occurred_at" field.
+func (u *ConsentStampUpsertOne) ClearEngagementTrackingOccurredAt() *ConsentStampUpsertOne {
+	return u.Update(func(s *ConsentStampUpsert) {
+		s.ClearEngagementTrackingOccurredAt()
 	})
 }
 
@@ -1041,6 +1098,27 @@ func (u *ConsentStampUpsertBulk) UpdateConfirmationOccurredAt() *ConsentStampUps
 func (u *ConsentStampUpsertBulk) ClearConfirmationOccurredAt() *ConsentStampUpsertBulk {
 	return u.Update(func(s *ConsentStampUpsert) {
 		s.ClearConfirmationOccurredAt()
+	})
+}
+
+// SetEngagementTrackingOccurredAt sets the "engagement_tracking_occurred_at" field.
+func (u *ConsentStampUpsertBulk) SetEngagementTrackingOccurredAt(v time.Time) *ConsentStampUpsertBulk {
+	return u.Update(func(s *ConsentStampUpsert) {
+		s.SetEngagementTrackingOccurredAt(v)
+	})
+}
+
+// UpdateEngagementTrackingOccurredAt sets the "engagement_tracking_occurred_at" field to the value that was provided on create.
+func (u *ConsentStampUpsertBulk) UpdateEngagementTrackingOccurredAt() *ConsentStampUpsertBulk {
+	return u.Update(func(s *ConsentStampUpsert) {
+		s.UpdateEngagementTrackingOccurredAt()
+	})
+}
+
+// ClearEngagementTrackingOccurredAt clears the value of the "engagement_tracking_occurred_at" field.
+func (u *ConsentStampUpsertBulk) ClearEngagementTrackingOccurredAt() *ConsentStampUpsertBulk {
+	return u.Update(func(s *ConsentStampUpsert) {
+		s.ClearEngagementTrackingOccurredAt()
 	})
 }
 

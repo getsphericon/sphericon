@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/defaultsendcap"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
@@ -704,6 +705,25 @@ func init() {
 	emailtemplateDescBody := emailtemplateFields[3].Descriptor()
 	// emailtemplate.DefaultBody holds the default value on creation for the body field.
 	emailtemplate.DefaultBody = emailtemplateDescBody.Default.(string)
+	engagementtrackingconsentMixin := schema.EngagementTrackingConsent{}.Mixin()
+	engagementtrackingconsentMixinFields0 := engagementtrackingconsentMixin[0].Fields()
+	_ = engagementtrackingconsentMixinFields0
+	engagementtrackingconsentFields := schema.EngagementTrackingConsent{}.Fields()
+	_ = engagementtrackingconsentFields
+	// engagementtrackingconsentDescCreatedAt is the schema descriptor for created_at field.
+	engagementtrackingconsentDescCreatedAt := engagementtrackingconsentMixinFields0[0].Descriptor()
+	// engagementtrackingconsent.DefaultCreatedAt holds the default value on creation for the created_at field.
+	engagementtrackingconsent.DefaultCreatedAt = engagementtrackingconsentDescCreatedAt.Default.(func() time.Time)
+	// engagementtrackingconsentDescUpdatedAt is the schema descriptor for updated_at field.
+	engagementtrackingconsentDescUpdatedAt := engagementtrackingconsentMixinFields0[1].Descriptor()
+	// engagementtrackingconsent.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	engagementtrackingconsent.DefaultUpdatedAt = engagementtrackingconsentDescUpdatedAt.Default.(func() time.Time)
+	// engagementtrackingconsent.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	engagementtrackingconsent.UpdateDefaultUpdatedAt = engagementtrackingconsentDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// engagementtrackingconsentDescDestination is the schema descriptor for destination field.
+	engagementtrackingconsentDescDestination := engagementtrackingconsentFields[2].Descriptor()
+	// engagementtrackingconsent.DestinationValidator is a validator for the "destination" field. It is called by the builders before save.
+	engagementtrackingconsent.DestinationValidator = engagementtrackingconsentDescDestination.Validators[0].(func(string) error)
 	erasureMixin := schema.Erasure{}.Mixin()
 	erasureMixinFields0 := erasureMixin[0].Fields()
 	_ = erasureMixinFields0

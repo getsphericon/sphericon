@@ -43,6 +43,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eventrecording"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/identitytokens"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
@@ -871,17 +872,18 @@ var audiencePackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*contacts.Module, error) {
 		return contacts.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*tags.Module](i),
-			do.MustInvoke[*confirmations.Module](i), do.MustInvoke[addresscheck.Resolver](i)), nil
+			do.MustInvoke[*confirmations.Module](i), do.MustInvoke[*engagementtracking.Module](i), do.MustInvoke[addresscheck.Resolver](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*visitors.Module, error) {
 		return visitors.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*contacterasure.UseCase, error) {
 		return contacterasure.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*broadcasts.Module](i),
-			do.MustInvoke[*contacts.Module](i), do.MustInvoke[*unsubscribes.Module](i), do.MustInvoke[*bindings.Chats](i), do.MustInvoke[Clock](i)), nil
+			do.MustInvoke[*contacts.Module](i), do.MustInvoke[*unsubscribes.Module](i), do.MustInvoke[*bindings.Chats](i),
+			do.MustInvoke[*engagementtracking.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
-	// The consent of the Destinations: the opt-outs, the Suppressions, the Confirmations and the
-	// Channel stops, which write their rows (ADR 0102).
+	// The consent of the Destinations: the opt-outs, the Suppressions, the Confirmations, the
+	// Engagement tracking consent and the Channel stops, which write their rows (ADR 0102).
 	do.Lazy(func(do.Injector) (*unsubscribes.Module, error) {
 		return unsubscribes.New(), nil
 	}),
@@ -890,6 +892,9 @@ var audiencePackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*confirmations.Module, error) {
 		return confirmations.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*unsubscribes.Module](i), do.MustInvoke[Clock](i)), nil
+	}),
+	do.Lazy(func(i do.Injector) (*engagementtracking.Module, error) {
+		return engagementtracking.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*channelstop.Module, error) {
 		return channelstop.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*confirmations.Module](i),
@@ -1251,6 +1256,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		Export:                exportstream.New(edition.Export, do.MustInvoke[*auditlog.Log](i), do.MustInvoke[*secrets.Cipher](i)),
 		Suppressions:          do.MustInvoke[*suppressions.Module](i),
 		Confirmations:         do.MustInvoke[*confirmations.Module](i),
+		Tracking:              do.MustInvoke[*engagementtracking.Module](i),
 		Exports:               dataexport.New(externalresources.ExportMapper{Converter: &externalresources.ConverterImpl{}}),
 
 		Unsubscribe: do.MustInvoke[*unsubscriberecording.UseCase](i),

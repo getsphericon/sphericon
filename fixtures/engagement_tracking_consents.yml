@@ -1,0 +1,19 @@
+# An Engagement tracking consent each of Acme and Globex (ADR 0120), on addresses no Contact or test
+# uses, for the scoped client's isolation checks and the Workspace erase: an address of Acme that
+# refused tracking, one of Globex that agreed to it.
+- id: 1
+  channel: email
+  destination: untracked@acme.example
+  state: denied
+  provenance: imported
+  workspace_id: 1
+  created_at: '2026-02-01 00:00:00'
+  updated_at: '2026-02-01 00:00:00'
+- id: 2
+  channel: email
+  destination: tracked@globex.example
+  state: granted
+  provenance: manual
+  workspace_id: 2
+  created_at: '2026-02-03 00:00:00'
+  updated_at: '2026-02-03 00:00:00'

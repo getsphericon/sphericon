@@ -5992,6 +5992,40 @@ func (s *ContactBatchWarning) UnmarshalText(data []byte) error {
 	}
 }
 
+// The Engagement tracking consent of each Destination of a contact (its email address).
+// Ref: #/components/schemas/ContactEngagementTracking
+type ContactEngagementTracking struct {
+	// One entry per Destination of the contact; empty when it has none.
+	Destinations []EngagementTrackingConsent `json:"destinations"`
+}
+
+// GetDestinations returns the value of Destinations.
+func (s *ContactEngagementTracking) GetDestinations() []EngagementTrackingConsent {
+	return s.Destinations
+}
+
+// SetDestinations sets the value of Destinations.
+func (s *ContactEngagementTracking) SetDestinations(val []EngagementTrackingConsent) {
+	s.Destinations = val
+}
+
+// The Engagement tracking consent a contact upsert item carries, per Destination of the contact.
+// Ref: #/components/schemas/ContactEngagementTrackingInput
+type ContactEngagementTrackingInput struct {
+	// The consent of the contact's email address: the item's, else the one the contact has.
+	Email OptEngagementTrackingObservationInput `json:"email"`
+}
+
+// GetEmail returns the value of Email.
+func (s *ContactEngagementTrackingInput) GetEmail() OptEngagementTrackingObservationInput {
+	return s.Email
+}
+
+// SetEmail sets the value of Email.
+func (s *ContactEngagementTrackingInput) SetEmail(val OptEngagementTrackingObservationInput) {
+	s.Email = val
+}
+
 // The contact's place in one broadcast's audience (how its send ended, and whether it was opened or
 // clicked, is in `outboundMessages`).
 // Ref: #/components/schemas/ContactExportBroadcastRecipient
@@ -10080,6 +10114,436 @@ func (s *EndStepType) UnmarshalText(data []byte) error {
 	switch EndStepType(data) {
 	case EndStepTypeEnd:
 		*s = EndStepTypeEnd
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A Channel whose messages track opens and clicks, so a Destination on it can consent to being tracked
+// (ADR 0120).
+// Ref: #/components/schemas/EngagementTrackingChannel
+type EngagementTrackingChannel string
+
+const (
+	EngagementTrackingChannelEmail    EngagementTrackingChannel = "email"
+	EngagementTrackingChannelSMS      EngagementTrackingChannel = "sms"
+	EngagementTrackingChannelTelegram EngagementTrackingChannel = "telegram"
+)
+
+// AllValues returns all EngagementTrackingChannel values.
+func (EngagementTrackingChannel) AllValues() []EngagementTrackingChannel {
+	return []EngagementTrackingChannel{
+		EngagementTrackingChannelEmail,
+		EngagementTrackingChannelSMS,
+		EngagementTrackingChannelTelegram,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EngagementTrackingChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case EngagementTrackingChannelEmail:
+		return []byte(s), nil
+	case EngagementTrackingChannelSMS:
+		return []byte(s), nil
+	case EngagementTrackingChannelTelegram:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EngagementTrackingChannel) UnmarshalText(data []byte) error {
+	switch EngagementTrackingChannel(data) {
+	case EngagementTrackingChannelEmail:
+		*s = EngagementTrackingChannelEmail
+		return nil
+	case EngagementTrackingChannelSMS:
+		*s = EngagementTrackingChannelSMS
+		return nil
+	case EngagementTrackingChannelTelegram:
+		*s = EngagementTrackingChannelTelegram
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The Engagement tracking consent of one Destination on one Channel (ADR 0120).
+// Ref: #/components/schemas/EngagementTrackingConsent
+type EngagementTrackingConsent struct {
+	// The Channel.
+	Channel EngagementTrackingChannel `json:"channel"`
+	// Normalized destination: the lower-cased email address on `email`.
+	Destination string `json:"destination"`
+	// The consent recorded, or `default` where none is.
+	State EngagementTrackingReading `json:"state"`
+	// Who recorded the consent; absent while none is recorded.
+	Provenance OptNilEngagementTrackingProvenance `json:"provenance"`
+	// Whether the Destination's opens and clicks are tracked: what the consent says, else the Workspace's
+	// default.
+	Effective EngagementTrackingDecision `json:"effective"`
+	// When the consent last changed; absent while none is recorded.
+	UpdatedAt OptNilTimestamp `json:"updatedAt"`
+}
+
+// GetChannel returns the value of Channel.
+func (s *EngagementTrackingConsent) GetChannel() EngagementTrackingChannel {
+	return s.Channel
+}
+
+// GetDestination returns the value of Destination.
+func (s *EngagementTrackingConsent) GetDestination() string {
+	return s.Destination
+}
+
+// GetState returns the value of State.
+func (s *EngagementTrackingConsent) GetState() EngagementTrackingReading {
+	return s.State
+}
+
+// GetProvenance returns the value of Provenance.
+func (s *EngagementTrackingConsent) GetProvenance() OptNilEngagementTrackingProvenance {
+	return s.Provenance
+}
+
+// GetEffective returns the value of Effective.
+func (s *EngagementTrackingConsent) GetEffective() EngagementTrackingDecision {
+	return s.Effective
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *EngagementTrackingConsent) GetUpdatedAt() OptNilTimestamp {
+	return s.UpdatedAt
+}
+
+// SetChannel sets the value of Channel.
+func (s *EngagementTrackingConsent) SetChannel(val EngagementTrackingChannel) {
+	s.Channel = val
+}
+
+// SetDestination sets the value of Destination.
+func (s *EngagementTrackingConsent) SetDestination(val string) {
+	s.Destination = val
+}
+
+// SetState sets the value of State.
+func (s *EngagementTrackingConsent) SetState(val EngagementTrackingReading) {
+	s.State = val
+}
+
+// SetProvenance sets the value of Provenance.
+func (s *EngagementTrackingConsent) SetProvenance(val OptNilEngagementTrackingProvenance) {
+	s.Provenance = val
+}
+
+// SetEffective sets the value of Effective.
+func (s *EngagementTrackingConsent) SetEffective(val EngagementTrackingDecision) {
+	s.Effective = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *EngagementTrackingConsent) SetUpdatedAt(val OptNilTimestamp) {
+	s.UpdatedAt = val
+}
+
+// Whether a Destination's opens and clicks are tracked.
+// Ref: #/components/schemas/EngagementTrackingDecision
+type EngagementTrackingDecision string
+
+const (
+	EngagementTrackingDecisionTrack     EngagementTrackingDecision = "track"
+	EngagementTrackingDecisionDontTrack EngagementTrackingDecision = "dont_track"
+)
+
+// AllValues returns all EngagementTrackingDecision values.
+func (EngagementTrackingDecision) AllValues() []EngagementTrackingDecision {
+	return []EngagementTrackingDecision{
+		EngagementTrackingDecisionTrack,
+		EngagementTrackingDecisionDontTrack,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EngagementTrackingDecision) MarshalText() ([]byte, error) {
+	switch s {
+	case EngagementTrackingDecisionTrack:
+		return []byte(s), nil
+	case EngagementTrackingDecisionDontTrack:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EngagementTrackingDecision) UnmarshalText(data []byte) error {
+	switch EngagementTrackingDecision(data) {
+	case EngagementTrackingDecisionTrack:
+		*s = EngagementTrackingDecisionTrack
+		return nil
+	case EngagementTrackingDecisionDontTrack:
+		*s = EngagementTrackingDecisionDontTrack
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// One Engagement tracking observation of a contact's Destination.
+// Ref: #/components/schemas/EngagementTrackingObservationInput
+type EngagementTrackingObservationInput struct {
+	// Whether the person agreed to have their opens and clicks tracked, or refused.
+	State EngagementTrackingState `json:"state"`
+	// When the person gave or refused the consent; now when omitted. It may not be in the future.
+	OccurredAt OptNilTimestamp `json:"occurredAt"`
+}
+
+// GetState returns the value of State.
+func (s *EngagementTrackingObservationInput) GetState() EngagementTrackingState {
+	return s.State
+}
+
+// GetOccurredAt returns the value of OccurredAt.
+func (s *EngagementTrackingObservationInput) GetOccurredAt() OptNilTimestamp {
+	return s.OccurredAt
+}
+
+// SetState sets the value of State.
+func (s *EngagementTrackingObservationInput) SetState(val EngagementTrackingState) {
+	s.State = val
+}
+
+// SetOccurredAt sets the value of OccurredAt.
+func (s *EngagementTrackingObservationInput) SetOccurredAt(val OptNilTimestamp) {
+	s.OccurredAt = val
+}
+
+// The answer to an Engagement tracking observation: what became of it, and the consent that stands
+// after it.
+// Ref: #/components/schemas/EngagementTrackingObservationResult
+type EngagementTrackingObservationResult struct {
+	// Whether the observation set the consent.
+	Outcome EngagementTrackingOutcome `json:"outcome"`
+	// The Destination's consent after the observation.
+	Consent EngagementTrackingConsent `json:"consent"`
+}
+
+// GetOutcome returns the value of Outcome.
+func (s *EngagementTrackingObservationResult) GetOutcome() EngagementTrackingOutcome {
+	return s.Outcome
+}
+
+// GetConsent returns the value of Consent.
+func (s *EngagementTrackingObservationResult) GetConsent() EngagementTrackingConsent {
+	return s.Consent
+}
+
+// SetOutcome sets the value of Outcome.
+func (s *EngagementTrackingObservationResult) SetOutcome(val EngagementTrackingOutcome) {
+	s.Outcome = val
+}
+
+// SetConsent sets the value of Consent.
+func (s *EngagementTrackingObservationResult) SetConsent(val EngagementTrackingConsent) {
+	s.Consent = val
+}
+
+// What became of an Engagement tracking observation: it set the consent (`applied`), or it occurred
+// before the consent standing and changed nothing (`superseded`, recorded in the contact's history as
+// `contact.consent_superseded`).
+// Ref: #/components/schemas/EngagementTrackingOutcome
+type EngagementTrackingOutcome string
+
+const (
+	EngagementTrackingOutcomeApplied    EngagementTrackingOutcome = "applied"
+	EngagementTrackingOutcomeSuperseded EngagementTrackingOutcome = "superseded"
+)
+
+// AllValues returns all EngagementTrackingOutcome values.
+func (EngagementTrackingOutcome) AllValues() []EngagementTrackingOutcome {
+	return []EngagementTrackingOutcome{
+		EngagementTrackingOutcomeApplied,
+		EngagementTrackingOutcomeSuperseded,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EngagementTrackingOutcome) MarshalText() ([]byte, error) {
+	switch s {
+	case EngagementTrackingOutcomeApplied:
+		return []byte(s), nil
+	case EngagementTrackingOutcomeSuperseded:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EngagementTrackingOutcome) UnmarshalText(data []byte) error {
+	switch EngagementTrackingOutcome(data) {
+	case EngagementTrackingOutcomeApplied:
+		*s = EngagementTrackingOutcomeApplied
+		return nil
+	case EngagementTrackingOutcomeSuperseded:
+		*s = EngagementTrackingOutcomeSuperseded
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Who recorded an Engagement tracking consent: the person on a page reached from a message (page), a
+// member of the Workspace on the Contact card (manual), the customer through the API or an import
+// (imported), or an On-site form's checkbox (onsite_form). A `denied` applies from any of them; only
+// the person lifts one.
+// Ref: #/components/schemas/EngagementTrackingProvenance
+type EngagementTrackingProvenance string
+
+const (
+	EngagementTrackingProvenancePage       EngagementTrackingProvenance = "page"
+	EngagementTrackingProvenanceManual     EngagementTrackingProvenance = "manual"
+	EngagementTrackingProvenanceImported   EngagementTrackingProvenance = "imported"
+	EngagementTrackingProvenanceOnsiteForm EngagementTrackingProvenance = "onsite_form"
+)
+
+// AllValues returns all EngagementTrackingProvenance values.
+func (EngagementTrackingProvenance) AllValues() []EngagementTrackingProvenance {
+	return []EngagementTrackingProvenance{
+		EngagementTrackingProvenancePage,
+		EngagementTrackingProvenanceManual,
+		EngagementTrackingProvenanceImported,
+		EngagementTrackingProvenanceOnsiteForm,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EngagementTrackingProvenance) MarshalText() ([]byte, error) {
+	switch s {
+	case EngagementTrackingProvenancePage:
+		return []byte(s), nil
+	case EngagementTrackingProvenanceManual:
+		return []byte(s), nil
+	case EngagementTrackingProvenanceImported:
+		return []byte(s), nil
+	case EngagementTrackingProvenanceOnsiteForm:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EngagementTrackingProvenance) UnmarshalText(data []byte) error {
+	switch EngagementTrackingProvenance(data) {
+	case EngagementTrackingProvenancePage:
+		*s = EngagementTrackingProvenancePage
+		return nil
+	case EngagementTrackingProvenanceManual:
+		*s = EngagementTrackingProvenanceManual
+		return nil
+	case EngagementTrackingProvenanceImported:
+		*s = EngagementTrackingProvenanceImported
+		return nil
+	case EngagementTrackingProvenanceOnsiteForm:
+		*s = EngagementTrackingProvenanceOnsiteForm
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// What a Destination's Engagement tracking consent reads as: `granted` or `denied` as recorded, or
+// `default` where nothing is recorded and the Workspace's default decides.
+// Ref: #/components/schemas/EngagementTrackingReading
+type EngagementTrackingReading string
+
+const (
+	EngagementTrackingReadingGranted EngagementTrackingReading = "granted"
+	EngagementTrackingReadingDenied  EngagementTrackingReading = "denied"
+	EngagementTrackingReadingDefault EngagementTrackingReading = "default"
+)
+
+// AllValues returns all EngagementTrackingReading values.
+func (EngagementTrackingReading) AllValues() []EngagementTrackingReading {
+	return []EngagementTrackingReading{
+		EngagementTrackingReadingGranted,
+		EngagementTrackingReadingDenied,
+		EngagementTrackingReadingDefault,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EngagementTrackingReading) MarshalText() ([]byte, error) {
+	switch s {
+	case EngagementTrackingReadingGranted:
+		return []byte(s), nil
+	case EngagementTrackingReadingDenied:
+		return []byte(s), nil
+	case EngagementTrackingReadingDefault:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EngagementTrackingReading) UnmarshalText(data []byte) error {
+	switch EngagementTrackingReading(data) {
+	case EngagementTrackingReadingGranted:
+		*s = EngagementTrackingReadingGranted
+		return nil
+	case EngagementTrackingReadingDenied:
+		*s = EngagementTrackingReadingDenied
+		return nil
+	case EngagementTrackingReadingDefault:
+		*s = EngagementTrackingReadingDefault
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Whether a Destination agreed to have its opens and clicks tracked (ADR 0120).
+// Ref: #/components/schemas/EngagementTrackingState
+type EngagementTrackingState string
+
+const (
+	EngagementTrackingStateGranted EngagementTrackingState = "granted"
+	EngagementTrackingStateDenied  EngagementTrackingState = "denied"
+)
+
+// AllValues returns all EngagementTrackingState values.
+func (EngagementTrackingState) AllValues() []EngagementTrackingState {
+	return []EngagementTrackingState{
+		EngagementTrackingStateGranted,
+		EngagementTrackingStateDenied,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EngagementTrackingState) MarshalText() ([]byte, error) {
+	switch s {
+	case EngagementTrackingStateGranted:
+		return []byte(s), nil
+	case EngagementTrackingStateDenied:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EngagementTrackingState) UnmarshalText(data []byte) error {
+	switch EngagementTrackingState(data) {
+	case EngagementTrackingStateGranted:
+		*s = EngagementTrackingStateGranted
+		return nil
+	case EngagementTrackingStateDenied:
+		*s = EngagementTrackingStateDenied
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -14959,6 +15423,52 @@ func (o OptConsentEvidence) Or(d ConsentEvidence) ConsentEvidence {
 	return d
 }
 
+// NewOptContactEngagementTrackingInput returns new OptContactEngagementTrackingInput with value set to v.
+func NewOptContactEngagementTrackingInput(v ContactEngagementTrackingInput) OptContactEngagementTrackingInput {
+	return OptContactEngagementTrackingInput{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptContactEngagementTrackingInput is optional ContactEngagementTrackingInput.
+type OptContactEngagementTrackingInput struct {
+	Value ContactEngagementTrackingInput
+	Set   bool
+}
+
+// IsSet returns true if OptContactEngagementTrackingInput was set.
+func (o OptContactEngagementTrackingInput) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptContactEngagementTrackingInput) Reset() {
+	var v ContactEngagementTrackingInput
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptContactEngagementTrackingInput) SetTo(v ContactEngagementTrackingInput) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptContactEngagementTrackingInput) Get() (v ContactEngagementTrackingInput, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptContactEngagementTrackingInput) Or(d ContactEngagementTrackingInput) ContactEngagementTrackingInput {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptCustomFieldType returns new OptCustomFieldType with value set to v.
 func NewOptCustomFieldType(v CustomFieldType) OptCustomFieldType {
 	return OptCustomFieldType{
@@ -15091,6 +15601,52 @@ func (o OptEmailAddress) Get() (v EmailAddress, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptEmailAddress) Or(d EmailAddress) EmailAddress {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptEngagementTrackingObservationInput returns new OptEngagementTrackingObservationInput with value set to v.
+func NewOptEngagementTrackingObservationInput(v EngagementTrackingObservationInput) OptEngagementTrackingObservationInput {
+	return OptEngagementTrackingObservationInput{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptEngagementTrackingObservationInput is optional EngagementTrackingObservationInput.
+type OptEngagementTrackingObservationInput struct {
+	Value EngagementTrackingObservationInput
+	Set   bool
+}
+
+// IsSet returns true if OptEngagementTrackingObservationInput was set.
+func (o OptEngagementTrackingObservationInput) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptEngagementTrackingObservationInput) Reset() {
+	var v EngagementTrackingObservationInput
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptEngagementTrackingObservationInput) SetTo(v EngagementTrackingObservationInput) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptEngagementTrackingObservationInput) Get() (v EngagementTrackingObservationInput, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptEngagementTrackingObservationInput) Or(d EngagementTrackingObservationInput) EngagementTrackingObservationInput {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -15823,6 +16379,74 @@ func (o OptNilEmailAddress) Get() (v EmailAddress, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilEmailAddress) Or(d EmailAddress) EmailAddress {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilEngagementTrackingProvenance returns new OptNilEngagementTrackingProvenance with value set to v.
+func NewOptNilEngagementTrackingProvenance(v EngagementTrackingProvenance) OptNilEngagementTrackingProvenance {
+	return OptNilEngagementTrackingProvenance{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilEngagementTrackingProvenance is optional nullable EngagementTrackingProvenance.
+type OptNilEngagementTrackingProvenance struct {
+	Value EngagementTrackingProvenance
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilEngagementTrackingProvenance was set.
+func (o OptNilEngagementTrackingProvenance) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilEngagementTrackingProvenance) Reset() {
+	var v EngagementTrackingProvenance
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilEngagementTrackingProvenance) SetTo(v EngagementTrackingProvenance) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilEngagementTrackingProvenance) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilEngagementTrackingProvenance) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v EngagementTrackingProvenance
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilEngagementTrackingProvenance) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilEngagementTrackingProvenance) Get() (v EngagementTrackingProvenance, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilEngagementTrackingProvenance) Or(d EngagementTrackingProvenance) EngagementTrackingProvenance {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -18914,6 +19538,60 @@ func (s *RateTriple) SetDenominator(val int32) {
 // SetRate sets the value of Rate.
 func (s *RateTriple) SetRate(val NilFloat64) {
 	s.Rate = val
+}
+
+// An Engagement tracking consent the customer collected for a Destination (ADR 0120), recorded as
+// `imported`.
+// Ref: #/components/schemas/RecordEngagementTrackingInput
+type RecordEngagementTrackingInput struct {
+	// The Channel the consent is for. Only `email` is accepted yet.
+	Channel EngagementTrackingChannel `json:"channel"`
+	// The Destination that consented or refused: an email address on `email`.
+	Destination string `json:"destination"`
+	// Whether the person agreed to have their opens and clicks tracked, or refused.
+	State EngagementTrackingState `json:"state"`
+	// When the person gave or refused the consent; now when omitted. It may not be in the future.
+	OccurredAt OptNilTimestamp `json:"occurredAt"`
+}
+
+// GetChannel returns the value of Channel.
+func (s *RecordEngagementTrackingInput) GetChannel() EngagementTrackingChannel {
+	return s.Channel
+}
+
+// GetDestination returns the value of Destination.
+func (s *RecordEngagementTrackingInput) GetDestination() string {
+	return s.Destination
+}
+
+// GetState returns the value of State.
+func (s *RecordEngagementTrackingInput) GetState() EngagementTrackingState {
+	return s.State
+}
+
+// GetOccurredAt returns the value of OccurredAt.
+func (s *RecordEngagementTrackingInput) GetOccurredAt() OptNilTimestamp {
+	return s.OccurredAt
+}
+
+// SetChannel sets the value of Channel.
+func (s *RecordEngagementTrackingInput) SetChannel(val EngagementTrackingChannel) {
+	s.Channel = val
+}
+
+// SetDestination sets the value of Destination.
+func (s *RecordEngagementTrackingInput) SetDestination(val string) {
+	s.Destination = val
+}
+
+// SetState sets the value of State.
+func (s *RecordEngagementTrackingInput) SetState(val EngagementTrackingState) {
+	s.State = val
+}
+
+// SetOccurredAt sets the value of OccurredAt.
+func (s *RecordEngagementTrackingInput) SetOccurredAt(val OptNilTimestamp) {
+	s.OccurredAt = val
 }
 
 // Request body for recording events one by one with per-item results.
@@ -27382,6 +28060,10 @@ type UpsertContactInput struct {
 	// SMS confirmation for the phone, as `POST /confirmations` does. Without it a phone stays unreachable
 	// on SMS. An item with it and no phone fails.
 	SmsConsent OptConsentEvidence `json:"smsConsent"`
+	// The Engagement tracking consent the contact's Destinations gave outside sphericon, recorded as
+	// `imported`, as `POST /engagement-tracking-consents` does. An item with consent for its email and no
+	// email fails.
+	EngagementTracking OptContactEngagementTrackingInput `json:"engagementTracking"`
 }
 
 // GetSubjectId returns the value of SubjectId.
@@ -27449,6 +28131,11 @@ func (s *UpsertContactInput) GetSmsConsent() OptConsentEvidence {
 	return s.SmsConsent
 }
 
+// GetEngagementTracking returns the value of EngagementTracking.
+func (s *UpsertContactInput) GetEngagementTracking() OptContactEngagementTrackingInput {
+	return s.EngagementTracking
+}
+
 // SetSubjectId sets the value of SubjectId.
 func (s *UpsertContactInput) SetSubjectId(val OptNilString) {
 	s.SubjectId = val
@@ -27512,6 +28199,11 @@ func (s *UpsertContactInput) SetCustomFields(val OptNilJsonObject) {
 // SetSmsConsent sets the value of SmsConsent.
 func (s *UpsertContactInput) SetSmsConsent(val OptConsentEvidence) {
 	s.SmsConsent = val
+}
+
+// SetEngagementTracking sets the value of EngagementTracking.
+func (s *UpsertContactInput) SetEngagementTracking(val OptContactEngagementTrackingInput) {
+	s.EngagementTracking = val
 }
 
 // Request body for upserting contacts in batch.

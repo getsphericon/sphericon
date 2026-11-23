@@ -4,7 +4,7 @@
 package resources
 
 import (
-	"encoding/json"
+	jsontext "encoding/json/jsontext"
 	"fmt"
 	ent "github.com/getsphericon/sphericon/ent"
 	automation "github.com/getsphericon/sphericon/ent/automation"
@@ -16,6 +16,7 @@ import (
 	confirmation "github.com/getsphericon/sphericon/ent/confirmation"
 	contact "github.com/getsphericon/sphericon/ent/contact"
 	customfield "github.com/getsphericon/sphericon/ent/customfield"
+	engagementtrackingconsent "github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	rule "github.com/getsphericon/sphericon/ent/rule"
 	schema "github.com/getsphericon/sphericon/ent/schema"
 	suppression "github.com/getsphericon/sphericon/ent/suppression"
@@ -25,6 +26,7 @@ import (
 	external "github.com/getsphericon/sphericon/gen/external"
 	condition "github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	engagementtracking "github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	orders "github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	brandkits "github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	auditlog "github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
@@ -624,6 +626,16 @@ func (c *ConverterImpl) ContactBatchWarnings(source []addresscheck.Flag) []exter
 	}
 	return externalapiContactBatchWarningList
 }
+func (c *ConverterImpl) ContactEngagementTrackingToResource(source engagementtracking.ContactConsents) external.ContactEngagementTracking {
+	var externalapiContactEngagementTracking external.ContactEngagementTracking
+	if source.Destinations != nil {
+		externalapiContactEngagementTracking.Destinations = make([]external.EngagementTrackingConsent, len(source.Destinations))
+		for i := 0; i < len(source.Destinations); i++ {
+			externalapiContactEngagementTracking.Destinations[i] = c.EngagementTrackingConsentToResource(source.Destinations[i])
+		}
+	}
+	return externalapiContactEngagementTracking
+}
 func (c *ConverterImpl) ContactExportSourceToResource(source contact.Source) external.ContactExportSource {
 	var externalapiContactExportSource external.ContactExportSource
 	switch source {
@@ -831,6 +843,77 @@ func (c *ConverterImpl) EndStepToResource(source automations.EndView) external.E
 	externalapiEndStep.ID = external.StepId(source.ID)
 	externalapiEndStep.Type = endStepType(source.Type)
 	return externalapiEndStep
+}
+func (c *ConverterImpl) EngagementTrackingChannelToResource(source channels.Channel) external.EngagementTrackingChannel {
+	var externalapiEngagementTrackingChannel external.EngagementTrackingChannel
+	switch source {
+	case channels.Email:
+		externalapiEngagementTrackingChannel = external.EngagementTrackingChannelEmail
+	case channels.SMS:
+		externalapiEngagementTrackingChannel = external.EngagementTrackingChannelSMS
+	case channels.Telegram:
+		externalapiEngagementTrackingChannel = external.EngagementTrackingChannelTelegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiEngagementTrackingChannel
+}
+func (c *ConverterImpl) EngagementTrackingConsentToResource(source engagementtracking.Consent) external.EngagementTrackingConsent {
+	var externalapiEngagementTrackingConsent external.EngagementTrackingConsent
+	externalapiEngagementTrackingConsent.Channel = c.EngagementTrackingChannelToResource(source.Channel)
+	externalapiEngagementTrackingConsent.Destination = source.Destination
+	externalapiEngagementTrackingConsent.State = c.EngagementTrackingReadingToResource(source.State)
+	externalapiEngagementTrackingConsent.Provenance = optNilEngagementTrackingProvenance(c, source.Provenance)
+	externalapiEngagementTrackingConsent.Effective = c.EngagementTrackingDecisionToResource(source.Effective)
+	externalapiEngagementTrackingConsent.UpdatedAt = optNilTimestamp(source.UpdatedAt)
+	return externalapiEngagementTrackingConsent
+}
+func (c *ConverterImpl) EngagementTrackingDecisionToResource(source engagementtracking.Decision) external.EngagementTrackingDecision {
+	var externalapiEngagementTrackingDecision external.EngagementTrackingDecision
+	switch source {
+	case engagementtracking.DontTrack:
+		externalapiEngagementTrackingDecision = external.EngagementTrackingDecisionDontTrack
+	case engagementtracking.Track:
+		externalapiEngagementTrackingDecision = external.EngagementTrackingDecisionTrack
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiEngagementTrackingDecision
+}
+func (c *ConverterImpl) EngagementTrackingOutcomeToResource(source engagementtracking.Outcome) external.EngagementTrackingOutcome {
+	var externalapiEngagementTrackingOutcome external.EngagementTrackingOutcome
+	switch source {
+	case engagementtracking.Applied:
+		externalapiEngagementTrackingOutcome = external.EngagementTrackingOutcomeApplied
+	case engagementtracking.Superseded:
+		externalapiEngagementTrackingOutcome = external.EngagementTrackingOutcomeSuperseded
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiEngagementTrackingOutcome
+}
+func (c *ConverterImpl) EngagementTrackingProvenanceToResource(source engagementtrackingconsent.Provenance) external.EngagementTrackingProvenance {
+	return external.EngagementTrackingProvenance(source)
+}
+func (c *ConverterImpl) EngagementTrackingReadingToResource(source engagementtracking.Reading) external.EngagementTrackingReading {
+	var externalapiEngagementTrackingReading external.EngagementTrackingReading
+	switch source {
+	case engagementtracking.ReadingDefault:
+		externalapiEngagementTrackingReading = external.EngagementTrackingReadingDefault
+	case engagementtracking.ReadingDenied:
+		externalapiEngagementTrackingReading = external.EngagementTrackingReadingDenied
+	case engagementtracking.ReadingGranted:
+		externalapiEngagementTrackingReading = external.EngagementTrackingReadingGranted
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiEngagementTrackingReading
+}
+func (c *ConverterImpl) EngagementTrackingRecordedToResource(source engagementtracking.Recorded) external.EngagementTrackingObservationResult {
+	var externalapiEngagementTrackingObservationResult external.EngagementTrackingObservationResult
+	externalapiEngagementTrackingObservationResult.Outcome = c.EngagementTrackingOutcomeToResource(source.Outcome)
+	externalapiEngagementTrackingObservationResult.Consent = c.EngagementTrackingConsentToResource(source.Consent)
+	return externalapiEngagementTrackingObservationResult
 }
 func (c *ConverterImpl) EnrollmentFailureKindToResource(source automationrun.FailureKind) external.EnrollmentFailureKind {
 	var externalapiEnrollmentFailureKind external.EnrollmentFailureKind
@@ -2080,7 +2163,7 @@ func (c *ConverterImpl) automationsVersionStepFiguresToExternalapiAutomationVers
 }
 func (c *ConverterImpl) emaildocAgentAttrToExternalapiEmailSchemaAttribute(source emaildoc.AgentAttr) external.EmailSchemaAttribute {
 	var externalapiEmailSchemaAttribute external.EmailSchemaAttribute
-	externalapiEmailSchemaAttribute.Default = c.jsonRawMessageToJxRaw(source.Default)
+	externalapiEmailSchemaAttribute.Default = c.jsontextValueToJxRaw(source.Default)
 	externalapiEmailSchemaAttribute.Type = source.Type
 	if source.Allowed != nil {
 		externalapiEmailSchemaAttribute.Allowed = make([]string, len(source.Allowed))
@@ -2091,7 +2174,7 @@ func (c *ConverterImpl) emaildocAgentAttrToExternalapiEmailSchemaAttribute(sourc
 	externalapiEmailSchemaAttribute.Rule = source.Rule
 	return externalapiEmailSchemaAttribute
 }
-func (c *ConverterImpl) jsonRawMessageToJxRaw(source json.RawMessage) jx.Raw {
+func (c *ConverterImpl) jsontextValueToJxRaw(source jsontext.Value) jx.Raw {
 	var jxRaw jx.Raw
 	if source != nil {
 		jxRaw = make(jx.Raw, len(source))

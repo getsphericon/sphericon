@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/defaultsendcap"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
@@ -115,86 +116,87 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeApiToken                 = "ApiToken"
-	TypeAuditEntry               = "AuditEntry"
-	TypeAuthAttempt              = "AuthAttempt"
-	TypeAutomation               = "Automation"
-	TypeAutomationFigure         = "AutomationFigure"
-	TypeAutomationRun            = "AutomationRun"
-	TypeAutomationSkippedEntry   = "AutomationSkippedEntry"
-	TypeAutomationStepRecord     = "AutomationStepRecord"
-	TypeAutomationVersion        = "AutomationVersion"
-	TypeBinding                  = "Binding"
-	TypeBrandKit                 = "BrandKit"
-	TypeBroadcast                = "Broadcast"
-	TypeBroadcastFigure          = "BroadcastFigure"
-	TypeBroadcastRecipient       = "BroadcastRecipient"
-	TypeCapturedMessage          = "CapturedMessage"
-	TypeConfirmation             = "Confirmation"
-	TypeConsentRecord            = "ConsentRecord"
-	TypeConsentStamp             = "ConsentStamp"
-	TypeContact                  = "Contact"
-	TypeContactTag               = "ContactTag"
-	TypeCustomField              = "CustomField"
-	TypeDefaultSendCap           = "DefaultSendCap"
-	TypeEmailTemplate            = "EmailTemplate"
-	TypeErasure                  = "Erasure"
-	TypeEvent                    = "Event"
-	TypeEventJournalEntry        = "EventJournalEntry"
-	TypeEventReceipt             = "EventReceipt"
-	TypeHeldOrderEvent           = "HeldOrderEvent"
-	TypeHold                     = "Hold"
-	TypeIdentitySecret           = "IdentitySecret"
-	TypeInstanceAuditEntry       = "InstanceAuditEntry"
-	TypeInstanceState            = "InstanceState"
-	TypeIntegration              = "Integration"
-	TypeIntegrationProviderState = "IntegrationProviderState"
-	TypeInvitation               = "Invitation"
-	TypeJoinDomain               = "JoinDomain"
-	TypeLegalDocumentDraft       = "LegalDocumentDraft"
-	TypeLegalDocumentVersion     = "LegalDocumentVersion"
-	TypeMembership               = "Membership"
-	TypeOAuthClient              = "OAuthClient"
-	TypeOAuthCode                = "OAuthCode"
-	TypeOAuthRefreshToken        = "OAuthRefreshToken"
-	TypeOrder                    = "Order"
-	TypeOrderMovement            = "OrderMovement"
-	TypeOutboundMessage          = "OutboundMessage"
-	TypePasskey                  = "Passkey"
-	TypePasskeyChallenge         = "PasskeyChallenge"
-	TypePendingSignup            = "PendingSignup"
-	TypePrivateRelayRange        = "PrivateRelayRange"
-	TypeProviderLimiter          = "ProviderLimiter"
-	TypeRecoveryCode             = "RecoveryCode"
-	TypeRule                     = "Rule"
-	TypeRuleFiring               = "RuleFiring"
-	TypeRuleVersion              = "RuleVersion"
-	TypeRuleVersionTrigger       = "RuleVersionTrigger"
-	TypeSchemaState              = "SchemaState"
-	TypeSecondFactor             = "SecondFactor"
-	TypeSegment                  = "Segment"
-	TypeSendCapLimiter           = "SendCapLimiter"
-	TypeSendingDomain            = "SendingDomain"
-	TypeServiceCredential        = "ServiceCredential"
-	TypeSignupItem               = "SignupItem"
-	TypeSignupSurveyResponse     = "SignupSurveyResponse"
-	TypeStaffMember              = "StaffMember"
-	TypeStartToken               = "StartToken"
-	TypeSuppression              = "Suppression"
-	TypeTag                      = "Tag"
-	TypeTrackedLink              = "TrackedLink"
-	TypeTrackingDomain           = "TrackingDomain"
-	TypeTrackingHostChange       = "TrackingHostChange"
-	TypeUnsubscribe              = "Unsubscribe"
-	TypeUsage                    = "Usage"
-	TypeUser                     = "User"
-	TypeUserIdentity             = "UserIdentity"
-	TypeUserTombstone            = "UserTombstone"
-	TypeVisitor                  = "Visitor"
-	TypeWebhookEndpoint          = "WebhookEndpoint"
-	TypeWebhookEndpointHealth    = "WebhookEndpointHealth"
-	TypeWorkspace                = "Workspace"
-	TypeWorkspaceStanding        = "WorkspaceStanding"
+	TypeApiToken                  = "ApiToken"
+	TypeAuditEntry                = "AuditEntry"
+	TypeAuthAttempt               = "AuthAttempt"
+	TypeAutomation                = "Automation"
+	TypeAutomationFigure          = "AutomationFigure"
+	TypeAutomationRun             = "AutomationRun"
+	TypeAutomationSkippedEntry    = "AutomationSkippedEntry"
+	TypeAutomationStepRecord      = "AutomationStepRecord"
+	TypeAutomationVersion         = "AutomationVersion"
+	TypeBinding                   = "Binding"
+	TypeBrandKit                  = "BrandKit"
+	TypeBroadcast                 = "Broadcast"
+	TypeBroadcastFigure           = "BroadcastFigure"
+	TypeBroadcastRecipient        = "BroadcastRecipient"
+	TypeCapturedMessage           = "CapturedMessage"
+	TypeConfirmation              = "Confirmation"
+	TypeConsentRecord             = "ConsentRecord"
+	TypeConsentStamp              = "ConsentStamp"
+	TypeContact                   = "Contact"
+	TypeContactTag                = "ContactTag"
+	TypeCustomField               = "CustomField"
+	TypeDefaultSendCap            = "DefaultSendCap"
+	TypeEmailTemplate             = "EmailTemplate"
+	TypeEngagementTrackingConsent = "EngagementTrackingConsent"
+	TypeErasure                   = "Erasure"
+	TypeEvent                     = "Event"
+	TypeEventJournalEntry         = "EventJournalEntry"
+	TypeEventReceipt              = "EventReceipt"
+	TypeHeldOrderEvent            = "HeldOrderEvent"
+	TypeHold                      = "Hold"
+	TypeIdentitySecret            = "IdentitySecret"
+	TypeInstanceAuditEntry        = "InstanceAuditEntry"
+	TypeInstanceState             = "InstanceState"
+	TypeIntegration               = "Integration"
+	TypeIntegrationProviderState  = "IntegrationProviderState"
+	TypeInvitation                = "Invitation"
+	TypeJoinDomain                = "JoinDomain"
+	TypeLegalDocumentDraft        = "LegalDocumentDraft"
+	TypeLegalDocumentVersion      = "LegalDocumentVersion"
+	TypeMembership                = "Membership"
+	TypeOAuthClient               = "OAuthClient"
+	TypeOAuthCode                 = "OAuthCode"
+	TypeOAuthRefreshToken         = "OAuthRefreshToken"
+	TypeOrder                     = "Order"
+	TypeOrderMovement             = "OrderMovement"
+	TypeOutboundMessage           = "OutboundMessage"
+	TypePasskey                   = "Passkey"
+	TypePasskeyChallenge          = "PasskeyChallenge"
+	TypePendingSignup             = "PendingSignup"
+	TypePrivateRelayRange         = "PrivateRelayRange"
+	TypeProviderLimiter           = "ProviderLimiter"
+	TypeRecoveryCode              = "RecoveryCode"
+	TypeRule                      = "Rule"
+	TypeRuleFiring                = "RuleFiring"
+	TypeRuleVersion               = "RuleVersion"
+	TypeRuleVersionTrigger        = "RuleVersionTrigger"
+	TypeSchemaState               = "SchemaState"
+	TypeSecondFactor              = "SecondFactor"
+	TypeSegment                   = "Segment"
+	TypeSendCapLimiter            = "SendCapLimiter"
+	TypeSendingDomain             = "SendingDomain"
+	TypeServiceCredential         = "ServiceCredential"
+	TypeSignupItem                = "SignupItem"
+	TypeSignupSurveyResponse      = "SignupSurveyResponse"
+	TypeStaffMember               = "StaffMember"
+	TypeStartToken                = "StartToken"
+	TypeSuppression               = "Suppression"
+	TypeTag                       = "Tag"
+	TypeTrackedLink               = "TrackedLink"
+	TypeTrackingDomain            = "TrackingDomain"
+	TypeTrackingHostChange        = "TrackingHostChange"
+	TypeUnsubscribe               = "Unsubscribe"
+	TypeUsage                     = "Usage"
+	TypeUser                      = "User"
+	TypeUserIdentity              = "UserIdentity"
+	TypeUserTombstone             = "UserTombstone"
+	TypeVisitor                   = "Visitor"
+	TypeWebhookEndpoint           = "WebhookEndpoint"
+	TypeWebhookEndpointHealth     = "WebhookEndpointHealth"
+	TypeWorkspace                 = "Workspace"
+	TypeWorkspaceStanding         = "WorkspaceStanding"
 )
 
 // ApiTokenMutation represents an operation that mutates the ApiToken nodes in the graph.
@@ -21939,26 +21941,27 @@ func (m *ConsentRecordMutation) ResetEdge(name string) error {
 // ConsentStampMutation represents an operation that mutates the ConsentStamp nodes in the graph.
 type ConsentStampMutation struct {
 	config
-	op                        Op
-	typ                       string
-	id                        *int64
-	created_at                *time.Time
-	updated_at                *time.Time
-	channel                   *channels.Channel
-	destination               *string
-	sending_source            *string
-	opt_out_occurred_at       *time.Time
-	opt_out_integration_id    *int64
-	addopt_out_integration_id *int64
-	opt_out_sequence          *int64
-	addopt_out_sequence       *int64
-	confirmation_occurred_at  *time.Time
-	clearedFields             map[string]struct{}
-	workspace                 *int64
-	clearedworkspace          bool
-	done                      bool
-	oldValue                  func(context.Context) (*ConsentStamp, error)
-	predicates                []predicate.ConsentStamp
+	op                              Op
+	typ                             string
+	id                              *int64
+	created_at                      *time.Time
+	updated_at                      *time.Time
+	channel                         *channels.Channel
+	destination                     *string
+	sending_source                  *string
+	opt_out_occurred_at             *time.Time
+	opt_out_integration_id          *int64
+	addopt_out_integration_id       *int64
+	opt_out_sequence                *int64
+	addopt_out_sequence             *int64
+	confirmation_occurred_at        *time.Time
+	engagement_tracking_occurred_at *time.Time
+	clearedFields                   map[string]struct{}
+	workspace                       *int64
+	clearedworkspace                bool
+	done                            bool
+	oldValue                        func(context.Context) (*ConsentStamp, error)
+	predicates                      []predicate.ConsentStamp
 }
 
 var _ ent.Mutation = (*ConsentStampMutation)(nil)
@@ -22519,6 +22522,55 @@ func (m *ConsentStampMutation) ResetConfirmationOccurredAt() {
 	delete(m.clearedFields, consentstamp.FieldConfirmationOccurredAt)
 }
 
+// SetEngagementTrackingOccurredAt sets the "engagement_tracking_occurred_at" field.
+func (m *ConsentStampMutation) SetEngagementTrackingOccurredAt(t time.Time) {
+	m.engagement_tracking_occurred_at = &t
+}
+
+// EngagementTrackingOccurredAt returns the value of the "engagement_tracking_occurred_at" field in the mutation.
+func (m *ConsentStampMutation) EngagementTrackingOccurredAt() (r time.Time, exists bool) {
+	v := m.engagement_tracking_occurred_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEngagementTrackingOccurredAt returns the old "engagement_tracking_occurred_at" field's value of the ConsentStamp entity.
+// If the ConsentStamp object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConsentStampMutation) OldEngagementTrackingOccurredAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEngagementTrackingOccurredAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEngagementTrackingOccurredAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEngagementTrackingOccurredAt: %w", err)
+	}
+	return oldValue.EngagementTrackingOccurredAt, nil
+}
+
+// ClearEngagementTrackingOccurredAt clears the value of the "engagement_tracking_occurred_at" field.
+func (m *ConsentStampMutation) ClearEngagementTrackingOccurredAt() {
+	m.engagement_tracking_occurred_at = nil
+	m.clearedFields[consentstamp.FieldEngagementTrackingOccurredAt] = struct{}{}
+}
+
+// EngagementTrackingOccurredAtCleared returns if the "engagement_tracking_occurred_at" field was cleared in this mutation.
+func (m *ConsentStampMutation) EngagementTrackingOccurredAtCleared() bool {
+	_, ok := m.clearedFields[consentstamp.FieldEngagementTrackingOccurredAt]
+	return ok
+}
+
+// ResetEngagementTrackingOccurredAt resets all changes to the "engagement_tracking_occurred_at" field.
+func (m *ConsentStampMutation) ResetEngagementTrackingOccurredAt() {
+	m.engagement_tracking_occurred_at = nil
+	delete(m.clearedFields, consentstamp.FieldEngagementTrackingOccurredAt)
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *ConsentStampMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -22580,7 +22632,7 @@ func (m *ConsentStampMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ConsentStampMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
 	if m.created_at != nil {
 		fields = append(fields, consentstamp.FieldCreatedAt)
 	}
@@ -22611,6 +22663,9 @@ func (m *ConsentStampMutation) Fields() []string {
 	if m.confirmation_occurred_at != nil {
 		fields = append(fields, consentstamp.FieldConfirmationOccurredAt)
 	}
+	if m.engagement_tracking_occurred_at != nil {
+		fields = append(fields, consentstamp.FieldEngagementTrackingOccurredAt)
+	}
 	return fields
 }
 
@@ -22639,6 +22694,8 @@ func (m *ConsentStampMutation) Field(name string) (ent.Value, bool) {
 		return m.OptOutSequence()
 	case consentstamp.FieldConfirmationOccurredAt:
 		return m.ConfirmationOccurredAt()
+	case consentstamp.FieldEngagementTrackingOccurredAt:
+		return m.EngagementTrackingOccurredAt()
 	}
 	return nil, false
 }
@@ -22668,6 +22725,8 @@ func (m *ConsentStampMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldOptOutSequence(ctx)
 	case consentstamp.FieldConfirmationOccurredAt:
 		return m.OldConfirmationOccurredAt(ctx)
+	case consentstamp.FieldEngagementTrackingOccurredAt:
+		return m.OldEngagementTrackingOccurredAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown ConsentStamp field %s", name)
 }
@@ -22747,6 +22806,13 @@ func (m *ConsentStampMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetConfirmationOccurredAt(v)
 		return nil
+	case consentstamp.FieldEngagementTrackingOccurredAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEngagementTrackingOccurredAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown ConsentStamp field %s", name)
 }
@@ -22816,6 +22882,9 @@ func (m *ConsentStampMutation) ClearedFields() []string {
 	if m.FieldCleared(consentstamp.FieldConfirmationOccurredAt) {
 		fields = append(fields, consentstamp.FieldConfirmationOccurredAt)
 	}
+	if m.FieldCleared(consentstamp.FieldEngagementTrackingOccurredAt) {
+		fields = append(fields, consentstamp.FieldEngagementTrackingOccurredAt)
+	}
 	return fields
 }
 
@@ -22841,6 +22910,9 @@ func (m *ConsentStampMutation) ClearField(name string) error {
 		return nil
 	case consentstamp.FieldConfirmationOccurredAt:
 		m.ClearConfirmationOccurredAt()
+		return nil
+	case consentstamp.FieldEngagementTrackingOccurredAt:
+		m.ClearEngagementTrackingOccurredAt()
 		return nil
 	}
 	return fmt.Errorf("unknown ConsentStamp nullable field %s", name)
@@ -22879,6 +22951,9 @@ func (m *ConsentStampMutation) ResetField(name string) error {
 		return nil
 	case consentstamp.FieldConfirmationOccurredAt:
 		m.ResetConfirmationOccurredAt()
+		return nil
+	case consentstamp.FieldEngagementTrackingOccurredAt:
+		m.ResetEngagementTrackingOccurredAt()
 		return nil
 	}
 	return fmt.Errorf("unknown ConsentStamp field %s", name)
@@ -27593,6 +27668,719 @@ func (m *EmailTemplateMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown EmailTemplate edge %s", name)
+}
+
+// EngagementTrackingConsentMutation represents an operation that mutates the EngagementTrackingConsent nodes in the graph.
+type EngagementTrackingConsentMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int64
+	created_at       *time.Time
+	updated_at       *time.Time
+	channel          *channels.Channel
+	destination      *string
+	state            *engagementtrackingconsent.State
+	provenance       *engagementtrackingconsent.Provenance
+	clearedFields    map[string]struct{}
+	workspace        *int64
+	clearedworkspace bool
+	done             bool
+	oldValue         func(context.Context) (*EngagementTrackingConsent, error)
+	predicates       []predicate.EngagementTrackingConsent
+}
+
+var _ ent.Mutation = (*EngagementTrackingConsentMutation)(nil)
+
+// engagementtrackingconsentOption allows management of the mutation configuration using functional options.
+type engagementtrackingconsentOption func(*EngagementTrackingConsentMutation)
+
+// newEngagementTrackingConsentMutation creates new mutation for the EngagementTrackingConsent entity.
+func newEngagementTrackingConsentMutation(c config, op Op, opts ...engagementtrackingconsentOption) *EngagementTrackingConsentMutation {
+	m := &EngagementTrackingConsentMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeEngagementTrackingConsent,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withEngagementTrackingConsentID sets the ID field of the mutation.
+func withEngagementTrackingConsentID(id int64) engagementtrackingconsentOption {
+	return func(m *EngagementTrackingConsentMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *EngagementTrackingConsent
+		)
+		m.oldValue = func(ctx context.Context) (*EngagementTrackingConsent, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().EngagementTrackingConsent.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withEngagementTrackingConsent sets the old EngagementTrackingConsent of the mutation.
+func withEngagementTrackingConsent(node *EngagementTrackingConsent) engagementtrackingconsentOption {
+	return func(m *EngagementTrackingConsentMutation) {
+		m.oldValue = func(context.Context) (*EngagementTrackingConsent, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m EngagementTrackingConsentMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m EngagementTrackingConsentMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of EngagementTrackingConsent entities.
+func (m *EngagementTrackingConsentMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *EngagementTrackingConsentMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *EngagementTrackingConsentMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().EngagementTrackingConsent.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *EngagementTrackingConsentMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *EngagementTrackingConsentMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the EngagementTrackingConsent entity.
+// If the EngagementTrackingConsent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EngagementTrackingConsentMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *EngagementTrackingConsentMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *EngagementTrackingConsentMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *EngagementTrackingConsentMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the EngagementTrackingConsent entity.
+// If the EngagementTrackingConsent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EngagementTrackingConsentMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *EngagementTrackingConsentMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *EngagementTrackingConsentMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *EngagementTrackingConsentMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the EngagementTrackingConsent entity.
+// If the EngagementTrackingConsent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EngagementTrackingConsentMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *EngagementTrackingConsentMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetChannel sets the "channel" field.
+func (m *EngagementTrackingConsentMutation) SetChannel(c channels.Channel) {
+	m.channel = &c
+}
+
+// Channel returns the value of the "channel" field in the mutation.
+func (m *EngagementTrackingConsentMutation) Channel() (r channels.Channel, exists bool) {
+	v := m.channel
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChannel returns the old "channel" field's value of the EngagementTrackingConsent entity.
+// If the EngagementTrackingConsent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EngagementTrackingConsentMutation) OldChannel(ctx context.Context) (v channels.Channel, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChannel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChannel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChannel: %w", err)
+	}
+	return oldValue.Channel, nil
+}
+
+// ResetChannel resets all changes to the "channel" field.
+func (m *EngagementTrackingConsentMutation) ResetChannel() {
+	m.channel = nil
+}
+
+// SetDestination sets the "destination" field.
+func (m *EngagementTrackingConsentMutation) SetDestination(s string) {
+	m.destination = &s
+}
+
+// Destination returns the value of the "destination" field in the mutation.
+func (m *EngagementTrackingConsentMutation) Destination() (r string, exists bool) {
+	v := m.destination
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDestination returns the old "destination" field's value of the EngagementTrackingConsent entity.
+// If the EngagementTrackingConsent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EngagementTrackingConsentMutation) OldDestination(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDestination is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDestination requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDestination: %w", err)
+	}
+	return oldValue.Destination, nil
+}
+
+// ResetDestination resets all changes to the "destination" field.
+func (m *EngagementTrackingConsentMutation) ResetDestination() {
+	m.destination = nil
+}
+
+// SetState sets the "state" field.
+func (m *EngagementTrackingConsentMutation) SetState(e engagementtrackingconsent.State) {
+	m.state = &e
+}
+
+// State returns the value of the "state" field in the mutation.
+func (m *EngagementTrackingConsentMutation) State() (r engagementtrackingconsent.State, exists bool) {
+	v := m.state
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldState returns the old "state" field's value of the EngagementTrackingConsent entity.
+// If the EngagementTrackingConsent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EngagementTrackingConsentMutation) OldState(ctx context.Context) (v engagementtrackingconsent.State, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldState is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldState requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldState: %w", err)
+	}
+	return oldValue.State, nil
+}
+
+// ResetState resets all changes to the "state" field.
+func (m *EngagementTrackingConsentMutation) ResetState() {
+	m.state = nil
+}
+
+// SetProvenance sets the "provenance" field.
+func (m *EngagementTrackingConsentMutation) SetProvenance(e engagementtrackingconsent.Provenance) {
+	m.provenance = &e
+}
+
+// Provenance returns the value of the "provenance" field in the mutation.
+func (m *EngagementTrackingConsentMutation) Provenance() (r engagementtrackingconsent.Provenance, exists bool) {
+	v := m.provenance
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProvenance returns the old "provenance" field's value of the EngagementTrackingConsent entity.
+// If the EngagementTrackingConsent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EngagementTrackingConsentMutation) OldProvenance(ctx context.Context) (v engagementtrackingconsent.Provenance, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProvenance is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProvenance requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProvenance: %w", err)
+	}
+	return oldValue.Provenance, nil
+}
+
+// ResetProvenance resets all changes to the "provenance" field.
+func (m *EngagementTrackingConsentMutation) ResetProvenance() {
+	m.provenance = nil
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *EngagementTrackingConsentMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[engagementtrackingconsent.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *EngagementTrackingConsentMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *EngagementTrackingConsentMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *EngagementTrackingConsentMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// Where appends a list predicates to the EngagementTrackingConsentMutation builder.
+func (m *EngagementTrackingConsentMutation) Where(ps ...predicate.EngagementTrackingConsent) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the EngagementTrackingConsentMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *EngagementTrackingConsentMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.EngagementTrackingConsent, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *EngagementTrackingConsentMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *EngagementTrackingConsentMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (EngagementTrackingConsent).
+func (m *EngagementTrackingConsentMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *EngagementTrackingConsentMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.created_at != nil {
+		fields = append(fields, engagementtrackingconsent.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, engagementtrackingconsent.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, engagementtrackingconsent.FieldWorkspaceID)
+	}
+	if m.channel != nil {
+		fields = append(fields, engagementtrackingconsent.FieldChannel)
+	}
+	if m.destination != nil {
+		fields = append(fields, engagementtrackingconsent.FieldDestination)
+	}
+	if m.state != nil {
+		fields = append(fields, engagementtrackingconsent.FieldState)
+	}
+	if m.provenance != nil {
+		fields = append(fields, engagementtrackingconsent.FieldProvenance)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *EngagementTrackingConsentMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case engagementtrackingconsent.FieldCreatedAt:
+		return m.CreatedAt()
+	case engagementtrackingconsent.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case engagementtrackingconsent.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case engagementtrackingconsent.FieldChannel:
+		return m.Channel()
+	case engagementtrackingconsent.FieldDestination:
+		return m.Destination()
+	case engagementtrackingconsent.FieldState:
+		return m.State()
+	case engagementtrackingconsent.FieldProvenance:
+		return m.Provenance()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *EngagementTrackingConsentMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case engagementtrackingconsent.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case engagementtrackingconsent.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case engagementtrackingconsent.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case engagementtrackingconsent.FieldChannel:
+		return m.OldChannel(ctx)
+	case engagementtrackingconsent.FieldDestination:
+		return m.OldDestination(ctx)
+	case engagementtrackingconsent.FieldState:
+		return m.OldState(ctx)
+	case engagementtrackingconsent.FieldProvenance:
+		return m.OldProvenance(ctx)
+	}
+	return nil, fmt.Errorf("unknown EngagementTrackingConsent field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *EngagementTrackingConsentMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case engagementtrackingconsent.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case engagementtrackingconsent.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case engagementtrackingconsent.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case engagementtrackingconsent.FieldChannel:
+		v, ok := value.(channels.Channel)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChannel(v)
+		return nil
+	case engagementtrackingconsent.FieldDestination:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDestination(v)
+		return nil
+	case engagementtrackingconsent.FieldState:
+		v, ok := value.(engagementtrackingconsent.State)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetState(v)
+		return nil
+	case engagementtrackingconsent.FieldProvenance:
+		v, ok := value.(engagementtrackingconsent.Provenance)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProvenance(v)
+		return nil
+	}
+	return fmt.Errorf("unknown EngagementTrackingConsent field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *EngagementTrackingConsentMutation) AddedFields() []string {
+	var fields []string
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *EngagementTrackingConsentMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *EngagementTrackingConsentMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown EngagementTrackingConsent numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *EngagementTrackingConsentMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *EngagementTrackingConsentMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *EngagementTrackingConsentMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown EngagementTrackingConsent nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *EngagementTrackingConsentMutation) ResetField(name string) error {
+	switch name {
+	case engagementtrackingconsent.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case engagementtrackingconsent.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case engagementtrackingconsent.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case engagementtrackingconsent.FieldChannel:
+		m.ResetChannel()
+		return nil
+	case engagementtrackingconsent.FieldDestination:
+		m.ResetDestination()
+		return nil
+	case engagementtrackingconsent.FieldState:
+		m.ResetState()
+		return nil
+	case engagementtrackingconsent.FieldProvenance:
+		m.ResetProvenance()
+		return nil
+	}
+	return fmt.Errorf("unknown EngagementTrackingConsent field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *EngagementTrackingConsentMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.workspace != nil {
+		edges = append(edges, engagementtrackingconsent.EdgeWorkspace)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *EngagementTrackingConsentMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case engagementtrackingconsent.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *EngagementTrackingConsentMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *EngagementTrackingConsentMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *EngagementTrackingConsentMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedworkspace {
+		edges = append(edges, engagementtrackingconsent.EdgeWorkspace)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *EngagementTrackingConsentMutation) EdgeCleared(name string) bool {
+	switch name {
+	case engagementtrackingconsent.EdgeWorkspace:
+		return m.clearedworkspace
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *EngagementTrackingConsentMutation) ClearEdge(name string) error {
+	switch name {
+	case engagementtrackingconsent.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown EngagementTrackingConsent unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *EngagementTrackingConsentMutation) ResetEdge(name string) error {
+	switch name {
+	case engagementtrackingconsent.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown EngagementTrackingConsent edge %s", name)
 }
 
 // ErasureMutation represents an operation that mutates the Erasure nodes in the graph.
@@ -78539,202 +79327,205 @@ func (m *WebhookEndpointHealthMutation) ResetEdge(name string) error {
 // WorkspaceMutation represents an operation that mutates the Workspace nodes in the graph.
 type WorkspaceMutation struct {
 	config
-	op                                 Op
-	typ                                string
-	id                                 *int64
-	created_at                         *time.Time
-	updated_at                         *time.Time
-	discarded_at                       *time.Time
-	revision                           *int64
-	addrevision                        *int64
-	name                               *string
-	public_id                          *string
-	collect_key                        *string
-	require_confirmed_opt_in           *bool
-	confirmation_from_email            *string
-	confirmation_from_name             *string
-	confirmation_subject               *string
-	confirmation_intro                 *string
-	postal_address                     *string
-	retention_days                     *int
-	addretention_days                  *int
-	timezone                           *string
-	reporting_currency                 *string
-	attribution_window_days            *int
-	addattribution_window_days         *int
-	send_cap                           *int
-	addsend_cap                        *int
-	domain_join_enabled                *bool
-	second_factor_required_at          *time.Time
-	erased_at                          *time.Time
-	suspended_at                       *time.Time
-	suspended_by_kind                  *workspace.SuspendedByKind
-	suspended_by_id                    *string
-	suspension_reason                  *string
-	cleared_at                         *time.Time
-	abuse_exempt                       *bool
-	clearedFields                      map[string]struct{}
-	contacts                           map[int64]struct{}
-	removedcontacts                    map[int64]struct{}
-	clearedcontacts                    bool
-	custom_fields                      map[int64]struct{}
-	removedcustom_fields               map[int64]struct{}
-	clearedcustom_fields               bool
-	tags                               map[int64]struct{}
-	removedtags                        map[int64]struct{}
-	clearedtags                        bool
-	segments                           map[int64]struct{}
-	removedsegments                    map[int64]struct{}
-	clearedsegments                    bool
-	events                             map[int64]struct{}
-	removedevents                      map[int64]struct{}
-	clearedevents                      bool
-	event_journal_entries              map[int64]struct{}
-	removedevent_journal_entries       map[int64]struct{}
-	clearedevent_journal_entries       bool
-	orders                             map[int64]struct{}
-	removedorders                      map[int64]struct{}
-	clearedorders                      bool
-	order_movements                    map[int64]struct{}
-	removedorder_movements             map[int64]struct{}
-	clearedorder_movements             bool
-	held_order_events                  map[int64]struct{}
-	removedheld_order_events           map[int64]struct{}
-	clearedheld_order_events           bool
-	visitors                           map[int64]struct{}
-	removedvisitors                    map[int64]struct{}
-	clearedvisitors                    bool
-	bindings                           map[int64]struct{}
-	removedbindings                    map[int64]struct{}
-	clearedbindings                    bool
-	start_tokens                       map[int64]struct{}
-	removedstart_tokens                map[int64]struct{}
-	clearedstart_tokens                bool
-	api_tokens                         map[int64]struct{}
-	removedapi_tokens                  map[int64]struct{}
-	clearedapi_tokens                  bool
-	oauth_codes                        map[int64]struct{}
-	removedoauth_codes                 map[int64]struct{}
-	clearedoauth_codes                 bool
-	integrations                       map[int64]struct{}
-	removedintegrations                map[int64]struct{}
-	clearedintegrations                bool
-	sending_domains                    map[int64]struct{}
-	removedsending_domains             map[int64]struct{}
-	clearedsending_domains             bool
-	join_domains                       map[int64]struct{}
-	removedjoin_domains                map[int64]struct{}
-	clearedjoin_domains                bool
-	tracking_domains                   map[int64]struct{}
-	removedtracking_domains            map[int64]struct{}
-	clearedtracking_domains            bool
-	provider_limiters                  map[int64]struct{}
-	removedprovider_limiters           map[int64]struct{}
-	clearedprovider_limiters           bool
-	send_cap_limiters                  map[int64]struct{}
-	removedsend_cap_limiters           map[int64]struct{}
-	clearedsend_cap_limiters           bool
-	holds                              map[int64]struct{}
-	removedholds                       map[int64]struct{}
-	clearedholds                       bool
-	broadcasts                         map[int64]struct{}
-	removedbroadcasts                  map[int64]struct{}
-	clearedbroadcasts                  bool
-	broadcast_recipients               map[int64]struct{}
-	removedbroadcast_recipients        map[int64]struct{}
-	clearedbroadcast_recipients        bool
-	broadcast_figures                  map[int64]struct{}
-	removedbroadcast_figures           map[int64]struct{}
-	clearedbroadcast_figures           bool
-	automation_figures                 map[int64]struct{}
-	removedautomation_figures          map[int64]struct{}
-	clearedautomation_figures          bool
-	automation_skipped_entries         map[int64]struct{}
-	removedautomation_skipped_entries  map[int64]struct{}
-	clearedautomation_skipped_entries  bool
-	email_templates                    map[int64]struct{}
-	removedemail_templates             map[int64]struct{}
-	clearedemail_templates             bool
-	brand_kits                         map[int64]struct{}
-	removedbrand_kits                  map[int64]struct{}
-	clearedbrand_kits                  bool
-	identity_secrets                   map[int64]struct{}
-	removedidentity_secrets            map[int64]struct{}
-	clearedidentity_secrets            bool
-	automations                        map[int64]struct{}
-	removedautomations                 map[int64]struct{}
-	clearedautomations                 bool
-	automation_versions                map[int64]struct{}
-	removedautomation_versions         map[int64]struct{}
-	clearedautomation_versions         bool
-	automation_runs                    map[int64]struct{}
-	removedautomation_runs             map[int64]struct{}
-	clearedautomation_runs             bool
-	automation_step_records            map[int64]struct{}
-	removedautomation_step_records     map[int64]struct{}
-	clearedautomation_step_records     bool
-	rules                              map[int64]struct{}
-	removedrules                       map[int64]struct{}
-	clearedrules                       bool
-	rule_versions                      map[int64]struct{}
-	removedrule_versions               map[int64]struct{}
-	clearedrule_versions               bool
-	rule_version_triggers              map[int64]struct{}
-	removedrule_version_triggers       map[int64]struct{}
-	clearedrule_version_triggers       bool
-	rule_firings                       map[int64]struct{}
-	removedrule_firings                map[int64]struct{}
-	clearedrule_firings                bool
-	webhook_endpoints                  map[int64]struct{}
-	removedwebhook_endpoints           map[int64]struct{}
-	clearedwebhook_endpoints           bool
-	suppressions                       map[int64]struct{}
-	removedsuppressions                map[int64]struct{}
-	clearedsuppressions                bool
-	unsubscribes                       map[int64]struct{}
-	removedunsubscribes                map[int64]struct{}
-	clearedunsubscribes                bool
-	confirmations                      map[int64]struct{}
-	removedconfirmations               map[int64]struct{}
-	clearedconfirmations               bool
-	consent_stamps                     map[int64]struct{}
-	removedconsent_stamps              map[int64]struct{}
-	clearedconsent_stamps              bool
-	outbound_messages                  map[int64]struct{}
-	removedoutbound_messages           map[int64]struct{}
-	clearedoutbound_messages           bool
-	tracked_links                      map[int64]struct{}
-	removedtracked_links               map[int64]struct{}
-	clearedtracked_links               bool
-	captured_messages                  map[int64]struct{}
-	removedcaptured_messages           map[int64]struct{}
-	clearedcaptured_messages           bool
-	memberships                        map[int64]struct{}
-	removedmemberships                 map[int64]struct{}
-	clearedmemberships                 bool
-	invitations                        map[int64]struct{}
-	removedinvitations                 map[int64]struct{}
-	clearedinvitations                 bool
-	audit_entries                      map[int64]struct{}
-	removedaudit_entries               map[int64]struct{}
-	clearedaudit_entries               bool
-	erasures                           map[int64]struct{}
-	removederasures                    map[int64]struct{}
-	clearederasures                    bool
-	usages                             map[int64]struct{}
-	removedusages                      map[int64]struct{}
-	clearedusages                      bool
-	integration_provider_states        map[int64]struct{}
-	removedintegration_provider_states map[int64]struct{}
-	clearedintegration_provider_states bool
-	webhook_endpoint_healths           map[int64]struct{}
-	removedwebhook_endpoint_healths    map[int64]struct{}
-	clearedwebhook_endpoint_healths    bool
-	standing                           *int64
-	clearedstanding                    bool
-	done                               bool
-	oldValue                           func(context.Context) (*Workspace, error)
-	predicates                         []predicate.Workspace
+	op                                  Op
+	typ                                 string
+	id                                  *int64
+	created_at                          *time.Time
+	updated_at                          *time.Time
+	discarded_at                        *time.Time
+	revision                            *int64
+	addrevision                         *int64
+	name                                *string
+	public_id                           *string
+	collect_key                         *string
+	require_confirmed_opt_in            *bool
+	confirmation_from_email             *string
+	confirmation_from_name              *string
+	confirmation_subject                *string
+	confirmation_intro                  *string
+	postal_address                      *string
+	retention_days                      *int
+	addretention_days                   *int
+	timezone                            *string
+	reporting_currency                  *string
+	attribution_window_days             *int
+	addattribution_window_days          *int
+	send_cap                            *int
+	addsend_cap                         *int
+	domain_join_enabled                 *bool
+	second_factor_required_at           *time.Time
+	erased_at                           *time.Time
+	suspended_at                        *time.Time
+	suspended_by_kind                   *workspace.SuspendedByKind
+	suspended_by_id                     *string
+	suspension_reason                   *string
+	cleared_at                          *time.Time
+	abuse_exempt                        *bool
+	clearedFields                       map[string]struct{}
+	contacts                            map[int64]struct{}
+	removedcontacts                     map[int64]struct{}
+	clearedcontacts                     bool
+	custom_fields                       map[int64]struct{}
+	removedcustom_fields                map[int64]struct{}
+	clearedcustom_fields                bool
+	tags                                map[int64]struct{}
+	removedtags                         map[int64]struct{}
+	clearedtags                         bool
+	segments                            map[int64]struct{}
+	removedsegments                     map[int64]struct{}
+	clearedsegments                     bool
+	events                              map[int64]struct{}
+	removedevents                       map[int64]struct{}
+	clearedevents                       bool
+	event_journal_entries               map[int64]struct{}
+	removedevent_journal_entries        map[int64]struct{}
+	clearedevent_journal_entries        bool
+	orders                              map[int64]struct{}
+	removedorders                       map[int64]struct{}
+	clearedorders                       bool
+	order_movements                     map[int64]struct{}
+	removedorder_movements              map[int64]struct{}
+	clearedorder_movements              bool
+	held_order_events                   map[int64]struct{}
+	removedheld_order_events            map[int64]struct{}
+	clearedheld_order_events            bool
+	visitors                            map[int64]struct{}
+	removedvisitors                     map[int64]struct{}
+	clearedvisitors                     bool
+	bindings                            map[int64]struct{}
+	removedbindings                     map[int64]struct{}
+	clearedbindings                     bool
+	start_tokens                        map[int64]struct{}
+	removedstart_tokens                 map[int64]struct{}
+	clearedstart_tokens                 bool
+	api_tokens                          map[int64]struct{}
+	removedapi_tokens                   map[int64]struct{}
+	clearedapi_tokens                   bool
+	oauth_codes                         map[int64]struct{}
+	removedoauth_codes                  map[int64]struct{}
+	clearedoauth_codes                  bool
+	integrations                        map[int64]struct{}
+	removedintegrations                 map[int64]struct{}
+	clearedintegrations                 bool
+	sending_domains                     map[int64]struct{}
+	removedsending_domains              map[int64]struct{}
+	clearedsending_domains              bool
+	join_domains                        map[int64]struct{}
+	removedjoin_domains                 map[int64]struct{}
+	clearedjoin_domains                 bool
+	tracking_domains                    map[int64]struct{}
+	removedtracking_domains             map[int64]struct{}
+	clearedtracking_domains             bool
+	provider_limiters                   map[int64]struct{}
+	removedprovider_limiters            map[int64]struct{}
+	clearedprovider_limiters            bool
+	send_cap_limiters                   map[int64]struct{}
+	removedsend_cap_limiters            map[int64]struct{}
+	clearedsend_cap_limiters            bool
+	holds                               map[int64]struct{}
+	removedholds                        map[int64]struct{}
+	clearedholds                        bool
+	broadcasts                          map[int64]struct{}
+	removedbroadcasts                   map[int64]struct{}
+	clearedbroadcasts                   bool
+	broadcast_recipients                map[int64]struct{}
+	removedbroadcast_recipients         map[int64]struct{}
+	clearedbroadcast_recipients         bool
+	broadcast_figures                   map[int64]struct{}
+	removedbroadcast_figures            map[int64]struct{}
+	clearedbroadcast_figures            bool
+	automation_figures                  map[int64]struct{}
+	removedautomation_figures           map[int64]struct{}
+	clearedautomation_figures           bool
+	automation_skipped_entries          map[int64]struct{}
+	removedautomation_skipped_entries   map[int64]struct{}
+	clearedautomation_skipped_entries   bool
+	email_templates                     map[int64]struct{}
+	removedemail_templates              map[int64]struct{}
+	clearedemail_templates              bool
+	brand_kits                          map[int64]struct{}
+	removedbrand_kits                   map[int64]struct{}
+	clearedbrand_kits                   bool
+	identity_secrets                    map[int64]struct{}
+	removedidentity_secrets             map[int64]struct{}
+	clearedidentity_secrets             bool
+	automations                         map[int64]struct{}
+	removedautomations                  map[int64]struct{}
+	clearedautomations                  bool
+	automation_versions                 map[int64]struct{}
+	removedautomation_versions          map[int64]struct{}
+	clearedautomation_versions          bool
+	automation_runs                     map[int64]struct{}
+	removedautomation_runs              map[int64]struct{}
+	clearedautomation_runs              bool
+	automation_step_records             map[int64]struct{}
+	removedautomation_step_records      map[int64]struct{}
+	clearedautomation_step_records      bool
+	rules                               map[int64]struct{}
+	removedrules                        map[int64]struct{}
+	clearedrules                        bool
+	rule_versions                       map[int64]struct{}
+	removedrule_versions                map[int64]struct{}
+	clearedrule_versions                bool
+	rule_version_triggers               map[int64]struct{}
+	removedrule_version_triggers        map[int64]struct{}
+	clearedrule_version_triggers        bool
+	rule_firings                        map[int64]struct{}
+	removedrule_firings                 map[int64]struct{}
+	clearedrule_firings                 bool
+	webhook_endpoints                   map[int64]struct{}
+	removedwebhook_endpoints            map[int64]struct{}
+	clearedwebhook_endpoints            bool
+	suppressions                        map[int64]struct{}
+	removedsuppressions                 map[int64]struct{}
+	clearedsuppressions                 bool
+	unsubscribes                        map[int64]struct{}
+	removedunsubscribes                 map[int64]struct{}
+	clearedunsubscribes                 bool
+	confirmations                       map[int64]struct{}
+	removedconfirmations                map[int64]struct{}
+	clearedconfirmations                bool
+	consent_stamps                      map[int64]struct{}
+	removedconsent_stamps               map[int64]struct{}
+	clearedconsent_stamps               bool
+	engagement_tracking_consents        map[int64]struct{}
+	removedengagement_tracking_consents map[int64]struct{}
+	clearedengagement_tracking_consents bool
+	outbound_messages                   map[int64]struct{}
+	removedoutbound_messages            map[int64]struct{}
+	clearedoutbound_messages            bool
+	tracked_links                       map[int64]struct{}
+	removedtracked_links                map[int64]struct{}
+	clearedtracked_links                bool
+	captured_messages                   map[int64]struct{}
+	removedcaptured_messages            map[int64]struct{}
+	clearedcaptured_messages            bool
+	memberships                         map[int64]struct{}
+	removedmemberships                  map[int64]struct{}
+	clearedmemberships                  bool
+	invitations                         map[int64]struct{}
+	removedinvitations                  map[int64]struct{}
+	clearedinvitations                  bool
+	audit_entries                       map[int64]struct{}
+	removedaudit_entries                map[int64]struct{}
+	clearedaudit_entries                bool
+	erasures                            map[int64]struct{}
+	removederasures                     map[int64]struct{}
+	clearederasures                     bool
+	usages                              map[int64]struct{}
+	removedusages                       map[int64]struct{}
+	clearedusages                       bool
+	integration_provider_states         map[int64]struct{}
+	removedintegration_provider_states  map[int64]struct{}
+	clearedintegration_provider_states  bool
+	webhook_endpoint_healths            map[int64]struct{}
+	removedwebhook_endpoint_healths     map[int64]struct{}
+	clearedwebhook_endpoint_healths     bool
+	standing                            *int64
+	clearedstanding                     bool
+	done                                bool
+	oldValue                            func(context.Context) (*Workspace, error)
+	predicates                          []predicate.Workspace
 }
 
 var _ ent.Mutation = (*WorkspaceMutation)(nil)
@@ -82384,6 +83175,60 @@ func (m *WorkspaceMutation) ResetConsentStamps() {
 	m.removedconsent_stamps = nil
 }
 
+// AddEngagementTrackingConsentIDs adds the "engagement_tracking_consents" edge to the EngagementTrackingConsent entity by ids.
+func (m *WorkspaceMutation) AddEngagementTrackingConsentIDs(ids ...int64) {
+	if m.engagement_tracking_consents == nil {
+		m.engagement_tracking_consents = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.engagement_tracking_consents[ids[i]] = struct{}{}
+	}
+}
+
+// ClearEngagementTrackingConsents clears the "engagement_tracking_consents" edge to the EngagementTrackingConsent entity.
+func (m *WorkspaceMutation) ClearEngagementTrackingConsents() {
+	m.clearedengagement_tracking_consents = true
+}
+
+// EngagementTrackingConsentsCleared reports if the "engagement_tracking_consents" edge to the EngagementTrackingConsent entity was cleared.
+func (m *WorkspaceMutation) EngagementTrackingConsentsCleared() bool {
+	return m.clearedengagement_tracking_consents
+}
+
+// RemoveEngagementTrackingConsentIDs removes the "engagement_tracking_consents" edge to the EngagementTrackingConsent entity by IDs.
+func (m *WorkspaceMutation) RemoveEngagementTrackingConsentIDs(ids ...int64) {
+	if m.removedengagement_tracking_consents == nil {
+		m.removedengagement_tracking_consents = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.engagement_tracking_consents, ids[i])
+		m.removedengagement_tracking_consents[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedEngagementTrackingConsents returns the removed IDs of the "engagement_tracking_consents" edge to the EngagementTrackingConsent entity.
+func (m *WorkspaceMutation) RemovedEngagementTrackingConsentsIDs() (ids []int64) {
+	for id := range m.removedengagement_tracking_consents {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// EngagementTrackingConsentsIDs returns the "engagement_tracking_consents" edge IDs in the mutation.
+func (m *WorkspaceMutation) EngagementTrackingConsentsIDs() (ids []int64) {
+	for id := range m.engagement_tracking_consents {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetEngagementTrackingConsents resets all changes to the "engagement_tracking_consents" edge.
+func (m *WorkspaceMutation) ResetEngagementTrackingConsents() {
+	m.engagement_tracking_consents = nil
+	m.clearedengagement_tracking_consents = false
+	m.removedengagement_tracking_consents = nil
+}
+
 // AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by ids.
 func (m *WorkspaceMutation) AddOutboundMessageIDs(ids ...int64) {
 	if m.outbound_messages == nil {
@@ -83694,7 +84539,7 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WorkspaceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 53)
+	edges := make([]string, 0, 54)
 	if m.contacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -83820,6 +84665,9 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	}
 	if m.consent_stamps != nil {
 		edges = append(edges, workspace.EdgeConsentStamps)
+	}
+	if m.engagement_tracking_consents != nil {
+		edges = append(edges, workspace.EdgeEngagementTrackingConsents)
 	}
 	if m.outbound_messages != nil {
 		edges = append(edges, workspace.EdgeOutboundMessages)
@@ -84113,6 +84961,12 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeEngagementTrackingConsents:
+		ids := make([]ent.Value, 0, len(m.engagement_tracking_consents))
+		for id := range m.engagement_tracking_consents {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeOutboundMessages:
 		ids := make([]ent.Value, 0, len(m.outbound_messages))
 		for id := range m.outbound_messages {
@@ -84183,7 +85037,7 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WorkspaceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 53)
+	edges := make([]string, 0, 54)
 	if m.removedcontacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -84309,6 +85163,9 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	}
 	if m.removedconsent_stamps != nil {
 		edges = append(edges, workspace.EdgeConsentStamps)
+	}
+	if m.removedengagement_tracking_consents != nil {
+		edges = append(edges, workspace.EdgeEngagementTrackingConsents)
 	}
 	if m.removedoutbound_messages != nil {
 		edges = append(edges, workspace.EdgeOutboundMessages)
@@ -84599,6 +85456,12 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeEngagementTrackingConsents:
+		ids := make([]ent.Value, 0, len(m.removedengagement_tracking_consents))
+		for id := range m.removedengagement_tracking_consents {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeOutboundMessages:
 		ids := make([]ent.Value, 0, len(m.removedoutbound_messages))
 		for id := range m.removedoutbound_messages {
@@ -84665,7 +85528,7 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WorkspaceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 53)
+	edges := make([]string, 0, 54)
 	if m.clearedcontacts {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -84792,6 +85655,9 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	if m.clearedconsent_stamps {
 		edges = append(edges, workspace.EdgeConsentStamps)
 	}
+	if m.clearedengagement_tracking_consents {
+		edges = append(edges, workspace.EdgeEngagementTrackingConsents)
+	}
 	if m.clearedoutbound_messages {
 		edges = append(edges, workspace.EdgeOutboundMessages)
 	}
@@ -84916,6 +85782,8 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearedconfirmations
 	case workspace.EdgeConsentStamps:
 		return m.clearedconsent_stamps
+	case workspace.EdgeEngagementTrackingConsents:
+		return m.clearedengagement_tracking_consents
 	case workspace.EdgeOutboundMessages:
 		return m.clearedoutbound_messages
 	case workspace.EdgeTrackedLinks:
@@ -85082,6 +85950,9 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 		return nil
 	case workspace.EdgeConsentStamps:
 		m.ResetConsentStamps()
+		return nil
+	case workspace.EdgeEngagementTrackingConsents:
+		m.ResetEngagementTrackingConsents()
 		return nil
 	case workspace.EdgeOutboundMessages:
 		m.ResetOutboundMessages()

@@ -2782,6 +2782,12 @@ export const zSystemEventAction = z.enum([
   'sms.confirmed',
   'sms.clicked',
   'sms.unsubscribed',
+  'email.engagement_tracking_granted',
+  'email.engagement_tracking_denied',
+  'sms.engagement_tracking_granted',
+  'sms.engagement_tracking_denied',
+  'telegram.engagement_tracking_granted',
+  'telegram.engagement_tracking_denied',
   'contact.consent_superseded'
 ]);
 

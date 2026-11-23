@@ -158,6 +158,26 @@ func (_u *ConsentStampUpdate) ClearConfirmationOccurredAt() *ConsentStampUpdate 
 	return _u
 }
 
+// SetEngagementTrackingOccurredAt sets the "engagement_tracking_occurred_at" field.
+func (_u *ConsentStampUpdate) SetEngagementTrackingOccurredAt(v time.Time) *ConsentStampUpdate {
+	_u.mutation.SetEngagementTrackingOccurredAt(v)
+	return _u
+}
+
+// SetNillableEngagementTrackingOccurredAt sets the "engagement_tracking_occurred_at" field if the given value is not nil.
+func (_u *ConsentStampUpdate) SetNillableEngagementTrackingOccurredAt(v *time.Time) *ConsentStampUpdate {
+	if v != nil {
+		_u.SetEngagementTrackingOccurredAt(*v)
+	}
+	return _u
+}
+
+// ClearEngagementTrackingOccurredAt clears the value of the "engagement_tracking_occurred_at" field.
+func (_u *ConsentStampUpdate) ClearEngagementTrackingOccurredAt() *ConsentStampUpdate {
+	_u.mutation.ClearEngagementTrackingOccurredAt()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *ConsentStampUpdate) SetWorkspace(v *Workspace) *ConsentStampUpdate {
 	return _u.SetWorkspaceID(v.ID)
@@ -276,6 +296,12 @@ func (_u *ConsentStampUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if _u.mutation.ConfirmationOccurredAtCleared() {
 		_spec.ClearField(consentstamp.FieldConfirmationOccurredAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.EngagementTrackingOccurredAt(); ok {
+		_spec.SetField(consentstamp.FieldEngagementTrackingOccurredAt, field.TypeTime, value)
+	}
+	if _u.mutation.EngagementTrackingOccurredAtCleared() {
+		_spec.ClearField(consentstamp.FieldEngagementTrackingOccurredAt, field.TypeTime)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -456,6 +482,26 @@ func (_u *ConsentStampUpdateOne) ClearConfirmationOccurredAt() *ConsentStampUpda
 	return _u
 }
 
+// SetEngagementTrackingOccurredAt sets the "engagement_tracking_occurred_at" field.
+func (_u *ConsentStampUpdateOne) SetEngagementTrackingOccurredAt(v time.Time) *ConsentStampUpdateOne {
+	_u.mutation.SetEngagementTrackingOccurredAt(v)
+	return _u
+}
+
+// SetNillableEngagementTrackingOccurredAt sets the "engagement_tracking_occurred_at" field if the given value is not nil.
+func (_u *ConsentStampUpdateOne) SetNillableEngagementTrackingOccurredAt(v *time.Time) *ConsentStampUpdateOne {
+	if v != nil {
+		_u.SetEngagementTrackingOccurredAt(*v)
+	}
+	return _u
+}
+
+// ClearEngagementTrackingOccurredAt clears the value of the "engagement_tracking_occurred_at" field.
+func (_u *ConsentStampUpdateOne) ClearEngagementTrackingOccurredAt() *ConsentStampUpdateOne {
+	_u.mutation.ClearEngagementTrackingOccurredAt()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *ConsentStampUpdateOne) SetWorkspace(v *Workspace) *ConsentStampUpdateOne {
 	return _u.SetWorkspaceID(v.ID)
@@ -604,6 +650,12 @@ func (_u *ConsentStampUpdateOne) sqlSave(ctx context.Context) (_node *ConsentSta
 	}
 	if _u.mutation.ConfirmationOccurredAtCleared() {
 		_spec.ClearField(consentstamp.FieldConfirmationOccurredAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.EngagementTrackingOccurredAt(); ok {
+		_spec.SetField(consentstamp.FieldEngagementTrackingOccurredAt, field.TypeTime, value)
+	}
+	if _u.mutation.EngagementTrackingOccurredAtCleared() {
+		_spec.ClearField(consentstamp.FieldEngagementTrackingOccurredAt, field.TypeTime)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

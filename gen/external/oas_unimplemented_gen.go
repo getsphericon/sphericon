@@ -501,6 +501,31 @@ func (UnimplementedHandler) EmailsSend(ctx context.Context, req *SendTransaction
 	return r, ht.ErrNotImplemented
 }
 
+// EngagementTrackingCreate implements EngagementTracking_create operation.
+//
+// Record whether a destination agreed to have its opens and clicks tracked, as an `imported` consent
+// collected outside sphericon (a consent banner, an account setting). A `denied` always applies, and
+// is kept in the immutable `email.engagement_tracking_denied` event; a `granted` is kept in
+// `email.engagement_tracking_granted` and is refused with a conflict over a standing `denied`: only
+// the person can lift a refusal. An observation that occurred before the consent standing changes
+// nothing and is answered as `superseded`; of two of the same moment the refusal wins.
+//
+// POST /engagement-tracking-consents
+func (UnimplementedHandler) EngagementTrackingCreate(ctx context.Context, req *RecordEngagementTrackingInput) (r *EngagementTrackingObservationResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// EngagementTrackingGetForContact implements EngagementTracking_getForContact operation.
+//
+// Read whether each Destination of a contact (its email address) is tracked: the consent recorded with
+// who recorded it, or `default` where none is, with what it means now. The consent is keyed by the
+// Destination, so it follows the address the contact has now.
+//
+// GET /contacts/{contactId}/engagement-tracking
+func (UnimplementedHandler) EngagementTrackingGetForContact(ctx context.Context, params EngagementTrackingGetForContactParams) (r *ContactEngagementTracking, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // EnrollmentsGet implements Enrollments_get operation.
 //
 // Get one Enrollment of an Automation. Needs the enrollments:read scope.

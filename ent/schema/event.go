@@ -14,12 +14,16 @@ import (
 )
 
 // ExpirableEventPredicate selects the Events that expire by age (ADR 0019): every
-// Event except the evidentiary ones (consent proof, complaints, unsubscribes and
-// hard bounces). A bounce with no bounceKind counts as soft. It is the
+// Event except the evidentiary ones (consent proof, Engagement tracking consent, complaints,
+// unsubscribes and hard bounces). A bounce with no bounceKind counts as soft. It is the
 // single source of truth for both the partial index below and the retention
 // delete (internal/infra/events.PruneEvents), so the delete can always use the index.
 const ExpirableEventPredicate = "action NOT IN ('" + systemevent.MarketingConfirmed + "', '" + systemevent.SmsConfirmed +
-	"', '" + systemevent.EmailComplained + "', '" + systemevent.EmailUnsubscribed + "') AND NOT (action = '" +
+	"', '" + systemevent.EmailComplained + "', '" + systemevent.EmailUnsubscribed +
+	"', '" + systemevent.EmailEngagementTrackingGranted + "', '" + systemevent.EmailEngagementTrackingDenied +
+	"', '" + systemevent.SmsEngagementTrackingGranted + "', '" + systemevent.SmsEngagementTrackingDenied +
+	"', '" + systemevent.TelegramEngagementTrackingGranted + "', '" + systemevent.TelegramEngagementTrackingDenied +
+	"') AND NOT (action = '" +
 	systemevent.EmailBounced + "' AND COALESCE(properties->>'" + systemevent.BounceKindProperty + "', '') = '" +
 	systemevent.BounceKindHard + "')"
 

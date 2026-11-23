@@ -52,6 +52,24 @@ export function useEventActionLabel() {
       [SystemEventAction.EMAIL_CLICKED]: t(($) => $.eventActions.emailClicked),
       [SystemEventAction.EMAIL_UNSUBSCRIBED]: t(($) => $.eventActions.emailUnsubscribed),
       [SystemEventAction.MARKETING_CONFIRMED]: t(($) => $.eventActions.marketingConfirmed),
+      [SystemEventAction.EMAIL_ENGAGEMENT_TRACKING_GRANTED]: t(
+        ($) => $.eventActions.emailEngagementTrackingGranted,
+      ),
+      [SystemEventAction.EMAIL_ENGAGEMENT_TRACKING_DENIED]: t(
+        ($) => $.eventActions.emailEngagementTrackingDenied,
+      ),
+      [SystemEventAction.SMS_ENGAGEMENT_TRACKING_GRANTED]: t(
+        ($) => $.eventActions.smsEngagementTrackingGranted,
+      ),
+      [SystemEventAction.SMS_ENGAGEMENT_TRACKING_DENIED]: t(
+        ($) => $.eventActions.smsEngagementTrackingDenied,
+      ),
+      [SystemEventAction.TELEGRAM_ENGAGEMENT_TRACKING_GRANTED]: t(
+        ($) => $.eventActions.telegramEngagementTrackingGranted,
+      ),
+      [SystemEventAction.TELEGRAM_ENGAGEMENT_TRACKING_DENIED]: t(
+        ($) => $.eventActions.telegramEngagementTrackingDenied,
+      ),
       [AUDIT_ENTRY_EVENT]: t(($) => $.eventActions.auditEntry),
     }
     const worded = (action: string): action is WordedAction => Object.hasOwn(words, action)

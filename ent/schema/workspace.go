@@ -225,6 +225,7 @@ func (Workspace) Edges() []ent.Edge {
 		edge.To("unsubscribes", Unsubscribe.Type),
 		edge.To("confirmations", Confirmation.Type),
 		edge.To("consent_stamps", ConsentStamp.Type),
+		edge.To("engagement_tracking_consents", EngagementTrackingConsent.Type),
 		edge.To("outbound_messages", OutboundMessage.Type),
 		edge.To("tracked_links", TrackedLink.Type),
 		edge.To("captured_messages", CapturedMessage.Type),

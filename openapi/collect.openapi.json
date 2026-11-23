@@ -554,6 +554,12 @@
           "sms.confirmed",
           "sms.clicked",
           "sms.unsubscribed",
+          "email.engagement_tracking_granted",
+          "email.engagement_tracking_denied",
+          "sms.engagement_tracking_granted",
+          "sms.engagement_tracking_denied",
+          "telegram.engagement_tracking_granted",
+          "telegram.engagement_tracking_denied",
           "contact.consent_superseded"
         ],
         "description": "The action of a System event: an Event sphericon itself records, never a customer. An Event's\n`action`, an Automation's trigger and a condition carry one of these or a customer's own action,\nwhich may not take a System event's namespace; a webhook's event types may also name the Audit\nlog's `audit.entry`."

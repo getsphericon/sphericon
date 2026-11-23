@@ -170,6 +170,26 @@ model UpsertContactInput {
    * `imported` SMS confirmation for the phone, as `POST /confirmations` does. Without it a phone
    * stays unreachable on SMS. An item with it and no phone fails */
   smsConsent?: ConsentEvidence;
+
+  /** The Engagement tracking consent the contact's Destinations gave outside sphericon, recorded as
+   * `imported`, as `POST /engagement-tracking-consents` does. An item with consent for its email
+   * and no email fails */
+  engagementTracking?: ContactEngagementTrackingInput;
+}
+
+/** The Engagement tracking consent a contact upsert item carries, per Destination of the contact */
+model ContactEngagementTrackingInput {
+  /** The consent of the contact's email address: the item's, else the one the contact has */
+  email?: EngagementTrackingObservationInput;
+}
+
+/** One Engagement tracking observation of a contact's Destination */
+model EngagementTrackingObservationInput {
+  /** Whether the person agreed to have their opens and clicks tracked, or refused */
+  state: EngagementTrackingState;
+
+  /** When the person gave or refused the consent; now when omitted. It may not be in the future */
+  occurredAt?: Timestamp | null;
 }
 
 /** Request body for upserting contacts in batch */

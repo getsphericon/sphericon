@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
@@ -1063,6 +1064,21 @@ func (_c *WorkspaceCreate) AddConsentStamps(v ...*ConsentStamp) *WorkspaceCreate
 		ids[i] = v[i].ID
 	}
 	return _c.AddConsentStampIDs(ids...)
+}
+
+// AddEngagementTrackingConsentIDs adds the "engagement_tracking_consents" edge to the EngagementTrackingConsent entity by IDs.
+func (_c *WorkspaceCreate) AddEngagementTrackingConsentIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddEngagementTrackingConsentIDs(ids...)
+	return _c
+}
+
+// AddEngagementTrackingConsents adds the "engagement_tracking_consents" edges to the EngagementTrackingConsent entity.
+func (_c *WorkspaceCreate) AddEngagementTrackingConsents(v ...*EngagementTrackingConsent) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddEngagementTrackingConsentIDs(ids...)
 }
 
 // AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
@@ -2206,6 +2222,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(consentstamp.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.EngagementTrackingConsentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.EngagementTrackingConsentsTable,
+			Columns: []string{workspace.EngagementTrackingConsentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(engagementtrackingconsent.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

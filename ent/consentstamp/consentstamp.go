@@ -36,6 +36,8 @@ const (
 	FieldOptOutSequence = "opt_out_sequence"
 	// FieldConfirmationOccurredAt holds the string denoting the confirmation_occurred_at field in the database.
 	FieldConfirmationOccurredAt = "confirmation_occurred_at"
+	// FieldEngagementTrackingOccurredAt holds the string denoting the engagement_tracking_occurred_at field in the database.
+	FieldEngagementTrackingOccurredAt = "engagement_tracking_occurred_at"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// Table holds the table name of the consentstamp in the database.
@@ -62,6 +64,7 @@ var Columns = []string{
 	FieldOptOutIntegrationID,
 	FieldOptOutSequence,
 	FieldConfirmationOccurredAt,
+	FieldEngagementTrackingOccurredAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -153,6 +156,11 @@ func ByOptOutSequence(opts ...sql.OrderTermOption) OrderOption {
 // ByConfirmationOccurredAt orders the results by the confirmation_occurred_at field.
 func ByConfirmationOccurredAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldConfirmationOccurredAt, opts...).ToFunc()
+}
+
+// ByEngagementTrackingOccurredAt orders the results by the engagement_tracking_occurred_at field.
+func ByEngagementTrackingOccurredAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEngagementTrackingOccurredAt, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.

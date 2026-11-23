@@ -155,6 +155,8 @@ const (
 	EdgeConfirmations = "confirmations"
 	// EdgeConsentStamps holds the string denoting the consent_stamps edge name in mutations.
 	EdgeConsentStamps = "consent_stamps"
+	// EdgeEngagementTrackingConsents holds the string denoting the engagement_tracking_consents edge name in mutations.
+	EdgeEngagementTrackingConsents = "engagement_tracking_consents"
 	// EdgeOutboundMessages holds the string denoting the outbound_messages edge name in mutations.
 	EdgeOutboundMessages = "outbound_messages"
 	// EdgeTrackedLinks holds the string denoting the tracked_links edge name in mutations.
@@ -480,6 +482,13 @@ const (
 	ConsentStampsInverseTable = "consent_stamps"
 	// ConsentStampsColumn is the table column denoting the consent_stamps relation/edge.
 	ConsentStampsColumn = "workspace_id"
+	// EngagementTrackingConsentsTable is the table that holds the engagement_tracking_consents relation/edge.
+	EngagementTrackingConsentsTable = "engagement_tracking_consents"
+	// EngagementTrackingConsentsInverseTable is the table name for the EngagementTrackingConsent entity.
+	// It exists in this package in order to avoid circular dependency with the "engagementtrackingconsent" package.
+	EngagementTrackingConsentsInverseTable = "engagement_tracking_consents"
+	// EngagementTrackingConsentsColumn is the table column denoting the engagement_tracking_consents relation/edge.
+	EngagementTrackingConsentsColumn = "workspace_id"
 	// OutboundMessagesTable is the table that holds the outbound_messages relation/edge.
 	OutboundMessagesTable = "outbound_messages"
 	// OutboundMessagesInverseTable is the table name for the OutboundMessage entity.
@@ -1415,6 +1424,20 @@ func ByConsentStamps(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByEngagementTrackingConsentsCount orders the results by engagement_tracking_consents count.
+func ByEngagementTrackingConsentsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newEngagementTrackingConsentsStep(), opts...)
+	}
+}
+
+// ByEngagementTrackingConsents orders the results by engagement_tracking_consents terms.
+func ByEngagementTrackingConsents(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newEngagementTrackingConsentsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByOutboundMessagesCount orders the results by outbound_messages count.
 func ByOutboundMessagesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -1860,6 +1883,13 @@ func newConsentStampsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ConsentStampsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ConsentStampsTable, ConsentStampsColumn),
+	)
+}
+func newEngagementTrackingConsentsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(EngagementTrackingConsentsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, EngagementTrackingConsentsTable, EngagementTrackingConsentsColumn),
 	)
 }
 func newOutboundMessagesStep() *sqlgraph.Step {

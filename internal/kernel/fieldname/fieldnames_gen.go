@@ -63,6 +63,7 @@ const (
 	Email                 = "email"
 	Enabled               = "enabled"
 	Endpoint              = "endpoint"
+	EngagementTracking    = "engagementTracking"
 	EnrollmentID          = "enrollmentId"
 	EnrollmentKey         = "enrollmentKey"
 	Entries               = "entries"

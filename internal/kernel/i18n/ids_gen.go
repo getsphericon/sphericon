@@ -145,6 +145,7 @@ var (
 	ErrorsConsentSourceEmpty                              = ID{key: "errors.consent_source_empty"}
 	ErrorsConsentSuperseded                               = ID{key: "errors.consent_superseded"}
 	ErrorsConsentWordingEmpty                             = ID{key: "errors.consent_wording_empty"}
+	ErrorsContactEmailMissing                             = ID{key: "errors.contact_email_missing"}
 	ErrorsContactExportIdentifier                         = ID{key: "errors.contact_export_identifier"}
 	ErrorsContactIdentityRequired                         = ID{key: "errors.contact_identity_required"}
 	ErrorsContactNotFound                                 = ID{key: "errors.contact_not_found"}
@@ -169,6 +170,11 @@ var (
 	ErrorsEmailInvalid                                    = ID{key: "errors.email_invalid"}
 	ErrorsEmailRequired                                   = ID{key: "errors.email_required"}
 	ErrorsEmailVerificationRequired                       = ID{key: "errors.email_verification_required"}
+	ErrorsEngagementTrackingChannel                       = ID{key: "errors.engagement_tracking_channel"}
+	ErrorsEngagementTrackingInFuture                      = ID{key: "errors.engagement_tracking_in_future"}
+	ErrorsEngagementTrackingProvenance                    = ID{key: "errors.engagement_tracking_provenance"}
+	ErrorsEngagementTrackingRefused                       = ID{key: "errors.engagement_tracking_refused"}
+	ErrorsEngagementTrackingState                         = ID{key: "errors.engagement_tracking_state"}
 	ErrorsEnrollmentNotFound                              = ID{key: "errors.enrollment_not_found"}
 	ErrorsErasureIdentifier                               = ID{key: "errors.erasure_identifier"}
 	ErrorsErasureNothingFound                             = ID{key: "errors.erasure_nothing_found"}

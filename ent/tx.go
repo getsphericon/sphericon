@@ -60,6 +60,8 @@ type Tx struct {
 	DefaultSendCap *DefaultSendCapClient
 	// EmailTemplate is the client for interacting with the EmailTemplate builders.
 	EmailTemplate *EmailTemplateClient
+	// EngagementTrackingConsent is the client for interacting with the EngagementTrackingConsent builders.
+	EngagementTrackingConsent *EngagementTrackingConsentClient
 	// Erasure is the client for interacting with the Erasure builders.
 	Erasure *ErasureClient
 	// Event is the client for interacting with the Event builders.
@@ -328,6 +330,7 @@ func (tx *Tx) init() {
 	tx.CustomField = NewCustomFieldClient(tx.config)
 	tx.DefaultSendCap = NewDefaultSendCapClient(tx.config)
 	tx.EmailTemplate = NewEmailTemplateClient(tx.config)
+	tx.EngagementTrackingConsent = NewEngagementTrackingConsentClient(tx.config)
 	tx.Erasure = NewErasureClient(tx.config)
 	tx.Event = NewEventClient(tx.config)
 	tx.EventJournalEntry = NewEventJournalEntryClient(tx.config)

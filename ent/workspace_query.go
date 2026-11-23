@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
@@ -74,65 +75,66 @@ import (
 // WorkspaceQuery is the builder for querying Workspace entities.
 type WorkspaceQuery struct {
 	config
-	ctx                           *QueryContext
-	order                         []workspace.OrderOption
-	inters                        []Interceptor
-	predicates                    []predicate.Workspace
-	withContacts                  *ContactQuery
-	withCustomFields              *CustomFieldQuery
-	withTags                      *TagQuery
-	withContactTags               *ContactTagQuery
-	withSegments                  *SegmentQuery
-	withEvents                    *EventQuery
-	withEventJournalEntries       *EventJournalEntryQuery
-	withOrders                    *OrderQuery
-	withOrderMovements            *OrderMovementQuery
-	withHeldOrderEvents           *HeldOrderEventQuery
-	withVisitors                  *VisitorQuery
-	withBindings                  *BindingQuery
-	withStartTokens               *StartTokenQuery
-	withAPITokens                 *ApiTokenQuery
-	withOauthCodes                *OAuthCodeQuery
-	withIntegrations              *IntegrationQuery
-	withSendingDomains            *SendingDomainQuery
-	withJoinDomains               *JoinDomainQuery
-	withTrackingDomains           *TrackingDomainQuery
-	withProviderLimiters          *ProviderLimiterQuery
-	withSendCapLimiters           *SendCapLimiterQuery
-	withHolds                     *HoldQuery
-	withBroadcasts                *BroadcastQuery
-	withBroadcastRecipients       *BroadcastRecipientQuery
-	withBroadcastFigures          *BroadcastFigureQuery
-	withAutomationFigures         *AutomationFigureQuery
-	withAutomationSkippedEntries  *AutomationSkippedEntryQuery
-	withEmailTemplates            *EmailTemplateQuery
-	withBrandKits                 *BrandKitQuery
-	withIdentitySecrets           *IdentitySecretQuery
-	withAutomations               *AutomationQuery
-	withAutomationVersions        *AutomationVersionQuery
-	withAutomationRuns            *AutomationRunQuery
-	withAutomationStepRecords     *AutomationStepRecordQuery
-	withRules                     *RuleQuery
-	withRuleVersions              *RuleVersionQuery
-	withRuleVersionTriggers       *RuleVersionTriggerQuery
-	withRuleFirings               *RuleFiringQuery
-	withWebhookEndpoints          *WebhookEndpointQuery
-	withSuppressions              *SuppressionQuery
-	withUnsubscribes              *UnsubscribeQuery
-	withConfirmations             *ConfirmationQuery
-	withConsentStamps             *ConsentStampQuery
-	withOutboundMessages          *OutboundMessageQuery
-	withTrackedLinks              *TrackedLinkQuery
-	withCapturedMessages          *CapturedMessageQuery
-	withMemberships               *MembershipQuery
-	withInvitations               *InvitationQuery
-	withAuditEntries              *AuditEntryQuery
-	withErasures                  *ErasureQuery
-	withUsages                    *UsageQuery
-	withIntegrationProviderStates *IntegrationProviderStateQuery
-	withWebhookEndpointHealths    *WebhookEndpointHealthQuery
-	withStanding                  *WorkspaceStandingQuery
-	modifiers                     []func(*sql.Selector)
+	ctx                            *QueryContext
+	order                          []workspace.OrderOption
+	inters                         []Interceptor
+	predicates                     []predicate.Workspace
+	withContacts                   *ContactQuery
+	withCustomFields               *CustomFieldQuery
+	withTags                       *TagQuery
+	withContactTags                *ContactTagQuery
+	withSegments                   *SegmentQuery
+	withEvents                     *EventQuery
+	withEventJournalEntries        *EventJournalEntryQuery
+	withOrders                     *OrderQuery
+	withOrderMovements             *OrderMovementQuery
+	withHeldOrderEvents            *HeldOrderEventQuery
+	withVisitors                   *VisitorQuery
+	withBindings                   *BindingQuery
+	withStartTokens                *StartTokenQuery
+	withAPITokens                  *ApiTokenQuery
+	withOauthCodes                 *OAuthCodeQuery
+	withIntegrations               *IntegrationQuery
+	withSendingDomains             *SendingDomainQuery
+	withJoinDomains                *JoinDomainQuery
+	withTrackingDomains            *TrackingDomainQuery
+	withProviderLimiters           *ProviderLimiterQuery
+	withSendCapLimiters            *SendCapLimiterQuery
+	withHolds                      *HoldQuery
+	withBroadcasts                 *BroadcastQuery
+	withBroadcastRecipients        *BroadcastRecipientQuery
+	withBroadcastFigures           *BroadcastFigureQuery
+	withAutomationFigures          *AutomationFigureQuery
+	withAutomationSkippedEntries   *AutomationSkippedEntryQuery
+	withEmailTemplates             *EmailTemplateQuery
+	withBrandKits                  *BrandKitQuery
+	withIdentitySecrets            *IdentitySecretQuery
+	withAutomations                *AutomationQuery
+	withAutomationVersions         *AutomationVersionQuery
+	withAutomationRuns             *AutomationRunQuery
+	withAutomationStepRecords      *AutomationStepRecordQuery
+	withRules                      *RuleQuery
+	withRuleVersions               *RuleVersionQuery
+	withRuleVersionTriggers        *RuleVersionTriggerQuery
+	withRuleFirings                *RuleFiringQuery
+	withWebhookEndpoints           *WebhookEndpointQuery
+	withSuppressions               *SuppressionQuery
+	withUnsubscribes               *UnsubscribeQuery
+	withConfirmations              *ConfirmationQuery
+	withConsentStamps              *ConsentStampQuery
+	withEngagementTrackingConsents *EngagementTrackingConsentQuery
+	withOutboundMessages           *OutboundMessageQuery
+	withTrackedLinks               *TrackedLinkQuery
+	withCapturedMessages           *CapturedMessageQuery
+	withMemberships                *MembershipQuery
+	withInvitations                *InvitationQuery
+	withAuditEntries               *AuditEntryQuery
+	withErasures                   *ErasureQuery
+	withUsages                     *UsageQuery
+	withIntegrationProviderStates  *IntegrationProviderStateQuery
+	withWebhookEndpointHealths     *WebhookEndpointHealthQuery
+	withStanding                   *WorkspaceStandingQuery
+	modifiers                      []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -1115,6 +1117,28 @@ func (_q *WorkspaceQuery) QueryConsentStamps() *ConsentStampQuery {
 	return query
 }
 
+// QueryEngagementTrackingConsents chains the current query on the "engagement_tracking_consents" edge.
+func (_q *WorkspaceQuery) QueryEngagementTrackingConsents() *EngagementTrackingConsentQuery {
+	query := (&EngagementTrackingConsentClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(engagementtrackingconsent.Table, engagementtrackingconsent.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.EngagementTrackingConsentsTable, workspace.EngagementTrackingConsentsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // QueryOutboundMessages chains the current query on the "outbound_messages" edge.
 func (_q *WorkspaceQuery) QueryOutboundMessages() *OutboundMessageQuery {
 	query := (&OutboundMessageClient{config: _q.config}).Query()
@@ -1544,65 +1568,66 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		return nil
 	}
 	return &WorkspaceQuery{
-		config:                        _q.config,
-		ctx:                           _q.ctx.Clone(),
-		order:                         append([]workspace.OrderOption{}, _q.order...),
-		inters:                        append([]Interceptor{}, _q.inters...),
-		predicates:                    append([]predicate.Workspace{}, _q.predicates...),
-		withContacts:                  _q.withContacts.Clone(),
-		withCustomFields:              _q.withCustomFields.Clone(),
-		withTags:                      _q.withTags.Clone(),
-		withContactTags:               _q.withContactTags.Clone(),
-		withSegments:                  _q.withSegments.Clone(),
-		withEvents:                    _q.withEvents.Clone(),
-		withEventJournalEntries:       _q.withEventJournalEntries.Clone(),
-		withOrders:                    _q.withOrders.Clone(),
-		withOrderMovements:            _q.withOrderMovements.Clone(),
-		withHeldOrderEvents:           _q.withHeldOrderEvents.Clone(),
-		withVisitors:                  _q.withVisitors.Clone(),
-		withBindings:                  _q.withBindings.Clone(),
-		withStartTokens:               _q.withStartTokens.Clone(),
-		withAPITokens:                 _q.withAPITokens.Clone(),
-		withOauthCodes:                _q.withOauthCodes.Clone(),
-		withIntegrations:              _q.withIntegrations.Clone(),
-		withSendingDomains:            _q.withSendingDomains.Clone(),
-		withJoinDomains:               _q.withJoinDomains.Clone(),
-		withTrackingDomains:           _q.withTrackingDomains.Clone(),
-		withProviderLimiters:          _q.withProviderLimiters.Clone(),
-		withSendCapLimiters:           _q.withSendCapLimiters.Clone(),
-		withHolds:                     _q.withHolds.Clone(),
-		withBroadcasts:                _q.withBroadcasts.Clone(),
-		withBroadcastRecipients:       _q.withBroadcastRecipients.Clone(),
-		withBroadcastFigures:          _q.withBroadcastFigures.Clone(),
-		withAutomationFigures:         _q.withAutomationFigures.Clone(),
-		withAutomationSkippedEntries:  _q.withAutomationSkippedEntries.Clone(),
-		withEmailTemplates:            _q.withEmailTemplates.Clone(),
-		withBrandKits:                 _q.withBrandKits.Clone(),
-		withIdentitySecrets:           _q.withIdentitySecrets.Clone(),
-		withAutomations:               _q.withAutomations.Clone(),
-		withAutomationVersions:        _q.withAutomationVersions.Clone(),
-		withAutomationRuns:            _q.withAutomationRuns.Clone(),
-		withAutomationStepRecords:     _q.withAutomationStepRecords.Clone(),
-		withRules:                     _q.withRules.Clone(),
-		withRuleVersions:              _q.withRuleVersions.Clone(),
-		withRuleVersionTriggers:       _q.withRuleVersionTriggers.Clone(),
-		withRuleFirings:               _q.withRuleFirings.Clone(),
-		withWebhookEndpoints:          _q.withWebhookEndpoints.Clone(),
-		withSuppressions:              _q.withSuppressions.Clone(),
-		withUnsubscribes:              _q.withUnsubscribes.Clone(),
-		withConfirmations:             _q.withConfirmations.Clone(),
-		withConsentStamps:             _q.withConsentStamps.Clone(),
-		withOutboundMessages:          _q.withOutboundMessages.Clone(),
-		withTrackedLinks:              _q.withTrackedLinks.Clone(),
-		withCapturedMessages:          _q.withCapturedMessages.Clone(),
-		withMemberships:               _q.withMemberships.Clone(),
-		withInvitations:               _q.withInvitations.Clone(),
-		withAuditEntries:              _q.withAuditEntries.Clone(),
-		withErasures:                  _q.withErasures.Clone(),
-		withUsages:                    _q.withUsages.Clone(),
-		withIntegrationProviderStates: _q.withIntegrationProviderStates.Clone(),
-		withWebhookEndpointHealths:    _q.withWebhookEndpointHealths.Clone(),
-		withStanding:                  _q.withStanding.Clone(),
+		config:                         _q.config,
+		ctx:                            _q.ctx.Clone(),
+		order:                          append([]workspace.OrderOption{}, _q.order...),
+		inters:                         append([]Interceptor{}, _q.inters...),
+		predicates:                     append([]predicate.Workspace{}, _q.predicates...),
+		withContacts:                   _q.withContacts.Clone(),
+		withCustomFields:               _q.withCustomFields.Clone(),
+		withTags:                       _q.withTags.Clone(),
+		withContactTags:                _q.withContactTags.Clone(),
+		withSegments:                   _q.withSegments.Clone(),
+		withEvents:                     _q.withEvents.Clone(),
+		withEventJournalEntries:        _q.withEventJournalEntries.Clone(),
+		withOrders:                     _q.withOrders.Clone(),
+		withOrderMovements:             _q.withOrderMovements.Clone(),
+		withHeldOrderEvents:            _q.withHeldOrderEvents.Clone(),
+		withVisitors:                   _q.withVisitors.Clone(),
+		withBindings:                   _q.withBindings.Clone(),
+		withStartTokens:                _q.withStartTokens.Clone(),
+		withAPITokens:                  _q.withAPITokens.Clone(),
+		withOauthCodes:                 _q.withOauthCodes.Clone(),
+		withIntegrations:               _q.withIntegrations.Clone(),
+		withSendingDomains:             _q.withSendingDomains.Clone(),
+		withJoinDomains:                _q.withJoinDomains.Clone(),
+		withTrackingDomains:            _q.withTrackingDomains.Clone(),
+		withProviderLimiters:           _q.withProviderLimiters.Clone(),
+		withSendCapLimiters:            _q.withSendCapLimiters.Clone(),
+		withHolds:                      _q.withHolds.Clone(),
+		withBroadcasts:                 _q.withBroadcasts.Clone(),
+		withBroadcastRecipients:        _q.withBroadcastRecipients.Clone(),
+		withBroadcastFigures:           _q.withBroadcastFigures.Clone(),
+		withAutomationFigures:          _q.withAutomationFigures.Clone(),
+		withAutomationSkippedEntries:   _q.withAutomationSkippedEntries.Clone(),
+		withEmailTemplates:             _q.withEmailTemplates.Clone(),
+		withBrandKits:                  _q.withBrandKits.Clone(),
+		withIdentitySecrets:            _q.withIdentitySecrets.Clone(),
+		withAutomations:                _q.withAutomations.Clone(),
+		withAutomationVersions:         _q.withAutomationVersions.Clone(),
+		withAutomationRuns:             _q.withAutomationRuns.Clone(),
+		withAutomationStepRecords:      _q.withAutomationStepRecords.Clone(),
+		withRules:                      _q.withRules.Clone(),
+		withRuleVersions:               _q.withRuleVersions.Clone(),
+		withRuleVersionTriggers:        _q.withRuleVersionTriggers.Clone(),
+		withRuleFirings:                _q.withRuleFirings.Clone(),
+		withWebhookEndpoints:           _q.withWebhookEndpoints.Clone(),
+		withSuppressions:               _q.withSuppressions.Clone(),
+		withUnsubscribes:               _q.withUnsubscribes.Clone(),
+		withConfirmations:              _q.withConfirmations.Clone(),
+		withConsentStamps:              _q.withConsentStamps.Clone(),
+		withEngagementTrackingConsents: _q.withEngagementTrackingConsents.Clone(),
+		withOutboundMessages:           _q.withOutboundMessages.Clone(),
+		withTrackedLinks:               _q.withTrackedLinks.Clone(),
+		withCapturedMessages:           _q.withCapturedMessages.Clone(),
+		withMemberships:                _q.withMemberships.Clone(),
+		withInvitations:                _q.withInvitations.Clone(),
+		withAuditEntries:               _q.withAuditEntries.Clone(),
+		withErasures:                   _q.withErasures.Clone(),
+		withUsages:                     _q.withUsages.Clone(),
+		withIntegrationProviderStates:  _q.withIntegrationProviderStates.Clone(),
+		withWebhookEndpointHealths:     _q.withWebhookEndpointHealths.Clone(),
+		withStanding:                   _q.withStanding.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -2083,6 +2108,17 @@ func (_q *WorkspaceQuery) WithConsentStamps(opts ...func(*ConsentStampQuery)) *W
 	return _q
 }
 
+// WithEngagementTrackingConsents tells the query-builder to eager-load the nodes that are connected to
+// the "engagement_tracking_consents" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithEngagementTrackingConsents(opts ...func(*EngagementTrackingConsentQuery)) *WorkspaceQuery {
+	query := (&EngagementTrackingConsentClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withEngagementTrackingConsents = query
+	return _q
+}
+
 // WithOutboundMessages tells the query-builder to eager-load the nodes that are connected to
 // the "outbound_messages" edge. The optional arguments are used to configure the query builder of the edge.
 func (_q *WorkspaceQuery) WithOutboundMessages(opts ...func(*OutboundMessageQuery)) *WorkspaceQuery {
@@ -2282,7 +2318,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [54]bool{
+		loadedTypes = [55]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
@@ -2326,6 +2362,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			_q.withUnsubscribes != nil,
 			_q.withConfirmations != nil,
 			_q.withConsentStamps != nil,
+			_q.withEngagementTrackingConsents != nil,
 			_q.withOutboundMessages != nil,
 			_q.withTrackedLinks != nil,
 			_q.withCapturedMessages != nil,
@@ -2672,6 +2709,15 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 		if err := _q.loadConsentStamps(ctx, query, nodes,
 			func(n *Workspace) { n.Edges.ConsentStamps = []*ConsentStamp{} },
 			func(n *Workspace, e *ConsentStamp) { n.Edges.ConsentStamps = append(n.Edges.ConsentStamps, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withEngagementTrackingConsents; query != nil {
+		if err := _q.loadEngagementTrackingConsents(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.EngagementTrackingConsents = []*EngagementTrackingConsent{} },
+			func(n *Workspace, e *EngagementTrackingConsent) {
+				n.Edges.EngagementTrackingConsents = append(n.Edges.EngagementTrackingConsents, e)
+			}); err != nil {
 			return nil, err
 		}
 	}
@@ -4036,6 +4082,36 @@ func (_q *WorkspaceQuery) loadConsentStamps(ctx context.Context, query *ConsentS
 	}
 	query.Where(predicate.ConsentStamp(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(workspace.ConsentStampsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadEngagementTrackingConsents(ctx context.Context, query *EngagementTrackingConsentQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *EngagementTrackingConsent)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(engagementtrackingconsent.FieldWorkspaceID)
+	}
+	query.Where(predicate.EngagementTrackingConsent(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.EngagementTrackingConsentsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

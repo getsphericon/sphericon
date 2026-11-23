@@ -352,6 +352,12 @@ export const SystemEventAction = {
   SMS_CONFIRMED: 'sms.confirmed',
   SMS_CLICKED: 'sms.clicked',
   SMS_UNSUBSCRIBED: 'sms.unsubscribed',
+  EMAIL_ENGAGEMENT_TRACKING_GRANTED: 'email.engagement_tracking_granted',
+  EMAIL_ENGAGEMENT_TRACKING_DENIED: 'email.engagement_tracking_denied',
+  SMS_ENGAGEMENT_TRACKING_GRANTED: 'sms.engagement_tracking_granted',
+  SMS_ENGAGEMENT_TRACKING_DENIED: 'sms.engagement_tracking_denied',
+  TELEGRAM_ENGAGEMENT_TRACKING_GRANTED: 'telegram.engagement_tracking_granted',
+  TELEGRAM_ENGAGEMENT_TRACKING_DENIED: 'telegram.engagement_tracking_denied',
   CONTACT_CONSENT_SUPERSEDED: 'contact.consent_superseded'
 } as const;
 

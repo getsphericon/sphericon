@@ -7,6 +7,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps/consentstampsunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking/engagementtrackingunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -25,7 +27,7 @@ func (u *UseCase) detachOptOuts(ctx context.Context, s *ent.Scoped, t *Target, _
 }
 
 // eraseConsentStamps leaves of the times the subject's consent observations occurred only the time
-// of a stop that still stands (ADR 0154), kept as its opt-out is: by the address on email, the
+// of a stop that still stands and of a tracking refusal (ADR 0154, ADR 0120), kept as its opt-out is: by the address on email, the
 // user id on Telegram, the number's hash on sms. It reads the opt-outs and the Bindings before
 // detachOptOuts rekeys the ones and the Contact's row takes the others, and comes before the other
 // deletions: an observation in flight holds its stamp first and the Contact after, so the Erasure,
@@ -69,7 +71,7 @@ func (u *UseCase) eraseConsentStamps(ctx context.Context, s *ent.Scoped, t *Targ
 }
 
 // eraseStampsOf erases the stamps of destination on channel but the time of a stop whose opt-out,
-// kept by the Destination, still stands.
+// kept by the Destination, still stands, and that of a tracking refusal the Erasure keeps.
 func (u *UseCase) eraseStampsOf(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string) error {
 	standing := func(ctx context.Context, source string) (bool, error) {
 		_, err := u.unsubs.Get(ctx, s, unsubscribes.Key{Channel: channel, Destination: destination, Source: source})
@@ -78,7 +80,19 @@ func (u *UseCase) eraseStampsOf(ctx context.Context, s *ent.Scoped, channel chan
 		}
 		return err == nil, err
 	}
-	return u.stamps.Erase(ctx, s, consentstampsunchecked.EraseInput{Channel: channel, Destination: destination, Standing: standing})
+	denied := func(ctx context.Context) (bool, error) {
+		consent, err := u.tracking.Of(ctx, s, channel, destination)
+		return consent.State == engagementtracking.ReadingDenied, err
+	}
+	return u.stamps.Erase(ctx, s, consentstampsunchecked.EraseInput{
+		Channel: channel, Destination: destination, Standing: standing, TrackingDenied: denied,
+	})
+}
+
+// eraseTracking deletes the tracking grants of the subject's addresses and keeps their refusals
+// (ADR 0120). It comes after eraseConsentStamps, which reads the refusals to keep their times.
+func (u *UseCase) eraseTracking(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+	return u.trackingSteps.Erase(ctx, s, engagementtrackingunchecked.EraseInput{Channel: channels.Email, Destinations: t.Destinations})
 }
 
 // anonymizeDelivery turns the subject's delivery records into anonymous rows: they keep

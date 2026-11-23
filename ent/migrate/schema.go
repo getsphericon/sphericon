@@ -987,6 +987,7 @@ var (
 		{Name: "opt_out_integration_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "opt_out_sequence", Type: field.TypeInt64, Nullable: true},
 		{Name: "confirmation_occurred_at", Type: field.TypeTime, Nullable: true},
+		{Name: "engagement_tracking_occurred_at", Type: field.TypeTime, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// ConsentStampsTable holds the schema information for the "consent_stamps" table.
@@ -997,7 +998,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "consent_stamps_workspaces_consent_stamps",
-				Columns:    []*schema.Column{ConsentStampsColumns[10]},
+				Columns:    []*schema.Column{ConsentStampsColumns[11]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1006,7 +1007,7 @@ var (
 			{
 				Name:    "consent_stamps_ws_channel_dest_source",
 				Unique:  true,
-				Columns: []*schema.Column{ConsentStampsColumns[10], ConsentStampsColumns[3], ConsentStampsColumns[4], ConsentStampsColumns[5]},
+				Columns: []*schema.Column{ConsentStampsColumns[11], ConsentStampsColumns[3], ConsentStampsColumns[4], ConsentStampsColumns[5]},
 			},
 		},
 	}
@@ -1191,6 +1192,38 @@ var (
 			},
 		},
 	}
+	// EngagementTrackingConsentsColumns holds the columns for the "engagement_tracking_consents" table.
+	EngagementTrackingConsentsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram", "sms"}},
+		{Name: "destination", Type: field.TypeString},
+		{Name: "state", Type: field.TypeEnum, Enums: []string{"granted", "denied"}},
+		{Name: "provenance", Type: field.TypeEnum, Enums: []string{"page", "manual", "imported", "onsite_form"}},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// EngagementTrackingConsentsTable holds the schema information for the "engagement_tracking_consents" table.
+	EngagementTrackingConsentsTable = &schema.Table{
+		Name:       "engagement_tracking_consents",
+		Columns:    EngagementTrackingConsentsColumns,
+		PrimaryKey: []*schema.Column{EngagementTrackingConsentsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "engagement_tracking_consents_workspaces_engagement_tracking_consents",
+				Columns:    []*schema.Column{EngagementTrackingConsentsColumns[7]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "engagement_tracking_consents_ws_channel_dest",
+				Unique:  true,
+				Columns: []*schema.Column{EngagementTrackingConsentsColumns[7], EngagementTrackingConsentsColumns[3], EngagementTrackingConsentsColumns[4]},
+			},
+		},
+	}
 	// ErasuresColumns holds the columns for the "erasures" table.
 	ErasuresColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1342,7 +1375,7 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{EventsColumns[1]},
 				Annotation: &entsql.IndexAnnotation{
-					Where: "action NOT IN ('marketing.confirmed', 'sms.confirmed', 'email.complained', 'email.unsubscribed') AND NOT (action = 'email.bounced' AND COALESCE(properties->>'bounceKind', '') = 'hard')",
+					Where: "action NOT IN ('marketing.confirmed', 'sms.confirmed', 'email.complained', 'email.unsubscribed', 'email.engagement_tracking_granted', 'email.engagement_tracking_denied', 'sms.engagement_tracking_granted', 'sms.engagement_tracking_denied', 'telegram.engagement_tracking_granted', 'telegram.engagement_tracking_denied') AND NOT (action = 'email.bounced' AND COALESCE(properties->>'bounceKind', '') = 'hard')",
 				},
 			},
 		},
@@ -3539,6 +3572,7 @@ var (
 		CustomFieldsTable,
 		DefaultSendCapTable,
 		EmailTemplatesTable,
+		EngagementTrackingConsentsTable,
 		ErasuresTable,
 		EventsTable,
 		EventJournalEntriesTable,
@@ -3770,11 +3804,12 @@ func init() {
 		Table: "consent_stamps",
 	}
 	ConsentStampsTable.Annotation.Checks = map[string]string{
-		"consent_stamps_channel_check":      "channel IN ('email', 'telegram', 'sms')",
-		"consent_stamps_confirmation_check": "sending_source = 'everything' OR confirmation_occurred_at IS NULL",
-		"consent_stamps_destination_lower":  "destination = lower(destination)",
-		"consent_stamps_sequence_check":     "(opt_out_integration_id IS NULL) = (opt_out_sequence IS NULL) AND (opt_out_occurred_at IS NOT NULL OR opt_out_integration_id IS NULL)",
-		"consent_stamps_sms_hash_check":     "channel <> 'sms' OR destination ~ '^[0-9a-f]{64}$'",
+		"consent_stamps_channel_check":             "channel IN ('email', 'telegram', 'sms')",
+		"consent_stamps_confirmation_check":        "sending_source = 'everything' OR confirmation_occurred_at IS NULL",
+		"consent_stamps_destination_lower":         "destination = lower(destination)",
+		"consent_stamps_engagement_tracking_check": "sending_source = 'everything' OR engagement_tracking_occurred_at IS NULL",
+		"consent_stamps_sequence_check":            "(opt_out_integration_id IS NULL) = (opt_out_sequence IS NULL) AND (opt_out_occurred_at IS NOT NULL OR opt_out_integration_id IS NULL)",
+		"consent_stamps_sms_hash_check":            "channel <> 'sms' OR destination ~ '^[0-9a-f]{64}$'",
 	}
 	ContactsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	ContactsTable.Annotation = &entsql.Annotation{
@@ -3805,6 +3840,16 @@ func init() {
 	EmailTemplatesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	EmailTemplatesTable.Annotation = &entsql.Annotation{
 		Table: "email_templates",
+	}
+	EngagementTrackingConsentsTable.ForeignKeys[0].RefTable = WorkspacesTable
+	EngagementTrackingConsentsTable.Annotation = &entsql.Annotation{
+		Table: "engagement_tracking_consents",
+	}
+	EngagementTrackingConsentsTable.Annotation.Checks = map[string]string{
+		"engagement_tracking_consents_channel_check":     "channel IN ('email', 'telegram', 'sms')",
+		"engagement_tracking_consents_destination_lower": "destination = lower(destination)",
+		"engagement_tracking_consents_provenance_check":  "provenance IN ('page', 'manual', 'imported', 'onsite_form')",
+		"engagement_tracking_consents_state_check":       "state IN ('granted', 'denied')",
 	}
 	ErasuresTable.ForeignKeys[0].RefTable = WorkspacesTable
 	ErasuresTable.Annotation = &entsql.Annotation{
