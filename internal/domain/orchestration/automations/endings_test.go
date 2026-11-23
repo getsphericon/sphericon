@@ -440,3 +440,28 @@ func TestEditingExitAndGoalEventsWritesTheDraft(t *testing.T) {
 	_, draft = automations.LiveAndDraft(cleared)
 	assert.Nil(t, draft.Goal)
 }
+
+// Saving the live exit and goal events again, filters included, creates no draft: matchers compare
+// by value, as Postgres hands back a filter with its keys in its own order (ADR 0169).
+func TestSavingUnchangedExitAndGoalEventsStoresNothing(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := testhelper.Module[*automations.Module](env)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	exits := []eventmatcher.Matcher{{Action: recoveryExit}, {Action: "order.closed", Filter: propertyEq(t, "status", "cancelled")}}
+	goal := patch.Set(eventmatcher.Matcher{Action: "order.closed", Filter: propertyEq(t, "status", "paid")})
+	_, err := m.Update(ctx, s, fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationPaymentRecoveryID),
+		ExitEvents: &exits, GoalEvent: goal})
+	require.NoError(t, err)
+	_, err = m.Publish(ctx, s, fixtures.AutomationPaymentRecoveryID, testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationPaymentRecoveryID))
+	require.NoError(t, err)
+	published := versionsOf(t, env, fixtures.AutomationPaymentRecoveryID)
+
+	resaved, err := m.Update(ctx, s, fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationPaymentRecoveryID),
+		ExitEvents: &exits, GoalEvent: goal})
+	require.NoError(t, err)
+
+	_, draft := automations.LiveAndDraft(resaved)
+	assert.Nil(t, draft)
+	assert.Equal(t, published, versionsOf(t, env, fixtures.AutomationPaymentRecoveryID))
+}

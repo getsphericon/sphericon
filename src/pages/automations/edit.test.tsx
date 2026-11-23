@@ -275,8 +275,9 @@ test('saving sends a goal event added on the canvas, an Event matcher with its f
   await screen.getByRole('button', { name: /Rule/ }).last().click()
   await screen.getByLabelText('Event property name').fill('status')
   await screen.getByTestId('value-editor').fill('paid')
-  // The value is left by a click elsewhere, as a person leaves it; the goal's editor lengthens the
-  // panel over the bar, so the Save is clicked by an event dispatched on it.
+  // The form's last change reaches the node a moment later: a click on the panel lets it land, as a
+  // person's move to the Save does. The goal's editor lengthens the panel over the bar, so the Save
+  // is clicked by an event dispatched on it.
   await screen.getByText('Goal Event').click()
   screen
     .getByRole('button', { name: 'Save' })
