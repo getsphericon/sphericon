@@ -79,10 +79,11 @@ func endsKey(ctx context.Context, s *ent.Scoped, run *ent.AutomationRun, sourceI
 	}
 	value, read := values[*key]
 	if !read {
-		var err error
-		if value, err = keyValueOf(ctx, s, sourceID, *key); err != nil {
+		readValue, err := keyValueOf(ctx, s, sourceID, *key)
+		if err != nil {
 			return false, err
 		}
+		value = readValue
 		values[*key] = value
 	}
 	return value == nil || *value == *run.KeyValue, nil

@@ -217,9 +217,11 @@ func (m *StepExecution) enroll(ctx context.Context, s *ent.Scoped, pub events.Pu
 		return entered{}, err
 	}
 	if key := a.row.Edges.LiveVersion.EnrollmentKey; key != nil {
-		if o.KeyValue, err = keyValueOf(ctx, s, o.BegunOnSourceID, *key); err != nil {
+		keyValue, err := keyValueOf(ctx, s, o.BegunOnSourceID, *key)
+		if err != nil {
 			return entered{}, err
 		}
+		o.KeyValue = keyValue
 	}
 	judged, err := judgeEntry(ctx, s, a.row.Edges.LiveVersion, contactID, o)
 	if err != nil {
