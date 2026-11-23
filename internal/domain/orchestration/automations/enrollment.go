@@ -112,6 +112,14 @@ func storedEvent(ctx context.Context, s *ent.Scoped, sourceID string) (*ent.Even
 	return stored, err
 }
 
+// entered is what an entry made: the Enrollment, by its run id (0 when none was made), whether a
+// step is to run, and the reason the entry checks skipped the entry (none when they let it through).
+type entered struct {
+	runID    int64
+	stepping bool
+	skipped  automationskippedentry.Reason
+}
+
 // enrollOnRule enrolls the Contact (enroll) for the Firing of a Rule that fired on the Event stored
 // with in.SourceID (the Firing's source_id): the Enrollment began when that Event occurred and keeps its
 // action and properties, as the Rule's own http Action binds them (#752). When no such Event is
@@ -119,11 +127,11 @@ func storedEvent(ctx context.Context, s *ent.Scoped, sourceID string) (*ent.Even
 // The Rule job reads the Automation before it enrolls, so a Deactivate or an Archive may have
 // landed since: under the lock it enrolls nobody and returns ErrInactive unless the Automation is
 // still kept and active (ADR 0099).
-func (m *StepExecution) enrollOnRule(ctx context.Context, s *ent.Scoped, pub events.Publisher, in EnrollOnRuleInput, now time.Time) (runID int64, enrolled bool, skip automationskippedentry.Reason, err error) {
+func (m *StepExecution) enrollOnRule(ctx context.Context, s *ent.Scoped, pub events.Publisher, in EnrollOnRuleInput, now time.Time) (entered, error) {
 	automationID, contactID := in.AutomationID, in.ContactID
 	fired, err := storedEvent(ctx, s, in.SourceID)
 	if err != nil {
-		return 0, false, "", err
+		return entered{}, err
 	}
 	o := origin{OccurredAt: now, Cause: cause{firingID: in.FiringID}, Chain: in.Chain}
 	if fired != nil {
@@ -141,18 +149,18 @@ func (m *StepExecution) enrollOnRule(ctx context.Context, s *ent.Scoped, pub eve
 // enrollOnTrigger enrolls the Contact (enroll) for the Event of the origin (originOf): the
 // Enrollment began when it occurred (#751) and keeps its action and properties (#752). The trigger
 // consumer picks the Automations before it enrolls, so a Publish that moved the Trigger, a
-// Deactivate or an Archive may have landed since: under the lock it enrolls nobody (runID 0) unless
+// Deactivate or an Archive may have landed since: under the lock it enrolls nobody (no run id) unless
 // the Automation is still kept, active and its live version's Trigger matches the Event, its
 // action and its filter (matchesEvent): a filter miss is the first entry check, no entry and no
 // skipped entry (ADR 0133).
-func (m *StepExecution) enrollOnTrigger(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, o origin) (runID int64, enrolled bool, skip automationskippedentry.Reason, err error) {
+func (m *StepExecution) enrollOnTrigger(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, o origin) (entered, error) {
 	return m.enroll(ctx, s, pub, automationID, contactID, o, func(a *ent.Automation) (bool, error) {
 		live := a.Edges.LiveVersion
 		if !active(a) || live == nil || live.TriggerAction != o.Action {
 			return false, nil
 		}
 		// The first entry check: an Event its filter misses is no entry, and nothing is recorded.
-		return matchesEvent(ctx, s, TriggerOf(live), o.Cause.sourceID)
+		return matchesEvent(ctx, s, TriggerOf(live), o.Action, event.SourceID(o.Cause.sourceID))
 	})
 }
 
@@ -178,51 +186,51 @@ var _ = db.Declare(
 // the entry, and the Enrollment keeps it (ADR 0165). admits answers whether the
 // Enrollment is made: a refusal with an error returns that error, one without makes nothing and
 // returns none. An entry the checks refuse makes nothing and is recorded as skipped, with its
-// reason (skip). An exit or goal Event of the live version recorded for the Contact since o occurred
+// reason (entered.skipped). An exit or goal Event of the live version recorded for the Contact since o occurred
 // may have been handled before the Enrollment existed, with nothing to end then: the Enrollment is
 // made already ended by the first of them (exited or goal_reached, so it counts for the ordinal, the
-// cooldown and `once`), and no step is to run. It returns the run id: 0, and nothing is made, when
-// the entry is refused or its Event or Firing made an Enrollment already (an entry handled again).
-// enrolled says that a step is to run. The Contact's lock is held to the end of the transaction s is
+// cooldown and `once`), and no step is to run. It returns what the entry made: no run id, and
+// nothing is made, when the entry is refused or its Event or Firing made an Enrollment already (an
+// entry handled again). The Contact's lock is held to the end of the transaction s is
 // bound to.
-func (m *StepExecution) enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, o origin, admits func(*ent.Automation) (bool, error)) (runID int64, enrolled bool, skip automationskippedentry.Reason, err error) {
+func (m *StepExecution) enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, o origin, admits func(*ent.Automation) (bool, error)) (entered, error) {
 	held, locked, err := m.lockContact(ctx, s, contactID)
 	if err != nil {
-		return 0, false, "", err
+		return entered{}, err
 	}
 	if !locked {
 		// Another Workspace's Contact is not in this one: the reference check the Create below
 		// would make says so, so keep that answer.
-		return 0, false, "", ent.ErrNotInWorkspace
+		return entered{}, ent.ErrNotInWorkspace
 	}
 	a, err := shareLive(ctx, s, automationID)
 	if ent.IsNotFound(err) {
 		// Another Workspace's Automation is not in this one: the reference check the Create
 		// below would make says so, so keep that answer.
-		return 0, false, "", ent.ErrNotInWorkspace
+		return entered{}, ent.ErrNotInWorkspace
 	}
 	if err != nil {
-		return 0, false, "", err
+		return entered{}, err
 	}
 	admitted, err := admits(a.row)
 	if err != nil || !admitted {
-		return 0, false, "", err
+		return entered{}, err
 	}
 	if key := a.row.Edges.LiveVersion.EnrollmentKey; key != nil {
 		if o.KeyValue, err = keyValueOf(ctx, s, o.BegunOnSourceID, *key); err != nil {
-			return 0, false, "", err
+			return entered{}, err
 		}
 	}
 	judged, err := judgeEntry(ctx, s, a.row.Edges.LiveVersion, contactID, o)
 	if err != nil {
-		return 0, false, "", err
+		return entered{}, err
 	}
 	if judged.skipped {
-		return 0, false, judged.reason, recordSkip(ctx, s, automationID, contactID, o, judged.reason)
+		return entered{skipped: judged.reason}, recordSkip(ctx, s, automationID, contactID, o, judged.reason)
 	}
 	ending, endedAt, ended, err := endedSince(ctx, s, a.row.Edges.LiveVersion, contactID, o)
 	if err != nil {
-		return 0, false, "", err
+		return entered{}, err
 	}
 	// The Enrollment reaches its first Step as it is made; a wait there is due from now (ADR 0124).
 	now := m.now()
@@ -233,34 +241,34 @@ func (m *StepExecution) enroll(ctx context.Context, s *ent.Scoped, pub events.Pu
 	}
 	runID, inserted, err := begin(ctx, s, held, a, o, judged.ordinal, due)
 	if err != nil || !inserted {
-		return 0, false, "", err
+		return entered{}, err
 	}
 	// The Enrollment begins (automation.enrolled) and, made already ended, ends in the same
 	// transaction: the Contact entered and left.
 	begun, err := s.AutomationRun().Query().Where(automationrun.ID(runID)).WithContact().Only(ctx)
 	if err != nil {
-		return 0, false, "", err
+		return entered{}, err
 	}
 	if err := publishEnrollment(ctx, s, pub, systemevent.AutomationEnrolled, begun); err != nil {
-		return 0, false, "", err
+		return entered{}, err
 	}
 	if ended {
 		if err := move(ctx, s, pub, runID, ending, endedAt, nil); err != nil {
-			return 0, false, "", err
+			return entered{}, err
 		}
-		return runID, false, "", nil
+		return entered{runID: runID}, nil
 	}
 	if !stepping {
 		// A version of no Steps has nothing to run: the Enrollment completes as it begins.
 		if err := completeRun(ctx, s, pub, runID, "", now); err != nil {
-			return 0, false, "", err
+			return entered{}, err
 		}
-		return runID, false, "", nil
+		return entered{runID: runID}, nil
 	}
 	if err := reach(ctx, s, runID, first.ID, now, due); err != nil {
-		return 0, false, "", err
+		return entered{}, err
 	}
-	return runID, true, "", nil
+	return entered{runID: runID, stepping: true}, nil
 }
 
 // lockContact locks the Contact's row to the end of the transaction s is bound to (contactlock):
@@ -336,8 +344,8 @@ func begin(ctx context.Context, s *ent.Scoped, held contactlock.Locked, a liveSh
 // ends it, and a keyed Enrollment ends only on an
 // Event carrying none of the key or o's value (ofKey, ADR 0165). Like the trigger consumer it
 // leaves out loaded history and a machine open or click (ADR 0053); an exit and the goal at the
-// same moment are taken in the order they were recorded, and an Event matching both reaches the
-// goal.
+// same moment are taken in the order they were recorded, and the Event found ends the Enrollment as
+// endingOf says.
 func endedSince(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, contactID int64, o origin) (trigger, time.Time, bool, error) {
 	exits, goal := ExitsOf(v), v.Goal
 	matchers := slices.Clone(exits)
@@ -377,16 +385,11 @@ func endedSince(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, co
 	if err != nil {
 		return "", time.Time{}, false, err
 	}
-	if goal != nil {
-		reached, err := matchesRow(ctx, s, *goal, first.ID)
-		if err != nil {
-			return "", time.Time{}, false, err
-		}
-		if reached {
-			return triggerReachGoal, first.OccurredAt, true, nil
-		}
+	t, ends, err := endingOf(ctx, s, v, first.Action, event.ID(first.ID))
+	if err != nil || !ends {
+		return "", time.Time{}, false, err
 	}
-	return triggerExit, first.OccurredAt, true, nil
+	return t, first.OccurredAt, true, nil
 }
 
 // byHuman matches the Events the matcher matches (matching), leaving out an open or a click a
@@ -495,7 +498,7 @@ func (m *StepExecution) endingFor(ctx context.Context, s *ent.Scoped, run *ent.A
 	if ev.OccurredAt.Before(run.BeganAt) {
 		return "", false, nil
 	}
-	t, ends, err := endingOf(ctx, s, run.Edges.Version, ev)
+	t, ends, err := endingOf(ctx, s, run.Edges.Version, ev.Action, event.SourceID(ev.SourceID))
 	if err != nil || !ends {
 		return "", false, err
 	}
@@ -510,21 +513,20 @@ func (m *StepExecution) endingFor(ctx context.Context, s *ent.Scoped, run *ent.A
 	return t, true, nil
 }
 
-// endingOf is the move the Event makes on an Enrollment standing on the version: its goal when the
-// goal matches it (matchesEvent, the filter run on the stored Event), else exited when one of its
-// exits does, else none. An Event matching the goal and an exit reaches the goal (ADR 0133).
-func endingOf(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, ev Event) (trigger, bool, error) {
-	if v.Goal != nil && v.Goal.Action == ev.Action {
-		reached, err := matchesEvent(ctx, s, *v.Goal, ev.SourceID)
+// endingOf is the move a stored Event of the action, the one row names, makes on an Enrollment
+// standing on the version: its goal when the goal matches it (matchesEvent), else exited when one of
+// its exits does, else none. The goal comes first, so an Event matching the goal and an exit reaches
+// the goal (ADR 0133): the one place that order is stated, for an Event handled and for one an
+// Enrollment finds recorded as it is made (endedSince).
+func endingOf(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, action string, row predicate.Event) (trigger, bool, error) {
+	if v.Goal != nil {
+		reached, err := matchesEvent(ctx, s, *v.Goal, action, row)
 		if err != nil || reached {
 			return triggerReachGoal, reached, err
 		}
 	}
 	for _, exit := range ExitsOf(v) {
-		if exit.Action != ev.Action {
-			continue
-		}
-		exited, err := matchesEvent(ctx, s, exit, ev.SourceID)
+		exited, err := matchesEvent(ctx, s, exit, action, row)
 		if err != nil || exited {
 			return triggerExit, exited, err
 		}
@@ -548,7 +550,7 @@ func triggeredBy(ctx context.Context, s *ent.Scoped, ev Event) ([]int64, error) 
 	}
 	var ids []int64
 	for _, a := range candidates {
-		ok, err := matchesEvent(ctx, s, TriggerOf(a.Edges.LiveVersion), ev.SourceID)
+		ok, err := matchesEvent(ctx, s, TriggerOf(a.Edges.LiveVersion), ev.Action, event.SourceID(ev.SourceID))
 		if err != nil {
 			return nil, err
 		}

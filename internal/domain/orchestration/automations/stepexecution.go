@@ -187,7 +187,7 @@ func (r EnrollOnRuleResult) SkipDetail() string {
 // made one already. An Enrollment an exit or goal Event recorded since that Event ended at once is
 // made, with no step queued (enrollOnRule).
 func (m *StepExecution) EnrollOnRule(ctx context.Context, s *ent.Scoped, in EnrollOnRuleInput) (EnrollOnRuleResult, error) {
-	return m.start(ctx, s, func(ts *ent.Scoped, pub events.Publisher) (int64, bool, automationskippedentry.Reason, error) {
+	return m.start(ctx, s, func(ts *ent.Scoped, pub events.Publisher) (entered, error) {
 		return m.enrollOnRule(ctx, ts, pub, in, m.now())
 	})
 }
@@ -196,7 +196,7 @@ func (m *StepExecution) EnrollOnRule(ctx context.Context, s *ent.Scoped, in Enro
 // nobody unless, when the Enrollment is made, the Automation is still active and started by that
 // Event's action in its live version (enrollOnTrigger).
 func (m *StepExecution) startOnTrigger(ctx context.Context, s *ent.Scoped, automationID, contactID int64, o origin) (EnrollOnRuleResult, error) {
-	return m.start(ctx, s, func(ts *ent.Scoped, pub events.Publisher) (int64, bool, automationskippedentry.Reason, error) {
+	return m.start(ctx, s, func(ts *ent.Scoped, pub events.Publisher) (entered, error) {
 		return m.enrollOnTrigger(ctx, ts, pub, automationID, contactID, o)
 	})
 }
@@ -204,24 +204,24 @@ func (m *StepExecution) startOnTrigger(ctx context.Context, s *ent.Scoped, autom
 // start makes the Enrollment makeEnrollment makes and, when a step is to run, queues the job of its first
 // step, the one the Enrollment begins on, in one transaction: the transaction the Contact's lock is
 // held in until both commit.
-func (m *StepExecution) start(ctx context.Context, s *ent.Scoped, makeEnrollment func(ts *ent.Scoped, pub events.Publisher) (int64, bool, automationskippedentry.Reason, error)) (EnrollOnRuleResult, error) {
+func (m *StepExecution) start(ctx context.Context, s *ent.Scoped, makeEnrollment func(ts *ent.Scoped, pub events.Publisher) (entered, error)) (EnrollOnRuleResult, error) {
 	var made EnrollOnRuleResult
 	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher, q events.Enqueuer) error {
-		runID, stepping, skip, err := makeEnrollment(ts, pub)
-		made = EnrollOnRuleResult{Skipped: skip}
-		if err != nil || runID == 0 {
+		e, err := makeEnrollment(ts, pub)
+		made = EnrollOnRuleResult{Skipped: e.skipped}
+		if err != nil || e.runID == 0 {
 			return err
 		}
 		made.Enrolled = true
-		if !stepping {
+		if !e.stepping {
 			return nil
 		}
-		run, err := ts.AutomationRun().Get(ctx, runID)
+		run, err := ts.AutomationRun().Get(ctx, e.runID)
 		if err != nil {
 			return err
 		}
 		// A first Step that is a wait is due later: its job runs then.
-		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: runID, StepID: lo.FromPtr(run.CurrentStepID)}, scheduled(run.ResumeAt))
+		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: e.runID, StepID: lo.FromPtr(run.CurrentStepID)}, scheduled(run.ResumeAt))
 	})
 	if err != nil {
 		return EnrollOnRuleResult{}, err
