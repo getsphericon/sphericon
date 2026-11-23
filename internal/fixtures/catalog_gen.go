@@ -493,6 +493,54 @@ const (
 	AutomationOnboardingDripVersion1ID = 106
 	// AutomationOnboardingDripVersion2ID is from fixtures/automation_versions.
 	AutomationOnboardingDripVersion2ID = 1060
+	// AutomationOuroborosGoalID is from fixtures/automations.
+	AutomationOuroborosGoalID = 15537
+	// AutomationOuroborosGoalName is from fixtures/automations.
+	AutomationOuroborosGoalName = "Goal"
+	// AutomationOuroborosGoalVersionID is from fixtures/automation_versions.
+	AutomationOuroborosGoalVersionID = 15537
+	// AutomationOuroborosOnClickID is from fixtures/automations.
+	AutomationOuroborosOnClickID = 15536
+	// AutomationOuroborosOnClickName is from fixtures/automations.
+	AutomationOuroborosOnClickName = "On a click"
+	// AutomationOuroborosOnClickVersionID is from fixtures/automation_versions.
+	AutomationOuroborosOnClickVersionID = 15536
+	// AutomationOuroborosOnCompletedID is from fixtures/automations.
+	AutomationOuroborosOnCompletedID = 15535
+	// AutomationOuroborosOnCompletedName is from fixtures/automations.
+	AutomationOuroborosOnCompletedName = "On a completion"
+	// AutomationOuroborosOnCompletedVersionID is from fixtures/automation_versions.
+	AutomationOuroborosOnCompletedVersionID = 15535
+	// AutomationOuroborosSelfTaggerID is from fixtures/automations.
+	AutomationOuroborosSelfTaggerID = 15533
+	// AutomationOuroborosSelfTaggerName is from fixtures/automations.
+	AutomationOuroborosSelfTaggerName = "Tag self on tag"
+	// AutomationOuroborosSelfTaggerVersionID is from fixtures/automation_versions.
+	AutomationOuroborosSelfTaggerVersionID = 15533
+	// AutomationOuroborosStarterID is from fixtures/automations.
+	AutomationOuroborosStarterID = 15534
+	// AutomationOuroborosStarterName is from fixtures/automations.
+	AutomationOuroborosStarterName = "Start"
+	// AutomationOuroborosStarterVersionID is from fixtures/automation_versions.
+	AutomationOuroborosStarterVersionID = 15534
+	// AutomationOuroborosTagRingID is from fixtures/automations.
+	AutomationOuroborosTagRingID = 15531
+	// AutomationOuroborosTagRingName is from fixtures/automations.
+	AutomationOuroborosTagRingName = "Tag ring on untag"
+	// AutomationOuroborosTagRingVersionID is from fixtures/automation_versions.
+	AutomationOuroborosTagRingVersionID = 15531
+	// AutomationOuroborosUntagRingID is from fixtures/automations.
+	AutomationOuroborosUntagRingID = 15530
+	// AutomationOuroborosUntagRingName is from fixtures/automations.
+	AutomationOuroborosUntagRingName = "Untag ring on tag"
+	// AutomationOuroborosUntagRingVersionID is from fixtures/automation_versions.
+	AutomationOuroborosUntagRingVersionID = 15530
+	// AutomationOuroborosWaitThenUntagRingID is from fixtures/automations.
+	AutomationOuroborosWaitThenUntagRingID = 15532
+	// AutomationOuroborosWaitThenUntagRingName is from fixtures/automations.
+	AutomationOuroborosWaitThenUntagRingName = "Wait, then untag ring on tag"
+	// AutomationOuroborosWaitThenUntagRingVersionID is from fixtures/automation_versions.
+	AutomationOuroborosWaitThenUntagRingVersionID = 15532
 	// AutomationPaymentRecoveryID is from fixtures/automations.
 	AutomationPaymentRecoveryID = 108
 	// AutomationPaymentRecoveryName is from fixtures/automations.
@@ -1459,6 +1507,14 @@ const (
 	ContactOptedOutOfWelcomeEmail = "leo.devops@codebasics.dev"
 	// ContactOptedOutOfWelcomeID is from fixtures/contacts.
 	ContactOptedOutOfWelcomeID = 128
+	// ContactOuroborosOttoEmail is from fixtures/contacts.
+	ContactOuroborosOttoEmail = "otto@ouroboros.example"
+	// ContactOuroborosOttoID is from fixtures/contacts.
+	ContactOuroborosOttoID = 15531
+	// ContactOuroborosUmaEmail is from fixtures/contacts.
+	ContactOuroborosUmaEmail = "uma@ouroboros.example"
+	// ContactOuroborosUmaID is from fixtures/contacts.
+	ContactOuroborosUmaID = 15530
 	// ContactPaidBeforeEnrolledEmail is from fixtures/contacts.
 	ContactPaidBeforeEnrolledEmail = "paid.early@codebasics.dev"
 	// ContactPaidBeforeEnrolledID is from fixtures/contacts.
@@ -3033,6 +3089,14 @@ const (
 	OscorpName = "Oscorp"
 	// OscorpPublicID is from fixtures/workspaces.
 	OscorpPublicID = "OscorW57"
+	// OuroborosCollectKey is from fixtures/workspaces.
+	OuroborosCollectKey = "omck_test_ouroboros_collect_key"
+	// OuroborosID is from fixtures/workspaces.
+	OuroborosID = 1553
+	// OuroborosName is from fixtures/workspaces.
+	OuroborosName = "Ouroboros"
+	// OuroborosPublicID is from fixtures/workspaces.
+	OuroborosPublicID = "OuroW153"
 	// OutboundMessageAutomationComplainedDestination is from fixtures/outbound_messages.
 	OutboundMessageAutomationComplainedDestination = "bob.automation@example.com"
 	// OutboundMessageAutomationComplainedID is from fixtures/outbound_messages.
@@ -3501,6 +3565,12 @@ const (
 	RuleNoActionsID = 7300
 	// RuleNoActionsName is from fixtures/rules.
 	RuleNoActionsName = "Draft with no actions"
+	// RuleOuroborosEnrollOnGoalID is from fixtures/rules.
+	RuleOuroborosEnrollOnGoalID = 15530
+	// RuleOuroborosEnrollOnGoalName is from fixtures/rules.
+	RuleOuroborosEnrollOnGoalName = "Enroll on a goal"
+	// RuleOuroborosEnrollOnGoalVersionID is from fixtures/rule_versions.
+	RuleOuroborosEnrollOnGoalVersionID = 15530
 	// RulePromotersID is from fixtures/rules.
 	RulePromotersID = 130
 	// RulePromotersName is from fixtures/rules.

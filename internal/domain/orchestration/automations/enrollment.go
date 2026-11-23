@@ -59,19 +59,25 @@ type Event struct {
 	// SendLocked marks an Event a write through a Connection without mcp:send published
 	// (events.Envelope.SendLocked): it ends Enrollments, but enrolls no one (ADR 0132).
 	SendLocked bool
+	// Chain is the Automations the chain that caused the Event passed through
+	// (events.Envelope.Automations, ADR 0127): none of them enrolls the Contact on it (`cycle`).
+	Chain []int64
 }
 
 // origin is what an Enrollment keeps of the Event it began on: when it occurred (began_at), and its
 // action and properties, which every step binds as `event` (#752). An origin with only OccurredAt
 // is an Enrollment no Event began: its `event` is empty. It also names what caused the entry, so
 // that one cause enrolls a Contact in an Automation once (ADR 0127): SourceID, the source id of the
-// Event whose Trigger it is, or FiringID, the Rule Firing whose Enroll Action it is.
+// Event whose Trigger it is, or FiringID, the Rule Firing whose Enroll Action it is. Chain is the
+// Automations the chain that caused the entry passed through (ADR 0127): the entry checks skip an
+// entry into one of them (`cycle`), and the Enrollment made keeps them with its own.
 type origin struct {
 	Action     string
 	OccurredAt time.Time
 	Properties map[string]any
 	SourceID   string
 	FiringID   int64
+	Chain      []int64
 }
 
 // originOf is the origin of an Event: its action and occurred_at, and the properties of the row
@@ -79,7 +85,7 @@ type origin struct {
 // stored before the trigger job is queued (#751); an Event no longer stored (Retention or an Erasure
 // removed it) gives no properties.
 func originOf(ctx context.Context, s *ent.Scoped, ev Event) (origin, error) {
-	o := origin{Action: ev.Action, OccurredAt: ev.OccurredAt, SourceID: ev.SourceID}
+	o := origin{Action: ev.Action, OccurredAt: ev.OccurredAt, SourceID: ev.SourceID, Chain: ev.Chain}
 	stored, err := storedEvent(ctx, s, ev.SourceID)
 	if err != nil || stored == nil {
 		return o, err
@@ -110,7 +116,7 @@ func (m *StepExecution) enrollOnRule(ctx context.Context, s *ent.Scoped, pub eve
 	if err != nil {
 		return 0, false, err
 	}
-	o := origin{OccurredAt: now, FiringID: in.FiringID}
+	o := origin{OccurredAt: now, FiringID: in.FiringID, Chain: in.Chain}
 	if fired != nil {
 		o.Action, o.Properties, o.OccurredAt = fired.Action, events.BoundedProperties(fired.Properties), fired.OccurredAt
 	}
@@ -274,15 +280,16 @@ func shareLive(ctx context.Context, s *ent.Scoped, automationID int64) (liveShar
 
 // begin writes the Enrollment of the Contact held in the Automation a, on a's live version, both
 // locked to the end of the transaction (ADR 0099, ADR 0108), standing on that version's first Step
-// (none for a version of no Steps) and parked there until due when that Step is a wait. A Contact
-// enrolls in an Automation once: an Enrollment already there is the answer, and nothing is written
-// (inserted false).
+// (none for a version of no Steps) and parked there until due when that Step is a wait, keeping the
+// chain of o with a's own Automation (ADR 0127). A Contact enrolls in an Automation once: an
+// Enrollment already there is the answer, and nothing is written (inserted false).
 func begin(ctx context.Context, s *ent.Scoped, held contactlock.Locked, a liveShared, o origin, due *time.Time) (runID int64, inserted bool, err error) {
 	create := s.AutomationRun().Create().
 		SetAutomationID(a.row.ID).
 		SetVersionID(*a.row.LiveVersionID).
 		SetContactID(held.Contact().ID).
 		SetBeganAt(o.OccurredAt).
+		SetChain(events.AutomationSet(o.Chain, a.row.ID)).
 		SetNillableResumeAt(due)
 	if first, ok := automationstep.First(a.row.Edges.LiveVersion.Steps); ok {
 		create.SetCurrentStepID(first.ID)
@@ -375,11 +382,11 @@ func (m *Module) Exit(ctx context.Context, s *ent.Scoped, automationID, contactI
 // exits it), and publishes its end with bus in the transaction s is bound to (Bus.PublishIn).
 // lifecycle.ErrInvalidTransition when it is no longer active.
 func exitRun(ctx context.Context, bus *events.Bus, s *ent.Scoped, runID int64, now time.Time) error {
-	ev, err := moved(ctx, s, runID, triggerExit, now, nil)
-	if err != nil || ev == nil {
+	end, err := moved(ctx, s, runID, triggerExit, now, nil)
+	if err != nil || end == nil {
 		return err
 	}
-	return bus.PublishIn(ctx, s, ev)
+	return bus.PublishIn(end.in(ctx), s, end.change)
 }
 
 // endOnEvent ends the Contact's active Enrollments that an Event with the action ends (#751): one

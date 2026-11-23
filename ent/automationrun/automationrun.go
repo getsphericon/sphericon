@@ -39,6 +39,8 @@ const (
 	FieldTriggerSourceID = "trigger_source_id"
 	// FieldFiringID holds the string denoting the firing_id field in the database.
 	FieldFiringID = "firing_id"
+	// FieldChain holds the string denoting the chain field in the database.
+	FieldChain = "chain"
 	// FieldEndedAt holds the string denoting the ended_at field in the database.
 	FieldEndedAt = "ended_at"
 	// FieldCurrentStepID holds the string denoting the current_step_id field in the database.
@@ -115,6 +117,7 @@ var Columns = []string{
 	FieldEventProperties,
 	FieldTriggerSourceID,
 	FieldFiringID,
+	FieldChain,
 	FieldEndedAt,
 	FieldCurrentStepID,
 	FieldResumeAt,
@@ -142,6 +145,8 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultBeganAt holds the default value on creation for the "began_at" field.
 	DefaultBeganAt func() time.Time
+	// DefaultChain holds the default value on creation for the "chain" field.
+	DefaultChain []int64
 )
 
 // Status defines the type for the "status" enum field.

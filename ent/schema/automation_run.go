@@ -17,17 +17,18 @@ import (
 // (automation_id, contact_id) index enforces enroll-once-ever (re-enrollment is
 // a deliberate non-feature for the MVP). One Event, or one Rule Firing, enrolls a Contact in an
 // Automation at most once (ADR 0127): the unique indexes on the triggering Event's source id and on
-// the Firing. current_step_id names the Step it stands on; resume_at is when the wait it stands on
-// is due.
+// the Firing. chain names the Automations the chain that made it passed through, its own included.
+// current_step_id names the Step it stands on; resume_at is when the wait it stands on is due.
 type AutomationRun struct {
 	ent.Schema
 }
 
 // Annotations adds to the enum checks that an Enrollment began on an Event's Trigger or on a Rule's
-// Firing, never both.
+// Firing, never both, and that its chain is a list.
 func (AutomationRun) Annotations() []schema.Annotation {
 	a := TableWithEnumChecks("automation_runs", AutomationRun{}.Fields())
 	a.Checks["automation_runs_entry_check"] = "trigger_source_id IS NULL OR firing_id IS NULL"
+	a.Checks["automation_runs_chain_check"] = jsonCheck("chain", "array")
 	return []schema.Annotation{a}
 }
 
@@ -91,6 +92,17 @@ func (AutomationRun) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Immutable(),
+		// The ids of the Automations the chain that made the Enrollment passed through, its own
+		// included, ascending (ADR 0127): the list of the Event or the Firing's Event that caused
+		// it, and its Automation. Everything published on behalf of the Enrollment carries it
+		// (events.Envelope.Automations), and an entry whose cause names the Automation is skipped
+		// as `cycle`; a Step resumed after a wait reads it here. A snapshot, without keys: an
+		// Automation it names may be archived or gone, and the list still says where the chain
+		// went.
+		field.JSON("chain", []int64{}).
+			Default([]int64{}).
+			Immutable().
+			Annotations(entsql.Default("[]")),
 		// When the Enrollment left `active` (#753): written by the one move out of it
 		// (internal/automations, runstate.go), together with the terminal status, and never again.
 		// An exit or goal Event ends it when that Event occurred, on began_at's clock; a step or an

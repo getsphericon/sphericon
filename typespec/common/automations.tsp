@@ -519,6 +519,9 @@ model AutomationPeriodResults {
 
 /** How many entries into an automation were skipped, by reason */
 model AutomationSkippedCounts {
+  /** Entries caused by a chain of events that already passed through the automation */
+  cycle: int32;
+
   /** Entries whose Event occurred while an enrollment of the contact was active */
   activeEnrollment: int32;
 

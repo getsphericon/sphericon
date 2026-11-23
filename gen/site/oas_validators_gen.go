@@ -13025,6 +13025,8 @@ func (s *SiteWorkspaceTimezoneInput) Validate() error {
 
 func (s SkippedEntryReason) Validate() error {
 	switch s {
+	case "cycle":
+		return nil
 	case "active_enrollment":
 		return nil
 	case "once":

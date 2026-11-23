@@ -21,8 +21,6 @@ type EvaluateTriggerArgs struct {
 
 	ContactID int64  `json:"contact_id"`
 	Action    string `json:"action"`
-	// SourceAutomationID is the Automation whose email the Event came from, 0 for any other Event.
-	SourceAutomationID int64 `json:"source_automation_id,omitempty"`
 	// OccurredAt is when the Event happened: it ends only the Enrollments that began by then, and
 	// an Enrollment it makes begins then. Required.
 	OccurredAt time.Time `json:"occurred_at"`
@@ -77,8 +75,13 @@ func (w *EvaluateTriggerWorker) Work(ctx context.Context, job *river.Job[Evaluat
 		return nil // stale or forged job args; never enroll across Workspaces
 	}
 	args := job.Args
-	ev := automations.Event{Action: args.Action, SourceID: args.SourceID, OccurredAt: args.OccurredAt, SendLocked: args.SendLocked}
-	return w.steps.OnEvent(ctx, w.ent.Scoped(c.WorkspaceID), automations.OnEventInput{ContactID: c.ID, Event: ev, SourceAutomationID: args.SourceAutomationID})
+	// The Automations the Event's chain passed through ride in the job's metadata, as its
+	// correlation does (events.JobCorrelation), and reach the entry checks (ADR 0127).
+	ev := automations.Event{
+		Action: args.Action, SourceID: args.SourceID, OccurredAt: args.OccurredAt, SendLocked: args.SendLocked,
+		Chain: events.AutomationsOf(ctx),
+	}
+	return w.steps.OnEvent(ctx, w.ent.Scoped(c.WorkspaceID), automations.OnEventInput{ContactID: c.ID, Event: ev})
 }
 
 // --- run a step: the adapter of the Automations module's Step execution ---

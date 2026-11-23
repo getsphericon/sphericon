@@ -69,19 +69,6 @@ func TestTheAutomationEvaluationSaysWhenTheEventOccurred(t *testing.T) {
 	assert.Equal(t, "2026-03-01T12:00:00Z", triggers[0]["occurred_at"])
 }
 
-// The Automation whose email the Event came from travels with the job, so it can refuse to
-// enroll the Contact into itself (ADR 0053).
-func TestTheAutomationEvaluationNamesTheAutomationOfTheEmail(t *testing.T) {
-	env := testhelper.Setup(t)
-	opened := aliceOpened()
-	opened.AutomationID = fixtures.AutomationOnOpenID
-	publishEvent(t, env, opened)
-
-	triggers := env.JobsOf(t, jobkind.EvaluateTrigger.Kind)
-	require.Len(t, triggers, 1)
-	assert.EqualValues(t, fixtures.AutomationOnOpenID, triggers[0]["source_automation_id"])
-}
-
 // What is recorded but never reacted to queues no evaluation, against the Automations or the Rules: a
 // scanner's open or click (ADR 0053), an Event with no Contact, loaded history and an
 // administrative action. An event a Rule's Action published may still enroll, but fires no Rule:

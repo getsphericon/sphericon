@@ -232,3 +232,12 @@
   workspace_id: 99
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
+
+# Ouroboros (workspace 1553): the version of RuleOuroborosEnrollOnGoal.
+- id: 15530 # fixture: RuleOuroborosEnrollOnGoalVersion
+  rule_id: 15530
+  version: 1
+  actions: '[{"type":"enroll_automation","automation_id":15537}]'
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'

@@ -257,3 +257,14 @@
   workspace_id: 99
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
+
+# Ouroboros (workspace 1553): enrolls in the Goal Automation whatever reaches a goal.
+- id: 15530 # fixture: RuleOuroborosEnrollOnGoal
+  revision: 1
+  name: Enroll on a goal
+  status: active
+  activated_at: '{{daysAgo 12}}'
+  live_version_id: 15530
+  workspace_id: 1553
+  created_at: '{{daysAgo 12}}'
+  updated_at: '{{daysAgo 12}}'

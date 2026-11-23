@@ -109,13 +109,12 @@ func firesRules(env events.Envelope, ev events.DomainEvent) bool {
 func evaluateTrigger(env events.Envelope, ev events.DomainEvent) river.JobArgs {
 	p, _ := events.ProjectionOf(ev)
 	return EvaluateTriggerArgs{
-		WorkspaceID:        env.WorkspaceID,
-		ContactID:          p.ContactID,
-		Action:             p.Action,
-		SourceAutomationID: p.AutomationID,
-		OccurredAt:         env.OccurredAt,
-		SourceID:           env.SourceID(),
-		SendLocked:         env.SendLocked,
+		WorkspaceID: env.WorkspaceID,
+		ContactID:   p.ContactID,
+		Action:      p.Action,
+		OccurredAt:  env.OccurredAt,
+		SourceID:    env.SourceID(),
+		SendLocked:  env.SendLocked,
 	}
 }
 

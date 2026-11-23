@@ -48,6 +48,8 @@ type AutomationRun struct {
 	TriggerSourceID *string `json:"trigger_source_id,omitempty"`
 	// FiringID holds the value of the "firing_id" field.
 	FiringID *int64 `json:"firing_id,omitempty"`
+	// Chain holds the value of the "chain" field.
+	Chain []int64 `json:"chain,omitempty"`
 	// EndedAt holds the value of the "ended_at" field.
 	EndedAt *time.Time `json:"ended_at,omitempty"`
 	// CurrentStepID holds the value of the "current_step_id" field.
@@ -143,7 +145,7 @@ func (*AutomationRun) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case automationrun.FieldEventProperties:
+		case automationrun.FieldEventProperties, automationrun.FieldChain:
 			values[i] = new([]byte)
 		case automationrun.FieldID, automationrun.FieldWorkspaceID, automationrun.FieldAutomationID, automationrun.FieldContactID, automationrun.FieldVersionID, automationrun.FieldFiringID, automationrun.FieldFailureStatus:
 			values[i] = new(sql.NullInt64)
@@ -248,6 +250,14 @@ func (_m *AutomationRun) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.FiringID = new(int64)
 				*_m.FiringID = value.Int64
+			}
+		case automationrun.FieldChain:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field chain", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Chain); err != nil {
+					return fmt.Errorf("unmarshal field chain: %w", err)
+				}
 			}
 		case automationrun.FieldEndedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -393,6 +403,9 @@ func (_m *AutomationRun) String() string {
 		builder.WriteString("firing_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("chain=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Chain))
 	builder.WriteString(", ")
 	if v := _m.EndedAt; v != nil {
 		builder.WriteString("ended_at=")

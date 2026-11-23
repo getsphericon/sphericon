@@ -6489,6 +6489,14 @@ func (x *AutomationRunScopedCreate) SetNillableFiringID(v *int64) *AutomationRun
 
 const RoleOf_AutomationRunScopedCreate_SetNillableFiringID = RoleStep
 
+// SetChain sets the "chain" field.
+func (x *AutomationRunScopedCreate) SetChain(v []int64) *AutomationRunScopedCreate {
+	x.set = append(x.set, func(b *AutomationRunCreate) { b.SetChain(v) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedCreate_SetChain = RoleStep
+
 // SetEndedAt sets the "ended_at" field.
 func (x *AutomationRunScopedCreate) SetEndedAt(v time.Time) *AutomationRunScopedCreate {
 	x.set = append(x.set, func(b *AutomationRunCreate) { b.SetEndedAt(v) })

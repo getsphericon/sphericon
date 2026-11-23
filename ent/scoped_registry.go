@@ -410,6 +410,7 @@ func ScopedEntities() []*ScopedEntity {
 				if src.FiringID != nil {
 					b.SetFiringID(remap("RuleFiring", *src.FiringID))
 				}
+				b.SetChain(src.Chain)
 				if src.EndedAt != nil {
 					b.SetEndedAt(*src.EndedAt)
 				}

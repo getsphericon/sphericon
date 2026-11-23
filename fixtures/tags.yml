@@ -76,3 +76,19 @@
   name_key: filter-beta
   workspace_id: 94
   created_at: '2026-01-01 00:00:00'
+# Ouroboros (workspace 1553): the Tags its Automations apply and remove.
+- id: 15530
+  name: ring
+  name_key: ring
+  workspace_id: 1553
+  created_at: '2026-01-01 00:00:00'
+- id: 15531
+  name: self
+  name_key: self
+  workspace_id: 1553
+  created_at: '2026-01-01 00:00:00'
+- id: 15532
+  name: start
+  name_key: start
+  workspace_id: 1553
+  created_at: '2026-01-01 00:00:00'

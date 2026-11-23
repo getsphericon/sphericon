@@ -156,6 +156,12 @@ func (_c *AutomationRunCreate) SetNillableFiringID(v *int64) *AutomationRunCreat
 	return _c
 }
 
+// SetChain sets the "chain" field.
+func (_c *AutomationRunCreate) SetChain(v []int64) *AutomationRunCreate {
+	_c.mutation.SetChain(v)
+	return _c
+}
+
 // SetEndedAt sets the "ended_at" field.
 func (_c *AutomationRunCreate) SetEndedAt(v time.Time) *AutomationRunCreate {
 	_c.mutation.SetEndedAt(v)
@@ -322,6 +328,10 @@ func (_c *AutomationRunCreate) defaults() {
 		v := automationrun.DefaultBeganAt()
 		_c.mutation.SetBeganAt(v)
 	}
+	if _, ok := _c.mutation.Chain(); !ok {
+		v := automationrun.DefaultChain
+		_c.mutation.SetChain(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -354,6 +364,9 @@ func (_c *AutomationRunCreate) check() error {
 	}
 	if _, ok := _c.mutation.BeganAt(); !ok {
 		return &ValidationError{Name: "began_at", err: errors.New(`ent: missing required field "AutomationRun.began_at"`)}
+	}
+	if _, ok := _c.mutation.Chain(); !ok {
+		return &ValidationError{Name: "chain", err: errors.New(`ent: missing required field "AutomationRun.chain"`)}
 	}
 	if v, ok := _c.mutation.FailureKind(); ok {
 		if err := automationrun.FailureKindValidator(v); err != nil {
@@ -432,6 +445,10 @@ func (_c *AutomationRunCreate) createSpec() (*AutomationRun, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.TriggerSourceID(); ok {
 		_spec.SetField(automationrun.FieldTriggerSourceID, field.TypeString, value)
 		_node.TriggerSourceID = &value
+	}
+	if value, ok := _c.mutation.Chain(); ok {
+		_spec.SetField(automationrun.FieldChain, field.TypeJSON, value)
+		_node.Chain = value
 	}
 	if value, ok := _c.mutation.EndedAt(); ok {
 		_spec.SetField(automationrun.FieldEndedAt, field.TypeTime, value)
@@ -814,6 +831,9 @@ func (u *AutomationRunUpsertOne) UpdateNewValues() *AutomationRunUpsertOne {
 		}
 		if _, exists := u.create.mutation.FiringID(); exists {
 			s.SetIgnore(automationrun.FieldFiringID)
+		}
+		if _, exists := u.create.mutation.Chain(); exists {
+			s.SetIgnore(automationrun.FieldChain)
 		}
 	}))
 	return u
@@ -1262,6 +1282,9 @@ func (u *AutomationRunUpsertBulk) UpdateNewValues() *AutomationRunUpsertBulk {
 			}
 			if _, exists := b.mutation.FiringID(); exists {
 				s.SetIgnore(automationrun.FieldFiringID)
+			}
+			if _, exists := b.mutation.Chain(); exists {
+				s.SetIgnore(automationrun.FieldChain)
 			}
 		}
 	}))

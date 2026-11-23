@@ -5910,6 +5910,8 @@ type AutomationRunMutation struct {
 	event_action      *string
 	event_properties  *map[string]interface{}
 	trigger_source_id *string
+	chain             *[]int64
+	appendchain       []int64
 	ended_at          *time.Time
 	current_step_id   *automationstep.ID
 	resume_at         *time.Time
@@ -6521,6 +6523,57 @@ func (m *AutomationRunMutation) ResetFiringID() {
 	delete(m.clearedFields, automationrun.FieldFiringID)
 }
 
+// SetChain sets the "chain" field.
+func (m *AutomationRunMutation) SetChain(i []int64) {
+	m.chain = &i
+	m.appendchain = nil
+}
+
+// Chain returns the value of the "chain" field in the mutation.
+func (m *AutomationRunMutation) Chain() (r []int64, exists bool) {
+	v := m.chain
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChain returns the old "chain" field's value of the AutomationRun entity.
+// If the AutomationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationRunMutation) OldChain(ctx context.Context) (v []int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChain is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChain requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChain: %w", err)
+	}
+	return oldValue.Chain, nil
+}
+
+// AppendChain adds i to the "chain" field.
+func (m *AutomationRunMutation) AppendChain(i []int64) {
+	m.appendchain = append(m.appendchain, i...)
+}
+
+// AppendedChain returns the list of values that were appended to the "chain" field in this mutation.
+func (m *AutomationRunMutation) AppendedChain() ([]int64, bool) {
+	if len(m.appendchain) == 0 {
+		return nil, false
+	}
+	return m.appendchain, true
+}
+
+// ResetChain resets all changes to the "chain" field.
+func (m *AutomationRunMutation) ResetChain() {
+	m.chain = nil
+	m.appendchain = nil
+}
+
 // SetEndedAt sets the "ended_at" field.
 func (m *AutomationRunMutation) SetEndedAt(t time.Time) {
 	m.ended_at = &t
@@ -7005,7 +7058,7 @@ func (m *AutomationRunMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationRunMutation) Fields() []string {
-	fields := make([]string, 0, 18)
+	fields := make([]string, 0, 19)
 	if m.created_at != nil {
 		fields = append(fields, automationrun.FieldCreatedAt)
 	}
@@ -7041,6 +7094,9 @@ func (m *AutomationRunMutation) Fields() []string {
 	}
 	if m.firing != nil {
 		fields = append(fields, automationrun.FieldFiringID)
+	}
+	if m.chain != nil {
+		fields = append(fields, automationrun.FieldChain)
 	}
 	if m.ended_at != nil {
 		fields = append(fields, automationrun.FieldEndedAt)
@@ -7092,6 +7148,8 @@ func (m *AutomationRunMutation) Field(name string) (ent.Value, bool) {
 		return m.TriggerSourceID()
 	case automationrun.FieldFiringID:
 		return m.FiringID()
+	case automationrun.FieldChain:
+		return m.Chain()
 	case automationrun.FieldEndedAt:
 		return m.EndedAt()
 	case automationrun.FieldCurrentStepID:
@@ -7137,6 +7195,8 @@ func (m *AutomationRunMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldTriggerSourceID(ctx)
 	case automationrun.FieldFiringID:
 		return m.OldFiringID(ctx)
+	case automationrun.FieldChain:
+		return m.OldChain(ctx)
 	case automationrun.FieldEndedAt:
 		return m.OldEndedAt(ctx)
 	case automationrun.FieldCurrentStepID:
@@ -7241,6 +7301,13 @@ func (m *AutomationRunMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetFiringID(v)
+		return nil
+	case automationrun.FieldChain:
+		v, ok := value.([]int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChain(v)
 		return nil
 	case automationrun.FieldEndedAt:
 		v, ok := value.(time.Time)
@@ -7446,6 +7513,9 @@ func (m *AutomationRunMutation) ResetField(name string) error {
 		return nil
 	case automationrun.FieldFiringID:
 		m.ResetFiringID()
+		return nil
+	case automationrun.FieldChain:
+		m.ResetChain()
 		return nil
 	case automationrun.FieldEndedAt:
 		m.ResetEndedAt()
