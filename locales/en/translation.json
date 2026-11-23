@@ -365,6 +365,8 @@
     "engagementHint": "Every open and click counts here, so a person who opens twice shows twice. Opens and clicks cover the Event retention window; delivered, bounced and complained do not.",
     "engagementTitle": "Engagement",
     "enrolledAt": "Enrolled at",
+    "enrollmentKeyHint": "One enrollment per value of this event property, such as order_id.",
+    "enrollmentKeyLabel": "Enrollment key",
     "enrollmentStatus": {
       "active": "In progress",
       "completed": "Completed",
@@ -449,6 +451,8 @@
       "skippedActiveEnrollment": "Skipped: an enrollment was active",
       "skippedCooldown": "Skipped: within the cooldown",
       "skippedCycle": "Skipped: a cycle",
+      "skippedEnrollmentCeiling": "Skipped: too many enrollments of one contact",
+      "skippedNoEnrollmentKey": "Skipped: no enrollment key",
       "skippedOnce": "Skipped: enrolled before",
       "title": "Results"
     },
@@ -463,6 +467,8 @@
       "active_enrollment": "An enrollment was active",
       "cooldown": "Within the cooldown",
       "cycle": "Caused by this automation",
+      "enrollment_ceiling": "Too many enrollments of one contact",
+      "no_enrollment_key": "The event lacked the enrollment key",
       "once": "Enrolled before"
     },
     "smsNodeDescription": "Send a text message to the contact's phone.",

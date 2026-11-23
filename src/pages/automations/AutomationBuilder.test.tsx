@@ -5,6 +5,7 @@ import {
   handleSiteAutomationsGet,
   handleSiteAutomationsUpdate,
   handleSiteEnrollmentsList,
+  handleSiteEventsPropertyKeys,
   handleSiteIntegrationsList,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
@@ -52,6 +53,7 @@ const STORED: SiteAutomationResource = {
 test('the builder shows the SDK strings and the app strings inside it as text, not keys', async () => {
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(STORED)),
+    handleSiteEventsPropertyKeys({ body: { keys: [] } }),
     handleSiteIntegrationsList({ body: [] }),
     handleSiteEnrollmentsList({
       body: { items: [], page: 1, pageSize: 25, totalItems: 0, totalPages: 0 },

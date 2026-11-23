@@ -7,6 +7,7 @@ import {
   handleSiteAutomationsPublish,
   handleSiteAutomationsUpdate,
   handleSiteEnrollmentsList,
+  handleSiteEventsPropertyKeys,
   handleSiteIntegrationsList,
   handleSiteTagsList,
   handleSiteWorkspacesList,
@@ -27,11 +28,13 @@ const EDIT_ROUTE = routeMount(automationsEditRoute, {
 })
 const NOW = '2026-01-01T00:00:00Z'
 
-// The page also asks for the failed Enrollments and the Integrations to pick from: none unless a
-// test says otherwise; and for the Workspace, whose postal address an email step shows when missing.
+// The page also asks for the failed Enrollments and the Integrations to pick from, and the Trigger
+// card for the property keys of recent events of its action: none unless a test says otherwise;
+// and for the Workspace, whose postal address an email step shows when missing.
 beforeEach(() => {
   worker.use(
     handleSiteWorkspacesList({ body: [workspace()] }),
+    handleSiteEventsPropertyKeys({ body: { keys: [] } }),
     handleSiteEnrollmentsList({
       body: { items: [], page: 1, pageSize: 25, totalItems: 0, totalPages: 0 },
     }),
@@ -169,6 +172,42 @@ test('the Trigger card sets the Entry policy and, under again, the cooldown in h
     .toMatchObject([{ trigger: { kind: 'event', entryPolicy: 'again', cooldown: 86_400 } }])
 })
 
+test('the Trigger card suggests the property keys of recent events of its action as the Enrollment key, and the save sends the one picked', async () => {
+  const bodies: unknown[] = []
+  const asked: (string | null)[] = []
+  worker.use(
+    handleSiteAutomationsGet({ body: STORED }),
+    handleSiteEventsPropertyKeys(({ request }) => {
+      asked.push(new URL(request.url).searchParams.get('action'))
+      return HttpResponse.json({ keys: ['order_id', 'total'] })
+    }),
+    handleSiteAutomationsUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(STORED)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+  await expect.poll(() => flowNode(0)).toBeInstanceOf(Element)
+  await page.elementLocator(flowNode(0)).click()
+  await screen.getByText('Properties').click()
+  await screen.getByRole('combobox', { name: 'Enrollment key' }).click()
+  await screen.getByRole('option', { name: 'order_id' }).click()
+  // A click inside the panel leaves the value, and the Save is a click dispatched on it.
+  await screen.getByText('Trigger Filter', { exact: true }).click()
+  screen
+    .getByRole('button', { name: 'Save' })
+    .element()
+    .dispatchEvent(new MouseEvent('click', { bubbles: true }))
+
+  expect(asked).toContain('email.clicked')
+  await expect
+    .poll(() => bodies)
+    .toMatchObject([
+      { trigger: { kind: 'event', action: 'email.clicked', enrollmentKey: 'order_id' } },
+    ])
+})
+
 test('saving sends the trigger event typed on the canvas, a custom one included', async () => {
   const bodies: unknown[] = []
   worker.use(
@@ -184,7 +223,13 @@ test('saving sends the trigger event typed on the canvas, a custom one included'
   await page.elementLocator(flowNode(0)).click()
   await screen.getByText('Properties').click()
   await screen.getByRole('combobox', { name: 'Trigger Event' }).fill('course_completed')
-  await screen.getByRole('button', { name: 'Save' }).click()
+  // The Trigger's panel covers the toolbar: a click inside the panel leaves the value, and the Save
+  // is a click dispatched on it.
+  await screen.getByText('Trigger Filter', { exact: true }).click()
+  screen
+    .getByRole('button', { name: 'Save' })
+    .element()
+    .dispatchEvent(new MouseEvent('click', { bubbles: true }))
 
   await expect
     .poll(() => bodies)
@@ -264,7 +309,11 @@ test('a filter left half-typed is dropped when the Trigger is opened again, and 
   await expect.element(screen.getByText('Trigger Filter')).not.toBeInTheDocument()
   flowNode(0).dispatchEvent(new MouseEvent('click', { bubbles: true }))
   await expect.element(screen.getByText('Trigger Filter')).toBeInTheDocument()
-  await screen.getByRole('button', { name: 'Save' }).click()
+  // The Trigger's panel covers the toolbar: the Save is a click dispatched on it.
+  screen
+    .getByRole('button', { name: 'Save' })
+    .element()
+    .dispatchEvent(new MouseEvent('click', { bubbles: true }))
 
   await expect
     .poll(() => bodies)

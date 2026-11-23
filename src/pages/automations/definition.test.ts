@@ -658,3 +658,23 @@ test('a half-typed filter of an exit or goal is dropped, a complete one kept', (
   expect(withoutHalfTypedFilter(halfTyped)).toEqual({ action: 'order.closed', filterText: '' })
   expect(withoutHalfTypedFilter(complete)).toEqual(complete)
 })
+
+test("the Trigger's Enrollment key rides on its node and round-trips into the saved Trigger, and a blank one saves none", () => {
+  const trigger: AutomationTrigger = {
+    trigger: {
+      kind: 'event',
+      action: 'order.completed',
+      entryPolicy: 'once',
+      cooldown: 3600,
+      enrollmentKey: 'order_id',
+    },
+    exitEvents: [],
+    goalEvent: null,
+  }
+  const graph = stepsToGraph(trigger, path([]), {})
+  const blank = node('trigger', 'trigger', { triggerEvent: 'order.completed', enrollmentKey: '  ' })
+
+  expect(graph.nodes[0]?.data.properties).toMatchObject({ enrollmentKey: 'order_id' })
+  expect(graphToSteps(graph).trigger).toEqual(trigger.trigger)
+  expect(graphToSteps({ nodes: [blank], edges: [] }).trigger).not.toHaveProperty('enrollmentKey')
+})

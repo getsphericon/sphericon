@@ -8,3 +8,5 @@ export const GOAL_EVENT_FORMAT = 'goal-event'
 // The schema `format`s of the Trigger's Entry policy and its cooldown in seconds (ADR 0127).
 export const ENTRY_POLICY_FORMAT = 'entry-policy'
 export const COOLDOWN_FORMAT = 'cooldown'
+// The schema `format` of the Trigger's Enrollment key, a property name (ADR 0165).
+export const ENROLLMENT_KEY_FORMAT = 'enrollment-key'
