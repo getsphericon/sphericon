@@ -16,7 +16,10 @@
 // adding one step, or a foreign key that does the work, not a second code path. The Contact row
 // goes last, through the contacts module's unchecked removal contactsunchecked.Module.DeleteIn. Each step is
 // an unchecked operation of its owner's subpackage (`<module>unchecked`), which only a use case may
-// import (ADR 0110). The record of an Erasure (the Erasures stream, ADR 0045)
+// import (ADR 0110), but one: a refusal's reach-back for the subject's refused Destinations, which
+// the Erasure runs itself before it blanks what the reach-back finds the messages by (ADR 0113), and
+// which calls the checked operations of its owners (outboundmessages, orders) as the reach-back's
+// own use case does, with eventsunchecked for the Events. The record of an Erasure (the Erasures stream, ADR 0045)
 // is written from the contact.erased Event by its own consumer, not here.
 package contacterasure
 

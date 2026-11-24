@@ -175,8 +175,8 @@ func (OutboundMessage) Fields() []ent.Field {
 		// rewritten (email), its links made Short tracked links (SMS, Telegram). A fact of what went
 		// out, decided at render in the send chokepoint from the surface and the Destination's
 		// effective consent, and recorded once with tracking_decided_at, before the provider is
-		// called; it says nothing while tracking_decided_at is NULL (a message skipped before its
-		// render, or not rendered yet), and a retry reads the earlier decision. A message is tracked
+		// called; false while no render decided (a message skipped before its render, or not
+		// rendered yet), and a retry reads the earlier decision. A message is tracked
 		// while this holds and tracking_withdrawn_at is NULL (engagementtracking.IsTracked).
 		field.Bool("tracked").Default(false).
 			Annotations(Attribute("what the render decided, written only in the latch write of tracking_decided_at")),

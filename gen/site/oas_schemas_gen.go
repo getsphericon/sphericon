@@ -5208,10 +5208,11 @@ type ContactExportOutboundMessage struct {
 	// True when the message went through a Test inbox: captured, not delivered.
 	Captured bool `json:"captured"`
 	// Whether the message went out tracked: with an open pixel and its links rewritten, or its links made
-	// Short tracked links (ADR 0120); it says nothing while `trackingDecidedAt` is null.
+	// Short tracked links (ADR 0120). False for a message no render decided (skipped before its render, or
+	// not rendered yet).
 	Tracked bool `json:"tracked"`
-	// When a render decided whether the message goes out tracked; null for a message no render decided
-	// (skipped before its render, or not rendered yet).
+	// When a render decided whether the message goes out tracked; null for a message no render decided,
+	// and for one sent before the moment was recorded, which went out tracked.
 	TrackingDecidedAt OptNilTimestamp `json:"trackingDecidedAt"`
 	// When the message's tracking was withdrawn (a refusal of the contact's, or the Workspace's default
 	// turned to `dont_track`); null while it was not.
