@@ -25,16 +25,31 @@ func ReadsWhere(channel channels.Channel, state State) func(*sql.Selector) {
 
 // readsOf is ReadsWhere's predicate over the outer contacts query.
 func readsOf(outer *sql.Selector, channel channels.Channel, state State) *sql.Predicate {
-	workspace := outer.C(contact.FieldWorkspaceID)
-	switch channel {
-	case channels.Email:
-		return sql.Exists(recordedOf(workspace, outer.C(contact.FieldEmail), channel, state))
-	case channels.SMS:
-		return sql.Exists(recordedOf(workspace, outer.C(contact.FieldPhone), channel, state))
-	case channels.Telegram:
+	column, ok := consentChannels[channel]
+	switch {
+	case !ok:
+		return sql.False()
+	case column == "":
 		return chatsRead(outer, state)
 	}
-	return sql.False()
+	return sql.Exists(recordedOf(outer.C(contact.FieldWorkspaceID), outer.C(column), channel, state))
+}
+
+// UntrackedOf is whether the Contact of the outer contacts query has a Destination on channel that
+// is not tracked under the Workspace's default dflt: its email address, its phone, or any of its
+// own Telegram chats (a Visitor's is no Contact's, ADR 0171). A Contact with none has nothing
+// untracked, and neither has one on a Channel that takes no consent. Never NULL.
+func UntrackedOf(outer *sql.Selector, channel channels.Channel, dflt Decision) *sql.Predicate {
+	column, ok := consentChannels[channel]
+	switch {
+	case !ok:
+		return sql.False()
+	case column == "":
+		chats := ownChats(outer)
+		chats.Where(Untracked(chats, channel, dflt, binding.FieldDestination))
+		return sql.Exists(chats)
+	}
+	return sql.And(sql.NotNull(outer.C(column)), Untracked(outer, channel, dflt, column))
 }
 
 // chatsRead is whether the Contact's own Telegram chats read as state: denied when any chat is

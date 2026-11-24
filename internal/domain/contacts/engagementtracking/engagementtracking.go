@@ -36,7 +36,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -135,9 +134,13 @@ var _ = db.Declare(
 	db.Fault("engagement_tracking_consents_ws_channel_dest", "every write holds the Destination's consent stamp first and reads the row under it"),
 )
 
-// open is the Channels whose messages track engagement (ADR 0083), so whose Destinations take a
-// consent: an email address, a phone number in E.164, the Telegram user id a Binding names.
-var open = map[channels.Channel]bool{channels.Email: true, channels.SMS: true, channels.Telegram: true}
+// consentChannels is the Channels whose messages track engagement (ADR 0083), so whose
+// Destinations take a consent, each with the Contact's column holding its Destination: the email
+// address, the phone number in E.164; "" on Telegram, whose Destinations are the user ids the
+// Contact's own Bindings name. Every per-Channel read of a Contact's Destination goes through it.
+var consentChannels = map[channels.Channel]string{
+	channels.Email: contact.FieldEmail, channels.SMS: contact.FieldPhone, channels.Telegram: "",
+}
 
 // Module records and reads the Engagement tracking consent of a Workspace's Destinations. It
 // publishes each consent's proof in the transaction of the scope it is given, through the bus.
@@ -263,12 +266,6 @@ func setBy(stamp *ent.ConsentStamp, at time.Time) bool {
 // Destinations are stored, a known state and provenance, and the time it occurred: now when it
 // states none, and never after now (a grant dated later is ErrInFuture, a refusal is taken as now).
 func (m *Module) checked(in RecordInput) (RecordInput, error) {
-	if !open[in.Channel] {
-		return RecordInput{}, ErrChannel
-	}
-	if err := validation.MaxLength(fieldname.Destination, in.Destination, bounds.ConsentDestinationMaxLength); err != nil {
-		return RecordInput{}, err
-	}
 	dest, err := destinationOf(in.Channel, in.Destination)
 	if err != nil {
 		return RecordInput{}, err
@@ -294,8 +291,12 @@ func (m *Module) checked(in RecordInput) (RecordInput, error) {
 }
 
 // destinationOf is raw as its Channel's Destinations are stored, normalized as an opt-out's are
-// (unsubscribes.Destination), or this module's refusal of it.
+// (unsubscribes.Destination), or this module's refusal of it: a Channel that takes no consent is
+// ErrChannel.
 func destinationOf(channel channels.Channel, raw string) (string, error) {
+	if _, ok := consentChannels[channel]; !ok {
+		return "", ErrChannel
+	}
 	dest, err := unsubscribes.Destination(channel, raw)
 	switch {
 	case errors.Is(err, unsubscribes.ErrDestinationEmpty):
@@ -385,12 +386,9 @@ func (m *Module) holderOf(ctx context.Context, s *ent.Scoped, channel channels.C
 		id  int64
 		err error
 	)
-	switch channel {
-	case channels.Email:
-		id, err = s.Contact().Query().Where(contact.Email(destination)).OnlyID(ctx)
-	case channels.SMS:
-		id, err = s.Contact().Query().Where(contact.Phone(destination)).OnlyID(ctx)
-	case channels.Telegram:
+	if column := consentChannels[channel]; column != "" {
+		id, err = s.Contact().Query().Where(sql.FieldEQ(column, destination)).OnlyID(ctx)
+	} else {
 		id, err = boundContactOf(ctx, s, destination)
 	}
 	switch {
@@ -460,9 +458,6 @@ func (m *Module) RecordByMember(ctx context.Context, s *ent.Scoped, contactID in
 		c, err := contactOf(ctx, ts, contactID)
 		if err != nil {
 			return err
-		}
-		if !open[in.Channel] {
-			return ErrChannel
 		}
 		address, err := destinationOf(in.Channel, in.Destination)
 		if err != nil {
