@@ -260,6 +260,9 @@ func (OutboundMessage) Indexes() []ent.Index {
 			StorageKey("outbound_messages_workspace_id_provider_message_id"),
 		// The Outbound messages Export stream's cursor (ADR 0045).
 		index.Fields("workspace_id", "updated_at", "id"),
+		// A refusal of tracking reaches back to its Destination's messages, in id order, a batch at
+		// a time (ADR 0120).
+		index.Fields("workspace_id", "destination", "id"),
 		// Erasure and contact lookups reach this table by contact; the contact foreign key's
 		// index (whole: a key's index cannot be partial).
 		index.Fields("workspace_id", "contact_id").

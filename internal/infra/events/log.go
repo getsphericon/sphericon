@@ -113,6 +113,24 @@ func NamesMessage() predicate.Event {
 	}
 }
 
+// NamesMessageIn narrows a query of Events to the ones that name one of the Outbound messages ids,
+// the id read as a bigint (the default cast of an integer, int, would overflow one); no ids match
+// nothing.
+func NamesMessageIn(ids []int64) predicate.Event {
+	args := make([]any, len(ids))
+	for i, id := range ids {
+		args[i] = id
+	}
+	return func(selector *sql.Selector) {
+		if len(args) == 0 {
+			selector.Where(sql.False())
+			return
+		}
+		selector.Where(sqljson.ValueIn(selector.C(event.FieldProperties), args,
+			sqljson.Path(outboundMessageIDProperty), sqljson.Cast("bigint")))
+	}
+}
+
 // messageIDOf is the stored id of the Outbound message an Event names, a JSON number however it
 // was decoded.
 func messageIDOf(e *ent.Event) (int64, bool) {

@@ -130,6 +130,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/trackingwithdrawal"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/visitoridentification"
@@ -589,39 +590,40 @@ var jobsPackage = do.Package(
 		edition := do.MustInvoke[*ee.Edition](i)
 		pool := do.MustInvoke[*riverPool](i)
 		jc, err := jobs.NewClient(riverdatabasesql.NewWithPgxListener(pool.DB, pool.listener), jobs.Deps{
-			Ent:               do.MustInvoke[*ent.Client](i),
-			Bus:               do.MustInvoke[*events.Bus](i),
-			Outbound:          do.MustInvoke[*outboundmessages.Module](i),
-			Broadcasts:        do.MustInvoke[*broadcasts.Module](i),
-			BroadcastDelivery: do.MustInvoke[*broadcasts.Delivery](i),
-			Cipher:            do.MustInvoke[*secrets.Cipher](i),
-			SystemSender:      do.MustInvoke[SystemSender](i).EmailSender,
-			Notices:           do.MustInvoke[*noticedelivery.Module](i),
-			Callbacks:         do.MustInvoke[*callbackinterpretation.Module](i),
-			Rules:             do.MustInvoke[*rules.Module](i),
-			Users:             do.MustInvoke[*users.Module](i),
-			SecondFactor:      do.MustInvoke[*secondfactors.Module](i),
-			Passkeys:          do.MustInvoke[*passkeys.Module](i),
-			Orders:            do.MustInvoke[*orders.Module](i),
-			Suppressions:      do.MustInvoke[*suppressions.Module](i),
-			Contacts:          do.MustInvoke[*contacts.Module](i),
-			CapturedMessages:  do.MustInvoke[*capturedmessages.Module](i),
-			Deletion:          do.MustInvoke[*workspacedeletion.UseCase](i),
-			Workspaces:        do.MustInvoke[*workspaces.Module](i),
-			MessageRetention:  do.MustInvoke[*messageretention.UseCase](i),
-			SendingDomains:    do.MustInvoke[*sendingdomains.Module](i),
-			StepExecution:     do.MustInvoke[*automations.StepExecution](i),
-			Automations:       do.MustInvoke[*automations.Module](i),
-			JoinDomains:       do.MustInvoke[*joindomains.Module](i),
-			Integrations:      do.MustInvoke[*integrations.Module](i),
-			Chats:             do.MustInvoke[*bindings.Chats](i),
-			TrackingDomains:   do.MustInvoke[*trackingdomains.Module](i),
-			Machine:           do.MustInvoke[*privaterelayranges.Detector](i),
-			Clock:             do.MustInvoke[Clock](i),
-			OutboundAllow:     cfg.OutboundAllow,
-			Retention:         jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
-			Webhooks:          edition.Webhooks,
-			Instance:          do.MustInvoke[*instancestates.Module](i),
+			Ent:                do.MustInvoke[*ent.Client](i),
+			Bus:                do.MustInvoke[*events.Bus](i),
+			Outbound:           do.MustInvoke[*outboundmessages.Module](i),
+			Broadcasts:         do.MustInvoke[*broadcasts.Module](i),
+			BroadcastDelivery:  do.MustInvoke[*broadcasts.Delivery](i),
+			Cipher:             do.MustInvoke[*secrets.Cipher](i),
+			SystemSender:       do.MustInvoke[SystemSender](i).EmailSender,
+			Notices:            do.MustInvoke[*noticedelivery.Module](i),
+			Callbacks:          do.MustInvoke[*callbackinterpretation.Module](i),
+			Rules:              do.MustInvoke[*rules.Module](i),
+			Users:              do.MustInvoke[*users.Module](i),
+			SecondFactor:       do.MustInvoke[*secondfactors.Module](i),
+			Passkeys:           do.MustInvoke[*passkeys.Module](i),
+			Orders:             do.MustInvoke[*orders.Module](i),
+			Suppressions:       do.MustInvoke[*suppressions.Module](i),
+			Contacts:           do.MustInvoke[*contacts.Module](i),
+			CapturedMessages:   do.MustInvoke[*capturedmessages.Module](i),
+			Deletion:           do.MustInvoke[*workspacedeletion.UseCase](i),
+			Workspaces:         do.MustInvoke[*workspaces.Module](i),
+			MessageRetention:   do.MustInvoke[*messageretention.UseCase](i),
+			TrackingWithdrawal: do.MustInvoke[*trackingwithdrawal.UseCase](i),
+			SendingDomains:     do.MustInvoke[*sendingdomains.Module](i),
+			StepExecution:      do.MustInvoke[*automations.StepExecution](i),
+			Automations:        do.MustInvoke[*automations.Module](i),
+			JoinDomains:        do.MustInvoke[*joindomains.Module](i),
+			Integrations:       do.MustInvoke[*integrations.Module](i),
+			Chats:              do.MustInvoke[*bindings.Chats](i),
+			TrackingDomains:    do.MustInvoke[*trackingdomains.Module](i),
+			Machine:            do.MustInvoke[*privaterelayranges.Detector](i),
+			Clock:              do.MustInvoke[Clock](i),
+			OutboundAllow:      cfg.OutboundAllow,
+			Retention:          jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
+			Webhooks:           edition.Webhooks,
+			Instance:           do.MustInvoke[*instancestates.Module](i),
 		}, eejobs.Extension(eejobs.Deps{
 			Retention:       do.MustInvoke[*auditlogretention.UseCase](i),
 			Detector:        do.MustInvoke[*abusedetector.Detector](i),
@@ -788,6 +790,11 @@ var identityPackage = do.Package(
 	// The Invitations (ADR 0102): their lookup by token takes the raw client.
 	do.Lazy(func(i do.Injector) (*invitations.Module, error) {
 		return invitations.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
+	}),
+	// The reach-back of a refusal of tracking (ADR 0120).
+	do.Lazy(func(i do.Injector) (*trackingwithdrawal.UseCase, error) {
+		return trackingwithdrawal.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*outboundmessages.Module](i),
+			do.MustInvoke[*orders.Module](i), trackingwithdrawal.Batch), nil
 	}),
 	// The use case of message retention (ADR 0143), over the raw client.
 	do.Lazy(func(i do.Injector) (*messageretention.UseCase, error) {

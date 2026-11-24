@@ -58,26 +58,24 @@ func (Order) Fields() []ent.Field {
 		// last clicked inside the Attribution window, the time of that click and the Outbound
 		// message it was on. Found once when the Order is created and never looked for again; all
 		// four are null for an unattributed Order, and at most one of the two references is set.
+		// A refusal of tracking by the message's Destination clears all four together (ADR 0120),
+		// the one change the credit takes.
 		field.Int64("broadcast_id").
 			Optional().
-			Nillable().
-			Immutable(),
+			Nillable(),
 		field.Int64("automation_id").
 			Optional().
-			Nillable().
-			Immutable(),
+			Nillable(),
 		field.Time("credited_click_at").
 			Annotations(Attribute(reasonHistory)).
 			Optional().
-			Nillable().
-			Immutable(),
+			Nillable(),
 		// The Outbound message whose click earned the credit, copied from the click Event's
 		// outboundMessageId, so a refusal of tracking clears exactly the credits that its
 		// Destination's clicks earned (ADR 0120).
 		field.Int64("credited_message_id").
 			Optional().
 			Nillable().
-			Immutable().
 			Annotations(ScopedRef{
 				Unchecked: true,
 				Reason: "a snapshot of the clicked message, as the click Event keeps it: message retention deletes " +
@@ -98,12 +96,10 @@ func (Order) Edges() []ent.Edge {
 		edge.To("broadcast", Broadcast.Type).
 			Field("broadcast_id").
 			Unique().
-			Immutable().
 			Annotations(entsql.OnDelete(entsql.Restrict)),
 		edge.To("automation", Automation.Type).
 			Field("automation_id").
 			Unique().
-			Immutable().
 			Annotations(entsql.OnDelete(entsql.Restrict)),
 		edge.To("movements", OrderMovement.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),

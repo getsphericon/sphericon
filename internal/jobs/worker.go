@@ -48,6 +48,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/usecase/messageretention"
+	"github.com/getsphericon/sphericon/internal/usecase/trackingwithdrawal"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
 
@@ -113,6 +114,9 @@ type Deps struct {
 	Workspaces *workspaces.Module
 	// MessageRetention deletes old Outbound messages, keeping their figures (ADR 0143).
 	MessageRetention *messageretention.UseCase
+	// TrackingWithdrawal reaches back from a refusal of tracking to its Destination's earlier
+	// messages (ADR 0120).
+	TrackingWithdrawal *trackingwithdrawal.UseCase
 	// SendingDomains, JoinDomains and TrackingDomains re-check the published DNS of the domains
 	// (ADR 0010, ADR 0071); verified is a live property.
 	SendingDomains *sendingdomains.Module
@@ -199,6 +203,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewBroadcastUnsubscribeEventWorker(entClient, deps.Broadcasts))
 	river.AddWorker(workers, NewMessageObservationWorker(entClient, mod))
 	river.AddWorker(workers, NewOrderEventWorker(entClient, deps.Orders))
+	river.AddWorker(workers, NewTrackingWithdrawalWorker(entClient, deps.TrackingWithdrawal))
 	dispatcher := NewWebhookDispatcher()
 	if deps.Webhooks != nil {
 		dispatcher = deps.Webhooks(dispatcher)
