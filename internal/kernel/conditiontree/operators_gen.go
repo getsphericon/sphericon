@@ -70,6 +70,21 @@ var PresenceOperators = []PresenceOperator{
 	PresenceNotSet,
 }
 
+// StateOperator is how a test of a Contact's Engagement tracking consent compares it with a state.
+type StateOperator string
+
+// The values of the contract's StateOperator enum, in its order.
+const (
+	StateEq  StateOperator = "eq"
+	StateNeq StateOperator = "neq"
+)
+
+// StateOperators is every StateOperator, in the contract's order.
+var StateOperators = []StateOperator{
+	StateEq,
+	StateNeq,
+}
+
 // HasOperator is whether a Tag, Telegram or SMS leaf asks the Contact to have it.
 type HasOperator string
 

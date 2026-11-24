@@ -14825,6 +14825,330 @@ func (s *EngagementTrackingState) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *EngagementTrackingStateTest) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *EngagementTrackingStateTest) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("operator")
+		s.Operator.Encode(e)
+	}
+	{
+		e.FieldStart("value")
+		s.Value.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfEngagementTrackingStateTest = [3]string{
+	0: "kind",
+	1: "operator",
+	2: "value",
+}
+
+// Decode decodes EngagementTrackingStateTest from json.
+func (s *EngagementTrackingStateTest) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode EngagementTrackingStateTest to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "operator":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Operator.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"operator\"")
+			}
+		case "value":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Value.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"value\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode EngagementTrackingStateTest")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfEngagementTrackingStateTest) {
+					name = jsonFieldsNameOfEngagementTrackingStateTest[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *EngagementTrackingStateTest) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *EngagementTrackingStateTest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *EngagementTrackingStateTestInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *EngagementTrackingStateTestInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("operator")
+		s.Operator.Encode(e)
+	}
+	{
+		e.FieldStart("value")
+		s.Value.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfEngagementTrackingStateTestInput = [3]string{
+	0: "kind",
+	1: "operator",
+	2: "value",
+}
+
+// Decode decodes EngagementTrackingStateTestInput from json.
+func (s *EngagementTrackingStateTestInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode EngagementTrackingStateTestInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "operator":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Operator.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"operator\"")
+			}
+		case "value":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Value.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"value\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode EngagementTrackingStateTestInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfEngagementTrackingStateTestInput) {
+					name = jsonFieldsNameOfEngagementTrackingStateTestInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *EngagementTrackingStateTestInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *EngagementTrackingStateTestInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes EngagementTrackingStateTestInputKind as json.
+func (s EngagementTrackingStateTestInputKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes EngagementTrackingStateTestInputKind from json.
+func (s *EngagementTrackingStateTestInputKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode EngagementTrackingStateTestInputKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch EngagementTrackingStateTestInputKind(v) {
+	case EngagementTrackingStateTestInputKindText:
+		*s = EngagementTrackingStateTestInputKindText
+	default:
+		*s = EngagementTrackingStateTestInputKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s EngagementTrackingStateTestInputKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *EngagementTrackingStateTestInputKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes EngagementTrackingStateTestKind as json.
+func (s EngagementTrackingStateTestKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes EngagementTrackingStateTestKind from json.
+func (s *EngagementTrackingStateTestKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode EngagementTrackingStateTestKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch EngagementTrackingStateTestKind(v) {
+	case EngagementTrackingStateTestKindText:
+		*s = EngagementTrackingStateTestKindText
+	default:
+		*s = EngagementTrackingStateTestKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s EngagementTrackingStateTestKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *EngagementTrackingStateTestKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *EngagementTrackingTest) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -14933,18 +15257,18 @@ func (s EngagementTrackingTestInputSum) Encode(e *jx.Encoder) {
 
 func (s EngagementTrackingTestInputSum) encodeFields(e *jx.Encoder) {
 	switch s.Type {
-	case TextTestInputEngagementTrackingTestInputSum:
+	case EngagementTrackingStateTestInputEngagementTrackingTestInputSum:
 		e.FieldStart("kind")
 		e.Str("text")
 		{
-			s := s.TextTestInput
+			s := s.EngagementTrackingStateTestInput
 			{
 				e.FieldStart("operator")
 				s.Operator.Encode(e)
 			}
 			{
 				e.FieldStart("value")
-				e.Str(s.Value)
+				s.Value.Encode(e)
 			}
 		}
 	case PresenceTestInputEngagementTrackingTestInputSum:
@@ -14984,7 +15308,7 @@ func (s *EngagementTrackingTestInputSum) Decode(d *jx.Decoder) error {
 				}
 				switch typ {
 				case "text":
-					s.Type = TextTestInputEngagementTrackingTestInputSum
+					s.Type = EngagementTrackingStateTestInputEngagementTrackingTestInputSum
 					found = true
 				case "presence":
 					s.Type = PresenceTestInputEngagementTrackingTestInputSum
@@ -15003,8 +15327,8 @@ func (s *EngagementTrackingTestInputSum) Decode(d *jx.Decoder) error {
 		return errors.New("unable to detect sum type variant")
 	}
 	switch s.Type {
-	case TextTestInputEngagementTrackingTestInputSum:
-		if err := s.TextTestInput.Decode(d); err != nil {
+	case EngagementTrackingStateTestInputEngagementTrackingTestInputSum:
+		if err := s.EngagementTrackingStateTestInput.Decode(d); err != nil {
 			return err
 		}
 	case PresenceTestInputEngagementTrackingTestInputSum:
@@ -15039,18 +15363,18 @@ func (s EngagementTrackingTestSum) Encode(e *jx.Encoder) {
 
 func (s EngagementTrackingTestSum) encodeFields(e *jx.Encoder) {
 	switch s.Type {
-	case TextTestEngagementTrackingTestSum:
+	case EngagementTrackingStateTestEngagementTrackingTestSum:
 		e.FieldStart("kind")
 		e.Str("text")
 		{
-			s := s.TextTest
+			s := s.EngagementTrackingStateTest
 			{
 				e.FieldStart("operator")
 				s.Operator.Encode(e)
 			}
 			{
 				e.FieldStart("value")
-				e.Str(s.Value)
+				s.Value.Encode(e)
 			}
 		}
 	case PresenceTestEngagementTrackingTestSum:
@@ -15090,7 +15414,7 @@ func (s *EngagementTrackingTestSum) Decode(d *jx.Decoder) error {
 				}
 				switch typ {
 				case "text":
-					s.Type = TextTestEngagementTrackingTestSum
+					s.Type = EngagementTrackingStateTestEngagementTrackingTestSum
 					found = true
 				case "presence":
 					s.Type = PresenceTestEngagementTrackingTestSum
@@ -15109,8 +15433,8 @@ func (s *EngagementTrackingTestSum) Decode(d *jx.Decoder) error {
 		return errors.New("unable to detect sum type variant")
 	}
 	switch s.Type {
-	case TextTestEngagementTrackingTestSum:
-		if err := s.TextTest.Decode(d); err != nil {
+	case EngagementTrackingStateTestEngagementTrackingTestSum:
+		if err := s.EngagementTrackingStateTest.Decode(d); err != nil {
 			return err
 		}
 	case PresenceTestEngagementTrackingTestSum:
@@ -63816,6 +64140,46 @@ func (s *SoleOwnedWorkspace) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SoleOwnedWorkspace) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes StateOperator as json.
+func (s StateOperator) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes StateOperator from json.
+func (s *StateOperator) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode StateOperator to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch StateOperator(v) {
+	case StateOperatorEq:
+		*s = StateOperatorEq
+	case StateOperatorNeq:
+		*s = StateOperatorNeq
+	default:
+		*s = StateOperator(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s StateOperator) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *StateOperator) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

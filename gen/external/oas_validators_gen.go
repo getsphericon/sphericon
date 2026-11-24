@@ -4683,6 +4683,114 @@ func (s EngagementTrackingState) Validate() error {
 	}
 }
 
+func (s *EngagementTrackingStateTest) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Operator.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "operator",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Value.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "value",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *EngagementTrackingStateTestInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Operator.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "operator",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Value.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "value",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s EngagementTrackingStateTestInputKind) Validate() error {
+	switch s {
+	case "text":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s EngagementTrackingStateTestKind) Validate() error {
+	switch s {
+	case "text":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *EngagementTrackingTest) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -4731,8 +4839,8 @@ func (s *EngagementTrackingTestInput) Validate() error {
 
 func (s EngagementTrackingTestInputSum) Validate() error {
 	switch s.Type {
-	case TextTestInputEngagementTrackingTestInputSum:
-		if err := s.TextTestInput.Validate(); err != nil {
+	case EngagementTrackingStateTestInputEngagementTrackingTestInputSum:
+		if err := s.EngagementTrackingStateTestInput.Validate(); err != nil {
 			return err
 		}
 		return nil
@@ -4748,8 +4856,8 @@ func (s EngagementTrackingTestInputSum) Validate() error {
 
 func (s EngagementTrackingTestSum) Validate() error {
 	switch s.Type {
-	case TextTestEngagementTrackingTestSum:
-		if err := s.TextTest.Validate(); err != nil {
+	case EngagementTrackingStateTestEngagementTrackingTestSum:
+		if err := s.EngagementTrackingStateTest.Validate(); err != nil {
 			return err
 		}
 		return nil
@@ -9942,6 +10050,17 @@ func (s *SoleOwnedWorkspace) Validate() error {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
+}
+
+func (s StateOperator) Validate() error {
+	switch s {
+	case "eq":
+		return nil
+	case "neq":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s SuppressionChannel) Validate() error {

@@ -122,6 +122,7 @@ var ConditionOperators = Table{
 		operatorEnum("NumberOperator", "Number", "how a number test compares the value with its own"),
 		operatorEnum("MomentOperator", "Moment", "which side of its moment a moment test asks for"),
 		operatorEnum("PresenceOperator", "Presence", "whether a presence test asks for a value set or not"),
+		operatorEnum("StateOperator", "State", "how a test of a Contact's Engagement tracking consent compares it with a state"),
 		operatorEnum("HasOperator", "", "whether a Tag, Telegram or SMS leaf asks the Contact to have it"),
 		operatorEnum("EventCountOperator", "", "how an event leaf bounds the count of the Contact's Events"),
 		Enum{

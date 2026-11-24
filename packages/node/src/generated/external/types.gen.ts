@@ -2985,26 +2985,56 @@ export const EngagementTrackingState = { GRANTED: 'granted', DENIED: 'denied' } 
 export type EngagementTrackingState = typeof EngagementTrackingState[keyof typeof EngagementTrackingState];
 
 /**
+ * A test of a Contact's Engagement tracking consent against a state. eq holds where the consent
+ * reads as `value`; neq holds everywhere else, where none is recorded included, so a test and its
+ * negation split every Contact.
+ */
+export type EngagementTrackingStateTest = {
+  kind: 'text';
+  /**
+   * Whether the consent reads as the state, or does not
+   */
+  operator: StateOperator;
+  /**
+   * The state compared with
+   */
+  value: EngagementTrackingState;
+};
+
+/**
+ * A test of a Contact's Engagement tracking consent against a state. eq holds where the consent
+ * reads as `value`; neq holds everywhere else, where none is recorded included, so a test and its
+ * negation split every Contact.
+ */
+export type EngagementTrackingStateTestInput = {
+  kind: 'text';
+  /**
+   * Whether the consent reads as the state, or does not
+   */
+  operator: StateOperator;
+  /**
+   * The state compared with
+   */
+  value: EngagementTrackingState;
+};
+
+/**
  * What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
- * text test whose eq or neq compares the consent with `granted` or `denied`, or a presence test of
- * whether any is recorded. neq holds where none is recorded, so a test and its negation split every
- * Contact.
+ * comparison with `granted` or `denied`, or a presence test of whether any is recorded.
  */
 export type EngagementTrackingTest = ({
   kind: 'text';
-} & TextTest) | ({
+} & EngagementTrackingStateTest) | ({
   kind: 'presence';
 } & PresenceTest);
 
 /**
  * What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
- * text test whose eq or neq compares the consent with `granted` or `denied`, or a presence test of
- * whether any is recorded. neq holds where none is recorded, so a test and its negation split every
- * Contact.
+ * comparison with `granted` or `denied`, or a presence test of whether any is recorded.
  */
 export type EngagementTrackingTestInput = ({
   kind: 'text';
-} & TextTestInput) | ({
+} & EngagementTrackingStateTestInput) | ({
   kind: 'presence';
 } & PresenceTestInput);
 
@@ -6035,6 +6065,18 @@ export type SoleOwnedWorkspace = {
    */
   name: string;
 };
+
+/**
+ * How a test of a Contact's Engagement tracking consent compares it with a state: it reads as
+ * the state, or it does not
+ */
+export const StateOperator = { EQ: 'eq', NEQ: 'neq' } as const;
+
+/**
+ * How a test of a Contact's Engagement tracking consent compares it with a state: it reads as
+ * the state, or it does not
+ */
+export type StateOperator = typeof StateOperator[keyof typeof StateOperator];
 
 /**
  * The id of a Step or a path: a UUID in its lowercase text form, kept by every version of the
