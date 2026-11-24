@@ -111,10 +111,12 @@ func (Workspace) Fields() []ent.Field {
 		// The Engagement tracking default (ADR 0120): whether a Destination with no Engagement
 		// tracking consent recorded is tracked. `track` until an Owner or Admin changes it; the core
 		// picks no default by law. The send path reads it at render and the recorder at every hit.
+		// A turn to `dont_track` queues the withdrawal by the default, in the edit's transaction.
 		field.Enum("engagement_tracking_default").
 			Values("track", "dont_track").
 			Default("track").
-			Annotations(Attribute(reasonSetting)),
+			Annotations(Attribute("a setting its owner edits, on the Workspace's revision; the withdrawal a turn to dont_track " +
+				"queues in the same transaction is idempotent and bound to the moment of the turn, so a repeated or reverted turn needs no compare-and-swap")),
 		// The Reporting currency (ADR 0064): the ISO 4217 code every revenue figure is in. NULL until
 		// an Owner or Admin chooses one; internal/accounts checks the code against the registry.
 		field.String("reporting_currency").
