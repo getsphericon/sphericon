@@ -47,6 +47,7 @@ func TestARetryOfAnAttemptThatRenderedUntrackedStaysUntracked(t *testing.T) {
 	require.Len(t, msgs, 1)
 	assert.NotContains(t, msgs[0].HTML, "/e/o/", "the retry carries no pixel")
 	assert.Contains(t, msgs[0].HTML, "/e/u/", "and keeps its unsubscribe footer")
+	assert.NotEmpty(t, msgs[0].ListUnsubscribeURL, "and List-Unsubscribe")
 }
 
 // A retry of an attempt that rendered tracked renders tracked again while the Destination still

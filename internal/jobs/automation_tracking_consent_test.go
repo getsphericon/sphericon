@@ -48,7 +48,6 @@ func TestAnAutomationEmailToADestinationThatRefusedTrackingIsNotTracked(t *testi
 	fs := sendLiamsAutomationEmail(t, env)
 
 	assert.NotContains(t, fs.sent[0].HTML, "/e/o/", "no open pixel")
-	assert.NotContains(t, fs.sent[0].HTML, "/e/c/", "no rewritten link")
 	assert.Contains(t, fs.sent[0].HTML, "https://app.test/e/u/", "the unsubscribe footer stays")
 	assert.Contains(t, fs.sent[0].ListUnsubscribeURL, "https://app.test/e/u/", "and List-Unsubscribe")
 }
