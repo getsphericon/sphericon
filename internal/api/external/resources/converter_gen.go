@@ -895,7 +895,20 @@ func (c *ConverterImpl) EngagementTrackingOutcomeToResource(source engagementtra
 	return externalapiEngagementTrackingOutcome
 }
 func (c *ConverterImpl) EngagementTrackingProvenanceToResource(source engagementtrackingconsent.Provenance) external.EngagementTrackingProvenance {
-	return external.EngagementTrackingProvenance(source)
+	var externalapiEngagementTrackingProvenance external.EngagementTrackingProvenance
+	switch source {
+	case engagementtrackingconsent.ProvenanceImported:
+		externalapiEngagementTrackingProvenance = external.EngagementTrackingProvenanceImported
+	case engagementtrackingconsent.ProvenanceManual:
+		externalapiEngagementTrackingProvenance = external.EngagementTrackingProvenanceManual
+	case engagementtrackingconsent.ProvenanceOnsiteForm:
+		externalapiEngagementTrackingProvenance = external.EngagementTrackingProvenanceOnsiteForm
+	case engagementtrackingconsent.ProvenancePage:
+		externalapiEngagementTrackingProvenance = external.EngagementTrackingProvenancePage
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiEngagementTrackingProvenance
 }
 func (c *ConverterImpl) EngagementTrackingReadingToResource(source engagementtracking.Reading) external.EngagementTrackingReading {
 	var externalapiEngagementTrackingReading external.EngagementTrackingReading

@@ -473,7 +473,16 @@ func (c *InputsImpl) EngagementTrackingDefaultSet(source *site.SiteSetEngagement
 	return workspaceviewSetEngagementTrackingDefaultInput
 }
 func (c *InputsImpl) EngagementTrackingState(source site.EngagementTrackingState) engagementtrackingconsent.State {
-	return engagementtrackingconsent.State(source)
+	var engagementtrackingconsentState engagementtrackingconsent.State
+	switch source {
+	case site.EngagementTrackingStateDenied:
+		engagementtrackingconsentState = engagementtrackingconsent.StateDenied
+	case site.EngagementTrackingStateGranted:
+		engagementtrackingconsentState = engagementtrackingconsent.StateGranted
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return engagementtrackingconsentState
 }
 func (c *InputsImpl) EnrollmentsFilter(source site.SiteEnrollmentsListParams) automations.EnrollmentsFilter {
 	var automationsEnrollmentsFilter automations.EnrollmentsFilter

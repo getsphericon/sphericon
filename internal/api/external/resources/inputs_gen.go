@@ -375,7 +375,16 @@ func (c *InputsImpl) EngagementTrackingObservation(source external.EngagementTra
 	return engagementtrackingObservation
 }
 func (c *InputsImpl) EngagementTrackingState(source external.EngagementTrackingState) engagementtrackingconsent.State {
-	return engagementtrackingconsent.State(source)
+	var engagementtrackingconsentState engagementtrackingconsent.State
+	switch source {
+	case external.EngagementTrackingStateDenied:
+		engagementtrackingconsentState = engagementtrackingconsent.StateDenied
+	case external.EngagementTrackingStateGranted:
+		engagementtrackingconsentState = engagementtrackingconsent.StateGranted
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return engagementtrackingconsentState
 }
 func (c *InputsImpl) EnrollmentsFilter(source external.EnrollmentsListParams) automations.EnrollmentsFilter {
 	var automationsEnrollmentsFilter automations.EnrollmentsFilter

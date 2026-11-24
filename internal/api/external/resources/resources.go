@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
@@ -502,7 +503,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	EngagementTrackingReadingToResource(source engagementtracking.Reading) externalapi.EngagementTrackingReading
 	// goverter:enum:transform value
-	EngagementTrackingProvenanceToResource(source engagementtracking.Provenance) externalapi.EngagementTrackingProvenance
+	EngagementTrackingProvenanceToResource(source engagementtrackingconsent.Provenance) externalapi.EngagementTrackingProvenance
 	// goverter:enum:transform value
 	EngagementTrackingDecisionToResource(source engagementtracking.Decision) externalapi.EngagementTrackingDecision
 	// goverter:enum:transform value

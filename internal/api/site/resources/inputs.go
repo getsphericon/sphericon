@@ -7,6 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
@@ -195,7 +196,7 @@ type Inputs interface {
 	// goverter:enum:transform value
 	EngagementTrackingChannel(source siteapi.EngagementTrackingChannel) channels.Channel
 	// goverter:enum:transform value
-	EngagementTrackingState(source siteapi.EngagementTrackingState) engagementtracking.State
+	EngagementTrackingState(source siteapi.EngagementTrackingState) engagementtrackingconsent.State
 	// Where a Broadcast's Test send goes: the address on email, the number on sms. OnlyTo is the
 	// handler's to set.
 	// goverter:ignore OnlyTo

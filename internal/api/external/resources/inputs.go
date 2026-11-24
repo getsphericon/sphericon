@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
@@ -255,7 +256,7 @@ type Inputs interface {
 	// goverter:enum:transform value
 	EngagementTrackingChannel(source externalapi.EngagementTrackingChannel) channels.Channel
 	// goverter:enum:transform value
-	EngagementTrackingState(source externalapi.EngagementTrackingState) engagementtracking.State
+	EngagementTrackingState(source externalapi.EngagementTrackingState) engagementtrackingconsent.State
 	// The Engagement tracking consent a batch item carries.
 	ContactEngagementTracking(source externalapi.ContactEngagementTrackingInput) engagementtracking.ContactObservations
 	EngagementTrackingObservation(source externalapi.EngagementTrackingObservationInput) engagementtracking.Observation
