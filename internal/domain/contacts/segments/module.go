@@ -177,16 +177,20 @@ type PreviewInput struct {
 	IntegrationID *int64
 }
 
-// PreviewResult is what a preview counts: the Contacts the Condition matches, and, when a Channel
-// was asked for, how many of them a Broadcast there would take now (eligibility.Module.BroadcastAudience).
+// PreviewResult is what a preview counts: the Contacts the Condition matches, the ones it leaves
+// out because their engagement is unknown (ADR 0123), and, when a Channel was asked for, how many
+// of the matching ones a Broadcast there would take now (eligibility.Module.BroadcastAudience).
 type PreviewResult struct {
-	Count      int
-	Recipients *int
+	Count int
+	// UnknownEngagement is the Contacts left out because a count of their opens or clicks is
+	// unknown: their Destination on its Channel is not tracked now (condition.Module.LeftOut).
+	UnknownEngagement int
+	Recipients        *int
 }
 
-// Preview counts the Contacts in the Workspace that match an unsaved Condition, and the recipients
-// of a Broadcast on the Channel the input names. A Condition that does not compile is
-// ErrInvalidCondition.
+// Preview counts the Contacts in the Workspace that match an unsaved Condition, the ones it leaves
+// out for unknown engagement, and the recipients of a Broadcast on the Channel the input names. A
+// Condition that does not compile is ErrInvalidCondition.
 func (s *Module) Preview(ctx context.Context, ws *ent.Scoped, in PreviewInput) (PreviewResult, error) {
 	cond := conditiontree.Segment{Group: conditiontree.Empty()}
 	if in.Condition != nil {
@@ -201,6 +205,16 @@ func (s *Module) Preview(ctx context.Context, ws *ent.Scoped, in PreviewInput) (
 		return PreviewResult{}, err
 	}
 	res := PreviewResult{Count: count}
+	if condition.CanBeUnknown(cond.Group) {
+		leftOut, err := s.conditions.LeftOut(ctx, ws, cond)
+		if err != nil {
+			return PreviewResult{}, ErrInvalidCondition.With(err.Error())
+		}
+		res.UnknownEngagement, err = ws.Contact().Query().Where(leftOut).Count(ctx)
+		if err != nil {
+			return PreviewResult{}, err
+		}
+	}
 	if in.Channel == nil {
 		return res, nil
 	}
@@ -216,17 +230,17 @@ func (s *Module) Preview(ctx context.Context, ws *ent.Scoped, in PreviewInput) (
 	return res, nil
 }
 
-// Count counts the Contacts matching a stored Segment, evaluated live.
-func (s *Module) Count(ctx context.Context, ws *ent.Scoped, id int64) (int, error) {
+// Count counts the Contacts matching a stored Segment, evaluated live, and the ones it leaves out
+// because their engagement is unknown, as Preview does.
+func (s *Module) Count(ctx context.Context, ws *ent.Scoped, id int64) (PreviewResult, error) {
 	seg, err := ws.Segment().Get(ctx, id)
 	if ent.IsNotFound(err) {
-		return 0, ErrNotFound
+		return PreviewResult{}, ErrNotFound
 	}
 	if err != nil {
-		return 0, err
+		return PreviewResult{}, err
 	}
-	res, err := s.Preview(ctx, ws, PreviewInput{Condition: &seg.Condition})
-	return res.Count, err
+	return s.Preview(ctx, ws, PreviewInput{Condition: &seg.Condition})
 }
 
 // Contacts returns one page of the Contacts a stored Segment matches, evaluated live, ascending by id.

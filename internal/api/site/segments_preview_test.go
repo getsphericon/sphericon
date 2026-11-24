@@ -321,3 +321,33 @@ func TestSiteSegmentsPreviewLeavesRecipientsOutWithoutAChannel(t *testing.T) {
 
 	assert.False(t, res.Recipients.Set)
 }
+
+// Under a dont_track default nobody granted tracking in Acme, so a count of opens is unknown for
+// every Contact with an address: the preview leaves them out and says how many, and a Contact
+// without one keeps its answer (ADR 0123).
+func TestSiteSegmentsPreviewReportsTheContactsLeftOutForUnknownEngagement(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	preview := func(def string) *siteapi.SitePreviewSegmentResult {
+		t.Helper()
+		res, err := c.SiteSegmentsPreview(t.Context(), &siteapi.SitePreviewSegmentInput{
+			Condition: siteapi.NewOptSegmentConditionInput(testhelper.ConditionInput[siteapi.SegmentConditionInput](t, def)),
+		}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.AcmePublicID})
+		require.NoError(t, err)
+		return res
+	}
+	const unengaged = `{"kind":"group","combinator":"and","entries":[{"kind":"event","action":"email.opened","operator":"atMost","times":0,"withinDays":90}]}`
+	const engaged = `{"kind":"group","combinator":"and","not":true,"entries":[{"kind":"event","action":"email.opened","operator":"atMost","times":0,"withinDays":90}]}`
+	const withAddress = `{"kind":"group","combinator":"and","entries":[{"kind":"attribute","attribute":"email","test":{"kind":"presence","operator":"set"}}]}`
+	const everyone = `{"kind":"group","combinator":"and","entries":[]}`
+	tracked := preview(unengaged)
+	_, err := setEngagementTrackingDefault(t, env, c, siteapi.EngagementTrackingDecisionDontTrack)
+	require.NoError(t, err)
+
+	untracked, negated, addressed, all := preview(unengaged), preview(engaged), preview(withAddress), preview(everyone)
+
+	assert.Zero(t, tracked.UnknownEngagement, "everyone is tracked by default")
+	assert.Equal(t, addressed.Count, untracked.UnknownEngagement, "every Contact with an address is left out")
+	assert.Equal(t, untracked.UnknownEngagement, negated.UnknownEngagement, "and its negation leaves them out too")
+	assert.Equal(t, all.Count, untracked.Count+negated.Count+untracked.UnknownEngagement, "matched, not matched and left out are everyone")
+}

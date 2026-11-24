@@ -16,7 +16,10 @@
 // A leaf is built from ent's generated predicates wherever one exists: the core
 // attributes (contact.EmailEQ …) and Tags (contact.HasTagsWith). An event count is a correlated
 // COUNT(*) of the Contact's Events, built with ent's SQL builder and the generated Event
-// predicates. The one dynamic piece is a Custom field's key inside the
+// predicates. A count of opens or clicks is the one leaf that can be unknown (ADR 0123): NULL for
+// a Contact whose Destination on the Channel of the count is not tracked now, so Postgres carries it
+// through AND, OR, NOT and WHERE by Kleene's rules and a Segment or a Rule reads it as no match;
+// every other leaf is meant two-valued. The one dynamic piece is a Custom field's key inside the
 // custom_fields JSON column, which no generated predicate covers; it is addressed
 // with ent's JSON predicates (sqljson) after the key is checked, and by a number or moment test
 // with a jsonpath filter, which is false on a value of another type where a cast would fail the
@@ -40,13 +43,16 @@ import (
 	"entgo.io/ent/dialect/sql/sqljson"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -100,9 +106,11 @@ type Module struct {
 // New builds the module over the Instance clock.
 func New(now func() time.Time) *Module { return &Module{now: now} }
 
-// Compile turns a Segment's Condition into a Contact predicate. An empty group matches everyone
-// (an empty negated group matches no one) — deliberate, so an empty Condition is never a silent
-// "nobody". A relative date (in the last N days) counts back from the Instance clock's time.
+// Compile turns a Segment's Condition into a Contact predicate, unknown (SQL NULL) for a Contact
+// an engagement count is unknown for where the rest of the tree does not decide (ADR 0123). An
+// empty group matches everyone (an empty negated group matches no one) — deliberate, so an empty
+// Condition is never a silent "nobody". A relative date (in the last N days) counts back from the
+// Instance clock's time.
 func (m *Module) Compile(ctx context.Context, s *ent.Scoped, g conditiontree.Segment) (predicate.Contact, error) {
 	tree, err := decode(g.Group, segmentPlace)
 	if err != nil {
@@ -132,14 +140,57 @@ func (m *Module) RulePredicate(ctx context.Context, s *ent.Scoped, g conditiontr
 	return (&compiler{s: s, now: m.now(), trigger: trigger}).group(ctx, tree)
 }
 
+// LeftOut narrows a Contact query to the Contacts a Segment's Condition leaves out because an
+// engagement count is unknown for them (ADR 0123): the Condition is unknown for them (Compile is
+// NULL), and it would be known were every engagement count read as it stands. A Contact for whom
+// only a test of another kind reads no value (a field it does not have) is not among them. A
+// Condition that counts no engagement (CanBeUnknown) leaves nobody out.
+func (m *Module) LeftOut(ctx context.Context, s *ent.Scoped, g conditiontree.Segment) (predicate.Contact, error) {
+	tree, err := decode(g.Group, segmentPlace)
+	if err != nil {
+		return nil, err
+	}
+	if !CanBeUnknown(g.Group) {
+		return predicate.Contact(func(s *sql.Selector) { s.Where(sql.False()) }), nil
+	}
+	now := m.now()
+	unknown, err := (&compiler{s: s, now: now}).group(ctx, tree)
+	if err != nil {
+		return nil, err
+	}
+	asCounted, err := (&compiler{s: s, now: now, counted: true}).group(ctx, tree)
+	if err != nil {
+		return nil, err
+	}
+	return predicate.Contact(func(s *sql.Selector) {
+		s.Where(sql.And(isNull(s, unknown), sql.Not(isNull(s, asCounted))))
+	}), nil
+}
+
+// isNull is the predicate p is unknown (SQL NULL) for the row of s.
+func isNull(s *sql.Selector, p predicate.Contact) *sql.Predicate {
+	inner := s.Clone().SetP(nil)
+	p(inner)
+	held := inner.P()
+	// raw sql: ent tests a column for NULL (sql.IsNull), not the value of a predicate.
+	return sql.P(func(b *sql.Builder) {
+		b.Wrap(func(b *sql.Builder) { b.Join(held) })
+		b.WriteString(" IS NULL")
+	})
+}
+
 // compiler holds what one compilation needs: the Workspace's Custom field keys are
 // loaded the first time a leaf names one.
 type compiler struct {
 	s    *ent.Scoped
 	now  time.Time
 	keys map[string]customfield.Type
-	// loc is the Workspace time zone, loaded by the first moment test that needs it.
-	loc *time.Location
+	// ws is the Workspace row, loaded by the first leaf that needs one of its settings: its time
+	// zone, or its Engagement tracking default.
+	ws *ent.Workspace
+	// counted reads every engagement count as it stands, two-valued, as if every Destination
+	// were tracked: what LeftOut compares the Condition with.
+	counted bool
 	// trigger is the properties of the Event a Rule's tests of the triggering Event read, a JSON
 	// object; nil in a Segment, whose tree holds no such test.
 	trigger json.RawMessage
@@ -193,7 +244,7 @@ func (c *compiler) node(ctx context.Context, n node) (predicate.Contact, error) 
 	case customFieldLeaf:
 		return c.custom(ctx, l)
 	case eventCountLeaf:
-		return c.event(l), nil
+		return c.event(ctx, l)
 	case propertyLeaf:
 		return c.property(l)
 	default:
@@ -253,19 +304,28 @@ func (c *compiler) property(l propertyLeaf) (predicate.Contact, error) {
 // location is the Workspace time zone, in which a datetime Custom field's value without an offset
 // is read (ADR 0087); it is loaded the first time a moment test needs it.
 func (c *compiler) location(ctx context.Context) (*time.Location, error) {
-	if c.loc != nil {
-		return c.loc, nil
-	}
-	ws, err := c.s.Workspace(ctx)
+	ws, err := c.workspace(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("%w: load workspace: %w", ErrStorage, err)
+		return nil, err
 	}
 	loc, err := reportday.Location(ws.Timezone)
 	if err != nil {
 		return nil, fmt.Errorf("workspace time zone: %w", err)
 	}
-	c.loc = loc
 	return loc, nil
+}
+
+// workspace is the Workspace row, loaded the first time a leaf needs one of its settings.
+func (c *compiler) workspace(ctx context.Context) (*ent.Workspace, error) {
+	if c.ws != nil {
+		return c.ws, nil
+	}
+	ws, err := c.s.Workspace(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("%w: load workspace: %w", ErrStorage, err)
+	}
+	c.ws = ws
+	return ws, nil
 }
 
 // target writes the JSON value a jsonpath filter reads, from the custom_fields column and key.
@@ -336,10 +396,14 @@ func eventCountOf(op conditiontree.EventCountOperator) (eventCount, error) {
 // event is the subject performed `action` at least (or at most) times times, over all time or
 // within the last withinDays days. Events attach to a Contact by the stable contact_id, so
 // anonymous events stitched onto it at Identify are counted here (ADR 0002), and the count is
-// correlated on it, so an anonymous Event (a NULL contact_id) is in no Contact's count.
-func (c *compiler) event(l eventCountLeaf) predicate.Contact {
+// correlated on it, so an anonymous Event (a NULL contact_id) is in no Contact's count. A count of
+// opens or clicks is unknown, in either direction, for a Contact whose Destination on the Channel
+// of the count is not tracked now (ADR 0123): its Engagement tracking consent, else the
+// Workspace's default; a Contact with no Destination there keeps the count.
+func (c *compiler) event(ctx context.Context, l eventCountLeaf) (predicate.Contact, error) {
 	preds := []predicate.Event{event.Action(l.action)}
-	if events.IsEngagement(l.action) {
+	channel, engagement := events.EngagementChannel(l.action)
+	if engagement {
 		// A machine open or click is in the log and in no count (ADR 0053).
 		preds = append(preds, events.HumanOnly())
 	}
@@ -349,16 +413,54 @@ func (c *compiler) event(l eventCountLeaf) predicate.Contact {
 		preds = append(preds, event.OccurredAtGTE(c.since(*l.withinDays)))
 	}
 
-	holds := l.count.holds
-	return predicate.Contact(func(s *sql.Selector) {
+	counted := func(s *sql.Selector) *sql.Predicate {
 		t := sql.Table(event.Table)
 		count := sql.Dialect(s.Dialect()).Select(sql.Count("*")).From(t)
 		count.Where(sql.ColumnsEQ(count.C(event.FieldContactID), s.C(contact.FieldID)))
 		for _, p := range preds {
 			p(count)
 		}
-		s.Where(holds(count, l.times))
-	})
+		return l.count.holds(count, l.times)
+	}
+	if !engagement || c.counted {
+		return predicate.Contact(func(s *sql.Selector) { s.Where(counted(s)) }), nil
+	}
+	ws, err := c.workspace(ctx)
+	if err != nil {
+		return nil, err
+	}
+	dflt := ws.EngagementTrackingDefault
+	return predicate.Contact(func(s *sql.Selector) {
+		unknown, holds := untracked(s, channel, dflt), counted(s)
+		// raw sql: ent has no CASE. The NULL stays inside the leaf, around the count's EXISTS (which
+		// is never NULL), so the tree above carries it by Kleene's rules.
+		s.Where(sql.P(func(b *sql.Builder) {
+			b.WriteString("CASE WHEN ").Join(unknown).WriteString(" THEN NULL ELSE ").Join(holds).WriteString(" END")
+		}))
+	}), nil
+}
+
+// untracked is the Contact of s has a Destination on channel that is not tracked under the
+// Workspace's default dflt: its email address, its phone, or any of its own Telegram Bindings (a
+// Visitor's is no Contact's, ADR 0171). A Contact with none has nothing untracked, and neither has
+// one on a Channel that tracks no engagement.
+func untracked(s *sql.Selector, channel channels.Channel, dflt engagementtracking.Decision) *sql.Predicate {
+	switch channel {
+	case channels.Email:
+		return sql.And(sql.NotNull(s.C(contact.FieldEmail)), engagementtracking.Untracked(s, channel, dflt, contact.FieldEmail))
+	case channels.SMS:
+		return sql.And(sql.NotNull(s.C(contact.FieldPhone)), engagementtracking.Untracked(s, channel, dflt, contact.FieldPhone))
+	case channels.Telegram:
+		b := sql.Table(binding.Table)
+		chats := sql.Select(b.C(binding.FieldID)).From(b)
+		chats.Where(sql.And(
+			sql.EQ(b.C(binding.FieldChannel), string(binding.ChannelTelegram)),
+			sql.ColumnsEQ(b.C(binding.FieldContactID), s.C(contact.FieldID)),
+			engagementtracking.Untracked(chats, channel, dflt, binding.FieldDestination),
+		))
+		return sql.Exists(chats)
+	}
+	return sql.False()
 }
 
 // tagRule is the subject has (or lacks) the Tag. Evaluated live — membership is never

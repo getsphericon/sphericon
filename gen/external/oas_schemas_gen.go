@@ -18749,6 +18749,10 @@ func (s *PreviewSegmentInput) SetIntegrationId(val OptNilEntityId) {
 type PreviewSegmentResult struct {
 	// Number of contacts matching the condition, before Suppression and Unsubscribe.
 	Count int32 `json:"count"`
+	// Number of contacts the condition leaves out because their engagement is unknown: it counts their
+	// opens or clicks, and their Destination on that Channel is not tracked now (its Engagement tracking
+	// consent, else the Workspace's default). They match neither the test nor its negation.
+	UnknownEngagement int32 `json:"unknownEngagement"`
 	// Number of matching contacts a Broadcast on the asked Channel would take now: those with a
 	// Destination on it that is neither suppressed nor unsubscribed (on Telegram, an eligible Binding on
 	// the routed Integration). The figure Schedule answers too. Absent unless a channel was given.
@@ -18760,6 +18764,11 @@ func (s *PreviewSegmentResult) GetCount() int32 {
 	return s.Count
 }
 
+// GetUnknownEngagement returns the value of UnknownEngagement.
+func (s *PreviewSegmentResult) GetUnknownEngagement() int32 {
+	return s.UnknownEngagement
+}
+
 // GetRecipients returns the value of Recipients.
 func (s *PreviewSegmentResult) GetRecipients() OptInt32 {
 	return s.Recipients
@@ -18768,6 +18777,11 @@ func (s *PreviewSegmentResult) GetRecipients() OptInt32 {
 // SetCount sets the value of Count.
 func (s *PreviewSegmentResult) SetCount(val int32) {
 	s.Count = val
+}
+
+// SetUnknownEngagement sets the value of UnknownEngagement.
+func (s *PreviewSegmentResult) SetUnknownEngagement(val int32) {
+	s.UnknownEngagement = val
 }
 
 // SetRecipients sets the value of Recipients.

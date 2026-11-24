@@ -30763,6 +30763,10 @@ func (s *PreviewSegmentResult) encodeFields(e *jx.Encoder) {
 		e.Int32(s.Count)
 	}
 	{
+		e.FieldStart("unknownEngagement")
+		e.Int32(s.UnknownEngagement)
+	}
+	{
 		if s.Recipients.Set {
 			e.FieldStart("recipients")
 			s.Recipients.Encode(e)
@@ -30770,9 +30774,10 @@ func (s *PreviewSegmentResult) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfPreviewSegmentResult = [2]string{
+var jsonFieldsNameOfPreviewSegmentResult = [3]string{
 	0: "count",
-	1: "recipients",
+	1: "unknownEngagement",
+	2: "recipients",
 }
 
 // Decode decodes PreviewSegmentResult from json.
@@ -30796,6 +30801,18 @@ func (s *PreviewSegmentResult) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"count\"")
 			}
+		case "unknownEngagement":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Int32()
+				s.UnknownEngagement = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"unknownEngagement\"")
+			}
 		case "recipients":
 			if err := func() error {
 				s.Recipients.Reset()
@@ -30816,7 +30833,7 @@ func (s *PreviewSegmentResult) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000001,
+		0b00000011,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

@@ -226,6 +226,15 @@ export function ConditionBuilder({
               {t(($) => $.segments.previewCount, { count: preview.data.count })}
             </Text>
           ) : null}
+          {/* A count of opens or clicks is unknown for a Contact who is not tracked (ADR 0123): it
+              is left out either way, and the author sees how many. */}
+          {preview.data && preview.data.unknownEngagement > 0 ? (
+            <Text size="sm" c="dimmed">
+              {t(($) => $.segments.previewUnknownEngagement, {
+                count: preview.data.unknownEngagement,
+              })}
+            </Text>
+          ) : null}
         </Group>
       ) : null}
     </Stack>

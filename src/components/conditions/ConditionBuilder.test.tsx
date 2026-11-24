@@ -76,7 +76,7 @@ function serve(previewBodies: unknown[] = []) {
     }),
     handleSiteSegmentsPreview(async ({ request }) => {
       previewBodies.push(await request.json())
-      return HttpResponse.json({ count: 3 })
+      return HttpResponse.json({ count: 3, unknownEngagement: 2 })
     }),
   )
 }
@@ -110,6 +110,9 @@ test('sends the current Condition to the segment preview', async () => {
   await expect.poll(() => previews.length).toBe(1)
   expect(previews).toEqual([{ condition: emailContains }])
   await expect.element(screen.getByText('3 matching contacts')).toBeInTheDocument()
+  await expect
+    .element(screen.getByText('2 contacts left out: their opens and clicks are not tracked'))
+    .toBeInTheDocument()
 })
 
 test("a Segment's builder offers no test of the triggering Event", async () => {

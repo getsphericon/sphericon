@@ -4447,6 +4447,12 @@ export type PreviewSegmentResult = {
    */
   count: number;
   /**
+   * Number of contacts the condition leaves out because their engagement is unknown: it counts their
+   * opens or clicks, and their Destination on that Channel is not tracked now (its Engagement
+   * tracking consent, else the Workspace's default). They match neither the test nor its negation.
+   */
+  unknownEngagement: number;
+  /**
    * Number of matching contacts a Broadcast on the asked Channel would take now: those with a
    * Destination on it that is neither suppressed nor unsubscribed (on Telegram, an eligible Binding
    * on the routed Integration). The figure Schedule answers too. Absent unless a channel was given.

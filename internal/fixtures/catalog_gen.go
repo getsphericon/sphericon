@@ -3665,6 +3665,10 @@ const (
 	RuleInitechID = 300
 	// RuleInitechName is from fixtures/rules.
 	RuleInitechName = "Initech rule"
+	// RuleMassiveUnengagedID is from fixtures/rules.
+	RuleMassiveUnengagedID = 5800
+	// RuleMassiveUnengagedName is from fixtures/rules.
+	RuleMassiveUnengagedName = "Tag the unengaged"
 	// RuleMultiTriggerID is from fixtures/rules.
 	RuleMultiTriggerID = 103
 	// RuleMultiTriggerName is from fixtures/rules.
@@ -3807,6 +3811,10 @@ const (
 	SegmentLacunaTexthamID = 7740
 	// SegmentLacunaTexthamName is from fixtures/segments.
 	SegmentLacunaTexthamName = "Lives in Textham"
+	// SegmentMassiveUnengagedID is from fixtures/segments.
+	SegmentMassiveUnengagedID = 5800
+	// SegmentMassiveUnengagedName is from fixtures/segments.
+	SegmentMassiveUnengagedName = "Opened no email in 90 days"
 	// SegmentNewsletterID is from fixtures/segments.
 	SegmentNewsletterID = 2
 	// SegmentNewsletterName is from fixtures/segments.

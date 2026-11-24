@@ -53,6 +53,6 @@ func TestASegmentWithNoTestsMatchesEveryContact(t *testing.T) {
 		assert.JSONEq(t, `{"kind":"group","combinator":"and","entries":[]}`, testhelper.Document(t, created.Condition), name)
 		count, err := m.Count(ctx, acme, created.ID)
 		require.NoError(t, err)
-		assert.Equal(t, everyone, count, name)
+		assert.Equal(t, everyone, count.Count, name)
 	}
 }
