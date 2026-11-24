@@ -141,3 +141,26 @@ func TestExportMessagesCarriesTheSkippedReasonAndTheFailureApart(t *testing.T) {
 	assert.Nil(t, failed["skipped_reason"])
 	assert.NotContains(t, failed, "reason")
 }
+
+// A message row says whether the message went out tracked and when its tracking was withdrawn
+// (ADR 0120): Umbrella's tracking mix Broadcast has one tracked message, one withdrawn since and
+// one sent untracked.
+func TestExportMessagesCarryWhetherAMessageIsTracked(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := exportClient(t, env, fixtures.UmbrellaID)
+
+	page := readExportMessages(t, c, "")
+
+	tracked := page.row(fixtures.OutboundMessageUmbrellaTrackedID)
+	withdrawn := page.row(fixtures.OutboundMessageUmbrellaWithdrawnID)
+	untracked := page.row(fixtures.OutboundMessageUmbrellaUntrackedID)
+	require.NotNil(t, tracked)
+	require.NotNil(t, withdrawn)
+	require.NotNil(t, untracked)
+	assert.Equal(t, true, tracked["tracked"])
+	assert.Nil(t, tracked["tracking_withdrawn_at"])
+	assert.Equal(t, true, withdrawn["tracked"], "it went out tracked")
+	assert.NotNil(t, withdrawn["tracking_withdrawn_at"])
+	assert.Equal(t, false, untracked["tracked"])
+	assert.Nil(t, untracked["tracking_withdrawn_at"])
+}

@@ -283,6 +283,7 @@ type Converter interface {
 	// goverter:map Sent SentCount
 	// goverter:map Opened OpenedCount
 	// goverter:map Clicked ClickedCount
+	// goverter:map Untracked UntrackedCount
 	AnalyticsEmailToResource(source analyticsreport.Email) siteapi.SiteAnalyticsEmail
 	// The Events and Clicks by link reports are lists, which goverter cannot map onto their
 	// envelopes: the handler builds those, of one list each.
@@ -363,6 +364,7 @@ type Converter interface {
 	// goverter:map Bounced BouncedCount
 	// goverter:map Complained ComplainedCount
 	// goverter:map Captured CapturedCount
+	// goverter:map Untracked UntrackedCount
 	BroadcastStatsToResource(source broadcasts.Figures) siteapi.SiteBroadcastStats
 
 	// goverter:map Processed ProcessedCount

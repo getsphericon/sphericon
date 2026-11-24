@@ -121,6 +121,7 @@ func (c *ConverterImpl) AnalyticsEmailToResource(source analyticsreport.Email) s
 	siteapiSiteAnalyticsEmail.SentCount = count(source.Sent)
 	siteapiSiteAnalyticsEmail.OpenedCount = count(source.Opened)
 	siteapiSiteAnalyticsEmail.ClickedCount = count(source.Clicked)
+	siteapiSiteAnalyticsEmail.UntrackedCount = count(source.Untracked)
 	siteapiSiteAnalyticsEmail.OpenRate = source.OpenRate
 	siteapiSiteAnalyticsEmail.ClickRate = source.ClickRate
 	siteapiSiteAnalyticsEmail.ClickToOpenRate = source.ClickToOpenRate
@@ -702,6 +703,7 @@ func (c *ConverterImpl) BroadcastStatsToResource(source broadcasts.Figures) site
 	siteapiSiteBroadcastStats.CancelledCount = count(source.Cancelled)
 	siteapiSiteBroadcastStats.OpenedCount = nilInt32(source.Opened)
 	siteapiSiteBroadcastStats.ClickedCount = count(source.Clicked)
+	siteapiSiteBroadcastStats.UntrackedCount = count(source.Untracked)
 	siteapiSiteBroadcastStats.UnsubscribedCount = count(source.Unsubscribed)
 	siteapiSiteBroadcastStats.DeliveredCount = nilInt32(source.Delivered)
 	siteapiSiteBroadcastStats.UndeliveredCount = nilInt32(source.Undelivered)
@@ -3172,6 +3174,7 @@ func (c *ConverterImpl) analyticsreportPointToSiteapiSiteAnalyticsPoint(source a
 	siteapiSiteAnalyticsPoint.Sent = count(source.Sent)
 	siteapiSiteAnalyticsPoint.Opened = count(source.Opened)
 	siteapiSiteAnalyticsPoint.Clicked = count(source.Clicked)
+	siteapiSiteAnalyticsPoint.Untracked = count(source.Untracked)
 	return siteapiSiteAnalyticsPoint
 }
 func (c *ConverterImpl) analyticsreportSendingToSiteapiSiteAnalyticsSending(source analyticsreport.Sending) site.SiteAnalyticsSending {

@@ -369,6 +369,7 @@ func (c *ConverterImpl) BroadcastReportToResource(source broadcasts.Report) exte
 	externalapiBroadcastReport.CancelledCount = count(source.Figures.Cancelled)
 	externalapiBroadcastReport.OpenedCount = nilInt32(source.Figures.Opened)
 	externalapiBroadcastReport.ClickedCount = count(source.Figures.Clicked)
+	externalapiBroadcastReport.UntrackedCount = count(source.Figures.Untracked)
 	externalapiBroadcastReport.UnsubscribedCount = count(source.Figures.Unsubscribed)
 	externalapiBroadcastReport.DeliveredCount = nilInt32(source.Figures.Delivered)
 	externalapiBroadcastReport.UndeliveredCount = nilInt32(source.Figures.Undelivered)

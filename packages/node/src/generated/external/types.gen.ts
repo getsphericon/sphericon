@@ -1014,13 +1014,17 @@ export type BroadcastReport = {
    */
   cancelledCount: number;
   /**
-   * Recipients that opened the email; null on a Channel that cannot tell
+   * Tracked messages that were opened; null on a Channel that cannot tell
    */
   openedCount: number | null;
   /**
-   * Recipients that clicked a link
+   * Tracked messages that were clicked
    */
   clickedCount: number;
+  /**
+   * Messages sent that are not tracked: sent untracked, or whose tracking was withdrawn since (ADR 0120). They count in no open or click figure, and the tracked messages are the sent count less these.
+   */
+  untrackedCount: number;
   /**
    * Recipients that unsubscribed via this broadcast
    */
@@ -1046,11 +1050,11 @@ export type BroadcastReport = {
    */
   capturedCount: number | null;
   /**
-   * Unique opens ÷ messages sent (0-1); null on a Channel that reports no opens
+   * Unique opens ÷ tracked messages sent (0-1); null on a Channel that reports no opens
    */
   openRate: number | null;
   /**
-   * Unique clicks ÷ messages sent (0-1)
+   * Unique clicks ÷ tracked messages sent (0-1)
    */
   clickRate: number;
 };
@@ -3619,7 +3623,7 @@ export type ExportEventRow = {
  * One row of the Outbound messages stream: the delivery record of one send, whichever
  * surface asked for it. It carries provenance and outcome only, never a subject or a body.
  * A row is delivered again whenever it changes (a status change, an Erasure clearing the
- * destination and the Contact).
+ * destination and the Contact, a withdrawal of its tracking).
  */
 export type ExportMessageRow = {
   /**
@@ -3734,6 +3738,14 @@ export type ExportMessageRow = {
    * True when the message went through a Test inbox: captured, not delivered
    */
   captured: boolean;
+  /**
+   * Whether the message went out tracked (ADR 0120): an open pixel and tracked links. A message is tracked while this holds and no withdrawal is recorded.
+   */
+  tracked: boolean;
+  /**
+   * When the message's tracking was withdrawn (a refusal of its Destination, or the Workspace's default turned to `dont_track`); absent while it was not. Once set it never clears.
+   */
+  tracking_withdrawn_at: Timestamp | null;
   /**
    * Creation timestamp
    */

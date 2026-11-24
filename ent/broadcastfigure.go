@@ -55,6 +55,8 @@ type BroadcastFigure struct {
 	Clicked int `json:"clicked,omitempty"`
 	// Captured holds the value of the "captured" field.
 	Captured int `json:"captured,omitempty"`
+	// Untracked holds the value of the "untracked" field.
+	Untracked int `json:"untracked,omitempty"`
 	// PrunedAt holds the value of the "pruned_at" field.
 	PrunedAt *time.Time `json:"pruned_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -101,7 +103,7 @@ func (*BroadcastFigure) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case broadcastfigure.FieldID, broadcastfigure.FieldWorkspaceID, broadcastfigure.FieldBroadcastID, broadcastfigure.FieldRecipients, broadcastfigure.FieldUnsubscribed, broadcastfigure.FieldSent, broadcastfigure.FieldSkipped, broadcastfigure.FieldFailed, broadcastfigure.FieldPending, broadcastfigure.FieldCancelled, broadcastfigure.FieldDelivered, broadcastfigure.FieldUndelivered, broadcastfigure.FieldBounced, broadcastfigure.FieldComplained, broadcastfigure.FieldOpened, broadcastfigure.FieldClicked, broadcastfigure.FieldCaptured:
+		case broadcastfigure.FieldID, broadcastfigure.FieldWorkspaceID, broadcastfigure.FieldBroadcastID, broadcastfigure.FieldRecipients, broadcastfigure.FieldUnsubscribed, broadcastfigure.FieldSent, broadcastfigure.FieldSkipped, broadcastfigure.FieldFailed, broadcastfigure.FieldPending, broadcastfigure.FieldCancelled, broadcastfigure.FieldDelivered, broadcastfigure.FieldUndelivered, broadcastfigure.FieldBounced, broadcastfigure.FieldComplained, broadcastfigure.FieldOpened, broadcastfigure.FieldClicked, broadcastfigure.FieldCaptured, broadcastfigure.FieldUntracked:
 			values[i] = new(sql.NullInt64)
 		case broadcastfigure.FieldCreatedAt, broadcastfigure.FieldUpdatedAt, broadcastfigure.FieldPrunedAt:
 			values[i] = new(sql.NullTime)
@@ -234,6 +236,12 @@ func (_m *BroadcastFigure) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Captured = int(value.Int64)
 			}
+		case broadcastfigure.FieldUntracked:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field untracked", values[i])
+			} else if value.Valid {
+				_m.Untracked = int(value.Int64)
+			}
 		case broadcastfigure.FieldPrunedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field pruned_at", values[i])
@@ -340,6 +348,9 @@ func (_m *BroadcastFigure) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("captured=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Captured))
+	builder.WriteString(", ")
+	builder.WriteString("untracked=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Untracked))
 	builder.WriteString(", ")
 	if v := _m.PrunedAt; v != nil {
 		builder.WriteString("pruned_at=")

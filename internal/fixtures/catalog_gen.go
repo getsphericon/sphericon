@@ -1187,6 +1187,12 @@ const (
 	BroadcastUmbrellaTestSendsName = "Umbrella test sends"
 	// BroadcastUmbrellaTestSendsSubject is from fixtures/broadcasts.
 	BroadcastUmbrellaTestSendsSubject = "News"
+	// BroadcastUmbrellaTrackingMixID is from fixtures/broadcasts.
+	BroadcastUmbrellaTrackingMixID = 7347
+	// BroadcastUmbrellaTrackingMixName is from fixtures/broadcasts.
+	BroadcastUmbrellaTrackingMixName = "Umbrella tracking mix"
+	// BroadcastUmbrellaTrackingMixSubject is from fixtures/broadcasts.
+	BroadcastUmbrellaTrackingMixSubject = "News"
 	// BroadcastWithoutTelegramID is from fixtures/broadcasts.
 	BroadcastWithoutTelegramID = 7410
 	// BroadcastWithoutTelegramName is from fixtures/broadcasts.
@@ -3255,6 +3261,18 @@ const (
 	OutboundMessageTrackingWithdrawnDestination = "withdrawn@acme.example"
 	// OutboundMessageTrackingWithdrawnID is from fixtures/outbound_messages.
 	OutboundMessageTrackingWithdrawnID = 5704
+	// OutboundMessageUmbrellaTrackedDestination is from fixtures/outbound_messages.
+	OutboundMessageUmbrellaTrackedDestination = "tracked@umbrella.test"
+	// OutboundMessageUmbrellaTrackedID is from fixtures/outbound_messages.
+	OutboundMessageUmbrellaTrackedID = 7360
+	// OutboundMessageUmbrellaUntrackedDestination is from fixtures/outbound_messages.
+	OutboundMessageUmbrellaUntrackedDestination = "untracked@umbrella.test"
+	// OutboundMessageUmbrellaUntrackedID is from fixtures/outbound_messages.
+	OutboundMessageUmbrellaUntrackedID = 7362
+	// OutboundMessageUmbrellaWithdrawnDestination is from fixtures/outbound_messages.
+	OutboundMessageUmbrellaWithdrawnDestination = "withdrawn@umbrella.test"
+	// OutboundMessageUmbrellaWithdrawnID is from fixtures/outbound_messages.
+	OutboundMessageUmbrellaWithdrawnID = 7361
 	// OutboundMessageUnengagedFirstDestination is from fixtures/outbound_messages.
 	OutboundMessageUnengagedFirstDestination = "sophia.python@codebasics.dev"
 	// OutboundMessageUnengagedFirstID is from fixtures/outbound_messages.

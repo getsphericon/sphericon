@@ -4519,6 +4519,58 @@
   workspace_id: 1
   created_at: '{{daysAgo 400}}'
   updated_at: '{{daysAgo 400}}'
+# Umbrella's tracking mix Broadcast (broadcasts.yml), sent three hours ago: a tracked message opened
+# and clicked; one opened and clicked before its tracking was withdrawn (a withdrawal by the default
+# keeps the stamps); one sent untracked. Umbrella has no other message in any analytics window.
+- id: 7360 # fixture: OutboundMessageUmbrellaTracked
+  kind: broadcast
+  idempotency_key: 'broadcast:umbrella-mix-7360'
+  broadcast_id: 7347
+  channel: email
+  destination: tracked@umbrella.test
+  sending_source: broadcasts
+  status: sent
+  integration_id: 910
+  sent_at: '{{hoursAgo 3}}'
+  claimed_at: '{{hoursAgo 3}}'
+  opened_at: '{{hoursAgo 2}}'
+  clicked_at: '{{hoursAgo 2}}'
+  workspace_id: 4
+  created_at: '{{hoursAgo 3}}'
+  updated_at: '{{hoursAgo 2}}'
+- id: 7361 # fixture: OutboundMessageUmbrellaWithdrawn
+  kind: broadcast
+  idempotency_key: 'broadcast:umbrella-mix-7361'
+  broadcast_id: 7347
+  channel: email
+  destination: withdrawn@umbrella.test
+  sending_source: broadcasts
+  status: sent
+  integration_id: 910
+  sent_at: '{{hoursAgo 3}}'
+  claimed_at: '{{hoursAgo 3}}'
+  opened_at: '{{hoursAgo 2}}'
+  clicked_at: '{{hoursAgo 2}}'
+  tracked: true
+  tracking_withdrawn_at: '{{hoursAgo 1}}'
+  workspace_id: 4
+  created_at: '{{hoursAgo 3}}'
+  updated_at: '{{hoursAgo 1}}'
+- id: 7362 # fixture: OutboundMessageUmbrellaUntracked
+  kind: broadcast
+  idempotency_key: 'broadcast:umbrella-mix-7362'
+  broadcast_id: 7347
+  channel: email
+  destination: untracked@umbrella.test
+  sending_source: broadcasts
+  status: sent
+  integration_id: 910
+  sent_at: '{{hoursAgo 3}}'
+  claimed_at: '{{hoursAgo 3}}'
+  tracked: false
+  workspace_id: 4
+  created_at: '{{hoursAgo 3}}'
+  updated_at: '{{hoursAgo 3}}'
 # Alice's emails of two Automations, sent outside the analytics windows, tracked like a Broadcast's (ADR 0053): one of the Welcome series
 # (it starts on `signup`) and one of the On open Automation, whose own open must not enroll it.
 - id: 5704 # fixture: OutboundMessageTrackingWithdrawn

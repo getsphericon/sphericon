@@ -50,6 +50,8 @@ const (
 	FieldClicked = "clicked"
 	// FieldCaptured holds the string denoting the captured field in the database.
 	FieldCaptured = "captured"
+	// FieldUntracked holds the string denoting the untracked field in the database.
+	FieldUntracked = "untracked"
 	// FieldPrunedAt holds the string denoting the pruned_at field in the database.
 	FieldPrunedAt = "pruned_at"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
@@ -95,6 +97,7 @@ var Columns = []string{
 	FieldOpened,
 	FieldClicked,
 	FieldCaptured,
+	FieldUntracked,
 	FieldPrunedAt,
 }
 
@@ -143,6 +146,10 @@ var (
 	ClickedValidator func(int) error
 	// CapturedValidator is a validator for the "captured" field. It is called by the builders before save.
 	CapturedValidator func(int) error
+	// DefaultUntracked holds the default value on creation for the "untracked" field.
+	DefaultUntracked int
+	// UntrackedValidator is a validator for the "untracked" field. It is called by the builders before save.
+	UntrackedValidator func(int) error
 )
 
 // OrderOption defines the ordering options for the BroadcastFigure queries.
@@ -241,6 +248,11 @@ func ByClicked(opts ...sql.OrderTermOption) OrderOption {
 // ByCaptured orders the results by the captured field.
 func ByCaptured(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCaptured, opts...).ToFunc()
+}
+
+// ByUntracked orders the results by the untracked field.
+func ByUntracked(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUntracked, opts...).ToFunc()
 }
 
 // ByPrunedAt orders the results by the pruned_at field.

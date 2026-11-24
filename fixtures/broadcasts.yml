@@ -435,6 +435,22 @@
   created_at: '{{daysAgo 400}}'
   updated_at: '{{daysAgo 400}}'
 
+# Umbrella's sent email Broadcast whose three messages (outbound_messages.yml) are one tracked, one whose
+# tracking was withdrawn since and one sent untracked (ADR 0120): its figures, the Engagement rates and
+# the figures message retention freezes count opens and clicks over the tracked one only.
+- id: 7347 # fixture: BroadcastUmbrellaTrackingMix
+  channel: email
+  revision: 1
+  name: Umbrella tracking mix
+  subject: News
+  from_name: Umbrella
+  body: '<p>News.</p>'
+  status: sent
+  sent_at: '{{hoursAgo 3}}'
+  workspace_id: 4
+  created_at: '{{hoursAgo 4}}'
+  updated_at: '{{hoursAgo 3}}'
+
 # Hooli (workspace 5): a draft, the only row besides its owner, for a Test send that must leave the
 # Setup checklist's last step todo.
 - id: 910 # fixture: BroadcastHooli

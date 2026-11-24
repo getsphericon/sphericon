@@ -7,7 +7,7 @@ namespace Sphericon;
  * One row of the Outbound messages stream: the delivery record of one send, whichever
  * surface asked for it. It carries provenance and outcome only, never a subject or a body.
  * A row is delivered again whenever it changes (a status change, an Erasure clearing the
- * destination and the Contact).
+ * destination and the Contact, a withdrawal of its tracking).
  */
 model ExportMessageRow {
   /** Unique identifier */
@@ -93,6 +93,12 @@ model ExportMessageRow {
 
   /** True when the message went through a Test inbox: captured, not delivered */
   captured: boolean;
+
+  /** Whether the message went out tracked (ADR 0120): an open pixel and tracked links. A message is tracked while this holds and no withdrawal is recorded. */
+  tracked: boolean;
+
+  /** When the message's tracking was withdrawn (a refusal of its Destination, or the Workspace's default turned to `dont_track`); absent while it was not. Once set it never clears. */
+  tracking_withdrawn_at: Timestamp | null;
 
   /** Creation timestamp */
   created_at: Timestamp;

@@ -1361,15 +1361,18 @@ export const zSiteAnalyticsContacts = z.object({
 });
 
 /**
- * Email engagement for the Broadcast and Automation messages sent in the selected range
- * (the send cohort; a Transactional message is not in it), from delivery logs. Each message
- * counts once, not each person. Opens/clicks are the first human open/click stamped on the
- * message and are counted among that cohort, so the counts reconcile and the rates stay in [0,1].
+ * Email engagement for the tracked Broadcast and Automation messages sent in the selected range
+ * (the send cohort; a Transactional message is not in it, and neither is a message sent untracked
+ * or whose tracking was withdrawn since, ADR 0120), from delivery logs. Each message counts once,
+ * not each person. Opens/clicks are the first human open/click stamped on the message and are
+ * counted among that cohort, so the counts reconcile and the rates stay in [0,1]. The untracked
+ * messages are counted beside it.
  */
 export const zSiteAnalyticsEmail = z.object({
   sentCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   openedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   clickedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  untrackedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   openRate: z.number(),
   clickRate: z.number(),
   clickToOpenRate: z.number()
@@ -1426,13 +1429,14 @@ export const zSiteAnalyticsClicksByLink = z.object({
 
 /**
  * One Report day of the cohort (ADR 0057), zero-filled across the range. Opened/clicked
- * count the messages sent that day that were later opened/clicked.
+ * count the tracked messages sent that day that were later opened/clicked.
  */
 export const zSiteAnalyticsPoint = z.object({
   date: z.string(),
   sent: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   opened: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  clicked: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+  clicked: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  untracked: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
 /**
@@ -1596,6 +1600,7 @@ export const zSiteBroadcastStats = z.object({
   cancelledCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   openedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
   clickedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  untrackedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   unsubscribedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   deliveredCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
   undeliveredCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),

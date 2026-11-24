@@ -145,6 +145,11 @@ func Captured(v int) predicate.BroadcastFigure {
 	return predicate.BroadcastFigure(sql.FieldEQ(FieldCaptured, v))
 }
 
+// Untracked applies equality check predicate on the "untracked" field. It's identical to UntrackedEQ.
+func Untracked(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldEQ(FieldUntracked, v))
+}
+
 // PrunedAt applies equality check predicate on the "pruned_at" field. It's identical to PrunedAtEQ.
 func PrunedAt(v time.Time) predicate.BroadcastFigure {
 	return predicate.BroadcastFigure(sql.FieldEQ(FieldPrunedAt, v))
@@ -828,6 +833,46 @@ func CapturedLT(v int) predicate.BroadcastFigure {
 // CapturedLTE applies the LTE predicate on the "captured" field.
 func CapturedLTE(v int) predicate.BroadcastFigure {
 	return predicate.BroadcastFigure(sql.FieldLTE(FieldCaptured, v))
+}
+
+// UntrackedEQ applies the EQ predicate on the "untracked" field.
+func UntrackedEQ(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldEQ(FieldUntracked, v))
+}
+
+// UntrackedNEQ applies the NEQ predicate on the "untracked" field.
+func UntrackedNEQ(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldNEQ(FieldUntracked, v))
+}
+
+// UntrackedIn applies the In predicate on the "untracked" field.
+func UntrackedIn(vs ...int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldIn(FieldUntracked, vs...))
+}
+
+// UntrackedNotIn applies the NotIn predicate on the "untracked" field.
+func UntrackedNotIn(vs ...int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldNotIn(FieldUntracked, vs...))
+}
+
+// UntrackedGT applies the GT predicate on the "untracked" field.
+func UntrackedGT(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldGT(FieldUntracked, v))
+}
+
+// UntrackedGTE applies the GTE predicate on the "untracked" field.
+func UntrackedGTE(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldGTE(FieldUntracked, v))
+}
+
+// UntrackedLT applies the LT predicate on the "untracked" field.
+func UntrackedLT(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldLT(FieldUntracked, v))
+}
+
+// UntrackedLTE applies the LTE predicate on the "untracked" field.
+func UntrackedLTE(v int) predicate.BroadcastFigure {
+	return predicate.BroadcastFigure(sql.FieldLTE(FieldUntracked, v))
 }
 
 // PrunedAtEQ applies the EQ predicate on the "pruned_at" field.

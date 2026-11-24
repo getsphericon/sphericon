@@ -15981,6 +15981,8 @@ type BroadcastFigureMutation struct {
 	addclicked       *int
 	captured         *int
 	addcaptured      *int
+	untracked        *int
+	adduntracked     *int
 	pruned_at        *time.Time
 	clearedFields    map[string]struct{}
 	workspace        *int64
@@ -17024,6 +17026,62 @@ func (m *BroadcastFigureMutation) ResetCaptured() {
 	m.addcaptured = nil
 }
 
+// SetUntracked sets the "untracked" field.
+func (m *BroadcastFigureMutation) SetUntracked(i int) {
+	m.untracked = &i
+	m.adduntracked = nil
+}
+
+// Untracked returns the value of the "untracked" field in the mutation.
+func (m *BroadcastFigureMutation) Untracked() (r int, exists bool) {
+	v := m.untracked
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUntracked returns the old "untracked" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldUntracked(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUntracked is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUntracked requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUntracked: %w", err)
+	}
+	return oldValue.Untracked, nil
+}
+
+// AddUntracked adds i to the "untracked" field.
+func (m *BroadcastFigureMutation) AddUntracked(i int) {
+	if m.adduntracked != nil {
+		*m.adduntracked += i
+	} else {
+		m.adduntracked = &i
+	}
+}
+
+// AddedUntracked returns the value that was added to the "untracked" field in this mutation.
+func (m *BroadcastFigureMutation) AddedUntracked() (r int, exists bool) {
+	v := m.adduntracked
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetUntracked resets all changes to the "untracked" field.
+func (m *BroadcastFigureMutation) ResetUntracked() {
+	m.untracked = nil
+	m.adduntracked = nil
+}
+
 // SetPrunedAt sets the "pruned_at" field.
 func (m *BroadcastFigureMutation) SetPrunedAt(t time.Time) {
 	m.pruned_at = &t
@@ -17161,7 +17219,7 @@ func (m *BroadcastFigureMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BroadcastFigureMutation) Fields() []string {
-	fields := make([]string, 0, 19)
+	fields := make([]string, 0, 20)
 	if m.created_at != nil {
 		fields = append(fields, broadcastfigure.FieldCreatedAt)
 	}
@@ -17216,6 +17274,9 @@ func (m *BroadcastFigureMutation) Fields() []string {
 	if m.captured != nil {
 		fields = append(fields, broadcastfigure.FieldCaptured)
 	}
+	if m.untracked != nil {
+		fields = append(fields, broadcastfigure.FieldUntracked)
+	}
 	if m.pruned_at != nil {
 		fields = append(fields, broadcastfigure.FieldPrunedAt)
 	}
@@ -17263,6 +17324,8 @@ func (m *BroadcastFigureMutation) Field(name string) (ent.Value, bool) {
 		return m.Clicked()
 	case broadcastfigure.FieldCaptured:
 		return m.Captured()
+	case broadcastfigure.FieldUntracked:
+		return m.Untracked()
 	case broadcastfigure.FieldPrunedAt:
 		return m.PrunedAt()
 	}
@@ -17310,6 +17373,8 @@ func (m *BroadcastFigureMutation) OldField(ctx context.Context, name string) (en
 		return m.OldClicked(ctx)
 	case broadcastfigure.FieldCaptured:
 		return m.OldCaptured(ctx)
+	case broadcastfigure.FieldUntracked:
+		return m.OldUntracked(ctx)
 	case broadcastfigure.FieldPrunedAt:
 		return m.OldPrunedAt(ctx)
 	}
@@ -17447,6 +17512,13 @@ func (m *BroadcastFigureMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCaptured(v)
 		return nil
+	case broadcastfigure.FieldUntracked:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUntracked(v)
+		return nil
 	case broadcastfigure.FieldPrunedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -17504,6 +17576,9 @@ func (m *BroadcastFigureMutation) AddedFields() []string {
 	if m.addcaptured != nil {
 		fields = append(fields, broadcastfigure.FieldCaptured)
 	}
+	if m.adduntracked != nil {
+		fields = append(fields, broadcastfigure.FieldUntracked)
+	}
 	return fields
 }
 
@@ -17540,6 +17615,8 @@ func (m *BroadcastFigureMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedClicked()
 	case broadcastfigure.FieldCaptured:
 		return m.AddedCaptured()
+	case broadcastfigure.FieldUntracked:
+		return m.AddedUntracked()
 	}
 	return nil, false
 }
@@ -17647,6 +17724,13 @@ func (m *BroadcastFigureMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddCaptured(v)
 		return nil
+	case broadcastfigure.FieldUntracked:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUntracked(v)
+		return nil
 	}
 	return fmt.Errorf("unknown BroadcastFigure numeric field %s", name)
 }
@@ -17736,6 +17820,9 @@ func (m *BroadcastFigureMutation) ResetField(name string) error {
 		return nil
 	case broadcastfigure.FieldCaptured:
 		m.ResetCaptured()
+		return nil
+	case broadcastfigure.FieldUntracked:
+		m.ResetUntracked()
 		return nil
 	case broadcastfigure.FieldPrunedAt:
 		m.ResetPrunedAt()

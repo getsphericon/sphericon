@@ -7366,6 +7366,10 @@ func (s *BroadcastReport) encodeFields(e *jx.Encoder) {
 		e.Int32(s.ClickedCount)
 	}
 	{
+		e.FieldStart("untrackedCount")
+		e.Int32(s.UntrackedCount)
+	}
+	{
 		e.FieldStart("unsubscribedCount")
 		e.Int32(s.UnsubscribedCount)
 	}
@@ -7399,7 +7403,7 @@ func (s *BroadcastReport) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfBroadcastReport = [18]string{
+var jsonFieldsNameOfBroadcastReport = [19]string{
 	0:  "status",
 	1:  "holdReason",
 	2:  "recipientsTotal",
@@ -7410,14 +7414,15 @@ var jsonFieldsNameOfBroadcastReport = [18]string{
 	7:  "cancelledCount",
 	8:  "openedCount",
 	9:  "clickedCount",
-	10: "unsubscribedCount",
-	11: "deliveredCount",
-	12: "undeliveredCount",
-	13: "bouncedCount",
-	14: "complainedCount",
-	15: "capturedCount",
-	16: "openRate",
-	17: "clickRate",
+	10: "untrackedCount",
+	11: "unsubscribedCount",
+	12: "deliveredCount",
+	13: "undeliveredCount",
+	14: "bouncedCount",
+	15: "complainedCount",
+	16: "capturedCount",
+	17: "openRate",
+	18: "clickRate",
 }
 
 // Decode decodes BroadcastReport from json.
@@ -7543,8 +7548,20 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"clickedCount\"")
 			}
-		case "unsubscribedCount":
+		case "untrackedCount":
 			requiredBitSet[1] |= 1 << 2
+			if err := func() error {
+				v, err := d.Int32()
+				s.UntrackedCount = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"untrackedCount\"")
+			}
+		case "unsubscribedCount":
+			requiredBitSet[1] |= 1 << 3
 			if err := func() error {
 				v, err := d.Int32()
 				s.UnsubscribedCount = int32(v)
@@ -7556,7 +7573,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"unsubscribedCount\"")
 			}
 		case "deliveredCount":
-			requiredBitSet[1] |= 1 << 3
+			requiredBitSet[1] |= 1 << 4
 			if err := func() error {
 				if err := s.DeliveredCount.Decode(d); err != nil {
 					return err
@@ -7566,7 +7583,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"deliveredCount\"")
 			}
 		case "undeliveredCount":
-			requiredBitSet[1] |= 1 << 4
+			requiredBitSet[1] |= 1 << 5
 			if err := func() error {
 				if err := s.UndeliveredCount.Decode(d); err != nil {
 					return err
@@ -7576,7 +7593,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"undeliveredCount\"")
 			}
 		case "bouncedCount":
-			requiredBitSet[1] |= 1 << 5
+			requiredBitSet[1] |= 1 << 6
 			if err := func() error {
 				if err := s.BouncedCount.Decode(d); err != nil {
 					return err
@@ -7586,7 +7603,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"bouncedCount\"")
 			}
 		case "complainedCount":
-			requiredBitSet[1] |= 1 << 6
+			requiredBitSet[1] |= 1 << 7
 			if err := func() error {
 				if err := s.ComplainedCount.Decode(d); err != nil {
 					return err
@@ -7596,7 +7613,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"complainedCount\"")
 			}
 		case "capturedCount":
-			requiredBitSet[1] |= 1 << 7
+			requiredBitSet[2] |= 1 << 0
 			if err := func() error {
 				if err := s.CapturedCount.Decode(d); err != nil {
 					return err
@@ -7606,7 +7623,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"capturedCount\"")
 			}
 		case "openRate":
-			requiredBitSet[2] |= 1 << 0
+			requiredBitSet[2] |= 1 << 1
 			if err := func() error {
 				if err := s.OpenRate.Decode(d); err != nil {
 					return err
@@ -7616,7 +7633,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"openRate\"")
 			}
 		case "clickRate":
-			requiredBitSet[2] |= 1 << 1
+			requiredBitSet[2] |= 1 << 2
 			if err := func() error {
 				v, err := d.Float32()
 				s.ClickRate = float32(v)
@@ -7639,7 +7656,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 	for i, mask := range [3]uint8{
 		0b11111101,
 		0b11111111,
-		0b00000011,
+		0b00000111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

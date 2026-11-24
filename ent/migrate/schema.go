@@ -737,6 +737,7 @@ var (
 		{Name: "opened", Type: field.TypeInt},
 		{Name: "clicked", Type: field.TypeInt},
 		{Name: "captured", Type: field.TypeInt},
+		{Name: "untracked", Type: field.TypeInt, Default: 0},
 		{Name: "pruned_at", Type: field.TypeTime, Nullable: true},
 		{Name: "broadcast_id", Type: field.TypeInt64},
 		{Name: "workspace_id", Type: field.TypeInt64},
@@ -749,13 +750,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "broadcast_figures_broadcasts_figures",
-				Columns:    []*schema.Column{BroadcastFiguresColumns[18]},
+				Columns:    []*schema.Column{BroadcastFiguresColumns[19]},
 				RefColumns: []*schema.Column{BroadcastsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "broadcast_figures_workspaces_broadcast_figures",
-				Columns:    []*schema.Column{BroadcastFiguresColumns[19]},
+				Columns:    []*schema.Column{BroadcastFiguresColumns[20]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -764,7 +765,7 @@ var (
 			{
 				Name:    "broadcast_figures_workspace_id_broadcast_id",
 				Unique:  true,
-				Columns: []*schema.Column{BroadcastFiguresColumns[19], BroadcastFiguresColumns[18]},
+				Columns: []*schema.Column{BroadcastFiguresColumns[20], BroadcastFiguresColumns[19]},
 			},
 		},
 	}

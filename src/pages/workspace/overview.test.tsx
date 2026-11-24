@@ -82,6 +82,7 @@ const period: SiteAnalyticsPeriod = {
     sentCount: 0,
     openedCount: 0,
     clickedCount: 0,
+    untrackedCount: 0,
     openRate: 0,
     clickRate: 0,
     clickToOpenRate: 0,
@@ -873,6 +874,33 @@ test('a rate that was zero over sent messages still changes by its points', asyn
   const { screen } = await renderWithRouter(<OverviewPage />, mount)
 
   await expect.element(screen.getByText('Previous 30 days: 0% (+50 pp)')).toBeInTheDocument()
+})
+
+// The rates count tracked messages only (ADR 0120); the untracked ones are named beside them.
+test('the audience says how many messages the rates leave out as untracked', async () => {
+  worker.use(
+    handleSiteAnalyticsOverview({
+      body: {
+        ...overview,
+        contacts: { total: 120, active: 110, unsubscribed: 10 },
+        current: {
+          ...period,
+          sending: { ...noSends, broadcast: 10 },
+          email: { ...period.email, sentCount: 7, untrackedCount: 3, openRate: 0.5 },
+        },
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<OverviewPage />, mount)
+
+  await expect
+    .element(
+      screen.getByText(
+        'The rates count tracked messages only. Untracked messages, beside them: 3.',
+      ),
+    )
+    .toBeInTheDocument()
 })
 
 test('revenue compares the total, the credited share and the orders with the previous period', async () => {
