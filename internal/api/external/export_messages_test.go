@@ -10,7 +10,9 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -185,5 +187,29 @@ func TestExportMessagesDeliversAWithdrawnMessageAgain(t *testing.T) {
 	after := readExportMessages(t, c, before.cursor)
 	withdrawn := after.row(usage)
 	require.NotNil(t, withdrawn, "the withdrawn message comes again from the cursor taken before")
+	assert.NotNil(t, withdrawn["tracking_withdrawn_at"])
+}
+
+// The withdrawal of a default turned to dont_track (ADR 0120) delivers the messages it reached
+// again, with the moment their tracking was withdrawn.
+func TestExportMessagesDeliversAMessageWithdrawnByTheDefaultAgain(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	c := exportClient(t, env, fixtures.GlobexID)
+	before := readExportMessages(t, c, "")
+	require.Nil(t, before.row(fixtures.OutboundMessageGlobexUsageID)["tracking_withdrawn_at"])
+
+	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
+	_, err := jane.SiteWorkspacesSetEngagementTrackingDefault(ctx, &siteapi.SiteSetEngagementTrackingDefaultInput{
+		Revision:                  siteapi.Revision(env.WorkspaceRevision(ctx, t, fixtures.GlobexPublicID)),
+		EngagementTrackingDefault: siteapi.EngagementTrackingDecisionDontTrack,
+	}, siteapi.SiteWorkspacesSetEngagementTrackingDefaultParams{WorkspaceId: fixtures.GlobexPublicID})
+	require.NoError(t, err)
+	env.PerformEnqueuedJobs(t, outboundmessages.WithdrawUngrantedArgs{})
+
+	after := readExportMessages(t, c, before.cursor)
+	withdrawn := after.row(fixtures.OutboundMessageGlobexUsageID)
+	require.NotNil(t, withdrawn, "the withdrawn row comes again from the cursor taken before")
+	assert.Equal(t, true, withdrawn["tracked"], "it went out tracked")
 	assert.NotNil(t, withdrawn["tracking_withdrawn_at"])
 }

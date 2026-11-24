@@ -3227,6 +3227,10 @@ const (
 	OutboundMessageGlobexDestination = "pat@globex.test"
 	// OutboundMessageGlobexID is from fixtures/outbound_messages.
 	OutboundMessageGlobexID = 900
+	// OutboundMessageGlobexUsageDestination is from fixtures/outbound_messages.
+	OutboundMessageGlobexUsageDestination = "usage@globex.test"
+	// OutboundMessageGlobexUsageID is from fixtures/outbound_messages.
+	OutboundMessageGlobexUsageID = 901
 	// OutboundMessageMailgunAliceID is from fixtures/outbound_messages.
 	OutboundMessageMailgunAliceID = 812
 	// OutboundMessageMovedOriginDestination is from fixtures/outbound_messages.
