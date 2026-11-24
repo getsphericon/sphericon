@@ -36,6 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -296,6 +297,10 @@ func (m *Module) checked(in RecordInput) (RecordInput, error) {
 func destinationOf(channel channels.Channel, raw string) (string, error) {
 	if _, ok := consentChannels[channel]; !ok {
 		return "", ErrChannel
+	}
+	// The consent's row bounds its Destination: its owner checks the bound, as the opt-outs do.
+	if err := validation.MaxLength(fieldname.Destination, raw, bounds.ConsentDestinationMaxLength); err != nil {
+		return "", err
 	}
 	dest, err := unsubscribes.Destination(channel, raw)
 	switch {
