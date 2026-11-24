@@ -45,6 +45,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
+	"github.com/getsphericon/sphericon/internal/kernel/phone"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
@@ -377,16 +378,9 @@ func match(r ref, st store, channel channels.Channel, extra ...string) *sql.Sele
 		sql.EQ(sub.C(st.channel), string(channel)),
 	}
 	if channel == channels.SMS {
-		// On sms a row is keyed by the number or, once its Contact was erased, by the number's hash
-		// (phone.Hash, here in SQL), so an erased person's refusal holds when the number comes back.
-		// raw sql: the destination correlation, matched against the number or its SHA-256 hex.
-		conds[1] = sql.P(func(b *sql.Builder) {
-			b.WriteString(sub.C(st.destination)).WriteString(" IN (")
-			r.destination(b)
-			b.WriteString(", encode(sha256(convert_to(")
-			r.destination(b)
-			b.WriteString(", 'UTF8')), 'hex'))")
-		})
+		// On sms a row is keyed by the number or, once its Contact was erased, by the number's hash,
+		// so an erased person's refusal holds when the number comes back.
+		conds[1] = phone.KeyedBy(func() string { return sub.C(st.destination) }, r.destination)
 	}
 	for _, col := range st.liveWhenNull {
 		conds = append(conds, sql.IsNull(sub.C(col)))

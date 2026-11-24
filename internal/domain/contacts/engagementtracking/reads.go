@@ -7,6 +7,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/phone"
 )
 
 // ReadsWhere is a Contact's consent in SQL, as recorded (the Workspace's default aside): it keeps
@@ -61,18 +62,14 @@ func ownChats(outer *sql.Selector) *sql.Selector {
 
 // recordedOf selects the consent rows of state on channel of the Destination in destination (a
 // column of the outer query holding its stored form) in the Workspace in workspace. On sms a
-// refusal is kept by the number or, once its Contact was erased, by the number's hash (phone.Hash,
-// here in SQL, as the eligibility layers match an opt-out), so it holds when the number comes back.
+// refusal is kept by the number or, once its Contact was erased, by the number's hash
+// (phone.KeyedBy, as the eligibility layers match an opt-out), so it holds when the number comes back.
 func recordedOf(workspace, destination string, channel channels.Channel, state State) *sql.Selector {
 	consents := sql.Table(engagementtrackingconsent.Table)
 	sameDestination := sql.ColumnsEQ(consents.C(engagementtrackingconsent.FieldDestination), destination)
 	if channel == channels.SMS {
-		// raw sql: the destination correlation, matched against the number or its SHA-256 hex.
-		sameDestination = sql.P(func(b *sql.Builder) {
-			b.WriteString(consents.C(engagementtrackingconsent.FieldDestination)).WriteString(" IN (").
-				WriteString(destination).WriteString(", encode(sha256(convert_to(").
-				WriteString(destination).WriteString(", 'UTF8')), 'hex'))")
-		})
+		sameDestination = phone.KeyedBy(func() string { return consents.C(engagementtrackingconsent.FieldDestination) },
+			func(b *sql.Builder) { b.WriteString(destination) })
 	}
 	return sql.Select(consents.C(engagementtrackingconsent.FieldID)).From(consents).Where(sql.And(
 		// Every Workspace-owned table names its Workspace in the same column (WorkspaceMixin).

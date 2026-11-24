@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strings"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/nyaruka/phonenumbers"
 )
 
@@ -69,6 +70,22 @@ func Normalize(raw, country string) (string, error) {
 func Hash(number string) string {
 	sum := sha256.Sum256([]byte(number))
 	return hex.EncodeToString(sum[:])
+}
+
+// KeyedBy is whether the key column of a row kept by a number holds the number number writes, as
+// it is or as its Hash: Hash in SQL, for a query that matches a refusal kept by the number or, once
+// its Contact was erased, by the hash. column names the key column and number renders the
+// number's SQL (a column of an outer query, or a bound value), both when the query is built, so
+// they are quoted in its dialect.
+func KeyedBy(column func() string, number func(*sql.Builder)) *sql.Predicate {
+	// raw sql: SQL has no form of Hash an ent predicate states; the number side is a correlation.
+	return sql.P(func(b *sql.Builder) {
+		b.WriteString(column()).WriteString(" IN (")
+		number(b)
+		b.WriteString(", encode(sha256(convert_to(")
+		number(b)
+		b.WriteString(", 'UTF8')), 'hex'))")
+	})
 }
 
 func parse(raw, region string) (*phonenumbers.PhoneNumber, error) {
