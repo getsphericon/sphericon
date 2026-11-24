@@ -1382,6 +1382,16 @@ export type ContactExportOutboundMessage = {
    */
   captured: boolean;
   /**
+   * Whether the message went out tracked: with an open pixel and its links rewritten, or its
+   * links made Short tracked links (ADR 0120)
+   */
+  tracked: boolean;
+  /**
+   * When the message's tracking was withdrawn (a refusal of the contact's, or the Workspace's
+   * default turned to `dont_track`); null while it was not
+   */
+  trackingWithdrawnAt?: Timestamp | null;
+  /**
    * Broadcast that produced the message
    */
   broadcastId?: EntityId | null;
@@ -7356,6 +7366,22 @@ export type SiteSetDomainJoinInput = {
 };
 
 /**
+ * Set the Engagement tracking default (ADR 0120)
+ */
+export type SiteSetEngagementTrackingDefaultInput = {
+  /**
+   * The Workspace's `revision` the change was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
+  /**
+   * `track`: a Destination with no consent recorded is tracked; `dont_track`: it is tracked only
+   * once it grants its consent. It decides every message rendered from then on, and every open or
+   * click recorded from then on.
+   */
+  engagementTrackingDefault: EngagementTrackingDecision;
+};
+
+/**
  * The Workspace's Setup checklist: its steps are read now, never ticked by hand, and the read
  * that first finds every step done stamps the Workspace, which keeps it complete for good
  */
@@ -8096,6 +8122,11 @@ export type SiteWorkspaceResource = {
    * email set up.
    */
   requireConfirmedOptIn: boolean;
+  /**
+   * The Engagement tracking default (ADR 0120): whether a Destination with no Engagement tracking
+   * consent recorded has its opens and clicks tracked. `track` until an Owner or Admin changes it.
+   */
+  engagementTrackingDefault: EngagementTrackingDecision;
   /**
    * The authenticated User's role in this Workspace (from their Membership). It
    * rides the Workspace list so role-gated UI is known even while the Workspace's
@@ -14982,6 +15013,38 @@ export type SiteDomainJoinSetResponses = {
 };
 
 export type SiteDomainJoinSetResponse = SiteDomainJoinSetResponses[keyof SiteDomainJoinSetResponses];
+
+export type SiteWorkspacesSetEngagementTrackingDefaultData = {
+  body: SiteSetEngagementTrackingDefaultInput;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/engagement-tracking-default';
+};
+
+export type SiteWorkspacesSetEngagementTrackingDefaultErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteWorkspacesSetEngagementTrackingDefaultError = SiteWorkspacesSetEngagementTrackingDefaultErrors[keyof SiteWorkspacesSetEngagementTrackingDefaultErrors];
+
+export type SiteWorkspacesSetEngagementTrackingDefaultResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteWorkspaceResource;
+};
+
+export type SiteWorkspacesSetEngagementTrackingDefaultResponse = SiteWorkspacesSetEngagementTrackingDefaultResponses[keyof SiteWorkspacesSetEngagementTrackingDefaultResponses];
 
 export type SiteEventsListData = {
   body?: never;

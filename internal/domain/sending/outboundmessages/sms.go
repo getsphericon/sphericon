@@ -85,7 +85,13 @@ type smsMessage struct{ body string }
 // send (messageID 0) gets the Workspace's message-less short links, so it shows the same form. A
 // text that does not render, or renders to nothing, is the message's own failure, the same on every
 // attempt.
-func (c smsChannel) render(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace) (any, error) {
+// tracks is the request's Track, unless the content keeps its links as written.
+func (smsChannel) tracks(req Request) bool {
+	content, ok := req.Content.(SMSContent)
+	return ok && req.Track && !content.NoLinkTracking
+}
+
+func (c smsChannel) render(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace, tracked bool) (any, error) {
 	content, ok := req.Content.(SMSContent)
 	if !ok {
 		return nil, fmt.Errorf("outbound: %T is no SMS content", req.Content)
@@ -101,7 +107,7 @@ func (c smsChannel) render(ctx context.Context, s *ent.Scoped, req Request, mess
 	if body == "" {
 		return nil, contentError{errors.New(reasonContentEmpty)}
 	}
-	if content.NoLinkTracking {
+	if !tracked {
 		return smsMessage{body: body}, nil
 	}
 	unsub, _ := vars[unsubscribeURLTag].(string)
@@ -223,7 +229,7 @@ func (m *Module) sendSMSTest(ctx context.Context, s *ent.Scoped, content SMSCont
 	if err != nil {
 		return Result{}, err
 	}
-	rendered, err := smsChannel{m}.render(ctx, s, Request{Content: content, Variables: testVariables(testSampleEmail)}, 0, to, ws)
+	rendered, err := smsChannel{m}.render(ctx, s, Request{Content: content, Variables: testVariables(testSampleEmail)}, 0, to, ws, !content.NoLinkTracking)
 	if err != nil {
 		if isContentError(err) {
 			return Result{}, fmt.Errorf("%w: %s", emailrender.ErrInvalidContent, err.Error())

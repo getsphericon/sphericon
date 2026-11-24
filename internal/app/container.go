@@ -700,6 +700,7 @@ var deliveryPackage = do.Package(
 			Chats:    do.MustInvoke[*bindings.Chats](i),
 			Limits:   do.MustInvoke[*providerlimit.Module](i),
 			Standing: do.MustInvoke[*integrations.Standing](i),
+			Consents: do.MustInvoke[*engagementtracking.Module](i),
 		}
 		return outboundmessages.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*holds.Holds](i), do.MustInvoke[outboundmessages.Senders](i), do.MustInvoke[*messagetoken.Tracker](i),
 			mods, deps, outboundmessages.Config{SendCaps: do.MustInvoke[providerlimit.SendCaps](i)}, do.MustInvoke[Clock](i)), nil
@@ -992,7 +993,7 @@ var contentPackage = do.Package(
 	// The opens and clicks of the Outbound messages (ADR 0053): a token names a message before any
 	// scope exists, so it holds the raw client.
 	do.Lazy(func(i do.Injector) (*engagement.Recorder, error) {
-		return engagement.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*contacts.Module](i), do.MustInvoke[*messagetoken.Tracker](i),
+		return engagement.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*contacts.Module](i), do.MustInvoke[*engagementtracking.Module](i), do.MustInvoke[*messagetoken.Tracker](i),
 			do.MustInvoke[*privaterelayranges.Detector](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// Webhooks: the audit.entry rule asks the Edition whether the license is active.

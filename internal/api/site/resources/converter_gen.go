@@ -26,6 +26,7 @@ import (
 	trackingdomain "github.com/getsphericon/sphericon/ent/trackingdomain"
 	unsubscribe "github.com/getsphericon/sphericon/ent/unsubscribe"
 	webhookendpoint "github.com/getsphericon/sphericon/ent/webhookendpoint"
+	workspace "github.com/getsphericon/sphericon/ent/workspace"
 	site "github.com/getsphericon/sphericon/gen/site"
 	condition "github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
@@ -1209,13 +1210,14 @@ func (c *ConverterImpl) EngagementTrackingConsentToResource(source engagementtra
 	siteapiEngagementTrackingConsent.UpdatedAt = optNilTimestamp(source.UpdatedAt)
 	return siteapiEngagementTrackingConsent
 }
-func (c *ConverterImpl) EngagementTrackingDecisionToResource(source engagementtracking.Decision) site.EngagementTrackingDecision {
+func (c *ConverterImpl) EngagementTrackingDecisionToResource(source workspace.EngagementTrackingDefault) site.EngagementTrackingDecision {
 	var siteapiEngagementTrackingDecision site.EngagementTrackingDecision
 	switch source {
-	case engagementtracking.DontTrack:
-		siteapiEngagementTrackingDecision = site.EngagementTrackingDecisionDontTrack
-	case engagementtracking.Track:
+	case workspace.DefaultEngagementTrackingDefault:
 		siteapiEngagementTrackingDecision = site.EngagementTrackingDecisionTrack
+	case workspace.EngagementTrackingDefaultDontTrack:
+		siteapiEngagementTrackingDecision = site.EngagementTrackingDecisionDontTrack
+	// Skipped EngagementTrackingDefaultTrack(track) -> EngagementTrackingDecisionTrack(track) because it duplicates DefaultEngagementTrackingDefault(track) -> EngagementTrackingDecisionTrack(track)
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -1819,6 +1821,8 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) sit
 		siteapiContactExportOutboundMessage.OpenedAt = optNilTimestamp((*source).OpenedAt)
 		siteapiContactExportOutboundMessage.ClickedAt = optNilTimestamp((*source).ClickedAt)
 		siteapiContactExportOutboundMessage.Captured = (*source).Captured
+		siteapiContactExportOutboundMessage.Tracked = (*source).Tracked
+		siteapiContactExportOutboundMessage.TrackingWithdrawnAt = optNilTimestamp((*source).TrackingWithdrawnAt)
 		siteapiContactExportOutboundMessage.BroadcastId = optNilEntityID((*source).BroadcastID)
 		siteapiContactExportOutboundMessage.AutomationId = optNilEntityID((*source).AutomationID)
 		siteapiContactExportOutboundMessage.AutomationStepId = optNilStepID((*source).AutomationStepID)
@@ -3076,6 +3080,7 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWork
 		siteapiSiteWorkspaceResource.PostalAddress = (*source).PostalAddress
 		siteapiSiteWorkspaceResource.Timezone = workspaceTimezone((*source).Timezone)
 		siteapiSiteWorkspaceResource.RequireConfirmedOptIn = (*source).RequireConfirmedOptIn
+		siteapiSiteWorkspaceResource.EngagementTrackingDefault = c.EngagementTrackingDecisionToResource((*source).EngagementTrackingDefault)
 		// siteapiSiteWorkspaceResource.Role: ignore
 		// siteapiSiteWorkspaceResource.Permissions: ignore
 		siteapiSiteWorkspaceResource.SuspendedAt = optNilTimestamp((*source).SuspendedAt)

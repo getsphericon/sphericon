@@ -108,6 +108,21 @@ func (m *Module) SetTimezone(ctx context.Context, s *ent.Scoped, revision int64,
 	return edit(s, revision).SetTimezone(name).Save(ctx)
 }
 
+// SetEngagementTrackingDefault sets the Workspace's Engagement tracking default (ADR 0120): whether a
+// Destination with no Engagement tracking consent recorded is tracked. A value outside the two is
+// refused with ErrEngagementTrackingDefault. It is an edit made on revision, as every edit of its
+// settings is (ADR 0119); setting the value it has writes nothing.
+func (m *Module) SetEngagementTrackingDefault(ctx context.Context, s *ent.Scoped, revision int64, d workspace.EngagementTrackingDefault) (*ent.Workspace, error) {
+	if workspace.EngagementTrackingDefaultValidator(d) != nil {
+		return nil, ErrEngagementTrackingDefault
+	}
+	return edit(s, revision).SetEngagementTrackingDefault(d).Save(ctx)
+}
+
+// ErrEngagementTrackingDefault refuses an Engagement tracking default other than track and dont_track.
+var ErrEngagementTrackingDefault = validation.RefuseField(fieldname.EngagementTrackingDefault,
+	"workspaces: unknown engagement tracking default", i18n.ErrorsEngagementTrackingDefaultUnknown)
+
 // ErrUnknownCurrency refuses a Reporting currency code that is not in ISO 4217.
 var ErrUnknownCurrency = validation.RefuseField(fieldname.ReportingCurrency, "workspaces: unknown currency code", i18n.ErrorsCurrencyUnknown)
 

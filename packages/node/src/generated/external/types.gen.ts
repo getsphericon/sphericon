@@ -1839,6 +1839,16 @@ export type ContactExportOutboundMessage = {
    */
   captured: boolean;
   /**
+   * Whether the message went out tracked: with an open pixel and its links rewritten, or its
+   * links made Short tracked links (ADR 0120)
+   */
+  tracked: boolean;
+  /**
+   * When the message's tracking was withdrawn (a refusal of the contact's, or the Workspace's
+   * default turned to `dont_track`); null while it was not
+   */
+  trackingWithdrawnAt?: Timestamp | null;
+  /**
    * Broadcast that produced the message
    */
   broadcastId?: EntityId | null;
@@ -7277,6 +7287,12 @@ export type WorkspaceResource = {
    * on, in the console's Workspace settings, affirming that the current mailable list consented.
    */
   requireConfirmedOptIn: boolean;
+  /**
+   * The Engagement tracking default (ADR 0120): whether a Destination with no Engagement tracking
+   * consent recorded has its opens and clicks tracked. Read-only: only a person changes it, in the
+   * console's Workspace settings.
+   */
+  engagementTrackingDefault: EngagementTrackingDecision;
   /**
    * The IANA time zone every analytics report counts its days in (ADR 0057)
    */

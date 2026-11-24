@@ -2233,6 +2233,10 @@ func ScopedEntities() []*ScopedEntity {
 					b.SetClickedAt(*src.ClickedAt)
 				}
 				b.SetCaptured(src.Captured)
+				b.SetTracked(src.Tracked)
+				if src.TrackingWithdrawnAt != nil {
+					b.SetTrackingWithdrawnAt(*src.TrackingWithdrawnAt)
+				}
 				if src.BroadcastID != nil {
 					b.SetBroadcastID(remap("Broadcast", *src.BroadcastID))
 				}

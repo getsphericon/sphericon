@@ -2289,6 +2289,14 @@ export const zSiteSetDomainJoinInput = z.strictObject({
 });
 
 /**
+ * Set the Engagement tracking default (ADR 0120)
+ */
+export const zSiteSetEngagementTrackingDefaultInput = z.strictObject({
+  revision: zRevision,
+  engagementTrackingDefault: zEngagementTrackingDecision
+});
+
+/**
  * Where one Setup checklist step stands, read off the Workspace's own data
  */
 export const zSiteSetupStepStatus = z.enum([
@@ -3334,6 +3342,8 @@ export const zContactExportOutboundMessage = z.object({
   openedAt: z.exactOptional(zTimestamp.nullable()),
   clickedAt: z.exactOptional(zTimestamp.nullable()),
   captured: z.boolean(),
+  tracked: z.boolean(),
+  trackingWithdrawnAt: z.exactOptional(zTimestamp.nullable()),
   broadcastId: z.exactOptional(zEntityId.nullable()),
   automationId: z.exactOptional(zEntityId.nullable()),
   automationStepId: z.exactOptional(z.string().nullable()),
@@ -4671,6 +4681,7 @@ export const zSiteWorkspaceResource = z.object({
   postalAddress: z.string(),
   timezone: zTimeZoneName,
   requireConfirmedOptIn: z.boolean(),
+  engagementTrackingDefault: zEngagementTrackingDecision,
   role: zSiteMembershipRole,
   permissions: z.array(zPermission),
   suspendedAt: z.exactOptional(zTimestamp.nullable()),
@@ -6713,6 +6724,17 @@ export const zSiteDomainJoinSetPath = z.object({
  * The request has succeeded.
  */
 export const zSiteDomainJoinSetResponse = zSiteDomainJoinResource;
+
+export const zSiteWorkspacesSetEngagementTrackingDefaultBody = zSiteSetEngagementTrackingDefaultInput;
+
+export const zSiteWorkspacesSetEngagementTrackingDefaultPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWorkspacesSetEngagementTrackingDefaultResponse = zSiteWorkspaceResource;
 
 export const zSiteEventsListPath = z.object({
   workspaceId: zWorkspaceId

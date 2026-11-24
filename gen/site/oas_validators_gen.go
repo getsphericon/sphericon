@@ -12000,6 +12000,40 @@ func (s *SiteSetDomainJoinInput) Validate() error {
 	return nil
 }
 
+func (s *SiteSetEngagementTrackingDefaultInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Revision.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "revision",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.EngagementTrackingDefault.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "engagementTrackingDefault",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s *SiteSetupProgress) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -13449,6 +13483,17 @@ func (s *SiteWorkspaceResource) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "id",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.EngagementTrackingDefault.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "engagementTrackingDefault",
 			Error: err,
 		})
 	}

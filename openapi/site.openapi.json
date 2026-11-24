@@ -6470,6 +6470,56 @@
         "x-required-permissions": ["join_domains:manage"]
       }
     },
+    "/workspaces/{workspaceId}/engagement-tracking-default": {
+      "put": {
+        "operationId": "SiteWorkspaces_setEngagementTrackingDefault",
+        "description": "Set the Engagement tracking default (Owner and Admin, ADR 0120): whether a Destination with no\nEngagement tracking consent recorded is tracked. Only a person changes it, here: neither `/api`\nnor MCP does. It decides every message rendered from then on and every open or click recorded\nfrom then on. Setting the value it has changes nothing. A change is recorded as an Audit entry.",
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WorkspaceId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteWorkspaceResource"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Site Workspaces"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteSetEngagementTrackingDefaultInput"
+              }
+            }
+          }
+        },
+        "x-required-permissions": ["workspace:update"]
+      }
+    },
     "/workspaces/{workspaceId}/events": {
       "get": {
         "operationId": "SiteEvents_list",
@@ -12714,6 +12764,7 @@
           "status",
           "claimedAt",
           "captured",
+          "tracked",
           "createdAt"
         ],
         "properties": {
@@ -12856,6 +12907,20 @@
           "captured": {
             "type": "boolean",
             "description": "True when the message went through a Test inbox: captured, not delivered"
+          },
+          "tracked": {
+            "type": "boolean",
+            "description": "Whether the message went out tracked: with an open pixel and its links rewritten, or its\nlinks made Short tracked links (ADR 0120)"
+          },
+          "trackingWithdrawnAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the message's tracking was withdrawn (a refusal of the contact's, or the Workspace's\ndefault turned to `dont_track`); null while it was not"
           },
           "broadcastId": {
             "type": "string",
@@ -21189,6 +21254,30 @@
         "description": "Switch domain join on or off",
         "additionalProperties": false
       },
+      "SiteSetEngagementTrackingDefaultInput": {
+        "type": "object",
+        "required": ["revision", "engagementTrackingDefault"],
+        "properties": {
+          "revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The Workspace's `revision` the change was made on (ADR 0119): the one it was read with"
+          },
+          "engagementTrackingDefault": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingDecision"
+              }
+            ],
+            "description": "`track`: a Destination with no consent recorded is tracked; `dont_track`: it is tracked only\nonce it grants its consent. It decides every message rendered from then on, and every open or\nclick recorded from then on."
+          }
+        },
+        "description": "Set the Engagement tracking default (ADR 0120)",
+        "additionalProperties": false
+      },
       "SiteSetupProgress": {
         "type": "object",
         "required": ["steps"],
@@ -22214,6 +22303,7 @@
           "postalAddress",
           "timezone",
           "requireConfirmedOptIn",
+          "engagementTrackingDefault",
           "role",
           "permissions",
           "mcpUrl",
@@ -22257,6 +22347,14 @@
           "requireConfirmedOptIn": {
             "type": "boolean",
             "description": "Whether email reaches an address only once it holds a Confirmation (confirmed opt-in, ADR\n0013). Off until an Owner or Admin turns it on in the console, which needs the confirmation\nemail set up."
+          },
+          "engagementTrackingDefault": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingDecision"
+              }
+            ],
+            "description": "The Engagement tracking default (ADR 0120): whether a Destination with no Engagement tracking\nconsent recorded has its opens and clicks tracked. `track` until an Owner or Admin changes it."
           },
           "role": {
             "allOf": [

@@ -48009,6 +48009,8 @@ type OutboundMessageMutation struct {
 	opened_at                  *time.Time
 	clicked_at                 *time.Time
 	captured                   *bool
+	tracked                    *bool
+	tracking_withdrawn_at      *time.Time
 	automation_step_id         *automationstep.ID
 	request_digest             *string
 	subject                    *string
@@ -49203,6 +49205,91 @@ func (m *OutboundMessageMutation) ResetCaptured() {
 	m.captured = nil
 }
 
+// SetTracked sets the "tracked" field.
+func (m *OutboundMessageMutation) SetTracked(b bool) {
+	m.tracked = &b
+}
+
+// Tracked returns the value of the "tracked" field in the mutation.
+func (m *OutboundMessageMutation) Tracked() (r bool, exists bool) {
+	v := m.tracked
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTracked returns the old "tracked" field's value of the OutboundMessage entity.
+// If the OutboundMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OutboundMessageMutation) OldTracked(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTracked is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTracked requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTracked: %w", err)
+	}
+	return oldValue.Tracked, nil
+}
+
+// ResetTracked resets all changes to the "tracked" field.
+func (m *OutboundMessageMutation) ResetTracked() {
+	m.tracked = nil
+}
+
+// SetTrackingWithdrawnAt sets the "tracking_withdrawn_at" field.
+func (m *OutboundMessageMutation) SetTrackingWithdrawnAt(t time.Time) {
+	m.tracking_withdrawn_at = &t
+}
+
+// TrackingWithdrawnAt returns the value of the "tracking_withdrawn_at" field in the mutation.
+func (m *OutboundMessageMutation) TrackingWithdrawnAt() (r time.Time, exists bool) {
+	v := m.tracking_withdrawn_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTrackingWithdrawnAt returns the old "tracking_withdrawn_at" field's value of the OutboundMessage entity.
+// If the OutboundMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OutboundMessageMutation) OldTrackingWithdrawnAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTrackingWithdrawnAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTrackingWithdrawnAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTrackingWithdrawnAt: %w", err)
+	}
+	return oldValue.TrackingWithdrawnAt, nil
+}
+
+// ClearTrackingWithdrawnAt clears the value of the "tracking_withdrawn_at" field.
+func (m *OutboundMessageMutation) ClearTrackingWithdrawnAt() {
+	m.tracking_withdrawn_at = nil
+	m.clearedFields[outboundmessage.FieldTrackingWithdrawnAt] = struct{}{}
+}
+
+// TrackingWithdrawnAtCleared returns if the "tracking_withdrawn_at" field was cleared in this mutation.
+func (m *OutboundMessageMutation) TrackingWithdrawnAtCleared() bool {
+	_, ok := m.clearedFields[outboundmessage.FieldTrackingWithdrawnAt]
+	return ok
+}
+
+// ResetTrackingWithdrawnAt resets all changes to the "tracking_withdrawn_at" field.
+func (m *OutboundMessageMutation) ResetTrackingWithdrawnAt() {
+	m.tracking_withdrawn_at = nil
+	delete(m.clearedFields, outboundmessage.FieldTrackingWithdrawnAt)
+}
+
 // SetBroadcastID sets the "broadcast_id" field.
 func (m *OutboundMessageMutation) SetBroadcastID(i int64) {
 	m.broadcast = &i
@@ -50073,7 +50160,7 @@ func (m *OutboundMessageMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OutboundMessageMutation) Fields() []string {
-	fields := make([]string, 0, 35)
+	fields := make([]string, 0, 37)
 	if m.created_at != nil {
 		fields = append(fields, outboundmessage.FieldCreatedAt)
 	}
@@ -50145,6 +50232,12 @@ func (m *OutboundMessageMutation) Fields() []string {
 	}
 	if m.captured != nil {
 		fields = append(fields, outboundmessage.FieldCaptured)
+	}
+	if m.tracked != nil {
+		fields = append(fields, outboundmessage.FieldTracked)
+	}
+	if m.tracking_withdrawn_at != nil {
+		fields = append(fields, outboundmessage.FieldTrackingWithdrawnAt)
 	}
 	if m.broadcast != nil {
 		fields = append(fields, outboundmessage.FieldBroadcastID)
@@ -50235,6 +50328,10 @@ func (m *OutboundMessageMutation) Field(name string) (ent.Value, bool) {
 		return m.ClickedAt()
 	case outboundmessage.FieldCaptured:
 		return m.Captured()
+	case outboundmessage.FieldTracked:
+		return m.Tracked()
+	case outboundmessage.FieldTrackingWithdrawnAt:
+		return m.TrackingWithdrawnAt()
 	case outboundmessage.FieldBroadcastID:
 		return m.BroadcastID()
 	case outboundmessage.FieldBroadcastRecipientID:
@@ -50314,6 +50411,10 @@ func (m *OutboundMessageMutation) OldField(ctx context.Context, name string) (en
 		return m.OldClickedAt(ctx)
 	case outboundmessage.FieldCaptured:
 		return m.OldCaptured(ctx)
+	case outboundmessage.FieldTracked:
+		return m.OldTracked(ctx)
+	case outboundmessage.FieldTrackingWithdrawnAt:
+		return m.OldTrackingWithdrawnAt(ctx)
 	case outboundmessage.FieldBroadcastID:
 		return m.OldBroadcastID(ctx)
 	case outboundmessage.FieldBroadcastRecipientID:
@@ -50513,6 +50614,20 @@ func (m *OutboundMessageMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCaptured(v)
 		return nil
+	case outboundmessage.FieldTracked:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTracked(v)
+		return nil
+	case outboundmessage.FieldTrackingWithdrawnAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTrackingWithdrawnAt(v)
+		return nil
 	case outboundmessage.FieldBroadcastID:
 		v, ok := value.(int64)
 		if !ok {
@@ -50668,6 +50783,9 @@ func (m *OutboundMessageMutation) ClearedFields() []string {
 	if m.FieldCleared(outboundmessage.FieldClickedAt) {
 		fields = append(fields, outboundmessage.FieldClickedAt)
 	}
+	if m.FieldCleared(outboundmessage.FieldTrackingWithdrawnAt) {
+		fields = append(fields, outboundmessage.FieldTrackingWithdrawnAt)
+	}
 	if m.FieldCleared(outboundmessage.FieldBroadcastID) {
 		fields = append(fields, outboundmessage.FieldBroadcastID)
 	}
@@ -50759,6 +50877,9 @@ func (m *OutboundMessageMutation) ClearField(name string) error {
 		return nil
 	case outboundmessage.FieldClickedAt:
 		m.ClearClickedAt()
+		return nil
+	case outboundmessage.FieldTrackingWithdrawnAt:
+		m.ClearTrackingWithdrawnAt()
 		return nil
 	case outboundmessage.FieldBroadcastID:
 		m.ClearBroadcastID()
@@ -50872,6 +50993,12 @@ func (m *OutboundMessageMutation) ResetField(name string) error {
 		return nil
 	case outboundmessage.FieldCaptured:
 		m.ResetCaptured()
+		return nil
+	case outboundmessage.FieldTracked:
+		m.ResetTracked()
+		return nil
+	case outboundmessage.FieldTrackingWithdrawnAt:
+		m.ResetTrackingWithdrawnAt()
 		return nil
 	case outboundmessage.FieldBroadcastID:
 		m.ResetBroadcastID()
@@ -79454,6 +79581,7 @@ type WorkspaceMutation struct {
 	retention_days                      *int
 	addretention_days                   *int
 	timezone                            *string
+	engagement_tracking_default         *workspace.EngagementTrackingDefault
 	reporting_currency                  *string
 	attribution_window_days             *int
 	addattribution_window_days          *int
@@ -80422,6 +80550,42 @@ func (m *WorkspaceMutation) TimezoneCleared() bool {
 func (m *WorkspaceMutation) ResetTimezone() {
 	m.timezone = nil
 	delete(m.clearedFields, workspace.FieldTimezone)
+}
+
+// SetEngagementTrackingDefault sets the "engagement_tracking_default" field.
+func (m *WorkspaceMutation) SetEngagementTrackingDefault(wtd workspace.EngagementTrackingDefault) {
+	m.engagement_tracking_default = &wtd
+}
+
+// EngagementTrackingDefault returns the value of the "engagement_tracking_default" field in the mutation.
+func (m *WorkspaceMutation) EngagementTrackingDefault() (r workspace.EngagementTrackingDefault, exists bool) {
+	v := m.engagement_tracking_default
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEngagementTrackingDefault returns the old "engagement_tracking_default" field's value of the Workspace entity.
+// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceMutation) OldEngagementTrackingDefault(ctx context.Context) (v workspace.EngagementTrackingDefault, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEngagementTrackingDefault is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEngagementTrackingDefault requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEngagementTrackingDefault: %w", err)
+	}
+	return oldValue.EngagementTrackingDefault, nil
+}
+
+// ResetEngagementTrackingDefault resets all changes to the "engagement_tracking_default" field.
+func (m *WorkspaceMutation) ResetEngagementTrackingDefault() {
+	m.engagement_tracking_default = nil
 }
 
 // SetReportingCurrency sets the "reporting_currency" field.
@@ -83949,7 +84113,7 @@ func (m *WorkspaceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WorkspaceMutation) Fields() []string {
-	fields := make([]string, 0, 27)
+	fields := make([]string, 0, 28)
 	if m.created_at != nil {
 		fields = append(fields, workspace.FieldCreatedAt)
 	}
@@ -83994,6 +84158,9 @@ func (m *WorkspaceMutation) Fields() []string {
 	}
 	if m.timezone != nil {
 		fields = append(fields, workspace.FieldTimezone)
+	}
+	if m.engagement_tracking_default != nil {
+		fields = append(fields, workspace.FieldEngagementTrackingDefault)
 	}
 	if m.reporting_currency != nil {
 		fields = append(fields, workspace.FieldReportingCurrency)
@@ -84069,6 +84236,8 @@ func (m *WorkspaceMutation) Field(name string) (ent.Value, bool) {
 		return m.RetentionDays()
 	case workspace.FieldTimezone:
 		return m.Timezone()
+	case workspace.FieldEngagementTrackingDefault:
+		return m.EngagementTrackingDefault()
 	case workspace.FieldReportingCurrency:
 		return m.ReportingCurrency()
 	case workspace.FieldAttributionWindowDays:
@@ -84132,6 +84301,8 @@ func (m *WorkspaceMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldRetentionDays(ctx)
 	case workspace.FieldTimezone:
 		return m.OldTimezone(ctx)
+	case workspace.FieldEngagementTrackingDefault:
+		return m.OldEngagementTrackingDefault(ctx)
 	case workspace.FieldReportingCurrency:
 		return m.OldReportingCurrency(ctx)
 	case workspace.FieldAttributionWindowDays:
@@ -84269,6 +84440,13 @@ func (m *WorkspaceMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTimezone(v)
+		return nil
+	case workspace.FieldEngagementTrackingDefault:
+		v, ok := value.(workspace.EngagementTrackingDefault)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEngagementTrackingDefault(v)
 		return nil
 	case workspace.FieldReportingCurrency:
 		v, ok := value.(string)
@@ -84603,6 +84781,9 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 		return nil
 	case workspace.FieldTimezone:
 		m.ResetTimezone()
+		return nil
+	case workspace.FieldEngagementTrackingDefault:
+		m.ResetEngagementTrackingDefault()
 		return nil
 	case workspace.FieldReportingCurrency:
 		m.ResetReportingCurrency()

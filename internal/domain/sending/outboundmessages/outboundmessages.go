@@ -47,6 +47,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
@@ -277,6 +278,8 @@ type Module struct {
 	// resolves the Contact of a Transactional send's address.
 	eligibility *eligibility.Module
 	contacts    *contacts.Module
+	// consents answers a Destination's effective Engagement tracking consent (ADR 0120).
+	consents *engagementtracking.Module
 }
 
 // TrackingHosts names the host a Workspace's links are built on: its current Tracking domain
@@ -297,6 +300,8 @@ type Modules struct {
 	Limits *providerlimit.Module
 	// Standing records the provider's refusal of an Integration's credentials.
 	Standing *integrations.Standing
+	// Consents answers whether a Destination consents to being tracked (ADR 0120).
+	Consents *engagementtracking.Module
 }
 
 // Deps are the collaborators of the module's optional parts, each passed by the wiring; a nil one
@@ -359,7 +364,7 @@ func New(bus *events.Bus, hs *holds.Holds, senders Senders, tracker *messagetoke
 		sendCaps: cfg.SendCaps, lease: cmp.Or(cfg.Lease, DefaultLease), now: now,
 		buckets: providerlimit.NewBuckets(bus.WithinAuditTx, now), limits: mods.Limits,
 		standing: mods.Standing, chats: mods.Chats,
-		eligibility: eligibility.New(), contacts: mods.Contacts,
+		eligibility: eligibility.New(), contacts: mods.Contacts, consents: mods.Consents,
 	}
 	m.channels = map[channels.Channel]channel{channels.Email: emailChannel{m: m}, channels.Telegram: telegramChannel{m: m}, channels.SMS: smsChannel{m: m}}
 	return m
@@ -548,7 +553,15 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	}
 	dest = eligible[0].dest
 
-	rendered, err := ch.render(ctx, s, req, msg.ID, dest, ws)
+	// Whether the message goes out tracked is decided now, after the claim, so a refusal recorded
+	// meanwhile finds the row (ADR 0120), and is on the row before the provider is called.
+	tracked, err := m.decideTracking(ctx, s, req, ch, msg, eligible)
+	if err != nil {
+		m.release(ctx, s, msg)
+		return Result{}, err
+	}
+
+	rendered, err := ch.render(ctx, s, req, msg.ID, dest, ws, tracked)
 	if err != nil {
 		if !isContentError(err) {
 			// The storage behind the content failed, not the content: retry rather than record a

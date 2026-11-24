@@ -3251,8 +3251,16 @@ const (
 	OutboundMessageTrackingSampleDestination = "alice.tracking@example.com"
 	// OutboundMessageTrackingSampleID is from fixtures/outbound_messages.
 	OutboundMessageTrackingSampleID = 5700
+	// OutboundMessageTrackingWithdrawnDestination is from fixtures/outbound_messages.
+	OutboundMessageTrackingWithdrawnDestination = "withdrawn@acme.example"
+	// OutboundMessageTrackingWithdrawnID is from fixtures/outbound_messages.
+	OutboundMessageTrackingWithdrawnID = 5704
+	// OutboundMessageUnengagedFirstDestination is from fixtures/outbound_messages.
+	OutboundMessageUnengagedFirstDestination = "sophia.python@codebasics.dev"
 	// OutboundMessageUnengagedFirstID is from fixtures/outbound_messages.
 	OutboundMessageUnengagedFirstID = 11005
+	// OutboundMessageUnengagedSecondDestination is from fixtures/outbound_messages.
+	OutboundMessageUnengagedSecondDestination = "mason.sql@codebasics.dev"
 	// OutboundMessageUnengagedSecondID is from fixtures/outbound_messages.
 	OutboundMessageUnengagedSecondID = 11006
 	// OutboundMessageWelcomeDestination is from fixtures/outbound_messages.

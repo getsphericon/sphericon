@@ -347,6 +347,34 @@ func (_c *OutboundMessageCreate) SetNillableCaptured(v *bool) *OutboundMessageCr
 	return _c
 }
 
+// SetTracked sets the "tracked" field.
+func (_c *OutboundMessageCreate) SetTracked(v bool) *OutboundMessageCreate {
+	_c.mutation.SetTracked(v)
+	return _c
+}
+
+// SetNillableTracked sets the "tracked" field if the given value is not nil.
+func (_c *OutboundMessageCreate) SetNillableTracked(v *bool) *OutboundMessageCreate {
+	if v != nil {
+		_c.SetTracked(*v)
+	}
+	return _c
+}
+
+// SetTrackingWithdrawnAt sets the "tracking_withdrawn_at" field.
+func (_c *OutboundMessageCreate) SetTrackingWithdrawnAt(v time.Time) *OutboundMessageCreate {
+	_c.mutation.SetTrackingWithdrawnAt(v)
+	return _c
+}
+
+// SetNillableTrackingWithdrawnAt sets the "tracking_withdrawn_at" field if the given value is not nil.
+func (_c *OutboundMessageCreate) SetNillableTrackingWithdrawnAt(v *time.Time) *OutboundMessageCreate {
+	if v != nil {
+		_c.SetTrackingWithdrawnAt(*v)
+	}
+	return _c
+}
+
 // SetBroadcastID sets the "broadcast_id" field.
 func (_c *OutboundMessageCreate) SetBroadcastID(v int64) *OutboundMessageCreate {
 	_c.mutation.SetBroadcastID(v)
@@ -626,6 +654,10 @@ func (_c *OutboundMessageCreate) defaults() {
 		v := outboundmessage.DefaultCaptured
 		_c.mutation.SetCaptured(v)
 	}
+	if _, ok := _c.mutation.Tracked(); !ok {
+		v := outboundmessage.DefaultTracked
+		_c.mutation.SetTracked(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -681,6 +713,9 @@ func (_c *OutboundMessageCreate) check() error {
 	}
 	if _, ok := _c.mutation.Captured(); !ok {
 		return &ValidationError{Name: "captured", err: errors.New(`ent: missing required field "OutboundMessage.captured"`)}
+	}
+	if _, ok := _c.mutation.Tracked(); !ok {
+		return &ValidationError{Name: "tracked", err: errors.New(`ent: missing required field "OutboundMessage.tracked"`)}
 	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "OutboundMessage.workspace"`)}
@@ -805,6 +840,14 @@ func (_c *OutboundMessageCreate) createSpec() (*OutboundMessage, *sqlgraph.Creat
 	if value, ok := _c.mutation.Captured(); ok {
 		_spec.SetField(outboundmessage.FieldCaptured, field.TypeBool, value)
 		_node.Captured = value
+	}
+	if value, ok := _c.mutation.Tracked(); ok {
+		_spec.SetField(outboundmessage.FieldTracked, field.TypeBool, value)
+		_node.Tracked = value
+	}
+	if value, ok := _c.mutation.TrackingWithdrawnAt(); ok {
+		_spec.SetField(outboundmessage.FieldTrackingWithdrawnAt, field.TypeTime, value)
+		_node.TrackingWithdrawnAt = &value
 	}
 	if value, ok := _c.mutation.AutomationStepID(); ok {
 		_spec.SetField(outboundmessage.FieldAutomationStepID, field.TypeString, value)
@@ -1382,6 +1425,36 @@ func (u *OutboundMessageUpsert) SetCaptured(v bool) *OutboundMessageUpsert {
 // UpdateCaptured sets the "captured" field to the value that was provided on create.
 func (u *OutboundMessageUpsert) UpdateCaptured() *OutboundMessageUpsert {
 	u.SetExcluded(outboundmessage.FieldCaptured)
+	return u
+}
+
+// SetTracked sets the "tracked" field.
+func (u *OutboundMessageUpsert) SetTracked(v bool) *OutboundMessageUpsert {
+	u.Set(outboundmessage.FieldTracked, v)
+	return u
+}
+
+// UpdateTracked sets the "tracked" field to the value that was provided on create.
+func (u *OutboundMessageUpsert) UpdateTracked() *OutboundMessageUpsert {
+	u.SetExcluded(outboundmessage.FieldTracked)
+	return u
+}
+
+// SetTrackingWithdrawnAt sets the "tracking_withdrawn_at" field.
+func (u *OutboundMessageUpsert) SetTrackingWithdrawnAt(v time.Time) *OutboundMessageUpsert {
+	u.Set(outboundmessage.FieldTrackingWithdrawnAt, v)
+	return u
+}
+
+// UpdateTrackingWithdrawnAt sets the "tracking_withdrawn_at" field to the value that was provided on create.
+func (u *OutboundMessageUpsert) UpdateTrackingWithdrawnAt() *OutboundMessageUpsert {
+	u.SetExcluded(outboundmessage.FieldTrackingWithdrawnAt)
+	return u
+}
+
+// ClearTrackingWithdrawnAt clears the value of the "tracking_withdrawn_at" field.
+func (u *OutboundMessageUpsert) ClearTrackingWithdrawnAt() *OutboundMessageUpsert {
+	u.SetNull(outboundmessage.FieldTrackingWithdrawnAt)
 	return u
 }
 
@@ -2021,6 +2094,41 @@ func (u *OutboundMessageUpsertOne) SetCaptured(v bool) *OutboundMessageUpsertOne
 func (u *OutboundMessageUpsertOne) UpdateCaptured() *OutboundMessageUpsertOne {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.UpdateCaptured()
+	})
+}
+
+// SetTracked sets the "tracked" field.
+func (u *OutboundMessageUpsertOne) SetTracked(v bool) *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetTracked(v)
+	})
+}
+
+// UpdateTracked sets the "tracked" field to the value that was provided on create.
+func (u *OutboundMessageUpsertOne) UpdateTracked() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateTracked()
+	})
+}
+
+// SetTrackingWithdrawnAt sets the "tracking_withdrawn_at" field.
+func (u *OutboundMessageUpsertOne) SetTrackingWithdrawnAt(v time.Time) *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetTrackingWithdrawnAt(v)
+	})
+}
+
+// UpdateTrackingWithdrawnAt sets the "tracking_withdrawn_at" field to the value that was provided on create.
+func (u *OutboundMessageUpsertOne) UpdateTrackingWithdrawnAt() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateTrackingWithdrawnAt()
+	})
+}
+
+// ClearTrackingWithdrawnAt clears the value of the "tracking_withdrawn_at" field.
+func (u *OutboundMessageUpsertOne) ClearTrackingWithdrawnAt() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearTrackingWithdrawnAt()
 	})
 }
 
@@ -2856,6 +2964,41 @@ func (u *OutboundMessageUpsertBulk) SetCaptured(v bool) *OutboundMessageUpsertBu
 func (u *OutboundMessageUpsertBulk) UpdateCaptured() *OutboundMessageUpsertBulk {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.UpdateCaptured()
+	})
+}
+
+// SetTracked sets the "tracked" field.
+func (u *OutboundMessageUpsertBulk) SetTracked(v bool) *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetTracked(v)
+	})
+}
+
+// UpdateTracked sets the "tracked" field to the value that was provided on create.
+func (u *OutboundMessageUpsertBulk) UpdateTracked() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateTracked()
+	})
+}
+
+// SetTrackingWithdrawnAt sets the "tracking_withdrawn_at" field.
+func (u *OutboundMessageUpsertBulk) SetTrackingWithdrawnAt(v time.Time) *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetTrackingWithdrawnAt(v)
+	})
+}
+
+// UpdateTrackingWithdrawnAt sets the "tracking_withdrawn_at" field to the value that was provided on create.
+func (u *OutboundMessageUpsertBulk) UpdateTrackingWithdrawnAt() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateTrackingWithdrawnAt()
+	})
+}
+
+// ClearTrackingWithdrawnAt clears the value of the "tracking_withdrawn_at" field.
+func (u *OutboundMessageUpsertBulk) ClearTrackingWithdrawnAt() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearTrackingWithdrawnAt()
 	})
 }
 

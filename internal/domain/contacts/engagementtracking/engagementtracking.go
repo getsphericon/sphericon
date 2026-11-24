@@ -16,9 +16,12 @@ import (
 	"slices"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
+	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
@@ -54,13 +57,14 @@ const (
 	OnsiteForm = engagementtrackingconsent.ProvenanceOnsiteForm
 )
 
-// Decision is whether a Destination's opens and clicks are tracked.
-type Decision string
+// Decision is whether a Destination's opens and clicks are tracked: the effective consent, and the
+// Workspace's Engagement tracking default, which decides for a Destination with no consent.
+type Decision = workspace.EngagementTrackingDefault
 
 // The decisions: track, or don't.
 const (
-	Track     Decision = "track"
-	DontTrack Decision = "dont_track"
+	Track     = workspace.EngagementTrackingDefaultTrack
+	DontTrack = workspace.EngagementTrackingDefaultDontTrack
 )
 
 // Reading is what a Destination's consent reads as: granted or denied as recorded, or default
@@ -224,7 +228,11 @@ func (m *Module) RecordIn(ctx context.Context, s *ent.Scoped, in RecordInput) (R
 	if err != nil {
 		return Recorded{}, err
 	}
-	return Recorded{Outcome: outcome, Consent: consentOf(in.Channel, in.Destination, standing, defaultOf())}, nil
+	dflt, err := defaultOf(ctx, s)
+	if err != nil {
+		return Recorded{}, err
+	}
+	return Recorded{Outcome: outcome, Consent: consentOf(in.Channel, in.Destination, standing, dflt)}, nil
 }
 
 // checked is in normalized, or its refusal: an open Channel, the Destination as the Channel's
@@ -423,13 +431,19 @@ func contactOf(ctx context.Context, s *ent.Scoped, contactID int64) (*ent.Contac
 	return c, nil
 }
 
-// Of is the consent of destination on channel, stored as it is (the Channel's normalized form).
+// Of is the consent of destination on channel, stored as it is (the Channel's normalized form),
+// and its effective consent under the Workspace's default as it stands now: the one answer for one
+// Destination the send path and the recorder read.
 func (m *Module) Of(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string) (Consent, error) {
 	row, err := standingOf(ctx, s, channel, destination)
 	if err != nil {
 		return Consent{}, err
 	}
-	return consentOf(channel, destination, row, defaultOf()), nil
+	dflt, err := defaultOf(ctx, s)
+	if err != nil {
+		return Consent{}, err
+	}
+	return consentOf(channel, destination, row, dflt), nil
 }
 
 // Observation is an observation of one Destination of a Contact, as a Contact intake row carries
@@ -474,9 +488,53 @@ func Effective(state *State, dflt Decision) Decision {
 	}
 }
 
-// defaultOf is the Workspace's Engagement tracking default: track until the Workspace setting
-// exists, which then decides here.
-func defaultOf() Decision { return Track }
+// defaultOf is the Engagement tracking default of the Workspace of s, as it stands in the
+// transaction s is bound to.
+func defaultOf(ctx context.Context, s *ent.Scoped) (Decision, error) {
+	ws, err := s.Workspace(ctx)
+	if err != nil {
+		return "", fmt.Errorf("read the engagement tracking default: %w", err)
+	}
+	return ws.EngagementTrackingDefault, nil
+}
+
+// TrackedWhere is the effective consent in SQL, over many Destinations at once: it keeps the rows
+// of the table it is applied to whose Destination, in their column (the stored, normalized form:
+// a Contact's `email`, an Outbound message's `destination`), is tracked on channel under the
+// Workspace's default dflt, matched in the row's own Workspace. It is Effective as a predicate: a
+// Destination is tracked when its consent is granted, or when none is recorded and the default is
+// to track. A NULL column has no consent: it reads as the default.
+func TrackedWhere(channel channels.Channel, dflt Decision, column string) func(*sql.Selector) {
+	return func(outer *sql.Selector) {
+		outer.Where(trackedOf(outer, channel, dflt, column))
+	}
+}
+
+// UntrackedWhere is TrackedWhere's complement: the rows whose Destination is not tracked on
+// channel under dflt.
+func UntrackedWhere(channel channels.Channel, dflt Decision, column string) func(*sql.Selector) {
+	return func(outer *sql.Selector) {
+		outer.Where(sql.Not(trackedOf(outer, channel, dflt, column)))
+	}
+}
+
+// trackedOf is TrackedWhere's predicate over outer. With the default resolved here, one EXISTS
+// decides: under track, a Destination is tracked unless a denied is recorded; under dont_track,
+// only when a granted is.
+func trackedOf(outer *sql.Selector, channel channels.Channel, dflt Decision, column string) *sql.Predicate {
+	consents := sql.Table(engagementtrackingconsent.Table)
+	state, exists := Granted, sql.Exists
+	if dflt == Track {
+		state, exists = Denied, sql.NotExists
+	}
+	return exists(sql.Select(consents.C(engagementtrackingconsent.FieldID)).From(consents).Where(sql.And(
+		// Every Workspace-owned table names its Workspace in the same column (WorkspaceMixin).
+		sql.ColumnsEQ(consents.C(engagementtrackingconsent.FieldWorkspaceID), outer.C(engagementtrackingconsent.FieldWorkspaceID)),
+		sql.ColumnsEQ(consents.C(engagementtrackingconsent.FieldDestination), outer.C(column)),
+		sql.EQ(consents.C(engagementtrackingconsent.FieldChannel), string(channel)),
+		sql.EQ(consents.C(engagementtrackingconsent.FieldState), string(state)),
+	)))
+}
 
 // consentOf is the Consent of destination on channel whose row is row, nil when none is recorded.
 func consentOf(channel channels.Channel, destination string, row *ent.EngagementTrackingConsent, dflt Decision) Consent {

@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
+	"github.com/getsphericon/sphericon/ent/workspace"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
@@ -162,6 +163,12 @@ type Inputs interface {
 	WorkspaceUpdate(source *siteapi.SiteUpdateWorkspaceInput) workspaceview.UpdateInput
 	// goverter:map Timezone Zone
 	TimezoneSet(source *siteapi.SiteWorkspaceTimezoneInput) workspaceview.SetTimezoneInput
+	// goverter:map EngagementTrackingDefault Default
+	EngagementTrackingDefaultSet(source *siteapi.SiteSetEngagementTrackingDefaultInput) workspaceview.SetEngagementTrackingDefaultInput
+	// ent's default constant shares track's value, so each value is named.
+	// goverter:enum:map EngagementTrackingDecisionTrack EngagementTrackingDefaultTrack
+	// goverter:enum:map EngagementTrackingDecisionDontTrack EngagementTrackingDefaultDontTrack
+	EngagementTrackingDefaultIn(source siteapi.EngagementTrackingDecision) workspace.EngagementTrackingDefault
 	RevenueSettingsSet(source *siteapi.SiteUpdateRevenueSettingsInput) workspaces.SetRevenueSettingsInput
 	ConfirmationEmailSet(source *siteapi.SiteUpdateConfirmationEmailInput) workspaces.SetConfirmationEmailInput
 	// goverter:map Enabled On

@@ -11,6 +11,7 @@ import (
 	invitation "github.com/getsphericon/sphericon/ent/invitation"
 	membership "github.com/getsphericon/sphericon/ent/membership"
 	signupsurveyresponse "github.com/getsphericon/sphericon/ent/signupsurveyresponse"
+	workspace "github.com/getsphericon/sphericon/ent/workspace"
 	site "github.com/getsphericon/sphericon/gen/site"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	contacts "github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
@@ -450,6 +451,26 @@ func (c *InputsImpl) EngagementTrackingChannel(source site.EngagementTrackingCha
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return channelsChannel
+}
+func (c *InputsImpl) EngagementTrackingDefaultIn(source site.EngagementTrackingDecision) workspace.EngagementTrackingDefault {
+	var workspaceEngagementTrackingDefault workspace.EngagementTrackingDefault
+	switch source {
+	case site.EngagementTrackingDecisionDontTrack:
+		workspaceEngagementTrackingDefault = workspace.EngagementTrackingDefaultDontTrack
+	case site.EngagementTrackingDecisionTrack:
+		workspaceEngagementTrackingDefault = workspace.EngagementTrackingDefaultTrack
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return workspaceEngagementTrackingDefault
+}
+func (c *InputsImpl) EngagementTrackingDefaultSet(source *site.SiteSetEngagementTrackingDefaultInput) workspaceview.SetEngagementTrackingDefaultInput {
+	var workspaceviewSetEngagementTrackingDefaultInput workspaceview.SetEngagementTrackingDefaultInput
+	if source != nil {
+		workspaceviewSetEngagementTrackingDefaultInput.Revision = revisionIn((*source).Revision)
+		workspaceviewSetEngagementTrackingDefaultInput.Default = c.EngagementTrackingDefaultIn((*source).EngagementTrackingDefault)
+	}
+	return workspaceviewSetEngagementTrackingDefaultInput
 }
 func (c *InputsImpl) EngagementTrackingState(source site.EngagementTrackingState) engagementtrackingconsent.State {
 	return engagementtrackingconsent.State(source)

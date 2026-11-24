@@ -33,10 +33,15 @@ type channel interface {
 	// (on email the address, empty for a Contact with none); a Channel of Bindings ignores it and
 	// reads the recipient's Bindings on the route's Integration. None is a Skipped no_destination.
 	targets(ctx context.Context, s *ent.Scoped, req Request, route Route, dest string) ([]target, error)
+	// tracks is whether req's surface asks for its message to be tracked (ADR 0120): the request's
+	// Track, and on a Channel whose content can keep its links as written, that it does not. The
+	// send tracks the message only when the Destination consents too (Module.decideTracking).
+	tracks(req Request) bool
 	// render renders req's content for one recipient, whose Outbound message is messageID and
-	// Destination dest, into the message the Channel's adapter sends. A contentError is the
-	// message's own and ends the send as Failed; any other error is retried.
-	render(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace) (any, error)
+	// Destination dest, into the message the Channel's adapter sends: tracked (the pixel and the
+	// rewritten links, the Short tracked links) when tracked is true, its links as written otherwise.
+	// A contentError is the message's own and ends the send as Failed; any other error is retried.
+	render(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace, tracked bool) (any, error)
 	// unreachable drops a target the provider said no longer reaches anyone (an unreachableError
 	// of send): a Channel of Bindings removes the Binding and records that it is gone, SMS
 	// suppresses the number. skip is the Skipped reason Send-eligibility now gives the target

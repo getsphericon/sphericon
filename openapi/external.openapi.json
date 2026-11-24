@@ -5404,7 +5404,7 @@
     "/workspace": {
       "get": {
         "operationId": "Workspace_get",
-        "description": "Read the Workspace the token acts in: its name, postal address, confirmed opt-in, time zone and Send cap. Read\nthe postal address before arming marketing email: an empty one refuses it, and only a person\ncan set it. Read the Send cap to explain a slow send or to plan one: a send larger than what\nremains of it in the last 24 hours goes out over more than a day. Read confirmed opt-in to know\nwhether a Contact needs a Confirmation before email reaches it. Read-only: no operation changes\nthe Send cap, the postal address or confirmed opt-in.",
+        "description": "Read the Workspace the token acts in: its name, postal address, confirmed opt-in, Engagement tracking default, time zone and Send cap. Read\nthe postal address before arming marketing email: an empty one refuses it, and only a person\ncan set it. Read the Send cap to explain a slow send or to plan one: a send larger than what\nremains of it in the last 24 hours goes out over more than a day. Read confirmed opt-in to know\nwhether a Contact needs a Confirmation before email reaches it. Read the Engagement tracking\ndefault to know whether a Destination with no consent recorded is tracked. Read-only: no\noperation changes the Send cap, the postal address, confirmed opt-in or the Engagement tracking\ndefault.",
         "parameters": [],
         "responses": {
           "200": {
@@ -8274,6 +8274,7 @@
           "status",
           "claimedAt",
           "captured",
+          "tracked",
           "createdAt"
         ],
         "properties": {
@@ -8416,6 +8417,20 @@
           "captured": {
             "type": "boolean",
             "description": "True when the message went through a Test inbox: captured, not delivered"
+          },
+          "tracked": {
+            "type": "boolean",
+            "description": "Whether the message went out tracked: with an open pixel and its links rewritten, or its\nlinks made Short tracked links (ADR 0120)"
+          },
+          "trackingWithdrawnAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the message's tracking was withdrawn (a refusal of the contact's, or the Workspace's\ndefault turned to `dont_track`); null while it was not"
           },
           "broadcastId": {
             "type": "string",
@@ -16181,6 +16196,7 @@
           "name",
           "postalAddress",
           "requireConfirmedOptIn",
+          "engagementTrackingDefault",
           "timezone",
           "revision"
         ],
@@ -16206,6 +16222,14 @@
           "requireConfirmedOptIn": {
             "type": "boolean",
             "description": "Whether email reaches an address only once it holds a Confirmation (confirmed opt-in, ADR\n0013); off, email is single opt-in by the Workspace's choice. Read-only: only a person turns it\non, in the console's Workspace settings, affirming that the current mailable list consented."
+          },
+          "engagementTrackingDefault": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingDecision"
+              }
+            ],
+            "description": "The Engagement tracking default (ADR 0120): whether a Destination with no Engagement tracking\nconsent recorded has its opens and clicks tracked. Read-only: only a person changes it, in the\nconsole's Workspace settings."
           },
           "timezone": {
             "allOf": [

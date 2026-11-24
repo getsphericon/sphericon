@@ -1060,6 +1060,26 @@ func TimezoneContainsFold(v string) predicate.Workspace {
 	return predicate.Workspace(sql.FieldContainsFold(FieldTimezone, v))
 }
 
+// EngagementTrackingDefaultEQ applies the EQ predicate on the "engagement_tracking_default" field.
+func EngagementTrackingDefaultEQ(v EngagementTrackingDefault) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldEngagementTrackingDefault, v))
+}
+
+// EngagementTrackingDefaultNEQ applies the NEQ predicate on the "engagement_tracking_default" field.
+func EngagementTrackingDefaultNEQ(v EngagementTrackingDefault) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldEngagementTrackingDefault, v))
+}
+
+// EngagementTrackingDefaultIn applies the In predicate on the "engagement_tracking_default" field.
+func EngagementTrackingDefaultIn(vs ...EngagementTrackingDefault) predicate.Workspace {
+	return predicate.Workspace(sql.FieldIn(FieldEngagementTrackingDefault, vs...))
+}
+
+// EngagementTrackingDefaultNotIn applies the NotIn predicate on the "engagement_tracking_default" field.
+func EngagementTrackingDefaultNotIn(vs ...EngagementTrackingDefault) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotIn(FieldEngagementTrackingDefault, vs...))
+}
+
 // ReportingCurrencyEQ applies the EQ predicate on the "reporting_currency" field.
 func ReportingCurrencyEQ(v string) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldReportingCurrency, v))

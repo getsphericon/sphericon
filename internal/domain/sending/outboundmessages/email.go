@@ -67,8 +67,12 @@ func (emailChannel) optedOut(context.Context, *ent.Scoped, events.Publisher, *en
 	return nil
 }
 
-func (c emailChannel) render(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace) (any, error) {
-	msg, err := c.m.renderEmail(ctx, s, req, messageID, dest, ws)
+// tracks is the request's Track: always for a Broadcast or an Automation email, as the request
+// asks for a Transactional one.
+func (emailChannel) tracks(req Request) bool { return req.Track }
+
+func (c emailChannel) render(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace, tracked bool) (any, error) {
+	msg, err := c.m.renderEmail(ctx, s, req, messageID, dest, ws, tracked)
 	if err != nil {
 		return nil, err
 	}
@@ -86,10 +90,10 @@ func emailContentOf(content Content) (EmailContent, error) {
 }
 
 // renderEmail renders the content for one recipient and, for a marketing send, layers on the
-// unsubscribe footer, the open/click tracking and the one-click header. A contentError is
-// deterministic for this message, so the caller records it as Failed; any other error is not the
-// message's and is returned to be retried. From and To are the adapter's.
-func (m *Module) renderEmail(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace) (messaging.EmailMessage, error) {
+// unsubscribe footer and the one-click header, and the open/click tracking when tracked. A
+// contentError is deterministic for this message, so the caller records it as Failed; any other
+// error is not the message's and is returned to be retried. From and To are the adapter's.
+func (m *Module) renderEmail(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace, tracked bool) (messaging.EmailMessage, error) {
 	content, err := emailContentOf(req.Content)
 	if err != nil {
 		return messaging.EmailMessage{}, err
@@ -105,10 +109,10 @@ func (m *Module) renderEmail(ctx context.Context, s *ent.Scoped, req Request, me
 		return messaging.EmailMessage{}, contentError{err}
 	}
 	out := messaging.EmailMessage{Subject: email.Subject, HTML: email.HTML, Text: email.Text}
-	if req.Source == "" && !req.Track {
+	if req.Source == "" && !tracked {
 		return out, nil // Transactional, untracked: no unsubscribe, no tracking
 	}
-	out, err = m.layerTracking(ctx, s, req, messageID, dest, ws, out)
+	out, err = m.layerTracking(ctx, s, req, messageID, dest, ws, out, tracked)
 	if err != nil {
 		return messaging.EmailMessage{}, err
 	}
@@ -118,9 +122,10 @@ func (m *Module) renderEmail(ctx context.Context, s *ent.Scoped, req Request, me
 }
 
 // layerTracking adds to a rendered message what its send needs on top: for a tracked
-// Transactional send the pixel and rewritten links; for a marketing send also the unsubscribe
-// footer and the one-click header. Its errors are renderEmail's (see contentError).
-func (m *Module) layerTracking(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace, out messaging.EmailMessage) (messaging.EmailMessage, error) {
+// Transactional send the pixel and rewritten links; for a marketing send the unsubscribe footer and
+// the one-click header, and the pixel and rewritten links when tracked. Its errors are
+// renderEmail's (see contentError).
+func (m *Module) layerTracking(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace, out messaging.EmailMessage, tracked bool) (messaging.EmailMessage, error) {
 	// One choice per message: every link and the List-Unsubscribe URL share one host.
 	tr, err := m.trackerFor(ctx, s)
 	if err != nil {
@@ -146,7 +151,7 @@ func (m *Module) layerTracking(ctx context.Context, s *ent.Scoped, req Request, 
 		// The link names this message, so the unsubscribe Event is about it.
 		OutboundMessageID: messageID,
 	}
-	if req.Track {
+	if tracked {
 		// Click/open tracking is layered on after rendering so re-parsing the HTML
 		// cannot mangle the pixel or links; Rewrite also appends the footer.
 		html, err := tr.Rewrite(out.HTML, messagetoken.Message{WorkspaceID: ws.ID, ID: messageID}, unsub, ws.PostalAddress)

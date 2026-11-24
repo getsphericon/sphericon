@@ -400,6 +400,24 @@ func (x *WorkspaceScopedUpdateOne) ClearTimezone() *WorkspaceScopedUpdateOne {
 
 const RoleOf_WorkspaceScopedUpdateOne_ClearTimezone = RoleStep
 
+// SetEngagementTrackingDefault sets the "engagement_tracking_default" field.
+func (x *WorkspaceScopedUpdateOne) SetEngagementTrackingDefault(v workspace.EngagementTrackingDefault) *WorkspaceScopedUpdateOne {
+	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.SetEngagementTrackingDefault(v) })
+	return x
+}
+
+const RoleOf_WorkspaceScopedUpdateOne_SetEngagementTrackingDefault = RoleStep
+
+// SetNillableEngagementTrackingDefault sets the "engagement_tracking_default" field if the given value is not nil.
+func (x *WorkspaceScopedUpdateOne) SetNillableEngagementTrackingDefault(v *workspace.EngagementTrackingDefault) *WorkspaceScopedUpdateOne {
+	if v != nil {
+		x.SetEngagementTrackingDefault(*v)
+	}
+	return x
+}
+
+const RoleOf_WorkspaceScopedUpdateOne_SetNillableEngagementTrackingDefault = RoleStep
+
 // SetReportingCurrency sets the "reporting_currency" field.
 func (x *WorkspaceScopedUpdateOne) SetReportingCurrency(v string) *WorkspaceScopedUpdateOne {
 	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.SetReportingCurrency(v) })

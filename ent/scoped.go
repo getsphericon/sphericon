@@ -44686,6 +44686,42 @@ func (x *OutboundMessageScopedCreate) SetNillableCaptured(v *bool) *OutboundMess
 
 const RoleOf_OutboundMessageScopedCreate_SetNillableCaptured = RoleStep
 
+// SetTracked sets the "tracked" field.
+func (x *OutboundMessageScopedCreate) SetTracked(v bool) *OutboundMessageScopedCreate {
+	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetTracked(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetTracked = RoleStep
+
+// SetNillableTracked sets the "tracked" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableTracked(v *bool) *OutboundMessageScopedCreate {
+	if v != nil {
+		x.SetTracked(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetNillableTracked = RoleStep
+
+// SetTrackingWithdrawnAt sets the "tracking_withdrawn_at" field.
+func (x *OutboundMessageScopedCreate) SetTrackingWithdrawnAt(v time.Time) *OutboundMessageScopedCreate {
+	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetTrackingWithdrawnAt(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetTrackingWithdrawnAt = RoleStep
+
+// SetNillableTrackingWithdrawnAt sets the "tracking_withdrawn_at" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableTrackingWithdrawnAt(v *time.Time) *OutboundMessageScopedCreate {
+	if v != nil {
+		x.SetTrackingWithdrawnAt(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetNillableTrackingWithdrawnAt = RoleStep
+
 // SetBroadcastID sets the "broadcast_id" field.
 func (x *OutboundMessageScopedCreate) SetBroadcastID(v int64) *OutboundMessageScopedCreate {
 	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetBroadcastID(v) })
@@ -45518,6 +45554,52 @@ func (u *OutboundMessageScopedUpsert) UpdateCaptured() *OutboundMessageScopedUps
 }
 
 const RoleOf_OutboundMessageScopedUpsert_UpdateCaptured = RoleStep
+
+// SetTracked sets the "tracked" field.
+func (u *OutboundMessageScopedUpsert) SetTracked(v bool) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldTracked, v)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_SetTracked = RoleStep
+
+// UpdateTracked sets the "tracked" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateTracked() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldTracked)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_UpdateTracked = RoleStep
+
+// SetTrackingWithdrawnAt sets the "tracking_withdrawn_at" field.
+func (u *OutboundMessageScopedUpsert) SetTrackingWithdrawnAt(v time.Time) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldTrackingWithdrawnAt, v)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_SetTrackingWithdrawnAt = RoleStep
+
+const SetsState_OutboundMessageScopedUpsert_SetTrackingWithdrawnAt = "TrackingWithdrawnAt"
+
+// UpdateTrackingWithdrawnAt sets the "tracking_withdrawn_at" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateTrackingWithdrawnAt() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldTrackingWithdrawnAt)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_UpdateTrackingWithdrawnAt = RoleStep
+
+const SetsState_OutboundMessageScopedUpsert_UpdateTrackingWithdrawnAt = "TrackingWithdrawnAt"
+
+// ClearTrackingWithdrawnAt clears the value of the "tracking_withdrawn_at" field.
+func (u *OutboundMessageScopedUpsert) ClearTrackingWithdrawnAt() *OutboundMessageScopedUpsert {
+	u.u.SetNull(outboundmessage.FieldTrackingWithdrawnAt)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_ClearTrackingWithdrawnAt = RoleStep
+
+const ClearsState_OutboundMessageScopedUpsert_ClearTrackingWithdrawnAt = "TrackingWithdrawnAt"
 
 // UpdateBroadcastID sets the "broadcast_id" field to the value that was provided on create.
 func (u *OutboundMessageScopedUpsert) UpdateBroadcastID() *OutboundMessageScopedUpsert {
@@ -46381,6 +46463,56 @@ func (x *OutboundMessageScopedUpdateOne) SetNillableCaptured(v *bool) *OutboundM
 }
 
 const RoleOf_OutboundMessageScopedUpdateOne_SetNillableCaptured = RoleStep
+
+// SetTracked sets the "tracked" field.
+func (x *OutboundMessageScopedUpdateOne) SetTracked(v bool) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetTracked(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetTracked = RoleStep
+
+// SetNillableTracked sets the "tracked" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableTracked(v *bool) *OutboundMessageScopedUpdateOne {
+	if v != nil {
+		x.SetTracked(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetNillableTracked = RoleStep
+
+// SetTrackingWithdrawnAt sets the "tracking_withdrawn_at" field.
+func (x *OutboundMessageScopedUpdateOne) SetTrackingWithdrawnAt(v time.Time) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetTrackingWithdrawnAt(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetTrackingWithdrawnAt = RoleStep
+
+const SetsState_OutboundMessageScopedUpdateOne_SetTrackingWithdrawnAt = "TrackingWithdrawnAt"
+
+// SetNillableTrackingWithdrawnAt sets the "tracking_withdrawn_at" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableTrackingWithdrawnAt(v *time.Time) *OutboundMessageScopedUpdateOne {
+	if v != nil {
+		x.SetTrackingWithdrawnAt(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetNillableTrackingWithdrawnAt = RoleStep
+
+const SetsState_OutboundMessageScopedUpdateOne_SetNillableTrackingWithdrawnAt = "TrackingWithdrawnAt"
+
+// ClearTrackingWithdrawnAt clears the value of the "tracking_withdrawn_at" field.
+func (x *OutboundMessageScopedUpdateOne) ClearTrackingWithdrawnAt() *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.ClearTrackingWithdrawnAt() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_ClearTrackingWithdrawnAt = RoleStep
+
+const ClearsState_OutboundMessageScopedUpdateOne_ClearTrackingWithdrawnAt = "TrackingWithdrawnAt"
 
 // SetBroadcastID sets the "broadcast_id" field.
 func (x *OutboundMessageScopedUpdateOne) SetBroadcastID(v int64) *OutboundMessageScopedUpdateOne {
@@ -47372,6 +47504,56 @@ func (x *OutboundMessageScopedUpdate) SetNillableCaptured(v *bool) *OutboundMess
 }
 
 const RoleOf_OutboundMessageScopedUpdate_SetNillableCaptured = RoleStep
+
+// SetTracked sets the "tracked" field.
+func (x *OutboundMessageScopedUpdate) SetTracked(v bool) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetTracked(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetTracked = RoleStep
+
+// SetNillableTracked sets the "tracked" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableTracked(v *bool) *OutboundMessageScopedUpdate {
+	if v != nil {
+		x.SetTracked(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetNillableTracked = RoleStep
+
+// SetTrackingWithdrawnAt sets the "tracking_withdrawn_at" field.
+func (x *OutboundMessageScopedUpdate) SetTrackingWithdrawnAt(v time.Time) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetTrackingWithdrawnAt(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetTrackingWithdrawnAt = RoleStep
+
+const SetsState_OutboundMessageScopedUpdate_SetTrackingWithdrawnAt = "TrackingWithdrawnAt"
+
+// SetNillableTrackingWithdrawnAt sets the "tracking_withdrawn_at" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableTrackingWithdrawnAt(v *time.Time) *OutboundMessageScopedUpdate {
+	if v != nil {
+		x.SetTrackingWithdrawnAt(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetNillableTrackingWithdrawnAt = RoleStep
+
+const SetsState_OutboundMessageScopedUpdate_SetNillableTrackingWithdrawnAt = "TrackingWithdrawnAt"
+
+// ClearTrackingWithdrawnAt clears the value of the "tracking_withdrawn_at" field.
+func (x *OutboundMessageScopedUpdate) ClearTrackingWithdrawnAt() *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.ClearTrackingWithdrawnAt() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_ClearTrackingWithdrawnAt = RoleStep
+
+const ClearsState_OutboundMessageScopedUpdate_ClearTrackingWithdrawnAt = "TrackingWithdrawnAt"
 
 // SetBroadcastID sets the "broadcast_id" field.
 func (x *OutboundMessageScopedUpdate) SetBroadcastID(v int64) *OutboundMessageScopedUpdate {
