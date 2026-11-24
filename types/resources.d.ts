@@ -1864,6 +1864,7 @@ export default interface Resources {
       "noRecords": "No segments yet",
       "previewButton": "Preview segment",
       "previewCount": "{{count, number}} matching contact" | "{{count, number}} matching contacts",
+      "previewUnknownEngagement": "{{count, number}} contact left out: its opens and clicks are not tracked" | "{{count, number}} contacts left out: their opens and clicks are not tracked",
       "propertyKeyLabel": "Event property name"
     },
     "settings": {

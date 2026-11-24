@@ -1894,6 +1894,8 @@
     "previewButton": "Preview segment",
     "previewCount_one": "{{count, number}} matching contact",
     "previewCount_other": "{{count, number}} matching contacts",
+    "previewUnknownEngagement_one": "{{count, number}} contact left out: its opens and clicks are not tracked",
+    "previewUnknownEngagement_other": "{{count, number}} contacts left out: their opens and clicks are not tracked",
     "propertyKeyLabel": "Event property name"
   },
   "settings": {

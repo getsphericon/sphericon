@@ -334,7 +334,7 @@ test('a draft larger than the Send cap is warned about and can still be sent now
     handleSiteWorkspacesList({
       body: [{ ...WORKSPACE, sendCap: { perDay: 1000, sentLast24h: 0 } }],
     }),
-    handleSiteSegmentsPreview({ body: { count: 2500 } }),
+    handleSiteSegmentsPreview({ body: { count: 2500, unknownEngagement: 0 } }),
   )
   const { screen, navigate } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
 
@@ -679,7 +679,7 @@ test('scheduling a draft posts the chosen time as an ISO timestamp and opens the
   const bodies: unknown[] = []
   serveDraft()
   worker.use(
-    handleSiteSegmentsPreview({ body: { count: 3, recipients: 2 } }),
+    handleSiteSegmentsPreview({ body: { count: 3, recipients: 2, unknownEngagement: 0 } }),
     handleSiteBroadcastsSchedule(async ({ request }) => {
       bodies.push(await request.json())
       return HttpResponse.json(broadcast('scheduled'))
@@ -861,7 +861,7 @@ test('a Telegram broadcast offers no test send and can be scheduled', async () =
   const bodies: unknown[] = []
   const draft = serveDraft({ text: 'Hello', buttons: [], linkPreview: true }, 'telegram')
   worker.use(
-    handleSiteSegmentsPreview({ body: { count: 3, recipients: 2 } }),
+    handleSiteSegmentsPreview({ body: { count: 3, recipients: 2, unknownEngagement: 0 } }),
     handleSiteBroadcastsSchedule(async ({ request }) => {
       bodies.push(await request.json())
       return HttpResponse.json(draft.as('scheduled'))
@@ -889,7 +889,7 @@ test('an SMS broadcast is test-sent to the typed number, then scheduled', async 
       bodies.push(await request.json())
       return HttpResponse.json({ captured: false })
     }),
-    handleSiteSegmentsPreview({ body: { count: 3, recipients: 2 } }),
+    handleSiteSegmentsPreview({ body: { count: 3, recipients: 2, unknownEngagement: 0 } }),
     handleSiteBroadcastsSchedule(async ({ request }) => {
       schedules.push(await request.json())
       return HttpResponse.json(draft.as('scheduled'))

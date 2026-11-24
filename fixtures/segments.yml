@@ -201,3 +201,12 @@
   workspace_id: 96
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# Massive (workspace 58): the sunset Segment of people who opened no email in 90 days (ADR 0123),
+# Ann alone while everyone is tracked.
+- id: 5800 # fixture: SegmentMassiveUnengaged
+  revision: 1
+  name: Opened no email in 90 days
+  condition: '{"kind":"group","combinator":"and","entries":[{"kind":"event","action":"email.opened","operator":"atMost","times":0,"withinDays":90}]}'
+  workspace_id: 58
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

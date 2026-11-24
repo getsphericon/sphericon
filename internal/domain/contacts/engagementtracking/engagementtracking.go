@@ -589,8 +589,15 @@ func TrackedWhere(channel channels.Channel, dflt Decision, column string) func(*
 // channel under dflt.
 func UntrackedWhere(channel channels.Channel, dflt Decision, column string) func(*sql.Selector) {
 	return func(outer *sql.Selector) {
-		outer.Where(sql.Not(trackedOf(outer, channel, dflt, column)))
+		outer.Where(Untracked(outer, channel, dflt, column))
 	}
+}
+
+// Untracked is UntrackedWhere as a predicate over outer, for a caller that puts it inside an
+// expression of its own: a Condition's engagement count, unknown where the Destination is not
+// tracked (ADR 0123).
+func Untracked(outer *sql.Selector, channel channels.Channel, dflt Decision, column string) *sql.Predicate {
+	return sql.Not(trackedOf(outer, channel, dflt, column))
 }
 
 // trackedOf is TrackedWhere's predicate over outer. With the default resolved here, one EXISTS

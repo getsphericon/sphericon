@@ -104,9 +104,10 @@ func (h *Handlers) SiteSegmentsUnarchive(ctx context.Context, params siteapi.Sit
 	return &res, nil
 }
 
-// SiteSegmentsPreview reports how many contacts match a rule definition, and, for a Broadcast
-// form that names its Channel, how many of them the Broadcast there would take: the audience of
-// its plan, not the Segment's whole match.
+// SiteSegmentsPreview reports how many contacts match a rule definition, how many it leaves out
+// because their engagement is unknown (ADR 0123), and, for a Broadcast form that names its
+// Channel, how many of the matching ones the Broadcast there would take: the audience of its plan,
+// not the Segment's whole match.
 func (h *Handlers) SiteSegmentsPreview(ctx context.Context, req *siteapi.SitePreviewSegmentInput, _ siteapi.SiteSegmentsPreviewParams) (*siteapi.SitePreviewSegmentResult, error) {
 	in, err := inputs.SegmentPreview(req)
 	if err != nil {
@@ -116,7 +117,7 @@ func (h *Handlers) SiteSegmentsPreview(ctx context.Context, req *siteapi.SitePre
 	if err != nil {
 		return nil, err
 	}
-	res := &siteapi.SitePreviewSegmentResult{Count: narrow.Int32(preview.Count)}
+	res := &siteapi.SitePreviewSegmentResult{Count: narrow.Int32(preview.Count), UnknownEngagement: narrow.Int32(preview.UnknownEngagement)}
 	if preview.Recipients != nil {
 		res.Recipients = siteapi.NewOptInt32(narrow.Int32(*preview.Recipients))
 	}

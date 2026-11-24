@@ -275,3 +275,36 @@ func TestExternalSegmentsTakeTheCanBeTextedCondition(t *testing.T) {
 	assert.Equal(t, &externalapi.PreviewSegmentResult{Count: 0}, before)
 	assert.Equal(t, &externalapi.PreviewSegmentResult{Count: 1}, after)
 }
+
+// A refusal of tracking recorded through /api leaves its Contact out of a count of opens, either
+// way, and the preview says so: the matches, the non-matches and the one left out are everyone
+// (ADR 0123).
+func TestExternalSegmentsPreviewLeavesOutAContactWhoRefusedTracking(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead, apitokens.ScopeContactsWrite)
+	preview := func(not bool) *externalapi.PreviewSegmentResult {
+		t.Helper()
+		def := `{"kind":"group","combinator":"and","not":` + lo.Ternary(not, "true", "false") +
+			`,"entries":[{"kind":"event","action":"email.clicked","operator":"atMost","times":0,"withinDays":90}]}`
+		res, err := c.SegmentsPreview(t.Context(), &externalapi.PreviewSegmentInput{
+			Condition: externalapi.NewOptSegmentConditionInput(testhelper.ConditionInput[externalapi.SegmentConditionInput](t, def)),
+		})
+		require.NoError(t, err)
+		return res
+	}
+	all, err := c.SegmentsPreview(t.Context(), &externalapi.PreviewSegmentInput{})
+	require.NoError(t, err)
+	before, beforeNegated := preview(false), preview(true)
+
+	_, err = c.EngagementTrackingCreate(t.Context(), &externalapi.RecordEngagementTrackingInput{
+		Channel: externalapi.EngagementTrackingChannelEmail, Destination: fixtures.ContactAliceEmail, State: externalapi.EngagementTrackingStateDenied,
+	})
+	require.NoError(t, err)
+	after, afterNegated := preview(false), preview(true)
+
+	assert.Equal(t, all.Count, before.Count+beforeNegated.Count, "while everyone is tracked, every Contact is one or the other")
+	assert.Zero(t, before.UnknownEngagement)
+	assert.EqualValues(t, 1, after.UnknownEngagement, "Alice")
+	assert.EqualValues(t, 1, afterNegated.UnknownEngagement, "Alice, under the negation too")
+	assert.Equal(t, all.Count, after.Count+afterNegated.Count+after.UnknownEngagement)
+}

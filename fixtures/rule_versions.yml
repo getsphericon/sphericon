@@ -241,3 +241,13 @@
   workspace_id: 1553
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
+
+# Massive (workspace 58): the version of RuleMassiveUnengaged, which counts opens.
+- id: 5800
+  rule_id: 5800
+  version: 1
+  condition: '{"kind":"group","combinator":"and","entries":[{"kind":"event","action":"email.opened","operator":"atMost","times":0,"withinDays":90}]}'
+  actions: '[{"type":"apply_tag","tag":"unengaged"}]'
+  workspace_id: 58
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 40}}'

@@ -12187,12 +12187,17 @@
       },
       "PreviewSegmentResult": {
         "type": "object",
-        "required": ["count"],
+        "required": ["count", "unknownEngagement"],
         "properties": {
           "count": {
             "type": "integer",
             "format": "int32",
             "description": "Number of contacts matching the condition, before Suppression and Unsubscribe"
+          },
+          "unknownEngagement": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of contacts the condition leaves out because their engagement is unknown: it counts their\nopens or clicks, and their Destination on that Channel is not tracked now (its Engagement\ntracking consent, else the Workspace's default). They match neither the test nor its negation."
           },
           "recipients": {
             "type": "integer",

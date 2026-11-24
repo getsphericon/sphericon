@@ -268,3 +268,14 @@
   workspace_id: 1553
   created_at: '{{daysAgo 12}}'
   updated_at: '{{daysAgo 12}}'
+
+# Massive (workspace 58): tags a Contact who opened no email in 90 days when it checks in (ADR 0123).
+- id: 5800 # fixture: RuleMassiveUnengaged
+  revision: 1
+  name: Tag the unengaged
+  status: active
+  activated_at: '{{daysAgo 30}}'
+  live_version_id: 5800
+  workspace_id: 58
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{daysAgo 30}}'
