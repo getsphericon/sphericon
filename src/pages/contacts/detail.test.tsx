@@ -619,7 +619,7 @@ test('a refused address says who refused it and disables Grant with the reason',
   expect(screen.getByRole('button', { name: 'Refuse tracking' }).query()).toBeNull()
 })
 
-test('records a refusal of tracking for the address once confirmed', async () => {
+test('records a refusal of tracking once the address is typed, saying what it deletes', async () => {
   const bodies: unknown[] = []
   worker.use(
     handleSiteContactsGet({ body: ADA }),
@@ -641,7 +641,14 @@ test('records a refusal of tracking for the address once confirmed', async () =>
 
   const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
   await screen.getByRole('button', { name: 'Refuse tracking' }).click()
-  await screen.getByRole('dialog').getByRole('button', { name: 'Refuse tracking' }).click()
+  const dialog = screen.getByRole('dialog')
+  await expect
+    .element(dialog.getByText(/opens, clicks and order credits already recorded/))
+    .toBeInTheDocument()
+  const confirm = dialog.getByRole('button', { name: 'Refuse tracking' })
+  await expect.element(confirm).toBeDisabled()
+  await dialog.getByLabelText('Type ada@example.com to confirm').fill('ada@example.com')
+  await confirm.click()
 
   await expect.element(screen.getByText('Refusal of tracking recorded.')).toBeInTheDocument()
   expect(bodies).toEqual([{ channel: 'email', destination: 'ada@example.com', state: 'denied' }])
