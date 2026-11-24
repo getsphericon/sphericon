@@ -92,6 +92,8 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteCustomFieldsUpdateOperation:                     []string{},
 	SiteDomainJoinGetOperation:                          []string{},
 	SiteDomainJoinSetOperation:                          []string{},
+	SiteEngagementTrackingCreateOperation:               []string{},
+	SiteEngagementTrackingGetOperation:                  []string{},
 	SiteEnrollmentsGetOperation:                         []string{},
 	SiteEnrollmentsListOperation:                        []string{},
 	SiteEventsActionsOperation:                          []string{},

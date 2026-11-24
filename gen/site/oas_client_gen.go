@@ -585,6 +585,22 @@ type Invoker interface {
 	//
 	// PUT /workspaces/{workspaceId}/domain-join
 	SiteDomainJoinSet(ctx context.Context, request *SiteSetDomainJoinInput, params SiteDomainJoinSetParams) (*SiteDomainJoinResource, error)
+	// SiteEngagementTrackingCreate invokes SiteEngagementTracking_create operation.
+	//
+	// Record a refusal or a grant of tracking the person made to you (by phone, by reply) for one of the
+	// contact's Destinations, as `manual`, now. A `denied` always applies and is kept in the immutable
+	// `email.engagement_tracking_denied` event; a `granted` is refused with a conflict over a standing
+	// `denied`: only the person can lift a refusal. 422 when the Destination is not the contact's.
+	//
+	// POST /workspaces/{workspaceId}/contacts/{contactId}/engagement-tracking
+	SiteEngagementTrackingCreate(ctx context.Context, request *SiteRecordEngagementTrackingInput, params SiteEngagementTrackingCreateParams) (*EngagementTrackingObservationResult, error)
+	// SiteEngagementTrackingGet invokes SiteEngagementTracking_get operation.
+	//
+	// Read whether each Destination of a contact (its email address) is tracked: the consent recorded with
+	// who recorded it, or `default` where none is, with what the Workspace's default means now.
+	//
+	// GET /workspaces/{workspaceId}/contacts/{contactId}/engagement-tracking
+	SiteEngagementTrackingGet(ctx context.Context, params SiteEngagementTrackingGetParams) (*ContactEngagementTracking, error)
 	// SiteEnrollmentsGet invokes SiteEnrollments_get operation.
 	//
 	// Get one Enrollment of an Automation.
@@ -12731,6 +12747,327 @@ func (c *Client) sendSiteDomainJoinSet(ctx context.Context, request *SiteSetDoma
 
 	stage = "DecodeResponse"
 	result, err := decodeSiteDomainJoinSetResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteEngagementTrackingCreate invokes SiteEngagementTracking_create operation.
+//
+// Record a refusal or a grant of tracking the person made to you (by phone, by reply) for one of the
+// contact's Destinations, as `manual`, now. A `denied` always applies and is kept in the immutable
+// `email.engagement_tracking_denied` event; a `granted` is refused with a conflict over a standing
+// `denied`: only the person can lift a refusal. 422 when the Destination is not the contact's.
+//
+// POST /workspaces/{workspaceId}/contacts/{contactId}/engagement-tracking
+func (c *Client) SiteEngagementTrackingCreate(ctx context.Context, request *SiteRecordEngagementTrackingInput, params SiteEngagementTrackingCreateParams) (*EngagementTrackingObservationResult, error) {
+	res, err := c.sendSiteEngagementTrackingCreate(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSiteEngagementTrackingCreate(ctx context.Context, request *SiteRecordEngagementTrackingInput, params SiteEngagementTrackingCreateParams) (res *EngagementTrackingObservationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteEngagementTracking_create"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/contacts/{contactId}/engagement-tracking"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteEngagementTrackingCreateOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [5]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/contacts/"
+	{
+		// Encode "contactId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "contactId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := publicid.ID(params.ContactId); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[3] = encoded
+	}
+	pathParts[4] = "/engagement-tracking"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSiteEngagementTrackingCreateRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteEngagementTrackingCreateOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteEngagementTrackingCreateResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteEngagementTrackingGet invokes SiteEngagementTracking_get operation.
+//
+// Read whether each Destination of a contact (its email address) is tracked: the consent recorded with
+// who recorded it, or `default` where none is, with what the Workspace's default means now.
+//
+// GET /workspaces/{workspaceId}/contacts/{contactId}/engagement-tracking
+func (c *Client) SiteEngagementTrackingGet(ctx context.Context, params SiteEngagementTrackingGetParams) (*ContactEngagementTracking, error) {
+	res, err := c.sendSiteEngagementTrackingGet(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSiteEngagementTrackingGet(ctx context.Context, params SiteEngagementTrackingGetParams) (res *ContactEngagementTracking, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteEngagementTracking_get"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/contacts/{contactId}/engagement-tracking"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteEngagementTrackingGetOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [5]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/contacts/"
+	{
+		// Encode "contactId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "contactId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := publicid.ID(params.ContactId); true {
+				return e.EncodeValue(conv.TextToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[3] = encoded
+	}
+	pathParts[4] = "/engagement-tracking"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteEngagementTrackingGetOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteEngagementTrackingGetResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

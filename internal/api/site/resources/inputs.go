@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
@@ -189,6 +190,12 @@ type Inputs interface {
 	TemplateUpdate(source *siteapi.UpdateTemplateInput) emailtemplates.UpdateInput
 
 	ConsentEvidence(source *siteapi.ConsentEvidence) confirmations.Evidence
+	// A member's Engagement tracking observation of one of a Contact's Destinations (ADR 0120).
+	EngagementTrackingByMember(source *siteapi.SiteRecordEngagementTrackingInput) engagementtracking.MemberInput
+	// goverter:enum:transform value
+	EngagementTrackingChannel(source siteapi.EngagementTrackingChannel) channels.Channel
+	// goverter:enum:transform value
+	EngagementTrackingState(source siteapi.EngagementTrackingState) engagementtracking.State
 	// Where a Broadcast's Test send goes: the address on email, the number on sms. OnlyTo is the
 	// handler's to set.
 	// goverter:ignore OnlyTo

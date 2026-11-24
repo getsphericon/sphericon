@@ -3221,8 +3221,6 @@ const (
 	OutboundMessageGlobexDestination = "pat@globex.test"
 	// OutboundMessageGlobexID is from fixtures/outbound_messages.
 	OutboundMessageGlobexID = 900
-	// OutboundMessageMailgunAliceDestination is from fixtures/outbound_messages.
-	OutboundMessageMailgunAliceDestination = "alice@example.com"
 	// OutboundMessageMailgunAliceID is from fixtures/outbound_messages.
 	OutboundMessageMailgunAliceID = 812
 	// OutboundMessageMovedOriginDestination is from fixtures/outbound_messages.
@@ -3233,12 +3231,8 @@ const (
 	OutboundMessageParkedClaimDestination = "bob@example.com"
 	// OutboundMessageParkedClaimID is from fixtures/outbound_messages.
 	OutboundMessageParkedClaimID = 5711
-	// OutboundMessagePostmarkAliceDestination is from fixtures/outbound_messages.
-	OutboundMessagePostmarkAliceDestination = "alice@example.com"
 	// OutboundMessagePostmarkAliceID is from fixtures/outbound_messages.
 	OutboundMessagePostmarkAliceID = 811
-	// OutboundMessageSesAliceDestination is from fixtures/outbound_messages.
-	OutboundMessageSesAliceDestination = "alice@example.com"
 	// OutboundMessageSesAliceID is from fixtures/outbound_messages.
 	OutboundMessageSesAliceID = 810
 	// OutboundMessageSkippedDestination is from fixtures/outbound_messages.

@@ -173,6 +173,7 @@ var (
 	ErrorsEngagementTrackingChannel                       = ID{key: "errors.engagement_tracking_channel"}
 	ErrorsEngagementTrackingDefaultUnknown                = ID{key: "errors.engagement_tracking_default_unknown"}
 	ErrorsEngagementTrackingInFuture                      = ID{key: "errors.engagement_tracking_in_future"}
+	ErrorsEngagementTrackingNotTheContacts                = ID{key: "errors.engagement_tracking_not_the_contacts"}
 	ErrorsEngagementTrackingProvenance                    = ID{key: "errors.engagement_tracking_provenance"}
 	ErrorsEngagementTrackingRefused                       = ID{key: "errors.engagement_tracking_refused"}
 	ErrorsEngagementTrackingState                         = ID{key: "errors.engagement_tracking_state"}

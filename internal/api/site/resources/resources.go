@@ -38,9 +38,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
-	"github.com/getsphericon/sphericon/ent/workspace"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
@@ -105,6 +105,7 @@ import (
 // goverter:extend optNilString
 // goverter:extend optNilStepID
 // goverter:extend optNilOptOutVia
+// goverter:extend optNilEngagementTrackingProvenance
 // goverter:extend optNilHoldReason
 // goverter:extend omitEmpty
 // goverter:extend omitEmptyConfigurationSet
@@ -449,8 +450,6 @@ type Converter interface {
 	// goverter:enum:transform value
 	EntryPolicyToResource(source automationversion.EntryPolicy) siteapi.EntryPolicy
 	// goverter:enum:transform value
-	EngagementTrackingDefaultToResource(source workspace.EngagementTrackingDefault) siteapi.EngagementTrackingDecision
-	// goverter:enum:transform value
 	SmsFromKindToResource(source messaging.SMSFromKind) siteapi.SmsFromKind
 	// goverter:map . Kind | twilioConfigKind
 	// goverter:map AccountSID AccountSid
@@ -492,6 +491,20 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	BindingsToResources(source []bindings.Chat) []siteapi.SiteBindingResource
 	SmsConsentToResource(source confirmations.ContactSMS) siteapi.SmsConsent
+	// The Engagement tracking consent of a Destination (ADR 0120), and what an observation did.
+	EngagementTrackingConsentToResource(source engagementtracking.Consent) siteapi.EngagementTrackingConsent
+	ContactEngagementTrackingToResource(source engagementtracking.ContactConsents) siteapi.ContactEngagementTracking
+	EngagementTrackingRecordedToResource(source engagementtracking.Recorded) siteapi.EngagementTrackingObservationResult
+	// goverter:enum:transform value
+	EngagementTrackingChannelToResource(source channels.Channel) siteapi.EngagementTrackingChannel
+	// goverter:enum:transform value
+	EngagementTrackingReadingToResource(source engagementtracking.Reading) siteapi.EngagementTrackingReading
+	// goverter:enum:transform value
+	EngagementTrackingProvenanceToResource(source engagementtracking.Provenance) siteapi.EngagementTrackingProvenance
+	// goverter:enum:transform value
+	EngagementTrackingDecisionToResource(source engagementtracking.Decision) siteapi.EngagementTrackingDecision
+	// goverter:enum:transform value
+	EngagementTrackingOutcomeToResource(source engagementtracking.Outcome) siteapi.EngagementTrackingOutcome
 	TestSendResultToResource(source outboundmessages.Result) siteapi.SiteTestSendBroadcastResult
 	SmsLengthLimitToResource(source smsrender.Limit) siteapi.SiteSmsLengthLimit
 	SmsOptOutToResource(source *confirmations.SMSOptOut) siteapi.SmsOptOut
@@ -1471,6 +1484,10 @@ func ruleResults(c Converter, stored string) []siteapi.RuleActionResult {
 
 func optNilOptOutVia(c Converter, v *unsubscribe.Via) siteapi.OptNilOptOutVia {
 	return convert.OptVia[siteapi.OptNilOptOutVia](v, c.OptOutViaToResource)
+}
+
+func optNilEngagementTrackingProvenance(c Converter, v *engagementtracking.Provenance) siteapi.OptNilEngagementTrackingProvenance {
+	return convert.OptVia[siteapi.OptNilEngagementTrackingProvenance](v, c.EngagementTrackingProvenanceToResource)
 }
 
 func optNilHoldReason(c Converter, v *holdreason.Reason) siteapi.OptNilHoldReason {

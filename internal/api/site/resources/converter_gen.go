@@ -16,6 +16,7 @@ import (
 	consentrecord "github.com/getsphericon/sphericon/ent/consentrecord"
 	contact "github.com/getsphericon/sphericon/ent/contact"
 	customfield "github.com/getsphericon/sphericon/ent/customfield"
+	engagementtrackingconsent "github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	invitation "github.com/getsphericon/sphericon/ent/invitation"
 	membership "github.com/getsphericon/sphericon/ent/membership"
 	rule "github.com/getsphericon/sphericon/ent/rule"
@@ -29,6 +30,7 @@ import (
 	site "github.com/getsphericon/sphericon/gen/site"
 	condition "github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	engagementtracking "github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	orders "github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	brandkits "github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	consentrecords "github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
@@ -964,6 +966,16 @@ func (c *ConverterImpl) ConnectionsToResources(source []*ent.ApiToken) []site.Si
 	}
 	return siteapiSiteConnectionResourceList
 }
+func (c *ConverterImpl) ContactEngagementTrackingToResource(source engagementtracking.ContactConsents) site.ContactEngagementTracking {
+	var siteapiContactEngagementTracking site.ContactEngagementTracking
+	if source.Destinations != nil {
+		siteapiContactEngagementTracking.Destinations = make([]site.EngagementTrackingConsent, len(source.Destinations))
+		for i := 0; i < len(source.Destinations); i++ {
+			siteapiContactEngagementTracking.Destinations[i] = c.EngagementTrackingConsentToResource(source.Destinations[i])
+		}
+	}
+	return siteapiContactEngagementTracking
+}
 func (c *ConverterImpl) ContactExportSourceToResource(source contact.Source) site.ContactExportSource {
 	var siteapiContactExportSource site.ContactExportSource
 	switch source {
@@ -1174,7 +1186,31 @@ func (c *ConverterImpl) EndStepToResource(source automations.EndView) site.EndSt
 	siteapiEndStep.Type = endStepType(source.Type)
 	return siteapiEndStep
 }
-func (c *ConverterImpl) EngagementTrackingDefaultToResource(source workspace.EngagementTrackingDefault) site.EngagementTrackingDecision {
+func (c *ConverterImpl) EngagementTrackingChannelToResource(source channels.Channel) site.EngagementTrackingChannel {
+	var siteapiEngagementTrackingChannel site.EngagementTrackingChannel
+	switch source {
+	case channels.Email:
+		siteapiEngagementTrackingChannel = site.EngagementTrackingChannelEmail
+	case channels.SMS:
+		siteapiEngagementTrackingChannel = site.EngagementTrackingChannelSMS
+	case channels.Telegram:
+		siteapiEngagementTrackingChannel = site.EngagementTrackingChannelTelegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiEngagementTrackingChannel
+}
+func (c *ConverterImpl) EngagementTrackingConsentToResource(source engagementtracking.Consent) site.EngagementTrackingConsent {
+	var siteapiEngagementTrackingConsent site.EngagementTrackingConsent
+	siteapiEngagementTrackingConsent.Channel = c.EngagementTrackingChannelToResource(source.Channel)
+	siteapiEngagementTrackingConsent.Destination = source.Destination
+	siteapiEngagementTrackingConsent.State = c.EngagementTrackingReadingToResource(source.State)
+	siteapiEngagementTrackingConsent.Provenance = optNilEngagementTrackingProvenance(c, source.Provenance)
+	siteapiEngagementTrackingConsent.Effective = c.EngagementTrackingDecisionToResource(source.Effective)
+	siteapiEngagementTrackingConsent.UpdatedAt = optNilTimestamp(source.UpdatedAt)
+	return siteapiEngagementTrackingConsent
+}
+func (c *ConverterImpl) EngagementTrackingDecisionToResource(source workspace.EngagementTrackingDefault) site.EngagementTrackingDecision {
 	var siteapiEngagementTrackingDecision site.EngagementTrackingDecision
 	switch source {
 	case workspace.DefaultEngagementTrackingDefault:
@@ -1186,6 +1222,41 @@ func (c *ConverterImpl) EngagementTrackingDefaultToResource(source workspace.Eng
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiEngagementTrackingDecision
+}
+func (c *ConverterImpl) EngagementTrackingOutcomeToResource(source engagementtracking.Outcome) site.EngagementTrackingOutcome {
+	var siteapiEngagementTrackingOutcome site.EngagementTrackingOutcome
+	switch source {
+	case engagementtracking.Applied:
+		siteapiEngagementTrackingOutcome = site.EngagementTrackingOutcomeApplied
+	case engagementtracking.Superseded:
+		siteapiEngagementTrackingOutcome = site.EngagementTrackingOutcomeSuperseded
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiEngagementTrackingOutcome
+}
+func (c *ConverterImpl) EngagementTrackingProvenanceToResource(source engagementtrackingconsent.Provenance) site.EngagementTrackingProvenance {
+	return site.EngagementTrackingProvenance(source)
+}
+func (c *ConverterImpl) EngagementTrackingReadingToResource(source engagementtracking.Reading) site.EngagementTrackingReading {
+	var siteapiEngagementTrackingReading site.EngagementTrackingReading
+	switch source {
+	case engagementtracking.ReadingDefault:
+		siteapiEngagementTrackingReading = site.EngagementTrackingReadingDefault
+	case engagementtracking.ReadingDenied:
+		siteapiEngagementTrackingReading = site.EngagementTrackingReadingDenied
+	case engagementtracking.ReadingGranted:
+		siteapiEngagementTrackingReading = site.EngagementTrackingReadingGranted
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiEngagementTrackingReading
+}
+func (c *ConverterImpl) EngagementTrackingRecordedToResource(source engagementtracking.Recorded) site.EngagementTrackingObservationResult {
+	var siteapiEngagementTrackingObservationResult site.EngagementTrackingObservationResult
+	siteapiEngagementTrackingObservationResult.Outcome = c.EngagementTrackingOutcomeToResource(source.Outcome)
+	siteapiEngagementTrackingObservationResult.Consent = c.EngagementTrackingConsentToResource(source.Consent)
+	return siteapiEngagementTrackingObservationResult
 }
 func (c *ConverterImpl) EnrollmentFailureKindToResource(source automationrun.FailureKind) site.EnrollmentFailureKind {
 	var siteapiEnrollmentFailureKind site.EnrollmentFailureKind
@@ -3009,7 +3080,7 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWork
 		siteapiSiteWorkspaceResource.PostalAddress = (*source).PostalAddress
 		siteapiSiteWorkspaceResource.Timezone = workspaceTimezone((*source).Timezone)
 		siteapiSiteWorkspaceResource.RequireConfirmedOptIn = (*source).RequireConfirmedOptIn
-		siteapiSiteWorkspaceResource.EngagementTrackingDefault = c.EngagementTrackingDefaultToResource((*source).EngagementTrackingDefault)
+		siteapiSiteWorkspaceResource.EngagementTrackingDefault = c.EngagementTrackingDecisionToResource((*source).EngagementTrackingDefault)
 		// siteapiSiteWorkspaceResource.Role: ignore
 		// siteapiSiteWorkspaceResource.Permissions: ignore
 		siteapiSiteWorkspaceResource.SuspendedAt = optNilTimestamp((*source).SuspendedAt)
