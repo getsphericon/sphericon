@@ -11646,6 +11646,16 @@ func (s *ContactExportOutboundMessage) encodeFields(e *jx.Encoder) {
 		e.Bool(s.Captured)
 	}
 	{
+		e.FieldStart("tracked")
+		e.Bool(s.Tracked)
+	}
+	{
+		if s.TrackingWithdrawnAt.Set {
+			e.FieldStart("trackingWithdrawnAt")
+			s.TrackingWithdrawnAt.Encode(e)
+		}
+	}
+	{
 		if s.BroadcastId.Set {
 			e.FieldStart("broadcastId")
 			s.BroadcastId.Encode(e)
@@ -11675,7 +11685,7 @@ func (s *ContactExportOutboundMessage) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfContactExportOutboundMessage = [25]string{
+var jsonFieldsNameOfContactExportOutboundMessage = [27]string{
 	0:  "id",
 	1:  "kind",
 	2:  "channel",
@@ -11696,11 +11706,13 @@ var jsonFieldsNameOfContactExportOutboundMessage = [25]string{
 	17: "openedAt",
 	18: "clickedAt",
 	19: "captured",
-	20: "broadcastId",
-	21: "automationId",
-	22: "automationStepId",
-	23: "templateId",
-	24: "createdAt",
+	20: "tracked",
+	21: "trackingWithdrawnAt",
+	22: "broadcastId",
+	23: "automationId",
+	24: "automationStepId",
+	25: "templateId",
+	26: "createdAt",
 }
 
 // Decode decodes ContactExportOutboundMessage from json.
@@ -11922,6 +11934,28 @@ func (s *ContactExportOutboundMessage) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"captured\"")
 			}
+		case "tracked":
+			requiredBitSet[2] |= 1 << 4
+			if err := func() error {
+				v, err := d.Bool()
+				s.Tracked = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"tracked\"")
+			}
+		case "trackingWithdrawnAt":
+			if err := func() error {
+				s.TrackingWithdrawnAt.Reset()
+				if err := s.TrackingWithdrawnAt.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"trackingWithdrawnAt\"")
+			}
 		case "broadcastId":
 			if err := func() error {
 				s.BroadcastId.Reset()
@@ -11963,7 +11997,7 @@ func (s *ContactExportOutboundMessage) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"templateId\"")
 			}
 		case "createdAt":
-			requiredBitSet[3] |= 1 << 0
+			requiredBitSet[3] |= 1 << 2
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -11984,8 +12018,8 @@ func (s *ContactExportOutboundMessage) Decode(d *jx.Decoder) error {
 	for i, mask := range [4]uint8{
 		0b10001111,
 		0b00000100,
-		0b00001000,
-		0b00000001,
+		0b00011000,
+		0b00000100,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -51955,6 +51989,10 @@ func (s *WorkspaceResource) encodeFields(e *jx.Encoder) {
 		e.Bool(s.RequireConfirmedOptIn)
 	}
 	{
+		e.FieldStart("engagementTrackingDefault")
+		s.EngagementTrackingDefault.Encode(e)
+	}
+	{
 		e.FieldStart("timezone")
 		s.Timezone.Encode(e)
 	}
@@ -51970,14 +52008,15 @@ func (s *WorkspaceResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfWorkspaceResource = [7]string{
+var jsonFieldsNameOfWorkspaceResource = [8]string{
 	0: "id",
 	1: "name",
 	2: "postalAddress",
 	3: "requireConfirmedOptIn",
-	4: "timezone",
-	5: "sendCap",
-	6: "revision",
+	4: "engagementTrackingDefault",
+	5: "timezone",
+	6: "sendCap",
+	7: "revision",
 }
 
 // Decode decodes WorkspaceResource from json.
@@ -52035,8 +52074,18 @@ func (s *WorkspaceResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"requireConfirmedOptIn\"")
 			}
-		case "timezone":
+		case "engagementTrackingDefault":
 			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				if err := s.EngagementTrackingDefault.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"engagementTrackingDefault\"")
+			}
+		case "timezone":
+			requiredBitSet[0] |= 1 << 5
 			if err := func() error {
 				if err := s.Timezone.Decode(d); err != nil {
 					return err
@@ -52056,7 +52105,7 @@ func (s *WorkspaceResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"sendCap\"")
 			}
 		case "revision":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				if err := s.Revision.Decode(d); err != nil {
 					return err
@@ -52075,7 +52124,7 @@ func (s *WorkspaceResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b01011111,
+		0b10111111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

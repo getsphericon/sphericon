@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
@@ -32,6 +33,7 @@ func (env *TestEnv) OutboundModules(bus *events.Bus, now func() time.Time) outbo
 		Chats:    bindings.NewChats(bus, now),
 		Limits:   providerlimit.New(now),
 		Standing: integrations.NewStanding(now),
+		Consents: Module[*engagementtracking.Module](env),
 	}
 }
 

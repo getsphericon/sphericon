@@ -65,6 +65,10 @@ const (
 	FieldClickedAt = "clicked_at"
 	// FieldCaptured holds the string denoting the captured field in the database.
 	FieldCaptured = "captured"
+	// FieldTracked holds the string denoting the tracked field in the database.
+	FieldTracked = "tracked"
+	// FieldTrackingWithdrawnAt holds the string denoting the tracking_withdrawn_at field in the database.
+	FieldTrackingWithdrawnAt = "tracking_withdrawn_at"
 	// FieldBroadcastID holds the string denoting the broadcast_id field in the database.
 	FieldBroadcastID = "broadcast_id"
 	// FieldBroadcastRecipientID holds the string denoting the broadcast_recipient_id field in the database.
@@ -208,6 +212,8 @@ var Columns = []string{
 	FieldOpenedAt,
 	FieldClickedAt,
 	FieldCaptured,
+	FieldTracked,
+	FieldTrackingWithdrawnAt,
 	FieldBroadcastID,
 	FieldBroadcastRecipientID,
 	FieldAutomationID,
@@ -244,6 +250,8 @@ var (
 	DefaultClaimedAt func() time.Time
 	// DefaultCaptured holds the default value on creation for the "captured" field.
 	DefaultCaptured bool
+	// DefaultTracked holds the default value on creation for the "tracked" field.
+	DefaultTracked bool
 )
 
 // Kind defines the type for the "kind" enum field.
@@ -446,6 +454,16 @@ func ByClickedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByCaptured orders the results by the captured field.
 func ByCaptured(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCaptured, opts...).ToFunc()
+}
+
+// ByTracked orders the results by the tracked field.
+func ByTracked(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTracked, opts...).ToFunc()
+}
+
+// ByTrackingWithdrawnAt orders the results by the tracking_withdrawn_at field.
+func ByTrackingWithdrawnAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTrackingWithdrawnAt, opts...).ToFunc()
 }
 
 // ByBroadcastID orders the results by the broadcast_id field.

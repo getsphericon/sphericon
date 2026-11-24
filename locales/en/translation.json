@@ -1984,6 +1984,22 @@
       "title": "Danger zone",
       "warning": "The workspace is frozen at once: nothing is sent, and its API tokens, collect key and tracking hosts stop working. Only an owner can restore it, within 30 days."
     },
+    "engagementTrackingDefault": {
+      "changeToDontTrack": "Track only those who agree",
+      "changeToTrack": "Track unless refused",
+      "confirm": "Change",
+      "description": "Whether the opens and clicks of a recipient with no tracking consent recorded are tracked. A recipient's own consent, granted or refused, always decides for them.",
+      "dontTrack": "Don't track: only recipients who granted their consent are tracked.",
+      "errorTitle": "Could not change the tracking default",
+      "forbidden": "Only owners and admins can change the tracking default.",
+      "saved": "Tracking default changed",
+      "title": "Engagement tracking default",
+      "toDontTrackDescription": "From now on, the opens and clicks of recipients with no tracking consent are not recorded, and messages to them go out without an open pixel and with their links as written. Recipients who granted their consent stay tracked.",
+      "toDontTrackTitle": "Track only recipients who agree?",
+      "toTrackDescription": "Messages sent from now on to recipients with no tracking consent are tracked again. Recipients who refused stay untracked.",
+      "toTrackTitle": "Track recipients unless they refuse?",
+      "track": "Track: every recipient is tracked unless they refused."
+    },
     "errorTitle": "Failed to update workspace",
     "identitySecret": {
       "description": "Prove who is signed in on your site. Your server signs an identity token (a JWT, HS256) with this secret for the signed-in person: their subjectId as sub, their email or phone, and an exp at most a day ahead. An identify that carries the token may update the person's details and gives them the Telegram chats started in that browser; one without it only fills what is empty.",

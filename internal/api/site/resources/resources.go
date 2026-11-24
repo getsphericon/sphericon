@@ -38,6 +38,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/ent/workspace"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
@@ -447,6 +448,8 @@ type Converter interface {
 	TelegramConfigToResource(source integrations.RedactedTelegram) siteapi.TelegramConfig
 	// goverter:enum:transform value
 	EntryPolicyToResource(source automationversion.EntryPolicy) siteapi.EntryPolicy
+	// goverter:enum:transform value
+	EngagementTrackingDefaultToResource(source workspace.EngagementTrackingDefault) siteapi.EngagementTrackingDecision
 	// goverter:enum:transform value
 	SmsFromKindToResource(source messaging.SMSFromKind) siteapi.SmsFromKind
 	// goverter:map . Kind | twilioConfigKind

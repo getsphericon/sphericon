@@ -118,7 +118,11 @@ func telegramContentOf(content Content) (TelegramContent, error) {
 // render renders the text for one recipient. A text that does not render, renders to nothing or is
 // over the limit once rendered (1024 with an image, 4096 without) is the message's own failure, the
 // same on every attempt.
-func (c telegramChannel) render(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace) (any, error) {
+// tracks is the request's Track: a Telegram message's links are always Short tracked links when
+// its recipients consent.
+func (telegramChannel) tracks(req Request) bool { return req.Track }
+
+func (c telegramChannel) render(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace, tracked bool) (any, error) {
 	content, err := telegramContentOf(req.Content)
 	if err != nil {
 		return nil, err
@@ -146,12 +150,15 @@ func (c telegramChannel) render(ctx context.Context, s *ent.Scoped, req Request,
 	for i, b := range content.Buttons {
 		buttons[i] = messaging.TelegramButton{Label: b.Label, URL: b.URL}
 	}
-	// Every link of the text and every button URL becomes a short tracked link (ADR 0083). It runs
-	// last, so the lengths above are those of what the person reads: a link's href counts for none.
-	unsub, _ := vars[unsubscribeURLTag].(string)
-	links, err := c.m.shortLinksFor(ctx, s, messageID, unsub)
-	if err != nil {
-		return nil, err
+	// Every link of the text and every button URL becomes a short tracked link (ADR 0083) when the
+	// message is tracked; untracked, a nil set keeps them as written (ADR 0120). It runs last, so
+	// the lengths above are those of what the person reads: a link's href counts for none.
+	var links *shortLinks
+	if tracked {
+		unsub, _ := vars[unsubscribeURLTag].(string)
+		if links, err = c.m.shortLinksFor(ctx, s, messageID, unsub); err != nil {
+			return nil, err
+		}
 	}
 	if text, err = links.text(ctx, text); err != nil {
 		return nil, err

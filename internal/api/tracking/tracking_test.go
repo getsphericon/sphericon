@@ -3,6 +3,7 @@ package tracking_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -241,8 +242,11 @@ func TestTrackingEndpoints(t *testing.T) {
 	assert.True(t, unsubscribedAt.Equal(*env.DB.BroadcastRecipient.GetX(ctx, rec.ID).UnsubscribedAt), "set once")
 
 	// Each endpoint published an engagement event, which its consumers' jobs carry. Assert all
-	// three events were published for this recipient.
-	forRecipient := lo.Filter(env.QueuedMessages(t), func(m testhelper.QueuedMessage, _ int) bool { return m.Data["email"] == *c.Email })
+	// three events were published for this recipient (an open or a click names the address the
+	// message went to, ADR 0120, and the unsubscribe the address it opts out: the Contact is theirs).
+	forRecipient := lo.Filter(env.QueuedMessages(t), func(m testhelper.QueuedMessage, _ int) bool {
+		return fmt.Sprint(m.Data["contactId"]) == strconv.FormatInt(c.ID, 10)
+	})
 	names := lo.Map(forRecipient, func(m testhelper.QueuedMessage, _ int) string { return m.Envelope.Name })
 	assert.Contains(t, names, systemevent.EmailOpened)
 	assert.Contains(t, names, systemevent.EmailClicked)

@@ -241,7 +241,7 @@ func failedContent(err error) (Result, error) {
 // renderTest renders a Test send's content for to with email's renderer: no unsubscribe, no
 // tracking.
 func (m *Module) renderTest(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, req TestRequest, to string) (messaging.EmailMessage, error) {
-	return m.renderEmail(ctx, s, Request{Content: req.Content, Variables: req.Variables}, 0, to, ws)
+	return m.renderEmail(ctx, s, Request{Content: req.Content, Variables: req.Variables}, 0, to, ws, false)
 }
 
 // sendTestMessage sends a rendered Test message from the address from and reports it Sent. No

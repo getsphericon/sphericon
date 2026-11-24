@@ -158,6 +158,16 @@ func Captured(v bool) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldCaptured, v))
 }
 
+// Tracked applies equality check predicate on the "tracked" field. It's identical to TrackedEQ.
+func Tracked(v bool) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldTracked, v))
+}
+
+// TrackingWithdrawnAt applies equality check predicate on the "tracking_withdrawn_at" field. It's identical to TrackingWithdrawnAtEQ.
+func TrackingWithdrawnAt(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldTrackingWithdrawnAt, v))
+}
+
 // BroadcastID applies equality check predicate on the "broadcast_id" field. It's identical to BroadcastIDEQ.
 func BroadcastID(v int64) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldBroadcastID, v))
@@ -1367,6 +1377,66 @@ func CapturedEQ(v bool) predicate.OutboundMessage {
 // CapturedNEQ applies the NEQ predicate on the "captured" field.
 func CapturedNEQ(v bool) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldNEQ(FieldCaptured, v))
+}
+
+// TrackedEQ applies the EQ predicate on the "tracked" field.
+func TrackedEQ(v bool) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldTracked, v))
+}
+
+// TrackedNEQ applies the NEQ predicate on the "tracked" field.
+func TrackedNEQ(v bool) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNEQ(FieldTracked, v))
+}
+
+// TrackingWithdrawnAtEQ applies the EQ predicate on the "tracking_withdrawn_at" field.
+func TrackingWithdrawnAtEQ(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldTrackingWithdrawnAt, v))
+}
+
+// TrackingWithdrawnAtNEQ applies the NEQ predicate on the "tracking_withdrawn_at" field.
+func TrackingWithdrawnAtNEQ(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNEQ(FieldTrackingWithdrawnAt, v))
+}
+
+// TrackingWithdrawnAtIn applies the In predicate on the "tracking_withdrawn_at" field.
+func TrackingWithdrawnAtIn(vs ...time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIn(FieldTrackingWithdrawnAt, vs...))
+}
+
+// TrackingWithdrawnAtNotIn applies the NotIn predicate on the "tracking_withdrawn_at" field.
+func TrackingWithdrawnAtNotIn(vs ...time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotIn(FieldTrackingWithdrawnAt, vs...))
+}
+
+// TrackingWithdrawnAtGT applies the GT predicate on the "tracking_withdrawn_at" field.
+func TrackingWithdrawnAtGT(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGT(FieldTrackingWithdrawnAt, v))
+}
+
+// TrackingWithdrawnAtGTE applies the GTE predicate on the "tracking_withdrawn_at" field.
+func TrackingWithdrawnAtGTE(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGTE(FieldTrackingWithdrawnAt, v))
+}
+
+// TrackingWithdrawnAtLT applies the LT predicate on the "tracking_withdrawn_at" field.
+func TrackingWithdrawnAtLT(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLT(FieldTrackingWithdrawnAt, v))
+}
+
+// TrackingWithdrawnAtLTE applies the LTE predicate on the "tracking_withdrawn_at" field.
+func TrackingWithdrawnAtLTE(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLTE(FieldTrackingWithdrawnAt, v))
+}
+
+// TrackingWithdrawnAtIsNil applies the IsNil predicate on the "tracking_withdrawn_at" field.
+func TrackingWithdrawnAtIsNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIsNull(FieldTrackingWithdrawnAt))
+}
+
+// TrackingWithdrawnAtNotNil applies the NotNil predicate on the "tracking_withdrawn_at" field.
+func TrackingWithdrawnAtNotNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotNull(FieldTrackingWithdrawnAt))
 }
 
 // BroadcastIDEQ applies the EQ predicate on the "broadcast_id" field.

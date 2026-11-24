@@ -256,6 +256,14 @@ model ContactExportOutboundMessage {
   /** True when the message went through a Test inbox: captured, not delivered */
   captured: boolean;
 
+  /** Whether the message went out tracked: with an open pixel and its links rewritten, or its
+   * links made Short tracked links (ADR 0120) */
+  tracked: boolean;
+
+  /** When the message's tracking was withdrawn (a refusal of the contact's, or the Workspace's
+   * default turned to `dont_track`); null while it was not */
+  trackingWithdrawnAt?: Timestamp | null;
+
   /** Broadcast that produced the message */
   broadcastId?: EntityId | null;
 

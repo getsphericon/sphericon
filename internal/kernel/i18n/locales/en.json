@@ -376,6 +376,7 @@
   "errors.engagement_tracking_in_future": "occurredAt of a grant must not be in the future",
   "errors.engagement_tracking_state": "state must be granted or denied",
   "errors.engagement_tracking_provenance": "the consent's provenance is not one of page, manual, imported, onsite_form",
+  "errors.engagement_tracking_default_unknown": "the engagement tracking default must be track or dont_track",
   "errors.contact_email_missing": "the contact has no email",
   "errors.contact_phone_missing": "the contact has no phone",
   "errors.variables_invalid": "invalid variables",

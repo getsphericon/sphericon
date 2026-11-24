@@ -262,6 +262,20 @@ func (_c *WorkspaceCreate) SetNillableTimezone(v *string) *WorkspaceCreate {
 	return _c
 }
 
+// SetEngagementTrackingDefault sets the "engagement_tracking_default" field.
+func (_c *WorkspaceCreate) SetEngagementTrackingDefault(v workspace.EngagementTrackingDefault) *WorkspaceCreate {
+	_c.mutation.SetEngagementTrackingDefault(v)
+	return _c
+}
+
+// SetNillableEngagementTrackingDefault sets the "engagement_tracking_default" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableEngagementTrackingDefault(v *workspace.EngagementTrackingDefault) *WorkspaceCreate {
+	if v != nil {
+		_c.SetEngagementTrackingDefault(*v)
+	}
+	return _c
+}
+
 // SetReportingCurrency sets the "reporting_currency" field.
 func (_c *WorkspaceCreate) SetReportingCurrency(v string) *WorkspaceCreate {
 	_c.mutation.SetReportingCurrency(v)
@@ -1305,6 +1319,10 @@ func (_c *WorkspaceCreate) defaults() {
 		v := workspace.DefaultPostalAddress
 		_c.mutation.SetPostalAddress(v)
 	}
+	if _, ok := _c.mutation.EngagementTrackingDefault(); !ok {
+		v := workspace.DefaultEngagementTrackingDefault
+		_c.mutation.SetEngagementTrackingDefault(v)
+	}
 	if _, ok := _c.mutation.AttributionWindowDays(); !ok {
 		v := workspace.DefaultAttributionWindowDays
 		_c.mutation.SetAttributionWindowDays(v)
@@ -1385,6 +1403,14 @@ func (_c *WorkspaceCreate) check() error {
 	if v, ok := _c.mutation.Timezone(); ok {
 		if err := workspace.TimezoneValidator(v); err != nil {
 			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "Workspace.timezone": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.EngagementTrackingDefault(); !ok {
+		return &ValidationError{Name: "engagement_tracking_default", err: errors.New(`ent: missing required field "Workspace.engagement_tracking_default"`)}
+	}
+	if v, ok := _c.mutation.EngagementTrackingDefault(); ok {
+		if err := workspace.EngagementTrackingDefaultValidator(v); err != nil {
+			return &ValidationError{Name: "engagement_tracking_default", err: fmt.Errorf(`ent: validator failed for field "Workspace.engagement_tracking_default": %w`, err)}
 		}
 	}
 	if v, ok := _c.mutation.ReportingCurrency(); ok {
@@ -1508,6 +1534,10 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Timezone(); ok {
 		_spec.SetField(workspace.FieldTimezone, field.TypeString, value)
 		_node.Timezone = &value
+	}
+	if value, ok := _c.mutation.EngagementTrackingDefault(); ok {
+		_spec.SetField(workspace.FieldEngagementTrackingDefault, field.TypeEnum, value)
+		_node.EngagementTrackingDefault = value
 	}
 	if value, ok := _c.mutation.ReportingCurrency(); ok {
 		_spec.SetField(workspace.FieldReportingCurrency, field.TypeString, value)
@@ -2689,6 +2719,18 @@ func (u *WorkspaceUpsert) ClearTimezone() *WorkspaceUpsert {
 	return u
 }
 
+// SetEngagementTrackingDefault sets the "engagement_tracking_default" field.
+func (u *WorkspaceUpsert) SetEngagementTrackingDefault(v workspace.EngagementTrackingDefault) *WorkspaceUpsert {
+	u.Set(workspace.FieldEngagementTrackingDefault, v)
+	return u
+}
+
+// UpdateEngagementTrackingDefault sets the "engagement_tracking_default" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateEngagementTrackingDefault() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldEngagementTrackingDefault)
+	return u
+}
+
 // SetReportingCurrency sets the "reporting_currency" field.
 func (u *WorkspaceUpsert) SetReportingCurrency(v string) *WorkspaceUpsert {
 	u.Set(workspace.FieldReportingCurrency, v)
@@ -3202,6 +3244,20 @@ func (u *WorkspaceUpsertOne) UpdateTimezone() *WorkspaceUpsertOne {
 func (u *WorkspaceUpsertOne) ClearTimezone() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearTimezone()
+	})
+}
+
+// SetEngagementTrackingDefault sets the "engagement_tracking_default" field.
+func (u *WorkspaceUpsertOne) SetEngagementTrackingDefault(v workspace.EngagementTrackingDefault) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetEngagementTrackingDefault(v)
+	})
+}
+
+// UpdateEngagementTrackingDefault sets the "engagement_tracking_default" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateEngagementTrackingDefault() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateEngagementTrackingDefault()
 	})
 }
 
@@ -3919,6 +3975,20 @@ func (u *WorkspaceUpsertBulk) UpdateTimezone() *WorkspaceUpsertBulk {
 func (u *WorkspaceUpsertBulk) ClearTimezone() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearTimezone()
+	})
+}
+
+// SetEngagementTrackingDefault sets the "engagement_tracking_default" field.
+func (u *WorkspaceUpsertBulk) SetEngagementTrackingDefault(v workspace.EngagementTrackingDefault) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetEngagementTrackingDefault(v)
+	})
+}
+
+// UpdateEngagementTrackingDefault sets the "engagement_tracking_default" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateEngagementTrackingDefault() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateEngagementTrackingDefault()
 	})
 }
 

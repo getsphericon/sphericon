@@ -45,6 +45,8 @@ const (
 	FieldRetentionDays = "retention_days"
 	// FieldTimezone holds the string denoting the timezone field in the database.
 	FieldTimezone = "timezone"
+	// FieldEngagementTrackingDefault holds the string denoting the engagement_tracking_default field in the database.
+	FieldEngagementTrackingDefault = "engagement_tracking_default"
 	// FieldReportingCurrency holds the string denoting the reporting_currency field in the database.
 	FieldReportingCurrency = "reporting_currency"
 	// FieldAttributionWindowDays holds the string denoting the attribution_window_days field in the database.
@@ -586,6 +588,7 @@ var Columns = []string{
 	FieldPostalAddress,
 	FieldRetentionDays,
 	FieldTimezone,
+	FieldEngagementTrackingDefault,
 	FieldReportingCurrency,
 	FieldAttributionWindowDays,
 	FieldSendCap,
@@ -654,6 +657,32 @@ var (
 	// DefaultAbuseExempt holds the default value on creation for the "abuse_exempt" field.
 	DefaultAbuseExempt bool
 )
+
+// EngagementTrackingDefault defines the type for the "engagement_tracking_default" enum field.
+type EngagementTrackingDefault string
+
+// EngagementTrackingDefaultTrack is the default value of the EngagementTrackingDefault enum.
+const DefaultEngagementTrackingDefault = EngagementTrackingDefaultTrack
+
+// EngagementTrackingDefault values.
+const (
+	EngagementTrackingDefaultTrack     EngagementTrackingDefault = "track"
+	EngagementTrackingDefaultDontTrack EngagementTrackingDefault = "dont_track"
+)
+
+func (etd EngagementTrackingDefault) String() string {
+	return string(etd)
+}
+
+// EngagementTrackingDefaultValidator is a validator for the "engagement_tracking_default" field enum values. It is called by the builders before save.
+func EngagementTrackingDefaultValidator(etd EngagementTrackingDefault) error {
+	switch etd {
+	case EngagementTrackingDefaultTrack, EngagementTrackingDefaultDontTrack:
+		return nil
+	default:
+		return fmt.Errorf("workspace: invalid enum value for engagement_tracking_default field: %q", etd)
+	}
+}
 
 // SuspendedByKind defines the type for the "suspended_by_kind" enum field.
 type SuspendedByKind string
@@ -760,6 +789,11 @@ func ByRetentionDays(opts ...sql.OrderTermOption) OrderOption {
 // ByTimezone orders the results by the timezone field.
 func ByTimezone(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTimezone, opts...).ToFunc()
+}
+
+// ByEngagementTrackingDefault orders the results by the engagement_tracking_default field.
+func ByEngagementTrackingDefault(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEngagementTrackingDefault, opts...).ToFunc()
 }
 
 // ByReportingCurrency orders the results by the reporting_currency field.

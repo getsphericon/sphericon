@@ -171,6 +171,9 @@ var (
 	rn95AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
+	rn254AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
 	rn111AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
@@ -231,7 +234,7 @@ var (
 	rn215AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
-	rn253AllowedHeaders = map[string]string{
+	rn255AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
 	rn216AllowedHeaders = map[string]string{
@@ -4149,96 +4152,137 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 							}
 
-						case 'e': // Prefix: "events"
+						case 'e': // Prefix: "e"
 
-							if l := len("events"); len(elem) >= l && elem[0:l] == "events" {
+							if l := len("e"); len(elem) >= l && elem[0:l] == "e" {
 								elem = elem[l:]
 							} else {
 								break
 							}
 
 							if len(elem) == 0 {
-								switch r.Method {
-								case "GET":
-									s.handleSiteEventsListRequest([1]string{
-										args[0],
-									}, elemIsEscaped, w, r)
-								default:
-									s.notAllowed(w, r, notAllowedParams{
-										allowedMethods: "GET",
-										allowedHeaders: nil,
-										acceptPost:     "",
-										acceptPatch:    "",
-									})
-								}
-
-								return
+								break
 							}
 							switch elem[0] {
-							case '/': // Prefix: "/"
+							case 'n': // Prefix: "ngagement-tracking-default"
 
-								if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+								if l := len("ngagement-tracking-default"); len(elem) >= l && elem[0:l] == "ngagement-tracking-default" {
 									elem = elem[l:]
 								} else {
 									break
 								}
 
 								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "PUT":
+										s.handleSiteWorkspacesSetEngagementTrackingDefaultRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "PUT",
+											allowedHeaders: rn254AllowedHeaders,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+							case 'v': // Prefix: "vents"
+
+								if l := len("vents"); len(elem) >= l && elem[0:l] == "vents" {
+									elem = elem[l:]
+								} else {
 									break
 								}
+
+								if len(elem) == 0 {
+									switch r.Method {
+									case "GET":
+										s.handleSiteEventsListRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "GET",
+											allowedHeaders: nil,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
 								switch elem[0] {
-								case 'a': // Prefix: "actions"
+								case '/': // Prefix: "/"
 
-									if l := len("actions"); len(elem) >= l && elem[0:l] == "actions" {
+									if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
 										elem = elem[l:]
 									} else {
 										break
 									}
 
 									if len(elem) == 0 {
-										// Leaf node.
-										switch r.Method {
-										case "GET":
-											s.handleSiteEventsActionsRequest([1]string{
-												args[0],
-											}, elemIsEscaped, w, r)
-										default:
-											s.notAllowed(w, r, notAllowedParams{
-												allowedMethods: "GET",
-												allowedHeaders: nil,
-												acceptPost:     "",
-												acceptPatch:    "",
-											})
-										}
-
-										return
-									}
-
-								case 'p': // Prefix: "property-keys"
-
-									if l := len("property-keys"); len(elem) >= l && elem[0:l] == "property-keys" {
-										elem = elem[l:]
-									} else {
 										break
 									}
+									switch elem[0] {
+									case 'a': // Prefix: "actions"
 
-									if len(elem) == 0 {
-										// Leaf node.
-										switch r.Method {
-										case "GET":
-											s.handleSiteEventsPropertyKeysRequest([1]string{
-												args[0],
-											}, elemIsEscaped, w, r)
-										default:
-											s.notAllowed(w, r, notAllowedParams{
-												allowedMethods: "GET",
-												allowedHeaders: nil,
-												acceptPost:     "",
-												acceptPatch:    "",
-											})
+										if l := len("actions"); len(elem) >= l && elem[0:l] == "actions" {
+											elem = elem[l:]
+										} else {
+											break
 										}
 
-										return
+										if len(elem) == 0 {
+											// Leaf node.
+											switch r.Method {
+											case "GET":
+												s.handleSiteEventsActionsRequest([1]string{
+													args[0],
+												}, elemIsEscaped, w, r)
+											default:
+												s.notAllowed(w, r, notAllowedParams{
+													allowedMethods: "GET",
+													allowedHeaders: nil,
+													acceptPost:     "",
+													acceptPatch:    "",
+												})
+											}
+
+											return
+										}
+
+									case 'p': // Prefix: "property-keys"
+
+										if l := len("property-keys"); len(elem) >= l && elem[0:l] == "property-keys" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										if len(elem) == 0 {
+											// Leaf node.
+											switch r.Method {
+											case "GET":
+												s.handleSiteEventsPropertyKeysRequest([1]string{
+													args[0],
+												}, elemIsEscaped, w, r)
+											default:
+												s.notAllowed(w, r, notAllowedParams{
+													allowedMethods: "GET",
+													allowedHeaders: nil,
+													acceptPost:     "",
+													acceptPatch:    "",
+												})
+											}
+
+											return
+										}
+
 									}
 
 								}
@@ -5770,7 +5814,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 									default:
 										s.notAllowed(w, r, notAllowedParams{
 											allowedMethods: "PUT",
-											allowedHeaders: rn253AllowedHeaders,
+											allowedHeaders: rn255AllowedHeaders,
 											acceptPost:     "",
 											acceptPatch:    "",
 										})
@@ -10020,90 +10064,129 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 
 							}
 
-						case 'e': // Prefix: "events"
+						case 'e': // Prefix: "e"
 
-							if l := len("events"); len(elem) >= l && elem[0:l] == "events" {
+							if l := len("e"); len(elem) >= l && elem[0:l] == "e" {
 								elem = elem[l:]
 							} else {
 								break
 							}
 
 							if len(elem) == 0 {
-								switch method {
-								case "GET":
-									r.name = SiteEventsListOperation
-									r.summary = ""
-									r.operationID = "SiteEvents_list"
-									r.operationGroup = ""
-									r.pathPattern = "/workspaces/{workspaceId}/events"
-									r.args = args
-									r.count = 1
-									return r, true
-								default:
-									return
-								}
+								break
 							}
 							switch elem[0] {
-							case '/': // Prefix: "/"
+							case 'n': // Prefix: "ngagement-tracking-default"
 
-								if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+								if l := len("ngagement-tracking-default"); len(elem) >= l && elem[0:l] == "ngagement-tracking-default" {
 									elem = elem[l:]
 								} else {
 									break
 								}
 
 								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "PUT":
+										r.name = SiteWorkspacesSetEngagementTrackingDefaultOperation
+										r.summary = ""
+										r.operationID = "SiteWorkspaces_setEngagementTrackingDefault"
+										r.operationGroup = ""
+										r.pathPattern = "/workspaces/{workspaceId}/engagement-tracking-default"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
+							case 'v': // Prefix: "vents"
+
+								if l := len("vents"); len(elem) >= l && elem[0:l] == "vents" {
+									elem = elem[l:]
+								} else {
 									break
 								}
+
+								if len(elem) == 0 {
+									switch method {
+									case "GET":
+										r.name = SiteEventsListOperation
+										r.summary = ""
+										r.operationID = "SiteEvents_list"
+										r.operationGroup = ""
+										r.pathPattern = "/workspaces/{workspaceId}/events"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
 								switch elem[0] {
-								case 'a': // Prefix: "actions"
+								case '/': // Prefix: "/"
 
-									if l := len("actions"); len(elem) >= l && elem[0:l] == "actions" {
+									if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
 										elem = elem[l:]
 									} else {
 										break
 									}
 
 									if len(elem) == 0 {
-										// Leaf node.
-										switch method {
-										case "GET":
-											r.name = SiteEventsActionsOperation
-											r.summary = ""
-											r.operationID = "SiteEvents_actions"
-											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{workspaceId}/events/actions"
-											r.args = args
-											r.count = 1
-											return r, true
-										default:
-											return
-										}
-									}
-
-								case 'p': // Prefix: "property-keys"
-
-									if l := len("property-keys"); len(elem) >= l && elem[0:l] == "property-keys" {
-										elem = elem[l:]
-									} else {
 										break
 									}
+									switch elem[0] {
+									case 'a': // Prefix: "actions"
 
-									if len(elem) == 0 {
-										// Leaf node.
-										switch method {
-										case "GET":
-											r.name = SiteEventsPropertyKeysOperation
-											r.summary = ""
-											r.operationID = "SiteEvents_propertyKeys"
-											r.operationGroup = ""
-											r.pathPattern = "/workspaces/{workspaceId}/events/property-keys"
-											r.args = args
-											r.count = 1
-											return r, true
-										default:
-											return
+										if l := len("actions"); len(elem) >= l && elem[0:l] == "actions" {
+											elem = elem[l:]
+										} else {
+											break
 										}
+
+										if len(elem) == 0 {
+											// Leaf node.
+											switch method {
+											case "GET":
+												r.name = SiteEventsActionsOperation
+												r.summary = ""
+												r.operationID = "SiteEvents_actions"
+												r.operationGroup = ""
+												r.pathPattern = "/workspaces/{workspaceId}/events/actions"
+												r.args = args
+												r.count = 1
+												return r, true
+											default:
+												return
+											}
+										}
+
+									case 'p': // Prefix: "property-keys"
+
+										if l := len("property-keys"); len(elem) >= l && elem[0:l] == "property-keys" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										if len(elem) == 0 {
+											// Leaf node.
+											switch method {
+											case "GET":
+												r.name = SiteEventsPropertyKeysOperation
+												r.summary = ""
+												r.operationID = "SiteEvents_propertyKeys"
+												r.operationGroup = ""
+												r.pathPattern = "/workspaces/{workspaceId}/events/property-keys"
+												r.args = args
+												r.count = 1
+												return r, true
+											default:
+												return
+											}
+										}
+
 									}
 
 								}

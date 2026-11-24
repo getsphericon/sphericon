@@ -453,6 +453,44 @@ export const zEmailBroadcastContentInput = z.strictObject({
 });
 
 /**
+ * A Channel whose messages track opens and clicks, so a Destination on it can consent to being tracked (ADR 0120)
+ */
+export const zEngagementTrackingChannel = z.enum([
+  'email',
+  'sms',
+  'telegram'
+]);
+
+/**
+ * Whether a Destination's opens and clicks are tracked
+ */
+export const zEngagementTrackingDecision = z.enum(['track', 'dont_track']);
+
+/**
+ * Who recorded an Engagement tracking consent: the person on a page reached from a message (page), a member of the Workspace on the Contact card (manual), the customer through the API or an import (imported), or an On-site form's checkbox (onsite_form). A `denied` applies from any of them; only the person lifts one
+ */
+export const zEngagementTrackingProvenance = z.enum([
+  'page',
+  'manual',
+  'imported',
+  'onsite_form'
+]);
+
+/**
+ * What a Destination's Engagement tracking consent reads as: `granted` or `denied` as recorded, or `default` where nothing is recorded and the Workspace's default decides
+ */
+export const zEngagementTrackingReading = z.enum([
+  'granted',
+  'denied',
+  'default'
+]);
+
+/**
+ * Whether a Destination agreed to have its opens and clicks tracked (ADR 0120)
+ */
+export const zEngagementTrackingState = z.enum(['granted', 'denied']);
+
+/**
  * Why an Enrollment failed. A closed set: `invalid_body` (an HTTP step's body did not render
  * to valid JSON), `timeout` (no answer in time), `blocked_address` (the URL names an address
  * this instance does not permit), `http_status` (a non-2xx answer, see `status`) and
@@ -2237,6 +2275,14 @@ export const zSiteSetDomainJoinInput = z.strictObject({
 });
 
 /**
+ * Set the Engagement tracking default (ADR 0120)
+ */
+export const zSiteSetEngagementTrackingDefaultInput = z.strictObject({
+  revision: zRevision,
+  engagementTrackingDefault: zEngagementTrackingDecision
+});
+
+/**
  * Where one Setup checklist step stands, read off the Workspace's own data
  */
 export const zSiteSetupStepStatus = z.enum([
@@ -3282,6 +3328,8 @@ export const zContactExportOutboundMessage = z.object({
   openedAt: z.exactOptional(zTimestamp.nullable()),
   clickedAt: z.exactOptional(zTimestamp.nullable()),
   captured: z.boolean(),
+  tracked: z.boolean(),
+  trackingWithdrawnAt: z.exactOptional(zTimestamp.nullable()),
   broadcastId: z.exactOptional(zEntityId.nullable()),
   automationId: z.exactOptional(zEntityId.nullable()),
   automationStepId: z.exactOptional(z.string().nullable()),
@@ -3347,6 +3395,25 @@ export const zContactExportDocument = z.object({
   events: z.array(zContactExportEvent),
   outboundMessages: z.array(zContactExportOutboundMessage),
   broadcastRecipients: z.array(zContactExportBroadcastRecipient)
+});
+
+/**
+ * The Engagement tracking consent of one Destination on one Channel (ADR 0120)
+ */
+export const zEngagementTrackingConsent = z.object({
+  channel: zEngagementTrackingChannel,
+  destination: z.string(),
+  state: zEngagementTrackingReading,
+  provenance: z.exactOptional(zEngagementTrackingProvenance.nullable()),
+  effective: zEngagementTrackingDecision,
+  updatedAt: z.exactOptional(zTimestamp.nullable())
+});
+
+/**
+ * The Engagement tracking consent of each Destination of a contact (its email address)
+ */
+export const zContactEngagementTracking = z.object({
+  destinations: z.array(zEngagementTrackingConsent)
 });
 
 /**
@@ -4592,6 +4659,7 @@ export const zSiteWorkspaceResource = z.object({
   postalAddress: z.string(),
   timezone: zTimeZoneName,
   requireConfirmedOptIn: z.boolean(),
+  engagementTrackingDefault: zEngagementTrackingDecision,
   role: zSiteMembershipRole,
   permissions: z.array(zPermission),
   suspendedAt: z.exactOptional(zTimestamp.nullable()),
@@ -6612,6 +6680,17 @@ export const zSiteDomainJoinSetPath = z.object({
  * The request has succeeded.
  */
 export const zSiteDomainJoinSetResponse = zSiteDomainJoinResource;
+
+export const zSiteWorkspacesSetEngagementTrackingDefaultBody = zSiteSetEngagementTrackingDefaultInput;
+
+export const zSiteWorkspacesSetEngagementTrackingDefaultPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWorkspacesSetEngagementTrackingDefaultResponse = zSiteWorkspaceResource;
 
 export const zSiteEventsListPath = z.object({
   workspaceId: zWorkspaceId

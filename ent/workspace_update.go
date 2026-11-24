@@ -319,6 +319,20 @@ func (_u *WorkspaceUpdate) ClearTimezone() *WorkspaceUpdate {
 	return _u
 }
 
+// SetEngagementTrackingDefault sets the "engagement_tracking_default" field.
+func (_u *WorkspaceUpdate) SetEngagementTrackingDefault(v workspace.EngagementTrackingDefault) *WorkspaceUpdate {
+	_u.mutation.SetEngagementTrackingDefault(v)
+	return _u
+}
+
+// SetNillableEngagementTrackingDefault sets the "engagement_tracking_default" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableEngagementTrackingDefault(v *workspace.EngagementTrackingDefault) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetEngagementTrackingDefault(*v)
+	}
+	return _u
+}
+
 // SetReportingCurrency sets the "reporting_currency" field.
 func (_u *WorkspaceUpdate) SetReportingCurrency(v string) *WorkspaceUpdate {
 	_u.mutation.SetReportingCurrency(v)
@@ -2571,6 +2585,11 @@ func (_u *WorkspaceUpdate) check() error {
 			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "Workspace.timezone": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.EngagementTrackingDefault(); ok {
+		if err := workspace.EngagementTrackingDefaultValidator(v); err != nil {
+			return &ValidationError{Name: "engagement_tracking_default", err: fmt.Errorf(`ent: validator failed for field "Workspace.engagement_tracking_default": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.ReportingCurrency(); ok {
 		if err := workspace.ReportingCurrencyValidator(v); err != nil {
 			return &ValidationError{Name: "reporting_currency", err: fmt.Errorf(`ent: validator failed for field "Workspace.reporting_currency": %w`, err)}
@@ -2680,6 +2699,9 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.TimezoneCleared() {
 		_spec.ClearField(workspace.FieldTimezone, field.TypeString)
+	}
+	if value, ok := _u.mutation.EngagementTrackingDefault(); ok {
+		_spec.SetField(workspace.FieldEngagementTrackingDefault, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.ReportingCurrency(); ok {
 		_spec.SetField(workspace.FieldReportingCurrency, field.TypeString, value)
@@ -5422,6 +5444,20 @@ func (_u *WorkspaceUpdateOne) ClearTimezone() *WorkspaceUpdateOne {
 	return _u
 }
 
+// SetEngagementTrackingDefault sets the "engagement_tracking_default" field.
+func (_u *WorkspaceUpdateOne) SetEngagementTrackingDefault(v workspace.EngagementTrackingDefault) *WorkspaceUpdateOne {
+	_u.mutation.SetEngagementTrackingDefault(v)
+	return _u
+}
+
+// SetNillableEngagementTrackingDefault sets the "engagement_tracking_default" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableEngagementTrackingDefault(v *workspace.EngagementTrackingDefault) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetEngagementTrackingDefault(*v)
+	}
+	return _u
+}
+
 // SetReportingCurrency sets the "reporting_currency" field.
 func (_u *WorkspaceUpdateOne) SetReportingCurrency(v string) *WorkspaceUpdateOne {
 	_u.mutation.SetReportingCurrency(v)
@@ -7687,6 +7723,11 @@ func (_u *WorkspaceUpdateOne) check() error {
 			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "Workspace.timezone": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.EngagementTrackingDefault(); ok {
+		if err := workspace.EngagementTrackingDefaultValidator(v); err != nil {
+			return &ValidationError{Name: "engagement_tracking_default", err: fmt.Errorf(`ent: validator failed for field "Workspace.engagement_tracking_default": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.ReportingCurrency(); ok {
 		if err := workspace.ReportingCurrencyValidator(v); err != nil {
 			return &ValidationError{Name: "reporting_currency", err: fmt.Errorf(`ent: validator failed for field "Workspace.reporting_currency": %w`, err)}
@@ -7813,6 +7854,9 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	}
 	if _u.mutation.TimezoneCleared() {
 		_spec.ClearField(workspace.FieldTimezone, field.TypeString)
+	}
+	if value, ok := _u.mutation.EngagementTrackingDefault(); ok {
+		_spec.SetField(workspace.FieldEngagementTrackingDefault, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.ReportingCurrency(); ok {
 		_spec.SetField(workspace.FieldReportingCurrency, field.TypeString, value)

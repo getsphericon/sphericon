@@ -492,6 +492,7 @@
   kind: broadcast
   idempotency_key: 'broadcast:1005'
   channel: email
+  destination: sophia.python@codebasics.dev
   contact_id: 105
   sending_source: broadcasts
   status: sent
@@ -506,6 +507,7 @@
   kind: broadcast
   idempotency_key: 'broadcast:1006'
   channel: email
+  destination: mason.sql@codebasics.dev
   contact_id: 106
   sending_source: broadcasts
   status: sent
@@ -4517,6 +4519,21 @@
   workspace_id: 1
   created_at: '{{daysAgo 400}}'
   updated_at: '{{daysAgo 400}}'
+# Alice's emails of two Automations, sent outside the analytics windows, tracked like a Broadcast's (ADR 0053): one of the Welcome series
+# (it starts on `signup`) and one of the On open Automation, whose own open must not enroll it.
+- id: 5704 # fixture: OutboundMessageTrackingWithdrawn
+  kind: transactional
+  idempotency_key: 'transactional:withdrawn:5704'
+  channel: email
+  destination: withdrawn@acme.example
+  status: sent
+  sent_at: '{{daysAgo 400}}'
+  claimed_at: '{{daysAgo 400}}'
+  tracked: true
+  tracking_withdrawn_at: '{{daysAgo 300}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 400}}'
+  updated_at: '{{daysAgo 300}}'
 # Alice's emails of two Automations, sent outside the analytics windows, tracked like a Broadcast's (ADR 0053): one of the Welcome series
 # (it starts on `signup`) and one of the On open Automation, whose own open must not enroll it.
 - id: 5701 # fixture: OutboundMessageAutomationTracked

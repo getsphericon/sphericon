@@ -418,6 +418,40 @@ func (_u *OutboundMessageUpdate) SetNillableCaptured(v *bool) *OutboundMessageUp
 	return _u
 }
 
+// SetTracked sets the "tracked" field.
+func (_u *OutboundMessageUpdate) SetTracked(v bool) *OutboundMessageUpdate {
+	_u.mutation.SetTracked(v)
+	return _u
+}
+
+// SetNillableTracked sets the "tracked" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableTracked(v *bool) *OutboundMessageUpdate {
+	if v != nil {
+		_u.SetTracked(*v)
+	}
+	return _u
+}
+
+// SetTrackingWithdrawnAt sets the "tracking_withdrawn_at" field.
+func (_u *OutboundMessageUpdate) SetTrackingWithdrawnAt(v time.Time) *OutboundMessageUpdate {
+	_u.mutation.SetTrackingWithdrawnAt(v)
+	return _u
+}
+
+// SetNillableTrackingWithdrawnAt sets the "tracking_withdrawn_at" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableTrackingWithdrawnAt(v *time.Time) *OutboundMessageUpdate {
+	if v != nil {
+		_u.SetTrackingWithdrawnAt(*v)
+	}
+	return _u
+}
+
+// ClearTrackingWithdrawnAt clears the value of the "tracking_withdrawn_at" field.
+func (_u *OutboundMessageUpdate) ClearTrackingWithdrawnAt() *OutboundMessageUpdate {
+	_u.mutation.ClearTrackingWithdrawnAt()
+	return _u
+}
+
 // SetBroadcastID sets the "broadcast_id" field.
 func (_u *OutboundMessageUpdate) SetBroadcastID(v int64) *OutboundMessageUpdate {
 	_u.mutation.SetBroadcastID(v)
@@ -933,6 +967,15 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if value, ok := _u.mutation.Captured(); ok {
 		_spec.SetField(outboundmessage.FieldCaptured, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Tracked(); ok {
+		_spec.SetField(outboundmessage.FieldTracked, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.TrackingWithdrawnAt(); ok {
+		_spec.SetField(outboundmessage.FieldTrackingWithdrawnAt, field.TypeTime, value)
+	}
+	if _u.mutation.TrackingWithdrawnAtCleared() {
+		_spec.ClearField(outboundmessage.FieldTrackingWithdrawnAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.AutomationStepID(); ok {
 		_spec.SetField(outboundmessage.FieldAutomationStepID, field.TypeString, value)
@@ -1659,6 +1702,40 @@ func (_u *OutboundMessageUpdateOne) SetNillableCaptured(v *bool) *OutboundMessag
 	return _u
 }
 
+// SetTracked sets the "tracked" field.
+func (_u *OutboundMessageUpdateOne) SetTracked(v bool) *OutboundMessageUpdateOne {
+	_u.mutation.SetTracked(v)
+	return _u
+}
+
+// SetNillableTracked sets the "tracked" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableTracked(v *bool) *OutboundMessageUpdateOne {
+	if v != nil {
+		_u.SetTracked(*v)
+	}
+	return _u
+}
+
+// SetTrackingWithdrawnAt sets the "tracking_withdrawn_at" field.
+func (_u *OutboundMessageUpdateOne) SetTrackingWithdrawnAt(v time.Time) *OutboundMessageUpdateOne {
+	_u.mutation.SetTrackingWithdrawnAt(v)
+	return _u
+}
+
+// SetNillableTrackingWithdrawnAt sets the "tracking_withdrawn_at" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableTrackingWithdrawnAt(v *time.Time) *OutboundMessageUpdateOne {
+	if v != nil {
+		_u.SetTrackingWithdrawnAt(*v)
+	}
+	return _u
+}
+
+// ClearTrackingWithdrawnAt clears the value of the "tracking_withdrawn_at" field.
+func (_u *OutboundMessageUpdateOne) ClearTrackingWithdrawnAt() *OutboundMessageUpdateOne {
+	_u.mutation.ClearTrackingWithdrawnAt()
+	return _u
+}
+
 // SetBroadcastID sets the "broadcast_id" field.
 func (_u *OutboundMessageUpdateOne) SetBroadcastID(v int64) *OutboundMessageUpdateOne {
 	_u.mutation.SetBroadcastID(v)
@@ -2204,6 +2281,15 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 	}
 	if value, ok := _u.mutation.Captured(); ok {
 		_spec.SetField(outboundmessage.FieldCaptured, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Tracked(); ok {
+		_spec.SetField(outboundmessage.FieldTracked, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.TrackingWithdrawnAt(); ok {
+		_spec.SetField(outboundmessage.FieldTrackingWithdrawnAt, field.TypeTime, value)
+	}
+	if _u.mutation.TrackingWithdrawnAtCleared() {
+		_spec.ClearField(outboundmessage.FieldTrackingWithdrawnAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.AutomationStepID(); ok {
 		_spec.SetField(outboundmessage.FieldAutomationStepID, field.TypeString, value)

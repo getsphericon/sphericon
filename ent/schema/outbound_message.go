@@ -165,6 +165,18 @@ func (OutboundMessage) Fields() []ent.Field {
 		// send from the sender's own capability, so it outlives the Integration's state and
 		// every report can say so without joining to the provider.
 		field.Bool("captured").Default(false).Annotations(Attribute(reasonFact)),
+		// Whether the message went out tracked (ADR 0120): with the open pixel and its links
+		// rewritten (email), its links made Short tracked links (SMS, Telegram). Decided at render, in
+		// the send chokepoint, from the surface and the Destination's effective consent, and written
+		// before the provider is called; a retry of the same row only ever lowers it, never raises it.
+		// True until a render decides, so it says what went out on a sent message only. A message is
+		// tracked while this holds and tracking_withdrawn_at is NULL (outboundmessages.IsTracked).
+		field.Bool("tracked").Default(true).
+			Annotations(Attribute("what the message went out as, decided at its render; a later render only lowers it and no move depends on it")),
+		// When the message's tracking was withdrawn (ADR 0120): by a refusal of its Destination or by
+		// the Workspace's default turned to `dont_track`. Recorded once and never cleared: nothing
+		// gives a message its tracking back.
+		field.Time("tracking_withdrawn_at").Optional().Nillable().Annotations(Latch()),
 		// Surface provenance, foreign keys declared in Edges.
 		field.Int64("broadcast_id").Optional().Nillable(),
 		field.Int64("broadcast_recipient_id").Optional().Nillable(),

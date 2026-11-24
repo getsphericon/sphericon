@@ -1064,6 +1064,16 @@ export const ContactAttribute = {
 export type ContactAttribute = typeof ContactAttribute[keyof typeof ContactAttribute];
 
 /**
+ * The Engagement tracking consent of each Destination of a contact (its email address)
+ */
+export type ContactEngagementTracking = {
+  /**
+   * One entry per Destination of the contact; empty when it has none
+   */
+  destinations: Array<EngagementTrackingConsent>;
+};
+
+/**
  * The contact's place in one broadcast's audience (how its send ended, and whether it was opened or clicked, is in `outboundMessages`)
  */
 export type ContactExportBroadcastRecipient = {
@@ -1371,6 +1381,16 @@ export type ContactExportOutboundMessage = {
    * True when the message went through a Test inbox: captured, not delivered
    */
   captured: boolean;
+  /**
+   * Whether the message went out tracked: with an open pixel and its links rewritten, or its
+   * links made Short tracked links (ADR 0120)
+   */
+  tracked: boolean;
+  /**
+   * When the message's tracking was withdrawn (a refusal of the contact's, or the Workspace's
+   * default turned to `dont_track`); null while it was not
+   */
+  trackingWithdrawnAt?: Timestamp | null;
   /**
    * Broadcast that produced the message
    */
@@ -2074,6 +2094,99 @@ export type EndStepInput = {
   id?: StepId;
   type: 'end';
 };
+
+/**
+ * A Channel whose messages track opens and clicks, so a Destination on it can consent to being tracked (ADR 0120)
+ */
+export const EngagementTrackingChannel = {
+  EMAIL: 'email',
+  SMS: 'sms',
+  TELEGRAM: 'telegram'
+} as const;
+
+/**
+ * A Channel whose messages track opens and clicks, so a Destination on it can consent to being tracked (ADR 0120)
+ */
+export type EngagementTrackingChannel = typeof EngagementTrackingChannel[keyof typeof EngagementTrackingChannel];
+
+/**
+ * The Engagement tracking consent of one Destination on one Channel (ADR 0120)
+ */
+export type EngagementTrackingConsent = {
+  /**
+   * The Channel
+   */
+  channel: EngagementTrackingChannel;
+  /**
+   * Normalized destination: the lower-cased email address on `email`
+   */
+  destination: string;
+  /**
+   * The consent recorded, or `default` where none is
+   */
+  state: EngagementTrackingReading;
+  /**
+   * Who recorded the consent; absent while none is recorded
+   */
+  provenance?: EngagementTrackingProvenance | null;
+  /**
+   * Whether the Destination's opens and clicks are tracked: what the consent says, else the Workspace's default
+   */
+  effective: EngagementTrackingDecision;
+  /**
+   * When the consent last changed; absent while none is recorded
+   */
+  updatedAt?: Timestamp | null;
+};
+
+/**
+ * Whether a Destination's opens and clicks are tracked
+ */
+export const EngagementTrackingDecision = { TRACK: 'track', DONT_TRACK: 'dont_track' } as const;
+
+/**
+ * Whether a Destination's opens and clicks are tracked
+ */
+export type EngagementTrackingDecision = typeof EngagementTrackingDecision[keyof typeof EngagementTrackingDecision];
+
+/**
+ * Who recorded an Engagement tracking consent: the person on a page reached from a message (page), a member of the Workspace on the Contact card (manual), the customer through the API or an import (imported), or an On-site form's checkbox (onsite_form). A `denied` applies from any of them; only the person lifts one
+ */
+export const EngagementTrackingProvenance = {
+  PAGE: 'page',
+  MANUAL: 'manual',
+  IMPORTED: 'imported',
+  ONSITE_FORM: 'onsite_form'
+} as const;
+
+/**
+ * Who recorded an Engagement tracking consent: the person on a page reached from a message (page), a member of the Workspace on the Contact card (manual), the customer through the API or an import (imported), or an On-site form's checkbox (onsite_form). A `denied` applies from any of them; only the person lifts one
+ */
+export type EngagementTrackingProvenance = typeof EngagementTrackingProvenance[keyof typeof EngagementTrackingProvenance];
+
+/**
+ * What a Destination's Engagement tracking consent reads as: `granted` or `denied` as recorded, or `default` where nothing is recorded and the Workspace's default decides
+ */
+export const EngagementTrackingReading = {
+  GRANTED: 'granted',
+  DENIED: 'denied',
+  DEFAULT: 'default'
+} as const;
+
+/**
+ * What a Destination's Engagement tracking consent reads as: `granted` or `denied` as recorded, or `default` where nothing is recorded and the Workspace's default decides
+ */
+export type EngagementTrackingReading = typeof EngagementTrackingReading[keyof typeof EngagementTrackingReading];
+
+/**
+ * Whether a Destination agreed to have its opens and clicks tracked (ADR 0120)
+ */
+export const EngagementTrackingState = { GRANTED: 'granted', DENIED: 'denied' } as const;
+
+/**
+ * Whether a Destination agreed to have its opens and clicks tracked (ADR 0120)
+ */
+export type EngagementTrackingState = typeof EngagementTrackingState[keyof typeof EngagementTrackingState];
 
 /**
  * What an HTTP step recorded when it failed an Enrollment; absent on any other Enrollment.
@@ -7211,6 +7324,22 @@ export type SiteSetDomainJoinInput = {
 };
 
 /**
+ * Set the Engagement tracking default (ADR 0120)
+ */
+export type SiteSetEngagementTrackingDefaultInput = {
+  /**
+   * The Workspace's `revision` the change was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
+  /**
+   * `track`: a Destination with no consent recorded is tracked; `dont_track`: it is tracked only
+   * once it grants its consent. It decides every message rendered from then on, and every open or
+   * click recorded from then on.
+   */
+  engagementTrackingDefault: EngagementTrackingDecision;
+};
+
+/**
  * The Workspace's Setup checklist: its steps are read now, never ticked by hand, and the read
  * that first finds every step done stamps the Workspace, which keeps it complete for good
  */
@@ -7951,6 +8080,11 @@ export type SiteWorkspaceResource = {
    * email set up.
    */
   requireConfirmedOptIn: boolean;
+  /**
+   * The Engagement tracking default (ADR 0120): whether a Destination with no Engagement tracking
+   * consent recorded has its opens and clicks tracked. `track` until an Owner or Admin changes it.
+   */
+  engagementTrackingDefault: EngagementTrackingDecision;
   /**
    * The authenticated User's role in this Workspace (from their Membership). It
    * rides the Workspace list so role-gated UI is known even while the Workspace's
@@ -14771,6 +14905,38 @@ export type SiteDomainJoinSetResponses = {
 };
 
 export type SiteDomainJoinSetResponse = SiteDomainJoinSetResponses[keyof SiteDomainJoinSetResponses];
+
+export type SiteWorkspacesSetEngagementTrackingDefaultData = {
+  body: SiteSetEngagementTrackingDefaultInput;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/engagement-tracking-default';
+};
+
+export type SiteWorkspacesSetEngagementTrackingDefaultErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteWorkspacesSetEngagementTrackingDefaultError = SiteWorkspacesSetEngagementTrackingDefaultErrors[keyof SiteWorkspacesSetEngagementTrackingDefaultErrors];
+
+export type SiteWorkspacesSetEngagementTrackingDefaultResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteWorkspaceResource;
+};
+
+export type SiteWorkspacesSetEngagementTrackingDefaultResponse = SiteWorkspacesSetEngagementTrackingDefaultResponses[keyof SiteWorkspacesSetEngagementTrackingDefaultResponses];
 
 export type SiteEventsListData = {
   body?: never;

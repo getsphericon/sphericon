@@ -77,6 +77,10 @@ type OutboundMessage struct {
 	ClickedAt *time.Time `json:"clicked_at,omitempty"`
 	// Captured holds the value of the "captured" field.
 	Captured bool `json:"captured,omitempty"`
+	// Tracked holds the value of the "tracked" field.
+	Tracked bool `json:"tracked,omitempty"`
+	// TrackingWithdrawnAt holds the value of the "tracking_withdrawn_at" field.
+	TrackingWithdrawnAt *time.Time `json:"tracking_withdrawn_at,omitempty"`
 	// BroadcastID holds the value of the "broadcast_id" field.
 	BroadcastID *int64 `json:"broadcast_id,omitempty"`
 	// BroadcastRecipientID holds the value of the "broadcast_recipient_id" field.
@@ -245,13 +249,13 @@ func (*OutboundMessage) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case outboundmessage.FieldCaptured:
+		case outboundmessage.FieldCaptured, outboundmessage.FieldTracked:
 			values[i] = new(sql.NullBool)
 		case outboundmessage.FieldID, outboundmessage.FieldWorkspaceID, outboundmessage.FieldContactID, outboundmessage.FieldBroadcastID, outboundmessage.FieldBroadcastRecipientID, outboundmessage.FieldAutomationID, outboundmessage.FieldAutomationRunID, outboundmessage.FieldAutomationVersionID, outboundmessage.FieldIntegrationID, outboundmessage.FieldTemplateID:
 			values[i] = new(sql.NullInt64)
 		case outboundmessage.FieldKind, outboundmessage.FieldIdempotencyKey, outboundmessage.FieldChannel, outboundmessage.FieldDestination, outboundmessage.FieldSendingSource, outboundmessage.FieldSendingDomain, outboundmessage.FieldProviderMessageID, outboundmessage.FieldStatus, outboundmessage.FieldSkippedReason, outboundmessage.FieldFailure, outboundmessage.FieldUndeliveredCode, outboundmessage.FieldAutomationStepID, outboundmessage.FieldRequestDigest, outboundmessage.FieldSubject, outboundmessage.FieldAppOrigin:
 			values[i] = new(sql.NullString)
-		case outboundmessage.FieldCreatedAt, outboundmessage.FieldUpdatedAt, outboundmessage.FieldClaimedAt, outboundmessage.FieldSentAt, outboundmessage.FieldDeliveredAt, outboundmessage.FieldBouncedAt, outboundmessage.FieldComplainedAt, outboundmessage.FieldUndeliveredAt, outboundmessage.FieldOpenedAt, outboundmessage.FieldClickedAt:
+		case outboundmessage.FieldCreatedAt, outboundmessage.FieldUpdatedAt, outboundmessage.FieldClaimedAt, outboundmessage.FieldSentAt, outboundmessage.FieldDeliveredAt, outboundmessage.FieldBouncedAt, outboundmessage.FieldComplainedAt, outboundmessage.FieldUndeliveredAt, outboundmessage.FieldOpenedAt, outboundmessage.FieldClickedAt, outboundmessage.FieldTrackingWithdrawnAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -431,6 +435,19 @@ func (_m *OutboundMessage) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field captured", values[i])
 			} else if value.Valid {
 				_m.Captured = value.Bool
+			}
+		case outboundmessage.FieldTracked:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field tracked", values[i])
+			} else if value.Valid {
+				_m.Tracked = value.Bool
+			}
+		case outboundmessage.FieldTrackingWithdrawnAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field tracking_withdrawn_at", values[i])
+			} else if value.Valid {
+				_m.TrackingWithdrawnAt = new(time.Time)
+				*_m.TrackingWithdrawnAt = value.Time
 			}
 		case outboundmessage.FieldBroadcastID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -694,6 +711,14 @@ func (_m *OutboundMessage) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("captured=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Captured))
+	builder.WriteString(", ")
+	builder.WriteString("tracked=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Tracked))
+	builder.WriteString(", ")
+	if v := _m.TrackingWithdrawnAt; v != nil {
+		builder.WriteString("tracking_withdrawn_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
 	if v := _m.BroadcastID; v != nil {
 		builder.WriteString("broadcast_id=")

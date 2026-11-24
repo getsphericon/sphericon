@@ -4,7 +4,7 @@
 package resources
 
 import (
-	jsontext "encoding/json/jsontext"
+	"encoding/json"
 	"fmt"
 	ent "github.com/getsphericon/sphericon/ent"
 	automation "github.com/getsphericon/sphericon/ent/automation"
@@ -23,6 +23,7 @@ import (
 	trackingdomain "github.com/getsphericon/sphericon/ent/trackingdomain"
 	unsubscribe "github.com/getsphericon/sphericon/ent/unsubscribe"
 	webhookendpoint "github.com/getsphericon/sphericon/ent/webhookendpoint"
+	workspace "github.com/getsphericon/sphericon/ent/workspace"
 	external "github.com/getsphericon/sphericon/gen/external"
 	condition "github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
@@ -868,13 +869,14 @@ func (c *ConverterImpl) EngagementTrackingConsentToResource(source engagementtra
 	externalapiEngagementTrackingConsent.UpdatedAt = optNilTimestamp(source.UpdatedAt)
 	return externalapiEngagementTrackingConsent
 }
-func (c *ConverterImpl) EngagementTrackingDecisionToResource(source engagementtracking.Decision) external.EngagementTrackingDecision {
+func (c *ConverterImpl) EngagementTrackingDecisionToResource(source workspace.EngagementTrackingDefault) external.EngagementTrackingDecision {
 	var externalapiEngagementTrackingDecision external.EngagementTrackingDecision
 	switch source {
-	case engagementtracking.DontTrack:
-		externalapiEngagementTrackingDecision = external.EngagementTrackingDecisionDontTrack
-	case engagementtracking.Track:
+	case workspace.DefaultEngagementTrackingDefault:
 		externalapiEngagementTrackingDecision = external.EngagementTrackingDecisionTrack
+	case workspace.EngagementTrackingDefaultDontTrack:
+		externalapiEngagementTrackingDecision = external.EngagementTrackingDecisionDontTrack
+	// Skipped EngagementTrackingDefaultTrack(track) -> EngagementTrackingDecisionTrack(track) because it duplicates DefaultEngagementTrackingDefault(track) -> EngagementTrackingDecisionTrack(track)
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -1241,6 +1243,8 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) ext
 		externalapiContactExportOutboundMessage.OpenedAt = optNilTimestamp((*source).OpenedAt)
 		externalapiContactExportOutboundMessage.ClickedAt = optNilTimestamp((*source).ClickedAt)
 		externalapiContactExportOutboundMessage.Captured = (*source).Captured
+		externalapiContactExportOutboundMessage.Tracked = (*source).Tracked
+		externalapiContactExportOutboundMessage.TrackingWithdrawnAt = optNilTimestamp((*source).TrackingWithdrawnAt)
 		externalapiContactExportOutboundMessage.BroadcastId = optNilEntityID((*source).BroadcastID)
 		externalapiContactExportOutboundMessage.AutomationId = optNilEntityID((*source).AutomationID)
 		externalapiContactExportOutboundMessage.AutomationStepId = optNilStepID((*source).AutomationStepID)
@@ -2130,6 +2134,7 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) external.Work
 		externalapiWorkspaceResource.Name = (*source).Name
 		externalapiWorkspaceResource.PostalAddress = (*source).PostalAddress
 		externalapiWorkspaceResource.RequireConfirmedOptIn = (*source).RequireConfirmedOptIn
+		externalapiWorkspaceResource.EngagementTrackingDefault = c.EngagementTrackingDecisionToResource((*source).EngagementTrackingDefault)
 		externalapiWorkspaceResource.Timezone = workspaceTimezone((*source).Timezone)
 		// externalapiWorkspaceResource.SendCap: ignore
 		externalapiWorkspaceResource.Revision = revision((*source).Revision)
@@ -2163,7 +2168,7 @@ func (c *ConverterImpl) automationsVersionStepFiguresToExternalapiAutomationVers
 }
 func (c *ConverterImpl) emaildocAgentAttrToExternalapiEmailSchemaAttribute(source emaildoc.AgentAttr) external.EmailSchemaAttribute {
 	var externalapiEmailSchemaAttribute external.EmailSchemaAttribute
-	externalapiEmailSchemaAttribute.Default = c.jsontextValueToJxRaw(source.Default)
+	externalapiEmailSchemaAttribute.Default = c.jsonRawMessageToJxRaw(source.Default)
 	externalapiEmailSchemaAttribute.Type = source.Type
 	if source.Allowed != nil {
 		externalapiEmailSchemaAttribute.Allowed = make([]string, len(source.Allowed))
@@ -2174,7 +2179,7 @@ func (c *ConverterImpl) emaildocAgentAttrToExternalapiEmailSchemaAttribute(sourc
 	externalapiEmailSchemaAttribute.Rule = source.Rule
 	return externalapiEmailSchemaAttribute
 }
-func (c *ConverterImpl) jsontextValueToJxRaw(source jsontext.Value) jx.Raw {
+func (c *ConverterImpl) jsonRawMessageToJxRaw(source json.RawMessage) jx.Raw {
 	var jxRaw jx.Raw
 	if source != nil {
 		jxRaw = make(jx.Raw, len(source))

@@ -48,6 +48,8 @@ type Workspace struct {
 	RetentionDays *int `json:"retention_days,omitempty"`
 	// Timezone holds the value of the "timezone" field.
 	Timezone *string `json:"timezone,omitempty"`
+	// EngagementTrackingDefault holds the value of the "engagement_tracking_default" field.
+	EngagementTrackingDefault workspace.EngagementTrackingDefault `json:"engagement_tracking_default,omitempty"`
 	// ReportingCurrency holds the value of the "reporting_currency" field.
 	ReportingCurrency *string `json:"reporting_currency,omitempty"`
 	// AttributionWindowDays holds the value of the "attribution_window_days" field.
@@ -701,7 +703,7 @@ func (*Workspace) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case workspace.FieldID, workspace.FieldRevision, workspace.FieldRetentionDays, workspace.FieldAttributionWindowDays, workspace.FieldSendCap:
 			values[i] = new(sql.NullInt64)
-		case workspace.FieldName, workspace.FieldPublicID, workspace.FieldCollectKey, workspace.FieldConfirmationFromEmail, workspace.FieldConfirmationFromName, workspace.FieldConfirmationSubject, workspace.FieldConfirmationIntro, workspace.FieldPostalAddress, workspace.FieldTimezone, workspace.FieldReportingCurrency, workspace.FieldSuspendedByKind, workspace.FieldSuspendedByID, workspace.FieldSuspensionReason:
+		case workspace.FieldName, workspace.FieldPublicID, workspace.FieldCollectKey, workspace.FieldConfirmationFromEmail, workspace.FieldConfirmationFromName, workspace.FieldConfirmationSubject, workspace.FieldConfirmationIntro, workspace.FieldPostalAddress, workspace.FieldTimezone, workspace.FieldEngagementTrackingDefault, workspace.FieldReportingCurrency, workspace.FieldSuspendedByKind, workspace.FieldSuspendedByID, workspace.FieldSuspensionReason:
 			values[i] = new(sql.NullString)
 		case workspace.FieldCreatedAt, workspace.FieldUpdatedAt, workspace.FieldDiscardedAt, workspace.FieldSecondFactorRequiredAt, workspace.FieldErasedAt, workspace.FieldSuspendedAt, workspace.FieldClearedAt:
 			values[i] = new(sql.NullTime)
@@ -822,6 +824,12 @@ func (_m *Workspace) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Timezone = new(string)
 				*_m.Timezone = value.String
+			}
+		case workspace.FieldEngagementTrackingDefault:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field engagement_tracking_default", values[i])
+			} else if value.Valid {
+				_m.EngagementTrackingDefault = workspace.EngagementTrackingDefault(value.String)
 			}
 		case workspace.FieldReportingCurrency:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -1272,6 +1280,9 @@ func (_m *Workspace) String() string {
 		builder.WriteString("timezone=")
 		builder.WriteString(*v)
 	}
+	builder.WriteString(", ")
+	builder.WriteString("engagement_tracking_default=")
+	builder.WriteString(fmt.Sprintf("%v", _m.EngagementTrackingDefault))
 	builder.WriteString(", ")
 	if v := _m.ReportingCurrency; v != nil {
 		builder.WriteString("reporting_currency=")

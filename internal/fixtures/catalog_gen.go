@@ -3221,6 +3221,8 @@ const (
 	OutboundMessageGlobexDestination = "pat@globex.test"
 	// OutboundMessageGlobexID is from fixtures/outbound_messages.
 	OutboundMessageGlobexID = 900
+	// OutboundMessageMailgunAliceDestination is from fixtures/outbound_messages.
+	OutboundMessageMailgunAliceDestination = "alice@example.com"
 	// OutboundMessageMailgunAliceID is from fixtures/outbound_messages.
 	OutboundMessageMailgunAliceID = 812
 	// OutboundMessageMovedOriginDestination is from fixtures/outbound_messages.
@@ -3231,8 +3233,12 @@ const (
 	OutboundMessageParkedClaimDestination = "bob@example.com"
 	// OutboundMessageParkedClaimID is from fixtures/outbound_messages.
 	OutboundMessageParkedClaimID = 5711
+	// OutboundMessagePostmarkAliceDestination is from fixtures/outbound_messages.
+	OutboundMessagePostmarkAliceDestination = "alice@example.com"
 	// OutboundMessagePostmarkAliceID is from fixtures/outbound_messages.
 	OutboundMessagePostmarkAliceID = 811
+	// OutboundMessageSesAliceDestination is from fixtures/outbound_messages.
+	OutboundMessageSesAliceDestination = "alice@example.com"
 	// OutboundMessageSesAliceID is from fixtures/outbound_messages.
 	OutboundMessageSesAliceID = 810
 	// OutboundMessageSkippedDestination is from fixtures/outbound_messages.
@@ -3251,8 +3257,16 @@ const (
 	OutboundMessageTrackingSampleDestination = "alice.tracking@example.com"
 	// OutboundMessageTrackingSampleID is from fixtures/outbound_messages.
 	OutboundMessageTrackingSampleID = 5700
+	// OutboundMessageTrackingWithdrawnDestination is from fixtures/outbound_messages.
+	OutboundMessageTrackingWithdrawnDestination = "withdrawn@acme.example"
+	// OutboundMessageTrackingWithdrawnID is from fixtures/outbound_messages.
+	OutboundMessageTrackingWithdrawnID = 5704
+	// OutboundMessageUnengagedFirstDestination is from fixtures/outbound_messages.
+	OutboundMessageUnengagedFirstDestination = "sophia.python@codebasics.dev"
 	// OutboundMessageUnengagedFirstID is from fixtures/outbound_messages.
 	OutboundMessageUnengagedFirstID = 11005
+	// OutboundMessageUnengagedSecondDestination is from fixtures/outbound_messages.
+	OutboundMessageUnengagedSecondDestination = "mason.sql@codebasics.dev"
 	// OutboundMessageUnengagedSecondID is from fixtures/outbound_messages.
 	OutboundMessageUnengagedSecondID = 11006
 	// OutboundMessageWelcomeDestination is from fixtures/outbound_messages.

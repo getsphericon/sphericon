@@ -25,6 +25,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
@@ -98,6 +99,13 @@ type UpdateInput struct {
 type SetTimezoneInput struct {
 	Revision int64
 	Zone     string
+}
+
+// SetEngagementTrackingDefaultInput is a change of the Workspace's Engagement tracking default (ADR
+// 0120), made on Revision (ADR 0119).
+type SetEngagementTrackingDefaultInput struct {
+	Revision int64
+	Default  workspace.EngagementTrackingDefault
 }
 
 // SetSecondFactorRequirementInput switches the Two-factor requirement on (Required) or off. Switching
@@ -221,6 +229,16 @@ func (u *UseCase) Update(ctx context.Context, s *ent.Scoped, c Caller, in Update
 // and answers its View for the caller.
 func (u *UseCase) SetTimezone(ctx context.Context, s *ent.Scoped, c Caller, in SetTimezoneInput) (View, error) {
 	ws, err := u.workspaces.SetTimezone(ctx, s, in.Revision, in.Zone)
+	if err != nil {
+		return View{}, err
+	}
+	return u.view(ctx, s, c, ws)
+}
+
+// SetEngagementTrackingDefault sets the Engagement tracking default of the Workspace of s
+// (workspaces.Module.SetEngagementTrackingDefault, ADR 0120) and answers its View for the caller.
+func (u *UseCase) SetEngagementTrackingDefault(ctx context.Context, s *ent.Scoped, c Caller, in SetEngagementTrackingDefaultInput) (View, error) {
+	ws, err := u.workspaces.SetEngagementTrackingDefault(ctx, s, in.Revision, in.Default)
 	if err != nil {
 		return View{}, err
 	}

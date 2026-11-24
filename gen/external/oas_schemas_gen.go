@@ -6701,6 +6701,12 @@ type ContactExportOutboundMessage struct {
 	ClickedAt OptNilTimestamp `json:"clickedAt"`
 	// True when the message went through a Test inbox: captured, not delivered.
 	Captured bool `json:"captured"`
+	// Whether the message went out tracked: with an open pixel and its links rewritten, or its links made
+	// Short tracked links (ADR 0120).
+	Tracked bool `json:"tracked"`
+	// When the message's tracking was withdrawn (a refusal of the contact's, or the Workspace's default
+	// turned to `dont_track`); null while it was not.
+	TrackingWithdrawnAt OptNilTimestamp `json:"trackingWithdrawnAt"`
 	// Broadcast that produced the message.
 	BroadcastId OptNilEntityId `json:"broadcastId"`
 	// Automation that produced the message.
@@ -6811,6 +6817,16 @@ func (s *ContactExportOutboundMessage) GetClickedAt() OptNilTimestamp {
 // GetCaptured returns the value of Captured.
 func (s *ContactExportOutboundMessage) GetCaptured() bool {
 	return s.Captured
+}
+
+// GetTracked returns the value of Tracked.
+func (s *ContactExportOutboundMessage) GetTracked() bool {
+	return s.Tracked
+}
+
+// GetTrackingWithdrawnAt returns the value of TrackingWithdrawnAt.
+func (s *ContactExportOutboundMessage) GetTrackingWithdrawnAt() OptNilTimestamp {
+	return s.TrackingWithdrawnAt
 }
 
 // GetBroadcastId returns the value of BroadcastId.
@@ -6936,6 +6952,16 @@ func (s *ContactExportOutboundMessage) SetClickedAt(val OptNilTimestamp) {
 // SetCaptured sets the value of Captured.
 func (s *ContactExportOutboundMessage) SetCaptured(val bool) {
 	s.Captured = val
+}
+
+// SetTracked sets the value of Tracked.
+func (s *ContactExportOutboundMessage) SetTracked(val bool) {
+	s.Tracked = val
+}
+
+// SetTrackingWithdrawnAt sets the value of TrackingWithdrawnAt.
+func (s *ContactExportOutboundMessage) SetTrackingWithdrawnAt(val OptNilTimestamp) {
+	s.TrackingWithdrawnAt = val
 }
 
 // SetBroadcastId sets the value of BroadcastId.
@@ -29063,6 +29089,10 @@ type WorkspaceResource struct {
 	// off, email is single opt-in by the Workspace's choice. Read-only: only a person turns it on, in the
 	// console's Workspace settings, affirming that the current mailable list consented.
 	RequireConfirmedOptIn bool `json:"requireConfirmedOptIn"`
+	// The Engagement tracking default (ADR 0120): whether a Destination with no Engagement tracking
+	// consent recorded has its opens and clicks tracked. Read-only: only a person changes it, in the
+	// console's Workspace settings.
+	EngagementTrackingDefault EngagementTrackingDecision `json:"engagementTrackingDefault"`
 	// The IANA time zone every analytics report counts its days in (ADR 0057).
 	Timezone TimeZoneName `json:"timezone"`
 	// The Send cap the platform set on the Workspace, with its sends over the last 24 hours; null when no
@@ -29090,6 +29120,11 @@ func (s *WorkspaceResource) GetPostalAddress() string {
 // GetRequireConfirmedOptIn returns the value of RequireConfirmedOptIn.
 func (s *WorkspaceResource) GetRequireConfirmedOptIn() bool {
 	return s.RequireConfirmedOptIn
+}
+
+// GetEngagementTrackingDefault returns the value of EngagementTrackingDefault.
+func (s *WorkspaceResource) GetEngagementTrackingDefault() EngagementTrackingDecision {
+	return s.EngagementTrackingDefault
 }
 
 // GetTimezone returns the value of Timezone.
@@ -29125,6 +29160,11 @@ func (s *WorkspaceResource) SetPostalAddress(val string) {
 // SetRequireConfirmedOptIn sets the value of RequireConfirmedOptIn.
 func (s *WorkspaceResource) SetRequireConfirmedOptIn(val bool) {
 	s.RequireConfirmedOptIn = val
+}
+
+// SetEngagementTrackingDefault sets the value of EngagementTrackingDefault.
+func (s *WorkspaceResource) SetEngagementTrackingDefault(val EngagementTrackingDecision) {
+	s.EngagementTrackingDefault = val
 }
 
 // SetTimezone sets the value of Timezone.

@@ -10,6 +10,7 @@ import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts
 import { Route as generalRoute } from '../../../routes/workspaces/$workspaceId/settings/index.tsx'
 import { can } from '../../../utils/permissions.ts'
 import { DangerZoneSection } from './DangerZoneSection.tsx'
+import { EngagementTrackingDefaultSection } from './EngagementTrackingDefaultSection.tsx'
 import { RevenueSettingsSection } from './RevenueSettingsSection.tsx'
 import { SettingsFrame } from './SettingsFrame.tsx'
 import { GeneralEditForm, TimezoneEditForm } from './workspaceSettingsEditors.ts'
@@ -75,6 +76,7 @@ export function GeneralPage() {
             <TimezoneSection workspace={workspace} />
           </QueryBoundary>
           <RevenueSettingsSection workspace={workspace} />
+          <EngagementTrackingDefaultSection workspace={workspace} />
           <DangerZoneSection workspace={workspace} />
         </Stack>
       )}

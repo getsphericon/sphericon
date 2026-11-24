@@ -5186,6 +5186,12 @@ type ContactExportOutboundMessage struct {
 	ClickedAt OptNilTimestamp `json:"clickedAt"`
 	// True when the message went through a Test inbox: captured, not delivered.
 	Captured bool `json:"captured"`
+	// Whether the message went out tracked: with an open pixel and its links rewritten, or its links made
+	// Short tracked links (ADR 0120).
+	Tracked bool `json:"tracked"`
+	// When the message's tracking was withdrawn (a refusal of the contact's, or the Workspace's default
+	// turned to `dont_track`); null while it was not.
+	TrackingWithdrawnAt OptNilTimestamp `json:"trackingWithdrawnAt"`
 	// Broadcast that produced the message.
 	BroadcastId OptNilEntityId `json:"broadcastId"`
 	// Automation that produced the message.
@@ -5296,6 +5302,16 @@ func (s *ContactExportOutboundMessage) GetClickedAt() OptNilTimestamp {
 // GetCaptured returns the value of Captured.
 func (s *ContactExportOutboundMessage) GetCaptured() bool {
 	return s.Captured
+}
+
+// GetTracked returns the value of Tracked.
+func (s *ContactExportOutboundMessage) GetTracked() bool {
+	return s.Tracked
+}
+
+// GetTrackingWithdrawnAt returns the value of TrackingWithdrawnAt.
+func (s *ContactExportOutboundMessage) GetTrackingWithdrawnAt() OptNilTimestamp {
+	return s.TrackingWithdrawnAt
 }
 
 // GetBroadcastId returns the value of BroadcastId.
@@ -5421,6 +5437,16 @@ func (s *ContactExportOutboundMessage) SetClickedAt(val OptNilTimestamp) {
 // SetCaptured sets the value of Captured.
 func (s *ContactExportOutboundMessage) SetCaptured(val bool) {
 	s.Captured = val
+}
+
+// SetTracked sets the value of Tracked.
+func (s *ContactExportOutboundMessage) SetTracked(val bool) {
+	s.Tracked = val
+}
+
+// SetTrackingWithdrawnAt sets the value of TrackingWithdrawnAt.
+func (s *ContactExportOutboundMessage) SetTrackingWithdrawnAt(val OptNilTimestamp) {
+	s.TrackingWithdrawnAt = val
 }
 
 // SetBroadcastId sets the value of BroadcastId.
@@ -7571,6 +7597,49 @@ func (s *EndStepType) UnmarshalText(data []byte) error {
 	switch EndStepType(data) {
 	case EndStepTypeEnd:
 		*s = EndStepTypeEnd
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Whether a Destination's opens and clicks are tracked.
+// Ref: #/components/schemas/EngagementTrackingDecision
+type EngagementTrackingDecision string
+
+const (
+	EngagementTrackingDecisionTrack     EngagementTrackingDecision = "track"
+	EngagementTrackingDecisionDontTrack EngagementTrackingDecision = "dont_track"
+)
+
+// AllValues returns all EngagementTrackingDecision values.
+func (EngagementTrackingDecision) AllValues() []EngagementTrackingDecision {
+	return []EngagementTrackingDecision{
+		EngagementTrackingDecisionTrack,
+		EngagementTrackingDecisionDontTrack,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EngagementTrackingDecision) MarshalText() ([]byte, error) {
+	switch s {
+	case EngagementTrackingDecisionTrack:
+		return []byte(s), nil
+	case EngagementTrackingDecisionDontTrack:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EngagementTrackingDecision) UnmarshalText(data []byte) error {
+	switch EngagementTrackingDecision(data) {
+	case EngagementTrackingDecisionTrack:
+		*s = EngagementTrackingDecisionTrack
+		return nil
+	case EngagementTrackingDecisionDontTrack:
+		*s = EngagementTrackingDecisionDontTrack
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -30543,6 +30612,37 @@ func (s *SiteSetDomainJoinInput) SetEnabled(val bool) {
 	s.Enabled = val
 }
 
+// Set the Engagement tracking default (ADR 0120).
+// Ref: #/components/schemas/SiteSetEngagementTrackingDefaultInput
+type SiteSetEngagementTrackingDefaultInput struct {
+	// The Workspace's `revision` the change was made on (ADR 0119): the one it was read with.
+	Revision Revision `json:"revision"`
+	// `track`: a Destination with no consent recorded is tracked; `dont_track`: it is tracked only once it
+	// grants its consent. It decides every message rendered from then on, and every open or click recorded
+	// from then on.
+	EngagementTrackingDefault EngagementTrackingDecision `json:"engagementTrackingDefault"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *SiteSetEngagementTrackingDefaultInput) GetRevision() Revision {
+	return s.Revision
+}
+
+// GetEngagementTrackingDefault returns the value of EngagementTrackingDefault.
+func (s *SiteSetEngagementTrackingDefaultInput) GetEngagementTrackingDefault() EngagementTrackingDecision {
+	return s.EngagementTrackingDefault
+}
+
+// SetRevision sets the value of Revision.
+func (s *SiteSetEngagementTrackingDefaultInput) SetRevision(val Revision) {
+	s.Revision = val
+}
+
+// SetEngagementTrackingDefault sets the value of EngagementTrackingDefault.
+func (s *SiteSetEngagementTrackingDefaultInput) SetEngagementTrackingDefault(val EngagementTrackingDecision) {
+	s.EngagementTrackingDefault = val
+}
+
 // The Workspace's Setup checklist: its steps are read now, never ticked by hand, and the read that
 // first finds every step done stamps the Workspace, which keeps it complete for good.
 // Ref: #/components/schemas/SiteSetupProgress
@@ -32837,6 +32937,9 @@ type SiteWorkspaceResource struct {
 	// Whether email reaches an address only once it holds a Confirmation (confirmed opt-in, ADR 0013). Off
 	// until an Owner or Admin turns it on in the console, which needs the confirmation email set up.
 	RequireConfirmedOptIn bool `json:"requireConfirmedOptIn"`
+	// The Engagement tracking default (ADR 0120): whether a Destination with no Engagement tracking
+	// consent recorded has its opens and clicks tracked. `track` until an Owner or Admin changes it.
+	EngagementTrackingDefault EngagementTrackingDecision `json:"engagementTrackingDefault"`
 	// The authenticated User's role in this Workspace (from their Membership). It rides the Workspace list
 	// so role-gated UI is known even while the Workspace's own endpoints are withheld under a Two-factor
 	// requirement.
@@ -32925,6 +33028,11 @@ func (s *SiteWorkspaceResource) GetTimezone() TimeZoneName {
 // GetRequireConfirmedOptIn returns the value of RequireConfirmedOptIn.
 func (s *SiteWorkspaceResource) GetRequireConfirmedOptIn() bool {
 	return s.RequireConfirmedOptIn
+}
+
+// GetEngagementTrackingDefault returns the value of EngagementTrackingDefault.
+func (s *SiteWorkspaceResource) GetEngagementTrackingDefault() EngagementTrackingDecision {
+	return s.EngagementTrackingDefault
 }
 
 // GetRole returns the value of Role.
@@ -33045,6 +33153,11 @@ func (s *SiteWorkspaceResource) SetTimezone(val TimeZoneName) {
 // SetRequireConfirmedOptIn sets the value of RequireConfirmedOptIn.
 func (s *SiteWorkspaceResource) SetRequireConfirmedOptIn(val bool) {
 	s.RequireConfirmedOptIn = val
+}
+
+// SetEngagementTrackingDefault sets the value of EngagementTrackingDefault.
+func (s *SiteWorkspaceResource) SetEngagementTrackingDefault(val EngagementTrackingDecision) {
+	s.EngagementTrackingDefault = val
 }
 
 // SetRole sets the value of Role.

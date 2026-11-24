@@ -2197,6 +2197,18 @@ func (UnimplementedHandler) SiteWorkspacesSetConfirmedOptIn(ctx context.Context,
 	return r, ht.ErrNotImplemented
 }
 
+// SiteWorkspacesSetEngagementTrackingDefault implements SiteWorkspaces_setEngagementTrackingDefault operation.
+//
+// Set the Engagement tracking default (Owner and Admin, ADR 0120): whether a Destination with no
+// Engagement tracking consent recorded is tracked. Only a person changes it, here: neither `/api` nor
+// MCP does. It decides every message rendered from then on and every open or click recorded from then
+// on. Setting the value it has changes nothing. A change is recorded as an Audit entry.
+//
+// PUT /workspaces/{workspaceId}/engagement-tracking-default
+func (UnimplementedHandler) SiteWorkspacesSetEngagementTrackingDefault(ctx context.Context, req *SiteSetEngagementTrackingDefaultInput, params SiteWorkspacesSetEngagementTrackingDefaultParams) (r *SiteWorkspaceResource, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteWorkspacesSetTimezone implements SiteWorkspaces_setTimezone operation.
 //
 // Set the Workspace time zone (Owner and Admin only), the zone of every Report day (ADR 0057). 422 for
