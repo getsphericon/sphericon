@@ -190,6 +190,7 @@ type UseCase struct {
 	optOuts       *unsubscribesunchecked.Module
 	suppressions  *suppressionsunchecked.Module
 	confirmations *confirmationsunchecked.Module
+	events        *eventsunchecked.Module
 	// chats reads the Telegram users Bound to the Contact.
 	chats *bindings.Chats
 	// tracking reads the Engagement tracking consent whose refusals an Erasure keeps, and
@@ -221,6 +222,7 @@ func New(bus *events.Bus, catalogue *broadcasts.Module, people *contacts.Module,
 		optOuts:       unsubscribesunchecked.New(),
 		suppressions:  suppressionsunchecked.New(),
 		confirmations: confirmationsunchecked.New(),
+		events:        eventsunchecked.New(),
 		chats:         chats,
 		tracking:      tracking,
 		trackingSteps: engagementtrackingunchecked.New(),
@@ -305,7 +307,9 @@ func (u *UseCase) steps() []step {
 		// The bus, which stores the Events, deletes the subject's customer-tracked Events and
 		// anonymizes its system Events in place.
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-			return eventsunchecked.EraseSubject(ctx, s, t.ContactID, t.Phone, t.Destinations, t.VisitorIDs)
+			return u.events.EraseSubject(ctx, s, eventsunchecked.Subject{
+				ContactID: t.ContactID, Phone: t.Phone, Addresses: t.Destinations, VisitorIDs: t.VisitorIDs,
+			})
 		},
 		// The Visitors, and with them their Bindings and Start tokens. Telegram opt-outs are not
 		// here: they are keyed by the user id and stay.

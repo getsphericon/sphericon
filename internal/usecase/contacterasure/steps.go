@@ -12,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/infra/events/eventsunchecked"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
 
@@ -65,8 +64,12 @@ func (u *UseCase) eraseConsentStamps(ctx context.Context, s *ent.Scoped, t *Targ
 			optOut, err := u.unsubs.SMSOptOut(ctx, s, number)
 			return optOut != nil, err
 		}
+		denied, err := u.trackingDenied(ctx, s, channels.SMS, number)
+		if err != nil {
+			return err
+		}
 		if err := u.stamps.Erase(ctx, s, consentstampsunchecked.EraseInput{
-			Channel: channels.SMS, Destination: number, Standing: standing, TrackingDenied: u.trackingDenied(s, channels.SMS, number),
+			Channel: channels.SMS, Destination: number, Standing: standing, TrackingDenied: denied,
 		}); err != nil {
 			return err
 		}
@@ -76,11 +79,9 @@ func (u *UseCase) eraseConsentStamps(ctx context.Context, s *ent.Scoped, t *Targ
 
 // trackingDenied reports whether a tracking refusal of destination on channel stands, which the
 // Erasure keeps with its time.
-func (u *UseCase) trackingDenied(s *ent.Scoped, channel channels.Channel, destination string) func(context.Context) (bool, error) {
-	return func(ctx context.Context) (bool, error) {
-		consent, err := u.tracking.Of(ctx, s, channel, destination)
-		return consent.State == engagementtracking.ReadingDenied, err
-	}
+func (u *UseCase) trackingDenied(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string) (bool, error) {
+	consent, err := u.tracking.Of(ctx, s, channel, destination)
+	return consent.State == engagementtracking.ReadingDenied, err
 }
 
 // eraseStampsOf erases the stamps of destination on channel but the time of a stop whose opt-out,
@@ -93,8 +94,12 @@ func (u *UseCase) eraseStampsOf(ctx context.Context, s *ent.Scoped, channel chan
 		}
 		return err == nil, err
 	}
+	denied, err := u.trackingDenied(ctx, s, channel, destination)
+	if err != nil {
+		return err
+	}
 	return u.stamps.Erase(ctx, s, consentstampsunchecked.EraseInput{
-		Channel: channel, Destination: destination, Standing: standing, TrackingDenied: u.trackingDenied(s, channel, destination),
+		Channel: channel, Destination: destination, Standing: standing, TrackingDenied: denied,
 	})
 }
 
@@ -116,11 +121,11 @@ func (u *UseCase) withdrawRefused(ctx context.Context, s *ent.Scoped, t *Target,
 		return err
 	}
 	for _, d := range held {
-		consent, err := u.tracking.Of(ctx, s, d.channel, d.address)
+		denied, err := u.trackingDenied(ctx, s, d.channel, d.address)
 		if err != nil {
 			return err
 		}
-		if consent.State != engagementtracking.ReadingDenied {
+		if !denied {
 			continue
 		}
 		if err := u.withdrawFrom(ctx, s, d); err != nil {
@@ -144,7 +149,7 @@ func (u *UseCase) withdrawFrom(ctx context.Context, s *ent.Scoped, d heldDestina
 		if err := u.messages.ForgetEngagement(ctx, s, ids); err != nil {
 			return err
 		}
-		if err := eventsunchecked.DeleteEngagementOf(ctx, s, taken); err != nil {
+		if err := u.events.DeleteEngagementOf(ctx, s, taken); err != nil {
 			return err
 		}
 		if err := u.credits.ClearCredits(ctx, s, ids); err != nil {

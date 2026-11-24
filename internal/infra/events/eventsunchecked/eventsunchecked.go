@@ -32,15 +32,33 @@ const eraseChunk = 10_000
 // send and not the person.
 var anonymousKeep = []string{"sendingDomain", systemevent.BounceKindProperty}
 
+// Module holds the Events steps of the use cases that remove Events: a Contact's Erasure and a
+// refusal's reach-back. It holds nothing: every call takes the scope of the use case's
+// transaction.
+type Module struct{}
+
+// New builds the module.
+func New() *Module { return &Module{} }
+
+// Subject is whom an Erasure erases the Events of: the Contact (0 for a subject without one), its
+// phone and addresses ("" and empty then) and its visitor ids.
+type Subject struct {
+	ContactID  int64
+	Phone      string
+	Addresses  []string
+	VisitorIDs []string
+}
+
 // EraseSubject is the Events part of a Contact's Erasure (ADR 0021): it deletes the subject's
 // customer-tracked Events and anonymizes its system Events in place. Events are found by
 // contact_id (Identify stitched earlier anonymous Events onto it), by the subject's visitor ids
 // (Events not yet stitched), for the Contact's phone by the sms.confirmed, SMS Engagement
 // tracking and sms.clicked Events of the number that name no Contact: consent the number gave before
-// any Contact had it (by the API or a START), a click of a text sent to the number alone, and for its addresses by the Engagement tracking Events of an
-// address that name no Contact, for the same reason. contactID is 0, phone "" and addresses empty for a subject without a Contact.
-// Run it inside the Erasure's transaction.
-func EraseSubject(ctx context.Context, s *ent.Scoped, contactID int64, phone string, addresses, visitorIDs []string) error {
+// any Contact had it (by the API or a START), a click of a text sent to the number alone, and
+// for its addresses by the Engagement tracking Events of an address that name no Contact, for the
+// same reason. Run it inside the Erasure's transaction.
+func (m *Module) EraseSubject(ctx context.Context, s *ent.Scoped, subj Subject) error {
+	contactID, phone, addresses, visitorIDs := subj.ContactID, subj.Phone, subj.Addresses, subj.VisitorIDs
 	var matches []predicate.Event
 	if contactID != 0 {
 		matches = append(matches, event.ContactID(contactID))
