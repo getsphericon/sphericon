@@ -6,12 +6,17 @@
 // fact's (ADR 0154), on the Destination's `everything` consent stamp: provenance first (a `denied`
 // applies from anyone, and only the person's own grant lifts one, ADR 0121), then time (an older
 // observation changes nothing and joins the Contact's history as contact.consent_superseded; a tie
-// goes to the refusal). It also answers the effective consent of a Destination: its consent, else
-// the Workspace's default.
+// goes to the refusal). Ordering by time is why an observation dated after now is not taken as it
+// is: a grant dated ahead would outrank every refusal the person makes until that moment, so it is
+// refused (ErrInFuture), and a refusal dated ahead (a client clock ahead of ours) would outrank the
+// person's own later grant, so it is taken as occurring now. It also answers the effective consent
+// of a Destination: its consent, else the Workspace's default.
 package engagementtracking
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"slices"
 	"time"
@@ -189,8 +194,9 @@ func (m *Module) Record(ctx context.Context, s *ent.Scoped, in RecordInput) (Rec
 // a `denied` applies from any provenance, a `granted` over a standing `denied` only from the
 // person's own page, else ErrRefusalStands. Then time (consentstamps): an observation older than
 // the one that set the consent changes nothing and is recorded as contact.consent_superseded for
-// the Contact holding the Destination (Superseded), unless it agrees with the consent standing
-// (a replay of the same observation, say), which records nothing at all. An observation that changes the state or the
+// the Contact holding the Destination (Superseded), once however often it is replayed, whether or
+// not it agrees with the consent standing; the observation that set the consent, replayed, records
+// nothing at all. An observation that changes the state or the
 // provenance writes the row and publishes its Channel's Event; one that repeats the consent
 // standing only moves its stamp. Only the Channels open today take one (ErrChannel), and a grant
 // in the future is ErrInFuture.
@@ -200,7 +206,8 @@ func (m *Module) RecordIn(ctx context.Context, s *ent.Scoped, in RecordInput) (R
 		return Recorded{}, err
 	}
 	key := stampKey(in.Channel, in.Destination)
-	if _, err := m.stamps.Hold(ctx, s, key); err != nil {
+	stamp, err := m.stamps.Hold(ctx, s, key)
+	if err != nil {
 		return Recorded{}, err
 	}
 	standing, err := standingOf(ctx, s, in.Channel, in.Destination)
@@ -222,9 +229,8 @@ func (m *Module) RecordIn(ctx context.Context, s *ent.Scoped, in RecordInput) (R
 	}
 	outcome := Applied
 	switch {
-	case !admitted && standing != nil && standing.State == in.State:
-		// It agrees with the consent standing, set later or at the same moment (a replay): it
-		// changes nothing and is no history.
+	case !admitted && standing != nil && standing.State == in.State && setBy(stamp, in.OccurredAt):
+		// The observation that set the consent, replayed: it changes nothing and is no history.
 	case !admitted:
 		outcome = Superseded
 		err = m.publishSuperseded(ctx, s, holder, in)
@@ -239,6 +245,13 @@ func (m *Module) RecordIn(ctx context.Context, s *ent.Scoped, in RecordInput) (R
 		return Recorded{}, err
 	}
 	return Recorded{Outcome: outcome, Consent: consentOf(in.Channel, in.Destination, standing, dflt)}, nil
+}
+
+// setBy reports whether the consent stamp records an observation of the moment at: the one that
+// set the consent, compared as the stamp stores it.
+func setBy(stamp *ent.ConsentStamp, at time.Time) bool {
+	set := stamp.EngagementTrackingOccurredAt
+	return set != nil && set.Equal(at.UTC().Truncate(time.Microsecond))
 }
 
 // checked is in normalized, or its refusal: an open Channel, the Destination as the Channel's
@@ -323,6 +336,7 @@ func (m *Module) publishSuperseded(ctx context.Context, s *ent.Scoped, holder in
 	e := &events.ConsentSuperseded{
 		WorkspaceID: s.WorkspaceID(), ContactID: holder, Channel: string(in.Channel),
 		Observation: observation, Provenance: string(in.Provenance), ObservedAt: in.OccurredAt,
+		DedupID: supersededKey(in),
 	}
 	switch in.Channel {
 	case channels.Email:
@@ -333,6 +347,15 @@ func (m *Module) publishSuperseded(ctx context.Context, s *ent.Scoped, holder in
 		// A Telegram user id has no column of the Event row: the Event names it by its Contact.
 	}
 	return m.bus.PublishIn(ctx, s, e)
+}
+
+// supersededKey is the dedup key of an observation's contact.consent_superseded: the same
+// observation replayed is the same Event, so a sync that sends it again records nothing twice. It
+// is a hash, so the key names no Destination.
+func supersededKey(in RecordInput) string {
+	sum := sha256.Sum256(fmt.Appendf(nil, "%s\x00%s\x00%s\x00%s\x00%d",
+		in.Channel, in.Destination, in.State, in.Provenance, in.OccurredAt.UTC().Truncate(time.Microsecond).UnixMicro()))
+	return "engagement-tracking-superseded:" + hex.EncodeToString(sum[:])
 }
 
 // holderOf is the Contact holding destination on channel, locked against its Erasure to the end

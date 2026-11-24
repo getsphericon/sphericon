@@ -280,6 +280,27 @@ func TestARepeatedObservationRecordsNothing(t *testing.T) {
 	assert.Len(t, granted, 1)
 }
 
+// An older observation that agrees with the consent standing changes nothing either: it only joins
+// the Contact's history as superseded (ADR 0154), once however often a sync replays it.
+func TestAnOlderObservationOfTheStandingStateOnlyJoinsTheHistory(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite, apitokens.ScopeContactsRead)
+	_, err := c.EngagementTrackingCreate(t.Context(), trackingOf(fixtures.ContactAliceEmail, externalapi.EngagementTrackingStateGranted, trackingAt))
+	require.NoError(t, err)
+
+	late, err := c.EngagementTrackingCreate(t.Context(), trackingOf(fixtures.ContactAliceEmail, externalapi.EngagementTrackingStateGranted, trackingAt.Add(-time.Hour)))
+	require.NoError(t, err)
+	replayed, err := c.EngagementTrackingCreate(t.Context(), trackingOf(fixtures.ContactAliceEmail, externalapi.EngagementTrackingStateGranted, trackingAt.Add(-time.Hour)))
+	require.NoError(t, err)
+
+	assert.Equal(t, externalapi.EngagementTrackingOutcomeSuperseded, late.Outcome)
+	assert.Equal(t, externalapi.EngagementTrackingOutcomeSuperseded, replayed.Outcome)
+	history := activity(t, env, fixtures.ContactAliceID, systemevent.ContactConsentSuperseded)
+	require.Len(t, history, 1)
+	assert.Equal(t, trackingAt.Add(-time.Hour), time.Time(history[0].OccurredAt).UTC())
+	assert.JSONEq(t, `"tracking_granted"`, string(history[0].Properties.Value["observation"]))
+}
+
 // eventsOfAddress is the Events of Acme that name address, as a member finds them by it.
 func eventsOfAddress(t *testing.T, env *testhelper.TestEnv, address string) []siteapi.SiteEventResource {
 	t.Helper()
