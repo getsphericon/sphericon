@@ -3073,6 +3073,30 @@ export const zAttributeLeaf = z.object({
 });
 
 /**
+ * What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
+ * text test whose eq or neq compares the consent with `granted` or `denied`, or a presence test of
+ * whether any is recorded. neq holds where none is recorded, so a test and its negation split every
+ * Contact.
+ */
+export const zEngagementTrackingTest = z.discriminatedUnion('kind', [
+  zTextTest.extend({ kind: z.literal('text') }),
+  zPresenceTest.extend({ kind: z.literal('presence') })
+]);
+
+/**
+ * A test of the Contact's Engagement tracking consent on one Channel (ADR 0120), read live as
+ * recorded, whatever the Workspace's default: on email the consent of its email address, on sms of
+ * its phone, on telegram of its own chats, which read `denied` when any is denied, `granted` when it
+ * has one and all are granted, and as none recorded otherwise. A Contact without a Destination on
+ * the Channel has none recorded.
+ */
+export const zEngagementTrackingLeaf = z.object({
+  kind: z.enum(['engagementTracking']),
+  channel: zEngagementTrackingChannel,
+  test: zEngagementTrackingTest
+});
+
+/**
  * What a property test asks of the property's value, by `kind`. A key the Event lacks fails
  * every test; a text test fails on a value that is not text; set holds for a text value and notSet
  * for an explicit null.
@@ -3120,6 +3144,30 @@ export const zAttributeLeafInput = z.strictObject({
   kind: z.enum(['attribute']),
   attribute: zContactAttribute,
   test: zAttributeTestInput
+});
+
+/**
+ * What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
+ * text test whose eq or neq compares the consent with `granted` or `denied`, or a presence test of
+ * whether any is recorded. neq holds where none is recorded, so a test and its negation split every
+ * Contact.
+ */
+export const zEngagementTrackingTestInput = z.discriminatedUnion('kind', [
+  zTextTestInput.extend({ kind: z.literal('text') }),
+  zPresenceTestInput.extend({ kind: z.literal('presence') })
+]);
+
+/**
+ * A test of the Contact's Engagement tracking consent on one Channel (ADR 0120), read live as
+ * recorded, whatever the Workspace's default: on email the consent of its email address, on sms of
+ * its phone, on telegram of its own chats, which read `denied` when any is denied, `granted` when it
+ * has one and all are granted, and as none recorded otherwise. A Contact without a Destination on
+ * the Channel has none recorded.
+ */
+export const zEngagementTrackingLeafInput = z.strictObject({
+  kind: z.enum(['engagementTracking']),
+  channel: zEngagementTrackingChannel,
+  test: zEngagementTrackingTestInput
 });
 
 /**
@@ -4900,6 +4948,7 @@ export const zRuleConditionNode = z.discriminatedUnion('kind', [
   zTagLeaf.extend({ kind: z.literal('tag') }),
   zTelegramLeaf.extend({ kind: z.literal('telegram') }),
   zSmsLeaf.extend({ kind: z.literal('sms') }),
+  zEngagementTrackingLeaf.extend({ kind: z.literal('engagementTracking') }),
   zCustomFieldLeaf.extend({ kind: z.literal('customField') }),
   zEventLeaf.extend({ kind: z.literal('event') }),
   zRulePropertyLeaf.extend({ kind: z.literal('property') })
@@ -4916,6 +4965,7 @@ export const zRuleConditionNodeInput = z.discriminatedUnion('kind', [
   zTagLeafInput.extend({ kind: z.literal('tag') }),
   zTelegramLeafInput.extend({ kind: z.literal('telegram') }),
   zSmsLeafInput.extend({ kind: z.literal('sms') }),
+  zEngagementTrackingLeafInput.extend({ kind: z.literal('engagementTracking') }),
   zCustomFieldLeafInput.extend({ kind: z.literal('customField') }),
   zEventLeafInput.extend({ kind: z.literal('event') }),
   zRulePropertyLeafInput.extend({ kind: z.literal('property') })
@@ -4962,6 +5012,7 @@ export const zSegmentConditionNode = z.discriminatedUnion('kind', [
   zTagLeaf.extend({ kind: z.literal('tag') }),
   zTelegramLeaf.extend({ kind: z.literal('telegram') }),
   zSmsLeaf.extend({ kind: z.literal('sms') }),
+  zEngagementTrackingLeaf.extend({ kind: z.literal('engagementTracking') }),
   zCustomFieldLeaf.extend({ kind: z.literal('customField') }),
   zEventLeaf.extend({ kind: z.literal('event') })
 ]);
@@ -4977,6 +5028,7 @@ export const zSegmentConditionNodeInput = z.discriminatedUnion('kind', [
   zTagLeafInput.extend({ kind: z.literal('tag') }),
   zTelegramLeafInput.extend({ kind: z.literal('telegram') }),
   zSmsLeafInput.extend({ kind: z.literal('sms') }),
+  zEngagementTrackingLeafInput.extend({ kind: z.literal('engagementTracking') }),
   zCustomFieldLeafInput.extend({ kind: z.literal('customField') }),
   zEventLeafInput.extend({ kind: z.literal('event') })
 ]);

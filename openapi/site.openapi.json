@@ -14033,6 +14033,61 @@
         "enum": ["track", "dont_track"],
         "description": "Whether a Destination's opens and clicks are tracked"
       },
+      "EngagementTrackingLeaf": {
+        "type": "object",
+        "required": ["kind", "channel", "test"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["engagementTracking"]
+          },
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingChannel"
+              }
+            ],
+            "description": "The Channel whose consent is tested"
+          },
+          "test": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingTest"
+              }
+            ],
+            "description": "What it asks of the consent"
+          }
+        },
+        "description": "A test of the Contact's Engagement tracking consent on one Channel (ADR 0120), read live as\nrecorded, whatever the Workspace's default: on email the consent of its email address, on sms of\nits phone, on telegram of its own chats, which read `denied` when any is denied, `granted` when it\nhas one and all are granted, and as none recorded otherwise. A Contact without a Destination on\nthe Channel has none recorded."
+      },
+      "EngagementTrackingLeafInput": {
+        "type": "object",
+        "required": ["kind", "channel", "test"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["engagementTracking"]
+          },
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingChannel"
+              }
+            ],
+            "description": "The Channel whose consent is tested"
+          },
+          "test": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingTestInput"
+              }
+            ],
+            "description": "What it asks of the consent"
+          }
+        },
+        "description": "A test of the Contact's Engagement tracking consent on one Channel (ADR 0120), read live as\nrecorded, whatever the Workspace's default: on email the consent of its email address, on sms of\nits phone, on telegram of its own chats, which read `denied` when any is denied, `granted` when it\nhas one and all are granted, and as none recorded otherwise. A Contact without a Destination on\nthe Channel has none recorded.",
+        "additionalProperties": false
+      },
       "EngagementTrackingObservationResult": {
         "type": "object",
         "required": ["outcome", "consent"],
@@ -14075,6 +14130,44 @@
         "type": "string",
         "enum": ["granted", "denied"],
         "description": "Whether a Destination agreed to have its opens and clicks tracked (ADR 0120)"
+      },
+      "EngagementTrackingTest": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TextTest"
+          },
+          {
+            "$ref": "#/components/schemas/PresenceTest"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "text": "#/components/schemas/TextTest",
+            "presence": "#/components/schemas/PresenceTest"
+          }
+        },
+        "description": "What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a\ntext test whose eq or neq compares the consent with `granted` or `denied`, or a presence test of\nwhether any is recorded. neq holds where none is recorded, so a test and its negation split every\nContact."
+      },
+      "EngagementTrackingTestInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TextTestInput"
+          },
+          {
+            "$ref": "#/components/schemas/PresenceTestInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "text": "#/components/schemas/TextTestInput",
+            "presence": "#/components/schemas/PresenceTestInput"
+          }
+        },
+        "description": "What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a\ntext test whose eq or neq compares the consent with `granted` or `denied`, or a presence test of\nwhether any is recorded. neq holds where none is recorded, so a test and its negation split every\nContact."
       },
       "EnrollmentFailure": {
         "type": "object",
@@ -15867,6 +15960,9 @@
             "$ref": "#/components/schemas/SmsLeaf"
           },
           {
+            "$ref": "#/components/schemas/EngagementTrackingLeaf"
+          },
+          {
             "$ref": "#/components/schemas/CustomFieldLeaf"
           },
           {
@@ -15884,6 +15980,7 @@
             "tag": "#/components/schemas/TagLeaf",
             "telegram": "#/components/schemas/TelegramLeaf",
             "sms": "#/components/schemas/SmsLeaf",
+            "engagementTracking": "#/components/schemas/EngagementTrackingLeaf",
             "customField": "#/components/schemas/CustomFieldLeaf",
             "event": "#/components/schemas/EventLeaf",
             "property": "#/components/schemas/RulePropertyLeaf",
@@ -15914,6 +16011,9 @@
             "$ref": "#/components/schemas/SmsLeafInput"
           },
           {
+            "$ref": "#/components/schemas/EngagementTrackingLeafInput"
+          },
+          {
             "$ref": "#/components/schemas/CustomFieldLeafInput"
           },
           {
@@ -15931,6 +16031,7 @@
             "tag": "#/components/schemas/TagLeafInput",
             "telegram": "#/components/schemas/TelegramLeafInput",
             "sms": "#/components/schemas/SmsLeafInput",
+            "engagementTracking": "#/components/schemas/EngagementTrackingLeafInput",
             "customField": "#/components/schemas/CustomFieldLeafInput",
             "event": "#/components/schemas/EventLeafInput",
             "property": "#/components/schemas/RulePropertyLeafInput",
@@ -16297,6 +16398,9 @@
             "$ref": "#/components/schemas/SmsLeaf"
           },
           {
+            "$ref": "#/components/schemas/EngagementTrackingLeaf"
+          },
+          {
             "$ref": "#/components/schemas/CustomFieldLeaf"
           },
           {
@@ -16311,6 +16415,7 @@
             "tag": "#/components/schemas/TagLeaf",
             "telegram": "#/components/schemas/TelegramLeaf",
             "sms": "#/components/schemas/SmsLeaf",
+            "engagementTracking": "#/components/schemas/EngagementTrackingLeaf",
             "customField": "#/components/schemas/CustomFieldLeaf",
             "event": "#/components/schemas/EventLeaf",
             "group": "#/components/schemas/SegmentCondition"
@@ -16340,6 +16445,9 @@
             "$ref": "#/components/schemas/SmsLeafInput"
           },
           {
+            "$ref": "#/components/schemas/EngagementTrackingLeafInput"
+          },
+          {
             "$ref": "#/components/schemas/CustomFieldLeafInput"
           },
           {
@@ -16354,6 +16462,7 @@
             "tag": "#/components/schemas/TagLeafInput",
             "telegram": "#/components/schemas/TelegramLeafInput",
             "sms": "#/components/schemas/SmsLeafInput",
+            "engagementTracking": "#/components/schemas/EngagementTrackingLeafInput",
             "customField": "#/components/schemas/CustomFieldLeafInput",
             "event": "#/components/schemas/EventLeafInput",
             "group": "#/components/schemas/SegmentConditionInput"

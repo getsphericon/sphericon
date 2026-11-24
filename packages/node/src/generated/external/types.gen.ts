@@ -2864,6 +2864,44 @@ export const EngagementTrackingDecision = { TRACK: 'track', DONT_TRACK: 'dont_tr
 export type EngagementTrackingDecision = typeof EngagementTrackingDecision[keyof typeof EngagementTrackingDecision];
 
 /**
+ * A test of the Contact's Engagement tracking consent on one Channel (ADR 0120), read live as
+ * recorded, whatever the Workspace's default: on email the consent of its email address, on sms of
+ * its phone, on telegram of its own chats, which read `denied` when any is denied, `granted` when it
+ * has one and all are granted, and as none recorded otherwise. A Contact without a Destination on
+ * the Channel has none recorded.
+ */
+export type EngagementTrackingLeaf = {
+  kind: 'engagementTracking';
+  /**
+   * The Channel whose consent is tested
+   */
+  channel: EngagementTrackingChannel;
+  /**
+   * What it asks of the consent
+   */
+  test: EngagementTrackingTest;
+};
+
+/**
+ * A test of the Contact's Engagement tracking consent on one Channel (ADR 0120), read live as
+ * recorded, whatever the Workspace's default: on email the consent of its email address, on sms of
+ * its phone, on telegram of its own chats, which read `denied` when any is denied, `granted` when it
+ * has one and all are granted, and as none recorded otherwise. A Contact without a Destination on
+ * the Channel has none recorded.
+ */
+export type EngagementTrackingLeafInput = {
+  kind: 'engagementTracking';
+  /**
+   * The Channel whose consent is tested
+   */
+  channel: EngagementTrackingChannel;
+  /**
+   * What it asks of the consent
+   */
+  test: EngagementTrackingTestInput;
+};
+
+/**
  * One Engagement tracking observation of a contact's Destination
  */
 export type EngagementTrackingObservationInput = {
@@ -2939,6 +2977,30 @@ export const EngagementTrackingState = { GRANTED: 'granted', DENIED: 'denied' } 
  * Whether a Destination agreed to have its opens and clicks tracked (ADR 0120)
  */
 export type EngagementTrackingState = typeof EngagementTrackingState[keyof typeof EngagementTrackingState];
+
+/**
+ * What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
+ * text test whose eq or neq compares the consent with `granted` or `denied`, or a presence test of
+ * whether any is recorded. neq holds where none is recorded, so a test and its negation split every
+ * Contact.
+ */
+export type EngagementTrackingTest = ({
+  kind: 'text';
+} & TextTest) | ({
+  kind: 'presence';
+} & PresenceTest);
+
+/**
+ * What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
+ * text test whose eq or neq compares the consent with `granted` or `denied`, or a presence test of
+ * whether any is recorded. neq holds where none is recorded, so a test and its negation split every
+ * Contact.
+ */
+export type EngagementTrackingTestInput = ({
+  kind: 'text';
+} & TextTestInput) | ({
+  kind: 'presence';
+} & PresenceTestInput);
 
 /**
  * What an HTTP step recorded when it failed an Enrollment; absent on any other Enrollment.
@@ -4987,6 +5049,8 @@ export type RuleConditionNode = ({
 } & TelegramLeaf) | ({
   kind: 'sms';
 } & SmsLeaf) | ({
+  kind: 'engagementTracking';
+} & EngagementTrackingLeaf) | ({
   kind: 'customField';
 } & CustomFieldLeaf) | ({
   kind: 'event';
@@ -5011,6 +5075,8 @@ export type RuleConditionNodeInput = ({
 } & TelegramLeafInput) | ({
   kind: 'sms';
 } & SmsLeafInput) | ({
+  kind: 'engagementTracking';
+} & EngagementTrackingLeafInput) | ({
   kind: 'customField';
 } & CustomFieldLeafInput) | ({
   kind: 'event';
@@ -5301,6 +5367,8 @@ export type SegmentConditionNode = ({
 } & TelegramLeaf) | ({
   kind: 'sms';
 } & SmsLeaf) | ({
+  kind: 'engagementTracking';
+} & EngagementTrackingLeaf) | ({
   kind: 'customField';
 } & CustomFieldLeaf) | ({
   kind: 'event';
@@ -5323,6 +5391,8 @@ export type SegmentConditionNodeInput = ({
 } & TelegramLeafInput) | ({
   kind: 'sms';
 } & SmsLeafInput) | ({
+  kind: 'engagementTracking';
+} & EngagementTrackingLeafInput) | ({
   kind: 'customField';
 } & CustomFieldLeafInput) | ({
   kind: 'event';

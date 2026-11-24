@@ -99,3 +99,20 @@ var EventCountOperators = []EventCountOperator{
 	AtLeast,
 	AtMost,
 }
+
+// TrackingChannel is the Channel whose Engagement tracking consent an engagementTracking leaf tests.
+type TrackingChannel string
+
+// The values of the contract's EngagementTrackingChannel enum, in its order.
+const (
+	TrackingEmail    TrackingChannel = "email"
+	TrackingSms      TrackingChannel = "sms"
+	TrackingTelegram TrackingChannel = "telegram"
+)
+
+// TrackingChannels is every TrackingChannel, in the contract's order.
+var TrackingChannels = []TrackingChannel{
+	TrackingEmail,
+	TrackingSms,
+	TrackingTelegram,
+}

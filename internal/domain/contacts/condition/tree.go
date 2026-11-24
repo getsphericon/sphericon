@@ -204,16 +204,17 @@ func decodeSkipping(g conditiontree.Group) group {
 // of every kind of leaf. Operator is a Tag, Telegram or SMS leaf's HasOperator or an event leaf's
 // EventCountOperator.
 type entry struct {
-	Kind       conditiontree.Kind      `json:"kind"`
-	Attribute  conditiontree.Attribute `json:"attribute"`
-	Name       string                  `json:"name"`
-	Operator   string                  `json:"operator"`
-	Key        string                  `json:"key"`
-	Of         *source                 `json:"of"`
-	Test       json.RawMessage         `json:"test"`
-	Action     string                  `json:"action"`
-	Times      *int                    `json:"times"`
-	WithinDays *int                    `json:"withinDays"`
+	Kind       conditiontree.Kind            `json:"kind"`
+	Attribute  conditiontree.Attribute       `json:"attribute"`
+	Channel    conditiontree.TrackingChannel `json:"channel"`
+	Name       string                        `json:"name"`
+	Operator   string                        `json:"operator"`
+	Key        string                        `json:"key"`
+	Of         *source                       `json:"of"`
+	Test       json.RawMessage               `json:"test"`
+	Action     string                        `json:"action"`
+	Times      *int                          `json:"times"`
+	WithinDays *int                          `json:"withinDays"`
 }
 
 // source is a property test's `of`: whose properties it reads, by its `kind`.
@@ -286,6 +287,8 @@ func decodeEntry(raw json.RawMessage, p place, sub func(conditiontree.Group) (no
 			return nil, err
 		}
 		return smsLeaf{test: has}, nil
+	case conditiontree.KindEngagementTracking:
+		return decodeEngagementTracking(e)
 	case conditiontree.KindCustomField:
 		if e.Key == "" {
 			return nil, errors.New("custom field key is required")

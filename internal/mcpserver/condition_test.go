@@ -41,6 +41,8 @@ func TestMCPToolCarriesThePlacesConditionInDefs(t *testing.T) {
 	}
 	assert.NotContains(t, listedDefs(t, tools["segments_create"]), "RulePropertyLeafInput", "a Segment's tree holds no property test")
 	assert.Contains(t, listedDefs(t, tools["rules_create"]), "RulePropertyLeafInput")
+	assert.Contains(t, listedDefs(t, tools["segments_create"]), "EngagementTrackingLeafInput", "a Segment tests the tracking consent")
+	assert.Contains(t, listedDefs(t, tools["rules_create"]), "EngagementTrackingLeafInput", "a Rule tests the tracking consent")
 }
 
 // A Condition an agent sends that its place does not admit is refused, naming the offending

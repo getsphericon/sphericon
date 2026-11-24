@@ -7,15 +7,16 @@ type Kind string
 
 // The discriminator values of the contract's unions, in the order they first name them.
 const (
-	KindGroup       Kind = "group"
-	KindAttribute   Kind = "attribute"
-	KindBirthday    Kind = "birthday"
-	KindTag         Kind = "tag"
-	KindTelegram    Kind = "telegram"
-	KindSms         Kind = "sms"
-	KindCustomField Kind = "customField"
-	KindEvent       Kind = "event"
-	KindProperty    Kind = "property"
+	KindGroup              Kind = "group"
+	KindAttribute          Kind = "attribute"
+	KindBirthday           Kind = "birthday"
+	KindTag                Kind = "tag"
+	KindTelegram           Kind = "telegram"
+	KindSms                Kind = "sms"
+	KindEngagementTracking Kind = "engagementTracking"
+	KindCustomField        Kind = "customField"
+	KindEvent              Kind = "event"
+	KindProperty           Kind = "property"
 )
 
 // SegmentKinds is every Kind a Segment's Condition admits.
@@ -26,6 +27,7 @@ var SegmentKinds = []Kind{
 	KindTag,
 	KindTelegram,
 	KindSms,
+	KindEngagementTracking,
 	KindCustomField,
 	KindEvent,
 }
@@ -38,6 +40,7 @@ var RuleKinds = []Kind{
 	KindTag,
 	KindTelegram,
 	KindSms,
+	KindEngagementTracking,
 	KindCustomField,
 	KindEvent,
 	KindProperty,
@@ -86,6 +89,12 @@ var CustomFieldTests = []TestKind{
 var PropertyTests = []TestKind{
 	TestText,
 	TestNumber,
+	TestPresence,
+}
+
+// EngagementTrackingTests is every TestKind an engagementTracking leaf takes.
+var EngagementTrackingTests = []TestKind{
+	TestText,
 	TestPresence,
 }
 
