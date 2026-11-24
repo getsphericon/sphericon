@@ -3396,7 +3396,7 @@ export const zContactExportOutboundMessage = z.object({
   openedAt: z.exactOptional(zTimestamp.nullable()),
   clickedAt: z.exactOptional(zTimestamp.nullable()),
   captured: z.boolean(),
-  tracked: z.boolean(),
+  tracked: z.exactOptional(z.boolean().nullable()),
   trackingWithdrawnAt: z.exactOptional(zTimestamp.nullable()),
   broadcastId: z.exactOptional(zEntityId.nullable()),
   automationId: z.exactOptional(zEntityId.nullable()),

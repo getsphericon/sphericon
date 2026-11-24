@@ -654,10 +654,6 @@ func (_c *OutboundMessageCreate) defaults() {
 		v := outboundmessage.DefaultCaptured
 		_c.mutation.SetCaptured(v)
 	}
-	if _, ok := _c.mutation.Tracked(); !ok {
-		v := outboundmessage.DefaultTracked
-		_c.mutation.SetTracked(v)
-	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -713,9 +709,6 @@ func (_c *OutboundMessageCreate) check() error {
 	}
 	if _, ok := _c.mutation.Captured(); !ok {
 		return &ValidationError{Name: "captured", err: errors.New(`ent: missing required field "OutboundMessage.captured"`)}
-	}
-	if _, ok := _c.mutation.Tracked(); !ok {
-		return &ValidationError{Name: "tracked", err: errors.New(`ent: missing required field "OutboundMessage.tracked"`)}
 	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "OutboundMessage.workspace"`)}
@@ -843,7 +836,7 @@ func (_c *OutboundMessageCreate) createSpec() (*OutboundMessage, *sqlgraph.Creat
 	}
 	if value, ok := _c.mutation.Tracked(); ok {
 		_spec.SetField(outboundmessage.FieldTracked, field.TypeBool, value)
-		_node.Tracked = value
+		_node.Tracked = &value
 	}
 	if value, ok := _c.mutation.TrackingWithdrawnAt(); ok {
 		_spec.SetField(outboundmessage.FieldTrackingWithdrawnAt, field.TypeTime, value)
@@ -1437,6 +1430,12 @@ func (u *OutboundMessageUpsert) SetTracked(v bool) *OutboundMessageUpsert {
 // UpdateTracked sets the "tracked" field to the value that was provided on create.
 func (u *OutboundMessageUpsert) UpdateTracked() *OutboundMessageUpsert {
 	u.SetExcluded(outboundmessage.FieldTracked)
+	return u
+}
+
+// ClearTracked clears the value of the "tracked" field.
+func (u *OutboundMessageUpsert) ClearTracked() *OutboundMessageUpsert {
+	u.SetNull(outboundmessage.FieldTracked)
 	return u
 }
 
@@ -2108,6 +2107,13 @@ func (u *OutboundMessageUpsertOne) SetTracked(v bool) *OutboundMessageUpsertOne 
 func (u *OutboundMessageUpsertOne) UpdateTracked() *OutboundMessageUpsertOne {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.UpdateTracked()
+	})
+}
+
+// ClearTracked clears the value of the "tracked" field.
+func (u *OutboundMessageUpsertOne) ClearTracked() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearTracked()
 	})
 }
 
@@ -2978,6 +2984,13 @@ func (u *OutboundMessageUpsertBulk) SetTracked(v bool) *OutboundMessageUpsertBul
 func (u *OutboundMessageUpsertBulk) UpdateTracked() *OutboundMessageUpsertBulk {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.UpdateTracked()
+	})
+}
+
+// ClearTracked clears the value of the "tracked" field.
+func (u *OutboundMessageUpsertBulk) ClearTracked() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearTracked()
 	})
 }
 

@@ -257,8 +257,9 @@ model ContactExportOutboundMessage {
   captured: boolean;
 
   /** Whether the message went out tracked: with an open pixel and its links rewritten, or its
-   * links made Short tracked links (ADR 0120) */
-  tracked: boolean;
+   * links made Short tracked links (ADR 0120); null when no render decided it (a message skipped
+   * before its render, or not rendered yet) */
+  tracked?: boolean | null;
 
   /** When the message's tracking was withdrawn (a refusal of the contact's, or the Workspace's
    * default turned to `dont_track`); null while it was not */

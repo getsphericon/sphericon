@@ -1389,6 +1389,16 @@ func TrackedNEQ(v bool) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldNEQ(FieldTracked, v))
 }
 
+// TrackedIsNil applies the IsNil predicate on the "tracked" field.
+func TrackedIsNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIsNull(FieldTracked))
+}
+
+// TrackedNotNil applies the NotNil predicate on the "tracked" field.
+func TrackedNotNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotNull(FieldTracked))
+}
+
 // TrackingWithdrawnAtEQ applies the EQ predicate on the "tracking_withdrawn_at" field.
 func TrackingWithdrawnAtEQ(v time.Time) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldTrackingWithdrawnAt, v))

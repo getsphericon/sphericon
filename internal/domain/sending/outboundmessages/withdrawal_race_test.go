@@ -10,7 +10,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages/engagement"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -52,7 +51,7 @@ func TestAMessageRenderedWhileARefusalIsInFlightIsWithdrawnByItsReachBack(t *tes
 	require.Len(t, sent, 1)
 	assert.Contains(t, sent[0].HTML, "/e/o/", "the render read the consent before the refusal committed")
 	msg := env.DB.OutboundMessage.GetX(ctx, res.MessageID)
-	assert.False(t, outboundmessages.IsTracked(msg), "the reach-back withdrew the message")
+	assert.False(t, engagementtracking.IsTracked(msg), "the reach-back withdrew the message")
 	opens := testhelper.Queued[*events.EmailEngagement](t, env, systemevent.EmailOpened)
 	assert.Empty(t, opens, "an open of the withdrawn message records nothing")
 }

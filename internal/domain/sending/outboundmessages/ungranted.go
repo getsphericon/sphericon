@@ -58,7 +58,7 @@ type WithdrawalProgress struct {
 	More bool
 }
 
-// WithdrawUngranted withdraws the tracking of the sent messages of the Workspace of s created up to
+// WithdrawUngranted withdraws the tracking of the tracked messages of the Workspace of s created up to
 // in.Before whose Destination has no granted Engagement tracking consent on their Channel (ADR
 // 0120), in up to in.Batches batches, each in a transaction of its own that persists at once
 // (WithdrawUngrantedIn). It deletes nothing. It is idempotent: a message withdrawn stays so, and a
@@ -79,16 +79,16 @@ func (m *Module) WithdrawUngranted(ctx context.Context, s *ent.Scoped, in Ungran
 }
 
 // WithdrawUngrantedIn is one batch of WithdrawUngranted, in the transaction ts is bound to
-// (WithdrawTracking): up to in.Limit sent messages after the message id in.After, created up to
-// in.Before, whose tracking stands and whose Destination has no granted on their Channel. A message
-// not sent yet is left to its render, which reads the default then; one whose provider call was in
-// flight at the turn may stay tracked, and its opens and clicks record nothing while the default is
-// dont_track (the recorder reads it live). The consent is read as it stands now: a Destination
+// (WithdrawTracking): up to in.Limit messages after the message id in.After, created up to
+// in.Before, that are tracked (engagementtracking.TrackedMessages) and whose Destination has no
+// granted on their Channel, whatever their status: a message rendered tracked whose send has not
+// ended is withdrawn too, so its retry renders untracked. A message no render decided yet is left
+// to its render, which reads the default then. The consent is read as it stands now: a Destination
 // granted before the withdrawal reaches its messages keeps them tracked, and one granted after gets
 // nothing back.
 func (m *Module) WithdrawUngrantedIn(ctx context.Context, ts *ent.Scoped, in UngrantedWithdrawal) (WithdrawalProgress, error) {
 	taken, err := m.WithdrawTracking(ctx, ts, WithdrawalBatch{
-		Messages: outboundmessage.And(outboundmessage.StatusEQ(outboundmessage.StatusSent), Tracked(),
+		Messages: outboundmessage.And(engagementtracking.TrackedMessages(),
 			outboundmessage.CreatedAtLTE(in.Before), m.ungranted()),
 		After: in.After,
 		Limit: in.Limit,

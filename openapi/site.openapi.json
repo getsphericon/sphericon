@@ -12764,7 +12764,6 @@
           "status",
           "claimedAt",
           "captured",
-          "tracked",
           "createdAt"
         ],
         "properties": {
@@ -12910,7 +12909,8 @@
           },
           "tracked": {
             "type": "boolean",
-            "description": "Whether the message went out tracked: with an open pixel and its links rewritten, or its\nlinks made Short tracked links (ADR 0120)"
+            "nullable": true,
+            "description": "Whether the message went out tracked: with an open pixel and its links rewritten, or its\nlinks made Short tracked links (ADR 0120); null when no render decided it (a message skipped\nbefore its render, or not rendered yet)"
           },
           "trackingWithdrawnAt": {
             "type": "string",

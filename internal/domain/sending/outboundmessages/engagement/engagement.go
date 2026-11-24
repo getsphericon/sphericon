@@ -25,7 +25,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -120,7 +119,7 @@ func (r *Recorder) ShortLink(ctx context.Context, token string, hit Hit) (string
 // record publishes the Event eventOf builds for a hit on the message m names. A hit on a Tracking
 // host is refused as ErrNotFound unless m is that host's Workspace's (ADR 0038), which the signed
 // token says without a read. Nothing is recorded, silently, for a message that is not tracked
-// (outboundmessages.IsTracked) or whose Destination's effective consent is no longer to track (ADR
+// (engagementtracking.IsTracked) or whose Destination's effective consent is no longer to track (ADR
 // 0120), and for one that is gone (message retention deleted it, ADR 0143), whose Contact is gone
 // (erased) or whose Destination was cleared; a read that fails for any other reason, or a failed
 // publish, records nothing and is logged, since a tracked link never refuses its recipient (ADR
@@ -172,7 +171,7 @@ func (r *Recorder) engagedOf(ctx context.Context, ts *ent.Scoped, id int64) (eng
 	if err != nil {
 		return engaged{}, false, fmt.Errorf("read the message: %w", err)
 	}
-	if !outboundmessages.IsTracked(msg) || msg.Destination == "" {
+	if !engagementtracking.IsTracked(msg) || msg.Destination == "" {
 		return engaged{}, false, nil
 	}
 	consent, err := r.consents.Of(ctx, ts, msg.Channel, msg.Destination)

@@ -2151,7 +2151,7 @@ var (
 		{Name: "opened_at", Type: field.TypeTime, Nullable: true},
 		{Name: "clicked_at", Type: field.TypeTime, Nullable: true},
 		{Name: "captured", Type: field.TypeBool, Default: false},
-		{Name: "tracked", Type: field.TypeBool, Default: true},
+		{Name: "tracked", Type: field.TypeBool, Nullable: true},
 		{Name: "tracking_withdrawn_at", Type: field.TypeTime, Nullable: true},
 		{Name: "automation_step_id", Type: field.TypeString, Nullable: true},
 		{Name: "request_digest", Type: field.TypeString, Nullable: true},

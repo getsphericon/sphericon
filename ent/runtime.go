@@ -1278,10 +1278,6 @@ func init() {
 	outboundmessageDescCaptured := outboundmessageFields[21].Descriptor()
 	// outboundmessage.DefaultCaptured holds the default value on creation for the captured field.
 	outboundmessage.DefaultCaptured = outboundmessageDescCaptured.Default.(bool)
-	// outboundmessageDescTracked is the schema descriptor for tracked field.
-	outboundmessageDescTracked := outboundmessageFields[22].Descriptor()
-	// outboundmessage.DefaultTracked holds the default value on creation for the tracked field.
-	outboundmessage.DefaultTracked = outboundmessageDescTracked.Default.(bool)
 	passkeyMixin := schema.Passkey{}.Mixin()
 	passkeyMixinFields0 := passkeyMixin[0].Fields()
 	_ = passkeyMixinFields0

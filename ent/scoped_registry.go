@@ -2246,7 +2246,9 @@ func ScopedEntities() []*ScopedEntity {
 					b.SetClickedAt(*src.ClickedAt)
 				}
 				b.SetCaptured(src.Captured)
-				b.SetTracked(src.Tracked)
+				if src.Tracked != nil {
+					b.SetTracked(*src.Tracked)
+				}
 				if src.TrackingWithdrawnAt != nil {
 					b.SetTrackingWithdrawnAt(*src.TrackingWithdrawnAt)
 				}

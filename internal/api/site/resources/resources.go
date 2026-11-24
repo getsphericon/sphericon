@@ -104,6 +104,7 @@ import (
 // goverter:extend revision
 // goverter:extend nilFloat64
 // goverter:extend optNilString
+// goverter:extend optNilBool
 // goverter:extend optNilStepID
 // goverter:extend optNilOptOutVia
 // goverter:extend optNilEngagementTrackingProvenance
@@ -1027,6 +1028,10 @@ func transactionalError(m *ent.OutboundMessage) siteapi.OptNilString {
 
 func optNilString(v *string) siteapi.OptNilString {
 	return convert.Opt[siteapi.OptNilString](v)
+}
+
+func optNilBool(v *bool) siteapi.OptNilBool {
+	return convert.Opt[siteapi.OptNilBool](v)
 }
 
 func optNilEmailAddress(v *string) siteapi.OptNilEmailAddress {

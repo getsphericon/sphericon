@@ -250,8 +250,6 @@ var (
 	DefaultClaimedAt func() time.Time
 	// DefaultCaptured holds the default value on creation for the "captured" field.
 	DefaultCaptured bool
-	// DefaultTracked holds the default value on creation for the "tracked" field.
-	DefaultTracked bool
 )
 
 // Kind defines the type for the "kind" enum field.

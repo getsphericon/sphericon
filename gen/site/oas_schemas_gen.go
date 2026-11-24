@@ -5205,8 +5205,9 @@ type ContactExportOutboundMessage struct {
 	// True when the message went through a Test inbox: captured, not delivered.
 	Captured bool `json:"captured"`
 	// Whether the message went out tracked: with an open pixel and its links rewritten, or its links made
-	// Short tracked links (ADR 0120).
-	Tracked bool `json:"tracked"`
+	// Short tracked links (ADR 0120); null when no render decided it (a message skipped before its render,
+	// or not rendered yet).
+	Tracked OptNilBool `json:"tracked"`
 	// When the message's tracking was withdrawn (a refusal of the contact's, or the Workspace's default
 	// turned to `dont_track`); null while it was not.
 	TrackingWithdrawnAt OptNilTimestamp `json:"trackingWithdrawnAt"`
@@ -5323,7 +5324,7 @@ func (s *ContactExportOutboundMessage) GetCaptured() bool {
 }
 
 // GetTracked returns the value of Tracked.
-func (s *ContactExportOutboundMessage) GetTracked() bool {
+func (s *ContactExportOutboundMessage) GetTracked() OptNilBool {
 	return s.Tracked
 }
 
@@ -5458,7 +5459,7 @@ func (s *ContactExportOutboundMessage) SetCaptured(val bool) {
 }
 
 // SetTracked sets the value of Tracked.
-func (s *ContactExportOutboundMessage) SetTracked(val bool) {
+func (s *ContactExportOutboundMessage) SetTracked(val OptNilBool) {
 	s.Tracked = val
 }
 
@@ -13507,6 +13508,74 @@ func (o OptNilAbuseWarning) Get() (v AbuseWarning, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilAbuseWarning) Or(d AbuseWarning) AbuseWarning {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilBool returns new OptNilBool with value set to v.
+func NewOptNilBool(v bool) OptNilBool {
+	return OptNilBool{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilBool is optional nullable bool.
+type OptNilBool struct {
+	Value bool
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilBool was set.
+func (o OptNilBool) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilBool) Reset() {
+	var v bool
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilBool) SetTo(v bool) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilBool) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilBool) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v bool
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilBool) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilBool) Get() (v bool, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilBool) Or(d bool) bool {
 	if v, ok := o.Get(); ok {
 		return v
 	}

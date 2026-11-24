@@ -78,7 +78,7 @@ type OutboundMessage struct {
 	// Captured holds the value of the "captured" field.
 	Captured bool `json:"captured,omitempty"`
 	// Tracked holds the value of the "tracked" field.
-	Tracked bool `json:"tracked,omitempty"`
+	Tracked *bool `json:"tracked,omitempty"`
 	// TrackingWithdrawnAt holds the value of the "tracking_withdrawn_at" field.
 	TrackingWithdrawnAt *time.Time `json:"tracking_withdrawn_at,omitempty"`
 	// BroadcastID holds the value of the "broadcast_id" field.
@@ -440,7 +440,8 @@ func (_m *OutboundMessage) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field tracked", values[i])
 			} else if value.Valid {
-				_m.Tracked = value.Bool
+				_m.Tracked = new(bool)
+				*_m.Tracked = value.Bool
 			}
 		case outboundmessage.FieldTrackingWithdrawnAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -712,8 +713,10 @@ func (_m *OutboundMessage) String() string {
 	builder.WriteString("captured=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Captured))
 	builder.WriteString(", ")
-	builder.WriteString("tracked=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Tracked))
+	if v := _m.Tracked; v != nil {
+		builder.WriteString("tracked=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
 	builder.WriteString(", ")
 	if v := _m.TrackingWithdrawnAt; v != nil {
 		builder.WriteString("tracking_withdrawn_at=")

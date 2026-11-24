@@ -12,6 +12,7 @@
   contact_id: 100
   template_id: 1
   status: sent
+  tracked: true
   sending_domain: codebasics.dev
   provider_message_id: '<fixture-100@codebasics.dev>'
   sent_at: '{{daysAgo 2}}'
@@ -27,6 +28,7 @@
   contact_id: 101
   template_id: 3
   status: sent
+  tracked: true
   sending_domain: codebasics.dev
   provider_message_id: '<fixture-101@codebasics.dev>'
   sent_at: '{{daysAgo 3}}'
@@ -42,6 +44,7 @@
   contact_id: 105
   template_id: 3
   status: sent
+  tracked: true
   sending_domain: codebasics.dev
   provider_message_id: '<fixture-102@codebasics.dev>'
   sent_at: '{{daysAgo 8}}'
@@ -83,6 +86,7 @@
   contact_id: 103
   template_id: 2
   status: sent
+  tracked: true
   sending_domain: codebasics.dev
   provider_message_id: '<fixture-105@codebasics.dev>'
   sent_at: '{{daysAgo 4}}'
@@ -114,6 +118,7 @@
   channel: email
   destination: usage.one@codebasics.dev
   status: sent
+  tracked: true
   integration_id: 1
   sent_at: '{{hoursAgo 2}}'
   claimed_at: '{{hoursAgo 2}}'
@@ -129,6 +134,7 @@
   channel: email
   destination: usage.two@codebasics.dev
   status: sent
+  tracked: true
   integration_id: 1
   sent_at: '{{hoursAgo 20}}'
   claimed_at: '{{hoursAgo 20}}'
@@ -142,6 +148,7 @@
   channel: email
   destination: usage.old@codebasics.dev
   status: sent
+  tracked: true
   integration_id: 1
   sent_at: '{{hoursAgo 30}}'
   claimed_at: '{{hoursAgo 30}}'
@@ -155,6 +162,7 @@
   channel: email
   destination: usage.ses@codebasics.dev
   status: sent
+  tracked: true
   integration_id: 2
   sent_at: '{{hoursAgo 1}}'
   claimed_at: '{{hoursAgo 1}}'
@@ -181,6 +189,7 @@
   channel: email
   destination: usage@globex.test
   status: sent
+  tracked: true
   integration_id: 900
   sent_at: '{{hoursAgo 1}}'
   claimed_at: '{{hoursAgo 1}}'
@@ -200,6 +209,7 @@
   automation_version_id: 901
   automation_step_id: 'e79a8d05-4974-56ef-ab76-3d777a91a4bd'
   status: sent
+  tracked: true
   integration_id: 902
   captured: true
   sent_at: '{{daysAgo 400}}'
@@ -221,6 +231,7 @@
   broadcast_id: 300
   broadcast_recipient_id: 3000
   status: sent
+  tracked: true
   sending_domain: mail.initech.test
   sent_at: '2026-01-02 00:00:00'
   claimed_at: '2026-01-02 00:00:00'
@@ -234,6 +245,7 @@
   destination: erin@initech.test
   contact_id: 300
   status: sent
+  tracked: true
   sending_domain: mail.initech.test
   sent_at: '2026-01-02 00:00:00'
   claimed_at: '2026-01-02 00:00:00'
@@ -253,6 +265,7 @@
   automation_version_id: 300
   automation_step_id: '42ba7642-d13f-55bb-8dfe-56d6b7ca7bdf'
   status: sent
+  tracked: true
   sending_domain: mail.initech.test
   sent_at: '2026-01-02 00:00:00'
   claimed_at: '2026-01-02 00:00:00'
@@ -268,6 +281,7 @@
   broadcast_id: 300
   broadcast_recipient_id: 3001
   status: sent
+  tracked: true
   sending_domain: mail.initech.test
   sent_at: '2026-01-02 00:00:00'
   claimed_at: '2026-01-02 00:00:00'
@@ -281,6 +295,7 @@
   channel: email
   destination: stranger@initech.test
   status: sent
+  tracked: true
   sending_domain: mail.initech.test
   sent_at: '2026-01-02 00:00:00'
   claimed_at: '2026-01-02 00:00:00'
@@ -296,6 +311,7 @@
   destination: moved@initech.test
   broadcast_id: 300
   status: sent
+  tracked: true
   sending_domain: mail.initech.test
   app_origin: 'https://old.initech.test'
   sent_at: '2026-01-03 00:00:00'
@@ -311,6 +327,7 @@
   contact_id: 1
   template_id: 1
   status: sent
+  tracked: true
   sending_domain: codebasics.dev
   provider_message_id: 'ses-msg-alice-1'
   sent_at: '{{daysAgo 1}}'
@@ -326,6 +343,7 @@
   contact_id: 1
   template_id: 1
   status: sent
+  tracked: true
   sending_domain: codebasics.dev
   provider_message_id: 'pm-msg-alice-1'
   sent_at: '{{daysAgo 1}}'
@@ -340,6 +358,7 @@
   contact_id: 1
   template_id: 1
   status: sent
+  tracked: true
   sending_domain: codebasics.dev
   provider_message_id: '<mg-msg-alice-1@codebasics.dev>'
   sent_at: '{{daysAgo 1}}'
@@ -357,6 +376,7 @@
   contact_id: 800
   template_id: 1
   status: sent
+  tracked: true
   sending_domain: codebasics.dev
   provider_message_id: '<fixture-800@codebasics.dev>'
   sent_at: '2026-02-02 11:00:00'
@@ -371,6 +391,7 @@
   destination: export.subject@example.com
   template_id: 1
   status: sent
+  tracked: true
   sending_domain: codebasics.dev
   provider_message_id: '<fixture-801@codebasics.dev>'
   sent_at: '2026-02-03 11:00:00'
@@ -397,6 +418,7 @@
   channel: email
   destination: someone@example.com
   status: sent
+  tracked: true
   provider_message_id: '<fixture-911@kramerica.test>'
   sent_at: '{{daysAgo 60}}'
   claimed_at: '{{daysAgo 60}}'
@@ -413,6 +435,7 @@
   contact_id: 100
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 3}}'
   claimed_at: '{{daysAgo 3}}'
   broadcast_id: 200
@@ -430,6 +453,7 @@
   contact_id: 101
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 3}}'
   claimed_at: '{{daysAgo 3}}'
   broadcast_id: 200
@@ -448,6 +472,7 @@
   contact_id: 102
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 3}}'
   claimed_at: '{{daysAgo 3}}'
   broadcast_id: 200
@@ -465,6 +490,7 @@
   contact_id: 103
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 3}}'
   claimed_at: '{{daysAgo 3}}'
   broadcast_id: 200
@@ -480,6 +506,7 @@
   contact_id: 104
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 3}}'
   claimed_at: '{{daysAgo 3}}'
   broadcast_id: 200
@@ -496,6 +523,7 @@
   contact_id: 105
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 3}}'
   claimed_at: '{{daysAgo 3}}'
   broadcast_id: 200
@@ -511,6 +539,7 @@
   contact_id: 106
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 3}}'
   claimed_at: '{{daysAgo 3}}'
   broadcast_id: 200
@@ -525,6 +554,7 @@
   contact_id: 107
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 3}}'
   claimed_at: '{{daysAgo 3}}'
   broadcast_id: 200
@@ -539,6 +569,7 @@
   contact_id: 108
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 3}}'
   claimed_at: '{{daysAgo 3}}'
   broadcast_id: 200
@@ -553,6 +584,7 @@
   contact_id: 109
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 3}}'
   claimed_at: '{{daysAgo 3}}'
   broadcast_id: 200
@@ -567,6 +599,7 @@
   contact_id: 105
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 9}}'
   claimed_at: '{{daysAgo 9}}'
   broadcast_id: 201
@@ -583,6 +616,7 @@
   contact_id: 106
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 9}}'
   claimed_at: '{{daysAgo 9}}'
   broadcast_id: 201
@@ -598,6 +632,7 @@
   contact_id: 107
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 9}}'
   claimed_at: '{{daysAgo 9}}'
   broadcast_id: 201
@@ -613,6 +648,7 @@
   contact_id: 108
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 9}}'
   claimed_at: '{{daysAgo 9}}'
   broadcast_id: 201
@@ -628,6 +664,7 @@
   contact_id: 109
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 9}}'
   claimed_at: '{{daysAgo 9}}'
   broadcast_id: 201
@@ -642,6 +679,7 @@
   contact_id: 110
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 9}}'
   claimed_at: '{{daysAgo 9}}'
   broadcast_id: 201
@@ -656,6 +694,7 @@
   contact_id: 111
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 9}}'
   claimed_at: '{{daysAgo 9}}'
   broadcast_id: 201
@@ -670,6 +709,7 @@
   contact_id: 112
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 9}}'
   claimed_at: '{{daysAgo 9}}'
   broadcast_id: 201
@@ -684,6 +724,7 @@
   contact_id: 113
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 9}}'
   claimed_at: '{{daysAgo 9}}'
   broadcast_id: 201
@@ -698,6 +739,7 @@
   contact_id: 114
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 9}}'
   claimed_at: '{{daysAgo 9}}'
   broadcast_id: 201
@@ -712,6 +754,7 @@
   contact_id: 110
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 16}}'
   claimed_at: '{{daysAgo 16}}'
   broadcast_id: 202
@@ -728,6 +771,7 @@
   contact_id: 111
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 16}}'
   claimed_at: '{{daysAgo 16}}'
   broadcast_id: 202
@@ -744,6 +788,7 @@
   contact_id: 112
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 16}}'
   claimed_at: '{{daysAgo 16}}'
   broadcast_id: 202
@@ -759,6 +804,7 @@
   contact_id: 113
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 16}}'
   claimed_at: '{{daysAgo 16}}'
   broadcast_id: 202
@@ -774,6 +820,7 @@
   contact_id: 114
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 16}}'
   claimed_at: '{{daysAgo 16}}'
   broadcast_id: 202
@@ -789,6 +836,7 @@
   contact_id: 115
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 16}}'
   claimed_at: '{{daysAgo 16}}'
   broadcast_id: 202
@@ -803,6 +851,7 @@
   contact_id: 116
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 16}}'
   claimed_at: '{{daysAgo 16}}'
   broadcast_id: 202
@@ -817,6 +866,7 @@
   contact_id: 117
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 16}}'
   claimed_at: '{{daysAgo 16}}'
   broadcast_id: 202
@@ -831,6 +881,7 @@
   contact_id: 118
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 16}}'
   claimed_at: '{{daysAgo 16}}'
   broadcast_id: 202
@@ -845,6 +896,7 @@
   contact_id: 119
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 16}}'
   claimed_at: '{{daysAgo 16}}'
   broadcast_id: 202
@@ -859,6 +911,7 @@
   contact_id: 115
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 24}}'
   claimed_at: '{{daysAgo 24}}'
   broadcast_id: 203
@@ -875,6 +928,7 @@
   contact_id: 116
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 24}}'
   claimed_at: '{{daysAgo 24}}'
   broadcast_id: 203
@@ -890,6 +944,7 @@
   contact_id: 117
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 24}}'
   claimed_at: '{{daysAgo 24}}'
   broadcast_id: 203
@@ -905,6 +960,7 @@
   contact_id: 118
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 24}}'
   claimed_at: '{{daysAgo 24}}'
   broadcast_id: 203
@@ -920,6 +976,7 @@
   contact_id: 119
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 24}}'
   claimed_at: '{{daysAgo 24}}'
   broadcast_id: 203
@@ -934,6 +991,7 @@
   contact_id: 120
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 24}}'
   claimed_at: '{{daysAgo 24}}'
   broadcast_id: 203
@@ -948,6 +1006,7 @@
   contact_id: 121
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 24}}'
   claimed_at: '{{daysAgo 24}}'
   broadcast_id: 203
@@ -962,6 +1021,7 @@
   contact_id: 122
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 24}}'
   claimed_at: '{{daysAgo 24}}'
   broadcast_id: 203
@@ -976,6 +1036,7 @@
   contact_id: 123
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 24}}'
   claimed_at: '{{daysAgo 24}}'
   broadcast_id: 203
@@ -1004,6 +1065,7 @@
   contact_id: 120
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 204
@@ -1020,6 +1082,7 @@
   contact_id: 121
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 204
@@ -1036,6 +1099,7 @@
   contact_id: 122
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 204
@@ -1052,6 +1116,7 @@
   contact_id: 123
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 204
@@ -1067,6 +1132,7 @@
   contact_id: 124
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 204
@@ -1082,6 +1148,7 @@
   contact_id: 125
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 204
@@ -1097,6 +1164,7 @@
   contact_id: 126
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 204
@@ -1111,6 +1179,7 @@
   contact_id: 127
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 204
@@ -1125,6 +1194,7 @@
   contact_id: 128
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 204
@@ -1139,6 +1209,7 @@
   contact_id: 129
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 204
@@ -1153,6 +1224,7 @@
   contact_id: 100
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 70}}'
   claimed_at: '{{daysAgo 70}}'
   broadcast_id: 205
@@ -1169,6 +1241,7 @@
   contact_id: 103
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 70}}'
   claimed_at: '{{daysAgo 70}}'
   broadcast_id: 205
@@ -1184,6 +1257,7 @@
   contact_id: 105
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 70}}'
   claimed_at: '{{daysAgo 70}}'
   broadcast_id: 205
@@ -1199,6 +1273,7 @@
   contact_id: 107
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 70}}'
   claimed_at: '{{daysAgo 70}}'
   broadcast_id: 205
@@ -1214,6 +1289,7 @@
   contact_id: 110
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 70}}'
   claimed_at: '{{daysAgo 70}}'
   broadcast_id: 205
@@ -1228,6 +1304,7 @@
   contact_id: 113
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 70}}'
   claimed_at: '{{daysAgo 70}}'
   broadcast_id: 205
@@ -1242,6 +1319,7 @@
   contact_id: 115
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 70}}'
   claimed_at: '{{daysAgo 70}}'
   broadcast_id: 205
@@ -1256,6 +1334,7 @@
   contact_id: 118
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 70}}'
   claimed_at: '{{daysAgo 70}}'
   broadcast_id: 205
@@ -1270,6 +1349,7 @@
   contact_id: 120
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 70}}'
   claimed_at: '{{daysAgo 70}}'
   broadcast_id: 205
@@ -1284,6 +1364,7 @@
   contact_id: 125
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 70}}'
   claimed_at: '{{daysAgo 70}}'
   broadcast_id: 205
@@ -1298,6 +1379,7 @@
   contact_id: 800
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 3}}'
   claimed_at: '{{daysAgo 3}}'
   broadcast_id: 200
@@ -1385,6 +1467,7 @@
   contact_id: 20020
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1876}}'
   claimed_at: '{{hoursAgo 1876}}'
   broadcast_id: 20001
@@ -1399,6 +1482,7 @@
   contact_id: 20021
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1872}}'
   claimed_at: '{{hoursAgo 1872}}'
   broadcast_id: 20001
@@ -1413,6 +1497,7 @@
   contact_id: 20022
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1873}}'
   claimed_at: '{{hoursAgo 1873}}'
   broadcast_id: 20001
@@ -1427,6 +1512,7 @@
   contact_id: 20023
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1874}}'
   claimed_at: '{{hoursAgo 1874}}'
   broadcast_id: 20001
@@ -1441,6 +1527,7 @@
   contact_id: 20024
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1875}}'
   claimed_at: '{{hoursAgo 1875}}'
   broadcast_id: 20001
@@ -1457,6 +1544,7 @@
   contact_id: 20025
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1876}}'
   claimed_at: '{{hoursAgo 1876}}'
   broadcast_id: 20001
@@ -1473,6 +1561,7 @@
   contact_id: 20026
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1872}}'
   claimed_at: '{{hoursAgo 1872}}'
   broadcast_id: 20001
@@ -1487,6 +1576,7 @@
   contact_id: 20027
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1873}}'
   claimed_at: '{{hoursAgo 1873}}'
   broadcast_id: 20001
@@ -1502,6 +1592,7 @@
   contact_id: 20028
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1874}}'
   claimed_at: '{{hoursAgo 1874}}'
   broadcast_id: 20001
@@ -1516,6 +1607,7 @@
   contact_id: 20029
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1875}}'
   claimed_at: '{{hoursAgo 1875}}'
   broadcast_id: 20001
@@ -1531,6 +1623,7 @@
   contact_id: 20030
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1876}}'
   claimed_at: '{{hoursAgo 1876}}'
   broadcast_id: 20001
@@ -1546,6 +1639,7 @@
   contact_id: 20031
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1872}}'
   claimed_at: '{{hoursAgo 1872}}'
   broadcast_id: 20001
@@ -1560,6 +1654,7 @@
   contact_id: 20040
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1876}}'
   claimed_at: '{{hoursAgo 1876}}'
   broadcast_id: 20001
@@ -1574,6 +1669,7 @@
   contact_id: 20041
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1872}}'
   claimed_at: '{{hoursAgo 1872}}'
   broadcast_id: 20001
@@ -1588,6 +1684,7 @@
   contact_id: 20042
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1873}}'
   claimed_at: '{{hoursAgo 1873}}'
   broadcast_id: 20001
@@ -1602,6 +1699,7 @@
   contact_id: 20043
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1874}}'
   claimed_at: '{{hoursAgo 1874}}'
   broadcast_id: 20001
@@ -1616,6 +1714,7 @@
   contact_id: 20044
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1875}}'
   claimed_at: '{{hoursAgo 1875}}'
   broadcast_id: 20001
@@ -1630,6 +1729,7 @@
   contact_id: 20015
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1252}}'
   claimed_at: '{{hoursAgo 1252}}'
   broadcast_id: 20002
@@ -1645,6 +1745,7 @@
   contact_id: 20016
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1248}}'
   claimed_at: '{{hoursAgo 1248}}'
   broadcast_id: 20002
@@ -1660,6 +1761,7 @@
   contact_id: 20017
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1249}}'
   claimed_at: '{{hoursAgo 1249}}'
   broadcast_id: 20002
@@ -1674,6 +1776,7 @@
   contact_id: 20018
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1250}}'
   claimed_at: '{{hoursAgo 1250}}'
   broadcast_id: 20002
@@ -1688,6 +1791,7 @@
   contact_id: 20019
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1251}}'
   claimed_at: '{{hoursAgo 1251}}'
   broadcast_id: 20002
@@ -1702,6 +1806,7 @@
   contact_id: 20020
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1252}}'
   claimed_at: '{{hoursAgo 1252}}'
   broadcast_id: 20002
@@ -1717,6 +1822,7 @@
   contact_id: 20021
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1248}}'
   claimed_at: '{{hoursAgo 1248}}'
   broadcast_id: 20002
@@ -1732,6 +1838,7 @@
   contact_id: 20022
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1249}}'
   claimed_at: '{{hoursAgo 1249}}'
   broadcast_id: 20002
@@ -1746,6 +1853,7 @@
   contact_id: 20023
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1250}}'
   claimed_at: '{{hoursAgo 1250}}'
   broadcast_id: 20002
@@ -1761,6 +1869,7 @@
   contact_id: 20024
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1251}}'
   claimed_at: '{{hoursAgo 1251}}'
   broadcast_id: 20002
@@ -1775,6 +1884,7 @@
   contact_id: 20025
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1252}}'
   claimed_at: '{{hoursAgo 1252}}'
   broadcast_id: 20002
@@ -1789,6 +1899,7 @@
   contact_id: 20026
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1248}}'
   claimed_at: '{{hoursAgo 1248}}'
   broadcast_id: 20002
@@ -1803,6 +1914,7 @@
   contact_id: 20027
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1249}}'
   claimed_at: '{{hoursAgo 1249}}'
   broadcast_id: 20002
@@ -1818,6 +1930,7 @@
   contact_id: 20028
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1250}}'
   claimed_at: '{{hoursAgo 1250}}'
   broadcast_id: 20002
@@ -1833,6 +1946,7 @@
   contact_id: 20029
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1251}}'
   claimed_at: '{{hoursAgo 1251}}'
   broadcast_id: 20002
@@ -1848,6 +1962,7 @@
   contact_id: 20030
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1252}}'
   claimed_at: '{{hoursAgo 1252}}'
   broadcast_id: 20002
@@ -1864,6 +1979,7 @@
   contact_id: 20031
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1248}}'
   claimed_at: '{{hoursAgo 1248}}'
   broadcast_id: 20002
@@ -1879,6 +1995,7 @@
   contact_id: 20032
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1249}}'
   claimed_at: '{{hoursAgo 1249}}'
   broadcast_id: 20002
@@ -1893,6 +2010,7 @@
   contact_id: 20033
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1250}}'
   claimed_at: '{{hoursAgo 1250}}'
   broadcast_id: 20002
@@ -1907,6 +2025,7 @@
   contact_id: 20034
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1251}}'
   claimed_at: '{{hoursAgo 1251}}'
   broadcast_id: 20002
@@ -1923,6 +2042,7 @@
   contact_id: 20035
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1252}}'
   claimed_at: '{{hoursAgo 1252}}'
   broadcast_id: 20002
@@ -1937,6 +2057,7 @@
   contact_id: 20036
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1248}}'
   claimed_at: '{{hoursAgo 1248}}'
   broadcast_id: 20002
@@ -1951,6 +2072,7 @@
   contact_id: 20037
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1249}}'
   claimed_at: '{{hoursAgo 1249}}'
   broadcast_id: 20002
@@ -1965,6 +2087,7 @@
   contact_id: 20038
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1250}}'
   claimed_at: '{{hoursAgo 1250}}'
   broadcast_id: 20002
@@ -1979,6 +2102,7 @@
   contact_id: 20039
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1251}}'
   claimed_at: '{{hoursAgo 1251}}'
   broadcast_id: 20002
@@ -1993,6 +2117,7 @@
   contact_id: 20040
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1252}}'
   claimed_at: '{{hoursAgo 1252}}'
   broadcast_id: 20002
@@ -2007,6 +2132,7 @@
   contact_id: 20041
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1248}}'
   claimed_at: '{{hoursAgo 1248}}'
   broadcast_id: 20002
@@ -2022,6 +2148,7 @@
   contact_id: 20042
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1249}}'
   claimed_at: '{{hoursAgo 1249}}'
   broadcast_id: 20002
@@ -2036,6 +2163,7 @@
   contact_id: 20043
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1250}}'
   claimed_at: '{{hoursAgo 1250}}'
   broadcast_id: 20002
@@ -2050,6 +2178,7 @@
   contact_id: 20044
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 1251}}'
   claimed_at: '{{hoursAgo 1251}}'
   broadcast_id: 20002
@@ -2064,6 +2193,7 @@
   contact_id: 20015
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 796}}'
   claimed_at: '{{hoursAgo 796}}'
   broadcast_id: 20003
@@ -2079,6 +2209,7 @@
   contact_id: 20016
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 792}}'
   claimed_at: '{{hoursAgo 792}}'
   broadcast_id: 20003
@@ -2093,6 +2224,7 @@
   contact_id: 20017
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 793}}'
   claimed_at: '{{hoursAgo 793}}'
   broadcast_id: 20003
@@ -2107,6 +2239,7 @@
   contact_id: 20018
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 794}}'
   claimed_at: '{{hoursAgo 794}}'
   broadcast_id: 20003
@@ -2123,6 +2256,7 @@
   contact_id: 20019
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 795}}'
   claimed_at: '{{hoursAgo 795}}'
   broadcast_id: 20003
@@ -2139,6 +2273,7 @@
   contact_id: 20020
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 796}}'
   claimed_at: '{{hoursAgo 796}}'
   broadcast_id: 20003
@@ -2155,6 +2290,7 @@
   contact_id: 20021
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 792}}'
   claimed_at: '{{hoursAgo 792}}'
   broadcast_id: 20003
@@ -2170,6 +2306,7 @@
   contact_id: 20022
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 793}}'
   claimed_at: '{{hoursAgo 793}}'
   broadcast_id: 20003
@@ -2186,6 +2323,7 @@
   contact_id: 20023
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 794}}'
   claimed_at: '{{hoursAgo 794}}'
   broadcast_id: 20003
@@ -2201,6 +2339,7 @@
   contact_id: 20024
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 795}}'
   claimed_at: '{{hoursAgo 795}}'
   broadcast_id: 20003
@@ -2215,6 +2354,7 @@
   contact_id: 20025
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 796}}'
   claimed_at: '{{hoursAgo 796}}'
   broadcast_id: 20003
@@ -2231,6 +2371,7 @@
   contact_id: 20026
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 792}}'
   claimed_at: '{{hoursAgo 792}}'
   broadcast_id: 20003
@@ -2246,6 +2387,7 @@
   contact_id: 20027
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 793}}'
   claimed_at: '{{hoursAgo 793}}'
   broadcast_id: 20003
@@ -2261,6 +2403,7 @@
   contact_id: 20028
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 794}}'
   claimed_at: '{{hoursAgo 794}}'
   broadcast_id: 20003
@@ -2276,6 +2419,7 @@
   contact_id: 20029
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 795}}'
   claimed_at: '{{hoursAgo 795}}'
   broadcast_id: 20003
@@ -2291,6 +2435,7 @@
   contact_id: 20030
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 796}}'
   claimed_at: '{{hoursAgo 796}}'
   broadcast_id: 20003
@@ -2305,6 +2450,7 @@
   contact_id: 20031
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 792}}'
   claimed_at: '{{hoursAgo 792}}'
   broadcast_id: 20003
@@ -2320,6 +2466,7 @@
   contact_id: 20032
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 793}}'
   claimed_at: '{{hoursAgo 793}}'
   broadcast_id: 20003
@@ -2334,6 +2481,7 @@
   contact_id: 20033
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 794}}'
   claimed_at: '{{hoursAgo 794}}'
   broadcast_id: 20003
@@ -2348,6 +2496,7 @@
   contact_id: 20034
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 795}}'
   claimed_at: '{{hoursAgo 795}}'
   broadcast_id: 20003
@@ -2363,6 +2512,7 @@
   contact_id: 20035
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 796}}'
   claimed_at: '{{hoursAgo 796}}'
   broadcast_id: 20003
@@ -2379,6 +2529,7 @@
   contact_id: 20036
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 792}}'
   claimed_at: '{{hoursAgo 792}}'
   broadcast_id: 20003
@@ -2393,6 +2544,7 @@
   contact_id: 20037
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 793}}'
   claimed_at: '{{hoursAgo 793}}'
   broadcast_id: 20003
@@ -2407,6 +2559,7 @@
   contact_id: 20038
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 794}}'
   claimed_at: '{{hoursAgo 794}}'
   broadcast_id: 20003
@@ -2421,6 +2574,7 @@
   contact_id: 20039
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 795}}'
   claimed_at: '{{hoursAgo 795}}'
   broadcast_id: 20003
@@ -2435,6 +2589,7 @@
   contact_id: 20040
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 796}}'
   claimed_at: '{{hoursAgo 796}}'
   broadcast_id: 20003
@@ -2450,6 +2605,7 @@
   contact_id: 20041
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 792}}'
   claimed_at: '{{hoursAgo 792}}'
   broadcast_id: 20003
@@ -2464,6 +2620,7 @@
   contact_id: 20042
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 793}}'
   claimed_at: '{{hoursAgo 793}}'
   broadcast_id: 20003
@@ -2478,6 +2635,7 @@
   contact_id: 20043
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 794}}'
   claimed_at: '{{hoursAgo 794}}'
   broadcast_id: 20003
@@ -2492,6 +2650,7 @@
   contact_id: 20044
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 795}}'
   claimed_at: '{{hoursAgo 795}}'
   broadcast_id: 20003
@@ -2506,6 +2665,7 @@
   contact_id: 20015
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 460}}'
   claimed_at: '{{hoursAgo 460}}'
   broadcast_id: 20004
@@ -2522,6 +2682,7 @@
   contact_id: 20016
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 456}}'
   claimed_at: '{{hoursAgo 456}}'
   broadcast_id: 20004
@@ -2538,6 +2699,7 @@
   contact_id: 20017
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 457}}'
   claimed_at: '{{hoursAgo 457}}'
   broadcast_id: 20004
@@ -2552,6 +2714,7 @@
   contact_id: 20018
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 458}}'
   claimed_at: '{{hoursAgo 458}}'
   broadcast_id: 20004
@@ -2568,6 +2731,7 @@
   contact_id: 20019
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 459}}'
   claimed_at: '{{hoursAgo 459}}'
   broadcast_id: 20004
@@ -2583,6 +2747,7 @@
   contact_id: 20020
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 460}}'
   claimed_at: '{{hoursAgo 460}}'
   broadcast_id: 20004
@@ -2598,6 +2763,7 @@
   contact_id: 20021
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 456}}'
   claimed_at: '{{hoursAgo 456}}'
   broadcast_id: 20004
@@ -2613,6 +2779,7 @@
   contact_id: 20022
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 457}}'
   claimed_at: '{{hoursAgo 457}}'
   broadcast_id: 20004
@@ -2628,6 +2795,7 @@
   contact_id: 20023
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 458}}'
   claimed_at: '{{hoursAgo 458}}'
   broadcast_id: 20004
@@ -2642,6 +2810,7 @@
   contact_id: 20024
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 459}}'
   claimed_at: '{{hoursAgo 459}}'
   broadcast_id: 20004
@@ -2657,6 +2826,7 @@
   contact_id: 20025
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 460}}'
   claimed_at: '{{hoursAgo 460}}'
   broadcast_id: 20004
@@ -2672,6 +2842,7 @@
   contact_id: 20026
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 456}}'
   claimed_at: '{{hoursAgo 456}}'
   broadcast_id: 20004
@@ -2686,6 +2857,7 @@
   contact_id: 20027
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 457}}'
   claimed_at: '{{hoursAgo 457}}'
   broadcast_id: 20004
@@ -2702,6 +2874,7 @@
   contact_id: 20028
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 458}}'
   claimed_at: '{{hoursAgo 458}}'
   broadcast_id: 20004
@@ -2717,6 +2890,7 @@
   contact_id: 20029
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 459}}'
   claimed_at: '{{hoursAgo 459}}'
   broadcast_id: 20004
@@ -2733,6 +2907,7 @@
   contact_id: 20030
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 460}}'
   claimed_at: '{{hoursAgo 460}}'
   broadcast_id: 20004
@@ -2748,6 +2923,7 @@
   contact_id: 20031
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 456}}'
   claimed_at: '{{hoursAgo 456}}'
   broadcast_id: 20004
@@ -2763,6 +2939,7 @@
   contact_id: 20032
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 457}}'
   claimed_at: '{{hoursAgo 457}}'
   broadcast_id: 20004
@@ -2778,6 +2955,7 @@
   contact_id: 20033
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 458}}'
   claimed_at: '{{hoursAgo 458}}'
   broadcast_id: 20004
@@ -2792,6 +2970,7 @@
   contact_id: 20034
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 459}}'
   claimed_at: '{{hoursAgo 459}}'
   broadcast_id: 20004
@@ -2806,6 +2985,7 @@
   contact_id: 20035
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 460}}'
   claimed_at: '{{hoursAgo 460}}'
   broadcast_id: 20004
@@ -2820,6 +3000,7 @@
   contact_id: 20036
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 456}}'
   claimed_at: '{{hoursAgo 456}}'
   broadcast_id: 20004
@@ -2834,6 +3015,7 @@
   contact_id: 20037
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 457}}'
   claimed_at: '{{hoursAgo 457}}'
   broadcast_id: 20004
@@ -2848,6 +3030,7 @@
   contact_id: 20038
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 458}}'
   claimed_at: '{{hoursAgo 458}}'
   broadcast_id: 20004
@@ -2862,6 +3045,7 @@
   contact_id: 20039
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 459}}'
   claimed_at: '{{hoursAgo 459}}'
   broadcast_id: 20004
@@ -2878,6 +3062,7 @@
   contact_id: 20040
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 460}}'
   claimed_at: '{{hoursAgo 460}}'
   broadcast_id: 20004
@@ -2892,6 +3077,7 @@
   contact_id: 20041
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 456}}'
   claimed_at: '{{hoursAgo 456}}'
   broadcast_id: 20004
@@ -2906,6 +3092,7 @@
   contact_id: 20042
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 457}}'
   claimed_at: '{{hoursAgo 457}}'
   broadcast_id: 20004
@@ -2921,6 +3108,7 @@
   contact_id: 20043
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 458}}'
   claimed_at: '{{hoursAgo 458}}'
   broadcast_id: 20004
@@ -2935,6 +3123,7 @@
   contact_id: 20044
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 459}}'
   claimed_at: '{{hoursAgo 459}}'
   broadcast_id: 20004
@@ -2949,6 +3138,7 @@
   contact_id: 20009
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 219}}'
   claimed_at: '{{hoursAgo 219}}'
   broadcast_id: 20005
@@ -2963,6 +3153,7 @@
   contact_id: 20010
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 220}}'
   claimed_at: '{{hoursAgo 220}}'
   broadcast_id: 20005
@@ -2977,6 +3168,7 @@
   contact_id: 20011
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 216}}'
   claimed_at: '{{hoursAgo 216}}'
   broadcast_id: 20005
@@ -2991,6 +3183,7 @@
   contact_id: 20012
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 217}}'
   claimed_at: '{{hoursAgo 217}}'
   broadcast_id: 20005
@@ -3006,6 +3199,7 @@
   contact_id: 20013
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 218}}'
   claimed_at: '{{hoursAgo 218}}'
   broadcast_id: 20005
@@ -3020,6 +3214,7 @@
   contact_id: 20014
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 219}}'
   claimed_at: '{{hoursAgo 219}}'
   broadcast_id: 20005
@@ -3035,6 +3230,7 @@
   contact_id: 20015
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 220}}'
   claimed_at: '{{hoursAgo 220}}'
   broadcast_id: 20005
@@ -3049,6 +3245,7 @@
   contact_id: 20016
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 216}}'
   claimed_at: '{{hoursAgo 216}}'
   broadcast_id: 20005
@@ -3064,6 +3261,7 @@
   contact_id: 20017
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 217}}'
   claimed_at: '{{hoursAgo 217}}'
   broadcast_id: 20005
@@ -3079,6 +3277,7 @@
   contact_id: 20018
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 218}}'
   claimed_at: '{{hoursAgo 218}}'
   broadcast_id: 20005
@@ -3095,6 +3294,7 @@
   contact_id: 20019
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 219}}'
   claimed_at: '{{hoursAgo 219}}'
   broadcast_id: 20005
@@ -3110,6 +3310,7 @@
   contact_id: 20020
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 220}}'
   claimed_at: '{{hoursAgo 220}}'
   broadcast_id: 20005
@@ -3126,6 +3327,7 @@
   contact_id: 20021
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 216}}'
   claimed_at: '{{hoursAgo 216}}'
   broadcast_id: 20005
@@ -3142,6 +3344,7 @@
   contact_id: 20022
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 217}}'
   claimed_at: '{{hoursAgo 217}}'
   broadcast_id: 20005
@@ -3156,6 +3359,7 @@
   contact_id: 20023
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 218}}'
   claimed_at: '{{hoursAgo 218}}'
   broadcast_id: 20005
@@ -3170,6 +3374,7 @@
   contact_id: 20024
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 219}}'
   claimed_at: '{{hoursAgo 219}}'
   broadcast_id: 20005
@@ -3185,6 +3390,7 @@
   contact_id: 20025
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 220}}'
   claimed_at: '{{hoursAgo 220}}'
   broadcast_id: 20005
@@ -3199,6 +3405,7 @@
   contact_id: 20026
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 216}}'
   claimed_at: '{{hoursAgo 216}}'
   broadcast_id: 20005
@@ -3215,6 +3422,7 @@
   contact_id: 20027
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 217}}'
   claimed_at: '{{hoursAgo 217}}'
   broadcast_id: 20005
@@ -3229,6 +3437,7 @@
   contact_id: 20028
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 218}}'
   claimed_at: '{{hoursAgo 218}}'
   broadcast_id: 20005
@@ -3243,6 +3452,7 @@
   contact_id: 20029
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 219}}'
   claimed_at: '{{hoursAgo 219}}'
   broadcast_id: 20005
@@ -3258,6 +3468,7 @@
   contact_id: 20030
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 220}}'
   claimed_at: '{{hoursAgo 220}}'
   broadcast_id: 20005
@@ -3273,6 +3484,7 @@
   contact_id: 20031
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 216}}'
   claimed_at: '{{hoursAgo 216}}'
   broadcast_id: 20005
@@ -3288,6 +3500,7 @@
   contact_id: 20032
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 217}}'
   claimed_at: '{{hoursAgo 217}}'
   broadcast_id: 20005
@@ -3304,6 +3517,7 @@
   contact_id: 20033
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 218}}'
   claimed_at: '{{hoursAgo 218}}'
   broadcast_id: 20005
@@ -3318,6 +3532,7 @@
   contact_id: 20034
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 219}}'
   claimed_at: '{{hoursAgo 219}}'
   broadcast_id: 20005
@@ -3333,6 +3548,7 @@
   contact_id: 20035
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 220}}'
   claimed_at: '{{hoursAgo 220}}'
   broadcast_id: 20005
@@ -3347,6 +3563,7 @@
   contact_id: 20036
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 216}}'
   claimed_at: '{{hoursAgo 216}}'
   broadcast_id: 20005
@@ -3363,6 +3580,7 @@
   contact_id: 20037
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 217}}'
   claimed_at: '{{hoursAgo 217}}'
   broadcast_id: 20005
@@ -3377,6 +3595,7 @@
   contact_id: 20038
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 218}}'
   claimed_at: '{{hoursAgo 218}}'
   broadcast_id: 20005
@@ -3393,6 +3612,7 @@
   contact_id: 20039
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 219}}'
   claimed_at: '{{hoursAgo 219}}'
   broadcast_id: 20005
@@ -3407,6 +3627,7 @@
   contact_id: 20040
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 220}}'
   claimed_at: '{{hoursAgo 220}}'
   broadcast_id: 20005
@@ -3421,6 +3642,7 @@
   contact_id: 20041
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 216}}'
   claimed_at: '{{hoursAgo 216}}'
   broadcast_id: 20005
@@ -3436,6 +3658,7 @@
   contact_id: 20042
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 217}}'
   claimed_at: '{{hoursAgo 217}}'
   broadcast_id: 20005
@@ -3450,6 +3673,7 @@
   contact_id: 20043
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 218}}'
   claimed_at: '{{hoursAgo 218}}'
   broadcast_id: 20005
@@ -3465,6 +3689,7 @@
   contact_id: 20044
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 219}}'
   claimed_at: '{{hoursAgo 219}}'
   broadcast_id: 20005
@@ -3479,6 +3704,7 @@
   contact_id: 20003
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 74}}'
   claimed_at: '{{hoursAgo 74}}'
   broadcast_id: 20006
@@ -3493,6 +3719,7 @@
   contact_id: 20004
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 75}}'
   claimed_at: '{{hoursAgo 75}}'
   broadcast_id: 20006
@@ -3507,6 +3734,7 @@
   contact_id: 20005
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 76}}'
   claimed_at: '{{hoursAgo 76}}'
   broadcast_id: 20006
@@ -3521,6 +3749,7 @@
   contact_id: 20006
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 72}}'
   claimed_at: '{{hoursAgo 72}}'
   broadcast_id: 20006
@@ -3535,6 +3764,7 @@
   contact_id: 20007
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 73}}'
   claimed_at: '{{hoursAgo 73}}'
   broadcast_id: 20006
@@ -3549,6 +3779,7 @@
   contact_id: 20008
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 74}}'
   claimed_at: '{{hoursAgo 74}}'
   broadcast_id: 20006
@@ -3563,6 +3794,7 @@
   contact_id: 20009
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 75}}'
   claimed_at: '{{hoursAgo 75}}'
   broadcast_id: 20006
@@ -3577,6 +3809,7 @@
   contact_id: 20010
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 76}}'
   claimed_at: '{{hoursAgo 76}}'
   broadcast_id: 20006
@@ -3591,6 +3824,7 @@
   contact_id: 20011
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 72}}'
   claimed_at: '{{hoursAgo 72}}'
   broadcast_id: 20006
@@ -3605,6 +3839,7 @@
   contact_id: 20012
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 73}}'
   claimed_at: '{{hoursAgo 73}}'
   broadcast_id: 20006
@@ -3619,6 +3854,7 @@
   contact_id: 20013
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 74}}'
   claimed_at: '{{hoursAgo 74}}'
   broadcast_id: 20006
@@ -3633,6 +3869,7 @@
   contact_id: 20014
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 75}}'
   claimed_at: '{{hoursAgo 75}}'
   broadcast_id: 20006
@@ -3647,6 +3884,7 @@
   contact_id: 20015
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 76}}'
   claimed_at: '{{hoursAgo 76}}'
   broadcast_id: 20006
@@ -3662,6 +3900,7 @@
   contact_id: 20016
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 72}}'
   claimed_at: '{{hoursAgo 72}}'
   broadcast_id: 20006
@@ -3676,6 +3915,7 @@
   contact_id: 20017
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 73}}'
   claimed_at: '{{hoursAgo 73}}'
   broadcast_id: 20006
@@ -3691,6 +3931,7 @@
   contact_id: 20018
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 74}}'
   claimed_at: '{{hoursAgo 74}}'
   broadcast_id: 20006
@@ -3705,6 +3946,7 @@
   contact_id: 20019
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 75}}'
   claimed_at: '{{hoursAgo 75}}'
   broadcast_id: 20006
@@ -3720,6 +3962,7 @@
   contact_id: 20020
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 76}}'
   claimed_at: '{{hoursAgo 76}}'
   broadcast_id: 20006
@@ -3735,6 +3978,7 @@
   contact_id: 20021
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 72}}'
   claimed_at: '{{hoursAgo 72}}'
   broadcast_id: 20006
@@ -3750,6 +3994,7 @@
   contact_id: 20022
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 73}}'
   claimed_at: '{{hoursAgo 73}}'
   broadcast_id: 20006
@@ -3764,6 +4009,7 @@
   contact_id: 20023
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 74}}'
   claimed_at: '{{hoursAgo 74}}'
   broadcast_id: 20006
@@ -3778,6 +4024,7 @@
   contact_id: 20024
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 75}}'
   claimed_at: '{{hoursAgo 75}}'
   broadcast_id: 20006
@@ -3792,6 +4039,7 @@
   contact_id: 20025
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 76}}'
   claimed_at: '{{hoursAgo 76}}'
   broadcast_id: 20006
@@ -3807,6 +4055,7 @@
   contact_id: 20026
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 72}}'
   claimed_at: '{{hoursAgo 72}}'
   broadcast_id: 20006
@@ -3823,6 +4072,7 @@
   contact_id: 20027
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 73}}'
   claimed_at: '{{hoursAgo 73}}'
   broadcast_id: 20006
@@ -3838,6 +4088,7 @@
   contact_id: 20028
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 74}}'
   claimed_at: '{{hoursAgo 74}}'
   broadcast_id: 20006
@@ -3853,6 +4104,7 @@
   contact_id: 20029
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 75}}'
   claimed_at: '{{hoursAgo 75}}'
   broadcast_id: 20006
@@ -3868,6 +4120,7 @@
   contact_id: 20030
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 76}}'
   claimed_at: '{{hoursAgo 76}}'
   broadcast_id: 20006
@@ -3884,6 +4137,7 @@
   contact_id: 20031
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 72}}'
   claimed_at: '{{hoursAgo 72}}'
   broadcast_id: 20006
@@ -3899,6 +4153,7 @@
   contact_id: 20032
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 73}}'
   claimed_at: '{{hoursAgo 73}}'
   broadcast_id: 20006
@@ -3915,6 +4170,7 @@
   contact_id: 20033
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 74}}'
   claimed_at: '{{hoursAgo 74}}'
   broadcast_id: 20006
@@ -3929,6 +4185,7 @@
   contact_id: 20034
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 75}}'
   claimed_at: '{{hoursAgo 75}}'
   broadcast_id: 20006
@@ -3944,6 +4201,7 @@
   contact_id: 20035
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 76}}'
   claimed_at: '{{hoursAgo 76}}'
   broadcast_id: 20006
@@ -3959,6 +4217,7 @@
   contact_id: 20036
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 72}}'
   claimed_at: '{{hoursAgo 72}}'
   broadcast_id: 20006
@@ -3973,6 +4232,7 @@
   contact_id: 20037
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 73}}'
   claimed_at: '{{hoursAgo 73}}'
   broadcast_id: 20006
@@ -3987,6 +4247,7 @@
   contact_id: 20038
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 74}}'
   claimed_at: '{{hoursAgo 74}}'
   broadcast_id: 20006
@@ -4001,6 +4262,7 @@
   contact_id: 20039
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 75}}'
   claimed_at: '{{hoursAgo 75}}'
   broadcast_id: 20006
@@ -4015,6 +4277,7 @@
   contact_id: 20040
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 76}}'
   claimed_at: '{{hoursAgo 76}}'
   broadcast_id: 20006
@@ -4043,6 +4306,7 @@
   contact_id: 20042
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 73}}'
   claimed_at: '{{hoursAgo 73}}'
   broadcast_id: 20006
@@ -4058,6 +4322,7 @@
   contact_id: 20043
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 74}}'
   claimed_at: '{{hoursAgo 74}}'
   broadcast_id: 20006
@@ -4073,6 +4338,7 @@
   contact_id: 20044
   sending_source: 'broadcasts'
   status: 'sent'
+  tracked: true
   sent_at: '{{hoursAgo 75}}'
   claimed_at: '{{hoursAgo 75}}'
   broadcast_id: 20006
@@ -4090,6 +4356,7 @@
   contact_id: 20022
   template_id: 20001
   status: 'sent'
+  tracked: true
   sending_domain: 'mail.brightpath.localhost'
   provider_message_id: '<bp-0@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 3}}'
@@ -4105,6 +4372,7 @@
   contact_id: 20031
   template_id: 20002
   status: 'sent'
+  tracked: true
   sending_domain: 'mail.brightpath.localhost'
   provider_message_id: '<bp-1@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 5}}'
@@ -4120,6 +4388,7 @@
   contact_id: 20015
   template_id: 20004
   status: 'sent'
+  tracked: true
   sending_domain: 'mail.brightpath.localhost'
   provider_message_id: '<bp-2@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 9}}'
@@ -4135,6 +4404,7 @@
   contact_id: 20006
   template_id: 20003
   status: 'sent'
+  tracked: true
   sending_domain: 'mail.brightpath.localhost'
   provider_message_id: '<bp-3@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 14}}'
@@ -4150,6 +4420,7 @@
   contact_id: 20003
   template_id: 20001
   status: 'sent'
+  tracked: true
   sending_domain: 'mail.brightpath.localhost'
   provider_message_id: '<bp-4@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 20}}'
@@ -4165,6 +4436,7 @@
   contact_id: 20030
   template_id: 20002
   status: 'sent'
+  tracked: true
   sending_domain: 'mail.brightpath.localhost'
   provider_message_id: '<bp-5@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 27}}'
@@ -4193,6 +4465,7 @@
   contact_id: 20009
   template_id: 20001
   status: 'sent'
+  tracked: true
   sending_domain: 'mail.brightpath.localhost'
   provider_message_id: '<bp-7@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 41}}'
@@ -4221,6 +4494,7 @@
   contact_id: 20018
   template_id: 20003
   status: 'sent'
+  tracked: true
   sending_domain: 'mail.brightpath.localhost'
   provider_message_id: '<bp-9@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 58}}'
@@ -4236,6 +4510,7 @@
   contact_id: 20027
   template_id: 20004
   status: 'sent'
+  tracked: true
   sending_domain: 'mail.brightpath.localhost'
   provider_message_id: '<bp-10@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 71}}'
@@ -4251,6 +4526,7 @@
   contact_id: 20024
   template_id: 20002
   status: 'sent'
+  tracked: true
   sending_domain: 'mail.brightpath.localhost'
   provider_message_id: '<bp-11@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 80}}'
@@ -4266,6 +4542,7 @@
   contact_id: 20035
   template_id: 20001
   status: 'sent'
+  tracked: true
   sending_domain: 'mail.brightpath.localhost'
   provider_message_id: '<bp-12@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 95}}'
@@ -4281,6 +4558,7 @@
   contact_id: 20028
   template_id: 20002
   status: 'sent'
+  tracked: true
   sending_domain: 'mail.brightpath.localhost'
   provider_message_id: '<bp-13@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 120}}'
@@ -4315,6 +4593,7 @@
   channel: email
   destination: meter-emails-b@example.com
   status: sent
+  tracked: true
   sent_at: '{{monthAgo 17 3 10 0}}'
   claimed_at: '{{monthAgo 17 3 10 0}}'
   workspace_id: 5800
@@ -4326,6 +4605,7 @@
   channel: email
   destination: meter-emails-a@example.com
   status: sent
+  tracked: true
   sent_at: '{{monthAgo 17 4 10 0}}'
   claimed_at: '{{monthAgo 17 4 10 0}}'
   workspace_id: 5800
@@ -4337,6 +4617,7 @@
   channel: email
   destination: meter-emails-t@example.com
   status: sent
+  tracked: true
   sent_at: '{{monthAgo 17 28 23 0}}'
   claimed_at: '{{monthAgo 17 28 23 0}}'
   workspace_id: 5800
@@ -4369,6 +4650,7 @@
   channel: email
   destination: meter-emails-next@example.com
   status: sent
+  tracked: true
   sent_at: '{{monthAgo 16 1 0 0}}'
   claimed_at: '{{monthAgo 16 1 0 0}}'
   workspace_id: 5800
@@ -4380,6 +4662,7 @@
   channel: email
   destination: meter-live-sent@example.com
   status: sent
+  tracked: true
   sent_at: '{{monthAgo 14 2 9 0}}'
   claimed_at: '{{monthAgo 14 2 9 0}}'
   workspace_id: 5800
@@ -4411,6 +4694,7 @@
   channel: email
   destination: meter-closed-one@example.com
   status: sent
+  tracked: true
   sent_at: '{{monthAgo 10 3 10 0}}'
   claimed_at: '{{monthAgo 10 3 10 0}}'
   workspace_id: 5800
@@ -4432,6 +4716,7 @@
   channel: email
   destination: meter-catchup-jan@example.com
   status: sent
+  tracked: true
   sent_at: '{{monthAgo 7 3 10 0}}'
   claimed_at: '{{monthAgo 7 3 10 0}}'
   workspace_id: 5800
@@ -4443,6 +4728,7 @@
   channel: email
   destination: meter-catchup-feb1@example.com
   status: sent
+  tracked: true
   sent_at: '{{monthAgo 6 3 10 0}}'
   claimed_at: '{{monthAgo 6 3 10 0}}'
   workspace_id: 5800
@@ -4454,6 +4740,7 @@
   channel: email
   destination: meter-catchup-feb2@example.com
   status: sent
+  tracked: true
   sent_at: '{{monthAgo 6 4 10 0}}'
   claimed_at: '{{monthAgo 6 4 10 0}}'
   workspace_id: 5800
@@ -4465,6 +4752,7 @@
   channel: email
   destination: meter-catchup-mar@example.com
   status: sent
+  tracked: true
   sent_at: '{{monthAgo 5 4 10 0}}'
   claimed_at: '{{monthAgo 5 4 10 0}}'
   workspace_id: 5800
@@ -4486,6 +4774,7 @@
   channel: email
   destination: meter-midnight-before@example.com
   status: sent
+  tracked: true
   sent_at: '{{monthAgo 19 1 0 -1}}'
   claimed_at: '{{monthAgo 19 1 0 -1}}'
   workspace_id: 5800
@@ -4497,6 +4786,7 @@
   channel: email
   destination: meter-midnight-after@example.com
   status: sent
+  tracked: true
   sent_at: '{{monthAgo 19 1 0 1}}'
   claimed_at: '{{monthAgo 19 1 0 1}}'
   workspace_id: 5800
@@ -4512,6 +4802,7 @@
   contact_id: 1
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 400}}'
   claimed_at: '{{daysAgo 400}}'
   broadcast_id: 5700
@@ -4530,6 +4821,7 @@
   destination: tracked@umbrella.test
   sending_source: broadcasts
   status: sent
+  tracked: true
   integration_id: 910
   sent_at: '{{hoursAgo 3}}'
   claimed_at: '{{hoursAgo 3}}'
@@ -4595,6 +4887,7 @@
   destination: alice.automation@example.com
   contact_id: 1
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 400}}'
   claimed_at: '{{daysAgo 400}}'
   automation_id: 100
@@ -4612,6 +4905,7 @@
   destination: alice.automation@example.com
   contact_id: 1
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 400}}'
   claimed_at: '{{daysAgo 400}}'
   automation_id: 5570
@@ -4629,6 +4923,7 @@
   destination: bob.automation@example.com
   contact_id: 2
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 400}}'
   claimed_at: '{{daysAgo 400}}'
   delivered_at: '{{daysAgo 400}}'
@@ -4649,6 +4944,7 @@
   channel: email
   destination: drip.one@example.com
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 400}}'
   claimed_at: '{{daysAgo 400}}'
   delivered_at: '{{daysAgo 400}}'
@@ -4683,6 +4979,7 @@
   contact_id: 20049
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '2026-03-08 04:59:00+00'
   claimed_at: '2026-03-08 04:59:00+00'
   broadcast_id: 20009
@@ -4698,6 +4995,7 @@
   contact_id: 20050
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '2026-03-08 05:00:00+00'
   claimed_at: '2026-03-08 05:00:00+00'
   broadcast_id: 20009
@@ -4715,6 +5013,7 @@
   contact_id: 20051
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '2026-03-09 03:59:00+00'
   claimed_at: '2026-03-09 03:59:00+00'
   broadcast_id: 20009
@@ -4730,6 +5029,7 @@
   contact_id: 20052
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '2026-03-09 04:00:00+00'
   claimed_at: '2026-03-09 04:00:00+00'
   broadcast_id: 20009
@@ -4745,6 +5045,7 @@
   contact_id: 20053
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '2026-11-01 03:59:00+00'
   claimed_at: '2026-11-01 03:59:00+00'
   broadcast_id: 20009
@@ -4760,6 +5061,7 @@
   contact_id: 20054
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '2026-11-01 04:00:00+00'
   claimed_at: '2026-11-01 04:00:00+00'
   broadcast_id: 20009
@@ -4776,6 +5078,7 @@
   contact_id: 20055
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '2026-11-02 04:59:00+00'
   claimed_at: '2026-11-02 04:59:00+00'
   broadcast_id: 20009
@@ -4793,6 +5096,7 @@
   contact_id: 20056
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '2026-11-02 05:00:00+00'
   claimed_at: '2026-11-02 05:00:00+00'
   broadcast_id: 20009
@@ -4810,6 +5114,7 @@
   contact_id: 20034
   sending_source: 'automations'
   status: 'sent'
+  tracked: true
   sending_domain: 'mail.brightpath.localhost'
   provider_message_id: '<bp-a0@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 40}}'
@@ -4831,6 +5136,7 @@
   contact_id: 20037
   sending_source: 'automations'
   status: 'sent'
+  tracked: true
   sending_domain: 'mail.brightpath.localhost'
   provider_message_id: '<bp-a1@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 57}}'
@@ -4851,6 +5157,7 @@
   contact_id: 20040
   sending_source: 'automations'
   status: 'sent'
+  tracked: true
   sending_domain: 'mail.brightpath.localhost'
   provider_message_id: '<bp-a2@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 74}}'
@@ -4872,6 +5179,7 @@
   contact_id: 20043
   sending_source: 'automations'
   status: 'sent'
+  tracked: true
   sending_domain: 'mail.brightpath.localhost'
   provider_message_id: '<bp-a3@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 91}}'
@@ -4928,6 +5236,7 @@
   contact_id: 20007
   sending_source: 'automations'
   status: 'sent'
+  tracked: true
   sending_domain: 'mail.brightpath.localhost'
   provider_message_id: '<bp-a6@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 142}}'
@@ -4950,6 +5259,7 @@
   contact_id: 20010
   sending_source: 'automations'
   status: 'sent'
+  tracked: true
   sending_domain: 'mail.brightpath.localhost'
   provider_message_id: '<bp-a7@mail.brightpath.localhost>'
   sent_at: '{{hoursAgo 159}}'
@@ -4974,6 +5284,7 @@
   contact_id: 810
   sending_source: broadcasts
   status: sent
+  tracked: true
   provider_message_id: 'SM00000000000000000000000000007500'
   sent_at: '2026-02-01 00:00:00'
   claimed_at: '2026-02-01 00:00:00'
@@ -4993,6 +5304,7 @@
   contact_id: 7210
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 7201
@@ -5007,6 +5319,7 @@
   contact_id: 7212
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 7201
@@ -5021,6 +5334,7 @@
   contact_id: 7213
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 7201
@@ -5035,6 +5349,7 @@
   contact_id: 7214
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 7201
@@ -5049,6 +5364,7 @@
   contact_id: 7215
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 7201
@@ -5063,6 +5379,7 @@
   contact_id: 7216
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 7201
@@ -5077,6 +5394,7 @@
   contact_id: 7218
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 7201
@@ -5091,6 +5409,7 @@
   contact_id: 7219
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 7201
@@ -5105,6 +5424,7 @@
   contact_id: 7220
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 7201
@@ -5119,6 +5439,7 @@
   contact_id: 7221
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 7201
@@ -5133,6 +5454,7 @@
   contact_id: 7222
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 7201
@@ -5147,6 +5469,7 @@
   contact_id: 7223
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 7201
@@ -5161,6 +5484,7 @@
   contact_id: 7224
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 7201
@@ -5175,6 +5499,7 @@
   contact_id: 7211
   sending_source: automations
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 5}}'
   claimed_at: '{{daysAgo 5}}'
   automation_id: 7201
@@ -5191,6 +5516,7 @@
   contact_id: 7212
   sending_source: automations
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 5}}'
   claimed_at: '{{daysAgo 5}}'
   automation_id: 7201
@@ -5207,6 +5533,7 @@
   contact_id: 7213
   sending_source: automations
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 5}}'
   claimed_at: '{{daysAgo 5}}'
   automation_id: 7201
@@ -5223,6 +5550,7 @@
   contact_id: 7214
   sending_source: automations
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 5}}'
   claimed_at: '{{daysAgo 5}}'
   automation_id: 7201
@@ -5239,6 +5567,7 @@
   contact_id: 7219
   sending_source: automations
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 5}}'
   claimed_at: '{{daysAgo 5}}'
   automation_id: 7201
@@ -5255,6 +5584,7 @@
   contact_id: 7220
   sending_source: automations
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 5}}'
   claimed_at: '{{daysAgo 5}}'
   automation_id: 7201
@@ -5271,6 +5601,7 @@
   contact_id: 7221
   sending_source: automations
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 5}}'
   claimed_at: '{{daysAgo 5}}'
   automation_id: 7201
@@ -5287,6 +5618,7 @@
   contact_id: 7222
   sending_source: automations
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 5}}'
   claimed_at: '{{daysAgo 5}}'
   automation_id: 7201
@@ -5303,6 +5635,7 @@
   contact_id: 7223
   sending_source: automations
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 5}}'
   claimed_at: '{{daysAgo 5}}'
   automation_id: 7201
@@ -5319,6 +5652,7 @@
   contact_id: 7224
   sending_source: automations
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 5}}'
   claimed_at: '{{daysAgo 5}}'
   automation_id: 7201
@@ -5334,6 +5668,7 @@
   channel: email
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 6}}'
   claimed_at: '{{daysAgo 6}}'
   broadcast_id: 7200
@@ -5346,6 +5681,7 @@
   channel: email
   sending_source: automations
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 5}}'
   claimed_at: '{{daysAgo 5}}'
   automation_id: 7200
@@ -5360,6 +5696,7 @@
   channel: email
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 6}}'
   claimed_at: '{{daysAgo 6}}'
   broadcast_id: 7202
@@ -5374,6 +5711,7 @@
   contact_id: 7200
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 5}}'
   claimed_at: '{{daysAgo 5}}'
   broadcast_id: 7203
@@ -5388,6 +5726,7 @@
   contact_id: 20049
   sending_source: automations
   status: sent
+  tracked: true
   sent_at: '2026-02-20 15:00:00+00'
   claimed_at: '2026-02-20 15:00:00+00'
   automation_id: 6100
@@ -5403,6 +5742,7 @@
   contact_id: 20054
   sending_source: automations
   status: sent
+  tracked: true
   sent_at: '2026-02-20 15:00:00+00'
   claimed_at: '2026-02-20 15:00:00+00'
   automation_id: 6100
@@ -5418,6 +5758,7 @@
   contact_id: 20050
   sending_source: automations
   status: sent
+  tracked: true
   sent_at: '2026-02-20 15:00:00+00'
   claimed_at: '2026-02-20 15:00:00+00'
   automation_id: 6100
@@ -5435,6 +5776,7 @@
   contact_id: 7217
   sending_source: broadcasts
   status: sent
+  tracked: true
   sent_at: '{{daysAgo 40}}'
   claimed_at: '{{daysAgo 40}}'
   broadcast_id: 7201

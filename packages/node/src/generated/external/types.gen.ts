@@ -1848,9 +1848,10 @@ export type ContactExportOutboundMessage = {
   captured: boolean;
   /**
    * Whether the message went out tracked: with an open pixel and its links rewritten, or its
-   * links made Short tracked links (ADR 0120)
+   * links made Short tracked links (ADR 0120); null when no render decided it (a message skipped
+   * before its render, or not rendered yet)
    */
-  tracked: boolean;
+  tracked?: boolean | null;
   /**
    * When the message's tracking was withdrawn (a refusal of the contact's, or the Workspace's
    * default turned to `dont_track`); null while it was not
@@ -3801,9 +3802,9 @@ export type ExportMessageRow = {
    */
   captured: boolean;
   /**
-   * Whether the message went out tracked (ADR 0120): an open pixel and tracked links. A message is tracked while this holds and no withdrawal is recorded.
+   * Whether the message went out tracked (ADR 0120): an open pixel and tracked links; null when no render decided it (a message skipped before its render, or not rendered yet). A message is tracked while this is true and no withdrawal is recorded.
    */
-  tracked: boolean;
+  tracked?: boolean | null;
   /**
    * When the message's tracking was withdrawn (a refusal of its Destination, or the Workspace's default turned to `dont_track`); absent while it was not. Once set it never clears.
    */

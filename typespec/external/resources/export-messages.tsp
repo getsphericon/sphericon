@@ -94,8 +94,8 @@ model ExportMessageRow {
   /** True when the message went through a Test inbox: captured, not delivered */
   captured: boolean;
 
-  /** Whether the message went out tracked (ADR 0120): an open pixel and tracked links. A message is tracked while this holds and no withdrawal is recorded. */
-  tracked: boolean;
+  /** Whether the message went out tracked (ADR 0120): an open pixel and tracked links; null when no render decided it (a message skipped before its render, or not rendered yet). A message is tracked while this is true and no withdrawal is recorded. */
+  tracked?: boolean | null;
 
   /** When the message's tracking was withdrawn (a refusal of its Destination, or the Workspace's default turned to `dont_track`); absent while it was not. Once set it never clears. */
   tracking_withdrawn_at: Timestamp | null;

@@ -8820,8 +8820,10 @@ func (s *ContactExportOutboundMessage) encodeFields(e *jx.Encoder) {
 		e.Bool(s.Captured)
 	}
 	{
-		e.FieldStart("tracked")
-		e.Bool(s.Tracked)
+		if s.Tracked.Set {
+			e.FieldStart("tracked")
+			s.Tracked.Encode(e)
+		}
 	}
 	{
 		if s.TrackingWithdrawnAt.Set {
@@ -9109,11 +9111,9 @@ func (s *ContactExportOutboundMessage) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"captured\"")
 			}
 		case "tracked":
-			requiredBitSet[2] |= 1 << 4
 			if err := func() error {
-				v, err := d.Bool()
-				s.Tracked = bool(v)
-				if err != nil {
+				s.Tracked.Reset()
+				if err := s.Tracked.Decode(d); err != nil {
 					return err
 				}
 				return nil
@@ -9192,7 +9192,7 @@ func (s *ContactExportOutboundMessage) Decode(d *jx.Decoder) error {
 	for i, mask := range [4]uint8{
 		0b10001111,
 		0b00000100,
-		0b00011000,
+		0b00001000,
 		0b00000100,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
@@ -22479,6 +22479,57 @@ func (s OptNilAbuseWarning) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptNilAbuseWarning) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes bool as json.
+func (o OptNilBool) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	if o.Null {
+		e.Null()
+		return
+	}
+	e.Bool(bool(o.Value))
+}
+
+// Decode decodes bool from json.
+func (o *OptNilBool) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptNilBool to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v bool
+		o.Value = v
+		o.Set = true
+		o.Null = true
+		return nil
+	}
+	o.Set = true
+	o.Null = false
+	v, err := d.Bool()
+	if err != nil {
+		return err
+	}
+	o.Value = bool(v)
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptNilBool) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptNilBool) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

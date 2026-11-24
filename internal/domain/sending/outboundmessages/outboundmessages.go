@@ -554,7 +554,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	dest = eligible[0].dest
 
 	// Whether the message goes out tracked is decided now, after the claim, so a refusal recorded
-	// meanwhile finds the row (ADR 0120), and is on the row before the provider is called.
+	// meanwhile finds the row (ADR 0120); the decision is on the row before the provider is called.
 	tracked, err := m.decideTracking(ctx, s, req, ch, msg, eligible)
 	if err != nil {
 		m.release(ctx, s, msg)
@@ -570,6 +570,12 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 			return Result{}, err
 		}
 		return m.fail(ctx, s, msg, err.Error())
+	}
+	// What the render decided is the message's fact, recorded before the provider is called: a
+	// message whose render failed decided nothing.
+	if err := m.recordTracking(ctx, s, msg, tracked); err != nil {
+		m.release(ctx, s, msg)
+		return Result{}, err
 	}
 
 	// Provider limit and Send cap: the last gate before the provider, so a message that was

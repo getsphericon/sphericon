@@ -49,8 +49,9 @@ type MessageRow struct {
 	ClickedAt         *time.Time         `json:"clicked_at"`
 	Captured          bool               `json:"captured"`
 	// Tracked and TrackingWithdrawnAt are the two facts of the message's tracking (ADR 0120): it
-	// is tracked while the first holds and the second is absent.
-	Tracked             bool       `json:"tracked"`
+	// is tracked while the first is true and the second is absent. Tracked is null until a render
+	// decides it.
+	Tracked             *bool      `json:"tracked"`
 	TrackingWithdrawnAt *time.Time `json:"tracking_withdrawn_at"`
 	CreatedAt           time.Time  `json:"created_at"`
 	UpdatedAt           time.Time  `json:"updated_at"`

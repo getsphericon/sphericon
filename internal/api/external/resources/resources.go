@@ -165,6 +165,7 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend timestamp
 // goverter:extend revision
 // goverter:extend optNilString
+// goverter:extend optNilBool
 // goverter:extend optNilStepID
 // goverter:extend optNilSendCap
 // goverter:extend optNilOptOutVia
@@ -794,6 +795,10 @@ func timestamp(t time.Time) externalapi.Timestamp {
 
 func optNilString(v *string) externalapi.OptNilString {
 	return convert.Opt[externalapi.OptNilString](v)
+}
+
+func optNilBool(v *bool) externalapi.OptNilBool {
+	return convert.Opt[externalapi.OptNilBool](v)
 }
 
 func optNilEmailAddress(v *string) externalapi.OptNilEmailAddress {

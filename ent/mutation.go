@@ -49309,7 +49309,7 @@ func (m *OutboundMessageMutation) Tracked() (r bool, exists bool) {
 // OldTracked returns the old "tracked" field's value of the OutboundMessage entity.
 // If the OutboundMessage object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *OutboundMessageMutation) OldTracked(ctx context.Context) (v bool, err error) {
+func (m *OutboundMessageMutation) OldTracked(ctx context.Context) (v *bool, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldTracked is only allowed on UpdateOne operations")
 	}
@@ -49323,9 +49323,22 @@ func (m *OutboundMessageMutation) OldTracked(ctx context.Context) (v bool, err e
 	return oldValue.Tracked, nil
 }
 
+// ClearTracked clears the value of the "tracked" field.
+func (m *OutboundMessageMutation) ClearTracked() {
+	m.tracked = nil
+	m.clearedFields[outboundmessage.FieldTracked] = struct{}{}
+}
+
+// TrackedCleared returns if the "tracked" field was cleared in this mutation.
+func (m *OutboundMessageMutation) TrackedCleared() bool {
+	_, ok := m.clearedFields[outboundmessage.FieldTracked]
+	return ok
+}
+
 // ResetTracked resets all changes to the "tracked" field.
 func (m *OutboundMessageMutation) ResetTracked() {
 	m.tracked = nil
+	delete(m.clearedFields, outboundmessage.FieldTracked)
 }
 
 // SetTrackingWithdrawnAt sets the "tracking_withdrawn_at" field.
@@ -50870,6 +50883,9 @@ func (m *OutboundMessageMutation) ClearedFields() []string {
 	if m.FieldCleared(outboundmessage.FieldClickedAt) {
 		fields = append(fields, outboundmessage.FieldClickedAt)
 	}
+	if m.FieldCleared(outboundmessage.FieldTracked) {
+		fields = append(fields, outboundmessage.FieldTracked)
+	}
 	if m.FieldCleared(outboundmessage.FieldTrackingWithdrawnAt) {
 		fields = append(fields, outboundmessage.FieldTrackingWithdrawnAt)
 	}
@@ -50964,6 +50980,9 @@ func (m *OutboundMessageMutation) ClearField(name string) error {
 		return nil
 	case outboundmessage.FieldClickedAt:
 		m.ClearClickedAt()
+		return nil
+	case outboundmessage.FieldTracked:
+		m.ClearTracked()
 		return nil
 	case outboundmessage.FieldTrackingWithdrawnAt:
 		m.ClearTrackingWithdrawnAt()

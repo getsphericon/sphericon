@@ -432,6 +432,12 @@ func (_u *OutboundMessageUpdate) SetNillableTracked(v *bool) *OutboundMessageUpd
 	return _u
 }
 
+// ClearTracked clears the value of the "tracked" field.
+func (_u *OutboundMessageUpdate) ClearTracked() *OutboundMessageUpdate {
+	_u.mutation.ClearTracked()
+	return _u
+}
+
 // SetTrackingWithdrawnAt sets the "tracking_withdrawn_at" field.
 func (_u *OutboundMessageUpdate) SetTrackingWithdrawnAt(v time.Time) *OutboundMessageUpdate {
 	_u.mutation.SetTrackingWithdrawnAt(v)
@@ -970,6 +976,9 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if value, ok := _u.mutation.Tracked(); ok {
 		_spec.SetField(outboundmessage.FieldTracked, field.TypeBool, value)
+	}
+	if _u.mutation.TrackedCleared() {
+		_spec.ClearField(outboundmessage.FieldTracked, field.TypeBool)
 	}
 	if value, ok := _u.mutation.TrackingWithdrawnAt(); ok {
 		_spec.SetField(outboundmessage.FieldTrackingWithdrawnAt, field.TypeTime, value)
@@ -1716,6 +1725,12 @@ func (_u *OutboundMessageUpdateOne) SetNillableTracked(v *bool) *OutboundMessage
 	return _u
 }
 
+// ClearTracked clears the value of the "tracked" field.
+func (_u *OutboundMessageUpdateOne) ClearTracked() *OutboundMessageUpdateOne {
+	_u.mutation.ClearTracked()
+	return _u
+}
+
 // SetTrackingWithdrawnAt sets the "tracking_withdrawn_at" field.
 func (_u *OutboundMessageUpdateOne) SetTrackingWithdrawnAt(v time.Time) *OutboundMessageUpdateOne {
 	_u.mutation.SetTrackingWithdrawnAt(v)
@@ -2284,6 +2299,9 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 	}
 	if value, ok := _u.mutation.Tracked(); ok {
 		_spec.SetField(outboundmessage.FieldTracked, field.TypeBool, value)
+	}
+	if _u.mutation.TrackedCleared() {
+		_spec.ClearField(outboundmessage.FieldTracked, field.TypeBool)
 	}
 	if value, ok := _u.mutation.TrackingWithdrawnAt(); ok {
 		_spec.SetField(outboundmessage.FieldTrackingWithdrawnAt, field.TypeTime, value)
