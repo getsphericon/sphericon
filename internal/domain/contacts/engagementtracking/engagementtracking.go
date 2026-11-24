@@ -17,12 +17,12 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
-	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
@@ -337,7 +337,8 @@ func (m *Module) publishSuperseded(ctx context.Context, s *ent.Scoped, holder in
 
 // holderOf is the Contact holding destination on channel, locked against its Erasure to the end
 // of the transaction (contactlock.Referenced), 0 when none does. A Telegram user id is held by the
-// Contact its first Binding reaches, its own or through a Visitor: the one Contact the Event names.
+// Contact of its first Binding, the one Contact the Event names; a Visitor's Binding reaches no
+// Contact (ADR 0171).
 func (m *Module) holderOf(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string) (int64, error) {
 	var (
 		id  int64
@@ -360,26 +361,17 @@ func (m *Module) holderOf(ctx context.Context, s *ent.Scoped, channel channels.C
 	return m.locks.Referenced(ctx, s, id)
 }
 
-// boundContactOf is the Contact the first Binding of a Telegram user id reaches, its own or
-// through a Visitor, 0 when none reaches one.
+// boundContactOf is the Contact of the first Binding of a Telegram user id that is a Contact's, 0
+// when none is.
 func boundContactOf(ctx context.Context, s *ent.Scoped, user string) (int64, error) {
-	rows, err := s.Binding().Query().
-		Where(binding.ChannelEQ(binding.ChannelTelegram), binding.Destination(user)).
-		WithVisitor().
+	b, err := s.Binding().Query().
+		Where(binding.ChannelEQ(binding.ChannelTelegram), binding.Destination(user), binding.ContactIDNotNil()).
 		Order(binding.ByBoundAt(), binding.ByID()).
-		All(ctx)
+		First(ctx)
 	if err != nil {
 		return 0, err
 	}
-	for _, b := range rows {
-		if b.ContactID != nil {
-			return *b.ContactID, nil
-		}
-		if b.Edges.Visitor != nil && b.Edges.Visitor.ContactID != nil {
-			return *b.Edges.Visitor.ContactID, nil
-		}
-	}
-	return 0, nil
+	return lo.FromPtr(b.ContactID), nil
 }
 
 // ContactConsents is the consent of each Destination of a Contact.
@@ -455,8 +447,8 @@ type destination struct {
 }
 
 // destinationsOf is the Destinations of c that take a consent: its email address, its phone, and
-// the Telegram users Bound to it on any bot of the Workspace, its own or through one of its
-// Visitors, as the sending context's Chats.DestinationsOf lists them.
+// the Telegram users of its own Bindings on any bot of the Workspace, the chats its card lists and
+// its sends reach (a Visitor's Binding reaches no Contact, ADR 0171).
 func destinationsOf(ctx context.Context, s *ent.Scoped, c *ent.Contact) ([]destination, error) {
 	var out []destination
 	if c.Email != nil {
@@ -468,7 +460,7 @@ func destinationsOf(ctx context.Context, s *ent.Scoped, c *ent.Contact) ([]desti
 	users, err := s.Binding().Query().
 		Where(
 			binding.ChannelEQ(binding.ChannelTelegram),
-			binding.Or(binding.ContactID(c.ID), binding.HasVisitorWith(visitor.ContactID(c.ID))),
+			binding.ContactID(c.ID),
 		).
 		Unique(true).
 		Order(binding.ByDestination()).
