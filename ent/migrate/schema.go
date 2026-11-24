@@ -2265,6 +2265,11 @@ var (
 				Columns: []*schema.Column{OutboundMessagesColumns[37], OutboundMessagesColumns[2], OutboundMessagesColumns[0]},
 			},
 			{
+				Name:    "outboundmessage_workspace_id_destination_id",
+				Unique:  false,
+				Columns: []*schema.Column{OutboundMessagesColumns[37], OutboundMessagesColumns[6], OutboundMessagesColumns[0]},
+			},
+			{
 				Name:    "outbound_messages_workspace_id_contact_id",
 				Unique:  false,
 				Columns: []*schema.Column{OutboundMessagesColumns[37], OutboundMessagesColumns[35]},

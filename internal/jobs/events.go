@@ -37,6 +37,7 @@ func EventConsumers() []events.Consumer {
 			return BroadcastUnsubscribeEventArgs{WorkspaceID: env.WorkspaceID, MessageID: e.OutboundMessageID, ObservedAt: e.ObservedAt}
 		}, Replay: events.RetainForReplay[BroadcastUnsubscribeEventArgs](1)},
 		{Wants: callsForNotices, Job: events.EnvelopeJob[NoticeEventArgs]},
+		{Wants: withdrawsTracking, Job: withdrawTracking},
 	}
 }
 

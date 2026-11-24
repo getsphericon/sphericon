@@ -40,6 +40,18 @@ func NotTracked() predicate.OutboundMessage {
 // taken over meanwhile is ErrInProgress.
 func (m *Module) decideTracking(ctx context.Context, s *ent.Scoped, req Request, ch channel, msg *ent.OutboundMessage, targets []target) (bool, error) {
 	tracked := ch.tracks(req) && IsTracked(msg)
+	if tracked && msg.Destination == "" && len(targets) > 0 {
+		// A Channel of Bindings resolves its Destination after the claim. It is on the row before
+		// the consent is read, so a refusal recorded meanwhile, whose withdrawal finds the messages
+		// by their Destination, reaches this one; the send records the target that accepted.
+		n, err := s.OutboundMessage().Update().Where(ownsClaim(msg)...).SetDestination(targets[0].dest).Save(ctx)
+		if err != nil {
+			return false, fmt.Errorf("outbound: record the destination of message %d: %w", msg.ID, err)
+		}
+		if n == 0 {
+			return false, ErrInProgress // the claim was taken over while we worked
+		}
+	}
 	for _, t := range targets {
 		if !tracked {
 			break

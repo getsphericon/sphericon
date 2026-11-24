@@ -2098,6 +2098,18 @@ func ScopedEntities() []*ScopedEntity {
 					},
 				},
 				{
+					Name: "broadcast", Target: "Broadcast",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Order().UpdateOneID(id).SetBroadcastID(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "automation", Target: "Automation",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Order().UpdateOneID(id).SetAutomationID(target).Exec(ctx)
+					},
+				},
+				{
 					Name: "movements", Target: "OrderMovement",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.Order().UpdateOneID(id).AddMovementIDs(target).Exec(ctx)

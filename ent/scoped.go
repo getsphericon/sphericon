@@ -42879,6 +42879,94 @@ func (u *OrderScopedUpsert) ClearContactID() *OrderScopedUpsert {
 
 const RoleOf_OrderScopedUpsert_ClearContactID = RoleStep
 
+// UpdateBroadcastID sets the "broadcast_id" field to the value that was provided on create.
+func (u *OrderScopedUpsert) UpdateBroadcastID() *OrderScopedUpsert {
+	u.u.SetExcluded(order.FieldBroadcastID)
+	return u
+}
+
+const RoleOf_OrderScopedUpsert_UpdateBroadcastID = RoleStep
+
+// ClearBroadcastID clears the value of the "broadcast_id" field.
+func (u *OrderScopedUpsert) ClearBroadcastID() *OrderScopedUpsert {
+	u.u.SetNull(order.FieldBroadcastID)
+	return u
+}
+
+const RoleOf_OrderScopedUpsert_ClearBroadcastID = RoleStep
+
+// UpdateAutomationID sets the "automation_id" field to the value that was provided on create.
+func (u *OrderScopedUpsert) UpdateAutomationID() *OrderScopedUpsert {
+	u.u.SetExcluded(order.FieldAutomationID)
+	return u
+}
+
+const RoleOf_OrderScopedUpsert_UpdateAutomationID = RoleStep
+
+// ClearAutomationID clears the value of the "automation_id" field.
+func (u *OrderScopedUpsert) ClearAutomationID() *OrderScopedUpsert {
+	u.u.SetNull(order.FieldAutomationID)
+	return u
+}
+
+const RoleOf_OrderScopedUpsert_ClearAutomationID = RoleStep
+
+// SetCreditedClickAt sets the "credited_click_at" field.
+func (u *OrderScopedUpsert) SetCreditedClickAt(v time.Time) *OrderScopedUpsert {
+	u.u.Set(order.FieldCreditedClickAt, v)
+	return u
+}
+
+const RoleOf_OrderScopedUpsert_SetCreditedClickAt = RoleStep
+
+// UpdateCreditedClickAt sets the "credited_click_at" field to the value that was provided on create.
+func (u *OrderScopedUpsert) UpdateCreditedClickAt() *OrderScopedUpsert {
+	u.u.SetExcluded(order.FieldCreditedClickAt)
+	return u
+}
+
+const RoleOf_OrderScopedUpsert_UpdateCreditedClickAt = RoleStep
+
+// ClearCreditedClickAt clears the value of the "credited_click_at" field.
+func (u *OrderScopedUpsert) ClearCreditedClickAt() *OrderScopedUpsert {
+	u.u.SetNull(order.FieldCreditedClickAt)
+	return u
+}
+
+const RoleOf_OrderScopedUpsert_ClearCreditedClickAt = RoleStep
+
+// SetCreditedMessageID sets the "credited_message_id" field.
+func (u *OrderScopedUpsert) SetCreditedMessageID(v int64) *OrderScopedUpsert {
+	u.u.Set(order.FieldCreditedMessageID, v)
+	return u
+}
+
+const RoleOf_OrderScopedUpsert_SetCreditedMessageID = RoleStep
+
+// AddCreditedMessageID adds v to the "credited_message_id" field.
+func (u *OrderScopedUpsert) AddCreditedMessageID(v int64) *OrderScopedUpsert {
+	u.u.Add(order.FieldCreditedMessageID, v)
+	return u
+}
+
+const RoleOf_OrderScopedUpsert_AddCreditedMessageID = RoleStep
+
+// UpdateCreditedMessageID sets the "credited_message_id" field to the value that was provided on create.
+func (u *OrderScopedUpsert) UpdateCreditedMessageID() *OrderScopedUpsert {
+	u.u.SetExcluded(order.FieldCreditedMessageID)
+	return u
+}
+
+const RoleOf_OrderScopedUpsert_UpdateCreditedMessageID = RoleStep
+
+// ClearCreditedMessageID clears the value of the "credited_message_id" field.
+func (u *OrderScopedUpsert) ClearCreditedMessageID() *OrderScopedUpsert {
+	u.u.SetNull(order.FieldCreditedMessageID)
+	return u
+}
+
+const RoleOf_OrderScopedUpsert_ClearCreditedMessageID = RoleStep
+
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
 // target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
 func (t *OrderScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
@@ -43112,6 +43200,118 @@ func (x *OrderScopedUpdateOne) ClearContactID() *OrderScopedUpdateOne {
 
 const RoleOf_OrderScopedUpdateOne_ClearContactID = RoleStep
 
+// SetBroadcastID sets the "broadcast_id" field.
+func (x *OrderScopedUpdateOne) SetBroadcastID(v int64) *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.SetBroadcastID(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_SetBroadcastID = RoleStep
+
+// SetNillableBroadcastID sets the "broadcast_id" field if the given value is not nil.
+func (x *OrderScopedUpdateOne) SetNillableBroadcastID(v *int64) *OrderScopedUpdateOne {
+	if v != nil {
+		x.SetBroadcastID(*v)
+	}
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_SetNillableBroadcastID = RoleStep
+
+// ClearBroadcastID clears the value of the "broadcast_id" field.
+func (x *OrderScopedUpdateOne) ClearBroadcastID() *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.ClearBroadcastID() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_ClearBroadcastID = RoleStep
+
+// SetAutomationID sets the "automation_id" field.
+func (x *OrderScopedUpdateOne) SetAutomationID(v int64) *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.SetAutomationID(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_SetAutomationID = RoleStep
+
+// SetNillableAutomationID sets the "automation_id" field if the given value is not nil.
+func (x *OrderScopedUpdateOne) SetNillableAutomationID(v *int64) *OrderScopedUpdateOne {
+	if v != nil {
+		x.SetAutomationID(*v)
+	}
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_SetNillableAutomationID = RoleStep
+
+// ClearAutomationID clears the value of the "automation_id" field.
+func (x *OrderScopedUpdateOne) ClearAutomationID() *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.ClearAutomationID() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_ClearAutomationID = RoleStep
+
+// SetCreditedClickAt sets the "credited_click_at" field.
+func (x *OrderScopedUpdateOne) SetCreditedClickAt(v time.Time) *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.SetCreditedClickAt(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_SetCreditedClickAt = RoleStep
+
+// SetNillableCreditedClickAt sets the "credited_click_at" field if the given value is not nil.
+func (x *OrderScopedUpdateOne) SetNillableCreditedClickAt(v *time.Time) *OrderScopedUpdateOne {
+	if v != nil {
+		x.SetCreditedClickAt(*v)
+	}
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_SetNillableCreditedClickAt = RoleStep
+
+// ClearCreditedClickAt clears the value of the "credited_click_at" field.
+func (x *OrderScopedUpdateOne) ClearCreditedClickAt() *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.ClearCreditedClickAt() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_ClearCreditedClickAt = RoleStep
+
+// SetCreditedMessageID sets the "credited_message_id" field.
+func (x *OrderScopedUpdateOne) SetCreditedMessageID(v int64) *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.SetCreditedMessageID(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_SetCreditedMessageID = RoleStep
+
+// SetNillableCreditedMessageID sets the "credited_message_id" field if the given value is not nil.
+func (x *OrderScopedUpdateOne) SetNillableCreditedMessageID(v *int64) *OrderScopedUpdateOne {
+	if v != nil {
+		x.SetCreditedMessageID(*v)
+	}
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_SetNillableCreditedMessageID = RoleStep
+
+// AddCreditedMessageID adds value to the "credited_message_id" field.
+func (x *OrderScopedUpdateOne) AddCreditedMessageID(v int64) *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.AddCreditedMessageID(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_AddCreditedMessageID = RoleStep
+
+// ClearCreditedMessageID clears the value of the "credited_message_id" field.
+func (x *OrderScopedUpdateOne) ClearCreditedMessageID() *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.ClearCreditedMessageID() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_ClearCreditedMessageID = RoleStep
+
 // SetContact sets the "contact" edge to the Contact entity.
 func (x *OrderScopedUpdateOne) SetContact(v *Contact) *OrderScopedUpdateOne {
 	x.set = append(x.set, func(b *OrderUpdateOne) { b.SetContact(v) })
@@ -43127,6 +43327,38 @@ func (x *OrderScopedUpdateOne) ClearContact() *OrderScopedUpdateOne {
 }
 
 const RoleOf_OrderScopedUpdateOne_ClearContact = RoleStep
+
+// SetBroadcast sets the "broadcast" edge to the Broadcast entity.
+func (x *OrderScopedUpdateOne) SetBroadcast(v *Broadcast) *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.SetBroadcast(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_SetBroadcast = RoleStep
+
+// ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
+func (x *OrderScopedUpdateOne) ClearBroadcast() *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.ClearBroadcast() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_ClearBroadcast = RoleStep
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (x *OrderScopedUpdateOne) SetAutomation(v *Automation) *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.SetAutomation(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_SetAutomation = RoleStep
+
+// ClearAutomation clears the "automation" edge to the Automation entity.
+func (x *OrderScopedUpdateOne) ClearAutomation() *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.ClearAutomation() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_ClearAutomation = RoleStep
 
 // AddMovementIDs adds the "movements" edge to the OrderMovement entity by IDs.
 func (x *OrderScopedUpdateOne) AddMovementIDs(ids ...int64) *OrderScopedUpdateOne {
@@ -43285,6 +43517,118 @@ func (x *OrderScopedUpdate) ClearContactID() *OrderScopedUpdate {
 
 const RoleOf_OrderScopedUpdate_ClearContactID = RoleStep
 
+// SetBroadcastID sets the "broadcast_id" field.
+func (x *OrderScopedUpdate) SetBroadcastID(v int64) *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.SetBroadcastID(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_SetBroadcastID = RoleStep
+
+// SetNillableBroadcastID sets the "broadcast_id" field if the given value is not nil.
+func (x *OrderScopedUpdate) SetNillableBroadcastID(v *int64) *OrderScopedUpdate {
+	if v != nil {
+		x.SetBroadcastID(*v)
+	}
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_SetNillableBroadcastID = RoleStep
+
+// ClearBroadcastID clears the value of the "broadcast_id" field.
+func (x *OrderScopedUpdate) ClearBroadcastID() *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.ClearBroadcastID() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_ClearBroadcastID = RoleStep
+
+// SetAutomationID sets the "automation_id" field.
+func (x *OrderScopedUpdate) SetAutomationID(v int64) *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.SetAutomationID(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_SetAutomationID = RoleStep
+
+// SetNillableAutomationID sets the "automation_id" field if the given value is not nil.
+func (x *OrderScopedUpdate) SetNillableAutomationID(v *int64) *OrderScopedUpdate {
+	if v != nil {
+		x.SetAutomationID(*v)
+	}
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_SetNillableAutomationID = RoleStep
+
+// ClearAutomationID clears the value of the "automation_id" field.
+func (x *OrderScopedUpdate) ClearAutomationID() *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.ClearAutomationID() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_ClearAutomationID = RoleStep
+
+// SetCreditedClickAt sets the "credited_click_at" field.
+func (x *OrderScopedUpdate) SetCreditedClickAt(v time.Time) *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.SetCreditedClickAt(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_SetCreditedClickAt = RoleStep
+
+// SetNillableCreditedClickAt sets the "credited_click_at" field if the given value is not nil.
+func (x *OrderScopedUpdate) SetNillableCreditedClickAt(v *time.Time) *OrderScopedUpdate {
+	if v != nil {
+		x.SetCreditedClickAt(*v)
+	}
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_SetNillableCreditedClickAt = RoleStep
+
+// ClearCreditedClickAt clears the value of the "credited_click_at" field.
+func (x *OrderScopedUpdate) ClearCreditedClickAt() *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.ClearCreditedClickAt() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_ClearCreditedClickAt = RoleStep
+
+// SetCreditedMessageID sets the "credited_message_id" field.
+func (x *OrderScopedUpdate) SetCreditedMessageID(v int64) *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.SetCreditedMessageID(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_SetCreditedMessageID = RoleStep
+
+// SetNillableCreditedMessageID sets the "credited_message_id" field if the given value is not nil.
+func (x *OrderScopedUpdate) SetNillableCreditedMessageID(v *int64) *OrderScopedUpdate {
+	if v != nil {
+		x.SetCreditedMessageID(*v)
+	}
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_SetNillableCreditedMessageID = RoleStep
+
+// AddCreditedMessageID adds value to the "credited_message_id" field.
+func (x *OrderScopedUpdate) AddCreditedMessageID(v int64) *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.AddCreditedMessageID(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_AddCreditedMessageID = RoleStep
+
+// ClearCreditedMessageID clears the value of the "credited_message_id" field.
+func (x *OrderScopedUpdate) ClearCreditedMessageID() *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.ClearCreditedMessageID() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_ClearCreditedMessageID = RoleStep
+
 // SetContact sets the "contact" edge to the Contact entity.
 func (x *OrderScopedUpdate) SetContact(v *Contact) *OrderScopedUpdate {
 	x.set = append(x.set, func(b *OrderUpdate) { b.SetContact(v) })
@@ -43300,6 +43644,38 @@ func (x *OrderScopedUpdate) ClearContact() *OrderScopedUpdate {
 }
 
 const RoleOf_OrderScopedUpdate_ClearContact = RoleStep
+
+// SetBroadcast sets the "broadcast" edge to the Broadcast entity.
+func (x *OrderScopedUpdate) SetBroadcast(v *Broadcast) *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.SetBroadcast(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_SetBroadcast = RoleStep
+
+// ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
+func (x *OrderScopedUpdate) ClearBroadcast() *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.ClearBroadcast() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_ClearBroadcast = RoleStep
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (x *OrderScopedUpdate) SetAutomation(v *Automation) *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.SetAutomation(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_SetAutomation = RoleStep
+
+// ClearAutomation clears the "automation" edge to the Automation entity.
+func (x *OrderScopedUpdate) ClearAutomation() *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.ClearAutomation() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_ClearAutomation = RoleStep
 
 // AddMovementIDs adds the "movements" edge to the OrderMovement entity by IDs.
 func (x *OrderScopedUpdate) AddMovementIDs(ids ...int64) *OrderScopedUpdate {

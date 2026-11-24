@@ -12,6 +12,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -163,4 +164,26 @@ func TestExportMessagesCarryWhetherAMessageIsTracked(t *testing.T) {
 	assert.NotNil(t, withdrawn["tracking_withdrawn_at"])
 	assert.Equal(t, false, untracked["tracked"])
 	assert.Nil(t, untracked["tracking_withdrawn_at"])
+}
+
+// A refusal's reach-back withdraws the tracking of the Destination's message (ADR 0120), and the
+// stream delivers the message again with the moment of the withdrawal.
+func TestExportMessagesDeliversAWithdrawnMessageAgain(t *testing.T) {
+	env := testhelper.Setup(t)
+	const usage = 901 // Globex's one Broadcast message in every analytics window, to usage@globex.test
+	c := exportClient(t, env, fixtures.GlobexID)
+	before := readExportMessages(t, c, "")
+	require.Nil(t, before.row(usage)["tracking_withdrawn_at"])
+
+	api := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.GlobexID, apitokens.ScopeContactsWrite))
+	_, err := api.EngagementTrackingCreate(t.Context(), &externalapi.RecordEngagementTrackingInput{
+		Channel: externalapi.EngagementTrackingChannelEmail, Destination: "usage@globex.test", State: externalapi.EngagementTrackingStateDenied,
+	})
+	require.NoError(t, err)
+	env.PerformEnqueuedJobs(t, jobs.TrackingWithdrawalArgs{})
+
+	after := readExportMessages(t, c, before.cursor)
+	withdrawn := after.row(usage)
+	require.NotNil(t, withdrawn, "the withdrawn message comes again from the cursor taken before")
+	assert.NotNil(t, withdrawn["tracking_withdrawn_at"])
 }
