@@ -44826,6 +44826,14 @@ func (x *OutboundMessageScopedCreate) SetNillableDestination(v *string) *Outboun
 
 const RoleOf_OutboundMessageScopedCreate_SetNillableDestination = RoleStep
 
+// SetDestinations sets the "destinations" field.
+func (x *OutboundMessageScopedCreate) SetDestinations(v []string) *OutboundMessageScopedCreate {
+	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetDestinations(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetDestinations = RoleStep
+
 // SetContactID sets the "contact_id" field.
 func (x *OutboundMessageScopedCreate) SetContactID(v int64) *OutboundMessageScopedCreate {
 	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetContactID(v) })
@@ -45614,6 +45622,30 @@ func (u *OutboundMessageScopedUpsert) ClearDestination() *OutboundMessageScopedU
 }
 
 const RoleOf_OutboundMessageScopedUpsert_ClearDestination = RoleStep
+
+// SetDestinations sets the "destinations" field.
+func (u *OutboundMessageScopedUpsert) SetDestinations(v []string) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldDestinations, v)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_SetDestinations = RoleStep
+
+// UpdateDestinations sets the "destinations" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateDestinations() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldDestinations)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_UpdateDestinations = RoleStep
+
+// ClearDestinations clears the value of the "destinations" field.
+func (u *OutboundMessageScopedUpsert) ClearDestinations() *OutboundMessageScopedUpsert {
+	u.u.SetNull(outboundmessage.FieldDestinations)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_ClearDestinations = RoleStep
 
 // UpdateContactID sets the "contact_id" field to the value that was provided on create.
 func (u *OutboundMessageScopedUpsert) UpdateContactID() *OutboundMessageScopedUpsert {
@@ -46495,6 +46527,30 @@ func (x *OutboundMessageScopedUpdateOne) ClearDestination() *OutboundMessageScop
 }
 
 const RoleOf_OutboundMessageScopedUpdateOne_ClearDestination = RoleStep
+
+// SetDestinations sets the "destinations" field.
+func (x *OutboundMessageScopedUpdateOne) SetDestinations(v []string) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetDestinations(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetDestinations = RoleStep
+
+// AppendDestinations appends value to the "destinations" field.
+func (x *OutboundMessageScopedUpdateOne) AppendDestinations(v []string) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.AppendDestinations(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_AppendDestinations = RoleStep
+
+// ClearDestinations clears the value of the "destinations" field.
+func (x *OutboundMessageScopedUpdateOne) ClearDestinations() *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.ClearDestinations() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_ClearDestinations = RoleStep
 
 // SetContactID sets the "contact_id" field.
 func (x *OutboundMessageScopedUpdateOne) SetContactID(v int64) *OutboundMessageScopedUpdateOne {
@@ -47550,6 +47606,30 @@ func (x *OutboundMessageScopedUpdate) ClearDestination() *OutboundMessageScopedU
 }
 
 const RoleOf_OutboundMessageScopedUpdate_ClearDestination = RoleStep
+
+// SetDestinations sets the "destinations" field.
+func (x *OutboundMessageScopedUpdate) SetDestinations(v []string) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetDestinations(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetDestinations = RoleStep
+
+// AppendDestinations appends value to the "destinations" field.
+func (x *OutboundMessageScopedUpdate) AppendDestinations(v []string) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.AppendDestinations(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_AppendDestinations = RoleStep
+
+// ClearDestinations clears the value of the "destinations" field.
+func (x *OutboundMessageScopedUpdate) ClearDestinations() *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.ClearDestinations() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_ClearDestinations = RoleStep
 
 // SetContactID sets the "contact_id" field.
 func (x *OutboundMessageScopedUpdate) SetContactID(v int64) *OutboundMessageScopedUpdate {

@@ -112,3 +112,24 @@ func TestARefusalDeletesTheClicksAndCreditOfTheChatsEarlierTelegramMessage(t *te
 	assert.Equal(t, before.UntrackedCount+1, after.UntrackedCount, "the refusing chat's message counts as untracked")
 	assert.Zero(t, after.Revenue.Orders, "the Order has no credit")
 }
+
+// A Telegram message to a Contact's two chats, clicked, then a refusal of the chat it reached
+// second: the refusal reaches the message all the same (ADR 0120), so the click leaves the
+// Broadcast's figures, the message counts as untracked and a later click records nothing.
+func TestARefusalOfEitherChatReachesATelegramMessageToTwo(t *testing.T) {
+	env := testhelper.Setup(t)
+	env.LacunaTelegram(t)
+	require.NoError(t, env.SendBroadcastThrough(t, env.OutboundModule(), fixtures.BroadcastLacunaTelegramClicksID))
+	tias, _ := shortPaths(t, env, tiaOtherChat)
+	require.Len(t, tias, 1)
+	follow(t, env, tias[0], browserUA)
+	before := lacunaStats(t, env, fixtures.BroadcastLacunaTelegramClicksID)
+	require.Equal(t, int32(1), before.ClickedCount, "Tia's click was counted")
+
+	refuseInLacuna(t, env, externalapi.EngagementTrackingChannelTelegram, tiaOtherChat)
+	follow(t, env, tias[0], browserUA)
+
+	after := lacunaStats(t, env, fixtures.BroadcastLacunaTelegramClicksID)
+	assert.Zero(t, after.ClickedCount, "the click is gone and the later one recorded nothing")
+	assert.Equal(t, before.UntrackedCount+1, after.UntrackedCount, "the message counts as untracked")
+}

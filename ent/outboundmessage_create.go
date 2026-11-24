@@ -109,6 +109,12 @@ func (_c *OutboundMessageCreate) SetNillableDestination(v *string) *OutboundMess
 	return _c
 }
 
+// SetDestinations sets the "destinations" field.
+func (_c *OutboundMessageCreate) SetDestinations(v []string) *OutboundMessageCreate {
+	_c.mutation.SetDestinations(v)
+	return _c
+}
+
 // SetContactID sets the "contact_id" field.
 func (_c *OutboundMessageCreate) SetContactID(v int64) *OutboundMessageCreate {
 	_c.mutation.SetContactID(v)
@@ -770,6 +776,10 @@ func (_c *OutboundMessageCreate) createSpec() (*OutboundMessage, *sqlgraph.Creat
 		_spec.SetField(outboundmessage.FieldDestination, field.TypeString, value)
 		_node.Destination = value
 	}
+	if value, ok := _c.mutation.Destinations(); ok {
+		_spec.SetField(outboundmessage.FieldDestinations, field.TypeJSON, value)
+		_node.Destinations = value
+	}
 	if value, ok := _c.mutation.SendingSource(); ok {
 		_spec.SetField(outboundmessage.FieldSendingSource, field.TypeString, value)
 		_node.SendingSource = &value
@@ -1130,6 +1140,24 @@ func (u *OutboundMessageUpsert) UpdateDestination() *OutboundMessageUpsert {
 // ClearDestination clears the value of the "destination" field.
 func (u *OutboundMessageUpsert) ClearDestination() *OutboundMessageUpsert {
 	u.SetNull(outboundmessage.FieldDestination)
+	return u
+}
+
+// SetDestinations sets the "destinations" field.
+func (u *OutboundMessageUpsert) SetDestinations(v []string) *OutboundMessageUpsert {
+	u.Set(outboundmessage.FieldDestinations, v)
+	return u
+}
+
+// UpdateDestinations sets the "destinations" field to the value that was provided on create.
+func (u *OutboundMessageUpsert) UpdateDestinations() *OutboundMessageUpsert {
+	u.SetExcluded(outboundmessage.FieldDestinations)
+	return u
+}
+
+// ClearDestinations clears the value of the "destinations" field.
+func (u *OutboundMessageUpsert) ClearDestinations() *OutboundMessageUpsert {
+	u.SetNull(outboundmessage.FieldDestinations)
 	return u
 }
 
@@ -1757,6 +1785,27 @@ func (u *OutboundMessageUpsertOne) UpdateDestination() *OutboundMessageUpsertOne
 func (u *OutboundMessageUpsertOne) ClearDestination() *OutboundMessageUpsertOne {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.ClearDestination()
+	})
+}
+
+// SetDestinations sets the "destinations" field.
+func (u *OutboundMessageUpsertOne) SetDestinations(v []string) *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetDestinations(v)
+	})
+}
+
+// UpdateDestinations sets the "destinations" field to the value that was provided on create.
+func (u *OutboundMessageUpsertOne) UpdateDestinations() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateDestinations()
+	})
+}
+
+// ClearDestinations clears the value of the "destinations" field.
+func (u *OutboundMessageUpsertOne) ClearDestinations() *OutboundMessageUpsertOne {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearDestinations()
 	})
 }
 
@@ -2634,6 +2683,27 @@ func (u *OutboundMessageUpsertBulk) UpdateDestination() *OutboundMessageUpsertBu
 func (u *OutboundMessageUpsertBulk) ClearDestination() *OutboundMessageUpsertBulk {
 	return u.Update(func(s *OutboundMessageUpsert) {
 		s.ClearDestination()
+	})
+}
+
+// SetDestinations sets the "destinations" field.
+func (u *OutboundMessageUpsertBulk) SetDestinations(v []string) *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.SetDestinations(v)
+	})
+}
+
+// UpdateDestinations sets the "destinations" field to the value that was provided on create.
+func (u *OutboundMessageUpsertBulk) UpdateDestinations() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.UpdateDestinations()
+	})
+}
+
+// ClearDestinations clears the value of the "destinations" field.
+func (u *OutboundMessageUpsertBulk) ClearDestinations() *OutboundMessageUpsertBulk {
+	return u.Update(func(s *OutboundMessageUpsert) {
+		s.ClearDestinations()
 	})
 }
 

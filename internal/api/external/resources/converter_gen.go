@@ -1241,6 +1241,7 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) ext
 		externalapiContactExportOutboundMessage.Kind = string((*source).Kind)
 		externalapiContactExportOutboundMessage.Channel = string((*source).Channel)
 		externalapiContactExportOutboundMessage.Destination = (*source).Destination
+		externalapiContactExportOutboundMessage.Destinations = optNilStrings((*source).Destinations)
 		externalapiContactExportOutboundMessage.SendingSource = optNilString((*source).SendingSource)
 		externalapiContactExportOutboundMessage.SendingDomain = optNilString((*source).SendingDomain)
 		externalapiContactExportOutboundMessage.ProviderMessageId = optNilString((*source).ProviderMessageID)

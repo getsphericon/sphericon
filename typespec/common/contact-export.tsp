@@ -208,6 +208,10 @@ model ContactExportOutboundMessage {
   /** Address the message was sent to */
   destination: string;
 
+  /** Every address a message rendered once for several went to (a Telegram message to the
+   * contact's chats), `destination` among them; null for a message to one */
+  destinations?: string[] | null;
+
   /** Sending source */
   sendingSource?: string | null;
 

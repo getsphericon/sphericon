@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -43,6 +44,8 @@ type OutboundMessage struct {
 	Channel channels.Channel `json:"channel,omitempty"`
 	// Destination holds the value of the "destination" field.
 	Destination string `json:"destination,omitempty"`
+	// Destinations holds the value of the "destinations" field.
+	Destinations []string `json:"destinations,omitempty"`
 	// ContactID holds the value of the "contact_id" field.
 	ContactID *int64 `json:"contact_id,omitempty"`
 	// SendingSource holds the value of the "sending_source" field.
@@ -249,6 +252,8 @@ func (*OutboundMessage) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case outboundmessage.FieldDestinations:
+			values[i] = new([]byte)
 		case outboundmessage.FieldCaptured, outboundmessage.FieldTracked:
 			values[i] = new(sql.NullBool)
 		case outboundmessage.FieldID, outboundmessage.FieldWorkspaceID, outboundmessage.FieldContactID, outboundmessage.FieldBroadcastID, outboundmessage.FieldBroadcastRecipientID, outboundmessage.FieldAutomationID, outboundmessage.FieldAutomationRunID, outboundmessage.FieldAutomationVersionID, outboundmessage.FieldIntegrationID, outboundmessage.FieldTemplateID:
@@ -319,6 +324,14 @@ func (_m *OutboundMessage) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field destination", values[i])
 			} else if value.Valid {
 				_m.Destination = value.String
+			}
+		case outboundmessage.FieldDestinations:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field destinations", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Destinations); err != nil {
+					return fmt.Errorf("unmarshal field destinations: %w", err)
+				}
 			}
 		case outboundmessage.FieldContactID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -633,6 +646,9 @@ func (_m *OutboundMessage) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("destination=")
 	builder.WriteString(_m.Destination)
+	builder.WriteString(", ")
+	builder.WriteString("destinations=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Destinations))
 	builder.WriteString(", ")
 	if v := _m.ContactID; v != nil {
 		builder.WriteString("contact_id=")

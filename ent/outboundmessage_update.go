@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
@@ -93,6 +94,24 @@ func (_u *OutboundMessageUpdate) SetNillableDestination(v *string) *OutboundMess
 // ClearDestination clears the value of the "destination" field.
 func (_u *OutboundMessageUpdate) ClearDestination() *OutboundMessageUpdate {
 	_u.mutation.ClearDestination()
+	return _u
+}
+
+// SetDestinations sets the "destinations" field.
+func (_u *OutboundMessageUpdate) SetDestinations(v []string) *OutboundMessageUpdate {
+	_u.mutation.SetDestinations(v)
+	return _u
+}
+
+// AppendDestinations appends value to the "destinations" field.
+func (_u *OutboundMessageUpdate) AppendDestinations(v []string) *OutboundMessageUpdate {
+	_u.mutation.AppendDestinations(v)
+	return _u
+}
+
+// ClearDestinations clears the value of the "destinations" field.
+func (_u *OutboundMessageUpdate) ClearDestinations() *OutboundMessageUpdate {
+	_u.mutation.ClearDestinations()
 	return _u
 }
 
@@ -887,6 +906,17 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 	if _u.mutation.DestinationCleared() {
 		_spec.ClearField(outboundmessage.FieldDestination, field.TypeString)
 	}
+	if value, ok := _u.mutation.Destinations(); ok {
+		_spec.SetField(outboundmessage.FieldDestinations, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedDestinations(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, outboundmessage.FieldDestinations, value)
+		})
+	}
+	if _u.mutation.DestinationsCleared() {
+		_spec.ClearField(outboundmessage.FieldDestinations, field.TypeJSON)
+	}
 	if value, ok := _u.mutation.SendingSource(); ok {
 		_spec.SetField(outboundmessage.FieldSendingSource, field.TypeString, value)
 	}
@@ -1386,6 +1416,24 @@ func (_u *OutboundMessageUpdateOne) SetNillableDestination(v *string) *OutboundM
 // ClearDestination clears the value of the "destination" field.
 func (_u *OutboundMessageUpdateOne) ClearDestination() *OutboundMessageUpdateOne {
 	_u.mutation.ClearDestination()
+	return _u
+}
+
+// SetDestinations sets the "destinations" field.
+func (_u *OutboundMessageUpdateOne) SetDestinations(v []string) *OutboundMessageUpdateOne {
+	_u.mutation.SetDestinations(v)
+	return _u
+}
+
+// AppendDestinations appends value to the "destinations" field.
+func (_u *OutboundMessageUpdateOne) AppendDestinations(v []string) *OutboundMessageUpdateOne {
+	_u.mutation.AppendDestinations(v)
+	return _u
+}
+
+// ClearDestinations clears the value of the "destinations" field.
+func (_u *OutboundMessageUpdateOne) ClearDestinations() *OutboundMessageUpdateOne {
+	_u.mutation.ClearDestinations()
 	return _u
 }
 
@@ -2209,6 +2257,17 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 	}
 	if _u.mutation.DestinationCleared() {
 		_spec.ClearField(outboundmessage.FieldDestination, field.TypeString)
+	}
+	if value, ok := _u.mutation.Destinations(); ok {
+		_spec.SetField(outboundmessage.FieldDestinations, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedDestinations(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, outboundmessage.FieldDestinations, value)
+		})
+	}
+	if _u.mutation.DestinationsCleared() {
+		_spec.ClearField(outboundmessage.FieldDestinations, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.SendingSource(); ok {
 		_spec.SetField(outboundmessage.FieldSendingSource, field.TypeString, value)

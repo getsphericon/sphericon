@@ -8730,6 +8730,12 @@ func (s *ContactExportOutboundMessage) encodeFields(e *jx.Encoder) {
 		e.Str(s.Destination)
 	}
 	{
+		if s.Destinations.Set {
+			e.FieldStart("destinations")
+			s.Destinations.Encode(e)
+		}
+	}
+	{
 		if s.SendingSource.Set {
 			e.FieldStart("sendingSource")
 			s.SendingSource.Encode(e)
@@ -8861,34 +8867,35 @@ func (s *ContactExportOutboundMessage) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfContactExportOutboundMessage = [27]string{
+var jsonFieldsNameOfContactExportOutboundMessage = [28]string{
 	0:  "id",
 	1:  "kind",
 	2:  "channel",
 	3:  "destination",
-	4:  "sendingSource",
-	5:  "sendingDomain",
-	6:  "providerMessageId",
-	7:  "status",
-	8:  "skippedReason",
-	9:  "failure",
-	10: "claimedAt",
-	11: "sentAt",
-	12: "deliveredAt",
-	13: "bouncedAt",
-	14: "undeliveredAt",
-	15: "undeliveredCode",
-	16: "complainedAt",
-	17: "openedAt",
-	18: "clickedAt",
-	19: "captured",
-	20: "tracked",
-	21: "trackingWithdrawnAt",
-	22: "broadcastId",
-	23: "automationId",
-	24: "automationStepId",
-	25: "templateId",
-	26: "createdAt",
+	4:  "destinations",
+	5:  "sendingSource",
+	6:  "sendingDomain",
+	7:  "providerMessageId",
+	8:  "status",
+	9:  "skippedReason",
+	10: "failure",
+	11: "claimedAt",
+	12: "sentAt",
+	13: "deliveredAt",
+	14: "bouncedAt",
+	15: "undeliveredAt",
+	16: "undeliveredCode",
+	17: "complainedAt",
+	18: "openedAt",
+	19: "clickedAt",
+	20: "captured",
+	21: "tracked",
+	22: "trackingWithdrawnAt",
+	23: "broadcastId",
+	24: "automationId",
+	25: "automationStepId",
+	26: "templateId",
+	27: "createdAt",
 }
 
 // Decode decodes ContactExportOutboundMessage from json.
@@ -8946,6 +8953,16 @@ func (s *ContactExportOutboundMessage) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"destination\"")
 			}
+		case "destinations":
+			if err := func() error {
+				s.Destinations.Reset()
+				if err := s.Destinations.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"destinations\"")
+			}
 		case "sendingSource":
 			if err := func() error {
 				s.SendingSource.Reset()
@@ -8977,7 +8994,7 @@ func (s *ContactExportOutboundMessage) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"providerMessageId\"")
 			}
 		case "status":
-			requiredBitSet[0] |= 1 << 7
+			requiredBitSet[1] |= 1 << 0
 			if err := func() error {
 				v, err := d.Str()
 				s.Status = string(v)
@@ -9009,7 +9026,7 @@ func (s *ContactExportOutboundMessage) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"failure\"")
 			}
 		case "claimedAt":
-			requiredBitSet[1] |= 1 << 2
+			requiredBitSet[1] |= 1 << 3
 			if err := func() error {
 				if err := s.ClaimedAt.Decode(d); err != nil {
 					return err
@@ -9099,7 +9116,7 @@ func (s *ContactExportOutboundMessage) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"clickedAt\"")
 			}
 		case "captured":
-			requiredBitSet[2] |= 1 << 3
+			requiredBitSet[2] |= 1 << 4
 			if err := func() error {
 				v, err := d.Bool()
 				s.Captured = bool(v)
@@ -9171,7 +9188,7 @@ func (s *ContactExportOutboundMessage) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"templateId\"")
 			}
 		case "createdAt":
-			requiredBitSet[3] |= 1 << 2
+			requiredBitSet[3] |= 1 << 3
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -9190,10 +9207,10 @@ func (s *ContactExportOutboundMessage) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [4]uint8{
-		0b10001111,
-		0b00000100,
+		0b00001111,
+		0b00001001,
+		0b00010000,
 		0b00001000,
-		0b00000100,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -23663,6 +23680,69 @@ func (s OptNilString) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptNilString) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes []string as json.
+func (o OptNilStringArray) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	if o.Null {
+		e.Null()
+		return
+	}
+	e.ArrStart()
+	for _, elem := range o.Value {
+		e.Str(elem)
+	}
+	e.ArrEnd()
+}
+
+// Decode decodes []string from json.
+func (o *OptNilStringArray) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptNilStringArray to nil")
+	}
+	if d.Next() == jx.Null {
+		if err := d.Null(); err != nil {
+			return err
+		}
+
+		var v []string
+		o.Value = v
+		o.Set = true
+		o.Null = true
+		return nil
+	}
+	o.Set = true
+	o.Null = false
+	o.Value = make([]string, 0)
+	if err := d.Arr(func(d *jx.Decoder) error {
+		var elem string
+		v, err := d.Str()
+		elem = string(v)
+		if err != nil {
+			return err
+		}
+		o.Value = append(o.Value, elem)
+		return nil
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptNilStringArray) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptNilStringArray) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

@@ -1820,6 +1820,7 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) sit
 		siteapiContactExportOutboundMessage.Kind = string((*source).Kind)
 		siteapiContactExportOutboundMessage.Channel = string((*source).Channel)
 		siteapiContactExportOutboundMessage.Destination = (*source).Destination
+		siteapiContactExportOutboundMessage.Destinations = optNilStrings((*source).Destinations)
 		siteapiContactExportOutboundMessage.SendingSource = optNilString((*source).SendingSource)
 		siteapiContactExportOutboundMessage.SendingDomain = optNilString((*source).SendingDomain)
 		siteapiContactExportOutboundMessage.ProviderMessageId = optNilString((*source).ProviderMessageID)

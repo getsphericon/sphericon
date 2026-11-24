@@ -2201,6 +2201,9 @@ func ScopedEntities() []*ScopedEntity {
 				if !reflect.ValueOf(src.Destination).IsZero() {
 					b.SetDestination(src.Destination)
 				}
+				if !reflect.ValueOf(src.Destinations).IsZero() {
+					b.SetDestinations(src.Destinations)
+				}
 				if src.ContactID != nil {
 					b.SetContactID(remap("Contact", *src.ContactID))
 				}

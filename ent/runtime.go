@@ -1271,11 +1271,11 @@ func init() {
 	// outboundmessage.IdempotencyKeyValidator is a validator for the "idempotency_key" field. It is called by the builders before save.
 	outboundmessage.IdempotencyKeyValidator = outboundmessageDescIdempotencyKey.Validators[0].(func(string) error)
 	// outboundmessageDescClaimedAt is the schema descriptor for claimed_at field.
-	outboundmessageDescClaimedAt := outboundmessageFields[12].Descriptor()
+	outboundmessageDescClaimedAt := outboundmessageFields[13].Descriptor()
 	// outboundmessage.DefaultClaimedAt holds the default value on creation for the claimed_at field.
 	outboundmessage.DefaultClaimedAt = outboundmessageDescClaimedAt.Default.(func() time.Time)
 	// outboundmessageDescCaptured is the schema descriptor for captured field.
-	outboundmessageDescCaptured := outboundmessageFields[21].Descriptor()
+	outboundmessageDescCaptured := outboundmessageFields[22].Descriptor()
 	// outboundmessage.DefaultCaptured holds the default value on creation for the captured field.
 	outboundmessage.DefaultCaptured = outboundmessageDescCaptured.Default.(bool)
 	passkeyMixin := schema.Passkey{}.Mixin()

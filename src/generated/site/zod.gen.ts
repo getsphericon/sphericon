@@ -3380,6 +3380,7 @@ export const zContactExportOutboundMessage = z.object({
   kind: z.string(),
   channel: z.string(),
   destination: z.string(),
+  destinations: z.exactOptional(z.array(z.string()).nullable()),
   sendingSource: z.exactOptional(z.string().nullable()),
   sendingDomain: z.exactOptional(z.string().nullable()),
   providerMessageId: z.exactOptional(z.string().nullable()),

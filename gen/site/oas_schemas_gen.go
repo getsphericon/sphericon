@@ -5171,6 +5171,9 @@ type ContactExportOutboundMessage struct {
 	Channel string `json:"channel"`
 	// Address the message was sent to.
 	Destination string `json:"destination"`
+	// Every address a message rendered once for several went to (a Telegram message to the contact's
+	// chats), `destination` among them; null for a message to one.
+	Destinations OptNilStringArray `json:"destinations"`
 	// Sending source.
 	SendingSource OptNilString `json:"sendingSource"`
 	// Sending domain.
@@ -5241,6 +5244,11 @@ func (s *ContactExportOutboundMessage) GetChannel() string {
 // GetDestination returns the value of Destination.
 func (s *ContactExportOutboundMessage) GetDestination() string {
 	return s.Destination
+}
+
+// GetDestinations returns the value of Destinations.
+func (s *ContactExportOutboundMessage) GetDestinations() OptNilStringArray {
+	return s.Destinations
 }
 
 // GetSendingSource returns the value of SendingSource.
@@ -5376,6 +5384,11 @@ func (s *ContactExportOutboundMessage) SetChannel(val string) {
 // SetDestination sets the value of Destination.
 func (s *ContactExportOutboundMessage) SetDestination(val string) {
 	s.Destination = val
+}
+
+// SetDestinations sets the value of Destinations.
+func (s *ContactExportOutboundMessage) SetDestinations(val OptNilStringArray) {
+	s.Destinations = val
 }
 
 // SetSendingSource sets the value of SendingSource.
@@ -15140,6 +15153,74 @@ func (o OptNilString) Get() (v string, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilString) Or(d string) string {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilStringArray returns new OptNilStringArray with value set to v.
+func NewOptNilStringArray(v []string) OptNilStringArray {
+	return OptNilStringArray{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilStringArray is optional nullable []string.
+type OptNilStringArray struct {
+	Value []string
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilStringArray was set.
+func (o OptNilStringArray) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilStringArray) Reset() {
+	var v []string
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilStringArray) SetTo(v []string) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilStringArray) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilStringArray) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v []string
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilStringArray) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilStringArray) Get() (v []string, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilStringArray) Or(d []string) []string {
 	if v, ok := o.Get(); ok {
 		return v
 	}

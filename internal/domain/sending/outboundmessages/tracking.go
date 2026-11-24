@@ -26,8 +26,14 @@ func (m *Module) decideTracking(ctx context.Context, s *ent.Scoped, req Request,
 	if tracked && msg.Destination == "" && len(targets) > 0 {
 		// A Channel of Bindings resolves its Destination after the claim. It is on the row before
 		// the consent is read, so a refusal recorded meanwhile, whose withdrawal finds the messages
-		// by their Destination, reaches this one; the send records the target that accepted.
-		n, err := s.OutboundMessage().Update().Where(ownsClaim(msg)...).SetDestination(targets[0].dest).Save(ctx)
+		// by their Destination, reaches this one; the send records the target that accepted. A
+		// message rendered once for several chats keeps every one of them, so a refusal of any
+		// reaches it and its clicks are checked against each.
+		update := s.OutboundMessage().Update().Where(ownsClaim(msg)...).SetDestination(targets[0].dest)
+		if len(targets) > 1 {
+			update.SetDestinations(lo.Map(targets, func(t target, _ int) string { return t.dest }))
+		}
+		n, err := update.Save(ctx)
 		if err != nil {
 			return false, fmt.Errorf("outbound: record the destination of message %d: %w", msg.ID, err)
 		}

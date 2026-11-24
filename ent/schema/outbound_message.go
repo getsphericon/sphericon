@@ -91,6 +91,12 @@ func (OutboundMessage) Fields() []ent.Field {
 		// delivery record.
 		field.String("destination").
 			Optional(),
+		// Every Destination a message rendered once for several went to, destination among them:
+		// a Telegram message to a Contact's several chats (ADR 0120). NULL for a message of one
+		// Destination, the most. A tracked message is checked against the consent of each, and a
+		// refusal of any reaches the message. Cleared with destination when the Contact is erased.
+		field.Strings("destinations").
+			Optional(),
 		// The Contact this destination resolved to, when one exists (a transactional
 		// destination may have none). Display and Event attribution only. SET NULL: the
 		// message stays as an anonymous delivery record when the Contact is erased.
@@ -263,6 +269,9 @@ func (OutboundMessage) Indexes() []ent.Index {
 		// A refusal of tracking reaches back to its Destination's messages, in id order, a batch at
 		// a time (ADR 0120).
 		index.Fields("workspace_id", "destination", "id"),
+		// The same reach-back to a message of several Destinations (destinations), which are few.
+		index.Fields("destinations").
+			Annotations(entsql.IndexType("GIN"), entsql.IndexWhere("destinations IS NOT NULL")),
 		// Erasure and contact lookups reach this table by contact; the contact foreign key's
 		// index (whole: a key's index cannot be partial).
 		index.Fields("workspace_id", "contact_id").

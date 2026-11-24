@@ -31,6 +31,8 @@ const (
 	FieldChannel = "channel"
 	// FieldDestination holds the string denoting the destination field in the database.
 	FieldDestination = "destination"
+	// FieldDestinations holds the string denoting the destinations field in the database.
+	FieldDestinations = "destinations"
 	// FieldContactID holds the string denoting the contact_id field in the database.
 	FieldContactID = "contact_id"
 	// FieldSendingSource holds the string denoting the sending_source field in the database.
@@ -195,6 +197,7 @@ var Columns = []string{
 	FieldIdempotencyKey,
 	FieldChannel,
 	FieldDestination,
+	FieldDestinations,
 	FieldContactID,
 	FieldSendingSource,
 	FieldSendingDomain,

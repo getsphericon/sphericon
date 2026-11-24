@@ -514,6 +514,16 @@ func DestinationContainsFold(v string) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldContainsFold(FieldDestination, v))
 }
 
+// DestinationsIsNil applies the IsNil predicate on the "destinations" field.
+func DestinationsIsNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIsNull(FieldDestinations))
+}
+
+// DestinationsNotNil applies the NotNil predicate on the "destinations" field.
+func DestinationsNotNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotNull(FieldDestinations))
+}
+
 // ContactIDEQ applies the EQ predicate on the "contact_id" field.
 func ContactIDEQ(v int64) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldContactID, v))

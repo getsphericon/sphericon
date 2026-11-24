@@ -174,12 +174,16 @@ func (r *Recorder) engagedOf(ctx context.Context, ts *ent.Scoped, id int64) (eng
 	if !engagementtracking.IsTracked(msg) || msg.Destination == "" {
 		return engaged{}, false, nil
 	}
-	consent, err := r.consents.Of(ctx, ts, msg.Channel, msg.Destination)
-	if err != nil {
-		return engaged{}, false, err
-	}
-	if consent.Effective != engagementtracking.Track {
-		return engaged{}, false, nil
+	// A message rendered once for several Destinations (a Telegram message to a Contact's chats) is
+	// recorded only while every one of them consents.
+	for _, dest := range lo.Uniq(append([]string{msg.Destination}, msg.Destinations...)) {
+		consent, err := r.consents.Of(ctx, ts, msg.Channel, dest)
+		if err != nil {
+			return engaged{}, false, err
+		}
+		if consent.Effective != engagementtracking.Track {
+			return engaged{}, false, nil
+		}
 	}
 	e := engaged{msg: msg}
 	if msg.Channel == channels.Email {

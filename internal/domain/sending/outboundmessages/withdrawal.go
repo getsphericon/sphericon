@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -35,9 +37,15 @@ type WithdrawalBatch struct {
 }
 
 // OfDestination is the messages sent, or being sent, to destination on channel, as the message
-// stores it: the form a Destination's Engagement tracking consent is stored in.
+// stores it: the form a Destination's Engagement tracking consent is stored in. A message rendered
+// once for several Destinations (a Telegram message to a Contact's chats) is of each of them.
 func OfDestination(channel channels.Channel, destination string) predicate.OutboundMessage {
-	return outboundmessage.And(outboundmessage.ChannelEQ(channel), outboundmessage.Destination(destination))
+	return outboundmessage.And(outboundmessage.ChannelEQ(channel), outboundmessage.Or(
+		outboundmessage.Destination(destination),
+		predicate.OutboundMessage(func(s *sql.Selector) {
+			s.Where(sqljson.ValueContains(outboundmessage.FieldDestinations, destination))
+		}),
+	))
 }
 
 // WithdrawTracking takes up to in.Limit of the Workspace's messages that in.Messages matches and
