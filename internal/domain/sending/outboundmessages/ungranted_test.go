@@ -48,3 +48,19 @@ func TestTheWithdrawalByTheDefaultLeavesTheMessagesCreatedAfterTheTurn(t *testin
 	require.NoError(t, err)
 	assert.True(t, outboundmessages.IsTracked(msg))
 }
+
+// The withdrawal reaches only sent messages: one not sent yet is left to its render, which reads the
+// default it finds then.
+func TestTheWithdrawalByTheDefaultLeavesAMessageNotSentYet(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	m := testhelper.Module[*outboundmessages.Module](env)
+	s := env.DB.Scoped(fixtures.GlobexID)
+
+	_, err := m.WithdrawUngranted(ctx, s, outboundmessages.UngrantedWithdrawal{Before: time.Now(), Limit: 100, Batches: 1})
+	require.NoError(t, err)
+
+	pending, err := s.OutboundMessage().Get(ctx, fixtures.OutboundMessageGlobexID)
+	require.NoError(t, err)
+	assert.Nil(t, pending.TrackingWithdrawnAt)
+}
