@@ -108,7 +108,8 @@ or `AGENTS.md`.
       Automation, Broadcast) is never removed while something live uses it, and is otherwise discarded
       by one shared soft-delete abstraction; what is archived takes no part in new work.
    3. Facts (Event, Outbound message, Audit entry, Suppression) are never discarded, only removed by
-      Retention or Erasure.
+      Retention, by Erasure, or by a refusal of Engagement tracking, whose reach-back deletes the
+      opens and clicks recorded of the Destination's earlier messages (ADR 0120).
 
 ## Tests
 
