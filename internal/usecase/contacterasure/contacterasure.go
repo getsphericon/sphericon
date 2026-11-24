@@ -42,6 +42,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts/contactsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking/engagementtrackingunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions/suppressionsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes/unsubscribesunchecked"
@@ -52,6 +53,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules/rulesunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages/capturedmessagesunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages/outboundmessagesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/events/eventsunchecked"
@@ -194,13 +196,19 @@ type UseCase struct {
 	// trackingSteps deletes its grants.
 	tracking      *engagementtracking.Module
 	trackingSteps *engagementtrackingunchecked.Module
+	// messages and credits take what a refusal of the subject's Destinations deletes, should the
+	// Erasure come before the refusal's reach-back.
+	messages *outboundmessages.Module
+	credits  *orders.Module
 }
 
 // New builds the Contact erasure use case over the bus whose transaction every erasure runs in,
 // the Broadcasts whose pending work it cancels, the contacts module whose unchecked removal of the
 // Contact row it builds, the opt-outs whose standing stops it keeps, the chats whose Bindings
-// to the Contact it reads and the Engagement tracking consent whose refusals it keeps; now is the Instance clock the Broadcasts' unchecked operations read.
-func New(bus *events.Bus, catalogue *broadcasts.Module, people *contacts.Module, unsubs *unsubscribes.Module, chats *bindings.Chats, tracking *engagementtracking.Module, now func() time.Time) *UseCase {
+// to the Contact it reads, the Engagement tracking consent whose refusals it keeps, and the Outbound
+// messages and Orders whose tracked engagement a refusal deletes; now is the Instance clock the
+// Broadcasts' unchecked operations read.
+func New(bus *events.Bus, catalogue *broadcasts.Module, people *contacts.Module, unsubs *unsubscribes.Module, chats *bindings.Chats, tracking *engagementtracking.Module, messages *outboundmessages.Module, credits *orders.Module, now func() time.Time) *UseCase {
 	return &UseCase{
 		bus: bus, broadcasts: broadcastsunchecked.New(catalogue, bus, now), unsubs: unsubs,
 		automations: automationsunchecked.New(bus), rules: rulesunchecked.New(bus),
@@ -216,6 +224,8 @@ func New(bus *events.Bus, catalogue *broadcasts.Module, people *contacts.Module,
 		chats:         chats,
 		tracking:      tracking,
 		trackingSteps: engagementtrackingunchecked.New(),
+		messages:      messages,
+		credits:       credits,
 	}
 }
 
@@ -282,6 +292,9 @@ func (u *UseCase) steps() []step {
 			return pub.PurgeWebhookJobs(ctx, s.WorkspaceID(), t.ContactID, t.destinations())
 		},
 		u.eraseConsentStamps,
+		// What a refusal of the subject's Destinations deletes, should its reach-back not have run
+		// yet: the steps below blank what the reach-back finds the messages by.
+		u.withdrawRefused,
 		// The tracking grants of the subject's addresses; their refusals stay (ADR 0120).
 		u.eraseTracking,
 		// The Outbound message module deletes the short links of the Contact's messages, before

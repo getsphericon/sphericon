@@ -10,7 +10,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking/engagementtrackingunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/events/eventsunchecked"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
 
@@ -94,6 +96,93 @@ func (u *UseCase) eraseStampsOf(ctx context.Context, s *ent.Scoped, channel chan
 	return u.stamps.Erase(ctx, s, consentstampsunchecked.EraseInput{
 		Channel: channel, Destination: destination, Standing: standing, TrackingDenied: u.trackingDenied(s, channel, destination),
 	})
+}
+
+// refusedBatch is how many messages withdrawRefused takes at a time, all in the Erasure's
+// transaction.
+const refusedBatch = 500
+
+// withdrawRefused is a refusal's reach-back (ADR 0120) for each Destination of the subject whose
+// tracking refusal stands: the tracking of its messages is withdrawn, and the opens and clicks
+// recorded of them, their stamps and the credits their clicks earned are deleted, as the reach-back
+// job does. That job finds the messages by their Destination, which anonymizeDelivery blanks, and
+// the Events by the message ids EraseSubject strips: an Erasure that comes first does the job's
+// work itself, so the outcome does not depend on which runs first (ADR 0113). A run after the job
+// finds the messages withdrawn and nothing left to delete. It reads the refusals before
+// eraseTracking rekeys a number's to its hash.
+func (u *UseCase) withdrawRefused(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+	held, err := u.heldDestinations(ctx, s, t)
+	if err != nil {
+		return err
+	}
+	for _, d := range held {
+		consent, err := u.tracking.Of(ctx, s, d.channel, d.address)
+		if err != nil {
+			return err
+		}
+		if consent.State != engagementtracking.ReadingDenied {
+			continue
+		}
+		if err := u.withdrawFrom(ctx, s, d); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// withdrawFrom withdraws the tracking of the messages to d, a batch at a time, and deletes what
+// was recorded of them.
+func (u *UseCase) withdrawFrom(ctx context.Context, s *ent.Scoped, d heldDestination) error {
+	which := outboundmessages.OfDestination(d.channel, d.address)
+	var after int64
+	for {
+		taken, err := u.messages.WithdrawTracking(ctx, s, outboundmessages.WithdrawalBatch{Messages: which, After: after, Limit: refusedBatch})
+		if err != nil || len(taken) == 0 {
+			return err
+		}
+		ids := lo.Map(taken, func(m *ent.OutboundMessage, _ int) int64 { return m.ID })
+		if err := u.messages.ForgetEngagement(ctx, s, ids); err != nil {
+			return err
+		}
+		if err := eventsunchecked.DeleteEngagementOf(ctx, s, taken); err != nil {
+			return err
+		}
+		if err := u.credits.ClearCredits(ctx, s, ids); err != nil {
+			return err
+		}
+		if len(taken) < refusedBatch {
+			return nil
+		}
+		after = taken[len(taken)-1].ID
+	}
+}
+
+// heldDestination is one Destination of the subject on a Channel.
+type heldDestination struct {
+	channel channels.Channel
+	address string
+}
+
+// heldDestinations is the subject's Destinations that take an Engagement tracking consent: its
+// addresses, its phone and the Telegram users of its chats.
+func (u *UseCase) heldDestinations(ctx context.Context, s *ent.Scoped, t *Target) ([]heldDestination, error) {
+	var out []heldDestination
+	for _, address := range t.Destinations {
+		out = append(out, heldDestination{channel: channels.Email, address: address})
+	}
+	if t.Phone != "" {
+		out = append(out, heldDestination{channel: channels.SMS, address: t.Phone})
+	}
+	if t.ContactID != 0 {
+		users, err := u.chats.DestinationsOf(ctx, s, t.ContactID)
+		if err != nil {
+			return nil, err
+		}
+		for _, user := range users {
+			out = append(out, heldDestination{channel: channels.Telegram, address: user})
+		}
+	}
+	return out, nil
 }
 
 // eraseTracking deletes the tracking grants of the subject's addresses, phone and Telegram users

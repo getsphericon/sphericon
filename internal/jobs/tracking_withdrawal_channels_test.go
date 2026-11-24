@@ -133,3 +133,30 @@ func TestARefusalOfEitherChatReachesATelegramMessageToTwo(t *testing.T) {
 	assert.Zero(t, after.ClickedCount, "the click is gone and the later one recorded nothing")
 	assert.Equal(t, before.UntrackedCount+1, after.UntrackedCount, "the message counts as untracked")
 }
+
+// A refusal, then an Erasure of the Contact before its reach-back has run: what the refusal
+// deletes is gone all the same (ADR 0113: the outcome does not depend on the order), though the
+// Erasure blanked the Destination the reach-back finds the messages by. The click leaves the
+// Broadcast's figures, the message counts as untracked and the Order has no credit.
+func TestAnErasureBeforeTheReachBackLeavesNothingTheRefusalDeletes(t *testing.T) {
+	env := testhelper.Setup(t)
+	env.LacunaTwilio(t)
+	require.NoError(t, env.SendBroadcastThrough(t, env.OutboundModule(), fixtures.BroadcastLacunaSmsLinksID))
+	paths := smsShortPaths(t, env)
+	require.Len(t, paths, 2)
+	follow(t, env, paths[1], browserUA)
+	lacunaOrder(t, env, fixtures.ContactLacunaBeaPhone, "S-2")
+	before := lacunaStats(t, env, fixtures.BroadcastLacunaSmsLinksID)
+	require.Equal(t, int32(1), before.ClickedCount, "the click was counted")
+	require.Equal(t, int32(1), before.Revenue.Orders, "the Order was credited through the click")
+
+	lacunaTracking(t, env, externalapi.EngagementTrackingChannelSMS, fixtures.ContactLacunaBeaPhone, externalapi.EngagementTrackingStateDenied)
+	eraser := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.LacunaID, apitokens.ScopeContactsErase))
+	require.NoError(t, eraser.ContactsDelete(t.Context(), externalapi.ContactsDeleteParams{ID: externalapi.EntityId(fixtures.ContactLacunaBeaID)}))
+	env.PerformEnqueuedJobs(t, jobs.TrackingWithdrawalArgs{})
+
+	after := lacunaStats(t, env, fixtures.BroadcastLacunaSmsLinksID)
+	assert.Zero(t, after.ClickedCount, "the click is gone")
+	assert.Equal(t, before.UntrackedCount+1, after.UntrackedCount, "the message counts as untracked")
+	assert.Zero(t, after.Revenue.Orders, "the Order has no credit")
+}
