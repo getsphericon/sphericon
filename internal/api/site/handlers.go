@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/identitytokens"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
@@ -147,6 +148,7 @@ type Handlers struct {
 	unsubscribe   *unsubscriberecording.UseCase
 	suppressions  *suppressions.Module
 	confirmations *confirmations.Module
+	tracking      *engagementtracking.Module
 	channelStops  *channelstop.Module
 	exports       *dataexport.Exporter
 }
@@ -269,6 +271,8 @@ type Deps struct {
 	Suppressions *suppressions.Module
 	// Confirmations performs a double opt-in and records and reads a Contact's SMS consent.
 	Confirmations *confirmations.Module
+	// Tracking records and reads the Engagement tracking consent of a Contact's Destinations.
+	Tracking *engagementtracking.Module
 	// ChannelStops records an SMS opt-out of a Contact's phone by hand.
 	ChannelStops *channelstop.Module
 	// Exports is the Data export of a Contact (ADR 0021), projected onto this surface's contract
@@ -293,7 +297,7 @@ func NewHandlers(d *Deps) *Handlers {
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, broadcastViews: d.BroadcastViews,
 		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), requests: users.NewRequests(d.Users, d.Attempts), tracker: d.Tracker, appURL: d.AppURL,
 		oauth: d.OAuth, apiTokens: d.APITokens, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, admission: d.Admission, signUp: d.SignUp, userDeletion: d.UserDeletion, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, workspaceView: d.WorkspaceView, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
-		suppressions: d.Suppressions, confirmations: d.Confirmations, channelStops: d.ChannelStops, exports: d.Exports,
+		suppressions: d.Suppressions, confirmations: d.Confirmations, tracking: d.Tracking, channelStops: d.ChannelStops, exports: d.Exports,
 		signin:     d.Signin,
 		migrations: d.Migrations,
 		login:      d.UserLogin,

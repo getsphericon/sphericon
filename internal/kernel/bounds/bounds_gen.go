@@ -283,7 +283,7 @@ const (
 )
 
 // ConsentDestination is the address or phone a Consent fact (a Confirmation, a Suppression, an Unsubscribe, an Engagement tracking consent) is about.
-// From external CreateConfirmationInput.destination, external RecordEngagementTrackingInput.destination, external CreateSuppressionInput.destination, external CreateUnsubscribeInput.destination.
+// From external CreateConfirmationInput.destination, external RecordEngagementTrackingInput.destination, site SiteRecordEngagementTrackingInput.destination, external CreateSuppressionInput.destination, external CreateUnsubscribeInput.destination.
 const (
 	ConsentDestinationMaxLength = 320
 )

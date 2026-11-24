@@ -13,6 +13,7 @@ package engagementtracking
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -97,6 +98,10 @@ var (
 		i18n.ErrorsEngagementTrackingInFuture)
 	// ErrNoEmail refuses a Contact's email consent for a Contact without an email address.
 	ErrNoEmail = validation.RefuseField(fieldname.Email, "engagement tracking: the contact has no email", i18n.ErrorsContactEmailMissing)
+	// ErrNotTheContacts refuses a member's observation, on the Contact card, of a Destination the
+	// Contact does not hold.
+	ErrNotTheContacts = validation.RefuseField(fieldname.Destination, "engagement tracking: the destination is not the contact's",
+		i18n.ErrorsEngagementTrackingNotTheContacts)
 	// ErrContactNotFound: no such Contact in the Workspace.
 	ErrContactNotFound = validation.NotFound("engagement tracking: contact not found", i18n.ErrorsContactNotFound)
 	// errState and errProvenance refuse a value outside their closed sets.
@@ -342,23 +347,80 @@ type ContactConsents struct {
 // ReadContact reads the consent of each Destination of a Contact: its email address. A Contact
 // without one has none.
 func (m *Module) ReadContact(ctx context.Context, s *ent.Scoped, contactID int64) (ContactConsents, error) {
-	c, err := s.Contact().Get(ctx, contactID)
-	if ent.IsNotFound(err) {
-		return ContactConsents{}, ErrContactNotFound
-	}
-	if err != nil {
-		return ContactConsents{}, fmt.Errorf("read contact: %w", err)
-	}
-	out := ContactConsents{Destinations: []Consent{}}
-	if c.Email == nil {
-		return out, nil
-	}
-	consent, err := m.Of(ctx, s, channels.Email, *c.Email)
+	c, err := contactOf(ctx, s, contactID)
 	if err != nil {
 		return ContactConsents{}, err
 	}
-	out.Destinations = append(out.Destinations, consent)
+	out := ContactConsents{Destinations: []Consent{}}
+	for _, d := range destinationsOf(c) {
+		consent, err := m.Of(ctx, s, d.channel, d.address)
+		if err != nil {
+			return ContactConsents{}, err
+		}
+		out.Destinations = append(out.Destinations, consent)
+	}
 	return out, nil
+}
+
+// MemberInput is a member's observation, on the Contact card, of one of the Contact's
+// Destinations: the person refused or agreed to tracking by another route (a call, a reply).
+type MemberInput struct {
+	Channel     channels.Channel
+	Destination string
+	State       State
+}
+
+// RecordByMember records a member's observation of one of a Contact's Destinations as manual,
+// occurring now, in a transaction of its own, by the rules of RecordIn: a refusal always applies,
+// a grant over a standing `denied` is ErrRefusalStands. A Destination the Contact does not hold is
+// ErrNotTheContacts, and a Contact the Workspace does not have is ErrContactNotFound.
+func (m *Module) RecordByMember(ctx context.Context, s *ent.Scoped, contactID int64, in MemberInput) (Recorded, error) {
+	var out Recorded
+	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		c, err := contactOf(ctx, ts, contactID)
+		if err != nil {
+			return err
+		}
+		if !open[in.Channel] {
+			return ErrChannel
+		}
+		address, err := unsubscribes.Destination(in.Channel, in.Destination)
+		if err != nil {
+			return err
+		}
+		if !slices.Contains(destinationsOf(c), destination{channel: in.Channel, address: address}) {
+			return ErrNotTheContacts
+		}
+		out, err = m.RecordIn(ctx, ts, RecordInput{Channel: in.Channel, Destination: address, State: in.State, Provenance: Manual})
+		return err
+	})
+	return out, err
+}
+
+// destination is one Destination of a Contact on a Channel, in its stored form.
+type destination struct {
+	channel channels.Channel
+	address string
+}
+
+// destinationsOf is the Destinations of c that take a consent: its email address.
+func destinationsOf(c *ent.Contact) []destination {
+	if c.Email == nil {
+		return nil
+	}
+	return []destination{{channel: channels.Email, address: *c.Email}}
+}
+
+// contactOf is the Contact contactID of the Workspace, or ErrContactNotFound.
+func contactOf(ctx context.Context, s *ent.Scoped, contactID int64) (*ent.Contact, error) {
+	c, err := s.Contact().Get(ctx, contactID)
+	if ent.IsNotFound(err) {
+		return nil, ErrContactNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("read contact: %w", err)
+	}
+	return c, nil
 }
 
 // Of is the consent of destination on channel, stored as it is (the Channel's normalized form).

@@ -453,6 +453,49 @@ export const zEmailBroadcastContentInput = z.strictObject({
 });
 
 /**
+ * A Channel whose messages track opens and clicks, so a Destination on it can consent to being tracked (ADR 0120)
+ */
+export const zEngagementTrackingChannel = z.enum([
+  'email',
+  'sms',
+  'telegram'
+]);
+
+/**
+ * Whether a Destination's opens and clicks are tracked
+ */
+export const zEngagementTrackingDecision = z.enum(['track', 'dont_track']);
+
+/**
+ * What became of an Engagement tracking observation: it set the consent (`applied`), or it occurred before the consent standing and changed nothing (`superseded`, recorded in the contact's history as `contact.consent_superseded`)
+ */
+export const zEngagementTrackingOutcome = z.enum(['applied', 'superseded']);
+
+/**
+ * Who recorded an Engagement tracking consent: the person on a page reached from a message (page), a member of the Workspace on the Contact card (manual), the customer through the API or an import (imported), or an On-site form's checkbox (onsite_form). A `denied` applies from any of them; only the person lifts one
+ */
+export const zEngagementTrackingProvenance = z.enum([
+  'page',
+  'manual',
+  'imported',
+  'onsite_form'
+]);
+
+/**
+ * What a Destination's Engagement tracking consent reads as: `granted` or `denied` as recorded, or `default` where nothing is recorded and the Workspace's default decides
+ */
+export const zEngagementTrackingReading = z.enum([
+  'granted',
+  'denied',
+  'default'
+]);
+
+/**
+ * Whether a Destination agreed to have its opens and clicks tracked (ADR 0120)
+ */
+export const zEngagementTrackingState = z.enum(['granted', 'denied']);
+
+/**
  * Why an Enrollment failed. A closed set: `invalid_body` (an HTTP step's body did not render
  * to valid JSON), `timeout` (no answer in time), `blocked_address` (the URL names an address
  * this instance does not permit), `http_status` (a non-2xx answer, see `status`) and
@@ -2067,6 +2110,15 @@ export const zSitePreviewSegmentResult = z.object({
 });
 
 /**
+ * An Engagement tracking consent a member records on the Contact card for one of the contact's Destinations (ADR 0120), as `manual`
+ */
+export const zSiteRecordEngagementTrackingInput = z.strictObject({
+  channel: zEngagementTrackingChannel,
+  destination: z.string().max(320),
+  state: zEngagementTrackingState
+});
+
+/**
  * A fresh set of Recovery codes. They are shown only in this response.
  */
 export const zSiteRecoveryCodes = z.object({
@@ -3347,6 +3399,33 @@ export const zContactExportDocument = z.object({
   events: z.array(zContactExportEvent),
   outboundMessages: z.array(zContactExportOutboundMessage),
   broadcastRecipients: z.array(zContactExportBroadcastRecipient)
+});
+
+/**
+ * The Engagement tracking consent of one Destination on one Channel (ADR 0120)
+ */
+export const zEngagementTrackingConsent = z.object({
+  channel: zEngagementTrackingChannel,
+  destination: z.string(),
+  state: zEngagementTrackingReading,
+  provenance: z.exactOptional(zEngagementTrackingProvenance.nullable()),
+  effective: zEngagementTrackingDecision,
+  updatedAt: z.exactOptional(zTimestamp.nullable())
+});
+
+/**
+ * The Engagement tracking consent of each Destination of a contact (its email address)
+ */
+export const zContactEngagementTracking = z.object({
+  destinations: z.array(zEngagementTrackingConsent)
+});
+
+/**
+ * The answer to an Engagement tracking observation: what became of it, and the consent that stands after it
+ */
+export const zEngagementTrackingObservationResult = z.object({
+  outcome: zEngagementTrackingOutcome,
+  consent: zEngagementTrackingConsent
 });
 
 /**
@@ -6424,6 +6503,28 @@ export const zSiteTelegramListBindingsPath = z.object({
  * The request has succeeded.
  */
 export const zSiteTelegramListBindingsResponse = z.array(zSiteBindingResource);
+
+export const zSiteEngagementTrackingGetPath = z.object({
+  workspaceId: zWorkspaceId,
+  contactId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteEngagementTrackingGetResponse = zContactEngagementTracking;
+
+export const zSiteEngagementTrackingCreateBody = zSiteRecordEngagementTrackingInput;
+
+export const zSiteEngagementTrackingCreatePath = z.object({
+  workspaceId: zWorkspaceId,
+  contactId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteEngagementTrackingCreateResponse = zEngagementTrackingObservationResult;
 
 export const zSiteSmsConsentsConfirmBody = zConsentEvidence;
 

@@ -1303,6 +1303,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Unsubscribe:           do.MustInvoke[*unsubscriberecording.UseCase](i),
 		Suppressions:          do.MustInvoke[*suppressions.Module](i),
 		Confirmations:         do.MustInvoke[*confirmations.Module](i),
+		Tracking:              do.MustInvoke[*engagementtracking.Module](i),
 		ChannelStops:          do.MustInvoke[*channelstop.Module](i),
 		Exports:               dataexport.New(siteresources.ExportMapper{Converter: &siteresources.ConverterImpl{}}),
 		Bindings:              do.MustInvoke[*bindings.Module](i),

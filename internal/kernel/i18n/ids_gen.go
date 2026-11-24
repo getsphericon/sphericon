@@ -172,6 +172,7 @@ var (
 	ErrorsEmailVerificationRequired                       = ID{key: "errors.email_verification_required"}
 	ErrorsEngagementTrackingChannel                       = ID{key: "errors.engagement_tracking_channel"}
 	ErrorsEngagementTrackingInFuture                      = ID{key: "errors.engagement_tracking_in_future"}
+	ErrorsEngagementTrackingNotTheContacts                = ID{key: "errors.engagement_tracking_not_the_contacts"}
 	ErrorsEngagementTrackingProvenance                    = ID{key: "errors.engagement_tracking_provenance"}
 	ErrorsEngagementTrackingRefused                       = ID{key: "errors.engagement_tracking_refused"}
 	ErrorsEngagementTrackingState                         = ID{key: "errors.engagement_tracking_state"}
