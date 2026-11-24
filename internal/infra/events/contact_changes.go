@@ -247,14 +247,15 @@ func (e *SmsDelivery) Project() Projection {
 // LinkClick is a click on a short tracked link of a message that is not an email (ADR 0083): the
 // URL it led to and the Broadcast or Automation and Outbound message it came from. Machine is set on
 // a hit made by software (a messaging app fetching the link for its preview, a carrier's filter):
-// it stays in the log and counts toward no figure, no rollup, no Trigger and no Attribution. The
-// Destination the message went to is not repeated: the Outbound message holds it. Each Channel's
+// it stays in the log and counts toward no figure, no rollup, no Trigger and no Attribution.
+// Destination is the one the message went to, as the Outbound message holds it (the number in
+// E.164, the Telegram user id), never the Contact's current address (ADR 0120). Each Channel's
 // click is its own Event on these facts: SmsClicked, TelegramClicked.
 type LinkClick struct {
 	ObservedAt        time.Time `json:"observedAt,omitzero"`
 	WorkspaceID       int64     `json:"workspaceId"`
 	ContactID         int64     `json:"contactId"`
-	Email             string    `json:"email,omitempty"`
+	Destination       string    `json:"destination"`
 	IntegrationID     int64     `json:"integrationId,omitempty"`
 	URL               string    `json:"url"`
 	BroadcastID       int64     `json:"broadcastId,omitempty"`
@@ -266,14 +267,14 @@ type LinkClick struct {
 
 // project is the click's Event row, as the action names it.
 func (e *LinkClick) project(action string) Projection {
-	props := map[string]any{"url": e.URL, outboundMessageIDProperty: e.OutboundMessageID}
+	props := map[string]any{"url": e.URL, "destination": e.Destination, outboundMessageIDProperty: e.OutboundMessageID}
 	setNonZero(props, "integrationId", e.IntegrationID)
 	setNonZero(props, "broadcastId", e.BroadcastID)
 	setNonZero(props, "automationId", e.AutomationID)
 	setNonZero(props, MachineProperty, e.Machine)
 	return Projection{
 		OccurredAt: e.ObservedAt,
-		Subject:    e.Email, Action: action, Email: e.Email, ContactID: e.ContactID,
+		Action:     action, ContactID: e.ContactID,
 		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, URL: e.URL, Machine: e.Machine, Properties: props,
 	}
 }
@@ -281,11 +282,17 @@ func (e *LinkClick) project(action string) Projection {
 // SmsClicked is a click on a short tracked link of an SMS (sms.clicked).
 type SmsClicked LinkClick
 
-func (*SmsClicked) EventName() string     { return systemevent.SmsClicked }
-func (*SmsClicked) EventVersion() int     { return 1 }
-func (e *SmsClicked) Workspace() int64    { return e.WorkspaceID }
-func (e *SmsClicked) EventID() string     { return e.DedupID }
-func (e *SmsClicked) Project() Projection { return (*LinkClick)(e).project(systemevent.SmsClicked) }
+func (*SmsClicked) EventName() string  { return systemevent.SmsClicked }
+func (*SmsClicked) EventVersion() int  { return 1 }
+func (e *SmsClicked) Workspace() int64 { return e.WorkspaceID }
+func (e *SmsClicked) EventID() string  { return e.DedupID }
+
+// Project is the click's Event row, its number as the row's phone, as an SMS Event's.
+func (e *SmsClicked) Project() Projection {
+	p := (*LinkClick)(e).project(systemevent.SmsClicked)
+	p.Phone = e.Destination
+	return p
+}
 
 // TelegramClicked is a click on a short tracked link of a Telegram message (telegram.clicked);
 // Telegram's link-preview fetcher is among the machine hits.

@@ -185,6 +185,7 @@ func TestTelegramsLinkPreviewFetcherIsMachineEngagementAndAPersonSetsTheRollupAn
 	assert.True(t, clicks[0].Machine)
 	assert.False(t, clicks[1].Machine)
 	assert.Equal(t, id, clicks[1].BroadcastID)
+	assert.Equal(t, benChat, clicks[1].Destination, "the click names the chat the message went to")
 }
 
 // telegram.clicked is a Trigger like email.clicked: a person's click enrolls the Contact, and a hit

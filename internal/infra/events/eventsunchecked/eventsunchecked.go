@@ -35,9 +35,9 @@ var anonymousKeep = []string{"sendingDomain", systemevent.BounceKindProperty}
 // EraseSubject is the Events part of a Contact's Erasure (ADR 0021): it deletes the subject's
 // customer-tracked Events and anonymizes its system Events in place. Events are found by
 // contact_id (Identify stitched earlier anonymous Events onto it), by the subject's visitor ids
-// (Events not yet stitched), for the Contact's phone by the sms.confirmed and SMS Engagement
-// tracking Events of the number that name no Contact: consent the number gave before any Contact
-// had it (by the API or a START), and for its addresses by the Engagement tracking Events of an
+// (Events not yet stitched), for the Contact's phone by the sms.confirmed, SMS Engagement
+// tracking and sms.clicked Events of the number that name no Contact: consent the number gave before
+// any Contact had it (by the API or a START), a click of a text sent to the number alone, and for its addresses by the Engagement tracking Events of an
 // address that name no Contact, for the same reason. contactID is 0, phone "" and addresses empty for a subject without a Contact.
 // Run it inside the Erasure's transaction.
 func EraseSubject(ctx context.Context, s *ent.Scoped, contactID int64, phone string, addresses, visitorIDs []string) error {
@@ -48,7 +48,8 @@ func EraseSubject(ctx context.Context, s *ent.Scoped, contactID int64, phone str
 	if phone != "" {
 		matches = append(matches, event.And(
 			event.ContactIDIsNil(),
-			event.ActionIn(systemevent.SmsConfirmed, systemevent.SmsEngagementTrackingGranted, systemevent.SmsEngagementTrackingDenied),
+			event.ActionIn(systemevent.SmsConfirmed, systemevent.SmsEngagementTrackingGranted, systemevent.SmsEngagementTrackingDenied,
+				systemevent.SmsClicked),
 			event.Phone(phone)))
 	}
 	if len(addresses) > 0 {

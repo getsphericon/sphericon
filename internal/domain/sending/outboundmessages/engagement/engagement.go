@@ -152,7 +152,8 @@ func (r *Recorder) record(ctx context.Context, m messagetoken.Message, hit Hit, 
 
 // engaged is the Outbound message a hit names, with the Contact it went to when there is one. A
 // Transactional send to an address with no Contact is kept by address. email is the message's own
-// Destination on email, never the Contact's current address.
+// Destination on email, never the Contact's current address; a click on another Channel names the
+// message's Destination too (events.LinkClick).
 type engaged struct {
 	msg     *ent.OutboundMessage
 	contact *ent.Contact // nil: the message has no Contact
@@ -200,11 +201,6 @@ func (r *Recorder) engagedOf(ctx context.Context, ts *ent.Scoped, id int64) (eng
 		return engaged{}, false, fmt.Errorf("read the message's contact: %w", err)
 	}
 	e.contact = c
-	if msg.Channel != channels.Email {
-		// An SMS or a Telegram click names the Contact's address, as it always has (the Outbound
-		// message holds the phone or the Telegram user).
-		e.email = lo.FromPtr(c.Email)
-	}
 	return e, true, nil
 }
 
@@ -230,7 +226,7 @@ func clickOn(dest string) func(e engaged, machine bool, at time.Time) events.Dom
 	return func(e engaged, machine bool, at time.Time) events.DomainEvent {
 		click := events.LinkClick{
 			ObservedAt:  at,
-			WorkspaceID: e.msg.WorkspaceID, ContactID: e.contactID(), Email: e.email,
+			WorkspaceID: e.msg.WorkspaceID, ContactID: e.contactID(), Destination: e.msg.Destination,
 			IntegrationID: lo.FromPtr(e.msg.IntegrationID), URL: dest,
 			BroadcastID: lo.FromPtr(e.msg.BroadcastID), AutomationID: lo.FromPtr(e.msg.AutomationID),
 			OutboundMessageID: e.msg.ID, Machine: machine,
