@@ -160,6 +160,7 @@ const (
 	SegmentID                 = "segmentId"
 	SendingSource             = "sendingSource"
 	SignupItems               = "signupItems"
+	Sms                       = "sms"
 	SmsConsent                = "smsConsent"
 	Source                    = "source"
 	State                     = "state"

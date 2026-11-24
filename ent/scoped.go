@@ -28196,6 +28196,22 @@ func (u *EngagementTrackingConsentScopedUpsert) UpdateUpdatedAt() *EngagementTra
 
 const RoleOf_EngagementTrackingConsentScopedUpsert_UpdateUpdatedAt = RoleStep
 
+// SetDestination sets the "destination" field.
+func (u *EngagementTrackingConsentScopedUpsert) SetDestination(v string) *EngagementTrackingConsentScopedUpsert {
+	u.u.Set(engagementtrackingconsent.FieldDestination, v)
+	return u
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpsert_SetDestination = RoleStep
+
+// UpdateDestination sets the "destination" field to the value that was provided on create.
+func (u *EngagementTrackingConsentScopedUpsert) UpdateDestination() *EngagementTrackingConsentScopedUpsert {
+	u.u.SetExcluded(engagementtrackingconsent.FieldDestination)
+	return u
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpsert_UpdateDestination = RoleStep
+
 // SetState sets the "state" field.
 func (u *EngagementTrackingConsentScopedUpsert) SetState(v engagementtrackingconsent.State) *EngagementTrackingConsentScopedUpsert {
 	u.u.Set(engagementtrackingconsent.FieldState, v)
@@ -28435,6 +28451,24 @@ func (x *EngagementTrackingConsentScopedUpdateOne) SetUpdatedAt(v time.Time) *En
 
 const RoleOf_EngagementTrackingConsentScopedUpdateOne_SetUpdatedAt = RoleStep
 
+// SetDestination sets the "destination" field.
+func (x *EngagementTrackingConsentScopedUpdateOne) SetDestination(v string) *EngagementTrackingConsentScopedUpdateOne {
+	x.set = append(x.set, func(b *EngagementTrackingConsentUpdateOne) { b.SetDestination(v) })
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpdateOne_SetDestination = RoleStep
+
+// SetNillableDestination sets the "destination" field if the given value is not nil.
+func (x *EngagementTrackingConsentScopedUpdateOne) SetNillableDestination(v *string) *EngagementTrackingConsentScopedUpdateOne {
+	if v != nil {
+		x.SetDestination(*v)
+	}
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpdateOne_SetNillableDestination = RoleStep
+
 // SetState sets the "state" field.
 func (x *EngagementTrackingConsentScopedUpdateOne) SetState(v engagementtrackingconsent.State) *EngagementTrackingConsentScopedUpdateOne {
 	x.set = append(x.set, func(b *EngagementTrackingConsentUpdateOne) { b.SetState(v) })
@@ -28561,6 +28595,24 @@ func (x *EngagementTrackingConsentScopedUpdate) SetUpdatedAt(v time.Time) *Engag
 }
 
 const RoleOf_EngagementTrackingConsentScopedUpdate_SetUpdatedAt = RoleStep
+
+// SetDestination sets the "destination" field.
+func (x *EngagementTrackingConsentScopedUpdate) SetDestination(v string) *EngagementTrackingConsentScopedUpdate {
+	x.set = append(x.set, func(b *EngagementTrackingConsentUpdate) { b.SetDestination(v) })
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpdate_SetDestination = RoleStep
+
+// SetNillableDestination sets the "destination" field if the given value is not nil.
+func (x *EngagementTrackingConsentScopedUpdate) SetNillableDestination(v *string) *EngagementTrackingConsentScopedUpdate {
+	if v != nil {
+		x.SetDestination(*v)
+	}
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpdate_SetNillableDestination = RoleStep
 
 // SetState sets the "state" field.
 func (x *EngagementTrackingConsentScopedUpdate) SetState(v engagementtrackingconsent.State) *EngagementTrackingConsentScopedUpdate {

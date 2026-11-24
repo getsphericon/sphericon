@@ -50,6 +50,20 @@ func (_u *EngagementTrackingConsentUpdate) SetNillableWorkspaceID(v *int64) *Eng
 	return _u
 }
 
+// SetDestination sets the "destination" field.
+func (_u *EngagementTrackingConsentUpdate) SetDestination(v string) *EngagementTrackingConsentUpdate {
+	_u.mutation.SetDestination(v)
+	return _u
+}
+
+// SetNillableDestination sets the "destination" field if the given value is not nil.
+func (_u *EngagementTrackingConsentUpdate) SetNillableDestination(v *string) *EngagementTrackingConsentUpdate {
+	if v != nil {
+		_u.SetDestination(*v)
+	}
+	return _u
+}
+
 // SetState sets the "state" field.
 func (_u *EngagementTrackingConsentUpdate) SetState(v engagementtrackingconsent.State) *EngagementTrackingConsentUpdate {
 	_u.mutation.SetState(v)
@@ -132,6 +146,11 @@ func (_u *EngagementTrackingConsentUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *EngagementTrackingConsentUpdate) check() error {
+	if v, ok := _u.mutation.Destination(); ok {
+		if err := engagementtrackingconsent.DestinationValidator(v); err != nil {
+			return &ValidationError{Name: "destination", err: fmt.Errorf(`ent: validator failed for field "EngagementTrackingConsent.destination": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.State(); ok {
 		if err := engagementtrackingconsent.StateValidator(v); err != nil {
 			return &ValidationError{Name: "state", err: fmt.Errorf(`ent: validator failed for field "EngagementTrackingConsent.state": %w`, err)}
@@ -168,6 +187,9 @@ func (_u *EngagementTrackingConsentUpdate) sqlSave(ctx context.Context) (_node i
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(engagementtrackingconsent.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Destination(); ok {
+		_spec.SetField(engagementtrackingconsent.FieldDestination, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.State(); ok {
 		_spec.SetField(engagementtrackingconsent.FieldState, field.TypeEnum, value)
@@ -242,6 +264,20 @@ func (_u *EngagementTrackingConsentUpdateOne) SetWorkspaceID(v int64) *Engagemen
 func (_u *EngagementTrackingConsentUpdateOne) SetNillableWorkspaceID(v *int64) *EngagementTrackingConsentUpdateOne {
 	if v != nil {
 		_u.SetWorkspaceID(*v)
+	}
+	return _u
+}
+
+// SetDestination sets the "destination" field.
+func (_u *EngagementTrackingConsentUpdateOne) SetDestination(v string) *EngagementTrackingConsentUpdateOne {
+	_u.mutation.SetDestination(v)
+	return _u
+}
+
+// SetNillableDestination sets the "destination" field if the given value is not nil.
+func (_u *EngagementTrackingConsentUpdateOne) SetNillableDestination(v *string) *EngagementTrackingConsentUpdateOne {
+	if v != nil {
+		_u.SetDestination(*v)
 	}
 	return _u
 }
@@ -341,6 +377,11 @@ func (_u *EngagementTrackingConsentUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *EngagementTrackingConsentUpdateOne) check() error {
+	if v, ok := _u.mutation.Destination(); ok {
+		if err := engagementtrackingconsent.DestinationValidator(v); err != nil {
+			return &ValidationError{Name: "destination", err: fmt.Errorf(`ent: validator failed for field "EngagementTrackingConsent.destination": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.State(); ok {
 		if err := engagementtrackingconsent.StateValidator(v); err != nil {
 			return &ValidationError{Name: "state", err: fmt.Errorf(`ent: validator failed for field "EngagementTrackingConsent.state": %w`, err)}
@@ -394,6 +435,9 @@ func (_u *EngagementTrackingConsentUpdateOne) sqlSave(ctx context.Context) (_nod
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(engagementtrackingconsent.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Destination(); ok {
+		_spec.SetField(engagementtrackingconsent.FieldDestination, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.State(); ok {
 		_spec.SetField(engagementtrackingconsent.FieldState, field.TypeEnum, value)

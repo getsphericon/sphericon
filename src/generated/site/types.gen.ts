@@ -1064,7 +1064,7 @@ export const ContactAttribute = {
 export type ContactAttribute = typeof ContactAttribute[keyof typeof ContactAttribute];
 
 /**
- * The Engagement tracking consent of each Destination of a contact (its email address)
+ * The Engagement tracking consent of each Destination of a contact: its email address, its phone, and the Telegram user of each of its chats
  */
 export type ContactEngagementTracking = {
   /**
@@ -2118,7 +2118,7 @@ export type EngagementTrackingConsent = {
    */
   channel: EngagementTrackingChannel;
   /**
-   * Normalized destination: the lower-cased email address on `email`
+   * Normalized destination: the lower-cased email address on `email`, the number in E.164 on `sms`, the Telegram user id on `telegram`
    */
   destination: string;
   /**
@@ -6983,11 +6983,11 @@ export type SitePreviewSegmentResult = {
  */
 export type SiteRecordEngagementTrackingInput = {
   /**
-   * The Channel the consent is for. Only `email` is accepted yet
+   * The Channel the consent is for
    */
   channel: EngagementTrackingChannel;
   /**
-   * The contact's Destination that consented or refused: its email address on `email`
+   * The contact's Destination that consented or refused: its email address on `email`, its phone on `sms`, the Telegram user id of one of its chats on `telegram`
    */
   destination: string;
   /**

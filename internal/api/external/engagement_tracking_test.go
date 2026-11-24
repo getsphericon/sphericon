@@ -33,10 +33,18 @@ func trackingOf(address string, state externalapi.EngagementTrackingState, at ti
 // emailTracking is the Engagement tracking consent of a Contact's email address, read through /api.
 func emailTracking(t *testing.T, c *externalapi.Client, contactID int64) externalapi.EngagementTrackingConsent {
 	t.Helper()
+	return trackingOn(t, c, contactID, externalapi.EngagementTrackingChannelEmail)
+}
+
+// trackingOn is the Engagement tracking consent of a Contact's one Destination on channel, read
+// through /api.
+func trackingOn(t *testing.T, c *externalapi.Client, contactID int64, channel externalapi.EngagementTrackingChannel) externalapi.EngagementTrackingConsent {
+	t.Helper()
 	read, err := c.EngagementTrackingGetForContact(t.Context(), externalapi.EngagementTrackingGetForContactParams{ContactId: externalapi.EntityId(contactID)})
 	require.NoError(t, err)
-	require.Len(t, read.Destinations, 1)
-	return read.Destinations[0]
+	on := lo.Filter(read.Destinations, func(d externalapi.EngagementTrackingConsent, _ int) bool { return d.Channel == channel })
+	require.Len(t, on, 1)
+	return on[0]
 }
 
 // activity is the Events of action in a Contact's history, as a member reads it on the Contact card.
@@ -147,12 +155,12 @@ func TestAGrantAndARefusalOfTheSameMomentLeaveTheRefusal(t *testing.T) {
 	assert.Equal(t, externalapi.EngagementTrackingReadingDenied, read.State)
 }
 
-// The consent is refused on a Channel whose Destinations take none yet, for a time to come, and
-// without contacts:write.
-func TestAnObservationIsRefusedOffEmailInTheFutureOrWithoutContactsWrite(t *testing.T) {
+// The consent is refused for a Destination that is none of its Channel's (a number without its
+// country code), for a time to come, and without contacts:write.
+func TestAnObservationIsRefusedForABadDestinationInTheFutureOrWithoutContactsWrite(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite, apitokens.ScopeContactsRead)
-	onSMS := trackingOf(fixtures.ContactTexterPhone, externalapi.EngagementTrackingStateDenied, time.Time{})
+	onSMS := trackingOf("4155550810", externalapi.EngagementTrackingStateDenied, time.Time{})
 	onSMS.Channel = externalapi.EngagementTrackingChannelSMS
 	future := trackingOf(fixtures.ContactAliceEmail, externalapi.EngagementTrackingStateGranted, time.Now().Add(24*time.Hour))
 	reader := env.ExternalScoped(t, apitokens.ScopeContactsRead)

@@ -11,7 +11,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -85,4 +87,34 @@ func TestTheEffectiveConsentOfOneDestinationFollowsTheDefault(t *testing.T) {
 
 	assert.Equal(t, engagementtracking.DontTrack, liam.Effective, "nothing recorded: the default")
 	assert.Equal(t, engagementtracking.Track, bob.Effective, "granted")
+}
+
+// A number's refusal outlives the Erasure of the Contact whose phone it was, kept by the number's
+// hash: for a Contact made again with the number, one Destination's answer and the SQL form agree
+// that it is not tracked.
+func TestARefusalOfAnErasedNumberHoldsInTheSQLFormAsForOneDestination(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite, apitokens.ScopeContactsErase)
+	number := "+14155550851"
+	first, err := c.ContactsCreate(ctx, &externalapi.CreateContactInput{Phone: externalapi.NewOptNilString(number)})
+	require.NoError(t, err)
+	_, err = c.EngagementTrackingCreate(ctx, &externalapi.RecordEngagementTrackingInput{
+		Channel: externalapi.EngagementTrackingChannelSMS, Destination: number, State: externalapi.EngagementTrackingStateDenied,
+	})
+	require.NoError(t, err)
+	require.NoError(t, c.ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: first.ID}))
+	again, err := c.ContactsCreate(ctx, &externalapi.CreateContactInput{Phone: externalapi.NewOptNilString(number)})
+	require.NoError(t, err)
+	s := env.DB.Scoped(fixtures.AcmeID)
+
+	one, err := testhelper.Module[*engagementtracking.Module](env).Of(ctx, s, channels.SMS, number)
+	require.NoError(t, err)
+	tracked, err := s.Contact().Query().
+		Where(contact.ID(int64(again.ID)), predicate.Contact(engagementtracking.TrackedWhere(channels.SMS, engagementtracking.Track, contact.FieldPhone))).
+		Exist(ctx)
+	require.NoError(t, err)
+
+	assert.Equal(t, engagementtracking.DontTrack, one.Effective)
+	assert.False(t, tracked)
 }

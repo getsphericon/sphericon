@@ -5,10 +5,10 @@ namespace Sphericon;
 
 /** An Engagement tracking consent a member records on the Contact card for one of the contact's Destinations (ADR 0120), as `manual` */
 model SiteRecordEngagementTrackingInput {
-  /** The Channel the consent is for. Only `email` is accepted yet */
+  /** The Channel the consent is for */
   channel: EngagementTrackingChannel;
 
-  /** The contact's Destination that consented or refused: its email address on `email` */
+  /** The contact's Destination that consented or refused: its email address on `email`, its phone on `sms`, the Telegram user id of one of its chats on `telegram` */
   @maxLength(320)
   destination: string;
 
@@ -23,7 +23,8 @@ model SiteRecordEngagementTrackingInput {
 @tag("Site engagement tracking")
 namespace SiteEngagementTracking {
   /**
-   * Read whether each Destination of a contact (its email address) is tracked: the consent
+   * Read whether each Destination of a contact (its email address, its phone, the Telegram user
+   * of each of its chats) is tracked: the consent
    * recorded with who recorded it, or `default` where none is, with what the Workspace's default
    * means now
    */
@@ -36,7 +37,7 @@ namespace SiteEngagementTracking {
   /**
    * Record a refusal or a grant of tracking the person made to you (by phone, by reply) for one of
    * the contact's Destinations, as `manual`, now. A `denied` always applies and is kept in the
-   * immutable `email.engagement_tracking_denied` event; a `granted` is refused with a conflict over
+   * immutable `<channel>.engagement_tracking_denied` event; a `granted` is refused with a conflict over
    * a standing `denied`: only the person can lift a refusal. 422 when the Destination is not the
    * contact's.
    */

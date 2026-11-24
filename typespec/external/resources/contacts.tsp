@@ -173,7 +173,7 @@ model UpsertContactInput {
 
   /** The Engagement tracking consent the contact's Destinations gave outside sphericon, recorded as
    * `imported`, as `POST /engagement-tracking-consents` does. An item with consent for its email
-   * and no email fails */
+   * and no email fails, and so does one with consent for its phone and no phone */
   engagementTracking?: ContactEngagementTrackingInput;
 }
 
@@ -181,6 +181,9 @@ model UpsertContactInput {
 model ContactEngagementTrackingInput {
   /** The consent of the contact's email address: the item's, else the one the contact has */
   email?: EngagementTrackingObservationInput;
+
+  /** The consent of the contact's phone on SMS: the item's, else the one the contact has */
+  sms?: EngagementTrackingObservationInput;
 }
 
 /** One Engagement tracking observation of a contact's Destination */

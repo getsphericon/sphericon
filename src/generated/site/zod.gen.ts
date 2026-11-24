@@ -3424,7 +3424,7 @@ export const zEngagementTrackingConsent = z.object({
 });
 
 /**
- * The Engagement tracking consent of each Destination of a contact (its email address)
+ * The Engagement tracking consent of each Destination of a contact: its email address, its phone, and the Telegram user of each of its chats
  */
 export const zContactEngagementTracking = z.object({
   destinations: z.array(zEngagementTrackingConsent)
