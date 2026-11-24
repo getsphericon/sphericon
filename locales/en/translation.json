@@ -139,8 +139,9 @@
       "empty": "No email sent in this window",
       "opened": "Opened",
       "openRate": "Open rate",
-      "rangeNote": "Aggregated over the selected window, from delivery logs.",
-      "sent": "Sent"
+      "rangeNote": "Aggregated over the selected window, from delivery logs. The rates count tracked messages only; the untracked ones (sent without tracking, or whose tracking was withdrawn) are counted beside them.",
+      "sent": "Sent (tracked)",
+      "untracked": "Untracked"
     },
     "events": {
       "action": "Action",
@@ -193,7 +194,8 @@
     "series": {
       "clicked": "Clicked",
       "opened": "Opened",
-      "sent": "Sent"
+      "sent": "Sent (tracked)",
+      "untracked": "Untracked"
     },
     "sources": {
       "api": "API",
@@ -654,7 +656,8 @@
       "skipped": "Skipped",
       "undelivered": "Undelivered",
       "unsubscribed": "Unsubscribed",
-      "unsubscribeRate": "Unsubscribe rate"
+      "unsubscribeRate": "Unsubscribe rate",
+      "untracked": "Untracked"
     },
     "status": {
       "cancelled": "Cancelled",
@@ -1613,7 +1616,8 @@
       "openRate": "Open rate",
       "report": "Subscribed people",
       "subscribed": "Subscribed",
-      "title": "Audience"
+      "title": "Audience",
+      "untracked": "The rates count tracked messages only. Untracked messages, beside them: {{untracked}}."
     },
     "figuresLoadError": "Failed to load the figures of the period",
     "pointChange": "{{change}} pp",

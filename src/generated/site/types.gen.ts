@@ -4395,24 +4395,30 @@ export type SiteAnalyticsDeliverability = {
 };
 
 /**
- * Email engagement for the Broadcast and Automation messages sent in the selected range
- * (the send cohort; a Transactional message is not in it), from delivery logs. Each message
- * counts once, not each person. Opens/clicks are the first human open/click stamped on the
- * message and are counted among that cohort, so the counts reconcile and the rates stay in [0,1].
+ * Email engagement for the tracked Broadcast and Automation messages sent in the selected range
+ * (the send cohort; a Transactional message is not in it, and neither is a message sent untracked
+ * or whose tracking was withdrawn since, ADR 0120), from delivery logs. Each message counts once,
+ * not each person. Opens/clicks are the first human open/click stamped on the message and are
+ * counted among that cohort, so the counts reconcile and the rates stay in [0,1]. The untracked
+ * messages are counted beside it.
  */
 export type SiteAnalyticsEmail = {
   /**
-   * Messages sent within the range
+   * Tracked messages sent within the range: the rates' denominator
    */
   sentCount: number;
   /**
-   * Messages sent in the range that were opened
+   * Tracked messages sent in the range that were opened
    */
   openedCount: number;
   /**
-   * Messages sent in the range that were clicked
+   * Tracked messages sent in the range that were clicked
    */
   clickedCount: number;
+  /**
+   * Broadcast and Automation messages sent in the range that are not tracked: sent untracked, or whose tracking was withdrawn since. They are in no rate.
+   */
+  untrackedCount: number;
   /**
    * Opened ÷ sent (0–1)
    */
@@ -4586,7 +4592,7 @@ export type SiteAnalyticsPeriod = {
 
 /**
  * One Report day of the cohort (ADR 0057), zero-filled across the range. Opened/clicked
- * count the messages sent that day that were later opened/clicked.
+ * count the tracked messages sent that day that were later opened/clicked.
  */
 export type SiteAnalyticsPoint = {
   /**
@@ -4594,17 +4600,21 @@ export type SiteAnalyticsPoint = {
    */
   date: string;
   /**
-   * Messages sent that day
+   * Tracked messages sent that day
    */
   sent: number;
   /**
-   * Messages sent that day that were opened
+   * Tracked messages sent that day that were opened
    */
   opened: number;
   /**
-   * Messages sent that day that were clicked
+   * Tracked messages sent that day that were clicked
    */
   clicked: number;
+  /**
+   * Broadcast and Automation messages sent that day that are not tracked
+   */
+  untracked: number;
 };
 
 /**
@@ -5210,13 +5220,17 @@ export type SiteBroadcastStats = {
    */
   cancelledCount: number;
   /**
-   * Recipients that opened the email; null on a Channel that cannot tell
+   * Tracked messages that were opened; null on a Channel that cannot tell
    */
   openedCount: number | null;
   /**
-   * Recipients that clicked a link
+   * Tracked messages that were clicked
    */
   clickedCount: number;
+  /**
+   * Messages sent that are not tracked: sent untracked, or whose tracking was withdrawn since (ADR 0120). They count in no open or click figure, and the tracked messages are the sent count less these.
+   */
+  untrackedCount: number;
   /**
    * Recipients that unsubscribed via this broadcast
    */
@@ -5246,11 +5260,11 @@ export type SiteBroadcastStats = {
    */
   deliveryRate: number | null;
   /**
-   * Unique opens ÷ messages sent (0–1); null on a Channel that reports no opens
+   * Unique opens ÷ tracked messages sent (0–1); null on a Channel that reports no opens
    */
   openRate: number | null;
   /**
-   * Unique clicks ÷ messages sent (0–1)
+   * Unique clicks ÷ tracked messages sent (0–1)
    */
   clickRate: number;
   /**

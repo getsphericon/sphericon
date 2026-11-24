@@ -4351,10 +4351,14 @@ type BroadcastReport struct {
 	// Recipients a Cancel left unsent: no message was created for them (ADR 0150). Zero unless the
 	// broadcast is cancelled.
 	CancelledCount int32 `json:"cancelledCount"`
-	// Recipients that opened the email; null on a Channel that cannot tell.
+	// Tracked messages that were opened; null on a Channel that cannot tell.
 	OpenedCount NilInt32 `json:"openedCount"`
-	// Recipients that clicked a link.
+	// Tracked messages that were clicked.
 	ClickedCount int32 `json:"clickedCount"`
+	// Messages sent that are not tracked: sent untracked, or whose tracking was withdrawn since (ADR
+	// 0120). They count in no open or click figure, and the tracked messages are the sent count less
+	// these.
+	UntrackedCount int32 `json:"untrackedCount"`
 	// Recipients that unsubscribed via this broadcast.
 	UnsubscribedCount int32 `json:"unsubscribedCount"`
 	// Messages the provider reported delivered, read from the delivery result stamped on each message;
@@ -4372,9 +4376,9 @@ type BroadcastReport struct {
 	// Messages that went through a Test inbox: captured, not delivered; they count as delivered too. Null
 	// off email.
 	CapturedCount NilInt32 `json:"capturedCount"`
-	// Unique opens ÷ messages sent (0-1); null on a Channel that reports no opens.
+	// Unique opens ÷ tracked messages sent (0-1); null on a Channel that reports no opens.
 	OpenRate NilFloat32 `json:"openRate"`
-	// Unique clicks ÷ messages sent (0-1).
+	// Unique clicks ÷ tracked messages sent (0-1).
 	ClickRate float32 `json:"clickRate"`
 }
 
@@ -4426,6 +4430,11 @@ func (s *BroadcastReport) GetOpenedCount() NilInt32 {
 // GetClickedCount returns the value of ClickedCount.
 func (s *BroadcastReport) GetClickedCount() int32 {
 	return s.ClickedCount
+}
+
+// GetUntrackedCount returns the value of UntrackedCount.
+func (s *BroadcastReport) GetUntrackedCount() int32 {
+	return s.UntrackedCount
 }
 
 // GetUnsubscribedCount returns the value of UnsubscribedCount.
@@ -4516,6 +4525,11 @@ func (s *BroadcastReport) SetOpenedCount(val NilInt32) {
 // SetClickedCount sets the value of ClickedCount.
 func (s *BroadcastReport) SetClickedCount(val int32) {
 	s.ClickedCount = val
+}
+
+// SetUntrackedCount sets the value of UntrackedCount.
+func (s *BroadcastReport) SetUntrackedCount(val int32) {
+	s.UntrackedCount = val
 }
 
 // SetUnsubscribedCount sets the value of UnsubscribedCount.

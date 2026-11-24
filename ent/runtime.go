@@ -498,6 +498,12 @@ func init() {
 	broadcastfigureDescCaptured := broadcastfigureFields[15].Descriptor()
 	// broadcastfigure.CapturedValidator is a validator for the "captured" field. It is called by the builders before save.
 	broadcastfigure.CapturedValidator = broadcastfigureDescCaptured.Validators[0].(func(int) error)
+	// broadcastfigureDescUntracked is the schema descriptor for untracked field.
+	broadcastfigureDescUntracked := broadcastfigureFields[16].Descriptor()
+	// broadcastfigure.DefaultUntracked holds the default value on creation for the untracked field.
+	broadcastfigure.DefaultUntracked = broadcastfigureDescUntracked.Default.(int)
+	// broadcastfigure.UntrackedValidator is a validator for the "untracked" field. It is called by the builders before save.
+	broadcastfigure.UntrackedValidator = broadcastfigureDescUntracked.Validators[0].(func(int) error)
 	broadcastrecipientMixin := schema.BroadcastRecipient{}.Mixin()
 	broadcastrecipientMixinFields0 := broadcastrecipientMixin[0].Fields()
 	_ = broadcastrecipientMixinFields0

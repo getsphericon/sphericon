@@ -48,8 +48,12 @@ type MessageRow struct {
 	OpenedAt          *time.Time         `json:"opened_at"`
 	ClickedAt         *time.Time         `json:"clicked_at"`
 	Captured          bool               `json:"captured"`
-	CreatedAt         time.Time          `json:"created_at"`
-	UpdatedAt         time.Time          `json:"updated_at"`
+	// Tracked and TrackingWithdrawnAt are the two facts of the message's tracking (ADR 0120): it
+	// is tracked while the first holds and the second is absent.
+	Tracked             bool       `json:"tracked"`
+	TrackingWithdrawnAt *time.Time `json:"tracking_withdrawn_at"`
+	CreatedAt           time.Time  `json:"created_at"`
+	UpdatedAt           time.Time  `json:"updated_at"`
 }
 
 // Position is the row's (updated_at, id).
@@ -57,36 +61,38 @@ func (r MessageRow) Position() Cursor { return Cursor{At: r.UpdatedAt, ID: int64
 
 func messageRow(m *ent.OutboundMessage) MessageRow {
 	return MessageRow{
-		ID:                publicid.ID(m.ID),
-		Kind:              m.Kind.String(),
-		Channel:           string(m.Channel),
-		Destination:       lo.EmptyableToPtr(m.Destination),
-		Status:            m.Status.String(),
-		SkippedReason:     m.SkippedReason,
-		Failure:           m.Failure,
-		ContactID:         publicid.Ptr(m.ContactID),
-		BroadcastID:       publicid.Ptr(m.BroadcastID),
-		AutomationID:      publicid.Ptr(m.AutomationID),
-		AutomationRunID:   publicid.Ptr(m.AutomationRunID),
-		AutomationVersion: versionNumber(m),
-		AutomationStepID:  (*string)(m.AutomationStepID),
-		IntegrationID:     publicid.Ptr(m.IntegrationID),
-		TemplateID:        publicid.Ptr(m.TemplateID),
-		SendingSource:     m.SendingSource,
-		SendingDomain:     m.SendingDomain,
-		ProviderMessageID: m.ProviderMessageID,
-		ClaimedAt:         m.ClaimedAt.UTC(),
-		SentAt:            utc(m.SentAt),
-		DeliveredAt:       utc(m.DeliveredAt),
-		BouncedAt:         utc(m.BouncedAt),
-		UndeliveredAt:     utc(m.UndeliveredAt),
-		UndeliveredCode:   m.UndeliveredCode,
-		ComplainedAt:      utc(m.ComplainedAt),
-		OpenedAt:          utc(m.OpenedAt),
-		ClickedAt:         utc(m.ClickedAt),
-		Captured:          m.Captured,
-		CreatedAt:         m.CreatedAt.UTC(),
-		UpdatedAt:         m.UpdatedAt.UTC(),
+		ID:                  publicid.ID(m.ID),
+		Kind:                m.Kind.String(),
+		Channel:             string(m.Channel),
+		Destination:         lo.EmptyableToPtr(m.Destination),
+		Status:              m.Status.String(),
+		SkippedReason:       m.SkippedReason,
+		Failure:             m.Failure,
+		ContactID:           publicid.Ptr(m.ContactID),
+		BroadcastID:         publicid.Ptr(m.BroadcastID),
+		AutomationID:        publicid.Ptr(m.AutomationID),
+		AutomationRunID:     publicid.Ptr(m.AutomationRunID),
+		AutomationVersion:   versionNumber(m),
+		AutomationStepID:    (*string)(m.AutomationStepID),
+		IntegrationID:       publicid.Ptr(m.IntegrationID),
+		TemplateID:          publicid.Ptr(m.TemplateID),
+		SendingSource:       m.SendingSource,
+		SendingDomain:       m.SendingDomain,
+		ProviderMessageID:   m.ProviderMessageID,
+		ClaimedAt:           m.ClaimedAt.UTC(),
+		SentAt:              utc(m.SentAt),
+		DeliveredAt:         utc(m.DeliveredAt),
+		BouncedAt:           utc(m.BouncedAt),
+		UndeliveredAt:       utc(m.UndeliveredAt),
+		UndeliveredCode:     m.UndeliveredCode,
+		ComplainedAt:        utc(m.ComplainedAt),
+		OpenedAt:            utc(m.OpenedAt),
+		ClickedAt:           utc(m.ClickedAt),
+		Captured:            m.Captured,
+		Tracked:             m.Tracked,
+		TrackingWithdrawnAt: utc(m.TrackingWithdrawnAt),
+		CreatedAt:           m.CreatedAt.UTC(),
+		UpdatedAt:           m.UpdatedAt.UTC(),
 	}
 }
 

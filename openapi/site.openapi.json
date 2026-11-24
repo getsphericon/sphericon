@@ -16898,6 +16898,7 @@
           "sentCount",
           "openedCount",
           "clickedCount",
+          "untrackedCount",
           "openRate",
           "clickRate",
           "clickToOpenRate"
@@ -16906,17 +16907,22 @@
           "sentCount": {
             "type": "integer",
             "format": "int32",
-            "description": "Messages sent within the range"
+            "description": "Tracked messages sent within the range: the rates' denominator"
           },
           "openedCount": {
             "type": "integer",
             "format": "int32",
-            "description": "Messages sent in the range that were opened"
+            "description": "Tracked messages sent in the range that were opened"
           },
           "clickedCount": {
             "type": "integer",
             "format": "int32",
-            "description": "Messages sent in the range that were clicked"
+            "description": "Tracked messages sent in the range that were clicked"
+          },
+          "untrackedCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Broadcast and Automation messages sent in the range that are not tracked: sent untracked, or whose tracking was withdrawn since. They are in no rate."
           },
           "openRate": {
             "type": "number",
@@ -16934,7 +16940,7 @@
             "description": "Clicked ÷ opened (0–1)"
           }
         },
-        "description": "Email engagement for the Broadcast and Automation messages sent in the selected range\n(the send cohort; a Transactional message is not in it), from delivery logs. Each message\ncounts once, not each person. Opens/clicks are the first human open/click stamped on the\nmessage and are counted among that cohort, so the counts reconcile and the rates stay in [0,1]."
+        "description": "Email engagement for the tracked Broadcast and Automation messages sent in the selected range\n(the send cohort; a Transactional message is not in it, and neither is a message sent untracked\nor whose tracking was withdrawn since, ADR 0120), from delivery logs. Each message counts once,\nnot each person. Opens/clicks are the first human open/click stamped on the message and are\ncounted among that cohort, so the counts reconcile and the rates stay in [0,1]. The untracked\nmessages are counted beside it."
       },
       "SiteAnalyticsEventAction": {
         "type": "object",
@@ -17158,7 +17164,7 @@
       },
       "SiteAnalyticsPoint": {
         "type": "object",
-        "required": ["date", "sent", "opened", "clicked"],
+        "required": ["date", "sent", "opened", "clicked", "untracked"],
         "properties": {
           "date": {
             "type": "string",
@@ -17167,20 +17173,25 @@
           "sent": {
             "type": "integer",
             "format": "int32",
-            "description": "Messages sent that day"
+            "description": "Tracked messages sent that day"
           },
           "opened": {
             "type": "integer",
             "format": "int32",
-            "description": "Messages sent that day that were opened"
+            "description": "Tracked messages sent that day that were opened"
           },
           "clicked": {
             "type": "integer",
             "format": "int32",
-            "description": "Messages sent that day that were clicked"
+            "description": "Tracked messages sent that day that were clicked"
+          },
+          "untracked": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Broadcast and Automation messages sent that day that are not tracked"
           }
         },
-        "description": "One Report day of the cohort (ADR 0057), zero-filled across the range. Opened/clicked\ncount the messages sent that day that were later opened/clicked."
+        "description": "One Report day of the cohort (ADR 0057), zero-filled across the range. Opened/clicked\ncount the tracked messages sent that day that were later opened/clicked."
       },
       "SiteAnalyticsRange": {
         "type": "string",
@@ -18035,6 +18046,7 @@
           "cancelledCount",
           "openedCount",
           "clickedCount",
+          "untrackedCount",
           "unsubscribedCount",
           "deliveredCount",
           "undeliveredCount",
@@ -18084,12 +18096,17 @@
             "type": "integer",
             "format": "int32",
             "nullable": true,
-            "description": "Recipients that opened the email; null on a Channel that cannot tell"
+            "description": "Tracked messages that were opened; null on a Channel that cannot tell"
           },
           "clickedCount": {
             "type": "integer",
             "format": "int32",
-            "description": "Recipients that clicked a link"
+            "description": "Tracked messages that were clicked"
+          },
+          "untrackedCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages sent that are not tracked: sent untracked, or whose tracking was withdrawn since (ADR 0120). They count in no open or click figure, and the tracked messages are the sent count less these."
           },
           "unsubscribedCount": {
             "type": "integer",
@@ -18136,12 +18153,12 @@
             "type": "number",
             "format": "float",
             "nullable": true,
-            "description": "Unique opens ÷ messages sent (0–1); null on a Channel that reports no opens"
+            "description": "Unique opens ÷ tracked messages sent (0–1); null on a Channel that reports no opens"
           },
           "clickRate": {
             "type": "number",
             "format": "float",
-            "description": "Unique clicks ÷ messages sent (0–1)"
+            "description": "Unique clicks ÷ tracked messages sent (0–1)"
           },
           "clickToOpenRate": {
             "type": "number",

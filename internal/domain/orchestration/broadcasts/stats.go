@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/aggregates"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -39,8 +40,13 @@ type Stats struct {
 	// claimed. It is Recipients less the four above, so a cancelled Broadcast's are only its
 	// claims still in flight.
 	Pending int
-	// Opened, Clicked and Unsubscribed count the recipients with that engagement.
+	// Opened and Clicked count the tracked messages with that engagement (ADR 0120): a message
+	// sent untracked or whose tracking was withdrawn counts in neither, whatever it still holds.
+	// Unsubscribed counts the recipients who unsubscribed through the Broadcast.
 	Opened, Clicked, Unsubscribed int
+	// Untracked counts the sent messages that are not tracked: sent untracked, or whose tracking
+	// was withdrawn since. Sent less Untracked is the tracked messages, the rates' denominator.
+	Untracked int
 	// Delivered, Undelivered, Bounced and Complained count the messages whose delivery result is
 	// stamped (ADR 0053, ADR 0079). They are read from the stamps, never from Events, so they
 	// outlive retention.
@@ -55,11 +61,11 @@ type Stats struct {
 }
 
 // Figures is the Stats as the Broadcast's Channel reports them (ADR 0080): every Channel reports
-// recipients, sent, skipped, failed, pending, clicked and unsubscribed; opened, delivered,
-// undelivered, bounced, complained and captured, and the rates built on them, are nil on a Channel
-// that does not report them, never zero. Telegram and SMS have no delivery rate and no open rate.
+// recipients, sent, skipped, failed, pending, clicked, unsubscribed and untracked; opened,
+// delivered, undelivered, bounced, complained and captured, and the rates built on them, are nil on
+// a Channel that does not report them, never zero. Telegram and SMS have no delivery rate and no open rate.
 type Figures struct {
-	Recipients, Sent, Skipped, Failed, Cancelled, Pending, Clicked, Unsubscribed int
+	Recipients, Sent, Skipped, Failed, Cancelled, Pending, Clicked, Unsubscribed, Untracked int
 
 	Opened, Delivered, Undelivered, Bounced, Complained, Captured *int
 
@@ -74,7 +80,7 @@ func (st Stats) Figures() Figures {
 	f := Figures{
 		Recipients: st.Recipients, Sent: st.Sent, Skipped: st.Skipped, Failed: st.Failed,
 		Cancelled: st.Cancelled, Pending: st.Pending,
-		Clicked: st.Clicked, Unsubscribed: st.Unsubscribed,
+		Clicked: st.Clicked, Unsubscribed: st.Unsubscribed, Untracked: st.Untracked,
 		ClickRate: st.ClickRate(), UnsubscribeRate: st.UnsubscribeRate(), FailureRate: st.FailureRate(),
 		Revenue: st.Revenue,
 	}
@@ -124,11 +130,14 @@ func (st Stats) onEmail() bool {
 // Processed counts the recipients whose send has ended.
 func (st Stats) Processed() int { return st.Recipients - st.Pending }
 
-// OpenRate is the share of sent messages that were opened, in [0,1].
-func (st Stats) OpenRate() float32 { return Ratio(st.Opened, st.Sent) }
+// Tracked counts the sent messages that are tracked: the denominator of the open and click rates.
+func (st Stats) Tracked() int { return st.Sent - st.Untracked }
 
-// ClickRate is the share of sent messages that were clicked, in [0,1].
-func (st Stats) ClickRate() float32 { return Ratio(st.Clicked, st.Sent) }
+// OpenRate is the share of tracked messages that were opened, in [0,1].
+func (st Stats) OpenRate() float32 { return Ratio(st.Opened, st.Tracked()) }
+
+// ClickRate is the share of tracked messages that were clicked, in [0,1].
+func (st Stats) ClickRate() float32 { return Ratio(st.Clicked, st.Tracked()) }
 
 // DeliveryRate is the share of recipients whose message was sent, in [0,1].
 func (st Stats) DeliveryRate() float32 { return Ratio(st.Sent, st.Recipients) }
@@ -241,7 +250,7 @@ func (st Stats) Frozen(c *ent.BroadcastFigureScopedCreate) *ent.BroadcastFigureS
 		SetSent(st.Sent).SetSkipped(st.Skipped).SetFailed(st.Failed).SetCancelled(st.Cancelled).SetPending(st.Pending).
 		SetDelivered(st.Delivered).SetUndelivered(st.Undelivered).
 		SetBounced(st.Bounced).SetComplained(st.Complained).
-		SetOpened(st.Opened).SetClicked(st.Clicked).SetCaptured(st.Captured)
+		SetOpened(st.Opened).SetClicked(st.Clicked).SetUntracked(st.Untracked).SetCaptured(st.Captured)
 }
 
 // frozenStats is the Stats a frozen figures row keeps, Frozen read back.
@@ -250,7 +259,7 @@ func frozenStats(f *ent.BroadcastFigure) Stats {
 		Recipients: f.Recipients, Unsubscribed: f.Unsubscribed,
 		Sent: f.Sent, Skipped: f.Skipped, Failed: f.Failed, Cancelled: f.Cancelled, Pending: f.Pending,
 		Delivered: f.Delivered, Undelivered: f.Undelivered, Bounced: f.Bounced, Complained: f.Complained,
-		Opened: f.Opened, Clicked: f.Clicked, Captured: f.Captured,
+		Opened: f.Opened, Clicked: f.Clicked, Untracked: f.Untracked, Captured: f.Captured,
 	}
 }
 
@@ -294,8 +303,6 @@ func (m *Module) RowStatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (m
 		Undelivered int                    `json:"undelivered"`
 		Bounced     int                    `json:"bounced"`
 		Complained  int                    `json:"complained"`
-		Opened      int                    `json:"opened"`
-		Clicked     int                    `json:"clicked"`
 		Captured    int                    `json:"captured"`
 	}
 	if err := s.OutboundMessage().Query().
@@ -307,8 +314,6 @@ func (m *Module) RowStatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (m
 			aggregates.CountSet(outboundmessage.FieldUndeliveredAt, "undelivered"),
 			aggregates.CountSet(outboundmessage.FieldBouncedAt, "bounced"),
 			aggregates.CountSet(outboundmessage.FieldComplainedAt, "complained"),
-			aggregates.CountSet(outboundmessage.FieldOpenedAt, "opened"),
-			aggregates.CountSet(outboundmessage.FieldClickedAt, "clicked"),
 			aggregates.CountTrue(outboundmessage.FieldCaptured, "captured"),
 		).
 		Scan(ctx, &messages); err != nil {
@@ -320,8 +325,6 @@ func (m *Module) RowStatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (m
 		st.Undelivered += row.Undelivered
 		st.Bounced += row.Bounced
 		st.Complained += row.Complained
-		st.Opened += row.Opened
-		st.Clicked += row.Clicked
 		st.Captured += row.Captured
 		switch row.Status {
 		case outboundmessage.StatusSent:
@@ -334,6 +337,9 @@ func (m *Module) RowStatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (m
 			// still claimed: not ended, so it stays in Pending
 		}
 		out[row.BroadcastID] = st
+	}
+	if err := engagementOf(ctx, s, ids, out); err != nil {
+		return nil, err
 	}
 	var cancelled []struct {
 		BroadcastID int64 `json:"broadcast_id"`
@@ -361,6 +367,53 @@ func (m *Module) RowStatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (m
 		out[id] = st
 	}
 	return out, nil
+}
+
+// engagementOf counts into out the given Broadcasts' opened and clicked over their tracked
+// messages, and their sent messages that are not tracked (ADR 0120). "Tracked" is the Outbound
+// message's one definition (outboundmessages.Tracked).
+func engagementOf(ctx context.Context, s *ent.Scoped, ids []int64, out map[int64]Stats) error {
+	var engaged []struct {
+		BroadcastID int64 `json:"broadcast_id"`
+		Opened      int   `json:"opened"`
+		Clicked     int   `json:"clicked"`
+	}
+	if err := s.OutboundMessage().Query().
+		Where(outboundmessage.BroadcastIDIn(ids...), outboundmessages.Tracked()).
+		GroupBy(outboundmessage.FieldBroadcastID).
+		Aggregate(
+			aggregates.CountSet(outboundmessage.FieldOpenedAt, "opened"),
+			aggregates.CountSet(outboundmessage.FieldClickedAt, "clicked"),
+		).
+		Scan(ctx, &engaged); err != nil {
+		return err
+	}
+	for _, row := range engaged {
+		st := out[row.BroadcastID]
+		st.Opened, st.Clicked = row.Opened, row.Clicked
+		out[row.BroadcastID] = st
+	}
+	var untracked []struct {
+		BroadcastID int64 `json:"broadcast_id"`
+		Count       int   `json:"count"`
+	}
+	if err := s.OutboundMessage().Query().
+		Where(
+			outboundmessage.BroadcastIDIn(ids...),
+			outboundmessage.StatusEQ(outboundmessage.StatusSent),
+			outboundmessages.NotTracked(),
+		).
+		GroupBy(outboundmessage.FieldBroadcastID).
+		Aggregate(ent.As(ent.Count(), "count")).
+		Scan(ctx, &untracked); err != nil {
+		return err
+	}
+	for _, row := range untracked {
+		st := out[row.BroadcastID]
+		st.Untracked = row.Count
+		out[row.BroadcastID] = st
+	}
+	return nil
 }
 
 // The unique constraint of a Broadcast's frozen figures (ADR 0106): no client can break it.

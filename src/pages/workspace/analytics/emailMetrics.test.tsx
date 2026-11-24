@@ -32,6 +32,7 @@ const period: SiteAnalyticsPeriod = {
     sentCount: 100,
     openedCount: 60,
     clickedCount: 20,
+    untrackedCount: 7,
     openRate: 0.6,
     clickRate: 0.2,
     clickToOpenRate: 0.33,
@@ -56,6 +57,16 @@ test('shows the contacts count', async () => {
   await expect.element(screen.getByText('42', { exact: true })).toBeInTheDocument()
 })
 
+// The rates count tracked messages only; the untracked ones are shown beside them (ADR 0120).
+test('shows the untracked messages beside the tracked ones', async () => {
+  worker.use(handleSiteAnalyticsOverview({ body: overview }))
+
+  const { screen } = await renderWithRouter(<EmailMetricsPage />, mount)
+
+  await expect.element(screen.getByText('Untracked', { exact: true }).first()).toBeInTheDocument()
+  await expect.element(screen.getByText('7', { exact: true })).toBeInTheDocument()
+})
+
 test('reads the section window from the URL', async () => {
   const ranges: (string | null)[] = []
   worker.use(
@@ -75,7 +86,10 @@ test('reads the section window from the URL', async () => {
 test('a window without sent email shows the empty state instead of the chart', async () => {
   worker.use(
     handleSiteAnalyticsOverview({
-      body: { ...overview, current: { ...period, email: { ...period.email, sentCount: 0 } } },
+      body: {
+        ...overview,
+        current: { ...period, email: { ...period.email, sentCount: 0, untrackedCount: 0 } },
+      },
     }),
   )
   const { screen } = await renderWithRouter(<EmailMetricsPage />, mount)

@@ -7137,6 +7137,7 @@
           "cancelledCount",
           "openedCount",
           "clickedCount",
+          "untrackedCount",
           "unsubscribedCount",
           "deliveredCount",
           "undeliveredCount",
@@ -7198,12 +7199,17 @@
             "type": "integer",
             "format": "int32",
             "nullable": true,
-            "description": "Recipients that opened the email; null on a Channel that cannot tell"
+            "description": "Tracked messages that were opened; null on a Channel that cannot tell"
           },
           "clickedCount": {
             "type": "integer",
             "format": "int32",
-            "description": "Recipients that clicked a link"
+            "description": "Tracked messages that were clicked"
+          },
+          "untrackedCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages sent that are not tracked: sent untracked, or whose tracking was withdrawn since (ADR 0120). They count in no open or click figure, and the tracked messages are the sent count less these."
           },
           "unsubscribedCount": {
             "type": "integer",
@@ -7244,12 +7250,12 @@
             "type": "number",
             "format": "float",
             "nullable": true,
-            "description": "Unique opens ÷ messages sent (0-1); null on a Channel that reports no opens"
+            "description": "Unique opens ÷ tracked messages sent (0-1); null on a Channel that reports no opens"
           },
           "clickRate": {
             "type": "number",
             "format": "float",
-            "description": "Unique clicks ÷ messages sent (0-1)"
+            "description": "Unique clicks ÷ tracked messages sent (0-1)"
           }
         },
         "description": "Delivery report of a broadcast, per Channel (ADR 0080). A figure the broadcast's Channel does\nnot report is null, never zero: Telegram reports no delivered, opened, bounced or complained\ncount and so no open rate; SMS reports delivered and undelivered, and no opened, bounced or\ncomplained count or open rate; only SMS reports undelivered."
@@ -11026,6 +11032,8 @@
           "opened_at",
           "clicked_at",
           "captured",
+          "tracked",
+          "tracking_withdrawn_at",
           "created_at",
           "updated_at"
         ],
@@ -11242,6 +11250,20 @@
             "type": "boolean",
             "description": "True when the message went through a Test inbox: captured, not delivered"
           },
+          "tracked": {
+            "type": "boolean",
+            "description": "Whether the message went out tracked (ADR 0120): an open pixel and tracked links. A message is tracked while this holds and no withdrawal is recorded."
+          },
+          "tracking_withdrawn_at": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the message's tracking was withdrawn (a refusal of its Destination, or the Workspace's default turned to `dont_track`); absent while it was not. Once set it never clears."
+          },
           "created_at": {
             "allOf": [
               {
@@ -11259,7 +11281,7 @@
             "description": "Last change timestamp: the cursor column and the version of the row"
           }
         },
-        "description": "One row of the Outbound messages stream: the delivery record of one send, whichever\nsurface asked for it. It carries provenance and outcome only, never a subject or a body.\nA row is delivered again whenever it changes (a status change, an Erasure clearing the\ndestination and the Contact)."
+        "description": "One row of the Outbound messages stream: the delivery record of one send, whichever\nsurface asked for it. It carries provenance and outcome only, never a subject or a body.\nA row is delivered again whenever it changes (a status change, an Erasure clearing the\ndestination and the Contact, a withdrawal of its tracking)."
       },
       "FilterPropertyLeaf": {
         "type": "object",

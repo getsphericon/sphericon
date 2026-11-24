@@ -141,8 +141,9 @@ export default interface Resources {
         "empty": "No email sent in this window",
         "openRate": "Open rate",
         "opened": "Opened",
-        "rangeNote": "Aggregated over the selected window, from delivery logs.",
-        "sent": "Sent"
+        "rangeNote": "Aggregated over the selected window, from delivery logs. The rates count tracked messages only; the untracked ones (sent without tracking, or whose tracking was withdrawn) are counted beside them.",
+        "sent": "Sent (tracked)",
+        "untracked": "Untracked"
       },
       "events": {
         "action": "Action",
@@ -194,7 +195,8 @@ export default interface Resources {
       "series": {
         "clicked": "Clicked",
         "opened": "Opened",
-        "sent": "Sent"
+        "sent": "Sent (tracked)",
+        "untracked": "Untracked"
       },
       "sources": {
         "api": "API",
@@ -646,7 +648,8 @@ export default interface Resources {
         "skipped": "Skipped",
         "undelivered": "Undelivered",
         "unsubscribeRate": "Unsubscribe rate",
-        "unsubscribed": "Unsubscribed"
+        "unsubscribed": "Unsubscribed",
+        "untracked": "Untracked"
       },
       "status": {
         "cancelled": "Cancelled",
@@ -1587,7 +1590,8 @@ export default interface Resources {
         "openRate": "Open rate",
         "report": "Subscribed people",
         "subscribed": "Subscribed",
-        "title": "Audience"
+        "title": "Audience",
+        "untracked": "The rates count tracked messages only. Untracked messages, beside them: {{untracked}}."
       },
       "figuresLoadError": "Failed to load the figures of the period",
       "pointChange": "{{change}} pp",

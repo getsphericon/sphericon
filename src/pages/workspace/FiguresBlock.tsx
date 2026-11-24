@@ -170,6 +170,13 @@ function Figures({ workspaceId, range, periodControl }: FiguresProps) {
                 comparison={comparedRate(current.email.clickRate, previous.email.clickRate)}
               />
             </SimpleGrid>
+            {current.email.untrackedCount > 0 && (
+              <Text size="xs" c="dimmed">
+                {t(($) => $.overview.audience.untracked, {
+                  untracked: current.email.untrackedCount,
+                })}
+              </Text>
+            )}
           </Stack>
         </Card>
       )}

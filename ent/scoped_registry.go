@@ -915,6 +915,7 @@ func ScopedEntities() []*ScopedEntity {
 				b.SetOpened(src.Opened)
 				b.SetClicked(src.Clicked)
 				b.SetCaptured(src.Captured)
+				b.SetUntracked(src.Untracked)
 				if src.PrunedAt != nil {
 					b.SetPrunedAt(*src.PrunedAt)
 				}

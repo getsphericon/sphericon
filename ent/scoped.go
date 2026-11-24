@@ -17386,6 +17386,24 @@ func (x *BroadcastFigureScopedCreate) SetCaptured(v int) *BroadcastFigureScopedC
 
 const RoleOf_BroadcastFigureScopedCreate_SetCaptured = RoleStep
 
+// SetUntracked sets the "untracked" field.
+func (x *BroadcastFigureScopedCreate) SetUntracked(v int) *BroadcastFigureScopedCreate {
+	x.set = append(x.set, func(b *BroadcastFigureCreate) { b.SetUntracked(v) })
+	return x
+}
+
+const RoleOf_BroadcastFigureScopedCreate_SetUntracked = RoleStep
+
+// SetNillableUntracked sets the "untracked" field if the given value is not nil.
+func (x *BroadcastFigureScopedCreate) SetNillableUntracked(v *int) *BroadcastFigureScopedCreate {
+	if v != nil {
+		x.SetUntracked(*v)
+	}
+	return x
+}
+
+const RoleOf_BroadcastFigureScopedCreate_SetNillableUntracked = RoleStep
+
 // SetPrunedAt sets the "pruned_at" field.
 func (x *BroadcastFigureScopedCreate) SetPrunedAt(v time.Time) *BroadcastFigureScopedCreate {
 	x.set = append(x.set, func(b *BroadcastFigureCreate) { b.SetPrunedAt(v) })

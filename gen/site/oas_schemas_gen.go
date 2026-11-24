@@ -21748,18 +21748,23 @@ func (s *SiteAnalyticsDeliverability) SetDomains(val []SiteSendingDomainRates) {
 	s.Domains = val
 }
 
-// Email engagement for the Broadcast and Automation messages sent in the selected range (the send
-// cohort; a Transactional message is not in it), from delivery logs. Each message counts once, not
-// each person. Opens/clicks are the first human open/click stamped on the message and are counted
-// among that cohort, so the counts reconcile and the rates stay in [0,1].
+// Email engagement for the tracked Broadcast and Automation messages sent in the selected range (the
+// send cohort; a Transactional message is not in it, and neither is a message sent untracked or whose
+// tracking was withdrawn since, ADR 0120), from delivery logs. Each message counts once, not each
+// person. Opens/clicks are the first human open/click stamped on the message and are counted among
+// that cohort, so the counts reconcile and the rates stay in [0,1]. The untracked messages are counted
+// beside it.
 // Ref: #/components/schemas/SiteAnalyticsEmail
 type SiteAnalyticsEmail struct {
-	// Messages sent within the range.
+	// Tracked messages sent within the range: the rates' denominator.
 	SentCount int32 `json:"sentCount"`
-	// Messages sent in the range that were opened.
+	// Tracked messages sent in the range that were opened.
 	OpenedCount int32 `json:"openedCount"`
-	// Messages sent in the range that were clicked.
+	// Tracked messages sent in the range that were clicked.
 	ClickedCount int32 `json:"clickedCount"`
+	// Broadcast and Automation messages sent in the range that are not tracked: sent untracked, or whose
+	// tracking was withdrawn since. They are in no rate.
+	UntrackedCount int32 `json:"untrackedCount"`
 	// Opened ÷ sent (0–1).
 	OpenRate float32 `json:"openRate"`
 	// Clicked ÷ sent (0–1).
@@ -21781,6 +21786,11 @@ func (s *SiteAnalyticsEmail) GetOpenedCount() int32 {
 // GetClickedCount returns the value of ClickedCount.
 func (s *SiteAnalyticsEmail) GetClickedCount() int32 {
 	return s.ClickedCount
+}
+
+// GetUntrackedCount returns the value of UntrackedCount.
+func (s *SiteAnalyticsEmail) GetUntrackedCount() int32 {
+	return s.UntrackedCount
 }
 
 // GetOpenRate returns the value of OpenRate.
@@ -21811,6 +21821,11 @@ func (s *SiteAnalyticsEmail) SetOpenedCount(val int32) {
 // SetClickedCount sets the value of ClickedCount.
 func (s *SiteAnalyticsEmail) SetClickedCount(val int32) {
 	s.ClickedCount = val
+}
+
+// SetUntrackedCount sets the value of UntrackedCount.
+func (s *SiteAnalyticsEmail) SetUntrackedCount(val int32) {
+	s.UntrackedCount = val
 }
 
 // SetOpenRate sets the value of OpenRate.
@@ -22246,17 +22261,19 @@ func (s *SiteAnalyticsPeriod) SetNewContacts(val int32) {
 }
 
 // One Report day of the cohort (ADR 0057), zero-filled across the range. Opened/clicked count the
-// messages sent that day that were later opened/clicked.
+// tracked messages sent that day that were later opened/clicked.
 // Ref: #/components/schemas/SiteAnalyticsPoint
 type SiteAnalyticsPoint struct {
 	// The Report day, `YYYY-MM-DD` in the Workspace time zone.
 	Date string `json:"date"`
-	// Messages sent that day.
+	// Tracked messages sent that day.
 	Sent int32 `json:"sent"`
-	// Messages sent that day that were opened.
+	// Tracked messages sent that day that were opened.
 	Opened int32 `json:"opened"`
-	// Messages sent that day that were clicked.
+	// Tracked messages sent that day that were clicked.
 	Clicked int32 `json:"clicked"`
+	// Broadcast and Automation messages sent that day that are not tracked.
+	Untracked int32 `json:"untracked"`
 }
 
 // GetDate returns the value of Date.
@@ -22279,6 +22296,11 @@ func (s *SiteAnalyticsPoint) GetClicked() int32 {
 	return s.Clicked
 }
 
+// GetUntracked returns the value of Untracked.
+func (s *SiteAnalyticsPoint) GetUntracked() int32 {
+	return s.Untracked
+}
+
 // SetDate sets the value of Date.
 func (s *SiteAnalyticsPoint) SetDate(val string) {
 	s.Date = val
@@ -22297,6 +22319,11 @@ func (s *SiteAnalyticsPoint) SetOpened(val int32) {
 // SetClicked sets the value of Clicked.
 func (s *SiteAnalyticsPoint) SetClicked(val int32) {
 	s.Clicked = val
+}
+
+// SetUntracked sets the value of Untracked.
+func (s *SiteAnalyticsPoint) SetUntracked(val int32) {
+	s.Untracked = val
 }
 
 // Selectable window for the analytics overview.
@@ -24233,10 +24260,14 @@ type SiteBroadcastStats struct {
 	// Recipients a Cancel left unsent: no message was created for them (ADR 0150). Zero unless the
 	// broadcast is cancelled.
 	CancelledCount int32 `json:"cancelledCount"`
-	// Recipients that opened the email; null on a Channel that cannot tell.
+	// Tracked messages that were opened; null on a Channel that cannot tell.
 	OpenedCount NilInt32 `json:"openedCount"`
-	// Recipients that clicked a link.
+	// Tracked messages that were clicked.
 	ClickedCount int32 `json:"clickedCount"`
+	// Messages sent that are not tracked: sent untracked, or whose tracking was withdrawn since (ADR
+	// 0120). They count in no open or click figure, and the tracked messages are the sent count less
+	// these.
+	UntrackedCount int32 `json:"untrackedCount"`
 	// Recipients that unsubscribed via this broadcast.
 	UnsubscribedCount int32 `json:"unsubscribedCount"`
 	// Messages the provider reported delivered, read from the delivery result stamped on each message;
@@ -24257,9 +24288,9 @@ type SiteBroadcastStats struct {
 	// Messages handed to the provider ÷ recipients targeted (0–1); null on a Channel that reports no
 	// delivery.
 	DeliveryRate NilFloat32 `json:"deliveryRate"`
-	// Unique opens ÷ messages sent (0–1); null on a Channel that reports no opens.
+	// Unique opens ÷ tracked messages sent (0–1); null on a Channel that reports no opens.
 	OpenRate NilFloat32 `json:"openRate"`
-	// Unique clicks ÷ messages sent (0–1).
+	// Unique clicks ÷ tracked messages sent (0–1).
 	ClickRate float32 `json:"clickRate"`
 	// Unique clicks ÷ unique opens (0–1); null on a Channel that reports no opens.
 	ClickToOpenRate NilFloat32 `json:"clickToOpenRate"`
@@ -24309,6 +24340,11 @@ func (s *SiteBroadcastStats) GetOpenedCount() NilInt32 {
 // GetClickedCount returns the value of ClickedCount.
 func (s *SiteBroadcastStats) GetClickedCount() int32 {
 	return s.ClickedCount
+}
+
+// GetUntrackedCount returns the value of UntrackedCount.
+func (s *SiteBroadcastStats) GetUntrackedCount() int32 {
+	return s.UntrackedCount
 }
 
 // GetUnsubscribedCount returns the value of UnsubscribedCount.
@@ -24414,6 +24450,11 @@ func (s *SiteBroadcastStats) SetOpenedCount(val NilInt32) {
 // SetClickedCount sets the value of ClickedCount.
 func (s *SiteBroadcastStats) SetClickedCount(val int32) {
 	s.ClickedCount = val
+}
+
+// SetUntrackedCount sets the value of UntrackedCount.
+func (s *SiteBroadcastStats) SetUntrackedCount(val int32) {
+	s.UntrackedCount = val
 }
 
 // SetUnsubscribedCount sets the value of UnsubscribedCount.
