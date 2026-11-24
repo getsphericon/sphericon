@@ -239,7 +239,7 @@ Single-context: one `GLOSSARY.md` at the repo root plus `docs/adr/`. See `docs/a
 
 ### Worktrees
 
-Every change is made in a worktree under `.claude/worktrees/<name>`, on a branch of its own; the primary checkout stays on a clean `main` and no branch is created there. The one exception is a small visual fix that has to be seen at once in the app running from the primary checkout: it is made there, committed on `main` and landed with `git fetch origin && git rebase origin/main && git push origin main`. A doc line or a typo is not such a fix. A worktree is never a sibling directory; its branch is pushed to `main` by a maintainer or opened as a pull request by `mise run land`. See `docs/agents/worktrees.md`.
+Every change is made in a worktree under `.worktrees/<name>`, on a branch of its own; the primary checkout stays on a clean `main` and no branch is created there. The one exception is a small visual fix that has to be seen at once in the app running from the primary checkout: it is made there, committed on `main` and landed with `git fetch origin && git rebase origin/main && git push origin main`. A doc line or a typo is not such a fix. A worktree is never a sibling directory; its branch is pushed to `main` by a maintainer or opened as a pull request by `mise run land`. See `docs/agents/worktrees.md`.
 
 ### Advisor before /to-spec
 

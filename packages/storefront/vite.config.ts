@@ -15,8 +15,8 @@ export default defineConfig({
     host: true,
     port: Number(requiredEnv('DEMO_PORT')),
     strictPort: true,
-    // Agent worktrees are full repo copies; watching them triggers spurious reloads.
-    watch: { ignored: ['**/.claude/worktrees/**'] },
+    // Worktrees are full repo copies; watching them triggers spurious reloads.
+    watch: { ignored: ['**/.worktrees/**', '**/.claude/worktrees/**'] },
     allowedHosts: ['.localhost'],
     hmr: {
       protocol: 'wss',

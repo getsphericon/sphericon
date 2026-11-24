@@ -866,7 +866,7 @@ done
 
 # osv-scanner is given the files git lists (tracked, and untracked but not ignored), not
 # `--recursive .`: it applies every .gitignore from / down, past the repository's boundary
-# (google/osv-scalibr#902), so in a linked worktree the primary checkout's `.claude/worktrees/`
+# (google/osv-scalibr#902), so in a linked worktree the primary checkout's `/.worktrees/`
 # ignores the whole tree and it finds no package sources. git already left the ignored files out,
 # hence --no-ignore. osv-scanner picks the lockfiles from the list itself, so a new one (another
 # go.mod, a package-lock.json) is scanned without a change here. Back to `--recursive .` once

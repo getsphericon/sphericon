@@ -113,9 +113,9 @@ export default defineConfig({
         // worktree's own slot in a linked one.
         port: Number(process.env.FRONTEND_PORT ?? 5173),
         strictPort: true,
-        // Agent worktrees are full repo copies and `test:cover` rewrites coverage/ (HTML files
+        // Worktrees are full repo copies and `test:cover` rewrites coverage/ (HTML files
         // Vite treats as pages): watching either triggers spurious full reloads.
-        watch: { ignored: ['**/.claude/worktrees/**', '**/coverage/**'] },
+        watch: { ignored: ['**/.worktrees/**', '**/.claude/worktrees/**', '**/coverage/**'] },
         // The primary checkout is sphericon.localhost, a linked worktree <dir>.sphericon.localhost.
         allowedHosts: ['.sphericon.localhost'],
         // HMR runs through Caddy's HTTPS origin, so the client connects over wss to the
@@ -134,7 +134,7 @@ export default defineConfig({
     expect: { poll: { timeout: 5_000 } },
     // .cache holds the Go module cache, whose dependencies ship their own *.test.* files.
     // typespec/lib's tests compile TypeSpec, which needs node: `mise run test:typespec` runs them.
-    exclude: [...configDefaults.exclude, '.cache/**', '.claude/**', 'typespec/**'],
+    exclude: [...configDefaults.exclude, '.cache/**', '.claude/**', '.worktrees/**', 'typespec/**'],
     setupFiles: ['./src/test/setup.tsx'],
     // Every test starts from its mocks as declared: what one test made a mock answer, or a spy it
     // put on an object, does not carry into the next.

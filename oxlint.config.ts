@@ -191,6 +191,7 @@ export default defineConfig({
     'ent',
     '.agents',
     '.claude',
+    '.worktrees',
     '.cache',
     '.vitest',
     'tmp',

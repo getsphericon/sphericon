@@ -30,6 +30,7 @@ export default defineConfig({
     '.mise/locks',
     '.agents',
     '.claude',
+    '.worktrees',
     '.cache',
     '.vitest',
     'tmp',

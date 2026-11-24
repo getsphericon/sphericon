@@ -24,6 +24,7 @@
   "exclude": [
     "node_modules",
     ".claude",
+    ".worktrees",
     "dist",
     "dist-release",
     "packages/*/dist",

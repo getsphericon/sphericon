@@ -212,7 +212,7 @@ func (c *Contract) scopes() map[string]bool {
 
 func skipDir(rel, name string) bool {
 	switch name {
-	case "node_modules", ".git", "testdata", "dist", ".claude", ".bin", "worktrees":
+	case "node_modules", ".git", "testdata", "dist", ".claude", ".worktrees", ".bin", "worktrees":
 		return true
 	}
 	switch rel {
