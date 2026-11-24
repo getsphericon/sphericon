@@ -2034,7 +2034,7 @@
       "forbidden": "Only owners and admins can change the tracking default.",
       "saved": "Tracking default changed",
       "title": "Engagement tracking default",
-      "toDontTrackDescription": "From now on, the opens and clicks of recipients with no tracking consent are not recorded, and messages to them go out without an open pixel and with their links as written. Recipients who granted their consent stay tracked.",
+      "toDontTrackDescription": "The messages already sent to recipients who did not grant their tracking consent stop being tracked: they leave the open and click rates, and the opens and clicks recorded of them are kept. Turning the default back later does not track them again. From now on, messages to those recipients go out without an open pixel and with their links as written, and their opens and clicks are not recorded. Recipients who granted their consent stay tracked.",
       "toDontTrackTitle": "Track only recipients who agree?",
       "toTrackDescription": "Messages sent from now on to recipients with no tracking consent are tracked again. Recipients who refused stay untracked.",
       "toTrackTitle": "Track recipients unless they refuse?",

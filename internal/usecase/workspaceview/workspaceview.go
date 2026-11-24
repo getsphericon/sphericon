@@ -128,6 +128,7 @@ type UseCase struct {
 	removalCheck    *removalcheck.Module
 	confirmations   *confirmations.Module
 	unchecked       *workspacesunchecked.Module
+	now             func() time.Time
 }
 
 // Modules are the modules the use case reads and changes the Workspace through. RemovalCheck finds the marketing email still to send that holds the postal address
@@ -147,12 +148,13 @@ type Modules struct {
 
 // New builds the use case over the bus whose transactions create and restore a Workspace and the
 // modules it reads and changes; now is the Instance clock a restore measures the deletion window on
-// (the unchecked operations it builds, workspacesunchecked.New).
+// (the unchecked operations it builds, workspacesunchecked.New) and that bounds the withdrawal a
+// default turned to dont_track queues.
 func New(bus *events.Bus, mods Modules, now func() time.Time) *UseCase {
 	return &UseCase{
 		bus: bus, users: mods.Users, workspaces: mods.Workspaces, memberships: mods.Memberships, secondFactors: mods.SecondFactors,
 		holds: mods.Holds, outbound: mods.Outbound, trackingDomains: mods.TrackingDomains,
-		removalCheck: mods.RemovalCheck, confirmations: mods.Confirmations, unchecked: workspacesunchecked.New(now),
+		removalCheck: mods.RemovalCheck, confirmations: mods.Confirmations, unchecked: workspacesunchecked.New(now), now: now,
 	}
 }
 
@@ -237,8 +239,25 @@ func (u *UseCase) SetTimezone(ctx context.Context, s *ent.Scoped, c Caller, in S
 
 // SetEngagementTrackingDefault sets the Engagement tracking default of the Workspace of s
 // (workspaces.Module.SetEngagementTrackingDefault, ADR 0120) and answers its View for the caller.
+// Turning it from track to dont_track queues, in the transaction of the change, the withdrawal of
+// the tracking of every message created until then to a Destination without a granted
+// (outboundmessages.WithdrawUngrantedArgs), which deletes nothing. Turning it back to track queues
+// nothing and restores nothing, and a turn to the value it has changes nothing.
 func (u *UseCase) SetEngagementTrackingDefault(ctx context.Context, s *ent.Scoped, c Caller, in SetEngagementTrackingDefaultInput) (View, error) {
-	ws, err := u.workspaces.SetEngagementTrackingDefault(ctx, s, in.Revision, in.Default)
+	var ws *ent.Workspace
+	err := u.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
+		was, err := u.workspaces.Get(ctx, ts)
+		if err != nil {
+			return err
+		}
+		if ws, err = u.workspaces.SetEngagementTrackingDefault(ctx, ts, in.Revision, in.Default); err != nil {
+			return err
+		}
+		if was.EngagementTrackingDefault == ws.EngagementTrackingDefault || ws.EngagementTrackingDefault != workspace.EngagementTrackingDefaultDontTrack {
+			return nil
+		}
+		return q.Enqueue(ctx, outboundmessages.WithdrawUngrantedArgs{WorkspaceID: ws.ID, Before: u.now()}, nil)
+	})
 	if err != nil {
 		return View{}, err
 	}

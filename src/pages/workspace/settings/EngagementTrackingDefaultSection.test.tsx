@@ -23,7 +23,7 @@ const workspace = (over: Partial<SiteWorkspaceResource> = {}): SiteWorkspaceReso
   ...over,
 })
 
-test('turning the tracking default to dont_track says what changes, then sends it', async () => {
+test('turning the tracking default to dont_track says what it withdraws, then sends it', async () => {
   const sent: SiteSetEngagementTrackingDefaultInput[] = []
   worker.use(
     handleSiteWorkspacesList({ body: [workspace()] }),
@@ -42,7 +42,10 @@ test('turning the tracking default to dont_track says what changes, then sends i
     .toBeInTheDocument()
   await screen.getByRole('button', { name: 'Track only those who agree' }).click()
   await expect
-    .element(screen.getByText(/messages to them go out without an open pixel/))
+    .element(screen.getByText(/messages already sent to recipients who did not grant/))
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByText(/the opens and clicks recorded of them are kept/))
     .toBeInTheDocument()
   await screen.getByRole('dialog').getByRole('button', { name: 'Change' }).click()
 
