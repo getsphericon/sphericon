@@ -561,21 +561,17 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		return Result{}, err
 	}
 
-	rendered, err := ch.render(ctx, s, req, msg.ID, dest, ws, tracked)
+	// What the render decided is the message's fact, recorded before the provider is called: a
+	// message whose render failed decided nothing.
+	rendered, err := m.renderDecided(ctx, s, req, ch, msg, dest, ws, tracked)
 	if err != nil {
 		if !isContentError(err) {
-			// The storage behind the content failed, not the content: retry rather than record a
-			// message that could have been sent as Failed for good.
+			// The storage behind the content failed, not the content, or the claim was taken over:
+			// retry rather than record a message that could have been sent as Failed for good.
 			m.release(ctx, s, msg)
 			return Result{}, err
 		}
 		return m.fail(ctx, s, msg, err.Error())
-	}
-	// What the render decided is the message's fact, recorded before the provider is called: a
-	// message whose render failed decided nothing.
-	if err := m.recordTracking(ctx, s, msg, tracked); err != nil {
-		m.release(ctx, s, msg)
-		return Result{}, err
 	}
 
 	// Provider limit and Send cap: the last gate before the provider, so a message that was

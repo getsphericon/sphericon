@@ -81,7 +81,9 @@ type OutboundMessage struct {
 	// Captured holds the value of the "captured" field.
 	Captured bool `json:"captured,omitempty"`
 	// Tracked holds the value of the "tracked" field.
-	Tracked *bool `json:"tracked,omitempty"`
+	Tracked bool `json:"tracked,omitempty"`
+	// TrackingDecidedAt holds the value of the "tracking_decided_at" field.
+	TrackingDecidedAt *time.Time `json:"tracking_decided_at,omitempty"`
 	// TrackingWithdrawnAt holds the value of the "tracking_withdrawn_at" field.
 	TrackingWithdrawnAt *time.Time `json:"tracking_withdrawn_at,omitempty"`
 	// BroadcastID holds the value of the "broadcast_id" field.
@@ -260,7 +262,7 @@ func (*OutboundMessage) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case outboundmessage.FieldKind, outboundmessage.FieldIdempotencyKey, outboundmessage.FieldChannel, outboundmessage.FieldDestination, outboundmessage.FieldSendingSource, outboundmessage.FieldSendingDomain, outboundmessage.FieldProviderMessageID, outboundmessage.FieldStatus, outboundmessage.FieldSkippedReason, outboundmessage.FieldFailure, outboundmessage.FieldUndeliveredCode, outboundmessage.FieldAutomationStepID, outboundmessage.FieldRequestDigest, outboundmessage.FieldSubject, outboundmessage.FieldAppOrigin:
 			values[i] = new(sql.NullString)
-		case outboundmessage.FieldCreatedAt, outboundmessage.FieldUpdatedAt, outboundmessage.FieldClaimedAt, outboundmessage.FieldSentAt, outboundmessage.FieldDeliveredAt, outboundmessage.FieldBouncedAt, outboundmessage.FieldComplainedAt, outboundmessage.FieldUndeliveredAt, outboundmessage.FieldOpenedAt, outboundmessage.FieldClickedAt, outboundmessage.FieldTrackingWithdrawnAt:
+		case outboundmessage.FieldCreatedAt, outboundmessage.FieldUpdatedAt, outboundmessage.FieldClaimedAt, outboundmessage.FieldSentAt, outboundmessage.FieldDeliveredAt, outboundmessage.FieldBouncedAt, outboundmessage.FieldComplainedAt, outboundmessage.FieldUndeliveredAt, outboundmessage.FieldOpenedAt, outboundmessage.FieldClickedAt, outboundmessage.FieldTrackingDecidedAt, outboundmessage.FieldTrackingWithdrawnAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -453,8 +455,14 @@ func (_m *OutboundMessage) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field tracked", values[i])
 			} else if value.Valid {
-				_m.Tracked = new(bool)
-				*_m.Tracked = value.Bool
+				_m.Tracked = value.Bool
+			}
+		case outboundmessage.FieldTrackingDecidedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field tracking_decided_at", values[i])
+			} else if value.Valid {
+				_m.TrackingDecidedAt = new(time.Time)
+				*_m.TrackingDecidedAt = value.Time
 			}
 		case outboundmessage.FieldTrackingWithdrawnAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -729,9 +737,12 @@ func (_m *OutboundMessage) String() string {
 	builder.WriteString("captured=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Captured))
 	builder.WriteString(", ")
-	if v := _m.Tracked; v != nil {
-		builder.WriteString("tracked=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
+	builder.WriteString("tracked=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Tracked))
+	builder.WriteString(", ")
+	if v := _m.TrackingDecidedAt; v != nil {
+		builder.WriteString("tracking_decided_at=")
+		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")
 	if v := _m.TrackingWithdrawnAt; v != nil {

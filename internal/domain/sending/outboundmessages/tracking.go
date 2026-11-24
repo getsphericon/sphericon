@@ -22,7 +22,7 @@ import (
 // decision does so because a refusal or the default withdrew the Destination's consent, whose
 // withdrawal reaches this message too. A claim taken over meanwhile is ErrInProgress.
 func (m *Module) decideTracking(ctx context.Context, s *ent.Scoped, req Request, ch channel, msg *ent.OutboundMessage, targets []target) (bool, error) {
-	tracked := ch.tracks(req) && msg.TrackingWithdrawnAt == nil && lo.FromPtrOr(msg.Tracked, true)
+	tracked := ch.tracks(req) && msg.TrackingWithdrawnAt == nil && (msg.TrackingDecidedAt == nil || msg.Tracked)
 	if tracked && msg.Destination == "" && len(targets) > 0 {
 		// A Channel of Bindings resolves its Destination after the claim. It is on the row before
 		// the consent is read, so a refusal recorded meanwhile, whose withdrawal finds the messages
@@ -54,16 +54,17 @@ func (m *Module) decideTracking(ctx context.Context, s *ent.Scoped, req Request,
 	return tracked, nil
 }
 
-// recordTracking records on the claimed message msg what its first render decided, before the
-// provider is called: once, so a retry, which reads the decision, records nothing. A claim taken
-// over meanwhile is ErrInProgress.
+// recordTracking records on the claimed message msg what its first render decided, with the moment
+// it decided, before the provider is called: once, so a retry, which reads the decision, records
+// nothing. A claim taken over meanwhile is ErrInProgress.
 func (m *Module) recordTracking(ctx context.Context, s *ent.Scoped, msg *ent.OutboundMessage, tracked bool) error {
-	if msg.Tracked != nil {
+	if msg.TrackingDecidedAt != nil {
 		return nil
 	}
 	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
 		n, err := s.OutboundMessage().Update().
-			Where(append(ownsClaim(msg), outboundmessage.TrackedIsNil())...).
+			Where(append(ownsClaim(msg), outboundmessage.TrackingDecidedAtIsNil())...).
+			SetTrackingDecidedAt(m.now()).
 			SetTracked(tracked).
 			Save(ctx)
 		return n > 0, err
@@ -75,4 +76,14 @@ func (m *Module) recordTracking(ctx context.Context, s *ent.Scoped, msg *ent.Out
 		return fmt.Errorf("outbound: record whether message %d is tracked: %w", msg.ID, err)
 	}
 	return nil
+}
+
+// renderDecided renders msg for dest as decided (tracked) and records the decision once the render
+// succeeds: a message whose render failed decides nothing. A content error is the content's own.
+func (m *Module) renderDecided(ctx context.Context, s *ent.Scoped, req Request, ch channel, msg *ent.OutboundMessage, dest string, ws *ent.Workspace, tracked bool) (any, error) {
+	rendered, err := ch.render(ctx, s, req, msg.ID, dest, ws, tracked)
+	if err != nil {
+		return nil, err
+	}
+	return rendered, m.recordTracking(ctx, s, msg, tracked)
 }

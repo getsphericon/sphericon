@@ -72,8 +72,8 @@ func Hash(number string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// KeyedBy is whether the key column of a row kept by a number holds the number number writes, as
-// it is or as its Hash: Hash in SQL, for a query that matches a refusal kept by the number or, once
+// KeyedBy is whether the key column of a row kept by a number holds the number that number writes,
+// as it is or as its Hash: Hash in SQL, for a query that matches a refusal kept by the number or, once
 // its Contact was erased, by the hash. column names the key column and number renders the
 // number's SQL (a column of an outer query, or a bound value), both when the query is built, so
 // they are quoted in its dialect.

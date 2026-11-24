@@ -451,9 +451,23 @@ func (_u *OutboundMessageUpdate) SetNillableTracked(v *bool) *OutboundMessageUpd
 	return _u
 }
 
-// ClearTracked clears the value of the "tracked" field.
-func (_u *OutboundMessageUpdate) ClearTracked() *OutboundMessageUpdate {
-	_u.mutation.ClearTracked()
+// SetTrackingDecidedAt sets the "tracking_decided_at" field.
+func (_u *OutboundMessageUpdate) SetTrackingDecidedAt(v time.Time) *OutboundMessageUpdate {
+	_u.mutation.SetTrackingDecidedAt(v)
+	return _u
+}
+
+// SetNillableTrackingDecidedAt sets the "tracking_decided_at" field if the given value is not nil.
+func (_u *OutboundMessageUpdate) SetNillableTrackingDecidedAt(v *time.Time) *OutboundMessageUpdate {
+	if v != nil {
+		_u.SetTrackingDecidedAt(*v)
+	}
+	return _u
+}
+
+// ClearTrackingDecidedAt clears the value of the "tracking_decided_at" field.
+func (_u *OutboundMessageUpdate) ClearTrackingDecidedAt() *OutboundMessageUpdate {
+	_u.mutation.ClearTrackingDecidedAt()
 	return _u
 }
 
@@ -1007,8 +1021,11 @@ func (_u *OutboundMessageUpdate) sqlSave(ctx context.Context) (_node int, err er
 	if value, ok := _u.mutation.Tracked(); ok {
 		_spec.SetField(outboundmessage.FieldTracked, field.TypeBool, value)
 	}
-	if _u.mutation.TrackedCleared() {
-		_spec.ClearField(outboundmessage.FieldTracked, field.TypeBool)
+	if value, ok := _u.mutation.TrackingDecidedAt(); ok {
+		_spec.SetField(outboundmessage.FieldTrackingDecidedAt, field.TypeTime, value)
+	}
+	if _u.mutation.TrackingDecidedAtCleared() {
+		_spec.ClearField(outboundmessage.FieldTrackingDecidedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.TrackingWithdrawnAt(); ok {
 		_spec.SetField(outboundmessage.FieldTrackingWithdrawnAt, field.TypeTime, value)
@@ -1773,9 +1790,23 @@ func (_u *OutboundMessageUpdateOne) SetNillableTracked(v *bool) *OutboundMessage
 	return _u
 }
 
-// ClearTracked clears the value of the "tracked" field.
-func (_u *OutboundMessageUpdateOne) ClearTracked() *OutboundMessageUpdateOne {
-	_u.mutation.ClearTracked()
+// SetTrackingDecidedAt sets the "tracking_decided_at" field.
+func (_u *OutboundMessageUpdateOne) SetTrackingDecidedAt(v time.Time) *OutboundMessageUpdateOne {
+	_u.mutation.SetTrackingDecidedAt(v)
+	return _u
+}
+
+// SetNillableTrackingDecidedAt sets the "tracking_decided_at" field if the given value is not nil.
+func (_u *OutboundMessageUpdateOne) SetNillableTrackingDecidedAt(v *time.Time) *OutboundMessageUpdateOne {
+	if v != nil {
+		_u.SetTrackingDecidedAt(*v)
+	}
+	return _u
+}
+
+// ClearTrackingDecidedAt clears the value of the "tracking_decided_at" field.
+func (_u *OutboundMessageUpdateOne) ClearTrackingDecidedAt() *OutboundMessageUpdateOne {
+	_u.mutation.ClearTrackingDecidedAt()
 	return _u
 }
 
@@ -2359,8 +2390,11 @@ func (_u *OutboundMessageUpdateOne) sqlSave(ctx context.Context) (_node *Outboun
 	if value, ok := _u.mutation.Tracked(); ok {
 		_spec.SetField(outboundmessage.FieldTracked, field.TypeBool, value)
 	}
-	if _u.mutation.TrackedCleared() {
-		_spec.ClearField(outboundmessage.FieldTracked, field.TypeBool)
+	if value, ok := _u.mutation.TrackingDecidedAt(); ok {
+		_spec.SetField(outboundmessage.FieldTrackingDecidedAt, field.TypeTime, value)
+	}
+	if _u.mutation.TrackingDecidedAtCleared() {
+		_spec.ClearField(outboundmessage.FieldTrackingDecidedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.TrackingWithdrawnAt(); ok {
 		_spec.SetField(outboundmessage.FieldTrackingWithdrawnAt, field.TypeTime, value)

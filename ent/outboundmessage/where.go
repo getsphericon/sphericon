@@ -163,6 +163,11 @@ func Tracked(v bool) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldTracked, v))
 }
 
+// TrackingDecidedAt applies equality check predicate on the "tracking_decided_at" field. It's identical to TrackingDecidedAtEQ.
+func TrackingDecidedAt(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldTrackingDecidedAt, v))
+}
+
 // TrackingWithdrawnAt applies equality check predicate on the "tracking_withdrawn_at" field. It's identical to TrackingWithdrawnAtEQ.
 func TrackingWithdrawnAt(v time.Time) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldTrackingWithdrawnAt, v))
@@ -1399,14 +1404,54 @@ func TrackedNEQ(v bool) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldNEQ(FieldTracked, v))
 }
 
-// TrackedIsNil applies the IsNil predicate on the "tracked" field.
-func TrackedIsNil() predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldIsNull(FieldTracked))
+// TrackingDecidedAtEQ applies the EQ predicate on the "tracking_decided_at" field.
+func TrackingDecidedAtEQ(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldTrackingDecidedAt, v))
 }
 
-// TrackedNotNil applies the NotNil predicate on the "tracked" field.
-func TrackedNotNil() predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldNotNull(FieldTracked))
+// TrackingDecidedAtNEQ applies the NEQ predicate on the "tracking_decided_at" field.
+func TrackingDecidedAtNEQ(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNEQ(FieldTrackingDecidedAt, v))
+}
+
+// TrackingDecidedAtIn applies the In predicate on the "tracking_decided_at" field.
+func TrackingDecidedAtIn(vs ...time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIn(FieldTrackingDecidedAt, vs...))
+}
+
+// TrackingDecidedAtNotIn applies the NotIn predicate on the "tracking_decided_at" field.
+func TrackingDecidedAtNotIn(vs ...time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotIn(FieldTrackingDecidedAt, vs...))
+}
+
+// TrackingDecidedAtGT applies the GT predicate on the "tracking_decided_at" field.
+func TrackingDecidedAtGT(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGT(FieldTrackingDecidedAt, v))
+}
+
+// TrackingDecidedAtGTE applies the GTE predicate on the "tracking_decided_at" field.
+func TrackingDecidedAtGTE(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldGTE(FieldTrackingDecidedAt, v))
+}
+
+// TrackingDecidedAtLT applies the LT predicate on the "tracking_decided_at" field.
+func TrackingDecidedAtLT(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLT(FieldTrackingDecidedAt, v))
+}
+
+// TrackingDecidedAtLTE applies the LTE predicate on the "tracking_decided_at" field.
+func TrackingDecidedAtLTE(v time.Time) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldLTE(FieldTrackingDecidedAt, v))
+}
+
+// TrackingDecidedAtIsNil applies the IsNil predicate on the "tracking_decided_at" field.
+func TrackingDecidedAtIsNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIsNull(FieldTrackingDecidedAt))
+}
+
+// TrackingDecidedAtNotNil applies the NotNil predicate on the "tracking_decided_at" field.
+func TrackingDecidedAtNotNil() predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotNull(FieldTrackingDecidedAt))
 }
 
 // TrackingWithdrawnAtEQ applies the EQ predicate on the "tracking_withdrawn_at" field.

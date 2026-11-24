@@ -8288,6 +8288,7 @@
           "status",
           "claimedAt",
           "captured",
+          "tracked",
           "createdAt"
         ],
         "properties": {
@@ -8441,8 +8442,17 @@
           },
           "tracked": {
             "type": "boolean",
+            "description": "Whether the message went out tracked: with an open pixel and its links rewritten, or its\nlinks made Short tracked links (ADR 0120); it says nothing while `trackingDecidedAt` is null"
+          },
+          "trackingDecidedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
             "nullable": true,
-            "description": "Whether the message went out tracked: with an open pixel and its links rewritten, or its\nlinks made Short tracked links (ADR 0120); null when no render decided it (a message skipped\nbefore its render, or not rendered yet)"
+            "description": "When a render decided whether the message goes out tracked; null for a message no render\ndecided (skipped before its render, or not rendered yet)"
           },
           "trackingWithdrawnAt": {
             "type": "string",
@@ -11188,6 +11198,7 @@
           "opened_at",
           "clicked_at",
           "captured",
+          "tracked",
           "tracking_withdrawn_at",
           "created_at",
           "updated_at"
@@ -11407,8 +11418,17 @@
           },
           "tracked": {
             "type": "boolean",
+            "description": "Whether the message went out tracked (ADR 0120): an open pixel and tracked links. It says nothing while `tracking_decided_at` is null. A message is tracked while this holds and no withdrawal is recorded."
+          },
+          "tracking_decided_at": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
             "nullable": true,
-            "description": "Whether the message went out tracked (ADR 0120): an open pixel and tracked links; null when no render decided it (a message skipped before its render, or not rendered yet). A message is tracked while this is true and no withdrawal is recorded."
+            "description": "When a render decided whether the message goes out tracked; null for a message no render decided (skipped before its render, or not rendered yet)."
           },
           "tracking_withdrawn_at": {
             "type": "string",

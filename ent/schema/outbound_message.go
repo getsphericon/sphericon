@@ -174,11 +174,15 @@ func (OutboundMessage) Fields() []ent.Field {
 		// Whether the message went out tracked (ADR 0120): with the open pixel and its links
 		// rewritten (email), its links made Short tracked links (SMS, Telegram). A fact of what went
 		// out, decided at render in the send chokepoint from the surface and the Destination's
-		// effective consent, and recorded once, before the provider is called; NULL until a render
-		// decides, so a message skipped before it is neither. A retry reads the earlier attempt's
-		// decision and never records another. A message is tracked while this is true and
-		// tracking_withdrawn_at is NULL (engagementtracking.IsTracked).
-		field.Bool("tracked").Optional().Nillable().Annotations(Latch()),
+		// effective consent, and recorded once with tracking_decided_at, before the provider is
+		// called; it says nothing while tracking_decided_at is NULL (a message skipped before its
+		// render, or not rendered yet), and a retry reads the earlier decision. A message is tracked
+		// while this holds and tracking_withdrawn_at is NULL (engagementtracking.IsTracked).
+		field.Bool("tracked").Default(false).
+			Annotations(Attribute("what the render decided, written only in the latch write of tracking_decided_at")),
+		// When a render decided whether the message goes out tracked (tracked): recorded once, never
+		// cleared. Rows sent before the decision existed keep tracked true with no moment.
+		field.Time("tracking_decided_at").Optional().Nillable().Annotations(Latch()),
 		// When the message's tracking was withdrawn (ADR 0120): by a refusal of its Destination or by
 		// the Workspace's default turned to `dont_track`. Recorded once and never cleared: nothing
 		// gives a message its tracking back.

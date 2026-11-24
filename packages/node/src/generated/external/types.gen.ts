@@ -1853,10 +1853,14 @@ export type ContactExportOutboundMessage = {
   captured: boolean;
   /**
    * Whether the message went out tracked: with an open pixel and its links rewritten, or its
-   * links made Short tracked links (ADR 0120); null when no render decided it (a message skipped
-   * before its render, or not rendered yet)
+   * links made Short tracked links (ADR 0120); it says nothing while `trackingDecidedAt` is null
    */
-  tracked?: boolean | null;
+  tracked: boolean;
+  /**
+   * When a render decided whether the message goes out tracked; null for a message no render
+   * decided (skipped before its render, or not rendered yet)
+   */
+  trackingDecidedAt?: Timestamp | null;
   /**
    * When the message's tracking was withdrawn (a refusal of the contact's, or the Workspace's
    * default turned to `dont_track`); null while it was not
@@ -3837,9 +3841,13 @@ export type ExportMessageRow = {
    */
   captured: boolean;
   /**
-   * Whether the message went out tracked (ADR 0120): an open pixel and tracked links; null when no render decided it (a message skipped before its render, or not rendered yet). A message is tracked while this is true and no withdrawal is recorded.
+   * Whether the message went out tracked (ADR 0120): an open pixel and tracked links. It says nothing while `tracking_decided_at` is null. A message is tracked while this holds and no withdrawal is recorded.
    */
-  tracked?: boolean | null;
+  tracked: boolean;
+  /**
+   * When a render decided whether the message goes out tracked; null for a message no render decided (skipped before its render, or not rendered yet).
+   */
+  tracking_decided_at?: Timestamp | null;
   /**
    * When the message's tracking was withdrawn (a refusal of its Destination, or the Workspace's default turned to `dont_track`); absent while it was not. Once set it never clears.
    */

@@ -11,10 +11,10 @@ import (
 // send path's retry, the recorder, an Order's credit, the rates, a Broadcast's figures, the export,
 // the Winner, the Link identity token, a Branch's open test); TrackedMessages and
 // UntrackedMessages are the same in SQL. A message no render decided (skipped before it, or not
-// rendered yet) is not tracked. It lives with the consent, in the contacts context, so that the
+// rendered yet) reads tracked false, so it is not tracked. It lives with the consent, in the contacts context, so that the
 // readers below Outbound send (an Order's credit) share it with the ones above.
 func IsTracked(msg *ent.OutboundMessage) bool {
-	return msg.Tracked != nil && *msg.Tracked && msg.TrackingWithdrawnAt == nil
+	return msg.Tracked && msg.TrackingWithdrawnAt == nil
 }
 
 // TrackedMessages is IsTracked as a predicate: the messages that went out tracked and whose
@@ -27,6 +27,6 @@ func TrackedMessages() predicate.OutboundMessage {
 // untracked, or whose tracking was withdrawn since.
 func UntrackedMessages() predicate.OutboundMessage {
 	return outboundmessage.Or(
-		outboundmessage.TrackedIsNil(), outboundmessage.Tracked(false), outboundmessage.TrackingWithdrawnAtNotNil(),
+		outboundmessage.Tracked(false), outboundmessage.TrackingWithdrawnAtNotNil(),
 	)
 }

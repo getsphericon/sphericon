@@ -168,8 +168,8 @@ func TestExportMessagesCarryWhetherAMessageIsTracked(t *testing.T) {
 	assert.Nil(t, untracked["tracking_withdrawn_at"])
 }
 
-// A message no render decided is neither tracked nor untracked (ADR 0120): one skipped before its
-// render, and one still pending, read `tracked` as null.
+// A message no render decided is not tracked and says so (ADR 0120): one skipped before its render,
+// and one still pending, have no moment of decision and read `tracked` false.
 func TestExportMessagesReadAMessageNoRenderDecidedAsNeither(t *testing.T) {
 	env := testhelper.Setup(t)
 
@@ -180,8 +180,10 @@ func TestExportMessagesReadAMessageNoRenderDecidedAsNeither(t *testing.T) {
 	pending := globex.row(fixtures.OutboundMessageGlobexID)
 	require.NotNil(t, skipped)
 	require.NotNil(t, pending)
-	assert.Nil(t, skipped["tracked"])
-	assert.Nil(t, pending["tracked"])
+	assert.Nil(t, skipped["tracking_decided_at"])
+	assert.Equal(t, false, skipped["tracked"])
+	assert.Nil(t, pending["tracking_decided_at"])
+	assert.Equal(t, false, pending["tracked"])
 }
 
 // A refusal's reach-back withdraws the tracking of the Destination's message (ADR 0120), and the

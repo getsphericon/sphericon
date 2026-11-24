@@ -12764,6 +12764,7 @@
           "status",
           "claimedAt",
           "captured",
+          "tracked",
           "createdAt"
         ],
         "properties": {
@@ -12917,8 +12918,17 @@
           },
           "tracked": {
             "type": "boolean",
+            "description": "Whether the message went out tracked: with an open pixel and its links rewritten, or its\nlinks made Short tracked links (ADR 0120); it says nothing while `trackingDecidedAt` is null"
+          },
+          "trackingDecidedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
             "nullable": true,
-            "description": "Whether the message went out tracked: with an open pixel and its links rewritten, or its\nlinks made Short tracked links (ADR 0120); null when no render decided it (a message skipped\nbefore its render, or not rendered yet)"
+            "description": "When a render decided whether the message goes out tracked; null for a message no render\ndecided (skipped before its render, or not rendered yet)"
           },
           "trackingWithdrawnAt": {
             "type": "string",

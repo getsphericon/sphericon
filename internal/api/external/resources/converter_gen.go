@@ -1258,7 +1258,8 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) ext
 		externalapiContactExportOutboundMessage.OpenedAt = optNilTimestamp((*source).OpenedAt)
 		externalapiContactExportOutboundMessage.ClickedAt = optNilTimestamp((*source).ClickedAt)
 		externalapiContactExportOutboundMessage.Captured = (*source).Captured
-		externalapiContactExportOutboundMessage.Tracked = optNilBool((*source).Tracked)
+		externalapiContactExportOutboundMessage.Tracked = (*source).Tracked
+		externalapiContactExportOutboundMessage.TrackingDecidedAt = optNilTimestamp((*source).TrackingDecidedAt)
 		externalapiContactExportOutboundMessage.TrackingWithdrawnAt = optNilTimestamp((*source).TrackingWithdrawnAt)
 		externalapiContactExportOutboundMessage.BroadcastId = optNilEntityID((*source).BroadcastID)
 		externalapiContactExportOutboundMessage.AutomationId = optNilEntityID((*source).AutomationID)
