@@ -70,6 +70,16 @@ var (
 	RuleEvaluate = Key{Kind: "rule_evaluate_event", Arg: "contact_id"}
 )
 
+// DestinationKey is a job kind with the string argument that names a Destination (an address, a
+// number in E.164, a Telegram user id), which Erasure matches its queued jobs by.
+type DestinationKey struct {
+	Kind string
+	Arg  string
+}
+
+// TrackingWithdrawal is a refusal's reach-back (ADR 0120), which names the Destination that refused.
+var TrackingWithdrawal = DestinationKey{Kind: "engagement_tracking_withdrawal", Arg: "destination"}
+
 // DeliverWebhookBodyArg is the argument of a queued webhook delivery that holds the event
 // payload, as JSON.
 const DeliverWebhookBodyArg = "body"

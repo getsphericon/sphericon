@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 )
 
 // detachOptOuts keeps the Unsubscribe and active Suppression rows, which are keyed by
@@ -113,11 +114,16 @@ const refusedBatch = 500
 // job does. That job finds the messages by their Destination, which anonymizeDelivery blanks, and
 // the Events by the message ids EraseSubject strips: an Erasure that comes first does the job's
 // work itself, so the outcome does not depend on which runs first (ADR 0113). A run after the job
-// finds the messages withdrawn and nothing left to delete. It reads the refusals before
-// eraseTracking rekeys a number's to its hash.
-func (u *UseCase) withdrawRefused(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+// finds the messages withdrawn and nothing left to delete. The job, which names the Destination
+// (ADR 0021), is deleted while it waits: its refusal stands, since nothing lifts a refusal yet, so
+// the work it was queued for is done here. It reads the refusals before eraseTracking rekeys a
+// number's to its hash.
+func (u *UseCase) withdrawRefused(ctx context.Context, s *ent.Scoped, t *Target, pub events.PurgingPublisher) error {
 	held, err := u.heldDestinations(ctx, s, t)
 	if err != nil {
+		return err
+	}
+	if err := pub.PurgeDestinationJobs(ctx, s.WorkspaceID(), jobkind.TrackingWithdrawal, addressesOf(held)); err != nil {
 		return err
 	}
 	for _, d := range held {
@@ -166,6 +172,18 @@ func (u *UseCase) withdrawFrom(ctx context.Context, s *ent.Scoped, d heldDestina
 type heldDestination struct {
 	channel channels.Channel
 	address string
+}
+
+// namedDestinations is every Destination of the subject a queued job may name: its addresses, its
+// phone and the Telegram users of its chats.
+func (u *UseCase) namedDestinations(ctx context.Context, s *ent.Scoped, t *Target) ([]string, error) {
+	held, err := u.heldDestinations(ctx, s, t)
+	return addressesOf(held), err
+}
+
+// addressesOf is the Destinations of held, whatever their Channel.
+func addressesOf(held []heldDestination) []string {
+	return lo.Map(held, func(d heldDestination, _ int) string { return d.address })
 }
 
 // heldDestinations is the subject's Destinations that take an Engagement tracking consent: its

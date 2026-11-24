@@ -289,12 +289,20 @@ func (u *UseCase) steps() []step {
 		// The queued event consumer jobs whose envelope names the subject: the bus inserted them,
 		// and the purge shares Erasure's transaction.
 		func(ctx context.Context, s *ent.Scoped, t *Target, pub events.PurgingPublisher) error {
-			return pub.PurgeEventJobs(ctx, s.WorkspaceID(), t.ContactID, t.destinations())
+			named, err := u.namedDestinations(ctx, s, t)
+			if err != nil {
+				return err
+			}
+			return pub.PurgeEventJobs(ctx, s.WorkspaceID(), t.ContactID, named)
 		},
 		// The queued webhook deliveries whose payload names the subject; the event envelope's
 		// owner knows that payload shape.
 		func(ctx context.Context, s *ent.Scoped, t *Target, pub events.PurgingPublisher) error {
-			return pub.PurgeWebhookJobs(ctx, s.WorkspaceID(), t.ContactID, t.destinations())
+			named, err := u.namedDestinations(ctx, s, t)
+			if err != nil {
+				return err
+			}
+			return pub.PurgeWebhookJobs(ctx, s.WorkspaceID(), t.ContactID, named)
 		},
 		u.eraseConsentStamps,
 		// What a refusal of the subject's Destinations deletes, should its reach-back not have run

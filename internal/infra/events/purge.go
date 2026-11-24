@@ -26,8 +26,8 @@ import (
 // a Where predicate matches the args.
 type QueuePurger interface {
 	// PurgeEventJobs deletes the Workspace's event consumer jobs (QueueEvents) whose envelope names
-	// the Contact by id or by one of its destinations, an address (matched case-insensitively) or a
-	// phone number, in any state but running: queued, retrying and discarded ones alike. A running
+	// the Contact by id or by one of its destinations, an address (matched case-insensitively), a
+	// phone number or a Telegram user id, as the event's email, phone or Destination, in any state but running: queued, retrying and discarded ones alike. A running
 	// (or locked) job is left to finish: a consumer that loads the Contact finds it gone, and one
 	// that only writes into the Workspace (the suppression, the orders, the Audit log, the Erasures
 	// stream) runs to its end.
@@ -37,9 +37,13 @@ type QueuePurger interface {
 	// A running job, or one a fetch holds locked to start it, is left to finish: each of these
 	// kinds' workers loads the row its args name and ends when it is gone.
 	PurgeJobs(ctx context.Context, workspaceID int64, key jobkind.Key, ids []int64) error
+	// PurgeDestinationJobs deletes the river jobs of key's kind of the Workspace whose args string
+	// field key.Arg is one of destinations, exactly as written. A running (or locked) job is left
+	// to finish.
+	PurgeDestinationJobs(ctx context.Context, workspaceID int64, key jobkind.DestinationKey, destinations []string) error
 	// PurgeWebhookJobs deletes the queued deliveries to the Workspace's own webhook
 	// endpoints whose body names the Contact (contactId) or one of its
-	// destinations (data.email case-insensitively, or data.phone). The body is the event payload
+	// destinations (data.email or data.destination case-insensitively, or data.phone). The body is the event payload
 	// the endpoint would receive. A running (or locked) delivery is left to finish.
 	PurgeWebhookJobs(ctx context.Context, workspaceID, contactID int64, destinations []string) error
 }
@@ -61,6 +65,17 @@ func (p *txPublisher) PurgeJobs(ctx context.Context, workspaceID int64, key jobk
 			river.NamedArgs{"purge_arg": key.Arg, "purge_ids": ids}))
 }
 
+func (p *txPublisher) PurgeDestinationJobs(ctx context.Context, workspaceID int64, key jobkind.DestinationKey, destinations []string) error {
+	if len(destinations) == 0 {
+		return nil
+	}
+	return p.deleteJobs(ctx, ofWorkspace(river.NewJobDeleteManyParams().Kinds(key.Kind), workspaceID).
+		// raw sql: a string field of the args matched against a list; river's delete filters stop
+		// at a job's own columns.
+		Where("args->>@purge_destination_arg::text = any(@purge_destinations::text[])",
+			river.NamedArgs{"purge_destination_arg": key.Arg, "purge_destinations": destinations}))
+}
+
 func (p *txPublisher) PurgeWebhookJobs(ctx context.Context, workspaceID, contactID int64, destinations []string) error {
 	id := ""
 	if contactID != 0 {
@@ -68,14 +83,16 @@ func (p *txPublisher) PurgeWebhookJobs(ctx context.Context, workspaceID, contact
 	}
 	// DeliverWebhookArgs.Body is the JSON event payload, kept as JSON in the args, naming the
 	// Contact at contactId / data.contactId, the address at data.email, the phone number at
-	// data.phone. A delivery names the Workspace of its endpoint (jobkind.Workspace), so the
+	// data.phone, and the Destination of a message or of a consent at data.destination (a click of
+	// a text, consent a number gave before any Contact had it). A delivery names the Workspace of its endpoint (jobkind.Workspace), so the
 	// Workspace's deliveries are its endpoints'.
 	return p.deleteJobs(ctx, ofWorkspace(river.NewJobDeleteManyParams().Kinds(jobkind.DeliverWebhook.Kind), workspaceID).
 		// raw sql: the payload's fields inside the args, the address case-insensitively.
 		Where("(args->@purge_body_arg::text->>'contactId' = @purge_contact::text"+
 			" OR args->@purge_body_arg::text->'data'->>'contactId' = @purge_contact::text"+
 			" OR lower(args->@purge_body_arg::text->'data'->>'email') = any(@purge_addresses::text[])"+
-			" OR args->@purge_body_arg::text->'data'->>'phone' = any(@purge_addresses::text[]))",
+			" OR args->@purge_body_arg::text->'data'->>'phone' = any(@purge_addresses::text[])"+
+			" OR lower(args->@purge_body_arg::text->'data'->>'destination') = any(@purge_addresses::text[]))",
 			river.NamedArgs{"purge_body_arg": jobkind.DeliverWebhookBodyArg, "purge_contact": id, "purge_addresses": lo.Map(destinations, inEmailCase)}))
 }
 
@@ -85,15 +102,16 @@ func (p *txPublisher) PurgeEventJobs(ctx context.Context, workspaceID, contactID
 		id = strconv.FormatInt(contactID, 10) // an event job keeps the envelope, which holds the key
 	}
 	// An event job's args are its envelope (EventJob): the Workspace at workspaceId, the event's name
-	// at name, the event at data, which names the Contact as contactId, the address as email and the
-	// phone as phone. Only an event that names a Contact is matched (namesContact).
+	// at name, the event at data, which names the Contact as contactId, the address as email, the
+	// phone as phone and the Destination of a message or of a consent as destination. Only an event that names a Contact is matched (namesContact).
 	return p.deleteJobs(ctx, ofWorkspace(river.NewJobDeleteManyParams().Queues(QueueEvents), workspaceID).
 		// raw sql: the event's name inside the args; river's delete filters stop at a job's own columns.
 		Where("args->>'name' = any(@purge_event_names::text[])", river.NamedArgs{"purge_event_names": contactEventNames}).
 		// raw sql: the event's fields inside the args, the address case-insensitively.
 		Where("(args->'data'->>'contactId' = @purge_event_contact::text"+
 			" OR lower(args->'data'->>'email') = any(@purge_event_addresses::text[])"+
-			" OR args->'data'->>'phone' = any(@purge_event_addresses::text[]))",
+			" OR args->'data'->>'phone' = any(@purge_event_addresses::text[])"+
+			" OR lower(args->'data'->>'destination') = any(@purge_event_addresses::text[]))",
 			river.NamedArgs{"purge_event_contact": id, "purge_event_addresses": lo.Map(destinations, inEmailCase)}))
 }
 

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/riverqueue/river"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -94,4 +96,30 @@ func TestPurgeJobsInRefusesAScopeOutsideAPurgingTransaction(t *testing.T) {
 		return nil
 	}))
 	assert.Len(t, env.JobsOf(t, jobkind.SendRecipient.Kind), 1)
+}
+
+// A refusal's reach-back names the Destination that refused: the purge of a Destination's jobs
+// removes the Workspace's reach-backs of the subject's Destinations, and leaves another
+// Destination's and another Workspace's.
+func TestPurgeDestinationJobsRemovesTheJobsOfTheSubjectsDestinations(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	env.EnqueueJobs(t,
+		jobs.TrackingWithdrawalArgs{WorkspaceID: fixtures.InitechID, Channel: channels.SMS, Destination: erasablePhone},
+		jobs.TrackingWithdrawalArgs{WorkspaceID: fixtures.InitechID, Channel: channels.Telegram, Destination: "801001"},
+		jobs.TrackingWithdrawalArgs{WorkspaceID: fixtures.InitechID, Channel: channels.SMS, Destination: "+14155550198"},
+		jobs.TrackingWithdrawalArgs{WorkspaceID: fixtures.GlobexID, Channel: channels.SMS, Destination: erasablePhone},
+	)
+
+	scope := env.DB.Scoped(fixtures.InitechID)
+	require.NoError(t, env.Bus.WithinScopedPurgeTx(ctx, scope, func(_ *ent.Scoped, pub events.PurgingPublisher) error {
+		return pub.PurgeDestinationJobs(ctx, fixtures.InitechID, jobkind.TrackingWithdrawal, []string{erasablePhone, "801001"})
+	}))
+
+	left := lo.Map(env.JobsOf(t, jobkind.TrackingWithdrawal.Kind), func(args map[string]any, _ int) [2]any {
+		return [2]any{args["workspaceId"], args["destination"]}
+	})
+	assert.ElementsMatch(t, [][2]any{
+		{float64(fixtures.InitechID), "+14155550198"}, {float64(fixtures.GlobexID), erasablePhone},
+	}, left)
 }

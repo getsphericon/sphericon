@@ -20,7 +20,8 @@ import (
 // queues it in the refusal's transaction. It is keyed by its args, the Workspace, the Channel and
 // the Destination: one waits or runs at a time per Destination, and a refusal recorded again
 // meanwhile adds none, the one queued reaching every message the Destination has. Like every event
-// consumer's job, it runs in the events queue.
+// consumer's job, it runs in the events queue. Its Destination is personal data: an Erasure of the
+// Destination's Contact deletes the job (jobkind.TrackingWithdrawal) and does its work itself.
 type TrackingWithdrawalArgs struct {
 	jobkind.Workspace
 
@@ -28,7 +29,7 @@ type TrackingWithdrawalArgs struct {
 	Destination string           `json:"destination"`
 }
 
-func (TrackingWithdrawalArgs) Kind() string { return "engagement_tracking_withdrawal" }
+func (TrackingWithdrawalArgs) Kind() string { return jobkind.TrackingWithdrawal.Kind }
 
 func (TrackingWithdrawalArgs) InsertOpts() river.InsertOpts {
 	return river.InsertOpts{Queue: events.QueueEvents, UniqueOpts: jobkind.QueuedOnce()}
