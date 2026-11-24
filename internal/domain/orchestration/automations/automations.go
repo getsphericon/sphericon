@@ -295,25 +295,31 @@ func (m *Module) build(ctx context.Context, written automationstep.Path) (automa
 	})
 }
 
-// engagementTriggers are the `email.` Events an Automation may start from: what a recipient does.
-// The others (sent, delivered, delayed, dropped, bounced, complained) are infrastructure, kept
-// for the figures and the log (ADR 0053).
-var engagementTriggers = []string{systemevent.EmailOpened, systemevent.EmailClicked, systemevent.EmailUnsubscribed}
+// engagementTriggers are the `email.` Events an Automation may start from: what a recipient does,
+// and what they decided about the tracking of their address (ADR 0120). The others (sent,
+// delivered, delayed, dropped, bounced, complained) are infrastructure, kept for the figures and
+// the log (ADR 0053).
+var engagementTriggers = []string{
+	systemevent.EmailOpened, systemevent.EmailClicked, systemevent.EmailUnsubscribed,
+	systemevent.EmailEngagementTrackingGranted, systemevent.EmailEngagementTrackingDenied,
+}
 
 // telegramTriggers are the `telegram.` Events an Automation may start from or end on: what happens
-// to a Binding and what the person does. `telegram.sent` is infrastructure, like `email.sent`.
+// to a Binding, what the person does and what they decided about the tracking of their chat (ADR
+// 0120). `telegram.sent` is infrastructure, like `email.sent`.
 var telegramTriggers = []string{
 	systemevent.TelegramBound, systemevent.TelegramUnbound, systemevent.TelegramReceived, systemevent.TelegramClicked,
-	systemevent.TelegramUnsubscribed,
+	systemevent.TelegramUnsubscribed, systemevent.TelegramEngagementTrackingGranted, systemevent.TelegramEngagementTrackingDenied,
 }
 
 // smsTriggers are the `sms.` Events an Automation may start from or end on: a text the person sent,
-// the consent they gave and withdrew, a link they clicked, and whether a text reached their phone
-// (a delivery report, which on SMS says the number works or not, unlike email's infrastructure
-// notices). The acceptance (`sms.sent`) is infrastructure, like `email.sent`.
+// the consent they gave and withdrew, the tracking of their number they agreed to or refused (ADR
+// 0120), a link they clicked, and whether a text reached their phone (a delivery report, which on
+// SMS says the number works or not, unlike email's infrastructure notices). The acceptance
+// (`sms.sent`) is infrastructure, like `email.sent`.
 var smsTriggers = []string{
 	systemevent.SmsReceived, systemevent.SmsConfirmed, systemevent.SmsClicked, systemevent.SmsDelivered, systemevent.SmsUndelivered,
-	systemevent.SmsUnsubscribed,
+	systemevent.SmsUnsubscribed, systemevent.SmsEngagementTrackingGranted, systemevent.SmsEngagementTrackingDenied,
 }
 
 // matcherProblem says why an Event matcher (ADR 0133) can neither start nor end an Automation: its

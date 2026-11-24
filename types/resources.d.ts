@@ -759,6 +759,15 @@ export default interface Resources {
         "eq": "is",
         "neq": "is not"
       },
+      "trackingFields": {
+        "email": "Email tracking consent",
+        "sms": "SMS tracking consent",
+        "telegram": "Telegram tracking consent"
+      },
+      "trackingStates": {
+        "denied": "denied",
+        "granted": "granted"
+      },
       "withinLast": "within the last (days)"
     },
     "confirmEmailChange": {

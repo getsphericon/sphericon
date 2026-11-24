@@ -597,30 +597,12 @@ func UntrackedWhere(channel channels.Channel, dflt Decision, column string) func
 // decides: under track, a Destination is tracked unless a denied is recorded; under dont_track,
 // only when a granted is.
 func trackedOf(outer *sql.Selector, channel channels.Channel, dflt Decision, column string) *sql.Predicate {
-	consents := sql.Table(engagementtrackingconsent.Table)
 	state, exists := Granted, sql.Exists
 	if dflt == Track {
 		state, exists = Denied, sql.NotExists
 	}
-	sameDestination := sql.ColumnsEQ(consents.C(engagementtrackingconsent.FieldDestination), outer.C(column))
-	if channel == channels.SMS {
-		// On sms a refusal is kept by the number or, once its Contact was erased, by the number's
-		// hash (phone.Hash, here in SQL, as the eligibility layers match an opt-out), so it holds
-		// when the number comes back.
-		// raw sql: the destination correlation, matched against the number or its SHA-256 hex.
-		sameDestination = sql.P(func(b *sql.Builder) {
-			b.WriteString(consents.C(engagementtrackingconsent.FieldDestination)).WriteString(" IN (").
-				WriteString(outer.C(column)).WriteString(", encode(sha256(convert_to(").
-				WriteString(outer.C(column)).WriteString(", 'UTF8')), 'hex'))")
-		})
-	}
-	return exists(sql.Select(consents.C(engagementtrackingconsent.FieldID)).From(consents).Where(sql.And(
-		// Every Workspace-owned table names its Workspace in the same column (WorkspaceMixin).
-		sql.ColumnsEQ(consents.C(engagementtrackingconsent.FieldWorkspaceID), outer.C(engagementtrackingconsent.FieldWorkspaceID)),
-		sameDestination,
-		sql.EQ(consents.C(engagementtrackingconsent.FieldChannel), string(channel)),
-		sql.EQ(consents.C(engagementtrackingconsent.FieldState), string(state)),
-	)))
+	// Every Workspace-owned table names its Workspace in the same column (WorkspaceMixin).
+	return exists(recordedOf(outer.C(engagementtrackingconsent.FieldWorkspaceID), outer.C(column), channel, state))
 }
 
 // consentOf is the Consent of destination on channel whose row is row, nil when none is recorded.

@@ -307,8 +307,9 @@ _Avoid_: Filter, query, predicate, rule (a Rule is something else)
 
 **Leaf**:
 An entry of a **Condition** that tests one thing: a Contact attribute, the birthday, a Tag, Telegram
-or SMS reachability, a Custom field, a count of past Events, or a **Property test**. The place a
-Condition is used decides which leaves it admits: a Segment's admits no Property test, a Rule's does.
+or SMS reachability, the **Engagement tracking consent** of a Channel, a Custom field, a count of
+past Events, or a **Property test**. The place a Condition is used decides which leaves it admits: a
+Segment's admits no Property test, a Rule's does.
 _Avoid_: Rule (a Rule is something else), field, criterion
 
 **Typed test**:

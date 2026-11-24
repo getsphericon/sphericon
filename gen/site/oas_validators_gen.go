@@ -3185,6 +3185,114 @@ func (s EngagementTrackingDecision) Validate() error {
 	}
 }
 
+func (s *EngagementTrackingLeaf) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Channel.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "channel",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Test.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "test",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *EngagementTrackingLeafInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Channel.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "channel",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Test.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "test",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s EngagementTrackingLeafInputKind) Validate() error {
+	switch s {
+	case "engagementTracking":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s EngagementTrackingLeafKind) Validate() error {
+	switch s {
+	case "engagementTracking":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *EngagementTrackingObservationResult) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -3266,6 +3374,86 @@ func (s EngagementTrackingState) Validate() error {
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *EngagementTrackingTest) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *EngagementTrackingTestInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s EngagementTrackingTestInputSum) Validate() error {
+	switch s.Type {
+	case TextTestInputEngagementTrackingTestInputSum:
+		if err := s.TextTestInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case PresenceTestInputEngagementTrackingTestInputSum:
+		if err := s.PresenceTestInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
+func (s EngagementTrackingTestSum) Validate() error {
+	switch s.Type {
+	case TextTestEngagementTrackingTestSum:
+		if err := s.TextTest.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case PresenceTestEngagementTrackingTestSum:
+		if err := s.PresenceTest.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
 	}
 }
 
@@ -6156,6 +6344,11 @@ func (s RuleConditionNodeInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case EngagementTrackingLeafInputRuleConditionNodeInputSum:
+		if err := s.EngagementTrackingLeafInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	case CustomFieldLeafInputRuleConditionNodeInputSum:
 		if err := s.CustomFieldLeafInput.Validate(); err != nil {
 			return err
@@ -6205,6 +6398,11 @@ func (s RuleConditionNodeSum) Validate() error {
 		return nil
 	case SmsLeafRuleConditionNodeSum:
 		if err := s.SmsLeaf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case EngagementTrackingLeafRuleConditionNodeSum:
+		if err := s.EngagementTrackingLeaf.Validate(); err != nil {
 			return err
 		}
 		return nil
@@ -6815,6 +7013,11 @@ func (s SegmentConditionNodeInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case EngagementTrackingLeafInputSegmentConditionNodeInputSum:
+		if err := s.EngagementTrackingLeafInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	case CustomFieldLeafInputSegmentConditionNodeInputSum:
 		if err := s.CustomFieldLeafInput.Validate(); err != nil {
 			return err
@@ -6859,6 +7062,11 @@ func (s SegmentConditionNodeSum) Validate() error {
 		return nil
 	case SmsLeafSegmentConditionNodeSum:
 		if err := s.SmsLeaf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case EngagementTrackingLeafSegmentConditionNodeSum:
+		if err := s.EngagementTrackingLeaf.Validate(); err != nil {
 			return err
 		}
 		return nil

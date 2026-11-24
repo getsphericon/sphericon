@@ -24,6 +24,8 @@ export default defineConfig({
       'conditions.numberOperators.*',
       'conditions.presenceOperators.*',
       'conditions.textOperators.*',
+      'conditions.trackingFields.*',
+      'conditions.trackingStates.*',
       'console.signupItems.kind.*',
       'console.workspaces.review.deleted',
       'console.workspaces.review.systemFrozen',

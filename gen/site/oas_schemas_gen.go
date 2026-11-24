@@ -7794,6 +7794,162 @@ func (s *EngagementTrackingDecision) UnmarshalText(data []byte) error {
 	}
 }
 
+// A test of the Contact's Engagement tracking consent on one Channel (ADR 0120), read live as
+// recorded, whatever the Workspace's default: on email the consent of its email address, on sms of its
+// phone, on telegram of its own chats, which read `denied` when any is denied, `granted` when it has
+// one and all are granted, and as none recorded otherwise. A Contact without a Destination on the
+// Channel has none recorded.
+// Ref: #/components/schemas/EngagementTrackingLeaf
+type EngagementTrackingLeaf struct {
+	Kind EngagementTrackingLeafKind `json:"kind"`
+	// The Channel whose consent is tested.
+	Channel EngagementTrackingChannel `json:"channel"`
+	// What it asks of the consent.
+	Test EngagementTrackingTest `json:"test"`
+}
+
+// GetKind returns the value of Kind.
+func (s *EngagementTrackingLeaf) GetKind() EngagementTrackingLeafKind {
+	return s.Kind
+}
+
+// GetChannel returns the value of Channel.
+func (s *EngagementTrackingLeaf) GetChannel() EngagementTrackingChannel {
+	return s.Channel
+}
+
+// GetTest returns the value of Test.
+func (s *EngagementTrackingLeaf) GetTest() EngagementTrackingTest {
+	return s.Test
+}
+
+// SetKind sets the value of Kind.
+func (s *EngagementTrackingLeaf) SetKind(val EngagementTrackingLeafKind) {
+	s.Kind = val
+}
+
+// SetChannel sets the value of Channel.
+func (s *EngagementTrackingLeaf) SetChannel(val EngagementTrackingChannel) {
+	s.Channel = val
+}
+
+// SetTest sets the value of Test.
+func (s *EngagementTrackingLeaf) SetTest(val EngagementTrackingTest) {
+	s.Test = val
+}
+
+// A test of the Contact's Engagement tracking consent on one Channel (ADR 0120), read live as
+// recorded, whatever the Workspace's default: on email the consent of its email address, on sms of its
+// phone, on telegram of its own chats, which read `denied` when any is denied, `granted` when it has
+// one and all are granted, and as none recorded otherwise. A Contact without a Destination on the
+// Channel has none recorded.
+// Ref: #/components/schemas/EngagementTrackingLeafInput
+type EngagementTrackingLeafInput struct {
+	Kind EngagementTrackingLeafInputKind `json:"kind"`
+	// The Channel whose consent is tested.
+	Channel EngagementTrackingChannel `json:"channel"`
+	// What it asks of the consent.
+	Test EngagementTrackingTestInput `json:"test"`
+}
+
+// GetKind returns the value of Kind.
+func (s *EngagementTrackingLeafInput) GetKind() EngagementTrackingLeafInputKind {
+	return s.Kind
+}
+
+// GetChannel returns the value of Channel.
+func (s *EngagementTrackingLeafInput) GetChannel() EngagementTrackingChannel {
+	return s.Channel
+}
+
+// GetTest returns the value of Test.
+func (s *EngagementTrackingLeafInput) GetTest() EngagementTrackingTestInput {
+	return s.Test
+}
+
+// SetKind sets the value of Kind.
+func (s *EngagementTrackingLeafInput) SetKind(val EngagementTrackingLeafInputKind) {
+	s.Kind = val
+}
+
+// SetChannel sets the value of Channel.
+func (s *EngagementTrackingLeafInput) SetChannel(val EngagementTrackingChannel) {
+	s.Channel = val
+}
+
+// SetTest sets the value of Test.
+func (s *EngagementTrackingLeafInput) SetTest(val EngagementTrackingTestInput) {
+	s.Test = val
+}
+
+type EngagementTrackingLeafInputKind string
+
+const (
+	EngagementTrackingLeafInputKindEngagementTracking EngagementTrackingLeafInputKind = "engagementTracking"
+)
+
+// AllValues returns all EngagementTrackingLeafInputKind values.
+func (EngagementTrackingLeafInputKind) AllValues() []EngagementTrackingLeafInputKind {
+	return []EngagementTrackingLeafInputKind{
+		EngagementTrackingLeafInputKindEngagementTracking,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EngagementTrackingLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case EngagementTrackingLeafInputKindEngagementTracking:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EngagementTrackingLeafInputKind) UnmarshalText(data []byte) error {
+	switch EngagementTrackingLeafInputKind(data) {
+	case EngagementTrackingLeafInputKindEngagementTracking:
+		*s = EngagementTrackingLeafInputKindEngagementTracking
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type EngagementTrackingLeafKind string
+
+const (
+	EngagementTrackingLeafKindEngagementTracking EngagementTrackingLeafKind = "engagementTracking"
+)
+
+// AllValues returns all EngagementTrackingLeafKind values.
+func (EngagementTrackingLeafKind) AllValues() []EngagementTrackingLeafKind {
+	return []EngagementTrackingLeafKind{
+		EngagementTrackingLeafKindEngagementTracking,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EngagementTrackingLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case EngagementTrackingLeafKindEngagementTracking:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EngagementTrackingLeafKind) UnmarshalText(data []byte) error {
+	switch EngagementTrackingLeafKind(data) {
+	case EngagementTrackingLeafKindEngagementTracking:
+		*s = EngagementTrackingLeafKindEngagementTracking
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // The answer to an Engagement tracking observation: what became of it, and the consent that stands
 // after it.
 // Ref: #/components/schemas/EngagementTrackingObservationResult
@@ -8021,6 +8177,180 @@ func (s *EngagementTrackingState) UnmarshalText(data []byte) error {
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
+}
+
+// What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a text
+// test whose eq or neq compares the consent with `granted` or `denied`, or a presence test of whether
+// any is recorded. neq holds where none is recorded, so a test and its negation split every Contact.
+// Ref: #/components/schemas/EngagementTrackingTest
+type EngagementTrackingTest struct {
+	OneOf EngagementTrackingTestSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *EngagementTrackingTest) GetOneOf() EngagementTrackingTestSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *EngagementTrackingTest) SetOneOf(val EngagementTrackingTestSum) {
+	s.OneOf = val
+}
+
+// What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a text
+// test whose eq or neq compares the consent with `granted` or `denied`, or a presence test of whether
+// any is recorded. neq holds where none is recorded, so a test and its negation split every Contact.
+// Ref: #/components/schemas/EngagementTrackingTestInput
+type EngagementTrackingTestInput struct {
+	OneOf EngagementTrackingTestInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *EngagementTrackingTestInput) GetOneOf() EngagementTrackingTestInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *EngagementTrackingTestInput) SetOneOf(val EngagementTrackingTestInputSum) {
+	s.OneOf = val
+}
+
+// EngagementTrackingTestInputSum represents sum type.
+type EngagementTrackingTestInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type              EngagementTrackingTestInputSumType
+	TextTestInput     TextTestInput
+	PresenceTestInput PresenceTestInput
+}
+
+// EngagementTrackingTestInputSumType is oneOf type of EngagementTrackingTestInputSum.
+type EngagementTrackingTestInputSumType string
+
+// Possible values for EngagementTrackingTestInputSumType.
+const (
+	TextTestInputEngagementTrackingTestInputSum     EngagementTrackingTestInputSumType = "text"
+	PresenceTestInputEngagementTrackingTestInputSum EngagementTrackingTestInputSumType = "presence"
+)
+
+// IsTextTestInput reports whether EngagementTrackingTestInputSum is TextTestInput.
+func (s EngagementTrackingTestInputSum) IsTextTestInput() bool {
+	return s.Type == TextTestInputEngagementTrackingTestInputSum
+}
+
+// IsPresenceTestInput reports whether EngagementTrackingTestInputSum is PresenceTestInput.
+func (s EngagementTrackingTestInputSum) IsPresenceTestInput() bool {
+	return s.Type == PresenceTestInputEngagementTrackingTestInputSum
+}
+
+// SetTextTestInput sets EngagementTrackingTestInputSum to TextTestInput.
+func (s *EngagementTrackingTestInputSum) SetTextTestInput(v TextTestInput) {
+	s.Type = TextTestInputEngagementTrackingTestInputSum
+	s.TextTestInput = v
+}
+
+// GetTextTestInput returns TextTestInput and true boolean if EngagementTrackingTestInputSum is TextTestInput.
+func (s EngagementTrackingTestInputSum) GetTextTestInput() (v TextTestInput, ok bool) {
+	if !s.IsTextTestInput() {
+		return v, false
+	}
+	return s.TextTestInput, true
+}
+
+// NewTextTestInputEngagementTrackingTestInputSum returns new EngagementTrackingTestInputSum from TextTestInput.
+func NewTextTestInputEngagementTrackingTestInputSum(v TextTestInput) EngagementTrackingTestInputSum {
+	var s EngagementTrackingTestInputSum
+	s.SetTextTestInput(v)
+	return s
+}
+
+// SetPresenceTestInput sets EngagementTrackingTestInputSum to PresenceTestInput.
+func (s *EngagementTrackingTestInputSum) SetPresenceTestInput(v PresenceTestInput) {
+	s.Type = PresenceTestInputEngagementTrackingTestInputSum
+	s.PresenceTestInput = v
+}
+
+// GetPresenceTestInput returns PresenceTestInput and true boolean if EngagementTrackingTestInputSum is PresenceTestInput.
+func (s EngagementTrackingTestInputSum) GetPresenceTestInput() (v PresenceTestInput, ok bool) {
+	if !s.IsPresenceTestInput() {
+		return v, false
+	}
+	return s.PresenceTestInput, true
+}
+
+// NewPresenceTestInputEngagementTrackingTestInputSum returns new EngagementTrackingTestInputSum from PresenceTestInput.
+func NewPresenceTestInputEngagementTrackingTestInputSum(v PresenceTestInput) EngagementTrackingTestInputSum {
+	var s EngagementTrackingTestInputSum
+	s.SetPresenceTestInput(v)
+	return s
+}
+
+// EngagementTrackingTestSum represents sum type.
+type EngagementTrackingTestSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type         EngagementTrackingTestSumType
+	TextTest     TextTest
+	PresenceTest PresenceTest
+}
+
+// EngagementTrackingTestSumType is oneOf type of EngagementTrackingTestSum.
+type EngagementTrackingTestSumType string
+
+// Possible values for EngagementTrackingTestSumType.
+const (
+	TextTestEngagementTrackingTestSum     EngagementTrackingTestSumType = "text"
+	PresenceTestEngagementTrackingTestSum EngagementTrackingTestSumType = "presence"
+)
+
+// IsTextTest reports whether EngagementTrackingTestSum is TextTest.
+func (s EngagementTrackingTestSum) IsTextTest() bool {
+	return s.Type == TextTestEngagementTrackingTestSum
+}
+
+// IsPresenceTest reports whether EngagementTrackingTestSum is PresenceTest.
+func (s EngagementTrackingTestSum) IsPresenceTest() bool {
+	return s.Type == PresenceTestEngagementTrackingTestSum
+}
+
+// SetTextTest sets EngagementTrackingTestSum to TextTest.
+func (s *EngagementTrackingTestSum) SetTextTest(v TextTest) {
+	s.Type = TextTestEngagementTrackingTestSum
+	s.TextTest = v
+}
+
+// GetTextTest returns TextTest and true boolean if EngagementTrackingTestSum is TextTest.
+func (s EngagementTrackingTestSum) GetTextTest() (v TextTest, ok bool) {
+	if !s.IsTextTest() {
+		return v, false
+	}
+	return s.TextTest, true
+}
+
+// NewTextTestEngagementTrackingTestSum returns new EngagementTrackingTestSum from TextTest.
+func NewTextTestEngagementTrackingTestSum(v TextTest) EngagementTrackingTestSum {
+	var s EngagementTrackingTestSum
+	s.SetTextTest(v)
+	return s
+}
+
+// SetPresenceTest sets EngagementTrackingTestSum to PresenceTest.
+func (s *EngagementTrackingTestSum) SetPresenceTest(v PresenceTest) {
+	s.Type = PresenceTestEngagementTrackingTestSum
+	s.PresenceTest = v
+}
+
+// GetPresenceTest returns PresenceTest and true boolean if EngagementTrackingTestSum is PresenceTest.
+func (s EngagementTrackingTestSum) GetPresenceTest() (v PresenceTest, ok bool) {
+	if !s.IsPresenceTest() {
+		return v, false
+	}
+	return s.PresenceTest, true
+}
+
+// NewPresenceTestEngagementTrackingTestSum returns new EngagementTrackingTestSum from PresenceTest.
+func NewPresenceTestEngagementTrackingTestSum(v PresenceTest) EngagementTrackingTestSum {
+	var s EngagementTrackingTestSum
+	s.SetPresenceTest(v)
+	return s
 }
 
 // What an HTTP step recorded when it failed an Enrollment; absent on any other Enrollment.
@@ -18649,16 +18979,17 @@ func (s *RuleConditionNodeInput) SetOneOf(val RuleConditionNodeInputSum) {
 // RuleConditionNodeInputSum represents sum type.
 type RuleConditionNodeInputSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type                  RuleConditionNodeInputSumType
-	RuleConditionInput    RuleConditionInput
-	AttributeLeafInput    AttributeLeafInput
-	BirthdayLeafInput     BirthdayLeafInput
-	TagLeafInput          TagLeafInput
-	TelegramLeafInput     TelegramLeafInput
-	SmsLeafInput          SmsLeafInput
-	CustomFieldLeafInput  CustomFieldLeafInput
-	EventLeafInput        EventLeafInput
-	RulePropertyLeafInput RulePropertyLeafInput
+	Type                        RuleConditionNodeInputSumType
+	RuleConditionInput          RuleConditionInput
+	AttributeLeafInput          AttributeLeafInput
+	BirthdayLeafInput           BirthdayLeafInput
+	TagLeafInput                TagLeafInput
+	TelegramLeafInput           TelegramLeafInput
+	SmsLeafInput                SmsLeafInput
+	EngagementTrackingLeafInput EngagementTrackingLeafInput
+	CustomFieldLeafInput        CustomFieldLeafInput
+	EventLeafInput              EventLeafInput
+	RulePropertyLeafInput       RulePropertyLeafInput
 }
 
 // RuleConditionNodeInputSumType is oneOf type of RuleConditionNodeInputSum.
@@ -18666,15 +18997,16 @@ type RuleConditionNodeInputSumType string
 
 // Possible values for RuleConditionNodeInputSumType.
 const (
-	RuleConditionInputRuleConditionNodeInputSum    RuleConditionNodeInputSumType = "group"
-	AttributeLeafInputRuleConditionNodeInputSum    RuleConditionNodeInputSumType = "attribute"
-	BirthdayLeafInputRuleConditionNodeInputSum     RuleConditionNodeInputSumType = "birthday"
-	TagLeafInputRuleConditionNodeInputSum          RuleConditionNodeInputSumType = "tag"
-	TelegramLeafInputRuleConditionNodeInputSum     RuleConditionNodeInputSumType = "telegram"
-	SmsLeafInputRuleConditionNodeInputSum          RuleConditionNodeInputSumType = "sms"
-	CustomFieldLeafInputRuleConditionNodeInputSum  RuleConditionNodeInputSumType = "customField"
-	EventLeafInputRuleConditionNodeInputSum        RuleConditionNodeInputSumType = "event"
-	RulePropertyLeafInputRuleConditionNodeInputSum RuleConditionNodeInputSumType = "property"
+	RuleConditionInputRuleConditionNodeInputSum          RuleConditionNodeInputSumType = "group"
+	AttributeLeafInputRuleConditionNodeInputSum          RuleConditionNodeInputSumType = "attribute"
+	BirthdayLeafInputRuleConditionNodeInputSum           RuleConditionNodeInputSumType = "birthday"
+	TagLeafInputRuleConditionNodeInputSum                RuleConditionNodeInputSumType = "tag"
+	TelegramLeafInputRuleConditionNodeInputSum           RuleConditionNodeInputSumType = "telegram"
+	SmsLeafInputRuleConditionNodeInputSum                RuleConditionNodeInputSumType = "sms"
+	EngagementTrackingLeafInputRuleConditionNodeInputSum RuleConditionNodeInputSumType = "engagementTracking"
+	CustomFieldLeafInputRuleConditionNodeInputSum        RuleConditionNodeInputSumType = "customField"
+	EventLeafInputRuleConditionNodeInputSum              RuleConditionNodeInputSumType = "event"
+	RulePropertyLeafInputRuleConditionNodeInputSum       RuleConditionNodeInputSumType = "property"
 )
 
 // IsRuleConditionInput reports whether RuleConditionNodeInputSum is RuleConditionInput.
@@ -18705,6 +19037,11 @@ func (s RuleConditionNodeInputSum) IsTelegramLeafInput() bool {
 // IsSmsLeafInput reports whether RuleConditionNodeInputSum is SmsLeafInput.
 func (s RuleConditionNodeInputSum) IsSmsLeafInput() bool {
 	return s.Type == SmsLeafInputRuleConditionNodeInputSum
+}
+
+// IsEngagementTrackingLeafInput reports whether RuleConditionNodeInputSum is EngagementTrackingLeafInput.
+func (s RuleConditionNodeInputSum) IsEngagementTrackingLeafInput() bool {
+	return s.Type == EngagementTrackingLeafInputRuleConditionNodeInputSum
 }
 
 // IsCustomFieldLeafInput reports whether RuleConditionNodeInputSum is CustomFieldLeafInput.
@@ -18848,6 +19185,27 @@ func NewSmsLeafInputRuleConditionNodeInputSum(v SmsLeafInput) RuleConditionNodeI
 	return s
 }
 
+// SetEngagementTrackingLeafInput sets RuleConditionNodeInputSum to EngagementTrackingLeafInput.
+func (s *RuleConditionNodeInputSum) SetEngagementTrackingLeafInput(v EngagementTrackingLeafInput) {
+	s.Type = EngagementTrackingLeafInputRuleConditionNodeInputSum
+	s.EngagementTrackingLeafInput = v
+}
+
+// GetEngagementTrackingLeafInput returns EngagementTrackingLeafInput and true boolean if RuleConditionNodeInputSum is EngagementTrackingLeafInput.
+func (s RuleConditionNodeInputSum) GetEngagementTrackingLeafInput() (v EngagementTrackingLeafInput, ok bool) {
+	if !s.IsEngagementTrackingLeafInput() {
+		return v, false
+	}
+	return s.EngagementTrackingLeafInput, true
+}
+
+// NewEngagementTrackingLeafInputRuleConditionNodeInputSum returns new RuleConditionNodeInputSum from EngagementTrackingLeafInput.
+func NewEngagementTrackingLeafInputRuleConditionNodeInputSum(v EngagementTrackingLeafInput) RuleConditionNodeInputSum {
+	var s RuleConditionNodeInputSum
+	s.SetEngagementTrackingLeafInput(v)
+	return s
+}
+
 // SetCustomFieldLeafInput sets RuleConditionNodeInputSum to CustomFieldLeafInput.
 func (s *RuleConditionNodeInputSum) SetCustomFieldLeafInput(v CustomFieldLeafInput) {
 	s.Type = CustomFieldLeafInputRuleConditionNodeInputSum
@@ -18914,16 +19272,17 @@ func NewRulePropertyLeafInputRuleConditionNodeInputSum(v RulePropertyLeafInput) 
 // RuleConditionNodeSum represents sum type.
 type RuleConditionNodeSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type             RuleConditionNodeSumType
-	RuleCondition    RuleCondition
-	AttributeLeaf    AttributeLeaf
-	BirthdayLeaf     BirthdayLeaf
-	TagLeaf          TagLeaf
-	TelegramLeaf     TelegramLeaf
-	SmsLeaf          SmsLeaf
-	CustomFieldLeaf  CustomFieldLeaf
-	EventLeaf        EventLeaf
-	RulePropertyLeaf RulePropertyLeaf
+	Type                   RuleConditionNodeSumType
+	RuleCondition          RuleCondition
+	AttributeLeaf          AttributeLeaf
+	BirthdayLeaf           BirthdayLeaf
+	TagLeaf                TagLeaf
+	TelegramLeaf           TelegramLeaf
+	SmsLeaf                SmsLeaf
+	EngagementTrackingLeaf EngagementTrackingLeaf
+	CustomFieldLeaf        CustomFieldLeaf
+	EventLeaf              EventLeaf
+	RulePropertyLeaf       RulePropertyLeaf
 }
 
 // RuleConditionNodeSumType is oneOf type of RuleConditionNodeSum.
@@ -18931,15 +19290,16 @@ type RuleConditionNodeSumType string
 
 // Possible values for RuleConditionNodeSumType.
 const (
-	RuleConditionRuleConditionNodeSum    RuleConditionNodeSumType = "group"
-	AttributeLeafRuleConditionNodeSum    RuleConditionNodeSumType = "attribute"
-	BirthdayLeafRuleConditionNodeSum     RuleConditionNodeSumType = "birthday"
-	TagLeafRuleConditionNodeSum          RuleConditionNodeSumType = "tag"
-	TelegramLeafRuleConditionNodeSum     RuleConditionNodeSumType = "telegram"
-	SmsLeafRuleConditionNodeSum          RuleConditionNodeSumType = "sms"
-	CustomFieldLeafRuleConditionNodeSum  RuleConditionNodeSumType = "customField"
-	EventLeafRuleConditionNodeSum        RuleConditionNodeSumType = "event"
-	RulePropertyLeafRuleConditionNodeSum RuleConditionNodeSumType = "property"
+	RuleConditionRuleConditionNodeSum          RuleConditionNodeSumType = "group"
+	AttributeLeafRuleConditionNodeSum          RuleConditionNodeSumType = "attribute"
+	BirthdayLeafRuleConditionNodeSum           RuleConditionNodeSumType = "birthday"
+	TagLeafRuleConditionNodeSum                RuleConditionNodeSumType = "tag"
+	TelegramLeafRuleConditionNodeSum           RuleConditionNodeSumType = "telegram"
+	SmsLeafRuleConditionNodeSum                RuleConditionNodeSumType = "sms"
+	EngagementTrackingLeafRuleConditionNodeSum RuleConditionNodeSumType = "engagementTracking"
+	CustomFieldLeafRuleConditionNodeSum        RuleConditionNodeSumType = "customField"
+	EventLeafRuleConditionNodeSum              RuleConditionNodeSumType = "event"
+	RulePropertyLeafRuleConditionNodeSum       RuleConditionNodeSumType = "property"
 )
 
 // IsRuleCondition reports whether RuleConditionNodeSum is RuleCondition.
@@ -18967,6 +19327,11 @@ func (s RuleConditionNodeSum) IsTelegramLeaf() bool {
 
 // IsSmsLeaf reports whether RuleConditionNodeSum is SmsLeaf.
 func (s RuleConditionNodeSum) IsSmsLeaf() bool { return s.Type == SmsLeafRuleConditionNodeSum }
+
+// IsEngagementTrackingLeaf reports whether RuleConditionNodeSum is EngagementTrackingLeaf.
+func (s RuleConditionNodeSum) IsEngagementTrackingLeaf() bool {
+	return s.Type == EngagementTrackingLeafRuleConditionNodeSum
+}
 
 // IsCustomFieldLeaf reports whether RuleConditionNodeSum is CustomFieldLeaf.
 func (s RuleConditionNodeSum) IsCustomFieldLeaf() bool {
@@ -19104,6 +19469,27 @@ func (s RuleConditionNodeSum) GetSmsLeaf() (v SmsLeaf, ok bool) {
 func NewSmsLeafRuleConditionNodeSum(v SmsLeaf) RuleConditionNodeSum {
 	var s RuleConditionNodeSum
 	s.SetSmsLeaf(v)
+	return s
+}
+
+// SetEngagementTrackingLeaf sets RuleConditionNodeSum to EngagementTrackingLeaf.
+func (s *RuleConditionNodeSum) SetEngagementTrackingLeaf(v EngagementTrackingLeaf) {
+	s.Type = EngagementTrackingLeafRuleConditionNodeSum
+	s.EngagementTrackingLeaf = v
+}
+
+// GetEngagementTrackingLeaf returns EngagementTrackingLeaf and true boolean if RuleConditionNodeSum is EngagementTrackingLeaf.
+func (s RuleConditionNodeSum) GetEngagementTrackingLeaf() (v EngagementTrackingLeaf, ok bool) {
+	if !s.IsEngagementTrackingLeaf() {
+		return v, false
+	}
+	return s.EngagementTrackingLeaf, true
+}
+
+// NewEngagementTrackingLeafRuleConditionNodeSum returns new RuleConditionNodeSum from EngagementTrackingLeaf.
+func NewEngagementTrackingLeafRuleConditionNodeSum(v EngagementTrackingLeaf) RuleConditionNodeSum {
+	var s RuleConditionNodeSum
+	s.SetEngagementTrackingLeaf(v)
 	return s
 }
 
@@ -20023,15 +20409,16 @@ func (s *SegmentConditionNodeInput) SetOneOf(val SegmentConditionNodeInputSum) {
 // SegmentConditionNodeInputSum represents sum type.
 type SegmentConditionNodeInputSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type                  SegmentConditionNodeInputSumType
-	SegmentConditionInput SegmentConditionInput
-	AttributeLeafInput    AttributeLeafInput
-	BirthdayLeafInput     BirthdayLeafInput
-	TagLeafInput          TagLeafInput
-	TelegramLeafInput     TelegramLeafInput
-	SmsLeafInput          SmsLeafInput
-	CustomFieldLeafInput  CustomFieldLeafInput
-	EventLeafInput        EventLeafInput
+	Type                        SegmentConditionNodeInputSumType
+	SegmentConditionInput       SegmentConditionInput
+	AttributeLeafInput          AttributeLeafInput
+	BirthdayLeafInput           BirthdayLeafInput
+	TagLeafInput                TagLeafInput
+	TelegramLeafInput           TelegramLeafInput
+	SmsLeafInput                SmsLeafInput
+	EngagementTrackingLeafInput EngagementTrackingLeafInput
+	CustomFieldLeafInput        CustomFieldLeafInput
+	EventLeafInput              EventLeafInput
 }
 
 // SegmentConditionNodeInputSumType is oneOf type of SegmentConditionNodeInputSum.
@@ -20039,14 +20426,15 @@ type SegmentConditionNodeInputSumType string
 
 // Possible values for SegmentConditionNodeInputSumType.
 const (
-	SegmentConditionInputSegmentConditionNodeInputSum SegmentConditionNodeInputSumType = "group"
-	AttributeLeafInputSegmentConditionNodeInputSum    SegmentConditionNodeInputSumType = "attribute"
-	BirthdayLeafInputSegmentConditionNodeInputSum     SegmentConditionNodeInputSumType = "birthday"
-	TagLeafInputSegmentConditionNodeInputSum          SegmentConditionNodeInputSumType = "tag"
-	TelegramLeafInputSegmentConditionNodeInputSum     SegmentConditionNodeInputSumType = "telegram"
-	SmsLeafInputSegmentConditionNodeInputSum          SegmentConditionNodeInputSumType = "sms"
-	CustomFieldLeafInputSegmentConditionNodeInputSum  SegmentConditionNodeInputSumType = "customField"
-	EventLeafInputSegmentConditionNodeInputSum        SegmentConditionNodeInputSumType = "event"
+	SegmentConditionInputSegmentConditionNodeInputSum       SegmentConditionNodeInputSumType = "group"
+	AttributeLeafInputSegmentConditionNodeInputSum          SegmentConditionNodeInputSumType = "attribute"
+	BirthdayLeafInputSegmentConditionNodeInputSum           SegmentConditionNodeInputSumType = "birthday"
+	TagLeafInputSegmentConditionNodeInputSum                SegmentConditionNodeInputSumType = "tag"
+	TelegramLeafInputSegmentConditionNodeInputSum           SegmentConditionNodeInputSumType = "telegram"
+	SmsLeafInputSegmentConditionNodeInputSum                SegmentConditionNodeInputSumType = "sms"
+	EngagementTrackingLeafInputSegmentConditionNodeInputSum SegmentConditionNodeInputSumType = "engagementTracking"
+	CustomFieldLeafInputSegmentConditionNodeInputSum        SegmentConditionNodeInputSumType = "customField"
+	EventLeafInputSegmentConditionNodeInputSum              SegmentConditionNodeInputSumType = "event"
 )
 
 // IsSegmentConditionInput reports whether SegmentConditionNodeInputSum is SegmentConditionInput.
@@ -20077,6 +20465,11 @@ func (s SegmentConditionNodeInputSum) IsTelegramLeafInput() bool {
 // IsSmsLeafInput reports whether SegmentConditionNodeInputSum is SmsLeafInput.
 func (s SegmentConditionNodeInputSum) IsSmsLeafInput() bool {
 	return s.Type == SmsLeafInputSegmentConditionNodeInputSum
+}
+
+// IsEngagementTrackingLeafInput reports whether SegmentConditionNodeInputSum is EngagementTrackingLeafInput.
+func (s SegmentConditionNodeInputSum) IsEngagementTrackingLeafInput() bool {
+	return s.Type == EngagementTrackingLeafInputSegmentConditionNodeInputSum
 }
 
 // IsCustomFieldLeafInput reports whether SegmentConditionNodeInputSum is CustomFieldLeafInput.
@@ -20215,6 +20608,27 @@ func NewSmsLeafInputSegmentConditionNodeInputSum(v SmsLeafInput) SegmentConditio
 	return s
 }
 
+// SetEngagementTrackingLeafInput sets SegmentConditionNodeInputSum to EngagementTrackingLeafInput.
+func (s *SegmentConditionNodeInputSum) SetEngagementTrackingLeafInput(v EngagementTrackingLeafInput) {
+	s.Type = EngagementTrackingLeafInputSegmentConditionNodeInputSum
+	s.EngagementTrackingLeafInput = v
+}
+
+// GetEngagementTrackingLeafInput returns EngagementTrackingLeafInput and true boolean if SegmentConditionNodeInputSum is EngagementTrackingLeafInput.
+func (s SegmentConditionNodeInputSum) GetEngagementTrackingLeafInput() (v EngagementTrackingLeafInput, ok bool) {
+	if !s.IsEngagementTrackingLeafInput() {
+		return v, false
+	}
+	return s.EngagementTrackingLeafInput, true
+}
+
+// NewEngagementTrackingLeafInputSegmentConditionNodeInputSum returns new SegmentConditionNodeInputSum from EngagementTrackingLeafInput.
+func NewEngagementTrackingLeafInputSegmentConditionNodeInputSum(v EngagementTrackingLeafInput) SegmentConditionNodeInputSum {
+	var s SegmentConditionNodeInputSum
+	s.SetEngagementTrackingLeafInput(v)
+	return s
+}
+
 // SetCustomFieldLeafInput sets SegmentConditionNodeInputSum to CustomFieldLeafInput.
 func (s *SegmentConditionNodeInputSum) SetCustomFieldLeafInput(v CustomFieldLeafInput) {
 	s.Type = CustomFieldLeafInputSegmentConditionNodeInputSum
@@ -20260,15 +20674,16 @@ func NewEventLeafInputSegmentConditionNodeInputSum(v EventLeafInput) SegmentCond
 // SegmentConditionNodeSum represents sum type.
 type SegmentConditionNodeSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type             SegmentConditionNodeSumType
-	SegmentCondition SegmentCondition
-	AttributeLeaf    AttributeLeaf
-	BirthdayLeaf     BirthdayLeaf
-	TagLeaf          TagLeaf
-	TelegramLeaf     TelegramLeaf
-	SmsLeaf          SmsLeaf
-	CustomFieldLeaf  CustomFieldLeaf
-	EventLeaf        EventLeaf
+	Type                   SegmentConditionNodeSumType
+	SegmentCondition       SegmentCondition
+	AttributeLeaf          AttributeLeaf
+	BirthdayLeaf           BirthdayLeaf
+	TagLeaf                TagLeaf
+	TelegramLeaf           TelegramLeaf
+	SmsLeaf                SmsLeaf
+	EngagementTrackingLeaf EngagementTrackingLeaf
+	CustomFieldLeaf        CustomFieldLeaf
+	EventLeaf              EventLeaf
 }
 
 // SegmentConditionNodeSumType is oneOf type of SegmentConditionNodeSum.
@@ -20276,14 +20691,15 @@ type SegmentConditionNodeSumType string
 
 // Possible values for SegmentConditionNodeSumType.
 const (
-	SegmentConditionSegmentConditionNodeSum SegmentConditionNodeSumType = "group"
-	AttributeLeafSegmentConditionNodeSum    SegmentConditionNodeSumType = "attribute"
-	BirthdayLeafSegmentConditionNodeSum     SegmentConditionNodeSumType = "birthday"
-	TagLeafSegmentConditionNodeSum          SegmentConditionNodeSumType = "tag"
-	TelegramLeafSegmentConditionNodeSum     SegmentConditionNodeSumType = "telegram"
-	SmsLeafSegmentConditionNodeSum          SegmentConditionNodeSumType = "sms"
-	CustomFieldLeafSegmentConditionNodeSum  SegmentConditionNodeSumType = "customField"
-	EventLeafSegmentConditionNodeSum        SegmentConditionNodeSumType = "event"
+	SegmentConditionSegmentConditionNodeSum       SegmentConditionNodeSumType = "group"
+	AttributeLeafSegmentConditionNodeSum          SegmentConditionNodeSumType = "attribute"
+	BirthdayLeafSegmentConditionNodeSum           SegmentConditionNodeSumType = "birthday"
+	TagLeafSegmentConditionNodeSum                SegmentConditionNodeSumType = "tag"
+	TelegramLeafSegmentConditionNodeSum           SegmentConditionNodeSumType = "telegram"
+	SmsLeafSegmentConditionNodeSum                SegmentConditionNodeSumType = "sms"
+	EngagementTrackingLeafSegmentConditionNodeSum SegmentConditionNodeSumType = "engagementTracking"
+	CustomFieldLeafSegmentConditionNodeSum        SegmentConditionNodeSumType = "customField"
+	EventLeafSegmentConditionNodeSum              SegmentConditionNodeSumType = "event"
 )
 
 // IsSegmentCondition reports whether SegmentConditionNodeSum is SegmentCondition.
@@ -20311,6 +20727,11 @@ func (s SegmentConditionNodeSum) IsTelegramLeaf() bool {
 
 // IsSmsLeaf reports whether SegmentConditionNodeSum is SmsLeaf.
 func (s SegmentConditionNodeSum) IsSmsLeaf() bool { return s.Type == SmsLeafSegmentConditionNodeSum }
+
+// IsEngagementTrackingLeaf reports whether SegmentConditionNodeSum is EngagementTrackingLeaf.
+func (s SegmentConditionNodeSum) IsEngagementTrackingLeaf() bool {
+	return s.Type == EngagementTrackingLeafSegmentConditionNodeSum
+}
 
 // IsCustomFieldLeaf reports whether SegmentConditionNodeSum is CustomFieldLeaf.
 func (s SegmentConditionNodeSum) IsCustomFieldLeaf() bool {
@@ -20445,6 +20866,27 @@ func (s SegmentConditionNodeSum) GetSmsLeaf() (v SmsLeaf, ok bool) {
 func NewSmsLeafSegmentConditionNodeSum(v SmsLeaf) SegmentConditionNodeSum {
 	var s SegmentConditionNodeSum
 	s.SetSmsLeaf(v)
+	return s
+}
+
+// SetEngagementTrackingLeaf sets SegmentConditionNodeSum to EngagementTrackingLeaf.
+func (s *SegmentConditionNodeSum) SetEngagementTrackingLeaf(v EngagementTrackingLeaf) {
+	s.Type = EngagementTrackingLeafSegmentConditionNodeSum
+	s.EngagementTrackingLeaf = v
+}
+
+// GetEngagementTrackingLeaf returns EngagementTrackingLeaf and true boolean if SegmentConditionNodeSum is EngagementTrackingLeaf.
+func (s SegmentConditionNodeSum) GetEngagementTrackingLeaf() (v EngagementTrackingLeaf, ok bool) {
+	if !s.IsEngagementTrackingLeaf() {
+		return v, false
+	}
+	return s.EngagementTrackingLeaf, true
+}
+
+// NewEngagementTrackingLeafSegmentConditionNodeSum returns new SegmentConditionNodeSum from EngagementTrackingLeaf.
+func NewEngagementTrackingLeafSegmentConditionNodeSum(v EngagementTrackingLeaf) SegmentConditionNodeSum {
+	var s SegmentConditionNodeSum
+	s.SetEngagementTrackingLeaf(v)
 	return s
 }
 

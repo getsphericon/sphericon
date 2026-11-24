@@ -3,9 +3,9 @@
 // predicate. A Segment is a named Condition and a Rule holds one; each place's tree admits its own
 // leaves. A stored Condition is read once into the typed tree (decode, tree.go): groups with a
 // combinator, a negation and their entries, whose leaves test a Contact attribute, the birthday, a
-// Tag, Telegram and SMS reachability, a Custom field, a count of the Contact's Events or, in a
-// Rule, a property of the triggering Event, each by a test typed by the value it reads (text,
-// presence, number, moment or the last days). An Event matcher's filter is a tree of property tests
+// Tag, Telegram and SMS reachability, an Engagement tracking consent, a Custom field, a count of the
+// Contact's Events or, in a Rule, a property of the triggering Event, each by a test typed by the
+// value it reads (text, presence, number, moment or the last days). An Event matcher's filter is a tree of property tests
 // alone, compiled to one SQL/JSON path (filter.go, ADR 0180), and a Rule's property tests run as the
 // same path on the triggering Event's properties: no property test is evaluated in Go. What each
 // place, leaf and test admits, and every operator, is the contract's vocabulary generated into
@@ -190,6 +190,8 @@ func (c *compiler) node(ctx context.Context, n node) (predicate.Contact, error) 
 		return present(contact.HasBindings(), l.test), nil
 	case smsLeaf:
 		return present(textable(), l.test), nil
+	case engagementTrackingLeaf:
+		return l.contact(), nil
 	case customFieldLeaf:
 		return c.custom(ctx, l)
 	case eventCountLeaf:

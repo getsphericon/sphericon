@@ -49,6 +49,17 @@ export const EMAIL_ENGAGEMENT_ACTIONS = [
   SystemEventAction.EMAIL_UNSUBSCRIBED,
 ] as const
 
+// A Destination's Engagement tracking consent granted or refused (ADR 0120), on each Channel: what
+// the person decided, which an Automation may start from.
+export const ENGAGEMENT_TRACKING_ACTIONS = [
+  SystemEventAction.EMAIL_ENGAGEMENT_TRACKING_DENIED,
+  SystemEventAction.EMAIL_ENGAGEMENT_TRACKING_GRANTED,
+  SystemEventAction.SMS_ENGAGEMENT_TRACKING_DENIED,
+  SystemEventAction.SMS_ENGAGEMENT_TRACKING_GRANTED,
+  SystemEventAction.TELEGRAM_ENGAGEMENT_TRACKING_DENIED,
+  SystemEventAction.TELEGRAM_ENGAGEMENT_TRACKING_GRANTED,
+] as const
+
 // The first-party tracker's page view: a customer's own action the tracker names, not a System
 // event, which the app still words.
 export const PAGE_VIEW_ACTION = 'page.view'

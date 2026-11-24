@@ -14,6 +14,8 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import {
   ContactAttribute,
+  EngagementTrackingChannel,
+  EngagementTrackingState,
   EventCountOperator,
   HasOperator,
 } from '../../generated/site/types.gen.ts'
@@ -27,6 +29,7 @@ import {
   toCondition,
   toDraft,
   toQuery,
+  trackingFieldId,
 } from './condition.ts'
 import type { AnyCondition, ConditionDraft, ConditionPlace } from './condition.ts'
 import { ConditionValueEditor } from './ConditionValueEditor.tsx'
@@ -40,6 +43,7 @@ import {
   operatorsOf,
   propertyOperators,
   tagOperators,
+  trackingOperators,
 } from './fieldOperators.ts'
 
 // Event conditions count the action (per-field overrides the global operator set): the presets
@@ -54,8 +58,8 @@ function eventOperators(t: TFunction): Operator[] {
   ]
 }
 
-// The Contact's leaves: its text attributes, its birthday, its Tags, and whether it can be reached
-// on Telegram or by SMS.
+// The Contact's leaves: its text attributes, its birthday, its Tags, whether it can be reached on
+// Telegram or by SMS, and its Engagement tracking consent on each Channel.
 function contactFields(t: TFunction): Field[] {
   return [
     ...Object.values(ContactAttribute).map((attribute) => ({
@@ -89,6 +93,18 @@ function contactFields(t: TFunction): Field[] {
       operators: haveOperators(t),
       defaultOperator: HasOperator.HAS,
     },
+    // The consent recorded for the Channel's Destination (granted or denied), picked from a list,
+    // or whether one is recorded at all.
+    ...Object.values(EngagementTrackingChannel).map((channel) => ({
+      name: trackingFieldId(channel),
+      label: t(($) => $.conditions.trackingFields[channel]),
+      operators: trackingOperators(t),
+      valueEditorType: 'select' as const,
+      values: Object.values(EngagementTrackingState).map((state) => ({
+        name: state,
+        label: t(($) => $.conditions.trackingStates[state]),
+      })),
+    })),
   ]
 }
 

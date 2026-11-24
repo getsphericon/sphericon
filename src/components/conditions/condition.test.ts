@@ -35,6 +35,16 @@ const segment: SegmentConditionInput = {
     { kind: 'telegram', operator: 'has' },
     { kind: 'sms', operator: 'doesNotHave' },
     {
+      kind: 'engagementTracking',
+      channel: 'email',
+      test: { kind: 'text', operator: 'eq', value: 'denied' },
+    },
+    {
+      kind: 'engagementTracking',
+      channel: 'telegram',
+      test: { kind: 'presence', operator: 'notSet' },
+    },
+    {
       kind: 'group',
       combinator: 'and',
       entries: [
@@ -72,6 +82,11 @@ const rule: RuleConditionInput = {
     },
     { kind: 'customField', key: 'email', test: { kind: 'text', operator: 'neq', value: 'x' } },
     { kind: 'attribute', attribute: 'email', test: { kind: 'text', operator: 'neq', value: 'x' } },
+    {
+      kind: 'engagementTracking',
+      channel: 'sms',
+      test: { kind: 'text', operator: 'neq', value: 'granted' },
+    },
   ],
 }
 

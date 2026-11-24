@@ -26,6 +26,8 @@ const (
 		{"kind":"group","combinator":"or","not":true,"entries":[
 			{"kind":"telegram","operator":"doesNotHave"},
 			{"kind":"sms","operator":"has"},
+			{"kind":"engagementTracking","channel":"telegram","test":{"kind":"presence","operator":"notSet"}},
+			{"kind":"engagementTracking","channel":"email","test":{"kind":"text","operator":"eq","value":"denied"}},
 			{"kind":"customField","key":"courses_completed","test":{"kind":"number","operator":"gte","value":2.5}},
 			{"kind":"customField","key":"plan","test":{"kind":"presence","operator":"set"}},
 			{"kind":"birthday","test":{"kind":"withinLast","days":30}}
@@ -34,6 +36,7 @@ const (
 	]}`
 	ruleConditionOfEveryLeaf = `{"kind":"group","combinator":"or","entries":[
 		{"kind":"tag","name":"vip","operator":"doesNotHave"},
+		{"kind":"engagementTracking","channel":"sms","test":{"kind":"text","operator":"neq","value":"granted"}},
 		{"kind":"group","combinator":"and","entries":[
 			{"kind":"property","of":{"kind":"trigger"},"key":"cart.total","test":{"kind":"number","operator":"gt","value":100}},
 			{"kind":"property","of":{"kind":"trigger"},"key":"coupon","test":{"kind":"presence","operator":"set"}},
@@ -106,6 +109,16 @@ func TestSiteConditionRefusesWhatItsPlaceDoesNotAdmitByItsPath(t *testing.T) {
 		{
 			"a number test on an attribute",
 			`{"kind":"attribute","attribute":"email","test":{"kind":"number","operator":"gt","value":1}}`,
+			"condition.entries.1.entries.1.test",
+		},
+		{
+			"a consent of a Channel that takes none",
+			`{"kind":"engagementTracking","channel":"push","test":{"kind":"presence","operator":"set"}}`,
+			"condition.entries.1.entries.1.channel",
+		},
+		{
+			"a number test on a consent",
+			`{"kind":"engagementTracking","channel":"email","test":{"kind":"number","operator":"gt","value":1}}`,
 			"condition.entries.1.entries.1.test",
 		},
 	} {

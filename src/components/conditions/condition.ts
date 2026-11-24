@@ -6,6 +6,7 @@ import * as z from 'zod'
 import {
   ConditionCombinator,
   ContactAttribute,
+  EngagementTrackingChannel,
   EventCountOperator,
   HasOperator,
   MomentOperator,
@@ -17,6 +18,7 @@ import type {
   AttributeLeafInput,
   BirthdayLeafInput,
   CustomFieldLeafInput,
+  EngagementTrackingLeafInput,
   EventFilter,
   EventFilterInput,
   EventFilterNode,
@@ -45,6 +47,7 @@ import {
   zCreateRuleInput,
   zCreateSegmentInput,
   zCustomFieldTestInput,
+  zEngagementTrackingTestInput,
   zEventFilterInput,
   zEventLeaf,
   zPropertyTestInput,
@@ -82,7 +85,8 @@ export const emptyGroup = {
 // The builder's fields, by the subject a leaf tests. A Contact attribute is its own name; the
 // birthday, a Tag, Telegram, SMS and the triggering Event's property are one field each (a Tag's
 // name and a property's key are typed in the value); a Custom field and an event action are one
-// field per key, named by kind and key so a Custom field keyed like an attribute stays apart.
+// field per key, named by kind and key so a Custom field keyed like an attribute stays apart, and so
+// is an Engagement tracking consent, one field per Channel.
 export const subjectFields = {
   birthday: 'birthday',
   tag: 'tag',
@@ -92,9 +96,15 @@ export const subjectFields = {
 } as const
 const customFieldIdPrefix = 'customField:'
 export const eventFieldPrefix = 'event:'
+const trackingFieldPrefix = 'engagementTracking:'
 
 export function customFieldId(key: string): string {
   return `${customFieldIdPrefix}${key}`
+}
+
+// trackingFieldId is the field of the Engagement tracking consent on channel.
+export function trackingFieldId(channel: EngagementTrackingChannel): string {
+  return `${trackingFieldPrefix}${channel}`
 }
 
 // byName reads a name as a value of a generated enum, or as undefined.
@@ -103,6 +113,7 @@ function byName<T extends string>(values: Record<string, T>) {
 }
 
 const attributeByName = byName(ContactAttribute)
+const trackingChannelByName = byName(EngagementTrackingChannel)
 
 // An event leaf is edited as a builder rule on the field "event:<action>" whose value holds the
 // count and the window. "Performed" and "not performed" are the builder's presets over the leaf:
@@ -224,6 +235,7 @@ export const leafTests = {
   birthday: kindsOf(zBirthdayTestInput),
   customField: kindsOf(zCustomFieldTestInput),
   property: kindsOf(zPropertyTestInput),
+  engagementTracking: kindsOf(zEngagementTrackingTestInput),
 }
 
 type AnyTest =
@@ -306,6 +318,9 @@ function toRule(
     case 'sms':
       rule = { field: subjectFields.sms, operator: node.operator, value: '' }
       break
+    case 'engagementTracking':
+      rule = { field: trackingFieldId(node.channel), ...testRule(node.test, timeZone) }
+      break
     case 'customField':
       rule = { field: customFieldId(node.key), ...testRule(node.test, timeZone) }
       break
@@ -353,6 +368,7 @@ type NodeDraft =
   | TagLeafInput
   | TelegramLeafInput
   | SmsLeafInput
+  | Tested<EngagementTrackingLeafInput>
   | Tested<CustomFieldLeafInput>
   | Blank<EventLeafInput, 'times'>
   | Blank<Tested<RulePropertyLeafInput>, 'key'>
@@ -473,6 +489,13 @@ const leaves: Record<LeafKind, (rule: RuleType, timeZone?: string) => NodeDraft[
   telegram: (rule) => toHaveLeaf(rule, (operator) => ({ kind: 'telegram', operator })),
   sms: (rule) => toHaveLeaf(rule, (operator) => ({ kind: 'sms', operator })),
   property: toPropertyLeaf,
+  engagementTracking: (rule, timeZone) => {
+    const channel = trackingChannelByName.get(rule.field.slice(trackingFieldPrefix.length))
+    const test = takes(leafTests.engagementTracking, toTest(rule.operator, rule.value, timeZone))
+    return channel === undefined || test === undefined
+      ? []
+      : [{ kind: 'engagementTracking', channel, test }]
+  },
   customField: (rule, timeZone) => {
     const test = takes(leafTests.customField, toTest(rule.operator, rule.value, timeZone))
     const key = rule.field.slice(customFieldIdPrefix.length)
@@ -502,6 +525,9 @@ function leafKindOf(field: string): LeafKind | undefined {
   }
   if (field.startsWith(customFieldIdPrefix)) {
     return 'customField'
+  }
+  if (field.startsWith(trackingFieldPrefix)) {
+    return 'engagementTracking'
   }
   return attributeByName.has(field) ? 'attribute' : subjectKinds.get(field)
 }

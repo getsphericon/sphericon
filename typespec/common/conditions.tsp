@@ -177,6 +177,26 @@ union PropertyTestInput {
   presence: PresenceTestInput,
 }
 
+/** What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
+ * text test whose eq or neq compares the consent with `granted` or `denied`, or a presence test of
+ * whether any is recorded. neq holds where none is recorded, so a test and its negation split every
+ * Contact. */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union EngagementTrackingTest {
+  text: TextTest,
+  presence: PresenceTest,
+}
+
+/** What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
+ * text test whose eq or neq compares the consent with `granted` or `denied`, or a presence test of
+ * whether any is recorded. neq holds where none is recorded, so a test and its negation split every
+ * Contact. */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union EngagementTrackingTestInput {
+  text: TextTestInput,
+  presence: PresenceTestInput,
+}
+
 /** A text attribute of a Contact */
 enum ContactAttribute {
   email,
@@ -241,6 +261,21 @@ model SmsLeaf {
 
   /** Has one or does not */
   operator: HasOperator;
+}
+
+/** A test of the Contact's Engagement tracking consent on one Channel (ADR 0120), read live as
+ * recorded, whatever the Workspace's default: on email the consent of its email address, on sms of
+ * its phone, on telegram of its own chats, which read `denied` when any is denied, `granted` when it
+ * has one and all are granted, and as none recorded otherwise. A Contact without a Destination on
+ * the Channel has none recorded. */
+model EngagementTrackingLeafOf<Test> {
+  kind: "engagementTracking";
+
+  /** The Channel whose consent is tested */
+  channel: EngagementTrackingChannel;
+
+  /** What it asks of the consent */
+  test: Test;
 }
 
 /** A test of a Custom field of the Workspace, its key in a field of its own */
@@ -336,6 +371,10 @@ model BirthdayLeafInput is BirthdayLeafOf<BirthdayTestInput>;
 model TagLeafInput is TagLeaf;
 model TelegramLeafInput is TelegramLeaf;
 model SmsLeafInput is SmsLeaf;
+model EngagementTrackingLeaf
+  is EngagementTrackingLeafOf<EngagementTrackingTest>;
+model EngagementTrackingLeafInput
+  is EngagementTrackingLeafOf<EngagementTrackingTestInput>;
 model CustomFieldLeaf is CustomFieldLeafOf<CustomFieldTest>;
 model CustomFieldLeafInput is CustomFieldLeafOf<CustomFieldTestInput>;
 model EventLeafInput is EventLeaf;
@@ -375,6 +414,7 @@ union SegmentConditionNode {
   tag: TagLeaf,
   telegram: TelegramLeaf,
   sms: SmsLeaf,
+  engagementTracking: EngagementTrackingLeaf,
   customField: CustomFieldLeaf,
   event: EventLeaf,
 }
@@ -389,6 +429,7 @@ union SegmentConditionNodeInput {
   tag: TagLeafInput,
   telegram: TelegramLeafInput,
   sms: SmsLeafInput,
+  engagementTracking: EngagementTrackingLeafInput,
   customField: CustomFieldLeafInput,
   event: EventLeafInput,
 }
@@ -409,6 +450,7 @@ union RuleConditionNode {
   tag: TagLeaf,
   telegram: TelegramLeaf,
   sms: SmsLeaf,
+  engagementTracking: EngagementTrackingLeaf,
   customField: CustomFieldLeaf,
   event: EventLeaf,
   property: RulePropertyLeaf,
@@ -424,6 +466,7 @@ union RuleConditionNodeInput {
   tag: TagLeafInput,
   telegram: TelegramLeafInput,
   sms: SmsLeafInput,
+  engagementTracking: EngagementTrackingLeafInput,
   customField: CustomFieldLeafInput,
   event: EventLeafInput,
   property: RulePropertyLeafInput,
