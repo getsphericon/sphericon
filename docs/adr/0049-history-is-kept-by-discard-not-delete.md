@@ -30,6 +30,11 @@ status: accepted
 > Amended by [[0100-archive-is-not-discard]]: Archive and Discard are two states, each kind has one of
 > them, Discard is not the mechanism behind Archive, and no row is purged for having no history.
 
+> Amended by [[0120-engagement-tracking-is-consented-per-destination]]: a third remover of facts
+> besides Retention and Erasure is a refusal of Engagement tracking, whose reach-back deletes the
+> opens and clicks recorded of the refusing Destination's earlier Outbound messages (their Events
+> and stamps) and the Order credits their clicks earned.
+
 Only a Workspace was removed softly (ADR 0043); every other row was removed with `DeleteOneID`.
 That broke history in three places: deleting an Automation cascaded away its Enrollments (the
 Outbound messages stayed, the record of who was enrolled and why a run failed did not), deleting a

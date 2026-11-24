@@ -2201,6 +2201,9 @@ func ScopedEntities() []*ScopedEntity {
 				if !reflect.ValueOf(src.Destination).IsZero() {
 					b.SetDestination(src.Destination)
 				}
+				if !reflect.ValueOf(src.Destinations).IsZero() {
+					b.SetDestinations(src.Destinations)
+				}
 				if src.ContactID != nil {
 					b.SetContactID(remap("Contact", *src.ContactID))
 				}
@@ -2247,6 +2250,9 @@ func ScopedEntities() []*ScopedEntity {
 				}
 				b.SetCaptured(src.Captured)
 				b.SetTracked(src.Tracked)
+				if src.TrackingDecidedAt != nil {
+					b.SetTrackingDecidedAt(*src.TrackingDecidedAt)
+				}
 				if src.TrackingWithdrawnAt != nil {
 					b.SetTrackingWithdrawnAt(*src.TrackingWithdrawnAt)
 				}

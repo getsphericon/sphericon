@@ -28,9 +28,9 @@ type EraseInput struct {
 	Destination string
 	// Standing reports whether the opt-out of the Destination from source still stands.
 	Standing func(ctx context.Context, source string) (bool, error)
-	// TrackingDenied reports whether a `denied` Engagement tracking consent of the Destination
-	// still stands (ADR 0120); nil when the Channel keeps none.
-	TrackingDenied func(ctx context.Context) (bool, error)
+	// TrackingDenied is whether a `denied` Engagement tracking consent of the Destination still
+	// stands (ADR 0120).
+	TrackingDenied bool
 }
 
 // Erase is the consent stamp part of the Erasure of a Contact that held in.Destination on
@@ -53,17 +53,13 @@ func (m *Module) Erase(ctx context.Context, s *ent.Scoped, in EraseInput) error 
 	if err != nil {
 		return fmt.Errorf("find consent stamps: %w", err)
 	}
-	denied, err := trackingDenied(ctx, in)
-	if err != nil {
-		return err
-	}
 	for _, row := range rows {
 		stands, err := in.Standing(ctx, row.SendingSource)
 		if err != nil {
 			return err
 		}
 		keepStop := stands && row.OptOutOccurredAt != nil
-		keepRefusal := denied && row.EngagementTrackingOccurredAt != nil
+		keepRefusal := in.TrackingDenied && row.EngagementTrackingOccurredAt != nil
 		switch {
 		case !keepStop && !keepRefusal:
 			err = s.ConsentStamp().DeleteOneID(row.ID).Exec(ctx)
@@ -82,12 +78,4 @@ func (m *Module) Erase(ctx context.Context, s *ent.Scoped, in EraseInput) error 
 		}
 	}
 	return nil
-}
-
-// trackingDenied is whether in's Destination keeps a tracking `denied`.
-func trackingDenied(ctx context.Context, in EraseInput) (bool, error) {
-	if in.TrackingDenied == nil {
-		return false, nil
-	}
-	return in.TrackingDenied(ctx)
 }

@@ -12,8 +12,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/aggregates"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -371,7 +371,7 @@ func (m *Module) RowStatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (m
 
 // engagementOf counts into out the given Broadcasts' opened and clicked over their tracked
 // messages, and their sent messages that are not tracked (ADR 0120). "Tracked" is the Outbound
-// message's one definition (outboundmessages.Tracked).
+// message's one definition (engagementtracking.TrackedMessages).
 func engagementOf(ctx context.Context, s *ent.Scoped, ids []int64, out map[int64]Stats) error {
 	var engaged []struct {
 		BroadcastID int64 `json:"broadcast_id"`
@@ -379,7 +379,7 @@ func engagementOf(ctx context.Context, s *ent.Scoped, ids []int64, out map[int64
 		Clicked     int   `json:"clicked"`
 	}
 	if err := s.OutboundMessage().Query().
-		Where(outboundmessage.BroadcastIDIn(ids...), outboundmessages.Tracked()).
+		Where(outboundmessage.BroadcastIDIn(ids...), engagementtracking.TrackedMessages()).
 		GroupBy(outboundmessage.FieldBroadcastID).
 		Aggregate(
 			aggregates.CountSet(outboundmessage.FieldOpenedAt, "opened"),
@@ -401,7 +401,7 @@ func engagementOf(ctx context.Context, s *ent.Scoped, ids []int64, out map[int64
 		Where(
 			outboundmessage.BroadcastIDIn(ids...),
 			outboundmessage.StatusEQ(outboundmessage.StatusSent),
-			outboundmessages.NotTracked(),
+			engagementtracking.UntrackedMessages(),
 		).
 		GroupBy(outboundmessage.FieldBroadcastID).
 		Aggregate(ent.As(ent.Count(), "count")).

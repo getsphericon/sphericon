@@ -168,6 +168,24 @@ func TestExportMessagesCarryWhetherAMessageIsTracked(t *testing.T) {
 	assert.Nil(t, untracked["tracking_withdrawn_at"])
 }
 
+// A message no render decided is not tracked and says so (ADR 0120): one skipped before its render,
+// and one still pending, have no moment of decision and read `tracked` false.
+func TestExportMessagesReadAMessageNoRenderDecidedAsNeither(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	acme := readExportMessages(t, exportClient(t, env, fixtures.AcmeID), "")
+	globex := readExportMessages(t, exportClient(t, env, fixtures.GlobexID), "")
+
+	skipped := acme.row(fixtures.OutboundMessageSkippedID)
+	pending := globex.row(fixtures.OutboundMessageGlobexID)
+	require.NotNil(t, skipped)
+	require.NotNil(t, pending)
+	assert.Nil(t, skipped["tracking_decided_at"])
+	assert.Equal(t, false, skipped["tracked"])
+	assert.Nil(t, pending["tracking_decided_at"])
+	assert.Equal(t, false, pending["tracked"])
+}
+
 // A refusal's reach-back withdraws the tracking of the Destination's message (ADR 0120), and the
 // stream delivers the message again with the moment of the withdrawal.
 func TestExportMessagesDeliversAWithdrawnMessageAgain(t *testing.T) {

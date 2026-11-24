@@ -25,7 +25,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -120,7 +119,7 @@ func (r *Recorder) ShortLink(ctx context.Context, token string, hit Hit) (string
 // record publishes the Event eventOf builds for a hit on the message m names. A hit on a Tracking
 // host is refused as ErrNotFound unless m is that host's Workspace's (ADR 0038), which the signed
 // token says without a read. Nothing is recorded, silently, for a message that is not tracked
-// (outboundmessages.IsTracked) or whose Destination's effective consent is no longer to track (ADR
+// (engagementtracking.IsTracked) or whose Destination's effective consent is no longer to track (ADR
 // 0120), and for one that is gone (message retention deleted it, ADR 0143), whose Contact is gone
 // (erased) or whose Destination was cleared; a read that fails for any other reason, or a failed
 // publish, records nothing and is logged, since a tracked link never refuses its recipient (ADR
@@ -153,7 +152,8 @@ func (r *Recorder) record(ctx context.Context, m messagetoken.Message, hit Hit, 
 
 // engaged is the Outbound message a hit names, with the Contact it went to when there is one. A
 // Transactional send to an address with no Contact is kept by address. email is the message's own
-// Destination on email, never the Contact's current address.
+// Destination on email, never the Contact's current address; a click on another Channel names the
+// message's Destination too (events.LinkClick).
 type engaged struct {
 	msg     *ent.OutboundMessage
 	contact *ent.Contact // nil: the message has no Contact
@@ -172,15 +172,19 @@ func (r *Recorder) engagedOf(ctx context.Context, ts *ent.Scoped, id int64) (eng
 	if err != nil {
 		return engaged{}, false, fmt.Errorf("read the message: %w", err)
 	}
-	if !outboundmessages.IsTracked(msg) || msg.Destination == "" {
+	if !engagementtracking.IsTracked(msg) || msg.Destination == "" {
 		return engaged{}, false, nil
 	}
-	consent, err := r.consents.Of(ctx, ts, msg.Channel, msg.Destination)
-	if err != nil {
-		return engaged{}, false, err
-	}
-	if consent.Effective != engagementtracking.Track {
-		return engaged{}, false, nil
+	// A message rendered once for several Destinations (a Telegram message to a Contact's chats) is
+	// recorded only while every one of them consents.
+	for _, dest := range lo.Uniq(append([]string{msg.Destination}, msg.Destinations...)) {
+		consent, err := r.consents.Of(ctx, ts, msg.Channel, dest)
+		if err != nil {
+			return engaged{}, false, err
+		}
+		if consent.Effective != engagementtracking.Track {
+			return engaged{}, false, nil
+		}
 	}
 	e := engaged{msg: msg}
 	if msg.Channel == channels.Email {
@@ -197,11 +201,6 @@ func (r *Recorder) engagedOf(ctx context.Context, ts *ent.Scoped, id int64) (eng
 		return engaged{}, false, fmt.Errorf("read the message's contact: %w", err)
 	}
 	e.contact = c
-	if msg.Channel != channels.Email {
-		// An SMS or a Telegram click names the Contact's address, as it always has (the Outbound
-		// message holds the phone or the Telegram user).
-		e.email = lo.FromPtr(c.Email)
-	}
 	return e, true, nil
 }
 
@@ -227,7 +226,7 @@ func clickOn(dest string) func(e engaged, machine bool, at time.Time) events.Dom
 	return func(e engaged, machine bool, at time.Time) events.DomainEvent {
 		click := events.LinkClick{
 			ObservedAt:  at,
-			WorkspaceID: e.msg.WorkspaceID, ContactID: e.contactID(), Email: e.email,
+			WorkspaceID: e.msg.WorkspaceID, ContactID: e.contactID(), Destination: e.msg.Destination,
 			IntegrationID: lo.FromPtr(e.msg.IntegrationID), URL: dest,
 			BroadcastID: lo.FromPtr(e.msg.BroadcastID), AutomationID: lo.FromPtr(e.msg.AutomationID),
 			OutboundMessageID: e.msg.ID, Machine: machine,

@@ -105,7 +105,7 @@ func (Event) Fields() []ent.Field {
 			Default(false).
 			Immutable(),
 		// The Broadcast whose email the Event is about (the broadcast edge). Like the url, cleared
-		// when an Erasure anonymizes the Event (events.EraseSubject), as the properties drop their copy.
+		// when an Erasure anonymizes the Event (eventsunchecked.Module.EraseSubject), as the properties drop their copy.
 		field.Int64("broadcast_id").
 			Optional().
 			Nillable(),

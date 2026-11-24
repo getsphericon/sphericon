@@ -554,18 +554,20 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	dest = eligible[0].dest
 
 	// Whether the message goes out tracked is decided now, after the claim, so a refusal recorded
-	// meanwhile finds the row (ADR 0120), and is on the row before the provider is called.
+	// meanwhile finds the row (ADR 0120); the decision is on the row before the provider is called.
 	tracked, err := m.decideTracking(ctx, s, req, ch, msg, eligible)
 	if err != nil {
 		m.release(ctx, s, msg)
 		return Result{}, err
 	}
 
-	rendered, err := ch.render(ctx, s, req, msg.ID, dest, ws, tracked)
+	// What the render decided is the message's fact, recorded before the provider is called: a
+	// message whose render failed decided nothing.
+	rendered, err := m.renderDecided(ctx, s, req, ch, msg, dest, ws, tracked)
 	if err != nil {
 		if !isContentError(err) {
-			// The storage behind the content failed, not the content: retry rather than record a
-			// message that could have been sent as Failed for good.
+			// The storage behind the content failed, not the content, or the claim was taken over:
+			// retry rather than record a message that could have been sent as Failed for good.
 			m.release(ctx, s, msg)
 			return Result{}, err
 		}

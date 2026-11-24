@@ -2,49 +2,38 @@ package outboundmessages
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
+	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
-	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
 
-// IsTracked is whether an Outbound message is tracked (ADR 0120): it went out tracked and its
-// tracking was not withdrawn since. It is the one definition every reader uses (the recorder, the
-// rates, a Broadcast's figures, the export, the Winner, the Link identity token, a Branch's open
-// test); Tracked and NotTracked are the same in SQL. It speaks of a sent message: one that was
-// never rendered has decided nothing.
-func IsTracked(msg *ent.OutboundMessage) bool {
-	return msg.Tracked && msg.TrackingWithdrawnAt == nil
-}
-
-// Tracked is IsTracked as a predicate: the messages that went out tracked and whose tracking was
-// not withdrawn.
-func Tracked() predicate.OutboundMessage {
-	return outboundmessage.And(outboundmessage.Tracked(true), outboundmessage.TrackingWithdrawnAtIsNil())
-}
-
-// NotTracked is Tracked's complement: the messages that went out untracked or whose tracking was
-// withdrawn since.
-func NotTracked() predicate.OutboundMessage {
-	return outboundmessage.Or(outboundmessage.Tracked(false), outboundmessage.TrackingWithdrawnAtNotNil())
-}
-
-// decideTracking decides whether the claimed message msg goes out tracked (ADR 0120) and records
-// it on the row before the provider is called: its surface tracks (channel.tracks), every target's
-// effective Engagement tracking consent is to track, and, for an attempt that takes over a claim, the
-// attempt before it rendered tracked and no withdrawal is recorded since. A message of several
-// targets (a Contact's Telegram chats, one rendered message) is tracked only when all of them are.
-// A render only ever lowers the row's value: nothing gives a message its tracking back. A claim
-// taken over meanwhile is ErrInProgress.
+// decideTracking decides whether the claimed message msg goes out tracked (ADR 0120): its surface
+// tracks (channel.tracks), its tracking was not withdrawn, every target's effective Engagement
+// tracking consent is to track and, on a retry, the attempt before it decided tracked. A message
+// of several targets (a Contact's Telegram chats, one rendered message) is tracked only when all of
+// them are. The decision of the first render is the message's fact, which recordTracking writes
+// once: a retry reads it and records nothing, and one that renders untracked over a tracked
+// decision does so because a refusal or the default withdrew the Destination's consent, whose
+// withdrawal reaches this message too. A claim taken over meanwhile is ErrInProgress.
 func (m *Module) decideTracking(ctx context.Context, s *ent.Scoped, req Request, ch channel, msg *ent.OutboundMessage, targets []target) (bool, error) {
-	tracked := ch.tracks(req) && IsTracked(msg)
+	tracked := ch.tracks(req) && msg.TrackingWithdrawnAt == nil && (msg.TrackingDecidedAt == nil || msg.Tracked)
 	if tracked && msg.Destination == "" && len(targets) > 0 {
 		// A Channel of Bindings resolves its Destination after the claim. It is on the row before
 		// the consent is read, so a refusal recorded meanwhile, whose withdrawal finds the messages
-		// by their Destination, reaches this one; the send records the target that accepted.
-		n, err := s.OutboundMessage().Update().Where(ownsClaim(msg)...).SetDestination(targets[0].dest).Save(ctx)
+		// by their Destination, reaches this one; the send records the target that accepted. A
+		// message rendered once for several chats keeps every one of them, so a refusal of any
+		// reaches it and its clicks are checked against each.
+		update := s.OutboundMessage().Update().Where(ownsClaim(msg)...).SetDestination(targets[0].dest)
+		if len(targets) > 1 {
+			update.SetDestinations(lo.Map(targets, func(t target, _ int) string { return t.dest }))
+		}
+		n, err := update.Save(ctx)
 		if err != nil {
 			return false, fmt.Errorf("outbound: record the destination of message %d: %w", msg.ID, err)
 		}
@@ -62,15 +51,39 @@ func (m *Module) decideTracking(ctx context.Context, s *ent.Scoped, req Request,
 		}
 		tracked = consent.Effective == engagementtracking.Track
 	}
-	if tracked == msg.Tracked {
-		return tracked, nil
-	}
-	n, err := s.OutboundMessage().Update().Where(ownsClaim(msg)...).SetTracked(tracked).Save(ctx)
-	if err != nil {
-		return false, fmt.Errorf("outbound: record whether message %d is tracked: %w", msg.ID, err)
-	}
-	if n == 0 {
-		return false, ErrInProgress // the claim was taken over while we worked
-	}
 	return tracked, nil
+}
+
+// recordTracking records on the claimed message msg what its first render decided, with the moment
+// it decided, before the provider is called: once, so a retry, which reads the decision, records
+// nothing. A claim taken over meanwhile is ErrInProgress.
+func (m *Module) recordTracking(ctx context.Context, s *ent.Scoped, msg *ent.OutboundMessage, tracked bool) error {
+	if msg.TrackingDecidedAt != nil {
+		return nil
+	}
+	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		n, err := s.OutboundMessage().Update().
+			Where(append(ownsClaim(msg), outboundmessage.TrackingDecidedAtIsNil())...).
+			SetTrackingDecidedAt(m.now()).
+			SetTracked(tracked).
+			Save(ctx)
+		return n > 0, err
+	})
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		return ErrInProgress // the claim was taken over while we worked
+	}
+	if err != nil {
+		return fmt.Errorf("outbound: record whether message %d is tracked: %w", msg.ID, err)
+	}
+	return nil
+}
+
+// renderDecided renders msg for dest as decided (tracked) and records the decision once the render
+// succeeds: a message whose render failed decides nothing. A content error is the content's own.
+func (m *Module) renderDecided(ctx context.Context, s *ent.Scoped, req Request, ch channel, msg *ent.OutboundMessage, dest string, ws *ent.Workspace, tracked bool) (any, error) {
+	rendered, err := ch.render(ctx, s, req, msg.ID, dest, ws, tracked)
+	if err != nil {
+		return nil, err
+	}
+	return rendered, m.recordTracking(ctx, s, msg, tracked)
 }

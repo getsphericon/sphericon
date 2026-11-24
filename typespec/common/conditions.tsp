@@ -177,23 +177,41 @@ union PropertyTestInput {
   presence: PresenceTestInput,
 }
 
+/** How a test of a Contact's Engagement tracking consent compares it with a state: it reads as
+ * the state, or it does not */
+enum StateOperator {
+  eq,
+  neq,
+}
+
+/** A test of a Contact's Engagement tracking consent against a state. eq holds where the consent
+ * reads as `value`; neq holds everywhere else, where none is recorded included, so a test and its
+ * negation split every Contact. */
+model EngagementTrackingStateTest {
+  kind: "text";
+
+  /** Whether the consent reads as the state, or does not */
+  operator: StateOperator;
+
+  /** The state compared with */
+  value: EngagementTrackingState;
+}
+
+model EngagementTrackingStateTestInput is EngagementTrackingStateTest;
+
 /** What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
- * text test whose eq or neq compares the consent with `granted` or `denied`, or a presence test of
- * whether any is recorded. neq holds where none is recorded, so a test and its negation split every
- * Contact. */
+ * comparison with `granted` or `denied`, or a presence test of whether any is recorded. */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union EngagementTrackingTest {
-  text: TextTest,
+  text: EngagementTrackingStateTest,
   presence: PresenceTest,
 }
 
 /** What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
- * text test whose eq or neq compares the consent with `granted` or `denied`, or a presence test of
- * whether any is recorded. neq holds where none is recorded, so a test and its negation split every
- * Contact. */
+ * comparison with `granted` or `denied`, or a presence test of whether any is recorded. */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union EngagementTrackingTestInput {
-  text: TextTestInput,
+  text: EngagementTrackingStateTestInput,
   presence: PresenceTestInput,
 }
 

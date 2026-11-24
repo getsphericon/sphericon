@@ -8312,6 +8312,14 @@
             "type": "string",
             "description": "Address the message was sent to"
           },
+          "destinations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "description": "Every address a message rendered once for several went to (a Telegram message to the\ncontact's chats), `destination` among them; null for a message to one"
+          },
           "sendingSource": {
             "type": "string",
             "nullable": true,
@@ -8434,7 +8442,17 @@
           },
           "tracked": {
             "type": "boolean",
-            "description": "Whether the message went out tracked: with an open pixel and its links rewritten, or its\nlinks made Short tracked links (ADR 0120)"
+            "description": "Whether the message went out tracked: with an open pixel and its links rewritten, or its\nlinks made Short tracked links (ADR 0120). False for a message no render decided (skipped\nbefore its render, or not rendered yet)"
+          },
+          "trackingDecidedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When a render decided whether the message goes out tracked; null for a message no render\ndecided, and for one sent before the moment was recorded, which went out tracked"
           },
           "trackingWithdrawnAt": {
             "type": "string",
@@ -10099,11 +10117,66 @@
         "enum": ["granted", "denied"],
         "description": "Whether a Destination agreed to have its opens and clicks tracked (ADR 0120)"
       },
+      "EngagementTrackingStateTest": {
+        "type": "object",
+        "required": ["kind", "operator", "value"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["text"]
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StateOperator"
+              }
+            ],
+            "description": "Whether the consent reads as the state, or does not"
+          },
+          "value": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingState"
+              }
+            ],
+            "description": "The state compared with"
+          }
+        },
+        "description": "A test of a Contact's Engagement tracking consent against a state. eq holds where the consent\nreads as `value`; neq holds everywhere else, where none is recorded included, so a test and its\nnegation split every Contact."
+      },
+      "EngagementTrackingStateTestInput": {
+        "type": "object",
+        "required": ["kind", "operator", "value"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["text"]
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StateOperator"
+              }
+            ],
+            "description": "Whether the consent reads as the state, or does not"
+          },
+          "value": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingState"
+              }
+            ],
+            "description": "The state compared with"
+          }
+        },
+        "description": "A test of a Contact's Engagement tracking consent against a state. eq holds where the consent\nreads as `value`; neq holds everywhere else, where none is recorded included, so a test and its\nnegation split every Contact.",
+        "additionalProperties": false
+      },
       "EngagementTrackingTest": {
         "type": "object",
         "oneOf": [
           {
-            "$ref": "#/components/schemas/TextTest"
+            "$ref": "#/components/schemas/EngagementTrackingStateTest"
           },
           {
             "$ref": "#/components/schemas/PresenceTest"
@@ -10112,17 +10185,17 @@
         "discriminator": {
           "propertyName": "kind",
           "mapping": {
-            "text": "#/components/schemas/TextTest",
+            "text": "#/components/schemas/EngagementTrackingStateTest",
             "presence": "#/components/schemas/PresenceTest"
           }
         },
-        "description": "What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a\ntext test whose eq or neq compares the consent with `granted` or `denied`, or a presence test of\nwhether any is recorded. neq holds where none is recorded, so a test and its negation split every\nContact."
+        "description": "What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a\ncomparison with `granted` or `denied`, or a presence test of whether any is recorded."
       },
       "EngagementTrackingTestInput": {
         "type": "object",
         "oneOf": [
           {
-            "$ref": "#/components/schemas/TextTestInput"
+            "$ref": "#/components/schemas/EngagementTrackingStateTestInput"
           },
           {
             "$ref": "#/components/schemas/PresenceTestInput"
@@ -10131,11 +10204,11 @@
         "discriminator": {
           "propertyName": "kind",
           "mapping": {
-            "text": "#/components/schemas/TextTestInput",
+            "text": "#/components/schemas/EngagementTrackingStateTestInput",
             "presence": "#/components/schemas/PresenceTestInput"
           }
         },
-        "description": "What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a\ntext test whose eq or neq compares the consent with `granted` or `denied`, or a presence test of\nwhether any is recorded. neq holds where none is recorded, so a test and its negation split every\nContact."
+        "description": "What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a\ncomparison with `granted` or `denied`, or a presence test of whether any is recorded."
       },
       "EnrollmentFailure": {
         "type": "object",
@@ -11345,7 +11418,17 @@
           },
           "tracked": {
             "type": "boolean",
-            "description": "Whether the message went out tracked (ADR 0120): an open pixel and tracked links. A message is tracked while this holds and no withdrawal is recorded."
+            "description": "Whether the message went out tracked (ADR 0120): an open pixel and tracked links; false for a message no render decided (skipped before its render, or not rendered yet). A message is tracked while this holds and no withdrawal is recorded."
+          },
+          "tracking_decided_at": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When a render decided whether the message goes out tracked; null for a message no render decided, and for one sent before the moment was recorded, which went out tracked."
           },
           "tracking_withdrawn_at": {
             "type": "string",
@@ -14531,6 +14614,11 @@
           }
         },
         "description": "A Workspace the User is the only Owner of, which blocks User deletion"
+      },
+      "StateOperator": {
+        "type": "string",
+        "enum": ["eq", "neq"],
+        "description": "How a test of a Contact's Engagement tracking consent compares it with a state: it reads as\nthe state, or it does not"
       },
       "StepId": {
         "type": "string",

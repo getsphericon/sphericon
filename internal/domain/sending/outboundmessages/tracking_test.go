@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
@@ -39,9 +40,9 @@ func TestTrackedAndNotTrackedSplitMessagesAsIsTrackedDoes(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	pair := []int64{fixtures.OutboundMessageTrackingSampleID, fixtures.OutboundMessageTrackingWithdrawnID}
 
-	tracked, err := s.OutboundMessage().Query().Where(outboundmessage.IDIn(pair...), outboundmessages.Tracked()).IDs(t.Context())
+	tracked, err := s.OutboundMessage().Query().Where(outboundmessage.IDIn(pair...), engagementtracking.TrackedMessages()).IDs(t.Context())
 	require.NoError(t, err)
-	untracked, err := s.OutboundMessage().Query().Where(outboundmessage.IDIn(pair...), outboundmessages.NotTracked()).IDs(t.Context())
+	untracked, err := s.OutboundMessage().Query().Where(outboundmessage.IDIn(pair...), engagementtracking.UntrackedMessages()).IDs(t.Context())
 	require.NoError(t, err)
 	sample, err := s.OutboundMessage().Get(t.Context(), fixtures.OutboundMessageTrackingSampleID)
 	require.NoError(t, err)
@@ -50,6 +51,6 @@ func TestTrackedAndNotTrackedSplitMessagesAsIsTrackedDoes(t *testing.T) {
 
 	assert.Equal(t, []int64{fixtures.OutboundMessageTrackingSampleID}, tracked)
 	assert.Equal(t, []int64{fixtures.OutboundMessageTrackingWithdrawnID}, untracked)
-	assert.True(t, outboundmessages.IsTracked(sample))
-	assert.False(t, outboundmessages.IsTracked(withdrawn))
+	assert.True(t, engagementtracking.IsTracked(sample))
+	assert.False(t, engagementtracking.IsTracked(withdrawn))
 }

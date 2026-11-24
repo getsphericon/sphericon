@@ -144,8 +144,8 @@ func TestPreviewAndCountReportTheContactsLeftOutForUnknownEngagement(t *testing.
 	count, err := m.Count(ctx, s, fixtures.SegmentMassiveUnengagedID)
 	require.NoError(t, err)
 
-	assert.Equal(t, segments.PreviewResult{Count: 1}, before, "Ann, while she is tracked")
-	assert.Equal(t, segments.PreviewResult{Count: 0, UnknownEngagement: 1}, preview)
+	assert.Equal(t, segments.Counts{Count: 1}, before, "Ann, while she is tracked")
+	assert.Equal(t, segments.Counts{Count: 0, UnknownEngagement: 1}, preview)
 	assert.Equal(t, preview, count)
 }
 

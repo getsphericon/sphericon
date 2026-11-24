@@ -49,7 +49,7 @@ included: the Workspace erase job calls `workspacedeletion`). It takes the
 `*ent.Scoped` its driver built, opens the transaction the domain modules it calls join (taking the
 Workspace lock where ADR 0099 requires it, so a removal that runs the Removal check opens it with
 `WithinWorkspaceLockTx`, as `tagdeletion` and `customfieldretyping` do; `contacterasure` opens `WithinScopedPurgeTx`, takes no Workspace lock and locks the Contact through `contactlock`; `unsubscriberecording` opens one `WithinScopedTx` for the opt-out, the Enrollment's exit and anonymous attribution work), reads them, and changes their rows only through their functions
-(Erasure calls an erase function of each owner, from its `<module>unchecked` subpackage: `eventsunchecked.EraseSubject`, `visitorsunchecked.Module.EraseSubject`, `outboundmessagesunchecked.Module.AnonymizeContact`, `confirmationsunchecked.Module.EraseNumber`, `unsubscribesunchecked.Module.EraseSMS` and the rest, then `contactsunchecked.Module.DeleteIn`, whose foreign keys delete or detach the Contact's other rows; an unsubscribe writes the opt-out through `unsubscribes`, drops the Confirmation an opt-out of everything ends through `confirmations.Module.Withdraw`, calls `automations.Module.Exit` and publishes anonymous attribution for the Broadcast consumer).
+(Erasure calls an erase function of each owner, from its `<module>unchecked` subpackage: `eventsunchecked.Module.EraseSubject`, `visitorsunchecked.Module.EraseSubject`, `outboundmessagesunchecked.Module.AnonymizeContact`, `confirmationsunchecked.Module.EraseNumber`, `unsubscribesunchecked.Module.EraseSMS` and the rest, then `contactsunchecked.Module.DeleteIn`, whose foreign keys delete or detach the Contact's other rows; an unsubscribe writes the opt-out through `unsubscribes`, drops the Confirmation an opt-out of everything ends through `confirmations.Module.Withdraw`, calls `automations.Module.Exit` and publishes anonymous attribution for the Broadcast consumer).
 Work that starts before any scope exists, such as a job given only a row's id, has its driver read
 the row's Workspace and build the scope the use case takes (a signed unsubscribe link's comes from
 `workspaces.Module.LinkScope`). easement
@@ -114,7 +114,7 @@ applied, ADR 0145), User deletion's removals
 deletion window leave, and the User row, `usersunchecked.Deletion`, opened on its row like the
 Removal writes), the restore and the tombstone of a Workspace's deletion cycle
 (`workspacesunchecked.Module.RestoreIn` and `TombstoneIn`; the erase deletes a Workspace's rows itself, ADR
-0110, so no owner's removal of them has a name) and each owner's step of a Contact's Erasure (`visitorsunchecked.Module.EraseSubject`, `eventsunchecked.EraseSubject` of
+0110, so no owner's removal of them has a name) and each owner's step of a Contact's Erasure (`visitorsunchecked.Module.EraseSubject`, `eventsunchecked.Module.EraseSubject` of
 the bus, `suppressionsunchecked.Module.EraseContact` and the others
 `internal/usecase/contacterasure`
 sequences, with the Contact row last, `contactsunchecked.Module.DeleteIn`; the purge of its queued jobs runs in the Erasure's transaction: an owner's step purges through `Bus.PurgeJobsIn`, and the use case purges the Events' and Webhooks' jobs through the `events.PurgingPublisher` that `WithinScopedPurgeTx` hands it). A new fence for any other caller has the same form: a

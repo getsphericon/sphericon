@@ -165,6 +165,7 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend timestamp
 // goverter:extend revision
 // goverter:extend optNilString
+// goverter:extend optNilStrings
 // goverter:extend optNilStepID
 // goverter:extend optNilSendCap
 // goverter:extend optNilOptOutVia
@@ -794,6 +795,14 @@ func timestamp(t time.Time) externalapi.Timestamp {
 
 func optNilString(v *string) externalapi.OptNilString {
 	return convert.Opt[externalapi.OptNilString](v)
+}
+
+// optNilStrings is a list stored as NULL when it has nothing to say (nil), absent then.
+func optNilStrings(v []string) externalapi.OptNilStringArray {
+	if v == nil {
+		return externalapi.OptNilStringArray{}
+	}
+	return externalapi.NewOptNilStringArray(v)
 }
 
 func optNilEmailAddress(v *string) externalapi.OptNilEmailAddress {

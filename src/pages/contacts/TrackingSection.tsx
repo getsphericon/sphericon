@@ -1,8 +1,10 @@
 import { Button, Group, Stack, Table, Text, Title } from '@mantine/core'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import { DetailsBadge } from '../../components/DetailsBadge.tsx'
+import { QueryBoundary } from '../../components/QueryBoundary.tsx'
+import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteEngagementTrackingCreateMutation,
   siteEngagementTrackingGetOptions,
@@ -31,9 +33,17 @@ interface Props {
 // consent is keyed by the Destination.
 export function TrackingSection({ workspaceId, contactId }: Props) {
   const { t } = useTranslation()
+  return (
+    <QueryBoundary fallback={<BlockSkeleton />} errorTitle={t(($) => $.contacts.trackingLoadError)}>
+      <TrackingTable workspaceId={workspaceId} contactId={contactId} />
+    </QueryBoundary>
+  )
+}
+
+function TrackingTable({ workspaceId, contactId }: Props) {
+  const { t } = useTranslation()
   const path = { workspaceId, contactId }
-  const consents = useQuery(siteEngagementTrackingGetOptions({ path }))
-  const destinations = consents.data?.destinations ?? []
+  const { destinations } = useSuspenseQuery(siteEngagementTrackingGetOptions({ path })).data
 
   if (destinations.length === 0) {
     return null
@@ -130,6 +140,8 @@ function TrackingRow({
         destination: consent.destination,
       }),
       confirmLabel: t(($) => $.contacts.trackingRefuse),
+      // Irreversible for a member and cascading (what was recorded is deleted): the typed tier.
+      typedName: consent.destination,
       onConfirm: () => refuse.mutate({ path, body: body('denied') }),
     })
 

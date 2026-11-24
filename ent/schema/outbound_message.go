@@ -91,6 +91,12 @@ func (OutboundMessage) Fields() []ent.Field {
 		// delivery record.
 		field.String("destination").
 			Optional(),
+		// Every Destination a message rendered once for several went to, destination among them:
+		// a Telegram message to a Contact's several chats (ADR 0120). NULL for a message of one
+		// Destination, the most. A tracked message is checked against the consent of each, and a
+		// refusal of any reaches the message. Cleared with destination when the Contact is erased.
+		field.Strings("destinations").
+			Optional(),
 		// The Contact this destination resolved to, when one exists (a transactional
 		// destination may have none). Display and Event attribution only. SET NULL: the
 		// message stays as an anonymous delivery record when the Contact is erased.
@@ -166,13 +172,17 @@ func (OutboundMessage) Fields() []ent.Field {
 		// every report can say so without joining to the provider.
 		field.Bool("captured").Default(false).Annotations(Attribute(reasonFact)),
 		// Whether the message went out tracked (ADR 0120): with the open pixel and its links
-		// rewritten (email), its links made Short tracked links (SMS, Telegram). Decided at render, in
-		// the send chokepoint, from the surface and the Destination's effective consent, and written
-		// before the provider is called; a retry of the same row only ever lowers it, never raises it.
-		// True until a render decides, so it says what went out on a sent message only. A message is
-		// tracked while this holds and tracking_withdrawn_at is NULL (outboundmessages.IsTracked).
-		field.Bool("tracked").Default(true).
-			Annotations(Attribute("what the message went out as, decided at its render; a later render only lowers it and no move depends on it")),
+		// rewritten (email), its links made Short tracked links (SMS, Telegram). A fact of what went
+		// out, decided at render in the send chokepoint from the surface and the Destination's
+		// effective consent, and recorded once with tracking_decided_at, before the provider is
+		// called; false while no render decided (a message skipped before its render, or not
+		// rendered yet), and a retry reads the earlier decision. A message is tracked
+		// while this holds and tracking_withdrawn_at is NULL (engagementtracking.IsTracked).
+		field.Bool("tracked").Default(false).
+			Annotations(Attribute("what the render decided, written only in the latch write of tracking_decided_at")),
+		// When a render decided whether the message goes out tracked (tracked): recorded once, never
+		// cleared. Rows sent before the decision existed keep tracked true with no moment.
+		field.Time("tracking_decided_at").Optional().Nillable().Annotations(Latch()),
 		// When the message's tracking was withdrawn (ADR 0120): by a refusal of its Destination or by
 		// the Workspace's default turned to `dont_track`. Recorded once and never cleared: nothing
 		// gives a message its tracking back.
@@ -263,6 +273,9 @@ func (OutboundMessage) Indexes() []ent.Index {
 		// A refusal of tracking reaches back to its Destination's messages, in id order, a batch at
 		// a time (ADR 0120).
 		index.Fields("workspace_id", "destination", "id"),
+		// The same reach-back to a message of several Destinations (destinations), which are few.
+		index.Fields("destinations").
+			Annotations(entsql.IndexType("GIN"), entsql.IndexWhere("destinations IS NOT NULL")),
 		// Erasure and contact lookups reach this table by contact; the contact foreign key's
 		// index (whole: a key's index cannot be partial).
 		index.Fields("workspace_id", "contact_id").

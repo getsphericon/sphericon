@@ -29,10 +29,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 )
@@ -208,13 +208,13 @@ func marketingSent(since, until time.Time) predicate.OutboundMessage {
 // that are tracked (ADR 0120). One sent untracked or withdrawn since is out of it, its stamps
 // included: a withdrawal by the Workspace's default keeps them.
 func engagementCohort(since, until time.Time) predicate.OutboundMessage {
-	return outboundmessage.And(marketingSent(since, until), outboundmessages.Tracked())
+	return outboundmessage.And(marketingSent(since, until), engagementtracking.TrackedMessages())
 }
 
 // untrackedBeside matches the marketing messages sent in [since, until) that are not tracked: the
 // ones the reports count beside the rates.
 func untrackedBeside(since, until time.Time) predicate.OutboundMessage {
-	return outboundmessage.And(marketingSent(since, until), outboundmessages.NotTracked())
+	return outboundmessage.And(marketingSent(since, until), engagementtracking.UntrackedMessages())
 }
 
 // sendCounts counts the Outbound messages sent in [since, until) per kind and the delivery stamps

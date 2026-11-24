@@ -23,8 +23,9 @@ var engagementActions = slices.Concat([]string{systemevent.EmailOpened}, events.
 // (ADR 0120), run by the use case internal/usecase/trackingwithdrawal in the transaction that holds
 // the messages' rows. An Event names its message's Contact, or none for a message kept by address,
 // which narrows the search to those Contacts' Events (the Contact's index) before the property is
-// read. What the Events triggered stays: an Enrollment, a send, a Rule's action.
-func DeleteEngagementOf(ctx context.Context, s *ent.Scoped, msgs []*ent.OutboundMessage) error {
+// read. What the Events triggered stays: an Enrollment, a send, a Rule's action. An Erasure that
+// comes before the reach-back runs it too (internal/usecase/contacterasure).
+func (m *Module) DeleteEngagementOf(ctx context.Context, s *ent.Scoped, msgs []*ent.OutboundMessage) error {
 	if len(msgs) == 0 {
 		return nil
 	}

@@ -43,7 +43,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqljson"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/event"
@@ -52,7 +51,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
@@ -433,36 +431,13 @@ func (c *compiler) event(ctx context.Context, l eventCountLeaf) (predicate.Conta
 	}
 	dflt := ws.EngagementTrackingDefault
 	return predicate.Contact(func(s *sql.Selector) {
-		unknown, holds := untracked(s, channel, dflt), counted(s)
+		unknown, holds := engagementtracking.UntrackedOf(s, channel, dflt), counted(s)
 		// raw sql: ent has no CASE. The NULL stays inside the leaf, around the count's EXISTS (which
 		// is never NULL), so the tree above carries it by Kleene's rules.
 		s.Where(sql.P(func(b *sql.Builder) {
 			b.WriteString("CASE WHEN ").Join(unknown).WriteString(" THEN NULL ELSE ").Join(holds).WriteString(" END")
 		}))
 	}), nil
-}
-
-// untracked is the Contact of s has a Destination on channel that is not tracked under the
-// Workspace's default dflt: its email address, its phone, or any of its own Telegram Bindings (a
-// Visitor's is no Contact's, ADR 0171). A Contact with none has nothing untracked, and neither has
-// one on a Channel that tracks no engagement.
-func untracked(s *sql.Selector, channel channels.Channel, dflt engagementtracking.Decision) *sql.Predicate {
-	switch channel {
-	case channels.Email:
-		return sql.And(sql.NotNull(s.C(contact.FieldEmail)), engagementtracking.Untracked(s, channel, dflt, contact.FieldEmail))
-	case channels.SMS:
-		return sql.And(sql.NotNull(s.C(contact.FieldPhone)), engagementtracking.Untracked(s, channel, dflt, contact.FieldPhone))
-	case channels.Telegram:
-		b := sql.Table(binding.Table)
-		chats := sql.Select(b.C(binding.FieldID)).From(b)
-		chats.Where(sql.And(
-			sql.EQ(b.C(binding.FieldChannel), string(binding.ChannelTelegram)),
-			sql.ColumnsEQ(b.C(binding.FieldContactID), s.C(contact.FieldID)),
-			engagementtracking.Untracked(chats, channel, dflt, binding.FieldDestination),
-		))
-		return sql.Exists(chats)
-	}
-	return sql.False()
 }
 
 // tagRule is the subject has (or lacks) the Tag. Evaluated live — membership is never

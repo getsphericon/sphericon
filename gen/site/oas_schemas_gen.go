@@ -5171,6 +5171,9 @@ type ContactExportOutboundMessage struct {
 	Channel string `json:"channel"`
 	// Address the message was sent to.
 	Destination string `json:"destination"`
+	// Every address a message rendered once for several went to (a Telegram message to the contact's
+	// chats), `destination` among them; null for a message to one.
+	Destinations OptNilStringArray `json:"destinations"`
 	// Sending source.
 	SendingSource OptNilString `json:"sendingSource"`
 	// Sending domain.
@@ -5205,8 +5208,12 @@ type ContactExportOutboundMessage struct {
 	// True when the message went through a Test inbox: captured, not delivered.
 	Captured bool `json:"captured"`
 	// Whether the message went out tracked: with an open pixel and its links rewritten, or its links made
-	// Short tracked links (ADR 0120).
+	// Short tracked links (ADR 0120). False for a message no render decided (skipped before its render, or
+	// not rendered yet).
 	Tracked bool `json:"tracked"`
+	// When a render decided whether the message goes out tracked; null for a message no render decided,
+	// and for one sent before the moment was recorded, which went out tracked.
+	TrackingDecidedAt OptNilTimestamp `json:"trackingDecidedAt"`
 	// When the message's tracking was withdrawn (a refusal of the contact's, or the Workspace's default
 	// turned to `dont_track`); null while it was not.
 	TrackingWithdrawnAt OptNilTimestamp `json:"trackingWithdrawnAt"`
@@ -5240,6 +5247,11 @@ func (s *ContactExportOutboundMessage) GetChannel() string {
 // GetDestination returns the value of Destination.
 func (s *ContactExportOutboundMessage) GetDestination() string {
 	return s.Destination
+}
+
+// GetDestinations returns the value of Destinations.
+func (s *ContactExportOutboundMessage) GetDestinations() OptNilStringArray {
+	return s.Destinations
 }
 
 // GetSendingSource returns the value of SendingSource.
@@ -5327,6 +5339,11 @@ func (s *ContactExportOutboundMessage) GetTracked() bool {
 	return s.Tracked
 }
 
+// GetTrackingDecidedAt returns the value of TrackingDecidedAt.
+func (s *ContactExportOutboundMessage) GetTrackingDecidedAt() OptNilTimestamp {
+	return s.TrackingDecidedAt
+}
+
 // GetTrackingWithdrawnAt returns the value of TrackingWithdrawnAt.
 func (s *ContactExportOutboundMessage) GetTrackingWithdrawnAt() OptNilTimestamp {
 	return s.TrackingWithdrawnAt
@@ -5375,6 +5392,11 @@ func (s *ContactExportOutboundMessage) SetChannel(val string) {
 // SetDestination sets the value of Destination.
 func (s *ContactExportOutboundMessage) SetDestination(val string) {
 	s.Destination = val
+}
+
+// SetDestinations sets the value of Destinations.
+func (s *ContactExportOutboundMessage) SetDestinations(val OptNilStringArray) {
+	s.Destinations = val
 }
 
 // SetSendingSource sets the value of SendingSource.
@@ -5460,6 +5482,11 @@ func (s *ContactExportOutboundMessage) SetCaptured(val bool) {
 // SetTracked sets the value of Tracked.
 func (s *ContactExportOutboundMessage) SetTracked(val bool) {
 	s.Tracked = val
+}
+
+// SetTrackingDecidedAt sets the value of TrackingDecidedAt.
+func (s *ContactExportOutboundMessage) SetTrackingDecidedAt(val OptNilTimestamp) {
+	s.TrackingDecidedAt = val
 }
 
 // SetTrackingWithdrawnAt sets the value of TrackingWithdrawnAt.
@@ -8179,9 +8206,160 @@ func (s *EngagementTrackingState) UnmarshalText(data []byte) error {
 	}
 }
 
-// What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a text
-// test whose eq or neq compares the consent with `granted` or `denied`, or a presence test of whether
-// any is recorded. neq holds where none is recorded, so a test and its negation split every Contact.
+// A test of a Contact's Engagement tracking consent against a state. eq holds where the consent reads
+// as `value`; neq holds everywhere else, where none is recorded included, so a test and its negation
+// split every Contact.
+// Ref: #/components/schemas/EngagementTrackingStateTest
+type EngagementTrackingStateTest struct {
+	Kind EngagementTrackingStateTestKind `json:"kind"`
+	// Whether the consent reads as the state, or does not.
+	Operator StateOperator `json:"operator"`
+	// The state compared with.
+	Value EngagementTrackingState `json:"value"`
+}
+
+// GetKind returns the value of Kind.
+func (s *EngagementTrackingStateTest) GetKind() EngagementTrackingStateTestKind {
+	return s.Kind
+}
+
+// GetOperator returns the value of Operator.
+func (s *EngagementTrackingStateTest) GetOperator() StateOperator {
+	return s.Operator
+}
+
+// GetValue returns the value of Value.
+func (s *EngagementTrackingStateTest) GetValue() EngagementTrackingState {
+	return s.Value
+}
+
+// SetKind sets the value of Kind.
+func (s *EngagementTrackingStateTest) SetKind(val EngagementTrackingStateTestKind) {
+	s.Kind = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *EngagementTrackingStateTest) SetOperator(val StateOperator) {
+	s.Operator = val
+}
+
+// SetValue sets the value of Value.
+func (s *EngagementTrackingStateTest) SetValue(val EngagementTrackingState) {
+	s.Value = val
+}
+
+// A test of a Contact's Engagement tracking consent against a state. eq holds where the consent reads
+// as `value`; neq holds everywhere else, where none is recorded included, so a test and its negation
+// split every Contact.
+// Ref: #/components/schemas/EngagementTrackingStateTestInput
+type EngagementTrackingStateTestInput struct {
+	Kind EngagementTrackingStateTestInputKind `json:"kind"`
+	// Whether the consent reads as the state, or does not.
+	Operator StateOperator `json:"operator"`
+	// The state compared with.
+	Value EngagementTrackingState `json:"value"`
+}
+
+// GetKind returns the value of Kind.
+func (s *EngagementTrackingStateTestInput) GetKind() EngagementTrackingStateTestInputKind {
+	return s.Kind
+}
+
+// GetOperator returns the value of Operator.
+func (s *EngagementTrackingStateTestInput) GetOperator() StateOperator {
+	return s.Operator
+}
+
+// GetValue returns the value of Value.
+func (s *EngagementTrackingStateTestInput) GetValue() EngagementTrackingState {
+	return s.Value
+}
+
+// SetKind sets the value of Kind.
+func (s *EngagementTrackingStateTestInput) SetKind(val EngagementTrackingStateTestInputKind) {
+	s.Kind = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *EngagementTrackingStateTestInput) SetOperator(val StateOperator) {
+	s.Operator = val
+}
+
+// SetValue sets the value of Value.
+func (s *EngagementTrackingStateTestInput) SetValue(val EngagementTrackingState) {
+	s.Value = val
+}
+
+type EngagementTrackingStateTestInputKind string
+
+const (
+	EngagementTrackingStateTestInputKindText EngagementTrackingStateTestInputKind = "text"
+)
+
+// AllValues returns all EngagementTrackingStateTestInputKind values.
+func (EngagementTrackingStateTestInputKind) AllValues() []EngagementTrackingStateTestInputKind {
+	return []EngagementTrackingStateTestInputKind{
+		EngagementTrackingStateTestInputKindText,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EngagementTrackingStateTestInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case EngagementTrackingStateTestInputKindText:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EngagementTrackingStateTestInputKind) UnmarshalText(data []byte) error {
+	switch EngagementTrackingStateTestInputKind(data) {
+	case EngagementTrackingStateTestInputKindText:
+		*s = EngagementTrackingStateTestInputKindText
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type EngagementTrackingStateTestKind string
+
+const (
+	EngagementTrackingStateTestKindText EngagementTrackingStateTestKind = "text"
+)
+
+// AllValues returns all EngagementTrackingStateTestKind values.
+func (EngagementTrackingStateTestKind) AllValues() []EngagementTrackingStateTestKind {
+	return []EngagementTrackingStateTestKind{
+		EngagementTrackingStateTestKindText,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EngagementTrackingStateTestKind) MarshalText() ([]byte, error) {
+	switch s {
+	case EngagementTrackingStateTestKindText:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EngagementTrackingStateTestKind) UnmarshalText(data []byte) error {
+	switch EngagementTrackingStateTestKind(data) {
+	case EngagementTrackingStateTestKindText:
+		*s = EngagementTrackingStateTestKindText
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
+// comparison with `granted` or `denied`, or a presence test of whether any is recorded.
 // Ref: #/components/schemas/EngagementTrackingTest
 type EngagementTrackingTest struct {
 	OneOf EngagementTrackingTestSum
@@ -8197,9 +8375,8 @@ func (s *EngagementTrackingTest) SetOneOf(val EngagementTrackingTestSum) {
 	s.OneOf = val
 }
 
-// What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a text
-// test whose eq or neq compares the consent with `granted` or `denied`, or a presence test of whether
-// any is recorded. neq holds where none is recorded, so a test and its negation split every Contact.
+// What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
+// comparison with `granted` or `denied`, or a presence test of whether any is recorded.
 // Ref: #/components/schemas/EngagementTrackingTestInput
 type EngagementTrackingTestInput struct {
 	OneOf EngagementTrackingTestInputSum
@@ -8218,9 +8395,9 @@ func (s *EngagementTrackingTestInput) SetOneOf(val EngagementTrackingTestInputSu
 // EngagementTrackingTestInputSum represents sum type.
 type EngagementTrackingTestInputSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type              EngagementTrackingTestInputSumType
-	TextTestInput     TextTestInput
-	PresenceTestInput PresenceTestInput
+	Type                             EngagementTrackingTestInputSumType
+	EngagementTrackingStateTestInput EngagementTrackingStateTestInput
+	PresenceTestInput                PresenceTestInput
 }
 
 // EngagementTrackingTestInputSumType is oneOf type of EngagementTrackingTestInputSum.
@@ -8228,13 +8405,13 @@ type EngagementTrackingTestInputSumType string
 
 // Possible values for EngagementTrackingTestInputSumType.
 const (
-	TextTestInputEngagementTrackingTestInputSum     EngagementTrackingTestInputSumType = "text"
-	PresenceTestInputEngagementTrackingTestInputSum EngagementTrackingTestInputSumType = "presence"
+	EngagementTrackingStateTestInputEngagementTrackingTestInputSum EngagementTrackingTestInputSumType = "text"
+	PresenceTestInputEngagementTrackingTestInputSum                EngagementTrackingTestInputSumType = "presence"
 )
 
-// IsTextTestInput reports whether EngagementTrackingTestInputSum is TextTestInput.
-func (s EngagementTrackingTestInputSum) IsTextTestInput() bool {
-	return s.Type == TextTestInputEngagementTrackingTestInputSum
+// IsEngagementTrackingStateTestInput reports whether EngagementTrackingTestInputSum is EngagementTrackingStateTestInput.
+func (s EngagementTrackingTestInputSum) IsEngagementTrackingStateTestInput() bool {
+	return s.Type == EngagementTrackingStateTestInputEngagementTrackingTestInputSum
 }
 
 // IsPresenceTestInput reports whether EngagementTrackingTestInputSum is PresenceTestInput.
@@ -8242,24 +8419,24 @@ func (s EngagementTrackingTestInputSum) IsPresenceTestInput() bool {
 	return s.Type == PresenceTestInputEngagementTrackingTestInputSum
 }
 
-// SetTextTestInput sets EngagementTrackingTestInputSum to TextTestInput.
-func (s *EngagementTrackingTestInputSum) SetTextTestInput(v TextTestInput) {
-	s.Type = TextTestInputEngagementTrackingTestInputSum
-	s.TextTestInput = v
+// SetEngagementTrackingStateTestInput sets EngagementTrackingTestInputSum to EngagementTrackingStateTestInput.
+func (s *EngagementTrackingTestInputSum) SetEngagementTrackingStateTestInput(v EngagementTrackingStateTestInput) {
+	s.Type = EngagementTrackingStateTestInputEngagementTrackingTestInputSum
+	s.EngagementTrackingStateTestInput = v
 }
 
-// GetTextTestInput returns TextTestInput and true boolean if EngagementTrackingTestInputSum is TextTestInput.
-func (s EngagementTrackingTestInputSum) GetTextTestInput() (v TextTestInput, ok bool) {
-	if !s.IsTextTestInput() {
+// GetEngagementTrackingStateTestInput returns EngagementTrackingStateTestInput and true boolean if EngagementTrackingTestInputSum is EngagementTrackingStateTestInput.
+func (s EngagementTrackingTestInputSum) GetEngagementTrackingStateTestInput() (v EngagementTrackingStateTestInput, ok bool) {
+	if !s.IsEngagementTrackingStateTestInput() {
 		return v, false
 	}
-	return s.TextTestInput, true
+	return s.EngagementTrackingStateTestInput, true
 }
 
-// NewTextTestInputEngagementTrackingTestInputSum returns new EngagementTrackingTestInputSum from TextTestInput.
-func NewTextTestInputEngagementTrackingTestInputSum(v TextTestInput) EngagementTrackingTestInputSum {
+// NewEngagementTrackingStateTestInputEngagementTrackingTestInputSum returns new EngagementTrackingTestInputSum from EngagementTrackingStateTestInput.
+func NewEngagementTrackingStateTestInputEngagementTrackingTestInputSum(v EngagementTrackingStateTestInput) EngagementTrackingTestInputSum {
 	var s EngagementTrackingTestInputSum
-	s.SetTextTestInput(v)
+	s.SetEngagementTrackingStateTestInput(v)
 	return s
 }
 
@@ -8287,9 +8464,9 @@ func NewPresenceTestInputEngagementTrackingTestInputSum(v PresenceTestInput) Eng
 // EngagementTrackingTestSum represents sum type.
 type EngagementTrackingTestSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type         EngagementTrackingTestSumType
-	TextTest     TextTest
-	PresenceTest PresenceTest
+	Type                        EngagementTrackingTestSumType
+	EngagementTrackingStateTest EngagementTrackingStateTest
+	PresenceTest                PresenceTest
 }
 
 // EngagementTrackingTestSumType is oneOf type of EngagementTrackingTestSum.
@@ -8297,13 +8474,13 @@ type EngagementTrackingTestSumType string
 
 // Possible values for EngagementTrackingTestSumType.
 const (
-	TextTestEngagementTrackingTestSum     EngagementTrackingTestSumType = "text"
-	PresenceTestEngagementTrackingTestSum EngagementTrackingTestSumType = "presence"
+	EngagementTrackingStateTestEngagementTrackingTestSum EngagementTrackingTestSumType = "text"
+	PresenceTestEngagementTrackingTestSum                EngagementTrackingTestSumType = "presence"
 )
 
-// IsTextTest reports whether EngagementTrackingTestSum is TextTest.
-func (s EngagementTrackingTestSum) IsTextTest() bool {
-	return s.Type == TextTestEngagementTrackingTestSum
+// IsEngagementTrackingStateTest reports whether EngagementTrackingTestSum is EngagementTrackingStateTest.
+func (s EngagementTrackingTestSum) IsEngagementTrackingStateTest() bool {
+	return s.Type == EngagementTrackingStateTestEngagementTrackingTestSum
 }
 
 // IsPresenceTest reports whether EngagementTrackingTestSum is PresenceTest.
@@ -8311,24 +8488,24 @@ func (s EngagementTrackingTestSum) IsPresenceTest() bool {
 	return s.Type == PresenceTestEngagementTrackingTestSum
 }
 
-// SetTextTest sets EngagementTrackingTestSum to TextTest.
-func (s *EngagementTrackingTestSum) SetTextTest(v TextTest) {
-	s.Type = TextTestEngagementTrackingTestSum
-	s.TextTest = v
+// SetEngagementTrackingStateTest sets EngagementTrackingTestSum to EngagementTrackingStateTest.
+func (s *EngagementTrackingTestSum) SetEngagementTrackingStateTest(v EngagementTrackingStateTest) {
+	s.Type = EngagementTrackingStateTestEngagementTrackingTestSum
+	s.EngagementTrackingStateTest = v
 }
 
-// GetTextTest returns TextTest and true boolean if EngagementTrackingTestSum is TextTest.
-func (s EngagementTrackingTestSum) GetTextTest() (v TextTest, ok bool) {
-	if !s.IsTextTest() {
+// GetEngagementTrackingStateTest returns EngagementTrackingStateTest and true boolean if EngagementTrackingTestSum is EngagementTrackingStateTest.
+func (s EngagementTrackingTestSum) GetEngagementTrackingStateTest() (v EngagementTrackingStateTest, ok bool) {
+	if !s.IsEngagementTrackingStateTest() {
 		return v, false
 	}
-	return s.TextTest, true
+	return s.EngagementTrackingStateTest, true
 }
 
-// NewTextTestEngagementTrackingTestSum returns new EngagementTrackingTestSum from TextTest.
-func NewTextTestEngagementTrackingTestSum(v TextTest) EngagementTrackingTestSum {
+// NewEngagementTrackingStateTestEngagementTrackingTestSum returns new EngagementTrackingTestSum from EngagementTrackingStateTest.
+func NewEngagementTrackingStateTestEngagementTrackingTestSum(v EngagementTrackingStateTest) EngagementTrackingTestSum {
 	var s EngagementTrackingTestSum
-	s.SetTextTest(v)
+	s.SetEngagementTrackingStateTest(v)
 	return s
 }
 
@@ -15071,6 +15248,74 @@ func (o OptNilString) Get() (v string, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilString) Or(d string) string {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilStringArray returns new OptNilStringArray with value set to v.
+func NewOptNilStringArray(v []string) OptNilStringArray {
+	return OptNilStringArray{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilStringArray is optional nullable []string.
+type OptNilStringArray struct {
+	Value []string
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilStringArray was set.
+func (o OptNilStringArray) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilStringArray) Reset() {
+	var v []string
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilStringArray) SetTo(v []string) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilStringArray) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilStringArray) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v []string
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilStringArray) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilStringArray) Get() (v []string, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilStringArray) Or(d []string) []string {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -35495,6 +35740,50 @@ func (s *SortDirection) UnmarshalText(data []byte) error {
 		return nil
 	case SortDirectionDesc:
 		*s = SortDirectionDesc
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// How a test of a Contact's Engagement tracking consent compares it with a state: it reads as the
+// state, or it does not.
+// Ref: #/components/schemas/StateOperator
+type StateOperator string
+
+const (
+	StateOperatorEq  StateOperator = "eq"
+	StateOperatorNeq StateOperator = "neq"
+)
+
+// AllValues returns all StateOperator values.
+func (StateOperator) AllValues() []StateOperator {
+	return []StateOperator{
+		StateOperatorEq,
+		StateOperatorNeq,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s StateOperator) MarshalText() ([]byte, error) {
+	switch s {
+	case StateOperatorEq:
+		return []byte(s), nil
+	case StateOperatorNeq:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *StateOperator) UnmarshalText(data []byte) error {
+	switch StateOperator(data) {
+	case StateOperatorEq:
+		*s = StateOperatorEq
+		return nil
+	case StateOperatorNeq:
+		*s = StateOperatorNeq
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

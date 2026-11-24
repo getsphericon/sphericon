@@ -2,6 +2,7 @@ package condition
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
@@ -23,7 +24,8 @@ type engagementTrackingLeaf struct {
 func (engagementTrackingLeaf) isNode() {}
 
 // decodeEngagementTracking reads an `engagementTracking` leaf: the Channel, and a text test that
-// compares the consent with granted or denied by eq or neq, or a presence test.
+// compares the consent with granted or denied by one of the contract's StateOperators, or a
+// presence test.
 func decodeEngagementTracking(e entry) (node, error) {
 	channel, err := trackingChannelOf(e.Channel)
 	if err != nil {
@@ -37,14 +39,16 @@ func decodeEngagementTracking(e entry) (node, error) {
 	case presenceTest:
 		return engagementTrackingLeaf{channel: channel, negated: !t.set}, nil
 	case textTest:
-		if t.op != conditiontree.TextEq && t.op != conditiontree.TextNeq {
-			return nil, fmt.Errorf("an engagement tracking consent is compared by %s or %s, not %q", conditiontree.TextEq, conditiontree.TextNeq, t.op)
+		// The contract's test of a consent is a text test of its own operators (StateOperator).
+		op := conditiontree.StateOperator(t.op)
+		if !slices.Contains(conditiontree.StateOperators, op) {
+			return nil, fmt.Errorf("an engagement tracking consent is compared by one of %v, not %q", conditiontree.StateOperators, t.op)
 		}
 		state := engagementtracking.State(t.value)
 		if err := engagementtrackingconsent.StateValidator(state); err != nil {
 			return nil, fmt.Errorf("an engagement tracking consent is %s or %s, not %q", engagementtracking.Granted, engagementtracking.Denied, t.value)
 		}
-		return engagementTrackingLeaf{channel: channel, state: &state, negated: t.op == conditiontree.TextNeq}, nil
+		return engagementTrackingLeaf{channel: channel, state: &state, negated: op == conditiontree.StateNeq}, nil
 	}
 	return nil, fmt.Errorf("unsupported test %T for an engagement tracking consent", t)
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
@@ -97,20 +98,20 @@ func lastClick(ctx context.Context, s *ent.Scoped, contactID int64, since, until
 	}
 }
 
-// isWithdrawn reads whether the tracking of the Outbound message id was withdrawn, holding its row
-// FOR SHARE until the Order's transaction ends; a message that is gone was not. The Orders module
-// is of the contacts context, below Outbound send, so it reads the Latch itself rather than ask the
-// module that writes it.
+// isWithdrawn reads whether the Outbound message id is no longer tracked (engagementtracking.IsTracked,
+// the one definition): a click recorded of it was of a tracked message, so its tracking was
+// withdrawn since. Its row is held FOR SHARE until the Order's transaction ends; a message that is
+// gone was not withdrawn.
 func isWithdrawn(ctx context.Context, s *ent.Scoped, id int64) (bool, error) {
 	msgs, err := s.OutboundMessage().Query().
 		Where(outboundmessage.ID(id)).
-		Select(outboundmessage.FieldID, outboundmessage.FieldTrackingWithdrawnAt).
+		Select(outboundmessage.FieldID, outboundmessage.FieldTracked, outboundmessage.FieldTrackingWithdrawnAt).
 		ForShare().
 		All(ctx)
 	if err != nil {
 		return false, fmt.Errorf("read the clicked message: %w", err)
 	}
-	return len(msgs) == 1 && msgs[0].TrackingWithdrawnAt != nil, nil
+	return len(msgs) == 1 && !engagementtracking.IsTracked(msgs[0]), nil
 }
 
 // ClearCredits takes the credit from every Order credited through a click of one of the Outbound

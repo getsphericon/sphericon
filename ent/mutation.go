@@ -48080,6 +48080,8 @@ type OutboundMessageMutation struct {
 	idempotency_key            *string
 	channel                    *channels.Channel
 	destination                *string
+	destinations               *[]string
+	appenddestinations         []string
 	sending_source             *string
 	sending_domain             *string
 	provider_message_id        *string
@@ -48097,6 +48099,7 @@ type OutboundMessageMutation struct {
 	clicked_at                 *time.Time
 	captured                   *bool
 	tracked                    *bool
+	tracking_decided_at        *time.Time
 	tracking_withdrawn_at      *time.Time
 	automation_step_id         *automationstep.ID
 	request_digest             *string
@@ -48496,6 +48499,71 @@ func (m *OutboundMessageMutation) DestinationCleared() bool {
 func (m *OutboundMessageMutation) ResetDestination() {
 	m.destination = nil
 	delete(m.clearedFields, outboundmessage.FieldDestination)
+}
+
+// SetDestinations sets the "destinations" field.
+func (m *OutboundMessageMutation) SetDestinations(s []string) {
+	m.destinations = &s
+	m.appenddestinations = nil
+}
+
+// Destinations returns the value of the "destinations" field in the mutation.
+func (m *OutboundMessageMutation) Destinations() (r []string, exists bool) {
+	v := m.destinations
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDestinations returns the old "destinations" field's value of the OutboundMessage entity.
+// If the OutboundMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OutboundMessageMutation) OldDestinations(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDestinations is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDestinations requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDestinations: %w", err)
+	}
+	return oldValue.Destinations, nil
+}
+
+// AppendDestinations adds s to the "destinations" field.
+func (m *OutboundMessageMutation) AppendDestinations(s []string) {
+	m.appenddestinations = append(m.appenddestinations, s...)
+}
+
+// AppendedDestinations returns the list of values that were appended to the "destinations" field in this mutation.
+func (m *OutboundMessageMutation) AppendedDestinations() ([]string, bool) {
+	if len(m.appenddestinations) == 0 {
+		return nil, false
+	}
+	return m.appenddestinations, true
+}
+
+// ClearDestinations clears the value of the "destinations" field.
+func (m *OutboundMessageMutation) ClearDestinations() {
+	m.destinations = nil
+	m.appenddestinations = nil
+	m.clearedFields[outboundmessage.FieldDestinations] = struct{}{}
+}
+
+// DestinationsCleared returns if the "destinations" field was cleared in this mutation.
+func (m *OutboundMessageMutation) DestinationsCleared() bool {
+	_, ok := m.clearedFields[outboundmessage.FieldDestinations]
+	return ok
+}
+
+// ResetDestinations resets all changes to the "destinations" field.
+func (m *OutboundMessageMutation) ResetDestinations() {
+	m.destinations = nil
+	m.appenddestinations = nil
+	delete(m.clearedFields, outboundmessage.FieldDestinations)
 }
 
 // SetContactID sets the "contact_id" field.
@@ -49326,6 +49394,55 @@ func (m *OutboundMessageMutation) OldTracked(ctx context.Context) (v bool, err e
 // ResetTracked resets all changes to the "tracked" field.
 func (m *OutboundMessageMutation) ResetTracked() {
 	m.tracked = nil
+}
+
+// SetTrackingDecidedAt sets the "tracking_decided_at" field.
+func (m *OutboundMessageMutation) SetTrackingDecidedAt(t time.Time) {
+	m.tracking_decided_at = &t
+}
+
+// TrackingDecidedAt returns the value of the "tracking_decided_at" field in the mutation.
+func (m *OutboundMessageMutation) TrackingDecidedAt() (r time.Time, exists bool) {
+	v := m.tracking_decided_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTrackingDecidedAt returns the old "tracking_decided_at" field's value of the OutboundMessage entity.
+// If the OutboundMessage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OutboundMessageMutation) OldTrackingDecidedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTrackingDecidedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTrackingDecidedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTrackingDecidedAt: %w", err)
+	}
+	return oldValue.TrackingDecidedAt, nil
+}
+
+// ClearTrackingDecidedAt clears the value of the "tracking_decided_at" field.
+func (m *OutboundMessageMutation) ClearTrackingDecidedAt() {
+	m.tracking_decided_at = nil
+	m.clearedFields[outboundmessage.FieldTrackingDecidedAt] = struct{}{}
+}
+
+// TrackingDecidedAtCleared returns if the "tracking_decided_at" field was cleared in this mutation.
+func (m *OutboundMessageMutation) TrackingDecidedAtCleared() bool {
+	_, ok := m.clearedFields[outboundmessage.FieldTrackingDecidedAt]
+	return ok
+}
+
+// ResetTrackingDecidedAt resets all changes to the "tracking_decided_at" field.
+func (m *OutboundMessageMutation) ResetTrackingDecidedAt() {
+	m.tracking_decided_at = nil
+	delete(m.clearedFields, outboundmessage.FieldTrackingDecidedAt)
 }
 
 // SetTrackingWithdrawnAt sets the "tracking_withdrawn_at" field.
@@ -50247,7 +50364,7 @@ func (m *OutboundMessageMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OutboundMessageMutation) Fields() []string {
-	fields := make([]string, 0, 37)
+	fields := make([]string, 0, 39)
 	if m.created_at != nil {
 		fields = append(fields, outboundmessage.FieldCreatedAt)
 	}
@@ -50268,6 +50385,9 @@ func (m *OutboundMessageMutation) Fields() []string {
 	}
 	if m.destination != nil {
 		fields = append(fields, outboundmessage.FieldDestination)
+	}
+	if m.destinations != nil {
+		fields = append(fields, outboundmessage.FieldDestinations)
 	}
 	if m.contact != nil {
 		fields = append(fields, outboundmessage.FieldContactID)
@@ -50322,6 +50442,9 @@ func (m *OutboundMessageMutation) Fields() []string {
 	}
 	if m.tracked != nil {
 		fields = append(fields, outboundmessage.FieldTracked)
+	}
+	if m.tracking_decided_at != nil {
+		fields = append(fields, outboundmessage.FieldTrackingDecidedAt)
 	}
 	if m.tracking_withdrawn_at != nil {
 		fields = append(fields, outboundmessage.FieldTrackingWithdrawnAt)
@@ -50381,6 +50504,8 @@ func (m *OutboundMessageMutation) Field(name string) (ent.Value, bool) {
 		return m.Channel()
 	case outboundmessage.FieldDestination:
 		return m.Destination()
+	case outboundmessage.FieldDestinations:
+		return m.Destinations()
 	case outboundmessage.FieldContactID:
 		return m.ContactID()
 	case outboundmessage.FieldSendingSource:
@@ -50417,6 +50542,8 @@ func (m *OutboundMessageMutation) Field(name string) (ent.Value, bool) {
 		return m.Captured()
 	case outboundmessage.FieldTracked:
 		return m.Tracked()
+	case outboundmessage.FieldTrackingDecidedAt:
+		return m.TrackingDecidedAt()
 	case outboundmessage.FieldTrackingWithdrawnAt:
 		return m.TrackingWithdrawnAt()
 	case outboundmessage.FieldBroadcastID:
@@ -50464,6 +50591,8 @@ func (m *OutboundMessageMutation) OldField(ctx context.Context, name string) (en
 		return m.OldChannel(ctx)
 	case outboundmessage.FieldDestination:
 		return m.OldDestination(ctx)
+	case outboundmessage.FieldDestinations:
+		return m.OldDestinations(ctx)
 	case outboundmessage.FieldContactID:
 		return m.OldContactID(ctx)
 	case outboundmessage.FieldSendingSource:
@@ -50500,6 +50629,8 @@ func (m *OutboundMessageMutation) OldField(ctx context.Context, name string) (en
 		return m.OldCaptured(ctx)
 	case outboundmessage.FieldTracked:
 		return m.OldTracked(ctx)
+	case outboundmessage.FieldTrackingDecidedAt:
+		return m.OldTrackingDecidedAt(ctx)
 	case outboundmessage.FieldTrackingWithdrawnAt:
 		return m.OldTrackingWithdrawnAt(ctx)
 	case outboundmessage.FieldBroadcastID:
@@ -50581,6 +50712,13 @@ func (m *OutboundMessageMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDestination(v)
+		return nil
+	case outboundmessage.FieldDestinations:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDestinations(v)
 		return nil
 	case outboundmessage.FieldContactID:
 		v, ok := value.(int64)
@@ -50708,6 +50846,13 @@ func (m *OutboundMessageMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTracked(v)
 		return nil
+	case outboundmessage.FieldTrackingDecidedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTrackingDecidedAt(v)
+		return nil
 	case outboundmessage.FieldTrackingWithdrawnAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -50828,6 +50973,9 @@ func (m *OutboundMessageMutation) ClearedFields() []string {
 	if m.FieldCleared(outboundmessage.FieldDestination) {
 		fields = append(fields, outboundmessage.FieldDestination)
 	}
+	if m.FieldCleared(outboundmessage.FieldDestinations) {
+		fields = append(fields, outboundmessage.FieldDestinations)
+	}
 	if m.FieldCleared(outboundmessage.FieldContactID) {
 		fields = append(fields, outboundmessage.FieldContactID)
 	}
@@ -50869,6 +51017,9 @@ func (m *OutboundMessageMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(outboundmessage.FieldClickedAt) {
 		fields = append(fields, outboundmessage.FieldClickedAt)
+	}
+	if m.FieldCleared(outboundmessage.FieldTrackingDecidedAt) {
+		fields = append(fields, outboundmessage.FieldTrackingDecidedAt)
 	}
 	if m.FieldCleared(outboundmessage.FieldTrackingWithdrawnAt) {
 		fields = append(fields, outboundmessage.FieldTrackingWithdrawnAt)
@@ -50923,6 +51074,9 @@ func (m *OutboundMessageMutation) ClearField(name string) error {
 	case outboundmessage.FieldDestination:
 		m.ClearDestination()
 		return nil
+	case outboundmessage.FieldDestinations:
+		m.ClearDestinations()
+		return nil
 	case outboundmessage.FieldContactID:
 		m.ClearContactID()
 		return nil
@@ -50964,6 +51118,9 @@ func (m *OutboundMessageMutation) ClearField(name string) error {
 		return nil
 	case outboundmessage.FieldClickedAt:
 		m.ClearClickedAt()
+		return nil
+	case outboundmessage.FieldTrackingDecidedAt:
+		m.ClearTrackingDecidedAt()
 		return nil
 	case outboundmessage.FieldTrackingWithdrawnAt:
 		m.ClearTrackingWithdrawnAt()
@@ -51030,6 +51187,9 @@ func (m *OutboundMessageMutation) ResetField(name string) error {
 	case outboundmessage.FieldDestination:
 		m.ResetDestination()
 		return nil
+	case outboundmessage.FieldDestinations:
+		m.ResetDestinations()
+		return nil
 	case outboundmessage.FieldContactID:
 		m.ResetContactID()
 		return nil
@@ -51083,6 +51243,9 @@ func (m *OutboundMessageMutation) ResetField(name string) error {
 		return nil
 	case outboundmessage.FieldTracked:
 		m.ResetTracked()
+		return nil
+	case outboundmessage.FieldTrackingDecidedAt:
+		m.ResetTrackingDecidedAt()
 		return nil
 	case outboundmessage.FieldTrackingWithdrawnAt:
 		m.ResetTrackingWithdrawnAt()

@@ -2615,6 +2615,78 @@ export const zSmtpConfigInput = z.strictObject({
 export const zSortDirection = z.enum(['asc', 'desc']);
 
 /**
+ * How a test of a Contact's Engagement tracking consent compares it with a state: it reads as
+ * the state, or it does not
+ */
+export const zStateOperator = z.enum(['eq', 'neq']);
+
+/**
+ * A test of a Contact's Engagement tracking consent against a state. eq holds where the consent
+ * reads as `value`; neq holds everywhere else, where none is recorded included, so a test and its
+ * negation split every Contact.
+ */
+export const zEngagementTrackingStateTest = z.object({
+  kind: z.enum(['text']),
+  operator: zStateOperator,
+  value: zEngagementTrackingState
+});
+
+/**
+ * A test of a Contact's Engagement tracking consent against a state. eq holds where the consent
+ * reads as `value`; neq holds everywhere else, where none is recorded included, so a test and its
+ * negation split every Contact.
+ */
+export const zEngagementTrackingStateTestInput = z.strictObject({
+  kind: z.enum(['text']),
+  operator: zStateOperator,
+  value: zEngagementTrackingState
+});
+
+/**
+ * What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
+ * comparison with `granted` or `denied`, or a presence test of whether any is recorded.
+ */
+export const zEngagementTrackingTest = z.discriminatedUnion('kind', [
+  zEngagementTrackingStateTest.extend({ kind: z.literal('text') }),
+  zPresenceTest.extend({ kind: z.literal('presence') })
+]);
+
+/**
+ * A test of the Contact's Engagement tracking consent on one Channel (ADR 0120), read live as
+ * recorded, whatever the Workspace's default: on email the consent of its email address, on sms of
+ * its phone, on telegram of its own chats, which read `denied` when any is denied, `granted` when it
+ * has one and all are granted, and as none recorded otherwise. A Contact without a Destination on
+ * the Channel has none recorded.
+ */
+export const zEngagementTrackingLeaf = z.object({
+  kind: z.enum(['engagementTracking']),
+  channel: zEngagementTrackingChannel,
+  test: zEngagementTrackingTest
+});
+
+/**
+ * What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
+ * comparison with `granted` or `denied`, or a presence test of whether any is recorded.
+ */
+export const zEngagementTrackingTestInput = z.discriminatedUnion('kind', [
+  zEngagementTrackingStateTestInput.extend({ kind: z.literal('text') }),
+  zPresenceTestInput.extend({ kind: z.literal('presence') })
+]);
+
+/**
+ * A test of the Contact's Engagement tracking consent on one Channel (ADR 0120), read live as
+ * recorded, whatever the Workspace's default: on email the consent of its email address, on sms of
+ * its phone, on telegram of its own chats, which read `denied` when any is denied, `granted` when it
+ * has one and all are granted, and as none recorded otherwise. A Contact without a Destination on
+ * the Channel has none recorded.
+ */
+export const zEngagementTrackingLeafInput = z.strictObject({
+  kind: z.enum(['engagementTracking']),
+  channel: zEngagementTrackingChannel,
+  test: zEngagementTrackingTestInput
+});
+
+/**
  * The id of a Step or a path: a UUID in its lowercase text form, kept by every version of the
  * automation. A client mints it when it creates the Step or path and sends it back on every save;
  * one sent without an id is given one. Unique within a version, Steps and paths together.
@@ -3073,30 +3145,6 @@ export const zAttributeLeaf = z.object({
 });
 
 /**
- * What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
- * text test whose eq or neq compares the consent with `granted` or `denied`, or a presence test of
- * whether any is recorded. neq holds where none is recorded, so a test and its negation split every
- * Contact.
- */
-export const zEngagementTrackingTest = z.discriminatedUnion('kind', [
-  zTextTest.extend({ kind: z.literal('text') }),
-  zPresenceTest.extend({ kind: z.literal('presence') })
-]);
-
-/**
- * A test of the Contact's Engagement tracking consent on one Channel (ADR 0120), read live as
- * recorded, whatever the Workspace's default: on email the consent of its email address, on sms of
- * its phone, on telegram of its own chats, which read `denied` when any is denied, `granted` when it
- * has one and all are granted, and as none recorded otherwise. A Contact without a Destination on
- * the Channel has none recorded.
- */
-export const zEngagementTrackingLeaf = z.object({
-  kind: z.enum(['engagementTracking']),
-  channel: zEngagementTrackingChannel,
-  test: zEngagementTrackingTest
-});
-
-/**
  * What a property test asks of the property's value, by `kind`. A key the Event lacks fails
  * every test; a text test fails on a value that is not text; set holds for a text value and notSet
  * for an explicit null.
@@ -3144,30 +3192,6 @@ export const zAttributeLeafInput = z.strictObject({
   kind: z.enum(['attribute']),
   attribute: zContactAttribute,
   test: zAttributeTestInput
-});
-
-/**
- * What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
- * text test whose eq or neq compares the consent with `granted` or `denied`, or a presence test of
- * whether any is recorded. neq holds where none is recorded, so a test and its negation split every
- * Contact.
- */
-export const zEngagementTrackingTestInput = z.discriminatedUnion('kind', [
-  zTextTestInput.extend({ kind: z.literal('text') }),
-  zPresenceTestInput.extend({ kind: z.literal('presence') })
-]);
-
-/**
- * A test of the Contact's Engagement tracking consent on one Channel (ADR 0120), read live as
- * recorded, whatever the Workspace's default: on email the consent of its email address, on sms of
- * its phone, on telegram of its own chats, which read `denied` when any is denied, `granted` when it
- * has one and all are granted, and as none recorded otherwise. A Contact without a Destination on
- * the Channel has none recorded.
- */
-export const zEngagementTrackingLeafInput = z.strictObject({
-  kind: z.enum(['engagementTracking']),
-  channel: zEngagementTrackingChannel,
-  test: zEngagementTrackingTestInput
 });
 
 /**
@@ -3380,6 +3404,7 @@ export const zContactExportOutboundMessage = z.object({
   kind: z.string(),
   channel: z.string(),
   destination: z.string(),
+  destinations: z.exactOptional(z.array(z.string()).nullable()),
   sendingSource: z.exactOptional(z.string().nullable()),
   sendingDomain: z.exactOptional(z.string().nullable()),
   providerMessageId: z.exactOptional(z.string().nullable()),
@@ -3397,6 +3422,7 @@ export const zContactExportOutboundMessage = z.object({
   clickedAt: z.exactOptional(zTimestamp.nullable()),
   captured: z.boolean(),
   tracked: z.boolean(),
+  trackingDecidedAt: z.exactOptional(zTimestamp.nullable()),
   trackingWithdrawnAt: z.exactOptional(zTimestamp.nullable()),
   broadcastId: z.exactOptional(zEntityId.nullable()),
   automationId: z.exactOptional(zEntityId.nullable()),

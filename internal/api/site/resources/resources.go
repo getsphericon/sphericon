@@ -104,6 +104,7 @@ import (
 // goverter:extend revision
 // goverter:extend nilFloat64
 // goverter:extend optNilString
+// goverter:extend optNilStrings
 // goverter:extend optNilStepID
 // goverter:extend optNilOptOutVia
 // goverter:extend optNilEngagementTrackingProvenance
@@ -1027,6 +1028,14 @@ func transactionalError(m *ent.OutboundMessage) siteapi.OptNilString {
 
 func optNilString(v *string) siteapi.OptNilString {
 	return convert.Opt[siteapi.OptNilString](v)
+}
+
+// optNilStrings is a list stored as NULL when it has nothing to say (nil), absent then.
+func optNilStrings(v []string) siteapi.OptNilStringArray {
+	if v == nil {
+		return siteapi.OptNilStringArray{}
+	}
+	return siteapi.NewOptNilStringArray(v)
 }
 
 func optNilEmailAddress(v *string) siteapi.OptNilEmailAddress {

@@ -36,13 +36,14 @@ type UseCase struct {
 	bus      *events.Bus
 	messages *outboundmessages.Module
 	orders   *orders.Module
+	events   *eventsunchecked.Module
 	batch    int
 }
 
 // New returns the reach-back, batch messages to a transaction (Batch; a test passes 1 to turn
 // every loop).
 func New(bus *events.Bus, messages *outboundmessages.Module, credits *orders.Module, batch int) *UseCase {
-	return &UseCase{bus: bus, messages: messages, orders: credits, batch: batch}
+	return &UseCase{bus: bus, messages: messages, orders: credits, events: eventsunchecked.New(), batch: batch}
 }
 
 // Refusal is the Destination that refused tracking, in the form its consent is stored in.
@@ -86,7 +87,7 @@ func (u *UseCase) forget(ctx context.Context, ts *ent.Scoped, msgs []*ent.Outbou
 	if err := u.messages.ForgetEngagement(ctx, ts, ids); err != nil {
 		return err
 	}
-	if err := eventsunchecked.DeleteEngagementOf(ctx, ts, msgs); err != nil {
+	if err := u.events.DeleteEngagementOf(ctx, ts, msgs); err != nil {
 		return fmt.Errorf("delete the opens and clicks: %w", err)
 	}
 	return u.orders.ClearCredits(ctx, ts, ids)

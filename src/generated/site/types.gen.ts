@@ -1318,6 +1318,11 @@ export type ContactExportOutboundMessage = {
    */
   destination: string;
   /**
+   * Every address a message rendered once for several went to (a Telegram message to the
+   * contact's chats), `destination` among them; null for a message to one
+   */
+  destinations?: Array<string> | null;
+  /**
    * Sending source
    */
   sendingSource?: string | null;
@@ -1383,9 +1388,15 @@ export type ContactExportOutboundMessage = {
   captured: boolean;
   /**
    * Whether the message went out tracked: with an open pixel and its links rewritten, or its
-   * links made Short tracked links (ADR 0120)
+   * links made Short tracked links (ADR 0120). False for a message no render decided (skipped
+   * before its render, or not rendered yet)
    */
   tracked: boolean;
+  /**
+   * When a render decided whether the message goes out tracked; null for a message no render
+   * decided, and for one sent before the moment was recorded, which went out tracked
+   */
+  trackingDecidedAt?: Timestamp | null;
   /**
    * When the message's tracking was withdrawn (a refusal of the contact's, or the Workspace's
    * default turned to `dont_track`); null while it was not
@@ -2251,26 +2262,56 @@ export const EngagementTrackingState = { GRANTED: 'granted', DENIED: 'denied' } 
 export type EngagementTrackingState = typeof EngagementTrackingState[keyof typeof EngagementTrackingState];
 
 /**
+ * A test of a Contact's Engagement tracking consent against a state. eq holds where the consent
+ * reads as `value`; neq holds everywhere else, where none is recorded included, so a test and its
+ * negation split every Contact.
+ */
+export type EngagementTrackingStateTest = {
+  kind: 'text';
+  /**
+   * Whether the consent reads as the state, or does not
+   */
+  operator: StateOperator;
+  /**
+   * The state compared with
+   */
+  value: EngagementTrackingState;
+};
+
+/**
+ * A test of a Contact's Engagement tracking consent against a state. eq holds where the consent
+ * reads as `value`; neq holds everywhere else, where none is recorded included, so a test and its
+ * negation split every Contact.
+ */
+export type EngagementTrackingStateTestInput = {
+  kind: 'text';
+  /**
+   * Whether the consent reads as the state, or does not
+   */
+  operator: StateOperator;
+  /**
+   * The state compared with
+   */
+  value: EngagementTrackingState;
+};
+
+/**
  * What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
- * text test whose eq or neq compares the consent with `granted` or `denied`, or a presence test of
- * whether any is recorded. neq holds where none is recorded, so a test and its negation split every
- * Contact.
+ * comparison with `granted` or `denied`, or a presence test of whether any is recorded.
  */
 export type EngagementTrackingTest = ({
   kind: 'text';
-} & TextTest) | ({
+} & EngagementTrackingStateTest) | ({
   kind: 'presence';
 } & PresenceTest);
 
 /**
  * What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
- * text test whose eq or neq compares the consent with `granted` or `denied`, or a presence test of
- * whether any is recorded. neq holds where none is recorded, so a test and its negation split every
- * Contact.
+ * comparison with `granted` or `denied`, or a presence test of whether any is recorded.
  */
 export type EngagementTrackingTestInput = ({
   kind: 'text';
-} & TextTestInput) | ({
+} & EngagementTrackingStateTestInput) | ({
   kind: 'presence';
 } & PresenceTestInput);
 
@@ -8650,6 +8691,18 @@ export const SortDirection = { ASC: 'asc', DESC: 'desc' } as const;
  * others do not carry an unused schema.
  */
 export type SortDirection = typeof SortDirection[keyof typeof SortDirection];
+
+/**
+ * How a test of a Contact's Engagement tracking consent compares it with a state: it reads as
+ * the state, or it does not
+ */
+export const StateOperator = { EQ: 'eq', NEQ: 'neq' } as const;
+
+/**
+ * How a test of a Contact's Engagement tracking consent compares it with a state: it reads as
+ * the state, or it does not
+ */
+export type StateOperator = typeof StateOperator[keyof typeof StateOperator];
 
 /**
  * The id of a Step or a path: a UUID in its lowercase text form, kept by every version of the
