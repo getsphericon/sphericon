@@ -1,6 +1,7 @@
 package jobs_test
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -44,20 +46,34 @@ func queuedNaming(t *testing.T, env *testhelper.TestEnv, destination string) []s
 	return append(named, reachBacks...)
 }
 
-// clickTrace is what a click Event keeps of the Destination its message went to.
-type clickTrace struct {
-	Destination any
-	Phone       *string
+// loggedDestinations is the Destinations Lacuna's Event log shows on its Events of action, as its
+// Owner reads them ("" for an Event that names none).
+func loggedDestinations(t *testing.T, env *testhelper.TestEnv, action string) []string {
+	t.Helper()
+	lena := env.SiteActor(t, fixtures.LacunaOwnerLenaEmail)
+	res, err := lena.SiteEventsList(t.Context(), siteapi.SiteEventsListParams{
+		WorkspaceId: fixtures.LacunaPublicID, Action: siteapi.NewOptString(action),
+		IncludeMachine: siteapi.NewOptBool(true), PageSize: siteapi.NewOptInt32(100),
+	})
+	require.NoError(t, err)
+	return lo.Map(res.Items, func(e siteapi.SiteEventResource, _ int) string {
+		raw, named := e.Properties.Or(nil)["destination"]
+		if !named {
+			return ""
+		}
+		var destination string
+		require.NoError(t, json.Unmarshal(raw, &destination))
+		return destination
+	})
 }
 
-// clickTraces are Lacuna's stored click Events of action, as their Destination traces.
-func clickTraces(t *testing.T, env *testhelper.TestEnv, action string) []clickTrace {
+// clickPhones is the phone of each of Lacuna's sms.clicked Events: a column no surface shows, read
+// from the table as an Erasure test reads what it erased.
+func clickPhones(t *testing.T, env *testhelper.TestEnv) []*string {
 	t.Helper()
-	clicks, err := env.DB.Scoped(fixtures.LacunaID).Event().Query().Where(event.Action(action)).Order(event.ByID()).All(t.Context())
+	clicks, err := env.DB.Scoped(fixtures.LacunaID).Event().Query().Where(event.Action(systemevent.SmsClicked)).All(t.Context())
 	require.NoError(t, err)
-	return lo.Map(clicks, func(e *ent.Event, _ int) clickTrace {
-		return clickTrace{Destination: e.Properties["destination"], Phone: e.Phone}
-	})
+	return lo.Map(clicks, func(e *ent.Event, _ int) *string { return e.Phone })
 }
 
 // A click of an SMS names the number the text went to; once its Contact is erased the click stays,
@@ -70,12 +86,13 @@ func TestAnErasureLeavesNoSMSClickThatNamesTheNumber(t *testing.T) {
 	require.Len(t, paths, 2)
 	follow(t, env, paths[1], browserUA)
 	number := fixtures.ContactLacunaBeaPhone
-	require.Equal(t, []clickTrace{{Destination: number, Phone: &number}}, clickTraces(t, env, systemevent.SmsClicked),
-		"the click names the number")
+	require.Equal(t, []string{number}, loggedDestinations(t, env, systemevent.SmsClicked), "the click names the number")
+	require.Equal(t, []*string{&number}, clickPhones(t, env), "the click's phone is the number")
 
 	eraseInLacuna(t, env, fixtures.ContactLacunaBeaID)
 
-	assert.Equal(t, []clickTrace{{}}, clickTraces(t, env, systemevent.SmsClicked), "the click keeps no number")
+	assert.Equal(t, []string{""}, loggedDestinations(t, env, systemevent.SmsClicked), "the click keeps no number")
+	assert.Equal(t, []*string{nil}, clickPhones(t, env), "nor a phone")
 }
 
 // A click of a Telegram message names the user the message went to; once its Contact is erased the
@@ -87,12 +104,12 @@ func TestAnErasureLeavesNoTelegramClickThatNamesTheUser(t *testing.T) {
 	tias, _ := shortPaths(t, env, tiaOtherChat)
 	require.Len(t, tias, 1)
 	follow(t, env, tias[0], browserUA)
-	require.Equal(t, []clickTrace{{Destination: tiaChat}}, clickTraces(t, env, systemevent.TelegramClicked),
+	require.Equal(t, []string{tiaChat}, loggedDestinations(t, env, systemevent.TelegramClicked),
 		"the click names the user the message went to")
 
 	eraseInLacuna(t, env, fixtures.ContactLacunaTwoChatsID)
 
-	assert.Equal(t, []clickTrace{{}}, clickTraces(t, env, systemevent.TelegramClicked), "the click keeps no user id")
+	assert.Equal(t, []string{""}, loggedDestinations(t, env, systemevent.TelegramClicked), "the click keeps no user id")
 }
 
 // A refusal of a number queues its reach-back, which names the number; an Erasure of its Contact
@@ -106,6 +123,21 @@ func TestAnErasureBeforeTheReachBackLeavesNoQueuedJobNamingTheNumber(t *testing.
 	eraseInLacuna(t, env, fixtures.ContactLacunaBeaID)
 
 	assert.Empty(t, queuedNaming(t, env, number), "no queued job names the number")
+}
+
+// The same of a refusal of an address, given in another case than the Contact's: the reach-back
+// names the address as it is stored.
+func TestAnErasureBeforeTheReachBackLeavesNoQueuedJobNamingTheAddress(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalWithToken(t, env.ScopedBearerFor(t, fixtures.LacunaID, apitokens.ScopeContactsWrite))
+	created, err := c.ContactsCreate(t.Context(), &externalapi.CreateContactInput{Email: externalapi.NewOptNilEmailAddress("Rae@Lacuna.example")})
+	require.NoError(t, err)
+	lacunaTracking(t, env, externalapi.EngagementTrackingChannelEmail, "RAE@lacuna.example", externalapi.EngagementTrackingStateDenied)
+	require.Contains(t, queuedNaming(t, env, "rae@lacuna.example"), "reach-back", "the reach-back waits, naming the address")
+
+	eraseInLacuna(t, env, int64(created.ID))
+
+	assert.Empty(t, queuedNaming(t, env, "rae@lacuna.example"), "no queued job names the address")
 }
 
 // The same of a refusal of one of a Contact's Telegram chats: the reach-back names the user id.

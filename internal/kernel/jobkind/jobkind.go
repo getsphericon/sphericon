@@ -84,5 +84,6 @@ var TrackingWithdrawal = DestinationKey{Kind: "engagement_tracking_withdrawal", 
 // payload, as JSON.
 const DeliverWebhookBodyArg = "body"
 
-// Purged lists every kind Erasure purges.
+// Purged lists every kind Erasure purges by an integer argument; a kind it purges by a Destination
+// is a DestinationKey (TrackingWithdrawal).
 var Purged = []Key{DeliverWebhook, EvaluateTrigger, RunStep, HTTPStep, SendRecipient, RuleEvaluate}
