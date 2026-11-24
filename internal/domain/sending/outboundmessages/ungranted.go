@@ -80,8 +80,8 @@ func (m *Module) WithdrawUngranted(ctx context.Context, s *ent.Scoped, in Ungran
 
 // WithdrawUngrantedIn is one batch of WithdrawUngranted, in the transaction ts is bound to
 // (WithdrawTracking): up to in.Limit messages after the message id in.After, created up to
-// in.Before, that are tracked (engagementtracking.TrackedMessages) and whose Destination has no
-// granted on their Channel, whatever their status: a message rendered tracked whose send has not
+// in.Before, that are tracked (engagementtracking.TrackedMessages) and with a Destination that has
+// no granted on their Channel, whatever their status: a message rendered tracked whose send has not
 // ended is withdrawn too, so its retry renders untracked. A message no render decided yet is left
 // to its render, which reads the default then. The consent is read as it stands now: a Destination
 // granted before the withdrawal reaches its messages keeps them tracked, and one granted after gets
@@ -99,14 +99,18 @@ func (m *Module) WithdrawUngrantedIn(ctx context.Context, ts *ent.Scoped, in Ung
 	return WithdrawalProgress{Last: taken[len(taken)-1].ID, More: len(taken) == in.Limit}, nil
 }
 
-// ungranted selects the messages whose Destination has no granted on their Channel: the effective
-// consent under a dont_track default (engagementtracking.UntrackedWhere), whatever the default is
-// now. A Destination that refused has no granted either.
+// ungranted selects the messages with a Destination that has no granted on their Channel: the
+// effective consent under a dont_track default (engagementtracking.UntrackedWhere), whatever the
+// default is now. A Destination that refused has no granted either. A message rendered once for
+// several Destinations (a Telegram message to a Contact's chats) is selected when any of them has
+// none, as the recorder records its hits only while every one consents.
 func (m *Module) ungranted() predicate.OutboundMessage {
 	chs := lo.Keys(m.channels)
 	slices.Sort(chs)
 	return outboundmessage.Or(lo.Map(chs, func(ch channels.Channel, _ int) predicate.OutboundMessage {
-		return outboundmessage.And(outboundmessage.ChannelEQ(ch),
-			predicate.OutboundMessage(engagementtracking.UntrackedWhere(ch, engagementtracking.DontTrack, outboundmessage.FieldDestination)))
+		return outboundmessage.And(outboundmessage.ChannelEQ(ch), outboundmessage.Or(
+			predicate.OutboundMessage(engagementtracking.UntrackedWhere(ch, engagementtracking.DontTrack, outboundmessage.FieldDestination)),
+			predicate.OutboundMessage(engagementtracking.UntrackedAmongWhere(ch, engagementtracking.DontTrack, outboundmessage.FieldDestinations)),
+		))
 	})...)
 }

@@ -22,6 +22,7 @@ import (
 	"slices"
 	"time"
 
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"github.com/samber/lo"
 
@@ -641,16 +642,40 @@ func Untracked(outer *sql.Selector, channel channels.Channel, dflt Decision, col
 	return sql.Not(trackedOf(outer, channel, dflt, column))
 }
 
-// trackedOf is TrackedWhere's predicate over outer. With the default resolved here, one EXISTS
-// decides: under track, a Destination is tracked unless a denied is recorded; under dont_track,
-// only when a granted is.
+// UntrackedAmongWhere keeps the rows of the table it is applied to with a Destination in their list
+// column (a JSON array of stored Destinations, an Outbound message's `destinations`) that is not
+// tracked on channel under dflt, matched in the row's own Workspace. A NULL list holds none.
+func UntrackedAmongWhere(channel channels.Channel, dflt Decision, column string) func(*sql.Selector) {
+	return func(outer *sql.Selector) {
+		// raw sql: the list's elements as rows, a set-returning function in FROM, which ent's
+		// builder has no form for; its one column is `value`. A jsonb function is Postgres's, and
+		// its column is quoted as Postgres quotes it, before a selector takes the table (the
+		// predicate may write the column out as is).
+		listed := sql.Dialect(dialect.Postgres).Table("jsonb_array_elements_text(" + outer.C(column) + ")").As("tracking_listed")
+		destination := listed.C("value")
+		// Every Workspace-owned table names its Workspace in the same column (WorkspaceMixin).
+		untracked := sql.Select(destination).From(listed).Where(sql.Not(
+			trackedIn(outer.C(engagementtrackingconsent.FieldWorkspaceID), destination, channel, dflt)))
+		outer.Where(sql.Exists(untracked))
+	}
+}
+
+// trackedOf is TrackedWhere's predicate over outer.
 func trackedOf(outer *sql.Selector, channel channels.Channel, dflt Decision, column string) *sql.Predicate {
+	// Every Workspace-owned table names its Workspace in the same column (WorkspaceMixin).
+	return trackedIn(outer.C(engagementtrackingconsent.FieldWorkspaceID), outer.C(column), channel, dflt)
+}
+
+// trackedIn is whether the Destination in destination (a column holding its stored form) is
+// tracked on channel under dflt in the Workspace in workspaceColumn. With the default resolved
+// here, one EXISTS decides: under track, a Destination is tracked unless a denied is recorded;
+// under dont_track, only when a granted is.
+func trackedIn(workspaceColumn, destination string, channel channels.Channel, dflt Decision) *sql.Predicate {
 	state, exists := Granted, sql.Exists
 	if dflt == Track {
 		state, exists = Denied, sql.NotExists
 	}
-	// Every Workspace-owned table names its Workspace in the same column (WorkspaceMixin).
-	return exists(recordedOf(outer.C(engagementtrackingconsent.FieldWorkspaceID), outer.C(column), channel, state))
+	return exists(recordedOf(workspaceColumn, destination, channel, state))
 }
 
 // consentOf is the Consent of destination on channel whose row is row, nil when none is recorded.
