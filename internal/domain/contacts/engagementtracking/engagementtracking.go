@@ -17,6 +17,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"slices"
 	"time"
@@ -117,6 +118,10 @@ var (
 	// Contact does not hold.
 	ErrNotTheContacts = validation.RefuseField(fieldname.Destination, "engagement tracking: the destination is not the contact's",
 		i18n.ErrorsEngagementTrackingNotTheContacts)
+	// ErrDestinationEmpty and ErrDestinationInvalid refuse a Destination that is none of its
+	// Channel's: empty, or not an address, a number in E.164 or a Telegram user id.
+	ErrDestinationEmpty   = validation.RefuseField(fieldname.Destination, "engagement tracking: destination must not be empty", i18n.ErrorsDestinationEmpty)
+	ErrDestinationInvalid = validation.RefuseField(fieldname.Destination, "engagement tracking: destination is not valid for the channel", i18n.ErrorsDestinationInvalid)
 	// ErrContactNotFound: no such Contact in the Workspace.
 	ErrContactNotFound = validation.NotFound("engagement tracking: contact not found", i18n.ErrorsContactNotFound)
 	// errState and errProvenance refuse a value outside their closed sets.
@@ -264,7 +269,7 @@ func (m *Module) checked(in RecordInput) (RecordInput, error) {
 	if err := validation.MaxLength(fieldname.Destination, in.Destination, bounds.ConsentDestinationMaxLength); err != nil {
 		return RecordInput{}, err
 	}
-	dest, err := unsubscribes.Destination(in.Channel, in.Destination)
+	dest, err := destinationOf(in.Channel, in.Destination)
 	if err != nil {
 		return RecordInput{}, err
 	}
@@ -286,6 +291,19 @@ func (m *Module) checked(in RecordInput) (RecordInput, error) {
 		return RecordInput{}, ErrInFuture
 	}
 	return in, nil
+}
+
+// destinationOf is raw as its Channel's Destinations are stored, normalized as an opt-out's are
+// (unsubscribes.Destination), or this module's refusal of it.
+func destinationOf(channel channels.Channel, raw string) (string, error) {
+	dest, err := unsubscribes.Destination(channel, raw)
+	switch {
+	case errors.Is(err, unsubscribes.ErrDestinationEmpty):
+		return "", ErrDestinationEmpty
+	case errors.Is(err, unsubscribes.ErrDestinationInvalid):
+		return "", ErrDestinationInvalid
+	}
+	return dest, err
 }
 
 // write sets the consent of in's Destination to in's state and provenance, over standing (nil
@@ -446,7 +464,7 @@ func (m *Module) RecordByMember(ctx context.Context, s *ent.Scoped, contactID in
 		if !open[in.Channel] {
 			return ErrChannel
 		}
-		address, err := unsubscribes.Destination(in.Channel, in.Destination)
+		address, err := destinationOf(in.Channel, in.Destination)
 		if err != nil {
 			return err
 		}
