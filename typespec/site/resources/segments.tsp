@@ -54,6 +54,13 @@ model SitePreviewSegmentResult {
   count: int32;
 
   /**
+   * Number of contacts the condition leaves out because their engagement is unknown: it counts their
+   * opens or clicks, and their Destination on that Channel is not tracked now (its Engagement
+   * tracking consent, else the Workspace's default). They match neither the test nor its negation.
+   */
+  unknownEngagement: int32;
+
+  /**
    * Number of matching contacts a Broadcast on the asked Channel would take: on email those with a
    * mailable address, on Telegram those with an eligible Binding on the routed Integration. Absent
    * unless a channel was given.

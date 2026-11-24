@@ -1060,6 +1060,26 @@ func TimezoneContainsFold(v string) predicate.Workspace {
 	return predicate.Workspace(sql.FieldContainsFold(FieldTimezone, v))
 }
 
+// EngagementTrackingDefaultEQ applies the EQ predicate on the "engagement_tracking_default" field.
+func EngagementTrackingDefaultEQ(v EngagementTrackingDefault) predicate.Workspace {
+	return predicate.Workspace(sql.FieldEQ(FieldEngagementTrackingDefault, v))
+}
+
+// EngagementTrackingDefaultNEQ applies the NEQ predicate on the "engagement_tracking_default" field.
+func EngagementTrackingDefaultNEQ(v EngagementTrackingDefault) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNEQ(FieldEngagementTrackingDefault, v))
+}
+
+// EngagementTrackingDefaultIn applies the In predicate on the "engagement_tracking_default" field.
+func EngagementTrackingDefaultIn(vs ...EngagementTrackingDefault) predicate.Workspace {
+	return predicate.Workspace(sql.FieldIn(FieldEngagementTrackingDefault, vs...))
+}
+
+// EngagementTrackingDefaultNotIn applies the NotIn predicate on the "engagement_tracking_default" field.
+func EngagementTrackingDefaultNotIn(vs ...EngagementTrackingDefault) predicate.Workspace {
+	return predicate.Workspace(sql.FieldNotIn(FieldEngagementTrackingDefault, vs...))
+}
+
 // ReportingCurrencyEQ applies the EQ predicate on the "reporting_currency" field.
 func ReportingCurrencyEQ(v string) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldReportingCurrency, v))
@@ -2606,6 +2626,29 @@ func HasConsentStamps() predicate.Workspace {
 func HasConsentStampsWith(preds ...predicate.ConsentStamp) predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {
 		step := newConsentStampsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasEngagementTrackingConsents applies the HasEdge predicate on the "engagement_tracking_consents" edge.
+func HasEngagementTrackingConsents() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, EngagementTrackingConsentsTable, EngagementTrackingConsentsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasEngagementTrackingConsentsWith applies the HasEdge predicate on the "engagement_tracking_consents" edge with a given conditions (other predicates).
+func HasEngagementTrackingConsentsWith(preds ...predicate.EngagementTrackingConsent) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newEngagementTrackingConsentsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

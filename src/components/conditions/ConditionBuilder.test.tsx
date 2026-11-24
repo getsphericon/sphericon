@@ -76,7 +76,7 @@ function serve(previewBodies: unknown[] = []) {
     }),
     handleSiteSegmentsPreview(async ({ request }) => {
       previewBodies.push(await request.json())
-      return HttpResponse.json({ count: 3 })
+      return HttpResponse.json({ count: 3, unknownEngagement: 2 })
     }),
   )
 }
@@ -110,6 +110,9 @@ test('sends the current Condition to the segment preview', async () => {
   await expect.poll(() => previews.length).toBe(1)
   expect(previews).toEqual([{ condition: emailContains }])
   await expect.element(screen.getByText('3 matching contacts')).toBeInTheDocument()
+  await expect
+    .element(screen.getByText('2 contacts left out: their opens and clicks are not tracked'))
+    .toBeInTheDocument()
 })
 
 test("a Segment's builder offers no test of the triggering Event", async () => {
@@ -477,6 +480,50 @@ test('a rule picks the SMS field: has, no value, and does not have round-trips',
   await expect
     .poll(() => onChange.mock.lastCall?.[0].entries)
     .toEqual([{ kind: 'sms', operator: 'doesNotHave' }])
+})
+
+test('a rule picks a tracking consent field: is a state picked from the list, or is not set', async () => {
+  serve()
+  const onChange = vi.fn<(draft: ConditionDraft) => void>()
+  const { screen } = await renderWithRouter(
+    <ConditionBuilder
+      workspaceId="TestWs01"
+      place="segment"
+      initialValue={emptyGroup}
+      onChange={onChange}
+    />,
+  )
+
+  await screen.getByRole('button', { name: /Rule/ }).first().click()
+  await screen.getByTestId('fields').click()
+  await screen.getByRole('option', { name: 'Email tracking consent' }).click()
+  await screen.getByTestId('value-editor').click()
+  await screen.getByRole('option', { name: 'denied' }).click()
+
+  await expect
+    .poll(() => onChange.mock.lastCall?.[0].entries)
+    .toEqual([
+      {
+        kind: 'engagementTracking',
+        channel: 'email',
+        test: { kind: 'text', operator: 'eq', value: 'denied' },
+      },
+    ])
+
+  await screen.getByTestId('operators').click()
+  await expect.element(screen.getByRole('option', { name: 'contains' })).not.toBeInTheDocument()
+  await screen.getByRole('option', { name: 'is not set' }).click()
+
+  await expect.element(screen.getByTestId('value-editor')).not.toBeInTheDocument()
+  await expect
+    .poll(() => onChange.mock.lastCall?.[0].entries)
+    .toEqual([
+      {
+        kind: 'engagementTracking',
+        channel: 'email',
+        test: { kind: 'presence', operator: 'notSet' },
+      },
+    ])
 })
 
 test('a loaded Tag shows its name and is edited as the Tag it tests', async () => {

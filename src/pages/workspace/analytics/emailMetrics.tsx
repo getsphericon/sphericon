@@ -41,8 +41,9 @@ function EmailMetricsReport() {
           <Text size="sm" c="dimmed">
             {t(($) => $.analytics.email.rangeNote)}
           </Text>
-          <SimpleGrid cols={{ base: 2, sm: 3, lg: 6 }}>
+          <SimpleGrid cols={{ base: 2, sm: 4, lg: 7 }}>
             <StatCard label={t(($) => $.analytics.email.sent)} value={email.sentCount} />
+            <StatCard label={t(($) => $.analytics.email.untracked)} value={email.untrackedCount} />
             <StatCard label={t(($) => $.analytics.email.opened)} value={email.openedCount} />
             <StatCard label={t(($) => $.analytics.email.clicked)} value={email.clickedCount} />
             <StatCard label={t(($) => $.analytics.email.openRate)} value={email.openRate} percent />
@@ -57,7 +58,7 @@ function EmailMetricsReport() {
               percent
             />
           </SimpleGrid>
-          {email.sentCount === 0 ? (
+          {email.sentCount + email.untrackedCount === 0 ? (
             <CenteredEmptyState
               height={260}
               icon={<IconChartBar />}
@@ -79,6 +80,11 @@ function EmailMetricsReport() {
                   name: 'clicked',
                   label: t(($) => $.analytics.series.clicked),
                   color: 'grape.6',
+                },
+                {
+                  name: 'untracked',
+                  label: t(($) => $.analytics.series.untracked),
+                  color: 'gray.5',
                 },
               ]}
             />

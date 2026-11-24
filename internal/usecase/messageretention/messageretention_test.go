@@ -255,3 +255,20 @@ func TestPruneMessagesLeavesACancelledBroadcastInsideTheWindow(t *testing.T) {
 	stats := cancelledStats(t, env)
 	assert.Equal(t, cancelledFigures, stats)
 }
+
+// Umbrella's tracking mix Broadcast (broadcasts.yml) froze with two of its three messages
+// untracked (ADR 0120): its figures keep that count, and its opened and clicked over the tracked
+// one, once its messages are gone.
+func TestAFrozenBroadcastKeepsItsUntrackedCount(t *testing.T) {
+	env := testhelper.Setup(t)
+	pruneMessages(t, env, messagesRetention, past())
+
+	got, err := testhelper.Module[*broadcasts.Module](env).StatsOf(context.Background(), env.DB.Scoped(fixtures.UmbrellaID), fixtures.BroadcastUmbrellaTrackingMixID)
+	require.NoError(t, err)
+
+	mix := got[fixtures.BroadcastUmbrellaTrackingMixID]
+	assert.Equal(t, 3, mix.Sent)
+	assert.Equal(t, 2, mix.Untracked)
+	assert.Equal(t, 1, mix.Opened)
+	assert.Equal(t, 1, mix.Clicked)
+}

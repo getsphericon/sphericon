@@ -48,6 +48,8 @@ func TestEveryPurgeKeyNamesAnIntegerArgumentOfItsJob(t *testing.T) {
 		fields := argFields(reflect.TypeOf(args))
 		assert.Equal(t, reflect.Int64, fields[key.Arg], "the purge argument of %q is not an int64 field of its args", key.Kind)
 	}
+	assert.Equal(t, reflect.String, argFields(reflect.TypeFor[jobs.TrackingWithdrawalArgs]())[jobkind.TrackingWithdrawal.Arg],
+		"the reach-back's Destination is not where the Erasure finds it")
 	assert.Equal(t, reflect.Slice, argFields(reflect.TypeFor[jobs.DeliverWebhookArgs]())[jobkind.DeliverWebhookBodyArg],
 		"a queued webhook delivery's body is not where the Erasure clears it")
 }

@@ -111,7 +111,8 @@ var ConditionAttributes = Table{
 }
 
 // ConditionOperators is how each test and leaf of a Condition compares, from the contract's
-// operator enums, so the module that decodes a Condition reads its operators from the contract.
+// operator enums, and the Channel a consent leaf reads, so the module that decodes a Condition
+// reads them from the contract.
 var ConditionOperators = Table{
 	Spec:    siteSpec,
 	Out:     "internal/kernel/conditiontree/operators_gen.go",
@@ -121,8 +122,17 @@ var ConditionOperators = Table{
 		operatorEnum("NumberOperator", "Number", "how a number test compares the value with its own"),
 		operatorEnum("MomentOperator", "Moment", "which side of its moment a moment test asks for"),
 		operatorEnum("PresenceOperator", "Presence", "whether a presence test asks for a value set or not"),
+		operatorEnum("StateOperator", "State", "how a test of a Contact's Engagement tracking consent compares it with a state"),
 		operatorEnum("HasOperator", "", "whether a Tag, Telegram or SMS leaf asks the Contact to have it"),
 		operatorEnum("EventCountOperator", "", "how an event leaf bounds the count of the Contact's Events"),
+		Enum{
+			Schema:  "EngagementTrackingChannel",
+			Doc:     []string{"TrackingChannel is the Channel whose Engagement tracking consent an engagementTracking leaf tests."},
+			Type:    "TrackingChannel",
+			Prefix:  "Tracking",
+			List:    "TrackingChannels",
+			ListDoc: []string{"TrackingChannels is every TrackingChannel, in the contract's order."},
+		},
 	),
 }
 
@@ -167,6 +177,9 @@ var ConditionKinds = Table{
 					"CustomFieldTests is every TestKind a Custom field leaf takes, whichever its field's type.",
 				}},
 				{Schema: "PropertyTest", List: "PropertyTests", Doc: []string{"PropertyTests is every TestKind a property leaf takes."}},
+				{Schema: "EngagementTrackingTest", List: "EngagementTrackingTests", Doc: []string{
+					"EngagementTrackingTests is every TestKind an engagementTracking leaf takes.",
+				}},
 			},
 		},
 		Discriminators{

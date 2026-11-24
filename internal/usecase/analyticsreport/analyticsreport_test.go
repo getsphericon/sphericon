@@ -283,3 +283,24 @@ func TestRevenueIsReadForThePeriodJustBeforeTheWindowToo(t *testing.T) {
 	}, report.Previous)
 	assert.Len(t, report.Series, 7, "the series is the current period's")
 }
+
+// Fixtures (outbound_messages.yml), Umbrella's tracking mix Broadcast three hours ago: one tracked
+// message, opened and clicked; one opened and clicked before its tracking was withdrawn; one sent
+// untracked. The rates are over the tracked one (ADR 0120), and the two others are counted beside
+// them, for the window and on the Report day they were sent; Sending still counts all three.
+func TestEngagementRatesCountTrackedMessagesAndTheUntrackedOnesBeside(t *testing.T) {
+	ov := overview(t, fixtures.UmbrellaID, analyticsreport.Window7Days)
+
+	assert.Equal(t, analyticsreport.Email{
+		Sent: 1, Opened: 1, Clicked: 1, Untracked: 2,
+		OpenRate: 1, ClickRate: 1, ClickToOpenRate: 1,
+	}, ov.Current.Email)
+	assert.Equal(t, 3, ov.Current.Sending.Broadcast, "every message sent counts as a send")
+	untracked, sent := 0, 0
+	for _, p := range ov.Series {
+		untracked += p.Untracked
+		sent += p.Sent
+	}
+	assert.Equal(t, 2, untracked, "the series reconciles with the cards")
+	assert.Equal(t, 1, sent)
+}

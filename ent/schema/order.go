@@ -16,13 +16,14 @@ type Order struct {
 }
 
 // Annotations checks the credit (at most one of the Broadcast and the Automation, and the click time
-// exactly when one is set) and the currency's form.
+// and the clicked message exactly when one is set) and the currency's form.
 func (Order) Annotations() []schema.Annotation {
 	currency, currencyExpr := CurrencyCheck("orders", "currency")
 	return []schema.Annotation{
 		entsql.Annotation{Table: "orders", Checks: map[string]string{
 			"orders_credit_check": "(broadcast_id IS NULL OR automation_id IS NULL) AND " +
-				"(credited_click_at IS NULL) = (broadcast_id IS NULL AND automation_id IS NULL)",
+				"(credited_click_at IS NULL) = (broadcast_id IS NULL AND automation_id IS NULL) AND " +
+				"(credited_message_id IS NULL) = (broadcast_id IS NULL AND automation_id IS NULL)",
 			currency: currencyExpr,
 		}},
 	}
@@ -53,23 +54,34 @@ func (Order) Fields() []ent.Field {
 		field.String("currency").
 			NotEmpty().
 			Immutable(),
-		// The credit (ADR 0064): the Broadcast or Automation whose email the Contact last clicked
-		// inside the Attribution window, and the time of that click. Found once when the Order is
-		// created and never looked for again; all three are null for an unattributed Order, and
-		// at most one of the two references is set.
+		// The credit (ADR 0064, ADR 0083): the Broadcast or Automation whose message the Contact
+		// last clicked inside the Attribution window, the time of that click and the Outbound
+		// message it was on. Found once when the Order is created and never looked for again; all
+		// four are null for an unattributed Order, and at most one of the two references is set.
+		// A refusal of tracking by the message's Destination clears all four together (ADR 0120),
+		// the one change the credit takes.
 		field.Int64("broadcast_id").
 			Optional().
-			Nillable().
-			Immutable(),
+			Nillable(),
 		field.Int64("automation_id").
 			Optional().
-			Nillable().
-			Immutable(),
+			Nillable(),
 		field.Time("credited_click_at").
 			Annotations(Attribute(reasonHistory)).
 			Optional().
+			Nillable(),
+		// The Outbound message whose click earned the credit, copied from the click Event's
+		// outboundMessageId, so a refusal of tracking clears exactly the credits that its
+		// Destination's clicks earned (ADR 0120).
+		field.Int64("credited_message_id").
+			Optional().
 			Nillable().
-			Immutable(),
+			Annotations(ScopedRef{
+				Unchecked: true,
+				Reason: "a snapshot of the clicked message, as the click Event keeps it: message retention deletes " +
+					"the message while the credit stays (ADR 0143), and a Backfilled Order is credited by a click " +
+					"still kept whose message may already be gone (ADR 0064)",
+			}),
 	}
 }
 
@@ -84,12 +96,10 @@ func (Order) Edges() []ent.Edge {
 		edge.To("broadcast", Broadcast.Type).
 			Field("broadcast_id").
 			Unique().
-			Immutable().
 			Annotations(entsql.OnDelete(entsql.Restrict)),
 		edge.To("automation", Automation.Type).
 			Field("automation_id").
 			Unique().
-			Immutable().
 			Annotations(entsql.OnDelete(entsql.Restrict)),
 		edge.To("movements", OrderMovement.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
@@ -106,6 +116,8 @@ func (Order) Indexes() []ent.Index {
 		// The credit's foreign keys' indexes, and the revenue of one Broadcast or Automation.
 		index.Fields("workspace_id", "broadcast_id"),
 		index.Fields("workspace_id", "automation_id"),
+		// The Orders a message's click credited, which a refusal of tracking clears (ADR 0120).
+		index.Fields("workspace_id", "credited_message_id"),
 	}
 }
 

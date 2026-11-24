@@ -1,10 +1,9 @@
 package events
 
 import (
-	"slices"
-
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
@@ -17,11 +16,28 @@ const MachineProperty = "machine"
 // (ADR 0083): what a link report counts and what Attribution credits.
 var ClickActions = []string{systemevent.EmailClicked, systemevent.TelegramClicked, systemevent.SmsClicked}
 
-// engagementActions are the opens and the clicks, the Events a machine can make.
-var engagementActions = append([]string{systemevent.EmailOpened}, ClickActions...)
+// engagementChannels are the opens and the clicks, the Events a machine can make, each with the
+// Channel of the message it was made on: whose Destination's Engagement tracking consent decides
+// whether it is recorded (ADR 0120).
+var engagementChannels = map[string]channels.Channel{
+	systemevent.EmailOpened:     channels.Email,
+	systemevent.EmailClicked:    channels.Email,
+	systemevent.SmsClicked:      channels.SMS,
+	systemevent.TelegramClicked: channels.Telegram,
+}
 
 // IsEngagement reports whether action is an open or a click, the Events a machine can make.
-func IsEngagement(action string) bool { return slices.Contains(engagementActions, action) }
+func IsEngagement(action string) bool {
+	_, ok := engagementChannels[action]
+	return ok
+}
+
+// EngagementChannel is the Channel of the message an open or a click is made on, false for an
+// action that is neither.
+func EngagementChannel(action string) (channels.Channel, bool) {
+	ch, ok := engagementChannels[action]
+	return ch, ok
+}
 
 // HumanOnly narrows a query of Events to the ones not made by software, for every figure that
 // counts engagement: a machine Event stays in the log and in no count.

@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -109,4 +110,22 @@ func TestTrackedTransactionalSendToASuppressedAddressIsRefused(t *testing.T) {
 	res := sendLinked(t, env, fixtures.SuppressionGhostBounceDestination, externalapi.NewOptBool(true))
 	assert.Equal(t, externalapi.TransactionalSendStatusSuppressed, res.Status)
 	assert.Empty(t, env.CustomerMail.Messages())
+}
+
+// A Transactional send that asks to be tracked yields to its Destination's consent (ADR 0120): to
+// an address that refused tracking it goes out untracked.
+func TestATrackedTransactionalSendToADestinationThatRefusedTrackingGoesOutUntracked(t *testing.T) {
+	env := testhelper.Setup(t)
+	_, err := env.ExternalScoped(t, apitokens.ScopeContactsWrite).EngagementTrackingCreate(t.Context(),
+		trackingOf(fixtures.ContactLiamEmail, externalapi.EngagementTrackingStateDenied, time.Time{}))
+	require.NoError(t, err)
+
+	sendLinked(t, env, fixtures.ContactLiamEmail, externalapi.NewOptBool(true))
+
+	msgs := env.CustomerMail.Messages()
+	require.Len(t, msgs, 1)
+	assert.Contains(t, msgs[0].HTML, orderLink, "the link as written")
+	assert.NotContains(t, msgs[0].HTML, "/e/c/")
+	assert.NotContains(t, msgs[0].HTML, "/e/o/")
+	assert.Empty(t, msgs[0].ListUnsubscribeURL, "still Transactional: no unsubscribe")
 }

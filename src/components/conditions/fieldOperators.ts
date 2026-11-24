@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next'
 import type { Field, InputType, Operator } from 'react-querybuilder'
 
-import { CustomFieldType, HasOperator } from '../../generated/site/types.gen.ts'
+import { CustomFieldType, HasOperator, StateOperator } from '../../generated/site/types.gen.ts'
 import type { SiteCustomFieldResource } from '../../generated/site/types.gen.ts'
 import { leafTests, namedOperator, operatorName, testOperators } from './condition.ts'
 import type { NamedOperator, TestKind } from './condition.ts'
@@ -63,6 +63,19 @@ export function birthdayOperators(t: TFunction): Operator[] {
 // tested for presence. Its key is typed in its value, which every operator shows, presence too.
 export function propertyOperators(t: TFunction): Operator[] {
   return operatorsOfTests(t, leafTests.property, false)
+}
+
+// An Engagement tracking consent is granted or denied, or none is recorded: it is or is not a state
+// picked as the value (its text test takes the contract's StateOperator only), or it is set or not.
+const stateComparisons = new Set<string>(Object.values(StateOperator))
+export function trackingOperators(t: TFunction): Operator[] {
+  return leafTests.engagementTracking.flatMap((kind) =>
+    testOperators[kind]
+      .filter(
+        (named: NamedOperator) => named.kind !== 'text' || stateComparisons.has(named.operator),
+      )
+      .map((named: NamedOperator) => operator(t, named, true)),
+  )
 }
 
 // A Tag is had or not, by its name, typed as the value.

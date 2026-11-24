@@ -563,6 +563,23 @@ type Handler interface {
 	//
 	// PUT /workspaces/{workspaceId}/domain-join
 	SiteDomainJoinSet(ctx context.Context, req *SiteSetDomainJoinInput, params SiteDomainJoinSetParams) (*SiteDomainJoinResource, error)
+	// SiteEngagementTrackingCreate implements SiteEngagementTracking_create operation.
+	//
+	// Record a refusal or a grant of tracking the person made to you (by phone, by reply) for one of the
+	// contact's Destinations, as `manual`, now. A `denied` always applies and is kept in the immutable
+	// `<channel>.engagement_tracking_denied` event; a `granted` is refused with a conflict over a standing
+	// `denied`: only the person can lift a refusal. 422 when the Destination is not the contact's.
+	//
+	// POST /workspaces/{workspaceId}/contacts/{contactId}/engagement-tracking
+	SiteEngagementTrackingCreate(ctx context.Context, req *SiteRecordEngagementTrackingInput, params SiteEngagementTrackingCreateParams) (*EngagementTrackingObservationResult, error)
+	// SiteEngagementTrackingGet implements SiteEngagementTracking_get operation.
+	//
+	// Read whether each Destination of a contact (its email address, its phone, the Telegram user of each
+	// of its chats) is tracked: the consent recorded with who recorded it, or `default` where none is,
+	// with what the Workspace's default means now.
+	//
+	// GET /workspaces/{workspaceId}/contacts/{contactId}/engagement-tracking
+	SiteEngagementTrackingGet(ctx context.Context, params SiteEngagementTrackingGetParams) (*ContactEngagementTracking, error)
 	// SiteEnrollmentsGet implements SiteEnrollments_get operation.
 	//
 	// Get one Enrollment of an Automation.
@@ -1556,6 +1573,15 @@ type Handler interface {
 	//
 	// PUT /workspaces/{workspaceId}/confirmed-opt-in
 	SiteWorkspacesSetConfirmedOptIn(ctx context.Context, req *SiteSetConfirmedOptInInput, params SiteWorkspacesSetConfirmedOptInParams) (*SiteWorkspaceResource, error)
+	// SiteWorkspacesSetEngagementTrackingDefault implements SiteWorkspaces_setEngagementTrackingDefault operation.
+	//
+	// Set the Engagement tracking default (Owner and Admin, ADR 0120): whether a Destination with no
+	// Engagement tracking consent recorded is tracked. Only a person changes it, here: neither `/api` nor
+	// MCP does. It decides every message rendered from then on and every open or click recorded from then
+	// on. Setting the value it has changes nothing. A change is recorded as an Audit entry.
+	//
+	// PUT /workspaces/{workspaceId}/engagement-tracking-default
+	SiteWorkspacesSetEngagementTrackingDefault(ctx context.Context, req *SiteSetEngagementTrackingDefaultInput, params SiteWorkspacesSetEngagementTrackingDefaultParams) (*SiteWorkspaceResource, error)
 	// SiteWorkspacesSetTimezone implements SiteWorkspaces_setTimezone operation.
 	//
 	// Set the Workspace time zone (Owner and Admin only), the zone of every Report day (ADR 0057). 422 for

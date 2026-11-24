@@ -2058,6 +2058,46 @@
         "x-required-scopes": ["contacts:export"]
       }
     },
+    "/contacts/{contactId}/engagement-tracking": {
+      "get": {
+        "operationId": "EngagementTracking_getForContact",
+        "description": "Read whether each Destination of a contact (its email address, its phone, the Telegram user\nof each of its chats) is tracked: the consent\nrecorded with who recorded it, or `default` where none is, with what it means now. The consent\nis keyed by the Destination, so it follows the address and the phone the contact has now.",
+        "parameters": [
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactEngagementTracking"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Consent"],
+        "x-required-scopes": ["contacts:read"]
+      }
+    },
     "/contacts/{contactId}/sms-consent": {
       "get": {
         "operationId": "SmsConsents_get",
@@ -2663,6 +2703,47 @@
         "x-mcp": {
           "name": "email_schema"
         }
+      }
+    },
+    "/engagement-tracking-consents": {
+      "post": {
+        "operationId": "EngagementTracking_create",
+        "description": "Record whether a destination agreed to have its opens and clicks tracked, as an `imported`\nconsent collected outside sphericon (a consent banner, an account setting). A `denied` always\napplies, and is kept in the immutable `<channel>.engagement_tracking_denied` event; a `granted`\nis kept in `<channel>.engagement_tracking_granted` and is refused with a conflict over a standing\n`denied`: only the person can lift a refusal. An observation that occurred before the consent\nstanding changes nothing and is answered as `superseded`; of two of the same moment the\nrefusal wins.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementTrackingObservationResult"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Consent"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordEngagementTrackingInput"
+              }
+            }
+          }
+        },
+        "x-required-scopes": ["contacts:write"]
       }
     },
     "/events": {
@@ -5323,7 +5404,7 @@
     "/workspace": {
       "get": {
         "operationId": "Workspace_get",
-        "description": "Read the Workspace the token acts in: its name, postal address, confirmed opt-in, time zone and Send cap. Read\nthe postal address before arming marketing email: an empty one refuses it, and only a person\ncan set it. Read the Send cap to explain a slow send or to plan one: a send larger than what\nremains of it in the last 24 hours goes out over more than a day. Read confirmed opt-in to know\nwhether a Contact needs a Confirmation before email reaches it. Read-only: no operation changes\nthe Send cap, the postal address or confirmed opt-in.",
+        "description": "Read the Workspace the token acts in: its name, postal address, confirmed opt-in, Engagement tracking default, time zone and Send cap. Read\nthe postal address before arming marketing email: an empty one refuses it, and only a person\ncan set it. Read the Send cap to explain a slow send or to plan one: a send larger than what\nremains of it in the last 24 hours goes out over more than a day. Read confirmed opt-in to know\nwhether a Contact needs a Confirmation before email reaches it. Read the Engagement tracking\ndefault to know whether a Destination with no consent recorded is tracked. Read-only: no\noperation changes the Send cap, the postal address, confirmed opt-in or the Engagement tracking\ndefault.",
         "parameters": [],
         "responses": {
           "200": {
@@ -7056,6 +7137,7 @@
           "cancelledCount",
           "openedCount",
           "clickedCount",
+          "untrackedCount",
           "unsubscribedCount",
           "deliveredCount",
           "undeliveredCount",
@@ -7117,12 +7199,17 @@
             "type": "integer",
             "format": "int32",
             "nullable": true,
-            "description": "Recipients that opened the email; null on a Channel that cannot tell"
+            "description": "Tracked messages that were opened; null on a Channel that cannot tell"
           },
           "clickedCount": {
             "type": "integer",
             "format": "int32",
-            "description": "Recipients that clicked a link"
+            "description": "Tracked messages that were clicked"
+          },
+          "untrackedCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages sent that are not tracked: sent untracked, or whose tracking was withdrawn since (ADR 0120). They count in no open or click figure, and the tracked messages are the sent count less these."
           },
           "unsubscribedCount": {
             "type": "integer",
@@ -7163,12 +7250,12 @@
             "type": "number",
             "format": "float",
             "nullable": true,
-            "description": "Unique opens ÷ messages sent (0-1); null on a Channel that reports no opens"
+            "description": "Unique opens ÷ tracked messages sent (0-1); null on a Channel that reports no opens"
           },
           "clickRate": {
             "type": "number",
             "format": "float",
-            "description": "Unique clicks ÷ messages sent (0-1)"
+            "description": "Unique clicks ÷ tracked messages sent (0-1)"
           }
         },
         "description": "Delivery report of a broadcast, per Channel (ADR 0080). A figure the broadcast's Channel does\nnot report is null, never zero: Telegram reports no delivered, opened, bounced or complained\ncount and so no open rate; SMS reports delivered and undelivered, and no opened, bounced or\ncomplained count or open rate; only SMS reports undelivered."
@@ -7804,6 +7891,43 @@
         "enum": ["disposable_email", "role_email"],
         "description": "A trait of an item's email address worth the importer's attention; the contact is stored all the\nsame. `disposable_email`: an address at a throwaway mailbox provider. `role_email`: an address of\na function rather than a person, such as info"
       },
+      "ContactEngagementTracking": {
+        "type": "object",
+        "required": ["destinations"],
+        "properties": {
+          "destinations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EngagementTrackingConsent"
+            },
+            "description": "One entry per Destination of the contact; empty when it has none"
+          }
+        },
+        "description": "The Engagement tracking consent of each Destination of a contact: its email address, its phone, and the Telegram user of each of its chats"
+      },
+      "ContactEngagementTrackingInput": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingObservationInput"
+              }
+            ],
+            "description": "The consent of the contact's email address: the item's, else the one the contact has"
+          },
+          "sms": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingObservationInput"
+              }
+            ],
+            "description": "The consent of the contact's phone on SMS: the item's, else the one the contact has"
+          }
+        },
+        "description": "The Engagement tracking consent a contact upsert item carries, per Destination of the contact",
+        "additionalProperties": false
+      },
       "ContactExportBroadcastRecipient": {
         "type": "object",
         "required": ["id", "broadcastId", "createdAt"],
@@ -8164,6 +8288,7 @@
           "status",
           "claimedAt",
           "captured",
+          "tracked",
           "createdAt"
         ],
         "properties": {
@@ -8186,6 +8311,14 @@
           "destination": {
             "type": "string",
             "description": "Address the message was sent to"
+          },
+          "destinations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "description": "Every address a message rendered once for several went to (a Telegram message to the\ncontact's chats), `destination` among them; null for a message to one"
           },
           "sendingSource": {
             "type": "string",
@@ -8306,6 +8439,30 @@
           "captured": {
             "type": "boolean",
             "description": "True when the message went through a Test inbox: captured, not delivered"
+          },
+          "tracked": {
+            "type": "boolean",
+            "description": "Whether the message went out tracked: with an open pixel and its links rewritten, or its\nlinks made Short tracked links (ADR 0120). False for a message no render decided (skipped\nbefore its render, or not rendered yet)"
+          },
+          "trackingDecidedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When a render decided whether the message goes out tracked; null for a message no render\ndecided, and for one sent before the moment was recorded, which went out tracked"
+          },
+          "trackingWithdrawnAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the message's tracking was withdrawn (a refusal of the contact's, or the Workspace's\ndefault turned to `dont_track`); null while it was not"
           },
           "broadcastId": {
             "type": "string",
@@ -9772,6 +9929,287 @@
         "description": "A Step that finishes its path, as a request writes it. A Step after it in the same path refuses\nthe save, naming that Step.",
         "additionalProperties": false
       },
+      "EngagementTrackingChannel": {
+        "type": "string",
+        "enum": ["email", "sms", "telegram"],
+        "description": "A Channel whose messages track opens and clicks, so a Destination on it can consent to being tracked (ADR 0120)"
+      },
+      "EngagementTrackingConsent": {
+        "type": "object",
+        "required": ["channel", "destination", "state", "effective"],
+        "properties": {
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingChannel"
+              }
+            ],
+            "description": "The Channel"
+          },
+          "destination": {
+            "type": "string",
+            "description": "Normalized destination: the lower-cased email address on `email`, the number in E.164 on `sms`, the Telegram user id on `telegram`"
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingReading"
+              }
+            ],
+            "description": "The consent recorded, or `default` where none is"
+          },
+          "provenance": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingProvenance"
+              }
+            ],
+            "nullable": true,
+            "description": "Who recorded the consent; absent while none is recorded"
+          },
+          "effective": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingDecision"
+              }
+            ],
+            "description": "Whether the Destination's opens and clicks are tracked: what the consent says, else the Workspace's default"
+          },
+          "updatedAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the consent last changed; absent while none is recorded"
+          }
+        },
+        "description": "The Engagement tracking consent of one Destination on one Channel (ADR 0120)"
+      },
+      "EngagementTrackingDecision": {
+        "type": "string",
+        "enum": ["track", "dont_track"],
+        "description": "Whether a Destination's opens and clicks are tracked"
+      },
+      "EngagementTrackingLeaf": {
+        "type": "object",
+        "required": ["kind", "channel", "test"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["engagementTracking"]
+          },
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingChannel"
+              }
+            ],
+            "description": "The Channel whose consent is tested"
+          },
+          "test": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingTest"
+              }
+            ],
+            "description": "What it asks of the consent"
+          }
+        },
+        "description": "A test of the Contact's Engagement tracking consent on one Channel (ADR 0120), read live as\nrecorded, whatever the Workspace's default: on email the consent of its email address, on sms of\nits phone, on telegram of its own chats, which read `denied` when any is denied, `granted` when it\nhas one and all are granted, and as none recorded otherwise. A Contact without a Destination on\nthe Channel has none recorded."
+      },
+      "EngagementTrackingLeafInput": {
+        "type": "object",
+        "required": ["kind", "channel", "test"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["engagementTracking"]
+          },
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingChannel"
+              }
+            ],
+            "description": "The Channel whose consent is tested"
+          },
+          "test": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingTestInput"
+              }
+            ],
+            "description": "What it asks of the consent"
+          }
+        },
+        "description": "A test of the Contact's Engagement tracking consent on one Channel (ADR 0120), read live as\nrecorded, whatever the Workspace's default: on email the consent of its email address, on sms of\nits phone, on telegram of its own chats, which read `denied` when any is denied, `granted` when it\nhas one and all are granted, and as none recorded otherwise. A Contact without a Destination on\nthe Channel has none recorded.",
+        "additionalProperties": false
+      },
+      "EngagementTrackingObservationInput": {
+        "type": "object",
+        "required": ["state"],
+        "properties": {
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingState"
+              }
+            ],
+            "description": "Whether the person agreed to have their opens and clicks tracked, or refused"
+          },
+          "occurredAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the person gave or refused the consent; now when omitted. A grant may not be in the future; a refusal dated in the future is taken as now"
+          }
+        },
+        "description": "One Engagement tracking observation of a contact's Destination",
+        "additionalProperties": false
+      },
+      "EngagementTrackingObservationResult": {
+        "type": "object",
+        "required": ["outcome", "consent"],
+        "properties": {
+          "outcome": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingOutcome"
+              }
+            ],
+            "description": "Whether the observation set the consent"
+          },
+          "consent": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingConsent"
+              }
+            ],
+            "description": "The Destination's consent after the observation"
+          }
+        },
+        "description": "The answer to an Engagement tracking observation: what became of it, and the consent that stands after it"
+      },
+      "EngagementTrackingOutcome": {
+        "type": "string",
+        "enum": ["applied", "superseded"],
+        "description": "What became of an Engagement tracking observation: it set the consent (`applied`), or it occurred before the consent standing and changed nothing (`superseded`, recorded in the contact's history as `contact.consent_superseded`)"
+      },
+      "EngagementTrackingProvenance": {
+        "type": "string",
+        "enum": ["page", "manual", "imported", "onsite_form"],
+        "description": "Who recorded an Engagement tracking consent: the person on a page reached from a message (page), a member of the Workspace on the Contact card (manual), the customer through the API or an import (imported), or an On-site form's checkbox (onsite_form). A `denied` applies from any of them; only the person lifts one"
+      },
+      "EngagementTrackingReading": {
+        "type": "string",
+        "enum": ["granted", "denied", "default"],
+        "description": "What a Destination's Engagement tracking consent reads as: `granted` or `denied` as recorded, or `default` where nothing is recorded and the Workspace's default decides"
+      },
+      "EngagementTrackingState": {
+        "type": "string",
+        "enum": ["granted", "denied"],
+        "description": "Whether a Destination agreed to have its opens and clicks tracked (ADR 0120)"
+      },
+      "EngagementTrackingStateTest": {
+        "type": "object",
+        "required": ["kind", "operator", "value"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["text"]
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StateOperator"
+              }
+            ],
+            "description": "Whether the consent reads as the state, or does not"
+          },
+          "value": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingState"
+              }
+            ],
+            "description": "The state compared with"
+          }
+        },
+        "description": "A test of a Contact's Engagement tracking consent against a state. eq holds where the consent\nreads as `value`; neq holds everywhere else, where none is recorded included, so a test and its\nnegation split every Contact."
+      },
+      "EngagementTrackingStateTestInput": {
+        "type": "object",
+        "required": ["kind", "operator", "value"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["text"]
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StateOperator"
+              }
+            ],
+            "description": "Whether the consent reads as the state, or does not"
+          },
+          "value": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingState"
+              }
+            ],
+            "description": "The state compared with"
+          }
+        },
+        "description": "A test of a Contact's Engagement tracking consent against a state. eq holds where the consent\nreads as `value`; neq holds everywhere else, where none is recorded included, so a test and its\nnegation split every Contact.",
+        "additionalProperties": false
+      },
+      "EngagementTrackingTest": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EngagementTrackingStateTest"
+          },
+          {
+            "$ref": "#/components/schemas/PresenceTest"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "text": "#/components/schemas/EngagementTrackingStateTest",
+            "presence": "#/components/schemas/PresenceTest"
+          }
+        },
+        "description": "What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a\ncomparison with `granted` or `denied`, or a presence test of whether any is recorded."
+      },
+      "EngagementTrackingTestInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EngagementTrackingStateTestInput"
+          },
+          {
+            "$ref": "#/components/schemas/PresenceTestInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "text": "#/components/schemas/EngagementTrackingStateTestInput",
+            "presence": "#/components/schemas/PresenceTestInput"
+          }
+        },
+        "description": "What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a\ncomparison with `granted` or `denied`, or a presence test of whether any is recorded."
+      },
       "EnrollmentFailure": {
         "type": "object",
         "required": ["kind"],
@@ -10760,6 +11198,8 @@
           "opened_at",
           "clicked_at",
           "captured",
+          "tracked",
+          "tracking_withdrawn_at",
           "created_at",
           "updated_at"
         ],
@@ -10976,6 +11416,30 @@
             "type": "boolean",
             "description": "True when the message went through a Test inbox: captured, not delivered"
           },
+          "tracked": {
+            "type": "boolean",
+            "description": "Whether the message went out tracked (ADR 0120): an open pixel and tracked links; false for a message no render decided (skipped before its render, or not rendered yet). A message is tracked while this holds and no withdrawal is recorded."
+          },
+          "tracking_decided_at": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When a render decided whether the message goes out tracked; null for a message no render decided, and for one sent before the moment was recorded, which went out tracked."
+          },
+          "tracking_withdrawn_at": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the message's tracking was withdrawn (a refusal of its Destination, or the Workspace's default turned to `dont_track`); absent while it was not. Once set it never clears."
+          },
           "created_at": {
             "allOf": [
               {
@@ -10993,7 +11457,7 @@
             "description": "Last change timestamp: the cursor column and the version of the row"
           }
         },
-        "description": "One row of the Outbound messages stream: the delivery record of one send, whichever\nsurface asked for it. It carries provenance and outcome only, never a subject or a body.\nA row is delivered again whenever it changes (a status change, an Erasure clearing the\ndestination and the Contact)."
+        "description": "One row of the Outbound messages stream: the delivery record of one send, whichever\nsurface asked for it. It carries provenance and outcome only, never a subject or a body.\nA row is delivered again whenever it changes (a status change, an Erasure clearing the\ndestination and the Contact, a withdrawal of its tracking)."
       },
       "FilterPropertyLeaf": {
         "type": "object",
@@ -11921,12 +12385,17 @@
       },
       "PreviewSegmentResult": {
         "type": "object",
-        "required": ["count"],
+        "required": ["count", "unknownEngagement"],
         "properties": {
           "count": {
             "type": "integer",
             "format": "int32",
             "description": "Number of contacts matching the condition, before Suppression and Unsubscribe"
+          },
+          "unknownEngagement": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of contacts the condition leaves out because their engagement is unknown: it counts their\nopens or clicks, and their Destination on that Channel is not tracked now (its Engagement\ntracking consent, else the Workspace's default). They match neither the test nor its negation."
           },
           "recipients": {
             "type": "integer",
@@ -12201,6 +12670,45 @@
           }
         },
         "description": "A rate as the (numerator, denominator, rate) triple (ADR 0011), shown as it is, with no\ndisplay floor: the rate is null only when the denominator is zero, an undefined rate never\nbeing reported as 0."
+      },
+      "RecordEngagementTrackingInput": {
+        "type": "object",
+        "required": ["channel", "destination", "state"],
+        "properties": {
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingChannel"
+              }
+            ],
+            "description": "The Channel the consent is for"
+          },
+          "destination": {
+            "type": "string",
+            "maxLength": 320,
+            "description": "The Destination that consented or refused: an email address on `email`, a phone number with its country code on `sms`, the Telegram user id a chat's Binding names on `telegram`"
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingState"
+              }
+            ],
+            "description": "Whether the person agreed to have their opens and clicks tracked, or refused"
+          },
+          "occurredAt": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "nullable": true,
+            "description": "When the person gave or refused the consent; now when omitted. A grant may not be in the future; a refusal dated in the future is taken as now"
+          }
+        },
+        "description": "An Engagement tracking consent the customer collected for a Destination (ADR 0120), recorded as `imported`",
+        "additionalProperties": false
       },
       "RecordEventsBatchInput": {
         "type": "object",
@@ -12572,6 +13080,9 @@
             "$ref": "#/components/schemas/SmsLeaf"
           },
           {
+            "$ref": "#/components/schemas/EngagementTrackingLeaf"
+          },
+          {
             "$ref": "#/components/schemas/CustomFieldLeaf"
           },
           {
@@ -12589,6 +13100,7 @@
             "tag": "#/components/schemas/TagLeaf",
             "telegram": "#/components/schemas/TelegramLeaf",
             "sms": "#/components/schemas/SmsLeaf",
+            "engagementTracking": "#/components/schemas/EngagementTrackingLeaf",
             "customField": "#/components/schemas/CustomFieldLeaf",
             "event": "#/components/schemas/EventLeaf",
             "property": "#/components/schemas/RulePropertyLeaf",
@@ -12619,6 +13131,9 @@
             "$ref": "#/components/schemas/SmsLeafInput"
           },
           {
+            "$ref": "#/components/schemas/EngagementTrackingLeafInput"
+          },
+          {
             "$ref": "#/components/schemas/CustomFieldLeafInput"
           },
           {
@@ -12636,6 +13151,7 @@
             "tag": "#/components/schemas/TagLeafInput",
             "telegram": "#/components/schemas/TelegramLeafInput",
             "sms": "#/components/schemas/SmsLeafInput",
+            "engagementTracking": "#/components/schemas/EngagementTrackingLeafInput",
             "customField": "#/components/schemas/CustomFieldLeafInput",
             "event": "#/components/schemas/EventLeafInput",
             "property": "#/components/schemas/RulePropertyLeafInput",
@@ -13093,6 +13609,9 @@
             "$ref": "#/components/schemas/SmsLeaf"
           },
           {
+            "$ref": "#/components/schemas/EngagementTrackingLeaf"
+          },
+          {
             "$ref": "#/components/schemas/CustomFieldLeaf"
           },
           {
@@ -13107,6 +13626,7 @@
             "tag": "#/components/schemas/TagLeaf",
             "telegram": "#/components/schemas/TelegramLeaf",
             "sms": "#/components/schemas/SmsLeaf",
+            "engagementTracking": "#/components/schemas/EngagementTrackingLeaf",
             "customField": "#/components/schemas/CustomFieldLeaf",
             "event": "#/components/schemas/EventLeaf",
             "group": "#/components/schemas/SegmentCondition"
@@ -13136,6 +13656,9 @@
             "$ref": "#/components/schemas/SmsLeafInput"
           },
           {
+            "$ref": "#/components/schemas/EngagementTrackingLeafInput"
+          },
+          {
             "$ref": "#/components/schemas/CustomFieldLeafInput"
           },
           {
@@ -13150,6 +13673,7 @@
             "tag": "#/components/schemas/TagLeafInput",
             "telegram": "#/components/schemas/TelegramLeafInput",
             "sms": "#/components/schemas/SmsLeafInput",
+            "engagementTracking": "#/components/schemas/EngagementTrackingLeafInput",
             "customField": "#/components/schemas/CustomFieldLeafInput",
             "event": "#/components/schemas/EventLeafInput",
             "group": "#/components/schemas/SegmentConditionInput"
@@ -14091,6 +14615,11 @@
         },
         "description": "A Workspace the User is the only Owner of, which blocks User deletion"
       },
+      "StateOperator": {
+        "type": "string",
+        "enum": ["eq", "neq"],
+        "description": "How a test of a Contact's Engagement tracking consent compares it with a state: it reads as\nthe state, or it does not"
+      },
       "StepId": {
         "type": "string",
         "description": "The id of a Step or a path: a UUID in its lowercase text form, kept by every version of the\nautomation. A client mints it when it creates the Step or path and sends it back on every save;\none sent without an id is given one. Unique within a version, Steps and paths together."
@@ -14183,6 +14712,12 @@
           "sms.confirmed",
           "sms.clicked",
           "sms.unsubscribed",
+          "email.engagement_tracking_granted",
+          "email.engagement_tracking_denied",
+          "sms.engagement_tracking_granted",
+          "sms.engagement_tracking_denied",
+          "telegram.engagement_tracking_granted",
+          "telegram.engagement_tracking_denied",
           "contact.consent_superseded"
         ],
         "description": "The action of a System event: an Event sphericon itself records, never a customer. An Event's\n`action`, an Automation's trigger and a condition carry one of these or a customer's own action,\nwhich may not take a System event's namespace; a webhook's event types may also name the Audit\nlog's `audit.entry`."
@@ -15559,6 +16094,14 @@
               }
             ],
             "description": "The evidence of the SMS consent the contact's phone gave outside sphericon: records an\n`imported` SMS confirmation for the phone, as `POST /confirmations` does. Without it a phone\nstays unreachable on SMS. An item with it and no phone fails"
+          },
+          "engagementTracking": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContactEngagementTrackingInput"
+              }
+            ],
+            "description": "The Engagement tracking consent the contact's Destinations gave outside sphericon, recorded as\n`imported`, as `POST /engagement-tracking-consents` does. An item with consent for its email\nand no email fails, and so does one with consent for its phone and no phone"
           }
         },
         "description": "One contact to upsert, matched by its alias keys (subject id, email, phone). An alias key fills\nonly a contact that has none; every other attribute given replaces the contact's, and null clears\nit.",
@@ -15885,6 +16428,7 @@
           "name",
           "postalAddress",
           "requireConfirmedOptIn",
+          "engagementTrackingDefault",
           "timezone",
           "revision"
         ],
@@ -15910,6 +16454,14 @@
           "requireConfirmedOptIn": {
             "type": "boolean",
             "description": "Whether email reaches an address only once it holds a Confirmation (confirmed opt-in, ADR\n0013); off, email is single opt-in by the Workspace's choice. Read-only: only a person turns it\non, in the console's Workspace settings, affirming that the current mailable list consented."
+          },
+          "engagementTrackingDefault": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingDecision"
+              }
+            ],
+            "description": "The Engagement tracking default (ADR 0120): whether a Destination with no Engagement tracking\nconsent recorded has its opens and clicks tracked. Read-only: only a person changes it, in the\nconsole's Workspace settings."
           },
           "timezone": {
             "allOf": [

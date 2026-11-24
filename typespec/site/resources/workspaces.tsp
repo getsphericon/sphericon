@@ -53,6 +53,10 @@ model SiteWorkspaceResource {
    * email set up. */
   requireConfirmedOptIn: boolean;
 
+  /** The Engagement tracking default (ADR 0120): whether a Destination with no Engagement tracking
+   * consent recorded has its opens and clicks tracked. `track` until an Owner or Admin changes it. */
+  engagementTrackingDefault: EngagementTrackingDecision;
+
   /** The authenticated User's role in this Workspace (from their Membership). It
    * rides the Workspace list so role-gated UI is known even while the Workspace's
    * own endpoints are withheld under a Two-factor requirement. */
@@ -168,6 +172,17 @@ model SiteSetConfirmedOptInInput {
    * the Workspace's current mailable list consented, and records a `grandfathered` Confirmation
    * for every address mailable now; off keeps every Confirmation. */
   enabled: boolean;
+}
+
+/** Set the Engagement tracking default (ADR 0120) */
+model SiteSetEngagementTrackingDefaultInput {
+  /** The Workspace's `revision` the change was made on (ADR 0119): the one it was read with */
+  revision: Revision;
+
+  /** `track`: a Destination with no consent recorded is tracked; `dont_track`: it is tracked only
+   * once it grants its consent. It decides every message rendered from then on, and every open or
+   * click recorded from then on. */
+  engagementTrackingDefault: EngagementTrackingDecision;
 }
 
 /** The texts the confirmation email goes out with while the Workspace sets none of its own: the
@@ -400,6 +415,18 @@ namespace SiteWorkspaces {
   op setConfirmedOptIn(
     @path workspaceId: WorkspaceId,
     @body body: SiteSetConfirmedOptInInput,
+  ): SiteWorkspaceResource | Problem;
+
+  /** Set the Engagement tracking default (Owner and Admin, ADR 0120): whether a Destination with no
+   * Engagement tracking consent recorded is tracked. Only a person changes it, here: neither `/api`
+   * nor MCP does. It decides every message rendered from then on and every open or click recorded
+   * from then on. Setting the value it has changes nothing. A change is recorded as an Audit entry. */
+  @put
+  @route("/{workspaceId}/engagement-tracking-default")
+  @requiresPermissions(#[Permission.workspaceUpdate])
+  op setEngagementTrackingDefault(
+    @path workspaceId: WorkspaceId,
+    @body body: SiteSetEngagementTrackingDefaultInput,
   ): SiteWorkspaceResource | Problem;
 
   /** Read the confirmation email's settings (Owner and Admin, ADR 0013) */

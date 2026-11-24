@@ -29,6 +29,7 @@ func FuzzDecodeReadsAnyDocument(f *testing.F) {
 	f.Add(`{"kind":"customField","key":"","test":{"kind":"text","operator":"eq","value":{"a":1}}}`)
 	f.Add(`{"kind":"telegram","operator":"has"}`)
 	f.Add(`{"kind":"sms","operator":"doesNotHave"}`)
+	f.Add(`{"kind":"engagementTracking","channel":"telegram","test":{"kind":"text","operator":"neq","value":"denied"}}`)
 	f.Add(`42`)
 
 	f.Fuzz(func(t *testing.T, entry string) {

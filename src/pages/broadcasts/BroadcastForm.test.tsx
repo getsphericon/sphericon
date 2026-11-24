@@ -200,7 +200,7 @@ test('Cancel links back to the broadcasts list of the current workspace', async 
 // second day.
 test('an audience larger than the Send cap is warned about with the days it takes', async () => {
   serve([], [], { perDay: 5000, sentLast24h: 0 })
-  worker.use(handleSiteSegmentsPreview({ body: { count: 12_000 } }))
+  worker.use(handleSiteSegmentsPreview({ body: { count: 12_000, unknownEngagement: 0 } }))
   const screen = await openEmailEditor()
   await chooseAudience(screen)
 
@@ -267,7 +267,7 @@ test('the chosen Segment is counted by its condition', async () => {
 test('the Send cap warning does not stop the Broadcast from being saved', async () => {
   const bodies: unknown[] = []
   serve([], bodies, { perDay: 5000, sentLast24h: 0 })
-  worker.use(handleSiteSegmentsPreview({ body: { count: 12_000 } }))
+  worker.use(handleSiteSegmentsPreview({ body: { count: 12_000, unknownEngagement: 0 } }))
   const screen = await openEmailEditor()
   await chooseAudience(screen)
 

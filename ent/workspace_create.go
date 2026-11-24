@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
@@ -257,6 +258,20 @@ func (_c *WorkspaceCreate) SetTimezone(v string) *WorkspaceCreate {
 func (_c *WorkspaceCreate) SetNillableTimezone(v *string) *WorkspaceCreate {
 	if v != nil {
 		_c.SetTimezone(*v)
+	}
+	return _c
+}
+
+// SetEngagementTrackingDefault sets the "engagement_tracking_default" field.
+func (_c *WorkspaceCreate) SetEngagementTrackingDefault(v workspace.EngagementTrackingDefault) *WorkspaceCreate {
+	_c.mutation.SetEngagementTrackingDefault(v)
+	return _c
+}
+
+// SetNillableEngagementTrackingDefault sets the "engagement_tracking_default" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableEngagementTrackingDefault(v *workspace.EngagementTrackingDefault) *WorkspaceCreate {
+	if v != nil {
+		_c.SetEngagementTrackingDefault(*v)
 	}
 	return _c
 }
@@ -1065,6 +1080,21 @@ func (_c *WorkspaceCreate) AddConsentStamps(v ...*ConsentStamp) *WorkspaceCreate
 	return _c.AddConsentStampIDs(ids...)
 }
 
+// AddEngagementTrackingConsentIDs adds the "engagement_tracking_consents" edge to the EngagementTrackingConsent entity by IDs.
+func (_c *WorkspaceCreate) AddEngagementTrackingConsentIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddEngagementTrackingConsentIDs(ids...)
+	return _c
+}
+
+// AddEngagementTrackingConsents adds the "engagement_tracking_consents" edges to the EngagementTrackingConsent entity.
+func (_c *WorkspaceCreate) AddEngagementTrackingConsents(v ...*EngagementTrackingConsent) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddEngagementTrackingConsentIDs(ids...)
+}
+
 // AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
 func (_c *WorkspaceCreate) AddOutboundMessageIDs(ids ...int64) *WorkspaceCreate {
 	_c.mutation.AddOutboundMessageIDs(ids...)
@@ -1289,6 +1319,10 @@ func (_c *WorkspaceCreate) defaults() {
 		v := workspace.DefaultPostalAddress
 		_c.mutation.SetPostalAddress(v)
 	}
+	if _, ok := _c.mutation.EngagementTrackingDefault(); !ok {
+		v := workspace.DefaultEngagementTrackingDefault
+		_c.mutation.SetEngagementTrackingDefault(v)
+	}
 	if _, ok := _c.mutation.AttributionWindowDays(); !ok {
 		v := workspace.DefaultAttributionWindowDays
 		_c.mutation.SetAttributionWindowDays(v)
@@ -1369,6 +1403,14 @@ func (_c *WorkspaceCreate) check() error {
 	if v, ok := _c.mutation.Timezone(); ok {
 		if err := workspace.TimezoneValidator(v); err != nil {
 			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "Workspace.timezone": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.EngagementTrackingDefault(); !ok {
+		return &ValidationError{Name: "engagement_tracking_default", err: errors.New(`ent: missing required field "Workspace.engagement_tracking_default"`)}
+	}
+	if v, ok := _c.mutation.EngagementTrackingDefault(); ok {
+		if err := workspace.EngagementTrackingDefaultValidator(v); err != nil {
+			return &ValidationError{Name: "engagement_tracking_default", err: fmt.Errorf(`ent: validator failed for field "Workspace.engagement_tracking_default": %w`, err)}
 		}
 	}
 	if v, ok := _c.mutation.ReportingCurrency(); ok {
@@ -1492,6 +1534,10 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Timezone(); ok {
 		_spec.SetField(workspace.FieldTimezone, field.TypeString, value)
 		_node.Timezone = &value
+	}
+	if value, ok := _c.mutation.EngagementTrackingDefault(); ok {
+		_spec.SetField(workspace.FieldEngagementTrackingDefault, field.TypeEnum, value)
+		_node.EngagementTrackingDefault = value
 	}
 	if value, ok := _c.mutation.ReportingCurrency(); ok {
 		_spec.SetField(workspace.FieldReportingCurrency, field.TypeString, value)
@@ -2213,6 +2259,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
+	if nodes := _c.mutation.EngagementTrackingConsentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.EngagementTrackingConsentsTable,
+			Columns: []string{workspace.EngagementTrackingConsentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(engagementtrackingconsent.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	if nodes := _c.mutation.OutboundMessagesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -2654,6 +2716,18 @@ func (u *WorkspaceUpsert) UpdateTimezone() *WorkspaceUpsert {
 // ClearTimezone clears the value of the "timezone" field.
 func (u *WorkspaceUpsert) ClearTimezone() *WorkspaceUpsert {
 	u.SetNull(workspace.FieldTimezone)
+	return u
+}
+
+// SetEngagementTrackingDefault sets the "engagement_tracking_default" field.
+func (u *WorkspaceUpsert) SetEngagementTrackingDefault(v workspace.EngagementTrackingDefault) *WorkspaceUpsert {
+	u.Set(workspace.FieldEngagementTrackingDefault, v)
+	return u
+}
+
+// UpdateEngagementTrackingDefault sets the "engagement_tracking_default" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateEngagementTrackingDefault() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldEngagementTrackingDefault)
 	return u
 }
 
@@ -3170,6 +3244,20 @@ func (u *WorkspaceUpsertOne) UpdateTimezone() *WorkspaceUpsertOne {
 func (u *WorkspaceUpsertOne) ClearTimezone() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearTimezone()
+	})
+}
+
+// SetEngagementTrackingDefault sets the "engagement_tracking_default" field.
+func (u *WorkspaceUpsertOne) SetEngagementTrackingDefault(v workspace.EngagementTrackingDefault) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetEngagementTrackingDefault(v)
+	})
+}
+
+// UpdateEngagementTrackingDefault sets the "engagement_tracking_default" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateEngagementTrackingDefault() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateEngagementTrackingDefault()
 	})
 }
 
@@ -3887,6 +3975,20 @@ func (u *WorkspaceUpsertBulk) UpdateTimezone() *WorkspaceUpsertBulk {
 func (u *WorkspaceUpsertBulk) ClearTimezone() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearTimezone()
+	})
+}
+
+// SetEngagementTrackingDefault sets the "engagement_tracking_default" field.
+func (u *WorkspaceUpsertBulk) SetEngagementTrackingDefault(v workspace.EngagementTrackingDefault) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetEngagementTrackingDefault(v)
+	})
+}
+
+// UpdateEngagementTrackingDefault sets the "engagement_tracking_default" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateEngagementTrackingDefault() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateEngagementTrackingDefault()
 	})
 }
 

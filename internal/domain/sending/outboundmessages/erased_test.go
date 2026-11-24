@@ -11,6 +11,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
@@ -30,7 +32,7 @@ func TestSendToAnErasedContactIsDroppedAtTheChokepoint(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	req := marketing(t, env, "bc:erased", fixtures.ContactAliceID)
 
-	require.NoError(t, contacterasure.New(env.Bus, testhelper.Module[*broadcasts.Module](env), testhelper.Module[*contacts.Module](env), testhelper.Module[*unsubscribes.Module](env), testhelper.Module[*bindings.Chats](env), time.Now).Erase(ctx, s, contacterasure.Identifier{ContactID: fixtures.ContactAliceID},
+	require.NoError(t, contacterasure.New(env.Bus, testhelper.Module[*broadcasts.Module](env), testhelper.Module[*contacts.Module](env), testhelper.Module[*unsubscribes.Module](env), testhelper.Module[*bindings.Chats](env), testhelper.Module[*engagementtracking.Module](env), testhelper.Module[*outboundmessages.Module](env), testhelper.Module[*orders.Module](env), time.Now).Erase(ctx, s, contacterasure.Identifier{ContactID: fixtures.ContactAliceID},
 		contacterasure.Requester{Kind: contacterasure.RequesterAPIToken}))
 	before := len(env.CustomerMail.Messages())
 
@@ -52,7 +54,7 @@ func TestSendToAnErasedContactIdIsRefusedAtTheClaim(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	require.NoError(t, contacterasure.New(env.Bus, testhelper.Module[*broadcasts.Module](env), testhelper.Module[*contacts.Module](env), testhelper.Module[*unsubscribes.Module](env), testhelper.Module[*bindings.Chats](env), time.Now).Erase(ctx, s, contacterasure.Identifier{ContactID: fixtures.ContactAliceID},
+	require.NoError(t, contacterasure.New(env.Bus, testhelper.Module[*broadcasts.Module](env), testhelper.Module[*contacts.Module](env), testhelper.Module[*unsubscribes.Module](env), testhelper.Module[*bindings.Chats](env), testhelper.Module[*engagementtracking.Module](env), testhelper.Module[*outboundmessages.Module](env), testhelper.Module[*orders.Module](env), time.Now).Erase(ctx, s, contacterasure.Identifier{ContactID: fixtures.ContactAliceID},
 		contacterasure.Requester{Kind: contacterasure.RequesterAPIToken}))
 	before := len(env.CustomerMail.Messages())
 

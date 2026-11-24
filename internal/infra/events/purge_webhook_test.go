@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -67,6 +68,10 @@ func TestPurgeWebhookJobsMatchesTheBodyDispatchBuilds(t *testing.T) {
 	byAddress := deliveryBody(t, env, &events.CollectedEvent{WorkspaceID: fixtures.InitechID, Action: "page_view", Email: "Erin@Initech.test"})
 	// Consent the Contact's number gave before any Contact had it names the number alone.
 	byNumber := deliveryBody(t, env, &events.SmsConfirmed{WorkspaceID: fixtures.InitechID, Phone: erasablePhone, Provenance: "keyword"})
+	// Tracking consent the number gave before any Contact had it names the number as its Destination.
+	byDestination := deliveryBody(t, env, &events.EngagementTrackingGranted{
+		WorkspaceID: fixtures.InitechID, Channel: channels.SMS, Destination: erasablePhone, Provenance: "manual",
+	})
 	otherNumber := deliveryBody(t, env, &events.SmsConfirmed{WorkspaceID: fixtures.InitechID, Phone: "+14155550198", Provenance: "keyword"})
 	bystander := deliveryBody(t, env, &events.ContactCreated{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactBystanderID, Email: fixtures.ContactBystanderEmail})
 	nobody := deliveryBody(t, env, &events.CollectedEvent{WorkspaceID: fixtures.InitechID, Action: "page_view", VisitorID: "anon-visitor"})
@@ -98,7 +103,7 @@ func TestPurgeWebhookJobsMatchesTheBodyDispatchBuilds(t *testing.T) {
 	require.NoError(t, json.Unmarshal(byNumber, &numbered))
 	assert.Equal(t, erasablePhone, numbered.Data.Phone)
 
-	names := make([]string, 0, 9)
+	names := make([]string, 0, 10)
 	for _, d := range []struct {
 		workspace int64
 		endpoint  int64
@@ -108,6 +113,7 @@ func TestPurgeWebhookJobsMatchesTheBodyDispatchBuilds(t *testing.T) {
 		{fixtures.InitechID, fixtures.WebhookInitechID, "by-id", byID},
 		{fixtures.InitechID, fixtures.WebhookInitechID, "by-address", byAddress},
 		{fixtures.InitechID, fixtures.WebhookInitechID, "by-number", byNumber},
+		{fixtures.InitechID, fixtures.WebhookInitechID, "by-destination", byDestination},
 		{fixtures.InitechID, fixtures.WebhookInitechID, "other-number", otherNumber},
 		{fixtures.InitechID, fixtures.WebhookInitechID, "by-top-level-id-only", onlyTopLevelID},
 		{fixtures.InitechID, fixtures.WebhookInitechID, "by-data-id-only", onlyDataID},

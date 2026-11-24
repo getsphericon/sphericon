@@ -7,39 +7,45 @@ package systemevent
 //
 // The values of the contract's SystemEventAction enum, in its order.
 const (
-	ContactCreated           = "contact.created"
-	ContactErased            = "contact.erased"
-	EmailSent                = "email.sent"
-	EmailDelivered           = "email.delivered"
-	EmailDelayed             = "email.delayed"
-	EmailDropped             = "email.dropped"
-	EmailOpened              = "email.opened"
-	EmailClicked             = "email.clicked"
-	EmailUnsubscribed        = "email.unsubscribed"
-	EmailBounced             = "email.bounced"
-	EmailComplained          = "email.complained"
-	MarketingConfirmed       = "marketing.confirmed"
-	ContactTagged            = "contact.tagged"
-	ContactUntagged          = "contact.untagged"
-	ContactFieldChanged      = "contact.field_changed"
-	AutomationEnrolled       = "automation.enrolled"
-	AutomationCompleted      = "automation.completed"
-	AutomationGoalReached    = "automation.goal_reached"
-	AutomationExited         = "automation.exited"
-	TelegramBound            = "telegram.bound"
-	TelegramUnbound          = "telegram.unbound"
-	TelegramReceived         = "telegram.received"
-	TelegramSent             = "telegram.sent"
-	TelegramClicked          = "telegram.clicked"
-	TelegramUnsubscribed     = "telegram.unsubscribed"
-	SmsReceived              = "sms.received"
-	SmsSent                  = "sms.sent"
-	SmsDelivered             = "sms.delivered"
-	SmsUndelivered           = "sms.undelivered"
-	SmsConfirmed             = "sms.confirmed"
-	SmsClicked               = "sms.clicked"
-	SmsUnsubscribed          = "sms.unsubscribed"
-	ContactConsentSuperseded = "contact.consent_superseded"
+	ContactCreated                    = "contact.created"
+	ContactErased                     = "contact.erased"
+	EmailSent                         = "email.sent"
+	EmailDelivered                    = "email.delivered"
+	EmailDelayed                      = "email.delayed"
+	EmailDropped                      = "email.dropped"
+	EmailOpened                       = "email.opened"
+	EmailClicked                      = "email.clicked"
+	EmailUnsubscribed                 = "email.unsubscribed"
+	EmailBounced                      = "email.bounced"
+	EmailComplained                   = "email.complained"
+	MarketingConfirmed                = "marketing.confirmed"
+	ContactTagged                     = "contact.tagged"
+	ContactUntagged                   = "contact.untagged"
+	ContactFieldChanged               = "contact.field_changed"
+	AutomationEnrolled                = "automation.enrolled"
+	AutomationCompleted               = "automation.completed"
+	AutomationGoalReached             = "automation.goal_reached"
+	AutomationExited                  = "automation.exited"
+	TelegramBound                     = "telegram.bound"
+	TelegramUnbound                   = "telegram.unbound"
+	TelegramReceived                  = "telegram.received"
+	TelegramSent                      = "telegram.sent"
+	TelegramClicked                   = "telegram.clicked"
+	TelegramUnsubscribed              = "telegram.unsubscribed"
+	SmsReceived                       = "sms.received"
+	SmsSent                           = "sms.sent"
+	SmsDelivered                      = "sms.delivered"
+	SmsUndelivered                    = "sms.undelivered"
+	SmsConfirmed                      = "sms.confirmed"
+	SmsClicked                        = "sms.clicked"
+	SmsUnsubscribed                   = "sms.unsubscribed"
+	EmailEngagementTrackingGranted    = "email.engagement_tracking_granted"
+	EmailEngagementTrackingDenied     = "email.engagement_tracking_denied"
+	SmsEngagementTrackingGranted      = "sms.engagement_tracking_granted"
+	SmsEngagementTrackingDenied       = "sms.engagement_tracking_denied"
+	TelegramEngagementTrackingGranted = "telegram.engagement_tracking_granted"
+	TelegramEngagementTrackingDenied  = "telegram.engagement_tracking_denied"
+	ContactConsentSuperseded          = "contact.consent_superseded"
 )
 
 // Actions is every System event action, in the contract's order.
@@ -76,5 +82,11 @@ var Actions = []string{
 	SmsConfirmed,
 	SmsClicked,
 	SmsUnsubscribed,
+	EmailEngagementTrackingGranted,
+	EmailEngagementTrackingDenied,
+	SmsEngagementTrackingGranted,
+	SmsEngagementTrackingDenied,
+	TelegramEngagementTrackingGranted,
+	TelegramEngagementTrackingDenied,
 	ContactConsentSuperseded,
 }

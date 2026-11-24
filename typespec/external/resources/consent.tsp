@@ -185,3 +185,50 @@ namespace SmsConsents {
   @requiresScopes(#[ApiTokenScope.contactsRead])
   op get(@path contactId: EntityId): SmsConsent | Problem;
 }
+
+/** An Engagement tracking consent the customer collected for a Destination (ADR 0120), recorded as `imported` */
+model RecordEngagementTrackingInput {
+  /** The Channel the consent is for */
+  channel: EngagementTrackingChannel;
+
+  /** The Destination that consented or refused: an email address on `email`, a phone number with its country code on `sms`, the Telegram user id a chat's Binding names on `telegram` */
+  @maxLength(320)
+  destination: string;
+
+  ...EngagementTrackingObservationInput;
+}
+
+// A refusal of tracking applies from anyone; a grant applies only where no refusal stands, since
+// only the person lifts a refusal (ADR 0121). There is deliberately no operation that lifts a
+// `denied`: do not add one.
+@tag("Consent")
+namespace EngagementTracking {
+  /**
+   * Record whether a destination agreed to have its opens and clicks tracked, as an `imported`
+   * consent collected outside sphericon (a consent banner, an account setting). A `denied` always
+   * applies, and is kept in the immutable `<channel>.engagement_tracking_denied` event; a `granted`
+   * is kept in `<channel>.engagement_tracking_granted` and is refused with a conflict over a standing
+   * `denied`: only the person can lift a refusal. An observation that occurred before the consent
+   * standing changes nothing and is answered as `superseded`; of two of the same moment the
+   * refusal wins.
+   */
+  @route("/engagement-tracking-consents")
+  @post
+  @requiresScopes(#[ApiTokenScope.contactsWrite])
+  op create(@body body: RecordEngagementTrackingInput):
+    | EngagementTrackingObservationResult
+    | Problem;
+
+  /**
+   * Read whether each Destination of a contact (its email address, its phone, the Telegram user
+   * of each of its chats) is tracked: the consent
+   * recorded with who recorded it, or `default` where none is, with what it means now. The consent
+   * is keyed by the Destination, so it follows the address and the phone the contact has now.
+   */
+  @route("/contacts/{contactId}/engagement-tracking")
+  @get
+  @requiresScopes(#[ApiTokenScope.contactsRead])
+  op getForContact(@path contactId: EntityId):
+    | ContactEngagementTracking
+    | Problem;
+}

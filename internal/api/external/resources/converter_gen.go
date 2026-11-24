@@ -16,15 +16,18 @@ import (
 	confirmation "github.com/getsphericon/sphericon/ent/confirmation"
 	contact "github.com/getsphericon/sphericon/ent/contact"
 	customfield "github.com/getsphericon/sphericon/ent/customfield"
+	engagementtrackingconsent "github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	rule "github.com/getsphericon/sphericon/ent/rule"
 	schema "github.com/getsphericon/sphericon/ent/schema"
 	suppression "github.com/getsphericon/sphericon/ent/suppression"
 	trackingdomain "github.com/getsphericon/sphericon/ent/trackingdomain"
 	unsubscribe "github.com/getsphericon/sphericon/ent/unsubscribe"
 	webhookendpoint "github.com/getsphericon/sphericon/ent/webhookendpoint"
+	workspace "github.com/getsphericon/sphericon/ent/workspace"
 	external "github.com/getsphericon/sphericon/gen/external"
 	condition "github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	engagementtracking "github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	orders "github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	brandkits "github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	auditlog "github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
@@ -366,6 +369,7 @@ func (c *ConverterImpl) BroadcastReportToResource(source broadcasts.Report) exte
 	externalapiBroadcastReport.CancelledCount = count(source.Figures.Cancelled)
 	externalapiBroadcastReport.OpenedCount = nilInt32(source.Figures.Opened)
 	externalapiBroadcastReport.ClickedCount = count(source.Figures.Clicked)
+	externalapiBroadcastReport.UntrackedCount = count(source.Figures.Untracked)
 	externalapiBroadcastReport.UnsubscribedCount = count(source.Figures.Unsubscribed)
 	externalapiBroadcastReport.DeliveredCount = nilInt32(source.Figures.Delivered)
 	externalapiBroadcastReport.UndeliveredCount = nilInt32(source.Figures.Undelivered)
@@ -624,6 +628,16 @@ func (c *ConverterImpl) ContactBatchWarnings(source []addresscheck.Flag) []exter
 	}
 	return externalapiContactBatchWarningList
 }
+func (c *ConverterImpl) ContactEngagementTrackingToResource(source engagementtracking.ContactConsents) external.ContactEngagementTracking {
+	var externalapiContactEngagementTracking external.ContactEngagementTracking
+	if source.Destinations != nil {
+		externalapiContactEngagementTracking.Destinations = make([]external.EngagementTrackingConsent, len(source.Destinations))
+		for i := 0; i < len(source.Destinations); i++ {
+			externalapiContactEngagementTracking.Destinations[i] = c.EngagementTrackingConsentToResource(source.Destinations[i])
+		}
+	}
+	return externalapiContactEngagementTracking
+}
 func (c *ConverterImpl) ContactExportSourceToResource(source contact.Source) external.ContactExportSource {
 	var externalapiContactExportSource external.ContactExportSource
 	switch source {
@@ -831,6 +845,91 @@ func (c *ConverterImpl) EndStepToResource(source automations.EndView) external.E
 	externalapiEndStep.ID = external.StepId(source.ID)
 	externalapiEndStep.Type = endStepType(source.Type)
 	return externalapiEndStep
+}
+func (c *ConverterImpl) EngagementTrackingChannelToResource(source channels.Channel) external.EngagementTrackingChannel {
+	var externalapiEngagementTrackingChannel external.EngagementTrackingChannel
+	switch source {
+	case channels.Email:
+		externalapiEngagementTrackingChannel = external.EngagementTrackingChannelEmail
+	case channels.SMS:
+		externalapiEngagementTrackingChannel = external.EngagementTrackingChannelSMS
+	case channels.Telegram:
+		externalapiEngagementTrackingChannel = external.EngagementTrackingChannelTelegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiEngagementTrackingChannel
+}
+func (c *ConverterImpl) EngagementTrackingConsentToResource(source engagementtracking.Consent) external.EngagementTrackingConsent {
+	var externalapiEngagementTrackingConsent external.EngagementTrackingConsent
+	externalapiEngagementTrackingConsent.Channel = c.EngagementTrackingChannelToResource(source.Channel)
+	externalapiEngagementTrackingConsent.Destination = source.Destination
+	externalapiEngagementTrackingConsent.State = c.EngagementTrackingReadingToResource(source.State)
+	externalapiEngagementTrackingConsent.Provenance = optNilEngagementTrackingProvenance(c, source.Provenance)
+	externalapiEngagementTrackingConsent.Effective = c.EngagementTrackingDecisionToResource(source.Effective)
+	externalapiEngagementTrackingConsent.UpdatedAt = optNilTimestamp(source.UpdatedAt)
+	return externalapiEngagementTrackingConsent
+}
+func (c *ConverterImpl) EngagementTrackingDecisionToResource(source workspace.EngagementTrackingDefault) external.EngagementTrackingDecision {
+	var externalapiEngagementTrackingDecision external.EngagementTrackingDecision
+	switch source {
+	case workspace.DefaultEngagementTrackingDefault:
+		externalapiEngagementTrackingDecision = external.EngagementTrackingDecisionTrack
+	case workspace.EngagementTrackingDefaultDontTrack:
+		externalapiEngagementTrackingDecision = external.EngagementTrackingDecisionDontTrack
+	// Skipped EngagementTrackingDefaultTrack(track) -> EngagementTrackingDecisionTrack(track) because it duplicates DefaultEngagementTrackingDefault(track) -> EngagementTrackingDecisionTrack(track)
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiEngagementTrackingDecision
+}
+func (c *ConverterImpl) EngagementTrackingOutcomeToResource(source engagementtracking.Outcome) external.EngagementTrackingOutcome {
+	var externalapiEngagementTrackingOutcome external.EngagementTrackingOutcome
+	switch source {
+	case engagementtracking.Applied:
+		externalapiEngagementTrackingOutcome = external.EngagementTrackingOutcomeApplied
+	case engagementtracking.Superseded:
+		externalapiEngagementTrackingOutcome = external.EngagementTrackingOutcomeSuperseded
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiEngagementTrackingOutcome
+}
+func (c *ConverterImpl) EngagementTrackingProvenanceToResource(source engagementtrackingconsent.Provenance) external.EngagementTrackingProvenance {
+	var externalapiEngagementTrackingProvenance external.EngagementTrackingProvenance
+	switch source {
+	case engagementtrackingconsent.ProvenanceImported:
+		externalapiEngagementTrackingProvenance = external.EngagementTrackingProvenanceImported
+	case engagementtrackingconsent.ProvenanceManual:
+		externalapiEngagementTrackingProvenance = external.EngagementTrackingProvenanceManual
+	case engagementtrackingconsent.ProvenanceOnsiteForm:
+		externalapiEngagementTrackingProvenance = external.EngagementTrackingProvenanceOnsiteForm
+	case engagementtrackingconsent.ProvenancePage:
+		externalapiEngagementTrackingProvenance = external.EngagementTrackingProvenancePage
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiEngagementTrackingProvenance
+}
+func (c *ConverterImpl) EngagementTrackingReadingToResource(source engagementtracking.Reading) external.EngagementTrackingReading {
+	var externalapiEngagementTrackingReading external.EngagementTrackingReading
+	switch source {
+	case engagementtracking.ReadingDefault:
+		externalapiEngagementTrackingReading = external.EngagementTrackingReadingDefault
+	case engagementtracking.ReadingDenied:
+		externalapiEngagementTrackingReading = external.EngagementTrackingReadingDenied
+	case engagementtracking.ReadingGranted:
+		externalapiEngagementTrackingReading = external.EngagementTrackingReadingGranted
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiEngagementTrackingReading
+}
+func (c *ConverterImpl) EngagementTrackingRecordedToResource(source engagementtracking.Recorded) external.EngagementTrackingObservationResult {
+	var externalapiEngagementTrackingObservationResult external.EngagementTrackingObservationResult
+	externalapiEngagementTrackingObservationResult.Outcome = c.EngagementTrackingOutcomeToResource(source.Outcome)
+	externalapiEngagementTrackingObservationResult.Consent = c.EngagementTrackingConsentToResource(source.Consent)
+	return externalapiEngagementTrackingObservationResult
 }
 func (c *ConverterImpl) EnrollmentFailureKindToResource(source automationrun.FailureKind) external.EnrollmentFailureKind {
 	var externalapiEnrollmentFailureKind external.EnrollmentFailureKind
@@ -1142,6 +1241,7 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) ext
 		externalapiContactExportOutboundMessage.Kind = string((*source).Kind)
 		externalapiContactExportOutboundMessage.Channel = string((*source).Channel)
 		externalapiContactExportOutboundMessage.Destination = (*source).Destination
+		externalapiContactExportOutboundMessage.Destinations = optNilStrings((*source).Destinations)
 		externalapiContactExportOutboundMessage.SendingSource = optNilString((*source).SendingSource)
 		externalapiContactExportOutboundMessage.SendingDomain = optNilString((*source).SendingDomain)
 		externalapiContactExportOutboundMessage.ProviderMessageId = optNilString((*source).ProviderMessageID)
@@ -1158,6 +1258,9 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) ext
 		externalapiContactExportOutboundMessage.OpenedAt = optNilTimestamp((*source).OpenedAt)
 		externalapiContactExportOutboundMessage.ClickedAt = optNilTimestamp((*source).ClickedAt)
 		externalapiContactExportOutboundMessage.Captured = (*source).Captured
+		externalapiContactExportOutboundMessage.Tracked = (*source).Tracked
+		externalapiContactExportOutboundMessage.TrackingDecidedAt = optNilTimestamp((*source).TrackingDecidedAt)
+		externalapiContactExportOutboundMessage.TrackingWithdrawnAt = optNilTimestamp((*source).TrackingWithdrawnAt)
 		externalapiContactExportOutboundMessage.BroadcastId = optNilEntityID((*source).BroadcastID)
 		externalapiContactExportOutboundMessage.AutomationId = optNilEntityID((*source).AutomationID)
 		externalapiContactExportOutboundMessage.AutomationStepId = optNilStepID((*source).AutomationStepID)
@@ -2047,6 +2150,7 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) external.Work
 		externalapiWorkspaceResource.Name = (*source).Name
 		externalapiWorkspaceResource.PostalAddress = (*source).PostalAddress
 		externalapiWorkspaceResource.RequireConfirmedOptIn = (*source).RequireConfirmedOptIn
+		externalapiWorkspaceResource.EngagementTrackingDefault = c.EngagementTrackingDecisionToResource((*source).EngagementTrackingDefault)
 		externalapiWorkspaceResource.Timezone = workspaceTimezone((*source).Timezone)
 		// externalapiWorkspaceResource.SendCap: ignore
 		externalapiWorkspaceResource.Revision = revision((*source).Revision)

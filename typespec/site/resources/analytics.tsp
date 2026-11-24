@@ -60,20 +60,25 @@ model SiteAnalyticsSending {
 }
 
 /**
- * Email engagement for the Broadcast and Automation messages sent in the selected range
- * (the send cohort; a Transactional message is not in it), from delivery logs. Each message
- * counts once, not each person. Opens/clicks are the first human open/click stamped on the
- * message and are counted among that cohort, so the counts reconcile and the rates stay in [0,1].
+ * Email engagement for the tracked Broadcast and Automation messages sent in the selected range
+ * (the send cohort; a Transactional message is not in it, and neither is a message sent untracked
+ * or whose tracking was withdrawn since, ADR 0120), from delivery logs. Each message counts once,
+ * not each person. Opens/clicks are the first human open/click stamped on the message and are
+ * counted among that cohort, so the counts reconcile and the rates stay in [0,1]. The untracked
+ * messages are counted beside it.
  */
 model SiteAnalyticsEmail {
-  /** Messages sent within the range */
+  /** Tracked messages sent within the range: the rates' denominator */
   sentCount: int32;
 
-  /** Messages sent in the range that were opened */
+  /** Tracked messages sent in the range that were opened */
   openedCount: int32;
 
-  /** Messages sent in the range that were clicked */
+  /** Tracked messages sent in the range that were clicked */
   clickedCount: int32;
+
+  /** Broadcast and Automation messages sent in the range that are not tracked: sent untracked, or whose tracking was withdrawn since. They are in no rate. */
+  untrackedCount: int32;
 
   /** Opened ÷ sent (0–1) */
   openRate: float32;
@@ -102,20 +107,23 @@ model SiteAnalyticsAutomations {
 
 /**
  * One Report day of the cohort (ADR 0057), zero-filled across the range. Opened/clicked
- * count the messages sent that day that were later opened/clicked.
+ * count the tracked messages sent that day that were later opened/clicked.
  */
 model SiteAnalyticsPoint {
   /** The Report day, `YYYY-MM-DD` in the Workspace time zone */
   date: string;
 
-  /** Messages sent that day */
+  /** Tracked messages sent that day */
   sent: int32;
 
-  /** Messages sent that day that were opened */
+  /** Tracked messages sent that day that were opened */
   opened: int32;
 
-  /** Messages sent that day that were clicked */
+  /** Tracked messages sent that day that were clicked */
   clicked: int32;
+
+  /** Broadcast and Automation messages sent that day that are not tracked */
+  untracked: int32;
 }
 
 /** The Complaint and Bounce rates of one Sending domain over a window */

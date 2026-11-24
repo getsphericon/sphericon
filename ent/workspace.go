@@ -48,6 +48,8 @@ type Workspace struct {
 	RetentionDays *int `json:"retention_days,omitempty"`
 	// Timezone holds the value of the "timezone" field.
 	Timezone *string `json:"timezone,omitempty"`
+	// EngagementTrackingDefault holds the value of the "engagement_tracking_default" field.
+	EngagementTrackingDefault workspace.EngagementTrackingDefault `json:"engagement_tracking_default,omitempty"`
 	// ReportingCurrency holds the value of the "reporting_currency" field.
 	ReportingCurrency *string `json:"reporting_currency,omitempty"`
 	// AttributionWindowDays holds the value of the "attribution_window_days" field.
@@ -166,6 +168,8 @@ type WorkspaceEdges struct {
 	Confirmations []*Confirmation `json:"confirmations,omitempty"`
 	// ConsentStamps holds the value of the consent_stamps edge.
 	ConsentStamps []*ConsentStamp `json:"consent_stamps,omitempty"`
+	// EngagementTrackingConsents holds the value of the engagement_tracking_consents edge.
+	EngagementTrackingConsents []*EngagementTrackingConsent `json:"engagement_tracking_consents,omitempty"`
 	// OutboundMessages holds the value of the outbound_messages edge.
 	OutboundMessages []*OutboundMessage `json:"outbound_messages,omitempty"`
 	// TrackedLinks holds the value of the tracked_links edge.
@@ -190,7 +194,7 @@ type WorkspaceEdges struct {
 	Standing *WorkspaceStanding `json:"standing,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [54]bool
+	loadedTypes [55]bool
 }
 
 // ContactsOrErr returns the Contacts value or an error if the edge
@@ -580,10 +584,19 @@ func (e WorkspaceEdges) ConsentStampsOrErr() ([]*ConsentStamp, error) {
 	return nil, &NotLoadedError{edge: "consent_stamps"}
 }
 
+// EngagementTrackingConsentsOrErr returns the EngagementTrackingConsents value or an error if the edge
+// was not loaded in eager-loading.
+func (e WorkspaceEdges) EngagementTrackingConsentsOrErr() ([]*EngagementTrackingConsent, error) {
+	if e.loadedTypes[43] {
+		return e.EngagementTrackingConsents, nil
+	}
+	return nil, &NotLoadedError{edge: "engagement_tracking_consents"}
+}
+
 // OutboundMessagesOrErr returns the OutboundMessages value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) OutboundMessagesOrErr() ([]*OutboundMessage, error) {
-	if e.loadedTypes[43] {
+	if e.loadedTypes[44] {
 		return e.OutboundMessages, nil
 	}
 	return nil, &NotLoadedError{edge: "outbound_messages"}
@@ -592,7 +605,7 @@ func (e WorkspaceEdges) OutboundMessagesOrErr() ([]*OutboundMessage, error) {
 // TrackedLinksOrErr returns the TrackedLinks value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) TrackedLinksOrErr() ([]*TrackedLink, error) {
-	if e.loadedTypes[44] {
+	if e.loadedTypes[45] {
 		return e.TrackedLinks, nil
 	}
 	return nil, &NotLoadedError{edge: "tracked_links"}
@@ -601,7 +614,7 @@ func (e WorkspaceEdges) TrackedLinksOrErr() ([]*TrackedLink, error) {
 // CapturedMessagesOrErr returns the CapturedMessages value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) CapturedMessagesOrErr() ([]*CapturedMessage, error) {
-	if e.loadedTypes[45] {
+	if e.loadedTypes[46] {
 		return e.CapturedMessages, nil
 	}
 	return nil, &NotLoadedError{edge: "captured_messages"}
@@ -610,7 +623,7 @@ func (e WorkspaceEdges) CapturedMessagesOrErr() ([]*CapturedMessage, error) {
 // MembershipsOrErr returns the Memberships value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) MembershipsOrErr() ([]*Membership, error) {
-	if e.loadedTypes[46] {
+	if e.loadedTypes[47] {
 		return e.Memberships, nil
 	}
 	return nil, &NotLoadedError{edge: "memberships"}
@@ -619,7 +632,7 @@ func (e WorkspaceEdges) MembershipsOrErr() ([]*Membership, error) {
 // InvitationsOrErr returns the Invitations value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) InvitationsOrErr() ([]*Invitation, error) {
-	if e.loadedTypes[47] {
+	if e.loadedTypes[48] {
 		return e.Invitations, nil
 	}
 	return nil, &NotLoadedError{edge: "invitations"}
@@ -628,7 +641,7 @@ func (e WorkspaceEdges) InvitationsOrErr() ([]*Invitation, error) {
 // AuditEntriesOrErr returns the AuditEntries value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) AuditEntriesOrErr() ([]*AuditEntry, error) {
-	if e.loadedTypes[48] {
+	if e.loadedTypes[49] {
 		return e.AuditEntries, nil
 	}
 	return nil, &NotLoadedError{edge: "audit_entries"}
@@ -637,7 +650,7 @@ func (e WorkspaceEdges) AuditEntriesOrErr() ([]*AuditEntry, error) {
 // ErasuresOrErr returns the Erasures value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) ErasuresOrErr() ([]*Erasure, error) {
-	if e.loadedTypes[49] {
+	if e.loadedTypes[50] {
 		return e.Erasures, nil
 	}
 	return nil, &NotLoadedError{edge: "erasures"}
@@ -646,7 +659,7 @@ func (e WorkspaceEdges) ErasuresOrErr() ([]*Erasure, error) {
 // UsagesOrErr returns the Usages value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) UsagesOrErr() ([]*Usage, error) {
-	if e.loadedTypes[50] {
+	if e.loadedTypes[51] {
 		return e.Usages, nil
 	}
 	return nil, &NotLoadedError{edge: "usages"}
@@ -655,7 +668,7 @@ func (e WorkspaceEdges) UsagesOrErr() ([]*Usage, error) {
 // IntegrationProviderStatesOrErr returns the IntegrationProviderStates value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) IntegrationProviderStatesOrErr() ([]*IntegrationProviderState, error) {
-	if e.loadedTypes[51] {
+	if e.loadedTypes[52] {
 		return e.IntegrationProviderStates, nil
 	}
 	return nil, &NotLoadedError{edge: "integration_provider_states"}
@@ -664,7 +677,7 @@ func (e WorkspaceEdges) IntegrationProviderStatesOrErr() ([]*IntegrationProvider
 // WebhookEndpointHealthsOrErr returns the WebhookEndpointHealths value or an error if the edge
 // was not loaded in eager-loading.
 func (e WorkspaceEdges) WebhookEndpointHealthsOrErr() ([]*WebhookEndpointHealth, error) {
-	if e.loadedTypes[52] {
+	if e.loadedTypes[53] {
 		return e.WebhookEndpointHealths, nil
 	}
 	return nil, &NotLoadedError{edge: "webhook_endpoint_healths"}
@@ -675,7 +688,7 @@ func (e WorkspaceEdges) WebhookEndpointHealthsOrErr() ([]*WebhookEndpointHealth,
 func (e WorkspaceEdges) StandingOrErr() (*WorkspaceStanding, error) {
 	if e.Standing != nil {
 		return e.Standing, nil
-	} else if e.loadedTypes[53] {
+	} else if e.loadedTypes[54] {
 		return nil, &NotFoundError{label: workspacestanding.Label}
 	}
 	return nil, &NotLoadedError{edge: "standing"}
@@ -690,7 +703,7 @@ func (*Workspace) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case workspace.FieldID, workspace.FieldRevision, workspace.FieldRetentionDays, workspace.FieldAttributionWindowDays, workspace.FieldSendCap:
 			values[i] = new(sql.NullInt64)
-		case workspace.FieldName, workspace.FieldPublicID, workspace.FieldCollectKey, workspace.FieldConfirmationFromEmail, workspace.FieldConfirmationFromName, workspace.FieldConfirmationSubject, workspace.FieldConfirmationIntro, workspace.FieldPostalAddress, workspace.FieldTimezone, workspace.FieldReportingCurrency, workspace.FieldSuspendedByKind, workspace.FieldSuspendedByID, workspace.FieldSuspensionReason:
+		case workspace.FieldName, workspace.FieldPublicID, workspace.FieldCollectKey, workspace.FieldConfirmationFromEmail, workspace.FieldConfirmationFromName, workspace.FieldConfirmationSubject, workspace.FieldConfirmationIntro, workspace.FieldPostalAddress, workspace.FieldTimezone, workspace.FieldEngagementTrackingDefault, workspace.FieldReportingCurrency, workspace.FieldSuspendedByKind, workspace.FieldSuspendedByID, workspace.FieldSuspensionReason:
 			values[i] = new(sql.NullString)
 		case workspace.FieldCreatedAt, workspace.FieldUpdatedAt, workspace.FieldDiscardedAt, workspace.FieldSecondFactorRequiredAt, workspace.FieldErasedAt, workspace.FieldSuspendedAt, workspace.FieldClearedAt:
 			values[i] = new(sql.NullTime)
@@ -811,6 +824,12 @@ func (_m *Workspace) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Timezone = new(string)
 				*_m.Timezone = value.String
+			}
+		case workspace.FieldEngagementTrackingDefault:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field engagement_tracking_default", values[i])
+			} else if value.Valid {
+				_m.EngagementTrackingDefault = workspace.EngagementTrackingDefault(value.String)
 			}
 		case workspace.FieldReportingCurrency:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -1121,6 +1140,11 @@ func (_m *Workspace) QueryConsentStamps() *ConsentStampQuery {
 	return NewWorkspaceClient(_m.config).QueryConsentStamps(_m)
 }
 
+// QueryEngagementTrackingConsents queries the "engagement_tracking_consents" edge of the Workspace entity.
+func (_m *Workspace) QueryEngagementTrackingConsents() *EngagementTrackingConsentQuery {
+	return NewWorkspaceClient(_m.config).QueryEngagementTrackingConsents(_m)
+}
+
 // QueryOutboundMessages queries the "outbound_messages" edge of the Workspace entity.
 func (_m *Workspace) QueryOutboundMessages() *OutboundMessageQuery {
 	return NewWorkspaceClient(_m.config).QueryOutboundMessages(_m)
@@ -1256,6 +1280,9 @@ func (_m *Workspace) String() string {
 		builder.WriteString("timezone=")
 		builder.WriteString(*v)
 	}
+	builder.WriteString(", ")
+	builder.WriteString("engagement_tracking_default=")
+	builder.WriteString(fmt.Sprintf("%v", _m.EngagementTrackingDefault))
 	builder.WriteString(", ")
 	if v := _m.ReportingCurrency; v != nil {
 		builder.WriteString("reporting_currency=")

@@ -7,13 +7,16 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/signupsurveyresponse"
+	"github.com/getsphericon/sphericon/ent/workspace"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
@@ -161,6 +164,12 @@ type Inputs interface {
 	WorkspaceUpdate(source *siteapi.SiteUpdateWorkspaceInput) workspaceview.UpdateInput
 	// goverter:map Timezone Zone
 	TimezoneSet(source *siteapi.SiteWorkspaceTimezoneInput) workspaceview.SetTimezoneInput
+	// goverter:map EngagementTrackingDefault Default
+	EngagementTrackingDefaultSet(source *siteapi.SiteSetEngagementTrackingDefaultInput) workspaceview.SetEngagementTrackingDefaultInput
+	// ent's default constant shares track's value, so each value is named.
+	// goverter:enum:map EngagementTrackingDecisionTrack EngagementTrackingDefaultTrack
+	// goverter:enum:map EngagementTrackingDecisionDontTrack EngagementTrackingDefaultDontTrack
+	EngagementTrackingDefaultIn(source siteapi.EngagementTrackingDecision) workspace.EngagementTrackingDefault
 	RevenueSettingsSet(source *siteapi.SiteUpdateRevenueSettingsInput) workspaces.SetRevenueSettingsInput
 	ConfirmationEmailSet(source *siteapi.SiteUpdateConfirmationEmailInput) workspaces.SetConfirmationEmailInput
 	// goverter:map Enabled On
@@ -182,6 +191,12 @@ type Inputs interface {
 	TemplateUpdate(source *siteapi.UpdateTemplateInput) emailtemplates.UpdateInput
 
 	ConsentEvidence(source *siteapi.ConsentEvidence) confirmations.Evidence
+	// A member's Engagement tracking observation of one of a Contact's Destinations (ADR 0120).
+	EngagementTrackingByMember(source *siteapi.SiteRecordEngagementTrackingInput) engagementtracking.MemberInput
+	// goverter:enum:transform value
+	EngagementTrackingChannel(source siteapi.EngagementTrackingChannel) channels.Channel
+	// goverter:enum:transform value
+	EngagementTrackingState(source siteapi.EngagementTrackingState) engagementtrackingconsent.State
 	// Where a Broadcast's Test send goes: the address on email, the number on sms. OnlyTo is the
 	// handler's to set.
 	// goverter:ignore OnlyTo

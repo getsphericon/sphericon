@@ -18,6 +18,8 @@ const (
 	limit           = "limit"
 	telemetryReport = "TelemetryReport"
 	httpcallOwner   = "internal/infra/httpcall"
+	consentDest     = "ConsentDestination"
+	destination     = "destination"
 )
 
 // Bounds are the contract's bounds on the input of a domain write, in the order they are written.
@@ -217,12 +219,14 @@ var Bounds = []Bound{
 		Owners: []string{"internal/usecase/visitoridentification"},
 	},
 	{
-		Name: "ConsentDestination", Doc: "is the address or phone a Consent fact (a Confirmation, a Suppression, an Unsubscribe) is about.",
-		Spec: external, Schema: "CreateConfirmationInput", Property: "destination",
-		Owners: []string{"Confirmation", "Suppression", "Unsubscribe"},
+		Name: consentDest, Doc: "is the address or phone a Consent fact (a Confirmation, a Suppression, an Unsubscribe, an Engagement tracking consent) is about.",
+		Spec: external, Schema: "CreateConfirmationInput", Property: destination,
+		Owners: []string{"Confirmation", "Suppression", "Unsubscribe", "EngagementTrackingConsent"},
 	},
-	{Name: "ConsentDestination", Spec: external, Schema: "CreateSuppressionInput", Property: "destination"},
-	{Name: "ConsentDestination", Spec: external, Schema: "CreateUnsubscribeInput", Property: "destination"},
+	{Name: consentDest, Spec: external, Schema: "RecordEngagementTrackingInput", Property: destination},
+	{Name: consentDest, Spec: site, Schema: "SiteRecordEngagementTrackingInput", Property: destination},
+	{Name: consentDest, Spec: external, Schema: "CreateSuppressionInput", Property: destination},
+	{Name: consentDest, Spec: external, Schema: "CreateUnsubscribeInput", Property: destination},
 	{
 		Name: "RuleTriggerEvents", Doc: "are the Event actions that fire a Rule.",
 		Spec: site, Schema: "CreateRuleInput", Property: "triggerEvents", Owners: []string{"Rule"},

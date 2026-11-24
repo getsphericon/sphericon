@@ -20,6 +20,7 @@ import "../common/broadcasts.tsp";
 import "../common/holds.tsp";
 import "../common/outcomes.tsp";
 import "../common/consent.tsp";
+import "../common/engagement-tracking.tsp";
 import "../common/contacts.tsp";
 import "../common/limits.tsp";
 import "../common/integrations.tsp";

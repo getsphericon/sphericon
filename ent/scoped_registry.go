@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
@@ -914,6 +915,7 @@ func ScopedEntities() []*ScopedEntity {
 				b.SetOpened(src.Opened)
 				b.SetClicked(src.Clicked)
 				b.SetCaptured(src.Captured)
+				b.SetUntracked(src.Untracked)
 				if src.PrunedAt != nil {
 					b.SetPrunedAt(*src.PrunedAt)
 				}
@@ -1155,6 +1157,9 @@ func ScopedEntities() []*ScopedEntity {
 				if src.ConfirmationOccurredAt != nil {
 					b.SetConfirmationOccurredAt(*src.ConfirmationOccurredAt)
 				}
+				if src.EngagementTrackingOccurredAt != nil {
+					b.SetEngagementTrackingOccurredAt(*src.EngagementTrackingOccurredAt)
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err
@@ -1352,6 +1357,48 @@ func ScopedEntities() []*ScopedEntity {
 				if src.EditorVersion != nil {
 					b.SetEditorVersion(*src.EditorVersion)
 				}
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
+		},
+		{
+			Kind:         Kinds["EngagementTrackingConsent"],
+			Name:         "EngagementTrackingConsent",
+			Wrapper:      reflect.TypeFor[*EngagementTrackingConsentScoped](),
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.EngagementTrackingConsent.Query().Where(engagementtrackingconsent.WorkspaceID(ws)).Order(Asc(engagementtrackingconsent.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.EngagementTrackingConsent().Get(ctx, id)
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.EngagementTrackingConsent().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.EngagementTrackingConsent().Update().Where(engagementtrackingconsent.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.EngagementTrackingConsent().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.EngagementTrackingConsent().Delete().Where(engagementtrackingconsent.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.EngagementTrackingConsent.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.EngagementTrackingConsent().Create()
+				b.SetChannel(src.Channel)
+				b.SetDestination(src.Destination)
+				b.SetState(src.State)
+				b.SetProvenance(src.Provenance)
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err
@@ -2034,6 +2081,9 @@ func ScopedEntities() []*ScopedEntity {
 				if src.CreditedClickAt != nil {
 					b.SetCreditedClickAt(*src.CreditedClickAt)
 				}
+				if src.CreditedMessageID != nil {
+					b.SetCreditedMessageID(*src.CreditedMessageID)
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err
@@ -2045,6 +2095,18 @@ func ScopedEntities() []*ScopedEntity {
 					Name: "contact", Target: "Contact",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.Order().UpdateOneID(id).SetContactID(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "broadcast", Target: "Broadcast",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Order().UpdateOneID(id).SetBroadcastID(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "automation", Target: "Automation",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Order().UpdateOneID(id).SetAutomationID(target).Exec(ctx)
 					},
 				},
 				{
@@ -2139,6 +2201,9 @@ func ScopedEntities() []*ScopedEntity {
 				if !reflect.ValueOf(src.Destination).IsZero() {
 					b.SetDestination(src.Destination)
 				}
+				if !reflect.ValueOf(src.Destinations).IsZero() {
+					b.SetDestinations(src.Destinations)
+				}
 				if src.ContactID != nil {
 					b.SetContactID(remap("Contact", *src.ContactID))
 				}
@@ -2184,6 +2249,13 @@ func ScopedEntities() []*ScopedEntity {
 					b.SetClickedAt(*src.ClickedAt)
 				}
 				b.SetCaptured(src.Captured)
+				b.SetTracked(src.Tracked)
+				if src.TrackingDecidedAt != nil {
+					b.SetTrackingDecidedAt(*src.TrackingDecidedAt)
+				}
+				if src.TrackingWithdrawnAt != nil {
+					b.SetTrackingWithdrawnAt(*src.TrackingWithdrawnAt)
+				}
 				if src.BroadcastID != nil {
 					b.SetBroadcastID(remap("Broadcast", *src.BroadcastID))
 				}

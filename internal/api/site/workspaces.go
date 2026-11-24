@@ -165,6 +165,17 @@ func (h *Handlers) SiteWorkspacesSetTimezone(ctx context.Context, req *siteapi.S
 	return &resource, nil
 }
 
+// SiteWorkspacesSetEngagementTrackingDefault sets the Workspace's Engagement tracking default
+// (Permission workspace:update, ADR 0120).
+func (h *Handlers) SiteWorkspacesSetEngagementTrackingDefault(ctx context.Context, req *siteapi.SiteSetEngagementTrackingDefaultInput, _ siteapi.SiteWorkspacesSetEngagementTrackingDefaultParams) (*siteapi.SiteWorkspaceResource, error) {
+	v, err := h.workspaceView.SetEngagementTrackingDefault(ctx, workspaceScope(ctx), h.viewCaller(ctx), inputs.EngagementTrackingDefaultSet(req))
+	if err != nil {
+		return nil, err
+	}
+	resource := h.workspaceResource(v)
+	return &resource, nil
+}
+
 // deletedWorkspaceResource is a Workspace in its deletion window with the date its data
 // will be erased.
 func deletedWorkspaceResource(d workspacedeletion.DeletedWorkspace) siteapi.SiteDeletedWorkspaceResource {

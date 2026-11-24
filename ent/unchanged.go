@@ -1283,6 +1283,11 @@ func (m *WorkspaceMutation) unchanged(ctx context.Context) (*Workspace, bool, er
 			return nil, false, nil
 		}
 	}
+	if v, ok := m.EngagementTrackingDefault(); ok {
+		if !reflect.DeepEqual(v, row.EngagementTrackingDefault) {
+			return nil, false, nil
+		}
+	}
 	if v, ok := m.ReportingCurrency(); ok {
 		if row.ReportingCurrency == nil {
 			return nil, false, nil

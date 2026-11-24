@@ -148,6 +148,20 @@ func (_c *BroadcastFigureCreate) SetCaptured(v int) *BroadcastFigureCreate {
 	return _c
 }
 
+// SetUntracked sets the "untracked" field.
+func (_c *BroadcastFigureCreate) SetUntracked(v int) *BroadcastFigureCreate {
+	_c.mutation.SetUntracked(v)
+	return _c
+}
+
+// SetNillableUntracked sets the "untracked" field if the given value is not nil.
+func (_c *BroadcastFigureCreate) SetNillableUntracked(v *int) *BroadcastFigureCreate {
+	if v != nil {
+		_c.SetUntracked(*v)
+	}
+	return _c
+}
+
 // SetPrunedAt sets the "pruned_at" field.
 func (_c *BroadcastFigureCreate) SetPrunedAt(v time.Time) *BroadcastFigureCreate {
 	_c.mutation.SetPrunedAt(v)
@@ -220,6 +234,10 @@ func (_c *BroadcastFigureCreate) defaults() {
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		v := broadcastfigure.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
+	}
+	if _, ok := _c.mutation.Untracked(); !ok {
+		v := broadcastfigure.DefaultUntracked
+		_c.mutation.SetUntracked(v)
 	}
 }
 
@@ -349,6 +367,14 @@ func (_c *BroadcastFigureCreate) check() error {
 			return &ValidationError{Name: "captured", err: fmt.Errorf(`ent: validator failed for field "BroadcastFigure.captured": %w`, err)}
 		}
 	}
+	if _, ok := _c.mutation.Untracked(); !ok {
+		return &ValidationError{Name: "untracked", err: errors.New(`ent: missing required field "BroadcastFigure.untracked"`)}
+	}
+	if v, ok := _c.mutation.Untracked(); ok {
+		if err := broadcastfigure.UntrackedValidator(v); err != nil {
+			return &ValidationError{Name: "untracked", err: fmt.Errorf(`ent: validator failed for field "BroadcastFigure.untracked": %w`, err)}
+		}
+	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "BroadcastFigure.workspace"`)}
 	}
@@ -451,6 +477,10 @@ func (_c *BroadcastFigureCreate) createSpec() (*BroadcastFigure, *sqlgraph.Creat
 	if value, ok := _c.mutation.Captured(); ok {
 		_spec.SetField(broadcastfigure.FieldCaptured, field.TypeInt, value)
 		_node.Captured = value
+	}
+	if value, ok := _c.mutation.Untracked(); ok {
+		_spec.SetField(broadcastfigure.FieldUntracked, field.TypeInt, value)
+		_node.Untracked = value
 	}
 	if value, ok := _c.mutation.PrunedAt(); ok {
 		_spec.SetField(broadcastfigure.FieldPrunedAt, field.TypeTime, value)
@@ -648,6 +678,9 @@ func (u *BroadcastFigureUpsertOne) UpdateNewValues() *BroadcastFigureUpsertOne {
 		}
 		if _, exists := u.create.mutation.Captured(); exists {
 			s.SetIgnore(broadcastfigure.FieldCaptured)
+		}
+		if _, exists := u.create.mutation.Untracked(); exists {
+			s.SetIgnore(broadcastfigure.FieldUntracked)
 		}
 	}))
 	return u
@@ -958,6 +991,9 @@ func (u *BroadcastFigureUpsertBulk) UpdateNewValues() *BroadcastFigureUpsertBulk
 			}
 			if _, exists := b.mutation.Captured(); exists {
 				s.SetIgnore(broadcastfigure.FieldCaptured)
+			}
+			if _, exists := b.mutation.Untracked(); exists {
+				s.SetIgnore(broadcastfigure.FieldUntracked)
 			}
 		}
 	}))

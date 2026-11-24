@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -40,6 +41,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
@@ -102,8 +104,10 @@ import (
 // goverter:extend revision
 // goverter:extend nilFloat64
 // goverter:extend optNilString
+// goverter:extend optNilStrings
 // goverter:extend optNilStepID
 // goverter:extend optNilOptOutVia
+// goverter:extend optNilEngagementTrackingProvenance
 // goverter:extend optNilHoldReason
 // goverter:extend omitEmpty
 // goverter:extend omitEmptyConfigurationSet
@@ -280,6 +284,7 @@ type Converter interface {
 	// goverter:map Sent SentCount
 	// goverter:map Opened OpenedCount
 	// goverter:map Clicked ClickedCount
+	// goverter:map Untracked UntrackedCount
 	AnalyticsEmailToResource(source analyticsreport.Email) siteapi.SiteAnalyticsEmail
 	// The Events and Clicks by link reports are lists, which goverter cannot map onto their
 	// envelopes: the handler builds those, of one list each.
@@ -360,6 +365,7 @@ type Converter interface {
 	// goverter:map Bounced BouncedCount
 	// goverter:map Complained ComplainedCount
 	// goverter:map Captured CapturedCount
+	// goverter:map Untracked UntrackedCount
 	BroadcastStatsToResource(source broadcasts.Figures) siteapi.SiteBroadcastStats
 
 	// goverter:map Processed ProcessedCount
@@ -489,6 +495,20 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	BindingsToResources(source []bindings.Chat) []siteapi.SiteBindingResource
 	SmsConsentToResource(source confirmations.ContactSMS) siteapi.SmsConsent
+	// The Engagement tracking consent of a Destination (ADR 0120), and what an observation did.
+	EngagementTrackingConsentToResource(source engagementtracking.Consent) siteapi.EngagementTrackingConsent
+	ContactEngagementTrackingToResource(source engagementtracking.ContactConsents) siteapi.ContactEngagementTracking
+	EngagementTrackingRecordedToResource(source engagementtracking.Recorded) siteapi.EngagementTrackingObservationResult
+	// goverter:enum:transform value
+	EngagementTrackingChannelToResource(source channels.Channel) siteapi.EngagementTrackingChannel
+	// goverter:enum:transform value
+	EngagementTrackingReadingToResource(source engagementtracking.Reading) siteapi.EngagementTrackingReading
+	// goverter:enum:transform value
+	EngagementTrackingProvenanceToResource(source engagementtrackingconsent.Provenance) siteapi.EngagementTrackingProvenance
+	// goverter:enum:transform value
+	EngagementTrackingDecisionToResource(source engagementtracking.Decision) siteapi.EngagementTrackingDecision
+	// goverter:enum:transform value
+	EngagementTrackingOutcomeToResource(source engagementtracking.Outcome) siteapi.EngagementTrackingOutcome
 	TestSendResultToResource(source outboundmessages.Result) siteapi.SiteTestSendBroadcastResult
 	SmsLengthLimitToResource(source smsrender.Limit) siteapi.SiteSmsLengthLimit
 	SmsOptOutToResource(source *confirmations.SMSOptOut) siteapi.SmsOptOut
@@ -1010,6 +1030,14 @@ func optNilString(v *string) siteapi.OptNilString {
 	return convert.Opt[siteapi.OptNilString](v)
 }
 
+// optNilStrings is a list stored as NULL when it has nothing to say (nil), absent then.
+func optNilStrings(v []string) siteapi.OptNilStringArray {
+	if v == nil {
+		return siteapi.OptNilStringArray{}
+	}
+	return siteapi.NewOptNilStringArray(v)
+}
+
 func optNilEmailAddress(v *string) siteapi.OptNilEmailAddress {
 	return convert.Opt[siteapi.OptNilEmailAddress]((*siteapi.EmailAddress)(v))
 }
@@ -1468,6 +1496,10 @@ func ruleResults(c Converter, stored string) []siteapi.RuleActionResult {
 
 func optNilOptOutVia(c Converter, v *unsubscribe.Via) siteapi.OptNilOptOutVia {
 	return convert.OptVia[siteapi.OptNilOptOutVia](v, c.OptOutViaToResource)
+}
+
+func optNilEngagementTrackingProvenance(c Converter, v *engagementtracking.Provenance) siteapi.OptNilEngagementTrackingProvenance {
+	return convert.OptVia[siteapi.OptNilEngagementTrackingProvenance](v, c.EngagementTrackingProvenanceToResource)
 }
 
 func optNilHoldReason(c Converter, v *holdreason.Reason) siteapi.OptNilHoldReason {

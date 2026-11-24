@@ -129,6 +129,20 @@ func (_c *OrderCreate) SetNillableCreditedClickAt(v *time.Time) *OrderCreate {
 	return _c
 }
 
+// SetCreditedMessageID sets the "credited_message_id" field.
+func (_c *OrderCreate) SetCreditedMessageID(v int64) *OrderCreate {
+	_c.mutation.SetCreditedMessageID(v)
+	return _c
+}
+
+// SetNillableCreditedMessageID sets the "credited_message_id" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableCreditedMessageID(v *int64) *OrderCreate {
+	if v != nil {
+		_c.SetCreditedMessageID(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *OrderCreate) SetID(v int64) *OrderCreate {
 	_c.mutation.SetID(v)
@@ -297,6 +311,10 @@ func (_c *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.CreditedClickAt(); ok {
 		_spec.SetField(order.FieldCreditedClickAt, field.TypeTime, value)
 		_node.CreditedClickAt = &value
+	}
+	if value, ok := _c.mutation.CreditedMessageID(); ok {
+		_spec.SetField(order.FieldCreditedMessageID, field.TypeInt64, value)
+		_node.CreditedMessageID = &value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -476,6 +494,84 @@ func (u *OrderUpsert) ClearContactID() *OrderUpsert {
 	return u
 }
 
+// SetBroadcastID sets the "broadcast_id" field.
+func (u *OrderUpsert) SetBroadcastID(v int64) *OrderUpsert {
+	u.Set(order.FieldBroadcastID, v)
+	return u
+}
+
+// UpdateBroadcastID sets the "broadcast_id" field to the value that was provided on create.
+func (u *OrderUpsert) UpdateBroadcastID() *OrderUpsert {
+	u.SetExcluded(order.FieldBroadcastID)
+	return u
+}
+
+// ClearBroadcastID clears the value of the "broadcast_id" field.
+func (u *OrderUpsert) ClearBroadcastID() *OrderUpsert {
+	u.SetNull(order.FieldBroadcastID)
+	return u
+}
+
+// SetAutomationID sets the "automation_id" field.
+func (u *OrderUpsert) SetAutomationID(v int64) *OrderUpsert {
+	u.Set(order.FieldAutomationID, v)
+	return u
+}
+
+// UpdateAutomationID sets the "automation_id" field to the value that was provided on create.
+func (u *OrderUpsert) UpdateAutomationID() *OrderUpsert {
+	u.SetExcluded(order.FieldAutomationID)
+	return u
+}
+
+// ClearAutomationID clears the value of the "automation_id" field.
+func (u *OrderUpsert) ClearAutomationID() *OrderUpsert {
+	u.SetNull(order.FieldAutomationID)
+	return u
+}
+
+// SetCreditedClickAt sets the "credited_click_at" field.
+func (u *OrderUpsert) SetCreditedClickAt(v time.Time) *OrderUpsert {
+	u.Set(order.FieldCreditedClickAt, v)
+	return u
+}
+
+// UpdateCreditedClickAt sets the "credited_click_at" field to the value that was provided on create.
+func (u *OrderUpsert) UpdateCreditedClickAt() *OrderUpsert {
+	u.SetExcluded(order.FieldCreditedClickAt)
+	return u
+}
+
+// ClearCreditedClickAt clears the value of the "credited_click_at" field.
+func (u *OrderUpsert) ClearCreditedClickAt() *OrderUpsert {
+	u.SetNull(order.FieldCreditedClickAt)
+	return u
+}
+
+// SetCreditedMessageID sets the "credited_message_id" field.
+func (u *OrderUpsert) SetCreditedMessageID(v int64) *OrderUpsert {
+	u.Set(order.FieldCreditedMessageID, v)
+	return u
+}
+
+// UpdateCreditedMessageID sets the "credited_message_id" field to the value that was provided on create.
+func (u *OrderUpsert) UpdateCreditedMessageID() *OrderUpsert {
+	u.SetExcluded(order.FieldCreditedMessageID)
+	return u
+}
+
+// AddCreditedMessageID adds v to the "credited_message_id" field.
+func (u *OrderUpsert) AddCreditedMessageID(v int64) *OrderUpsert {
+	u.Add(order.FieldCreditedMessageID, v)
+	return u
+}
+
+// ClearCreditedMessageID clears the value of the "credited_message_id" field.
+func (u *OrderUpsert) ClearCreditedMessageID() *OrderUpsert {
+	u.SetNull(order.FieldCreditedMessageID)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -501,15 +597,6 @@ func (u *OrderUpsertOne) UpdateNewValues() *OrderUpsertOne {
 		}
 		if _, exists := u.create.mutation.Currency(); exists {
 			s.SetIgnore(order.FieldCurrency)
-		}
-		if _, exists := u.create.mutation.BroadcastID(); exists {
-			s.SetIgnore(order.FieldBroadcastID)
-		}
-		if _, exists := u.create.mutation.AutomationID(); exists {
-			s.SetIgnore(order.FieldAutomationID)
-		}
-		if _, exists := u.create.mutation.CreditedClickAt(); exists {
-			s.SetIgnore(order.FieldCreditedClickAt)
 		}
 	}))
 	return u
@@ -588,6 +675,97 @@ func (u *OrderUpsertOne) UpdateContactID() *OrderUpsertOne {
 func (u *OrderUpsertOne) ClearContactID() *OrderUpsertOne {
 	return u.Update(func(s *OrderUpsert) {
 		s.ClearContactID()
+	})
+}
+
+// SetBroadcastID sets the "broadcast_id" field.
+func (u *OrderUpsertOne) SetBroadcastID(v int64) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetBroadcastID(v)
+	})
+}
+
+// UpdateBroadcastID sets the "broadcast_id" field to the value that was provided on create.
+func (u *OrderUpsertOne) UpdateBroadcastID() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateBroadcastID()
+	})
+}
+
+// ClearBroadcastID clears the value of the "broadcast_id" field.
+func (u *OrderUpsertOne) ClearBroadcastID() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearBroadcastID()
+	})
+}
+
+// SetAutomationID sets the "automation_id" field.
+func (u *OrderUpsertOne) SetAutomationID(v int64) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetAutomationID(v)
+	})
+}
+
+// UpdateAutomationID sets the "automation_id" field to the value that was provided on create.
+func (u *OrderUpsertOne) UpdateAutomationID() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateAutomationID()
+	})
+}
+
+// ClearAutomationID clears the value of the "automation_id" field.
+func (u *OrderUpsertOne) ClearAutomationID() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearAutomationID()
+	})
+}
+
+// SetCreditedClickAt sets the "credited_click_at" field.
+func (u *OrderUpsertOne) SetCreditedClickAt(v time.Time) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetCreditedClickAt(v)
+	})
+}
+
+// UpdateCreditedClickAt sets the "credited_click_at" field to the value that was provided on create.
+func (u *OrderUpsertOne) UpdateCreditedClickAt() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateCreditedClickAt()
+	})
+}
+
+// ClearCreditedClickAt clears the value of the "credited_click_at" field.
+func (u *OrderUpsertOne) ClearCreditedClickAt() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearCreditedClickAt()
+	})
+}
+
+// SetCreditedMessageID sets the "credited_message_id" field.
+func (u *OrderUpsertOne) SetCreditedMessageID(v int64) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetCreditedMessageID(v)
+	})
+}
+
+// AddCreditedMessageID adds v to the "credited_message_id" field.
+func (u *OrderUpsertOne) AddCreditedMessageID(v int64) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.AddCreditedMessageID(v)
+	})
+}
+
+// UpdateCreditedMessageID sets the "credited_message_id" field to the value that was provided on create.
+func (u *OrderUpsertOne) UpdateCreditedMessageID() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateCreditedMessageID()
+	})
+}
+
+// ClearCreditedMessageID clears the value of the "credited_message_id" field.
+func (u *OrderUpsertOne) ClearCreditedMessageID() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearCreditedMessageID()
 	})
 }
 
@@ -782,15 +960,6 @@ func (u *OrderUpsertBulk) UpdateNewValues() *OrderUpsertBulk {
 			if _, exists := b.mutation.Currency(); exists {
 				s.SetIgnore(order.FieldCurrency)
 			}
-			if _, exists := b.mutation.BroadcastID(); exists {
-				s.SetIgnore(order.FieldBroadcastID)
-			}
-			if _, exists := b.mutation.AutomationID(); exists {
-				s.SetIgnore(order.FieldAutomationID)
-			}
-			if _, exists := b.mutation.CreditedClickAt(); exists {
-				s.SetIgnore(order.FieldCreditedClickAt)
-			}
 		}
 	}))
 	return u
@@ -869,6 +1038,97 @@ func (u *OrderUpsertBulk) UpdateContactID() *OrderUpsertBulk {
 func (u *OrderUpsertBulk) ClearContactID() *OrderUpsertBulk {
 	return u.Update(func(s *OrderUpsert) {
 		s.ClearContactID()
+	})
+}
+
+// SetBroadcastID sets the "broadcast_id" field.
+func (u *OrderUpsertBulk) SetBroadcastID(v int64) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetBroadcastID(v)
+	})
+}
+
+// UpdateBroadcastID sets the "broadcast_id" field to the value that was provided on create.
+func (u *OrderUpsertBulk) UpdateBroadcastID() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateBroadcastID()
+	})
+}
+
+// ClearBroadcastID clears the value of the "broadcast_id" field.
+func (u *OrderUpsertBulk) ClearBroadcastID() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearBroadcastID()
+	})
+}
+
+// SetAutomationID sets the "automation_id" field.
+func (u *OrderUpsertBulk) SetAutomationID(v int64) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetAutomationID(v)
+	})
+}
+
+// UpdateAutomationID sets the "automation_id" field to the value that was provided on create.
+func (u *OrderUpsertBulk) UpdateAutomationID() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateAutomationID()
+	})
+}
+
+// ClearAutomationID clears the value of the "automation_id" field.
+func (u *OrderUpsertBulk) ClearAutomationID() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearAutomationID()
+	})
+}
+
+// SetCreditedClickAt sets the "credited_click_at" field.
+func (u *OrderUpsertBulk) SetCreditedClickAt(v time.Time) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetCreditedClickAt(v)
+	})
+}
+
+// UpdateCreditedClickAt sets the "credited_click_at" field to the value that was provided on create.
+func (u *OrderUpsertBulk) UpdateCreditedClickAt() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateCreditedClickAt()
+	})
+}
+
+// ClearCreditedClickAt clears the value of the "credited_click_at" field.
+func (u *OrderUpsertBulk) ClearCreditedClickAt() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearCreditedClickAt()
+	})
+}
+
+// SetCreditedMessageID sets the "credited_message_id" field.
+func (u *OrderUpsertBulk) SetCreditedMessageID(v int64) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetCreditedMessageID(v)
+	})
+}
+
+// AddCreditedMessageID adds v to the "credited_message_id" field.
+func (u *OrderUpsertBulk) AddCreditedMessageID(v int64) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.AddCreditedMessageID(v)
+	})
+}
+
+// UpdateCreditedMessageID sets the "credited_message_id" field to the value that was provided on create.
+func (u *OrderUpsertBulk) UpdateCreditedMessageID() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateCreditedMessageID()
+	})
+}
+
+// ClearCreditedMessageID clears the value of the "credited_message_id" field.
+func (u *OrderUpsertBulk) ClearCreditedMessageID() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearCreditedMessageID()
 	})
 }
 

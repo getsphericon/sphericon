@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -43,6 +44,8 @@ type OutboundMessage struct {
 	Channel channels.Channel `json:"channel,omitempty"`
 	// Destination holds the value of the "destination" field.
 	Destination string `json:"destination,omitempty"`
+	// Destinations holds the value of the "destinations" field.
+	Destinations []string `json:"destinations,omitempty"`
 	// ContactID holds the value of the "contact_id" field.
 	ContactID *int64 `json:"contact_id,omitempty"`
 	// SendingSource holds the value of the "sending_source" field.
@@ -77,6 +80,12 @@ type OutboundMessage struct {
 	ClickedAt *time.Time `json:"clicked_at,omitempty"`
 	// Captured holds the value of the "captured" field.
 	Captured bool `json:"captured,omitempty"`
+	// Tracked holds the value of the "tracked" field.
+	Tracked bool `json:"tracked,omitempty"`
+	// TrackingDecidedAt holds the value of the "tracking_decided_at" field.
+	TrackingDecidedAt *time.Time `json:"tracking_decided_at,omitempty"`
+	// TrackingWithdrawnAt holds the value of the "tracking_withdrawn_at" field.
+	TrackingWithdrawnAt *time.Time `json:"tracking_withdrawn_at,omitempty"`
 	// BroadcastID holds the value of the "broadcast_id" field.
 	BroadcastID *int64 `json:"broadcast_id,omitempty"`
 	// BroadcastRecipientID holds the value of the "broadcast_recipient_id" field.
@@ -245,13 +254,15 @@ func (*OutboundMessage) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case outboundmessage.FieldCaptured:
+		case outboundmessage.FieldDestinations:
+			values[i] = new([]byte)
+		case outboundmessage.FieldCaptured, outboundmessage.FieldTracked:
 			values[i] = new(sql.NullBool)
 		case outboundmessage.FieldID, outboundmessage.FieldWorkspaceID, outboundmessage.FieldContactID, outboundmessage.FieldBroadcastID, outboundmessage.FieldBroadcastRecipientID, outboundmessage.FieldAutomationID, outboundmessage.FieldAutomationRunID, outboundmessage.FieldAutomationVersionID, outboundmessage.FieldIntegrationID, outboundmessage.FieldTemplateID:
 			values[i] = new(sql.NullInt64)
 		case outboundmessage.FieldKind, outboundmessage.FieldIdempotencyKey, outboundmessage.FieldChannel, outboundmessage.FieldDestination, outboundmessage.FieldSendingSource, outboundmessage.FieldSendingDomain, outboundmessage.FieldProviderMessageID, outboundmessage.FieldStatus, outboundmessage.FieldSkippedReason, outboundmessage.FieldFailure, outboundmessage.FieldUndeliveredCode, outboundmessage.FieldAutomationStepID, outboundmessage.FieldRequestDigest, outboundmessage.FieldSubject, outboundmessage.FieldAppOrigin:
 			values[i] = new(sql.NullString)
-		case outboundmessage.FieldCreatedAt, outboundmessage.FieldUpdatedAt, outboundmessage.FieldClaimedAt, outboundmessage.FieldSentAt, outboundmessage.FieldDeliveredAt, outboundmessage.FieldBouncedAt, outboundmessage.FieldComplainedAt, outboundmessage.FieldUndeliveredAt, outboundmessage.FieldOpenedAt, outboundmessage.FieldClickedAt:
+		case outboundmessage.FieldCreatedAt, outboundmessage.FieldUpdatedAt, outboundmessage.FieldClaimedAt, outboundmessage.FieldSentAt, outboundmessage.FieldDeliveredAt, outboundmessage.FieldBouncedAt, outboundmessage.FieldComplainedAt, outboundmessage.FieldUndeliveredAt, outboundmessage.FieldOpenedAt, outboundmessage.FieldClickedAt, outboundmessage.FieldTrackingDecidedAt, outboundmessage.FieldTrackingWithdrawnAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -315,6 +326,14 @@ func (_m *OutboundMessage) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field destination", values[i])
 			} else if value.Valid {
 				_m.Destination = value.String
+			}
+		case outboundmessage.FieldDestinations:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field destinations", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Destinations); err != nil {
+					return fmt.Errorf("unmarshal field destinations: %w", err)
+				}
 			}
 		case outboundmessage.FieldContactID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -431,6 +450,26 @@ func (_m *OutboundMessage) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field captured", values[i])
 			} else if value.Valid {
 				_m.Captured = value.Bool
+			}
+		case outboundmessage.FieldTracked:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field tracked", values[i])
+			} else if value.Valid {
+				_m.Tracked = value.Bool
+			}
+		case outboundmessage.FieldTrackingDecidedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field tracking_decided_at", values[i])
+			} else if value.Valid {
+				_m.TrackingDecidedAt = new(time.Time)
+				*_m.TrackingDecidedAt = value.Time
+			}
+		case outboundmessage.FieldTrackingWithdrawnAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field tracking_withdrawn_at", values[i])
+			} else if value.Valid {
+				_m.TrackingWithdrawnAt = new(time.Time)
+				*_m.TrackingWithdrawnAt = value.Time
 			}
 		case outboundmessage.FieldBroadcastID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -616,6 +655,9 @@ func (_m *OutboundMessage) String() string {
 	builder.WriteString("destination=")
 	builder.WriteString(_m.Destination)
 	builder.WriteString(", ")
+	builder.WriteString("destinations=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Destinations))
+	builder.WriteString(", ")
 	if v := _m.ContactID; v != nil {
 		builder.WriteString("contact_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
@@ -694,6 +736,19 @@ func (_m *OutboundMessage) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("captured=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Captured))
+	builder.WriteString(", ")
+	builder.WriteString("tracked=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Tracked))
+	builder.WriteString(", ")
+	if v := _m.TrackingDecidedAt; v != nil {
+		builder.WriteString("tracking_decided_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.TrackingWithdrawnAt; v != nil {
+		builder.WriteString("tracking_withdrawn_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
 	if v := _m.BroadcastID; v != nil {
 		builder.WriteString("broadcast_id=")

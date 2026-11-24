@@ -11,13 +11,15 @@ import (
 )
 
 // deletedOnErasure are the Events a Contact's Erasure deletes rather than keeps anonymous: the
-// customer's own, the consent proof, the person's own words and the Contact's own changes.
+// customer's own, the consent proof (a tracking grant's too), the person's own words and the
+// Contact's own changes.
 var deletedOnErasure = []string{
 	events.NameCollected, systemevent.MarketingConfirmed, systemevent.SmsConfirmed,
 	systemevent.TelegramReceived, systemevent.SmsReceived, systemevent.ContactErased,
 	systemevent.ContactTagged, systemevent.ContactUntagged, systemevent.ContactFieldChanged,
 	systemevent.AutomationEnrolled, systemevent.AutomationCompleted, systemevent.AutomationGoalReached,
 	systemevent.AutomationExited,
+	systemevent.EmailEngagementTrackingGranted, systemevent.SmsEngagementTrackingGranted, systemevent.TelegramEngagementTrackingGranted,
 }
 
 // Every event with an Event row says what a Contact's Erasure does with it, so a new one is kept

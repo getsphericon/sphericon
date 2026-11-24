@@ -161,7 +161,8 @@ func TestExternalSuppressionsCreateNeedsTheSuppressionsWriteScope(t *testing.T) 
 }
 
 // Consent only narrows through /api (ADR 0016): the contract has no operation that
-// resubscribes, removes an Unsubscribe or lifts a Suppression.
+// resubscribes, removes an Unsubscribe, lifts a Suppression or removes an Engagement tracking
+// consent.
 func TestExternalContractHasNoWideningConsentOperation(t *testing.T) {
 	raw, err := os.ReadFile("../../../openapi/external.openapi.json")
 	require.NoError(t, err)
@@ -189,4 +190,8 @@ func TestExternalContractHasNoWideningConsentOperation(t *testing.T) {
 		assert.Equalf(t, "post", r.method, "%s %s: consent routes only narrow (create)", r.method, r.path)
 	}
 	assert.Len(t, consent, 2, "exactly add-suppression and unsubscribe")
+	// Engagement tracking consent is recorded and never lifted: a refusal stands until the person
+	// lifts it (ADR 0121).
+	tracking := lo.Filter(routes, func(r route, _ int) bool { return strings.HasSuffix(r.path, "/engagement-tracking-consents") })
+	assert.Equal(t, []string{"post"}, lo.Map(tracking, func(r route, _ int) string { return r.method }))
 }

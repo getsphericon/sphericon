@@ -96,8 +96,9 @@ func (h *Handlers) SegmentsUnarchive(ctx context.Context, params externalapi.Seg
 	return &res, nil
 }
 
-// SegmentsPreview counts the contacts matching an unsaved rule definition, and, for a Broadcast's
-// Channel, the recipients a Broadcast there would take now (ADR 0149).
+// SegmentsPreview counts the contacts matching an unsaved rule definition, the ones it leaves out
+// because their engagement is unknown (ADR 0123), and, for a Broadcast's Channel, the recipients a
+// Broadcast there would take now (ADR 0149).
 func (h *Handlers) SegmentsPreview(ctx context.Context, req *externalapi.PreviewSegmentInput) (*externalapi.PreviewSegmentResult, error) {
 	in, err := inputs.SegmentPreview(req)
 	if err != nil {
@@ -107,7 +108,7 @@ func (h *Handlers) SegmentsPreview(ctx context.Context, req *externalapi.Preview
 	if err != nil {
 		return nil, err
 	}
-	res := &externalapi.PreviewSegmentResult{Count: narrow.Int32(preview.Count)}
+	res := &externalapi.PreviewSegmentResult{Count: narrow.Int32(preview.Count), UnknownEngagement: narrow.Int32(preview.UnknownEngagement)}
 	if preview.Recipients != nil {
 		res.Recipients = externalapi.NewOptInt32(narrow.Int32(*preview.Recipients))
 	}

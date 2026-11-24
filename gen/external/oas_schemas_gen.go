@@ -4351,10 +4351,14 @@ type BroadcastReport struct {
 	// Recipients a Cancel left unsent: no message was created for them (ADR 0150). Zero unless the
 	// broadcast is cancelled.
 	CancelledCount int32 `json:"cancelledCount"`
-	// Recipients that opened the email; null on a Channel that cannot tell.
+	// Tracked messages that were opened; null on a Channel that cannot tell.
 	OpenedCount NilInt32 `json:"openedCount"`
-	// Recipients that clicked a link.
+	// Tracked messages that were clicked.
 	ClickedCount int32 `json:"clickedCount"`
+	// Messages sent that are not tracked: sent untracked, or whose tracking was withdrawn since (ADR
+	// 0120). They count in no open or click figure, and the tracked messages are the sent count less
+	// these.
+	UntrackedCount int32 `json:"untrackedCount"`
 	// Recipients that unsubscribed via this broadcast.
 	UnsubscribedCount int32 `json:"unsubscribedCount"`
 	// Messages the provider reported delivered, read from the delivery result stamped on each message;
@@ -4372,9 +4376,9 @@ type BroadcastReport struct {
 	// Messages that went through a Test inbox: captured, not delivered; they count as delivered too. Null
 	// off email.
 	CapturedCount NilInt32 `json:"capturedCount"`
-	// Unique opens ÷ messages sent (0-1); null on a Channel that reports no opens.
+	// Unique opens ÷ tracked messages sent (0-1); null on a Channel that reports no opens.
 	OpenRate NilFloat32 `json:"openRate"`
-	// Unique clicks ÷ messages sent (0-1).
+	// Unique clicks ÷ tracked messages sent (0-1).
 	ClickRate float32 `json:"clickRate"`
 }
 
@@ -4426,6 +4430,11 @@ func (s *BroadcastReport) GetOpenedCount() NilInt32 {
 // GetClickedCount returns the value of ClickedCount.
 func (s *BroadcastReport) GetClickedCount() int32 {
 	return s.ClickedCount
+}
+
+// GetUntrackedCount returns the value of UntrackedCount.
+func (s *BroadcastReport) GetUntrackedCount() int32 {
+	return s.UntrackedCount
 }
 
 // GetUnsubscribedCount returns the value of UnsubscribedCount.
@@ -4516,6 +4525,11 @@ func (s *BroadcastReport) SetOpenedCount(val NilInt32) {
 // SetClickedCount sets the value of ClickedCount.
 func (s *BroadcastReport) SetClickedCount(val int32) {
 	s.ClickedCount = val
+}
+
+// SetUntrackedCount sets the value of UntrackedCount.
+func (s *BroadcastReport) SetUntrackedCount(val int32) {
+	s.UntrackedCount = val
 }
 
 // SetUnsubscribedCount sets the value of UnsubscribedCount.
@@ -5992,6 +6006,53 @@ func (s *ContactBatchWarning) UnmarshalText(data []byte) error {
 	}
 }
 
+// The Engagement tracking consent of each Destination of a contact: its email address, its phone, and
+// the Telegram user of each of its chats.
+// Ref: #/components/schemas/ContactEngagementTracking
+type ContactEngagementTracking struct {
+	// One entry per Destination of the contact; empty when it has none.
+	Destinations []EngagementTrackingConsent `json:"destinations"`
+}
+
+// GetDestinations returns the value of Destinations.
+func (s *ContactEngagementTracking) GetDestinations() []EngagementTrackingConsent {
+	return s.Destinations
+}
+
+// SetDestinations sets the value of Destinations.
+func (s *ContactEngagementTracking) SetDestinations(val []EngagementTrackingConsent) {
+	s.Destinations = val
+}
+
+// The Engagement tracking consent a contact upsert item carries, per Destination of the contact.
+// Ref: #/components/schemas/ContactEngagementTrackingInput
+type ContactEngagementTrackingInput struct {
+	// The consent of the contact's email address: the item's, else the one the contact has.
+	Email OptEngagementTrackingObservationInput `json:"email"`
+	// The consent of the contact's phone on SMS: the item's, else the one the contact has.
+	SMS OptEngagementTrackingObservationInput `json:"sms"`
+}
+
+// GetEmail returns the value of Email.
+func (s *ContactEngagementTrackingInput) GetEmail() OptEngagementTrackingObservationInput {
+	return s.Email
+}
+
+// GetSMS returns the value of SMS.
+func (s *ContactEngagementTrackingInput) GetSMS() OptEngagementTrackingObservationInput {
+	return s.SMS
+}
+
+// SetEmail sets the value of Email.
+func (s *ContactEngagementTrackingInput) SetEmail(val OptEngagementTrackingObservationInput) {
+	s.Email = val
+}
+
+// SetSMS sets the value of SMS.
+func (s *ContactEngagementTrackingInput) SetSMS(val OptEngagementTrackingObservationInput) {
+	s.SMS = val
+}
+
 // The contact's place in one broadcast's audience (how its send ended, and whether it was opened or
 // clicked, is in `outboundMessages`).
 // Ref: #/components/schemas/ContactExportBroadcastRecipient
@@ -6634,6 +6695,9 @@ type ContactExportOutboundMessage struct {
 	Channel string `json:"channel"`
 	// Address the message was sent to.
 	Destination string `json:"destination"`
+	// Every address a message rendered once for several went to (a Telegram message to the contact's
+	// chats), `destination` among them; null for a message to one.
+	Destinations OptNilStringArray `json:"destinations"`
 	// Sending source.
 	SendingSource OptNilString `json:"sendingSource"`
 	// Sending domain.
@@ -6667,6 +6731,16 @@ type ContactExportOutboundMessage struct {
 	ClickedAt OptNilTimestamp `json:"clickedAt"`
 	// True when the message went through a Test inbox: captured, not delivered.
 	Captured bool `json:"captured"`
+	// Whether the message went out tracked: with an open pixel and its links rewritten, or its links made
+	// Short tracked links (ADR 0120). False for a message no render decided (skipped before its render, or
+	// not rendered yet).
+	Tracked bool `json:"tracked"`
+	// When a render decided whether the message goes out tracked; null for a message no render decided,
+	// and for one sent before the moment was recorded, which went out tracked.
+	TrackingDecidedAt OptNilTimestamp `json:"trackingDecidedAt"`
+	// When the message's tracking was withdrawn (a refusal of the contact's, or the Workspace's default
+	// turned to `dont_track`); null while it was not.
+	TrackingWithdrawnAt OptNilTimestamp `json:"trackingWithdrawnAt"`
 	// Broadcast that produced the message.
 	BroadcastId OptNilEntityId `json:"broadcastId"`
 	// Automation that produced the message.
@@ -6697,6 +6771,11 @@ func (s *ContactExportOutboundMessage) GetChannel() string {
 // GetDestination returns the value of Destination.
 func (s *ContactExportOutboundMessage) GetDestination() string {
 	return s.Destination
+}
+
+// GetDestinations returns the value of Destinations.
+func (s *ContactExportOutboundMessage) GetDestinations() OptNilStringArray {
+	return s.Destinations
 }
 
 // GetSendingSource returns the value of SendingSource.
@@ -6779,6 +6858,21 @@ func (s *ContactExportOutboundMessage) GetCaptured() bool {
 	return s.Captured
 }
 
+// GetTracked returns the value of Tracked.
+func (s *ContactExportOutboundMessage) GetTracked() bool {
+	return s.Tracked
+}
+
+// GetTrackingDecidedAt returns the value of TrackingDecidedAt.
+func (s *ContactExportOutboundMessage) GetTrackingDecidedAt() OptNilTimestamp {
+	return s.TrackingDecidedAt
+}
+
+// GetTrackingWithdrawnAt returns the value of TrackingWithdrawnAt.
+func (s *ContactExportOutboundMessage) GetTrackingWithdrawnAt() OptNilTimestamp {
+	return s.TrackingWithdrawnAt
+}
+
 // GetBroadcastId returns the value of BroadcastId.
 func (s *ContactExportOutboundMessage) GetBroadcastId() OptNilEntityId {
 	return s.BroadcastId
@@ -6822,6 +6916,11 @@ func (s *ContactExportOutboundMessage) SetChannel(val string) {
 // SetDestination sets the value of Destination.
 func (s *ContactExportOutboundMessage) SetDestination(val string) {
 	s.Destination = val
+}
+
+// SetDestinations sets the value of Destinations.
+func (s *ContactExportOutboundMessage) SetDestinations(val OptNilStringArray) {
+	s.Destinations = val
 }
 
 // SetSendingSource sets the value of SendingSource.
@@ -6902,6 +7001,21 @@ func (s *ContactExportOutboundMessage) SetClickedAt(val OptNilTimestamp) {
 // SetCaptured sets the value of Captured.
 func (s *ContactExportOutboundMessage) SetCaptured(val bool) {
 	s.Captured = val
+}
+
+// SetTracked sets the value of Tracked.
+func (s *ContactExportOutboundMessage) SetTracked(val bool) {
+	s.Tracked = val
+}
+
+// SetTrackingDecidedAt sets the value of TrackingDecidedAt.
+func (s *ContactExportOutboundMessage) SetTrackingDecidedAt(val OptNilTimestamp) {
+	s.TrackingDecidedAt = val
+}
+
+// SetTrackingWithdrawnAt sets the value of TrackingWithdrawnAt.
+func (s *ContactExportOutboundMessage) SetTrackingWithdrawnAt(val OptNilTimestamp) {
+	s.TrackingWithdrawnAt = val
 }
 
 // SetBroadcastId sets the value of BroadcastId.
@@ -10084,6 +10198,918 @@ func (s *EndStepType) UnmarshalText(data []byte) error {
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
+}
+
+// A Channel whose messages track opens and clicks, so a Destination on it can consent to being tracked
+// (ADR 0120).
+// Ref: #/components/schemas/EngagementTrackingChannel
+type EngagementTrackingChannel string
+
+const (
+	EngagementTrackingChannelEmail    EngagementTrackingChannel = "email"
+	EngagementTrackingChannelSMS      EngagementTrackingChannel = "sms"
+	EngagementTrackingChannelTelegram EngagementTrackingChannel = "telegram"
+)
+
+// AllValues returns all EngagementTrackingChannel values.
+func (EngagementTrackingChannel) AllValues() []EngagementTrackingChannel {
+	return []EngagementTrackingChannel{
+		EngagementTrackingChannelEmail,
+		EngagementTrackingChannelSMS,
+		EngagementTrackingChannelTelegram,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EngagementTrackingChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case EngagementTrackingChannelEmail:
+		return []byte(s), nil
+	case EngagementTrackingChannelSMS:
+		return []byte(s), nil
+	case EngagementTrackingChannelTelegram:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EngagementTrackingChannel) UnmarshalText(data []byte) error {
+	switch EngagementTrackingChannel(data) {
+	case EngagementTrackingChannelEmail:
+		*s = EngagementTrackingChannelEmail
+		return nil
+	case EngagementTrackingChannelSMS:
+		*s = EngagementTrackingChannelSMS
+		return nil
+	case EngagementTrackingChannelTelegram:
+		*s = EngagementTrackingChannelTelegram
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The Engagement tracking consent of one Destination on one Channel (ADR 0120).
+// Ref: #/components/schemas/EngagementTrackingConsent
+type EngagementTrackingConsent struct {
+	// The Channel.
+	Channel EngagementTrackingChannel `json:"channel"`
+	// Normalized destination: the lower-cased email address on `email`, the number in E.164 on `sms`, the
+	// Telegram user id on `telegram`.
+	Destination string `json:"destination"`
+	// The consent recorded, or `default` where none is.
+	State EngagementTrackingReading `json:"state"`
+	// Who recorded the consent; absent while none is recorded.
+	Provenance OptNilEngagementTrackingProvenance `json:"provenance"`
+	// Whether the Destination's opens and clicks are tracked: what the consent says, else the Workspace's
+	// default.
+	Effective EngagementTrackingDecision `json:"effective"`
+	// When the consent last changed; absent while none is recorded.
+	UpdatedAt OptNilTimestamp `json:"updatedAt"`
+}
+
+// GetChannel returns the value of Channel.
+func (s *EngagementTrackingConsent) GetChannel() EngagementTrackingChannel {
+	return s.Channel
+}
+
+// GetDestination returns the value of Destination.
+func (s *EngagementTrackingConsent) GetDestination() string {
+	return s.Destination
+}
+
+// GetState returns the value of State.
+func (s *EngagementTrackingConsent) GetState() EngagementTrackingReading {
+	return s.State
+}
+
+// GetProvenance returns the value of Provenance.
+func (s *EngagementTrackingConsent) GetProvenance() OptNilEngagementTrackingProvenance {
+	return s.Provenance
+}
+
+// GetEffective returns the value of Effective.
+func (s *EngagementTrackingConsent) GetEffective() EngagementTrackingDecision {
+	return s.Effective
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *EngagementTrackingConsent) GetUpdatedAt() OptNilTimestamp {
+	return s.UpdatedAt
+}
+
+// SetChannel sets the value of Channel.
+func (s *EngagementTrackingConsent) SetChannel(val EngagementTrackingChannel) {
+	s.Channel = val
+}
+
+// SetDestination sets the value of Destination.
+func (s *EngagementTrackingConsent) SetDestination(val string) {
+	s.Destination = val
+}
+
+// SetState sets the value of State.
+func (s *EngagementTrackingConsent) SetState(val EngagementTrackingReading) {
+	s.State = val
+}
+
+// SetProvenance sets the value of Provenance.
+func (s *EngagementTrackingConsent) SetProvenance(val OptNilEngagementTrackingProvenance) {
+	s.Provenance = val
+}
+
+// SetEffective sets the value of Effective.
+func (s *EngagementTrackingConsent) SetEffective(val EngagementTrackingDecision) {
+	s.Effective = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *EngagementTrackingConsent) SetUpdatedAt(val OptNilTimestamp) {
+	s.UpdatedAt = val
+}
+
+// Whether a Destination's opens and clicks are tracked.
+// Ref: #/components/schemas/EngagementTrackingDecision
+type EngagementTrackingDecision string
+
+const (
+	EngagementTrackingDecisionTrack     EngagementTrackingDecision = "track"
+	EngagementTrackingDecisionDontTrack EngagementTrackingDecision = "dont_track"
+)
+
+// AllValues returns all EngagementTrackingDecision values.
+func (EngagementTrackingDecision) AllValues() []EngagementTrackingDecision {
+	return []EngagementTrackingDecision{
+		EngagementTrackingDecisionTrack,
+		EngagementTrackingDecisionDontTrack,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EngagementTrackingDecision) MarshalText() ([]byte, error) {
+	switch s {
+	case EngagementTrackingDecisionTrack:
+		return []byte(s), nil
+	case EngagementTrackingDecisionDontTrack:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EngagementTrackingDecision) UnmarshalText(data []byte) error {
+	switch EngagementTrackingDecision(data) {
+	case EngagementTrackingDecisionTrack:
+		*s = EngagementTrackingDecisionTrack
+		return nil
+	case EngagementTrackingDecisionDontTrack:
+		*s = EngagementTrackingDecisionDontTrack
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A test of the Contact's Engagement tracking consent on one Channel (ADR 0120), read live as
+// recorded, whatever the Workspace's default: on email the consent of its email address, on sms of its
+// phone, on telegram of its own chats, which read `denied` when any is denied, `granted` when it has
+// one and all are granted, and as none recorded otherwise. A Contact without a Destination on the
+// Channel has none recorded.
+// Ref: #/components/schemas/EngagementTrackingLeaf
+type EngagementTrackingLeaf struct {
+	Kind EngagementTrackingLeafKind `json:"kind"`
+	// The Channel whose consent is tested.
+	Channel EngagementTrackingChannel `json:"channel"`
+	// What it asks of the consent.
+	Test EngagementTrackingTest `json:"test"`
+}
+
+// GetKind returns the value of Kind.
+func (s *EngagementTrackingLeaf) GetKind() EngagementTrackingLeafKind {
+	return s.Kind
+}
+
+// GetChannel returns the value of Channel.
+func (s *EngagementTrackingLeaf) GetChannel() EngagementTrackingChannel {
+	return s.Channel
+}
+
+// GetTest returns the value of Test.
+func (s *EngagementTrackingLeaf) GetTest() EngagementTrackingTest {
+	return s.Test
+}
+
+// SetKind sets the value of Kind.
+func (s *EngagementTrackingLeaf) SetKind(val EngagementTrackingLeafKind) {
+	s.Kind = val
+}
+
+// SetChannel sets the value of Channel.
+func (s *EngagementTrackingLeaf) SetChannel(val EngagementTrackingChannel) {
+	s.Channel = val
+}
+
+// SetTest sets the value of Test.
+func (s *EngagementTrackingLeaf) SetTest(val EngagementTrackingTest) {
+	s.Test = val
+}
+
+// A test of the Contact's Engagement tracking consent on one Channel (ADR 0120), read live as
+// recorded, whatever the Workspace's default: on email the consent of its email address, on sms of its
+// phone, on telegram of its own chats, which read `denied` when any is denied, `granted` when it has
+// one and all are granted, and as none recorded otherwise. A Contact without a Destination on the
+// Channel has none recorded.
+// Ref: #/components/schemas/EngagementTrackingLeafInput
+type EngagementTrackingLeafInput struct {
+	Kind EngagementTrackingLeafInputKind `json:"kind"`
+	// The Channel whose consent is tested.
+	Channel EngagementTrackingChannel `json:"channel"`
+	// What it asks of the consent.
+	Test EngagementTrackingTestInput `json:"test"`
+}
+
+// GetKind returns the value of Kind.
+func (s *EngagementTrackingLeafInput) GetKind() EngagementTrackingLeafInputKind {
+	return s.Kind
+}
+
+// GetChannel returns the value of Channel.
+func (s *EngagementTrackingLeafInput) GetChannel() EngagementTrackingChannel {
+	return s.Channel
+}
+
+// GetTest returns the value of Test.
+func (s *EngagementTrackingLeafInput) GetTest() EngagementTrackingTestInput {
+	return s.Test
+}
+
+// SetKind sets the value of Kind.
+func (s *EngagementTrackingLeafInput) SetKind(val EngagementTrackingLeafInputKind) {
+	s.Kind = val
+}
+
+// SetChannel sets the value of Channel.
+func (s *EngagementTrackingLeafInput) SetChannel(val EngagementTrackingChannel) {
+	s.Channel = val
+}
+
+// SetTest sets the value of Test.
+func (s *EngagementTrackingLeafInput) SetTest(val EngagementTrackingTestInput) {
+	s.Test = val
+}
+
+type EngagementTrackingLeafInputKind string
+
+const (
+	EngagementTrackingLeafInputKindEngagementTracking EngagementTrackingLeafInputKind = "engagementTracking"
+)
+
+// AllValues returns all EngagementTrackingLeafInputKind values.
+func (EngagementTrackingLeafInputKind) AllValues() []EngagementTrackingLeafInputKind {
+	return []EngagementTrackingLeafInputKind{
+		EngagementTrackingLeafInputKindEngagementTracking,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EngagementTrackingLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case EngagementTrackingLeafInputKindEngagementTracking:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EngagementTrackingLeafInputKind) UnmarshalText(data []byte) error {
+	switch EngagementTrackingLeafInputKind(data) {
+	case EngagementTrackingLeafInputKindEngagementTracking:
+		*s = EngagementTrackingLeafInputKindEngagementTracking
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type EngagementTrackingLeafKind string
+
+const (
+	EngagementTrackingLeafKindEngagementTracking EngagementTrackingLeafKind = "engagementTracking"
+)
+
+// AllValues returns all EngagementTrackingLeafKind values.
+func (EngagementTrackingLeafKind) AllValues() []EngagementTrackingLeafKind {
+	return []EngagementTrackingLeafKind{
+		EngagementTrackingLeafKindEngagementTracking,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EngagementTrackingLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case EngagementTrackingLeafKindEngagementTracking:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EngagementTrackingLeafKind) UnmarshalText(data []byte) error {
+	switch EngagementTrackingLeafKind(data) {
+	case EngagementTrackingLeafKindEngagementTracking:
+		*s = EngagementTrackingLeafKindEngagementTracking
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// One Engagement tracking observation of a contact's Destination.
+// Ref: #/components/schemas/EngagementTrackingObservationInput
+type EngagementTrackingObservationInput struct {
+	// Whether the person agreed to have their opens and clicks tracked, or refused.
+	State EngagementTrackingState `json:"state"`
+	// When the person gave or refused the consent; now when omitted. A grant may not be in the future; a
+	// refusal dated in the future is taken as now.
+	OccurredAt OptNilTimestamp `json:"occurredAt"`
+}
+
+// GetState returns the value of State.
+func (s *EngagementTrackingObservationInput) GetState() EngagementTrackingState {
+	return s.State
+}
+
+// GetOccurredAt returns the value of OccurredAt.
+func (s *EngagementTrackingObservationInput) GetOccurredAt() OptNilTimestamp {
+	return s.OccurredAt
+}
+
+// SetState sets the value of State.
+func (s *EngagementTrackingObservationInput) SetState(val EngagementTrackingState) {
+	s.State = val
+}
+
+// SetOccurredAt sets the value of OccurredAt.
+func (s *EngagementTrackingObservationInput) SetOccurredAt(val OptNilTimestamp) {
+	s.OccurredAt = val
+}
+
+// The answer to an Engagement tracking observation: what became of it, and the consent that stands
+// after it.
+// Ref: #/components/schemas/EngagementTrackingObservationResult
+type EngagementTrackingObservationResult struct {
+	// Whether the observation set the consent.
+	Outcome EngagementTrackingOutcome `json:"outcome"`
+	// The Destination's consent after the observation.
+	Consent EngagementTrackingConsent `json:"consent"`
+}
+
+// GetOutcome returns the value of Outcome.
+func (s *EngagementTrackingObservationResult) GetOutcome() EngagementTrackingOutcome {
+	return s.Outcome
+}
+
+// GetConsent returns the value of Consent.
+func (s *EngagementTrackingObservationResult) GetConsent() EngagementTrackingConsent {
+	return s.Consent
+}
+
+// SetOutcome sets the value of Outcome.
+func (s *EngagementTrackingObservationResult) SetOutcome(val EngagementTrackingOutcome) {
+	s.Outcome = val
+}
+
+// SetConsent sets the value of Consent.
+func (s *EngagementTrackingObservationResult) SetConsent(val EngagementTrackingConsent) {
+	s.Consent = val
+}
+
+// What became of an Engagement tracking observation: it set the consent (`applied`), or it occurred
+// before the consent standing and changed nothing (`superseded`, recorded in the contact's history as
+// `contact.consent_superseded`).
+// Ref: #/components/schemas/EngagementTrackingOutcome
+type EngagementTrackingOutcome string
+
+const (
+	EngagementTrackingOutcomeApplied    EngagementTrackingOutcome = "applied"
+	EngagementTrackingOutcomeSuperseded EngagementTrackingOutcome = "superseded"
+)
+
+// AllValues returns all EngagementTrackingOutcome values.
+func (EngagementTrackingOutcome) AllValues() []EngagementTrackingOutcome {
+	return []EngagementTrackingOutcome{
+		EngagementTrackingOutcomeApplied,
+		EngagementTrackingOutcomeSuperseded,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EngagementTrackingOutcome) MarshalText() ([]byte, error) {
+	switch s {
+	case EngagementTrackingOutcomeApplied:
+		return []byte(s), nil
+	case EngagementTrackingOutcomeSuperseded:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EngagementTrackingOutcome) UnmarshalText(data []byte) error {
+	switch EngagementTrackingOutcome(data) {
+	case EngagementTrackingOutcomeApplied:
+		*s = EngagementTrackingOutcomeApplied
+		return nil
+	case EngagementTrackingOutcomeSuperseded:
+		*s = EngagementTrackingOutcomeSuperseded
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Who recorded an Engagement tracking consent: the person on a page reached from a message (page), a
+// member of the Workspace on the Contact card (manual), the customer through the API or an import
+// (imported), or an On-site form's checkbox (onsite_form). A `denied` applies from any of them; only
+// the person lifts one.
+// Ref: #/components/schemas/EngagementTrackingProvenance
+type EngagementTrackingProvenance string
+
+const (
+	EngagementTrackingProvenancePage       EngagementTrackingProvenance = "page"
+	EngagementTrackingProvenanceManual     EngagementTrackingProvenance = "manual"
+	EngagementTrackingProvenanceImported   EngagementTrackingProvenance = "imported"
+	EngagementTrackingProvenanceOnsiteForm EngagementTrackingProvenance = "onsite_form"
+)
+
+// AllValues returns all EngagementTrackingProvenance values.
+func (EngagementTrackingProvenance) AllValues() []EngagementTrackingProvenance {
+	return []EngagementTrackingProvenance{
+		EngagementTrackingProvenancePage,
+		EngagementTrackingProvenanceManual,
+		EngagementTrackingProvenanceImported,
+		EngagementTrackingProvenanceOnsiteForm,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EngagementTrackingProvenance) MarshalText() ([]byte, error) {
+	switch s {
+	case EngagementTrackingProvenancePage:
+		return []byte(s), nil
+	case EngagementTrackingProvenanceManual:
+		return []byte(s), nil
+	case EngagementTrackingProvenanceImported:
+		return []byte(s), nil
+	case EngagementTrackingProvenanceOnsiteForm:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EngagementTrackingProvenance) UnmarshalText(data []byte) error {
+	switch EngagementTrackingProvenance(data) {
+	case EngagementTrackingProvenancePage:
+		*s = EngagementTrackingProvenancePage
+		return nil
+	case EngagementTrackingProvenanceManual:
+		*s = EngagementTrackingProvenanceManual
+		return nil
+	case EngagementTrackingProvenanceImported:
+		*s = EngagementTrackingProvenanceImported
+		return nil
+	case EngagementTrackingProvenanceOnsiteForm:
+		*s = EngagementTrackingProvenanceOnsiteForm
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// What a Destination's Engagement tracking consent reads as: `granted` or `denied` as recorded, or
+// `default` where nothing is recorded and the Workspace's default decides.
+// Ref: #/components/schemas/EngagementTrackingReading
+type EngagementTrackingReading string
+
+const (
+	EngagementTrackingReadingGranted EngagementTrackingReading = "granted"
+	EngagementTrackingReadingDenied  EngagementTrackingReading = "denied"
+	EngagementTrackingReadingDefault EngagementTrackingReading = "default"
+)
+
+// AllValues returns all EngagementTrackingReading values.
+func (EngagementTrackingReading) AllValues() []EngagementTrackingReading {
+	return []EngagementTrackingReading{
+		EngagementTrackingReadingGranted,
+		EngagementTrackingReadingDenied,
+		EngagementTrackingReadingDefault,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EngagementTrackingReading) MarshalText() ([]byte, error) {
+	switch s {
+	case EngagementTrackingReadingGranted:
+		return []byte(s), nil
+	case EngagementTrackingReadingDenied:
+		return []byte(s), nil
+	case EngagementTrackingReadingDefault:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EngagementTrackingReading) UnmarshalText(data []byte) error {
+	switch EngagementTrackingReading(data) {
+	case EngagementTrackingReadingGranted:
+		*s = EngagementTrackingReadingGranted
+		return nil
+	case EngagementTrackingReadingDenied:
+		*s = EngagementTrackingReadingDenied
+		return nil
+	case EngagementTrackingReadingDefault:
+		*s = EngagementTrackingReadingDefault
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Whether a Destination agreed to have its opens and clicks tracked (ADR 0120).
+// Ref: #/components/schemas/EngagementTrackingState
+type EngagementTrackingState string
+
+const (
+	EngagementTrackingStateGranted EngagementTrackingState = "granted"
+	EngagementTrackingStateDenied  EngagementTrackingState = "denied"
+)
+
+// AllValues returns all EngagementTrackingState values.
+func (EngagementTrackingState) AllValues() []EngagementTrackingState {
+	return []EngagementTrackingState{
+		EngagementTrackingStateGranted,
+		EngagementTrackingStateDenied,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EngagementTrackingState) MarshalText() ([]byte, error) {
+	switch s {
+	case EngagementTrackingStateGranted:
+		return []byte(s), nil
+	case EngagementTrackingStateDenied:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EngagementTrackingState) UnmarshalText(data []byte) error {
+	switch EngagementTrackingState(data) {
+	case EngagementTrackingStateGranted:
+		*s = EngagementTrackingStateGranted
+		return nil
+	case EngagementTrackingStateDenied:
+		*s = EngagementTrackingStateDenied
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A test of a Contact's Engagement tracking consent against a state. eq holds where the consent reads
+// as `value`; neq holds everywhere else, where none is recorded included, so a test and its negation
+// split every Contact.
+// Ref: #/components/schemas/EngagementTrackingStateTest
+type EngagementTrackingStateTest struct {
+	Kind EngagementTrackingStateTestKind `json:"kind"`
+	// Whether the consent reads as the state, or does not.
+	Operator StateOperator `json:"operator"`
+	// The state compared with.
+	Value EngagementTrackingState `json:"value"`
+}
+
+// GetKind returns the value of Kind.
+func (s *EngagementTrackingStateTest) GetKind() EngagementTrackingStateTestKind {
+	return s.Kind
+}
+
+// GetOperator returns the value of Operator.
+func (s *EngagementTrackingStateTest) GetOperator() StateOperator {
+	return s.Operator
+}
+
+// GetValue returns the value of Value.
+func (s *EngagementTrackingStateTest) GetValue() EngagementTrackingState {
+	return s.Value
+}
+
+// SetKind sets the value of Kind.
+func (s *EngagementTrackingStateTest) SetKind(val EngagementTrackingStateTestKind) {
+	s.Kind = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *EngagementTrackingStateTest) SetOperator(val StateOperator) {
+	s.Operator = val
+}
+
+// SetValue sets the value of Value.
+func (s *EngagementTrackingStateTest) SetValue(val EngagementTrackingState) {
+	s.Value = val
+}
+
+// A test of a Contact's Engagement tracking consent against a state. eq holds where the consent reads
+// as `value`; neq holds everywhere else, where none is recorded included, so a test and its negation
+// split every Contact.
+// Ref: #/components/schemas/EngagementTrackingStateTestInput
+type EngagementTrackingStateTestInput struct {
+	Kind EngagementTrackingStateTestInputKind `json:"kind"`
+	// Whether the consent reads as the state, or does not.
+	Operator StateOperator `json:"operator"`
+	// The state compared with.
+	Value EngagementTrackingState `json:"value"`
+}
+
+// GetKind returns the value of Kind.
+func (s *EngagementTrackingStateTestInput) GetKind() EngagementTrackingStateTestInputKind {
+	return s.Kind
+}
+
+// GetOperator returns the value of Operator.
+func (s *EngagementTrackingStateTestInput) GetOperator() StateOperator {
+	return s.Operator
+}
+
+// GetValue returns the value of Value.
+func (s *EngagementTrackingStateTestInput) GetValue() EngagementTrackingState {
+	return s.Value
+}
+
+// SetKind sets the value of Kind.
+func (s *EngagementTrackingStateTestInput) SetKind(val EngagementTrackingStateTestInputKind) {
+	s.Kind = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *EngagementTrackingStateTestInput) SetOperator(val StateOperator) {
+	s.Operator = val
+}
+
+// SetValue sets the value of Value.
+func (s *EngagementTrackingStateTestInput) SetValue(val EngagementTrackingState) {
+	s.Value = val
+}
+
+type EngagementTrackingStateTestInputKind string
+
+const (
+	EngagementTrackingStateTestInputKindText EngagementTrackingStateTestInputKind = "text"
+)
+
+// AllValues returns all EngagementTrackingStateTestInputKind values.
+func (EngagementTrackingStateTestInputKind) AllValues() []EngagementTrackingStateTestInputKind {
+	return []EngagementTrackingStateTestInputKind{
+		EngagementTrackingStateTestInputKindText,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EngagementTrackingStateTestInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case EngagementTrackingStateTestInputKindText:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EngagementTrackingStateTestInputKind) UnmarshalText(data []byte) error {
+	switch EngagementTrackingStateTestInputKind(data) {
+	case EngagementTrackingStateTestInputKindText:
+		*s = EngagementTrackingStateTestInputKindText
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type EngagementTrackingStateTestKind string
+
+const (
+	EngagementTrackingStateTestKindText EngagementTrackingStateTestKind = "text"
+)
+
+// AllValues returns all EngagementTrackingStateTestKind values.
+func (EngagementTrackingStateTestKind) AllValues() []EngagementTrackingStateTestKind {
+	return []EngagementTrackingStateTestKind{
+		EngagementTrackingStateTestKindText,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EngagementTrackingStateTestKind) MarshalText() ([]byte, error) {
+	switch s {
+	case EngagementTrackingStateTestKindText:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EngagementTrackingStateTestKind) UnmarshalText(data []byte) error {
+	switch EngagementTrackingStateTestKind(data) {
+	case EngagementTrackingStateTestKindText:
+		*s = EngagementTrackingStateTestKindText
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
+// comparison with `granted` or `denied`, or a presence test of whether any is recorded.
+// Ref: #/components/schemas/EngagementTrackingTest
+type EngagementTrackingTest struct {
+	OneOf EngagementTrackingTestSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *EngagementTrackingTest) GetOneOf() EngagementTrackingTestSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *EngagementTrackingTest) SetOneOf(val EngagementTrackingTestSum) {
+	s.OneOf = val
+}
+
+// What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
+// comparison with `granted` or `denied`, or a presence test of whether any is recorded.
+// Ref: #/components/schemas/EngagementTrackingTestInput
+type EngagementTrackingTestInput struct {
+	OneOf EngagementTrackingTestInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *EngagementTrackingTestInput) GetOneOf() EngagementTrackingTestInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *EngagementTrackingTestInput) SetOneOf(val EngagementTrackingTestInputSum) {
+	s.OneOf = val
+}
+
+// EngagementTrackingTestInputSum represents sum type.
+type EngagementTrackingTestInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                             EngagementTrackingTestInputSumType
+	EngagementTrackingStateTestInput EngagementTrackingStateTestInput
+	PresenceTestInput                PresenceTestInput
+}
+
+// EngagementTrackingTestInputSumType is oneOf type of EngagementTrackingTestInputSum.
+type EngagementTrackingTestInputSumType string
+
+// Possible values for EngagementTrackingTestInputSumType.
+const (
+	EngagementTrackingStateTestInputEngagementTrackingTestInputSum EngagementTrackingTestInputSumType = "text"
+	PresenceTestInputEngagementTrackingTestInputSum                EngagementTrackingTestInputSumType = "presence"
+)
+
+// IsEngagementTrackingStateTestInput reports whether EngagementTrackingTestInputSum is EngagementTrackingStateTestInput.
+func (s EngagementTrackingTestInputSum) IsEngagementTrackingStateTestInput() bool {
+	return s.Type == EngagementTrackingStateTestInputEngagementTrackingTestInputSum
+}
+
+// IsPresenceTestInput reports whether EngagementTrackingTestInputSum is PresenceTestInput.
+func (s EngagementTrackingTestInputSum) IsPresenceTestInput() bool {
+	return s.Type == PresenceTestInputEngagementTrackingTestInputSum
+}
+
+// SetEngagementTrackingStateTestInput sets EngagementTrackingTestInputSum to EngagementTrackingStateTestInput.
+func (s *EngagementTrackingTestInputSum) SetEngagementTrackingStateTestInput(v EngagementTrackingStateTestInput) {
+	s.Type = EngagementTrackingStateTestInputEngagementTrackingTestInputSum
+	s.EngagementTrackingStateTestInput = v
+}
+
+// GetEngagementTrackingStateTestInput returns EngagementTrackingStateTestInput and true boolean if EngagementTrackingTestInputSum is EngagementTrackingStateTestInput.
+func (s EngagementTrackingTestInputSum) GetEngagementTrackingStateTestInput() (v EngagementTrackingStateTestInput, ok bool) {
+	if !s.IsEngagementTrackingStateTestInput() {
+		return v, false
+	}
+	return s.EngagementTrackingStateTestInput, true
+}
+
+// NewEngagementTrackingStateTestInputEngagementTrackingTestInputSum returns new EngagementTrackingTestInputSum from EngagementTrackingStateTestInput.
+func NewEngagementTrackingStateTestInputEngagementTrackingTestInputSum(v EngagementTrackingStateTestInput) EngagementTrackingTestInputSum {
+	var s EngagementTrackingTestInputSum
+	s.SetEngagementTrackingStateTestInput(v)
+	return s
+}
+
+// SetPresenceTestInput sets EngagementTrackingTestInputSum to PresenceTestInput.
+func (s *EngagementTrackingTestInputSum) SetPresenceTestInput(v PresenceTestInput) {
+	s.Type = PresenceTestInputEngagementTrackingTestInputSum
+	s.PresenceTestInput = v
+}
+
+// GetPresenceTestInput returns PresenceTestInput and true boolean if EngagementTrackingTestInputSum is PresenceTestInput.
+func (s EngagementTrackingTestInputSum) GetPresenceTestInput() (v PresenceTestInput, ok bool) {
+	if !s.IsPresenceTestInput() {
+		return v, false
+	}
+	return s.PresenceTestInput, true
+}
+
+// NewPresenceTestInputEngagementTrackingTestInputSum returns new EngagementTrackingTestInputSum from PresenceTestInput.
+func NewPresenceTestInputEngagementTrackingTestInputSum(v PresenceTestInput) EngagementTrackingTestInputSum {
+	var s EngagementTrackingTestInputSum
+	s.SetPresenceTestInput(v)
+	return s
+}
+
+// EngagementTrackingTestSum represents sum type.
+type EngagementTrackingTestSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                        EngagementTrackingTestSumType
+	EngagementTrackingStateTest EngagementTrackingStateTest
+	PresenceTest                PresenceTest
+}
+
+// EngagementTrackingTestSumType is oneOf type of EngagementTrackingTestSum.
+type EngagementTrackingTestSumType string
+
+// Possible values for EngagementTrackingTestSumType.
+const (
+	EngagementTrackingStateTestEngagementTrackingTestSum EngagementTrackingTestSumType = "text"
+	PresenceTestEngagementTrackingTestSum                EngagementTrackingTestSumType = "presence"
+)
+
+// IsEngagementTrackingStateTest reports whether EngagementTrackingTestSum is EngagementTrackingStateTest.
+func (s EngagementTrackingTestSum) IsEngagementTrackingStateTest() bool {
+	return s.Type == EngagementTrackingStateTestEngagementTrackingTestSum
+}
+
+// IsPresenceTest reports whether EngagementTrackingTestSum is PresenceTest.
+func (s EngagementTrackingTestSum) IsPresenceTest() bool {
+	return s.Type == PresenceTestEngagementTrackingTestSum
+}
+
+// SetEngagementTrackingStateTest sets EngagementTrackingTestSum to EngagementTrackingStateTest.
+func (s *EngagementTrackingTestSum) SetEngagementTrackingStateTest(v EngagementTrackingStateTest) {
+	s.Type = EngagementTrackingStateTestEngagementTrackingTestSum
+	s.EngagementTrackingStateTest = v
+}
+
+// GetEngagementTrackingStateTest returns EngagementTrackingStateTest and true boolean if EngagementTrackingTestSum is EngagementTrackingStateTest.
+func (s EngagementTrackingTestSum) GetEngagementTrackingStateTest() (v EngagementTrackingStateTest, ok bool) {
+	if !s.IsEngagementTrackingStateTest() {
+		return v, false
+	}
+	return s.EngagementTrackingStateTest, true
+}
+
+// NewEngagementTrackingStateTestEngagementTrackingTestSum returns new EngagementTrackingTestSum from EngagementTrackingStateTest.
+func NewEngagementTrackingStateTestEngagementTrackingTestSum(v EngagementTrackingStateTest) EngagementTrackingTestSum {
+	var s EngagementTrackingTestSum
+	s.SetEngagementTrackingStateTest(v)
+	return s
+}
+
+// SetPresenceTest sets EngagementTrackingTestSum to PresenceTest.
+func (s *EngagementTrackingTestSum) SetPresenceTest(v PresenceTest) {
+	s.Type = PresenceTestEngagementTrackingTestSum
+	s.PresenceTest = v
+}
+
+// GetPresenceTest returns PresenceTest and true boolean if EngagementTrackingTestSum is PresenceTest.
+func (s EngagementTrackingTestSum) GetPresenceTest() (v PresenceTest, ok bool) {
+	if !s.IsPresenceTest() {
+		return v, false
+	}
+	return s.PresenceTest, true
+}
+
+// NewPresenceTestEngagementTrackingTestSum returns new EngagementTrackingTestSum from PresenceTest.
+func NewPresenceTestEngagementTrackingTestSum(v PresenceTest) EngagementTrackingTestSum {
+	var s EngagementTrackingTestSum
+	s.SetPresenceTest(v)
+	return s
 }
 
 // What an HTTP step recorded when it failed an Enrollment; absent on any other Enrollment.
@@ -14959,6 +15985,52 @@ func (o OptConsentEvidence) Or(d ConsentEvidence) ConsentEvidence {
 	return d
 }
 
+// NewOptContactEngagementTrackingInput returns new OptContactEngagementTrackingInput with value set to v.
+func NewOptContactEngagementTrackingInput(v ContactEngagementTrackingInput) OptContactEngagementTrackingInput {
+	return OptContactEngagementTrackingInput{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptContactEngagementTrackingInput is optional ContactEngagementTrackingInput.
+type OptContactEngagementTrackingInput struct {
+	Value ContactEngagementTrackingInput
+	Set   bool
+}
+
+// IsSet returns true if OptContactEngagementTrackingInput was set.
+func (o OptContactEngagementTrackingInput) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptContactEngagementTrackingInput) Reset() {
+	var v ContactEngagementTrackingInput
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptContactEngagementTrackingInput) SetTo(v ContactEngagementTrackingInput) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptContactEngagementTrackingInput) Get() (v ContactEngagementTrackingInput, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptContactEngagementTrackingInput) Or(d ContactEngagementTrackingInput) ContactEngagementTrackingInput {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptCustomFieldType returns new OptCustomFieldType with value set to v.
 func NewOptCustomFieldType(v CustomFieldType) OptCustomFieldType {
 	return OptCustomFieldType{
@@ -15091,6 +16163,52 @@ func (o OptEmailAddress) Get() (v EmailAddress, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptEmailAddress) Or(d EmailAddress) EmailAddress {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptEngagementTrackingObservationInput returns new OptEngagementTrackingObservationInput with value set to v.
+func NewOptEngagementTrackingObservationInput(v EngagementTrackingObservationInput) OptEngagementTrackingObservationInput {
+	return OptEngagementTrackingObservationInput{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptEngagementTrackingObservationInput is optional EngagementTrackingObservationInput.
+type OptEngagementTrackingObservationInput struct {
+	Value EngagementTrackingObservationInput
+	Set   bool
+}
+
+// IsSet returns true if OptEngagementTrackingObservationInput was set.
+func (o OptEngagementTrackingObservationInput) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptEngagementTrackingObservationInput) Reset() {
+	var v EngagementTrackingObservationInput
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptEngagementTrackingObservationInput) SetTo(v EngagementTrackingObservationInput) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptEngagementTrackingObservationInput) Get() (v EngagementTrackingObservationInput, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptEngagementTrackingObservationInput) Or(d EngagementTrackingObservationInput) EngagementTrackingObservationInput {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -15823,6 +16941,74 @@ func (o OptNilEmailAddress) Get() (v EmailAddress, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilEmailAddress) Or(d EmailAddress) EmailAddress {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilEngagementTrackingProvenance returns new OptNilEngagementTrackingProvenance with value set to v.
+func NewOptNilEngagementTrackingProvenance(v EngagementTrackingProvenance) OptNilEngagementTrackingProvenance {
+	return OptNilEngagementTrackingProvenance{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilEngagementTrackingProvenance is optional nullable EngagementTrackingProvenance.
+type OptNilEngagementTrackingProvenance struct {
+	Value EngagementTrackingProvenance
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilEngagementTrackingProvenance was set.
+func (o OptNilEngagementTrackingProvenance) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilEngagementTrackingProvenance) Reset() {
+	var v EngagementTrackingProvenance
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilEngagementTrackingProvenance) SetTo(v EngagementTrackingProvenance) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilEngagementTrackingProvenance) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilEngagementTrackingProvenance) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v EngagementTrackingProvenance
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilEngagementTrackingProvenance) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilEngagementTrackingProvenance) Get() (v EngagementTrackingProvenance, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilEngagementTrackingProvenance) Or(d EngagementTrackingProvenance) EngagementTrackingProvenance {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -16843,6 +18029,74 @@ func (o OptNilString) Get() (v string, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilString) Or(d string) string {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilStringArray returns new OptNilStringArray with value set to v.
+func NewOptNilStringArray(v []string) OptNilStringArray {
+	return OptNilStringArray{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilStringArray is optional nullable []string.
+type OptNilStringArray struct {
+	Value []string
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilStringArray was set.
+func (o OptNilStringArray) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilStringArray) Reset() {
+	var v []string
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilStringArray) SetTo(v []string) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilStringArray) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilStringArray) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v []string
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilStringArray) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilStringArray) Get() (v []string, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilStringArray) Or(d []string) []string {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -18070,6 +19324,10 @@ func (s *PreviewSegmentInput) SetIntegrationId(val OptNilEntityId) {
 type PreviewSegmentResult struct {
 	// Number of contacts matching the condition, before Suppression and Unsubscribe.
 	Count int32 `json:"count"`
+	// Number of contacts the condition leaves out because their engagement is unknown: it counts their
+	// opens or clicks, and their Destination on that Channel is not tracked now (its Engagement tracking
+	// consent, else the Workspace's default). They match neither the test nor its negation.
+	UnknownEngagement int32 `json:"unknownEngagement"`
 	// Number of matching contacts a Broadcast on the asked Channel would take now: those with a
 	// Destination on it that is neither suppressed nor unsubscribed (on Telegram, an eligible Binding on
 	// the routed Integration). The figure Schedule answers too. Absent unless a channel was given.
@@ -18081,6 +19339,11 @@ func (s *PreviewSegmentResult) GetCount() int32 {
 	return s.Count
 }
 
+// GetUnknownEngagement returns the value of UnknownEngagement.
+func (s *PreviewSegmentResult) GetUnknownEngagement() int32 {
+	return s.UnknownEngagement
+}
+
 // GetRecipients returns the value of Recipients.
 func (s *PreviewSegmentResult) GetRecipients() OptInt32 {
 	return s.Recipients
@@ -18089,6 +19352,11 @@ func (s *PreviewSegmentResult) GetRecipients() OptInt32 {
 // SetCount sets the value of Count.
 func (s *PreviewSegmentResult) SetCount(val int32) {
 	s.Count = val
+}
+
+// SetUnknownEngagement sets the value of UnknownEngagement.
+func (s *PreviewSegmentResult) SetUnknownEngagement(val int32) {
+	s.UnknownEngagement = val
 }
 
 // SetRecipients sets the value of Recipients.
@@ -18914,6 +20182,62 @@ func (s *RateTriple) SetDenominator(val int32) {
 // SetRate sets the value of Rate.
 func (s *RateTriple) SetRate(val NilFloat64) {
 	s.Rate = val
+}
+
+// An Engagement tracking consent the customer collected for a Destination (ADR 0120), recorded as
+// `imported`.
+// Ref: #/components/schemas/RecordEngagementTrackingInput
+type RecordEngagementTrackingInput struct {
+	// The Channel the consent is for.
+	Channel EngagementTrackingChannel `json:"channel"`
+	// The Destination that consented or refused: an email address on `email`, a phone number with its
+	// country code on `sms`, the Telegram user id a chat's Binding names on `telegram`.
+	Destination string `json:"destination"`
+	// Whether the person agreed to have their opens and clicks tracked, or refused.
+	State EngagementTrackingState `json:"state"`
+	// When the person gave or refused the consent; now when omitted. A grant may not be in the future; a
+	// refusal dated in the future is taken as now.
+	OccurredAt OptNilTimestamp `json:"occurredAt"`
+}
+
+// GetChannel returns the value of Channel.
+func (s *RecordEngagementTrackingInput) GetChannel() EngagementTrackingChannel {
+	return s.Channel
+}
+
+// GetDestination returns the value of Destination.
+func (s *RecordEngagementTrackingInput) GetDestination() string {
+	return s.Destination
+}
+
+// GetState returns the value of State.
+func (s *RecordEngagementTrackingInput) GetState() EngagementTrackingState {
+	return s.State
+}
+
+// GetOccurredAt returns the value of OccurredAt.
+func (s *RecordEngagementTrackingInput) GetOccurredAt() OptNilTimestamp {
+	return s.OccurredAt
+}
+
+// SetChannel sets the value of Channel.
+func (s *RecordEngagementTrackingInput) SetChannel(val EngagementTrackingChannel) {
+	s.Channel = val
+}
+
+// SetDestination sets the value of Destination.
+func (s *RecordEngagementTrackingInput) SetDestination(val string) {
+	s.Destination = val
+}
+
+// SetState sets the value of State.
+func (s *RecordEngagementTrackingInput) SetState(val EngagementTrackingState) {
+	s.State = val
+}
+
+// SetOccurredAt sets the value of OccurredAt.
+func (s *RecordEngagementTrackingInput) SetOccurredAt(val OptNilTimestamp) {
+	s.OccurredAt = val
 }
 
 // Request body for recording events one by one with per-item results.
@@ -19771,16 +21095,17 @@ func (s *RuleConditionNodeInput) SetOneOf(val RuleConditionNodeInputSum) {
 // RuleConditionNodeInputSum represents sum type.
 type RuleConditionNodeInputSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type                  RuleConditionNodeInputSumType
-	RuleConditionInput    RuleConditionInput
-	AttributeLeafInput    AttributeLeafInput
-	BirthdayLeafInput     BirthdayLeafInput
-	TagLeafInput          TagLeafInput
-	TelegramLeafInput     TelegramLeafInput
-	SmsLeafInput          SmsLeafInput
-	CustomFieldLeafInput  CustomFieldLeafInput
-	EventLeafInput        EventLeafInput
-	RulePropertyLeafInput RulePropertyLeafInput
+	Type                        RuleConditionNodeInputSumType
+	RuleConditionInput          RuleConditionInput
+	AttributeLeafInput          AttributeLeafInput
+	BirthdayLeafInput           BirthdayLeafInput
+	TagLeafInput                TagLeafInput
+	TelegramLeafInput           TelegramLeafInput
+	SmsLeafInput                SmsLeafInput
+	EngagementTrackingLeafInput EngagementTrackingLeafInput
+	CustomFieldLeafInput        CustomFieldLeafInput
+	EventLeafInput              EventLeafInput
+	RulePropertyLeafInput       RulePropertyLeafInput
 }
 
 // RuleConditionNodeInputSumType is oneOf type of RuleConditionNodeInputSum.
@@ -19788,15 +21113,16 @@ type RuleConditionNodeInputSumType string
 
 // Possible values for RuleConditionNodeInputSumType.
 const (
-	RuleConditionInputRuleConditionNodeInputSum    RuleConditionNodeInputSumType = "group"
-	AttributeLeafInputRuleConditionNodeInputSum    RuleConditionNodeInputSumType = "attribute"
-	BirthdayLeafInputRuleConditionNodeInputSum     RuleConditionNodeInputSumType = "birthday"
-	TagLeafInputRuleConditionNodeInputSum          RuleConditionNodeInputSumType = "tag"
-	TelegramLeafInputRuleConditionNodeInputSum     RuleConditionNodeInputSumType = "telegram"
-	SmsLeafInputRuleConditionNodeInputSum          RuleConditionNodeInputSumType = "sms"
-	CustomFieldLeafInputRuleConditionNodeInputSum  RuleConditionNodeInputSumType = "customField"
-	EventLeafInputRuleConditionNodeInputSum        RuleConditionNodeInputSumType = "event"
-	RulePropertyLeafInputRuleConditionNodeInputSum RuleConditionNodeInputSumType = "property"
+	RuleConditionInputRuleConditionNodeInputSum          RuleConditionNodeInputSumType = "group"
+	AttributeLeafInputRuleConditionNodeInputSum          RuleConditionNodeInputSumType = "attribute"
+	BirthdayLeafInputRuleConditionNodeInputSum           RuleConditionNodeInputSumType = "birthday"
+	TagLeafInputRuleConditionNodeInputSum                RuleConditionNodeInputSumType = "tag"
+	TelegramLeafInputRuleConditionNodeInputSum           RuleConditionNodeInputSumType = "telegram"
+	SmsLeafInputRuleConditionNodeInputSum                RuleConditionNodeInputSumType = "sms"
+	EngagementTrackingLeafInputRuleConditionNodeInputSum RuleConditionNodeInputSumType = "engagementTracking"
+	CustomFieldLeafInputRuleConditionNodeInputSum        RuleConditionNodeInputSumType = "customField"
+	EventLeafInputRuleConditionNodeInputSum              RuleConditionNodeInputSumType = "event"
+	RulePropertyLeafInputRuleConditionNodeInputSum       RuleConditionNodeInputSumType = "property"
 )
 
 // IsRuleConditionInput reports whether RuleConditionNodeInputSum is RuleConditionInput.
@@ -19827,6 +21153,11 @@ func (s RuleConditionNodeInputSum) IsTelegramLeafInput() bool {
 // IsSmsLeafInput reports whether RuleConditionNodeInputSum is SmsLeafInput.
 func (s RuleConditionNodeInputSum) IsSmsLeafInput() bool {
 	return s.Type == SmsLeafInputRuleConditionNodeInputSum
+}
+
+// IsEngagementTrackingLeafInput reports whether RuleConditionNodeInputSum is EngagementTrackingLeafInput.
+func (s RuleConditionNodeInputSum) IsEngagementTrackingLeafInput() bool {
+	return s.Type == EngagementTrackingLeafInputRuleConditionNodeInputSum
 }
 
 // IsCustomFieldLeafInput reports whether RuleConditionNodeInputSum is CustomFieldLeafInput.
@@ -19970,6 +21301,27 @@ func NewSmsLeafInputRuleConditionNodeInputSum(v SmsLeafInput) RuleConditionNodeI
 	return s
 }
 
+// SetEngagementTrackingLeafInput sets RuleConditionNodeInputSum to EngagementTrackingLeafInput.
+func (s *RuleConditionNodeInputSum) SetEngagementTrackingLeafInput(v EngagementTrackingLeafInput) {
+	s.Type = EngagementTrackingLeafInputRuleConditionNodeInputSum
+	s.EngagementTrackingLeafInput = v
+}
+
+// GetEngagementTrackingLeafInput returns EngagementTrackingLeafInput and true boolean if RuleConditionNodeInputSum is EngagementTrackingLeafInput.
+func (s RuleConditionNodeInputSum) GetEngagementTrackingLeafInput() (v EngagementTrackingLeafInput, ok bool) {
+	if !s.IsEngagementTrackingLeafInput() {
+		return v, false
+	}
+	return s.EngagementTrackingLeafInput, true
+}
+
+// NewEngagementTrackingLeafInputRuleConditionNodeInputSum returns new RuleConditionNodeInputSum from EngagementTrackingLeafInput.
+func NewEngagementTrackingLeafInputRuleConditionNodeInputSum(v EngagementTrackingLeafInput) RuleConditionNodeInputSum {
+	var s RuleConditionNodeInputSum
+	s.SetEngagementTrackingLeafInput(v)
+	return s
+}
+
 // SetCustomFieldLeafInput sets RuleConditionNodeInputSum to CustomFieldLeafInput.
 func (s *RuleConditionNodeInputSum) SetCustomFieldLeafInput(v CustomFieldLeafInput) {
 	s.Type = CustomFieldLeafInputRuleConditionNodeInputSum
@@ -20036,16 +21388,17 @@ func NewRulePropertyLeafInputRuleConditionNodeInputSum(v RulePropertyLeafInput) 
 // RuleConditionNodeSum represents sum type.
 type RuleConditionNodeSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type             RuleConditionNodeSumType
-	RuleCondition    RuleCondition
-	AttributeLeaf    AttributeLeaf
-	BirthdayLeaf     BirthdayLeaf
-	TagLeaf          TagLeaf
-	TelegramLeaf     TelegramLeaf
-	SmsLeaf          SmsLeaf
-	CustomFieldLeaf  CustomFieldLeaf
-	EventLeaf        EventLeaf
-	RulePropertyLeaf RulePropertyLeaf
+	Type                   RuleConditionNodeSumType
+	RuleCondition          RuleCondition
+	AttributeLeaf          AttributeLeaf
+	BirthdayLeaf           BirthdayLeaf
+	TagLeaf                TagLeaf
+	TelegramLeaf           TelegramLeaf
+	SmsLeaf                SmsLeaf
+	EngagementTrackingLeaf EngagementTrackingLeaf
+	CustomFieldLeaf        CustomFieldLeaf
+	EventLeaf              EventLeaf
+	RulePropertyLeaf       RulePropertyLeaf
 }
 
 // RuleConditionNodeSumType is oneOf type of RuleConditionNodeSum.
@@ -20053,15 +21406,16 @@ type RuleConditionNodeSumType string
 
 // Possible values for RuleConditionNodeSumType.
 const (
-	RuleConditionRuleConditionNodeSum    RuleConditionNodeSumType = "group"
-	AttributeLeafRuleConditionNodeSum    RuleConditionNodeSumType = "attribute"
-	BirthdayLeafRuleConditionNodeSum     RuleConditionNodeSumType = "birthday"
-	TagLeafRuleConditionNodeSum          RuleConditionNodeSumType = "tag"
-	TelegramLeafRuleConditionNodeSum     RuleConditionNodeSumType = "telegram"
-	SmsLeafRuleConditionNodeSum          RuleConditionNodeSumType = "sms"
-	CustomFieldLeafRuleConditionNodeSum  RuleConditionNodeSumType = "customField"
-	EventLeafRuleConditionNodeSum        RuleConditionNodeSumType = "event"
-	RulePropertyLeafRuleConditionNodeSum RuleConditionNodeSumType = "property"
+	RuleConditionRuleConditionNodeSum          RuleConditionNodeSumType = "group"
+	AttributeLeafRuleConditionNodeSum          RuleConditionNodeSumType = "attribute"
+	BirthdayLeafRuleConditionNodeSum           RuleConditionNodeSumType = "birthday"
+	TagLeafRuleConditionNodeSum                RuleConditionNodeSumType = "tag"
+	TelegramLeafRuleConditionNodeSum           RuleConditionNodeSumType = "telegram"
+	SmsLeafRuleConditionNodeSum                RuleConditionNodeSumType = "sms"
+	EngagementTrackingLeafRuleConditionNodeSum RuleConditionNodeSumType = "engagementTracking"
+	CustomFieldLeafRuleConditionNodeSum        RuleConditionNodeSumType = "customField"
+	EventLeafRuleConditionNodeSum              RuleConditionNodeSumType = "event"
+	RulePropertyLeafRuleConditionNodeSum       RuleConditionNodeSumType = "property"
 )
 
 // IsRuleCondition reports whether RuleConditionNodeSum is RuleCondition.
@@ -20089,6 +21443,11 @@ func (s RuleConditionNodeSum) IsTelegramLeaf() bool {
 
 // IsSmsLeaf reports whether RuleConditionNodeSum is SmsLeaf.
 func (s RuleConditionNodeSum) IsSmsLeaf() bool { return s.Type == SmsLeafRuleConditionNodeSum }
+
+// IsEngagementTrackingLeaf reports whether RuleConditionNodeSum is EngagementTrackingLeaf.
+func (s RuleConditionNodeSum) IsEngagementTrackingLeaf() bool {
+	return s.Type == EngagementTrackingLeafRuleConditionNodeSum
+}
 
 // IsCustomFieldLeaf reports whether RuleConditionNodeSum is CustomFieldLeaf.
 func (s RuleConditionNodeSum) IsCustomFieldLeaf() bool {
@@ -20226,6 +21585,27 @@ func (s RuleConditionNodeSum) GetSmsLeaf() (v SmsLeaf, ok bool) {
 func NewSmsLeafRuleConditionNodeSum(v SmsLeaf) RuleConditionNodeSum {
 	var s RuleConditionNodeSum
 	s.SetSmsLeaf(v)
+	return s
+}
+
+// SetEngagementTrackingLeaf sets RuleConditionNodeSum to EngagementTrackingLeaf.
+func (s *RuleConditionNodeSum) SetEngagementTrackingLeaf(v EngagementTrackingLeaf) {
+	s.Type = EngagementTrackingLeafRuleConditionNodeSum
+	s.EngagementTrackingLeaf = v
+}
+
+// GetEngagementTrackingLeaf returns EngagementTrackingLeaf and true boolean if RuleConditionNodeSum is EngagementTrackingLeaf.
+func (s RuleConditionNodeSum) GetEngagementTrackingLeaf() (v EngagementTrackingLeaf, ok bool) {
+	if !s.IsEngagementTrackingLeaf() {
+		return v, false
+	}
+	return s.EngagementTrackingLeaf, true
+}
+
+// NewEngagementTrackingLeafRuleConditionNodeSum returns new RuleConditionNodeSum from EngagementTrackingLeaf.
+func NewEngagementTrackingLeafRuleConditionNodeSum(v EngagementTrackingLeaf) RuleConditionNodeSum {
+	var s RuleConditionNodeSum
+	s.SetEngagementTrackingLeaf(v)
 	return s
 }
 
@@ -21405,15 +22785,16 @@ func (s *SegmentConditionNodeInput) SetOneOf(val SegmentConditionNodeInputSum) {
 // SegmentConditionNodeInputSum represents sum type.
 type SegmentConditionNodeInputSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type                  SegmentConditionNodeInputSumType
-	SegmentConditionInput SegmentConditionInput
-	AttributeLeafInput    AttributeLeafInput
-	BirthdayLeafInput     BirthdayLeafInput
-	TagLeafInput          TagLeafInput
-	TelegramLeafInput     TelegramLeafInput
-	SmsLeafInput          SmsLeafInput
-	CustomFieldLeafInput  CustomFieldLeafInput
-	EventLeafInput        EventLeafInput
+	Type                        SegmentConditionNodeInputSumType
+	SegmentConditionInput       SegmentConditionInput
+	AttributeLeafInput          AttributeLeafInput
+	BirthdayLeafInput           BirthdayLeafInput
+	TagLeafInput                TagLeafInput
+	TelegramLeafInput           TelegramLeafInput
+	SmsLeafInput                SmsLeafInput
+	EngagementTrackingLeafInput EngagementTrackingLeafInput
+	CustomFieldLeafInput        CustomFieldLeafInput
+	EventLeafInput              EventLeafInput
 }
 
 // SegmentConditionNodeInputSumType is oneOf type of SegmentConditionNodeInputSum.
@@ -21421,14 +22802,15 @@ type SegmentConditionNodeInputSumType string
 
 // Possible values for SegmentConditionNodeInputSumType.
 const (
-	SegmentConditionInputSegmentConditionNodeInputSum SegmentConditionNodeInputSumType = "group"
-	AttributeLeafInputSegmentConditionNodeInputSum    SegmentConditionNodeInputSumType = "attribute"
-	BirthdayLeafInputSegmentConditionNodeInputSum     SegmentConditionNodeInputSumType = "birthday"
-	TagLeafInputSegmentConditionNodeInputSum          SegmentConditionNodeInputSumType = "tag"
-	TelegramLeafInputSegmentConditionNodeInputSum     SegmentConditionNodeInputSumType = "telegram"
-	SmsLeafInputSegmentConditionNodeInputSum          SegmentConditionNodeInputSumType = "sms"
-	CustomFieldLeafInputSegmentConditionNodeInputSum  SegmentConditionNodeInputSumType = "customField"
-	EventLeafInputSegmentConditionNodeInputSum        SegmentConditionNodeInputSumType = "event"
+	SegmentConditionInputSegmentConditionNodeInputSum       SegmentConditionNodeInputSumType = "group"
+	AttributeLeafInputSegmentConditionNodeInputSum          SegmentConditionNodeInputSumType = "attribute"
+	BirthdayLeafInputSegmentConditionNodeInputSum           SegmentConditionNodeInputSumType = "birthday"
+	TagLeafInputSegmentConditionNodeInputSum                SegmentConditionNodeInputSumType = "tag"
+	TelegramLeafInputSegmentConditionNodeInputSum           SegmentConditionNodeInputSumType = "telegram"
+	SmsLeafInputSegmentConditionNodeInputSum                SegmentConditionNodeInputSumType = "sms"
+	EngagementTrackingLeafInputSegmentConditionNodeInputSum SegmentConditionNodeInputSumType = "engagementTracking"
+	CustomFieldLeafInputSegmentConditionNodeInputSum        SegmentConditionNodeInputSumType = "customField"
+	EventLeafInputSegmentConditionNodeInputSum              SegmentConditionNodeInputSumType = "event"
 )
 
 // IsSegmentConditionInput reports whether SegmentConditionNodeInputSum is SegmentConditionInput.
@@ -21459,6 +22841,11 @@ func (s SegmentConditionNodeInputSum) IsTelegramLeafInput() bool {
 // IsSmsLeafInput reports whether SegmentConditionNodeInputSum is SmsLeafInput.
 func (s SegmentConditionNodeInputSum) IsSmsLeafInput() bool {
 	return s.Type == SmsLeafInputSegmentConditionNodeInputSum
+}
+
+// IsEngagementTrackingLeafInput reports whether SegmentConditionNodeInputSum is EngagementTrackingLeafInput.
+func (s SegmentConditionNodeInputSum) IsEngagementTrackingLeafInput() bool {
+	return s.Type == EngagementTrackingLeafInputSegmentConditionNodeInputSum
 }
 
 // IsCustomFieldLeafInput reports whether SegmentConditionNodeInputSum is CustomFieldLeafInput.
@@ -21597,6 +22984,27 @@ func NewSmsLeafInputSegmentConditionNodeInputSum(v SmsLeafInput) SegmentConditio
 	return s
 }
 
+// SetEngagementTrackingLeafInput sets SegmentConditionNodeInputSum to EngagementTrackingLeafInput.
+func (s *SegmentConditionNodeInputSum) SetEngagementTrackingLeafInput(v EngagementTrackingLeafInput) {
+	s.Type = EngagementTrackingLeafInputSegmentConditionNodeInputSum
+	s.EngagementTrackingLeafInput = v
+}
+
+// GetEngagementTrackingLeafInput returns EngagementTrackingLeafInput and true boolean if SegmentConditionNodeInputSum is EngagementTrackingLeafInput.
+func (s SegmentConditionNodeInputSum) GetEngagementTrackingLeafInput() (v EngagementTrackingLeafInput, ok bool) {
+	if !s.IsEngagementTrackingLeafInput() {
+		return v, false
+	}
+	return s.EngagementTrackingLeafInput, true
+}
+
+// NewEngagementTrackingLeafInputSegmentConditionNodeInputSum returns new SegmentConditionNodeInputSum from EngagementTrackingLeafInput.
+func NewEngagementTrackingLeafInputSegmentConditionNodeInputSum(v EngagementTrackingLeafInput) SegmentConditionNodeInputSum {
+	var s SegmentConditionNodeInputSum
+	s.SetEngagementTrackingLeafInput(v)
+	return s
+}
+
 // SetCustomFieldLeafInput sets SegmentConditionNodeInputSum to CustomFieldLeafInput.
 func (s *SegmentConditionNodeInputSum) SetCustomFieldLeafInput(v CustomFieldLeafInput) {
 	s.Type = CustomFieldLeafInputSegmentConditionNodeInputSum
@@ -21642,15 +23050,16 @@ func NewEventLeafInputSegmentConditionNodeInputSum(v EventLeafInput) SegmentCond
 // SegmentConditionNodeSum represents sum type.
 type SegmentConditionNodeSum struct {
 	// Type selects the active sum variant, switch on this field.
-	Type             SegmentConditionNodeSumType
-	SegmentCondition SegmentCondition
-	AttributeLeaf    AttributeLeaf
-	BirthdayLeaf     BirthdayLeaf
-	TagLeaf          TagLeaf
-	TelegramLeaf     TelegramLeaf
-	SmsLeaf          SmsLeaf
-	CustomFieldLeaf  CustomFieldLeaf
-	EventLeaf        EventLeaf
+	Type                   SegmentConditionNodeSumType
+	SegmentCondition       SegmentCondition
+	AttributeLeaf          AttributeLeaf
+	BirthdayLeaf           BirthdayLeaf
+	TagLeaf                TagLeaf
+	TelegramLeaf           TelegramLeaf
+	SmsLeaf                SmsLeaf
+	EngagementTrackingLeaf EngagementTrackingLeaf
+	CustomFieldLeaf        CustomFieldLeaf
+	EventLeaf              EventLeaf
 }
 
 // SegmentConditionNodeSumType is oneOf type of SegmentConditionNodeSum.
@@ -21658,14 +23067,15 @@ type SegmentConditionNodeSumType string
 
 // Possible values for SegmentConditionNodeSumType.
 const (
-	SegmentConditionSegmentConditionNodeSum SegmentConditionNodeSumType = "group"
-	AttributeLeafSegmentConditionNodeSum    SegmentConditionNodeSumType = "attribute"
-	BirthdayLeafSegmentConditionNodeSum     SegmentConditionNodeSumType = "birthday"
-	TagLeafSegmentConditionNodeSum          SegmentConditionNodeSumType = "tag"
-	TelegramLeafSegmentConditionNodeSum     SegmentConditionNodeSumType = "telegram"
-	SmsLeafSegmentConditionNodeSum          SegmentConditionNodeSumType = "sms"
-	CustomFieldLeafSegmentConditionNodeSum  SegmentConditionNodeSumType = "customField"
-	EventLeafSegmentConditionNodeSum        SegmentConditionNodeSumType = "event"
+	SegmentConditionSegmentConditionNodeSum       SegmentConditionNodeSumType = "group"
+	AttributeLeafSegmentConditionNodeSum          SegmentConditionNodeSumType = "attribute"
+	BirthdayLeafSegmentConditionNodeSum           SegmentConditionNodeSumType = "birthday"
+	TagLeafSegmentConditionNodeSum                SegmentConditionNodeSumType = "tag"
+	TelegramLeafSegmentConditionNodeSum           SegmentConditionNodeSumType = "telegram"
+	SmsLeafSegmentConditionNodeSum                SegmentConditionNodeSumType = "sms"
+	EngagementTrackingLeafSegmentConditionNodeSum SegmentConditionNodeSumType = "engagementTracking"
+	CustomFieldLeafSegmentConditionNodeSum        SegmentConditionNodeSumType = "customField"
+	EventLeafSegmentConditionNodeSum              SegmentConditionNodeSumType = "event"
 )
 
 // IsSegmentCondition reports whether SegmentConditionNodeSum is SegmentCondition.
@@ -21693,6 +23103,11 @@ func (s SegmentConditionNodeSum) IsTelegramLeaf() bool {
 
 // IsSmsLeaf reports whether SegmentConditionNodeSum is SmsLeaf.
 func (s SegmentConditionNodeSum) IsSmsLeaf() bool { return s.Type == SmsLeafSegmentConditionNodeSum }
+
+// IsEngagementTrackingLeaf reports whether SegmentConditionNodeSum is EngagementTrackingLeaf.
+func (s SegmentConditionNodeSum) IsEngagementTrackingLeaf() bool {
+	return s.Type == EngagementTrackingLeafSegmentConditionNodeSum
+}
 
 // IsCustomFieldLeaf reports whether SegmentConditionNodeSum is CustomFieldLeaf.
 func (s SegmentConditionNodeSum) IsCustomFieldLeaf() bool {
@@ -21827,6 +23242,27 @@ func (s SegmentConditionNodeSum) GetSmsLeaf() (v SmsLeaf, ok bool) {
 func NewSmsLeafSegmentConditionNodeSum(v SmsLeaf) SegmentConditionNodeSum {
 	var s SegmentConditionNodeSum
 	s.SetSmsLeaf(v)
+	return s
+}
+
+// SetEngagementTrackingLeaf sets SegmentConditionNodeSum to EngagementTrackingLeaf.
+func (s *SegmentConditionNodeSum) SetEngagementTrackingLeaf(v EngagementTrackingLeaf) {
+	s.Type = EngagementTrackingLeafSegmentConditionNodeSum
+	s.EngagementTrackingLeaf = v
+}
+
+// GetEngagementTrackingLeaf returns EngagementTrackingLeaf and true boolean if SegmentConditionNodeSum is EngagementTrackingLeaf.
+func (s SegmentConditionNodeSum) GetEngagementTrackingLeaf() (v EngagementTrackingLeaf, ok bool) {
+	if !s.IsEngagementTrackingLeaf() {
+		return v, false
+	}
+	return s.EngagementTrackingLeaf, true
+}
+
+// NewEngagementTrackingLeafSegmentConditionNodeSum returns new SegmentConditionNodeSum from EngagementTrackingLeaf.
+func NewEngagementTrackingLeafSegmentConditionNodeSum(v EngagementTrackingLeaf) SegmentConditionNodeSum {
+	var s SegmentConditionNodeSum
+	s.SetEngagementTrackingLeaf(v)
 	return s
 }
 
@@ -24110,6 +25546,50 @@ func (s *SoleOwnedWorkspace) SetID(val WorkspaceId) {
 // SetName sets the value of Name.
 func (s *SoleOwnedWorkspace) SetName(val string) {
 	s.Name = val
+}
+
+// How a test of a Contact's Engagement tracking consent compares it with a state: it reads as the
+// state, or it does not.
+// Ref: #/components/schemas/StateOperator
+type StateOperator string
+
+const (
+	StateOperatorEq  StateOperator = "eq"
+	StateOperatorNeq StateOperator = "neq"
+)
+
+// AllValues returns all StateOperator values.
+func (StateOperator) AllValues() []StateOperator {
+	return []StateOperator{
+		StateOperatorEq,
+		StateOperatorNeq,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s StateOperator) MarshalText() ([]byte, error) {
+	switch s {
+	case StateOperatorEq:
+		return []byte(s), nil
+	case StateOperatorNeq:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *StateOperator) UnmarshalText(data []byte) error {
+	switch StateOperator(data) {
+	case StateOperatorEq:
+		*s = StateOperatorEq
+		return nil
+	case StateOperatorNeq:
+		*s = StateOperatorNeq
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 type StepId string
@@ -27382,6 +28862,10 @@ type UpsertContactInput struct {
 	// SMS confirmation for the phone, as `POST /confirmations` does. Without it a phone stays unreachable
 	// on SMS. An item with it and no phone fails.
 	SmsConsent OptConsentEvidence `json:"smsConsent"`
+	// The Engagement tracking consent the contact's Destinations gave outside sphericon, recorded as
+	// `imported`, as `POST /engagement-tracking-consents` does. An item with consent for its email and no
+	// email fails, and so does one with consent for its phone and no phone.
+	EngagementTracking OptContactEngagementTrackingInput `json:"engagementTracking"`
 }
 
 // GetSubjectId returns the value of SubjectId.
@@ -27449,6 +28933,11 @@ func (s *UpsertContactInput) GetSmsConsent() OptConsentEvidence {
 	return s.SmsConsent
 }
 
+// GetEngagementTracking returns the value of EngagementTracking.
+func (s *UpsertContactInput) GetEngagementTracking() OptContactEngagementTrackingInput {
+	return s.EngagementTracking
+}
+
 // SetSubjectId sets the value of SubjectId.
 func (s *UpsertContactInput) SetSubjectId(val OptNilString) {
 	s.SubjectId = val
@@ -27512,6 +29001,11 @@ func (s *UpsertContactInput) SetCustomFields(val OptNilJsonObject) {
 // SetSmsConsent sets the value of SmsConsent.
 func (s *UpsertContactInput) SetSmsConsent(val OptConsentEvidence) {
 	s.SmsConsent = val
+}
+
+// SetEngagementTracking sets the value of EngagementTracking.
+func (s *UpsertContactInput) SetEngagementTracking(val OptContactEngagementTrackingInput) {
+	s.EngagementTracking = val
 }
 
 // Request body for upserting contacts in batch.
@@ -28369,6 +29863,10 @@ type WorkspaceResource struct {
 	// off, email is single opt-in by the Workspace's choice. Read-only: only a person turns it on, in the
 	// console's Workspace settings, affirming that the current mailable list consented.
 	RequireConfirmedOptIn bool `json:"requireConfirmedOptIn"`
+	// The Engagement tracking default (ADR 0120): whether a Destination with no Engagement tracking
+	// consent recorded has its opens and clicks tracked. Read-only: only a person changes it, in the
+	// console's Workspace settings.
+	EngagementTrackingDefault EngagementTrackingDecision `json:"engagementTrackingDefault"`
 	// The IANA time zone every analytics report counts its days in (ADR 0057).
 	Timezone TimeZoneName `json:"timezone"`
 	// The Send cap the platform set on the Workspace, with its sends over the last 24 hours; null when no
@@ -28396,6 +29894,11 @@ func (s *WorkspaceResource) GetPostalAddress() string {
 // GetRequireConfirmedOptIn returns the value of RequireConfirmedOptIn.
 func (s *WorkspaceResource) GetRequireConfirmedOptIn() bool {
 	return s.RequireConfirmedOptIn
+}
+
+// GetEngagementTrackingDefault returns the value of EngagementTrackingDefault.
+func (s *WorkspaceResource) GetEngagementTrackingDefault() EngagementTrackingDecision {
+	return s.EngagementTrackingDefault
 }
 
 // GetTimezone returns the value of Timezone.
@@ -28431,6 +29934,11 @@ func (s *WorkspaceResource) SetPostalAddress(val string) {
 // SetRequireConfirmedOptIn sets the value of RequireConfirmedOptIn.
 func (s *WorkspaceResource) SetRequireConfirmedOptIn(val bool) {
 	s.RequireConfirmedOptIn = val
+}
+
+// SetEngagementTrackingDefault sets the value of EngagementTrackingDefault.
+func (s *WorkspaceResource) SetEngagementTrackingDefault(val EngagementTrackingDecision) {
+	s.EngagementTrackingDefault = val
 }
 
 // SetTimezone sets the value of Timezone.

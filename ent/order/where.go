@@ -100,6 +100,11 @@ func CreditedClickAt(v time.Time) predicate.Order {
 	return predicate.Order(sql.FieldEQ(FieldCreditedClickAt, v))
 }
 
+// CreditedMessageID applies equality check predicate on the "credited_message_id" field. It's identical to CreditedMessageIDEQ.
+func CreditedMessageID(v int64) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldCreditedMessageID, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Order {
 	return predicate.Order(sql.FieldEQ(FieldCreatedAt, v))
@@ -468,6 +473,56 @@ func CreditedClickAtIsNil() predicate.Order {
 // CreditedClickAtNotNil applies the NotNil predicate on the "credited_click_at" field.
 func CreditedClickAtNotNil() predicate.Order {
 	return predicate.Order(sql.FieldNotNull(FieldCreditedClickAt))
+}
+
+// CreditedMessageIDEQ applies the EQ predicate on the "credited_message_id" field.
+func CreditedMessageIDEQ(v int64) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldCreditedMessageID, v))
+}
+
+// CreditedMessageIDNEQ applies the NEQ predicate on the "credited_message_id" field.
+func CreditedMessageIDNEQ(v int64) predicate.Order {
+	return predicate.Order(sql.FieldNEQ(FieldCreditedMessageID, v))
+}
+
+// CreditedMessageIDIn applies the In predicate on the "credited_message_id" field.
+func CreditedMessageIDIn(vs ...int64) predicate.Order {
+	return predicate.Order(sql.FieldIn(FieldCreditedMessageID, vs...))
+}
+
+// CreditedMessageIDNotIn applies the NotIn predicate on the "credited_message_id" field.
+func CreditedMessageIDNotIn(vs ...int64) predicate.Order {
+	return predicate.Order(sql.FieldNotIn(FieldCreditedMessageID, vs...))
+}
+
+// CreditedMessageIDGT applies the GT predicate on the "credited_message_id" field.
+func CreditedMessageIDGT(v int64) predicate.Order {
+	return predicate.Order(sql.FieldGT(FieldCreditedMessageID, v))
+}
+
+// CreditedMessageIDGTE applies the GTE predicate on the "credited_message_id" field.
+func CreditedMessageIDGTE(v int64) predicate.Order {
+	return predicate.Order(sql.FieldGTE(FieldCreditedMessageID, v))
+}
+
+// CreditedMessageIDLT applies the LT predicate on the "credited_message_id" field.
+func CreditedMessageIDLT(v int64) predicate.Order {
+	return predicate.Order(sql.FieldLT(FieldCreditedMessageID, v))
+}
+
+// CreditedMessageIDLTE applies the LTE predicate on the "credited_message_id" field.
+func CreditedMessageIDLTE(v int64) predicate.Order {
+	return predicate.Order(sql.FieldLTE(FieldCreditedMessageID, v))
+}
+
+// CreditedMessageIDIsNil applies the IsNil predicate on the "credited_message_id" field.
+func CreditedMessageIDIsNil() predicate.Order {
+	return predicate.Order(sql.FieldIsNull(FieldCreditedMessageID))
+}
+
+// CreditedMessageIDNotNil applies the NotNil predicate on the "credited_message_id" field.
+func CreditedMessageIDNotNil() predicate.Order {
+	return predicate.Order(sql.FieldNotNull(FieldCreditedMessageID))
 }
 
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.

@@ -57,6 +57,7 @@ function statEntries(
       { label: t(($) => $.broadcasts.stats.captured), value: stats.capturedCount },
       { label: t(($) => $.broadcasts.stats.opened), value: stats.openedCount },
       { label: t(($) => $.broadcasts.stats.clicked), value: stats.clickedCount },
+      { label: t(($) => $.broadcasts.stats.untracked), value: stats.untrackedCount },
       { label: t(($) => $.broadcasts.stats.unsubscribed), value: stats.unsubscribedCount },
       { label: t(($) => $.broadcasts.stats.failed), value: stats.failedCount },
     ]),

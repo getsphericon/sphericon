@@ -6,9 +6,11 @@ package resources
 import (
 	"fmt"
 	automationversion "github.com/getsphericon/sphericon/ent/automationversion"
+	engagementtrackingconsent "github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	external "github.com/getsphericon/sphericon/gen/external"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	contacts "github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	engagementtracking "github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	eventrecording "github.com/getsphericon/sphericon/internal/domain/contacts/eventrecording"
 	segments "github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	emailtemplates "github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
@@ -243,6 +245,12 @@ func (c *InputsImpl) ContactCreate(source *external.CreateContactInput) contacts
 	}
 	return contactsCreateInput
 }
+func (c *InputsImpl) ContactEngagementTracking(source external.ContactEngagementTrackingInput) engagementtracking.ContactObservations {
+	var engagementtrackingContactObservations engagementtracking.ContactObservations
+	engagementtrackingContactObservations.Email = engagementTrackingObservationIn(c, source.Email)
+	engagementtrackingContactObservations.SMS = engagementTrackingObservationIn(c, source.SMS)
+	return engagementtrackingContactObservations
+}
 func (c *InputsImpl) ContactExport(source external.ContactsExportParams) dataexport.OpenInput {
 	var dataexportOpenInput dataexport.OpenInput
 	dataexportOpenInput.ID = entityIDPtrIn(source.ID)
@@ -253,6 +261,7 @@ func (c *InputsImpl) ContactIntake(source external.UpsertContactInput) contacts.
 	var contactsIntakeInput contacts.IntakeInput
 	contactsIntakeInput.UpsertInput = c.ContactUpsert(source)
 	contactsIntakeInput.SMSConsent = smsConsentIn(c, source.SmsConsent)
+	contactsIntakeInput.EngagementTracking = engagementTrackingIn(c, source.EngagementTracking)
 	return contactsIntakeInput
 }
 func (c *InputsImpl) ContactIntakes(source []external.UpsertContactInput) []contacts.IntakeInput {
@@ -334,6 +343,49 @@ func (c *InputsImpl) EmailStepIn(source external.EmailStepInput) automationstep.
 	automationstepEmail.Doc = documentIn(source.Doc)
 	// automationstepEmail.EditorVersion: ignore
 	return automationstepEmail
+}
+func (c *InputsImpl) EngagementTracking(source *external.RecordEngagementTrackingInput) engagementtracking.RecordInput {
+	var engagementtrackingRecordInput engagementtracking.RecordInput
+	if source != nil {
+		engagementtrackingRecordInput.Channel = c.EngagementTrackingChannel((*source).Channel)
+		engagementtrackingRecordInput.Destination = (*source).Destination
+		engagementtrackingRecordInput.State = c.EngagementTrackingState((*source).State)
+		// engagementtrackingRecordInput.Provenance: ignore
+		engagementtrackingRecordInput.OccurredAt = timestampIn((*source).OccurredAt)
+	}
+	return engagementtrackingRecordInput
+}
+func (c *InputsImpl) EngagementTrackingChannel(source external.EngagementTrackingChannel) channels.Channel {
+	var channelsChannel channels.Channel
+	switch source {
+	case external.EngagementTrackingChannelEmail:
+		channelsChannel = channels.Email
+	case external.EngagementTrackingChannelSMS:
+		channelsChannel = channels.SMS
+	case external.EngagementTrackingChannelTelegram:
+		channelsChannel = channels.Telegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return channelsChannel
+}
+func (c *InputsImpl) EngagementTrackingObservation(source external.EngagementTrackingObservationInput) engagementtracking.Observation {
+	var engagementtrackingObservation engagementtracking.Observation
+	engagementtrackingObservation.State = c.EngagementTrackingState(source.State)
+	engagementtrackingObservation.OccurredAt = timestampIn(source.OccurredAt)
+	return engagementtrackingObservation
+}
+func (c *InputsImpl) EngagementTrackingState(source external.EngagementTrackingState) engagementtrackingconsent.State {
+	var engagementtrackingconsentState engagementtrackingconsent.State
+	switch source {
+	case external.EngagementTrackingStateDenied:
+		engagementtrackingconsentState = engagementtrackingconsent.StateDenied
+	case external.EngagementTrackingStateGranted:
+		engagementtrackingconsentState = engagementtrackingconsent.StateGranted
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return engagementtrackingconsentState
 }
 func (c *InputsImpl) EnrollmentsFilter(source external.EnrollmentsListParams) automations.EnrollmentsFilter {
 	var automationsEnrollmentsFilter automations.EnrollmentsFilter

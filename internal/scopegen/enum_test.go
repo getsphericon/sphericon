@@ -100,6 +100,7 @@ func TestGenerateConditionKindsListsWhatEachUnionAdmitsInItsOrder(t *testing.T) 
 	 "CustomFieldTest":{"oneOf":[{"$ref":"#/components/schemas/TextTest"},{"$ref":"#/components/schemas/WithinLastTest"}],
 	  "discriminator":{"propertyName":"kind","mapping":{"withinLast":"#/components/schemas/WithinLastTest","text":"#/components/schemas/TextTest"}}},
 	 "PropertyTest":{"oneOf":[{"$ref":"#/components/schemas/TextTest"}],"discriminator":{"propertyName":"kind","mapping":{"text":"#/components/schemas/TextTest"}}},
+	 "EngagementTrackingTest":{"oneOf":[{"$ref":"#/components/schemas/PresenceTest"}],"discriminator":{"propertyName":"kind","mapping":{"presence":"#/components/schemas/PresenceTest"}}},
 	 "RulePropertySource":{"oneOf":[{"$ref":"#/components/schemas/TriggerSource"}],"discriminator":{"propertyName":"kind","mapping":{"trigger":"#/components/schemas/TriggerSource"}}}}}}`))
 	require.NoError(t, err)
 
@@ -112,6 +113,7 @@ func TestGenerateConditionKindsListsWhatEachUnionAdmitsInItsOrder(t *testing.T) 
 	require.Regexp(t, `var RuleKinds = \[\]Kind\{\s+KindGroup,\s+KindTag,\s+KindProperty,\s+\}`, out)
 	require.Regexp(t, `var EventFilterKinds = \[\]Kind\{\s+KindGroup,\s+KindProperty,\s+\}`, out)
 	require.Regexp(t, `var CustomFieldTests = \[\]TestKind\{\s+TestText,\s+TestWithinLast,\s+\}`, out)
+	require.Regexp(t, `var EngagementTrackingTests = \[\]TestKind\{\s+TestPresence,\s+\}`, out)
 	require.Regexp(t, `var RuleSources = \[\]Source\{\s+SourceTrigger,\s+\}`, out)
 }
 
@@ -128,14 +130,18 @@ func TestGenerateConditionOperatorsTypesEachOperatorEnumWithItsList(t *testing.T
 	 "NumberOperator":{"type":"string","enum":["gt"]},
 	 "MomentOperator":{"type":"string","enum":["before"]},
 	 "PresenceOperator":{"type":"string","enum":["set","notSet"]},
+	 "StateOperator":{"type":"string","enum":["eq","neq"]},
 	 "HasOperator":{"type":"string","enum":["has","doesNotHave"]},
-	 "EventCountOperator":{"type":"string","enum":["atLeast","atMost"]}}}}`))
+	 "EventCountOperator":{"type":"string","enum":["atLeast","atMost"]},
+	 "EngagementTrackingChannel":{"type":"string","enum":["email","telegram"]}}}}`))
 	require.NoError(t, err)
 
 	out := string(src)
 	require.Regexp(t, `TextBeginsWith\s+TextOperator = "beginsWith"`, out)
 	require.Regexp(t, `var TextOperators = \[\]TextOperator\{\s+TextEq,\s+TextBeginsWith,\s+\}`, out)
 	require.Regexp(t, `PresenceNotSet\s+PresenceOperator = "notSet"`, out)
+	require.Regexp(t, `var StateOperators = \[\]StateOperator\{\s+StateEq,\s+StateNeq,\s+\}`, out)
 	require.Regexp(t, `DoesNotHave\s+HasOperator = "doesNotHave"`, out)
 	require.Regexp(t, `AtMost\s+EventCountOperator = "atMost"`, out)
+	require.Regexp(t, `var TrackingChannels = \[\]TrackingChannel\{\s+TrackingEmail,\s+TrackingTelegram,\s+\}`, out)
 }

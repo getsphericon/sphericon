@@ -282,8 +282,8 @@ const (
 	IdentifyLocaleMaxLength = 35
 )
 
-// ConsentDestination is the address or phone a Consent fact (a Confirmation, a Suppression, an Unsubscribe) is about.
-// From external CreateConfirmationInput.destination, external CreateSuppressionInput.destination, external CreateUnsubscribeInput.destination.
+// ConsentDestination is the address or phone a Consent fact (a Confirmation, a Suppression, an Unsubscribe, an Engagement tracking consent) is about.
+// From external CreateConfirmationInput.destination, external RecordEngagementTrackingInput.destination, site SiteRecordEngagementTrackingInput.destination, external CreateSuppressionInput.destination, external CreateUnsubscribeInput.destination.
 const (
 	ConsentDestinationMaxLength = 320
 )
@@ -415,7 +415,7 @@ var Owners = map[string][]string{
 	"IdentifySubjectIDMaxLength":         {"internal/usecase/visitoridentification"},
 	"IdentifyTimeZoneMaxLength":          {"internal/usecase/visitoridentification"},
 	"IdentifyLocaleMaxLength":            {"internal/usecase/visitoridentification"},
-	"ConsentDestinationMaxLength":        {"Confirmation", "Suppression", "Unsubscribe"},
+	"ConsentDestinationMaxLength":        {"Confirmation", "Suppression", "Unsubscribe", "EngagementTrackingConsent"},
 	"RuleTriggerEventsMinItems":          {"Rule"},
 	"EntryCooldownMin":                   {"AutomationVersion"},
 	"TriggerCooldownDefault":             {"AutomationVersion"},

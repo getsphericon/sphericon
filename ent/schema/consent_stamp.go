@@ -12,7 +12,8 @@ import (
 // ConsentStamp is when the Consent observations that set the consent states of one (Channel,
 // Destination, Sending source) occurred (ADR 0154): the opt-out state (an Unsubscribe, or the
 // return that lifted it) and, on the `everything` source, the Confirmation state (a Confirmation,
-// or the opt-out that withdrew it). It outlives the Unsubscribe row a return deletes, so a late,
+// or the opt-out that withdrew it) and the Engagement tracking consent (ADR 0120), which has no
+// Sending source. It outlives the Unsubscribe row a return deletes, so a late,
 // older stop is compared with the return. A new observation changes a state only when it occurred
 // later. The row is also what serializes the observations of its key: each takes it FOR UPDATE
 // first. Only internal/domain/contacts/consentstamps writes it. Keyed by the Destination like the
@@ -23,12 +24,14 @@ type ConsentStamp struct {
 }
 
 // Annotations checks what the comments of the columns say: a bot's number comes with the bot and
-// only on a stamped opt-out, and a Confirmation's time only on the `everything` source.
+// only on a stamped opt-out, and a Confirmation's and an Engagement tracking consent's time only on
+// the `everything` source.
 func (ConsentStamp) Annotations() []schema.Annotation {
 	a := WithLowerCheck(TableWithEnumChecks("consent_stamps", ConsentStamp{}.Fields()), "destination")
 	a.Checks["consent_stamps_sequence_check"] = "(opt_out_integration_id IS NULL) = (opt_out_sequence IS NULL) AND " +
 		"(opt_out_occurred_at IS NOT NULL OR opt_out_integration_id IS NULL)"
 	a.Checks["consent_stamps_confirmation_check"] = "sending_source = 'everything' OR confirmation_occurred_at IS NULL"
+	a.Checks["consent_stamps_engagement_tracking_check"] = "sending_source = 'everything' OR engagement_tracking_occurred_at IS NULL"
 	a.Checks["consent_stamps_sms_hash_check"] = "channel <> 'sms' OR destination ~ '^[0-9a-f]{64}$'"
 	return []schema.Annotation{a}
 }
@@ -71,6 +74,12 @@ func (ConsentStamp) Fields() []ent.Field {
 		// When the observation that set the Confirmation state occurred: a Confirmation, or the
 		// opt-out of everything that withdrew it. Only on the `everything` source.
 		field.Time("confirmation_occurred_at").
+			Optional().
+			Nillable().
+			Annotations(Attribute("the occurrence an observation is compared with; no move of a lifecycle reads it")),
+		// When the observation that set the Engagement tracking consent occurred: a `granted` or a
+		// `denied`. Only on the `everything` source.
+		field.Time("engagement_tracking_occurred_at").
 			Optional().
 			Nillable().
 			Annotations(Attribute("the occurrence an observation is compared with; no move of a lifecycle reads it")),

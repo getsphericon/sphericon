@@ -105,6 +105,7 @@ func TestAnSMSBroadcastsLinksGoOutAsShortTrackedLinksAndAPersonsClickIsRecorded(
 	assert.Equal(t, id, human.BroadcastID)
 	assert.EqualValues(t, fixtures.ContactLacunaBeaID, human.ContactID)
 	assert.Equal(t, smsCart, human.URL)
+	assert.Equal(t, fixtures.ContactLacunaBeaPhone, human.Destination, "the click names the number the message went to")
 }
 
 // Lacuna's untracked draft "Sale: <offer> or <cart>" goes to Textham, whose one number that can be

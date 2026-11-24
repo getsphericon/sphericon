@@ -1,0 +1,96 @@
+package engagementtracking
+
+import (
+	"entgo.io/ent/dialect/sql"
+
+	"github.com/getsphericon/sphericon/ent/binding"
+	"github.com/getsphericon/sphericon/ent/contact"
+	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/phone"
+)
+
+// ReadsWhere is a Contact's consent in SQL, as recorded (the Workspace's default aside): it keeps
+// the Contacts whose consent on channel reads as state. On email it is the consent of the Contact's
+// email address, on sms of its phone (the number or, once erased, its hash), and on telegram of
+// its own chats (a Visitor's reaches no Contact, ADR 0171), which read denied when any is denied
+// and granted when the Contact has one and every one is granted. A Contact without a Destination
+// on the Channel reads as neither. Every form is an EXISTS, never NULL, so a negation of it keeps
+// exactly the Contacts it leaves out.
+func ReadsWhere(channel channels.Channel, state State) func(*sql.Selector) {
+	return func(outer *sql.Selector) {
+		outer.Where(readsOf(outer, channel, state))
+	}
+}
+
+// readsOf is ReadsWhere's predicate over the outer contacts query.
+func readsOf(outer *sql.Selector, channel channels.Channel, state State) *sql.Predicate {
+	column, ok := consentChannels[channel]
+	switch {
+	case !ok:
+		return sql.False()
+	case column == "":
+		return chatsRead(outer, state)
+	}
+	return sql.Exists(recordedOf(outer.C(contact.FieldWorkspaceID), outer.C(column), channel, state))
+}
+
+// UntrackedOf is whether the Contact of the outer contacts query has a Destination on channel that
+// is not tracked under the Workspace's default dflt: its email address, its phone, or any of its
+// own Telegram chats (a Visitor's is no Contact's, ADR 0171). A Contact with none has nothing
+// untracked, and neither has one on a Channel that takes no consent. Never NULL.
+func UntrackedOf(outer *sql.Selector, channel channels.Channel, dflt Decision) *sql.Predicate {
+	column, ok := consentChannels[channel]
+	switch {
+	case !ok:
+		return sql.False()
+	case column == "":
+		chats := ownChats(outer)
+		chats.Where(Untracked(chats, channel, dflt, binding.FieldDestination))
+		return sql.Exists(chats)
+	}
+	return sql.And(sql.NotNull(outer.C(column)), Untracked(outer, channel, dflt, column))
+}
+
+// chatsRead is whether the Contact's own Telegram chats read as state: denied when any chat is
+// denied; granted when it has a chat and none lacks a grant (a chat's consent is one state, so
+// none is denied then either).
+func chatsRead(outer *sql.Selector, state State) *sql.Predicate {
+	if state == Denied {
+		chats := ownChats(outer)
+		chats.Where(sql.Exists(recordedOf(chats.C(binding.FieldWorkspaceID), chats.C(binding.FieldDestination), channels.Telegram, Denied)))
+		return sql.Exists(chats)
+	}
+	ungranted := ownChats(outer)
+	ungranted.Where(sql.NotExists(recordedOf(ungranted.C(binding.FieldWorkspaceID), ungranted.C(binding.FieldDestination), channels.Telegram, Granted)))
+	return sql.And(sql.Exists(ownChats(outer)), sql.NotExists(ungranted))
+}
+
+// ownChats selects the Telegram Bindings of the outer query's Contact.
+func ownChats(outer *sql.Selector) *sql.Selector {
+	chats := sql.Table(binding.Table).As("tracking_chats")
+	return sql.Select(chats.C(binding.FieldID)).From(chats).Where(sql.And(
+		sql.ColumnsEQ(chats.C(binding.FieldContactID), outer.C(contact.FieldID)),
+		sql.EQ(chats.C(binding.FieldChannel), string(channels.Telegram)),
+	))
+}
+
+// recordedOf selects the consent rows of state on channel of the Destination in destination (a
+// column of the outer query holding its stored form) in the Workspace in workspace. On sms a
+// refusal is kept by the number or, once its Contact was erased, by the number's hash
+// (phone.KeyedBy, as the eligibility layers match an opt-out), so it holds when the number comes back.
+func recordedOf(workspace, destination string, channel channels.Channel, state State) *sql.Selector {
+	consents := sql.Table(engagementtrackingconsent.Table)
+	sameDestination := sql.ColumnsEQ(consents.C(engagementtrackingconsent.FieldDestination), destination)
+	if channel == channels.SMS {
+		sameDestination = phone.KeyedBy(func() string { return consents.C(engagementtrackingconsent.FieldDestination) },
+			func(b *sql.Builder) { b.WriteString(destination) })
+	}
+	return sql.Select(consents.C(engagementtrackingconsent.FieldID)).From(consents).Where(sql.And(
+		// Every Workspace-owned table names its Workspace in the same column (WorkspaceMixin).
+		sql.ColumnsEQ(consents.C(engagementtrackingconsent.FieldWorkspaceID), workspace),
+		sameDestination,
+		sql.EQ(consents.C(engagementtrackingconsent.FieldChannel), string(channel)),
+		sql.EQ(consents.C(engagementtrackingconsent.FieldState), string(state)),
+	))
+}

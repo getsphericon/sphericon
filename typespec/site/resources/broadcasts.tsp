@@ -32,11 +32,14 @@ model SiteBroadcastStats {
   /** Recipients a Cancel left unsent: no message was created for them (ADR 0150). Zero unless the broadcast is cancelled. */
   cancelledCount: int32;
 
-  /** Recipients that opened the email; null on a Channel that cannot tell */
+  /** Tracked messages that were opened; null on a Channel that cannot tell */
   openedCount: int32 | null;
 
-  /** Recipients that clicked a link */
+  /** Tracked messages that were clicked */
   clickedCount: int32;
+
+  /** Messages sent that are not tracked: sent untracked, or whose tracking was withdrawn since (ADR 0120). They count in no open or click figure, and the tracked messages are the sent count less these. */
+  untrackedCount: int32;
 
   /** Recipients that unsubscribed via this broadcast */
   unsubscribedCount: int32;
@@ -59,10 +62,10 @@ model SiteBroadcastStats {
   /** Messages handed to the provider ÷ recipients targeted (0–1); null on a Channel that reports no delivery */
   deliveryRate: float32 | null;
 
-  /** Unique opens ÷ messages sent (0–1); null on a Channel that reports no opens */
+  /** Unique opens ÷ tracked messages sent (0–1); null on a Channel that reports no opens */
   openRate: float32 | null;
 
-  /** Unique clicks ÷ messages sent (0–1) */
+  /** Unique clicks ÷ tracked messages sent (0–1) */
   clickRate: float32;
 
   /** Unique clicks ÷ unique opens (0–1); null on a Channel that reports no opens */

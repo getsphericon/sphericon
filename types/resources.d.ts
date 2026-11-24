@@ -141,8 +141,9 @@ export default interface Resources {
         "empty": "No email sent in this window",
         "openRate": "Open rate",
         "opened": "Opened",
-        "rangeNote": "Aggregated over the selected window, from delivery logs.",
-        "sent": "Sent"
+        "rangeNote": "Aggregated over the selected window, from delivery logs. The rates count tracked messages only; the untracked ones (sent without tracking, or whose tracking was withdrawn) are counted beside them.",
+        "sent": "Sent (tracked)",
+        "untracked": "Untracked"
       },
       "events": {
         "action": "Action",
@@ -194,7 +195,8 @@ export default interface Resources {
       "series": {
         "clicked": "Clicked",
         "opened": "Opened",
-        "sent": "Sent"
+        "sent": "Sent (tracked)",
+        "untracked": "Untracked"
       },
       "sources": {
         "api": "API",
@@ -646,7 +648,8 @@ export default interface Resources {
         "skipped": "Skipped",
         "undelivered": "Undelivered",
         "unsubscribeRate": "Unsubscribe rate",
-        "unsubscribed": "Unsubscribed"
+        "unsubscribed": "Unsubscribed",
+        "untracked": "Untracked"
       },
       "status": {
         "cancelled": "Cancelled",
@@ -758,6 +761,15 @@ export default interface Resources {
         "contains": "contains",
         "eq": "is",
         "neq": "is not"
+      },
+      "trackingFields": {
+        "email": "Email tracking consent",
+        "sms": "SMS tracking consent",
+        "telegram": "Telegram tracking consent"
+      },
+      "trackingStates": {
+        "denied": "denied",
+        "granted": "granted"
       },
       "withinLast": "within the last (days)"
     },
@@ -1161,6 +1173,32 @@ export default interface Resources {
       "telegramLinkErrorTitle": "Could not issue the Telegram link",
       "telegramNoChats": "No Telegram chat is bound to this contact yet.",
       "telegramTitle": "Telegram",
+      "trackingChannelEmail": "Email",
+      "trackingChannelSms": "SMS",
+      "trackingChannelTelegram": "Telegram",
+      "trackingDefaultDetails": "No consent recorded: the workspace's engagement tracking default decides.",
+      "trackingDefaultDontTrack": "Default: not tracked",
+      "trackingDefaultTrack": "Default: tracked",
+      "trackingDenied": "Refused",
+      "trackingDestination": "Destination",
+      "trackingError": "Could not record the tracking consent",
+      "trackingGrant": "Grant tracking",
+      "trackingGranted": "Granted",
+      "trackingGrantedRecorded": "Grant of tracking recorded.",
+      "trackingHint": "Whether the opens and clicks of the contact's messages are tracked, for its email address, its phone and each of its Telegram chats. A refusal the person made to you by phone or by reply is recorded here; only the person can lift it.",
+      "trackingLoadError": "Failed to load the engagement tracking consent",
+      "trackingOnlyThePerson": "Only the person can lift a refusal.",
+      "trackingProvenanceImported": "Imported through the API.",
+      "trackingProvenanceManual": "Recorded by a member of the workspace.",
+      "trackingProvenanceOnsiteForm": "Recorded by the person on an on-site form.",
+      "trackingProvenancePage": "Recorded by the person on the preference page.",
+      "trackingRefuse": "Refuse tracking",
+      "trackingRefuseConfirmDescription": "Opens and clicks of messages to {{destination}} will no longer be tracked, and the opens, clicks and order credits already recorded of its earlier messages are deleted. Only the person can lift a refusal: no member can undo it.",
+      "trackingRefuseConfirmTitle": "Refuse tracking?",
+      "trackingRefused": "Refusal of tracking recorded.",
+      "trackingSince": "Since {{at}}.",
+      "trackingState": "Tracking",
+      "trackingTitle": "Engagement tracking",
       "updatedAt": "Updated at"
     },
     "createWorkspace": {
@@ -1215,6 +1253,8 @@ export default interface Resources {
       "emailDelayed": "Email delayed",
       "emailDelivered": "Received an email",
       "emailDropped": "Email dropped",
+      "emailEngagementTrackingDenied": "Refused email open and click tracking",
+      "emailEngagementTrackingGranted": "Agreed to email open and click tracking",
       "emailOpened": "Opened an email",
       "emailSent": "Was sent an email",
       "emailUnsubscribed": "Unsubscribed",
@@ -1223,12 +1263,16 @@ export default interface Resources {
       "smsClicked": "Clicked a link in a text message",
       "smsConfirmed": "Confirmed SMS opt-in",
       "smsDelivered": "Text message delivered",
+      "smsEngagementTrackingDenied": "Refused SMS click tracking",
+      "smsEngagementTrackingGranted": "Agreed to SMS click tracking",
       "smsReceived": "Sent a text message",
       "smsSent": "Was sent a text message",
       "smsUndelivered": "Text message not delivered",
       "smsUnsubscribed": "Unsubscribed from text messages",
       "telegramBound": "Telegram chat bound",
       "telegramClicked": "Clicked a link in a Telegram message",
+      "telegramEngagementTrackingDenied": "Refused Telegram click tracking",
+      "telegramEngagementTrackingGranted": "Agreed to Telegram click tracking",
       "telegramReceived": "Sent a Telegram message",
       "telegramSent": "Was sent a Telegram message",
       "telegramUnbound": "Telegram chat unbound",
@@ -1556,7 +1600,8 @@ export default interface Resources {
         "openRate": "Open rate",
         "report": "Subscribed people",
         "subscribed": "Subscribed",
-        "title": "Audience"
+        "title": "Audience",
+        "untracked": "The rates count tracked messages only. Untracked messages, beside them: {{untracked}}."
       },
       "figuresLoadError": "Failed to load the figures of the period",
       "pointChange": "{{change}} pp",
@@ -1833,6 +1878,7 @@ export default interface Resources {
       "noRecords": "No segments yet",
       "previewButton": "Preview segment",
       "previewCount": "{{count, number}} matching contact" | "{{count, number}} matching contacts",
+      "previewUnknownEngagement": "{{count, number}} contact left out: its opens and clicks are not tracked" | "{{count, number}} contacts left out: their opens and clicks are not tracked",
       "propertyKeyLabel": "Event property name"
     },
     "settings": {
@@ -1946,6 +1992,22 @@ export default interface Resources {
         "modalTitle": "Delete this workspace?",
         "title": "Danger zone",
         "warning": "The workspace is frozen at once: nothing is sent, and its API tokens, collect key and tracking hosts stop working. Only an owner can restore it, within 30 days."
+      },
+      "engagementTrackingDefault": {
+        "changeToDontTrack": "Track only those who agree",
+        "changeToTrack": "Track unless refused",
+        "confirm": "Change",
+        "description": "Whether the opens and clicks of a recipient with no tracking consent recorded are tracked. A recipient's own consent, granted or refused, always decides for them.",
+        "dontTrack": "Don't track: only recipients who granted their consent are tracked.",
+        "errorTitle": "Could not change the tracking default",
+        "forbidden": "Only owners and admins can change the tracking default.",
+        "saved": "Tracking default changed",
+        "title": "Engagement tracking default",
+        "toDontTrackDescription": "The messages already sent to recipients who did not grant their tracking consent stop being tracked: they leave the open and click rates, and the opens and clicks recorded of them are kept. Turning the default back later does not track them again. From now on, messages to those recipients go out without an open pixel and with their links as written, and their opens and clicks are not recorded. Recipients who granted their consent stay tracked.",
+        "toDontTrackTitle": "Track only recipients who agree?",
+        "toTrackDescription": "Messages sent from now on to recipients with no tracking consent are tracked again. Recipients who refused stay untracked.",
+        "toTrackTitle": "Track recipients unless they refuse?",
+        "track": "Track: every recipient is tracked unless they refused."
       },
       "errorTitle": "Failed to update workspace",
       "identitySecret": {

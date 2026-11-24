@@ -177,6 +177,44 @@ union PropertyTestInput {
   presence: PresenceTestInput,
 }
 
+/** How a test of a Contact's Engagement tracking consent compares it with a state: it reads as
+ * the state, or it does not */
+enum StateOperator {
+  eq,
+  neq,
+}
+
+/** A test of a Contact's Engagement tracking consent against a state. eq holds where the consent
+ * reads as `value`; neq holds everywhere else, where none is recorded included, so a test and its
+ * negation split every Contact. */
+model EngagementTrackingStateTest {
+  kind: "text";
+
+  /** Whether the consent reads as the state, or does not */
+  operator: StateOperator;
+
+  /** The state compared with */
+  value: EngagementTrackingState;
+}
+
+model EngagementTrackingStateTestInput is EngagementTrackingStateTest;
+
+/** What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
+ * comparison with `granted` or `denied`, or a presence test of whether any is recorded. */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union EngagementTrackingTest {
+  text: EngagementTrackingStateTest,
+  presence: PresenceTest,
+}
+
+/** What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
+ * comparison with `granted` or `denied`, or a presence test of whether any is recorded. */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union EngagementTrackingTestInput {
+  text: EngagementTrackingStateTestInput,
+  presence: PresenceTestInput,
+}
+
 /** A text attribute of a Contact */
 enum ContactAttribute {
   email,
@@ -241,6 +279,21 @@ model SmsLeaf {
 
   /** Has one or does not */
   operator: HasOperator;
+}
+
+/** A test of the Contact's Engagement tracking consent on one Channel (ADR 0120), read live as
+ * recorded, whatever the Workspace's default: on email the consent of its email address, on sms of
+ * its phone, on telegram of its own chats, which read `denied` when any is denied, `granted` when it
+ * has one and all are granted, and as none recorded otherwise. A Contact without a Destination on
+ * the Channel has none recorded. */
+model EngagementTrackingLeafOf<Test> {
+  kind: "engagementTracking";
+
+  /** The Channel whose consent is tested */
+  channel: EngagementTrackingChannel;
+
+  /** What it asks of the consent */
+  test: Test;
 }
 
 /** A test of a Custom field of the Workspace, its key in a field of its own */
@@ -336,6 +389,10 @@ model BirthdayLeafInput is BirthdayLeafOf<BirthdayTestInput>;
 model TagLeafInput is TagLeaf;
 model TelegramLeafInput is TelegramLeaf;
 model SmsLeafInput is SmsLeaf;
+model EngagementTrackingLeaf
+  is EngagementTrackingLeafOf<EngagementTrackingTest>;
+model EngagementTrackingLeafInput
+  is EngagementTrackingLeafOf<EngagementTrackingTestInput>;
 model CustomFieldLeaf is CustomFieldLeafOf<CustomFieldTest>;
 model CustomFieldLeafInput is CustomFieldLeafOf<CustomFieldTestInput>;
 model EventLeafInput is EventLeaf;
@@ -375,6 +432,7 @@ union SegmentConditionNode {
   tag: TagLeaf,
   telegram: TelegramLeaf,
   sms: SmsLeaf,
+  engagementTracking: EngagementTrackingLeaf,
   customField: CustomFieldLeaf,
   event: EventLeaf,
 }
@@ -389,6 +447,7 @@ union SegmentConditionNodeInput {
   tag: TagLeafInput,
   telegram: TelegramLeafInput,
   sms: SmsLeafInput,
+  engagementTracking: EngagementTrackingLeafInput,
   customField: CustomFieldLeafInput,
   event: EventLeafInput,
 }
@@ -409,6 +468,7 @@ union RuleConditionNode {
   tag: TagLeaf,
   telegram: TelegramLeaf,
   sms: SmsLeaf,
+  engagementTracking: EngagementTrackingLeaf,
   customField: CustomFieldLeaf,
   event: EventLeaf,
   property: RulePropertyLeaf,
@@ -424,6 +484,7 @@ union RuleConditionNodeInput {
   tag: TagLeafInput,
   telegram: TelegramLeafInput,
   sms: SmsLeafInput,
+  engagementTracking: EngagementTrackingLeafInput,
   customField: CustomFieldLeafInput,
   event: EventLeafInput,
   property: RulePropertyLeafInput,

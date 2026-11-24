@@ -1,6 +1,8 @@
 // Package engagement records an open or a click of an Outbound message (ADR 0053, ADR 0111): it
-// resolves the token of the hit, judges whether a machine made it, and publishes the Event in its
-// own transaction. The message's report stamp follows the Event through its consumer (ADR 0113).
+// resolves the token of the hit, checks that the message is tracked and that its Destination still
+// consents to being tracked (ADR 0120), judges whether a machine made it, and publishes the Event in
+// the transaction of that check. The message's report stamp follows the Event through its consumer
+// (ADR 0113).
 //
 // It is the part of outboundmessages that holds the raw client: an open or a click token names an
 // Outbound message, and a short link's token a tracked link, before any scope exists, so the
@@ -11,14 +13,17 @@ package engagement
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -52,15 +57,16 @@ type Recorder struct {
 	client   *ent.Client
 	bus      *events.Bus
 	contacts *contacts.Module
+	consents *engagementtracking.Module
 	tracker  *messagetoken.Tracker
 	detector *privaterelayranges.Detector
 	now      func() time.Time
 }
 
-// New builds the Recorder. people reads the Contact a message went to; now is the Instance clock a
-// hit is observed at.
-func New(client *ent.Client, bus *events.Bus, people *contacts.Module, tracker *messagetoken.Tracker, detector *privaterelayranges.Detector, now func() time.Time) *Recorder {
-	return &Recorder{client: client, bus: bus, contacts: people, tracker: tracker, detector: detector, now: now}
+// New builds the Recorder. people reads the Contact a message went to and consents whether its
+// Destination is tracked; now is the Instance clock a hit is observed at.
+func New(client *ent.Client, bus *events.Bus, people *contacts.Module, consents *engagementtracking.Module, tracker *messagetoken.Tracker, detector *privaterelayranges.Detector, now func() time.Time) *Recorder {
+	return &Recorder{client: client, bus: bus, contacts: people, consents: consents, tracker: tracker, detector: detector, now: now}
 }
 
 // Open records an open of the message the token names. Every open is an Event of its own: a
@@ -112,10 +118,16 @@ func (r *Recorder) ShortLink(ctx context.Context, token string, hit Hit) (string
 
 // record publishes the Event eventOf builds for a hit on the message m names. A hit on a Tracking
 // host is refused as ErrNotFound unless m is that host's Workspace's (ADR 0038), which the signed
-// token says without a read. A message that is gone (message retention deleted it, ADR 0143), or
-// whose Contact is gone (erased) or whose address was cleared, records nothing silently; a read
-// that fails for any other reason, or a failed publish, records nothing and is logged, since a
-// tracked link never refuses its recipient (ADR 0025).
+// token says without a read. Nothing is recorded, silently, for a message that is not tracked
+// (engagementtracking.IsTracked) or whose Destination's effective consent is no longer to track (ADR
+// 0120), and for one that is gone (message retention deleted it, ADR 0143), whose Contact is gone
+// (erased) or whose Destination was cleared; a read that fails for any other reason, or a failed
+// publish, records nothing and is logged, since a tracked link never refuses its recipient (ADR
+// 0025).
+//
+// The check and the publish are one transaction that holds the message's row FOR SHARE: a
+// withdrawal of the message's tracking, which takes the row for its update, either waits for the
+// Event to commit (and then removes it) or commits first, and the check sees it.
 func (r *Recorder) record(ctx context.Context, m messagetoken.Message, hit Hit, kind privaterelayranges.Kind, eventOf func(e engaged, machine bool, at time.Time) events.DomainEvent) error {
 	if hit.Host != 0 && hit.Host != m.WorkspaceID {
 		return ErrNotFound
@@ -123,58 +135,73 @@ func (r *Recorder) record(ctx context.Context, m messagetoken.Message, hit Hit, 
 	if !hit.MayRecord() {
 		return nil
 	}
-	msg, err := r.client.OutboundMessage.Get(ctx, m.ID)
-	if err != nil {
-		if !ent.IsNotFound(err) {
-			logLookup(ctx, m.ID, err)
-		}
-		return nil
-	}
-	if msg.WorkspaceID != m.WorkspaceID {
-		return nil // a token signed for another Workspace's message: never minted, never recorded
-	}
-	e, ok := r.engagedOf(ctx, msg)
-	if !ok {
-		return nil
-	}
+	// Judged before the transaction: the detector reads its ranges through a connection of its own.
 	machine := r.detector.IsMachine(ctx, privaterelayranges.IsMachineInput{Kind: kind, UserAgent: hit.UserAgent, ClientAddr: hit.Address})
-	if err := r.bus.Publish(ctx, eventOf(e, machine, r.now())); err != nil {
+	err := r.bus.WithinScopedTx(ctx, r.client.Scoped(m.WorkspaceID), func(ts *ent.Scoped, pub events.Publisher) error {
+		e, ok, err := r.engagedOf(ctx, ts, m.ID)
+		if err != nil || !ok {
+			return err
+		}
+		return pub.Publish(ctx, eventOf(e, machine, r.now()))
+	})
+	if err != nil {
 		slog.ErrorContext(ctx, "engagement: recording failed", "message_id", m.ID, "err", err)
 	}
 	return nil
 }
 
 // engaged is the Outbound message a hit names, with the Contact it went to when there is one. A
-// Transactional send to an address with no Contact is kept by address.
+// Transactional send to an address with no Contact is kept by address. email is the message's own
+// Destination on email, never the Contact's current address; a click on another Channel names the
+// message's Destination too (events.LinkClick).
 type engaged struct {
 	msg     *ent.OutboundMessage
 	contact *ent.Contact // nil: the message has no Contact
 	email   string
 }
 
-// engagedOf reads the message's Contact in the message's Workspace, which the message row the
-// token names gives.
-func (r *Recorder) engagedOf(ctx context.Context, msg *ent.OutboundMessage) (engaged, bool) {
-	if msg.ContactID == nil {
-		if msg.Destination == "" {
-			return engaged{}, false
-		}
-		return engaged{msg: msg, email: msg.Destination}, true
+// engagedOf reads the message id names, locked FOR SHARE in the transaction ts is bound to, and
+// its Contact, and says whether a hit on it may be recorded: the message is there and tracked, it
+// has a Destination whose effective consent is to track, and its Contact, when it has one, is
+// still there. Not found anywhere is no failure.
+func (r *Recorder) engagedOf(ctx context.Context, ts *ent.Scoped, id int64) (engaged, bool, error) {
+	msg, err := ts.OutboundMessage().Query().Where(outboundmessage.ID(id)).ForShare().Only(ctx)
+	if ent.IsNotFound(err) {
+		return engaged{}, false, nil
 	}
-	c, err := r.contacts.Get(ctx, r.client.Scoped(msg.WorkspaceID), *msg.ContactID)
 	if err != nil {
-		if !errors.Is(err, contacts.ErrNotFound) {
-			logLookup(ctx, msg.ID, err)
-		}
-		return engaged{}, false
+		return engaged{}, false, fmt.Errorf("read the message: %w", err)
 	}
-	return engaged{msg: msg, contact: c, email: lo.FromPtr(c.Email)}, true
-}
-
-// logLookup logs a failed lookup of a hit's message or Contact; a row that is simply gone is no
-// failure, and its caller does not log it.
-func logLookup(ctx context.Context, messageID int64, err error) {
-	slog.ErrorContext(ctx, "engagement: lookup failed", "message_id", messageID, "err", err)
+	if !engagementtracking.IsTracked(msg) || msg.Destination == "" {
+		return engaged{}, false, nil
+	}
+	// A message rendered once for several Destinations (a Telegram message to a Contact's chats) is
+	// recorded only while every one of them consents.
+	for _, dest := range lo.Uniq(append([]string{msg.Destination}, msg.Destinations...)) {
+		consent, err := r.consents.Of(ctx, ts, msg.Channel, dest)
+		if err != nil {
+			return engaged{}, false, err
+		}
+		if consent.Effective != engagementtracking.Track {
+			return engaged{}, false, nil
+		}
+	}
+	e := engaged{msg: msg}
+	if msg.Channel == channels.Email {
+		e.email = msg.Destination
+	}
+	if msg.ContactID == nil {
+		return e, true, nil
+	}
+	c, err := r.contacts.Get(ctx, ts, *msg.ContactID)
+	if errors.Is(err, contacts.ErrNotFound) {
+		return engaged{}, false, nil
+	}
+	if err != nil {
+		return engaged{}, false, fmt.Errorf("read the message's contact: %w", err)
+	}
+	e.contact = c
+	return e, true, nil
 }
 
 func (e engaged) contactID() int64 {
@@ -199,7 +226,7 @@ func clickOn(dest string) func(e engaged, machine bool, at time.Time) events.Dom
 	return func(e engaged, machine bool, at time.Time) events.DomainEvent {
 		click := events.LinkClick{
 			ObservedAt:  at,
-			WorkspaceID: e.msg.WorkspaceID, ContactID: e.contactID(), Email: e.email,
+			WorkspaceID: e.msg.WorkspaceID, ContactID: e.contactID(), Destination: e.msg.Destination,
 			IntegrationID: lo.FromPtr(e.msg.IntegrationID), URL: dest,
 			BroadcastID: lo.FromPtr(e.msg.BroadcastID), AutomationID: lo.FromPtr(e.msg.AutomationID),
 			OutboundMessageID: e.msg.ID, Machine: machine,

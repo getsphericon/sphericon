@@ -352,6 +352,26 @@ type Handler interface {
 	//
 	// POST /emails
 	EmailsSend(ctx context.Context, req *SendTransactionalEmailInput, params EmailsSendParams) (*SendTransactionalEmailResponse, error)
+	// EngagementTrackingCreate implements EngagementTracking_create operation.
+	//
+	// Record whether a destination agreed to have its opens and clicks tracked, as an `imported` consent
+	// collected outside sphericon (a consent banner, an account setting). A `denied` always applies, and
+	// is kept in the immutable `<channel>.engagement_tracking_denied` event; a `granted` is kept in
+	// `<channel>.engagement_tracking_granted` and is refused with a conflict over a standing `denied`:
+	// only the person can lift a refusal. An observation that occurred before the consent standing changes
+	// nothing and is answered as `superseded`; of two of the same moment the refusal wins.
+	//
+	// POST /engagement-tracking-consents
+	EngagementTrackingCreate(ctx context.Context, req *RecordEngagementTrackingInput) (*EngagementTrackingObservationResult, error)
+	// EngagementTrackingGetForContact implements EngagementTracking_getForContact operation.
+	//
+	// Read whether each Destination of a contact (its email address, its phone, the Telegram user of each
+	// of its chats) is tracked: the consent recorded with who recorded it, or `default` where none is,
+	// with what it means now. The consent is keyed by the Destination, so it follows the address and the
+	// phone the contact has now.
+	//
+	// GET /contacts/{contactId}/engagement-tracking
+	EngagementTrackingGetForContact(ctx context.Context, params EngagementTrackingGetForContactParams) (*ContactEngagementTracking, error)
 	// EnrollmentsGet implements Enrollments_get operation.
 	//
 	// Get one Enrollment of an Automation. Needs the enrollments:read scope.
@@ -800,12 +820,14 @@ type Handler interface {
 	WebhooksUpdate(ctx context.Context, req *UpdateWebhookInput, params WebhooksUpdateParams) (*WebhookResource, error)
 	// WorkspaceGet implements Workspace_get operation.
 	//
-	// Read the Workspace the token acts in: its name, postal address, confirmed opt-in, time zone and Send
-	// cap. Read the postal address before arming marketing email: an empty one refuses it, and only a
-	// person can set it. Read the Send cap to explain a slow send or to plan one: a send larger than what
-	// remains of it in the last 24 hours goes out over more than a day. Read confirmed opt-in to know
-	// whether a Contact needs a Confirmation before email reaches it. Read-only: no operation changes the
-	// Send cap, the postal address or confirmed opt-in.
+	// Read the Workspace the token acts in: its name, postal address, confirmed opt-in, Engagement
+	// tracking default, time zone and Send cap. Read the postal address before arming marketing email: an
+	// empty one refuses it, and only a person can set it. Read the Send cap to explain a slow send or to
+	// plan one: a send larger than what remains of it in the last 24 hours goes out over more than a day.
+	// Read confirmed opt-in to know whether a Contact needs a Confirmation before email reaches it. Read
+	// the Engagement tracking default to know whether a Destination with no consent recorded is tracked.
+	// Read-only: no operation changes the Send cap, the postal address, confirmed opt-in or the Engagement
+	// tracking default.
 	//
 	// GET /workspace
 	WorkspaceGet(ctx context.Context) (*WorkspaceResource, error)

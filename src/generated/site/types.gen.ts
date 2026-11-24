@@ -1064,6 +1064,16 @@ export const ContactAttribute = {
 export type ContactAttribute = typeof ContactAttribute[keyof typeof ContactAttribute];
 
 /**
+ * The Engagement tracking consent of each Destination of a contact: its email address, its phone, and the Telegram user of each of its chats
+ */
+export type ContactEngagementTracking = {
+  /**
+   * One entry per Destination of the contact; empty when it has none
+   */
+  destinations: Array<EngagementTrackingConsent>;
+};
+
+/**
  * The contact's place in one broadcast's audience (how its send ended, and whether it was opened or clicked, is in `outboundMessages`)
  */
 export type ContactExportBroadcastRecipient = {
@@ -1308,6 +1318,11 @@ export type ContactExportOutboundMessage = {
    */
   destination: string;
   /**
+   * Every address a message rendered once for several went to (a Telegram message to the
+   * contact's chats), `destination` among them; null for a message to one
+   */
+  destinations?: Array<string> | null;
+  /**
    * Sending source
    */
   sendingSource?: string | null;
@@ -1371,6 +1386,22 @@ export type ContactExportOutboundMessage = {
    * True when the message went through a Test inbox: captured, not delivered
    */
   captured: boolean;
+  /**
+   * Whether the message went out tracked: with an open pixel and its links rewritten, or its
+   * links made Short tracked links (ADR 0120). False for a message no render decided (skipped
+   * before its render, or not rendered yet)
+   */
+  tracked: boolean;
+  /**
+   * When a render decided whether the message goes out tracked; null for a message no render
+   * decided, and for one sent before the moment was recorded, which went out tracked
+   */
+  trackingDecidedAt?: Timestamp | null;
+  /**
+   * When the message's tracking was withdrawn (a refusal of the contact's, or the Workspace's
+   * default turned to `dont_track`); null while it was not
+   */
+  trackingWithdrawnAt?: Timestamp | null;
   /**
    * Broadcast that produced the message
    */
@@ -2074,6 +2105,215 @@ export type EndStepInput = {
   id?: StepId;
   type: 'end';
 };
+
+/**
+ * A Channel whose messages track opens and clicks, so a Destination on it can consent to being tracked (ADR 0120)
+ */
+export const EngagementTrackingChannel = {
+  EMAIL: 'email',
+  SMS: 'sms',
+  TELEGRAM: 'telegram'
+} as const;
+
+/**
+ * A Channel whose messages track opens and clicks, so a Destination on it can consent to being tracked (ADR 0120)
+ */
+export type EngagementTrackingChannel = typeof EngagementTrackingChannel[keyof typeof EngagementTrackingChannel];
+
+/**
+ * The Engagement tracking consent of one Destination on one Channel (ADR 0120)
+ */
+export type EngagementTrackingConsent = {
+  /**
+   * The Channel
+   */
+  channel: EngagementTrackingChannel;
+  /**
+   * Normalized destination: the lower-cased email address on `email`, the number in E.164 on `sms`, the Telegram user id on `telegram`
+   */
+  destination: string;
+  /**
+   * The consent recorded, or `default` where none is
+   */
+  state: EngagementTrackingReading;
+  /**
+   * Who recorded the consent; absent while none is recorded
+   */
+  provenance?: EngagementTrackingProvenance | null;
+  /**
+   * Whether the Destination's opens and clicks are tracked: what the consent says, else the Workspace's default
+   */
+  effective: EngagementTrackingDecision;
+  /**
+   * When the consent last changed; absent while none is recorded
+   */
+  updatedAt?: Timestamp | null;
+};
+
+/**
+ * Whether a Destination's opens and clicks are tracked
+ */
+export const EngagementTrackingDecision = { TRACK: 'track', DONT_TRACK: 'dont_track' } as const;
+
+/**
+ * Whether a Destination's opens and clicks are tracked
+ */
+export type EngagementTrackingDecision = typeof EngagementTrackingDecision[keyof typeof EngagementTrackingDecision];
+
+/**
+ * A test of the Contact's Engagement tracking consent on one Channel (ADR 0120), read live as
+ * recorded, whatever the Workspace's default: on email the consent of its email address, on sms of
+ * its phone, on telegram of its own chats, which read `denied` when any is denied, `granted` when it
+ * has one and all are granted, and as none recorded otherwise. A Contact without a Destination on
+ * the Channel has none recorded.
+ */
+export type EngagementTrackingLeaf = {
+  kind: 'engagementTracking';
+  /**
+   * The Channel whose consent is tested
+   */
+  channel: EngagementTrackingChannel;
+  /**
+   * What it asks of the consent
+   */
+  test: EngagementTrackingTest;
+};
+
+/**
+ * A test of the Contact's Engagement tracking consent on one Channel (ADR 0120), read live as
+ * recorded, whatever the Workspace's default: on email the consent of its email address, on sms of
+ * its phone, on telegram of its own chats, which read `denied` when any is denied, `granted` when it
+ * has one and all are granted, and as none recorded otherwise. A Contact without a Destination on
+ * the Channel has none recorded.
+ */
+export type EngagementTrackingLeafInput = {
+  kind: 'engagementTracking';
+  /**
+   * The Channel whose consent is tested
+   */
+  channel: EngagementTrackingChannel;
+  /**
+   * What it asks of the consent
+   */
+  test: EngagementTrackingTestInput;
+};
+
+/**
+ * The answer to an Engagement tracking observation: what became of it, and the consent that stands after it
+ */
+export type EngagementTrackingObservationResult = {
+  /**
+   * Whether the observation set the consent
+   */
+  outcome: EngagementTrackingOutcome;
+  /**
+   * The Destination's consent after the observation
+   */
+  consent: EngagementTrackingConsent;
+};
+
+/**
+ * What became of an Engagement tracking observation: it set the consent (`applied`), or it occurred before the consent standing and changed nothing (`superseded`, recorded in the contact's history as `contact.consent_superseded`)
+ */
+export const EngagementTrackingOutcome = { APPLIED: 'applied', SUPERSEDED: 'superseded' } as const;
+
+/**
+ * What became of an Engagement tracking observation: it set the consent (`applied`), or it occurred before the consent standing and changed nothing (`superseded`, recorded in the contact's history as `contact.consent_superseded`)
+ */
+export type EngagementTrackingOutcome = typeof EngagementTrackingOutcome[keyof typeof EngagementTrackingOutcome];
+
+/**
+ * Who recorded an Engagement tracking consent: the person on a page reached from a message (page), a member of the Workspace on the Contact card (manual), the customer through the API or an import (imported), or an On-site form's checkbox (onsite_form). A `denied` applies from any of them; only the person lifts one
+ */
+export const EngagementTrackingProvenance = {
+  PAGE: 'page',
+  MANUAL: 'manual',
+  IMPORTED: 'imported',
+  ONSITE_FORM: 'onsite_form'
+} as const;
+
+/**
+ * Who recorded an Engagement tracking consent: the person on a page reached from a message (page), a member of the Workspace on the Contact card (manual), the customer through the API or an import (imported), or an On-site form's checkbox (onsite_form). A `denied` applies from any of them; only the person lifts one
+ */
+export type EngagementTrackingProvenance = typeof EngagementTrackingProvenance[keyof typeof EngagementTrackingProvenance];
+
+/**
+ * What a Destination's Engagement tracking consent reads as: `granted` or `denied` as recorded, or `default` where nothing is recorded and the Workspace's default decides
+ */
+export const EngagementTrackingReading = {
+  GRANTED: 'granted',
+  DENIED: 'denied',
+  DEFAULT: 'default'
+} as const;
+
+/**
+ * What a Destination's Engagement tracking consent reads as: `granted` or `denied` as recorded, or `default` where nothing is recorded and the Workspace's default decides
+ */
+export type EngagementTrackingReading = typeof EngagementTrackingReading[keyof typeof EngagementTrackingReading];
+
+/**
+ * Whether a Destination agreed to have its opens and clicks tracked (ADR 0120)
+ */
+export const EngagementTrackingState = { GRANTED: 'granted', DENIED: 'denied' } as const;
+
+/**
+ * Whether a Destination agreed to have its opens and clicks tracked (ADR 0120)
+ */
+export type EngagementTrackingState = typeof EngagementTrackingState[keyof typeof EngagementTrackingState];
+
+/**
+ * A test of a Contact's Engagement tracking consent against a state. eq holds where the consent
+ * reads as `value`; neq holds everywhere else, where none is recorded included, so a test and its
+ * negation split every Contact.
+ */
+export type EngagementTrackingStateTest = {
+  kind: 'text';
+  /**
+   * Whether the consent reads as the state, or does not
+   */
+  operator: StateOperator;
+  /**
+   * The state compared with
+   */
+  value: EngagementTrackingState;
+};
+
+/**
+ * A test of a Contact's Engagement tracking consent against a state. eq holds where the consent
+ * reads as `value`; neq holds everywhere else, where none is recorded included, so a test and its
+ * negation split every Contact.
+ */
+export type EngagementTrackingStateTestInput = {
+  kind: 'text';
+  /**
+   * Whether the consent reads as the state, or does not
+   */
+  operator: StateOperator;
+  /**
+   * The state compared with
+   */
+  value: EngagementTrackingState;
+};
+
+/**
+ * What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
+ * comparison with `granted` or `denied`, or a presence test of whether any is recorded.
+ */
+export type EngagementTrackingTest = ({
+  kind: 'text';
+} & EngagementTrackingStateTest) | ({
+  kind: 'presence';
+} & PresenceTest);
+
+/**
+ * What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
+ * comparison with `granted` or `denied`, or a presence test of whether any is recorded.
+ */
+export type EngagementTrackingTestInput = ({
+  kind: 'text';
+} & EngagementTrackingStateTestInput) | ({
+  kind: 'presence';
+} & PresenceTestInput);
 
 /**
  * What an HTTP step recorded when it failed an Enrollment; absent on any other Enrollment.
@@ -3532,6 +3772,8 @@ export type RuleConditionNode = ({
 } & TelegramLeaf) | ({
   kind: 'sms';
 } & SmsLeaf) | ({
+  kind: 'engagementTracking';
+} & EngagementTrackingLeaf) | ({
   kind: 'customField';
 } & CustomFieldLeaf) | ({
   kind: 'event';
@@ -3556,6 +3798,8 @@ export type RuleConditionNodeInput = ({
 } & TelegramLeafInput) | ({
   kind: 'sms';
 } & SmsLeafInput) | ({
+  kind: 'engagementTracking';
+} & EngagementTrackingLeafInput) | ({
   kind: 'customField';
 } & CustomFieldLeafInput) | ({
   kind: 'event';
@@ -3797,6 +4041,8 @@ export type SegmentConditionNode = ({
 } & TelegramLeaf) | ({
   kind: 'sms';
 } & SmsLeaf) | ({
+  kind: 'engagementTracking';
+} & EngagementTrackingLeaf) | ({
   kind: 'customField';
 } & CustomFieldLeaf) | ({
   kind: 'event';
@@ -3819,6 +4065,8 @@ export type SegmentConditionNodeInput = ({
 } & TelegramLeafInput) | ({
   kind: 'sms';
 } & SmsLeafInput) | ({
+  kind: 'engagementTracking';
+} & EngagementTrackingLeafInput) | ({
   kind: 'customField';
 } & CustomFieldLeafInput) | ({
   kind: 'event';
@@ -4258,24 +4506,30 @@ export type SiteAnalyticsDeliverability = {
 };
 
 /**
- * Email engagement for the Broadcast and Automation messages sent in the selected range
- * (the send cohort; a Transactional message is not in it), from delivery logs. Each message
- * counts once, not each person. Opens/clicks are the first human open/click stamped on the
- * message and are counted among that cohort, so the counts reconcile and the rates stay in [0,1].
+ * Email engagement for the tracked Broadcast and Automation messages sent in the selected range
+ * (the send cohort; a Transactional message is not in it, and neither is a message sent untracked
+ * or whose tracking was withdrawn since, ADR 0120), from delivery logs. Each message counts once,
+ * not each person. Opens/clicks are the first human open/click stamped on the message and are
+ * counted among that cohort, so the counts reconcile and the rates stay in [0,1]. The untracked
+ * messages are counted beside it.
  */
 export type SiteAnalyticsEmail = {
   /**
-   * Messages sent within the range
+   * Tracked messages sent within the range: the rates' denominator
    */
   sentCount: number;
   /**
-   * Messages sent in the range that were opened
+   * Tracked messages sent in the range that were opened
    */
   openedCount: number;
   /**
-   * Messages sent in the range that were clicked
+   * Tracked messages sent in the range that were clicked
    */
   clickedCount: number;
+  /**
+   * Broadcast and Automation messages sent in the range that are not tracked: sent untracked, or whose tracking was withdrawn since. They are in no rate.
+   */
+  untrackedCount: number;
   /**
    * Opened ÷ sent (0–1)
    */
@@ -4449,7 +4703,7 @@ export type SiteAnalyticsPeriod = {
 
 /**
  * One Report day of the cohort (ADR 0057), zero-filled across the range. Opened/clicked
- * count the messages sent that day that were later opened/clicked.
+ * count the tracked messages sent that day that were later opened/clicked.
  */
 export type SiteAnalyticsPoint = {
   /**
@@ -4457,17 +4711,21 @@ export type SiteAnalyticsPoint = {
    */
   date: string;
   /**
-   * Messages sent that day
+   * Tracked messages sent that day
    */
   sent: number;
   /**
-   * Messages sent that day that were opened
+   * Tracked messages sent that day that were opened
    */
   opened: number;
   /**
-   * Messages sent that day that were clicked
+   * Tracked messages sent that day that were clicked
    */
   clicked: number;
+  /**
+   * Broadcast and Automation messages sent that day that are not tracked
+   */
+  untracked: number;
 };
 
 /**
@@ -5073,13 +5331,17 @@ export type SiteBroadcastStats = {
    */
   cancelledCount: number;
   /**
-   * Recipients that opened the email; null on a Channel that cannot tell
+   * Tracked messages that were opened; null on a Channel that cannot tell
    */
   openedCount: number | null;
   /**
-   * Recipients that clicked a link
+   * Tracked messages that were clicked
    */
   clickedCount: number;
+  /**
+   * Messages sent that are not tracked: sent untracked, or whose tracking was withdrawn since (ADR 0120). They count in no open or click figure, and the tracked messages are the sent count less these.
+   */
+  untrackedCount: number;
   /**
    * Recipients that unsubscribed via this broadcast
    */
@@ -5109,11 +5371,11 @@ export type SiteBroadcastStats = {
    */
   deliveryRate: number | null;
   /**
-   * Unique opens ÷ messages sent (0–1); null on a Channel that reports no opens
+   * Unique opens ÷ tracked messages sent (0–1); null on a Channel that reports no opens
    */
   openRate: number | null;
   /**
-   * Unique clicks ÷ messages sent (0–1)
+   * Unique clicks ÷ tracked messages sent (0–1)
    */
   clickRate: number;
   /**
@@ -6834,11 +7096,35 @@ export type SitePreviewSegmentResult = {
    */
   count: number;
   /**
+   * Number of contacts the condition leaves out because their engagement is unknown: it counts their
+   * opens or clicks, and their Destination on that Channel is not tracked now (its Engagement
+   * tracking consent, else the Workspace's default). They match neither the test nor its negation.
+   */
+  unknownEngagement: number;
+  /**
    * Number of matching contacts a Broadcast on the asked Channel would take: on email those with a
    * mailable address, on Telegram those with an eligible Binding on the routed Integration. Absent
    * unless a channel was given.
    */
   recipients?: number;
+};
+
+/**
+ * An Engagement tracking consent a member records on the Contact card for one of the contact's Destinations (ADR 0120), as `manual`
+ */
+export type SiteRecordEngagementTrackingInput = {
+  /**
+   * The Channel the consent is for
+   */
+  channel: EngagementTrackingChannel;
+  /**
+   * The contact's Destination that consented or refused: its email address on `email`, its phone on `sms`, the Telegram user id of one of its chats on `telegram`
+   */
+  destination: string;
+  /**
+   * Whether the person agreed to have their opens and clicks tracked, or refused
+   */
+  state: EngagementTrackingState;
 };
 
 /**
@@ -7208,6 +7494,22 @@ export type SiteSetDomainJoinInput = {
    * Whether to admit Users by Join domain from now on
    */
   enabled: boolean;
+};
+
+/**
+ * Set the Engagement tracking default (ADR 0120)
+ */
+export type SiteSetEngagementTrackingDefaultInput = {
+  /**
+   * The Workspace's `revision` the change was made on (ADR 0119): the one it was read with
+   */
+  revision: Revision;
+  /**
+   * `track`: a Destination with no consent recorded is tracked; `dont_track`: it is tracked only
+   * once it grants its consent. It decides every message rendered from then on, and every open or
+   * click recorded from then on.
+   */
+  engagementTrackingDefault: EngagementTrackingDecision;
 };
 
 /**
@@ -7952,6 +8254,11 @@ export type SiteWorkspaceResource = {
    */
   requireConfirmedOptIn: boolean;
   /**
+   * The Engagement tracking default (ADR 0120): whether a Destination with no Engagement tracking
+   * consent recorded has its opens and clicks tracked. `track` until an Owner or Admin changes it.
+   */
+  engagementTrackingDefault: EngagementTrackingDecision;
+  /**
    * The authenticated User's role in this Workspace (from their Membership). It
    * rides the Workspace list so role-gated UI is known even while the Workspace's
    * own endpoints are withheld under a Two-factor requirement.
@@ -8386,6 +8693,18 @@ export const SortDirection = { ASC: 'asc', DESC: 'desc' } as const;
 export type SortDirection = typeof SortDirection[keyof typeof SortDirection];
 
 /**
+ * How a test of a Contact's Engagement tracking consent compares it with a state: it reads as
+ * the state, or it does not
+ */
+export const StateOperator = { EQ: 'eq', NEQ: 'neq' } as const;
+
+/**
+ * How a test of a Contact's Engagement tracking consent compares it with a state: it reads as
+ * the state, or it does not
+ */
+export type StateOperator = typeof StateOperator[keyof typeof StateOperator];
+
+/**
  * The id of a Step or a path: a UUID in its lowercase text form, kept by every version of the
  * automation. A client mints it when it creates the Step or path and sends it back on every save;
  * one sent without an id is given one. Unique within a version, Steps and paths together.
@@ -8461,6 +8780,12 @@ export const SystemEventAction = {
   SMS_CONFIRMED: 'sms.confirmed',
   SMS_CLICKED: 'sms.clicked',
   SMS_UNSUBSCRIBED: 'sms.unsubscribed',
+  EMAIL_ENGAGEMENT_TRACKING_GRANTED: 'email.engagement_tracking_granted',
+  EMAIL_ENGAGEMENT_TRACKING_DENIED: 'email.engagement_tracking_denied',
+  SMS_ENGAGEMENT_TRACKING_GRANTED: 'sms.engagement_tracking_granted',
+  SMS_ENGAGEMENT_TRACKING_DENIED: 'sms.engagement_tracking_denied',
+  TELEGRAM_ENGAGEMENT_TRACKING_GRANTED: 'telegram.engagement_tracking_granted',
+  TELEGRAM_ENGAGEMENT_TRACKING_DENIED: 'telegram.engagement_tracking_denied',
   CONTACT_CONSENT_SUPERSEDED: 'contact.consent_superseded'
 } as const;
 
@@ -14151,6 +14476,72 @@ export type SiteTelegramListBindingsResponses = {
 
 export type SiteTelegramListBindingsResponse = SiteTelegramListBindingsResponses[keyof SiteTelegramListBindingsResponses];
 
+export type SiteEngagementTrackingGetData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+    contactId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/contacts/{contactId}/engagement-tracking';
+};
+
+export type SiteEngagementTrackingGetErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteEngagementTrackingGetError = SiteEngagementTrackingGetErrors[keyof SiteEngagementTrackingGetErrors];
+
+export type SiteEngagementTrackingGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: ContactEngagementTracking;
+};
+
+export type SiteEngagementTrackingGetResponse = SiteEngagementTrackingGetResponses[keyof SiteEngagementTrackingGetResponses];
+
+export type SiteEngagementTrackingCreateData = {
+  body: SiteRecordEngagementTrackingInput;
+  path: {
+    workspaceId: WorkspaceId;
+    contactId: EntityId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/contacts/{contactId}/engagement-tracking';
+};
+
+export type SiteEngagementTrackingCreateErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteEngagementTrackingCreateError = SiteEngagementTrackingCreateErrors[keyof SiteEngagementTrackingCreateErrors];
+
+export type SiteEngagementTrackingCreateResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: EngagementTrackingObservationResult;
+};
+
+export type SiteEngagementTrackingCreateResponse = SiteEngagementTrackingCreateResponses[keyof SiteEngagementTrackingCreateResponses];
+
 export type SiteSmsConsentsConfirmData = {
   body: ConsentEvidence;
   path: {
@@ -14765,6 +15156,38 @@ export type SiteDomainJoinSetResponses = {
 };
 
 export type SiteDomainJoinSetResponse = SiteDomainJoinSetResponses[keyof SiteDomainJoinSetResponses];
+
+export type SiteWorkspacesSetEngagementTrackingDefaultData = {
+  body: SiteSetEngagementTrackingDefaultInput;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/engagement-tracking-default';
+};
+
+export type SiteWorkspacesSetEngagementTrackingDefaultErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteWorkspacesSetEngagementTrackingDefaultError = SiteWorkspacesSetEngagementTrackingDefaultErrors[keyof SiteWorkspacesSetEngagementTrackingDefaultErrors];
+
+export type SiteWorkspacesSetEngagementTrackingDefaultResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteWorkspaceResource;
+};
+
+export type SiteWorkspacesSetEngagementTrackingDefaultResponse = SiteWorkspacesSetEngagementTrackingDefaultResponses[keyof SiteWorkspacesSetEngagementTrackingDefaultResponses];
 
 export type SiteEventsListData = {
   body?: never;

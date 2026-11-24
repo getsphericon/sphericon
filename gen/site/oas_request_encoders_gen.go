@@ -388,6 +388,20 @@ func encodeSiteDomainJoinSetRequest(
 	return nil
 }
 
+func encodeSiteEngagementTrackingCreateRequest(
+	req *SiteRecordEngagementTrackingInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
 func encodeSiteIdentitiesLinkRequest(
 	req *SiteIdentityLinkInput,
 	r *http.Request,
@@ -1076,6 +1090,20 @@ func encodeSiteWorkspacesRequireSecondFactorRequest(
 
 func encodeSiteWorkspacesSetConfirmedOptInRequest(
 	req *SiteSetConfirmedOptInInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeSiteWorkspacesSetEngagementTrackingDefaultRequest(
+	req *SiteSetEngagementTrackingDefaultInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"

@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/defaultsendcap"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
@@ -497,6 +498,12 @@ func init() {
 	broadcastfigureDescCaptured := broadcastfigureFields[15].Descriptor()
 	// broadcastfigure.CapturedValidator is a validator for the "captured" field. It is called by the builders before save.
 	broadcastfigure.CapturedValidator = broadcastfigureDescCaptured.Validators[0].(func(int) error)
+	// broadcastfigureDescUntracked is the schema descriptor for untracked field.
+	broadcastfigureDescUntracked := broadcastfigureFields[16].Descriptor()
+	// broadcastfigure.DefaultUntracked holds the default value on creation for the untracked field.
+	broadcastfigure.DefaultUntracked = broadcastfigureDescUntracked.Default.(int)
+	// broadcastfigure.UntrackedValidator is a validator for the "untracked" field. It is called by the builders before save.
+	broadcastfigure.UntrackedValidator = broadcastfigureDescUntracked.Validators[0].(func(int) error)
 	broadcastrecipientMixin := schema.BroadcastRecipient{}.Mixin()
 	broadcastrecipientMixinFields0 := broadcastrecipientMixin[0].Fields()
 	_ = broadcastrecipientMixinFields0
@@ -704,6 +711,25 @@ func init() {
 	emailtemplateDescBody := emailtemplateFields[3].Descriptor()
 	// emailtemplate.DefaultBody holds the default value on creation for the body field.
 	emailtemplate.DefaultBody = emailtemplateDescBody.Default.(string)
+	engagementtrackingconsentMixin := schema.EngagementTrackingConsent{}.Mixin()
+	engagementtrackingconsentMixinFields0 := engagementtrackingconsentMixin[0].Fields()
+	_ = engagementtrackingconsentMixinFields0
+	engagementtrackingconsentFields := schema.EngagementTrackingConsent{}.Fields()
+	_ = engagementtrackingconsentFields
+	// engagementtrackingconsentDescCreatedAt is the schema descriptor for created_at field.
+	engagementtrackingconsentDescCreatedAt := engagementtrackingconsentMixinFields0[0].Descriptor()
+	// engagementtrackingconsent.DefaultCreatedAt holds the default value on creation for the created_at field.
+	engagementtrackingconsent.DefaultCreatedAt = engagementtrackingconsentDescCreatedAt.Default.(func() time.Time)
+	// engagementtrackingconsentDescUpdatedAt is the schema descriptor for updated_at field.
+	engagementtrackingconsentDescUpdatedAt := engagementtrackingconsentMixinFields0[1].Descriptor()
+	// engagementtrackingconsent.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	engagementtrackingconsent.DefaultUpdatedAt = engagementtrackingconsentDescUpdatedAt.Default.(func() time.Time)
+	// engagementtrackingconsent.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	engagementtrackingconsent.UpdateDefaultUpdatedAt = engagementtrackingconsentDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// engagementtrackingconsentDescDestination is the schema descriptor for destination field.
+	engagementtrackingconsentDescDestination := engagementtrackingconsentFields[2].Descriptor()
+	// engagementtrackingconsent.DestinationValidator is a validator for the "destination" field. It is called by the builders before save.
+	engagementtrackingconsent.DestinationValidator = engagementtrackingconsentDescDestination.Validators[0].(func(string) error)
 	erasureMixin := schema.Erasure{}.Mixin()
 	erasureMixinFields0 := erasureMixin[0].Fields()
 	_ = erasureMixinFields0
@@ -1245,13 +1271,17 @@ func init() {
 	// outboundmessage.IdempotencyKeyValidator is a validator for the "idempotency_key" field. It is called by the builders before save.
 	outboundmessage.IdempotencyKeyValidator = outboundmessageDescIdempotencyKey.Validators[0].(func(string) error)
 	// outboundmessageDescClaimedAt is the schema descriptor for claimed_at field.
-	outboundmessageDescClaimedAt := outboundmessageFields[12].Descriptor()
+	outboundmessageDescClaimedAt := outboundmessageFields[13].Descriptor()
 	// outboundmessage.DefaultClaimedAt holds the default value on creation for the claimed_at field.
 	outboundmessage.DefaultClaimedAt = outboundmessageDescClaimedAt.Default.(func() time.Time)
 	// outboundmessageDescCaptured is the schema descriptor for captured field.
-	outboundmessageDescCaptured := outboundmessageFields[21].Descriptor()
+	outboundmessageDescCaptured := outboundmessageFields[22].Descriptor()
 	// outboundmessage.DefaultCaptured holds the default value on creation for the captured field.
 	outboundmessage.DefaultCaptured = outboundmessageDescCaptured.Default.(bool)
+	// outboundmessageDescTracked is the schema descriptor for tracked field.
+	outboundmessageDescTracked := outboundmessageFields[23].Descriptor()
+	// outboundmessage.DefaultTracked holds the default value on creation for the tracked field.
+	outboundmessage.DefaultTracked = outboundmessageDescTracked.Default.(bool)
 	passkeyMixin := schema.Passkey{}.Mixin()
 	passkeyMixinFields0 := passkeyMixin[0].Fields()
 	_ = passkeyMixinFields0
@@ -2147,25 +2177,25 @@ func init() {
 	// workspace.TimezoneValidator is a validator for the "timezone" field. It is called by the builders before save.
 	workspace.TimezoneValidator = workspaceDescTimezone.Validators[0].(func(string) error)
 	// workspaceDescReportingCurrency is the schema descriptor for reporting_currency field.
-	workspaceDescReportingCurrency := workspaceFields[12].Descriptor()
+	workspaceDescReportingCurrency := workspaceFields[13].Descriptor()
 	// workspace.ReportingCurrencyValidator is a validator for the "reporting_currency" field. It is called by the builders before save.
 	workspace.ReportingCurrencyValidator = workspaceDescReportingCurrency.Validators[0].(func(string) error)
 	// workspaceDescAttributionWindowDays is the schema descriptor for attribution_window_days field.
-	workspaceDescAttributionWindowDays := workspaceFields[13].Descriptor()
+	workspaceDescAttributionWindowDays := workspaceFields[14].Descriptor()
 	// workspace.DefaultAttributionWindowDays holds the default value on creation for the attribution_window_days field.
 	workspace.DefaultAttributionWindowDays = workspaceDescAttributionWindowDays.Default.(int)
 	// workspace.AttributionWindowDaysValidator is a validator for the "attribution_window_days" field. It is called by the builders before save.
 	workspace.AttributionWindowDaysValidator = workspaceDescAttributionWindowDays.Validators[0].(func(int) error)
 	// workspaceDescSendCap is the schema descriptor for send_cap field.
-	workspaceDescSendCap := workspaceFields[14].Descriptor()
+	workspaceDescSendCap := workspaceFields[15].Descriptor()
 	// workspace.SendCapValidator is a validator for the "send_cap" field. It is called by the builders before save.
 	workspace.SendCapValidator = workspaceDescSendCap.Validators[0].(func(int) error)
 	// workspaceDescDomainJoinEnabled is the schema descriptor for domain_join_enabled field.
-	workspaceDescDomainJoinEnabled := workspaceFields[15].Descriptor()
+	workspaceDescDomainJoinEnabled := workspaceFields[16].Descriptor()
 	// workspace.DefaultDomainJoinEnabled holds the default value on creation for the domain_join_enabled field.
 	workspace.DefaultDomainJoinEnabled = workspaceDescDomainJoinEnabled.Default.(bool)
 	// workspaceDescAbuseExempt is the schema descriptor for abuse_exempt field.
-	workspaceDescAbuseExempt := workspaceFields[23].Descriptor()
+	workspaceDescAbuseExempt := workspaceFields[24].Descriptor()
 	// workspace.DefaultAbuseExempt holds the default value on creation for the abuse_exempt field.
 	workspace.DefaultAbuseExempt = workspaceDescAbuseExempt.Default.(bool)
 	workspacestandingMixin := schema.WorkspaceStanding{}.Mixin()

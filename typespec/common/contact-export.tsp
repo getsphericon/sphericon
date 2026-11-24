@@ -208,6 +208,10 @@ model ContactExportOutboundMessage {
   /** Address the message was sent to */
   destination: string;
 
+  /** Every address a message rendered once for several went to (a Telegram message to the
+   * contact's chats), `destination` among them; null for a message to one */
+  destinations?: string[] | null;
+
   /** Sending source */
   sendingSource?: string | null;
 
@@ -255,6 +259,19 @@ model ContactExportOutboundMessage {
 
   /** True when the message went through a Test inbox: captured, not delivered */
   captured: boolean;
+
+  /** Whether the message went out tracked: with an open pixel and its links rewritten, or its
+   * links made Short tracked links (ADR 0120). False for a message no render decided (skipped
+   * before its render, or not rendered yet) */
+  tracked: boolean;
+
+  /** When a render decided whether the message goes out tracked; null for a message no render
+   * decided, and for one sent before the moment was recorded, which went out tracked */
+  trackingDecidedAt?: Timestamp | null;
+
+  /** When the message's tracking was withdrawn (a refusal of the contact's, or the Workspace's
+   * default turned to `dont_track`); null while it was not */
+  trackingWithdrawnAt?: Timestamp | null;
 
   /** Broadcast that produced the message */
   broadcastId?: EntityId | null;

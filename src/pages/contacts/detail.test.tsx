@@ -12,6 +12,8 @@ import {
   handleSiteContactsDelete,
   handleSiteContactsExport,
   handleSiteContactsGet,
+  handleSiteEngagementTrackingCreate,
+  handleSiteEngagementTrackingGet,
   handleSiteEventsList,
   handleSiteIntegrationsList,
   handleSiteSmsConsentsConfirm,
@@ -22,6 +24,7 @@ import {
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
 import type {
+  EngagementTrackingConsent,
   Permission,
   SiteContactResource,
   SiteIntegrationResource,
@@ -68,6 +71,7 @@ beforeEach(() => {
     holding([]),
     handleSiteTelegramListBindings({ body: [] }),
     handleSiteSmsConsentsGet({ body: {} }),
+    handleSiteEngagementTrackingGet({ body: { destinations: [] } }),
     handleSiteIntegrationsList({ body: [] }),
   )
 })
@@ -555,4 +559,125 @@ test('a consent texted with START carries no evidence, so its evidence rows show
   await expect.element(screen.getByRole('row', { name: 'Source —' })).toBeInTheDocument()
   await expect.element(screen.getByRole('row', { name: 'Brand —' })).toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Record opt-out' })).toBeInTheDocument()
+})
+
+const ADA_TRACKING: EngagementTrackingConsent = {
+  channel: 'email',
+  destination: 'ada@example.com',
+  state: 'default',
+  effective: 'track',
+}
+
+function tracking(consent: Partial<EngagementTrackingConsent>) {
+  return handleSiteEngagementTrackingGet({
+    body: { destinations: [{ ...ADA_TRACKING, ...consent }] },
+  })
+}
+
+test('an address with no tracking consent shows the default and what it means now', async () => {
+  worker.use(handleSiteContactsGet({ body: ADA }), NO_EVENTS, tracking({ effective: 'dont_track' }))
+
+  const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
+
+  await expect
+    .element(screen.getByRole('heading', { name: 'Engagement tracking' }))
+    .toBeInTheDocument()
+  await expect.element(screen.getByText('Default: not tracked')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Refuse tracking' })).toBeEnabled()
+  await expect.element(screen.getByRole('button', { name: 'Grant tracking' })).toBeEnabled()
+})
+
+test('a granted address offers only the refusal', async () => {
+  worker.use(
+    handleSiteContactsGet({ body: ADA }),
+    NO_EVENTS,
+    tracking({ state: 'granted', provenance: 'imported', effective: 'track', updatedAt: NOW }),
+  )
+
+  const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
+
+  await expect.element(screen.getByText('Granted')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Refuse tracking' })).toBeEnabled()
+  expect(screen.getByRole('button', { name: 'Grant tracking' }).query()).toBeNull()
+})
+
+test('a refused address says who refused it and disables Grant with the reason', async () => {
+  worker.use(
+    handleSiteContactsGet({ body: ADA }),
+    NO_EVENTS,
+    tracking({ state: 'denied', provenance: 'manual', effective: 'dont_track', updatedAt: NOW }),
+  )
+
+  const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
+  await screen.getByRole('button', { name: 'Refused' }).click()
+
+  await expect
+    .element(screen.getByText('Recorded by a member of the workspace.'))
+    .toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Grant tracking' })).toBeDisabled()
+  await expect.element(screen.getByText('Only the person can lift a refusal.')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Refuse tracking' }).query()).toBeNull()
+})
+
+test('records a refusal of tracking once the address is typed, saying what it deletes', async () => {
+  const bodies: unknown[] = []
+  worker.use(
+    handleSiteContactsGet({ body: ADA }),
+    NO_EVENTS,
+    tracking({}),
+    handleSiteEngagementTrackingCreate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json({
+        outcome: 'applied',
+        consent: {
+          ...ADA_TRACKING,
+          state: 'denied',
+          provenance: 'manual',
+          effective: 'dont_track',
+        },
+      })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
+  await screen.getByRole('button', { name: 'Refuse tracking' }).click()
+  const dialog = screen.getByRole('dialog')
+  await expect
+    .element(dialog.getByText(/opens, clicks and order credits already recorded/))
+    .toBeInTheDocument()
+  const confirm = dialog.getByRole('button', { name: 'Refuse tracking' })
+  await expect.element(confirm).toBeDisabled()
+  await dialog.getByLabelText('Type ada@example.com to confirm').fill('ada@example.com')
+  await confirm.click()
+
+  await expect.element(screen.getByText('Refusal of tracking recorded.')).toBeInTheDocument()
+  expect(bodies).toEqual([{ channel: 'email', destination: 'ada@example.com', state: 'denied' }])
+})
+
+test('a grant the server refuses over a refusal recorded meanwhile says why and reads it', async () => {
+  let reads = 0
+  worker.use(
+    handleSiteContactsGet({ body: ADA }),
+    NO_EVENTS,
+    handleSiteEngagementTrackingGet(() => {
+      reads += 1
+      const standing: Partial<EngagementTrackingConsent> =
+        reads === 1 ? {} : { state: 'denied', provenance: 'imported', effective: 'dont_track' }
+      return HttpResponse.json({ destinations: [{ ...ADA_TRACKING, ...standing }] })
+    }),
+    handleSiteEngagementTrackingCreate(() =>
+      problem(409, {
+        title: 'Conflict',
+        detail: 'the destination refused tracking, and only the person can lift a refusal',
+      }),
+    ),
+  )
+
+  const { screen } = await renderWithRouter(<ContactDetailPage />, DETAIL_ROUTE)
+  await screen.getByRole('button', { name: 'Grant tracking' }).click()
+
+  await expect
+    .element(screen.getByText('Could not record the tracking consent'))
+    .toBeInTheDocument()
+  await expect.element(screen.getByText(/only the person can lift a refusal/)).toBeInTheDocument()
 })

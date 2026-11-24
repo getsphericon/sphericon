@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
@@ -315,6 +316,20 @@ func (_u *WorkspaceUpdate) SetNillableTimezone(v *string) *WorkspaceUpdate {
 // ClearTimezone clears the value of the "timezone" field.
 func (_u *WorkspaceUpdate) ClearTimezone() *WorkspaceUpdate {
 	_u.mutation.ClearTimezone()
+	return _u
+}
+
+// SetEngagementTrackingDefault sets the "engagement_tracking_default" field.
+func (_u *WorkspaceUpdate) SetEngagementTrackingDefault(v workspace.EngagementTrackingDefault) *WorkspaceUpdate {
+	_u.mutation.SetEngagementTrackingDefault(v)
+	return _u
+}
+
+// SetNillableEngagementTrackingDefault sets the "engagement_tracking_default" field if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableEngagementTrackingDefault(v *workspace.EngagementTrackingDefault) *WorkspaceUpdate {
+	if v != nil {
+		_u.SetEngagementTrackingDefault(*v)
+	}
 	return _u
 }
 
@@ -1182,6 +1197,21 @@ func (_u *WorkspaceUpdate) AddConsentStamps(v ...*ConsentStamp) *WorkspaceUpdate
 		ids[i] = v[i].ID
 	}
 	return _u.AddConsentStampIDs(ids...)
+}
+
+// AddEngagementTrackingConsentIDs adds the "engagement_tracking_consents" edge to the EngagementTrackingConsent entity by IDs.
+func (_u *WorkspaceUpdate) AddEngagementTrackingConsentIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddEngagementTrackingConsentIDs(ids...)
+	return _u
+}
+
+// AddEngagementTrackingConsents adds the "engagement_tracking_consents" edges to the EngagementTrackingConsent entity.
+func (_u *WorkspaceUpdate) AddEngagementTrackingConsents(v ...*EngagementTrackingConsent) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddEngagementTrackingConsentIDs(ids...)
 }
 
 // AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
@@ -2240,6 +2270,27 @@ func (_u *WorkspaceUpdate) RemoveConsentStamps(v ...*ConsentStamp) *WorkspaceUpd
 	return _u.RemoveConsentStampIDs(ids...)
 }
 
+// ClearEngagementTrackingConsents clears all "engagement_tracking_consents" edges to the EngagementTrackingConsent entity.
+func (_u *WorkspaceUpdate) ClearEngagementTrackingConsents() *WorkspaceUpdate {
+	_u.mutation.ClearEngagementTrackingConsents()
+	return _u
+}
+
+// RemoveEngagementTrackingConsentIDs removes the "engagement_tracking_consents" edge to EngagementTrackingConsent entities by IDs.
+func (_u *WorkspaceUpdate) RemoveEngagementTrackingConsentIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveEngagementTrackingConsentIDs(ids...)
+	return _u
+}
+
+// RemoveEngagementTrackingConsents removes "engagement_tracking_consents" edges to EngagementTrackingConsent entities.
+func (_u *WorkspaceUpdate) RemoveEngagementTrackingConsents(v ...*EngagementTrackingConsent) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveEngagementTrackingConsentIDs(ids...)
+}
+
 // ClearOutboundMessages clears all "outbound_messages" edges to the OutboundMessage entity.
 func (_u *WorkspaceUpdate) ClearOutboundMessages() *WorkspaceUpdate {
 	_u.mutation.ClearOutboundMessages()
@@ -2534,6 +2585,11 @@ func (_u *WorkspaceUpdate) check() error {
 			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "Workspace.timezone": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.EngagementTrackingDefault(); ok {
+		if err := workspace.EngagementTrackingDefaultValidator(v); err != nil {
+			return &ValidationError{Name: "engagement_tracking_default", err: fmt.Errorf(`ent: validator failed for field "Workspace.engagement_tracking_default": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.ReportingCurrency(); ok {
 		if err := workspace.ReportingCurrencyValidator(v); err != nil {
 			return &ValidationError{Name: "reporting_currency", err: fmt.Errorf(`ent: validator failed for field "Workspace.reporting_currency": %w`, err)}
@@ -2643,6 +2699,9 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.TimezoneCleared() {
 		_spec.ClearField(workspace.FieldTimezone, field.TypeString)
+	}
+	if value, ok := _u.mutation.EngagementTrackingDefault(); ok {
+		_spec.SetField(workspace.FieldEngagementTrackingDefault, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.ReportingCurrency(); ok {
 		_spec.SetField(workspace.FieldReportingCurrency, field.TypeString, value)
@@ -4603,6 +4662,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.EngagementTrackingConsentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.EngagementTrackingConsentsTable,
+			Columns: []string{workspace.EngagementTrackingConsentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(engagementtrackingconsent.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedEngagementTrackingConsentsIDs(); len(nodes) > 0 && !_u.mutation.EngagementTrackingConsentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.EngagementTrackingConsentsTable,
+			Columns: []string{workspace.EngagementTrackingConsentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(engagementtrackingconsent.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.EngagementTrackingConsentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.EngagementTrackingConsentsTable,
+			Columns: []string{workspace.EngagementTrackingConsentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(engagementtrackingconsent.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _u.mutation.OutboundMessagesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -5337,6 +5441,20 @@ func (_u *WorkspaceUpdateOne) SetNillableTimezone(v *string) *WorkspaceUpdateOne
 // ClearTimezone clears the value of the "timezone" field.
 func (_u *WorkspaceUpdateOne) ClearTimezone() *WorkspaceUpdateOne {
 	_u.mutation.ClearTimezone()
+	return _u
+}
+
+// SetEngagementTrackingDefault sets the "engagement_tracking_default" field.
+func (_u *WorkspaceUpdateOne) SetEngagementTrackingDefault(v workspace.EngagementTrackingDefault) *WorkspaceUpdateOne {
+	_u.mutation.SetEngagementTrackingDefault(v)
+	return _u
+}
+
+// SetNillableEngagementTrackingDefault sets the "engagement_tracking_default" field if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableEngagementTrackingDefault(v *workspace.EngagementTrackingDefault) *WorkspaceUpdateOne {
+	if v != nil {
+		_u.SetEngagementTrackingDefault(*v)
+	}
 	return _u
 }
 
@@ -6204,6 +6322,21 @@ func (_u *WorkspaceUpdateOne) AddConsentStamps(v ...*ConsentStamp) *WorkspaceUpd
 		ids[i] = v[i].ID
 	}
 	return _u.AddConsentStampIDs(ids...)
+}
+
+// AddEngagementTrackingConsentIDs adds the "engagement_tracking_consents" edge to the EngagementTrackingConsent entity by IDs.
+func (_u *WorkspaceUpdateOne) AddEngagementTrackingConsentIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddEngagementTrackingConsentIDs(ids...)
+	return _u
+}
+
+// AddEngagementTrackingConsents adds the "engagement_tracking_consents" edges to the EngagementTrackingConsent entity.
+func (_u *WorkspaceUpdateOne) AddEngagementTrackingConsents(v ...*EngagementTrackingConsent) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddEngagementTrackingConsentIDs(ids...)
 }
 
 // AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
@@ -7262,6 +7395,27 @@ func (_u *WorkspaceUpdateOne) RemoveConsentStamps(v ...*ConsentStamp) *Workspace
 	return _u.RemoveConsentStampIDs(ids...)
 }
 
+// ClearEngagementTrackingConsents clears all "engagement_tracking_consents" edges to the EngagementTrackingConsent entity.
+func (_u *WorkspaceUpdateOne) ClearEngagementTrackingConsents() *WorkspaceUpdateOne {
+	_u.mutation.ClearEngagementTrackingConsents()
+	return _u
+}
+
+// RemoveEngagementTrackingConsentIDs removes the "engagement_tracking_consents" edge to EngagementTrackingConsent entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveEngagementTrackingConsentIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveEngagementTrackingConsentIDs(ids...)
+	return _u
+}
+
+// RemoveEngagementTrackingConsents removes "engagement_tracking_consents" edges to EngagementTrackingConsent entities.
+func (_u *WorkspaceUpdateOne) RemoveEngagementTrackingConsents(v ...*EngagementTrackingConsent) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveEngagementTrackingConsentIDs(ids...)
+}
+
 // ClearOutboundMessages clears all "outbound_messages" edges to the OutboundMessage entity.
 func (_u *WorkspaceUpdateOne) ClearOutboundMessages() *WorkspaceUpdateOne {
 	_u.mutation.ClearOutboundMessages()
@@ -7569,6 +7723,11 @@ func (_u *WorkspaceUpdateOne) check() error {
 			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "Workspace.timezone": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.EngagementTrackingDefault(); ok {
+		if err := workspace.EngagementTrackingDefaultValidator(v); err != nil {
+			return &ValidationError{Name: "engagement_tracking_default", err: fmt.Errorf(`ent: validator failed for field "Workspace.engagement_tracking_default": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.ReportingCurrency(); ok {
 		if err := workspace.ReportingCurrencyValidator(v); err != nil {
 			return &ValidationError{Name: "reporting_currency", err: fmt.Errorf(`ent: validator failed for field "Workspace.reporting_currency": %w`, err)}
@@ -7695,6 +7854,9 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	}
 	if _u.mutation.TimezoneCleared() {
 		_spec.ClearField(workspace.FieldTimezone, field.TypeString)
+	}
+	if value, ok := _u.mutation.EngagementTrackingDefault(); ok {
+		_spec.SetField(workspace.FieldEngagementTrackingDefault, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.ReportingCurrency(); ok {
 		_spec.SetField(workspace.FieldReportingCurrency, field.TypeString, value)
@@ -9648,6 +9810,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(consentstamp.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.EngagementTrackingConsentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.EngagementTrackingConsentsTable,
+			Columns: []string{workspace.EngagementTrackingConsentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(engagementtrackingconsent.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedEngagementTrackingConsentsIDs(); len(nodes) > 0 && !_u.mutation.EngagementTrackingConsentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.EngagementTrackingConsentsTable,
+			Columns: []string{workspace.EngagementTrackingConsentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(engagementtrackingconsent.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.EngagementTrackingConsentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.EngagementTrackingConsentsTable,
+			Columns: []string{workspace.EngagementTrackingConsentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(engagementtrackingconsent.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

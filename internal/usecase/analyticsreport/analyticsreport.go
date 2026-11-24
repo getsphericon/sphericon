@@ -6,10 +6,11 @@
 // Days are Report days (ADR 0057): calendar days in the Workspace time zone, cut by
 // internal/kernel/reportday, so the whole history is re-bucketed the moment the zone changes.
 //
-// Engagement rates are a send cohort: the denominator is the Broadcast recipients
-// sent in the window, and opens and clicks are counted among that same cohort, so
-// opened never exceeds sent and every rate is within [0, 1]. They are not the
-// Sending-domain Complaint and Bounce rates of internal/domain/sending/reputation.
+// Engagement rates are a send cohort: the denominator is the tracked Broadcast and Automation
+// messages sent in the window (ADR 0120), and opens and clicks are counted among that same cohort,
+// so opened never exceeds sent and every rate is within [0, 1]. The messages that are not tracked
+// (sent untracked, or withdrawn since) are counted beside the rates, never in them. They are not
+// the Sending-domain Complaint and Bounce rates of internal/domain/sending/reputation.
 //
 // Sending counts every message sent in the window, through every surface, from the Outbound
 // messages themselves (ADR 0053): what went out and what the provider said became of it.
@@ -28,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
@@ -81,9 +83,10 @@ type Sending struct {
 	Delivered, Bounced, Complained       int
 }
 
-// Email is the send cohort's counts and Engagement rates.
+// Email is the send cohort's counts and Engagement rates: Sent, Opened and Clicked are the tracked
+// messages', Untracked the Broadcast and Automation messages sent in the window that are not tracked.
 type Email struct {
-	Sent, Opened, Clicked                int
+	Sent, Opened, Clicked, Untracked     int
 	OpenRate, ClickRate, ClickToOpenRate float32
 }
 
@@ -92,10 +95,10 @@ type Automations struct {
 	Total, Active, RunsActive, RunsCompleted int
 }
 
-// Point is one Report day of the send cohort.
+// Point is one Report day of the send cohort, and of the untracked messages beside it.
 type Point struct {
-	Date                  string
-	Sent, Opened, Clicked int
+	Date                             string
+	Sent, Opened, Clicked, Untracked int
 }
 
 // UseCase computes Overviews.
@@ -189,11 +192,11 @@ func contactCounts(ctx context.Context, s *ent.Scoped) (Contacts, error) {
 	return Contacts{Total: total, Active: total - unsub, Unsubscribed: unsub}, nil
 }
 
-// engagementCohort matches the marketing messages whose email was sent in [since, until): the
-// Broadcast and Automation sends, a Transactional one left out (ADR 0053). The send time is the
-// Outbound message's (ADR 0015), and so are its opened and clicked stamps (ADR 0053), so the
-// cohort counts every message, not one per person.
-func engagementCohort(since, until time.Time) predicate.OutboundMessage {
+// marketingSent matches the marketing messages sent in [since, until): the Broadcast and
+// Automation sends, a Transactional one left out (ADR 0053). The send time is the Outbound
+// message's (ADR 0015), and so are its opened and clicked stamps (ADR 0053), so every message
+// counts, not one per person.
+func marketingSent(since, until time.Time) predicate.OutboundMessage {
 	return outboundmessage.And(
 		outboundmessage.KindIn(outboundmessage.KindBroadcast, outboundmessage.KindAutomation),
 		outboundmessage.StatusEQ(outboundmessage.StatusSent),
@@ -201,18 +204,69 @@ func engagementCohort(since, until time.Time) predicate.OutboundMessage {
 	)
 }
 
-// sendCounts counts the Outbound messages sent in [since, until) per kind, and the delivery
-// stamps among them, in one pass: the Broadcast and Automation groups are the engagementCohort
-// of the window, so their sends, opens and clicks are its Engagement rates.
+// engagementCohort matches the send cohort of [since, until): the marketing messages sent in it
+// that are tracked (ADR 0120). One sent untracked or withdrawn since is out of it, its stamps
+// included: a withdrawal by the Workspace's default keeps them.
+func engagementCohort(since, until time.Time) predicate.OutboundMessage {
+	return outboundmessage.And(marketingSent(since, until), engagementtracking.TrackedMessages())
+}
+
+// untrackedBeside matches the marketing messages sent in [since, until) that are not tracked: the
+// ones the reports count beside the rates.
+func untrackedBeside(since, until time.Time) predicate.OutboundMessage {
+	return outboundmessage.And(marketingSent(since, until), engagementtracking.UntrackedMessages())
+}
+
+// sendCounts counts the Outbound messages sent in [since, until) per kind and the delivery stamps
+// among them, then the engagementCohort's sends, opens and clicks, which are the Engagement rates,
+// and the untracked marketing messages beside it.
 func sendCounts(ctx context.Context, s *ent.Scoped, since, until time.Time) (Sending, Email, error) {
+	sending, err := sendingCounts(ctx, s, since, until)
+	if err != nil {
+		return Sending{}, Email{}, err
+	}
+	var cohort []struct {
+		Sent    int `sql:"sent"`
+		Opened  int `sql:"opened"`
+		Clicked int `sql:"clicked"`
+	}
+	err = s.OutboundMessage().Query().
+		Where(engagementCohort(since, until)).
+		Modify(func(sel *sql.Selector) {
+			sel.Select(
+				sql.As(sql.Count("*"), "sent"),
+				sql.As(sql.Count(sel.C(outboundmessage.FieldOpenedAt)), "opened"),
+				sql.As(sql.Count(sel.C(outboundmessage.FieldClickedAt)), "clicked"),
+			)
+		}).
+		Scan(ctx, &cohort)
+	if err != nil {
+		return Sending{}, Email{}, err
+	}
+	untracked, err := s.OutboundMessage().Query().Where(untrackedBeside(since, until)).Count(ctx)
+	if err != nil {
+		return Sending{}, Email{}, err
+	}
+	var email Email
+	for _, r := range cohort {
+		email.Sent, email.Opened, email.Clicked = r.Sent, r.Opened, r.Clicked
+	}
+	email.Untracked = untracked
+	email.OpenRate = broadcasts.Ratio(email.Opened, email.Sent)
+	email.ClickRate = broadcasts.Ratio(email.Clicked, email.Sent)
+	email.ClickToOpenRate = broadcasts.Ratio(email.Clicked, email.Opened)
+	return sending, email, nil
+}
+
+// sendingCounts counts the Outbound messages sent in [since, until) per kind, tracked or not, and
+// the delivery stamps among them: delivery is not tracking.
+func sendingCounts(ctx context.Context, s *ent.Scoped, since, until time.Time) (Sending, error) {
 	var rows []struct {
 		Kind       outboundmessage.Kind `sql:"kind"`
 		Sent       int                  `sql:"sent"`
 		Delivered  int                  `sql:"delivered"`
 		Bounced    int                  `sql:"bounced"`
 		Complained int                  `sql:"complained"`
-		Opened     int                  `sql:"opened"`
-		Clicked    int                  `sql:"clicked"`
 	}
 	err := s.OutboundMessage().Query().
 		Where(
@@ -227,16 +281,13 @@ func sendCounts(ctx context.Context, s *ent.Scoped, since, until time.Time) (Sen
 				sql.As(sql.Count(sel.C(outboundmessage.FieldDeliveredAt)), "delivered"),
 				sql.As(sql.Count(sel.C(outboundmessage.FieldBouncedAt)), "bounced"),
 				sql.As(sql.Count(sel.C(outboundmessage.FieldComplainedAt)), "complained"),
-				sql.As(sql.Count(sel.C(outboundmessage.FieldOpenedAt)), "opened"),
-				sql.As(sql.Count(sel.C(outboundmessage.FieldClickedAt)), "clicked"),
 			).GroupBy(sel.C(outboundmessage.FieldKind))
 		}).
 		Scan(ctx, &rows)
 	if err != nil {
-		return Sending{}, Email{}, err
+		return Sending{}, err
 	}
 	var out Sending
-	var email Email
 	for _, r := range rows {
 		switch r.Kind {
 		case outboundmessage.KindBroadcast:
@@ -246,19 +297,11 @@ func sendCounts(ctx context.Context, s *ent.Scoped, since, until time.Time) (Sen
 		case outboundmessage.KindTransactional:
 			out.Transactional = r.Sent
 		}
-		if r.Kind == outboundmessage.KindBroadcast || r.Kind == outboundmessage.KindAutomation {
-			email.Sent += r.Sent
-			email.Opened += r.Opened
-			email.Clicked += r.Clicked
-		}
 		out.Delivered += r.Delivered
 		out.Bounced += r.Bounced
 		out.Complained += r.Complained
 	}
-	email.OpenRate = broadcasts.Ratio(email.Opened, email.Sent)
-	email.ClickRate = broadcasts.Ratio(email.Clicked, email.Sent)
-	email.ClickToOpenRate = broadcasts.Ratio(email.Clicked, email.Opened)
-	return out, email, nil
+	return out, nil
 }
 
 func automationCounts(ctx context.Context, s *ent.Scoped) (Automations, error) {
@@ -281,8 +324,9 @@ func automationCounts(ctx context.Context, s *ent.Scoped) (Automations, error) {
 	return Automations{Total: total, Active: active, RunsActive: runsActive, RunsCompleted: runsCompleted}, nil
 }
 
-// timeSeries buckets the send cohort by the Report day of its send time, then zero-fills
-// every day of the window from the local dates, so a 23- or 25-hour day is one bucket.
+// timeSeries buckets the send cohort, and the untracked messages beside it, by the Report day of
+// their send time, then zero-fills every day of the window from the local dates, so a 23- or
+// 25-hour day is one bucket.
 func timeSeries(ctx context.Context, s *ent.Scoped, days reportday.Window) ([]Point, error) {
 	var rows []struct {
 		Day     string `sql:"day"`
@@ -305,9 +349,29 @@ func timeSeries(ctx context.Context, s *ent.Scoped, days reportday.Window) ([]Po
 	if err != nil {
 		return nil, err
 	}
+	var untracked []struct {
+		Day   string `sql:"day"`
+		Count int    `sql:"untracked"`
+	}
+	err = s.OutboundMessage().Query().
+		Where(untrackedBeside(days.Since, days.Until)).
+		Modify(func(sel *sql.Selector) {
+			sel.Select(sql.As(sql.Count("*"), "untracked"))
+			sel.AppendSelectExprAs(reportday.Label(sel.C(outboundmessage.FieldSentAt), days.Loc), "day").
+				GroupBy("day")
+		}).
+		Scan(ctx, &untracked)
+	if err != nil {
+		return nil, err
+	}
 	byDay := make(map[string]Point, len(rows))
 	for _, r := range rows {
 		byDay[r.Day] = Point{Date: r.Day, Sent: r.Sent, Opened: r.Opened, Clicked: r.Clicked}
+	}
+	for _, r := range untracked {
+		p := byDay[r.Day]
+		p.Untracked = r.Count
+		byDay[r.Day] = p
 	}
 	return zeroFilled(days, byDay, func(p *Point, day string) { p.Date = day }), nil
 }

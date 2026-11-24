@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -31,7 +32,7 @@ func closedClient(t *testing.T) (*ent.Client, *events.Bus) {
 func TestStorageFailuresSurfaceAsErrors(t *testing.T) {
 	client, bus := closedClient(t)
 	m := tags.New()
-	c := contacts.New(bus, m, confirmations.New(bus, unsubscribes.New(), time.Now), nil)
+	c := contacts.New(bus, m, confirmations.New(bus, unsubscribes.New(), time.Now), engagementtracking.New(bus, time.Now), nil)
 	ctx := context.Background()
 	wsID := client.Scoped(fixtures.AcmeID)
 

@@ -31,6 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
@@ -467,6 +468,22 @@ func (s *Scoped) verifyEmailTemplate(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("EmailTemplate: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyEngagementTrackingConsent fails with ErrNotInWorkspace unless every id is a EngagementTrackingConsent of the Workspace.
+func (s *Scoped) verifyEngagementTrackingConsent(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.EngagementTrackingConsent.Query().Where(s.inEngagementTrackingConsent(engagementtrackingconsent.IDIn(ids...))...).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("EngagementTrackingConsent: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -17369,6 +17386,24 @@ func (x *BroadcastFigureScopedCreate) SetCaptured(v int) *BroadcastFigureScopedC
 
 const RoleOf_BroadcastFigureScopedCreate_SetCaptured = RoleStep
 
+// SetUntracked sets the "untracked" field.
+func (x *BroadcastFigureScopedCreate) SetUntracked(v int) *BroadcastFigureScopedCreate {
+	x.set = append(x.set, func(b *BroadcastFigureCreate) { b.SetUntracked(v) })
+	return x
+}
+
+const RoleOf_BroadcastFigureScopedCreate_SetUntracked = RoleStep
+
+// SetNillableUntracked sets the "untracked" field if the given value is not nil.
+func (x *BroadcastFigureScopedCreate) SetNillableUntracked(v *int) *BroadcastFigureScopedCreate {
+	if v != nil {
+		x.SetUntracked(*v)
+	}
+	return x
+}
+
+const RoleOf_BroadcastFigureScopedCreate_SetNillableUntracked = RoleStep
+
 // SetPrunedAt sets the "pruned_at" field.
 func (x *BroadcastFigureScopedCreate) SetPrunedAt(v time.Time) *BroadcastFigureScopedCreate {
 	x.set = append(x.set, func(b *BroadcastFigureCreate) { b.SetPrunedAt(v) })
@@ -21532,6 +21567,24 @@ func (x *ConsentStampScopedCreate) SetNillableConfirmationOccurredAt(v *time.Tim
 
 const RoleOf_ConsentStampScopedCreate_SetNillableConfirmationOccurredAt = RoleStep
 
+// SetEngagementTrackingOccurredAt sets the "engagement_tracking_occurred_at" field.
+func (x *ConsentStampScopedCreate) SetEngagementTrackingOccurredAt(v time.Time) *ConsentStampScopedCreate {
+	x.set = append(x.set, func(b *ConsentStampCreate) { b.SetEngagementTrackingOccurredAt(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedCreate_SetEngagementTrackingOccurredAt = RoleStep
+
+// SetNillableEngagementTrackingOccurredAt sets the "engagement_tracking_occurred_at" field if the given value is not nil.
+func (x *ConsentStampScopedCreate) SetNillableEngagementTrackingOccurredAt(v *time.Time) *ConsentStampScopedCreate {
+	if v != nil {
+		x.SetEngagementTrackingOccurredAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ConsentStampScopedCreate_SetNillableEngagementTrackingOccurredAt = RoleStep
+
 const (
 	TypeOf_ConsentStampScopedCreate                        = TypeScopedCreate
 	EntityOf_ConsentStampScopedCreate                      = "ConsentStamp"
@@ -21788,6 +21841,30 @@ func (u *ConsentStampScopedUpsert) ClearConfirmationOccurredAt() *ConsentStampSc
 }
 
 const RoleOf_ConsentStampScopedUpsert_ClearConfirmationOccurredAt = RoleStep
+
+// SetEngagementTrackingOccurredAt sets the "engagement_tracking_occurred_at" field.
+func (u *ConsentStampScopedUpsert) SetEngagementTrackingOccurredAt(v time.Time) *ConsentStampScopedUpsert {
+	u.u.Set(consentstamp.FieldEngagementTrackingOccurredAt, v)
+	return u
+}
+
+const RoleOf_ConsentStampScopedUpsert_SetEngagementTrackingOccurredAt = RoleStep
+
+// UpdateEngagementTrackingOccurredAt sets the "engagement_tracking_occurred_at" field to the value that was provided on create.
+func (u *ConsentStampScopedUpsert) UpdateEngagementTrackingOccurredAt() *ConsentStampScopedUpsert {
+	u.u.SetExcluded(consentstamp.FieldEngagementTrackingOccurredAt)
+	return u
+}
+
+const RoleOf_ConsentStampScopedUpsert_UpdateEngagementTrackingOccurredAt = RoleStep
+
+// ClearEngagementTrackingOccurredAt clears the value of the "engagement_tracking_occurred_at" field.
+func (u *ConsentStampScopedUpsert) ClearEngagementTrackingOccurredAt() *ConsentStampScopedUpsert {
+	u.u.SetNull(consentstamp.FieldEngagementTrackingOccurredAt)
+	return u
+}
+
+const RoleOf_ConsentStampScopedUpsert_ClearEngagementTrackingOccurredAt = RoleStep
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
 // target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
@@ -22134,6 +22211,32 @@ func (x *ConsentStampScopedUpdateOne) ClearConfirmationOccurredAt() *ConsentStam
 
 const RoleOf_ConsentStampScopedUpdateOne_ClearConfirmationOccurredAt = RoleStep
 
+// SetEngagementTrackingOccurredAt sets the "engagement_tracking_occurred_at" field.
+func (x *ConsentStampScopedUpdateOne) SetEngagementTrackingOccurredAt(v time.Time) *ConsentStampScopedUpdateOne {
+	x.set = append(x.set, func(b *ConsentStampUpdateOne) { b.SetEngagementTrackingOccurredAt(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdateOne_SetEngagementTrackingOccurredAt = RoleStep
+
+// SetNillableEngagementTrackingOccurredAt sets the "engagement_tracking_occurred_at" field if the given value is not nil.
+func (x *ConsentStampScopedUpdateOne) SetNillableEngagementTrackingOccurredAt(v *time.Time) *ConsentStampScopedUpdateOne {
+	if v != nil {
+		x.SetEngagementTrackingOccurredAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdateOne_SetNillableEngagementTrackingOccurredAt = RoleStep
+
+// ClearEngagementTrackingOccurredAt clears the value of the "engagement_tracking_occurred_at" field.
+func (x *ConsentStampScopedUpdateOne) ClearEngagementTrackingOccurredAt() *ConsentStampScopedUpdateOne {
+	x.set = append(x.set, func(b *ConsentStampUpdateOne) { b.ClearEngagementTrackingOccurredAt() })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdateOne_ClearEngagementTrackingOccurredAt = RoleStep
+
 // Save verifies the references against the Workspace, then updates the ConsentStamp.
 func (x *ConsentStampScopedUpdateOne) Save(ctx context.Context) (*ConsentStamp, error) {
 	return x.save(ctx, "update", skipUnchanged)
@@ -22362,6 +22465,32 @@ func (x *ConsentStampScopedUpdate) ClearConfirmationOccurredAt() *ConsentStampSc
 }
 
 const RoleOf_ConsentStampScopedUpdate_ClearConfirmationOccurredAt = RoleStep
+
+// SetEngagementTrackingOccurredAt sets the "engagement_tracking_occurred_at" field.
+func (x *ConsentStampScopedUpdate) SetEngagementTrackingOccurredAt(v time.Time) *ConsentStampScopedUpdate {
+	x.set = append(x.set, func(b *ConsentStampUpdate) { b.SetEngagementTrackingOccurredAt(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdate_SetEngagementTrackingOccurredAt = RoleStep
+
+// SetNillableEngagementTrackingOccurredAt sets the "engagement_tracking_occurred_at" field if the given value is not nil.
+func (x *ConsentStampScopedUpdate) SetNillableEngagementTrackingOccurredAt(v *time.Time) *ConsentStampScopedUpdate {
+	if v != nil {
+		x.SetEngagementTrackingOccurredAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdate_SetNillableEngagementTrackingOccurredAt = RoleStep
+
+// ClearEngagementTrackingOccurredAt clears the value of the "engagement_tracking_occurred_at" field.
+func (x *ConsentStampScopedUpdate) ClearEngagementTrackingOccurredAt() *ConsentStampScopedUpdate {
+	x.set = append(x.set, func(b *ConsentStampUpdate) { b.ClearEngagementTrackingOccurredAt() })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdate_ClearEngagementTrackingOccurredAt = RoleStep
 
 // build makes the ent update on the client of s and verifies the references it sets.
 func (x *ConsentStampScopedUpdate) build(ctx context.Context, s *Scoped) (*ConsentStampUpdate, error) {
@@ -27731,6 +27860,855 @@ const (
 	RoleOf_EmailTemplateScopedUpdate_Modify = RoleStep
 	RoleOf_EmailTemplateScopedUpdate_Save   = RoleStep
 	RoleOf_EmailTemplateScopedUpdate_Exec   = RoleStep
+)
+
+// EngagementTrackingConsentScoped reaches EngagementTrackingConsent entities of one Workspace.
+type EngagementTrackingConsentScoped struct{ s *Scoped }
+
+// EngagementTrackingConsent returns the EngagementTrackingConsent entities of the Workspace.
+func (s *Scoped) EngagementTrackingConsent() *EngagementTrackingConsentScoped {
+	return &EngagementTrackingConsentScoped{s: s}
+}
+
+const (
+	TypeOf_EngagementTrackingConsentScoped             = TypeWrapper
+	EntityOf_EngagementTrackingConsentScoped           = "EngagementTrackingConsent"
+	RoleOf_Scoped_EngagementTrackingConsent            = RoleNone
+	RoleOf_EngagementTrackingConsentScoped_Query       = RoleRead
+	RoleOf_EngagementTrackingConsentScoped_Get         = RoleRead
+	RoleOf_EngagementTrackingConsentScoped_DeleteOneID = RoleStart
+	RoleOf_EngagementTrackingConsentScoped_UpdateOneID = RoleStart
+	RoleOf_EngagementTrackingConsentScoped_Delete      = RoleStart
+	RoleOf_EngagementTrackingConsentScoped_Create      = RoleStart
+	RoleOf_EngagementTrackingConsentScoped_CreateBulk  = RoleStart
+	RoleOf_EngagementTrackingConsentScoped_Update      = RoleStart
+)
+
+// inEngagementTrackingConsent confines predicates of EngagementTrackingConsent rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inEngagementTrackingConsent(ps ...predicate.EngagementTrackingConsent) []predicate.EngagementTrackingConsent {
+	return append([]predicate.EngagementTrackingConsent{engagementtrackingconsent.WorkspaceID(s.ws)}, ps...)
+}
+
+// Query returns a EngagementTrackingConsent query already confined to the Workspace.
+func (t *EngagementTrackingConsentScoped) Query() *EngagementTrackingConsentQuery {
+	return t.s.c.EngagementTrackingConsent.Query().Where(t.s.inEngagementTrackingConsent()...)
+}
+
+// Get returns the EngagementTrackingConsent with the id; a row of another Workspace is not found.
+func (t *EngagementTrackingConsentScoped) Get(ctx context.Context, id int64) (*EngagementTrackingConsent, error) {
+	return t.Query().Where(engagementtrackingconsent.ID(id)).Only(ctx)
+}
+
+// writeEngagementTrackingConsent runs a write of EngagementTrackingConsent rows: run builds it on the client of the scope it is
+// given and executes it, and reaches no other client. The
+// entity is not audited, so run gets the scope itself.
+func (s *Scoped) writeEngagementTrackingConsent(ctx context.Context, verb string, where []predicate.EngagementTrackingConsent, unchanged unchangedRows, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, unchanged
+	_, err := run(s)
+	return err
+}
+
+// checkEngagementTrackingConsent verifies every reference the mutations set against the Workspace of s, one query per
+// reference for all of them.
+func (s *Scoped) checkEngagementTrackingConsent(ctx context.Context, ms ...*EngagementTrackingConsentMutation) error {
+	return nil
+}
+
+// EngagementTrackingConsentScopedDeleteOne deletes one EngagementTrackingConsent: it keeps the row's id and its fences, and builds the
+// ent delete on the client the delete runs on.
+type EngagementTrackingConsentScopedDeleteOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.EngagementTrackingConsent
+}
+
+// DeleteOneID deletes the EngagementTrackingConsent with the id; a row of another Workspace is not found.
+func (t *EngagementTrackingConsentScoped) DeleteOneID(id int64) *EngagementTrackingConsentScopedDeleteOne {
+	return &EngagementTrackingConsentScopedDeleteOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *EngagementTrackingConsentScopedDeleteOne) Where(ps ...predicate.EngagementTrackingConsent) *EngagementTrackingConsentScopedDeleteOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_EngagementTrackingConsentScopedDeleteOne       = TypeScopedDelete
+	EntityOf_EngagementTrackingConsentScopedDeleteOne     = "EngagementTrackingConsent"
+	RoleOf_EngagementTrackingConsentScopedDeleteOne_Where = RoleStep
+	RoleOf_EngagementTrackingConsentScopedDeleteOne_Exec  = RoleStep
+)
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *EngagementTrackingConsentScopedDeleteOne) Exec(ctx context.Context) error {
+	where := x.s.inEngagementTrackingConsent(x.where...)
+	return x.s.writeEngagementTrackingConsent(ctx, "delete", append([]predicate.EngagementTrackingConsent{engagementtrackingconsent.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
+		return nil, s.c.EngagementTrackingConsent.DeleteOneID(x.id).Where(where...).Exec(ctx)
+	})
+}
+
+// EngagementTrackingConsentScopedDelete deletes the EngagementTrackingConsent rows of one Workspace that match its predicates, which it
+// keeps until the delete is built on the client it runs on.
+type EngagementTrackingConsentScopedDelete struct {
+	s     *Scoped
+	where []predicate.EngagementTrackingConsent
+}
+
+// Delete deletes the EngagementTrackingConsent entities of the Workspace that match the predicates.
+func (t *EngagementTrackingConsentScoped) Delete() *EngagementTrackingConsentScopedDelete {
+	return &EngagementTrackingConsentScopedDelete{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *EngagementTrackingConsentScopedDelete) Where(ps ...predicate.EngagementTrackingConsent) *EngagementTrackingConsentScopedDelete {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_EngagementTrackingConsentScopedDelete       = TypeScopedDelete
+	EntityOf_EngagementTrackingConsentScopedDelete     = "EngagementTrackingConsent"
+	RoleOf_EngagementTrackingConsentScopedDelete_Where = RoleStep
+	RoleOf_EngagementTrackingConsentScopedDelete_Exec  = RoleStep
+)
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *EngagementTrackingConsentScopedDelete) Exec(ctx context.Context) (int, error) {
+	where := x.s.inEngagementTrackingConsent(x.where...)
+	var n int
+	err := x.s.writeEngagementTrackingConsent(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		var err error
+		n, err = s.c.EngagementTrackingConsent.Delete().Where(where...).Exec(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// ---------------------------------------------------------------- create
+
+// EngagementTrackingConsentScopedCreate creates a EngagementTrackingConsent of one Workspace. It has no way to name a Workspace: it
+// keeps what its setters set and builds the ent create, in its Workspace, on the client the create
+// runs on.
+type EngagementTrackingConsentScopedCreate struct {
+	s   *Scoped
+	set []func(*EngagementTrackingConsentCreate)
+}
+
+// Create starts a EngagementTrackingConsent in the Workspace.
+func (t *EngagementTrackingConsentScoped) Create() *EngagementTrackingConsentScopedCreate {
+	return &EngagementTrackingConsentScopedCreate{s: t.s}
+}
+
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *EngagementTrackingConsentScopedCreate) raw(s *Scoped) *EngagementTrackingConsentCreate {
+	b := s.c.EngagementTrackingConsent.Create().SetWorkspaceID(s.ws)
+	for _, set := range x.set {
+		set(b)
+	}
+	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *EngagementTrackingConsentScopedCreate) build(ctx context.Context, s *Scoped) (*EngagementTrackingConsentCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkEngagementTrackingConsent(ctx, b.Mutation()))
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *EngagementTrackingConsentScopedCreate) SetCreatedAt(v time.Time) *EngagementTrackingConsentScopedCreate {
+	x.set = append(x.set, func(b *EngagementTrackingConsentCreate) { b.SetCreatedAt(v) })
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedCreate_SetCreatedAt = RoleStep
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *EngagementTrackingConsentScopedCreate) SetNillableCreatedAt(v *time.Time) *EngagementTrackingConsentScopedCreate {
+	if v != nil {
+		x.SetCreatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedCreate_SetNillableCreatedAt = RoleStep
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *EngagementTrackingConsentScopedCreate) SetUpdatedAt(v time.Time) *EngagementTrackingConsentScopedCreate {
+	x.set = append(x.set, func(b *EngagementTrackingConsentCreate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedCreate_SetUpdatedAt = RoleStep
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *EngagementTrackingConsentScopedCreate) SetNillableUpdatedAt(v *time.Time) *EngagementTrackingConsentScopedCreate {
+	if v != nil {
+		x.SetUpdatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedCreate_SetNillableUpdatedAt = RoleStep
+
+// SetChannel sets the "channel" field.
+func (x *EngagementTrackingConsentScopedCreate) SetChannel(v channels.Channel) *EngagementTrackingConsentScopedCreate {
+	x.set = append(x.set, func(b *EngagementTrackingConsentCreate) { b.SetChannel(v) })
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedCreate_SetChannel = RoleStep
+
+// SetDestination sets the "destination" field.
+func (x *EngagementTrackingConsentScopedCreate) SetDestination(v string) *EngagementTrackingConsentScopedCreate {
+	x.set = append(x.set, func(b *EngagementTrackingConsentCreate) { b.SetDestination(v) })
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedCreate_SetDestination = RoleStep
+
+// SetState sets the "state" field.
+func (x *EngagementTrackingConsentScopedCreate) SetState(v engagementtrackingconsent.State) *EngagementTrackingConsentScopedCreate {
+	x.set = append(x.set, func(b *EngagementTrackingConsentCreate) { b.SetState(v) })
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedCreate_SetState = RoleStep
+
+// SetProvenance sets the "provenance" field.
+func (x *EngagementTrackingConsentScopedCreate) SetProvenance(v engagementtrackingconsent.Provenance) *EngagementTrackingConsentScopedCreate {
+	x.set = append(x.set, func(b *EngagementTrackingConsentCreate) { b.SetProvenance(v) })
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedCreate_SetProvenance = RoleStep
+
+const (
+	TypeOf_EngagementTrackingConsentScopedCreate                        = TypeScopedCreate
+	EntityOf_EngagementTrackingConsentScopedCreate                      = "EngagementTrackingConsent"
+	RoleOf_EngagementTrackingConsentScopedCreate_Save                   = RoleStep
+	RoleOf_EngagementTrackingConsentScopedCreate_Exec                   = RoleStep
+	RoleOf_EngagementTrackingConsentScopedCreate_OnConflictColumns      = RoleStart
+	RoleOf_EngagementTrackingConsentScopedCreate_OnConflictColumnsWhere = RoleStart
+)
+
+// Save verifies the references against the Workspace, then creates the EngagementTrackingConsent.
+func (x *EngagementTrackingConsentScopedCreate) Save(ctx context.Context) (*EngagementTrackingConsent, error) {
+	var created *EngagementTrackingConsent
+	err := x.s.writeEngagementTrackingConsent(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = b.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *EngagementTrackingConsentScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// EngagementTrackingConsentScopedCreateBulk creates several EngagementTrackingConsent entities of one Workspace at once.
+type EngagementTrackingConsentScopedCreateBulk struct {
+	s  *Scoped
+	xs []*EngagementTrackingConsentScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *EngagementTrackingConsentScoped) CreateBulk(xs ...*EngagementTrackingConsentScopedCreate) *EngagementTrackingConsentScopedCreateBulk {
+	return &EngagementTrackingConsentScopedCreateBulk{s: t.s, xs: xs}
+}
+
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *EngagementTrackingConsentScopedCreateBulk) refuseForeign() error {
+	for _, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return fmt.Errorf("EngagementTrackingConsent: builder of another scope: %w", ErrNotInWorkspace)
+		}
+	}
+	return nil
+}
+
+// build makes the ent bulk create on the client of s, every create of it in the Workspace, and
+// verifies the references of all of them, one query per reference rather than one per row.
+func (b *EngagementTrackingConsentScopedCreateBulk) build(ctx context.Context, s *Scoped) (*EngagementTrackingConsentCreateBulk, error) {
+	builders := make([]*EngagementTrackingConsentCreate, len(b.xs))
+	ms := make([]*EngagementTrackingConsentMutation, len(b.xs))
+	for i, x := range b.xs {
+		builders[i] = x.raw(s)
+		ms[i] = builders[i].Mutation()
+	}
+	if err := s.checkEngagementTrackingConsent(ctx, ms...); err != nil {
+		return nil, err
+	}
+	return s.c.EngagementTrackingConsent.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the EngagementTrackingConsent entities.
+func (b *EngagementTrackingConsentScopedCreateBulk) Save(ctx context.Context) ([]*EngagementTrackingConsent, error) {
+	if err := b.refuseForeign(); err != nil {
+		return nil, err
+	}
+	var created []*EngagementTrackingConsent
+	err := b.s.writeEngagementTrackingConsent(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = raw.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *EngagementTrackingConsentScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_EngagementTrackingConsentScopedCreateBulk                   = TypeScopedCreate
+	EntityOf_EngagementTrackingConsentScopedCreateBulk                 = "EngagementTrackingConsent"
+	RoleOf_EngagementTrackingConsentScopedCreateBulk_Save              = RoleStep
+	RoleOf_EngagementTrackingConsentScopedCreateBulk_Exec              = RoleStep
+	RoleOf_EngagementTrackingConsentScopedCreateBulk_OnConflictColumns = RoleStart
+)
+
+// ---------------------------------------------------------------- upsert
+
+// EngagementTrackingConsentScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type EngagementTrackingConsentScopedUpsert struct{ u *sql.UpdateSet }
+
+const (
+	TypeOf_EngagementTrackingConsentScopedUpsert   = TypeScopedUpsert
+	EntityOf_EngagementTrackingConsentScopedUpsert = "EngagementTrackingConsent"
+)
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *EngagementTrackingConsentScopedUpsert) SetUpdatedAt(v time.Time) *EngagementTrackingConsentScopedUpsert {
+	u.u.Set(engagementtrackingconsent.FieldUpdatedAt, v)
+	return u
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpsert_SetUpdatedAt = RoleStep
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *EngagementTrackingConsentScopedUpsert) UpdateUpdatedAt() *EngagementTrackingConsentScopedUpsert {
+	u.u.SetExcluded(engagementtrackingconsent.FieldUpdatedAt)
+	return u
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpsert_UpdateUpdatedAt = RoleStep
+
+// SetDestination sets the "destination" field.
+func (u *EngagementTrackingConsentScopedUpsert) SetDestination(v string) *EngagementTrackingConsentScopedUpsert {
+	u.u.Set(engagementtrackingconsent.FieldDestination, v)
+	return u
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpsert_SetDestination = RoleStep
+
+// UpdateDestination sets the "destination" field to the value that was provided on create.
+func (u *EngagementTrackingConsentScopedUpsert) UpdateDestination() *EngagementTrackingConsentScopedUpsert {
+	u.u.SetExcluded(engagementtrackingconsent.FieldDestination)
+	return u
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpsert_UpdateDestination = RoleStep
+
+// SetState sets the "state" field.
+func (u *EngagementTrackingConsentScopedUpsert) SetState(v engagementtrackingconsent.State) *EngagementTrackingConsentScopedUpsert {
+	u.u.Set(engagementtrackingconsent.FieldState, v)
+	return u
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpsert_SetState = RoleStep
+
+// UpdateState sets the "state" field to the value that was provided on create.
+func (u *EngagementTrackingConsentScopedUpsert) UpdateState() *EngagementTrackingConsentScopedUpsert {
+	u.u.SetExcluded(engagementtrackingconsent.FieldState)
+	return u
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpsert_UpdateState = RoleStep
+
+// SetProvenance sets the "provenance" field.
+func (u *EngagementTrackingConsentScopedUpsert) SetProvenance(v engagementtrackingconsent.Provenance) *EngagementTrackingConsentScopedUpsert {
+	u.u.Set(engagementtrackingconsent.FieldProvenance, v)
+	return u
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpsert_SetProvenance = RoleStep
+
+// UpdateProvenance sets the "provenance" field to the value that was provided on create.
+func (u *EngagementTrackingConsentScopedUpsert) UpdateProvenance() *EngagementTrackingConsentScopedUpsert {
+	u.u.SetExcluded(engagementtrackingconsent.FieldProvenance)
+	return u
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpsert_UpdateProvenance = RoleStep
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *EngagementTrackingConsentScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(engagementtrackingconsent.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// EngagementTrackingConsentScopedUpsertOne is the "upsert" of one EngagementTrackingConsent: the create it was started on, which a setter
+// called later still changes, and what to do on a conflict.
+type EngagementTrackingConsentScopedUpsertOne struct {
+	x        *EngagementTrackingConsentScopedCreate
+	conflict []sql.ConflictOption
+	set      []func(*EngagementTrackingConsentUpsertOne)
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+const (
+	TypeOf_EngagementTrackingConsentScopedUpsertOne                 = TypeScopedUpsert
+	EntityOf_EngagementTrackingConsentScopedUpsertOne               = "EngagementTrackingConsent"
+	RoleOf_EngagementTrackingConsentScopedUpsertOne_UpdateNewValues = RoleStep
+	RoleOf_EngagementTrackingConsentScopedUpsertOne_Ignore          = RoleStep
+	RoleOf_EngagementTrackingConsentScopedUpsertOne_DoNothing       = RoleStep
+	RoleOf_EngagementTrackingConsentScopedUpsertOne_Update          = RoleStep
+	RoleOf_EngagementTrackingConsentScopedUpsertOne_Exec            = RoleStep
+	RoleOf_EngagementTrackingConsentScopedUpsertOne_ID              = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *EngagementTrackingConsentScopedCreate) OnConflictColumns(columns ...string) *EngagementTrackingConsentScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *EngagementTrackingConsentScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *EngagementTrackingConsentScopedUpsertOne {
+	return &EngagementTrackingConsentScopedUpsertOne{x: x, conflict: (&EngagementTrackingConsentScoped{s: x.s}).conflictOptions(columns, target)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *EngagementTrackingConsentScopedUpsertOne) UpdateNewValues() *EngagementTrackingConsentScopedUpsertOne {
+	u.set = append(u.set, func(r *EngagementTrackingConsentUpsertOne) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *EngagementTrackingConsentScopedUpsertOne) Ignore() *EngagementTrackingConsentScopedUpsertOne {
+	u.set = append(u.set, func(r *EngagementTrackingConsentUpsertOne) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *EngagementTrackingConsentScopedUpsertOne) DoNothing() *EngagementTrackingConsentScopedUpsertOne {
+	u.set = append(u.set, func(r *EngagementTrackingConsentUpsertOne) { r.DoNothing() })
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *EngagementTrackingConsentScopedUpsertOne) Update(set func(*EngagementTrackingConsentScopedUpsert)) *EngagementTrackingConsentScopedUpsertOne {
+	u.set = append(u.set, func(r *EngagementTrackingConsentUpsertOne) {
+		r.Update(func(s *EngagementTrackingConsentUpsert) { set(&EngagementTrackingConsentScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// build makes the ent upsert on the client of s and verifies the create's references.
+func (u *EngagementTrackingConsentScopedUpsertOne) build(ctx context.Context, s *Scoped) (*EngagementTrackingConsentUpsertOne, error) {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	r := b.OnConflict(u.conflict...)
+	for _, set := range u.set {
+		set(r)
+	}
+	return r, nil
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *EngagementTrackingConsentScopedUpsertOne) Exec(ctx context.Context) error {
+	_, err := u.ID(ctx)
+	return err
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *EngagementTrackingConsentScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	var id int64
+	err := u.x.s.writeEngagementTrackingConsent(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		r, err := u.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if id, err = r.ID(ctx); err != nil {
+			return nil, err
+		}
+		return []int64{id}, nil
+	})
+	return written(id, err)
+}
+
+// EngagementTrackingConsentScopedUpsertBulk is the "upsert" of several EngagementTrackingConsent entities.
+type EngagementTrackingConsentScopedUpsertBulk struct {
+	b       *EngagementTrackingConsentScopedCreateBulk
+	t       *EngagementTrackingConsentScoped
+	columns []string
+	set     []func(*EngagementTrackingConsentUpsertBulk)
+}
+
+const (
+	TypeOf_EngagementTrackingConsentScopedUpsertBulk                 = TypeScopedUpsert
+	EntityOf_EngagementTrackingConsentScopedUpsertBulk               = "EngagementTrackingConsent"
+	RoleOf_EngagementTrackingConsentScopedUpsertBulk_UpdateNewValues = RoleStep
+	RoleOf_EngagementTrackingConsentScopedUpsertBulk_Ignore          = RoleStep
+	RoleOf_EngagementTrackingConsentScopedUpsertBulk_DoNothing       = RoleStep
+	RoleOf_EngagementTrackingConsentScopedUpsertBulk_Update          = RoleStep
+	RoleOf_EngagementTrackingConsentScopedUpsertBulk_Exec            = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *EngagementTrackingConsentScopedCreateBulk) OnConflictColumns(columns ...string) *EngagementTrackingConsentScopedUpsertBulk {
+	return &EngagementTrackingConsentScopedUpsertBulk{b: b, t: &EngagementTrackingConsentScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *EngagementTrackingConsentScopedUpsertBulk) UpdateNewValues() *EngagementTrackingConsentScopedUpsertBulk {
+	u.set = append(u.set, func(r *EngagementTrackingConsentUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *EngagementTrackingConsentScopedUpsertBulk) Ignore() *EngagementTrackingConsentScopedUpsertBulk {
+	u.set = append(u.set, func(r *EngagementTrackingConsentUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *EngagementTrackingConsentScopedUpsertBulk) DoNothing() *EngagementTrackingConsentScopedUpsertBulk {
+	u.set = append(u.set, func(r *EngagementTrackingConsentUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *EngagementTrackingConsentScopedUpsertBulk) Update(set func(*EngagementTrackingConsentScopedUpsert)) *EngagementTrackingConsentScopedUpsertBulk {
+	u.set = append(u.set, func(r *EngagementTrackingConsentUpsertBulk) {
+		r.Update(func(s *EngagementTrackingConsentUpsert) { set(&EngagementTrackingConsentScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *EngagementTrackingConsentScopedUpsertBulk) Exec(ctx context.Context) error {
+	if err := u.b.refuseForeign(); err != nil {
+		return err
+	}
+	return u.b.s.writeEngagementTrackingConsent(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := u.b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+		for _, set := range u.set {
+			set(r)
+		}
+		return nil, r.Exec(ctx)
+	})
+}
+
+// ---------------------------------------------------------------- update
+
+// EngagementTrackingConsentScopedUpdateOne updates one EngagementTrackingConsent. It has no way to move the row to another Workspace: it
+// keeps the row's id, its fences and what its setters set, and builds the ent update on the client
+// the update runs on.
+type EngagementTrackingConsentScopedUpdateOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.EngagementTrackingConsent
+	set   []func(*EngagementTrackingConsentUpdateOne)
+}
+
+// UpdateOneID updates the EngagementTrackingConsent with the id; a row of another Workspace is not found.
+func (t *EngagementTrackingConsentScoped) UpdateOneID(id int64) *EngagementTrackingConsentScopedUpdateOne {
+	return &EngagementTrackingConsentScopedUpdateOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *EngagementTrackingConsentScopedUpdateOne) Where(ps ...predicate.EngagementTrackingConsent) *EngagementTrackingConsentScopedUpdateOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *EngagementTrackingConsentScopedUpdateOne) SetUpdatedAt(v time.Time) *EngagementTrackingConsentScopedUpdateOne {
+	x.set = append(x.set, func(b *EngagementTrackingConsentUpdateOne) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpdateOne_SetUpdatedAt = RoleStep
+
+// SetDestination sets the "destination" field.
+func (x *EngagementTrackingConsentScopedUpdateOne) SetDestination(v string) *EngagementTrackingConsentScopedUpdateOne {
+	x.set = append(x.set, func(b *EngagementTrackingConsentUpdateOne) { b.SetDestination(v) })
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpdateOne_SetDestination = RoleStep
+
+// SetNillableDestination sets the "destination" field if the given value is not nil.
+func (x *EngagementTrackingConsentScopedUpdateOne) SetNillableDestination(v *string) *EngagementTrackingConsentScopedUpdateOne {
+	if v != nil {
+		x.SetDestination(*v)
+	}
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpdateOne_SetNillableDestination = RoleStep
+
+// SetState sets the "state" field.
+func (x *EngagementTrackingConsentScopedUpdateOne) SetState(v engagementtrackingconsent.State) *EngagementTrackingConsentScopedUpdateOne {
+	x.set = append(x.set, func(b *EngagementTrackingConsentUpdateOne) { b.SetState(v) })
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpdateOne_SetState = RoleStep
+
+// SetNillableState sets the "state" field if the given value is not nil.
+func (x *EngagementTrackingConsentScopedUpdateOne) SetNillableState(v *engagementtrackingconsent.State) *EngagementTrackingConsentScopedUpdateOne {
+	if v != nil {
+		x.SetState(*v)
+	}
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpdateOne_SetNillableState = RoleStep
+
+// SetProvenance sets the "provenance" field.
+func (x *EngagementTrackingConsentScopedUpdateOne) SetProvenance(v engagementtrackingconsent.Provenance) *EngagementTrackingConsentScopedUpdateOne {
+	x.set = append(x.set, func(b *EngagementTrackingConsentUpdateOne) { b.SetProvenance(v) })
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpdateOne_SetProvenance = RoleStep
+
+// SetNillableProvenance sets the "provenance" field if the given value is not nil.
+func (x *EngagementTrackingConsentScopedUpdateOne) SetNillableProvenance(v *engagementtrackingconsent.Provenance) *EngagementTrackingConsentScopedUpdateOne {
+	if v != nil {
+		x.SetProvenance(*v)
+	}
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpdateOne_SetNillableProvenance = RoleStep
+
+// Save verifies the references against the Workspace, then updates the EngagementTrackingConsent.
+func (x *EngagementTrackingConsentScopedUpdateOne) Save(ctx context.Context) (*EngagementTrackingConsent, error) {
+	return x.save(ctx, "update", skipUnchanged)
+}
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *EngagementTrackingConsentScopedUpdateOne) build(ctx context.Context, s *Scoped) (*EngagementTrackingConsentUpdateOne, error) {
+	b := s.c.EngagementTrackingConsent.UpdateOneID(x.id).Where(s.inEngagementTrackingConsent(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkEngagementTrackingConsent(ctx, b.Mutation()))
+}
+
+// save is Save under a verb, doing with an unchanged row what unchanged says.
+func (x *EngagementTrackingConsentScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*EngagementTrackingConsent, error) {
+	where := x.s.inEngagementTrackingConsent(x.where...)
+	var updated *EngagementTrackingConsent
+	err := x.s.writeEngagementTrackingConsent(ctx, verb, append([]predicate.EngagementTrackingConsent{engagementtrackingconsent.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		updated, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(updated, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *EngagementTrackingConsentScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_EngagementTrackingConsentScopedUpdateOne       = TypeScopedUpdate
+	EntityOf_EngagementTrackingConsentScopedUpdateOne     = "EngagementTrackingConsent"
+	RoleOf_EngagementTrackingConsentScopedUpdateOne_Where = RoleStep
+	RoleOf_EngagementTrackingConsentScopedUpdateOne_Save  = RoleStep
+	RoleOf_EngagementTrackingConsentScopedUpdateOne_Exec  = RoleStep
+)
+
+// EngagementTrackingConsentScopedUpdate is a conditional bulk update of one Workspace: it keeps its predicates and
+// what its setters and modifiers set, and builds the ent update on the client the update runs on.
+type EngagementTrackingConsentScopedUpdate struct {
+	s     *Scoped
+	where []predicate.EngagementTrackingConsent
+	set   []func(*EngagementTrackingConsentUpdate)
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the EngagementTrackingConsent entities of the Workspace that match the predicates.
+func (t *EngagementTrackingConsentScoped) Update() *EngagementTrackingConsentScopedUpdate {
+	return &EngagementTrackingConsentScopedUpdate{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *EngagementTrackingConsentScopedUpdate) Where(ps ...predicate.EngagementTrackingConsent) *EngagementTrackingConsentScopedUpdate {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *EngagementTrackingConsentScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *EngagementTrackingConsentScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(engagementtrackingconsent.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.set = append(x.set, func(b *EngagementTrackingConsentUpdate) {
+			b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+		})
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *EngagementTrackingConsentScopedUpdate) SetUpdatedAt(v time.Time) *EngagementTrackingConsentScopedUpdate {
+	x.set = append(x.set, func(b *EngagementTrackingConsentUpdate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpdate_SetUpdatedAt = RoleStep
+
+// SetDestination sets the "destination" field.
+func (x *EngagementTrackingConsentScopedUpdate) SetDestination(v string) *EngagementTrackingConsentScopedUpdate {
+	x.set = append(x.set, func(b *EngagementTrackingConsentUpdate) { b.SetDestination(v) })
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpdate_SetDestination = RoleStep
+
+// SetNillableDestination sets the "destination" field if the given value is not nil.
+func (x *EngagementTrackingConsentScopedUpdate) SetNillableDestination(v *string) *EngagementTrackingConsentScopedUpdate {
+	if v != nil {
+		x.SetDestination(*v)
+	}
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpdate_SetNillableDestination = RoleStep
+
+// SetState sets the "state" field.
+func (x *EngagementTrackingConsentScopedUpdate) SetState(v engagementtrackingconsent.State) *EngagementTrackingConsentScopedUpdate {
+	x.set = append(x.set, func(b *EngagementTrackingConsentUpdate) { b.SetState(v) })
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpdate_SetState = RoleStep
+
+// SetNillableState sets the "state" field if the given value is not nil.
+func (x *EngagementTrackingConsentScopedUpdate) SetNillableState(v *engagementtrackingconsent.State) *EngagementTrackingConsentScopedUpdate {
+	if v != nil {
+		x.SetState(*v)
+	}
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpdate_SetNillableState = RoleStep
+
+// SetProvenance sets the "provenance" field.
+func (x *EngagementTrackingConsentScopedUpdate) SetProvenance(v engagementtrackingconsent.Provenance) *EngagementTrackingConsentScopedUpdate {
+	x.set = append(x.set, func(b *EngagementTrackingConsentUpdate) { b.SetProvenance(v) })
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpdate_SetProvenance = RoleStep
+
+// SetNillableProvenance sets the "provenance" field if the given value is not nil.
+func (x *EngagementTrackingConsentScopedUpdate) SetNillableProvenance(v *engagementtrackingconsent.Provenance) *EngagementTrackingConsentScopedUpdate {
+	if v != nil {
+		x.SetProvenance(*v)
+	}
+	return x
+}
+
+const RoleOf_EngagementTrackingConsentScopedUpdate_SetNillableProvenance = RoleStep
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *EngagementTrackingConsentScopedUpdate) build(ctx context.Context, s *Scoped) (*EngagementTrackingConsentUpdate, error) {
+	b := s.c.EngagementTrackingConsent.Update().Where(s.inEngagementTrackingConsent(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkEngagementTrackingConsent(ctx, b.Mutation()))
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *EngagementTrackingConsentScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	where := x.s.inEngagementTrackingConsent(x.where...)
+	var n int
+	err := x.s.writeEngagementTrackingConsent(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		n, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// Exec is like Save, discarding the count.
+func (x *EngagementTrackingConsentScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_EngagementTrackingConsentScopedUpdate        = TypeScopedUpdate
+	EntityOf_EngagementTrackingConsentScopedUpdate      = "EngagementTrackingConsent"
+	RoleOf_EngagementTrackingConsentScopedUpdate_Where  = RoleStep
+	RoleOf_EngagementTrackingConsentScopedUpdate_Modify = RoleStep
+	RoleOf_EngagementTrackingConsentScopedUpdate_Save   = RoleStep
+	RoleOf_EngagementTrackingConsentScopedUpdate_Exec   = RoleStep
 )
 
 // ErasureScoped reaches Erasure entities of one Workspace.
@@ -41698,6 +42676,24 @@ func (x *OrderScopedCreate) SetNillableCreditedClickAt(v *time.Time) *OrderScope
 
 const RoleOf_OrderScopedCreate_SetNillableCreditedClickAt = RoleStep
 
+// SetCreditedMessageID sets the "credited_message_id" field.
+func (x *OrderScopedCreate) SetCreditedMessageID(v int64) *OrderScopedCreate {
+	x.set = append(x.set, func(b *OrderCreate) { b.SetCreditedMessageID(v) })
+	return x
+}
+
+const RoleOf_OrderScopedCreate_SetCreditedMessageID = RoleStep
+
+// SetNillableCreditedMessageID sets the "credited_message_id" field if the given value is not nil.
+func (x *OrderScopedCreate) SetNillableCreditedMessageID(v *int64) *OrderScopedCreate {
+	if v != nil {
+		x.SetCreditedMessageID(*v)
+	}
+	return x
+}
+
+const RoleOf_OrderScopedCreate_SetNillableCreditedMessageID = RoleStep
+
 // SetContact sets the "contact" edge to the Contact entity.
 func (x *OrderScopedCreate) SetContact(v *Contact) *OrderScopedCreate {
 	x.set = append(x.set, func(b *OrderCreate) { b.SetContact(v) })
@@ -41882,6 +42878,94 @@ func (u *OrderScopedUpsert) ClearContactID() *OrderScopedUpsert {
 }
 
 const RoleOf_OrderScopedUpsert_ClearContactID = RoleStep
+
+// UpdateBroadcastID sets the "broadcast_id" field to the value that was provided on create.
+func (u *OrderScopedUpsert) UpdateBroadcastID() *OrderScopedUpsert {
+	u.u.SetExcluded(order.FieldBroadcastID)
+	return u
+}
+
+const RoleOf_OrderScopedUpsert_UpdateBroadcastID = RoleStep
+
+// ClearBroadcastID clears the value of the "broadcast_id" field.
+func (u *OrderScopedUpsert) ClearBroadcastID() *OrderScopedUpsert {
+	u.u.SetNull(order.FieldBroadcastID)
+	return u
+}
+
+const RoleOf_OrderScopedUpsert_ClearBroadcastID = RoleStep
+
+// UpdateAutomationID sets the "automation_id" field to the value that was provided on create.
+func (u *OrderScopedUpsert) UpdateAutomationID() *OrderScopedUpsert {
+	u.u.SetExcluded(order.FieldAutomationID)
+	return u
+}
+
+const RoleOf_OrderScopedUpsert_UpdateAutomationID = RoleStep
+
+// ClearAutomationID clears the value of the "automation_id" field.
+func (u *OrderScopedUpsert) ClearAutomationID() *OrderScopedUpsert {
+	u.u.SetNull(order.FieldAutomationID)
+	return u
+}
+
+const RoleOf_OrderScopedUpsert_ClearAutomationID = RoleStep
+
+// SetCreditedClickAt sets the "credited_click_at" field.
+func (u *OrderScopedUpsert) SetCreditedClickAt(v time.Time) *OrderScopedUpsert {
+	u.u.Set(order.FieldCreditedClickAt, v)
+	return u
+}
+
+const RoleOf_OrderScopedUpsert_SetCreditedClickAt = RoleStep
+
+// UpdateCreditedClickAt sets the "credited_click_at" field to the value that was provided on create.
+func (u *OrderScopedUpsert) UpdateCreditedClickAt() *OrderScopedUpsert {
+	u.u.SetExcluded(order.FieldCreditedClickAt)
+	return u
+}
+
+const RoleOf_OrderScopedUpsert_UpdateCreditedClickAt = RoleStep
+
+// ClearCreditedClickAt clears the value of the "credited_click_at" field.
+func (u *OrderScopedUpsert) ClearCreditedClickAt() *OrderScopedUpsert {
+	u.u.SetNull(order.FieldCreditedClickAt)
+	return u
+}
+
+const RoleOf_OrderScopedUpsert_ClearCreditedClickAt = RoleStep
+
+// SetCreditedMessageID sets the "credited_message_id" field.
+func (u *OrderScopedUpsert) SetCreditedMessageID(v int64) *OrderScopedUpsert {
+	u.u.Set(order.FieldCreditedMessageID, v)
+	return u
+}
+
+const RoleOf_OrderScopedUpsert_SetCreditedMessageID = RoleStep
+
+// AddCreditedMessageID adds v to the "credited_message_id" field.
+func (u *OrderScopedUpsert) AddCreditedMessageID(v int64) *OrderScopedUpsert {
+	u.u.Add(order.FieldCreditedMessageID, v)
+	return u
+}
+
+const RoleOf_OrderScopedUpsert_AddCreditedMessageID = RoleStep
+
+// UpdateCreditedMessageID sets the "credited_message_id" field to the value that was provided on create.
+func (u *OrderScopedUpsert) UpdateCreditedMessageID() *OrderScopedUpsert {
+	u.u.SetExcluded(order.FieldCreditedMessageID)
+	return u
+}
+
+const RoleOf_OrderScopedUpsert_UpdateCreditedMessageID = RoleStep
+
+// ClearCreditedMessageID clears the value of the "credited_message_id" field.
+func (u *OrderScopedUpsert) ClearCreditedMessageID() *OrderScopedUpsert {
+	u.u.SetNull(order.FieldCreditedMessageID)
+	return u
+}
+
+const RoleOf_OrderScopedUpsert_ClearCreditedMessageID = RoleStep
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
 // target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
@@ -42116,6 +43200,118 @@ func (x *OrderScopedUpdateOne) ClearContactID() *OrderScopedUpdateOne {
 
 const RoleOf_OrderScopedUpdateOne_ClearContactID = RoleStep
 
+// SetBroadcastID sets the "broadcast_id" field.
+func (x *OrderScopedUpdateOne) SetBroadcastID(v int64) *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.SetBroadcastID(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_SetBroadcastID = RoleStep
+
+// SetNillableBroadcastID sets the "broadcast_id" field if the given value is not nil.
+func (x *OrderScopedUpdateOne) SetNillableBroadcastID(v *int64) *OrderScopedUpdateOne {
+	if v != nil {
+		x.SetBroadcastID(*v)
+	}
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_SetNillableBroadcastID = RoleStep
+
+// ClearBroadcastID clears the value of the "broadcast_id" field.
+func (x *OrderScopedUpdateOne) ClearBroadcastID() *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.ClearBroadcastID() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_ClearBroadcastID = RoleStep
+
+// SetAutomationID sets the "automation_id" field.
+func (x *OrderScopedUpdateOne) SetAutomationID(v int64) *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.SetAutomationID(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_SetAutomationID = RoleStep
+
+// SetNillableAutomationID sets the "automation_id" field if the given value is not nil.
+func (x *OrderScopedUpdateOne) SetNillableAutomationID(v *int64) *OrderScopedUpdateOne {
+	if v != nil {
+		x.SetAutomationID(*v)
+	}
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_SetNillableAutomationID = RoleStep
+
+// ClearAutomationID clears the value of the "automation_id" field.
+func (x *OrderScopedUpdateOne) ClearAutomationID() *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.ClearAutomationID() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_ClearAutomationID = RoleStep
+
+// SetCreditedClickAt sets the "credited_click_at" field.
+func (x *OrderScopedUpdateOne) SetCreditedClickAt(v time.Time) *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.SetCreditedClickAt(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_SetCreditedClickAt = RoleStep
+
+// SetNillableCreditedClickAt sets the "credited_click_at" field if the given value is not nil.
+func (x *OrderScopedUpdateOne) SetNillableCreditedClickAt(v *time.Time) *OrderScopedUpdateOne {
+	if v != nil {
+		x.SetCreditedClickAt(*v)
+	}
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_SetNillableCreditedClickAt = RoleStep
+
+// ClearCreditedClickAt clears the value of the "credited_click_at" field.
+func (x *OrderScopedUpdateOne) ClearCreditedClickAt() *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.ClearCreditedClickAt() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_ClearCreditedClickAt = RoleStep
+
+// SetCreditedMessageID sets the "credited_message_id" field.
+func (x *OrderScopedUpdateOne) SetCreditedMessageID(v int64) *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.SetCreditedMessageID(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_SetCreditedMessageID = RoleStep
+
+// SetNillableCreditedMessageID sets the "credited_message_id" field if the given value is not nil.
+func (x *OrderScopedUpdateOne) SetNillableCreditedMessageID(v *int64) *OrderScopedUpdateOne {
+	if v != nil {
+		x.SetCreditedMessageID(*v)
+	}
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_SetNillableCreditedMessageID = RoleStep
+
+// AddCreditedMessageID adds value to the "credited_message_id" field.
+func (x *OrderScopedUpdateOne) AddCreditedMessageID(v int64) *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.AddCreditedMessageID(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_AddCreditedMessageID = RoleStep
+
+// ClearCreditedMessageID clears the value of the "credited_message_id" field.
+func (x *OrderScopedUpdateOne) ClearCreditedMessageID() *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.ClearCreditedMessageID() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_ClearCreditedMessageID = RoleStep
+
 // SetContact sets the "contact" edge to the Contact entity.
 func (x *OrderScopedUpdateOne) SetContact(v *Contact) *OrderScopedUpdateOne {
 	x.set = append(x.set, func(b *OrderUpdateOne) { b.SetContact(v) })
@@ -42131,6 +43327,38 @@ func (x *OrderScopedUpdateOne) ClearContact() *OrderScopedUpdateOne {
 }
 
 const RoleOf_OrderScopedUpdateOne_ClearContact = RoleStep
+
+// SetBroadcast sets the "broadcast" edge to the Broadcast entity.
+func (x *OrderScopedUpdateOne) SetBroadcast(v *Broadcast) *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.SetBroadcast(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_SetBroadcast = RoleStep
+
+// ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
+func (x *OrderScopedUpdateOne) ClearBroadcast() *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.ClearBroadcast() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_ClearBroadcast = RoleStep
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (x *OrderScopedUpdateOne) SetAutomation(v *Automation) *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.SetAutomation(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_SetAutomation = RoleStep
+
+// ClearAutomation clears the "automation" edge to the Automation entity.
+func (x *OrderScopedUpdateOne) ClearAutomation() *OrderScopedUpdateOne {
+	x.set = append(x.set, func(b *OrderUpdateOne) { b.ClearAutomation() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdateOne_ClearAutomation = RoleStep
 
 // AddMovementIDs adds the "movements" edge to the OrderMovement entity by IDs.
 func (x *OrderScopedUpdateOne) AddMovementIDs(ids ...int64) *OrderScopedUpdateOne {
@@ -42289,6 +43517,118 @@ func (x *OrderScopedUpdate) ClearContactID() *OrderScopedUpdate {
 
 const RoleOf_OrderScopedUpdate_ClearContactID = RoleStep
 
+// SetBroadcastID sets the "broadcast_id" field.
+func (x *OrderScopedUpdate) SetBroadcastID(v int64) *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.SetBroadcastID(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_SetBroadcastID = RoleStep
+
+// SetNillableBroadcastID sets the "broadcast_id" field if the given value is not nil.
+func (x *OrderScopedUpdate) SetNillableBroadcastID(v *int64) *OrderScopedUpdate {
+	if v != nil {
+		x.SetBroadcastID(*v)
+	}
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_SetNillableBroadcastID = RoleStep
+
+// ClearBroadcastID clears the value of the "broadcast_id" field.
+func (x *OrderScopedUpdate) ClearBroadcastID() *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.ClearBroadcastID() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_ClearBroadcastID = RoleStep
+
+// SetAutomationID sets the "automation_id" field.
+func (x *OrderScopedUpdate) SetAutomationID(v int64) *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.SetAutomationID(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_SetAutomationID = RoleStep
+
+// SetNillableAutomationID sets the "automation_id" field if the given value is not nil.
+func (x *OrderScopedUpdate) SetNillableAutomationID(v *int64) *OrderScopedUpdate {
+	if v != nil {
+		x.SetAutomationID(*v)
+	}
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_SetNillableAutomationID = RoleStep
+
+// ClearAutomationID clears the value of the "automation_id" field.
+func (x *OrderScopedUpdate) ClearAutomationID() *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.ClearAutomationID() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_ClearAutomationID = RoleStep
+
+// SetCreditedClickAt sets the "credited_click_at" field.
+func (x *OrderScopedUpdate) SetCreditedClickAt(v time.Time) *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.SetCreditedClickAt(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_SetCreditedClickAt = RoleStep
+
+// SetNillableCreditedClickAt sets the "credited_click_at" field if the given value is not nil.
+func (x *OrderScopedUpdate) SetNillableCreditedClickAt(v *time.Time) *OrderScopedUpdate {
+	if v != nil {
+		x.SetCreditedClickAt(*v)
+	}
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_SetNillableCreditedClickAt = RoleStep
+
+// ClearCreditedClickAt clears the value of the "credited_click_at" field.
+func (x *OrderScopedUpdate) ClearCreditedClickAt() *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.ClearCreditedClickAt() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_ClearCreditedClickAt = RoleStep
+
+// SetCreditedMessageID sets the "credited_message_id" field.
+func (x *OrderScopedUpdate) SetCreditedMessageID(v int64) *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.SetCreditedMessageID(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_SetCreditedMessageID = RoleStep
+
+// SetNillableCreditedMessageID sets the "credited_message_id" field if the given value is not nil.
+func (x *OrderScopedUpdate) SetNillableCreditedMessageID(v *int64) *OrderScopedUpdate {
+	if v != nil {
+		x.SetCreditedMessageID(*v)
+	}
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_SetNillableCreditedMessageID = RoleStep
+
+// AddCreditedMessageID adds value to the "credited_message_id" field.
+func (x *OrderScopedUpdate) AddCreditedMessageID(v int64) *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.AddCreditedMessageID(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_AddCreditedMessageID = RoleStep
+
+// ClearCreditedMessageID clears the value of the "credited_message_id" field.
+func (x *OrderScopedUpdate) ClearCreditedMessageID() *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.ClearCreditedMessageID() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_ClearCreditedMessageID = RoleStep
+
 // SetContact sets the "contact" edge to the Contact entity.
 func (x *OrderScopedUpdate) SetContact(v *Contact) *OrderScopedUpdate {
 	x.set = append(x.set, func(b *OrderUpdate) { b.SetContact(v) })
@@ -42304,6 +43644,38 @@ func (x *OrderScopedUpdate) ClearContact() *OrderScopedUpdate {
 }
 
 const RoleOf_OrderScopedUpdate_ClearContact = RoleStep
+
+// SetBroadcast sets the "broadcast" edge to the Broadcast entity.
+func (x *OrderScopedUpdate) SetBroadcast(v *Broadcast) *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.SetBroadcast(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_SetBroadcast = RoleStep
+
+// ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
+func (x *OrderScopedUpdate) ClearBroadcast() *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.ClearBroadcast() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_ClearBroadcast = RoleStep
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (x *OrderScopedUpdate) SetAutomation(v *Automation) *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.SetAutomation(v) })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_SetAutomation = RoleStep
+
+// ClearAutomation clears the "automation" edge to the Automation entity.
+func (x *OrderScopedUpdate) ClearAutomation() *OrderScopedUpdate {
+	x.set = append(x.set, func(b *OrderUpdate) { b.ClearAutomation() })
+	return x
+}
+
+const RoleOf_OrderScopedUpdate_ClearAutomation = RoleStep
 
 // AddMovementIDs adds the "movements" edge to the OrderMovement entity by IDs.
 func (x *OrderScopedUpdate) AddMovementIDs(ids ...int64) *OrderScopedUpdate {
@@ -43454,6 +44826,14 @@ func (x *OutboundMessageScopedCreate) SetNillableDestination(v *string) *Outboun
 
 const RoleOf_OutboundMessageScopedCreate_SetNillableDestination = RoleStep
 
+// SetDestinations sets the "destinations" field.
+func (x *OutboundMessageScopedCreate) SetDestinations(v []string) *OutboundMessageScopedCreate {
+	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetDestinations(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetDestinations = RoleStep
+
 // SetContactID sets the "contact_id" field.
 func (x *OutboundMessageScopedCreate) SetContactID(v int64) *OutboundMessageScopedCreate {
 	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetContactID(v) })
@@ -43759,6 +45139,60 @@ func (x *OutboundMessageScopedCreate) SetNillableCaptured(v *bool) *OutboundMess
 }
 
 const RoleOf_OutboundMessageScopedCreate_SetNillableCaptured = RoleStep
+
+// SetTracked sets the "tracked" field.
+func (x *OutboundMessageScopedCreate) SetTracked(v bool) *OutboundMessageScopedCreate {
+	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetTracked(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetTracked = RoleStep
+
+// SetNillableTracked sets the "tracked" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableTracked(v *bool) *OutboundMessageScopedCreate {
+	if v != nil {
+		x.SetTracked(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetNillableTracked = RoleStep
+
+// SetTrackingDecidedAt sets the "tracking_decided_at" field.
+func (x *OutboundMessageScopedCreate) SetTrackingDecidedAt(v time.Time) *OutboundMessageScopedCreate {
+	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetTrackingDecidedAt(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetTrackingDecidedAt = RoleStep
+
+// SetNillableTrackingDecidedAt sets the "tracking_decided_at" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableTrackingDecidedAt(v *time.Time) *OutboundMessageScopedCreate {
+	if v != nil {
+		x.SetTrackingDecidedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetNillableTrackingDecidedAt = RoleStep
+
+// SetTrackingWithdrawnAt sets the "tracking_withdrawn_at" field.
+func (x *OutboundMessageScopedCreate) SetTrackingWithdrawnAt(v time.Time) *OutboundMessageScopedCreate {
+	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetTrackingWithdrawnAt(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetTrackingWithdrawnAt = RoleStep
+
+// SetNillableTrackingWithdrawnAt sets the "tracking_withdrawn_at" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableTrackingWithdrawnAt(v *time.Time) *OutboundMessageScopedCreate {
+	if v != nil {
+		x.SetTrackingWithdrawnAt(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetNillableTrackingWithdrawnAt = RoleStep
 
 // SetBroadcastID sets the "broadcast_id" field.
 func (x *OutboundMessageScopedCreate) SetBroadcastID(v int64) *OutboundMessageScopedCreate {
@@ -44207,6 +45641,30 @@ func (u *OutboundMessageScopedUpsert) ClearDestination() *OutboundMessageScopedU
 
 const RoleOf_OutboundMessageScopedUpsert_ClearDestination = RoleStep
 
+// SetDestinations sets the "destinations" field.
+func (u *OutboundMessageScopedUpsert) SetDestinations(v []string) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldDestinations, v)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_SetDestinations = RoleStep
+
+// UpdateDestinations sets the "destinations" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateDestinations() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldDestinations)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_UpdateDestinations = RoleStep
+
+// ClearDestinations clears the value of the "destinations" field.
+func (u *OutboundMessageScopedUpsert) ClearDestinations() *OutboundMessageScopedUpsert {
+	u.u.SetNull(outboundmessage.FieldDestinations)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_ClearDestinations = RoleStep
+
 // UpdateContactID sets the "contact_id" field to the value that was provided on create.
 func (u *OutboundMessageScopedUpsert) UpdateContactID() *OutboundMessageScopedUpsert {
 	u.u.SetExcluded(outboundmessage.FieldContactID)
@@ -44592,6 +46050,82 @@ func (u *OutboundMessageScopedUpsert) UpdateCaptured() *OutboundMessageScopedUps
 }
 
 const RoleOf_OutboundMessageScopedUpsert_UpdateCaptured = RoleStep
+
+// SetTracked sets the "tracked" field.
+func (u *OutboundMessageScopedUpsert) SetTracked(v bool) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldTracked, v)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_SetTracked = RoleStep
+
+// UpdateTracked sets the "tracked" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateTracked() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldTracked)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_UpdateTracked = RoleStep
+
+// SetTrackingDecidedAt sets the "tracking_decided_at" field.
+func (u *OutboundMessageScopedUpsert) SetTrackingDecidedAt(v time.Time) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldTrackingDecidedAt, v)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_SetTrackingDecidedAt = RoleStep
+
+const SetsState_OutboundMessageScopedUpsert_SetTrackingDecidedAt = "TrackingDecidedAt"
+
+// UpdateTrackingDecidedAt sets the "tracking_decided_at" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateTrackingDecidedAt() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldTrackingDecidedAt)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_UpdateTrackingDecidedAt = RoleStep
+
+const SetsState_OutboundMessageScopedUpsert_UpdateTrackingDecidedAt = "TrackingDecidedAt"
+
+// ClearTrackingDecidedAt clears the value of the "tracking_decided_at" field.
+func (u *OutboundMessageScopedUpsert) ClearTrackingDecidedAt() *OutboundMessageScopedUpsert {
+	u.u.SetNull(outboundmessage.FieldTrackingDecidedAt)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_ClearTrackingDecidedAt = RoleStep
+
+const ClearsState_OutboundMessageScopedUpsert_ClearTrackingDecidedAt = "TrackingDecidedAt"
+
+// SetTrackingWithdrawnAt sets the "tracking_withdrawn_at" field.
+func (u *OutboundMessageScopedUpsert) SetTrackingWithdrawnAt(v time.Time) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldTrackingWithdrawnAt, v)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_SetTrackingWithdrawnAt = RoleStep
+
+const SetsState_OutboundMessageScopedUpsert_SetTrackingWithdrawnAt = "TrackingWithdrawnAt"
+
+// UpdateTrackingWithdrawnAt sets the "tracking_withdrawn_at" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateTrackingWithdrawnAt() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldTrackingWithdrawnAt)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_UpdateTrackingWithdrawnAt = RoleStep
+
+const SetsState_OutboundMessageScopedUpsert_UpdateTrackingWithdrawnAt = "TrackingWithdrawnAt"
+
+// ClearTrackingWithdrawnAt clears the value of the "tracking_withdrawn_at" field.
+func (u *OutboundMessageScopedUpsert) ClearTrackingWithdrawnAt() *OutboundMessageScopedUpsert {
+	u.u.SetNull(outboundmessage.FieldTrackingWithdrawnAt)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_ClearTrackingWithdrawnAt = RoleStep
+
+const ClearsState_OutboundMessageScopedUpsert_ClearTrackingWithdrawnAt = "TrackingWithdrawnAt"
 
 // UpdateBroadcastID sets the "broadcast_id" field to the value that was provided on create.
 func (u *OutboundMessageScopedUpsert) UpdateBroadcastID() *OutboundMessageScopedUpsert {
@@ -45028,6 +46562,30 @@ func (x *OutboundMessageScopedUpdateOne) ClearDestination() *OutboundMessageScop
 
 const RoleOf_OutboundMessageScopedUpdateOne_ClearDestination = RoleStep
 
+// SetDestinations sets the "destinations" field.
+func (x *OutboundMessageScopedUpdateOne) SetDestinations(v []string) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetDestinations(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetDestinations = RoleStep
+
+// AppendDestinations appends value to the "destinations" field.
+func (x *OutboundMessageScopedUpdateOne) AppendDestinations(v []string) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.AppendDestinations(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_AppendDestinations = RoleStep
+
+// ClearDestinations clears the value of the "destinations" field.
+func (x *OutboundMessageScopedUpdateOne) ClearDestinations() *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.ClearDestinations() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_ClearDestinations = RoleStep
+
 // SetContactID sets the "contact_id" field.
 func (x *OutboundMessageScopedUpdateOne) SetContactID(v int64) *OutboundMessageScopedUpdateOne {
 	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetContactID(v) })
@@ -45455,6 +47013,88 @@ func (x *OutboundMessageScopedUpdateOne) SetNillableCaptured(v *bool) *OutboundM
 }
 
 const RoleOf_OutboundMessageScopedUpdateOne_SetNillableCaptured = RoleStep
+
+// SetTracked sets the "tracked" field.
+func (x *OutboundMessageScopedUpdateOne) SetTracked(v bool) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetTracked(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetTracked = RoleStep
+
+// SetNillableTracked sets the "tracked" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableTracked(v *bool) *OutboundMessageScopedUpdateOne {
+	if v != nil {
+		x.SetTracked(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetNillableTracked = RoleStep
+
+// SetTrackingDecidedAt sets the "tracking_decided_at" field.
+func (x *OutboundMessageScopedUpdateOne) SetTrackingDecidedAt(v time.Time) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetTrackingDecidedAt(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetTrackingDecidedAt = RoleStep
+
+const SetsState_OutboundMessageScopedUpdateOne_SetTrackingDecidedAt = "TrackingDecidedAt"
+
+// SetNillableTrackingDecidedAt sets the "tracking_decided_at" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableTrackingDecidedAt(v *time.Time) *OutboundMessageScopedUpdateOne {
+	if v != nil {
+		x.SetTrackingDecidedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetNillableTrackingDecidedAt = RoleStep
+
+const SetsState_OutboundMessageScopedUpdateOne_SetNillableTrackingDecidedAt = "TrackingDecidedAt"
+
+// ClearTrackingDecidedAt clears the value of the "tracking_decided_at" field.
+func (x *OutboundMessageScopedUpdateOne) ClearTrackingDecidedAt() *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.ClearTrackingDecidedAt() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_ClearTrackingDecidedAt = RoleStep
+
+const ClearsState_OutboundMessageScopedUpdateOne_ClearTrackingDecidedAt = "TrackingDecidedAt"
+
+// SetTrackingWithdrawnAt sets the "tracking_withdrawn_at" field.
+func (x *OutboundMessageScopedUpdateOne) SetTrackingWithdrawnAt(v time.Time) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetTrackingWithdrawnAt(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetTrackingWithdrawnAt = RoleStep
+
+const SetsState_OutboundMessageScopedUpdateOne_SetTrackingWithdrawnAt = "TrackingWithdrawnAt"
+
+// SetNillableTrackingWithdrawnAt sets the "tracking_withdrawn_at" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableTrackingWithdrawnAt(v *time.Time) *OutboundMessageScopedUpdateOne {
+	if v != nil {
+		x.SetTrackingWithdrawnAt(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetNillableTrackingWithdrawnAt = RoleStep
+
+const SetsState_OutboundMessageScopedUpdateOne_SetNillableTrackingWithdrawnAt = "TrackingWithdrawnAt"
+
+// ClearTrackingWithdrawnAt clears the value of the "tracking_withdrawn_at" field.
+func (x *OutboundMessageScopedUpdateOne) ClearTrackingWithdrawnAt() *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.ClearTrackingWithdrawnAt() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_ClearTrackingWithdrawnAt = RoleStep
+
+const ClearsState_OutboundMessageScopedUpdateOne_ClearTrackingWithdrawnAt = "TrackingWithdrawnAt"
 
 // SetBroadcastID sets the "broadcast_id" field.
 func (x *OutboundMessageScopedUpdateOne) SetBroadcastID(v int64) *OutboundMessageScopedUpdateOne {
@@ -46019,6 +47659,30 @@ func (x *OutboundMessageScopedUpdate) ClearDestination() *OutboundMessageScopedU
 
 const RoleOf_OutboundMessageScopedUpdate_ClearDestination = RoleStep
 
+// SetDestinations sets the "destinations" field.
+func (x *OutboundMessageScopedUpdate) SetDestinations(v []string) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetDestinations(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetDestinations = RoleStep
+
+// AppendDestinations appends value to the "destinations" field.
+func (x *OutboundMessageScopedUpdate) AppendDestinations(v []string) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.AppendDestinations(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_AppendDestinations = RoleStep
+
+// ClearDestinations clears the value of the "destinations" field.
+func (x *OutboundMessageScopedUpdate) ClearDestinations() *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.ClearDestinations() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_ClearDestinations = RoleStep
+
 // SetContactID sets the "contact_id" field.
 func (x *OutboundMessageScopedUpdate) SetContactID(v int64) *OutboundMessageScopedUpdate {
 	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetContactID(v) })
@@ -46446,6 +48110,88 @@ func (x *OutboundMessageScopedUpdate) SetNillableCaptured(v *bool) *OutboundMess
 }
 
 const RoleOf_OutboundMessageScopedUpdate_SetNillableCaptured = RoleStep
+
+// SetTracked sets the "tracked" field.
+func (x *OutboundMessageScopedUpdate) SetTracked(v bool) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetTracked(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetTracked = RoleStep
+
+// SetNillableTracked sets the "tracked" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableTracked(v *bool) *OutboundMessageScopedUpdate {
+	if v != nil {
+		x.SetTracked(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetNillableTracked = RoleStep
+
+// SetTrackingDecidedAt sets the "tracking_decided_at" field.
+func (x *OutboundMessageScopedUpdate) SetTrackingDecidedAt(v time.Time) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetTrackingDecidedAt(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetTrackingDecidedAt = RoleStep
+
+const SetsState_OutboundMessageScopedUpdate_SetTrackingDecidedAt = "TrackingDecidedAt"
+
+// SetNillableTrackingDecidedAt sets the "tracking_decided_at" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableTrackingDecidedAt(v *time.Time) *OutboundMessageScopedUpdate {
+	if v != nil {
+		x.SetTrackingDecidedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetNillableTrackingDecidedAt = RoleStep
+
+const SetsState_OutboundMessageScopedUpdate_SetNillableTrackingDecidedAt = "TrackingDecidedAt"
+
+// ClearTrackingDecidedAt clears the value of the "tracking_decided_at" field.
+func (x *OutboundMessageScopedUpdate) ClearTrackingDecidedAt() *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.ClearTrackingDecidedAt() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_ClearTrackingDecidedAt = RoleStep
+
+const ClearsState_OutboundMessageScopedUpdate_ClearTrackingDecidedAt = "TrackingDecidedAt"
+
+// SetTrackingWithdrawnAt sets the "tracking_withdrawn_at" field.
+func (x *OutboundMessageScopedUpdate) SetTrackingWithdrawnAt(v time.Time) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetTrackingWithdrawnAt(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetTrackingWithdrawnAt = RoleStep
+
+const SetsState_OutboundMessageScopedUpdate_SetTrackingWithdrawnAt = "TrackingWithdrawnAt"
+
+// SetNillableTrackingWithdrawnAt sets the "tracking_withdrawn_at" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableTrackingWithdrawnAt(v *time.Time) *OutboundMessageScopedUpdate {
+	if v != nil {
+		x.SetTrackingWithdrawnAt(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetNillableTrackingWithdrawnAt = RoleStep
+
+const SetsState_OutboundMessageScopedUpdate_SetNillableTrackingWithdrawnAt = "TrackingWithdrawnAt"
+
+// ClearTrackingWithdrawnAt clears the value of the "tracking_withdrawn_at" field.
+func (x *OutboundMessageScopedUpdate) ClearTrackingWithdrawnAt() *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.ClearTrackingWithdrawnAt() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_ClearTrackingWithdrawnAt = RoleStep
+
+const ClearsState_OutboundMessageScopedUpdate_ClearTrackingWithdrawnAt = "TrackingWithdrawnAt"
 
 // SetBroadcastID sets the "broadcast_id" field.
 func (x *OutboundMessageScopedUpdate) SetBroadcastID(v int64) *OutboundMessageScopedUpdate {

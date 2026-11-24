@@ -285,6 +285,18 @@ func (f EmailTemplateFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.EmailTemplateMutation", m)
 }
 
+// The EngagementTrackingConsentFunc type is an adapter to allow the use of ordinary
+// function as EngagementTrackingConsent mutator.
+type EngagementTrackingConsentFunc func(context.Context, *ent.EngagementTrackingConsentMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f EngagementTrackingConsentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.EngagementTrackingConsentMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.EngagementTrackingConsentMutation", m)
+}
+
 // The ErasureFunc type is an adapter to allow the use of ordinary
 // function as Erasure mutator.
 type ErasureFunc func(context.Context, *ent.ErasureMutation) (ent.Value, error)

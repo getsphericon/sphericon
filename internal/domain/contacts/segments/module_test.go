@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -118,7 +119,34 @@ func TestPreviewAndCountAgree(t *testing.T) {
 
 	count, err := m.Count(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID)
 	require.NoError(t, err)
-	assert.Equal(t, want, count)
+	assert.Equal(t, want, count.Count)
+}
+
+// A Segment that counts opens leaves out a Contact whose address refused tracking, and its
+// preview and count both say so (ADR 0123). Massive's sunset Segment holds Ann, who opened nothing;
+// Bob and Cara opened, and stay out as before.
+func TestPreviewAndCountReportTheContactsLeftOutForUnknownEngagement(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := testhelper.Module[*segments.Module](env)
+	ctx := context.Background()
+	s := env.DB.Scoped(fixtures.MassiveID)
+	stored, err := s.Segment().Get(ctx, fixtures.SegmentMassiveUnengagedID)
+	require.NoError(t, err)
+	before, err := m.Count(ctx, s, fixtures.SegmentMassiveUnengagedID)
+	require.NoError(t, err)
+
+	_, err = testhelper.Module[*engagementtracking.Module](env).Record(ctx, s, engagementtracking.RecordInput{
+		Channel: channels.Email, Destination: fixtures.MassiveAnnEmail, State: engagementtracking.Denied, Provenance: engagementtracking.Manual,
+	})
+	require.NoError(t, err)
+	preview, err := m.Preview(ctx, s, segments.PreviewInput{Condition: &stored.Condition})
+	require.NoError(t, err)
+	count, err := m.Count(ctx, s, fixtures.SegmentMassiveUnengagedID)
+	require.NoError(t, err)
+
+	assert.Equal(t, segments.Counts{Count: 1}, before, "Ann, while she is tracked")
+	assert.Equal(t, segments.Counts{Count: 0, UnknownEngagement: 1}, preview)
+	assert.Equal(t, preview, count)
 }
 
 func TestPreviewAndCountErrors(t *testing.T) {
@@ -175,7 +203,7 @@ func TestASegmentOfContactsThatCanBeTextedCountsAndListsThem(t *testing.T) {
 		for i, c := range page.Items {
 			ids[i] = c.ID
 		}
-		return count, ids
+		return count.Count, ids
 	}
 	all, err := ws.Contact().Query().Count(ctx)
 	require.NoError(t, err)

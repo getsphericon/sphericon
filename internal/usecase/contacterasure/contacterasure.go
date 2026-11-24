@@ -16,7 +16,10 @@
 // adding one step, or a foreign key that does the work, not a second code path. The Contact row
 // goes last, through the contacts module's unchecked removal contactsunchecked.Module.DeleteIn. Each step is
 // an unchecked operation of its owner's subpackage (`<module>unchecked`), which only a use case may
-// import (ADR 0110). The record of an Erasure (the Erasures stream, ADR 0045)
+// import (ADR 0110), but one: a refusal's reach-back for the subject's refused Destinations, which
+// the Erasure runs itself before it blanks what the reach-back finds the messages by (ADR 0113), and
+// which calls the checked operations of its owners (outboundmessages, orders) as the reach-back's
+// own use case does, with eventsunchecked for the Events. The record of an Erasure (the Erasures stream, ADR 0045)
 // is written from the contact.erased Event by its own consumer, not here.
 package contacterasure
 
@@ -40,6 +43,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts/contactsunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking/engagementtrackingunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions/suppressionsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes/unsubscribesunchecked"
@@ -50,6 +56,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules/rulesunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages/capturedmessagesunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages/outboundmessagesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/events/eventsunchecked"
@@ -186,15 +193,26 @@ type UseCase struct {
 	optOuts       *unsubscribesunchecked.Module
 	suppressions  *suppressionsunchecked.Module
 	confirmations *confirmationsunchecked.Module
+	events        *eventsunchecked.Module
 	// chats reads the Telegram users Bound to the Contact.
 	chats *bindings.Chats
+	// tracking reads the Engagement tracking consent whose refusals an Erasure keeps, and
+	// trackingSteps deletes its grants.
+	tracking      *engagementtracking.Module
+	trackingSteps *engagementtrackingunchecked.Module
+	// messages and credits take what a refusal of the subject's Destinations deletes, should the
+	// Erasure come before the refusal's reach-back.
+	messages *outboundmessages.Module
+	credits  *orders.Module
 }
 
 // New builds the Contact erasure use case over the bus whose transaction every erasure runs in,
 // the Broadcasts whose pending work it cancels, the contacts module whose unchecked removal of the
-// Contact row it builds, the opt-outs whose standing stops it keeps and the chats whose Bindings
-// to the Contact it reads; now is the Instance clock the Broadcasts' unchecked operations read.
-func New(bus *events.Bus, catalogue *broadcasts.Module, people *contacts.Module, unsubs *unsubscribes.Module, chats *bindings.Chats, now func() time.Time) *UseCase {
+// Contact row it builds, the opt-outs whose standing stops it keeps, the chats whose Bindings
+// to the Contact it reads, the Engagement tracking consent whose refusals it keeps, and the Outbound
+// messages and Orders whose tracked engagement a refusal deletes; now is the Instance clock the
+// Broadcasts' unchecked operations read.
+func New(bus *events.Bus, catalogue *broadcasts.Module, people *contacts.Module, unsubs *unsubscribes.Module, chats *bindings.Chats, tracking *engagementtracking.Module, messages *outboundmessages.Module, credits *orders.Module, now func() time.Time) *UseCase {
 	return &UseCase{
 		bus: bus, broadcasts: broadcastsunchecked.New(catalogue, bus, now), unsubs: unsubs,
 		automations: automationsunchecked.New(bus), rules: rulesunchecked.New(bus),
@@ -207,7 +225,12 @@ func New(bus *events.Bus, catalogue *broadcasts.Module, people *contacts.Module,
 		optOuts:       unsubscribesunchecked.New(),
 		suppressions:  suppressionsunchecked.New(),
 		confirmations: confirmationsunchecked.New(),
+		events:        eventsunchecked.New(),
 		chats:         chats,
+		tracking:      tracking,
+		trackingSteps: engagementtrackingunchecked.New(),
+		messages:      messages,
+		credits:       credits,
 	}
 }
 
@@ -266,14 +289,27 @@ func (u *UseCase) steps() []step {
 		// The queued event consumer jobs whose envelope names the subject: the bus inserted them,
 		// and the purge shares Erasure's transaction.
 		func(ctx context.Context, s *ent.Scoped, t *Target, pub events.PurgingPublisher) error {
-			return pub.PurgeEventJobs(ctx, s.WorkspaceID(), t.ContactID, t.destinations())
+			named, err := u.namedDestinations(ctx, s, t)
+			if err != nil {
+				return err
+			}
+			return pub.PurgeEventJobs(ctx, s.WorkspaceID(), t.ContactID, named)
 		},
 		// The queued webhook deliveries whose payload names the subject; the event envelope's
 		// owner knows that payload shape.
 		func(ctx context.Context, s *ent.Scoped, t *Target, pub events.PurgingPublisher) error {
-			return pub.PurgeWebhookJobs(ctx, s.WorkspaceID(), t.ContactID, t.destinations())
+			named, err := u.namedDestinations(ctx, s, t)
+			if err != nil {
+				return err
+			}
+			return pub.PurgeWebhookJobs(ctx, s.WorkspaceID(), t.ContactID, named)
 		},
 		u.eraseConsentStamps,
+		// What a refusal of the subject's Destinations deletes, should its reach-back not have run
+		// yet: the steps below blank what the reach-back finds the messages by.
+		u.withdrawRefused,
+		// The tracking grants of the subject's addresses; their refusals stay (ADR 0120).
+		u.eraseTracking,
 		// The Outbound message module deletes the short links of the Contact's messages, before
 		// anonymizeDelivery clears the contact_id they are found by.
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
@@ -282,7 +318,9 @@ func (u *UseCase) steps() []step {
 		// The bus, which stores the Events, deletes the subject's customer-tracked Events and
 		// anonymizes its system Events in place.
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-			return eventsunchecked.EraseSubject(ctx, s, t.ContactID, t.Phone, t.VisitorIDs)
+			return u.events.EraseSubject(ctx, s, eventsunchecked.Subject{
+				ContactID: t.ContactID, Phone: t.Phone, Addresses: t.Destinations, VisitorIDs: t.VisitorIDs,
+			})
 		},
 		// The Visitors, and with them their Bindings and Start tokens. Telegram opt-outs are not
 		// here: they are keyed by the user id and stay.

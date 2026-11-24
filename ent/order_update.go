@@ -11,6 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/ordermovement"
@@ -72,6 +74,93 @@ func (_u *OrderUpdate) ClearContactID() *OrderUpdate {
 	return _u
 }
 
+// SetBroadcastID sets the "broadcast_id" field.
+func (_u *OrderUpdate) SetBroadcastID(v int64) *OrderUpdate {
+	_u.mutation.SetBroadcastID(v)
+	return _u
+}
+
+// SetNillableBroadcastID sets the "broadcast_id" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableBroadcastID(v *int64) *OrderUpdate {
+	if v != nil {
+		_u.SetBroadcastID(*v)
+	}
+	return _u
+}
+
+// ClearBroadcastID clears the value of the "broadcast_id" field.
+func (_u *OrderUpdate) ClearBroadcastID() *OrderUpdate {
+	_u.mutation.ClearBroadcastID()
+	return _u
+}
+
+// SetAutomationID sets the "automation_id" field.
+func (_u *OrderUpdate) SetAutomationID(v int64) *OrderUpdate {
+	_u.mutation.SetAutomationID(v)
+	return _u
+}
+
+// SetNillableAutomationID sets the "automation_id" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableAutomationID(v *int64) *OrderUpdate {
+	if v != nil {
+		_u.SetAutomationID(*v)
+	}
+	return _u
+}
+
+// ClearAutomationID clears the value of the "automation_id" field.
+func (_u *OrderUpdate) ClearAutomationID() *OrderUpdate {
+	_u.mutation.ClearAutomationID()
+	return _u
+}
+
+// SetCreditedClickAt sets the "credited_click_at" field.
+func (_u *OrderUpdate) SetCreditedClickAt(v time.Time) *OrderUpdate {
+	_u.mutation.SetCreditedClickAt(v)
+	return _u
+}
+
+// SetNillableCreditedClickAt sets the "credited_click_at" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableCreditedClickAt(v *time.Time) *OrderUpdate {
+	if v != nil {
+		_u.SetCreditedClickAt(*v)
+	}
+	return _u
+}
+
+// ClearCreditedClickAt clears the value of the "credited_click_at" field.
+func (_u *OrderUpdate) ClearCreditedClickAt() *OrderUpdate {
+	_u.mutation.ClearCreditedClickAt()
+	return _u
+}
+
+// SetCreditedMessageID sets the "credited_message_id" field.
+func (_u *OrderUpdate) SetCreditedMessageID(v int64) *OrderUpdate {
+	_u.mutation.ResetCreditedMessageID()
+	_u.mutation.SetCreditedMessageID(v)
+	return _u
+}
+
+// SetNillableCreditedMessageID sets the "credited_message_id" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableCreditedMessageID(v *int64) *OrderUpdate {
+	if v != nil {
+		_u.SetCreditedMessageID(*v)
+	}
+	return _u
+}
+
+// AddCreditedMessageID adds value to the "credited_message_id" field.
+func (_u *OrderUpdate) AddCreditedMessageID(v int64) *OrderUpdate {
+	_u.mutation.AddCreditedMessageID(v)
+	return _u
+}
+
+// ClearCreditedMessageID clears the value of the "credited_message_id" field.
+func (_u *OrderUpdate) ClearCreditedMessageID() *OrderUpdate {
+	_u.mutation.ClearCreditedMessageID()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *OrderUpdate) SetWorkspace(v *Workspace) *OrderUpdate {
 	return _u.SetWorkspaceID(v.ID)
@@ -80,6 +169,16 @@ func (_u *OrderUpdate) SetWorkspace(v *Workspace) *OrderUpdate {
 // SetContact sets the "contact" edge to the Contact entity.
 func (_u *OrderUpdate) SetContact(v *Contact) *OrderUpdate {
 	return _u.SetContactID(v.ID)
+}
+
+// SetBroadcast sets the "broadcast" edge to the Broadcast entity.
+func (_u *OrderUpdate) SetBroadcast(v *Broadcast) *OrderUpdate {
+	return _u.SetBroadcastID(v.ID)
+}
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (_u *OrderUpdate) SetAutomation(v *Automation) *OrderUpdate {
+	return _u.SetAutomationID(v.ID)
 }
 
 // AddMovementIDs adds the "movements" edge to the OrderMovement entity by IDs.
@@ -111,6 +210,18 @@ func (_u *OrderUpdate) ClearWorkspace() *OrderUpdate {
 // ClearContact clears the "contact" edge to the Contact entity.
 func (_u *OrderUpdate) ClearContact() *OrderUpdate {
 	_u.mutation.ClearContact()
+	return _u
+}
+
+// ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
+func (_u *OrderUpdate) ClearBroadcast() *OrderUpdate {
+	_u.mutation.ClearBroadcast()
+	return _u
+}
+
+// ClearAutomation clears the "automation" edge to the Automation entity.
+func (_u *OrderUpdate) ClearAutomation() *OrderUpdate {
+	_u.mutation.ClearAutomation()
 	return _u
 }
 
@@ -200,8 +311,20 @@ func (_u *OrderUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(order.FieldUpdatedAt, field.TypeTime, value)
 	}
+	if value, ok := _u.mutation.CreditedClickAt(); ok {
+		_spec.SetField(order.FieldCreditedClickAt, field.TypeTime, value)
+	}
 	if _u.mutation.CreditedClickAtCleared() {
 		_spec.ClearField(order.FieldCreditedClickAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.CreditedMessageID(); ok {
+		_spec.SetField(order.FieldCreditedMessageID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedCreditedMessageID(); ok {
+		_spec.AddField(order.FieldCreditedMessageID, field.TypeInt64, value)
+	}
+	if _u.mutation.CreditedMessageIDCleared() {
+		_spec.ClearField(order.FieldCreditedMessageID, field.TypeInt64)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -254,6 +377,64 @@ func (_u *OrderUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BroadcastCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   order.BroadcastTable,
+			Columns: []string{order.BroadcastColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcast.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BroadcastIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   order.BroadcastTable,
+			Columns: []string{order.BroadcastColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcast.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.AutomationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   order.AutomationTable,
+			Columns: []string{order.AutomationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automation.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AutomationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   order.AutomationTable,
+			Columns: []string{order.AutomationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automation.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -368,6 +549,93 @@ func (_u *OrderUpdateOne) ClearContactID() *OrderUpdateOne {
 	return _u
 }
 
+// SetBroadcastID sets the "broadcast_id" field.
+func (_u *OrderUpdateOne) SetBroadcastID(v int64) *OrderUpdateOne {
+	_u.mutation.SetBroadcastID(v)
+	return _u
+}
+
+// SetNillableBroadcastID sets the "broadcast_id" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableBroadcastID(v *int64) *OrderUpdateOne {
+	if v != nil {
+		_u.SetBroadcastID(*v)
+	}
+	return _u
+}
+
+// ClearBroadcastID clears the value of the "broadcast_id" field.
+func (_u *OrderUpdateOne) ClearBroadcastID() *OrderUpdateOne {
+	_u.mutation.ClearBroadcastID()
+	return _u
+}
+
+// SetAutomationID sets the "automation_id" field.
+func (_u *OrderUpdateOne) SetAutomationID(v int64) *OrderUpdateOne {
+	_u.mutation.SetAutomationID(v)
+	return _u
+}
+
+// SetNillableAutomationID sets the "automation_id" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableAutomationID(v *int64) *OrderUpdateOne {
+	if v != nil {
+		_u.SetAutomationID(*v)
+	}
+	return _u
+}
+
+// ClearAutomationID clears the value of the "automation_id" field.
+func (_u *OrderUpdateOne) ClearAutomationID() *OrderUpdateOne {
+	_u.mutation.ClearAutomationID()
+	return _u
+}
+
+// SetCreditedClickAt sets the "credited_click_at" field.
+func (_u *OrderUpdateOne) SetCreditedClickAt(v time.Time) *OrderUpdateOne {
+	_u.mutation.SetCreditedClickAt(v)
+	return _u
+}
+
+// SetNillableCreditedClickAt sets the "credited_click_at" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableCreditedClickAt(v *time.Time) *OrderUpdateOne {
+	if v != nil {
+		_u.SetCreditedClickAt(*v)
+	}
+	return _u
+}
+
+// ClearCreditedClickAt clears the value of the "credited_click_at" field.
+func (_u *OrderUpdateOne) ClearCreditedClickAt() *OrderUpdateOne {
+	_u.mutation.ClearCreditedClickAt()
+	return _u
+}
+
+// SetCreditedMessageID sets the "credited_message_id" field.
+func (_u *OrderUpdateOne) SetCreditedMessageID(v int64) *OrderUpdateOne {
+	_u.mutation.ResetCreditedMessageID()
+	_u.mutation.SetCreditedMessageID(v)
+	return _u
+}
+
+// SetNillableCreditedMessageID sets the "credited_message_id" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableCreditedMessageID(v *int64) *OrderUpdateOne {
+	if v != nil {
+		_u.SetCreditedMessageID(*v)
+	}
+	return _u
+}
+
+// AddCreditedMessageID adds value to the "credited_message_id" field.
+func (_u *OrderUpdateOne) AddCreditedMessageID(v int64) *OrderUpdateOne {
+	_u.mutation.AddCreditedMessageID(v)
+	return _u
+}
+
+// ClearCreditedMessageID clears the value of the "credited_message_id" field.
+func (_u *OrderUpdateOne) ClearCreditedMessageID() *OrderUpdateOne {
+	_u.mutation.ClearCreditedMessageID()
+	return _u
+}
+
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *OrderUpdateOne) SetWorkspace(v *Workspace) *OrderUpdateOne {
 	return _u.SetWorkspaceID(v.ID)
@@ -376,6 +644,16 @@ func (_u *OrderUpdateOne) SetWorkspace(v *Workspace) *OrderUpdateOne {
 // SetContact sets the "contact" edge to the Contact entity.
 func (_u *OrderUpdateOne) SetContact(v *Contact) *OrderUpdateOne {
 	return _u.SetContactID(v.ID)
+}
+
+// SetBroadcast sets the "broadcast" edge to the Broadcast entity.
+func (_u *OrderUpdateOne) SetBroadcast(v *Broadcast) *OrderUpdateOne {
+	return _u.SetBroadcastID(v.ID)
+}
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (_u *OrderUpdateOne) SetAutomation(v *Automation) *OrderUpdateOne {
+	return _u.SetAutomationID(v.ID)
 }
 
 // AddMovementIDs adds the "movements" edge to the OrderMovement entity by IDs.
@@ -407,6 +685,18 @@ func (_u *OrderUpdateOne) ClearWorkspace() *OrderUpdateOne {
 // ClearContact clears the "contact" edge to the Contact entity.
 func (_u *OrderUpdateOne) ClearContact() *OrderUpdateOne {
 	_u.mutation.ClearContact()
+	return _u
+}
+
+// ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
+func (_u *OrderUpdateOne) ClearBroadcast() *OrderUpdateOne {
+	_u.mutation.ClearBroadcast()
+	return _u
+}
+
+// ClearAutomation clears the "automation" edge to the Automation entity.
+func (_u *OrderUpdateOne) ClearAutomation() *OrderUpdateOne {
+	_u.mutation.ClearAutomation()
 	return _u
 }
 
@@ -526,8 +816,20 @@ func (_u *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error)
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(order.FieldUpdatedAt, field.TypeTime, value)
 	}
+	if value, ok := _u.mutation.CreditedClickAt(); ok {
+		_spec.SetField(order.FieldCreditedClickAt, field.TypeTime, value)
+	}
 	if _u.mutation.CreditedClickAtCleared() {
 		_spec.ClearField(order.FieldCreditedClickAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.CreditedMessageID(); ok {
+		_spec.SetField(order.FieldCreditedMessageID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedCreditedMessageID(); ok {
+		_spec.AddField(order.FieldCreditedMessageID, field.TypeInt64, value)
+	}
+	if _u.mutation.CreditedMessageIDCleared() {
+		_spec.ClearField(order.FieldCreditedMessageID, field.TypeInt64)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -580,6 +882,64 @@ func (_u *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error)
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(contact.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BroadcastCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   order.BroadcastTable,
+			Columns: []string{order.BroadcastColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcast.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BroadcastIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   order.BroadcastTable,
+			Columns: []string{order.BroadcastColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcast.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.AutomationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   order.AutomationTable,
+			Columns: []string{order.AutomationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automation.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AutomationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   order.AutomationTable,
+			Columns: []string{order.AutomationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automation.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

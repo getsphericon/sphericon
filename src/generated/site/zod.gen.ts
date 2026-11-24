@@ -453,6 +453,49 @@ export const zEmailBroadcastContentInput = z.strictObject({
 });
 
 /**
+ * A Channel whose messages track opens and clicks, so a Destination on it can consent to being tracked (ADR 0120)
+ */
+export const zEngagementTrackingChannel = z.enum([
+  'email',
+  'sms',
+  'telegram'
+]);
+
+/**
+ * Whether a Destination's opens and clicks are tracked
+ */
+export const zEngagementTrackingDecision = z.enum(['track', 'dont_track']);
+
+/**
+ * What became of an Engagement tracking observation: it set the consent (`applied`), or it occurred before the consent standing and changed nothing (`superseded`, recorded in the contact's history as `contact.consent_superseded`)
+ */
+export const zEngagementTrackingOutcome = z.enum(['applied', 'superseded']);
+
+/**
+ * Who recorded an Engagement tracking consent: the person on a page reached from a message (page), a member of the Workspace on the Contact card (manual), the customer through the API or an import (imported), or an On-site form's checkbox (onsite_form). A `denied` applies from any of them; only the person lifts one
+ */
+export const zEngagementTrackingProvenance = z.enum([
+  'page',
+  'manual',
+  'imported',
+  'onsite_form'
+]);
+
+/**
+ * What a Destination's Engagement tracking consent reads as: `granted` or `denied` as recorded, or `default` where nothing is recorded and the Workspace's default decides
+ */
+export const zEngagementTrackingReading = z.enum([
+  'granted',
+  'denied',
+  'default'
+]);
+
+/**
+ * Whether a Destination agreed to have its opens and clicks tracked (ADR 0120)
+ */
+export const zEngagementTrackingState = z.enum(['granted', 'denied']);
+
+/**
  * Why an Enrollment failed. A closed set: `invalid_body` (an HTTP step's body did not render
  * to valid JSON), `timeout` (no answer in time), `blocked_address` (the URL names an address
  * this instance does not permit), `http_status` (a non-2xx answer, see `status`) and
@@ -1318,15 +1361,18 @@ export const zSiteAnalyticsContacts = z.object({
 });
 
 /**
- * Email engagement for the Broadcast and Automation messages sent in the selected range
- * (the send cohort; a Transactional message is not in it), from delivery logs. Each message
- * counts once, not each person. Opens/clicks are the first human open/click stamped on the
- * message and are counted among that cohort, so the counts reconcile and the rates stay in [0,1].
+ * Email engagement for the tracked Broadcast and Automation messages sent in the selected range
+ * (the send cohort; a Transactional message is not in it, and neither is a message sent untracked
+ * or whose tracking was withdrawn since, ADR 0120), from delivery logs. Each message counts once,
+ * not each person. Opens/clicks are the first human open/click stamped on the message and are
+ * counted among that cohort, so the counts reconcile and the rates stay in [0,1]. The untracked
+ * messages are counted beside it.
  */
 export const zSiteAnalyticsEmail = z.object({
   sentCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   openedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   clickedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  untrackedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   openRate: z.number(),
   clickRate: z.number(),
   clickToOpenRate: z.number()
@@ -1383,13 +1429,14 @@ export const zSiteAnalyticsClicksByLink = z.object({
 
 /**
  * One Report day of the cohort (ADR 0057), zero-filled across the range. Opened/clicked
- * count the messages sent that day that were later opened/clicked.
+ * count the tracked messages sent that day that were later opened/clicked.
  */
 export const zSiteAnalyticsPoint = z.object({
   date: z.string(),
   sent: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   opened: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  clicked: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+  clicked: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  untracked: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
 /**
@@ -1553,6 +1600,7 @@ export const zSiteBroadcastStats = z.object({
   cancelledCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   openedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
   clickedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  untrackedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   unsubscribedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   deliveredCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
   undeliveredCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
@@ -2063,7 +2111,17 @@ export const zSitePendingSignup = z.object({
  */
 export const zSitePreviewSegmentResult = z.object({
   count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  unknownEngagement: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   recipients: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
+});
+
+/**
+ * An Engagement tracking consent a member records on the Contact card for one of the contact's Destinations (ADR 0120), as `manual`
+ */
+export const zSiteRecordEngagementTrackingInput = z.strictObject({
+  channel: zEngagementTrackingChannel,
+  destination: z.string().max(320),
+  state: zEngagementTrackingState
 });
 
 /**
@@ -2234,6 +2292,14 @@ export const zSiteSetConfirmedOptInInput = z.strictObject({
 export const zSiteSetDomainJoinInput = z.strictObject({
   revision: zRevision,
   enabled: z.boolean()
+});
+
+/**
+ * Set the Engagement tracking default (ADR 0120)
+ */
+export const zSiteSetEngagementTrackingDefaultInput = z.strictObject({
+  revision: zRevision,
+  engagementTrackingDefault: zEngagementTrackingDecision
 });
 
 /**
@@ -2549,6 +2615,78 @@ export const zSmtpConfigInput = z.strictObject({
 export const zSortDirection = z.enum(['asc', 'desc']);
 
 /**
+ * How a test of a Contact's Engagement tracking consent compares it with a state: it reads as
+ * the state, or it does not
+ */
+export const zStateOperator = z.enum(['eq', 'neq']);
+
+/**
+ * A test of a Contact's Engagement tracking consent against a state. eq holds where the consent
+ * reads as `value`; neq holds everywhere else, where none is recorded included, so a test and its
+ * negation split every Contact.
+ */
+export const zEngagementTrackingStateTest = z.object({
+  kind: z.enum(['text']),
+  operator: zStateOperator,
+  value: zEngagementTrackingState
+});
+
+/**
+ * A test of a Contact's Engagement tracking consent against a state. eq holds where the consent
+ * reads as `value`; neq holds everywhere else, where none is recorded included, so a test and its
+ * negation split every Contact.
+ */
+export const zEngagementTrackingStateTestInput = z.strictObject({
+  kind: z.enum(['text']),
+  operator: zStateOperator,
+  value: zEngagementTrackingState
+});
+
+/**
+ * What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
+ * comparison with `granted` or `denied`, or a presence test of whether any is recorded.
+ */
+export const zEngagementTrackingTest = z.discriminatedUnion('kind', [
+  zEngagementTrackingStateTest.extend({ kind: z.literal('text') }),
+  zPresenceTest.extend({ kind: z.literal('presence') })
+]);
+
+/**
+ * A test of the Contact's Engagement tracking consent on one Channel (ADR 0120), read live as
+ * recorded, whatever the Workspace's default: on email the consent of its email address, on sms of
+ * its phone, on telegram of its own chats, which read `denied` when any is denied, `granted` when it
+ * has one and all are granted, and as none recorded otherwise. A Contact without a Destination on
+ * the Channel has none recorded.
+ */
+export const zEngagementTrackingLeaf = z.object({
+  kind: z.enum(['engagementTracking']),
+  channel: zEngagementTrackingChannel,
+  test: zEngagementTrackingTest
+});
+
+/**
+ * What a test of a Contact's Engagement tracking consent on one Channel asks of it, by `kind`: a
+ * comparison with `granted` or `denied`, or a presence test of whether any is recorded.
+ */
+export const zEngagementTrackingTestInput = z.discriminatedUnion('kind', [
+  zEngagementTrackingStateTestInput.extend({ kind: z.literal('text') }),
+  zPresenceTestInput.extend({ kind: z.literal('presence') })
+]);
+
+/**
+ * A test of the Contact's Engagement tracking consent on one Channel (ADR 0120), read live as
+ * recorded, whatever the Workspace's default: on email the consent of its email address, on sms of
+ * its phone, on telegram of its own chats, which read `denied` when any is denied, `granted` when it
+ * has one and all are granted, and as none recorded otherwise. A Contact without a Destination on
+ * the Channel has none recorded.
+ */
+export const zEngagementTrackingLeafInput = z.strictObject({
+  kind: z.enum(['engagementTracking']),
+  channel: zEngagementTrackingChannel,
+  test: zEngagementTrackingTestInput
+});
+
+/**
  * The id of a Step or a path: a UUID in its lowercase text form, kept by every version of the
  * automation. A client mints it when it creates the Step or path and sends it back on every save;
  * one sent without an id is given one. Unique within a version, Steps and paths together.
@@ -2782,6 +2920,12 @@ export const zSystemEventAction = z.enum([
   'sms.confirmed',
   'sms.clicked',
   'sms.unsubscribed',
+  'email.engagement_tracking_granted',
+  'email.engagement_tracking_denied',
+  'sms.engagement_tracking_granted',
+  'sms.engagement_tracking_denied',
+  'telegram.engagement_tracking_granted',
+  'telegram.engagement_tracking_denied',
   'contact.consent_superseded'
 ]);
 
@@ -3260,6 +3404,7 @@ export const zContactExportOutboundMessage = z.object({
   kind: z.string(),
   channel: z.string(),
   destination: z.string(),
+  destinations: z.exactOptional(z.array(z.string()).nullable()),
   sendingSource: z.exactOptional(z.string().nullable()),
   sendingDomain: z.exactOptional(z.string().nullable()),
   providerMessageId: z.exactOptional(z.string().nullable()),
@@ -3276,6 +3421,9 @@ export const zContactExportOutboundMessage = z.object({
   openedAt: z.exactOptional(zTimestamp.nullable()),
   clickedAt: z.exactOptional(zTimestamp.nullable()),
   captured: z.boolean(),
+  tracked: z.boolean(),
+  trackingDecidedAt: z.exactOptional(zTimestamp.nullable()),
+  trackingWithdrawnAt: z.exactOptional(zTimestamp.nullable()),
   broadcastId: z.exactOptional(zEntityId.nullable()),
   automationId: z.exactOptional(zEntityId.nullable()),
   automationStepId: z.exactOptional(z.string().nullable()),
@@ -3341,6 +3489,33 @@ export const zContactExportDocument = z.object({
   events: z.array(zContactExportEvent),
   outboundMessages: z.array(zContactExportOutboundMessage),
   broadcastRecipients: z.array(zContactExportBroadcastRecipient)
+});
+
+/**
+ * The Engagement tracking consent of one Destination on one Channel (ADR 0120)
+ */
+export const zEngagementTrackingConsent = z.object({
+  channel: zEngagementTrackingChannel,
+  destination: z.string(),
+  state: zEngagementTrackingReading,
+  provenance: z.exactOptional(zEngagementTrackingProvenance.nullable()),
+  effective: zEngagementTrackingDecision,
+  updatedAt: z.exactOptional(zTimestamp.nullable())
+});
+
+/**
+ * The Engagement tracking consent of each Destination of a contact: its email address, its phone, and the Telegram user of each of its chats
+ */
+export const zContactEngagementTracking = z.object({
+  destinations: z.array(zEngagementTrackingConsent)
+});
+
+/**
+ * The answer to an Engagement tracking observation: what became of it, and the consent that stands after it
+ */
+export const zEngagementTrackingObservationResult = z.object({
+  outcome: zEngagementTrackingOutcome,
+  consent: zEngagementTrackingConsent
 });
 
 /**
@@ -4586,6 +4761,7 @@ export const zSiteWorkspaceResource = z.object({
   postalAddress: z.string(),
   timezone: zTimeZoneName,
   requireConfirmedOptIn: z.boolean(),
+  engagementTrackingDefault: zEngagementTrackingDecision,
   role: zSiteMembershipRole,
   permissions: z.array(zPermission),
   suspendedAt: z.exactOptional(zTimestamp.nullable()),
@@ -4798,6 +4974,7 @@ export const zRuleConditionNode = z.discriminatedUnion('kind', [
   zTagLeaf.extend({ kind: z.literal('tag') }),
   zTelegramLeaf.extend({ kind: z.literal('telegram') }),
   zSmsLeaf.extend({ kind: z.literal('sms') }),
+  zEngagementTrackingLeaf.extend({ kind: z.literal('engagementTracking') }),
   zCustomFieldLeaf.extend({ kind: z.literal('customField') }),
   zEventLeaf.extend({ kind: z.literal('event') }),
   zRulePropertyLeaf.extend({ kind: z.literal('property') })
@@ -4814,6 +4991,7 @@ export const zRuleConditionNodeInput = z.discriminatedUnion('kind', [
   zTagLeafInput.extend({ kind: z.literal('tag') }),
   zTelegramLeafInput.extend({ kind: z.literal('telegram') }),
   zSmsLeafInput.extend({ kind: z.literal('sms') }),
+  zEngagementTrackingLeafInput.extend({ kind: z.literal('engagementTracking') }),
   zCustomFieldLeafInput.extend({ kind: z.literal('customField') }),
   zEventLeafInput.extend({ kind: z.literal('event') }),
   zRulePropertyLeafInput.extend({ kind: z.literal('property') })
@@ -4860,6 +5038,7 @@ export const zSegmentConditionNode = z.discriminatedUnion('kind', [
   zTagLeaf.extend({ kind: z.literal('tag') }),
   zTelegramLeaf.extend({ kind: z.literal('telegram') }),
   zSmsLeaf.extend({ kind: z.literal('sms') }),
+  zEngagementTrackingLeaf.extend({ kind: z.literal('engagementTracking') }),
   zCustomFieldLeaf.extend({ kind: z.literal('customField') }),
   zEventLeaf.extend({ kind: z.literal('event') })
 ]);
@@ -4875,6 +5054,7 @@ export const zSegmentConditionNodeInput = z.discriminatedUnion('kind', [
   zTagLeafInput.extend({ kind: z.literal('tag') }),
   zTelegramLeafInput.extend({ kind: z.literal('telegram') }),
   zSmsLeafInput.extend({ kind: z.literal('sms') }),
+  zEngagementTrackingLeafInput.extend({ kind: z.literal('engagementTracking') }),
   zCustomFieldLeafInput.extend({ kind: z.literal('customField') }),
   zEventLeafInput.extend({ kind: z.literal('event') })
 ]);
@@ -6419,6 +6599,28 @@ export const zSiteTelegramListBindingsPath = z.object({
  */
 export const zSiteTelegramListBindingsResponse = z.array(zSiteBindingResource);
 
+export const zSiteEngagementTrackingGetPath = z.object({
+  workspaceId: zWorkspaceId,
+  contactId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteEngagementTrackingGetResponse = zContactEngagementTracking;
+
+export const zSiteEngagementTrackingCreateBody = zSiteRecordEngagementTrackingInput;
+
+export const zSiteEngagementTrackingCreatePath = z.object({
+  workspaceId: zWorkspaceId,
+  contactId: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteEngagementTrackingCreateResponse = zEngagementTrackingObservationResult;
+
 export const zSiteSmsConsentsConfirmBody = zConsentEvidence;
 
 export const zSiteSmsConsentsConfirmPath = z.object({
@@ -6606,6 +6808,17 @@ export const zSiteDomainJoinSetPath = z.object({
  * The request has succeeded.
  */
 export const zSiteDomainJoinSetResponse = zSiteDomainJoinResource;
+
+export const zSiteWorkspacesSetEngagementTrackingDefaultBody = zSiteSetEngagementTrackingDefaultInput;
+
+export const zSiteWorkspacesSetEngagementTrackingDefaultPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteWorkspacesSetEngagementTrackingDefaultResponse = zSiteWorkspaceResource;
 
 export const zSiteEventsListPath = z.object({
   workspaceId: zWorkspaceId

@@ -52,6 +52,10 @@ func (BroadcastFigure) Fields() []ent.Field {
 		field.Int("opened").NonNegative().Immutable(),
 		field.Int("clicked").NonNegative().Immutable(),
 		field.Int("captured").NonNegative().Immutable(),
+		// The sent messages that were not tracked at freeze (ADR 0120): sent untracked, or whose
+		// tracking was withdrawn. Opened and clicked are counted over the others. 0 on a row frozen
+		// before messages could go out untracked, as every one of them went out tracked.
+		field.Int("untracked").NonNegative().Default(0).Immutable(),
 		// When the last of the Broadcast's recipients and messages was deleted; nil while the prune
 		// is still under way.
 		field.Time("pruned_at").

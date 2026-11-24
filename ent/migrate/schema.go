@@ -737,6 +737,7 @@ var (
 		{Name: "opened", Type: field.TypeInt},
 		{Name: "clicked", Type: field.TypeInt},
 		{Name: "captured", Type: field.TypeInt},
+		{Name: "untracked", Type: field.TypeInt, Default: 0},
 		{Name: "pruned_at", Type: field.TypeTime, Nullable: true},
 		{Name: "broadcast_id", Type: field.TypeInt64},
 		{Name: "workspace_id", Type: field.TypeInt64},
@@ -749,13 +750,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "broadcast_figures_broadcasts_figures",
-				Columns:    []*schema.Column{BroadcastFiguresColumns[18]},
+				Columns:    []*schema.Column{BroadcastFiguresColumns[19]},
 				RefColumns: []*schema.Column{BroadcastsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "broadcast_figures_workspaces_broadcast_figures",
-				Columns:    []*schema.Column{BroadcastFiguresColumns[19]},
+				Columns:    []*schema.Column{BroadcastFiguresColumns[20]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -764,7 +765,7 @@ var (
 			{
 				Name:    "broadcast_figures_workspace_id_broadcast_id",
 				Unique:  true,
-				Columns: []*schema.Column{BroadcastFiguresColumns[19], BroadcastFiguresColumns[18]},
+				Columns: []*schema.Column{BroadcastFiguresColumns[20], BroadcastFiguresColumns[19]},
 			},
 		},
 	}
@@ -987,6 +988,7 @@ var (
 		{Name: "opt_out_integration_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "opt_out_sequence", Type: field.TypeInt64, Nullable: true},
 		{Name: "confirmation_occurred_at", Type: field.TypeTime, Nullable: true},
+		{Name: "engagement_tracking_occurred_at", Type: field.TypeTime, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// ConsentStampsTable holds the schema information for the "consent_stamps" table.
@@ -997,7 +999,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "consent_stamps_workspaces_consent_stamps",
-				Columns:    []*schema.Column{ConsentStampsColumns[10]},
+				Columns:    []*schema.Column{ConsentStampsColumns[11]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1006,7 +1008,7 @@ var (
 			{
 				Name:    "consent_stamps_ws_channel_dest_source",
 				Unique:  true,
-				Columns: []*schema.Column{ConsentStampsColumns[10], ConsentStampsColumns[3], ConsentStampsColumns[4], ConsentStampsColumns[5]},
+				Columns: []*schema.Column{ConsentStampsColumns[11], ConsentStampsColumns[3], ConsentStampsColumns[4], ConsentStampsColumns[5]},
 			},
 		},
 	}
@@ -1191,6 +1193,38 @@ var (
 			},
 		},
 	}
+	// EngagementTrackingConsentsColumns holds the columns for the "engagement_tracking_consents" table.
+	EngagementTrackingConsentsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram", "sms"}},
+		{Name: "destination", Type: field.TypeString},
+		{Name: "state", Type: field.TypeEnum, Enums: []string{"granted", "denied"}},
+		{Name: "provenance", Type: field.TypeEnum, Enums: []string{"page", "manual", "imported", "onsite_form"}},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// EngagementTrackingConsentsTable holds the schema information for the "engagement_tracking_consents" table.
+	EngagementTrackingConsentsTable = &schema.Table{
+		Name:       "engagement_tracking_consents",
+		Columns:    EngagementTrackingConsentsColumns,
+		PrimaryKey: []*schema.Column{EngagementTrackingConsentsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "engagement_tracking_consents_workspaces_engagement_tracking_consents",
+				Columns:    []*schema.Column{EngagementTrackingConsentsColumns[7]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "engagement_tracking_consents_ws_channel_dest",
+				Unique:  true,
+				Columns: []*schema.Column{EngagementTrackingConsentsColumns[7], EngagementTrackingConsentsColumns[3], EngagementTrackingConsentsColumns[4]},
+			},
+		},
+	}
 	// ErasuresColumns holds the columns for the "erasures" table.
 	ErasuresColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1342,7 +1376,7 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{EventsColumns[1]},
 				Annotation: &entsql.IndexAnnotation{
-					Where: "action NOT IN ('marketing.confirmed', 'sms.confirmed', 'email.complained', 'email.unsubscribed') AND NOT (action = 'email.bounced' AND COALESCE(properties->>'bounceKind', '') = 'hard')",
+					Where: "action NOT IN ('marketing.confirmed', 'sms.confirmed', 'email.complained', 'email.unsubscribed', 'email.engagement_tracking_granted', 'email.engagement_tracking_denied', 'sms.engagement_tracking_granted', 'sms.engagement_tracking_denied', 'telegram.engagement_tracking_granted', 'telegram.engagement_tracking_denied') AND NOT (action = 'email.bounced' AND COALESCE(properties->>'bounceKind', '') = 'hard')",
 				},
 			},
 		},
@@ -1966,6 +2000,7 @@ var (
 		{Name: "order_id", Type: field.TypeString},
 		{Name: "currency", Type: field.TypeString},
 		{Name: "credited_click_at", Type: field.TypeTime, Nullable: true},
+		{Name: "credited_message_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "broadcast_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "automation_id", Type: field.TypeInt64, Nullable: true},
@@ -1979,25 +2014,25 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "orders_contacts_orders",
-				Columns:    []*schema.Column{OrdersColumns[6]},
+				Columns:    []*schema.Column{OrdersColumns[7]},
 				RefColumns: []*schema.Column{ContactsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "orders_broadcasts_broadcast",
-				Columns:    []*schema.Column{OrdersColumns[7]},
+				Columns:    []*schema.Column{OrdersColumns[8]},
 				RefColumns: []*schema.Column{BroadcastsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "orders_automations_automation",
-				Columns:    []*schema.Column{OrdersColumns[8]},
+				Columns:    []*schema.Column{OrdersColumns[9]},
 				RefColumns: []*schema.Column{AutomationsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "orders_workspaces_orders",
-				Columns:    []*schema.Column{OrdersColumns[9]},
+				Columns:    []*schema.Column{OrdersColumns[10]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -2006,22 +2041,27 @@ var (
 			{
 				Name:    "order_workspace_id_order_id",
 				Unique:  true,
-				Columns: []*schema.Column{OrdersColumns[9], OrdersColumns[3]},
+				Columns: []*schema.Column{OrdersColumns[10], OrdersColumns[3]},
 			},
 			{
 				Name:    "order_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrdersColumns[9], OrdersColumns[6]},
+				Columns: []*schema.Column{OrdersColumns[10], OrdersColumns[7]},
 			},
 			{
 				Name:    "order_workspace_id_broadcast_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrdersColumns[9], OrdersColumns[7]},
+				Columns: []*schema.Column{OrdersColumns[10], OrdersColumns[8]},
 			},
 			{
 				Name:    "order_workspace_id_automation_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrdersColumns[9], OrdersColumns[8]},
+				Columns: []*schema.Column{OrdersColumns[10], OrdersColumns[9]},
+			},
+			{
+				Name:    "order_workspace_id_credited_message_id",
+				Unique:  false,
+				Columns: []*schema.Column{OrdersColumns[10], OrdersColumns[6]},
 			},
 		},
 	}
@@ -2095,6 +2135,7 @@ var (
 		{Name: "idempotency_key", Type: field.TypeString},
 		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram", "sms"}, Default: "email"},
 		{Name: "destination", Type: field.TypeString, Nullable: true},
+		{Name: "destinations", Type: field.TypeJSON, Nullable: true},
 		{Name: "sending_source", Type: field.TypeString, Nullable: true},
 		{Name: "sending_domain", Type: field.TypeString, Nullable: true},
 		{Name: "provider_message_id", Type: field.TypeString, Nullable: true},
@@ -2111,6 +2152,9 @@ var (
 		{Name: "opened_at", Type: field.TypeTime, Nullable: true},
 		{Name: "clicked_at", Type: field.TypeTime, Nullable: true},
 		{Name: "captured", Type: field.TypeBool, Default: false},
+		{Name: "tracked", Type: field.TypeBool, Default: false},
+		{Name: "tracking_decided_at", Type: field.TypeTime, Nullable: true},
+		{Name: "tracking_withdrawn_at", Type: field.TypeTime, Nullable: true},
 		{Name: "automation_step_id", Type: field.TypeString, Nullable: true},
 		{Name: "request_digest", Type: field.TypeString, Nullable: true},
 		{Name: "subject", Type: field.TypeString, Nullable: true},
@@ -2133,55 +2177,55 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "outbound_messages_broadcasts_broadcast",
-				Columns:    []*schema.Column{OutboundMessagesColumns[27]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[31]},
 				RefColumns: []*schema.Column{BroadcastsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "outbound_messages_automations_automation",
-				Columns:    []*schema.Column{OutboundMessagesColumns[28]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[32]},
 				RefColumns: []*schema.Column{AutomationsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "outbound_messages_automation_versions_automation_version",
-				Columns:    []*schema.Column{OutboundMessagesColumns[29]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[33]},
 				RefColumns: []*schema.Column{AutomationVersionsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "outbound_messages_integrations_integration",
-				Columns:    []*schema.Column{OutboundMessagesColumns[30]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[34]},
 				RefColumns: []*schema.Column{IntegrationsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "outbound_messages_broadcast_recipients_broadcast_recipient",
-				Columns:    []*schema.Column{OutboundMessagesColumns[31]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[35]},
 				RefColumns: []*schema.Column{BroadcastRecipientsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "outbound_messages_automation_runs_automation_run",
-				Columns:    []*schema.Column{OutboundMessagesColumns[32]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[36]},
 				RefColumns: []*schema.Column{AutomationRunsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "outbound_messages_contacts_contact",
-				Columns:    []*schema.Column{OutboundMessagesColumns[33]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[37]},
 				RefColumns: []*schema.Column{ContactsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "outbound_messages_email_templates_template",
-				Columns:    []*schema.Column{OutboundMessagesColumns[34]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[38]},
 				RefColumns: []*schema.Column{EmailTemplatesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "outbound_messages_workspaces_outbound_messages",
-				Columns:    []*schema.Column{OutboundMessagesColumns[35]},
+				Columns:    []*schema.Column{OutboundMessagesColumns[39]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -2190,12 +2234,12 @@ var (
 			{
 				Name:    "outbound_messages_workspace_id_idempotency_key",
 				Unique:  true,
-				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[4]},
+				Columns: []*schema.Column{OutboundMessagesColumns[39], OutboundMessagesColumns[4]},
 			},
 			{
 				Name:    "outboundmessage_workspace_id_kind_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[3], OutboundMessagesColumns[1]},
+				Columns: []*schema.Column{OutboundMessagesColumns[39], OutboundMessagesColumns[3], OutboundMessagesColumns[1]},
 			},
 			{
 				Name:    "outbound_messages_kind_created_at",
@@ -2205,72 +2249,86 @@ var (
 			{
 				Name:    "outboundmessage_workspace_id_integration_id_sent_at",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[30], OutboundMessagesColumns[14]},
+				Columns: []*schema.Column{OutboundMessagesColumns[39], OutboundMessagesColumns[34], OutboundMessagesColumns[15]},
 			},
 			{
 				Name:    "outboundmessage_workspace_id_sending_domain_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[8], OutboundMessagesColumns[1]},
+				Columns: []*schema.Column{OutboundMessagesColumns[39], OutboundMessagesColumns[9], OutboundMessagesColumns[1]},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_provider_message_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[9]},
+				Columns: []*schema.Column{OutboundMessagesColumns[39], OutboundMessagesColumns[10]},
 			},
 			{
 				Name:    "outboundmessage_workspace_id_updated_at_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[2], OutboundMessagesColumns[0]},
+				Columns: []*schema.Column{OutboundMessagesColumns[39], OutboundMessagesColumns[2], OutboundMessagesColumns[0]},
+			},
+			{
+				Name:    "outboundmessage_workspace_id_destination_id",
+				Unique:  false,
+				Columns: []*schema.Column{OutboundMessagesColumns[39], OutboundMessagesColumns[6], OutboundMessagesColumns[0]},
+			},
+			{
+				Name:    "outboundmessage_destinations",
+				Unique:  false,
+				Columns: []*schema.Column{OutboundMessagesColumns[7]},
+				Annotation: &entsql.IndexAnnotation{
+					Type:  "GIN",
+					Where: "destinations IS NOT NULL",
+				},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[33]},
+				Columns: []*schema.Column{OutboundMessagesColumns[39], OutboundMessagesColumns[37]},
 			},
 			{
 				Name:    "outboundmessage_workspace_id_broadcast_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[27], OutboundMessagesColumns[10]},
+				Columns: []*schema.Column{OutboundMessagesColumns[39], OutboundMessagesColumns[31], OutboundMessagesColumns[11]},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_broadcast_recipient_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[31]},
+				Columns: []*schema.Column{OutboundMessagesColumns[39], OutboundMessagesColumns[35]},
 			},
 			{
 				Name:    "outbound_messages_broadcast_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[27]},
+				Columns: []*schema.Column{OutboundMessagesColumns[31]},
 			},
 			{
 				Name:    "outbound_messages_integration_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[30]},
+				Columns: []*schema.Column{OutboundMessagesColumns[34]},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_automation_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[28]},
+				Columns: []*schema.Column{OutboundMessagesColumns[39], OutboundMessagesColumns[32]},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_automation_run_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[32]},
+				Columns: []*schema.Column{OutboundMessagesColumns[39], OutboundMessagesColumns[36]},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_automation_version_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[29]},
+				Columns: []*schema.Column{OutboundMessagesColumns[39], OutboundMessagesColumns[33]},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_template_id",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[34]},
+				Columns: []*schema.Column{OutboundMessagesColumns[39], OutboundMessagesColumns[38]},
 			},
 			{
 				Name:    "outbound_messages_workspace_id_sent_at_broadcast",
 				Unique:  false,
-				Columns: []*schema.Column{OutboundMessagesColumns[35], OutboundMessagesColumns[14]},
+				Columns: []*schema.Column{OutboundMessagesColumns[39], OutboundMessagesColumns[15]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "broadcast_recipient_id IS NOT NULL",
 				},
@@ -3463,6 +3521,7 @@ var (
 		{Name: "postal_address", Type: field.TypeString, Nullable: true, Default: ""},
 		{Name: "retention_days", Type: field.TypeInt, Nullable: true},
 		{Name: "timezone", Type: field.TypeString, Nullable: true},
+		{Name: "engagement_tracking_default", Type: field.TypeEnum, Enums: []string{"track", "dont_track"}, Default: "track"},
 		{Name: "reporting_currency", Type: field.TypeString, Nullable: true},
 		{Name: "attribution_window_days", Type: field.TypeInt, Default: 5},
 		{Name: "send_cap", Type: field.TypeInt, Nullable: true},
@@ -3539,6 +3598,7 @@ var (
 		CustomFieldsTable,
 		DefaultSendCapTable,
 		EmailTemplatesTable,
+		EngagementTrackingConsentsTable,
 		ErasuresTable,
 		EventsTable,
 		EventJournalEntriesTable,
@@ -3770,11 +3830,12 @@ func init() {
 		Table: "consent_stamps",
 	}
 	ConsentStampsTable.Annotation.Checks = map[string]string{
-		"consent_stamps_channel_check":      "channel IN ('email', 'telegram', 'sms')",
-		"consent_stamps_confirmation_check": "sending_source = 'everything' OR confirmation_occurred_at IS NULL",
-		"consent_stamps_destination_lower":  "destination = lower(destination)",
-		"consent_stamps_sequence_check":     "(opt_out_integration_id IS NULL) = (opt_out_sequence IS NULL) AND (opt_out_occurred_at IS NOT NULL OR opt_out_integration_id IS NULL)",
-		"consent_stamps_sms_hash_check":     "channel <> 'sms' OR destination ~ '^[0-9a-f]{64}$'",
+		"consent_stamps_channel_check":             "channel IN ('email', 'telegram', 'sms')",
+		"consent_stamps_confirmation_check":        "sending_source = 'everything' OR confirmation_occurred_at IS NULL",
+		"consent_stamps_destination_lower":         "destination = lower(destination)",
+		"consent_stamps_engagement_tracking_check": "sending_source = 'everything' OR engagement_tracking_occurred_at IS NULL",
+		"consent_stamps_sequence_check":            "(opt_out_integration_id IS NULL) = (opt_out_sequence IS NULL) AND (opt_out_occurred_at IS NOT NULL OR opt_out_integration_id IS NULL)",
+		"consent_stamps_sms_hash_check":            "channel <> 'sms' OR destination ~ '^[0-9a-f]{64}$'",
 	}
 	ContactsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	ContactsTable.Annotation = &entsql.Annotation{
@@ -3805,6 +3866,16 @@ func init() {
 	EmailTemplatesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	EmailTemplatesTable.Annotation = &entsql.Annotation{
 		Table: "email_templates",
+	}
+	EngagementTrackingConsentsTable.ForeignKeys[0].RefTable = WorkspacesTable
+	EngagementTrackingConsentsTable.Annotation = &entsql.Annotation{
+		Table: "engagement_tracking_consents",
+	}
+	EngagementTrackingConsentsTable.Annotation.Checks = map[string]string{
+		"engagement_tracking_consents_channel_check":     "channel IN ('email', 'telegram', 'sms')",
+		"engagement_tracking_consents_destination_lower": "destination = lower(destination)",
+		"engagement_tracking_consents_provenance_check":  "provenance IN ('page', 'manual', 'imported', 'onsite_form')",
+		"engagement_tracking_consents_state_check":       "state IN ('granted', 'denied')",
 	}
 	ErasuresTable.ForeignKeys[0].RefTable = WorkspacesTable
 	ErasuresTable.Annotation = &entsql.Annotation{
@@ -3923,7 +3994,7 @@ func init() {
 		Table: "orders",
 	}
 	OrdersTable.Annotation.Checks = map[string]string{
-		"orders_credit_check":    "(broadcast_id IS NULL OR automation_id IS NULL) AND (credited_click_at IS NULL) = (broadcast_id IS NULL AND automation_id IS NULL)",
+		"orders_credit_check":    "(broadcast_id IS NULL OR automation_id IS NULL) AND (credited_click_at IS NULL) = (broadcast_id IS NULL AND automation_id IS NULL) AND (credited_message_id IS NULL) = (broadcast_id IS NULL AND automation_id IS NULL)",
 		"orders_currency_format": "currency ~ '^[A-Z]{3}$'",
 	}
 	OrderMovementsTable.ForeignKeys[0].RefTable = OrdersTable
@@ -4161,11 +4232,12 @@ func init() {
 		Table: "workspaces",
 	}
 	WorkspacesTable.Annotation.Checks = map[string]string{
-		"workspaces_public_id_max_length_check": "char_length(public_id) <= 8",
-		"workspaces_public_id_min_length_check": "char_length(public_id) >= 8",
-		"workspaces_reporting_currency_format":  "reporting_currency ~ '^[A-Z]{3}$'",
-		"workspaces_suspended_by_kind_check":    "suspended_by_kind IN ('system', 'cli', 'staff')",
-		"workspaces_suspension_check":           "(suspended_at IS NULL) = (suspended_by_kind IS NULL) AND (suspended_at IS NULL) = (suspension_reason IS NULL) AND COALESCE(suspended_by_kind = 'staff', false) = (suspended_by_id IS NOT NULL)",
+		"workspaces_engagement_tracking_default_check": "engagement_tracking_default IN ('track', 'dont_track')",
+		"workspaces_public_id_max_length_check":        "char_length(public_id) <= 8",
+		"workspaces_public_id_min_length_check":        "char_length(public_id) >= 8",
+		"workspaces_reporting_currency_format":         "reporting_currency ~ '^[A-Z]{3}$'",
+		"workspaces_suspended_by_kind_check":           "suspended_by_kind IN ('system', 'cli', 'staff')",
+		"workspaces_suspension_check":                  "(suspended_at IS NULL) = (suspended_by_kind IS NULL) AND (suspended_at IS NULL) = (suspension_reason IS NULL) AND COALESCE(suspended_by_kind = 'staff', false) = (suspended_by_id IS NOT NULL)",
 	}
 	WorkspaceStandingTable.ForeignKeys[0].RefTable = WorkspacesTable
 	WorkspaceStandingTable.Annotation = &entsql.Annotation{

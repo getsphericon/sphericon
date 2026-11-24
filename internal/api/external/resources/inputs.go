@@ -7,10 +7,12 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eventrecording"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
@@ -107,6 +109,8 @@ import (
 // goverter:extend broadcastContentPatch
 // goverter:extend broadcastChannelPtrIn
 // goverter:extend smsConsentIn
+// goverter:extend engagementTrackingIn
+// goverter:extend engagementTrackingObservationIn
 // goverter:extend timeIn
 // goverter:extend enrollmentStatusIn
 type Inputs interface {
@@ -164,7 +168,7 @@ type Inputs interface {
 	// goverter:map . Core
 	// goverter:ignore GuessedTimeZone GuessedLocale Claimed
 	ContactUpsert(source externalapi.UpsertContactInput) contacts.UpsertInput
-	// An import row: the Contact it asserts and the SMS consent it carries.
+	// An import row: the Contact it asserts and the SMS and Engagement tracking consent it carries.
 	// goverter:map . UpsertInput
 	ContactIntake(source externalapi.UpsertContactInput) contacts.IntakeInput
 	ContactIntakes(source []externalapi.UpsertContactInput) []contacts.IntakeInput
@@ -245,6 +249,17 @@ type Inputs interface {
 	Confirmation(source *externalapi.CreateConfirmationInput) confirmations.ConfirmInput
 	// The evidence of consent a batch item carries.
 	ConsentEvidence(source externalapi.ConsentEvidence) confirmations.Evidence
+	// An Engagement tracking observation: the provenance is the surface's, imported on /api, which
+	// the handler assigns.
+	// goverter:ignore Provenance
+	EngagementTracking(source *externalapi.RecordEngagementTrackingInput) engagementtracking.RecordInput
+	// goverter:enum:transform value
+	EngagementTrackingChannel(source externalapi.EngagementTrackingChannel) channels.Channel
+	// goverter:enum:transform value
+	EngagementTrackingState(source externalapi.EngagementTrackingState) engagementtrackingconsent.State
+	// The Engagement tracking consent a batch item carries.
+	ContactEngagementTracking(source externalapi.ContactEngagementTrackingInput) engagementtracking.ContactObservations
+	EngagementTrackingObservation(source externalapi.EngagementTrackingObservationInput) engagementtracking.Observation
 	// Where a Broadcast's Test send goes: the address on email, the number on sms. OnlyTo is the
 	// handler's to set.
 	// goverter:ignore OnlyTo
@@ -258,6 +273,26 @@ func smsConsentIn(c Inputs, o externalapi.OptConsentEvidence) *confirmations.Evi
 		return nil
 	}
 	return new(c.ConsentEvidence(v))
+}
+
+// engagementTrackingIn is the Engagement tracking consent a batch item carries, none when it
+// carries none.
+func engagementTrackingIn(c Inputs, o externalapi.OptContactEngagementTrackingInput) engagementtracking.ContactObservations {
+	v, ok := o.Get()
+	if !ok {
+		return engagementtracking.ContactObservations{}
+	}
+	return c.ContactEngagementTracking(v)
+}
+
+// engagementTrackingObservationIn is the observation of one Destination a batch item carries, nil
+// when it carries none.
+func engagementTrackingObservationIn(c Inputs, o externalapi.OptEngagementTrackingObservationInput) *engagementtracking.Observation {
+	v, ok := o.Get()
+	if !ok {
+		return nil
+	}
+	return new(c.EngagementTrackingObservation(v))
 }
 
 // goverter:context backfill

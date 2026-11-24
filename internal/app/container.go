@@ -43,6 +43,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eventrecording"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/identitytokens"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
@@ -129,6 +130,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/trackingwithdrawal"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/visitoridentification"
@@ -588,39 +590,40 @@ var jobsPackage = do.Package(
 		edition := do.MustInvoke[*ee.Edition](i)
 		pool := do.MustInvoke[*riverPool](i)
 		jc, err := jobs.NewClient(riverdatabasesql.NewWithPgxListener(pool.DB, pool.listener), jobs.Deps{
-			Ent:               do.MustInvoke[*ent.Client](i),
-			Bus:               do.MustInvoke[*events.Bus](i),
-			Outbound:          do.MustInvoke[*outboundmessages.Module](i),
-			Broadcasts:        do.MustInvoke[*broadcasts.Module](i),
-			BroadcastDelivery: do.MustInvoke[*broadcasts.Delivery](i),
-			Cipher:            do.MustInvoke[*secrets.Cipher](i),
-			SystemSender:      do.MustInvoke[SystemSender](i).EmailSender,
-			Notices:           do.MustInvoke[*noticedelivery.Module](i),
-			Callbacks:         do.MustInvoke[*callbackinterpretation.Module](i),
-			Rules:             do.MustInvoke[*rules.Module](i),
-			Users:             do.MustInvoke[*users.Module](i),
-			SecondFactor:      do.MustInvoke[*secondfactors.Module](i),
-			Passkeys:          do.MustInvoke[*passkeys.Module](i),
-			Orders:            do.MustInvoke[*orders.Module](i),
-			Suppressions:      do.MustInvoke[*suppressions.Module](i),
-			Contacts:          do.MustInvoke[*contacts.Module](i),
-			CapturedMessages:  do.MustInvoke[*capturedmessages.Module](i),
-			Deletion:          do.MustInvoke[*workspacedeletion.UseCase](i),
-			Workspaces:        do.MustInvoke[*workspaces.Module](i),
-			MessageRetention:  do.MustInvoke[*messageretention.UseCase](i),
-			SendingDomains:    do.MustInvoke[*sendingdomains.Module](i),
-			StepExecution:     do.MustInvoke[*automations.StepExecution](i),
-			Automations:       do.MustInvoke[*automations.Module](i),
-			JoinDomains:       do.MustInvoke[*joindomains.Module](i),
-			Integrations:      do.MustInvoke[*integrations.Module](i),
-			Chats:             do.MustInvoke[*bindings.Chats](i),
-			TrackingDomains:   do.MustInvoke[*trackingdomains.Module](i),
-			Machine:           do.MustInvoke[*privaterelayranges.Detector](i),
-			Clock:             do.MustInvoke[Clock](i),
-			OutboundAllow:     cfg.OutboundAllow,
-			Retention:         jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
-			Webhooks:          edition.Webhooks,
-			Instance:          do.MustInvoke[*instancestates.Module](i),
+			Ent:                do.MustInvoke[*ent.Client](i),
+			Bus:                do.MustInvoke[*events.Bus](i),
+			Outbound:           do.MustInvoke[*outboundmessages.Module](i),
+			Broadcasts:         do.MustInvoke[*broadcasts.Module](i),
+			BroadcastDelivery:  do.MustInvoke[*broadcasts.Delivery](i),
+			Cipher:             do.MustInvoke[*secrets.Cipher](i),
+			SystemSender:       do.MustInvoke[SystemSender](i).EmailSender,
+			Notices:            do.MustInvoke[*noticedelivery.Module](i),
+			Callbacks:          do.MustInvoke[*callbackinterpretation.Module](i),
+			Rules:              do.MustInvoke[*rules.Module](i),
+			Users:              do.MustInvoke[*users.Module](i),
+			SecondFactor:       do.MustInvoke[*secondfactors.Module](i),
+			Passkeys:           do.MustInvoke[*passkeys.Module](i),
+			Orders:             do.MustInvoke[*orders.Module](i),
+			Suppressions:       do.MustInvoke[*suppressions.Module](i),
+			Contacts:           do.MustInvoke[*contacts.Module](i),
+			CapturedMessages:   do.MustInvoke[*capturedmessages.Module](i),
+			Deletion:           do.MustInvoke[*workspacedeletion.UseCase](i),
+			Workspaces:         do.MustInvoke[*workspaces.Module](i),
+			MessageRetention:   do.MustInvoke[*messageretention.UseCase](i),
+			TrackingWithdrawal: do.MustInvoke[*trackingwithdrawal.UseCase](i),
+			SendingDomains:     do.MustInvoke[*sendingdomains.Module](i),
+			StepExecution:      do.MustInvoke[*automations.StepExecution](i),
+			Automations:        do.MustInvoke[*automations.Module](i),
+			JoinDomains:        do.MustInvoke[*joindomains.Module](i),
+			Integrations:       do.MustInvoke[*integrations.Module](i),
+			Chats:              do.MustInvoke[*bindings.Chats](i),
+			TrackingDomains:    do.MustInvoke[*trackingdomains.Module](i),
+			Machine:            do.MustInvoke[*privaterelayranges.Detector](i),
+			Clock:              do.MustInvoke[Clock](i),
+			OutboundAllow:      cfg.OutboundAllow,
+			Retention:          jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
+			Webhooks:           edition.Webhooks,
+			Instance:           do.MustInvoke[*instancestates.Module](i),
 		}, eejobs.Extension(eejobs.Deps{
 			Retention:       do.MustInvoke[*auditlogretention.UseCase](i),
 			Detector:        do.MustInvoke[*abusedetector.Detector](i),
@@ -699,6 +702,7 @@ var deliveryPackage = do.Package(
 			Chats:    do.MustInvoke[*bindings.Chats](i),
 			Limits:   do.MustInvoke[*providerlimit.Module](i),
 			Standing: do.MustInvoke[*integrations.Standing](i),
+			Consents: do.MustInvoke[*engagementtracking.Module](i),
 		}
 		return outboundmessages.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*holds.Holds](i), do.MustInvoke[outboundmessages.Senders](i), do.MustInvoke[*messagetoken.Tracker](i),
 			mods, deps, outboundmessages.Config{SendCaps: do.MustInvoke[providerlimit.SendCaps](i)}, do.MustInvoke[Clock](i)), nil
@@ -787,6 +791,11 @@ var identityPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*invitations.Module, error) {
 		return invitations.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
+	// The reach-back of a refusal of tracking (ADR 0120).
+	do.Lazy(func(i do.Injector) (*trackingwithdrawal.UseCase, error) {
+		return trackingwithdrawal.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*outboundmessages.Module](i),
+			do.MustInvoke[*orders.Module](i), trackingwithdrawal.Batch), nil
+	}),
 	// The use case of message retention (ADR 0143), over the raw client.
 	do.Lazy(func(i do.Injector) (*messageretention.UseCase, error) {
 		return messageretention.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*broadcasts.Module](i),
@@ -871,17 +880,19 @@ var audiencePackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*contacts.Module, error) {
 		return contacts.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*tags.Module](i),
-			do.MustInvoke[*confirmations.Module](i), do.MustInvoke[addresscheck.Resolver](i)), nil
+			do.MustInvoke[*confirmations.Module](i), do.MustInvoke[*engagementtracking.Module](i), do.MustInvoke[addresscheck.Resolver](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*visitors.Module, error) {
 		return visitors.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*contacterasure.UseCase, error) {
 		return contacterasure.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*broadcasts.Module](i),
-			do.MustInvoke[*contacts.Module](i), do.MustInvoke[*unsubscribes.Module](i), do.MustInvoke[*bindings.Chats](i), do.MustInvoke[Clock](i)), nil
+			do.MustInvoke[*contacts.Module](i), do.MustInvoke[*unsubscribes.Module](i), do.MustInvoke[*bindings.Chats](i),
+			do.MustInvoke[*engagementtracking.Module](i), do.MustInvoke[*outboundmessages.Module](i),
+			do.MustInvoke[*orders.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
-	// The consent of the Destinations: the opt-outs, the Suppressions, the Confirmations and the
-	// Channel stops, which write their rows (ADR 0102).
+	// The consent of the Destinations: the opt-outs, the Suppressions, the Confirmations, the
+	// Engagement tracking consent and the Channel stops, which write their rows (ADR 0102).
 	do.Lazy(func(do.Injector) (*unsubscribes.Module, error) {
 		return unsubscribes.New(), nil
 	}),
@@ -890,6 +901,9 @@ var audiencePackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*confirmations.Module, error) {
 		return confirmations.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*unsubscribes.Module](i), do.MustInvoke[Clock](i)), nil
+	}),
+	do.Lazy(func(i do.Injector) (*engagementtracking.Module, error) {
+		return engagementtracking.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*channelstop.Module, error) {
 		return channelstop.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*confirmations.Module](i),
@@ -987,7 +1001,7 @@ var contentPackage = do.Package(
 	// The opens and clicks of the Outbound messages (ADR 0053): a token names a message before any
 	// scope exists, so it holds the raw client.
 	do.Lazy(func(i do.Injector) (*engagement.Recorder, error) {
-		return engagement.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*contacts.Module](i), do.MustInvoke[*messagetoken.Tracker](i),
+		return engagement.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*contacts.Module](i), do.MustInvoke[*engagementtracking.Module](i), do.MustInvoke[*messagetoken.Tracker](i),
 			do.MustInvoke[*privaterelayranges.Detector](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// Webhooks: the audit.entry rule asks the Edition whether the license is active.
@@ -1251,6 +1265,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		Export:                exportstream.New(edition.Export, do.MustInvoke[*auditlog.Log](i), do.MustInvoke[*secrets.Cipher](i)),
 		Suppressions:          do.MustInvoke[*suppressions.Module](i),
 		Confirmations:         do.MustInvoke[*confirmations.Module](i),
+		Tracking:              do.MustInvoke[*engagementtracking.Module](i),
 		Exports:               dataexport.New(externalresources.ExportMapper{Converter: &externalresources.ConverterImpl{}}),
 
 		Unsubscribe: do.MustInvoke[*unsubscriberecording.UseCase](i),
@@ -1297,6 +1312,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Unsubscribe:           do.MustInvoke[*unsubscriberecording.UseCase](i),
 		Suppressions:          do.MustInvoke[*suppressions.Module](i),
 		Confirmations:         do.MustInvoke[*confirmations.Module](i),
+		Tracking:              do.MustInvoke[*engagementtracking.Module](i),
 		ChannelStops:          do.MustInvoke[*channelstop.Module](i),
 		Exports:               dataexport.New(siteresources.ExportMapper{Converter: &siteresources.ConverterImpl{}}),
 		Bindings:              do.MustInvoke[*bindings.Module](i),
