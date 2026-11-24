@@ -2061,7 +2061,7 @@
     "/contacts/{contactId}/engagement-tracking": {
       "get": {
         "operationId": "EngagementTracking_getForContact",
-        "description": "Read whether each Destination of a contact (its email address) is tracked: the consent\nrecorded with who recorded it, or `default` where none is, with what it means now. The consent\nis keyed by the Destination, so it follows the address the contact has now.",
+        "description": "Read whether each Destination of a contact (its email address, its phone, the Telegram user\nof each of its chats) is tracked: the consent\nrecorded with who recorded it, or `default` where none is, with what it means now. The consent\nis keyed by the Destination, so it follows the address and the phone the contact has now.",
         "parameters": [
           {
             "name": "contactId",
@@ -2708,7 +2708,7 @@
     "/engagement-tracking-consents": {
       "post": {
         "operationId": "EngagementTracking_create",
-        "description": "Record whether a destination agreed to have its opens and clicks tracked, as an `imported`\nconsent collected outside sphericon (a consent banner, an account setting). A `denied` always\napplies, and is kept in the immutable `email.engagement_tracking_denied` event; a `granted` is\nkept in `email.engagement_tracking_granted` and is refused with a conflict over a standing\n`denied`: only the person can lift a refusal. An observation that occurred before the consent\nstanding changes nothing and is answered as `superseded`; of two of the same moment the\nrefusal wins.",
+        "description": "Record whether a destination agreed to have its opens and clicks tracked, as an `imported`\nconsent collected outside sphericon (a consent banner, an account setting). A `denied` always\napplies, and is kept in the immutable `<channel>.engagement_tracking_denied` event; a `granted`\nis kept in `<channel>.engagement_tracking_granted` and is refused with a conflict over a standing\n`denied`: only the person can lift a refusal. An observation that occurred before the consent\nstanding changes nothing and is answered as `superseded`; of two of the same moment the\nrefusal wins.",
         "parameters": [],
         "responses": {
           "200": {
@@ -7897,7 +7897,7 @@
             "description": "One entry per Destination of the contact; empty when it has none"
           }
         },
-        "description": "The Engagement tracking consent of each Destination of a contact (its email address)"
+        "description": "The Engagement tracking consent of each Destination of a contact: its email address, its phone, and the Telegram user of each of its chats"
       },
       "ContactEngagementTrackingInput": {
         "type": "object",
@@ -7909,6 +7909,14 @@
               }
             ],
             "description": "The consent of the contact's email address: the item's, else the one the contact has"
+          },
+          "sms": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EngagementTrackingObservationInput"
+              }
+            ],
+            "description": "The consent of the contact's phone on SMS: the item's, else the one the contact has"
           }
         },
         "description": "The Engagement tracking consent a contact upsert item carries, per Destination of the contact",
@@ -9916,7 +9924,7 @@
           },
           "destination": {
             "type": "string",
-            "description": "Normalized destination: the lower-cased email address on `email`"
+            "description": "Normalized destination: the lower-cased email address on `email`, the number in E.164 on `sms`, the Telegram user id on `telegram`"
           },
           "state": {
             "allOf": [
@@ -12470,12 +12478,12 @@
                 "$ref": "#/components/schemas/EngagementTrackingChannel"
               }
             ],
-            "description": "The Channel the consent is for. Only `email` is accepted yet"
+            "description": "The Channel the consent is for"
           },
           "destination": {
             "type": "string",
             "maxLength": 320,
-            "description": "The Destination that consented or refused: an email address on `email`"
+            "description": "The Destination that consented or refused: an email address on `email`, a phone number with its country code on `sms`, the Telegram user id a chat's Binding names on `telegram`"
           },
           "state": {
             "allOf": [
@@ -15869,7 +15877,7 @@
                 "$ref": "#/components/schemas/ContactEngagementTrackingInput"
               }
             ],
-            "description": "The Engagement tracking consent the contact's Destinations gave outside sphericon, recorded as\n`imported`, as `POST /engagement-tracking-consents` does. An item with consent for its email\nand no email fails"
+            "description": "The Engagement tracking consent the contact's Destinations gave outside sphericon, recorded as\n`imported`, as `POST /engagement-tracking-consents` does. An item with consent for its email\nand no email fails, and so does one with consent for its phone and no phone"
           }
         },
         "description": "One contact to upsert, matched by its alias keys (subject id, email, phone). An alias key fills\nonly a contact that has none; every other attribute given replaces the contact's, and null clears\nit.",

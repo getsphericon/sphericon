@@ -42,10 +42,11 @@ func (EngagementTrackingConsent) Fields() []ent.Field {
 			GoType(channels.Channel("")).
 			Immutable(),
 		// Normalized Channel-specific Destination: the lower-cased email address, the phone number
-		// in E.164, or the Telegram user id a Binding names.
+		// in E.164, or the Telegram user id a Binding names. On sms the Erasure of the Contact whose
+		// phone it was rekeys a `denied` to the number's hash (phone.Hash), as it does an opt-out
+		// (ADR 0021): the refusal outlives the person, the number does not.
 		field.String("destination").
-			NotEmpty().
-			Immutable(),
+			NotEmpty(),
 		// Whether the Destination agreed to be tracked. A `denied` is replaced only by the person's
 		// own grant (ADR 0121); the observations of one Destination are serialized and ordered by
 		// its consent stamp (ADR 0154).

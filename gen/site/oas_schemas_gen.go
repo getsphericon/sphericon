@@ -4511,7 +4511,8 @@ func (s *ContactAttribute) UnmarshalText(data []byte) error {
 	}
 }
 
-// The Engagement tracking consent of each Destination of a contact (its email address).
+// The Engagement tracking consent of each Destination of a contact: its email address, its phone, and
+// the Telegram user of each of its chats.
 // Ref: #/components/schemas/ContactEngagementTracking
 type ContactEngagementTracking struct {
 	// One entry per Destination of the contact; empty when it has none.
@@ -7676,7 +7677,8 @@ func (s *EngagementTrackingChannel) UnmarshalText(data []byte) error {
 type EngagementTrackingConsent struct {
 	// The Channel.
 	Channel EngagementTrackingChannel `json:"channel"`
-	// Normalized destination: the lower-cased email address on `email`.
+	// Normalized destination: the lower-cased email address on `email`, the number in E.164 on `sms`, the
+	// Telegram user id on `telegram`.
 	Destination string `json:"destination"`
 	// The consent recorded, or `default` where none is.
 	State EngagementTrackingReading `json:"state"`
@@ -29850,9 +29852,10 @@ type SitePublicUnsubscribesPerformNoContent struct{}
 // Destinations (ADR 0120), as `manual`.
 // Ref: #/components/schemas/SiteRecordEngagementTrackingInput
 type SiteRecordEngagementTrackingInput struct {
-	// The Channel the consent is for. Only `email` is accepted yet.
+	// The Channel the consent is for.
 	Channel EngagementTrackingChannel `json:"channel"`
-	// The contact's Destination that consented or refused: its email address on `email`.
+	// The contact's Destination that consented or refused: its email address on `email`, its phone on
+	// `sms`, the Telegram user id of one of its chats on `telegram`.
 	Destination string `json:"destination"`
 	// Whether the person agreed to have their opens and clicks tracked, or refused.
 	State EngagementTrackingState `json:"state"`

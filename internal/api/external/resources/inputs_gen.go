@@ -248,6 +248,7 @@ func (c *InputsImpl) ContactCreate(source *external.CreateContactInput) contacts
 func (c *InputsImpl) ContactEngagementTracking(source external.ContactEngagementTrackingInput) engagementtracking.ContactObservations {
 	var engagementtrackingContactObservations engagementtracking.ContactObservations
 	engagementtrackingContactObservations.Email = engagementTrackingObservationIn(c, source.Email)
+	engagementtrackingContactObservations.SMS = engagementTrackingObservationIn(c, source.SMS)
 	return engagementtrackingContactObservations
 }
 func (c *InputsImpl) ContactExport(source external.ContactsExportParams) dataexport.OpenInput {

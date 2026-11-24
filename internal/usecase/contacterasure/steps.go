@@ -63,11 +63,22 @@ func (u *UseCase) eraseConsentStamps(ctx context.Context, s *ent.Scoped, t *Targ
 			optOut, err := u.unsubs.SMSOptOut(ctx, s, number)
 			return optOut != nil, err
 		}
-		if err := u.stamps.Erase(ctx, s, consentstampsunchecked.EraseInput{Channel: channels.SMS, Destination: number, Standing: standing}); err != nil {
+		if err := u.stamps.Erase(ctx, s, consentstampsunchecked.EraseInput{
+			Channel: channels.SMS, Destination: number, Standing: standing, TrackingDenied: u.trackingDenied(s, channels.SMS, number),
+		}); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// trackingDenied reports whether a tracking refusal of destination on channel stands, which the
+// Erasure keeps with its time.
+func (u *UseCase) trackingDenied(s *ent.Scoped, channel channels.Channel, destination string) func(context.Context) (bool, error) {
+	return func(ctx context.Context) (bool, error) {
+		consent, err := u.tracking.Of(ctx, s, channel, destination)
+		return consent.State == engagementtracking.ReadingDenied, err
+	}
 }
 
 // eraseStampsOf erases the stamps of destination on channel but the time of a stop whose opt-out,
@@ -80,19 +91,34 @@ func (u *UseCase) eraseStampsOf(ctx context.Context, s *ent.Scoped, channel chan
 		}
 		return err == nil, err
 	}
-	denied := func(ctx context.Context) (bool, error) {
-		consent, err := u.tracking.Of(ctx, s, channel, destination)
-		return consent.State == engagementtracking.ReadingDenied, err
-	}
 	return u.stamps.Erase(ctx, s, consentstampsunchecked.EraseInput{
-		Channel: channel, Destination: destination, Standing: standing, TrackingDenied: denied,
+		Channel: channel, Destination: destination, Standing: standing, TrackingDenied: u.trackingDenied(s, channel, destination),
 	})
 }
 
-// eraseTracking deletes the tracking grants of the subject's addresses and keeps their refusals
-// (ADR 0120). It comes after eraseConsentStamps, which reads the refusals to keep their times.
+// eraseTracking deletes the tracking grants of the subject's addresses, phone and Telegram users
+// and keeps their refusals, the phone's by its hash (ADR 0120). It comes after eraseConsentStamps,
+// which reads the refusals to keep their times, and before the Visitors and the Contact go, whose
+// Bindings name its Telegram users.
 func (u *UseCase) eraseTracking(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-	return u.trackingSteps.Erase(ctx, s, engagementtrackingunchecked.EraseInput{Channel: channels.Email, Destinations: t.Destinations})
+	var users []string
+	if t.ContactID != 0 {
+		var err error
+		if users, err = u.chats.DestinationsOf(ctx, s, t.ContactID); err != nil {
+			return err
+		}
+	}
+	held := []engagementtrackingunchecked.EraseInput{
+		{Channel: channels.Email, Destinations: t.Destinations},
+		{Channel: channels.SMS, Destinations: lo.Compact([]string{t.Phone})},
+		{Channel: channels.Telegram, Destinations: users},
+	}
+	for _, in := range held {
+		if err := u.trackingSteps.Erase(ctx, s, in); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // anonymizeDelivery turns the subject's delivery records into anonymous rows: they keep

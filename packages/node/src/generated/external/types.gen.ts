@@ -1511,7 +1511,7 @@ export const ContactBatchWarning = { DISPOSABLE_EMAIL: 'disposable_email', ROLE_
 export type ContactBatchWarning = typeof ContactBatchWarning[keyof typeof ContactBatchWarning];
 
 /**
- * The Engagement tracking consent of each Destination of a contact (its email address)
+ * The Engagement tracking consent of each Destination of a contact: its email address, its phone, and the Telegram user of each of its chats
  */
 export type ContactEngagementTracking = {
   /**
@@ -1528,6 +1528,10 @@ export type ContactEngagementTrackingInput = {
    * The consent of the contact's email address: the item's, else the one the contact has
    */
   email?: EngagementTrackingObservationInput;
+  /**
+   * The consent of the contact's phone on SMS: the item's, else the one the contact has
+   */
+  sms?: EngagementTrackingObservationInput;
 };
 
 /**
@@ -2824,7 +2828,7 @@ export type EngagementTrackingConsent = {
    */
   channel: EngagementTrackingChannel;
   /**
-   * Normalized destination: the lower-cased email address on `email`
+   * Normalized destination: the lower-cased email address on `email`, the number in E.164 on `sms`, the Telegram user id on `telegram`
    */
   destination: string;
   /**
@@ -4661,11 +4665,11 @@ export type RateTriple = {
  */
 export type RecordEngagementTrackingInput = {
   /**
-   * The Channel the consent is for. Only `email` is accepted yet
+   * The Channel the consent is for
    */
   channel: EngagementTrackingChannel;
   /**
-   * The Destination that consented or refused: an email address on `email`
+   * The Destination that consented or refused: an email address on `email`, a phone number with its country code on `sms`, the Telegram user id a chat's Binding names on `telegram`
    */
   destination: string;
   /**
@@ -7001,7 +7005,7 @@ export type UpsertContactInput = {
   /**
    * The Engagement tracking consent the contact's Destinations gave outside sphericon, recorded as
    * `imported`, as `POST /engagement-tracking-consents` does. An item with consent for its email
-   * and no email fails
+   * and no email fails, and so does one with consent for its phone and no phone
    */
   engagementTracking?: ContactEngagementTrackingInput;
 };

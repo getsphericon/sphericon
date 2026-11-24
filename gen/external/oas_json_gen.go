@@ -10214,10 +10214,17 @@ func (s *ContactEngagementTrackingInput) encodeFields(e *jx.Encoder) {
 			s.Email.Encode(e)
 		}
 	}
+	{
+		if s.SMS.Set {
+			e.FieldStart("sms")
+			s.SMS.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfContactEngagementTrackingInput = [1]string{
+var jsonFieldsNameOfContactEngagementTrackingInput = [2]string{
 	0: "email",
+	1: "sms",
 }
 
 // Decode decodes ContactEngagementTrackingInput from json.
@@ -10237,6 +10244,16 @@ func (s *ContactEngagementTrackingInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"email\"")
+			}
+		case "sms":
+			if err := func() error {
+				s.SMS.Reset()
+				if err := s.SMS.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"sms\"")
 			}
 		default:
 			return errors.Errorf("unexpected field %q", k)

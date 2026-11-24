@@ -148,9 +148,13 @@ func (m *Module) confirmSMS(ctx context.Context, s *ent.Scoped, res Result, ev *
 }
 
 // recordTracking records the Engagement tracking consent a row carries for the Contact's email
-// address: the row's, else the one the Contact has. Consent for an email without one is refused.
-// The consent was collected for the address the row names, as SMS consent for its phone.
+// address and phone: the row's, else the ones the Contact has. Consent for a Destination the
+// Contact lacks is refused. The consent was collected for the address and the number the row
+// names, as SMS consent for its phone.
 func (m *Module) recordTracking(ctx context.Context, s *ent.Scoped, res Result, in IntakeInput) error {
-	email := lo.CoalesceOrEmpty(emailcase.Of(lo.FromPtr(in.Email)), lo.FromPtr(res.Contact.Email))
-	return m.tracking.ImportIn(ctx, s, email, in.EngagementTracking)
+	return m.tracking.ImportIn(ctx, s, engagementtracking.ImportInput{
+		Email:        lo.CoalesceOrEmpty(emailcase.Of(lo.FromPtr(in.Email)), lo.FromPtr(res.Contact.Email)),
+		Phone:        lo.CoalesceOrEmpty(lo.FromPtr(res.Phone), lo.FromPtr(res.Contact.Phone)),
+		Observations: in.EngagementTracking,
+	})
 }

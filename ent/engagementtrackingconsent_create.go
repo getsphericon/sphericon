@@ -334,6 +334,18 @@ func (u *EngagementTrackingConsentUpsert) UpdateWorkspaceID() *EngagementTrackin
 	return u
 }
 
+// SetDestination sets the "destination" field.
+func (u *EngagementTrackingConsentUpsert) SetDestination(v string) *EngagementTrackingConsentUpsert {
+	u.Set(engagementtrackingconsent.FieldDestination, v)
+	return u
+}
+
+// UpdateDestination sets the "destination" field to the value that was provided on create.
+func (u *EngagementTrackingConsentUpsert) UpdateDestination() *EngagementTrackingConsentUpsert {
+	u.SetExcluded(engagementtrackingconsent.FieldDestination)
+	return u
+}
+
 // SetState sets the "state" field.
 func (u *EngagementTrackingConsentUpsert) SetState(v engagementtrackingconsent.State) *EngagementTrackingConsentUpsert {
 	u.Set(engagementtrackingconsent.FieldState, v)
@@ -380,9 +392,6 @@ func (u *EngagementTrackingConsentUpsertOne) UpdateNewValues() *EngagementTracki
 		}
 		if _, exists := u.create.mutation.Channel(); exists {
 			s.SetIgnore(engagementtrackingconsent.FieldChannel)
-		}
-		if _, exists := u.create.mutation.Destination(); exists {
-			s.SetIgnore(engagementtrackingconsent.FieldDestination)
 		}
 	}))
 	return u
@@ -440,6 +449,20 @@ func (u *EngagementTrackingConsentUpsertOne) SetWorkspaceID(v int64) *Engagement
 func (u *EngagementTrackingConsentUpsertOne) UpdateWorkspaceID() *EngagementTrackingConsentUpsertOne {
 	return u.Update(func(s *EngagementTrackingConsentUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetDestination sets the "destination" field.
+func (u *EngagementTrackingConsentUpsertOne) SetDestination(v string) *EngagementTrackingConsentUpsertOne {
+	return u.Update(func(s *EngagementTrackingConsentUpsert) {
+		s.SetDestination(v)
+	})
+}
+
+// UpdateDestination sets the "destination" field to the value that was provided on create.
+func (u *EngagementTrackingConsentUpsertOne) UpdateDestination() *EngagementTrackingConsentUpsertOne {
+	return u.Update(func(s *EngagementTrackingConsentUpsert) {
+		s.UpdateDestination()
 	})
 }
 
@@ -659,9 +682,6 @@ func (u *EngagementTrackingConsentUpsertBulk) UpdateNewValues() *EngagementTrack
 			if _, exists := b.mutation.Channel(); exists {
 				s.SetIgnore(engagementtrackingconsent.FieldChannel)
 			}
-			if _, exists := b.mutation.Destination(); exists {
-				s.SetIgnore(engagementtrackingconsent.FieldDestination)
-			}
 		}
 	}))
 	return u
@@ -719,6 +739,20 @@ func (u *EngagementTrackingConsentUpsertBulk) SetWorkspaceID(v int64) *Engagemen
 func (u *EngagementTrackingConsentUpsertBulk) UpdateWorkspaceID() *EngagementTrackingConsentUpsertBulk {
 	return u.Update(func(s *EngagementTrackingConsentUpsert) {
 		s.UpdateWorkspaceID()
+	})
+}
+
+// SetDestination sets the "destination" field.
+func (u *EngagementTrackingConsentUpsertBulk) SetDestination(v string) *EngagementTrackingConsentUpsertBulk {
+	return u.Update(func(s *EngagementTrackingConsentUpsert) {
+		s.SetDestination(v)
+	})
+}
+
+// UpdateDestination sets the "destination" field to the value that was provided on create.
+func (u *EngagementTrackingConsentUpsertBulk) UpdateDestination() *EngagementTrackingConsentUpsertBulk {
+	return u.Update(func(s *EngagementTrackingConsentUpsert) {
+		s.UpdateDestination()
 	})
 }
 

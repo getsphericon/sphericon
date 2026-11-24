@@ -473,9 +473,10 @@ export const contactsExport = <ThrowOnError extends boolean = false>(options?: O
 });
 
 /**
- * Read whether each Destination of a contact (its email address) is tracked: the consent
+ * Read whether each Destination of a contact (its email address, its phone, the Telegram user
+ * of each of its chats) is tracked: the consent
  * recorded with who recorded it, or `default` where none is, with what it means now. The consent
- * is keyed by the Destination, so it follows the address the contact has now.
+ * is keyed by the Destination, so it follows the address and the phone the contact has now.
  */
 export const engagementTrackingGetForContact = <ThrowOnError extends boolean = false>(options: Options<EngagementTrackingGetForContactData, ThrowOnError>): RequestResult<EngagementTrackingGetForContactResponses, EngagementTrackingGetForContactErrors, ThrowOnError> => (options.client ?? client).get<EngagementTrackingGetForContactResponses, EngagementTrackingGetForContactErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
@@ -645,8 +646,8 @@ export const emailSchemaGet = <ThrowOnError extends boolean = false>(options?: O
 /**
  * Record whether a destination agreed to have its opens and clicks tracked, as an `imported`
  * consent collected outside sphericon (a consent banner, an account setting). A `denied` always
- * applies, and is kept in the immutable `email.engagement_tracking_denied` event; a `granted` is
- * kept in `email.engagement_tracking_granted` and is refused with a conflict over a standing
+ * applies, and is kept in the immutable `<channel>.engagement_tracking_denied` event; a `granted`
+ * is kept in `<channel>.engagement_tracking_granted` and is refused with a conflict over a standing
  * `denied`: only the person can lift a refusal. An observation that occurred before the consent
  * standing changes nothing and is answered as `superseded`; of two of the same moment the
  * refusal wins.

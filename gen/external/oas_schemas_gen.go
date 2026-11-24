@@ -5992,7 +5992,8 @@ func (s *ContactBatchWarning) UnmarshalText(data []byte) error {
 	}
 }
 
-// The Engagement tracking consent of each Destination of a contact (its email address).
+// The Engagement tracking consent of each Destination of a contact: its email address, its phone, and
+// the Telegram user of each of its chats.
 // Ref: #/components/schemas/ContactEngagementTracking
 type ContactEngagementTracking struct {
 	// One entry per Destination of the contact; empty when it has none.
@@ -6014,6 +6015,8 @@ func (s *ContactEngagementTracking) SetDestinations(val []EngagementTrackingCons
 type ContactEngagementTrackingInput struct {
 	// The consent of the contact's email address: the item's, else the one the contact has.
 	Email OptEngagementTrackingObservationInput `json:"email"`
+	// The consent of the contact's phone on SMS: the item's, else the one the contact has.
+	SMS OptEngagementTrackingObservationInput `json:"sms"`
 }
 
 // GetEmail returns the value of Email.
@@ -6021,9 +6024,19 @@ func (s *ContactEngagementTrackingInput) GetEmail() OptEngagementTrackingObserva
 	return s.Email
 }
 
+// GetSMS returns the value of SMS.
+func (s *ContactEngagementTrackingInput) GetSMS() OptEngagementTrackingObservationInput {
+	return s.SMS
+}
+
 // SetEmail sets the value of Email.
 func (s *ContactEngagementTrackingInput) SetEmail(val OptEngagementTrackingObservationInput) {
 	s.Email = val
+}
+
+// SetSMS sets the value of SMS.
+func (s *ContactEngagementTrackingInput) SetSMS(val OptEngagementTrackingObservationInput) {
+	s.SMS = val
 }
 
 // The contact's place in one broadcast's audience (how its send ended, and whether it was opened or
@@ -10202,7 +10215,8 @@ func (s *EngagementTrackingChannel) UnmarshalText(data []byte) error {
 type EngagementTrackingConsent struct {
 	// The Channel.
 	Channel EngagementTrackingChannel `json:"channel"`
-	// Normalized destination: the lower-cased email address on `email`.
+	// Normalized destination: the lower-cased email address on `email`, the number in E.164 on `sms`, the
+	// Telegram user id on `telegram`.
 	Destination string `json:"destination"`
 	// The consent recorded, or `default` where none is.
 	State EngagementTrackingReading `json:"state"`
@@ -19571,9 +19585,10 @@ func (s *RateTriple) SetRate(val NilFloat64) {
 // `imported`.
 // Ref: #/components/schemas/RecordEngagementTrackingInput
 type RecordEngagementTrackingInput struct {
-	// The Channel the consent is for. Only `email` is accepted yet.
+	// The Channel the consent is for.
 	Channel EngagementTrackingChannel `json:"channel"`
-	// The Destination that consented or refused: an email address on `email`.
+	// The Destination that consented or refused: an email address on `email`, a phone number with its
+	// country code on `sms`, the Telegram user id a chat's Binding names on `telegram`.
 	Destination string `json:"destination"`
 	// Whether the person agreed to have their opens and clicks tracked, or refused.
 	State EngagementTrackingState `json:"state"`
@@ -28090,7 +28105,7 @@ type UpsertContactInput struct {
 	SmsConsent OptConsentEvidence `json:"smsConsent"`
 	// The Engagement tracking consent the contact's Destinations gave outside sphericon, recorded as
 	// `imported`, as `POST /engagement-tracking-consents` does. An item with consent for its email and no
-	// email fails.
+	// email fails, and so does one with consent for its phone and no phone.
 	EngagementTracking OptContactEngagementTrackingInput `json:"engagementTracking"`
 }
 

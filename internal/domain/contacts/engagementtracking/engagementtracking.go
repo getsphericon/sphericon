@@ -19,8 +19,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
+	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
@@ -32,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/phone"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -94,14 +97,17 @@ var (
 	// only the person lifts a refusal (ADR 0121).
 	ErrRefusalStands = validation.Conflict("engagement tracking: the destination refused tracking, and only the person can lift a refusal",
 		i18n.ErrorsEngagementTrackingRefused)
-	// ErrChannel refuses a Channel whose Destinations take no consent yet.
-	ErrChannel = validation.RefuseField(fieldname.Channel, "engagement tracking: only email takes a consent yet",
+	// ErrChannel refuses a Channel whose messages track no engagement, so whose Destinations take
+	// no consent.
+	ErrChannel = validation.RefuseField(fieldname.Channel, "engagement tracking: only email, sms and telegram take a consent",
 		i18n.ErrorsEngagementTrackingChannel)
 	// ErrInFuture refuses a grant said to occur after now: it would outrank every real refusal.
 	ErrInFuture = validation.RefuseField(fieldname.OccurredAt, "engagement tracking: occurredAt of a grant must not be in the future",
 		i18n.ErrorsEngagementTrackingInFuture)
 	// ErrNoEmail refuses a Contact's email consent for a Contact without an email address.
 	ErrNoEmail = validation.RefuseField(fieldname.Email, "engagement tracking: the contact has no email", i18n.ErrorsContactEmailMissing)
+	// ErrNoPhone refuses a Contact's SMS consent for a Contact without a phone.
+	ErrNoPhone = validation.RefuseField(fieldname.Phone, "engagement tracking: the contact has no phone", i18n.ErrorsContactPhoneMissing)
 	// ErrNotTheContacts refuses a member's observation, on the Contact card, of a Destination the
 	// Contact does not hold.
 	ErrNotTheContacts = validation.RefuseField(fieldname.Destination, "engagement tracking: the destination is not the contact's",
@@ -119,9 +125,9 @@ var _ = db.Declare(
 	db.Fault("engagement_tracking_consents_ws_channel_dest", "every write holds the Destination's consent stamp first and reads the row under it"),
 )
 
-// open is the Channels whose Destinations take a consent today. SMS and Telegram open when their
-// Destinations do (the row, the Events and the provenance already cover them).
-var open = map[channels.Channel]bool{channels.Email: true}
+// open is the Channels whose messages track engagement (ADR 0083), so whose Destinations take a
+// consent: an email address, a phone number in E.164, the Telegram user id a Binding names.
+var open = map[channels.Channel]bool{channels.Email: true, channels.SMS: true, channels.Telegram: true}
 
 // Module records and reads the Engagement tracking consent of a Workspace's Destinations. It
 // publishes each consent's proof in the transaction of the scope it is given, through the bus.
@@ -318,33 +324,62 @@ func (m *Module) publishSuperseded(ctx context.Context, s *ent.Scoped, holder in
 		WorkspaceID: s.WorkspaceID(), ContactID: holder, Channel: string(in.Channel),
 		Observation: observation, Provenance: string(in.Provenance), ObservedAt: in.OccurredAt,
 	}
-	if in.Channel == channels.Email {
+	switch in.Channel {
+	case channels.Email:
 		e.Email = in.Destination
+	case channels.SMS:
+		e.Phone = in.Destination
+	case channels.Telegram:
+		// A Telegram user id has no column of the Event row: the Event names it by its Contact.
 	}
 	return m.bus.PublishIn(ctx, s, e)
 }
 
 // holderOf is the Contact holding destination on channel, locked against its Erasure to the end
-// of the transaction (contactlock.Referenced), 0 when none does.
+// of the transaction (contactlock.Referenced), 0 when none does. A Telegram user id is held by the
+// Contact its first Binding reaches, its own or through a Visitor: the one Contact the Event names.
 func (m *Module) holderOf(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string) (int64, error) {
-	q := s.Contact().Query()
+	var (
+		id  int64
+		err error
+	)
 	switch channel {
 	case channels.Email:
-		q.Where(contact.Email(destination))
+		id, err = s.Contact().Query().Where(contact.Email(destination)).OnlyID(ctx)
 	case channels.SMS:
-		q.Where(contact.Phone(destination))
-	default:
-		// A Telegram Destination is held through a Binding, which the sending context keeps.
-		return 0, nil
+		id, err = s.Contact().Query().Where(contact.Phone(destination)).OnlyID(ctx)
+	case channels.Telegram:
+		id, err = boundContactOf(ctx, s, destination)
 	}
-	id, err := q.OnlyID(ctx)
-	if ent.IsNotFound(err) {
+	switch {
+	case ent.IsNotFound(err), err == nil && id == 0:
 		return 0, nil
-	}
-	if err != nil {
+	case err != nil:
 		return 0, fmt.Errorf("find the destination's contact: %w", err)
 	}
 	return m.locks.Referenced(ctx, s, id)
+}
+
+// boundContactOf is the Contact the first Binding of a Telegram user id reaches, its own or
+// through a Visitor, 0 when none reaches one.
+func boundContactOf(ctx context.Context, s *ent.Scoped, user string) (int64, error) {
+	rows, err := s.Binding().Query().
+		Where(binding.ChannelEQ(binding.ChannelTelegram), binding.Destination(user)).
+		WithVisitor().
+		Order(binding.ByBoundAt(), binding.ByID()).
+		All(ctx)
+	if err != nil {
+		return 0, err
+	}
+	for _, b := range rows {
+		if b.ContactID != nil {
+			return *b.ContactID, nil
+		}
+		if b.Edges.Visitor != nil && b.Edges.Visitor.ContactID != nil {
+			return *b.Edges.Visitor.ContactID, nil
+		}
+	}
+	return 0, nil
 }
 
 // ContactConsents is the consent of each Destination of a Contact.
@@ -352,15 +387,19 @@ type ContactConsents struct {
 	Destinations []Consent
 }
 
-// ReadContact reads the consent of each Destination of a Contact: its email address. A Contact
-// without one has none.
+// ReadContact reads the consent of each Destination of a Contact: its email address, its phone,
+// and the Telegram user of each of its chats. A Contact without any has none.
 func (m *Module) ReadContact(ctx context.Context, s *ent.Scoped, contactID int64) (ContactConsents, error) {
 	c, err := contactOf(ctx, s, contactID)
 	if err != nil {
 		return ContactConsents{}, err
 	}
+	held, err := destinationsOf(ctx, s, c)
+	if err != nil {
+		return ContactConsents{}, err
+	}
 	out := ContactConsents{Destinations: []Consent{}}
-	for _, d := range destinationsOf(c) {
+	for _, d := range held {
 		consent, err := m.Of(ctx, s, d.channel, d.address)
 		if err != nil {
 			return ContactConsents{}, err
@@ -396,7 +435,11 @@ func (m *Module) RecordByMember(ctx context.Context, s *ent.Scoped, contactID in
 		if err != nil {
 			return err
 		}
-		if !slices.Contains(destinationsOf(c), destination{channel: in.Channel, address: address}) {
+		held, err := destinationsOf(ctx, ts, c)
+		if err != nil {
+			return err
+		}
+		if !slices.Contains(held, destination{channel: in.Channel, address: address}) {
 			return ErrNotTheContacts
 		}
 		out, err = m.RecordIn(ctx, ts, RecordInput{Channel: in.Channel, Destination: address, State: in.State, Provenance: Manual})
@@ -411,12 +454,33 @@ type destination struct {
 	address string
 }
 
-// destinationsOf is the Destinations of c that take a consent: its email address.
-func destinationsOf(c *ent.Contact) []destination {
-	if c.Email == nil {
-		return nil
+// destinationsOf is the Destinations of c that take a consent: its email address, its phone, and
+// the Telegram users Bound to it on any bot of the Workspace, its own or through one of its
+// Visitors, as the sending context's Chats.DestinationsOf lists them.
+func destinationsOf(ctx context.Context, s *ent.Scoped, c *ent.Contact) ([]destination, error) {
+	var out []destination
+	if c.Email != nil {
+		out = append(out, destination{channel: channels.Email, address: *c.Email})
 	}
-	return []destination{{channel: channels.Email, address: *c.Email}}
+	if c.Phone != nil {
+		out = append(out, destination{channel: channels.SMS, address: *c.Phone})
+	}
+	users, err := s.Binding().Query().
+		Where(
+			binding.ChannelEQ(binding.ChannelTelegram),
+			binding.Or(binding.ContactID(c.ID), binding.HasVisitorWith(visitor.ContactID(c.ID))),
+		).
+		Unique(true).
+		Order(binding.ByDestination()).
+		Select(binding.FieldDestination).
+		Strings(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list the contact's telegram users: %w", err)
+	}
+	for _, user := range users {
+		out = append(out, destination{channel: channels.Telegram, address: user})
+	}
+	return out, nil
 }
 
 // contactOf is the Contact contactID of the Workspace, or ErrContactNotFound.
@@ -454,23 +518,42 @@ type Observation struct {
 }
 
 // ContactObservations are the observations a Contact intake row carries, per Destination of the
-// Contact; Email is nil when it carries none for the email address.
+// Contact; Email is nil when it carries none for the email address, SMS when it carries none for
+// the phone.
 type ContactObservations struct {
 	Email *Observation
+	SMS   *Observation
 }
 
-// ImportIn records the observations an intake row carries for a Contact whose email address is
-// email ("" when it has none), as imported, inside the bus transaction s is bound to: one for the
-// email address of a Contact without one is ErrNoEmail, so an import row never drops it silently.
-func (m *Module) ImportIn(ctx context.Context, s *ent.Scoped, email string, in ContactObservations) error {
-	if in.Email == nil {
+// ImportInput is what a Contact intake row records: the Contact's email address and phone ("" when
+// it has none), and the observations the row carries for them.
+type ImportInput struct {
+	Email        string
+	Phone        string
+	Observations ContactObservations
+}
+
+// ImportIn records the observations an intake row carries for a Contact, as imported, inside the
+// bus transaction s is bound to: one for the email address of a Contact without one is ErrNoEmail,
+// one for the phone of a Contact without one ErrNoPhone, so an import row never drops it silently.
+func (m *Module) ImportIn(ctx context.Context, s *ent.Scoped, in ImportInput) error {
+	if err := m.importOne(ctx, s, channels.Email, in.Email, in.Observations.Email, ErrNoEmail); err != nil {
+		return err
+	}
+	return m.importOne(ctx, s, channels.SMS, in.Phone, in.Observations.SMS, ErrNoPhone)
+}
+
+// importOne records the observation o of destination on channel as imported; none is nothing, and
+// one without a destination is missing.
+func (m *Module) importOne(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string, o *Observation, missing error) error {
+	if o == nil {
 		return nil
 	}
-	if email == "" {
-		return ErrNoEmail
+	if destination == "" {
+		return missing
 	}
 	_, err := m.RecordIn(ctx, s, RecordInput{
-		Channel: channels.Email, Destination: email, State: in.Email.State, Provenance: Imported, OccurredAt: in.Email.OccurredAt,
+		Channel: channel, Destination: destination, State: o.State, Provenance: Imported, OccurredAt: o.OccurredAt,
 	})
 	return err
 }
@@ -527,10 +610,22 @@ func trackedOf(outer *sql.Selector, channel channels.Channel, dflt Decision, col
 	if dflt == Track {
 		state, exists = Denied, sql.NotExists
 	}
+	sameDestination := sql.ColumnsEQ(consents.C(engagementtrackingconsent.FieldDestination), outer.C(column))
+	if channel == channels.SMS {
+		// On sms a refusal is kept by the number or, once its Contact was erased, by the number's
+		// hash (phone.Hash, here in SQL, as the eligibility layers match an opt-out), so it holds
+		// when the number comes back.
+		// raw sql: the destination correlation, matched against the number or its SHA-256 hex.
+		sameDestination = sql.P(func(b *sql.Builder) {
+			b.WriteString(consents.C(engagementtrackingconsent.FieldDestination)).WriteString(" IN (").
+				WriteString(outer.C(column)).WriteString(", encode(sha256(convert_to(").
+				WriteString(outer.C(column)).WriteString(", 'UTF8')), 'hex'))")
+		})
+	}
 	return exists(sql.Select(consents.C(engagementtrackingconsent.FieldID)).From(consents).Where(sql.And(
 		// Every Workspace-owned table names its Workspace in the same column (WorkspaceMixin).
 		sql.ColumnsEQ(consents.C(engagementtrackingconsent.FieldWorkspaceID), outer.C(engagementtrackingconsent.FieldWorkspaceID)),
-		sql.ColumnsEQ(consents.C(engagementtrackingconsent.FieldDestination), outer.C(column)),
+		sameDestination,
 		sql.EQ(consents.C(engagementtrackingconsent.FieldChannel), string(channel)),
 		sql.EQ(consents.C(engagementtrackingconsent.FieldState), string(state)),
 	)))
@@ -549,11 +644,18 @@ func consentOf(channel channels.Channel, destination string, row *ent.Engagement
 	return out
 }
 
-// standingOf is the consent row of destination on channel, nil when none is recorded.
+// standingOf is the consent row of destination on channel, nil when none is recorded. On sms the
+// row is the number's or, once the Contact whose phone it was is erased, its hash's
+// (engagementtrackingunchecked), never both: an observation of the number writes the hash's row
+// when one stands, and an Erasure rekeys the number's only where no hash's stands.
 func standingOf(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string) (*ent.EngagementTrackingConsent, error) {
+	same := engagementtrackingconsent.DestinationEQ(destination)
+	if channel == channels.SMS {
+		same = engagementtrackingconsent.DestinationIn(destination, phone.Hash(destination))
+	}
 	row, err := s.EngagementTrackingConsent().Query().Where(
 		engagementtrackingconsent.ChannelEQ(channel),
-		engagementtrackingconsent.DestinationEQ(destination),
+		same,
 	).Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil, nil

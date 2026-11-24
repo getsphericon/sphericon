@@ -39,7 +39,7 @@ model EngagementTrackingConsent {
   /** The Channel */
   channel: EngagementTrackingChannel;
 
-  /** Normalized destination: the lower-cased email address on `email` */
+  /** Normalized destination: the lower-cased email address on `email`, the number in E.164 on `sms`, the Telegram user id on `telegram` */
   destination: string;
 
   /** The consent recorded, or `default` where none is */
@@ -55,7 +55,7 @@ model EngagementTrackingConsent {
   updatedAt?: Timestamp | null;
 }
 
-/** The Engagement tracking consent of each Destination of a contact (its email address) */
+/** The Engagement tracking consent of each Destination of a contact: its email address, its phone, and the Telegram user of each of its chats */
 model ContactEngagementTracking {
   /** One entry per Destination of the contact; empty when it has none */
   destinations: EngagementTrackingConsent[];

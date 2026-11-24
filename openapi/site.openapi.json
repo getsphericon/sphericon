@@ -5565,7 +5565,7 @@
     "/workspaces/{workspaceId}/contacts/{contactId}/engagement-tracking": {
       "get": {
         "operationId": "SiteEngagementTracking_get",
-        "description": "Read whether each Destination of a contact (its email address) is tracked: the consent\nrecorded with who recorded it, or `default` where none is, with what the Workspace's default\nmeans now",
+        "description": "Read whether each Destination of a contact (its email address, its phone, the Telegram user\nof each of its chats) is tracked: the consent\nrecorded with who recorded it, or `default` where none is, with what the Workspace's default\nmeans now",
         "parameters": [
           {
             "name": "workspaceId",
@@ -5611,7 +5611,7 @@
       },
       "post": {
         "operationId": "SiteEngagementTracking_create",
-        "description": "Record a refusal or a grant of tracking the person made to you (by phone, by reply) for one of\nthe contact's Destinations, as `manual`, now. A `denied` always applies and is kept in the\nimmutable `email.engagement_tracking_denied` event; a `granted` is refused with a conflict over\na standing `denied`: only the person can lift a refusal. 422 when the Destination is not the\ncontact's.",
+        "description": "Record a refusal or a grant of tracking the person made to you (by phone, by reply) for one of\nthe contact's Destinations, as `manual`, now. A `denied` always applies and is kept in the\nimmutable `<channel>.engagement_tracking_denied` event; a `granted` is refused with a conflict over\na standing `denied`: only the person can lift a refusal. 422 when the Destination is not the\ncontact's.",
         "parameters": [
           {
             "name": "workspaceId",
@@ -12402,7 +12402,7 @@
             "description": "One entry per Destination of the contact; empty when it has none"
           }
         },
-        "description": "The Engagement tracking consent of each Destination of a contact (its email address)"
+        "description": "The Engagement tracking consent of each Destination of a contact: its email address, its phone, and the Telegram user of each of its chats"
       },
       "ContactExportBroadcastRecipient": {
         "type": "object",
@@ -13988,7 +13988,7 @@
           },
           "destination": {
             "type": "string",
-            "description": "Normalized destination: the lower-cased email address on `email`"
+            "description": "Normalized destination: the lower-cased email address on `email`, the number in E.164 on `sms`, the Telegram user id on `telegram`"
           },
           "state": {
             "allOf": [
@@ -20709,12 +20709,12 @@
                 "$ref": "#/components/schemas/EngagementTrackingChannel"
               }
             ],
-            "description": "The Channel the consent is for. Only `email` is accepted yet"
+            "description": "The Channel the consent is for"
           },
           "destination": {
             "type": "string",
             "maxLength": 320,
-            "description": "The contact's Destination that consented or refused: its email address on `email`"
+            "description": "The contact's Destination that consented or refused: its email address on `email`, its phone on `sms`, the Telegram user id of one of its chats on `telegram`"
           },
           "state": {
             "allOf": [

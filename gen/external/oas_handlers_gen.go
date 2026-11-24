@@ -9802,9 +9802,9 @@ func (s *Server) handleEmailsSendRequest(args [0]string, argsEscaped bool, w htt
 //
 // Record whether a destination agreed to have its opens and clicks tracked, as an `imported` consent
 // collected outside sphericon (a consent banner, an account setting). A `denied` always applies, and
-// is kept in the immutable `email.engagement_tracking_denied` event; a `granted` is kept in
-// `email.engagement_tracking_granted` and is refused with a conflict over a standing `denied`: only
-// the person can lift a refusal. An observation that occurred before the consent standing changes
+// is kept in the immutable `<channel>.engagement_tracking_denied` event; a `granted` is kept in
+// `<channel>.engagement_tracking_granted` and is refused with a conflict over a standing `denied`:
+// only the person can lift a refusal. An observation that occurred before the consent standing changes
 // nothing and is answered as `superseded`; of two of the same moment the refusal wins.
 //
 // POST /engagement-tracking-consents
@@ -10005,9 +10005,10 @@ func (s *Server) handleEngagementTrackingCreateRequest(args [0]string, argsEscap
 
 // handleEngagementTrackingGetForContactRequest handles EngagementTracking_getForContact operation.
 //
-// Read whether each Destination of a contact (its email address) is tracked: the consent recorded with
-// who recorded it, or `default` where none is, with what it means now. The consent is keyed by the
-// Destination, so it follows the address the contact has now.
+// Read whether each Destination of a contact (its email address, its phone, the Telegram user of each
+// of its chats) is tracked: the consent recorded with who recorded it, or `default` where none is,
+// with what it means now. The consent is keyed by the Destination, so it follows the address and the
+// phone the contact has now.
 //
 // GET /contacts/{contactId}/engagement-tracking
 func (s *Server) handleEngagementTrackingGetForContactRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

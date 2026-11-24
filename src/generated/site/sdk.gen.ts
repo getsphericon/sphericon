@@ -2440,7 +2440,8 @@ export const siteTelegramListBindings = <ThrowOnError extends boolean = false>(o
 });
 
 /**
- * Read whether each Destination of a contact (its email address) is tracked: the consent
+ * Read whether each Destination of a contact (its email address, its phone, the Telegram user
+ * of each of its chats) is tracked: the consent
  * recorded with who recorded it, or `default` where none is, with what the Workspace's default
  * means now
  */
@@ -2462,7 +2463,7 @@ export const siteEngagementTrackingGet = <ThrowOnError extends boolean = false>(
 /**
  * Record a refusal or a grant of tracking the person made to you (by phone, by reply) for one of
  * the contact's Destinations, as `manual`, now. A `denied` always applies and is kept in the
- * immutable `email.engagement_tracking_denied` event; a `granted` is refused with a conflict over
+ * immutable `<channel>.engagement_tracking_denied` event; a `granted` is refused with a conflict over
  * a standing `denied`: only the person can lift a refusal. 422 when the Destination is not the
  * contact's.
  */

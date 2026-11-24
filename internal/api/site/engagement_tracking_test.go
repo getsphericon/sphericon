@@ -101,3 +101,50 @@ func TestTrackingConsentOnTheCardIsTheContactsOwnAndNotFoundInAnotherWorkspace(t
 	require.Len(t, bob.Destinations, 1)
 	assert.Equal(t, siteapi.EngagementTrackingReadingDefault, bob.Destinations[0].State, "Bob's address was not touched")
 }
+
+// destinationsOnCard is the Channel and Destination of each consent the card lists for a Contact.
+func destinationsOnCard(t *testing.T, member *siteapi.Client, contactID int64) map[siteapi.EngagementTrackingChannel]string {
+	t.Helper()
+	read, err := member.SiteEngagementTrackingGet(t.Context(), trackingParams(contactID))
+	require.NoError(t, err)
+	out := map[siteapi.EngagementTrackingChannel]string{}
+	for _, d := range read.Destinations {
+		out[d.Channel] = d.Destination
+	}
+	return out
+}
+
+// The card lists the Contact's phone and the Telegram user of its chat beside its email address,
+// and a member records a refusal of the chat apart from the rest; a grant over it is a conflict.
+func TestTheCardListsThePhoneAndEachChatAndRecordsTheirConsent(t *testing.T) {
+	env := testhelper.Setup(t)
+	member := env.SiteActor(t, fixtures.MemberMaryEmail)
+	ctx := t.Context()
+	onChat := func(state siteapi.EngagementTrackingState) *siteapi.SiteRecordEngagementTrackingInput {
+		return &siteapi.SiteRecordEngagementTrackingInput{Channel: siteapi.EngagementTrackingChannelTelegram, Destination: fixtures.BindingLiamDestination, State: state}
+	}
+
+	texter := destinationsOnCard(t, member, fixtures.ContactTexterID)
+	liam := destinationsOnCard(t, member, fixtures.ContactLiamID)
+	refused, err := member.SiteEngagementTrackingCreate(ctx, onChat(siteapi.EngagementTrackingStateDenied), trackingRecordParams(fixtures.ContactLiamID))
+	require.NoError(t, err)
+	_, regrant := member.SiteEngagementTrackingCreate(ctx, onChat(siteapi.EngagementTrackingStateGranted), trackingRecordParams(fixtures.ContactLiamID))
+	_, notHis := member.SiteEngagementTrackingCreate(ctx, &siteapi.SiteRecordEngagementTrackingInput{
+		Channel: siteapi.EngagementTrackingChannelSMS, Destination: fixtures.ContactTexterPhone, State: siteapi.EngagementTrackingStateDenied,
+	}, trackingRecordParams(fixtures.ContactLiamID))
+
+	assert.Equal(t, map[siteapi.EngagementTrackingChannel]string{
+		siteapi.EngagementTrackingChannelEmail: fixtures.ContactTexterEmail, siteapi.EngagementTrackingChannelSMS: fixtures.ContactTexterPhone,
+	}, texter)
+	assert.Equal(t, map[siteapi.EngagementTrackingChannel]string{
+		siteapi.EngagementTrackingChannelEmail: fixtures.ContactLiamEmail, siteapi.EngagementTrackingChannelTelegram: fixtures.BindingLiamDestination,
+	}, liam)
+	assert.Equal(t, siteapi.EngagementTrackingReadingDenied, refused.Consent.State)
+	assert.Equal(t, siteapi.EngagementTrackingProvenanceManual, refused.Consent.Provenance.Value)
+	testhelper.SiteRefusal(t, regrant, http.StatusConflict)
+	testhelper.SiteRefusal(t, notHis, http.StatusUnprocessableEntity)
+	denied := env.QueuedCount(t, systemevent.TelegramEngagementTrackingDenied, map[string]any{
+		"destination": fixtures.BindingLiamDestination, "contactId": fixtures.ContactLiamID, "provenance": "manual",
+	})
+	assert.Equal(t, 1, denied)
+}
