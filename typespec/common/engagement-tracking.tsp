@@ -60,3 +60,18 @@ model ContactEngagementTracking {
   /** One entry per Destination of the contact; empty when it has none */
   destinations: EngagementTrackingConsent[];
 }
+
+/** What became of an Engagement tracking observation: it set the consent (`applied`), or it occurred before the consent standing and changed nothing (`superseded`, recorded in the contact's history as `contact.consent_superseded`) */
+enum EngagementTrackingOutcome {
+  applied,
+  superseded,
+}
+
+/** The answer to an Engagement tracking observation: what became of it, and the consent that stands after it */
+model EngagementTrackingObservationResult {
+  /** Whether the observation set the consent */
+  outcome: EngagementTrackingOutcome;
+
+  /** The Destination's consent after the observation */
+  consent: EngagementTrackingConsent;
+}

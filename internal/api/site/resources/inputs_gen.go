@@ -7,12 +7,14 @@ import (
 	"fmt"
 	automationversion "github.com/getsphericon/sphericon/ent/automationversion"
 	broadcast "github.com/getsphericon/sphericon/ent/broadcast"
+	engagementtrackingconsent "github.com/getsphericon/sphericon/ent/engagementtrackingconsent"
 	invitation "github.com/getsphericon/sphericon/ent/invitation"
 	membership "github.com/getsphericon/sphericon/ent/membership"
 	signupsurveyresponse "github.com/getsphericon/sphericon/ent/signupsurveyresponse"
 	site "github.com/getsphericon/sphericon/gen/site"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	contacts "github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	engagementtracking "github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	segments "github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	brandkits "github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	emailtemplates "github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
@@ -425,6 +427,32 @@ func (c *InputsImpl) EmailStepIn(source site.EmailStepInput) automationstep.Emai
 	automationstepEmail.Doc = documentIn(source.Doc)
 	// automationstepEmail.EditorVersion: ignore
 	return automationstepEmail
+}
+func (c *InputsImpl) EngagementTrackingByMember(source *site.SiteRecordEngagementTrackingInput) engagementtracking.MemberInput {
+	var engagementtrackingMemberInput engagementtracking.MemberInput
+	if source != nil {
+		engagementtrackingMemberInput.Channel = c.EngagementTrackingChannel((*source).Channel)
+		engagementtrackingMemberInput.Destination = (*source).Destination
+		engagementtrackingMemberInput.State = c.EngagementTrackingState((*source).State)
+	}
+	return engagementtrackingMemberInput
+}
+func (c *InputsImpl) EngagementTrackingChannel(source site.EngagementTrackingChannel) channels.Channel {
+	var channelsChannel channels.Channel
+	switch source {
+	case site.EngagementTrackingChannelEmail:
+		channelsChannel = channels.Email
+	case site.EngagementTrackingChannelSMS:
+		channelsChannel = channels.SMS
+	case site.EngagementTrackingChannelTelegram:
+		channelsChannel = channels.Telegram
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return channelsChannel
+}
+func (c *InputsImpl) EngagementTrackingState(source site.EngagementTrackingState) engagementtrackingconsent.State {
+	return engagementtrackingconsent.State(source)
 }
 func (c *InputsImpl) EnrollmentsFilter(source site.SiteEnrollmentsListParams) automations.EnrollmentsFilter {
 	var automationsEnrollmentsFilter automations.EnrollmentsFilter

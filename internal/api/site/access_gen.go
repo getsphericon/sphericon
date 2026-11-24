@@ -86,6 +86,8 @@ var operationAccess = map[siteapi.OperationName]access{
 	siteapi.SiteCustomFieldsUpdateOperation:                    {workspace: true, permissions: []memberships.Permission{memberships.PermCustomFieldsManage}},
 	siteapi.SiteDomainJoinGetOperation:                         {workspace: true, permissions: []memberships.Permission{memberships.PermJoinDomainsManage}},
 	siteapi.SiteDomainJoinSetOperation:                         {workspace: true, permissions: []memberships.Permission{memberships.PermJoinDomainsManage}},
+	siteapi.SiteEngagementTrackingCreateOperation:              {workspace: true},
+	siteapi.SiteEngagementTrackingGetOperation:                 {workspace: true},
 	siteapi.SiteEnrollmentsGetOperation:                        {workspace: true},
 	siteapi.SiteEnrollmentsListOperation:                       {workspace: true},
 	siteapi.SiteEventsActionsOperation:                         {workspace: true},

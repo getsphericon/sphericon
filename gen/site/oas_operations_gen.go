@@ -80,6 +80,8 @@ const (
 	SiteCustomFieldsUpdateOperation                    OperationName = "SiteCustomFieldsUpdate"
 	SiteDomainJoinGetOperation                         OperationName = "SiteDomainJoinGet"
 	SiteDomainJoinSetOperation                         OperationName = "SiteDomainJoinSet"
+	SiteEngagementTrackingCreateOperation              OperationName = "SiteEngagementTrackingCreate"
+	SiteEngagementTrackingGetOperation                 OperationName = "SiteEngagementTrackingGet"
 	SiteEnrollmentsGetOperation                        OperationName = "SiteEnrollmentsGet"
 	SiteEnrollmentsListOperation                       OperationName = "SiteEnrollmentsList"
 	SiteEventsActionsOperation                         OperationName = "SiteEventsActions"

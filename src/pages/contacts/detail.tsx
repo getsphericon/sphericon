@@ -45,6 +45,7 @@ import { can } from '../../utils/permissions.ts'
 import { formatPhone } from '../../utils/phone.ts'
 import { SmsSection } from './SmsSection.tsx'
 import { TelegramSection } from './TelegramSection.tsx'
+import { TrackingSection } from './TrackingSection.tsx'
 
 const EVENTS_PAGE_SIZE = 10
 
@@ -315,6 +316,8 @@ export function ContactDetailPage() {
           </Group>
         </>
       ) : null}
+
+      <TrackingSection workspaceId={workspaceId} contactId={contactId} />
 
       <SmsSection workspaceId={workspaceId} contactId={contactId} />
 
