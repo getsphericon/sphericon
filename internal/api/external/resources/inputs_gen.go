@@ -72,15 +72,23 @@ func (c *InputsImpl) AutomationCreate(source *external.CreateAutomationInput) (a
 			return automationsCreateInput, err
 		}
 		automationsCreateInput.GoalEvent = pEventmatcherMatcher
-		automationsCreateInput.Steps = automationPathPtrIn(c, (*source).Steps)
+		pAutomationstepPath, err := automationPathPtrIn(c, (*source).Steps)
+		if err != nil {
+			return automationsCreateInput, err
+		}
+		automationsCreateInput.Steps = pAutomationstepPath
 	}
 	return automationsCreateInput, nil
 }
-func (c *InputsImpl) AutomationPath(source external.AutomationPathInput) automationstep.Path {
+func (c *InputsImpl) AutomationPath(source external.AutomationPathInput) (automationstep.Path, error) {
 	var automationstepPath automationstep.Path
 	automationstepPath.ID = stepIDIn(source.ID)
-	automationstepPath.Steps = automationStepsIn(c, source.Steps)
-	return automationstepPath
+	automationstepStepList, err := automationStepsIn(c, source.Steps)
+	if err != nil {
+		return automationstepPath, err
+	}
+	automationstepPath.Steps = automationstepStepList
+	return automationstepPath, nil
 }
 func (c *InputsImpl) AutomationReportPeriod(source external.AutomationsReportPeriod) automations.ReportPeriod {
 	var automationsReportPeriod automations.ReportPeriod
@@ -119,7 +127,11 @@ func (c *InputsImpl) AutomationUpdate(source *external.UpdateAutomationInput) (a
 			return automationsUpdateInput, err
 		}
 		automationsUpdateInput.GoalEvent = patchField
-		automationsUpdateInput.Steps = automationPathPtrIn(c, (*source).Steps)
+		pAutomationstepPath, err := automationPathPtrIn(c, (*source).Steps)
+		if err != nil {
+			return automationsUpdateInput, err
+		}
+		automationsUpdateInput.Steps = pAutomationstepPath
 	}
 	return automationsUpdateInput, nil
 }

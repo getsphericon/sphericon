@@ -344,6 +344,7 @@ export default interface Resources {
       "addAutomation": "Create automation",
       "applyTagNodeDescription": "Add a tag to the contact.",
       "bounced": "Bounced",
+      "branchReadOnly": "This version holds a Branch, which this editor cannot edit yet. It is shown read-only; publishing or reverting it keeps the Branch and its paths.",
       "branchesUnsupported": "Only a single linear path is saved. Nodes off the main chain were ignored.",
       "branchesUnsupportedTitle": "Branches not supported yet",
       "captured": "Captured, not delivered",
@@ -485,6 +486,7 @@ export default interface Resources {
       "stateFilter": "Status",
       "statusLabel": "Status",
       "stepApplyTag": "Apply tag",
+      "stepBranch": "Branch",
       "stepEmail": "Send email",
       "stepEnd": "End",
       "stepFigures": {

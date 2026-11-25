@@ -111,10 +111,21 @@ func refuse(st *automationstep.Step, why string) error {
 	return ErrInvalidStep.With(fmt.Sprintf("step %s (%s): %s", st.ID, st.Kind(), why))
 }
 
-// validate checks each step on its own; the steps carry their ids (identify). linkLength is the
-// length of the Workspace's short tracked links, what an SMS step's links count as.
+// The bounds of a version's tree (ADR 0122, ADR 0124): its Steps over all paths, and the paths of
+// one fork, a Branch's otherwise counted. Nesting has no bound of its own.
+const (
+	MaxStepsPerVersion = 100
+	MaxPathsPerFork    = 10
+)
+
+// validate checks each step on its own, at any depth of the tree, and the tree's bounds; the steps
+// carry their ids (identify). linkLength is the length of the Workspace's short tracked links, what
+// an SMS step's links count as.
 func validate(steps automationstep.Path, linkLength int) error {
-	for _, st := range automationstep.All(steps) {
+	for pos, st := range automationstep.All(steps) {
+		if pos >= MaxStepsPerVersion {
+			return refuse(st, fmt.Sprintf("a version has at most %d steps over all its paths", MaxStepsPerVersion))
+		}
 		switch s := st.Payload.(type) {
 		case automationstep.Email:
 			if err := emailrender.Lint(s.Subject, s.Body, nil).Error; err != nil {
@@ -156,8 +167,56 @@ func validate(steps automationstep.Path, linkLength int) error {
 				return refuse(st, "a tag step needs a tag name")
 			}
 		case automationstep.End:
+		case automationstep.Branch:
+			if err := validateBranch(st, s); err != nil {
+				return err
+			}
 		default:
 			return refuse(st, "the step has no known kind")
+		}
+	}
+	return nil
+}
+
+// validateBranch checks the shape of a Branch (ADR 0124): a path besides otherwise, at most
+// MaxPathsPerFork paths with otherwise, and a Condition that tests something on each path. Whether
+// each Condition names what the Workspace holds is checkBranches'.
+func validateBranch(st *automationstep.Step, b automationstep.Branch) error {
+	if len(b.Paths) == 0 {
+		return refuse(st, "a branch needs a path besides otherwise")
+	}
+	if n := len(b.Paths) + 1; n > MaxPathsPerFork {
+		return refuse(st, fmt.Sprintf("a branch has at most %d paths with otherwise, this one has %d", MaxPathsPerFork, n))
+	}
+	for i, p := range b.Paths {
+		if !p.Condition.Tests() {
+			return refuse(st, fmt.Sprintf("path %d has no condition", i+1))
+		}
+	}
+	return nil
+}
+
+// checkBranches checks the Condition of each path of each Branch of the tree as a Rule's is
+// checked (condition.Module.CheckBranch), bounded as a Rule's: it reads as a Branch path's tree,
+// and names only the Custom fields the Workspace holds, by tests their types take. A refusal names
+// the Branch and the path.
+func (m *Module) checkBranches(ctx context.Context, s *ent.Scoped, steps automationstep.Path) error {
+	for _, st := range automationstep.All(steps) {
+		b, ok := st.Payload.(automationstep.Branch)
+		if !ok {
+			continue
+		}
+		for i, p := range b.Paths {
+			if size := p.Condition.Size(); size > rules.MaxConditionNodes {
+				return refuse(st, fmt.Sprintf("path %d: a condition has at most %d groups and tests, this one has %d", i+1, rules.MaxConditionNodes, size))
+			}
+			err := m.conditions.CheckBranch(ctx, s, p.Condition)
+			if errors.Is(err, condition.ErrStorage) {
+				return err
+			}
+			if err != nil {
+				return refuse(st, fmt.Sprintf("path %d: %s", i+1, err.Error()))
+			}
 		}
 	}
 	return nil
@@ -235,7 +294,9 @@ type Module struct {
 	// tags and people read the Tag and Custom field catalogues an Event filter names (checkNamed).
 	tags   *tags.Module
 	people *contacts.Module
-	life   *versioneddefinition.Lifecycle[ent.Automation, ent.AutomationVersion, edit, definition]
+	// conditions checks a Branch path's Condition (checkBranches).
+	conditions *condition.Module
+	life       *versioneddefinition.Lifecycle[ent.Automation, ent.AutomationVersion, edit, definition]
 	// now is the Instance clock a report's period ends by, an activation is dated by and an
 	// Enrollment's exit is.
 	now func() time.Time
@@ -251,7 +312,7 @@ type Module struct {
 // contacts module, whose Custom field catalogue an Event filter names; now is the Instance clock.
 func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer, out *outboundmessages.Module, clicks *linkclick.Module, enrollers *rules.Module, people *contacts.Module, now func() time.Time) *Module {
 	m := &Module{cipher: cipher, bus: bus, renderer: renderer, out: out, clicks: clicks, rules: enrollers, people: people, now: now,
-		revenues: orders.NewRevenues(), tags: tags.New()}
+		revenues: orders.NewRevenues(), tags: tags.New(), conditions: condition.New(now)}
 	m.life = versioneddefinition.New(bus, versioned{m: m}, versioneddefinition.Errors{
 		NotFound:         ErrNotFound,
 		Archived:         ErrArchived,
@@ -663,6 +724,9 @@ func (v versioned) mergeSteps(ctx context.Context, ts *ent.Scoped, steps, stored
 		return automationstep.Path{}, err
 	}
 	if err := checkEnds(steps); err != nil {
+		return automationstep.Path{}, err
+	}
+	if err := v.m.checkBranches(ctx, ts, steps); err != nil {
 		return automationstep.Path{}, err
 	}
 	// Each Integration the steps name is checked once, however many steps send through it.

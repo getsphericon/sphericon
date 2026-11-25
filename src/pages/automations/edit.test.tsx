@@ -465,6 +465,47 @@ test('a version holding an End opens read-only, drawing the End and offering no 
     .toBeInTheDocument()
 })
 
+// A Branch (ADR 0124) is drawn as one node, but this canvas cannot edit the tree yet: a version
+// holding one opens read-only, with no save that could drop the Branch or its paths.
+test('a version holding a Branch opens read-only, drawing the Branch and offering no save', async () => {
+  worker.use(
+    handleSiteAutomationsGet({
+      body: {
+        ...STORED,
+        draft: withSteps([
+          {
+            id: stepId(11),
+            type: 'branch',
+            paths: [
+              {
+                id: stepId(12),
+                condition: {
+                  kind: 'group',
+                  combinator: 'and',
+                  entries: [{ kind: 'tag', name: 'vip', operator: 'has' }],
+                },
+                steps: [{ id: stepId(13), type: 'wait', seconds: 60 }],
+              },
+            ],
+            otherwise: { id: stepId(14), steps: [] },
+          },
+          { id: stepId(15), type: 'wait', seconds: 60 },
+        ]),
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+
+  await expect.poll(() => flowNode(2)).toBeInstanceOf(Element)
+  await expect
+    .element(screen.getByText('This version holds a Branch', { exact: false }))
+    .toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
+  await expect.element(screen.getByLabelText('Name', { exact: false })).toBeDisabled()
+  await expect.element(screen.getByText('Branch', { exact: true }).first()).toBeInTheDocument()
+})
+
 const AUTHORED_DOC = {
   type: 'doc',
   content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hello' }] }],

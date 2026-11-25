@@ -175,11 +175,29 @@ function useHoldsEnd(): boolean {
   )
 }
 
-// EditorReadOnly makes the canvas read-only while an operation is pending or it holds an End.
+// useHoldsBranch tells whether the canvas holds a Branch (ADR 0124). This canvas draws a Branch as
+// one node, without its paths, so such a version is read-only here, as one holding an End is: no
+// save could drop the Branch or its paths.
+function useHoldsBranch(): boolean {
+  return useStore((state) =>
+    state.nodes.some((node) => node.data.type === ('branch' satisfies StepKind)),
+  )
+}
+
+// useHoldsLocked tells whether the canvas holds a Step this canvas cannot edit around: an End or a
+// Branch.
+function useHoldsLocked(): boolean {
+  const holdsEnd = useHoldsEnd()
+  const holdsBranch = useHoldsBranch()
+  return holdsEnd || holdsBranch
+}
+
+// EditorReadOnly makes the canvas read-only while an operation is pending or it holds an End or a
+// Branch (useHoldsLocked).
 function EditorReadOnly({ readOnly }: { readOnly: boolean }) {
   const { setReadOnly } = useWorkflowBuilderActions()
-  const holdsEnd = useHoldsEnd()
-  const locked = readOnly || holdsEnd
+  const holdsLocked = useHoldsLocked()
+  const locked = readOnly || holdsLocked
   useEffect(() => {
     setReadOnly(locked)
   }, [locked, setReadOnly])
@@ -214,7 +232,7 @@ function BuilderBar({
   const { resource: automation, operation } = session.context
   const unsaved = dirty({ name: form.values.name, graph: { nodes, edges } })
   const busy = !session.matches('idle')
-  const holdsEnd = useHoldsEnd()
+  const holdsLocked = useHoldsLocked()
 
   return (
     <Paper withBorder shadow="sm" p="xs" pos="absolute" top={16} left={16} right={16}>
@@ -229,7 +247,7 @@ function BuilderBar({
             flex={1}
             miw={0}
             maw={320}
-            disabled={session.hasTag('readOnly') || holdsEnd}
+            disabled={session.hasTag('readOnly') || holdsLocked}
             {...form.getInputProps('name')}
           />
         </Group>
@@ -237,7 +255,7 @@ function BuilderBar({
           <FailedEnrollments workspaceId={workspaceId} automationId={automation.id} />
           <Button
             loading={session.matches('saving')}
-            disabled={busy || holdsEnd}
+            disabled={busy || holdsLocked}
             onClick={() => {
               void onSave()
             }}
@@ -273,10 +291,19 @@ function CanvasPostalAddressNotice({ workspaceId }: { workspaceId: string }) {
   return sendsEmail ? <PostalAddressNotice workspaceId={workspaceId} /> : null
 }
 
-// CanvasEndNotice says why a canvas holding an End cannot be edited here (useHoldsEnd).
+// CanvasEndNotice says why a canvas holding an End or a Branch cannot be edited here
+// (useHoldsLocked).
 function CanvasEndNotice() {
   const { t } = useTranslation()
   const holdsEnd = useHoldsEnd()
+  const holdsBranch = useHoldsBranch()
+  if (holdsBranch) {
+    return (
+      <Alert color="yellow" title={t(($) => $.automations.endReadOnlyTitle)}>
+        {t(($) => $.automations.branchReadOnly)}
+      </Alert>
+    )
+  }
   return holdsEnd ? (
     <Alert color="yellow" title={t(($) => $.automations.endReadOnlyTitle)}>
       {t(($) => $.automations.endReadOnly)}
@@ -305,6 +332,7 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
         nodeTypes.flatMap((item) => ('type' in item ? [[item.type, item.label]] : [])),
       ),
       ['end' satisfies StepKind]: t(($) => $.automations.stepEnd),
+      ['branch' satisfies StepKind]: t(($) => $.automations.stepBranch),
     }),
     [nodeTypes, t],
   )

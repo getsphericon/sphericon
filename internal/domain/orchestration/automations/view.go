@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 )
 
@@ -15,7 +16,7 @@ type PathView struct {
 }
 
 // StepView is a stored Step as the API shows it, one type per kind (EmailView, TelegramView,
-// SMSView, WaitView, TagView, HTTPView, EndView): each holds its kind's fields only, the defaults it was
+// SMSView, WaitView, TagView, HTTPView, EndView, BranchView): each holds its kind's fields only, the defaults it was
 // stored without filled in. An HTTP step is masked: its URL, header values and signing secret
 // never leave the server, only the header names and whether a secret is set.
 type StepView interface{ stepView() }
@@ -82,7 +83,25 @@ type EndView struct {
 	Type automationstep.Kind
 }
 
+// BranchView is a Branch: its listed paths, each with its Condition, its otherwise and its unknown
+// path, nil for none; each path's Steps are views too.
+type BranchView struct {
+	ID        automationstep.ID
+	Type      automationstep.Kind
+	Paths     []BranchPathView
+	Otherwise PathView
+	Unknown   *PathView
+}
+
+// BranchPathView is a listed path of a Branch: its id, its Condition and its Steps.
+type BranchPathView struct {
+	ID        automationstep.ID
+	Condition conditiontree.Branch
+	Steps     []StepView
+}
+
 func (EmailView) stepView()    {}
+func (BranchView) stepView()   {}
 func (TelegramView) stepView() {}
 func (SMSView) stepView()      {}
 func (WaitView) stepView()     {}
@@ -95,22 +114,58 @@ type HeaderName struct {
 	Name string
 }
 
-// View is the view of a version's steps. A Step of a kind with no view fails it: it is never
-// shown as an empty Step.
+// View is the view of a version's steps, the tree kept: a fork's view holds the views of its
+// paths. A Step of a kind with no view fails it: it is never shown as an empty Step.
 func View(stored automationstep.Path) (PathView, error) {
 	views := make([]StepView, 0, len(stored.Steps))
-	for _, st := range automationstep.All(stored) {
-		v := viewOf(st)
-		if v == nil {
-			return PathView{}, fmt.Errorf("automations: step %s of kind %q has no view", st.ID, st.Kind())
+	for st := range automationstep.Own(stored) {
+		v, err := viewOf(st)
+		if err != nil {
+			return PathView{}, err
 		}
 		views = append(views, v)
 	}
 	return PathView{ID: stored.ID, Steps: views}, nil
 }
 
-// viewOf is the view of the Step, nil for a kind with none.
-func viewOf(st *automationstep.Step) StepView {
+// branchView is the view of a Branch, each of its paths viewed (View).
+func branchView(id automationstep.ID, b automationstep.Branch) (StepView, error) {
+	v := BranchView{ID: id, Type: automationstep.KindBranch, Paths: make([]BranchPathView, len(b.Paths))}
+	for i, p := range b.Paths {
+		steps, err := View(automationstep.Path{ID: p.ID, Steps: p.Steps})
+		if err != nil {
+			return nil, err
+		}
+		v.Paths[i] = BranchPathView{ID: p.ID, Condition: p.Condition, Steps: steps.Steps}
+	}
+	otherwise, err := View(b.Otherwise)
+	if err != nil {
+		return nil, err
+	}
+	v.Otherwise = otherwise
+	if b.Unknown != nil {
+		unknown, err := View(*b.Unknown)
+		if err != nil {
+			return nil, err
+		}
+		v.Unknown = &unknown
+	}
+	return v, nil
+}
+
+// viewOf is the view of the Step; a kind with none is an error.
+func viewOf(st *automationstep.Step) (StepView, error) {
+	if b, ok := st.Payload.(automationstep.Branch); ok {
+		return branchView(st.ID, b)
+	}
+	if v := leafView(st); v != nil {
+		return v, nil
+	}
+	return nil, fmt.Errorf("automations: step %s of kind %q has no view", st.ID, st.Kind())
+}
+
+// leafView is the view of a Step that holds no path, nil for a kind with none.
+func leafView(st *automationstep.Step) StepView {
 	switch s := st.Payload.(type) {
 	case automationstep.Wait:
 		return WaitView{ID: st.ID, Type: st.Kind(), Seconds: s.Seconds}

@@ -30,6 +30,7 @@ import { OFF, STORED } from './nodeProperties.ts'
 import type { NodeProperties, ReadProperties, StepKind } from './nodeProperties.ts'
 import {
   EMAIL_NODE_ICON,
+  BRANCH_NODE_ICON,
   END_NODE_ICON,
   HTTP_NODE_ICON,
   SMS_NODE_ICON,
@@ -75,6 +76,7 @@ const STEP_ICON: Record<StepKind, WBIcon> = {
   remove_tag: TAG_NODE_ICON,
   http: HTTP_NODE_ICON,
   end: END_NODE_ICON,
+  branch: BRANCH_NODE_ICON,
 }
 
 // A Telegram step's content, as the form holds it: every value a string.
@@ -118,6 +120,12 @@ function stepProperties(step: AutomationStep): NodeProperties[keyof NodeProperti
     case 'end': {
       const end: NodeProperties['end'] = {}
       return end
+    }
+    case 'branch': {
+      // A Branch is drawn as one node and never edited here: the canvas is read-only
+      // (useHoldsLocked), so no save rebuilds its paths.
+      const branch: NodeProperties['branch'] = {}
+      return branch
     }
     case 'sms': {
       const sms: NodeProperties['sms'] = {

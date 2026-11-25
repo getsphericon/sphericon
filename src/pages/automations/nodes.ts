@@ -52,6 +52,8 @@ export const TRIGGER_NODE_ICON: WBIcon = 'Lightning'
 // An End (ADR 0124) is drawn when a version holds one, but is not in the palette: this canvas
 // cannot place one yet, and a version holding one opens read-only.
 export const END_NODE_ICON: WBIcon = 'FlagCheckered'
+// A Branch is drawn, not edited, until the editor edits the tree (useHoldsLocked).
+export const BRANCH_NODE_ICON: WBIcon = 'GitFork'
 
 export const TRIGGER_EVENTS = [
   SystemEventAction.CONTACT_CREATED,

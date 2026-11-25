@@ -272,11 +272,13 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 	if run.ResumeAt != nil && run.ResumeAt.After(m.now()) {
 		return m.requeue(ctx, s, run.ID, step, *run.ResumeAt)
 	}
-	st, ok := automationstep.Find(version.Steps, step)
+	// The tree is indexed once, as it is decoded: where each Step stands and what follows it.
+	index := automationstep.NewIndex(version.Steps)
+	st, ok := index.Step(step)
 	if !ok {
 		return m.fail(ctx, s, run.ID, fmt.Errorf("step %s is not a step of version %d", step, version.ID))
 	}
-	at := place{steps: version.Steps, step: step}
+	at := place{index: index, step: step}
 
 	switch p := st.Payload.(type) {
 	case automationstep.Wait:
@@ -393,10 +395,10 @@ type stepMove struct {
 	with      func(*ent.Scoped, events.Publisher) error
 }
 
-// place is the Step an Enrollment stands on: its id, and the path of the Enrollment's version
-// that holds it.
+// place is the Step an Enrollment stands on: its id, and the index of the tree of the
+// Enrollment's version that holds it.
 type place struct {
-	steps automationstep.Path
+	index *automationstep.Index
 	step  automationstep.ID
 }
 
@@ -407,7 +409,7 @@ type place struct {
 // queued. A move that finds the Enrollment gone or elsewhere, or its Contact gone, writes nothing
 // and returns nil.
 func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64, from place, mv stepMove) error {
-	next, more := automationstep.Next(from.steps, from.step)
+	next, more := from.index.Next(from.step)
 	now := m.now()
 	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher, q events.Enqueuer) error {
 		if mv.contactID != 0 {

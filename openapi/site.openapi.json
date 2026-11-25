@@ -11909,6 +11909,9 @@
           },
           {
             "$ref": "#/components/schemas/EndStep"
+          },
+          {
+            "$ref": "#/components/schemas/BranchStep"
           }
         ],
         "discriminator": {
@@ -11921,7 +11924,8 @@
             "apply_tag": "#/components/schemas/ApplyTagStep",
             "remove_tag": "#/components/schemas/RemoveTagStep",
             "http": "#/components/schemas/HttpStep",
-            "end": "#/components/schemas/EndStep"
+            "end": "#/components/schemas/EndStep",
+            "branch": "#/components/schemas/BranchStep"
           }
         },
         "description": "One Step of an automation, by `type`"
@@ -11977,6 +11981,9 @@
           },
           {
             "$ref": "#/components/schemas/EndStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/BranchStepInput"
           }
         ],
         "discriminator": {
@@ -11989,7 +11996,8 @@
             "apply_tag": "#/components/schemas/ApplyTagStepInput",
             "remove_tag": "#/components/schemas/RemoveTagStepInput",
             "http": "#/components/schemas/HttpStepInput",
-            "end": "#/components/schemas/EndStepInput"
+            "end": "#/components/schemas/EndStepInput",
+            "branch": "#/components/schemas/BranchStepInput"
           }
         },
         "description": "One Step of an automation, by `type`, as a request writes it. A field of another kind is refused."
@@ -12175,6 +12183,408 @@
           }
         },
         "description": "What a test of the Contact's birthday asks of it, by `kind`"
+      },
+      "BranchCondition": {
+        "type": "object",
+        "required": ["kind", "combinator", "entries"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["group"]
+          },
+          "combinator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConditionCombinator"
+              }
+            ],
+            "description": "How the entries combine"
+          },
+          "not": {
+            "type": "boolean",
+            "description": "Negate the whole group"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BranchConditionNode"
+            },
+            "description": "The group's tests and nested groups"
+          }
+        },
+        "description": "A Branch path's Condition: the tree of tests the Contact, on its live data when the Enrollment\nreaches the Branch, and the Event the Enrollment began with match"
+      },
+      "BranchConditionInput": {
+        "type": "object",
+        "required": ["kind", "combinator", "entries"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["group"]
+          },
+          "combinator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConditionCombinator"
+              }
+            ],
+            "description": "How the entries combine"
+          },
+          "not": {
+            "type": "boolean",
+            "description": "Negate the whole group"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BranchConditionNodeInput"
+            },
+            "description": "The group's tests and nested groups"
+          }
+        },
+        "description": "A Branch path's Condition: the tree of tests the Contact, on its live data when the Enrollment\nreaches the Branch, and the Event the Enrollment began with match",
+        "additionalProperties": false
+      },
+      "BranchConditionNode": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/BranchCondition"
+          },
+          {
+            "$ref": "#/components/schemas/AttributeLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/BirthdayLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/TagLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/TelegramLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/SmsLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/EngagementTrackingLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/CustomFieldLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/EventLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/BranchPropertyLeaf"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "attribute": "#/components/schemas/AttributeLeaf",
+            "birthday": "#/components/schemas/BirthdayLeaf",
+            "tag": "#/components/schemas/TagLeaf",
+            "telegram": "#/components/schemas/TelegramLeaf",
+            "sms": "#/components/schemas/SmsLeaf",
+            "engagementTracking": "#/components/schemas/EngagementTrackingLeaf",
+            "customField": "#/components/schemas/CustomFieldLeaf",
+            "event": "#/components/schemas/EventLeaf",
+            "property": "#/components/schemas/BranchPropertyLeaf",
+            "group": "#/components/schemas/BranchCondition"
+          }
+        },
+        "description": "An entry of a Branch path's Condition, by `kind`: a Rule's, the property test reading the\nEvent the Enrollment began with"
+      },
+      "BranchConditionNodeInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/BranchConditionInput"
+          },
+          {
+            "$ref": "#/components/schemas/AttributeLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/BirthdayLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/TagLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/TelegramLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/SmsLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/EngagementTrackingLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/CustomFieldLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/EventLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/BranchPropertyLeafInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "attribute": "#/components/schemas/AttributeLeafInput",
+            "birthday": "#/components/schemas/BirthdayLeafInput",
+            "tag": "#/components/schemas/TagLeafInput",
+            "telegram": "#/components/schemas/TelegramLeafInput",
+            "sms": "#/components/schemas/SmsLeafInput",
+            "engagementTracking": "#/components/schemas/EngagementTrackingLeafInput",
+            "customField": "#/components/schemas/CustomFieldLeafInput",
+            "event": "#/components/schemas/EventLeafInput",
+            "property": "#/components/schemas/BranchPropertyLeafInput",
+            "group": "#/components/schemas/BranchConditionInput"
+          }
+        },
+        "description": "An entry of a Branch path's Condition, by `kind`: a Rule's, the property test reading the\nEvent the Enrollment began with"
+      },
+      "BranchPath": {
+        "type": "object",
+        "required": ["id", "condition", "steps"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The path's id"
+          },
+          "condition": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BranchCondition"
+              }
+            ],
+            "description": "The Condition an Enrollment takes the path on, when no path above it is taken"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PathStep"
+            },
+            "description": "The path's Steps, in order; none goes on to the Step after the Branch"
+          }
+        },
+        "description": "A path of a Branch: the Condition that sends an Enrollment down it and its Steps"
+      },
+      "BranchPathInput": {
+        "type": "object",
+        "required": ["condition", "steps"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The path's id; omitted, the path is given one"
+          },
+          "condition": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BranchConditionInput"
+              }
+            ],
+            "description": "The Condition an Enrollment takes the path on, when no path above it is taken. A path\nwithout a test refuses the save, naming the Branch."
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PathStepInput"
+            },
+            "description": "The path's Steps, in order; none goes on to the Step after the Branch"
+          }
+        },
+        "description": "A path of a Branch, as a request writes it",
+        "additionalProperties": false
+      },
+      "BranchPropertyLeaf": {
+        "type": "object",
+        "required": ["kind", "of", "key", "test"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["property"]
+          },
+          "of": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BranchPropertySource"
+              }
+            ],
+            "description": "Whose property it is"
+          },
+          "key": {
+            "type": "string",
+            "description": "The property's key"
+          },
+          "test": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PropertyTest"
+              }
+            ],
+            "description": "What it asks of the property's value"
+          }
+        },
+        "description": "A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a\nkey holding a dot is one key"
+      },
+      "BranchPropertyLeafInput": {
+        "type": "object",
+        "required": ["kind", "of", "key", "test"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["property"]
+          },
+          "of": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BranchPropertySourceInput"
+              }
+            ],
+            "description": "Whose property it is"
+          },
+          "key": {
+            "type": "string",
+            "description": "The property's key"
+          },
+          "test": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PropertyTestInput"
+              }
+            ],
+            "description": "What it asks of the property's value"
+          }
+        },
+        "description": "A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a\nkey holding a dot is one key",
+        "additionalProperties": false
+      },
+      "BranchPropertySource": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TriggerSource"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "trigger": "#/components/schemas/TriggerSource"
+          }
+        },
+        "description": "Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment\nbegan with"
+      },
+      "BranchPropertySourceInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TriggerSourceInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "trigger": "#/components/schemas/TriggerSourceInput"
+          }
+        },
+        "description": "Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment\nbegan with"
+      },
+      "BranchStep": {
+        "type": "object",
+        "required": ["id", "type", "paths", "otherwise"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["branch"]
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BranchPath"
+            },
+            "description": "The paths, in the order their Conditions are tested"
+          },
+          "otherwise": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationPath"
+              }
+            ],
+            "description": "The path taken when no Condition holds"
+          },
+          "unknown": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationPath"
+              }
+            ],
+            "description": "The path taken when the first Condition that does not fail is unknown; present only on a\nBranch whose Conditions can be unknown"
+          }
+        },
+        "description": "A Step that sends each Enrollment down the first of its paths whose Condition holds, on the\nContact's live data when the Enrollment reaches it (ADR 0124), and down `otherwise` when none\ndoes. A Condition that is unknown for the Contact (an engagement count of a Destination that is\nnot tracked, ADR 0123) before any holds sends it down `unknown`. The paths rejoin at the Step\nafter the Branch."
+      },
+      "BranchStepInput": {
+        "type": "object",
+        "required": ["type", "paths", "otherwise"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id; omitted, the Step is given one"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["branch"]
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BranchPathInput"
+            },
+            "description": "The paths, in the order their Conditions are tested"
+          },
+          "otherwise": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationPathInput"
+              }
+            ],
+            "description": "The path taken when no Condition holds"
+          },
+          "unknown": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationPathInput"
+              }
+            ],
+            "description": "The path taken when the first Condition that does not fail is unknown"
+          }
+        },
+        "description": "A Branch, as a request writes it. It needs a path besides `otherwise`; Publish refuses it\nwithout `unknown` when a Condition counts an open or a click, and with `unknown` when none does.",
+        "additionalProperties": false
       },
       "BrandKitResource": {
         "type": "object",
@@ -15306,6 +15716,100 @@
         "type": "string",
         "enum": ["keyword", "button", "block", "link", "refused_send", "manual"],
         "description": "How a person stopped on a Channel other than email (ADR 0077): a STOP keyword or `/stop` (keyword), a message's unsubscribe button (button) or link (link), a blocked bot (block), a send the provider refused because the person had stopped at the provider (refused_send), or an opt-out recorded by hand in the app or through the API, which reached the Workspace by another route (manual)"
+      },
+      "PathStep": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EmailStep"
+          },
+          {
+            "$ref": "#/components/schemas/TelegramStep"
+          },
+          {
+            "$ref": "#/components/schemas/SmsStep"
+          },
+          {
+            "$ref": "#/components/schemas/WaitStep"
+          },
+          {
+            "$ref": "#/components/schemas/ApplyTagStep"
+          },
+          {
+            "$ref": "#/components/schemas/RemoveTagStep"
+          },
+          {
+            "$ref": "#/components/schemas/HttpStep"
+          },
+          {
+            "$ref": "#/components/schemas/EndStep"
+          },
+          {
+            "$ref": "#/components/schemas/BranchStep"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "email": "#/components/schemas/EmailStep",
+            "telegram": "#/components/schemas/TelegramStep",
+            "sms": "#/components/schemas/SmsStep",
+            "wait": "#/components/schemas/WaitStep",
+            "apply_tag": "#/components/schemas/ApplyTagStep",
+            "remove_tag": "#/components/schemas/RemoveTagStep",
+            "http": "#/components/schemas/HttpStep",
+            "end": "#/components/schemas/EndStep",
+            "branch": "#/components/schemas/BranchStep"
+          }
+        },
+        "description": "One Step of a fork's path, by `type`: the arms of AutomationStep"
+      },
+      "PathStepInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EmailStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/TelegramStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/SmsStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/WaitStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/ApplyTagStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/RemoveTagStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/HttpStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/EndStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/BranchStepInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "email": "#/components/schemas/EmailStepInput",
+            "telegram": "#/components/schemas/TelegramStepInput",
+            "sms": "#/components/schemas/SmsStepInput",
+            "wait": "#/components/schemas/WaitStepInput",
+            "apply_tag": "#/components/schemas/ApplyTagStepInput",
+            "remove_tag": "#/components/schemas/RemoveTagStepInput",
+            "http": "#/components/schemas/HttpStepInput",
+            "end": "#/components/schemas/EndStepInput",
+            "branch": "#/components/schemas/BranchStepInput"
+          }
+        },
+        "description": "One Step of a fork's path, by `type`, as a request writes it: the arms of AutomationStepInput"
       },
       "Permission": {
         "type": "string",

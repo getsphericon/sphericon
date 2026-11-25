@@ -184,7 +184,7 @@ type Inputs interface {
 	SegmentPreview(source *externalapi.PreviewSegmentInput) (segments.PreviewInput, error)
 
 	// A version's root path; each Step is picked by automationStepIn.
-	AutomationPath(source externalapi.AutomationPathInput) automationstep.Path
+	AutomationPath(source externalapi.AutomationPathInput) (automationstep.Path, error)
 	// The arms of a Step, which automationStepIn picks; the Step's id is the arm's, which it
 	// takes. The editor version is the save's own: the module renders the document and stamps it.
 	// goverter:ignore EditorVersion
@@ -403,13 +403,16 @@ func timestampPtrIn(o externalapi.OptNilTimestamp) *time.Time {
 
 // automationPathPtrIn is the root path a write replaces the steps with: omitted (nil) keeps the
 // stored ones.
-func automationPathPtrIn(c Inputs, o externalapi.OptAutomationPathInput) *automationstep.Path {
+func automationPathPtrIn(c Inputs, o externalapi.OptAutomationPathInput) (*automationstep.Path, error) {
 	in, ok := o.Get()
 	if !ok {
-		return nil
+		return nil, nil
 	}
-	out := c.AutomationPath(in)
-	return &out
+	out, err := c.AutomationPath(in)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 // stepIDIn is the id a Step or a path is written with, "" when the request leaves it to the
@@ -417,37 +420,94 @@ func automationPathPtrIn(c Inputs, o externalapi.OptAutomationPathInput) *automa
 func stepIDIn(o externalapi.OptStepId) automationstep.ID { return automationstep.ID(o.Or("")) }
 
 // automationStepsIn maps a path's Steps onto the module's, each by automationStepIn.
-func automationStepsIn(c Inputs, in []externalapi.AutomationStepInput) []automationstep.Step {
+func automationStepsIn(c Inputs, in []externalapi.AutomationStepInput) ([]automationstep.Step, error) {
 	out := make([]automationstep.Step, len(in))
 	for i := range in {
-		out[i] = automationStepIn(c, &in[i])
+		st, err := automationStepIn(c, &in[i].OneOf)
+		if err != nil {
+			return nil, err
+		}
+		out[i] = st
 	}
-	return out
+	return out, nil
+}
+
+// pathStepsIn maps the Steps of a fork's path onto the module's: the contract's union of a fork's
+// path has the arms of the root's, so each is read as one of those (automationStepIn).
+func pathStepsIn(c Inputs, in []externalapi.PathStepInput) ([]automationstep.Step, error) {
+	out := make([]automationstep.Step, len(in))
+	for i := range in {
+		s := &in[i].OneOf
+		st, err := automationStepIn(c, &externalapi.AutomationStepInputSum{
+			Type: externalapi.AutomationStepInputSumType(s.Type), EmailStepInput: s.EmailStepInput, TelegramStepInput: s.TelegramStepInput,
+			SmsStepInput: s.SmsStepInput, WaitStepInput: s.WaitStepInput, ApplyTagStepInput: s.ApplyTagStepInput,
+			RemoveTagStepInput: s.RemoveTagStepInput, HttpStepInput: s.HttpStepInput, EndStepInput: s.EndStepInput,
+			BranchStepInput: s.BranchStepInput,
+		})
+		if err != nil {
+			return nil, err
+		}
+		out[i] = st
+	}
+	return out, nil
 }
 
 // automationStepIn maps a Step of the union onto its kind's payload, with the id its arm carries;
 // a oneOf is beyond goverter, so only the switch is written here.
-func automationStepIn(c Inputs, in *externalapi.AutomationStepInput) automationstep.Step {
-	switch s := &in.OneOf; s.Type {
+func automationStepIn(c Inputs, s *externalapi.AutomationStepInputSum) (automationstep.Step, error) {
+	switch s.Type {
 	case externalapi.EmailStepInputAutomationStepInputSum:
-		return automationstep.Step{ID: stepIDIn(s.EmailStepInput.ID), Payload: c.EmailStepIn(s.EmailStepInput)}
+		return automationstep.Step{ID: stepIDIn(s.EmailStepInput.ID), Payload: c.EmailStepIn(s.EmailStepInput)}, nil
 	case externalapi.TelegramStepInputAutomationStepInputSum:
-		return automationstep.Step{ID: stepIDIn(s.TelegramStepInput.ID), Payload: c.TelegramStepIn(s.TelegramStepInput)}
+		return automationstep.Step{ID: stepIDIn(s.TelegramStepInput.ID), Payload: c.TelegramStepIn(s.TelegramStepInput)}, nil
 	case externalapi.SmsStepInputAutomationStepInputSum:
-		return automationstep.Step{ID: stepIDIn(s.SmsStepInput.ID), Payload: c.SmsStepIn(s.SmsStepInput)}
+		return automationstep.Step{ID: stepIDIn(s.SmsStepInput.ID), Payload: c.SmsStepIn(s.SmsStepInput)}, nil
 	case externalapi.WaitStepInputAutomationStepInputSum:
-		return automationstep.Step{ID: stepIDIn(s.WaitStepInput.ID), Payload: c.WaitStepIn(s.WaitStepInput)}
+		return automationstep.Step{ID: stepIDIn(s.WaitStepInput.ID), Payload: c.WaitStepIn(s.WaitStepInput)}, nil
 	case externalapi.ApplyTagStepInputAutomationStepInputSum:
-		return automationstep.Step{ID: stepIDIn(s.ApplyTagStepInput.ID), Payload: c.ApplyTagStepIn(s.ApplyTagStepInput)}
+		return automationstep.Step{ID: stepIDIn(s.ApplyTagStepInput.ID), Payload: c.ApplyTagStepIn(s.ApplyTagStepInput)}, nil
 	case externalapi.RemoveTagStepInputAutomationStepInputSum:
-		return automationstep.Step{ID: stepIDIn(s.RemoveTagStepInput.ID), Payload: c.RemoveTagStepIn(s.RemoveTagStepInput)}
+		return automationstep.Step{ID: stepIDIn(s.RemoveTagStepInput.ID), Payload: c.RemoveTagStepIn(s.RemoveTagStepInput)}, nil
 	case externalapi.HttpStepInputAutomationStepInputSum:
-		return automationstep.Step{ID: stepIDIn(s.HttpStepInput.ID), Payload: c.HttpStepIn(s.HttpStepInput)}
+		return automationstep.Step{ID: stepIDIn(s.HttpStepInput.ID), Payload: c.HttpStepIn(s.HttpStepInput)}, nil
 	case externalapi.EndStepInputAutomationStepInputSum:
-		return automationstep.Step{ID: stepIDIn(s.EndStepInput.ID), Payload: automationstep.End{}}
+		return automationstep.Step{ID: stepIDIn(s.EndStepInput.ID), Payload: automationstep.End{}}, nil
+	case externalapi.BranchStepInputAutomationStepInputSum:
+		return branchStepIn(c, &s.BranchStepInput)
 	default:
-		return automationstep.Step{} // the save refuses a Step of no kind
+		return automationstep.Step{}, nil // the save refuses a Step of no kind
 	}
+}
+
+// branchStepIn maps a Branch: each listed path with its Condition (the contract's typed tree is
+// the stored shape, ADR 0169) and its Steps, its otherwise and its unknown path.
+func branchStepIn(c Inputs, in *externalapi.BranchStepInput) (automationstep.Step, error) {
+	b := automationstep.Branch{Paths: make([]automationstep.BranchPath, len(in.Paths))}
+	for i := range in.Paths {
+		p := &in.Paths[i]
+		cond, err := condition.FromDTO[conditiontree.Branch](&p.Condition)
+		if err != nil {
+			return automationstep.Step{}, err
+		}
+		steps, err := pathStepsIn(c, p.Steps)
+		if err != nil {
+			return automationstep.Step{}, err
+		}
+		b.Paths[i] = automationstep.BranchPath{ID: stepIDIn(p.ID), Condition: cond, Steps: steps}
+	}
+	otherwise, err := c.AutomationPath(in.Otherwise)
+	if err != nil {
+		return automationstep.Step{}, err
+	}
+	b.Otherwise = otherwise
+	if u, ok := in.Unknown.Get(); ok {
+		unknown, err := c.AutomationPath(u)
+		if err != nil {
+			return automationstep.Step{}, err
+		}
+		b.Unknown = &unknown
+	}
+	return automationstep.Step{ID: stepIDIn(in.ID), Payload: b}, nil
 }
 
 // ruleActionsPtrIn is the Actions an update replaces: omitted (nil) keeps the stored ones.

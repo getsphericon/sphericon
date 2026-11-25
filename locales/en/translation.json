@@ -345,6 +345,7 @@
     "bounced": "Bounced",
     "branchesUnsupported": "Only a single linear path is saved. Nodes off the main chain were ignored.",
     "branchesUnsupportedTitle": "Branches not supported yet",
+    "branchReadOnly": "This version holds a Branch, which this editor cannot edit yet. It is shown read-only; publishing or reverting it keeps the Branch and its paths.",
     "captured": "Captured, not delivered",
     "clicks": "Clicks",
     "complained": "Complained",
@@ -486,6 +487,7 @@
     "stateFilter": "Status",
     "statusLabel": "Status",
     "stepApplyTag": "Apply tag",
+    "stepBranch": "Branch",
     "stepEmail": "Send email",
     "stepEnd": "End",
     "stepFigures": {

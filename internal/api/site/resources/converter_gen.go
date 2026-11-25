@@ -627,6 +627,47 @@ func (c *ConverterImpl) BindingsToResources(source []bindings.Chat) []site.SiteB
 	}
 	return siteapiSiteBindingResourceList
 }
+func (c *ConverterImpl) BranchPathToResource(source automations.BranchPathView) (site.BranchPath, error) {
+	var siteapiBranchPath site.BranchPath
+	siteapiBranchPath.ID = site.StepId(source.ID)
+	siteapiBranchCondition, err := branchCondition(source.Condition)
+	if err != nil {
+		return siteapiBranchPath, err
+	}
+	siteapiBranchPath.Condition = siteapiBranchCondition
+	siteapiPathStepList, err := pathStepViews(c, source.Steps)
+	if err != nil {
+		return siteapiBranchPath, err
+	}
+	siteapiBranchPath.Steps = siteapiPathStepList
+	return siteapiBranchPath, nil
+}
+func (c *ConverterImpl) BranchStepToResource(source automations.BranchView) (site.BranchStep, error) {
+	var siteapiBranchStep site.BranchStep
+	siteapiBranchStep.ID = site.StepId(source.ID)
+	siteapiBranchStep.Type = branchStepType(source.Type)
+	if source.Paths != nil {
+		siteapiBranchStep.Paths = make([]site.BranchPath, len(source.Paths))
+		for i := 0; i < len(source.Paths); i++ {
+			siteapiBranchPath, err := c.BranchPathToResource(source.Paths[i])
+			if err != nil {
+				return siteapiBranchStep, err
+			}
+			siteapiBranchStep.Paths[i] = siteapiBranchPath
+		}
+	}
+	siteapiAutomationPath, err := c.AutomationPathToResource(source.Otherwise)
+	if err != nil {
+		return siteapiBranchStep, err
+	}
+	siteapiBranchStep.Otherwise = siteapiAutomationPath
+	siteapiOptAutomationPath, err := optAutomationPath(c, source.Unknown)
+	if err != nil {
+		return siteapiBranchStep, err
+	}
+	siteapiBranchStep.Unknown = siteapiOptAutomationPath
+	return siteapiBranchStep, nil
+}
 func (c *ConverterImpl) BrandKitToResource(source brandkits.Kit) site.BrandKitResource {
 	var siteapiBrandKitResource site.BrandKitResource
 	siteapiBrandKitResource.Saved = source.Saved

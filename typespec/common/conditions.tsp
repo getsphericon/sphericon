@@ -354,6 +354,20 @@ union RulePropertySourceInput {
   trigger: TriggerSourceInput,
 }
 
+/** Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
+ * began with */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union BranchPropertySource {
+  trigger: TriggerSource,
+}
+
+/** Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
+ * began with */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union BranchPropertySourceInput {
+  trigger: TriggerSourceInput,
+}
+
 /** A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
  * key holding a dot is one key */
 model PropertyLeafOf<Of, Test> {
@@ -397,6 +411,11 @@ model CustomFieldLeaf is CustomFieldLeafOf<CustomFieldTest>;
 model CustomFieldLeafInput is CustomFieldLeafOf<CustomFieldTestInput>;
 model EventLeafInput is EventLeaf;
 model RulePropertyLeaf is PropertyLeafOf<RulePropertySource, PropertyTest>;
+model BranchPropertyLeaf is PropertyLeafOf<BranchPropertySource, PropertyTest>;
+model BranchPropertyLeafInput is PropertyLeafOf<
+  BranchPropertySourceInput,
+  PropertyTestInput
+>;
 model RulePropertyLeafInput is PropertyLeafOf<
   RulePropertySourceInput,
   PropertyTestInput
@@ -495,6 +514,46 @@ model RuleCondition is ConditionOf<RuleConditionNode>;
 
 /** A Rule's Condition: the tree of tests the Contact and the Event that fired the Rule match */
 model RuleConditionInput is ConditionOf<RuleConditionNodeInput>;
+
+/** An entry of a Branch path's Condition, by `kind`: a Rule's, the property test reading the
+ * Event the Enrollment began with */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union BranchConditionNode {
+  group: BranchCondition,
+  attribute: AttributeLeaf,
+  birthday: BirthdayLeaf,
+  tag: TagLeaf,
+  telegram: TelegramLeaf,
+  sms: SmsLeaf,
+  engagementTracking: EngagementTrackingLeaf,
+  customField: CustomFieldLeaf,
+  event: EventLeaf,
+  property: BranchPropertyLeaf,
+}
+
+/** An entry of a Branch path's Condition, by `kind`: a Rule's, the property test reading the
+ * Event the Enrollment began with */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union BranchConditionNodeInput {
+  group: BranchConditionInput,
+  attribute: AttributeLeafInput,
+  birthday: BirthdayLeafInput,
+  tag: TagLeafInput,
+  telegram: TelegramLeafInput,
+  sms: SmsLeafInput,
+  engagementTracking: EngagementTrackingLeafInput,
+  customField: CustomFieldLeafInput,
+  event: EventLeafInput,
+  property: BranchPropertyLeafInput,
+}
+
+/** A Branch path's Condition: the tree of tests the Contact, on its live data when the Enrollment
+ * reaches the Branch, and the Event the Enrollment began with match */
+model BranchCondition is ConditionOf<BranchConditionNode>;
+
+/** A Branch path's Condition: the tree of tests the Contact, on its live data when the Enrollment
+ * reaches the Branch, and the Event the Enrollment began with match */
+model BranchConditionInput is ConditionOf<BranchConditionNodeInput>;
 
 /** An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is
  * about, or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133). */

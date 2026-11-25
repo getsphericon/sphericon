@@ -4231,6 +4231,23 @@ export const zTriggerSource = z.object({
 });
 
 /**
+ * Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
+ * began with
+ */
+export const zBranchPropertySource = zTriggerSource;
+
+/**
+ * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
+ * key holding a dot is one key
+ */
+export const zBranchPropertyLeaf = z.object({
+  kind: z.enum(['property']),
+  of: zBranchPropertySource,
+  key: z.string(),
+  test: zPropertyTest
+});
+
+/**
  * Whose properties a Rule's property test reads, by `kind`: the triggering Event
  */
 export const zRulePropertySource = zTriggerSource;
@@ -4251,6 +4268,23 @@ export const zRulePropertyLeaf = z.object({
  */
 export const zTriggerSourceInput = z.strictObject({
   kind: z.enum(['trigger'])
+});
+
+/**
+ * Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
+ * began with
+ */
+export const zBranchPropertySourceInput = zTriggerSourceInput;
+
+/**
+ * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
+ * key holding a dot is one key
+ */
+export const zBranchPropertyLeafInput = z.strictObject({
+  kind: z.enum(['property']),
+  of: zBranchPropertySourceInput,
+  key: z.string(),
+  test: zPropertyTestInput
 });
 
 /**
@@ -4504,56 +4538,12 @@ export const zWaitStep = z.object({
 });
 
 /**
- * One Step of an automation, by `type`
- */
-export const zAutomationStep = z.discriminatedUnion('type', [
-  zEmailStep.extend({ type: z.literal('email') }),
-  zTelegramStep.extend({ type: z.literal('telegram') }),
-  zSmsStep.extend({ type: z.literal('sms') }),
-  zWaitStep.extend({ type: z.literal('wait') }),
-  zApplyTagStep.extend({ type: z.literal('apply_tag') }),
-  zRemoveTagStep.extend({ type: z.literal('remove_tag') }),
-  zHttpStep.extend({ type: z.literal('http') }),
-  zEndStep.extend({ type: z.literal('end') })
-]);
-
-/**
- * A path of Steps, in the order an Enrollment walks them. A version's Steps are its root path.
- */
-export const zAutomationPath = z.object({
-  id: zStepId,
-  steps: z.array(zAutomationStep)
-});
-
-/**
  * A Step that waits before the next one, as a request writes it
  */
 export const zWaitStepInput = z.strictObject({
   id: z.exactOptional(zStepId),
   type: z.enum(['wait']),
   seconds: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
-});
-
-/**
- * One Step of an automation, by `type`, as a request writes it. A field of another kind is refused.
- */
-export const zAutomationStepInput = z.discriminatedUnion('type', [
-  zEmailStepInput.extend({ type: z.literal('email') }),
-  zTelegramStepInput.extend({ type: z.literal('telegram') }),
-  zSmsStepInput.extend({ type: z.literal('sms') }),
-  zWaitStepInput.extend({ type: z.literal('wait') }),
-  zApplyTagStepInput.extend({ type: z.literal('apply_tag') }),
-  zRemoveTagStepInput.extend({ type: z.literal('remove_tag') }),
-  zHttpStepInput.extend({ type: z.literal('http') }),
-  zEndStepInput.extend({ type: z.literal('end') })
-]);
-
-/**
- * A path of Steps, as a request writes it
- */
-export const zAutomationPathInput = z.strictObject({
-  id: z.exactOptional(zStepId),
-  steps: z.array(zAutomationStepInput)
 });
 
 /**
@@ -4810,6 +4800,88 @@ export const zProblemDetails = z.object({
 });
 
 /**
+ * A path of Steps, in the order an Enrollment walks them. A version's Steps are its root path.
+ */
+export const zAutomationPath = z.object({
+  id: zStepId,
+  steps: z.array(z.lazy((): any => zAutomationStep))
+});
+
+/**
+ * A path of Steps, as a request writes it
+ */
+export const zAutomationPathInput = z.strictObject({
+  id: z.exactOptional(zStepId),
+  steps: z.array(z.lazy((): any => zAutomationStepInput))
+});
+
+/**
+ * One Step of an automation, by `type`
+ */
+export const zAutomationStep = z.union([
+  z.object({
+    type: z.literal('email')
+  }).and(zEmailStep),
+  z.object({
+    type: z.literal('telegram')
+  }).and(zTelegramStep),
+  z.object({
+    type: z.literal('sms')
+  }).and(zSmsStep),
+  z.object({
+    type: z.literal('wait')
+  }).and(zWaitStep),
+  z.object({
+    type: z.literal('apply_tag')
+  }).and(zApplyTagStep),
+  z.object({
+    type: z.literal('remove_tag')
+  }).and(zRemoveTagStep),
+  z.object({
+    type: z.literal('http')
+  }).and(zHttpStep),
+  z.object({
+    type: z.literal('end')
+  }).and(zEndStep),
+  z.object({
+    type: z.literal('branch')
+  }).and(z.lazy((): any => zBranchStep))
+]);
+
+/**
+ * One Step of an automation, by `type`, as a request writes it. A field of another kind is refused.
+ */
+export const zAutomationStepInput = z.union([
+  z.object({
+    type: z.literal('email')
+  }).and(zEmailStepInput),
+  z.object({
+    type: z.literal('telegram')
+  }).and(zTelegramStepInput),
+  z.object({
+    type: z.literal('sms')
+  }).and(zSmsStepInput),
+  z.object({
+    type: z.literal('wait')
+  }).and(zWaitStepInput),
+  z.object({
+    type: z.literal('apply_tag')
+  }).and(zApplyTagStepInput),
+  z.object({
+    type: z.literal('remove_tag')
+  }).and(zRemoveTagStepInput),
+  z.object({
+    type: z.literal('http')
+  }).and(zHttpStepInput),
+  z.object({
+    type: z.literal('end')
+  }).and(zEndStepInput),
+  z.object({
+    type: z.literal('branch')
+  }).and(z.lazy((): any => zBranchStepInput))
+]);
+
+/**
  * What enrolls a Contact in an automation, by `kind`: an Event matcher
  */
 export const zAutomationTrigger = z.lazy((): any => zEventTrigger);
@@ -4828,6 +4900,107 @@ export const zAutomationVersion = z.object({
   exitEvents: z.array(z.lazy((): any => zEventMatcher)),
   goalEvent: z.lazy((): any => zEventMatcher).nullable(),
   steps: zAutomationPath
+});
+
+/**
+ * A Branch path's Condition: the tree of tests the Contact, on its live data when the Enrollment
+ * reaches the Branch, and the Event the Enrollment began with match
+ */
+export const zBranchCondition = z.object({
+  kind: z.enum(['group']),
+  combinator: zConditionCombinator,
+  not: z.exactOptional(z.boolean()),
+  entries: z.array(z.lazy((): any => zBranchConditionNode))
+});
+
+/**
+ * A Branch path's Condition: the tree of tests the Contact, on its live data when the Enrollment
+ * reaches the Branch, and the Event the Enrollment began with match
+ */
+export const zBranchConditionInput = z.strictObject({
+  kind: z.enum(['group']),
+  combinator: zConditionCombinator,
+  not: z.exactOptional(z.boolean()),
+  entries: z.array(z.lazy((): any => zBranchConditionNodeInput))
+});
+
+/**
+ * An entry of a Branch path's Condition, by `kind`: a Rule's, the property test reading the
+ * Event the Enrollment began with
+ */
+export const zBranchConditionNode = z.discriminatedUnion('kind', [
+  zBranchCondition.extend({ kind: z.literal('group') }),
+  zAttributeLeaf.extend({ kind: z.literal('attribute') }),
+  zBirthdayLeaf.extend({ kind: z.literal('birthday') }),
+  zTagLeaf.extend({ kind: z.literal('tag') }),
+  zTelegramLeaf.extend({ kind: z.literal('telegram') }),
+  zSmsLeaf.extend({ kind: z.literal('sms') }),
+  zEngagementTrackingLeaf.extend({ kind: z.literal('engagementTracking') }),
+  zCustomFieldLeaf.extend({ kind: z.literal('customField') }),
+  zEventLeaf.extend({ kind: z.literal('event') }),
+  zBranchPropertyLeaf.extend({ kind: z.literal('property') })
+]);
+
+/**
+ * An entry of a Branch path's Condition, by `kind`: a Rule's, the property test reading the
+ * Event the Enrollment began with
+ */
+export const zBranchConditionNodeInput = z.discriminatedUnion('kind', [
+  zBranchConditionInput.extend({ kind: z.literal('group') }),
+  zAttributeLeafInput.extend({ kind: z.literal('attribute') }),
+  zBirthdayLeafInput.extend({ kind: z.literal('birthday') }),
+  zTagLeafInput.extend({ kind: z.literal('tag') }),
+  zTelegramLeafInput.extend({ kind: z.literal('telegram') }),
+  zSmsLeafInput.extend({ kind: z.literal('sms') }),
+  zEngagementTrackingLeafInput.extend({ kind: z.literal('engagementTracking') }),
+  zCustomFieldLeafInput.extend({ kind: z.literal('customField') }),
+  zEventLeafInput.extend({ kind: z.literal('event') }),
+  zBranchPropertyLeafInput.extend({ kind: z.literal('property') })
+]);
+
+/**
+ * A path of a Branch: the Condition that sends an Enrollment down it and its Steps
+ */
+export const zBranchPath = z.object({
+  id: zStepId,
+  condition: zBranchCondition,
+  steps: z.array(z.lazy((): any => zPathStep))
+});
+
+/**
+ * A path of a Branch, as a request writes it
+ */
+export const zBranchPathInput = z.strictObject({
+  id: z.exactOptional(zStepId),
+  condition: zBranchConditionInput,
+  steps: z.array(z.lazy((): any => zPathStepInput))
+});
+
+/**
+ * A Step that sends each Enrollment down the first of its paths whose Condition holds, on the
+ * Contact's live data when the Enrollment reaches it (ADR 0124), and down `otherwise` when none
+ * does. A Condition that is unknown for the Contact (an engagement count of a Destination that is
+ * not tracked, ADR 0123) before any holds sends it down `unknown`. The paths rejoin at the Step
+ * after the Branch.
+ */
+export const zBranchStep = z.object({
+  id: zStepId,
+  type: z.enum(['branch']),
+  paths: z.array(zBranchPath),
+  otherwise: zAutomationPath,
+  unknown: z.exactOptional(zAutomationPath)
+});
+
+/**
+ * A Branch, as a request writes it. It needs a path besides `otherwise`; Publish refuses it
+ * without `unknown` when a Condition counts an open or a click, and with `unknown` when none does.
+ */
+export const zBranchStepInput = z.strictObject({
+  id: z.exactOptional(zStepId),
+  type: z.enum(['branch']),
+  paths: z.array(zBranchPathInput),
+  otherwise: zAutomationPathInput,
+  unknown: z.exactOptional(zAutomationPathInput)
 });
 
 /**
@@ -4942,6 +5115,36 @@ export const zEventTriggerInput = z.strictObject({
   cooldown: z.exactOptional(zEntryCooldown),
   enrollmentKey: z.exactOptional(z.string())
 });
+
+/**
+ * One Step of a fork's path, by `type`: the arms of AutomationStep
+ */
+export const zPathStep = z.discriminatedUnion('type', [
+  zEmailStep.extend({ type: z.literal('email') }),
+  zTelegramStep.extend({ type: z.literal('telegram') }),
+  zSmsStep.extend({ type: z.literal('sms') }),
+  zWaitStep.extend({ type: z.literal('wait') }),
+  zApplyTagStep.extend({ type: z.literal('apply_tag') }),
+  zRemoveTagStep.extend({ type: z.literal('remove_tag') }),
+  zHttpStep.extend({ type: z.literal('http') }),
+  zEndStep.extend({ type: z.literal('end') }),
+  zBranchStep.extend({ type: z.literal('branch') })
+]);
+
+/**
+ * One Step of a fork's path, by `type`, as a request writes it: the arms of AutomationStepInput
+ */
+export const zPathStepInput = z.discriminatedUnion('type', [
+  zEmailStepInput.extend({ type: z.literal('email') }),
+  zTelegramStepInput.extend({ type: z.literal('telegram') }),
+  zSmsStepInput.extend({ type: z.literal('sms') }),
+  zWaitStepInput.extend({ type: z.literal('wait') }),
+  zApplyTagStepInput.extend({ type: z.literal('apply_tag') }),
+  zRemoveTagStepInput.extend({ type: z.literal('remove_tag') }),
+  zHttpStepInput.extend({ type: z.literal('http') }),
+  zEndStepInput.extend({ type: z.literal('end') }),
+  zBranchStepInput.extend({ type: z.literal('branch') })
+]);
 
 /**
  * A Rule's Condition: the tree of tests the Contact and the Event that fired the Rule match

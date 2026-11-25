@@ -139,6 +139,10 @@ import (
 // goverter:extend removeTagStepType
 // goverter:extend httpStepType
 // goverter:extend endStepType
+// goverter:extend branchStepType
+// goverter:extend pathStepViews
+// goverter:extend optAutomationPath
+// goverter:extend branchCondition
 // goverter:extend segmentCondition
 // goverter:extend ruleCondition
 // goverter:extend ruleActions
@@ -429,6 +433,8 @@ type Converter interface {
 	RemoveTagStepToResource(source automations.TagView) siteapi.RemoveTagStep
 	HttpStepToResource(source automations.HTTPView) siteapi.HttpStep
 	EndStepToResource(source automations.EndView) siteapi.EndStep
+	BranchStepToResource(source automations.BranchView) (siteapi.BranchStep, error)
+	BranchPathToResource(source automations.BranchPathView) (siteapi.BranchPath, error)
 	// goverter:ignore Value
 	AutomationHttpHeaderToResource(source automations.HeaderName) siteapi.AutomationHttpHeader
 	TelegramButtonToResource(source telegramrender.Button) siteapi.TelegramButton
@@ -1139,42 +1145,89 @@ func automationPath(c Converter, steps automationstep.Path) (siteapi.AutomationP
 	return c.AutomationPathToResource(view)
 }
 
-// automationStepViews wraps each Step's view in the arm of its kind: a oneOf is beyond goverter,
-// so only the switch is written here. A view with no arm fails the response, never shown as an
-// empty Step.
+// automationStepViews wraps each Step's view of the root path in the arm of its kind (stepSum).
 func automationStepViews(c Converter, views []automations.StepView) ([]siteapi.AutomationStep, error) {
 	out := make([]siteapi.AutomationStep, 0, len(views))
 	for _, v := range views {
-		var sum siteapi.AutomationStepSum
-		switch v := v.(type) {
-		case automations.EmailView:
-			sum = siteapi.NewEmailStepAutomationStepSum(c.EmailStepToResource(v))
-		case automations.TelegramView:
-			sum = siteapi.NewTelegramStepAutomationStepSum(c.TelegramStepToResource(v))
-		case automations.SMSView:
-			sum = siteapi.NewSmsStepAutomationStepSum(c.SmsStepToResource(v))
-		case automations.WaitView:
-			sum = siteapi.NewWaitStepAutomationStepSum(c.WaitStepToResource(v))
-		case automations.TagView:
-			// The module shows both tag kinds as one view; the union has an arm for each.
-			switch v.Type {
-			case automationstep.KindApplyTag:
-				sum = siteapi.NewApplyTagStepAutomationStepSum(c.ApplyTagStepToResource(v))
-			case automationstep.KindRemoveTag:
-				sum = siteapi.NewRemoveTagStepAutomationStepSum(c.RemoveTagStepToResource(v))
-			default:
-				return nil, fmt.Errorf("a tag step view of kind %q has no arm", v.Type)
-			}
-		case automations.HTTPView:
-			sum = siteapi.NewHttpStepAutomationStepSum(c.HttpStepToResource(v))
-		case automations.EndView:
-			sum = siteapi.NewEndStepAutomationStepSum(c.EndStepToResource(v))
-		default:
-			return nil, fmt.Errorf("the step view %T has no arm", v)
+		sum, err := stepSum(c, v)
+		if err != nil {
+			return nil, err
 		}
 		out = append(out, siteapi.AutomationStep{OneOf: sum})
 	}
 	return out, nil
+}
+
+// pathStepViews wraps each Step's view of a fork's path in the arm of its kind (stepSum): the
+// contract's union of a fork's path has the arms of the root's.
+func pathStepViews(c Converter, views []automations.StepView) ([]siteapi.PathStep, error) {
+	out := make([]siteapi.PathStep, 0, len(views))
+	for _, v := range views {
+		sum, err := stepSum(c, v)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, siteapi.PathStep{OneOf: siteapi.PathStepSum{
+			Type: siteapi.PathStepSumType(sum.Type), EmailStep: sum.EmailStep, TelegramStep: sum.TelegramStep,
+			SmsStep: sum.SmsStep, WaitStep: sum.WaitStep, ApplyTagStep: sum.ApplyTagStep,
+			RemoveTagStep: sum.RemoveTagStep, HttpStep: sum.HttpStep, EndStep: sum.EndStep, BranchStep: sum.BranchStep,
+		}})
+	}
+	return out, nil
+}
+
+// stepSum is the arm of the Step's view: a oneOf is beyond goverter, so only the switch is written
+// here. A view with no arm fails the response, never shown as an empty Step.
+func stepSum(c Converter, v automations.StepView) (siteapi.AutomationStepSum, error) {
+	switch v := v.(type) {
+	case automations.EmailView:
+		return siteapi.NewEmailStepAutomationStepSum(c.EmailStepToResource(v)), nil
+	case automations.TelegramView:
+		return siteapi.NewTelegramStepAutomationStepSum(c.TelegramStepToResource(v)), nil
+	case automations.SMSView:
+		return siteapi.NewSmsStepAutomationStepSum(c.SmsStepToResource(v)), nil
+	case automations.WaitView:
+		return siteapi.NewWaitStepAutomationStepSum(c.WaitStepToResource(v)), nil
+	case automations.TagView:
+		// The module shows both tag kinds as one view; the union has an arm for each.
+		switch v.Type {
+		case automationstep.KindApplyTag:
+			return siteapi.NewApplyTagStepAutomationStepSum(c.ApplyTagStepToResource(v)), nil
+		case automationstep.KindRemoveTag:
+			return siteapi.NewRemoveTagStepAutomationStepSum(c.RemoveTagStepToResource(v)), nil
+		default:
+			return siteapi.AutomationStepSum{}, fmt.Errorf("a tag step view of kind %q has no arm", v.Type)
+		}
+	case automations.HTTPView:
+		return siteapi.NewHttpStepAutomationStepSum(c.HttpStepToResource(v)), nil
+	case automations.EndView:
+		return siteapi.NewEndStepAutomationStepSum(c.EndStepToResource(v)), nil
+	case automations.BranchView:
+		b, err := c.BranchStepToResource(v)
+		if err != nil {
+			return siteapi.AutomationStepSum{}, err
+		}
+		return siteapi.NewBranchStepAutomationStepSum(b), nil
+	default:
+		return siteapi.AutomationStepSum{}, fmt.Errorf("the step view %T has no arm", v)
+	}
+}
+
+// optAutomationPath is a Branch's unknown path, absent for none.
+func optAutomationPath(c Converter, v *automations.PathView) (siteapi.OptAutomationPath, error) {
+	if v == nil {
+		return siteapi.OptAutomationPath{}, nil
+	}
+	p, err := c.AutomationPathToResource(*v)
+	if err != nil {
+		return siteapi.OptAutomationPath{}, err
+	}
+	return siteapi.NewOptAutomationPath(p), nil
+}
+
+// branchCondition maps a Branch path's Condition into the typed DTO.
+func branchCondition(g conditiontree.Branch) (siteapi.BranchCondition, error) {
+	return convert.Document[siteapi.BranchCondition](g)
 }
 
 // The discriminators of the Step arms.
@@ -1192,6 +1245,9 @@ func removeTagStepType(automationstep.Kind) siteapi.RemoveTagStepType {
 }
 func httpStepType(automationstep.Kind) siteapi.HttpStepType { return siteapi.HttpStepTypeHTTP }
 func endStepType(automationstep.Kind) siteapi.EndStepType   { return siteapi.EndStepTypeEnd }
+func branchStepType(automationstep.Kind) siteapi.BranchStepType {
+	return siteapi.BranchStepTypeBranch
+}
 
 func optEditorDocument(doc json.RawMessage) siteapi.OptEditorDocument {
 	return convert.OptObject[siteapi.OptEditorDocument](convert.DocObject[siteapi.EditorDocument](doc))

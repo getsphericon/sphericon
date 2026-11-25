@@ -31,6 +31,7 @@ export interface NodeProperties {
   wait: { seconds: number }
   tag: { tag: string }
   end: Record<string, never>
+  branch: Record<string, never>
 }
 
 // The properties of a node as read back: any of them may be missing or of another type.

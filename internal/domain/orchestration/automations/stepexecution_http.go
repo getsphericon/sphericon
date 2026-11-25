@@ -49,7 +49,8 @@ func (m *StepExecution) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in Execu
 	if err != nil {
 		return httpcall.Execution{}, err
 	}
-	st, ok := automationstep.Find(version.Steps, step)
+	index := automationstep.NewIndex(version.Steps)
+	st, ok := index.Step(step)
 	if !ok {
 		return httpcall.Execution{}, nil
 	}
@@ -86,7 +87,7 @@ func (m *StepExecution) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in Execu
 		return httpcall.Execution{}, nil
 	}
 	if sendErr == nil {
-		return httpcall.Execution{}, m.advance(ctx, s, run.ID, place{steps: version.Steps, step: step}, stepMove{})
+		return httpcall.Execution{}, m.advance(ctx, s, run.ID, place{index: index, step: step}, stepMove{})
 	}
 	decision := httpcall.OneOff.Decide(sendErr, attempt, m.now())
 	switch {
