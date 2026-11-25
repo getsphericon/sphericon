@@ -657,6 +657,8 @@ func (c *InputsImpl) PathStepInputType(source site.PathStepInputSumType) site.Au
 		siteapiAutomationStepInputSumType = site.RemoveTagStepInputAutomationStepInputSum
 	case site.SmsStepInputPathStepInputSum:
 		siteapiAutomationStepInputSumType = site.SmsStepInputAutomationStepInputSum
+	case site.SplitStepInputPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.SplitStepInputAutomationStepInputSum
 	case site.TelegramStepInputPathStepInputSum:
 		siteapiAutomationStepInputSumType = site.TelegramStepInputAutomationStepInputSum
 	case site.WaitStepInputPathStepInputSum:
@@ -1058,6 +1060,34 @@ func (c *InputsImpl) SortDirection(source site.SortDirection) pagination.Directi
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return paginationDirection
+}
+func (c *InputsImpl) SplitPathStepInputType(source site.SplitPathStepInputSumType) site.AutomationStepInputSumType {
+	var siteapiAutomationStepInputSumType site.AutomationStepInputSumType
+	switch source {
+	case site.ApplyTagStepInputSplitPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.ApplyTagStepInputAutomationStepInputSum
+	case site.BranchStepInputSplitPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.BranchStepInputAutomationStepInputSum
+	case site.EmailStepInputSplitPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.EmailStepInputAutomationStepInputSum
+	case site.EndStepInputSplitPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.EndStepInputAutomationStepInputSum
+	case site.HttpStepInputSplitPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.HttpStepInputAutomationStepInputSum
+	case site.RemoveTagStepInputSplitPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.RemoveTagStepInputAutomationStepInputSum
+	case site.SmsStepInputSplitPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.SmsStepInputAutomationStepInputSum
+	case site.SplitStepInputSplitPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.SplitStepInputAutomationStepInputSum
+	case site.TelegramStepInputSplitPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.TelegramStepInputAutomationStepInputSum
+	case site.WaitStepInputSplitPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.WaitStepInputAutomationStepInputSum
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiAutomationStepInputSumType
 }
 func (c *InputsImpl) SuppressionChannel(source site.SuppressionChannel) channels.Channel {
 	var channelsChannel channels.Channel

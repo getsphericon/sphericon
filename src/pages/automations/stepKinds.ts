@@ -1,4 +1,5 @@
 import {
+  IconArrowsSplit,
   IconBolt,
   IconBrandTelegram,
   IconClock,
@@ -79,8 +80,8 @@ function isKind(kinds: Record<EditedKind, StepKindInfo>, kind: string): kind is 
 export const TRIGGER_ICON = IconBolt
 
 // useStepInfo is what a node shows of its Step: its kind's name and icon. A Step the editor does
-// not edit is named by its kind as stored: an End or a Branch by its name, a kind newer than the
-// editor by its type.
+// not edit is named by its kind as stored: an End, a Branch or a Split by its name, a kind newer
+// than the editor by its type.
 export function useStepInfo(): (step: FlowStep) => { label: string; icon: Icon } {
   const { t } = useTranslation()
   const kinds = useStepKinds()
@@ -91,6 +92,9 @@ export function useStepInfo(): (step: FlowStep) => { label: string; icon: Icon }
     const { type } = step.step
     if (type === 'branch') {
       return { label: t(($) => $.automations.stepBranch), icon: IconGitBranch }
+    }
+    if (type === 'split') {
+      return { label: t(($) => $.automations.stepSplit), icon: IconArrowsSplit }
     }
     return type === 'end'
       ? { label: t(($) => $.automations.stepEnd), icon: IconFlag }

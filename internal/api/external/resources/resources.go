@@ -119,6 +119,26 @@ func pathStepViews(c Converter, views []automations.StepView) ([]externalapi.Pat
 			Type: c.PathStepType(sum.Type), EmailStep: sum.EmailStep, TelegramStep: sum.TelegramStep,
 			SmsStep: sum.SmsStep, WaitStep: sum.WaitStep, ApplyTagStep: sum.ApplyTagStep,
 			RemoveTagStep: sum.RemoveTagStep, HttpStep: sum.HttpStep, EndStep: sum.EndStep, BranchStep: sum.BranchStep,
+			SplitStep: sum.SplitStep,
+		}})
+	}
+	return out, nil
+}
+
+// splitPathStepViews wraps each Step's view of a Split's path in the arm of its kind (stepSum): the
+// contract's union of a Split's path has the arms of the root's.
+func splitPathStepViews(c Converter, views []automations.StepView) ([]externalapi.SplitPathStep, error) {
+	out := make([]externalapi.SplitPathStep, 0, len(views))
+	for _, v := range views {
+		sum, err := stepSum(c, v)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, externalapi.SplitPathStep{OneOf: externalapi.SplitPathStepSum{
+			Type: c.SplitPathStepType(sum.Type), EmailStep: sum.EmailStep, TelegramStep: sum.TelegramStep,
+			SmsStep: sum.SmsStep, WaitStep: sum.WaitStep, ApplyTagStep: sum.ApplyTagStep,
+			RemoveTagStep: sum.RemoveTagStep, HttpStep: sum.HttpStep, EndStep: sum.EndStep, BranchStep: sum.BranchStep,
+			SplitStep: sum.SplitStep,
 		}})
 	}
 	return out, nil
@@ -156,6 +176,12 @@ func stepSum(c Converter, v automations.StepView) (externalapi.AutomationStepSum
 			return externalapi.AutomationStepSum{}, err
 		}
 		return externalapi.NewBranchStepAutomationStepSum(b), nil
+	case automations.SplitView:
+		sp, err := c.SplitStepToResource(v)
+		if err != nil {
+			return externalapi.AutomationStepSum{}, err
+		}
+		return externalapi.NewSplitStepAutomationStepSum(sp), nil
 	default:
 		return externalapi.AutomationStepSum{}, fmt.Errorf("the step view %T has no arm", v)
 	}
@@ -197,6 +223,9 @@ func httpStepType(automationstep.Kind) externalapi.HttpStepType { return externa
 func endStepType(automationstep.Kind) externalapi.EndStepType   { return externalapi.EndStepTypeEnd }
 func branchStepType(automationstep.Kind) externalapi.BranchStepType {
 	return externalapi.BranchStepTypeBranch
+}
+func splitStepType(automationstep.Kind) externalapi.SplitStepType {
+	return externalapi.SplitStepTypeSplit
 }
 
 func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
@@ -273,6 +302,8 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend httpStepType
 // goverter:extend endStepType
 // goverter:extend branchStepType
+// goverter:extend splitStepType
+// goverter:extend splitPathStepViews
 // goverter:extend pathStepViews
 // goverter:extend optAutomationPath
 // goverter:extend branchCondition
@@ -412,6 +443,12 @@ type Converter interface {
 	// have the same arms (pathStepViews).
 	// goverter:enum:transform value
 	PathStepType(source externalapi.AutomationStepSumType) externalapi.PathStepSumType
+	// The kind of a Step of the root's union as the kind of a Step of a Split's path: the two unions
+	// have the same arms (splitPathStepViews).
+	// goverter:enum:transform value
+	SplitPathStepType(source externalapi.AutomationStepSumType) externalapi.SplitPathStepSumType
+	SplitStepToResource(source automations.SplitView) (externalapi.SplitStep, error)
+	SplitPathToResource(source automations.SplitPathView) (externalapi.SplitPath, error)
 	// goverter:ignore Value
 	AutomationHttpHeaderToResource(source automations.HeaderName) externalapi.AutomationHttpHeader
 	TelegramButtonToResource(source telegramrender.Button) externalapi.TelegramButton

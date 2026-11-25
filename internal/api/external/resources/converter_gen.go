@@ -1334,6 +1334,8 @@ func (c *ConverterImpl) PathStepType(source external.AutomationStepSumType) exte
 		externalapiPathStepSumType = external.RemoveTagStepPathStepSum
 	case external.SmsStepAutomationStepSum:
 		externalapiPathStepSumType = external.SmsStepPathStepSum
+	case external.SplitStepAutomationStepSum:
+		externalapiPathStepSumType = external.SplitStepPathStepSum
 	case external.TelegramStepAutomationStepSum:
 		externalapiPathStepSumType = external.TelegramStepPathStepSum
 	case external.WaitStepAutomationStepSum:
@@ -1856,6 +1858,61 @@ func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) e
 	externalapiSmtpConfig.From = external.EmailAddress(source.From)
 	externalapiSmtpConfig.FromName = omitEmpty(source.FromName)
 	return externalapiSmtpConfig
+}
+func (c *ConverterImpl) SplitPathStepType(source external.AutomationStepSumType) external.SplitPathStepSumType {
+	var externalapiSplitPathStepSumType external.SplitPathStepSumType
+	switch source {
+	case external.ApplyTagStepAutomationStepSum:
+		externalapiSplitPathStepSumType = external.ApplyTagStepSplitPathStepSum
+	case external.BranchStepAutomationStepSum:
+		externalapiSplitPathStepSumType = external.BranchStepSplitPathStepSum
+	case external.EmailStepAutomationStepSum:
+		externalapiSplitPathStepSumType = external.EmailStepSplitPathStepSum
+	case external.EndStepAutomationStepSum:
+		externalapiSplitPathStepSumType = external.EndStepSplitPathStepSum
+	case external.HttpStepAutomationStepSum:
+		externalapiSplitPathStepSumType = external.HttpStepSplitPathStepSum
+	case external.RemoveTagStepAutomationStepSum:
+		externalapiSplitPathStepSumType = external.RemoveTagStepSplitPathStepSum
+	case external.SmsStepAutomationStepSum:
+		externalapiSplitPathStepSumType = external.SmsStepSplitPathStepSum
+	case external.SplitStepAutomationStepSum:
+		externalapiSplitPathStepSumType = external.SplitStepSplitPathStepSum
+	case external.TelegramStepAutomationStepSum:
+		externalapiSplitPathStepSumType = external.TelegramStepSplitPathStepSum
+	case external.WaitStepAutomationStepSum:
+		externalapiSplitPathStepSumType = external.WaitStepSplitPathStepSum
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiSplitPathStepSumType
+}
+func (c *ConverterImpl) SplitPathToResource(source automations.SplitPathView) (external.SplitPath, error) {
+	var externalapiSplitPath external.SplitPath
+	externalapiSplitPath.ID = external.StepId(source.ID)
+	externalapiSplitPath.Weight = count(source.Weight)
+	externalapiSplitPathStepList, err := splitPathStepViews(c, source.Steps)
+	if err != nil {
+		return externalapiSplitPath, err
+	}
+	externalapiSplitPath.Steps = externalapiSplitPathStepList
+	return externalapiSplitPath, nil
+}
+func (c *ConverterImpl) SplitStepToResource(source automations.SplitView) (external.SplitStep, error) {
+	var externalapiSplitStep external.SplitStep
+	externalapiSplitStep.ID = external.StepId(source.ID)
+	externalapiSplitStep.Type = splitStepType(source.Type)
+	if source.Paths != nil {
+		externalapiSplitStep.Paths = make([]external.SplitPath, len(source.Paths))
+		for i := 0; i < len(source.Paths); i++ {
+			externalapiSplitPath, err := c.SplitPathToResource(source.Paths[i])
+			if err != nil {
+				return externalapiSplitStep, err
+			}
+			externalapiSplitStep.Paths[i] = externalapiSplitPath
+		}
+	}
+	return externalapiSplitStep, nil
 }
 func (c *ConverterImpl) StartLinkToResource(source bindings.StartLink) external.TelegramStartLinkResource {
 	var externalapiTelegramStartLinkResource external.TelegramStartLinkResource

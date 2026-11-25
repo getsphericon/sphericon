@@ -504,6 +504,7 @@
     "stepRemoveTag": "Remove tag",
     "stepsLabel": "Steps",
     "stepSms": "Send SMS",
+    "stepSplit": "Split",
     "stepTelegram": "Send Telegram message",
     "stepTrigger": "Trigger",
     "stepWait": "Wait",

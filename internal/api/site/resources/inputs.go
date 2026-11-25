@@ -254,6 +254,10 @@ type Inputs interface {
 	// the same arms (pathStepsIn).
 	// goverter:enum:transform value
 	PathStepInputType(source siteapi.PathStepInputSumType) siteapi.AutomationStepInputSumType
+	// The kind of a Step of a Split's path as the kind of a Step of the root's: the two unions have
+	// the same arms (splitPathStepsIn).
+	// goverter:enum:transform value
+	SplitPathStepInputType(source siteapi.SplitPathStepInputSumType) siteapi.AutomationStepInputSumType
 	// A version's root path; each Step is picked by automationStepIn.
 	AutomationPath(source siteapi.AutomationPathInput) (automationstep.Path, error)
 	// The arms of a Step, which automationStepIn picks; the Step's id is the arm's, which it
@@ -505,7 +509,27 @@ func pathStepsIn(c Inputs, in []siteapi.PathStepInput) ([]automationstep.Step, e
 			Type: c.PathStepInputType(s.Type), EmailStepInput: s.EmailStepInput, TelegramStepInput: s.TelegramStepInput,
 			SmsStepInput: s.SmsStepInput, WaitStepInput: s.WaitStepInput, ApplyTagStepInput: s.ApplyTagStepInput,
 			RemoveTagStepInput: s.RemoveTagStepInput, HttpStepInput: s.HttpStepInput, EndStepInput: s.EndStepInput,
-			BranchStepInput: s.BranchStepInput,
+			BranchStepInput: s.BranchStepInput, SplitStepInput: s.SplitStepInput,
+		})
+		if err != nil {
+			return nil, err
+		}
+		out[i] = st
+	}
+	return out, nil
+}
+
+// splitPathStepsIn maps the Steps of a Split's path onto the module's: the contract's union of a
+// Split's path has the arms of the root's, so each is read as one of those (automationStepIn).
+func splitPathStepsIn(c Inputs, in []siteapi.SplitPathStepInput) ([]automationstep.Step, error) {
+	out := make([]automationstep.Step, len(in))
+	for i := range in {
+		s := &in[i].OneOf
+		st, err := automationStepIn(c, &siteapi.AutomationStepInputSum{
+			Type: c.SplitPathStepInputType(s.Type), EmailStepInput: s.EmailStepInput, TelegramStepInput: s.TelegramStepInput,
+			SmsStepInput: s.SmsStepInput, WaitStepInput: s.WaitStepInput, ApplyTagStepInput: s.ApplyTagStepInput,
+			RemoveTagStepInput: s.RemoveTagStepInput, HttpStepInput: s.HttpStepInput, EndStepInput: s.EndStepInput,
+			BranchStepInput: s.BranchStepInput, SplitStepInput: s.SplitStepInput,
 		})
 		if err != nil {
 			return nil, err
@@ -537,6 +561,8 @@ func automationStepIn(c Inputs, s *siteapi.AutomationStepInputSum) (automationst
 		return automationstep.Step{ID: stepIDIn(s.EndStepInput.ID), Payload: automationstep.End{}}, nil
 	case siteapi.BranchStepInputAutomationStepInputSum:
 		return branchStepIn(c, &s.BranchStepInput)
+	case siteapi.SplitStepInputAutomationStepInputSum:
+		return splitStepIn(c, &s.SplitStepInput)
 	default:
 		return automationstep.Step{}, nil // the save refuses a Step of no kind
 	}
@@ -571,6 +597,20 @@ func branchStepIn(c Inputs, in *siteapi.BranchStepInput) (automationstep.Step, e
 		b.Unknown = &unknown
 	}
 	return automationstep.Step{ID: stepIDIn(in.ID), Payload: b}, nil
+}
+
+// splitStepIn maps a Split: each path with its weight and its Steps. The save checks the weights.
+func splitStepIn(c Inputs, in *siteapi.SplitStepInput) (automationstep.Step, error) {
+	sp := automationstep.Split{Paths: make([]automationstep.SplitPath, len(in.Paths))}
+	for i := range in.Paths {
+		p := &in.Paths[i]
+		steps, err := splitPathStepsIn(c, p.Steps)
+		if err != nil {
+			return automationstep.Step{}, err
+		}
+		sp.Paths[i] = automationstep.SplitPath{ID: stepIDIn(p.ID), Weight: int(p.Weight), Steps: steps}
+	}
+	return automationstep.Step{ID: stepIDIn(in.ID), Payload: sp}, nil
 }
 
 // ruleActionsPtrIn is the Actions an update replaces: omitted (nil) keeps the stored ones.

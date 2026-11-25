@@ -195,6 +195,7 @@ const (
 	Variables                 = "variables"
 	Version                   = "version"
 	VisitorID                 = "visitorId"
+	Weight                    = "weight"
 	WindowDays                = "windowDays"
 	WithinDays                = "withinDays"
 	Wording                   = "wording"

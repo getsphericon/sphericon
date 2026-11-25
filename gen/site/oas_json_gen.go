@@ -4398,6 +4398,26 @@ func (s AutomationStepInputSum) encodeFields(e *jx.Encoder) {
 				}
 			}
 		}
+	case SplitStepInputAutomationStepInputSum:
+		e.FieldStart("type")
+		e.Str("split")
+		{
+			s := s.SplitStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("paths")
+				e.ArrStart()
+				for _, elem := range s.Paths {
+					elem.Encode(e)
+				}
+				e.ArrEnd()
+			}
+		}
 	}
 }
 
@@ -4451,6 +4471,9 @@ func (s *AutomationStepInputSum) Decode(d *jx.Decoder) error {
 				case "branch":
 					s.Type = BranchStepInputAutomationStepInputSum
 					found = true
+				case "split":
+					s.Type = SplitStepInputAutomationStepInputSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -4499,6 +4522,10 @@ func (s *AutomationStepInputSum) Decode(d *jx.Decoder) error {
 		}
 	case BranchStepInputAutomationStepInputSum:
 		if err := s.BranchStepInput.Decode(d); err != nil {
+			return err
+		}
+	case SplitStepInputAutomationStepInputSum:
+		if err := s.SplitStepInput.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -4739,6 +4766,24 @@ func (s AutomationStepSum) encodeFields(e *jx.Encoder) {
 				}
 			}
 		}
+	case SplitStepAutomationStepSum:
+		e.FieldStart("type")
+		e.Str("split")
+		{
+			s := s.SplitStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("paths")
+				e.ArrStart()
+				for _, elem := range s.Paths {
+					elem.Encode(e)
+				}
+				e.ArrEnd()
+			}
+		}
 	}
 }
 
@@ -4792,6 +4837,9 @@ func (s *AutomationStepSum) Decode(d *jx.Decoder) error {
 				case "branch":
 					s.Type = BranchStepAutomationStepSum
 					found = true
+				case "split":
+					s.Type = SplitStepAutomationStepSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -4840,6 +4888,10 @@ func (s *AutomationStepSum) Decode(d *jx.Decoder) error {
 		}
 	case BranchStepAutomationStepSum:
 		if err := s.BranchStep.Decode(d); err != nil {
+			return err
+		}
+	case SplitStepAutomationStepSum:
+		if err := s.SplitStep.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -27803,6 +27855,26 @@ func (s PathStepInputSum) encodeFields(e *jx.Encoder) {
 				}
 			}
 		}
+	case SplitStepInputPathStepInputSum:
+		e.FieldStart("type")
+		e.Str("split")
+		{
+			s := s.SplitStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("paths")
+				e.ArrStart()
+				for _, elem := range s.Paths {
+					elem.Encode(e)
+				}
+				e.ArrEnd()
+			}
+		}
 	}
 }
 
@@ -27856,6 +27928,9 @@ func (s *PathStepInputSum) Decode(d *jx.Decoder) error {
 				case "branch":
 					s.Type = BranchStepInputPathStepInputSum
 					found = true
+				case "split":
+					s.Type = SplitStepInputPathStepInputSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -27904,6 +27979,10 @@ func (s *PathStepInputSum) Decode(d *jx.Decoder) error {
 		}
 	case BranchStepInputPathStepInputSum:
 		if err := s.BranchStepInput.Decode(d); err != nil {
+			return err
+		}
+	case SplitStepInputPathStepInputSum:
+		if err := s.SplitStepInput.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -28144,6 +28223,24 @@ func (s PathStepSum) encodeFields(e *jx.Encoder) {
 				}
 			}
 		}
+	case SplitStepPathStepSum:
+		e.FieldStart("type")
+		e.Str("split")
+		{
+			s := s.SplitStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("paths")
+				e.ArrStart()
+				for _, elem := range s.Paths {
+					elem.Encode(e)
+				}
+				e.ArrEnd()
+			}
+		}
 	}
 }
 
@@ -28197,6 +28294,9 @@ func (s *PathStepSum) Decode(d *jx.Decoder) error {
 				case "branch":
 					s.Type = BranchStepPathStepSum
 					found = true
+				case "split":
+					s.Type = SplitStepPathStepSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -28245,6 +28345,10 @@ func (s *PathStepSum) Decode(d *jx.Decoder) error {
 		}
 	case BranchStepPathStepSum:
 		if err := s.BranchStep.Decode(d); err != nil {
+			return err
+		}
+	case SplitStepPathStepSum:
+		if err := s.SplitStep.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -67393,6 +67497,1504 @@ func (s *SoleOwnedWorkspace) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SoleOwnedWorkspace) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SplitPath) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SplitPath) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("id")
+		s.ID.Encode(e)
+	}
+	{
+		e.FieldStart("weight")
+		e.Int32(s.Weight)
+	}
+	{
+		e.FieldStart("steps")
+		e.ArrStart()
+		for _, elem := range s.Steps {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+}
+
+var jsonFieldsNameOfSplitPath = [3]string{
+	0: "id",
+	1: "weight",
+	2: "steps",
+}
+
+// Decode decodes SplitPath from json.
+func (s *SplitPath) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SplitPath to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "weight":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Int32()
+				s.Weight = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"weight\"")
+			}
+		case "steps":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				s.Steps = make([]SplitPathStep, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem SplitPathStep
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Steps = append(s.Steps, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"steps\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SplitPath")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSplitPath) {
+					name = jsonFieldsNameOfSplitPath[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SplitPath) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SplitPath) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SplitPathInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SplitPathInput) encodeFields(e *jx.Encoder) {
+	{
+		if s.ID.Set {
+			e.FieldStart("id")
+			s.ID.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("weight")
+		e.Int32(s.Weight)
+	}
+	{
+		e.FieldStart("steps")
+		e.ArrStart()
+		for _, elem := range s.Steps {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+}
+
+var jsonFieldsNameOfSplitPathInput = [3]string{
+	0: "id",
+	1: "weight",
+	2: "steps",
+}
+
+// Decode decodes SplitPathInput from json.
+func (s *SplitPathInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SplitPathInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			if err := func() error {
+				s.ID.Reset()
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "weight":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Int32()
+				s.Weight = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"weight\"")
+			}
+		case "steps":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				s.Steps = make([]SplitPathStepInput, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem SplitPathStepInput
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Steps = append(s.Steps, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"steps\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SplitPathInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000110,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSplitPathInput) {
+					name = jsonFieldsNameOfSplitPathInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SplitPathInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SplitPathInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SplitPathStep) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SplitPathStep) encodeFields(e *jx.Encoder) {
+	s.OneOf.encodeFields(e)
+}
+
+var jsonFieldsNameOfSplitPathStep = [0]string{}
+
+// Decode decodes SplitPathStep from json.
+func (s *SplitPathStep) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SplitPathStep to nil")
+	}
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return s.OneOf.Decode(d)
+	}); err != nil {
+		return errors.Wrap(err, "decode field OneOf")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		default:
+			return d.Skip()
+		}
+	}); err != nil {
+		return errors.Wrap(err, "decode SplitPathStep")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SplitPathStep) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SplitPathStep) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SplitPathStepInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SplitPathStepInput) encodeFields(e *jx.Encoder) {
+	s.OneOf.encodeFields(e)
+}
+
+var jsonFieldsNameOfSplitPathStepInput = [0]string{}
+
+// Decode decodes SplitPathStepInput from json.
+func (s *SplitPathStepInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SplitPathStepInput to nil")
+	}
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return s.OneOf.Decode(d)
+	}); err != nil {
+		return errors.Wrap(err, "decode field OneOf")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		default:
+			return d.Skip()
+		}
+	}); err != nil {
+		return errors.Wrap(err, "decode SplitPathStepInput")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SplitPathStepInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SplitPathStepInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SplitPathStepInputSum as json.
+func (s SplitPathStepInputSum) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+func (s SplitPathStepInputSum) encodeFields(e *jx.Encoder) {
+	switch s.Type {
+	case EmailStepInputSplitPathStepInputSum:
+		e.FieldStart("type")
+		e.Str("email")
+		{
+			s := s.EmailStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("subject")
+				e.Str(s.Subject)
+			}
+			{
+				if s.Body.Set {
+					e.FieldStart("body")
+					s.Body.Encode(e)
+				}
+			}
+			{
+				if s.Doc.Set {
+					e.FieldStart("doc")
+					s.Doc.Encode(e)
+				}
+			}
+			{
+				if s.IntegrationId.Set {
+					e.FieldStart("integrationId")
+					s.IntegrationId.Encode(e)
+				}
+			}
+		}
+	case TelegramStepInputSplitPathStepInputSum:
+		e.FieldStart("type")
+		e.Str("telegram")
+		{
+			s := s.TelegramStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("text")
+				e.Str(s.Text)
+			}
+			{
+				if s.UnsubscribeButton.Set {
+					e.FieldStart("unsubscribeButton")
+					s.UnsubscribeButton.Encode(e)
+				}
+			}
+			{
+				if s.ImageUrl.Set {
+					e.FieldStart("imageUrl")
+					s.ImageUrl.Encode(e)
+				}
+			}
+			{
+				if s.Buttons != nil {
+					e.FieldStart("buttons")
+					e.ArrStart()
+					for _, elem := range s.Buttons {
+						elem.Encode(e)
+					}
+					e.ArrEnd()
+				}
+			}
+			{
+				if s.LinkPreview.Set {
+					e.FieldStart("linkPreview")
+					s.LinkPreview.Encode(e)
+				}
+			}
+			{
+				if s.IntegrationId.Set {
+					e.FieldStart("integrationId")
+					s.IntegrationId.Encode(e)
+				}
+			}
+		}
+	case SmsStepInputSplitPathStepInputSum:
+		e.FieldStart("type")
+		e.Str("sms")
+		{
+			s := s.SmsStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("text")
+				e.Str(s.Text)
+			}
+			{
+				if s.LinkTracking.Set {
+					e.FieldStart("linkTracking")
+					s.LinkTracking.Encode(e)
+				}
+			}
+			{
+				if s.IntegrationId.Set {
+					e.FieldStart("integrationId")
+					s.IntegrationId.Encode(e)
+				}
+			}
+		}
+	case WaitStepInputSplitPathStepInputSum:
+		e.FieldStart("type")
+		e.Str("wait")
+		{
+			s := s.WaitStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("seconds")
+				e.Int32(s.Seconds)
+			}
+		}
+	case ApplyTagStepInputSplitPathStepInputSum:
+		e.FieldStart("type")
+		e.Str("apply_tag")
+		{
+			s := s.ApplyTagStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("tag")
+				e.Str(s.Tag)
+			}
+		}
+	case RemoveTagStepInputSplitPathStepInputSum:
+		e.FieldStart("type")
+		e.Str("remove_tag")
+		{
+			s := s.RemoveTagStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("tag")
+				e.Str(s.Tag)
+			}
+		}
+	case HttpStepInputSplitPathStepInputSum:
+		e.FieldStart("type")
+		e.Str("http")
+		{
+			s := s.HttpStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("body")
+				e.Str(s.Body)
+			}
+			{
+				if s.URL.Set {
+					e.FieldStart("url")
+					s.URL.Encode(e)
+				}
+			}
+			{
+				if s.Headers != nil {
+					e.FieldStart("headers")
+					e.ArrStart()
+					for _, elem := range s.Headers {
+						elem.Encode(e)
+					}
+					e.ArrEnd()
+				}
+			}
+			{
+				if s.Secret.Set {
+					e.FieldStart("secret")
+					s.Secret.Encode(e)
+				}
+			}
+			{
+				if s.ClearSecret.Set {
+					e.FieldStart("clearSecret")
+					s.ClearSecret.Encode(e)
+				}
+			}
+		}
+	case EndStepInputSplitPathStepInputSum:
+		e.FieldStart("type")
+		e.Str("end")
+		{
+			s := s.EndStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+		}
+	case BranchStepInputSplitPathStepInputSum:
+		e.FieldStart("type")
+		e.Str("branch")
+		{
+			s := s.BranchStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("paths")
+				e.ArrStart()
+				for _, elem := range s.Paths {
+					elem.Encode(e)
+				}
+				e.ArrEnd()
+			}
+			{
+				e.FieldStart("otherwise")
+				s.Otherwise.Encode(e)
+			}
+			{
+				if s.Unknown.Set {
+					e.FieldStart("unknown")
+					s.Unknown.Encode(e)
+				}
+			}
+		}
+	case SplitStepInputSplitPathStepInputSum:
+		e.FieldStart("type")
+		e.Str("split")
+		{
+			s := s.SplitStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("paths")
+				e.ArrStart()
+				for _, elem := range s.Paths {
+					elem.Encode(e)
+				}
+				e.ArrEnd()
+			}
+		}
+	}
+}
+
+// Decode decodes SplitPathStepInputSum from json.
+func (s *SplitPathStepInputSum) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SplitPathStepInputSum to nil")
+	}
+	// Sum type discriminator.
+	if typ := d.Next(); typ != jx.Object {
+		return errors.Errorf("unexpected json type %q", typ)
+	}
+
+	var found bool
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return d.ObjBytes(func(d *jx.Decoder, key []byte) error {
+			if found {
+				return d.Skip()
+			}
+			switch string(key) {
+			case "type":
+				typ, err := d.Str()
+				if err != nil {
+					return err
+				}
+				switch typ {
+				case "email":
+					s.Type = EmailStepInputSplitPathStepInputSum
+					found = true
+				case "telegram":
+					s.Type = TelegramStepInputSplitPathStepInputSum
+					found = true
+				case "sms":
+					s.Type = SmsStepInputSplitPathStepInputSum
+					found = true
+				case "wait":
+					s.Type = WaitStepInputSplitPathStepInputSum
+					found = true
+				case "apply_tag":
+					s.Type = ApplyTagStepInputSplitPathStepInputSum
+					found = true
+				case "remove_tag":
+					s.Type = RemoveTagStepInputSplitPathStepInputSum
+					found = true
+				case "http":
+					s.Type = HttpStepInputSplitPathStepInputSum
+					found = true
+				case "end":
+					s.Type = EndStepInputSplitPathStepInputSum
+					found = true
+				case "branch":
+					s.Type = BranchStepInputSplitPathStepInputSum
+					found = true
+				case "split":
+					s.Type = SplitStepInputSplitPathStepInputSum
+					found = true
+				default:
+					return errors.Errorf("unknown type %s", typ)
+				}
+				return nil
+			}
+			return d.Skip()
+		})
+	}); err != nil {
+		return errors.Wrap(err, "capture")
+	}
+	if !found {
+		return errors.New("unable to detect sum type variant")
+	}
+	switch s.Type {
+	case EmailStepInputSplitPathStepInputSum:
+		if err := s.EmailStepInput.Decode(d); err != nil {
+			return err
+		}
+	case TelegramStepInputSplitPathStepInputSum:
+		if err := s.TelegramStepInput.Decode(d); err != nil {
+			return err
+		}
+	case SmsStepInputSplitPathStepInputSum:
+		if err := s.SmsStepInput.Decode(d); err != nil {
+			return err
+		}
+	case WaitStepInputSplitPathStepInputSum:
+		if err := s.WaitStepInput.Decode(d); err != nil {
+			return err
+		}
+	case ApplyTagStepInputSplitPathStepInputSum:
+		if err := s.ApplyTagStepInput.Decode(d); err != nil {
+			return err
+		}
+	case RemoveTagStepInputSplitPathStepInputSum:
+		if err := s.RemoveTagStepInput.Decode(d); err != nil {
+			return err
+		}
+	case HttpStepInputSplitPathStepInputSum:
+		if err := s.HttpStepInput.Decode(d); err != nil {
+			return err
+		}
+	case EndStepInputSplitPathStepInputSum:
+		if err := s.EndStepInput.Decode(d); err != nil {
+			return err
+		}
+	case BranchStepInputSplitPathStepInputSum:
+		if err := s.BranchStepInput.Decode(d); err != nil {
+			return err
+		}
+	case SplitStepInputSplitPathStepInputSum:
+		if err := s.SplitStepInput.Decode(d); err != nil {
+			return err
+		}
+	default:
+		return errors.Errorf("inferred invalid type: %s", s.Type)
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SplitPathStepInputSum) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SplitPathStepInputSum) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SplitPathStepSum as json.
+func (s SplitPathStepSum) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+func (s SplitPathStepSum) encodeFields(e *jx.Encoder) {
+	switch s.Type {
+	case EmailStepSplitPathStepSum:
+		e.FieldStart("type")
+		e.Str("email")
+		{
+			s := s.EmailStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("subject")
+				e.Str(s.Subject)
+			}
+			{
+				e.FieldStart("body")
+				e.Str(s.Body)
+			}
+			{
+				if s.Doc.Set {
+					e.FieldStart("doc")
+					s.Doc.Encode(e)
+				}
+			}
+			{
+				if s.EditorVersion.Set {
+					e.FieldStart("editorVersion")
+					s.EditorVersion.Encode(e)
+				}
+			}
+			{
+				if s.IntegrationId.Set {
+					e.FieldStart("integrationId")
+					s.IntegrationId.Encode(e)
+				}
+			}
+		}
+	case TelegramStepSplitPathStepSum:
+		e.FieldStart("type")
+		e.Str("telegram")
+		{
+			s := s.TelegramStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("text")
+				e.Str(s.Text)
+			}
+			{
+				if s.UnsubscribeButton.Set {
+					e.FieldStart("unsubscribeButton")
+					s.UnsubscribeButton.Encode(e)
+				}
+			}
+			{
+				if s.ImageUrl.Set {
+					e.FieldStart("imageUrl")
+					s.ImageUrl.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("buttons")
+				e.ArrStart()
+				for _, elem := range s.Buttons {
+					elem.Encode(e)
+				}
+				e.ArrEnd()
+			}
+			{
+				e.FieldStart("linkPreview")
+				e.Bool(s.LinkPreview)
+			}
+			{
+				if s.IntegrationId.Set {
+					e.FieldStart("integrationId")
+					s.IntegrationId.Encode(e)
+				}
+			}
+		}
+	case SmsStepSplitPathStepSum:
+		e.FieldStart("type")
+		e.Str("sms")
+		{
+			s := s.SmsStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("text")
+				e.Str(s.Text)
+			}
+			{
+				e.FieldStart("linkTracking")
+				e.Bool(s.LinkTracking)
+			}
+			{
+				if s.IntegrationId.Set {
+					e.FieldStart("integrationId")
+					s.IntegrationId.Encode(e)
+				}
+			}
+		}
+	case WaitStepSplitPathStepSum:
+		e.FieldStart("type")
+		e.Str("wait")
+		{
+			s := s.WaitStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("seconds")
+				e.Int32(s.Seconds)
+			}
+		}
+	case ApplyTagStepSplitPathStepSum:
+		e.FieldStart("type")
+		e.Str("apply_tag")
+		{
+			s := s.ApplyTagStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("tag")
+				e.Str(s.Tag)
+			}
+		}
+	case RemoveTagStepSplitPathStepSum:
+		e.FieldStart("type")
+		e.Str("remove_tag")
+		{
+			s := s.RemoveTagStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("tag")
+				e.Str(s.Tag)
+			}
+		}
+	case HttpStepSplitPathStepSum:
+		e.FieldStart("type")
+		e.Str("http")
+		{
+			s := s.HttpStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("body")
+				e.Str(s.Body)
+			}
+			{
+				e.FieldStart("headers")
+				e.ArrStart()
+				for _, elem := range s.Headers {
+					elem.Encode(e)
+				}
+				e.ArrEnd()
+			}
+			{
+				e.FieldStart("hasSecret")
+				e.Bool(s.HasSecret)
+			}
+		}
+	case EndStepSplitPathStepSum:
+		e.FieldStart("type")
+		e.Str("end")
+		{
+			s := s.EndStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+		}
+	case BranchStepSplitPathStepSum:
+		e.FieldStart("type")
+		e.Str("branch")
+		{
+			s := s.BranchStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("paths")
+				e.ArrStart()
+				for _, elem := range s.Paths {
+					elem.Encode(e)
+				}
+				e.ArrEnd()
+			}
+			{
+				e.FieldStart("otherwise")
+				s.Otherwise.Encode(e)
+			}
+			{
+				if s.Unknown.Set {
+					e.FieldStart("unknown")
+					s.Unknown.Encode(e)
+				}
+			}
+		}
+	case SplitStepSplitPathStepSum:
+		e.FieldStart("type")
+		e.Str("split")
+		{
+			s := s.SplitStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("paths")
+				e.ArrStart()
+				for _, elem := range s.Paths {
+					elem.Encode(e)
+				}
+				e.ArrEnd()
+			}
+		}
+	}
+}
+
+// Decode decodes SplitPathStepSum from json.
+func (s *SplitPathStepSum) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SplitPathStepSum to nil")
+	}
+	// Sum type discriminator.
+	if typ := d.Next(); typ != jx.Object {
+		return errors.Errorf("unexpected json type %q", typ)
+	}
+
+	var found bool
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return d.ObjBytes(func(d *jx.Decoder, key []byte) error {
+			if found {
+				return d.Skip()
+			}
+			switch string(key) {
+			case "type":
+				typ, err := d.Str()
+				if err != nil {
+					return err
+				}
+				switch typ {
+				case "email":
+					s.Type = EmailStepSplitPathStepSum
+					found = true
+				case "telegram":
+					s.Type = TelegramStepSplitPathStepSum
+					found = true
+				case "sms":
+					s.Type = SmsStepSplitPathStepSum
+					found = true
+				case "wait":
+					s.Type = WaitStepSplitPathStepSum
+					found = true
+				case "apply_tag":
+					s.Type = ApplyTagStepSplitPathStepSum
+					found = true
+				case "remove_tag":
+					s.Type = RemoveTagStepSplitPathStepSum
+					found = true
+				case "http":
+					s.Type = HttpStepSplitPathStepSum
+					found = true
+				case "end":
+					s.Type = EndStepSplitPathStepSum
+					found = true
+				case "branch":
+					s.Type = BranchStepSplitPathStepSum
+					found = true
+				case "split":
+					s.Type = SplitStepSplitPathStepSum
+					found = true
+				default:
+					return errors.Errorf("unknown type %s", typ)
+				}
+				return nil
+			}
+			return d.Skip()
+		})
+	}); err != nil {
+		return errors.Wrap(err, "capture")
+	}
+	if !found {
+		return errors.New("unable to detect sum type variant")
+	}
+	switch s.Type {
+	case EmailStepSplitPathStepSum:
+		if err := s.EmailStep.Decode(d); err != nil {
+			return err
+		}
+	case TelegramStepSplitPathStepSum:
+		if err := s.TelegramStep.Decode(d); err != nil {
+			return err
+		}
+	case SmsStepSplitPathStepSum:
+		if err := s.SmsStep.Decode(d); err != nil {
+			return err
+		}
+	case WaitStepSplitPathStepSum:
+		if err := s.WaitStep.Decode(d); err != nil {
+			return err
+		}
+	case ApplyTagStepSplitPathStepSum:
+		if err := s.ApplyTagStep.Decode(d); err != nil {
+			return err
+		}
+	case RemoveTagStepSplitPathStepSum:
+		if err := s.RemoveTagStep.Decode(d); err != nil {
+			return err
+		}
+	case HttpStepSplitPathStepSum:
+		if err := s.HttpStep.Decode(d); err != nil {
+			return err
+		}
+	case EndStepSplitPathStepSum:
+		if err := s.EndStep.Decode(d); err != nil {
+			return err
+		}
+	case BranchStepSplitPathStepSum:
+		if err := s.BranchStep.Decode(d); err != nil {
+			return err
+		}
+	case SplitStepSplitPathStepSum:
+		if err := s.SplitStep.Decode(d); err != nil {
+			return err
+		}
+	default:
+		return errors.Errorf("inferred invalid type: %s", s.Type)
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SplitPathStepSum) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SplitPathStepSum) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SplitStep) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SplitStep) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("id")
+		s.ID.Encode(e)
+	}
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		e.FieldStart("paths")
+		e.ArrStart()
+		for _, elem := range s.Paths {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+}
+
+var jsonFieldsNameOfSplitStep = [3]string{
+	0: "id",
+	1: "type",
+	2: "paths",
+}
+
+// Decode decodes SplitStep from json.
+func (s *SplitStep) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SplitStep to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "type":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "paths":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				s.Paths = make([]SplitPath, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem SplitPath
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Paths = append(s.Paths, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"paths\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SplitStep")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSplitStep) {
+					name = jsonFieldsNameOfSplitStep[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SplitStep) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SplitStep) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SplitStepInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SplitStepInput) encodeFields(e *jx.Encoder) {
+	{
+		if s.ID.Set {
+			e.FieldStart("id")
+			s.ID.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		e.FieldStart("paths")
+		e.ArrStart()
+		for _, elem := range s.Paths {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+}
+
+var jsonFieldsNameOfSplitStepInput = [3]string{
+	0: "id",
+	1: "type",
+	2: "paths",
+}
+
+// Decode decodes SplitStepInput from json.
+func (s *SplitStepInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SplitStepInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			if err := func() error {
+				s.ID.Reset()
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "type":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "paths":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				s.Paths = make([]SplitPathInput, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem SplitPathInput
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Paths = append(s.Paths, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"paths\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SplitStepInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000110,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSplitStepInput) {
+					name = jsonFieldsNameOfSplitStepInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SplitStepInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SplitStepInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SplitStepInputType as json.
+func (s SplitStepInputType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SplitStepInputType from json.
+func (s *SplitStepInputType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SplitStepInputType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SplitStepInputType(v) {
+	case SplitStepInputTypeSplit:
+		*s = SplitStepInputTypeSplit
+	default:
+		*s = SplitStepInputType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SplitStepInputType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SplitStepInputType) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SplitStepType as json.
+func (s SplitStepType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SplitStepType from json.
+func (s *SplitStepType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SplitStepType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SplitStepType(v) {
+	case SplitStepTypeSplit:
+		*s = SplitStepTypeSplit
+	default:
+		*s = SplitStepType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SplitStepType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SplitStepType) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

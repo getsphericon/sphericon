@@ -16,7 +16,7 @@ type PathView struct {
 }
 
 // StepView is a stored Step as the API shows it, one type per kind (EmailView, TelegramView,
-// SMSView, WaitView, TagView, HTTPView, EndView, BranchView): each holds its kind's fields only, the defaults it was
+// SMSView, WaitView, TagView, HTTPView, EndView, BranchView, SplitView): each holds its kind's fields only, the defaults it was
 // stored without filled in. An HTTP step is masked: its URL, header values and signing secret
 // never leave the server, only the header names and whether a secret is set.
 type StepView interface{ stepView() }
@@ -100,8 +100,23 @@ type BranchPathView struct {
 	Steps     []StepView
 }
 
+// SplitView is a Split: its paths in order, each with its weight; each path's Steps are views too.
+type SplitView struct {
+	ID    automationstep.ID
+	Type  automationstep.Kind
+	Paths []SplitPathView
+}
+
+// SplitPathView is a path of a Split: its id, its weight and its Steps.
+type SplitPathView struct {
+	ID     automationstep.ID
+	Weight int
+	Steps  []StepView
+}
+
 func (EmailView) stepView()    {}
 func (BranchView) stepView()   {}
+func (SplitView) stepView()    {}
 func (TelegramView) stepView() {}
 func (SMSView) stepView()      {}
 func (WaitView) stepView()     {}
@@ -153,10 +168,26 @@ func branchView(id automationstep.ID, b automationstep.Branch) (StepView, error)
 	return v, nil
 }
 
+// splitView is the view of a Split, each of its paths viewed (View).
+func splitView(id automationstep.ID, sp automationstep.Split) (StepView, error) {
+	v := SplitView{ID: id, Type: automationstep.KindSplit, Paths: make([]SplitPathView, len(sp.Paths))}
+	for i, p := range sp.Paths {
+		steps, err := View(automationstep.Path{ID: p.ID, Steps: p.Steps})
+		if err != nil {
+			return nil, err
+		}
+		v.Paths[i] = SplitPathView{ID: p.ID, Weight: p.Weight, Steps: steps.Steps}
+	}
+	return v, nil
+}
+
 // viewOf is the view of the Step; a kind with none is an error.
 func viewOf(st *automationstep.Step) (StepView, error) {
-	if b, ok := st.Payload.(automationstep.Branch); ok {
-		return branchView(st.ID, b)
+	switch p := st.Payload.(type) {
+	case automationstep.Branch:
+		return branchView(st.ID, p)
+	case automationstep.Split:
+		return splitView(st.ID, p)
 	}
 	if v := leafView(st); v != nil {
 		return v, nil
