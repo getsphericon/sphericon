@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
@@ -27,6 +29,12 @@ var (
 	segmentPlace = place{kinds: conditiontree.SegmentKinds}
 	rulePlace    = place{kinds: conditiontree.RuleKinds, sources: conditiontree.RuleSources}
 	branchPlace  = place{kinds: conditiontree.BranchKinds, sources: conditiontree.BranchSources}
+	// everyPlace admits the leaves of every place: the readers of what a stored Condition names
+	// (decodeSkipping, NamedSenders) read a tree whatever place holds it.
+	everyPlace = place{
+		kinds:   lo.Union(conditiontree.SegmentKinds, conditiontree.RuleKinds, conditiontree.BranchKinds),
+		sources: lo.Union(conditiontree.RuleSources, conditiontree.BranchSources),
+	}
 )
 
 // group is a decoded group of the tree: its entries hold, all of them or any, and the result is
@@ -195,11 +203,11 @@ func checkGroup(g conditiontree.Group) error {
 
 // decodeSkipping is the stored Condition as the readers of what it names see it: an entry decode
 // refuses tests nothing and is left out, so one bad entry does not hide the others. It reads the
-// leaves of every place: a Branch path's, which admits a Rule's and so a Segment's.
+// leaves of every place.
 func decodeSkipping(g conditiontree.Group) group {
 	d := group{combinator: g.Combinator, not: g.Not, entries: make([]node, 0, len(g.Entries))}
 	for _, raw := range g.Entries {
-		n, err := decodeEntry(raw, branchPlace, func(sub conditiontree.Group) (node, error) { return decodeSkipping(sub), nil })
+		n, err := decodeEntry(raw, everyPlace, func(sub conditiontree.Group) (node, error) { return decodeSkipping(sub), nil })
 		if err != nil {
 			continue
 		}
