@@ -37,6 +37,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
@@ -200,6 +201,14 @@ func validateBranch(st *automationstep.Step, b automationstep.Branch) error {
 	return nil
 }
 
+// NeedsUnknownPath reports whether a Branch whose listed paths hold these Conditions needs an
+// unknown path (ADR 0124): it does when one of them can be unknown for a Contact
+// (condition.CanBeUnknown: an engagement count, ADR 0123). Publish arms a Branch by it, and the
+// editor asks it of the Conditions being edited.
+func NeedsUnknownPath(conditions []conditiontree.Branch) bool {
+	return slices.ContainsFunc(conditions, func(c conditiontree.Branch) bool { return condition.CanBeUnknown(c.Group) })
+}
+
 // checkUnknownPaths refuses, naming it, a Branch of the tree whose Conditions can be unknown for a
 // Contact (condition.CanBeUnknown: an engagement count, ADR 0123) and that has no unknown path, and
 // a Branch whose Conditions cannot be unknown and that has one (ADR 0124). A save keeps either, so
@@ -210,7 +219,11 @@ func checkUnknownPaths(steps automationstep.Path) error {
 		if !ok {
 			continue
 		}
-		needs := slices.ContainsFunc(b.Paths, func(p automationstep.BranchPath) bool { return condition.CanBeUnknown(p.Condition.Group) })
+		conditions := make([]conditiontree.Branch, len(b.Paths))
+		for i, p := range b.Paths {
+			conditions[i] = p.Condition
+		}
+		needs := NeedsUnknownPath(conditions)
 		switch {
 		case needs && b.Unknown == nil:
 			return refuse(st, "a branch whose conditions count an open or a click needs an unknown path, taken when one is unknown for the contact")

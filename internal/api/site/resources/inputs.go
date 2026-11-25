@@ -130,6 +130,7 @@ import (
 // goverter:extend automationsSortIn
 // goverter:extend sortDirectionIn
 // goverter:extend timeIn
+// goverter:extend branchConditionIn
 type Inputs interface {
 	// The proof of identity comes from the session and the password typed, which the handler
 	// assigns.
@@ -258,6 +259,8 @@ type Inputs interface {
 	// the same arms (splitPathStepsIn).
 	// goverter:enum:transform value
 	SplitPathStepInputType(source siteapi.SplitPathStepInputSumType) siteapi.AutomationStepInputSumType
+	// The Conditions of a Branch being edited, whose need of an unknown path the editor asks.
+	BranchConditions(source []siteapi.BranchConditionInput) ([]conditiontree.Branch, error)
 	// A version's root path; each Step is picked by automationStepIn.
 	AutomationPath(source siteapi.AutomationPathInput) (automationstep.Path, error)
 	// The arms of a Step, which automationStepIn picks; the Step's id is the arm's, which it
@@ -574,7 +577,7 @@ func branchStepIn(c Inputs, in *siteapi.BranchStepInput) (automationstep.Step, e
 	b := automationstep.Branch{Paths: make([]automationstep.BranchPath, len(in.Paths))}
 	for i := range in.Paths {
 		p := &in.Paths[i]
-		cond, err := condition.FromDTO[conditiontree.Branch](&p.Condition)
+		cond, err := branchConditionIn(p.Condition)
 		if err != nil {
 			return automationstep.Step{}, err
 		}
@@ -623,6 +626,11 @@ func ruleActionsPtrIn(c Inputs, actions []siteapi.RuleActionInput) *[]ruleaction
 }
 
 // segmentConditionIn is a Segment's Condition the request may leave out; nil when it is absent.
+// branchConditionIn is a Branch path's Condition as the place's typed tree.
+func branchConditionIn(in siteapi.BranchConditionInput) (conditiontree.Branch, error) {
+	return condition.FromDTO[conditiontree.Branch](&in)
+}
+
 func segmentConditionIn(o siteapi.OptSegmentConditionInput) (*conditiontree.Segment, error) {
 	return condition.FromOptionalDTO[conditiontree.Segment](o)
 }

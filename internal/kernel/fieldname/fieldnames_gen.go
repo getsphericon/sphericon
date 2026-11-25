@@ -43,6 +43,7 @@ const (
 	CompanySize               = "companySize"
 	CompanySizeOther          = "companySizeOther"
 	Condition                 = "condition"
+	Conditions                = "conditions"
 	Config                    = "config"
 	ConfigurationSet          = "configurationSet"
 	ContactID                 = "contactId"

@@ -1099,6 +1099,28 @@ export type BranchStepInput = {
 };
 
 /**
+ * An automation is archived, never deleted (ADR 0100): it has no delete. An archived automation is
+ * read-only until it is unarchived: an edit, publish, revert or deactivate of it is a 409.The Conditions of a Branch being edited, whose need of an unknown path is asked
+ */
+export type BranchUnknownPathInput = {
+  /**
+   * The Conditions of the Branch's listed paths, in order
+   */
+  conditions: Array<BranchConditionInput>;
+};
+
+/**
+ * Whether a Branch needs its unknown path (ADR 0124)
+ */
+export type BranchUnknownPathResult = {
+  /**
+   * True when one of its Conditions can be unknown for a Contact (it counts an open or a click,
+   * ADR 0123): Publish then refuses the Branch without an unknown path, and with one when false
+   */
+  needed: boolean;
+};
+
+/**
  * The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets
  * the palette the editor offers and what an agent is told to use: write a message in these values.
  * Its values are written into a message when the message is authored, so saving it never changes a
@@ -13205,6 +13227,42 @@ export type SiteAutomationsDryRunHttpStepResponses = {
 };
 
 export type SiteAutomationsDryRunHttpStepResponse = SiteAutomationsDryRunHttpStepResponses[keyof SiteAutomationsDryRunHttpStepResponses];
+
+export type SiteAutomationsUnknownPathData = {
+  body: BranchUnknownPathInput;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/automations/unknown-path';
+};
+
+export type SiteAutomationsUnknownPathErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteAutomationsUnknownPathError = SiteAutomationsUnknownPathErrors[keyof SiteAutomationsUnknownPathErrors];
+
+export type SiteAutomationsUnknownPathResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: BranchUnknownPathResult;
+};
+
+export type SiteAutomationsUnknownPathResponse = SiteAutomationsUnknownPathResponses[keyof SiteAutomationsUnknownPathResponses];
 
 export type SiteEnrollmentsListData = {
   body?: never;

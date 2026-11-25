@@ -39,6 +39,7 @@ import (
 	sendingdomains "github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
+	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	httpheader "github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
 	ruleaction "github.com/getsphericon/sphericon/internal/kernel/ruleaction"
@@ -200,6 +201,20 @@ func (c *InputsImpl) AutomationsSort(source site.SiteAutomationsSort) automation
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return automationsSort
+}
+func (c *InputsImpl) BranchConditions(source []site.BranchConditionInput) ([]conditiontree.Branch, error) {
+	var conditiontreeBranchList []conditiontree.Branch
+	if source != nil {
+		conditiontreeBranchList = make([]conditiontree.Branch, len(source))
+		for i := 0; i < len(source); i++ {
+			conditiontreeBranch, err := branchConditionIn(source[i])
+			if err != nil {
+				return nil, err
+			}
+			conditiontreeBranchList[i] = conditiontreeBranch
+		}
+	}
+	return conditiontreeBranchList, nil
 }
 func (c *InputsImpl) BrandKitSave(source *site.SiteSaveBrandKitInput) brandkits.Input {
 	var brandkitsInput brandkits.Input

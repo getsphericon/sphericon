@@ -234,6 +234,20 @@ func encodeSiteAutomationsRevertRequest(
 	return nil
 }
 
+func encodeSiteAutomationsUnknownPathRequest(
+	req *BranchUnknownPathInput,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
 func encodeSiteAutomationsUpdateRequest(
 	req *UpdateAutomationInput,
 	r *http.Request,

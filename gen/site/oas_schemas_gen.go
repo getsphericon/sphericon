@@ -5110,6 +5110,43 @@ func (s *BranchStepType) UnmarshalText(data []byte) error {
 	}
 }
 
+// An automation is archived, never deleted (ADR 0100): it has no delete. An archived automation is
+// read-only until it is unarchived: an edit, publish, revert or deactivate of it is a 409.The
+// Conditions of a Branch being edited, whose need of an unknown path is asked.
+// Ref: #/components/schemas/BranchUnknownPathInput
+type BranchUnknownPathInput struct {
+	// The Conditions of the Branch's listed paths, in order.
+	Conditions []BranchConditionInput `json:"conditions"`
+}
+
+// GetConditions returns the value of Conditions.
+func (s *BranchUnknownPathInput) GetConditions() []BranchConditionInput {
+	return s.Conditions
+}
+
+// SetConditions sets the value of Conditions.
+func (s *BranchUnknownPathInput) SetConditions(val []BranchConditionInput) {
+	s.Conditions = val
+}
+
+// Whether a Branch needs its unknown path (ADR 0124).
+// Ref: #/components/schemas/BranchUnknownPathResult
+type BranchUnknownPathResult struct {
+	// True when one of its Conditions can be unknown for a Contact (it counts an open or a click, ADR
+	// 0123): Publish then refuses the Branch without an unknown path, and with one when false.
+	Needed bool `json:"needed"`
+}
+
+// GetNeeded returns the value of Needed.
+func (s *BranchUnknownPathResult) GetNeeded() bool {
+	return s.Needed
+}
+
+// SetNeeded sets the value of Needed.
+func (s *BranchUnknownPathResult) SetNeeded(val bool) {
+	s.Needed = val
+}
+
 // The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets the
 // palette the editor offers and what an agent is told to use: write a message in these values. Its
 // values are written into a message when the message is authored, so saving it never changes a message
