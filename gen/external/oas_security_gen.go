@@ -67,6 +67,7 @@ var operationRolesBearerAuth = map[string][]string{
 	CapturedMessagesDeleteAllOperation:       []string{},
 	CapturedMessagesGetOperation:             []string{},
 	CapturedMessagesListOperation:            []string{},
+	ConfirmationRequestsCreateOperation:      []string{},
 	ConfirmationsCreateOperation:             []string{},
 	ContactsBatchUpsertOperation:             []string{},
 	ContactsCreateOperation:                  []string{},

@@ -45,6 +45,7 @@ var ExternalOperationScopes = map[externalapi.OperationName][]apitokens.Scope{
 	externalapi.CapturedMessagesDeleteOperation:          {apitokens.ScopeCapturedMessagesWrite},
 	externalapi.CapturedMessagesGetOperation:             {apitokens.ScopeCapturedMessagesRead},
 	externalapi.CapturedMessagesListOperation:            {apitokens.ScopeCapturedMessagesRead},
+	externalapi.ConfirmationRequestsCreateOperation:      {apitokens.ScopeConfirmationsSend},
 	externalapi.ConfirmationsCreateOperation:             {apitokens.ScopeContactsWrite},
 	externalapi.ContactsBatchUpsertOperation:             {apitokens.ScopeContactsWrite},
 	externalapi.ContactsCreateOperation:                  {apitokens.ScopeContactsWrite},

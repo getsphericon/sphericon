@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
+	"github.com/getsphericon/sphericon/internal/domain/sending/confirmationrequests"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
@@ -92,8 +93,10 @@ type Handlers struct {
 	unsubscribe   *unsubscriberecording.UseCase
 	suppressions  *suppressions.Module
 	confirmations *confirmations.Module
-	tracking      *engagementtracking.Module
-	exports       *dataexport.Exporter
+	// confirmationRequests asks for a Contact's confirmation email.
+	confirmationRequests *confirmationrequests.Module
+	tracking             *engagementtracking.Module
+	exports              *dataexport.Exporter
 }
 
 // Deps is everything the /api handlers are built from. The domain modules are
@@ -146,6 +149,8 @@ type Deps struct {
 	Suppressions *suppressions.Module
 	// Confirmations records the consent a customer collected and reads a Contact's SMS consent.
 	Confirmations *confirmations.Module
+	// ConfirmationRequests asks for a Contact's confirmation email (ADR 0013).
+	ConfirmationRequests *confirmationrequests.Module
 	// Tracking records and reads the Engagement tracking consent of the Destinations.
 	Tracking *engagementtracking.Module
 	// Exports is the Data export of a Contact (ADR 0021), projected onto this surface's contract
@@ -163,7 +168,7 @@ func NewHandlers(d Deps) *Handlers {
 		eventrecording: d.EventRecording, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
 		broadcasts: d.Broadcasts, reputation: d.Reputation, tokens: d.Tokens,
 		audit: d.Audit, export: d.Export,
-		unsubscribe: d.Unsubscribe, suppressions: d.Suppressions, confirmations: d.Confirmations,
+		unsubscribe: d.Unsubscribe, suppressions: d.Suppressions, confirmations: d.Confirmations, confirmationRequests: d.ConfirmationRequests,
 		tracking: d.Tracking, exports: d.Exports,
 	}
 }

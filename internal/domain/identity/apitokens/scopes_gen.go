@@ -34,6 +34,7 @@ const (
 	ScopeEmailsSend            Scope = "emails:send"
 	ScopeBroadcastsSend        Scope = "broadcasts:send"
 	ScopeAutomationsPublish    Scope = "automations:publish"
+	ScopeConfirmationsSend     Scope = "confirmations:send"
 	ScopeMcpSend               Scope = "mcp:send"
 	ScopeSendingDomainsWrite   Scope = "sending_domains:write"
 	ScopeTrackingDomainsWrite  Scope = "tracking_domains:write"
@@ -76,6 +77,7 @@ var Scopes = []Scope{
 	ScopeEmailsSend,
 	ScopeBroadcastsSend,
 	ScopeAutomationsPublish,
+	ScopeConfirmationsSend,
 	ScopeMcpSend,
 	ScopeSendingDomainsWrite,
 	ScopeTrackingDomainsWrite,

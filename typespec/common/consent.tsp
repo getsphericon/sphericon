@@ -74,3 +74,15 @@ model SmsConsent {
   /** The phone's opt-out of every SMS of the Workspace; absent while it has none */
   optOut?: SmsOptOut | null;
 }
+
+/** What became of a Confirmation request (ADR 0013): its email is on its way (`accepted`), or the address already holds a Confirmation and gets none (`confirmed`) */
+enum ConfirmationRequestStatus {
+  accepted,
+  confirmed,
+}
+
+/** The answer to a Confirmation request */
+model ConfirmationRequestResult {
+  /** Whether a confirmation email is on its way or the address is confirmed already */
+  status: ConfirmationRequestStatus;
+}

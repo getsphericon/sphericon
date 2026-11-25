@@ -161,19 +161,21 @@ func New(d Deps) http.Handler {
 
 	mux.HandleFunc("GET "+paths.LinkConfirm+"{token}", func(w http.ResponseWriter, r *http.Request) {
 		tokenStr := r.PathValue("token")
-		target, err := d.Tracker.DecodeConfirm(tokenStr)
+		// An expired link still names its Workspace and Contact: its page reads that it expired and
+		// offers a new one (ADR 0013).
+		target, _, err := d.Tracker.DecodeConfirmLink(tokenStr)
 		if err == nil && !onHost(r, target.WorkspaceID) {
 			http.NotFound(w, r)
 			return
 		}
 		if err != nil {
-			// Invalid or expired: send to the page with no token so it offers the
-			// "request a new confirmation" path rather than a dead Confirm button.
-			http.Redirect(w, r, appURL+"/confirm?expired=1", http.StatusSeeOther)
+			// Not a link of ours: the page, with no token, says the link leads nowhere.
+			http.Redirect(w, r, appURL+"/confirm", http.StatusSeeOther)
 			return
 		}
 		// Safe method: record nothing, render the SPA confirmation page. The page's
-		// button performs the confirmation through the site API.
+		// button performs the confirmation through the site API, or, for an expired link,
+		// asks for a new one.
 		http.Redirect(w, r, appURL+"/confirm?token="+url.QueryEscape(tokenStr), http.StatusSeeOther)
 	})
 

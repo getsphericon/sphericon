@@ -172,6 +172,35 @@ namespace Confirmations {
     | Problem;
 }
 
+@route("/contacts/{contactId}/confirmation-requests")
+@tag("Consent")
+namespace ConfirmationRequests {
+  /**
+   * Ask for a double opt-in confirmation email to the contact's email address (ADR 0013): it is
+   * sent by a job through the Workspace's confirmation email, whose link records a Confirmation with
+   * provenance `double_opt_in` when the person presses Confirm. An address that already holds a
+   * Confirmation gets no mail and the answer is `confirmed` (200). 409 `confirmation_email_required`
+   * while the Workspace has no confirmation email set up; 409 when the address opted out of
+   * everything or is suppressed, naming which: soliciting a person who left is itself a violation,
+   * and only the person returns, through a form or the Preference page. 422 when the contact has no
+   * email address. At most 3 confirmation emails reach an address in 24 hours, whoever asks: a
+   * fourth is a 429 with `Retry-After`. It works whether or not the Workspace requires confirmed
+   * opt-in. Send-class: needs the confirmations:send scope, and mcp:send over MCP.
+   */
+  @post
+  @requiresScopes(#[ApiTokenScope.confirmationsSend])
+  op create(@path contactId: EntityId):
+    | {
+        @statusCode statusCode: 202;
+        @body body: ConfirmationRequestResult;
+      }
+    | {
+        @statusCode statusCode: 200;
+        @body body: ConfirmationRequestResult;
+      }
+    | Problem;
+}
+
 @route("/contacts/{contactId}/sms-consent")
 @tag("Consent")
 namespace SmsConsents {

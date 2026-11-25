@@ -143,6 +143,8 @@ var (
 	ErrorsConfirmationChannel                             = ID{key: "errors.confirmation_channel"}
 	ErrorsConfirmationEmailRequired                       = ID{key: "errors.confirmation_email_required"}
 	ErrorsConfirmationFromNotVerified                     = ID{key: "errors.confirmation_from_not_verified"}
+	ErrorsConfirmationRequestSuppressed                   = ID{key: "errors.confirmation_request_suppressed"}
+	ErrorsConfirmationRequestUnsubscribedEverything       = ID{key: "errors.confirmation_request_unsubscribed_everything"}
 	ErrorsConnectionNotFound                              = ID{key: "errors.connection_not_found"}
 	ErrorsConsentBrandEmpty                               = ID{key: "errors.consent_brand_empty"}
 	ErrorsConsentSourceEmpty                              = ID{key: "errors.consent_source_empty"}

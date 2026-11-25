@@ -817,14 +817,21 @@ export default interface Resources {
       "verifying": "Confirming your new email…"
     },
     "confirmSubscription": {
-      "body": "Press the button below to confirm your subscription and start receiving these emails.",
+      "alreadyConfirmedBody": "Your address is already confirmed: you receive email from {{workspace}}.",
+      "alreadyConfirmedTitle": "Already confirmed",
+      "body": "Press the button below to confirm your address and start receiving email from {{workspace}}.",
       "confirm": "Confirm subscription",
-      "doneBody": "Thank you — your subscription is confirmed.",
+      "doneBody": "Thank you — you will receive email from {{workspace}}.",
       "doneTitle": "Subscription confirmed",
       "errorBody": "Something went wrong. Please try again.",
       "errorTitle": "Confirmation failed",
-      "expiredBody": "This confirmation link has expired. Please sign up again to receive a new one.",
+      "expiredBody": "This confirmation link from {{workspace}} has expired. We can send you a new one.",
       "expiredTitle": "Link expired",
+      "invalidBody": "This confirmation link is not valid. Use the link in the latest email you received.",
+      "invalidTitle": "Link not valid",
+      "renew": "Send a new link",
+      "renewedBody": "If this address can receive it, a new confirmation link is on its way. Check your inbox.",
+      "renewedTitle": "Check your inbox",
       "title": "Confirm your subscription"
     },
     "confirmations": {
@@ -1156,6 +1163,12 @@ export default interface Resources {
     },
     "contacts": {
       "addContact": "Add contact",
+      "confirmationRequest": "Send confirmation request",
+      "confirmationRequestConfirmDescription": "The contact gets this workspace's confirmation email, with a link to confirm their address. Nothing is sent to an address that is already confirmed.",
+      "confirmationRequestConfirmTitle": "Send a confirmation email?",
+      "confirmationRequestConfirmed": "The address is already confirmed; nothing was sent.",
+      "confirmationRequestError": "Could not send the confirmation request",
+      "confirmationRequestSent": "The confirmation email is on its way.",
       "countryFilter": "Country",
       "detailsTitle": "Details",
       "erase": "Erase",

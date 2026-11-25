@@ -49,6 +49,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
+	"github.com/getsphericon/sphericon/internal/domain/sending/confirmationrequests"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
@@ -150,9 +151,11 @@ type Handlers struct {
 	unsubscribe   *unsubscriberecording.UseCase
 	suppressions  *suppressions.Module
 	confirmations *confirmations.Module
-	tracking      *engagementtracking.Module
-	channelStops  *channelstop.Module
-	exports       *dataexport.Exporter
+	// confirmationRequests asks for a Contact's confirmation email and reads the confirmation page.
+	confirmationRequests *confirmationrequests.Module
+	tracking             *engagementtracking.Module
+	channelStops         *channelstop.Module
+	exports              *dataexport.Exporter
 }
 
 // Origins are the public origins besides the app's own that a Workspace resource names: where an
@@ -274,6 +277,9 @@ type Deps struct {
 	Suppressions *suppressions.Module
 	// Confirmations performs a double opt-in and records and reads a Contact's SMS consent.
 	Confirmations *confirmations.Module
+	// ConfirmationRequests asks for a Contact's confirmation email, from the console or from the page
+	// of an expired link, and reads what that page shows (ADR 0013).
+	ConfirmationRequests *confirmationrequests.Module
 	// Tracking records and reads the Engagement tracking consent of a Contact's Destinations.
 	Tracking *engagementtracking.Module
 	// ChannelStops records an SMS opt-out of a Contact's phone by hand.
@@ -300,7 +306,7 @@ func NewHandlers(d *Deps) *Handlers {
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, broadcastViews: d.BroadcastViews,
 		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), requests: users.NewRequests(d.Users, d.Attempts), tracker: d.Tracker, appURL: d.AppURL,
 		oauth: d.OAuth, apiTokens: d.APITokens, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, admission: d.Admission, signUp: d.SignUp, userDeletion: d.UserDeletion, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, workspaceView: d.WorkspaceView, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
-		suppressions: d.Suppressions, confirmations: d.Confirmations, tracking: d.Tracking, channelStops: d.ChannelStops, exports: d.Exports,
+		suppressions: d.Suppressions, confirmations: d.Confirmations, confirmationRequests: d.ConfirmationRequests, tracking: d.Tracking, channelStops: d.ChannelStops, exports: d.Exports,
 		signin:     d.Signin,
 		migrations: d.Migrations,
 		login:      d.UserLogin,

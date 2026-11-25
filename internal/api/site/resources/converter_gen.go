@@ -45,6 +45,7 @@ import (
 	broadcasts "github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	rules "github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	bindings "github.com/getsphericon/sphericon/internal/domain/sending/bindings"
+	confirmationrequests "github.com/getsphericon/sphericon/internal/domain/sending/confirmationrequests"
 	integrations "github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	linkclick "github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	outboundmessages "github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
@@ -943,6 +944,13 @@ func (c *ConverterImpl) ConfirmationEmailToResource(source workspaces.Confirmati
 	siteapiSiteConfirmationEmailResource.Defaults = c.workspacesConfirmationEmailDefaultsToSiteapiSiteConfirmationEmailDefaults(source.Defaults)
 	siteapiSiteConfirmationEmailResource.Revision = revision(source.Revision)
 	return siteapiSiteConfirmationEmailResource
+}
+func (c *ConverterImpl) ConfirmationPageToResource(source confirmationrequests.Page) site.SiteConfirmationPage {
+	var siteapiSiteConfirmationPage site.SiteConfirmationPage
+	siteapiSiteConfirmationPage.Expired = source.Expired
+	siteapiSiteConfirmationPage.WorkspaceName = source.WorkspaceName
+	siteapiSiteConfirmationPage.Brand = c.PublicBrandToResource(source.Brand)
+	return siteapiSiteConfirmationPage
 }
 func (c *ConverterImpl) ConfirmationProvenanceToResource(source confirmation.Provenance) site.ConfirmationProvenance {
 	var siteapiConfirmationProvenance site.ConfirmationProvenance
@@ -2054,6 +2062,8 @@ func (c *ConverterImpl) PersonalScopeToResource(source tokenscope.PersonalScope)
 		siteapiPersonalScope = site.PersonalScopeBroadcastsSend
 	case tokenscope.PersonalScopeBroadcastsWrite:
 		siteapiPersonalScope = site.PersonalScopeBroadcastsWrite
+	case tokenscope.PersonalScopeConfirmationsSend:
+		siteapiPersonalScope = site.PersonalScopeConfirmationsSend
 	case tokenscope.PersonalScopeContactsExport:
 		siteapiPersonalScope = site.PersonalScopeContactsExport
 	case tokenscope.PersonalScopeContactsRead:
@@ -2217,6 +2227,17 @@ func (c *ConverterImpl) ProviderLimitWarningToResource(source providerlimit.Warn
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return siteapiProviderLimitWarning
+}
+func (c *ConverterImpl) PublicBrandToResource(source brandkits.Kit) site.SitePublicBrand {
+	var siteapiSitePublicBrand site.SitePublicBrand
+	siteapiSitePublicBrand.AccentColor = source.AccentColor
+	siteapiSitePublicBrand.TextColor = source.TextColor
+	siteapiSitePublicBrand.BackgroundColor = source.BackgroundColor
+	siteapiSitePublicBrand.BodyFont = source.BodyFont
+	siteapiSitePublicBrand.ButtonTextColor = source.ButtonTextColor
+	siteapiSitePublicBrand.ButtonRadius = count(source.ButtonRadius)
+	siteapiSitePublicBrand.LogoUrl = source.LogoURL
+	return siteapiSitePublicBrand
 }
 func (c *ConverterImpl) RemoveTagStepToResource(source automations.TagView) site.RemoveTagStep {
 	var siteapiRemoveTagStep site.RemoveTagStep

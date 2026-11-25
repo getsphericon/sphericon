@@ -378,14 +378,15 @@ func TestConfirmationModes(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			for address, reason := range tc.want {
+				wantEligible := reason == ""
 				d := decide(t, env, fixtures.LumonID, address, tc.mode)
-				assert.Equal(t, reason, d.Reason, address)
-				assert.Equal(t, reason == "", d.Eligible, address)
 				kept, err := env.DB.Scoped(fixtures.LumonID).Contact().Query().
 					Where(contact.Email(address), eligibility.Audience(eligibility.EmailDestination(), tc.mode)).
 					Exist(t.Context())
 				require.NoError(t, err)
-				assert.Equal(t, reason == "", kept, "the audience agrees for %s", address)
+				assert.Equal(t, reason, d.Reason, address)
+				assert.Equal(t, wantEligible, d.Eligible, address)
+				assert.Equal(t, wantEligible, kept, "the audience agrees for %s", address)
 			}
 		})
 	}

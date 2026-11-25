@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/callbackinterpretation"
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
+	"github.com/getsphericon/sphericon/internal/domain/sending/confirmationrequests"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
@@ -88,7 +89,9 @@ type Deps struct {
 	// BroadcastDelivery plans and sends a Broadcast, its sends scheduled as RecipientJobs.
 	Broadcasts        *broadcasts.Module
 	BroadcastDelivery *broadcasts.Delivery
-	Cipher            *secrets.Cipher
+	// ConfirmationRequests sends the email of a Confirmation request (ADR 0013).
+	ConfirmationRequests *confirmationrequests.Module
+	Cipher               *secrets.Cipher
 	// SystemSender is the platform's own sender, which delivers the Notices (nil on an Instance
 	// with no outbound mail).
 	SystemSender messaging.EmailSender
@@ -162,6 +165,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	workers := river.NewWorkers()
 	river.AddWorker(workers, NewSendBroadcastWorker(entClient, deps.BroadcastDelivery))
 	river.AddWorker(workers, NewSendRecipientWorker(entClient, deps.BroadcastDelivery))
+	river.AddWorker(workers, NewSendConfirmationWorker(entClient, deps.ConfirmationRequests))
 	stepper := deps.StepExecution
 	river.AddWorker(workers, NewEvaluateTriggerWorker(entClient, stepper))
 	river.AddWorker(workers, NewRunStepWorker(entClient, stepper))

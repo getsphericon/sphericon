@@ -60,5 +60,9 @@ namespace Sphericon;
 @@mcp(Automations.publish, #{ send: true });
 @@mcp(Rules.publish, #{ send: true });
 @@mcp(Emails.send, #{ send: true });
+@@mcp(
+  ConfirmationRequests.create,
+  #{ send: true, name: "contacts_confirmation_request" }
+);
 @@mcp(Broadcasts.schedule, #{ send: true });
 @@mcp(Broadcasts.unschedule, #{ send: true });

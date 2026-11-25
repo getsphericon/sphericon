@@ -67,6 +67,7 @@ const (
 	SendScopeEmailsSend         SendScope = "emails:send"
 	SendScopeBroadcastsSend     SendScope = "broadcasts:send"
 	SendScopeAutomationsPublish SendScope = "automations:publish"
+	SendScopeConfirmationsSend  SendScope = "confirmations:send"
 	SendScopeMcpSend            SendScope = "mcp:send"
 )
 
@@ -75,6 +76,7 @@ var SendScopes = []SendScope{
 	SendScopeEmailsSend,
 	SendScopeBroadcastsSend,
 	SendScopeAutomationsPublish,
+	SendScopeConfirmationsSend,
 	SendScopeMcpSend,
 }
 
@@ -130,6 +132,7 @@ const (
 	PersonalScopeEmailsSend           PersonalScope = "emails:send"
 	PersonalScopeBroadcastsSend       PersonalScope = "broadcasts:send"
 	PersonalScopeAutomationsPublish   PersonalScope = "automations:publish"
+	PersonalScopeConfirmationsSend    PersonalScope = "confirmations:send"
 	PersonalScopeMcpSend              PersonalScope = "mcp:send"
 	PersonalScopeSendingDomainsWrite  PersonalScope = "sending_domains:write"
 	PersonalScopeTrackingDomainsWrite PersonalScope = "tracking_domains:write"
@@ -165,6 +168,7 @@ var PersonalScopes = []PersonalScope{
 	PersonalScopeEmailsSend,
 	PersonalScopeBroadcastsSend,
 	PersonalScopeAutomationsPublish,
+	PersonalScopeConfirmationsSend,
 	PersonalScopeMcpSend,
 	PersonalScopeSendingDomainsWrite,
 	PersonalScopeTrackingDomainsWrite,

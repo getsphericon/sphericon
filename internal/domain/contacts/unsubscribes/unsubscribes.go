@@ -262,6 +262,27 @@ func (m *Module) LiftSMS(ctx context.Context, s *ent.Scoped, number string, at c
 	return true, nil
 }
 
+// LiftEmail lifts the opt-out of everything of an email address: the person confirmed a fresh
+// confirmation link, which occurred at the given time (ADR 0013). A per-source opt-out stays. It reports whether an opt-out was
+// lifted: none to lift, or a return older than the address's opt-out state (the person left after
+// it, ADR 0154), lifts nothing. The return's Event is the caller's to publish.
+func (m *Module) LiftEmail(ctx context.Context, s *ent.Scoped, address string, at consentstamps.Occurrence) (bool, error) {
+	k := consentstamps.Key{Channel: channels.Email, Destination: address, Source: eligibility.SourceEverything}
+	admitted, err := m.stamps.Admit(ctx, s, consentstamps.Observation{Key: k, Fact: consentstamps.OptOut, Occurred: at})
+	if err != nil || !admitted {
+		return false, err
+	}
+	n, err := s.Unsubscribe().Delete().Where(
+		unsubscribe.ChannelEQ(channels.Email),
+		unsubscribe.DestinationEQ(address),
+		unsubscribe.SendingSourceEQ(eligibility.SourceEverything),
+	).Exec(ctx)
+	if err != nil {
+		return false, fmt.Errorf("lift opt-out: %w", err)
+	}
+	return n > 0, nil
+}
+
 // SMSOptOut is the Channel-wide opt-out of a phone number, nil when it has none.
 func (m *Module) SMSOptOut(ctx context.Context, s *ent.Scoped, number string) (*ent.Unsubscribe, error) {
 	u, err := s.Unsubscribe().Query().Where(smsEverything(number)...).Order(ent.Asc(unsubscribe.FieldID)).First(ctx)

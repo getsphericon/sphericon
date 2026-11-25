@@ -154,6 +154,7 @@ const (
 	ApiTokenScopeEmailsSend            ApiTokenScope = "emails:send"
 	ApiTokenScopeBroadcastsSend        ApiTokenScope = "broadcasts:send"
 	ApiTokenScopeAutomationsPublish    ApiTokenScope = "automations:publish"
+	ApiTokenScopeConfirmationsSend     ApiTokenScope = "confirmations:send"
 	ApiTokenScopeMcpSend               ApiTokenScope = "mcp:send"
 	ApiTokenScopeSendingDomainsWrite   ApiTokenScope = "sending_domains:write"
 	ApiTokenScopeTrackingDomainsWrite  ApiTokenScope = "tracking_domains:write"
@@ -197,6 +198,7 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 		ApiTokenScopeEmailsSend,
 		ApiTokenScopeBroadcastsSend,
 		ApiTokenScopeAutomationsPublish,
+		ApiTokenScopeConfirmationsSend,
 		ApiTokenScopeMcpSend,
 		ApiTokenScopeSendingDomainsWrite,
 		ApiTokenScopeTrackingDomainsWrite,
@@ -266,6 +268,8 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 	case ApiTokenScopeBroadcastsSend:
 		return []byte(s), nil
 	case ApiTokenScopeAutomationsPublish:
+		return []byte(s), nil
+	case ApiTokenScopeConfirmationsSend:
 		return []byte(s), nil
 	case ApiTokenScopeMcpSend:
 		return []byte(s), nil
@@ -376,6 +380,9 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 		return nil
 	case ApiTokenScopeAutomationsPublish:
 		*s = ApiTokenScopeAutomationsPublish
+		return nil
+	case ApiTokenScopeConfirmationsSend:
+		*s = ApiTokenScopeConfirmationsSend
 		return nil
 	case ApiTokenScopeMcpSend:
 		*s = ApiTokenScopeMcpSend
@@ -7105,6 +7112,75 @@ func (s *ConfirmationProvenance) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
+
+// The answer to a Confirmation request.
+// Ref: #/components/schemas/ConfirmationRequestResult
+type ConfirmationRequestResult struct {
+	// Whether a confirmation email is on its way or the address is confirmed already.
+	Status ConfirmationRequestStatus `json:"status"`
+}
+
+// GetStatus returns the value of Status.
+func (s *ConfirmationRequestResult) GetStatus() ConfirmationRequestStatus {
+	return s.Status
+}
+
+// SetStatus sets the value of Status.
+func (s *ConfirmationRequestResult) SetStatus(val ConfirmationRequestStatus) {
+	s.Status = val
+}
+
+// What became of a Confirmation request (ADR 0013): its email is on its way (`accepted`), or the
+// address already holds a Confirmation and gets none (`confirmed`).
+// Ref: #/components/schemas/ConfirmationRequestStatus
+type ConfirmationRequestStatus string
+
+const (
+	ConfirmationRequestStatusAccepted  ConfirmationRequestStatus = "accepted"
+	ConfirmationRequestStatusConfirmed ConfirmationRequestStatus = "confirmed"
+)
+
+// AllValues returns all ConfirmationRequestStatus values.
+func (ConfirmationRequestStatus) AllValues() []ConfirmationRequestStatus {
+	return []ConfirmationRequestStatus{
+		ConfirmationRequestStatusAccepted,
+		ConfirmationRequestStatusConfirmed,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConfirmationRequestStatus) MarshalText() ([]byte, error) {
+	switch s {
+	case ConfirmationRequestStatusAccepted:
+		return []byte(s), nil
+	case ConfirmationRequestStatusConfirmed:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConfirmationRequestStatus) UnmarshalText(data []byte) error {
+	switch ConfirmationRequestStatus(data) {
+	case ConfirmationRequestStatusAccepted:
+		*s = ConfirmationRequestStatusAccepted
+		return nil
+	case ConfirmationRequestStatusConfirmed:
+		*s = ConfirmationRequestStatusConfirmed
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type ConfirmationRequestsCreateAccepted ConfirmationRequestResult
+
+func (*ConfirmationRequestsCreateAccepted) confirmationRequestsCreateRes() {}
+
+type ConfirmationRequestsCreateOK ConfirmationRequestResult
+
+func (*ConfirmationRequestsCreateOK) confirmationRequestsCreateRes() {}
 
 // A recorded consent of a destination on a Channel (ADR 0077): on `sms` a text goes only to a number
 // that has one.

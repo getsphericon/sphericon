@@ -30,7 +30,7 @@ var acmeConfirmation = workspaces.ConfirmationEmail{
 func confirmationTo(t *testing.T, env *testhelper.TestEnv, key string, contactID int64, by outboundmessages.ConfirmationAsker) outboundmessages.Request {
 	t.Helper()
 	c := env.DB.Contact.GetX(t.Context(), contactID)
-	return outboundmessages.Confirmation(outboundmessages.ConfirmationMessage{Key: key, Contact: c, AskedBy: by, Email: acmeConfirmation})
+	return outboundmessages.Confirmation(outboundmessages.ConfirmationMessage{Request: key, Contact: c, AskedBy: by, Email: acmeConfirmation})
 }
 
 // The confirmation email (ADR 0013) is the Workspace's From, subject and intro, as written, in a
@@ -54,8 +54,8 @@ func TestConfirmationEmailCarriesItsLinkAndNothingOfMarketing(t *testing.T) {
 	assert.Contains(t, msg.HTML, "100 Market Street")
 	assert.Contains(t, msg.HTML, "#1a73e8", "the Brand kit's accent")
 	assert.Empty(t, msg.ListUnsubscribeURL)
-	for _, path := range []string{"/e/o/", "/e/c/", "/e/u/"} {
-		assert.NotContains(t, msg.HTML, trackingBase+path)
+	for _, link := range []string{trackingBase + "/e/o/", trackingBase + "/e/c/", trackingBase + "/e/u/"} {
+		assert.NotContains(t, msg.HTML, link, "no pixel, rewritten link or unsubscribe link")
 	}
 	found := confirmLink.FindStringSubmatch(msg.HTML)
 	require.Len(t, found, 2, "the Confirm button carries the link")

@@ -11,8 +11,8 @@ package throttle
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/hex"
 	stdsql "database/sql"
+	"encoding/hex"
 	"errors"
 	"strconv"
 	"time"

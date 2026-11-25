@@ -50,6 +50,7 @@ export const ApiTokenScope = {
   EMAILS_SEND: 'emails:send',
   BROADCASTS_SEND: 'broadcasts:send',
   AUTOMATIONS_PUBLISH: 'automations:publish',
+  CONFIRMATIONS_SEND: 'confirmations:send',
   MCP_SEND: 'mcp:send',
   SENDING_DOMAINS_WRITE: 'sending_domains:write',
   TRACKING_DOMAINS_WRITE: 'tracking_domains:write',
@@ -1642,6 +1643,26 @@ export const ConfirmationProvenance = {
  * How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a keyword (the person texted START), imported (consent an API client or an import collected itself, with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A Confirmation is replaced only by a stronger one.
  */
 export type ConfirmationProvenance = typeof ConfirmationProvenance[keyof typeof ConfirmationProvenance];
+
+/**
+ * The answer to a Confirmation request
+ */
+export type ConfirmationRequestResult = {
+  /**
+   * Whether a confirmation email is on its way or the address is confirmed already
+   */
+  status: ConfirmationRequestStatus;
+};
+
+/**
+ * What became of a Confirmation request (ADR 0013): its email is on its way (`accepted`), or the address already holds a Confirmation and gets none (`confirmed`)
+ */
+export const ConfirmationRequestStatus = { ACCEPTED: 'accepted', CONFIRMED: 'confirmed' } as const;
+
+/**
+ * What became of a Confirmation request (ADR 0013): its email is on its way (`accepted`), or the address already holds a Confirmation and gets none (`confirmed`)
+ */
+export type ConfirmationRequestStatus = typeof ConfirmationRequestStatus[keyof typeof ConfirmationRequestStatus];
 
 /**
  * A recorded consent of a destination on a Channel (ADR 0077): on `sms` a text goes only to a number that has one
@@ -5875,6 +5896,7 @@ export const SendScope = {
   EMAILS_SEND: 'emails:send',
   BROADCASTS_SEND: 'broadcasts:send',
   AUTOMATIONS_PUBLISH: 'automations:publish',
+  CONFIRMATIONS_SEND: 'confirmations:send',
   MCP_SEND: 'mcp:send'
 } as const;
 
@@ -9791,6 +9813,42 @@ export type ContactsExportResponses = {
 };
 
 export type ContactsExportResponse = ContactsExportResponses[keyof ContactsExportResponses];
+
+export type ConfirmationRequestsCreateData = {
+  body?: never;
+  path: {
+    contactId: EntityId;
+  };
+  query?: never;
+  url: '/contacts/{contactId}/confirmation-requests';
+};
+
+export type ConfirmationRequestsCreateErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type ConfirmationRequestsCreateError = ConfirmationRequestsCreateErrors[keyof ConfirmationRequestsCreateErrors];
+
+export type ConfirmationRequestsCreateResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: ConfirmationRequestResult;
+  /**
+   * The request has been accepted for processing, but processing has not yet completed.
+   */
+  202: ConfirmationRequestResult;
+};
+
+export type ConfirmationRequestsCreateResponse = ConfirmationRequestsCreateResponses[keyof ConfirmationRequestsCreateResponses];
 
 export type EngagementTrackingGetForContactData = {
   body?: never;
