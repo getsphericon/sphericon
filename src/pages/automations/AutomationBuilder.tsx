@@ -12,17 +12,35 @@ import { useEditorEffects } from '../../editing/useEditorEffects.ts'
 import { useEditorSession } from '../../editing/useEditorSession.ts'
 import { siteAutomationsGetQueryKey } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
+import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
-import { holdsKept } from './definition.ts'
+import { allSteps, forkPaths, holdsKept } from './definition.ts'
 import type { Flow } from './definition.ts'
 import { automationOutcomeTexts } from './draftActions.ts'
 import { automationAdapter, editedFlow, editorSession } from './editorSession.ts'
 import { FailedEnrollments } from './FailedEnrollments.tsx'
 import { FlowCanvas } from './FlowCanvas.tsx'
-import { copyStep, insertStep, removeStep, updateStep, updateTrigger } from './flowEdits.ts'
+import {
+  addPath,
+  copyStep,
+  insertStep,
+  movePath,
+  nestedSteps,
+  removePath,
+  removeStep,
+  setUnknownPath,
+  updateFork,
+  updateStep,
+  updateTrigger,
+} from './flowEdits.ts'
+import { forkError, invalidForks } from './forkRules.ts'
+import type { ForkError } from './forkRules.ts'
 import { LeaveGuard } from './LeaveGuard.tsx'
+import { useStepInfo } from './stepKinds.ts'
 import { StepPanel } from './StepPanel.tsx'
+import type { ForkControls } from './StepPanel.tsx'
+import { useUnknownPaths } from './useUnknownPaths.ts'
 
 interface AutomationBarValues {
   name: string
@@ -75,6 +93,14 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
   const [selected, setSelected] = useState<string | null>(null)
   // The check of the open Step's form, which the Save runs first.
   const validatorRef = useRef<(() => boolean) | null>(null)
+  // The forks checked on blur or on Save: their nodes show their errors from then on.
+  const [checked, setChecked] = useState<ReadonlySet<string>>(new Set())
+  const check = useCallback(
+    (ids: string[]) => setChecked((current) => new Set([...current, ...ids])),
+    [],
+  )
+  const confirm = useConfirmation()
+  const stepInfo = useStepInfo()
 
   const outcomeTexts = automationOutcomeTexts(t)
   const effects = useEditorEffects<SiteAutomationResource, AutomationOperation>(
@@ -110,6 +136,14 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
     if (validatorRef.current?.() === false) {
       return
     }
+    // A fork whose panel is closed is checked too: its node shows the error, and its panel opens.
+    const invalid = invalidForks(latest.current)
+    const [first] = invalid
+    if (first !== undefined) {
+      check(invalid.map((fork) => fork.id))
+      setSelected(first.id)
+      return
+    }
     await save((submission) => {
       if (form.validate().hasErrors || !submission) {
         return false
@@ -140,12 +174,75 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
   const content = { name: form.values.name, flow }
   const unsaved = dirty(content)
   const busy = !session.matches('idle')
-  // A version holding a Step this editor does not edit (an End, a fork) is shown read-only: no edit
-  // and no save could drop it. Publish and Revert act on the stored version, which keeps it.
+  // A version holding a Step of a kind newer than this editor is shown read-only: no edit and no
+  // save could drop it. Publish and Revert act on the stored version, which keeps it.
   const kept = holdsKept(flow)
   const editable = !session.hasTag('readOnly') && !kept
   const { resource, operation } = session.context
-  const sendsEmail = flow.path.steps.some((step) => step.kind === 'email')
+  const sendsEmail = allSteps(flow.path).some((step) => step.kind === 'email')
+
+  useUnknownPaths({
+    workspaceId,
+    flow,
+    editable,
+    setUnknown: (id, present) => edit((current) => setUnknownPath(current, id, present)),
+    confirmRemoval: (branch) =>
+      confirm({
+        title: t(($) => $.automations.removeUnknownPathTitle),
+        description: t(($) => $.automations.removeUnknownPathConfirm, {
+          count: branch.unknown?.steps.length ?? 0,
+        }),
+        confirmLabel: t(($) => $.automations.removeConfirm),
+        onConfirm: () => edit((current) => setUnknownPath(current, branch.id, false)),
+      }),
+  })
+
+  // Removing a single Step or an empty path needs no confirmation (docs/standards/ui.md): it is
+  // quickly made again. A fork or a path holding Steps asks first, naming how many go with it.
+  const removeWithSteps = (count: number, label: string, onConfirm: () => void) => {
+    if (count === 0) {
+      onConfirm()
+      return
+    }
+    confirm({
+      title: t(($) => $.automations.removeWithStepsTitle, { label }),
+      description: t(($) => $.automations.removeWithStepsConfirm, { count, label }),
+      confirmLabel: t(($) => $.automations.removeConfirm),
+      onConfirm,
+    })
+  }
+  const forkErrorText = (error: ForkError): string => {
+    switch (error.kind) {
+      case 'condition':
+        return t(($) => $.automations.forkConditionError, { number: error.index + 1 })
+      case 'weight':
+        return t(($) => $.automations.forkWeightError, { number: error.index + 1 })
+      case 'sum':
+      default:
+        return t(($) => $.automations.weightSumError, { sum: error.sum })
+    }
+  }
+  const errorOf = (id: string): string | null => {
+    const step = checked.has(id) ? allSteps(flow.path).find((s) => s.id === id) : undefined
+    const error = step?.kind === 'branch' || step?.kind === 'split' ? forkError(step) : null
+    return error === null ? null : forkErrorText(error)
+  }
+  const forks: ForkControls = {
+    checked: (id) => checked.has(id),
+    onChecked: (id) => check([id]),
+    onPaths: (id, patches) => edit((current) => updateFork(current, id, patches)),
+    onAddPath: (id) => edit((current) => addPath(current, id).flow),
+    onRemovePath: (id, pathId) => {
+      const fork = allSteps(latest.current.path).find((step) => step.id === id)
+      const path = fork === undefined ? undefined : forkPaths(fork).find((p) => p.id === pathId)
+      removeWithSteps(
+        path === undefined ? 0 : allSteps(path).length,
+        t(($) => $.automations.pathLabel),
+        () => edit((current) => removePath(current, id, pathId)),
+      )
+    },
+    onMovePath: (id, move) => edit((current) => movePath(current, id, move)),
+  }
 
   // The editor is a full-screen layer over the app rather than a block inside a page: the canvas
   // takes the viewport. Its focus trap is off so the menus it opens, rendered outside, stay usable.
@@ -167,12 +264,21 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
           editable={editable}
           selected={selected}
           select={setSelected}
-          insert={(at, kind) => {
-            const inserted = insertStep(latest.current, at, kind)
+          insert={(place, kind) => {
+            const inserted = insertStep(latest.current, place, kind)
             write(inserted.flow)
             setSelected(inserted.id)
           }}
-          remove={(id) => edit((current) => removeStep(current, id))}
+          remove={(id) => {
+            const step = allSteps(latest.current.path).find((s) => s.id === id)
+            removeWithSteps(
+              step === undefined ? 0 : nestedSteps(step),
+              step === undefined ? '' : stepInfo(step).label,
+              () => edit((current) => removeStep(current, id)),
+            )
+          }}
+          addPath={(id) => edit((current) => addPath(current, id).flow)}
+          errorOf={errorOf}
         />
         <Paper withBorder shadow="sm" p="xs" pos="absolute" top={16} left={16} right={16}>
           <Group justify="space-between" wrap="nowrap">
@@ -230,6 +336,7 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
               edit((current) => updateTrigger(current, { ...current.trigger, ...patch }))
             }
             onStep={(step) => edit((current) => updateStep(current, step))}
+            forks={forks}
             onCopy={(id) => {
               const copied = copyStep(latest.current, id)
               write(copied.flow)

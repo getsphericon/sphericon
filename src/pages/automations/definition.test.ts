@@ -3,6 +3,7 @@ import { expect, test } from 'vitest'
 import type {
   AutomationStep,
   AutomationVersion,
+  BranchCondition,
   EventFilterInput,
 } from '../../generated/site/types.gen.ts'
 import { stepId, testId } from '../../test/payloads.ts'
@@ -93,36 +94,71 @@ test('a stored step opens with what it leaves out filled in, and saves without i
   ])
 })
 
-// An End (ADR 0124) and any kind the editor does not edit yet are kept as stored: the version is
-// shown, never saved, so nothing can drop them.
-test('a version holding an End keeps it as stored and is not saved', () => {
-  const ended = version([...STEPS, { id: stepId(15), type: 'end' }])
+const VIP: BranchCondition = {
+  kind: 'group',
+  combinator: 'and',
+  entries: [{ kind: 'tag', name: 'vip', operator: 'has' }],
+}
 
-  const flow = flowOf(ended)
+// A tree of every fork kind and an End (ADR 0124): a Branch with an unknown path, a Split nested in
+// one of its paths, an End finishing another.
+const TREE: AutomationStep[] = [
+  {
+    id: stepId(20),
+    type: 'branch',
+    paths: [
+      {
+        id: stepId(21),
+        condition: VIP,
+        steps: [
+          {
+            id: stepId(22),
+            type: 'split',
+            paths: [
+              {
+                id: stepId(23),
+                weight: 30,
+                steps: [{ id: stepId(24), type: 'wait', seconds: 60 }],
+              },
+              { id: stepId(25), weight: 70, steps: [] },
+            ],
+          },
+        ],
+      },
+    ],
+    otherwise: { id: stepId(26), steps: [{ id: stepId(27), type: 'end' }] },
+    unknown: { id: stepId(28), steps: [] },
+  },
+  { id: stepId(29), type: 'apply_tag', tag: 'done' },
+]
 
-  expect(holdsKept(flow)).toBe(true)
-  expect(definitionOf(flow).steps).toEqual(ended.steps)
-  expect(pathInputOf(flow)).toBeNull()
-  expect(holdsKept(flowOf(version(STEPS)))).toBe(false)
+test('a version holding forks and an End round-trips, every Step and path keeping its id', () => {
+  const flow = flowOf(version(TREE))
+
+  expect(holdsKept(flow)).toBe(false)
+  expect(pathInputOf(flow)).toEqual({ id: ROOT, steps: TREE })
+  expect(definitionOf(flow).steps).toEqual({ id: ROOT, steps: TREE })
 })
 
-// A Split (ADR 0124) is kept as stored, its paths, weights and their Steps with it, until the editor
-// edits forks.
-test('a version holding a Split keeps it as stored and is not saved', () => {
+// A kind newer than the editor is kept as stored, at any depth: the version is shown, never saved,
+// so nothing can drop it.
+test('a Step of a kind the editor does not know, inside a fork path, keeps the version unsaved', () => {
+  // A kind the contract may gain, read as the server would send it.
+  const newer: AutomationStep = JSON.parse(
+    JSON.stringify({ id: stepId(30), type: 'wait_for_event' }),
+  )
   const split: AutomationStep = {
     id: stepId(15),
     type: 'split',
     paths: [
-      { id: stepId(16), weight: 30, steps: [{ id: stepId(17), type: 'wait', seconds: 60 }] },
+      { id: stepId(16), weight: 30, steps: [newer] },
       { id: stepId(18), weight: 70, steps: [] },
     ],
   }
-  const splitting = version([...STEPS, split])
 
-  const flow = flowOf(splitting)
+  const flow = flowOf(version([...STEPS, split]))
 
   expect(holdsKept(flow)).toBe(true)
-  expect(definitionOf(flow).steps).toEqual(splitting.steps)
   expect(pathInputOf(flow)).toBeNull()
 })
 

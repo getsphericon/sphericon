@@ -15,7 +15,7 @@ import {
 import type { Icon } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 
-import type { EditedKind, FlowStep } from './definition.ts'
+import type { FlowStep, InsertedKind } from './definition.ts'
 
 export interface StepKindInfo {
   label: string
@@ -23,9 +23,9 @@ export interface StepKindInfo {
   icon: Icon
 }
 
-// useStepKinds names each kind the editor edits, says what it does and gives it an icon, in the
-// order the insertion menu offers them.
-export function useStepKinds(): Record<EditedKind, StepKindInfo> {
+// useStepKinds names each kind a person puts on the canvas, says what it does and gives it an icon,
+// in the order the insertion menu offers them.
+export function useStepKinds(): Record<InsertedKind, StepKindInfo> {
   const { t } = useTranslation()
   return {
     email: {
@@ -63,41 +63,42 @@ export function useStepKinds(): Record<EditedKind, StepKindInfo> {
       description: t(($) => $.automations.httpNodeDescription),
       icon: IconWebhook,
     },
+    branch: {
+      label: t(($) => $.automations.stepBranch),
+      description: t(($) => $.automations.branchNodeDescription),
+      icon: IconGitBranch,
+    },
+    split: {
+      label: t(($) => $.automations.stepSplit),
+      description: t(($) => $.automations.splitNodeDescription),
+      icon: IconArrowsSplit,
+    },
+    end: {
+      label: t(($) => $.automations.stepEnd),
+      description: t(($) => $.automations.endNodeDescription),
+      icon: IconFlag,
+    },
   }
 }
 
-// The kinds in the order the insertion menu offers them.
-export function insertableKinds(kinds: Record<EditedKind, StepKindInfo>) {
+// The kinds in the order the insertion menu offers them. An End finishes its path, so it is
+// offered only at a path's end.
+export function insertableKinds(kinds: Record<InsertedKind, StepKindInfo>, pathEnd: boolean) {
   return Object.keys(kinds).flatMap((kind) =>
-    isKind(kinds, kind) ? [{ kind, ...kinds[kind] }] : [],
+    isKind(kinds, kind) && (pathEnd || kind !== 'end') ? [{ kind, ...kinds[kind] }] : [],
   )
 }
 
-function isKind(kinds: Record<EditedKind, StepKindInfo>, kind: string): kind is EditedKind {
+function isKind(kinds: Record<InsertedKind, StepKindInfo>, kind: string): kind is InsertedKind {
   return Object.hasOwn(kinds, kind)
 }
 
 export const TRIGGER_ICON = IconBolt
 
-// useStepInfo is what a node shows of its Step: its kind's name and icon. A Step the editor does
-// not edit is named by its kind as stored: an End, a Branch or a Split by its name, a kind newer
-// than the editor by its type.
+// useStepInfo is what a node shows of its Step: its kind's name and icon. A kind newer than the
+// editor is named by its type as stored.
 export function useStepInfo(): (step: FlowStep) => { label: string; icon: Icon } {
-  const { t } = useTranslation()
   const kinds = useStepKinds()
-  return (step) => {
-    if (step.kind !== 'kept') {
-      return kinds[step.kind]
-    }
-    const { type } = step.step
-    if (type === 'branch') {
-      return { label: t(($) => $.automations.stepBranch), icon: IconGitBranch }
-    }
-    if (type === 'split') {
-      return { label: t(($) => $.automations.stepSplit), icon: IconArrowsSplit }
-    }
-    return type === 'end'
-      ? { label: t(($) => $.automations.stepEnd), icon: IconFlag }
-      : { label: type, icon: IconPuzzle }
-  }
+  return (step) =>
+    step.kind === 'kept' ? { label: step.step.type, icon: IconPuzzle } : kinds[step.kind]
 }
