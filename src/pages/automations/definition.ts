@@ -260,6 +260,12 @@ export function allSteps(path: FlowPath): FlowStep[] {
   ])
 }
 
+// sendsMessage tells whether the Step sends a message on its Channel: the report counts what such a
+// Step sent and skipped, by its id.
+export function sendsMessage(step: FlowStep): boolean {
+  return step.kind === 'email' || step.kind === 'telegram' || step.kind === 'sms'
+}
+
 // holdsKept tells whether the flow holds, at any depth, a Step the editor does not edit: the version
 // is then read-only here.
 export function holdsKept(flow: Flow): boolean {

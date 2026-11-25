@@ -3,6 +3,7 @@ import { beforeEach, expect, test } from 'vitest'
 import { page } from 'vitest/browser'
 
 import {
+  handleSiteAutomationReportsGet,
   handleSiteAutomationsGet,
   handleSiteAutomationsPublish,
   handleSiteAutomationsUnknownPath,
@@ -21,7 +22,7 @@ import type {
 } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
-import { stepId, testId, workspace } from '../../test/payloads.ts'
+import { NO_AUTOMATION_REPORT, stepId, testId, workspace } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -36,11 +37,13 @@ const NOW = '2026-01-01T00:00:00Z'
 
 // The page also asks for the failed Enrollments and the Integrations to pick from, and the Trigger
 // card for the property keys of recent events of its action: none unless a test says otherwise;
-// and for the Workspace, whose postal address an email step shows when missing.
+// for the Workspace, whose postal address an email step shows when missing; and for the report,
+// whose figures the canvas shows: none.
 beforeEach(async () => {
   // The editor is a desktop tool: its side panel sits beside the canvas, not over it.
   await page.viewport(1280, 900)
   worker.use(
+    handleSiteAutomationReportsGet({ body: NO_AUTOMATION_REPORT }),
     handleSiteWorkspacesList({ body: [workspace()] }),
     handleSiteEventsPropertyKeys({ body: { keys: [] } }),
     handleSiteEnrollmentsList({
