@@ -1,6 +1,6 @@
 import * as z from 'zod'
 
-import { allSteps, branchConditionOf } from './definition.ts'
+import { allSteps, branchConditionOf, isFork } from './definition.ts'
 import type { Flow, ForkStep, SplitPathDraft } from './definition.ts'
 
 // What the server asks of a fork (ADR 0124), checked in the editor before a Save sends it: a
@@ -70,7 +70,7 @@ export function forkError(step: ForkStep): ForkError | null {
 // The forks of the flow, at any depth, that a Save would send with an error.
 export function invalidForks(flow: Flow): ForkStep[] {
   return allSteps(flow.path).flatMap((step) =>
-    (step.kind === 'branch' || step.kind === 'split') && forkError(step) !== null ? [step] : [],
+    isFork(step) && forkError(step) !== null ? [step] : [],
   )
 }
 

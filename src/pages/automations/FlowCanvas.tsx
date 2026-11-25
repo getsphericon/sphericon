@@ -19,7 +19,7 @@ import { useTranslation } from 'react-i18next'
 
 import { useFormat } from '../../hooks/useFormat.ts'
 import type { CanvasFigures } from './canvasFigures.ts'
-import { sendsMessage } from './definition.ts'
+import { isFork, sendsMessage } from './definition.ts'
 import type { Flow, FlowStep, InsertedKind } from './definition.ts'
 import type { Place } from './flowEdits.ts'
 import { layoutFlow, TRIGGER_NODE_ID } from './flowLayout.ts'
@@ -192,7 +192,7 @@ function StepNodeView({ data: { step } }: NodeProps<StepNode>) {
   const { editable, remove, addPath, errorOf } = useControls()
   const info = useStepInfo()(step)
   const figures = useStepFigures(step)
-  const fork = step.kind === 'branch' || step.kind === 'split' ? step : null
+  const fork = isFork(step) ? step : null
   return (
     <>
       <Handles />
