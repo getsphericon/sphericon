@@ -284,7 +284,7 @@ func (p HTTP) Stored() Payload {
 func (p End) Stored() Payload { return p }
 
 // Stored is the Branch as it is: the walker stores the Steps of its paths (Rewrite).
-func (p Branch) Stored() Payload { return p }
+func (b Branch) Stored() Payload { return b }
 
 func (Email) Kind() Kind     { return KindEmail }
 func (Telegram) Kind() Kind  { return KindTelegram }

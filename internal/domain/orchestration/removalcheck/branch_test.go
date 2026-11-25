@@ -27,7 +27,7 @@ func branchOn(t *testing.T, leaf map[string]any) automationstep.Path {
 	t.Helper()
 	raw, err := json.Marshal(leaf)
 	require.NoError(t, err)
-	cond := conditiontree.Branch{Group: conditiontree.Group{Kind: conditiontree.KindGroup, Combinator: conditiontree.And, Entries: []json.RawMessage{raw}}}
+	cond := conditiontree.Branch{Kind: conditiontree.KindGroup, Combinator: conditiontree.And, Entries: []json.RawMessage{raw}}
 	return automationstep.Root(automationstep.New(automationstep.Branch{
 		Paths:     []automationstep.BranchPath{{Condition: cond, Steps: []automationstep.Step{}}},
 		Otherwise: automationstep.Path{Steps: []automationstep.Step{}},

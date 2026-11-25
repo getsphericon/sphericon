@@ -38,7 +38,7 @@ func condOf(t *testing.T, leaves ...map[string]any) conditiontree.Branch {
 		require.NoError(t, err)
 		entries[i] = raw
 	}
-	return conditiontree.Branch{Group: conditiontree.Group{Kind: conditiontree.KindGroup, Combinator: conditiontree.And, Entries: entries}}
+	return conditiontree.Branch{Kind: conditiontree.KindGroup, Combinator: conditiontree.And, Entries: entries}
 }
 
 // hasTag is a leaf that holds for a Contact with the Tag.

@@ -128,9 +128,9 @@ func TestExternalAutomationRefusesABranchConditionOnAnUnknownCustomField(t *test
 func TestExternalAutomationRefusesTheHundredAndFirstStepOverAllPaths(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, stepAuthorScopes...)
-	waits := make([]string, 98) // with the Branch and the wait after it, 100 Steps
-	for i := range waits {
-		waits[i] = `{"type":"wait","seconds":1}`
+	waits := make([]string, 0, 100) // with the Branch and the wait after it, 98 make 100 Steps
+	for range 98 {
+		waits = append(waits, `{"type":"wait","seconds":1}`)
 	}
 	last := "1a6b8d1e-6c2a-4a55-8f7e-3c1d2b4a5e99"
 	onlyBranch := func(steps []string) error {

@@ -152,17 +152,17 @@ func JSONOfEach[T any, PT interface {
 
 // ExternalBranch is a Branch of the external API as its JSON writes it, so a test reads as the
 // tree it saves.
-func ExternalBranch(t testing.TB, doc string) externalapi.BranchStepInput {
-	t.Helper()
+func ExternalBranch(tb testing.TB, doc string) externalapi.BranchStepInput {
+	tb.Helper()
 	var b externalapi.BranchStepInput
-	require.NoError(t, b.UnmarshalJSON([]byte(doc)))
+	require.NoError(tb, b.UnmarshalJSON([]byte(doc)))
 	return b
 }
 
 // SiteBranch is ExternalBranch for the site API.
-func SiteBranch(t testing.TB, doc string) siteapi.BranchStepInput {
-	t.Helper()
+func SiteBranch(tb testing.TB, doc string) siteapi.BranchStepInput {
+	tb.Helper()
 	var b siteapi.BranchStepInput
-	require.NoError(t, b.UnmarshalJSON([]byte(doc)))
+	require.NoError(tb, b.UnmarshalJSON([]byte(doc)))
 	return b
 }

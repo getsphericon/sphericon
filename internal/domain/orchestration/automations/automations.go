@@ -196,32 +196,6 @@ func validateBranch(st *automationstep.Step, b automationstep.Branch) error {
 	return nil
 }
 
-// checkBranches checks the Condition of each path of each Branch of the tree as a Rule's is
-// checked (condition.Module.CheckBranch), bounded as a Rule's: it reads as a Branch path's tree,
-// and names only the Custom fields the Workspace holds, by tests their types take. A refusal names
-// the Branch and the path.
-func (m *Module) checkBranches(ctx context.Context, s *ent.Scoped, steps automationstep.Path) error {
-	for _, st := range automationstep.All(steps) {
-		b, ok := st.Payload.(automationstep.Branch)
-		if !ok {
-			continue
-		}
-		for i, p := range b.Paths {
-			if size := p.Condition.Size(); size > rules.MaxConditionNodes {
-				return refuse(st, fmt.Sprintf("path %d: a condition has at most %d groups and tests, this one has %d", i+1, rules.MaxConditionNodes, size))
-			}
-			err := m.conditions.CheckBranch(ctx, s, p.Condition)
-			if errors.Is(err, condition.ErrStorage) {
-				return err
-			}
-			if err != nil {
-				return refuse(st, fmt.Sprintf("path %d: %s", i+1, err.Error()))
-			}
-		}
-	}
-	return nil
-}
-
 // checkUnknownPaths refuses, naming it, a Branch of the tree whose Conditions can be unknown for a
 // Contact (condition.CanBeUnknown: an engagement count, ADR 0123) and that has no unknown path, and
 // a Branch whose Conditions cannot be unknown and that has one (ADR 0124). A save keeps either, so
@@ -375,6 +349,32 @@ func (m *Module) build(ctx context.Context, written automationstep.Path) (automa
 		s.Body, s.EditorVersion = c.Authored.Body, c.Authored.EditorVersion
 		return automationstep.Step{ID: st.ID, Payload: s}, nil
 	})
+}
+
+// checkBranches checks the Condition of each path of each Branch of the tree as a Rule's is
+// checked (condition.Module.CheckBranch), bounded as a Rule's: it reads as a Branch path's tree,
+// and names only the Custom fields the Workspace holds, by tests their types take. A refusal names
+// the Branch and the path.
+func (m *Module) checkBranches(ctx context.Context, s *ent.Scoped, steps automationstep.Path) error {
+	for _, st := range automationstep.All(steps) {
+		b, ok := st.Payload.(automationstep.Branch)
+		if !ok {
+			continue
+		}
+		for i, p := range b.Paths {
+			if size := p.Condition.Size(); size > rules.MaxConditionNodes {
+				return refuse(st, fmt.Sprintf("path %d: a condition has at most %d groups and tests, this one has %d", i+1, rules.MaxConditionNodes, size))
+			}
+			err := m.conditions.CheckBranch(ctx, s, p.Condition)
+			if errors.Is(err, condition.ErrStorage) {
+				return err
+			}
+			if err != nil {
+				return refuse(st, fmt.Sprintf("path %d: %s", i+1, err.Error()))
+			}
+		}
+	}
+	return nil
 }
 
 // engagementTriggers are the `email.` Events an Automation may start from: what a recipient does,

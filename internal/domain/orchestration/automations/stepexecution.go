@@ -335,14 +335,14 @@ func (m *StepExecution) branch(ctx context.Context, s *ent.Scoped, run *ent.Auto
 	for i, p := range b.Paths {
 		conds[i] = p.Condition
 	}
-	truths, err := m.conditions.Outcomes(ctx, s, run.ContactID, conds, run.EventProperties)
+	truths, err := m.conditions.Outcomes(ctx, s, condition.OutcomesInput{ContactID: run.ContactID, Conditions: conds, Properties: run.EventProperties})
 	if errors.Is(err, condition.ErrStorage) {
 		return err
 	}
 	if err != nil {
 		return m.fail(ctx, s, run.ID, fmt.Errorf("branch step %s: %w", at.step, err))
 	}
-	return m.advance(ctx, s, run.ID, at, stepMove{leaving: leaving{path: chosen(b, truths)}})
+	return m.advance(ctx, s, run.ID, at, stepMove{path: chosen(b, truths)})
 }
 
 // chosen is the path of the Branch its paths' truths send the Enrollment down (ADR 0124), with each
@@ -428,7 +428,7 @@ func (m *StepExecution) send(ctx context.Context, s *ent.Scoped, a *ent.Automati
 		// No Destination on the step's Channel, an opt-out from the Channel or from this
 		// Automation, or a Suppression: the sequence goes on with its next step, so one Channel's
 		// absence never ends it, and the step's record says why it was skipped.
-		return m.advance(ctx, s, run.ID, at, stepMove{leaving: leaving{skipped: res.SkippedReason}})
+		return m.advance(ctx, s, run.ID, at, stepMove{skipped: res.SkippedReason})
 	default: // outboundmessages.Failed
 		if res.MessageOnly() {
 			// The provider refused this one message (an invalid number, an answer that concerns no
@@ -446,6 +446,7 @@ func (m *StepExecution) send(ctx context.Context, s *ent.Scoped, a *ent.Automati
 // lockContact).
 type stepMove struct {
 	leaving
+
 	contactID int64
 	with      func(*ent.Scoped, events.Publisher) error
 }

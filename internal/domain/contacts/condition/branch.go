@@ -29,15 +29,23 @@ func (m *Module) CheckBranch(ctx context.Context, s *ent.Scoped, g conditiontree
 	return err
 }
 
-// Outcomes reads what each Condition is for the Contact contactID, on its live data, in the order
-// given, by Kleene's logic (ADR 0123): it holds, it fails, or it is unknown. props, the properties
-// of the Event the Enrollment began with, are a JSON object bound to the statement, which each
-// property test reads (ADR 0180). Unknown is the unknown of engagement alone: a Condition is
+// OutcomesInput is what Outcomes reads: the Contact, the Conditions in order, and the properties
+// of the Event the Enrollment began with (nil for none), which each property test reads.
+type OutcomesInput struct {
+	ContactID  int64
+	Conditions []conditiontree.Branch
+	Properties map[string]any
+}
+
+// Outcomes reads what each Condition of in is for its Contact, on its live data, in the order
+// given, by Kleene's logic (ADR 0123): it holds, it fails, or it is unknown. The Event's properties
+// are a JSON object bound to the statement, which each property test reads (ADR 0180). Unknown is the unknown of engagement alone: a Condition is
 // unknown when SQL reads it NULL and would read it true or false were every engagement count read
 // as it stands; a NULL of a test that reads no value (a field the Contact has none of) is no match,
 // false, as a Segment and a Rule read it. Every Condition is read in one statement, one snapshot of
 // the Contact. A Condition that does not compile fails the read.
-func (m *Module) Outcomes(ctx context.Context, s *ent.Scoped, contactID int64, conds []conditiontree.Branch, props map[string]any) ([]conditiontree.Truth, error) {
+func (m *Module) Outcomes(ctx context.Context, s *ent.Scoped, in OutcomesInput) ([]conditiontree.Truth, error) {
+	contactID, conds, props := in.ContactID, in.Conditions, in.Properties
 	if len(conds) == 0 {
 		return []conditiontree.Truth{}, nil
 	}
@@ -113,6 +121,7 @@ func predicateOf(sel *sql.Selector, p predicate.Contact) *sql.Predicate {
 	inner := sel.Clone().SetP(nil)
 	p(inner)
 	held := inner.P()
+	// raw sql: ent has no expression of a predicate's value; it is the predicate in parentheses.
 	return sql.P(func(b *sql.Builder) {
 		b.Wrap(func(b *sql.Builder) { b.Join(held) })
 	})

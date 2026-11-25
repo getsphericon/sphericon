@@ -35,7 +35,7 @@ func TestABranchsConditionsAreReadTrueFalseOrUnknown(t *testing.T) {
 		branchOf(negated(eventLeaf(systemevent.EmailOpened, "atLeast", 1, 0))),
 	}
 
-	got, err := condition.New(time.Now).Outcomes(t.Context(), env.DB.Scoped(fixtures.MassiveID), ann, conds, map[string]any{"amount": "10"})
+	got, err := condition.New(time.Now).Outcomes(t.Context(), env.DB.Scoped(fixtures.MassiveID), condition.OutcomesInput{ContactID: ann, Conditions: conds, Properties: map[string]any{"amount": "10"}})
 
 	require.NoError(t, err)
 	assert.Equal(t, []conditiontree.Truth{
@@ -53,7 +53,7 @@ func TestATestThatReadsNoValueIsFalseInABranch(t *testing.T) {
 		branchOf(attribute("email", text("neq", "x@example.com")), eventLeaf(systemevent.TelegramClicked, "atMost", 0, 0)),
 	}
 
-	got, err := condition.New(time.Now).Outcomes(t.Context(), env.DB.Scoped(fixtures.DuffID), tara, conds, nil)
+	got, err := condition.New(time.Now).Outcomes(t.Context(), env.DB.Scoped(fixtures.DuffID), condition.OutcomesInput{ContactID: tara, Conditions: conds})
 
 	require.NoError(t, err)
 	assert.Equal(t, []conditiontree.Truth{conditiontree.TruthFalse, conditiontree.TruthFalse, conditiontree.TruthFalse}, got)

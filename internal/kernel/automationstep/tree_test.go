@@ -19,8 +19,8 @@ func wait(id automationstep.ID, seconds int) automationstep.Step {
 
 // vip is the Condition of a Branch path that tests the Tag "vip".
 func vip() conditiontree.Branch {
-	return conditiontree.Branch{Group: conditiontree.Group{Kind: conditiontree.KindGroup, Combinator: conditiontree.And,
-		Entries: []json.RawMessage{json.RawMessage(`{"kind":"tag","name":"vip","operator":"has"}`)}}}
+	return conditiontree.Branch{Kind: conditiontree.KindGroup, Combinator: conditiontree.And,
+		Entries: []json.RawMessage{json.RawMessage(`{"kind":"tag","name":"vip","operator":"has"}`)}}
 }
 
 // tree is a version whose root holds a, then a Branch b with paths p1 (x, then a nested Branch n
