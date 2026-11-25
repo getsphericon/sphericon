@@ -2444,6 +2444,8 @@ func (s CapturedMessageSurface) Validate() error {
 		return nil
 	case "transactional":
 		return nil
+	case "confirmation":
+		return nil
 	case "test":
 		return nil
 	default:

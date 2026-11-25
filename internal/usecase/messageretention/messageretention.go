@@ -63,12 +63,12 @@ func New(client *ent.Client, bus *events.Bus, catalogue *broadcasts.Module, rete
 // Pruned is how many Outbound messages a run deleted, by kind, and whether its budget ran out
 // before the Workspace's work did.
 type Pruned struct {
-	Broadcast, Automation, Transactional int
-	More                                 bool
+	Broadcast, Automation, Transactional, Confirmation int
+	More                                               bool
 }
 
 // Due lists the Workspaces with something past the window: a finished Broadcast not pruned yet, or
-// an Automation or Transactional message that has left pending.
+// an Automation, Transactional or confirmation message that has left pending.
 func (u *UseCase) Due(ctx context.Context) ([]int64, error) {
 	if u.retention <= 0 {
 		return nil, nil
@@ -86,7 +86,7 @@ func (u *UseCase) Due(ctx context.Context) ([]int64, error) {
 	var withMessages []int64
 	err = u.client.OutboundMessage.Query().
 		Where(
-			outboundmessage.KindIn(outboundmessage.KindAutomation, outboundmessage.KindTransactional),
+			outboundmessage.KindIn(outboundmessage.KindAutomation, outboundmessage.KindTransactional, outboundmessage.KindConfirmation),
 			outboundmessage.CreatedAtLT(cutoff),
 			outboundmessage.StatusNEQ(outboundmessage.StatusPending),
 		).
@@ -134,7 +134,10 @@ func (u *UseCase) Prune(ctx context.Context, workspaceID int64, budget int) (Pru
 	if p.Transactional, err = r.kind(ctx, outboundmessage.KindTransactional, nil); err != nil {
 		return p, fmt.Errorf("prune transactional messages: %w", err)
 	}
-	p.More = r.budget <= 0
+	if p.Confirmation, err = r.kind(ctx, outboundmessage.KindConfirmation, nil); err != nil {
+		return p, fmt.Errorf("prune confirmation messages: %w", err)
+	}
+	p.More = r.exhausted
 	return p, nil
 }
 
@@ -145,11 +148,15 @@ type run struct {
 	s           *ent.Scoped
 	now, cutoff time.Time
 	budget      int
+	// exhausted is set once the budget refused a batch: work may be left for the next run. A run
+	// whose every kind found its work done before the budget ran out leaves it false.
+	exhausted bool
 }
 
 // spend takes one batch from the budget, false once it is spent.
 func (r *run) spend() bool {
 	if r.budget <= 0 {
+		r.exhausted = true
 		return false
 	}
 	r.budget--
@@ -166,6 +173,7 @@ func (r *run) broadcasts(ctx context.Context) (int, error) {
 	for _, id := range finished {
 		// A spent budget prunes nothing more: the next run freezes and prunes the rest.
 		if r.budget <= 0 {
+			r.exhausted = true
 			break
 		}
 		n, err := r.broadcast(ctx, id)

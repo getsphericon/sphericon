@@ -6801,6 +6801,7 @@ const (
 	CapturedMessageSurfaceBroadcast     CapturedMessageSurface = "broadcast"
 	CapturedMessageSurfaceAutomation    CapturedMessageSurface = "automation"
 	CapturedMessageSurfaceTransactional CapturedMessageSurface = "transactional"
+	CapturedMessageSurfaceConfirmation  CapturedMessageSurface = "confirmation"
 	CapturedMessageSurfaceTest          CapturedMessageSurface = "test"
 )
 
@@ -6810,6 +6811,7 @@ func (CapturedMessageSurface) AllValues() []CapturedMessageSurface {
 		CapturedMessageSurfaceBroadcast,
 		CapturedMessageSurfaceAutomation,
 		CapturedMessageSurfaceTransactional,
+		CapturedMessageSurfaceConfirmation,
 		CapturedMessageSurfaceTest,
 	}
 }
@@ -6822,6 +6824,8 @@ func (s CapturedMessageSurface) MarshalText() ([]byte, error) {
 	case CapturedMessageSurfaceAutomation:
 		return []byte(s), nil
 	case CapturedMessageSurfaceTransactional:
+		return []byte(s), nil
+	case CapturedMessageSurfaceConfirmation:
 		return []byte(s), nil
 	case CapturedMessageSurfaceTest:
 		return []byte(s), nil
@@ -6841,6 +6845,9 @@ func (s *CapturedMessageSurface) UnmarshalText(data []byte) error {
 		return nil
 	case CapturedMessageSurfaceTransactional:
 		*s = CapturedMessageSurfaceTransactional
+		return nil
+	case CapturedMessageSurfaceConfirmation:
+		*s = CapturedMessageSurfaceConfirmation
 		return nil
 	case CapturedMessageSurfaceTest:
 		*s = CapturedMessageSurfaceTest

@@ -1,8 +1,8 @@
 // Package throttle is the Login throttle and the mail budgets of an address (ADR 0025): the
 // growing delay after repeated failed logins of an address (a User's or a Staff member's), the
 // budget of mails a stranger can make us send to an address (password reset, the notice of a
-// Taken address, an email change), and the fixed caps on a Test send from the System sender (ADR
-// 0041). It counts in Postgres, so the count follows the address and is exact across replicas.
+// Taken address, an email change), the fixed caps on a Test send from the System sender (ADR
+// 0041) and on the confirmation emails of a Destination (ADR 0013). It counts in Postgres, so the count follows the address and is exact across replicas.
 //
 // It takes the raw client: an AuthAttempt belongs to no Workspace, and the addresses it counts
 // may belong to nobody.
@@ -10,6 +10,8 @@ package throttle
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	stdsql "database/sql"
 	"errors"
 	"strconv"
@@ -40,7 +42,15 @@ const (
 	// id rather than an address (see counterKey).
 	KindTestSendUser      = authattempt.KindTestSendUser
 	KindTestSendWorkspace = authattempt.KindTestSendWorkspace
+	// KindConfirmation counts the confirmation emails of a Destination in a Workspace (ADR 0013), keyed
+	// by the Workspace and a hash of the address (see confirmationKey).
+	KindConfirmation = authattempt.KindConfirmation
 )
+
+// ConfirmationsPerDestinationDay is the subscription-bombing limit (ADR 0013): at most this many
+// confirmation emails reach a Destination from one Workspace in 24 hours, whoever asks. It is fixed,
+// as the Test send caps are.
+const ConfirmationsPerDestinationDay = 3
 
 // The fixed caps on a Test send from the System sender (ADR 0041): a way to cause mail from
 // the platform's own domain, so no environment variable raises them.
@@ -131,6 +141,7 @@ func NewAttempts(client *ent.Client, now func() time.Time, opts ...AttemptsOptio
 		// Not configurable: always on, with their own windows.
 		KindTestSendUser:      {Threshold: TestSendPerUserHour, Window: time.Hour},
 		KindTestSendWorkspace: {Threshold: TestSendPerWorkspaceDay, Window: 24 * time.Hour},
+		KindConfirmation:      {Threshold: ConfirmationsPerDestinationDay, Window: 24 * time.Hour},
 	}}
 	for _, opt := range opts {
 		opt(a)
@@ -318,6 +329,20 @@ func (a *Attempts) TakeTestSend(ctx context.Context, userID, workspaceID int64) 
 		err = errors.Join(err, a.refund(ctx, KindTestSendUser, userKey))
 	}
 	return refusal, err
+}
+
+// TakeConfirmation grants one confirmation email to destination from the Workspace workspaceID
+// (ADR 0013), or returns the Refusal: how long until the Destination's 24 hours free a slot.
+func (a *Attempts) TakeConfirmation(ctx context.Context, workspaceID int64, destination string) (ratelimit.Refusal, error) {
+	return a.take(ctx, KindConfirmation, confirmationKey(workspaceID, emailcase.Of(destination)))
+}
+
+// confirmationKey is the counter key of a Destination's confirmation emails in a Workspace: the
+// Workspace and the SHA-256 of the address, so the counter keeps no address an Erasure would have
+// to reach while it lasts.
+func confirmationKey(workspaceID int64, destination string) string {
+	sum := sha256.Sum256([]byte(destination))
+	return counterKey("confirmation", workspaceID) + ":" + hex.EncodeToString(sum[:])
 }
 
 // Purge deletes the rows whose last failure is past their Kind's window (a delay is

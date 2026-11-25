@@ -830,6 +830,8 @@ func (c *ConverterImpl) CapturedMessageSurfaceToResource(source capturedmessage.
 		siteapiCapturedMessageSurface = site.CapturedMessageSurfaceAutomation
 	case capturedmessage.SurfaceBroadcast:
 		siteapiCapturedMessageSurface = site.CapturedMessageSurfaceBroadcast
+	case capturedmessage.SurfaceConfirmation:
+		siteapiCapturedMessageSurface = site.CapturedMessageSurfaceConfirmation
 	case capturedmessage.SurfaceTest:
 		siteapiCapturedMessageSurface = site.CapturedMessageSurfaceTest
 	case capturedmessage.SurfaceTransactional:

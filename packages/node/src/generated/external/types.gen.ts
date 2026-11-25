@@ -1591,6 +1591,7 @@ export const CapturedMessageSurface = {
   BROADCAST: 'broadcast',
   AUTOMATION: 'automation',
   TRANSACTIONAL: 'transactional',
+  CONFIRMATION: 'confirmation',
   TEST: 'test'
 } as const;
 
@@ -4038,7 +4039,7 @@ export type ExportMessageRow = {
    */
   id: EntityId;
   /**
-   * Which surface asked for the send: `broadcast`, `automation` or `transactional`
+   * Which surface asked for the send: `broadcast`, `automation`, `transactional` or `confirmation` (a double opt-in confirmation email)
    */
   kind: string;
   /**
@@ -6723,6 +6724,7 @@ export const SystemEventAction = {
   SMS_ENGAGEMENT_TRACKING_DENIED: 'sms.engagement_tracking_denied',
   TELEGRAM_ENGAGEMENT_TRACKING_GRANTED: 'telegram.engagement_tracking_granted',
   TELEGRAM_ENGAGEMENT_TRACKING_DENIED: 'telegram.engagement_tracking_denied',
+  EMAIL_RESUBSCRIBED: 'email.resubscribed',
   CONTACT_CONSENT_SUPERSEDED: 'contact.consent_superseded'
 } as const;
 

@@ -731,6 +731,7 @@
     "surfaces": {
       "automation": "Automation",
       "broadcast": "Broadcast",
+      "confirmation": "Confirmation email",
       "test": "Test send",
       "transactional": "Transactional email"
     },
@@ -1301,6 +1302,7 @@
     "emailEngagementTrackingGranted": "Agreed to email open and click tracking",
     "emailOpened": "Opened an email",
     "emailSent": "Was sent an email",
+    "emailResubscribed": "Returned to everything",
     "emailUnsubscribed": "Unsubscribed",
     "marketingConfirmed": "Confirmed opt-in",
     "pageView": "Visited a page",

@@ -128,7 +128,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "email", Type: field.TypeString},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"login", "staff_login", "password_reset", "sign_up", "email_change", "test_send_user", "test_send_workspace"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"login", "staff_login", "password_reset", "sign_up", "email_change", "test_send_user", "test_send_workspace", "confirmation"}},
 		{Name: "failures", Type: field.TypeInt, Default: 0},
 		{Name: "last_attempt_at", Type: field.TypeTime},
 	}
@@ -825,7 +825,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
-		{Name: "surface", Type: field.TypeEnum, Enums: []string{"broadcast", "automation", "transactional", "test"}},
+		{Name: "surface", Type: field.TypeEnum, Enums: []string{"broadcast", "automation", "transactional", "confirmation", "test"}},
 		{Name: "sending_source", Type: field.TypeString, Nullable: true},
 		{Name: "recipient", Type: field.TypeString},
 		{Name: "from_email", Type: field.TypeString},
@@ -1378,7 +1378,7 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{EventsColumns[1]},
 				Annotation: &entsql.IndexAnnotation{
-					Where: "action NOT IN ('marketing.confirmed', 'sms.confirmed', 'email.complained', 'email.unsubscribed', 'email.engagement_tracking_granted', 'email.engagement_tracking_denied', 'sms.engagement_tracking_granted', 'sms.engagement_tracking_denied', 'telegram.engagement_tracking_granted', 'telegram.engagement_tracking_denied') AND NOT (action = 'email.bounced' AND COALESCE(properties->>'bounceKind', '') = 'hard')",
+					Where: "action NOT IN ('marketing.confirmed', 'sms.confirmed', 'email.complained', 'email.unsubscribed', 'email.resubscribed', 'email.engagement_tracking_granted', 'email.engagement_tracking_denied', 'sms.engagement_tracking_granted', 'sms.engagement_tracking_denied', 'telegram.engagement_tracking_granted', 'telegram.engagement_tracking_denied') AND NOT (action = 'email.bounced' AND COALESCE(properties->>'bounceKind', '') = 'hard')",
 				},
 			},
 		},
@@ -2133,7 +2133,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
-		{Name: "kind", Type: field.TypeEnum, Enums: []string{"broadcast", "automation", "transactional"}},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"broadcast", "automation", "transactional", "confirmation"}},
 		{Name: "idempotency_key", Type: field.TypeString},
 		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram", "sms"}, Default: "email"},
 		{Name: "destination", Type: field.TypeString, Nullable: true},
@@ -3683,7 +3683,7 @@ func init() {
 	}
 	AuthAttemptsTable.Annotation.Checks = map[string]string{
 		"auth_attempts_email_lower": "email = lower(email)",
-		"auth_attempts_kind_check":  "kind IN ('login', 'staff_login', 'password_reset', 'sign_up', 'email_change', 'test_send_user', 'test_send_workspace')",
+		"auth_attempts_kind_check":  "kind IN ('login', 'staff_login', 'password_reset', 'sign_up', 'email_change', 'test_send_user', 'test_send_workspace', 'confirmation')",
 	}
 	AutomationsTable.ForeignKeys[0].RefTable = AutomationVersionsTable
 	AutomationsTable.ForeignKeys[1].RefTable = AutomationVersionsTable
@@ -3806,7 +3806,7 @@ func init() {
 	}
 	CapturedMessagesTable.Annotation.Checks = map[string]string{
 		"captured_messages_recipient_lower": "recipient = lower(recipient)",
-		"captured_messages_surface_check":   "surface IN ('broadcast', 'automation', 'transactional', 'test')",
+		"captured_messages_surface_check":   "surface IN ('broadcast', 'automation', 'transactional', 'confirmation', 'test')",
 	}
 	ConfirmationsTable.ForeignKeys[0].RefTable = ContactsTable
 	ConfirmationsTable.ForeignKeys[1].RefTable = WorkspacesTable
@@ -4023,9 +4023,9 @@ func init() {
 		"outbound_messages_channel_check":        "channel IN ('email', 'telegram', 'sms')",
 		"outbound_messages_destination_lower":    "destination = lower(destination)",
 		"outbound_messages_final_report_check":   "delivered_at IS NULL OR undelivered_at IS NULL",
-		"outbound_messages_kind_check":           "kind IN ('broadcast', 'automation', 'transactional')",
+		"outbound_messages_kind_check":           "kind IN ('broadcast', 'automation', 'transactional', 'confirmation')",
 		"outbound_messages_outcome_check":        "(status = 'pending' AND skipped_reason IS NULL AND failure IS NULL) OR (status = 'sent' AND skipped_reason IS NULL AND failure IS NULL) OR (status = 'skipped' AND skipped_reason IS NOT NULL AND failure IS NULL) OR (status = 'failed' AND skipped_reason IS NULL)",
-		"outbound_messages_provenance_check":     "(kind = 'broadcast' AND broadcast_id IS NOT NULL AND automation_id IS NULL AND automation_version_id IS NULL AND automation_step_id IS NULL AND automation_run_id IS NULL AND template_id IS NULL) OR (kind = 'automation' AND automation_id IS NOT NULL AND automation_version_id IS NOT NULL AND automation_step_id IS NOT NULL AND broadcast_id IS NULL AND broadcast_recipient_id IS NULL AND template_id IS NULL) OR (kind = 'transactional' AND broadcast_id IS NULL AND broadcast_recipient_id IS NULL AND automation_id IS NULL AND automation_version_id IS NULL AND automation_step_id IS NULL AND automation_run_id IS NULL)",
+		"outbound_messages_provenance_check":     "(kind = 'broadcast' AND broadcast_id IS NOT NULL AND automation_id IS NULL AND automation_version_id IS NULL AND automation_step_id IS NULL AND automation_run_id IS NULL AND template_id IS NULL) OR (kind = 'automation' AND automation_id IS NOT NULL AND automation_version_id IS NOT NULL AND automation_step_id IS NOT NULL AND broadcast_id IS NULL AND broadcast_recipient_id IS NULL AND template_id IS NULL) OR (kind = 'transactional' AND broadcast_id IS NULL AND broadcast_recipient_id IS NULL AND automation_id IS NULL AND automation_version_id IS NULL AND automation_step_id IS NULL AND automation_run_id IS NULL) OR (kind = 'confirmation' AND broadcast_id IS NULL AND broadcast_recipient_id IS NULL AND automation_id IS NULL AND automation_version_id IS NULL AND automation_step_id IS NULL AND automation_run_id IS NULL AND template_id IS NULL)",
 		"outbound_messages_skipped_reason_check": "skipped_reason IN ('suppressed', 'unsubscribed_everything', 'unsubscribed_source', 'unconfirmed', 'no_destination', 'contact_erased', 'no_local_time', 'frequency_cap')",
 		"outbound_messages_status_check":         "status IN ('pending', 'sent', 'skipped', 'failed')",
 	}

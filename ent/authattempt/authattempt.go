@@ -76,6 +76,7 @@ const (
 	KindEmailChange       Kind = "email_change"
 	KindTestSendUser      Kind = "test_send_user"
 	KindTestSendWorkspace Kind = "test_send_workspace"
+	KindConfirmation      Kind = "confirmation"
 )
 
 func (k Kind) String() string {
@@ -85,7 +86,7 @@ func (k Kind) String() string {
 // KindValidator is a validator for the "kind" field enum values. It is called by the builders before save.
 func KindValidator(k Kind) error {
 	switch k {
-	case KindLogin, KindStaffLogin, KindPasswordReset, KindSignUp, KindEmailChange, KindTestSendUser, KindTestSendWorkspace:
+	case KindLogin, KindStaffLogin, KindPasswordReset, KindSignUp, KindEmailChange, KindTestSendUser, KindTestSendWorkspace, KindConfirmation:
 		return nil
 	default:
 		return fmt.Errorf("authattempt: invalid enum value for kind field: %q", k)

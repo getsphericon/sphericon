@@ -68,9 +68,9 @@ func (w *PruneWorkspaceMessagesWorker) Work(ctx context.Context, job *river.Job[
 	if err != nil {
 		return err
 	}
-	if pruned.Broadcast+pruned.Automation+pruned.Transactional > 0 {
+	if pruned.Broadcast+pruned.Automation+pruned.Transactional+pruned.Confirmation > 0 {
 		slog.InfoContext(ctx, "expired outbound messages pruned", "workspace_id", job.Args.WorkspaceID,
-			"broadcast", pruned.Broadcast, "automation", pruned.Automation, "transactional", pruned.Transactional)
+			"broadcast", pruned.Broadcast, "automation", pruned.Automation, "transactional", pruned.Transactional, "confirmation", pruned.Confirmation)
 	}
 	if !pruned.More {
 		return nil

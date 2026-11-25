@@ -36,7 +36,9 @@ var (
 	EmailAddressTakenSignIn                               = ID{key: "email.address_taken.sign_in"}
 	EmailAddressTakenSubject                              = ID{key: "email.address_taken.subject"}
 	EmailAuthFooter                                       = ID{key: "email.auth.footer"}
+	EmailConfirmationRequestConfirm                       = ID{key: "email.confirmation_request.confirm"}
 	EmailConfirmationRequestIntro                         = ID{key: "email.confirmation_request.intro"}
+	EmailConfirmationRequestNotAsked                      = ID{key: "email.confirmation_request.not_asked"}
 	EmailConfirmationRequestSubject                       = ID{key: "email.confirmation_request.subject"}
 	EmailEmailChangeIntro                                 = ID{key: "email.email_change.intro"}
 	EmailEmailChangeSubject                               = ID{key: "email.email_change.subject"}

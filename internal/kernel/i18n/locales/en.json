@@ -7,6 +7,8 @@
   "email.email_change.intro": "Follow this link to confirm your new email address:",
   "email.confirmation_request.subject": "Confirm your subscription to {{.Workspace}}",
   "email.confirmation_request.intro": "You asked to receive email from {{.Workspace}}. Confirm your address to start receiving it.",
+  "email.confirmation_request.confirm": "Confirm my address",
+  "email.confirmation_request.not_asked": "If you did not ask for this, ignore this email: nothing happens, and you will not receive email from {{.Workspace}}.",
   "email.address_taken.subject": "Someone tried to use your email on Sphericon",
   "email.address_taken.intro": "Someone tried to sign up, or to move an account, with this email address, which already has a Sphericon account. Nothing was changed.",
   "email.address_taken.sign_in": "If it was you, sign in:",

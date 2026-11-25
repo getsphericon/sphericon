@@ -721,6 +721,7 @@ export default interface Resources {
       "surfaces": {
         "automation": "Automation",
         "broadcast": "Broadcast",
+        "confirmation": "Confirmation email",
         "test": "Test send",
         "transactional": "Transactional email"
       },
@@ -1290,6 +1291,7 @@ export default interface Resources {
       "emailEngagementTrackingDenied": "Refused email open and click tracking",
       "emailEngagementTrackingGranted": "Agreed to email open and click tracking",
       "emailOpened": "Opened an email",
+      "emailResubscribed": "Returned to everything",
       "emailSent": "Was sent an email",
       "emailUnsubscribed": "Unsubscribed",
       "marketingConfirmed": "Confirmed opt-in",

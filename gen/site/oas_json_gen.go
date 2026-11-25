@@ -9746,6 +9746,8 @@ func (s *CapturedMessageSurface) Decode(d *jx.Decoder) error {
 		*s = CapturedMessageSurfaceAutomation
 	case CapturedMessageSurfaceTransactional:
 		*s = CapturedMessageSurfaceTransactional
+	case CapturedMessageSurfaceConfirmation:
+		*s = CapturedMessageSurfaceConfirmation
 	case CapturedMessageSurfaceTest:
 		*s = CapturedMessageSurfaceTest
 	default:

@@ -116,7 +116,7 @@ sent, so the answer never tells whether the address has an account.
  - `SPHERICON_EVENTS_RETENTION` (default: `9600h`) - The age past which analytical Events are deleted by a daily job, a Go duration such as
 `9600h` (400 days); `0` disables it (ADR 0019). Evidentiary Events (`marketing.confirmed`,
 `sms.confirmed`, the `*.engagement_tracking_granted` and `*.engagement_tracking_denied` Events,
-`email.complained`, `email.unsubscribed`, a permanent `email.bounced`) are
+`email.complained`, `email.unsubscribed`, `email.resubscribed`, a permanent `email.bounced`) are
 never deleted by age. Rule Firings and the receipts that reject a redelivered external fact
 end with the same window.
  - `SPHERICON_MESSAGES_RETENTION` (default: `9600h`) - The age past which a daily job deletes Outbound messages, Broadcast recipients and tracked

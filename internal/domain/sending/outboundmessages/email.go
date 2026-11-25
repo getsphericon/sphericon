@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -94,6 +95,12 @@ func emailContentOf(content Content) (EmailContent, error) {
 // contentError is deterministic for this message, so the caller records it as Failed; any other
 // error is not the message's and is returned to be retried. From and To are the adapter's.
 func (m *Module) renderEmail(ctx context.Context, s *ent.Scoped, req Request, messageID int64, dest string, ws *ent.Workspace, tracked bool) (messaging.EmailMessage, error) {
+	switch req.Kind() {
+	case outboundmessage.KindConfirmation:
+		// A confirmation email is its own frame around the Workspace's text, never a template.
+		return m.renderConfirmation(ctx, s, req, dest, ws)
+	case outboundmessage.KindBroadcast, outboundmessage.KindAutomation, outboundmessage.KindTransactional:
+	}
 	content, err := emailContentOf(req.Content)
 	if err != nil {
 		return messaging.EmailMessage{}, err

@@ -298,6 +298,7 @@ export const zCapturedMessageSurface = z.enum([
   'broadcast',
   'automation',
   'transactional',
+  'confirmation',
   'test'
 ]);
 
@@ -2949,6 +2950,7 @@ export const zSystemEventAction = z.enum([
   'sms.engagement_tracking_denied',
   'telegram.engagement_tracking_granted',
   'telegram.engagement_tracking_denied',
+  'email.resubscribed',
   'contact.consent_superseded'
 ]);
 
