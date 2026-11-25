@@ -81,7 +81,6 @@ func marketing(t *testing.T, env *testhelper.TestEnv, key string, contactID int6
 		Key:         key,
 		Destination: *c.Email,
 		Contact:     c,
-		Source:      eligibility.SourceBroadcasts,
 		Content:     outboundmessages.EmailContent{Subject: "News", Body: htmlBody},
 		Ref:         broadcastIn(t, c.WorkspaceID),
 	}

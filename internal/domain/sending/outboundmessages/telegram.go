@@ -181,14 +181,14 @@ func (m *Module) bindUnsubscribeURL(ctx context.Context, s *ent.Scoped, req Requ
 		return nil
 	}
 	vars[unsubscribeURLTag] = ""
-	if req.Source == "" || m.tracker == nil {
+	if req.source() == "" || m.tracker == nil {
 		return nil
 	}
 	tr, err := m.trackerFor(ctx, s)
 	if err != nil {
 		return err
 	}
-	source := req.Source
+	source := req.source()
 	if onChannel == channels.SMS {
 		source = eligibility.SourceEverything
 	}
@@ -305,7 +305,7 @@ func (telegramAdapter) publishSent(ctx context.Context, pub events.Publisher, f 
 		AutomationID:      f.req.automationID(),
 		OutboundMessageID: f.messageID,
 		Surface:           string(f.req.Kind()),
-		SendingSource:     f.req.Source,
+		SendingSource:     f.req.source(),
 		DedupID:           fmt.Sprintf("%s:%d", systemevent.TelegramSent, f.messageID),
 	}
 	if f.req.Contact != nil && f.req.Contact.Email != nil {

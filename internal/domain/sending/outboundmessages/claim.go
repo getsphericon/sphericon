@@ -61,8 +61,8 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest str
 	if g.as.sendingDomain != "" {
 		create.SetSendingDomain(g.as.sendingDomain)
 	}
-	if req.Source != "" {
-		create.SetSendingSource(req.Source)
+	if req.source() != "" {
+		create.SetSendingSource(req.source())
 	}
 	if contactID := req.contactID(); contactID != 0 {
 		create.SetContactID(contactID)

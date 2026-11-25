@@ -204,7 +204,7 @@ func TestAContactCreatedAfterConfirmedOptInIsUnconfirmed(t *testing.T) {
 	require.NoError(t, err)
 
 	decision, err := eligibility.New().Check(t.Context(), env.DB.Scoped(fixtures.AcmeID),
-		eligibility.CheckInput{Channel: channels.Email, Destination: "late.comer@example.org", Source: eligibility.SourceBroadcasts})
+		eligibility.CheckInput{Channel: channels.Email, Destination: "late.comer@example.org", Mode: eligibility.Marketing(eligibility.SourceBroadcasts)})
 	require.NoError(t, err)
 	audience := acmeEmailAudience(t, env)
 	assert.Equal(t, skipreason.Unconfirmed, decision.Reason)

@@ -394,10 +394,6 @@ type Request struct {
 	Contact     *ent.Contact
 	ContactID   int64
 
-	// Source is the unsubscribe Sending source ("broadcasts", "automation:<id>");
-	// "" is a Transactional send (Suppression only, no unsubscribe).
-	Source string
-
 	// Content is the Message content: its Channel is the Channel the message goes out on.
 	// Required.
 	Content Content
@@ -413,7 +409,8 @@ type Request struct {
 	// Outbound message (ADR 0053).
 	Track bool
 
-	// Ref is the surface record the message is sent for, and so its kind. Required.
+	// Ref is the surface record the message is sent for, and so its kind and its mode of
+	// Send-eligibility. Required.
 	Ref Ref
 
 	// Stopped, when set, says when the source stopped taking new messages: the surface that owns
@@ -432,6 +429,13 @@ type Request struct {
 
 // Kind is the surface that asked for the send: its Ref's.
 func (r Request) Kind() outboundmessage.Kind { return r.Ref.Kind() }
+
+// Mode is what Send-eligibility checks the message for: its Ref's.
+func (r Request) Mode() eligibility.Mode { return r.Ref.mode() }
+
+// source is the unsubscribe Sending source of a marketing message ("broadcasts",
+// "automation:<id>"), "" for a message that carries none.
+func (r Request) source() string { return r.Mode().Source() }
 
 // broadcastID is the Broadcast the message is sent for, 0 for none.
 func (r Request) broadcastID() int64 {
@@ -477,7 +481,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	if err := req.validate(); err != nil {
 		return Result{}, err
 	}
-	if req.Source != "" && m.tracker == nil {
+	if req.source() != "" && m.tracker == nil {
 		return Result{}, ErrNoTracker
 	}
 	onChannel := req.Channel()
@@ -586,7 +590,7 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		return Result{Outcome: Deferral, Cause: short.Cause, Wait: short.Wait}, nil
 	}
 
-	origin := messaging.Origin{OutboundMessageID: msg.ID, Surface: messaging.Surface(req.Kind()), Source: req.Source}
+	origin := messaging.Origin{OutboundMessageID: msg.ID, Surface: messaging.Surface(req.Kind()), Source: req.source()}
 	first, stopped, skip, err := m.deliver(ctx, s, g, req, rendered, eligible, origin, msg)
 	if err != nil {
 		if stopped != nil {
@@ -627,7 +631,7 @@ func renderedSubject(rendered any) string {
 func (m *Module) eligibleTargets(ctx context.Context, s *ent.Scoped, req Request, targets []target) (eligible []target, skip skipreason.Reason, err error) {
 	onChannel := req.Channel()
 	for _, t := range targets {
-		dec, err := m.eligibility.Check(ctx, s, eligibility.CheckInput{Channel: onChannel, Destination: t.dest, Source: req.Source})
+		dec, err := m.eligibility.Check(ctx, s, eligibility.CheckInput{Channel: onChannel, Destination: t.dest, Mode: req.Mode()})
 		if err != nil {
 			return nil, "", err
 		}
@@ -850,7 +854,7 @@ func (m *Module) FailRecipient(ctx context.Context, s *ent.Scoped, f Failure) (R
 		create := s.OutboundMessage().Create().
 			SetKind(ref.Kind()).
 			SetIdempotencyKey(key).
-			SetSendingSource(eligibility.SourceBroadcasts).
+			SetSendingSource(ref.mode().Source()).
 			SetStatus(outboundmessage.StatusFailed).
 			SetFailure(cause.Error())
 		ref.stamp(create)

@@ -109,7 +109,7 @@ func (m *Module) renderEmail(ctx context.Context, s *ent.Scoped, req Request, me
 		return messaging.EmailMessage{}, contentError{err}
 	}
 	out := messaging.EmailMessage{Subject: email.Subject, HTML: email.HTML, Text: email.Text}
-	if req.Source == "" && !tracked {
+	if req.source() == "" && !tracked {
 		return out, nil // Transactional, untracked: no unsubscribe, no tracking
 	}
 	out, err = m.layerTracking(ctx, s, req, messageID, dest, ws, out, tracked)
@@ -131,7 +131,7 @@ func (m *Module) layerTracking(ctx context.Context, s *ent.Scoped, req Request, 
 	if err != nil {
 		return messaging.EmailMessage{}, err
 	}
-	if req.Source == "" {
+	if req.source() == "" {
 		// A tracked Transactional send: pixel and rewritten links, no footer, no header (ADR 0053).
 		html, err := tr.Instrument(out.HTML, messagetoken.Message{WorkspaceID: s.WorkspaceID(), ID: messageID})
 		if err != nil {
@@ -143,7 +143,7 @@ func (m *Module) layerTracking(ctx context.Context, s *ent.Scoped, req Request, 
 
 	unsub := linktarget.Unsubscribe{
 		Channel:     channels.Email,
-		Source:      req.Source,
+		Source:      req.source(),
 		Destination: dest,
 		WorkspaceID: ws.ID,
 		ContactID:   req.contactID(),
@@ -252,7 +252,7 @@ func (a emailAdapter) publishSent(ctx context.Context, pub events.Publisher, f s
 		BroadcastID:       f.req.broadcastID(),
 		DedupID:           fmt.Sprintf("email.sent:%d", f.messageID),
 		Surface:           string(f.req.Kind()),
-		SendingSource:     f.req.Source,
+		SendingSource:     f.req.source(),
 		SendingDomain:     f.as.sendingDomain,
 		AutomationID:      f.req.automationID(),
 		OutboundMessageID: f.messageID,
@@ -275,7 +275,7 @@ func (a emailAdapter) publishSent(ctx context.Context, pub events.Publisher, f s
 		DedupID:           fmt.Sprintf("%s:%d/%s", systemevent.EmailDelivered, f.messageID, f.dest),
 		OutboundMessageID: f.messageID,
 		Surface:           string(f.req.Kind()),
-		SendingSource:     f.req.Source,
+		SendingSource:     f.req.source(),
 		BroadcastID:       f.req.broadcastID(),
 		AutomationID:      f.req.automationID(),
 		Captured:          f.captured,

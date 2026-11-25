@@ -469,7 +469,7 @@ func present(p predicate.Contact, t presenceTest) predicate.Contact {
 // Evaluated live through the audience predicate, the rule's single definition. Every SMS opt-out
 // is of everything, so the Sending source named here changes nothing.
 func textable() predicate.Contact {
-	return eligibility.Audience(eligibility.PhoneDestination(), eligibility.SourceBroadcasts)
+	return eligibility.Audience(eligibility.PhoneDestination(), eligibility.Marketing(eligibility.SourceBroadcasts))
 }
 
 // custom is a test of one Custom field. The key must be in the Workspace's catalogue (ADR 0006)
