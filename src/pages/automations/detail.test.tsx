@@ -14,6 +14,8 @@ import type { SiteAutomationResource, AutomationResults } from '../../generated/
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import {
   emailIntegration,
+  NO_AUTOMATION_REPORT,
+  NO_AUTOMATION_RESULTS,
   page,
   stepId,
   testId,
@@ -34,54 +36,6 @@ const MOUNT = routeMount(automationsDetailRoute, {
 
 // When the wait an Enrollment stands on is due.
 const WAIT_DUE = '2026-03-20T09:30:00Z'
-
-const NO_REVENUE = { reportingCurrency: 'USD', orders: 0, amount: 0 }
-
-// A period in which nothing happened, nor in the one before.
-const NO_RESULTS: AutomationResults = {
-  period: '30d',
-  current: {
-    entered: 0,
-    completed: 0,
-    goalReached: 0,
-    exited: 0,
-    failed: 0,
-    from: '2026-02-16',
-    to: '2026-03-17',
-    contacts: 0,
-    skipped: {
-      cycle: 0,
-      activeEnrollment: 0,
-      once: 0,
-      cooldown: 0,
-      noEnrollmentKey: 0,
-      enrollmentCeiling: 0,
-    },
-    averageDurationSeconds: null,
-    revenue: NO_REVENUE,
-  },
-  previous: {
-    entered: 0,
-    completed: 0,
-    goalReached: 0,
-    exited: 0,
-    failed: 0,
-    from: '2026-01-17',
-    to: '2026-02-15',
-    contacts: 0,
-    skipped: {
-      cycle: 0,
-      activeEnrollment: 0,
-      once: 0,
-      cooldown: 0,
-      noEnrollmentKey: 0,
-      enrollmentCeiling: 0,
-    },
-    averageDurationSeconds: null,
-    revenue: NO_REVENUE,
-  },
-  series: [],
-}
 
 test('shows the automation and the contacts enrolled in it', async () => {
   worker.use(
@@ -120,7 +74,7 @@ test('shows the automation and the contacts enrolled in it', async () => {
         steps: [],
         versionSteps: [],
         paths: [],
-        results: NO_RESULTS,
+        results: NO_AUTOMATION_RESULTS,
       },
     }),
     handleSiteEnrollmentsList({
@@ -200,7 +154,7 @@ test('shows the opens, the clicks and the clicked links of the automation', asyn
         steps: [],
         versionSteps: [],
         paths: [],
-        results: NO_RESULTS,
+        results: NO_AUTOMATION_RESULTS,
       },
     }),
     handleSiteEnrollmentsList({ body: page([], 0) }),
@@ -259,7 +213,7 @@ test('marks an inactive automation as inactive', async () => {
         steps: [],
         versionSteps: [],
         paths: [],
-        results: NO_RESULTS,
+        results: NO_AUTOMATION_RESULTS,
       },
     }),
     handleSiteEnrollmentsList({ body: page([], 0) }),
@@ -316,7 +270,7 @@ test('shows the orders and the net revenue credited to the automation', async ()
         steps: [],
         versionSteps: [],
         paths: [],
-        results: NO_RESULTS,
+        results: NO_AUTOMATION_RESULTS,
       },
     }),
     handleSiteEnrollmentsList({ body: page([], 0) }),
@@ -366,7 +320,7 @@ test('shows no orders or revenue on the automation until the first order sets th
         steps: [],
         versionSteps: [],
         paths: [],
-        results: NO_RESULTS,
+        results: NO_AUTOMATION_RESULTS,
       },
     }),
     handleSiteEnrollmentsList({ body: page([], 0) }),
@@ -413,21 +367,6 @@ const PENDING: SiteAutomationResource = {
 }
 
 const PUBLISHED: SiteAutomationResource = { ...PENDING, live: PENDING.draft, draft: null }
-
-const NO_FIGURES = {
-  opens: 0,
-  clicks: 0,
-  delivered: 0,
-  bounced: 0,
-  complained: 0,
-  captured: 0,
-  revenue: { reportingCurrency: 'USD', orders: 0, amount: 0 },
-  links: [],
-  steps: [],
-  versionSteps: [],
-  paths: [],
-  results: NO_RESULTS,
-}
 
 test('shows what the live version does, its exit and goal events included, not the draft above it', async () => {
   worker.use(
@@ -477,7 +416,7 @@ test('shows what the live version does, its exit and goal events included, not t
         },
       },
     }),
-    handleSiteAutomationReportsGet({ body: NO_FIGURES }),
+    handleSiteAutomationReportsGet({ body: NO_AUTOMATION_REPORT }),
     handleSiteEnrollmentsList({ body: page([], 0) }),
     handleSiteIntegrationsGet({ body: emailIntegration(testId(21), 'Mailgun relay') }),
   )
@@ -528,7 +467,7 @@ test('a send step through a deleted Integration names it as deleted', async () =
         },
       },
     }),
-    handleSiteAutomationReportsGet({ body: NO_FIGURES }),
+    handleSiteAutomationReportsGet({ body: NO_AUTOMATION_REPORT }),
     handleSiteEnrollmentsList({ body: page([], 0) }),
     handleSiteIntegrationsGet({
       body: emailIntegration(testId(21), 'Mailgun relay', { discardedAt: '2026-02-01T00:00:00Z' }),
@@ -546,7 +485,7 @@ test('a draft above the live version is marked pending, and Publish makes it liv
   const published: string[] = []
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(published.length > 0 ? PUBLISHED : PENDING)),
-    handleSiteAutomationReportsGet({ body: NO_FIGURES }),
+    handleSiteAutomationReportsGet({ body: NO_AUTOMATION_REPORT }),
     handleSiteEnrollmentsList({ body: page([], 0) }),
     handleSiteAutomationsPublish(({ params }) => {
       published.push(params.id)
@@ -568,7 +507,7 @@ test('Revert drops the draft', async () => {
   const live: SiteAutomationResource = { ...PENDING, draft: null }
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(reverted.length > 0 ? live : PENDING)),
-    handleSiteAutomationReportsGet({ body: NO_FIGURES }),
+    handleSiteAutomationReportsGet({ body: NO_AUTOMATION_REPORT }),
     handleSiteEnrollmentsList({ body: page([], 0) }),
     handleSiteAutomationsRevert(({ params }) => {
       reverted.push(params.id)
@@ -587,7 +526,7 @@ test('Revert drops the draft', async () => {
 test('a never-published automation offers Publish but not Revert', async () => {
   worker.use(
     handleSiteAutomationsGet({ body: { ...PENDING, status: 'inactive', live: null } }),
-    handleSiteAutomationReportsGet({ body: NO_FIGURES }),
+    handleSiteAutomationReportsGet({ body: NO_AUTOMATION_REPORT }),
     handleSiteEnrollmentsList({ body: page([], 0) }),
   )
 
@@ -601,7 +540,7 @@ test('a never-published automation offers Publish but not Revert', async () => {
 test('a refused publish shows the reason', async () => {
   worker.use(
     handleSiteAutomationsGet({ body: PENDING }),
-    handleSiteAutomationReportsGet({ body: NO_FIGURES }),
+    handleSiteAutomationReportsGet({ body: NO_AUTOMATION_REPORT }),
     handleSiteEnrollmentsList({ body: page([], 0) }),
     handleSiteAutomationsPublish(() => problem(422, { detail: 'integration not found' })),
   )
@@ -677,7 +616,7 @@ const RESULTS_BY_PERIOD = new Map<string | null, AutomationResults>([
 test('shows what the enrollments did in the period against the period before', async () => {
   worker.use(
     handleSiteAutomationsGet({ body: PENDING }),
-    handleSiteAutomationReportsGet({ body: { ...NO_FIGURES, results: MONTH } }),
+    handleSiteAutomationReportsGet({ body: { ...NO_AUTOMATION_REPORT, results: MONTH } }),
     handleSiteEnrollmentsList({ body: page([], 0) }),
   )
 
@@ -712,7 +651,10 @@ test('the period picked shows the results of that period', async () => {
     handleSiteAutomationsGet({ body: PENDING }),
     handleSiteAutomationReportsGet(({ request }) => {
       const results = RESULTS_BY_PERIOD.get(new URL(request.url).searchParams.get('period'))
-      return HttpResponse.json({ ...NO_FIGURES, results: results ?? NO_RESULTS })
+      return HttpResponse.json({
+        ...NO_AUTOMATION_REPORT,
+        results: results ?? NO_AUTOMATION_RESULTS,
+      })
     }),
     handleSiteEnrollmentsList({ body: page([], 0) }),
   )
@@ -749,7 +691,7 @@ test('shows what each send step sent and skipped, by its id across versions, nam
     handleSiteAutomationsGet({ body: { ...PENDING, live, draft: null } }),
     handleSiteAutomationReportsGet({
       body: {
-        ...NO_FIGURES,
+        ...NO_AUTOMATION_REPORT,
         steps: [
           { stepId: stepId(11), sent: 41, skipped: 3 },
           { stepId: stepId(13), sent: 17, skipped: 29 },
@@ -818,7 +760,7 @@ test('an archived automation is read-only: it offers no edit and no publish', as
         steps: [],
         versionSteps: [],
         paths: [],
-        results: NO_RESULTS,
+        results: NO_AUTOMATION_RESULTS,
       },
     }),
     handleSiteEnrollmentsList({ body: page([], 0) }),
