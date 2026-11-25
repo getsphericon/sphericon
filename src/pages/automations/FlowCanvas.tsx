@@ -17,6 +17,9 @@ import { createContext, use, useMemo } from 'react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { useFormat } from '../../hooks/useFormat.ts'
+import type { CanvasFigures } from './canvasFigures.ts'
+import { sendsMessage } from './definition.ts'
 import type { Flow, FlowStep, InsertedKind } from './definition.ts'
 import type { Place } from './flowEdits.ts'
 import { layoutFlow, TRIGGER_NODE_ID } from './flowLayout.ts'
@@ -27,6 +30,7 @@ import { insertableKinds, TRIGGER_ICON, useStepInfo, useStepKinds } from './step
 // What the nodes of the canvas do: they select what the side panel edits, insert a Step at their
 // place, remove theirs and add a path to a fork. Nothing on the canvas edits the flow but through
 // these. `errorOf` is the error a fork's node shows once it was checked (on blur or on Save).
+// `figures` are the report's, null until it is read: the nodes show none then.
 interface CanvasControls {
   flow: Flow
   editable: boolean
@@ -36,6 +40,7 @@ interface CanvasControls {
   remove: (id: string) => void
   addPath: (forkId: string) => void
   errorOf: (id: string) => string | null
+  figures: CanvasFigures | null
 }
 
 const Controls = createContext<CanvasControls | null>(null)
@@ -58,14 +63,15 @@ function Handles() {
   )
 }
 
-// The box of the Trigger and of a Step: its icon, its kind and what it says beside it. A click
-// opens it in the side panel.
+// The box of the Trigger and of a Step: its icon, its kind, what it says beside it and its figures
+// from the report. A click opens it in the side panel.
 function NodeBox({
   id,
   icon: NodeIcon,
   label,
   detail,
   error = null,
+  figures = null,
   children,
 }: {
   id: string
@@ -74,6 +80,7 @@ function NodeBox({
   detail: string
   // What is wrong with it, shown in place of the detail.
   error?: string | null
+  figures?: string | null
   children?: ReactNode
 }) {
   const { selected, select } = useControls()
@@ -109,6 +116,11 @@ function NodeBox({
                     {error}
                   </Text>
                 </Group>
+              )}
+              {figures !== null && (
+                <Text size="xs" c="dimmed" truncate>
+                  {figures}
+                </Text>
               )}
             </Box>
           </Group>
@@ -159,10 +171,27 @@ function stepDetail(step: FlowStep): string {
   }
 }
 
+// What a send Step sent and skipped, by its id over every version that had it; nothing for a Step
+// that sends no message, or before the report is read.
+function useStepFigures(step: FlowStep): string | null {
+  const { t } = useTranslation()
+  const { formatNumber } = useFormat()
+  const { figures } = useControls()
+  if (figures === null || !sendsMessage(step)) {
+    return null
+  }
+  const { sent, skipped } = figures.step(step.id)
+  return t(($) => $.automations.nodeFigures, {
+    sent: formatNumber(sent),
+    skipped: formatNumber(skipped),
+  })
+}
+
 function StepNodeView({ data: { step } }: NodeProps<StepNode>) {
   const { t } = useTranslation()
   const { editable, remove, addPath, errorOf } = useControls()
   const info = useStepInfo()(step)
+  const figures = useStepFigures(step)
   const fork = step.kind === 'branch' || step.kind === 'split' ? step : null
   return (
     <>
@@ -173,6 +202,7 @@ function StepNodeView({ data: { step } }: NodeProps<StepNode>) {
         label={info.label}
         detail={stepDetail(step)}
         error={errorOf(step.id)}
+        figures={figures}
       >
         {editable && fork !== null && (
           <ActionIcon
@@ -231,10 +261,15 @@ function usePathLabel(): (role: PathRole) => string {
   }
 }
 
-// The head of a fork's path, under the fork: a click opens the fork in the side panel.
-function PathNodeView({ data: { fork, role } }: NodeProps<PathNode>) {
-  const { select } = useControls()
+// The head of a fork's path, under the fork: what heads it and, once the report is read, the
+// Enrollments that took it and those among them that reached the goal. A click opens the fork in
+// the side panel.
+function PathNodeView({ data: { fork, pathId, role } }: NodeProps<PathNode>) {
+  const { t } = useTranslation()
+  const { formatNumber } = useFormat()
+  const { select, figures } = useControls()
   const label = usePathLabel()(role)
+  const counts = figures?.path(fork.id, pathId) ?? null
   return (
     <>
       <Handles />
@@ -243,6 +278,14 @@ function PathNodeView({ data: { fork, role } }: NodeProps<PathNode>) {
           <Text size="xs" fw={500} ta="center" truncate>
             {label}
           </Text>
+          {counts !== null && (
+            <Text size="xs" c="dimmed" ta="center" truncate>
+              {t(($) => $.automations.pathFigures, {
+                enrollments: formatNumber(counts.enrollments),
+                goalReached: formatNumber(counts.goalReached),
+              })}
+            </Text>
+          )}
         </UnstyledButton>
       </Paper>
     </>

@@ -3,6 +3,7 @@ import { beforeEach, expect, test } from 'vitest'
 import { page } from 'vitest/browser'
 
 import {
+  handleSiteAutomationReportsGet,
   handleSiteAutomationsGet,
   handleSiteAutomationsUpdate,
   handleSiteContactsList,
@@ -11,12 +12,13 @@ import {
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
 import type {
+  AutomationReport,
   AutomationStep,
   SiteAutomationResource,
   UpdateAutomationInput,
 } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
-import { stepId, TIMESTAMPS, testId, workspace } from '../../test/payloads.ts'
+import { NO_AUTOMATION_REPORT, stepId, TIMESTAMPS, testId, workspace } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
@@ -36,8 +38,9 @@ beforeEach(async () => {
   await page.viewport(1280, 900)
 })
 
-// Renders the editor over the stored steps, recording the body of every save.
-async function editing(steps: AutomationStep[]) {
+// Renders the editor over the stored steps and the Automation's report, recording the body of
+// every save.
+async function editing(steps: AutomationStep[], report: AutomationReport = NO_AUTOMATION_REPORT) {
   const bodies: UpdateAutomationInput[] = []
   const stored: SiteAutomationResource = {
     id: testId(5),
@@ -56,6 +59,7 @@ async function editing(steps: AutomationStep[]) {
   }
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(stored)),
+    handleSiteAutomationReportsGet({ body: report }),
     handleSiteAutomationsUpdate(async ({ request }) => {
       bodies.push(await request.json())
       return HttpResponse.json(stored)
@@ -194,4 +198,22 @@ test('an HTTP step and an email step inserted on the canvas are edited in their 
       { id: expect.stringMatching(UUID), type: 'email', subject: 'Welcome', body: '' },
     ],
   ])
+})
+
+test("a send Step's node shows what it sent and skipped by its id, none of them zero", async () => {
+  const email: AutomationStep = { id: stepId(14), type: 'email', subject: 'Welcome', body: '' }
+  const sms: AutomationStep = { id: stepId(15), type: 'sms', text: 'Hi', linkTracking: true }
+  // The figures follow a Step by its id, whatever its place: the SMS sent from an earlier version
+  // where it stood first, and a Step since removed sent too.
+  const { screen } = await editing([email, WAIT, sms], {
+    ...NO_AUTOMATION_REPORT,
+    steps: [
+      { stepId: sms.id, sent: 1204, skipped: 12 },
+      { stepId: stepId(99), sent: 7, skipped: 3 },
+    ],
+  })
+
+  await expect.element(nodeButton(screen, 'Send SMS')).toMatchTextContent('1,204 sent · 12 skipped')
+  await expect.element(nodeButton(screen, 'Send email')).toMatchTextContent('0 sent · 0 skipped')
+  await expect.element(nodeButton(screen, 'Wait')).not.toMatchTextContent('sent')
 })

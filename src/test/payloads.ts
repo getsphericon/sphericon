@@ -1,4 +1,7 @@
 import type {
+  AutomationPeriodResults,
+  AutomationReport,
+  AutomationResults,
   BrandKitResource,
   CustomFieldConditionTests,
   RuleCondition,
@@ -117,3 +120,54 @@ export const testId = (n: number) => 'test' + String(n).padStart(18, '0')
 
 // A Step's or a path's id: a UUID in its lowercase text form, as the canvas and the server mint them.
 export const stepId = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
+
+const NO_REVENUE = { reportingCurrency: 'USD', orders: 0, amount: 0 }
+
+// What an Automation's Enrollments did from `from` to `to`, days of a period in which nothing
+// happened.
+function nothingDone(from: string, to: string): AutomationPeriodResults {
+  return {
+    entered: 0,
+    completed: 0,
+    goalReached: 0,
+    exited: 0,
+    failed: 0,
+    from,
+    to,
+    contacts: 0,
+    skipped: {
+      cycle: 0,
+      activeEnrollment: 0,
+      once: 0,
+      cooldown: 0,
+      noEnrollmentKey: 0,
+      enrollmentCeiling: 0,
+    },
+    averageDurationSeconds: null,
+    revenue: NO_REVENUE,
+  }
+}
+
+// A period in which an Automation's Enrollments did nothing, nor in the one before.
+export const NO_AUTOMATION_RESULTS: AutomationResults = {
+  period: '30d',
+  current: nothingDone('2026-02-16', '2026-03-17'),
+  previous: nothingDone('2026-01-17', '2026-02-15'),
+  series: [],
+}
+
+// The report of an Automation nothing went through: no message, no Enrollment, no path taken.
+export const NO_AUTOMATION_REPORT: AutomationReport = {
+  opens: 0,
+  clicks: 0,
+  delivered: 0,
+  bounced: 0,
+  complained: 0,
+  captured: 0,
+  revenue: NO_REVENUE,
+  links: [],
+  steps: [],
+  versionSteps: [],
+  paths: [],
+  results: NO_AUTOMATION_RESULTS,
+}

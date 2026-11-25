@@ -3,6 +3,7 @@ import { beforeEach, expect, test } from 'vitest'
 import { page } from 'vitest/browser'
 
 import {
+  handleSiteAutomationReportsGet,
   handleSiteAutomationsGet,
   handleSiteAutomationsPublish,
   handleSiteAutomationsUnknownPath,
@@ -15,13 +16,21 @@ import {
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
 import type {
+  AutomationReport,
   AutomationStep,
   BranchCondition,
   SiteAutomationResource,
   UpdateAutomationInput,
 } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
-import { page as pageOf, stepId, TIMESTAMPS, testId, workspace } from '../../test/payloads.ts'
+import {
+  NO_AUTOMATION_REPORT,
+  page as pageOf,
+  stepId,
+  TIMESTAMPS,
+  testId,
+  workspace,
+} from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -72,9 +81,10 @@ beforeEach(async () => {
   await page.viewport(1280, 900)
 })
 
-// Renders the editor over the stored steps, recording the body of every save. The server says a
-// Branch needs an unknown path when one of its Conditions counts an open.
-async function editing(steps: AutomationStep[]) {
+// Renders the editor over the stored steps and the Automation's report, recording the body of
+// every save. The server says a Branch needs an unknown path when one of its Conditions counts an
+// open.
+async function editing(steps: AutomationStep[], report: AutomationReport = NO_AUTOMATION_REPORT) {
   const bodies: UpdateAutomationInput[] = []
   const stored: SiteAutomationResource = {
     id: testId(5),
@@ -93,6 +103,7 @@ async function editing(steps: AutomationStep[]) {
   }
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(stored)),
+    handleSiteAutomationReportsGet({ body: report }),
     handleSiteAutomationsUpdate(async ({ request }) => {
       bodies.push(await request.json())
       return HttpResponse.json(stored)
@@ -171,7 +182,7 @@ test("a Step inserted into a fork's empty path goes there", async () => {
     otherwise: { id: stepId(22), steps: [] },
   }
   const { screen, saved } = await editing([branch, TAG])
-  await expect.element(screen.getByRole('button', { name: 'Otherwise' })).toBeVisible()
+  await expect.element(screen.getByRole('button', { name: /^Otherwise/ })).toBeVisible()
 
   // The places in the canvas's order: the root's first, path 1's two, then `otherwise`'s one.
   await screen.getByRole('button', { name: 'Add a step here' }).nth(3).click()
@@ -343,7 +354,7 @@ test('an open test added to a Condition adds the unknown path', async () => {
   await panel.getByRole('button', { name: /Rule/ }).first().click()
   await panel.getByTestId('fields').last().click()
   await screen.getByRole('option', { name: 'Opened an email' }).click()
-  await expect.element(screen.getByRole('button', { name: 'Unknown' })).toBeVisible()
+  await expect.element(screen.getByRole('button', { name: /^Unknown/ })).toBeVisible()
   await save(screen)
 
   await expect.poll(saved).toEqual([
@@ -386,7 +397,7 @@ test('removing the last open test removes the unknown path, asking first while i
     .element(screen.getByText('Removing it also removes the step it holds.', { exact: false }))
     .toBeVisible()
   await screen.getByRole('button', { name: 'Remove', exact: true }).click()
-  await expect.element(screen.getByRole('button', { name: 'Unknown' })).not.toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: /^Unknown/ })).not.toBeInTheDocument()
   await save(screen)
 
   await expect.poll(saved).toEqual([
@@ -439,7 +450,7 @@ test('retyping the count of an open test keeps the unknown path as it is', async
   await nodeButton(screen, 'Branch').click()
   const times = screen.getByRole('region', { name: 'Branch' }).getByLabelText('Times')
   await times.fill('')
-  await expect.element(screen.getByRole('button', { name: 'Unknown' })).toBeVisible()
+  await expect.element(screen.getByRole('button', { name: /^Unknown/ })).toBeVisible()
   await times.fill('3')
   await save(screen)
 
@@ -469,4 +480,41 @@ test('an End offers no copy: a copy after it would never run', async () => {
   await expect
     .element(screen.getByRole('button', { name: 'Duplicate step' }))
     .not.toBeInTheDocument()
+})
+
+test('each path of a fork shows the Enrollments that took it and those that reached the goal', async () => {
+  const branch: AutomationStep = {
+    id: stepId(20),
+    type: 'branch',
+    paths: [{ id: stepId(21), condition: OPENED, steps: [] }],
+    otherwise: { id: stepId(22), steps: [] },
+    unknown: { id: stepId(23), steps: [] },
+  }
+  const split: AutomationStep = {
+    id: stepId(30),
+    type: 'split',
+    paths: [
+      { id: stepId(31), weight: 50, steps: [] },
+      { id: stepId(32), weight: 50, steps: [] },
+    ],
+  }
+  // The report orders its paths by the versions that had them, never as the canvas draws them; it
+  // leaves out a path no Enrollment took (otherwise here) and keeps one since removed.
+  const { screen } = await editing([branch, split], {
+    ...NO_AUTOMATION_REPORT,
+    paths: [
+      { stepId: split.id, pathId: stepId(32), enrollments: 40, goalReached: 4 },
+      { stepId: branch.id, pathId: stepId(23), enrollments: 3, goalReached: 0 },
+      { stepId: branch.id, pathId: stepId(29), enrollments: 9, goalReached: 9 },
+      { stepId: branch.id, pathId: stepId(21), enrollments: 120, goalReached: 30 },
+      { stepId: split.id, pathId: stepId(31), enrollments: 1500, goalReached: 210 },
+    ],
+  })
+
+  const head = (name: RegExp) => screen.getByRole('button', { name })
+  await expect.element(head(/^Path 1(?! ·)/)).toMatchTextContent('120 took it · 30 reached goal')
+  await expect.element(head(/^Otherwise/)).toMatchTextContent('0 took it · 0 reached goal')
+  await expect.element(head(/^Unknown/)).toMatchTextContent('3 took it · 0 reached goal')
+  await expect.element(head(/^Path 1 · 50%/)).toMatchTextContent('1,500 took it · 210 reached goal')
+  await expect.element(head(/^Path 2 · 50%/)).toMatchTextContent('40 took it · 4 reached goal')
 })

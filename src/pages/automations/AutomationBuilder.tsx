@@ -1,7 +1,7 @@
 import { Alert, Box, Button, Group, Modal, Paper, Stack, TextInput } from '@mantine/core'
 import { useForm } from '@mantine/form'
-import { useQueryClient } from '@tanstack/react-query'
-import { useCallback, useRef, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { DraftActions } from '../../components/DraftControls.tsx'
@@ -10,11 +10,15 @@ import { ButtonLink } from '../../components/RouterLink.tsx'
 import { ChangedNotice } from '../../editing/ChangedNotice.tsx'
 import { useEditorEffects } from '../../editing/useEditorEffects.ts'
 import { useEditorSession } from '../../editing/useEditorSession.ts'
-import { siteAutomationsGetQueryKey } from '../../generated/site/@tanstack/react-query.gen.ts'
+import {
+  siteAutomationReportsGetOptions,
+  siteAutomationsGetQueryKey,
+} from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
+import { canvasFigures } from './canvasFigures.ts'
 import { allSteps, forkPaths, holdsKept } from './definition.ts'
 import type { Flow } from './definition.ts'
 import { automationOutcomeTexts } from './draftActions.ts'
@@ -101,6 +105,13 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
   )
   const confirm = useConfirmation()
   const stepInfo = useStepInfo()
+  // The figures each node and path shows, over the Automation's whole history. They are no part of
+  // what is edited: until they are read, or when they cannot be, the canvas shows none.
+  const reportQuery = useQuery(
+    siteAutomationReportsGetOptions({ path: { workspaceId, automationId: automation.id } }),
+  )
+  const report = reportQuery.data
+  const figures = useMemo(() => (report === undefined ? null : canvasFigures(report)), [report])
 
   const outcomeTexts = automationOutcomeTexts(t)
   const effects = useEditorEffects<SiteAutomationResource, AutomationOperation>(
@@ -280,6 +291,7 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
           }}
           addPath={(id) => edit((current) => addPath(current, id).flow)}
           errorOf={errorOf}
+          figures={figures}
         />
         <Paper withBorder shadow="sm" p="xs" pos="absolute" top={16} left={16} right={16}>
           <Group justify="space-between" wrap="nowrap">

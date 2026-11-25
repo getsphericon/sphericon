@@ -3,6 +3,7 @@ import { beforeEach, expect, test } from 'vitest'
 import { page } from 'vitest/browser'
 
 import {
+  handleSiteAutomationReportsGet,
   handleSiteAutomationsGet,
   handleSiteAutomationsUpdate,
   handleSiteEnrollmentsList,
@@ -17,9 +18,10 @@ import type {
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import {
   emailIntegration,
+  NO_AUTOMATION_REPORT,
   stepId,
-  TIMESTAMPS,
   testId,
+  TIMESTAMPS,
   workspace as workspacePayload,
 } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -35,6 +37,8 @@ const EDIT_ROUTE = routeMount(automationsEditRoute, {
 beforeEach(async () => {
   // The editor is a desktop tool: its side panel sits beside the canvas, not over it.
   await page.viewport(1280, 900)
+  // The canvas shows the figures of the Automation's report: none here.
+  worker.use(handleSiteAutomationReportsGet({ body: NO_AUTOMATION_REPORT }))
 })
 
 type Screen = Awaited<ReturnType<typeof renderWithRouter>>['screen']

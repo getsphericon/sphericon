@@ -1,6 +1,7 @@
 import { graphlib, layout } from '@dagrejs/dagre'
 import type { Edge, Node } from '@xyflow/react'
 
+import { sendsMessage } from './definition.ts'
 import type { Flow, FlowPath, FlowStep, ForkStep } from './definition.ts'
 
 // The canvas is drawn from the flow on every change, laid out top to bottom by dagre: the Trigger,
@@ -11,11 +12,14 @@ import type { Flow, FlowPath, FlowStep, ForkStep } from './definition.ts'
 
 export const TRIGGER_NODE_ID = 'trigger'
 
-// Every node has a fixed size, so the layout needs no measuring.
+// Every node has a fixed size, so the layout needs no measuring. A send Step's node has a line more
+// than the others, for what it sent and skipped, and a path's head one under its label, for the
+// Enrollments that took it.
 const NODE_WIDTH = 280
 const NODE_HEIGHT = 64
-const PATH_WIDTH = 200
-const PATH_HEIGHT = 36
+const SEND_HEIGHT = 80
+const PATH_WIDTH = 240
+const PATH_HEIGHT = 52
 const INSERT_SIZE = 28
 // The room between two nodes along an edge, and between two paths side by side.
 const RANK_GAP = 24
@@ -30,7 +34,7 @@ export type PathRole =
   | { kind: 'otherwise' }
   | { kind: 'unknown' }
   | { kind: 'weight'; index: number; weight: number | '' }
-// The head of a fork's path: a click opens the fork; it is where the path's figures go.
+// The head of a fork's path: a click opens the fork; it shows the path's figures.
 export type PathNode = Node<{ fork: ForkStep; pathId: string; role: PathRole }, 'path'>
 // An insertion point puts a new Step at `at` of the path of the id: 0 is its start. `end` says it
 // is the path's last place, the one place an End may go.
@@ -117,7 +121,7 @@ function drawStep(step: FlowStep): Drawn {
     type: 'step',
     data: { step },
     width: NODE_WIDTH,
-    height: NODE_HEIGHT,
+    height: sendsMessage(step) ? SEND_HEIGHT : NODE_HEIGHT,
   }
   if (step.kind === 'end') {
     return { nodes: [node], edges: [], exits: [] }
