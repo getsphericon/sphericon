@@ -2,10 +2,11 @@
 // (ADR 0153, ADR 0180) are the Workspace's: a Segment, a Rule and an Automation refuse, each in its
 // own words, when they are saved, a filter that names one the Workspace does not have. An archived one is the
 // Workspace's: Archive keeps its row and the Events that name it, so a filter naming it still
-// counts them, and neither is ever deleted by its owner (ADR 0100). It is no Definition use: the
-// Removal check does not read it. It reads the two tables only to tell an id the Workspace has from
-// one it does not, which neither owner (broadcasts, automations, which imports rules) can answer for
-// the other, and it holds no state, so the modules that check a filter build it themselves.
+// counts them, and neither is ever deleted by its owner (ADR 0100), so it reads both tables with
+// QueryWithArchived (ADR 0102: a reader chooses the rows it takes). It is no Definition use: the
+// Removal check does not read it. It is a module of its own because rules, which checks a filter,
+// cannot import automations, which imports rules; it holds no state, so the modules that check a
+// filter build it themselves.
 package messagesenders
 
 import (

@@ -187,7 +187,7 @@ entries, `ee/domain/insights/erasures` the Erasures rows, `ee/domain/insights/us
 Workspace-owned table is the Workspace erase (`internal/usecase/workspacedeletion`, ADR 0110): it
 deletes the rows of a Workspace past its deletion window itself, through the scoped client, since no
 rule of an owner governs them any more; it only deletes, and only through the scoped wrappers. Any other package, a use case
-included, reads the table and changes it only through a function of its owner: the Workspace's
+included, may read the table directly, and changes it only through a function of its owner: the Workspace's
 standing (`workspaces.Module.SuspendIn`, `SetSendCapIn`, the abuse notice markers, the feed position of `workspaces.Feed`)
 for `suspension`, `ee/domain/insights/abusedetector` and `workspacefeed`; the User's survey marker and feed position
 (`users.Module.ClearSurveyDueIn`, `users.Feed.SetPosition`) for `signupsurveyresponses` and `usertombstones`; a Membership an
