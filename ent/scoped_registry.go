@@ -551,6 +551,12 @@ func ScopedEntities() []*ScopedEntity {
 				if src.SkipReason != nil {
 					b.SetSkipReason(*src.SkipReason)
 				}
+				if src.PathID != nil {
+					b.SetPathID(*src.PathID)
+				}
+				if !reflect.ValueOf(src.PathOutcomes).IsZero() {
+					b.SetPathOutcomes(src.PathOutcomes)
+				}
 				if src.DueAt != nil {
 					b.SetDueAt(*src.DueAt)
 				}

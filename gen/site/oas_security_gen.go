@@ -58,6 +58,7 @@ var operationRolesApiKeyAuth = map[string][]string{
 	SiteAutomationsPublishOperation:                     []string{},
 	SiteAutomationsRevertOperation:                      []string{},
 	SiteAutomationsUnarchiveOperation:                   []string{},
+	SiteAutomationsUnknownPathOperation:                 []string{},
 	SiteAutomationsUpdateOperation:                      []string{},
 	SiteBrandKitGetOperation:                            []string{},
 	SiteBrandKitRecreateStarterTemplatesOperation:       []string{},

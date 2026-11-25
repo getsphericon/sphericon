@@ -52,6 +52,7 @@ var operationAccess = map[siteapi.OperationName]access{
 	siteapi.SiteAutomationsPublishOperation:                     {workspace: true},
 	siteapi.SiteAutomationsRevertOperation:                      {workspace: true},
 	siteapi.SiteAutomationsUnarchiveOperation:                   {workspace: true},
+	siteapi.SiteAutomationsUnknownPathOperation:                 {workspace: true},
 	siteapi.SiteAutomationsUpdateOperation:                      {workspace: true},
 	siteapi.SiteBrandKitGetOperation:                            {workspace: true},
 	siteapi.SiteBrandKitRecreateStarterTemplatesOperation:       {workspace: true, permissions: []memberships.Permission{memberships.PermBrandKitManage}},

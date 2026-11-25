@@ -22,11 +22,8 @@ import 'mantine-datatable/styles.css'
 import '@react-email/editor/themes/default.css'
 // Structural layout only; the Mantine compat package handles the visuals.
 import 'react-querybuilder/dist/query-builder-layout.css'
-
-// The workflow builder SDK stylesheet is intentionally NOT imported here: it
-// ships unlayered global resets (body{overflow:hidden}, *{font-family}) and
-// rewrites global .mantine-* classes, which leak across the whole app. It is
-// injected only while the builder is mounted — see AutomationBuilder.tsx.
+// The Automation editor's canvas: its viewport, nodes and edges are placed by these rules.
+import '@xyflow/react/dist/style.css'
 
 const queryClient = new QueryClient()
 const router = createAppRouter(queryClient)

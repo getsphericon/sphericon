@@ -10,13 +10,13 @@ import {
   handleSiteAutomationsUpdate,
 } from '../../generated/site/msw.gen.ts'
 import { siteAutomationsGet } from '../../generated/site/sdk.gen.ts'
-import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
+import type { AutomationStep, SiteAutomationResource } from '../../generated/site/types.gen.ts'
 import { zUpdateAutomationInput } from '../../generated/site/zod.gen.ts'
 import { stepId, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { worker } from '../../test/worker.ts'
-import { stepsToGraph } from './definition.ts'
-import type { AutomationGraph } from './definition.ts'
+import { flowOf } from './definition.ts'
+import type { Flow } from './definition.ts'
 import { automationSubmission, editorSession } from './editorSession.ts'
 import { automationSnapshot } from './leaveSnapshot.ts'
 
@@ -43,12 +43,12 @@ const RESOURCE: SiteAutomationResource = {
   createdAt: '2026-01-01T00:00:00Z',
   updatedAt: '2026-01-01T00:00:00Z',
 }
-const GRAPH = stepsToGraph(DRAFT, DRAFT.steps, {})
+const FLOW = flowOf(DRAFT)
 const sessions = new Set<ActorRefFrom<typeof editorSession>>()
 
 function startSession() {
   const actor = createActor(editorSession, {
-    input: { path: PATH, resource: RESOURCE, graph: GRAPH, labels: {} },
+    input: { path: PATH, resource: RESOURCE },
   }).start()
   sessions.add(actor)
   return actor
@@ -62,20 +62,23 @@ function stopSessions() {
 }
 afterEach(stopSessions)
 
-function capture(name: string, graph: AutomationGraph = GRAPH) {
-  const submission = automationSubmission(name, graph)
+function capture(name: string, flow: Flow = FLOW) {
+  const submission = automationSubmission(name, flow)
   if (!submission) {
     throw new Error('Fixture has no Trigger')
   }
   return submission
 }
 
-function httpNode(graph: AutomationGraph) {
-  const node = graph.nodes[1]
-  if (!node) {
-    throw new Error('Fixture has no HTTP node')
-  }
-  return node
+// The flow with the HTTP step's draft changed, as its form writes it.
+function withHttp(
+  flow: Flow,
+  change: Partial<{ url: string; secret: string; body: string }>,
+): Flow {
+  const steps = flow.path.steps.map((step) =>
+    step.kind === 'http' ? { ...step, draft: { ...step.draft, ...change } } : step,
+  )
+  return { ...flow, path: { ...flow.path, steps } }
 }
 
 // The API's write-only HTTP fields can be omitted only when the Step's id names a stored step, whose
@@ -166,7 +169,7 @@ test('a refused Save retains its previous receipt and allows another attempt', a
 })
 
 test.each([
-  { type: 'PUBLISH' as const, current: automationSnapshot(RESOURCE.name, GRAPH) },
+  { type: 'PUBLISH' as const, current: automationSnapshot(RESOURCE.name, FLOW) },
   { type: 'REVERT' as const },
 ])('a refused $type preserves the editor content and receipt', async (event) => {
   worker.use(
@@ -195,32 +198,28 @@ test('a refresh updates lifecycle metadata without replacing content or its rece
 })
 
 test('two Saves keep an HTTP step by its id and its stored secret while preserving newer content', async () => {
-  // A node dropped on the canvas: its id, which the SDK minted, is the Step's from the first Save.
-  const graph = stepsToGraph(
-    DRAFT,
-    {
+  // A Step inserted on the canvas: its id, which the client minted, is the Step's from the first
+  // Save.
+  const inserted = flowOf({
+    ...DRAFT,
+    steps: {
       id: stepId(1),
       steps: [{ id: stepId(7), type: 'http', body: '{}', headers: [], hasSecret: false }],
     },
-    {},
-  )
-  const node = httpNode(graph)
-  node.data.properties.url = 'https://example.com/hook'
-  node.data.properties.secret = `whsec_${btoa('submitted')}`
+  })
+  const submitted = withHttp(inserted, {
+    url: 'https://example.com/hook',
+    secret: `whsec_${btoa('submitted')}`,
+  })
   const server = httpServer()
   const actor = startSession()
-  actor.send({ type: 'SAVE', submission: capture('HTTP flow', graph) })
+  actor.send({ type: 'SAVE', submission: capture('HTTP flow', submitted) })
   await server.received.promise
-  node.data.properties.body = '{"newer":true}'
+  const newer = withHttp(submitted, { body: '{"newer":true}' })
   server.release.resolve(undefined)
   const first = await waitFor(actor, (state) => state.matches('idle'))
-  const current = graph
-  const currentHttp = httpNode(current)
-  expect(currentHttp.data.properties.body).toBe('{"newer":true}')
-  expect(currentHttp.id).toBe(stepId(7))
-  expect(automationSnapshot('HTTP flow', current)).not.toBe(first.context.saved)
-  currentHttp.data.properties.url = ''
-  currentHttp.data.properties.secret = ''
+  expect(automationSnapshot('HTTP flow', newer)).not.toBe(first.context.saved)
+  const current = withHttp(newer, { url: '', secret: '' })
   actor.send({ type: 'SAVE', submission: capture('HTTP flow', current) })
   const second = await waitFor(actor, (state) => state.matches('idle'))
   const { data: persisted } = await siteAutomationsGet({ path: PATH, throwOnError: true })
@@ -229,4 +228,60 @@ test('two Saves keep an HTTP step by its id and its stored secret while preservi
   expect(persisted.draft?.steps.steps).toEqual([
     { type: 'http', id: stepId(7), body: '{"newer":true}', headers: [], hasSecret: true },
   ])
+})
+
+// A version holding a Step of a kind newer than the editor is never saved, whoever asks: the
+// changed notice's "Save mine over it" captures through the same adapter.
+test('a flow holding a kept Step has no submission', () => {
+  // A kind the contract may gain, read as the server would send it.
+  const newer: AutomationStep = JSON.parse(
+    JSON.stringify({ id: stepId(9), type: 'wait_for_event' }),
+  )
+  const kept = flowOf({ ...DRAFT, steps: { id: stepId(1), steps: [newer] } })
+
+  expect(automationSubmission('Kept', kept)).toBeNull()
+})
+
+// A Branch path whose Condition is still being typed is never sent: the Save stops on it first.
+test('a flow holding a Branch path without a complete Condition has no submission', () => {
+  const branching = flowOf({
+    ...DRAFT,
+    steps: {
+      id: stepId(1),
+      steps: [
+        {
+          id: stepId(9),
+          type: 'branch',
+          paths: [
+            {
+              id: stepId(10),
+              condition: { kind: 'group', combinator: 'and', entries: [] },
+              steps: [],
+            },
+          ],
+          otherwise: { id: stepId(11), steps: [] },
+        },
+      ],
+    },
+  })
+
+  expect(automationSubmission('Branching', branching)).toBeNull()
+})
+
+// "Load the saved version" of the changed notice (ADR 0119) opens the version as stored now.
+test('a reload opens the version the resource holds now', () => {
+  const actor = startSession()
+  const newer: SiteAutomationResource = {
+    ...RESOURCE,
+    revision: 2,
+    draft: {
+      ...DRAFT,
+      steps: { id: stepId(1), steps: [{ id: stepId(5), type: 'wait', seconds: 9 }] },
+    },
+  }
+
+  actor.send({ type: 'RELOAD', resource: newer })
+
+  const { flow } = actor.getSnapshot().context.content.value
+  expect(flow.path.steps).toEqual([{ id: stepId(5), kind: 'wait', draft: { seconds: 9 } }])
 })

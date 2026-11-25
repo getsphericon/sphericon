@@ -75,6 +75,23 @@ model SiteAutomationsListFilter {
   @query direction?: SortDirection;
 }
 
+/** The Conditions of a Branch being edited, whose need of an unknown path is asked */
+model BranchUnknownPathInput {
+  /** The Conditions of the Branch's listed paths, in order: one to nine, as a Branch lists */
+  @minItems(1)
+  @maxItems(9)
+  conditions: BranchConditionInput[];
+}
+
+/** Whether a Branch needs its unknown path (ADR 0124) */
+model BranchUnknownPathResult {
+  /**
+   * True when one of its Conditions can be unknown for a Contact (it counts an open or a click,
+   * ADR 0123): Publish then refuses the Branch without an unknown path, and with one when false
+   */
+  needed: boolean;
+}
+
 /**
  * An automation is archived, never deleted (ADR 0100): it has no delete. An archived automation is
  * read-only until it is unarchived: an edit, publish, revert or deactivate of it is a 409.
@@ -121,6 +138,18 @@ interface SiteAutomations
   deactivate(...ResourceParameters<SiteAutomationResource>):
     | SiteAutomationResource
     | Problem;
+
+  /**
+   * Whether a Branch with these Conditions needs an unknown path, as Publish decides it: the editor
+   * asks it of the version being edited
+   */
+  @collectionAction(SiteAutomationResource, "unknown-path")
+  @autoRoute
+  @requiresPermissions(#[])
+  unknownPath(
+    ...ResourceCollectionParameters<SiteAutomationResource>,
+    @body body: BranchUnknownPathInput,
+  ): BranchUnknownPathResult | Problem;
 
   /** Render an HTTP step's body for a Contact and validate it, calling nothing */
   @collectionAction(SiteAutomationResource, "dry-run-http-step")

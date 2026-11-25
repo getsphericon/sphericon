@@ -38,6 +38,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
@@ -115,10 +116,19 @@ func refuse(st *automationstep.Step, why string) error {
 	return ErrInvalidStep.With(fmt.Sprintf("step %s (%s): %s", st.ID, st.Kind(), why))
 }
 
-// validate checks each step on its own; the steps carry their ids (identify). linkLength is the
-// length of the Workspace's short tracked links, what an SMS step's links count as.
+// MaxStepsPerVersion bounds a version's tree (ADR 0122, ADR 0124): its Steps over all paths. The
+// paths of one fork are the contract's (bounds.BranchPaths, bounds.SplitPaths); nesting has no bound
+// of its own.
+const MaxStepsPerVersion = 100
+
+// validate checks each step on its own, at any depth of the tree, and the tree's bounds; the steps
+// carry their ids (identify). linkLength is the length of the Workspace's short tracked links, what
+// an SMS step's links count as.
 func validate(steps automationstep.Path, linkLength int) error {
-	for _, st := range automationstep.All(steps) {
+	for pos, st := range automationstep.All(steps) {
+		if pos >= MaxStepsPerVersion {
+			return refuse(st, fmt.Sprintf("a version has at most %d steps over all its paths", MaxStepsPerVersion))
+		}
 		switch s := st.Payload.(type) {
 		case automationstep.Email:
 			if err := emailrender.Lint(s.Subject, s.Body, nil).Error; err != nil {
@@ -160,8 +170,61 @@ func validate(steps automationstep.Path, linkLength int) error {
 				return refuse(st, "a tag step needs a tag name")
 			}
 		case automationstep.End:
+		case automationstep.Branch:
+			if err := validateBranch(st, s); err != nil {
+				return err
+			}
+		case automationstep.Split:
+			if err := validateSplit(st, s); err != nil {
+				return err
+			}
 		default:
 			return refuse(st, "the step has no known kind")
+		}
+	}
+	return nil
+}
+
+// validateBranch checks the shape of a Branch (ADR 0124): the contract's count of listed paths
+// besides otherwise (bounds.BranchPaths), and a Condition that tests something on each path.
+// Whether each Condition names what the Workspace holds is checkBranches'.
+func validateBranch(st *automationstep.Step, b automationstep.Branch) error {
+	if n := len(b.Paths); n < bounds.BranchPathsMinItems || n > bounds.BranchPathsMaxItems {
+		return refuse(st, fmt.Sprintf("a branch has %d to %d paths besides otherwise, this one has %d",
+			bounds.BranchPathsMinItems, bounds.BranchPathsMaxItems, n))
+	}
+	for i, p := range b.Paths {
+		if !p.Condition.Tests() {
+			return refuse(st, fmt.Sprintf("path %d has no condition", i+1))
+		}
+	}
+	return nil
+}
+
+// NeedsUnknownPath reports whether a Branch whose listed paths hold these Conditions needs an
+// unknown path (ADR 0124): it does when one of them can be unknown for a Contact
+// (condition.CanBeUnknown: an engagement count, ADR 0123). Publish arms a Branch by it, and the
+// editor asks it of the Conditions being edited.
+func NeedsUnknownPath(conditions []conditiontree.Branch) bool {
+	return slices.ContainsFunc(conditions, func(c conditiontree.Branch) bool { return condition.CanBeUnknown(c.Group) })
+}
+
+// checkUnknownPaths refuses, naming it, a Branch of the tree whose Conditions can be unknown for a
+// Contact (condition.CanBeUnknown: an engagement count, ADR 0123) and that has no unknown path, and
+// a Branch whose Conditions cannot be unknown and that has one (ADR 0124). A save keeps either, so
+// the author can build the Branch up; Publish arms it.
+func checkUnknownPaths(steps automationstep.Path) error {
+	for _, st := range automationstep.All(steps) {
+		b, ok := st.Payload.(automationstep.Branch)
+		if !ok {
+			continue
+		}
+		needs := NeedsUnknownPath(b.Conditions())
+		switch {
+		case needs && b.Unknown == nil:
+			return refuse(st, "a branch whose conditions count an open or a click needs an unknown path, taken when one is unknown for the contact")
+		case !needs && b.Unknown != nil:
+			return refuse(st, "a branch whose conditions count no open or click is never unknown, so it takes no unknown path")
 		}
 	}
 	return nil
@@ -239,7 +302,10 @@ type Module struct {
 	// tags and people read the Tag and Custom field catalogues an Event filter names (checkNamed).
 	tags   *tags.Module
 	people *contacts.Module
-	// senders answers for the Broadcasts and Automations an Event filter names (checkNamed).
+	// conditions checks a Branch path's Condition (checkBranches).
+	conditions *condition.Module
+	// senders answers for the Broadcasts and Automations an Event filter or a Branch path's event
+	// test names (checkNamed, checkBranches).
 	senders *messagesenders.Module
 	life    *versioneddefinition.Lifecycle[ent.Automation, ent.AutomationVersion, edit, definition]
 	// now is the Instance clock a report's period ends by, an activation is dated by and an
@@ -257,7 +323,7 @@ type Module struct {
 // contacts module, whose Custom field catalogue an Event filter names; now is the Instance clock.
 func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer, out *outboundmessages.Module, clicks *linkclick.Module, enrollers *rules.Module, people *contacts.Module, now func() time.Time) *Module {
 	m := &Module{cipher: cipher, bus: bus, renderer: renderer, out: out, clicks: clicks, rules: enrollers, people: people, now: now,
-		revenues: orders.NewRevenues(), tags: tags.New(), senders: messagesenders.New()}
+		revenues: orders.NewRevenues(), tags: tags.New(), conditions: condition.New(now), senders: messagesenders.New()}
 	m.life = versioneddefinition.New(bus, versioned{m: m}, versioneddefinition.Errors{
 		NotFound:         ErrNotFound,
 		Archived:         ErrArchived,
@@ -299,6 +365,62 @@ func (m *Module) build(ctx context.Context, written automationstep.Path) (automa
 		s.Body, s.EditorVersion = c.Authored.Body, c.Authored.EditorVersion
 		return automationstep.Step{ID: st.ID, Payload: s}, nil
 	})
+}
+
+// validateSplit checks the shape of a Split (ADR 0124): the contract's count of paths
+// (bounds.SplitPaths) and least weight (bounds.SplitWeight), and the weights summing to 100.
+func validateSplit(st *automationstep.Step, sp automationstep.Split) error {
+	if n := len(sp.Paths); n < bounds.SplitPathsMinItems || n > bounds.SplitPathsMaxItems {
+		return refuse(st, fmt.Sprintf("a split has %d to %d paths, this one has %d", bounds.SplitPathsMinItems, bounds.SplitPathsMaxItems, n))
+	}
+	sum := 0
+	for i, p := range sp.Paths {
+		if p.Weight < bounds.SplitWeightMin {
+			return refuse(st, fmt.Sprintf("path %d: a weight is at least %d, this one is %d", i+1, bounds.SplitWeightMin, p.Weight))
+		}
+		sum += p.Weight
+	}
+	if sum != splitWhole {
+		return refuse(st, fmt.Sprintf("the weights of a split sum to %d, these sum to %d", splitWhole, sum))
+	}
+	return nil
+}
+
+// splitWhole is what a Split's weights sum to: each is a percentage of the Contacts that reach it.
+const splitWhole = 100
+
+// checkBranches checks the Condition of each path of each Branch of the tree as a Rule's is
+// checked (condition.Module.CheckBranch), bounded as a Rule's: it reads as a Branch path's tree,
+// and names only the Custom fields the Workspace holds, by tests their types take. A refusal names
+// the Branch and the path. A Condition whose event test's filter names a Broadcast or an Automation
+// the Workspace does not have (messagesenders) is ErrUnknownSender (ADR 0153).
+func (m *Module) checkBranches(ctx context.Context, s *ent.Scoped, steps automationstep.Path) error {
+	for _, st := range automationstep.All(steps) {
+		b, ok := st.Payload.(automationstep.Branch)
+		if !ok {
+			continue
+		}
+		for i, p := range b.Paths {
+			if size := p.Condition.Size(); size > rules.MaxConditionNodes {
+				return refuse(st, fmt.Sprintf("path %d: a condition has at most %d groups and tests, this one has %d", i+1, rules.MaxConditionNodes, size))
+			}
+			err := m.conditions.CheckBranch(ctx, s, p.Condition)
+			if errors.Is(err, condition.ErrStorage) {
+				return err
+			}
+			if err != nil {
+				return refuse(st, fmt.Sprintf("path %d: %s", i+1, err.Error()))
+			}
+			unknown, err := m.senders.Unknown(ctx, s, condition.NamedSenders(p.Condition.Group))
+			if err != nil {
+				return err
+			}
+			if unknown != nil {
+				return ErrUnknownSender.With(fmt.Sprintf("step %s (%s): path %d: %s", st.ID, st.Kind(), i+1, unknown.Missing()))
+			}
+		}
+	}
+	return nil
 }
 
 // engagementTriggers are the `email.` Events an Automation may start from: what a recipient does,
@@ -671,6 +793,9 @@ func (v versioned) mergeSteps(ctx context.Context, ts *ent.Scoped, steps, stored
 	if err := checkEnds(steps); err != nil {
 		return automationstep.Path{}, err
 	}
+	if err := v.m.checkBranches(ctx, ts, steps); err != nil {
+		return automationstep.Path{}, err
+	}
 	// Each Integration the steps name is checked once, however many steps send through it.
 	var named []int64
 	for _, st := range automationstep.All(steps) {
@@ -775,9 +900,13 @@ func (versioned) Write(ctx context.Context, l *ent.WorkspaceLocked, id int64, nu
 // an edit may name such an Integration, only Publish is refused, and a route that stops sending
 // after it holds the sends at that step instead. A Telegram step whose text, as written, is over
 // Telegram's limit is refused too, and so is an email step while the Workspace has no postal
-// address for its footer (outboundmessages.ErrPostalAddressRequired, ADR 0156).
+// address for its footer (outboundmessages.ErrPostalAddressRequired, ADR 0156). A Branch needs an
+// unknown path exactly when its Conditions can be unknown (checkUnknownPaths).
 func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent.AutomationVersion) error {
 	if err := validateEvents(definitionOf(version)); err != nil {
+		return err
+	}
+	if err := checkUnknownPaths(version.Steps); err != nil {
 		return err
 	}
 	sends := SendSteps(version)

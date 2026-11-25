@@ -144,3 +144,27 @@ func TestAKeyedSeriesSendsOneMessagePerOrderAndACancelEndsOnlyItsOwn(t *testing.
 	}, EmailTimeout, 100*time.Millisecond, "the cancel of A-1 never ended its series alone")
 	assert.Equal(t, want, w.EnrollmentsByKey(automationID))
 }
+
+// A Branch on a property of the Event that began the Enrollment (ADR 0124, ADR 0180) sends the
+// matching path's message to the Contact whose Event matches, the otherwise path's to the other,
+// and both paths rejoin: each Contact then receives the email after the Branch.
+func TestABranchOnAnEventPropertySendsEachPathsMessageAndThenTheStepAfterIt(t *testing.T) {
+	t.Parallel()
+	w := env.NewWorkspace(t).Ready()
+	gold, silver := w.NewRecipient(), w.NewRecipient()
+	w.ImportContacts(gold, silver)
+	w.PublishBranchAutomation(BranchAutomation{
+		TriggerEvent: "e2e.ordered", Key: "plan", Value: "gold",
+		PathSubject: "Thanks for going gold", OtherwiseSubject: "Have you seen gold?", AfterSubject: "See you soon",
+	})
+
+	w.RecordEventWith(gold, "e2e.ordered", map[string]string{"plan": "gold"})
+	w.RecordEventWith(silver, "e2e.ordered", map[string]string{"plan": "silver"})
+
+	w.Inbox.Wait(Match{To: gold, Subject: "Thanks for going gold"})
+	w.Inbox.Wait(Match{To: silver, Subject: "Have you seen gold?"})
+	w.Inbox.Wait(Match{To: gold, Subject: "See you soon"})
+	w.Inbox.Wait(Match{To: silver, Subject: "See you soon"})
+	w.Inbox.RequireNone(Match{To: gold, Subject: "Have you seen gold?"})
+	w.Inbox.RequireNone(Match{To: silver, Subject: "Thanks for going gold"})
+}

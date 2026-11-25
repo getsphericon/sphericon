@@ -5,6 +5,8 @@ package automationstep
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,6 +17,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 )
@@ -32,6 +35,8 @@ const (
 	KindRemoveTag Kind = "remove_tag"
 	KindHTTP      Kind = "http"
 	KindEnd       Kind = "end"
+	KindBranch    Kind = "branch"
+	KindSplit     Kind = "split"
 )
 
 // Channel is the Channel a send step of the kind sends on (ADR 0081: the step's kind fixes its
@@ -82,7 +87,7 @@ type Step struct {
 func New(p Payload) Step { return Step{Payload: p} }
 
 // Payload is what a Step does, one type per kind: Email, Telegram, SMS, Wait, ApplyTag, RemoveTag,
-// HTTP and End.
+// HTTP, End, Branch and Split.
 type Payload interface {
 	Kind() Kind
 	// Stored is the payload as a version stores it: tag names, a Telegram step's image and
@@ -196,6 +201,125 @@ type HTTP struct {
 // by design, which is no exit. It holds nothing but its id, and it is the last Step of its path.
 type End struct{}
 
+// Branch sends an Enrollment down the first of its Paths whose Condition holds on the Contact's
+// live data when it reaches the Branch, down Otherwise when none does, and down Unknown when the
+// first Condition that is not false is unknown (ADR 0124). Its paths rejoin at the Step after it.
+type Branch struct {
+	Paths     []BranchPath `json:"paths"`
+	Otherwise Path         `json:"otherwise"`
+	Unknown   *Path        `json:"unknown,omitempty"`
+}
+
+// BranchPath is a listed path of a Branch: its id, the Condition that sends an Enrollment down it
+// and its Steps.
+type BranchPath struct {
+	ID        ID                   `json:"id"`
+	Condition conditiontree.Branch `json:"condition"`
+	Steps     []Step               `json:"steps"`
+}
+
+// Conditions are the Conditions of the listed paths, in the order they are tested.
+func (b Branch) Conditions() []conditiontree.Branch {
+	out := make([]conditiontree.Branch, len(b.Paths))
+	for i, p := range b.Paths {
+		out[i] = p.Condition
+	}
+	return out
+}
+
+// Fork is a Step whose paths rejoin after it (ADR 0122, ADR 0124): the walker reaches the Steps of
+// its paths through it, and a new fork kind implements it.
+type Fork interface {
+	Payload
+	// Forks are the fork's paths, in the order the walker visits them: a Branch's listed paths,
+	// then otherwise, then unknown when it has one.
+	Forks() []Path
+	// WithForks is the fork with its paths replaced by paths, given in the order Forks gives them;
+	// what else it holds (a path's Condition) is kept.
+	WithForks(paths []Path) Fork
+}
+
+func (b Branch) Forks() []Path {
+	out := make([]Path, 0, len(b.Paths)+2)
+	for _, p := range b.Paths {
+		out = append(out, Path{ID: p.ID, Steps: p.Steps})
+	}
+	out = append(out, b.Otherwise)
+	if b.Unknown != nil {
+		out = append(out, *b.Unknown)
+	}
+	return out
+}
+
+func (b Branch) WithForks(paths []Path) Fork {
+	listed := make([]BranchPath, len(b.Paths))
+	for i, p := range b.Paths {
+		listed[i] = BranchPath{ID: paths[i].ID, Condition: p.Condition, Steps: paths[i].Steps}
+	}
+	out := Branch{Paths: listed, Otherwise: paths[len(listed)]}
+	if b.Unknown != nil {
+		unknown := paths[len(listed)+1]
+		out.Unknown = &unknown
+	}
+	return out
+}
+
+// Split sends an Enrollment down one of its Paths by weight (ADR 0124): a draw of its Contact, its
+// Step and its ordinal (Draw) lands on a path by the running total of the weights (At). An empty
+// path is a holdout, sent nothing. Its paths rejoin at the Step after it.
+type Split struct {
+	Paths []SplitPath `json:"paths"`
+}
+
+// SplitPath is a path of a Split: its id, its weight, a whole share of 100, and its Steps.
+type SplitPath struct {
+	ID     ID     `json:"id"`
+	Weight int    `json:"weight"`
+	Steps  []Step `json:"steps"`
+}
+
+func (s Split) Forks() []Path {
+	out := make([]Path, len(s.Paths))
+	for i, p := range s.Paths {
+		out[i] = Path{ID: p.ID, Steps: p.Steps}
+	}
+	return out
+}
+
+func (s Split) WithForks(paths []Path) Fork {
+	out := make([]SplitPath, len(s.Paths))
+	for i, p := range s.Paths {
+		out[i] = SplitPath{ID: paths[i].ID, Weight: p.Weight, Steps: paths[i].Steps}
+	}
+	return Split{Paths: out}
+}
+
+// At is the path a draw of 0 to 99 lands on: the first whose running total of the weights exceeds
+// it. The save holds the weights to whole numbers of at least 1 summing to 100, so every draw lands
+// on a path; a draw past the total lands on the last path.
+func (s Split) At(draw int) ID {
+	total := 0
+	for _, p := range s.Paths {
+		total += p.Weight
+		if draw < total {
+			return p.ID
+		}
+	}
+	if len(s.Paths) == 0 {
+		return ""
+	}
+	return s.Paths[len(s.Paths)-1].ID
+}
+
+// Draw is the draw, 0 to 99, of the Contact at the Split's Step for the Enrollment of the ordinal
+// (ADR 0124, ADR 0127): the first eight bytes of the SHA-256 of "<contact>:<step>:<ordinal>",
+// big-endian, mod 100. It holds no random state, so the same Enrollment always draws the same, and
+// a new Enrollment of the Contact draws again.
+func Draw(contactID int64, step ID, ordinal int) int {
+	sum := sha256.Sum256(fmt.Appendf(nil, "%d:%s:%d", contactID, step, ordinal))
+	return int(binary.BigEndian.Uint64(sum[:8]) % 100)
+}
+
 func (p Email) Integration() *int64    { return p.IntegrationID }
 func (p Telegram) Integration() *int64 { return p.IntegrationID }
 func (s SMS) Integration() *int64      { return s.IntegrationID }
@@ -227,6 +351,12 @@ func (p HTTP) Stored() Payload {
 }
 func (p End) Stored() Payload { return p }
 
+// Stored is the Branch as it is: the walker stores the Steps of its paths (Rewrite).
+func (b Branch) Stored() Payload { return b }
+
+// Stored is the Split as it is: the walker stores the Steps of its paths (Rewrite).
+func (s Split) Stored() Payload { return s }
+
 func (Email) Kind() Kind     { return KindEmail }
 func (Telegram) Kind() Kind  { return KindTelegram }
 func (SMS) Kind() Kind       { return KindSMS }
@@ -235,6 +365,8 @@ func (ApplyTag) Kind() Kind  { return KindApplyTag }
 func (RemoveTag) Kind() Kind { return KindRemoveTag }
 func (HTTP) Kind() Kind      { return KindHTTP }
 func (End) Kind() Kind       { return KindEnd }
+func (Branch) Kind() Kind    { return KindBranch }
+func (Split) Kind() Kind     { return KindSplit }
 
 // decoders read the fields of each kind's payload, refusing any field the kind does not hold.
 var decoders = map[Kind]func([]byte) (Payload, error){
@@ -246,6 +378,8 @@ var decoders = map[Kind]func([]byte) (Payload, error){
 	KindRemoveTag: decodeAs[RemoveTag],
 	KindHTTP:      decodeAs[HTTP],
 	KindEnd:       decodeAs[End],
+	KindBranch:    decodeAs[Branch],
+	KindSplit:     decodeAs[Split],
 }
 
 func decodeAs[P Payload](b []byte) (Payload, error) {
@@ -347,8 +481,8 @@ func (e *BadIDError) Unwrap() error { return ErrBadID }
 // NewID mints the id of a Step or a path.
 func NewID() ID { return ID(uuid.NewString()) }
 
-// Identify gives the path, and each of its Steps, that has no id one from mint, and keeps an id
-// it holds. An id that is not a UUID in its lowercase text form, or that two of them share, is a
+// Identify gives the root path, each Step of the tree and each path of its forks that has no id
+// one from mint, and keeps an id it holds. An id that is not a UUID in its lowercase text form, or that two of them share, is a
 // *BadIDError naming the Step by its id and kind, or the path. The path given is left as it was.
 func Identify(p Path, mint func() ID) (Path, error) {
 	seen := map[ID]bool{}
@@ -378,7 +512,21 @@ func Identify(p Path, mint func() ID) (Path, error) {
 	}
 	out, err := Map(p, func(_ int, st *Step) (Step, error) {
 		id, err := claim(st.ID, st)
-		return Step{ID: id, Payload: st.Payload}, err
+		if err != nil {
+			return Step{}, err
+		}
+		f, ok := st.Payload.(Fork)
+		if !ok {
+			return Step{ID: id, Payload: st.Payload}, nil
+		}
+		// A fork's paths are claimed after the fork and before their Steps, which Map reaches next.
+		paths := f.Forks()
+		for i := range paths {
+			if paths[i].ID, err = claim(paths[i].ID, nil); err != nil {
+				return Step{}, err
+			}
+		}
+		return Step{ID: id, Payload: f.WithForks(paths)}, nil
 	})
 	if err != nil {
 		return Path{}, err

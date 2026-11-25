@@ -416,6 +416,28 @@ export type AutomationPath = {
 };
 
 /**
+ * The enrollments that took one path of a fork, over every version that had it
+ */
+export type AutomationPathFigures = {
+  /**
+   * The fork's Step id, the same in every version
+   */
+  stepId: StepId;
+  /**
+   * The path's id, the same in every version
+   */
+  pathId: StepId;
+  /**
+   * Enrollments that took the path
+   */
+  enrollments: number;
+  /**
+   * Enrollments among them that ended because their goal event was recorded
+   */
+  goalReached: number;
+};
+
+/**
  * A path of Steps, as a request writes it
  */
 export type AutomationPathInput = {
@@ -537,6 +559,14 @@ export type AutomationReport = {
    * its Step order
    */
   versionSteps: Array<AutomationVersionStepFigures>;
+  /**
+   * Each path of a Branch (its unknown path included) and of a Split by its fork's Step id and
+   * its own id: the enrollments that took it and how many of them reached the goal, over the
+   * automation's whole history, each summed over every version that had the path. Sorted by the
+   * newest of those versions, then by the fork's place there and the path's place in the fork:
+   * one entry per path an enrollment took, so a path none took has none
+   */
+  paths: Array<AutomationPathFigures>;
 };
 
 /**
@@ -739,7 +769,11 @@ export type AutomationStep = ({
   type: 'http';
 } & HttpStep) | ({
   type: 'end';
-} & EndStep);
+} & EndStep) | ({
+  type: 'branch';
+} & BranchStep) | ({
+  type: 'split';
+} & SplitStep);
 
 /**
  * The messages of one send Step, over every version that had it
@@ -779,7 +813,11 @@ export type AutomationStepInput = ({
   type: 'http';
 } & HttpStepInput) | ({
   type: 'end';
-} & EndStepInput);
+} & EndStepInput) | ({
+  type: 'branch';
+} & BranchStepInput) | ({
+  type: 'split';
+} & SplitStepInput);
 
 /**
  * What enrolls a Contact in an automation, by `kind`: an Event matcher
@@ -880,6 +918,240 @@ export type BirthdayTestInput = ({
 } & MomentTestInput) | ({
   kind: 'withinLast';
 } & WithinLastTestInput);
+
+/**
+ * A Branch path's Condition: the tree of tests the Contact, on its live data when the Enrollment
+ * reaches the Branch, and the Event the Enrollment began with match
+ */
+export type BranchCondition = {
+  kind: 'group';
+  /**
+   * How the entries combine
+   */
+  combinator: ConditionCombinator;
+  /**
+   * Negate the whole group
+   */
+  not?: boolean;
+  /**
+   * The group's tests and nested groups
+   */
+  entries: Array<BranchConditionNode>;
+};
+
+/**
+ * A Branch path's Condition: the tree of tests the Contact, on its live data when the Enrollment
+ * reaches the Branch, and the Event the Enrollment began with match
+ */
+export type BranchConditionInput = {
+  kind: 'group';
+  /**
+   * How the entries combine
+   */
+  combinator: ConditionCombinator;
+  /**
+   * Negate the whole group
+   */
+  not?: boolean;
+  /**
+   * The group's tests and nested groups
+   */
+  entries: Array<BranchConditionNodeInput>;
+};
+
+/**
+ * An entry of a Branch path's Condition, by `kind`: a Rule's, the property test reading the
+ * Event the Enrollment began with
+ */
+export type BranchConditionNode = ({
+  kind: 'group';
+} & BranchCondition) | ({
+  kind: 'attribute';
+} & AttributeLeaf) | ({
+  kind: 'birthday';
+} & BirthdayLeaf) | ({
+  kind: 'tag';
+} & TagLeaf) | ({
+  kind: 'telegram';
+} & TelegramLeaf) | ({
+  kind: 'sms';
+} & SmsLeaf) | ({
+  kind: 'engagementTracking';
+} & EngagementTrackingLeaf) | ({
+  kind: 'customField';
+} & CustomFieldLeaf) | ({
+  kind: 'event';
+} & EventLeaf) | ({
+  kind: 'property';
+} & BranchPropertyLeaf);
+
+/**
+ * An entry of a Branch path's Condition, by `kind`: a Rule's, the property test reading the
+ * Event the Enrollment began with
+ */
+export type BranchConditionNodeInput = ({
+  kind: 'group';
+} & BranchConditionInput) | ({
+  kind: 'attribute';
+} & AttributeLeafInput) | ({
+  kind: 'birthday';
+} & BirthdayLeafInput) | ({
+  kind: 'tag';
+} & TagLeafInput) | ({
+  kind: 'telegram';
+} & TelegramLeafInput) | ({
+  kind: 'sms';
+} & SmsLeafInput) | ({
+  kind: 'engagementTracking';
+} & EngagementTrackingLeafInput) | ({
+  kind: 'customField';
+} & CustomFieldLeafInput) | ({
+  kind: 'event';
+} & EventLeafInput) | ({
+  kind: 'property';
+} & BranchPropertyLeafInput);
+
+/**
+ * A path of a Branch: the Condition that sends an Enrollment down it and its Steps
+ */
+export type BranchPath = {
+  /**
+   * The path's id
+   */
+  id: StepId;
+  /**
+   * The Condition an Enrollment takes the path on, when no path above it is taken
+   */
+  condition: BranchCondition;
+  /**
+   * The path's Steps, in order; none goes on to the Step after the Branch
+   */
+  steps: Array<PathStep>;
+};
+
+/**
+ * A path of a Branch, as a request writes it
+ */
+export type BranchPathInput = {
+  /**
+   * The path's id; omitted, the path is given one
+   */
+  id?: StepId;
+  /**
+   * The Condition an Enrollment takes the path on, when no path above it is taken. A path
+   * without a test refuses the save, naming the Branch.
+   */
+  condition: BranchConditionInput;
+  /**
+   * The path's Steps, in order; none goes on to the Step after the Branch
+   */
+  steps: Array<PathStepInput>;
+};
+
+/**
+ * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
+ * key holding a dot is one key
+ */
+export type BranchPropertyLeaf = {
+  kind: 'property';
+  /**
+   * Whose property it is
+   */
+  of: BranchPropertySource;
+  /**
+   * The property's key
+   */
+  key: string;
+  /**
+   * What it asks of the property's value
+   */
+  test: PropertyTest;
+};
+
+/**
+ * A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a
+ * key holding a dot is one key
+ */
+export type BranchPropertyLeafInput = {
+  kind: 'property';
+  /**
+   * Whose property it is
+   */
+  of: BranchPropertySourceInput;
+  /**
+   * The property's key
+   */
+  key: string;
+  /**
+   * What it asks of the property's value
+   */
+  test: PropertyTestInput;
+};
+
+/**
+ * Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
+ * began with
+ */
+export type BranchPropertySource = TriggerSource;
+
+/**
+ * Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment
+ * began with
+ */
+export type BranchPropertySourceInput = TriggerSourceInput;
+
+/**
+ * A Step that sends each Enrollment down the first of its paths whose Condition holds, on the
+ * Contact's live data when the Enrollment reaches it (ADR 0124), and down `otherwise` when none
+ * does. A Condition that is unknown for the Contact (an engagement count of a Destination that is
+ * not tracked, ADR 0123) before any holds sends it down `unknown`. The paths rejoin at the Step
+ * after the Branch.
+ */
+export type BranchStep = {
+  /**
+   * The Step's id
+   */
+  id: StepId;
+  type: 'branch';
+  /**
+   * The paths, in the order their Conditions are tested
+   */
+  paths: Array<BranchPath>;
+  /**
+   * The path taken when no Condition holds
+   */
+  otherwise: AutomationPath;
+  /**
+   * The path taken when the first Condition that does not fail is unknown; present only on a
+   * Branch whose Conditions can be unknown
+   */
+  unknown?: AutomationPath;
+};
+
+/**
+ * A Branch, as a request writes it. Publish refuses it without `unknown` when a Condition counts
+ * an open or a click, and with `unknown` when none does.
+ */
+export type BranchStepInput = {
+  /**
+   * The Step's id; omitted, the Step is given one
+   */
+  id?: StepId;
+  type: 'branch';
+  /**
+   * The paths, in the order their Conditions are tested: one to nine, so that with `otherwise` a
+   * Branch has at most ten (`unknown` is not counted)
+   */
+  paths: Array<BranchPathInput>;
+  /**
+   * The path taken when no Condition holds
+   */
+  otherwise: AutomationPathInput;
+  /**
+   * The path taken when the first Condition that does not fail is unknown
+   */
+  unknown?: AutomationPathInput;
+};
 
 /**
  * The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets
@@ -4479,6 +4751,56 @@ export const OptOutVia = {
 export type OptOutVia = typeof OptOutVia[keyof typeof OptOutVia];
 
 /**
+ * One Step of a Branch's listed path, by `type`: the arms of AutomationStep
+ */
+export type PathStep = ({
+  type: 'email';
+} & EmailStep) | ({
+  type: 'telegram';
+} & TelegramStep) | ({
+  type: 'sms';
+} & SmsStep) | ({
+  type: 'wait';
+} & WaitStep) | ({
+  type: 'apply_tag';
+} & ApplyTagStep) | ({
+  type: 'remove_tag';
+} & RemoveTagStep) | ({
+  type: 'http';
+} & HttpStep) | ({
+  type: 'end';
+} & EndStep) | ({
+  type: 'branch';
+} & BranchStep) | ({
+  type: 'split';
+} & SplitStep);
+
+/**
+ * One Step of a Branch's listed path, by `type`, as a request writes it: the arms of AutomationStepInput
+ */
+export type PathStepInput = ({
+  type: 'email';
+} & EmailStepInput) | ({
+  type: 'telegram';
+} & TelegramStepInput) | ({
+  type: 'sms';
+} & SmsStepInput) | ({
+  type: 'wait';
+} & WaitStepInput) | ({
+  type: 'apply_tag';
+} & ApplyTagStepInput) | ({
+  type: 'remove_tag';
+} & RemoveTagStepInput) | ({
+  type: 'http';
+} & HttpStepInput) | ({
+  type: 'end';
+} & EndStepInput) | ({
+  type: 'branch';
+} & BranchStepInput) | ({
+  type: 'split';
+} & SplitStepInput);
+
+/**
  * A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY "Permission"),
  * written `resource:verb` like the API token scopes. A Role is a set of them; the table
  * from Role to Permissions lives in the server, and the client reads a Membership's
@@ -6157,6 +6479,128 @@ export type SoleOwnedWorkspace = {
    * Display name
    */
   name: string;
+};
+
+/**
+ * A path of a Split: its share of the Contacts and its Steps
+ */
+export type SplitPath = {
+  /**
+   * The path's id
+   */
+  id: StepId;
+  /**
+   * The path's share of the Contacts that reach the Split, a whole percentage
+   */
+  weight: number;
+  /**
+   * The path's Steps, in order; none is a holdout, sent nothing, that goes on to the Step after
+   * the Split
+   */
+  steps: Array<SplitPathStep>;
+};
+
+/**
+ * A path of a Split, as a request writes it
+ */
+export type SplitPathInput = {
+  /**
+   * The path's id; omitted, the path is given one
+   */
+  id?: StepId;
+  /**
+   * The path's share of the Contacts that reach the Split, a whole percentage. The weights of a
+   * Split's paths sum to 100, or the save is refused, naming the Split.
+   */
+  weight: number;
+  /**
+   * The path's Steps, in order; none is a holdout, sent nothing, that goes on to the Step after
+   * the Split
+   */
+  steps: Array<SplitPathStepInput>;
+};
+
+/**
+ * One Step of a Split's path, by `type`: the arms of AutomationStep
+ */
+export type SplitPathStep = ({
+  type: 'email';
+} & EmailStep) | ({
+  type: 'telegram';
+} & TelegramStep) | ({
+  type: 'sms';
+} & SmsStep) | ({
+  type: 'wait';
+} & WaitStep) | ({
+  type: 'apply_tag';
+} & ApplyTagStep) | ({
+  type: 'remove_tag';
+} & RemoveTagStep) | ({
+  type: 'http';
+} & HttpStep) | ({
+  type: 'end';
+} & EndStep) | ({
+  type: 'branch';
+} & BranchStep) | ({
+  type: 'split';
+} & SplitStep);
+
+/**
+ * One Step of a Split's path, by `type`, as a request writes it: the arms of AutomationStepInput
+ */
+export type SplitPathStepInput = ({
+  type: 'email';
+} & EmailStepInput) | ({
+  type: 'telegram';
+} & TelegramStepInput) | ({
+  type: 'sms';
+} & SmsStepInput) | ({
+  type: 'wait';
+} & WaitStepInput) | ({
+  type: 'apply_tag';
+} & ApplyTagStepInput) | ({
+  type: 'remove_tag';
+} & RemoveTagStepInput) | ({
+  type: 'http';
+} & HttpStepInput) | ({
+  type: 'end';
+} & EndStepInput) | ({
+  type: 'branch';
+} & BranchStepInput) | ({
+  type: 'split';
+} & SplitStepInput);
+
+/**
+ * A Step that sends each Enrollment down one of its paths by weight (ADR 0124): a hash of the
+ * Contact, the Split and the Enrollment's ordinal chooses the path, so the same Enrollment always
+ * takes the same path and a new Enrollment of the Contact draws again. An empty path is a holdout.
+ * The paths rejoin at the Step after the Split.
+ */
+export type SplitStep = {
+  /**
+   * The Step's id
+   */
+  id: StepId;
+  type: 'split';
+  /**
+   * The paths, in order
+   */
+  paths: Array<SplitPath>;
+};
+
+/**
+ * A Split, as a request writes it. Its paths' weights sum to 100.
+ */
+export type SplitStepInput = {
+  /**
+   * The Step's id; omitted, the Step is given one
+   */
+  id?: StepId;
+  type: 'split';
+  /**
+   * The paths, in order: two to ten
+   */
+  paths: Array<SplitPathInput>;
 };
 
 /**

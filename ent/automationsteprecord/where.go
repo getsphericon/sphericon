@@ -93,6 +93,12 @@ func LeftAt(v time.Time) predicate.AutomationStepRecord {
 	return predicate.AutomationStepRecord(sql.FieldEQ(FieldLeftAt, v))
 }
 
+// PathID applies equality check predicate on the "path_id" field. It's identical to PathIDEQ.
+func PathID(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldEQ(FieldPathID, vc))
+}
+
 // DueAt applies equality check predicate on the "due_at" field. It's identical to DueAtEQ.
 func DueAt(v time.Time) predicate.AutomationStepRecord {
 	return predicate.AutomationStepRecord(sql.FieldEQ(FieldDueAt, v))
@@ -460,6 +466,110 @@ func SkipReasonIsNil() predicate.AutomationStepRecord {
 // SkipReasonNotNil applies the NotNil predicate on the "skip_reason" field.
 func SkipReasonNotNil() predicate.AutomationStepRecord {
 	return predicate.AutomationStepRecord(sql.FieldNotNull(FieldSkipReason))
+}
+
+// PathIDEQ applies the EQ predicate on the "path_id" field.
+func PathIDEQ(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldEQ(FieldPathID, vc))
+}
+
+// PathIDNEQ applies the NEQ predicate on the "path_id" field.
+func PathIDNEQ(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldNEQ(FieldPathID, vc))
+}
+
+// PathIDIn applies the In predicate on the "path_id" field.
+func PathIDIn(vs ...automationstep.ID) predicate.AutomationStepRecord {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = string(vs[i])
+	}
+	return predicate.AutomationStepRecord(sql.FieldIn(FieldPathID, v...))
+}
+
+// PathIDNotIn applies the NotIn predicate on the "path_id" field.
+func PathIDNotIn(vs ...automationstep.ID) predicate.AutomationStepRecord {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = string(vs[i])
+	}
+	return predicate.AutomationStepRecord(sql.FieldNotIn(FieldPathID, v...))
+}
+
+// PathIDGT applies the GT predicate on the "path_id" field.
+func PathIDGT(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldGT(FieldPathID, vc))
+}
+
+// PathIDGTE applies the GTE predicate on the "path_id" field.
+func PathIDGTE(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldGTE(FieldPathID, vc))
+}
+
+// PathIDLT applies the LT predicate on the "path_id" field.
+func PathIDLT(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldLT(FieldPathID, vc))
+}
+
+// PathIDLTE applies the LTE predicate on the "path_id" field.
+func PathIDLTE(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldLTE(FieldPathID, vc))
+}
+
+// PathIDContains applies the Contains predicate on the "path_id" field.
+func PathIDContains(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldContains(FieldPathID, vc))
+}
+
+// PathIDHasPrefix applies the HasPrefix predicate on the "path_id" field.
+func PathIDHasPrefix(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldHasPrefix(FieldPathID, vc))
+}
+
+// PathIDHasSuffix applies the HasSuffix predicate on the "path_id" field.
+func PathIDHasSuffix(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldHasSuffix(FieldPathID, vc))
+}
+
+// PathIDIsNil applies the IsNil predicate on the "path_id" field.
+func PathIDIsNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldIsNull(FieldPathID))
+}
+
+// PathIDNotNil applies the NotNil predicate on the "path_id" field.
+func PathIDNotNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldNotNull(FieldPathID))
+}
+
+// PathIDEqualFold applies the EqualFold predicate on the "path_id" field.
+func PathIDEqualFold(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldEqualFold(FieldPathID, vc))
+}
+
+// PathIDContainsFold applies the ContainsFold predicate on the "path_id" field.
+func PathIDContainsFold(v automationstep.ID) predicate.AutomationStepRecord {
+	vc := string(v)
+	return predicate.AutomationStepRecord(sql.FieldContainsFold(FieldPathID, vc))
+}
+
+// PathOutcomesIsNil applies the IsNil predicate on the "path_outcomes" field.
+func PathOutcomesIsNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldIsNull(FieldPathOutcomes))
+}
+
+// PathOutcomesNotNil applies the NotNil predicate on the "path_outcomes" field.
+func PathOutcomesNotNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldNotNull(FieldPathOutcomes))
 }
 
 // DueAtEQ applies the EQ predicate on the "due_at" field.

@@ -54,6 +54,7 @@ import (
 	trackingdomains "github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	messaging "github.com/getsphericon/sphericon/internal/infra/messaging"
 	webhook "github.com/getsphericon/sphericon/internal/infra/webhook"
+	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	deferralcause "github.com/getsphericon/sphericon/internal/kernel/deferralcause"
@@ -430,6 +431,12 @@ func (c *ConverterImpl) AutomationReportToResource(source automations.Report) si
 			siteapiAutomationReport.VersionSteps[j] = c.automationsVersionStepFiguresToSiteapiAutomationVersionStepFigures(source.VersionSteps[j])
 		}
 	}
+	if source.Paths != nil {
+		siteapiAutomationReport.Paths = make([]site.AutomationPathFigures, len(source.Paths))
+		for k := 0; k < len(source.Paths); k++ {
+			siteapiAutomationReport.Paths[k] = c.automationsPathFiguresToSiteapiAutomationPathFigures(source.Paths[k])
+		}
+	}
 	return siteapiAutomationReport
 }
 func (c *ConverterImpl) AutomationResultsPointToResource(source automations.ResultsPoint) site.AutomationResultsPoint {
@@ -626,6 +633,47 @@ func (c *ConverterImpl) BindingsToResources(source []bindings.Chat) []site.SiteB
 		siteapiSiteBindingResourceList[i] = c.BindingToResource(source[i])
 	}
 	return siteapiSiteBindingResourceList
+}
+func (c *ConverterImpl) BranchPathToResource(source automations.BranchPathView) (site.BranchPath, error) {
+	var siteapiBranchPath site.BranchPath
+	siteapiBranchPath.ID = c.automationstepIDToSiteapiStepId(source.ID)
+	siteapiBranchCondition, err := branchCondition(source.Condition)
+	if err != nil {
+		return siteapiBranchPath, err
+	}
+	siteapiBranchPath.Condition = siteapiBranchCondition
+	siteapiPathStepList, err := pathStepViews(c, source.Steps)
+	if err != nil {
+		return siteapiBranchPath, err
+	}
+	siteapiBranchPath.Steps = siteapiPathStepList
+	return siteapiBranchPath, nil
+}
+func (c *ConverterImpl) BranchStepToResource(source automations.BranchView) (site.BranchStep, error) {
+	var siteapiBranchStep site.BranchStep
+	siteapiBranchStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
+	siteapiBranchStep.Type = branchStepType(source.Type)
+	if source.Paths != nil {
+		siteapiBranchStep.Paths = make([]site.BranchPath, len(source.Paths))
+		for i := 0; i < len(source.Paths); i++ {
+			siteapiBranchPath, err := c.BranchPathToResource(source.Paths[i])
+			if err != nil {
+				return siteapiBranchStep, err
+			}
+			siteapiBranchStep.Paths[i] = siteapiBranchPath
+		}
+	}
+	siteapiAutomationPath, err := c.AutomationPathToResource(source.Otherwise)
+	if err != nil {
+		return siteapiBranchStep, err
+	}
+	siteapiBranchStep.Otherwise = siteapiAutomationPath
+	siteapiOptAutomationPath, err := optAutomationPath(c, source.Unknown)
+	if err != nil {
+		return siteapiBranchStep, err
+	}
+	siteapiBranchStep.Unknown = siteapiOptAutomationPath
+	return siteapiBranchStep, nil
 }
 func (c *ConverterImpl) BrandKitToResource(source brandkits.Kit) site.BrandKitResource {
 	var siteapiBrandKitResource site.BrandKitResource
@@ -1149,7 +1197,7 @@ func (c *ConverterImpl) EmailBroadcastContentToResource(source *ent.Broadcast) s
 }
 func (c *ConverterImpl) EmailStepToResource(source automations.EmailView) site.EmailStep {
 	var siteapiEmailStep site.EmailStep
-	siteapiEmailStep.ID = site.StepId(source.ID)
+	siteapiEmailStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
 	siteapiEmailStep.Type = emailStepType(source.Type)
 	siteapiEmailStep.Subject = source.Subject
 	siteapiEmailStep.Body = source.Body
@@ -1184,7 +1232,7 @@ func (c *ConverterImpl) EmailTemplatesToResources(source []*ent.EmailTemplate) [
 }
 func (c *ConverterImpl) EndStepToResource(source automations.EndView) site.EndStep {
 	var siteapiEndStep site.EndStep
-	siteapiEndStep.ID = site.StepId(source.ID)
+	siteapiEndStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
 	siteapiEndStep.Type = endStepType(source.Type)
 	return siteapiEndStep
 }
@@ -1448,7 +1496,7 @@ func (c *ConverterImpl) HoldsToResources(source []*ent.Hold) []site.SiteWorkspac
 }
 func (c *ConverterImpl) HttpStepToResource(source automations.HTTPView) site.HttpStep {
 	var siteapiHttpStep site.HttpStep
-	siteapiHttpStep.ID = site.StepId(source.ID)
+	siteapiHttpStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
 	siteapiHttpStep.Type = httpStepType(source.Type)
 	siteapiHttpStep.Body = source.Body
 	if source.Headers != nil {
@@ -1873,6 +1921,49 @@ func (c *ConverterImpl) PasskeysToResources(source []*ent.Passkey) []site.SitePa
 	}
 	return siteapiSitePasskeyList
 }
+func (c *ConverterImpl) PathStepSum(source site.AutomationStepSum) site.PathStepSum {
+	var siteapiPathStepSum site.PathStepSum
+	siteapiPathStepSum.Type = c.PathStepType(source.Type)
+	siteapiPathStepSum.EmailStep = source.EmailStep
+	siteapiPathStepSum.TelegramStep = source.TelegramStep
+	siteapiPathStepSum.SmsStep = source.SmsStep
+	siteapiPathStepSum.WaitStep = source.WaitStep
+	siteapiPathStepSum.ApplyTagStep = source.ApplyTagStep
+	siteapiPathStepSum.RemoveTagStep = source.RemoveTagStep
+	siteapiPathStepSum.HttpStep = source.HttpStep
+	siteapiPathStepSum.EndStep = source.EndStep
+	siteapiPathStepSum.BranchStep = source.BranchStep
+	siteapiPathStepSum.SplitStep = source.SplitStep
+	return siteapiPathStepSum
+}
+func (c *ConverterImpl) PathStepType(source site.AutomationStepSumType) site.PathStepSumType {
+	var siteapiPathStepSumType site.PathStepSumType
+	switch source {
+	case site.ApplyTagStepAutomationStepSum:
+		siteapiPathStepSumType = site.ApplyTagStepPathStepSum
+	case site.BranchStepAutomationStepSum:
+		siteapiPathStepSumType = site.BranchStepPathStepSum
+	case site.EmailStepAutomationStepSum:
+		siteapiPathStepSumType = site.EmailStepPathStepSum
+	case site.EndStepAutomationStepSum:
+		siteapiPathStepSumType = site.EndStepPathStepSum
+	case site.HttpStepAutomationStepSum:
+		siteapiPathStepSumType = site.HttpStepPathStepSum
+	case site.RemoveTagStepAutomationStepSum:
+		siteapiPathStepSumType = site.RemoveTagStepPathStepSum
+	case site.SmsStepAutomationStepSum:
+		siteapiPathStepSumType = site.SmsStepPathStepSum
+	case site.SplitStepAutomationStepSum:
+		siteapiPathStepSumType = site.SplitStepPathStepSum
+	case site.TelegramStepAutomationStepSum:
+		siteapiPathStepSumType = site.TelegramStepPathStepSum
+	case site.WaitStepAutomationStepSum:
+		siteapiPathStepSumType = site.WaitStepPathStepSum
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiPathStepSumType
+}
 func (c *ConverterImpl) PendingSignupToResource(source *ent.PendingSignup) *site.SitePendingSignup {
 	var pSiteapiSitePendingSignup *site.SitePendingSignup
 	if source != nil {
@@ -2127,7 +2218,7 @@ func (c *ConverterImpl) ProviderLimitWarningToResource(source providerlimit.Warn
 }
 func (c *ConverterImpl) RemoveTagStepToResource(source automations.TagView) site.RemoveTagStep {
 	var siteapiRemoveTagStep site.RemoveTagStep
-	siteapiRemoveTagStep.ID = site.StepId(source.ID)
+	siteapiRemoveTagStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
 	siteapiRemoveTagStep.Type = removeTagStepType(source.Type)
 	siteapiRemoveTagStep.Tag = source.Tag
 	return siteapiRemoveTagStep
@@ -2630,7 +2721,7 @@ func (c *ConverterImpl) SmsOptOutToResource(source *confirmations.SMSOptOut) sit
 }
 func (c *ConverterImpl) SmsStepToResource(source automations.SMSView) site.SmsStep {
 	var siteapiSmsStep site.SmsStep
-	siteapiSmsStep.ID = site.StepId(source.ID)
+	siteapiSmsStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
 	siteapiSmsStep.Type = smsStepType(source.Type)
 	siteapiSmsStep.Text = source.Text
 	siteapiSmsStep.LinkTracking = source.LinkTracking
@@ -2646,6 +2737,76 @@ func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) s
 	siteapiSmtpConfig.From = site.EmailAddress(source.From)
 	siteapiSmtpConfig.FromName = omitEmpty(source.FromName)
 	return siteapiSmtpConfig
+}
+func (c *ConverterImpl) SplitPathStepSum(source site.AutomationStepSum) site.SplitPathStepSum {
+	var siteapiSplitPathStepSum site.SplitPathStepSum
+	siteapiSplitPathStepSum.Type = c.SplitPathStepType(source.Type)
+	siteapiSplitPathStepSum.EmailStep = source.EmailStep
+	siteapiSplitPathStepSum.TelegramStep = source.TelegramStep
+	siteapiSplitPathStepSum.SmsStep = source.SmsStep
+	siteapiSplitPathStepSum.WaitStep = source.WaitStep
+	siteapiSplitPathStepSum.ApplyTagStep = source.ApplyTagStep
+	siteapiSplitPathStepSum.RemoveTagStep = source.RemoveTagStep
+	siteapiSplitPathStepSum.HttpStep = source.HttpStep
+	siteapiSplitPathStepSum.EndStep = source.EndStep
+	siteapiSplitPathStepSum.BranchStep = source.BranchStep
+	siteapiSplitPathStepSum.SplitStep = source.SplitStep
+	return siteapiSplitPathStepSum
+}
+func (c *ConverterImpl) SplitPathStepType(source site.AutomationStepSumType) site.SplitPathStepSumType {
+	var siteapiSplitPathStepSumType site.SplitPathStepSumType
+	switch source {
+	case site.ApplyTagStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.ApplyTagStepSplitPathStepSum
+	case site.BranchStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.BranchStepSplitPathStepSum
+	case site.EmailStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.EmailStepSplitPathStepSum
+	case site.EndStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.EndStepSplitPathStepSum
+	case site.HttpStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.HttpStepSplitPathStepSum
+	case site.RemoveTagStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.RemoveTagStepSplitPathStepSum
+	case site.SmsStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.SmsStepSplitPathStepSum
+	case site.SplitStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.SplitStepSplitPathStepSum
+	case site.TelegramStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.TelegramStepSplitPathStepSum
+	case site.WaitStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.WaitStepSplitPathStepSum
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiSplitPathStepSumType
+}
+func (c *ConverterImpl) SplitPathToResource(source automations.SplitPathView) (site.SplitPath, error) {
+	var siteapiSplitPath site.SplitPath
+	siteapiSplitPath.ID = c.automationstepIDToSiteapiStepId(source.ID)
+	siteapiSplitPath.Weight = count(source.Weight)
+	siteapiSplitPathStepList, err := splitPathStepViews(c, source.Steps)
+	if err != nil {
+		return siteapiSplitPath, err
+	}
+	siteapiSplitPath.Steps = siteapiSplitPathStepList
+	return siteapiSplitPath, nil
+}
+func (c *ConverterImpl) SplitStepToResource(source automations.SplitView) (site.SplitStep, error) {
+	var siteapiSplitStep site.SplitStep
+	siteapiSplitStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
+	siteapiSplitStep.Type = splitStepType(source.Type)
+	if source.Paths != nil {
+		siteapiSplitStep.Paths = make([]site.SplitPath, len(source.Paths))
+		for i := 0; i < len(source.Paths); i++ {
+			siteapiSplitPath, err := c.SplitPathToResource(source.Paths[i])
+			if err != nil {
+				return siteapiSplitStep, err
+			}
+			siteapiSplitStep.Paths[i] = siteapiSplitPath
+		}
+	}
+	return siteapiSplitStep, nil
 }
 func (c *ConverterImpl) StartLinkToResource(source bindings.StartLink) site.TelegramStartLinkResource {
 	var siteapiTelegramStartLinkResource site.TelegramStartLinkResource
@@ -2802,7 +2963,7 @@ func (c *ConverterImpl) TelegramConfigToResource(source integrations.RedactedTel
 }
 func (c *ConverterImpl) TelegramStepToResource(source automations.TelegramView) site.TelegramStep {
 	var siteapiTelegramStep site.TelegramStep
-	siteapiTelegramStep.ID = site.StepId(source.ID)
+	siteapiTelegramStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
 	siteapiTelegramStep.Type = telegramStepType(source.Type)
 	siteapiTelegramStep.Text = source.Text
 	siteapiTelegramStep.UnsubscribeButton = optString(source.UnsubscribeButton)
@@ -3024,7 +3185,7 @@ func (c *ConverterImpl) VisitorToExport(source *ent.Visitor) site.ContactExportV
 }
 func (c *ConverterImpl) WaitStepToResource(source automations.WaitView) site.WaitStep {
 	var siteapiWaitStep site.WaitStep
-	siteapiWaitStep.ID = site.StepId(source.ID)
+	siteapiWaitStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
 	siteapiWaitStep.Type = waitStepType(source.Type)
 	siteapiWaitStep.Seconds = count(source.Seconds)
 	return siteapiWaitStep
@@ -3197,6 +3358,14 @@ func (c *ConverterImpl) analyticsreportSubscribedPointToSiteapiSiteAnalyticsSubs
 	siteapiSiteAnalyticsSubscribedPoint.Net = count(source.Net)
 	return siteapiSiteAnalyticsSubscribedPoint
 }
+func (c *ConverterImpl) automationsPathFiguresToSiteapiAutomationPathFigures(source automations.PathFigures) site.AutomationPathFigures {
+	var siteapiAutomationPathFigures site.AutomationPathFigures
+	siteapiAutomationPathFigures.StepId = c.automationstepIDToSiteapiStepId(source.StepID)
+	siteapiAutomationPathFigures.PathId = c.automationstepIDToSiteapiStepId(source.PathID)
+	siteapiAutomationPathFigures.Enrollments = count(source.Enrollments)
+	siteapiAutomationPathFigures.GoalReached = count(source.GoalReached)
+	return siteapiAutomationPathFigures
+}
 func (c *ConverterImpl) automationsSkippedCountsToSiteapiAutomationSkippedCounts(source automations.SkippedCounts) site.AutomationSkippedCounts {
 	var siteapiAutomationSkippedCounts site.AutomationSkippedCounts
 	siteapiAutomationSkippedCounts.Cycle = count(source.Cycle)
@@ -3221,6 +3390,9 @@ func (c *ConverterImpl) automationsVersionStepFiguresToSiteapiAutomationVersionS
 	siteapiAutomationVersionStepFigures.Sent = count(source.Sent)
 	siteapiAutomationVersionStepFigures.Skipped = count(source.Skipped)
 	return siteapiAutomationVersionStepFigures
+}
+func (c *ConverterImpl) automationstepIDToSiteapiStepId(source automationstep.ID) site.StepId {
+	return site.StepId(source)
 }
 func (c *ConverterImpl) linkclickClicksToSiteapiLinkClicks(source linkclick.Clicks) site.LinkClicks {
 	var siteapiLinkClicks site.LinkClicks

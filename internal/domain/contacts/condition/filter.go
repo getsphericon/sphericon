@@ -394,10 +394,10 @@ func (n NamedSender) Missing() string {
 }
 
 // NamedSenders is every Broadcast and Automation the sent-by tests of the Condition's event leaves
-// name, at any depth, in the order they appear. A Condition that does not decode names none: its
-// save is refused for that first.
+// name, at any depth, in the order they appear. It reads the tree of every place. A Condition that does not decode names none: its save
+// is refused for that first.
 func NamedSenders(g conditiontree.Group) []NamedSender {
-	tree, err := decode(g, rulePlace)
+	tree, err := decode(g, everyPlace)
 	if err != nil {
 		return nil
 	}

@@ -80,12 +80,13 @@ func TestFirstIsTheFirstStepOfThePath(t *testing.T) {
 func TestFindFindsTheStepOfAnID(t *testing.T) {
 	tag := automationstep.New(automationstep.ApplyTag{Tag: "vip"})
 	steps := withIDs(automationstep.Root(automationstep.New(automationstep.Wait{Seconds: 60}), tag))
-	st, ok := automationstep.Find(steps, "step-1")
+	index := automationstep.NewIndex(steps)
+	st, ok := index.Step("step-1")
 	require.True(t, ok)
 	assert.Equal(t, automationstep.Step{ID: "step-1", Payload: tag.Payload}, *st)
-	_, ok = automationstep.Find(steps, "step-9")
+	_, ok = index.Step("step-9")
 	assert.False(t, ok, "an id the version does not hold names no Step")
-	_, ok = automationstep.Find(steps, "")
+	_, ok = index.Step("")
 	assert.False(t, ok)
 }
 
@@ -96,17 +97,19 @@ func TestNextIsTheFollowingStepOfThePath(t *testing.T) {
 		steps := withIDs(stepsGen().Filter(func(p automationstep.Path) bool { return len(p.Steps) > 1 }).Draw(rt, "steps"))
 		last := len(steps.Steps) - 1
 		pos := rapid.IntRange(0, last-1).Draw(rt, "pos")
-		next, ok := automationstep.Next(steps, stepID(pos))
+		index := automationstep.NewIndex(steps)
+		next, ok := index.Next(stepID(pos))
 		require.True(rt, ok)
 		assert.Equal(rt, stepID(pos+1), next.ID)
 		assert.Equal(rt, 60*(pos+2), seconds(next))
-		_, ok = automationstep.Next(steps, stepID(last))
+		_, ok = index.Next(stepID(last))
 		assert.False(rt, ok, "the last Step has no next")
 	})
 	single := withIDs(automationstep.Root(automationstep.New(automationstep.Wait{Seconds: 60})))
-	_, ok := automationstep.Next(single, "step-0")
+	index := automationstep.NewIndex(single)
+	_, ok := index.Next("step-0")
 	assert.False(t, ok, "the only Step is the last")
-	_, ok = automationstep.Next(single, "elsewhere")
+	_, ok = index.Next("elsewhere")
 	assert.False(t, ok)
 }
 

@@ -14,6 +14,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
@@ -108,6 +110,38 @@ func (_u *AutomationStepRecordUpdate) SetNillableSkipReason(v *skipreason.Reason
 // ClearSkipReason clears the value of the "skip_reason" field.
 func (_u *AutomationStepRecordUpdate) ClearSkipReason() *AutomationStepRecordUpdate {
 	_u.mutation.ClearSkipReason()
+	return _u
+}
+
+// SetPathID sets the "path_id" field.
+func (_u *AutomationStepRecordUpdate) SetPathID(v automationstep.ID) *AutomationStepRecordUpdate {
+	_u.mutation.SetPathID(v)
+	return _u
+}
+
+// SetNillablePathID sets the "path_id" field if the given value is not nil.
+func (_u *AutomationStepRecordUpdate) SetNillablePathID(v *automationstep.ID) *AutomationStepRecordUpdate {
+	if v != nil {
+		_u.SetPathID(*v)
+	}
+	return _u
+}
+
+// ClearPathID clears the value of the "path_id" field.
+func (_u *AutomationStepRecordUpdate) ClearPathID() *AutomationStepRecordUpdate {
+	_u.mutation.ClearPathID()
+	return _u
+}
+
+// SetPathOutcomes sets the "path_outcomes" field.
+func (_u *AutomationStepRecordUpdate) SetPathOutcomes(v map[automationstep.ID]conditiontree.Truth) *AutomationStepRecordUpdate {
+	_u.mutation.SetPathOutcomes(v)
+	return _u
+}
+
+// ClearPathOutcomes clears the value of the "path_outcomes" field.
+func (_u *AutomationStepRecordUpdate) ClearPathOutcomes() *AutomationStepRecordUpdate {
+	_u.mutation.ClearPathOutcomes()
 	return _u
 }
 
@@ -222,6 +256,18 @@ func (_u *AutomationStepRecordUpdate) sqlSave(ctx context.Context) (_node int, e
 	}
 	if _u.mutation.SkipReasonCleared() {
 		_spec.ClearField(automationsteprecord.FieldSkipReason, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.PathID(); ok {
+		_spec.SetField(automationsteprecord.FieldPathID, field.TypeString, value)
+	}
+	if _u.mutation.PathIDCleared() {
+		_spec.ClearField(automationsteprecord.FieldPathID, field.TypeString)
+	}
+	if value, ok := _u.mutation.PathOutcomes(); ok {
+		_spec.SetField(automationsteprecord.FieldPathOutcomes, field.TypeJSON, value)
+	}
+	if _u.mutation.PathOutcomesCleared() {
+		_spec.ClearField(automationsteprecord.FieldPathOutcomes, field.TypeJSON)
 	}
 	if _u.mutation.DueAtCleared() {
 		_spec.ClearField(automationsteprecord.FieldDueAt, field.TypeTime)
@@ -354,6 +400,38 @@ func (_u *AutomationStepRecordUpdateOne) SetNillableSkipReason(v *skipreason.Rea
 // ClearSkipReason clears the value of the "skip_reason" field.
 func (_u *AutomationStepRecordUpdateOne) ClearSkipReason() *AutomationStepRecordUpdateOne {
 	_u.mutation.ClearSkipReason()
+	return _u
+}
+
+// SetPathID sets the "path_id" field.
+func (_u *AutomationStepRecordUpdateOne) SetPathID(v automationstep.ID) *AutomationStepRecordUpdateOne {
+	_u.mutation.SetPathID(v)
+	return _u
+}
+
+// SetNillablePathID sets the "path_id" field if the given value is not nil.
+func (_u *AutomationStepRecordUpdateOne) SetNillablePathID(v *automationstep.ID) *AutomationStepRecordUpdateOne {
+	if v != nil {
+		_u.SetPathID(*v)
+	}
+	return _u
+}
+
+// ClearPathID clears the value of the "path_id" field.
+func (_u *AutomationStepRecordUpdateOne) ClearPathID() *AutomationStepRecordUpdateOne {
+	_u.mutation.ClearPathID()
+	return _u
+}
+
+// SetPathOutcomes sets the "path_outcomes" field.
+func (_u *AutomationStepRecordUpdateOne) SetPathOutcomes(v map[automationstep.ID]conditiontree.Truth) *AutomationStepRecordUpdateOne {
+	_u.mutation.SetPathOutcomes(v)
+	return _u
+}
+
+// ClearPathOutcomes clears the value of the "path_outcomes" field.
+func (_u *AutomationStepRecordUpdateOne) ClearPathOutcomes() *AutomationStepRecordUpdateOne {
+	_u.mutation.ClearPathOutcomes()
 	return _u
 }
 
@@ -498,6 +576,18 @@ func (_u *AutomationStepRecordUpdateOne) sqlSave(ctx context.Context) (_node *Au
 	}
 	if _u.mutation.SkipReasonCleared() {
 		_spec.ClearField(automationsteprecord.FieldSkipReason, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.PathID(); ok {
+		_spec.SetField(automationsteprecord.FieldPathID, field.TypeString, value)
+	}
+	if _u.mutation.PathIDCleared() {
+		_spec.ClearField(automationsteprecord.FieldPathID, field.TypeString)
+	}
+	if value, ok := _u.mutation.PathOutcomes(); ok {
+		_spec.SetField(automationsteprecord.FieldPathOutcomes, field.TypeJSON, value)
+	}
+	if _u.mutation.PathOutcomesCleared() {
+		_spec.ClearField(automationsteprecord.FieldPathOutcomes, field.TypeJSON)
 	}
 	if _u.mutation.DueAtCleared() {
 		_spec.ClearField(automationsteprecord.FieldDueAt, field.TypeTime)

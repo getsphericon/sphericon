@@ -47,6 +47,20 @@ var RuleKinds = []Kind{
 	KindProperty,
 }
 
+// BranchKinds is every Kind a Branch path's Condition admits.
+var BranchKinds = []Kind{
+	KindGroup,
+	KindAttribute,
+	KindBirthday,
+	KindTag,
+	KindTelegram,
+	KindSms,
+	KindEngagementTracking,
+	KindCustomField,
+	KindEvent,
+	KindProperty,
+}
+
 // EventFilterKinds is every Kind an Event filter admits.
 var EventFilterKinds = []Kind{
 	KindGroup,
@@ -110,5 +124,10 @@ const (
 
 // RuleSources is every Source a Rule's property leaf reads.
 var RuleSources = []Source{
+	SourceTrigger,
+}
+
+// BranchSources is every Source a Branch path's property leaf reads.
+var BranchSources = []Source{
 	SourceTrigger,
 }

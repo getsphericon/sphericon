@@ -1,6 +1,7 @@
 // Package automationsuse reads the use the Automations make of a row: the Definition use of a kept
-// Automation's live version or draft that applies or removes a Tag, or whose Trigger's, exit's or
-// goal's filter names a Tag or a Custom field (ADR 0133), and the Live use of the versions that will still send (ADR
+// Automation's live version or draft that applies or removes a Tag, whose Trigger's, exit's or
+// goal's filter names a Tag or a Custom field (ADR 0133), or whose Branch's Conditions test a Tag
+// or a Custom field (ADR 0124), read as a Rule's Condition is read, and the Live use of the versions that will still send (ADR
 // 0099). It is a reader of the Removal check
 // (internal/domain/orchestration/removalcheck), the one package easement lets import it, so every
 // removal that checks a row reads every holder, and which builds its Module. The automations
@@ -19,11 +20,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 )
 
@@ -34,22 +37,39 @@ type Module struct{}
 func New() *Module { return &Module{} }
 
 // UsingTag returns the Workspace's kept Automations whose live version or draft applies or
-// removes the Tag by its name, or whose Trigger's, exit's or goal's filter names it (ADR 0133), in
-// id order (spec
-// #767, "In use"). An archived Automation takes no part in new work.
+// removes the Tag by its name, whose Trigger's, exit's or goal's filter names it (ADR 0133), or
+// whose Branch's Condition tests it or names it in an event test's filter (ADR 0124, ADR 0153), in
+// id order (spec #767, "In use"). An archived
+// Automation takes no part in new work.
 func (m *Module) UsingTag(ctx context.Context, l *ent.WorkspaceLocked, name string) ([]*ent.Automation, error) {
 	return using(ctx, l, func(v *ent.AutomationVersion) bool {
-		return stepsTag(v, name) || slices.ContainsFunc(matcherNames(v).Tags, func(n string) bool { return tagname.Same(n, name) })
+		return stepsTag(v, name) || slices.ContainsFunc(matcherNames(v).Tags, func(n string) bool { return tagname.Same(n, name) }) ||
+			slices.ContainsFunc(branchConditions(v), func(g conditiontree.Branch) bool { return condition.NamesTag(g.Group, name) })
 	})
 }
 
-// UsingCustomField returns the Workspace's kept Automations whose live version's or draft's
-// Trigger, exit or goal filter names the Custom field key (ADR 0133), in id order: a
-// contact.field_changed matcher that tests its `key`.
-func (m *Module) UsingCustomField(ctx context.Context, l *ent.WorkspaceLocked, key string) ([]*ent.Automation, error) {
+// UsingCustomField returns the Workspace's kept Automations whose live version or draft holds the
+// Custom field key against a retype to type t, in id order: its Trigger, exit or goal filter names
+// it (ADR 0133), a contact.field_changed matcher that tests its `key`, which any retype breaks; or
+// a Branch's Condition tests it with a leaf a field of type t does not take (ADR 0124) or names it
+// in an event test's filter (ADR 0153), the check a Rule's Condition holds a field by
+// (condition.HoldsCustomField).
+func (m *Module) UsingCustomField(ctx context.Context, l *ent.WorkspaceLocked, key string, t customfield.Type) ([]*ent.Automation, error) {
 	return using(ctx, l, func(v *ent.AutomationVersion) bool {
-		return slices.Contains(matcherNames(v).CustomFields, key)
+		return slices.Contains(matcherNames(v).CustomFields, key) ||
+			slices.ContainsFunc(branchConditions(v), func(g conditiontree.Branch) bool { return condition.HoldsCustomField(g.Group, key, t) })
 	})
+}
+
+// branchConditions are the Conditions of the paths of every Branch of the version, at any depth.
+func branchConditions(v *ent.AutomationVersion) []conditiontree.Branch {
+	var out []conditiontree.Branch
+	for _, st := range automationstep.All(v.Steps) {
+		if b, ok := st.Payload.(automationstep.Branch); ok {
+			out = append(out, b.Conditions()...)
+		}
+	}
+	return out
 }
 
 // using returns the Workspace's kept Automations whose live version or draft names holds of, in

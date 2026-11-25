@@ -651,3 +651,20 @@ test("an event test's filter opens in its own builder, offering the senders of t
   await expect.poll(() => previews).toEqual([{ condition: clickedLastMonth }])
   await expect.element(screen.getByText('1 matching contact')).toBeInTheDocument()
 })
+
+test("a Branch path's event test opens its filter's builder as a Segment's does", async () => {
+  serveClicks([])
+  const { screen } = await renderWithRouter(
+    <ConditionBuilder
+      workspaceId="TestWs01"
+      place="branch"
+      initialValue={clickedLastMonth}
+      onChange={vi.fn<() => void>()}
+    />,
+  )
+
+  await screen.getByRole('button', { name: 'Filter (2 tests)' }).click()
+
+  const sender = screen.getByRole('dialog').getByTestId('value-editor').first()
+  await expect.element(sender).toHaveValue('Last month (archived)')
+})

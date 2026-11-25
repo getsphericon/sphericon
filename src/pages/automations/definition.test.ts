@@ -1,20 +1,22 @@
-import type { WorkflowBuilderEdge, WorkflowBuilderNode } from '@workflowbuilder/sdk'
 import { expect, test } from 'vitest'
 
-import type { AutomationPath, EventFilterInput } from '../../generated/site/types.gen.ts'
+import type {
+  AutomationStep,
+  AutomationVersion,
+  BranchCondition,
+  EventFilterInput,
+} from '../../generated/site/types.gen.ts'
 import { stepId, testId } from '../../test/payloads.ts'
 import {
   cooldownHours,
   cooldownSeconds,
-  endingsOf,
-  endingsText,
-  goalOf,
-  goalText,
-  graphToSteps,
-  stepsToGraph,
+  definitionOf,
+  flowOf,
+  holdsKept,
+  pathInputOf,
   withoutHalfTypedFilter,
 } from './definition.ts'
-import type { AutomationStep, AutomationTrigger } from './definition.ts'
+import type { Flow, TriggerDraft } from './definition.ts'
 import { automationSnapshot } from './leaveSnapshot.ts'
 
 const ROOT = stepId(1)
@@ -26,150 +28,188 @@ const STEPS: AutomationStep[] = [
   { id: stepId(14), type: 'remove_tag', tag: 'lead' },
 ]
 
-// The root path of the steps.
-function path(steps: AutomationStep[]): AutomationPath {
-  return { id: ROOT, steps }
-}
-
-function node(id: string, type: string, properties: Record<string, unknown>): WorkflowBuilderNode {
+// A version on the event, with no exit and no goal event, holding the steps.
+function version(steps: AutomationStep[], action = 'email.opened'): AutomationVersion {
   return {
-    id,
-    type: 'node',
-    position: { x: 0, y: 0 },
-    data: { type, icon: 'Tag', segments: [], properties },
-  }
-}
-
-const TRIGGER = node('trigger', 'trigger', { triggerEvent: 'email.opened', pathId: ROOT })
-
-// A Trigger on the event, with no exit and no goal event.
-function on(action: string): AutomationTrigger {
-  return {
+    number: 1,
     trigger: { kind: 'event', action, entryPolicy: 'once', cooldown: 3600 },
     exitEvents: [],
     goalEvent: null,
+    steps: { id: ROOT, steps },
   }
 }
 
-// A canvas of the Trigger followed by the nodes in a chain.
-function chain(...nodes: WorkflowBuilderNode[]) {
-  const all = [TRIGGER, ...nodes]
-  return { nodes: all, edges: all.slice(1).map((n, i) => edge(all[i]?.id ?? '', n.id)) }
+// A flow whose Trigger is the draft given, over no steps.
+function triggered(trigger: Partial<TriggerDraft>): Flow {
+  const flow = flowOf(version([], 'paid'))
+  return { ...flow, trigger: { ...flow.trigger, ...trigger } }
 }
 
-function edge(source: string, target: string): WorkflowBuilderEdge {
-  return { id: `${source}-${target}`, source, target }
-}
-
-test('stepsToGraph starts the chain with the Trigger node, linked to each step by its id', () => {
-  const { nodes, edges } = stepsToGraph(on('email.opened'), path(STEPS), {})
-
-  expect(nodes.map((n) => n.id)).toEqual([
-    'trigger',
-    stepId(11),
-    stepId(12),
-    stepId(13),
-    stepId(14),
-  ])
-  expect(nodes.map((n) => n.position.y)).toEqual([0, 160, 320, 480, 640])
-  expect(nodes[0]?.data).toMatchObject({
-    type: 'trigger',
-    isStartNode: true,
-    properties: { triggerEvent: 'email.opened', pathId: ROOT },
+test('a stored version round-trips through the flow, each Step and the path keeping its id', () => {
+  expect(definitionOf(flowOf(version(STEPS, 'email.clicked')))).toEqual({
+    trigger: { kind: 'event', action: 'email.clicked', entryPolicy: 'once', cooldown: 3600 },
+    filterIncomplete: false,
+    exitEvents: [],
+    goalEvent: null,
+    steps: { id: ROOT, steps: STEPS },
   })
-  expect(nodes[0]?.deletable).toBe(false)
-  expect(nodes.slice(1).map((n) => n.data.properties)).toEqual([
-    { integrationId: '', subject: 'Hello', body: '<p></p>', doc: '' },
-    { seconds: 3600 },
-    { tag: 'vip' },
-    { tag: 'lead' },
-  ])
-  expect(edges.map((e) => [e.source, e.target])).toEqual([
-    ['trigger', stepId(11)],
-    [stepId(11), stepId(12)],
-    [stepId(12), stepId(13)],
-    [stepId(13), stepId(14)],
-  ])
+  expect(pathInputOf(flowOf(version(STEPS)))).toEqual({ id: ROOT, steps: STEPS })
 })
 
-test('stepsToGraph fills in what a stored step leaves out', () => {
-  const { nodes } = stepsToGraph(
-    on('contact.created'),
-    path([
+test('a stored step opens with what it leaves out filled in, and saves without its defaults', () => {
+  const flow = flowOf(
+    version([
       { id: stepId(11), type: 'telegram', text: 'Hi', buttons: [], linkPreview: true },
       { id: stepId(12), type: 'telegram', text: 'Hi', buttons: [], linkPreview: false },
       { id: stepId(13), type: 'sms', text: 'Hi', linkTracking: true },
       { id: stepId(14), type: 'sms', text: 'Hi', linkTracking: false },
     ]),
-    {},
   )
 
-  expect(nodes.slice(1).map((n) => n.data.properties)).toEqual([
+  expect(flow.path.steps.map((step) => ('draft' in step ? step.draft : null))).toEqual([
     {
       integrationId: '',
       text: 'Hi',
       unsubscribeButton: '',
       imageUrl: '',
-      buttons: '',
-      linkPreview: '',
+      buttons: [],
+      linkPreview: true,
     },
     {
       integrationId: '',
       text: 'Hi',
       unsubscribeButton: '',
       imageUrl: '',
-      buttons: '',
-      linkPreview: 'off',
+      buttons: [],
+      linkPreview: false,
     },
-    { integrationId: '', text: 'Hi', linkTracking: '' },
-    { integrationId: '', text: 'Hi', linkTracking: 'off' },
+    { integrationId: '', text: 'Hi', linkTracking: true },
+    { integrationId: '', text: 'Hi', linkTracking: false },
+  ])
+  expect(pathInputOf(flow)?.steps).toEqual([
+    { id: stepId(11), type: 'telegram', text: 'Hi' },
+    { id: stepId(12), type: 'telegram', text: 'Hi', linkPreview: false },
+    { id: stepId(13), type: 'sms', text: 'Hi' },
+    { id: stepId(14), type: 'sms', text: 'Hi', linkTracking: false },
   ])
 })
 
-test('stepsToGraph of no steps is the Trigger alone', () => {
-  const { nodes, edges } = stepsToGraph(on('contact.created'), path([]), {})
+const VIP: BranchCondition = {
+  kind: 'group',
+  combinator: 'and',
+  entries: [{ kind: 'tag', name: 'vip', operator: 'has' }],
+}
 
-  expect(nodes.map((n) => n.id)).toEqual(['trigger'])
-  expect(edges).toEqual([])
+// A tree of every fork kind and an End (ADR 0124): a Branch with an unknown path, a Split nested in
+// one of its paths, an End finishing another.
+const TREE: AutomationStep[] = [
+  {
+    id: stepId(20),
+    type: 'branch',
+    paths: [
+      {
+        id: stepId(21),
+        condition: VIP,
+        steps: [
+          {
+            id: stepId(22),
+            type: 'split',
+            paths: [
+              {
+                id: stepId(23),
+                weight: 30,
+                steps: [{ id: stepId(24), type: 'wait', seconds: 60 }],
+              },
+              { id: stepId(25), weight: 70, steps: [] },
+            ],
+          },
+        ],
+      },
+    ],
+    otherwise: { id: stepId(26), steps: [{ id: stepId(27), type: 'end' }] },
+    unknown: { id: stepId(28), steps: [] },
+  },
+  { id: stepId(29), type: 'apply_tag', tag: 'done' },
+]
+
+test('a version holding forks and an End round-trips, every Step and path keeping its id', () => {
+  const flow = flowOf(version(TREE))
+
+  expect(holdsKept(flow)).toBe(false)
+  expect(pathInputOf(flow)).toEqual({ id: ROOT, steps: TREE })
+  expect(definitionOf(flow).steps).toEqual({ id: ROOT, steps: TREE })
 })
 
-test('graphToSteps round-trips a stored trigger and chain, each Step and the path keeping its id', () => {
-  expect(graphToSteps(stepsToGraph(on('email.clicked'), path(STEPS), {}))).toEqual({
-    trigger: { kind: 'event', action: 'email.clicked', entryPolicy: 'once', cooldown: 3600 },
-    filterIncomplete: false,
-    exitEvents: [],
-    goalEvent: null,
-    steps: path(STEPS),
-    dropped: 0,
-  })
-})
-
-test('an End the canvas reads is saved back with its id: a save never drops it', () => {
-  const ended = path([...STEPS, { id: stepId(15), type: 'end' }])
-
-  const { steps } = graphToSteps(stepsToGraph(on('email.opened'), ended, {}))
-
-  expect(steps).toEqual(ended)
-})
-
-test('a node dropped on the canvas is saved with its node id, beside the stored steps', () => {
-  const graph = stepsToGraph(on('contact.created'), path(STEPS.slice(0, 1)), {})
-  const added = node(stepId(99), 'wait', { seconds: 60 })
-  const extended = {
-    nodes: [...graph.nodes, added],
-    edges: [...graph.edges, edge(stepId(11), stepId(99))],
+// A stored Condition is saved back as read, whatever its leaves: the read shape of each leaf is
+// the shape a request writes.
+test("a Branch path's stored Condition of every leaf kind is saved back as read", () => {
+  const condition: BranchCondition = {
+    kind: 'group',
+    combinator: 'or',
+    not: true,
+    entries: [
+      { kind: 'event', action: 'email.opened', operator: 'atMost', times: 2, withinDays: 7 },
+      { kind: 'birthday', test: { kind: 'withinLast', days: 3 } },
+      {
+        kind: 'customField',
+        key: 'renews_at',
+        test: { kind: 'moment', operator: 'before', at: '2026-01-01T00:00:00Z' },
+      },
+      {
+        kind: 'attribute',
+        attribute: 'email',
+        test: { kind: 'text', operator: 'contains', value: '@x' },
+      },
+      {
+        kind: 'engagementTracking',
+        channel: 'email',
+        test: { kind: 'text', operator: 'eq', value: 'granted' },
+      },
+      { kind: 'telegram', operator: 'has' },
+      {
+        kind: 'group',
+        combinator: 'and',
+        entries: [
+          {
+            kind: 'property',
+            of: { kind: 'trigger' },
+            key: 'total',
+            test: { kind: 'number', operator: 'gt', value: 100 },
+          },
+        ],
+      },
+    ],
+  }
+  const branch: AutomationStep = {
+    id: stepId(20),
+    type: 'branch',
+    paths: [{ id: stepId(21), condition, steps: [] }],
+    otherwise: { id: stepId(22), steps: [] },
   }
 
-  expect(graphToSteps(extended).steps).toEqual({
-    id: ROOT,
-    steps: [STEPS[0], { id: stepId(99), type: 'wait', seconds: 60 }],
-  })
+  expect(pathInputOf(flowOf(version([branch])))).toEqual({ id: ROOT, steps: [branch] })
 })
 
-test('a Trigger with no path id saves the steps without one: the server gives it', () => {
-  const graph = { nodes: [node('trigger', 'trigger', { triggerEvent: 'paid' })], edges: [] }
+// A kind newer than the editor is kept as stored, at any depth: the version is shown, never saved,
+// so nothing can drop it.
+test('a Step of a kind the editor does not know, inside a fork path, keeps the version unsaved', () => {
+  // A kind the contract may gain, read as the server would send it.
+  const newer: AutomationStep = JSON.parse(
+    JSON.stringify({ id: stepId(30), type: 'wait_for_event' }),
+  )
+  const split: AutomationStep = {
+    id: stepId(15),
+    type: 'split',
+    paths: [
+      { id: stepId(16), weight: 30, steps: [newer] },
+      { id: stepId(18), weight: 70, steps: [] },
+    ],
+  }
 
-  expect(graphToSteps(graph).steps).toEqual({ steps: [] })
+  const flow = flowOf(version([...STEPS, split]))
+
+  expect(holdsKept(flow)).toBe(true)
+  expect(pathInputOf(flow)).toBeNull()
 })
 
 test('an email step written in the editor is saved as its document alone', () => {
@@ -183,111 +223,37 @@ test('an email step written in the editor is saved as its document alone', () =>
     editorVersion: '1.7.14',
   }
 
-  // The canvas holds the document as text beside the body the server built...
-  expect(stepsToGraph(on('contact.created'), path([stored]), {}).nodes[1]?.data.properties).toEqual(
-    {
-      integrationId: '',
-      subject: 'Hi',
-      body: '<p>built by the server</p>',
-      doc: JSON.stringify(doc),
-    },
-  )
-  // ...and resaving sends the document only: a body beside it is a 422.
-  expect(graphToSteps(stepsToGraph(on('contact.created'), path([stored]), {})).steps.steps).toEqual(
-    [{ id: stepId(11), type: 'email', subject: 'Hi', doc }],
-  )
-})
-
-test('an email step whose document was cleared is saved as its body alone', () => {
-  const graph = chain(node('a', 'email', { subject: 'Hi', body: '<p>source</p>', doc: '' }))
-
-  expect(graphToSteps(graph).steps.steps).toEqual([
-    { id: 'a', type: 'email', subject: 'Hi', body: '<p>source</p>' },
+  expect(pathInputOf(flowOf(version([stored])))?.steps).toEqual([
+    { id: stepId(11), type: 'email', subject: 'Hi', doc },
   ])
 })
 
-test('graphToSteps of a canvas without exactly one Trigger has no trigger event', () => {
-  const none = {
-    trigger: null,
-    filterIncomplete: false,
-    exitEvents: [],
-    goalEvent: null,
-    steps: { steps: [] },
-    dropped: 0,
-  }
-
-  expect(graphToSteps({ nodes: [], edges: [] })).toEqual(none)
-  expect(graphToSteps({ nodes: [node('a', 'wait', { seconds: 5 })], edges: [] })).toEqual(none)
-  expect(graphToSteps({ nodes: [TRIGGER, { ...TRIGGER, id: 'second' }], edges: [] })).toEqual(none)
-})
-
-test('graphToSteps follows edges from the Trigger regardless of node order', () => {
-  const graph = {
-    nodes: [
-      node('b', 'wait', { seconds: 5 }),
-      node('a', 'email', { subject: 's', body: 'b' }),
-      TRIGGER,
-    ],
-    edges: [edge('trigger', 'a'), edge('a', 'b')],
-  }
-
-  expect(graphToSteps(graph).steps.steps).toEqual([
-    { id: 'a', type: 'email', subject: 's', body: 'b' },
-    { id: 'b', type: 'wait', seconds: 5 },
-  ])
-})
-
-test('graphToSteps coerces wait seconds and non-text values', () => {
-  const graph = chain(
-    node('a', 'wait', { seconds: '90.7' }),
-    node('b', 'wait', { seconds: 'abc' }),
-    node('c', 'apply_tag', { tag: 42 }),
+test('an email step with no document is saved as its body alone', () => {
+  const flow = flowOf(
+    version([{ id: stepId(11), type: 'email', subject: 'Hi', body: '<p>source</p>' }]),
   )
 
-  expect(graphToSteps(graph).steps.steps).toEqual([
-    { id: 'a', type: 'wait', seconds: 90 },
-    { id: 'b', type: 'wait', seconds: 0 },
-    { id: 'c', type: 'apply_tag', tag: '' },
+  expect(pathInputOf(flow)?.steps).toEqual([
+    { id: stepId(11), type: 'email', subject: 'Hi', body: '<p>source</p>' },
   ])
 })
 
-test('graphToSteps reports nodes off the main chain as dropped', () => {
-  const graph = {
-    nodes: [
-      TRIGGER,
-      node('a', 'apply_tag', { tag: 'x' }),
-      node('b', 'apply_tag', { tag: 'y' }),
-      node('c', 'apply_tag', { tag: 'z' }),
-    ],
-    edges: [edge('trigger', 'a'), edge('a', 'b'), edge('a', 'c')],
+test('a wait whose seconds are blank or fractional saves whole seconds', () => {
+  const flow = flowOf(version([{ id: stepId(11), type: 'wait', seconds: 60 }]))
+  const blank: Flow = {
+    ...flow,
+    path: { ...flow.path, steps: [{ id: stepId(11), kind: 'wait', draft: { seconds: '' } }] },
+  }
+  const fractional: Flow = {
+    ...flow,
+    path: { ...flow.path, steps: [{ id: stepId(11), kind: 'wait', draft: { seconds: 90.7 } }] },
   }
 
-  expect(graphToSteps(graph)).toEqual({
-    trigger: { kind: 'event', action: 'email.opened', entryPolicy: 'once' },
-    filterIncomplete: false,
-    exitEvents: [],
-    goalEvent: null,
-    steps: {
-      id: ROOT,
-      steps: [
-        { id: 'a', type: 'apply_tag', tag: 'x' },
-        { id: 'b', type: 'apply_tag', tag: 'y' },
-      ],
-    },
-    dropped: 1,
-  })
+  expect(pathInputOf(blank)?.steps).toEqual([{ id: stepId(11), type: 'wait', seconds: 0 }])
+  expect(pathInputOf(fractional)?.steps).toEqual([{ id: stepId(11), type: 'wait', seconds: 90 }])
 })
 
-test('graphToSteps skips unknown node types and ignores edges to missing nodes', () => {
-  const graph = {
-    nodes: [TRIGGER, node('a', 'mystery', {}), node('b', 'remove_tag', { tag: 't' })],
-    edges: [edge('trigger', 'a'), edge('a', 'b'), edge('b', 'ghost')],
-  }
-
-  expect(graphToSteps(graph).steps.steps).toEqual([{ id: 'b', type: 'remove_tag', tag: 't' }])
-})
-
-test('an HTTP step keeps its id and header names but never carries a secret into the canvas', () => {
+test('an HTTP step keeps its id and header names but never carries a secret into the editor', () => {
   const stored: AutomationStep = {
     id: stepId(11),
     type: 'http',
@@ -295,191 +261,100 @@ test('an HTTP step keeps its id and header names but never carries a secret into
     headers: [{ name: 'Authorization' }, { name: 'X-Key' }],
     hasSecret: true,
   }
-  const { nodes } = stepsToGraph(on('contact.created'), path([stored]), {})
+  const flow = flowOf(version([stored]))
 
-  expect(nodes[1]?.id).toBe(stepId(11))
-  expect(nodes[1]?.data.properties).toEqual({
-    stored: 'stored',
-    url: '',
-    headers: '[{"name":"Authorization"},{"name":"X-Key"}]',
-    body: '{"a":1}',
-    secret: '',
-  })
+  expect(flow.path.steps).toEqual([
+    {
+      id: stepId(11),
+      kind: 'http',
+      draft: {
+        stored: true,
+        url: '',
+        headers: [{ name: 'Authorization' }, { name: 'X-Key' }],
+        body: '{"a":1}',
+        secret: '',
+      },
+    },
+  ])
   // Resaving untouched resends no URL, header value or secret, so the server keeps them, matched
   // by the Step's id.
-  expect(graphToSteps(stepsToGraph(on('contact.created'), path([stored]), {}))).toEqual({
-    trigger: { kind: 'event', action: 'contact.created', entryPolicy: 'once', cooldown: 3600 },
-    filterIncomplete: false,
-    exitEvents: [],
-    goalEvent: null,
-    steps: {
-      id: ROOT,
+  expect(pathInputOf(flow)?.steps).toEqual([
+    {
+      id: stepId(11),
+      type: 'http',
+      body: '{"a":1}',
+      headers: [{ name: 'Authorization' }, { name: 'X-Key' }],
+    },
+  ])
+})
+
+test('an HTTP step with a new URL, header value and secret sends them, and drops a blank row', () => {
+  const flow = flowOf(version([]))
+  const edited: Flow = {
+    ...flow,
+    path: {
+      ...flow.path,
       steps: [
         {
           id: stepId(11),
-          type: 'http',
-          body: '{"a":1}',
-          headers: [{ name: 'Authorization' }, { name: 'X-Key' }],
+          kind: 'http',
+          draft: {
+            stored: false,
+            url: ' https://hooks.example.com/x ',
+            headers: [
+              { name: 'Authorization', value: 'Bearer a:b' },
+              { name: '', value: '' },
+              { name: ' X-Key ', value: 'k' },
+              { name: 'X-Kept', value: '' },
+            ],
+            body: '{}',
+            secret: 'whsec_x',
+          },
         },
       ],
     },
-    dropped: 0,
-  })
-})
+  }
 
-test('an HTTP node with a new URL, header value and secret sends them', () => {
-  const graph = chain(
-    node('a', 'http', {
-      stored: '',
-      url: ' https://hooks.example.com/x ',
-      headers: JSON.stringify([
-        { name: 'Authorization', value: 'Bearer a:b' },
-        { name: '', value: '' },
-        { name: ' X-Key ', value: 'k' },
-      ]),
-      body: '{}',
-      secret: 'whsec_x',
-    }),
-  )
-
-  expect(graphToSteps(graph).steps.steps).toEqual([
+  expect(pathInputOf(edited)?.steps).toEqual([
     {
-      id: 'a',
+      id: stepId(11),
       type: 'http',
       body: '{}',
       url: 'https://hooks.example.com/x',
       headers: [
         { name: 'Authorization', value: 'Bearer a:b' },
         { name: 'X-Key', value: 'k' },
+        { name: 'X-Kept' },
       ],
       secret: 'whsec_x',
     },
   ])
 })
 
-test('a bare HTTP step opens blank and a header with no value keeps its stored one', () => {
-  const { nodes } = stepsToGraph(
-    on('contact.created'),
-    path([{ id: stepId(11), type: 'http', body: '', headers: [], hasSecret: false }]),
-    {},
-  )
-
-  expect(nodes[1]?.data.properties).toEqual({
-    stored: 'stored',
-    url: '',
-    headers: '[]',
-    body: '',
-    secret: '',
-  })
-  expect(
-    graphToSteps(
-      chain(
-        node('a', 'http', {
-          stored: '',
-          url: '',
-          headers: '[{"name":"X-Key","value":""}]',
-          body: '',
-          secret: '',
-        }),
-      ),
-    ).steps.steps,
-  ).toEqual([{ id: 'a', type: 'http', body: '', headers: [{ name: 'X-Key' }] }])
-})
-
-test('an HTTP node whose headers text is not a header list sends none', () => {
-  expect(
-    graphToSteps(
-      chain(
-        node('a', 'http', { stored: '', url: '', headers: 'X-Key: 1', body: '', secret: '' }),
-        node('b', 'http', { stored: '', url: '', headers: '{"name":"X"}', body: '', secret: '' }),
-      ),
-    ).steps.steps,
-  ).toEqual([
-    { id: 'a', type: 'http', body: '', headers: [] },
-    { id: 'b', type: 'http', body: '', headers: [] },
-  ])
-})
-
-test('graphToSteps stops on a cycle instead of looping', () => {
-  const graph = {
-    nodes: [TRIGGER, node('a', 'apply_tag', { tag: 'x' }), node('b', 'apply_tag', { tag: 'y' })],
-    edges: [edge('trigger', 'a'), edge('a', 'b'), edge('b', 'a')],
-  }
-
-  expect(graphToSteps(graph)).toEqual({
-    trigger: { kind: 'event', action: 'email.opened', entryPolicy: 'once' },
-    filterIncomplete: false,
-    exitEvents: [],
-    goalEvent: null,
-    steps: {
-      id: ROOT,
-      steps: [
-        { id: 'a', type: 'apply_tag', tag: 'x' },
-        { id: 'b', type: 'apply_tag', tag: 'y' },
-      ],
-    },
-    dropped: 0,
-  })
-})
-
-test('stepsToGraph names each node by its kind', () => {
-  const { nodes } = stepsToGraph(
-    on('contact.created'),
-    path([{ id: stepId(11), type: 'wait', seconds: 5 }]),
-    { trigger: 'Trigger', wait: 'Wait' },
-  )
-
-  expect(nodes.map((n) => n.data.properties.label)).toEqual(['Trigger', 'Wait'])
-})
-
-test("the saved snapshot changes with the name, the trigger, the steps or a step's Integration, and not with a re-layout", () => {
-  const graph = stepsToGraph(on('contact.created'), path(STEPS), {})
-  const saved = automationSnapshot('Welcome', graph)
-  const rest = STEPS.slice(1)
-  const throughRelay: AutomationStep[] = [
-    { id: stepId(11), type: 'email', subject: 'Hello', body: '<p></p>', integrationId: testId(21) },
-    ...rest,
-  ]
-
-  expect(automationSnapshot('  Welcome ', graph)).toBe(saved)
-  expect(automationSnapshot('Welcome 2', graph)).not.toBe(saved)
-  expect(automationSnapshot('Welcome', stepsToGraph(on('email.opened'), path(STEPS), {}))).not.toBe(
-    saved,
-  )
-  expect(
-    automationSnapshot('Welcome', stepsToGraph(on('contact.created'), path(STEPS.slice(1)), {})),
-  ).not.toBe(saved)
-  expect(
-    automationSnapshot('Welcome', stepsToGraph(on('contact.created'), path(throughRelay), {})),
-  ).not.toBe(saved)
-  const moved = {
-    ...graph,
-    nodes: graph.nodes.map((n) => ({ ...n, position: { x: 50, y: n.position.y } })),
-  }
-  expect(automationSnapshot('Welcome', moved)).toBe(saved)
-})
-
 test('each email step keeps the Integration it names, and one that names none sends through the default', () => {
   const steps: AutomationStep[] = [
-    {
-      id: stepId(11),
-      type: 'email',
-      integrationId: testId(21),
-      subject: 'First',
-      body: '<p>1</p>',
-    },
-    { id: stepId(12), type: 'wait', seconds: 60 },
-    { id: stepId(13), type: 'email', subject: 'Second', body: '<p>2</p>' },
+    { id: stepId(11), type: 'email', integrationId: testId(21), subject: 'A', body: '<p>1</p>' },
+    { id: stepId(12), type: 'email', subject: 'B', body: '<p>2</p>' },
   ]
-  const graph = stepsToGraph(on('contact.created'), path(steps), {})
 
-  expect(graph.nodes.map((n) => n.data.properties.integrationId)).toEqual([
-    undefined,
-    testId(21),
-    undefined,
-    '',
-  ])
-  expect(graphToSteps(graph).steps).toEqual(path(steps))
+  expect(pathInputOf(flowOf(version(steps)))).toEqual({ id: ROOT, steps })
+})
+
+test("the saved snapshot changes with the name, the trigger, the steps or a step's Integration", () => {
+  const saved = automationSnapshot('Welcome', flowOf(version(STEPS, 'contact.created')))
+  const throughRelay: AutomationStep[] = [
+    { id: stepId(11), type: 'email', subject: 'Hello', body: '<p></p>', integrationId: testId(21) },
+    ...STEPS.slice(1),
+  ]
+
+  const trimmed = automationSnapshot('  Welcome ', flowOf(version(STEPS, 'contact.created')))
+  const renamed = automationSnapshot('Welcome 2', flowOf(version(STEPS, 'contact.created')))
+  const retriggered = automationSnapshot('Welcome', flowOf(version(STEPS, 'email.opened')))
+  const shorter = automationSnapshot('Welcome', flowOf(version(STEPS.slice(1), 'contact.created')))
+  const relayed = automationSnapshot('Welcome', flowOf(version(throughRelay, 'contact.created')))
+
+  expect(trimmed).toBe(saved)
+  expect([renamed, retriggered, shorter, relayed].filter((other) => other === saved)).toEqual([])
 })
 
 const PAID: EventFilterInput = {
@@ -489,163 +364,108 @@ const PAID: EventFilterInput = {
     { kind: 'property', key: 'status', test: { kind: 'text', operator: 'eq', value: 'paid' } },
   ],
 }
-
-test("the Trigger's filter rides on its node as JSON text and round-trips into the saved Trigger", () => {
-  const trigger: AutomationTrigger = {
-    trigger: {
-      kind: 'event',
-      action: 'order.completed',
-      filter: PAID,
-      entryPolicy: 'once',
-      cooldown: 3600,
-    },
-    exitEvents: [],
-    goalEvent: null,
-  }
-  const graph = stepsToGraph(trigger, path([]), {})
-
-  expect(graph.nodes[0]?.data.properties).toMatchObject({
-    triggerEvent: 'order.completed',
-    triggerFilter: JSON.stringify(PAID),
-  })
-  expect(graphToSteps(graph)).toMatchObject({ trigger: trigger.trigger, filterIncomplete: false })
-})
-
-test('a Trigger with an empty filter, or none, saves no filter', () => {
-  const empty = node('trigger', 'trigger', { triggerEvent: 'order.completed', triggerFilter: '' })
-
-  expect(graphToSteps({ nodes: [empty], edges: [] })).toMatchObject({
-    trigger: { kind: 'event', action: 'order.completed', entryPolicy: 'once' },
-    filterIncomplete: false,
-  })
-  expect(graphToSteps({ nodes: [empty], edges: [] }).trigger).not.toHaveProperty('filter')
-})
-
-test('a filter still being typed is flagged and left out of the saved Trigger', () => {
-  const blankKey = {
-    ...PAID,
-    entries: [{ kind: 'property', test: { kind: 'text', operator: 'eq', value: 'paid' } }],
-  }
-  const typing = node('trigger', 'trigger', {
-    triggerEvent: 'order.completed',
-    triggerFilter: JSON.stringify(blankKey),
-  })
-
-  const saved = graphToSteps({ nodes: [typing], edges: [] })
-
-  expect(saved.filterIncomplete).toBe(true)
-  expect(saved.trigger).toEqual({ kind: 'event', action: 'order.completed', entryPolicy: 'once' })
-})
-
-test("the Trigger's Entry policy and cooldown ride on its node and round-trip into the saved Trigger", () => {
-  const trigger: AutomationTrigger = {
-    trigger: { kind: 'event', action: 'order.completed', entryPolicy: 'again', cooldown: 7200 },
-    exitEvents: [],
-    goalEvent: null,
-  }
-  const graph = stepsToGraph(trigger, path([]), {})
-
-  expect(graph.nodes[0]?.data.properties).toMatchObject({ entryPolicy: 'again', cooldown: '7200' })
-  expect(graphToSteps(graph).trigger).toEqual(trigger.trigger)
-})
-
-test('a Trigger node without a cooldown leaves it to the server, and an unknown policy is once', () => {
-  const bare = node('trigger', 'trigger', {
-    triggerEvent: 'order.completed',
-    entryPolicy: 'sometimes',
-    cooldown: '',
-  })
-
-  expect(graphToSteps({ nodes: [bare], edges: [] }).trigger).toEqual({
-    kind: 'event',
-    action: 'order.completed',
-    entryPolicy: 'once',
-  })
-})
-
-test('the cooldown is typed in hours and held in seconds', () => {
-  expect(cooldownSeconds(3)).toBe('10800')
-  expect(cooldownHours('10800')).toBe(3)
-  expect(cooldownSeconds('')).toBe('')
-  expect(cooldownHours('')).toBe('')
-})
-
 const CANCELLED: EventFilterInput = {
   ...PAID,
   entries: [
     { kind: 'property', key: 'status', test: { kind: 'text', operator: 'eq', value: 'cancelled' } },
   ],
 }
+const BLANK_KEY = JSON.stringify({
+  ...PAID,
+  entries: [{ kind: 'property', test: { kind: 'text', operator: 'eq', value: 'paid' } }],
+})
 
-test('the Trigger node carries the exit and goal events as matchers, which round-trip', () => {
-  const trigger: AutomationTrigger = {
-    trigger: { kind: 'event', action: 'order.placed', entryPolicy: 'once', cooldown: 3600 },
+test("the Trigger's filter, Entry policy, cooldown and Enrollment key round-trip", () => {
+  const stored: AutomationVersion = {
+    ...version([], 'order.completed'),
+    trigger: {
+      kind: 'event',
+      action: 'order.completed',
+      filter: PAID,
+      entryPolicy: 'again',
+      cooldown: 7200,
+      enrollmentKey: 'order_id',
+    },
+  }
+
+  expect(flowOf(stored).trigger).toMatchObject({
+    filterText: JSON.stringify(PAID),
+    entryPolicy: 'again',
+    cooldown: 7200,
+    enrollmentKey: 'order_id',
+  })
+  expect(definitionOf(flowOf(stored))).toMatchObject({
+    trigger: stored.trigger,
+    filterIncomplete: false,
+  })
+})
+
+test('a Trigger with no filter, cooldown or Enrollment key leaves them to the server', () => {
+  const { trigger } = definitionOf(
+    triggered({ filterText: '', cooldown: null, enrollmentKey: '  ' }),
+  )
+
+  expect(trigger).toEqual({ kind: 'event', action: 'paid', entryPolicy: 'once' })
+})
+
+test('a filter still being typed is flagged and left out of the saved Trigger', () => {
+  const saved = definitionOf(triggered({ filterText: BLANK_KEY, cooldown: null }))
+
+  expect(saved.filterIncomplete).toBe(true)
+  expect(saved.trigger).toEqual({ kind: 'event', action: 'paid', entryPolicy: 'once' })
+})
+
+test('the cooldown is typed in hours and held in seconds', () => {
+  expect(cooldownSeconds(3)).toBe(10_800)
+  expect(cooldownHours(10_800)).toBe(3)
+  expect(cooldownSeconds('')).toBeNull()
+  expect(cooldownHours(null)).toBe('')
+})
+
+test('the exit and goal events round-trip as matchers', () => {
+  const stored: AutomationVersion = {
+    ...version(STEPS, 'order.placed'),
     exitEvents: [{ action: 'account_closed' }, { action: 'order.closed', filter: CANCELLED }],
     goalEvent: { action: 'order.closed', filter: PAID },
   }
-  const graph = stepsToGraph(trigger, path(STEPS), {})
 
-  expect(endingsOf(String(graph.nodes[0]?.data.properties.exitEvents))).toEqual([
-    { action: 'account_closed', filterText: '' },
-    { action: 'order.closed', filterText: JSON.stringify(CANCELLED) },
-  ])
-  expect(goalOf(String(graph.nodes[0]?.data.properties.goalEvent))).toEqual({
-    action: 'order.closed',
-    filterText: JSON.stringify(PAID),
+  expect(flowOf(stored).trigger).toMatchObject({
+    exits: [
+      { action: 'account_closed', filterText: '' },
+      { action: 'order.closed', filterText: JSON.stringify(CANCELLED) },
+    ],
+    goal: { action: 'order.closed', filterText: JSON.stringify(PAID) },
   })
-  expect(graphToSteps(graph)).toEqual({
-    ...trigger,
-    filterIncomplete: false,
-    steps: path(STEPS),
-    dropped: 0,
+  expect(definitionOf(flowOf(stored))).toMatchObject({
+    exitEvents: stored.exitEvents,
+    goalEvent: stored.goalEvent,
   })
 })
 
 test('an exit with a blank action is dropped, a goal with one is none, and actions are trimmed', () => {
-  const root = node('trigger', 'trigger', {
-    triggerEvent: 'paid',
-    exitEvents: endingsText([
+  const flow = triggered({
+    exits: [
       { action: ' refunded ', filterText: '' },
       { action: '  ', filterText: '' },
-    ]),
-    goalEvent: goalText({ action: ' ', filterText: '' }),
+    ],
+    goal: { action: ' ', filterText: '' },
   })
 
-  expect(graphToSteps({ nodes: [root], edges: [] })).toMatchObject({
+  expect(definitionOf(flow)).toMatchObject({
     exitEvents: [{ action: 'refunded' }],
     goalEvent: null,
   })
 })
 
-test('no goal is an empty text, and an unreadable text of exits or goal is none', () => {
-  const root = node('trigger', 'trigger', { triggerEvent: 'paid', exitEvents: 'x', goalEvent: '' })
-
-  expect(goalText(null)).toBe('')
-  expect(graphToSteps({ nodes: [root], edges: [] })).toMatchObject({
-    exitEvents: [],
-    goalEvent: null,
-  })
-})
-
 test("an exit's or the goal's filter still being typed is flagged and left out of what is saved", () => {
-  const blankKey = JSON.stringify({
-    ...PAID,
-    entries: [{ kind: 'property', test: { kind: 'text', operator: 'eq', value: 'paid' } }],
-  })
-  const exitTyping = node('trigger', 'trigger', {
-    triggerEvent: 'order.placed',
-    exitEvents: endingsText([{ action: 'order.closed', filterText: blankKey }]),
-  })
-  const goalTyping = node('trigger', 'trigger', {
-    triggerEvent: 'order.placed',
-    goalEvent: goalText({ action: 'order.closed', filterText: blankKey }),
-  })
+  const exitTyping = triggered({ exits: [{ action: 'order.closed', filterText: BLANK_KEY }] })
+  const goalTyping = triggered({ goal: { action: 'order.closed', filterText: BLANK_KEY } })
 
-  expect(graphToSteps({ nodes: [exitTyping], edges: [] })).toMatchObject({
+  expect(definitionOf(exitTyping)).toMatchObject({
     filterIncomplete: true,
     exitEvents: [{ action: 'order.closed' }],
   })
-  expect(graphToSteps({ nodes: [goalTyping], edges: [] })).toMatchObject({
+  expect(definitionOf(goalTyping)).toMatchObject({
     filterIncomplete: true,
     goalEvent: { action: 'order.closed' },
   })
@@ -657,24 +477,4 @@ test('a half-typed filter of an exit or goal is dropped, a complete one kept', (
 
   expect(withoutHalfTypedFilter(halfTyped)).toEqual({ action: 'order.closed', filterText: '' })
   expect(withoutHalfTypedFilter(complete)).toEqual(complete)
-})
-
-test("the Trigger's Enrollment key rides on its node and round-trips into the saved Trigger, and a blank one saves none", () => {
-  const trigger: AutomationTrigger = {
-    trigger: {
-      kind: 'event',
-      action: 'order.completed',
-      entryPolicy: 'once',
-      cooldown: 3600,
-      enrollmentKey: 'order_id',
-    },
-    exitEvents: [],
-    goalEvent: null,
-  }
-  const graph = stepsToGraph(trigger, path([]), {})
-  const blank = node('trigger', 'trigger', { triggerEvent: 'order.completed', enrollmentKey: '  ' })
-
-  expect(graph.nodes[0]?.data.properties).toMatchObject({ enrollmentKey: 'order_id' })
-  expect(graphToSteps(graph).trigger).toEqual(trigger.trigger)
-  expect(graphToSteps({ nodes: [blank], edges: [] }).trigger).not.toHaveProperty('enrollmentKey')
 })

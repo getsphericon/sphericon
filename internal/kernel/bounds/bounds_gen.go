@@ -306,6 +306,26 @@ const (
 	TriggerCooldownDefault = 3600
 )
 
+// BranchPaths are the listed paths of a Branch, `otherwise` and `unknown` aside (ADR 0124).
+// From site BranchStepInput.paths, site BranchUnknownPathInput.conditions.
+const (
+	BranchPathsMinItems = 1
+	BranchPathsMaxItems = 9
+)
+
+// SplitPaths are the paths of a Split (ADR 0124).
+// From site SplitStepInput.paths.
+const (
+	SplitPathsMinItems = 2
+	SplitPathsMaxItems = 10
+)
+
+// SplitWeight is the share of a Split's path, a whole percentage of the Contacts that reach it (ADR 0124).
+// From site SplitPathInput.weight.
+const (
+	SplitWeightMin = 1
+)
+
 // ConditionWithinDays is how many days back a condition looks: an Event count's window or a moment's within the last days.
 // From site EventLeafInput.withinDays, site WithinLastTestInput.days.
 const (
@@ -419,6 +439,11 @@ var Owners = map[string][]string{
 	"RuleTriggerEventsMinItems":          {"Rule"},
 	"EntryCooldownMin":                   {"AutomationVersion"},
 	"TriggerCooldownDefault":             {"AutomationVersion"},
+	"BranchPathsMinItems":                {"AutomationVersion"},
+	"BranchPathsMaxItems":                {"AutomationVersion"},
+	"SplitPathsMinItems":                 {"AutomationVersion"},
+	"SplitPathsMaxItems":                 {"AutomationVersion"},
+	"SplitWeightMin":                     {"AutomationVersion"},
 	"ConditionWithinDaysMin":             {"internal/domain/contacts/condition"},
 	"ConditionEventTimesMin":             {"internal/domain/contacts/condition"},
 	"SigningSecretPattern":               {"internal/infra/httpcall"},

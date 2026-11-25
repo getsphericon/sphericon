@@ -311,6 +311,129 @@ model EndStepInput {
   type: "end";
 }
 
+/** A path of a Branch: the Condition that sends an Enrollment down it and its Steps */
+model BranchPath {
+  /** The path's id */
+  id: StepId;
+
+  /** The Condition an Enrollment takes the path on, when no path above it is taken */
+  condition: BranchCondition;
+
+  /** The path's Steps, in order; none goes on to the Step after the Branch */
+  steps: PathStep[];
+}
+
+/** A path of a Branch, as a request writes it */
+model BranchPathInput {
+  /** The path's id; omitted, the path is given one */
+  id?: StepId;
+
+  /** The Condition an Enrollment takes the path on, when no path above it is taken. A path
+   * without a test refuses the save, naming the Branch. */
+  condition: BranchConditionInput;
+
+  /** The path's Steps, in order; none goes on to the Step after the Branch */
+  steps: PathStepInput[];
+}
+
+/** A Step that sends each Enrollment down the first of its paths whose Condition holds, on the
+ * Contact's live data when the Enrollment reaches it (ADR 0124), and down `otherwise` when none
+ * does. A Condition that is unknown for the Contact (an engagement count of a Destination that is
+ * not tracked, ADR 0123) before any holds sends it down `unknown`. The paths rejoin at the Step
+ * after the Branch. */
+model BranchStep {
+  /** The Step's id */
+  id: StepId;
+
+  type: "branch";
+
+  /** The paths, in the order their Conditions are tested */
+  paths: BranchPath[];
+
+  /** The path taken when no Condition holds */
+  otherwise: AutomationPath;
+
+  /** The path taken when the first Condition that does not fail is unknown; present only on a
+   * Branch whose Conditions can be unknown */
+  `unknown`?: AutomationPath;
+}
+
+/** A Branch, as a request writes it. Publish refuses it without `unknown` when a Condition counts
+ * an open or a click, and with `unknown` when none does. */
+model BranchStepInput {
+  /** The Step's id; omitted, the Step is given one */
+  id?: StepId;
+
+  type: "branch";
+
+  /** The paths, in the order their Conditions are tested: one to nine, so that with `otherwise` a
+   * Branch has at most ten (`unknown` is not counted) */
+  @minItems(1)
+  @maxItems(9)
+  paths: BranchPathInput[];
+
+  /** The path taken when no Condition holds */
+  otherwise: AutomationPathInput;
+
+  /** The path taken when the first Condition that does not fail is unknown */
+  `unknown`?: AutomationPathInput;
+}
+
+/** A path of a Split: its share of the Contacts and its Steps */
+model SplitPath {
+  /** The path's id */
+  id: StepId;
+
+  /** The path's share of the Contacts that reach the Split, a whole percentage */
+  weight: int32;
+
+  /** The path's Steps, in order; none is a holdout, sent nothing, that goes on to the Step after
+   * the Split */
+  steps: SplitPathStep[];
+}
+
+/** A path of a Split, as a request writes it */
+model SplitPathInput {
+  /** The path's id; omitted, the path is given one */
+  id?: StepId;
+
+  /** The path's share of the Contacts that reach the Split, a whole percentage. The weights of a
+   * Split's paths sum to 100, or the save is refused, naming the Split. */
+  @minValue(1)
+  weight: int32;
+
+  /** The path's Steps, in order; none is a holdout, sent nothing, that goes on to the Step after
+   * the Split */
+  steps: SplitPathStepInput[];
+}
+
+/** A Step that sends each Enrollment down one of its paths by weight (ADR 0124): a hash of the
+ * Contact, the Split and the Enrollment's ordinal chooses the path, so the same Enrollment always
+ * takes the same path and a new Enrollment of the Contact draws again. An empty path is a holdout.
+ * The paths rejoin at the Step after the Split. */
+model SplitStep {
+  /** The Step's id */
+  id: StepId;
+
+  type: "split";
+
+  /** The paths, in order */
+  paths: SplitPath[];
+}
+
+/** A Split, as a request writes it. Its paths' weights sum to 100. */
+model SplitStepInput {
+  /** The Step's id; omitted, the Step is given one */
+  id?: StepId;
+
+  type: "split";
+
+  /** The paths, in order: two to ten */
+  @minItems(2)
+  @maxItems(10)
+  paths: SplitPathInput[];
+}
+
 /** One Step of an automation, by `type` */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "type" })
 union AutomationStep {
@@ -322,6 +445,8 @@ union AutomationStep {
   remove_tag: RemoveTagStep,
   http: HttpStep,
   end: EndStep,
+  branch: BranchStep,
+  split: SplitStep,
 }
 
 /** One Step of an automation, by `type`, as a request writes it. A field of another kind is refused. */
@@ -335,6 +460,73 @@ union AutomationStepInput {
   remove_tag: RemoveTagStepInput,
   http: HttpStepInput,
   end: EndStepInput,
+  branch: BranchStepInput,
+  split: SplitStepInput,
+}
+
+// A fork's listed paths hold their Steps through a union of their own, the same arms as
+// AutomationStep: ogen breaks a recursion only at an object, so the union a fork's path reaches
+// must be one that no Step union above it is still being built from. Each fork kind has its own:
+// a union shared by two forks is reached again, through the other fork, while it is being built.
+
+/** One Step of a Branch's listed path, by `type`: the arms of AutomationStep */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "type" })
+union PathStep {
+  email: EmailStep,
+  telegram: TelegramStep,
+  sms: SmsStep,
+  wait: WaitStep,
+  apply_tag: ApplyTagStep,
+  remove_tag: RemoveTagStep,
+  http: HttpStep,
+  end: EndStep,
+  branch: BranchStep,
+  split: SplitStep,
+}
+
+/** One Step of a Branch's listed path, by `type`, as a request writes it: the arms of AutomationStepInput */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "type" })
+union PathStepInput {
+  email: EmailStepInput,
+  telegram: TelegramStepInput,
+  sms: SmsStepInput,
+  wait: WaitStepInput,
+  apply_tag: ApplyTagStepInput,
+  remove_tag: RemoveTagStepInput,
+  http: HttpStepInput,
+  end: EndStepInput,
+  branch: BranchStepInput,
+  split: SplitStepInput,
+}
+
+/** One Step of a Split's path, by `type`: the arms of AutomationStep */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "type" })
+union SplitPathStep {
+  email: EmailStep,
+  telegram: TelegramStep,
+  sms: SmsStep,
+  wait: WaitStep,
+  apply_tag: ApplyTagStep,
+  remove_tag: RemoveTagStep,
+  http: HttpStep,
+  end: EndStep,
+  branch: BranchStep,
+  split: SplitStep,
+}
+
+/** One Step of a Split's path, by `type`, as a request writes it: the arms of AutomationStepInput */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "type" })
+union SplitPathStepInput {
+  email: EmailStepInput,
+  telegram: TelegramStepInput,
+  sms: SmsStepInput,
+  wait: WaitStepInput,
+  apply_tag: ApplyTagStepInput,
+  remove_tag: RemoveTagStepInput,
+  http: HttpStepInput,
+  end: EndStepInput,
+  branch: BranchStepInput,
+  split: SplitStepInput,
 }
 
 /** A path of Steps, in the order an Enrollment walks them. A version's Steps are its root path. */
@@ -679,6 +871,28 @@ model AutomationReport {
   /** The send Steps' messages by version and Step id, in version order and, within a version, in
    * its Step order */
   versionSteps: AutomationVersionStepFigures[];
+
+  /** Each path of a Branch (its unknown path included) and of a Split by its fork's Step id and
+   * its own id: the enrollments that took it and how many of them reached the goal, over the
+   * automation's whole history, each summed over every version that had the path. Sorted by the
+   * newest of those versions, then by the fork's place there and the path's place in the fork:
+   * one entry per path an enrollment took, so a path none took has none */
+  paths: AutomationPathFigures[];
+}
+
+/** The enrollments that took one path of a fork, over every version that had it */
+model AutomationPathFigures {
+  /** The fork's Step id, the same in every version */
+  stepId: StepId;
+
+  /** The path's id, the same in every version */
+  pathId: StepId;
+
+  /** Enrollments that took the path */
+  enrollments: int32;
+
+  /** Enrollments among them that ended because their goal event was recorded */
+  goalReached: int32;
 }
 
 /** The messages of one send Step, over every version that had it */
