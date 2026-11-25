@@ -70,9 +70,12 @@ Other parts of the core are misplaced too:
 - **A domain module owns its tables and the rules of its own rows.** It calls only domain modules of its
   own context or of contexts below it.
 - **Only the owner writes a table.** A table is written only by the domain module that owns it. A use case
-  or another module reads it, and changes it only through its owner's functions. The `entrywrite` analyzer,
-  which forbids handlers to write through ent, holds an ownership map: each ent entity names its owning
-  module, and a write to it from any other package fails.
+  or another module may read it directly, in a query that joins the tables of several owners too, and
+  changes it only through its owner's functions. Which rows a read takes is the reader's choice, written
+  at the call: `Query` takes the rows the owner keeps, `QueryWithArchived` and `QueryWithDiscarded` the
+  archived or discarded ones as well. The `entrywrite` analyzer, which forbids handlers to write or read
+  through ent, holds an ownership map: each ent entity names its owning module, and a write to it from any
+  other package fails.
   An infrastructure package owns the few tables that belong to no domain, with the same rule: the bus
   owns the Events (`Event`), the Login throttle its attempts (`AuthAttempt`) and the database package
   the schema state the migrations keep (`SchemaState`).
