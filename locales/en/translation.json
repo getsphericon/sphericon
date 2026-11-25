@@ -454,10 +454,10 @@
     "removeStep": "Remove step",
     "removeTagNodeDescription": "Take a tag off the contact.",
     "removeUnknownPathConfirm_one": "No condition of this Branch counts an open or a click any more, so it needs no unknown path. Removing it also removes the step it holds.",
-    "removeUnknownPathConfirm_other": "No condition of this Branch counts an open or a click any more, so it needs no unknown path. Removing it also removes the {{count}} steps it holds.",
+    "removeUnknownPathConfirm_other": "No condition of this Branch counts an open or a click any more, so it needs no unknown path. Removing it also removes the {{count, number}} steps it holds.",
     "removeUnknownPathTitle": "Remove the unknown path",
     "removeWithStepsConfirm_one": "Removing this {{label}} also removes the step it holds.",
-    "removeWithStepsConfirm_other": "Removing this {{label}} also removes the {{count}} steps it holds.",
+    "removeWithStepsConfirm_other": "Removing this {{label}} also removes the {{count, number}} steps it holds.",
     "removeWithStepsTitle": "Remove {{label}}",
     "results": {
       "averageDuration": "Average duration",
