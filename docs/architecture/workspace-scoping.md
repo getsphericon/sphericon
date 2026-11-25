@@ -95,7 +95,8 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
 3. collect: `CollectSecurityHandler` in `internal/api/auth/auth.go`, from the collect key;
 4. jobs and event consumers, right after the row that names the Workspace is loaded
    (`client.Scoped(run.WorkspaceID)` in `internal/jobs`; `EvaluateTriggerWorker` loads the
-   contact and scopes from its Workspace; the suppression consumer (`jobs.SuppressEventWorker`), and the webhooks
+   contact and scopes from its Workspace; `DecideOccurrencesWorker`, the date scheduler's decision
+   of one Automation (ADR 0126), loads the Automation its tick named and scopes from its Workspace; the suppression consumer (`jobs.SuppressEventWorker`), and the webhooks
    consumer (`jobs.WebhookEventWorker`), which builds the scope it hands to `Dispatch` from the
    event envelope: an event job is the raw-client entry, an envelope carries only a Workspace
    id; and the orders consumer (`events.RecordOrder`, ADR 0064), which opens a transaction on the raw
@@ -224,7 +225,7 @@ function takes a `*ent.Scoped`), `internal/domain/sending/trackingdomains` (the 
 Workspace with `Module.Due` and loads a row by id in `Module.Recheck` before any scope exists, then writes through that
 Workspace's scope; `Module.HostWorkspace` reads the Instance-wide Tracking host index, ADR 0038, for the host gate of
 `internal/server` (`trackinghost.go`) and the edge's TLS question (`internal/api/tlsask`), which resolve a host to its
-Workspace before any scope exists), `internal/domain/orchestration/automations` (only `FenceOn`, the Automation run fence, ADR 0046: it opens the transaction that holds the share lock on the Enrollment's row, and `SecretSweeps`, the sealed HTTP step fields of every Automation version the re-encryption rewrites, in a transaction that tries the Workspace's lock and writes on the Automation's revision it read, and `Module.PruneSkippedEntries`, the Instance-wide age prune of the skipped entries the skipped entries retention job calls with the raw client; every other function takes a `*ent.Scoped`), `internal/domain/identity/suspension` (Workspace
+Workspace before any scope exists), `internal/domain/orchestration/automations` (only `FenceOn`, the Automation run fence, ADR 0046: it opens the transaction that holds the share lock on the Enrollment's row, and `SecretSweeps`, the sealed HTTP step fields of every Automation version the re-encryption rewrites, in a transaction that tries the Workspace's lock and writes on the Automation's revision it read, and `Module.PruneSkippedEntries`, the Instance-wide age prune of the skipped entries the skipped entries retention job calls with the raw client, and `Module.DateDue`, the date scheduler's tick (ADR 0126): the active, kept Automations of every Workspace whose live version has a date Trigger, each of which it queues a decision of; every other function takes a `*ent.Scoped`), `internal/domain/identity/suspension` (Workspace
 suspension and the Staff's other levers on the Workspace row: the abuse exemption and the Send cap, ADR 0067; it opens the transaction and writes the row through `workspaces`; and the default Send cap, ADR 0146, whose one row belongs to no Workspace: `DefaultSendCap.StartingIn` reads it on the transaction that creates a Workspace (`memberships.Module.CreateWorkspaceIn`, whose module the wiring builds over it), and `SetIn` changes it on the transaction of `instancestates`, which records the change), `internal/infra/events`
 (the bus, the Event rows it writes and the event consumers' work), `internal/jobs` (job entry points), `internal/server`
 (composition only: it hands the raw client to the security handlers it mounts), `internal/domain/sending/outboundmessages/engagement` (the
