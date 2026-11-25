@@ -11923,7 +11923,8 @@ func (s *EventFilterKind) UnmarshalText(data []byte) error {
 }
 
 // An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is about,
-// or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133).
+// of what sent the message a message's System event is about, or a nested group. A test of the Contact
+// is a Rule's, never a filter's (ADR 0133).
 // Ref: #/components/schemas/EventFilterNode
 type EventFilterNode struct {
 	OneOf EventFilterNodeSum
@@ -11940,7 +11941,8 @@ func (s *EventFilterNode) SetOneOf(val EventFilterNodeSum) {
 }
 
 // An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is about,
-// or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133).
+// of what sent the message a message's System event is about, or a nested group. A test of the Contact
+// is a Rule's, never a filter's (ADR 0133).
 // Ref: #/components/schemas/EventFilterNodeInput
 type EventFilterNodeInput struct {
 	OneOf EventFilterNodeInputSum
@@ -11962,6 +11964,7 @@ type EventFilterNodeInputSum struct {
 	Type                    EventFilterNodeInputSumType
 	EventFilterInput        EventFilterInput
 	FilterPropertyLeafInput FilterPropertyLeafInput
+	SentByLeafInput         SentByLeafInput
 }
 
 // EventFilterNodeInputSumType is oneOf type of EventFilterNodeInputSum.
@@ -11971,6 +11974,7 @@ type EventFilterNodeInputSumType string
 const (
 	EventFilterInputEventFilterNodeInputSum        EventFilterNodeInputSumType = "group"
 	FilterPropertyLeafInputEventFilterNodeInputSum EventFilterNodeInputSumType = "property"
+	SentByLeafInputEventFilterNodeInputSum         EventFilterNodeInputSumType = "sentBy"
 )
 
 // IsEventFilterInput reports whether EventFilterNodeInputSum is EventFilterInput.
@@ -11981,6 +11985,11 @@ func (s EventFilterNodeInputSum) IsEventFilterInput() bool {
 // IsFilterPropertyLeafInput reports whether EventFilterNodeInputSum is FilterPropertyLeafInput.
 func (s EventFilterNodeInputSum) IsFilterPropertyLeafInput() bool {
 	return s.Type == FilterPropertyLeafInputEventFilterNodeInputSum
+}
+
+// IsSentByLeafInput reports whether EventFilterNodeInputSum is SentByLeafInput.
+func (s EventFilterNodeInputSum) IsSentByLeafInput() bool {
+	return s.Type == SentByLeafInputEventFilterNodeInputSum
 }
 
 // SetEventFilterInput sets EventFilterNodeInputSum to EventFilterInput.
@@ -12025,12 +12034,34 @@ func NewFilterPropertyLeafInputEventFilterNodeInputSum(v FilterPropertyLeafInput
 	return s
 }
 
+// SetSentByLeafInput sets EventFilterNodeInputSum to SentByLeafInput.
+func (s *EventFilterNodeInputSum) SetSentByLeafInput(v SentByLeafInput) {
+	s.Type = SentByLeafInputEventFilterNodeInputSum
+	s.SentByLeafInput = v
+}
+
+// GetSentByLeafInput returns SentByLeafInput and true boolean if EventFilterNodeInputSum is SentByLeafInput.
+func (s EventFilterNodeInputSum) GetSentByLeafInput() (v SentByLeafInput, ok bool) {
+	if !s.IsSentByLeafInput() {
+		return v, false
+	}
+	return s.SentByLeafInput, true
+}
+
+// NewSentByLeafInputEventFilterNodeInputSum returns new EventFilterNodeInputSum from SentByLeafInput.
+func NewSentByLeafInputEventFilterNodeInputSum(v SentByLeafInput) EventFilterNodeInputSum {
+	var s EventFilterNodeInputSum
+	s.SetSentByLeafInput(v)
+	return s
+}
+
 // EventFilterNodeSum represents sum type.
 type EventFilterNodeSum struct {
 	// Type selects the active sum variant, switch on this field.
 	Type               EventFilterNodeSumType
 	EventFilter        EventFilter
 	FilterPropertyLeaf FilterPropertyLeaf
+	SentByLeaf         SentByLeaf
 }
 
 // EventFilterNodeSumType is oneOf type of EventFilterNodeSum.
@@ -12040,6 +12071,7 @@ type EventFilterNodeSumType string
 const (
 	EventFilterEventFilterNodeSum        EventFilterNodeSumType = "group"
 	FilterPropertyLeafEventFilterNodeSum EventFilterNodeSumType = "property"
+	SentByLeafEventFilterNodeSum         EventFilterNodeSumType = "sentBy"
 )
 
 // IsEventFilter reports whether EventFilterNodeSum is EventFilter.
@@ -12049,6 +12081,9 @@ func (s EventFilterNodeSum) IsEventFilter() bool { return s.Type == EventFilterE
 func (s EventFilterNodeSum) IsFilterPropertyLeaf() bool {
 	return s.Type == FilterPropertyLeafEventFilterNodeSum
 }
+
+// IsSentByLeaf reports whether EventFilterNodeSum is SentByLeaf.
+func (s EventFilterNodeSum) IsSentByLeaf() bool { return s.Type == SentByLeafEventFilterNodeSum }
 
 // SetEventFilter sets EventFilterNodeSum to EventFilter.
 func (s *EventFilterNodeSum) SetEventFilter(v EventFilter) {
@@ -12089,6 +12124,27 @@ func (s EventFilterNodeSum) GetFilterPropertyLeaf() (v FilterPropertyLeaf, ok bo
 func NewFilterPropertyLeafEventFilterNodeSum(v FilterPropertyLeaf) EventFilterNodeSum {
 	var s EventFilterNodeSum
 	s.SetFilterPropertyLeaf(v)
+	return s
+}
+
+// SetSentByLeaf sets EventFilterNodeSum to SentByLeaf.
+func (s *EventFilterNodeSum) SetSentByLeaf(v SentByLeaf) {
+	s.Type = SentByLeafEventFilterNodeSum
+	s.SentByLeaf = v
+}
+
+// GetSentByLeaf returns SentByLeaf and true boolean if EventFilterNodeSum is SentByLeaf.
+func (s EventFilterNodeSum) GetSentByLeaf() (v SentByLeaf, ok bool) {
+	if !s.IsSentByLeaf() {
+		return v, false
+	}
+	return s.SentByLeaf, true
+}
+
+// NewSentByLeafEventFilterNodeSum returns new EventFilterNodeSum from SentByLeaf.
+func NewSentByLeafEventFilterNodeSum(v SentByLeaf) EventFilterNodeSum {
+	var s EventFilterNodeSum
+	s.SetSentByLeaf(v)
 	return s
 }
 
@@ -12184,9 +12240,10 @@ func (s *EventInput) SetClientEventId(val OptNilString) {
 }
 
 // A count of how many times a Contact performed an Event action, over all time or within the last
-// `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of both.
-// Engagement Events made by software (machine opens and clicks) are not counted. A window longer than
-// Event retention is capped by it: expired Events are no longer counted.
+// `withinDays` days, of the Events that pass its `filter` (ADR 0153). Performed is atLeast 1, not
+// performed is atMost 0; "exactly" is a group of both. Engagement Events made by software (machine
+// opens and clicks) are not counted. A window longer than Event retention is capped by it: expired
+// Events are no longer counted.
 // Ref: #/components/schemas/EventLeaf
 type EventLeaf struct {
 	Kind EventLeafKind `json:"kind"`
@@ -12198,6 +12255,12 @@ type EventLeaf struct {
 	Times int32 `json:"times"`
 	// Count only the Events of the last this many days; absent counts all time.
 	WithinDays OptInt32 `json:"withinDays"`
+	// Count only the Events whose properties pass these tests, as an Event matcher's filter does; absent,
+	// every Event of the action counts. On a message's sent, delivery and engagement Events it may name
+	// the Broadcast or Automation that sent the message (`sentBy`). The `tag` of contact.tagged and
+	// contact.untagged and the `key` of contact.field_changed, tested by eq or neq, name a Tag or Custom
+	// field, which is then kept from removal while the Condition names it.
+	Filter OptEventFilter `json:"filter"`
 }
 
 // GetKind returns the value of Kind.
@@ -12225,6 +12288,11 @@ func (s *EventLeaf) GetWithinDays() OptInt32 {
 	return s.WithinDays
 }
 
+// GetFilter returns the value of Filter.
+func (s *EventLeaf) GetFilter() OptEventFilter {
+	return s.Filter
+}
+
 // SetKind sets the value of Kind.
 func (s *EventLeaf) SetKind(val EventLeafKind) {
 	s.Kind = val
@@ -12250,10 +12318,16 @@ func (s *EventLeaf) SetWithinDays(val OptInt32) {
 	s.WithinDays = val
 }
 
+// SetFilter sets the value of Filter.
+func (s *EventLeaf) SetFilter(val OptEventFilter) {
+	s.Filter = val
+}
+
 // A count of how many times a Contact performed an Event action, over all time or within the last
-// `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of both.
-// Engagement Events made by software (machine opens and clicks) are not counted. A window longer than
-// Event retention is capped by it: expired Events are no longer counted.
+// `withinDays` days, of the Events that pass its `filter` (ADR 0153). Performed is atLeast 1, not
+// performed is atMost 0; "exactly" is a group of both. Engagement Events made by software (machine
+// opens and clicks) are not counted. A window longer than Event retention is capped by it: expired
+// Events are no longer counted.
 // Ref: #/components/schemas/EventLeafInput
 type EventLeafInput struct {
 	Kind EventLeafInputKind `json:"kind"`
@@ -12265,6 +12339,12 @@ type EventLeafInput struct {
 	Times int32 `json:"times"`
 	// Count only the Events of the last this many days; absent counts all time.
 	WithinDays OptInt32 `json:"withinDays"`
+	// Count only the Events whose properties pass these tests, as an Event matcher's filter does; absent,
+	// every Event of the action counts. On a message's sent, delivery and engagement Events it may name
+	// the Broadcast or Automation that sent the message (`sentBy`). The `tag` of contact.tagged and
+	// contact.untagged and the `key` of contact.field_changed, tested by eq or neq, name a Tag or Custom
+	// field, which is then kept from removal while the Condition names it.
+	Filter OptEventFilterInput `json:"filter"`
 }
 
 // GetKind returns the value of Kind.
@@ -12292,6 +12372,11 @@ func (s *EventLeafInput) GetWithinDays() OptInt32 {
 	return s.WithinDays
 }
 
+// GetFilter returns the value of Filter.
+func (s *EventLeafInput) GetFilter() OptEventFilterInput {
+	return s.Filter
+}
+
 // SetKind sets the value of Kind.
 func (s *EventLeafInput) SetKind(val EventLeafInputKind) {
 	s.Kind = val
@@ -12315,6 +12400,11 @@ func (s *EventLeafInput) SetTimes(val int32) {
 // SetWithinDays sets the value of WithinDays.
 func (s *EventLeafInput) SetWithinDays(val OptInt32) {
 	s.WithinDays = val
+}
+
+// SetFilter sets the value of Filter.
+func (s *EventLeafInput) SetFilter(val OptEventFilterInput) {
+	s.Filter = val
 }
 
 type EventLeafInputKind string
@@ -12395,7 +12485,8 @@ type EventMatcher struct {
 	Action string `json:"action"`
 	// The tests of the Event's own properties it must pass; absent, every Event of the action matches. The
 	// `tag` of contact.tagged and contact.untagged and the `key` of contact.field_changed, tested by eq or
-	// neq, must name a Tag or Custom field of the Workspace.
+	// neq, must name a Tag or Custom field of the Workspace. On a message's sent, delivery and engagement
+	// Events it may name the Broadcast or Automation that sent the message (`sentBy`).
 	Filter OptEventFilter `json:"filter"`
 }
 
@@ -12427,7 +12518,8 @@ type EventMatcherInput struct {
 	Action string `json:"action"`
 	// The tests of the Event's own properties it must pass; omitted, every Event of the action matches.
 	// The `tag` of contact.tagged and contact.untagged and the `key` of contact.field_changed, tested by
-	// eq or neq, must name a Tag or Custom field of the Workspace.
+	// eq or neq, must name a Tag or Custom field of the Workspace. On a message's sent, delivery and
+	// engagement Events it may name the Broadcast or Automation that sent the message (`sentBy`).
 	Filter OptEventFilterInput `json:"filter"`
 }
 
@@ -12462,7 +12554,8 @@ type EventTrigger struct {
 	Action string `json:"action"`
 	// The tests of the Event's own properties it must pass; absent, every Event of the action enrolls. The
 	// `tag` of contact.tagged and contact.untagged and the `key` of contact.field_changed, tested by eq or
-	// neq, must name a Tag or Custom field of the Workspace.
+	// neq, must name a Tag or Custom field of the Workspace. On a message's sent, delivery and engagement
+	// Events it may name the Broadcast or Automation that sent the message (`sentBy`).
 	Filter OptEventFilter `json:"filter"`
 	// Whether a contact enrolls again, after its previous enrollment ended, on a later Event or a rule's
 	// enroll action.
@@ -12548,7 +12641,8 @@ type EventTriggerInput struct {
 	Action string `json:"action"`
 	// The tests of the Event's own properties it must pass; omitted, every Event of the action enrolls.
 	// The `tag` of contact.tagged and contact.untagged and the `key` of contact.field_changed, tested by
-	// eq or neq, must name a Tag or Custom field of the Workspace.
+	// eq or neq, must name a Tag or Custom field of the Workspace. On a message's sent, delivery and
+	// engagement Events it may name the Broadcast or Automation that sent the message (`sentBy`).
 	Filter OptEventFilterInput `json:"filter"`
 	// Whether a contact enrolls again, after its previous enrollment ended, on a later Event or a rule's
 	// enroll action; omitted is `once`.
@@ -14576,6 +14670,49 @@ func (s *MessageRevenue) SetOrders(val int32) {
 // SetAmount sets the value of Amount.
 func (s *MessageRevenue) SetAmount(val int64) {
 	s.Amount = val
+}
+
+// What sends the message a message's System event is about.
+// Ref: #/components/schemas/MessageSender
+type MessageSender string
+
+const (
+	MessageSenderBroadcast  MessageSender = "broadcast"
+	MessageSenderAutomation MessageSender = "automation"
+)
+
+// AllValues returns all MessageSender values.
+func (MessageSender) AllValues() []MessageSender {
+	return []MessageSender{
+		MessageSenderBroadcast,
+		MessageSenderAutomation,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s MessageSender) MarshalText() ([]byte, error) {
+	switch s {
+	case MessageSenderBroadcast:
+		return []byte(s), nil
+	case MessageSenderAutomation:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *MessageSender) UnmarshalText(data []byte) error {
+	switch MessageSender(data) {
+	case MessageSenderBroadcast:
+		*s = MessageSenderBroadcast
+		return nil
+	case MessageSenderAutomation:
+		*s = MessageSenderAutomation
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 // Which side of `at` a moment is on: before is strictly earlier, after is at or later, so the two
@@ -19332,6 +19469,10 @@ type PreviewSegmentResult struct {
 	// Destination on it that is neither suppressed nor unsubscribed (on Telegram, an eligible Binding on
 	// the routed Integration). The figure Schedule answers too. Absent unless a channel was given.
 	Recipients OptInt32 `json:"recipients"`
+	// How many days of analytical Events the Instance keeps (ADR 0019): present when an event test counts
+	// with no window, or with one longer than that, since it counts only the Events kept. Absent when
+	// every Event is kept, or no event test reaches past them.
+	EventsKeptDays OptInt32 `json:"eventsKeptDays"`
 }
 
 // GetCount returns the value of Count.
@@ -19349,6 +19490,11 @@ func (s *PreviewSegmentResult) GetRecipients() OptInt32 {
 	return s.Recipients
 }
 
+// GetEventsKeptDays returns the value of EventsKeptDays.
+func (s *PreviewSegmentResult) GetEventsKeptDays() OptInt32 {
+	return s.EventsKeptDays
+}
+
 // SetCount sets the value of Count.
 func (s *PreviewSegmentResult) SetCount(val int32) {
 	s.Count = val
@@ -19362,6 +19508,11 @@ func (s *PreviewSegmentResult) SetUnknownEngagement(val int32) {
 // SetRecipients sets the value of Recipients.
 func (s *PreviewSegmentResult) SetRecipients(val OptInt32) {
 	s.Recipients = val
+}
+
+// SetEventsKeptDays sets the value of EventsKeptDays.
+func (s *PreviewSegmentResult) SetEventsKeptDays(val OptInt32) {
+	s.EventsKeptDays = val
 }
 
 // A machine-readable reason a client branches on, beyond the HTTP status.
@@ -23976,6 +24127,160 @@ func (s *SendingDomainsListOK) SetTotalItems(val int32) {
 // SetTotalPages sets the value of TotalPages.
 func (s *SendingDomainsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
+}
+
+// A test of what sent the message a message's sent, delivery or engagement System event is about (ADR
+// 0153, ADR 0180): the Broadcast or the Automation named by its id, archived or not, which the Event
+// carries as its `broadcastId` or `automationId`. A filter of any other action refuses it, and so does
+// one that names a Broadcast or Automation the Workspace does not have.
+// Ref: #/components/schemas/SentByLeaf
+type SentByLeaf struct {
+	Kind SentByLeafKind `json:"kind"`
+	// Whether a Broadcast or an Automation sent it.
+	Sender MessageSender `json:"sender"`
+	// The Broadcast's or the Automation's id.
+	ID EntityId `json:"id"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SentByLeaf) GetKind() SentByLeafKind {
+	return s.Kind
+}
+
+// GetSender returns the value of Sender.
+func (s *SentByLeaf) GetSender() MessageSender {
+	return s.Sender
+}
+
+// GetID returns the value of ID.
+func (s *SentByLeaf) GetID() EntityId {
+	return s.ID
+}
+
+// SetKind sets the value of Kind.
+func (s *SentByLeaf) SetKind(val SentByLeafKind) {
+	s.Kind = val
+}
+
+// SetSender sets the value of Sender.
+func (s *SentByLeaf) SetSender(val MessageSender) {
+	s.Sender = val
+}
+
+// SetID sets the value of ID.
+func (s *SentByLeaf) SetID(val EntityId) {
+	s.ID = val
+}
+
+// A test of what sent the message a message's sent, delivery or engagement System event is about (ADR
+// 0153, ADR 0180): the Broadcast or the Automation named by its id, archived or not, which the Event
+// carries as its `broadcastId` or `automationId`. A filter of any other action refuses it, and so does
+// one that names a Broadcast or Automation the Workspace does not have.
+// Ref: #/components/schemas/SentByLeafInput
+type SentByLeafInput struct {
+	Kind SentByLeafInputKind `json:"kind"`
+	// Whether a Broadcast or an Automation sent it.
+	Sender MessageSender `json:"sender"`
+	// The Broadcast's or the Automation's id.
+	ID EntityId `json:"id"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SentByLeafInput) GetKind() SentByLeafInputKind {
+	return s.Kind
+}
+
+// GetSender returns the value of Sender.
+func (s *SentByLeafInput) GetSender() MessageSender {
+	return s.Sender
+}
+
+// GetID returns the value of ID.
+func (s *SentByLeafInput) GetID() EntityId {
+	return s.ID
+}
+
+// SetKind sets the value of Kind.
+func (s *SentByLeafInput) SetKind(val SentByLeafInputKind) {
+	s.Kind = val
+}
+
+// SetSender sets the value of Sender.
+func (s *SentByLeafInput) SetSender(val MessageSender) {
+	s.Sender = val
+}
+
+// SetID sets the value of ID.
+func (s *SentByLeafInput) SetID(val EntityId) {
+	s.ID = val
+}
+
+type SentByLeafInputKind string
+
+const (
+	SentByLeafInputKindSentBy SentByLeafInputKind = "sentBy"
+)
+
+// AllValues returns all SentByLeafInputKind values.
+func (SentByLeafInputKind) AllValues() []SentByLeafInputKind {
+	return []SentByLeafInputKind{
+		SentByLeafInputKindSentBy,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SentByLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SentByLeafInputKindSentBy:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SentByLeafInputKind) UnmarshalText(data []byte) error {
+	switch SentByLeafInputKind(data) {
+	case SentByLeafInputKindSentBy:
+		*s = SentByLeafInputKindSentBy
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type SentByLeafKind string
+
+const (
+	SentByLeafKindSentBy SentByLeafKind = "sentBy"
+)
+
+// AllValues returns all SentByLeafKind values.
+func (SentByLeafKind) AllValues() []SentByLeafKind {
+	return []SentByLeafKind{
+		SentByLeafKindSentBy,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SentByLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SentByLeafKindSentBy:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SentByLeafKind) UnmarshalText(data []byte) error {
+	switch SentByLeafKind(data) {
+	case SentByLeafKindSentBy:
+		*s = SentByLeafKindSentBy
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 // SES config without the secret access key.

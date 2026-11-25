@@ -3,6 +3,7 @@ import { expect, test } from 'vitest'
 
 import { MomentOperator } from '../../generated/site/types.gen.ts'
 import type {
+  EventFilterInput,
   EventLeaf,
   RuleConditionInput,
   SegmentCondition,
@@ -12,6 +13,8 @@ import {
   emptyGroup,
   eventCount,
   eventPresets,
+  reachesPastKept,
+  subjectless,
   toCondition,
   toDraft,
   toQuery,
@@ -387,4 +390,63 @@ test("a Custom field rule is dropped when its operator names no test, an event c
 
   expect(performed.entries).toEqual([])
   expect(has.entries).toEqual([])
+})
+
+// An event test whose filter names what sent the message and tests the link: the filter is the
+// rule's value beside the count, and a sent-by test is a rule of its own field in the filter's tree.
+const clickFilter: EventFilterInput = {
+  kind: 'group',
+  combinator: 'and',
+  entries: [
+    { kind: 'sentBy', sender: 'broadcast', id: 'AAAAAAAAAAAAAAAAAAAAAA' },
+    {
+      kind: 'property',
+      key: 'url',
+      test: { kind: 'text', operator: 'contains', value: '/pricing' },
+    },
+  ],
+}
+const filteredEvent: SegmentConditionInput = {
+  kind: 'group',
+  combinator: 'and',
+  entries: [
+    { kind: 'event', action: 'email.clicked', operator: 'atLeast', times: 1, filter: clickFilter },
+  ],
+}
+
+test("an event test's filter survives the walk to the query builder and back", () => {
+  const back = toDraft(toQuery(filteredEvent))
+
+  expect(back).toEqual(filteredEvent)
+  expect(toCondition(back, 'segment')).toEqual(filteredEvent)
+})
+
+test("a filter's sent-by test survives the walk in the Event filter's own builder", () => {
+  const back = subjectless(toDraft(toQuery(clickFilter)))
+
+  expect(back).toEqual(clickFilter)
+  expect(toCondition(back, 'eventFilter')).toEqual(clickFilter)
+})
+
+test('a sent-by test with nothing picked yet is no test', () => {
+  const draft = toDraft({
+    combinator: 'and',
+    rules: [{ field: 'sentBy:automation', operator: 'is', value: '' }],
+  })
+
+  expect(draft.entries).toEqual([])
+})
+
+test('an event test counts only the Events kept when it has no window or a longer one', () => {
+  const kept = { keptDays: 400, keptActions: ['email.unsubscribed'] }
+
+  expect(reachesPastKept({ action: 'purchase', withinDays: undefined, ...kept })).toBe(true)
+  expect(reachesPastKept({ action: 'purchase', withinDays: 500, ...kept })).toBe(true)
+  expect(reachesPastKept({ action: 'purchase', withinDays: 30, ...kept })).toBe(false)
+  expect(reachesPastKept({ action: 'email.unsubscribed', withinDays: undefined, ...kept })).toBe(
+    false,
+  )
+  expect(
+    reachesPastKept({ action: 'purchase', withinDays: undefined, keptDays: 0, keptActions: [] }),
+  ).toBe(false)
 })

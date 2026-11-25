@@ -901,6 +901,24 @@ const (
 	BroadcastDraftName = "Summer sale teaser"
 	// BroadcastDraftSubject is from fixtures/broadcasts.
 	BroadcastDraftSubject = "A summer treat is coming 🌞"
+	// BroadcastDunderArchivedID is from fixtures/broadcasts.
+	BroadcastDunderArchivedID = 7962
+	// BroadcastDunderArchivedName is from fixtures/broadcasts.
+	BroadcastDunderArchivedName = "Dunder last month"
+	// BroadcastDunderArchivedSubject is from fixtures/broadcasts.
+	BroadcastDunderArchivedSubject = "Last month"
+	// BroadcastDunderNewsletterID is from fixtures/broadcasts.
+	BroadcastDunderNewsletterID = 7960
+	// BroadcastDunderNewsletterName is from fixtures/broadcasts.
+	BroadcastDunderNewsletterName = "Dunder newsletter"
+	// BroadcastDunderNewsletterSubject is from fixtures/broadcasts.
+	BroadcastDunderNewsletterSubject = "News"
+	// BroadcastDunderPromoID is from fixtures/broadcasts.
+	BroadcastDunderPromoID = 7961
+	// BroadcastDunderPromoName is from fixtures/broadcasts.
+	BroadcastDunderPromoName = "Dunder promo"
+	// BroadcastDunderPromoSubject is from fixtures/broadcasts.
+	BroadcastDunderPromoSubject = "Promo"
 	// BroadcastEmporiumID is from fixtures/broadcasts.
 	BroadcastEmporiumID = 7201
 	// BroadcastEmporiumName is from fixtures/broadcasts.
@@ -1717,6 +1735,14 @@ const (
 	DuffOwnerDanPassword = "password"
 	// DuffPublicID is from fixtures/workspaces.
 	DuffPublicID = "DuffWs94"
+	// DunderArchivedClickerEmail is from fixtures/contacts.
+	DunderArchivedClickerEmail = "archived-clicker@dunder.test"
+	// DunderArchivedClickerID is from fixtures/contacts.
+	DunderArchivedClickerID = 5555
+	// DunderBlogClickerEmail is from fixtures/contacts.
+	DunderBlogClickerEmail = "blog-clicker@dunder.test"
+	// DunderBlogClickerID is from fixtures/contacts.
+	DunderBlogClickerID = 5553
 	// DunderCollectKey is from fixtures/workspaces.
 	DunderCollectKey = "omck_test_dunder_collect_key"
 	// DunderEventPreviewEmail is from fixtures/contacts.
@@ -1737,12 +1763,32 @@ const (
 	DunderOwnerDwightPassword = "password"
 	// DunderOwnerMembershipID is from fixtures/memberships.
 	DunderOwnerMembershipID = 5500
+	// DunderPaidBuyerEmail is from fixtures/contacts.
+	DunderPaidBuyerEmail = "paid-buyer@dunder.test"
+	// DunderPaidBuyerID is from fixtures/contacts.
+	DunderPaidBuyerID = 5556
+	// DunderPendingBuyerEmail is from fixtures/contacts.
+	DunderPendingBuyerEmail = "pending-buyer@dunder.test"
+	// DunderPendingBuyerID is from fixtures/contacts.
+	DunderPendingBuyerID = 5557
 	// DunderPreviewTargetEmail is from fixtures/contacts.
 	DunderPreviewTargetEmail = "preview-target@dunder.test"
 	// DunderPreviewTargetID is from fixtures/contacts.
 	DunderPreviewTargetID = 5550
+	// DunderPricingClickerEmail is from fixtures/contacts.
+	DunderPricingClickerEmail = "pricing-clicker@dunder.test"
+	// DunderPricingClickerID is from fixtures/contacts.
+	DunderPricingClickerID = 5552
+	// DunderPromoClickerEmail is from fixtures/contacts.
+	DunderPromoClickerEmail = "promo-clicker@dunder.test"
+	// DunderPromoClickerID is from fixtures/contacts.
+	DunderPromoClickerID = 5554
 	// DunderPublicID is from fixtures/workspaces.
 	DunderPublicID = "DundrW60"
+	// DunderStatuslessBuyerEmail is from fixtures/contacts.
+	DunderStatuslessBuyerEmail = "statusless-buyer@dunder.test"
+	// DunderStatuslessBuyerID is from fixtures/contacts.
+	DunderStatuslessBuyerID = 5558
 	// EmporiumCollectKey is from fixtures/workspaces.
 	EmporiumCollectKey = "omck_test_emporium_collect_key"
 	// EmporiumID is from fixtures/workspaces.
@@ -4247,6 +4293,10 @@ const (
 	SurveyDueDanName = "Dan"
 	// SurveyDueDanPassword is from fixtures/users.
 	SurveyDueDanPassword = "password"
+	// TagDunderTrialID is from fixtures/tags.
+	TagDunderTrialID = 5590
+	// TagDunderTrialName is from fixtures/tags.
+	TagDunderTrialName = "trial"
 	// TagGlobexID is from fixtures/tags.
 	TagGlobexID = 900
 	// TagGlobexName is from fixtures/tags.

@@ -1306,6 +1306,58 @@
   workspace_id: 60
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# The Event filter of an event test (#1446): clicks of the Newsletter's /pricing link, of its other
+# link, of the same link in the Promo and in an archived Broadcast; and Orders completed paid,
+# pending and with no status (events.yml).
+- id: 5552 # fixture: DunderPricingClicker
+  source: manual
+  revision: 1
+  email: pricing-clicker@dunder.test
+  workspace_id: 60
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5553 # fixture: DunderBlogClicker
+  source: manual
+  revision: 1
+  email: blog-clicker@dunder.test
+  workspace_id: 60
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5554 # fixture: DunderPromoClicker
+  source: manual
+  revision: 1
+  email: promo-clicker@dunder.test
+  workspace_id: 60
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5555 # fixture: DunderArchivedClicker
+  source: manual
+  revision: 1
+  email: archived-clicker@dunder.test
+  workspace_id: 60
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5556 # fixture: DunderPaidBuyer
+  source: manual
+  revision: 1
+  email: paid-buyer@dunder.test
+  workspace_id: 60
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5557 # fixture: DunderPendingBuyer
+  source: manual
+  revision: 1
+  email: pending-buyer@dunder.test
+  workspace_id: 60
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5558 # fixture: DunderStatuslessBuyer
+  source: manual
+  revision: 1
+  email: statusless-buyer@dunder.test
+  workspace_id: 60
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
 # Wonka (workspace 62): the number and date leaves (#750). score holds a number, a number as text,
 # a boolean, null, a list or nothing; seen_at a moment with an offset (past or to come), text, a bare
 # date, a date-time without an offset or nothing. WonkaNone has no custom_fields at all.

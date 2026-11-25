@@ -5,6 +5,7 @@ import {
   handleSiteAutomationsGet,
   handleSiteAutomationsUpdate,
   handleSiteEnrollmentsList,
+  handleSiteEventsActions,
   handleSiteEventsPropertyKeys,
   handleSiteIntegrationsList,
   handleSiteWorkspacesList,
@@ -54,6 +55,9 @@ test('the builder shows the SDK strings and the app strings inside it as text, n
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(STORED)),
     handleSiteEventsPropertyKeys({ body: { keys: [] } }),
+    handleSiteEventsActions({
+      body: { actions: [], eventsKeptDays: 400, messageActions: [], keptActions: [] },
+    }),
     handleSiteIntegrationsList({ body: [] }),
     handleSiteEnrollmentsList({
       body: { items: [], page: 1, pageSize: 25, totalItems: 0, totalPages: 0 },

@@ -8,6 +8,7 @@ import {
   handleSiteAutomationsRevert,
   handleSiteAutomationsUpdate,
   handleSiteEnrollmentsList,
+  handleSiteEventsActions,
   handleSiteEventsPropertyKeys,
   handleSiteIntegrationsList,
 } from '../../generated/site/msw.gen.ts'
@@ -51,6 +52,9 @@ function noEnrollmentsOrIntegrations() {
   worker.use(
     handleSiteIntegrationsList({ body: [] }),
     handleSiteEventsPropertyKeys({ body: { keys: [] } }),
+    handleSiteEventsActions({
+      body: { actions: [], eventsKeptDays: 400, messageActions: [], keptActions: [] },
+    }),
     handleSiteEnrollmentsList({
       body: { items: [], page: 1, pageSize: 25, totalItems: 0, totalPages: 0 },
     }),

@@ -14,7 +14,9 @@ import { SegmentCreatePage } from './resource.tsx'
 
 function serveCatalogue() {
   worker.use(
-    handleSiteEventsActions({ body: { actions: [] } }),
+    handleSiteEventsActions({
+      body: { actions: [], eventsKeptDays: 400, messageActions: [], keptActions: [] },
+    }),
     handleSiteCustomFieldsList({ body: page([], 0) }),
   )
 }

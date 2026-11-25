@@ -38,6 +38,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
+	"github.com/getsphericon/sphericon/internal/usecase/segmentsaving"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
@@ -59,6 +60,7 @@ type Handlers struct {
 	eventrecording  *eventrecording.Module
 	outbound        *outboundmessages.Module
 	segments        *segments.Module
+	segmentSaving   *segmentsaving.UseCase
 	webhooks        *webhookendpoints.Module
 	integrations    *integrations.Module
 	captured        *capturedmessages.Module
@@ -110,6 +112,7 @@ type Deps struct {
 	TrackingDomains  *trackingdomains.Module
 	Outbound         *outboundmessages.Module
 	Segments         *segments.Module
+	SegmentSaving    *segmentsaving.UseCase
 	EventRecording   *eventrecording.Module
 	Contacts         *contacts.Module
 	Erasure          *contacterasure.UseCase
@@ -156,7 +159,7 @@ func NewHandlers(d Deps) *Handlers {
 	}
 	return &Handlers{
 		now:        d.Clock,
-		workspaces: d.Workspaces, workspaceView: d.WorkspaceView, bus: d.Bus, webhooks: d.Webhooks, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, captured: d.CapturedMessages, sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, outbound: d.Outbound, segments: d.Segments,
+		workspaces: d.Workspaces, workspaceView: d.WorkspaceView, bus: d.Bus, webhooks: d.Webhooks, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, captured: d.CapturedMessages, sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, outbound: d.Outbound, segments: d.Segments, segmentSaving: d.SegmentSaving,
 		eventrecording: d.EventRecording, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
 		broadcasts: d.Broadcasts, reputation: d.Reputation, tokens: d.Tokens,
 		audit: d.Audit, export: d.Export,

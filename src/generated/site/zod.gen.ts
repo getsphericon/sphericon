@@ -574,34 +574,6 @@ export const zEntryPolicy = z.enum(['once', 'again']);
 export const zEventCountOperator = z.enum(['atLeast', 'atMost']);
 
 /**
- * A count of how many times a Contact performed an Event action, over all time or within the
- * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
- * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
- * longer than Event retention is capped by it: expired Events are no longer counted.
- */
-export const zEventLeaf = z.object({
-  kind: z.enum(['event']),
-  action: z.string(),
-  operator: zEventCountOperator,
-  times: z.int().gte(0).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  withinDays: z.exactOptional(z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
-});
-
-/**
- * A count of how many times a Contact performed an Event action, over all time or within the
- * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
- * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
- * longer than Event retention is capped by it: expired Events are no longer counted.
- */
-export const zEventLeafInput = z.strictObject({
-  kind: z.enum(['event']),
-  action: z.string(),
-  operator: zEventCountOperator,
-  times: z.int().gte(0).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  withinDays: z.exactOptional(z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
-});
-
-/**
  * Scopes an OAuth client may be granted without any extra opt-in: the external
  * API's read/write vocabulary. Token management scopes are deliberately absent,
  * so a connector can never mint further credentials.
@@ -799,6 +771,11 @@ export const zAutomationResults = z.object({
   previous: zAutomationPeriodResults,
   series: z.array(zAutomationResultsPoint)
 });
+
+/**
+ * What sends the message a message's System event is about
+ */
+export const zMessageSender = z.enum(['broadcast', 'automation']);
 
 /**
  * Which side of `at` a moment is on: before is strictly earlier, after is at or later, so the two
@@ -1160,6 +1137,30 @@ export const zSendScope = z.enum([
   'automations:publish',
   'mcp:send'
 ]);
+
+/**
+ * A test of what sent the message a message's sent, delivery or engagement System event is about
+ * (ADR 0153, ADR 0180): the Broadcast or the Automation named by its id, archived or not, which the
+ * Event carries as its `broadcastId` or `automationId`. A filter of any other action refuses it, and
+ * so does one that names a Broadcast or Automation the Workspace does not have.
+ */
+export const zSentByLeaf = z.object({
+  kind: z.enum(['sentBy']),
+  sender: zMessageSender,
+  id: zEntityId
+});
+
+/**
+ * A test of what sent the message a message's sent, delivery or engagement System event is about
+ * (ADR 0153, ADR 0180): the Broadcast or the Automation named by its id, archived or not, which the
+ * Event carries as its `broadcastId` or `automationId`. A filter of any other action refuses it, and
+ * so does one that names a Broadcast or Automation the Workspace does not have.
+ */
+export const zSentByLeafInput = z.strictObject({
+  kind: z.enum(['sentBy']),
+  sender: zMessageSender,
+  id: zEntityId
+});
 
 /**
  * The name of an SES configuration set, as SES names one: letters, digits, hyphens and underscores
@@ -1731,7 +1732,10 @@ export const zSiteEmailChangeInput = z.strictObject({
  * Distinct event actions seen in a workspace (for segment/filter pickers)
  */
 export const zSiteEventActionsResult = z.object({
-  actions: z.array(z.string())
+  actions: z.array(z.string()),
+  eventsKeptDays: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  messageActions: z.array(z.string()),
+  keptActions: z.array(z.string())
 });
 
 /**
@@ -2112,7 +2116,8 @@ export const zSitePendingSignup = z.object({
 export const zSitePreviewSegmentResult = z.object({
   count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   unknownEngagement: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  recipients: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
+  recipients: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  eventsKeptDays: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
 });
 
 /**
@@ -4883,21 +4888,57 @@ export const zEventFilterInput = z.strictObject({
 
 /**
  * An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is
- * about, or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133).
+ * about, of what sent the message a message's System event is about, or a nested group. A test of
+ * the Contact is a Rule's, never a filter's (ADR 0133).
  */
 export const zEventFilterNode = z.discriminatedUnion('kind', [
   zEventFilter.extend({ kind: z.literal('group') }),
-  zFilterPropertyLeaf.extend({ kind: z.literal('property') })
+  zFilterPropertyLeaf.extend({ kind: z.literal('property') }),
+  zSentByLeaf.extend({ kind: z.literal('sentBy') })
 ]);
 
 /**
  * An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is
- * about, or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133).
+ * about, of what sent the message a message's System event is about, or a nested group. A test of
+ * the Contact is a Rule's, never a filter's (ADR 0133).
  */
 export const zEventFilterNodeInput = z.discriminatedUnion('kind', [
   zEventFilterInput.extend({ kind: z.literal('group') }),
-  zFilterPropertyLeafInput.extend({ kind: z.literal('property') })
+  zFilterPropertyLeafInput.extend({ kind: z.literal('property') }),
+  zSentByLeafInput.extend({ kind: z.literal('sentBy') })
 ]);
+
+/**
+ * A count of how many times a Contact performed an Event action, over all time or within the
+ * last `withinDays` days, of the Events that pass its `filter` (ADR 0153). Performed is atLeast 1,
+ * not performed is atMost 0; "exactly" is a group of both. Engagement Events made by software
+ * (machine opens and clicks) are not counted. A window longer than Event retention is capped by it:
+ * expired Events are no longer counted.
+ */
+export const zEventLeaf = z.object({
+  kind: z.enum(['event']),
+  action: z.string(),
+  operator: zEventCountOperator,
+  times: z.int().gte(0).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  withinDays: z.exactOptional(z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  filter: z.exactOptional(zEventFilter)
+});
+
+/**
+ * A count of how many times a Contact performed an Event action, over all time or within the
+ * last `withinDays` days, of the Events that pass its `filter` (ADR 0153). Performed is atLeast 1,
+ * not performed is atMost 0; "exactly" is a group of both. Engagement Events made by software
+ * (machine opens and clicks) are not counted. A window longer than Event retention is capped by it:
+ * expired Events are no longer counted.
+ */
+export const zEventLeafInput = z.strictObject({
+  kind: z.enum(['event']),
+  action: z.string(),
+  operator: zEventCountOperator,
+  times: z.int().gte(0).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  withinDays: z.exactOptional(z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  filter: z.exactOptional(zEventFilterInput)
+});
 
 /**
  * An Event matcher that ends an enrollment (ADR 0133): an action, and an optional filter on that

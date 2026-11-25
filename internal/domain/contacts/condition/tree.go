@@ -65,12 +65,15 @@ type customFieldLeaf struct {
 }
 
 // eventCountLeaf counts the Contact's Events of action: at least or at most times of them (count),
-// over all time or within the last withinDays days (nil for all time).
+// over all time or within the last withinDays days (nil for all time), of the Events whose
+// properties pass filter (nil for every one), compiled to path (ADR 0153, ADR 0180).
 type eventCountLeaf struct {
 	action     string
 	count      eventCount
 	times      int
 	withinDays *int
+	filter     *conditiontree.EventFilter
+	path       *Path
 }
 
 // propertyLeaf tests the property key of the triggering Event, the one source a Rule's property
@@ -215,6 +218,7 @@ type entry struct {
 	Action     string                        `json:"action"`
 	Times      *int                          `json:"times"`
 	WithinDays *int                          `json:"withinDays"`
+	Filter     *conditiontree.EventFilter    `json:"filter"`
 }
 
 // source is a property test's `of`: whose properties it reads, by its `kind`.
@@ -302,6 +306,8 @@ func decodeEntry(raw json.RawMessage, p place, sub func(conditiontree.Group) (no
 		return decodeEvent(e)
 	case conditiontree.KindProperty:
 		return decodeProperty(e)
+	case conditiontree.KindSentBy:
+		// A sent-by test is an Event filter's alone (decodeFilterEntry): no place's tree admits it.
 	}
 	return nil, fmt.Errorf("unknown entry kind %q", e.Kind)
 }
@@ -447,5 +453,13 @@ func decodeEvent(l entry) (node, error) {
 			return nil, boundError{err}
 		}
 	}
-	return eventCountLeaf{action: action, count: count, times: times, withinDays: l.WithinDays}, nil
+	leaf := eventCountLeaf{action: action, count: count, times: times, withinDays: l.WithinDays}
+	if l.Filter != nil {
+		path, err := CompileEventFilter(action, *l.Filter)
+		if err != nil {
+			return nil, fmt.Errorf("filter: %w", err)
+		}
+		leaf.filter, leaf.path = l.Filter, &path
+	}
+	return leaf, nil
 }

@@ -22644,6 +22644,20 @@ func (s EventFilterNodeInputSum) encodeFields(e *jx.Encoder) {
 				s.Test.Encode(e)
 			}
 		}
+	case SentByLeafInputEventFilterNodeInputSum:
+		e.FieldStart("kind")
+		e.Str("sentBy")
+		{
+			s := s.SentByLeafInput
+			{
+				e.FieldStart("sender")
+				s.Sender.Encode(e)
+			}
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+		}
 	}
 }
 
@@ -22676,6 +22690,9 @@ func (s *EventFilterNodeInputSum) Decode(d *jx.Decoder) error {
 				case "property":
 					s.Type = FilterPropertyLeafInputEventFilterNodeInputSum
 					found = true
+				case "sentBy":
+					s.Type = SentByLeafInputEventFilterNodeInputSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -22696,6 +22713,10 @@ func (s *EventFilterNodeInputSum) Decode(d *jx.Decoder) error {
 		}
 	case FilterPropertyLeafInputEventFilterNodeInputSum:
 		if err := s.FilterPropertyLeafInput.Decode(d); err != nil {
+			return err
+		}
+	case SentByLeafInputEventFilterNodeInputSum:
+		if err := s.SentByLeafInput.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -22764,6 +22785,20 @@ func (s EventFilterNodeSum) encodeFields(e *jx.Encoder) {
 				s.Test.Encode(e)
 			}
 		}
+	case SentByLeafEventFilterNodeSum:
+		e.FieldStart("kind")
+		e.Str("sentBy")
+		{
+			s := s.SentByLeaf
+			{
+				e.FieldStart("sender")
+				s.Sender.Encode(e)
+			}
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+		}
 	}
 }
 
@@ -22796,6 +22831,9 @@ func (s *EventFilterNodeSum) Decode(d *jx.Decoder) error {
 				case "property":
 					s.Type = FilterPropertyLeafEventFilterNodeSum
 					found = true
+				case "sentBy":
+					s.Type = SentByLeafEventFilterNodeSum
+					found = true
 				default:
 					return errors.Errorf("unknown type %s", typ)
 				}
@@ -22816,6 +22854,10 @@ func (s *EventFilterNodeSum) Decode(d *jx.Decoder) error {
 		}
 	case FilterPropertyLeafEventFilterNodeSum:
 		if err := s.FilterPropertyLeaf.Decode(d); err != nil {
+			return err
+		}
+	case SentByLeafEventFilterNodeSum:
+		if err := s.SentByLeaf.Decode(d); err != nil {
 			return err
 		}
 	default:
@@ -23066,14 +23108,21 @@ func (s *EventLeaf) encodeFields(e *jx.Encoder) {
 			s.WithinDays.Encode(e)
 		}
 	}
+	{
+		if s.Filter.Set {
+			e.FieldStart("filter")
+			s.Filter.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfEventLeaf = [5]string{
+var jsonFieldsNameOfEventLeaf = [6]string{
 	0: "kind",
 	1: "action",
 	2: "operator",
 	3: "times",
 	4: "withinDays",
+	5: "filter",
 }
 
 // Decode decodes EventLeaf from json.
@@ -23138,6 +23187,16 @@ func (s *EventLeaf) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"withinDays\"")
+			}
+		case "filter":
+			if err := func() error {
+				s.Filter.Reset()
+				if err := s.Filter.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"filter\"")
 			}
 		default:
 			return d.Skip()
@@ -23226,14 +23285,21 @@ func (s *EventLeafInput) encodeFields(e *jx.Encoder) {
 			s.WithinDays.Encode(e)
 		}
 	}
+	{
+		if s.Filter.Set {
+			e.FieldStart("filter")
+			s.Filter.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfEventLeafInput = [5]string{
+var jsonFieldsNameOfEventLeafInput = [6]string{
 	0: "kind",
 	1: "action",
 	2: "operator",
 	3: "times",
 	4: "withinDays",
+	5: "filter",
 }
 
 // Decode decodes EventLeafInput from json.
@@ -23298,6 +23364,16 @@ func (s *EventLeafInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"withinDays\"")
+			}
+		case "filter":
+			if err := func() error {
+				s.Filter.Reset()
+				if err := s.Filter.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"filter\"")
 			}
 		default:
 			return errors.Errorf("unexpected field %q", k)
@@ -27373,6 +27449,46 @@ func (s *MessageRevenue) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *MessageRevenue) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes MessageSender as json.
+func (s MessageSender) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes MessageSender from json.
+func (s *MessageSender) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode MessageSender to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch MessageSender(v) {
+	case MessageSenderBroadcast:
+		*s = MessageSenderBroadcast
+	case MessageSenderAutomation:
+		*s = MessageSenderAutomation
+	default:
+		*s = MessageSender(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s MessageSender) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *MessageSender) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -31829,12 +31945,19 @@ func (s *PreviewSegmentResult) encodeFields(e *jx.Encoder) {
 			s.Recipients.Encode(e)
 		}
 	}
+	{
+		if s.EventsKeptDays.Set {
+			e.FieldStart("eventsKeptDays")
+			s.EventsKeptDays.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfPreviewSegmentResult = [3]string{
+var jsonFieldsNameOfPreviewSegmentResult = [4]string{
 	0: "count",
 	1: "unknownEngagement",
 	2: "recipients",
+	3: "eventsKeptDays",
 }
 
 // Decode decodes PreviewSegmentResult from json.
@@ -31879,6 +32002,16 @@ func (s *PreviewSegmentResult) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"recipients\"")
+			}
+		case "eventsKeptDays":
+			if err := func() error {
+				s.EventsKeptDays.Reset()
+				if err := s.EventsKeptDays.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"eventsKeptDays\"")
 			}
 		default:
 			return d.Skip()
@@ -35693,6 +35826,12 @@ func (s RuleConditionNodeInputSum) encodeFields(e *jx.Encoder) {
 					s.WithinDays.Encode(e)
 				}
 			}
+			{
+				if s.Filter.Set {
+					e.FieldStart("filter")
+					s.Filter.Encode(e)
+				}
+			}
 		}
 	case RulePropertyLeafInputRuleConditionNodeInputSum:
 		e.FieldStart("kind")
@@ -35981,6 +36120,12 @@ func (s RuleConditionNodeSum) encodeFields(e *jx.Encoder) {
 				if s.WithinDays.Set {
 					e.FieldStart("withinDays")
 					s.WithinDays.Encode(e)
+				}
+			}
+			{
+				if s.Filter.Set {
+					e.FieldStart("filter")
+					s.Filter.Encode(e)
 				}
 			}
 		}
@@ -38768,6 +38913,12 @@ func (s SegmentConditionNodeInputSum) encodeFields(e *jx.Encoder) {
 					s.WithinDays.Encode(e)
 				}
 			}
+			{
+				if s.Filter.Set {
+					e.FieldStart("filter")
+					s.Filter.Encode(e)
+				}
+			}
 		}
 	}
 }
@@ -39031,6 +39182,12 @@ func (s SegmentConditionNodeSum) encodeFields(e *jx.Encoder) {
 				if s.WithinDays.Set {
 					e.FieldStart("withinDays")
 					s.WithinDays.Encode(e)
+				}
+			}
+			{
+				if s.Filter.Set {
+					e.FieldStart("filter")
+					s.Filter.Encode(e)
 				}
 			}
 		}
@@ -40724,6 +40881,330 @@ func (s *SendingDomainsListOK) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SendingDomainsListOK) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SentByLeaf) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SentByLeaf) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("sender")
+		s.Sender.Encode(e)
+	}
+	{
+		e.FieldStart("id")
+		s.ID.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfSentByLeaf = [3]string{
+	0: "kind",
+	1: "sender",
+	2: "id",
+}
+
+// Decode decodes SentByLeaf from json.
+func (s *SentByLeaf) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SentByLeaf to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "sender":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Sender.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"sender\"")
+			}
+		case "id":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SentByLeaf")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSentByLeaf) {
+					name = jsonFieldsNameOfSentByLeaf[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SentByLeaf) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SentByLeaf) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SentByLeafInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SentByLeafInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("sender")
+		s.Sender.Encode(e)
+	}
+	{
+		e.FieldStart("id")
+		s.ID.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfSentByLeafInput = [3]string{
+	0: "kind",
+	1: "sender",
+	2: "id",
+}
+
+// Decode decodes SentByLeafInput from json.
+func (s *SentByLeafInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SentByLeafInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "sender":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Sender.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"sender\"")
+			}
+		case "id":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SentByLeafInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSentByLeafInput) {
+					name = jsonFieldsNameOfSentByLeafInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SentByLeafInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SentByLeafInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SentByLeafInputKind as json.
+func (s SentByLeafInputKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SentByLeafInputKind from json.
+func (s *SentByLeafInputKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SentByLeafInputKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SentByLeafInputKind(v) {
+	case SentByLeafInputKindSentBy:
+		*s = SentByLeafInputKindSentBy
+	default:
+		*s = SentByLeafInputKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SentByLeafInputKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SentByLeafInputKind) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes SentByLeafKind as json.
+func (s SentByLeafKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes SentByLeafKind from json.
+func (s *SentByLeafKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SentByLeafKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch SentByLeafKind(v) {
+	case SentByLeafKindSentBy:
+		*s = SentByLeafKindSentBy
+	default:
+		*s = SentByLeafKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s SentByLeafKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SentByLeafKind) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

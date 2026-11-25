@@ -3274,23 +3274,29 @@ export type EventFilterInput = {
 
 /**
  * An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is
- * about, or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133).
+ * about, of what sent the message a message's System event is about, or a nested group. A test of
+ * the Contact is a Rule's, never a filter's (ADR 0133).
  */
 export type EventFilterNode = ({
   kind: 'group';
 } & EventFilter) | ({
   kind: 'property';
-} & FilterPropertyLeaf);
+} & FilterPropertyLeaf) | ({
+  kind: 'sentBy';
+} & SentByLeaf);
 
 /**
  * An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is
- * about, or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133).
+ * about, of what sent the message a message's System event is about, or a nested group. A test of
+ * the Contact is a Rule's, never a filter's (ADR 0133).
  */
 export type EventFilterNodeInput = ({
   kind: 'group';
 } & EventFilterInput) | ({
   kind: 'property';
-} & FilterPropertyLeafInput);
+} & FilterPropertyLeafInput) | ({
+  kind: 'sentBy';
+} & SentByLeafInput);
 
 /**
  * Event payload
@@ -3331,9 +3337,10 @@ export type EventInput = {
 
 /**
  * A count of how many times a Contact performed an Event action, over all time or within the
- * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
- * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
- * longer than Event retention is capped by it: expired Events are no longer counted.
+ * last `withinDays` days, of the Events that pass its `filter` (ADR 0153). Performed is atLeast 1,
+ * not performed is atMost 0; "exactly" is a group of both. Engagement Events made by software
+ * (machine opens and clicks) are not counted. A window longer than Event retention is capped by it:
+ * expired Events are no longer counted.
  */
 export type EventLeaf = {
   kind: 'event';
@@ -3353,13 +3360,22 @@ export type EventLeaf = {
    * Count only the Events of the last this many days; absent counts all time
    */
   withinDays?: number;
+  /**
+   * Count only the Events whose properties pass these tests, as an Event matcher's filter does;
+   * absent, every Event of the action counts. On a message's sent, delivery and engagement Events
+   * it may name the Broadcast or Automation that sent the message (`sentBy`). The `tag` of
+   * contact.tagged and contact.untagged and the `key` of contact.field_changed, tested by eq or neq,
+   * name a Tag or Custom field, which is then kept from removal while the Condition names it.
+   */
+  filter?: EventFilter;
 };
 
 /**
  * A count of how many times a Contact performed an Event action, over all time or within the
- * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
- * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
- * longer than Event retention is capped by it: expired Events are no longer counted.
+ * last `withinDays` days, of the Events that pass its `filter` (ADR 0153). Performed is atLeast 1,
+ * not performed is atMost 0; "exactly" is a group of both. Engagement Events made by software
+ * (machine opens and clicks) are not counted. A window longer than Event retention is capped by it:
+ * expired Events are no longer counted.
  */
 export type EventLeafInput = {
   kind: 'event';
@@ -3379,6 +3395,14 @@ export type EventLeafInput = {
    * Count only the Events of the last this many days; absent counts all time
    */
   withinDays?: number;
+  /**
+   * Count only the Events whose properties pass these tests, as an Event matcher's filter does;
+   * absent, every Event of the action counts. On a message's sent, delivery and engagement Events
+   * it may name the Broadcast or Automation that sent the message (`sentBy`). The `tag` of
+   * contact.tagged and contact.untagged and the `key` of contact.field_changed, tested by eq or neq,
+   * name a Tag or Custom field, which is then kept from removal while the Condition names it.
+   */
+  filter?: EventFilterInput;
 };
 
 /**
@@ -3395,7 +3419,9 @@ export type EventMatcher = {
   /**
    * The tests of the Event's own properties it must pass; absent, every Event of the action
    * matches. The `tag` of contact.tagged and contact.untagged and the `key` of
-   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace.
+   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. On
+   * a message's sent, delivery and engagement Events it may name the Broadcast or Automation that
+   * sent the message (`sentBy`).
    */
   filter?: EventFilter;
 };
@@ -3412,7 +3438,9 @@ export type EventMatcherInput = {
   /**
    * The tests of the Event's own properties it must pass; omitted, every Event of the action
    * matches. The `tag` of contact.tagged and contact.untagged and the `key` of
-   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace.
+   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. On
+   * a message's sent, delivery and engagement Events it may name the Broadcast or Automation that
+   * sent the message (`sentBy`).
    */
   filter?: EventFilterInput;
 };
@@ -3432,7 +3460,9 @@ export type EventTrigger = {
   /**
    * The tests of the Event's own properties it must pass; absent, every Event of the action
    * enrolls. The `tag` of contact.tagged and contact.untagged and the `key` of
-   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace.
+   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. On
+   * a message's sent, delivery and engagement Events it may name the Broadcast or Automation that
+   * sent the message (`sentBy`).
    */
   filter?: EventFilter;
   /**
@@ -3469,7 +3499,9 @@ export type EventTriggerInput = {
   /**
    * The tests of the Event's own properties it must pass; omitted, every Event of the action
    * enrolls. The `tag` of contact.tagged and contact.untagged and the `key` of
-   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace.
+   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. On
+   * a message's sent, delivery and engagement Events it may name the Broadcast or Automation that
+   * sent the message (`sentBy`).
    */
   filter?: EventFilterInput;
   /**
@@ -4318,6 +4350,16 @@ export type MessageRevenue = {
 };
 
 /**
+ * What sends the message a message's System event is about
+ */
+export const MessageSender = { BROADCAST: 'broadcast', AUTOMATION: 'automation' } as const;
+
+/**
+ * What sends the message a message's System event is about
+ */
+export type MessageSender = typeof MessageSender[keyof typeof MessageSender];
+
+/**
  * Which side of `at` a moment is on: before is strictly earlier, after is at or later, so the two
  * split time at `at`
  */
@@ -4565,6 +4607,12 @@ export type PreviewSegmentResult = {
    * on the routed Integration). The figure Schedule answers too. Absent unless a channel was given.
    */
   recipients?: number;
+  /**
+   * How many days of analytical Events the Instance keeps (ADR 0019): present when an event test
+   * counts with no window, or with one longer than that, since it counts only the Events kept.
+   * Absent when every Event is kept, or no event test reaches past them.
+   */
+  eventsKeptDays?: number;
 };
 
 /**
@@ -5653,6 +5701,42 @@ export type SendingDomainResource = {
    * Last update timestamp
    */
   updatedAt: Timestamp;
+};
+
+/**
+ * A test of what sent the message a message's sent, delivery or engagement System event is about
+ * (ADR 0153, ADR 0180): the Broadcast or the Automation named by its id, archived or not, which the
+ * Event carries as its `broadcastId` or `automationId`. A filter of any other action refuses it, and
+ * so does one that names a Broadcast or Automation the Workspace does not have.
+ */
+export type SentByLeaf = {
+  kind: 'sentBy';
+  /**
+   * Whether a Broadcast or an Automation sent it
+   */
+  sender: MessageSender;
+  /**
+   * The Broadcast's or the Automation's id
+   */
+  id: EntityId;
+};
+
+/**
+ * A test of what sent the message a message's sent, delivery or engagement System event is about
+ * (ADR 0153, ADR 0180): the Broadcast or the Automation named by its id, archived or not, which the
+ * Event carries as its `broadcastId` or `automationId`. A filter of any other action refuses it, and
+ * so does one that names a Broadcast or Automation the Workspace does not have.
+ */
+export type SentByLeafInput = {
+  kind: 'sentBy';
+  /**
+   * Whether a Broadcast or an Automation sent it
+   */
+  sender: MessageSender;
+  /**
+   * The Broadcast's or the Automation's id
+   */
+  id: EntityId;
 };
 
 /**

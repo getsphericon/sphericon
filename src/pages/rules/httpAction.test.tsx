@@ -45,7 +45,9 @@ const EDIT_ROUTE = routeMount(rulesEditRoute, { workspaceId: 'TestWs01', ruleId:
 test('editing an http action keeps its id and sends no URL or header value it was not given', async () => {
   const bodies: unknown[] = []
   worker.use(
-    handleSiteEventsActions({ body: { actions: ['signed_up'] } }),
+    handleSiteEventsActions({
+      body: { actions: ['signed_up'], eventsKeptDays: 400, messageActions: [], keptActions: [] },
+    }),
     handleSiteCustomFieldsList({ body: page([], 0) }),
     handleSiteEventsList({ body: page([], 0) }),
     handleSiteRulesGet({ body: STORED }),

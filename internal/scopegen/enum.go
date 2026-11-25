@@ -126,6 +126,14 @@ var ConditionOperators = Table{
 		operatorEnum("HasOperator", "", "whether a Tag, Telegram or SMS leaf asks the Contact to have it"),
 		operatorEnum("EventCountOperator", "", "how an event leaf bounds the count of the Contact's Events"),
 		Enum{
+			Schema:  "MessageSender",
+			Doc:     []string{"Sender is what sends the message a message's System event is about, which a sentBy leaf names."},
+			Type:    "Sender",
+			Prefix:  "Sender",
+			List:    "Senders",
+			ListDoc: []string{"Senders is every Sender, in the contract's order."},
+		},
+		Enum{
 			Schema:  "EngagementTrackingChannel",
 			Doc:     []string{"TrackingChannel is the Channel whose Engagement tracking consent an engagementTracking leaf tests."},
 			Type:    "TrackingChannel",

@@ -5090,6 +5090,64 @@
   workspace_id: 60
   occurred_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 1}}'
+# The Event filter of an event test (#1446): see the Dunder contacts 5552-5558.
+- id: 5520
+  contact_id: 5552
+  action: email.clicked
+  properties: '{"broadcastId":7960,"url":"https://dunder.test/pricing?utm=news"}'
+  broadcast_id: 7960
+  url: 'https://dunder.test/pricing?utm=news'
+  workspace_id: 60
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 5521
+  contact_id: 5553
+  action: email.clicked
+  properties: '{"broadcastId":7960,"url":"https://dunder.test/blog"}'
+  broadcast_id: 7960
+  url: 'https://dunder.test/blog'
+  workspace_id: 60
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 5522
+  contact_id: 5554
+  action: email.clicked
+  properties: '{"broadcastId":7961,"url":"https://dunder.test/pricing?utm=news"}'
+  broadcast_id: 7961
+  url: 'https://dunder.test/pricing?utm=news'
+  workspace_id: 60
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 5523
+  contact_id: 5555
+  action: email.clicked
+  properties: '{"broadcastId":7962,"url":"https://dunder.test/pricing"}'
+  broadcast_id: 7962
+  url: 'https://dunder.test/pricing'
+  workspace_id: 60
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 5524
+  contact_id: 5556
+  action: order.completed
+  properties: '{"status":"paid","total":120}'
+  workspace_id: 60
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 5525
+  contact_id: 5557
+  action: order.completed
+  properties: '{"status":"pending","total":80}'
+  workspace_id: 60
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
+- id: 5526
+  contact_id: 5558
+  action: order.completed
+  properties: '{"total":40}'
+  workspace_id: 60
+  occurred_at: '{{daysAgo 2}}'
+  created_at: '{{daysAgo 2}}'
 
 # Stored Events the Rule dry run reads (ids 9100+): Liam clicked and did a vip action, an
 # anonymous click, and two clicks of rule_url that differ by the property a Rule tests.

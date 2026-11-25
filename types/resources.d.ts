@@ -714,6 +714,7 @@ export default interface Resources {
       "title": "Changed since you opened it"
     },
     "conditions": {
+      "archivedSender": "{{name}} (archived)",
       "attributes": {
         "city": "City",
         "country": "Country",
@@ -756,6 +757,12 @@ export default interface Resources {
         "notSet": "is not set",
         "set": "is set"
       },
+      "sentBy": {
+        "automation": "Sent by automation",
+        "broadcast": "Sent by broadcast"
+      },
+      "sentByOperator": "is",
+      "showArchivedSenders": "Offer archived broadcasts and automations",
       "textOperators": {
         "beginsWith": "begins with",
         "contains": "contains",
@@ -1869,9 +1876,14 @@ export default interface Resources {
       "createTitle": "New segment",
       "didEvent": "Did \"{{action}}\"",
       "editTitle": "Edit segment",
+      "eventFilterButton": "Filter",
+      "eventFilterDone": "Done",
+      "eventFilterTests": "Filter (1 test)" | "Filter ({{count, number}} tests)",
+      "eventFilterTitle": "Which events count",
       "eventTimesLabel": "Times",
       "eventWindowEver": "ever",
       "eventWindowLabel": "In the last (days)",
+      "eventsKept": "Events of the last day are kept" | "Events of the last {{count, number}} days are kept",
       "matchingContacts": "Matching contacts",
       "nameLabel": "Name",
       "noMatchingContacts": "No contacts match this segment",

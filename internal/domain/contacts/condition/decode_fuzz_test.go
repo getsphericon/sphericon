@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 )
 
 // A stored Condition is a document a client wrote, read by one decode. Whatever its entries, the
@@ -58,13 +59,15 @@ func FuzzCompileEventFilterReadsAnyDocument(f *testing.F) {
 	f.Add(`{"kind":"group","combinator":"or","not":true,"entries":[{"kind":"property","key":"a","test":{"kind":"text","operator":"beginsWith","value":"x"}}]}`)
 	f.Add(`{"kind":"property","of":{"kind":"trigger"},"key":"tag","test":{"kind":"text","operator":"eq","value":"vip"}}`)
 	f.Add(`{"kind":"tag","name":"vip","operator":"has"}`)
+	f.Add(`{"kind":"sentBy","sender":"broadcast","id":"` + publicid.Encode(7) + `"}`)
+	f.Add(`{"kind":"sentBy","sender":"rule","id":"0000000000000000000000"}`)
 	f.Add(`{"kind":"group","combinator":"and","entries":"nope"}`)
 	f.Add(`42`)
 
 	f.Fuzz(func(t *testing.T, entry string) {
 		g := conditiontree.Group{Kind: conditiontree.KindGroup, Combinator: conditiontree.And, Entries: []json.RawMessage{json.RawMessage(entry)}}
 
-		path, err := condition.CompileEventFilter(conditiontree.EventFilter{Group: g})
+		path, err := condition.CompileEventFilter(filteredAction, conditiontree.EventFilter{Group: g})
 
 		compiled := strings.HasPrefix(path.Text, "strict $ ? (") && json.Valid(path.Vars)
 		assert.NotEqual(t, err == nil, path.Text == "", "%q: a path or an error, never both nor neither", entry)

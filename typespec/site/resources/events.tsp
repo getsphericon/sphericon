@@ -42,6 +42,18 @@ model SiteEventResource {
 /** Distinct event actions seen in a workspace (for segment/filter pickers) */
 model SiteEventActionsResult {
   actions: string[];
+
+  /** How many days of analytical Events the Instance keeps (ADR 0019), so an event test with no
+   * window, or one longer than that, counts only the Events kept; 0 means every Event is kept */
+  eventsKeptDays: int32;
+
+  /** The actions of a message's sent, delivery and engagement System events, on every Channel:
+   * the Events an Event filter may test by what sent the message (`sentBy`) */
+  messageActions: string[];
+
+  /** The evidentiary System events retention never deletes by age (ADR 0019), which an event
+   * test counts back to their first */
+  keptActions: string[];
 }
 
 /** The property keys seen on the most recent events of an action, sorted (for the Enrollment key
