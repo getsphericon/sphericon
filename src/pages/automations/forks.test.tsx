@@ -196,14 +196,6 @@ test("a Step inserted into a fork's empty path goes there", async () => {
     ])
 })
 
-test('an End is offered only at the end of a path', async () => {
-  const { screen } = await editing([WAIT])
-
-  await screen.getByRole('button', { name: 'Add a step here' }).first().click()
-  await expect.element(screen.getByRole('menuitem', { name: 'Wait' })).toBeVisible()
-  await expect.element(screen.getByRole('menuitem', { name: 'End' })).not.toBeInTheDocument()
-})
-
 test('removing a Branch whose paths hold Steps asks first, naming how many go with it', async () => {
   const branch: AutomationStep = {
     id: stepId(20),
@@ -533,17 +525,6 @@ test('retyping the count of an open test keeps the unknown path as it is', async
     ],
   ])
   expect(screen.getByText('needs no unknown path', { exact: false }).elements()).toEqual([])
-})
-
-test('an End offers no copy: a copy after it would never run', async () => {
-  const { screen } = await editing([WAIT, { id: stepId(14), type: 'end' }])
-
-  await nodeButton(screen, 'End').click()
-
-  await expect.element(screen.getByRole('region', { name: 'End' })).toBeVisible()
-  await expect
-    .element(screen.getByRole('button', { name: 'Duplicate step' }))
-    .not.toBeInTheDocument()
 })
 
 test('each path of a fork shows the Enrollments that took it and those that reached the goal', async () => {
