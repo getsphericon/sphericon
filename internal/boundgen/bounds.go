@@ -12,14 +12,15 @@ const (
 
 // The names the lists repeat: a bound's, an owner's, a parameter's and a schema's.
 const (
-	contactCity     = "ContactCity"
-	city            = "city"
-	contactOwner    = "Contact"
-	limit           = "limit"
-	telemetryReport = "TelemetryReport"
-	httpcallOwner   = "internal/infra/httpcall"
-	consentDest     = "ConsentDestination"
-	destination     = "destination"
+	contactCity       = "ContactCity"
+	city              = "city"
+	contactOwner      = "Contact"
+	limit             = "limit"
+	telemetryReport   = "TelemetryReport"
+	httpcallOwner     = "internal/infra/httpcall"
+	consentDest       = "ConsentDestination"
+	destination       = "destination"
+	automationVersion = "AutomationVersion"
 )
 
 // Bounds are the contract's bounds on the input of a domain write, in the order they are written.
@@ -234,24 +235,24 @@ var Bounds = []Bound{
 	{Name: "RuleTriggerEvents", Spec: site, Schema: "UpdateRuleInput", Property: "triggerEvents"},
 	{
 		Name: "EntryCooldown", Doc: "is the least time in seconds from the beginning of a Contact's previous Enrollment in an Automation to the next (ADR 0127).",
-		Spec: site, Schema: "EntryCooldown", Owners: []string{"AutomationVersion"},
+		Spec: site, Schema: "EntryCooldown", Owners: []string{automationVersion},
 	},
 	{
 		Name: "TriggerCooldown", Doc: "is the cooldown of an Event Trigger written without one (ADR 0127).",
-		Spec: site, Schema: "EventTriggerInput", Property: "cooldown", Owners: []string{"AutomationVersion"},
+		Spec: site, Schema: "EventTriggerInput", Property: "cooldown", Owners: []string{automationVersion},
 	},
 	{
 		Name: "BranchPaths", Doc: "are the listed paths of a Branch, `otherwise` and `unknown` aside (ADR 0124).",
-		Spec: site, Schema: "BranchStepInput", Property: "paths", Owners: []string{"AutomationVersion"},
+		Spec: site, Schema: "BranchStepInput", Property: "paths", Owners: []string{automationVersion},
 	},
 	{Name: "BranchPaths", Spec: site, Schema: "BranchUnknownPathInput", Property: "conditions"},
 	{
 		Name: "SplitPaths", Doc: "are the paths of a Split (ADR 0124).",
-		Spec: site, Schema: "SplitStepInput", Property: "paths", Owners: []string{"AutomationVersion"},
+		Spec: site, Schema: "SplitStepInput", Property: "paths", Owners: []string{automationVersion},
 	},
 	{
 		Name: "SplitWeight", Doc: "is the share of a Split's path, a whole percentage of the Contacts that reach it (ADR 0124).",
-		Spec: site, Schema: "SplitPathInput", Property: "weight", Owners: []string{"AutomationVersion"},
+		Spec: site, Schema: "SplitPathInput", Property: "weight", Owners: []string{automationVersion},
 	},
 	{
 		Name: "ConditionWithinDays", Doc: "is how many days back a condition looks: an Event count's window or a moment's within the last days.",
