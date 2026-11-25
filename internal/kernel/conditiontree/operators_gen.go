@@ -115,6 +115,21 @@ var EventCountOperators = []EventCountOperator{
 	AtMost,
 }
 
+// Sender is what sends the message a message's System event is about, which a sentBy leaf names.
+type Sender string
+
+// The values of the contract's MessageSender enum, in its order.
+const (
+	SenderBroadcast  Sender = "broadcast"
+	SenderAutomation Sender = "automation"
+)
+
+// Senders is every Sender, in the contract's order.
+var Senders = []Sender{
+	SenderBroadcast,
+	SenderAutomation,
+}
+
 // TrackingChannel is the Channel whose Engagement tracking consent an engagementTracking leaf tests.
 type TrackingChannel string
 

@@ -52,7 +52,14 @@ const HTTP_ID = '01J00000000000000000000001'
 
 function serve(rule: SiteRuleResource, events: SiteEventResource[] = []) {
   worker.use(
-    handleSiteEventsActions({ body: { actions: ['signed_up', 'purchased'] } }),
+    handleSiteEventsActions({
+      body: {
+        actions: ['signed_up', 'purchased'],
+        eventsKeptDays: 400,
+        messageActions: [],
+        keptActions: [],
+      },
+    }),
     handleSiteCustomFieldsList({ body: page([], 0) }),
     handleSiteEventsList({ body: page(events, events.length) }),
     handleSiteRulesGet({ body: rule }),

@@ -128,6 +128,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/messageretention"
 	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
+	"github.com/getsphericon/sphericon/internal/usecase/segmentsaving"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/trackingwithdrawal"
@@ -876,7 +877,7 @@ var identityPackage = do.Package(
 // is constructed.
 var audiencePackage = do.Package(
 	do.Lazy(func(i do.Injector) (*segments.Module, error) {
-		return segments.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
+		return segments.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i), do.MustInvoke[*config.Config](i).EventsRetention), nil
 	}),
 	do.Lazy(func(i do.Injector) (*contacts.Module, error) {
 		return contacts.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*tags.Module](i),
@@ -970,6 +971,9 @@ var contentPackage = do.Package(
 	}),
 	do.Lazy(func(do.Injector) (*tags.Module, error) {
 		return tags.New(), nil
+	}),
+	do.Lazy(func(i do.Injector) (*segmentsaving.UseCase, error) {
+		return segmentsaving.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*segments.Module](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*tagdeletion.UseCase, error) {
 		return tagdeletion.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*removalcheck.Module](i), do.MustInvoke[*tags.Module](i)), nil
@@ -1241,6 +1245,7 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		Webhooks:              do.MustInvoke[*webhookendpoints.Module](i),
 		Outbound:              do.MustInvoke[*outboundmessages.Module](i),
 		Segments:              do.MustInvoke[*segments.Module](i),
+		SegmentSaving:         do.MustInvoke[*segmentsaving.UseCase](i),
 		EventRecording:        do.MustInvoke[*eventrecording.Module](i),
 		Contacts:              do.MustInvoke[*contacts.Module](i),
 		Erasure:               do.MustInvoke[*contacterasure.UseCase](i),
@@ -1304,6 +1309,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		IdentityTokens:        do.MustInvoke[*identitytokens.Module](i),
 		Outbound:              do.MustInvoke[*outboundmessages.Module](i),
 		Segments:              do.MustInvoke[*segments.Module](i),
+		SegmentSaving:         do.MustInvoke[*segmentsaving.UseCase](i),
 		Contacts:              do.MustInvoke[*contacts.Module](i),
 		Erasure:               do.MustInvoke[*contacterasure.UseCase](i),
 		Tags:                  do.MustInvoke[*tags.Module](i),

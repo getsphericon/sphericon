@@ -9,6 +9,7 @@ import {
   EngagementTrackingChannel,
   EventCountOperator,
   HasOperator,
+  MessageSender,
   MomentOperator,
   NumberOperator,
   PresenceOperator,
@@ -37,6 +38,7 @@ import type {
   RulePropertyLeafInput,
   SegmentCondition,
   SegmentConditionInput,
+  SentByLeafInput,
   SmsLeafInput,
   TagLeafInput,
   TelegramLeafInput,
@@ -105,6 +107,16 @@ export const subjectFields = {
 const customFieldIdPrefix = 'customField:'
 export const eventFieldPrefix = 'event:'
 const trackingFieldPrefix = 'engagementTracking:'
+const sentByFieldPrefix = 'sentBy:'
+
+// A sent-by test is edited as a rule on the field "sentBy:<sender>", whose one operator names the
+// Broadcast or Automation picked as its value.
+export const sentByOperator = 'is'
+
+// sentByFieldId is the field of the test that a sender of the kind sent the message.
+export function sentByFieldId(sender: MessageSender): string {
+  return `${sentByFieldPrefix}${sender}`
+}
 
 export function customFieldId(key: string): string {
   return `${customFieldIdPrefix}${key}`
@@ -134,8 +146,15 @@ const presetBounds = new Map<string, Pick<EventLeaf, 'operator' | 'times'>>([
 ])
 
 // The builder rule's value of an event field: the count and the window, each blank until it is
-// typed. A value that does not fit is read as neither.
-const zEventCount = zEventLeaf.pick({ times: true, withinDays: true }).partial()
+// typed, and the filter of the Events it counts (ADR 0153) as its own builder leaves it, complete or
+// still being typed. A value that does not fit is read as none of them.
+const zFilterDraft = z.custom<ConditionDraft>(
+  (value) => typeof value === 'object' && value !== null && 'entries' in value,
+)
+const zEventCount = zEventLeaf
+  .pick({ times: true, withinDays: true })
+  .partial()
+  .extend({ filter: zFilterDraft.optional() })
 type EventCount = z.infer<typeof zEventCount>
 
 export function eventCount(value: unknown): EventCount {
@@ -143,12 +162,39 @@ export function eventCount(value: unknown): EventCount {
   return parsed.success ? parsed.data : {}
 }
 
-// eventCountOf is the value of an event rule, leaving out what is blank.
-export function eventCountOf(times?: number, withinDays?: number): EventCount {
+// eventCountOf is the value of an event rule, leaving out what is blank and a filter that tests
+// nothing.
+export function eventCountOf(
+  times?: number,
+  withinDays?: number,
+  filter?: ConditionDraft,
+): EventCount {
   return {
     ...(times === undefined ? {} : { times }),
     ...(withinDays === undefined ? {} : { withinDays }),
+    ...(filter === undefined || testsNothing(filter) ? {} : { filter }),
   }
+}
+
+// reachesPastKept tells an event test that counts Events older than the analytical Events the
+// Instance keeps (ADR 0019, ADR 0153): one with no window, or a longer one, of an action whose
+// Events expire, so it counts only the Events kept. keptDays 0 keeps every Event.
+export function reachesPastKept(count: {
+  action: string
+  withinDays: number | undefined
+  keptDays: number
+  keptActions: readonly string[]
+}): boolean {
+  if (count.keptDays <= 0 || count.keptActions.includes(count.action)) {
+    return false
+  }
+  return count.withinDays === undefined || count.withinDays > count.keptDays
+}
+
+// testsNothing tells a filter that holds no test, which is no filter: an empty group that is not
+// negated holds for every Event.
+function testsNothing(filter: AnyCondition | ConditionDraft): boolean {
+  return filter.entries.length === 0 && filter.not !== true
 }
 
 const eventOperatorByName = byName(EventCountOperator)
@@ -165,13 +211,18 @@ function presetOf(leaf: EventLeaf): string | undefined {
   return preset?.[0]
 }
 
-// A loaded leaf that is a preset's count shows as the preset, whose value is the window alone.
+// A loaded leaf that is a preset's count shows as the preset, whose value is the window and the
+// filter alone.
 function toEventRule(leaf: EventLeaf): RuleType {
   const preset = presetOf(leaf)
   return {
     field: `${eventFieldPrefix}${leaf.action}`,
     operator: preset ?? leaf.operator,
-    value: eventCountOf(preset === undefined ? leaf.times : undefined, leaf.withinDays),
+    value: eventCountOf(
+      preset === undefined ? leaf.times : undefined,
+      leaf.withinDays,
+      leaf.filter,
+    ),
   }
 }
 
@@ -340,6 +391,9 @@ function toRule(
       rule = { field: subjectFields.property, operator, value: propertyValueOf(node.key, value) }
       break
     }
+    case 'sentBy':
+      rule = { field: sentByFieldId(node.sender), operator: sentByOperator, value: node.id }
+      break
   }
   return rule
 }
@@ -378,9 +432,10 @@ type NodeDraft =
   | SmsLeafInput
   | Tested<EngagementTrackingLeafInput>
   | Tested<CustomFieldLeafInput>
-  | Blank<EventLeafInput, 'times'>
+  | (Omit<Blank<EventLeafInput, 'times'>, 'filter'> & { filter?: ConditionDraft })
   | Blank<Tested<RulePropertyLeafInput>, 'key'>
   | Blank<Tested<FilterPropertyLeafInput>, 'key'>
+  | SentByLeafInput
   | ConditionDraft
 export type ConditionDraft = Omit<RuleConditionInput, 'entries'> & { entries: NodeDraft[] }
 
@@ -467,7 +522,18 @@ function toEventLeaf(action: string, rule: RuleType): NodeDraft[] {
     return []
   }
   const span = count.withinDays === undefined ? {} : { withinDays: count.withinDays }
-  return [{ kind: 'event', action, ...bound, ...span }]
+  const filtered = count.filter === undefined ? {} : { filter: count.filter }
+  return [{ kind: 'event', action, ...bound, ...span, ...filtered }]
+}
+
+const senderByName = byName(MessageSender)
+
+// toSentByLeaf reads a builder rule as the test that the sender its field names, picked as the
+// rule's value, sent the message; nothing until one is picked.
+function toSentByLeaf(rule: RuleType): NodeDraft[] {
+  const sender = senderByName.get(rule.field.slice(sentByFieldPrefix.length))
+  const id = textOf(rule.value)
+  return sender === undefined || id === '' ? [] : [{ kind: 'sentBy', sender, id }]
 }
 
 // toHaveLeaf reads a builder rule as a leaf the Contact has or not, or as nothing when its
@@ -497,6 +563,7 @@ const leaves: Record<LeafKind, (rule: RuleType, timeZone?: string) => NodeDraft[
   telegram: (rule) => toHaveLeaf(rule, (operator) => ({ kind: 'telegram', operator })),
   sms: (rule) => toHaveLeaf(rule, (operator) => ({ kind: 'sms', operator })),
   property: toPropertyLeaf,
+  sentBy: toSentByLeaf,
   engagementTracking: (rule, timeZone) => {
     const channel = trackingChannelByName.get(rule.field.slice(trackingFieldPrefix.length))
     const test = takes(leafTests.engagementTracking, toTest(rule.operator, rule.value, timeZone))
@@ -536,6 +603,9 @@ function leafKindOf(field: string): LeafKind | undefined {
   }
   if (field.startsWith(trackingFieldPrefix)) {
     return 'engagementTracking'
+  }
+  if (field.startsWith(sentByFieldPrefix)) {
+    return 'sentBy'
   }
   return attributeByName.has(field) ? 'attribute' : subjectKinds.get(field)
 }

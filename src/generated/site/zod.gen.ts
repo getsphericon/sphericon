@@ -581,34 +581,6 @@ export const zEntryPolicy = z.enum(['once', 'again']);
 export const zEventCountOperator = z.enum(['atLeast', 'atMost']);
 
 /**
- * A count of how many times a Contact performed an Event action, over all time or within the
- * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
- * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
- * longer than Event retention is capped by it: expired Events are no longer counted.
- */
-export const zEventLeaf = z.object({
-  kind: z.enum(['event']),
-  action: z.string(),
-  operator: zEventCountOperator,
-  times: z.int().gte(0).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  withinDays: z.exactOptional(z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
-});
-
-/**
- * A count of how many times a Contact performed an Event action, over all time or within the
- * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
- * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
- * longer than Event retention is capped by it: expired Events are no longer counted.
- */
-export const zEventLeafInput = z.strictObject({
-  kind: z.enum(['event']),
-  action: z.string(),
-  operator: zEventCountOperator,
-  times: z.int().gte(0).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  withinDays: z.exactOptional(z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
-});
-
-/**
  * Scopes an OAuth client may be granted without any extra opt-in: the external
  * API's read/write vocabulary. Token management scopes are deliberately absent,
  * so a connector can never mint further credentials.
@@ -806,6 +778,11 @@ export const zAutomationResults = z.object({
   previous: zAutomationPeriodResults,
   series: z.array(zAutomationResultsPoint)
 });
+
+/**
+ * What sends the message a message's System event is about
+ */
+export const zMessageSender = z.enum(['broadcast', 'automation']);
 
 /**
  * Which side of `at` a moment is on: before is strictly earlier, after is at or later, so the two
@@ -1167,6 +1144,30 @@ export const zSendScope = z.enum([
   'automations:publish',
   'mcp:send'
 ]);
+
+/**
+ * A test of what sent the message a message's sent, delivery or engagement System event is about
+ * (ADR 0153, ADR 0180): the Broadcast or the Automation named by its id, archived or not, which the
+ * Event carries as its `broadcastId` or `automationId`. A filter of any other action refuses it, and
+ * so does one that names a Broadcast or Automation the Workspace does not have.
+ */
+export const zSentByLeaf = z.object({
+  kind: z.enum(['sentBy']),
+  sender: zMessageSender,
+  id: zEntityId
+});
+
+/**
+ * A test of what sent the message a message's sent, delivery or engagement System event is about
+ * (ADR 0153, ADR 0180): the Broadcast or the Automation named by its id, archived or not, which the
+ * Event carries as its `broadcastId` or `automationId`. A filter of any other action refuses it, and
+ * so does one that names a Broadcast or Automation the Workspace does not have.
+ */
+export const zSentByLeafInput = z.strictObject({
+  kind: z.enum(['sentBy']),
+  sender: zMessageSender,
+  id: zEntityId
+});
 
 /**
  * The name of an SES configuration set, as SES names one: letters, digits, hyphens and underscores
@@ -1738,7 +1739,10 @@ export const zSiteEmailChangeInput = z.strictObject({
  * Distinct event actions seen in a workspace (for segment/filter pickers)
  */
 export const zSiteEventActionsResult = z.object({
-  actions: z.array(z.string())
+  actions: z.array(z.string()),
+  eventsKeptDays: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  messageActions: z.array(z.string()),
+  keptActions: z.array(z.string())
 });
 
 /**
@@ -2119,7 +2123,8 @@ export const zSitePendingSignup = z.object({
 export const zSitePreviewSegmentResult = z.object({
   count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   unknownEngagement: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  recipients: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
+  recipients: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  eventsKeptDays: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
 });
 
 /**
@@ -4952,34 +4957,74 @@ export const zBranchConditionInput = z.strictObject({
  * An entry of a Branch path's Condition, by `kind`: a Rule's, the property test reading the
  * Event the Enrollment began with
  */
-export const zBranchConditionNode = z.discriminatedUnion('kind', [
-  zBranchCondition.extend({ kind: z.literal('group') }),
-  zAttributeLeaf.extend({ kind: z.literal('attribute') }),
-  zBirthdayLeaf.extend({ kind: z.literal('birthday') }),
-  zTagLeaf.extend({ kind: z.literal('tag') }),
-  zTelegramLeaf.extend({ kind: z.literal('telegram') }),
-  zSmsLeaf.extend({ kind: z.literal('sms') }),
-  zEngagementTrackingLeaf.extend({ kind: z.literal('engagementTracking') }),
-  zCustomFieldLeaf.extend({ kind: z.literal('customField') }),
-  zEventLeaf.extend({ kind: z.literal('event') }),
-  zBranchPropertyLeaf.extend({ kind: z.literal('property') })
+export const zBranchConditionNode = z.union([
+  z.object({
+    kind: z.literal('group')
+  }).and(zBranchCondition),
+  z.object({
+    kind: z.literal('attribute')
+  }).and(zAttributeLeaf),
+  z.object({
+    kind: z.literal('birthday')
+  }).and(zBirthdayLeaf),
+  z.object({
+    kind: z.literal('tag')
+  }).and(zTagLeaf),
+  z.object({
+    kind: z.literal('telegram')
+  }).and(zTelegramLeaf),
+  z.object({
+    kind: z.literal('sms')
+  }).and(zSmsLeaf),
+  z.object({
+    kind: z.literal('engagementTracking')
+  }).and(zEngagementTrackingLeaf),
+  z.object({
+    kind: z.literal('customField')
+  }).and(zCustomFieldLeaf),
+  z.object({
+    kind: z.literal('event')
+  }).and(z.lazy((): any => zEventLeaf)),
+  z.object({
+    kind: z.literal('property')
+  }).and(zBranchPropertyLeaf)
 ]);
 
 /**
  * An entry of a Branch path's Condition, by `kind`: a Rule's, the property test reading the
  * Event the Enrollment began with
  */
-export const zBranchConditionNodeInput = z.discriminatedUnion('kind', [
-  zBranchConditionInput.extend({ kind: z.literal('group') }),
-  zAttributeLeafInput.extend({ kind: z.literal('attribute') }),
-  zBirthdayLeafInput.extend({ kind: z.literal('birthday') }),
-  zTagLeafInput.extend({ kind: z.literal('tag') }),
-  zTelegramLeafInput.extend({ kind: z.literal('telegram') }),
-  zSmsLeafInput.extend({ kind: z.literal('sms') }),
-  zEngagementTrackingLeafInput.extend({ kind: z.literal('engagementTracking') }),
-  zCustomFieldLeafInput.extend({ kind: z.literal('customField') }),
-  zEventLeafInput.extend({ kind: z.literal('event') }),
-  zBranchPropertyLeafInput.extend({ kind: z.literal('property') })
+export const zBranchConditionNodeInput = z.union([
+  z.object({
+    kind: z.literal('group')
+  }).and(zBranchConditionInput),
+  z.object({
+    kind: z.literal('attribute')
+  }).and(zAttributeLeafInput),
+  z.object({
+    kind: z.literal('birthday')
+  }).and(zBirthdayLeafInput),
+  z.object({
+    kind: z.literal('tag')
+  }).and(zTagLeafInput),
+  z.object({
+    kind: z.literal('telegram')
+  }).and(zTelegramLeafInput),
+  z.object({
+    kind: z.literal('sms')
+  }).and(zSmsLeafInput),
+  z.object({
+    kind: z.literal('engagementTracking')
+  }).and(zEngagementTrackingLeafInput),
+  z.object({
+    kind: z.literal('customField')
+  }).and(zCustomFieldLeafInput),
+  z.object({
+    kind: z.literal('event')
+  }).and(z.lazy((): any => zEventLeafInput)),
+  z.object({
+    kind: z.literal('property')
+  }).and(zBranchPropertyLeafInput)
 ]);
 
 /**
@@ -5088,21 +5133,57 @@ export const zEventFilterInput = z.strictObject({
 
 /**
  * An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is
- * about, or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133).
+ * about, of what sent the message a message's System event is about, or a nested group. A test of
+ * the Contact is a Rule's, never a filter's (ADR 0133).
  */
 export const zEventFilterNode = z.discriminatedUnion('kind', [
   zEventFilter.extend({ kind: z.literal('group') }),
-  zFilterPropertyLeaf.extend({ kind: z.literal('property') })
+  zFilterPropertyLeaf.extend({ kind: z.literal('property') }),
+  zSentByLeaf.extend({ kind: z.literal('sentBy') })
 ]);
 
 /**
  * An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is
- * about, or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133).
+ * about, of what sent the message a message's System event is about, or a nested group. A test of
+ * the Contact is a Rule's, never a filter's (ADR 0133).
  */
 export const zEventFilterNodeInput = z.discriminatedUnion('kind', [
   zEventFilterInput.extend({ kind: z.literal('group') }),
-  zFilterPropertyLeafInput.extend({ kind: z.literal('property') })
+  zFilterPropertyLeafInput.extend({ kind: z.literal('property') }),
+  zSentByLeafInput.extend({ kind: z.literal('sentBy') })
 ]);
+
+/**
+ * A count of how many times a Contact performed an Event action, over all time or within the
+ * last `withinDays` days, of the Events that pass its `filter` (ADR 0153). Performed is atLeast 1,
+ * not performed is atMost 0; "exactly" is a group of both. Engagement Events made by software
+ * (machine opens and clicks) are not counted. A window longer than Event retention is capped by it:
+ * expired Events are no longer counted.
+ */
+export const zEventLeaf = z.object({
+  kind: z.enum(['event']),
+  action: z.string(),
+  operator: zEventCountOperator,
+  times: z.int().gte(0).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  withinDays: z.exactOptional(z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  filter: z.exactOptional(zEventFilter)
+});
+
+/**
+ * A count of how many times a Contact performed an Event action, over all time or within the
+ * last `withinDays` days, of the Events that pass its `filter` (ADR 0153). Performed is atLeast 1,
+ * not performed is atMost 0; "exactly" is a group of both. Engagement Events made by software
+ * (machine opens and clicks) are not counted. A window longer than Event retention is capped by it:
+ * expired Events are no longer counted.
+ */
+export const zEventLeafInput = z.strictObject({
+  kind: z.enum(['event']),
+  action: z.string(),
+  operator: zEventCountOperator,
+  times: z.int().gte(0).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  withinDays: z.exactOptional(z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  filter: z.exactOptional(zEventFilterInput)
+});
 
 /**
  * An Event matcher that ends an enrollment (ADR 0133): an action, and an optional filter on that

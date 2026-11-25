@@ -68,3 +68,26 @@ func TestABranchsConditionNamesOnlyTheWorkspacesCustomFields(t *testing.T) {
 
 	require.ErrorContains(t, err, `unknown custom field "no_such_field"`)
 }
+
+// clickedIn is an event test of the clicks of a link holding /pricing in the Broadcast id: its
+// filter names what sent the message and tests the Event's own property (ADR 0153).
+func clickedIn(id int64) leaf {
+	l := eventLeaf(systemevent.EmailClicked, "atLeast", 1, 0)
+	l["filter"] = opsGroup(sentBy("broadcast", id), prop("url", text("contains", "/pricing")))
+	return l
+}
+
+// A Branch path's event test counts only the Events that pass its filter, as a Segment's does: in
+// Dunder, the pricing clicker clicked /pricing in the Newsletter, not in the Promo.
+func TestABranchsEventTestCountsOnlyTheEventsItsFilterPasses(t *testing.T) {
+	env := testhelper.Setup(t)
+	conds := []conditiontree.Branch{
+		branchOf(clickedIn(fixtures.BroadcastDunderNewsletterID)),
+		branchOf(clickedIn(fixtures.BroadcastDunderPromoID)),
+	}
+
+	got, err := condition.New(time.Now).Outcomes(t.Context(), env.DB.Scoped(fixtures.DunderID), condition.OutcomesInput{ContactID: fixtures.DunderPricingClickerID, Conditions: conds})
+
+	require.NoError(t, err)
+	assert.Equal(t, []conditiontree.Truth{conditiontree.TruthTrue, conditiontree.TruthFalse}, got)
+}

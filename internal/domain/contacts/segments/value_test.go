@@ -13,21 +13,22 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/segmentsaving"
 )
 
 // A Condition saved again in another key order and spacing is the one the Segment holds (ADR
 // 0169): the save writes nothing, so it records no Audit entry and moves no revision.
 func TestSavingTheSameConditionSpelledOtherwiseChangesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := testhelper.Module[*segments.Module](env)
+	save := testhelper.Module[*segmentsaving.UseCase](env)
 	ctx := context.Background()
 	acting := env.Bus.Act(env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser, ID: "7", Name: "John"})
-	created, err := m.Create(ctx, acting, segments.CreateInput{Name: "VIPs", Condition: new(testhelper.SegmentCondition(t,
+	created, err := save.Create(ctx, acting, segments.CreateInput{Name: "VIPs", Condition: new(testhelper.SegmentCondition(t,
 		`{"kind":"group","combinator":"and","entries":[{"kind":"tag","name":"vip","operator":"has"}]}`))})
 	require.NoError(t, err)
 	audited := len(env.QueuedEvents(t, events.NameAuditEntry))
 
-	saved, err := m.Update(ctx, acting, created.ID, segments.UpdateInput{Revision: created.Revision, Condition: patch.Set(testhelper.SegmentCondition(t,
+	saved, err := save.Update(ctx, acting, created.ID, segments.UpdateInput{Revision: created.Revision, Condition: patch.Set(testhelper.SegmentCondition(t,
 		`{ "entries": [ { "operator": "has",  "name": "vip", "kind": "tag" } ], "combinator": "and", "kind": "group" }`))})
 	require.NoError(t, err)
 
@@ -40,6 +41,7 @@ func TestSavingTheSameConditionSpelledOtherwiseChangesNothing(t *testing.T) {
 func TestASegmentWithNoTestsMatchesEveryContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*segments.Module](env)
+	save := testhelper.Module[*segmentsaving.UseCase](env)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	everyone, err := acme.Contact().Query().Count(ctx)
@@ -47,7 +49,7 @@ func TestASegmentWithNoTestsMatchesEveryContact(t *testing.T) {
 	require.Positive(t, everyone)
 
 	for name, cond := range map[string]*conditiontree.Segment{"none": nil, "empty group": {Group: conditiontree.Empty()}} {
-		created, err := m.Create(ctx, acme, segments.CreateInput{Name: name, Condition: cond})
+		created, err := save.Create(ctx, acme, segments.CreateInput{Name: name, Condition: cond})
 		require.NoError(t, err)
 
 		assert.JSONEq(t, `{"kind":"group","combinator":"and","entries":[]}`, testhelper.Document(t, created.Condition), name)

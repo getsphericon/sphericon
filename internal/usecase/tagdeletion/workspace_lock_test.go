@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/segmentsaving"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 )
 
@@ -29,12 +30,12 @@ func TestDeletingATagWaitsForASegmentSavedNamingIt(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.Committed())
 	scope := env.DB.Scoped(fixtures.AcmeID)
 	s := scope
-	segs, catalogue, deletion := testhelper.Module[*segments.Module](env), tags.New(), testhelper.Module[*tagdeletion.UseCase](env)
+	saving, catalogue, deletion := testhelper.Module[*segmentsaving.UseCase](env), tags.New(), testhelper.Module[*tagdeletion.UseCase](env)
 
 	var saved int64
 	save := testhelper.Writer{Name: "save", Run: func() error {
 		cond := `{"kind":"group","combinator":"and","entries":[{"kind":"tag","name":"` + fixtures.TagUnusedName + `","operator":"has"}]}`
-		seg, err := segs.Create(ctx, s, segments.CreateInput{Name: "Unused tag holders", Condition: new(testhelper.SegmentCondition(t, cond))})
+		seg, err := saving.Create(ctx, s, segments.CreateInput{Name: "Unused tag holders", Condition: new(testhelper.SegmentCondition(t, cond))})
 		if seg != nil {
 			saved = seg.ID
 		}

@@ -161,6 +161,7 @@ const (
 	Secret                    = "secret"
 	SecretAccessKey           = "secretAccessKey"
 	SegmentID                 = "segmentId"
+	Sender                    = "sender"
 	SendingSource             = "sendingSource"
 	SignupItems               = "signupItems"
 	Sms                       = "sms"

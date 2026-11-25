@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
@@ -30,7 +31,7 @@ type filterGroup struct {
 	entries    []filterNode
 }
 
-// filterNode is an entry of a filter's group: a nested group or a property test.
+// filterNode is an entry of a filter's group: a nested group, a property test or a sent-by test.
 type filterNode interface{ isFilterNode() }
 
 // filterLeaf tests the property key of the object the filter is about.
@@ -39,8 +40,18 @@ type filterLeaf struct {
 	test propertyTest
 }
 
+// sentByLeaf tests that the message a message's System event is about was sent by the Broadcast
+// or the Automation id (ADR 0153, ADR 0180): the `broadcastId` or `automationId` the Event carries.
+// publicID is the id as the filter names it, which a refusal quotes.
+type sentByLeaf struct {
+	sender   conditiontree.Sender
+	id       int64
+	publicID string
+}
+
 func (filterGroup) isFilterNode() {}
 func (filterLeaf) isFilterNode()  {}
+func (sentByLeaf) isFilterNode()  {}
 
 // decodeFilter reads a stored filter into its typed tree, refusing what it cannot read with the
 // path of the entry ("entry 0: entry 2: …"), as decode does for the other places.
@@ -59,8 +70,8 @@ func decodeFilter(g conditiontree.Group) (filterGroup, error) {
 	return d, nil
 }
 
-// decodeFilterEntry reads an entries[] item of a filter by its `kind`: a nested group or a
-// property test, which names no subject, the two kinds the filter admits.
+// decodeFilterEntry reads an entries[] item of a filter by its `kind`: a nested group, a property
+// test, which names no subject, or a sent-by test, the kinds the filter admits.
 func decodeFilterEntry(raw json.RawMessage) (filterNode, error) {
 	var e entry
 	if err := json.Unmarshal(raw, &e); err != nil {
@@ -76,6 +87,9 @@ func decodeFilterEntry(raw json.RawMessage) (filterNode, error) {
 		}
 		return decodeFilter(g)
 	}
+	if e.Kind == conditiontree.KindSentBy {
+		return decodeSentBy(raw)
+	}
 	if e.Of != nil {
 		return nil, errors.New("a filter's property test names no subject")
 	}
@@ -84,6 +98,60 @@ func decodeFilterEntry(raw json.RawMessage) (filterNode, error) {
 		return nil, err
 	}
 	return filterLeaf{key: key, test: t}, nil
+}
+
+// storedSentBy is a stored sent-by test: whether a Broadcast or an Automation sent the message, and
+// its id in the public form the contract carries (ADR 0142).
+type storedSentBy struct {
+	Sender conditiontree.Sender `json:"sender"`
+	ID     string               `json:"id"`
+}
+
+// decodeSentBy reads a sent-by test, refusing a sender outside the contract and an id that is no
+// public id of this Instance.
+func decodeSentBy(raw json.RawMessage) (filterNode, error) {
+	var t storedSentBy
+	if err := json.Unmarshal(raw, &t); err != nil {
+		return nil, fmt.Errorf("malformed sent-by test: %w", err)
+	}
+	if !slices.Contains(conditiontree.Senders, t.Sender) {
+		return nil, fmt.Errorf("unknown sender %q", t.Sender)
+	}
+	id, err := publicid.Decode(t.ID)
+	if err != nil {
+		return nil, fmt.Errorf("sent-by id %q is no id", t.ID)
+	}
+	return sentByLeaf{sender: t.Sender, id: id, publicID: t.ID}, nil
+}
+
+// property is the property of a message's System event that holds the key of the sender.
+func (l sentByLeaf) property() string {
+	switch l.sender {
+	case conditiontree.SenderBroadcast:
+		return systemevent.BroadcastIDProperty
+	case conditiontree.SenderAutomation:
+		return systemevent.AutomationIDProperty
+	}
+	return ""
+}
+
+// checkSenders refuses a sent-by test, at any depth, in the filter of an action that is not a
+// message's System event: no other Event carries what sent a message (ADR 0180).
+func checkSenders(action string, g filterGroup) error {
+	if slices.Contains(systemevent.MessageActions, action) {
+		return nil
+	}
+	for i, n := range g.entries {
+		switch n := n.(type) {
+		case filterGroup:
+			if err := checkSenders(action, n); err != nil {
+				return fmt.Errorf("entry %d: %w", i, err)
+			}
+		case sentByLeaf:
+			return fmt.Errorf("entry %d: %s is no message's Event, so no %s sent it", i, action, n.sender)
+		}
+	}
+	return nil
 }
 
 // Path is a property filter compiled to one SQL/JSON path (ADR 0180), independent of the object it
@@ -107,13 +175,17 @@ type containsTest struct {
 	operand string
 }
 
-// CompileEventFilter reads an Event matcher's filter, refusing a tree it cannot read (an entry
-// other than a group or a property test that names no subject, a test a property does not take),
-// and compiles it to its path. An empty group holds for every object, an empty negated group for
-// none.
-func CompileEventFilter(f conditiontree.EventFilter) (Path, error) {
+// CompileEventFilter reads the filter of the Events of action, an Event matcher's or an event
+// test's, refusing a tree it cannot read (an entry other than a group, a property test that names
+// no subject or a sent-by test, a test a property does not take, a sent-by test of an action that
+// is no message's System event), and compiles it to its path. An empty group holds for every
+// object, an empty negated group for none.
+func CompileEventFilter(action string, f conditiontree.EventFilter) (Path, error) {
 	tree, err := decodeFilter(f.Group)
 	if err != nil {
+		return Path{}, err
+	}
+	if err := checkSenders(action, tree); err != nil {
 		return Path{}, err
 	}
 	b := newPathBuilder()
@@ -221,8 +293,20 @@ func (b *pathBuilder) node(n filterNode) string {
 		return b.group(n)
 	case filterLeaf:
 		return b.property(n.key, n.test)
+	case sentByLeaf:
+		return b.property(n.property(), keyTest{id: n.id})
 	}
 	return "!" + always
+}
+
+// keyTest holds for a JSON number that is the key id: the `broadcastId` or `automationId` a
+// message's System event carries. It is bound as an integer, so a key past 2^53 compares exactly.
+type keyTest struct{ id int64 }
+
+func (keyTest) isTest() {}
+
+func (t keyTest) path(b *pathBuilder, _ string) string {
+	return `@.type() == "number" && @ == ` + b.bind(t.id)
 }
 
 // property is the predicate that the object @ holds the property key and that its value passes t.
@@ -291,6 +375,78 @@ func namesOf(f conditiontree.EventFilter, key string) []string {
 	}
 	walk(tree)
 	return names
+}
+
+// NamedSender is a Broadcast or an Automation a sent-by test names (ADR 0153): which sender, its key
+// and its id as the test names it, and the path of the test in its tree ("entry 0: filter: entry
+// 1: "), which a refusal of an unknown one quotes.
+type NamedSender struct {
+	Sender   conditiontree.Sender
+	ID       int64
+	PublicID string
+	Path     string
+}
+
+// Missing is the refusal's message of a filter naming n when the Workspace does not have it: the
+// path of the test and the id as the filter names it.
+func (n NamedSender) Missing() string {
+	return fmt.Sprintf("%sthe Workspace has no %s %s", n.Path, n.Sender, n.PublicID)
+}
+
+// NamedSenders is every Broadcast and Automation the sent-by tests of the Condition's event leaves
+// name, at any depth, in the order they appear. It reads the tree of every place: a Branch path's,
+// which admits a Rule's and so a Segment's. A Condition that does not decode names none: its save
+// is refused for that first.
+func NamedSenders(g conditiontree.Group) []NamedSender {
+	tree, err := decode(g, branchPlace)
+	if err != nil {
+		return nil
+	}
+	return namedSendersOf(tree, "")
+}
+
+// FilterSenders is every Broadcast and Automation the sent-by tests of an Event matcher's filter
+// name, as NamedSenders.
+func FilterSenders(f conditiontree.EventFilter) []NamedSender {
+	tree, err := decodeFilter(f.Group)
+	if err != nil {
+		return nil
+	}
+	return filterSendersOf(tree, "")
+}
+
+func namedSendersOf(g group, path string) []NamedSender {
+	var named []NamedSender
+	for i, n := range g.entries {
+		at := fmt.Sprintf("%sentry %d: ", path, i)
+		switch n := n.(type) {
+		case group:
+			named = append(named, namedSendersOf(n, at)...)
+		case eventCountLeaf:
+			if n.filter == nil {
+				continue
+			}
+			tree, err := decodeFilter(n.filter.Group)
+			if err == nil {
+				named = append(named, filterSendersOf(tree, at+"filter: ")...)
+			}
+		}
+	}
+	return named
+}
+
+func filterSendersOf(g filterGroup, path string) []NamedSender {
+	var named []NamedSender
+	for i, n := range g.entries {
+		at := fmt.Sprintf("%sentry %d: ", path, i)
+		switch n := n.(type) {
+		case filterGroup:
+			named = append(named, filterSendersOf(n, at)...)
+		case sentByLeaf:
+			named = append(named, NamedSender{Sender: n.sender, ID: n.id, PublicID: n.publicID, Path: at})
+		}
+	}
+	return named
 }
 
 // Holds is the selector predicate that the path holds on the JSON object in column of the table the

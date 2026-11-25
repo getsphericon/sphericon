@@ -29,8 +29,9 @@ func New() *Module { return &Module{} }
 
 // UnfitForCustomFieldType returns the Workspace's kept Rules, in id order, whose live version or
 // draft tests the Custom field key in its Condition with a leaf a field of type t does not take, so
-// it would stop compiling were the field retyped. A deleted Rule acts on nothing, so it does not
-// count.
+// it would stop compiling were the field retyped, or names the field in an event test's filter (ADR
+// 0153), which any retype would leave naming a field that is not there. A deleted Rule acts on
+// nothing, so it does not count.
 func (m *Module) UnfitForCustomFieldType(ctx context.Context, l *ent.WorkspaceLocked, key string, t customfield.Type) ([]*ent.Rule, error) {
 	kept, err := keptWithVersions(ctx, l)
 	if err != nil {
@@ -38,7 +39,7 @@ func (m *Module) UnfitForCustomFieldType(ctx context.Context, l *ent.WorkspaceLo
 	}
 	return lo.Filter(kept, func(r *ent.Rule, _ int) bool {
 		return lo.SomeBy(versions(r), func(v *ent.RuleVersion) bool {
-			return !condition.FitsCustomFieldType(v.Condition.Group, key, t)
+			return condition.HoldsCustomField(v.Condition.Group, key, t)
 		})
 	}), nil
 }

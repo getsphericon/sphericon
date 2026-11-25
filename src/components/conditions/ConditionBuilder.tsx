@@ -1,4 +1,4 @@
-import { Button, Group, Stack, Text } from '@mantine/core'
+import { Button, Checkbox, Group, Stack, Text } from '@mantine/core'
 import { QueryBuilderMantine } from '@react-querybuilder/mantine'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import type { TFunction } from 'i18next'
@@ -8,9 +8,13 @@ import { QueryBuilder } from 'react-querybuilder'
 import type { Field, Operator } from 'react-querybuilder'
 
 import {
+  siteAutomationsListOptions,
+  siteBroadcastsListOptions,
   siteCustomFieldsListOptions,
   siteEventsActionsOptions,
+  siteEventsPropertyKeysOptions,
   siteSegmentsPreviewMutation,
+  siteTagsListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import {
   ContactAttribute,
@@ -18,6 +22,8 @@ import {
   EngagementTrackingState,
   EventCountOperator,
   HasOperator,
+  MessageSender,
+  SystemEventAction,
 } from '../../generated/site/types.gen.ts'
 import { useEventActionLabel } from '../../hooks/useEventActionLabel.ts'
 import { useTimeZone } from '../../hooks/useFormat.ts'
@@ -25,7 +31,10 @@ import {
   customFieldId,
   eventFieldPrefix,
   eventPresets,
+  sentByFieldId,
+  sentByOperator,
   subjectFields,
+  subjectless,
   toCondition,
   toDraft,
   toQuery,
@@ -33,7 +42,6 @@ import {
 } from './condition.ts'
 import type { AnyCondition, ConditionDraft, ConditionPlace } from './condition.ts'
 import { ConditionValueEditor } from './ConditionValueEditor.tsx'
-import type { PropertyValues, ValueEditorContext } from './ConditionValueEditor.tsx'
 import {
   attributeOperators,
   birthdayOperators,
@@ -45,6 +53,11 @@ import {
   tagOperators,
   trackingOperators,
 } from './fieldOperators.ts'
+import type {
+  EventFilterEditorProps,
+  PropertyValues,
+  ValueEditorContext,
+} from './valueEditorContext.ts'
 
 // Event conditions count the action (per-field overrides the global operator set): the presets
 // "performed" and "not performed", or at least / at most a number of times. EventCountEditor
@@ -151,6 +164,11 @@ interface ConditionBuilderProps {
   // catalogue a property holds (an Event filter's `tag` of contact.tagged). A suggestion, not a
   // limit: the server checks the name.
   propertyValues?: PropertyValues
+  // The keys offered for a property test: those seen on recent Events of the action an Event filter
+  // is about. A suggestion, not a limit.
+  propertyKeys?: readonly string[]
+  // The fields an Event filter adds to its property tests: what sent a message's System event.
+  filterFields?: Field[]
 }
 
 // ConditionBuilder is the visual Condition editor (react-querybuilder + the official
@@ -162,6 +180,8 @@ export function ConditionBuilder({
   onChange,
   place,
   propertyValues,
+  propertyKeys,
+  filterFields,
 }: ConditionBuilderProps) {
   const { t } = useTranslation()
   const labelOf = useEventActionLabel()
@@ -201,8 +221,29 @@ export function ConditionBuilder({
       operators: eventOperators(t),
       defaultOperator: eventPresets.performed,
     }))
-    return placeFields[place](t, [...contactFields(t), ...customFields, ...eventFields])
-  }, [actionsQuery.data, customFieldsQuery.data, labelOf, t, place])
+    return [
+      ...placeFields[place](t, [...contactFields(t), ...customFields, ...eventFields]),
+      ...(filterFields ?? []),
+    ]
+  }, [actionsQuery.data, customFieldsQuery.data, labelOf, t, place, filterFields])
+  // What the value editors read: the values and keys a property test is offered, and, where an
+  // event test is edited, the Workspace, the editor of its filter and how far back Events are kept.
+  const context: ValueEditorContext = {
+    ...(propertyValues === undefined ? {} : { propertyValues }),
+    ...(propertyKeys === undefined ? {} : { propertyKeys }),
+    ...(testsContact(place)
+      ? {
+          workspaceId,
+          eventFilterEditor: EventFilterBuilder,
+          ...(actionsQuery.data
+            ? {
+                eventsKeptDays: actionsQuery.data.eventsKeptDays,
+                keptActions: actionsQuery.data.keptActions,
+              }
+            : {}),
+        }
+      : {}),
+  }
 
   return (
     <Stack gap="xs">
@@ -214,9 +255,7 @@ export function ConditionBuilder({
           defaultQuery={initialQuery}
           enableMountQueryChange={false}
           controlElements={{ valueEditor: ConditionValueEditor }}
-          context={
-            (propertyValues === undefined ? {} : { propertyValues }) satisfies ValueEditorContext
-          }
+          context={context}
           onQueryChange={(q) => {
             const next = toDraft(q, timeZone)
             setDraft(next)
@@ -253,8 +292,154 @@ export function ConditionBuilder({
               })}
             </Text>
           ) : null}
+          {/* An event test with no window, or a longer one, counts only the Events kept (ADR
+              0153): the preview says how far back they reach. */}
+          {preview.data?.eventsKeptDays === undefined ? null : (
+            <Text size="sm" c="dimmed">
+              {t(($) => $.segments.eventsKept, { count: preview.data.eventsKeptDays })}
+            </Text>
+          )}
         </Group>
       ) : null}
+    </Stack>
+  )
+}
+
+// How many Tags, Broadcasts and Automations an Event filter offers: the first page of each list,
+// as a suggestion.
+const SUGGESTIONS = 100
+
+// The actions whose `tag` names a Tag of the catalogue.
+const TAG_ACTIONS = new Set<string>([
+  SystemEventAction.CONTACT_TAGGED,
+  SystemEventAction.CONTACT_UNTAGGED,
+])
+
+// A Broadcast or an Automation as a sent-by test offers it: its id and its name, marked when it is
+// archived.
+interface Sender {
+  id: string
+  name: string
+  archivedAt?: string | null
+}
+
+// senderField is the field of the test that a sender of the kind sent the message, offering the
+// senders given.
+function senderField(t: TFunction, sender: MessageSender, senders: Sender[]): Field {
+  const labels: Record<MessageSender, string> = {
+    [MessageSender.BROADCAST]: t(($) => $.conditions.sentBy.broadcast),
+    [MessageSender.AUTOMATION]: t(($) => $.conditions.sentBy.automation),
+  }
+  return {
+    name: sentByFieldId(sender),
+    label: labels[sender],
+    operators: [{ name: sentByOperator, label: t(($) => $.conditions.sentByOperator) }],
+    valueEditorType: 'select',
+    values: senders.map((row) => ({
+      name: row.id,
+      label: row.archivedAt ? t(($) => $.conditions.archivedSender, { name: row.name }) : row.name,
+    })),
+  }
+}
+
+// namesSender tells a filter that holds a sent-by test, at any depth.
+function namesSender(filter: AnyCondition | ConditionDraft): boolean {
+  return filter.entries.some(
+    (node: AnyCondition['entries'][number] | ConditionDraft['entries'][number]) =>
+      node.kind === 'group' ? namesSender(node) : node.kind === 'sentBy',
+  )
+}
+
+// EventFilterBuilder is the builder of the filter of the Events of an action (ADR 0133, ADR 0153):
+// an Event matcher's, and an event test's in a Condition. It offers the keys seen on recent Events
+// of the action, the Workspace's Tags for the `tag` of contact.tagged and contact.untagged and its
+// Custom fields for the `key` of contact.field_changed, which the server checks, and, on a message's
+// System event, the Broadcasts and Automations that may have sent it: the kept ones, and the
+// archived ones on request, marked as archived. It hands back the filter as it holds it, its
+// property tests naming no subject.
+export function EventFilterBuilder({
+  workspaceId,
+  action,
+  initialValue,
+  onChange,
+}: EventFilterEditorProps) {
+  const { t } = useTranslation()
+  const [archived, setArchived] = useState(() => namesSender(initialValue))
+  const actions = useQuery(siteEventsActionsOptions({ path: { workspaceId } }))
+  const keys = useQuery(siteEventsPropertyKeysOptions({ path: { workspaceId }, query: { action } }))
+  const message = actions.data?.messageActions.includes(action) ?? false
+  const tags = useQuery({
+    ...siteTagsListOptions({ path: { workspaceId }, query: { pageSize: SUGGESTIONS } }),
+    enabled: TAG_ACTIONS.has(action),
+  })
+  const fields = useQuery({
+    ...siteCustomFieldsListOptions({ path: { workspaceId } }),
+    enabled: action === SystemEventAction.CONTACT_FIELD_CHANGED,
+  })
+  const page = (withArchived: boolean) => ({
+    path: { workspaceId },
+    query: { pageSize: SUGGESTIONS, archived: withArchived },
+  })
+  const broadcasts = useQuery({ ...siteBroadcastsListOptions(page(false)), enabled: message })
+  const automations = useQuery({ ...siteAutomationsListOptions(page(false)), enabled: message })
+  const oldBroadcasts = useQuery({
+    ...siteBroadcastsListOptions(page(true)),
+    enabled: message && archived,
+  })
+  const oldAutomations = useQuery({
+    ...siteAutomationsListOptions(page(true)),
+    enabled: message && archived,
+  })
+  const offered: PropertyValues = {}
+  if (TAG_ACTIONS.has(action)) {
+    offered.tag = (tags.data?.items ?? []).map((tag) => tag.name)
+  }
+  if (action === SystemEventAction.CONTACT_FIELD_CHANGED) {
+    offered.key = (fields.data?.items ?? []).map((field) => field.key)
+  }
+  const senderFields = useMemo<Field[]>(() => {
+    if (!message) {
+      return []
+    }
+    const old = (rows: Sender[] = []) => (archived ? rows : [])
+    return [
+      senderField(t, MessageSender.BROADCAST, [
+        ...(broadcasts.data?.items ?? []),
+        ...old(oldBroadcasts.data?.items),
+      ]),
+      senderField(t, MessageSender.AUTOMATION, [
+        ...(automations.data?.items ?? []),
+        ...old(oldAutomations.data?.items),
+      ]),
+    ]
+  }, [
+    message,
+    archived,
+    broadcasts.data,
+    automations.data,
+    oldBroadcasts.data,
+    oldAutomations.data,
+    t,
+  ])
+
+  return (
+    <Stack gap="xs">
+      {message ? (
+        <Checkbox
+          label={t(($) => $.conditions.showArchivedSenders)}
+          checked={archived}
+          onChange={(event) => setArchived(event.currentTarget.checked)}
+        />
+      ) : null}
+      <ConditionBuilder
+        workspaceId={workspaceId}
+        place="eventFilter"
+        initialValue={initialValue}
+        propertyValues={offered}
+        propertyKeys={keys.data?.keys ?? []}
+        filterFields={senderFields}
+        onChange={(draft) => onChange(subjectless(draft))}
+      />
     </Stack>
   )
 }

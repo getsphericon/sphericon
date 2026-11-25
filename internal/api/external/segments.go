@@ -23,7 +23,7 @@ func (h *Handlers) SegmentsCreate(ctx context.Context, req *externalapi.CreateSe
 	if err != nil {
 		return nil, err
 	}
-	s, err := h.segments.Create(ctx, ws, in)
+	s, err := h.segmentSaving.Create(ctx, ws, in)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (h *Handlers) SegmentsUpdate(ctx context.Context, req *externalapi.UpdateSe
 	if err != nil {
 		return nil, err
 	}
-	s, err := h.segments.Update(ctx, ws, id, in)
+	s, err := h.segmentSaving.Update(ctx, ws, id, in)
 	if err != nil {
 		return nil, err
 	}
@@ -111,6 +111,9 @@ func (h *Handlers) SegmentsPreview(ctx context.Context, req *externalapi.Preview
 	res := &externalapi.PreviewSegmentResult{Count: narrow.Int32(preview.Count), UnknownEngagement: narrow.Int32(preview.UnknownEngagement)}
 	if preview.Recipients != nil {
 		res.Recipients = externalapi.NewOptInt32(narrow.Int32(*preview.Recipients))
+	}
+	if preview.EventsKeptDays != nil {
+		res.EventsKeptDays = externalapi.NewOptInt32(narrow.Int32(*preview.EventsKeptDays))
 	}
 	return res, nil
 }

@@ -59,7 +59,9 @@ function DetailProbe() {
 // Everything the segment form reads besides the segment itself (condition builder catalogues).
 function serveCatalogue() {
   worker.use(
-    handleSiteEventsActions({ body: { actions: [] } }),
+    handleSiteEventsActions({
+      body: { actions: [], eventsKeptDays: 400, messageActions: [], keptActions: [] },
+    }),
     handleSiteCustomFieldsList({ body: page([], 0) }),
   )
 }
@@ -211,7 +213,9 @@ test('an unfinished Condition is refused, then saves its completed structured ed
   }
   serveCatalogue()
   worker.use(
-    handleSiteEventsActions({ body: { actions: ['purchased'] } }),
+    handleSiteEventsActions({
+      body: { actions: ['purchased'], eventsKeptDays: 400, messageActions: [], keptActions: [] },
+    }),
     handleSiteSegmentsGet({
       body: { id: testId(7), name: 'Buyers', condition, revision: 1, ...TIMESTAMPS },
     }),
@@ -382,7 +386,9 @@ test("a Segment's Condition edited in the builder is saved in the typed shape it
   const bodies: unknown[] = []
   serveCatalogue()
   worker.use(
-    handleSiteEventsActions({ body: { actions: ['purchased'] } }),
+    handleSiteEventsActions({
+      body: { actions: ['purchased'], eventsKeptDays: 400, messageActions: [], keptActions: [] },
+    }),
     handleSiteCustomFieldsList({
       body: page([
         {

@@ -135,8 +135,11 @@ and the context is `domain-sending`. A content module imports no Integration,
 Outbound send or other sending module, and neither context imports `broadcasts`,
 `automations`, `rules`, `webhookendpoints` or a use case.
 Orchestration, above sending, is `broadcasts`, `automations`, `rules` and
-`webhookendpoints` (the spec's list), with two packages placed by the same rule: `liveuse`, the one shape of a
-refused removal (ADR 0049), a leaf below `broadcasts` and `automations`, which return it, and
+`webhookendpoints` (the spec's list), with three packages placed by the same rule: `liveuse`, the one shape of a
+refused removal (ADR 0049), a leaf below `broadcasts` and `automations`, which return it,
+`messagesenders`, which tells the Broadcasts and Automations an Event filter's sent-by test names
+(ADR 0153) from ids the Workspace lacks, a leaf `rules`, `automations` and the segment saving use
+case each build and ask before they refuse in their own words, and
 `removalcheck`, the Removal check at the top of the context, which reads the Segments below it and
 the Broadcasts, Automations and Rules beside it through their `<module>use` readers and is a
 component of its own (`domain-orchestration-removalcheck`, imported only by the use cases and the

@@ -568,7 +568,9 @@ model EventTrigger {
 
   /** The tests of the Event's own properties it must pass; absent, every Event of the action
    * enrolls. The `tag` of contact.tagged and contact.untagged and the `key` of
-   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. */
+   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. On
+   * a message's sent, delivery and engagement Events it may name the Broadcast or Automation that
+   * sent the message (`sentBy`). */
   filter?: EventFilter;
 
   /** Whether a contact enrolls again, after its previous enrollment ended, on a later Event or a
@@ -598,7 +600,9 @@ model EventTriggerInput {
 
   /** The tests of the Event's own properties it must pass; omitted, every Event of the action
    * enrolls. The `tag` of contact.tagged and contact.untagged and the `key` of
-   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. */
+   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. On
+   * a message's sent, delivery and engagement Events it may name the Broadcast or Automation that
+   * sent the message (`sentBy`). */
   filter?: EventFilterInput;
 
   /** Whether a contact enrolls again, after its previous enrollment ended, on a later Event or a
@@ -637,7 +641,9 @@ model EventMatcher {
 
   /** The tests of the Event's own properties it must pass; absent, every Event of the action
    * matches. The `tag` of contact.tagged and contact.untagged and the `key` of
-   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. */
+   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. On
+   * a message's sent, delivery and engagement Events it may name the Broadcast or Automation that
+   * sent the message (`sentBy`). */
   filter?: EventFilter;
 }
 
@@ -649,7 +655,9 @@ model EventMatcherInput {
 
   /** The tests of the Event's own properties it must pass; omitted, every Event of the action
    * matches. The `tag` of contact.tagged and contact.untagged and the `key` of
-   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. */
+   * contact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. On
+   * a message's sent, delivery and engagement Events it may name the Broadcast or Automation that
+   * sent the message (`sentBy`). */
   filter?: EventFilterInput;
 }
 

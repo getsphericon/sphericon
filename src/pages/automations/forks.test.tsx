@@ -101,7 +101,9 @@ async function editing(steps: AutomationStep[]) {
       const { conditions } = await request.json()
       return HttpResponse.json({ needed: JSON.stringify(conditions).includes('email.opened') })
     }),
-    handleSiteEventsActions({ body: { actions: ['email.opened'] } }),
+    handleSiteEventsActions({
+      body: { actions: ['email.opened'], eventsKeptDays: 400, messageActions: [], keptActions: [] },
+    }),
     handleSiteCustomFieldsList({ body: pageOf([]) }),
     handleSiteIntegrationsList({ body: [] }),
     handleSiteContactsList({ body: pageOf([]) }),

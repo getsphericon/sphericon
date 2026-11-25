@@ -43,14 +43,15 @@ func (m *Module) UsingTag(ctx context.Context, l *ent.WorkspaceLocked, name stri
 
 // UnfitForCustomFieldType returns the Workspace's Segments, in id order, whose Condition tests the
 // Custom field key with a leaf a field of type t does not take, so they would stop compiling were
-// the field retyped. Archived ones count, as for a Tag: restoring one must not bring back a
-// Condition that no longer compiles.
+// the field retyped, or names the field in an event test's filter (ADR 0153), which any retype
+// would leave naming a field that is not there. Archived ones count, as for a Tag: restoring one
+// must not bring back a Condition that no longer compiles.
 func (m *Module) UnfitForCustomFieldType(ctx context.Context, l *ent.WorkspaceLocked, key string, t customfield.Type) ([]*ent.Segment, error) {
 	all, err := l.Segment().QueryWithArchived().Order(ent.Asc(segment.FieldID)).All(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return lo.Filter(all, func(seg *ent.Segment, _ int) bool {
-		return !condition.FitsCustomFieldType(seg.Condition.Group, key, t)
+		return condition.HoldsCustomField(seg.Condition.Group, key, t)
 	}), nil
 }

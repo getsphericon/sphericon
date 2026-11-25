@@ -88,6 +88,24 @@ func TestACustomFieldABranchConditionTestsHoldsItsTypeAsARulesDoes(t *testing.T)
 	assert.NotContains(t, usersOf(toText), holder, "a text test still compiles on a text field")
 }
 
+// A Custom field a Branch's event test names in its filter, the `key` of contact.field_changed
+// (ADR 0153), is held against any retype, even to a type every test of it takes.
+func TestACustomFieldABranchsEventFilterNamesHoldsItAgainstAnyRetype(t *testing.T) {
+	env := testhelper.Setup(t)
+	changed := map[string]any{"kind": "event", "action": "contact.field_changed", "operator": "atLeast", "times": 1, "filter": map[string]any{
+		"kind": "group", "combinator": "and", "entries": []any{map[string]any{
+			"kind": "property", "key": "key", "test": map[string]any{"kind": "text", "operator": "eq", "value": fixtures.CustomFieldAcmePlanKey},
+		}},
+	}}
+	a := branchingOn(t, env, fixtures.AcmeID, "Branch on a plan change", branchOn(t, changed), true)
+
+	toText := underLock(t, env, fixtures.AcmeID, func(s *ent.WorkspaceLocked) error {
+		return testhelper.Module[*removalcheck.Module](env).CustomFieldRetype(t.Context(), s, fixtures.CustomFieldAcmePlanKey, customfield.TypeString)
+	})
+
+	assert.Contains(t, usersOf(toText), liveuse.User{Kind: liveuse.Automation, ID: a.ID, Name: a.Name})
+}
+
 // usersOf is who a refusal names; none for no refusal.
 func usersOf(err error) []liveuse.User {
 	refused, _ := errors.AsType[*liveuse.Error](err)

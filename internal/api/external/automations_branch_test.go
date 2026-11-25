@@ -11,6 +11,8 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -121,6 +123,34 @@ func TestExternalAutomationRefusesABranchConditionOnAnUnknownCustomField(t *test
 
 	detail := refusedNaming(t, err, branchID, "branch")
 	assert.Contains(t, detail, "no_such_field")
+}
+
+// branchOnSender is a Branch whose one path's Condition counts the action's Events sent by the
+// Broadcast id (ADR 0153).
+func branchOnSender(action string, id int64) string {
+	return `{"id":"` + branchID + `","type":"branch","paths":[
+		{"condition":{"kind":"group","combinator":"and","entries":[
+			{"kind":"event","action":"` + action + `","operator":"atLeast","times":1,"filter":{"kind":"group","combinator":"and","entries":[
+				{"kind":"sentBy","sender":"broadcast","id":"` + publicid.Encode(id) + `"}]}}]},"steps":[]}],
+		"otherwise":{"steps":[]}}`
+}
+
+// A Branch path's event test takes a filter as a Segment's does (ADR 0153): one naming a Broadcast
+// of the Workspace, archived or not, is saved; one naming a Broadcast it does not have is refused
+// (400) naming the Branch, the path and the test; a sent-by test of an action no message sends is
+// refused (422).
+func TestExternalAutomationBranchConditionNamesWhatSentAMessage(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, stepAuthorScopes...)
+
+	_, known := saveBranch(t, c, branchOnSender("email.clicked", fixtures.BroadcastArchivedID))
+	_, unknown := saveBranch(t, c, branchOnSender("email.clicked", fixtures.BroadcastDunderNewsletterID))
+	_, notAMessage := saveBranch(t, c, branchOnSender("order.completed", fixtures.BroadcastArchivedID))
+
+	require.NoError(t, known)
+	refused := testhelper.ExternalRefusal(t, unknown, http.StatusBadRequest)
+	assert.Contains(t, refused.Detail.Or(""), branchID+" (branch): path 1: entry 0: filter: entry 0:")
+	refusedNaming(t, notAMessage, branchID, "branch")
 }
 
 // A version holds at most 100 Steps over all its paths: the 101st, inside a Branch's path, is

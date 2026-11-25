@@ -10,7 +10,10 @@ import { ActivityPage } from './page.tsx'
 
 const mount = routeMount(activityRoute, { workspaceId: 'TestWs01' })
 
-const noActions = () => handleSiteEventsActions({ body: { actions: [] } })
+const noActions = () =>
+  handleSiteEventsActions({
+    body: { actions: [], eventsKeptDays: 400, messageActions: [], keptActions: [] },
+  })
 
 const eventsPage = () =>
   handleSiteEventsList({

@@ -14,13 +14,19 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/publicid"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
+
+// filteredAction is the action of the Events the filters below are about: a message's System event,
+// so a sent-by test is one of its tests too.
+const filteredAction = systemevent.EmailClicked
 
 // filterHolds compiles f and runs its path in Postgres on doc, a JSON object.
 func filterHolds(t *testing.T, env *testhelper.TestEnv, f conditiontree.EventFilter, doc string) bool {
 	t.Helper()
-	path, err := condition.CompileEventFilter(f)
+	path, err := condition.CompileEventFilter(filteredAction, f)
 	require.NoError(t, err)
 	on := condition.Document(json.RawMessage(doc))
 	holds := predicate.Contact(func(s *sql.Selector) { s.Where(path.On(on)) })
@@ -222,7 +228,7 @@ func TestFilterKeysAndValuesAreVariablesOfThePath(t *testing.T) {
 		prop("key_five", presence("set")),
 	)
 
-	path, err := condition.CompileEventFilter(filter)
+	path, err := condition.CompileEventFilter(filteredAction, filter)
 	require.NoError(t, err)
 
 	for _, spliced := range []string{"key_", "value_", "4242"} {
@@ -278,7 +284,7 @@ func TestFilterContainsMatchesItsOperandLiterally(t *testing.T) {
 // The operand of a contains test is no part of the path: like_regex would take it only as a literal
 // written into the path, so it is bound to the statement instead, as every other value is.
 func TestFilterContainsOperandIsNotSplicedIntoThePath(t *testing.T) {
-	path, err := condition.CompileEventFilter(filterOf(prop("k", text("contains", "operand_one"))))
+	path, err := condition.CompileEventFilter(filteredAction, filterOf(prop("k", text("contains", "operand_one"))))
 	require.NoError(t, err)
 
 	assert.NotContains(t, path.Text, "operand_one")
@@ -314,7 +320,7 @@ func TestAnEventFilterHoldsPropertyTestsOnly(t *testing.T) {
 		"history":                     {eventLeaf("signup", "atLeast", 1, 0), `unknown entry kind "event"`},
 		"the triggering Event's test": {property("tag", text("eq", "vip")), "a filter's property test names no subject"},
 	} {
-		_, err := condition.CompileEventFilter(filterOf(prop("ok", presence("set")), opsGroup(tc.entry)))
+		_, err := condition.CompileEventFilter(filteredAction, filterOf(prop("ok", presence("set")), opsGroup(tc.entry)))
 
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), "entry 1: entry 0: "+tc.msg, name)
@@ -336,8 +342,46 @@ func TestAnEventFilterRefusesWhatItCannotRead(t *testing.T) {
 		"an unknown combinator":   {conditiontree.EventFilter{Group: groupOf("xor", false)}, `unknown combinator "xor"`},
 		"a group without entries": {noEntries, "group entries are required"},
 	} {
-		_, err := condition.CompileEventFilter(tc.filter)
+		_, err := condition.CompileEventFilter(filteredAction, tc.filter)
 
 		require.ErrorContains(t, err, tc.msg, name)
 	}
+}
+
+// sentBy is a sent-by test of the sender with the key id.
+func sentBy(sender string, id int64) leaf {
+	return leaf{"kind": "sentBy", "sender": sender, "id": publicid.Encode(id)}
+}
+
+// A sent-by test holds for the message's System event that carries the sender's key as a number:
+// another key, another sender's key, the key as text, or no key fails it, so a not over it holds.
+func TestASentByTestMatchesTheSenderAMessagesEventCarries(t *testing.T) {
+	env := testhelper.Setup(t)
+	byBroadcast, byAutomation := filterOf(sentBy("broadcast", 7)), filterOf(sentBy("automation", 7))
+	notByBroadcast := conditiontree.EventFilter{Group: groupOf("and", true, sentBy("broadcast", 7))}
+
+	cases := map[string]filterCase{
+		`{"broadcastId":7,"url":"x"}`:  {want: true},
+		`{"broadcastId":8,"url":"x"}`:  {want: false},
+		`{"automationId":7,"url":"x"}`: {want: false},
+		`{"broadcastId":"7"}`:          {want: false},
+		`{"url":"x"}`:                  {want: false},
+	}
+	for doc, tc := range cases {
+		assert.Equal(t, tc.want, filterHolds(t, env, byBroadcast, doc), doc)
+		assert.Equal(t, !tc.want, filterHolds(t, env, notByBroadcast, doc), "not: "+doc)
+	}
+	byAnAutomation := filterHolds(t, env, byAutomation, `{"automationId":7}`)
+
+	assert.True(t, byAnAutomation)
+}
+
+// No Event but a message's System event carries what sent the message: a sent-by test of another
+// action is refused with the path of the test, and so is an id that is no public id.
+func TestASentByTestIsRefusedOutsideAMessagesEvent(t *testing.T) {
+	_, ofAnOrder := condition.CompileEventFilter("order.completed", filterOf(prop("ok", presence("set")), opsGroup(sentBy("broadcast", 7))))
+	_, malformed := condition.CompileEventFilter(filteredAction, filterOf(leaf{"kind": "sentBy", "sender": "broadcast", "id": "7"}))
+
+	require.ErrorContains(t, ofAnOrder, "entry 1: entry 0: order.completed is no message's Event")
+	require.ErrorContains(t, malformed, `entry 0: sent-by id "7" is no id`)
 }

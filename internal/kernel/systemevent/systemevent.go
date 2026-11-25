@@ -23,9 +23,37 @@ const (
 	BounceKindSoft     = "soft"
 )
 
+// The properties a message's System event carries for what sent the message (MessageActions): the
+// Broadcast, or the Automation, by its key. A message sent by neither carries none.
+const (
+	BroadcastIDProperty  = "broadcastId"
+	AutomationIDProperty = "automationId"
+)
+
+// MessageActions are the System events about one message the Workspace sent (ADR 0153): its send,
+// what became of its delivery, and how its recipient engaged with it (an open, a click, an
+// unsubscribe from it), on every Channel. Each carries what sent the message, so an Event filter
+// may name it (a sent-by test). Web push joins them when it is built.
+var MessageActions = []string{
+	EmailSent, EmailDelivered, EmailDelayed, EmailDropped, EmailBounced, EmailComplained,
+	EmailOpened, EmailClicked, EmailUnsubscribed,
+	SmsSent, SmsDelivered, SmsUndelivered, SmsClicked, SmsUnsubscribed,
+	TelegramSent, TelegramClicked, TelegramUnsubscribed,
+}
+
+// KeptActions are the evidentiary System events Event retention never deletes by age (ADR 0019):
+// consent proof, Engagement tracking consent, complaints and unsubscribes. A hard bounce is kept
+// too, which its bounceKind says (BounceKindProperty), so email.bounced as an action is not.
+var KeptActions = []string{
+	MarketingConfirmed, SmsConfirmed, EmailComplained, EmailUnsubscribed,
+	EmailEngagementTrackingGranted, EmailEngagementTrackingDenied,
+	SmsEngagementTrackingGranted, SmsEngagementTrackingDenied,
+	TelegramEngagementTrackingGranted, TelegramEngagementTrackingDenied,
+}
+
 // KeyProperties are the properties of a System event that hold a primary key: what the Event is
 // about (an Automation, a Broadcast, an Integration), the message it came from, who asked.
-var KeyProperties = []string{"automationId", "broadcastId", "integrationId", "outboundMessageId", "requesterId"}
+var KeyProperties = []string{AutomationIDProperty, BroadcastIDProperty, "integrationId", "outboundMessageId", "requesterId"}
 
 // PublicProperties is the properties of an Event of action as a client sees them (ADR 0142): a
 // System event's KeyProperties by their public form (publicid). A customer's own Event is its

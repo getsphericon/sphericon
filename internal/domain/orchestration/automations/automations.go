@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/domain/content/versioneddefinition"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/messagesenders"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
@@ -86,6 +87,9 @@ var (
 	// ErrRevisionChanged is an edit, Publish or Revert made on a revision the Automation has moved past
 	// (ADR 0119): someone changed it since the editor read it. Nothing is written.
 	ErrRevisionChanged = validation.RevisionChanged("automations: automation changed since it was read", i18n.ErrorsAutomationRevisionChanged)
+	// ErrUnknownSender: an event filter of an Automation names a Broadcast or an Automation the Workspace
+	// does not have (ADR 0153), an unknown reference. The message names the test's path and the id.
+	ErrUnknownSender = validation.UnknownReference("automations: unknown sender", i18n.ErrorsAutomationSenderUnknown)
 
 	// ErrNoVersion: the Automation has no live version: it was never published, so nobody can
 	// be enrolled in it.
@@ -308,7 +312,10 @@ type Module struct {
 	people *contacts.Module
 	// conditions checks a Branch path's Condition (checkBranches).
 	conditions *condition.Module
-	life       *versioneddefinition.Lifecycle[ent.Automation, ent.AutomationVersion, edit, definition]
+	// senders answers for the Broadcasts and Automations an Event filter or a Branch path's event
+	// test names (checkNamed, checkBranches).
+	senders *messagesenders.Module
+	life    *versioneddefinition.Lifecycle[ent.Automation, ent.AutomationVersion, edit, definition]
 	// now is the Instance clock a report's period ends by, an activation is dated by and an
 	// Enrollment's exit is.
 	now func() time.Time
@@ -324,7 +331,7 @@ type Module struct {
 // contacts module, whose Custom field catalogue an Event filter names; now is the Instance clock.
 func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer, out *outboundmessages.Module, clicks *linkclick.Module, enrollers *rules.Module, people *contacts.Module, now func() time.Time) *Module {
 	m := &Module{cipher: cipher, bus: bus, renderer: renderer, out: out, clicks: clicks, rules: enrollers, people: people, now: now,
-		revenues: orders.NewRevenues(), tags: tags.New(), conditions: condition.New(now)}
+		revenues: orders.NewRevenues(), tags: tags.New(), conditions: condition.New(now), senders: messagesenders.New()}
 	m.life = versioneddefinition.New(bus, versioned{m: m}, versioneddefinition.Errors{
 		NotFound:         ErrNotFound,
 		Archived:         ErrArchived,
@@ -393,7 +400,8 @@ const splitWhole = 100
 // checkBranches checks the Condition of each path of each Branch of the tree as a Rule's is
 // checked (condition.Module.CheckBranch), bounded as a Rule's: it reads as a Branch path's tree,
 // and names only the Custom fields the Workspace holds, by tests their types take. A refusal names
-// the Branch and the path.
+// the Branch and the path. A Condition whose event test's filter names a Broadcast or an Automation
+// the Workspace does not have (messagesenders) is ErrUnknownSender (ADR 0153).
 func (m *Module) checkBranches(ctx context.Context, s *ent.Scoped, steps automationstep.Path) error {
 	for _, st := range automationstep.All(steps) {
 		b, ok := st.Payload.(automationstep.Branch)
@@ -410,6 +418,13 @@ func (m *Module) checkBranches(ctx context.Context, s *ent.Scoped, steps automat
 			}
 			if err != nil {
 				return refuse(st, fmt.Sprintf("path %d: %s", i+1, err.Error()))
+			}
+			unknown, err := m.senders.Unknown(ctx, s, condition.NamedSenders(p.Condition.Group))
+			if err != nil {
+				return err
+			}
+			if unknown != nil {
+				return ErrUnknownSender.With(fmt.Sprintf("step %s (%s): path %d: %s", st.ID, st.Kind(), i+1, unknown.Missing()))
 			}
 		}
 	}
@@ -458,7 +473,7 @@ func matcherProblem(m eventmatcher.Matcher) string {
 	if size := m.Filter.Size(); size > rules.MaxConditionNodes {
 		return fmt.Sprintf("a filter has at most %d groups and tests, this one has %d", rules.MaxConditionNodes, size)
 	}
-	if _, err := condition.CompileEventFilter(*m.Filter); err != nil {
+	if _, err := condition.CompileEventFilter(m.Action, *m.Filter); err != nil {
 		return "the filter: " + err.Error()
 	}
 	return ""
@@ -1013,10 +1028,19 @@ func checkIntegration(ctx context.Context, s *ent.Scoped, id *int64) error {
 // checkNamed refuses, with refusal, an Event matcher whose filter names a Tag or Custom field the
 // Workspace's catalogue lacks (condition.NamedDefinitions, ADR 0133): such a filter would never
 // match. A Tag is named as the Event carries it, by its stored name, so another spelling of it is
-// refused too. The catalogues are their owners' (tags, contacts).
+// refused too. The catalogues are their owners' (tags, contacts). A filter that names a Broadcast
+// or an Automation the Workspace does not have, archived ones being its own (messagesenders), is
+// ErrUnknownSender (ADR 0153).
 func (m *Module) checkNamed(ctx context.Context, s *ent.Scoped, matcher eventmatcher.Matcher, refusal *validation.RefusalError) error {
 	if matcher.Filter == nil {
 		return nil
+	}
+	unknown, err := m.senders.Unknown(ctx, s, condition.FilterSenders(*matcher.Filter))
+	if err != nil {
+		return err
+	}
+	if unknown != nil {
+		return ErrUnknownSender.With("the filter: " + unknown.Missing())
 	}
 	named := condition.NamedDefinitions(matcher.Action, *matcher.Filter)
 	for _, name := range named.Tags {

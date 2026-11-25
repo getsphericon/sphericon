@@ -749,6 +749,7 @@
     "title": "Changed since you opened it"
   },
   "conditions": {
+    "archivedSender": "{{name}} (archived)",
     "attributes": {
       "city": "City",
       "country": "Country",
@@ -791,6 +792,12 @@
       "notSet": "is not set",
       "set": "is set"
     },
+    "sentBy": {
+      "automation": "Sent by automation",
+      "broadcast": "Sent by broadcast"
+    },
+    "sentByOperator": "is",
+    "showArchivedSenders": "Offer archived broadcasts and automations",
     "textOperators": {
       "beginsWith": "begins with",
       "contains": "contains",
@@ -1925,6 +1932,13 @@
     "createTitle": "New segment",
     "didEvent": "Did \"{{action}}\"",
     "editTitle": "Edit segment",
+    "eventFilterButton": "Filter",
+    "eventFilterDone": "Done",
+    "eventFilterTests_one": "Filter (1 test)",
+    "eventFilterTests_other": "Filter ({{count, number}} tests)",
+    "eventFilterTitle": "Which events count",
+    "eventsKept_one": "Events of the last day are kept",
+    "eventsKept_other": "Events of the last {{count, number}} days are kept",
     "eventTimesLabel": "Times",
     "eventWindowEver": "ever",
     "eventWindowLabel": "In the last (days)",

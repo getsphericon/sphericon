@@ -3,8 +3,11 @@ import { expect, test, vi } from 'vitest'
 import { userEvent } from 'vitest/browser'
 
 import {
+  handleSiteAutomationsList,
+  handleSiteBroadcastsList,
   handleSiteCustomFieldsList,
   handleSiteEventsActions,
+  handleSiteEventsPropertyKeys,
   handleSiteSegmentsPreview,
 } from '../../generated/site/msw.gen.ts'
 import {
@@ -24,7 +27,9 @@ import { ConditionBuilder } from './ConditionBuilder.tsx'
 // The Custom fields of each type, with what the server lists for the type.
 function serve(previewBodies: unknown[] = []) {
   worker.use(
-    handleSiteEventsActions({ body: { actions: ['purchase'] } }),
+    handleSiteEventsActions({
+      body: { actions: ['purchase'], eventsKeptDays: 400, messageActions: [], keptActions: [] },
+    }),
     handleSiteCustomFieldsList({
       body: page([
         {
@@ -138,7 +143,16 @@ test("a Segment's builder offers no test of the triggering Event", async () => {
 // An event field reads as its action: a System event by its words, a tracked action by its name.
 test('an event field names a System event by its words and a tracked action as it was tracked', async () => {
   serve()
-  worker.use(handleSiteEventsActions({ body: { actions: ['purchase', 'email.opened'] } }))
+  worker.use(
+    handleSiteEventsActions({
+      body: {
+        actions: ['purchase', 'email.opened'],
+        eventsKeptDays: 400,
+        messageActions: [],
+        keptActions: [],
+      },
+    }),
+  )
   const { screen } = await renderWithRouter(
     <ConditionBuilder
       workspaceId="TestWs01"
@@ -550,4 +564,107 @@ test('a loaded Tag shows its name and is edited as the Tag it tests', async () =
   await expect
     .poll(() => onChange.mock.lastCall?.[0].entries)
     .toEqual([{ kind: 'tag', name: 'churned', operator: 'has' }])
+})
+
+// An event test of a click with a filter that names an archived Broadcast and tests the link, over
+// all time: it counts only the Events kept (ADR 0153).
+const clickedLastMonth: SegmentCondition = {
+  kind: 'group',
+  combinator: 'and',
+  entries: [
+    {
+      kind: 'event',
+      action: 'email.clicked',
+      operator: 'atLeast',
+      times: 2,
+      filter: {
+        kind: 'group',
+        combinator: 'and',
+        entries: [
+          { kind: 'sentBy', sender: 'broadcast', id: testId(9) },
+          {
+            kind: 'property',
+            key: 'url',
+            test: { kind: 'text', operator: 'contains', value: '/pricing' },
+          },
+        ],
+      },
+    },
+  ],
+}
+
+// What the filter of a click offers: the keys of recent clicks, the kept Broadcasts and, asked
+// for, the archived ones.
+function serveClicks(previewBodies: unknown[]) {
+  worker.use(
+    handleSiteEventsActions({
+      body: {
+        actions: ['email.clicked'],
+        eventsKeptDays: 400,
+        messageActions: ['email.clicked'],
+        keptActions: [],
+      },
+    }),
+    handleSiteCustomFieldsList({ body: page([]) }),
+    handleSiteEventsPropertyKeys({ body: { keys: ['url'] } }),
+    handleSiteBroadcastsList(({ request }) => {
+      const archived = new URL(request.url).searchParams.get('archived') === 'true'
+      const items = archived
+        ? [{ id: testId(9), name: 'Last month', archivedAt: TIMESTAMPS.createdAt }]
+        : [{ id: testId(8), name: 'Newsletter', archivedAt: null }]
+      return HttpResponse.json({ items, page: 1, pageSize: 100, totalItems: 1, totalPages: 1 })
+    }),
+    handleSiteAutomationsList(() =>
+      HttpResponse.json({ items: [], page: 1, pageSize: 100, totalItems: 0, totalPages: 0 }),
+    ),
+    handleSiteSegmentsPreview(async ({ request }) => {
+      previewBodies.push(await request.json())
+      return HttpResponse.json({ count: 1, unknownEngagement: 0, eventsKeptDays: 400 })
+    }),
+  )
+}
+
+test("an event test's filter opens in its own builder, offering the senders of the message", async () => {
+  const previews: unknown[] = []
+  serveClicks(previews)
+  const { screen } = await renderWithRouter(
+    <ConditionBuilder
+      workspaceId="TestWs01"
+      place="segment"
+      initialValue={clickedLastMonth}
+      onChange={vi.fn<() => void>()}
+    />,
+  )
+
+  await expect
+    .element(screen.getByText('Events of the last 400 days are kept').first())
+    .toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Filter (2 tests)' }).click()
+
+  const archived = screen.getByLabelText('Offer archived broadcasts and automations')
+  await expect.element(archived).toBeChecked()
+  const sender = screen.getByRole('dialog').getByTestId('value-editor').first()
+  await expect.element(sender).toHaveValue('Last month (archived)')
+  await screen.getByRole('button', { name: 'Done' }).click()
+  await screen.getByRole('button', { name: 'Preview segment' }).click()
+
+  await expect.poll(() => previews).toEqual([{ condition: clickedLastMonth }])
+  await expect.element(screen.getByText('1 matching contact')).toBeInTheDocument()
+})
+
+test("a Branch path's event test opens its filter's builder as a Segment's does", async () => {
+  serveClicks([])
+  const { screen } = await renderWithRouter(
+    <ConditionBuilder
+      workspaceId="TestWs01"
+      place="branch"
+      initialValue={clickedLastMonth}
+      onChange={vi.fn<() => void>()}
+    />,
+  )
+
+  await screen.getByRole('button', { name: 'Filter (2 tests)' }).click()
+
+  const sender = screen.getByRole('dialog').getByTestId('value-editor').first()
+  await expect.element(sender).toHaveValue('Last month (archived)')
 })

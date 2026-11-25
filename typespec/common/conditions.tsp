@@ -314,10 +314,11 @@ enum EventCountOperator {
 }
 
 /** A count of how many times a Contact performed an Event action, over all time or within the
- * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
- * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
- * longer than Event retention is capped by it: expired Events are no longer counted. */
-model EventLeaf {
+ * last `withinDays` days, of the Events that pass its `filter` (ADR 0153). Performed is atLeast 1,
+ * not performed is atMost 0; "exactly" is a group of both. Engagement Events made by software
+ * (machine opens and clicks) are not counted. A window longer than Event retention is capped by it:
+ * expired Events are no longer counted. */
+model EventLeafOf<Filter> {
   kind: "event";
 
   /** The Event action counted */
@@ -333,6 +334,33 @@ model EventLeaf {
   /** Count only the Events of the last this many days; absent counts all time */
   @minValue(1)
   withinDays?: int32;
+
+  /** Count only the Events whose properties pass these tests, as an Event matcher's filter does;
+   * absent, every Event of the action counts. On a message's sent, delivery and engagement Events
+   * it may name the Broadcast or Automation that sent the message (`sentBy`). The `tag` of
+   * contact.tagged and contact.untagged and the `key` of contact.field_changed, tested by eq or neq,
+   * name a Tag or Custom field, which is then kept from removal while the Condition names it. */
+  filter?: Filter;
+}
+
+/** What sends the message a message's System event is about */
+enum MessageSender {
+  broadcast,
+  automation,
+}
+
+/** A test of what sent the message a message's sent, delivery or engagement System event is about
+ * (ADR 0153, ADR 0180): the Broadcast or the Automation named by its id, archived or not, which the
+ * Event carries as its `broadcastId` or `automationId`. A filter of any other action refuses it, and
+ * so does one that names a Broadcast or Automation the Workspace does not have. */
+model SentByLeaf {
+  kind: "sentBy";
+
+  /** Whether a Broadcast or an Automation sent it */
+  sender: MessageSender;
+
+  /** The Broadcast's or the Automation's id */
+  id: EntityId;
 }
 
 /** The Event that fired a Rule, whose properties a property test reads */
@@ -409,7 +437,9 @@ model EngagementTrackingLeafInput
   is EngagementTrackingLeafOf<EngagementTrackingTestInput>;
 model CustomFieldLeaf is CustomFieldLeafOf<CustomFieldTest>;
 model CustomFieldLeafInput is CustomFieldLeafOf<CustomFieldTestInput>;
-model EventLeafInput is EventLeaf;
+model EventLeaf is EventLeafOf<EventFilter>;
+model EventLeafInput is EventLeafOf<EventFilterInput>;
+model SentByLeafInput is SentByLeaf;
 model RulePropertyLeaf is PropertyLeafOf<RulePropertySource, PropertyTest>;
 model BranchPropertyLeaf is PropertyLeafOf<BranchPropertySource, PropertyTest>;
 model BranchPropertyLeafInput is PropertyLeafOf<
@@ -556,19 +586,23 @@ model BranchCondition is ConditionOf<BranchConditionNode>;
 model BranchConditionInput is ConditionOf<BranchConditionNodeInput>;
 
 /** An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is
- * about, or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133). */
+ * about, of what sent the message a message's System event is about, or a nested group. A test of
+ * the Contact is a Rule's, never a filter's (ADR 0133). */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union EventFilterNode {
   group: EventFilter,
   property: FilterPropertyLeaf,
+  sentBy: SentByLeaf,
 }
 
 /** An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is
- * about, or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133). */
+ * about, of what sent the message a message's System event is about, or a nested group. A test of
+ * the Contact is a Rule's, never a filter's (ADR 0133). */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union EventFilterNodeInput {
   group: EventFilterInput,
   property: FilterPropertyLeafInput,
+  sentBy: SentByLeafInput,
 }
 
 /** An Event matcher's filter (ADR 0133): the tests of the Event's own properties it holds. A

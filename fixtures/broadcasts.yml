@@ -1007,3 +1007,42 @@
   workspace_id: 96
   created_at: '2026-03-01 00:00:00'
   updated_at: '2026-03-01 00:00:00'
+
+# Dunder (workspace 60): the Broadcasts a Segment's event test names by what sent a click (#1446).
+- id: 7960 # fixture: BroadcastDunderNewsletter
+  channel: email
+  revision: 1
+  name: Dunder newsletter
+  subject: News
+  from_name: Dunder
+  body: '<p>News.</p>'
+  status: sent
+  sent_at: '{{daysAgo 3}}'
+  workspace_id: 60
+  created_at: '{{daysAgo 4}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 7961 # fixture: BroadcastDunderPromo
+  channel: email
+  revision: 1
+  name: Dunder promo
+  subject: Promo
+  from_name: Dunder
+  body: '<p>Promo.</p>'
+  status: sent
+  sent_at: '{{daysAgo 3}}'
+  workspace_id: 60
+  created_at: '{{daysAgo 4}}'
+  updated_at: '{{daysAgo 3}}'
+- id: 7962 # fixture: BroadcastDunderArchived
+  channel: email
+  revision: 1
+  name: Dunder last month
+  subject: Last month
+  from_name: Dunder
+  body: '<p>Last month.</p>'
+  status: sent
+  sent_at: '{{daysAgo 30}}'
+  archived_at: '{{daysAgo 2}}'
+  workspace_id: 60
+  created_at: '{{daysAgo 31}}'
+  updated_at: '{{daysAgo 2}}'

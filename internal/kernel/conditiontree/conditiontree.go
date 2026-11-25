@@ -45,8 +45,9 @@ func Empty() Group {
 	return Group{Kind: KindGroup, Combinator: And, Entries: []json.RawMessage{}}
 }
 
-// Size counts the nodes of the group: itself and every nested group and leaf, at any depth. A
-// malformed entry counts as one node.
+// Size counts the nodes of the group: itself and every nested group and leaf, at any depth, and the
+// nodes of an event leaf's filter, so a filter does not hide tests from the bound on a Condition's
+// size. A malformed entry counts as one node.
 func (g Group) Size() int {
 	n := 1
 	for _, raw := range g.Entries {
@@ -56,6 +57,12 @@ func (g Group) Size() int {
 			continue
 		}
 		n++
+		var leaf struct {
+			Filter *Group `json:"filter"`
+		}
+		if json.Unmarshal(raw, &leaf) == nil && leaf.Filter != nil {
+			n += leaf.Filter.Size()
+		}
 	}
 	return n
 }

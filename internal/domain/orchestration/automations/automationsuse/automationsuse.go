@@ -38,7 +38,8 @@ func New() *Module { return &Module{} }
 
 // UsingTag returns the Workspace's kept Automations whose live version or draft applies or
 // removes the Tag by its name, whose Trigger's, exit's or goal's filter names it (ADR 0133), or
-// whose Branch's Condition tests it (ADR 0124), in id order (spec #767, "In use"). An archived
+// whose Branch's Condition tests it or names it in an event test's filter (ADR 0124, ADR 0153), in
+// id order (spec #767, "In use"). An archived
 // Automation takes no part in new work.
 func (m *Module) UsingTag(ctx context.Context, l *ent.WorkspaceLocked, name string) ([]*ent.Automation, error) {
 	return using(ctx, l, func(v *ent.AutomationVersion) bool {
@@ -50,12 +51,13 @@ func (m *Module) UsingTag(ctx context.Context, l *ent.WorkspaceLocked, name stri
 // UsingCustomField returns the Workspace's kept Automations whose live version or draft holds the
 // Custom field key against a retype to type t, in id order: its Trigger, exit or goal filter names
 // it (ADR 0133), a contact.field_changed matcher that tests its `key`, which any retype breaks; or
-// a Branch's Condition tests it with a leaf a field of type t does not take (ADR 0124), the check a
-// Rule's Condition holds a field by (condition.FitsCustomFieldType).
+// a Branch's Condition tests it with a leaf a field of type t does not take (ADR 0124) or names it
+// in an event test's filter (ADR 0153), the check a Rule's Condition holds a field by
+// (condition.HoldsCustomField).
 func (m *Module) UsingCustomField(ctx context.Context, l *ent.WorkspaceLocked, key string, t customfield.Type) ([]*ent.Automation, error) {
 	return using(ctx, l, func(v *ent.AutomationVersion) bool {
 		return slices.Contains(matcherNames(v).CustomFields, key) ||
-			slices.ContainsFunc(branchConditions(v), func(g conditiontree.Branch) bool { return !condition.FitsCustomFieldType(g.Group, key, t) })
+			slices.ContainsFunc(branchConditions(v), func(g conditiontree.Branch) bool { return condition.HoldsCustomField(g.Group, key, t) })
 	})
 }
 

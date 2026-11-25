@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/segmentsaving"
 )
 
 // Every write that creates a use a Removal check reads (Live use or Definition use), and the
@@ -25,6 +26,7 @@ func TestEveryWriteThatCreatesAUseWaitsForTheWorkspaceLock(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	sends := testhelper.Module[*broadcasts.Module](env)
 	segs := testhelper.Module[*segments.Module](env)
+	save := testhelper.Module[*segmentsaving.UseCase](env)
 	ruleset := testhelper.Module[*rules.Module](env)
 	autos := testhelper.Module[*automations.Module](env)
 	renamed := new("Renamed")
@@ -34,9 +36,9 @@ func TestEveryWriteThatCreatesAUseWaitsForTheWorkspaceLock(t *testing.T) {
 		run  func() error
 	}{
 		{"archive a Segment", func() error { _, err := segs.Archive(ctx, s, fixtures.SegmentRetiredID); return err }},
-		{"create a Segment", func() error { _, err := segs.Create(ctx, s, segments.CreateInput{Name: "New"}); return err }},
+		{"create a Segment", func() error { _, err := save.Create(ctx, s, segments.CreateInput{Name: "New"}); return err }},
 		{"update a Segment", func() error {
-			_, err := segs.Update(ctx, s, fixtures.SegmentActiveID, segments.UpdateInput{Revision: testhelper.SegmentRevisionIn(ctx, t, s, fixtures.SegmentActiveID), Name: patch.Set("Renamed")})
+			_, err := save.Update(ctx, s, fixtures.SegmentActiveID, segments.UpdateInput{Revision: testhelper.SegmentRevisionIn(ctx, t, s, fixtures.SegmentActiveID), Name: patch.Set("Renamed")})
 			return err
 		}},
 		{"schedule a Broadcast", func() error {

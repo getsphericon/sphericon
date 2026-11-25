@@ -139,7 +139,8 @@ func TestExternalSegmentsPreviewCountsEvents(t *testing.T) {
 	_, atLeastNone := preview(`{"kind":"event","action":"rule_url","operator":"atLeast","times":0}`)
 
 	assert.Equal(t, &externalapi.PreviewSegmentResult{Count: 1}, three)
-	assert.Equal(t, &externalapi.PreviewSegmentResult{Count: 0}, four)
+	assert.Equal(t, &externalapi.PreviewSegmentResult{Count: 0, EventsKeptDays: externalapi.NewOptInt32(400)}, four,
+		"with no window it counts the Events kept, the default SPHERICON_EVENTS_RETENTION in days")
 	testhelper.ExternalRefusal(t, negative, http.StatusBadRequest)
 	testhelper.ExternalRefusal(t, noWindow, http.StatusBadRequest)
 	testhelper.ExternalRefusal(t, atLeastNone, http.StatusUnprocessableEntity)
