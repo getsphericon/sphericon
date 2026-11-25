@@ -143,17 +143,25 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
     effects,
   })
 
-  const onSave = async () => {
-    // Every fork is checked, its panel open or not: its node shows the error from then on.
+  // The check a Save and a "Save mine over it" run before they send: every fork is checked, its
+  // panel open or not, and its node shows the error from then on; the open Step's form is checked;
+  // the first invalid fork whose panel is closed opens. False when anything is invalid.
+  const checkBeforeSending = (): boolean => {
     const invalid = invalidForks(latest.current)
     check(invalid.map((fork) => fork.id))
     if (validatorRef.current?.() === false) {
-      return
+      return false
     }
-    // The first invalid fork whose panel is closed opens.
     const [first] = invalid
     if (first !== undefined) {
       setSelected(first.id)
+      return false
+    }
+    return true
+  }
+
+  const onSave = async () => {
+    if (!checkBeforeSending()) {
       return
     }
     await save((submission) => {
@@ -375,7 +383,9 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
                 void stored(reload)
               }}
               onOverwrite={() => {
-                void stored(overwrite)
+                if (checkBeforeSending()) {
+                  void stored(overwrite)
+                }
               }}
             />
           )}
