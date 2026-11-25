@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -162,4 +163,40 @@ func TestExternalAutomationRefusesABranchOfElevenPaths(t *testing.T) {
 
 	require.NoError(t, fits)
 	refusedNaming(t, err, branchID, "branch")
+}
+
+// openedOnce is a Branch path's Condition that counts an open, unknown for a Contact whose address
+// is not tracked (ADR 0123).
+const openedOnce = `{"kind":"group","combinator":"and","entries":[{"kind":"event","action":"email.opened","operator":"atLeast","times":1}]}`
+
+// publishBranch saves the Branch written as doc and publishes it.
+func publishBranch(t *testing.T, env *testhelper.TestEnv, doc string) error {
+	t.Helper()
+	c := env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite, apitokens.ScopeAutomationsPublish)
+	a, err := saveBranch(t, c, doc)
+	require.NoError(t, err)
+	_, err = c.AutomationsPublish(t.Context(), &externalapi.RevisionInput{Revision: externalapi.Revision(env.AutomationRevision(t.Context(), t, int64(a.ID)))},
+		externalapi.AutomationsPublishParams{ID: a.ID})
+	return err
+}
+
+// A Branch whose Condition counts an open needs an unknown path (ADR 0124): Publish refuses one
+// without, naming it, and publishes one with.
+func TestExternalPublishRefusesAnEngagementBranchWithoutAnUnknownPath(t *testing.T) {
+	env := testhelper.Setup(t)
+	without := publishBranch(t, env, `{"id":"`+branchID+`","type":"branch","paths":[{"condition":`+openedOnce+`,"steps":[]}],"otherwise":{"steps":[]}}`)
+	with := publishBranch(t, env, `{"type":"branch","paths":[{"condition":`+openedOnce+`,"steps":[]}],"otherwise":{"steps":[]},"unknown":{"steps":[]}}`)
+
+	detail := refusedNaming(t, without, branchID, "branch")
+	assert.Contains(t, detail, "unknown path")
+	require.NoError(t, with)
+}
+
+// A Branch with no engagement test is never unknown: Publish refuses it an unknown path, naming it.
+func TestExternalPublishRefusesAnUnknownPathOnABranchThatCannotBeUnknown(t *testing.T) {
+	env := testhelper.Setup(t)
+	err := publishBranch(t, env, `{"id":"`+branchID+`","type":"branch","paths":[{"condition":`+vipCondition+`,"steps":[]}],"otherwise":{"steps":[]},"unknown":{"steps":[]}}`)
+
+	detail := refusedNaming(t, err, branchID, "branch")
+	assert.Contains(t, detail, "unknown path")
 }

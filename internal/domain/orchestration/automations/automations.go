@@ -222,6 +222,27 @@ func (m *Module) checkBranches(ctx context.Context, s *ent.Scoped, steps automat
 	return nil
 }
 
+// checkUnknownPaths refuses, naming it, a Branch of the tree whose Conditions can be unknown for a
+// Contact (condition.CanBeUnknown: an engagement count, ADR 0123) and that has no unknown path, and
+// a Branch whose Conditions cannot be unknown and that has one (ADR 0124). A save keeps either, so
+// the author can build the Branch up; Publish arms it.
+func checkUnknownPaths(steps automationstep.Path) error {
+	for _, st := range automationstep.All(steps) {
+		b, ok := st.Payload.(automationstep.Branch)
+		if !ok {
+			continue
+		}
+		needs := slices.ContainsFunc(b.Paths, func(p automationstep.BranchPath) bool { return condition.CanBeUnknown(p.Condition.Group) })
+		switch {
+		case needs && b.Unknown == nil:
+			return refuse(st, "a branch whose conditions count an open or a click needs an unknown path, taken when one is unknown for the contact")
+		case !needs && b.Unknown != nil:
+			return refuse(st, "a branch whose conditions count no open or click is never unknown, so it takes no unknown path")
+		}
+	}
+	return nil
+}
+
 // identify gives the path and each step without an id one, keeping the ids sent; a malformed id
 // or one used twice in the version refuses the save, naming the Step or the path (ADR 0122).
 func identify(steps automationstep.Path) (automationstep.Path, error) {
@@ -833,9 +854,13 @@ func (versioned) Write(ctx context.Context, l *ent.WorkspaceLocked, id int64, nu
 // an edit may name such an Integration, only Publish is refused, and a route that stops sending
 // after it holds the sends at that step instead. A Telegram step whose text, as written, is over
 // Telegram's limit is refused too, and so is an email step while the Workspace has no postal
-// address for its footer (outboundmessages.ErrPostalAddressRequired, ADR 0156).
+// address for its footer (outboundmessages.ErrPostalAddressRequired, ADR 0156). A Branch needs an
+// unknown path exactly when its Conditions can be unknown (checkUnknownPaths).
 func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent.AutomationVersion) error {
 	if err := validateEvents(definitionOf(version)); err != nil {
+		return err
+	}
+	if err := checkUnknownPaths(version.Steps); err != nil {
 		return err
 	}
 	sends := SendSteps(version)
