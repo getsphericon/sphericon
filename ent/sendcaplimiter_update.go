@@ -50,24 +50,30 @@ func (_u *SendCapLimiterUpdate) SetNillableWorkspaceID(v *int64) *SendCapLimiter
 	return _u
 }
 
-// SetDayFill sets the "day_fill" field.
-func (_u *SendCapLimiterUpdate) SetDayFill(v float64) *SendCapLimiterUpdate {
-	_u.mutation.ResetDayFill()
-	_u.mutation.SetDayFill(v)
+// SetDayTokens sets the "day_tokens" field.
+func (_u *SendCapLimiterUpdate) SetDayTokens(v float64) *SendCapLimiterUpdate {
+	_u.mutation.ResetDayTokens()
+	_u.mutation.SetDayTokens(v)
 	return _u
 }
 
-// SetNillableDayFill sets the "day_fill" field if the given value is not nil.
-func (_u *SendCapLimiterUpdate) SetNillableDayFill(v *float64) *SendCapLimiterUpdate {
+// SetNillableDayTokens sets the "day_tokens" field if the given value is not nil.
+func (_u *SendCapLimiterUpdate) SetNillableDayTokens(v *float64) *SendCapLimiterUpdate {
 	if v != nil {
-		_u.SetDayFill(*v)
+		_u.SetDayTokens(*v)
 	}
 	return _u
 }
 
-// AddDayFill adds value to the "day_fill" field.
-func (_u *SendCapLimiterUpdate) AddDayFill(v float64) *SendCapLimiterUpdate {
-	_u.mutation.AddDayFill(v)
+// AddDayTokens adds value to the "day_tokens" field.
+func (_u *SendCapLimiterUpdate) AddDayTokens(v float64) *SendCapLimiterUpdate {
+	_u.mutation.AddDayTokens(v)
+	return _u
+}
+
+// ClearDayTokens clears the value of the "day_tokens" field.
+func (_u *SendCapLimiterUpdate) ClearDayTokens() *SendCapLimiterUpdate {
+	_u.mutation.ClearDayTokens()
 	return _u
 }
 
@@ -166,11 +172,14 @@ func (_u *SendCapLimiterUpdate) sqlSave(ctx context.Context) (_node int, err err
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(sendcaplimiter.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := _u.mutation.DayFill(); ok {
-		_spec.SetField(sendcaplimiter.FieldDayFill, field.TypeFloat64, value)
+	if value, ok := _u.mutation.DayTokens(); ok {
+		_spec.SetField(sendcaplimiter.FieldDayTokens, field.TypeFloat64, value)
 	}
-	if value, ok := _u.mutation.AddedDayFill(); ok {
-		_spec.AddField(sendcaplimiter.FieldDayFill, field.TypeFloat64, value)
+	if value, ok := _u.mutation.AddedDayTokens(); ok {
+		_spec.AddField(sendcaplimiter.FieldDayTokens, field.TypeFloat64, value)
+	}
+	if _u.mutation.DayTokensCleared() {
+		_spec.ClearField(sendcaplimiter.FieldDayTokens, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.RefilledAt(); ok {
 		_spec.SetField(sendcaplimiter.FieldRefilledAt, field.TypeTime, value)
@@ -246,24 +255,30 @@ func (_u *SendCapLimiterUpdateOne) SetNillableWorkspaceID(v *int64) *SendCapLimi
 	return _u
 }
 
-// SetDayFill sets the "day_fill" field.
-func (_u *SendCapLimiterUpdateOne) SetDayFill(v float64) *SendCapLimiterUpdateOne {
-	_u.mutation.ResetDayFill()
-	_u.mutation.SetDayFill(v)
+// SetDayTokens sets the "day_tokens" field.
+func (_u *SendCapLimiterUpdateOne) SetDayTokens(v float64) *SendCapLimiterUpdateOne {
+	_u.mutation.ResetDayTokens()
+	_u.mutation.SetDayTokens(v)
 	return _u
 }
 
-// SetNillableDayFill sets the "day_fill" field if the given value is not nil.
-func (_u *SendCapLimiterUpdateOne) SetNillableDayFill(v *float64) *SendCapLimiterUpdateOne {
+// SetNillableDayTokens sets the "day_tokens" field if the given value is not nil.
+func (_u *SendCapLimiterUpdateOne) SetNillableDayTokens(v *float64) *SendCapLimiterUpdateOne {
 	if v != nil {
-		_u.SetDayFill(*v)
+		_u.SetDayTokens(*v)
 	}
 	return _u
 }
 
-// AddDayFill adds value to the "day_fill" field.
-func (_u *SendCapLimiterUpdateOne) AddDayFill(v float64) *SendCapLimiterUpdateOne {
-	_u.mutation.AddDayFill(v)
+// AddDayTokens adds value to the "day_tokens" field.
+func (_u *SendCapLimiterUpdateOne) AddDayTokens(v float64) *SendCapLimiterUpdateOne {
+	_u.mutation.AddDayTokens(v)
+	return _u
+}
+
+// ClearDayTokens clears the value of the "day_tokens" field.
+func (_u *SendCapLimiterUpdateOne) ClearDayTokens() *SendCapLimiterUpdateOne {
+	_u.mutation.ClearDayTokens()
 	return _u
 }
 
@@ -392,11 +407,14 @@ func (_u *SendCapLimiterUpdateOne) sqlSave(ctx context.Context) (_node *SendCapL
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(sendcaplimiter.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := _u.mutation.DayFill(); ok {
-		_spec.SetField(sendcaplimiter.FieldDayFill, field.TypeFloat64, value)
+	if value, ok := _u.mutation.DayTokens(); ok {
+		_spec.SetField(sendcaplimiter.FieldDayTokens, field.TypeFloat64, value)
 	}
-	if value, ok := _u.mutation.AddedDayFill(); ok {
-		_spec.AddField(sendcaplimiter.FieldDayFill, field.TypeFloat64, value)
+	if value, ok := _u.mutation.AddedDayTokens(); ok {
+		_spec.AddField(sendcaplimiter.FieldDayTokens, field.TypeFloat64, value)
+	}
+	if _u.mutation.DayTokensCleared() {
+		_spec.ClearField(sendcaplimiter.FieldDayTokens, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.RefilledAt(); ok {
 		_spec.SetField(sendcaplimiter.FieldRefilledAt, field.TypeTime, value)

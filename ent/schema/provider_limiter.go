@@ -12,10 +12,10 @@ import (
 // ProviderLimiter is the state of one Integration's Provider limit (ADR 0023): two
 // token buckets, per-second and daily, in a single row so a reservation can take a
 // token from both or neither in one atomic UPDATE. The row is created lazily on the
-// first limited send. Each bucket stores its fill as a fraction of capacity (1 is
-// full), not a token count: capacity and refill rate derive from the Integration's
-// max_per_second / max_per_day at reservation time, so changing a limit takes effect
-// at once and a bucket that was unlimited for a while is simply full.
+// first limited send. Each bucket stores the messages it holds (tokens); its capacity and
+// refill rate derive from the Integration's max_per_second / max_per_day at reservation
+// time, so a changed limit takes effect at once. The balance is never rescaled: the time
+// since refilled_at refills at the limit in force at the reservation, capped at it (ADR 0023).
 type ProviderLimiter struct {
 	ent.Schema
 }
@@ -38,12 +38,18 @@ func (ProviderLimiter) Fields() []ent.Field {
 		field.Int64("integration_id").
 			Unique().
 			Immutable(),
-		// Fill of the per-second bucket as of refilled_at, a fraction of its capacity
-		// (max_per_second tokens). It may go below zero (a bucket in debt).
-		field.Float("second_fill"),
-		// Fill of the rolling 24-hour bucket as of refilled_at, a fraction of its
-		// capacity (max_per_day tokens).
-		field.Float("day_fill"),
+		// Messages the per-second bucket holds as of refilled_at, at most the max_per_second in
+		// force at that write (a limit lowered since leaves it above until the next one). It may
+		// go below zero (a bucket in debt). NULL is a full bucket: one not spent from yet, or
+		// not limited at its last write.
+		field.Float("second_tokens").
+			Optional().
+			Nillable(),
+		// Messages the rolling 24-hour bucket holds as of refilled_at, at most the max_per_day in
+		// force at that write; above it, below zero and NULL as for second_tokens.
+		field.Float("day_tokens").
+			Optional().
+			Nillable(),
 		// The instant both buckets were last topped up.
 		field.Time("refilled_at").
 			Annotations(Attribute(reasonBucket)),

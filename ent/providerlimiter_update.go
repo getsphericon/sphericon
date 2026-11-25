@@ -50,45 +50,57 @@ func (_u *ProviderLimiterUpdate) SetNillableWorkspaceID(v *int64) *ProviderLimit
 	return _u
 }
 
-// SetSecondFill sets the "second_fill" field.
-func (_u *ProviderLimiterUpdate) SetSecondFill(v float64) *ProviderLimiterUpdate {
-	_u.mutation.ResetSecondFill()
-	_u.mutation.SetSecondFill(v)
+// SetSecondTokens sets the "second_tokens" field.
+func (_u *ProviderLimiterUpdate) SetSecondTokens(v float64) *ProviderLimiterUpdate {
+	_u.mutation.ResetSecondTokens()
+	_u.mutation.SetSecondTokens(v)
 	return _u
 }
 
-// SetNillableSecondFill sets the "second_fill" field if the given value is not nil.
-func (_u *ProviderLimiterUpdate) SetNillableSecondFill(v *float64) *ProviderLimiterUpdate {
+// SetNillableSecondTokens sets the "second_tokens" field if the given value is not nil.
+func (_u *ProviderLimiterUpdate) SetNillableSecondTokens(v *float64) *ProviderLimiterUpdate {
 	if v != nil {
-		_u.SetSecondFill(*v)
+		_u.SetSecondTokens(*v)
 	}
 	return _u
 }
 
-// AddSecondFill adds value to the "second_fill" field.
-func (_u *ProviderLimiterUpdate) AddSecondFill(v float64) *ProviderLimiterUpdate {
-	_u.mutation.AddSecondFill(v)
+// AddSecondTokens adds value to the "second_tokens" field.
+func (_u *ProviderLimiterUpdate) AddSecondTokens(v float64) *ProviderLimiterUpdate {
+	_u.mutation.AddSecondTokens(v)
 	return _u
 }
 
-// SetDayFill sets the "day_fill" field.
-func (_u *ProviderLimiterUpdate) SetDayFill(v float64) *ProviderLimiterUpdate {
-	_u.mutation.ResetDayFill()
-	_u.mutation.SetDayFill(v)
+// ClearSecondTokens clears the value of the "second_tokens" field.
+func (_u *ProviderLimiterUpdate) ClearSecondTokens() *ProviderLimiterUpdate {
+	_u.mutation.ClearSecondTokens()
 	return _u
 }
 
-// SetNillableDayFill sets the "day_fill" field if the given value is not nil.
-func (_u *ProviderLimiterUpdate) SetNillableDayFill(v *float64) *ProviderLimiterUpdate {
+// SetDayTokens sets the "day_tokens" field.
+func (_u *ProviderLimiterUpdate) SetDayTokens(v float64) *ProviderLimiterUpdate {
+	_u.mutation.ResetDayTokens()
+	_u.mutation.SetDayTokens(v)
+	return _u
+}
+
+// SetNillableDayTokens sets the "day_tokens" field if the given value is not nil.
+func (_u *ProviderLimiterUpdate) SetNillableDayTokens(v *float64) *ProviderLimiterUpdate {
 	if v != nil {
-		_u.SetDayFill(*v)
+		_u.SetDayTokens(*v)
 	}
 	return _u
 }
 
-// AddDayFill adds value to the "day_fill" field.
-func (_u *ProviderLimiterUpdate) AddDayFill(v float64) *ProviderLimiterUpdate {
-	_u.mutation.AddDayFill(v)
+// AddDayTokens adds value to the "day_tokens" field.
+func (_u *ProviderLimiterUpdate) AddDayTokens(v float64) *ProviderLimiterUpdate {
+	_u.mutation.AddDayTokens(v)
+	return _u
+}
+
+// ClearDayTokens clears the value of the "day_tokens" field.
+func (_u *ProviderLimiterUpdate) ClearDayTokens() *ProviderLimiterUpdate {
+	_u.mutation.ClearDayTokens()
 	return _u
 }
 
@@ -190,17 +202,23 @@ func (_u *ProviderLimiterUpdate) sqlSave(ctx context.Context) (_node int, err er
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(providerlimiter.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := _u.mutation.SecondFill(); ok {
-		_spec.SetField(providerlimiter.FieldSecondFill, field.TypeFloat64, value)
+	if value, ok := _u.mutation.SecondTokens(); ok {
+		_spec.SetField(providerlimiter.FieldSecondTokens, field.TypeFloat64, value)
 	}
-	if value, ok := _u.mutation.AddedSecondFill(); ok {
-		_spec.AddField(providerlimiter.FieldSecondFill, field.TypeFloat64, value)
+	if value, ok := _u.mutation.AddedSecondTokens(); ok {
+		_spec.AddField(providerlimiter.FieldSecondTokens, field.TypeFloat64, value)
 	}
-	if value, ok := _u.mutation.DayFill(); ok {
-		_spec.SetField(providerlimiter.FieldDayFill, field.TypeFloat64, value)
+	if _u.mutation.SecondTokensCleared() {
+		_spec.ClearField(providerlimiter.FieldSecondTokens, field.TypeFloat64)
 	}
-	if value, ok := _u.mutation.AddedDayFill(); ok {
-		_spec.AddField(providerlimiter.FieldDayFill, field.TypeFloat64, value)
+	if value, ok := _u.mutation.DayTokens(); ok {
+		_spec.SetField(providerlimiter.FieldDayTokens, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedDayTokens(); ok {
+		_spec.AddField(providerlimiter.FieldDayTokens, field.TypeFloat64, value)
+	}
+	if _u.mutation.DayTokensCleared() {
+		_spec.ClearField(providerlimiter.FieldDayTokens, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.RefilledAt(); ok {
 		_spec.SetField(providerlimiter.FieldRefilledAt, field.TypeTime, value)
@@ -276,45 +294,57 @@ func (_u *ProviderLimiterUpdateOne) SetNillableWorkspaceID(v *int64) *ProviderLi
 	return _u
 }
 
-// SetSecondFill sets the "second_fill" field.
-func (_u *ProviderLimiterUpdateOne) SetSecondFill(v float64) *ProviderLimiterUpdateOne {
-	_u.mutation.ResetSecondFill()
-	_u.mutation.SetSecondFill(v)
+// SetSecondTokens sets the "second_tokens" field.
+func (_u *ProviderLimiterUpdateOne) SetSecondTokens(v float64) *ProviderLimiterUpdateOne {
+	_u.mutation.ResetSecondTokens()
+	_u.mutation.SetSecondTokens(v)
 	return _u
 }
 
-// SetNillableSecondFill sets the "second_fill" field if the given value is not nil.
-func (_u *ProviderLimiterUpdateOne) SetNillableSecondFill(v *float64) *ProviderLimiterUpdateOne {
+// SetNillableSecondTokens sets the "second_tokens" field if the given value is not nil.
+func (_u *ProviderLimiterUpdateOne) SetNillableSecondTokens(v *float64) *ProviderLimiterUpdateOne {
 	if v != nil {
-		_u.SetSecondFill(*v)
+		_u.SetSecondTokens(*v)
 	}
 	return _u
 }
 
-// AddSecondFill adds value to the "second_fill" field.
-func (_u *ProviderLimiterUpdateOne) AddSecondFill(v float64) *ProviderLimiterUpdateOne {
-	_u.mutation.AddSecondFill(v)
+// AddSecondTokens adds value to the "second_tokens" field.
+func (_u *ProviderLimiterUpdateOne) AddSecondTokens(v float64) *ProviderLimiterUpdateOne {
+	_u.mutation.AddSecondTokens(v)
 	return _u
 }
 
-// SetDayFill sets the "day_fill" field.
-func (_u *ProviderLimiterUpdateOne) SetDayFill(v float64) *ProviderLimiterUpdateOne {
-	_u.mutation.ResetDayFill()
-	_u.mutation.SetDayFill(v)
+// ClearSecondTokens clears the value of the "second_tokens" field.
+func (_u *ProviderLimiterUpdateOne) ClearSecondTokens() *ProviderLimiterUpdateOne {
+	_u.mutation.ClearSecondTokens()
 	return _u
 }
 
-// SetNillableDayFill sets the "day_fill" field if the given value is not nil.
-func (_u *ProviderLimiterUpdateOne) SetNillableDayFill(v *float64) *ProviderLimiterUpdateOne {
+// SetDayTokens sets the "day_tokens" field.
+func (_u *ProviderLimiterUpdateOne) SetDayTokens(v float64) *ProviderLimiterUpdateOne {
+	_u.mutation.ResetDayTokens()
+	_u.mutation.SetDayTokens(v)
+	return _u
+}
+
+// SetNillableDayTokens sets the "day_tokens" field if the given value is not nil.
+func (_u *ProviderLimiterUpdateOne) SetNillableDayTokens(v *float64) *ProviderLimiterUpdateOne {
 	if v != nil {
-		_u.SetDayFill(*v)
+		_u.SetDayTokens(*v)
 	}
 	return _u
 }
 
-// AddDayFill adds value to the "day_fill" field.
-func (_u *ProviderLimiterUpdateOne) AddDayFill(v float64) *ProviderLimiterUpdateOne {
-	_u.mutation.AddDayFill(v)
+// AddDayTokens adds value to the "day_tokens" field.
+func (_u *ProviderLimiterUpdateOne) AddDayTokens(v float64) *ProviderLimiterUpdateOne {
+	_u.mutation.AddDayTokens(v)
+	return _u
+}
+
+// ClearDayTokens clears the value of the "day_tokens" field.
+func (_u *ProviderLimiterUpdateOne) ClearDayTokens() *ProviderLimiterUpdateOne {
+	_u.mutation.ClearDayTokens()
 	return _u
 }
 
@@ -446,17 +476,23 @@ func (_u *ProviderLimiterUpdateOne) sqlSave(ctx context.Context) (_node *Provide
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(providerlimiter.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := _u.mutation.SecondFill(); ok {
-		_spec.SetField(providerlimiter.FieldSecondFill, field.TypeFloat64, value)
+	if value, ok := _u.mutation.SecondTokens(); ok {
+		_spec.SetField(providerlimiter.FieldSecondTokens, field.TypeFloat64, value)
 	}
-	if value, ok := _u.mutation.AddedSecondFill(); ok {
-		_spec.AddField(providerlimiter.FieldSecondFill, field.TypeFloat64, value)
+	if value, ok := _u.mutation.AddedSecondTokens(); ok {
+		_spec.AddField(providerlimiter.FieldSecondTokens, field.TypeFloat64, value)
 	}
-	if value, ok := _u.mutation.DayFill(); ok {
-		_spec.SetField(providerlimiter.FieldDayFill, field.TypeFloat64, value)
+	if _u.mutation.SecondTokensCleared() {
+		_spec.ClearField(providerlimiter.FieldSecondTokens, field.TypeFloat64)
 	}
-	if value, ok := _u.mutation.AddedDayFill(); ok {
-		_spec.AddField(providerlimiter.FieldDayFill, field.TypeFloat64, value)
+	if value, ok := _u.mutation.DayTokens(); ok {
+		_spec.SetField(providerlimiter.FieldDayTokens, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedDayTokens(); ok {
+		_spec.AddField(providerlimiter.FieldDayTokens, field.TypeFloat64, value)
+	}
+	if _u.mutation.DayTokensCleared() {
+		_spec.ClearField(providerlimiter.FieldDayTokens, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.RefilledAt(); ok {
 		_spec.SetField(providerlimiter.FieldRefilledAt, field.TypeTime, value)

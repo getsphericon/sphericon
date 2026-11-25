@@ -22,10 +22,10 @@ const (
 	FieldWorkspaceID = "workspace_id"
 	// FieldIntegrationID holds the string denoting the integration_id field in the database.
 	FieldIntegrationID = "integration_id"
-	// FieldSecondFill holds the string denoting the second_fill field in the database.
-	FieldSecondFill = "second_fill"
-	// FieldDayFill holds the string denoting the day_fill field in the database.
-	FieldDayFill = "day_fill"
+	// FieldSecondTokens holds the string denoting the second_tokens field in the database.
+	FieldSecondTokens = "second_tokens"
+	// FieldDayTokens holds the string denoting the day_tokens field in the database.
+	FieldDayTokens = "day_tokens"
 	// FieldRefilledAt holds the string denoting the refilled_at field in the database.
 	FieldRefilledAt = "refilled_at"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
@@ -57,8 +57,8 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldWorkspaceID,
 	FieldIntegrationID,
-	FieldSecondFill,
-	FieldDayFill,
+	FieldSecondTokens,
+	FieldDayTokens,
 	FieldRefilledAt,
 }
 
@@ -109,14 +109,14 @@ func ByIntegrationID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIntegrationID, opts...).ToFunc()
 }
 
-// BySecondFill orders the results by the second_fill field.
-func BySecondFill(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSecondFill, opts...).ToFunc()
+// BySecondTokens orders the results by the second_tokens field.
+func BySecondTokens(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSecondTokens, opts...).ToFunc()
 }
 
-// ByDayFill orders the results by the day_fill field.
-func ByDayFill(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDayFill, opts...).ToFunc()
+// ByDayTokens orders the results by the day_tokens field.
+func ByDayTokens(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDayTokens, opts...).ToFunc()
 }
 
 // ByRefilledAt orders the results by the refilled_at field.

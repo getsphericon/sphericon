@@ -69,6 +69,16 @@ that Outbound send's gate also uses. A route that cannot send is not paced at on
 held with the route's reason, as each of its sends would be. Outbound send reads the limit on its own
 clock, `outbound.WithClock`, which tests move instead of the wall.)
 
+(Amended by #1808: each bucket, the Send cap's of ADR 0067 too, stores the messages it holds, not a
+fraction of its ceiling, and NULL is a full bucket. The ceiling is read on each call and the row
+stores none. The balance is never rescaled: the time since the last write refills at the ceiling
+in force at the call, capped at it. A debt from Transactional sends therefore stays the same number
+of messages, and a raise shortens the wait at once. On a bucket emptied and then idle for 12 hours,
+100 raised to 10 000 grants 5 000 and 10 000 lowered to 100 grants 50: closer to the rolling 24
+hours in both directions than applying the new ceiling from the moment it changed (50 and 100),
+which would need a stored ceiling. The reference model of the buckets' test is
+`golang.org/x/time/rate`, set at the bucket's last write.)
+
 ## Considered options
 
 - **River's own limiting.** River v0.40 offers only `MaxWorkers` per queue; there is no rate limit or per-key limit.

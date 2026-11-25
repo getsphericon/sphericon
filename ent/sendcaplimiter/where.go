@@ -70,9 +70,9 @@ func WorkspaceID(v int64) predicate.SendCapLimiter {
 	return predicate.SendCapLimiter(sql.FieldEQ(FieldWorkspaceID, v))
 }
 
-// DayFill applies equality check predicate on the "day_fill" field. It's identical to DayFillEQ.
-func DayFill(v float64) predicate.SendCapLimiter {
-	return predicate.SendCapLimiter(sql.FieldEQ(FieldDayFill, v))
+// DayTokens applies equality check predicate on the "day_tokens" field. It's identical to DayTokensEQ.
+func DayTokens(v float64) predicate.SendCapLimiter {
+	return predicate.SendCapLimiter(sql.FieldEQ(FieldDayTokens, v))
 }
 
 // RefilledAt applies equality check predicate on the "refilled_at" field. It's identical to RefilledAtEQ.
@@ -180,44 +180,54 @@ func WorkspaceIDNotIn(vs ...int64) predicate.SendCapLimiter {
 	return predicate.SendCapLimiter(sql.FieldNotIn(FieldWorkspaceID, vs...))
 }
 
-// DayFillEQ applies the EQ predicate on the "day_fill" field.
-func DayFillEQ(v float64) predicate.SendCapLimiter {
-	return predicate.SendCapLimiter(sql.FieldEQ(FieldDayFill, v))
+// DayTokensEQ applies the EQ predicate on the "day_tokens" field.
+func DayTokensEQ(v float64) predicate.SendCapLimiter {
+	return predicate.SendCapLimiter(sql.FieldEQ(FieldDayTokens, v))
 }
 
-// DayFillNEQ applies the NEQ predicate on the "day_fill" field.
-func DayFillNEQ(v float64) predicate.SendCapLimiter {
-	return predicate.SendCapLimiter(sql.FieldNEQ(FieldDayFill, v))
+// DayTokensNEQ applies the NEQ predicate on the "day_tokens" field.
+func DayTokensNEQ(v float64) predicate.SendCapLimiter {
+	return predicate.SendCapLimiter(sql.FieldNEQ(FieldDayTokens, v))
 }
 
-// DayFillIn applies the In predicate on the "day_fill" field.
-func DayFillIn(vs ...float64) predicate.SendCapLimiter {
-	return predicate.SendCapLimiter(sql.FieldIn(FieldDayFill, vs...))
+// DayTokensIn applies the In predicate on the "day_tokens" field.
+func DayTokensIn(vs ...float64) predicate.SendCapLimiter {
+	return predicate.SendCapLimiter(sql.FieldIn(FieldDayTokens, vs...))
 }
 
-// DayFillNotIn applies the NotIn predicate on the "day_fill" field.
-func DayFillNotIn(vs ...float64) predicate.SendCapLimiter {
-	return predicate.SendCapLimiter(sql.FieldNotIn(FieldDayFill, vs...))
+// DayTokensNotIn applies the NotIn predicate on the "day_tokens" field.
+func DayTokensNotIn(vs ...float64) predicate.SendCapLimiter {
+	return predicate.SendCapLimiter(sql.FieldNotIn(FieldDayTokens, vs...))
 }
 
-// DayFillGT applies the GT predicate on the "day_fill" field.
-func DayFillGT(v float64) predicate.SendCapLimiter {
-	return predicate.SendCapLimiter(sql.FieldGT(FieldDayFill, v))
+// DayTokensGT applies the GT predicate on the "day_tokens" field.
+func DayTokensGT(v float64) predicate.SendCapLimiter {
+	return predicate.SendCapLimiter(sql.FieldGT(FieldDayTokens, v))
 }
 
-// DayFillGTE applies the GTE predicate on the "day_fill" field.
-func DayFillGTE(v float64) predicate.SendCapLimiter {
-	return predicate.SendCapLimiter(sql.FieldGTE(FieldDayFill, v))
+// DayTokensGTE applies the GTE predicate on the "day_tokens" field.
+func DayTokensGTE(v float64) predicate.SendCapLimiter {
+	return predicate.SendCapLimiter(sql.FieldGTE(FieldDayTokens, v))
 }
 
-// DayFillLT applies the LT predicate on the "day_fill" field.
-func DayFillLT(v float64) predicate.SendCapLimiter {
-	return predicate.SendCapLimiter(sql.FieldLT(FieldDayFill, v))
+// DayTokensLT applies the LT predicate on the "day_tokens" field.
+func DayTokensLT(v float64) predicate.SendCapLimiter {
+	return predicate.SendCapLimiter(sql.FieldLT(FieldDayTokens, v))
 }
 
-// DayFillLTE applies the LTE predicate on the "day_fill" field.
-func DayFillLTE(v float64) predicate.SendCapLimiter {
-	return predicate.SendCapLimiter(sql.FieldLTE(FieldDayFill, v))
+// DayTokensLTE applies the LTE predicate on the "day_tokens" field.
+func DayTokensLTE(v float64) predicate.SendCapLimiter {
+	return predicate.SendCapLimiter(sql.FieldLTE(FieldDayTokens, v))
+}
+
+// DayTokensIsNil applies the IsNil predicate on the "day_tokens" field.
+func DayTokensIsNil() predicate.SendCapLimiter {
+	return predicate.SendCapLimiter(sql.FieldIsNull(FieldDayTokens))
+}
+
+// DayTokensNotNil applies the NotNil predicate on the "day_tokens" field.
+func DayTokensNotNil() predicate.SendCapLimiter {
+	return predicate.SendCapLimiter(sql.FieldNotNull(FieldDayTokens))
 }
 
 // RefilledAtEQ applies the EQ predicate on the "refilled_at" field.

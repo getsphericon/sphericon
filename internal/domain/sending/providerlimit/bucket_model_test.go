@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/time/rate"
 	"pgregory.net/rapid"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -16,77 +17,123 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// bucketModel is the specification of the two token buckets in one place: the fill is a fraction
-// of the capacity, a second's bucket refills in a second and a day's over a day, a marketing
-// send needs one token from each limited bucket, and a transactional send takes one even when
-// that leaves a bucket negative.
+// modelBucket is one bucket of the reference model: a rate.Limiter whose limit is the ceiling over
+// the period and whose burst is the ceiling. Its ceiling is kept here so a run can change it.
+type modelBucket struct {
+	name    string
+	ceiling *int
+	period  time.Duration
+	lim     *rate.Limiter
+}
+
+func (b *modelBucket) limit() rate.Limit {
+	return rate.Limit(float64(*b.ceiling) / b.period.Seconds())
+}
+
+// bucketModel is the specification of the buckets: golang.org/x/time/rate. A marketing send needs
+// one token in every limited bucket and takes one from each or none, so the model checks TokensAt in
+// all of them before it takes (AllowN per bucket would spend from one bucket while another is
+// short); a Transactional send takes one from each without waiting (ReserveN), which may leave a
+// bucket negative. A bucket not spent from
+// yet is full at any ceiling. A changed ceiling keeps the balance: the limiter reads the ceilings
+// on each call and applies them to the bucket as of its last write (ADR 0023), so each call of
+// the model first sets them at that write (SetLimitAt and SetBurstAt), and lifts the burst again
+// after it, so a lowered ceiling caps the balance only when a call reads it.
 type bucketModel struct {
-	limits providerlimit.Limits
-	second float64
-	day    float64
-	at     time.Time
+	buckets []*modelBucket
+	written time.Time // the last take; zero before the first
 }
 
-func (m *bucketModel) refill(now time.Time) (second, day float64) {
-	elapsed := math.Max(0, now.Sub(m.at).Seconds())
-	return math.Min(1, m.second+elapsed), math.Min(1, m.day+elapsed/86400)
-}
-
-func (m *bucketModel) take(now time.Time) {
-	m.second, m.day = m.refill(now)
-	if m.limits.PerSecond != nil {
-		m.second -= 1 / float64(*m.limits.PerSecond)
-	}
-	if m.limits.PerDay != nil {
-		m.day -= 1 / float64(*m.limits.PerDay)
-	}
-	if now.After(m.at) {
-		m.at = now
-	}
-}
-
-// shortBy is how far each limited bucket is from holding a token, and whether the model is
-// close enough to a bucket's threshold that rounding could decide either way.
-func (m *bucketModel) shortBy(now time.Time) (granted, borderline bool) {
-	second, day := m.refill(now)
-	granted = true
-	check := func(fill float64, capacity *int) {
-		if capacity == nil {
-			return
+// limited is the buckets with a ceiling.
+func (m *bucketModel) limited() []*modelBucket {
+	out := make([]*modelBucket, 0, len(m.buckets))
+	for _, b := range m.buckets {
+		if b.ceiling != nil {
+			out = append(out, b)
 		}
-		threshold := 1 / float64(*capacity)
-		if math.Abs(fill-threshold) < 1e-6 {
+	}
+	return out
+}
+
+// call runs fn with the ceilings in force, as of the last write.
+func (m *bucketModel) call(fn func()) {
+	for _, b := range m.limited() {
+		b.lim.SetLimitAt(m.written, b.limit())
+		b.lim.SetBurstAt(m.written, *b.ceiling)
+	}
+	fn()
+	for _, b := range m.limited() {
+		b.lim.SetBurstAt(m.written, math.MaxInt)
+	}
+}
+
+// wait is how long until every limited bucket holds a token at now (zero when each does), and
+// whether a bucket is close enough to one token that rounding could decide either way.
+func (m *bucketModel) wait(now time.Time) (wait time.Duration, borderline bool) {
+	m.call(func() { wait, borderline = m.waitIn(now) })
+	return wait, borderline
+}
+
+func (m *bucketModel) waitIn(now time.Time) (wait time.Duration, borderline bool) {
+	for _, b := range m.limited() {
+		tokens := b.lim.TokensAt(now)
+		if math.Abs(tokens-1) < 1e-6 {
 			borderline = true
 		}
-		if fill < threshold-1e-9 {
-			granted = false
+		if tokens < 1 {
+			wait = max(wait, time.Duration((1-tokens)/float64(b.limit())*float64(time.Second)))
 		}
 	}
-	check(second, m.limits.PerSecond)
-	check(day, m.limits.PerDay)
-	return granted, borderline
+	return wait, borderline
 }
 
-// drawLimits draws the ceilings of a run: per second, per day or both.
-func drawLimits(t *rapid.T) providerlimit.Limits {
-	var limits providerlimit.Limits
+// take spends one token from every limited bucket at now.
+func (m *bucketModel) take(now time.Time) {
+	m.call(func() {
+		for _, b := range m.limited() {
+			b.lim.ReserveN(now, 1)
+		}
+		m.written = now
+	})
+}
+
+// setCeiling changes the ceiling of b; the next call applies it.
+func (m *bucketModel) setCeiling(b *modelBucket, ceiling int) {
+	b.ceiling = &ceiling
+	if m.written.IsZero() {
+		b.lim = rate.NewLimiter(b.limit(), ceiling) // not spent from yet: full
+	}
+}
+
+func newModelBucket(name string, ceiling *int, period time.Duration) *modelBucket {
+	b := &modelBucket{name: name, ceiling: ceiling, period: period}
+	if ceiling != nil {
+		b.lim = rate.NewLimiter(b.limit(), *ceiling)
+	}
+	return b
+}
+
+// drawLimits draws the ceilings of a run: per second, per day or both, and a Send cap or none.
+func drawLimits(t *rapid.T) (limits providerlimit.Limits, sendCap *int) {
 	if rapid.Bool().Draw(t, "limited per second") {
 		limits.PerSecond = new(rapid.IntRange(1, 20).Draw(t, "per second"))
 	}
 	if limits.PerSecond == nil || rapid.Bool().Draw(t, "limited per day") {
 		limits.PerDay = new(rapid.IntRange(1, 5000).Draw(t, "per day"))
 	}
-	return limits
+	if rapid.Bool().Draw(t, "send cap") {
+		sendCap = new(rapid.IntRange(1, 5000).Draw(t, "send cap per day"))
+	}
+	return limits, sendCap
 }
 
 // limiterRun drives the limiter and the model side by side: each exported method is an action of
 // the state machine rapid draws.
 type limiterRun struct {
-	s           *ent.Scoped
-	within      providerlimit.Tx
-	reservation providerlimit.Reservation
-	model       *bucketModel
-	now         time.Time
+	s      *ent.Scoped
+	within providerlimit.Tx
+	model  *bucketModel
+	now    time.Time
 }
 
 // buckets spends at the run's clock as it stands at each call.
@@ -94,57 +141,99 @@ func (r *limiterRun) buckets() *providerlimit.Buckets {
 	return providerlimit.NewBuckets(r.within, func() time.Time { return r.now })
 }
 
-// Reserve asks for a token: granted exactly when the model holds one in each bucket, and when
-// denied, granted after the wait the limiter reports.
-func (r *limiterRun) Reserve(t *rapid.T) {
-	granted, borderline := r.model.shortBy(r.now)
+// reservation is what a send spends from, with the ceilings the model holds now.
+func (r *limiterRun) reservation() providerlimit.Reservation {
+	return providerlimit.Reservation{
+		IntegrationID: fixtures.IntegrationAcmeDefaultID,
+		Limits:        providerlimit.Limits{PerSecond: r.model.buckets[0].ceiling, PerDay: r.model.buckets[1].ceiling},
+		SendCap:       r.model.buckets[2].ceiling,
+	}
+}
 
-	short, err := r.buckets().Reserve(t.Context(), r.s, r.reservation)
+// Reserve asks for a token: granted exactly when the model holds one in each bucket, and when
+// denied, with the model's wait (rounded up to a millisecond), after which it is granted.
+func (r *limiterRun) Reserve(t *rapid.T) {
+	want, borderline := r.model.wait(r.now)
+
+	short, err := r.buckets().Reserve(t.Context(), r.s, r.reservation())
 
 	require.NoErrorf(t, err, "reserve at %v", r.now)
-	assert.Truef(t, borderline || (short.Wait == 0) == granted,
-		"at %v the model grants %v, the limiter waited %v", r.now, granted, short.Wait)
+	expected := expectedWait(want, borderline, short.Wait)
+	modelGrants := expected == 0
+	granted := short.Wait == 0
+	assert.Equalf(t, modelGrants, granted, "at %v the model waits %v, the limiter %v", r.now, expected, short.Wait)
+	assert.InDeltaf(t, expected, short.Wait, float64(2*time.Millisecond), "at %v the wait", r.now)
 	if short.Wait != 0 {
 		r.now = r.now.Add(short.Wait)
-		again, err := r.buckets().Reserve(t.Context(), r.s, r.reservation)
+		again, err := r.buckets().Reserve(t.Context(), r.s, r.reservation())
 		require.NoError(t, err)
 		require.Zerof(t, again.Wait, "after the reported wait of %v the reservation still waits", short.Wait)
 	}
 	r.model.take(r.now)
 }
 
-// Spend takes a token for a transactional send, granted or not.
+// expectedWait is the wait the limiter must report: the model's, or the limiter's own when a bucket
+// holds so close to one token that rounding may decide either way.
+func expectedWait(model time.Duration, borderline bool, limiter time.Duration) time.Duration {
+	if borderline {
+		return limiter
+	}
+	return model
+}
+
+// Spend takes a token for a Transactional send, granted or not.
 func (r *limiterRun) Spend(t *rapid.T) {
-	require.NoErrorf(t, r.buckets().Spend(t.Context(), r.s, r.reservation), "spend at %v", r.now)
+	err := r.buckets().Spend(t.Context(), r.s, r.reservation())
+	require.NoErrorf(t, err, "spend at %v", r.now)
 	r.model.take(r.now)
 }
 
-// LetTimePass moves the clock by up to two minutes.
+// LetTimePass moves the clock by up to two minutes, or now and then by up to a day.
 func (r *limiterRun) LetTimePass(t *rapid.T) {
-	r.now = r.now.Add(time.Duration(rapid.IntRange(0, 120_000).Draw(t, "milliseconds")) * time.Millisecond)
+	most := 120_000
+	if rapid.IntRange(0, 9).Draw(t, "long wait") == 0 {
+		most = 86_400_000
+	}
+	r.now = r.now.Add(time.Duration(rapid.IntRange(0, most).Draw(t, "milliseconds")) * time.Millisecond)
+}
+
+// ChangeCeiling raises or lowers the ceiling of one limited bucket.
+func (r *limiterRun) ChangeCeiling(t *rapid.T) {
+	limited := r.model.limited()
+	b := limited[rapid.IntRange(0, len(limited)-1).Draw(t, "bucket")]
+	most := 5000
+	if b.period == time.Second {
+		most = 20
+	}
+	r.model.setCeiling(b, rapid.IntRange(1, most).Draw(t, b.name))
 }
 
 // Check holds nothing between actions: each action checks what it did.
 func (*limiterRun) Check(*rapid.T) {}
 
-// Whatever mix of marketing sends, transactional sends and waiting, a reservation is granted
-// exactly when the model says both buckets hold a token, and a denied one reports a wait after
-// which the same reservation is granted.
-func TestProviderLimiterFollowsTheTokenBucketModel(t *testing.T) {
+// Whatever mix of marketing sends, Transactional sends, waiting and changed ceilings, a reservation
+// is granted exactly when x/time/rate grants it in every bucket, the Integration's two and the Send
+// cap's, and a denied one reports the wait x/time/rate does, after which it is granted.
+func TestTheBucketsFollowXTimeRate(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	start := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
 
 	rapid.Check(t, func(t *rapid.T) {
-		// Each run starts from no limiter row, so the first reservation creates it full.
+		// Each run starts from no limiter rows, so the first reservation creates them full.
 		env.DB.ProviderLimiter.Delete().Where(providerlimiter.IntegrationID(fixtures.IntegrationAcmeDefaultID)).ExecX(t.Context())
-		limits := drawLimits(t)
+		_, err := s.SendCapLimiter().Delete().Exec(t.Context())
+		require.NoError(t, err)
+		limits, sendCap := drawLimits(t)
 		run := &limiterRun{
-			s:           s,
-			within:      env.Bus.WithinAuditTx,
-			reservation: providerlimit.Reservation{IntegrationID: fixtures.IntegrationAcmeDefaultID, Limits: limits},
-			model:       &bucketModel{limits: limits, second: 1, day: 1, at: start},
-			now:         start,
+			s:      s,
+			within: env.Bus.WithinAuditTx,
+			model: &bucketModel{buckets: []*modelBucket{
+				newModelBucket("per second", limits.PerSecond, time.Second),
+				newModelBucket("per day", limits.PerDay, 24*time.Hour),
+				newModelBucket("send cap", sendCap, 24*time.Hour),
+			}},
+			now: start,
 		}
 
 		t.Repeat(rapid.StateMachineActions(run))

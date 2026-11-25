@@ -29,7 +29,9 @@ rules below make a jump safe without asking the Self-hoster to step through ever
   constraint on a table the same migration creates passes. Squawk's other rules are advice and never
   fail. The migration starts with a check that the data it
   strands is already moved (a `DO` block that raises), so an Upgrade that skipped a release fails
-  instead of losing data. Job and event payloads follow the same rule as columns.
+  instead of losing data. (Amended by #1808: a column of derived state that is rebuilt on use, such
+  as the send limit buckets, strands nothing and is dropped without the check.) Job and event
+  payloads follow the same rule as columns.
 - **Heavy data work is a river job after the Upgrade, never a migration.** A migration is fast
   DDL; an unavoidable long one uses `CONCURRENTLY` and `-- +goose NO TRANSACTION`.
 - **Migrations are explicit by default.** `SPHERICON_DB_AUTO_MIGRATE` stays off; `sphericon migrate`

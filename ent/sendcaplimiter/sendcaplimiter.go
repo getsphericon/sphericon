@@ -20,8 +20,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldWorkspaceID holds the string denoting the workspace_id field in the database.
 	FieldWorkspaceID = "workspace_id"
-	// FieldDayFill holds the string denoting the day_fill field in the database.
-	FieldDayFill = "day_fill"
+	// FieldDayTokens holds the string denoting the day_tokens field in the database.
+	FieldDayTokens = "day_tokens"
 	// FieldRefilledAt holds the string denoting the refilled_at field in the database.
 	FieldRefilledAt = "refilled_at"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
@@ -43,7 +43,7 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldWorkspaceID,
-	FieldDayFill,
+	FieldDayTokens,
 	FieldRefilledAt,
 }
 
@@ -89,9 +89,9 @@ func ByWorkspaceID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldWorkspaceID, opts...).ToFunc()
 }
 
-// ByDayFill orders the results by the day_fill field.
-func ByDayFill(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDayFill, opts...).ToFunc()
+// ByDayTokens orders the results by the day_tokens field.
+func ByDayTokens(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDayTokens, opts...).ToFunc()
 }
 
 // ByRefilledAt orders the results by the refilled_at field.
