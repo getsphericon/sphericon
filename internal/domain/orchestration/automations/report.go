@@ -5,10 +5,13 @@ import (
 	"context"
 	"slices"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
+	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -46,6 +49,17 @@ type Report struct {
 	// VersionSteps is the send Steps' messages by version and Step id, in version order and, within
 	// a version, in its Step order.
 	VersionSteps []VersionStepFigures
+	// Paths is the Enrollments that took each path of each fork, by the fork's Step id and the
+	// path's id, each summed over the versions that had the path (ADR 0124), sorted by the newest
+	// of those versions, then by the fork's place there and the path's place in the fork.
+	Paths []PathFigures
+}
+
+// PathFigures is how many Enrollments took one path of a fork, over every version of the
+// Automation that had it, and how many of them reached the goal.
+type PathFigures struct {
+	StepID, PathID           automationstep.ID
+	Enrollments, GoalReached int
 }
 
 // StepFigures is what one send Step sent and skipped over every version of the Automation that had
@@ -121,6 +135,13 @@ func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64, p Report
 		return Report{}, err
 	}
 	if err := stepFiguresOf(ctx, s, id, sent, &report); err != nil {
+		return Report{}, err
+	}
+	taken, err := pathsTaken(ctx, s, id)
+	if err != nil {
+		return Report{}, err
+	}
+	if report.Paths, err = pathFiguresOf(ctx, s, id, taken); err != nil {
 		return Report{}, err
 	}
 	return report, nil
@@ -258,3 +279,132 @@ var _ = db.Declare(
 	db.Fault("automation_figures_workspace_automation_version_step",
 		"automationsunchecked.Module.AddPruned upserts ON CONFLICT on the version and the Step, adding a batch's counts to the row"),
 )
+
+// versionPath names a path of a fork of one version: the version's row id, the fork's Step id and
+// the path's id.
+type versionPath struct {
+	versionID      int64
+	stepID, pathID automationstep.ID
+}
+
+// tookAndGoal is how many Enrollments took a path and how many of them reached the goal.
+type tookAndGoal struct{ took, goal int }
+
+// pathsTaken counts the Automation's Enrollments by the version they began on and each path a
+// fork sent them down, as their Step records say (ADR 0124), and those of them that reached the
+// goal.
+func pathsTaken(ctx context.Context, s *ent.Scoped, id int64) (map[versionPath]*tookAndGoal, error) {
+	var rows []struct {
+		VersionID int64                `sql:"version_id"`
+		StepID    automationstep.ID    `sql:"step_id"`
+		PathID    automationstep.ID    `sql:"path_id"`
+		Status    automationrun.Status `sql:"status"`
+		N         int                  `sql:"n"`
+	}
+	err := s.AutomationStepRecord().Query().
+		Where(automationsteprecord.OutcomeEQ(automationsteprecord.OutcomePath)).
+		Modify(func(sel *sql.Selector) {
+			run := sql.Table(automationrun.Table)
+			// The run's foreign key is composite: joined on both columns, the runs stay in the
+			// scope's Workspace and the read takes the runs' Workspace and Automation index.
+			sel.Join(run).OnP(sql.And(
+				sql.ColumnsEQ(sel.C(automationsteprecord.FieldWorkspaceID), run.C(automationrun.FieldWorkspaceID)),
+				sql.ColumnsEQ(sel.C(automationsteprecord.FieldRunID), run.C(automationrun.FieldID)),
+			))
+			sel.Where(sql.EQ(run.C(automationrun.FieldAutomationID), id))
+			sel.Select(
+				sql.As(run.C(automationrun.FieldVersionID), "version_id"),
+				sql.As(sel.C(automationsteprecord.FieldStepID), "step_id"),
+				sql.As(sel.C(automationsteprecord.FieldPathID), "path_id"),
+				sql.As(run.C(automationrun.FieldStatus), "status"),
+				sql.As(sql.Count("*"), "n"),
+			).GroupBy(
+				run.C(automationrun.FieldVersionID), sel.C(automationsteprecord.FieldStepID),
+				sel.C(automationsteprecord.FieldPathID), run.C(automationrun.FieldStatus),
+			)
+		}).Scan(ctx, &rows)
+	if err != nil {
+		return nil, err
+	}
+	taken := map[versionPath]*tookAndGoal{}
+	for _, r := range rows {
+		k := versionPath{versionID: r.VersionID, stepID: r.StepID, pathID: r.PathID}
+		c := taken[k]
+		if c == nil {
+			c = &tookAndGoal{}
+			taken[k] = c
+		}
+		c.took += r.N
+		if r.Status == automationrun.StatusGoalReached {
+			c.goal += r.N
+		}
+	}
+	return taken, nil
+}
+
+// pathFiguresOf sums what each path's Enrollments did by the fork's Step id and the path's id, in
+// the order of the newest version that had each path: the fork's place there, then the path's
+// place in the fork, a path the version no longer holds after the ones it does.
+func pathFiguresOf(ctx context.Context, s *ent.Scoped, id int64, taken map[versionPath]*tookAndGoal) ([]PathFigures, error) {
+	versionIDs := lo.Uniq(lo.Map(lo.Keys(taken), func(k versionPath, _ int) int64 { return k.versionID }))
+	versions, err := s.AutomationVersion().Query().
+		Where(automationversion.AutomationID(id), automationversion.IDIn(versionIDs...)).
+		Order(ent.Desc(automationversion.FieldVersion)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	figures := []PathFigures{}
+	sums := map[forkPath]int{}
+	for _, v := range versions {
+		place := pathPlaces(v.Steps)
+		var own []versionPath
+		for k := range taken {
+			if k.versionID == v.ID {
+				own = append(own, k)
+			}
+		}
+		slices.SortFunc(own, func(a, b versionPath) int {
+			return cmp.Or(
+				cmp.Compare(placeOfPath(place, a), placeOfPath(place, b)),
+				cmp.Compare(a.stepID, b.stepID), cmp.Compare(a.pathID, b.pathID),
+			)
+		})
+		for _, k := range own {
+			fp := forkPath{stepID: k.stepID, pathID: k.pathID}
+			i, ok := sums[fp]
+			if !ok {
+				i = len(figures)
+				sums[fp] = i
+				figures = append(figures, PathFigures{StepID: k.stepID, PathID: k.pathID})
+			}
+			figures[i].Enrollments += taken[k].took
+			figures[i].GoalReached += taken[k].goal
+		}
+	}
+	return figures, nil
+}
+
+// forkPath names a path of a fork, the same in every version that has it.
+type forkPath struct{ stepID, pathID automationstep.ID }
+
+// pathPlaces is the place of each path of each fork of the root path: the forks in pre-order and,
+// within a fork, its paths in order.
+func pathPlaces(root automationstep.Path) map[forkPath]int {
+	place := map[forkPath]int{}
+	for _, st := range automationstep.All(root) {
+		for _, p := range automationstep.Forks(st) {
+			place[forkPath{stepID: st.ID, pathID: p.ID}] = len(place)
+		}
+	}
+	return place
+}
+
+// placeOfPath is the path's place in a version, after every path it holds when it holds none of
+// that fork and id.
+func placeOfPath(place map[forkPath]int, k versionPath) int {
+	if pos, ok := place[forkPath{stepID: k.stepID, pathID: k.pathID}]; ok {
+		return pos
+	}
+	return len(place)
+}

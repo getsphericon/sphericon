@@ -436,6 +436,28 @@ export type AutomationPath = {
 };
 
 /**
+ * The enrollments that took one path of a fork, over every version that had it
+ */
+export type AutomationPathFigures = {
+  /**
+   * The fork's Step id, the same in every version
+   */
+  stepId: StepId;
+  /**
+   * The path's id, the same in every version
+   */
+  pathId: StepId;
+  /**
+   * Enrollments that took the path
+   */
+  enrollments: number;
+  /**
+   * Enrollments among them that ended because their goal event was recorded
+   */
+  goalReached: number;
+};
+
+/**
  * A path of Steps, as a request writes it
  */
 export type AutomationPathInput = {
@@ -557,6 +579,14 @@ export type AutomationReport = {
    * its Step order
    */
   versionSteps: Array<AutomationVersionStepFigures>;
+  /**
+   * Each path of a Branch (its unknown path included) and of a Split by its fork's Step id and
+   * its own id: the enrollments that took it and how many of them reached the goal, over the
+   * automation's whole history, each summed over every version that had the path. Sorted by the
+   * newest of those versions, then by the fork's place there and the path's place in the fork:
+   * one entry per path an enrollment took, so a path none took has none
+   */
+  paths: Array<AutomationPathFigures>;
 };
 
 /**
