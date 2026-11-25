@@ -8,48 +8,42 @@ import type {
   SiteAutomationResource,
   SiteAutomationsUpdateData,
 } from '../../generated/site/types.gen.ts'
-import { graphToSteps, stepsToGraph } from './definition.ts'
-import type { AutomationGraph } from './definition.ts'
+import { definitionOf, flowOf, pathInputOf } from './definition.ts'
+import type { Flow } from './definition.ts'
 import { automationSnapshot } from './leaveSnapshot.ts'
 
 type Path = SiteAutomationsUpdateData['path']
+// The editor's content: the name in the bar and the flow the canvas draws.
 export interface AutomationContent {
   name: string
-  graph: AutomationGraph
+  flow: Flow
 }
 interface Submission {
   // The revision is the session's base, added when the Save is sent (ADR 0119).
   body: Omit<SiteAutomationsUpdateData['body'], 'revision'> & { name: string }
   fingerprint: string
-  dropped: number
   // The Trigger's filter is still being typed: there is no filter to save yet.
   filterIncomplete: boolean
 }
 
-// Capture the persisted representation before any asynchronous work. SDK graph data can contain
-// nested references; neither a later edit nor a query refresh may change this request or its receipt.
-export function automationSubmission(name: string, graph: AutomationGraph): Submission | null {
-  const captured = {
-    nodes: graph.nodes.map((node) => ({
-      ...node,
-      data: { ...node.data, properties: structuredClone(node.data.properties) },
-    })),
-    edges: graph.edges.map((edge) => ({ ...edge })),
-  }
-  const { dropped, trigger, filterIncomplete, ...definition } = graphToSteps(captured)
-  if (trigger === null) {
+// Capture the persisted representation before any asynchronous work: neither a later edit nor a
+// query refresh may change this request or its receipt. A flow holding a Step the editor does not
+// edit (an End, a fork) is never saved, whoever asks: nothing may drop it.
+export function automationSubmission(name: string, flow: Flow): Submission | null {
+  const steps = pathInputOf(flow)
+  if (steps === null) {
     return null
   }
+  const { trigger, filterIncomplete, exitEvents, goalEvent } = definitionOf(flow)
   return {
-    body: structuredClone({ name: name.trim(), trigger, ...definition }),
-    fingerprint: automationSnapshot(name, captured),
-    dropped,
+    body: structuredClone({ name: name.trim(), trigger, exitEvents, goalEvent, steps }),
+    fingerprint: automationSnapshot(name, flow),
     filterIncomplete,
   }
 }
 
 // The receipt of a Save: the stored Automation and the fingerprint of what was sent. Every Step
-// was sent with the id it keeps (its node's), so the receipt adds nothing to the canvas.
+// was sent with the id it keeps, so the receipt adds nothing to the flow.
 function acknowledge(submission: Submission, resource: SiteAutomationResource) {
   return { resource, fingerprint: submission.fingerprint }
 }
@@ -57,20 +51,27 @@ function acknowledge(submission: Submission, resource: SiteAutomationResource) {
 interface AutomationSubject {
   path: Path
   resource: SiteAutomationResource
-  // The version the canvas opens with, as a graph, and the node labels Revert rebuilds one with.
-  graph: AutomationGraph
-  labels: Record<string, string>
 }
 
-// The canvas adapter: the content is the name in the bar and the graph on the canvas.
+// The flow of the version the editor edits: the draft, else the live one (ADR 0065). A new
+// Automation is created with a draft and Publish only moves it to live, so one is always there.
+export function editedFlow(resource: SiteAutomationResource): Flow {
+  const edited = resource.draft ?? resource.live
+  if (!edited) {
+    throw new Error('An Automation without a draft or a live version')
+  }
+  return flowOf(edited)
+}
+
+// The canvas adapter: the content is the name in the bar and the flow on the canvas.
 export const automationAdapter = {
   id: 'automationEditor',
-  open: ({ resource, graph }: AutomationSubject): AutomationContent => ({
+  open: ({ resource }: AutomationSubject): AutomationContent => ({
     name: resource.name,
-    graph,
+    flow: editedFlow(resource),
   }),
-  fingerprint: ({ name, graph }: AutomationContent) => automationSnapshot(name, graph),
-  submit: ({ name, graph }: AutomationContent) => automationSubmission(name, graph),
+  fingerprint: ({ name, flow }: AutomationContent) => automationSnapshot(name, flow),
+  submit: ({ name, flow }: AutomationContent) => automationSubmission(name, flow),
   revision: (resource: SiteAutomationResource) => resource.revision,
   save: async ({
     subject,
@@ -89,7 +90,7 @@ export const automationAdapter = {
     return data
   },
   acknowledge,
-  // Newer fields, positions and edges stay as edited, and the canvas is not reloaded.
+  // Newer edits stay as made, and the canvas is not reloaded.
   fold: (current: AutomationContent) => ({ content: current, replaces: false }),
   operations: {
     PUBLISH: {
@@ -126,15 +127,12 @@ export const automationAdapter = {
       },
       available: draftGuards.revertible,
       // Revert is the one operation that replaces the canvas: with the live version.
-      replaces: (
-        resource: SiteAutomationResource,
-        subject: AutomationSubject,
-      ): AutomationContent => {
+      replaces: (resource: SiteAutomationResource): AutomationContent => {
         const live = resource.live
         if (!live) {
           throw new Error('Revert returned an Automation without a live version')
         }
-        return { name: resource.name, graph: stepsToGraph(live, live.steps, subject.labels) }
+        return { name: resource.name, flow: flowOf(live) }
       },
     },
   },

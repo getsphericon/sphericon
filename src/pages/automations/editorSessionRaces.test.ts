@@ -18,8 +18,8 @@ import { stepId, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { requestGate } from '../../test/requestGate.ts'
 import { worker } from '../../test/worker.ts'
-import { stepsToGraph } from './definition.ts'
-import type { AutomationGraph } from './definition.ts'
+import { flowOf } from './definition.ts'
+import type { Flow } from './definition.ts'
 import { automationAdapter, editorSession } from './editorSession.ts'
 import type { AutomationContent, AutomationOperation } from './editorSession.ts'
 
@@ -48,7 +48,7 @@ const RESOURCE: SiteAutomationResource = {
   createdAt: '2026-01-01T00:00:00Z',
   updatedAt: '2026-01-01T00:00:00Z',
 }
-const GRAPH = stepsToGraph(DRAFT, DRAFT.steps, {})
+const FLOW = flowOf(DRAFT)
 const sessions = new Set<ActorRefFrom<typeof editorSession>>()
 
 afterEach(() => {
@@ -60,15 +60,13 @@ afterEach(() => {
 
 // A session over the canvas adapter, with the bar and canvas held in memory and a page whose cache,
 // toasts and refreshes the effects write to.
-function startCanvas(graph: AutomationGraph) {
-  let current: AutomationContent = { name: RESOURCE.name, graph }
+function startCanvas(flow: Flow) {
+  let current: AutomationContent = { name: RESOURCE.name, flow }
   const page: RaceRig<OperationEvent>['page'] = { cached: null, toasts: [], refreshedOver: null }
   const actor = createActor(editorSession, {
     input: {
       path: PATH,
       resource: RESOURCE,
-      graph,
-      labels: {},
       editor: {
         read: () => current,
         write: (content) => {
@@ -143,7 +141,7 @@ function startRaces({ refuse }: { refuse: boolean }): RaceRig<OperationEvent> {
       return HttpResponse.json(server)
     }),
   )
-  const canvas = startCanvas(GRAPH)
+  const canvas = startCanvas(FLOW)
   const { actor } = canvas
   const fingerprint = () => automationAdapter.fingerprint(canvas.read())
   let submitted = ''
@@ -180,18 +178,15 @@ function startRaces({ refuse }: { refuse: boolean }): RaceRig<OperationEvent> {
 
 editorSessionRaces(startRaces)
 
-// The content with new properties on one node, as the properties panel writes them.
-function withProperties(
+// The content with the HTTP step's draft changed, as its form writes it.
+function withHttp(
   content: AutomationContent,
-  nodeId: string,
-  properties: Record<string, unknown>,
+  change: Partial<{ url: string; body: string }>,
 ): AutomationContent {
-  const nodes = content.graph.nodes.map((node) =>
-    node.id === nodeId
-      ? { ...node, data: { ...node.data, properties: { ...node.data.properties, ...properties } } }
-      : node,
+  const steps = content.flow.path.steps.map((step) =>
+    step.kind === 'http' ? { ...step, draft: { ...step.draft, ...change } } : step,
   )
-  return { ...content, graph: { ...content.graph, nodes } }
+  return { ...content, flow: { ...content.flow, path: { ...content.flow.path, steps } } }
 }
 
 test('Save leaves a canvas edited meanwhile as edited, each node keeping its Step id, without reloading it', async () => {
@@ -211,26 +206,23 @@ test('Save leaves a canvas edited meanwhile as edited, each node keeping its Ste
       })
     }),
   )
-  const graph = stepsToGraph(
-    DRAFT,
-    {
+  const flow = flowOf({
+    ...DRAFT,
+    steps: {
       id: stepId(1),
       steps: [{ id: stepId(7), type: 'http', body: '{}', headers: [], hasSecret: false }],
     },
-    {},
-  )
-  const httpId = stepId(7)
-  const canvas = startCanvas(graph)
-  canvas.edit((content) => withProperties(content, httpId, { url: 'https://example.com/hook' }))
+  })
+  const canvas = startCanvas(flow)
+  canvas.edit((content) => withHttp(content, { url: 'https://example.com/hook' }))
   canvas.actor.send({ type: 'SAVE', submission: capture(canvas.read()) })
   await gate.received
-  canvas.edit((content) => withProperties(content, httpId, { body: '{"newer":true}' }))
+  canvas.edit((content) => withHttp(content, { body: '{"newer":true}' }))
   gate.release()
   const settled = await waitFor(canvas.actor, (state) => state.matches('idle'))
-  const http = canvas.read().graph.nodes[1]
+  const [http] = canvas.read().flow.path.steps
   const current = automationAdapter.fingerprint(canvas.read())
-  expect(http?.id).toBe(stepId(7))
-  expect(http?.data.properties.body).toBe('{"newer":true}')
+  expect(http).toMatchObject({ id: stepId(7), draft: { body: '{"newer":true}' } })
   expect(current).not.toBe(settled.context.saved)
   expect(settled.context.content.revision).toBe(0)
 })
@@ -252,7 +244,7 @@ test('a Save over a change made elsewhere is refused and the canvas is kept', as
       return HttpResponse.json(server)
     }),
   )
-  const canvas = startCanvas(GRAPH)
+  const canvas = startCanvas(FLOW)
   canvas.edit((content) => ({ ...content, name: 'Mine' }))
   server = { ...server, name: 'Saved elsewhere', revision: server.revision + 1 }
   canvas.actor.send({ type: 'REFRESH', resource: await stored() })

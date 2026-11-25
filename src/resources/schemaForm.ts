@@ -36,9 +36,13 @@ export type SchemaForm<TValues extends object, TOutput> = Omit<
 // validateFields checks a part of the form as a submit checks the whole (a step of a form shown
 // one screen at a time): it shows the errors of the paths given, focuses the first of them in the
 // page's order and answers whether they are all valid.
+//
+// onValuesChange hands every change of the values to a form whose values live elsewhere too (a
+// Step's form in the Automation editor, whose flow holds what is saved).
 export function useSchemaForm<TValues extends object, TOutput>(
   schema: z.ZodType<TOutput, TValues>,
   initialValues: TValues,
+  onValuesChange?: (values: TValues) => void,
 ): SchemaForm<TValues, TOutput> {
   // A name of its own scopes the form's fields (their data-path) to it, so finding an invalid
   // field never lands on another form's field with the same path. Mantine takes letters, digits and
@@ -50,6 +54,7 @@ export function useSchemaForm<TValues extends object, TOutput>(
     validate: schemaResolver(schema, { sync: true }),
     transformValues: (values) => schema.parse(values),
     validateInputOnBlur: true,
+    ...(onValuesChange && { onValuesChange: (values: TValues) => onValuesChange(values) }),
     enhanceGetInputProps: ({ inputProps, field, form: renderedForm }) => {
       // The error showing at render time is the one the keystroke is about to clear.
       if (!renderedForm.errors[field]) {

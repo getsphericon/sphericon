@@ -168,13 +168,6 @@ export default defineConfig({
       files: ['src/components/PasswordField.tsx'],
       rules: { 'eslint/no-restricted-imports': 'off' },
     },
-    // The workflow builder's own stylesheet (a library's, not ours) carries global resets, so it is
-    // rendered as a <style> while the builder is mounted and goes with it. The one file a <style>
-    // element is allowed in.
-    {
-      files: ['src/pages/automations/AutomationBuilder.tsx'],
-      rules: { 'react/forbid-elements': 'off' },
-    },
   ],
   ignorePatterns: [
     'dist',

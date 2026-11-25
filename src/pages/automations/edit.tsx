@@ -40,8 +40,7 @@ function AutomationEdit() {
 
   // A new Automation is created with a draft and Publish only moves it to live, so one of the two
   // is always there.
-  const edited = automation.draft ?? automation.live
-  if (!edited) {
+  if (!automation.draft && !automation.live) {
     return <ApiErrorAlert error={null} title={t(($) => $.alerts.automationLoadErrorTitle)} />
   }
 
@@ -50,7 +49,6 @@ function AutomationEdit() {
       key={`${workspaceId}:${automation.id}`}
       workspaceId={workspaceId}
       automation={automation}
-      edited={edited}
     />
   )
 }
