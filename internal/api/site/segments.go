@@ -26,7 +26,7 @@ func (h *Handlers) SiteSegmentsCreate(ctx context.Context, req *siteapi.CreateSe
 	if err != nil {
 		return nil, err
 	}
-	s, err := h.segments.Create(ctx, ws, in)
+	s, err := h.segmentSaving.Create(ctx, ws, in)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (h *Handlers) SiteSegmentsUpdate(ctx context.Context, req *siteapi.UpdateSe
 	if err != nil {
 		return nil, err
 	}
-	s, err := h.segments.Update(ctx, ws, id, in)
+	s, err := h.segmentSaving.Update(ctx, ws, id, in)
 	if err != nil {
 		return nil, err
 	}
@@ -120,6 +120,9 @@ func (h *Handlers) SiteSegmentsPreview(ctx context.Context, req *siteapi.SitePre
 	res := &siteapi.SitePreviewSegmentResult{Count: narrow.Int32(preview.Count), UnknownEngagement: narrow.Int32(preview.UnknownEngagement)}
 	if preview.Recipients != nil {
 		res.Recipients = siteapi.NewOptInt32(narrow.Int32(*preview.Recipients))
+	}
+	if preview.EventsKeptDays != nil {
+		res.EventsKeptDays = siteapi.NewOptInt32(narrow.Int32(*preview.EventsKeptDays))
 	}
 	return res, nil
 }

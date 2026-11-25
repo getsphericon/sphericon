@@ -41,15 +41,16 @@ func (m *Module) UsingTag(ctx context.Context, l *ent.WorkspaceLocked, name stri
 
 // UnfitForCustomFieldType returns the armed Broadcasts (scheduled, or sending and so still to be
 // planned), in id order, whose copied Condition tests the Custom field key with a leaf a field of
-// type t does not take (ADR 0065): retyping the field would fail their planning. A draft follows
-// its Segment, which answers for itself.
+// type t does not take (ADR 0065), so retyping the field would fail their planning, or names the
+// field in an event test's filter (ADR 0153), which any retype would leave naming a field that is
+// not there. A draft follows its Segment, which answers for itself.
 func (m *Module) UnfitForCustomFieldType(ctx context.Context, l *ent.WorkspaceLocked, key string, t customfield.Type) ([]*ent.Broadcast, error) {
 	armed, err := armedWithCondition(ctx, l)
 	if err != nil {
 		return nil, err
 	}
 	return lo.Filter(armed, func(b *ent.Broadcast, _ int) bool {
-		return !condition.FitsCustomFieldType(b.Condition.Group, key, t)
+		return !condition.FitsCustomFieldType(b.Condition.Group, key, t) || condition.NamesCustomField(b.Condition.Group, key)
 	}), nil
 }
 

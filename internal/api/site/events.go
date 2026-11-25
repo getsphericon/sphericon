@@ -6,6 +6,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
+	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
@@ -36,7 +37,8 @@ func (h *Handlers) SiteEventsList(ctx context.Context, params siteapi.SiteEvents
 	return res, nil
 }
 
-// SiteEventsActions returns the distinct event actions in the workspace, sorted —
+// SiteEventsActions returns the distinct event actions in the workspace, sorted, with how many days
+// of analytical Events the Instance keeps, which an event test with no window counts back to —
 // used to populate the segment builder's event-condition picker.
 func (h *Handlers) SiteEventsActions(ctx context.Context, _ siteapi.SiteEventsActionsParams) (*siteapi.SiteEventActionsResult, error) {
 	scoped := workspaceScope(ctx)
@@ -45,7 +47,7 @@ func (h *Handlers) SiteEventsActions(ctx context.Context, _ siteapi.SiteEventsAc
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SiteEventActionsResult{Actions: actions}, nil
+	return &siteapi.SiteEventActionsResult{Actions: actions, EventsKeptDays: narrow.Int32(h.segments.EventsKeptDays())}, nil
 }
 
 // SiteEventsPropertyKeys returns the property keys of the action's most recent events, distinct

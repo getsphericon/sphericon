@@ -52,6 +52,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/engagementtracking"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -394,7 +395,7 @@ func eventCountOf(op conditiontree.EventCountOperator) (eventCount, error) {
 }
 
 // event is the subject performed `action` at least (or at most) times times, over all time or
-// within the last withinDays days. Events attach to a Contact by the stable contact_id, so
+// within the last withinDays days, counting only the Events that pass the leaf's filter. Events attach to a Contact by the stable contact_id, so
 // anonymous events stitched onto it at Identify are counted here (ADR 0002), and the count is
 // correlated on it, so an anonymous Event (a NULL contact_id) is in no Contact's count. A count of
 // opens or clicks is unknown, in either direction, for a Contact whose Destination on the Channel
@@ -411,6 +412,11 @@ func (c *compiler) event(ctx context.Context, l eventCountLeaf) (predicate.Conta
 		// A window reaching back past the first year starts there (since), which counts all time:
 		// no Event is older. A window longer than Event retention is capped by it (ADR 0019).
 		preds = append(preds, event.OccurredAtGTE(c.since(*l.withinDays)))
+	}
+	if l.path != nil {
+		// Only the Events whose properties pass the filter are counted (ADR 0153): its path runs
+		// inside the count of the Contact's Events of the action, which the existing index serves.
+		preds = append(preds, predicate.Event(l.path.Holds(event.FieldProperties)))
 	}
 
 	counted := func(s *sql.Selector) *sql.Predicate {
@@ -656,11 +662,56 @@ func FitsCustomFieldType(g conditiontree.Group, key string, t customfield.Type) 
 	return true
 }
 
-// NamesTag reports whether any leaf of the group, at any depth, tests the Tag called name.
-// A malformed entry names nothing.
+// NamesTag reports whether any leaf of the group, at any depth, tests the Tag called name, or
+// names it in the filter of an event test (NamedDefinitions, ADR 0153). A malformed entry names
+// nothing.
 func NamesTag(g conditiontree.Group, name string) bool {
 	for n := range decodeSkipping(g).leaves() {
 		if l, ok := n.(tagLeaf); ok && tagname.Same(l.name, name) {
+			return true
+		}
+		named := filterNames(n).Tags
+		if slices.ContainsFunc(named, func(n string) bool { return tagname.Same(n, name) }) {
+			return true
+		}
+	}
+	return false
+}
+
+// NamesCustomField reports whether the filter of an event test of the group, at any depth, names
+// the Custom field key (NamedDefinitions, ADR 0153): the `key` of contact.field_changed. Such a
+// Condition holds the field against any retype, the change that removes the field it names. A
+// malformed entry names nothing.
+func NamesCustomField(g conditiontree.Group, key string) bool {
+	for n := range decodeSkipping(g).leaves() {
+		if slices.Contains(filterNames(n).CustomFields, key) {
+			return true
+		}
+	}
+	return false
+}
+
+// filterNames is what the filter of an event test names in the Workspace's catalogue, nothing for
+// another leaf or a test without a filter.
+func filterNames(n node) Definitions {
+	l, ok := n.(eventCountLeaf)
+	if !ok || l.filter == nil {
+		return Definitions{}
+	}
+	return NamedDefinitions(l.action, *l.filter)
+}
+
+// ReachesPastKept reports whether an event leaf of the group, at any depth, counts Events older than
+// the keptDays days of analytical Events the Instance keeps (ADR 0019, ADR 0153): one with no window,
+// or a window longer than that, of an action whose Events expire, so it counts only the Events kept.
+// keptDays 0 keeps every Event, and nothing reaches past it. A malformed entry counts nothing.
+func ReachesPastKept(g conditiontree.Group, keptDays int) bool {
+	if keptDays <= 0 {
+		return false
+	}
+	for n := range decodeSkipping(g).leaves() {
+		l, ok := n.(eventCountLeaf)
+		if ok && !slices.Contains(systemevent.KeptActions, l.action) && (l.withinDays == nil || *l.withinDays > keptDays) {
 			return true
 		}
 	}

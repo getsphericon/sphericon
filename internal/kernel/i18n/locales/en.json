@@ -206,6 +206,7 @@
   "errors.rule_revision_changed": "the rule changed since it was opened",
   "errors.template_revision_changed": "the template changed since it was opened",
   "errors.rule_invalid": "invalid rule",
+  "errors.message_sender_unknown": "the Workspace has no such Broadcast or Automation",
   "errors.rule_not_found": "rule not found",
   "errors.rule_nothing_to_publish": "nothing to publish",
   "errors.rule_nothing_to_revert": "no unpublished changes to revert",

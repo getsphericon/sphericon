@@ -17,6 +17,7 @@ const (
 	KindCustomField        Kind = "customField"
 	KindEvent              Kind = "event"
 	KindProperty           Kind = "property"
+	KindSentBy             Kind = "sentBy"
 )
 
 // SegmentKinds is every Kind a Segment's Condition admits.
@@ -50,6 +51,7 @@ var RuleKinds = []Kind{
 var EventFilterKinds = []Kind{
 	KindGroup,
 	KindProperty,
+	KindSentBy,
 }
 
 // TestKind is the kind of a leaf's test: what it asks of the value the leaf reads.

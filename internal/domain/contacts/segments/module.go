@@ -46,14 +46,22 @@ type Module struct {
 	// conditions compiles a rule over the same clock, which a relative date counts back from.
 	conditions  *condition.Module
 	eligibility *eligibility.Module
+	// keptDays is how many days of analytical Events the Instance keeps (ADR 0019), 0 for every
+	// one: an event test that reaches past them counts only the Events kept, which a count says.
+	keptDays int
 }
 
 // New builds the Segments module. It holds no client: every call takes the
 // Workspace's scoped client (ADR 0017); the bus runs a save and the archive each in one
-// transaction under the Workspace's lock (ADR 0099). now is the Instance clock.
-func New(bus *events.Bus, now func() time.Time) *Module {
-	return &Module{bus: bus, now: now, conditions: condition.New(now), eligibility: eligibility.New()}
+// transaction under the Workspace's lock (ADR 0099). now is the Instance clock; eventsKept the
+// Instance's Event retention (config.EventsRetention), 0 when Events are kept forever.
+func New(bus *events.Bus, now func() time.Time, eventsKept time.Duration) *Module {
+	return &Module{bus: bus, now: now, conditions: condition.New(now), eligibility: eligibility.New(), keptDays: int(eventsKept / (24 * time.Hour))}
 }
+
+// EventsKeptDays is how many days of analytical Events the Instance keeps (ADR 0019), 0 when it
+// keeps every one: an event test with no window, or a longer one, counts only the Events kept.
+func (s *Module) EventsKeptDays() int { return s.keptDays }
 
 // CreateInput is a new Segment. A nil Condition is the empty group: no tests yet, every Contact.
 type CreateInput struct {
@@ -187,6 +195,9 @@ type Counts struct {
 	// unknown: their Destination on its Channel is not tracked now (condition.Module.LeftOut).
 	UnknownEngagement int
 	Recipients        *int
+	// EventsKeptDays is how many days of analytical Events the Instance keeps, set when an event
+	// test of the Condition reaches past them and so counts only the Events kept (ADR 0153).
+	EventsKeptDays *int
 }
 
 // Preview counts the Contacts in the Workspace that match an unsaved Condition, the ones it leaves
@@ -206,6 +217,10 @@ func (s *Module) Preview(ctx context.Context, ws *ent.Scoped, in PreviewInput) (
 		return Counts{}, err
 	}
 	res := Counts{Count: count}
+	if condition.ReachesPastKept(cond.Group, s.keptDays) {
+		kept := s.keptDays
+		res.EventsKeptDays = &kept
+	}
 	if condition.CanBeUnknown(cond.Group) {
 		leftOut, err := s.conditions.LeftOut(ctx, ws, cond)
 		if err != nil {

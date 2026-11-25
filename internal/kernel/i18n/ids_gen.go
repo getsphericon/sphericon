@@ -239,6 +239,7 @@ var (
 	ErrorsLintBodyOrDoc                                   = ID{key: "errors.lint_body_or_doc"}
 	ErrorsLoginChallengeInvalid                           = ID{key: "errors.login_challenge_invalid"}
 	ErrorsMemberNotFound                                  = ID{key: "errors.member_not_found"}
+	ErrorsMessageSenderUnknown                            = ID{key: "errors.message_sender_unknown"}
 	ErrorsNameEmpty                                       = ID{key: "errors.name_empty"}
 	ErrorsNameInvalid                                     = ID{key: "errors.name_invalid"}
 	ErrorsNameRequired                                    = ID{key: "errors.name_required"}

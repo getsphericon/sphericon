@@ -92,3 +92,9 @@
   name_key: start
   workspace_id: 1553
   created_at: '2026-01-01 00:00:00'
+# Dunder (workspace 60): the Tag a Segment's event test names in its filter (#1446).
+- id: 5590 # fixture: TagDunderTrial
+  name: trial
+  name_key: trial
+  workspace_id: 60
+  created_at: '2026-01-01 00:00:00'

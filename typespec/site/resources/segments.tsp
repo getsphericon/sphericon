@@ -66,6 +66,13 @@ model SitePreviewSegmentResult {
    * unless a channel was given.
    */
   recipients?: int32;
+
+  /**
+   * How many days of analytical Events the Instance keeps (ADR 0019): present when an event test
+   * counts with no window, or with one longer than that, since it counts only the Events kept.
+   * Absent when every Event is kept, or no event test reaches past them.
+   */
+  eventsKeptDays?: int32;
 }
 
 @tag("Site Segments")

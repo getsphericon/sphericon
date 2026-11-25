@@ -9,6 +9,7 @@ import {
   EngagementTrackingChannel,
   EventCountOperator,
   HasOperator,
+  MessageSender,
   MomentOperator,
   NumberOperator,
   PresenceOperator,
@@ -97,6 +98,16 @@ export const subjectFields = {
 const customFieldIdPrefix = 'customField:'
 export const eventFieldPrefix = 'event:'
 const trackingFieldPrefix = 'engagementTracking:'
+const sentByFieldPrefix = 'sentBy:'
+
+// A sent-by test is edited as a rule on the field "sentBy:<sender>", whose one operator names the
+// Broadcast or Automation picked as its value.
+export const sentByOperator = 'is'
+
+// sentByFieldId is the field of the test that a sender of the kind sent the message.
+export function sentByFieldId(sender: MessageSender): string {
+  return `${sentByFieldPrefix}${sender}`
+}
 
 export function customFieldId(key: string): string {
   return `${customFieldIdPrefix}${key}`
@@ -332,6 +343,9 @@ function toRule(
       rule = { field: subjectFields.property, operator, value: propertyValueOf(node.key, value) }
       break
     }
+    case 'sentBy':
+      rule = { field: sentByFieldId(node.sender), operator: sentByOperator, value: node.id }
+      break
   }
   return rule
 }

@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/content/versioneddefinition"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/messagesenders"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
@@ -126,6 +127,8 @@ type Module struct {
 	life   *versioneddefinition.Lifecycle[ent.Rule, ent.RuleVersion, UpdateInput, definition]
 	// conditions compiles a Rule's Condition.
 	conditions *condition.Module
+	// senders answers for the Broadcasts and Automations an event test's filter names.
+	senders *messagesenders.Module
 	// client makes the call of an http Action.
 	client webhook.Doer
 	// now is the Instance clock a condition's relative date counts back from, a Firing completes
@@ -138,7 +141,7 @@ type Module struct {
 // (internal/domain/content/versioneddefinition); client is the protected HTTP client an http
 // Action calls through (ADR 0039). now is the Instance clock.
 func New(cipher *secrets.Cipher, bus *events.Bus, client webhook.Doer, now func() time.Time) *Module {
-	m := &Module{cipher: cipher, bus: bus, client: client, now: now, conditions: condition.New(now)}
+	m := &Module{cipher: cipher, bus: bus, client: client, now: now, conditions: condition.New(now), senders: messagesenders.New()}
 	m.life = versioneddefinition.New(bus, versioned{m: m}, versioneddefinition.Errors{
 		NotFound: ErrNotFound,
 		// A Rule is discarded, never archived (ADR 0100): the lifecycle never finds one archived.
@@ -447,9 +450,10 @@ func saveTriggers(ctx context.Context, s *ent.Scoped, versionID int64, actions [
 	return s.RuleVersionTrigger().CreateBulk(creates...).Exec(ctx)
 }
 
-// validateCondition checks a Rule's Condition as a Segment's is checked: it parses, and every leaf
-// names a Contact attribute, a Tag, an Event action or a custom field the Workspace has. A Rule's
-// Condition may also test the triggering Event's properties, any key.
+// validateCondition checks a Rule's Condition as a Segment's is checked: it parses, every leaf
+// names a Contact attribute, a Tag, an Event action or a custom field the Workspace has, and every
+// Broadcast or Automation an event test's filter names is the Workspace's (messagesenders). A
+// Rule's Condition may also test the triggering Event's properties, any key.
 func (m *Module) validateCondition(ctx context.Context, s *ent.Scoped, cond conditiontree.Rule) error {
 	size := cond.Size()
 	if size > MaxConditionNodes {
@@ -458,7 +462,7 @@ func (m *Module) validateCondition(ctx context.Context, s *ent.Scoped, cond cond
 	if _, err := m.conditions.RulePredicate(ctx, s, cond, nil); err != nil {
 		return ErrInvalid.With(err.Error())
 	}
-	return nil
+	return m.senders.Require(ctx, s, condition.NamedSenders(cond.Group))
 }
 
 // storedActions validates the Actions and returns them as stored, dropping the fields that do

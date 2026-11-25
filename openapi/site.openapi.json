@@ -14464,16 +14464,20 @@
           },
           {
             "$ref": "#/components/schemas/FilterPropertyLeaf"
+          },
+          {
+            "$ref": "#/components/schemas/SentByLeaf"
           }
         ],
         "discriminator": {
           "propertyName": "kind",
           "mapping": {
             "property": "#/components/schemas/FilterPropertyLeaf",
+            "sentBy": "#/components/schemas/SentByLeaf",
             "group": "#/components/schemas/EventFilter"
           }
         },
-        "description": "An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is\nabout, or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133)."
+        "description": "An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is\nabout, of what sent the message a message's System event is about, or a nested group. A test of\nthe Contact is a Rule's, never a filter's (ADR 0133)."
       },
       "EventFilterNodeInput": {
         "type": "object",
@@ -14483,16 +14487,20 @@
           },
           {
             "$ref": "#/components/schemas/FilterPropertyLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/SentByLeafInput"
           }
         ],
         "discriminator": {
           "propertyName": "kind",
           "mapping": {
             "property": "#/components/schemas/FilterPropertyLeafInput",
+            "sentBy": "#/components/schemas/SentByLeafInput",
             "group": "#/components/schemas/EventFilterInput"
           }
         },
-        "description": "An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is\nabout, or a nested group. A test of the Contact is a Rule's, never a filter's (ADR 0133)."
+        "description": "An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is\nabout, of what sent the message a message's System event is about, or a nested group. A test of\nthe Contact is a Rule's, never a filter's (ADR 0133)."
       },
       "EventLeaf": {
         "type": "object",
@@ -14525,9 +14533,17 @@
             "format": "int32",
             "minimum": 1,
             "description": "Count only the Events of the last this many days; absent counts all time"
+          },
+          "filter": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventFilter"
+              }
+            ],
+            "description": "Count only the Events whose properties pass these tests, as an Event matcher's filter does;\nabsent, every Event of the action counts. On a message's sent, delivery and engagement Events\nit may name the Broadcast or Automation that sent the message (`sentBy`). The `tag` of\ncontact.tagged and contact.untagged and the `key` of contact.field_changed, tested by eq or neq,\nname a Tag or Custom field, which is then kept from removal while the Condition names it."
           }
         },
-        "description": "A count of how many times a Contact performed an Event action, over all time or within the\nlast `withinDays` days. Performed is atLeast 1, not performed is atMost 0; \"exactly\" is a group of\nboth. Engagement Events made by software (machine opens and clicks) are not counted. A window\nlonger than Event retention is capped by it: expired Events are no longer counted."
+        "description": "A count of how many times a Contact performed an Event action, over all time or within the\nlast `withinDays` days, of the Events that pass its `filter` (ADR 0153). Performed is atLeast 1,\nnot performed is atMost 0; \"exactly\" is a group of both. Engagement Events made by software\n(machine opens and clicks) are not counted. A window longer than Event retention is capped by it:\nexpired Events are no longer counted."
       },
       "EventLeafInput": {
         "type": "object",
@@ -14560,9 +14576,17 @@
             "format": "int32",
             "minimum": 1,
             "description": "Count only the Events of the last this many days; absent counts all time"
+          },
+          "filter": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EventFilterInput"
+              }
+            ],
+            "description": "Count only the Events whose properties pass these tests, as an Event matcher's filter does;\nabsent, every Event of the action counts. On a message's sent, delivery and engagement Events\nit may name the Broadcast or Automation that sent the message (`sentBy`). The `tag` of\ncontact.tagged and contact.untagged and the `key` of contact.field_changed, tested by eq or neq,\nname a Tag or Custom field, which is then kept from removal while the Condition names it."
           }
         },
-        "description": "A count of how many times a Contact performed an Event action, over all time or within the\nlast `withinDays` days. Performed is atLeast 1, not performed is atMost 0; \"exactly\" is a group of\nboth. Engagement Events made by software (machine opens and clicks) are not counted. A window\nlonger than Event retention is capped by it: expired Events are no longer counted.",
+        "description": "A count of how many times a Contact performed an Event action, over all time or within the\nlast `withinDays` days, of the Events that pass its `filter` (ADR 0153). Performed is atLeast 1,\nnot performed is atMost 0; \"exactly\" is a group of both. Engagement Events made by software\n(machine opens and clicks) are not counted. A window longer than Event retention is capped by it:\nexpired Events are no longer counted.",
         "additionalProperties": false
       },
       "EventMatcher": {
@@ -14579,7 +14603,7 @@
                 "$ref": "#/components/schemas/EventFilter"
               }
             ],
-            "description": "The tests of the Event's own properties it must pass; absent, every Event of the action\nmatches. The `tag` of contact.tagged and contact.untagged and the `key` of\ncontact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace."
+            "description": "The tests of the Event's own properties it must pass; absent, every Event of the action\nmatches. The `tag` of contact.tagged and contact.untagged and the `key` of\ncontact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. On\na message's sent, delivery and engagement Events it may name the Broadcast or Automation that\nsent the message (`sentBy`)."
           }
         },
         "description": "An Event matcher that ends an enrollment (ADR 0133): an action, and an optional filter on that\nEvent's own properties, so `order.closed` where `status` is `cancelled` exits and the same action\nwhere `status` is `paid` reaches the goal. The Event that began the enrollment never ends it."
@@ -14598,7 +14622,7 @@
                 "$ref": "#/components/schemas/EventFilterInput"
               }
             ],
-            "description": "The tests of the Event's own properties it must pass; omitted, every Event of the action\nmatches. The `tag` of contact.tagged and contact.untagged and the `key` of\ncontact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace."
+            "description": "The tests of the Event's own properties it must pass; omitted, every Event of the action\nmatches. The `tag` of contact.tagged and contact.untagged and the `key` of\ncontact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. On\na message's sent, delivery and engagement Events it may name the Broadcast or Automation that\nsent the message (`sentBy`)."
           }
         },
         "description": "An Event matcher that ends an enrollment (ADR 0133), as a request writes it",
@@ -14622,7 +14646,7 @@
                 "$ref": "#/components/schemas/EventFilter"
               }
             ],
-            "description": "The tests of the Event's own properties it must pass; absent, every Event of the action\nenrolls. The `tag` of contact.tagged and contact.untagged and the `key` of\ncontact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace."
+            "description": "The tests of the Event's own properties it must pass; absent, every Event of the action\nenrolls. The `tag` of contact.tagged and contact.untagged and the `key` of\ncontact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. On\na message's sent, delivery and engagement Events it may name the Broadcast or Automation that\nsent the message (`sentBy`)."
           },
           "entryPolicy": {
             "allOf": [
@@ -14665,7 +14689,7 @@
                 "$ref": "#/components/schemas/EventFilterInput"
               }
             ],
-            "description": "The tests of the Event's own properties it must pass; omitted, every Event of the action\nenrolls. The `tag` of contact.tagged and contact.untagged and the `key` of\ncontact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace."
+            "description": "The tests of the Event's own properties it must pass; omitted, every Event of the action\nenrolls. The `tag` of contact.tagged and contact.untagged and the `key` of\ncontact.field_changed, tested by eq or neq, must name a Tag or Custom field of the Workspace. On\na message's sent, delivery and engagement Events it may name the Broadcast or Automation that\nsent the message (`sentBy`)."
           },
           "entryPolicy": {
             "allOf": [
@@ -15182,6 +15206,11 @@
           }
         },
         "description": "The Orders credited to one Broadcast or Automation and the net revenue of their Movements\n(ADR 0064), in the Reporting currency, read from the Movements and never stored: a refund\nlowers `amount` on its own day. Orders in another currency are counted in neither field."
+      },
+      "MessageSender": {
+        "type": "string",
+        "enum": ["broadcast", "automation"],
+        "description": "What sends the message a message's System event is about"
       },
       "MomentOperator": {
         "type": "string",
@@ -16718,6 +16747,61 @@
           }
         },
         "description": "Sending domain (ADR 0010). sphericon generates the DKIM keypair; the caller publishes the\nDKIM TXT record. The private key is never returned. `verified` is re-checked in the\nbackground: the domain loses it (`verificationLostAt`) if the DNS record disappears."
+      },
+      "SentByLeaf": {
+        "type": "object",
+        "required": ["kind", "sender", "id"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["sentBy"]
+          },
+          "sender": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MessageSender"
+              }
+            ],
+            "description": "Whether a Broadcast or an Automation sent it"
+          },
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The Broadcast's or the Automation's id"
+          }
+        },
+        "description": "A test of what sent the message a message's sent, delivery or engagement System event is about\n(ADR 0153, ADR 0180): the Broadcast or the Automation named by its id, archived or not, which the\nEvent carries as its `broadcastId` or `automationId`. A filter of any other action refuses it, and\nso does one that names a Broadcast or Automation the Workspace does not have."
+      },
+      "SentByLeafInput": {
+        "type": "object",
+        "required": ["kind", "sender", "id"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["sentBy"]
+          },
+          "sender": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MessageSender"
+              }
+            ],
+            "description": "Whether a Broadcast or an Automation sent it"
+          },
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "The Broadcast's or the Automation's id"
+          }
+        },
+        "description": "A test of what sent the message a message's sent, delivery or engagement System event is about\n(ADR 0153, ADR 0180): the Broadcast or the Automation named by its id, archived or not, which the\nEvent carries as its `broadcastId` or `automationId`. A filter of any other action refuses it, and\nso does one that names a Broadcast or Automation the Workspace does not have.",
+        "additionalProperties": false
       },
       "SesConfig": {
         "type": "object",
@@ -19507,13 +19591,18 @@
       },
       "SiteEventActionsResult": {
         "type": "object",
-        "required": ["actions"],
+        "required": ["actions", "eventsKeptDays"],
         "properties": {
           "actions": {
             "type": "array",
             "items": {
               "type": "string"
             }
+          },
+          "eventsKeptDays": {
+            "type": "integer",
+            "format": "int32",
+            "description": "How many days of analytical Events the Instance keeps (ADR 0019), so an event test with no\nwindow, or one longer than that, counts only the Events kept; 0 means every Event is kept"
           }
         },
         "description": "Distinct event actions seen in a workspace (for segment/filter pickers)"
@@ -20899,6 +20988,11 @@
             "type": "integer",
             "format": "int32",
             "description": "Number of matching contacts a Broadcast on the asked Channel would take: on email those with a\nmailable address, on Telegram those with an eligible Binding on the routed Integration. Absent\nunless a channel was given."
+          },
+          "eventsKeptDays": {
+            "type": "integer",
+            "format": "int32",
+            "description": "How many days of analytical Events the Instance keeps (ADR 0019): present when an event test\ncounts with no window, or with one longer than that, since it counts only the Events kept.\nAbsent when every Event is kept, or no event test reaches past them."
           }
         },
         "description": "Result of a segment preview: how many deliverable contacts match"

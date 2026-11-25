@@ -17,7 +17,7 @@ import (
 func matching(m eventmatcher.Matcher) (predicate.Event, error) {
 	preds := []predicate.Event{event.Action(m.Action)}
 	if m.Filter != nil {
-		path, err := condition.CompileEventFilter(*m.Filter)
+		path, err := condition.CompileEventFilter(m.Action, *m.Filter)
 		if err != nil {
 			return nil, err
 		}

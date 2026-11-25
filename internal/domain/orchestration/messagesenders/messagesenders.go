@@ -1,0 +1,60 @@
+// Package messagesenders answers whether the Broadcasts and Automations a sent-by test names
+// (ADR 0153, ADR 0180) are the Workspace's: a Segment, a Rule and an Automation refuse, when they
+// are saved, a filter that names one the Workspace does not have. An archived one is the
+// Workspace's: Archive keeps its row and the Events that name it, so a filter naming it still
+// counts them, and neither is ever deleted by its owner (ADR 0100). It is no Definition use: the
+// Removal check does not read it. It reads the two tables only to tell an id the Workspace has from
+// one it does not, which neither owner (broadcasts, automations, which imports rules) can answer for
+// the other, and it holds no state, so the modules that check a filter build it themselves.
+package messagesenders
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/samber/lo"
+
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
+)
+
+// ErrUnknown refuses a filter that names a Broadcast or an Automation the Workspace does not have
+// (400, an unknown reference). The message names the test's path and the id as the filter names it.
+var ErrUnknown = validation.UnknownReference("messagesenders: unknown sender", i18n.ErrorsMessageSenderUnknown)
+
+// Module answers for the senders a filter names.
+type Module struct{}
+
+// New builds the module. It needs nothing: every question reads in the scope it is given.
+func New() *Module { return &Module{} }
+
+// Require refuses with ErrUnknown the first of named the Workspace of s does not have, archived
+// ones being the Workspace's; nil when it has them all.
+func (m *Module) Require(ctx context.Context, s *ent.Scoped, named []condition.NamedSender) error {
+	if len(named) == 0 {
+		return nil
+	}
+	ids := func(sender conditiontree.Sender) []int64 {
+		return lo.Uniq(lo.FilterMap(named, func(n condition.NamedSender, _ int) (int64, bool) { return n.ID, n.Sender == sender }))
+	}
+	broadcasts, err := s.Broadcast().QueryWithArchived().Where(broadcast.IDIn(ids(conditiontree.SenderBroadcast)...)).IDs(ctx)
+	if err != nil {
+		return fmt.Errorf("read the named broadcasts: %w", err)
+	}
+	automations, err := s.Automation().QueryWithArchived().Where(automation.IDIn(ids(conditiontree.SenderAutomation)...)).IDs(ctx)
+	if err != nil {
+		return fmt.Errorf("read the named automations: %w", err)
+	}
+	has := map[conditiontree.Sender][]int64{conditiontree.SenderBroadcast: broadcasts, conditiontree.SenderAutomation: automations}
+	for _, n := range named {
+		if !lo.Contains(has[n.Sender], n.ID) {
+			return ErrUnknown.With(fmt.Sprintf("%sthe Workspace has no %s %s", n.Path, n.Sender, n.PublicID))
+		}
+	}
+	return nil
+}
