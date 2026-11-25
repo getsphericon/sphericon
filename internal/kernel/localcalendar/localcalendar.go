@@ -48,6 +48,9 @@ func (d Date) midnight() time.Time { return time.Date(d.year, d.month, d.day, 0,
 // addDays is the date days calendar days after d (before it when negative).
 func (d Date) addDays(days int) Date { return DateOf(d.midnight().AddDate(0, 0, days)) }
 
+// weekday is the day of the week the date falls on.
+func (d Date) weekday() time.Weekday { return d.midnight().Weekday() }
+
 // in is the date's day and month in year; 29 February is 28 February in a year without it.
 func (d Date) in(year int) Date {
 	if d.month == time.February && d.day == 29 && !isLeap(year) {
@@ -83,12 +86,14 @@ func ValueDate(value any, workspace *time.Location) (Date, bool) {
 	if !ok {
 		return Date{}, false
 	}
-	if t, err := time.Parse(time.RFC3339Nano, s); err == nil {
-		return DateOf(t.In(workspace)), true
+	zoned, err := time.Parse(time.RFC3339Nano, s)
+	if err == nil {
+		return DateOf(zoned.In(workspace)), true
 	}
 	for _, layout := range isoLayouts[1:] {
-		if t, err := time.Parse(layout, s); err == nil {
-			return DateOf(t), true
+		local, err := time.Parse(layout, s)
+		if err == nil {
+			return DateOf(local), true
 		}
 	}
 	return Date{}, false
@@ -103,12 +108,20 @@ func Zone(contact, workspace *string) (*time.Location, error) {
 	if err != nil {
 		return nil, fmt.Errorf("workspace time zone: %w", err)
 	}
-	if contact != nil {
-		if loc, err := reportday.Load(*contact); err == nil {
-			return loc, nil
-		}
+	own, ok := contactZone(contact)
+	if !ok {
+		return fallback, nil
 	}
-	return fallback, nil
+	return own, nil
+}
+
+// contactZone is the zone a Contact's time_zone names, when the zone database loads it.
+func contactZone(name *string) (*time.Location, bool) {
+	if name == nil {
+		return nil, false
+	}
+	loc, err := reportday.Load(*name)
+	return loc, err == nil
 }
 
 // Recurrence is how often a date recurs: every year, or once.
@@ -169,9 +182,9 @@ func (t hhmm) on(d Date, loc *time.Location) time.Time {
 	// offsets in effect over those two days are the ones at their ends and middle.
 	var first time.Time
 	for _, probe := range []time.Time{wall.Add(-24 * time.Hour), wall, wall.Add(24 * time.Hour)} {
-		_, offset := probe.In(loc).Zone()
-		at := wall.Add(-time.Duration(offset) * time.Second)
-		if sameWall(at.In(loc), wall) && (first.IsZero() || at.Before(first)) {
+		at := readWith(wall, probe, loc)
+		reads := at.In(loc)
+		if sameWall(reads, wall) && (first.IsZero() || at.Before(first)) {
 			first = at
 		}
 	}
@@ -180,9 +193,16 @@ func (t hhmm) on(d Date, loc *time.Location) time.Time {
 	}
 	// No instant reads as wall: the change skipped it. Read with the offset before the change, it
 	// lands after the change, in the zone that begins at the first moment after the gap.
-	_, before := wall.Add(-24 * time.Hour).In(loc).Zone()
-	start, _ := wall.Add(-time.Duration(before) * time.Second).In(loc).ZoneBounds()
+	after := readWith(wall, wall.Add(-24*time.Hour), loc)
+	zone := after.In(loc)
+	start, _ := zone.ZoneBounds()
 	return start.In(loc)
+}
+
+// readWith is the instant the wall-clock time wall names under the offset loc has at probe.
+func readWith(wall, probe time.Time, loc *time.Location) time.Time {
+	_, offset := probe.In(loc).Zone()
+	return wall.Add(-time.Duration(offset) * time.Second)
 }
 
 func sameWall(t, wall time.Time) bool {
@@ -234,7 +254,8 @@ func (s Schedule) Moment(date Date, year int, loc *time.Location) (time.Time, bo
 			return time.Time{}, false
 		}
 	}
-	return s.at.on(date.in(year).addDays(s.offsetDays), loc), true
+	day := date.in(year).addDays(s.offsetDays)
+	return s.at.on(day, loc), true
 }
 
 // Occurrence is one occurrence of a date: its anniversary year and its moment.
@@ -252,7 +273,8 @@ func (s Schedule) Next(date Date, after time.Time, loc *time.Location) (Occurren
 	}
 	// An offset of up to a year moves an anniversary year's moment into the calendar year before or
 	// after it, and each year's moment is later than the one before.
-	for year := max(date.year+1, after.In(loc).Year()-2); ; year++ {
+	local := after.In(loc)
+	for year := max(date.year+1, local.Year()-2); ; year++ {
 		at, _ := s.Moment(date, year, loc)
 		if !at.Before(after) {
 			return Occurrence{Year: year, At: at}, true
@@ -310,11 +332,12 @@ func (w TimeOfDay) takes(day time.Weekday) bool {
 // Next is the first moment of the local time on a chosen weekday at or after the moment given, in
 // loc: one at that very moment is ahead.
 func (w TimeOfDay) Next(after time.Time, loc *time.Location) time.Time {
-	today := DateOf(after.In(loc))
+	local := after.In(loc)
+	today := DateOf(local)
 	// The same weekday a week on is the last day the search can reach.
 	for days := 0; ; days++ {
 		day := today.addDays(days)
-		if !w.takes(day.midnight().Weekday()) {
+		if !w.takes(day.weekday()) {
 			continue
 		}
 		at := w.at.on(day, loc)

@@ -10,14 +10,20 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 )
 
-func zone(t *testing.T, name string) *time.Location {
+// testingT is a *testing.T or a *rapid.T.
+type testingT interface {
+	require.TestingT
+	Helper()
+}
+
+func zone(t testingT, name string) *time.Location {
 	t.Helper()
 	loc, err := time.LoadLocation(name)
 	require.NoError(t, err)
 	return loc
 }
 
-func schedule(t *testing.T, recurrence localcalendar.Recurrence, offsetDays int, localTime string) localcalendar.Schedule {
+func schedule(t testingT, recurrence localcalendar.Recurrence, offsetDays int, localTime string) localcalendar.Schedule {
 	t.Helper()
 	s, err := localcalendar.NewSchedule(recurrence, offsetDays, localTime)
 	require.NoError(t, err)
@@ -53,11 +59,12 @@ func TestAnOccurrenceIsTheLocalTimeOnItsDayInTheZone(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			s := schedule(t, localcalendar.Yearly, 0, c.localTime)
+			loc := zone(t, c.zone)
 
-			got, ok := s.Moment(c.date, c.year, zone(t, c.zone))
+			got, ok := s.Moment(c.date, c.year, loc)
 
 			require.True(t, ok)
-			assert.Equal(t, c.want, got.UTC())
+			assert.WithinDuration(t, c.want, got, 0)
 		})
 	}
 }
@@ -86,7 +93,7 @@ func TestAnOccurrenceCountsItsOffsetFromTheDayInItsAnniversaryYear(t *testing.T)
 			got, ok := s.Moment(c.date, c.year, time.UTC)
 
 			require.True(t, ok)
-			assert.Equal(t, c.want, got.UTC())
+			assert.WithinDuration(t, c.want, got, 0)
 		})
 	}
 }
@@ -111,7 +118,7 @@ func TestAnOccurrenceIsOnlyInAnAnniversaryYearOfItsRecurrence(t *testing.T) {
 			got, ok := s.Moment(date, c.year, time.UTC)
 
 			require.True(t, ok)
-			assert.Equal(t, c.want, got.UTC())
+			assert.WithinDuration(t, c.want, got, 0)
 		})
 	}
 	none := []struct {
@@ -170,7 +177,7 @@ func TestTheNextOccurrenceIsTheFirstAtOrAfterTheArrival(t *testing.T) {
 
 			require.True(t, ok)
 			assert.Equal(t, c.want.Year, got.Year)
-			assert.Equal(t, c.want.At, got.At.UTC())
+			assert.WithinDuration(t, c.want.At, got.At, 0)
 		})
 	}
 }
@@ -209,10 +216,11 @@ func TestTheNextTimeOfDayIsTheFirstOnAChosenWeekdayAtOrAfterTheArrival(t *testin
 		t.Run(c.name, func(t *testing.T) {
 			w, err := localcalendar.NewTimeOfDay(c.localTime, c.weekdays)
 			require.NoError(t, err)
+			loc := zone(t, c.zone)
 
-			got := w.Next(c.arrival, zone(t, c.zone))
+			got := w.Next(c.arrival, loc)
 
-			assert.Equal(t, c.want, got.UTC())
+			assert.WithinDuration(t, c.want, got, 0)
 		})
 	}
 }
@@ -294,8 +302,9 @@ func TestTheZoneIsTheContactsElseTheWorkspaces(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			loc, err := localcalendar.Zone(c.contact, c.workspace)
 			require.NoError(t, err)
+			got := loc.String()
 
-			assert.Equal(t, c.want, loc.String())
+			assert.Equal(t, c.want, got)
 		})
 	}
 }
@@ -312,29 +321,31 @@ func TestAnUnknownWorkspaceZoneIsAnError(t *testing.T) {
 // into it, one without and a bare date keep their own date (ADR 0087). Tokyo is UTC+9, Los Angeles
 // UTC-8 in January.
 func TestAStoredValuesDateIsReadInTheWorkspaceZone(t *testing.T) {
+	tokyo, losAngeles := zone(t, "Asia/Tokyo"), zone(t, "America/Los_Angeles")
+	jan14, jan15, jan16 := localcalendar.NewDate(2026, time.January, 14), localcalendar.NewDate(2026, time.January, 15), localcalendar.NewDate(2026, time.January, 16)
 	cases := []struct {
 		name  string
 		value any
-		east  string
-		west  string
+		east  localcalendar.Date
+		west  localcalendar.Date
 	}{
-		{"an evening in UTC", "2026-01-15T20:00:00Z", "2026-01-16", "2026-01-15"},
-		{"an early hour in UTC", "2026-01-15T03:00:00Z", "2026-01-15", "2026-01-14"},
-		{"an offset of its own", "2026-01-15T23:00:00-05:00", "2026-01-16", "2026-01-15"},
-		{"fractional seconds", "2026-01-15T03:00:00.123456Z", "2026-01-15", "2026-01-14"},
-		{"late at night without an offset", "2026-01-15T23:30:00", "2026-01-15", "2026-01-15"},
-		{"early in the morning without an offset", "2026-01-15T00:30:00", "2026-01-15", "2026-01-15"},
-		{"a bare date", "2026-01-15", "2026-01-15", "2026-01-15"},
+		{"an evening in UTC", "2026-01-15T20:00:00Z", jan16, jan15},
+		{"an early hour in UTC", "2026-01-15T03:00:00Z", jan15, jan14},
+		{"an offset of its own", "2026-01-15T23:00:00-05:00", jan16, jan15},
+		{"fractional seconds", "2026-01-15T03:00:00.123456Z", jan15, jan14},
+		{"late at night without an offset", "2026-01-15T23:30:00", jan15, jan15},
+		{"early in the morning without an offset", "2026-01-15T00:30:00", jan15, jan15},
+		{"a bare date", "2026-01-15", jan15, jan15},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			east, eastOK := localcalendar.ValueDate(c.value, zone(t, "Asia/Tokyo"))
-			west, westOK := localcalendar.ValueDate(c.value, zone(t, "America/Los_Angeles"))
+			east, eastOK := localcalendar.ValueDate(c.value, tokyo)
+			west, westOK := localcalendar.ValueDate(c.value, losAngeles)
 
 			require.True(t, eastOK)
 			require.True(t, westOK)
-			assert.Equal(t, c.east, east.String())
-			assert.Equal(t, c.west, west.String())
+			assert.Equal(t, c.east, east)
+			assert.Equal(t, c.west, west)
 		})
 	}
 }
@@ -370,5 +381,19 @@ func TestABirthdayKeepsItsOwnDate(t *testing.T) {
 
 	got := localcalendar.DateOf(stored)
 
-	assert.Equal(t, "1990-05-10", got.String())
+	assert.Equal(t, localcalendar.NewDate(1990, time.May, 10), got)
+}
+
+// Every part out of bounds is refused at once, each matched by its own refusal, so a save can name
+// every field it refuses.
+func TestTheConstructorsRefuseEveryPartOutOfBoundsAtOnce(t *testing.T) {
+	_, scheduleErr := localcalendar.NewSchedule("monthly", 400, "25:00")
+	_, timeOfDayErr := localcalendar.NewTimeOfDay("7pm", []string{"monday", "monday", "someday"})
+
+	require.ErrorIs(t, scheduleErr, localcalendar.ErrRecurrence)
+	require.ErrorIs(t, scheduleErr, localcalendar.ErrOffset)
+	require.ErrorIs(t, scheduleErr, localcalendar.ErrLocalTime)
+	require.ErrorIs(t, timeOfDayErr, localcalendar.ErrLocalTime)
+	require.ErrorIs(t, timeOfDayErr, localcalendar.ErrRepeatedWeekday)
+	require.ErrorIs(t, timeOfDayErr, localcalendar.ErrWeekday)
 }
