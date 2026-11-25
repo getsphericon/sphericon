@@ -30,6 +30,16 @@ export function maxItemsOf(schema: z.ZodArray): number {
   return maxItems
 }
 
+// The fewest items a list of the contract holds (TypeSpec @minItems -> zod), for a form that removes
+// rows down to it, read as maxItemsOf reads its bound; a list without one fails at once.
+export function minItemsOf(schema: z.ZodArray): number {
+  const { minItems } = z.toJSONSchema(schema, { unrepresentable: 'any' })
+  if (minItems === undefined) {
+    throw new Error('the contract declares no fewest items for this list')
+  }
+  return minItems
+}
+
 // The longest a string of the contract may be (TypeSpec @maxLength -> zod), for an input's
 // maxLength; a string without one fails at once, as a range does.
 export function maxLengthOf(schema: { maxLength: number | null }): number {

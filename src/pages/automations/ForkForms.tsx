@@ -5,15 +5,20 @@ import { useTranslation } from 'react-i18next'
 
 import { emptyGroup } from '../../components/conditions/condition.ts'
 import { ConditionBuilder } from '../../components/conditions/ConditionBuilder.tsx'
+import { zSplitPathInput } from '../../generated/site/zod.gen.ts'
 import { useSchemaForm } from '../../resources/schemaForm.ts'
 import type { SchemaForm } from '../../resources/schemaForm.ts'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
+import { boundsOf } from '../../utils/bounds.ts'
 import { branchConditionOf, filterText } from './definition.ts'
 import type { BranchStep, ForkStep, SplitStep } from './definition.ts'
 import type { PathPatch } from './flowEdits.ts'
 import { canAddPath, canRemovePath, forkError, forkSchemas, weightSum } from './forkRules.ts'
 import { useValidator } from './stepValidator.ts'
 import type { StepValidator } from './stepValidator.ts'
+
+// The range of a Split path's weight, as the contract bounds it.
+const WEIGHT = boundsOf(zSplitPathInput.shape.weight)
 
 // What a fork's panel does to the flow: it sets its paths' Conditions or weights by path id, and
 // adds, removes and (on a Branch) moves a path. The Steps the paths hold are the canvas's.
@@ -223,7 +228,7 @@ export function SplitForm({
             flex={1}
             label={t(($) => $.automations.pathWeightLabel, { number: i + 1 })}
             suffix="%"
-            min={1}
+            min={WEIGHT.min}
             allowDecimal={false}
             allowNegative={false}
             {...form.getInputProps(`paths.${i}.weight`)}
