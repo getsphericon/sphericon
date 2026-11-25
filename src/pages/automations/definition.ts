@@ -1,9 +1,11 @@
 import type { AnyCondition, ConditionDraft } from '../../components/conditions/condition.ts'
 import type {
   AutomationHttpHeader,
+  AutomationPath,
   AutomationPathInput,
   AutomationStep,
   AutomationStepInput,
+  BranchConditionInput,
   AutomationTriggerInput,
   AutomationVersion,
   EditorDocument,
@@ -13,7 +15,11 @@ import type {
   EventMatcherInput,
   TelegramButton,
 } from '../../generated/site/types.gen.ts'
-import { zEntryPolicy, zEventFilterInput } from '../../generated/site/zod.gen.ts'
+import {
+  zBranchConditionInput,
+  zEntryPolicy,
+  zEventFilterInput,
+} from '../../generated/site/zod.gen.ts'
 import { jsonText } from '../../utils/jsonText.ts'
 import { completeButtons } from '../../utils/telegramContent.ts'
 
@@ -49,24 +55,62 @@ export interface StepDrafts {
   remove_tag: { tag: string }
 }
 
-// The kinds the editor edits: those it has a draft of. A Step of any other kind (an End, a fork, a
-// kind the contract gains) is kept as it was read and makes the version read-only here (ADR 0124):
-// no edit or save can drop it.
+// The kinds the side panel edits in a form of their own: those it has a draft of.
 export type EditedKind = keyof StepDrafts
 
-// A Step the editor edits, by kind.
+// A Step the editor edits in its kind's form, by kind.
 export type EditedStep = {
   [K in EditedKind]: { id: string; kind: K; draft: StepDrafts[K] }
 }[EditedKind]
 
-// A Step the editor does not edit, kept as stored.
+// A path of Steps, with the id it keeps across versions: the root, or a path of a fork.
+export type FlowPath = Pick<AutomationPath, 'id'> & { steps: FlowStep[] }
+
+// A Branch's listed path (ADR 0124): its Condition as the builder leaves it (conditionText: '' for
+// none, else its JSON, complete or still being typed) and its Steps.
+export interface BranchPathDraft extends FlowPath {
+  conditionText: string
+}
+
+// A Split's path: its weight as typed ('' while blank) and its Steps.
+export interface SplitPathDraft extends FlowPath {
+  weight: number | ''
+}
+
+// A Branch: its listed paths in the order their Conditions are tested, `otherwise`, and the unknown
+// path, there only while a Condition can be unknown (the server says when).
+export interface BranchStep {
+  id: string
+  kind: 'branch'
+  paths: BranchPathDraft[]
+  otherwise: FlowPath
+  unknown: FlowPath | null
+}
+
+// A Split: its weighted paths, in order (the first is compared with the others, ADR 0192).
+export interface SplitStep {
+  id: string
+  kind: 'split'
+  paths: SplitPathDraft[]
+}
+
+export type ForkStep = BranchStep | SplitStep
+
+// An End: it finishes its path, and is its last Step.
+type EndStep = Pick<AutomationPath, 'id'> & { kind: 'end' }
+
+// A Step of a kind newer than the editor, kept as stored: the version holding it is read-only here
+// (ADR 0124), so no edit or save can drop it.
 interface KeptStep {
   id: string
   kind: 'kept'
   step: AutomationStep
 }
 
-export type FlowStep = EditedStep | KeptStep
+export type FlowStep = EditedStep | ForkStep | EndStep | KeptStep
+
+// The kinds a person puts on the canvas.
+export type InsertedKind = EditedKind | ForkStep['kind'] | EndStep['kind']
 
 // An exit or goal event as the Trigger node holds it (ADR 0133): its action, and its filter's text
 // as the builder leaves it (filterText: '' for none, complete or still being typed).
@@ -87,26 +131,17 @@ export interface TriggerDraft {
 
 export interface Flow {
   trigger: TriggerDraft
-  path: { id: string; steps: FlowStep[] }
+  path: FlowPath
 }
 
-// The kinds the editor edits, by kind: a Step of another kind is kept.
-const EDITED: Record<EditedKind, true> = {
-  email: true,
-  telegram: true,
-  sms: true,
-  http: true,
-  wait: true,
-  apply_tag: true,
-  remove_tag: true,
+// A stored path as the editor holds it.
+function flowPathOf(path: AutomationPath): FlowPath {
+  return { id: path.id, steps: path.steps.map((step) => flowStepOf(step)) }
 }
 
-function isEdited(kind: string): kind is EditedKind {
-  return Object.hasOwn(EDITED, kind)
-}
-
-// The draft of a stored Step the editor edits; what the stored Step leaves out is blank.
-function draftOf(step: AutomationStep): EditedStep | null {
+// flowStepOf is a stored Step as the editor holds it: what the stored Step leaves out is blank, and
+// a Step of a kind newer than the editor is kept.
+function flowStepOf(step: AutomationStep): FlowStep {
   const { id } = step
   switch (step.type) {
     case 'email':
@@ -162,17 +197,27 @@ function draftOf(step: AutomationStep): EditedStep | null {
     case 'remove_tag':
       return { id, kind: 'remove_tag', draft: { tag: step.tag } }
     case 'end':
+      return { id, kind: 'end' }
     case 'branch':
+      return {
+        id,
+        kind: 'branch',
+        paths: step.paths.map((path) => ({
+          ...flowPathOf(path),
+          conditionText: filterText(path.condition),
+        })),
+        otherwise: flowPathOf(step.otherwise),
+        unknown: step.unknown ? flowPathOf(step.unknown) : null,
+      }
     case 'split':
+      return {
+        id,
+        kind: 'split',
+        paths: step.paths.map((path) => ({ ...flowPathOf(path), weight: path.weight })),
+      }
     default:
-      return null
+      return { id, kind: 'kept', step }
   }
-}
-
-// flowStepOf is a stored Step as the editor holds it: a draft of a kind it edits, else kept.
-function flowStepOf(step: AutomationStep): FlowStep {
-  const edited = isEdited(step.type) ? draftOf(step) : null
-  return edited ?? { id: step.id, kind: 'kept', step }
 }
 
 // The Trigger of a version as its panel edits it.
@@ -193,14 +238,32 @@ function triggerDraftOf(version: AutomationVersion): TriggerDraft {
 export function flowOf(version: AutomationVersion): Flow {
   return {
     trigger: triggerDraftOf(version),
-    path: { id: version.steps.id, steps: version.steps.steps.map((step) => flowStepOf(step)) },
+    path: flowPathOf(version.steps),
   }
 }
 
-// holdsKept tells whether the flow holds a Step the editor does not edit: the version is then
-// read-only here.
+// forkPaths are the paths of a fork, in the order the canvas draws them: a Branch's listed paths,
+// `otherwise`, then the unknown path; a Split's paths. Any other Step has none.
+export function forkPaths(step: FlowStep): FlowPath[] {
+  if (step.kind === 'branch') {
+    return [...step.paths, step.otherwise, ...(step.unknown ? [step.unknown] : [])]
+  }
+  return step.kind === 'split' ? step.paths : []
+}
+
+// allSteps are the Steps of the path and of every path nested in it, each fork before its paths'
+// Steps.
+export function allSteps(path: FlowPath): FlowStep[] {
+  return path.steps.flatMap((step) => [
+    step,
+    ...forkPaths(step).flatMap((nested) => allSteps(nested)),
+  ])
+}
+
+// holdsKept tells whether the flow holds, at any depth, a Step the editor does not edit: the version
+// is then read-only here.
 export function holdsKept(flow: Flow): boolean {
-  return flow.path.steps.some((step) => step.kind === 'kept')
+  return allSteps(flow.path).some((step) => step.kind === 'kept')
 }
 
 // endingDraft is the draft of a stored exit or goal event.
@@ -369,16 +432,91 @@ function stepInputOf(step: EditedStep): AutomationStepInput {
   }
 }
 
+// The Condition a Branch path's text holds when it is complete and tests something: a path without
+// one refuses the save (ADR 0124).
+export function branchConditionOf(text: string): BranchConditionInput | undefined {
+  if (text === '') {
+    return undefined
+  }
+  const parsed = jsonText.pipe(zBranchConditionInput).safeParse(text)
+  return parsed.success && parsed.data.entries.length > 0 ? parsed.data : undefined
+}
+
+// The path a flow's path saves, or null when it holds what is never saved: a kept Step, or a Branch
+// path whose Condition is missing or still being typed.
+function pathInput(path: FlowPath): AutomationPathInput | null {
+  const steps: AutomationStepInput[] = []
+  for (const step of path.steps) {
+    const input = stepInput(step)
+    if (input === null) {
+      return null
+    }
+    steps.push(input)
+  }
+  return { id: path.id, steps }
+}
+
+// The Step a flow's Step saves, its paths with it; null as for pathInput.
+function stepInput(step: FlowStep): AutomationStepInput | null {
+  if (step.kind === 'kept') {
+    return null
+  }
+  if (step.kind === 'end') {
+    return { id: step.id, type: 'end' }
+  }
+  if (step.kind === 'branch') {
+    return branchInput(step)
+  }
+  return step.kind === 'split' ? splitInput(step) : stepInputOf(step)
+}
+
+function splitInput(step: SplitStep): AutomationStepInput | null {
+  const paths = []
+  for (const path of step.paths) {
+    const input = pathInput(path)
+    if (input === null) {
+      return null
+    }
+    paths.push({ ...input, weight: Math.trunc(Number(path.weight)) || 0 })
+  }
+  return { id: step.id, type: 'split', paths }
+}
+
+function branchInput(step: BranchStep): AutomationStepInput | null {
+  const paths = []
+  for (const path of step.paths) {
+    const condition = branchConditionOf(path.conditionText)
+    const input = pathInput(path)
+    if (condition === undefined || input === null) {
+      return null
+    }
+    paths.push({ ...input, condition })
+  }
+  const otherwise = pathInput(step.otherwise)
+  const unknown = step.unknown === null ? undefined : pathInput(step.unknown)
+  if (otherwise === null || unknown === null) {
+    return null
+  }
+  return {
+    id: step.id,
+    type: 'branch',
+    paths,
+    otherwise,
+    ...(unknown === undefined ? {} : { unknown }),
+  }
+}
+
 // What a flow saves as the version's definition: the Trigger, its exit and goal events and the root
-// path, each Step with its id. `filterIncomplete` says a filter of the Trigger, an exit or the goal
-// is still being typed, and is left out. A kept Step stays as stored: a flow holding one is shown,
-// never saved (holdsKept).
+// path, each Step and path with its id. `filterIncomplete` says a filter of the Trigger, an exit or
+// the goal is still being typed, and is left out. A flow that is never saved as it stands (a kept
+// Step, a Branch path's Condition missing or being typed: pathInputOf) shows its root path as the
+// editor holds it, which tells one such flow from another.
 export function definitionOf(flow: Flow): {
   trigger: AutomationTriggerInput
   filterIncomplete: boolean
   exitEvents: EventMatcherInput[]
   goalEvent: EventMatcherInput | null
-  steps: { id: string; steps: (AutomationStepInput | AutomationStep)[] }
+  steps: AutomationPathInput | FlowPath
 } {
   const { trigger, incomplete } = triggerOf(flow.trigger)
   const exits = flow.trigger.exits.flatMap((draft) => endingRead(draft))
@@ -388,15 +526,12 @@ export function definitionOf(flow: Flow): {
     filterIncomplete: incomplete || [...exits, ...(goal ? [goal] : [])].some((e) => e.incomplete),
     exitEvents: exits.map(({ matcher }) => matcher),
     goalEvent: goal?.matcher ?? null,
-    steps: {
-      id: flow.path.id,
-      steps: flow.path.steps.map((step) => (step.kind === 'kept' ? step.step : stepInputOf(step))),
-    },
+    steps: pathInputOf(flow) ?? flow.path,
   }
 }
 
-// The root path a flow saves; null when it holds a kept Step, which the editor never saves.
+// The root path a flow saves; null when it holds a kept Step, which the editor never saves, or a
+// Branch path whose Condition is missing or still being typed, which the Save stops on first.
 export function pathInputOf(flow: Flow): AutomationPathInput | null {
-  const steps = flow.path.steps.flatMap((step) => (step.kind === 'kept' ? [] : [stepInputOf(step)]))
-  return holdsKept(flow) ? null : { id: flow.path.id, steps }
+  return pathInput(flow.path)
 }

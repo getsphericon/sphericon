@@ -10,7 +10,7 @@ import {
   handleSiteAutomationsUpdate,
 } from '../../generated/site/msw.gen.ts'
 import { siteAutomationsGet } from '../../generated/site/sdk.gen.ts'
-import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
+import type { AutomationStep, SiteAutomationResource } from '../../generated/site/types.gen.ts'
 import { zUpdateAutomationInput } from '../../generated/site/zod.gen.ts'
 import { stepId, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
@@ -230,15 +230,42 @@ test('two Saves keep an HTTP step by its id and its stored secret while preservi
   ])
 })
 
-// A version holding an End (or another Step the editor does not edit) is never saved, whoever
-// asks: the changed notice's "Save mine over it" captures through the same adapter.
+// A version holding a Step of a kind newer than the editor is never saved, whoever asks: the
+// changed notice's "Save mine over it" captures through the same adapter.
 test('a flow holding a kept Step has no submission', () => {
-  const ended = flowOf({
+  // A kind the contract may gain, read as the server would send it.
+  const newer: AutomationStep = JSON.parse(
+    JSON.stringify({ id: stepId(9), type: 'wait_for_event' }),
+  )
+  const kept = flowOf({ ...DRAFT, steps: { id: stepId(1), steps: [newer] } })
+
+  expect(automationSubmission('Kept', kept)).toBeNull()
+})
+
+// A Branch path whose Condition is still being typed is never sent: the Save stops on it first.
+test('a flow holding a Branch path without a complete Condition has no submission', () => {
+  const branching = flowOf({
     ...DRAFT,
-    steps: { id: stepId(1), steps: [{ id: stepId(9), type: 'end' }] },
+    steps: {
+      id: stepId(1),
+      steps: [
+        {
+          id: stepId(9),
+          type: 'branch',
+          paths: [
+            {
+              id: stepId(10),
+              condition: { kind: 'group', combinator: 'and', entries: [] },
+              steps: [],
+            },
+          ],
+          otherwise: { id: stepId(11), steps: [] },
+        },
+      ],
+    },
   })
 
-  expect(automationSubmission('Ended', ended)).toBeNull()
+  expect(automationSubmission('Branching', branching)).toBeNull()
 })
 
 // "Load the saved version" of the changed notice (ADR 0119) opens the version as stored now.

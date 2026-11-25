@@ -9,7 +9,7 @@ import {
   UnstyledButton,
   useComputedColorScheme,
 } from '@mantine/core'
-import { IconPlus, IconTrash } from '@tabler/icons-react'
+import { IconAlertCircle, IconPlus, IconTrash } from '@tabler/icons-react'
 import type { Icon } from '@tabler/icons-react'
 import { Background, Handle, Position, ReactFlow } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
@@ -17,20 +17,25 @@ import { createContext, use, useMemo } from 'react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import type { EditedKind, Flow, FlowStep } from './definition.ts'
+import type { Flow, FlowStep, InsertedKind } from './definition.ts'
+import type { Place } from './flowEdits.ts'
 import { layoutFlow, TRIGGER_NODE_ID } from './flowLayout.ts'
-import type { InsertNode, StepNode } from './flowLayout.ts'
+import type { InsertNode, PathNode, PathRole, StepNode } from './flowLayout.ts'
+import { canAddPath } from './forkRules.ts'
 import { insertableKinds, TRIGGER_ICON, useStepInfo, useStepKinds } from './stepKinds.ts'
 
 // What the nodes of the canvas do: they select what the side panel edits, insert a Step at their
-// place and remove theirs. Nothing on the canvas edits the flow but through these.
+// place, remove theirs and add a path to a fork. Nothing on the canvas edits the flow but through
+// these. `errorOf` is the error a fork's node shows once it was checked (on blur or on Save).
 interface CanvasControls {
   flow: Flow
   editable: boolean
   selected: string | null
   select: (id: string) => void
-  insert: (at: number, kind: EditedKind) => void
+  insert: (place: Place, kind: InsertedKind) => void
   remove: (id: string) => void
+  addPath: (forkId: string) => void
+  errorOf: (id: string) => string | null
 }
 
 const Controls = createContext<CanvasControls | null>(null)
@@ -60,12 +65,15 @@ function NodeBox({
   icon: NodeIcon,
   label,
   detail,
+  error = null,
   children,
 }: {
   id: string
   icon: Icon
   label: string
   detail: string
+  // What is wrong with it, shown in place of the detail.
+  error?: string | null
   children?: ReactNode
 }) {
   const { selected, select } = useControls()
@@ -88,10 +96,19 @@ function NodeBox({
               <Text size="sm" fw={500} truncate>
                 {label}
               </Text>
-              {detail !== '' && (
-                <Text size="xs" c="dimmed" truncate>
-                  {detail}
-                </Text>
+              {error === null ? (
+                detail !== '' && (
+                  <Text size="xs" c="dimmed" truncate>
+                    {detail}
+                  </Text>
+                )
+              ) : (
+                <Group gap={4} wrap="nowrap">
+                  <IconAlertCircle size={14} color="var(--mantine-color-error)" />
+                  <Text size="xs" c="red" truncate>
+                    {error}
+                  </Text>
+                </Group>
               )}
             </Box>
           </Group>
@@ -118,7 +135,8 @@ function TriggerNodeView() {
   )
 }
 
-// What a Step's node says beside its kind: an email's subject, a tag step's Tag.
+// What a Step's node says beside its kind: an email's subject, a tag step's Tag, a Split's
+// weights.
 function stepDetail(step: FlowStep): string {
   switch (step.kind) {
     case 'email':
@@ -129,8 +147,12 @@ function stepDetail(step: FlowStep): string {
     case 'telegram':
     case 'sms':
       return step.draft.text
+    case 'split':
+      return step.paths.map((path) => `${path.weight === '' ? '?' : path.weight}%`).join(' / ')
     case 'http':
     case 'wait':
+    case 'branch':
+    case 'end':
     case 'kept':
     default:
       return ''
@@ -139,14 +161,35 @@ function stepDetail(step: FlowStep): string {
 
 function StepNodeView({ data: { step } }: NodeProps<StepNode>) {
   const { t } = useTranslation()
-  const { editable, remove } = useControls()
+  const { editable, remove, addPath, errorOf } = useControls()
   const info = useStepInfo()(step)
+  const fork = step.kind === 'branch' || step.kind === 'split' ? step : null
   return (
     <>
       <Handles />
-      <NodeBox id={step.id} icon={info.icon} label={info.label} detail={stepDetail(step)}>
+      <NodeBox
+        id={step.id}
+        icon={info.icon}
+        label={info.label}
+        detail={stepDetail(step)}
+        error={errorOf(step.id)}
+      >
+        {editable && fork !== null && (
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            aria-label={t(($) => $.automations.addPath)}
+            disabled={!canAddPath(fork)}
+            onClick={(event) => {
+              event.stopPropagation()
+              addPath(fork.id)
+            }}
+          >
+            <IconPlus size={16} />
+          </ActionIcon>
+        )}
         {/* Removing a single Step needs no confirmation (docs/standards/ui.md): it is quickly
-            made again. */}
+            made again. A fork whose paths hold Steps asks first (remove). */}
         {editable && step.kind !== 'kept' && (
           <ActionIcon
             variant="subtle"
@@ -166,11 +209,52 @@ function StepNodeView({ data: { step } }: NodeProps<StepNode>) {
   )
 }
 
-// An insertion point on an edge: it offers each kind of Step, and puts the one chosen there.
-function InsertNodeView({ data: { at } }: NodeProps<InsertNode>) {
+// What heads a path of a fork: its place among the Branch's Conditions, `otherwise`, the unknown
+// path, or a Split's path and its weight.
+function usePathLabel(): (role: PathRole) => string {
+  const { t } = useTranslation()
+  return (role) => {
+    switch (role.kind) {
+      case 'condition':
+        return t(($) => $.automations.pathNumbered, { number: role.index + 1 })
+      case 'otherwise':
+        return t(($) => $.automations.pathOtherwise)
+      case 'unknown':
+        return t(($) => $.automations.pathUnknown)
+      case 'weight':
+      default:
+        return t(($) => $.automations.pathWeighted, {
+          number: role.index + 1,
+          weight: role.weight === '' ? '?' : role.weight,
+        })
+    }
+  }
+}
+
+// The head of a fork's path, under the fork: a click opens the fork in the side panel.
+function PathNodeView({ data: { fork, role } }: NodeProps<PathNode>) {
+  const { select } = useControls()
+  const label = usePathLabel()(role)
+  return (
+    <>
+      <Handles />
+      <Paper withBorder radius="xl" w="100%" h="100%" px="sm">
+        <UnstyledButton w="100%" h="100%" onClick={() => select(fork.id)}>
+          <Text size="xs" fw={500} ta="center" truncate>
+            {label}
+          </Text>
+        </UnstyledButton>
+      </Paper>
+    </>
+  )
+}
+
+// An insertion point on an edge or in an empty path: it offers each kind of Step, and puts the one
+// chosen there. An End is offered only at the end of a path.
+function InsertNodeView({ data: { path, at, end } }: NodeProps<InsertNode>) {
   const { t } = useTranslation()
   const { editable, insert } = useControls()
-  const kinds = insertableKinds(useStepKinds())
+  const kinds = insertableKinds(useStepKinds(), end)
   return (
     <>
       <Handles />
@@ -191,7 +275,7 @@ function InsertNodeView({ data: { at } }: NodeProps<InsertNode>) {
               <Menu.Item
                 key={kind}
                 leftSection={<KindIcon size={16} />}
-                onClick={() => insert(at, kind)}
+                onClick={() => insert({ path, at }, kind)}
               >
                 {label}
               </Menu.Item>
@@ -204,7 +288,12 @@ function InsertNodeView({ data: { at } }: NodeProps<InsertNode>) {
 }
 
 // Stable references: the canvas re-registers its node kinds when this object changes.
-const nodeTypes = { trigger: TriggerNodeView, step: StepNodeView, insert: InsertNodeView }
+const nodeTypes = {
+  trigger: TriggerNodeView,
+  step: StepNodeView,
+  path: PathNodeView,
+  insert: InsertNodeView,
+}
 
 // FlowCanvas draws the flow top to bottom, laid out anew on every change (flowLayout.ts). Its nodes
 // are neither dragged nor connected: the canvas cannot hold a shape the server would refuse.
@@ -226,10 +315,12 @@ export function FlowCanvas(controls: CanvasControls) {
         edgesFocusable={false}
         elementsSelectable={false}
         deleteKeyCode={null}
-        // A click on the Trigger or a Step opens it in the side panel; an insertion point is no
-        // node to open.
+        // A click on the Trigger or a Step opens it in the side panel, one on a path's head its
+        // fork; an insertion point is no node to open.
         onNodeClick={(_, node) => {
-          if (node.type !== 'insert') {
+          if (node.type === 'path') {
+            controls.select(node.data.fork.id)
+          } else if (node.type !== 'insert') {
             controls.select(node.id)
           }
         }}

@@ -46,6 +46,7 @@ const (
 	SiteAutomationsPublishOperation                     OperationName = "SiteAutomationsPublish"
 	SiteAutomationsRevertOperation                      OperationName = "SiteAutomationsRevert"
 	SiteAutomationsUnarchiveOperation                   OperationName = "SiteAutomationsUnarchive"
+	SiteAutomationsUnknownPathOperation                 OperationName = "SiteAutomationsUnknownPath"
 	SiteAutomationsUpdateOperation                      OperationName = "SiteAutomationsUpdate"
 	SiteBrandKitGetOperation                            OperationName = "SiteBrandKitGet"
 	SiteBrandKitRecreateStarterTemplatesOperation       OperationName = "SiteBrandKitRecreateStarterTemplates"

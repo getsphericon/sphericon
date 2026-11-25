@@ -5,6 +5,7 @@ import { page } from 'vitest/browser'
 import {
   handleSiteAutomationsGet,
   handleSiteAutomationsPublish,
+  handleSiteAutomationsUnknownPath,
   handleSiteAutomationsUpdate,
   handleSiteEnrollmentsList,
   handleSiteEventsPropertyKeys,
@@ -12,7 +13,12 @@ import {
   handleSiteTagsList,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteAutomationResource, AutomationVersion } from '../../generated/site/types.gen.ts'
+import type {
+  AutomationStep,
+  AutomationVersion,
+  SiteAutomationResource,
+  UpdateAutomationInput,
+} from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { stepId, testId, workspace } from '../../test/payloads.ts'
@@ -363,27 +369,89 @@ function withSteps(steps: AutomationVersion['steps']['steps']): AutomationVersio
   }
 }
 
-// An End (ADR 0124) is drawn, but this editor cannot edit around one yet: a version holding one
-// opens read-only, with nothing to save that could drop it, and Publish still publishes it.
-test('a version holding an End opens read-only, drawing the End and offering no save', async () => {
+// A tree of every fork kind and an End (ADR 0124): a Branch with an unknown path, a Split nested in
+// one of its paths, an End finishing `otherwise`.
+const TREE: AutomationVersion['steps']['steps'] = [
+  {
+    id: stepId(20),
+    type: 'branch',
+    paths: [
+      {
+        id: stepId(21),
+        condition: {
+          kind: 'group',
+          combinator: 'and',
+          entries: [{ kind: 'event', action: 'email.opened', operator: 'atLeast', times: 1 }],
+        },
+        steps: [
+          {
+            id: stepId(22),
+            type: 'split',
+            paths: [
+              {
+                id: stepId(23),
+                weight: 30,
+                steps: [{ id: stepId(24), type: 'wait', seconds: 60 }],
+              },
+              { id: stepId(25), weight: 70, steps: [] },
+            ],
+          },
+        ],
+      },
+    ],
+    otherwise: { id: stepId(26), steps: [{ id: stepId(27), type: 'end' }] },
+    unknown: { id: stepId(28), steps: [] },
+  },
+  { id: stepId(29), type: 'apply_tag', tag: 'done' },
+]
+
+// Branches, Splits and End are edited (ADR 0124): a version holding them opens editable, draws
+// each, and a save sends every one of them back, nothing dropped.
+test('a version holding forks and an End opens editable, and a save sends the whole tree back', async () => {
+  const bodies: UpdateAutomationInput[] = []
+  worker.use(
+    handleSiteAutomationsGet({ body: { ...STORED, draft: withSteps(TREE) } }),
+    handleSiteAutomationsUnknownPath({ body: { needed: true } }),
+    handleSiteAutomationsUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(STORED)
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+  await expect.element(nodeButton(screen, 'Branch')).toBeInTheDocument()
+  await expect.element(nodeButton(screen, 'Split')).toBeInTheDocument()
+  await expect.element(nodeButton(screen, 'End')).toBeInTheDocument()
+  await screen.getByLabelText('Name', { exact: false }).fill('Forked')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies.map((body) => body.steps))
+    .toEqual([{ id: stepId(1), steps: TREE }])
+})
+
+// A Step of a kind newer than this editor is kept as stored: the version opens read-only, with
+// nothing to save that could drop it, and Publish still publishes it.
+test('a version holding a step of a kind the editor does not know opens read-only', async () => {
+  // A kind the contract may gain, read as the server would send it.
+  const newer: AutomationStep = JSON.parse(
+    JSON.stringify({ id: stepId(12), type: 'wait_for_event' }),
+  )
   worker.use(
     handleSiteAutomationsGet({
       body: {
         ...STORED,
-        draft: withSteps([
-          { id: stepId(11), type: 'wait', seconds: 60 },
-          { id: stepId(12), type: 'end' },
-        ]),
+        draft: withSteps([{ id: stepId(11), type: 'wait', seconds: 60 }, newer]),
       },
     }),
   )
 
   const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
 
-  await expect.element(nodeButton(screen, 'End')).toBeInTheDocument()
+  await expect.element(nodeButton(screen, 'wait_for_event')).toBeInTheDocument()
   await expect
     .element(
-      screen.getByText('This version holds a step that this editor cannot edit yet', {
+      screen.getByText('This version holds a step of a kind this editor does not know', {
         exact: false,
       }),
     )
@@ -396,95 +464,6 @@ test('a version holding an End opens read-only, drawing the End and offering no 
     .not.toBeInTheDocument()
   await openNode(screen, 'Wait')
   await expect.element(screen.getByRole('textbox', { name: 'Wait (seconds)' })).toBeDisabled()
-  await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeEnabled()
-})
-
-// A Branch (ADR 0124) is drawn as one node, but this editor cannot edit the tree yet: a version
-// holding one opens read-only, with no save that could drop the Branch or its paths, and Publish
-// still publishes it.
-test('a version holding a Branch opens read-only, drawing the Branch and offering no save', async () => {
-  worker.use(
-    handleSiteAutomationsGet({
-      body: {
-        ...STORED,
-        draft: withSteps([
-          {
-            id: stepId(11),
-            type: 'branch',
-            paths: [
-              {
-                id: stepId(12),
-                condition: {
-                  kind: 'group',
-                  combinator: 'and',
-                  entries: [{ kind: 'tag', name: 'vip', operator: 'has' }],
-                },
-                steps: [{ id: stepId(13), type: 'wait', seconds: 60 }],
-              },
-            ],
-            otherwise: { id: stepId(14), steps: [] },
-          },
-          { id: stepId(15), type: 'wait', seconds: 60 },
-        ]),
-      },
-    }),
-  )
-
-  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
-
-  await expect.element(nodeButton(screen, 'Branch')).toBeInTheDocument()
-  await expect
-    .element(
-      screen.getByText('This version holds a step that this editor cannot edit yet', {
-        exact: false,
-      }),
-    )
-    .toBeInTheDocument()
-  await expect.element(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
-  await expect.element(screen.getByLabelText('Name', { exact: false })).toBeDisabled()
-  await expect.element(screen.getByRole('button', { name: 'Remove step' })).not.toBeInTheDocument()
-  await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeEnabled()
-})
-
-// A Split (ADR 0124) is kept as a Branch is: drawn as one node, the version read-only, with no save
-// that could drop its paths or weights, and Publish still publishing it.
-test('a version holding a Split opens read-only, drawing the Split and offering no save', async () => {
-  worker.use(
-    handleSiteAutomationsGet({
-      body: {
-        ...STORED,
-        draft: withSteps([
-          {
-            id: stepId(11),
-            type: 'split',
-            paths: [
-              {
-                id: stepId(12),
-                weight: 50,
-                steps: [{ id: stepId(13), type: 'wait', seconds: 60 }],
-              },
-              { id: stepId(14), weight: 50, steps: [] },
-            ],
-          },
-          { id: stepId(15), type: 'wait', seconds: 60 },
-        ]),
-      },
-    }),
-  )
-
-  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
-
-  await expect.element(nodeButton(screen, 'Split')).toBeInTheDocument()
-  await expect
-    .element(
-      screen.getByText('This version holds a step that this editor cannot edit yet', {
-        exact: false,
-      }),
-    )
-    .toBeInTheDocument()
-  await expect.element(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
-  await expect.element(screen.getByLabelText('Name', { exact: false })).toBeDisabled()
-  await expect.element(screen.getByRole('button', { name: 'Remove step' })).not.toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeEnabled()
 })
 

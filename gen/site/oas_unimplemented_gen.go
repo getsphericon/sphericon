@@ -448,6 +448,16 @@ func (UnimplementedHandler) SiteAutomationsUnarchive(ctx context.Context, params
 	return r, ht.ErrNotImplemented
 }
 
+// SiteAutomationsUnknownPath implements SiteAutomations_unknownPath operation.
+//
+// Whether a Branch with these Conditions needs an unknown path, as Publish decides it: the editor asks
+// it of the version being edited.
+//
+// POST /workspaces/{workspaceId}/automations/unknown-path
+func (UnimplementedHandler) SiteAutomationsUnknownPath(ctx context.Context, req *BranchUnknownPathInput, params SiteAutomationsUnknownPathParams) (r *BranchUnknownPathResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteAutomationsUpdate implements SiteAutomations_update operation.
 //
 // Update an automation: its name, and its definition written to the draft. 409 when the automation is

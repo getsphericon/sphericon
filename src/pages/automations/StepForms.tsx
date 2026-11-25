@@ -1,6 +1,4 @@
 import { NumberInput, Stack, Text, Textarea, TextInput } from '@mantine/core'
-import { useEffect } from 'react'
-import type { RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { HttpHeaderRows } from '../../components/HttpHeaderRows.tsx'
@@ -8,38 +6,22 @@ import { SmsContentEditor } from '../../components/sms/SmsContentEditor.tsx'
 import { TelegramContentEditor } from '../../components/telegram/TelegramContentEditor.tsx'
 import { TelegramUnsubscribeControl } from '../../components/telegram/TelegramUnsubscribeControl.tsx'
 import { useSchemaForm } from '../../resources/schemaForm.ts'
-import type { SchemaForm } from '../../resources/schemaForm.ts'
 import { EVENT_ACTION_TAG } from '../../utils/mergeTags.ts'
 import type { EditedKind, EditedStep } from './definition.ts'
 import { HttpDryRun } from './HttpStepControls.tsx'
 import { IntegrationControl } from './IntegrationControl.tsx'
 import { MessageControl } from './MessageControl.tsx'
 import { stepSchemas } from './stepSchemas.ts'
+import { useValidator } from './stepValidator.ts'
+import type { StepValidator } from './stepValidator.ts'
 
 type StepOf<K extends EditedKind> = Extract<EditedStep, { kind: K }>
-
-// Checks every field of the open form as a submit does, showing each error under its field and
-// focusing the first: the editor's Save asks it before it sends.
-export type StepValidator = RefObject<(() => boolean) | null>
 
 interface StepFormProps<K extends EditedKind> {
   step: StepOf<K>
   // Every edit of the form, as the Step with its new draft: the flow holds what is saved.
   onEdit: (step: StepOf<K>) => void
   validatorRef: StepValidator
-}
-
-// useValidator hands the editor the check of the open form, for as long as it is open.
-function useValidator<TValues extends object, TOutput>(
-  form: SchemaForm<TValues, TOutput>,
-  validatorRef: StepValidator,
-) {
-  useEffect(() => {
-    validatorRef.current = () => form.validateFields(Object.keys(form.getValues()))
-    return () => {
-      validatorRef.current = null
-    }
-  }, [form, validatorRef])
 }
 
 function EmailForm({ step, onEdit, validatorRef }: StepFormProps<'email'>) {
