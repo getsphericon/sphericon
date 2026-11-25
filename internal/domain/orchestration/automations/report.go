@@ -305,7 +305,12 @@ func pathsTaken(ctx context.Context, s *ent.Scoped, id int64) (map[versionPath]*
 		Where(automationsteprecord.OutcomeEQ(automationsteprecord.OutcomePath)).
 		Modify(func(sel *sql.Selector) {
 			run := sql.Table(automationrun.Table)
-			sel.Join(run).On(sel.C(automationsteprecord.FieldRunID), run.C(automationrun.FieldID))
+			// The run's foreign key is composite: joined on both columns, the runs stay in the
+			// scope's Workspace and the read takes the runs' Workspace and Automation index.
+			sel.Join(run).OnP(sql.And(
+				sql.ColumnsEQ(sel.C(automationsteprecord.FieldWorkspaceID), run.C(automationrun.FieldWorkspaceID)),
+				sql.ColumnsEQ(sel.C(automationsteprecord.FieldRunID), run.C(automationrun.FieldID)),
+			))
 			sel.Where(sql.EQ(run.C(automationrun.FieldAutomationID), id))
 			sel.Select(
 				sql.As(run.C(automationrun.FieldVersionID), "version_id"),
