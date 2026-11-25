@@ -1,64 +1,18 @@
-import { Alert, Button, Code, Group, Select, Stack, Text, Textarea } from '@mantine/core'
+import { Alert, Button, Code, Group, Select, Stack, Text } from '@mantine/core'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { useJsonForms } from '@workflowbuilder/sdk'
-import type { ControlProps } from '@workflowbuilder/sdk'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
-import { HttpHeaderRows } from '../../components/HttpHeaderRows.tsx'
 import {
   siteAutomationsDryRunHttpStepMutation,
   siteContactsListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
-import { headersOf, headersText } from './definition.ts'
-import { STORED } from './nodeProperties.ts'
 
-// The step's headers as rows, as a Rule's http Action edits them. Only the names of saved headers
-// come back from the server, so a stored step keeps a header whose value is left empty.
-export function HttpHeadersControl(props: ControlProps) {
-  const { data, label, path } = props
-  const { core } = useJsonForms()
-  const saved = core?.data?.stored === STORED
-
-  return (
-    <Stack gap={4}>
-      <Text size="sm" fw={500}>
-        {label}
-      </Text>
-      <HttpHeaderRows
-        headers={headersOf(typeof data === 'string' ? data : '')}
-        saved={saved}
-        onChange={(headers) => props.handleChange(path, headersText(headers))}
-      />
-    </Stack>
-  )
-}
-
-// The step's body, with a dry run: the server renders it for a chosen Contact and checks it is
-// valid JSON, calling nothing, so the body being edited is checked before it is saved.
-export function HttpBodyControl(props: ControlProps) {
-  const { data, label, path } = props
-  const { t } = useTranslation()
-  const body = typeof data === 'string' ? data : ''
-
-  return (
-    <Stack gap="xs">
-      <Textarea
-        label={label}
-        description={t(($) => $.automations.httpBodyHint, { mergeTag: '{{ first_name }}' })}
-        autosize
-        minRows={6}
-        value={body}
-        onChange={(event) => props.handleChange(path, event.currentTarget.value)}
-      />
-      <HttpDryRun body={body} />
-    </Stack>
-  )
-}
-
-function HttpDryRun({ body }: { body: string }) {
+// The dry run of an HTTP step's body: the server renders the body being edited for a chosen
+// Contact and checks it is valid JSON, calling nothing, so the body is checked before it is saved.
+export function HttpDryRun({ body }: { body: string }) {
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()
   const [contactId, setContactId] = useState<string | null>(null)

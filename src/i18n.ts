@@ -22,11 +22,7 @@ export function resolveLocale(): Locale {
 }
 
 // The app runs on an i18next instance of its own, which components reach through the
-// <I18nextProvider> in App.tsx, the automation builder's subtree included. @workflowbuilder/sdk
-// depends on i18next and react-i18next of its own majors (not as peers), so it initialises and
-// reads its own copies at import time and never this instance. Were the SDK ever to share the
-// app's copies, its strings would be looked up here and miss: the builder test that expects the
-// SDK's "Nodes Library" catches it.
+// <I18nextProvider> in App.tsx.
 const i18n = createInstance()
 
 const REGIONAL_FORMAT_CHANGED = 'regionalFormatChanged'

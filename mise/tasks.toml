@@ -493,12 +493,10 @@ depends = ["update:npm", "update:go"]
 
 ["update:npm"]
 # openapi-ts stays on its pinned next channel: stable still needs the TypeScript package, which breaks under TS7.
-# @xyflow/react stays on 12 while @workflowbuilder/sdk asks for ^12: 13 drops exports the SDK's bundle imports
-# (useStore), which tsc does not see and the automation builder fails on at runtime.
 # playwright stays on 1.65.0: 1.65.1's Chromium crashes the browser tests partway through a run
 # (VITEST_BROWSER_CONNECTION_CLOSED), locally and in CI. CI's image moves with it (check:playwright-image).
 # --workspaces --root takes the packages/* manifests along with the root one.
-run = "pnpm exec ncu -u --workspaces --root --reject @hey-api/openapi-ts,@xyflow/react,playwright && pnpm update -r"
+run = "pnpm exec ncu -u --workspaces --root --reject @hey-api/openapi-ts,playwright && pnpm update -r"
 
 ["update:go"]
 # Both modules: the root and tools/analyzers, which has a go.mod of its own. Only the modules go.mod

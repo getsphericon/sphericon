@@ -1,212 +1,218 @@
-import { NodeType } from '@workflowbuilder/sdk'
-import type { WBIcon, WorkflowBuilderEdge, WorkflowBuilderNode } from '@workflowbuilder/sdk'
-import * as z from 'zod'
-
 import type { AnyCondition, ConditionDraft } from '../../components/conditions/condition.ts'
 import type {
   AutomationHttpHeader,
-  AutomationPath,
   AutomationPathInput,
   AutomationStep,
   AutomationStepInput,
   AutomationTriggerInput,
   AutomationVersion,
+  EditorDocument,
   EntryPolicy,
   EventFilterInput,
   EventMatcher,
   EventMatcherInput,
-  TelegramStep,
+  TelegramButton,
 } from '../../generated/site/types.gen.ts'
-import {
-  zAutomationHttpHeader,
-  zEntryPolicy,
-  zEventFilterInput,
-} from '../../generated/site/zod.gen.ts'
+import { zEntryPolicy, zEventFilterInput } from '../../generated/site/zod.gen.ts'
 import { jsonText } from '../../utils/jsonText.ts'
-import { docCodec } from '../../utils/messageDoc.ts'
-import { buttonsCodec } from '../../utils/telegramButtons.ts'
 import { completeButtons } from '../../utils/telegramContent.ts'
-import { OFF, STORED } from './nodeProperties.ts'
-import type { NodeProperties, ReadProperties, StepKind } from './nodeProperties.ts'
-import {
-  EMAIL_NODE_ICON,
-  END_NODE_ICON,
-  HTTP_NODE_ICON,
-  SMS_NODE_ICON,
-  TAG_NODE_ICON,
-  TELEGRAM_NODE_ICON,
-  TRIGGER_NODE_ICON,
-  TRIGGER_NODE_TYPE,
-  WAIT_NODE_ICON,
-} from './nodes.ts'
 
-// A step is the generated contract type (typed in TypeSpec; no hand-rolled
-// parse/serialize — the API carries steps as structured data, not a JSON string): a union by
-// `type`, each kind with fields of its own. A version's Steps are its root path, {id, steps}.
-export type { AutomationStep }
+// The editor's model is the version's Step tree (ADR 0122): the Trigger with its exit and goal
+// events, and the root path of Steps, each Step with the id it keeps across versions. The canvas
+// draws it and the side panel edits it; nothing else holds the flow.
 
-// --- graph ↔ steps (the visual builder uses an xyflow graph; we persist the root path) ---
-// A Step's node has the Step's id as its id (ADR 0122): a loaded node takes the stored id, and a
-// node dropped on the canvas the UUID the SDK mints for it, so every save sends each Step with the
-// id it keeps, and an HTTP step keeps its secrets by it. The root path's id rides on the Trigger
-// node (pathId).
+// The kinds the editor edits. A Step of any other kind (an End, a fork) is kept as it was read and
+// makes the version read-only here (ADR 0124): no edit or save can drop it.
+export type EditedKind = Exclude<AutomationStep['type'], 'end'>
 
-// The SDK's default node renderer key (NodeType.Node) and default edge type.
-const NODE_RENDERER_TYPE = 'node'
-const EDGE_TYPE = 'labelEdge'
-// Default node handle ids the SDK's node template uses for a single in/out port.
-const SOURCE_HANDLE = 'source'
-const TARGET_HANDLE = 'target'
-// Vertical spacing for the synthesized chain (layout is not persisted — we lay
-// the chain out top-to-bottom on load and let the user rearrange freely).
-const Y_GAP = 160
-
-export interface AutomationGraph {
-  nodes: WorkflowBuilderNode[]
-  edges: WorkflowBuilderEdge[]
-}
-
-const STEP_ICON: Record<StepKind, WBIcon> = {
-  email: EMAIL_NODE_ICON,
-  telegram: TELEGRAM_NODE_ICON,
-  sms: SMS_NODE_ICON,
-  wait: WAIT_NODE_ICON,
-  apply_tag: TAG_NODE_ICON,
-  remove_tag: TAG_NODE_ICON,
-  http: HTTP_NODE_ICON,
-  end: END_NODE_ICON,
-}
-
-// A Telegram step's content, as the form holds it: every value a string.
-function telegramProperties(step: TelegramStep): NodeProperties['telegram'] {
-  return {
-    integrationId: step.integrationId ?? '',
-    text: step.text,
-    unsubscribeButton: step.unsubscribeButton ?? '',
-    imageUrl: step.imageUrl ?? '',
-    buttons: buttonsCodec.write(step.buttons),
-    linkPreview: step.linkPreview ? '' : OFF,
+// What the side panel edits of each kind: every field a person types, as the form holds it.
+export interface StepDrafts {
+  // `integrationId` '' is the Channel's default (ADR 0081). `doc` is the editor's document, null
+  // for a message written as HTML (its body).
+  email: { integrationId: string; subject: string; body: string; doc: EditorDocument | null }
+  telegram: {
+    integrationId: string
+    text: string
+    unsubscribeButton: string
+    imageUrl: string
+    buttons: TelegramButton[]
+    linkPreview: boolean
   }
-}
-
-// The server never returns an HTTP step's URL, header values or signing secret, so the
-// canvas holds them blank: a blank field is "keep what is stored". The headers come back as
-// names only, held as JSON text (headersText) for the same reason.
-function stepProperties(step: AutomationStep): NodeProperties[keyof NodeProperties] {
-  switch (step.type) {
-    case 'http': {
-      const http: NodeProperties['http'] = {
-        stored: STORED,
-        url: '',
-        headers: headersText(step.headers.map(({ name }) => ({ name }))),
-        body: step.body,
-        secret: '',
-      }
-      return http
-    }
-    case 'wait': {
-      const wait: NodeProperties['wait'] = { seconds: step.seconds }
-      return wait
-    }
-    case 'apply_tag':
-    case 'remove_tag': {
-      const tag: NodeProperties['tag'] = { tag: step.tag }
-      return tag
-    }
-    case 'telegram':
-      return telegramProperties(step)
-    case 'end': {
-      const end: NodeProperties['end'] = {}
-      return end
-    }
-    case 'sms': {
-      const sms: NodeProperties['sms'] = {
-        integrationId: step.integrationId ?? '',
-        text: step.text,
-        linkTracking: step.linkTracking ? '' : OFF,
-      }
-      return sms
-    }
-    case 'email':
-    default: {
-      const email: NodeProperties['email'] = {
-        integrationId: step.integrationId ?? '',
-        subject: step.subject,
-        body: step.body,
-        doc: step.doc ? z.encode(docCodec, step.doc) : '',
-      }
-      return email
-    }
+  sms: { integrationId: string; text: string; linkTracking: boolean }
+  // The server never returns an HTTP step's URL, header values or signing secret: a `stored` step
+  // holds them blank, and a blank one keeps what is stored under the Step's id.
+  http: {
+    stored: boolean
+    url: string
+    headers: AutomationHttpHeader[]
+    body: string
+    secret: string
   }
+  wait: { seconds: number | '' }
+  apply_tag: { tag: string }
+  remove_tag: { tag: string }
 }
 
-const TRIGGER_NODE_ID = 'trigger'
+// A Step the editor edits, by kind.
+export type EditedStep = {
+  [K in EditedKind]: { id: string; kind: K; draft: StepDrafts[K] }
+}[EditedKind]
 
-// What the Trigger node holds: the Event matcher that enrolls a Contact (ADR 0133), the events that
-// end an Enrollment early and the one that ends it as having reached its goal (#751).
-export type AutomationTrigger = Pick<AutomationVersion, 'trigger' | 'exitEvents' | 'goalEvent'>
-
-// The canvas holds the Trigger's action as text and its filter as JSON text ('' for none), its
-// Entry policy and its cooldown as text of seconds (ADR 0127), its Enrollment key as text ('' for
-// none, ADR 0165), the exit events as the JSON text of
-// their drafts, the goal event as the JSON text of its draft ('' for
-// none), and the id of the root path the steps hang from.
-function triggerProperties(trigger: AutomationTrigger, pathId: string): Record<string, unknown> {
-  return {
-    triggerEvent: trigger.trigger.action,
-    triggerFilter: trigger.trigger.filter ? filterText(trigger.trigger.filter) : '',
-    entryPolicy: trigger.trigger.entryPolicy,
-    cooldown: String(trigger.trigger.cooldown),
-    enrollmentKey: trigger.trigger.enrollmentKey ?? '',
-    exitEvents: endingsText(trigger.exitEvents.map((exit) => endingDraft(exit))),
-    goalEvent: goalText(trigger.goalEvent === null ? null : endingDraft(trigger.goalEvent)),
-    pathId,
-  }
+// A Step the editor does not edit, kept as stored.
+interface KeptStep {
+  id: string
+  kind: 'kept'
+  step: AutomationStep
 }
+
+export type FlowStep = EditedStep | KeptStep
 
 // An exit or goal event as the Trigger node holds it (ADR 0133): its action, and its filter's text
 // as the builder leaves it (filterText: '' for none, complete or still being typed).
 export type EndingDraft = Pick<EventMatcherInput, 'action'> & { filterText: string }
 
-const endingDraftSchema = z.object({ action: z.string(), filterText: z.string() })
-const endingsCodec = jsonText.pipe(z.array(endingDraftSchema))
-const goalCodec = jsonText.pipe(endingDraftSchema)
+// The Trigger as its panel edits it: the Event matcher that enrolls a Contact (ADR 0133), its Entry
+// policy and cooldown in seconds (ADR 0127, null for the server's default), its Enrollment key (''
+// for none, ADR 0165), and the events that end an Enrollment early or at its goal (#751).
+export interface TriggerDraft {
+  action: string
+  filterText: string
+  entryPolicy: EntryPolicy
+  cooldown: number | null
+  enrollmentKey: string
+  exits: EndingDraft[]
+  goal: EndingDraft | null
+}
+
+export interface Flow {
+  trigger: TriggerDraft
+  path: { id: string; steps: FlowStep[] }
+}
+
+// The kinds the editor edits, by kind: a Step of another kind is kept.
+const EDITED: Record<EditedKind, true> = {
+  email: true,
+  telegram: true,
+  sms: true,
+  http: true,
+  wait: true,
+  apply_tag: true,
+  remove_tag: true,
+}
+
+function isEdited(kind: string): kind is EditedKind {
+  return Object.hasOwn(EDITED, kind)
+}
+
+// The draft of a stored Step the editor edits; what the stored Step leaves out is blank.
+function draftOf(step: AutomationStep): EditedStep | null {
+  const { id } = step
+  switch (step.type) {
+    case 'email':
+      return {
+        id,
+        kind: 'email',
+        draft: {
+          integrationId: step.integrationId ?? '',
+          subject: step.subject,
+          body: step.body,
+          doc: step.doc ?? null,
+        },
+      }
+    case 'telegram':
+      return {
+        id,
+        kind: 'telegram',
+        draft: {
+          integrationId: step.integrationId ?? '',
+          text: step.text,
+          unsubscribeButton: step.unsubscribeButton ?? '',
+          imageUrl: step.imageUrl ?? '',
+          buttons: step.buttons,
+          linkPreview: step.linkPreview,
+        },
+      }
+    case 'sms':
+      return {
+        id,
+        kind: 'sms',
+        draft: {
+          integrationId: step.integrationId ?? '',
+          text: step.text,
+          linkTracking: step.linkTracking,
+        },
+      }
+    case 'http':
+      return {
+        id,
+        kind: 'http',
+        draft: {
+          stored: true,
+          url: '',
+          headers: step.headers.map(({ name }) => ({ name })),
+          body: step.body,
+          secret: '',
+        },
+      }
+    case 'wait':
+      return { id, kind: 'wait', draft: { seconds: step.seconds } }
+    case 'apply_tag':
+      return { id, kind: 'apply_tag', draft: { tag: step.tag } }
+    case 'remove_tag':
+      return { id, kind: 'remove_tag', draft: { tag: step.tag } }
+    case 'end':
+    default:
+      return null
+  }
+}
+
+// flowStepOf is a stored Step as the editor holds it: a draft of a kind it edits, else kept.
+function flowStepOf(step: AutomationStep): FlowStep {
+  const edited = isEdited(step.type) ? draftOf(step) : null
+  return edited ?? { id: step.id, kind: 'kept', step }
+}
+
+// The Trigger of a version as its panel edits it.
+function triggerDraftOf(version: AutomationVersion): TriggerDraft {
+  const { trigger } = version
+  return {
+    action: trigger.action,
+    filterText: trigger.filter ? filterText(trigger.filter) : '',
+    entryPolicy: trigger.entryPolicy,
+    cooldown: trigger.cooldown,
+    enrollmentKey: trigger.enrollmentKey ?? '',
+    exits: version.exitEvents.map((exit) => endingDraft(exit)),
+    goal: version.goalEvent === null ? null : endingDraft(version.goalEvent),
+  }
+}
+
+// flowOf is the version the editor opens: its Trigger and its root path, each Step by its id.
+export function flowOf(version: AutomationVersion): Flow {
+  return {
+    trigger: triggerDraftOf(version),
+    path: { id: version.steps.id, steps: version.steps.steps.map((step) => flowStepOf(step)) },
+  }
+}
+
+// holdsKept tells whether the flow holds a Step the editor does not edit: the version is then
+// read-only here.
+export function holdsKept(flow: Flow): boolean {
+  return flow.path.steps.some((step) => step.kind === 'kept')
+}
 
 // endingDraft is the draft of a stored exit or goal event.
 function endingDraft(matcher: EventMatcher): EndingDraft {
   return { action: matcher.action, filterText: matcher.filter ? filterText(matcher.filter) : '' }
 }
 
-// endingsText is the Trigger node's text of its exit events.
-export function endingsText(drafts: EndingDraft[]): string {
-  return z.encode(endingsCodec, drafts)
-}
-
-// endingsOf reads the exit events' drafts off the Trigger node; an unreadable text is none.
-export function endingsOf(text: string): EndingDraft[] {
-  const parsed = endingsCodec.safeParse(text)
-  return parsed.success ? parsed.data : []
-}
-
-// goalText is the Trigger node's text of its goal event: '' for none.
-export function goalText(draft: EndingDraft | null): string {
-  return draft === null ? '' : z.encode(goalCodec, draft)
-}
-
-// goalOf reads the goal event's draft off the Trigger node: null for none or an unreadable text.
-export function goalOf(text: string): EndingDraft | null {
-  const parsed = goalCodec.safeParse(text)
-  return parsed.success ? parsed.data : null
-}
-
-// filterText is the Trigger node's text of a filter as the builder edits it (complete or not):
-// '' for an empty group, which tests nothing and is no filter, else its JSON.
+// filterText is the text of a filter as the builder edits it (complete or not): '' for an empty
+// group, which tests nothing and is no filter, else its JSON.
 export function filterText(filter: AnyCondition | ConditionDraft): string {
   return filter.entries.length === 0 && filter.not !== true ? '' : JSON.stringify(filter)
 }
 
-// The filter the Trigger node's text holds, as the builder loads it: a complete filter, or none
-// for '' and for a filter still being typed, which the builder then starts over.
+// The filter a text holds, as the builder loads it: a complete filter, or none for '' and for a
+// filter still being typed, which the builder then starts over.
 export function filterOf(text: string): EventFilterInput | undefined {
   if (text === '') {
     return undefined
@@ -215,33 +221,26 @@ export function filterOf(text: string): EventFilterInput | undefined {
   return parsed.success ? parsed.data : undefined
 }
 
-// entryPolicyOf reads an Entry policy off a node's value: `once` for anything that is none.
+// entryPolicyOf reads an Entry policy off a picker's value: `once` for anything that is none.
 export function entryPolicyOf(value: unknown): EntryPolicy {
   const parsed = zEntryPolicy.safeParse(value)
   return parsed.success ? parsed.data : 'once'
 }
 
-// cooldownHours shows a cooldown the node holds as text of seconds in hours, '' while none is set.
-export function cooldownHours(value: unknown): number | '' {
-  const seconds = cooldownOf(value)
-  return seconds === undefined ? '' : seconds / 3600
+const SECONDS_PER_HOUR = 3600
+
+// cooldownHours shows a cooldown in seconds in hours, '' while none is set.
+export function cooldownHours(seconds: number | null): number | '' {
+  return seconds === null ? '' : seconds / SECONDS_PER_HOUR
 }
 
-// cooldownSeconds turns the hours a person typed into the text of seconds the node holds, '' for
-// none.
-export function cooldownSeconds(hours: number | string): string {
-  return typeof hours === 'number' ? String(hours * 3600) : ''
-}
-
-// cooldownOf reads the cooldown in seconds off the node's text, none when it holds no number.
-function cooldownOf(value: unknown): number | undefined {
-  const text = asText(value).trim()
-  const seconds = Number(text)
-  return text === '' || !Number.isInteger(seconds) ? undefined : seconds
+// cooldownSeconds turns the hours a person typed into seconds, null for none.
+export function cooldownSeconds(hours: number | string): number | null {
+  return typeof hours === 'number' ? hours * SECONDS_PER_HOUR : null
 }
 
 // withoutHalfTypedFilter is the draft with a filter still being typed dropped: the builder loads
-// only a complete filter, so the node drops the rest too when its panel opens again.
+// only a complete filter, so the panel drops the rest too when it opens again.
 export function withoutHalfTypedFilter(draft: EndingDraft): EndingDraft {
   return draft.filterText !== '' && filterOf(draft.filterText) === undefined
     ? { ...draft, filterText: '' }
@@ -266,33 +265,6 @@ function matcherOf(
   return { matcher: { ...matcher, filter: parsed.data }, incomplete: false }
 }
 
-// triggerOf reads the Trigger off the node: its matcher (matcherOf), its Entry policy, its
-// cooldown, one left empty being the server's default, and its Enrollment key trimmed, a blank one
-// being none.
-function triggerOf(properties: Record<string, unknown>): {
-  trigger: AutomationTriggerInput
-  incomplete: boolean
-} {
-  const { matcher, incomplete } = matcherOf(
-    asText(properties.triggerEvent),
-    asText(properties.triggerFilter),
-  )
-  const trigger: AutomationTriggerInput = {
-    kind: 'event',
-    ...matcher,
-    entryPolicy: entryPolicyOf(properties.entryPolicy),
-  }
-  const cooldown = cooldownOf(properties.cooldown)
-  if (cooldown !== undefined) {
-    trigger.cooldown = cooldown
-  }
-  const key = asText(properties.enrollmentKey).trim()
-  if (key !== '') {
-    trigger.enrollmentKey = key
-  }
-  return { trigger, incomplete }
-}
-
 // endingRead is an exit or goal event read off its draft (matcherOf): none for no draft or a blank
 // action.
 function endingRead(
@@ -303,262 +275,125 @@ function endingRead(
     : [matcherOf(draft.action, draft.filterText)]
 }
 
-// endingsOfNode reads the exit and goal events off the Trigger node (matcherOf): an exit with a
-// blank action is dropped, a goal with one is none. incomplete says a filter of one of them is
-// still being typed.
-function endingsOfNode(properties: Record<string, unknown>): {
-  exitEvents: EventMatcherInput[]
-  goalEvent: EventMatcherInput | null
-  incomplete: boolean
-} {
-  const exits = endingsOf(asText(properties.exitEvents)).flatMap((draft) => endingRead(draft))
-  const [goal] = endingRead(goalOf(asText(properties.goalEvent)))
-  return {
-    exitEvents: exits.map(({ matcher }) => matcher),
-    goalEvent: goal?.matcher ?? null,
-    incomplete: [...exits, ...(goal ? [goal] : [])].some(({ incomplete }) => incomplete),
+// triggerOf reads the Trigger off its draft: its matcher (matcherOf), its Entry policy, its
+// cooldown, none being the server's default, and its Enrollment key trimmed, a blank one being
+// none.
+function triggerOf(draft: TriggerDraft): { trigger: AutomationTriggerInput; incomplete: boolean } {
+  const { matcher, incomplete } = matcherOf(draft.action, draft.filterText)
+  const trigger: AutomationTriggerInput = {
+    kind: 'event',
+    ...matcher,
+    entryPolicy: entryPolicyOf(draft.entryPolicy),
   }
-}
-
-function labelOf(labels: Record<string, string>, type: string): { label?: string } {
-  const label = labels[type]
-  return label === undefined ? {} : { label }
-}
-
-// stepsToGraph builds a linear top-to-bottom chain for the canvas: the Trigger as the start
-// node, holding the root path's id, then one node per stored step, its id the Step's. Positions
-// are synthesized from order, never persisted; `labels` names each node kind on the canvas.
-export function stepsToGraph(
-  trigger: AutomationTrigger,
-  path: AutomationPath,
-  labels: Record<string, string>,
-): AutomationGraph {
-  const start: WorkflowBuilderNode = {
-    id: TRIGGER_NODE_ID,
-    type: NODE_RENDERER_TYPE,
-    position: { x: 0, y: 0 },
-    deletable: false,
-    data: {
-      type: TRIGGER_NODE_TYPE,
-      icon: TRIGGER_NODE_ICON,
-      templateType: NodeType.StartNode,
-      isStartNode: true,
-      segments: [],
-      properties: {
-        ...triggerProperties(trigger, path.id),
-        ...labelOf(labels, TRIGGER_NODE_TYPE),
-      },
-    },
+  if (draft.cooldown !== null) {
+    trigger.cooldown = draft.cooldown
   }
-  const nodes: WorkflowBuilderNode[] = [
-    start,
-    ...path.steps.map((step, i): WorkflowBuilderNode => ({
-      id: step.id,
-      type: NODE_RENDERER_TYPE,
-      position: { x: 0, y: (i + 1) * Y_GAP },
-      data: {
-        type: step.type,
-        icon: STEP_ICON[step.type],
-        segments: [],
-        properties: { ...stepProperties(step), ...labelOf(labels, step.type) },
-      },
-    })),
-  ]
-
-  const edges: WorkflowBuilderEdge[] = nodes.slice(1).map((node, i) => ({
-    id: `edge-${i}`,
-    source: nodes[i]?.id ?? TRIGGER_NODE_ID,
-    target: node.id,
-    sourceHandle: SOURCE_HANDLE,
-    targetHandle: TARGET_HANDLE,
-    type: EDGE_TYPE,
-  }))
-
-  return { nodes, edges }
-}
-
-function asText(value: unknown): string {
-  return typeof value === 'string' ? value : ''
-}
-
-// An HTTP step's headers as the node holds them: JSON text (see jsonText).
-const headersCodec = jsonText.pipe(z.array(zAutomationHttpHeader))
-
-// headersOf reads an HTTP step's headers off the node; a blank or unreadable text is none.
-export function headersOf(text: string): AutomationHttpHeader[] {
-  const parsed = headersCodec.safeParse(text)
-  return parsed.success ? parsed.data : []
-}
-
-// headersText is the JSON text a node holds its headers in.
-export function headersText(headers: AutomationHttpHeader[]): string {
-  return z.encode(headersCodec, headers)
+  const key = draft.enrollmentKey.trim()
+  if (key !== '') {
+    trigger.enrollmentKey = key
+  }
+  return { trigger, incomplete }
 }
 
 // stepHeaders are the headers a step saves: a row left wholly blank is dropped, and a header
 // whose value is empty keeps the stored value of the header with that name.
-function stepHeaders(text: string): AutomationHttpHeader[] {
-  return headersOf(text)
+function stepHeaders(headers: AutomationHttpHeader[]): AutomationHttpHeader[] {
+  return headers
     .map(({ name, value }) => ({ name: name.trim(), value: value ?? '' }))
     .filter(({ name, value }) => name !== '' || value !== '')
     .map(({ name, value }) => (value === '' ? { name } : { name, value }))
 }
 
-// The Telegram step a node holds: what is left blank is left out.
-function telegramStep(id: string, props: ReadProperties<'telegram'>): AutomationStepInput {
-  const integrationId = asText(props.integrationId)
-  const unsubscribeButton = asText(props.unsubscribeButton)
-  const imageUrl = asText(props.imageUrl).trim()
-  const buttons = completeButtons(buttonsCodec.read(props.buttons))
-  return {
-    id,
-    type: 'telegram',
-    text: asText(props.text),
-    ...(integrationId === '' ? {} : { integrationId }),
-    ...(unsubscribeButton === '' ? {} : { unsubscribeButton }),
-    ...(imageUrl === '' ? {} : { imageUrl }),
-    ...(buttons.length === 0 ? {} : { buttons }),
-    ...(props.linkPreview === OFF ? { linkPreview: false } : {}),
-  }
+// An Integration a send step names: '' names none, and the step sends through the default.
+function via(integrationId: string) {
+  return integrationId === '' ? {} : { integrationId }
 }
 
-// The SMS step a node holds. A step that names no Integration ('') leaves it out: it sends
-// through the SMS default. Link tracking is on unless the node turned it 'off'.
-function smsStep(id: string, props: ReadProperties<'sms'>): AutomationStepInput {
-  const integrationId = asText(props.integrationId)
-  return {
-    id,
-    type: 'sms',
-    text: asText(props.text),
-    ...(integrationId === '' ? {} : { integrationId }),
-    ...(props.linkTracking === OFF ? { linkTracking: false } : {}),
-  }
-}
-
-// The Step a node holds, with the node's id as its own; null for a node that is no Step.
-function nodeToStep(node: WorkflowBuilderNode): AutomationStepInput | null {
-  const props: Record<string, unknown> = node.data.properties
-  const { id } = node
-  switch (node.data.type) {
+// The Step a draft saves, with its id: what is left blank is left out, a switch left on is the
+// server's default.
+function stepInputOf(step: EditedStep): AutomationStepInput {
+  const { id } = step
+  switch (step.kind) {
+    case 'email': {
+      // A message written in the editor is saved as its document alone (the server builds the
+      // body; sending both is a 422), and one written as HTML as its body alone.
+      const { integrationId, subject, body, doc } = step.draft
+      return doc === null
+        ? { id, type: 'email', ...via(integrationId), subject, body }
+        : { id, type: 'email', ...via(integrationId), subject, doc }
+    }
+    case 'telegram': {
+      const { draft } = step
+      const imageUrl = draft.imageUrl.trim()
+      const buttons = completeButtons(draft.buttons)
+      return {
+        id,
+        type: 'telegram',
+        text: draft.text,
+        ...via(draft.integrationId),
+        ...(draft.unsubscribeButton === '' ? {} : { unsubscribeButton: draft.unsubscribeButton }),
+        ...(imageUrl === '' ? {} : { imageUrl }),
+        ...(buttons.length === 0 ? {} : { buttons }),
+        ...(draft.linkPreview ? {} : { linkPreview: false }),
+      }
+    }
+    case 'sms':
+      return {
+        id,
+        type: 'sms',
+        text: step.draft.text,
+        ...via(step.draft.integrationId),
+        ...(step.draft.linkTracking ? {} : { linkTracking: false }),
+      }
     case 'http': {
-      const http: ReadProperties<'http'> = props
-      const url = asText(http.url).trim()
-      const secret = asText(http.secret)
+      const url = step.draft.url.trim()
+      const { secret } = step.draft
       return {
         id,
         type: 'http',
-        body: asText(http.body),
-        headers: stepHeaders(asText(http.headers)),
+        body: step.draft.body,
+        headers: stepHeaders(step.draft.headers),
         ...(url === '' ? {} : { url }),
         ...(secret === '' ? {} : { secret }),
       }
     }
-    case 'wait': {
-      const wait: ReadProperties<'wait'> = props
-      return { id, type: 'wait', seconds: Math.trunc(Number(wait.seconds)) || 0 }
-    }
+    case 'wait':
+      return { id, type: 'wait', seconds: Math.trunc(Number(step.draft.seconds)) || 0 }
     case 'apply_tag':
-    case 'remove_tag': {
-      const tag: ReadProperties<'tag'> = props
-      return { id, type: node.data.type, tag: asText(tag.tag) }
-    }
-    case 'telegram':
-      return telegramStep(id, props)
-    case 'sms':
-      return smsStep(id, props)
-    // An End holds nothing but its id: the canvas cannot place one, but keeps one it read.
-    case 'end':
-      return { id, type: 'end' }
-    case 'email': {
-      // A message written in the editor is saved as its document alone (the server builds the
-      // body; sending both is a 422), and one written as HTML as its body alone. A step that names
-      // no Integration ('') leaves it out: it sends through the email default.
-      const email: ReadProperties<'email'> = props
-      const subject = asText(email.subject)
-      const integrationId = asText(email.integrationId)
-      const via = integrationId === '' ? {} : { integrationId }
-      const doc = docCodec.safeParse(asText(email.doc))
-      return doc.success
-        ? { id, type: 'email', ...via, subject, doc: doc.data }
-        : { id, type: 'email', ...via, subject, body: asText(email.body) }
-    }
+    case 'remove_tag':
     default:
-      return null
+      return { id, type: step.kind, tag: step.draft.tag }
   }
 }
 
-// graphToSteps linearizes the canvas graph: it finds the one Trigger node, reads the trigger,
-// exit and goal events and the root path's id off it and walks single outgoing edges from there
-// into the root path's ordered steps, each with its node's id.
-// The Trigger is not a Step. Branches are not supported yet: nodes off the main chain are
-// reported via `dropped` so the caller can warn instead of silently losing them. `trigger` is
-// null when the canvas does not hold exactly one Trigger; `filterIncomplete` says its filter, or an
-// exit's or the goal's, is still being typed, and is left out of what is saved.
-export function graphToSteps(graph: AutomationGraph): {
-  trigger: AutomationTriggerInput | null
+// What a flow saves as the version's definition: the Trigger, its exit and goal events and the root
+// path, each Step with its id. `filterIncomplete` says a filter of the Trigger, an exit or the goal
+// is still being typed, and is left out. A kept Step stays as stored: a flow holding one is shown,
+// never saved (holdsKept).
+export function definitionOf(flow: Flow): {
+  trigger: AutomationTriggerInput
   filterIncomplete: boolean
   exitEvents: EventMatcherInput[]
   goalEvent: EventMatcherInput | null
-  steps: AutomationPathInput
-  dropped: number
+  steps: { id: string; steps: (AutomationStepInput | AutomationStep)[] }
 } {
-  const ordered = linearGraphNodes(graph)
-  const [root] = ordered
-  if (!root) {
-    return {
-      trigger: null,
-      filterIncomplete: false,
-      exitEvents: [],
-      goalEvent: null,
-      steps: { steps: [] },
-      dropped: 0,
-    }
-  }
-  const steps = ordered.flatMap((node) => {
-    const step = nodeToStep(node)
-    return step ? [step] : []
-  })
-  const pathId = asText(root.data.properties.pathId)
-  const { trigger, incomplete } = triggerOf(root.data.properties)
-  const endings = endingsOfNode(root.data.properties)
+  const { trigger, incomplete } = triggerOf(flow.trigger)
+  const exits = flow.trigger.exits.flatMap((draft) => endingRead(draft))
+  const [goal] = endingRead(flow.trigger.goal)
   return {
     trigger,
-    filterIncomplete: incomplete || endings.incomplete,
-    exitEvents: endings.exitEvents,
-    goalEvent: endings.goalEvent,
-    steps: pathId === '' ? { steps } : { id: pathId, steps },
-    dropped: graph.nodes.length - ordered.length,
+    filterIncomplete: incomplete || [...exits, ...(goal ? [goal] : [])].some((e) => e.incomplete),
+    exitEvents: exits.map(({ matcher }) => matcher),
+    goalEvent: goal?.matcher ?? null,
+    steps: {
+      id: flow.path.id,
+      steps: flow.path.steps.map((step) => (step.kind === 'kept' ? step.step : stepInputOf(step))),
+    },
   }
 }
 
-// The canvas order is its edges, not the order in which nodes were created.
-function linearGraphNodes(graph: AutomationGraph): WorkflowBuilderNode[] {
-  const { nodes, edges } = graph
-  const triggers = nodes.filter((n) => n.data.type === TRIGGER_NODE_TYPE)
-  const [root] = triggers
-  if (triggers.length !== 1 || !root) {
-    return []
-  }
-
-  const byId = new Map(nodes.map((n) => [n.id, n]))
-  const next = new Map<string, string>()
-  for (const e of edges) {
-    if (byId.has(e.source) && byId.has(e.target) && !next.has(e.source)) {
-      next.set(e.source, e.target)
-    }
-  }
-
-  const ordered: WorkflowBuilderNode[] = []
-  const visited = new Set<string>()
-  let current: string | undefined = root.id
-  while (current && !visited.has(current)) {
-    visited.add(current)
-    const node = byId.get(current)
-    if (node) {
-      ordered.push(node)
-    }
-    current = next.get(current)
-  }
-
-  return ordered
+// The root path a flow saves; null when it holds a kept Step, which the editor never saves.
+export function pathInputOf(flow: Flow): AutomationPathInput | null {
+  const steps = flow.path.steps.flatMap((step) => (step.kind === 'kept' ? [] : [stepInputOf(step)]))
+  return holdsKept(flow) ? null : { id: flow.path.id, steps }
 }

@@ -1,16 +1,15 @@
 import { ActionIcon, Autocomplete, Button, Group, Input, Paper, Stack } from '@mantine/core'
 import { IconPlus, IconTrash } from '@tabler/icons-react'
-import type { ControlProps } from '@workflowbuilder/sdk'
 import { useMount } from 'ahooks'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { EventActionOption } from '../../components/EventActionName.tsx'
 import { useEventActionFilter } from '../../hooks/useEventActionLabel.ts'
-import { endingsOf, endingsText, goalOf, goalText, withoutHalfTypedFilter } from './definition.ts'
+import { withoutHalfTypedFilter } from './definition.ts'
 import type { EndingDraft } from './definition.ts'
 import { EventFilterField } from './EventFilterField.tsx'
-import { TRIGGER_EVENTS } from './nodes.ts'
+import { TRIGGER_EVENTS } from './triggerEvents.ts'
 
 const NO_ENDING: EndingDraft = { action: '', filterText: '' }
 
@@ -63,17 +62,20 @@ function EndingEditor({
   )
 }
 
-// The exit events end an active Enrollment early (#751), each an Event matcher (ADR 0133). The node
-// holds them as the JSON text of their drafts; a filter left half-typed is dropped when the panel
-// opens again, and one still being typed is refused at the Save.
-export function ExitEventsControl(props: ControlProps) {
-  const { data, label, path } = props
+// The exit events end an active Enrollment early (#751), each an Event matcher (ADR 0133). A filter
+// left half-typed is dropped when the panel opens again, and one still being typed is refused at the
+// Save.
+export function ExitEventsControl({
+  value: drafts,
+  onChange: write,
+}: {
+  value: EndingDraft[]
+  onChange: (drafts: EndingDraft[]) => void
+}) {
   const { t } = useTranslation()
-  const drafts = endingsOf(typeof data === 'string' ? data : '')
   // Each row keeps its key while the panel is open, so removing one never hands its builder to
   // the next.
   const [keys, setKeys] = useState(() => drafts.map(() => crypto.randomUUID()))
-  const write = (next: EndingDraft[]) => props.handleChange(path, endingsText(next))
   useMount(() => {
     const loaded = drafts.map((draft) => withoutHalfTypedFilter(draft))
     if (loaded.some((draft, i) => draft !== drafts[i])) {
@@ -82,7 +84,10 @@ export function ExitEventsControl(props: ControlProps) {
   })
 
   return (
-    <Input.Wrapper label={label} description={t(($) => $.automations.exitEventsHint)}>
+    <Input.Wrapper
+      label={t(($) => $.automations.exitEventsLabel)}
+      description={t(($) => $.automations.exitEventsHint)}
+    >
       <Stack gap="xs" mt="xs">
         {drafts.map((draft, i) => (
           <EndingEditor
@@ -111,12 +116,15 @@ export function ExitEventsControl(props: ControlProps) {
 }
 
 // The goal event ends an active Enrollment as having reached its goal, an Event matcher (ADR 0133);
-// none until one is added. The node holds it as the JSON text of its draft, '' for none.
-export function GoalEventControl(props: ControlProps) {
-  const { data, label, path } = props
+// none until one is added.
+export function GoalEventControl({
+  value: draft,
+  onChange: write,
+}: {
+  value: EndingDraft | null
+  onChange: (draft: EndingDraft | null) => void
+}) {
   const { t } = useTranslation()
-  const draft = goalOf(typeof data === 'string' ? data : '')
-  const write = (next: EndingDraft | null) => props.handleChange(path, goalText(next))
   useMount(() => {
     if (draft !== null && withoutHalfTypedFilter(draft) !== draft) {
       write(withoutHalfTypedFilter(draft))
@@ -124,7 +132,10 @@ export function GoalEventControl(props: ControlProps) {
   })
 
   return (
-    <Input.Wrapper label={label} description={t(($) => $.automations.goalEventHint)}>
+    <Input.Wrapper
+      label={t(($) => $.automations.goalEventLabel)}
+      description={t(($) => $.automations.goalEventHint)}
+    >
       <Stack gap="xs" mt="xs">
         {draft === null ? (
           <Button

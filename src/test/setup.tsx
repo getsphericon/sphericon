@@ -5,6 +5,7 @@
 // - i18n init so `t(($) => $.x)` translation keys resolve to English strings.
 import '@mantine/core/styles.css'
 import '@mantine/notifications/styles.css'
+import '@xyflow/react/dist/style.css'
 import '../i18n.ts'
 import { QueryClient } from '@tanstack/react-query'
 import { http, HttpResponse } from 'msw'

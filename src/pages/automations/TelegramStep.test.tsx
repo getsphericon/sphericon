@@ -1,5 +1,5 @@
 import { HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { beforeEach, expect, test } from 'vitest'
 import { page } from 'vitest/browser'
 
 import {
@@ -15,7 +15,6 @@ import type {
   SiteAutomationResource,
 } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
-import { canvasProperties } from '../../test/canvas.ts'
 import { emailIntegration, stepId, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -26,6 +25,22 @@ const EDIT_ROUTE = routeMount(automationsEditRoute, {
   workspaceId: 'TestWs01',
   automationId: testId(5),
 })
+
+beforeEach(async () => {
+  // The editor is a desktop tool: its side panel sits beside the canvas, not over it.
+  await page.viewport(1280, 900)
+})
+
+type Screen = Awaited<ReturnType<typeof renderWithRouter>>['screen']
+
+// Opens the canvas node whose kind is `label` in the side panel; `index` picks among nodes of one
+// kind, top to bottom.
+async function openNode(screen: Screen, label: string, index = 0) {
+  await screen
+    .getByRole('button', { name: new RegExp(`^${label}`) })
+    .nth(index)
+    .click()
+}
 
 const STEP: AutomationStep = {
   id: stepId(11),
@@ -71,22 +86,6 @@ function stored(steps: AutomationStep[]): SiteAutomationResource {
   }
 }
 
-function flowNode(index: number) {
-  const node = document.querySelectorAll('.react-flow__node')[index]
-  if (!node) {
-    throw new Error('the canvas has not drawn the node yet')
-  }
-  return node
-}
-
-function canvasPane() {
-  const pane = document.querySelector('.react-flow__pane')
-  if (!pane) {
-    throw new Error('the canvas has not drawn yet')
-  }
-  return pane
-}
-
 test('a Telegram step round-trips: its bot and text load, an edit saves them back', async () => {
   const bodies: { steps?: AutomationPathInput }[] = []
   const current = stored([STEP])
@@ -103,9 +102,7 @@ test('a Telegram step round-trips: its bot and text load, an edit saves them bac
   )
   const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
 
-  await expect.poll(() => flowNode(1)).toBeInstanceOf(Element)
-  await page.elementLocator(flowNode(1)).click()
-  await screen.getByText('Properties').click({ force: true })
+  await openNode(screen, 'Send Telegram message')
   const picker = screen.getByRole('combobox', { name: 'Integration' })
   await expect.element(picker).toHaveValue('Acme bot')
   await picker.click()
@@ -116,8 +113,6 @@ test('a Telegram step round-trips: its bot and text load, an edit saves them bac
   await expect.element(screen.getByText('15 / 4,096')).toBeVisible()
   await text.fill('Welcome')
   await expect.element(screen.getByText('7 / 4,096')).toBeVisible()
-  // The edit reaches the canvas store, which the Save reads, a moment later.
-  await expect.poll(() => canvasProperties(STEP.id)).toMatchObject({ text: 'Welcome' })
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect
@@ -147,8 +142,7 @@ test('a Telegram text over the limit is flagged by the counter', async () => {
   )
   const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
 
-  await expect.poll(() => flowNode(1)).toBeInstanceOf(Element)
-  await page.elementLocator(flowNode(1)).click()
+  await openNode(screen, 'Send Telegram message')
   await expect.element(screen.getByText('4,100 / 4,096')).toBeVisible()
   await expect.element(screen.getByText(/it cannot go out until it is shorter/)).toBeVisible()
 })
@@ -169,8 +163,7 @@ test('adding an image switches the counter to the caption limit, and buttons and
   )
   const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
 
-  await expect.poll(() => flowNode(1)).toBeInstanceOf(Element)
-  await page.elementLocator(flowNode(1)).click()
+  await openNode(screen, 'Send Telegram message')
   await expect.element(screen.getByText('22 / 4,096')).toBeVisible()
 
   await screen.getByRole('textbox', { name: 'Image URL' }).fill('https://cdn.example.com/a.png')
@@ -182,16 +175,6 @@ test('adding an image switches the counter to the caption limit, and buttons and
   await screen.getByRole('textbox', { name: 'Button 1 label' }).fill('Open')
   await screen.getByRole('textbox', { name: 'Button 1 URL' }).fill('https://example.com/a')
   await expect.element(screen.getByTestId('telegram-preview')).toHaveTextContent('Hello AlexOpen')
-  // The edit reaches the canvas store, which the Save reads, a moment later.
-  await expect
-    .poll(() => canvasProperties(STEP.id))
-    .toMatchObject({
-      imageUrl: 'https://cdn.example.com/a.png',
-      linkPreview: 'off',
-      buttons: expect.stringContaining('https://example.com/a'),
-    })
-  // The open properties panel covers the toolbar at this viewport: deselect the node first.
-  await page.elementLocator(canvasPane()).click({ position: { x: 5, y: 300 } })
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect
@@ -209,7 +192,8 @@ test('adding an image switches the counter to the caption limit, and buttons and
     ])
 
   // Back from the server, the saved content loads into the editor again.
-  await page.elementLocator(flowNode(1)).click()
+  await screen.getByRole('button', { name: 'Close panel' }).click()
+  await openNode(screen, 'Send Telegram message')
   await expect.element(screen.getByRole('textbox', { name: 'Button 1 label' })).toHaveValue('Open')
 })
 
@@ -229,19 +213,11 @@ test('the unsubscribe button of a Telegram step is switched on with a label and 
   )
   const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
 
-  await expect.poll(() => flowNode(1)).toBeInstanceOf(Element)
-  await page.elementLocator(flowNode(1)).click()
-  await screen.getByText('Properties').click()
+  await openNode(screen, 'Send Telegram message')
   await screen.getByText('Unsubscribe button', { exact: true }).click({ force: true })
   const label = screen.getByRole('textbox', { name: 'Button label' })
   await expect.element(label).toHaveValue('Unsubscribe')
   await label.fill('Stop messages')
-  // The edit reaches the canvas store, which the Save reads, a moment later.
-  await expect
-    .poll(() => canvasProperties(STEP.id))
-    .toMatchObject({ unsubscribeButton: 'Stop messages' })
-  // The open properties panel covers the toolbar at this viewport: deselect the node first.
-  await page.elementLocator(canvasPane()).click({ position: { x: 5, y: 300 } })
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect
@@ -265,13 +241,9 @@ test('a Telegram step with an unsubscribe button loads its label, and switching 
   )
   const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
 
-  await expect.poll(() => flowNode(1)).toBeInstanceOf(Element)
-  await page.elementLocator(flowNode(1)).click()
-  await screen.getByText('Properties').click()
+  await openNode(screen, 'Send Telegram message')
   await expect.element(screen.getByRole('textbox', { name: 'Button label' })).toHaveValue('Stop')
   await screen.getByText('Unsubscribe button', { exact: true }).click({ force: true })
-  // The edit reaches the canvas store, which the Save reads, a moment later.
-  await expect.poll(() => canvasProperties(STEP.id)).toMatchObject({ unsubscribeButton: '' })
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect.poll(() => bodies.map((body) => body.steps?.steps)).toEqual([[SENT]])
