@@ -530,6 +530,7 @@ export default interface Resources {
       "stepTelegram": "Send Telegram message",
       "stepTrigger": "Trigger",
       "stepWait": "Wait",
+      "stepWaitUntil": "Wait until",
       "stepsLabel": "Steps",
       "tagNameLabel": "Tag",
       "telegramNodeDescription": "Send a Telegram message to the contact's bound chats.",

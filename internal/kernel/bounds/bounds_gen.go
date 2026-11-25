@@ -313,6 +313,12 @@ const (
 	BranchPathsMaxItems = 9
 )
 
+// LocalTime is a local time of day, HH:MM in whole minutes (ADR 0126).
+// From site LocalTime.
+const (
+	LocalTimePattern = `^([01]\d|2[0-3]):[0-5]\d$`
+)
+
 // SplitPaths are the paths of a Split (ADR 0124).
 // From site SplitStepInput.paths.
 const (
@@ -441,6 +447,7 @@ var Owners = map[string][]string{
 	"TriggerCooldownDefault":             {"AutomationVersion"},
 	"BranchPathsMinItems":                {"AutomationVersion"},
 	"BranchPathsMaxItems":                {"AutomationVersion"},
+	"LocalTimePattern":                   {"internal/kernel/localcalendar"},
 	"SplitPathsMinItems":                 {"AutomationVersion"},
 	"SplitPathsMaxItems":                 {"AutomationVersion"},
 	"SplitWeightMin":                     {"AutomationVersion"},

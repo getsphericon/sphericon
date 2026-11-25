@@ -60,6 +60,7 @@ import (
 	deferralcause "github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	emailrender "github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	holdreason "github.com/getsphericon/sphericon/internal/kernel/holdreason"
+	localcalendar "github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
 	providers "github.com/getsphericon/sphericon/internal/kernel/providers"
 	ruleaction "github.com/getsphericon/sphericon/internal/kernel/ruleaction"
@@ -1928,6 +1929,7 @@ func (c *ConverterImpl) PathStepSum(source site.AutomationStepSum) site.PathStep
 	siteapiPathStepSum.TelegramStep = source.TelegramStep
 	siteapiPathStepSum.SmsStep = source.SmsStep
 	siteapiPathStepSum.WaitStep = source.WaitStep
+	siteapiPathStepSum.WaitUntilStep = source.WaitUntilStep
 	siteapiPathStepSum.ApplyTagStep = source.ApplyTagStep
 	siteapiPathStepSum.RemoveTagStep = source.RemoveTagStep
 	siteapiPathStepSum.HttpStep = source.HttpStep
@@ -1959,6 +1961,8 @@ func (c *ConverterImpl) PathStepType(source site.AutomationStepSumType) site.Pat
 		siteapiPathStepSumType = site.TelegramStepPathStepSum
 	case site.WaitStepAutomationStepSum:
 		siteapiPathStepSumType = site.WaitStepPathStepSum
+	case site.WaitUntilStepAutomationStepSum:
+		siteapiPathStepSumType = site.WaitUntilStepPathStepSum
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -2745,6 +2749,7 @@ func (c *ConverterImpl) SplitPathStepSum(source site.AutomationStepSum) site.Spl
 	siteapiSplitPathStepSum.TelegramStep = source.TelegramStep
 	siteapiSplitPathStepSum.SmsStep = source.SmsStep
 	siteapiSplitPathStepSum.WaitStep = source.WaitStep
+	siteapiSplitPathStepSum.WaitUntilStep = source.WaitUntilStep
 	siteapiSplitPathStepSum.ApplyTagStep = source.ApplyTagStep
 	siteapiSplitPathStepSum.RemoveTagStep = source.RemoveTagStep
 	siteapiSplitPathStepSum.HttpStep = source.HttpStep
@@ -2776,6 +2781,8 @@ func (c *ConverterImpl) SplitPathStepType(source site.AutomationStepSumType) sit
 		siteapiSplitPathStepSumType = site.TelegramStepSplitPathStepSum
 	case site.WaitStepAutomationStepSum:
 		siteapiSplitPathStepSumType = site.WaitStepSplitPathStepSum
+	case site.WaitUntilStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.WaitUntilStepSplitPathStepSum
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -3190,6 +3197,27 @@ func (c *ConverterImpl) WaitStepToResource(source automations.WaitView) site.Wai
 	siteapiWaitStep.Seconds = count(source.Seconds)
 	return siteapiWaitStep
 }
+func (c *ConverterImpl) WaitUntilStepToResource(source automations.WaitUntilView) (site.WaitUntilStep, error) {
+	var siteapiWaitUntilStep site.WaitUntilStep
+	siteapiWaitUntilStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
+	siteapiWaitUntilStep.Type = waitUntilStepType(source.Type)
+	siteapiWaitUntilMoment, err := waitUntilMoment(c, source.Until)
+	if err != nil {
+		return siteapiWaitUntilStep, err
+	}
+	siteapiWaitUntilStep.Until = siteapiWaitUntilMoment
+	return siteapiWaitUntilStep, nil
+}
+func (c *ConverterImpl) WaitUntilTimeOfDayToResource(source automationstep.TimeOfDay) site.WaitUntilTimeOfDay {
+	var siteapiWaitUntilTimeOfDay site.WaitUntilTimeOfDay
+	siteapiWaitUntilTimeOfDay.Form = waitUntilTimeOfDayForm(source)
+	siteapiWaitUntilTimeOfDay.LocalTime = site.LocalTime(source.LocalTime)
+	siteapiWaitUntilTimeOfDay.Weekdays = make([]site.Weekday, len(source.Weekdays))
+	for i := 0; i < len(source.Weekdays); i++ {
+		siteapiWaitUntilTimeOfDay.Weekdays[i] = c.WeekdayToResource(source.Weekdays[i])
+	}
+	return siteapiWaitUntilTimeOfDay
+}
 func (c *ConverterImpl) WebhookDisabledReasonToResource(source webhookendpoint.DisabledReason) site.WebhookDisabledReason {
 	var siteapiWebhookDisabledReason site.WebhookDisabledReason
 	switch source {
@@ -3248,6 +3276,28 @@ func (c *ConverterImpl) WebhooksListPage(source pagination.Page[site.SiteWebhook
 	siteapiSiteWebhooksListOK.TotalItems = count(source.TotalItems)
 	siteapiSiteWebhooksListOK.TotalPages = count(source.TotalPages)
 	return &siteapiSiteWebhooksListOK
+}
+func (c *ConverterImpl) WeekdayToResource(source localcalendar.Weekday) site.Weekday {
+	var siteapiWeekday site.Weekday
+	switch source {
+	case localcalendar.Friday:
+		siteapiWeekday = site.WeekdayFriday
+	case localcalendar.Monday:
+		siteapiWeekday = site.WeekdayMonday
+	case localcalendar.Saturday:
+		siteapiWeekday = site.WeekdaySaturday
+	case localcalendar.Sunday:
+		siteapiWeekday = site.WeekdaySunday
+	case localcalendar.Thursday:
+		siteapiWeekday = site.WeekdayThursday
+	case localcalendar.Tuesday:
+		siteapiWeekday = site.WeekdayTuesday
+	case localcalendar.Wednesday:
+		siteapiWeekday = site.WeekdayWednesday
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiWeekday
 }
 func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) site.SiteWorkspaceResource {
 	var siteapiSiteWorkspaceResource site.SiteWorkspaceResource

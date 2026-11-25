@@ -31,6 +31,7 @@ const (
 	KindTelegram  Kind = "telegram"
 	KindSMS       Kind = "sms"
 	KindWait      Kind = "wait"
+	KindWaitUntil Kind = "wait_until"
 	KindApplyTag  Kind = "apply_tag"
 	KindRemoveTag Kind = "remove_tag"
 	KindHTTP      Kind = "http"
@@ -86,8 +87,8 @@ type Step struct {
 // New is a Step with no id yet: Identify gives it one.
 func New(p Payload) Step { return Step{Payload: p} }
 
-// Payload is what a Step does, one type per kind: Email, Telegram, SMS, Wait, ApplyTag, RemoveTag,
-// HTTP, End, Branch and Split.
+// Payload is what a Step does, one type per kind: Email, Telegram, SMS, Wait, WaitUntil, ApplyTag,
+// RemoveTag, HTTP, End, Branch and Split.
 type Payload interface {
 	Kind() Kind
 	// Stored is the payload as a version stores it: tag names, a Telegram step's image and
@@ -374,6 +375,7 @@ var decoders = map[Kind]func([]byte) (Payload, error){
 	KindTelegram:  decodeAs[Telegram],
 	KindSMS:       decodeAs[SMS],
 	KindWait:      decodeAs[Wait],
+	KindWaitUntil: decodeAs[WaitUntil],
 	KindApplyTag:  decodeAs[ApplyTag],
 	KindRemoveTag: decodeAs[RemoveTag],
 	KindHTTP:      decodeAs[HTTP],

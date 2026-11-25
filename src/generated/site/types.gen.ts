@@ -738,6 +738,8 @@ export type AutomationStep = ({
 } & SmsStep) | ({
   type: 'wait';
 } & WaitStep) | ({
+  type: 'wait_until';
+} & WaitUntilStep) | ({
   type: 'apply_tag';
 } & ApplyTagStep) | ({
   type: 'remove_tag';
@@ -782,6 +784,8 @@ export type AutomationStepInput = ({
 } & SmsStepInput) | ({
   type: 'wait';
 } & WaitStepInput) | ({
+  type: 'wait_until';
+} & WaitUntilStepInput) | ({
   type: 'apply_tag';
 } & ApplyTagStepInput) | ({
   type: 'remove_tag';
@@ -3330,6 +3334,12 @@ export type LintFinding = {
 };
 
 /**
+ * A local time of day, `HH:MM` in whole minutes from 00:00 to 23:59, read in a time zone the
+ * place that holds it names (`09:00`, `18:30`)
+ */
+export type LocalTime = string;
+
+/**
  * A BCP 47 language tag: a language, optionally with a script and a region (`de`, `pt-BR`)
  */
 export type LocaleTag = string;
@@ -3505,6 +3515,8 @@ export type PathStep = ({
 } & SmsStep) | ({
   type: 'wait';
 } & WaitStep) | ({
+  type: 'wait_until';
+} & WaitUntilStep) | ({
   type: 'apply_tag';
 } & ApplyTagStep) | ({
   type: 'remove_tag';
@@ -3530,6 +3542,8 @@ export type PathStepInput = ({
 } & SmsStepInput) | ({
   type: 'wait';
 } & WaitStepInput) | ({
+  type: 'wait_until';
+} & WaitUntilStepInput) | ({
   type: 'apply_tag';
 } & ApplyTagStepInput) | ({
   type: 'remove_tag';
@@ -9185,6 +9199,8 @@ export type SplitPathStep = ({
 } & SmsStep) | ({
   type: 'wait';
 } & WaitStep) | ({
+  type: 'wait_until';
+} & WaitUntilStep) | ({
   type: 'apply_tag';
 } & ApplyTagStep) | ({
   type: 'remove_tag';
@@ -9210,6 +9226,8 @@ export type SplitPathStepInput = ({
 } & SmsStepInput) | ({
   type: 'wait';
 } & WaitStepInput) | ({
+  type: 'wait_until';
+} & WaitUntilStepInput) | ({
   type: 'apply_tag';
 } & ApplyTagStepInput) | ({
   type: 'remove_tag';
@@ -10209,6 +10227,79 @@ export type WaitStepInput = {
 };
 
 /**
+ * The moment a Wait until holds an Enrollment until, by `form`
+ */
+export type WaitUntilMoment = WaitUntilTimeOfDay;
+
+/**
+ * The moment a Wait until holds an Enrollment until, by `form`, as a request writes it
+ */
+export type WaitUntilMomentInput = WaitUntilTimeOfDayInput;
+
+/**
+ * A Step that holds the Enrollment until a calendar moment (ADR 0126): the moment is computed
+ * once, from when the Enrollment reaches the Step, and kept, so neither a restart nor a time zone
+ * changed during the wait moves it. A moment equal to the arrival waits zero.
+ */
+export type WaitUntilStep = {
+  /**
+   * The Step's id
+   */
+  id: StepId;
+  type: 'wait_until';
+  /**
+   * The moment the Enrollment waits for
+   */
+  until: WaitUntilMoment;
+};
+
+/**
+ * A Step that holds the Enrollment until a calendar moment, as a request writes it
+ */
+export type WaitUntilStepInput = {
+  /**
+   * The Step's id; omitted, the Step is given one
+   */
+  id?: StepId;
+  type: 'wait_until';
+  /**
+   * The moment the Enrollment waits for
+   */
+  until: WaitUntilMomentInput;
+};
+
+/**
+ * Wait until the next moment a local time comes, on chosen weekdays or on any day, in the
+ * Contact's time zone, or the Workspace time zone when the Contact has no valid one (ADR 0126)
+ */
+export type WaitUntilTimeOfDay = {
+  form: 'time_of_day';
+  /**
+   * The local time of day
+   */
+  localTime: LocalTime;
+  /**
+   * The weekdays the local time counts on; empty is every day
+   */
+  weekdays: Array<Weekday>;
+};
+
+/**
+ * Wait until the next moment a local time comes, as a request writes it
+ */
+export type WaitUntilTimeOfDayInput = {
+  form: 'time_of_day';
+  /**
+   * The local time of day
+   */
+  localTime: LocalTime;
+  /**
+   * The weekdays the local time counts on, each at most once; omitted or empty is every day
+   */
+  weekdays?: Array<Weekday>;
+};
+
+/**
  * Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the
  * receiver answered 410 Gone) and `persistent_failure` (deliveries failed for longer
  * than the window). Absent while the endpoint is enabled.
@@ -10290,6 +10381,24 @@ export type WebhookTestResult = {
    */
   kind?: WebhookErrorKind;
 };
+
+/**
+ * A day of the week, by its ISO name in lower case
+ */
+export const Weekday = {
+  MONDAY: 'monday',
+  TUESDAY: 'tuesday',
+  WEDNESDAY: 'wednesday',
+  THURSDAY: 'thursday',
+  FRIDAY: 'friday',
+  SATURDAY: 'saturday',
+  SUNDAY: 'sunday'
+} as const;
+
+/**
+ * A day of the week, by its ISO name in lower case
+ */
+export type Weekday = typeof Weekday[keyof typeof Weekday];
 
 /**
  * A test of a moment: within the last `days` days up to now, so a moment still to come is not

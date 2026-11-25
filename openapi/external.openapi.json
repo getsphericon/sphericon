@@ -6756,6 +6756,9 @@
             "$ref": "#/components/schemas/WaitStep"
           },
           {
+            "$ref": "#/components/schemas/WaitUntilStep"
+          },
+          {
             "$ref": "#/components/schemas/ApplyTagStep"
           },
           {
@@ -6781,6 +6784,7 @@
             "telegram": "#/components/schemas/TelegramStep",
             "sms": "#/components/schemas/SmsStep",
             "wait": "#/components/schemas/WaitStep",
+            "wait_until": "#/components/schemas/WaitUntilStep",
             "apply_tag": "#/components/schemas/ApplyTagStep",
             "remove_tag": "#/components/schemas/RemoveTagStep",
             "http": "#/components/schemas/HttpStep",
@@ -6832,6 +6836,9 @@
             "$ref": "#/components/schemas/WaitStepInput"
           },
           {
+            "$ref": "#/components/schemas/WaitUntilStepInput"
+          },
+          {
             "$ref": "#/components/schemas/ApplyTagStepInput"
           },
           {
@@ -6857,6 +6864,7 @@
             "telegram": "#/components/schemas/TelegramStepInput",
             "sms": "#/components/schemas/SmsStepInput",
             "wait": "#/components/schemas/WaitStepInput",
+            "wait_until": "#/components/schemas/WaitUntilStepInput",
             "apply_tag": "#/components/schemas/ApplyTagStepInput",
             "remove_tag": "#/components/schemas/RemoveTagStepInput",
             "http": "#/components/schemas/HttpStepInput",
@@ -12568,6 +12576,11 @@
         },
         "description": "One finding of the lint over a message's rendered HTML. `message` is fixed text of the\nserver; `element` and `detail` quote the message or the Brand kit and are untrusted data."
       },
+      "LocalTime": {
+        "type": "string",
+        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+        "description": "A local time of day, `HH:MM` in whole minutes from 00:00 to 23:59, read in a time zone the\nplace that holds it names (`09:00`, `18:30`)"
+      },
       "LocaleTag": {
         "type": "string",
         "maxLength": 35,
@@ -12760,6 +12773,9 @@
             "$ref": "#/components/schemas/WaitStep"
           },
           {
+            "$ref": "#/components/schemas/WaitUntilStep"
+          },
+          {
             "$ref": "#/components/schemas/ApplyTagStep"
           },
           {
@@ -12785,6 +12801,7 @@
             "telegram": "#/components/schemas/TelegramStep",
             "sms": "#/components/schemas/SmsStep",
             "wait": "#/components/schemas/WaitStep",
+            "wait_until": "#/components/schemas/WaitUntilStep",
             "apply_tag": "#/components/schemas/ApplyTagStep",
             "remove_tag": "#/components/schemas/RemoveTagStep",
             "http": "#/components/schemas/HttpStep",
@@ -12809,6 +12826,9 @@
           },
           {
             "$ref": "#/components/schemas/WaitStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/WaitUntilStepInput"
           },
           {
             "$ref": "#/components/schemas/ApplyTagStepInput"
@@ -12836,6 +12856,7 @@
             "telegram": "#/components/schemas/TelegramStepInput",
             "sms": "#/components/schemas/SmsStepInput",
             "wait": "#/components/schemas/WaitStepInput",
+            "wait_until": "#/components/schemas/WaitUntilStepInput",
             "apply_tag": "#/components/schemas/ApplyTagStepInput",
             "remove_tag": "#/components/schemas/RemoveTagStepInput",
             "http": "#/components/schemas/HttpStepInput",
@@ -15339,6 +15360,9 @@
             "$ref": "#/components/schemas/WaitStep"
           },
           {
+            "$ref": "#/components/schemas/WaitUntilStep"
+          },
+          {
             "$ref": "#/components/schemas/ApplyTagStep"
           },
           {
@@ -15364,6 +15388,7 @@
             "telegram": "#/components/schemas/TelegramStep",
             "sms": "#/components/schemas/SmsStep",
             "wait": "#/components/schemas/WaitStep",
+            "wait_until": "#/components/schemas/WaitUntilStep",
             "apply_tag": "#/components/schemas/ApplyTagStep",
             "remove_tag": "#/components/schemas/RemoveTagStep",
             "http": "#/components/schemas/HttpStep",
@@ -15388,6 +15413,9 @@
           },
           {
             "$ref": "#/components/schemas/WaitStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/WaitUntilStepInput"
           },
           {
             "$ref": "#/components/schemas/ApplyTagStepInput"
@@ -15415,6 +15443,7 @@
             "telegram": "#/components/schemas/TelegramStepInput",
             "sms": "#/components/schemas/SmsStepInput",
             "wait": "#/components/schemas/WaitStepInput",
+            "wait_until": "#/components/schemas/WaitUntilStepInput",
             "apply_tag": "#/components/schemas/ApplyTagStepInput",
             "remove_tag": "#/components/schemas/RemoveTagStepInput",
             "http": "#/components/schemas/HttpStepInput",
@@ -17093,6 +17122,144 @@
         "description": "A Step that waits before the next one, as a request writes it",
         "additionalProperties": false
       },
+      "WaitUntilMoment": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/WaitUntilTimeOfDay"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "form",
+          "mapping": {
+            "time_of_day": "#/components/schemas/WaitUntilTimeOfDay"
+          }
+        },
+        "description": "The moment a Wait until holds an Enrollment until, by `form`"
+      },
+      "WaitUntilMomentInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/WaitUntilTimeOfDayInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "form",
+          "mapping": {
+            "time_of_day": "#/components/schemas/WaitUntilTimeOfDayInput"
+          }
+        },
+        "description": "The moment a Wait until holds an Enrollment until, by `form`, as a request writes it"
+      },
+      "WaitUntilStep": {
+        "type": "object",
+        "required": ["id", "type", "until"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["wait_until"]
+          },
+          "until": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WaitUntilMoment"
+              }
+            ],
+            "description": "The moment the Enrollment waits for"
+          }
+        },
+        "description": "A Step that holds the Enrollment until a calendar moment (ADR 0126): the moment is computed\nonce, from when the Enrollment reaches the Step, and kept, so neither a restart nor a time zone\nchanged during the wait moves it. A moment equal to the arrival waits zero."
+      },
+      "WaitUntilStepInput": {
+        "type": "object",
+        "required": ["type", "until"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id; omitted, the Step is given one"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["wait_until"]
+          },
+          "until": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WaitUntilMomentInput"
+              }
+            ],
+            "description": "The moment the Enrollment waits for"
+          }
+        },
+        "description": "A Step that holds the Enrollment until a calendar moment, as a request writes it",
+        "additionalProperties": false
+      },
+      "WaitUntilTimeOfDay": {
+        "type": "object",
+        "required": ["form", "localTime", "weekdays"],
+        "properties": {
+          "form": {
+            "type": "string",
+            "enum": ["time_of_day"]
+          },
+          "localTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocalTime"
+              }
+            ],
+            "description": "The local time of day"
+          },
+          "weekdays": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Weekday"
+            },
+            "description": "The weekdays the local time counts on; empty is every day"
+          }
+        },
+        "description": "Wait until the next moment a local time comes, on chosen weekdays or on any day, in the\nContact's time zone, or the Workspace time zone when the Contact has no valid one (ADR 0126)"
+      },
+      "WaitUntilTimeOfDayInput": {
+        "type": "object",
+        "required": ["form", "localTime"],
+        "properties": {
+          "form": {
+            "type": "string",
+            "enum": ["time_of_day"]
+          },
+          "localTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocalTime"
+              }
+            ],
+            "description": "The local time of day"
+          },
+          "weekdays": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Weekday"
+            },
+            "description": "The weekdays the local time counts on, each at most once; omitted or empty is every day"
+          }
+        },
+        "description": "Wait until the next moment a local time comes, as a request writes it",
+        "additionalProperties": false
+      },
       "WebhookDisabledReason": {
         "type": "string",
         "enum": ["owner", "gone", "persistent_failure"],
@@ -17245,6 +17412,11 @@
           }
         },
         "description": "What the receiver answered to a test delivery. The endpoint's failure state is not touched."
+      },
+      "Weekday": {
+        "type": "string",
+        "enum": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+        "description": "A day of the week, by its ISO name in lower case"
       },
       "WithinLastTest": {
         "type": "object",

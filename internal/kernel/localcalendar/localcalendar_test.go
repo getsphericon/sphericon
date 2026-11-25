@@ -191,7 +191,7 @@ func TestAOnceDateHasNoNextOccurrenceAfterItsOwn(t *testing.T) {
 	assert.False(t, ok)
 }
 
-var workdays = []string{"monday", "tuesday", "wednesday", "thursday", "friday"}
+var workdays = []localcalendar.Weekday{localcalendar.Monday, localcalendar.Tuesday, localcalendar.Wednesday, localcalendar.Thursday, localcalendar.Friday}
 
 // A Wait until's time-of-day form waits for the next local time on one of its weekdays, every day
 // when it names none; arriving at that very moment waits zero (decision 11). 2027-01-15 is a Friday.
@@ -200,7 +200,7 @@ func TestTheNextTimeOfDayIsTheFirstOnAChosenWeekdayAtOrAfterTheArrival(t *testin
 		name      string
 		zone      string
 		localTime string
-		weekdays  []string
+		weekdays  []localcalendar.Weekday
 		arrival   time.Time
 		want      time.Time
 	}{
@@ -209,7 +209,7 @@ func TestTheNextTimeOfDayIsTheFirstOnAChosenWeekdayAtOrAfterTheArrival(t *testin
 		{"arriving at the time", "Europe/Berlin", "09:00", workdays, utc(2027, time.January, 18, 8, 0), utc(2027, time.January, 18, 8, 0)},
 		{"every day", "Europe/Berlin", "09:00", nil, utc(2027, time.January, 15, 17, 0), utc(2027, time.January, 16, 8, 0)},
 		{"later the same day", "Europe/Berlin", "09:00", nil, utc(2027, time.January, 15, 7, 0), utc(2027, time.January, 15, 8, 0)},
-		{"a minute past the one weekday", "Europe/Berlin", "10:00", []string{"tuesday"}, utc(2027, time.January, 19, 9, 1), utc(2027, time.January, 26, 9, 0)},
+		{"a minute past the one weekday", "Europe/Berlin", "10:00", []localcalendar.Weekday{localcalendar.Tuesday}, utc(2027, time.January, 19, 9, 1), utc(2027, time.January, 26, 9, 0)},
 		{"a time the spring-forward change skips", "Europe/Berlin", "02:30", nil, utc(2027, time.March, 27, 12, 0), utc(2027, time.March, 28, 1, 0)},
 	}
 	for _, c := range cases {
@@ -254,12 +254,12 @@ func TestTheConstructorsRefuseWhatIsOutOfBounds(t *testing.T) {
 	timesOfDay := []struct {
 		name      string
 		localTime string
-		weekdays  []string
+		weekdays  []localcalendar.Weekday
 		want      error
 	}{
-		{"a repeated weekday", "09:00", []string{"monday", "monday"}, localcalendar.ErrRepeatedWeekday},
-		{"an unknown weekday", "09:00", []string{"funday"}, localcalendar.ErrWeekday},
-		{"a weekday not in lower case", "09:00", []string{"Monday"}, localcalendar.ErrWeekday},
+		{"a repeated weekday", "09:00", []localcalendar.Weekday{localcalendar.Monday, localcalendar.Monday}, localcalendar.ErrRepeatedWeekday},
+		{"an unknown weekday", "09:00", []localcalendar.Weekday{"funday"}, localcalendar.ErrWeekday},
+		{"a weekday not in lower case", "09:00", []localcalendar.Weekday{"Monday"}, localcalendar.ErrWeekday},
 		{"a malformed local time", "9am", nil, localcalendar.ErrLocalTime},
 	}
 	for _, c := range timesOfDay {
@@ -277,7 +277,7 @@ func TestTheConstructorsTakeTheirBounds(t *testing.T) {
 	require.NoError(t, err)
 	_, err = localcalendar.NewSchedule(localcalendar.Yearly, 365, "00:00")
 	require.NoError(t, err)
-	_, err = localcalendar.NewTimeOfDay("00:00", []string{"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"})
+	_, err = localcalendar.NewTimeOfDay("00:00", localcalendar.Weekdays)
 	require.NoError(t, err)
 }
 
@@ -388,7 +388,7 @@ func TestABirthdayKeepsItsOwnDate(t *testing.T) {
 // every field it refuses.
 func TestTheConstructorsRefuseEveryPartOutOfBoundsAtOnce(t *testing.T) {
 	_, scheduleErr := localcalendar.NewSchedule("monthly", 400, "25:00")
-	_, timeOfDayErr := localcalendar.NewTimeOfDay("7pm", []string{"monday", "monday", "someday"})
+	_, timeOfDayErr := localcalendar.NewTimeOfDay("7pm", []localcalendar.Weekday{localcalendar.Monday, localcalendar.Monday, "someday"})
 
 	require.ErrorIs(t, scheduleErr, localcalendar.ErrRecurrence)
 	require.ErrorIs(t, scheduleErr, localcalendar.ErrOffset)

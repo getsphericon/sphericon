@@ -2,6 +2,7 @@
 // bodies, HTTP step dry run and report.
 
 import "./engagement.tsp";
+import "./local-calendar.tsp";
 import "./segments.tsp";
 import "./signing-secret.tsp";
 
@@ -206,6 +207,65 @@ model WaitStepInput {
 
   /** Delay before the next Step, in seconds; a negative one is refused */
   seconds: int32;
+}
+
+/** Wait until the next moment a local time comes, on chosen weekdays or on any day, in the
+ * Contact's time zone, or the Workspace time zone when the Contact has no valid one (ADR 0126) */
+model WaitUntilTimeOfDay {
+  form: "time_of_day";
+
+  /** The local time of day */
+  localTime: LocalTime;
+
+  /** The weekdays the local time counts on; empty is every day */
+  weekdays: Weekday[];
+}
+
+/** Wait until the next moment a local time comes, as a request writes it */
+model WaitUntilTimeOfDayInput {
+  form: "time_of_day";
+
+  /** The local time of day */
+  localTime: LocalTime;
+
+  /** The weekdays the local time counts on, each at most once; omitted or empty is every day */
+  weekdays?: Weekday[];
+}
+
+/** The moment a Wait until holds an Enrollment until, by `form` */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "form" })
+union WaitUntilMoment {
+  time_of_day: WaitUntilTimeOfDay,
+}
+
+/** The moment a Wait until holds an Enrollment until, by `form`, as a request writes it */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "form" })
+union WaitUntilMomentInput {
+  time_of_day: WaitUntilTimeOfDayInput,
+}
+
+/** A Step that holds the Enrollment until a calendar moment (ADR 0126): the moment is computed
+ * once, from when the Enrollment reaches the Step, and kept, so neither a restart nor a time zone
+ * changed during the wait moves it. A moment equal to the arrival waits zero. */
+model WaitUntilStep {
+  /** The Step's id */
+  id: StepId;
+
+  type: "wait_until";
+
+  /** The moment the Enrollment waits for */
+  until: WaitUntilMoment;
+}
+
+/** A Step that holds the Enrollment until a calendar moment, as a request writes it */
+model WaitUntilStepInput {
+  /** The Step's id; omitted, the Step is given one */
+  id?: StepId;
+
+  type: "wait_until";
+
+  /** The moment the Enrollment waits for */
+  until: WaitUntilMomentInput;
 }
 
 /** A Step that applies a Tag to the enrolled Contact */
@@ -441,6 +501,7 @@ union AutomationStep {
   telegram: TelegramStep,
   sms: SmsStep,
   wait: WaitStep,
+  wait_until: WaitUntilStep,
   apply_tag: ApplyTagStep,
   remove_tag: RemoveTagStep,
   http: HttpStep,
@@ -456,6 +517,7 @@ union AutomationStepInput {
   telegram: TelegramStepInput,
   sms: SmsStepInput,
   wait: WaitStepInput,
+  wait_until: WaitUntilStepInput,
   apply_tag: ApplyTagStepInput,
   remove_tag: RemoveTagStepInput,
   http: HttpStepInput,
@@ -476,6 +538,7 @@ union PathStep {
   telegram: TelegramStep,
   sms: SmsStep,
   wait: WaitStep,
+  wait_until: WaitUntilStep,
   apply_tag: ApplyTagStep,
   remove_tag: RemoveTagStep,
   http: HttpStep,
@@ -491,6 +554,7 @@ union PathStepInput {
   telegram: TelegramStepInput,
   sms: SmsStepInput,
   wait: WaitStepInput,
+  wait_until: WaitUntilStepInput,
   apply_tag: ApplyTagStepInput,
   remove_tag: RemoveTagStepInput,
   http: HttpStepInput,
@@ -506,6 +570,7 @@ union SplitPathStep {
   telegram: TelegramStep,
   sms: SmsStep,
   wait: WaitStep,
+  wait_until: WaitUntilStep,
   apply_tag: ApplyTagStep,
   remove_tag: RemoveTagStep,
   http: HttpStep,
@@ -521,6 +586,7 @@ union SplitPathStepInput {
   telegram: TelegramStepInput,
   sms: SmsStepInput,
   wait: WaitStepInput,
+  wait_until: WaitUntilStepInput,
   apply_tag: ApplyTagStepInput,
   remove_tag: RemoveTagStepInput,
   http: HttpStepInput,

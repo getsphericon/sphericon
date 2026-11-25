@@ -247,6 +247,10 @@ var Bounds = []Bound{
 	},
 	{Name: "BranchPaths", Spec: site, Schema: "BranchUnknownPathInput", Property: "conditions"},
 	{
+		Name: "LocalTime", Doc: "is a local time of day, HH:MM in whole minutes (ADR 0126).",
+		Spec: site, Schema: "LocalTime", Owners: []string{"internal/kernel/localcalendar"},
+	},
+	{
 		Name: "SplitPaths", Doc: "are the paths of a Split (ADR 0124).",
 		Spec: site, Schema: "SplitStepInput", Property: "paths", Owners: []string{automationVersion},
 	},

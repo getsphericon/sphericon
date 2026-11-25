@@ -363,6 +363,12 @@ const (
 	AutomationJobsWaitFirstName = "Jobs wait first"
 	// AutomationJobsWaitFirstVersionID is from fixtures/automation_versions.
 	AutomationJobsWaitFirstVersionID = 5562
+	// AutomationJobsWaitUntilID is from fixtures/automations.
+	AutomationJobsWaitUntilID = 5591
+	// AutomationJobsWaitUntilName is from fixtures/automations.
+	AutomationJobsWaitUntilName = "Jobs wait until"
+	// AutomationJobsWaitUntilVersionID is from fixtures/automation_versions.
+	AutomationJobsWaitUntilVersionID = 5591
 	// AutomationLacunaOnSmsUndeliveredID is from fixtures/automations.
 	AutomationLacunaOnSmsUndeliveredID = 7740
 	// AutomationLacunaOnSmsUndeliveredName is from fixtures/automations.

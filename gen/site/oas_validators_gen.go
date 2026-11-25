@@ -1067,6 +1067,11 @@ func (s AutomationStepInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case WaitUntilStepInputAutomationStepInputSum:
+		if err := s.WaitUntilStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	case ApplyTagStepInputAutomationStepInputSum:
 		if err := s.ApplyTagStepInput.Validate(); err != nil {
 			return err
@@ -1121,6 +1126,11 @@ func (s AutomationStepSum) Validate() error {
 		return nil
 	case WaitStepAutomationStepSum:
 		if err := s.WaitStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case WaitUntilStepAutomationStepSum:
+		if err := s.WaitUntilStep.Validate(); err != nil {
 			return err
 		}
 		return nil
@@ -5846,6 +5856,26 @@ func (s *LintFinding) Validate() error {
 	return nil
 }
 
+func (s LocalTime) Validate() error {
+	alias := (string)(s)
+	if err := (validate.String{
+		MinLength:     0,
+		MinLengthSet:  false,
+		MaxLength:     0,
+		MaxLengthSet:  false,
+		Email:         false,
+		Hostname:      false,
+		Regex:         regexMap["^([01]\\d|2[0-3]):[0-5]\\d$"],
+		MinNumeric:    0,
+		MinNumericSet: false,
+		MaxNumeric:    0,
+		MaxNumericSet: false,
+	}).Validate(string(alias)); err != nil {
+		return errors.Wrap(err, "string")
+	}
+	return nil
+}
+
 func (s LocaleTag) Validate() error {
 	alias := (string)(s)
 	if err := (validate.String{
@@ -6270,6 +6300,11 @@ func (s PathStepInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case WaitUntilStepInputPathStepInputSum:
+		if err := s.WaitUntilStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	case ApplyTagStepInputPathStepInputSum:
 		if err := s.ApplyTagStepInput.Validate(); err != nil {
 			return err
@@ -6324,6 +6359,11 @@ func (s PathStepSum) Validate() error {
 		return nil
 	case WaitStepPathStepSum:
 		if err := s.WaitStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case WaitUntilStepPathStepSum:
+		if err := s.WaitUntilStep.Validate(); err != nil {
 			return err
 		}
 		return nil
@@ -15786,6 +15826,11 @@ func (s SplitPathStepInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case WaitUntilStepInputSplitPathStepInputSum:
+		if err := s.WaitUntilStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	case ApplyTagStepInputSplitPathStepInputSum:
 		if err := s.ApplyTagStepInput.Validate(); err != nil {
 			return err
@@ -15840,6 +15885,11 @@ func (s SplitPathStepSum) Validate() error {
 		return nil
 	case WaitStepSplitPathStepSum:
 		if err := s.WaitStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case WaitUntilStepSplitPathStepSum:
+		if err := s.WaitUntilStep.Validate(); err != nil {
 			return err
 		}
 		return nil
@@ -17589,6 +17639,301 @@ func (s WaitStepType) Validate() error {
 	}
 }
 
+func (s *WaitUntilMoment) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *WaitUntilMomentInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s WaitUntilMomentInputSum) Validate() error {
+	switch s.Type {
+	case WaitUntilTimeOfDayInputWaitUntilMomentInputSum:
+		if err := s.WaitUntilTimeOfDayInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
+func (s WaitUntilMomentSum) Validate() error {
+	switch s.Type {
+	case WaitUntilTimeOfDayWaitUntilMomentSum:
+		if err := s.WaitUntilTimeOfDay.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
+func (s *WaitUntilStep) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Until.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "until",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *WaitUntilStepInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Until.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "until",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s WaitUntilStepInputType) Validate() error {
+	switch s {
+	case "wait_until":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s WaitUntilStepType) Validate() error {
+	switch s {
+	case "wait_until":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *WaitUntilTimeOfDay) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Form.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "form",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.LocalTime.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "localTime",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Weekdays == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Weekdays {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "weekdays",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s WaitUntilTimeOfDayForm) Validate() error {
+	switch s {
+	case "time_of_day":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *WaitUntilTimeOfDayInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Form.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "form",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.LocalTime.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "localTime",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		var failures []validate.FieldError
+		for i, elem := range s.Weekdays {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "weekdays",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s WaitUntilTimeOfDayInputForm) Validate() error {
+	switch s {
+	case "time_of_day":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s WebhookDisabledReason) Validate() error {
 	switch s {
 	case "owner":
@@ -17668,6 +18013,27 @@ func (s *WebhookTestResult) Validate() error {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
+}
+
+func (s Weekday) Validate() error {
+	switch s {
+	case "monday":
+		return nil
+	case "tuesday":
+		return nil
+	case "wednesday":
+		return nil
+	case "thursday":
+		return nil
+	case "friday":
+		return nil
+	case "saturday":
+		return nil
+	case "sunday":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s *WithinLastTest) Validate() error {

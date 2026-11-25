@@ -10,10 +10,13 @@ package localcalendar
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 )
 
@@ -141,7 +144,7 @@ var (
 	ErrRecurrence = errors.New("unknown recurrence")
 	ErrOffset     = errors.New("offset out of range")
 	ErrLocalTime  = errors.New("malformed local time")
-	// ErrWeekday is a name that is no ISO day name in lower case ("monday" to "sunday").
+	// ErrWeekday is a name that is no Weekday of the contract.
 	ErrWeekday         = errors.New("unknown weekday")
 	ErrRepeatedWeekday = errors.New("repeated weekday")
 )
@@ -155,24 +158,20 @@ type hhmm struct {
 	hour, minute int
 }
 
-// parseLocalTime reads a local time written HH:MM, from 00:00 to 23:59.
+// localTimePattern is the contract's shape of a local time: HH:MM from 00:00 to 23:59.
+var localTimePattern = regexp.MustCompile(bounds.LocalTimePattern)
+
+// parseLocalTime reads a local time of the contract's shape.
 func parseLocalTime(s string) (hhmm, error) {
-	if len(s) != len("15:04") || s[2] != ':' {
+	if !localTimePattern.MatchString(s) {
 		return hhmm{}, fmt.Errorf("%w: %q", ErrLocalTime, s)
 	}
-	hour, okHour := twoDigits(s[0:2])
-	minute, okMinute := twoDigits(s[3:5])
-	if !okHour || !okMinute || hour > 23 || minute > 59 {
-		return hhmm{}, fmt.Errorf("%w: %q", ErrLocalTime, s)
+	hour, hourErr := strconv.Atoi(s[0:2])
+	minute, minuteErr := strconv.Atoi(s[3:5])
+	if err := errors.Join(hourErr, minuteErr); err != nil {
+		return hhmm{}, fmt.Errorf("%w: %q: %w", ErrLocalTime, s, err)
 	}
 	return hhmm{hour: hour, minute: minute}, nil
-}
-
-func twoDigits(s string) (int, bool) {
-	if s[0] < '0' || s[0] > '9' || s[1] < '0' || s[1] > '9' {
-		return 0, false
-	}
-	return int(s[0]-'0')*10 + int(s[1]-'0'), true
 }
 
 // on is the moment of the local time on date d in loc, by the calendar rules of the package.
@@ -288,9 +287,9 @@ type TimeOfDay struct {
 	weekdays [7]bool // by time.Weekday; all false is every day
 }
 
-// NewTimeOfDay is the local time on the weekdays named ("monday" to "sunday"), or the refusal of
-// every part out of bounds, joined: ErrLocalTime, ErrWeekday and ErrRepeatedWeekday.
-func NewTimeOfDay(localTime string, weekdays []string) (TimeOfDay, error) {
+// NewTimeOfDay is the local time on the weekdays named, or the refusal of every part out of bounds,
+// joined: ErrLocalTime, ErrWeekday and ErrRepeatedWeekday.
+func NewTimeOfDay(localTime string, weekdays []Weekday) (TimeOfDay, error) {
 	var errs []error
 	at, err := parseLocalTime(localTime)
 	if err != nil {
@@ -314,10 +313,10 @@ func NewTimeOfDay(localTime string, weekdays []string) (TimeOfDay, error) {
 	return TimeOfDay{at: at, weekdays: days}, nil
 }
 
-// weekday is the day an ISO day name in lower case names.
-func weekday(name string) (time.Weekday, bool) {
+// weekday is the day a Weekday of the contract names: its ISO name is Go's in lower case.
+func weekday(name Weekday) (time.Weekday, bool) {
 	for day := time.Sunday; day <= time.Saturday; day++ {
-		if name == strings.ToLower(day.String()) {
+		if string(name) == strings.ToLower(day.String()) {
 			return day, true
 		}
 	}

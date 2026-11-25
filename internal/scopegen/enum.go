@@ -79,6 +79,21 @@ var SystemEventActions = Table{
 	}.Decls,
 }
 
+// Weekdays is the days of the week a local time of day counts on, from the contract's Weekday
+// enum, so the local calendar reads them from the contract (ADR 0126).
+var Weekdays = Table{
+	Spec:    siteSpec,
+	Out:     "internal/kernel/localcalendar/weekday_gen.go",
+	Package: "localcalendar",
+	Decls: Enum{
+		Schema:  "Weekday",
+		Doc:     []string{"Weekday is a day of the week by its ISO name in lower case."},
+		Type:    "Weekday",
+		List:    "Weekdays",
+		ListDoc: []string{"Weekdays is every Weekday, Monday first, in the contract's order."},
+	}.Decls,
+}
+
 // ConditionCombinators is how a condition Group joins its entries, from the
 // contract's ConditionCombinator enum.
 var ConditionCombinators = Table{

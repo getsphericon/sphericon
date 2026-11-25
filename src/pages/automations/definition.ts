@@ -215,6 +215,8 @@ function flowStepOf(step: AutomationStep): FlowStep {
         kind: 'split',
         paths: step.paths.map((path) => ({ ...flowPathOf(path), weight: path.weight })),
       }
+    // Until the editor knows a Wait until (#1613's editor slice), a version holding one is kept.
+    case 'wait_until':
     default:
       return { id, kind: 'kept', step }
   }

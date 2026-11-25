@@ -534,6 +534,7 @@
     "stepTelegram": "Send Telegram message",
     "stepTrigger": "Trigger",
     "stepWait": "Wait",
+    "stepWaitUntil": "Wait until",
     "tagNameLabel": "Tag",
     "telegramNodeDescription": "Send a Telegram message to the contact's bound chats.",
     "telegramUnsubscribeDefault": "Unsubscribe",

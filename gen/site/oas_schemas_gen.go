@@ -2736,6 +2736,7 @@ type AutomationStepInputSum struct {
 	TelegramStepInput  TelegramStepInput
 	SmsStepInput       SmsStepInput
 	WaitStepInput      WaitStepInput
+	WaitUntilStepInput WaitUntilStepInput
 	ApplyTagStepInput  ApplyTagStepInput
 	RemoveTagStepInput RemoveTagStepInput
 	HttpStepInput      HttpStepInput
@@ -2753,6 +2754,7 @@ const (
 	TelegramStepInputAutomationStepInputSum  AutomationStepInputSumType = "telegram"
 	SmsStepInputAutomationStepInputSum       AutomationStepInputSumType = "sms"
 	WaitStepInputAutomationStepInputSum      AutomationStepInputSumType = "wait"
+	WaitUntilStepInputAutomationStepInputSum AutomationStepInputSumType = "wait_until"
 	ApplyTagStepInputAutomationStepInputSum  AutomationStepInputSumType = "apply_tag"
 	RemoveTagStepInputAutomationStepInputSum AutomationStepInputSumType = "remove_tag"
 	HttpStepInputAutomationStepInputSum      AutomationStepInputSumType = "http"
@@ -2779,6 +2781,11 @@ func (s AutomationStepInputSum) IsSmsStepInput() bool {
 // IsWaitStepInput reports whether AutomationStepInputSum is WaitStepInput.
 func (s AutomationStepInputSum) IsWaitStepInput() bool {
 	return s.Type == WaitStepInputAutomationStepInputSum
+}
+
+// IsWaitUntilStepInput reports whether AutomationStepInputSum is WaitUntilStepInput.
+func (s AutomationStepInputSum) IsWaitUntilStepInput() bool {
+	return s.Type == WaitUntilStepInputAutomationStepInputSum
 }
 
 // IsApplyTagStepInput reports whether AutomationStepInputSum is ApplyTagStepInput.
@@ -2892,6 +2899,27 @@ func (s AutomationStepInputSum) GetWaitStepInput() (v WaitStepInput, ok bool) {
 func NewWaitStepInputAutomationStepInputSum(v WaitStepInput) AutomationStepInputSum {
 	var s AutomationStepInputSum
 	s.SetWaitStepInput(v)
+	return s
+}
+
+// SetWaitUntilStepInput sets AutomationStepInputSum to WaitUntilStepInput.
+func (s *AutomationStepInputSum) SetWaitUntilStepInput(v WaitUntilStepInput) {
+	s.Type = WaitUntilStepInputAutomationStepInputSum
+	s.WaitUntilStepInput = v
+}
+
+// GetWaitUntilStepInput returns WaitUntilStepInput and true boolean if AutomationStepInputSum is WaitUntilStepInput.
+func (s AutomationStepInputSum) GetWaitUntilStepInput() (v WaitUntilStepInput, ok bool) {
+	if !s.IsWaitUntilStepInput() {
+		return v, false
+	}
+	return s.WaitUntilStepInput, true
+}
+
+// NewWaitUntilStepInputAutomationStepInputSum returns new AutomationStepInputSum from WaitUntilStepInput.
+func NewWaitUntilStepInputAutomationStepInputSum(v WaitUntilStepInput) AutomationStepInputSum {
+	var s AutomationStepInputSum
+	s.SetWaitUntilStepInput(v)
 	return s
 }
 
@@ -3029,6 +3057,7 @@ type AutomationStepSum struct {
 	TelegramStep  TelegramStep
 	SmsStep       SmsStep
 	WaitStep      WaitStep
+	WaitUntilStep WaitUntilStep
 	ApplyTagStep  ApplyTagStep
 	RemoveTagStep RemoveTagStep
 	HttpStep      HttpStep
@@ -3046,6 +3075,7 @@ const (
 	TelegramStepAutomationStepSum  AutomationStepSumType = "telegram"
 	SmsStepAutomationStepSum       AutomationStepSumType = "sms"
 	WaitStepAutomationStepSum      AutomationStepSumType = "wait"
+	WaitUntilStepAutomationStepSum AutomationStepSumType = "wait_until"
 	ApplyTagStepAutomationStepSum  AutomationStepSumType = "apply_tag"
 	RemoveTagStepAutomationStepSum AutomationStepSumType = "remove_tag"
 	HttpStepAutomationStepSum      AutomationStepSumType = "http"
@@ -3065,6 +3095,9 @@ func (s AutomationStepSum) IsSmsStep() bool { return s.Type == SmsStepAutomation
 
 // IsWaitStep reports whether AutomationStepSum is WaitStep.
 func (s AutomationStepSum) IsWaitStep() bool { return s.Type == WaitStepAutomationStepSum }
+
+// IsWaitUntilStep reports whether AutomationStepSum is WaitUntilStep.
+func (s AutomationStepSum) IsWaitUntilStep() bool { return s.Type == WaitUntilStepAutomationStepSum }
 
 // IsApplyTagStep reports whether AutomationStepSum is ApplyTagStep.
 func (s AutomationStepSum) IsApplyTagStep() bool { return s.Type == ApplyTagStepAutomationStepSum }
@@ -3165,6 +3198,27 @@ func (s AutomationStepSum) GetWaitStep() (v WaitStep, ok bool) {
 func NewWaitStepAutomationStepSum(v WaitStep) AutomationStepSum {
 	var s AutomationStepSum
 	s.SetWaitStep(v)
+	return s
+}
+
+// SetWaitUntilStep sets AutomationStepSum to WaitUntilStep.
+func (s *AutomationStepSum) SetWaitUntilStep(v WaitUntilStep) {
+	s.Type = WaitUntilStepAutomationStepSum
+	s.WaitUntilStep = v
+}
+
+// GetWaitUntilStep returns WaitUntilStep and true boolean if AutomationStepSum is WaitUntilStep.
+func (s AutomationStepSum) GetWaitUntilStep() (v WaitUntilStep, ok bool) {
+	if !s.IsWaitUntilStep() {
+		return v, false
+	}
+	return s.WaitUntilStep, true
+}
+
+// NewWaitUntilStepAutomationStepSum returns new AutomationStepSum from WaitUntilStep.
+func NewWaitUntilStepAutomationStepSum(v WaitUntilStep) AutomationStepSum {
+	var s AutomationStepSum
+	s.SetWaitUntilStep(v)
 	return s
 }
 
@@ -12919,6 +12973,8 @@ func (s *LintFinding) SetDetail(val OptString) {
 	s.Detail = val
 }
 
+type LocalTime string
+
 type LocaleTag string
 
 type MaxPerDay int32
@@ -18756,6 +18812,7 @@ type PathStepInputSum struct {
 	TelegramStepInput  TelegramStepInput
 	SmsStepInput       SmsStepInput
 	WaitStepInput      WaitStepInput
+	WaitUntilStepInput WaitUntilStepInput
 	ApplyTagStepInput  ApplyTagStepInput
 	RemoveTagStepInput RemoveTagStepInput
 	HttpStepInput      HttpStepInput
@@ -18773,6 +18830,7 @@ const (
 	TelegramStepInputPathStepInputSum  PathStepInputSumType = "telegram"
 	SmsStepInputPathStepInputSum       PathStepInputSumType = "sms"
 	WaitStepInputPathStepInputSum      PathStepInputSumType = "wait"
+	WaitUntilStepInputPathStepInputSum PathStepInputSumType = "wait_until"
 	ApplyTagStepInputPathStepInputSum  PathStepInputSumType = "apply_tag"
 	RemoveTagStepInputPathStepInputSum PathStepInputSumType = "remove_tag"
 	HttpStepInputPathStepInputSum      PathStepInputSumType = "http"
@@ -18794,6 +18852,11 @@ func (s PathStepInputSum) IsSmsStepInput() bool { return s.Type == SmsStepInputP
 
 // IsWaitStepInput reports whether PathStepInputSum is WaitStepInput.
 func (s PathStepInputSum) IsWaitStepInput() bool { return s.Type == WaitStepInputPathStepInputSum }
+
+// IsWaitUntilStepInput reports whether PathStepInputSum is WaitUntilStepInput.
+func (s PathStepInputSum) IsWaitUntilStepInput() bool {
+	return s.Type == WaitUntilStepInputPathStepInputSum
+}
 
 // IsApplyTagStepInput reports whether PathStepInputSum is ApplyTagStepInput.
 func (s PathStepInputSum) IsApplyTagStepInput() bool {
@@ -18898,6 +18961,27 @@ func (s PathStepInputSum) GetWaitStepInput() (v WaitStepInput, ok bool) {
 func NewWaitStepInputPathStepInputSum(v WaitStepInput) PathStepInputSum {
 	var s PathStepInputSum
 	s.SetWaitStepInput(v)
+	return s
+}
+
+// SetWaitUntilStepInput sets PathStepInputSum to WaitUntilStepInput.
+func (s *PathStepInputSum) SetWaitUntilStepInput(v WaitUntilStepInput) {
+	s.Type = WaitUntilStepInputPathStepInputSum
+	s.WaitUntilStepInput = v
+}
+
+// GetWaitUntilStepInput returns WaitUntilStepInput and true boolean if PathStepInputSum is WaitUntilStepInput.
+func (s PathStepInputSum) GetWaitUntilStepInput() (v WaitUntilStepInput, ok bool) {
+	if !s.IsWaitUntilStepInput() {
+		return v, false
+	}
+	return s.WaitUntilStepInput, true
+}
+
+// NewWaitUntilStepInputPathStepInputSum returns new PathStepInputSum from WaitUntilStepInput.
+func NewWaitUntilStepInputPathStepInputSum(v WaitUntilStepInput) PathStepInputSum {
+	var s PathStepInputSum
+	s.SetWaitUntilStepInput(v)
 	return s
 }
 
@@ -19035,6 +19119,7 @@ type PathStepSum struct {
 	TelegramStep  TelegramStep
 	SmsStep       SmsStep
 	WaitStep      WaitStep
+	WaitUntilStep WaitUntilStep
 	ApplyTagStep  ApplyTagStep
 	RemoveTagStep RemoveTagStep
 	HttpStep      HttpStep
@@ -19052,6 +19137,7 @@ const (
 	TelegramStepPathStepSum  PathStepSumType = "telegram"
 	SmsStepPathStepSum       PathStepSumType = "sms"
 	WaitStepPathStepSum      PathStepSumType = "wait"
+	WaitUntilStepPathStepSum PathStepSumType = "wait_until"
 	ApplyTagStepPathStepSum  PathStepSumType = "apply_tag"
 	RemoveTagStepPathStepSum PathStepSumType = "remove_tag"
 	HttpStepPathStepSum      PathStepSumType = "http"
@@ -19071,6 +19157,9 @@ func (s PathStepSum) IsSmsStep() bool { return s.Type == SmsStepPathStepSum }
 
 // IsWaitStep reports whether PathStepSum is WaitStep.
 func (s PathStepSum) IsWaitStep() bool { return s.Type == WaitStepPathStepSum }
+
+// IsWaitUntilStep reports whether PathStepSum is WaitUntilStep.
+func (s PathStepSum) IsWaitUntilStep() bool { return s.Type == WaitUntilStepPathStepSum }
 
 // IsApplyTagStep reports whether PathStepSum is ApplyTagStep.
 func (s PathStepSum) IsApplyTagStep() bool { return s.Type == ApplyTagStepPathStepSum }
@@ -19171,6 +19260,27 @@ func (s PathStepSum) GetWaitStep() (v WaitStep, ok bool) {
 func NewWaitStepPathStepSum(v WaitStep) PathStepSum {
 	var s PathStepSum
 	s.SetWaitStep(v)
+	return s
+}
+
+// SetWaitUntilStep sets PathStepSum to WaitUntilStep.
+func (s *PathStepSum) SetWaitUntilStep(v WaitUntilStep) {
+	s.Type = WaitUntilStepPathStepSum
+	s.WaitUntilStep = v
+}
+
+// GetWaitUntilStep returns WaitUntilStep and true boolean if PathStepSum is WaitUntilStep.
+func (s PathStepSum) GetWaitUntilStep() (v WaitUntilStep, ok bool) {
+	if !s.IsWaitUntilStep() {
+		return v, false
+	}
+	return s.WaitUntilStep, true
+}
+
+// NewWaitUntilStepPathStepSum returns new PathStepSum from WaitUntilStep.
+func NewWaitUntilStepPathStepSum(v WaitUntilStep) PathStepSum {
+	var s PathStepSum
+	s.SetWaitUntilStep(v)
 	return s
 }
 
@@ -38420,6 +38530,7 @@ type SplitPathStepInputSum struct {
 	TelegramStepInput  TelegramStepInput
 	SmsStepInput       SmsStepInput
 	WaitStepInput      WaitStepInput
+	WaitUntilStepInput WaitUntilStepInput
 	ApplyTagStepInput  ApplyTagStepInput
 	RemoveTagStepInput RemoveTagStepInput
 	HttpStepInput      HttpStepInput
@@ -38437,6 +38548,7 @@ const (
 	TelegramStepInputSplitPathStepInputSum  SplitPathStepInputSumType = "telegram"
 	SmsStepInputSplitPathStepInputSum       SplitPathStepInputSumType = "sms"
 	WaitStepInputSplitPathStepInputSum      SplitPathStepInputSumType = "wait"
+	WaitUntilStepInputSplitPathStepInputSum SplitPathStepInputSumType = "wait_until"
 	ApplyTagStepInputSplitPathStepInputSum  SplitPathStepInputSumType = "apply_tag"
 	RemoveTagStepInputSplitPathStepInputSum SplitPathStepInputSumType = "remove_tag"
 	HttpStepInputSplitPathStepInputSum      SplitPathStepInputSumType = "http"
@@ -38463,6 +38575,11 @@ func (s SplitPathStepInputSum) IsSmsStepInput() bool {
 // IsWaitStepInput reports whether SplitPathStepInputSum is WaitStepInput.
 func (s SplitPathStepInputSum) IsWaitStepInput() bool {
 	return s.Type == WaitStepInputSplitPathStepInputSum
+}
+
+// IsWaitUntilStepInput reports whether SplitPathStepInputSum is WaitUntilStepInput.
+func (s SplitPathStepInputSum) IsWaitUntilStepInput() bool {
+	return s.Type == WaitUntilStepInputSplitPathStepInputSum
 }
 
 // IsApplyTagStepInput reports whether SplitPathStepInputSum is ApplyTagStepInput.
@@ -38576,6 +38693,27 @@ func (s SplitPathStepInputSum) GetWaitStepInput() (v WaitStepInput, ok bool) {
 func NewWaitStepInputSplitPathStepInputSum(v WaitStepInput) SplitPathStepInputSum {
 	var s SplitPathStepInputSum
 	s.SetWaitStepInput(v)
+	return s
+}
+
+// SetWaitUntilStepInput sets SplitPathStepInputSum to WaitUntilStepInput.
+func (s *SplitPathStepInputSum) SetWaitUntilStepInput(v WaitUntilStepInput) {
+	s.Type = WaitUntilStepInputSplitPathStepInputSum
+	s.WaitUntilStepInput = v
+}
+
+// GetWaitUntilStepInput returns WaitUntilStepInput and true boolean if SplitPathStepInputSum is WaitUntilStepInput.
+func (s SplitPathStepInputSum) GetWaitUntilStepInput() (v WaitUntilStepInput, ok bool) {
+	if !s.IsWaitUntilStepInput() {
+		return v, false
+	}
+	return s.WaitUntilStepInput, true
+}
+
+// NewWaitUntilStepInputSplitPathStepInputSum returns new SplitPathStepInputSum from WaitUntilStepInput.
+func NewWaitUntilStepInputSplitPathStepInputSum(v WaitUntilStepInput) SplitPathStepInputSum {
+	var s SplitPathStepInputSum
+	s.SetWaitUntilStepInput(v)
 	return s
 }
 
@@ -38713,6 +38851,7 @@ type SplitPathStepSum struct {
 	TelegramStep  TelegramStep
 	SmsStep       SmsStep
 	WaitStep      WaitStep
+	WaitUntilStep WaitUntilStep
 	ApplyTagStep  ApplyTagStep
 	RemoveTagStep RemoveTagStep
 	HttpStep      HttpStep
@@ -38730,6 +38869,7 @@ const (
 	TelegramStepSplitPathStepSum  SplitPathStepSumType = "telegram"
 	SmsStepSplitPathStepSum       SplitPathStepSumType = "sms"
 	WaitStepSplitPathStepSum      SplitPathStepSumType = "wait"
+	WaitUntilStepSplitPathStepSum SplitPathStepSumType = "wait_until"
 	ApplyTagStepSplitPathStepSum  SplitPathStepSumType = "apply_tag"
 	RemoveTagStepSplitPathStepSum SplitPathStepSumType = "remove_tag"
 	HttpStepSplitPathStepSum      SplitPathStepSumType = "http"
@@ -38749,6 +38889,9 @@ func (s SplitPathStepSum) IsSmsStep() bool { return s.Type == SmsStepSplitPathSt
 
 // IsWaitStep reports whether SplitPathStepSum is WaitStep.
 func (s SplitPathStepSum) IsWaitStep() bool { return s.Type == WaitStepSplitPathStepSum }
+
+// IsWaitUntilStep reports whether SplitPathStepSum is WaitUntilStep.
+func (s SplitPathStepSum) IsWaitUntilStep() bool { return s.Type == WaitUntilStepSplitPathStepSum }
 
 // IsApplyTagStep reports whether SplitPathStepSum is ApplyTagStep.
 func (s SplitPathStepSum) IsApplyTagStep() bool { return s.Type == ApplyTagStepSplitPathStepSum }
@@ -38849,6 +38992,27 @@ func (s SplitPathStepSum) GetWaitStep() (v WaitStep, ok bool) {
 func NewWaitStepSplitPathStepSum(v WaitStep) SplitPathStepSum {
 	var s SplitPathStepSum
 	s.SetWaitStep(v)
+	return s
+}
+
+// SetWaitUntilStep sets SplitPathStepSum to WaitUntilStep.
+func (s *SplitPathStepSum) SetWaitUntilStep(v WaitUntilStep) {
+	s.Type = WaitUntilStepSplitPathStepSum
+	s.WaitUntilStep = v
+}
+
+// GetWaitUntilStep returns WaitUntilStep and true boolean if SplitPathStepSum is WaitUntilStep.
+func (s SplitPathStepSum) GetWaitUntilStep() (v WaitUntilStep, ok bool) {
+	if !s.IsWaitUntilStep() {
+		return v, false
+	}
+	return s.WaitUntilStep, true
+}
+
+// NewWaitUntilStepSplitPathStepSum returns new SplitPathStepSum from WaitUntilStep.
+func NewWaitUntilStepSplitPathStepSum(v WaitUntilStep) SplitPathStepSum {
+	var s SplitPathStepSum
+	s.SetWaitUntilStep(v)
 	return s
 }
 
@@ -41956,6 +42120,419 @@ func (s *WaitStepType) UnmarshalText(data []byte) error {
 	}
 }
 
+// The moment a Wait until holds an Enrollment until, by `form`.
+// Ref: #/components/schemas/WaitUntilMoment
+type WaitUntilMoment struct {
+	OneOf WaitUntilMomentSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *WaitUntilMoment) GetOneOf() WaitUntilMomentSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *WaitUntilMoment) SetOneOf(val WaitUntilMomentSum) {
+	s.OneOf = val
+}
+
+// The moment a Wait until holds an Enrollment until, by `form`, as a request writes it.
+// Ref: #/components/schemas/WaitUntilMomentInput
+type WaitUntilMomentInput struct {
+	OneOf WaitUntilMomentInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *WaitUntilMomentInput) GetOneOf() WaitUntilMomentInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *WaitUntilMomentInput) SetOneOf(val WaitUntilMomentInputSum) {
+	s.OneOf = val
+}
+
+// WaitUntilMomentInputSum represents sum type.
+type WaitUntilMomentInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                    WaitUntilMomentInputSumType
+	WaitUntilTimeOfDayInput WaitUntilTimeOfDayInput
+}
+
+// WaitUntilMomentInputSumType is oneOf type of WaitUntilMomentInputSum.
+type WaitUntilMomentInputSumType string
+
+// Possible values for WaitUntilMomentInputSumType.
+const (
+	WaitUntilTimeOfDayInputWaitUntilMomentInputSum WaitUntilMomentInputSumType = "time_of_day"
+)
+
+// IsWaitUntilTimeOfDayInput reports whether WaitUntilMomentInputSum is WaitUntilTimeOfDayInput.
+func (s WaitUntilMomentInputSum) IsWaitUntilTimeOfDayInput() bool {
+	return s.Type == WaitUntilTimeOfDayInputWaitUntilMomentInputSum
+}
+
+// SetWaitUntilTimeOfDayInput sets WaitUntilMomentInputSum to WaitUntilTimeOfDayInput.
+func (s *WaitUntilMomentInputSum) SetWaitUntilTimeOfDayInput(v WaitUntilTimeOfDayInput) {
+	s.Type = WaitUntilTimeOfDayInputWaitUntilMomentInputSum
+	s.WaitUntilTimeOfDayInput = v
+}
+
+// GetWaitUntilTimeOfDayInput returns WaitUntilTimeOfDayInput and true boolean if WaitUntilMomentInputSum is WaitUntilTimeOfDayInput.
+func (s WaitUntilMomentInputSum) GetWaitUntilTimeOfDayInput() (v WaitUntilTimeOfDayInput, ok bool) {
+	if !s.IsWaitUntilTimeOfDayInput() {
+		return v, false
+	}
+	return s.WaitUntilTimeOfDayInput, true
+}
+
+// NewWaitUntilTimeOfDayInputWaitUntilMomentInputSum returns new WaitUntilMomentInputSum from WaitUntilTimeOfDayInput.
+func NewWaitUntilTimeOfDayInputWaitUntilMomentInputSum(v WaitUntilTimeOfDayInput) WaitUntilMomentInputSum {
+	var s WaitUntilMomentInputSum
+	s.SetWaitUntilTimeOfDayInput(v)
+	return s
+}
+
+// WaitUntilMomentSum represents sum type.
+type WaitUntilMomentSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type               WaitUntilMomentSumType
+	WaitUntilTimeOfDay WaitUntilTimeOfDay
+}
+
+// WaitUntilMomentSumType is oneOf type of WaitUntilMomentSum.
+type WaitUntilMomentSumType string
+
+// Possible values for WaitUntilMomentSumType.
+const (
+	WaitUntilTimeOfDayWaitUntilMomentSum WaitUntilMomentSumType = "time_of_day"
+)
+
+// IsWaitUntilTimeOfDay reports whether WaitUntilMomentSum is WaitUntilTimeOfDay.
+func (s WaitUntilMomentSum) IsWaitUntilTimeOfDay() bool {
+	return s.Type == WaitUntilTimeOfDayWaitUntilMomentSum
+}
+
+// SetWaitUntilTimeOfDay sets WaitUntilMomentSum to WaitUntilTimeOfDay.
+func (s *WaitUntilMomentSum) SetWaitUntilTimeOfDay(v WaitUntilTimeOfDay) {
+	s.Type = WaitUntilTimeOfDayWaitUntilMomentSum
+	s.WaitUntilTimeOfDay = v
+}
+
+// GetWaitUntilTimeOfDay returns WaitUntilTimeOfDay and true boolean if WaitUntilMomentSum is WaitUntilTimeOfDay.
+func (s WaitUntilMomentSum) GetWaitUntilTimeOfDay() (v WaitUntilTimeOfDay, ok bool) {
+	if !s.IsWaitUntilTimeOfDay() {
+		return v, false
+	}
+	return s.WaitUntilTimeOfDay, true
+}
+
+// NewWaitUntilTimeOfDayWaitUntilMomentSum returns new WaitUntilMomentSum from WaitUntilTimeOfDay.
+func NewWaitUntilTimeOfDayWaitUntilMomentSum(v WaitUntilTimeOfDay) WaitUntilMomentSum {
+	var s WaitUntilMomentSum
+	s.SetWaitUntilTimeOfDay(v)
+	return s
+}
+
+// A Step that holds the Enrollment until a calendar moment (ADR 0126): the moment is computed once,
+// from when the Enrollment reaches the Step, and kept, so neither a restart nor a time zone changed
+// during the wait moves it. A moment equal to the arrival waits zero.
+// Ref: #/components/schemas/WaitUntilStep
+type WaitUntilStep struct {
+	// The Step's id.
+	ID   StepId            `json:"id"`
+	Type WaitUntilStepType `json:"type"`
+	// The moment the Enrollment waits for.
+	Until WaitUntilMoment `json:"until"`
+}
+
+// GetID returns the value of ID.
+func (s *WaitUntilStep) GetID() StepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *WaitUntilStep) GetType() WaitUntilStepType {
+	return s.Type
+}
+
+// GetUntil returns the value of Until.
+func (s *WaitUntilStep) GetUntil() WaitUntilMoment {
+	return s.Until
+}
+
+// SetID sets the value of ID.
+func (s *WaitUntilStep) SetID(val StepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *WaitUntilStep) SetType(val WaitUntilStepType) {
+	s.Type = val
+}
+
+// SetUntil sets the value of Until.
+func (s *WaitUntilStep) SetUntil(val WaitUntilMoment) {
+	s.Until = val
+}
+
+// A Step that holds the Enrollment until a calendar moment, as a request writes it.
+// Ref: #/components/schemas/WaitUntilStepInput
+type WaitUntilStepInput struct {
+	// The Step's id; omitted, the Step is given one.
+	ID   OptStepId              `json:"id"`
+	Type WaitUntilStepInputType `json:"type"`
+	// The moment the Enrollment waits for.
+	Until WaitUntilMomentInput `json:"until"`
+}
+
+// GetID returns the value of ID.
+func (s *WaitUntilStepInput) GetID() OptStepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *WaitUntilStepInput) GetType() WaitUntilStepInputType {
+	return s.Type
+}
+
+// GetUntil returns the value of Until.
+func (s *WaitUntilStepInput) GetUntil() WaitUntilMomentInput {
+	return s.Until
+}
+
+// SetID sets the value of ID.
+func (s *WaitUntilStepInput) SetID(val OptStepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *WaitUntilStepInput) SetType(val WaitUntilStepInputType) {
+	s.Type = val
+}
+
+// SetUntil sets the value of Until.
+func (s *WaitUntilStepInput) SetUntil(val WaitUntilMomentInput) {
+	s.Until = val
+}
+
+type WaitUntilStepInputType string
+
+const (
+	WaitUntilStepInputTypeWaitUntil WaitUntilStepInputType = "wait_until"
+)
+
+// AllValues returns all WaitUntilStepInputType values.
+func (WaitUntilStepInputType) AllValues() []WaitUntilStepInputType {
+	return []WaitUntilStepInputType{
+		WaitUntilStepInputTypeWaitUntil,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WaitUntilStepInputType) MarshalText() ([]byte, error) {
+	switch s {
+	case WaitUntilStepInputTypeWaitUntil:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WaitUntilStepInputType) UnmarshalText(data []byte) error {
+	switch WaitUntilStepInputType(data) {
+	case WaitUntilStepInputTypeWaitUntil:
+		*s = WaitUntilStepInputTypeWaitUntil
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type WaitUntilStepType string
+
+const (
+	WaitUntilStepTypeWaitUntil WaitUntilStepType = "wait_until"
+)
+
+// AllValues returns all WaitUntilStepType values.
+func (WaitUntilStepType) AllValues() []WaitUntilStepType {
+	return []WaitUntilStepType{
+		WaitUntilStepTypeWaitUntil,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WaitUntilStepType) MarshalText() ([]byte, error) {
+	switch s {
+	case WaitUntilStepTypeWaitUntil:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WaitUntilStepType) UnmarshalText(data []byte) error {
+	switch WaitUntilStepType(data) {
+	case WaitUntilStepTypeWaitUntil:
+		*s = WaitUntilStepTypeWaitUntil
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Wait until the next moment a local time comes, on chosen weekdays or on any day, in the Contact's
+// time zone, or the Workspace time zone when the Contact has no valid one (ADR 0126).
+// Ref: #/components/schemas/WaitUntilTimeOfDay
+type WaitUntilTimeOfDay struct {
+	Form WaitUntilTimeOfDayForm `json:"form"`
+	// The local time of day.
+	LocalTime LocalTime `json:"localTime"`
+	// The weekdays the local time counts on; empty is every day.
+	Weekdays []Weekday `json:"weekdays"`
+}
+
+// GetForm returns the value of Form.
+func (s *WaitUntilTimeOfDay) GetForm() WaitUntilTimeOfDayForm {
+	return s.Form
+}
+
+// GetLocalTime returns the value of LocalTime.
+func (s *WaitUntilTimeOfDay) GetLocalTime() LocalTime {
+	return s.LocalTime
+}
+
+// GetWeekdays returns the value of Weekdays.
+func (s *WaitUntilTimeOfDay) GetWeekdays() []Weekday {
+	return s.Weekdays
+}
+
+// SetForm sets the value of Form.
+func (s *WaitUntilTimeOfDay) SetForm(val WaitUntilTimeOfDayForm) {
+	s.Form = val
+}
+
+// SetLocalTime sets the value of LocalTime.
+func (s *WaitUntilTimeOfDay) SetLocalTime(val LocalTime) {
+	s.LocalTime = val
+}
+
+// SetWeekdays sets the value of Weekdays.
+func (s *WaitUntilTimeOfDay) SetWeekdays(val []Weekday) {
+	s.Weekdays = val
+}
+
+type WaitUntilTimeOfDayForm string
+
+const (
+	WaitUntilTimeOfDayFormTimeOfDay WaitUntilTimeOfDayForm = "time_of_day"
+)
+
+// AllValues returns all WaitUntilTimeOfDayForm values.
+func (WaitUntilTimeOfDayForm) AllValues() []WaitUntilTimeOfDayForm {
+	return []WaitUntilTimeOfDayForm{
+		WaitUntilTimeOfDayFormTimeOfDay,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WaitUntilTimeOfDayForm) MarshalText() ([]byte, error) {
+	switch s {
+	case WaitUntilTimeOfDayFormTimeOfDay:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WaitUntilTimeOfDayForm) UnmarshalText(data []byte) error {
+	switch WaitUntilTimeOfDayForm(data) {
+	case WaitUntilTimeOfDayFormTimeOfDay:
+		*s = WaitUntilTimeOfDayFormTimeOfDay
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Wait until the next moment a local time comes, as a request writes it.
+// Ref: #/components/schemas/WaitUntilTimeOfDayInput
+type WaitUntilTimeOfDayInput struct {
+	Form WaitUntilTimeOfDayInputForm `json:"form"`
+	// The local time of day.
+	LocalTime LocalTime `json:"localTime"`
+	// The weekdays the local time counts on, each at most once; omitted or empty is every day.
+	Weekdays []Weekday `json:"weekdays"`
+}
+
+// GetForm returns the value of Form.
+func (s *WaitUntilTimeOfDayInput) GetForm() WaitUntilTimeOfDayInputForm {
+	return s.Form
+}
+
+// GetLocalTime returns the value of LocalTime.
+func (s *WaitUntilTimeOfDayInput) GetLocalTime() LocalTime {
+	return s.LocalTime
+}
+
+// GetWeekdays returns the value of Weekdays.
+func (s *WaitUntilTimeOfDayInput) GetWeekdays() []Weekday {
+	return s.Weekdays
+}
+
+// SetForm sets the value of Form.
+func (s *WaitUntilTimeOfDayInput) SetForm(val WaitUntilTimeOfDayInputForm) {
+	s.Form = val
+}
+
+// SetLocalTime sets the value of LocalTime.
+func (s *WaitUntilTimeOfDayInput) SetLocalTime(val LocalTime) {
+	s.LocalTime = val
+}
+
+// SetWeekdays sets the value of Weekdays.
+func (s *WaitUntilTimeOfDayInput) SetWeekdays(val []Weekday) {
+	s.Weekdays = val
+}
+
+type WaitUntilTimeOfDayInputForm string
+
+const (
+	WaitUntilTimeOfDayInputFormTimeOfDay WaitUntilTimeOfDayInputForm = "time_of_day"
+)
+
+// AllValues returns all WaitUntilTimeOfDayInputForm values.
+func (WaitUntilTimeOfDayInputForm) AllValues() []WaitUntilTimeOfDayInputForm {
+	return []WaitUntilTimeOfDayInputForm{
+		WaitUntilTimeOfDayInputFormTimeOfDay,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WaitUntilTimeOfDayInputForm) MarshalText() ([]byte, error) {
+	switch s {
+	case WaitUntilTimeOfDayInputFormTimeOfDay:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WaitUntilTimeOfDayInputForm) UnmarshalText(data []byte) error {
+	switch WaitUntilTimeOfDayInputForm(data) {
+	case WaitUntilTimeOfDayInputFormTimeOfDay:
+		*s = WaitUntilTimeOfDayInputFormTimeOfDay
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the receiver
 // answered 410 Gone) and `persistent_failure` (deliveries failed for longer than the window). Absent
 // while the endpoint is enabled.
@@ -42171,6 +42748,84 @@ func (s *WebhookTestResult) SetStatus(val OptInt32) {
 // SetKind sets the value of Kind.
 func (s *WebhookTestResult) SetKind(val OptWebhookErrorKind) {
 	s.Kind = val
+}
+
+// A day of the week, by its ISO name in lower case.
+// Ref: #/components/schemas/Weekday
+type Weekday string
+
+const (
+	WeekdayMonday    Weekday = "monday"
+	WeekdayTuesday   Weekday = "tuesday"
+	WeekdayWednesday Weekday = "wednesday"
+	WeekdayThursday  Weekday = "thursday"
+	WeekdayFriday    Weekday = "friday"
+	WeekdaySaturday  Weekday = "saturday"
+	WeekdaySunday    Weekday = "sunday"
+)
+
+// AllValues returns all Weekday values.
+func (Weekday) AllValues() []Weekday {
+	return []Weekday{
+		WeekdayMonday,
+		WeekdayTuesday,
+		WeekdayWednesday,
+		WeekdayThursday,
+		WeekdayFriday,
+		WeekdaySaturday,
+		WeekdaySunday,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s Weekday) MarshalText() ([]byte, error) {
+	switch s {
+	case WeekdayMonday:
+		return []byte(s), nil
+	case WeekdayTuesday:
+		return []byte(s), nil
+	case WeekdayWednesday:
+		return []byte(s), nil
+	case WeekdayThursday:
+		return []byte(s), nil
+	case WeekdayFriday:
+		return []byte(s), nil
+	case WeekdaySaturday:
+		return []byte(s), nil
+	case WeekdaySunday:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *Weekday) UnmarshalText(data []byte) error {
+	switch Weekday(data) {
+	case WeekdayMonday:
+		*s = WeekdayMonday
+		return nil
+	case WeekdayTuesday:
+		*s = WeekdayTuesday
+		return nil
+	case WeekdayWednesday:
+		*s = WeekdayWednesday
+		return nil
+	case WeekdayThursday:
+		*s = WeekdayThursday
+		return nil
+	case WeekdayFriday:
+		*s = WeekdayFriday
+		return nil
+	case WeekdaySaturday:
+		*s = WeekdaySaturday
+		return nil
+	case WeekdaySunday:
+		*s = WeekdaySunday
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 // A test of a moment: within the last `days` days up to now, so a moment still to come is not within.

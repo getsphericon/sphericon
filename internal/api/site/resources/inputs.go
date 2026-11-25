@@ -3,6 +3,7 @@ package resources
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent/automationversion"
@@ -43,6 +44,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
+	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
@@ -273,6 +275,11 @@ type Inputs interface {
 	TelegramStepIn(source siteapi.TelegramStepInput) automationstep.Telegram
 	SmsStepIn(source siteapi.SmsStepInput) automationstep.SMS
 	WaitStepIn(source siteapi.WaitStepInput) automationstep.Wait
+	// goverter:map Until | waitUntilMomentIn
+	WaitUntilStepIn(source siteapi.WaitUntilStepInput) (automationstep.WaitUntil, error)
+	WaitUntilTimeOfDayIn(source siteapi.WaitUntilTimeOfDayInput) automationstep.TimeOfDay
+	// goverter:enum:transform value
+	WeekdayIn(source siteapi.Weekday) localcalendar.Weekday
 	ApplyTagStepIn(source siteapi.ApplyTagStepInput) automationstep.ApplyTag
 	RemoveTagStepIn(source siteapi.RemoveTagStepInput) automationstep.RemoveTag
 	HttpStepIn(source siteapi.HttpStepInput) automationstep.HTTP
@@ -547,6 +554,9 @@ func automationStepIn(c Inputs, s *siteapi.AutomationStepInputSum) (automationst
 		return automationstep.Step{ID: stepIDIn(s.SmsStepInput.ID), Payload: c.SmsStepIn(s.SmsStepInput)}, nil
 	case siteapi.WaitStepInputAutomationStepInputSum:
 		return automationstep.Step{ID: stepIDIn(s.WaitStepInput.ID), Payload: c.WaitStepIn(s.WaitStepInput)}, nil
+	case siteapi.WaitUntilStepInputAutomationStepInputSum:
+		w, err := c.WaitUntilStepIn(s.WaitUntilStepInput)
+		return automationstep.Step{ID: stepIDIn(s.WaitUntilStepInput.ID), Payload: w}, err
 	case siteapi.ApplyTagStepInputAutomationStepInputSum:
 		return automationstep.Step{ID: stepIDIn(s.ApplyTagStepInput.ID), Payload: c.ApplyTagStepIn(s.ApplyTagStepInput)}, nil
 	case siteapi.RemoveTagStepInputAutomationStepInputSum:
@@ -561,6 +571,17 @@ func automationStepIn(c Inputs, s *siteapi.AutomationStepInputSum) (automationst
 		return splitStepIn(c, &s.SplitStepInput)
 	default:
 		return automationstep.Step{}, nil // the save refuses a Step of no kind
+	}
+}
+
+// waitUntilMomentIn maps a Wait until's moment onto its form's: a oneOf is beyond goverter, so only
+// the switch is written here.
+func waitUntilMomentIn(c Inputs, in siteapi.WaitUntilMomentInput) (automationstep.Until, error) {
+	switch in.OneOf.Type {
+	case siteapi.WaitUntilTimeOfDayInputWaitUntilMomentInputSum:
+		return c.WaitUntilTimeOfDayIn(in.OneOf.WaitUntilTimeOfDayInput), nil
+	default:
+		return nil, fmt.Errorf("the moment of form %q has no form of a wait until", in.OneOf.Type)
 	}
 }
 

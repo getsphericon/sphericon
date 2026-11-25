@@ -6,6 +6,7 @@ package resources
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
+	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
@@ -146,6 +148,12 @@ func stepSum(c Converter, v automations.StepView) (externalapi.AutomationStepSum
 		return externalapi.NewSmsStepAutomationStepSum(c.SmsStepToResource(v)), nil
 	case automations.WaitView:
 		return externalapi.NewWaitStepAutomationStepSum(c.WaitStepToResource(v)), nil
+	case automations.WaitUntilView:
+		w, err := c.WaitUntilStepToResource(v)
+		if err != nil {
+			return externalapi.AutomationStepSum{}, err
+		}
+		return externalapi.NewWaitUntilStepAutomationStepSum(w), nil
 	case automations.TagView:
 		// The module shows both tag kinds as one view; the union has an arm for each.
 		switch v.Type {
@@ -203,6 +211,24 @@ func telegramStepType(automationstep.Kind) externalapi.TelegramStepType {
 }
 func smsStepType(automationstep.Kind) externalapi.SmsStepType   { return externalapi.SmsStepTypeSMS }
 func waitStepType(automationstep.Kind) externalapi.WaitStepType { return externalapi.WaitStepTypeWait }
+func waitUntilStepType(automationstep.Kind) externalapi.WaitUntilStepType {
+	return externalapi.WaitUntilStepTypeWaitUntil
+}
+func waitUntilTimeOfDayForm(automationstep.TimeOfDay) externalapi.WaitUntilTimeOfDayForm {
+	return externalapi.WaitUntilTimeOfDayFormTimeOfDay
+}
+
+// waitUntilMoment is the arm of a Wait until's moment: a oneOf is beyond goverter, so only the
+// switch is written here. A moment with no arm fails the response.
+func waitUntilMoment(c Converter, u automationstep.Until) (externalapi.WaitUntilMoment, error) {
+	switch u := u.(type) {
+	case automationstep.TimeOfDay:
+		return externalapi.WaitUntilMoment{OneOf: externalapi.NewWaitUntilTimeOfDayWaitUntilMomentSum(c.WaitUntilTimeOfDayToResource(u))}, nil
+	case nil:
+		return externalapi.WaitUntilMoment{}, errors.New("a wait until without a moment")
+	}
+	return externalapi.WaitUntilMoment{}, fmt.Errorf("the moment %T has no arm", u)
+}
 func applyTagStepType(automationstep.Kind) externalapi.ApplyTagStepType {
 	return externalapi.ApplyTagStepTypeApplyTag
 }
@@ -287,6 +313,9 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend telegramStepType
 // goverter:extend smsStepType
 // goverter:extend waitStepType
+// goverter:extend waitUntilStepType
+// goverter:extend waitUntilMoment
+// goverter:extend waitUntilTimeOfDayForm
 // goverter:extend applyTagStepType
 // goverter:extend removeTagStepType
 // goverter:extend httpStepType
@@ -423,6 +452,12 @@ type Converter interface {
 	// goverter:map IntegrationID IntegrationId
 	SmsStepToResource(source automations.SMSView) externalapi.SmsStep
 	WaitStepToResource(source automations.WaitView) externalapi.WaitStep
+	WaitUntilStepToResource(source automations.WaitUntilView) (externalapi.WaitUntilStep, error)
+	// goverter:map . Form | waitUntilTimeOfDayForm
+	// goverter:useEmptyOnNil:slice
+	WaitUntilTimeOfDayToResource(source automationstep.TimeOfDay) externalapi.WaitUntilTimeOfDay
+	// goverter:enum:transform value
+	WeekdayToResource(source localcalendar.Weekday) externalapi.Weekday
 	ApplyTagStepToResource(source automations.TagView) externalapi.ApplyTagStep
 	RemoveTagStepToResource(source automations.TagView) externalapi.RemoveTagStep
 	HttpStepToResource(source automations.HTTPView) externalapi.HttpStep
