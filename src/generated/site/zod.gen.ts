@@ -2712,6 +2712,16 @@ export const zApplyTagStepInput = z.strictObject({
 });
 
 /**
+ * The enrollments that took one path of a fork, over every version that had it
+ */
+export const zAutomationPathFigures = z.object({
+  stepId: zStepId,
+  pathId: zStepId,
+  enrollments: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  goalReached: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
  * The messages of one send Step, over every version that had it
  */
 export const zAutomationStepFigures = z.object({
@@ -2744,7 +2754,8 @@ export const zAutomationReport = z.object({
   links: z.array(zLinkClicks),
   results: zAutomationResults,
   steps: z.array(zAutomationStepFigures),
-  versionSteps: z.array(zAutomationVersionStepFigures)
+  versionSteps: z.array(zAutomationVersionStepFigures),
+  paths: z.array(zAutomationPathFigures)
 });
 
 /**

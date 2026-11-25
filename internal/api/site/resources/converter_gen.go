@@ -54,6 +54,7 @@ import (
 	trackingdomains "github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	messaging "github.com/getsphericon/sphericon/internal/infra/messaging"
 	webhook "github.com/getsphericon/sphericon/internal/infra/webhook"
+	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	deferralcause "github.com/getsphericon/sphericon/internal/kernel/deferralcause"
@@ -430,6 +431,12 @@ func (c *ConverterImpl) AutomationReportToResource(source automations.Report) si
 			siteapiAutomationReport.VersionSteps[j] = c.automationsVersionStepFiguresToSiteapiAutomationVersionStepFigures(source.VersionSteps[j])
 		}
 	}
+	if source.Paths != nil {
+		siteapiAutomationReport.Paths = make([]site.AutomationPathFigures, len(source.Paths))
+		for k := 0; k < len(source.Paths); k++ {
+			siteapiAutomationReport.Paths[k] = c.automationsPathFiguresToSiteapiAutomationPathFigures(source.Paths[k])
+		}
+	}
 	return siteapiAutomationReport
 }
 func (c *ConverterImpl) AutomationResultsPointToResource(source automations.ResultsPoint) site.AutomationResultsPoint {
@@ -629,7 +636,7 @@ func (c *ConverterImpl) BindingsToResources(source []bindings.Chat) []site.SiteB
 }
 func (c *ConverterImpl) BranchPathToResource(source automations.BranchPathView) (site.BranchPath, error) {
 	var siteapiBranchPath site.BranchPath
-	siteapiBranchPath.ID = site.StepId(source.ID)
+	siteapiBranchPath.ID = c.automationstepIDToSiteapiStepId(source.ID)
 	siteapiBranchCondition, err := branchCondition(source.Condition)
 	if err != nil {
 		return siteapiBranchPath, err
@@ -644,7 +651,7 @@ func (c *ConverterImpl) BranchPathToResource(source automations.BranchPathView) 
 }
 func (c *ConverterImpl) BranchStepToResource(source automations.BranchView) (site.BranchStep, error) {
 	var siteapiBranchStep site.BranchStep
-	siteapiBranchStep.ID = site.StepId(source.ID)
+	siteapiBranchStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
 	siteapiBranchStep.Type = branchStepType(source.Type)
 	if source.Paths != nil {
 		siteapiBranchStep.Paths = make([]site.BranchPath, len(source.Paths))
@@ -1190,7 +1197,7 @@ func (c *ConverterImpl) EmailBroadcastContentToResource(source *ent.Broadcast) s
 }
 func (c *ConverterImpl) EmailStepToResource(source automations.EmailView) site.EmailStep {
 	var siteapiEmailStep site.EmailStep
-	siteapiEmailStep.ID = site.StepId(source.ID)
+	siteapiEmailStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
 	siteapiEmailStep.Type = emailStepType(source.Type)
 	siteapiEmailStep.Subject = source.Subject
 	siteapiEmailStep.Body = source.Body
@@ -1225,7 +1232,7 @@ func (c *ConverterImpl) EmailTemplatesToResources(source []*ent.EmailTemplate) [
 }
 func (c *ConverterImpl) EndStepToResource(source automations.EndView) site.EndStep {
 	var siteapiEndStep site.EndStep
-	siteapiEndStep.ID = site.StepId(source.ID)
+	siteapiEndStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
 	siteapiEndStep.Type = endStepType(source.Type)
 	return siteapiEndStep
 }
@@ -1489,7 +1496,7 @@ func (c *ConverterImpl) HoldsToResources(source []*ent.Hold) []site.SiteWorkspac
 }
 func (c *ConverterImpl) HttpStepToResource(source automations.HTTPView) site.HttpStep {
 	var siteapiHttpStep site.HttpStep
-	siteapiHttpStep.ID = site.StepId(source.ID)
+	siteapiHttpStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
 	siteapiHttpStep.Type = httpStepType(source.Type)
 	siteapiHttpStep.Body = source.Body
 	if source.Headers != nil {
@@ -2196,7 +2203,7 @@ func (c *ConverterImpl) ProviderLimitWarningToResource(source providerlimit.Warn
 }
 func (c *ConverterImpl) RemoveTagStepToResource(source automations.TagView) site.RemoveTagStep {
 	var siteapiRemoveTagStep site.RemoveTagStep
-	siteapiRemoveTagStep.ID = site.StepId(source.ID)
+	siteapiRemoveTagStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
 	siteapiRemoveTagStep.Type = removeTagStepType(source.Type)
 	siteapiRemoveTagStep.Tag = source.Tag
 	return siteapiRemoveTagStep
@@ -2699,7 +2706,7 @@ func (c *ConverterImpl) SmsOptOutToResource(source *confirmations.SMSOptOut) sit
 }
 func (c *ConverterImpl) SmsStepToResource(source automations.SMSView) site.SmsStep {
 	var siteapiSmsStep site.SmsStep
-	siteapiSmsStep.ID = site.StepId(source.ID)
+	siteapiSmsStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
 	siteapiSmsStep.Type = smsStepType(source.Type)
 	siteapiSmsStep.Text = source.Text
 	siteapiSmsStep.LinkTracking = source.LinkTracking
@@ -2746,7 +2753,7 @@ func (c *ConverterImpl) SplitPathStepType(source site.AutomationStepSumType) sit
 }
 func (c *ConverterImpl) SplitPathToResource(source automations.SplitPathView) (site.SplitPath, error) {
 	var siteapiSplitPath site.SplitPath
-	siteapiSplitPath.ID = site.StepId(source.ID)
+	siteapiSplitPath.ID = c.automationstepIDToSiteapiStepId(source.ID)
 	siteapiSplitPath.Weight = count(source.Weight)
 	siteapiSplitPathStepList, err := splitPathStepViews(c, source.Steps)
 	if err != nil {
@@ -2757,7 +2764,7 @@ func (c *ConverterImpl) SplitPathToResource(source automations.SplitPathView) (s
 }
 func (c *ConverterImpl) SplitStepToResource(source automations.SplitView) (site.SplitStep, error) {
 	var siteapiSplitStep site.SplitStep
-	siteapiSplitStep.ID = site.StepId(source.ID)
+	siteapiSplitStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
 	siteapiSplitStep.Type = splitStepType(source.Type)
 	if source.Paths != nil {
 		siteapiSplitStep.Paths = make([]site.SplitPath, len(source.Paths))
@@ -2926,7 +2933,7 @@ func (c *ConverterImpl) TelegramConfigToResource(source integrations.RedactedTel
 }
 func (c *ConverterImpl) TelegramStepToResource(source automations.TelegramView) site.TelegramStep {
 	var siteapiTelegramStep site.TelegramStep
-	siteapiTelegramStep.ID = site.StepId(source.ID)
+	siteapiTelegramStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
 	siteapiTelegramStep.Type = telegramStepType(source.Type)
 	siteapiTelegramStep.Text = source.Text
 	siteapiTelegramStep.UnsubscribeButton = optString(source.UnsubscribeButton)
@@ -3148,7 +3155,7 @@ func (c *ConverterImpl) VisitorToExport(source *ent.Visitor) site.ContactExportV
 }
 func (c *ConverterImpl) WaitStepToResource(source automations.WaitView) site.WaitStep {
 	var siteapiWaitStep site.WaitStep
-	siteapiWaitStep.ID = site.StepId(source.ID)
+	siteapiWaitStep.ID = c.automationstepIDToSiteapiStepId(source.ID)
 	siteapiWaitStep.Type = waitStepType(source.Type)
 	siteapiWaitStep.Seconds = count(source.Seconds)
 	return siteapiWaitStep
@@ -3321,6 +3328,14 @@ func (c *ConverterImpl) analyticsreportSubscribedPointToSiteapiSiteAnalyticsSubs
 	siteapiSiteAnalyticsSubscribedPoint.Net = count(source.Net)
 	return siteapiSiteAnalyticsSubscribedPoint
 }
+func (c *ConverterImpl) automationsPathFiguresToSiteapiAutomationPathFigures(source automations.PathFigures) site.AutomationPathFigures {
+	var siteapiAutomationPathFigures site.AutomationPathFigures
+	siteapiAutomationPathFigures.StepId = c.automationstepIDToSiteapiStepId(source.StepID)
+	siteapiAutomationPathFigures.PathId = c.automationstepIDToSiteapiStepId(source.PathID)
+	siteapiAutomationPathFigures.Enrollments = count(source.Enrollments)
+	siteapiAutomationPathFigures.GoalReached = count(source.GoalReached)
+	return siteapiAutomationPathFigures
+}
 func (c *ConverterImpl) automationsSkippedCountsToSiteapiAutomationSkippedCounts(source automations.SkippedCounts) site.AutomationSkippedCounts {
 	var siteapiAutomationSkippedCounts site.AutomationSkippedCounts
 	siteapiAutomationSkippedCounts.Cycle = count(source.Cycle)
@@ -3345,6 +3360,9 @@ func (c *ConverterImpl) automationsVersionStepFiguresToSiteapiAutomationVersionS
 	siteapiAutomationVersionStepFigures.Sent = count(source.Sent)
 	siteapiAutomationVersionStepFigures.Skipped = count(source.Skipped)
 	return siteapiAutomationVersionStepFigures
+}
+func (c *ConverterImpl) automationstepIDToSiteapiStepId(source automationstep.ID) site.StepId {
+	return site.StepId(source)
 }
 func (c *ConverterImpl) linkclickClicksToSiteapiLinkClicks(source linkclick.Clicks) site.LinkClicks {
 	var siteapiLinkClicks site.LinkClicks

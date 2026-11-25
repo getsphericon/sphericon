@@ -1959,6 +1959,59 @@ func (s *AutomationPath) SetSteps(val []AutomationStep) {
 	s.Steps = val
 }
 
+// The enrollments that took one path of a fork, over every version that had it.
+// Ref: #/components/schemas/AutomationPathFigures
+type AutomationPathFigures struct {
+	// The fork's Step id, the same in every version.
+	StepId StepId `json:"stepId"`
+	// The path's id, the same in every version.
+	PathId StepId `json:"pathId"`
+	// Enrollments that took the path.
+	Enrollments int32 `json:"enrollments"`
+	// Enrollments among them that ended because their goal event was recorded.
+	GoalReached int32 `json:"goalReached"`
+}
+
+// GetStepId returns the value of StepId.
+func (s *AutomationPathFigures) GetStepId() StepId {
+	return s.StepId
+}
+
+// GetPathId returns the value of PathId.
+func (s *AutomationPathFigures) GetPathId() StepId {
+	return s.PathId
+}
+
+// GetEnrollments returns the value of Enrollments.
+func (s *AutomationPathFigures) GetEnrollments() int32 {
+	return s.Enrollments
+}
+
+// GetGoalReached returns the value of GoalReached.
+func (s *AutomationPathFigures) GetGoalReached() int32 {
+	return s.GoalReached
+}
+
+// SetStepId sets the value of StepId.
+func (s *AutomationPathFigures) SetStepId(val StepId) {
+	s.StepId = val
+}
+
+// SetPathId sets the value of PathId.
+func (s *AutomationPathFigures) SetPathId(val StepId) {
+	s.PathId = val
+}
+
+// SetEnrollments sets the value of Enrollments.
+func (s *AutomationPathFigures) SetEnrollments(val int32) {
+	s.Enrollments = val
+}
+
+// SetGoalReached sets the value of GoalReached.
+func (s *AutomationPathFigures) SetGoalReached(val int32) {
+	s.GoalReached = val
+}
+
 // A path of Steps, as a request writes it.
 // Ref: #/components/schemas/AutomationPathInput
 type AutomationPathInput struct {
@@ -2163,6 +2216,12 @@ type AutomationReport struct {
 	// The send Steps' messages by version and Step id, in version order and, within a version, in its Step
 	// order.
 	VersionSteps []AutomationVersionStepFigures `json:"versionSteps"`
+	// Each path of a Branch (its unknown path included) and of a Split by its fork's Step id and its own
+	// id: the enrollments that took it and how many of them reached the goal, over the automation's whole
+	// history, each summed over every version that had the path. Sorted by the newest of those versions,
+	// then by the fork's place there and the path's place in the fork: one entry per path an enrollment
+	// took, so a path none took has none.
+	Paths []AutomationPathFigures `json:"paths"`
 }
 
 // GetOpens returns the value of Opens.
@@ -2220,6 +2279,11 @@ func (s *AutomationReport) GetVersionSteps() []AutomationVersionStepFigures {
 	return s.VersionSteps
 }
 
+// GetPaths returns the value of Paths.
+func (s *AutomationReport) GetPaths() []AutomationPathFigures {
+	return s.Paths
+}
+
 // SetOpens sets the value of Opens.
 func (s *AutomationReport) SetOpens(val int32) {
 	s.Opens = val
@@ -2273,6 +2337,11 @@ func (s *AutomationReport) SetSteps(val []AutomationStepFigures) {
 // SetVersionSteps sets the value of VersionSteps.
 func (s *AutomationReport) SetVersionSteps(val []AutomationVersionStepFigures) {
 	s.VersionSteps = val
+}
+
+// SetPaths sets the value of Paths.
+func (s *AutomationReport) SetPaths(val []AutomationPathFigures) {
+	s.Paths = val
 }
 
 // The length of the period an automation's results are read over, in Report days (ADR 0057), today

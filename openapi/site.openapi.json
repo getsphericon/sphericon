@@ -11535,6 +11535,39 @@
         },
         "description": "A path of Steps, in the order an Enrollment walks them. A version's Steps are its root path."
       },
+      "AutomationPathFigures": {
+        "type": "object",
+        "required": ["stepId", "pathId", "enrollments", "goalReached"],
+        "properties": {
+          "stepId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The fork's Step id, the same in every version"
+          },
+          "pathId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The path's id, the same in every version"
+          },
+          "enrollments": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments that took the path"
+          },
+          "goalReached": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Enrollments among them that ended because their goal event was recorded"
+          }
+        },
+        "description": "The enrollments that took one path of a fork, over every version that had it"
+      },
       "AutomationPathInput": {
         "type": "object",
         "required": ["steps"],
@@ -11650,7 +11683,8 @@
           "links",
           "results",
           "steps",
-          "versionSteps"
+          "versionSteps",
+          "paths"
         ],
         "properties": {
           "opens": {
@@ -11719,6 +11753,13 @@
               "$ref": "#/components/schemas/AutomationVersionStepFigures"
             },
             "description": "The send Steps' messages by version and Step id, in version order and, within a version, in\nits Step order"
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationPathFigures"
+            },
+            "description": "Each path of a Branch (its unknown path included) and of a Split by its fork's Step id and\nits own id: the enrollments that took it and how many of them reached the goal, over the\nautomation's whole history, each summed over every version that had the path. Sorted by the\nnewest of those versions, then by the fork's place there and the path's place in the fork:\none entry per path an enrollment took, so a path none took has none"
           }
         },
         "description": "An automation's engagement figures over its whole history and its results over a period"
