@@ -241,6 +241,19 @@ var Bounds = []Bound{
 		Spec: site, Schema: "EventTriggerInput", Property: "cooldown", Owners: []string{"AutomationVersion"},
 	},
 	{
+		Name: "BranchPaths", Doc: "are the listed paths of a Branch, `otherwise` and `unknown` aside (ADR 0124).",
+		Spec: site, Schema: "BranchStepInput", Property: "paths", Owners: []string{"AutomationVersion"},
+	},
+	{Name: "BranchPaths", Spec: site, Schema: "BranchUnknownPathInput", Property: "conditions"},
+	{
+		Name: "SplitPaths", Doc: "are the paths of a Split (ADR 0124).",
+		Spec: site, Schema: "SplitStepInput", Property: "paths", Owners: []string{"AutomationVersion"},
+	},
+	{
+		Name: "SplitWeight", Doc: "is the share of a Split's path, a whole percentage of the Contacts that reach it (ADR 0124).",
+		Spec: site, Schema: "SplitPathInput", Property: "weight", Owners: []string{"AutomationVersion"},
+	},
+	{
 		Name: "ConditionWithinDays", Doc: "is how many days back a condition looks: an Event count's window or a moment's within the last days.",
 		Spec: site, Schema: "EventLeafInput", Property: "withinDays",
 		Owners: []string{"internal/domain/contacts/condition"},

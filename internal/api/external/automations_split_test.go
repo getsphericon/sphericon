@@ -2,6 +2,7 @@ package external_test
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -77,18 +78,14 @@ func TestExternalAutomationKeepsASplitsTree(t *testing.T) {
 	assert.Equal(t, externalapi.WaitStepAutomationStepSum, steps[1].OneOf.Type)
 }
 
-// A Split's weights are whole numbers of at least 1 summing to 100, over two to ten paths: any
-// other Split is refused, naming it.
+// splitPath is a path of a Split of weight, with no Steps.
+func splitPath(weight int) string { return fmt.Sprintf(`{"weight":%d,"steps":[]}`, weight) }
+
+// A Split's weights sum to 100: any other sum is refused, naming the Split.
 func TestExternalAutomationRefusesASplitsWeights(t *testing.T) {
-	path := func(weight int) string { return fmt.Sprintf(`{"weight":%d,"steps":[]}`, weight) }
-	eleven := strings.Repeat(path(9)+",", 10) + path(10)
 	cases := map[string]string{
-		"summing to 99":    path(50) + "," + path(49),
-		"summing to 101":   path(50) + "," + path(51),
-		"a weight of 0":    path(100) + "," + path(0),
-		"a negative share": path(101) + "," + path(-1),
-		"a single path":    path(100),
-		"eleven paths":     eleven,
+		"summing to 99":  splitPath(50) + "," + splitPath(49),
+		"summing to 101": splitPath(50) + "," + splitPath(51),
 	}
 	for name, paths := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -98,6 +95,28 @@ func TestExternalAutomationRefusesASplitsWeights(t *testing.T) {
 			_, err := saveSplit(t, c, `{"id":"`+splitID+`","type":"split","paths":[`+paths+`]}`)
 
 			refusedNaming(t, err, splitID, "split")
+		})
+	}
+}
+
+// A Split has two to ten paths, each of a weight of at least 1, bounds of the contract: outside
+// them the request is refused (400), naming the property.
+func TestExternalAutomationRefusesASplitOutsideTheContractsBounds(t *testing.T) {
+	cases := map[string]struct{ paths, property string }{
+		"a weight of 0":    {splitPath(100) + "," + splitPath(0), "steps.steps.0.paths.1.weight"},
+		"a negative share": {splitPath(101) + "," + splitPath(-1), "steps.steps.0.paths.1.weight"},
+		"a single path":    {splitPath(100), "steps.steps.0.paths"},
+		"eleven paths":     {strings.Repeat(splitPath(9)+",", 10) + splitPath(10), "steps.steps.0.paths"},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			api := env.ExternalScoped(t, stepAuthorScopes...)
+
+			_, err := saveSplit(t, api, `{"id":"`+splitID+`","type":"split","paths":[`+c.paths+`]}`)
+
+			refused := testhelper.ExternalRefusal(t, err, http.StatusBadRequest)
+			assert.Contains(t, refused.Errors.Or(nil), c.property)
 		})
 	}
 }

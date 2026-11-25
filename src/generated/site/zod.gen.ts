@@ -5061,23 +5061,22 @@ export const zBranchStep = z.object({
 });
 
 /**
- * A Branch, as a request writes it. It needs a path besides `otherwise`; Publish refuses it
- * without `unknown` when a Condition counts an open or a click, and with `unknown` when none does.
+ * A Branch, as a request writes it. Publish refuses it without `unknown` when a Condition counts
+ * an open or a click, and with `unknown` when none does.
  */
 export const zBranchStepInput = z.strictObject({
   id: z.exactOptional(zStepId),
   type: z.enum(['branch']),
-  paths: z.array(zBranchPathInput),
+  paths: z.array(zBranchPathInput).min(1).max(9),
   otherwise: zAutomationPathInput,
   unknown: z.exactOptional(zAutomationPathInput)
 });
 
 /**
- * An automation is archived, never deleted (ADR 0100): it has no delete. An archived automation is
- * read-only until it is unarchived: an edit, publish, revert or deactivate of it is a 409.The Conditions of a Branch being edited, whose need of an unknown path is asked
+ * The Conditions of a Branch being edited, whose need of an unknown path is asked
  */
 export const zBranchUnknownPathInput = z.strictObject({
-  conditions: z.array(zBranchConditionInput)
+  conditions: z.array(zBranchConditionInput).min(1).max(9)
 });
 
 /**
@@ -5485,7 +5484,7 @@ export const zSplitPath = z.object({
  */
 export const zSplitPathInput = z.strictObject({
   id: z.exactOptional(zStepId),
-  weight: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  weight: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   steps: z.array(z.lazy((): any => zSplitPathStepInput))
 });
 
@@ -5574,12 +5573,12 @@ export const zSplitStep = z.object({
 });
 
 /**
- * A Split, as a request writes it. It needs two to ten paths, with weights summing to 100.
+ * A Split, as a request writes it. Its paths' weights sum to 100.
  */
 export const zSplitStepInput = z.strictObject({
   id: z.exactOptional(zStepId),
   type: z.enum(['split']),
-  paths: z.array(zSplitPathInput)
+  paths: z.array(zSplitPathInput).min(2).max(10)
 });
 
 /**

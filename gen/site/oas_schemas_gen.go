@@ -5046,14 +5046,15 @@ func (s *BranchStep) SetUnknown(val OptAutomationPath) {
 	s.Unknown = val
 }
 
-// A Branch, as a request writes it. It needs a path besides `otherwise`; Publish refuses it without
-// `unknown` when a Condition counts an open or a click, and with `unknown` when none does.
+// A Branch, as a request writes it. Publish refuses it without `unknown` when a Condition counts an
+// open or a click, and with `unknown` when none does.
 // Ref: #/components/schemas/BranchStepInput
 type BranchStepInput struct {
 	// The Step's id; omitted, the Step is given one.
 	ID   OptStepId           `json:"id"`
 	Type BranchStepInputType `json:"type"`
-	// The paths, in the order their Conditions are tested.
+	// The paths, in the order their Conditions are tested: one to nine, so that with `otherwise` a Branch
+	// has at most ten (`unknown` is not counted).
 	Paths []BranchPathInput `json:"paths"`
 	// The path taken when no Condition holds.
 	Otherwise AutomationPathInput `json:"otherwise"`
@@ -5179,12 +5180,10 @@ func (s *BranchStepType) UnmarshalText(data []byte) error {
 	}
 }
 
-// An automation is archived, never deleted (ADR 0100): it has no delete. An archived automation is
-// read-only until it is unarchived: an edit, publish, revert or deactivate of it is a 409.The
-// Conditions of a Branch being edited, whose need of an unknown path is asked.
+// The Conditions of a Branch being edited, whose need of an unknown path is asked.
 // Ref: #/components/schemas/BranchUnknownPathInput
 type BranchUnknownPathInput struct {
-	// The Conditions of the Branch's listed paths, in order.
+	// The Conditions of the Branch's listed paths, in order: one to nine, as a Branch lists.
 	Conditions []BranchConditionInput `json:"conditions"`
 }
 
@@ -38343,8 +38342,8 @@ func (s *SplitPath) SetSteps(val []SplitPathStep) {
 type SplitPathInput struct {
 	// The path's id; omitted, the path is given one.
 	ID OptStepId `json:"id"`
-	// The path's share of the Contacts that reach the Split, a whole percentage of at least 1. The weights
-	// of a Split's paths sum to 100, or the save is refused, naming the Split.
+	// The path's share of the Contacts that reach the Split, a whole percentage. The weights of a Split's
+	// paths sum to 100, or the save is refused, naming the Split.
 	Weight int32 `json:"weight"`
 	// The path's Steps, in order; none is a holdout, sent nothing, that goes on to the Step after the
 	// Split.
@@ -39022,13 +39021,13 @@ func (s *SplitStep) SetPaths(val []SplitPath) {
 	s.Paths = val
 }
 
-// A Split, as a request writes it. It needs two to ten paths, with weights summing to 100.
+// A Split, as a request writes it. Its paths' weights sum to 100.
 // Ref: #/components/schemas/SplitStepInput
 type SplitStepInput struct {
 	// The Step's id; omitted, the Step is given one.
 	ID   OptStepId          `json:"id"`
 	Type SplitStepInputType `json:"type"`
-	// The paths, in order.
+	// The paths, in order: two to ten.
 	Paths []SplitPathInput `json:"paths"`
 }
 
