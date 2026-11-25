@@ -75,14 +75,14 @@ func IntegrationID(v int64) predicate.ProviderLimiter {
 	return predicate.ProviderLimiter(sql.FieldEQ(FieldIntegrationID, v))
 }
 
-// SecondFill applies equality check predicate on the "second_fill" field. It's identical to SecondFillEQ.
-func SecondFill(v float64) predicate.ProviderLimiter {
-	return predicate.ProviderLimiter(sql.FieldEQ(FieldSecondFill, v))
+// SecondTokens applies equality check predicate on the "second_tokens" field. It's identical to SecondTokensEQ.
+func SecondTokens(v float64) predicate.ProviderLimiter {
+	return predicate.ProviderLimiter(sql.FieldEQ(FieldSecondTokens, v))
 }
 
-// DayFill applies equality check predicate on the "day_fill" field. It's identical to DayFillEQ.
-func DayFill(v float64) predicate.ProviderLimiter {
-	return predicate.ProviderLimiter(sql.FieldEQ(FieldDayFill, v))
+// DayTokens applies equality check predicate on the "day_tokens" field. It's identical to DayTokensEQ.
+func DayTokens(v float64) predicate.ProviderLimiter {
+	return predicate.ProviderLimiter(sql.FieldEQ(FieldDayTokens, v))
 }
 
 // RefilledAt applies equality check predicate on the "refilled_at" field. It's identical to RefilledAtEQ.
@@ -210,84 +210,104 @@ func IntegrationIDNotIn(vs ...int64) predicate.ProviderLimiter {
 	return predicate.ProviderLimiter(sql.FieldNotIn(FieldIntegrationID, vs...))
 }
 
-// SecondFillEQ applies the EQ predicate on the "second_fill" field.
-func SecondFillEQ(v float64) predicate.ProviderLimiter {
-	return predicate.ProviderLimiter(sql.FieldEQ(FieldSecondFill, v))
+// SecondTokensEQ applies the EQ predicate on the "second_tokens" field.
+func SecondTokensEQ(v float64) predicate.ProviderLimiter {
+	return predicate.ProviderLimiter(sql.FieldEQ(FieldSecondTokens, v))
 }
 
-// SecondFillNEQ applies the NEQ predicate on the "second_fill" field.
-func SecondFillNEQ(v float64) predicate.ProviderLimiter {
-	return predicate.ProviderLimiter(sql.FieldNEQ(FieldSecondFill, v))
+// SecondTokensNEQ applies the NEQ predicate on the "second_tokens" field.
+func SecondTokensNEQ(v float64) predicate.ProviderLimiter {
+	return predicate.ProviderLimiter(sql.FieldNEQ(FieldSecondTokens, v))
 }
 
-// SecondFillIn applies the In predicate on the "second_fill" field.
-func SecondFillIn(vs ...float64) predicate.ProviderLimiter {
-	return predicate.ProviderLimiter(sql.FieldIn(FieldSecondFill, vs...))
+// SecondTokensIn applies the In predicate on the "second_tokens" field.
+func SecondTokensIn(vs ...float64) predicate.ProviderLimiter {
+	return predicate.ProviderLimiter(sql.FieldIn(FieldSecondTokens, vs...))
 }
 
-// SecondFillNotIn applies the NotIn predicate on the "second_fill" field.
-func SecondFillNotIn(vs ...float64) predicate.ProviderLimiter {
-	return predicate.ProviderLimiter(sql.FieldNotIn(FieldSecondFill, vs...))
+// SecondTokensNotIn applies the NotIn predicate on the "second_tokens" field.
+func SecondTokensNotIn(vs ...float64) predicate.ProviderLimiter {
+	return predicate.ProviderLimiter(sql.FieldNotIn(FieldSecondTokens, vs...))
 }
 
-// SecondFillGT applies the GT predicate on the "second_fill" field.
-func SecondFillGT(v float64) predicate.ProviderLimiter {
-	return predicate.ProviderLimiter(sql.FieldGT(FieldSecondFill, v))
+// SecondTokensGT applies the GT predicate on the "second_tokens" field.
+func SecondTokensGT(v float64) predicate.ProviderLimiter {
+	return predicate.ProviderLimiter(sql.FieldGT(FieldSecondTokens, v))
 }
 
-// SecondFillGTE applies the GTE predicate on the "second_fill" field.
-func SecondFillGTE(v float64) predicate.ProviderLimiter {
-	return predicate.ProviderLimiter(sql.FieldGTE(FieldSecondFill, v))
+// SecondTokensGTE applies the GTE predicate on the "second_tokens" field.
+func SecondTokensGTE(v float64) predicate.ProviderLimiter {
+	return predicate.ProviderLimiter(sql.FieldGTE(FieldSecondTokens, v))
 }
 
-// SecondFillLT applies the LT predicate on the "second_fill" field.
-func SecondFillLT(v float64) predicate.ProviderLimiter {
-	return predicate.ProviderLimiter(sql.FieldLT(FieldSecondFill, v))
+// SecondTokensLT applies the LT predicate on the "second_tokens" field.
+func SecondTokensLT(v float64) predicate.ProviderLimiter {
+	return predicate.ProviderLimiter(sql.FieldLT(FieldSecondTokens, v))
 }
 
-// SecondFillLTE applies the LTE predicate on the "second_fill" field.
-func SecondFillLTE(v float64) predicate.ProviderLimiter {
-	return predicate.ProviderLimiter(sql.FieldLTE(FieldSecondFill, v))
+// SecondTokensLTE applies the LTE predicate on the "second_tokens" field.
+func SecondTokensLTE(v float64) predicate.ProviderLimiter {
+	return predicate.ProviderLimiter(sql.FieldLTE(FieldSecondTokens, v))
 }
 
-// DayFillEQ applies the EQ predicate on the "day_fill" field.
-func DayFillEQ(v float64) predicate.ProviderLimiter {
-	return predicate.ProviderLimiter(sql.FieldEQ(FieldDayFill, v))
+// SecondTokensIsNil applies the IsNil predicate on the "second_tokens" field.
+func SecondTokensIsNil() predicate.ProviderLimiter {
+	return predicate.ProviderLimiter(sql.FieldIsNull(FieldSecondTokens))
 }
 
-// DayFillNEQ applies the NEQ predicate on the "day_fill" field.
-func DayFillNEQ(v float64) predicate.ProviderLimiter {
-	return predicate.ProviderLimiter(sql.FieldNEQ(FieldDayFill, v))
+// SecondTokensNotNil applies the NotNil predicate on the "second_tokens" field.
+func SecondTokensNotNil() predicate.ProviderLimiter {
+	return predicate.ProviderLimiter(sql.FieldNotNull(FieldSecondTokens))
 }
 
-// DayFillIn applies the In predicate on the "day_fill" field.
-func DayFillIn(vs ...float64) predicate.ProviderLimiter {
-	return predicate.ProviderLimiter(sql.FieldIn(FieldDayFill, vs...))
+// DayTokensEQ applies the EQ predicate on the "day_tokens" field.
+func DayTokensEQ(v float64) predicate.ProviderLimiter {
+	return predicate.ProviderLimiter(sql.FieldEQ(FieldDayTokens, v))
 }
 
-// DayFillNotIn applies the NotIn predicate on the "day_fill" field.
-func DayFillNotIn(vs ...float64) predicate.ProviderLimiter {
-	return predicate.ProviderLimiter(sql.FieldNotIn(FieldDayFill, vs...))
+// DayTokensNEQ applies the NEQ predicate on the "day_tokens" field.
+func DayTokensNEQ(v float64) predicate.ProviderLimiter {
+	return predicate.ProviderLimiter(sql.FieldNEQ(FieldDayTokens, v))
 }
 
-// DayFillGT applies the GT predicate on the "day_fill" field.
-func DayFillGT(v float64) predicate.ProviderLimiter {
-	return predicate.ProviderLimiter(sql.FieldGT(FieldDayFill, v))
+// DayTokensIn applies the In predicate on the "day_tokens" field.
+func DayTokensIn(vs ...float64) predicate.ProviderLimiter {
+	return predicate.ProviderLimiter(sql.FieldIn(FieldDayTokens, vs...))
 }
 
-// DayFillGTE applies the GTE predicate on the "day_fill" field.
-func DayFillGTE(v float64) predicate.ProviderLimiter {
-	return predicate.ProviderLimiter(sql.FieldGTE(FieldDayFill, v))
+// DayTokensNotIn applies the NotIn predicate on the "day_tokens" field.
+func DayTokensNotIn(vs ...float64) predicate.ProviderLimiter {
+	return predicate.ProviderLimiter(sql.FieldNotIn(FieldDayTokens, vs...))
 }
 
-// DayFillLT applies the LT predicate on the "day_fill" field.
-func DayFillLT(v float64) predicate.ProviderLimiter {
-	return predicate.ProviderLimiter(sql.FieldLT(FieldDayFill, v))
+// DayTokensGT applies the GT predicate on the "day_tokens" field.
+func DayTokensGT(v float64) predicate.ProviderLimiter {
+	return predicate.ProviderLimiter(sql.FieldGT(FieldDayTokens, v))
 }
 
-// DayFillLTE applies the LTE predicate on the "day_fill" field.
-func DayFillLTE(v float64) predicate.ProviderLimiter {
-	return predicate.ProviderLimiter(sql.FieldLTE(FieldDayFill, v))
+// DayTokensGTE applies the GTE predicate on the "day_tokens" field.
+func DayTokensGTE(v float64) predicate.ProviderLimiter {
+	return predicate.ProviderLimiter(sql.FieldGTE(FieldDayTokens, v))
+}
+
+// DayTokensLT applies the LT predicate on the "day_tokens" field.
+func DayTokensLT(v float64) predicate.ProviderLimiter {
+	return predicate.ProviderLimiter(sql.FieldLT(FieldDayTokens, v))
+}
+
+// DayTokensLTE applies the LTE predicate on the "day_tokens" field.
+func DayTokensLTE(v float64) predicate.ProviderLimiter {
+	return predicate.ProviderLimiter(sql.FieldLTE(FieldDayTokens, v))
+}
+
+// DayTokensIsNil applies the IsNil predicate on the "day_tokens" field.
+func DayTokensIsNil() predicate.ProviderLimiter {
+	return predicate.ProviderLimiter(sql.FieldIsNull(FieldDayTokens))
+}
+
+// DayTokensNotNil applies the NotNil predicate on the "day_tokens" field.
+func DayTokensNotNil() predicate.ProviderLimiter {
+	return predicate.ProviderLimiter(sql.FieldNotNull(FieldDayTokens))
 }
 
 // RefilledAtEQ applies the EQ predicate on the "refilled_at" field.

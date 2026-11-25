@@ -54522,10 +54522,10 @@ type ProviderLimiterMutation struct {
 	id                 *int64
 	created_at         *time.Time
 	updated_at         *time.Time
-	second_fill        *float64
-	addsecond_fill     *float64
-	day_fill           *float64
-	addday_fill        *float64
+	second_tokens      *float64
+	addsecond_tokens   *float64
+	day_tokens         *float64
+	addday_tokens      *float64
 	refilled_at        *time.Time
 	clearedFields      map[string]struct{}
 	workspace          *int64
@@ -54785,116 +54785,144 @@ func (m *ProviderLimiterMutation) ResetIntegrationID() {
 	m.integration = nil
 }
 
-// SetSecondFill sets the "second_fill" field.
-func (m *ProviderLimiterMutation) SetSecondFill(f float64) {
-	m.second_fill = &f
-	m.addsecond_fill = nil
+// SetSecondTokens sets the "second_tokens" field.
+func (m *ProviderLimiterMutation) SetSecondTokens(f float64) {
+	m.second_tokens = &f
+	m.addsecond_tokens = nil
 }
 
-// SecondFill returns the value of the "second_fill" field in the mutation.
-func (m *ProviderLimiterMutation) SecondFill() (r float64, exists bool) {
-	v := m.second_fill
+// SecondTokens returns the value of the "second_tokens" field in the mutation.
+func (m *ProviderLimiterMutation) SecondTokens() (r float64, exists bool) {
+	v := m.second_tokens
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldSecondFill returns the old "second_fill" field's value of the ProviderLimiter entity.
+// OldSecondTokens returns the old "second_tokens" field's value of the ProviderLimiter entity.
 // If the ProviderLimiter object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ProviderLimiterMutation) OldSecondFill(ctx context.Context) (v float64, err error) {
+func (m *ProviderLimiterMutation) OldSecondTokens(ctx context.Context) (v *float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSecondFill is only allowed on UpdateOne operations")
+		return v, errors.New("OldSecondTokens is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSecondFill requires an ID field in the mutation")
+		return v, errors.New("OldSecondTokens requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSecondFill: %w", err)
+		return v, fmt.Errorf("querying old value for OldSecondTokens: %w", err)
 	}
-	return oldValue.SecondFill, nil
+	return oldValue.SecondTokens, nil
 }
 
-// AddSecondFill adds f to the "second_fill" field.
-func (m *ProviderLimiterMutation) AddSecondFill(f float64) {
-	if m.addsecond_fill != nil {
-		*m.addsecond_fill += f
+// AddSecondTokens adds f to the "second_tokens" field.
+func (m *ProviderLimiterMutation) AddSecondTokens(f float64) {
+	if m.addsecond_tokens != nil {
+		*m.addsecond_tokens += f
 	} else {
-		m.addsecond_fill = &f
+		m.addsecond_tokens = &f
 	}
 }
 
-// AddedSecondFill returns the value that was added to the "second_fill" field in this mutation.
-func (m *ProviderLimiterMutation) AddedSecondFill() (r float64, exists bool) {
-	v := m.addsecond_fill
+// AddedSecondTokens returns the value that was added to the "second_tokens" field in this mutation.
+func (m *ProviderLimiterMutation) AddedSecondTokens() (r float64, exists bool) {
+	v := m.addsecond_tokens
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// ResetSecondFill resets all changes to the "second_fill" field.
-func (m *ProviderLimiterMutation) ResetSecondFill() {
-	m.second_fill = nil
-	m.addsecond_fill = nil
+// ClearSecondTokens clears the value of the "second_tokens" field.
+func (m *ProviderLimiterMutation) ClearSecondTokens() {
+	m.second_tokens = nil
+	m.addsecond_tokens = nil
+	m.clearedFields[providerlimiter.FieldSecondTokens] = struct{}{}
 }
 
-// SetDayFill sets the "day_fill" field.
-func (m *ProviderLimiterMutation) SetDayFill(f float64) {
-	m.day_fill = &f
-	m.addday_fill = nil
+// SecondTokensCleared returns if the "second_tokens" field was cleared in this mutation.
+func (m *ProviderLimiterMutation) SecondTokensCleared() bool {
+	_, ok := m.clearedFields[providerlimiter.FieldSecondTokens]
+	return ok
 }
 
-// DayFill returns the value of the "day_fill" field in the mutation.
-func (m *ProviderLimiterMutation) DayFill() (r float64, exists bool) {
-	v := m.day_fill
+// ResetSecondTokens resets all changes to the "second_tokens" field.
+func (m *ProviderLimiterMutation) ResetSecondTokens() {
+	m.second_tokens = nil
+	m.addsecond_tokens = nil
+	delete(m.clearedFields, providerlimiter.FieldSecondTokens)
+}
+
+// SetDayTokens sets the "day_tokens" field.
+func (m *ProviderLimiterMutation) SetDayTokens(f float64) {
+	m.day_tokens = &f
+	m.addday_tokens = nil
+}
+
+// DayTokens returns the value of the "day_tokens" field in the mutation.
+func (m *ProviderLimiterMutation) DayTokens() (r float64, exists bool) {
+	v := m.day_tokens
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldDayFill returns the old "day_fill" field's value of the ProviderLimiter entity.
+// OldDayTokens returns the old "day_tokens" field's value of the ProviderLimiter entity.
 // If the ProviderLimiter object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ProviderLimiterMutation) OldDayFill(ctx context.Context) (v float64, err error) {
+func (m *ProviderLimiterMutation) OldDayTokens(ctx context.Context) (v *float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDayFill is only allowed on UpdateOne operations")
+		return v, errors.New("OldDayTokens is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDayFill requires an ID field in the mutation")
+		return v, errors.New("OldDayTokens requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDayFill: %w", err)
+		return v, fmt.Errorf("querying old value for OldDayTokens: %w", err)
 	}
-	return oldValue.DayFill, nil
+	return oldValue.DayTokens, nil
 }
 
-// AddDayFill adds f to the "day_fill" field.
-func (m *ProviderLimiterMutation) AddDayFill(f float64) {
-	if m.addday_fill != nil {
-		*m.addday_fill += f
+// AddDayTokens adds f to the "day_tokens" field.
+func (m *ProviderLimiterMutation) AddDayTokens(f float64) {
+	if m.addday_tokens != nil {
+		*m.addday_tokens += f
 	} else {
-		m.addday_fill = &f
+		m.addday_tokens = &f
 	}
 }
 
-// AddedDayFill returns the value that was added to the "day_fill" field in this mutation.
-func (m *ProviderLimiterMutation) AddedDayFill() (r float64, exists bool) {
-	v := m.addday_fill
+// AddedDayTokens returns the value that was added to the "day_tokens" field in this mutation.
+func (m *ProviderLimiterMutation) AddedDayTokens() (r float64, exists bool) {
+	v := m.addday_tokens
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// ResetDayFill resets all changes to the "day_fill" field.
-func (m *ProviderLimiterMutation) ResetDayFill() {
-	m.day_fill = nil
-	m.addday_fill = nil
+// ClearDayTokens clears the value of the "day_tokens" field.
+func (m *ProviderLimiterMutation) ClearDayTokens() {
+	m.day_tokens = nil
+	m.addday_tokens = nil
+	m.clearedFields[providerlimiter.FieldDayTokens] = struct{}{}
+}
+
+// DayTokensCleared returns if the "day_tokens" field was cleared in this mutation.
+func (m *ProviderLimiterMutation) DayTokensCleared() bool {
+	_, ok := m.clearedFields[providerlimiter.FieldDayTokens]
+	return ok
+}
+
+// ResetDayTokens resets all changes to the "day_tokens" field.
+func (m *ProviderLimiterMutation) ResetDayTokens() {
+	m.day_tokens = nil
+	m.addday_tokens = nil
+	delete(m.clearedFields, providerlimiter.FieldDayTokens)
 }
 
 // SetRefilledAt sets the "refilled_at" field.
@@ -55034,11 +55062,11 @@ func (m *ProviderLimiterMutation) Fields() []string {
 	if m.integration != nil {
 		fields = append(fields, providerlimiter.FieldIntegrationID)
 	}
-	if m.second_fill != nil {
-		fields = append(fields, providerlimiter.FieldSecondFill)
+	if m.second_tokens != nil {
+		fields = append(fields, providerlimiter.FieldSecondTokens)
 	}
-	if m.day_fill != nil {
-		fields = append(fields, providerlimiter.FieldDayFill)
+	if m.day_tokens != nil {
+		fields = append(fields, providerlimiter.FieldDayTokens)
 	}
 	if m.refilled_at != nil {
 		fields = append(fields, providerlimiter.FieldRefilledAt)
@@ -55059,10 +55087,10 @@ func (m *ProviderLimiterMutation) Field(name string) (ent.Value, bool) {
 		return m.WorkspaceID()
 	case providerlimiter.FieldIntegrationID:
 		return m.IntegrationID()
-	case providerlimiter.FieldSecondFill:
-		return m.SecondFill()
-	case providerlimiter.FieldDayFill:
-		return m.DayFill()
+	case providerlimiter.FieldSecondTokens:
+		return m.SecondTokens()
+	case providerlimiter.FieldDayTokens:
+		return m.DayTokens()
 	case providerlimiter.FieldRefilledAt:
 		return m.RefilledAt()
 	}
@@ -55082,10 +55110,10 @@ func (m *ProviderLimiterMutation) OldField(ctx context.Context, name string) (en
 		return m.OldWorkspaceID(ctx)
 	case providerlimiter.FieldIntegrationID:
 		return m.OldIntegrationID(ctx)
-	case providerlimiter.FieldSecondFill:
-		return m.OldSecondFill(ctx)
-	case providerlimiter.FieldDayFill:
-		return m.OldDayFill(ctx)
+	case providerlimiter.FieldSecondTokens:
+		return m.OldSecondTokens(ctx)
+	case providerlimiter.FieldDayTokens:
+		return m.OldDayTokens(ctx)
 	case providerlimiter.FieldRefilledAt:
 		return m.OldRefilledAt(ctx)
 	}
@@ -55125,19 +55153,19 @@ func (m *ProviderLimiterMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetIntegrationID(v)
 		return nil
-	case providerlimiter.FieldSecondFill:
+	case providerlimiter.FieldSecondTokens:
 		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetSecondFill(v)
+		m.SetSecondTokens(v)
 		return nil
-	case providerlimiter.FieldDayFill:
+	case providerlimiter.FieldDayTokens:
 		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetDayFill(v)
+		m.SetDayTokens(v)
 		return nil
 	case providerlimiter.FieldRefilledAt:
 		v, ok := value.(time.Time)
@@ -55154,11 +55182,11 @@ func (m *ProviderLimiterMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *ProviderLimiterMutation) AddedFields() []string {
 	var fields []string
-	if m.addsecond_fill != nil {
-		fields = append(fields, providerlimiter.FieldSecondFill)
+	if m.addsecond_tokens != nil {
+		fields = append(fields, providerlimiter.FieldSecondTokens)
 	}
-	if m.addday_fill != nil {
-		fields = append(fields, providerlimiter.FieldDayFill)
+	if m.addday_tokens != nil {
+		fields = append(fields, providerlimiter.FieldDayTokens)
 	}
 	return fields
 }
@@ -55168,10 +55196,10 @@ func (m *ProviderLimiterMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *ProviderLimiterMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case providerlimiter.FieldSecondFill:
-		return m.AddedSecondFill()
-	case providerlimiter.FieldDayFill:
-		return m.AddedDayFill()
+	case providerlimiter.FieldSecondTokens:
+		return m.AddedSecondTokens()
+	case providerlimiter.FieldDayTokens:
+		return m.AddedDayTokens()
 	}
 	return nil, false
 }
@@ -55181,19 +55209,19 @@ func (m *ProviderLimiterMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *ProviderLimiterMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case providerlimiter.FieldSecondFill:
+	case providerlimiter.FieldSecondTokens:
 		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.AddSecondFill(v)
+		m.AddSecondTokens(v)
 		return nil
-	case providerlimiter.FieldDayFill:
+	case providerlimiter.FieldDayTokens:
 		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.AddDayFill(v)
+		m.AddDayTokens(v)
 		return nil
 	}
 	return fmt.Errorf("unknown ProviderLimiter numeric field %s", name)
@@ -55202,7 +55230,14 @@ func (m *ProviderLimiterMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *ProviderLimiterMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(providerlimiter.FieldSecondTokens) {
+		fields = append(fields, providerlimiter.FieldSecondTokens)
+	}
+	if m.FieldCleared(providerlimiter.FieldDayTokens) {
+		fields = append(fields, providerlimiter.FieldDayTokens)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -55215,6 +55250,14 @@ func (m *ProviderLimiterMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *ProviderLimiterMutation) ClearField(name string) error {
+	switch name {
+	case providerlimiter.FieldSecondTokens:
+		m.ClearSecondTokens()
+		return nil
+	case providerlimiter.FieldDayTokens:
+		m.ClearDayTokens()
+		return nil
+	}
 	return fmt.Errorf("unknown ProviderLimiter nullable field %s", name)
 }
 
@@ -55234,11 +55277,11 @@ func (m *ProviderLimiterMutation) ResetField(name string) error {
 	case providerlimiter.FieldIntegrationID:
 		m.ResetIntegrationID()
 		return nil
-	case providerlimiter.FieldSecondFill:
-		m.ResetSecondFill()
+	case providerlimiter.FieldSecondTokens:
+		m.ResetSecondTokens()
 		return nil
-	case providerlimiter.FieldDayFill:
-		m.ResetDayFill()
+	case providerlimiter.FieldDayTokens:
+		m.ResetDayTokens()
 		return nil
 	case providerlimiter.FieldRefilledAt:
 		m.ResetRefilledAt()
@@ -62074,8 +62117,8 @@ type SendCapLimiterMutation struct {
 	id               *int64
 	created_at       *time.Time
 	updated_at       *time.Time
-	day_fill         *float64
-	addday_fill      *float64
+	day_tokens       *float64
+	addday_tokens    *float64
 	refilled_at      *time.Time
 	clearedFields    map[string]struct{}
 	workspace        *int64
@@ -62297,60 +62340,74 @@ func (m *SendCapLimiterMutation) ResetWorkspaceID() {
 	m.workspace = nil
 }
 
-// SetDayFill sets the "day_fill" field.
-func (m *SendCapLimiterMutation) SetDayFill(f float64) {
-	m.day_fill = &f
-	m.addday_fill = nil
+// SetDayTokens sets the "day_tokens" field.
+func (m *SendCapLimiterMutation) SetDayTokens(f float64) {
+	m.day_tokens = &f
+	m.addday_tokens = nil
 }
 
-// DayFill returns the value of the "day_fill" field in the mutation.
-func (m *SendCapLimiterMutation) DayFill() (r float64, exists bool) {
-	v := m.day_fill
+// DayTokens returns the value of the "day_tokens" field in the mutation.
+func (m *SendCapLimiterMutation) DayTokens() (r float64, exists bool) {
+	v := m.day_tokens
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldDayFill returns the old "day_fill" field's value of the SendCapLimiter entity.
+// OldDayTokens returns the old "day_tokens" field's value of the SendCapLimiter entity.
 // If the SendCapLimiter object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SendCapLimiterMutation) OldDayFill(ctx context.Context) (v float64, err error) {
+func (m *SendCapLimiterMutation) OldDayTokens(ctx context.Context) (v *float64, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDayFill is only allowed on UpdateOne operations")
+		return v, errors.New("OldDayTokens is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDayFill requires an ID field in the mutation")
+		return v, errors.New("OldDayTokens requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDayFill: %w", err)
+		return v, fmt.Errorf("querying old value for OldDayTokens: %w", err)
 	}
-	return oldValue.DayFill, nil
+	return oldValue.DayTokens, nil
 }
 
-// AddDayFill adds f to the "day_fill" field.
-func (m *SendCapLimiterMutation) AddDayFill(f float64) {
-	if m.addday_fill != nil {
-		*m.addday_fill += f
+// AddDayTokens adds f to the "day_tokens" field.
+func (m *SendCapLimiterMutation) AddDayTokens(f float64) {
+	if m.addday_tokens != nil {
+		*m.addday_tokens += f
 	} else {
-		m.addday_fill = &f
+		m.addday_tokens = &f
 	}
 }
 
-// AddedDayFill returns the value that was added to the "day_fill" field in this mutation.
-func (m *SendCapLimiterMutation) AddedDayFill() (r float64, exists bool) {
-	v := m.addday_fill
+// AddedDayTokens returns the value that was added to the "day_tokens" field in this mutation.
+func (m *SendCapLimiterMutation) AddedDayTokens() (r float64, exists bool) {
+	v := m.addday_tokens
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// ResetDayFill resets all changes to the "day_fill" field.
-func (m *SendCapLimiterMutation) ResetDayFill() {
-	m.day_fill = nil
-	m.addday_fill = nil
+// ClearDayTokens clears the value of the "day_tokens" field.
+func (m *SendCapLimiterMutation) ClearDayTokens() {
+	m.day_tokens = nil
+	m.addday_tokens = nil
+	m.clearedFields[sendcaplimiter.FieldDayTokens] = struct{}{}
+}
+
+// DayTokensCleared returns if the "day_tokens" field was cleared in this mutation.
+func (m *SendCapLimiterMutation) DayTokensCleared() bool {
+	_, ok := m.clearedFields[sendcaplimiter.FieldDayTokens]
+	return ok
+}
+
+// ResetDayTokens resets all changes to the "day_tokens" field.
+func (m *SendCapLimiterMutation) ResetDayTokens() {
+	m.day_tokens = nil
+	m.addday_tokens = nil
+	delete(m.clearedFields, sendcaplimiter.FieldDayTokens)
 }
 
 // SetRefilledAt sets the "refilled_at" field.
@@ -62460,8 +62517,8 @@ func (m *SendCapLimiterMutation) Fields() []string {
 	if m.workspace != nil {
 		fields = append(fields, sendcaplimiter.FieldWorkspaceID)
 	}
-	if m.day_fill != nil {
-		fields = append(fields, sendcaplimiter.FieldDayFill)
+	if m.day_tokens != nil {
+		fields = append(fields, sendcaplimiter.FieldDayTokens)
 	}
 	if m.refilled_at != nil {
 		fields = append(fields, sendcaplimiter.FieldRefilledAt)
@@ -62480,8 +62537,8 @@ func (m *SendCapLimiterMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case sendcaplimiter.FieldWorkspaceID:
 		return m.WorkspaceID()
-	case sendcaplimiter.FieldDayFill:
-		return m.DayFill()
+	case sendcaplimiter.FieldDayTokens:
+		return m.DayTokens()
 	case sendcaplimiter.FieldRefilledAt:
 		return m.RefilledAt()
 	}
@@ -62499,8 +62556,8 @@ func (m *SendCapLimiterMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldUpdatedAt(ctx)
 	case sendcaplimiter.FieldWorkspaceID:
 		return m.OldWorkspaceID(ctx)
-	case sendcaplimiter.FieldDayFill:
-		return m.OldDayFill(ctx)
+	case sendcaplimiter.FieldDayTokens:
+		return m.OldDayTokens(ctx)
 	case sendcaplimiter.FieldRefilledAt:
 		return m.OldRefilledAt(ctx)
 	}
@@ -62533,12 +62590,12 @@ func (m *SendCapLimiterMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetWorkspaceID(v)
 		return nil
-	case sendcaplimiter.FieldDayFill:
+	case sendcaplimiter.FieldDayTokens:
 		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetDayFill(v)
+		m.SetDayTokens(v)
 		return nil
 	case sendcaplimiter.FieldRefilledAt:
 		v, ok := value.(time.Time)
@@ -62555,8 +62612,8 @@ func (m *SendCapLimiterMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *SendCapLimiterMutation) AddedFields() []string {
 	var fields []string
-	if m.addday_fill != nil {
-		fields = append(fields, sendcaplimiter.FieldDayFill)
+	if m.addday_tokens != nil {
+		fields = append(fields, sendcaplimiter.FieldDayTokens)
 	}
 	return fields
 }
@@ -62566,8 +62623,8 @@ func (m *SendCapLimiterMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *SendCapLimiterMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case sendcaplimiter.FieldDayFill:
-		return m.AddedDayFill()
+	case sendcaplimiter.FieldDayTokens:
+		return m.AddedDayTokens()
 	}
 	return nil, false
 }
@@ -62577,12 +62634,12 @@ func (m *SendCapLimiterMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *SendCapLimiterMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case sendcaplimiter.FieldDayFill:
+	case sendcaplimiter.FieldDayTokens:
 		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.AddDayFill(v)
+		m.AddDayTokens(v)
 		return nil
 	}
 	return fmt.Errorf("unknown SendCapLimiter numeric field %s", name)
@@ -62591,7 +62648,11 @@ func (m *SendCapLimiterMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *SendCapLimiterMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(sendcaplimiter.FieldDayTokens) {
+		fields = append(fields, sendcaplimiter.FieldDayTokens)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -62604,6 +62665,11 @@ func (m *SendCapLimiterMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *SendCapLimiterMutation) ClearField(name string) error {
+	switch name {
+	case sendcaplimiter.FieldDayTokens:
+		m.ClearDayTokens()
+		return nil
+	}
 	return fmt.Errorf("unknown SendCapLimiter nullable field %s", name)
 }
 
@@ -62620,8 +62686,8 @@ func (m *SendCapLimiterMutation) ResetField(name string) error {
 	case sendcaplimiter.FieldWorkspaceID:
 		m.ResetWorkspaceID()
 		return nil
-	case sendcaplimiter.FieldDayFill:
-		m.ResetDayFill()
+	case sendcaplimiter.FieldDayTokens:
+		m.ResetDayTokens()
 		return nil
 	case sendcaplimiter.FieldRefilledAt:
 		m.ResetRefilledAt()

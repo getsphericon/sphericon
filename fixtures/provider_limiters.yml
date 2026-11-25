@@ -1,18 +1,15 @@
 # Provider limit state (ADR 0023), one row per limited Integration. Acme's is the
 # disabled SES Integration (id 2) so the default Integration (id 1) stays on a clean
-# slate for tests that exercise lazy creation; Globex's is its only Integration.
+# slate for tests that exercise lazy creation; Globex's is its only Integration. Both
+# are full: no second_tokens or day_tokens.
 - id: 1 # fixture: ProviderLimiterAcme
   integration_id: 2
-  second_fill: 1.0
-  day_fill: 1.0
   refilled_at: '{{daysAgo 1}}'
   workspace_id: 1
   created_at: '{{daysAgo 1}}'
   updated_at: '{{daysAgo 1}}'
 - id: 900 # fixture: ProviderLimiterGlobex
   integration_id: 900
-  second_fill: 1.0
-  day_fill: 1.0
   refilled_at: '{{daysAgo 1}}'
   workspace_id: 2
   created_at: '{{daysAgo 1}}'

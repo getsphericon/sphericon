@@ -256,18 +256,21 @@ func TestAutomationAndBroadcastSendsShareOneLimit(t *testing.T) {
 	assert.Equal(t, outboundmessages.Deferral, send(t, m, env, "bc:1").Outcome, "the Automation send spent the Broadcast's token")
 }
 
-func TestChangedLimitTakesEffectImmediatelyAndProportionally(t *testing.T) {
+// A changed limit takes effect at once and keeps the bucket's messages (#1808): a lowered one caps
+// them at the new ceiling.
+func TestALoweredLimitTakesEffectAtOnceAndCapsTheBucket(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
 	m := newModule(env, c.Now)
 	limited(t, env, new(10), nil)
 
-	require.Equal(t, outboundmessages.Sent, send(t, m, env, "bc:1").Outcome) // bucket 9/10 full
+	require.Equal(t, outboundmessages.Sent, send(t, m, env, "bc:1").Outcome) // 9 of 10 left
 	limited(t, env, new(1), nil)
 
-	res := send(t, m, env, "bc:2") // 0.9 of one token: not enough yet
+	assert.Equal(t, outboundmessages.Sent, send(t, m, env, "bc:2").Outcome, "the 9 are capped at the new 1")
+	res := send(t, m, env, "bc:3")
 	assert.Equal(t, outboundmessages.Deferral, res.Outcome)
-	assert.Equal(t, 100*time.Millisecond, res.Wait)
+	assert.Equal(t, time.Second, res.Wait, "then one a second")
 }
 
 func TestSentMessageIsStampedWithItsIntegrationAndCountsAsUsage(t *testing.T) {

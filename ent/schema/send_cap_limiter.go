@@ -11,8 +11,10 @@ import (
 // SendCapLimiter is the state of one Workspace's Send cap (ADR 0067): a rolling 24-hour token
 // bucket beside its Integrations' Provider limit buckets (ADR 0023), at most one row per
 // Workspace, created lazily on the first send under a Send cap. Like the Provider limit's, the
-// bucket stores its fill as a fraction of capacity (1 is full): capacity and refill derive from
-// the Workspace's send_cap at reservation time, so a changed Send cap takes effect at once.
+// bucket stores the messages it holds (tokens): capacity and refill derive from the Workspace's
+// send_cap at reservation time, so a changed Send cap takes effect at once. The balance is never
+// rescaled: the time since refilled_at refills at the Send cap in force at the reservation,
+// capped at it.
 type SendCapLimiter struct {
 	ent.Schema
 }
@@ -32,9 +34,12 @@ func (SendCapLimiter) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		// Fill of the rolling 24-hour bucket as of refilled_at, a fraction of its capacity
-		// (send_cap tokens). It may go below zero (a bucket in debt after Transactional sends).
-		field.Float("day_fill"),
+		// Messages the rolling 24-hour bucket holds as of refilled_at, at most send_cap. It may
+		// go below zero (a bucket in debt after Transactional sends). NULL is a full bucket, one
+		// not spent from yet.
+		field.Float("day_tokens").
+			Optional().
+			Nillable(),
 		// The instant the bucket was last topped up.
 		field.Time("refilled_at").
 			Annotations(Attribute(reasonBucket)),

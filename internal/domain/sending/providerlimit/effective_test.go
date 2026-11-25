@@ -209,19 +209,19 @@ func TestSendCapDrainIsTheTimeTheBucketTakesToHoldTheMessages(t *testing.T) {
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
 	for name, tc := range map[string]struct {
-		fill       float64
+		tokens     float64
 		refilledAt time.Time
 		n          int
 		want       time.Duration
 	}{
-		"a full bucket within the cap":          {1, now, 100, 0},
-		"a full bucket beyond the cap":          {1, now, 150, 12 * time.Hour},
-		"a quarter refilled for three hours":    {0.25, now.Add(-3 * time.Hour), 50, 3 * time.Hour},
-		"a bucket in debt from Transactionals":  {-0.5, now, 50, 24 * time.Hour},
+		"a full bucket within the cap":          {100, now, 100, 0},
+		"a full bucket beyond the cap":          {100, now, 150, 12 * time.Hour},
+		"a quarter refilled for three hours":    {25, now.Add(-3 * time.Hour), 50, 3 * time.Hour},
+		"a bucket in debt from Transactionals":  {-50, now, 50, 24 * time.Hour},
 		"a bucket that refilled to full and on": {0, now.Add(-48 * time.Hour), 100, 0},
 	} {
 		require.NoError(t, acme.SendCapLimiter().UpdateOneID(fixtures.SendCapLimiterAcmeID).
-			SetDayFill(tc.fill).SetRefilledAt(tc.refilledAt).Exec(ctx))
+			SetDayTokens(tc.tokens).SetRefilledAt(tc.refilledAt).Exec(ctx))
 
 		got, err := reads.SendCapDrain(ctx, acme, providerlimit.DrainInput{SendCap: 100, N: tc.n, At: now})
 

@@ -162,7 +162,7 @@ func TestProgressCountsTheSendCapAlreadySpent(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	f := sendingWithPending(t, env, 3)
 	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(2).ExecX(ctx)
-	env.DB.SendCapLimiter.UpdateOneID(fixtures.SendCapLimiterAcmeID).SetDayFill(0).SetRefilledAt(now).ExecX(ctx)
+	env.DB.SendCapLimiter.UpdateOneID(fixtures.SendCapLimiterAcmeID).SetDayTokens(0).SetRefilledAt(now).ExecX(ctx)
 
 	detail, err := testhelper.Module[*broadcasts.Module](env).Detail(ctx, s, env.DB.Broadcast.GetX(ctx, f.id))
 	require.NoError(t, err)

@@ -185,7 +185,7 @@ func TestAutomationStepDeferredBySendCapAsksAgainWithinTheBound(t *testing.T) {
 		mod := outboundmessages.New(env.Bus, env.CoreHolds(), resolvingTo(fs), messagetoken.New("test-secret", "http://local", time.Now), env.OutboundModules(env.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{SendCaps: true}, time.Now)
 		env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(1).ExecX(ctx)
 		// The day's one token went to another send just now.
-		env.DB.SendCapLimiter.UpdateOneID(fixtures.SendCapLimiterAcmeID).SetDayFill(0).SetRefilledAt(time.Now()).ExecX(ctx)
+		env.DB.SendCapLimiter.UpdateOneID(fixtures.SendCapLimiterAcmeID).SetDayTokens(0).SetRefilledAt(time.Now()).ExecX(ctx)
 
 		require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactHoldDemoID, Event: automations.Event{Action: "hold_demo", OccurredAt: time.Now()}}))
 		runID := env.DB.AutomationRun.Query().Where(automationrun.AutomationID(fixtures.AutomationHoldDemoID)).OnlyIDX(ctx)

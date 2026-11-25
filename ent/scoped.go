@@ -49028,21 +49028,41 @@ func (x *ProviderLimiterScopedCreate) SetIntegrationID(v int64) *ProviderLimiter
 
 const RoleOf_ProviderLimiterScopedCreate_SetIntegrationID = RoleStep
 
-// SetSecondFill sets the "second_fill" field.
-func (x *ProviderLimiterScopedCreate) SetSecondFill(v float64) *ProviderLimiterScopedCreate {
-	x.set = append(x.set, func(b *ProviderLimiterCreate) { b.SetSecondFill(v) })
+// SetSecondTokens sets the "second_tokens" field.
+func (x *ProviderLimiterScopedCreate) SetSecondTokens(v float64) *ProviderLimiterScopedCreate {
+	x.set = append(x.set, func(b *ProviderLimiterCreate) { b.SetSecondTokens(v) })
 	return x
 }
 
-const RoleOf_ProviderLimiterScopedCreate_SetSecondFill = RoleStep
+const RoleOf_ProviderLimiterScopedCreate_SetSecondTokens = RoleStep
 
-// SetDayFill sets the "day_fill" field.
-func (x *ProviderLimiterScopedCreate) SetDayFill(v float64) *ProviderLimiterScopedCreate {
-	x.set = append(x.set, func(b *ProviderLimiterCreate) { b.SetDayFill(v) })
+// SetNillableSecondTokens sets the "second_tokens" field if the given value is not nil.
+func (x *ProviderLimiterScopedCreate) SetNillableSecondTokens(v *float64) *ProviderLimiterScopedCreate {
+	if v != nil {
+		x.SetSecondTokens(*v)
+	}
 	return x
 }
 
-const RoleOf_ProviderLimiterScopedCreate_SetDayFill = RoleStep
+const RoleOf_ProviderLimiterScopedCreate_SetNillableSecondTokens = RoleStep
+
+// SetDayTokens sets the "day_tokens" field.
+func (x *ProviderLimiterScopedCreate) SetDayTokens(v float64) *ProviderLimiterScopedCreate {
+	x.set = append(x.set, func(b *ProviderLimiterCreate) { b.SetDayTokens(v) })
+	return x
+}
+
+const RoleOf_ProviderLimiterScopedCreate_SetDayTokens = RoleStep
+
+// SetNillableDayTokens sets the "day_tokens" field if the given value is not nil.
+func (x *ProviderLimiterScopedCreate) SetNillableDayTokens(v *float64) *ProviderLimiterScopedCreate {
+	if v != nil {
+		x.SetDayTokens(*v)
+	}
+	return x
+}
+
+const RoleOf_ProviderLimiterScopedCreate_SetNillableDayTokens = RoleStep
 
 // SetRefilledAt sets the "refilled_at" field.
 func (x *ProviderLimiterScopedCreate) SetRefilledAt(v time.Time) *ProviderLimiterScopedCreate {
@@ -49189,53 +49209,69 @@ func (u *ProviderLimiterScopedUpsert) UpdateUpdatedAt() *ProviderLimiterScopedUp
 
 const RoleOf_ProviderLimiterScopedUpsert_UpdateUpdatedAt = RoleStep
 
-// SetSecondFill sets the "second_fill" field.
-func (u *ProviderLimiterScopedUpsert) SetSecondFill(v float64) *ProviderLimiterScopedUpsert {
-	u.u.Set(providerlimiter.FieldSecondFill, v)
+// SetSecondTokens sets the "second_tokens" field.
+func (u *ProviderLimiterScopedUpsert) SetSecondTokens(v float64) *ProviderLimiterScopedUpsert {
+	u.u.Set(providerlimiter.FieldSecondTokens, v)
 	return u
 }
 
-const RoleOf_ProviderLimiterScopedUpsert_SetSecondFill = RoleStep
+const RoleOf_ProviderLimiterScopedUpsert_SetSecondTokens = RoleStep
 
-// AddSecondFill adds v to the "second_fill" field.
-func (u *ProviderLimiterScopedUpsert) AddSecondFill(v float64) *ProviderLimiterScopedUpsert {
-	u.u.Add(providerlimiter.FieldSecondFill, v)
+// AddSecondTokens adds v to the "second_tokens" field.
+func (u *ProviderLimiterScopedUpsert) AddSecondTokens(v float64) *ProviderLimiterScopedUpsert {
+	u.u.Add(providerlimiter.FieldSecondTokens, v)
 	return u
 }
 
-const RoleOf_ProviderLimiterScopedUpsert_AddSecondFill = RoleStep
+const RoleOf_ProviderLimiterScopedUpsert_AddSecondTokens = RoleStep
 
-// UpdateSecondFill sets the "second_fill" field to the value that was provided on create.
-func (u *ProviderLimiterScopedUpsert) UpdateSecondFill() *ProviderLimiterScopedUpsert {
-	u.u.SetExcluded(providerlimiter.FieldSecondFill)
+// UpdateSecondTokens sets the "second_tokens" field to the value that was provided on create.
+func (u *ProviderLimiterScopedUpsert) UpdateSecondTokens() *ProviderLimiterScopedUpsert {
+	u.u.SetExcluded(providerlimiter.FieldSecondTokens)
 	return u
 }
 
-const RoleOf_ProviderLimiterScopedUpsert_UpdateSecondFill = RoleStep
+const RoleOf_ProviderLimiterScopedUpsert_UpdateSecondTokens = RoleStep
 
-// SetDayFill sets the "day_fill" field.
-func (u *ProviderLimiterScopedUpsert) SetDayFill(v float64) *ProviderLimiterScopedUpsert {
-	u.u.Set(providerlimiter.FieldDayFill, v)
+// ClearSecondTokens clears the value of the "second_tokens" field.
+func (u *ProviderLimiterScopedUpsert) ClearSecondTokens() *ProviderLimiterScopedUpsert {
+	u.u.SetNull(providerlimiter.FieldSecondTokens)
 	return u
 }
 
-const RoleOf_ProviderLimiterScopedUpsert_SetDayFill = RoleStep
+const RoleOf_ProviderLimiterScopedUpsert_ClearSecondTokens = RoleStep
 
-// AddDayFill adds v to the "day_fill" field.
-func (u *ProviderLimiterScopedUpsert) AddDayFill(v float64) *ProviderLimiterScopedUpsert {
-	u.u.Add(providerlimiter.FieldDayFill, v)
+// SetDayTokens sets the "day_tokens" field.
+func (u *ProviderLimiterScopedUpsert) SetDayTokens(v float64) *ProviderLimiterScopedUpsert {
+	u.u.Set(providerlimiter.FieldDayTokens, v)
 	return u
 }
 
-const RoleOf_ProviderLimiterScopedUpsert_AddDayFill = RoleStep
+const RoleOf_ProviderLimiterScopedUpsert_SetDayTokens = RoleStep
 
-// UpdateDayFill sets the "day_fill" field to the value that was provided on create.
-func (u *ProviderLimiterScopedUpsert) UpdateDayFill() *ProviderLimiterScopedUpsert {
-	u.u.SetExcluded(providerlimiter.FieldDayFill)
+// AddDayTokens adds v to the "day_tokens" field.
+func (u *ProviderLimiterScopedUpsert) AddDayTokens(v float64) *ProviderLimiterScopedUpsert {
+	u.u.Add(providerlimiter.FieldDayTokens, v)
 	return u
 }
 
-const RoleOf_ProviderLimiterScopedUpsert_UpdateDayFill = RoleStep
+const RoleOf_ProviderLimiterScopedUpsert_AddDayTokens = RoleStep
+
+// UpdateDayTokens sets the "day_tokens" field to the value that was provided on create.
+func (u *ProviderLimiterScopedUpsert) UpdateDayTokens() *ProviderLimiterScopedUpsert {
+	u.u.SetExcluded(providerlimiter.FieldDayTokens)
+	return u
+}
+
+const RoleOf_ProviderLimiterScopedUpsert_UpdateDayTokens = RoleStep
+
+// ClearDayTokens clears the value of the "day_tokens" field.
+func (u *ProviderLimiterScopedUpsert) ClearDayTokens() *ProviderLimiterScopedUpsert {
+	u.u.SetNull(providerlimiter.FieldDayTokens)
+	return u
+}
+
+const RoleOf_ProviderLimiterScopedUpsert_ClearDayTokens = RoleStep
 
 // SetRefilledAt sets the "refilled_at" field.
 func (u *ProviderLimiterScopedUpsert) SetRefilledAt(v time.Time) *ProviderLimiterScopedUpsert {
@@ -49460,57 +49496,73 @@ func (x *ProviderLimiterScopedUpdateOne) SetUpdatedAt(v time.Time) *ProviderLimi
 
 const RoleOf_ProviderLimiterScopedUpdateOne_SetUpdatedAt = RoleStep
 
-// SetSecondFill sets the "second_fill" field.
-func (x *ProviderLimiterScopedUpdateOne) SetSecondFill(v float64) *ProviderLimiterScopedUpdateOne {
-	x.set = append(x.set, func(b *ProviderLimiterUpdateOne) { b.SetSecondFill(v) })
+// SetSecondTokens sets the "second_tokens" field.
+func (x *ProviderLimiterScopedUpdateOne) SetSecondTokens(v float64) *ProviderLimiterScopedUpdateOne {
+	x.set = append(x.set, func(b *ProviderLimiterUpdateOne) { b.SetSecondTokens(v) })
 	return x
 }
 
-const RoleOf_ProviderLimiterScopedUpdateOne_SetSecondFill = RoleStep
+const RoleOf_ProviderLimiterScopedUpdateOne_SetSecondTokens = RoleStep
 
-// SetNillableSecondFill sets the "second_fill" field if the given value is not nil.
-func (x *ProviderLimiterScopedUpdateOne) SetNillableSecondFill(v *float64) *ProviderLimiterScopedUpdateOne {
+// SetNillableSecondTokens sets the "second_tokens" field if the given value is not nil.
+func (x *ProviderLimiterScopedUpdateOne) SetNillableSecondTokens(v *float64) *ProviderLimiterScopedUpdateOne {
 	if v != nil {
-		x.SetSecondFill(*v)
+		x.SetSecondTokens(*v)
 	}
 	return x
 }
 
-const RoleOf_ProviderLimiterScopedUpdateOne_SetNillableSecondFill = RoleStep
+const RoleOf_ProviderLimiterScopedUpdateOne_SetNillableSecondTokens = RoleStep
 
-// AddSecondFill adds value to the "second_fill" field.
-func (x *ProviderLimiterScopedUpdateOne) AddSecondFill(v float64) *ProviderLimiterScopedUpdateOne {
-	x.set = append(x.set, func(b *ProviderLimiterUpdateOne) { b.AddSecondFill(v) })
+// AddSecondTokens adds value to the "second_tokens" field.
+func (x *ProviderLimiterScopedUpdateOne) AddSecondTokens(v float64) *ProviderLimiterScopedUpdateOne {
+	x.set = append(x.set, func(b *ProviderLimiterUpdateOne) { b.AddSecondTokens(v) })
 	return x
 }
 
-const RoleOf_ProviderLimiterScopedUpdateOne_AddSecondFill = RoleStep
+const RoleOf_ProviderLimiterScopedUpdateOne_AddSecondTokens = RoleStep
 
-// SetDayFill sets the "day_fill" field.
-func (x *ProviderLimiterScopedUpdateOne) SetDayFill(v float64) *ProviderLimiterScopedUpdateOne {
-	x.set = append(x.set, func(b *ProviderLimiterUpdateOne) { b.SetDayFill(v) })
+// ClearSecondTokens clears the value of the "second_tokens" field.
+func (x *ProviderLimiterScopedUpdateOne) ClearSecondTokens() *ProviderLimiterScopedUpdateOne {
+	x.set = append(x.set, func(b *ProviderLimiterUpdateOne) { b.ClearSecondTokens() })
 	return x
 }
 
-const RoleOf_ProviderLimiterScopedUpdateOne_SetDayFill = RoleStep
+const RoleOf_ProviderLimiterScopedUpdateOne_ClearSecondTokens = RoleStep
 
-// SetNillableDayFill sets the "day_fill" field if the given value is not nil.
-func (x *ProviderLimiterScopedUpdateOne) SetNillableDayFill(v *float64) *ProviderLimiterScopedUpdateOne {
+// SetDayTokens sets the "day_tokens" field.
+func (x *ProviderLimiterScopedUpdateOne) SetDayTokens(v float64) *ProviderLimiterScopedUpdateOne {
+	x.set = append(x.set, func(b *ProviderLimiterUpdateOne) { b.SetDayTokens(v) })
+	return x
+}
+
+const RoleOf_ProviderLimiterScopedUpdateOne_SetDayTokens = RoleStep
+
+// SetNillableDayTokens sets the "day_tokens" field if the given value is not nil.
+func (x *ProviderLimiterScopedUpdateOne) SetNillableDayTokens(v *float64) *ProviderLimiterScopedUpdateOne {
 	if v != nil {
-		x.SetDayFill(*v)
+		x.SetDayTokens(*v)
 	}
 	return x
 }
 
-const RoleOf_ProviderLimiterScopedUpdateOne_SetNillableDayFill = RoleStep
+const RoleOf_ProviderLimiterScopedUpdateOne_SetNillableDayTokens = RoleStep
 
-// AddDayFill adds value to the "day_fill" field.
-func (x *ProviderLimiterScopedUpdateOne) AddDayFill(v float64) *ProviderLimiterScopedUpdateOne {
-	x.set = append(x.set, func(b *ProviderLimiterUpdateOne) { b.AddDayFill(v) })
+// AddDayTokens adds value to the "day_tokens" field.
+func (x *ProviderLimiterScopedUpdateOne) AddDayTokens(v float64) *ProviderLimiterScopedUpdateOne {
+	x.set = append(x.set, func(b *ProviderLimiterUpdateOne) { b.AddDayTokens(v) })
 	return x
 }
 
-const RoleOf_ProviderLimiterScopedUpdateOne_AddDayFill = RoleStep
+const RoleOf_ProviderLimiterScopedUpdateOne_AddDayTokens = RoleStep
+
+// ClearDayTokens clears the value of the "day_tokens" field.
+func (x *ProviderLimiterScopedUpdateOne) ClearDayTokens() *ProviderLimiterScopedUpdateOne {
+	x.set = append(x.set, func(b *ProviderLimiterUpdateOne) { b.ClearDayTokens() })
+	return x
+}
+
+const RoleOf_ProviderLimiterScopedUpdateOne_ClearDayTokens = RoleStep
 
 // SetRefilledAt sets the "refilled_at" field.
 func (x *ProviderLimiterScopedUpdateOne) SetRefilledAt(v time.Time) *ProviderLimiterScopedUpdateOne {
@@ -49621,57 +49673,73 @@ func (x *ProviderLimiterScopedUpdate) SetUpdatedAt(v time.Time) *ProviderLimiter
 
 const RoleOf_ProviderLimiterScopedUpdate_SetUpdatedAt = RoleStep
 
-// SetSecondFill sets the "second_fill" field.
-func (x *ProviderLimiterScopedUpdate) SetSecondFill(v float64) *ProviderLimiterScopedUpdate {
-	x.set = append(x.set, func(b *ProviderLimiterUpdate) { b.SetSecondFill(v) })
+// SetSecondTokens sets the "second_tokens" field.
+func (x *ProviderLimiterScopedUpdate) SetSecondTokens(v float64) *ProviderLimiterScopedUpdate {
+	x.set = append(x.set, func(b *ProviderLimiterUpdate) { b.SetSecondTokens(v) })
 	return x
 }
 
-const RoleOf_ProviderLimiterScopedUpdate_SetSecondFill = RoleStep
+const RoleOf_ProviderLimiterScopedUpdate_SetSecondTokens = RoleStep
 
-// SetNillableSecondFill sets the "second_fill" field if the given value is not nil.
-func (x *ProviderLimiterScopedUpdate) SetNillableSecondFill(v *float64) *ProviderLimiterScopedUpdate {
+// SetNillableSecondTokens sets the "second_tokens" field if the given value is not nil.
+func (x *ProviderLimiterScopedUpdate) SetNillableSecondTokens(v *float64) *ProviderLimiterScopedUpdate {
 	if v != nil {
-		x.SetSecondFill(*v)
+		x.SetSecondTokens(*v)
 	}
 	return x
 }
 
-const RoleOf_ProviderLimiterScopedUpdate_SetNillableSecondFill = RoleStep
+const RoleOf_ProviderLimiterScopedUpdate_SetNillableSecondTokens = RoleStep
 
-// AddSecondFill adds value to the "second_fill" field.
-func (x *ProviderLimiterScopedUpdate) AddSecondFill(v float64) *ProviderLimiterScopedUpdate {
-	x.set = append(x.set, func(b *ProviderLimiterUpdate) { b.AddSecondFill(v) })
+// AddSecondTokens adds value to the "second_tokens" field.
+func (x *ProviderLimiterScopedUpdate) AddSecondTokens(v float64) *ProviderLimiterScopedUpdate {
+	x.set = append(x.set, func(b *ProviderLimiterUpdate) { b.AddSecondTokens(v) })
 	return x
 }
 
-const RoleOf_ProviderLimiterScopedUpdate_AddSecondFill = RoleStep
+const RoleOf_ProviderLimiterScopedUpdate_AddSecondTokens = RoleStep
 
-// SetDayFill sets the "day_fill" field.
-func (x *ProviderLimiterScopedUpdate) SetDayFill(v float64) *ProviderLimiterScopedUpdate {
-	x.set = append(x.set, func(b *ProviderLimiterUpdate) { b.SetDayFill(v) })
+// ClearSecondTokens clears the value of the "second_tokens" field.
+func (x *ProviderLimiterScopedUpdate) ClearSecondTokens() *ProviderLimiterScopedUpdate {
+	x.set = append(x.set, func(b *ProviderLimiterUpdate) { b.ClearSecondTokens() })
 	return x
 }
 
-const RoleOf_ProviderLimiterScopedUpdate_SetDayFill = RoleStep
+const RoleOf_ProviderLimiterScopedUpdate_ClearSecondTokens = RoleStep
 
-// SetNillableDayFill sets the "day_fill" field if the given value is not nil.
-func (x *ProviderLimiterScopedUpdate) SetNillableDayFill(v *float64) *ProviderLimiterScopedUpdate {
+// SetDayTokens sets the "day_tokens" field.
+func (x *ProviderLimiterScopedUpdate) SetDayTokens(v float64) *ProviderLimiterScopedUpdate {
+	x.set = append(x.set, func(b *ProviderLimiterUpdate) { b.SetDayTokens(v) })
+	return x
+}
+
+const RoleOf_ProviderLimiterScopedUpdate_SetDayTokens = RoleStep
+
+// SetNillableDayTokens sets the "day_tokens" field if the given value is not nil.
+func (x *ProviderLimiterScopedUpdate) SetNillableDayTokens(v *float64) *ProviderLimiterScopedUpdate {
 	if v != nil {
-		x.SetDayFill(*v)
+		x.SetDayTokens(*v)
 	}
 	return x
 }
 
-const RoleOf_ProviderLimiterScopedUpdate_SetNillableDayFill = RoleStep
+const RoleOf_ProviderLimiterScopedUpdate_SetNillableDayTokens = RoleStep
 
-// AddDayFill adds value to the "day_fill" field.
-func (x *ProviderLimiterScopedUpdate) AddDayFill(v float64) *ProviderLimiterScopedUpdate {
-	x.set = append(x.set, func(b *ProviderLimiterUpdate) { b.AddDayFill(v) })
+// AddDayTokens adds value to the "day_tokens" field.
+func (x *ProviderLimiterScopedUpdate) AddDayTokens(v float64) *ProviderLimiterScopedUpdate {
+	x.set = append(x.set, func(b *ProviderLimiterUpdate) { b.AddDayTokens(v) })
 	return x
 }
 
-const RoleOf_ProviderLimiterScopedUpdate_AddDayFill = RoleStep
+const RoleOf_ProviderLimiterScopedUpdate_AddDayTokens = RoleStep
+
+// ClearDayTokens clears the value of the "day_tokens" field.
+func (x *ProviderLimiterScopedUpdate) ClearDayTokens() *ProviderLimiterScopedUpdate {
+	x.set = append(x.set, func(b *ProviderLimiterUpdate) { b.ClearDayTokens() })
+	return x
+}
+
+const RoleOf_ProviderLimiterScopedUpdate_ClearDayTokens = RoleStep
 
 // SetRefilledAt sets the "refilled_at" field.
 func (x *ProviderLimiterScopedUpdate) SetRefilledAt(v time.Time) *ProviderLimiterScopedUpdate {
@@ -55944,13 +56012,23 @@ func (x *SendCapLimiterScopedCreate) SetNillableUpdatedAt(v *time.Time) *SendCap
 
 const RoleOf_SendCapLimiterScopedCreate_SetNillableUpdatedAt = RoleStep
 
-// SetDayFill sets the "day_fill" field.
-func (x *SendCapLimiterScopedCreate) SetDayFill(v float64) *SendCapLimiterScopedCreate {
-	x.set = append(x.set, func(b *SendCapLimiterCreate) { b.SetDayFill(v) })
+// SetDayTokens sets the "day_tokens" field.
+func (x *SendCapLimiterScopedCreate) SetDayTokens(v float64) *SendCapLimiterScopedCreate {
+	x.set = append(x.set, func(b *SendCapLimiterCreate) { b.SetDayTokens(v) })
 	return x
 }
 
-const RoleOf_SendCapLimiterScopedCreate_SetDayFill = RoleStep
+const RoleOf_SendCapLimiterScopedCreate_SetDayTokens = RoleStep
+
+// SetNillableDayTokens sets the "day_tokens" field if the given value is not nil.
+func (x *SendCapLimiterScopedCreate) SetNillableDayTokens(v *float64) *SendCapLimiterScopedCreate {
+	if v != nil {
+		x.SetDayTokens(*v)
+	}
+	return x
+}
+
+const RoleOf_SendCapLimiterScopedCreate_SetNillableDayTokens = RoleStep
 
 // SetRefilledAt sets the "refilled_at" field.
 func (x *SendCapLimiterScopedCreate) SetRefilledAt(v time.Time) *SendCapLimiterScopedCreate {
@@ -56089,29 +56167,37 @@ func (u *SendCapLimiterScopedUpsert) UpdateUpdatedAt() *SendCapLimiterScopedUpse
 
 const RoleOf_SendCapLimiterScopedUpsert_UpdateUpdatedAt = RoleStep
 
-// SetDayFill sets the "day_fill" field.
-func (u *SendCapLimiterScopedUpsert) SetDayFill(v float64) *SendCapLimiterScopedUpsert {
-	u.u.Set(sendcaplimiter.FieldDayFill, v)
+// SetDayTokens sets the "day_tokens" field.
+func (u *SendCapLimiterScopedUpsert) SetDayTokens(v float64) *SendCapLimiterScopedUpsert {
+	u.u.Set(sendcaplimiter.FieldDayTokens, v)
 	return u
 }
 
-const RoleOf_SendCapLimiterScopedUpsert_SetDayFill = RoleStep
+const RoleOf_SendCapLimiterScopedUpsert_SetDayTokens = RoleStep
 
-// AddDayFill adds v to the "day_fill" field.
-func (u *SendCapLimiterScopedUpsert) AddDayFill(v float64) *SendCapLimiterScopedUpsert {
-	u.u.Add(sendcaplimiter.FieldDayFill, v)
+// AddDayTokens adds v to the "day_tokens" field.
+func (u *SendCapLimiterScopedUpsert) AddDayTokens(v float64) *SendCapLimiterScopedUpsert {
+	u.u.Add(sendcaplimiter.FieldDayTokens, v)
 	return u
 }
 
-const RoleOf_SendCapLimiterScopedUpsert_AddDayFill = RoleStep
+const RoleOf_SendCapLimiterScopedUpsert_AddDayTokens = RoleStep
 
-// UpdateDayFill sets the "day_fill" field to the value that was provided on create.
-func (u *SendCapLimiterScopedUpsert) UpdateDayFill() *SendCapLimiterScopedUpsert {
-	u.u.SetExcluded(sendcaplimiter.FieldDayFill)
+// UpdateDayTokens sets the "day_tokens" field to the value that was provided on create.
+func (u *SendCapLimiterScopedUpsert) UpdateDayTokens() *SendCapLimiterScopedUpsert {
+	u.u.SetExcluded(sendcaplimiter.FieldDayTokens)
 	return u
 }
 
-const RoleOf_SendCapLimiterScopedUpsert_UpdateDayFill = RoleStep
+const RoleOf_SendCapLimiterScopedUpsert_UpdateDayTokens = RoleStep
+
+// ClearDayTokens clears the value of the "day_tokens" field.
+func (u *SendCapLimiterScopedUpsert) ClearDayTokens() *SendCapLimiterScopedUpsert {
+	u.u.SetNull(sendcaplimiter.FieldDayTokens)
+	return u
+}
+
+const RoleOf_SendCapLimiterScopedUpsert_ClearDayTokens = RoleStep
 
 // SetRefilledAt sets the "refilled_at" field.
 func (u *SendCapLimiterScopedUpsert) SetRefilledAt(v time.Time) *SendCapLimiterScopedUpsert {
@@ -56336,31 +56422,39 @@ func (x *SendCapLimiterScopedUpdateOne) SetUpdatedAt(v time.Time) *SendCapLimite
 
 const RoleOf_SendCapLimiterScopedUpdateOne_SetUpdatedAt = RoleStep
 
-// SetDayFill sets the "day_fill" field.
-func (x *SendCapLimiterScopedUpdateOne) SetDayFill(v float64) *SendCapLimiterScopedUpdateOne {
-	x.set = append(x.set, func(b *SendCapLimiterUpdateOne) { b.SetDayFill(v) })
+// SetDayTokens sets the "day_tokens" field.
+func (x *SendCapLimiterScopedUpdateOne) SetDayTokens(v float64) *SendCapLimiterScopedUpdateOne {
+	x.set = append(x.set, func(b *SendCapLimiterUpdateOne) { b.SetDayTokens(v) })
 	return x
 }
 
-const RoleOf_SendCapLimiterScopedUpdateOne_SetDayFill = RoleStep
+const RoleOf_SendCapLimiterScopedUpdateOne_SetDayTokens = RoleStep
 
-// SetNillableDayFill sets the "day_fill" field if the given value is not nil.
-func (x *SendCapLimiterScopedUpdateOne) SetNillableDayFill(v *float64) *SendCapLimiterScopedUpdateOne {
+// SetNillableDayTokens sets the "day_tokens" field if the given value is not nil.
+func (x *SendCapLimiterScopedUpdateOne) SetNillableDayTokens(v *float64) *SendCapLimiterScopedUpdateOne {
 	if v != nil {
-		x.SetDayFill(*v)
+		x.SetDayTokens(*v)
 	}
 	return x
 }
 
-const RoleOf_SendCapLimiterScopedUpdateOne_SetNillableDayFill = RoleStep
+const RoleOf_SendCapLimiterScopedUpdateOne_SetNillableDayTokens = RoleStep
 
-// AddDayFill adds value to the "day_fill" field.
-func (x *SendCapLimiterScopedUpdateOne) AddDayFill(v float64) *SendCapLimiterScopedUpdateOne {
-	x.set = append(x.set, func(b *SendCapLimiterUpdateOne) { b.AddDayFill(v) })
+// AddDayTokens adds value to the "day_tokens" field.
+func (x *SendCapLimiterScopedUpdateOne) AddDayTokens(v float64) *SendCapLimiterScopedUpdateOne {
+	x.set = append(x.set, func(b *SendCapLimiterUpdateOne) { b.AddDayTokens(v) })
 	return x
 }
 
-const RoleOf_SendCapLimiterScopedUpdateOne_AddDayFill = RoleStep
+const RoleOf_SendCapLimiterScopedUpdateOne_AddDayTokens = RoleStep
+
+// ClearDayTokens clears the value of the "day_tokens" field.
+func (x *SendCapLimiterScopedUpdateOne) ClearDayTokens() *SendCapLimiterScopedUpdateOne {
+	x.set = append(x.set, func(b *SendCapLimiterUpdateOne) { b.ClearDayTokens() })
+	return x
+}
+
+const RoleOf_SendCapLimiterScopedUpdateOne_ClearDayTokens = RoleStep
 
 // SetRefilledAt sets the "refilled_at" field.
 func (x *SendCapLimiterScopedUpdateOne) SetRefilledAt(v time.Time) *SendCapLimiterScopedUpdateOne {
@@ -56471,31 +56565,39 @@ func (x *SendCapLimiterScopedUpdate) SetUpdatedAt(v time.Time) *SendCapLimiterSc
 
 const RoleOf_SendCapLimiterScopedUpdate_SetUpdatedAt = RoleStep
 
-// SetDayFill sets the "day_fill" field.
-func (x *SendCapLimiterScopedUpdate) SetDayFill(v float64) *SendCapLimiterScopedUpdate {
-	x.set = append(x.set, func(b *SendCapLimiterUpdate) { b.SetDayFill(v) })
+// SetDayTokens sets the "day_tokens" field.
+func (x *SendCapLimiterScopedUpdate) SetDayTokens(v float64) *SendCapLimiterScopedUpdate {
+	x.set = append(x.set, func(b *SendCapLimiterUpdate) { b.SetDayTokens(v) })
 	return x
 }
 
-const RoleOf_SendCapLimiterScopedUpdate_SetDayFill = RoleStep
+const RoleOf_SendCapLimiterScopedUpdate_SetDayTokens = RoleStep
 
-// SetNillableDayFill sets the "day_fill" field if the given value is not nil.
-func (x *SendCapLimiterScopedUpdate) SetNillableDayFill(v *float64) *SendCapLimiterScopedUpdate {
+// SetNillableDayTokens sets the "day_tokens" field if the given value is not nil.
+func (x *SendCapLimiterScopedUpdate) SetNillableDayTokens(v *float64) *SendCapLimiterScopedUpdate {
 	if v != nil {
-		x.SetDayFill(*v)
+		x.SetDayTokens(*v)
 	}
 	return x
 }
 
-const RoleOf_SendCapLimiterScopedUpdate_SetNillableDayFill = RoleStep
+const RoleOf_SendCapLimiterScopedUpdate_SetNillableDayTokens = RoleStep
 
-// AddDayFill adds value to the "day_fill" field.
-func (x *SendCapLimiterScopedUpdate) AddDayFill(v float64) *SendCapLimiterScopedUpdate {
-	x.set = append(x.set, func(b *SendCapLimiterUpdate) { b.AddDayFill(v) })
+// AddDayTokens adds value to the "day_tokens" field.
+func (x *SendCapLimiterScopedUpdate) AddDayTokens(v float64) *SendCapLimiterScopedUpdate {
+	x.set = append(x.set, func(b *SendCapLimiterUpdate) { b.AddDayTokens(v) })
 	return x
 }
 
-const RoleOf_SendCapLimiterScopedUpdate_AddDayFill = RoleStep
+const RoleOf_SendCapLimiterScopedUpdate_AddDayTokens = RoleStep
+
+// ClearDayTokens clears the value of the "day_tokens" field.
+func (x *SendCapLimiterScopedUpdate) ClearDayTokens() *SendCapLimiterScopedUpdate {
+	x.set = append(x.set, func(b *SendCapLimiterUpdate) { b.ClearDayTokens() })
+	return x
+}
+
+const RoleOf_SendCapLimiterScopedUpdate_ClearDayTokens = RoleStep
 
 // SetRefilledAt sets the "refilled_at" field.
 func (x *SendCapLimiterScopedUpdate) SetRefilledAt(v time.Time) *SendCapLimiterScopedUpdate {

@@ -2389,8 +2389,12 @@ func ScopedEntities() []*ScopedEntity {
 				_ = remap
 				b := s.ProviderLimiter().Create()
 				b.SetIntegrationID(remap("Integration", src.IntegrationID))
-				b.SetSecondFill(src.SecondFill)
-				b.SetDayFill(src.DayFill)
+				if src.SecondTokens != nil {
+					b.SetSecondTokens(*src.SecondTokens)
+				}
+				if src.DayTokens != nil {
+					b.SetDayTokens(*src.DayTokens)
+				}
 				b.SetRefilledAt(src.RefilledAt)
 				created, err := b.Save(ctx)
 				if err != nil {
@@ -2729,7 +2733,9 @@ func ScopedEntities() []*ScopedEntity {
 				}
 				_ = remap
 				b := s.SendCapLimiter().Create()
-				b.SetDayFill(src.DayFill)
+				if src.DayTokens != nil {
+					b.SetDayTokens(*src.DayTokens)
+				}
 				b.SetRefilledAt(src.RefilledAt)
 				created, err := b.Save(ctx)
 				if err != nil {

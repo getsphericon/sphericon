@@ -64,15 +64,31 @@ func (_c *ProviderLimiterCreate) SetIntegrationID(v int64) *ProviderLimiterCreat
 	return _c
 }
 
-// SetSecondFill sets the "second_fill" field.
-func (_c *ProviderLimiterCreate) SetSecondFill(v float64) *ProviderLimiterCreate {
-	_c.mutation.SetSecondFill(v)
+// SetSecondTokens sets the "second_tokens" field.
+func (_c *ProviderLimiterCreate) SetSecondTokens(v float64) *ProviderLimiterCreate {
+	_c.mutation.SetSecondTokens(v)
 	return _c
 }
 
-// SetDayFill sets the "day_fill" field.
-func (_c *ProviderLimiterCreate) SetDayFill(v float64) *ProviderLimiterCreate {
-	_c.mutation.SetDayFill(v)
+// SetNillableSecondTokens sets the "second_tokens" field if the given value is not nil.
+func (_c *ProviderLimiterCreate) SetNillableSecondTokens(v *float64) *ProviderLimiterCreate {
+	if v != nil {
+		_c.SetSecondTokens(*v)
+	}
+	return _c
+}
+
+// SetDayTokens sets the "day_tokens" field.
+func (_c *ProviderLimiterCreate) SetDayTokens(v float64) *ProviderLimiterCreate {
+	_c.mutation.SetDayTokens(v)
+	return _c
+}
+
+// SetNillableDayTokens sets the "day_tokens" field if the given value is not nil.
+func (_c *ProviderLimiterCreate) SetNillableDayTokens(v *float64) *ProviderLimiterCreate {
+	if v != nil {
+		_c.SetDayTokens(*v)
+	}
 	return _c
 }
 
@@ -157,12 +173,6 @@ func (_c *ProviderLimiterCreate) check() error {
 	if _, ok := _c.mutation.IntegrationID(); !ok {
 		return &ValidationError{Name: "integration_id", err: errors.New(`ent: missing required field "ProviderLimiter.integration_id"`)}
 	}
-	if _, ok := _c.mutation.SecondFill(); !ok {
-		return &ValidationError{Name: "second_fill", err: errors.New(`ent: missing required field "ProviderLimiter.second_fill"`)}
-	}
-	if _, ok := _c.mutation.DayFill(); !ok {
-		return &ValidationError{Name: "day_fill", err: errors.New(`ent: missing required field "ProviderLimiter.day_fill"`)}
-	}
 	if _, ok := _c.mutation.RefilledAt(); !ok {
 		return &ValidationError{Name: "refilled_at", err: errors.New(`ent: missing required field "ProviderLimiter.refilled_at"`)}
 	}
@@ -213,13 +223,13 @@ func (_c *ProviderLimiterCreate) createSpec() (*ProviderLimiter, *sqlgraph.Creat
 		_spec.SetField(providerlimiter.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if value, ok := _c.mutation.SecondFill(); ok {
-		_spec.SetField(providerlimiter.FieldSecondFill, field.TypeFloat64, value)
-		_node.SecondFill = value
+	if value, ok := _c.mutation.SecondTokens(); ok {
+		_spec.SetField(providerlimiter.FieldSecondTokens, field.TypeFloat64, value)
+		_node.SecondTokens = &value
 	}
-	if value, ok := _c.mutation.DayFill(); ok {
-		_spec.SetField(providerlimiter.FieldDayFill, field.TypeFloat64, value)
-		_node.DayFill = value
+	if value, ok := _c.mutation.DayTokens(); ok {
+		_spec.SetField(providerlimiter.FieldDayTokens, field.TypeFloat64, value)
+		_node.DayTokens = &value
 	}
 	if value, ok := _c.mutation.RefilledAt(); ok {
 		_spec.SetField(providerlimiter.FieldRefilledAt, field.TypeTime, value)
@@ -335,39 +345,51 @@ func (u *ProviderLimiterUpsert) UpdateWorkspaceID() *ProviderLimiterUpsert {
 	return u
 }
 
-// SetSecondFill sets the "second_fill" field.
-func (u *ProviderLimiterUpsert) SetSecondFill(v float64) *ProviderLimiterUpsert {
-	u.Set(providerlimiter.FieldSecondFill, v)
+// SetSecondTokens sets the "second_tokens" field.
+func (u *ProviderLimiterUpsert) SetSecondTokens(v float64) *ProviderLimiterUpsert {
+	u.Set(providerlimiter.FieldSecondTokens, v)
 	return u
 }
 
-// UpdateSecondFill sets the "second_fill" field to the value that was provided on create.
-func (u *ProviderLimiterUpsert) UpdateSecondFill() *ProviderLimiterUpsert {
-	u.SetExcluded(providerlimiter.FieldSecondFill)
+// UpdateSecondTokens sets the "second_tokens" field to the value that was provided on create.
+func (u *ProviderLimiterUpsert) UpdateSecondTokens() *ProviderLimiterUpsert {
+	u.SetExcluded(providerlimiter.FieldSecondTokens)
 	return u
 }
 
-// AddSecondFill adds v to the "second_fill" field.
-func (u *ProviderLimiterUpsert) AddSecondFill(v float64) *ProviderLimiterUpsert {
-	u.Add(providerlimiter.FieldSecondFill, v)
+// AddSecondTokens adds v to the "second_tokens" field.
+func (u *ProviderLimiterUpsert) AddSecondTokens(v float64) *ProviderLimiterUpsert {
+	u.Add(providerlimiter.FieldSecondTokens, v)
 	return u
 }
 
-// SetDayFill sets the "day_fill" field.
-func (u *ProviderLimiterUpsert) SetDayFill(v float64) *ProviderLimiterUpsert {
-	u.Set(providerlimiter.FieldDayFill, v)
+// ClearSecondTokens clears the value of the "second_tokens" field.
+func (u *ProviderLimiterUpsert) ClearSecondTokens() *ProviderLimiterUpsert {
+	u.SetNull(providerlimiter.FieldSecondTokens)
 	return u
 }
 
-// UpdateDayFill sets the "day_fill" field to the value that was provided on create.
-func (u *ProviderLimiterUpsert) UpdateDayFill() *ProviderLimiterUpsert {
-	u.SetExcluded(providerlimiter.FieldDayFill)
+// SetDayTokens sets the "day_tokens" field.
+func (u *ProviderLimiterUpsert) SetDayTokens(v float64) *ProviderLimiterUpsert {
+	u.Set(providerlimiter.FieldDayTokens, v)
 	return u
 }
 
-// AddDayFill adds v to the "day_fill" field.
-func (u *ProviderLimiterUpsert) AddDayFill(v float64) *ProviderLimiterUpsert {
-	u.Add(providerlimiter.FieldDayFill, v)
+// UpdateDayTokens sets the "day_tokens" field to the value that was provided on create.
+func (u *ProviderLimiterUpsert) UpdateDayTokens() *ProviderLimiterUpsert {
+	u.SetExcluded(providerlimiter.FieldDayTokens)
+	return u
+}
+
+// AddDayTokens adds v to the "day_tokens" field.
+func (u *ProviderLimiterUpsert) AddDayTokens(v float64) *ProviderLimiterUpsert {
+	u.Add(providerlimiter.FieldDayTokens, v)
+	return u
+}
+
+// ClearDayTokens clears the value of the "day_tokens" field.
+func (u *ProviderLimiterUpsert) ClearDayTokens() *ProviderLimiterUpsert {
+	u.SetNull(providerlimiter.FieldDayTokens)
 	return u
 }
 
@@ -465,45 +487,59 @@ func (u *ProviderLimiterUpsertOne) UpdateWorkspaceID() *ProviderLimiterUpsertOne
 	})
 }
 
-// SetSecondFill sets the "second_fill" field.
-func (u *ProviderLimiterUpsertOne) SetSecondFill(v float64) *ProviderLimiterUpsertOne {
+// SetSecondTokens sets the "second_tokens" field.
+func (u *ProviderLimiterUpsertOne) SetSecondTokens(v float64) *ProviderLimiterUpsertOne {
 	return u.Update(func(s *ProviderLimiterUpsert) {
-		s.SetSecondFill(v)
+		s.SetSecondTokens(v)
 	})
 }
 
-// AddSecondFill adds v to the "second_fill" field.
-func (u *ProviderLimiterUpsertOne) AddSecondFill(v float64) *ProviderLimiterUpsertOne {
+// AddSecondTokens adds v to the "second_tokens" field.
+func (u *ProviderLimiterUpsertOne) AddSecondTokens(v float64) *ProviderLimiterUpsertOne {
 	return u.Update(func(s *ProviderLimiterUpsert) {
-		s.AddSecondFill(v)
+		s.AddSecondTokens(v)
 	})
 }
 
-// UpdateSecondFill sets the "second_fill" field to the value that was provided on create.
-func (u *ProviderLimiterUpsertOne) UpdateSecondFill() *ProviderLimiterUpsertOne {
+// UpdateSecondTokens sets the "second_tokens" field to the value that was provided on create.
+func (u *ProviderLimiterUpsertOne) UpdateSecondTokens() *ProviderLimiterUpsertOne {
 	return u.Update(func(s *ProviderLimiterUpsert) {
-		s.UpdateSecondFill()
+		s.UpdateSecondTokens()
 	})
 }
 
-// SetDayFill sets the "day_fill" field.
-func (u *ProviderLimiterUpsertOne) SetDayFill(v float64) *ProviderLimiterUpsertOne {
+// ClearSecondTokens clears the value of the "second_tokens" field.
+func (u *ProviderLimiterUpsertOne) ClearSecondTokens() *ProviderLimiterUpsertOne {
 	return u.Update(func(s *ProviderLimiterUpsert) {
-		s.SetDayFill(v)
+		s.ClearSecondTokens()
 	})
 }
 
-// AddDayFill adds v to the "day_fill" field.
-func (u *ProviderLimiterUpsertOne) AddDayFill(v float64) *ProviderLimiterUpsertOne {
+// SetDayTokens sets the "day_tokens" field.
+func (u *ProviderLimiterUpsertOne) SetDayTokens(v float64) *ProviderLimiterUpsertOne {
 	return u.Update(func(s *ProviderLimiterUpsert) {
-		s.AddDayFill(v)
+		s.SetDayTokens(v)
 	})
 }
 
-// UpdateDayFill sets the "day_fill" field to the value that was provided on create.
-func (u *ProviderLimiterUpsertOne) UpdateDayFill() *ProviderLimiterUpsertOne {
+// AddDayTokens adds v to the "day_tokens" field.
+func (u *ProviderLimiterUpsertOne) AddDayTokens(v float64) *ProviderLimiterUpsertOne {
 	return u.Update(func(s *ProviderLimiterUpsert) {
-		s.UpdateDayFill()
+		s.AddDayTokens(v)
+	})
+}
+
+// UpdateDayTokens sets the "day_tokens" field to the value that was provided on create.
+func (u *ProviderLimiterUpsertOne) UpdateDayTokens() *ProviderLimiterUpsertOne {
+	return u.Update(func(s *ProviderLimiterUpsert) {
+		s.UpdateDayTokens()
+	})
+}
+
+// ClearDayTokens clears the value of the "day_tokens" field.
+func (u *ProviderLimiterUpsertOne) ClearDayTokens() *ProviderLimiterUpsertOne {
+	return u.Update(func(s *ProviderLimiterUpsert) {
+		s.ClearDayTokens()
 	})
 }
 
@@ -769,45 +805,59 @@ func (u *ProviderLimiterUpsertBulk) UpdateWorkspaceID() *ProviderLimiterUpsertBu
 	})
 }
 
-// SetSecondFill sets the "second_fill" field.
-func (u *ProviderLimiterUpsertBulk) SetSecondFill(v float64) *ProviderLimiterUpsertBulk {
+// SetSecondTokens sets the "second_tokens" field.
+func (u *ProviderLimiterUpsertBulk) SetSecondTokens(v float64) *ProviderLimiterUpsertBulk {
 	return u.Update(func(s *ProviderLimiterUpsert) {
-		s.SetSecondFill(v)
+		s.SetSecondTokens(v)
 	})
 }
 
-// AddSecondFill adds v to the "second_fill" field.
-func (u *ProviderLimiterUpsertBulk) AddSecondFill(v float64) *ProviderLimiterUpsertBulk {
+// AddSecondTokens adds v to the "second_tokens" field.
+func (u *ProviderLimiterUpsertBulk) AddSecondTokens(v float64) *ProviderLimiterUpsertBulk {
 	return u.Update(func(s *ProviderLimiterUpsert) {
-		s.AddSecondFill(v)
+		s.AddSecondTokens(v)
 	})
 }
 
-// UpdateSecondFill sets the "second_fill" field to the value that was provided on create.
-func (u *ProviderLimiterUpsertBulk) UpdateSecondFill() *ProviderLimiterUpsertBulk {
+// UpdateSecondTokens sets the "second_tokens" field to the value that was provided on create.
+func (u *ProviderLimiterUpsertBulk) UpdateSecondTokens() *ProviderLimiterUpsertBulk {
 	return u.Update(func(s *ProviderLimiterUpsert) {
-		s.UpdateSecondFill()
+		s.UpdateSecondTokens()
 	})
 }
 
-// SetDayFill sets the "day_fill" field.
-func (u *ProviderLimiterUpsertBulk) SetDayFill(v float64) *ProviderLimiterUpsertBulk {
+// ClearSecondTokens clears the value of the "second_tokens" field.
+func (u *ProviderLimiterUpsertBulk) ClearSecondTokens() *ProviderLimiterUpsertBulk {
 	return u.Update(func(s *ProviderLimiterUpsert) {
-		s.SetDayFill(v)
+		s.ClearSecondTokens()
 	})
 }
 
-// AddDayFill adds v to the "day_fill" field.
-func (u *ProviderLimiterUpsertBulk) AddDayFill(v float64) *ProviderLimiterUpsertBulk {
+// SetDayTokens sets the "day_tokens" field.
+func (u *ProviderLimiterUpsertBulk) SetDayTokens(v float64) *ProviderLimiterUpsertBulk {
 	return u.Update(func(s *ProviderLimiterUpsert) {
-		s.AddDayFill(v)
+		s.SetDayTokens(v)
 	})
 }
 
-// UpdateDayFill sets the "day_fill" field to the value that was provided on create.
-func (u *ProviderLimiterUpsertBulk) UpdateDayFill() *ProviderLimiterUpsertBulk {
+// AddDayTokens adds v to the "day_tokens" field.
+func (u *ProviderLimiterUpsertBulk) AddDayTokens(v float64) *ProviderLimiterUpsertBulk {
 	return u.Update(func(s *ProviderLimiterUpsert) {
-		s.UpdateDayFill()
+		s.AddDayTokens(v)
+	})
+}
+
+// UpdateDayTokens sets the "day_tokens" field to the value that was provided on create.
+func (u *ProviderLimiterUpsertBulk) UpdateDayTokens() *ProviderLimiterUpsertBulk {
+	return u.Update(func(s *ProviderLimiterUpsert) {
+		s.UpdateDayTokens()
+	})
+}
+
+// ClearDayTokens clears the value of the "day_tokens" field.
+func (u *ProviderLimiterUpsertBulk) ClearDayTokens() *ProviderLimiterUpsertBulk {
+	return u.Update(func(s *ProviderLimiterUpsert) {
+		s.ClearDayTokens()
 	})
 }
 

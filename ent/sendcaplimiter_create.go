@@ -57,9 +57,17 @@ func (_c *SendCapLimiterCreate) SetWorkspaceID(v int64) *SendCapLimiterCreate {
 	return _c
 }
 
-// SetDayFill sets the "day_fill" field.
-func (_c *SendCapLimiterCreate) SetDayFill(v float64) *SendCapLimiterCreate {
-	_c.mutation.SetDayFill(v)
+// SetDayTokens sets the "day_tokens" field.
+func (_c *SendCapLimiterCreate) SetDayTokens(v float64) *SendCapLimiterCreate {
+	_c.mutation.SetDayTokens(v)
+	return _c
+}
+
+// SetNillableDayTokens sets the "day_tokens" field if the given value is not nil.
+func (_c *SendCapLimiterCreate) SetNillableDayTokens(v *float64) *SendCapLimiterCreate {
+	if v != nil {
+		_c.SetDayTokens(*v)
+	}
 	return _c
 }
 
@@ -136,9 +144,6 @@ func (_c *SendCapLimiterCreate) check() error {
 	if _, ok := _c.mutation.WorkspaceID(); !ok {
 		return &ValidationError{Name: "workspace_id", err: errors.New(`ent: missing required field "SendCapLimiter.workspace_id"`)}
 	}
-	if _, ok := _c.mutation.DayFill(); !ok {
-		return &ValidationError{Name: "day_fill", err: errors.New(`ent: missing required field "SendCapLimiter.day_fill"`)}
-	}
 	if _, ok := _c.mutation.RefilledAt(); !ok {
 		return &ValidationError{Name: "refilled_at", err: errors.New(`ent: missing required field "SendCapLimiter.refilled_at"`)}
 	}
@@ -186,9 +191,9 @@ func (_c *SendCapLimiterCreate) createSpec() (*SendCapLimiter, *sqlgraph.CreateS
 		_spec.SetField(sendcaplimiter.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if value, ok := _c.mutation.DayFill(); ok {
-		_spec.SetField(sendcaplimiter.FieldDayFill, field.TypeFloat64, value)
-		_node.DayFill = value
+	if value, ok := _c.mutation.DayTokens(); ok {
+		_spec.SetField(sendcaplimiter.FieldDayTokens, field.TypeFloat64, value)
+		_node.DayTokens = &value
 	}
 	if value, ok := _c.mutation.RefilledAt(); ok {
 		_spec.SetField(sendcaplimiter.FieldRefilledAt, field.TypeTime, value)
@@ -287,21 +292,27 @@ func (u *SendCapLimiterUpsert) UpdateWorkspaceID() *SendCapLimiterUpsert {
 	return u
 }
 
-// SetDayFill sets the "day_fill" field.
-func (u *SendCapLimiterUpsert) SetDayFill(v float64) *SendCapLimiterUpsert {
-	u.Set(sendcaplimiter.FieldDayFill, v)
+// SetDayTokens sets the "day_tokens" field.
+func (u *SendCapLimiterUpsert) SetDayTokens(v float64) *SendCapLimiterUpsert {
+	u.Set(sendcaplimiter.FieldDayTokens, v)
 	return u
 }
 
-// UpdateDayFill sets the "day_fill" field to the value that was provided on create.
-func (u *SendCapLimiterUpsert) UpdateDayFill() *SendCapLimiterUpsert {
-	u.SetExcluded(sendcaplimiter.FieldDayFill)
+// UpdateDayTokens sets the "day_tokens" field to the value that was provided on create.
+func (u *SendCapLimiterUpsert) UpdateDayTokens() *SendCapLimiterUpsert {
+	u.SetExcluded(sendcaplimiter.FieldDayTokens)
 	return u
 }
 
-// AddDayFill adds v to the "day_fill" field.
-func (u *SendCapLimiterUpsert) AddDayFill(v float64) *SendCapLimiterUpsert {
-	u.Add(sendcaplimiter.FieldDayFill, v)
+// AddDayTokens adds v to the "day_tokens" field.
+func (u *SendCapLimiterUpsert) AddDayTokens(v float64) *SendCapLimiterUpsert {
+	u.Add(sendcaplimiter.FieldDayTokens, v)
+	return u
+}
+
+// ClearDayTokens clears the value of the "day_tokens" field.
+func (u *SendCapLimiterUpsert) ClearDayTokens() *SendCapLimiterUpsert {
+	u.SetNull(sendcaplimiter.FieldDayTokens)
 	return u
 }
 
@@ -396,24 +407,31 @@ func (u *SendCapLimiterUpsertOne) UpdateWorkspaceID() *SendCapLimiterUpsertOne {
 	})
 }
 
-// SetDayFill sets the "day_fill" field.
-func (u *SendCapLimiterUpsertOne) SetDayFill(v float64) *SendCapLimiterUpsertOne {
+// SetDayTokens sets the "day_tokens" field.
+func (u *SendCapLimiterUpsertOne) SetDayTokens(v float64) *SendCapLimiterUpsertOne {
 	return u.Update(func(s *SendCapLimiterUpsert) {
-		s.SetDayFill(v)
+		s.SetDayTokens(v)
 	})
 }
 
-// AddDayFill adds v to the "day_fill" field.
-func (u *SendCapLimiterUpsertOne) AddDayFill(v float64) *SendCapLimiterUpsertOne {
+// AddDayTokens adds v to the "day_tokens" field.
+func (u *SendCapLimiterUpsertOne) AddDayTokens(v float64) *SendCapLimiterUpsertOne {
 	return u.Update(func(s *SendCapLimiterUpsert) {
-		s.AddDayFill(v)
+		s.AddDayTokens(v)
 	})
 }
 
-// UpdateDayFill sets the "day_fill" field to the value that was provided on create.
-func (u *SendCapLimiterUpsertOne) UpdateDayFill() *SendCapLimiterUpsertOne {
+// UpdateDayTokens sets the "day_tokens" field to the value that was provided on create.
+func (u *SendCapLimiterUpsertOne) UpdateDayTokens() *SendCapLimiterUpsertOne {
 	return u.Update(func(s *SendCapLimiterUpsert) {
-		s.UpdateDayFill()
+		s.UpdateDayTokens()
+	})
+}
+
+// ClearDayTokens clears the value of the "day_tokens" field.
+func (u *SendCapLimiterUpsertOne) ClearDayTokens() *SendCapLimiterUpsertOne {
+	return u.Update(func(s *SendCapLimiterUpsert) {
+		s.ClearDayTokens()
 	})
 }
 
@@ -676,24 +694,31 @@ func (u *SendCapLimiterUpsertBulk) UpdateWorkspaceID() *SendCapLimiterUpsertBulk
 	})
 }
 
-// SetDayFill sets the "day_fill" field.
-func (u *SendCapLimiterUpsertBulk) SetDayFill(v float64) *SendCapLimiterUpsertBulk {
+// SetDayTokens sets the "day_tokens" field.
+func (u *SendCapLimiterUpsertBulk) SetDayTokens(v float64) *SendCapLimiterUpsertBulk {
 	return u.Update(func(s *SendCapLimiterUpsert) {
-		s.SetDayFill(v)
+		s.SetDayTokens(v)
 	})
 }
 
-// AddDayFill adds v to the "day_fill" field.
-func (u *SendCapLimiterUpsertBulk) AddDayFill(v float64) *SendCapLimiterUpsertBulk {
+// AddDayTokens adds v to the "day_tokens" field.
+func (u *SendCapLimiterUpsertBulk) AddDayTokens(v float64) *SendCapLimiterUpsertBulk {
 	return u.Update(func(s *SendCapLimiterUpsert) {
-		s.AddDayFill(v)
+		s.AddDayTokens(v)
 	})
 }
 
-// UpdateDayFill sets the "day_fill" field to the value that was provided on create.
-func (u *SendCapLimiterUpsertBulk) UpdateDayFill() *SendCapLimiterUpsertBulk {
+// UpdateDayTokens sets the "day_tokens" field to the value that was provided on create.
+func (u *SendCapLimiterUpsertBulk) UpdateDayTokens() *SendCapLimiterUpsertBulk {
 	return u.Update(func(s *SendCapLimiterUpsert) {
-		s.UpdateDayFill()
+		s.UpdateDayTokens()
+	})
+}
+
+// ClearDayTokens clears the value of the "day_tokens" field.
+func (u *SendCapLimiterUpsertBulk) ClearDayTokens() *SendCapLimiterUpsertBulk {
+	return u.Update(func(s *SendCapLimiterUpsert) {
+		s.ClearDayTokens()
 	})
 }
 

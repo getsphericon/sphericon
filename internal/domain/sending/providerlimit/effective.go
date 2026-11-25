@@ -213,15 +213,16 @@ type DrainInput struct {
 // a full bucket.
 func (m *Module) SendCapDrain(ctx context.Context, s *ent.Scoped, in DrainInput) (time.Duration, error) {
 	b, now := workspaceBucket(in.SendCap), in.At
-	fill, refilledAt := 1.0, now
+	var tokens *float64 // full
+	refilledAt := now
 	row, err := s.SendCapLimiter().Query().Only(ctx)
 	if err != nil && !ent.IsNotFound(err) {
 		return 0, err
 	}
 	if row != nil {
-		fill, refilledAt = row.DayFill, row.RefilledAt
+		tokens, refilledAt = row.DayTokens, row.RefilledAt
 	}
-	return time.Duration(math.Ceil(b.secondsUntil(in.N, fill, refilledAt, now))) * time.Second, nil
+	return time.Duration(math.Ceil(b.secondsUntil(in.N, tokens, refilledAt, now))) * time.Second, nil
 }
 
 // Status is an Integration's Provider limit as shown to a user: the ceilings as
