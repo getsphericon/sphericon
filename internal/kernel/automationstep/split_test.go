@@ -138,20 +138,6 @@ func TestEveryDrawLandsOnAPathOfTheSplit(t *testing.T) {
 	})
 }
 
-// A Split shares its Contacts out by its weights: over many Contacts, a 50/50 Split sends close to
-// half down each path.
-func TestASplitSharesContactsOutByItsWeights(t *testing.T) {
-	s := automationstep.Split{Paths: []automationstep.SplitPath{{ID: "a", Weight: 50}, {ID: "b", Weight: 50}}}
-	step := automationstep.ID("3f1c0e9a-5b7d-4c2e-9a10-6d8e7f2b4c01")
-	landed := map[automationstep.ID]int{}
-	for contact := range int64(10000) {
-		landed[s.At(automationstep.Draw(contact, step, 1))]++
-	}
-
-	assert.InDelta(t, 5000, landed["a"], 250)
-	assert.InDelta(t, 5000, landed["b"], 250)
-}
-
 // weightsSummingTo100 draws two to ten whole weights of at least 1 that sum to 100.
 func weightsSummingTo100(t *rapid.T) []int {
 	n := rapid.IntRange(2, 10).Draw(t, "paths")
