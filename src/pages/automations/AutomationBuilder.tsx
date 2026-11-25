@@ -133,14 +133,15 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
   })
 
   const onSave = async () => {
+    // Every fork is checked, its panel open or not: its node shows the error from then on.
+    const invalid = invalidForks(latest.current)
+    check(invalid.map((fork) => fork.id))
     if (validatorRef.current?.() === false) {
       return
     }
-    // A fork whose panel is closed is checked too: its node shows the error, and its panel opens.
-    const invalid = invalidForks(latest.current)
+    // The first invalid fork whose panel is closed opens.
     const [first] = invalid
     if (first !== undefined) {
-      check(invalid.map((fork) => fork.id))
       setSelected(first.id)
       return
     }

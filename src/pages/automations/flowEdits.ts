@@ -171,10 +171,11 @@ function copyPath(path: FlowPath): FlowPath {
   return { id: newId(), steps: path.steps.map((step) => copyOf(step)) }
 }
 
-// copyStep puts a copy of the Step of the id right after it (copyOf). A kept Step is not copied.
+// copyStep puts a copy of the Step of the id right after it (copyOf). A kept Step is not copied,
+// nor an End, which is its path's last Step.
 export function copyStep(flow: Flow, of: string): { flow: Flow; id: string } {
   const original = allSteps(flow.path).find((step) => step.id === of)
-  if (original === undefined || original.kind === 'kept') {
+  if (original === undefined || original.kind === 'kept' || original.kind === 'end') {
     return { flow, id: of }
   }
   const copy = copyOf(original)

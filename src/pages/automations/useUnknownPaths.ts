@@ -6,9 +6,12 @@ import type { BranchConditionInput } from '../../generated/site/types.gen.ts'
 import { allSteps, branchConditionOf } from './definition.ts'
 import type { BranchStep, Flow } from './definition.ts'
 
-// The complete Conditions of a Branch's listed paths: one still being typed tests nothing yet.
-function conditionsOf(branch: BranchStep): BranchConditionInput[] {
-  return branch.paths.flatMap((path) => branchConditionOf(path.conditionText) ?? [])
+// The Conditions of a Branch's listed paths, or none while one of them is missing or still being
+// typed: what it needs is asked once they are all complete, so a count cleared to be typed again
+// neither drops the unknown path nor asks to.
+function conditionsOf(branch: BranchStep): BranchConditionInput[] | null {
+  const conditions = branch.paths.flatMap((path) => branchConditionOf(path.conditionText) ?? [])
+  return conditions.length === branch.paths.length ? conditions : null
 }
 
 // useUnknownPaths keeps each Branch's unknown path (ADR 0124) to what its Conditions need: the
@@ -39,20 +42,17 @@ export function useUnknownPaths({
       queryFn: async () => {
         const { data } = await siteAutomationsUnknownPath({
           path: { workspaceId },
-          body: { conditions },
+          body: { conditions: conditions ?? [] },
           throwOnError: true,
         })
         return data.needed
       },
-      enabled: conditions.length > 0,
+      enabled: conditions !== null,
       staleTime: Number.POSITIVE_INFINITY,
     })),
   })
-  // Whether each Branch needs an unknown path, undefined while the server has not said: a Branch
-  // whose Conditions are all still being typed needs none.
-  const needs = branches.map((branch, i) =>
-    (asked[i]?.length ?? 0) === 0 ? false : answers[i]?.data,
-  )
+  // Whether each Branch needs an unknown path, undefined while it is not asked or not answered.
+  const needs = branches.map((_, i) => (asked[i] === null ? undefined : answers[i]?.data))
   // The Branches already asked about losing a path that holds Steps.
   const confirming = useRef(new Set<string>())
 

@@ -140,6 +140,56 @@ test('a version holding forks and an End round-trips, every Step and path keepin
   expect(definitionOf(flow).steps).toEqual({ id: ROOT, steps: TREE })
 })
 
+// A stored Condition is saved back as read, whatever its leaves: the read shape of each leaf is
+// the shape a request writes.
+test("a Branch path's stored Condition of every leaf kind is saved back as read", () => {
+  const condition: BranchCondition = {
+    kind: 'group',
+    combinator: 'or',
+    not: true,
+    entries: [
+      { kind: 'event', action: 'email.opened', operator: 'atMost', times: 2, withinDays: 7 },
+      { kind: 'birthday', test: { kind: 'withinLast', days: 3 } },
+      {
+        kind: 'customField',
+        key: 'renews_at',
+        test: { kind: 'moment', operator: 'before', at: '2026-01-01T00:00:00Z' },
+      },
+      {
+        kind: 'attribute',
+        attribute: 'email',
+        test: { kind: 'text', operator: 'contains', value: '@x' },
+      },
+      {
+        kind: 'engagementTracking',
+        channel: 'email',
+        test: { kind: 'text', operator: 'eq', value: 'granted' },
+      },
+      { kind: 'telegram', operator: 'has' },
+      {
+        kind: 'group',
+        combinator: 'and',
+        entries: [
+          {
+            kind: 'property',
+            of: { kind: 'trigger' },
+            key: 'total',
+            test: { kind: 'number', operator: 'gt', value: 100 },
+          },
+        ],
+      },
+    ],
+  }
+  const branch: AutomationStep = {
+    id: stepId(20),
+    type: 'branch',
+    paths: [{ id: stepId(21), condition, steps: [] }],
+    otherwise: { id: stepId(22), steps: [] },
+  }
+
+  expect(pathInputOf(flowOf(version([branch])))).toEqual({ id: ROOT, steps: [branch] })
+})
+
 // A kind newer than the editor is kept as stored, at any depth: the version is shown, never saved,
 // so nothing can drop it.
 test('a Step of a kind the editor does not know, inside a fork path, keeps the version unsaved', () => {

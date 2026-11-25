@@ -122,7 +122,8 @@ export function StepPanel({
         <Group justify="space-between" wrap="nowrap" mb="md">
           <Title order={4}>{title}</Title>
           <Group gap="xs" wrap="nowrap">
-            {editable && step !== undefined && step.kind !== 'kept' && (
+            {/* An End is its path's last Step: a copy after it would never run. */}
+            {editable && step !== undefined && step.kind !== 'kept' && step.kind !== 'end' && (
               <ActionIcon
                 variant="subtle"
                 color="gray"

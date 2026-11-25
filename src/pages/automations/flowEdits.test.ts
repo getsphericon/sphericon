@@ -247,6 +247,12 @@ test('a Step inside a path is removed from it', () => {
   expect(nestedSteps(branchOf(removeStep(flow, stepId(22))))).toBe(0)
 })
 
+test('an End is not copied: it is the last Step of its path', () => {
+  const flow = flowOf(version([...STEPS, { id: stepId(13), type: 'end' }]))
+
+  expect(copyStep(flow, stepId(13))).toEqual({ flow, id: stepId(13) })
+})
+
 test('a copied fork follows its original, it and every path and Step in it with new ids', () => {
   const flow = flowOf(version(BRANCHING))
 

@@ -298,7 +298,21 @@ test("a Branch path's Condition tests a property of the Event the Enrollment beg
   ])
 })
 
-test("a fork's error shows on its node and in its panel, and stops the Save", async () => {
+test("a fork's error shows on its node and in its open panel, and stops the Save", async () => {
+  const { screen, saved } = await editing([])
+
+  await screen.getByRole('button', { name: 'Add a step here' }).click()
+  await screen.getByRole('menuitem', { name: 'Branch' }).click()
+  await save(screen)
+
+  await expect.element(screen.getByText('Path 1 needs a condition')).toBeVisible()
+  await expect
+    .element(screen.getByRole('region', { name: 'Branch' }).getByText('This field is required'))
+    .toBeVisible()
+  expect(saved()).toEqual([])
+})
+
+test('a Save stopped on a fork whose panel is closed opens it, showing the error', async () => {
   const { screen, saved } = await editing([])
 
   await screen.getByRole('button', { name: 'Add a step here' }).click()
@@ -401,4 +415,56 @@ test("Publish's refusal of a Branch's unknown path shows in the editor", async (
   await screen.getByRole('button', { name: 'Publish' }).click()
 
   await expect.element(screen.getByText(refusal)).toBeVisible()
+})
+
+// A count cleared to be typed again leaves the Condition incomplete for a moment: the unknown path
+// stays as it is meanwhile, its Steps and id with it, and nothing is asked.
+test('retyping the count of an open test keeps the unknown path as it is', async () => {
+  const openedTwice: BranchCondition = {
+    kind: 'group',
+    combinator: 'and',
+    entries: [{ kind: 'event', action: 'email.opened', operator: 'atLeast', times: 2 }],
+  }
+  const branch: AutomationStep = {
+    id: stepId(20),
+    type: 'branch',
+    paths: [{ id: stepId(21), condition: openedTwice, steps: [] }],
+    otherwise: { id: stepId(22), steps: [] },
+    unknown: { id: stepId(23), steps: [WAIT] },
+  }
+  const { screen, saved } = await editing([branch])
+
+  await nodeButton(screen, 'Branch').click()
+  const times = screen.getByRole('region', { name: 'Branch' }).getByLabelText('Times')
+  await times.fill('')
+  await expect.element(screen.getByRole('button', { name: 'Unknown' })).toBeVisible()
+  await times.fill('3')
+  await save(screen)
+
+  await expect.poll(saved).toEqual([
+    [
+      {
+        ...branch,
+        paths: [
+          {
+            id: stepId(21),
+            condition: { ...openedTwice, entries: [{ ...openedTwice.entries[0], times: 3 }] },
+            steps: [],
+          },
+        ],
+      },
+    ],
+  ])
+  expect(screen.getByText('needs no unknown path', { exact: false }).elements()).toEqual([])
+})
+
+test('an End offers no copy: a copy after it would never run', async () => {
+  const { screen } = await editing([WAIT, { id: stepId(14), type: 'end' }])
+
+  await nodeButton(screen, 'End').click()
+
+  await expect.element(screen.getByRole('region', { name: 'End' })).toBeVisible()
+  await expect
+    .element(screen.getByRole('button', { name: 'Duplicate step' }))
+    .not.toBeInTheDocument()
 })
