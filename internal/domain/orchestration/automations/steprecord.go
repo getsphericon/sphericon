@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
@@ -46,11 +47,26 @@ func reach(ctx context.Context, s *ent.Scoped, runID int64, stepID automationste
 		Exec(ctx)
 }
 
-// leave records that the Enrollment runID left the Step of the id at now: skipped for why when
-// why is set, done otherwise. The left moment is a latch (ADR 0109), written once with the
+// leaving is how the Enrollment leaves a Step: done, skipped for a reason when skipped is set, or
+// down the path of a fork when path is set (ADR 0124).
+type leaving struct {
+	skipped skipreason.Reason
+	path    *pathTaken
+}
+
+// pathTaken is the path a fork sent the Enrollment down, by its id, and, at a Branch, what each
+// path's Condition was for the Contact, by path id: true, false or unknown, never the values
+// tested.
+type pathTaken struct {
+	id       automationstep.ID
+	outcomes map[automationstep.ID]conditiontree.Truth
+}
+
+// leave records that the Enrollment runID left the Step of the id at now, as how says: skipped for
+// its reason, down its path, or done. The left moment is a latch (ADR 0109), written once with the
 // outcome; the caller has moved the Enrollment off the Step, so a record already left, or none, is
 // a broken invariant, not a lost race.
-func leave(ctx context.Context, s *ent.Scoped, runID int64, stepID automationstep.ID, now time.Time, why skipreason.Reason) error {
+func leave(ctx context.Context, s *ent.Scoped, runID int64, stepID automationstep.ID, now time.Time, how leaving) error {
 	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
 		u := s.AutomationStepRecord().Update().
 			Where(
@@ -61,8 +77,14 @@ func leave(ctx context.Context, s *ent.Scoped, runID int64, stepID automationste
 			).
 			SetLeftAt(now).
 			SetOutcome(automationsteprecord.OutcomeDone)
-		if why != "" {
-			u.SetOutcome(automationsteprecord.OutcomeSkipped).SetSkipReason(why)
+		switch {
+		case how.skipped != "":
+			u.SetOutcome(automationsteprecord.OutcomeSkipped).SetSkipReason(how.skipped)
+		case how.path != nil:
+			u.SetOutcome(automationsteprecord.OutcomePath).SetPathID(how.path.id)
+			if how.path.outcomes != nil {
+				u.SetPathOutcomes(how.path.outcomes)
+			}
 		}
 		n, err := u.Save(ctx)
 		return n > 0, err

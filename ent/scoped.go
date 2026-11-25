@@ -8981,6 +8981,32 @@ func (x *AutomationStepRecordScopedCreate) SetNillableSkipReason(v *skipreason.R
 
 const RoleOf_AutomationStepRecordScopedCreate_SetNillableSkipReason = RoleStep
 
+// SetPathID sets the "path_id" field.
+func (x *AutomationStepRecordScopedCreate) SetPathID(v automationstep.ID) *AutomationStepRecordScopedCreate {
+	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetPathID(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetPathID = RoleStep
+
+// SetNillablePathID sets the "path_id" field if the given value is not nil.
+func (x *AutomationStepRecordScopedCreate) SetNillablePathID(v *automationstep.ID) *AutomationStepRecordScopedCreate {
+	if v != nil {
+		x.SetPathID(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetNillablePathID = RoleStep
+
+// SetPathOutcomes sets the "path_outcomes" field.
+func (x *AutomationStepRecordScopedCreate) SetPathOutcomes(v map[automationstep.ID]conditiontree.Truth) *AutomationStepRecordScopedCreate {
+	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetPathOutcomes(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedCreate_SetPathOutcomes = RoleStep
+
 // SetDueAt sets the "due_at" field.
 func (x *AutomationStepRecordScopedCreate) SetDueAt(v time.Time) *AutomationStepRecordScopedCreate {
 	x.set = append(x.set, func(b *AutomationStepRecordCreate) { b.SetDueAt(v) })
@@ -9219,6 +9245,54 @@ func (u *AutomationStepRecordScopedUpsert) ClearSkipReason() *AutomationStepReco
 }
 
 const RoleOf_AutomationStepRecordScopedUpsert_ClearSkipReason = RoleStep
+
+// SetPathID sets the "path_id" field.
+func (u *AutomationStepRecordScopedUpsert) SetPathID(v automationstep.ID) *AutomationStepRecordScopedUpsert {
+	u.u.Set(automationsteprecord.FieldPathID, v)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_SetPathID = RoleStep
+
+// UpdatePathID sets the "path_id" field to the value that was provided on create.
+func (u *AutomationStepRecordScopedUpsert) UpdatePathID() *AutomationStepRecordScopedUpsert {
+	u.u.SetExcluded(automationsteprecord.FieldPathID)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_UpdatePathID = RoleStep
+
+// ClearPathID clears the value of the "path_id" field.
+func (u *AutomationStepRecordScopedUpsert) ClearPathID() *AutomationStepRecordScopedUpsert {
+	u.u.SetNull(automationsteprecord.FieldPathID)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_ClearPathID = RoleStep
+
+// SetPathOutcomes sets the "path_outcomes" field.
+func (u *AutomationStepRecordScopedUpsert) SetPathOutcomes(v map[automationstep.ID]conditiontree.Truth) *AutomationStepRecordScopedUpsert {
+	u.u.Set(automationsteprecord.FieldPathOutcomes, v)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_SetPathOutcomes = RoleStep
+
+// UpdatePathOutcomes sets the "path_outcomes" field to the value that was provided on create.
+func (u *AutomationStepRecordScopedUpsert) UpdatePathOutcomes() *AutomationStepRecordScopedUpsert {
+	u.u.SetExcluded(automationsteprecord.FieldPathOutcomes)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_UpdatePathOutcomes = RoleStep
+
+// ClearPathOutcomes clears the value of the "path_outcomes" field.
+func (u *AutomationStepRecordScopedUpsert) ClearPathOutcomes() *AutomationStepRecordScopedUpsert {
+	u.u.SetNull(automationsteprecord.FieldPathOutcomes)
+	return u
+}
+
+const RoleOf_AutomationStepRecordScopedUpsert_ClearPathOutcomes = RoleStep
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
 // target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
@@ -9517,6 +9591,48 @@ func (x *AutomationStepRecordScopedUpdateOne) ClearSkipReason() *AutomationStepR
 
 const RoleOf_AutomationStepRecordScopedUpdateOne_ClearSkipReason = RoleStep
 
+// SetPathID sets the "path_id" field.
+func (x *AutomationStepRecordScopedUpdateOne) SetPathID(v automationstep.ID) *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.SetPathID(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_SetPathID = RoleStep
+
+// SetNillablePathID sets the "path_id" field if the given value is not nil.
+func (x *AutomationStepRecordScopedUpdateOne) SetNillablePathID(v *automationstep.ID) *AutomationStepRecordScopedUpdateOne {
+	if v != nil {
+		x.SetPathID(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_SetNillablePathID = RoleStep
+
+// ClearPathID clears the value of the "path_id" field.
+func (x *AutomationStepRecordScopedUpdateOne) ClearPathID() *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.ClearPathID() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_ClearPathID = RoleStep
+
+// SetPathOutcomes sets the "path_outcomes" field.
+func (x *AutomationStepRecordScopedUpdateOne) SetPathOutcomes(v map[automationstep.ID]conditiontree.Truth) *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.SetPathOutcomes(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_SetPathOutcomes = RoleStep
+
+// ClearPathOutcomes clears the value of the "path_outcomes" field.
+func (x *AutomationStepRecordScopedUpdateOne) ClearPathOutcomes() *AutomationStepRecordScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdateOne) { b.ClearPathOutcomes() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdateOne_ClearPathOutcomes = RoleStep
+
 // Save verifies the references against the Workspace, then updates the AutomationStepRecord.
 func (x *AutomationStepRecordScopedUpdateOne) Save(ctx context.Context) (*AutomationStepRecord, error) {
 	return x.save(ctx, "update", skipUnchanged)
@@ -9697,6 +9813,48 @@ func (x *AutomationStepRecordScopedUpdate) ClearSkipReason() *AutomationStepReco
 }
 
 const RoleOf_AutomationStepRecordScopedUpdate_ClearSkipReason = RoleStep
+
+// SetPathID sets the "path_id" field.
+func (x *AutomationStepRecordScopedUpdate) SetPathID(v automationstep.ID) *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.SetPathID(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_SetPathID = RoleStep
+
+// SetNillablePathID sets the "path_id" field if the given value is not nil.
+func (x *AutomationStepRecordScopedUpdate) SetNillablePathID(v *automationstep.ID) *AutomationStepRecordScopedUpdate {
+	if v != nil {
+		x.SetPathID(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_SetNillablePathID = RoleStep
+
+// ClearPathID clears the value of the "path_id" field.
+func (x *AutomationStepRecordScopedUpdate) ClearPathID() *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.ClearPathID() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_ClearPathID = RoleStep
+
+// SetPathOutcomes sets the "path_outcomes" field.
+func (x *AutomationStepRecordScopedUpdate) SetPathOutcomes(v map[automationstep.ID]conditiontree.Truth) *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.SetPathOutcomes(v) })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_SetPathOutcomes = RoleStep
+
+// ClearPathOutcomes clears the value of the "path_outcomes" field.
+func (x *AutomationStepRecordScopedUpdate) ClearPathOutcomes() *AutomationStepRecordScopedUpdate {
+	x.set = append(x.set, func(b *AutomationStepRecordUpdate) { b.ClearPathOutcomes() })
+	return x
+}
+
+const RoleOf_AutomationStepRecordScopedUpdate_ClearPathOutcomes = RoleStep
 
 // build makes the ent update on the client of s and verifies the references it sets.
 func (x *AutomationStepRecordScopedUpdate) build(ctx context.Context, s *Scoped) (*AutomationStepRecordUpdate, error) {

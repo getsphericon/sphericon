@@ -459,8 +459,10 @@ var (
 		{Name: "step_id", Type: field.TypeString},
 		{Name: "reached_at", Type: field.TypeTime},
 		{Name: "left_at", Type: field.TypeTime, Nullable: true},
-		{Name: "outcome", Type: field.TypeEnum, Nullable: true, Enums: []string{"done", "skipped"}},
+		{Name: "outcome", Type: field.TypeEnum, Nullable: true, Enums: []string{"done", "skipped", "path"}},
 		{Name: "skip_reason", Type: field.TypeEnum, Nullable: true, Enums: []string{"suppressed", "unsubscribed_everything", "unsubscribed_source", "unconfirmed", "no_destination", "contact_erased", "no_local_time", "frequency_cap"}},
+		{Name: "path_id", Type: field.TypeString, Nullable: true},
+		{Name: "path_outcomes", Type: field.TypeJSON, Nullable: true},
 		{Name: "due_at", Type: field.TypeTime, Nullable: true},
 		{Name: "run_id", Type: field.TypeInt64},
 		{Name: "workspace_id", Type: field.TypeInt64},
@@ -473,13 +475,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "automation_step_records_automation_runs_run",
-				Columns:    []*schema.Column{AutomationStepRecordsColumns[9]},
+				Columns:    []*schema.Column{AutomationStepRecordsColumns[11]},
 				RefColumns: []*schema.Column{AutomationRunsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "automation_step_records_workspaces_automation_step_records",
-				Columns:    []*schema.Column{AutomationStepRecordsColumns[10]},
+				Columns:    []*schema.Column{AutomationStepRecordsColumns[12]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -488,7 +490,7 @@ var (
 			{
 				Name:    "automation_step_records_workspace_id_run_id_step_id",
 				Unique:  true,
-				Columns: []*schema.Column{AutomationStepRecordsColumns[10], AutomationStepRecordsColumns[9], AutomationStepRecordsColumns[3]},
+				Columns: []*schema.Column{AutomationStepRecordsColumns[12], AutomationStepRecordsColumns[11], AutomationStepRecordsColumns[3]},
 			},
 		},
 	}
@@ -3731,10 +3733,10 @@ func init() {
 	}
 	AutomationStepRecordsTable.Annotation.Checks = map[string]string{
 		"automation_step_records_left_check":        "outcome IS NULL OR left_at IS NOT NULL",
-		"automation_step_records_outcome_check":     "outcome IN ('done', 'skipped')",
+		"automation_step_records_outcome_check":     "outcome IN ('done', 'skipped', 'path')",
 		"automation_step_records_reason_check":      "outcome IS NOT NULL OR skip_reason IS NULL",
 		"automation_step_records_skip_reason_check": "skip_reason IN ('suppressed', 'unsubscribed_everything', 'unsubscribed_source', 'unconfirmed', 'no_destination', 'contact_erased', 'no_local_time', 'frequency_cap')",
-		"automation_step_records_skipped_check":     "(outcome = 'done' AND skip_reason IS NULL) OR (outcome = 'skipped' AND skip_reason IS NOT NULL)",
+		"automation_step_records_skipped_check":     "(outcome = 'done' AND skip_reason IS NULL AND path_id IS NULL AND path_outcomes IS NULL) OR (outcome = 'skipped' AND skip_reason IS NOT NULL AND path_id IS NULL AND path_outcomes IS NULL) OR (outcome = 'path' AND path_id IS NOT NULL AND skip_reason IS NULL)",
 	}
 	AutomationVersionsTable.ForeignKeys[0].RefTable = AutomationsTable
 	AutomationVersionsTable.ForeignKeys[1].RefTable = WorkspacesTable

@@ -8861,6 +8861,8 @@ type AutomationStepRecordMutation struct {
 	left_at          *time.Time
 	outcome          *automationsteprecord.Outcome
 	skip_reason      *skipreason.Reason
+	path_id          *automationstep.ID
+	path_outcomes    *map[automationstep.ID]conditiontree.Truth
 	due_at           *time.Time
 	clearedFields    map[string]struct{}
 	workspace        *int64
@@ -9339,6 +9341,104 @@ func (m *AutomationStepRecordMutation) ResetSkipReason() {
 	delete(m.clearedFields, automationsteprecord.FieldSkipReason)
 }
 
+// SetPathID sets the "path_id" field.
+func (m *AutomationStepRecordMutation) SetPathID(a automationstep.ID) {
+	m.path_id = &a
+}
+
+// PathID returns the value of the "path_id" field in the mutation.
+func (m *AutomationStepRecordMutation) PathID() (r automationstep.ID, exists bool) {
+	v := m.path_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPathID returns the old "path_id" field's value of the AutomationStepRecord entity.
+// If the AutomationStepRecord object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationStepRecordMutation) OldPathID(ctx context.Context) (v *automationstep.ID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPathID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPathID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPathID: %w", err)
+	}
+	return oldValue.PathID, nil
+}
+
+// ClearPathID clears the value of the "path_id" field.
+func (m *AutomationStepRecordMutation) ClearPathID() {
+	m.path_id = nil
+	m.clearedFields[automationsteprecord.FieldPathID] = struct{}{}
+}
+
+// PathIDCleared returns if the "path_id" field was cleared in this mutation.
+func (m *AutomationStepRecordMutation) PathIDCleared() bool {
+	_, ok := m.clearedFields[automationsteprecord.FieldPathID]
+	return ok
+}
+
+// ResetPathID resets all changes to the "path_id" field.
+func (m *AutomationStepRecordMutation) ResetPathID() {
+	m.path_id = nil
+	delete(m.clearedFields, automationsteprecord.FieldPathID)
+}
+
+// SetPathOutcomes sets the "path_outcomes" field.
+func (m *AutomationStepRecordMutation) SetPathOutcomes(value map[automationstep.ID]conditiontree.Truth) {
+	m.path_outcomes = &value
+}
+
+// PathOutcomes returns the value of the "path_outcomes" field in the mutation.
+func (m *AutomationStepRecordMutation) PathOutcomes() (r map[automationstep.ID]conditiontree.Truth, exists bool) {
+	v := m.path_outcomes
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPathOutcomes returns the old "path_outcomes" field's value of the AutomationStepRecord entity.
+// If the AutomationStepRecord object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationStepRecordMutation) OldPathOutcomes(ctx context.Context) (v map[automationstep.ID]conditiontree.Truth, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPathOutcomes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPathOutcomes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPathOutcomes: %w", err)
+	}
+	return oldValue.PathOutcomes, nil
+}
+
+// ClearPathOutcomes clears the value of the "path_outcomes" field.
+func (m *AutomationStepRecordMutation) ClearPathOutcomes() {
+	m.path_outcomes = nil
+	m.clearedFields[automationsteprecord.FieldPathOutcomes] = struct{}{}
+}
+
+// PathOutcomesCleared returns if the "path_outcomes" field was cleared in this mutation.
+func (m *AutomationStepRecordMutation) PathOutcomesCleared() bool {
+	_, ok := m.clearedFields[automationsteprecord.FieldPathOutcomes]
+	return ok
+}
+
+// ResetPathOutcomes resets all changes to the "path_outcomes" field.
+func (m *AutomationStepRecordMutation) ResetPathOutcomes() {
+	m.path_outcomes = nil
+	delete(m.clearedFields, automationsteprecord.FieldPathOutcomes)
+}
+
 // SetDueAt sets the "due_at" field.
 func (m *AutomationStepRecordMutation) SetDueAt(t time.Time) {
 	m.due_at = &t
@@ -9476,7 +9576,7 @@ func (m *AutomationStepRecordMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationStepRecordMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 12)
 	if m.created_at != nil {
 		fields = append(fields, automationsteprecord.FieldCreatedAt)
 	}
@@ -9503,6 +9603,12 @@ func (m *AutomationStepRecordMutation) Fields() []string {
 	}
 	if m.skip_reason != nil {
 		fields = append(fields, automationsteprecord.FieldSkipReason)
+	}
+	if m.path_id != nil {
+		fields = append(fields, automationsteprecord.FieldPathID)
+	}
+	if m.path_outcomes != nil {
+		fields = append(fields, automationsteprecord.FieldPathOutcomes)
 	}
 	if m.due_at != nil {
 		fields = append(fields, automationsteprecord.FieldDueAt)
@@ -9533,6 +9639,10 @@ func (m *AutomationStepRecordMutation) Field(name string) (ent.Value, bool) {
 		return m.Outcome()
 	case automationsteprecord.FieldSkipReason:
 		return m.SkipReason()
+	case automationsteprecord.FieldPathID:
+		return m.PathID()
+	case automationsteprecord.FieldPathOutcomes:
+		return m.PathOutcomes()
 	case automationsteprecord.FieldDueAt:
 		return m.DueAt()
 	}
@@ -9562,6 +9672,10 @@ func (m *AutomationStepRecordMutation) OldField(ctx context.Context, name string
 		return m.OldOutcome(ctx)
 	case automationsteprecord.FieldSkipReason:
 		return m.OldSkipReason(ctx)
+	case automationsteprecord.FieldPathID:
+		return m.OldPathID(ctx)
+	case automationsteprecord.FieldPathOutcomes:
+		return m.OldPathOutcomes(ctx)
 	case automationsteprecord.FieldDueAt:
 		return m.OldDueAt(ctx)
 	}
@@ -9636,6 +9750,20 @@ func (m *AutomationStepRecordMutation) SetField(name string, value ent.Value) er
 		}
 		m.SetSkipReason(v)
 		return nil
+	case automationsteprecord.FieldPathID:
+		v, ok := value.(automationstep.ID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPathID(v)
+		return nil
+	case automationsteprecord.FieldPathOutcomes:
+		v, ok := value.(map[automationstep.ID]conditiontree.Truth)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPathOutcomes(v)
+		return nil
 	case automationsteprecord.FieldDueAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -9685,6 +9813,12 @@ func (m *AutomationStepRecordMutation) ClearedFields() []string {
 	if m.FieldCleared(automationsteprecord.FieldSkipReason) {
 		fields = append(fields, automationsteprecord.FieldSkipReason)
 	}
+	if m.FieldCleared(automationsteprecord.FieldPathID) {
+		fields = append(fields, automationsteprecord.FieldPathID)
+	}
+	if m.FieldCleared(automationsteprecord.FieldPathOutcomes) {
+		fields = append(fields, automationsteprecord.FieldPathOutcomes)
+	}
 	if m.FieldCleared(automationsteprecord.FieldDueAt) {
 		fields = append(fields, automationsteprecord.FieldDueAt)
 	}
@@ -9710,6 +9844,12 @@ func (m *AutomationStepRecordMutation) ClearField(name string) error {
 		return nil
 	case automationsteprecord.FieldSkipReason:
 		m.ClearSkipReason()
+		return nil
+	case automationsteprecord.FieldPathID:
+		m.ClearPathID()
+		return nil
+	case automationsteprecord.FieldPathOutcomes:
+		m.ClearPathOutcomes()
 		return nil
 	case automationsteprecord.FieldDueAt:
 		m.ClearDueAt()
@@ -9748,6 +9888,12 @@ func (m *AutomationStepRecordMutation) ResetField(name string) error {
 		return nil
 	case automationsteprecord.FieldSkipReason:
 		m.ResetSkipReason()
+		return nil
+	case automationsteprecord.FieldPathID:
+		m.ResetPathID()
+		return nil
+	case automationsteprecord.FieldPathOutcomes:
+		m.ResetPathOutcomes()
 		return nil
 	case automationsteprecord.FieldDueAt:
 		m.ResetDueAt()
