@@ -218,6 +218,15 @@ type BranchPath struct {
 	Steps     []Step               `json:"steps"`
 }
 
+// Conditions are the Conditions of the listed paths, in the order they are tested.
+func (b Branch) Conditions() []conditiontree.Branch {
+	out := make([]conditiontree.Branch, len(b.Paths))
+	for i, p := range b.Paths {
+		out[i] = p.Condition
+	}
+	return out
+}
+
 // Fork is a Step whose paths rejoin after it (ADR 0122, ADR 0124): the walker reaches the Steps of
 // its paths through it, and a new fork kind implements it.
 type Fork interface {

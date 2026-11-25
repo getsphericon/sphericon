@@ -66,9 +66,7 @@ func branchConditions(v *ent.AutomationVersion) []conditiontree.Branch {
 	var out []conditiontree.Branch
 	for _, st := range automationstep.All(v.Steps) {
 		if b, ok := st.Payload.(automationstep.Branch); ok {
-			for _, p := range b.Paths {
-				out = append(out, p.Condition)
-			}
+			out = append(out, b.Conditions()...)
 		}
 	}
 	return out

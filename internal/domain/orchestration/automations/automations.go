@@ -223,11 +223,7 @@ func checkUnknownPaths(steps automationstep.Path) error {
 		if !ok {
 			continue
 		}
-		conditions := make([]conditiontree.Branch, len(b.Paths))
-		for i, p := range b.Paths {
-			conditions[i] = p.Condition
-		}
-		needs := NeedsUnknownPath(conditions)
+		needs := NeedsUnknownPath(b.Conditions())
 		switch {
 		case needs && b.Unknown == nil:
 			return refuse(st, "a branch whose conditions count an open or a click needs an unknown path, taken when one is unknown for the contact")
