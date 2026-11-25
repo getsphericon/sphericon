@@ -19,7 +19,7 @@ import (
 
 var regexMap = map[string]ogenregex.Regexp{
 	"^(?:whsec_)?(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})$": ogenregex.MustCompile("^(?:whsec_)?(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})$"),
-	"^([01][0-9]|2[0-3]):[0-5][0-9]$":     ogenregex.MustCompile("^([01][0-9]|2[0-3]):[0-5][0-9]$"),
+	"^([01]\\d|2[0-3]):[0-5]\\d$":         ogenregex.MustCompile("^([01]\\d|2[0-3]):[0-5]\\d$"),
 	"^[0-9A-Za-z]{8}$":                    ogenregex.MustCompile("^[0-9A-Za-z]{8}$"),
 	"^[A-Z]{2}$":                          ogenregex.MustCompile("^[A-Z]{2}$"),
 	"^[A-Z]{3}$":                          ogenregex.MustCompile("^[A-Z]{3}$"),

@@ -1344,6 +1344,7 @@ func (c *ConverterImpl) PathStepSum(source external.AutomationStepSum) external.
 	externalapiPathStepSum.TelegramStep = source.TelegramStep
 	externalapiPathStepSum.SmsStep = source.SmsStep
 	externalapiPathStepSum.WaitStep = source.WaitStep
+	externalapiPathStepSum.WaitUntilStep = source.WaitUntilStep
 	externalapiPathStepSum.ApplyTagStep = source.ApplyTagStep
 	externalapiPathStepSum.RemoveTagStep = source.RemoveTagStep
 	externalapiPathStepSum.HttpStep = source.HttpStep
@@ -1375,6 +1376,8 @@ func (c *ConverterImpl) PathStepType(source external.AutomationStepSumType) exte
 		externalapiPathStepSumType = external.TelegramStepPathStepSum
 	case external.WaitStepAutomationStepSum:
 		externalapiPathStepSumType = external.WaitStepPathStepSum
+	case external.WaitUntilStepAutomationStepSum:
+		externalapiPathStepSumType = external.WaitUntilStepPathStepSum
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -1905,6 +1908,7 @@ func (c *ConverterImpl) SplitPathStepSum(source external.AutomationStepSum) exte
 	externalapiSplitPathStepSum.TelegramStep = source.TelegramStep
 	externalapiSplitPathStepSum.SmsStep = source.SmsStep
 	externalapiSplitPathStepSum.WaitStep = source.WaitStep
+	externalapiSplitPathStepSum.WaitUntilStep = source.WaitUntilStep
 	externalapiSplitPathStepSum.ApplyTagStep = source.ApplyTagStep
 	externalapiSplitPathStepSum.RemoveTagStep = source.RemoveTagStep
 	externalapiSplitPathStepSum.HttpStep = source.HttpStep
@@ -1936,6 +1940,8 @@ func (c *ConverterImpl) SplitPathStepType(source external.AutomationStepSumType)
 		externalapiSplitPathStepSumType = external.TelegramStepSplitPathStepSum
 	case external.WaitStepAutomationStepSum:
 		externalapiSplitPathStepSumType = external.WaitStepSplitPathStepSum
+	case external.WaitUntilStepAutomationStepSum:
+		externalapiSplitPathStepSumType = external.WaitUntilStepSplitPathStepSum
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -2263,6 +2269,27 @@ func (c *ConverterImpl) WaitStepToResource(source automations.WaitView) external
 	externalapiWaitStep.Seconds = count(source.Seconds)
 	return externalapiWaitStep
 }
+func (c *ConverterImpl) WaitUntilStepToResource(source automations.WaitUntilView) (external.WaitUntilStep, error) {
+	var externalapiWaitUntilStep external.WaitUntilStep
+	externalapiWaitUntilStep.ID = c.automationstepIDToExternalapiStepId(source.ID)
+	externalapiWaitUntilStep.Type = waitUntilStepType(source.Type)
+	externalapiWaitUntilMoment, err := waitUntilMoment(c, source.Until)
+	if err != nil {
+		return externalapiWaitUntilStep, err
+	}
+	externalapiWaitUntilStep.Until = externalapiWaitUntilMoment
+	return externalapiWaitUntilStep, nil
+}
+func (c *ConverterImpl) WaitUntilTimeOfDayToResource(source automationstep.TimeOfDay) external.WaitUntilTimeOfDay {
+	var externalapiWaitUntilTimeOfDay external.WaitUntilTimeOfDay
+	externalapiWaitUntilTimeOfDay.Form = waitUntilTimeOfDayForm(source)
+	externalapiWaitUntilTimeOfDay.LocalTime = external.LocalTime(source.LocalTime)
+	externalapiWaitUntilTimeOfDay.Weekdays = make([]external.Weekday, len(source.Weekdays))
+	for i := 0; i < len(source.Weekdays); i++ {
+		externalapiWaitUntilTimeOfDay.Weekdays[i] = c.WeekdayToResource(source.Weekdays[i])
+	}
+	return externalapiWaitUntilTimeOfDay
+}
 func (c *ConverterImpl) WebhookDisabledReasonToResource(source webhookendpoint.DisabledReason) external.WebhookDisabledReason {
 	var externalapiWebhookDisabledReason external.WebhookDisabledReason
 	switch source {
@@ -2320,6 +2347,28 @@ func (c *ConverterImpl) WebhooksListPage(source pagination.Page[external.Webhook
 	externalapiWebhooksListOK.TotalItems = count(source.TotalItems)
 	externalapiWebhooksListOK.TotalPages = count(source.TotalPages)
 	return &externalapiWebhooksListOK
+}
+func (c *ConverterImpl) WeekdayToResource(source localcalendar.Weekday) external.Weekday {
+	var externalapiWeekday external.Weekday
+	switch source {
+	case localcalendar.Friday:
+		externalapiWeekday = external.WeekdayFriday
+	case localcalendar.Monday:
+		externalapiWeekday = external.WeekdayMonday
+	case localcalendar.Saturday:
+		externalapiWeekday = external.WeekdaySaturday
+	case localcalendar.Sunday:
+		externalapiWeekday = external.WeekdaySunday
+	case localcalendar.Thursday:
+		externalapiWeekday = external.WeekdayThursday
+	case localcalendar.Tuesday:
+		externalapiWeekday = external.WeekdayTuesday
+	case localcalendar.Wednesday:
+		externalapiWeekday = external.WeekdayWednesday
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiWeekday
 }
 func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) external.WorkspaceResource {
 	var externalapiWorkspaceResource external.WorkspaceResource

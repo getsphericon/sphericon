@@ -40,6 +40,8 @@ func siteStepIDs(p siteapi.AutomationPath) []string {
 			ids[i] = string(s.SmsStep.ID)
 		case siteapi.WaitStepAutomationStepSum:
 			ids[i] = string(s.WaitStep.ID)
+		case siteapi.WaitUntilStepAutomationStepSum:
+			ids[i] = string(s.WaitUntilStep.ID)
 		case siteapi.ApplyTagStepAutomationStepSum:
 			ids[i] = string(s.ApplyTagStep.ID)
 		case siteapi.RemoveTagStepAutomationStepSum:

@@ -675,6 +675,7 @@ func (c *InputsImpl) PathStepInputSum(source site.PathStepInputSum) site.Automat
 	siteapiAutomationStepInputSum.TelegramStepInput = source.TelegramStepInput
 	siteapiAutomationStepInputSum.SmsStepInput = source.SmsStepInput
 	siteapiAutomationStepInputSum.WaitStepInput = source.WaitStepInput
+	siteapiAutomationStepInputSum.WaitUntilStepInput = source.WaitUntilStepInput
 	siteapiAutomationStepInputSum.ApplyTagStepInput = source.ApplyTagStepInput
 	siteapiAutomationStepInputSum.RemoveTagStepInput = source.RemoveTagStepInput
 	siteapiAutomationStepInputSum.HttpStepInput = source.HttpStepInput
@@ -706,6 +707,8 @@ func (c *InputsImpl) PathStepInputType(source site.PathStepInputSumType) site.Au
 		siteapiAutomationStepInputSumType = site.TelegramStepInputAutomationStepInputSum
 	case site.WaitStepInputPathStepInputSum:
 		siteapiAutomationStepInputSumType = site.WaitStepInputAutomationStepInputSum
+	case site.WaitUntilStepInputPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.WaitUntilStepInputAutomationStepInputSum
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -1111,6 +1114,7 @@ func (c *InputsImpl) SplitPathStepInputSum(source site.SplitPathStepInputSum) si
 	siteapiAutomationStepInputSum.TelegramStepInput = source.TelegramStepInput
 	siteapiAutomationStepInputSum.SmsStepInput = source.SmsStepInput
 	siteapiAutomationStepInputSum.WaitStepInput = source.WaitStepInput
+	siteapiAutomationStepInputSum.WaitUntilStepInput = source.WaitUntilStepInput
 	siteapiAutomationStepInputSum.ApplyTagStepInput = source.ApplyTagStepInput
 	siteapiAutomationStepInputSum.RemoveTagStepInput = source.RemoveTagStepInput
 	siteapiAutomationStepInputSum.HttpStepInput = source.HttpStepInput
@@ -1142,6 +1146,8 @@ func (c *InputsImpl) SplitPathStepInputType(source site.SplitPathStepInputSumTyp
 		siteapiAutomationStepInputSumType = site.TelegramStepInputAutomationStepInputSum
 	case site.WaitStepInputSplitPathStepInputSum:
 		siteapiAutomationStepInputSumType = site.WaitStepInputAutomationStepInputSum
+	case site.WaitUntilStepInputSplitPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.WaitUntilStepInputAutomationStepInputSum
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
@@ -1266,6 +1272,26 @@ func (c *InputsImpl) WaitStepIn(source site.WaitStepInput) automationstep.Wait {
 	automationstepWait.Seconds = int32ToInt(source.Seconds)
 	return automationstepWait
 }
+func (c *InputsImpl) WaitUntilStepIn(source site.WaitUntilStepInput) (automationstep.WaitUntil, error) {
+	var automationstepWaitUntil automationstep.WaitUntil
+	automationstepUntil, err := waitUntilMomentIn(c, source.Until)
+	if err != nil {
+		return automationstepWaitUntil, err
+	}
+	automationstepWaitUntil.Until = automationstepUntil
+	return automationstepWaitUntil, nil
+}
+func (c *InputsImpl) WaitUntilTimeOfDayIn(source site.WaitUntilTimeOfDayInput) automationstep.TimeOfDay {
+	var automationstepTimeOfDay automationstep.TimeOfDay
+	automationstepTimeOfDay.LocalTime = string(source.LocalTime)
+	if source.Weekdays != nil {
+		automationstepTimeOfDay.Weekdays = make([]localcalendar.Weekday, len(source.Weekdays))
+		for i := 0; i < len(source.Weekdays); i++ {
+			automationstepTimeOfDay.Weekdays[i] = c.WeekdayIn(source.Weekdays[i])
+		}
+	}
+	return automationstepTimeOfDay
+}
 func (c *InputsImpl) WebhookCreate(source *site.CreateWebhookInput) webhookendpoints.CreateInput {
 	var webhookendpointsCreateInput webhookendpoints.CreateInput
 	if source != nil {
@@ -1289,6 +1315,28 @@ func (c *InputsImpl) WebhookUpdate(source *site.UpdateWebhookInput) webhookendpo
 		webhookendpointsUpdateInput.Enabled = boolPatch((*source).Enabled)
 	}
 	return webhookendpointsUpdateInput
+}
+func (c *InputsImpl) WeekdayIn(source site.Weekday) localcalendar.Weekday {
+	var localcalendarWeekday localcalendar.Weekday
+	switch source {
+	case site.WeekdayFriday:
+		localcalendarWeekday = localcalendar.Friday
+	case site.WeekdayMonday:
+		localcalendarWeekday = localcalendar.Monday
+	case site.WeekdaySaturday:
+		localcalendarWeekday = localcalendar.Saturday
+	case site.WeekdaySunday:
+		localcalendarWeekday = localcalendar.Sunday
+	case site.WeekdayThursday:
+		localcalendarWeekday = localcalendar.Thursday
+	case site.WeekdayTuesday:
+		localcalendarWeekday = localcalendar.Tuesday
+	case site.WeekdayWednesday:
+		localcalendarWeekday = localcalendar.Wednesday
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return localcalendarWeekday
 }
 func (c *InputsImpl) WorkspaceCreate(source *site.SiteCreateWorkspaceInput) workspaceview.CreateInput {
 	var workspaceviewCreateInput workspaceview.CreateInput

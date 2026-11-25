@@ -16,9 +16,10 @@ type PathView struct {
 }
 
 // StepView is a stored Step as the API shows it, one type per kind (EmailView, TelegramView,
-// SMSView, WaitView, TagView, HTTPView, EndView, BranchView, SplitView): each holds its kind's fields only, the defaults it was
-// stored without filled in. An HTTP step is masked: its URL, header values and signing secret
-// never leave the server, only the header names and whether a secret is set.
+// SMSView, WaitView, WaitUntilView, TagView, HTTPView, EndView, BranchView, SplitView): each holds
+// its kind's fields only, the defaults it was stored without filled in. An HTTP step is masked: its
+// URL, header values and signing secret never leave the server, only the header names and whether
+// a secret is set.
 type StepView interface{ stepView() }
 
 // EmailView is an email step. Doc is its editor document and EditorVersion the editor that
@@ -59,6 +60,13 @@ type WaitView struct {
 	ID      automationstep.ID
 	Type    automationstep.Kind
 	Seconds int
+}
+
+// WaitUntilView is a Wait until: its moment, in its stored form.
+type WaitUntilView struct {
+	ID    automationstep.ID
+	Type  automationstep.Kind
+	Until automationstep.Until
 }
 
 // TagView is an apply tag or a remove tag step, as Type says.
@@ -114,15 +122,16 @@ type SplitPathView struct {
 	Steps  []StepView
 }
 
-func (EmailView) stepView()    {}
-func (BranchView) stepView()   {}
-func (SplitView) stepView()    {}
-func (TelegramView) stepView() {}
-func (SMSView) stepView()      {}
-func (WaitView) stepView()     {}
-func (TagView) stepView()      {}
-func (HTTPView) stepView()     {}
-func (EndView) stepView()      {}
+func (EmailView) stepView()     {}
+func (BranchView) stepView()    {}
+func (SplitView) stepView()     {}
+func (TelegramView) stepView()  {}
+func (SMSView) stepView()       {}
+func (WaitView) stepView()      {}
+func (WaitUntilView) stepView() {}
+func (TagView) stepView()       {}
+func (HTTPView) stepView()      {}
+func (EndView) stepView()       {}
 
 // HeaderName is a header of an HTTP step without its value.
 type HeaderName struct {
@@ -200,6 +209,8 @@ func leafView(st *automationstep.Step) StepView {
 	switch s := st.Payload.(type) {
 	case automationstep.Wait:
 		return WaitView{ID: st.ID, Type: st.Kind(), Seconds: s.Seconds}
+	case automationstep.WaitUntil:
+		return WaitUntilView{ID: st.ID, Type: st.Kind(), Until: s.Until}
 	case automationstep.End:
 		return EndView{ID: st.ID, Type: st.Kind()}
 	case automationstep.Tagging:

@@ -9,6 +9,7 @@ export function stepLabel(t: TFunction, step: AutomationStep): string {
     telegram: t(($) => $.automations.stepTelegram),
     sms: t(($) => $.automations.stepSms),
     wait: t(($) => $.automations.stepWait),
+    wait_until: t(($) => $.automations.stepWaitUntil),
     apply_tag: t(($) => $.automations.stepApplyTag),
     remove_tag: t(($) => $.automations.stepRemoveTag),
     http: t(($) => $.automations.stepHttp),
@@ -35,6 +36,7 @@ function stepDetail(step: AutomationStep): string {
     case 'sms':
     case 'telegram':
     case 'wait':
+    case 'wait_until':
     default:
       return ''
   }

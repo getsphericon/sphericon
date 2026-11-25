@@ -135,58 +135,83 @@ func validate(steps automationstep.Path, linkLength int) error {
 		if pos >= MaxStepsPerVersion {
 			return refuse(st, fmt.Sprintf("a version has at most %d steps over all its paths", MaxStepsPerVersion))
 		}
-		switch s := st.Payload.(type) {
-		case automationstep.Email:
-			if err := emailrender.Lint(s.Subject, s.Body, nil).Error; err != nil {
-				return refuse(st, err.Error())
-			}
-		case automationstep.Telegram:
-			if strings.TrimSpace(s.Text) == "" {
-				return refuse(st, "a Telegram step needs a text")
-			}
-			for _, err := range []error{
-				telegramrender.Check(s.Text),
-				telegramrender.CheckUnsubscribeButton(s.UnsubscribeButton),
-				telegramrender.CheckImage(s.ImageURL),
-				telegramrender.CheckButtons(s.Buttons),
-			} {
-				if err != nil {
-					return refuse(st, err.Error())
-				}
-			}
-		case automationstep.SMS:
-			if strings.TrimSpace(s.Text) == "" {
-				return refuse(st, "an SMS step needs a text")
-			}
-			if err := smsrender.Check(s.Text); err != nil {
-				return refuse(st, err.Error())
-			}
-			// Twilio is the one SMS provider, so its length limit is the one a text is held to. Its
-			// links count as the short links they go out as, unless the step keeps them.
-			if err := smsrender.CheckLength(s.Text, twilio.MaxLength, lo.Ternary(s.TracksLinks(), linkLength, 0)); err != nil {
-				return refuse(st, err.Error())
-			}
-		case automationstep.HTTP:
-		case automationstep.Wait:
-			if s.Seconds < 0 {
-				return refuse(st, "a wait cannot be negative")
-			}
-		case automationstep.Tagging:
-			if strings.TrimSpace(s.TagName()) == "" {
-				return refuse(st, "a tag step needs a tag name")
-			}
-		case automationstep.End:
-		case automationstep.Branch:
-			if err := validateBranch(st, s); err != nil {
-				return err
-			}
-		case automationstep.Split:
-			if err := validateSplit(st, s); err != nil {
-				return err
-			}
-		default:
-			return refuse(st, "the step has no known kind")
+		if err := validateStep(st, linkLength); err != nil {
+			return err
 		}
+	}
+	return nil
+}
+
+// validateStep checks the Step st on its own, by its kind; linkLength is as validate's.
+func validateStep(st *automationstep.Step, linkLength int) error {
+	switch s := st.Payload.(type) {
+	case automationstep.Email:
+		if err := emailrender.Lint(s.Subject, s.Body, nil).Error; err != nil {
+			return refuse(st, err.Error())
+		}
+	case automationstep.Telegram:
+		if strings.TrimSpace(s.Text) == "" {
+			return refuse(st, "a Telegram step needs a text")
+		}
+		for _, err := range []error{
+			telegramrender.Check(s.Text),
+			telegramrender.CheckUnsubscribeButton(s.UnsubscribeButton),
+			telegramrender.CheckImage(s.ImageURL),
+			telegramrender.CheckButtons(s.Buttons),
+		} {
+			if err != nil {
+				return refuse(st, err.Error())
+			}
+		}
+	case automationstep.SMS:
+		if strings.TrimSpace(s.Text) == "" {
+			return refuse(st, "an SMS step needs a text")
+		}
+		if err := smsrender.Check(s.Text); err != nil {
+			return refuse(st, err.Error())
+		}
+		// Twilio is the one SMS provider, so its length limit is the one a text is held to. Its
+		// links count as the short links they go out as, unless the step keeps them.
+		if err := smsrender.CheckLength(s.Text, twilio.MaxLength, lo.Ternary(s.TracksLinks(), linkLength, 0)); err != nil {
+			return refuse(st, err.Error())
+		}
+	case automationstep.HTTP:
+	case automationstep.Wait:
+		if s.Seconds < 0 {
+			return refuse(st, "a wait cannot be negative")
+		}
+	case automationstep.WaitUntil:
+		if err := checkUntil(s.Until); err != nil {
+			return refuse(st, err.Error())
+		}
+	case automationstep.Tagging:
+		if strings.TrimSpace(s.TagName()) == "" {
+			return refuse(st, "a tag step needs a tag name")
+		}
+	case automationstep.End:
+	case automationstep.Branch:
+		if err := validateBranch(st, s); err != nil {
+			return err
+		}
+	case automationstep.Split:
+		if err := validateSplit(st, s); err != nil {
+			return err
+		}
+	default:
+		return refuse(st, "the step has no known kind")
+	}
+	return nil
+}
+
+// checkUntil refuses a Wait until's moment out of its bounds (decision 6 of #1613): a malformed
+// local time, an unknown or a repeated weekday, each named.
+func checkUntil(u automationstep.Until) error {
+	switch u := u.(type) {
+	case automationstep.TimeOfDay:
+		_, err := u.Calendar()
+		return err
+	case nil:
+		return errors.New("a wait until needs the moment it waits for")
 	}
 	return nil
 }

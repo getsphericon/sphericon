@@ -4450,6 +4450,22 @@ func (s AutomationStepInputSum) encodeFields(e *jx.Encoder) {
 				e.Int32(s.Seconds)
 			}
 		}
+	case WaitUntilStepInputAutomationStepInputSum:
+		e.FieldStart("type")
+		e.Str("wait_until")
+		{
+			s := s.WaitUntilStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("until")
+				s.Until.Encode(e)
+			}
+		}
 	case ApplyTagStepInputAutomationStepInputSum:
 		e.FieldStart("type")
 		e.Str("apply_tag")
@@ -4626,6 +4642,9 @@ func (s *AutomationStepInputSum) Decode(d *jx.Decoder) error {
 				case "wait":
 					s.Type = WaitStepInputAutomationStepInputSum
 					found = true
+				case "wait_until":
+					s.Type = WaitUntilStepInputAutomationStepInputSum
+					found = true
 				case "apply_tag":
 					s.Type = ApplyTagStepInputAutomationStepInputSum
 					found = true
@@ -4672,6 +4691,10 @@ func (s *AutomationStepInputSum) Decode(d *jx.Decoder) error {
 		}
 	case WaitStepInputAutomationStepInputSum:
 		if err := s.WaitStepInput.Decode(d); err != nil {
+			return err
+		}
+	case WaitUntilStepInputAutomationStepInputSum:
+		if err := s.WaitUntilStepInput.Decode(d); err != nil {
 			return err
 		}
 	case ApplyTagStepInputAutomationStepInputSum:
@@ -4844,6 +4867,20 @@ func (s AutomationStepSum) encodeFields(e *jx.Encoder) {
 				e.Int32(s.Seconds)
 			}
 		}
+	case WaitUntilStepAutomationStepSum:
+		e.FieldStart("type")
+		e.Str("wait_until")
+		{
+			s := s.WaitUntilStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("until")
+				s.Until.Encode(e)
+			}
+		}
 	case ApplyTagStepAutomationStepSum:
 		e.FieldStart("type")
 		e.Str("apply_tag")
@@ -4992,6 +5029,9 @@ func (s *AutomationStepSum) Decode(d *jx.Decoder) error {
 				case "wait":
 					s.Type = WaitStepAutomationStepSum
 					found = true
+				case "wait_until":
+					s.Type = WaitUntilStepAutomationStepSum
+					found = true
 				case "apply_tag":
 					s.Type = ApplyTagStepAutomationStepSum
 					found = true
@@ -5038,6 +5078,10 @@ func (s *AutomationStepSum) Decode(d *jx.Decoder) error {
 		}
 	case WaitStepAutomationStepSum:
 		if err := s.WaitStep.Decode(d); err != nil {
+			return err
+		}
+	case WaitUntilStepAutomationStepSum:
+		if err := s.WaitUntilStep.Decode(d); err != nil {
 			return err
 		}
 	case ApplyTagStepAutomationStepSum:
@@ -29651,6 +29695,22 @@ func (s PathStepInputSum) encodeFields(e *jx.Encoder) {
 				e.Int32(s.Seconds)
 			}
 		}
+	case WaitUntilStepInputPathStepInputSum:
+		e.FieldStart("type")
+		e.Str("wait_until")
+		{
+			s := s.WaitUntilStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("until")
+				s.Until.Encode(e)
+			}
+		}
 	case ApplyTagStepInputPathStepInputSum:
 		e.FieldStart("type")
 		e.Str("apply_tag")
@@ -29827,6 +29887,9 @@ func (s *PathStepInputSum) Decode(d *jx.Decoder) error {
 				case "wait":
 					s.Type = WaitStepInputPathStepInputSum
 					found = true
+				case "wait_until":
+					s.Type = WaitUntilStepInputPathStepInputSum
+					found = true
 				case "apply_tag":
 					s.Type = ApplyTagStepInputPathStepInputSum
 					found = true
@@ -29873,6 +29936,10 @@ func (s *PathStepInputSum) Decode(d *jx.Decoder) error {
 		}
 	case WaitStepInputPathStepInputSum:
 		if err := s.WaitStepInput.Decode(d); err != nil {
+			return err
+		}
+	case WaitUntilStepInputPathStepInputSum:
+		if err := s.WaitUntilStepInput.Decode(d); err != nil {
 			return err
 		}
 	case ApplyTagStepInputPathStepInputSum:
@@ -30045,6 +30112,20 @@ func (s PathStepSum) encodeFields(e *jx.Encoder) {
 				e.Int32(s.Seconds)
 			}
 		}
+	case WaitUntilStepPathStepSum:
+		e.FieldStart("type")
+		e.Str("wait_until")
+		{
+			s := s.WaitUntilStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("until")
+				s.Until.Encode(e)
+			}
+		}
 	case ApplyTagStepPathStepSum:
 		e.FieldStart("type")
 		e.Str("apply_tag")
@@ -30193,6 +30274,9 @@ func (s *PathStepSum) Decode(d *jx.Decoder) error {
 				case "wait":
 					s.Type = WaitStepPathStepSum
 					found = true
+				case "wait_until":
+					s.Type = WaitUntilStepPathStepSum
+					found = true
 				case "apply_tag":
 					s.Type = ApplyTagStepPathStepSum
 					found = true
@@ -30239,6 +30323,10 @@ func (s *PathStepSum) Decode(d *jx.Decoder) error {
 		}
 	case WaitStepPathStepSum:
 		if err := s.WaitStep.Decode(d); err != nil {
+			return err
+		}
+	case WaitUntilStepPathStepSum:
+		if err := s.WaitUntilStep.Decode(d); err != nil {
 			return err
 		}
 	case ApplyTagStepPathStepSum:
@@ -70374,6 +70462,22 @@ func (s SplitPathStepInputSum) encodeFields(e *jx.Encoder) {
 				e.Int32(s.Seconds)
 			}
 		}
+	case WaitUntilStepInputSplitPathStepInputSum:
+		e.FieldStart("type")
+		e.Str("wait_until")
+		{
+			s := s.WaitUntilStepInput
+			{
+				if s.ID.Set {
+					e.FieldStart("id")
+					s.ID.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("until")
+				s.Until.Encode(e)
+			}
+		}
 	case ApplyTagStepInputSplitPathStepInputSum:
 		e.FieldStart("type")
 		e.Str("apply_tag")
@@ -70550,6 +70654,9 @@ func (s *SplitPathStepInputSum) Decode(d *jx.Decoder) error {
 				case "wait":
 					s.Type = WaitStepInputSplitPathStepInputSum
 					found = true
+				case "wait_until":
+					s.Type = WaitUntilStepInputSplitPathStepInputSum
+					found = true
 				case "apply_tag":
 					s.Type = ApplyTagStepInputSplitPathStepInputSum
 					found = true
@@ -70596,6 +70703,10 @@ func (s *SplitPathStepInputSum) Decode(d *jx.Decoder) error {
 		}
 	case WaitStepInputSplitPathStepInputSum:
 		if err := s.WaitStepInput.Decode(d); err != nil {
+			return err
+		}
+	case WaitUntilStepInputSplitPathStepInputSum:
+		if err := s.WaitUntilStepInput.Decode(d); err != nil {
 			return err
 		}
 	case ApplyTagStepInputSplitPathStepInputSum:
@@ -70768,6 +70879,20 @@ func (s SplitPathStepSum) encodeFields(e *jx.Encoder) {
 				e.Int32(s.Seconds)
 			}
 		}
+	case WaitUntilStepSplitPathStepSum:
+		e.FieldStart("type")
+		e.Str("wait_until")
+		{
+			s := s.WaitUntilStep
+			{
+				e.FieldStart("id")
+				s.ID.Encode(e)
+			}
+			{
+				e.FieldStart("until")
+				s.Until.Encode(e)
+			}
+		}
 	case ApplyTagStepSplitPathStepSum:
 		e.FieldStart("type")
 		e.Str("apply_tag")
@@ -70916,6 +71041,9 @@ func (s *SplitPathStepSum) Decode(d *jx.Decoder) error {
 				case "wait":
 					s.Type = WaitStepSplitPathStepSum
 					found = true
+				case "wait_until":
+					s.Type = WaitUntilStepSplitPathStepSum
+					found = true
 				case "apply_tag":
 					s.Type = ApplyTagStepSplitPathStepSum
 					found = true
@@ -70962,6 +71090,10 @@ func (s *SplitPathStepSum) Decode(d *jx.Decoder) error {
 		}
 	case WaitStepSplitPathStepSum:
 		if err := s.WaitStep.Decode(d); err != nil {
+			return err
+		}
+	case WaitUntilStepSplitPathStepSum:
+		if err := s.WaitUntilStep.Decode(d); err != nil {
 			return err
 		}
 	case ApplyTagStepSplitPathStepSum:
@@ -77389,6 +77521,969 @@ func (s *WaitStepType) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode implements json.Marshaler.
+func (s *WaitUntilMoment) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *WaitUntilMoment) encodeFields(e *jx.Encoder) {
+	s.OneOf.encodeFields(e)
+}
+
+var jsonFieldsNameOfWaitUntilMoment = [0]string{}
+
+// Decode decodes WaitUntilMoment from json.
+func (s *WaitUntilMoment) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitUntilMoment to nil")
+	}
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return s.OneOf.Decode(d)
+	}); err != nil {
+		return errors.Wrap(err, "decode field OneOf")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		default:
+			return d.Skip()
+		}
+	}); err != nil {
+		return errors.Wrap(err, "decode WaitUntilMoment")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *WaitUntilMoment) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitUntilMoment) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *WaitUntilMomentInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *WaitUntilMomentInput) encodeFields(e *jx.Encoder) {
+	s.OneOf.encodeFields(e)
+}
+
+var jsonFieldsNameOfWaitUntilMomentInput = [0]string{}
+
+// Decode decodes WaitUntilMomentInput from json.
+func (s *WaitUntilMomentInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitUntilMomentInput to nil")
+	}
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return s.OneOf.Decode(d)
+	}); err != nil {
+		return errors.Wrap(err, "decode field OneOf")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		default:
+			return d.Skip()
+		}
+	}); err != nil {
+		return errors.Wrap(err, "decode WaitUntilMomentInput")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *WaitUntilMomentInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitUntilMomentInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes WaitUntilMomentInputSum as json.
+func (s WaitUntilMomentInputSum) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+func (s WaitUntilMomentInputSum) encodeFields(e *jx.Encoder) {
+	switch s.Type {
+	case WaitUntilTimeOfDayInputWaitUntilMomentInputSum:
+		e.FieldStart("form")
+		e.Str("time_of_day")
+		{
+			s := s.WaitUntilTimeOfDayInput
+			{
+				e.FieldStart("localTime")
+				s.LocalTime.Encode(e)
+			}
+			{
+				if s.Weekdays != nil {
+					e.FieldStart("weekdays")
+					e.ArrStart()
+					for _, elem := range s.Weekdays {
+						elem.Encode(e)
+					}
+					e.ArrEnd()
+				}
+			}
+		}
+	}
+}
+
+// Decode decodes WaitUntilMomentInputSum from json.
+func (s *WaitUntilMomentInputSum) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitUntilMomentInputSum to nil")
+	}
+	// Sum type discriminator.
+	if typ := d.Next(); typ != jx.Object {
+		return errors.Errorf("unexpected json type %q", typ)
+	}
+
+	var found bool
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return d.ObjBytes(func(d *jx.Decoder, key []byte) error {
+			if found {
+				return d.Skip()
+			}
+			switch string(key) {
+			case "form":
+				typ, err := d.Str()
+				if err != nil {
+					return err
+				}
+				switch typ {
+				case "time_of_day":
+					s.Type = WaitUntilTimeOfDayInputWaitUntilMomentInputSum
+					found = true
+				default:
+					return errors.Errorf("unknown type %s", typ)
+				}
+				return nil
+			}
+			return d.Skip()
+		})
+	}); err != nil {
+		return errors.Wrap(err, "capture")
+	}
+	if !found {
+		return errors.New("unable to detect sum type variant")
+	}
+	switch s.Type {
+	case WaitUntilTimeOfDayInputWaitUntilMomentInputSum:
+		if err := s.WaitUntilTimeOfDayInput.Decode(d); err != nil {
+			return err
+		}
+	default:
+		return errors.Errorf("inferred invalid type: %s", s.Type)
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s WaitUntilMomentInputSum) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitUntilMomentInputSum) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes WaitUntilMomentSum as json.
+func (s WaitUntilMomentSum) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+func (s WaitUntilMomentSum) encodeFields(e *jx.Encoder) {
+	switch s.Type {
+	case WaitUntilTimeOfDayWaitUntilMomentSum:
+		e.FieldStart("form")
+		e.Str("time_of_day")
+		{
+			s := s.WaitUntilTimeOfDay
+			{
+				e.FieldStart("localTime")
+				s.LocalTime.Encode(e)
+			}
+			{
+				e.FieldStart("weekdays")
+				e.ArrStart()
+				for _, elem := range s.Weekdays {
+					elem.Encode(e)
+				}
+				e.ArrEnd()
+			}
+		}
+	}
+}
+
+// Decode decodes WaitUntilMomentSum from json.
+func (s *WaitUntilMomentSum) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitUntilMomentSum to nil")
+	}
+	// Sum type discriminator.
+	if typ := d.Next(); typ != jx.Object {
+		return errors.Errorf("unexpected json type %q", typ)
+	}
+
+	var found bool
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return d.ObjBytes(func(d *jx.Decoder, key []byte) error {
+			if found {
+				return d.Skip()
+			}
+			switch string(key) {
+			case "form":
+				typ, err := d.Str()
+				if err != nil {
+					return err
+				}
+				switch typ {
+				case "time_of_day":
+					s.Type = WaitUntilTimeOfDayWaitUntilMomentSum
+					found = true
+				default:
+					return errors.Errorf("unknown type %s", typ)
+				}
+				return nil
+			}
+			return d.Skip()
+		})
+	}); err != nil {
+		return errors.Wrap(err, "capture")
+	}
+	if !found {
+		return errors.New("unable to detect sum type variant")
+	}
+	switch s.Type {
+	case WaitUntilTimeOfDayWaitUntilMomentSum:
+		if err := s.WaitUntilTimeOfDay.Decode(d); err != nil {
+			return err
+		}
+	default:
+		return errors.Errorf("inferred invalid type: %s", s.Type)
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s WaitUntilMomentSum) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitUntilMomentSum) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *WaitUntilStep) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *WaitUntilStep) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("id")
+		s.ID.Encode(e)
+	}
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		e.FieldStart("until")
+		s.Until.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfWaitUntilStep = [3]string{
+	0: "id",
+	1: "type",
+	2: "until",
+}
+
+// Decode decodes WaitUntilStep from json.
+func (s *WaitUntilStep) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitUntilStep to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "type":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "until":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Until.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"until\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode WaitUntilStep")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfWaitUntilStep) {
+					name = jsonFieldsNameOfWaitUntilStep[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *WaitUntilStep) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitUntilStep) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *WaitUntilStepInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *WaitUntilStepInput) encodeFields(e *jx.Encoder) {
+	{
+		if s.ID.Set {
+			e.FieldStart("id")
+			s.ID.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		e.FieldStart("until")
+		s.Until.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfWaitUntilStepInput = [3]string{
+	0: "id",
+	1: "type",
+	2: "until",
+}
+
+// Decode decodes WaitUntilStepInput from json.
+func (s *WaitUntilStepInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitUntilStepInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "id":
+			if err := func() error {
+				s.ID.Reset()
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "type":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "until":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Until.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"until\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode WaitUntilStepInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000110,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfWaitUntilStepInput) {
+					name = jsonFieldsNameOfWaitUntilStepInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *WaitUntilStepInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitUntilStepInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes WaitUntilStepInputType as json.
+func (s WaitUntilStepInputType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes WaitUntilStepInputType from json.
+func (s *WaitUntilStepInputType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitUntilStepInputType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch WaitUntilStepInputType(v) {
+	case WaitUntilStepInputTypeWaitUntil:
+		*s = WaitUntilStepInputTypeWaitUntil
+	default:
+		*s = WaitUntilStepInputType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s WaitUntilStepInputType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitUntilStepInputType) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes WaitUntilStepType as json.
+func (s WaitUntilStepType) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes WaitUntilStepType from json.
+func (s *WaitUntilStepType) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitUntilStepType to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch WaitUntilStepType(v) {
+	case WaitUntilStepTypeWaitUntil:
+		*s = WaitUntilStepTypeWaitUntil
+	default:
+		*s = WaitUntilStepType(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s WaitUntilStepType) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitUntilStepType) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *WaitUntilTimeOfDay) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *WaitUntilTimeOfDay) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("form")
+		s.Form.Encode(e)
+	}
+	{
+		e.FieldStart("localTime")
+		s.LocalTime.Encode(e)
+	}
+	{
+		e.FieldStart("weekdays")
+		e.ArrStart()
+		for _, elem := range s.Weekdays {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+}
+
+var jsonFieldsNameOfWaitUntilTimeOfDay = [3]string{
+	0: "form",
+	1: "localTime",
+	2: "weekdays",
+}
+
+// Decode decodes WaitUntilTimeOfDay from json.
+func (s *WaitUntilTimeOfDay) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitUntilTimeOfDay to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "form":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Form.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"form\"")
+			}
+		case "localTime":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.LocalTime.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"localTime\"")
+			}
+		case "weekdays":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				s.Weekdays = make([]Weekday, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem Weekday
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Weekdays = append(s.Weekdays, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"weekdays\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode WaitUntilTimeOfDay")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfWaitUntilTimeOfDay) {
+					name = jsonFieldsNameOfWaitUntilTimeOfDay[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *WaitUntilTimeOfDay) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitUntilTimeOfDay) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes WaitUntilTimeOfDayForm as json.
+func (s WaitUntilTimeOfDayForm) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes WaitUntilTimeOfDayForm from json.
+func (s *WaitUntilTimeOfDayForm) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitUntilTimeOfDayForm to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch WaitUntilTimeOfDayForm(v) {
+	case WaitUntilTimeOfDayFormTimeOfDay:
+		*s = WaitUntilTimeOfDayFormTimeOfDay
+	default:
+		*s = WaitUntilTimeOfDayForm(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s WaitUntilTimeOfDayForm) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitUntilTimeOfDayForm) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *WaitUntilTimeOfDayInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *WaitUntilTimeOfDayInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("form")
+		s.Form.Encode(e)
+	}
+	{
+		e.FieldStart("localTime")
+		s.LocalTime.Encode(e)
+	}
+	{
+		if s.Weekdays != nil {
+			e.FieldStart("weekdays")
+			e.ArrStart()
+			for _, elem := range s.Weekdays {
+				elem.Encode(e)
+			}
+			e.ArrEnd()
+		}
+	}
+}
+
+var jsonFieldsNameOfWaitUntilTimeOfDayInput = [3]string{
+	0: "form",
+	1: "localTime",
+	2: "weekdays",
+}
+
+// Decode decodes WaitUntilTimeOfDayInput from json.
+func (s *WaitUntilTimeOfDayInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitUntilTimeOfDayInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "form":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Form.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"form\"")
+			}
+		case "localTime":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.LocalTime.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"localTime\"")
+			}
+		case "weekdays":
+			if err := func() error {
+				s.Weekdays = make([]Weekday, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem Weekday
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Weekdays = append(s.Weekdays, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"weekdays\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode WaitUntilTimeOfDayInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfWaitUntilTimeOfDayInput) {
+					name = jsonFieldsNameOfWaitUntilTimeOfDayInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *WaitUntilTimeOfDayInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitUntilTimeOfDayInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes WaitUntilTimeOfDayInputForm as json.
+func (s WaitUntilTimeOfDayInputForm) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes WaitUntilTimeOfDayInputForm from json.
+func (s *WaitUntilTimeOfDayInputForm) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode WaitUntilTimeOfDayInputForm to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch WaitUntilTimeOfDayInputForm(v) {
+	case WaitUntilTimeOfDayInputFormTimeOfDay:
+		*s = WaitUntilTimeOfDayInputFormTimeOfDay
+	default:
+		*s = WaitUntilTimeOfDayInputForm(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s WaitUntilTimeOfDayInputForm) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *WaitUntilTimeOfDayInputForm) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes WebhookDisabledReason as json.
 func (s WebhookDisabledReason) Encode(e *jx.Encoder) {
 	e.Str(string(s))
@@ -77759,6 +78854,56 @@ func (s *WebhookTestResult) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *WebhookTestResult) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes Weekday as json.
+func (s Weekday) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes Weekday from json.
+func (s *Weekday) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode Weekday to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch Weekday(v) {
+	case WeekdayMonday:
+		*s = WeekdayMonday
+	case WeekdayTuesday:
+		*s = WeekdayTuesday
+	case WeekdayWednesday:
+		*s = WeekdayWednesday
+	case WeekdayThursday:
+		*s = WeekdayThursday
+	case WeekdayFriday:
+		*s = WeekdayFriday
+	case WeekdaySaturday:
+		*s = WeekdaySaturday
+	case WeekdaySunday:
+		*s = WeekdaySunday
+	default:
+		*s = Weekday(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s Weekday) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *Weekday) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

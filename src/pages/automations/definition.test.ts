@@ -212,6 +212,22 @@ test('a Step of a kind the editor does not know, inside a fork path, keeps the v
   expect(pathInputOf(flow)).toBeNull()
 })
 
+// Until the editor knows a Wait until (ADR 0126), a version holding one opens with the Step kept
+// as stored and is never saved from the editor, so nothing can drop it.
+test('a Wait until is kept as stored and keeps the version unsaved', () => {
+  const waitUntil: AutomationStep = {
+    id: stepId(31),
+    type: 'wait_until',
+    until: { form: 'time_of_day', localTime: '09:00', weekdays: ['monday', 'friday'] },
+  }
+
+  const flow = flowOf(version([...STEPS, waitUntil]))
+
+  expect(flow.path.steps.at(-1)).toEqual({ id: stepId(31), kind: 'kept', step: waitUntil })
+  expect(holdsKept(flow)).toBe(true)
+  expect(pathInputOf(flow)).toBeNull()
+})
+
 test('an email step written in the editor is saved as its document alone', () => {
   const doc = { type: 'doc', content: [{ type: 'paragraph' }] }
   const stored: AutomationStep = {

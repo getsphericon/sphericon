@@ -497,8 +497,10 @@ export default interface Resources {
         "cooldown": "Within the cooldown",
         "cycle": "Caused by this automation",
         "enrollment_ceiling": "Too many enrollments of one contact",
+        "missed": "Reached more than 24 hours late",
         "no_enrollment_key": "The event lacked the enrollment key",
-        "once": "Enrolled before"
+        "once": "Enrolled before",
+        "send_locked": "The date was set by an agent that may not send"
       },
       "smsNodeDescription": "Send a text message to the contact's phone.",
       "splitNodeDescription": "Send each contact down a path drawn by weight, as an A/B test does.",
@@ -530,6 +532,7 @@ export default interface Resources {
       "stepTelegram": "Send Telegram message",
       "stepTrigger": "Trigger",
       "stepWait": "Wait",
+      "stepWaitUntil": "Wait until",
       "stepsLabel": "Steps",
       "tagNameLabel": "Tag",
       "telegramNodeDescription": "Send a Telegram message to the contact's bound chats.",

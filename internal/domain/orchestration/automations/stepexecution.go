@@ -284,7 +284,7 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 	at := place{index: index, step: step}
 
 	switch p := st.Payload.(type) {
-	case automationstep.Wait:
+	case automationstep.Wait, automationstep.WaitUntil:
 		// Its due moment, recorded when the Enrollment reached it, has come.
 		return m.advance(ctx, s, run.ID, at, stepMove{})
 
@@ -483,7 +483,11 @@ func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64,
 		}
 		var due *time.Time
 		if more {
-			due = dueOf(next, now)
+			var err error
+			due, err = dueOf(next, now, func() (*time.Location, error) { return runZone(ctx, ts, runID) })
+			if err != nil {
+				return err
+			}
 			if err := advanceRun(ctx, ts, runID, from.step, next.ID, due); err != nil {
 				return err
 			}

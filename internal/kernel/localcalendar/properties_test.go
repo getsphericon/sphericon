@@ -18,8 +18,6 @@ import (
 // change at midnight.
 var zones = []string{"UTC", "Europe/Berlin", "America/New_York", "Asia/Kolkata", "Pacific/Auckland", "Australia/Lord_Howe", "America/Santiago", "America/Havana"}
 
-var weekdayNames = []string{"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"}
-
 func drawLocalTime(t *rapid.T) (hour, minute int, localTime string) {
 	hour = rapid.IntRange(0, 23).Draw(t, "hour")
 	minute = rapid.IntRange(0, 59).Draw(t, "minute")
@@ -32,8 +30,8 @@ func drawMoment(t *rapid.T) time.Time {
 
 // chosen reports whether a time of day of the weekdays named comes on day: every day when none is
 // named.
-func chosen(weekdays []string, day time.Weekday) bool {
-	return len(weekdays) == 0 || lo.Contains(weekdays, strings.ToLower(day.String()))
+func chosen(weekdays []localcalendar.Weekday, day time.Weekday) bool {
+	return len(weekdays) == 0 || lo.Contains(weekdays, localcalendar.Weekday(strings.ToLower(day.String())))
 }
 
 // readsAs reports whether t reads as the local time in its location, or is the first moment after a
@@ -48,7 +46,7 @@ func TestTheNextTimeOfDayIsTheLocalTimeOnAChosenDayWithinAWeek(t *testing.T) {
 		loc := zone(t, rapid.SampledFrom(zones).Draw(t, "zone"))
 		arrival := drawMoment(t)
 		hour, minute, localTime := drawLocalTime(t)
-		weekdays := rapid.SliceOfDistinct(rapid.SampledFrom(weekdayNames), func(s string) string { return s }).Draw(t, "weekdays")
+		weekdays := rapid.SliceOfDistinct(rapid.SampledFrom(localcalendar.Weekdays), func(d localcalendar.Weekday) localcalendar.Weekday { return d }).Draw(t, "weekdays")
 		w, err := localcalendar.NewTimeOfDay(localTime, weekdays)
 		require.NoError(t, err)
 

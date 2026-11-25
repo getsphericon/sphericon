@@ -240,7 +240,10 @@ func (m *StepExecution) enroll(ctx context.Context, s *ent.Scoped, pub events.Pu
 	first, stepping := automationstep.First(a.row.Edges.LiveVersion.Steps)
 	var due *time.Time
 	if stepping && !ended {
-		due = dueOf(first, now)
+		due, err = dueOf(first, now, func() (*time.Location, error) { return contactZone(ctx, s, held.Contact()) })
+		if err != nil {
+			return entered{}, err
+		}
 	}
 	runID, inserted, err := begin(ctx, s, held, a, o, judged.ordinal, due)
 	if err != nil || !inserted {

@@ -785,10 +785,10 @@ export const zLintFinding = z.object({
 });
 
 /**
- * A local time of day in whole minutes, `HH:MM` from 00:00 to 23:59, read in a time zone the
- * place that holds it names
+ * A local time of day, `HH:MM` in whole minutes from 00:00 to 23:59, read in a time zone the
+ * place that holds it names (`09:00`, `18:30`)
  */
-export const zLocalTime = z.string().regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/);
+export const zLocalTime = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 
 /**
  * A Trigger that enrolls a Contact on a date it holds (ADR 0126): on each anniversary of its
@@ -4733,6 +4733,68 @@ export const zWebhookTestResult = z.object({
 });
 
 /**
+ * A day of the week, by its ISO name in lower case
+ */
+export const zWeekday = z.enum([
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday'
+]);
+
+/**
+ * Wait until the next moment a local time comes, on chosen weekdays or on any day, in the
+ * Contact's time zone, or the Workspace time zone when the Contact has no valid one (ADR 0126)
+ */
+export const zWaitUntilTimeOfDay = z.object({
+  form: z.enum(['time_of_day']),
+  localTime: zLocalTime,
+  weekdays: z.array(zWeekday)
+});
+
+/**
+ * The moment a Wait until holds an Enrollment until, by `form`
+ */
+export const zWaitUntilMoment = zWaitUntilTimeOfDay;
+
+/**
+ * A Step that holds the Enrollment until a calendar moment (ADR 0126): the moment is computed
+ * once, from when the Enrollment reaches the Step, and kept, so neither a restart nor a time zone
+ * changed during the wait moves it. A moment equal to the arrival waits zero.
+ */
+export const zWaitUntilStep = z.object({
+  id: zStepId,
+  type: z.enum(['wait_until']),
+  until: zWaitUntilMoment
+});
+
+/**
+ * Wait until the next moment a local time comes, as a request writes it
+ */
+export const zWaitUntilTimeOfDayInput = z.strictObject({
+  form: z.enum(['time_of_day']),
+  localTime: zLocalTime,
+  weekdays: z.exactOptional(z.array(zWeekday))
+});
+
+/**
+ * The moment a Wait until holds an Enrollment until, by `form`, as a request writes it
+ */
+export const zWaitUntilMomentInput = zWaitUntilTimeOfDayInput;
+
+/**
+ * A Step that holds the Enrollment until a calendar moment, as a request writes it
+ */
+export const zWaitUntilStepInput = z.strictObject({
+  id: z.exactOptional(zStepId),
+  type: z.enum(['wait_until']),
+  until: zWaitUntilMomentInput
+});
+
+/**
  * A test of a moment: within the last `days` days up to now, so a moment still to come is not
  * within. A moment is read as for the moment test.
  */
@@ -4957,6 +5019,9 @@ export const zAutomationStep = z.union([
     type: z.literal('wait')
   }).and(zWaitStep),
   z.object({
+    type: z.literal('wait_until')
+  }).and(zWaitUntilStep),
+  z.object({
     type: z.literal('apply_tag')
   }).and(zApplyTagStep),
   z.object({
@@ -4992,6 +5057,9 @@ export const zAutomationStepInput = z.union([
   z.object({
     type: z.literal('wait')
   }).and(zWaitStepInput),
+  z.object({
+    type: z.literal('wait_until')
+  }).and(zWaitUntilStepInput),
   z.object({
     type: z.literal('apply_tag')
   }).and(zApplyTagStepInput),
@@ -5361,6 +5429,9 @@ export const zPathStep = z.union([
     type: z.literal('wait')
   }).and(zWaitStep),
   z.object({
+    type: z.literal('wait_until')
+  }).and(zWaitUntilStep),
+  z.object({
     type: z.literal('apply_tag')
   }).and(zApplyTagStep),
   z.object({
@@ -5396,6 +5467,9 @@ export const zPathStepInput = z.union([
   z.object({
     type: z.literal('wait')
   }).and(zWaitStepInput),
+  z.object({
+    type: z.literal('wait_until')
+  }).and(zWaitUntilStepInput),
   z.object({
     type: z.literal('apply_tag')
   }).and(zApplyTagStepInput),
@@ -5621,6 +5695,9 @@ export const zSplitPathStep = z.union([
     type: z.literal('wait')
   }).and(zWaitStep),
   z.object({
+    type: z.literal('wait_until')
+  }).and(zWaitUntilStep),
+  z.object({
     type: z.literal('apply_tag')
   }).and(zApplyTagStep),
   z.object({
@@ -5656,6 +5733,9 @@ export const zSplitPathStepInput = z.union([
   z.object({
     type: z.literal('wait')
   }).and(zWaitStepInput),
+  z.object({
+    type: z.literal('wait_until')
+  }).and(zWaitUntilStepInput),
   z.object({
     type: z.literal('apply_tag')
   }).and(zApplyTagStepInput),

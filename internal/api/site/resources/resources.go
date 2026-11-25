@@ -6,6 +6,7 @@ package resources
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
+	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
@@ -81,10 +83,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
-	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
+	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
-	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
@@ -137,6 +138,9 @@ import (
 // goverter:extend telegramStepType
 // goverter:extend smsStepType
 // goverter:extend waitStepType
+// goverter:extend waitUntilStepType
+// goverter:extend waitUntilMoment
+// goverter:extend waitUntilTimeOfDayForm
 // goverter:extend applyTagStepType
 // goverter:extend removeTagStepType
 // goverter:extend httpStepType
@@ -433,6 +437,12 @@ type Converter interface {
 	// goverter:map IntegrationID IntegrationId
 	SmsStepToResource(source automations.SMSView) siteapi.SmsStep
 	WaitStepToResource(source automations.WaitView) siteapi.WaitStep
+	WaitUntilStepToResource(source automations.WaitUntilView) (siteapi.WaitUntilStep, error)
+	// goverter:map . Form | waitUntilTimeOfDayForm
+	// goverter:useEmptyOnNil:slice
+	WaitUntilTimeOfDayToResource(source automationstep.TimeOfDay) siteapi.WaitUntilTimeOfDay
+	// goverter:enum:transform value
+	WeekdayToResource(source localcalendar.Weekday) siteapi.Weekday
 	ApplyTagStepToResource(source automations.TagView) siteapi.ApplyTagStep
 	RemoveTagStepToResource(source automations.TagView) siteapi.RemoveTagStep
 	HttpStepToResource(source automations.HTTPView) siteapi.HttpStep
@@ -1217,6 +1227,12 @@ func stepSum(c Converter, v automations.StepView) (siteapi.AutomationStepSum, er
 		return siteapi.NewSmsStepAutomationStepSum(c.SmsStepToResource(v)), nil
 	case automations.WaitView:
 		return siteapi.NewWaitStepAutomationStepSum(c.WaitStepToResource(v)), nil
+	case automations.WaitUntilView:
+		w, err := c.WaitUntilStepToResource(v)
+		if err != nil {
+			return siteapi.AutomationStepSum{}, err
+		}
+		return siteapi.NewWaitUntilStepAutomationStepSum(w), nil
 	case automations.TagView:
 		// The module shows both tag kinds as one view; the union has an arm for each.
 		switch v.Type {
@@ -1272,6 +1288,24 @@ func telegramStepType(automationstep.Kind) siteapi.TelegramStepType {
 }
 func smsStepType(automationstep.Kind) siteapi.SmsStepType   { return siteapi.SmsStepTypeSMS }
 func waitStepType(automationstep.Kind) siteapi.WaitStepType { return siteapi.WaitStepTypeWait }
+func waitUntilStepType(automationstep.Kind) siteapi.WaitUntilStepType {
+	return siteapi.WaitUntilStepTypeWaitUntil
+}
+func waitUntilTimeOfDayForm(automationstep.TimeOfDay) siteapi.WaitUntilTimeOfDayForm {
+	return siteapi.WaitUntilTimeOfDayFormTimeOfDay
+}
+
+// waitUntilMoment is the arm of a Wait until's moment: a oneOf is beyond goverter, so only the
+// switch is written here. A moment with no arm fails the response.
+func waitUntilMoment(c Converter, u automationstep.Until) (siteapi.WaitUntilMoment, error) {
+	switch u := u.(type) {
+	case automationstep.TimeOfDay:
+		return siteapi.WaitUntilMoment{OneOf: siteapi.NewWaitUntilTimeOfDayWaitUntilMomentSum(c.WaitUntilTimeOfDayToResource(u))}, nil
+	case nil:
+		return siteapi.WaitUntilMoment{}, errors.New("a wait until without a moment")
+	}
+	return siteapi.WaitUntilMoment{}, fmt.Errorf("the moment %T has no arm", u)
+}
 func applyTagStepType(automationstep.Kind) siteapi.ApplyTagStepType {
 	return siteapi.ApplyTagStepTypeApplyTag
 }

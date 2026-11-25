@@ -37,11 +37,6 @@ model RevisionInput {
 
 scalar TimeZoneName extends string;
 
-/** A local time of day in whole minutes, `HH:MM` from 00:00 to 23:59, read in a time zone the
- * place that holds it names */
-@pattern("^([01][0-9]|2[0-3]):[0-5][0-9]$")
-scalar LocalTime extends string;
-
 /** A BCP 47 tag, with its region, that a User picks for how the app shows dates, times and
  * numbers (`en-GB`, `de-DE`). A malformed tag is refused by the handler (422). */
 @maxLength(35)

@@ -40,6 +40,8 @@ func SiteStep(st any) siteapi.AutomationStepInput {
 		return siteapi.AutomationStepInput{OneOf: siteapi.NewSmsStepInputAutomationStepInputSum(v)}
 	case siteapi.WaitStepInput:
 		return siteapi.AutomationStepInput{OneOf: siteapi.NewWaitStepInputAutomationStepInputSum(v)}
+	case siteapi.WaitUntilStepInput:
+		return siteapi.AutomationStepInput{OneOf: siteapi.NewWaitUntilStepInputAutomationStepInputSum(v)}
 	case siteapi.ApplyTagStepInput:
 		return siteapi.AutomationStepInput{OneOf: siteapi.NewApplyTagStepInputAutomationStepInputSum(v)}
 	case siteapi.RemoveTagStepInput:
@@ -84,6 +86,8 @@ func ExternalStep(st any) externalapi.AutomationStepInput {
 		return externalapi.AutomationStepInput{OneOf: externalapi.NewSmsStepInputAutomationStepInputSum(v)}
 	case externalapi.WaitStepInput:
 		return externalapi.AutomationStepInput{OneOf: externalapi.NewWaitStepInputAutomationStepInputSum(v)}
+	case externalapi.WaitUntilStepInput:
+		return externalapi.AutomationStepInput{OneOf: externalapi.NewWaitUntilStepInputAutomationStepInputSum(v)}
 	case externalapi.ApplyTagStepInput:
 		return externalapi.AutomationStepInput{OneOf: externalapi.NewApplyTagStepInputAutomationStepInputSum(v)}
 	case externalapi.RemoveTagStepInput:
@@ -186,4 +190,21 @@ func SiteSplit(tb testing.TB, doc string) siteapi.SplitStepInput {
 	var sp siteapi.SplitStepInput
 	require.NoError(tb, sp.UnmarshalJSON([]byte(doc)))
 	return sp
+}
+
+// ExternalWaitUntil is a Wait until of the external API as its JSON writes it, so a test reads as
+// the Step it saves.
+func ExternalWaitUntil(tb testing.TB, doc string) externalapi.WaitUntilStepInput {
+	tb.Helper()
+	var w externalapi.WaitUntilStepInput
+	require.NoError(tb, w.UnmarshalJSON([]byte(doc)))
+	return w
+}
+
+// SiteWaitUntil is ExternalWaitUntil for the site API.
+func SiteWaitUntil(tb testing.TB, doc string) siteapi.WaitUntilStepInput {
+	tb.Helper()
+	var w siteapi.WaitUntilStepInput
+	require.NoError(tb, w.UnmarshalJSON([]byte(doc)))
+	return w
 }
