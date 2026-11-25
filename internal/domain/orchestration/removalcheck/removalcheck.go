@@ -55,8 +55,8 @@ func New(senders *messaging.Resolver) *Module {
 }
 
 // Tag checks that nothing holds the Tag with the name, in Definition use: a Segment's Condition
-// (archived ones too), a step or the Trigger's filter of a kept Automation's live version or
-// draft (ADR 0133), a kept Rule's live
+// (archived ones too), a step, the Trigger's filter or a Branch's Condition of a kept Automation's
+// live version or draft (ADR 0133, ADR 0124), a kept Rule's live
 // version or draft (a Condition leaf or a tag Action) and the Condition an armed Broadcast copied
 // from its Segment (ADR 0065). Each names the Tag, not its id, so it would silently stop matching
 // or applying. It returns nil, or a *liveuse.Error naming them in that order.
@@ -83,7 +83,8 @@ func (m *Module) Tag(ctx context.Context, l *ent.WorkspaceLocked, name string) e
 // CustomFieldRetype checks that nothing holds the Custom field key against a retype to type t, in
 // Definition use: a Segment, a kept Rule and an armed Broadcast that test it with a Condition leaf
 // a field of type t does not take, whose Conditions would stop compiling (ADR 0006), and a kept
-// Automation whose live version's or draft's Trigger filter names it (ADR 0133). A Custom field
+// Automation whose live version's or draft's Trigger filter names it (ADR 0133) or whose Branch's
+// Condition tests it with such a leaf (ADR 0124). A Custom field
 // has no delete, so a retype is the change that removes the field a filter names: any retype is
 // refused while one does. A leaf every type takes (notNull) does not hold the type. It returns
 // nil, or a *liveuse.Error naming them in that order.
@@ -92,7 +93,7 @@ func (m *Module) CustomFieldRetype(ctx context.Context, l *ent.WorkspaceLocked, 
 	if err != nil {
 		return err
 	}
-	autos, err := m.automations.UsingCustomField(ctx, l, key)
+	autos, err := m.automations.UsingCustomField(ctx, l, key, t)
 	if err != nil {
 		return err
 	}
