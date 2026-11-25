@@ -94,3 +94,32 @@ func TestTheReportCountsEachBranchPathsEnrollmentsAndGoals(t *testing.T) {
 		{StepId: externalapi.StepId(branch.ID), PathId: externalapi.StepId(unknown), Enrollments: 1},
 	}, paths)
 }
+
+// A path kept across versions keeps its figures: the report sums it over every version that had
+// it. Version 1 holds the pinned Split at 50/50, and Alice draws 39, the variant; version 2 keeps
+// the Split and its paths' ids at 97/3, and Bob draws 96, the variant too. Nobody took the holdout.
+func TestASplitPathKeptAcrossVersionsKeepsItsFigures(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	m := testhelper.Module[*automations.Module](env)
+	auto := publishedSplitting(t, env, fiftyFifty())
+	enterSplitAt(t, env, fixtures.ContactAliceID, time.Now())
+	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(&fakeSender{})))
+	split := fiftyFifty()
+	paths := split.Payload.(automationstep.Split).Paths
+	paths[0].Weight, paths[1].Weight = 97, 3
+	root := automationstep.Root(split)
+	_, err := m.Update(ctx, acme, auto.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, auto.ID), Steps: &root})
+	require.NoError(t, err)
+	_, err = m.Publish(ctx, acme, auto.ID, testhelper.AutomationRevisionIn(ctx, t, acme, auto.ID))
+	require.NoError(t, err)
+
+	enterSplitAt(t, env, fixtures.ContactBobID, time.Now())
+	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(&fakeSender{})))
+	figures := pathFigures(t, env, auto.ID)
+
+	assert.Equal(t, []externalapi.AutomationPathFigures{
+		{StepId: externalapi.StepId(pinnedSplitID), PathId: externalapi.StepId(variantPathID), Enrollments: 2},
+	}, figures)
+}
