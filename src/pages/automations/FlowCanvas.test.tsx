@@ -116,13 +116,14 @@ test('inserting a Step on an edge puts it there, with an id of its own, edited i
     .toEqual([[WAIT, { id: expect.stringMatching(UUID), type: 'remove_tag', tag: 'lead' }, TAG]])
 })
 
-test('removing a single Step needs no confirmation', async () => {
+test('removing a single Step needs no confirmation, and leaves the open panel open', async () => {
   const { screen, saved } = await editing([WAIT, TAG])
-  await expect.element(nodeButton(screen, 'Wait')).toBeVisible()
+  await nodeButton(screen, 'Apply tag').click()
 
   await screen.getByRole('button', { name: 'Remove step' }).first().click()
 
   await expect.element(nodeButton(screen, 'Wait')).not.toBeInTheDocument()
+  await expect.element(screen.getByRole('textbox', { name: 'Tag' })).toHaveValue('vip')
   await screen.getByRole('button', { name: 'Save' }).click()
   await expect.poll(saved).toEqual([[TAG]])
 })

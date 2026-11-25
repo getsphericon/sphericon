@@ -152,7 +152,11 @@ function StepNodeView({ data: { step } }: NodeProps<StepNode>) {
             variant="subtle"
             color="gray"
             aria-label={t(($) => $.automations.removeStep)}
-            onClick={() => remove(step.id)}
+            onClick={(event) => {
+              // The node's own click opens it; removing it must not.
+              event.stopPropagation()
+              remove(step.id)
+            }}
           >
             <IconTrash size={16} />
           </ActionIcon>

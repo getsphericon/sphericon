@@ -21,10 +21,6 @@ import { completeButtons } from '../../utils/telegramContent.ts'
 // events, and the root path of Steps, each Step with the id it keeps across versions. The canvas
 // draws it and the side panel edits it; nothing else holds the flow.
 
-// The kinds the editor edits. A Step of any other kind (an End, a fork) is kept as it was read and
-// makes the version read-only here (ADR 0124): no edit or save can drop it.
-export type EditedKind = Exclude<AutomationStep['type'], 'end'>
-
 // What the side panel edits of each kind: every field a person types, as the form holds it.
 export interface StepDrafts {
   // `integrationId` '' is the Channel's default (ADR 0081). `doc` is the editor's document, null
@@ -52,6 +48,11 @@ export interface StepDrafts {
   apply_tag: { tag: string }
   remove_tag: { tag: string }
 }
+
+// The kinds the editor edits: those it has a draft of. A Step of any other kind (an End, a fork, a
+// kind the contract gains) is kept as it was read and makes the version read-only here (ADR 0124):
+// no edit or save can drop it.
+export type EditedKind = keyof StepDrafts
 
 // A Step the editor edits, by kind.
 export type EditedStep = {

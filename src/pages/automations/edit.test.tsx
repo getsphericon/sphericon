@@ -682,3 +682,39 @@ function nodeButton(screen: Screen, label: string) {
 async function openNode(screen: Screen, label: string) {
   await nodeButton(screen, label).click()
 }
+
+// The Workspace the builder edits in, with no postal address yet (ADR 0156).
+const NO_ADDRESS = workspace({ postalAddress: '' })
+
+test('an email step on the canvas shows the missing postal address with a link to the setting', async () => {
+  worker.use(
+    handleSiteAutomationsGet({
+      body: {
+        ...STORED,
+        draft: withSteps([{ id: stepId(11), type: 'email', subject: 'Hi', body: '<p>Hi</p>' }]),
+      },
+    }),
+    handleSiteWorkspacesList({ body: [NO_ADDRESS] }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+
+  await expect.element(screen.getByText(/This workspace has no postal address/)).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Set the postal address' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/settings')
+})
+
+test('a canvas without an email step shows no postal address notice', async () => {
+  worker.use(
+    handleSiteAutomationsGet({ body: STORED }),
+    handleSiteWorkspacesList({ body: [NO_ADDRESS] }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+
+  await expect.element(nodeButton(screen, 'Wait')).toBeVisible()
+  await expect
+    .element(screen.getByText(/This workspace has no postal address/))
+    .not.toBeInTheDocument()
+})
