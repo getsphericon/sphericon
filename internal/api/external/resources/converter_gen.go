@@ -1324,6 +1324,21 @@ func (c *ConverterImpl) OwnershipRecordToResource(source trackingdomains.Ownersh
 	externalapiDnsRecord.Value = source.Value
 	return externalapiDnsRecord
 }
+func (c *ConverterImpl) PathStepSum(source external.AutomationStepSum) external.PathStepSum {
+	var externalapiPathStepSum external.PathStepSum
+	externalapiPathStepSum.Type = c.PathStepType(source.Type)
+	externalapiPathStepSum.EmailStep = source.EmailStep
+	externalapiPathStepSum.TelegramStep = source.TelegramStep
+	externalapiPathStepSum.SmsStep = source.SmsStep
+	externalapiPathStepSum.WaitStep = source.WaitStep
+	externalapiPathStepSum.ApplyTagStep = source.ApplyTagStep
+	externalapiPathStepSum.RemoveTagStep = source.RemoveTagStep
+	externalapiPathStepSum.HttpStep = source.HttpStep
+	externalapiPathStepSum.EndStep = source.EndStep
+	externalapiPathStepSum.BranchStep = source.BranchStep
+	externalapiPathStepSum.SplitStep = source.SplitStep
+	return externalapiPathStepSum
+}
 func (c *ConverterImpl) PathStepType(source external.AutomationStepSumType) external.PathStepSumType {
 	var externalapiPathStepSumType external.PathStepSumType
 	switch source {
@@ -1865,6 +1880,21 @@ func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) e
 	externalapiSmtpConfig.From = external.EmailAddress(source.From)
 	externalapiSmtpConfig.FromName = omitEmpty(source.FromName)
 	return externalapiSmtpConfig
+}
+func (c *ConverterImpl) SplitPathStepSum(source external.AutomationStepSum) external.SplitPathStepSum {
+	var externalapiSplitPathStepSum external.SplitPathStepSum
+	externalapiSplitPathStepSum.Type = c.SplitPathStepType(source.Type)
+	externalapiSplitPathStepSum.EmailStep = source.EmailStep
+	externalapiSplitPathStepSum.TelegramStep = source.TelegramStep
+	externalapiSplitPathStepSum.SmsStep = source.SmsStep
+	externalapiSplitPathStepSum.WaitStep = source.WaitStep
+	externalapiSplitPathStepSum.ApplyTagStep = source.ApplyTagStep
+	externalapiSplitPathStepSum.RemoveTagStep = source.RemoveTagStep
+	externalapiSplitPathStepSum.HttpStep = source.HttpStep
+	externalapiSplitPathStepSum.EndStep = source.EndStep
+	externalapiSplitPathStepSum.BranchStep = source.BranchStep
+	externalapiSplitPathStepSum.SplitStep = source.SplitStep
+	return externalapiSplitPathStepSum
 }
 func (c *ConverterImpl) SplitPathStepType(source external.AutomationStepSumType) external.SplitPathStepSumType {
 	var externalapiSplitPathStepSumType external.SplitPathStepSumType
