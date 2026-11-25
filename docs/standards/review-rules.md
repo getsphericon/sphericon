@@ -37,7 +37,10 @@ or `AGENTS.md`.
 5. **Business logic is a layer of its own.** The drivers (handlers of every surface, MCP, jobs,
    event subscribers and the commands of the command line) only receive input, call one operation
    of a domain module or a use case and return the result; they hold no logic (ADR 0111). A table is written only by the domain module that owns it (ADR 0102): any
-   other package, a use case included, reads it and changes it only through a function of its owner.
+   other package but an HTTP handler, a use case included, may read it directly, in a query that joins
+   the tables of several owners too, and changes it only through a function of its owner. Which rows a
+   read takes is the reader's choice, written at the call (`Query` the rows the owner keeps,
+   `QueryWithArchived` and `QueryWithDiscarded` the archived or discarded ones as well).
    A write whose check needs a module its owner may not call is an unchecked operation of the
    owner's subpackage `<module>unchecked` (the owner's own for this rule), which only a use case
    imports, after the check (ADR 0110); the owner exports for it nothing that writes, and nothing
