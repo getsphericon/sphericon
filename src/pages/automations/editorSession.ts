@@ -51,16 +51,24 @@ function acknowledge(submission: Submission, resource: SiteAutomationResource) {
 interface AutomationSubject {
   path: Path
   resource: SiteAutomationResource
-  // The version the editor opens: the draft, else the live one.
-  flow: Flow
+}
+
+// The flow of the version the editor edits: the draft, else the live one (ADR 0065). A new
+// Automation is created with a draft and Publish only moves it to live, so one is always there.
+export function editedFlow(resource: SiteAutomationResource): Flow {
+  const edited = resource.draft ?? resource.live
+  if (!edited) {
+    throw new Error('An Automation without a draft or a live version')
+  }
+  return flowOf(edited)
 }
 
 // The canvas adapter: the content is the name in the bar and the flow on the canvas.
 export const automationAdapter = {
   id: 'automationEditor',
-  open: ({ resource, flow }: AutomationSubject): AutomationContent => ({
+  open: ({ resource }: AutomationSubject): AutomationContent => ({
     name: resource.name,
-    flow,
+    flow: editedFlow(resource),
   }),
   fingerprint: ({ name, flow }: AutomationContent) => automationSnapshot(name, flow),
   submit: ({ name, flow }: AutomationContent) => automationSubmission(name, flow),

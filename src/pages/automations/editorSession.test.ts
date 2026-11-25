@@ -48,7 +48,7 @@ const sessions = new Set<ActorRefFrom<typeof editorSession>>()
 
 function startSession() {
   const actor = createActor(editorSession, {
-    input: { path: PATH, resource: RESOURCE, flow: FLOW },
+    input: { path: PATH, resource: RESOURCE },
   }).start()
   sessions.add(actor)
   return actor
@@ -239,4 +239,22 @@ test('a flow holding a kept Step has no submission', () => {
   })
 
   expect(automationSubmission('Ended', ended)).toBeNull()
+})
+
+// "Load the saved version" of the changed notice (ADR 0119) opens the version as stored now.
+test('a reload opens the version the resource holds now', () => {
+  const actor = startSession()
+  const newer: SiteAutomationResource = {
+    ...RESOURCE,
+    revision: 2,
+    draft: {
+      ...DRAFT,
+      steps: { id: stepId(1), steps: [{ id: stepId(5), type: 'wait', seconds: 9 }] },
+    },
+  }
+
+  actor.send({ type: 'RELOAD', resource: newer })
+
+  const { flow } = actor.getSnapshot().context.content.value
+  expect(flow.path.steps).toEqual([{ id: stepId(5), kind: 'wait', draft: { seconds: 9 } }])
 })

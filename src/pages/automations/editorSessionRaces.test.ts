@@ -67,7 +67,6 @@ function startCanvas(flow: Flow) {
     input: {
       path: PATH,
       resource: RESOURCE,
-      flow,
       editor: {
         read: () => current,
         write: (content) => {

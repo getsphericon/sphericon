@@ -11,13 +11,13 @@ import { ChangedNotice } from '../../editing/ChangedNotice.tsx'
 import { useEditorEffects } from '../../editing/useEditorEffects.ts'
 import { useEditorSession } from '../../editing/useEditorSession.ts'
 import { siteAutomationsGetQueryKey } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { AutomationVersion, SiteAutomationResource } from '../../generated/site/types.gen.ts'
+import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
-import { flowOf, holdsKept } from './definition.ts'
+import { holdsKept } from './definition.ts'
 import type { Flow } from './definition.ts'
 import { automationOutcomeTexts } from './draftActions.ts'
-import { automationAdapter, editorSession } from './editorSession.ts'
+import { automationAdapter, editedFlow, editorSession } from './editorSession.ts'
 import { FailedEnrollments } from './FailedEnrollments.tsx'
 import { FlowCanvas } from './FlowCanvas.tsx'
 import { copyStep, insertStep, removeStep, updateStep, updateTrigger } from './flowEdits.ts'
@@ -38,9 +38,8 @@ function useAutomationBarForm(name: string) {
 
 interface AutomationBuilderProps {
   workspaceId: string
+  // The Automation whose draft, else live version, the canvas edits and a save writes over.
   automation: SiteAutomationResource
-  // The version the canvas edits and a save writes over: the draft, else the live one.
-  edited: AutomationVersion
 }
 
 // useFlow holds the flow the canvas draws and the panel edits. The editor session reads it at once
@@ -67,11 +66,11 @@ function useFlow(initial: Flow) {
 // persists the name and the flow together through the session's generated client call. Save and
 // Publish preserve the canvas; only an explicit Revert replaces it. Query refreshes do not own the
 // editor's local content.
-export function AutomationBuilder({ workspaceId, automation, edited }: AutomationBuilderProps) {
+export function AutomationBuilder({ workspaceId, automation }: AutomationBuilderProps) {
   const { t } = useTranslation()
   const notify = useNotify()
   const form = useAutomationBarForm(automation.name)
-  const [initial] = useState(() => flowOf(edited))
+  const [initial] = useState(() => editedFlow(automation))
   const { flow, latest, write, edit } = useFlow(initial)
   const [selected, setSelected] = useState<string | null>(null)
   // The check of the open Step's form, which the Save runs first.
@@ -92,7 +91,7 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
     reload,
     overwrite,
   } = useEditorSession(automationAdapter, editorSession, {
-    subject: { path: { workspaceId, id: automation.id }, resource: automation, flow: initial },
+    subject: { path: { workspaceId, id: automation.id }, resource: automation },
     // The bar's name and the flow hold the current content.
     editor: {
       read: () => ({ name: form.getValues().name, flow: latest.current }),
