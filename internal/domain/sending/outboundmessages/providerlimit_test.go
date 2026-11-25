@@ -267,7 +267,8 @@ func TestALoweredLimitTakesEffectAtOnceAndCapsTheBucket(t *testing.T) {
 	require.Equal(t, outboundmessages.Sent, send(t, m, env, "bc:1").Outcome) // 9 of 10 left
 	limited(t, env, new(1), nil)
 
-	assert.Equal(t, outboundmessages.Sent, send(t, m, env, "bc:2").Outcome, "the 9 are capped at the new 1")
+	capped := send(t, m, env, "bc:2")
+	assert.Equal(t, outboundmessages.Sent, capped.Outcome, "the 9 are capped at the new 1")
 	res := send(t, m, env, "bc:3")
 	assert.Equal(t, outboundmessages.Deferral, res.Outcome)
 	assert.Equal(t, time.Second, res.Wait, "then one a second")

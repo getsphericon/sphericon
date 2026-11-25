@@ -163,39 +163,39 @@ func spend(ctx context.Context, s *ent.Scoped, tx Tx, r Reservation, now time.Ti
 // bucket is one token bucket: its token and refill-time columns, its capacity in tokens (nil when
 // not limited) and the seconds it takes to refill that capacity.
 type bucket struct {
-	column     string
-	refilledAt string
-	capacity   *int
-	period     float64
+	column        string
+	refilledAt    string
+	capacity      *int
+	periodSeconds float64
 }
 
 func integrationBuckets(l Limits) []bucket {
 	return []bucket{
 		// Capacity is one second's worth of messages, refilled over one second.
-		{column: providerlimiter.FieldSecondTokens, refilledAt: providerlimiter.FieldRefilledAt, capacity: l.PerSecond, period: 1},
+		{column: providerlimiter.FieldSecondTokens, refilledAt: providerlimiter.FieldRefilledAt, capacity: l.PerSecond, periodSeconds: 1},
 		// Capacity is a day's worth of messages, refilled evenly over 24 hours.
-		{column: providerlimiter.FieldDayTokens, refilledAt: providerlimiter.FieldRefilledAt, capacity: l.PerDay, period: daySeconds},
+		{column: providerlimiter.FieldDayTokens, refilledAt: providerlimiter.FieldRefilledAt, capacity: l.PerDay, periodSeconds: daySeconds},
 	}
 }
 
 // workspaceBucket is the Send cap's: a day's worth of messages, refilled evenly over 24 hours.
 func workspaceBucket(sendCap int) bucket {
-	return bucket{column: sendcaplimiter.FieldDayTokens, refilledAt: sendcaplimiter.FieldRefilledAt, capacity: &sendCap, period: daySeconds}
+	return bucket{column: sendcaplimiter.FieldDayTokens, refilledAt: sendcaplimiter.FieldRefilledAt, capacity: &sendCap, periodSeconds: daySeconds}
 }
 
-// full is the bucket's capacity in tokens.
-func (b bucket) full() float64 { return float64(*b.capacity) }
+// ceiling is the bucket's capacity in tokens.
+func (b bucket) ceiling() float64 { return float64(*b.capacity) }
 
 // perSecond is the tokens the bucket regains per second.
-func (b bucket) perSecond() float64 { return b.full() / b.period }
+func (b bucket) perSecond() float64 { return b.ceiling() / b.periodSeconds }
 
 // writeRefilled writes the SQL for the tokens a bucket holds as of now, capped at its capacity; a
 // NULL column is a full bucket.
 func (b bucket) writeRefilled(bld *entsql.Builder, now time.Time) {
 	bld.WriteString("LEAST(")
-	bld.Arg(b.full())
+	bld.Arg(b.ceiling())
 	bld.WriteString("::float8, COALESCE(" + b.column + ", ")
-	bld.Arg(b.full())
+	bld.Arg(b.ceiling())
 	bld.WriteString("::float8) + GREATEST(0, EXTRACT(EPOCH FROM (")
 	bld.Arg(now)
 	bld.WriteString("::timestamptz - " + b.refilledAt + "))) * ")
@@ -209,7 +209,7 @@ func enough(sel *entsql.Selector, bs []bucket, now time.Time) {
 		if b.capacity == nil {
 			continue
 		}
-		// raw sql: compares a refilled value computed from the stored fill and elapsed time; ent
+		// raw sql: compares a refilled value computed from the stored tokens and elapsed time; ent
 		// predicates compare columns only.
 		sel.Where(entsql.P(func(bld *entsql.Builder) {
 			b.writeRefilled(bld, now)
@@ -364,10 +364,10 @@ func shortfall(ctx context.Context, s *ent.Scoped, r Reservation, now time.Time)
 // refilled for the time since, capped at its capacity (the Go side of writeRefilled).
 func (b bucket) tokensAt(tokens *float64, refilledAt, now time.Time) float64 {
 	if tokens == nil {
-		return b.full()
+		return b.ceiling()
 	}
 	elapsed := math.Max(0, now.Sub(refilledAt).Seconds())
-	return math.Min(b.full(), *tokens+elapsed*b.perSecond())
+	return math.Min(b.ceiling(), *tokens+elapsed*b.perSecond())
 }
 
 // secondsUntil is the seconds from now until the bucket, at tokens as of refilledAt, has held n

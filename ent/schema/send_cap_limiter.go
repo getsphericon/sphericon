@@ -34,9 +34,10 @@ func (SendCapLimiter) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		// Messages the rolling 24-hour bucket holds as of refilled_at, at most send_cap. It may
-		// go below zero (a bucket in debt after Transactional sends). NULL is a full bucket, one
-		// not spent from yet.
+		// Messages the rolling 24-hour bucket holds as of refilled_at, at most the send_cap in
+		// force at that write (a cap lowered since leaves it above until the next one). It may go
+		// below zero (a bucket in debt after Transactional sends). NULL is a full bucket, one not
+		// spent from yet.
 		field.Float("day_tokens").
 			Optional().
 			Nillable(),

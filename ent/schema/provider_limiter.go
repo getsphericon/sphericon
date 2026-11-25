@@ -38,14 +38,15 @@ func (ProviderLimiter) Fields() []ent.Field {
 		field.Int64("integration_id").
 			Unique().
 			Immutable(),
-		// Messages the per-second bucket holds as of refilled_at, at most max_per_second. It
-		// may go below zero (a bucket in debt). NULL is a full bucket: one not spent from
-		// yet, or not limited at its last write.
+		// Messages the per-second bucket holds as of refilled_at, at most the max_per_second in
+		// force at that write (a limit lowered since leaves it above until the next one). It may
+		// go below zero (a bucket in debt). NULL is a full bucket: one not spent from yet, or
+		// not limited at its last write.
 		field.Float("second_tokens").
 			Optional().
 			Nillable(),
-		// Messages the rolling 24-hour bucket holds as of refilled_at, at most max_per_day;
-		// below zero and NULL as for second_tokens.
+		// Messages the rolling 24-hour bucket holds as of refilled_at, at most the max_per_day in
+		// force at that write; above it, below zero and NULL as for second_tokens.
 		field.Float("day_tokens").
 			Optional().
 			Nillable(),

@@ -158,12 +158,11 @@ func (r *limiterRun) Reserve(t *rapid.T) {
 	short, err := r.buckets().Reserve(t.Context(), r.s, r.reservation())
 
 	require.NoErrorf(t, err, "reserve at %v", r.now)
-	if !borderline {
-		assert.Equalf(t, want == 0, short.Wait == 0, "at %v the model waits %v, the limiter %v", r.now, want, short.Wait)
-		if want != 0 && short.Wait != 0 {
-			assert.InDeltaf(t, want, short.Wait, float64(2*time.Millisecond), "at %v the wait", r.now)
-		}
-	}
+	expected := expectedWait(want, borderline, short.Wait)
+	modelGrants := expected == 0
+	granted := short.Wait == 0
+	assert.Equalf(t, modelGrants, granted, "at %v the model waits %v, the limiter %v", r.now, expected, short.Wait)
+	assert.InDeltaf(t, expected, short.Wait, float64(2*time.Millisecond), "at %v the wait", r.now)
 	if short.Wait != 0 {
 		r.now = r.now.Add(short.Wait)
 		again, err := r.buckets().Reserve(t.Context(), r.s, r.reservation())
@@ -173,9 +172,19 @@ func (r *limiterRun) Reserve(t *rapid.T) {
 	r.model.take(r.now)
 }
 
+// expectedWait is the wait the limiter must report: the model's, or the limiter's own when a bucket
+// holds so close to one token that rounding may decide either way.
+func expectedWait(model time.Duration, borderline bool, limiter time.Duration) time.Duration {
+	if borderline {
+		return limiter
+	}
+	return model
+}
+
 // Spend takes a token for a Transactional send, granted or not.
 func (r *limiterRun) Spend(t *rapid.T) {
-	require.NoErrorf(t, r.buckets().Spend(t.Context(), r.s, r.reservation()), "spend at %v", r.now)
+	err := r.buckets().Spend(t.Context(), r.s, r.reservation())
+	require.NoErrorf(t, err, "spend at %v", r.now)
 	r.model.take(r.now)
 }
 

@@ -44,7 +44,8 @@ func TestARaisedProviderLimitKeepsATransactionalDebtInMessages(t *testing.T) {
 	now := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
 	b := providerlimit.NewBuckets(env.Bus.WithinAuditTx, func() time.Time { return now })
 	for range 3 {
-		require.NoError(t, b.Spend(t.Context(), env.DB.Scoped(fixtures.AcmeID), perDay(2)))
+		err := b.Spend(t.Context(), env.DB.Scoped(fixtures.AcmeID), perDay(2))
+		require.NoError(t, err)
 	}
 	_, before := granted(t, b, env, perDay(2), 1)
 	require.Equal(t, 24*time.Hour, before, "one message of debt and one to send, at 12 hours each")
