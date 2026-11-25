@@ -39,7 +39,7 @@ func (m *Module) UnfitForCustomFieldType(ctx context.Context, l *ent.WorkspaceLo
 	}
 	return lo.Filter(kept, func(r *ent.Rule, _ int) bool {
 		return lo.SomeBy(versions(r), func(v *ent.RuleVersion) bool {
-			return !condition.FitsCustomFieldType(v.Condition.Group, key, t) || condition.NamesCustomField(v.Condition.Group, key)
+			return condition.HoldsCustomField(v.Condition.Group, key, t)
 		})
 	}), nil
 }

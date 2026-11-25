@@ -19591,7 +19591,7 @@
       },
       "SiteEventActionsResult": {
         "type": "object",
-        "required": ["actions", "eventsKeptDays"],
+        "required": ["actions", "eventsKeptDays", "messageActions", "keptActions"],
         "properties": {
           "actions": {
             "type": "array",
@@ -19603,6 +19603,20 @@
             "type": "integer",
             "format": "int32",
             "description": "How many days of analytical Events the Instance keeps (ADR 0019), so an event test with no\nwindow, or one longer than that, counts only the Events kept; 0 means every Event is kept"
+          },
+          "messageActions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The actions of a message's sent, delivery and engagement System events, on every Channel:\nthe Events an Event filter may test by what sent the message (`sentBy`)"
+          },
+          "keptActions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The evidentiary System events retention never deletes by age (ADR 0019), which an event\ntest counts back to their first"
           }
         },
         "description": "Distinct event actions seen in a workspace (for segment/filter pickers)"

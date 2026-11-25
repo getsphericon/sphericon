@@ -678,6 +678,14 @@ func NamesTag(g conditiontree.Group, name string) bool {
 	return false
 }
 
+// HoldsCustomField reports whether the group holds the Custom field key against a retype to type
+// t: a leaf tests it with a test a field of type t does not take (FitsCustomFieldType), or an event
+// test's filter names it (NamesCustomField), which any retype would leave naming a field that is
+// not there.
+func HoldsCustomField(g conditiontree.Group, key string, t customfield.Type) bool {
+	return !FitsCustomFieldType(g, key, t) || NamesCustomField(g, key)
+}
+
 // NamesCustomField reports whether the filter of an event test of the group, at any depth, names
 // the Custom field key (NamedDefinitions, ADR 0153): the `key` of contact.field_changed. Such a
 // Condition holds the field against any retype, the change that removes the field it names. A

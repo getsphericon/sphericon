@@ -34,7 +34,9 @@ const event = (id: string, action: string, properties: Record<string, unknown>) 
 // Onboarding Automation (id 7); Automation 8 is gone.
 function serve(...items: ReturnType<typeof event>[]) {
   worker.use(
-    handleSiteEventsActions({ body: { actions: [] } }),
+    handleSiteEventsActions({
+      body: { actions: [], eventsKeptDays: 400, messageActions: [], keptActions: [] },
+    }),
     handleSiteEventsList({ body: page(items) }),
     handleSiteTagsList({ body: page([{ id: testId(1), name: 'vip', ...TIMESTAMPS }]) }),
     handleSiteCustomFieldsList({

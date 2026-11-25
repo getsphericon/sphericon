@@ -12,14 +12,7 @@ import {
 } from './condition.ts'
 import { EventCountEditor } from './EventCountEditor.tsx'
 import { isPresence } from './fieldOperators.ts'
-
-// The values offered for a property's text test, by the property's key.
-export type PropertyValues = Partial<Record<string, readonly string[]>>
-
-// What the builder hands its value editor through the query builder's context.
-export interface ValueEditorContext {
-  propertyValues?: PropertyValues
-}
+import type { ValueEditorContext } from './valueEditorContext.ts'
 
 // ConditionValueEditor is the builder's value editor: an event field edits its count and window, an
 // Event property its key and the value its test compares with, and every other field keeps the
@@ -34,23 +27,35 @@ export function ConditionValueEditor(props: MantineValueEditorProps) {
   return <MantineValueEditor {...props} />
 }
 
-// PropertyEditor edits the key of the Event's property in an input of its own, then the value its
-// test compares with; a presence test compares with none. A blank key stays blank and is marked
-// required.
+// PropertyEditor edits the key of the Event's property in an input of its own, with the keys the
+// builder suggests, then the value its test compares with; a presence test compares with none. A
+// blank key stays blank and is marked required.
 function PropertyEditor(props: MantineValueEditorProps) {
   const { t } = useTranslation()
+  const context: ValueEditorContext = props.context ?? {}
   const { key, value } = propertyValue(props.value)
   return (
     <Group gap="xs" wrap="nowrap" align="flex-start">
-      <TextInput
-        aria-label={t(($) => $.segments.propertyKeyLabel)}
-        placeholder={t(($) => $.segments.propertyKeyLabel)}
-        value={key}
-        error={key === '' ? t(($) => $.validation.required) : undefined}
-        onChange={(event) =>
-          props.handleOnChange(propertyValueOf(event.currentTarget.value, value))
-        }
-      />
+      {context.propertyKeys === undefined || context.propertyKeys.length === 0 ? (
+        <TextInput
+          aria-label={t(($) => $.segments.propertyKeyLabel)}
+          placeholder={t(($) => $.segments.propertyKeyLabel)}
+          value={key}
+          error={key === '' ? t(($) => $.validation.required) : undefined}
+          onChange={(event) =>
+            props.handleOnChange(propertyValueOf(event.currentTarget.value, value))
+          }
+        />
+      ) : (
+        <Autocomplete
+          aria-label={t(($) => $.segments.propertyKeyLabel)}
+          placeholder={t(($) => $.segments.propertyKeyLabel)}
+          data={[...context.propertyKeys]}
+          value={key}
+          error={key === '' ? t(($) => $.validation.required) : undefined}
+          onChange={(next) => props.handleOnChange(propertyValueOf(next, value))}
+        />
+      )}
       {isPresence(props.operator) ? null : (
         <PropertyValueEditor {...props} propertyKey={key} value={value} />
       )}

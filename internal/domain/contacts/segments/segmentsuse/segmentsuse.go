@@ -52,6 +52,6 @@ func (m *Module) UnfitForCustomFieldType(ctx context.Context, l *ent.WorkspaceLo
 		return nil, err
 	}
 	return lo.Filter(all, func(seg *ent.Segment, _ int) bool {
-		return !condition.FitsCustomFieldType(seg.Condition.Group, key, t) || condition.NamesCustomField(seg.Condition.Group, key)
+		return condition.HoldsCustomField(seg.Condition.Group, key, t)
 	}), nil
 }

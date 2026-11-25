@@ -33,11 +33,22 @@ var (
 	// ErrRevisionChanged: the update was made on a revision the Segment has moved past (ADR 0119):
 	// someone wrote it since the client read it. Nothing is written.
 	ErrRevisionChanged = validation.RevisionChanged("segments: segment changed since it was read", i18n.ErrorsSegmentRevisionChanged)
+	// ErrUnknownSender: an event test's filter names a Broadcast or an Automation the Workspace does
+	// not have (ADR 0153), an unknown reference. The message names the test's path and the id.
+	ErrUnknownSender = validation.UnknownReference("segments: unknown sender", i18n.ErrorsSegmentSenderUnknown)
 )
 
-// Module is the one place a Segment is written, validated, previewed and counted
-// (ADR 0016). Create and update share one validation rule set; handlers stay thin
-// adapters (scope check, call, map). Membership is the rule alone — Send-eligibility
+// RefuseUnknownSender is the refusal of a Condition whose event test's filter names the sender n,
+// which the Workspace does not have: the segment saving use case asks messagesenders, a module
+// above this one, and refuses in this module's words.
+func RefuseUnknownSender(n condition.NamedSender) error {
+	return ErrUnknownSender.With(n.Missing())
+}
+
+// Module is the one place a Segment is validated, previewed, counted and archived (ADR 0016). Its
+// save is segmentsunchecked's (ADR 0110): a Condition may name a Broadcast or an Automation, which
+// only the segment saving use case can ask about, so create and update run there, over the one
+// validation rule set here. Membership is the rule alone — Send-eligibility
 // is subtracted only at send, never folded into a count (ADR 0001).
 type Module struct {
 	bus *events.Bus
@@ -80,44 +91,12 @@ type UpdateInput struct {
 
 // Validate checks a condition against the Contact attributes and the Workspace's Custom
 // field catalogue. A condition with no tests is valid. This is the single rule set behind
-// Create, Update, Preview and Count.
+// a save (segmentsunchecked), Preview and Count.
 func (s *Module) Validate(ctx context.Context, ws *ent.Scoped, cond conditiontree.Segment) error {
 	if _, err := s.conditions.Compile(ctx, ws, cond); err != nil {
 		return ErrInvalidCondition.With(err.Error())
 	}
 	return nil
-}
-
-// Create validates the condition and stores the Segment. It holds the Workspace's lock (ADR 0099):
-// the Condition may name a Tag or test a Custom field, and the delete of that Tag and the retype of
-// that field check for it under the same lock.
-func (s *Module) Create(ctx context.Context, ws *ent.Scoped, in CreateInput) (*ent.Segment, error) {
-	name, err := validation.Name(in.Name)
-	if err != nil {
-		return nil, err
-	}
-	in.Name = name
-	var seg *ent.Segment
-	err = s.bus.WithinWorkspaceLockTx(ctx, ws, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
-		seg, err = s.createIn(ctx, wl, in)
-		return err
-	})
-	return seg, err
-}
-
-// createIn validates the condition and stores the Segment under the Workspace's lock (ADR 0108).
-func (s *Module) createIn(ctx context.Context, wl *ent.WorkspaceLocked, in CreateInput) (*ent.Segment, error) {
-	cond := conditiontree.Segment{Group: conditiontree.Empty()}
-	if in.Condition != nil {
-		cond = *in.Condition
-	}
-	if err := s.Validate(ctx, wl.Scope(), cond); err != nil {
-		return nil, err
-	}
-	return wl.Segment().Create().
-		SetName(in.Name).
-		SetCondition(cond).
-		Save(ctx)
 }
 
 // Get returns one Segment. An unknown id is ErrNotFound.
@@ -129,47 +108,9 @@ func (s *Module) Get(ctx context.Context, ws *ent.Scoped, id int64) (*ent.Segmen
 	return seg, err
 }
 
-// Update validates a changed condition exactly as Create does, then applies the change, under the
-// Workspace's lock as Create, for the references the condition names. An archived Segment is
-// ErrArchived: it is read-only until it is unarchived (ADR 0100), so the change is an update
-// conditioned on its not being archived (ADR 0109) and on the revision it was made on (ADR 0119):
-// ErrRevisionChanged when the Segment has moved past it.
-func (s *Module) Update(ctx context.Context, ws *ent.Scoped, id int64, in UpdateInput) (*ent.Segment, error) {
-	name, err := validation.NamePatch(in.Name)
-	if err != nil {
-		return nil, err
-	}
-	in.Name = name
-	var seg *ent.Segment
-	err = s.bus.WithinWorkspaceLockTx(ctx, ws, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
-		seg, err = s.updateIn(ctx, wl, id, in)
-		return err
-	})
-	if ent.IsNotFound(err) {
-		return nil, ErrNotFound
-	}
-	return seg, err
-}
-
-// updateIn validates a changed condition and applies the change under the Workspace's lock (ADR
-// 0108), conditioned on the Segment's not being archived (ErrArchived) and on its revision
-// (ErrRevisionChanged).
-func (s *Module) updateIn(ctx context.Context, wl *ent.WorkspaceLocked, id int64, in UpdateInput) (*ent.Segment, error) {
-	if cond, ok := in.Condition.Get(); ok {
-		if err := s.Validate(ctx, wl.Scope(), cond); err != nil {
-			return nil, err
-		}
-	}
-	q := wl.Segment().EditAt(id, in.Revision).Where(segment.ArchivedAtIsNil()).
-		Refusing(ErrNotFound, ErrRevisionChanged, refuseArchived)
-	in.Name.ApplySet(q.SetName)
-	in.Condition.ApplySet(q.SetCondition)
-	seg, err := q.Save(ctx)
-	return seg, err
-}
-
-// refuseArchived is ErrArchived for an archived Segment, which is read-only until it is unarchived.
-func refuseArchived(s *ent.Segment) error {
+// RefuseArchived is ErrArchived for an archived Segment, which is read-only until it is unarchived:
+// the refusal of an update conditioned on its not being archived (segmentsunchecked, Archive).
+func RefuseArchived(s *ent.Segment) error {
 	if s.ArchivedAt != nil {
 		return ErrArchived
 	}

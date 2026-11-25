@@ -50,7 +50,7 @@ func (m *Module) UnfitForCustomFieldType(ctx context.Context, l *ent.WorkspaceLo
 		return nil, err
 	}
 	return lo.Filter(armed, func(b *ent.Broadcast, _ int) bool {
-		return !condition.FitsCustomFieldType(b.Condition.Group, key, t) || condition.NamesCustomField(b.Condition.Group, key)
+		return condition.HoldsCustomField(b.Condition.Group, key, t)
 	}), nil
 }
 

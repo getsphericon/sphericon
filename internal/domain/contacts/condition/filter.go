@@ -80,14 +80,14 @@ func decodeFilterEntry(raw json.RawMessage) (filterNode, error) {
 	if !slices.Contains(conditiontree.EventFilterKinds, e.Kind) {
 		return nil, fmt.Errorf("unknown entry kind %q", e.Kind)
 	}
-	switch e.Kind {
-	case conditiontree.KindGroup:
+	if e.Kind == conditiontree.KindGroup {
 		var g conditiontree.Group
 		if err := json.Unmarshal(raw, &g); err != nil {
 			return nil, fmt.Errorf("malformed group: %w", err)
 		}
 		return decodeFilter(g)
-	case conditiontree.KindSentBy:
+	}
+	if e.Kind == conditiontree.KindSentBy {
 		return decodeSentBy(raw)
 	}
 	if e.Of != nil {
@@ -385,6 +385,12 @@ type NamedSender struct {
 	ID       int64
 	PublicID string
 	Path     string
+}
+
+// Missing is the refusal's message of a filter naming n when the Workspace does not have it: the
+// path of the test and the id as the filter names it.
+func (n NamedSender) Missing() string {
+	return fmt.Sprintf("%sthe Workspace has no %s %s", n.Path, n.Sender, n.PublicID)
 }
 
 // NamedSenders is every Broadcast and Automation the sent-by tests of the Condition's event leaves

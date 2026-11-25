@@ -306,6 +306,8 @@ func decodeEntry(raw json.RawMessage, p place, sub func(conditiontree.Group) (no
 		return decodeEvent(e)
 	case conditiontree.KindProperty:
 		return decodeProperty(e)
+	case conditiontree.KindSentBy:
+		// A sent-by test is an Event filter's alone (decodeFilterEntry): no place's tree admits it.
 	}
 	return nil, fmt.Errorf("unknown entry kind %q", e.Kind)
 }

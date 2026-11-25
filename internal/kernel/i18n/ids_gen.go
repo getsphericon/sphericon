@@ -103,6 +103,7 @@ var (
 	ErrorsAutomationNothingToPublish                      = ID{key: "errors.automation_nothing_to_publish"}
 	ErrorsAutomationNothingToRevert                       = ID{key: "errors.automation_nothing_to_revert"}
 	ErrorsAutomationRevisionChanged                       = ID{key: "errors.automation_revision_changed"}
+	ErrorsAutomationSenderUnknown                         = ID{key: "errors.automation_sender_unknown"}
 	ErrorsAutomationStepInvalid                           = ID{key: "errors.automation_step_invalid"}
 	ErrorsAutomationTriggerInvalid                        = ID{key: "errors.automation_trigger_invalid"}
 	ErrorsBodyAndDoc                                      = ID{key: "errors.body_and_doc"}
@@ -239,7 +240,6 @@ var (
 	ErrorsLintBodyOrDoc                                   = ID{key: "errors.lint_body_or_doc"}
 	ErrorsLoginChallengeInvalid                           = ID{key: "errors.login_challenge_invalid"}
 	ErrorsMemberNotFound                                  = ID{key: "errors.member_not_found"}
-	ErrorsMessageSenderUnknown                            = ID{key: "errors.message_sender_unknown"}
 	ErrorsNameEmpty                                       = ID{key: "errors.name_empty"}
 	ErrorsNameInvalid                                     = ID{key: "errors.name_invalid"}
 	ErrorsNameRequired                                    = ID{key: "errors.name_required"}
@@ -310,6 +310,7 @@ var (
 	ErrorsRuleNothingToPublish                            = ID{key: "errors.rule_nothing_to_publish"}
 	ErrorsRuleNothingToRevert                             = ID{key: "errors.rule_nothing_to_revert"}
 	ErrorsRuleRevisionChanged                             = ID{key: "errors.rule_revision_changed"}
+	ErrorsRuleSenderUnknown                               = ID{key: "errors.rule_sender_unknown"}
 	ErrorsSecondFactorAlreadyActive                       = ID{key: "errors.second_factor_already_active"}
 	ErrorsSecondFactorCodeInvalid                         = ID{key: "errors.second_factor_code_invalid"}
 	ErrorsSecondFactorNoPending                           = ID{key: "errors.second_factor_no_pending"}
@@ -323,6 +324,7 @@ var (
 	ErrorsSegmentInvalid                                  = ID{key: "errors.segment_invalid"}
 	ErrorsSegmentNotFound                                 = ID{key: "errors.segment_not_found"}
 	ErrorsSegmentRevisionChanged                          = ID{key: "errors.segment_revision_changed"}
+	ErrorsSegmentSenderUnknown                            = ID{key: "errors.segment_sender_unknown"}
 	ErrorsSendCapsAbsent                                  = ID{key: "errors.send_caps_absent"}
 	ErrorsSendInProgress                                  = ID{key: "errors.send_in_progress"}
 	ErrorsSendKeyFailed                                   = ID{key: "errors.send_key_failed"}

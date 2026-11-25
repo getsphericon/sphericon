@@ -45189,11 +45189,29 @@ func (s *SiteEventActionsResult) encodeFields(e *jx.Encoder) {
 		e.FieldStart("eventsKeptDays")
 		e.Int32(s.EventsKeptDays)
 	}
+	{
+		e.FieldStart("messageActions")
+		e.ArrStart()
+		for _, elem := range s.MessageActions {
+			e.Str(elem)
+		}
+		e.ArrEnd()
+	}
+	{
+		e.FieldStart("keptActions")
+		e.ArrStart()
+		for _, elem := range s.KeptActions {
+			e.Str(elem)
+		}
+		e.ArrEnd()
+	}
 }
 
-var jsonFieldsNameOfSiteEventActionsResult = [2]string{
+var jsonFieldsNameOfSiteEventActionsResult = [4]string{
 	0: "actions",
 	1: "eventsKeptDays",
+	2: "messageActions",
+	3: "keptActions",
 }
 
 // Decode decodes SiteEventActionsResult from json.
@@ -45237,6 +45255,46 @@ func (s *SiteEventActionsResult) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"eventsKeptDays\"")
 			}
+		case "messageActions":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				s.MessageActions = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.MessageActions = append(s.MessageActions, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"messageActions\"")
+			}
+		case "keptActions":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				s.KeptActions = make([]string, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem string
+					v, err := d.Str()
+					elem = string(v)
+					if err != nil {
+						return err
+					}
+					s.KeptActions = append(s.KeptActions, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"keptActions\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -45247,7 +45305,7 @@ func (s *SiteEventActionsResult) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000011,
+		0b00001111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

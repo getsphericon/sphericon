@@ -7,6 +7,7 @@ import {
   handleSiteAutomationsPublish,
   handleSiteAutomationsUpdate,
   handleSiteEnrollmentsList,
+  handleSiteEventsActions,
   handleSiteEventsPropertyKeys,
   handleSiteIntegrationsList,
   handleSiteTagsList,
@@ -37,6 +38,9 @@ beforeEach(() => {
   worker.use(
     handleSiteWorkspacesList({ body: [workspace()] }),
     handleSiteEventsPropertyKeys({ body: { keys: [] } }),
+    handleSiteEventsActions({
+      body: { actions: [], eventsKeptDays: 400, messageActions: [], keptActions: [] },
+    }),
     handleSiteEnrollmentsList({
       body: { items: [], page: 1, pageSize: 25, totalItems: 0, totalPages: 0 },
     }),

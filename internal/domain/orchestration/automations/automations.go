@@ -86,6 +86,9 @@ var (
 	// ErrRevisionChanged is an edit, Publish or Revert made on a revision the Automation has moved past
 	// (ADR 0119): someone changed it since the editor read it. Nothing is written.
 	ErrRevisionChanged = validation.RevisionChanged("automations: automation changed since it was read", i18n.ErrorsAutomationRevisionChanged)
+	// ErrUnknownSender: an event filter of an Automation names a Broadcast or an Automation the Workspace
+	// does not have (ADR 0153), an unknown reference. The message names the test's path and the id.
+	ErrUnknownSender = validation.UnknownReference("automations: unknown sender", i18n.ErrorsAutomationSenderUnknown)
 
 	// ErrNoVersion: the Automation has no live version: it was never published, so nobody can
 	// be enrolled in it.
@@ -889,14 +892,18 @@ func checkIntegration(ctx context.Context, s *ent.Scoped, id *int64) error {
 // Workspace's catalogue lacks (condition.NamedDefinitions, ADR 0133): such a filter would never
 // match. A Tag is named as the Event carries it, by its stored name, so another spelling of it is
 // refused too. The catalogues are their owners' (tags, contacts). A filter that names a Broadcast
-// or an Automation the Workspace does not have, archived ones being its own, is refused by
-// messagesenders (ADR 0153).
+// or an Automation the Workspace does not have, archived ones being its own (messagesenders), is
+// ErrUnknownSender (ADR 0153).
 func (m *Module) checkNamed(ctx context.Context, s *ent.Scoped, matcher eventmatcher.Matcher, refusal *validation.RefusalError) error {
 	if matcher.Filter == nil {
 		return nil
 	}
-	if err := m.senders.Require(ctx, s, condition.FilterSenders(*matcher.Filter)); err != nil {
+	unknown, err := m.senders.Unknown(ctx, s, condition.FilterSenders(*matcher.Filter))
+	if err != nil {
 		return err
+	}
+	if unknown != nil {
+		return ErrUnknownSender.With("the filter: " + unknown.Missing())
 	}
 	named := condition.NamedDefinitions(matcher.Action, *matcher.Filter)
 	for _, name := range named.Tags {

@@ -31,7 +31,14 @@ interface Query {
 
 function serveEvents(queries: Query[], totalItems = 1) {
   worker.use(
-    handleSiteEventsActions({ body: { actions: ['email.opened', 'purchase'] } }),
+    handleSiteEventsActions({
+      body: {
+        actions: ['email.opened', 'purchase'],
+        eventsKeptDays: 400,
+        messageActions: [],
+        keptActions: [],
+      },
+    }),
     handleSiteEventsList(({ request }) => {
       const params = new URL(request.url).searchParams
       queries.push({ page: params.get('page'), action: params.get('action') })
@@ -105,7 +112,9 @@ test('an action in the URL the Workspace has not recorded stays the filter', asy
 
 test('shows an error alert when the feed fails to load', async () => {
   worker.use(
-    handleSiteEventsActions({ body: { actions: [] } }),
+    handleSiteEventsActions({
+      body: { actions: [], eventsKeptDays: 400, messageActions: [], keptActions: [] },
+    }),
     handleSiteEventsList(() => problem(500)),
   )
   const { screen } = await renderWithRouter(<ActivityPage />, mount)

@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
+	"github.com/getsphericon/sphericon/internal/usecase/segmentsaving"
 )
 
 // dateHasIt tests Duff's has_it with a moment test, which fits a datetime field and no string one.
@@ -38,7 +39,7 @@ func newRetypeRace(t *testing.T) *retypeRace {
 	ctx := context.Background()
 	env := testhelper.Setup(t, testhelper.Committed())
 	s := env.DB.Scoped(fixtures.DuffID)
-	segs, ruleset := testhelper.Module[*segments.Module](env), testhelper.Module[*rules.Module](env)
+	save, ruleset := testhelper.Module[*segmentsaving.UseCase](env), testhelper.Module[*rules.Module](env)
 	retyping := testhelper.Module[*customfieldretyping.UseCase](env)
 	r := &retypeRace{env: env, scope: s, savedID: new(int64)}
 	r.rename = testhelper.Writer{Name: "rename", Run: func() error {
@@ -50,7 +51,7 @@ func newRetypeRace(t *testing.T) *retypeRace {
 		return err
 	}}
 	r.saveSegment = testhelper.Writer{Name: "save", Run: func() error {
-		seg, err := segs.Create(ctx, s, segments.CreateInput{Name: "Has it lately", Condition: new(testhelper.SegmentCondition(t, dateHasIt))})
+		seg, err := save.Create(ctx, s, segments.CreateInput{Name: "Has it lately", Condition: new(testhelper.SegmentCondition(t, dateHasIt))})
 		if seg != nil {
 			*r.savedID = seg.ID
 		}

@@ -2,12 +2,14 @@ package site
 
 import (
 	"context"
+	"slices"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // SiteEventsList returns the workspace's events, most recent first.
@@ -38,7 +40,8 @@ func (h *Handlers) SiteEventsList(ctx context.Context, params siteapi.SiteEvents
 }
 
 // SiteEventsActions returns the distinct event actions in the workspace, sorted, with how many days
-// of analytical Events the Instance keeps, which an event test with no window counts back to —
+// of analytical Events the Instance keeps, which an event test with no window counts back to, the
+// actions whose filter may name what sent a message and the actions kept whatever their age —
 // used to populate the segment builder's event-condition picker.
 func (h *Handlers) SiteEventsActions(ctx context.Context, _ siteapi.SiteEventsActionsParams) (*siteapi.SiteEventActionsResult, error) {
 	scoped := workspaceScope(ctx)
@@ -47,7 +50,10 @@ func (h *Handlers) SiteEventsActions(ctx context.Context, _ siteapi.SiteEventsAc
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SiteEventActionsResult{Actions: actions, EventsKeptDays: narrow.Int32(h.segments.EventsKeptDays())}, nil
+	return &siteapi.SiteEventActionsResult{
+		Actions: actions, EventsKeptDays: narrow.Int32(h.segments.EventsKeptDays()),
+		MessageActions: slices.Clone(systemevent.MessageActions), KeptActions: slices.Clone(systemevent.KeptActions),
+	}, nil
 }
 
 // SiteEventsPropertyKeys returns the property keys of the action's most recent events, distinct

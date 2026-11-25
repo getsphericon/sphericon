@@ -77,6 +77,9 @@ var (
 	// ErrRevisionChanged is an edit, Publish or Revert made on a revision the Rule has moved past
 	// (ADR 0119): someone changed it since the editor read it. Nothing is written.
 	ErrRevisionChanged = validation.RevisionChanged("rules: rule changed since it was read", i18n.ErrorsRuleRevisionChanged)
+	// ErrUnknownSender: an event filter of a Rule names a Broadcast or an Automation the Workspace
+	// does not have (ADR 0153), an unknown reference. The message names the test's path and the id.
+	ErrUnknownSender = validation.UnknownReference("rules: unknown sender", i18n.ErrorsRuleSenderUnknown)
 )
 
 // Outcome is how one Action ended.
@@ -462,7 +465,14 @@ func (m *Module) validateCondition(ctx context.Context, s *ent.Scoped, cond cond
 	if _, err := m.conditions.RulePredicate(ctx, s, cond, nil); err != nil {
 		return ErrInvalid.With(err.Error())
 	}
-	return m.senders.Require(ctx, s, condition.NamedSenders(cond.Group))
+	unknown, err := m.senders.Unknown(ctx, s, condition.NamedSenders(cond.Group))
+	if err != nil {
+		return err
+	}
+	if unknown != nil {
+		return ErrUnknownSender.With(unknown.Missing())
+	}
+	return nil
 }
 
 // storedActions validates the Actions and returns them as stored, dropping the fields that do

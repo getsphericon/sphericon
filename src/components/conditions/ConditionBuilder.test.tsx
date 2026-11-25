@@ -24,7 +24,9 @@ import { ConditionBuilder } from './ConditionBuilder.tsx'
 // The Custom fields of each type, with what the server lists for the type.
 function serve(previewBodies: unknown[] = []) {
   worker.use(
-    handleSiteEventsActions({ body: { actions: ['purchase'] } }),
+    handleSiteEventsActions({
+      body: { actions: ['purchase'], eventsKeptDays: 400, messageActions: [], keptActions: [] },
+    }),
     handleSiteCustomFieldsList({
       body: page([
         {
@@ -138,7 +140,16 @@ test("a Segment's builder offers no test of the triggering Event", async () => {
 // An event field reads as its action: a System event by its words, a tracked action by its name.
 test('an event field names a System event by its words and a tracked action as it was tracked', async () => {
   serve()
-  worker.use(handleSiteEventsActions({ body: { actions: ['purchase', 'email.opened'] } }))
+  worker.use(
+    handleSiteEventsActions({
+      body: {
+        actions: ['purchase', 'email.opened'],
+        eventsKeptDays: 400,
+        messageActions: [],
+        keptActions: [],
+      },
+    }),
+  )
   const { screen } = await renderWithRouter(
     <ConditionBuilder
       workspaceId="TestWs01"

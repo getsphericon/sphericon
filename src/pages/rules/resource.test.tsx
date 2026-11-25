@@ -84,7 +84,14 @@ const EDIT_ROUTE = routeMount(rulesEditRoute, { workspaceId: 'TestWs01', ruleId:
 // condition builder) and the custom fields (condition builder).
 function serveCatalogue() {
   worker.use(
-    handleSiteEventsActions({ body: { actions: ['signed_up', 'purchased'] } }),
+    handleSiteEventsActions({
+      body: {
+        actions: ['signed_up', 'purchased'],
+        eventsKeptDays: 400,
+        messageActions: [],
+        keptActions: [],
+      },
+    }),
     handleSiteCustomFieldsList({ body: page([], 0) }),
     handleSiteEventsList({ body: page([], 0) }),
   )

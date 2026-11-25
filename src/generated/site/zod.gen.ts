@@ -1733,7 +1733,9 @@ export const zSiteEmailChangeInput = z.strictObject({
  */
 export const zSiteEventActionsResult = z.object({
   actions: z.array(z.string()),
-  eventsKeptDays: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+  eventsKeptDays: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  messageActions: z.array(z.string()),
+  keptActions: z.array(z.string())
 });
 
 /**

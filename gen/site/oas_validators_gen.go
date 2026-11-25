@@ -10297,6 +10297,28 @@ func (s *SiteEventActionsResult) Validate() error {
 			Error: err,
 		})
 	}
+	if err := func() error {
+		if s.MessageActions == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "messageActions",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.KeptActions == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "keptActions",
+			Error: err,
+		})
+	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
 	}

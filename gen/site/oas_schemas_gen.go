@@ -27648,6 +27648,12 @@ type SiteEventActionsResult struct {
 	// How many days of analytical Events the Instance keeps (ADR 0019), so an event test with no window,
 	// or one longer than that, counts only the Events kept; 0 means every Event is kept.
 	EventsKeptDays int32 `json:"eventsKeptDays"`
+	// The actions of a message's sent, delivery and engagement System events, on every Channel: the Events
+	// an Event filter may test by what sent the message (`sentBy`).
+	MessageActions []string `json:"messageActions"`
+	// The evidentiary System events retention never deletes by age (ADR 0019), which an event test counts
+	// back to their first.
+	KeptActions []string `json:"keptActions"`
 }
 
 // GetActions returns the value of Actions.
@@ -27660,6 +27666,16 @@ func (s *SiteEventActionsResult) GetEventsKeptDays() int32 {
 	return s.EventsKeptDays
 }
 
+// GetMessageActions returns the value of MessageActions.
+func (s *SiteEventActionsResult) GetMessageActions() []string {
+	return s.MessageActions
+}
+
+// GetKeptActions returns the value of KeptActions.
+func (s *SiteEventActionsResult) GetKeptActions() []string {
+	return s.KeptActions
+}
+
 // SetActions sets the value of Actions.
 func (s *SiteEventActionsResult) SetActions(val []string) {
 	s.Actions = val
@@ -27668,6 +27684,16 @@ func (s *SiteEventActionsResult) SetActions(val []string) {
 // SetEventsKeptDays sets the value of EventsKeptDays.
 func (s *SiteEventActionsResult) SetEventsKeptDays(val int32) {
 	s.EventsKeptDays = val
+}
+
+// SetMessageActions sets the value of MessageActions.
+func (s *SiteEventActionsResult) SetMessageActions(val []string) {
+	s.MessageActions = val
+}
+
+// SetKeptActions sets the value of KeptActions.
+func (s *SiteEventActionsResult) SetKeptActions(val []string) {
+	s.KeptActions = val
 }
 
 // The property keys seen on the most recent events of an action, sorted (for the Enrollment key

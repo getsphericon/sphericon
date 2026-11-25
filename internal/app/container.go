@@ -973,7 +973,7 @@ var contentPackage = do.Package(
 		return tags.New(), nil
 	}),
 	do.Lazy(func(i do.Injector) (*segmentsaving.UseCase, error) {
-		return segmentsaving.New(do.MustInvoke[*segments.Module](i)), nil
+		return segmentsaving.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*segments.Module](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*tagdeletion.UseCase, error) {
 		return tagdeletion.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*removalcheck.Module](i), do.MustInvoke[*tags.Module](i)), nil
