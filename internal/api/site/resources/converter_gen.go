@@ -1151,6 +1151,18 @@ func (c *ConverterImpl) CustomFieldsToResources(source []*ent.CustomField) []sit
 	}
 	return siteapiSiteCustomFieldResourceList
 }
+func (c *ConverterImpl) DateRecurrenceToResource(source localcalendar.Recurrence) site.DateRecurrence {
+	var siteapiDateRecurrence site.DateRecurrence
+	switch source {
+	case localcalendar.Once:
+		siteapiDateRecurrence = site.DateRecurrenceOnce
+	case localcalendar.Yearly:
+		siteapiDateRecurrence = site.DateRecurrenceYearly
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiDateRecurrence
+}
 func (c *ConverterImpl) DeletedWorkspaceToResource(source *ent.Workspace) site.SiteDeletedWorkspaceResource {
 	var siteapiSiteDeletedWorkspaceResource site.SiteDeletedWorkspaceResource
 	if source != nil {

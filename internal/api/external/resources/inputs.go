@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
@@ -210,6 +211,8 @@ type Inputs interface {
 	WaitUntilTimeOfDayIn(source externalapi.WaitUntilTimeOfDayInput) automationstep.TimeOfDay
 	// goverter:enum:transform value
 	WeekdayIn(source externalapi.Weekday) localcalendar.Weekday
+	// goverter:enum:transform value
+	DateRecurrence(source externalapi.DateRecurrence) localcalendar.Recurrence
 	ApplyTagStepIn(source externalapi.ApplyTagStepInput) automationstep.ApplyTag
 	RemoveTagStepIn(source externalapi.RemoveTagStepInput) automationstep.RemoveTag
 	HttpStepIn(source externalapi.HttpStepInput) automationstep.HTTP
@@ -518,9 +521,27 @@ func waitUntilMomentIn(c Inputs, in externalapi.WaitUntilMomentInput) (automatio
 	switch in.OneOf.Type {
 	case externalapi.WaitUntilTimeOfDayInputWaitUntilMomentInputSum:
 		return c.WaitUntilTimeOfDayIn(in.OneOf.WaitUntilTimeOfDayInput), nil
+	case externalapi.WaitUntilDateInputWaitUntilMomentInputSum:
+		d := in.OneOf.WaitUntilDateInput
+		return automationstep.OnDate{Date: datetrigger.Date{
+			Field: dateFieldIn(d.Field), Recurrence: c.DateRecurrence(d.Recurrence),
+			OffsetDays: int(d.OffsetDays), LocalTime: string(d.LocalTime),
+		}}, nil
 	default:
 		return nil, fmt.Errorf("the moment of form %q has no form of a wait until", in.OneOf.Type)
 	}
+}
+
+// dateFieldIn is the date field a date Trigger names, by its kind: the birthday, or a Custom field by
+// its key. A field of no kind names none, which the save refuses.
+func dateFieldIn(f externalapi.DateFieldInput) datetrigger.Field {
+	switch f.OneOf.Type {
+	case externalapi.BirthdayDateFieldInputDateFieldInputSum:
+		return datetrigger.Field{Kind: datetrigger.Birthday}
+	case externalapi.CustomFieldDateFieldInputDateFieldInputSum:
+		return datetrigger.Field{Kind: datetrigger.CustomField, Key: f.OneOf.CustomFieldDateFieldInput.Key}
+	}
+	return datetrigger.Field{}
 }
 
 // branchStepIn maps a Branch: each listed path with its Condition (the contract's typed tree is

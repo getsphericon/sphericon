@@ -306,6 +306,13 @@ const (
 	TriggerCooldownDefault = 3600
 )
 
+// DateOffsetDays is how many whole days before (negative) or after a Contact's date its occurrence comes (ADR 0126).
+// From site DateOffsetDays.
+const (
+	DateOffsetDaysMin = -365
+	DateOffsetDaysMax = 365
+)
+
 // BranchPaths are the listed paths of a Branch, `otherwise` and `unknown` aside (ADR 0124).
 // From site BranchStepInput.paths, site BranchUnknownPathInput.conditions.
 const (
@@ -445,6 +452,8 @@ var Owners = map[string][]string{
 	"RuleTriggerEventsMinItems":          {"Rule"},
 	"EntryCooldownMin":                   {"AutomationVersion"},
 	"TriggerCooldownDefault":             {"AutomationVersion"},
+	"DateOffsetDaysMin":                  {"internal/kernel/localcalendar"},
+	"DateOffsetDaysMax":                  {"internal/kernel/localcalendar"},
 	"BranchPathsMinItems":                {"AutomationVersion"},
 	"BranchPathsMaxItems":                {"AutomationVersion"},
 	"LocalTimePattern":                   {"internal/kernel/localcalendar"},

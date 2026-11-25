@@ -321,6 +321,18 @@ func (c *InputsImpl) CustomFieldUpdate(source *external.UpdateCustomFieldInput) 
 	}
 	return contactsCustomFieldUpdateInput
 }
+func (c *InputsImpl) DateRecurrence(source external.DateRecurrence) localcalendar.Recurrence {
+	var localcalendarRecurrence localcalendar.Recurrence
+	switch source {
+	case external.DateRecurrenceOnce:
+		localcalendarRecurrence = localcalendar.Once
+	case external.DateRecurrenceYearly:
+		localcalendarRecurrence = localcalendar.Yearly
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return localcalendarRecurrence
+}
 func (c *InputsImpl) EmailBroadcastContentIn(source external.EmailBroadcastContentInput) broadcasts.EmailContentInput {
 	var broadcastsEmailContentInput broadcasts.EmailContentInput
 	broadcastsEmailContentInput.Subject = stringPtrIn(source.Subject)

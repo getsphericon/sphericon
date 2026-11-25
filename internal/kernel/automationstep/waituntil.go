@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 )
 
@@ -22,11 +23,12 @@ type Form string
 // The forms of a Wait until's moment.
 const (
 	FormTimeOfDay Form = "time_of_day"
+	FormDate      Form = "date"
 )
 
-// Until is the moment a Wait until holds the Enrollment until, one type per form: TimeOfDay. A new
-// form adds its type, its Form constant and its line in untilDecoders, and a type switch over
-// Until that misses it fails the lint (gochecksumtype).
+// Until is the moment a Wait until holds the Enrollment until, one type per form: TimeOfDay and
+// OnDate. A new form adds its type, its Form constant and its line in untilDecoders, and a type
+// switch over Until that misses it fails the lint (gochecksumtype).
 //
 //sumtype:decl
 type Until interface {
@@ -59,6 +61,17 @@ func (t TimeOfDay) Calendar() (localcalendar.TimeOfDay, error) {
 	return localcalendar.NewTimeOfDay(t.LocalTime, t.Weekdays)
 }
 
+// OnDate is the next occurrence of a date the Contact holds, in the date Trigger's model (ADR 0126):
+// its birthday or a datetime Custom field, every year or once, OffsetDays before or after it, at
+// LocalTime in the Contact's zone.
+type OnDate struct {
+	datetrigger.Date
+}
+
+func (OnDate) Form() Form { return FormDate }
+
+func (d OnDate) stored() Until { return d }
+
 func (WaitUntil) Kind() Kind { return KindWaitUntil }
 
 // Stored is the Wait until with its moment in its stored form.
@@ -72,6 +85,7 @@ func (w WaitUntil) Stored() Payload {
 // untilDecoders read the fields of each form's moment, refusing any field the form does not hold.
 var untilDecoders = map[Form]func([]byte) (Until, error){
 	FormTimeOfDay: decodeUntilAs[TimeOfDay],
+	FormDate:      decodeUntilAs[OnDate],
 }
 
 func decodeUntilAs[U Until](b []byte) (Until, error) {

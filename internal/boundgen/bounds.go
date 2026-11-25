@@ -242,6 +242,10 @@ var Bounds = []Bound{
 		Spec: site, Schema: "EventTriggerInput", Property: "cooldown", Owners: []string{automationVersion},
 	},
 	{
+		Name: "DateOffsetDays", Doc: "is how many whole days before (negative) or after a Contact's date its occurrence comes (ADR 0126).",
+		Spec: site, Schema: "DateOffsetDays", Owners: []string{"internal/kernel/localcalendar"},
+	},
+	{
 		Name: "BranchPaths", Doc: "are the listed paths of a Branch, `otherwise` and `unknown` aside (ADR 0124).",
 		Spec: site, Schema: "BranchStepInput", Property: "paths", Owners: []string{automationVersion},
 	},

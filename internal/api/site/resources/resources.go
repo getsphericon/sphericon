@@ -13,6 +13,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
@@ -442,6 +443,8 @@ type Converter interface {
 	WaitUntilTimeOfDayToResource(source automationstep.TimeOfDay) siteapi.WaitUntilTimeOfDay
 	// goverter:enum:transform value
 	WeekdayToResource(source localcalendar.Weekday) siteapi.Weekday
+	// goverter:enum:transform value
+	DateRecurrenceToResource(source localcalendar.Recurrence) siteapi.DateRecurrence
 	ApplyTagStepToResource(source automations.TagView) siteapi.ApplyTagStep
 	RemoveTagStepToResource(source automations.TagView) siteapi.RemoveTagStep
 	HttpStepToResource(source automations.HTTPView) siteapi.HttpStep
@@ -1298,11 +1301,29 @@ func waitUntilMoment(c Converter, u automationstep.Until) (siteapi.WaitUntilMome
 	switch u := u.(type) {
 	case automationstep.TimeOfDay:
 		return siteapi.WaitUntilMoment{OneOf: siteapi.NewWaitUntilTimeOfDayWaitUntilMomentSum(c.WaitUntilTimeOfDayToResource(u))}, nil
+	case automationstep.OnDate:
+		return siteapi.WaitUntilMoment{OneOf: siteapi.NewWaitUntilDateWaitUntilMomentSum(siteapi.WaitUntilDate{
+			Form: siteapi.WaitUntilDateFormDate, Field: dateField(u.Field), Recurrence: c.DateRecurrenceToResource(u.Recurrence),
+			OffsetDays: siteapi.DateOffsetDays(narrow.Int32(u.OffsetDays)), LocalTime: siteapi.LocalTime(u.LocalTime),
+		})}, nil
 	case nil:
 		return siteapi.WaitUntilMoment{}, errors.New("a wait until without a moment")
 	}
 	return siteapi.WaitUntilMoment{}, fmt.Errorf("the moment %T has no arm", u)
 }
+// dateField maps a date Trigger's field into the typed DTO by its kind. A stored field is checked
+// when it is written, so a kind it does not know is the birthday's never.
+func dateField(f datetrigger.Field) siteapi.DateField {
+	switch f.Kind {
+	case datetrigger.CustomField:
+		return siteapi.DateField{OneOf: siteapi.NewCustomFieldDateFieldDateFieldSum(siteapi.CustomFieldDateField{
+			Kind: siteapi.CustomFieldDateFieldKindCustomField, Key: f.Key,
+		})}
+	case datetrigger.Birthday:
+	}
+	return siteapi.DateField{OneOf: siteapi.NewBirthdayDateFieldDateFieldSum(siteapi.BirthdayDateField{Kind: siteapi.BirthdayDateFieldKindBirthday})}
+}
+
 func applyTagStepType(automationstep.Kind) siteapi.ApplyTagStepType {
 	return siteapi.ApplyTagStepTypeApplyTag
 }

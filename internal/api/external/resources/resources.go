@@ -13,6 +13,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
@@ -224,11 +225,29 @@ func waitUntilMoment(c Converter, u automationstep.Until) (externalapi.WaitUntil
 	switch u := u.(type) {
 	case automationstep.TimeOfDay:
 		return externalapi.WaitUntilMoment{OneOf: externalapi.NewWaitUntilTimeOfDayWaitUntilMomentSum(c.WaitUntilTimeOfDayToResource(u))}, nil
+	case automationstep.OnDate:
+		return externalapi.WaitUntilMoment{OneOf: externalapi.NewWaitUntilDateWaitUntilMomentSum(externalapi.WaitUntilDate{
+			Form: externalapi.WaitUntilDateFormDate, Field: dateField(u.Field), Recurrence: c.DateRecurrenceToResource(u.Recurrence),
+			OffsetDays: externalapi.DateOffsetDays(narrow.Int32(u.OffsetDays)), LocalTime: externalapi.LocalTime(u.LocalTime),
+		})}, nil
 	case nil:
 		return externalapi.WaitUntilMoment{}, errors.New("a wait until without a moment")
 	}
 	return externalapi.WaitUntilMoment{}, fmt.Errorf("the moment %T has no arm", u)
 }
+// dateField maps a date Trigger's field into the typed DTO by its kind. A stored field is checked
+// when it is written, so a kind it does not know is the birthday's never.
+func dateField(f datetrigger.Field) externalapi.DateField {
+	switch f.Kind {
+	case datetrigger.CustomField:
+		return externalapi.DateField{OneOf: externalapi.NewCustomFieldDateFieldDateFieldSum(externalapi.CustomFieldDateField{
+			Kind: externalapi.CustomFieldDateFieldKindCustomField, Key: f.Key,
+		})}
+	case datetrigger.Birthday:
+	}
+	return externalapi.DateField{OneOf: externalapi.NewBirthdayDateFieldDateFieldSum(externalapi.BirthdayDateField{Kind: externalapi.BirthdayDateFieldKindBirthday})}
+}
+
 func applyTagStepType(automationstep.Kind) externalapi.ApplyTagStepType {
 	return externalapi.ApplyTagStepTypeApplyTag
 }
@@ -458,6 +477,8 @@ type Converter interface {
 	WaitUntilTimeOfDayToResource(source automationstep.TimeOfDay) externalapi.WaitUntilTimeOfDay
 	// goverter:enum:transform value
 	WeekdayToResource(source localcalendar.Weekday) externalapi.Weekday
+	// goverter:enum:transform value
+	DateRecurrenceToResource(source localcalendar.Recurrence) externalapi.DateRecurrence
 	ApplyTagStepToResource(source automations.TagView) externalapi.ApplyTagStep
 	RemoveTagStepToResource(source automations.TagView) externalapi.RemoveTagStep
 	HttpStepToResource(source automations.HTTPView) externalapi.HttpStep

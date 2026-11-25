@@ -810,6 +810,18 @@ func (c *ConverterImpl) CustomFieldsToResources(source []*ent.CustomField) []ext
 	}
 	return externalapiCustomFieldResourceList
 }
+func (c *ConverterImpl) DateRecurrenceToResource(source localcalendar.Recurrence) external.DateRecurrence {
+	var externalapiDateRecurrence external.DateRecurrence
+	switch source {
+	case localcalendar.Once:
+		externalapiDateRecurrence = external.DateRecurrenceOnce
+	case localcalendar.Yearly:
+		externalapiDateRecurrence = external.DateRecurrenceYearly
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiDateRecurrence
+}
 func (c *ConverterImpl) DnsRecordToResource(source sendingdomains.Record) external.DnsRecord {
 	var externalapiDnsRecord external.DnsRecord
 	externalapiDnsRecord.Type = dnsRecordType(source)

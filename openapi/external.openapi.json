@@ -6980,6 +6980,29 @@
         },
         "description": "The messages one version's send Step sent"
       },
+      "BirthdayDateField": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["birthday"]
+          }
+        },
+        "description": "The Contact's date of birth, a date field every Contact has"
+      },
+      "BirthdayDateFieldInput": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["birthday"]
+          }
+        },
+        "description": "The Contact's date of birth, a date field every Contact has",
+        "additionalProperties": false
+      },
       "BirthdayLeaf": {
         "type": "object",
         "required": ["kind", "test"],
@@ -9804,6 +9827,37 @@
         },
         "description": "The tests a Condition's Custom field test takes on a field of one type, each with the\noperators it takes there; an empty list is a test the type does not take"
       },
+      "CustomFieldDateField": {
+        "type": "object",
+        "required": ["kind", "key"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["customField"]
+          },
+          "key": {
+            "type": "string",
+            "description": "The Custom field's key"
+          }
+        },
+        "description": "A datetime Custom field of the Workspace, its key in a field of its own. Its value's calendar\ndate is read in the Workspace time zone: a value with an offset is moved into it, one without an\noffset or a bare date keeps its own date."
+      },
+      "CustomFieldDateFieldInput": {
+        "type": "object",
+        "required": ["kind", "key"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["customField"]
+          },
+          "key": {
+            "type": "string",
+            "description": "The Custom field's key"
+          }
+        },
+        "description": "A datetime Custom field of the Workspace, its key in a field of its own. Its value's calendar\ndate is read in the Workspace time zone: a value with an offset is moved into it, one without an\noffset or a bare date keeps its own date.",
+        "additionalProperties": false
+      },
       "CustomFieldLeaf": {
         "type": "object",
         "required": ["kind", "key", "test"],
@@ -9991,6 +10045,56 @@
         "type": "string",
         "enum": ["string", "number", "bool", "datetime"],
         "description": "A Custom field's value type"
+      },
+      "DateField": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/BirthdayDateField"
+          },
+          {
+            "$ref": "#/components/schemas/CustomFieldDateField"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "birthday": "#/components/schemas/BirthdayDateField",
+            "customField": "#/components/schemas/CustomFieldDateField"
+          }
+        },
+        "description": "A date a Contact holds, by `kind`: its `birthday`, or a datetime Custom field"
+      },
+      "DateFieldInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/BirthdayDateFieldInput"
+          },
+          {
+            "$ref": "#/components/schemas/CustomFieldDateFieldInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "birthday": "#/components/schemas/BirthdayDateFieldInput",
+            "customField": "#/components/schemas/CustomFieldDateFieldInput"
+          }
+        },
+        "description": "A date a Contact holds, by `kind`, as a request writes it"
+      },
+      "DateOffsetDays": {
+        "type": "integer",
+        "format": "int32",
+        "minimum": -365,
+        "maximum": 365,
+        "description": "A whole number of days before (negative) or after the date, within a year"
+      },
+      "DateRecurrence": {
+        "type": "string",
+        "enum": ["yearly", "once"],
+        "description": "How often a date comes: `yearly` on each anniversary, from the year after the date's own;\n`once` on the date itself. The birthday is always past, so it is only yearly."
       },
       "DeferralCause": {
         "type": "string",
@@ -17122,17 +17226,108 @@
         "description": "A Step that waits before the next one, as a request writes it",
         "additionalProperties": false
       },
+      "WaitUntilDate": {
+        "type": "object",
+        "required": ["form", "field", "recurrence", "offsetDays", "localTime"],
+        "properties": {
+          "form": {
+            "type": "string",
+            "enum": ["date"]
+          },
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateField"
+              }
+            ],
+            "description": "The date the moment comes from"
+          },
+          "recurrence": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateRecurrence"
+              }
+            ],
+            "description": "Every year, or once"
+          },
+          "offsetDays": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateOffsetDays"
+              }
+            ],
+            "description": "Days before (negative) or after the date"
+          },
+          "localTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocalTime"
+              }
+            ],
+            "description": "The time of day of the moment, in the Contact's time zone"
+          }
+        },
+        "description": "Wait until the next occurrence of a date the Contact holds (ADR 0126), at or after the moment\nthe Enrollment reaches the Step: `offsetDays` before or after the date, at `localTime` in the\nContact's time zone, or the Workspace time zone when the Contact has no valid one. A yearly date\nwaits for its next anniversary, from the year after the date's own; a once date for the date\nitself. When there is no such moment within 366 days the Enrollment goes on at once, and the\nreport counts why: the moment has passed (`past`), the Contact holds no date in the field\n(`no_date`), or it lies more than 366 days ahead (`beyond_bound`)."
+      },
+      "WaitUntilDateInput": {
+        "type": "object",
+        "required": ["form", "field", "recurrence", "offsetDays", "localTime"],
+        "properties": {
+          "form": {
+            "type": "string",
+            "enum": ["date"]
+          },
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateFieldInput"
+              }
+            ],
+            "description": "The date the moment comes from: the birthday, or a datetime Custom field of the Workspace's\ncatalogue"
+          },
+          "recurrence": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateRecurrence"
+              }
+            ],
+            "description": "Every year, or once; the birthday is only yearly"
+          },
+          "offsetDays": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateOffsetDays"
+              }
+            ],
+            "description": "Days before (negative) or after the date, within 365"
+          },
+          "localTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocalTime"
+              }
+            ],
+            "description": "The time of day of the moment, `HH:MM`, in the Contact's time zone"
+          }
+        },
+        "description": "Wait until the next occurrence of a date the Contact holds, as a request writes it",
+        "additionalProperties": false
+      },
       "WaitUntilMoment": {
         "type": "object",
         "oneOf": [
           {
             "$ref": "#/components/schemas/WaitUntilTimeOfDay"
+          },
+          {
+            "$ref": "#/components/schemas/WaitUntilDate"
           }
         ],
         "discriminator": {
           "propertyName": "form",
           "mapping": {
-            "time_of_day": "#/components/schemas/WaitUntilTimeOfDay"
+            "time_of_day": "#/components/schemas/WaitUntilTimeOfDay",
+            "date": "#/components/schemas/WaitUntilDate"
           }
         },
         "description": "The moment a Wait until holds an Enrollment until, by `form`"
@@ -17142,12 +17337,16 @@
         "oneOf": [
           {
             "$ref": "#/components/schemas/WaitUntilTimeOfDayInput"
+          },
+          {
+            "$ref": "#/components/schemas/WaitUntilDateInput"
           }
         ],
         "discriminator": {
           "propertyName": "form",
           "mapping": {
-            "time_of_day": "#/components/schemas/WaitUntilTimeOfDayInput"
+            "time_of_day": "#/components/schemas/WaitUntilTimeOfDayInput",
+            "date": "#/components/schemas/WaitUntilDateInput"
           }
         },
         "description": "The moment a Wait until holds an Enrollment until, by `form`, as a request writes it"

@@ -884,6 +884,20 @@ export type AutomationVersionStepFigures = {
 };
 
 /**
+ * The Contact's date of birth, a date field every Contact has
+ */
+export type BirthdayDateField = {
+  kind: 'birthday';
+};
+
+/**
+ * The Contact's date of birth, a date field every Contact has
+ */
+export type BirthdayDateFieldInput = {
+  kind: 'birthday';
+};
+
+/**
  * A test of the Contact's date of birth
  */
 export type BirthdayLeaf = {
@@ -2674,6 +2688,32 @@ export type CustomFieldConditionTests = {
 };
 
 /**
+ * A datetime Custom field of the Workspace, its key in a field of its own. Its value's calendar
+ * date is read in the Workspace time zone: a value with an offset is moved into it, one without an
+ * offset or a bare date keeps its own date.
+ */
+export type CustomFieldDateField = {
+  kind: 'customField';
+  /**
+   * The Custom field's key
+   */
+  key: string;
+};
+
+/**
+ * A datetime Custom field of the Workspace, its key in a field of its own. Its value's calendar
+ * date is read in the Workspace time zone: a value with an offset is moved into it, one without an
+ * offset or a bare date keeps its own date.
+ */
+export type CustomFieldDateFieldInput = {
+  kind: 'customField';
+  /**
+   * The Custom field's key
+   */
+  key: string;
+};
+
+/**
  * A test of a Custom field of the Workspace, its key in a field of its own
  */
 export type CustomFieldLeaf = {
@@ -2789,6 +2829,41 @@ export const CustomFieldType = {
  * A Custom field's value type
  */
 export type CustomFieldType = typeof CustomFieldType[keyof typeof CustomFieldType];
+
+/**
+ * A date a Contact holds, by `kind`: its `birthday`, or a datetime Custom field
+ */
+export type DateField = ({
+  kind: 'birthday';
+} & BirthdayDateField) | ({
+  kind: 'customField';
+} & CustomFieldDateField);
+
+/**
+ * A date a Contact holds, by `kind`, as a request writes it
+ */
+export type DateFieldInput = ({
+  kind: 'birthday';
+} & BirthdayDateFieldInput) | ({
+  kind: 'customField';
+} & CustomFieldDateFieldInput);
+
+/**
+ * A whole number of days before (negative) or after the date, within a year
+ */
+export type DateOffsetDays = number;
+
+/**
+ * How often a date comes: `yearly` on each anniversary, from the year after the date's own;
+ * `once` on the date itself. The birthday is always past, so it is only yearly.
+ */
+export const DateRecurrence = { YEARLY: 'yearly', ONCE: 'once' } as const;
+
+/**
+ * How often a date comes: `yearly` on each anniversary, from the year after the date's own;
+ * `once` on the date itself. The birthday is always past, so it is only yearly.
+ */
+export type DateRecurrence = typeof DateRecurrence[keyof typeof DateRecurrence];
 
 /**
  * What a Deferral waits for: the send is not consumed and goes through every check again when it is retried
@@ -7798,14 +7873,75 @@ export type WaitStepInput = {
 };
 
 /**
+ * Wait until the next occurrence of a date the Contact holds (ADR 0126), at or after the moment
+ * the Enrollment reaches the Step: `offsetDays` before or after the date, at `localTime` in the
+ * Contact's time zone, or the Workspace time zone when the Contact has no valid one. A yearly date
+ * waits for its next anniversary, from the year after the date's own; a once date for the date
+ * itself. When there is no such moment within 366 days the Enrollment goes on at once, and the
+ * report counts why: the moment has passed (`past`), the Contact holds no date in the field
+ * (`no_date`), or it lies more than 366 days ahead (`beyond_bound`).
+ */
+export type WaitUntilDate = {
+  form: 'date';
+  /**
+   * The date the moment comes from
+   */
+  field: DateField;
+  /**
+   * Every year, or once
+   */
+  recurrence: DateRecurrence;
+  /**
+   * Days before (negative) or after the date
+   */
+  offsetDays: DateOffsetDays;
+  /**
+   * The time of day of the moment, in the Contact's time zone
+   */
+  localTime: LocalTime;
+};
+
+/**
+ * Wait until the next occurrence of a date the Contact holds, as a request writes it
+ */
+export type WaitUntilDateInput = {
+  form: 'date';
+  /**
+   * The date the moment comes from: the birthday, or a datetime Custom field of the Workspace's
+   * catalogue
+   */
+  field: DateFieldInput;
+  /**
+   * Every year, or once; the birthday is only yearly
+   */
+  recurrence: DateRecurrence;
+  /**
+   * Days before (negative) or after the date, within 365
+   */
+  offsetDays: DateOffsetDays;
+  /**
+   * The time of day of the moment, `HH:MM`, in the Contact's time zone
+   */
+  localTime: LocalTime;
+};
+
+/**
  * The moment a Wait until holds an Enrollment until, by `form`
  */
-export type WaitUntilMoment = WaitUntilTimeOfDay;
+export type WaitUntilMoment = ({
+  form: 'time_of_day';
+} & WaitUntilTimeOfDay) | ({
+  form: 'date';
+} & WaitUntilDate);
 
 /**
  * The moment a Wait until holds an Enrollment until, by `form`, as a request writes it
  */
-export type WaitUntilMomentInput = WaitUntilTimeOfDayInput;
+export type WaitUntilMomentInput = ({
+  form: 'time_of_day';
+} & WaitUntilTimeOfDayInput) | ({
+  form: 'date';
+} & WaitUntilDateInput);
 
 /**
  * A Step that holds the Enrollment until a calendar moment (ADR 0126): the moment is computed

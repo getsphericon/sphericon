@@ -1461,6 +1461,70 @@ func (s AutomationsReportPeriod) Validate() error {
 	}
 }
 
+func (s *BirthdayDateField) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *BirthdayDateFieldInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s BirthdayDateFieldInputKind) Validate() error {
+	switch s {
+	case "birthday":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s BirthdayDateFieldKind) Validate() error {
+	switch s {
+	case "birthday":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *BirthdayLeaf) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -4561,6 +4625,70 @@ func (s *CustomFieldConditionTests) Validate() error {
 	return nil
 }
 
+func (s *CustomFieldDateField) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *CustomFieldDateFieldInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s CustomFieldDateFieldInputKind) Validate() error {
+	switch s {
+	case "customField":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s CustomFieldDateFieldKind) Validate() error {
+	switch s {
+	case "customField":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *CustomFieldLeaf) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -4855,6 +4983,115 @@ func (s *CustomFieldsListOK) Validate() error {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
+}
+
+func (s *DateField) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *DateFieldInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s DateFieldInputSum) Validate() error {
+	switch s.Type {
+	case BirthdayDateFieldInputDateFieldInputSum:
+		if err := s.BirthdayDateFieldInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case CustomFieldDateFieldInputDateFieldInputSum:
+		if err := s.CustomFieldDateFieldInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
+func (s DateFieldSum) Validate() error {
+	switch s.Type {
+	case BirthdayDateFieldDateFieldSum:
+		if err := s.BirthdayDateField.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case CustomFieldDateFieldDateFieldSum:
+		if err := s.CustomFieldDateField.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
+func (s DateOffsetDays) Validate() error {
+	alias := (int32)(s)
+	if err := (validate.Int{
+		MinSet:        true,
+		Min:           -365,
+		MaxSet:        true,
+		Max:           365,
+		MinExclusive:  false,
+		MaxExclusive:  false,
+		MultipleOfSet: false,
+		MultipleOf:    0,
+		Pattern:       nil,
+	}).Validate(int64(alias)); err != nil {
+		return errors.Wrap(err, "int")
+	}
+	return nil
+}
+
+func (s DateRecurrence) Validate() error {
+	switch s {
+	case "yearly":
+		return nil
+	case "once":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s *DnsRecord) Validate() error {
@@ -13696,6 +13933,158 @@ func (s WaitStepType) Validate() error {
 	}
 }
 
+func (s *WaitUntilDate) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Form.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "form",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Field.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "field",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Recurrence.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "recurrence",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.OffsetDays.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "offsetDays",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.LocalTime.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "localTime",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s WaitUntilDateForm) Validate() error {
+	switch s {
+	case "date":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *WaitUntilDateInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Form.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "form",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Field.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "field",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Recurrence.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "recurrence",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.OffsetDays.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "offsetDays",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.LocalTime.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "localTime",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s WaitUntilDateInputForm) Validate() error {
+	switch s {
+	case "date":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *WaitUntilMoment) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -13749,6 +14138,11 @@ func (s WaitUntilMomentInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case WaitUntilDateInputWaitUntilMomentInputSum:
+		if err := s.WaitUntilDateInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -13758,6 +14152,11 @@ func (s WaitUntilMomentSum) Validate() error {
 	switch s.Type {
 	case WaitUntilTimeOfDayWaitUntilMomentSum:
 		if err := s.WaitUntilTimeOfDay.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case WaitUntilDateWaitUntilMomentSum:
+		if err := s.WaitUntilDate.Validate(); err != nil {
 			return err
 		}
 		return nil

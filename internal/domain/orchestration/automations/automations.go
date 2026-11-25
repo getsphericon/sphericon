@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
@@ -39,12 +40,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/jsonvalue"
+	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/kernel/optional"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
@@ -198,14 +201,87 @@ func validateStep(st *automationstep.Step, linkLength int) error {
 }
 
 // checkUntil refuses a Wait until's moment out of its bounds (decision 6 of #1613): a malformed
-// local time, an unknown or a repeated weekday, each named.
+// local time, an unknown or a repeated weekday, each named; and a date the date Trigger's rules
+// that need no catalogue refuse (dateProblem). Whether its Custom field is in the catalogue is
+// checkDateFields'.
 func checkUntil(u automationstep.Until) error {
 	switch u := u.(type) {
 	case automationstep.TimeOfDay:
 		_, err := u.Calendar()
 		return err
+	case automationstep.OnDate:
+		if problem := dateProblem(u.Date); problem != "" {
+			return errors.New(problem)
+		}
+		return nil
 	case nil:
 		return errors.New("a wait until needs the moment it waits for")
+	}
+	return nil
+}
+
+// dateProblem says why a date Trigger cannot be stored, by the rules that need no catalogue: its
+// schedule out of the calendar's bounds (localcalendar.NewSchedule), a field of no known kind or a
+// Custom field without a key, and `once` on the birthday, which is always past (decision 5 of
+// #1613). Empty when it can.
+func dateProblem(d datetrigger.Date) string {
+	if _, err := d.Schedule(); err != nil {
+		return err.Error()
+	}
+	switch d.Field.Kind {
+	case datetrigger.Birthday:
+		if d.Recurrence == localcalendar.Once {
+			return "a birthday is always past, so its trigger is only yearly"
+		}
+		return ""
+	case datetrigger.CustomField:
+		if d.Field.Key == "" {
+			return "the custom field has no key"
+		}
+		return ""
+	}
+	return fmt.Sprintf("%q is not a date field", d.Field.Kind)
+}
+
+// dateFieldProblem says why the Workspace's catalogue cannot hold the date d names: a Custom
+// field it lacks, or holds with another type than datetime, whose date would never come. Empty
+// when it can, and for the birthday, which every Contact has.
+func (m *Module) dateFieldProblem(ctx context.Context, s *ent.Scoped, d datetrigger.Date) (string, error) {
+	if d.Field.Kind != datetrigger.CustomField {
+		return "", nil
+	}
+	field, err := m.people.CustomFieldByKey(ctx, s, d.Field.Key)
+	if err != nil {
+		return "", err
+	}
+	if field == nil {
+		return fmt.Sprintf("the Workspace has no Custom field %q", d.Field.Key), nil
+	}
+	if field.Type != customfield.TypeDatetime {
+		return fmt.Sprintf("the Custom field %q is a %s, not a datetime", d.Field.Key, field.Type), nil
+	}
+	return "", nil
+}
+
+// checkDateFields refuses a Wait until on a date whose Custom field the Workspace's catalogue cannot
+// hold (dateFieldProblem), naming the Step.
+func (m *Module) checkDateFields(ctx context.Context, s *ent.Scoped, steps automationstep.Path) error {
+	for _, st := range automationstep.All(steps) {
+		w, ok := st.Payload.(automationstep.WaitUntil)
+		if !ok {
+			continue
+		}
+		d, ok := w.Until.(automationstep.OnDate)
+		if !ok {
+			continue
+		}
+		problem, err := m.dateFieldProblem(ctx, s, d.Date)
+		if err != nil {
+			return err
+		}
+		if problem != "" {
+			return refuse(st, problem)
+		}
 	}
 	return nil
 }
@@ -819,6 +895,9 @@ func (v versioned) mergeSteps(ctx context.Context, ts *ent.Scoped, steps, stored
 		return automationstep.Path{}, err
 	}
 	if err := v.m.checkBranches(ctx, ts, steps); err != nil {
+		return automationstep.Path{}, err
+	}
+	if err := v.m.checkDateFields(ctx, ts, steps); err != nil {
 		return automationstep.Path{}, err
 	}
 	// Each Integration the steps name is checked once, however many steps send through it.

@@ -3582,6 +3582,106 @@ func (s *AutomationVersionStepFigures) SetSkipped(val int32) {
 	s.Skipped = val
 }
 
+// The Contact's date of birth, a date field every Contact has.
+// Ref: #/components/schemas/BirthdayDateField
+type BirthdayDateField struct {
+	Kind BirthdayDateFieldKind `json:"kind"`
+}
+
+// GetKind returns the value of Kind.
+func (s *BirthdayDateField) GetKind() BirthdayDateFieldKind {
+	return s.Kind
+}
+
+// SetKind sets the value of Kind.
+func (s *BirthdayDateField) SetKind(val BirthdayDateFieldKind) {
+	s.Kind = val
+}
+
+// The Contact's date of birth, a date field every Contact has.
+// Ref: #/components/schemas/BirthdayDateFieldInput
+type BirthdayDateFieldInput struct {
+	Kind BirthdayDateFieldInputKind `json:"kind"`
+}
+
+// GetKind returns the value of Kind.
+func (s *BirthdayDateFieldInput) GetKind() BirthdayDateFieldInputKind {
+	return s.Kind
+}
+
+// SetKind sets the value of Kind.
+func (s *BirthdayDateFieldInput) SetKind(val BirthdayDateFieldInputKind) {
+	s.Kind = val
+}
+
+type BirthdayDateFieldInputKind string
+
+const (
+	BirthdayDateFieldInputKindBirthday BirthdayDateFieldInputKind = "birthday"
+)
+
+// AllValues returns all BirthdayDateFieldInputKind values.
+func (BirthdayDateFieldInputKind) AllValues() []BirthdayDateFieldInputKind {
+	return []BirthdayDateFieldInputKind{
+		BirthdayDateFieldInputKindBirthday,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s BirthdayDateFieldInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case BirthdayDateFieldInputKindBirthday:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *BirthdayDateFieldInputKind) UnmarshalText(data []byte) error {
+	switch BirthdayDateFieldInputKind(data) {
+	case BirthdayDateFieldInputKindBirthday:
+		*s = BirthdayDateFieldInputKindBirthday
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type BirthdayDateFieldKind string
+
+const (
+	BirthdayDateFieldKindBirthday BirthdayDateFieldKind = "birthday"
+)
+
+// AllValues returns all BirthdayDateFieldKind values.
+func (BirthdayDateFieldKind) AllValues() []BirthdayDateFieldKind {
+	return []BirthdayDateFieldKind{
+		BirthdayDateFieldKindBirthday,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s BirthdayDateFieldKind) MarshalText() ([]byte, error) {
+	switch s {
+	case BirthdayDateFieldKindBirthday:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *BirthdayDateFieldKind) UnmarshalText(data []byte) error {
+	switch BirthdayDateFieldKind(data) {
+	case BirthdayDateFieldKindBirthday:
+		*s = BirthdayDateFieldKindBirthday
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A test of the Contact's date of birth.
 // Ref: #/components/schemas/BirthdayLeaf
 type BirthdayLeaf struct {
@@ -7950,6 +8050,134 @@ func (s *CustomFieldConditionTests) SetPresence(val []PresenceOperator) {
 	s.Presence = val
 }
 
+// A datetime Custom field of the Workspace, its key in a field of its own. Its value's calendar date
+// is read in the Workspace time zone: a value with an offset is moved into it, one without an offset
+// or a bare date keeps its own date.
+// Ref: #/components/schemas/CustomFieldDateField
+type CustomFieldDateField struct {
+	Kind CustomFieldDateFieldKind `json:"kind"`
+	// The Custom field's key.
+	Key string `json:"key"`
+}
+
+// GetKind returns the value of Kind.
+func (s *CustomFieldDateField) GetKind() CustomFieldDateFieldKind {
+	return s.Kind
+}
+
+// GetKey returns the value of Key.
+func (s *CustomFieldDateField) GetKey() string {
+	return s.Key
+}
+
+// SetKind sets the value of Kind.
+func (s *CustomFieldDateField) SetKind(val CustomFieldDateFieldKind) {
+	s.Kind = val
+}
+
+// SetKey sets the value of Key.
+func (s *CustomFieldDateField) SetKey(val string) {
+	s.Key = val
+}
+
+// A datetime Custom field of the Workspace, its key in a field of its own. Its value's calendar date
+// is read in the Workspace time zone: a value with an offset is moved into it, one without an offset
+// or a bare date keeps its own date.
+// Ref: #/components/schemas/CustomFieldDateFieldInput
+type CustomFieldDateFieldInput struct {
+	Kind CustomFieldDateFieldInputKind `json:"kind"`
+	// The Custom field's key.
+	Key string `json:"key"`
+}
+
+// GetKind returns the value of Kind.
+func (s *CustomFieldDateFieldInput) GetKind() CustomFieldDateFieldInputKind {
+	return s.Kind
+}
+
+// GetKey returns the value of Key.
+func (s *CustomFieldDateFieldInput) GetKey() string {
+	return s.Key
+}
+
+// SetKind sets the value of Kind.
+func (s *CustomFieldDateFieldInput) SetKind(val CustomFieldDateFieldInputKind) {
+	s.Kind = val
+}
+
+// SetKey sets the value of Key.
+func (s *CustomFieldDateFieldInput) SetKey(val string) {
+	s.Key = val
+}
+
+type CustomFieldDateFieldInputKind string
+
+const (
+	CustomFieldDateFieldInputKindCustomField CustomFieldDateFieldInputKind = "customField"
+)
+
+// AllValues returns all CustomFieldDateFieldInputKind values.
+func (CustomFieldDateFieldInputKind) AllValues() []CustomFieldDateFieldInputKind {
+	return []CustomFieldDateFieldInputKind{
+		CustomFieldDateFieldInputKindCustomField,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s CustomFieldDateFieldInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case CustomFieldDateFieldInputKindCustomField:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *CustomFieldDateFieldInputKind) UnmarshalText(data []byte) error {
+	switch CustomFieldDateFieldInputKind(data) {
+	case CustomFieldDateFieldInputKindCustomField:
+		*s = CustomFieldDateFieldInputKindCustomField
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type CustomFieldDateFieldKind string
+
+const (
+	CustomFieldDateFieldKindCustomField CustomFieldDateFieldKind = "customField"
+)
+
+// AllValues returns all CustomFieldDateFieldKind values.
+func (CustomFieldDateFieldKind) AllValues() []CustomFieldDateFieldKind {
+	return []CustomFieldDateFieldKind{
+		CustomFieldDateFieldKindCustomField,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s CustomFieldDateFieldKind) MarshalText() ([]byte, error) {
+	switch s {
+	case CustomFieldDateFieldKindCustomField:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *CustomFieldDateFieldKind) UnmarshalText(data []byte) error {
+	switch CustomFieldDateFieldKind(data) {
+	case CustomFieldDateFieldKindCustomField:
+		*s = CustomFieldDateFieldKindCustomField
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A test of a Custom field of the Workspace, its key in a field of its own.
 // Ref: #/components/schemas/CustomFieldLeaf
 type CustomFieldLeaf struct {
@@ -8483,6 +8711,220 @@ func (s *CustomFieldType) UnmarshalText(data []byte) error {
 		return nil
 	case CustomFieldTypeDatetime:
 		*s = CustomFieldTypeDatetime
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A date a Contact holds, by `kind`: its `birthday`, or a datetime Custom field.
+// Ref: #/components/schemas/DateField
+type DateField struct {
+	OneOf DateFieldSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *DateField) GetOneOf() DateFieldSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *DateField) SetOneOf(val DateFieldSum) {
+	s.OneOf = val
+}
+
+// A date a Contact holds, by `kind`, as a request writes it.
+// Ref: #/components/schemas/DateFieldInput
+type DateFieldInput struct {
+	OneOf DateFieldInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *DateFieldInput) GetOneOf() DateFieldInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *DateFieldInput) SetOneOf(val DateFieldInputSum) {
+	s.OneOf = val
+}
+
+// DateFieldInputSum represents sum type.
+type DateFieldInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                      DateFieldInputSumType
+	BirthdayDateFieldInput    BirthdayDateFieldInput
+	CustomFieldDateFieldInput CustomFieldDateFieldInput
+}
+
+// DateFieldInputSumType is oneOf type of DateFieldInputSum.
+type DateFieldInputSumType string
+
+// Possible values for DateFieldInputSumType.
+const (
+	BirthdayDateFieldInputDateFieldInputSum    DateFieldInputSumType = "birthday"
+	CustomFieldDateFieldInputDateFieldInputSum DateFieldInputSumType = "customField"
+)
+
+// IsBirthdayDateFieldInput reports whether DateFieldInputSum is BirthdayDateFieldInput.
+func (s DateFieldInputSum) IsBirthdayDateFieldInput() bool {
+	return s.Type == BirthdayDateFieldInputDateFieldInputSum
+}
+
+// IsCustomFieldDateFieldInput reports whether DateFieldInputSum is CustomFieldDateFieldInput.
+func (s DateFieldInputSum) IsCustomFieldDateFieldInput() bool {
+	return s.Type == CustomFieldDateFieldInputDateFieldInputSum
+}
+
+// SetBirthdayDateFieldInput sets DateFieldInputSum to BirthdayDateFieldInput.
+func (s *DateFieldInputSum) SetBirthdayDateFieldInput(v BirthdayDateFieldInput) {
+	s.Type = BirthdayDateFieldInputDateFieldInputSum
+	s.BirthdayDateFieldInput = v
+}
+
+// GetBirthdayDateFieldInput returns BirthdayDateFieldInput and true boolean if DateFieldInputSum is BirthdayDateFieldInput.
+func (s DateFieldInputSum) GetBirthdayDateFieldInput() (v BirthdayDateFieldInput, ok bool) {
+	if !s.IsBirthdayDateFieldInput() {
+		return v, false
+	}
+	return s.BirthdayDateFieldInput, true
+}
+
+// NewBirthdayDateFieldInputDateFieldInputSum returns new DateFieldInputSum from BirthdayDateFieldInput.
+func NewBirthdayDateFieldInputDateFieldInputSum(v BirthdayDateFieldInput) DateFieldInputSum {
+	var s DateFieldInputSum
+	s.SetBirthdayDateFieldInput(v)
+	return s
+}
+
+// SetCustomFieldDateFieldInput sets DateFieldInputSum to CustomFieldDateFieldInput.
+func (s *DateFieldInputSum) SetCustomFieldDateFieldInput(v CustomFieldDateFieldInput) {
+	s.Type = CustomFieldDateFieldInputDateFieldInputSum
+	s.CustomFieldDateFieldInput = v
+}
+
+// GetCustomFieldDateFieldInput returns CustomFieldDateFieldInput and true boolean if DateFieldInputSum is CustomFieldDateFieldInput.
+func (s DateFieldInputSum) GetCustomFieldDateFieldInput() (v CustomFieldDateFieldInput, ok bool) {
+	if !s.IsCustomFieldDateFieldInput() {
+		return v, false
+	}
+	return s.CustomFieldDateFieldInput, true
+}
+
+// NewCustomFieldDateFieldInputDateFieldInputSum returns new DateFieldInputSum from CustomFieldDateFieldInput.
+func NewCustomFieldDateFieldInputDateFieldInputSum(v CustomFieldDateFieldInput) DateFieldInputSum {
+	var s DateFieldInputSum
+	s.SetCustomFieldDateFieldInput(v)
+	return s
+}
+
+// DateFieldSum represents sum type.
+type DateFieldSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                 DateFieldSumType
+	BirthdayDateField    BirthdayDateField
+	CustomFieldDateField CustomFieldDateField
+}
+
+// DateFieldSumType is oneOf type of DateFieldSum.
+type DateFieldSumType string
+
+// Possible values for DateFieldSumType.
+const (
+	BirthdayDateFieldDateFieldSum    DateFieldSumType = "birthday"
+	CustomFieldDateFieldDateFieldSum DateFieldSumType = "customField"
+)
+
+// IsBirthdayDateField reports whether DateFieldSum is BirthdayDateField.
+func (s DateFieldSum) IsBirthdayDateField() bool { return s.Type == BirthdayDateFieldDateFieldSum }
+
+// IsCustomFieldDateField reports whether DateFieldSum is CustomFieldDateField.
+func (s DateFieldSum) IsCustomFieldDateField() bool {
+	return s.Type == CustomFieldDateFieldDateFieldSum
+}
+
+// SetBirthdayDateField sets DateFieldSum to BirthdayDateField.
+func (s *DateFieldSum) SetBirthdayDateField(v BirthdayDateField) {
+	s.Type = BirthdayDateFieldDateFieldSum
+	s.BirthdayDateField = v
+}
+
+// GetBirthdayDateField returns BirthdayDateField and true boolean if DateFieldSum is BirthdayDateField.
+func (s DateFieldSum) GetBirthdayDateField() (v BirthdayDateField, ok bool) {
+	if !s.IsBirthdayDateField() {
+		return v, false
+	}
+	return s.BirthdayDateField, true
+}
+
+// NewBirthdayDateFieldDateFieldSum returns new DateFieldSum from BirthdayDateField.
+func NewBirthdayDateFieldDateFieldSum(v BirthdayDateField) DateFieldSum {
+	var s DateFieldSum
+	s.SetBirthdayDateField(v)
+	return s
+}
+
+// SetCustomFieldDateField sets DateFieldSum to CustomFieldDateField.
+func (s *DateFieldSum) SetCustomFieldDateField(v CustomFieldDateField) {
+	s.Type = CustomFieldDateFieldDateFieldSum
+	s.CustomFieldDateField = v
+}
+
+// GetCustomFieldDateField returns CustomFieldDateField and true boolean if DateFieldSum is CustomFieldDateField.
+func (s DateFieldSum) GetCustomFieldDateField() (v CustomFieldDateField, ok bool) {
+	if !s.IsCustomFieldDateField() {
+		return v, false
+	}
+	return s.CustomFieldDateField, true
+}
+
+// NewCustomFieldDateFieldDateFieldSum returns new DateFieldSum from CustomFieldDateField.
+func NewCustomFieldDateFieldDateFieldSum(v CustomFieldDateField) DateFieldSum {
+	var s DateFieldSum
+	s.SetCustomFieldDateField(v)
+	return s
+}
+
+type DateOffsetDays int32
+
+// How often a date comes: `yearly` on each anniversary, from the year after the date's own; `once` on
+// the date itself. The birthday is always past, so it is only yearly.
+// Ref: #/components/schemas/DateRecurrence
+type DateRecurrence string
+
+const (
+	DateRecurrenceYearly DateRecurrence = "yearly"
+	DateRecurrenceOnce   DateRecurrence = "once"
+)
+
+// AllValues returns all DateRecurrence values.
+func (DateRecurrence) AllValues() []DateRecurrence {
+	return []DateRecurrence{
+		DateRecurrenceYearly,
+		DateRecurrenceOnce,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s DateRecurrence) MarshalText() ([]byte, error) {
+	switch s {
+	case DateRecurrenceYearly:
+		return []byte(s), nil
+	case DateRecurrenceOnce:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *DateRecurrence) UnmarshalText(data []byte) error {
+	switch DateRecurrence(data) {
+	case DateRecurrenceYearly:
+		*s = DateRecurrenceYearly
+		return nil
+	case DateRecurrenceOnce:
+		*s = DateRecurrenceOnce
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -42120,6 +42562,209 @@ func (s *WaitStepType) UnmarshalText(data []byte) error {
 	}
 }
 
+// Wait until the next occurrence of a date the Contact holds (ADR 0126), at or after the moment the
+// Enrollment reaches the Step: `offsetDays` before or after the date, at `localTime` in the Contact's
+// time zone, or the Workspace time zone when the Contact has no valid one. A yearly date waits for its
+// next anniversary, from the year after the date's own; a once date for the date itself. When there is
+// no such moment within 366 days the Enrollment goes on at once, and the report counts why: the moment
+// has passed (`past`), the Contact holds no date in the field (`no_date`), or it lies more than 366
+// days ahead (`beyond_bound`).
+// Ref: #/components/schemas/WaitUntilDate
+type WaitUntilDate struct {
+	Form WaitUntilDateForm `json:"form"`
+	// The date the moment comes from.
+	Field DateField `json:"field"`
+	// Every year, or once.
+	Recurrence DateRecurrence `json:"recurrence"`
+	// Days before (negative) or after the date.
+	OffsetDays DateOffsetDays `json:"offsetDays"`
+	// The time of day of the moment, in the Contact's time zone.
+	LocalTime LocalTime `json:"localTime"`
+}
+
+// GetForm returns the value of Form.
+func (s *WaitUntilDate) GetForm() WaitUntilDateForm {
+	return s.Form
+}
+
+// GetField returns the value of Field.
+func (s *WaitUntilDate) GetField() DateField {
+	return s.Field
+}
+
+// GetRecurrence returns the value of Recurrence.
+func (s *WaitUntilDate) GetRecurrence() DateRecurrence {
+	return s.Recurrence
+}
+
+// GetOffsetDays returns the value of OffsetDays.
+func (s *WaitUntilDate) GetOffsetDays() DateOffsetDays {
+	return s.OffsetDays
+}
+
+// GetLocalTime returns the value of LocalTime.
+func (s *WaitUntilDate) GetLocalTime() LocalTime {
+	return s.LocalTime
+}
+
+// SetForm sets the value of Form.
+func (s *WaitUntilDate) SetForm(val WaitUntilDateForm) {
+	s.Form = val
+}
+
+// SetField sets the value of Field.
+func (s *WaitUntilDate) SetField(val DateField) {
+	s.Field = val
+}
+
+// SetRecurrence sets the value of Recurrence.
+func (s *WaitUntilDate) SetRecurrence(val DateRecurrence) {
+	s.Recurrence = val
+}
+
+// SetOffsetDays sets the value of OffsetDays.
+func (s *WaitUntilDate) SetOffsetDays(val DateOffsetDays) {
+	s.OffsetDays = val
+}
+
+// SetLocalTime sets the value of LocalTime.
+func (s *WaitUntilDate) SetLocalTime(val LocalTime) {
+	s.LocalTime = val
+}
+
+type WaitUntilDateForm string
+
+const (
+	WaitUntilDateFormDate WaitUntilDateForm = "date"
+)
+
+// AllValues returns all WaitUntilDateForm values.
+func (WaitUntilDateForm) AllValues() []WaitUntilDateForm {
+	return []WaitUntilDateForm{
+		WaitUntilDateFormDate,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WaitUntilDateForm) MarshalText() ([]byte, error) {
+	switch s {
+	case WaitUntilDateFormDate:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WaitUntilDateForm) UnmarshalText(data []byte) error {
+	switch WaitUntilDateForm(data) {
+	case WaitUntilDateFormDate:
+		*s = WaitUntilDateFormDate
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Wait until the next occurrence of a date the Contact holds, as a request writes it.
+// Ref: #/components/schemas/WaitUntilDateInput
+type WaitUntilDateInput struct {
+	Form WaitUntilDateInputForm `json:"form"`
+	// The date the moment comes from: the birthday, or a datetime Custom field of the Workspace's
+	// catalogue.
+	Field DateFieldInput `json:"field"`
+	// Every year, or once; the birthday is only yearly.
+	Recurrence DateRecurrence `json:"recurrence"`
+	// Days before (negative) or after the date, within 365.
+	OffsetDays DateOffsetDays `json:"offsetDays"`
+	// The time of day of the moment, `HH:MM`, in the Contact's time zone.
+	LocalTime LocalTime `json:"localTime"`
+}
+
+// GetForm returns the value of Form.
+func (s *WaitUntilDateInput) GetForm() WaitUntilDateInputForm {
+	return s.Form
+}
+
+// GetField returns the value of Field.
+func (s *WaitUntilDateInput) GetField() DateFieldInput {
+	return s.Field
+}
+
+// GetRecurrence returns the value of Recurrence.
+func (s *WaitUntilDateInput) GetRecurrence() DateRecurrence {
+	return s.Recurrence
+}
+
+// GetOffsetDays returns the value of OffsetDays.
+func (s *WaitUntilDateInput) GetOffsetDays() DateOffsetDays {
+	return s.OffsetDays
+}
+
+// GetLocalTime returns the value of LocalTime.
+func (s *WaitUntilDateInput) GetLocalTime() LocalTime {
+	return s.LocalTime
+}
+
+// SetForm sets the value of Form.
+func (s *WaitUntilDateInput) SetForm(val WaitUntilDateInputForm) {
+	s.Form = val
+}
+
+// SetField sets the value of Field.
+func (s *WaitUntilDateInput) SetField(val DateFieldInput) {
+	s.Field = val
+}
+
+// SetRecurrence sets the value of Recurrence.
+func (s *WaitUntilDateInput) SetRecurrence(val DateRecurrence) {
+	s.Recurrence = val
+}
+
+// SetOffsetDays sets the value of OffsetDays.
+func (s *WaitUntilDateInput) SetOffsetDays(val DateOffsetDays) {
+	s.OffsetDays = val
+}
+
+// SetLocalTime sets the value of LocalTime.
+func (s *WaitUntilDateInput) SetLocalTime(val LocalTime) {
+	s.LocalTime = val
+}
+
+type WaitUntilDateInputForm string
+
+const (
+	WaitUntilDateInputFormDate WaitUntilDateInputForm = "date"
+)
+
+// AllValues returns all WaitUntilDateInputForm values.
+func (WaitUntilDateInputForm) AllValues() []WaitUntilDateInputForm {
+	return []WaitUntilDateInputForm{
+		WaitUntilDateInputFormDate,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WaitUntilDateInputForm) MarshalText() ([]byte, error) {
+	switch s {
+	case WaitUntilDateInputFormDate:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WaitUntilDateInputForm) UnmarshalText(data []byte) error {
+	switch WaitUntilDateInputForm(data) {
+	case WaitUntilDateInputFormDate:
+		*s = WaitUntilDateInputFormDate
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // The moment a Wait until holds an Enrollment until, by `form`.
 // Ref: #/components/schemas/WaitUntilMoment
 type WaitUntilMoment struct {
@@ -42157,6 +42802,7 @@ type WaitUntilMomentInputSum struct {
 	// Type selects the active sum variant, switch on this field.
 	Type                    WaitUntilMomentInputSumType
 	WaitUntilTimeOfDayInput WaitUntilTimeOfDayInput
+	WaitUntilDateInput      WaitUntilDateInput
 }
 
 // WaitUntilMomentInputSumType is oneOf type of WaitUntilMomentInputSum.
@@ -42165,11 +42811,17 @@ type WaitUntilMomentInputSumType string
 // Possible values for WaitUntilMomentInputSumType.
 const (
 	WaitUntilTimeOfDayInputWaitUntilMomentInputSum WaitUntilMomentInputSumType = "time_of_day"
+	WaitUntilDateInputWaitUntilMomentInputSum      WaitUntilMomentInputSumType = "date"
 )
 
 // IsWaitUntilTimeOfDayInput reports whether WaitUntilMomentInputSum is WaitUntilTimeOfDayInput.
 func (s WaitUntilMomentInputSum) IsWaitUntilTimeOfDayInput() bool {
 	return s.Type == WaitUntilTimeOfDayInputWaitUntilMomentInputSum
+}
+
+// IsWaitUntilDateInput reports whether WaitUntilMomentInputSum is WaitUntilDateInput.
+func (s WaitUntilMomentInputSum) IsWaitUntilDateInput() bool {
+	return s.Type == WaitUntilDateInputWaitUntilMomentInputSum
 }
 
 // SetWaitUntilTimeOfDayInput sets WaitUntilMomentInputSum to WaitUntilTimeOfDayInput.
@@ -42193,11 +42845,33 @@ func NewWaitUntilTimeOfDayInputWaitUntilMomentInputSum(v WaitUntilTimeOfDayInput
 	return s
 }
 
+// SetWaitUntilDateInput sets WaitUntilMomentInputSum to WaitUntilDateInput.
+func (s *WaitUntilMomentInputSum) SetWaitUntilDateInput(v WaitUntilDateInput) {
+	s.Type = WaitUntilDateInputWaitUntilMomentInputSum
+	s.WaitUntilDateInput = v
+}
+
+// GetWaitUntilDateInput returns WaitUntilDateInput and true boolean if WaitUntilMomentInputSum is WaitUntilDateInput.
+func (s WaitUntilMomentInputSum) GetWaitUntilDateInput() (v WaitUntilDateInput, ok bool) {
+	if !s.IsWaitUntilDateInput() {
+		return v, false
+	}
+	return s.WaitUntilDateInput, true
+}
+
+// NewWaitUntilDateInputWaitUntilMomentInputSum returns new WaitUntilMomentInputSum from WaitUntilDateInput.
+func NewWaitUntilDateInputWaitUntilMomentInputSum(v WaitUntilDateInput) WaitUntilMomentInputSum {
+	var s WaitUntilMomentInputSum
+	s.SetWaitUntilDateInput(v)
+	return s
+}
+
 // WaitUntilMomentSum represents sum type.
 type WaitUntilMomentSum struct {
 	// Type selects the active sum variant, switch on this field.
 	Type               WaitUntilMomentSumType
 	WaitUntilTimeOfDay WaitUntilTimeOfDay
+	WaitUntilDate      WaitUntilDate
 }
 
 // WaitUntilMomentSumType is oneOf type of WaitUntilMomentSum.
@@ -42206,12 +42880,16 @@ type WaitUntilMomentSumType string
 // Possible values for WaitUntilMomentSumType.
 const (
 	WaitUntilTimeOfDayWaitUntilMomentSum WaitUntilMomentSumType = "time_of_day"
+	WaitUntilDateWaitUntilMomentSum      WaitUntilMomentSumType = "date"
 )
 
 // IsWaitUntilTimeOfDay reports whether WaitUntilMomentSum is WaitUntilTimeOfDay.
 func (s WaitUntilMomentSum) IsWaitUntilTimeOfDay() bool {
 	return s.Type == WaitUntilTimeOfDayWaitUntilMomentSum
 }
+
+// IsWaitUntilDate reports whether WaitUntilMomentSum is WaitUntilDate.
+func (s WaitUntilMomentSum) IsWaitUntilDate() bool { return s.Type == WaitUntilDateWaitUntilMomentSum }
 
 // SetWaitUntilTimeOfDay sets WaitUntilMomentSum to WaitUntilTimeOfDay.
 func (s *WaitUntilMomentSum) SetWaitUntilTimeOfDay(v WaitUntilTimeOfDay) {
@@ -42231,6 +42909,27 @@ func (s WaitUntilMomentSum) GetWaitUntilTimeOfDay() (v WaitUntilTimeOfDay, ok bo
 func NewWaitUntilTimeOfDayWaitUntilMomentSum(v WaitUntilTimeOfDay) WaitUntilMomentSum {
 	var s WaitUntilMomentSum
 	s.SetWaitUntilTimeOfDay(v)
+	return s
+}
+
+// SetWaitUntilDate sets WaitUntilMomentSum to WaitUntilDate.
+func (s *WaitUntilMomentSum) SetWaitUntilDate(v WaitUntilDate) {
+	s.Type = WaitUntilDateWaitUntilMomentSum
+	s.WaitUntilDate = v
+}
+
+// GetWaitUntilDate returns WaitUntilDate and true boolean if WaitUntilMomentSum is WaitUntilDate.
+func (s WaitUntilMomentSum) GetWaitUntilDate() (v WaitUntilDate, ok bool) {
+	if !s.IsWaitUntilDate() {
+		return v, false
+	}
+	return s.WaitUntilDate, true
+}
+
+// NewWaitUntilDateWaitUntilMomentSum returns new WaitUntilMomentSum from WaitUntilDate.
+func NewWaitUntilDateWaitUntilMomentSum(v WaitUntilDate) WaitUntilMomentSum {
+	var s WaitUntilMomentSum
+	s.SetWaitUntilDate(v)
 	return s
 }
 

@@ -232,16 +232,59 @@ model WaitUntilTimeOfDayInput {
   weekdays?: Weekday[];
 }
 
+/** Wait until the next occurrence of a date the Contact holds (ADR 0126), at or after the moment
+ * the Enrollment reaches the Step: `offsetDays` before or after the date, at `localTime` in the
+ * Contact's time zone, or the Workspace time zone when the Contact has no valid one. A yearly date
+ * waits for its next anniversary, from the year after the date's own; a once date for the date
+ * itself. When there is no such moment within 366 days the Enrollment goes on at once, and the
+ * report counts why: the moment has passed (`past`), the Contact holds no date in the field
+ * (`no_date`), or it lies more than 366 days ahead (`beyond_bound`). */
+model WaitUntilDate {
+  form: "date";
+
+  /** The date the moment comes from */
+  field: DateField;
+
+  /** Every year, or once */
+  recurrence: DateRecurrence;
+
+  /** Days before (negative) or after the date */
+  offsetDays: DateOffsetDays;
+
+  /** The time of day of the moment, in the Contact's time zone */
+  localTime: LocalTime;
+}
+
+/** Wait until the next occurrence of a date the Contact holds, as a request writes it */
+model WaitUntilDateInput {
+  form: "date";
+
+  /** The date the moment comes from: the birthday, or a datetime Custom field of the Workspace's
+   * catalogue */
+  field: DateFieldInput;
+
+  /** Every year, or once; the birthday is only yearly */
+  recurrence: DateRecurrence;
+
+  /** Days before (negative) or after the date, within 365 */
+  offsetDays: DateOffsetDays;
+
+  /** The time of day of the moment, `HH:MM`, in the Contact's time zone */
+  localTime: LocalTime;
+}
+
 /** The moment a Wait until holds an Enrollment until, by `form` */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "form" })
 union WaitUntilMoment {
   time_of_day: WaitUntilTimeOfDay,
+  date: WaitUntilDate,
 }
 
 /** The moment a Wait until holds an Enrollment until, by `form`, as a request writes it */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "form" })
 union WaitUntilMomentInput {
   time_of_day: WaitUntilTimeOfDayInput,
+  date: WaitUntilDateInput,
 }
 
 /** A Step that holds the Enrollment until a calendar moment (ADR 0126): the moment is computed

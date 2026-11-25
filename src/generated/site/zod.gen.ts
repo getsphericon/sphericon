@@ -264,6 +264,20 @@ export const zAutomationSkippedCounts = z.object({
 export const zAutomationStatus = z.enum(['active', 'inactive']);
 
 /**
+ * The Contact's date of birth, a date field every Contact has
+ */
+export const zBirthdayDateField = z.object({
+  kind: z.enum(['birthday'])
+});
+
+/**
+ * The Contact's date of birth, a date field every Contact has
+ */
+export const zBirthdayDateFieldInput = z.strictObject({
+  kind: z.enum(['birthday'])
+});
+
+/**
  * Whether a Branch needs its unknown path (ADR 0124)
  */
 export const zBranchUnknownPathResult = z.object({
@@ -387,6 +401,26 @@ export const zCreateWebhookInput = z.strictObject({
 export const zCurrencyCode = z.string().regex(/^[A-Z]{3}$/);
 
 /**
+ * A datetime Custom field of the Workspace, its key in a field of its own. Its value's calendar
+ * date is read in the Workspace time zone: a value with an offset is moved into it, one without an
+ * offset or a bare date keeps its own date.
+ */
+export const zCustomFieldDateField = z.object({
+  kind: z.enum(['customField']),
+  key: z.string()
+});
+
+/**
+ * A datetime Custom field of the Workspace, its key in a field of its own. Its value's calendar
+ * date is read in the Workspace time zone: a value with an offset is moved into it, one without an
+ * offset or a bare date keeps its own date.
+ */
+export const zCustomFieldDateFieldInput = z.strictObject({
+  kind: z.enum(['customField']),
+  key: z.string()
+});
+
+/**
  * A Custom field's value type
  */
 export const zCustomFieldType = z.enum([
@@ -395,6 +429,33 @@ export const zCustomFieldType = z.enum([
   'bool',
   'datetime'
 ]);
+
+/**
+ * A date a Contact holds, by `kind`: its `birthday`, or a datetime Custom field
+ */
+export const zDateField = z.discriminatedUnion('kind', [
+  zBirthdayDateField.extend({ kind: z.literal('birthday') }),
+  zCustomFieldDateField.extend({ kind: z.literal('customField') })
+]);
+
+/**
+ * A date a Contact holds, by `kind`, as a request writes it
+ */
+export const zDateFieldInput = z.discriminatedUnion('kind', [
+  zBirthdayDateFieldInput.extend({ kind: z.literal('birthday') }),
+  zCustomFieldDateFieldInput.extend({ kind: z.literal('customField') })
+]);
+
+/**
+ * A whole number of days before (negative) or after the date, within a year
+ */
+export const zDateOffsetDays = z.int().gte(-365).lte(365);
+
+/**
+ * How often a date comes: `yearly` on each anniversary, from the year after the date's own;
+ * `once` on the date itself. The birthday is always past, so it is only yearly.
+ */
+export const zDateRecurrence = z.enum(['yearly', 'once']);
 
 /**
  * What a Deferral waits for: the send is not consumed and goes through every check again when it is retried
@@ -4576,6 +4637,34 @@ export const zWaitStepInput = z.strictObject({
 });
 
 /**
+ * Wait until the next occurrence of a date the Contact holds (ADR 0126), at or after the moment
+ * the Enrollment reaches the Step: `offsetDays` before or after the date, at `localTime` in the
+ * Contact's time zone, or the Workspace time zone when the Contact has no valid one. A yearly date
+ * waits for its next anniversary, from the year after the date's own; a once date for the date
+ * itself. When there is no such moment within 366 days the Enrollment goes on at once, and the
+ * report counts why: the moment has passed (`past`), the Contact holds no date in the field
+ * (`no_date`), or it lies more than 366 days ahead (`beyond_bound`).
+ */
+export const zWaitUntilDate = z.object({
+  form: z.enum(['date']),
+  field: zDateField,
+  recurrence: zDateRecurrence,
+  offsetDays: zDateOffsetDays,
+  localTime: zLocalTime
+});
+
+/**
+ * Wait until the next occurrence of a date the Contact holds, as a request writes it
+ */
+export const zWaitUntilDateInput = z.strictObject({
+  form: z.enum(['date']),
+  field: zDateFieldInput,
+  recurrence: zDateRecurrence,
+  offsetDays: zDateOffsetDays,
+  localTime: zLocalTime
+});
+
+/**
  * Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the
  * receiver answered 410 Gone) and `persistent_failure` (deliveries failed for longer
  * than the window). Absent while the endpoint is enabled.
@@ -4662,7 +4751,10 @@ export const zWaitUntilTimeOfDay = z.object({
 /**
  * The moment a Wait until holds an Enrollment until, by `form`
  */
-export const zWaitUntilMoment = zWaitUntilTimeOfDay;
+export const zWaitUntilMoment = z.discriminatedUnion('form', [
+  zWaitUntilTimeOfDay.extend({ form: z.literal('time_of_day') }),
+  zWaitUntilDate.extend({ form: z.literal('date') })
+]);
 
 /**
  * A Step that holds the Enrollment until a calendar moment (ADR 0126): the moment is computed
@@ -4687,7 +4779,10 @@ export const zWaitUntilTimeOfDayInput = z.strictObject({
 /**
  * The moment a Wait until holds an Enrollment until, by `form`, as a request writes it
  */
-export const zWaitUntilMomentInput = zWaitUntilTimeOfDayInput;
+export const zWaitUntilMomentInput = z.discriminatedUnion('form', [
+  zWaitUntilTimeOfDayInput.extend({ form: z.literal('time_of_day') }),
+  zWaitUntilDateInput.extend({ form: z.literal('date') })
+]);
 
 /**
  * A Step that holds the Enrollment until a calendar moment, as a request writes it

@@ -149,10 +149,6 @@ var (
 	ErrRepeatedWeekday = errors.New("repeated weekday")
 )
 
-// maxOffsetDays is the bound of an offset, in whole days before or after the date (decision 6 of
-// #1613). When the contract declares it, the bound is the generated one.
-const maxOffsetDays = 365
-
 // hhmm is a local time: a time of day in whole minutes.
 type hhmm struct {
 	hour, minute int
@@ -218,14 +214,14 @@ type Schedule struct {
 }
 
 // NewSchedule is the schedule of the recurrence, offset and local time given, or the refusal of
-// every one out of bounds, joined: ErrRecurrence, ErrOffset (beyond ±maxOffsetDays) and
+// every one out of bounds, joined: ErrRecurrence, ErrOffset (beyond the contract's DateOffsetDays) and
 // ErrLocalTime.
 func NewSchedule(recurrence Recurrence, offsetDays int, localTime string) (Schedule, error) {
 	var errs []error
 	if recurrence != Yearly && recurrence != Once {
 		errs = append(errs, fmt.Errorf("%w: %q", ErrRecurrence, recurrence))
 	}
-	if offsetDays < -maxOffsetDays || offsetDays > maxOffsetDays {
+	if offsetDays < bounds.DateOffsetDaysMin || offsetDays > bounds.DateOffsetDaysMax {
 		errs = append(errs, fmt.Errorf("%w: %d days", ErrOffset, offsetDays))
 	}
 	at, err := parseLocalTime(localTime)
