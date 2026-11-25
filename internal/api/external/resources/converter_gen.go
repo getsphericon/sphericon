@@ -45,6 +45,7 @@ import (
 	messaging "github.com/getsphericon/sphericon/internal/infra/messaging"
 	webhook "github.com/getsphericon/sphericon/internal/infra/webhook"
 	addresscheck "github.com/getsphericon/sphericon/internal/kernel/addresscheck"
+	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	emaildoc "github.com/getsphericon/sphericon/internal/kernel/emaildoc"
@@ -204,6 +205,12 @@ func (c *ConverterImpl) AutomationReportToResource(source automations.Report) ex
 			externalapiAutomationReport.VersionSteps[k] = c.automationsVersionStepFiguresToExternalapiAutomationVersionStepFigures(source.VersionSteps[k])
 		}
 	}
+	if source.Paths != nil {
+		externalapiAutomationReport.Paths = make([]external.AutomationPathFigures, len(source.Paths))
+		for l := 0; l < len(source.Paths); l++ {
+			externalapiAutomationReport.Paths[l] = c.automationsPathFiguresToExternalapiAutomationPathFigures(source.Paths[l])
+		}
+	}
 	return externalapiAutomationReport
 }
 func (c *ConverterImpl) AutomationResultsPointToResource(source automations.ResultsPoint) external.AutomationResultsPoint {
@@ -319,7 +326,7 @@ func (c *ConverterImpl) AutomationsToResources(source []*ent.Automation) ([]exte
 }
 func (c *ConverterImpl) BranchPathToResource(source automations.BranchPathView) (external.BranchPath, error) {
 	var externalapiBranchPath external.BranchPath
-	externalapiBranchPath.ID = external.StepId(source.ID)
+	externalapiBranchPath.ID = c.automationstepIDToExternalapiStepId(source.ID)
 	externalapiBranchCondition, err := branchCondition(source.Condition)
 	if err != nil {
 		return externalapiBranchPath, err
@@ -334,7 +341,7 @@ func (c *ConverterImpl) BranchPathToResource(source automations.BranchPathView) 
 }
 func (c *ConverterImpl) BranchStepToResource(source automations.BranchView) (external.BranchStep, error) {
 	var externalapiBranchStep external.BranchStep
-	externalapiBranchStep.ID = external.StepId(source.ID)
+	externalapiBranchStep.ID = c.automationstepIDToExternalapiStepId(source.ID)
 	externalapiBranchStep.Type = branchStepType(source.Type)
 	if source.Paths != nil {
 		externalapiBranchStep.Paths = make([]external.BranchPath, len(source.Paths))
@@ -849,7 +856,7 @@ func (c *ConverterImpl) EmailSchemaTypeToResource(source emaildoc.AgentType) ext
 }
 func (c *ConverterImpl) EmailStepToResource(source automations.EmailView) external.EmailStep {
 	var externalapiEmailStep external.EmailStep
-	externalapiEmailStep.ID = external.StepId(source.ID)
+	externalapiEmailStep.ID = c.automationstepIDToExternalapiStepId(source.ID)
 	externalapiEmailStep.Type = emailStepType(source.Type)
 	externalapiEmailStep.Subject = source.Subject
 	externalapiEmailStep.Body = source.Body
@@ -883,7 +890,7 @@ func (c *ConverterImpl) EmailTemplatesToResources(source []*ent.EmailTemplate) [
 }
 func (c *ConverterImpl) EndStepToResource(source automations.EndView) external.EndStep {
 	var externalapiEndStep external.EndStep
-	externalapiEndStep.ID = external.StepId(source.ID)
+	externalapiEndStep.ID = c.automationstepIDToExternalapiStepId(source.ID)
 	externalapiEndStep.Type = endStepType(source.Type)
 	return externalapiEndStep
 }
@@ -1109,7 +1116,7 @@ func (c *ConverterImpl) HoldReasonToResource(source holdreason.Reason) external.
 }
 func (c *ConverterImpl) HttpStepToResource(source automations.HTTPView) external.HttpStep {
 	var externalapiHttpStep external.HttpStep
-	externalapiHttpStep.ID = external.StepId(source.ID)
+	externalapiHttpStep.ID = c.automationstepIDToExternalapiStepId(source.ID)
 	externalapiHttpStep.Type = httpStepType(source.Type)
 	externalapiHttpStep.Body = source.Body
 	if source.Headers != nil {
@@ -1418,7 +1425,7 @@ func (c *ConverterImpl) RateToTriple(source reputation.Rate) external.RateTriple
 }
 func (c *ConverterImpl) RemoveTagStepToResource(source automations.TagView) external.RemoveTagStep {
 	var externalapiRemoveTagStep external.RemoveTagStep
-	externalapiRemoveTagStep.ID = external.StepId(source.ID)
+	externalapiRemoveTagStep.ID = c.automationstepIDToExternalapiStepId(source.ID)
 	externalapiRemoveTagStep.Type = removeTagStepType(source.Type)
 	externalapiRemoveTagStep.Tag = source.Tag
 	return externalapiRemoveTagStep
@@ -1842,7 +1849,7 @@ func (c *ConverterImpl) SmsOptOutToResource(source *confirmations.SMSOptOut) ext
 }
 func (c *ConverterImpl) SmsStepToResource(source automations.SMSView) external.SmsStep {
 	var externalapiSmsStep external.SmsStep
-	externalapiSmsStep.ID = external.StepId(source.ID)
+	externalapiSmsStep.ID = c.automationstepIDToExternalapiStepId(source.ID)
 	externalapiSmsStep.Type = smsStepType(source.Type)
 	externalapiSmsStep.Text = source.Text
 	externalapiSmsStep.LinkTracking = source.LinkTracking
@@ -1889,7 +1896,7 @@ func (c *ConverterImpl) SplitPathStepType(source external.AutomationStepSumType)
 }
 func (c *ConverterImpl) SplitPathToResource(source automations.SplitPathView) (external.SplitPath, error) {
 	var externalapiSplitPath external.SplitPath
-	externalapiSplitPath.ID = external.StepId(source.ID)
+	externalapiSplitPath.ID = c.automationstepIDToExternalapiStepId(source.ID)
 	externalapiSplitPath.Weight = count(source.Weight)
 	externalapiSplitPathStepList, err := splitPathStepViews(c, source.Steps)
 	if err != nil {
@@ -1900,7 +1907,7 @@ func (c *ConverterImpl) SplitPathToResource(source automations.SplitPathView) (e
 }
 func (c *ConverterImpl) SplitStepToResource(source automations.SplitView) (external.SplitStep, error) {
 	var externalapiSplitStep external.SplitStep
-	externalapiSplitStep.ID = external.StepId(source.ID)
+	externalapiSplitStep.ID = c.automationstepIDToExternalapiStepId(source.ID)
 	externalapiSplitStep.Type = splitStepType(source.Type)
 	if source.Paths != nil {
 		externalapiSplitStep.Paths = make([]external.SplitPath, len(source.Paths))
@@ -2050,7 +2057,7 @@ func (c *ConverterImpl) TelegramConfigToResource(source integrations.RedactedTel
 }
 func (c *ConverterImpl) TelegramStepToResource(source automations.TelegramView) external.TelegramStep {
 	var externalapiTelegramStep external.TelegramStep
-	externalapiTelegramStep.ID = external.StepId(source.ID)
+	externalapiTelegramStep.ID = c.automationstepIDToExternalapiStepId(source.ID)
 	externalapiTelegramStep.Type = telegramStepType(source.Type)
 	externalapiTelegramStep.Text = source.Text
 	externalapiTelegramStep.UnsubscribeButton = optString(source.UnsubscribeButton)
@@ -2204,7 +2211,7 @@ func (c *ConverterImpl) VisitorToExport(source *ent.Visitor) external.ContactExp
 }
 func (c *ConverterImpl) WaitStepToResource(source automations.WaitView) external.WaitStep {
 	var externalapiWaitStep external.WaitStep
-	externalapiWaitStep.ID = external.StepId(source.ID)
+	externalapiWaitStep.ID = c.automationstepIDToExternalapiStepId(source.ID)
 	externalapiWaitStep.Type = waitStepType(source.Type)
 	externalapiWaitStep.Seconds = count(source.Seconds)
 	return externalapiWaitStep
@@ -2281,6 +2288,14 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) external.Work
 	}
 	return externalapiWorkspaceResource
 }
+func (c *ConverterImpl) automationsPathFiguresToExternalapiAutomationPathFigures(source automations.PathFigures) external.AutomationPathFigures {
+	var externalapiAutomationPathFigures external.AutomationPathFigures
+	externalapiAutomationPathFigures.StepId = c.automationstepIDToExternalapiStepId(source.StepID)
+	externalapiAutomationPathFigures.PathId = c.automationstepIDToExternalapiStepId(source.PathID)
+	externalapiAutomationPathFigures.Enrollments = count(source.Enrollments)
+	externalapiAutomationPathFigures.GoalReached = count(source.GoalReached)
+	return externalapiAutomationPathFigures
+}
 func (c *ConverterImpl) automationsSkippedCountsToExternalapiAutomationSkippedCounts(source automations.SkippedCounts) external.AutomationSkippedCounts {
 	var externalapiAutomationSkippedCounts external.AutomationSkippedCounts
 	externalapiAutomationSkippedCounts.Cycle = count(source.Cycle)
@@ -2305,6 +2320,9 @@ func (c *ConverterImpl) automationsVersionStepFiguresToExternalapiAutomationVers
 	externalapiAutomationVersionStepFigures.Sent = count(source.Sent)
 	externalapiAutomationVersionStepFigures.Skipped = count(source.Skipped)
 	return externalapiAutomationVersionStepFigures
+}
+func (c *ConverterImpl) automationstepIDToExternalapiStepId(source automationstep.ID) external.StepId {
+	return external.StepId(source)
 }
 func (c *ConverterImpl) emaildocAgentAttrToExternalapiEmailSchemaAttribute(source emaildoc.AgentAttr) external.EmailSchemaAttribute {
 	var externalapiEmailSchemaAttribute external.EmailSchemaAttribute
