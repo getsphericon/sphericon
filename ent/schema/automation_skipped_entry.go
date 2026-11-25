@@ -18,11 +18,11 @@ type AutomationSkippedEntry struct {
 	ent.Schema
 }
 
-// Annotations adds to the enum checks that an entry came from an Event's Trigger or from a Rule's
-// Firing, never both.
+// Annotations adds to the enum checks that an entry came from an Event's Trigger, from a Rule's
+// Firing or from an occurrence of a date Trigger, never two.
 func (AutomationSkippedEntry) Annotations() []schema.Annotation {
 	a := TableWithEnumChecks("automation_skipped_entries", AutomationSkippedEntry{}.Fields())
-	a.Checks["automation_skipped_entries_entry_check"] = "source_id IS NULL OR firing_id IS NULL"
+	a.Checks["automation_skipped_entries_entry_check"] = "num_nonnulls(source_id, firing_id, occurrence) <= 1"
 	return []schema.Annotation{a}
 }
 
@@ -52,6 +52,12 @@ func (AutomationSkippedEntry) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Immutable(),
+		// The occurrence of a date Trigger the entry was for (ADR 0126): the anniversary year of a
+		// yearly date, datetrigger.OnceMark for a once date. Null for an Event's or a Rule's entry.
+		field.Int("occurrence").
+			Optional().
+			Nillable().
+			Immutable(),
 		// Why the entry was refused, by the first entry check that refused it, in their order:
 		// `no_enrollment_key` (the version has an Enrollment key and the triggering Event lacks the
 		// property, ADR 0165), `cycle` (the chain that caused it passed through the Automation
@@ -60,9 +66,12 @@ func (AutomationSkippedEntry) Fields() []ent.Field {
 		// key value in the Automation before, under the `once` Entry policy), `cooldown` (under
 		// `again`, the cooldown from another Enrollment's beginning for the key value had not
 		// passed) or `enrollment_ceiling` (a keyed version's Contact had 10 active Enrollments, or
-		// 10 begun within a day of the entry, ADR 0165).
+		// 10 begun within a day of the entry, ADR 0165). An occurrence of a date Trigger (ADR 0126) runs
+		// only `active_enrollment`, and is `missed` when the scheduler reached it 24 hours late or
+		// more, or `send_locked` while its date was last written through a Connection without
+		// mcp:send (ADR 0132): such an occurrence is not decided, and a later write may still enroll it.
 		field.Enum("reason").
-			Values("no_enrollment_key", "cycle", "active_enrollment", "once", "cooldown", "enrollment_ceiling").
+			Values("no_enrollment_key", "cycle", "active_enrollment", "once", "cooldown", "enrollment_ceiling", "missed", "send_locked").
 			Immutable(),
 		// When the entry would have begun, as an Enrollment's began_at: the occurred_at of its Event
 		// (of the Event the Rule fired on). The report counts it on this moment's Report day.
@@ -92,6 +101,16 @@ func (AutomationSkippedEntry) Indexes() []ent.Index {
 		index.Fields("workspace_id", "automation_id", "firing_id").
 			Unique().
 			StorageKey("automation_skipped_entries_workspace_automation_firing"),
+		// One decided skip per Automation, Contact and occurrence (ADR 0126), and one record of an
+		// occurrence held by the send lock, which is not decided.
+		index.Fields("workspace_id", "automation_id", "contact_id", "occurrence").
+			Unique().
+			Annotations(entsql.IndexWhere("occurrence IS NOT NULL AND reason <> 'send_locked'")).
+			StorageKey(OccurrenceSkipIndex),
+		index.Fields("workspace_id", "automation_id", "contact_id", "occurrence").
+			Unique().
+			Annotations(entsql.IndexWhere("occurrence IS NOT NULL AND reason = 'send_locked'")).
+			StorageKey(OccurrenceSendLockedIndex),
 		// The report counts an Automation's skipped entries in a window; the list reads them newest
 		// first.
 		index.Fields("workspace_id", "automation_id", "occurred_at"),
@@ -103,3 +122,10 @@ func (AutomationSkippedEntry) Indexes() []ent.Index {
 		index.Fields("created_at"),
 	}
 }
+
+// The partial unique indexes of an occurrence's skipped entries (ADR 0126): the one that decides it
+// (`active_enrollment` or `missed`), and the one record of it held by the send lock.
+const (
+	OccurrenceSkipIndex       = "automation_skipped_entries_occurrence"
+	OccurrenceSendLockedIndex = "automation_skipped_entries_occurrence_send_locked"
+)

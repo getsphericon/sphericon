@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/authattempt"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
+	"github.com/getsphericon/sphericon/ent/automationoccurrencecursor"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
@@ -99,6 +100,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
@@ -116,87 +118,88 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeApiToken                  = "ApiToken"
-	TypeAuditEntry                = "AuditEntry"
-	TypeAuthAttempt               = "AuthAttempt"
-	TypeAutomation                = "Automation"
-	TypeAutomationFigure          = "AutomationFigure"
-	TypeAutomationRun             = "AutomationRun"
-	TypeAutomationSkippedEntry    = "AutomationSkippedEntry"
-	TypeAutomationStepRecord      = "AutomationStepRecord"
-	TypeAutomationVersion         = "AutomationVersion"
-	TypeBinding                   = "Binding"
-	TypeBrandKit                  = "BrandKit"
-	TypeBroadcast                 = "Broadcast"
-	TypeBroadcastFigure           = "BroadcastFigure"
-	TypeBroadcastRecipient        = "BroadcastRecipient"
-	TypeCapturedMessage           = "CapturedMessage"
-	TypeConfirmation              = "Confirmation"
-	TypeConsentRecord             = "ConsentRecord"
-	TypeConsentStamp              = "ConsentStamp"
-	TypeContact                   = "Contact"
-	TypeContactTag                = "ContactTag"
-	TypeCustomField               = "CustomField"
-	TypeDefaultSendCap            = "DefaultSendCap"
-	TypeEmailTemplate             = "EmailTemplate"
-	TypeEngagementTrackingConsent = "EngagementTrackingConsent"
-	TypeErasure                   = "Erasure"
-	TypeEvent                     = "Event"
-	TypeEventJournalEntry         = "EventJournalEntry"
-	TypeEventReceipt              = "EventReceipt"
-	TypeHeldOrderEvent            = "HeldOrderEvent"
-	TypeHold                      = "Hold"
-	TypeIdentitySecret            = "IdentitySecret"
-	TypeInstanceAuditEntry        = "InstanceAuditEntry"
-	TypeInstanceState             = "InstanceState"
-	TypeIntegration               = "Integration"
-	TypeIntegrationProviderState  = "IntegrationProviderState"
-	TypeInvitation                = "Invitation"
-	TypeJoinDomain                = "JoinDomain"
-	TypeLegalDocumentDraft        = "LegalDocumentDraft"
-	TypeLegalDocumentVersion      = "LegalDocumentVersion"
-	TypeMembership                = "Membership"
-	TypeOAuthClient               = "OAuthClient"
-	TypeOAuthCode                 = "OAuthCode"
-	TypeOAuthRefreshToken         = "OAuthRefreshToken"
-	TypeOrder                     = "Order"
-	TypeOrderMovement             = "OrderMovement"
-	TypeOutboundMessage           = "OutboundMessage"
-	TypePasskey                   = "Passkey"
-	TypePasskeyChallenge          = "PasskeyChallenge"
-	TypePendingSignup             = "PendingSignup"
-	TypePrivateRelayRange         = "PrivateRelayRange"
-	TypeProviderLimiter           = "ProviderLimiter"
-	TypeRecoveryCode              = "RecoveryCode"
-	TypeRule                      = "Rule"
-	TypeRuleFiring                = "RuleFiring"
-	TypeRuleVersion               = "RuleVersion"
-	TypeRuleVersionTrigger        = "RuleVersionTrigger"
-	TypeSchemaState               = "SchemaState"
-	TypeSecondFactor              = "SecondFactor"
-	TypeSegment                   = "Segment"
-	TypeSendCapLimiter            = "SendCapLimiter"
-	TypeSendingDomain             = "SendingDomain"
-	TypeServiceCredential         = "ServiceCredential"
-	TypeSignupItem                = "SignupItem"
-	TypeSignupSurveyResponse      = "SignupSurveyResponse"
-	TypeStaffMember               = "StaffMember"
-	TypeStartToken                = "StartToken"
-	TypeSuppression               = "Suppression"
-	TypeTag                       = "Tag"
-	TypeTrackedLink               = "TrackedLink"
-	TypeTrackingDomain            = "TrackingDomain"
-	TypeTrackingHostChange        = "TrackingHostChange"
-	TypeUnsubscribe               = "Unsubscribe"
-	TypeUsage                     = "Usage"
-	TypeUser                      = "User"
-	TypeUserIdentity              = "UserIdentity"
-	TypeUserTombstone             = "UserTombstone"
-	TypeVisitor                   = "Visitor"
-	TypeWebhookEndpoint           = "WebhookEndpoint"
-	TypeWebhookEndpointHealth     = "WebhookEndpointHealth"
-	TypeWorkspace                 = "Workspace"
-	TypeWorkspaceStanding         = "WorkspaceStanding"
+	TypeApiToken                   = "ApiToken"
+	TypeAuditEntry                 = "AuditEntry"
+	TypeAuthAttempt                = "AuthAttempt"
+	TypeAutomation                 = "Automation"
+	TypeAutomationFigure           = "AutomationFigure"
+	TypeAutomationOccurrenceCursor = "AutomationOccurrenceCursor"
+	TypeAutomationRun              = "AutomationRun"
+	TypeAutomationSkippedEntry     = "AutomationSkippedEntry"
+	TypeAutomationStepRecord       = "AutomationStepRecord"
+	TypeAutomationVersion          = "AutomationVersion"
+	TypeBinding                    = "Binding"
+	TypeBrandKit                   = "BrandKit"
+	TypeBroadcast                  = "Broadcast"
+	TypeBroadcastFigure            = "BroadcastFigure"
+	TypeBroadcastRecipient         = "BroadcastRecipient"
+	TypeCapturedMessage            = "CapturedMessage"
+	TypeConfirmation               = "Confirmation"
+	TypeConsentRecord              = "ConsentRecord"
+	TypeConsentStamp               = "ConsentStamp"
+	TypeContact                    = "Contact"
+	TypeContactTag                 = "ContactTag"
+	TypeCustomField                = "CustomField"
+	TypeDefaultSendCap             = "DefaultSendCap"
+	TypeEmailTemplate              = "EmailTemplate"
+	TypeEngagementTrackingConsent  = "EngagementTrackingConsent"
+	TypeErasure                    = "Erasure"
+	TypeEvent                      = "Event"
+	TypeEventJournalEntry          = "EventJournalEntry"
+	TypeEventReceipt               = "EventReceipt"
+	TypeHeldOrderEvent             = "HeldOrderEvent"
+	TypeHold                       = "Hold"
+	TypeIdentitySecret             = "IdentitySecret"
+	TypeInstanceAuditEntry         = "InstanceAuditEntry"
+	TypeInstanceState              = "InstanceState"
+	TypeIntegration                = "Integration"
+	TypeIntegrationProviderState   = "IntegrationProviderState"
+	TypeInvitation                 = "Invitation"
+	TypeJoinDomain                 = "JoinDomain"
+	TypeLegalDocumentDraft         = "LegalDocumentDraft"
+	TypeLegalDocumentVersion       = "LegalDocumentVersion"
+	TypeMembership                 = "Membership"
+	TypeOAuthClient                = "OAuthClient"
+	TypeOAuthCode                  = "OAuthCode"
+	TypeOAuthRefreshToken          = "OAuthRefreshToken"
+	TypeOrder                      = "Order"
+	TypeOrderMovement              = "OrderMovement"
+	TypeOutboundMessage            = "OutboundMessage"
+	TypePasskey                    = "Passkey"
+	TypePasskeyChallenge           = "PasskeyChallenge"
+	TypePendingSignup              = "PendingSignup"
+	TypePrivateRelayRange          = "PrivateRelayRange"
+	TypeProviderLimiter            = "ProviderLimiter"
+	TypeRecoveryCode               = "RecoveryCode"
+	TypeRule                       = "Rule"
+	TypeRuleFiring                 = "RuleFiring"
+	TypeRuleVersion                = "RuleVersion"
+	TypeRuleVersionTrigger         = "RuleVersionTrigger"
+	TypeSchemaState                = "SchemaState"
+	TypeSecondFactor               = "SecondFactor"
+	TypeSegment                    = "Segment"
+	TypeSendCapLimiter             = "SendCapLimiter"
+	TypeSendingDomain              = "SendingDomain"
+	TypeServiceCredential          = "ServiceCredential"
+	TypeSignupItem                 = "SignupItem"
+	TypeSignupSurveyResponse       = "SignupSurveyResponse"
+	TypeStaffMember                = "StaffMember"
+	TypeStartToken                 = "StartToken"
+	TypeSuppression                = "Suppression"
+	TypeTag                        = "Tag"
+	TypeTrackedLink                = "TrackedLink"
+	TypeTrackingDomain             = "TrackingDomain"
+	TypeTrackingHostChange         = "TrackingHostChange"
+	TypeUnsubscribe                = "Unsubscribe"
+	TypeUsage                      = "Usage"
+	TypeUser                       = "User"
+	TypeUserIdentity               = "UserIdentity"
+	TypeUserTombstone              = "UserTombstone"
+	TypeVisitor                    = "Visitor"
+	TypeWebhookEndpoint            = "WebhookEndpoint"
+	TypeWebhookEndpointHealth      = "WebhookEndpointHealth"
+	TypeWorkspace                  = "Workspace"
+	TypeWorkspaceStanding          = "WorkspaceStanding"
 )
 
 // ApiTokenMutation represents an operation that mutates the ApiToken nodes in the graph.
@@ -3383,33 +3386,35 @@ func (m *AuthAttemptMutation) ResetEdge(name string) error {
 // AutomationMutation represents an operation that mutates the Automation nodes in the graph.
 type AutomationMutation struct {
 	config
-	op                   Op
-	typ                  string
-	id                   *int64
-	created_at           *time.Time
-	updated_at           *time.Time
-	archived_at          *time.Time
-	status               *automation.Status
-	activated_at         *time.Time
-	revision             *int64
-	addrevision          *int64
-	name                 *string
-	clearedFields        map[string]struct{}
-	workspace            *int64
-	clearedworkspace     bool
-	versions             map[int64]struct{}
-	removedversions      map[int64]struct{}
-	clearedversions      bool
-	live_version         *int64
-	clearedlive_version  bool
-	draft_version        *int64
-	cleareddraft_version bool
-	runs                 map[int64]struct{}
-	removedruns          map[int64]struct{}
-	clearedruns          bool
-	done                 bool
-	oldValue             func(context.Context) (*Automation, error)
-	predicates           []predicate.Automation
+	op                       Op
+	typ                      string
+	id                       *int64
+	created_at               *time.Time
+	updated_at               *time.Time
+	archived_at              *time.Time
+	status                   *automation.Status
+	activated_at             *time.Time
+	revision                 *int64
+	addrevision              *int64
+	name                     *string
+	clearedFields            map[string]struct{}
+	workspace                *int64
+	clearedworkspace         bool
+	versions                 map[int64]struct{}
+	removedversions          map[int64]struct{}
+	clearedversions          bool
+	live_version             *int64
+	clearedlive_version      bool
+	draft_version            *int64
+	cleareddraft_version     bool
+	runs                     map[int64]struct{}
+	removedruns              map[int64]struct{}
+	clearedruns              bool
+	occurrence_cursor        *int64
+	clearedoccurrence_cursor bool
+	done                     bool
+	oldValue                 func(context.Context) (*Automation, error)
+	predicates               []predicate.Automation
 }
 
 var _ ent.Mutation = (*AutomationMutation)(nil)
@@ -4137,6 +4142,45 @@ func (m *AutomationMutation) ResetRuns() {
 	m.removedruns = nil
 }
 
+// SetOccurrenceCursorID sets the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity by id.
+func (m *AutomationMutation) SetOccurrenceCursorID(id int64) {
+	m.occurrence_cursor = &id
+}
+
+// ClearOccurrenceCursor clears the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity.
+func (m *AutomationMutation) ClearOccurrenceCursor() {
+	m.clearedoccurrence_cursor = true
+}
+
+// OccurrenceCursorCleared reports if the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity was cleared.
+func (m *AutomationMutation) OccurrenceCursorCleared() bool {
+	return m.clearedoccurrence_cursor
+}
+
+// OccurrenceCursorID returns the "occurrence_cursor" edge ID in the mutation.
+func (m *AutomationMutation) OccurrenceCursorID() (id int64, exists bool) {
+	if m.occurrence_cursor != nil {
+		return *m.occurrence_cursor, true
+	}
+	return
+}
+
+// OccurrenceCursorIDs returns the "occurrence_cursor" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// OccurrenceCursorID instead. It exists only for internal usage by the builders.
+func (m *AutomationMutation) OccurrenceCursorIDs() (ids []int64) {
+	if id := m.occurrence_cursor; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetOccurrenceCursor resets all changes to the "occurrence_cursor" edge.
+func (m *AutomationMutation) ResetOccurrenceCursor() {
+	m.occurrence_cursor = nil
+	m.clearedoccurrence_cursor = false
+}
+
 // Where appends a list predicates to the AutomationMutation builder.
 func (m *AutomationMutation) Where(ps ...predicate.Automation) {
 	m.predicates = append(m.predicates, ps...)
@@ -4465,7 +4509,7 @@ func (m *AutomationMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *AutomationMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.workspace != nil {
 		edges = append(edges, automation.EdgeWorkspace)
 	}
@@ -4480,6 +4524,9 @@ func (m *AutomationMutation) AddedEdges() []string {
 	}
 	if m.runs != nil {
 		edges = append(edges, automation.EdgeRuns)
+	}
+	if m.occurrence_cursor != nil {
+		edges = append(edges, automation.EdgeOccurrenceCursor)
 	}
 	return edges
 }
@@ -4512,13 +4559,17 @@ func (m *AutomationMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case automation.EdgeOccurrenceCursor:
+		if id := m.occurrence_cursor; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *AutomationMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.removedversions != nil {
 		edges = append(edges, automation.EdgeVersions)
 	}
@@ -4550,7 +4601,7 @@ func (m *AutomationMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *AutomationMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.clearedworkspace {
 		edges = append(edges, automation.EdgeWorkspace)
 	}
@@ -4565,6 +4616,9 @@ func (m *AutomationMutation) ClearedEdges() []string {
 	}
 	if m.clearedruns {
 		edges = append(edges, automation.EdgeRuns)
+	}
+	if m.clearedoccurrence_cursor {
+		edges = append(edges, automation.EdgeOccurrenceCursor)
 	}
 	return edges
 }
@@ -4583,6 +4637,8 @@ func (m *AutomationMutation) EdgeCleared(name string) bool {
 		return m.cleareddraft_version
 	case automation.EdgeRuns:
 		return m.clearedruns
+	case automation.EdgeOccurrenceCursor:
+		return m.clearedoccurrence_cursor
 	}
 	return false
 }
@@ -4599,6 +4655,9 @@ func (m *AutomationMutation) ClearEdge(name string) error {
 		return nil
 	case automation.EdgeDraftVersion:
 		m.ClearDraftVersion()
+		return nil
+	case automation.EdgeOccurrenceCursor:
+		m.ClearOccurrenceCursor()
 		return nil
 	}
 	return fmt.Errorf("unknown Automation unique edge %s", name)
@@ -4622,6 +4681,9 @@ func (m *AutomationMutation) ResetEdge(name string) error {
 		return nil
 	case automation.EdgeRuns:
 		m.ResetRuns()
+		return nil
+	case automation.EdgeOccurrenceCursor:
+		m.ResetOccurrenceCursor()
 		return nil
 	}
 	return fmt.Errorf("unknown Automation edge %s", name)
@@ -5900,6 +5962,860 @@ func (m *AutomationFigureMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown AutomationFigure edge %s", name)
 }
 
+// AutomationOccurrenceCursorMutation represents an operation that mutates the AutomationOccurrenceCursor nodes in the graph.
+type AutomationOccurrenceCursorMutation struct {
+	config
+	op                    Op
+	typ                   string
+	id                    *int64
+	created_at            *time.Time
+	updated_at            *time.Time
+	span_start            *time.Time
+	decided_through       *time.Time
+	workspace_zone        *string
+	contacts_seen_through *time.Time
+	clearedFields         map[string]struct{}
+	workspace             *int64
+	clearedworkspace      bool
+	automation            *int64
+	clearedautomation     bool
+	done                  bool
+	oldValue              func(context.Context) (*AutomationOccurrenceCursor, error)
+	predicates            []predicate.AutomationOccurrenceCursor
+}
+
+var _ ent.Mutation = (*AutomationOccurrenceCursorMutation)(nil)
+
+// automationoccurrencecursorOption allows management of the mutation configuration using functional options.
+type automationoccurrencecursorOption func(*AutomationOccurrenceCursorMutation)
+
+// newAutomationOccurrenceCursorMutation creates new mutation for the AutomationOccurrenceCursor entity.
+func newAutomationOccurrenceCursorMutation(c config, op Op, opts ...automationoccurrencecursorOption) *AutomationOccurrenceCursorMutation {
+	m := &AutomationOccurrenceCursorMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeAutomationOccurrenceCursor,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withAutomationOccurrenceCursorID sets the ID field of the mutation.
+func withAutomationOccurrenceCursorID(id int64) automationoccurrencecursorOption {
+	return func(m *AutomationOccurrenceCursorMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *AutomationOccurrenceCursor
+		)
+		m.oldValue = func(ctx context.Context) (*AutomationOccurrenceCursor, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().AutomationOccurrenceCursor.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withAutomationOccurrenceCursor sets the old AutomationOccurrenceCursor of the mutation.
+func withAutomationOccurrenceCursor(node *AutomationOccurrenceCursor) automationoccurrencecursorOption {
+	return func(m *AutomationOccurrenceCursorMutation) {
+		m.oldValue = func(context.Context) (*AutomationOccurrenceCursor, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m AutomationOccurrenceCursorMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m AutomationOccurrenceCursorMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of AutomationOccurrenceCursor entities.
+func (m *AutomationOccurrenceCursorMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *AutomationOccurrenceCursorMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *AutomationOccurrenceCursorMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().AutomationOccurrenceCursor.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *AutomationOccurrenceCursorMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *AutomationOccurrenceCursorMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the AutomationOccurrenceCursor entity.
+// If the AutomationOccurrenceCursor object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationOccurrenceCursorMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *AutomationOccurrenceCursorMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *AutomationOccurrenceCursorMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *AutomationOccurrenceCursorMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the AutomationOccurrenceCursor entity.
+// If the AutomationOccurrenceCursor object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationOccurrenceCursorMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *AutomationOccurrenceCursorMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *AutomationOccurrenceCursorMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *AutomationOccurrenceCursorMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the AutomationOccurrenceCursor entity.
+// If the AutomationOccurrenceCursor object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationOccurrenceCursorMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *AutomationOccurrenceCursorMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetAutomationID sets the "automation_id" field.
+func (m *AutomationOccurrenceCursorMutation) SetAutomationID(i int64) {
+	m.automation = &i
+}
+
+// AutomationID returns the value of the "automation_id" field in the mutation.
+func (m *AutomationOccurrenceCursorMutation) AutomationID() (r int64, exists bool) {
+	v := m.automation
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAutomationID returns the old "automation_id" field's value of the AutomationOccurrenceCursor entity.
+// If the AutomationOccurrenceCursor object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationOccurrenceCursorMutation) OldAutomationID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAutomationID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAutomationID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAutomationID: %w", err)
+	}
+	return oldValue.AutomationID, nil
+}
+
+// ResetAutomationID resets all changes to the "automation_id" field.
+func (m *AutomationOccurrenceCursorMutation) ResetAutomationID() {
+	m.automation = nil
+}
+
+// SetSpanStart sets the "span_start" field.
+func (m *AutomationOccurrenceCursorMutation) SetSpanStart(t time.Time) {
+	m.span_start = &t
+}
+
+// SpanStart returns the value of the "span_start" field in the mutation.
+func (m *AutomationOccurrenceCursorMutation) SpanStart() (r time.Time, exists bool) {
+	v := m.span_start
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSpanStart returns the old "span_start" field's value of the AutomationOccurrenceCursor entity.
+// If the AutomationOccurrenceCursor object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationOccurrenceCursorMutation) OldSpanStart(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSpanStart is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSpanStart requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSpanStart: %w", err)
+	}
+	return oldValue.SpanStart, nil
+}
+
+// ResetSpanStart resets all changes to the "span_start" field.
+func (m *AutomationOccurrenceCursorMutation) ResetSpanStart() {
+	m.span_start = nil
+}
+
+// SetDecidedThrough sets the "decided_through" field.
+func (m *AutomationOccurrenceCursorMutation) SetDecidedThrough(t time.Time) {
+	m.decided_through = &t
+}
+
+// DecidedThrough returns the value of the "decided_through" field in the mutation.
+func (m *AutomationOccurrenceCursorMutation) DecidedThrough() (r time.Time, exists bool) {
+	v := m.decided_through
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDecidedThrough returns the old "decided_through" field's value of the AutomationOccurrenceCursor entity.
+// If the AutomationOccurrenceCursor object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationOccurrenceCursorMutation) OldDecidedThrough(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDecidedThrough is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDecidedThrough requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDecidedThrough: %w", err)
+	}
+	return oldValue.DecidedThrough, nil
+}
+
+// ResetDecidedThrough resets all changes to the "decided_through" field.
+func (m *AutomationOccurrenceCursorMutation) ResetDecidedThrough() {
+	m.decided_through = nil
+}
+
+// SetWorkspaceZone sets the "workspace_zone" field.
+func (m *AutomationOccurrenceCursorMutation) SetWorkspaceZone(s string) {
+	m.workspace_zone = &s
+}
+
+// WorkspaceZone returns the value of the "workspace_zone" field in the mutation.
+func (m *AutomationOccurrenceCursorMutation) WorkspaceZone() (r string, exists bool) {
+	v := m.workspace_zone
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceZone returns the old "workspace_zone" field's value of the AutomationOccurrenceCursor entity.
+// If the AutomationOccurrenceCursor object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationOccurrenceCursorMutation) OldWorkspaceZone(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceZone is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceZone requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceZone: %w", err)
+	}
+	return oldValue.WorkspaceZone, nil
+}
+
+// ClearWorkspaceZone clears the value of the "workspace_zone" field.
+func (m *AutomationOccurrenceCursorMutation) ClearWorkspaceZone() {
+	m.workspace_zone = nil
+	m.clearedFields[automationoccurrencecursor.FieldWorkspaceZone] = struct{}{}
+}
+
+// WorkspaceZoneCleared returns if the "workspace_zone" field was cleared in this mutation.
+func (m *AutomationOccurrenceCursorMutation) WorkspaceZoneCleared() bool {
+	_, ok := m.clearedFields[automationoccurrencecursor.FieldWorkspaceZone]
+	return ok
+}
+
+// ResetWorkspaceZone resets all changes to the "workspace_zone" field.
+func (m *AutomationOccurrenceCursorMutation) ResetWorkspaceZone() {
+	m.workspace_zone = nil
+	delete(m.clearedFields, automationoccurrencecursor.FieldWorkspaceZone)
+}
+
+// SetContactsSeenThrough sets the "contacts_seen_through" field.
+func (m *AutomationOccurrenceCursorMutation) SetContactsSeenThrough(t time.Time) {
+	m.contacts_seen_through = &t
+}
+
+// ContactsSeenThrough returns the value of the "contacts_seen_through" field in the mutation.
+func (m *AutomationOccurrenceCursorMutation) ContactsSeenThrough() (r time.Time, exists bool) {
+	v := m.contacts_seen_through
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldContactsSeenThrough returns the old "contacts_seen_through" field's value of the AutomationOccurrenceCursor entity.
+// If the AutomationOccurrenceCursor object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationOccurrenceCursorMutation) OldContactsSeenThrough(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldContactsSeenThrough is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldContactsSeenThrough requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldContactsSeenThrough: %w", err)
+	}
+	return oldValue.ContactsSeenThrough, nil
+}
+
+// ClearContactsSeenThrough clears the value of the "contacts_seen_through" field.
+func (m *AutomationOccurrenceCursorMutation) ClearContactsSeenThrough() {
+	m.contacts_seen_through = nil
+	m.clearedFields[automationoccurrencecursor.FieldContactsSeenThrough] = struct{}{}
+}
+
+// ContactsSeenThroughCleared returns if the "contacts_seen_through" field was cleared in this mutation.
+func (m *AutomationOccurrenceCursorMutation) ContactsSeenThroughCleared() bool {
+	_, ok := m.clearedFields[automationoccurrencecursor.FieldContactsSeenThrough]
+	return ok
+}
+
+// ResetContactsSeenThrough resets all changes to the "contacts_seen_through" field.
+func (m *AutomationOccurrenceCursorMutation) ResetContactsSeenThrough() {
+	m.contacts_seen_through = nil
+	delete(m.clearedFields, automationoccurrencecursor.FieldContactsSeenThrough)
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *AutomationOccurrenceCursorMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[automationoccurrencecursor.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *AutomationOccurrenceCursorMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *AutomationOccurrenceCursorMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *AutomationOccurrenceCursorMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// ClearAutomation clears the "automation" edge to the Automation entity.
+func (m *AutomationOccurrenceCursorMutation) ClearAutomation() {
+	m.clearedautomation = true
+	m.clearedFields[automationoccurrencecursor.FieldAutomationID] = struct{}{}
+}
+
+// AutomationCleared reports if the "automation" edge to the Automation entity was cleared.
+func (m *AutomationOccurrenceCursorMutation) AutomationCleared() bool {
+	return m.clearedautomation
+}
+
+// AutomationIDs returns the "automation" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// AutomationID instead. It exists only for internal usage by the builders.
+func (m *AutomationOccurrenceCursorMutation) AutomationIDs() (ids []int64) {
+	if id := m.automation; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetAutomation resets all changes to the "automation" edge.
+func (m *AutomationOccurrenceCursorMutation) ResetAutomation() {
+	m.automation = nil
+	m.clearedautomation = false
+}
+
+// Where appends a list predicates to the AutomationOccurrenceCursorMutation builder.
+func (m *AutomationOccurrenceCursorMutation) Where(ps ...predicate.AutomationOccurrenceCursor) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the AutomationOccurrenceCursorMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *AutomationOccurrenceCursorMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.AutomationOccurrenceCursor, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *AutomationOccurrenceCursorMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *AutomationOccurrenceCursorMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (AutomationOccurrenceCursor).
+func (m *AutomationOccurrenceCursorMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *AutomationOccurrenceCursorMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.created_at != nil {
+		fields = append(fields, automationoccurrencecursor.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, automationoccurrencecursor.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, automationoccurrencecursor.FieldWorkspaceID)
+	}
+	if m.automation != nil {
+		fields = append(fields, automationoccurrencecursor.FieldAutomationID)
+	}
+	if m.span_start != nil {
+		fields = append(fields, automationoccurrencecursor.FieldSpanStart)
+	}
+	if m.decided_through != nil {
+		fields = append(fields, automationoccurrencecursor.FieldDecidedThrough)
+	}
+	if m.workspace_zone != nil {
+		fields = append(fields, automationoccurrencecursor.FieldWorkspaceZone)
+	}
+	if m.contacts_seen_through != nil {
+		fields = append(fields, automationoccurrencecursor.FieldContactsSeenThrough)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *AutomationOccurrenceCursorMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case automationoccurrencecursor.FieldCreatedAt:
+		return m.CreatedAt()
+	case automationoccurrencecursor.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case automationoccurrencecursor.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case automationoccurrencecursor.FieldAutomationID:
+		return m.AutomationID()
+	case automationoccurrencecursor.FieldSpanStart:
+		return m.SpanStart()
+	case automationoccurrencecursor.FieldDecidedThrough:
+		return m.DecidedThrough()
+	case automationoccurrencecursor.FieldWorkspaceZone:
+		return m.WorkspaceZone()
+	case automationoccurrencecursor.FieldContactsSeenThrough:
+		return m.ContactsSeenThrough()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *AutomationOccurrenceCursorMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case automationoccurrencecursor.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case automationoccurrencecursor.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case automationoccurrencecursor.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case automationoccurrencecursor.FieldAutomationID:
+		return m.OldAutomationID(ctx)
+	case automationoccurrencecursor.FieldSpanStart:
+		return m.OldSpanStart(ctx)
+	case automationoccurrencecursor.FieldDecidedThrough:
+		return m.OldDecidedThrough(ctx)
+	case automationoccurrencecursor.FieldWorkspaceZone:
+		return m.OldWorkspaceZone(ctx)
+	case automationoccurrencecursor.FieldContactsSeenThrough:
+		return m.OldContactsSeenThrough(ctx)
+	}
+	return nil, fmt.Errorf("unknown AutomationOccurrenceCursor field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AutomationOccurrenceCursorMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case automationoccurrencecursor.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case automationoccurrencecursor.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case automationoccurrencecursor.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case automationoccurrencecursor.FieldAutomationID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAutomationID(v)
+		return nil
+	case automationoccurrencecursor.FieldSpanStart:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSpanStart(v)
+		return nil
+	case automationoccurrencecursor.FieldDecidedThrough:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDecidedThrough(v)
+		return nil
+	case automationoccurrencecursor.FieldWorkspaceZone:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceZone(v)
+		return nil
+	case automationoccurrencecursor.FieldContactsSeenThrough:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetContactsSeenThrough(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AutomationOccurrenceCursor field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *AutomationOccurrenceCursorMutation) AddedFields() []string {
+	var fields []string
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *AutomationOccurrenceCursorMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AutomationOccurrenceCursorMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown AutomationOccurrenceCursor numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *AutomationOccurrenceCursorMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(automationoccurrencecursor.FieldWorkspaceZone) {
+		fields = append(fields, automationoccurrencecursor.FieldWorkspaceZone)
+	}
+	if m.FieldCleared(automationoccurrencecursor.FieldContactsSeenThrough) {
+		fields = append(fields, automationoccurrencecursor.FieldContactsSeenThrough)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *AutomationOccurrenceCursorMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *AutomationOccurrenceCursorMutation) ClearField(name string) error {
+	switch name {
+	case automationoccurrencecursor.FieldWorkspaceZone:
+		m.ClearWorkspaceZone()
+		return nil
+	case automationoccurrencecursor.FieldContactsSeenThrough:
+		m.ClearContactsSeenThrough()
+		return nil
+	}
+	return fmt.Errorf("unknown AutomationOccurrenceCursor nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *AutomationOccurrenceCursorMutation) ResetField(name string) error {
+	switch name {
+	case automationoccurrencecursor.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case automationoccurrencecursor.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case automationoccurrencecursor.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case automationoccurrencecursor.FieldAutomationID:
+		m.ResetAutomationID()
+		return nil
+	case automationoccurrencecursor.FieldSpanStart:
+		m.ResetSpanStart()
+		return nil
+	case automationoccurrencecursor.FieldDecidedThrough:
+		m.ResetDecidedThrough()
+		return nil
+	case automationoccurrencecursor.FieldWorkspaceZone:
+		m.ResetWorkspaceZone()
+		return nil
+	case automationoccurrencecursor.FieldContactsSeenThrough:
+		m.ResetContactsSeenThrough()
+		return nil
+	}
+	return fmt.Errorf("unknown AutomationOccurrenceCursor field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *AutomationOccurrenceCursorMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.workspace != nil {
+		edges = append(edges, automationoccurrencecursor.EdgeWorkspace)
+	}
+	if m.automation != nil {
+		edges = append(edges, automationoccurrencecursor.EdgeAutomation)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *AutomationOccurrenceCursorMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case automationoccurrencecursor.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	case automationoccurrencecursor.EdgeAutomation:
+		if id := m.automation; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *AutomationOccurrenceCursorMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *AutomationOccurrenceCursorMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *AutomationOccurrenceCursorMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedworkspace {
+		edges = append(edges, automationoccurrencecursor.EdgeWorkspace)
+	}
+	if m.clearedautomation {
+		edges = append(edges, automationoccurrencecursor.EdgeAutomation)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *AutomationOccurrenceCursorMutation) EdgeCleared(name string) bool {
+	switch name {
+	case automationoccurrencecursor.EdgeWorkspace:
+		return m.clearedworkspace
+	case automationoccurrencecursor.EdgeAutomation:
+		return m.clearedautomation
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *AutomationOccurrenceCursorMutation) ClearEdge(name string) error {
+	switch name {
+	case automationoccurrencecursor.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	case automationoccurrencecursor.EdgeAutomation:
+		m.ClearAutomation()
+		return nil
+	}
+	return fmt.Errorf("unknown AutomationOccurrenceCursor unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *AutomationOccurrenceCursorMutation) ResetEdge(name string) error {
+	switch name {
+	case automationoccurrencecursor.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	case automationoccurrencecursor.EdgeAutomation:
+		m.ResetAutomation()
+		return nil
+	}
+	return fmt.Errorf("unknown AutomationOccurrenceCursor edge %s", name)
+}
+
 // AutomationRunMutation represents an operation that mutates the AutomationRun nodes in the graph.
 type AutomationRunMutation struct {
 	config
@@ -5913,6 +6829,8 @@ type AutomationRunMutation struct {
 	event_action      *string
 	event_properties  *map[string]interface{}
 	trigger_source_id *string
+	occurrence        *int
+	addoccurrence     *int
 	chain             *[]int64
 	appendchain       []int64
 	ordinal           *int
@@ -6527,6 +7445,76 @@ func (m *AutomationRunMutation) FiringIDCleared() bool {
 func (m *AutomationRunMutation) ResetFiringID() {
 	m.firing = nil
 	delete(m.clearedFields, automationrun.FieldFiringID)
+}
+
+// SetOccurrence sets the "occurrence" field.
+func (m *AutomationRunMutation) SetOccurrence(i int) {
+	m.occurrence = &i
+	m.addoccurrence = nil
+}
+
+// Occurrence returns the value of the "occurrence" field in the mutation.
+func (m *AutomationRunMutation) Occurrence() (r int, exists bool) {
+	v := m.occurrence
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOccurrence returns the old "occurrence" field's value of the AutomationRun entity.
+// If the AutomationRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationRunMutation) OldOccurrence(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOccurrence is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOccurrence requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOccurrence: %w", err)
+	}
+	return oldValue.Occurrence, nil
+}
+
+// AddOccurrence adds i to the "occurrence" field.
+func (m *AutomationRunMutation) AddOccurrence(i int) {
+	if m.addoccurrence != nil {
+		*m.addoccurrence += i
+	} else {
+		m.addoccurrence = &i
+	}
+}
+
+// AddedOccurrence returns the value that was added to the "occurrence" field in this mutation.
+func (m *AutomationRunMutation) AddedOccurrence() (r int, exists bool) {
+	v := m.addoccurrence
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearOccurrence clears the value of the "occurrence" field.
+func (m *AutomationRunMutation) ClearOccurrence() {
+	m.occurrence = nil
+	m.addoccurrence = nil
+	m.clearedFields[automationrun.FieldOccurrence] = struct{}{}
+}
+
+// OccurrenceCleared returns if the "occurrence" field was cleared in this mutation.
+func (m *AutomationRunMutation) OccurrenceCleared() bool {
+	_, ok := m.clearedFields[automationrun.FieldOccurrence]
+	return ok
+}
+
+// ResetOccurrence resets all changes to the "occurrence" field.
+func (m *AutomationRunMutation) ResetOccurrence() {
+	m.occurrence = nil
+	m.addoccurrence = nil
+	delete(m.clearedFields, automationrun.FieldOccurrence)
 }
 
 // SetChain sets the "chain" field.
@@ -7169,7 +8157,7 @@ func (m *AutomationRunMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationRunMutation) Fields() []string {
-	fields := make([]string, 0, 21)
+	fields := make([]string, 0, 22)
 	if m.created_at != nil {
 		fields = append(fields, automationrun.FieldCreatedAt)
 	}
@@ -7205,6 +8193,9 @@ func (m *AutomationRunMutation) Fields() []string {
 	}
 	if m.firing != nil {
 		fields = append(fields, automationrun.FieldFiringID)
+	}
+	if m.occurrence != nil {
+		fields = append(fields, automationrun.FieldOccurrence)
 	}
 	if m.chain != nil {
 		fields = append(fields, automationrun.FieldChain)
@@ -7265,6 +8256,8 @@ func (m *AutomationRunMutation) Field(name string) (ent.Value, bool) {
 		return m.TriggerSourceID()
 	case automationrun.FieldFiringID:
 		return m.FiringID()
+	case automationrun.FieldOccurrence:
+		return m.Occurrence()
 	case automationrun.FieldChain:
 		return m.Chain()
 	case automationrun.FieldOrdinal:
@@ -7316,6 +8309,8 @@ func (m *AutomationRunMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldTriggerSourceID(ctx)
 	case automationrun.FieldFiringID:
 		return m.OldFiringID(ctx)
+	case automationrun.FieldOccurrence:
+		return m.OldOccurrence(ctx)
 	case automationrun.FieldChain:
 		return m.OldChain(ctx)
 	case automationrun.FieldOrdinal:
@@ -7427,6 +8422,13 @@ func (m *AutomationRunMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetFiringID(v)
 		return nil
+	case automationrun.FieldOccurrence:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOccurrence(v)
+		return nil
 	case automationrun.FieldChain:
 		v, ok := value.([]int64)
 		if !ok {
@@ -7498,6 +8500,9 @@ func (m *AutomationRunMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *AutomationRunMutation) AddedFields() []string {
 	var fields []string
+	if m.addoccurrence != nil {
+		fields = append(fields, automationrun.FieldOccurrence)
+	}
 	if m.addordinal != nil {
 		fields = append(fields, automationrun.FieldOrdinal)
 	}
@@ -7512,6 +8517,8 @@ func (m *AutomationRunMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *AutomationRunMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case automationrun.FieldOccurrence:
+		return m.AddedOccurrence()
 	case automationrun.FieldOrdinal:
 		return m.AddedOrdinal()
 	case automationrun.FieldFailureStatus:
@@ -7525,6 +8532,13 @@ func (m *AutomationRunMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *AutomationRunMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case automationrun.FieldOccurrence:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddOccurrence(v)
+		return nil
 	case automationrun.FieldOrdinal:
 		v, ok := value.(int)
 		if !ok {
@@ -7558,6 +8572,9 @@ func (m *AutomationRunMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(automationrun.FieldFiringID) {
 		fields = append(fields, automationrun.FieldFiringID)
+	}
+	if m.FieldCleared(automationrun.FieldOccurrence) {
+		fields = append(fields, automationrun.FieldOccurrence)
 	}
 	if m.FieldCleared(automationrun.FieldKeyValue) {
 		fields = append(fields, automationrun.FieldKeyValue)
@@ -7605,6 +8622,9 @@ func (m *AutomationRunMutation) ClearField(name string) error {
 		return nil
 	case automationrun.FieldFiringID:
 		m.ClearFiringID()
+		return nil
+	case automationrun.FieldOccurrence:
+		m.ClearOccurrence()
 		return nil
 	case automationrun.FieldKeyValue:
 		m.ClearKeyValue()
@@ -7670,6 +8690,9 @@ func (m *AutomationRunMutation) ResetField(name string) error {
 		return nil
 	case automationrun.FieldFiringID:
 		m.ResetFiringID()
+		return nil
+	case automationrun.FieldOccurrence:
+		m.ResetOccurrence()
 		return nil
 	case automationrun.FieldChain:
 		m.ResetChain()
@@ -7857,6 +8880,8 @@ type AutomationSkippedEntryMutation struct {
 	created_at        *time.Time
 	updated_at        *time.Time
 	source_id         *string
+	occurrence        *int
+	addoccurrence     *int
 	reason            *automationskippedentry.Reason
 	occurred_at       *time.Time
 	clearedFields     map[string]struct{}
@@ -8255,6 +9280,76 @@ func (m *AutomationSkippedEntryMutation) ResetFiringID() {
 	delete(m.clearedFields, automationskippedentry.FieldFiringID)
 }
 
+// SetOccurrence sets the "occurrence" field.
+func (m *AutomationSkippedEntryMutation) SetOccurrence(i int) {
+	m.occurrence = &i
+	m.addoccurrence = nil
+}
+
+// Occurrence returns the value of the "occurrence" field in the mutation.
+func (m *AutomationSkippedEntryMutation) Occurrence() (r int, exists bool) {
+	v := m.occurrence
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOccurrence returns the old "occurrence" field's value of the AutomationSkippedEntry entity.
+// If the AutomationSkippedEntry object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationSkippedEntryMutation) OldOccurrence(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOccurrence is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOccurrence requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOccurrence: %w", err)
+	}
+	return oldValue.Occurrence, nil
+}
+
+// AddOccurrence adds i to the "occurrence" field.
+func (m *AutomationSkippedEntryMutation) AddOccurrence(i int) {
+	if m.addoccurrence != nil {
+		*m.addoccurrence += i
+	} else {
+		m.addoccurrence = &i
+	}
+}
+
+// AddedOccurrence returns the value that was added to the "occurrence" field in this mutation.
+func (m *AutomationSkippedEntryMutation) AddedOccurrence() (r int, exists bool) {
+	v := m.addoccurrence
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearOccurrence clears the value of the "occurrence" field.
+func (m *AutomationSkippedEntryMutation) ClearOccurrence() {
+	m.occurrence = nil
+	m.addoccurrence = nil
+	m.clearedFields[automationskippedentry.FieldOccurrence] = struct{}{}
+}
+
+// OccurrenceCleared returns if the "occurrence" field was cleared in this mutation.
+func (m *AutomationSkippedEntryMutation) OccurrenceCleared() bool {
+	_, ok := m.clearedFields[automationskippedentry.FieldOccurrence]
+	return ok
+}
+
+// ResetOccurrence resets all changes to the "occurrence" field.
+func (m *AutomationSkippedEntryMutation) ResetOccurrence() {
+	m.occurrence = nil
+	m.addoccurrence = nil
+	delete(m.clearedFields, automationskippedentry.FieldOccurrence)
+}
+
 // SetReason sets the "reason" field.
 func (m *AutomationSkippedEntryMutation) SetReason(a automationskippedentry.Reason) {
 	m.reason = &a
@@ -8469,7 +9564,7 @@ func (m *AutomationSkippedEntryMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationSkippedEntryMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, automationskippedentry.FieldCreatedAt)
 	}
@@ -8490,6 +9585,9 @@ func (m *AutomationSkippedEntryMutation) Fields() []string {
 	}
 	if m.firing != nil {
 		fields = append(fields, automationskippedentry.FieldFiringID)
+	}
+	if m.occurrence != nil {
+		fields = append(fields, automationskippedentry.FieldOccurrence)
 	}
 	if m.reason != nil {
 		fields = append(fields, automationskippedentry.FieldReason)
@@ -8519,6 +9617,8 @@ func (m *AutomationSkippedEntryMutation) Field(name string) (ent.Value, bool) {
 		return m.SourceID()
 	case automationskippedentry.FieldFiringID:
 		return m.FiringID()
+	case automationskippedentry.FieldOccurrence:
+		return m.Occurrence()
 	case automationskippedentry.FieldReason:
 		return m.Reason()
 	case automationskippedentry.FieldOccurredAt:
@@ -8546,6 +9646,8 @@ func (m *AutomationSkippedEntryMutation) OldField(ctx context.Context, name stri
 		return m.OldSourceID(ctx)
 	case automationskippedentry.FieldFiringID:
 		return m.OldFiringID(ctx)
+	case automationskippedentry.FieldOccurrence:
+		return m.OldOccurrence(ctx)
 	case automationskippedentry.FieldReason:
 		return m.OldReason(ctx)
 	case automationskippedentry.FieldOccurredAt:
@@ -8608,6 +9710,13 @@ func (m *AutomationSkippedEntryMutation) SetField(name string, value ent.Value) 
 		}
 		m.SetFiringID(v)
 		return nil
+	case automationskippedentry.FieldOccurrence:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOccurrence(v)
+		return nil
 	case automationskippedentry.FieldReason:
 		v, ok := value.(automationskippedentry.Reason)
 		if !ok {
@@ -8630,6 +9739,9 @@ func (m *AutomationSkippedEntryMutation) SetField(name string, value ent.Value) 
 // this mutation.
 func (m *AutomationSkippedEntryMutation) AddedFields() []string {
 	var fields []string
+	if m.addoccurrence != nil {
+		fields = append(fields, automationskippedentry.FieldOccurrence)
+	}
 	return fields
 }
 
@@ -8638,6 +9750,8 @@ func (m *AutomationSkippedEntryMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *AutomationSkippedEntryMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case automationskippedentry.FieldOccurrence:
+		return m.AddedOccurrence()
 	}
 	return nil, false
 }
@@ -8647,6 +9761,13 @@ func (m *AutomationSkippedEntryMutation) AddedField(name string) (ent.Value, boo
 // type.
 func (m *AutomationSkippedEntryMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case automationskippedentry.FieldOccurrence:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddOccurrence(v)
+		return nil
 	}
 	return fmt.Errorf("unknown AutomationSkippedEntry numeric field %s", name)
 }
@@ -8660,6 +9781,9 @@ func (m *AutomationSkippedEntryMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(automationskippedentry.FieldFiringID) {
 		fields = append(fields, automationskippedentry.FieldFiringID)
+	}
+	if m.FieldCleared(automationskippedentry.FieldOccurrence) {
+		fields = append(fields, automationskippedentry.FieldOccurrence)
 	}
 	return fields
 }
@@ -8680,6 +9804,9 @@ func (m *AutomationSkippedEntryMutation) ClearField(name string) error {
 		return nil
 	case automationskippedentry.FieldFiringID:
 		m.ClearFiringID()
+		return nil
+	case automationskippedentry.FieldOccurrence:
+		m.ClearOccurrence()
 		return nil
 	}
 	return fmt.Errorf("unknown AutomationSkippedEntry nullable field %s", name)
@@ -8709,6 +9836,9 @@ func (m *AutomationSkippedEntryMutation) ResetField(name string) error {
 		return nil
 	case automationskippedentry.FieldFiringID:
 		m.ResetFiringID()
+		return nil
+	case automationskippedentry.FieldOccurrence:
+		m.ResetOccurrence()
 		return nil
 	case automationskippedentry.FieldReason:
 		m.ResetReason()
@@ -10007,6 +11137,7 @@ type AutomationVersionMutation struct {
 	steps               *automationstep.Path
 	trigger_action      *string
 	trigger_filter      **conditiontree.EventFilter
+	trigger_date        **datetrigger.Date
 	exits               *[]eventmatcher.Matcher
 	appendexits         []eventmatcher.Matcher
 	goal                **eventmatcher.Matcher
@@ -10452,6 +11583,55 @@ func (m *AutomationVersionMutation) ResetTriggerFilter() {
 	delete(m.clearedFields, automationversion.FieldTriggerFilter)
 }
 
+// SetTriggerDate sets the "trigger_date" field.
+func (m *AutomationVersionMutation) SetTriggerDate(d *datetrigger.Date) {
+	m.trigger_date = &d
+}
+
+// TriggerDate returns the value of the "trigger_date" field in the mutation.
+func (m *AutomationVersionMutation) TriggerDate() (r *datetrigger.Date, exists bool) {
+	v := m.trigger_date
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTriggerDate returns the old "trigger_date" field's value of the AutomationVersion entity.
+// If the AutomationVersion object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationVersionMutation) OldTriggerDate(ctx context.Context) (v *datetrigger.Date, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTriggerDate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTriggerDate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTriggerDate: %w", err)
+	}
+	return oldValue.TriggerDate, nil
+}
+
+// ClearTriggerDate clears the value of the "trigger_date" field.
+func (m *AutomationVersionMutation) ClearTriggerDate() {
+	m.trigger_date = nil
+	m.clearedFields[automationversion.FieldTriggerDate] = struct{}{}
+}
+
+// TriggerDateCleared returns if the "trigger_date" field was cleared in this mutation.
+func (m *AutomationVersionMutation) TriggerDateCleared() bool {
+	_, ok := m.clearedFields[automationversion.FieldTriggerDate]
+	return ok
+}
+
+// ResetTriggerDate resets all changes to the "trigger_date" field.
+func (m *AutomationVersionMutation) ResetTriggerDate() {
+	m.trigger_date = nil
+	delete(m.clearedFields, automationversion.FieldTriggerDate)
+}
+
 // SetExits sets the "exits" field.
 func (m *AutomationVersionMutation) SetExits(e []eventmatcher.Matcher) {
 	m.exits = &e
@@ -10835,7 +12015,7 @@ func (m *AutomationVersionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationVersionMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 14)
 	if m.created_at != nil {
 		fields = append(fields, automationversion.FieldCreatedAt)
 	}
@@ -10859,6 +12039,9 @@ func (m *AutomationVersionMutation) Fields() []string {
 	}
 	if m.trigger_filter != nil {
 		fields = append(fields, automationversion.FieldTriggerFilter)
+	}
+	if m.trigger_date != nil {
+		fields = append(fields, automationversion.FieldTriggerDate)
 	}
 	if m.exits != nil {
 		fields = append(fields, automationversion.FieldExits)
@@ -10899,6 +12082,8 @@ func (m *AutomationVersionMutation) Field(name string) (ent.Value, bool) {
 		return m.TriggerAction()
 	case automationversion.FieldTriggerFilter:
 		return m.TriggerFilter()
+	case automationversion.FieldTriggerDate:
+		return m.TriggerDate()
 	case automationversion.FieldExits:
 		return m.Exits()
 	case automationversion.FieldGoal:
@@ -10934,6 +12119,8 @@ func (m *AutomationVersionMutation) OldField(ctx context.Context, name string) (
 		return m.OldTriggerAction(ctx)
 	case automationversion.FieldTriggerFilter:
 		return m.OldTriggerFilter(ctx)
+	case automationversion.FieldTriggerDate:
+		return m.OldTriggerDate(ctx)
 	case automationversion.FieldExits:
 		return m.OldExits(ctx)
 	case automationversion.FieldGoal:
@@ -11008,6 +12195,13 @@ func (m *AutomationVersionMutation) SetField(name string, value ent.Value) error
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetTriggerFilter(v)
+		return nil
+	case automationversion.FieldTriggerDate:
+		v, ok := value.(*datetrigger.Date)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTriggerDate(v)
 		return nil
 	case automationversion.FieldExits:
 		v, ok := value.([]eventmatcher.Matcher)
@@ -11104,6 +12298,9 @@ func (m *AutomationVersionMutation) ClearedFields() []string {
 	if m.FieldCleared(automationversion.FieldTriggerFilter) {
 		fields = append(fields, automationversion.FieldTriggerFilter)
 	}
+	if m.FieldCleared(automationversion.FieldTriggerDate) {
+		fields = append(fields, automationversion.FieldTriggerDate)
+	}
 	if m.FieldCleared(automationversion.FieldGoal) {
 		fields = append(fields, automationversion.FieldGoal)
 	}
@@ -11126,6 +12323,9 @@ func (m *AutomationVersionMutation) ClearField(name string) error {
 	switch name {
 	case automationversion.FieldTriggerFilter:
 		m.ClearTriggerFilter()
+		return nil
+	case automationversion.FieldTriggerDate:
+		m.ClearTriggerDate()
 		return nil
 	case automationversion.FieldGoal:
 		m.ClearGoal()
@@ -11164,6 +12364,9 @@ func (m *AutomationVersionMutation) ResetField(name string) error {
 		return nil
 	case automationversion.FieldTriggerFilter:
 		m.ResetTriggerFilter()
+		return nil
+	case automationversion.FieldTriggerDate:
+		m.ResetTriggerDate()
 		return nil
 	case automationversion.FieldExits:
 		m.ResetExits()
@@ -23269,50 +24472,52 @@ func (m *ConsentStampMutation) ResetEdge(name string) error {
 // ContactMutation represents an operation that mutates the Contact nodes in the graph.
 type ContactMutation struct {
 	config
-	op                  Op
-	typ                 string
-	id                  *int64
-	created_at          *time.Time
-	updated_at          *time.Time
-	revision            *int64
-	addrevision         *int64
-	subject_id          *string
-	email               *string
-	phone               *string
-	first_name          *string
-	last_name           *string
-	time_zone           *string
-	country             *string
-	locale              *string
-	birthday            *time.Time
-	city                *string
-	avatar              *string
-	source              *contact.Source
-	custom_fields       *map[string]interface{}
-	clearedFields       map[string]struct{}
-	workspace           *int64
-	clearedworkspace    bool
-	visitors            map[int64]struct{}
-	removedvisitors     map[int64]struct{}
-	clearedvisitors     bool
-	bindings            map[int64]struct{}
-	removedbindings     map[int64]struct{}
-	clearedbindings     bool
-	start_tokens        map[int64]struct{}
-	removedstart_tokens map[int64]struct{}
-	clearedstart_tokens bool
-	tags                map[int64]struct{}
-	removedtags         map[int64]struct{}
-	clearedtags         bool
-	events              map[int64]struct{}
-	removedevents       map[int64]struct{}
-	clearedevents       bool
-	orders              map[int64]struct{}
-	removedorders       map[int64]struct{}
-	clearedorders       bool
-	done                bool
-	oldValue            func(context.Context) (*Contact, error)
-	predicates          []predicate.Contact
+	op                      Op
+	typ                     string
+	id                      *int64
+	created_at              *time.Time
+	updated_at              *time.Time
+	revision                *int64
+	addrevision             *int64
+	subject_id              *string
+	email                   *string
+	phone                   *string
+	first_name              *string
+	last_name               *string
+	time_zone               *string
+	country                 *string
+	locale                  *string
+	birthday                *time.Time
+	city                    *string
+	avatar                  *string
+	source                  *contact.Source
+	custom_fields           *map[string]interface{}
+	send_locked_dates       *[]datetrigger.Field
+	appendsend_locked_dates []datetrigger.Field
+	clearedFields           map[string]struct{}
+	workspace               *int64
+	clearedworkspace        bool
+	visitors                map[int64]struct{}
+	removedvisitors         map[int64]struct{}
+	clearedvisitors         bool
+	bindings                map[int64]struct{}
+	removedbindings         map[int64]struct{}
+	clearedbindings         bool
+	start_tokens            map[int64]struct{}
+	removedstart_tokens     map[int64]struct{}
+	clearedstart_tokens     bool
+	tags                    map[int64]struct{}
+	removedtags             map[int64]struct{}
+	clearedtags             bool
+	events                  map[int64]struct{}
+	removedevents           map[int64]struct{}
+	clearedevents           bool
+	orders                  map[int64]struct{}
+	removedorders           map[int64]struct{}
+	clearedorders           bool
+	done                    bool
+	oldValue                func(context.Context) (*Contact, error)
+	predicates              []predicate.Contact
 }
 
 var _ ent.Mutation = (*ContactMutation)(nil)
@@ -24207,6 +25412,57 @@ func (m *ContactMutation) ResetCustomFields() {
 	delete(m.clearedFields, contact.FieldCustomFields)
 }
 
+// SetSendLockedDates sets the "send_locked_dates" field.
+func (m *ContactMutation) SetSendLockedDates(d []datetrigger.Field) {
+	m.send_locked_dates = &d
+	m.appendsend_locked_dates = nil
+}
+
+// SendLockedDates returns the value of the "send_locked_dates" field in the mutation.
+func (m *ContactMutation) SendLockedDates() (r []datetrigger.Field, exists bool) {
+	v := m.send_locked_dates
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSendLockedDates returns the old "send_locked_dates" field's value of the Contact entity.
+// If the Contact object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactMutation) OldSendLockedDates(ctx context.Context) (v []datetrigger.Field, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSendLockedDates is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSendLockedDates requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSendLockedDates: %w", err)
+	}
+	return oldValue.SendLockedDates, nil
+}
+
+// AppendSendLockedDates adds d to the "send_locked_dates" field.
+func (m *ContactMutation) AppendSendLockedDates(d []datetrigger.Field) {
+	m.appendsend_locked_dates = append(m.appendsend_locked_dates, d...)
+}
+
+// AppendedSendLockedDates returns the list of values that were appended to the "send_locked_dates" field in this mutation.
+func (m *ContactMutation) AppendedSendLockedDates() ([]datetrigger.Field, bool) {
+	if len(m.appendsend_locked_dates) == 0 {
+		return nil, false
+	}
+	return m.appendsend_locked_dates, true
+}
+
+// ResetSendLockedDates resets all changes to the "send_locked_dates" field.
+func (m *ContactMutation) ResetSendLockedDates() {
+	m.send_locked_dates = nil
+	m.appendsend_locked_dates = nil
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *ContactMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -24592,7 +25848,7 @@ func (m *ContactMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ContactMutation) Fields() []string {
-	fields := make([]string, 0, 17)
+	fields := make([]string, 0, 18)
 	if m.created_at != nil {
 		fields = append(fields, contact.FieldCreatedAt)
 	}
@@ -24644,6 +25900,9 @@ func (m *ContactMutation) Fields() []string {
 	if m.custom_fields != nil {
 		fields = append(fields, contact.FieldCustomFields)
 	}
+	if m.send_locked_dates != nil {
+		fields = append(fields, contact.FieldSendLockedDates)
+	}
 	return fields
 }
 
@@ -24686,6 +25945,8 @@ func (m *ContactMutation) Field(name string) (ent.Value, bool) {
 		return m.Source()
 	case contact.FieldCustomFields:
 		return m.CustomFields()
+	case contact.FieldSendLockedDates:
+		return m.SendLockedDates()
 	}
 	return nil, false
 }
@@ -24729,6 +25990,8 @@ func (m *ContactMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldSource(ctx)
 	case contact.FieldCustomFields:
 		return m.OldCustomFields(ctx)
+	case contact.FieldSendLockedDates:
+		return m.OldSendLockedDates(ctx)
 	}
 	return nil, fmt.Errorf("unknown Contact field %s", name)
 }
@@ -24856,6 +26119,13 @@ func (m *ContactMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetCustomFields(v)
+		return nil
+	case contact.FieldSendLockedDates:
+		v, ok := value.([]datetrigger.Field)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSendLockedDates(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Contact field %s", name)
@@ -25046,6 +26316,9 @@ func (m *ContactMutation) ResetField(name string) error {
 		return nil
 	case contact.FieldCustomFields:
 		m.ResetCustomFields()
+		return nil
+	case contact.FieldSendLockedDates:
+		m.ResetSendLockedDates()
 		return nil
 	}
 	return fmt.Errorf("unknown Contact field %s", name)
@@ -79957,206 +81230,209 @@ func (m *WebhookEndpointHealthMutation) ResetEdge(name string) error {
 // WorkspaceMutation represents an operation that mutates the Workspace nodes in the graph.
 type WorkspaceMutation struct {
 	config
-	op                                  Op
-	typ                                 string
-	id                                  *int64
-	created_at                          *time.Time
-	updated_at                          *time.Time
-	discarded_at                        *time.Time
-	revision                            *int64
-	addrevision                         *int64
-	name                                *string
-	public_id                           *string
-	collect_key                         *string
-	require_confirmed_opt_in            *bool
-	confirmation_from_email             *string
-	confirmation_from_name              *string
-	confirmation_subject                *string
-	confirmation_intro                  *string
-	postal_address                      *string
-	retention_days                      *int
-	addretention_days                   *int
-	timezone                            *string
-	engagement_tracking_default         *workspace.EngagementTrackingDefault
-	reporting_currency                  *string
-	attribution_window_days             *int
-	addattribution_window_days          *int
-	send_cap                            *int
-	addsend_cap                         *int
-	domain_join_enabled                 *bool
-	second_factor_required_at           *time.Time
-	erased_at                           *time.Time
-	suspended_at                        *time.Time
-	suspended_by_kind                   *workspace.SuspendedByKind
-	suspended_by_id                     *string
-	suspension_reason                   *string
-	cleared_at                          *time.Time
-	abuse_exempt                        *bool
-	clearedFields                       map[string]struct{}
-	contacts                            map[int64]struct{}
-	removedcontacts                     map[int64]struct{}
-	clearedcontacts                     bool
-	custom_fields                       map[int64]struct{}
-	removedcustom_fields                map[int64]struct{}
-	clearedcustom_fields                bool
-	tags                                map[int64]struct{}
-	removedtags                         map[int64]struct{}
-	clearedtags                         bool
-	segments                            map[int64]struct{}
-	removedsegments                     map[int64]struct{}
-	clearedsegments                     bool
-	events                              map[int64]struct{}
-	removedevents                       map[int64]struct{}
-	clearedevents                       bool
-	event_journal_entries               map[int64]struct{}
-	removedevent_journal_entries        map[int64]struct{}
-	clearedevent_journal_entries        bool
-	orders                              map[int64]struct{}
-	removedorders                       map[int64]struct{}
-	clearedorders                       bool
-	order_movements                     map[int64]struct{}
-	removedorder_movements              map[int64]struct{}
-	clearedorder_movements              bool
-	held_order_events                   map[int64]struct{}
-	removedheld_order_events            map[int64]struct{}
-	clearedheld_order_events            bool
-	visitors                            map[int64]struct{}
-	removedvisitors                     map[int64]struct{}
-	clearedvisitors                     bool
-	bindings                            map[int64]struct{}
-	removedbindings                     map[int64]struct{}
-	clearedbindings                     bool
-	start_tokens                        map[int64]struct{}
-	removedstart_tokens                 map[int64]struct{}
-	clearedstart_tokens                 bool
-	api_tokens                          map[int64]struct{}
-	removedapi_tokens                   map[int64]struct{}
-	clearedapi_tokens                   bool
-	oauth_codes                         map[int64]struct{}
-	removedoauth_codes                  map[int64]struct{}
-	clearedoauth_codes                  bool
-	integrations                        map[int64]struct{}
-	removedintegrations                 map[int64]struct{}
-	clearedintegrations                 bool
-	sending_domains                     map[int64]struct{}
-	removedsending_domains              map[int64]struct{}
-	clearedsending_domains              bool
-	join_domains                        map[int64]struct{}
-	removedjoin_domains                 map[int64]struct{}
-	clearedjoin_domains                 bool
-	tracking_domains                    map[int64]struct{}
-	removedtracking_domains             map[int64]struct{}
-	clearedtracking_domains             bool
-	provider_limiters                   map[int64]struct{}
-	removedprovider_limiters            map[int64]struct{}
-	clearedprovider_limiters            bool
-	send_cap_limiters                   map[int64]struct{}
-	removedsend_cap_limiters            map[int64]struct{}
-	clearedsend_cap_limiters            bool
-	holds                               map[int64]struct{}
-	removedholds                        map[int64]struct{}
-	clearedholds                        bool
-	broadcasts                          map[int64]struct{}
-	removedbroadcasts                   map[int64]struct{}
-	clearedbroadcasts                   bool
-	broadcast_recipients                map[int64]struct{}
-	removedbroadcast_recipients         map[int64]struct{}
-	clearedbroadcast_recipients         bool
-	broadcast_figures                   map[int64]struct{}
-	removedbroadcast_figures            map[int64]struct{}
-	clearedbroadcast_figures            bool
-	automation_figures                  map[int64]struct{}
-	removedautomation_figures           map[int64]struct{}
-	clearedautomation_figures           bool
-	automation_skipped_entries          map[int64]struct{}
-	removedautomation_skipped_entries   map[int64]struct{}
-	clearedautomation_skipped_entries   bool
-	email_templates                     map[int64]struct{}
-	removedemail_templates              map[int64]struct{}
-	clearedemail_templates              bool
-	brand_kits                          map[int64]struct{}
-	removedbrand_kits                   map[int64]struct{}
-	clearedbrand_kits                   bool
-	identity_secrets                    map[int64]struct{}
-	removedidentity_secrets             map[int64]struct{}
-	clearedidentity_secrets             bool
-	automations                         map[int64]struct{}
-	removedautomations                  map[int64]struct{}
-	clearedautomations                  bool
-	automation_versions                 map[int64]struct{}
-	removedautomation_versions          map[int64]struct{}
-	clearedautomation_versions          bool
-	automation_runs                     map[int64]struct{}
-	removedautomation_runs              map[int64]struct{}
-	clearedautomation_runs              bool
-	automation_step_records             map[int64]struct{}
-	removedautomation_step_records      map[int64]struct{}
-	clearedautomation_step_records      bool
-	rules                               map[int64]struct{}
-	removedrules                        map[int64]struct{}
-	clearedrules                        bool
-	rule_versions                       map[int64]struct{}
-	removedrule_versions                map[int64]struct{}
-	clearedrule_versions                bool
-	rule_version_triggers               map[int64]struct{}
-	removedrule_version_triggers        map[int64]struct{}
-	clearedrule_version_triggers        bool
-	rule_firings                        map[int64]struct{}
-	removedrule_firings                 map[int64]struct{}
-	clearedrule_firings                 bool
-	webhook_endpoints                   map[int64]struct{}
-	removedwebhook_endpoints            map[int64]struct{}
-	clearedwebhook_endpoints            bool
-	suppressions                        map[int64]struct{}
-	removedsuppressions                 map[int64]struct{}
-	clearedsuppressions                 bool
-	unsubscribes                        map[int64]struct{}
-	removedunsubscribes                 map[int64]struct{}
-	clearedunsubscribes                 bool
-	confirmations                       map[int64]struct{}
-	removedconfirmations                map[int64]struct{}
-	clearedconfirmations                bool
-	consent_stamps                      map[int64]struct{}
-	removedconsent_stamps               map[int64]struct{}
-	clearedconsent_stamps               bool
-	engagement_tracking_consents        map[int64]struct{}
-	removedengagement_tracking_consents map[int64]struct{}
-	clearedengagement_tracking_consents bool
-	outbound_messages                   map[int64]struct{}
-	removedoutbound_messages            map[int64]struct{}
-	clearedoutbound_messages            bool
-	tracked_links                       map[int64]struct{}
-	removedtracked_links                map[int64]struct{}
-	clearedtracked_links                bool
-	captured_messages                   map[int64]struct{}
-	removedcaptured_messages            map[int64]struct{}
-	clearedcaptured_messages            bool
-	memberships                         map[int64]struct{}
-	removedmemberships                  map[int64]struct{}
-	clearedmemberships                  bool
-	invitations                         map[int64]struct{}
-	removedinvitations                  map[int64]struct{}
-	clearedinvitations                  bool
-	audit_entries                       map[int64]struct{}
-	removedaudit_entries                map[int64]struct{}
-	clearedaudit_entries                bool
-	erasures                            map[int64]struct{}
-	removederasures                     map[int64]struct{}
-	clearederasures                     bool
-	usages                              map[int64]struct{}
-	removedusages                       map[int64]struct{}
-	clearedusages                       bool
-	integration_provider_states         map[int64]struct{}
-	removedintegration_provider_states  map[int64]struct{}
-	clearedintegration_provider_states  bool
-	webhook_endpoint_healths            map[int64]struct{}
-	removedwebhook_endpoint_healths     map[int64]struct{}
-	clearedwebhook_endpoint_healths     bool
-	standing                            *int64
-	clearedstanding                     bool
-	done                                bool
-	oldValue                            func(context.Context) (*Workspace, error)
-	predicates                          []predicate.Workspace
+	op                                   Op
+	typ                                  string
+	id                                   *int64
+	created_at                           *time.Time
+	updated_at                           *time.Time
+	discarded_at                         *time.Time
+	revision                             *int64
+	addrevision                          *int64
+	name                                 *string
+	public_id                            *string
+	collect_key                          *string
+	require_confirmed_opt_in             *bool
+	confirmation_from_email              *string
+	confirmation_from_name               *string
+	confirmation_subject                 *string
+	confirmation_intro                   *string
+	postal_address                       *string
+	retention_days                       *int
+	addretention_days                    *int
+	timezone                             *string
+	engagement_tracking_default          *workspace.EngagementTrackingDefault
+	reporting_currency                   *string
+	attribution_window_days              *int
+	addattribution_window_days           *int
+	send_cap                             *int
+	addsend_cap                          *int
+	domain_join_enabled                  *bool
+	second_factor_required_at            *time.Time
+	erased_at                            *time.Time
+	suspended_at                         *time.Time
+	suspended_by_kind                    *workspace.SuspendedByKind
+	suspended_by_id                      *string
+	suspension_reason                    *string
+	cleared_at                           *time.Time
+	abuse_exempt                         *bool
+	clearedFields                        map[string]struct{}
+	contacts                             map[int64]struct{}
+	removedcontacts                      map[int64]struct{}
+	clearedcontacts                      bool
+	custom_fields                        map[int64]struct{}
+	removedcustom_fields                 map[int64]struct{}
+	clearedcustom_fields                 bool
+	tags                                 map[int64]struct{}
+	removedtags                          map[int64]struct{}
+	clearedtags                          bool
+	segments                             map[int64]struct{}
+	removedsegments                      map[int64]struct{}
+	clearedsegments                      bool
+	events                               map[int64]struct{}
+	removedevents                        map[int64]struct{}
+	clearedevents                        bool
+	event_journal_entries                map[int64]struct{}
+	removedevent_journal_entries         map[int64]struct{}
+	clearedevent_journal_entries         bool
+	orders                               map[int64]struct{}
+	removedorders                        map[int64]struct{}
+	clearedorders                        bool
+	order_movements                      map[int64]struct{}
+	removedorder_movements               map[int64]struct{}
+	clearedorder_movements               bool
+	held_order_events                    map[int64]struct{}
+	removedheld_order_events             map[int64]struct{}
+	clearedheld_order_events             bool
+	visitors                             map[int64]struct{}
+	removedvisitors                      map[int64]struct{}
+	clearedvisitors                      bool
+	bindings                             map[int64]struct{}
+	removedbindings                      map[int64]struct{}
+	clearedbindings                      bool
+	start_tokens                         map[int64]struct{}
+	removedstart_tokens                  map[int64]struct{}
+	clearedstart_tokens                  bool
+	api_tokens                           map[int64]struct{}
+	removedapi_tokens                    map[int64]struct{}
+	clearedapi_tokens                    bool
+	oauth_codes                          map[int64]struct{}
+	removedoauth_codes                   map[int64]struct{}
+	clearedoauth_codes                   bool
+	integrations                         map[int64]struct{}
+	removedintegrations                  map[int64]struct{}
+	clearedintegrations                  bool
+	sending_domains                      map[int64]struct{}
+	removedsending_domains               map[int64]struct{}
+	clearedsending_domains               bool
+	join_domains                         map[int64]struct{}
+	removedjoin_domains                  map[int64]struct{}
+	clearedjoin_domains                  bool
+	tracking_domains                     map[int64]struct{}
+	removedtracking_domains              map[int64]struct{}
+	clearedtracking_domains              bool
+	provider_limiters                    map[int64]struct{}
+	removedprovider_limiters             map[int64]struct{}
+	clearedprovider_limiters             bool
+	send_cap_limiters                    map[int64]struct{}
+	removedsend_cap_limiters             map[int64]struct{}
+	clearedsend_cap_limiters             bool
+	holds                                map[int64]struct{}
+	removedholds                         map[int64]struct{}
+	clearedholds                         bool
+	broadcasts                           map[int64]struct{}
+	removedbroadcasts                    map[int64]struct{}
+	clearedbroadcasts                    bool
+	broadcast_recipients                 map[int64]struct{}
+	removedbroadcast_recipients          map[int64]struct{}
+	clearedbroadcast_recipients          bool
+	broadcast_figures                    map[int64]struct{}
+	removedbroadcast_figures             map[int64]struct{}
+	clearedbroadcast_figures             bool
+	automation_figures                   map[int64]struct{}
+	removedautomation_figures            map[int64]struct{}
+	clearedautomation_figures            bool
+	automation_skipped_entries           map[int64]struct{}
+	removedautomation_skipped_entries    map[int64]struct{}
+	clearedautomation_skipped_entries    bool
+	automation_occurrence_cursors        map[int64]struct{}
+	removedautomation_occurrence_cursors map[int64]struct{}
+	clearedautomation_occurrence_cursors bool
+	email_templates                      map[int64]struct{}
+	removedemail_templates               map[int64]struct{}
+	clearedemail_templates               bool
+	brand_kits                           map[int64]struct{}
+	removedbrand_kits                    map[int64]struct{}
+	clearedbrand_kits                    bool
+	identity_secrets                     map[int64]struct{}
+	removedidentity_secrets              map[int64]struct{}
+	clearedidentity_secrets              bool
+	automations                          map[int64]struct{}
+	removedautomations                   map[int64]struct{}
+	clearedautomations                   bool
+	automation_versions                  map[int64]struct{}
+	removedautomation_versions           map[int64]struct{}
+	clearedautomation_versions           bool
+	automation_runs                      map[int64]struct{}
+	removedautomation_runs               map[int64]struct{}
+	clearedautomation_runs               bool
+	automation_step_records              map[int64]struct{}
+	removedautomation_step_records       map[int64]struct{}
+	clearedautomation_step_records       bool
+	rules                                map[int64]struct{}
+	removedrules                         map[int64]struct{}
+	clearedrules                         bool
+	rule_versions                        map[int64]struct{}
+	removedrule_versions                 map[int64]struct{}
+	clearedrule_versions                 bool
+	rule_version_triggers                map[int64]struct{}
+	removedrule_version_triggers         map[int64]struct{}
+	clearedrule_version_triggers         bool
+	rule_firings                         map[int64]struct{}
+	removedrule_firings                  map[int64]struct{}
+	clearedrule_firings                  bool
+	webhook_endpoints                    map[int64]struct{}
+	removedwebhook_endpoints             map[int64]struct{}
+	clearedwebhook_endpoints             bool
+	suppressions                         map[int64]struct{}
+	removedsuppressions                  map[int64]struct{}
+	clearedsuppressions                  bool
+	unsubscribes                         map[int64]struct{}
+	removedunsubscribes                  map[int64]struct{}
+	clearedunsubscribes                  bool
+	confirmations                        map[int64]struct{}
+	removedconfirmations                 map[int64]struct{}
+	clearedconfirmations                 bool
+	consent_stamps                       map[int64]struct{}
+	removedconsent_stamps                map[int64]struct{}
+	clearedconsent_stamps                bool
+	engagement_tracking_consents         map[int64]struct{}
+	removedengagement_tracking_consents  map[int64]struct{}
+	clearedengagement_tracking_consents  bool
+	outbound_messages                    map[int64]struct{}
+	removedoutbound_messages             map[int64]struct{}
+	clearedoutbound_messages             bool
+	tracked_links                        map[int64]struct{}
+	removedtracked_links                 map[int64]struct{}
+	clearedtracked_links                 bool
+	captured_messages                    map[int64]struct{}
+	removedcaptured_messages             map[int64]struct{}
+	clearedcaptured_messages             bool
+	memberships                          map[int64]struct{}
+	removedmemberships                   map[int64]struct{}
+	clearedmemberships                   bool
+	invitations                          map[int64]struct{}
+	removedinvitations                   map[int64]struct{}
+	clearedinvitations                   bool
+	audit_entries                        map[int64]struct{}
+	removedaudit_entries                 map[int64]struct{}
+	clearedaudit_entries                 bool
+	erasures                             map[int64]struct{}
+	removederasures                      map[int64]struct{}
+	clearederasures                      bool
+	usages                               map[int64]struct{}
+	removedusages                        map[int64]struct{}
+	clearedusages                        bool
+	integration_provider_states          map[int64]struct{}
+	removedintegration_provider_states   map[int64]struct{}
+	clearedintegration_provider_states   bool
+	webhook_endpoint_healths             map[int64]struct{}
+	removedwebhook_endpoint_healths      map[int64]struct{}
+	clearedwebhook_endpoint_healths      bool
+	standing                             *int64
+	clearedstanding                      bool
+	done                                 bool
+	oldValue                             func(context.Context) (*Workspace, error)
+	predicates                           []predicate.Workspace
 }
 
 var _ ent.Mutation = (*WorkspaceMutation)(nil)
@@ -82978,6 +84254,60 @@ func (m *WorkspaceMutation) ResetAutomationSkippedEntries() {
 	m.removedautomation_skipped_entries = nil
 }
 
+// AddAutomationOccurrenceCursorIDs adds the "automation_occurrence_cursors" edge to the AutomationOccurrenceCursor entity by ids.
+func (m *WorkspaceMutation) AddAutomationOccurrenceCursorIDs(ids ...int64) {
+	if m.automation_occurrence_cursors == nil {
+		m.automation_occurrence_cursors = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.automation_occurrence_cursors[ids[i]] = struct{}{}
+	}
+}
+
+// ClearAutomationOccurrenceCursors clears the "automation_occurrence_cursors" edge to the AutomationOccurrenceCursor entity.
+func (m *WorkspaceMutation) ClearAutomationOccurrenceCursors() {
+	m.clearedautomation_occurrence_cursors = true
+}
+
+// AutomationOccurrenceCursorsCleared reports if the "automation_occurrence_cursors" edge to the AutomationOccurrenceCursor entity was cleared.
+func (m *WorkspaceMutation) AutomationOccurrenceCursorsCleared() bool {
+	return m.clearedautomation_occurrence_cursors
+}
+
+// RemoveAutomationOccurrenceCursorIDs removes the "automation_occurrence_cursors" edge to the AutomationOccurrenceCursor entity by IDs.
+func (m *WorkspaceMutation) RemoveAutomationOccurrenceCursorIDs(ids ...int64) {
+	if m.removedautomation_occurrence_cursors == nil {
+		m.removedautomation_occurrence_cursors = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.automation_occurrence_cursors, ids[i])
+		m.removedautomation_occurrence_cursors[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedAutomationOccurrenceCursors returns the removed IDs of the "automation_occurrence_cursors" edge to the AutomationOccurrenceCursor entity.
+func (m *WorkspaceMutation) RemovedAutomationOccurrenceCursorsIDs() (ids []int64) {
+	for id := range m.removedautomation_occurrence_cursors {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// AutomationOccurrenceCursorsIDs returns the "automation_occurrence_cursors" edge IDs in the mutation.
+func (m *WorkspaceMutation) AutomationOccurrenceCursorsIDs() (ids []int64) {
+	for id := range m.automation_occurrence_cursors {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetAutomationOccurrenceCursors resets all changes to the "automation_occurrence_cursors" edge.
+func (m *WorkspaceMutation) ResetAutomationOccurrenceCursors() {
+	m.automation_occurrence_cursors = nil
+	m.clearedautomation_occurrence_cursors = false
+	m.removedautomation_occurrence_cursors = nil
+}
+
 // AddEmailTemplateIDs adds the "email_templates" edge to the EmailTemplate entity by ids.
 func (m *WorkspaceMutation) AddEmailTemplateIDs(ids ...int64) {
 	if m.email_templates == nil {
@@ -85223,7 +86553,7 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WorkspaceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 54)
+	edges := make([]string, 0, 55)
 	if m.contacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -85301,6 +86631,9 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	}
 	if m.automation_skipped_entries != nil {
 		edges = append(edges, workspace.EdgeAutomationSkippedEntries)
+	}
+	if m.automation_occurrence_cursors != nil {
+		edges = append(edges, workspace.EdgeAutomationOccurrenceCursors)
 	}
 	if m.email_templates != nil {
 		edges = append(edges, workspace.EdgeEmailTemplates)
@@ -85549,6 +86882,12 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeAutomationOccurrenceCursors:
+		ids := make([]ent.Value, 0, len(m.automation_occurrence_cursors))
+		for id := range m.automation_occurrence_cursors {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeEmailTemplates:
 		ids := make([]ent.Value, 0, len(m.email_templates))
 		for id := range m.email_templates {
@@ -85721,7 +87060,7 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WorkspaceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 54)
+	edges := make([]string, 0, 55)
 	if m.removedcontacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -85799,6 +87138,9 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	}
 	if m.removedautomation_skipped_entries != nil {
 		edges = append(edges, workspace.EdgeAutomationSkippedEntries)
+	}
+	if m.removedautomation_occurrence_cursors != nil {
+		edges = append(edges, workspace.EdgeAutomationOccurrenceCursors)
 	}
 	if m.removedemail_templates != nil {
 		edges = append(edges, workspace.EdgeEmailTemplates)
@@ -86044,6 +87386,12 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeAutomationOccurrenceCursors:
+		ids := make([]ent.Value, 0, len(m.removedautomation_occurrence_cursors))
+		for id := range m.removedautomation_occurrence_cursors {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeEmailTemplates:
 		ids := make([]ent.Value, 0, len(m.removedemail_templates))
 		for id := range m.removedemail_templates {
@@ -86212,7 +87560,7 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WorkspaceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 54)
+	edges := make([]string, 0, 55)
 	if m.clearedcontacts {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -86290,6 +87638,9 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	}
 	if m.clearedautomation_skipped_entries {
 		edges = append(edges, workspace.EdgeAutomationSkippedEntries)
+	}
+	if m.clearedautomation_occurrence_cursors {
+		edges = append(edges, workspace.EdgeAutomationOccurrenceCursors)
 	}
 	if m.clearedemail_templates {
 		edges = append(edges, workspace.EdgeEmailTemplates)
@@ -86434,6 +87785,8 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearedautomation_figures
 	case workspace.EdgeAutomationSkippedEntries:
 		return m.clearedautomation_skipped_entries
+	case workspace.EdgeAutomationOccurrenceCursors:
+		return m.clearedautomation_occurrence_cursors
 	case workspace.EdgeEmailTemplates:
 		return m.clearedemail_templates
 	case workspace.EdgeBrandKits:
@@ -86586,6 +87939,9 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 		return nil
 	case workspace.EdgeAutomationSkippedEntries:
 		m.ResetAutomationSkippedEntries()
+		return nil
+	case workspace.EdgeAutomationOccurrenceCursors:
+		m.ResetAutomationOccurrenceCursors()
 		return nil
 	case workspace.EdgeEmailTemplates:
 		m.ResetEmailTemplates()

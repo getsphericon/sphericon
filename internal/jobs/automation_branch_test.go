@@ -75,7 +75,7 @@ func publishedBranching(t *testing.T, env *testhelper.TestEnv, ws int64, steps .
 	s := env.DB.Scoped(ws)
 	m := testhelper.Module[*automations.Module](env)
 	root := automationstep.Root(steps...)
-	a, err := m.Create(ctx, s, automations.CreateInput{Name: "Branching", Trigger: eventmatcher.Matcher{Action: branchTrigger}, Steps: &root})
+	a, err := m.Create(ctx, s, automations.CreateInput{Name: "Branching", Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: branchTrigger}}, Steps: &root})
 	require.NoError(t, err)
 	a, err = m.Publish(ctx, s, a.ID, testhelper.AutomationRevisionIn(ctx, t, s, a.ID))
 	require.NoError(t, err)

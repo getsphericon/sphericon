@@ -8,7 +8,7 @@ import type {
   SiteAutomationResource,
   SiteAutomationsUpdateData,
 } from '../../generated/site/types.gen.ts'
-import { definitionOf, flowOf, pathInputOf } from './definition.ts'
+import { definitionOf, flowOf, holdsKept, pathInputOf } from './definition.ts'
 import type { Flow } from './definition.ts'
 import { automationSnapshot } from './leaveSnapshot.ts'
 
@@ -28,10 +28,11 @@ interface Submission {
 
 // Capture the persisted representation before any asynchronous work: neither a later edit nor a
 // query refresh may change this request or its receipt. A flow holding a Step the editor does not
-// edit (an End, a fork) is never saved, whoever asks: nothing may drop it.
+// edit (a Step or a Trigger of a kind newer than the editor) is never saved, whoever asks: nothing
+// may drop it.
 export function automationSubmission(name: string, flow: Flow): Submission | null {
   const steps = pathInputOf(flow)
-  if (steps === null) {
+  if (steps === null || holdsKept(flow)) {
     return null
   }
   const { trigger, filterIncomplete, exitEvents, goalEvent } = definitionOf(flow)

@@ -42,7 +42,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
+	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
@@ -327,6 +329,8 @@ type Inputs interface {
 	// goverter:enum:map EventTriggerInputEntryPolicyOnce EntryPolicyOnce
 	// goverter:enum:map EventTriggerInputEntryPolicyAgain EntryPolicyAgain
 	EntryPolicy(source siteapi.EventTriggerInputEntryPolicy) automationversion.EntryPolicy
+	// goverter:enum:transform value
+	DateRecurrence(source siteapi.DateRecurrence) localcalendar.Recurrence
 	// goverter:enum:transform value
 	SuppressionChannel(source siteapi.SuppressionChannel) channels.Channel
 	// goverter:enum:map SiteAnalyticsRevenueRange7d Window7Days
@@ -629,18 +633,37 @@ func segmentConditionIn(o siteapi.OptSegmentConditionInput) (*conditiontree.Segm
 }
 
 // automationTriggerIn is the Trigger a write gives, by its kind: an Event matcher, its filter the
-// stored Condition of the place (ADR 0169). A oneOf is beyond goverter, so the switch is written
-// here; a Trigger of no kind is no matcher, which the save refuses.
-func automationTriggerIn(t siteapi.AutomationTriggerInput) (eventmatcher.Matcher, error) {
-	if t.OneOf.Type != siteapi.EventTriggerInputAutomationTriggerInputSum {
-		return eventmatcher.Matcher{}, nil
+// stored Condition of the place (ADR 0169), or a date (ADR 0126). A oneOf is beyond goverter, so the
+// switch is written here; a Trigger of no kind is no matcher, which the save refuses.
+func automationTriggerIn(c Inputs, t siteapi.AutomationTriggerInput) (automations.Trigger, error) {
+	switch t.OneOf.Type {
+	case siteapi.EventTriggerInputAutomationTriggerInputSum:
+		ev := t.OneOf.EventTriggerInput
+		filter, err := condition.FromOptionalDTO[conditiontree.EventFilter](ev.Filter)
+		if err != nil {
+			return automations.Trigger{}, err
+		}
+		return automations.Trigger{Event: eventmatcher.Matcher{Action: ev.Action, Filter: filter}}, nil
+	case siteapi.DateTriggerInputAutomationTriggerInputSum:
+		d := t.OneOf.DateTriggerInput
+		return automations.Trigger{Date: &datetrigger.Date{
+			Field: dateFieldIn(d.Field), Recurrence: c.DateRecurrence(d.Recurrence),
+			OffsetDays: int(d.OffsetDays), LocalTime: string(d.LocalTime),
+		}}, nil
 	}
-	ev := t.OneOf.EventTriggerInput
-	filter, err := condition.FromOptionalDTO[conditiontree.EventFilter](ev.Filter)
-	if err != nil {
-		return eventmatcher.Matcher{}, err
+	return automations.Trigger{}, nil
+}
+
+// dateFieldIn is the date field a date Trigger names, by its kind: the birthday, or a Custom field by
+// its key. A field of no kind names none, which the save refuses.
+func dateFieldIn(f siteapi.DateFieldInput) datetrigger.Field {
+	switch f.OneOf.Type {
+	case siteapi.BirthdayDateFieldInputDateFieldInputSum:
+		return datetrigger.Field{Kind: datetrigger.Birthday}
+	case siteapi.CustomFieldDateFieldInputDateFieldInputSum:
+		return datetrigger.Field{Kind: datetrigger.CustomField, Key: f.OneOf.CustomFieldDateFieldInput.Key}
 	}
-	return eventmatcher.Matcher{Action: ev.Action, Filter: filter}, nil
+	return datetrigger.Field{}
 }
 
 // automationEntryIn is the Entry policy and the Enrollment key a write gives with its Trigger, an
@@ -735,12 +758,12 @@ func automationGoalPatch(o siteapi.OptNilEventMatcherInput) (patch.Field[eventma
 }
 
 // automationTriggerPtrIn is the Trigger an update replaces: omitted (nil) keeps the stored one.
-func automationTriggerPtrIn(o siteapi.OptAutomationTriggerInput) (*eventmatcher.Matcher, error) {
+func automationTriggerPtrIn(c Inputs, o siteapi.OptAutomationTriggerInput) (*automations.Trigger, error) {
 	t, ok := o.Get()
 	if !ok {
 		return nil, nil
 	}
-	m, err := automationTriggerIn(t)
+	m, err := automationTriggerIn(c, t)
 	if err != nil {
 		return nil, err
 	}

@@ -130,6 +130,19 @@ func (m *Module) HasCustomField(ctx context.Context, s *ent.Scoped, key string) 
 	return ok, nil
 }
 
+// CustomFieldByKey returns the Workspace's Custom field of the key, nil when its catalogue has
+// none.
+func (m *Module) CustomFieldByKey(ctx context.Context, s *ent.Scoped, key string) (*ent.CustomField, error) {
+	field, err := s.CustomField().Query().Where(customfield.Key(key)).Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("look up custom field %q: %w", key, err)
+	}
+	return field, nil
+}
+
 // inferFieldType maps a JSON-decoded value to a CustomField type. Numbers decode to
 // float64 (encoding/json) or json.Number; booleans to bool; a string in one of the ISO forms of a
 // date is a datetime (localcalendar.IsISODate); everything else (other strings, objects, arrays,

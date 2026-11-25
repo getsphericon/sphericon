@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
+	"github.com/getsphericon/sphericon/ent/automationoccurrencecursor"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
@@ -70,6 +71,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
@@ -228,6 +230,22 @@ func (s *Scoped) verifyAutomationFigure(ctx context.Context, ids []int64) error 
 	}
 	if n != len(ids) {
 		return fmt.Errorf("AutomationFigure: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyAutomationOccurrenceCursor fails with ErrNotInWorkspace unless every id is a AutomationOccurrenceCursor of the Workspace.
+func (s *Scoped) verifyAutomationOccurrenceCursor(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.AutomationOccurrenceCursor.Query().Where(s.inAutomationOccurrenceCursor(automationoccurrencecursor.IDIn(ids...))...).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("AutomationOccurrenceCursor: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -3387,6 +3405,15 @@ func (s *Scoped) checkAutomation(ctx context.Context, ms ...*AutomationMutation)
 			return fmt.Errorf("runs: %w", err)
 		}
 	}
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.OccurrenceCursorIDs()...)
+		}
+		if err := s.verifyAutomationOccurrenceCursor(ctx, ids); err != nil {
+			return fmt.Errorf("occurrence_cursor: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -3719,6 +3746,32 @@ func (x *AutomationScopedCreate) AddRuns(v ...*AutomationRun) *AutomationScopedC
 }
 
 const RoleOf_AutomationScopedCreate_AddRuns = RoleStep
+
+// SetOccurrenceCursorID sets the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity by ID.
+func (x *AutomationScopedCreate) SetOccurrenceCursorID(id int64) *AutomationScopedCreate {
+	x.set = append(x.set, func(b *AutomationCreate) { b.SetOccurrenceCursorID(id) })
+	return x
+}
+
+const RoleOf_AutomationScopedCreate_SetOccurrenceCursorID = RoleStep
+
+// SetNillableOccurrenceCursorID sets the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity by ID if the given value is not nil.
+func (x *AutomationScopedCreate) SetNillableOccurrenceCursorID(id *int64) *AutomationScopedCreate {
+	if id != nil {
+		x.SetOccurrenceCursorID(*id)
+	}
+	return x
+}
+
+const RoleOf_AutomationScopedCreate_SetNillableOccurrenceCursorID = RoleStep
+
+// SetOccurrenceCursor sets the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity.
+func (x *AutomationScopedCreate) SetOccurrenceCursor(v *AutomationOccurrenceCursor) *AutomationScopedCreate {
+	x.set = append(x.set, func(b *AutomationCreate) { b.SetOccurrenceCursor(v) })
+	return x
+}
+
+const RoleOf_AutomationScopedCreate_SetOccurrenceCursor = RoleStep
 
 const (
 	TypeOf_AutomationScopedCreate                        = TypeScopedCreate
@@ -4476,6 +4529,40 @@ func (x *AutomationScopedUpdateOne) RemoveRuns(v ...*AutomationRun) *AutomationS
 
 const RoleOf_AutomationScopedUpdateOne_RemoveRuns = RoleStep
 
+// SetOccurrenceCursorID sets the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity by ID.
+func (x *AutomationScopedUpdateOne) SetOccurrenceCursorID(id int64) *AutomationScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationUpdateOne) { b.SetOccurrenceCursorID(id) })
+	return x
+}
+
+const RoleOf_AutomationScopedUpdateOne_SetOccurrenceCursorID = RoleStep
+
+// SetNillableOccurrenceCursorID sets the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity by ID if the given value is not nil.
+func (x *AutomationScopedUpdateOne) SetNillableOccurrenceCursorID(id *int64) *AutomationScopedUpdateOne {
+	if id != nil {
+		x.SetOccurrenceCursorID(*id)
+	}
+	return x
+}
+
+const RoleOf_AutomationScopedUpdateOne_SetNillableOccurrenceCursorID = RoleStep
+
+// SetOccurrenceCursor sets the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity.
+func (x *AutomationScopedUpdateOne) SetOccurrenceCursor(v *AutomationOccurrenceCursor) *AutomationScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationUpdateOne) { b.SetOccurrenceCursor(v) })
+	return x
+}
+
+const RoleOf_AutomationScopedUpdateOne_SetOccurrenceCursor = RoleStep
+
+// ClearOccurrenceCursor clears the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity.
+func (x *AutomationScopedUpdateOne) ClearOccurrenceCursor() *AutomationScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationUpdateOne) { b.ClearOccurrenceCursor() })
+	return x
+}
+
+const RoleOf_AutomationScopedUpdateOne_ClearOccurrenceCursor = RoleStep
+
 // Save verifies the references against the Workspace, then updates the Automation.
 func (x *AutomationScopedUpdateOne) Save(ctx context.Context) (*Automation, error) {
 	return x.save(ctx, "update", skipUnchanged)
@@ -4835,6 +4922,40 @@ func (x *AutomationScopedUpdate) RemoveRuns(v ...*AutomationRun) *AutomationScop
 }
 
 const RoleOf_AutomationScopedUpdate_RemoveRuns = RoleStep
+
+// SetOccurrenceCursorID sets the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity by ID.
+func (x *AutomationScopedUpdate) SetOccurrenceCursorID(id int64) *AutomationScopedUpdate {
+	x.set = append(x.set, func(b *AutomationUpdate) { b.SetOccurrenceCursorID(id) })
+	return x
+}
+
+const RoleOf_AutomationScopedUpdate_SetOccurrenceCursorID = RoleStep
+
+// SetNillableOccurrenceCursorID sets the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity by ID if the given value is not nil.
+func (x *AutomationScopedUpdate) SetNillableOccurrenceCursorID(id *int64) *AutomationScopedUpdate {
+	if id != nil {
+		x.SetOccurrenceCursorID(*id)
+	}
+	return x
+}
+
+const RoleOf_AutomationScopedUpdate_SetNillableOccurrenceCursorID = RoleStep
+
+// SetOccurrenceCursor sets the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity.
+func (x *AutomationScopedUpdate) SetOccurrenceCursor(v *AutomationOccurrenceCursor) *AutomationScopedUpdate {
+	x.set = append(x.set, func(b *AutomationUpdate) { b.SetOccurrenceCursor(v) })
+	return x
+}
+
+const RoleOf_AutomationScopedUpdate_SetOccurrenceCursor = RoleStep
+
+// ClearOccurrenceCursor clears the "occurrence_cursor" edge to the AutomationOccurrenceCursor entity.
+func (x *AutomationScopedUpdate) ClearOccurrenceCursor() *AutomationScopedUpdate {
+	x.set = append(x.set, func(b *AutomationUpdate) { b.ClearOccurrenceCursor() })
+	return x
+}
+
+const RoleOf_AutomationScopedUpdate_ClearOccurrenceCursor = RoleStep
 
 // build makes the ent update on the client of s and verifies the references it sets.
 func (x *AutomationScopedUpdate) build(ctx context.Context, s *Scoped) (*AutomationUpdate, error) {
@@ -6160,6 +6281,1004 @@ const (
 	RoleOf_AutomationFigureScopedUpdate_Exec   = RoleStep
 )
 
+// AutomationOccurrenceCursorScoped reaches AutomationOccurrenceCursor entities of one Workspace.
+type AutomationOccurrenceCursorScoped struct{ s *Scoped }
+
+// AutomationOccurrenceCursor returns the AutomationOccurrenceCursor entities of the Workspace.
+func (s *Scoped) AutomationOccurrenceCursor() *AutomationOccurrenceCursorScoped {
+	return &AutomationOccurrenceCursorScoped{s: s}
+}
+
+const (
+	TypeOf_AutomationOccurrenceCursorScoped             = TypeWrapper
+	EntityOf_AutomationOccurrenceCursorScoped           = "AutomationOccurrenceCursor"
+	RoleOf_Scoped_AutomationOccurrenceCursor            = RoleNone
+	RoleOf_AutomationOccurrenceCursorScoped_Query       = RoleRead
+	RoleOf_AutomationOccurrenceCursorScoped_Get         = RoleRead
+	RoleOf_AutomationOccurrenceCursorScoped_DeleteOneID = RoleStart
+	RoleOf_AutomationOccurrenceCursorScoped_UpdateOneID = RoleStart
+	RoleOf_AutomationOccurrenceCursorScoped_Delete      = RoleStart
+	RoleOf_AutomationOccurrenceCursorScoped_Create      = RoleStart
+	RoleOf_AutomationOccurrenceCursorScoped_CreateBulk  = RoleStart
+	RoleOf_AutomationOccurrenceCursorScoped_Update      = RoleStart
+)
+
+// inAutomationOccurrenceCursor confines predicates of AutomationOccurrenceCursor rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inAutomationOccurrenceCursor(ps ...predicate.AutomationOccurrenceCursor) []predicate.AutomationOccurrenceCursor {
+	return append([]predicate.AutomationOccurrenceCursor{automationoccurrencecursor.WorkspaceID(s.ws)}, ps...)
+}
+
+// Query returns a AutomationOccurrenceCursor query already confined to the Workspace.
+func (t *AutomationOccurrenceCursorScoped) Query() *AutomationOccurrenceCursorQuery {
+	return t.s.c.AutomationOccurrenceCursor.Query().Where(t.s.inAutomationOccurrenceCursor()...)
+}
+
+// Get returns the AutomationOccurrenceCursor with the id; a row of another Workspace is not found.
+func (t *AutomationOccurrenceCursorScoped) Get(ctx context.Context, id int64) (*AutomationOccurrenceCursor, error) {
+	return t.Query().Where(automationoccurrencecursor.ID(id)).Only(ctx)
+}
+
+// writeAutomationOccurrenceCursor runs a write of AutomationOccurrenceCursor rows: run builds it on the client of the scope it is
+// given and executes it, and reaches no other client. The
+// entity is not audited, so run gets the scope itself.
+func (s *Scoped) writeAutomationOccurrenceCursor(ctx context.Context, verb string, where []predicate.AutomationOccurrenceCursor, unchanged unchangedRows, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, unchanged
+	_, err := run(s)
+	return err
+}
+
+// checkAutomationOccurrenceCursor verifies every reference the mutations set against the Workspace of s, one query per
+// reference for all of them.
+func (s *Scoped) checkAutomationOccurrenceCursor(ctx context.Context, ms ...*AutomationOccurrenceCursorMutation) error {
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.AutomationIDs()...)
+		}
+		if err := s.verifyAutomation(ctx, ids); err != nil {
+			return fmt.Errorf("automation: %w", err)
+		}
+	}
+	return nil
+}
+
+// AutomationOccurrenceCursorScopedDeleteOne deletes one AutomationOccurrenceCursor: it keeps the row's id and its fences, and builds the
+// ent delete on the client the delete runs on.
+type AutomationOccurrenceCursorScopedDeleteOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.AutomationOccurrenceCursor
+}
+
+// DeleteOneID deletes the AutomationOccurrenceCursor with the id; a row of another Workspace is not found.
+func (t *AutomationOccurrenceCursorScoped) DeleteOneID(id int64) *AutomationOccurrenceCursorScopedDeleteOne {
+	return &AutomationOccurrenceCursorScopedDeleteOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *AutomationOccurrenceCursorScopedDeleteOne) Where(ps ...predicate.AutomationOccurrenceCursor) *AutomationOccurrenceCursorScopedDeleteOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_AutomationOccurrenceCursorScopedDeleteOne       = TypeScopedDelete
+	EntityOf_AutomationOccurrenceCursorScopedDeleteOne     = "AutomationOccurrenceCursor"
+	RoleOf_AutomationOccurrenceCursorScopedDeleteOne_Where = RoleStep
+	RoleOf_AutomationOccurrenceCursorScopedDeleteOne_Exec  = RoleStep
+)
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *AutomationOccurrenceCursorScopedDeleteOne) Exec(ctx context.Context) error {
+	where := x.s.inAutomationOccurrenceCursor(x.where...)
+	return x.s.writeAutomationOccurrenceCursor(ctx, "delete", append([]predicate.AutomationOccurrenceCursor{automationoccurrencecursor.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
+		return nil, s.c.AutomationOccurrenceCursor.DeleteOneID(x.id).Where(where...).Exec(ctx)
+	})
+}
+
+// AutomationOccurrenceCursorScopedDelete deletes the AutomationOccurrenceCursor rows of one Workspace that match its predicates, which it
+// keeps until the delete is built on the client it runs on.
+type AutomationOccurrenceCursorScopedDelete struct {
+	s     *Scoped
+	where []predicate.AutomationOccurrenceCursor
+}
+
+// Delete deletes the AutomationOccurrenceCursor entities of the Workspace that match the predicates.
+func (t *AutomationOccurrenceCursorScoped) Delete() *AutomationOccurrenceCursorScopedDelete {
+	return &AutomationOccurrenceCursorScopedDelete{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *AutomationOccurrenceCursorScopedDelete) Where(ps ...predicate.AutomationOccurrenceCursor) *AutomationOccurrenceCursorScopedDelete {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_AutomationOccurrenceCursorScopedDelete       = TypeScopedDelete
+	EntityOf_AutomationOccurrenceCursorScopedDelete     = "AutomationOccurrenceCursor"
+	RoleOf_AutomationOccurrenceCursorScopedDelete_Where = RoleStep
+	RoleOf_AutomationOccurrenceCursorScopedDelete_Exec  = RoleStep
+)
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *AutomationOccurrenceCursorScopedDelete) Exec(ctx context.Context) (int, error) {
+	where := x.s.inAutomationOccurrenceCursor(x.where...)
+	var n int
+	err := x.s.writeAutomationOccurrenceCursor(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		var err error
+		n, err = s.c.AutomationOccurrenceCursor.Delete().Where(where...).Exec(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// ---------------------------------------------------------------- create
+
+// AutomationOccurrenceCursorScopedCreate creates a AutomationOccurrenceCursor of one Workspace. It has no way to name a Workspace: it
+// keeps what its setters set and builds the ent create, in its Workspace, on the client the create
+// runs on.
+type AutomationOccurrenceCursorScopedCreate struct {
+	s   *Scoped
+	set []func(*AutomationOccurrenceCursorCreate)
+}
+
+// Create starts a AutomationOccurrenceCursor in the Workspace.
+func (t *AutomationOccurrenceCursorScoped) Create() *AutomationOccurrenceCursorScopedCreate {
+	return &AutomationOccurrenceCursorScopedCreate{s: t.s}
+}
+
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *AutomationOccurrenceCursorScopedCreate) raw(s *Scoped) *AutomationOccurrenceCursorCreate {
+	b := s.c.AutomationOccurrenceCursor.Create().SetWorkspaceID(s.ws)
+	for _, set := range x.set {
+		set(b)
+	}
+	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *AutomationOccurrenceCursorScopedCreate) build(ctx context.Context, s *Scoped) (*AutomationOccurrenceCursorCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkAutomationOccurrenceCursor(ctx, b.Mutation()))
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *AutomationOccurrenceCursorScopedCreate) SetCreatedAt(v time.Time) *AutomationOccurrenceCursorScopedCreate {
+	x.set = append(x.set, func(b *AutomationOccurrenceCursorCreate) { b.SetCreatedAt(v) })
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedCreate_SetCreatedAt = RoleStep
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *AutomationOccurrenceCursorScopedCreate) SetNillableCreatedAt(v *time.Time) *AutomationOccurrenceCursorScopedCreate {
+	if v != nil {
+		x.SetCreatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedCreate_SetNillableCreatedAt = RoleStep
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *AutomationOccurrenceCursorScopedCreate) SetUpdatedAt(v time.Time) *AutomationOccurrenceCursorScopedCreate {
+	x.set = append(x.set, func(b *AutomationOccurrenceCursorCreate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedCreate_SetUpdatedAt = RoleStep
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *AutomationOccurrenceCursorScopedCreate) SetNillableUpdatedAt(v *time.Time) *AutomationOccurrenceCursorScopedCreate {
+	if v != nil {
+		x.SetUpdatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedCreate_SetNillableUpdatedAt = RoleStep
+
+// SetAutomationID sets the "automation_id" field.
+func (x *AutomationOccurrenceCursorScopedCreate) SetAutomationID(v int64) *AutomationOccurrenceCursorScopedCreate {
+	x.set = append(x.set, func(b *AutomationOccurrenceCursorCreate) { b.SetAutomationID(v) })
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedCreate_SetAutomationID = RoleStep
+
+// SetSpanStart sets the "span_start" field.
+func (x *AutomationOccurrenceCursorScopedCreate) SetSpanStart(v time.Time) *AutomationOccurrenceCursorScopedCreate {
+	x.set = append(x.set, func(b *AutomationOccurrenceCursorCreate) { b.SetSpanStart(v) })
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedCreate_SetSpanStart = RoleStep
+
+// SetDecidedThrough sets the "decided_through" field.
+func (x *AutomationOccurrenceCursorScopedCreate) SetDecidedThrough(v time.Time) *AutomationOccurrenceCursorScopedCreate {
+	x.set = append(x.set, func(b *AutomationOccurrenceCursorCreate) { b.SetDecidedThrough(v) })
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedCreate_SetDecidedThrough = RoleStep
+
+// SetWorkspaceZone sets the "workspace_zone" field.
+func (x *AutomationOccurrenceCursorScopedCreate) SetWorkspaceZone(v string) *AutomationOccurrenceCursorScopedCreate {
+	x.set = append(x.set, func(b *AutomationOccurrenceCursorCreate) { b.SetWorkspaceZone(v) })
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedCreate_SetWorkspaceZone = RoleStep
+
+// SetNillableWorkspaceZone sets the "workspace_zone" field if the given value is not nil.
+func (x *AutomationOccurrenceCursorScopedCreate) SetNillableWorkspaceZone(v *string) *AutomationOccurrenceCursorScopedCreate {
+	if v != nil {
+		x.SetWorkspaceZone(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedCreate_SetNillableWorkspaceZone = RoleStep
+
+// SetContactsSeenThrough sets the "contacts_seen_through" field.
+func (x *AutomationOccurrenceCursorScopedCreate) SetContactsSeenThrough(v time.Time) *AutomationOccurrenceCursorScopedCreate {
+	x.set = append(x.set, func(b *AutomationOccurrenceCursorCreate) { b.SetContactsSeenThrough(v) })
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedCreate_SetContactsSeenThrough = RoleStep
+
+// SetNillableContactsSeenThrough sets the "contacts_seen_through" field if the given value is not nil.
+func (x *AutomationOccurrenceCursorScopedCreate) SetNillableContactsSeenThrough(v *time.Time) *AutomationOccurrenceCursorScopedCreate {
+	if v != nil {
+		x.SetContactsSeenThrough(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedCreate_SetNillableContactsSeenThrough = RoleStep
+
+// SetAutomation sets the "automation" edge to the Automation entity.
+func (x *AutomationOccurrenceCursorScopedCreate) SetAutomation(v *Automation) *AutomationOccurrenceCursorScopedCreate {
+	x.set = append(x.set, func(b *AutomationOccurrenceCursorCreate) { b.SetAutomation(v) })
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedCreate_SetAutomation = RoleStep
+
+const (
+	TypeOf_AutomationOccurrenceCursorScopedCreate                        = TypeScopedCreate
+	EntityOf_AutomationOccurrenceCursorScopedCreate                      = "AutomationOccurrenceCursor"
+	RoleOf_AutomationOccurrenceCursorScopedCreate_Save                   = RoleStep
+	RoleOf_AutomationOccurrenceCursorScopedCreate_Exec                   = RoleStep
+	RoleOf_AutomationOccurrenceCursorScopedCreate_OnConflictColumns      = RoleStart
+	RoleOf_AutomationOccurrenceCursorScopedCreate_OnConflictColumnsWhere = RoleStart
+)
+
+// Save verifies the references against the Workspace, then creates the AutomationOccurrenceCursor.
+func (x *AutomationOccurrenceCursorScopedCreate) Save(ctx context.Context) (*AutomationOccurrenceCursor, error) {
+	var created *AutomationOccurrenceCursor
+	err := x.s.writeAutomationOccurrenceCursor(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = b.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *AutomationOccurrenceCursorScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// AutomationOccurrenceCursorScopedCreateBulk creates several AutomationOccurrenceCursor entities of one Workspace at once.
+type AutomationOccurrenceCursorScopedCreateBulk struct {
+	s  *Scoped
+	xs []*AutomationOccurrenceCursorScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *AutomationOccurrenceCursorScoped) CreateBulk(xs ...*AutomationOccurrenceCursorScopedCreate) *AutomationOccurrenceCursorScopedCreateBulk {
+	return &AutomationOccurrenceCursorScopedCreateBulk{s: t.s, xs: xs}
+}
+
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *AutomationOccurrenceCursorScopedCreateBulk) refuseForeign() error {
+	for _, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return fmt.Errorf("AutomationOccurrenceCursor: builder of another scope: %w", ErrNotInWorkspace)
+		}
+	}
+	return nil
+}
+
+// build makes the ent bulk create on the client of s, every create of it in the Workspace, and
+// verifies the references of all of them, one query per reference rather than one per row.
+func (b *AutomationOccurrenceCursorScopedCreateBulk) build(ctx context.Context, s *Scoped) (*AutomationOccurrenceCursorCreateBulk, error) {
+	builders := make([]*AutomationOccurrenceCursorCreate, len(b.xs))
+	ms := make([]*AutomationOccurrenceCursorMutation, len(b.xs))
+	for i, x := range b.xs {
+		builders[i] = x.raw(s)
+		ms[i] = builders[i].Mutation()
+	}
+	if err := s.checkAutomationOccurrenceCursor(ctx, ms...); err != nil {
+		return nil, err
+	}
+	return s.c.AutomationOccurrenceCursor.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the AutomationOccurrenceCursor entities.
+func (b *AutomationOccurrenceCursorScopedCreateBulk) Save(ctx context.Context) ([]*AutomationOccurrenceCursor, error) {
+	if err := b.refuseForeign(); err != nil {
+		return nil, err
+	}
+	var created []*AutomationOccurrenceCursor
+	err := b.s.writeAutomationOccurrenceCursor(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = raw.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *AutomationOccurrenceCursorScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_AutomationOccurrenceCursorScopedCreateBulk                   = TypeScopedCreate
+	EntityOf_AutomationOccurrenceCursorScopedCreateBulk                 = "AutomationOccurrenceCursor"
+	RoleOf_AutomationOccurrenceCursorScopedCreateBulk_Save              = RoleStep
+	RoleOf_AutomationOccurrenceCursorScopedCreateBulk_Exec              = RoleStep
+	RoleOf_AutomationOccurrenceCursorScopedCreateBulk_OnConflictColumns = RoleStart
+)
+
+// ---------------------------------------------------------------- upsert
+
+// AutomationOccurrenceCursorScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type AutomationOccurrenceCursorScopedUpsert struct{ u *sql.UpdateSet }
+
+const (
+	TypeOf_AutomationOccurrenceCursorScopedUpsert   = TypeScopedUpsert
+	EntityOf_AutomationOccurrenceCursorScopedUpsert = "AutomationOccurrenceCursor"
+)
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *AutomationOccurrenceCursorScopedUpsert) SetUpdatedAt(v time.Time) *AutomationOccurrenceCursorScopedUpsert {
+	u.u.Set(automationoccurrencecursor.FieldUpdatedAt, v)
+	return u
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpsert_SetUpdatedAt = RoleStep
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *AutomationOccurrenceCursorScopedUpsert) UpdateUpdatedAt() *AutomationOccurrenceCursorScopedUpsert {
+	u.u.SetExcluded(automationoccurrencecursor.FieldUpdatedAt)
+	return u
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpsert_UpdateUpdatedAt = RoleStep
+
+// SetSpanStart sets the "span_start" field.
+func (u *AutomationOccurrenceCursorScopedUpsert) SetSpanStart(v time.Time) *AutomationOccurrenceCursorScopedUpsert {
+	u.u.Set(automationoccurrencecursor.FieldSpanStart, v)
+	return u
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpsert_SetSpanStart = RoleStep
+
+// UpdateSpanStart sets the "span_start" field to the value that was provided on create.
+func (u *AutomationOccurrenceCursorScopedUpsert) UpdateSpanStart() *AutomationOccurrenceCursorScopedUpsert {
+	u.u.SetExcluded(automationoccurrencecursor.FieldSpanStart)
+	return u
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpsert_UpdateSpanStart = RoleStep
+
+// SetDecidedThrough sets the "decided_through" field.
+func (u *AutomationOccurrenceCursorScopedUpsert) SetDecidedThrough(v time.Time) *AutomationOccurrenceCursorScopedUpsert {
+	u.u.Set(automationoccurrencecursor.FieldDecidedThrough, v)
+	return u
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpsert_SetDecidedThrough = RoleStep
+
+// UpdateDecidedThrough sets the "decided_through" field to the value that was provided on create.
+func (u *AutomationOccurrenceCursorScopedUpsert) UpdateDecidedThrough() *AutomationOccurrenceCursorScopedUpsert {
+	u.u.SetExcluded(automationoccurrencecursor.FieldDecidedThrough)
+	return u
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpsert_UpdateDecidedThrough = RoleStep
+
+// SetWorkspaceZone sets the "workspace_zone" field.
+func (u *AutomationOccurrenceCursorScopedUpsert) SetWorkspaceZone(v string) *AutomationOccurrenceCursorScopedUpsert {
+	u.u.Set(automationoccurrencecursor.FieldWorkspaceZone, v)
+	return u
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpsert_SetWorkspaceZone = RoleStep
+
+// UpdateWorkspaceZone sets the "workspace_zone" field to the value that was provided on create.
+func (u *AutomationOccurrenceCursorScopedUpsert) UpdateWorkspaceZone() *AutomationOccurrenceCursorScopedUpsert {
+	u.u.SetExcluded(automationoccurrencecursor.FieldWorkspaceZone)
+	return u
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpsert_UpdateWorkspaceZone = RoleStep
+
+// ClearWorkspaceZone clears the value of the "workspace_zone" field.
+func (u *AutomationOccurrenceCursorScopedUpsert) ClearWorkspaceZone() *AutomationOccurrenceCursorScopedUpsert {
+	u.u.SetNull(automationoccurrencecursor.FieldWorkspaceZone)
+	return u
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpsert_ClearWorkspaceZone = RoleStep
+
+// SetContactsSeenThrough sets the "contacts_seen_through" field.
+func (u *AutomationOccurrenceCursorScopedUpsert) SetContactsSeenThrough(v time.Time) *AutomationOccurrenceCursorScopedUpsert {
+	u.u.Set(automationoccurrencecursor.FieldContactsSeenThrough, v)
+	return u
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpsert_SetContactsSeenThrough = RoleStep
+
+// UpdateContactsSeenThrough sets the "contacts_seen_through" field to the value that was provided on create.
+func (u *AutomationOccurrenceCursorScopedUpsert) UpdateContactsSeenThrough() *AutomationOccurrenceCursorScopedUpsert {
+	u.u.SetExcluded(automationoccurrencecursor.FieldContactsSeenThrough)
+	return u
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpsert_UpdateContactsSeenThrough = RoleStep
+
+// ClearContactsSeenThrough clears the value of the "contacts_seen_through" field.
+func (u *AutomationOccurrenceCursorScopedUpsert) ClearContactsSeenThrough() *AutomationOccurrenceCursorScopedUpsert {
+	u.u.SetNull(automationoccurrencecursor.FieldContactsSeenThrough)
+	return u
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpsert_ClearContactsSeenThrough = RoleStep
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *AutomationOccurrenceCursorScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(automationoccurrencecursor.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// AutomationOccurrenceCursorScopedUpsertOne is the "upsert" of one AutomationOccurrenceCursor: the create it was started on, which a setter
+// called later still changes, and what to do on a conflict.
+type AutomationOccurrenceCursorScopedUpsertOne struct {
+	x        *AutomationOccurrenceCursorScopedCreate
+	conflict []sql.ConflictOption
+	set      []func(*AutomationOccurrenceCursorUpsertOne)
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+const (
+	TypeOf_AutomationOccurrenceCursorScopedUpsertOne                 = TypeScopedUpsert
+	EntityOf_AutomationOccurrenceCursorScopedUpsertOne               = "AutomationOccurrenceCursor"
+	RoleOf_AutomationOccurrenceCursorScopedUpsertOne_UpdateNewValues = RoleStep
+	RoleOf_AutomationOccurrenceCursorScopedUpsertOne_Ignore          = RoleStep
+	RoleOf_AutomationOccurrenceCursorScopedUpsertOne_DoNothing       = RoleStep
+	RoleOf_AutomationOccurrenceCursorScopedUpsertOne_Update          = RoleStep
+	RoleOf_AutomationOccurrenceCursorScopedUpsertOne_Exec            = RoleStep
+	RoleOf_AutomationOccurrenceCursorScopedUpsertOne_ID              = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *AutomationOccurrenceCursorScopedCreate) OnConflictColumns(columns ...string) *AutomationOccurrenceCursorScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *AutomationOccurrenceCursorScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *AutomationOccurrenceCursorScopedUpsertOne {
+	return &AutomationOccurrenceCursorScopedUpsertOne{x: x, conflict: (&AutomationOccurrenceCursorScoped{s: x.s}).conflictOptions(columns, target)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *AutomationOccurrenceCursorScopedUpsertOne) UpdateNewValues() *AutomationOccurrenceCursorScopedUpsertOne {
+	u.set = append(u.set, func(r *AutomationOccurrenceCursorUpsertOne) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *AutomationOccurrenceCursorScopedUpsertOne) Ignore() *AutomationOccurrenceCursorScopedUpsertOne {
+	u.set = append(u.set, func(r *AutomationOccurrenceCursorUpsertOne) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *AutomationOccurrenceCursorScopedUpsertOne) DoNothing() *AutomationOccurrenceCursorScopedUpsertOne {
+	u.set = append(u.set, func(r *AutomationOccurrenceCursorUpsertOne) { r.DoNothing() })
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *AutomationOccurrenceCursorScopedUpsertOne) Update(set func(*AutomationOccurrenceCursorScopedUpsert)) *AutomationOccurrenceCursorScopedUpsertOne {
+	u.set = append(u.set, func(r *AutomationOccurrenceCursorUpsertOne) {
+		r.Update(func(s *AutomationOccurrenceCursorUpsert) {
+			set(&AutomationOccurrenceCursorScopedUpsert{u: s.UpdateSet})
+		})
+	})
+	return u
+}
+
+// build makes the ent upsert on the client of s and verifies the create's references.
+func (u *AutomationOccurrenceCursorScopedUpsertOne) build(ctx context.Context, s *Scoped) (*AutomationOccurrenceCursorUpsertOne, error) {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	r := b.OnConflict(u.conflict...)
+	for _, set := range u.set {
+		set(r)
+	}
+	return r, nil
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *AutomationOccurrenceCursorScopedUpsertOne) Exec(ctx context.Context) error {
+	_, err := u.ID(ctx)
+	return err
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *AutomationOccurrenceCursorScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	var id int64
+	err := u.x.s.writeAutomationOccurrenceCursor(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		r, err := u.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if id, err = r.ID(ctx); err != nil {
+			return nil, err
+		}
+		return []int64{id}, nil
+	})
+	return written(id, err)
+}
+
+// AutomationOccurrenceCursorScopedUpsertBulk is the "upsert" of several AutomationOccurrenceCursor entities.
+type AutomationOccurrenceCursorScopedUpsertBulk struct {
+	b       *AutomationOccurrenceCursorScopedCreateBulk
+	t       *AutomationOccurrenceCursorScoped
+	columns []string
+	set     []func(*AutomationOccurrenceCursorUpsertBulk)
+}
+
+const (
+	TypeOf_AutomationOccurrenceCursorScopedUpsertBulk                 = TypeScopedUpsert
+	EntityOf_AutomationOccurrenceCursorScopedUpsertBulk               = "AutomationOccurrenceCursor"
+	RoleOf_AutomationOccurrenceCursorScopedUpsertBulk_UpdateNewValues = RoleStep
+	RoleOf_AutomationOccurrenceCursorScopedUpsertBulk_Ignore          = RoleStep
+	RoleOf_AutomationOccurrenceCursorScopedUpsertBulk_DoNothing       = RoleStep
+	RoleOf_AutomationOccurrenceCursorScopedUpsertBulk_Update          = RoleStep
+	RoleOf_AutomationOccurrenceCursorScopedUpsertBulk_Exec            = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *AutomationOccurrenceCursorScopedCreateBulk) OnConflictColumns(columns ...string) *AutomationOccurrenceCursorScopedUpsertBulk {
+	return &AutomationOccurrenceCursorScopedUpsertBulk{b: b, t: &AutomationOccurrenceCursorScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *AutomationOccurrenceCursorScopedUpsertBulk) UpdateNewValues() *AutomationOccurrenceCursorScopedUpsertBulk {
+	u.set = append(u.set, func(r *AutomationOccurrenceCursorUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *AutomationOccurrenceCursorScopedUpsertBulk) Ignore() *AutomationOccurrenceCursorScopedUpsertBulk {
+	u.set = append(u.set, func(r *AutomationOccurrenceCursorUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *AutomationOccurrenceCursorScopedUpsertBulk) DoNothing() *AutomationOccurrenceCursorScopedUpsertBulk {
+	u.set = append(u.set, func(r *AutomationOccurrenceCursorUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *AutomationOccurrenceCursorScopedUpsertBulk) Update(set func(*AutomationOccurrenceCursorScopedUpsert)) *AutomationOccurrenceCursorScopedUpsertBulk {
+	u.set = append(u.set, func(r *AutomationOccurrenceCursorUpsertBulk) {
+		r.Update(func(s *AutomationOccurrenceCursorUpsert) {
+			set(&AutomationOccurrenceCursorScopedUpsert{u: s.UpdateSet})
+		})
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *AutomationOccurrenceCursorScopedUpsertBulk) Exec(ctx context.Context) error {
+	if err := u.b.refuseForeign(); err != nil {
+		return err
+	}
+	return u.b.s.writeAutomationOccurrenceCursor(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := u.b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+		for _, set := range u.set {
+			set(r)
+		}
+		return nil, r.Exec(ctx)
+	})
+}
+
+// ---------------------------------------------------------------- update
+
+// AutomationOccurrenceCursorScopedUpdateOne updates one AutomationOccurrenceCursor. It has no way to move the row to another Workspace: it
+// keeps the row's id, its fences and what its setters set, and builds the ent update on the client
+// the update runs on.
+type AutomationOccurrenceCursorScopedUpdateOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.AutomationOccurrenceCursor
+	set   []func(*AutomationOccurrenceCursorUpdateOne)
+}
+
+// UpdateOneID updates the AutomationOccurrenceCursor with the id; a row of another Workspace is not found.
+func (t *AutomationOccurrenceCursorScoped) UpdateOneID(id int64) *AutomationOccurrenceCursorScopedUpdateOne {
+	return &AutomationOccurrenceCursorScopedUpdateOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *AutomationOccurrenceCursorScopedUpdateOne) Where(ps ...predicate.AutomationOccurrenceCursor) *AutomationOccurrenceCursorScopedUpdateOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *AutomationOccurrenceCursorScopedUpdateOne) SetUpdatedAt(v time.Time) *AutomationOccurrenceCursorScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationOccurrenceCursorUpdateOne) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpdateOne_SetUpdatedAt = RoleStep
+
+// SetSpanStart sets the "span_start" field.
+func (x *AutomationOccurrenceCursorScopedUpdateOne) SetSpanStart(v time.Time) *AutomationOccurrenceCursorScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationOccurrenceCursorUpdateOne) { b.SetSpanStart(v) })
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpdateOne_SetSpanStart = RoleStep
+
+// SetNillableSpanStart sets the "span_start" field if the given value is not nil.
+func (x *AutomationOccurrenceCursorScopedUpdateOne) SetNillableSpanStart(v *time.Time) *AutomationOccurrenceCursorScopedUpdateOne {
+	if v != nil {
+		x.SetSpanStart(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpdateOne_SetNillableSpanStart = RoleStep
+
+// SetDecidedThrough sets the "decided_through" field.
+func (x *AutomationOccurrenceCursorScopedUpdateOne) SetDecidedThrough(v time.Time) *AutomationOccurrenceCursorScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationOccurrenceCursorUpdateOne) { b.SetDecidedThrough(v) })
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpdateOne_SetDecidedThrough = RoleStep
+
+// SetNillableDecidedThrough sets the "decided_through" field if the given value is not nil.
+func (x *AutomationOccurrenceCursorScopedUpdateOne) SetNillableDecidedThrough(v *time.Time) *AutomationOccurrenceCursorScopedUpdateOne {
+	if v != nil {
+		x.SetDecidedThrough(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpdateOne_SetNillableDecidedThrough = RoleStep
+
+// SetWorkspaceZone sets the "workspace_zone" field.
+func (x *AutomationOccurrenceCursorScopedUpdateOne) SetWorkspaceZone(v string) *AutomationOccurrenceCursorScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationOccurrenceCursorUpdateOne) { b.SetWorkspaceZone(v) })
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpdateOne_SetWorkspaceZone = RoleStep
+
+// SetNillableWorkspaceZone sets the "workspace_zone" field if the given value is not nil.
+func (x *AutomationOccurrenceCursorScopedUpdateOne) SetNillableWorkspaceZone(v *string) *AutomationOccurrenceCursorScopedUpdateOne {
+	if v != nil {
+		x.SetWorkspaceZone(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpdateOne_SetNillableWorkspaceZone = RoleStep
+
+// ClearWorkspaceZone clears the value of the "workspace_zone" field.
+func (x *AutomationOccurrenceCursorScopedUpdateOne) ClearWorkspaceZone() *AutomationOccurrenceCursorScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationOccurrenceCursorUpdateOne) { b.ClearWorkspaceZone() })
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpdateOne_ClearWorkspaceZone = RoleStep
+
+// SetContactsSeenThrough sets the "contacts_seen_through" field.
+func (x *AutomationOccurrenceCursorScopedUpdateOne) SetContactsSeenThrough(v time.Time) *AutomationOccurrenceCursorScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationOccurrenceCursorUpdateOne) { b.SetContactsSeenThrough(v) })
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpdateOne_SetContactsSeenThrough = RoleStep
+
+// SetNillableContactsSeenThrough sets the "contacts_seen_through" field if the given value is not nil.
+func (x *AutomationOccurrenceCursorScopedUpdateOne) SetNillableContactsSeenThrough(v *time.Time) *AutomationOccurrenceCursorScopedUpdateOne {
+	if v != nil {
+		x.SetContactsSeenThrough(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpdateOne_SetNillableContactsSeenThrough = RoleStep
+
+// ClearContactsSeenThrough clears the value of the "contacts_seen_through" field.
+func (x *AutomationOccurrenceCursorScopedUpdateOne) ClearContactsSeenThrough() *AutomationOccurrenceCursorScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationOccurrenceCursorUpdateOne) { b.ClearContactsSeenThrough() })
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpdateOne_ClearContactsSeenThrough = RoleStep
+
+// Save verifies the references against the Workspace, then updates the AutomationOccurrenceCursor.
+func (x *AutomationOccurrenceCursorScopedUpdateOne) Save(ctx context.Context) (*AutomationOccurrenceCursor, error) {
+	return x.save(ctx, "update", skipUnchanged)
+}
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *AutomationOccurrenceCursorScopedUpdateOne) build(ctx context.Context, s *Scoped) (*AutomationOccurrenceCursorUpdateOne, error) {
+	b := s.c.AutomationOccurrenceCursor.UpdateOneID(x.id).Where(s.inAutomationOccurrenceCursor(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkAutomationOccurrenceCursor(ctx, b.Mutation()))
+}
+
+// save is Save under a verb, doing with an unchanged row what unchanged says.
+func (x *AutomationOccurrenceCursorScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*AutomationOccurrenceCursor, error) {
+	where := x.s.inAutomationOccurrenceCursor(x.where...)
+	var updated *AutomationOccurrenceCursor
+	err := x.s.writeAutomationOccurrenceCursor(ctx, verb, append([]predicate.AutomationOccurrenceCursor{automationoccurrencecursor.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		updated, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(updated, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *AutomationOccurrenceCursorScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_AutomationOccurrenceCursorScopedUpdateOne       = TypeScopedUpdate
+	EntityOf_AutomationOccurrenceCursorScopedUpdateOne     = "AutomationOccurrenceCursor"
+	RoleOf_AutomationOccurrenceCursorScopedUpdateOne_Where = RoleStep
+	RoleOf_AutomationOccurrenceCursorScopedUpdateOne_Save  = RoleStep
+	RoleOf_AutomationOccurrenceCursorScopedUpdateOne_Exec  = RoleStep
+)
+
+// AutomationOccurrenceCursorScopedUpdate is a conditional bulk update of one Workspace: it keeps its predicates and
+// what its setters and modifiers set, and builds the ent update on the client the update runs on.
+type AutomationOccurrenceCursorScopedUpdate struct {
+	s     *Scoped
+	where []predicate.AutomationOccurrenceCursor
+	set   []func(*AutomationOccurrenceCursorUpdate)
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the AutomationOccurrenceCursor entities of the Workspace that match the predicates.
+func (t *AutomationOccurrenceCursorScoped) Update() *AutomationOccurrenceCursorScopedUpdate {
+	return &AutomationOccurrenceCursorScopedUpdate{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *AutomationOccurrenceCursorScopedUpdate) Where(ps ...predicate.AutomationOccurrenceCursor) *AutomationOccurrenceCursorScopedUpdate {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *AutomationOccurrenceCursorScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *AutomationOccurrenceCursorScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(automationoccurrencecursor.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.set = append(x.set, func(b *AutomationOccurrenceCursorUpdate) {
+			b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+		})
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *AutomationOccurrenceCursorScopedUpdate) SetUpdatedAt(v time.Time) *AutomationOccurrenceCursorScopedUpdate {
+	x.set = append(x.set, func(b *AutomationOccurrenceCursorUpdate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpdate_SetUpdatedAt = RoleStep
+
+// SetSpanStart sets the "span_start" field.
+func (x *AutomationOccurrenceCursorScopedUpdate) SetSpanStart(v time.Time) *AutomationOccurrenceCursorScopedUpdate {
+	x.set = append(x.set, func(b *AutomationOccurrenceCursorUpdate) { b.SetSpanStart(v) })
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpdate_SetSpanStart = RoleStep
+
+// SetNillableSpanStart sets the "span_start" field if the given value is not nil.
+func (x *AutomationOccurrenceCursorScopedUpdate) SetNillableSpanStart(v *time.Time) *AutomationOccurrenceCursorScopedUpdate {
+	if v != nil {
+		x.SetSpanStart(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpdate_SetNillableSpanStart = RoleStep
+
+// SetDecidedThrough sets the "decided_through" field.
+func (x *AutomationOccurrenceCursorScopedUpdate) SetDecidedThrough(v time.Time) *AutomationOccurrenceCursorScopedUpdate {
+	x.set = append(x.set, func(b *AutomationOccurrenceCursorUpdate) { b.SetDecidedThrough(v) })
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpdate_SetDecidedThrough = RoleStep
+
+// SetNillableDecidedThrough sets the "decided_through" field if the given value is not nil.
+func (x *AutomationOccurrenceCursorScopedUpdate) SetNillableDecidedThrough(v *time.Time) *AutomationOccurrenceCursorScopedUpdate {
+	if v != nil {
+		x.SetDecidedThrough(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpdate_SetNillableDecidedThrough = RoleStep
+
+// SetWorkspaceZone sets the "workspace_zone" field.
+func (x *AutomationOccurrenceCursorScopedUpdate) SetWorkspaceZone(v string) *AutomationOccurrenceCursorScopedUpdate {
+	x.set = append(x.set, func(b *AutomationOccurrenceCursorUpdate) { b.SetWorkspaceZone(v) })
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpdate_SetWorkspaceZone = RoleStep
+
+// SetNillableWorkspaceZone sets the "workspace_zone" field if the given value is not nil.
+func (x *AutomationOccurrenceCursorScopedUpdate) SetNillableWorkspaceZone(v *string) *AutomationOccurrenceCursorScopedUpdate {
+	if v != nil {
+		x.SetWorkspaceZone(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpdate_SetNillableWorkspaceZone = RoleStep
+
+// ClearWorkspaceZone clears the value of the "workspace_zone" field.
+func (x *AutomationOccurrenceCursorScopedUpdate) ClearWorkspaceZone() *AutomationOccurrenceCursorScopedUpdate {
+	x.set = append(x.set, func(b *AutomationOccurrenceCursorUpdate) { b.ClearWorkspaceZone() })
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpdate_ClearWorkspaceZone = RoleStep
+
+// SetContactsSeenThrough sets the "contacts_seen_through" field.
+func (x *AutomationOccurrenceCursorScopedUpdate) SetContactsSeenThrough(v time.Time) *AutomationOccurrenceCursorScopedUpdate {
+	x.set = append(x.set, func(b *AutomationOccurrenceCursorUpdate) { b.SetContactsSeenThrough(v) })
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpdate_SetContactsSeenThrough = RoleStep
+
+// SetNillableContactsSeenThrough sets the "contacts_seen_through" field if the given value is not nil.
+func (x *AutomationOccurrenceCursorScopedUpdate) SetNillableContactsSeenThrough(v *time.Time) *AutomationOccurrenceCursorScopedUpdate {
+	if v != nil {
+		x.SetContactsSeenThrough(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpdate_SetNillableContactsSeenThrough = RoleStep
+
+// ClearContactsSeenThrough clears the value of the "contacts_seen_through" field.
+func (x *AutomationOccurrenceCursorScopedUpdate) ClearContactsSeenThrough() *AutomationOccurrenceCursorScopedUpdate {
+	x.set = append(x.set, func(b *AutomationOccurrenceCursorUpdate) { b.ClearContactsSeenThrough() })
+	return x
+}
+
+const RoleOf_AutomationOccurrenceCursorScopedUpdate_ClearContactsSeenThrough = RoleStep
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *AutomationOccurrenceCursorScopedUpdate) build(ctx context.Context, s *Scoped) (*AutomationOccurrenceCursorUpdate, error) {
+	b := s.c.AutomationOccurrenceCursor.Update().Where(s.inAutomationOccurrenceCursor(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkAutomationOccurrenceCursor(ctx, b.Mutation()))
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *AutomationOccurrenceCursorScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	where := x.s.inAutomationOccurrenceCursor(x.where...)
+	var n int
+	err := x.s.writeAutomationOccurrenceCursor(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		n, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// Exec is like Save, discarding the count.
+func (x *AutomationOccurrenceCursorScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_AutomationOccurrenceCursorScopedUpdate        = TypeScopedUpdate
+	EntityOf_AutomationOccurrenceCursorScopedUpdate      = "AutomationOccurrenceCursor"
+	RoleOf_AutomationOccurrenceCursorScopedUpdate_Where  = RoleStep
+	RoleOf_AutomationOccurrenceCursorScopedUpdate_Modify = RoleStep
+	RoleOf_AutomationOccurrenceCursorScopedUpdate_Save   = RoleStep
+	RoleOf_AutomationOccurrenceCursorScopedUpdate_Exec   = RoleStep
+)
+
 // AutomationRunScoped reaches AutomationRun entities of one Workspace.
 type AutomationRunScoped struct{ s *Scoped }
 
@@ -6506,6 +7625,24 @@ func (x *AutomationRunScopedCreate) SetNillableFiringID(v *int64) *AutomationRun
 }
 
 const RoleOf_AutomationRunScopedCreate_SetNillableFiringID = RoleStep
+
+// SetOccurrence sets the "occurrence" field.
+func (x *AutomationRunScopedCreate) SetOccurrence(v int) *AutomationRunScopedCreate {
+	x.set = append(x.set, func(b *AutomationRunCreate) { b.SetOccurrence(v) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedCreate_SetOccurrence = RoleStep
+
+// SetNillableOccurrence sets the "occurrence" field if the given value is not nil.
+func (x *AutomationRunScopedCreate) SetNillableOccurrence(v *int) *AutomationRunScopedCreate {
+	if v != nil {
+		x.SetOccurrence(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationRunScopedCreate_SetNillableOccurrence = RoleStep
 
 // SetChain sets the "chain" field.
 func (x *AutomationRunScopedCreate) SetChain(v []int64) *AutomationRunScopedCreate {
@@ -8192,6 +9329,24 @@ func (x *AutomationSkippedEntryScopedCreate) SetNillableFiringID(v *int64) *Auto
 }
 
 const RoleOf_AutomationSkippedEntryScopedCreate_SetNillableFiringID = RoleStep
+
+// SetOccurrence sets the "occurrence" field.
+func (x *AutomationSkippedEntryScopedCreate) SetOccurrence(v int) *AutomationSkippedEntryScopedCreate {
+	x.set = append(x.set, func(b *AutomationSkippedEntryCreate) { b.SetOccurrence(v) })
+	return x
+}
+
+const RoleOf_AutomationSkippedEntryScopedCreate_SetOccurrence = RoleStep
+
+// SetNillableOccurrence sets the "occurrence" field if the given value is not nil.
+func (x *AutomationSkippedEntryScopedCreate) SetNillableOccurrence(v *int) *AutomationSkippedEntryScopedCreate {
+	if v != nil {
+		x.SetOccurrence(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationSkippedEntryScopedCreate_SetNillableOccurrence = RoleStep
 
 // SetReason sets the "reason" field.
 func (x *AutomationSkippedEntryScopedCreate) SetReason(v automationskippedentry.Reason) *AutomationSkippedEntryScopedCreate {
@@ -10146,6 +11301,14 @@ func (x *AutomationVersionScopedCreate) SetTriggerFilter(v *conditiontree.EventF
 
 const RoleOf_AutomationVersionScopedCreate_SetTriggerFilter = RoleStep
 
+// SetTriggerDate sets the "trigger_date" field.
+func (x *AutomationVersionScopedCreate) SetTriggerDate(v *datetrigger.Date) *AutomationVersionScopedCreate {
+	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetTriggerDate(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedCreate_SetTriggerDate = RoleStep
+
 // SetExits sets the "exits" field.
 func (x *AutomationVersionScopedCreate) SetExits(v []eventmatcher.Matcher) *AutomationVersionScopedCreate {
 	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetExits(v) })
@@ -10432,6 +11595,30 @@ func (u *AutomationVersionScopedUpsert) ClearTriggerFilter() *AutomationVersionS
 }
 
 const RoleOf_AutomationVersionScopedUpsert_ClearTriggerFilter = RoleStep
+
+// SetTriggerDate sets the "trigger_date" field.
+func (u *AutomationVersionScopedUpsert) SetTriggerDate(v *datetrigger.Date) *AutomationVersionScopedUpsert {
+	u.u.Set(automationversion.FieldTriggerDate, v)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_SetTriggerDate = RoleStep
+
+// UpdateTriggerDate sets the "trigger_date" field to the value that was provided on create.
+func (u *AutomationVersionScopedUpsert) UpdateTriggerDate() *AutomationVersionScopedUpsert {
+	u.u.SetExcluded(automationversion.FieldTriggerDate)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_UpdateTriggerDate = RoleStep
+
+// ClearTriggerDate clears the value of the "trigger_date" field.
+func (u *AutomationVersionScopedUpsert) ClearTriggerDate() *AutomationVersionScopedUpsert {
+	u.u.SetNull(automationversion.FieldTriggerDate)
+	return u
+}
+
+const RoleOf_AutomationVersionScopedUpsert_ClearTriggerDate = RoleStep
 
 // SetExits sets the "exits" field.
 func (u *AutomationVersionScopedUpsert) SetExits(v []eventmatcher.Matcher) *AutomationVersionScopedUpsert {
@@ -10814,6 +12001,22 @@ func (x *AutomationVersionScopedUpdateOne) ClearTriggerFilter() *AutomationVersi
 
 const RoleOf_AutomationVersionScopedUpdateOne_ClearTriggerFilter = RoleStep
 
+// SetTriggerDate sets the "trigger_date" field.
+func (x *AutomationVersionScopedUpdateOne) SetTriggerDate(v *datetrigger.Date) *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetTriggerDate(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdateOne_SetTriggerDate = RoleStep
+
+// ClearTriggerDate clears the value of the "trigger_date" field.
+func (x *AutomationVersionScopedUpdateOne) ClearTriggerDate() *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.ClearTriggerDate() })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdateOne_ClearTriggerDate = RoleStep
+
 // SetExits sets the "exits" field.
 func (x *AutomationVersionScopedUpdateOne) SetExits(v []eventmatcher.Matcher) *AutomationVersionScopedUpdateOne {
 	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetExits(v) })
@@ -11132,6 +12335,22 @@ func (x *AutomationVersionScopedUpdate) ClearTriggerFilter() *AutomationVersionS
 }
 
 const RoleOf_AutomationVersionScopedUpdate_ClearTriggerFilter = RoleStep
+
+// SetTriggerDate sets the "trigger_date" field.
+func (x *AutomationVersionScopedUpdate) SetTriggerDate(v *datetrigger.Date) *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetTriggerDate(v) })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdate_SetTriggerDate = RoleStep
+
+// ClearTriggerDate clears the value of the "trigger_date" field.
+func (x *AutomationVersionScopedUpdate) ClearTriggerDate() *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.ClearTriggerDate() })
+	return x
+}
+
+const RoleOf_AutomationVersionScopedUpdate_ClearTriggerDate = RoleStep
 
 // SetExits sets the "exits" field.
 func (x *AutomationVersionScopedUpdate) SetExits(v []eventmatcher.Matcher) *AutomationVersionScopedUpdate {
@@ -23203,6 +24422,14 @@ func (x *ContactScopedCreate) SetCustomFields(v map[string]interface{}) *Contact
 
 const RoleOf_ContactScopedCreate_SetCustomFields = RoleStep
 
+// SetSendLockedDates sets the "send_locked_dates" field.
+func (x *ContactScopedCreate) SetSendLockedDates(v []datetrigger.Field) *ContactScopedCreate {
+	x.set = append(x.set, func(b *ContactCreate) { b.SetSendLockedDates(v) })
+	return x
+}
+
+const RoleOf_ContactScopedCreate_SetSendLockedDates = RoleStep
+
 // AddVisitorIDs adds the "visitors" edge to the Visitor entity by IDs.
 func (x *ContactScopedCreate) AddVisitorIDs(ids ...int64) *ContactScopedCreate {
 	x.set = append(x.set, func(b *ContactCreate) { b.AddVisitorIDs(ids...) })
@@ -23727,6 +24954,22 @@ func (u *ContactScopedUpsert) ClearCustomFields() *ContactScopedUpsert {
 }
 
 const RoleOf_ContactScopedUpsert_ClearCustomFields = RoleStep
+
+// SetSendLockedDates sets the "send_locked_dates" field.
+func (u *ContactScopedUpsert) SetSendLockedDates(v []datetrigger.Field) *ContactScopedUpsert {
+	u.u.Set(contact.FieldSendLockedDates, v)
+	return u
+}
+
+const RoleOf_ContactScopedUpsert_SetSendLockedDates = RoleStep
+
+// UpdateSendLockedDates sets the "send_locked_dates" field to the value that was provided on create.
+func (u *ContactScopedUpsert) UpdateSendLockedDates() *ContactScopedUpsert {
+	u.u.SetExcluded(contact.FieldSendLockedDates)
+	return u
+}
+
+const RoleOf_ContactScopedUpsert_UpdateSendLockedDates = RoleStep
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
 // target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
@@ -24338,6 +25581,22 @@ func (x *ContactScopedUpdateOne) ClearCustomFields() *ContactScopedUpdateOne {
 
 const RoleOf_ContactScopedUpdateOne_ClearCustomFields = RoleStep
 
+// SetSendLockedDates sets the "send_locked_dates" field.
+func (x *ContactScopedUpdateOne) SetSendLockedDates(v []datetrigger.Field) *ContactScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactUpdateOne) { b.SetSendLockedDates(v) })
+	return x
+}
+
+const RoleOf_ContactScopedUpdateOne_SetSendLockedDates = RoleStep
+
+// AppendSendLockedDates appends value to the "send_locked_dates" field.
+func (x *ContactScopedUpdateOne) AppendSendLockedDates(v []datetrigger.Field) *ContactScopedUpdateOne {
+	x.set = append(x.set, func(b *ContactUpdateOne) { b.AppendSendLockedDates(v) })
+	return x
+}
+
+const RoleOf_ContactScopedUpdateOne_AppendSendLockedDates = RoleStep
+
 // AddVisitorIDs adds the "visitors" edge to the Visitor entity by IDs.
 func (x *ContactScopedUpdateOne) AddVisitorIDs(ids ...int64) *ContactScopedUpdateOne {
 	x.set = append(x.set, func(b *ContactUpdateOne) { b.AddVisitorIDs(ids...) })
@@ -24939,6 +26198,22 @@ func (x *ContactScopedUpdate) ClearCustomFields() *ContactScopedUpdate {
 }
 
 const RoleOf_ContactScopedUpdate_ClearCustomFields = RoleStep
+
+// SetSendLockedDates sets the "send_locked_dates" field.
+func (x *ContactScopedUpdate) SetSendLockedDates(v []datetrigger.Field) *ContactScopedUpdate {
+	x.set = append(x.set, func(b *ContactUpdate) { b.SetSendLockedDates(v) })
+	return x
+}
+
+const RoleOf_ContactScopedUpdate_SetSendLockedDates = RoleStep
+
+// AppendSendLockedDates appends value to the "send_locked_dates" field.
+func (x *ContactScopedUpdate) AppendSendLockedDates(v []datetrigger.Field) *ContactScopedUpdate {
+	x.set = append(x.set, func(b *ContactUpdate) { b.AppendSendLockedDates(v) })
+	return x
+}
+
+const RoleOf_ContactScopedUpdate_AppendSendLockedDates = RoleStep
 
 // AddVisitorIDs adds the "visitors" edge to the Visitor entity by IDs.
 func (x *ContactScopedUpdate) AddVisitorIDs(ids ...int64) *ContactScopedUpdate {

@@ -51,6 +51,7 @@ import (
 	emaildoc "github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	emailrender "github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	holdreason "github.com/getsphericon/sphericon/internal/kernel/holdreason"
+	localcalendar "github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
 	providers "github.com/getsphericon/sphericon/internal/kernel/providers"
 	ruleaction "github.com/getsphericon/sphericon/internal/kernel/ruleaction"
@@ -808,6 +809,18 @@ func (c *ConverterImpl) CustomFieldsToResources(source []*ent.CustomField) []ext
 		externalapiCustomFieldResourceList[i] = c.CustomFieldToResource(source[i])
 	}
 	return externalapiCustomFieldResourceList
+}
+func (c *ConverterImpl) DateRecurrenceToResource(source localcalendar.Recurrence) external.DateRecurrence {
+	var externalapiDateRecurrence external.DateRecurrence
+	switch source {
+	case localcalendar.Once:
+		externalapiDateRecurrence = external.DateRecurrenceOnce
+	case localcalendar.Yearly:
+		externalapiDateRecurrence = external.DateRecurrenceYearly
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiDateRecurrence
 }
 func (c *ConverterImpl) DnsRecordToResource(source sendingdomains.Record) external.DnsRecord {
 	var externalapiDnsRecord external.DnsRecord
@@ -1764,10 +1777,14 @@ func (c *ConverterImpl) SkippedEntryReasonToResource(source automationskippedent
 		externalapiSkippedEntryReason = external.SkippedEntryReasonCycle
 	case automationskippedentry.ReasonEnrollmentCeiling:
 		externalapiSkippedEntryReason = external.SkippedEntryReasonEnrollmentCeiling
+	case automationskippedentry.ReasonMissed:
+		externalapiSkippedEntryReason = external.SkippedEntryReasonMissed
 	case automationskippedentry.ReasonNoEnrollmentKey:
 		externalapiSkippedEntryReason = external.SkippedEntryReasonNoEnrollmentKey
 	case automationskippedentry.ReasonOnce:
 		externalapiSkippedEntryReason = external.SkippedEntryReasonOnce
+	case automationskippedentry.ReasonSendLocked:
+		externalapiSkippedEntryReason = external.SkippedEntryReasonSendLocked
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}

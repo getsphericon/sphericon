@@ -106,6 +106,11 @@ func FiringID(v int64) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldEQ(FieldFiringID, v))
 }
 
+// Occurrence applies equality check predicate on the "occurrence" field. It's identical to OccurrenceEQ.
+func Occurrence(v int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldOccurrence, v))
+}
+
 // Ordinal applies equality check predicate on the "ordinal" field. It's identical to OrdinalEQ.
 func Ordinal(v int) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldEQ(FieldOrdinal, v))
@@ -550,6 +555,56 @@ func FiringIDIsNil() predicate.AutomationRun {
 // FiringIDNotNil applies the NotNil predicate on the "firing_id" field.
 func FiringIDNotNil() predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldNotNull(FieldFiringID))
+}
+
+// OccurrenceEQ applies the EQ predicate on the "occurrence" field.
+func OccurrenceEQ(v int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldOccurrence, v))
+}
+
+// OccurrenceNEQ applies the NEQ predicate on the "occurrence" field.
+func OccurrenceNEQ(v int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNEQ(FieldOccurrence, v))
+}
+
+// OccurrenceIn applies the In predicate on the "occurrence" field.
+func OccurrenceIn(vs ...int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIn(FieldOccurrence, vs...))
+}
+
+// OccurrenceNotIn applies the NotIn predicate on the "occurrence" field.
+func OccurrenceNotIn(vs ...int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotIn(FieldOccurrence, vs...))
+}
+
+// OccurrenceGT applies the GT predicate on the "occurrence" field.
+func OccurrenceGT(v int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldGT(FieldOccurrence, v))
+}
+
+// OccurrenceGTE applies the GTE predicate on the "occurrence" field.
+func OccurrenceGTE(v int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldGTE(FieldOccurrence, v))
+}
+
+// OccurrenceLT applies the LT predicate on the "occurrence" field.
+func OccurrenceLT(v int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldLT(FieldOccurrence, v))
+}
+
+// OccurrenceLTE applies the LTE predicate on the "occurrence" field.
+func OccurrenceLTE(v int) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldLTE(FieldOccurrence, v))
+}
+
+// OccurrenceIsNil applies the IsNil predicate on the "occurrence" field.
+func OccurrenceIsNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIsNull(FieldOccurrence))
+}
+
+// OccurrenceNotNil applies the NotNil predicate on the "occurrence" field.
+func OccurrenceNotNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotNull(FieldOccurrence))
 }
 
 // OrdinalEQ applies the EQ predicate on the "ordinal" field.

@@ -256,6 +256,45 @@ var (
 			},
 		},
 	}
+	// AutomationOccurrenceCursorsColumns holds the columns for the "automation_occurrence_cursors" table.
+	AutomationOccurrenceCursorsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "span_start", Type: field.TypeTime},
+		{Name: "decided_through", Type: field.TypeTime},
+		{Name: "workspace_zone", Type: field.TypeString, Nullable: true},
+		{Name: "contacts_seen_through", Type: field.TypeTime, Nullable: true},
+		{Name: "automation_id", Type: field.TypeInt64, Unique: true},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// AutomationOccurrenceCursorsTable holds the schema information for the "automation_occurrence_cursors" table.
+	AutomationOccurrenceCursorsTable = &schema.Table{
+		Name:       "automation_occurrence_cursors",
+		Columns:    AutomationOccurrenceCursorsColumns,
+		PrimaryKey: []*schema.Column{AutomationOccurrenceCursorsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "automation_occurrence_cursors_automations_occurrence_cursor",
+				Columns:    []*schema.Column{AutomationOccurrenceCursorsColumns[7]},
+				RefColumns: []*schema.Column{AutomationsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "automation_occurrence_cursors_workspaces_automation_occurrence_cursors",
+				Columns:    []*schema.Column{AutomationOccurrenceCursorsColumns[8]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "automation_occurrence_cursors_automation",
+				Unique:  true,
+				Columns: []*schema.Column{AutomationOccurrenceCursorsColumns[8], AutomationOccurrenceCursorsColumns[7]},
+			},
+		},
+	}
 	// AutomationRunsColumns holds the columns for the "automation_runs" table.
 	AutomationRunsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -266,6 +305,7 @@ var (
 		{Name: "event_action", Type: field.TypeString, Nullable: true},
 		{Name: "event_properties", Type: field.TypeJSON, Nullable: true},
 		{Name: "trigger_source_id", Type: field.TypeString, Nullable: true},
+		{Name: "occurrence", Type: field.TypeInt, Nullable: true},
 		{Name: "chain", Type: field.TypeJSON, Default: "[]"},
 		{Name: "ordinal", Type: field.TypeInt},
 		{Name: "key_value", Type: field.TypeString, Nullable: true},
@@ -289,31 +329,31 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "automation_runs_automations_runs",
-				Columns:    []*schema.Column{AutomationRunsColumns[17]},
+				Columns:    []*schema.Column{AutomationRunsColumns[18]},
 				RefColumns: []*schema.Column{AutomationsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "automation_runs_contacts_contact",
-				Columns:    []*schema.Column{AutomationRunsColumns[18]},
+				Columns:    []*schema.Column{AutomationRunsColumns[19]},
 				RefColumns: []*schema.Column{ContactsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "automation_runs_rule_firings_firing",
-				Columns:    []*schema.Column{AutomationRunsColumns[19]},
+				Columns:    []*schema.Column{AutomationRunsColumns[20]},
 				RefColumns: []*schema.Column{RuleFiringsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "automation_runs_automation_versions_runs",
-				Columns:    []*schema.Column{AutomationRunsColumns[20]},
+				Columns:    []*schema.Column{AutomationRunsColumns[21]},
 				RefColumns: []*schema.Column{AutomationVersionsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "automation_runs_workspaces_automation_runs",
-				Columns:    []*schema.Column{AutomationRunsColumns[21]},
+				Columns:    []*schema.Column{AutomationRunsColumns[22]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -322,7 +362,7 @@ var (
 			{
 				Name:    "automation_runs_active_enrollment",
 				Unique:  true,
-				Columns: []*schema.Column{AutomationRunsColumns[21], AutomationRunsColumns[17], AutomationRunsColumns[18], AutomationRunsColumns[10]},
+				Columns: []*schema.Column{AutomationRunsColumns[22], AutomationRunsColumns[18], AutomationRunsColumns[19], AutomationRunsColumns[11]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "status = 'active'",
 				},
@@ -330,47 +370,55 @@ var (
 			{
 				Name:    "automation_runs_workspace_automation_contact_ordinal",
 				Unique:  true,
-				Columns: []*schema.Column{AutomationRunsColumns[21], AutomationRunsColumns[17], AutomationRunsColumns[18], AutomationRunsColumns[9]},
+				Columns: []*schema.Column{AutomationRunsColumns[22], AutomationRunsColumns[18], AutomationRunsColumns[19], AutomationRunsColumns[10]},
 			},
 			{
 				Name:    "automation_runs_workspace_automation_trigger_source",
 				Unique:  true,
-				Columns: []*schema.Column{AutomationRunsColumns[21], AutomationRunsColumns[17], AutomationRunsColumns[7]},
+				Columns: []*schema.Column{AutomationRunsColumns[22], AutomationRunsColumns[18], AutomationRunsColumns[7]},
 			},
 			{
 				Name:    "automation_runs_workspace_automation_firing",
 				Unique:  true,
-				Columns: []*schema.Column{AutomationRunsColumns[21], AutomationRunsColumns[17], AutomationRunsColumns[19]},
+				Columns: []*schema.Column{AutomationRunsColumns[22], AutomationRunsColumns[18], AutomationRunsColumns[20]},
+			},
+			{
+				Name:    "automation_runs_occurrence",
+				Unique:  true,
+				Columns: []*schema.Column{AutomationRunsColumns[22], AutomationRunsColumns[18], AutomationRunsColumns[19], AutomationRunsColumns[8]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "occurrence IS NOT NULL",
+				},
 			},
 			{
 				Name:    "automationrun_workspace_id_firing_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationRunsColumns[21], AutomationRunsColumns[19]},
+				Columns: []*schema.Column{AutomationRunsColumns[22], AutomationRunsColumns[20]},
 			},
 			{
 				Name:    "automationrun_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationRunsColumns[21], AutomationRunsColumns[18]},
+				Columns: []*schema.Column{AutomationRunsColumns[22], AutomationRunsColumns[19]},
 			},
 			{
 				Name:    "automation_runs_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationRunsColumns[18]},
+				Columns: []*schema.Column{AutomationRunsColumns[19]},
 			},
 			{
 				Name:    "automationrun_workspace_id_version_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationRunsColumns[21], AutomationRunsColumns[20]},
+				Columns: []*schema.Column{AutomationRunsColumns[22], AutomationRunsColumns[21]},
 			},
 			{
 				Name:    "automationrun_workspace_id_automation_id_began_at",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationRunsColumns[21], AutomationRunsColumns[17], AutomationRunsColumns[4]},
+				Columns: []*schema.Column{AutomationRunsColumns[22], AutomationRunsColumns[18], AutomationRunsColumns[4]},
 			},
 			{
 				Name:    "automationrun_workspace_id_automation_id_ended_at",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationRunsColumns[21], AutomationRunsColumns[17], AutomationRunsColumns[11]},
+				Columns: []*schema.Column{AutomationRunsColumns[22], AutomationRunsColumns[18], AutomationRunsColumns[12]},
 			},
 		},
 	}
@@ -380,7 +428,8 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "source_id", Type: field.TypeString, Nullable: true},
-		{Name: "reason", Type: field.TypeEnum, Enums: []string{"no_enrollment_key", "cycle", "active_enrollment", "once", "cooldown", "enrollment_ceiling"}},
+		{Name: "occurrence", Type: field.TypeInt, Nullable: true},
+		{Name: "reason", Type: field.TypeEnum, Enums: []string{"no_enrollment_key", "cycle", "active_enrollment", "once", "cooldown", "enrollment_ceiling", "missed", "send_locked"}},
 		{Name: "occurred_at", Type: field.TypeTime},
 		{Name: "automation_id", Type: field.TypeInt64},
 		{Name: "contact_id", Type: field.TypeInt64},
@@ -395,25 +444,25 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "automation_skipped_entries_automations_automation",
-				Columns:    []*schema.Column{AutomationSkippedEntriesColumns[6]},
+				Columns:    []*schema.Column{AutomationSkippedEntriesColumns[7]},
 				RefColumns: []*schema.Column{AutomationsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "automation_skipped_entries_contacts_contact",
-				Columns:    []*schema.Column{AutomationSkippedEntriesColumns[7]},
+				Columns:    []*schema.Column{AutomationSkippedEntriesColumns[8]},
 				RefColumns: []*schema.Column{ContactsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "automation_skipped_entries_rule_firings_firing",
-				Columns:    []*schema.Column{AutomationSkippedEntriesColumns[8]},
+				Columns:    []*schema.Column{AutomationSkippedEntriesColumns[9]},
 				RefColumns: []*schema.Column{RuleFiringsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "automation_skipped_entries_workspaces_automation_skipped_entries",
-				Columns:    []*schema.Column{AutomationSkippedEntriesColumns[9]},
+				Columns:    []*schema.Column{AutomationSkippedEntriesColumns[10]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -422,27 +471,43 @@ var (
 			{
 				Name:    "automation_skipped_entries_workspace_automation_source",
 				Unique:  true,
-				Columns: []*schema.Column{AutomationSkippedEntriesColumns[9], AutomationSkippedEntriesColumns[6], AutomationSkippedEntriesColumns[3]},
+				Columns: []*schema.Column{AutomationSkippedEntriesColumns[10], AutomationSkippedEntriesColumns[7], AutomationSkippedEntriesColumns[3]},
 			},
 			{
 				Name:    "automation_skipped_entries_workspace_automation_firing",
 				Unique:  true,
-				Columns: []*schema.Column{AutomationSkippedEntriesColumns[9], AutomationSkippedEntriesColumns[6], AutomationSkippedEntriesColumns[8]},
+				Columns: []*schema.Column{AutomationSkippedEntriesColumns[10], AutomationSkippedEntriesColumns[7], AutomationSkippedEntriesColumns[9]},
+			},
+			{
+				Name:    "automation_skipped_entries_occurrence",
+				Unique:  true,
+				Columns: []*schema.Column{AutomationSkippedEntriesColumns[10], AutomationSkippedEntriesColumns[7], AutomationSkippedEntriesColumns[8], AutomationSkippedEntriesColumns[4]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "occurrence IS NOT NULL AND reason <> 'send_locked'",
+				},
+			},
+			{
+				Name:    "automation_skipped_entries_occurrence_send_locked",
+				Unique:  true,
+				Columns: []*schema.Column{AutomationSkippedEntriesColumns[10], AutomationSkippedEntriesColumns[7], AutomationSkippedEntriesColumns[8], AutomationSkippedEntriesColumns[4]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "occurrence IS NOT NULL AND reason = 'send_locked'",
+				},
 			},
 			{
 				Name:    "automationskippedentry_workspace_id_automation_id_occurred_at",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationSkippedEntriesColumns[9], AutomationSkippedEntriesColumns[6], AutomationSkippedEntriesColumns[5]},
+				Columns: []*schema.Column{AutomationSkippedEntriesColumns[10], AutomationSkippedEntriesColumns[7], AutomationSkippedEntriesColumns[6]},
 			},
 			{
 				Name:    "automationskippedentry_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationSkippedEntriesColumns[9], AutomationSkippedEntriesColumns[7]},
+				Columns: []*schema.Column{AutomationSkippedEntriesColumns[10], AutomationSkippedEntriesColumns[8]},
 			},
 			{
 				Name:    "automationskippedentry_workspace_id_firing_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationSkippedEntriesColumns[9], AutomationSkippedEntriesColumns[8]},
+				Columns: []*schema.Column{AutomationSkippedEntriesColumns[10], AutomationSkippedEntriesColumns[9]},
 			},
 			{
 				Name:    "automationskippedentry_created_at",
@@ -503,6 +568,7 @@ var (
 		{Name: "steps", Type: field.TypeJSON},
 		{Name: "trigger_action", Type: field.TypeString},
 		{Name: "trigger_filter", Type: field.TypeJSON, Nullable: true},
+		{Name: "trigger_date", Type: field.TypeJSON, Nullable: true},
 		{Name: "exits", Type: field.TypeJSON, Default: "[]"},
 		{Name: "goal", Type: field.TypeJSON, Nullable: true},
 		{Name: "entry_policy", Type: field.TypeEnum, Enums: []string{"once", "again"}, Default: "once"},
@@ -519,13 +585,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "automation_versions_automations_versions",
-				Columns:    []*schema.Column{AutomationVersionsColumns[12]},
+				Columns:    []*schema.Column{AutomationVersionsColumns[13]},
 				RefColumns: []*schema.Column{AutomationsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "automation_versions_workspaces_automation_versions",
-				Columns:    []*schema.Column{AutomationVersionsColumns[13]},
+				Columns:    []*schema.Column{AutomationVersionsColumns[14]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -534,17 +600,25 @@ var (
 			{
 				Name:    "automation_versions_workspace_id_automation_id_version",
 				Unique:  true,
-				Columns: []*schema.Column{AutomationVersionsColumns[13], AutomationVersionsColumns[12], AutomationVersionsColumns[3]},
+				Columns: []*schema.Column{AutomationVersionsColumns[14], AutomationVersionsColumns[13], AutomationVersionsColumns[3]},
 			},
 			{
 				Name:    "automationversion_automation_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationVersionsColumns[12]},
+				Columns: []*schema.Column{AutomationVersionsColumns[13]},
 			},
 			{
 				Name:    "automationversion_workspace_id_trigger_action",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationVersionsColumns[13], AutomationVersionsColumns[5]},
+				Columns: []*schema.Column{AutomationVersionsColumns[14], AutomationVersionsColumns[5]},
+			},
+			{
+				Name:    "automation_versions_date_trigger",
+				Unique:  false,
+				Columns: []*schema.Column{AutomationVersionsColumns[14], AutomationVersionsColumns[13]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "trigger_date IS NOT NULL",
+				},
 			},
 		},
 	}
@@ -1033,6 +1107,7 @@ var (
 		{Name: "avatar", Type: field.TypeString, Nullable: true},
 		{Name: "source", Type: field.TypeEnum, Enums: []string{"manual", "api", "tracker"}},
 		{Name: "custom_fields", Type: field.TypeJSON, Nullable: true},
+		{Name: "send_locked_dates", Type: field.TypeJSON, Default: "[]"},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// ContactsTable holds the schema information for the "contacts" table.
@@ -1043,7 +1118,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "contacts_workspaces_contacts",
-				Columns:    []*schema.Column{ContactsColumns[17]},
+				Columns:    []*schema.Column{ContactsColumns[18]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1052,27 +1127,27 @@ var (
 			{
 				Name:    "contacts_email_workspace_id",
 				Unique:  true,
-				Columns: []*schema.Column{ContactsColumns[5], ContactsColumns[17]},
+				Columns: []*schema.Column{ContactsColumns[5], ContactsColumns[18]},
 			},
 			{
 				Name:    "contacts_subject_id_workspace_id",
 				Unique:  true,
-				Columns: []*schema.Column{ContactsColumns[4], ContactsColumns[17]},
+				Columns: []*schema.Column{ContactsColumns[4], ContactsColumns[18]},
 			},
 			{
 				Name:    "contacts_phone_workspace_id",
 				Unique:  true,
-				Columns: []*schema.Column{ContactsColumns[6], ContactsColumns[17]},
+				Columns: []*schema.Column{ContactsColumns[6], ContactsColumns[18]},
 			},
 			{
 				Name:    "contact_workspace_id_updated_at_id",
 				Unique:  false,
-				Columns: []*schema.Column{ContactsColumns[17], ContactsColumns[2], ContactsColumns[0]},
+				Columns: []*schema.Column{ContactsColumns[18], ContactsColumns[2], ContactsColumns[0]},
 			},
 			{
 				Name:    "contacts_workspace_id_identified",
 				Unique:  false,
-				Columns: []*schema.Column{ContactsColumns[17]},
+				Columns: []*schema.Column{ContactsColumns[18]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "email IS NOT NULL AND email <> ''",
 				},
@@ -3582,6 +3657,7 @@ var (
 		AuthAttemptsTable,
 		AutomationsTable,
 		AutomationFiguresTable,
+		AutomationOccurrenceCursorsTable,
 		AutomationRunsTable,
 		AutomationSkippedEntriesTable,
 		AutomationStepRecordsTable,
@@ -3700,6 +3776,11 @@ func init() {
 	AutomationFiguresTable.Annotation = &entsql.Annotation{
 		Table: "automation_figures",
 	}
+	AutomationOccurrenceCursorsTable.ForeignKeys[0].RefTable = AutomationsTable
+	AutomationOccurrenceCursorsTable.ForeignKeys[1].RefTable = WorkspacesTable
+	AutomationOccurrenceCursorsTable.Annotation = &entsql.Annotation{
+		Table: "automation_occurrence_cursors",
+	}
 	AutomationRunsTable.ForeignKeys[0].RefTable = AutomationsTable
 	AutomationRunsTable.ForeignKeys[1].RefTable = ContactsTable
 	AutomationRunsTable.ForeignKeys[2].RefTable = RuleFiringsTable
@@ -3710,7 +3791,7 @@ func init() {
 	}
 	AutomationRunsTable.Annotation.Checks = map[string]string{
 		"automation_runs_chain_check":        "jsonb_typeof(chain) = 'array'",
-		"automation_runs_entry_check":        "trigger_source_id IS NULL OR firing_id IS NULL",
+		"automation_runs_entry_check":        "num_nonnulls(trigger_source_id, firing_id, occurrence) <= 1",
 		"automation_runs_failure_kind_check": "failure_kind IN ('invalid_body', 'timeout', 'blocked_address', 'http_status', 'network')",
 		"automation_runs_ordinal_check":      "ordinal >= 1",
 		"automation_runs_status_check":       "status IN ('active', 'completed', 'failed', 'exited', 'goal_reached')",
@@ -3723,8 +3804,8 @@ func init() {
 		Table: "automation_skipped_entries",
 	}
 	AutomationSkippedEntriesTable.Annotation.Checks = map[string]string{
-		"automation_skipped_entries_entry_check":  "source_id IS NULL OR firing_id IS NULL",
-		"automation_skipped_entries_reason_check": "reason IN ('no_enrollment_key', 'cycle', 'active_enrollment', 'once', 'cooldown', 'enrollment_ceiling')",
+		"automation_skipped_entries_entry_check":  "num_nonnulls(source_id, firing_id, occurrence) <= 1",
+		"automation_skipped_entries_reason_check": "reason IN ('no_enrollment_key', 'cycle', 'active_enrollment', 'once', 'cooldown', 'enrollment_ceiling', 'missed', 'send_locked')",
 	}
 	AutomationStepRecordsTable.ForeignKeys[0].RefTable = AutomationRunsTable
 	AutomationStepRecordsTable.ForeignKeys[1].RefTable = WorkspacesTable
@@ -3750,8 +3831,10 @@ func init() {
 		"automation_versions_exits_check":                  "jsonb_typeof(exits) = 'array'",
 		"automation_versions_goal_check":                   "jsonb_typeof(goal) = 'object'",
 		"automation_versions_steps_check":                  "COALESCE(jsonb_typeof(steps -> 'steps') = 'array', false)",
+		"automation_versions_trigger_date_check":           "trigger_date IS NULL OR jsonb_typeof(trigger_date) = 'object'",
 		"automation_versions_trigger_filter_check":         "jsonb_typeof(trigger_filter) = 'object'",
 		"automation_versions_trigger_filter_entries_check": "trigger_filter IS NULL OR COALESCE(jsonb_typeof(trigger_filter -> 'entries') = 'array', false)",
+		"automation_versions_trigger_kind_check":           "(trigger_date IS NULL AND trigger_action <> '') OR (trigger_date IS NOT NULL AND trigger_action = '' AND trigger_filter IS NULL AND enrollment_key IS NULL AND entry_policy = 'once' AND cooldown_seconds = 3600)",
 	}
 	BindingsTable.ForeignKeys[0].RefTable = ContactsTable
 	BindingsTable.ForeignKeys[1].RefTable = IntegrationsTable
@@ -3844,10 +3927,11 @@ func init() {
 		Table: "contacts",
 	}
 	ContactsTable.Annotation.Checks = map[string]string{
-		"contacts_country_format": "country ~ '^[A-Z]{2}$'",
-		"contacts_email_lower":    "email = lower(email)",
-		"contacts_phone_format":   "phone ~ '^\\+[1-9]\\d{1,14}$'",
-		"contacts_source_check":   "source IN ('manual', 'api', 'tracker')",
+		"contacts_country_format":          "country ~ '^[A-Z]{2}$'",
+		"contacts_email_lower":             "email = lower(email)",
+		"contacts_phone_format":            "phone ~ '^\\+[1-9]\\d{1,14}$'",
+		"contacts_send_locked_dates_check": "jsonb_typeof(send_locked_dates) = 'array'",
+		"contacts_source_check":            "source IN ('manual', 'api', 'tracker')",
 	}
 	ContactTagsTable.ForeignKeys[0].RefTable = ContactsTable
 	ContactTagsTable.ForeignKeys[1].RefTable = TagsTable

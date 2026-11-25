@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 )
 
@@ -107,6 +108,18 @@ func (_u *AutomationVersionUpdate) SetTriggerFilter(v *conditiontree.EventFilter
 // ClearTriggerFilter clears the value of the "trigger_filter" field.
 func (_u *AutomationVersionUpdate) ClearTriggerFilter() *AutomationVersionUpdate {
 	_u.mutation.ClearTriggerFilter()
+	return _u
+}
+
+// SetTriggerDate sets the "trigger_date" field.
+func (_u *AutomationVersionUpdate) SetTriggerDate(v *datetrigger.Date) *AutomationVersionUpdate {
+	_u.mutation.SetTriggerDate(v)
+	return _u
+}
+
+// ClearTriggerDate clears the value of the "trigger_date" field.
+func (_u *AutomationVersionUpdate) ClearTriggerDate() *AutomationVersionUpdate {
+	_u.mutation.ClearTriggerDate()
 	return _u
 }
 
@@ -337,6 +350,12 @@ func (_u *AutomationVersionUpdate) sqlSave(ctx context.Context) (_node int, err 
 	if _u.mutation.TriggerFilterCleared() {
 		_spec.ClearField(automationversion.FieldTriggerFilter, field.TypeJSON)
 	}
+	if value, ok := _u.mutation.TriggerDate(); ok {
+		_spec.SetField(automationversion.FieldTriggerDate, field.TypeJSON, value)
+	}
+	if _u.mutation.TriggerDateCleared() {
+		_spec.ClearField(automationversion.FieldTriggerDate, field.TypeJSON)
+	}
 	if value, ok := _u.mutation.Exits(); ok {
 		_spec.SetField(automationversion.FieldExits, field.TypeJSON, value)
 	}
@@ -562,6 +581,18 @@ func (_u *AutomationVersionUpdateOne) SetTriggerFilter(v *conditiontree.EventFil
 // ClearTriggerFilter clears the value of the "trigger_filter" field.
 func (_u *AutomationVersionUpdateOne) ClearTriggerFilter() *AutomationVersionUpdateOne {
 	_u.mutation.ClearTriggerFilter()
+	return _u
+}
+
+// SetTriggerDate sets the "trigger_date" field.
+func (_u *AutomationVersionUpdateOne) SetTriggerDate(v *datetrigger.Date) *AutomationVersionUpdateOne {
+	_u.mutation.SetTriggerDate(v)
+	return _u
+}
+
+// ClearTriggerDate clears the value of the "trigger_date" field.
+func (_u *AutomationVersionUpdateOne) ClearTriggerDate() *AutomationVersionUpdateOne {
+	_u.mutation.ClearTriggerDate()
 	return _u
 }
 
@@ -821,6 +852,12 @@ func (_u *AutomationVersionUpdateOne) sqlSave(ctx context.Context) (_node *Autom
 	}
 	if _u.mutation.TriggerFilterCleared() {
 		_spec.ClearField(automationversion.FieldTriggerFilter, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.TriggerDate(); ok {
+		_spec.SetField(automationversion.FieldTriggerDate, field.TypeJSON, value)
+	}
+	if _u.mutation.TriggerDateCleared() {
+		_spec.ClearField(automationversion.FieldTriggerDate, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.Exits(); ok {
 		_spec.SetField(automationversion.FieldExits, field.TypeJSON, value)

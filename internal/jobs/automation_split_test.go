@@ -54,7 +54,7 @@ func publishedSplitting(t *testing.T, env *testhelper.TestEnv, steps ...automati
 	m := testhelper.Module[*automations.Module](env)
 	root := automationstep.Root(steps...)
 	a, err := m.Create(ctx, s, automations.CreateInput{
-		Name: "Splitting", Trigger: eventmatcher.Matcher{Action: splitTrigger},
+		Name: "Splitting", Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: splitTrigger}},
 		Entry: automations.Entry{Policy: automationversion.EntryPolicyAgain}, Steps: &root,
 	})
 	require.NoError(t, err)

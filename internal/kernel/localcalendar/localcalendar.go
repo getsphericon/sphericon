@@ -10,10 +10,12 @@ package localcalendar
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 )
 
@@ -146,33 +148,25 @@ var (
 	ErrRepeatedWeekday = errors.New("repeated weekday")
 )
 
-// maxOffsetDays is the bound of an offset, in whole days before or after the date (decision 6 of
-// #1613). When the contract declares it, the bound is the generated one.
-const maxOffsetDays = 365
-
 // hhmm is a local time: a time of day in whole minutes.
 type hhmm struct {
 	hour, minute int
 }
 
-// parseLocalTime reads a local time written HH:MM, from 00:00 to 23:59.
-func parseLocalTime(s string) (hhmm, error) {
-	if len(s) != len("15:04") || s[2] != ':' {
-		return hhmm{}, fmt.Errorf("%w: %q", ErrLocalTime, s)
-	}
-	hour, okHour := twoDigits(s[0:2])
-	minute, okMinute := twoDigits(s[3:5])
-	if !okHour || !okMinute || hour > 23 || minute > 59 {
-		return hhmm{}, fmt.Errorf("%w: %q", ErrLocalTime, s)
-	}
-	return hhmm{hour: hour, minute: minute}, nil
-}
+// localTimeForm is the form of a local time the contract declares (LocalTime): HH:MM, from 00:00
+// to 23:59.
+var localTimeForm = regexp.MustCompile(bounds.LocalTimePattern)
 
-func twoDigits(s string) (int, bool) {
-	if s[0] < '0' || s[0] > '9' || s[1] < '0' || s[1] > '9' {
-		return 0, false
+// parseLocalTime reads a local time of the contract's form, HH:MM from 00:00 to 23:59.
+func parseLocalTime(s string) (hhmm, error) {
+	if !localTimeForm.MatchString(s) {
+		return hhmm{}, fmt.Errorf("%w: %q", ErrLocalTime, s)
 	}
-	return int(s[0]-'0')*10 + int(s[1]-'0'), true
+	at, err := time.Parse("15:04", s)
+	if err != nil {
+		return hhmm{}, fmt.Errorf("%w: %q", ErrLocalTime, s)
+	}
+	return hhmm{hour: at.Hour(), minute: at.Minute()}, nil
 }
 
 // on is the moment of the local time on date d in loc, by the calendar rules of the package.
@@ -219,14 +213,14 @@ type Schedule struct {
 }
 
 // NewSchedule is the schedule of the recurrence, offset and local time given, or the refusal of
-// every one out of bounds, joined: ErrRecurrence, ErrOffset (beyond ±maxOffsetDays) and
+// every one out of bounds, joined: ErrRecurrence, ErrOffset (beyond the contract's DateOffsetDays) and
 // ErrLocalTime.
 func NewSchedule(recurrence Recurrence, offsetDays int, localTime string) (Schedule, error) {
 	var errs []error
 	if recurrence != Yearly && recurrence != Once {
 		errs = append(errs, fmt.Errorf("%w: %q", ErrRecurrence, recurrence))
 	}
-	if offsetDays < -maxOffsetDays || offsetDays > maxOffsetDays {
+	if offsetDays < bounds.DateOffsetDaysMin || offsetDays > bounds.DateOffsetDaysMax {
 		errs = append(errs, fmt.Errorf("%w: %d days", ErrOffset, offsetDays))
 	}
 	at, err := parseLocalTime(localTime)

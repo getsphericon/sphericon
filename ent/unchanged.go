@@ -534,6 +534,9 @@ func (m *ContactMutation) unchanged(ctx context.Context) (*Contact, bool, error)
 	if v, ok := m.AddedRevision(); ok && v != 0 {
 		return nil, false, nil
 	}
+	if v, ok := m.AppendedSendLockedDates(); ok && len(v) > 0 {
+		return nil, false, nil
+	}
 	// An update that names no column but the noise is a touch: a write of what an editor shows.
 	written := slices.Concat(m.Fields(), m.ClearedFields())
 	if !slices.ContainsFunc(written, func(c string) bool { return !revisionNoise(c) }) {
@@ -701,6 +704,11 @@ func (m *ContactMutation) unchanged(ctx context.Context) (*Contact, bool, error)
 	}
 	if m.CustomFieldsCleared() {
 		return nil, false, nil
+	}
+	if v, ok := m.SendLockedDates(); ok {
+		if !sameJSON(v, row.SendLockedDates) {
+			return nil, false, nil
+		}
 	}
 	return row, true, nil
 }

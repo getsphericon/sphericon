@@ -264,6 +264,20 @@ export const zAutomationSkippedCounts = z.object({
 export const zAutomationStatus = z.enum(['active', 'inactive']);
 
 /**
+ * The Contact's date of birth, a date field every Contact has
+ */
+export const zBirthdayDateField = z.object({
+  kind: z.enum(['birthday'])
+});
+
+/**
+ * The Contact's date of birth, a date field every Contact has
+ */
+export const zBirthdayDateFieldInput = z.strictObject({
+  kind: z.enum(['birthday'])
+});
+
+/**
  * Whether a Branch needs its unknown path (ADR 0124)
  */
 export const zBranchUnknownPathResult = z.object({
@@ -387,6 +401,26 @@ export const zCreateWebhookInput = z.strictObject({
 export const zCurrencyCode = z.string().regex(/^[A-Z]{3}$/);
 
 /**
+ * A datetime Custom field of the Workspace, its key in a field of its own. Its value's calendar
+ * date is read in the Workspace time zone: a value with an offset is moved into it, one without an
+ * offset or a bare date keeps its own date.
+ */
+export const zCustomFieldDateField = z.object({
+  kind: z.enum(['customField']),
+  key: z.string()
+});
+
+/**
+ * A datetime Custom field of the Workspace, its key in a field of its own. Its value's calendar
+ * date is read in the Workspace time zone: a value with an offset is moved into it, one without an
+ * offset or a bare date keeps its own date.
+ */
+export const zCustomFieldDateFieldInput = z.strictObject({
+  kind: z.enum(['customField']),
+  key: z.string()
+});
+
+/**
  * A Custom field's value type
  */
 export const zCustomFieldType = z.enum([
@@ -395,6 +429,33 @@ export const zCustomFieldType = z.enum([
   'bool',
   'datetime'
 ]);
+
+/**
+ * A date a Contact holds, by `kind`: its `birthday`, or a datetime Custom field
+ */
+export const zDateField = z.discriminatedUnion('kind', [
+  zBirthdayDateField.extend({ kind: z.literal('birthday') }),
+  zCustomFieldDateField.extend({ kind: z.literal('customField') })
+]);
+
+/**
+ * A date a Contact holds, by `kind`, as a request writes it
+ */
+export const zDateFieldInput = z.discriminatedUnion('kind', [
+  zBirthdayDateFieldInput.extend({ kind: z.literal('birthday') }),
+  zCustomFieldDateFieldInput.extend({ kind: z.literal('customField') })
+]);
+
+/**
+ * A whole number of days before (negative) or after the date, within a year
+ */
+export const zDateOffsetDays = z.int().gte(-365).lte(365);
+
+/**
+ * How often a date comes: `yearly` on each anniversary, from the year after the date's own;
+ * `once` on the date itself. The birthday is always past, so it is only yearly.
+ */
+export const zDateRecurrence = z.enum(['yearly', 'once']);
 
 /**
  * What a Deferral waits for: the send is not consumed and goes through every check again when it is retried
@@ -721,6 +782,42 @@ export const zLintFinding = z.object({
   message: z.string(),
   element: z.exactOptional(z.string()),
   detail: z.exactOptional(z.string())
+});
+
+/**
+ * A local time of day in whole minutes, `HH:MM` from 00:00 to 23:59, read in a time zone the
+ * place that holds it names
+ */
+export const zLocalTime = z.string().regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/);
+
+/**
+ * A Trigger that enrolls a Contact on a date it holds (ADR 0126): on each anniversary of its
+ * birthday or of a datetime Custom field, or once on such a field, `offsetDays` before or after it,
+ * at `localTime` in the Contact's time zone, or in the Workspace time zone when the Contact has no
+ * valid one. A yearly date enrolls a Contact at most once per anniversary year, the year of the date
+ * the offset counts from, and a once date at most once ever; an occurrence while the previous
+ * enrollment is still active is skipped. Only occurrences after the automation was published
+ * enroll, at most 24 hours late, and the enrollment begins at the occurrence's moment with no
+ * triggering Event. A date Trigger has no entry policy, cooldown or Enrollment key, and no rule's
+ * enroll action may name its automation.
+ */
+export const zDateTrigger = z.object({
+  kind: z.enum(['date']),
+  field: zDateField,
+  recurrence: zDateRecurrence,
+  offsetDays: zDateOffsetDays,
+  localTime: zLocalTime
+});
+
+/**
+ * A Trigger that enrolls a Contact on a date it holds (ADR 0126), as a request writes it
+ */
+export const zDateTriggerInput = z.strictObject({
+  kind: z.enum(['date']),
+  field: zDateFieldInput,
+  recurrence: zDateRecurrence,
+  offsetDays: zDateOffsetDays,
+  localTime: zLocalTime
 });
 
 /**
@@ -2522,7 +2619,10 @@ export const zSiteVerifyEmailInput = z.strictObject({
  * enrollment for the key value in the automation before, under the `once` entry policy),
  * `cooldown` (under `again`, the cooldown from the beginning of the contact's previous enrollment
  * for the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10
- * active enrollments, or 10 begun in a day).
+ * active enrollments, or 10 begun in a day). An occurrence of a date Trigger (ADR 0126) is skipped as
+ * `active_enrollment` (an enrollment of the contact was active at its moment), `missed` (it was
+ * reached 24 hours late or more) or `send_locked` (its date was last written through a Connection
+ * without mcp:send; a later write of the date may still enroll it within 24 hours).
  */
 export const zSkippedEntryReason = z.enum([
   'no_enrollment_key',
@@ -2530,7 +2630,9 @@ export const zSkippedEntryReason = z.enum([
   'active_enrollment',
   'once',
   'cooldown',
-  'enrollment_ceiling'
+  'enrollment_ceiling',
+  'missed',
+  'send_locked'
 ]);
 
 /**
@@ -4911,14 +5013,28 @@ export const zAutomationStepInput = z.union([
 ]);
 
 /**
- * What enrolls a Contact in an automation, by `kind`: an Event matcher
+ * What enrolls a Contact in an automation, by `kind`: an Event matcher or a date
  */
-export const zAutomationTrigger = z.lazy((): any => zEventTrigger);
+export const zAutomationTrigger = z.union([
+  z.object({
+    kind: z.literal('event')
+  }).and(z.lazy((): any => zEventTrigger)),
+  z.object({
+    kind: z.literal('date')
+  }).and(zDateTrigger)
+]);
 
 /**
- * What enrolls a Contact in an automation, by `kind`: an Event matcher
+ * What enrolls a Contact in an automation, by `kind`: an Event matcher or a date
  */
-export const zAutomationTriggerInput = z.lazy((): any => zEventTriggerInput);
+export const zAutomationTriggerInput = z.union([
+  z.object({
+    kind: z.literal('event')
+  }).and(z.lazy((): any => zEventTriggerInput)),
+  z.object({
+    kind: z.literal('date')
+  }).and(zDateTriggerInput)
+]);
 
 /**
  * One version of an automation's definition: what publishing makes it do (ADR 0065)

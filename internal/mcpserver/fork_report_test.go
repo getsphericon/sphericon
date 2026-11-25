@@ -33,7 +33,7 @@ func TestMCPReportGivesEachForkPath(t *testing.T) {
 		Otherwise: automationstep.Path{ID: otherwise, Steps: []automationstep.Step{}},
 	}}
 	root := automationstep.Root(branch)
-	a, err := m.Create(ctx, acme, automations.CreateInput{Name: "Forking", Trigger: eventmatcher.Matcher{Action: "fork.entered"}, Steps: &root})
+	a, err := m.Create(ctx, acme, automations.CreateInput{Name: "Forking", Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: "fork.entered"}}, Steps: &root})
 	require.NoError(t, err)
 	_, err = m.Publish(ctx, acme, a.ID, testhelper.AutomationRevisionIn(ctx, t, acme, a.ID))
 	require.NoError(t, err)

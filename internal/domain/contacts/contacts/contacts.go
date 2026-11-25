@@ -225,6 +225,13 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, src contact.Source, 
 		if len(typed) > 0 {
 			q = q.SetCustomFields(typed)
 		}
+		locks, marked, err := sendLocks(ctx, ts, nil, dates{}, dates{birthday: attrs.Birthday, fields: typed})
+		if err != nil {
+			return err
+		}
+		if marked {
+			q.SetSendLockedDates(locks)
+		}
 		if err := constraints.Write(ctx, ts, func() (err error) { c, err = q.Save(ctx); return err }); err != nil {
 			return err
 		}
@@ -274,15 +281,25 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		in.Email.Apply(q.SetEmail, q.ClearEmail)
 		phone.Apply(q.SetPhone, q.ClearPhone)
 		applyCore(q, in.Core)
+		written := dates{birthday: in.Birthday.Over(before.Birthday), fields: before.CustomFields}
 		if fields, ok := in.CustomFields.Get(); ok {
 			typed, err := m.EnsureCustomFields(ctx, ts, fields)
 			if err != nil {
 				return err
 			}
 			q.SetCustomFields(typed)
+			written.fields = typed
 		}
 		if in.CustomFields.IsClear() {
 			q.ClearCustomFields()
+			written.fields = nil
+		}
+		locks, marked, err := sendLocks(ctx, ts, before.SendLockedDates, datesOf(before), written)
+		if err != nil {
+			return err
+		}
+		if marked {
+			q.SetSendLockedDates(locks)
 		}
 		var after *ent.Contact
 		err = constraints.Write(ctx, ts, func() (err error) { after, err = q.Save(ctx); return err })
@@ -430,6 +447,13 @@ func (m *Module) upsertIn(ctx context.Context, s *ent.Scoped, src contact.Source
 	if len(typed) > 0 {
 		q.SetCustomFields(typed)
 	}
+	locks, marked, err := sendLocks(ctx, s, nil, dates{}, dates{birthday: in.Birthday.Ptr(), fields: typed})
+	if err != nil {
+		return Result{}, err
+	}
+	if marked {
+		q.SetSendLockedDates(locks)
+	}
 	var c *ent.Contact
 	if err := constraints.Write(ctx, s, func() (err error) { c, err = q.Save(ctx); return err }); err != nil {
 		return Result{}, err
@@ -507,8 +531,17 @@ func (m *Module) enrich(ctx context.Context, s *ent.Scoped, id int64, in UpsertI
 	fillMissing(existing.Email, in.Email, q.SetNillableEmail)
 	fillMissing(existing.Phone, in.Phone, q.SetNillablePhone)
 	applyCore(q, core)
+	written := dates{birthday: core.Birthday.Over(existing.Birthday), fields: existing.CustomFields}
 	if len(typed) > 0 {
-		q.SetCustomFields(lo.Assign(existing.CustomFields, typed))
+		written.fields = lo.Assign(existing.CustomFields, typed)
+		q.SetCustomFields(written.fields)
+	}
+	locks, marked, err := sendLocks(ctx, s, existing.SendLockedDates, datesOf(existing), written)
+	if err != nil {
+		return nil, err
+	}
+	if marked {
+		q.SetSendLockedDates(locks)
 	}
 	var c *ent.Contact
 	if err := constraints.Write(ctx, s, func() (err error) { c, err = q.Save(ctx); return err }); err != nil || ch != recordChanges {

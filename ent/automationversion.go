@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 )
 
@@ -39,6 +40,8 @@ type AutomationVersion struct {
 	TriggerAction string `json:"trigger_action,omitempty"`
 	// TriggerFilter holds the value of the "trigger_filter" field.
 	TriggerFilter *conditiontree.EventFilter `json:"trigger_filter,omitempty"`
+	// TriggerDate holds the value of the "trigger_date" field.
+	TriggerDate *datetrigger.Date `json:"trigger_date,omitempty"`
 	// Exits holds the value of the "exits" field.
 	Exits []eventmatcher.Matcher `json:"exits,omitempty"`
 	// Goal holds the value of the "goal" field.
@@ -104,7 +107,7 @@ func (*AutomationVersion) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case automationversion.FieldSteps, automationversion.FieldTriggerFilter, automationversion.FieldExits, automationversion.FieldGoal:
+		case automationversion.FieldSteps, automationversion.FieldTriggerFilter, automationversion.FieldTriggerDate, automationversion.FieldExits, automationversion.FieldGoal:
 			values[i] = new([]byte)
 		case automationversion.FieldID, automationversion.FieldWorkspaceID, automationversion.FieldAutomationID, automationversion.FieldVersion, automationversion.FieldCooldownSeconds:
 			values[i] = new(sql.NullInt64)
@@ -183,6 +186,14 @@ func (_m *AutomationVersion) assignValues(columns []string, values []any) error 
 			} else if value != nil && len(*value) > 0 {
 				if err := json.Unmarshal(*value, &_m.TriggerFilter); err != nil {
 					return fmt.Errorf("unmarshal field trigger_filter: %w", err)
+				}
+			}
+		case automationversion.FieldTriggerDate:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field trigger_date", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.TriggerDate); err != nil {
+					return fmt.Errorf("unmarshal field trigger_date: %w", err)
 				}
 			}
 		case automationversion.FieldExits:
@@ -294,6 +305,9 @@ func (_m *AutomationVersion) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("trigger_filter=")
 	builder.WriteString(fmt.Sprintf("%v", _m.TriggerFilter))
+	builder.WriteString(", ")
+	builder.WriteString("trigger_date=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TriggerDate))
 	builder.WriteString(", ")
 	builder.WriteString("exits=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Exits))

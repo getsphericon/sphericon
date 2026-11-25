@@ -222,6 +222,7 @@
   "errors.automation_integration_not_found": "integration not found",
   "errors.automation_not_found": "automation not found",
   "errors.automation_inactive": "the automation is not active",
+  "errors.automation_date_trigger_enrolled_into": "a rule enrolls contacts into the automation, so it cannot start on a date",
   "errors.automation_no_version": "the automation was never published",
   "errors.automation_archived": "the automation is archived: unarchive it to change it",
   "errors.automation_nothing_to_publish": "nothing to publish",

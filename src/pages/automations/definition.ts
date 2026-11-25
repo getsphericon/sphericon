@@ -7,6 +7,7 @@ import type {
   AutomationStepInput,
   BranchConditionInput,
   AutomationTriggerInput,
+  DateTrigger,
   AutomationVersion,
   EditorDocument,
   EntryPolicy,
@@ -118,8 +119,11 @@ export type EndingDraft = Pick<EventMatcherInput, 'action'> & { filterText: stri
 
 // The Trigger as its panel edits it: the Event matcher that enrolls a Contact (ADR 0133), its Entry
 // policy and cooldown in seconds (ADR 0127, null for the server's default), its Enrollment key (''
-// for none, ADR 0165), and the events that end an Enrollment early or at its goal (#751).
+// for none, ADR 0165), and the events that end an Enrollment early or at its goal (#751). A date
+// Trigger (ADR 0126), which the editor does not edit yet, is kept as stored: the version holding it
+// is read-only here, so no edit or save can drop it.
 export interface TriggerDraft {
+  kept: DateTrigger | null
   action: string
   filterText: string
   entryPolicy: EntryPolicy
@@ -223,14 +227,29 @@ function flowStepOf(step: AutomationStep): FlowStep {
 // The Trigger of a version as its panel edits it.
 function triggerDraftOf(version: AutomationVersion): TriggerDraft {
   const { trigger } = version
+  const endings = {
+    exits: version.exitEvents.map((exit) => endingDraft(exit)),
+    goal: version.goalEvent === null ? null : endingDraft(version.goalEvent),
+  }
+  if (trigger.kind !== 'event') {
+    return {
+      kept: trigger,
+      action: '',
+      filterText: '',
+      entryPolicy: 'once',
+      cooldown: null,
+      enrollmentKey: '',
+      ...endings,
+    }
+  }
   return {
+    kept: null,
     action: trigger.action,
     filterText: trigger.filter ? filterText(trigger.filter) : '',
     entryPolicy: trigger.entryPolicy,
     cooldown: trigger.cooldown,
     enrollmentKey: trigger.enrollmentKey ?? '',
-    exits: version.exitEvents.map((exit) => endingDraft(exit)),
-    goal: version.goalEvent === null ? null : endingDraft(version.goalEvent),
+    ...endings,
   }
 }
 
@@ -271,10 +290,10 @@ export function sendsMessage(step: FlowStep): boolean {
   return step.kind === 'email' || step.kind === 'telegram' || step.kind === 'sms'
 }
 
-// holdsKept tells whether the flow holds, at any depth, a Step the editor does not edit: the version
-// is then read-only here.
+// holdsKept tells whether the flow holds a Trigger, or at any depth a Step, the editor does not
+// edit: the version is then read-only here.
 export function holdsKept(flow: Flow): boolean {
-  return allSteps(flow.path).some((step) => step.kind === 'kept')
+  return flow.trigger.kept !== null || allSteps(flow.path).some((step) => step.kind === 'kept')
 }
 
 // endingDraft is the draft of a stored exit or goal event.
@@ -356,6 +375,13 @@ function endingRead(
 // cooldown, none being the server's default, and its Enrollment key trimmed, a blank one being
 // none.
 function triggerOf(draft: TriggerDraft): { trigger: AutomationTriggerInput; incomplete: boolean } {
+  if (draft.kept !== null) {
+    const { field, recurrence, offsetDays, localTime } = draft.kept
+    return {
+      trigger: { kind: 'date', field, recurrence, offsetDays, localTime },
+      incomplete: false,
+    }
+  }
   const { matcher, incomplete } = matcherOf(draft.action, draft.filterText)
   const trigger: AutomationTriggerInput = {
     kind: 'event',

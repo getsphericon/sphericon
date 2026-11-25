@@ -194,6 +194,12 @@ export type JsonObject = {
 };
 
 /**
+ * A local time of day in whole minutes, `HH:MM` from 00:00 to 23:59, read in a time zone the
+ * place that holds it names
+ */
+export type LocalTime = string;
+
+/**
  * A BCP 47 language tag: a language, optionally with a script and a region (`de`, `pt-BR`)
  */
 export type LocaleTag = string;

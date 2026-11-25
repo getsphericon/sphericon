@@ -49,7 +49,7 @@ func TestAForkOutsideTheContractsBoundsIsRefusedNamingIt(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			steps := automationstep.Root(automationstep.Step{ID: forkID, Payload: c.fork})
 
-			_, err := m.Create(t.Context(), env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{Name: "x", Trigger: eventmatcher.Matcher{Action: "y"}, Steps: &steps})
+			_, err := m.Create(t.Context(), env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{Name: "x", Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: "y"}}, Steps: &steps})
 
 			require.ErrorIs(t, err, automations.ErrInvalidStep)
 			require.ErrorContains(t, err, c.names)

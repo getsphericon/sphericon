@@ -625,16 +625,105 @@ model EventTriggerInput {
   enrollmentKey?: string;
 }
 
-/** What enrolls a Contact in an automation, by `kind`: an Event matcher */
+/** The Contact's date of birth, a date field every Contact has */
+model BirthdayDateField {
+  kind: "birthday";
+}
+
+/** A datetime Custom field of the Workspace, its key in a field of its own. Its value's calendar
+ * date is read in the Workspace time zone: a value with an offset is moved into it, one without an
+ * offset or a bare date keeps its own date. */
+model CustomFieldDateField {
+  kind: "customField";
+
+  /** The Custom field's key */
+  key: string;
+}
+
+model BirthdayDateFieldInput is BirthdayDateField;
+model CustomFieldDateFieldInput is CustomFieldDateField;
+
+/** A date a Contact holds, by `kind`: its `birthday`, or a datetime Custom field */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union DateField {
+  birthday: BirthdayDateField,
+  customField: CustomFieldDateField,
+}
+
+/** A date a Contact holds, by `kind`, as a request writes it */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union DateFieldInput {
+  birthday: BirthdayDateFieldInput,
+  customField: CustomFieldDateFieldInput,
+}
+
+/** How often a date comes: `yearly` on each anniversary, from the year after the date's own;
+ * `once` on the date itself. The birthday is always past, so it is only yearly. */
+enum DateRecurrence {
+  yearly,
+  once,
+}
+
+/** A whole number of days before (negative) or after the date, within a year */
+@minValue(-365)
+@maxValue(365)
+scalar DateOffsetDays extends int32;
+
+/** A Trigger that enrolls a Contact on a date it holds (ADR 0126): on each anniversary of its
+ * birthday or of a datetime Custom field, or once on such a field, `offsetDays` before or after it,
+ * at `localTime` in the Contact's time zone, or in the Workspace time zone when the Contact has no
+ * valid one. A yearly date enrolls a Contact at most once per anniversary year, the year of the date
+ * the offset counts from, and a once date at most once ever; an occurrence while the previous
+ * enrollment is still active is skipped. Only occurrences after the automation was published
+ * enroll, at most 24 hours late, and the enrollment begins at the occurrence's moment with no
+ * triggering Event. A date Trigger has no entry policy, cooldown or Enrollment key, and no rule's
+ * enroll action may name its automation. */
+model DateTrigger {
+  kind: "date";
+
+  /** The date the occurrences come from */
+  field: DateField;
+
+  /** Every year, or once */
+  recurrence: DateRecurrence;
+
+  /** Days before (negative) or after the date */
+  offsetDays: DateOffsetDays;
+
+  /** The time of day of each occurrence, in the Contact's time zone */
+  localTime: LocalTime;
+}
+
+/** A Trigger that enrolls a Contact on a date it holds (ADR 0126), as a request writes it */
+model DateTriggerInput {
+  kind: "date";
+
+  /** The date the occurrences come from: the birthday, or a datetime Custom field of the
+   * Workspace's catalogue */
+  field: DateFieldInput;
+
+  /** Every year, or once; the birthday is only yearly */
+  recurrence: DateRecurrence;
+
+  /** Days before (negative) or after the date, within 365 */
+  offsetDays: DateOffsetDays;
+
+  /** The time of day of each occurrence, `HH:MM`, in the Contact's time zone */
+  localTime: LocalTime;
+}
+
+/** What enrolls a Contact in an automation, by `kind`: an Event matcher or a date */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union AutomationTrigger {
   event: EventTrigger,
+  date: DateTrigger,
 }
 
-/** What enrolls a Contact in an automation, by `kind`: an Event matcher */
+/** What enrolls a Contact in an automation, by `kind`: an Event matcher or a date */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union AutomationTriggerInput {
   event: EventTriggerInput,
+  date: DateTriggerInput,
 }
 
 /** An Event matcher that ends an enrollment (ADR 0133): an action, and an optional filter on that

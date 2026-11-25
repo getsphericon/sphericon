@@ -41,7 +41,7 @@ func branchingOn(t *testing.T, env *testhelper.TestEnv, workspaceID int64, name 
 	ctx := context.Background()
 	s := env.DB.Scoped(workspaceID)
 	m := testhelper.Module[*automations.Module](env)
-	a, err := m.Create(ctx, s, automations.CreateInput{Name: name, Trigger: eventmatcher.Matcher{Action: "signup"}, Steps: &steps})
+	a, err := m.Create(ctx, s, automations.CreateInput{Name: name, Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: "signup"}}, Steps: &steps})
 	require.NoError(t, err)
 	if published {
 		a, err = m.Publish(ctx, s, a.ID, testhelper.AutomationRevisionIn(ctx, t, s, a.ID))

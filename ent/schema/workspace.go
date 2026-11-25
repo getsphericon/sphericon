@@ -218,6 +218,7 @@ func (Workspace) Edges() []ent.Edge {
 		edge.To("broadcast_figures", BroadcastFigure.Type),
 		edge.To("automation_figures", AutomationFigure.Type),
 		edge.To("automation_skipped_entries", AutomationSkippedEntry.Type),
+		edge.To("automation_occurrence_cursors", AutomationOccurrenceCursor.Type),
 		edge.To("email_templates", EmailTemplate.Type),
 		edge.To("brand_kits", BrandKit.Type),
 		edge.To("identity_secrets", IdentitySecret.Type),

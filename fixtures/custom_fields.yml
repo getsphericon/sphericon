@@ -31,6 +31,15 @@
   workspace_id: 1
   created_at: '{{daysAgo 170}}'
   updated_at: '{{daysAgo 170}}'
+# When an Acme Contact's trial ends: the datetime field a date Trigger names (ADR 0126).
+- id: 6 # fixture: CustomFieldAcmeTrialEndsAt
+  revision: 1
+  key: trial_ends_at
+  name: Trial ends at
+  type: datetime
+  workspace_id: 1
+  created_at: '{{daysAgo 170}}'
+  updated_at: '{{daysAgo 170}}'
 
 # --- Globex (workspace 2) foreign row — DO NOT change ---
 - id: 900 # fixture: CustomFieldGlobex

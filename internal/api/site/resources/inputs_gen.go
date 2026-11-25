@@ -41,6 +41,7 @@ import (
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	httpheader "github.com/getsphericon/sphericon/internal/kernel/httpheader"
+	localcalendar "github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
 	ruleaction "github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
@@ -88,11 +89,11 @@ func (c *InputsImpl) AutomationCreate(source *site.CreateAutomationInput) (autom
 	var automationsCreateInput automations.CreateInput
 	if source != nil {
 		automationsCreateInput.Name = nameIn((*source).Name)
-		eventmatcherMatcher, err := automationTriggerIn((*source).Trigger)
+		automationsTrigger, err := automationTriggerIn(c, (*source).Trigger)
 		if err != nil {
 			return automationsCreateInput, err
 		}
-		automationsCreateInput.Trigger = eventmatcherMatcher
+		automationsCreateInput.Trigger = automationsTrigger
 		automationsCreateInput.Entry = automationEntryIn(c, (*source).Trigger)
 		eventmatcherMatcherList, err := automationExitsIn((*source).ExitEvents)
 		if err != nil {
@@ -157,11 +158,11 @@ func (c *InputsImpl) AutomationUpdate(source *site.UpdateAutomationInput) (autom
 	if source != nil {
 		automationsUpdateInput.Revision = revisionIn((*source).Revision)
 		automationsUpdateInput.Name = namePtrIn((*source).Name)
-		pEventmatcherMatcher, err := automationTriggerPtrIn((*source).Trigger)
+		pAutomationsTrigger, err := automationTriggerPtrIn(c, (*source).Trigger)
 		if err != nil {
 			return automationsUpdateInput, err
 		}
-		automationsUpdateInput.Trigger = pEventmatcherMatcher
+		automationsUpdateInput.Trigger = pAutomationsTrigger
 		automationsUpdateInput.Entry = automationEntryPtrIn(c, (*source).Trigger)
 		pEventmatcherMatcherList, err := automationExitsPtrIn((*source).ExitEvents)
 		if err != nil {
@@ -420,6 +421,18 @@ func (c *InputsImpl) CustomFieldUpdate(source *site.UpdateCustomFieldInput) cont
 		contactsCustomFieldUpdateInput.Type = customFieldTypePatch((*source).Type)
 	}
 	return contactsCustomFieldUpdateInput
+}
+func (c *InputsImpl) DateRecurrence(source site.DateRecurrence) localcalendar.Recurrence {
+	var localcalendarRecurrence localcalendar.Recurrence
+	switch source {
+	case site.DateRecurrenceOnce:
+		localcalendarRecurrence = localcalendar.Once
+	case site.DateRecurrenceYearly:
+		localcalendarRecurrence = localcalendar.Yearly
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return localcalendarRecurrence
 }
 func (c *InputsImpl) EmailBroadcastContentIn(source site.EmailBroadcastContentInput) broadcasts.EmailContentInput {
 	var broadcastsEmailContentInput broadcasts.EmailContentInput

@@ -53,6 +53,12 @@ const (
 	AutomationArchivedName = "Old referral nudge"
 	// AutomationArchivedVersionID is from fixtures/automation_versions.
 	AutomationArchivedVersionID = 107
+	// AutomationBirthdayGreetingID is from fixtures/automations.
+	AutomationBirthdayGreetingID = 1713
+	// AutomationBirthdayGreetingName is from fixtures/automations.
+	AutomationBirthdayGreetingName = "Birthday greeting"
+	// AutomationBirthdayGreetingVersionID is from fixtures/automation_versions.
+	AutomationBirthdayGreetingVersionID = 1713
 	// AutomationDuffActiveID is from fixtures/automations.
 	AutomationDuffActiveID = 7701
 	// AutomationDuffActiveName is from fixtures/automations.
@@ -1643,6 +1649,12 @@ const (
 	CustomFieldAcmePlanKey = "plan"
 	// CustomFieldAcmePlanName is from fixtures/custom_fields.
 	CustomFieldAcmePlanName = "Plan"
+	// CustomFieldAcmeTrialEndsAtID is from fixtures/custom_fields.
+	CustomFieldAcmeTrialEndsAtID = 6
+	// CustomFieldAcmeTrialEndsAtKey is from fixtures/custom_fields.
+	CustomFieldAcmeTrialEndsAtKey = "trial_ends_at"
+	// CustomFieldAcmeTrialEndsAtName is from fixtures/custom_fields.
+	CustomFieldAcmeTrialEndsAtName = "Trial ends at"
 	// CustomFieldDuffEndsOnID is from fixtures/custom_fields.
 	CustomFieldDuffEndsOnID = 7702
 	// CustomFieldDuffEndsOnKey is from fixtures/custom_fields.
@@ -3107,6 +3119,8 @@ const (
 	OAuthCodeGlobexCode = "globex-oauth-code"
 	// OAuthCodeGlobexID is from fixtures/oauth_codes.
 	OAuthCodeGlobexID = 7701
+	// OccurrenceCursorBirthdayGreetingID is from fixtures/automation_occurrence_cursors.
+	OccurrenceCursorBirthdayGreetingID = 1
 	// OllivandersAbeMembershipID is from fixtures/memberships.
 	OllivandersAbeMembershipID = 7952
 	// OllivandersCollectKey is from fixtures/workspaces.

@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/authattempt"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
+	"github.com/getsphericon/sphericon/ent/automationoccurrencecursor"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
@@ -87,6 +88,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/ent/workspacestanding"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 )
@@ -256,6 +258,21 @@ func init() {
 	automationfigure.DefaultCaptured = automationfigureDescCaptured.Default.(int)
 	// automationfigure.CapturedValidator is a validator for the "captured" field. It is called by the builders before save.
 	automationfigure.CapturedValidator = automationfigureDescCaptured.Validators[0].(func(int) error)
+	automationoccurrencecursorMixin := schema.AutomationOccurrenceCursor{}.Mixin()
+	automationoccurrencecursorMixinFields0 := automationoccurrencecursorMixin[0].Fields()
+	_ = automationoccurrencecursorMixinFields0
+	automationoccurrencecursorFields := schema.AutomationOccurrenceCursor{}.Fields()
+	_ = automationoccurrencecursorFields
+	// automationoccurrencecursorDescCreatedAt is the schema descriptor for created_at field.
+	automationoccurrencecursorDescCreatedAt := automationoccurrencecursorMixinFields0[0].Descriptor()
+	// automationoccurrencecursor.DefaultCreatedAt holds the default value on creation for the created_at field.
+	automationoccurrencecursor.DefaultCreatedAt = automationoccurrencecursorDescCreatedAt.Default.(func() time.Time)
+	// automationoccurrencecursorDescUpdatedAt is the schema descriptor for updated_at field.
+	automationoccurrencecursorDescUpdatedAt := automationoccurrencecursorMixinFields0[1].Descriptor()
+	// automationoccurrencecursor.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	automationoccurrencecursor.DefaultUpdatedAt = automationoccurrencecursorDescUpdatedAt.Default.(func() time.Time)
+	// automationoccurrencecursor.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	automationoccurrencecursor.UpdateDefaultUpdatedAt = automationoccurrencecursorDescUpdatedAt.UpdateDefault.(func() time.Time)
 	automationrunMixin := schema.AutomationRun{}.Mixin()
 	automationrunMixinFields0 := automationrunMixin[0].Fields()
 	_ = automationrunMixinFields0
@@ -276,7 +293,7 @@ func init() {
 	// automationrun.DefaultBeganAt holds the default value on creation for the began_at field.
 	automationrun.DefaultBeganAt = automationrunDescBeganAt.Default.(func() time.Time)
 	// automationrunDescChain is the schema descriptor for chain field.
-	automationrunDescChain := automationrunFields[10].Descriptor()
+	automationrunDescChain := automationrunFields[11].Descriptor()
 	// automationrun.DefaultChain holds the default value on creation for the chain field.
 	automationrun.DefaultChain = automationrunDescChain.Default.([]int64)
 	automationskippedentryMixin := schema.AutomationSkippedEntry{}.Mixin()
@@ -331,11 +348,11 @@ func init() {
 	// automationversion.VersionValidator is a validator for the "version" field. It is called by the builders before save.
 	automationversion.VersionValidator = automationversionDescVersion.Validators[0].(func(int) error)
 	// automationversionDescExits is the schema descriptor for exits field.
-	automationversionDescExits := automationversionFields[4].Descriptor()
+	automationversionDescExits := automationversionFields[5].Descriptor()
 	// automationversion.DefaultExits holds the default value on creation for the exits field.
 	automationversion.DefaultExits = automationversionDescExits.Default.([]eventmatcher.Matcher)
 	// automationversionDescCooldownSeconds is the schema descriptor for cooldown_seconds field.
-	automationversionDescCooldownSeconds := automationversionFields[7].Descriptor()
+	automationversionDescCooldownSeconds := automationversionFields[8].Descriptor()
 	// automationversion.DefaultCooldownSeconds holds the default value on creation for the cooldown_seconds field.
 	automationversion.DefaultCooldownSeconds = automationversionDescCooldownSeconds.Default.(int)
 	bindingMixin := schema.Binding{}.Mixin()
@@ -626,6 +643,10 @@ func init() {
 	contact.DefaultRevision = contactDescRevision.Default.(func() int64)
 	// contact.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
 	contact.RevisionValidator = contactDescRevision.Validators[0].(func(int64) error)
+	// contactDescSendLockedDates is the schema descriptor for send_locked_dates field.
+	contactDescSendLockedDates := contactFields[14].Descriptor()
+	// contact.DefaultSendLockedDates holds the default value on creation for the send_locked_dates field.
+	contact.DefaultSendLockedDates = contactDescSendLockedDates.Default.([]datetrigger.Field)
 	customfieldMixin := schema.CustomField{}.Mixin()
 	customfieldMixinFields0 := customfieldMixin[0].Fields()
 	_ = customfieldMixinFields0

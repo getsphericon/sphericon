@@ -32,6 +32,8 @@ const (
 	FieldTriggerAction = "trigger_action"
 	// FieldTriggerFilter holds the string denoting the trigger_filter field in the database.
 	FieldTriggerFilter = "trigger_filter"
+	// FieldTriggerDate holds the string denoting the trigger_date field in the database.
+	FieldTriggerDate = "trigger_date"
 	// FieldExits holds the string denoting the exits field in the database.
 	FieldExits = "exits"
 	// FieldGoal holds the string denoting the goal field in the database.
@@ -84,6 +86,7 @@ var Columns = []string{
 	FieldSteps,
 	FieldTriggerAction,
 	FieldTriggerFilter,
+	FieldTriggerDate,
 	FieldExits,
 	FieldGoal,
 	FieldEntryPolicy,

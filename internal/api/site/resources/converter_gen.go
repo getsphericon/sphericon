@@ -60,6 +60,7 @@ import (
 	deferralcause "github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	emailrender "github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	holdreason "github.com/getsphericon/sphericon/internal/kernel/holdreason"
+	localcalendar "github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
 	providers "github.com/getsphericon/sphericon/internal/kernel/providers"
 	ruleaction "github.com/getsphericon/sphericon/internal/kernel/ruleaction"
@@ -1149,6 +1150,18 @@ func (c *ConverterImpl) CustomFieldsToResources(source []*ent.CustomField) []sit
 		siteapiSiteCustomFieldResourceList[i] = c.CustomFieldToResource(source[i])
 	}
 	return siteapiSiteCustomFieldResourceList
+}
+func (c *ConverterImpl) DateRecurrenceToResource(source localcalendar.Recurrence) site.DateRecurrence {
+	var siteapiDateRecurrence site.DateRecurrence
+	switch source {
+	case localcalendar.Once:
+		siteapiDateRecurrence = site.DateRecurrenceOnce
+	case localcalendar.Yearly:
+		siteapiDateRecurrence = site.DateRecurrenceYearly
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiDateRecurrence
 }
 func (c *ConverterImpl) DeletedWorkspaceToResource(source *ent.Workspace) site.SiteDeletedWorkspaceResource {
 	var siteapiSiteDeletedWorkspaceResource site.SiteDeletedWorkspaceResource
@@ -2615,10 +2628,14 @@ func (c *ConverterImpl) SkippedEntryReasonToResource(source automationskippedent
 		siteapiSkippedEntryReason = site.SkippedEntryReasonCycle
 	case automationskippedentry.ReasonEnrollmentCeiling:
 		siteapiSkippedEntryReason = site.SkippedEntryReasonEnrollmentCeiling
+	case automationskippedentry.ReasonMissed:
+		siteapiSkippedEntryReason = site.SkippedEntryReasonMissed
 	case automationskippedentry.ReasonNoEnrollmentKey:
 		siteapiSkippedEntryReason = site.SkippedEntryReasonNoEnrollmentKey
 	case automationskippedentry.ReasonOnce:
 		siteapiSkippedEntryReason = site.SkippedEntryReasonOnce
+	case automationskippedentry.ReasonSendLocked:
+		siteapiSkippedEntryReason = site.SkippedEntryReasonSendLocked
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}

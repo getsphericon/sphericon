@@ -83,7 +83,7 @@ func TestADeactivateBetweenPickingAndEnrollingEnrollsNobody(t *testing.T) {
 // live version again and, started by another action now, it enrolls nobody.
 func TestAPublishThatMovesTheTriggerBetweenPickingAndEnrollingEnrollsNobody(t *testing.T) {
 	runs := raceThePick(t, func(ctx context.Context, mod *automations.Module, s *ent.Scoped) error {
-		_, updated := mod.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationHoldDemoID), Trigger: &eventmatcher.Matcher{Action: "hold_demo_moved"}})
+		_, updated := mod.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationHoldDemoID), Trigger: &automations.Trigger{Event: eventmatcher.Matcher{Action: "hold_demo_moved"}}})
 		_, published := mod.Publish(ctx, s, fixtures.AutomationHoldDemoID, testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationHoldDemoID))
 		return errors.Join(updated, published)
 	})
@@ -101,7 +101,7 @@ func TestAPublishThatFiltersTheTriggerBetweenPickingAndEnrollingEnrollsNobody(t 
 	filter := &conditiontree.EventFilter{Kind: conditiontree.KindGroup, Combinator: conditiontree.And, Entries: []json.RawMessage{leaf}}
 
 	runs := raceThePick(t, func(ctx context.Context, mod *automations.Module, s *ent.Scoped) error {
-		_, updated := mod.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationHoldDemoID), Trigger: &eventmatcher.Matcher{Action: "hold_demo", Filter: filter}})
+		_, updated := mod.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationHoldDemoID), Trigger: &automations.Trigger{Event: eventmatcher.Matcher{Action: "hold_demo", Filter: filter}}})
 		_, published := mod.Publish(ctx, s, fixtures.AutomationHoldDemoID, testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationHoldDemoID))
 		return errors.Join(updated, published)
 	})

@@ -3294,7 +3294,7 @@ func NewSplitStepAutomationStepSum(v SplitStep) AutomationStepSum {
 	return s
 }
 
-// What enrolls a Contact in an automation, by `kind`: an Event matcher.
+// What enrolls a Contact in an automation, by `kind`: an Event matcher or a date.
 // Ref: #/components/schemas/AutomationTrigger
 type AutomationTrigger struct {
 	OneOf AutomationTriggerSum
@@ -3310,7 +3310,7 @@ func (s *AutomationTrigger) SetOneOf(val AutomationTriggerSum) {
 	s.OneOf = val
 }
 
-// What enrolls a Contact in an automation, by `kind`: an Event matcher.
+// What enrolls a Contact in an automation, by `kind`: an Event matcher or a date.
 // Ref: #/components/schemas/AutomationTriggerInput
 type AutomationTriggerInput struct {
 	OneOf AutomationTriggerInputSum
@@ -3331,6 +3331,7 @@ type AutomationTriggerInputSum struct {
 	// Type selects the active sum variant, switch on this field.
 	Type              AutomationTriggerInputSumType
 	EventTriggerInput EventTriggerInput
+	DateTriggerInput  DateTriggerInput
 }
 
 // AutomationTriggerInputSumType is oneOf type of AutomationTriggerInputSum.
@@ -3339,11 +3340,17 @@ type AutomationTriggerInputSumType string
 // Possible values for AutomationTriggerInputSumType.
 const (
 	EventTriggerInputAutomationTriggerInputSum AutomationTriggerInputSumType = "event"
+	DateTriggerInputAutomationTriggerInputSum  AutomationTriggerInputSumType = "date"
 )
 
 // IsEventTriggerInput reports whether AutomationTriggerInputSum is EventTriggerInput.
 func (s AutomationTriggerInputSum) IsEventTriggerInput() bool {
 	return s.Type == EventTriggerInputAutomationTriggerInputSum
+}
+
+// IsDateTriggerInput reports whether AutomationTriggerInputSum is DateTriggerInput.
+func (s AutomationTriggerInputSum) IsDateTriggerInput() bool {
+	return s.Type == DateTriggerInputAutomationTriggerInputSum
 }
 
 // SetEventTriggerInput sets AutomationTriggerInputSum to EventTriggerInput.
@@ -3367,11 +3374,33 @@ func NewEventTriggerInputAutomationTriggerInputSum(v EventTriggerInput) Automati
 	return s
 }
 
+// SetDateTriggerInput sets AutomationTriggerInputSum to DateTriggerInput.
+func (s *AutomationTriggerInputSum) SetDateTriggerInput(v DateTriggerInput) {
+	s.Type = DateTriggerInputAutomationTriggerInputSum
+	s.DateTriggerInput = v
+}
+
+// GetDateTriggerInput returns DateTriggerInput and true boolean if AutomationTriggerInputSum is DateTriggerInput.
+func (s AutomationTriggerInputSum) GetDateTriggerInput() (v DateTriggerInput, ok bool) {
+	if !s.IsDateTriggerInput() {
+		return v, false
+	}
+	return s.DateTriggerInput, true
+}
+
+// NewDateTriggerInputAutomationTriggerInputSum returns new AutomationTriggerInputSum from DateTriggerInput.
+func NewDateTriggerInputAutomationTriggerInputSum(v DateTriggerInput) AutomationTriggerInputSum {
+	var s AutomationTriggerInputSum
+	s.SetDateTriggerInput(v)
+	return s
+}
+
 // AutomationTriggerSum represents sum type.
 type AutomationTriggerSum struct {
 	// Type selects the active sum variant, switch on this field.
 	Type         AutomationTriggerSumType
 	EventTrigger EventTrigger
+	DateTrigger  DateTrigger
 }
 
 // AutomationTriggerSumType is oneOf type of AutomationTriggerSum.
@@ -3380,12 +3409,16 @@ type AutomationTriggerSumType string
 // Possible values for AutomationTriggerSumType.
 const (
 	EventTriggerAutomationTriggerSum AutomationTriggerSumType = "event"
+	DateTriggerAutomationTriggerSum  AutomationTriggerSumType = "date"
 )
 
 // IsEventTrigger reports whether AutomationTriggerSum is EventTrigger.
 func (s AutomationTriggerSum) IsEventTrigger() bool {
 	return s.Type == EventTriggerAutomationTriggerSum
 }
+
+// IsDateTrigger reports whether AutomationTriggerSum is DateTrigger.
+func (s AutomationTriggerSum) IsDateTrigger() bool { return s.Type == DateTriggerAutomationTriggerSum }
 
 // SetEventTrigger sets AutomationTriggerSum to EventTrigger.
 func (s *AutomationTriggerSum) SetEventTrigger(v EventTrigger) {
@@ -3405,6 +3438,27 @@ func (s AutomationTriggerSum) GetEventTrigger() (v EventTrigger, ok bool) {
 func NewEventTriggerAutomationTriggerSum(v EventTrigger) AutomationTriggerSum {
 	var s AutomationTriggerSum
 	s.SetEventTrigger(v)
+	return s
+}
+
+// SetDateTrigger sets AutomationTriggerSum to DateTrigger.
+func (s *AutomationTriggerSum) SetDateTrigger(v DateTrigger) {
+	s.Type = DateTriggerAutomationTriggerSum
+	s.DateTrigger = v
+}
+
+// GetDateTrigger returns DateTrigger and true boolean if AutomationTriggerSum is DateTrigger.
+func (s AutomationTriggerSum) GetDateTrigger() (v DateTrigger, ok bool) {
+	if !s.IsDateTrigger() {
+		return v, false
+	}
+	return s.DateTrigger, true
+}
+
+// NewDateTriggerAutomationTriggerSum returns new AutomationTriggerSum from DateTrigger.
+func NewDateTriggerAutomationTriggerSum(v DateTrigger) AutomationTriggerSum {
+	var s AutomationTriggerSum
+	s.SetDateTrigger(v)
 	return s
 }
 
@@ -3526,6 +3580,106 @@ func (s *AutomationVersionStepFigures) SetSent(val int32) {
 // SetSkipped sets the value of Skipped.
 func (s *AutomationVersionStepFigures) SetSkipped(val int32) {
 	s.Skipped = val
+}
+
+// The Contact's date of birth, a date field every Contact has.
+// Ref: #/components/schemas/BirthdayDateField
+type BirthdayDateField struct {
+	Kind BirthdayDateFieldKind `json:"kind"`
+}
+
+// GetKind returns the value of Kind.
+func (s *BirthdayDateField) GetKind() BirthdayDateFieldKind {
+	return s.Kind
+}
+
+// SetKind sets the value of Kind.
+func (s *BirthdayDateField) SetKind(val BirthdayDateFieldKind) {
+	s.Kind = val
+}
+
+// The Contact's date of birth, a date field every Contact has.
+// Ref: #/components/schemas/BirthdayDateFieldInput
+type BirthdayDateFieldInput struct {
+	Kind BirthdayDateFieldInputKind `json:"kind"`
+}
+
+// GetKind returns the value of Kind.
+func (s *BirthdayDateFieldInput) GetKind() BirthdayDateFieldInputKind {
+	return s.Kind
+}
+
+// SetKind sets the value of Kind.
+func (s *BirthdayDateFieldInput) SetKind(val BirthdayDateFieldInputKind) {
+	s.Kind = val
+}
+
+type BirthdayDateFieldInputKind string
+
+const (
+	BirthdayDateFieldInputKindBirthday BirthdayDateFieldInputKind = "birthday"
+)
+
+// AllValues returns all BirthdayDateFieldInputKind values.
+func (BirthdayDateFieldInputKind) AllValues() []BirthdayDateFieldInputKind {
+	return []BirthdayDateFieldInputKind{
+		BirthdayDateFieldInputKindBirthday,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s BirthdayDateFieldInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case BirthdayDateFieldInputKindBirthday:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *BirthdayDateFieldInputKind) UnmarshalText(data []byte) error {
+	switch BirthdayDateFieldInputKind(data) {
+	case BirthdayDateFieldInputKindBirthday:
+		*s = BirthdayDateFieldInputKindBirthday
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type BirthdayDateFieldKind string
+
+const (
+	BirthdayDateFieldKindBirthday BirthdayDateFieldKind = "birthday"
+)
+
+// AllValues returns all BirthdayDateFieldKind values.
+func (BirthdayDateFieldKind) AllValues() []BirthdayDateFieldKind {
+	return []BirthdayDateFieldKind{
+		BirthdayDateFieldKindBirthday,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s BirthdayDateFieldKind) MarshalText() ([]byte, error) {
+	switch s {
+	case BirthdayDateFieldKindBirthday:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *BirthdayDateFieldKind) UnmarshalText(data []byte) error {
+	switch BirthdayDateFieldKind(data) {
+	case BirthdayDateFieldKindBirthday:
+		*s = BirthdayDateFieldKindBirthday
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 // A test of the Contact's date of birth.
@@ -7896,6 +8050,134 @@ func (s *CustomFieldConditionTests) SetPresence(val []PresenceOperator) {
 	s.Presence = val
 }
 
+// A datetime Custom field of the Workspace, its key in a field of its own. Its value's calendar date
+// is read in the Workspace time zone: a value with an offset is moved into it, one without an offset
+// or a bare date keeps its own date.
+// Ref: #/components/schemas/CustomFieldDateField
+type CustomFieldDateField struct {
+	Kind CustomFieldDateFieldKind `json:"kind"`
+	// The Custom field's key.
+	Key string `json:"key"`
+}
+
+// GetKind returns the value of Kind.
+func (s *CustomFieldDateField) GetKind() CustomFieldDateFieldKind {
+	return s.Kind
+}
+
+// GetKey returns the value of Key.
+func (s *CustomFieldDateField) GetKey() string {
+	return s.Key
+}
+
+// SetKind sets the value of Kind.
+func (s *CustomFieldDateField) SetKind(val CustomFieldDateFieldKind) {
+	s.Kind = val
+}
+
+// SetKey sets the value of Key.
+func (s *CustomFieldDateField) SetKey(val string) {
+	s.Key = val
+}
+
+// A datetime Custom field of the Workspace, its key in a field of its own. Its value's calendar date
+// is read in the Workspace time zone: a value with an offset is moved into it, one without an offset
+// or a bare date keeps its own date.
+// Ref: #/components/schemas/CustomFieldDateFieldInput
+type CustomFieldDateFieldInput struct {
+	Kind CustomFieldDateFieldInputKind `json:"kind"`
+	// The Custom field's key.
+	Key string `json:"key"`
+}
+
+// GetKind returns the value of Kind.
+func (s *CustomFieldDateFieldInput) GetKind() CustomFieldDateFieldInputKind {
+	return s.Kind
+}
+
+// GetKey returns the value of Key.
+func (s *CustomFieldDateFieldInput) GetKey() string {
+	return s.Key
+}
+
+// SetKind sets the value of Kind.
+func (s *CustomFieldDateFieldInput) SetKind(val CustomFieldDateFieldInputKind) {
+	s.Kind = val
+}
+
+// SetKey sets the value of Key.
+func (s *CustomFieldDateFieldInput) SetKey(val string) {
+	s.Key = val
+}
+
+type CustomFieldDateFieldInputKind string
+
+const (
+	CustomFieldDateFieldInputKindCustomField CustomFieldDateFieldInputKind = "customField"
+)
+
+// AllValues returns all CustomFieldDateFieldInputKind values.
+func (CustomFieldDateFieldInputKind) AllValues() []CustomFieldDateFieldInputKind {
+	return []CustomFieldDateFieldInputKind{
+		CustomFieldDateFieldInputKindCustomField,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s CustomFieldDateFieldInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case CustomFieldDateFieldInputKindCustomField:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *CustomFieldDateFieldInputKind) UnmarshalText(data []byte) error {
+	switch CustomFieldDateFieldInputKind(data) {
+	case CustomFieldDateFieldInputKindCustomField:
+		*s = CustomFieldDateFieldInputKindCustomField
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type CustomFieldDateFieldKind string
+
+const (
+	CustomFieldDateFieldKindCustomField CustomFieldDateFieldKind = "customField"
+)
+
+// AllValues returns all CustomFieldDateFieldKind values.
+func (CustomFieldDateFieldKind) AllValues() []CustomFieldDateFieldKind {
+	return []CustomFieldDateFieldKind{
+		CustomFieldDateFieldKindCustomField,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s CustomFieldDateFieldKind) MarshalText() ([]byte, error) {
+	switch s {
+	case CustomFieldDateFieldKindCustomField:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *CustomFieldDateFieldKind) UnmarshalText(data []byte) error {
+	switch CustomFieldDateFieldKind(data) {
+	case CustomFieldDateFieldKindCustomField:
+		*s = CustomFieldDateFieldKindCustomField
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A test of a Custom field of the Workspace, its key in a field of its own.
 // Ref: #/components/schemas/CustomFieldLeaf
 type CustomFieldLeaf struct {
@@ -8429,6 +8711,425 @@ func (s *CustomFieldType) UnmarshalText(data []byte) error {
 		return nil
 	case CustomFieldTypeDatetime:
 		*s = CustomFieldTypeDatetime
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A date a Contact holds, by `kind`: its `birthday`, or a datetime Custom field.
+// Ref: #/components/schemas/DateField
+type DateField struct {
+	OneOf DateFieldSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *DateField) GetOneOf() DateFieldSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *DateField) SetOneOf(val DateFieldSum) {
+	s.OneOf = val
+}
+
+// A date a Contact holds, by `kind`, as a request writes it.
+// Ref: #/components/schemas/DateFieldInput
+type DateFieldInput struct {
+	OneOf DateFieldInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *DateFieldInput) GetOneOf() DateFieldInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *DateFieldInput) SetOneOf(val DateFieldInputSum) {
+	s.OneOf = val
+}
+
+// DateFieldInputSum represents sum type.
+type DateFieldInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                      DateFieldInputSumType
+	BirthdayDateFieldInput    BirthdayDateFieldInput
+	CustomFieldDateFieldInput CustomFieldDateFieldInput
+}
+
+// DateFieldInputSumType is oneOf type of DateFieldInputSum.
+type DateFieldInputSumType string
+
+// Possible values for DateFieldInputSumType.
+const (
+	BirthdayDateFieldInputDateFieldInputSum    DateFieldInputSumType = "birthday"
+	CustomFieldDateFieldInputDateFieldInputSum DateFieldInputSumType = "customField"
+)
+
+// IsBirthdayDateFieldInput reports whether DateFieldInputSum is BirthdayDateFieldInput.
+func (s DateFieldInputSum) IsBirthdayDateFieldInput() bool {
+	return s.Type == BirthdayDateFieldInputDateFieldInputSum
+}
+
+// IsCustomFieldDateFieldInput reports whether DateFieldInputSum is CustomFieldDateFieldInput.
+func (s DateFieldInputSum) IsCustomFieldDateFieldInput() bool {
+	return s.Type == CustomFieldDateFieldInputDateFieldInputSum
+}
+
+// SetBirthdayDateFieldInput sets DateFieldInputSum to BirthdayDateFieldInput.
+func (s *DateFieldInputSum) SetBirthdayDateFieldInput(v BirthdayDateFieldInput) {
+	s.Type = BirthdayDateFieldInputDateFieldInputSum
+	s.BirthdayDateFieldInput = v
+}
+
+// GetBirthdayDateFieldInput returns BirthdayDateFieldInput and true boolean if DateFieldInputSum is BirthdayDateFieldInput.
+func (s DateFieldInputSum) GetBirthdayDateFieldInput() (v BirthdayDateFieldInput, ok bool) {
+	if !s.IsBirthdayDateFieldInput() {
+		return v, false
+	}
+	return s.BirthdayDateFieldInput, true
+}
+
+// NewBirthdayDateFieldInputDateFieldInputSum returns new DateFieldInputSum from BirthdayDateFieldInput.
+func NewBirthdayDateFieldInputDateFieldInputSum(v BirthdayDateFieldInput) DateFieldInputSum {
+	var s DateFieldInputSum
+	s.SetBirthdayDateFieldInput(v)
+	return s
+}
+
+// SetCustomFieldDateFieldInput sets DateFieldInputSum to CustomFieldDateFieldInput.
+func (s *DateFieldInputSum) SetCustomFieldDateFieldInput(v CustomFieldDateFieldInput) {
+	s.Type = CustomFieldDateFieldInputDateFieldInputSum
+	s.CustomFieldDateFieldInput = v
+}
+
+// GetCustomFieldDateFieldInput returns CustomFieldDateFieldInput and true boolean if DateFieldInputSum is CustomFieldDateFieldInput.
+func (s DateFieldInputSum) GetCustomFieldDateFieldInput() (v CustomFieldDateFieldInput, ok bool) {
+	if !s.IsCustomFieldDateFieldInput() {
+		return v, false
+	}
+	return s.CustomFieldDateFieldInput, true
+}
+
+// NewCustomFieldDateFieldInputDateFieldInputSum returns new DateFieldInputSum from CustomFieldDateFieldInput.
+func NewCustomFieldDateFieldInputDateFieldInputSum(v CustomFieldDateFieldInput) DateFieldInputSum {
+	var s DateFieldInputSum
+	s.SetCustomFieldDateFieldInput(v)
+	return s
+}
+
+// DateFieldSum represents sum type.
+type DateFieldSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                 DateFieldSumType
+	BirthdayDateField    BirthdayDateField
+	CustomFieldDateField CustomFieldDateField
+}
+
+// DateFieldSumType is oneOf type of DateFieldSum.
+type DateFieldSumType string
+
+// Possible values for DateFieldSumType.
+const (
+	BirthdayDateFieldDateFieldSum    DateFieldSumType = "birthday"
+	CustomFieldDateFieldDateFieldSum DateFieldSumType = "customField"
+)
+
+// IsBirthdayDateField reports whether DateFieldSum is BirthdayDateField.
+func (s DateFieldSum) IsBirthdayDateField() bool { return s.Type == BirthdayDateFieldDateFieldSum }
+
+// IsCustomFieldDateField reports whether DateFieldSum is CustomFieldDateField.
+func (s DateFieldSum) IsCustomFieldDateField() bool {
+	return s.Type == CustomFieldDateFieldDateFieldSum
+}
+
+// SetBirthdayDateField sets DateFieldSum to BirthdayDateField.
+func (s *DateFieldSum) SetBirthdayDateField(v BirthdayDateField) {
+	s.Type = BirthdayDateFieldDateFieldSum
+	s.BirthdayDateField = v
+}
+
+// GetBirthdayDateField returns BirthdayDateField and true boolean if DateFieldSum is BirthdayDateField.
+func (s DateFieldSum) GetBirthdayDateField() (v BirthdayDateField, ok bool) {
+	if !s.IsBirthdayDateField() {
+		return v, false
+	}
+	return s.BirthdayDateField, true
+}
+
+// NewBirthdayDateFieldDateFieldSum returns new DateFieldSum from BirthdayDateField.
+func NewBirthdayDateFieldDateFieldSum(v BirthdayDateField) DateFieldSum {
+	var s DateFieldSum
+	s.SetBirthdayDateField(v)
+	return s
+}
+
+// SetCustomFieldDateField sets DateFieldSum to CustomFieldDateField.
+func (s *DateFieldSum) SetCustomFieldDateField(v CustomFieldDateField) {
+	s.Type = CustomFieldDateFieldDateFieldSum
+	s.CustomFieldDateField = v
+}
+
+// GetCustomFieldDateField returns CustomFieldDateField and true boolean if DateFieldSum is CustomFieldDateField.
+func (s DateFieldSum) GetCustomFieldDateField() (v CustomFieldDateField, ok bool) {
+	if !s.IsCustomFieldDateField() {
+		return v, false
+	}
+	return s.CustomFieldDateField, true
+}
+
+// NewCustomFieldDateFieldDateFieldSum returns new DateFieldSum from CustomFieldDateField.
+func NewCustomFieldDateFieldDateFieldSum(v CustomFieldDateField) DateFieldSum {
+	var s DateFieldSum
+	s.SetCustomFieldDateField(v)
+	return s
+}
+
+type DateOffsetDays int32
+
+// How often a date comes: `yearly` on each anniversary, from the year after the date's own; `once` on
+// the date itself. The birthday is always past, so it is only yearly.
+// Ref: #/components/schemas/DateRecurrence
+type DateRecurrence string
+
+const (
+	DateRecurrenceYearly DateRecurrence = "yearly"
+	DateRecurrenceOnce   DateRecurrence = "once"
+)
+
+// AllValues returns all DateRecurrence values.
+func (DateRecurrence) AllValues() []DateRecurrence {
+	return []DateRecurrence{
+		DateRecurrenceYearly,
+		DateRecurrenceOnce,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s DateRecurrence) MarshalText() ([]byte, error) {
+	switch s {
+	case DateRecurrenceYearly:
+		return []byte(s), nil
+	case DateRecurrenceOnce:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *DateRecurrence) UnmarshalText(data []byte) error {
+	switch DateRecurrence(data) {
+	case DateRecurrenceYearly:
+		*s = DateRecurrenceYearly
+		return nil
+	case DateRecurrenceOnce:
+		*s = DateRecurrenceOnce
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A Trigger that enrolls a Contact on a date it holds (ADR 0126): on each anniversary of its birthday
+// or of a datetime Custom field, or once on such a field, `offsetDays` before or after it, at
+// `localTime` in the Contact's time zone, or in the Workspace time zone when the Contact has no valid
+// one. A yearly date enrolls a Contact at most once per anniversary year, the year of the date the
+// offset counts from, and a once date at most once ever; an occurrence while the previous enrollment
+// is still active is skipped. Only occurrences after the automation was published enroll, at most 24
+// hours late, and the enrollment begins at the occurrence's moment with no triggering Event. A date
+// Trigger has no entry policy, cooldown or Enrollment key, and no rule's enroll action may name its
+// automation.
+// Ref: #/components/schemas/DateTrigger
+type DateTrigger struct {
+	Kind DateTriggerKind `json:"kind"`
+	// The date the occurrences come from.
+	Field DateField `json:"field"`
+	// Every year, or once.
+	Recurrence DateRecurrence `json:"recurrence"`
+	// Days before (negative) or after the date.
+	OffsetDays DateOffsetDays `json:"offsetDays"`
+	// The time of day of each occurrence, in the Contact's time zone.
+	LocalTime LocalTime `json:"localTime"`
+}
+
+// GetKind returns the value of Kind.
+func (s *DateTrigger) GetKind() DateTriggerKind {
+	return s.Kind
+}
+
+// GetField returns the value of Field.
+func (s *DateTrigger) GetField() DateField {
+	return s.Field
+}
+
+// GetRecurrence returns the value of Recurrence.
+func (s *DateTrigger) GetRecurrence() DateRecurrence {
+	return s.Recurrence
+}
+
+// GetOffsetDays returns the value of OffsetDays.
+func (s *DateTrigger) GetOffsetDays() DateOffsetDays {
+	return s.OffsetDays
+}
+
+// GetLocalTime returns the value of LocalTime.
+func (s *DateTrigger) GetLocalTime() LocalTime {
+	return s.LocalTime
+}
+
+// SetKind sets the value of Kind.
+func (s *DateTrigger) SetKind(val DateTriggerKind) {
+	s.Kind = val
+}
+
+// SetField sets the value of Field.
+func (s *DateTrigger) SetField(val DateField) {
+	s.Field = val
+}
+
+// SetRecurrence sets the value of Recurrence.
+func (s *DateTrigger) SetRecurrence(val DateRecurrence) {
+	s.Recurrence = val
+}
+
+// SetOffsetDays sets the value of OffsetDays.
+func (s *DateTrigger) SetOffsetDays(val DateOffsetDays) {
+	s.OffsetDays = val
+}
+
+// SetLocalTime sets the value of LocalTime.
+func (s *DateTrigger) SetLocalTime(val LocalTime) {
+	s.LocalTime = val
+}
+
+// A Trigger that enrolls a Contact on a date it holds (ADR 0126), as a request writes it.
+// Ref: #/components/schemas/DateTriggerInput
+type DateTriggerInput struct {
+	Kind DateTriggerInputKind `json:"kind"`
+	// The date the occurrences come from: the birthday, or a datetime Custom field of the Workspace's
+	// catalogue.
+	Field DateFieldInput `json:"field"`
+	// Every year, or once; the birthday is only yearly.
+	Recurrence DateRecurrence `json:"recurrence"`
+	// Days before (negative) or after the date, within 365.
+	OffsetDays DateOffsetDays `json:"offsetDays"`
+	// The time of day of each occurrence, `HH:MM`, in the Contact's time zone.
+	LocalTime LocalTime `json:"localTime"`
+}
+
+// GetKind returns the value of Kind.
+func (s *DateTriggerInput) GetKind() DateTriggerInputKind {
+	return s.Kind
+}
+
+// GetField returns the value of Field.
+func (s *DateTriggerInput) GetField() DateFieldInput {
+	return s.Field
+}
+
+// GetRecurrence returns the value of Recurrence.
+func (s *DateTriggerInput) GetRecurrence() DateRecurrence {
+	return s.Recurrence
+}
+
+// GetOffsetDays returns the value of OffsetDays.
+func (s *DateTriggerInput) GetOffsetDays() DateOffsetDays {
+	return s.OffsetDays
+}
+
+// GetLocalTime returns the value of LocalTime.
+func (s *DateTriggerInput) GetLocalTime() LocalTime {
+	return s.LocalTime
+}
+
+// SetKind sets the value of Kind.
+func (s *DateTriggerInput) SetKind(val DateTriggerInputKind) {
+	s.Kind = val
+}
+
+// SetField sets the value of Field.
+func (s *DateTriggerInput) SetField(val DateFieldInput) {
+	s.Field = val
+}
+
+// SetRecurrence sets the value of Recurrence.
+func (s *DateTriggerInput) SetRecurrence(val DateRecurrence) {
+	s.Recurrence = val
+}
+
+// SetOffsetDays sets the value of OffsetDays.
+func (s *DateTriggerInput) SetOffsetDays(val DateOffsetDays) {
+	s.OffsetDays = val
+}
+
+// SetLocalTime sets the value of LocalTime.
+func (s *DateTriggerInput) SetLocalTime(val LocalTime) {
+	s.LocalTime = val
+}
+
+type DateTriggerInputKind string
+
+const (
+	DateTriggerInputKindDate DateTriggerInputKind = "date"
+)
+
+// AllValues returns all DateTriggerInputKind values.
+func (DateTriggerInputKind) AllValues() []DateTriggerInputKind {
+	return []DateTriggerInputKind{
+		DateTriggerInputKindDate,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s DateTriggerInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case DateTriggerInputKindDate:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *DateTriggerInputKind) UnmarshalText(data []byte) error {
+	switch DateTriggerInputKind(data) {
+	case DateTriggerInputKindDate:
+		*s = DateTriggerInputKindDate
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type DateTriggerKind string
+
+const (
+	DateTriggerKindDate DateTriggerKind = "date"
+)
+
+// AllValues returns all DateTriggerKind values.
+func (DateTriggerKind) AllValues() []DateTriggerKind {
+	return []DateTriggerKind{
+		DateTriggerKindDate,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s DateTriggerKind) MarshalText() ([]byte, error) {
+	switch s {
+	case DateTriggerKindDate:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *DateTriggerKind) UnmarshalText(data []byte) error {
+	switch DateTriggerKind(data) {
+	case DateTriggerKindDate:
+		*s = DateTriggerKindDate
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -12918,6 +13619,8 @@ func (s *LintFinding) SetElement(val OptString) {
 func (s *LintFinding) SetDetail(val OptString) {
 	s.Detail = val
 }
+
+type LocalTime string
 
 type LocaleTag string
 
@@ -37069,7 +37772,10 @@ type SiteWorkspacesLeaveNoContent struct{}
 // key value in the automation before, under the `once` entry policy), `cooldown` (under `again`, the
 // cooldown from the beginning of the contact's previous enrollment for the key value had not passed)
 // or `enrollment_ceiling` (the keyed automation's contact had 10 active enrollments, or 10 begun in a
-// day).
+// day). An occurrence of a date Trigger (ADR 0126) is skipped as `active_enrollment` (an enrollment of
+// the contact was active at its moment), `missed` (it was reached 24 hours late or more) or
+// `send_locked` (its date was last written through a Connection without mcp:send; a later write of the
+// date may still enroll it within 24 hours).
 // Ref: #/components/schemas/SkippedEntryReason
 type SkippedEntryReason string
 
@@ -37080,6 +37786,8 @@ const (
 	SkippedEntryReasonOnce              SkippedEntryReason = "once"
 	SkippedEntryReasonCooldown          SkippedEntryReason = "cooldown"
 	SkippedEntryReasonEnrollmentCeiling SkippedEntryReason = "enrollment_ceiling"
+	SkippedEntryReasonMissed            SkippedEntryReason = "missed"
+	SkippedEntryReasonSendLocked        SkippedEntryReason = "send_locked"
 )
 
 // AllValues returns all SkippedEntryReason values.
@@ -37091,6 +37799,8 @@ func (SkippedEntryReason) AllValues() []SkippedEntryReason {
 		SkippedEntryReasonOnce,
 		SkippedEntryReasonCooldown,
 		SkippedEntryReasonEnrollmentCeiling,
+		SkippedEntryReasonMissed,
+		SkippedEntryReasonSendLocked,
 	}
 }
 
@@ -37108,6 +37818,10 @@ func (s SkippedEntryReason) MarshalText() ([]byte, error) {
 	case SkippedEntryReasonCooldown:
 		return []byte(s), nil
 	case SkippedEntryReasonEnrollmentCeiling:
+		return []byte(s), nil
+	case SkippedEntryReasonMissed:
+		return []byte(s), nil
+	case SkippedEntryReasonSendLocked:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -37135,6 +37849,12 @@ func (s *SkippedEntryReason) UnmarshalText(data []byte) error {
 	case SkippedEntryReasonEnrollmentCeiling:
 		*s = SkippedEntryReasonEnrollmentCeiling
 		return nil
+	case SkippedEntryReasonMissed:
+		*s = SkippedEntryReasonMissed
+		return nil
+	case SkippedEntryReasonSendLocked:
+		*s = SkippedEntryReasonSendLocked
+		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
@@ -37153,11 +37873,12 @@ type SkippedEntryResource struct {
 	// Why the entry was skipped.
 	Reason SkippedEntryReason `json:"reason"`
 	// The source id of the triggering Event (its dedupKey when it had one); absent when a rule's enroll
-	// action tried.
+	// action or a date Trigger's occurrence tried.
 	EventSourceId OptString `json:"eventSourceId"`
 	// The rule firing whose enroll action tried; absent when the automation's trigger did.
 	FiringId OptEntityId `json:"firingId"`
-	// When the enrollment would have begun: when its Event occurred.
+	// When the enrollment would have begun: when its Event occurred, or the moment of the date Trigger's
+	// occurrence.
 	OccurredAt Timestamp `json:"occurredAt"`
 	// When the entry was skipped.
 	CreatedAt Timestamp `json:"createdAt"`

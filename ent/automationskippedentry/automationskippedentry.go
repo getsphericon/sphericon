@@ -29,6 +29,8 @@ const (
 	FieldSourceID = "source_id"
 	// FieldFiringID holds the string denoting the firing_id field in the database.
 	FieldFiringID = "firing_id"
+	// FieldOccurrence holds the string denoting the occurrence field in the database.
+	FieldOccurrence = "occurrence"
 	// FieldReason holds the string denoting the reason field in the database.
 	FieldReason = "reason"
 	// FieldOccurredAt holds the string denoting the occurred_at field in the database.
@@ -83,6 +85,7 @@ var Columns = []string{
 	FieldContactID,
 	FieldSourceID,
 	FieldFiringID,
+	FieldOccurrence,
 	FieldReason,
 	FieldOccurredAt,
 }
@@ -117,6 +120,8 @@ const (
 	ReasonOnce              Reason = "once"
 	ReasonCooldown          Reason = "cooldown"
 	ReasonEnrollmentCeiling Reason = "enrollment_ceiling"
+	ReasonMissed            Reason = "missed"
+	ReasonSendLocked        Reason = "send_locked"
 )
 
 func (r Reason) String() string {
@@ -126,7 +131,7 @@ func (r Reason) String() string {
 // ReasonValidator is a validator for the "reason" field enum values. It is called by the builders before save.
 func ReasonValidator(r Reason) error {
 	switch r {
-	case ReasonNoEnrollmentKey, ReasonCycle, ReasonActiveEnrollment, ReasonOnce, ReasonCooldown, ReasonEnrollmentCeiling:
+	case ReasonNoEnrollmentKey, ReasonCycle, ReasonActiveEnrollment, ReasonOnce, ReasonCooldown, ReasonEnrollmentCeiling, ReasonMissed, ReasonSendLocked:
 		return nil
 	default:
 		return fmt.Errorf("automationskippedentry: invalid enum value for reason field: %q", r)
@@ -174,6 +179,11 @@ func BySourceID(opts ...sql.OrderTermOption) OrderOption {
 // ByFiringID orders the results by the firing_id field.
 func ByFiringID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFiringID, opts...).ToFunc()
+}
+
+// ByOccurrence orders the results by the occurrence field.
+func ByOccurrence(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOccurrence, opts...).ToFunc()
 }
 
 // ByReason orders the results by the reason field.

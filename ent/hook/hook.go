@@ -69,6 +69,18 @@ func (f AutomationFigureFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.V
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AutomationFigureMutation", m)
 }
 
+// The AutomationOccurrenceCursorFunc type is an adapter to allow the use of ordinary
+// function as AutomationOccurrenceCursor mutator.
+type AutomationOccurrenceCursorFunc func(context.Context, *ent.AutomationOccurrenceCursorMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AutomationOccurrenceCursorFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AutomationOccurrenceCursorMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AutomationOccurrenceCursorMutation", m)
+}
+
 // The AutomationRunFunc type is an adapter to allow the use of ordinary
 // function as AutomationRun mutator.
 type AutomationRunFunc func(context.Context, *ent.AutomationRunMutation) (ent.Value, error)

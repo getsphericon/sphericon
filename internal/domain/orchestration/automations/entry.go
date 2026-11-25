@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/ent/schema"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/optional"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
@@ -207,7 +208,14 @@ func judgeEntry(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, co
 		// entry to judge, and the insert makes nothing.
 		return next, nil
 	}
-	for _, check := range entryChecks {
+	checks := entryChecks
+	if o.Cause.byOccurrence() {
+		// An occurrence of a date Trigger (ADR 0126) has no key, no chain before it and no Entry
+		// policy: its uniqueness stands in for `once`, so only an Enrollment active at its moment
+		// skips it.
+		checks = []entryCheck{activeEnrollment}
+	}
+	for _, check := range checks {
 		reason, skipped := check(c)
 		if skipped {
 			return entry{reason: reason, skipped: true}, nil
@@ -224,7 +232,7 @@ func recordSkip(ctx context.Context, s *ent.Scoped, automationID, contactID int6
 		SetContactID(contactID).
 		SetReason(reason).
 		SetOccurredAt(o.OccurredAt)
-	err := o.Cause.insertSkip(ctx, create)
+	err := o.Cause.insertSkip(ctx, create, reason)
 	_, err = db.Inserted(err)
 	return err
 }
@@ -239,6 +247,12 @@ var _ = db.Declare(
 		"a skipped entry of an Event is written with ON CONFLICT DO NOTHING on this index"),
 	db.Fault("automation_skipped_entries_workspace_automation_firing",
 		"a skipped entry of a Firing is written with ON CONFLICT DO NOTHING on this index"),
+	db.Fault(schema.OccurrenceEnrollmentIndex,
+		"an Enrollment on an occurrence of a date Trigger is written with ON CONFLICT DO NOTHING on this index"),
+	db.Fault(schema.OccurrenceSkipIndex,
+		"a skipped entry deciding an occurrence is written with ON CONFLICT DO NOTHING on this index"),
+	db.Fault(schema.OccurrenceSendLockedIndex,
+		"a skipped entry of a send-locked occurrence is written with ON CONFLICT DO NOTHING on this index"),
 )
 
 // SkippedEntriesFilter names the Automation whose skipped entries are listed and, optionally, the

@@ -62,7 +62,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
+	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
@@ -483,6 +485,8 @@ type Converter interface {
 	TelegramConfigToResource(source integrations.RedactedTelegram) externalapi.TelegramConfig
 	// goverter:enum:transform value
 	EntryPolicyToResource(source automationversion.EntryPolicy) externalapi.EntryPolicy
+	// goverter:enum:transform value
+	DateRecurrenceToResource(source localcalendar.Recurrence) externalapi.DateRecurrence
 	// goverter:enum:transform value
 	SmsFromKindToResource(source messaging.SMSFromKind) externalapi.SmsFromKind
 	// goverter:map . Kind | twilioConfigKind
@@ -949,6 +953,12 @@ func segmentCondition(g conditiontree.Segment) (externalapi.SegmentCondition, er
 // automationTrigger maps a version's Trigger into the typed DTO by its kind: an Event matcher whose
 // filter is checked as a stored Condition is (convert.Document).
 func automationTrigger(c Converter, v *ent.AutomationVersion) (externalapi.AutomationTrigger, error) {
+	if d := automations.DateTriggerOf(v); d != nil {
+		return externalapi.AutomationTrigger{OneOf: externalapi.NewDateTriggerAutomationTriggerSum(externalapi.DateTrigger{
+			Kind: externalapi.DateTriggerKindDate, Field: dateField(d.Field), Recurrence: c.DateRecurrenceToResource(d.Recurrence),
+			OffsetDays: externalapi.DateOffsetDays(narrow.Int32(d.OffsetDays)), LocalTime: externalapi.LocalTime(d.LocalTime),
+		})}, nil
+	}
 	m := automations.TriggerOf(v)
 	ev := externalapi.EventTrigger{
 		Kind: externalapi.EventTriggerKindEvent, Action: m.Action,
@@ -963,6 +973,19 @@ func automationTrigger(c Converter, v *ent.AutomationVersion) (externalapi.Autom
 		ev.Filter = externalapi.NewOptEventFilter(f)
 	}
 	return externalapi.AutomationTrigger{OneOf: externalapi.NewEventTriggerAutomationTriggerSum(ev)}, nil
+}
+
+// dateField maps a date Trigger's field into the typed DTO by its kind. A stored field is checked
+// when it is written, so a kind it does not know is the birthday's never.
+func dateField(f datetrigger.Field) externalapi.DateField {
+	switch f.Kind {
+	case datetrigger.CustomField:
+		return externalapi.DateField{OneOf: externalapi.NewCustomFieldDateFieldDateFieldSum(externalapi.CustomFieldDateField{
+			Kind: externalapi.CustomFieldDateFieldKindCustomField, Key: f.Key,
+		})}
+	case datetrigger.Birthday:
+	}
+	return externalapi.DateField{OneOf: externalapi.NewBirthdayDateFieldDateFieldSum(externalapi.BirthdayDateField{Kind: externalapi.BirthdayDateFieldKindBirthday})}
 }
 
 // eventMatcher maps an exit or goal event into the typed DTO, its filter checked as a stored

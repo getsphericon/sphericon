@@ -850,6 +850,11 @@
         "maxLength": 100000,
         "description": "A Legal document's text, in Markdown"
       },
+      "LocalTime": {
+        "type": "string",
+        "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$",
+        "description": "A local time of day in whole minutes, `HH:MM` from 00:00 to 23:59, read in a time zone the\nplace that holds it names"
+      },
       "LocaleTag": {
         "type": "string",
         "maxLength": 35,

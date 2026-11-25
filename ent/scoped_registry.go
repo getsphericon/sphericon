@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationfigure"
+	"github.com/getsphericon/sphericon/ent/automationoccurrencecursor"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
@@ -315,6 +316,12 @@ func ScopedEntities() []*ScopedEntity {
 						return s.Automation().UpdateOneID(id).AddRunIDs(target).Exec(ctx)
 					},
 				},
+				{
+					Name: "occurrence_cursor", Target: "AutomationOccurrenceCursor",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Automation().UpdateOneID(id).SetOccurrenceCursorID(target).Exec(ctx)
+					},
+				},
 			},
 		},
 		{
@@ -356,6 +363,53 @@ func ScopedEntities() []*ScopedEntity {
 				b.SetBounced(src.Bounced)
 				b.SetComplained(src.Complained)
 				b.SetCaptured(src.Captured)
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
+		},
+		{
+			Kind:         Kinds["AutomationOccurrenceCursor"],
+			Name:         "AutomationOccurrenceCursor",
+			Wrapper:      reflect.TypeFor[*AutomationOccurrenceCursorScoped](),
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.AutomationOccurrenceCursor.Query().Where(automationoccurrencecursor.WorkspaceID(ws)).Order(Asc(automationoccurrencecursor.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.AutomationOccurrenceCursor().Get(ctx, id)
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.AutomationOccurrenceCursor().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.AutomationOccurrenceCursor().Update().Where(automationoccurrencecursor.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.AutomationOccurrenceCursor().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.AutomationOccurrenceCursor().Delete().Where(automationoccurrencecursor.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.AutomationOccurrenceCursor.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.AutomationOccurrenceCursor().Create()
+				b.SetAutomationID(remap("Automation", src.AutomationID))
+				b.SetSpanStart(src.SpanStart)
+				b.SetDecidedThrough(src.DecidedThrough)
+				if src.WorkspaceZone != nil {
+					b.SetWorkspaceZone(*src.WorkspaceZone)
+				}
+				if src.ContactsSeenThrough != nil {
+					b.SetContactsSeenThrough(*src.ContactsSeenThrough)
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err
@@ -410,6 +464,9 @@ func ScopedEntities() []*ScopedEntity {
 				}
 				if src.FiringID != nil {
 					b.SetFiringID(remap("RuleFiring", *src.FiringID))
+				}
+				if src.Occurrence != nil {
+					b.SetOccurrence(*src.Occurrence)
 				}
 				b.SetChain(src.Chain)
 				b.SetOrdinal(src.Ordinal)
@@ -498,6 +555,9 @@ func ScopedEntities() []*ScopedEntity {
 				}
 				if src.FiringID != nil {
 					b.SetFiringID(remap("RuleFiring", *src.FiringID))
+				}
+				if src.Occurrence != nil {
+					b.SetOccurrence(*src.Occurrence)
 				}
 				b.SetReason(src.Reason)
 				b.SetOccurredAt(src.OccurredAt)
@@ -604,6 +664,9 @@ func ScopedEntities() []*ScopedEntity {
 				b.SetTriggerAction(src.TriggerAction)
 				if !reflect.ValueOf(src.TriggerFilter).IsZero() {
 					b.SetTriggerFilter(src.TriggerFilter)
+				}
+				if !reflect.ValueOf(src.TriggerDate).IsZero() {
+					b.SetTriggerDate(src.TriggerDate)
 				}
 				b.SetExits(src.Exits)
 				if !reflect.ValueOf(src.Goal).IsZero() {
@@ -1242,6 +1305,7 @@ func ScopedEntities() []*ScopedEntity {
 				if !reflect.ValueOf(src.CustomFields).IsZero() {
 					b.SetCustomFields(src.CustomFields)
 				}
+				b.SetSendLockedDates(src.SendLockedDates)
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

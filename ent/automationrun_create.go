@@ -156,6 +156,20 @@ func (_c *AutomationRunCreate) SetNillableFiringID(v *int64) *AutomationRunCreat
 	return _c
 }
 
+// SetOccurrence sets the "occurrence" field.
+func (_c *AutomationRunCreate) SetOccurrence(v int) *AutomationRunCreate {
+	_c.mutation.SetOccurrence(v)
+	return _c
+}
+
+// SetNillableOccurrence sets the "occurrence" field if the given value is not nil.
+func (_c *AutomationRunCreate) SetNillableOccurrence(v *int) *AutomationRunCreate {
+	if v != nil {
+		_c.SetOccurrence(*v)
+	}
+	return _c
+}
+
 // SetChain sets the "chain" field.
 func (_c *AutomationRunCreate) SetChain(v []int64) *AutomationRunCreate {
 	_c.mutation.SetChain(v)
@@ -468,6 +482,10 @@ func (_c *AutomationRunCreate) createSpec() (*AutomationRun, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.TriggerSourceID(); ok {
 		_spec.SetField(automationrun.FieldTriggerSourceID, field.TypeString, value)
 		_node.TriggerSourceID = &value
+	}
+	if value, ok := _c.mutation.Occurrence(); ok {
+		_spec.SetField(automationrun.FieldOccurrence, field.TypeInt, value)
+		_node.Occurrence = &value
 	}
 	if value, ok := _c.mutation.Chain(); ok {
 		_spec.SetField(automationrun.FieldChain, field.TypeJSON, value)
@@ -862,6 +880,9 @@ func (u *AutomationRunUpsertOne) UpdateNewValues() *AutomationRunUpsertOne {
 		}
 		if _, exists := u.create.mutation.FiringID(); exists {
 			s.SetIgnore(automationrun.FieldFiringID)
+		}
+		if _, exists := u.create.mutation.Occurrence(); exists {
+			s.SetIgnore(automationrun.FieldOccurrence)
 		}
 		if _, exists := u.create.mutation.Chain(); exists {
 			s.SetIgnore(automationrun.FieldChain)
@@ -1319,6 +1340,9 @@ func (u *AutomationRunUpsertBulk) UpdateNewValues() *AutomationRunUpsertBulk {
 			}
 			if _, exists := b.mutation.FiringID(); exists {
 				s.SetIgnore(automationrun.FieldFiringID)
+			}
+			if _, exists := b.mutation.Occurrence(); exists {
+				s.SetIgnore(automationrun.FieldOccurrence)
 			}
 			if _, exists := b.mutation.Chain(); exists {
 				s.SetIgnore(automationrun.FieldChain)

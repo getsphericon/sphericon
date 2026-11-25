@@ -159,6 +159,12 @@ export const zImageUrl = z.string().max(2048).regex(/^https:\/\/\S+$/);
 export const zJsonObject = z.record(z.string(), z.unknown());
 
 /**
+ * A local time of day in whole minutes, `HH:MM` from 00:00 to 23:59, read in a time zone the
+ * place that holds it names
+ */
+export const zLocalTime = z.string().regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/);
+
+/**
  * A BCP 47 language tag: a language, optionally with a script and a region (`de`, `pt-BR`)
  */
 export const zLocaleTag = z.string().max(35).regex(/^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/);

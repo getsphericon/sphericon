@@ -84,7 +84,7 @@ func (m *Module) Tag(ctx context.Context, l *ent.WorkspaceLocked, name string) e
 // Definition use: a Segment, a kept Rule and an armed Broadcast that test it with a Condition leaf
 // a field of type t does not take, whose Conditions would stop compiling (ADR 0006), or that name
 // it in an event test's filter (ADR 0153), and a kept Automation whose live version's or draft's
-// Trigger filter names it (ADR 0133) or whose Branch's Condition tests it with such a leaf or names
+// date Trigger names it (ADR 0126) or Trigger filter names it (ADR 0133) or whose Branch's Condition tests it with such a leaf or names
 // it in an event test's filter (ADR 0124, ADR 0153). A Custom field
 // has no delete, so a retype is the change that removes the field a filter names: any retype is
 // refused while one does. A leaf every type takes (notNull) does not hold the type. It returns

@@ -332,8 +332,15 @@ export function AutomationsListPage() {
             title: t(($) => $.automations.triggerColumn),
             // What enrolls Contacts: the live version's Trigger, or the draft's before publishing.
             render: (record) => {
-              const trigger = (record.live ?? record.draft)?.trigger.action
-              return trigger === undefined ? '-' : <EventActionName action={trigger} />
+              const trigger = (record.live ?? record.draft)?.trigger
+              if (trigger === undefined) {
+                return '-'
+              }
+              return trigger.kind === 'event' ? (
+                <EventActionName action={trigger.action} />
+              ) : (
+                t(($) => $.automations.triggerOnDate)
+              )
             },
           },
           {

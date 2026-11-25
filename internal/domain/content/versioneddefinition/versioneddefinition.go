@@ -46,8 +46,12 @@ type Definition[O, V, E, B any] interface {
 	// of what it names (ADR 0099), so it is written under the Workspace lock (ADR 0108).
 	Write(ctx context.Context, l *ent.WorkspaceLocked, id int64, number int, draft *V, body B) (int64, error)
 	// Publishable refuses a version that cannot go live: the draft Publish promotes, or the
-	// inactive live version Publish makes active again. Either arms the object.
-	Publishable(ctx context.Context, ts *ent.Scoped, version *V) error
+	// inactive live version Publish makes active again. Either arms the object. It reads under the
+	// Workspace lock, where what may name the object checks for it (ADR 0108).
+	Publishable(ctx context.Context, l *ent.WorkspaceLocked, version *V) error
+	// Published runs in the transaction of a Publish that made version the live and active one,
+	// after the move: what the kind keeps of when its live version began to act.
+	Published(ctx context.Context, l *ent.WorkspaceLocked, version *V) error
 	// Archivable refuses to archive the object while live work still needs it, read under the
 	// Workspace lock (ADR 0108).
 	Archivable(ctx context.Context, l *ent.WorkspaceLocked, row *O) error
@@ -260,19 +264,19 @@ func (l *Lifecycle[O, V, E, B]) Publish(ctx context.Context, s *ent.Scoped, id, 
 		}
 		switch {
 		case st.Draft != nil:
-			if err := l.def.Publishable(ctx, ts, st.Draft); err != nil {
+			if err := l.def.Publishable(ctx, wl, st.Draft); err != nil {
 				return err
 			}
-			return l.publish(ctx, wl, st)
+			return l.publish(ctx, wl, st, st.Draft)
 		case st.Live == nil:
 			return l.errs.NothingToPublish
 		case st.Active:
 			return nil // live and active already
 		default:
-			if err := l.def.Publishable(ctx, ts, st.Live); err != nil {
+			if err := l.def.Publishable(ctx, wl, st.Live); err != nil {
 				return err
 			}
-			return l.publish(ctx, wl, st)
+			return l.publish(ctx, wl, st, st.Live)
 		}
 	})
 	if err != nil {
@@ -282,9 +286,13 @@ func (l *Lifecycle[O, V, E, B]) Publish(ctx context.Context, s *ent.Scoped, id, 
 }
 
 // publish makes the version st stands on live and the object active: the write that makes it Live
-// use (ADR 0099), so it takes the Workspace lock (ADR 0108).
-func (l *Lifecycle[O, V, E, B]) publish(ctx context.Context, wl *ent.WorkspaceLocked, st ent.VersionState[O, V]) error {
-	return l.move(ctx, l.def.Store(wl.Scope()), st, Publish, 0, "")
+// use (ADR 0099), so it takes the Workspace lock (ADR 0108). version is the one going live, which
+// the definition is told of once it is (Published).
+func (l *Lifecycle[O, V, E, B]) publish(ctx context.Context, wl *ent.WorkspaceLocked, st ent.VersionState[O, V], version *V) error {
+	if err := l.move(ctx, l.def.Store(wl.Scope()), st, Publish, 0, ""); err != nil {
+		return err
+	}
+	return l.def.Published(ctx, wl, version)
 }
 
 // Revert drops the draft: the live version is again the latest. It is refused (NothingToRevert)

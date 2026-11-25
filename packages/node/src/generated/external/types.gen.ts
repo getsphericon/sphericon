@@ -820,14 +820,22 @@ export type AutomationStepInput = ({
 } & SplitStepInput);
 
 /**
- * What enrolls a Contact in an automation, by `kind`: an Event matcher
+ * What enrolls a Contact in an automation, by `kind`: an Event matcher or a date
  */
-export type AutomationTrigger = EventTrigger;
+export type AutomationTrigger = ({
+  kind: 'event';
+} & EventTrigger) | ({
+  kind: 'date';
+} & DateTrigger);
 
 /**
- * What enrolls a Contact in an automation, by `kind`: an Event matcher
+ * What enrolls a Contact in an automation, by `kind`: an Event matcher or a date
  */
-export type AutomationTriggerInput = EventTriggerInput;
+export type AutomationTriggerInput = ({
+  kind: 'event';
+} & EventTriggerInput) | ({
+  kind: 'date';
+} & DateTriggerInput);
 
 /**
  * One version of an automation's definition: what publishing makes it do (ADR 0065)
@@ -877,6 +885,20 @@ export type AutomationVersionStepFigures = {
    * Messages skipped, as in AutomationStepFigures
    */
   skipped: number;
+};
+
+/**
+ * The Contact's date of birth, a date field every Contact has
+ */
+export type BirthdayDateField = {
+  kind: 'birthday';
+};
+
+/**
+ * The Contact's date of birth, a date field every Contact has
+ */
+export type BirthdayDateFieldInput = {
+  kind: 'birthday';
 };
 
 /**
@@ -2670,6 +2692,32 @@ export type CustomFieldConditionTests = {
 };
 
 /**
+ * A datetime Custom field of the Workspace, its key in a field of its own. Its value's calendar
+ * date is read in the Workspace time zone: a value with an offset is moved into it, one without an
+ * offset or a bare date keeps its own date.
+ */
+export type CustomFieldDateField = {
+  kind: 'customField';
+  /**
+   * The Custom field's key
+   */
+  key: string;
+};
+
+/**
+ * A datetime Custom field of the Workspace, its key in a field of its own. Its value's calendar
+ * date is read in the Workspace time zone: a value with an offset is moved into it, one without an
+ * offset or a bare date keeps its own date.
+ */
+export type CustomFieldDateFieldInput = {
+  kind: 'customField';
+  /**
+   * The Custom field's key
+   */
+  key: string;
+};
+
+/**
  * A test of a Custom field of the Workspace, its key in a field of its own
  */
 export type CustomFieldLeaf = {
@@ -2785,6 +2833,96 @@ export const CustomFieldType = {
  * A Custom field's value type
  */
 export type CustomFieldType = typeof CustomFieldType[keyof typeof CustomFieldType];
+
+/**
+ * A date a Contact holds, by `kind`: its `birthday`, or a datetime Custom field
+ */
+export type DateField = ({
+  kind: 'birthday';
+} & BirthdayDateField) | ({
+  kind: 'customField';
+} & CustomFieldDateField);
+
+/**
+ * A date a Contact holds, by `kind`, as a request writes it
+ */
+export type DateFieldInput = ({
+  kind: 'birthday';
+} & BirthdayDateFieldInput) | ({
+  kind: 'customField';
+} & CustomFieldDateFieldInput);
+
+/**
+ * A whole number of days before (negative) or after the date, within a year
+ */
+export type DateOffsetDays = number;
+
+/**
+ * How often a date comes: `yearly` on each anniversary, from the year after the date's own;
+ * `once` on the date itself. The birthday is always past, so it is only yearly.
+ */
+export const DateRecurrence = { YEARLY: 'yearly', ONCE: 'once' } as const;
+
+/**
+ * How often a date comes: `yearly` on each anniversary, from the year after the date's own;
+ * `once` on the date itself. The birthday is always past, so it is only yearly.
+ */
+export type DateRecurrence = typeof DateRecurrence[keyof typeof DateRecurrence];
+
+/**
+ * A Trigger that enrolls a Contact on a date it holds (ADR 0126): on each anniversary of its
+ * birthday or of a datetime Custom field, or once on such a field, `offsetDays` before or after it,
+ * at `localTime` in the Contact's time zone, or in the Workspace time zone when the Contact has no
+ * valid one. A yearly date enrolls a Contact at most once per anniversary year, the year of the date
+ * the offset counts from, and a once date at most once ever; an occurrence while the previous
+ * enrollment is still active is skipped. Only occurrences after the automation was published
+ * enroll, at most 24 hours late, and the enrollment begins at the occurrence's moment with no
+ * triggering Event. A date Trigger has no entry policy, cooldown or Enrollment key, and no rule's
+ * enroll action may name its automation.
+ */
+export type DateTrigger = {
+  kind: 'date';
+  /**
+   * The date the occurrences come from
+   */
+  field: DateField;
+  /**
+   * Every year, or once
+   */
+  recurrence: DateRecurrence;
+  /**
+   * Days before (negative) or after the date
+   */
+  offsetDays: DateOffsetDays;
+  /**
+   * The time of day of each occurrence, in the Contact's time zone
+   */
+  localTime: LocalTime;
+};
+
+/**
+ * A Trigger that enrolls a Contact on a date it holds (ADR 0126), as a request writes it
+ */
+export type DateTriggerInput = {
+  kind: 'date';
+  /**
+   * The date the occurrences come from: the birthday, or a datetime Custom field of the
+   * Workspace's catalogue
+   */
+  field: DateFieldInput;
+  /**
+   * Every year, or once; the birthday is only yearly
+   */
+  recurrence: DateRecurrence;
+  /**
+   * Days before (negative) or after the date, within 365
+   */
+  offsetDays: DateOffsetDays;
+  /**
+   * The time of day of each occurrence, `HH:MM`, in the Contact's time zone
+   */
+  localTime: LocalTime;
+};
 
 /**
  * What a Deferral waits for: the send is not consumed and goes through every check again when it is retried
@@ -4587,6 +4725,12 @@ export type LintFinding = {
 };
 
 /**
+ * A local time of day in whole minutes, `HH:MM` from 00:00 to 23:59, read in a time zone the
+ * place that holds it names
+ */
+export type LocalTime = string;
+
+/**
  * A BCP 47 language tag: a language, optionally with a script and a region (`de`, `pt-BR`)
  */
 export type LocaleTag = string;
@@ -6177,7 +6321,10 @@ export type SigningSecret = string;
  * enrollment for the key value in the automation before, under the `once` entry policy),
  * `cooldown` (under `again`, the cooldown from the beginning of the contact's previous enrollment
  * for the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10
- * active enrollments, or 10 begun in a day).
+ * active enrollments, or 10 begun in a day). An occurrence of a date Trigger (ADR 0126) is skipped as
+ * `active_enrollment` (an enrollment of the contact was active at its moment), `missed` (it was
+ * reached 24 hours late or more) or `send_locked` (its date was last written through a Connection
+ * without mcp:send; a later write of the date may still enroll it within 24 hours).
  */
 export const SkippedEntryReason = {
   NO_ENROLLMENT_KEY: 'no_enrollment_key',
@@ -6185,7 +6332,9 @@ export const SkippedEntryReason = {
   ACTIVE_ENROLLMENT: 'active_enrollment',
   ONCE: 'once',
   COOLDOWN: 'cooldown',
-  ENROLLMENT_CEILING: 'enrollment_ceiling'
+  ENROLLMENT_CEILING: 'enrollment_ceiling',
+  MISSED: 'missed',
+  SEND_LOCKED: 'send_locked'
 } as const;
 
 /**
@@ -6197,7 +6346,10 @@ export const SkippedEntryReason = {
  * enrollment for the key value in the automation before, under the `once` entry policy),
  * `cooldown` (under `again`, the cooldown from the beginning of the contact's previous enrollment
  * for the key value had not passed) or `enrollment_ceiling` (the keyed automation's contact had 10
- * active enrollments, or 10 begun in a day).
+ * active enrollments, or 10 begun in a day). An occurrence of a date Trigger (ADR 0126) is skipped as
+ * `active_enrollment` (an enrollment of the contact was active at its moment), `missed` (it was
+ * reached 24 hours late or more) or `send_locked` (its date was last written through a Connection
+ * without mcp:send; a later write of the date may still enroll it within 24 hours).
  */
 export type SkippedEntryReason = typeof SkippedEntryReason[keyof typeof SkippedEntryReason];
 
@@ -6224,7 +6376,7 @@ export type SkippedEntryResource = {
   reason: SkippedEntryReason;
   /**
    * The source id of the triggering Event (its dedupKey when it had one); absent when a rule's
-   * enroll action tried
+   * enroll action or a date Trigger's occurrence tried
    */
   eventSourceId?: string;
   /**
@@ -6232,7 +6384,8 @@ export type SkippedEntryResource = {
    */
   firingId?: EntityId;
   /**
-   * When the enrollment would have begun: when its Event occurred
+   * When the enrollment would have begun: when its Event occurred, or the moment of the date
+   * Trigger's occurrence
    */
   occurredAt: Timestamp;
   /**
