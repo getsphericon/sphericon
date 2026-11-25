@@ -140,6 +140,8 @@ import (
 // goverter:extend httpStepType
 // goverter:extend endStepType
 // goverter:extend branchStepType
+// goverter:extend splitStepType
+// goverter:extend splitPathStepViews
 // goverter:extend pathStepViews
 // goverter:extend optAutomationPath
 // goverter:extend branchCondition
@@ -435,6 +437,16 @@ type Converter interface {
 	EndStepToResource(source automations.EndView) siteapi.EndStep
 	BranchStepToResource(source automations.BranchView) (siteapi.BranchStep, error)
 	BranchPathToResource(source automations.BranchPathView) (siteapi.BranchPath, error)
+	// The kind of a Step of the root's union as the kind of a Step of a fork's path: the two unions
+	// have the same arms (pathStepViews).
+	// goverter:enum:transform value
+	PathStepType(source siteapi.AutomationStepSumType) siteapi.PathStepSumType
+	// The kind of a Step of the root's union as the kind of a Step of a Split's path: the two unions
+	// have the same arms (splitPathStepViews).
+	// goverter:enum:transform value
+	SplitPathStepType(source siteapi.AutomationStepSumType) siteapi.SplitPathStepSumType
+	SplitStepToResource(source automations.SplitView) (siteapi.SplitStep, error)
+	SplitPathToResource(source automations.SplitPathView) (siteapi.SplitPath, error)
 	// goverter:ignore Value
 	AutomationHttpHeaderToResource(source automations.HeaderName) siteapi.AutomationHttpHeader
 	TelegramButtonToResource(source telegramrender.Button) siteapi.TelegramButton
@@ -1168,9 +1180,29 @@ func pathStepViews(c Converter, views []automations.StepView) ([]siteapi.PathSte
 			return nil, err
 		}
 		out = append(out, siteapi.PathStep{OneOf: siteapi.PathStepSum{
-			Type: siteapi.PathStepSumType(sum.Type), EmailStep: sum.EmailStep, TelegramStep: sum.TelegramStep,
+			Type: c.PathStepType(sum.Type), EmailStep: sum.EmailStep, TelegramStep: sum.TelegramStep,
 			SmsStep: sum.SmsStep, WaitStep: sum.WaitStep, ApplyTagStep: sum.ApplyTagStep,
 			RemoveTagStep: sum.RemoveTagStep, HttpStep: sum.HttpStep, EndStep: sum.EndStep, BranchStep: sum.BranchStep,
+			SplitStep: sum.SplitStep,
+		}})
+	}
+	return out, nil
+}
+
+// splitPathStepViews wraps each Step's view of a Split's path in the arm of its kind (stepSum): the
+// contract's union of a Split's path has the arms of the root's.
+func splitPathStepViews(c Converter, views []automations.StepView) ([]siteapi.SplitPathStep, error) {
+	out := make([]siteapi.SplitPathStep, 0, len(views))
+	for _, v := range views {
+		sum, err := stepSum(c, v)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, siteapi.SplitPathStep{OneOf: siteapi.SplitPathStepSum{
+			Type: c.SplitPathStepType(sum.Type), EmailStep: sum.EmailStep, TelegramStep: sum.TelegramStep,
+			SmsStep: sum.SmsStep, WaitStep: sum.WaitStep, ApplyTagStep: sum.ApplyTagStep,
+			RemoveTagStep: sum.RemoveTagStep, HttpStep: sum.HttpStep, EndStep: sum.EndStep, BranchStep: sum.BranchStep,
+			SplitStep: sum.SplitStep,
 		}})
 	}
 	return out, nil
@@ -1208,6 +1240,12 @@ func stepSum(c Converter, v automations.StepView) (siteapi.AutomationStepSum, er
 			return siteapi.AutomationStepSum{}, err
 		}
 		return siteapi.NewBranchStepAutomationStepSum(b), nil
+	case automations.SplitView:
+		sp, err := c.SplitStepToResource(v)
+		if err != nil {
+			return siteapi.AutomationStepSum{}, err
+		}
+		return siteapi.NewSplitStepAutomationStepSum(sp), nil
 	default:
 		return siteapi.AutomationStepSum{}, fmt.Errorf("the step view %T has no arm", v)
 	}
@@ -1247,6 +1285,9 @@ func httpStepType(automationstep.Kind) siteapi.HttpStepType { return siteapi.Htt
 func endStepType(automationstep.Kind) siteapi.EndStepType   { return siteapi.EndStepTypeEnd }
 func branchStepType(automationstep.Kind) siteapi.BranchStepType {
 	return siteapi.BranchStepTypeBranch
+}
+func splitStepType(automationstep.Kind) siteapi.SplitStepType {
+	return siteapi.SplitStepTypeSplit
 }
 
 func optEditorDocument(doc json.RawMessage) siteapi.OptEditorDocument {

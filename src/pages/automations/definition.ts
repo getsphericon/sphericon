@@ -163,6 +163,7 @@ function draftOf(step: AutomationStep): EditedStep | null {
       return { id, kind: 'remove_tag', draft: { tag: step.tag } }
     case 'end':
     case 'branch':
+    case 'split':
     default:
       return null
   }

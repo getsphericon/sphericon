@@ -1914,6 +1914,34 @@ func (c *ConverterImpl) PasskeysToResources(source []*ent.Passkey) []site.SitePa
 	}
 	return siteapiSitePasskeyList
 }
+func (c *ConverterImpl) PathStepType(source site.AutomationStepSumType) site.PathStepSumType {
+	var siteapiPathStepSumType site.PathStepSumType
+	switch source {
+	case site.ApplyTagStepAutomationStepSum:
+		siteapiPathStepSumType = site.ApplyTagStepPathStepSum
+	case site.BranchStepAutomationStepSum:
+		siteapiPathStepSumType = site.BranchStepPathStepSum
+	case site.EmailStepAutomationStepSum:
+		siteapiPathStepSumType = site.EmailStepPathStepSum
+	case site.EndStepAutomationStepSum:
+		siteapiPathStepSumType = site.EndStepPathStepSum
+	case site.HttpStepAutomationStepSum:
+		siteapiPathStepSumType = site.HttpStepPathStepSum
+	case site.RemoveTagStepAutomationStepSum:
+		siteapiPathStepSumType = site.RemoveTagStepPathStepSum
+	case site.SmsStepAutomationStepSum:
+		siteapiPathStepSumType = site.SmsStepPathStepSum
+	case site.SplitStepAutomationStepSum:
+		siteapiPathStepSumType = site.SplitStepPathStepSum
+	case site.TelegramStepAutomationStepSum:
+		siteapiPathStepSumType = site.TelegramStepPathStepSum
+	case site.WaitStepAutomationStepSum:
+		siteapiPathStepSumType = site.WaitStepPathStepSum
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiPathStepSumType
+}
 func (c *ConverterImpl) PendingSignupToResource(source *ent.PendingSignup) *site.SitePendingSignup {
 	var pSiteapiSitePendingSignup *site.SitePendingSignup
 	if source != nil {
@@ -2687,6 +2715,61 @@ func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) s
 	siteapiSmtpConfig.From = site.EmailAddress(source.From)
 	siteapiSmtpConfig.FromName = omitEmpty(source.FromName)
 	return siteapiSmtpConfig
+}
+func (c *ConverterImpl) SplitPathStepType(source site.AutomationStepSumType) site.SplitPathStepSumType {
+	var siteapiSplitPathStepSumType site.SplitPathStepSumType
+	switch source {
+	case site.ApplyTagStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.ApplyTagStepSplitPathStepSum
+	case site.BranchStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.BranchStepSplitPathStepSum
+	case site.EmailStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.EmailStepSplitPathStepSum
+	case site.EndStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.EndStepSplitPathStepSum
+	case site.HttpStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.HttpStepSplitPathStepSum
+	case site.RemoveTagStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.RemoveTagStepSplitPathStepSum
+	case site.SmsStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.SmsStepSplitPathStepSum
+	case site.SplitStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.SplitStepSplitPathStepSum
+	case site.TelegramStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.TelegramStepSplitPathStepSum
+	case site.WaitStepAutomationStepSum:
+		siteapiSplitPathStepSumType = site.WaitStepSplitPathStepSum
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiSplitPathStepSumType
+}
+func (c *ConverterImpl) SplitPathToResource(source automations.SplitPathView) (site.SplitPath, error) {
+	var siteapiSplitPath site.SplitPath
+	siteapiSplitPath.ID = site.StepId(source.ID)
+	siteapiSplitPath.Weight = count(source.Weight)
+	siteapiSplitPathStepList, err := splitPathStepViews(c, source.Steps)
+	if err != nil {
+		return siteapiSplitPath, err
+	}
+	siteapiSplitPath.Steps = siteapiSplitPathStepList
+	return siteapiSplitPath, nil
+}
+func (c *ConverterImpl) SplitStepToResource(source automations.SplitView) (site.SplitStep, error) {
+	var siteapiSplitStep site.SplitStep
+	siteapiSplitStep.ID = site.StepId(source.ID)
+	siteapiSplitStep.Type = splitStepType(source.Type)
+	if source.Paths != nil {
+		siteapiSplitStep.Paths = make([]site.SplitPath, len(source.Paths))
+		for i := 0; i < len(source.Paths); i++ {
+			siteapiSplitPath, err := c.SplitPathToResource(source.Paths[i])
+			if err != nil {
+				return siteapiSplitStep, err
+			}
+			siteapiSplitStep.Paths[i] = siteapiSplitPath
+		}
+	}
+	return siteapiSplitStep, nil
 }
 func (c *ConverterImpl) StartLinkToResource(source bindings.StartLink) site.TelegramStartLinkResource {
 	var siteapiTelegramStartLinkResource site.TelegramStartLinkResource

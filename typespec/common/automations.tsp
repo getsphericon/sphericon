@@ -376,6 +376,58 @@ model BranchStepInput {
   `unknown`?: AutomationPathInput;
 }
 
+/** A path of a Split: its share of the Contacts and its Steps */
+model SplitPath {
+  /** The path's id */
+  id: StepId;
+
+  /** The path's share of the Contacts that reach the Split, a whole percentage */
+  weight: int32;
+
+  /** The path's Steps, in order; none is a holdout, sent nothing, that goes on to the Step after
+   * the Split */
+  steps: SplitPathStep[];
+}
+
+/** A path of a Split, as a request writes it */
+model SplitPathInput {
+  /** The path's id; omitted, the path is given one */
+  id?: StepId;
+
+  /** The path's share of the Contacts that reach the Split, a whole percentage of at least 1. The
+   * weights of a Split's paths sum to 100, or the save is refused, naming the Split. */
+  weight: int32;
+
+  /** The path's Steps, in order; none is a holdout, sent nothing, that goes on to the Step after
+   * the Split */
+  steps: SplitPathStepInput[];
+}
+
+/** A Step that sends each Enrollment down one of its paths by weight (ADR 0124): a hash of the
+ * Contact, the Split and the Enrollment's ordinal chooses the path, so the same Enrollment always
+ * takes the same path and a new Enrollment of the Contact draws again. An empty path is a holdout.
+ * The paths rejoin at the Step after the Split. */
+model SplitStep {
+  /** The Step's id */
+  id: StepId;
+
+  type: "split";
+
+  /** The paths, in order */
+  paths: SplitPath[];
+}
+
+/** A Split, as a request writes it. It needs two to ten paths, with weights summing to 100. */
+model SplitStepInput {
+  /** The Step's id; omitted, the Step is given one */
+  id?: StepId;
+
+  type: "split";
+
+  /** The paths, in order */
+  paths: SplitPathInput[];
+}
+
 /** One Step of an automation, by `type` */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "type" })
 union AutomationStep {
@@ -388,6 +440,7 @@ union AutomationStep {
   http: HttpStep,
   end: EndStep,
   branch: BranchStep,
+  split: SplitStep,
 }
 
 /** One Step of an automation, by `type`, as a request writes it. A field of another kind is refused. */
@@ -402,13 +455,15 @@ union AutomationStepInput {
   http: HttpStepInput,
   end: EndStepInput,
   branch: BranchStepInput,
+  split: SplitStepInput,
 }
 
 // A fork's listed paths hold their Steps through a union of their own, the same arms as
-// AutomationStep: ogen breaks a recursion only at an object, so the union a Branch's path reaches
-// must be one that no Step union above it is still being built from.
+// AutomationStep: ogen breaks a recursion only at an object, so the union a fork's path reaches
+// must be one that no Step union above it is still being built from. Each fork kind has its own:
+// a union shared by two forks is reached again, through the other fork, while it is being built.
 
-/** One Step of a fork's path, by `type`: the arms of AutomationStep */
+/** One Step of a Branch's listed path, by `type`: the arms of AutomationStep */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "type" })
 union PathStep {
   email: EmailStep,
@@ -420,9 +475,10 @@ union PathStep {
   http: HttpStep,
   end: EndStep,
   branch: BranchStep,
+  split: SplitStep,
 }
 
-/** One Step of a fork's path, by `type`, as a request writes it: the arms of AutomationStepInput */
+/** One Step of a Branch's listed path, by `type`, as a request writes it: the arms of AutomationStepInput */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "type" })
 union PathStepInput {
   email: EmailStepInput,
@@ -434,6 +490,37 @@ union PathStepInput {
   http: HttpStepInput,
   end: EndStepInput,
   branch: BranchStepInput,
+  split: SplitStepInput,
+}
+
+/** One Step of a Split's path, by `type`: the arms of AutomationStep */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "type" })
+union SplitPathStep {
+  email: EmailStep,
+  telegram: TelegramStep,
+  sms: SmsStep,
+  wait: WaitStep,
+  apply_tag: ApplyTagStep,
+  remove_tag: RemoveTagStep,
+  http: HttpStep,
+  end: EndStep,
+  branch: BranchStep,
+  split: SplitStep,
+}
+
+/** One Step of a Split's path, by `type`, as a request writes it: the arms of AutomationStepInput */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "type" })
+union SplitPathStepInput {
+  email: EmailStepInput,
+  telegram: TelegramStepInput,
+  sms: SmsStepInput,
+  wait: WaitStepInput,
+  apply_tag: ApplyTagStepInput,
+  remove_tag: RemoveTagStepInput,
+  http: HttpStepInput,
+  end: EndStepInput,
+  branch: BranchStepInput,
+  split: SplitStepInput,
 }
 
 /** A path of Steps, in the order an Enrollment walks them. A version's Steps are its root path. */

@@ -307,6 +307,13 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 	case automationstep.Branch:
 		return m.branch(ctx, s, run, at, p)
 
+	case automationstep.Split:
+		// The draw holds no random state (ADR 0124): the same Enrollment always lands on the same
+		// path, and the move down it commits behind the compare-and-set on the cursor, so a job
+		// delivered again finds the Enrollment moved on.
+		draw := automationstep.Draw(run.ContactID, at.step, run.Ordinal)
+		return m.advance(ctx, s, run.ID, at, stepMove{path: &pathTaken{id: p.At(draw)}})
+
 	case automationstep.HTTP:
 		// The call runs on its own queue (ADR 0039); the job queued here makes it and moves
 		// the Enrollment on through ExecuteHTTP.

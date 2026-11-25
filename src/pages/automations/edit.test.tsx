@@ -446,6 +446,48 @@ test('a version holding a Branch opens read-only, drawing the Branch and offerin
   await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeEnabled()
 })
 
+// A Split (ADR 0124) is kept as a Branch is: drawn as one node, the version read-only, with no save
+// that could drop its paths or weights, and Publish still publishing it.
+test('a version holding a Split opens read-only, drawing the Split and offering no save', async () => {
+  worker.use(
+    handleSiteAutomationsGet({
+      body: {
+        ...STORED,
+        draft: withSteps([
+          {
+            id: stepId(11),
+            type: 'split',
+            paths: [
+              {
+                id: stepId(12),
+                weight: 50,
+                steps: [{ id: stepId(13), type: 'wait', seconds: 60 }],
+              },
+              { id: stepId(14), weight: 50, steps: [] },
+            ],
+          },
+          { id: stepId(15), type: 'wait', seconds: 60 },
+        ]),
+      },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+
+  await expect.element(nodeButton(screen, 'Split')).toBeInTheDocument()
+  await expect
+    .element(
+      screen.getByText('This version holds a step that this editor cannot edit yet', {
+        exact: false,
+      }),
+    )
+    .toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
+  await expect.element(screen.getByLabelText('Name', { exact: false })).toBeDisabled()
+  await expect.element(screen.getByRole('button', { name: 'Remove step' })).not.toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeEnabled()
+})
+
 const AUTHORED_DOC = {
   type: 'doc',
   content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hello' }] }],

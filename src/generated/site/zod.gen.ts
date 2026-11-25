@@ -4845,7 +4845,10 @@ export const zAutomationStep = z.union([
   }).and(zEndStep),
   z.object({
     type: z.literal('branch')
-  }).and(z.lazy((): any => zBranchStep))
+  }).and(z.lazy((): any => zBranchStep)),
+  z.object({
+    type: z.literal('split')
+  }).and(z.lazy((): any => zSplitStep))
 ]);
 
 /**
@@ -4878,7 +4881,10 @@ export const zAutomationStepInput = z.union([
   }).and(zEndStepInput),
   z.object({
     type: z.literal('branch')
-  }).and(z.lazy((): any => zBranchStepInput))
+  }).and(z.lazy((): any => zBranchStepInput)),
+  z.object({
+    type: z.literal('split')
+  }).and(z.lazy((): any => zSplitStepInput))
 ]);
 
 /**
@@ -5117,33 +5123,75 @@ export const zEventTriggerInput = z.strictObject({
 });
 
 /**
- * One Step of a fork's path, by `type`: the arms of AutomationStep
+ * One Step of a Branch's listed path, by `type`: the arms of AutomationStep
  */
-export const zPathStep = z.discriminatedUnion('type', [
-  zEmailStep.extend({ type: z.literal('email') }),
-  zTelegramStep.extend({ type: z.literal('telegram') }),
-  zSmsStep.extend({ type: z.literal('sms') }),
-  zWaitStep.extend({ type: z.literal('wait') }),
-  zApplyTagStep.extend({ type: z.literal('apply_tag') }),
-  zRemoveTagStep.extend({ type: z.literal('remove_tag') }),
-  zHttpStep.extend({ type: z.literal('http') }),
-  zEndStep.extend({ type: z.literal('end') }),
-  zBranchStep.extend({ type: z.literal('branch') })
+export const zPathStep = z.union([
+  z.object({
+    type: z.literal('email')
+  }).and(zEmailStep),
+  z.object({
+    type: z.literal('telegram')
+  }).and(zTelegramStep),
+  z.object({
+    type: z.literal('sms')
+  }).and(zSmsStep),
+  z.object({
+    type: z.literal('wait')
+  }).and(zWaitStep),
+  z.object({
+    type: z.literal('apply_tag')
+  }).and(zApplyTagStep),
+  z.object({
+    type: z.literal('remove_tag')
+  }).and(zRemoveTagStep),
+  z.object({
+    type: z.literal('http')
+  }).and(zHttpStep),
+  z.object({
+    type: z.literal('end')
+  }).and(zEndStep),
+  z.object({
+    type: z.literal('branch')
+  }).and(zBranchStep),
+  z.object({
+    type: z.literal('split')
+  }).and(z.lazy((): any => zSplitStep))
 ]);
 
 /**
- * One Step of a fork's path, by `type`, as a request writes it: the arms of AutomationStepInput
+ * One Step of a Branch's listed path, by `type`, as a request writes it: the arms of AutomationStepInput
  */
-export const zPathStepInput = z.discriminatedUnion('type', [
-  zEmailStepInput.extend({ type: z.literal('email') }),
-  zTelegramStepInput.extend({ type: z.literal('telegram') }),
-  zSmsStepInput.extend({ type: z.literal('sms') }),
-  zWaitStepInput.extend({ type: z.literal('wait') }),
-  zApplyTagStepInput.extend({ type: z.literal('apply_tag') }),
-  zRemoveTagStepInput.extend({ type: z.literal('remove_tag') }),
-  zHttpStepInput.extend({ type: z.literal('http') }),
-  zEndStepInput.extend({ type: z.literal('end') }),
-  zBranchStepInput.extend({ type: z.literal('branch') })
+export const zPathStepInput = z.union([
+  z.object({
+    type: z.literal('email')
+  }).and(zEmailStepInput),
+  z.object({
+    type: z.literal('telegram')
+  }).and(zTelegramStepInput),
+  z.object({
+    type: z.literal('sms')
+  }).and(zSmsStepInput),
+  z.object({
+    type: z.literal('wait')
+  }).and(zWaitStepInput),
+  z.object({
+    type: z.literal('apply_tag')
+  }).and(zApplyTagStepInput),
+  z.object({
+    type: z.literal('remove_tag')
+  }).and(zRemoveTagStepInput),
+  z.object({
+    type: z.literal('http')
+  }).and(zHttpStepInput),
+  z.object({
+    type: z.literal('end')
+  }).and(zEndStepInput),
+  z.object({
+    type: z.literal('branch')
+  }).and(zBranchStepInput),
+  z.object({
+    type: z.literal('split')
+  }).and(z.lazy((): any => zSplitStepInput))
 ]);
 
 /**
@@ -5314,6 +5362,117 @@ export const zSiteSegmentResource = z.object({
   revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
+});
+
+/**
+ * A path of a Split: its share of the Contacts and its Steps
+ */
+export const zSplitPath = z.object({
+  id: zStepId,
+  weight: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  steps: z.array(z.lazy((): any => zSplitPathStep))
+});
+
+/**
+ * A path of a Split, as a request writes it
+ */
+export const zSplitPathInput = z.strictObject({
+  id: z.exactOptional(zStepId),
+  weight: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  steps: z.array(z.lazy((): any => zSplitPathStepInput))
+});
+
+/**
+ * One Step of a Split's path, by `type`: the arms of AutomationStep
+ */
+export const zSplitPathStep = z.union([
+  z.object({
+    type: z.literal('email')
+  }).and(zEmailStep),
+  z.object({
+    type: z.literal('telegram')
+  }).and(zTelegramStep),
+  z.object({
+    type: z.literal('sms')
+  }).and(zSmsStep),
+  z.object({
+    type: z.literal('wait')
+  }).and(zWaitStep),
+  z.object({
+    type: z.literal('apply_tag')
+  }).and(zApplyTagStep),
+  z.object({
+    type: z.literal('remove_tag')
+  }).and(zRemoveTagStep),
+  z.object({
+    type: z.literal('http')
+  }).and(zHttpStep),
+  z.object({
+    type: z.literal('end')
+  }).and(zEndStep),
+  z.object({
+    type: z.literal('branch')
+  }).and(zBranchStep),
+  z.object({
+    type: z.literal('split')
+  }).and(z.lazy((): any => zSplitStep))
+]);
+
+/**
+ * One Step of a Split's path, by `type`, as a request writes it: the arms of AutomationStepInput
+ */
+export const zSplitPathStepInput = z.union([
+  z.object({
+    type: z.literal('email')
+  }).and(zEmailStepInput),
+  z.object({
+    type: z.literal('telegram')
+  }).and(zTelegramStepInput),
+  z.object({
+    type: z.literal('sms')
+  }).and(zSmsStepInput),
+  z.object({
+    type: z.literal('wait')
+  }).and(zWaitStepInput),
+  z.object({
+    type: z.literal('apply_tag')
+  }).and(zApplyTagStepInput),
+  z.object({
+    type: z.literal('remove_tag')
+  }).and(zRemoveTagStepInput),
+  z.object({
+    type: z.literal('http')
+  }).and(zHttpStepInput),
+  z.object({
+    type: z.literal('end')
+  }).and(zEndStepInput),
+  z.object({
+    type: z.literal('branch')
+  }).and(zBranchStepInput),
+  z.object({
+    type: z.literal('split')
+  }).and(z.lazy((): any => zSplitStepInput))
+]);
+
+/**
+ * A Step that sends each Enrollment down one of its paths by weight (ADR 0124): a hash of the
+ * Contact, the Split and the Enrollment's ordinal chooses the path, so the same Enrollment always
+ * takes the same path and a new Enrollment of the Contact draws again. An empty path is a holdout.
+ * The paths rejoin at the Step after the Split.
+ */
+export const zSplitStep = z.object({
+  id: zStepId,
+  type: z.enum(['split']),
+  paths: z.array(zSplitPath)
+});
+
+/**
+ * A Split, as a request writes it. It needs two to ten paths, with weights summing to 100.
+ */
+export const zSplitStepInput = z.strictObject({
+  id: z.exactOptional(zStepId),
+  type: z.enum(['split']),
+  paths: z.array(zSplitPathInput)
 });
 
 /**

@@ -1168,6 +1168,11 @@ func (s AutomationStepInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case SplitStepInputAutomationStepInputSum:
+		if err := s.SplitStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -1217,6 +1222,11 @@ func (s AutomationStepSum) Validate() error {
 		return nil
 	case BranchStepAutomationStepSum:
 		if err := s.BranchStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case SplitStepAutomationStepSum:
+		if err := s.SplitStep.Validate(); err != nil {
 			return err
 		}
 		return nil
@@ -7699,6 +7709,11 @@ func (s PathStepInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case SplitStepInputPathStepInputSum:
+		if err := s.SplitStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -7748,6 +7763,11 @@ func (s PathStepSum) Validate() error {
 		return nil
 	case BranchStepPathStepSum:
 		if err := s.BranchStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case SplitStepPathStepSum:
+		if err := s.SplitStep.Validate(); err != nil {
 			return err
 		}
 		return nil
@@ -10970,6 +10990,366 @@ func (s *SoleOwnedWorkspace) Validate() error {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
+}
+
+func (s *SplitPath) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if s.Steps == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Steps {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "steps",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *SplitPathInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if s.Steps == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Steps {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "steps",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *SplitPathStep) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *SplitPathStepInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SplitPathStepInputSum) Validate() error {
+	switch s.Type {
+	case EmailStepInputSplitPathStepInputSum:
+		if err := s.EmailStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case TelegramStepInputSplitPathStepInputSum:
+		if err := s.TelegramStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case SmsStepInputSplitPathStepInputSum:
+		if err := s.SmsStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case WaitStepInputSplitPathStepInputSum:
+		if err := s.WaitStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case ApplyTagStepInputSplitPathStepInputSum:
+		if err := s.ApplyTagStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case RemoveTagStepInputSplitPathStepInputSum:
+		if err := s.RemoveTagStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case HttpStepInputSplitPathStepInputSum:
+		if err := s.HttpStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case EndStepInputSplitPathStepInputSum:
+		if err := s.EndStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case BranchStepInputSplitPathStepInputSum:
+		if err := s.BranchStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case SplitStepInputSplitPathStepInputSum:
+		if err := s.SplitStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
+func (s SplitPathStepSum) Validate() error {
+	switch s.Type {
+	case EmailStepSplitPathStepSum:
+		if err := s.EmailStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case TelegramStepSplitPathStepSum:
+		if err := s.TelegramStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case SmsStepSplitPathStepSum:
+		if err := s.SmsStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case WaitStepSplitPathStepSum:
+		if err := s.WaitStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case ApplyTagStepSplitPathStepSum:
+		if err := s.ApplyTagStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case RemoveTagStepSplitPathStepSum:
+		if err := s.RemoveTagStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case HttpStepSplitPathStepSum:
+		if err := s.HttpStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case EndStepSplitPathStepSum:
+		if err := s.EndStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case BranchStepSplitPathStepSum:
+		if err := s.BranchStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case SplitStepSplitPathStepSum:
+		if err := s.SplitStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
+func (s *SplitStep) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Paths == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Paths {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "paths",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *SplitStepInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Paths == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Paths {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "paths",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s SplitStepInputType) Validate() error {
+	switch s {
+	case "split":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s SplitStepType) Validate() error {
+	switch s {
+	case "split":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }
 
 func (s StateOperator) Validate() error {

@@ -183,6 +183,14 @@ type Inputs interface {
 	// goverter:map Condition | segmentConditionIn
 	SegmentPreview(source *externalapi.PreviewSegmentInput) (segments.PreviewInput, error)
 
+	// The kind of a Step of a fork's path as the kind of a Step of the root's: the two unions have
+	// the same arms (pathStepsIn).
+	// goverter:enum:transform value
+	PathStepInputType(source externalapi.PathStepInputSumType) externalapi.AutomationStepInputSumType
+	// The kind of a Step of a Split's path as the kind of a Step of the root's: the two unions have
+	// the same arms (splitPathStepsIn).
+	// goverter:enum:transform value
+	SplitPathStepInputType(source externalapi.SplitPathStepInputSumType) externalapi.AutomationStepInputSumType
 	// A version's root path; each Step is picked by automationStepIn.
 	AutomationPath(source externalapi.AutomationPathInput) (automationstep.Path, error)
 	// The arms of a Step, which automationStepIn picks; the Step's id is the arm's, which it
@@ -439,10 +447,30 @@ func pathStepsIn(c Inputs, in []externalapi.PathStepInput) ([]automationstep.Ste
 	for i := range in {
 		s := &in[i].OneOf
 		st, err := automationStepIn(c, &externalapi.AutomationStepInputSum{
-			Type: externalapi.AutomationStepInputSumType(s.Type), EmailStepInput: s.EmailStepInput, TelegramStepInput: s.TelegramStepInput,
+			Type: c.PathStepInputType(s.Type), EmailStepInput: s.EmailStepInput, TelegramStepInput: s.TelegramStepInput,
 			SmsStepInput: s.SmsStepInput, WaitStepInput: s.WaitStepInput, ApplyTagStepInput: s.ApplyTagStepInput,
 			RemoveTagStepInput: s.RemoveTagStepInput, HttpStepInput: s.HttpStepInput, EndStepInput: s.EndStepInput,
-			BranchStepInput: s.BranchStepInput,
+			BranchStepInput: s.BranchStepInput, SplitStepInput: s.SplitStepInput,
+		})
+		if err != nil {
+			return nil, err
+		}
+		out[i] = st
+	}
+	return out, nil
+}
+
+// splitPathStepsIn maps the Steps of a Split's path onto the module's: the contract's union of a
+// Split's path has the arms of the root's, so each is read as one of those (automationStepIn).
+func splitPathStepsIn(c Inputs, in []externalapi.SplitPathStepInput) ([]automationstep.Step, error) {
+	out := make([]automationstep.Step, len(in))
+	for i := range in {
+		s := &in[i].OneOf
+		st, err := automationStepIn(c, &externalapi.AutomationStepInputSum{
+			Type: c.SplitPathStepInputType(s.Type), EmailStepInput: s.EmailStepInput, TelegramStepInput: s.TelegramStepInput,
+			SmsStepInput: s.SmsStepInput, WaitStepInput: s.WaitStepInput, ApplyTagStepInput: s.ApplyTagStepInput,
+			RemoveTagStepInput: s.RemoveTagStepInput, HttpStepInput: s.HttpStepInput, EndStepInput: s.EndStepInput,
+			BranchStepInput: s.BranchStepInput, SplitStepInput: s.SplitStepInput,
 		})
 		if err != nil {
 			return nil, err
@@ -474,6 +502,8 @@ func automationStepIn(c Inputs, s *externalapi.AutomationStepInputSum) (automati
 		return automationstep.Step{ID: stepIDIn(s.EndStepInput.ID), Payload: automationstep.End{}}, nil
 	case externalapi.BranchStepInputAutomationStepInputSum:
 		return branchStepIn(c, &s.BranchStepInput)
+	case externalapi.SplitStepInputAutomationStepInputSum:
+		return splitStepIn(c, &s.SplitStepInput)
 	default:
 		return automationstep.Step{}, nil // the save refuses a Step of no kind
 	}
@@ -508,6 +538,20 @@ func branchStepIn(c Inputs, in *externalapi.BranchStepInput) (automationstep.Ste
 		b.Unknown = &unknown
 	}
 	return automationstep.Step{ID: stepIDIn(in.ID), Payload: b}, nil
+}
+
+// splitStepIn maps a Split: each path with its weight and its Steps. The save checks the weights.
+func splitStepIn(c Inputs, in *externalapi.SplitStepInput) (automationstep.Step, error) {
+	sp := automationstep.Split{Paths: make([]automationstep.SplitPath, len(in.Paths))}
+	for i := range in.Paths {
+		p := &in.Paths[i]
+		steps, err := splitPathStepsIn(c, p.Steps)
+		if err != nil {
+			return automationstep.Step{}, err
+		}
+		sp.Paths[i] = automationstep.SplitPath{ID: stepIDIn(p.ID), Weight: int(p.Weight), Steps: steps}
+	}
+	return automationstep.Step{ID: stepIDIn(in.ID), Payload: sp}, nil
 }
 
 // ruleActionsPtrIn is the Actions an update replaces: omitted (nil) keeps the stored ones.

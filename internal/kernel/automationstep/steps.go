@@ -5,6 +5,8 @@ package automationstep
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -34,6 +36,7 @@ const (
 	KindHTTP      Kind = "http"
 	KindEnd       Kind = "end"
 	KindBranch    Kind = "branch"
+	KindSplit     Kind = "split"
 )
 
 // Channel is the Channel a send step of the kind sends on (ADR 0081: the step's kind fixes its
@@ -84,7 +87,7 @@ type Step struct {
 func New(p Payload) Step { return Step{Payload: p} }
 
 // Payload is what a Step does, one type per kind: Email, Telegram, SMS, Wait, ApplyTag, RemoveTag,
-// HTTP, End and Branch.
+// HTTP, End, Branch and Split.
 type Payload interface {
 	Kind() Kind
 	// Stored is the payload as a version stores it: tag names, a Telegram step's image and
@@ -252,6 +255,62 @@ func (b Branch) WithForks(paths []Path) Fork {
 	return out
 }
 
+// Split sends an Enrollment down one of its Paths by weight (ADR 0124): a draw of its Contact, its
+// Step and its ordinal (Draw) lands on a path by the running total of the weights (At). An empty
+// path is a holdout, sent nothing. Its paths rejoin at the Step after it.
+type Split struct {
+	Paths []SplitPath `json:"paths"`
+}
+
+// SplitPath is a path of a Split: its id, its weight, a whole share of 100, and its Steps.
+type SplitPath struct {
+	ID     ID     `json:"id"`
+	Weight int    `json:"weight"`
+	Steps  []Step `json:"steps"`
+}
+
+func (s Split) Forks() []Path {
+	out := make([]Path, len(s.Paths))
+	for i, p := range s.Paths {
+		out[i] = Path{ID: p.ID, Steps: p.Steps}
+	}
+	return out
+}
+
+func (s Split) WithForks(paths []Path) Fork {
+	out := make([]SplitPath, len(s.Paths))
+	for i, p := range s.Paths {
+		out[i] = SplitPath{ID: paths[i].ID, Weight: p.Weight, Steps: paths[i].Steps}
+	}
+	return Split{Paths: out}
+}
+
+// At is the path a draw of 0 to 99 lands on: the first whose running total of the weights exceeds
+// it. The save holds the weights to whole numbers of at least 1 summing to 100, so every draw lands
+// on a path; a draw past the total lands on the last path.
+func (s Split) At(draw int) ID {
+	total := 0
+	for _, p := range s.Paths {
+		total += p.Weight
+		if draw < total {
+			return p.ID
+		}
+	}
+	if len(s.Paths) == 0 {
+		return ""
+	}
+	return s.Paths[len(s.Paths)-1].ID
+}
+
+// Draw is the draw, 0 to 99, of the Contact at the Split's Step for the Enrollment of the ordinal
+// (ADR 0124, ADR 0127): the first eight bytes of the SHA-256 of "<contact>:<step>:<ordinal>",
+// big-endian, mod 100. It holds no random state, so the same Enrollment always draws the same, and
+// a new Enrollment of the Contact draws again.
+func Draw(contactID int64, step ID, ordinal int) int {
+	sum := sha256.Sum256(fmt.Appendf(nil, "%d:%s:%d", contactID, step, ordinal))
+	return int(binary.BigEndian.Uint64(sum[:8]) % 100)
+}
+
 func (p Email) Integration() *int64    { return p.IntegrationID }
 func (p Telegram) Integration() *int64 { return p.IntegrationID }
 func (s SMS) Integration() *int64      { return s.IntegrationID }
@@ -286,6 +345,9 @@ func (p End) Stored() Payload { return p }
 // Stored is the Branch as it is: the walker stores the Steps of its paths (Rewrite).
 func (b Branch) Stored() Payload { return b }
 
+// Stored is the Split as it is: the walker stores the Steps of its paths (Rewrite).
+func (s Split) Stored() Payload { return s }
+
 func (Email) Kind() Kind     { return KindEmail }
 func (Telegram) Kind() Kind  { return KindTelegram }
 func (SMS) Kind() Kind       { return KindSMS }
@@ -295,6 +357,7 @@ func (RemoveTag) Kind() Kind { return KindRemoveTag }
 func (HTTP) Kind() Kind      { return KindHTTP }
 func (End) Kind() Kind       { return KindEnd }
 func (Branch) Kind() Kind    { return KindBranch }
+func (Split) Kind() Kind     { return KindSplit }
 
 // decoders read the fields of each kind's payload, refusing any field the kind does not hold.
 var decoders = map[Kind]func([]byte) (Payload, error){
@@ -307,6 +370,7 @@ var decoders = map[Kind]func([]byte) (Payload, error){
 	KindHTTP:      decodeAs[HTTP],
 	KindEnd:       decodeAs[End],
 	KindBranch:    decodeAs[Branch],
+	KindSplit:     decodeAs[Split],
 }
 
 func decodeAs[P Payload](b []byte) (Payload, error) {

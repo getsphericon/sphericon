@@ -508,6 +508,34 @@ func (c *InputsImpl) OptOut(source *external.CreateUnsubscribeInput) unsubscribe
 	}
 	return unsubscriberecordingOptOutInput
 }
+func (c *InputsImpl) PathStepInputType(source external.PathStepInputSumType) external.AutomationStepInputSumType {
+	var externalapiAutomationStepInputSumType external.AutomationStepInputSumType
+	switch source {
+	case external.ApplyTagStepInputPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.ApplyTagStepInputAutomationStepInputSum
+	case external.BranchStepInputPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.BranchStepInputAutomationStepInputSum
+	case external.EmailStepInputPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.EmailStepInputAutomationStepInputSum
+	case external.EndStepInputPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.EndStepInputAutomationStepInputSum
+	case external.HttpStepInputPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.HttpStepInputAutomationStepInputSum
+	case external.RemoveTagStepInputPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.RemoveTagStepInputAutomationStepInputSum
+	case external.SmsStepInputPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.SmsStepInputAutomationStepInputSum
+	case external.SplitStepInputPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.SplitStepInputAutomationStepInputSum
+	case external.TelegramStepInputPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.TelegramStepInputAutomationStepInputSum
+	case external.WaitStepInputPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.WaitStepInputAutomationStepInputSum
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiAutomationStepInputSumType
+}
 func (c *InputsImpl) RemoveTagStepIn(source external.RemoveTagStepInput) automationstep.RemoveTag {
 	var automationstepRemoveTag automationstep.RemoveTag
 	automationstepRemoveTag.Tag = source.Tag
@@ -650,6 +678,34 @@ func (c *InputsImpl) SmsStepIn(source external.SmsStepInput) automationstep.SMS 
 	automationstepSMS.Text = source.Text
 	automationstepSMS.LinkTracking = boolPtrIn(source.LinkTracking)
 	return automationstepSMS
+}
+func (c *InputsImpl) SplitPathStepInputType(source external.SplitPathStepInputSumType) external.AutomationStepInputSumType {
+	var externalapiAutomationStepInputSumType external.AutomationStepInputSumType
+	switch source {
+	case external.ApplyTagStepInputSplitPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.ApplyTagStepInputAutomationStepInputSum
+	case external.BranchStepInputSplitPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.BranchStepInputAutomationStepInputSum
+	case external.EmailStepInputSplitPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.EmailStepInputAutomationStepInputSum
+	case external.EndStepInputSplitPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.EndStepInputAutomationStepInputSum
+	case external.HttpStepInputSplitPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.HttpStepInputAutomationStepInputSum
+	case external.RemoveTagStepInputSplitPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.RemoveTagStepInputAutomationStepInputSum
+	case external.SmsStepInputSplitPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.SmsStepInputAutomationStepInputSum
+	case external.SplitStepInputSplitPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.SplitStepInputAutomationStepInputSum
+	case external.TelegramStepInputSplitPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.TelegramStepInputAutomationStepInputSum
+	case external.WaitStepInputSplitPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.WaitStepInputAutomationStepInputSum
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiAutomationStepInputSumType
 }
 func (c *InputsImpl) SuppressionChannel(source external.SuppressionChannel) channels.Channel {
 	var channelsChannel channels.Channel

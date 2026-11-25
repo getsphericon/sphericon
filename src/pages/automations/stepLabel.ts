@@ -14,6 +14,7 @@ export function stepLabel(t: TFunction, step: AutomationStep): string {
     http: t(($) => $.automations.stepHttp),
     end: t(($) => $.automations.stepEnd),
     branch: t(($) => $.automations.stepBranch),
+    split: t(($) => $.automations.stepSplit),
   }
   const detail = stepDetail(step)
   return detail ? `${kind[step.type]}: ${detail}` : kind[step.type]
@@ -29,6 +30,7 @@ function stepDetail(step: AutomationStep): string {
       return step.tag
     case 'end':
     case 'branch':
+    case 'split':
     case 'http':
     case 'sms':
     case 'telegram':

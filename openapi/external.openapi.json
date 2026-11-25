@@ -6728,6 +6728,9 @@
           },
           {
             "$ref": "#/components/schemas/BranchStep"
+          },
+          {
+            "$ref": "#/components/schemas/SplitStep"
           }
         ],
         "discriminator": {
@@ -6741,7 +6744,8 @@
             "remove_tag": "#/components/schemas/RemoveTagStep",
             "http": "#/components/schemas/HttpStep",
             "end": "#/components/schemas/EndStep",
-            "branch": "#/components/schemas/BranchStep"
+            "branch": "#/components/schemas/BranchStep",
+            "split": "#/components/schemas/SplitStep"
           }
         },
         "description": "One Step of an automation, by `type`"
@@ -6800,6 +6804,9 @@
           },
           {
             "$ref": "#/components/schemas/BranchStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/SplitStepInput"
           }
         ],
         "discriminator": {
@@ -6813,7 +6820,8 @@
             "remove_tag": "#/components/schemas/RemoveTagStepInput",
             "http": "#/components/schemas/HttpStepInput",
             "end": "#/components/schemas/EndStepInput",
-            "branch": "#/components/schemas/BranchStepInput"
+            "branch": "#/components/schemas/BranchStepInput",
+            "split": "#/components/schemas/SplitStepInput"
           }
         },
         "description": "One Step of an automation, by `type`, as a request writes it. A field of another kind is refused."
@@ -12693,6 +12701,9 @@
           },
           {
             "$ref": "#/components/schemas/BranchStep"
+          },
+          {
+            "$ref": "#/components/schemas/SplitStep"
           }
         ],
         "discriminator": {
@@ -12706,10 +12717,11 @@
             "remove_tag": "#/components/schemas/RemoveTagStep",
             "http": "#/components/schemas/HttpStep",
             "end": "#/components/schemas/EndStep",
+            "split": "#/components/schemas/SplitStep",
             "branch": "#/components/schemas/BranchStep"
           }
         },
-        "description": "One Step of a fork's path, by `type`: the arms of AutomationStep"
+        "description": "One Step of a Branch's listed path, by `type`: the arms of AutomationStep"
       },
       "PathStepInput": {
         "type": "object",
@@ -12740,6 +12752,9 @@
           },
           {
             "$ref": "#/components/schemas/BranchStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/SplitStepInput"
           }
         ],
         "discriminator": {
@@ -12753,10 +12768,11 @@
             "remove_tag": "#/components/schemas/RemoveTagStepInput",
             "http": "#/components/schemas/HttpStepInput",
             "end": "#/components/schemas/EndStepInput",
+            "split": "#/components/schemas/SplitStepInput",
             "branch": "#/components/schemas/BranchStepInput"
           }
         },
-        "description": "One Step of a fork's path, by `type`, as a request writes it: the arms of AutomationStepInput"
+        "description": "One Step of a Branch's listed path, by `type`, as a request writes it: the arms of AutomationStepInput"
       },
       "Permission": {
         "type": "string",
@@ -15118,6 +15134,216 @@
           }
         },
         "description": "A Workspace the User is the only Owner of, which blocks User deletion"
+      },
+      "SplitPath": {
+        "type": "object",
+        "required": ["id", "weight", "steps"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The path's id"
+          },
+          "weight": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The path's share of the Contacts that reach the Split, a whole percentage"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SplitPathStep"
+            },
+            "description": "The path's Steps, in order; none is a holdout, sent nothing, that goes on to the Step after\nthe Split"
+          }
+        },
+        "description": "A path of a Split: its share of the Contacts and its Steps"
+      },
+      "SplitPathInput": {
+        "type": "object",
+        "required": ["weight", "steps"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The path's id; omitted, the path is given one"
+          },
+          "weight": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The path's share of the Contacts that reach the Split, a whole percentage of at least 1. The\nweights of a Split's paths sum to 100, or the save is refused, naming the Split."
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SplitPathStepInput"
+            },
+            "description": "The path's Steps, in order; none is a holdout, sent nothing, that goes on to the Step after\nthe Split"
+          }
+        },
+        "description": "A path of a Split, as a request writes it",
+        "additionalProperties": false
+      },
+      "SplitPathStep": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EmailStep"
+          },
+          {
+            "$ref": "#/components/schemas/TelegramStep"
+          },
+          {
+            "$ref": "#/components/schemas/SmsStep"
+          },
+          {
+            "$ref": "#/components/schemas/WaitStep"
+          },
+          {
+            "$ref": "#/components/schemas/ApplyTagStep"
+          },
+          {
+            "$ref": "#/components/schemas/RemoveTagStep"
+          },
+          {
+            "$ref": "#/components/schemas/HttpStep"
+          },
+          {
+            "$ref": "#/components/schemas/EndStep"
+          },
+          {
+            "$ref": "#/components/schemas/BranchStep"
+          },
+          {
+            "$ref": "#/components/schemas/SplitStep"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "email": "#/components/schemas/EmailStep",
+            "telegram": "#/components/schemas/TelegramStep",
+            "sms": "#/components/schemas/SmsStep",
+            "wait": "#/components/schemas/WaitStep",
+            "apply_tag": "#/components/schemas/ApplyTagStep",
+            "remove_tag": "#/components/schemas/RemoveTagStep",
+            "http": "#/components/schemas/HttpStep",
+            "end": "#/components/schemas/EndStep",
+            "split": "#/components/schemas/SplitStep",
+            "branch": "#/components/schemas/BranchStep"
+          }
+        },
+        "description": "One Step of a Split's path, by `type`: the arms of AutomationStep"
+      },
+      "SplitPathStepInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EmailStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/TelegramStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/SmsStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/WaitStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/ApplyTagStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/RemoveTagStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/HttpStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/EndStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/BranchStepInput"
+          },
+          {
+            "$ref": "#/components/schemas/SplitStepInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "email": "#/components/schemas/EmailStepInput",
+            "telegram": "#/components/schemas/TelegramStepInput",
+            "sms": "#/components/schemas/SmsStepInput",
+            "wait": "#/components/schemas/WaitStepInput",
+            "apply_tag": "#/components/schemas/ApplyTagStepInput",
+            "remove_tag": "#/components/schemas/RemoveTagStepInput",
+            "http": "#/components/schemas/HttpStepInput",
+            "end": "#/components/schemas/EndStepInput",
+            "split": "#/components/schemas/SplitStepInput",
+            "branch": "#/components/schemas/BranchStepInput"
+          }
+        },
+        "description": "One Step of a Split's path, by `type`, as a request writes it: the arms of AutomationStepInput"
+      },
+      "SplitStep": {
+        "type": "object",
+        "required": ["id", "type", "paths"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["split"]
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SplitPath"
+            },
+            "description": "The paths, in order"
+          }
+        },
+        "description": "A Step that sends each Enrollment down one of its paths by weight (ADR 0124): a hash of the\nContact, the Split and the Enrollment's ordinal chooses the path, so the same Enrollment always\ntakes the same path and a new Enrollment of the Contact draws again. An empty path is a holdout.\nThe paths rejoin at the Step after the Split."
+      },
+      "SplitStepInput": {
+        "type": "object",
+        "required": ["type", "paths"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Step's id; omitted, the Step is given one"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["split"]
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SplitPathInput"
+            },
+            "description": "The paths, in order"
+          }
+        },
+        "description": "A Split, as a request writes it. It needs two to ten paths, with weights summing to 100.",
+        "additionalProperties": false
       },
       "StateOperator": {
         "type": "string",

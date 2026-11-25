@@ -741,7 +741,9 @@ export type AutomationStep = ({
   type: 'end';
 } & EndStep) | ({
   type: 'branch';
-} & BranchStep);
+} & BranchStep) | ({
+  type: 'split';
+} & SplitStep);
 
 /**
  * The messages of one send Step, over every version that had it
@@ -783,7 +785,9 @@ export type AutomationStepInput = ({
   type: 'end';
 } & EndStepInput) | ({
   type: 'branch';
-} & BranchStepInput);
+} & BranchStepInput) | ({
+  type: 'split';
+} & SplitStepInput);
 
 /**
  * What enrolls a Contact in an automation, by `kind`: an Event matcher
@@ -4674,7 +4678,7 @@ export const OptOutVia = {
 export type OptOutVia = typeof OptOutVia[keyof typeof OptOutVia];
 
 /**
- * One Step of a fork's path, by `type`: the arms of AutomationStep
+ * One Step of a Branch's listed path, by `type`: the arms of AutomationStep
  */
 export type PathStep = ({
   type: 'email';
@@ -4694,10 +4698,12 @@ export type PathStep = ({
   type: 'end';
 } & EndStep) | ({
   type: 'branch';
-} & BranchStep);
+} & BranchStep) | ({
+  type: 'split';
+} & SplitStep);
 
 /**
- * One Step of a fork's path, by `type`, as a request writes it: the arms of AutomationStepInput
+ * One Step of a Branch's listed path, by `type`, as a request writes it: the arms of AutomationStepInput
  */
 export type PathStepInput = ({
   type: 'email';
@@ -4717,7 +4723,9 @@ export type PathStepInput = ({
   type: 'end';
 } & EndStepInput) | ({
   type: 'branch';
-} & BranchStepInput);
+} & BranchStepInput) | ({
+  type: 'split';
+} & SplitStepInput);
 
 /**
  * A named action in a Workspace that a Role allows (ADR 0061, GLOSSARY "Permission"),
@@ -6356,6 +6364,128 @@ export type SoleOwnedWorkspace = {
    * Display name
    */
   name: string;
+};
+
+/**
+ * A path of a Split: its share of the Contacts and its Steps
+ */
+export type SplitPath = {
+  /**
+   * The path's id
+   */
+  id: StepId;
+  /**
+   * The path's share of the Contacts that reach the Split, a whole percentage
+   */
+  weight: number;
+  /**
+   * The path's Steps, in order; none is a holdout, sent nothing, that goes on to the Step after
+   * the Split
+   */
+  steps: Array<SplitPathStep>;
+};
+
+/**
+ * A path of a Split, as a request writes it
+ */
+export type SplitPathInput = {
+  /**
+   * The path's id; omitted, the path is given one
+   */
+  id?: StepId;
+  /**
+   * The path's share of the Contacts that reach the Split, a whole percentage of at least 1. The
+   * weights of a Split's paths sum to 100, or the save is refused, naming the Split.
+   */
+  weight: number;
+  /**
+   * The path's Steps, in order; none is a holdout, sent nothing, that goes on to the Step after
+   * the Split
+   */
+  steps: Array<SplitPathStepInput>;
+};
+
+/**
+ * One Step of a Split's path, by `type`: the arms of AutomationStep
+ */
+export type SplitPathStep = ({
+  type: 'email';
+} & EmailStep) | ({
+  type: 'telegram';
+} & TelegramStep) | ({
+  type: 'sms';
+} & SmsStep) | ({
+  type: 'wait';
+} & WaitStep) | ({
+  type: 'apply_tag';
+} & ApplyTagStep) | ({
+  type: 'remove_tag';
+} & RemoveTagStep) | ({
+  type: 'http';
+} & HttpStep) | ({
+  type: 'end';
+} & EndStep) | ({
+  type: 'branch';
+} & BranchStep) | ({
+  type: 'split';
+} & SplitStep);
+
+/**
+ * One Step of a Split's path, by `type`, as a request writes it: the arms of AutomationStepInput
+ */
+export type SplitPathStepInput = ({
+  type: 'email';
+} & EmailStepInput) | ({
+  type: 'telegram';
+} & TelegramStepInput) | ({
+  type: 'sms';
+} & SmsStepInput) | ({
+  type: 'wait';
+} & WaitStepInput) | ({
+  type: 'apply_tag';
+} & ApplyTagStepInput) | ({
+  type: 'remove_tag';
+} & RemoveTagStepInput) | ({
+  type: 'http';
+} & HttpStepInput) | ({
+  type: 'end';
+} & EndStepInput) | ({
+  type: 'branch';
+} & BranchStepInput) | ({
+  type: 'split';
+} & SplitStepInput);
+
+/**
+ * A Step that sends each Enrollment down one of its paths by weight (ADR 0124): a hash of the
+ * Contact, the Split and the Enrollment's ordinal chooses the path, so the same Enrollment always
+ * takes the same path and a new Enrollment of the Contact draws again. An empty path is a holdout.
+ * The paths rejoin at the Step after the Split.
+ */
+export type SplitStep = {
+  /**
+   * The Step's id
+   */
+  id: StepId;
+  type: 'split';
+  /**
+   * The paths, in order
+   */
+  paths: Array<SplitPath>;
+};
+
+/**
+ * A Split, as a request writes it. It needs two to ten paths, with weights summing to 100.
+ */
+export type SplitStepInput = {
+  /**
+   * The Step's id; omitted, the Step is given one
+   */
+  id?: StepId;
+  type: 'split';
+  /**
+   * The paths, in order
+   */
+  paths: Array<SplitPathInput>;
 };
 
 /**

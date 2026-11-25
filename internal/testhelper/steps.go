@@ -50,6 +50,8 @@ func SiteStep(st any) siteapi.AutomationStepInput {
 		return siteapi.AutomationStepInput{OneOf: siteapi.NewEndStepInputAutomationStepInputSum(v)}
 	case siteapi.BranchStepInput:
 		return siteapi.AutomationStepInput{OneOf: siteapi.NewBranchStepInputAutomationStepInputSum(v)}
+	case siteapi.SplitStepInput:
+		return siteapi.AutomationStepInput{OneOf: siteapi.NewSplitStepInputAutomationStepInputSum(v)}
 	default:
 		panic(fmt.Sprintf("testhelper: %T is not a site Step", st))
 	}
@@ -92,6 +94,8 @@ func ExternalStep(st any) externalapi.AutomationStepInput {
 		return externalapi.AutomationStepInput{OneOf: externalapi.NewEndStepInputAutomationStepInputSum(v)}
 	case externalapi.BranchStepInput:
 		return externalapi.AutomationStepInput{OneOf: externalapi.NewBranchStepInputAutomationStepInputSum(v)}
+	case externalapi.SplitStepInput:
+		return externalapi.AutomationStepInput{OneOf: externalapi.NewSplitStepInputAutomationStepInputSum(v)}
 	default:
 		panic(fmt.Sprintf("testhelper: %T is not an external Step", st))
 	}
@@ -165,4 +169,21 @@ func SiteBranch(tb testing.TB, doc string) siteapi.BranchStepInput {
 	var b siteapi.BranchStepInput
 	require.NoError(tb, b.UnmarshalJSON([]byte(doc)))
 	return b
+}
+
+// ExternalSplit is a Split of the external API as its JSON writes it, so a test reads as the tree
+// it saves.
+func ExternalSplit(tb testing.TB, doc string) externalapi.SplitStepInput {
+	tb.Helper()
+	var sp externalapi.SplitStepInput
+	require.NoError(tb, sp.UnmarshalJSON([]byte(doc)))
+	return sp
+}
+
+// SiteSplit is ExternalSplit for the site API.
+func SiteSplit(tb testing.TB, doc string) siteapi.SplitStepInput {
+	tb.Helper()
+	var sp siteapi.SplitStepInput
+	require.NoError(tb, sp.UnmarshalJSON([]byte(doc)))
+	return sp
 }

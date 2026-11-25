@@ -2784,6 +2784,7 @@ type AutomationStepInputSum struct {
 	HttpStepInput      HttpStepInput
 	EndStepInput       EndStepInput
 	BranchStepInput    BranchStepInput
+	SplitStepInput     SplitStepInput
 }
 
 // AutomationStepInputSumType is oneOf type of AutomationStepInputSum.
@@ -2800,6 +2801,7 @@ const (
 	HttpStepInputAutomationStepInputSum      AutomationStepInputSumType = "http"
 	EndStepInputAutomationStepInputSum       AutomationStepInputSumType = "end"
 	BranchStepInputAutomationStepInputSum    AutomationStepInputSumType = "branch"
+	SplitStepInputAutomationStepInputSum     AutomationStepInputSumType = "split"
 )
 
 // IsEmailStepInput reports whether AutomationStepInputSum is EmailStepInput.
@@ -2845,6 +2847,11 @@ func (s AutomationStepInputSum) IsEndStepInput() bool {
 // IsBranchStepInput reports whether AutomationStepInputSum is BranchStepInput.
 func (s AutomationStepInputSum) IsBranchStepInput() bool {
 	return s.Type == BranchStepInputAutomationStepInputSum
+}
+
+// IsSplitStepInput reports whether AutomationStepInputSum is SplitStepInput.
+func (s AutomationStepInputSum) IsSplitStepInput() bool {
+	return s.Type == SplitStepInputAutomationStepInputSum
 }
 
 // SetEmailStepInput sets AutomationStepInputSum to EmailStepInput.
@@ -3036,6 +3043,27 @@ func NewBranchStepInputAutomationStepInputSum(v BranchStepInput) AutomationStepI
 	return s
 }
 
+// SetSplitStepInput sets AutomationStepInputSum to SplitStepInput.
+func (s *AutomationStepInputSum) SetSplitStepInput(v SplitStepInput) {
+	s.Type = SplitStepInputAutomationStepInputSum
+	s.SplitStepInput = v
+}
+
+// GetSplitStepInput returns SplitStepInput and true boolean if AutomationStepInputSum is SplitStepInput.
+func (s AutomationStepInputSum) GetSplitStepInput() (v SplitStepInput, ok bool) {
+	if !s.IsSplitStepInput() {
+		return v, false
+	}
+	return s.SplitStepInput, true
+}
+
+// NewSplitStepInputAutomationStepInputSum returns new AutomationStepInputSum from SplitStepInput.
+func NewSplitStepInputAutomationStepInputSum(v SplitStepInput) AutomationStepInputSum {
+	var s AutomationStepInputSum
+	s.SetSplitStepInput(v)
+	return s
+}
+
 // AutomationStepSum represents sum type.
 type AutomationStepSum struct {
 	// Type selects the active sum variant, switch on this field.
@@ -3049,6 +3077,7 @@ type AutomationStepSum struct {
 	HttpStep      HttpStep
 	EndStep       EndStep
 	BranchStep    BranchStep
+	SplitStep     SplitStep
 }
 
 // AutomationStepSumType is oneOf type of AutomationStepSum.
@@ -3065,6 +3094,7 @@ const (
 	HttpStepAutomationStepSum      AutomationStepSumType = "http"
 	EndStepAutomationStepSum       AutomationStepSumType = "end"
 	BranchStepAutomationStepSum    AutomationStepSumType = "branch"
+	SplitStepAutomationStepSum     AutomationStepSumType = "split"
 )
 
 // IsEmailStep reports whether AutomationStepSum is EmailStep.
@@ -3093,6 +3123,9 @@ func (s AutomationStepSum) IsEndStep() bool { return s.Type == EndStepAutomation
 
 // IsBranchStep reports whether AutomationStepSum is BranchStep.
 func (s AutomationStepSum) IsBranchStep() bool { return s.Type == BranchStepAutomationStepSum }
+
+// IsSplitStep reports whether AutomationStepSum is SplitStep.
+func (s AutomationStepSum) IsSplitStep() bool { return s.Type == SplitStepAutomationStepSum }
 
 // SetEmailStep sets AutomationStepSum to EmailStep.
 func (s *AutomationStepSum) SetEmailStep(v EmailStep) {
@@ -3280,6 +3313,27 @@ func (s AutomationStepSum) GetBranchStep() (v BranchStep, ok bool) {
 func NewBranchStepAutomationStepSum(v BranchStep) AutomationStepSum {
 	var s AutomationStepSum
 	s.SetBranchStep(v)
+	return s
+}
+
+// SetSplitStep sets AutomationStepSum to SplitStep.
+func (s *AutomationStepSum) SetSplitStep(v SplitStep) {
+	s.Type = SplitStepAutomationStepSum
+	s.SplitStep = v
+}
+
+// GetSplitStep returns SplitStep and true boolean if AutomationStepSum is SplitStep.
+func (s AutomationStepSum) GetSplitStep() (v SplitStep, ok bool) {
+	if !s.IsSplitStep() {
+		return v, false
+	}
+	return s.SplitStep, true
+}
+
+// NewSplitStepAutomationStepSum returns new AutomationStepSum from SplitStep.
+func NewSplitStepAutomationStepSum(v SplitStep) AutomationStepSum {
+	var s AutomationStepSum
+	s.SetSplitStep(v)
 	return s
 }
 
@@ -20464,7 +20518,7 @@ func (o OptWebhookFailure) Or(d WebhookFailure) WebhookFailure {
 	return d
 }
 
-// One Step of a fork's path, by `type`: the arms of AutomationStep.
+// One Step of a Branch's listed path, by `type`: the arms of AutomationStep.
 // Ref: #/components/schemas/PathStep
 type PathStep struct {
 	OneOf PathStepSum
@@ -20480,7 +20534,8 @@ func (s *PathStep) SetOneOf(val PathStepSum) {
 	s.OneOf = val
 }
 
-// One Step of a fork's path, by `type`, as a request writes it: the arms of AutomationStepInput.
+// One Step of a Branch's listed path, by `type`, as a request writes it: the arms of
+// AutomationStepInput.
 // Ref: #/components/schemas/PathStepInput
 type PathStepInput struct {
 	OneOf PathStepInputSum
@@ -20509,6 +20564,7 @@ type PathStepInputSum struct {
 	HttpStepInput      HttpStepInput
 	EndStepInput       EndStepInput
 	BranchStepInput    BranchStepInput
+	SplitStepInput     SplitStepInput
 }
 
 // PathStepInputSumType is oneOf type of PathStepInputSum.
@@ -20525,6 +20581,7 @@ const (
 	HttpStepInputPathStepInputSum      PathStepInputSumType = "http"
 	EndStepInputPathStepInputSum       PathStepInputSumType = "end"
 	BranchStepInputPathStepInputSum    PathStepInputSumType = "branch"
+	SplitStepInputPathStepInputSum     PathStepInputSumType = "split"
 )
 
 // IsEmailStepInput reports whether PathStepInputSum is EmailStepInput.
@@ -20559,6 +20616,9 @@ func (s PathStepInputSum) IsEndStepInput() bool { return s.Type == EndStepInputP
 
 // IsBranchStepInput reports whether PathStepInputSum is BranchStepInput.
 func (s PathStepInputSum) IsBranchStepInput() bool { return s.Type == BranchStepInputPathStepInputSum }
+
+// IsSplitStepInput reports whether PathStepInputSum is SplitStepInput.
+func (s PathStepInputSum) IsSplitStepInput() bool { return s.Type == SplitStepInputPathStepInputSum }
 
 // SetEmailStepInput sets PathStepInputSum to EmailStepInput.
 func (s *PathStepInputSum) SetEmailStepInput(v EmailStepInput) {
@@ -20749,6 +20809,27 @@ func NewBranchStepInputPathStepInputSum(v BranchStepInput) PathStepInputSum {
 	return s
 }
 
+// SetSplitStepInput sets PathStepInputSum to SplitStepInput.
+func (s *PathStepInputSum) SetSplitStepInput(v SplitStepInput) {
+	s.Type = SplitStepInputPathStepInputSum
+	s.SplitStepInput = v
+}
+
+// GetSplitStepInput returns SplitStepInput and true boolean if PathStepInputSum is SplitStepInput.
+func (s PathStepInputSum) GetSplitStepInput() (v SplitStepInput, ok bool) {
+	if !s.IsSplitStepInput() {
+		return v, false
+	}
+	return s.SplitStepInput, true
+}
+
+// NewSplitStepInputPathStepInputSum returns new PathStepInputSum from SplitStepInput.
+func NewSplitStepInputPathStepInputSum(v SplitStepInput) PathStepInputSum {
+	var s PathStepInputSum
+	s.SetSplitStepInput(v)
+	return s
+}
+
 // PathStepSum represents sum type.
 type PathStepSum struct {
 	// Type selects the active sum variant, switch on this field.
@@ -20762,6 +20843,7 @@ type PathStepSum struct {
 	HttpStep      HttpStep
 	EndStep       EndStep
 	BranchStep    BranchStep
+	SplitStep     SplitStep
 }
 
 // PathStepSumType is oneOf type of PathStepSum.
@@ -20778,6 +20860,7 @@ const (
 	HttpStepPathStepSum      PathStepSumType = "http"
 	EndStepPathStepSum       PathStepSumType = "end"
 	BranchStepPathStepSum    PathStepSumType = "branch"
+	SplitStepPathStepSum     PathStepSumType = "split"
 )
 
 // IsEmailStep reports whether PathStepSum is EmailStep.
@@ -20806,6 +20889,9 @@ func (s PathStepSum) IsEndStep() bool { return s.Type == EndStepPathStepSum }
 
 // IsBranchStep reports whether PathStepSum is BranchStep.
 func (s PathStepSum) IsBranchStep() bool { return s.Type == BranchStepPathStepSum }
+
+// IsSplitStep reports whether PathStepSum is SplitStep.
+func (s PathStepSum) IsSplitStep() bool { return s.Type == SplitStepPathStepSum }
 
 // SetEmailStep sets PathStepSum to EmailStep.
 func (s *PathStepSum) SetEmailStep(v EmailStep) {
@@ -20993,6 +21079,27 @@ func (s PathStepSum) GetBranchStep() (v BranchStep, ok bool) {
 func NewBranchStepPathStepSum(v BranchStep) PathStepSum {
 	var s PathStepSum
 	s.SetBranchStep(v)
+	return s
+}
+
+// SetSplitStep sets PathStepSum to SplitStep.
+func (s *PathStepSum) SetSplitStep(v SplitStep) {
+	s.Type = SplitStepPathStepSum
+	s.SplitStep = v
+}
+
+// GetSplitStep returns SplitStep and true boolean if PathStepSum is SplitStep.
+func (s PathStepSum) GetSplitStep() (v SplitStep, ok bool) {
+	if !s.IsSplitStep() {
+		return v, false
+	}
+	return s.SplitStep, true
+}
+
+// NewSplitStepPathStepSum returns new PathStepSum from SplitStep.
+func NewSplitStepPathStepSum(v SplitStep) PathStepSum {
+	var s PathStepSum
+	s.SetSplitStep(v)
 	return s
 }
 
@@ -27539,6 +27646,840 @@ func (s *SoleOwnedWorkspace) SetID(val WorkspaceId) {
 // SetName sets the value of Name.
 func (s *SoleOwnedWorkspace) SetName(val string) {
 	s.Name = val
+}
+
+// A path of a Split: its share of the Contacts and its Steps.
+// Ref: #/components/schemas/SplitPath
+type SplitPath struct {
+	// The path's id.
+	ID StepId `json:"id"`
+	// The path's share of the Contacts that reach the Split, a whole percentage.
+	Weight int32 `json:"weight"`
+	// The path's Steps, in order; none is a holdout, sent nothing, that goes on to the Step after the
+	// Split.
+	Steps []SplitPathStep `json:"steps"`
+}
+
+// GetID returns the value of ID.
+func (s *SplitPath) GetID() StepId {
+	return s.ID
+}
+
+// GetWeight returns the value of Weight.
+func (s *SplitPath) GetWeight() int32 {
+	return s.Weight
+}
+
+// GetSteps returns the value of Steps.
+func (s *SplitPath) GetSteps() []SplitPathStep {
+	return s.Steps
+}
+
+// SetID sets the value of ID.
+func (s *SplitPath) SetID(val StepId) {
+	s.ID = val
+}
+
+// SetWeight sets the value of Weight.
+func (s *SplitPath) SetWeight(val int32) {
+	s.Weight = val
+}
+
+// SetSteps sets the value of Steps.
+func (s *SplitPath) SetSteps(val []SplitPathStep) {
+	s.Steps = val
+}
+
+// A path of a Split, as a request writes it.
+// Ref: #/components/schemas/SplitPathInput
+type SplitPathInput struct {
+	// The path's id; omitted, the path is given one.
+	ID OptStepId `json:"id"`
+	// The path's share of the Contacts that reach the Split, a whole percentage of at least 1. The weights
+	// of a Split's paths sum to 100, or the save is refused, naming the Split.
+	Weight int32 `json:"weight"`
+	// The path's Steps, in order; none is a holdout, sent nothing, that goes on to the Step after the
+	// Split.
+	Steps []SplitPathStepInput `json:"steps"`
+}
+
+// GetID returns the value of ID.
+func (s *SplitPathInput) GetID() OptStepId {
+	return s.ID
+}
+
+// GetWeight returns the value of Weight.
+func (s *SplitPathInput) GetWeight() int32 {
+	return s.Weight
+}
+
+// GetSteps returns the value of Steps.
+func (s *SplitPathInput) GetSteps() []SplitPathStepInput {
+	return s.Steps
+}
+
+// SetID sets the value of ID.
+func (s *SplitPathInput) SetID(val OptStepId) {
+	s.ID = val
+}
+
+// SetWeight sets the value of Weight.
+func (s *SplitPathInput) SetWeight(val int32) {
+	s.Weight = val
+}
+
+// SetSteps sets the value of Steps.
+func (s *SplitPathInput) SetSteps(val []SplitPathStepInput) {
+	s.Steps = val
+}
+
+// One Step of a Split's path, by `type`: the arms of AutomationStep.
+// Ref: #/components/schemas/SplitPathStep
+type SplitPathStep struct {
+	OneOf SplitPathStepSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *SplitPathStep) GetOneOf() SplitPathStepSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *SplitPathStep) SetOneOf(val SplitPathStepSum) {
+	s.OneOf = val
+}
+
+// One Step of a Split's path, by `type`, as a request writes it: the arms of AutomationStepInput.
+// Ref: #/components/schemas/SplitPathStepInput
+type SplitPathStepInput struct {
+	OneOf SplitPathStepInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *SplitPathStepInput) GetOneOf() SplitPathStepInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *SplitPathStepInput) SetOneOf(val SplitPathStepInputSum) {
+	s.OneOf = val
+}
+
+// SplitPathStepInputSum represents sum type.
+type SplitPathStepInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type               SplitPathStepInputSumType
+	EmailStepInput     EmailStepInput
+	TelegramStepInput  TelegramStepInput
+	SmsStepInput       SmsStepInput
+	WaitStepInput      WaitStepInput
+	ApplyTagStepInput  ApplyTagStepInput
+	RemoveTagStepInput RemoveTagStepInput
+	HttpStepInput      HttpStepInput
+	EndStepInput       EndStepInput
+	BranchStepInput    BranchStepInput
+	SplitStepInput     SplitStepInput
+}
+
+// SplitPathStepInputSumType is oneOf type of SplitPathStepInputSum.
+type SplitPathStepInputSumType string
+
+// Possible values for SplitPathStepInputSumType.
+const (
+	EmailStepInputSplitPathStepInputSum     SplitPathStepInputSumType = "email"
+	TelegramStepInputSplitPathStepInputSum  SplitPathStepInputSumType = "telegram"
+	SmsStepInputSplitPathStepInputSum       SplitPathStepInputSumType = "sms"
+	WaitStepInputSplitPathStepInputSum      SplitPathStepInputSumType = "wait"
+	ApplyTagStepInputSplitPathStepInputSum  SplitPathStepInputSumType = "apply_tag"
+	RemoveTagStepInputSplitPathStepInputSum SplitPathStepInputSumType = "remove_tag"
+	HttpStepInputSplitPathStepInputSum      SplitPathStepInputSumType = "http"
+	EndStepInputSplitPathStepInputSum       SplitPathStepInputSumType = "end"
+	BranchStepInputSplitPathStepInputSum    SplitPathStepInputSumType = "branch"
+	SplitStepInputSplitPathStepInputSum     SplitPathStepInputSumType = "split"
+)
+
+// IsEmailStepInput reports whether SplitPathStepInputSum is EmailStepInput.
+func (s SplitPathStepInputSum) IsEmailStepInput() bool {
+	return s.Type == EmailStepInputSplitPathStepInputSum
+}
+
+// IsTelegramStepInput reports whether SplitPathStepInputSum is TelegramStepInput.
+func (s SplitPathStepInputSum) IsTelegramStepInput() bool {
+	return s.Type == TelegramStepInputSplitPathStepInputSum
+}
+
+// IsSmsStepInput reports whether SplitPathStepInputSum is SmsStepInput.
+func (s SplitPathStepInputSum) IsSmsStepInput() bool {
+	return s.Type == SmsStepInputSplitPathStepInputSum
+}
+
+// IsWaitStepInput reports whether SplitPathStepInputSum is WaitStepInput.
+func (s SplitPathStepInputSum) IsWaitStepInput() bool {
+	return s.Type == WaitStepInputSplitPathStepInputSum
+}
+
+// IsApplyTagStepInput reports whether SplitPathStepInputSum is ApplyTagStepInput.
+func (s SplitPathStepInputSum) IsApplyTagStepInput() bool {
+	return s.Type == ApplyTagStepInputSplitPathStepInputSum
+}
+
+// IsRemoveTagStepInput reports whether SplitPathStepInputSum is RemoveTagStepInput.
+func (s SplitPathStepInputSum) IsRemoveTagStepInput() bool {
+	return s.Type == RemoveTagStepInputSplitPathStepInputSum
+}
+
+// IsHttpStepInput reports whether SplitPathStepInputSum is HttpStepInput.
+func (s SplitPathStepInputSum) IsHttpStepInput() bool {
+	return s.Type == HttpStepInputSplitPathStepInputSum
+}
+
+// IsEndStepInput reports whether SplitPathStepInputSum is EndStepInput.
+func (s SplitPathStepInputSum) IsEndStepInput() bool {
+	return s.Type == EndStepInputSplitPathStepInputSum
+}
+
+// IsBranchStepInput reports whether SplitPathStepInputSum is BranchStepInput.
+func (s SplitPathStepInputSum) IsBranchStepInput() bool {
+	return s.Type == BranchStepInputSplitPathStepInputSum
+}
+
+// IsSplitStepInput reports whether SplitPathStepInputSum is SplitStepInput.
+func (s SplitPathStepInputSum) IsSplitStepInput() bool {
+	return s.Type == SplitStepInputSplitPathStepInputSum
+}
+
+// SetEmailStepInput sets SplitPathStepInputSum to EmailStepInput.
+func (s *SplitPathStepInputSum) SetEmailStepInput(v EmailStepInput) {
+	s.Type = EmailStepInputSplitPathStepInputSum
+	s.EmailStepInput = v
+}
+
+// GetEmailStepInput returns EmailStepInput and true boolean if SplitPathStepInputSum is EmailStepInput.
+func (s SplitPathStepInputSum) GetEmailStepInput() (v EmailStepInput, ok bool) {
+	if !s.IsEmailStepInput() {
+		return v, false
+	}
+	return s.EmailStepInput, true
+}
+
+// NewEmailStepInputSplitPathStepInputSum returns new SplitPathStepInputSum from EmailStepInput.
+func NewEmailStepInputSplitPathStepInputSum(v EmailStepInput) SplitPathStepInputSum {
+	var s SplitPathStepInputSum
+	s.SetEmailStepInput(v)
+	return s
+}
+
+// SetTelegramStepInput sets SplitPathStepInputSum to TelegramStepInput.
+func (s *SplitPathStepInputSum) SetTelegramStepInput(v TelegramStepInput) {
+	s.Type = TelegramStepInputSplitPathStepInputSum
+	s.TelegramStepInput = v
+}
+
+// GetTelegramStepInput returns TelegramStepInput and true boolean if SplitPathStepInputSum is TelegramStepInput.
+func (s SplitPathStepInputSum) GetTelegramStepInput() (v TelegramStepInput, ok bool) {
+	if !s.IsTelegramStepInput() {
+		return v, false
+	}
+	return s.TelegramStepInput, true
+}
+
+// NewTelegramStepInputSplitPathStepInputSum returns new SplitPathStepInputSum from TelegramStepInput.
+func NewTelegramStepInputSplitPathStepInputSum(v TelegramStepInput) SplitPathStepInputSum {
+	var s SplitPathStepInputSum
+	s.SetTelegramStepInput(v)
+	return s
+}
+
+// SetSmsStepInput sets SplitPathStepInputSum to SmsStepInput.
+func (s *SplitPathStepInputSum) SetSmsStepInput(v SmsStepInput) {
+	s.Type = SmsStepInputSplitPathStepInputSum
+	s.SmsStepInput = v
+}
+
+// GetSmsStepInput returns SmsStepInput and true boolean if SplitPathStepInputSum is SmsStepInput.
+func (s SplitPathStepInputSum) GetSmsStepInput() (v SmsStepInput, ok bool) {
+	if !s.IsSmsStepInput() {
+		return v, false
+	}
+	return s.SmsStepInput, true
+}
+
+// NewSmsStepInputSplitPathStepInputSum returns new SplitPathStepInputSum from SmsStepInput.
+func NewSmsStepInputSplitPathStepInputSum(v SmsStepInput) SplitPathStepInputSum {
+	var s SplitPathStepInputSum
+	s.SetSmsStepInput(v)
+	return s
+}
+
+// SetWaitStepInput sets SplitPathStepInputSum to WaitStepInput.
+func (s *SplitPathStepInputSum) SetWaitStepInput(v WaitStepInput) {
+	s.Type = WaitStepInputSplitPathStepInputSum
+	s.WaitStepInput = v
+}
+
+// GetWaitStepInput returns WaitStepInput and true boolean if SplitPathStepInputSum is WaitStepInput.
+func (s SplitPathStepInputSum) GetWaitStepInput() (v WaitStepInput, ok bool) {
+	if !s.IsWaitStepInput() {
+		return v, false
+	}
+	return s.WaitStepInput, true
+}
+
+// NewWaitStepInputSplitPathStepInputSum returns new SplitPathStepInputSum from WaitStepInput.
+func NewWaitStepInputSplitPathStepInputSum(v WaitStepInput) SplitPathStepInputSum {
+	var s SplitPathStepInputSum
+	s.SetWaitStepInput(v)
+	return s
+}
+
+// SetApplyTagStepInput sets SplitPathStepInputSum to ApplyTagStepInput.
+func (s *SplitPathStepInputSum) SetApplyTagStepInput(v ApplyTagStepInput) {
+	s.Type = ApplyTagStepInputSplitPathStepInputSum
+	s.ApplyTagStepInput = v
+}
+
+// GetApplyTagStepInput returns ApplyTagStepInput and true boolean if SplitPathStepInputSum is ApplyTagStepInput.
+func (s SplitPathStepInputSum) GetApplyTagStepInput() (v ApplyTagStepInput, ok bool) {
+	if !s.IsApplyTagStepInput() {
+		return v, false
+	}
+	return s.ApplyTagStepInput, true
+}
+
+// NewApplyTagStepInputSplitPathStepInputSum returns new SplitPathStepInputSum from ApplyTagStepInput.
+func NewApplyTagStepInputSplitPathStepInputSum(v ApplyTagStepInput) SplitPathStepInputSum {
+	var s SplitPathStepInputSum
+	s.SetApplyTagStepInput(v)
+	return s
+}
+
+// SetRemoveTagStepInput sets SplitPathStepInputSum to RemoveTagStepInput.
+func (s *SplitPathStepInputSum) SetRemoveTagStepInput(v RemoveTagStepInput) {
+	s.Type = RemoveTagStepInputSplitPathStepInputSum
+	s.RemoveTagStepInput = v
+}
+
+// GetRemoveTagStepInput returns RemoveTagStepInput and true boolean if SplitPathStepInputSum is RemoveTagStepInput.
+func (s SplitPathStepInputSum) GetRemoveTagStepInput() (v RemoveTagStepInput, ok bool) {
+	if !s.IsRemoveTagStepInput() {
+		return v, false
+	}
+	return s.RemoveTagStepInput, true
+}
+
+// NewRemoveTagStepInputSplitPathStepInputSum returns new SplitPathStepInputSum from RemoveTagStepInput.
+func NewRemoveTagStepInputSplitPathStepInputSum(v RemoveTagStepInput) SplitPathStepInputSum {
+	var s SplitPathStepInputSum
+	s.SetRemoveTagStepInput(v)
+	return s
+}
+
+// SetHttpStepInput sets SplitPathStepInputSum to HttpStepInput.
+func (s *SplitPathStepInputSum) SetHttpStepInput(v HttpStepInput) {
+	s.Type = HttpStepInputSplitPathStepInputSum
+	s.HttpStepInput = v
+}
+
+// GetHttpStepInput returns HttpStepInput and true boolean if SplitPathStepInputSum is HttpStepInput.
+func (s SplitPathStepInputSum) GetHttpStepInput() (v HttpStepInput, ok bool) {
+	if !s.IsHttpStepInput() {
+		return v, false
+	}
+	return s.HttpStepInput, true
+}
+
+// NewHttpStepInputSplitPathStepInputSum returns new SplitPathStepInputSum from HttpStepInput.
+func NewHttpStepInputSplitPathStepInputSum(v HttpStepInput) SplitPathStepInputSum {
+	var s SplitPathStepInputSum
+	s.SetHttpStepInput(v)
+	return s
+}
+
+// SetEndStepInput sets SplitPathStepInputSum to EndStepInput.
+func (s *SplitPathStepInputSum) SetEndStepInput(v EndStepInput) {
+	s.Type = EndStepInputSplitPathStepInputSum
+	s.EndStepInput = v
+}
+
+// GetEndStepInput returns EndStepInput and true boolean if SplitPathStepInputSum is EndStepInput.
+func (s SplitPathStepInputSum) GetEndStepInput() (v EndStepInput, ok bool) {
+	if !s.IsEndStepInput() {
+		return v, false
+	}
+	return s.EndStepInput, true
+}
+
+// NewEndStepInputSplitPathStepInputSum returns new SplitPathStepInputSum from EndStepInput.
+func NewEndStepInputSplitPathStepInputSum(v EndStepInput) SplitPathStepInputSum {
+	var s SplitPathStepInputSum
+	s.SetEndStepInput(v)
+	return s
+}
+
+// SetBranchStepInput sets SplitPathStepInputSum to BranchStepInput.
+func (s *SplitPathStepInputSum) SetBranchStepInput(v BranchStepInput) {
+	s.Type = BranchStepInputSplitPathStepInputSum
+	s.BranchStepInput = v
+}
+
+// GetBranchStepInput returns BranchStepInput and true boolean if SplitPathStepInputSum is BranchStepInput.
+func (s SplitPathStepInputSum) GetBranchStepInput() (v BranchStepInput, ok bool) {
+	if !s.IsBranchStepInput() {
+		return v, false
+	}
+	return s.BranchStepInput, true
+}
+
+// NewBranchStepInputSplitPathStepInputSum returns new SplitPathStepInputSum from BranchStepInput.
+func NewBranchStepInputSplitPathStepInputSum(v BranchStepInput) SplitPathStepInputSum {
+	var s SplitPathStepInputSum
+	s.SetBranchStepInput(v)
+	return s
+}
+
+// SetSplitStepInput sets SplitPathStepInputSum to SplitStepInput.
+func (s *SplitPathStepInputSum) SetSplitStepInput(v SplitStepInput) {
+	s.Type = SplitStepInputSplitPathStepInputSum
+	s.SplitStepInput = v
+}
+
+// GetSplitStepInput returns SplitStepInput and true boolean if SplitPathStepInputSum is SplitStepInput.
+func (s SplitPathStepInputSum) GetSplitStepInput() (v SplitStepInput, ok bool) {
+	if !s.IsSplitStepInput() {
+		return v, false
+	}
+	return s.SplitStepInput, true
+}
+
+// NewSplitStepInputSplitPathStepInputSum returns new SplitPathStepInputSum from SplitStepInput.
+func NewSplitStepInputSplitPathStepInputSum(v SplitStepInput) SplitPathStepInputSum {
+	var s SplitPathStepInputSum
+	s.SetSplitStepInput(v)
+	return s
+}
+
+// SplitPathStepSum represents sum type.
+type SplitPathStepSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type          SplitPathStepSumType
+	EmailStep     EmailStep
+	TelegramStep  TelegramStep
+	SmsStep       SmsStep
+	WaitStep      WaitStep
+	ApplyTagStep  ApplyTagStep
+	RemoveTagStep RemoveTagStep
+	HttpStep      HttpStep
+	EndStep       EndStep
+	BranchStep    BranchStep
+	SplitStep     SplitStep
+}
+
+// SplitPathStepSumType is oneOf type of SplitPathStepSum.
+type SplitPathStepSumType string
+
+// Possible values for SplitPathStepSumType.
+const (
+	EmailStepSplitPathStepSum     SplitPathStepSumType = "email"
+	TelegramStepSplitPathStepSum  SplitPathStepSumType = "telegram"
+	SmsStepSplitPathStepSum       SplitPathStepSumType = "sms"
+	WaitStepSplitPathStepSum      SplitPathStepSumType = "wait"
+	ApplyTagStepSplitPathStepSum  SplitPathStepSumType = "apply_tag"
+	RemoveTagStepSplitPathStepSum SplitPathStepSumType = "remove_tag"
+	HttpStepSplitPathStepSum      SplitPathStepSumType = "http"
+	EndStepSplitPathStepSum       SplitPathStepSumType = "end"
+	BranchStepSplitPathStepSum    SplitPathStepSumType = "branch"
+	SplitStepSplitPathStepSum     SplitPathStepSumType = "split"
+)
+
+// IsEmailStep reports whether SplitPathStepSum is EmailStep.
+func (s SplitPathStepSum) IsEmailStep() bool { return s.Type == EmailStepSplitPathStepSum }
+
+// IsTelegramStep reports whether SplitPathStepSum is TelegramStep.
+func (s SplitPathStepSum) IsTelegramStep() bool { return s.Type == TelegramStepSplitPathStepSum }
+
+// IsSmsStep reports whether SplitPathStepSum is SmsStep.
+func (s SplitPathStepSum) IsSmsStep() bool { return s.Type == SmsStepSplitPathStepSum }
+
+// IsWaitStep reports whether SplitPathStepSum is WaitStep.
+func (s SplitPathStepSum) IsWaitStep() bool { return s.Type == WaitStepSplitPathStepSum }
+
+// IsApplyTagStep reports whether SplitPathStepSum is ApplyTagStep.
+func (s SplitPathStepSum) IsApplyTagStep() bool { return s.Type == ApplyTagStepSplitPathStepSum }
+
+// IsRemoveTagStep reports whether SplitPathStepSum is RemoveTagStep.
+func (s SplitPathStepSum) IsRemoveTagStep() bool { return s.Type == RemoveTagStepSplitPathStepSum }
+
+// IsHttpStep reports whether SplitPathStepSum is HttpStep.
+func (s SplitPathStepSum) IsHttpStep() bool { return s.Type == HttpStepSplitPathStepSum }
+
+// IsEndStep reports whether SplitPathStepSum is EndStep.
+func (s SplitPathStepSum) IsEndStep() bool { return s.Type == EndStepSplitPathStepSum }
+
+// IsBranchStep reports whether SplitPathStepSum is BranchStep.
+func (s SplitPathStepSum) IsBranchStep() bool { return s.Type == BranchStepSplitPathStepSum }
+
+// IsSplitStep reports whether SplitPathStepSum is SplitStep.
+func (s SplitPathStepSum) IsSplitStep() bool { return s.Type == SplitStepSplitPathStepSum }
+
+// SetEmailStep sets SplitPathStepSum to EmailStep.
+func (s *SplitPathStepSum) SetEmailStep(v EmailStep) {
+	s.Type = EmailStepSplitPathStepSum
+	s.EmailStep = v
+}
+
+// GetEmailStep returns EmailStep and true boolean if SplitPathStepSum is EmailStep.
+func (s SplitPathStepSum) GetEmailStep() (v EmailStep, ok bool) {
+	if !s.IsEmailStep() {
+		return v, false
+	}
+	return s.EmailStep, true
+}
+
+// NewEmailStepSplitPathStepSum returns new SplitPathStepSum from EmailStep.
+func NewEmailStepSplitPathStepSum(v EmailStep) SplitPathStepSum {
+	var s SplitPathStepSum
+	s.SetEmailStep(v)
+	return s
+}
+
+// SetTelegramStep sets SplitPathStepSum to TelegramStep.
+func (s *SplitPathStepSum) SetTelegramStep(v TelegramStep) {
+	s.Type = TelegramStepSplitPathStepSum
+	s.TelegramStep = v
+}
+
+// GetTelegramStep returns TelegramStep and true boolean if SplitPathStepSum is TelegramStep.
+func (s SplitPathStepSum) GetTelegramStep() (v TelegramStep, ok bool) {
+	if !s.IsTelegramStep() {
+		return v, false
+	}
+	return s.TelegramStep, true
+}
+
+// NewTelegramStepSplitPathStepSum returns new SplitPathStepSum from TelegramStep.
+func NewTelegramStepSplitPathStepSum(v TelegramStep) SplitPathStepSum {
+	var s SplitPathStepSum
+	s.SetTelegramStep(v)
+	return s
+}
+
+// SetSmsStep sets SplitPathStepSum to SmsStep.
+func (s *SplitPathStepSum) SetSmsStep(v SmsStep) {
+	s.Type = SmsStepSplitPathStepSum
+	s.SmsStep = v
+}
+
+// GetSmsStep returns SmsStep and true boolean if SplitPathStepSum is SmsStep.
+func (s SplitPathStepSum) GetSmsStep() (v SmsStep, ok bool) {
+	if !s.IsSmsStep() {
+		return v, false
+	}
+	return s.SmsStep, true
+}
+
+// NewSmsStepSplitPathStepSum returns new SplitPathStepSum from SmsStep.
+func NewSmsStepSplitPathStepSum(v SmsStep) SplitPathStepSum {
+	var s SplitPathStepSum
+	s.SetSmsStep(v)
+	return s
+}
+
+// SetWaitStep sets SplitPathStepSum to WaitStep.
+func (s *SplitPathStepSum) SetWaitStep(v WaitStep) {
+	s.Type = WaitStepSplitPathStepSum
+	s.WaitStep = v
+}
+
+// GetWaitStep returns WaitStep and true boolean if SplitPathStepSum is WaitStep.
+func (s SplitPathStepSum) GetWaitStep() (v WaitStep, ok bool) {
+	if !s.IsWaitStep() {
+		return v, false
+	}
+	return s.WaitStep, true
+}
+
+// NewWaitStepSplitPathStepSum returns new SplitPathStepSum from WaitStep.
+func NewWaitStepSplitPathStepSum(v WaitStep) SplitPathStepSum {
+	var s SplitPathStepSum
+	s.SetWaitStep(v)
+	return s
+}
+
+// SetApplyTagStep sets SplitPathStepSum to ApplyTagStep.
+func (s *SplitPathStepSum) SetApplyTagStep(v ApplyTagStep) {
+	s.Type = ApplyTagStepSplitPathStepSum
+	s.ApplyTagStep = v
+}
+
+// GetApplyTagStep returns ApplyTagStep and true boolean if SplitPathStepSum is ApplyTagStep.
+func (s SplitPathStepSum) GetApplyTagStep() (v ApplyTagStep, ok bool) {
+	if !s.IsApplyTagStep() {
+		return v, false
+	}
+	return s.ApplyTagStep, true
+}
+
+// NewApplyTagStepSplitPathStepSum returns new SplitPathStepSum from ApplyTagStep.
+func NewApplyTagStepSplitPathStepSum(v ApplyTagStep) SplitPathStepSum {
+	var s SplitPathStepSum
+	s.SetApplyTagStep(v)
+	return s
+}
+
+// SetRemoveTagStep sets SplitPathStepSum to RemoveTagStep.
+func (s *SplitPathStepSum) SetRemoveTagStep(v RemoveTagStep) {
+	s.Type = RemoveTagStepSplitPathStepSum
+	s.RemoveTagStep = v
+}
+
+// GetRemoveTagStep returns RemoveTagStep and true boolean if SplitPathStepSum is RemoveTagStep.
+func (s SplitPathStepSum) GetRemoveTagStep() (v RemoveTagStep, ok bool) {
+	if !s.IsRemoveTagStep() {
+		return v, false
+	}
+	return s.RemoveTagStep, true
+}
+
+// NewRemoveTagStepSplitPathStepSum returns new SplitPathStepSum from RemoveTagStep.
+func NewRemoveTagStepSplitPathStepSum(v RemoveTagStep) SplitPathStepSum {
+	var s SplitPathStepSum
+	s.SetRemoveTagStep(v)
+	return s
+}
+
+// SetHttpStep sets SplitPathStepSum to HttpStep.
+func (s *SplitPathStepSum) SetHttpStep(v HttpStep) {
+	s.Type = HttpStepSplitPathStepSum
+	s.HttpStep = v
+}
+
+// GetHttpStep returns HttpStep and true boolean if SplitPathStepSum is HttpStep.
+func (s SplitPathStepSum) GetHttpStep() (v HttpStep, ok bool) {
+	if !s.IsHttpStep() {
+		return v, false
+	}
+	return s.HttpStep, true
+}
+
+// NewHttpStepSplitPathStepSum returns new SplitPathStepSum from HttpStep.
+func NewHttpStepSplitPathStepSum(v HttpStep) SplitPathStepSum {
+	var s SplitPathStepSum
+	s.SetHttpStep(v)
+	return s
+}
+
+// SetEndStep sets SplitPathStepSum to EndStep.
+func (s *SplitPathStepSum) SetEndStep(v EndStep) {
+	s.Type = EndStepSplitPathStepSum
+	s.EndStep = v
+}
+
+// GetEndStep returns EndStep and true boolean if SplitPathStepSum is EndStep.
+func (s SplitPathStepSum) GetEndStep() (v EndStep, ok bool) {
+	if !s.IsEndStep() {
+		return v, false
+	}
+	return s.EndStep, true
+}
+
+// NewEndStepSplitPathStepSum returns new SplitPathStepSum from EndStep.
+func NewEndStepSplitPathStepSum(v EndStep) SplitPathStepSum {
+	var s SplitPathStepSum
+	s.SetEndStep(v)
+	return s
+}
+
+// SetBranchStep sets SplitPathStepSum to BranchStep.
+func (s *SplitPathStepSum) SetBranchStep(v BranchStep) {
+	s.Type = BranchStepSplitPathStepSum
+	s.BranchStep = v
+}
+
+// GetBranchStep returns BranchStep and true boolean if SplitPathStepSum is BranchStep.
+func (s SplitPathStepSum) GetBranchStep() (v BranchStep, ok bool) {
+	if !s.IsBranchStep() {
+		return v, false
+	}
+	return s.BranchStep, true
+}
+
+// NewBranchStepSplitPathStepSum returns new SplitPathStepSum from BranchStep.
+func NewBranchStepSplitPathStepSum(v BranchStep) SplitPathStepSum {
+	var s SplitPathStepSum
+	s.SetBranchStep(v)
+	return s
+}
+
+// SetSplitStep sets SplitPathStepSum to SplitStep.
+func (s *SplitPathStepSum) SetSplitStep(v SplitStep) {
+	s.Type = SplitStepSplitPathStepSum
+	s.SplitStep = v
+}
+
+// GetSplitStep returns SplitStep and true boolean if SplitPathStepSum is SplitStep.
+func (s SplitPathStepSum) GetSplitStep() (v SplitStep, ok bool) {
+	if !s.IsSplitStep() {
+		return v, false
+	}
+	return s.SplitStep, true
+}
+
+// NewSplitStepSplitPathStepSum returns new SplitPathStepSum from SplitStep.
+func NewSplitStepSplitPathStepSum(v SplitStep) SplitPathStepSum {
+	var s SplitPathStepSum
+	s.SetSplitStep(v)
+	return s
+}
+
+// A Step that sends each Enrollment down one of its paths by weight (ADR 0124): a hash of the Contact,
+// the Split and the Enrollment's ordinal chooses the path, so the same Enrollment always takes the
+// same path and a new Enrollment of the Contact draws again. An empty path is a holdout. The paths
+// rejoin at the Step after the Split.
+// Ref: #/components/schemas/SplitStep
+type SplitStep struct {
+	// The Step's id.
+	ID   StepId        `json:"id"`
+	Type SplitStepType `json:"type"`
+	// The paths, in order.
+	Paths []SplitPath `json:"paths"`
+}
+
+// GetID returns the value of ID.
+func (s *SplitStep) GetID() StepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *SplitStep) GetType() SplitStepType {
+	return s.Type
+}
+
+// GetPaths returns the value of Paths.
+func (s *SplitStep) GetPaths() []SplitPath {
+	return s.Paths
+}
+
+// SetID sets the value of ID.
+func (s *SplitStep) SetID(val StepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *SplitStep) SetType(val SplitStepType) {
+	s.Type = val
+}
+
+// SetPaths sets the value of Paths.
+func (s *SplitStep) SetPaths(val []SplitPath) {
+	s.Paths = val
+}
+
+// A Split, as a request writes it. It needs two to ten paths, with weights summing to 100.
+// Ref: #/components/schemas/SplitStepInput
+type SplitStepInput struct {
+	// The Step's id; omitted, the Step is given one.
+	ID   OptStepId          `json:"id"`
+	Type SplitStepInputType `json:"type"`
+	// The paths, in order.
+	Paths []SplitPathInput `json:"paths"`
+}
+
+// GetID returns the value of ID.
+func (s *SplitStepInput) GetID() OptStepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *SplitStepInput) GetType() SplitStepInputType {
+	return s.Type
+}
+
+// GetPaths returns the value of Paths.
+func (s *SplitStepInput) GetPaths() []SplitPathInput {
+	return s.Paths
+}
+
+// SetID sets the value of ID.
+func (s *SplitStepInput) SetID(val OptStepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *SplitStepInput) SetType(val SplitStepInputType) {
+	s.Type = val
+}
+
+// SetPaths sets the value of Paths.
+func (s *SplitStepInput) SetPaths(val []SplitPathInput) {
+	s.Paths = val
+}
+
+type SplitStepInputType string
+
+const (
+	SplitStepInputTypeSplit SplitStepInputType = "split"
+)
+
+// AllValues returns all SplitStepInputType values.
+func (SplitStepInputType) AllValues() []SplitStepInputType {
+	return []SplitStepInputType{
+		SplitStepInputTypeSplit,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SplitStepInputType) MarshalText() ([]byte, error) {
+	switch s {
+	case SplitStepInputTypeSplit:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SplitStepInputType) UnmarshalText(data []byte) error {
+	switch SplitStepInputType(data) {
+	case SplitStepInputTypeSplit:
+		*s = SplitStepInputTypeSplit
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type SplitStepType string
+
+const (
+	SplitStepTypeSplit SplitStepType = "split"
+)
+
+// AllValues returns all SplitStepType values.
+func (SplitStepType) AllValues() []SplitStepType {
+	return []SplitStepType{
+		SplitStepTypeSplit,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SplitStepType) MarshalText() ([]byte, error) {
+	switch s {
+	case SplitStepTypeSplit:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SplitStepType) UnmarshalText(data []byte) error {
+	switch SplitStepType(data) {
+	case SplitStepTypeSplit:
+		*s = SplitStepTypeSplit
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 // How a test of a Contact's Engagement tracking consent compares it with a state: it reads as the

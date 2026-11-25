@@ -171,6 +171,10 @@ func validate(steps automationstep.Path, linkLength int) error {
 			if err := validateBranch(st, s); err != nil {
 				return err
 			}
+		case automationstep.Split:
+			if err := validateSplit(st, s); err != nil {
+				return err
+			}
 		default:
 			return refuse(st, "the step has no known kind")
 		}
@@ -350,6 +354,28 @@ func (m *Module) build(ctx context.Context, written automationstep.Path) (automa
 		return automationstep.Step{ID: st.ID, Payload: s}, nil
 	})
 }
+
+// validateSplit checks the shape of a Split (ADR 0124): two to MaxPathsPerFork paths, each of a
+// whole weight of at least 1, the weights summing to 100.
+func validateSplit(st *automationstep.Step, sp automationstep.Split) error {
+	if n := len(sp.Paths); n < 2 || n > MaxPathsPerFork {
+		return refuse(st, fmt.Sprintf("a split has 2 to %d paths, this one has %d", MaxPathsPerFork, n))
+	}
+	sum := 0
+	for i, p := range sp.Paths {
+		if p.Weight < 1 {
+			return refuse(st, fmt.Sprintf("path %d: a weight is at least 1, this one is %d", i+1, p.Weight))
+		}
+		sum += p.Weight
+	}
+	if sum != splitWhole {
+		return refuse(st, fmt.Sprintf("the weights of a split sum to %d, these sum to %d", splitWhole, sum))
+	}
+	return nil
+}
+
+// splitWhole is what a Split's weights sum to: each is a percentage of the Contacts that reach it.
+const splitWhole = 100
 
 // checkBranches checks the Condition of each path of each Branch of the tree as a Rule's is
 // checked (condition.Module.CheckBranch), bounded as a Rule's: it reads as a Branch path's tree,

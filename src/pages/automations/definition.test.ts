@@ -106,6 +106,26 @@ test('a version holding an End keeps it as stored and is not saved', () => {
   expect(holdsKept(flowOf(version(STEPS)))).toBe(false)
 })
 
+// A Split (ADR 0124) is kept as stored, its paths, weights and their Steps with it, until the editor
+// edits forks.
+test('a version holding a Split keeps it as stored and is not saved', () => {
+  const split: AutomationStep = {
+    id: stepId(15),
+    type: 'split',
+    paths: [
+      { id: stepId(16), weight: 30, steps: [{ id: stepId(17), type: 'wait', seconds: 60 }] },
+      { id: stepId(18), weight: 70, steps: [] },
+    ],
+  }
+  const splitting = version([...STEPS, split])
+
+  const flow = flowOf(splitting)
+
+  expect(holdsKept(flow)).toBe(true)
+  expect(definitionOf(flow).steps).toEqual(splitting.steps)
+  expect(pathInputOf(flow)).toBeNull()
+})
+
 test('an email step written in the editor is saved as its document alone', () => {
   const doc = { type: 'doc', content: [{ type: 'paragraph' }] }
   const stored: AutomationStep = {

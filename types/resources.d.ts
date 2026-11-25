@@ -502,6 +502,7 @@ export default interface Resources {
       "stepHttp": "Call a URL",
       "stepRemoveTag": "Remove tag",
       "stepSms": "Send SMS",
+      "stepSplit": "Split",
       "stepTelegram": "Send Telegram message",
       "stepTrigger": "Trigger",
       "stepWait": "Wait",
