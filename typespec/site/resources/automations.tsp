@@ -75,13 +75,11 @@ model SiteAutomationsListFilter {
   @query direction?: SortDirection;
 }
 
-/**
- * An automation is archived, never deleted (ADR 0100): it has no delete. An archived automation is
- * read-only until it is unarchived: an edit, publish, revert or deactivate of it is a 409.
- */
 /** The Conditions of a Branch being edited, whose need of an unknown path is asked */
 model BranchUnknownPathInput {
-  /** The Conditions of the Branch's listed paths, in order */
+  /** The Conditions of the Branch's listed paths, in order: one to nine, as a Branch lists */
+  @minItems(1)
+  @maxItems(9)
   conditions: BranchConditionInput[];
 }
 
@@ -94,6 +92,10 @@ model BranchUnknownPathResult {
   needed: boolean;
 }
 
+/**
+ * An automation is archived, never deleted (ADR 0100): it has no delete. An archived automation is
+ * read-only until it is unarchived: an edit, publish, revert or deactivate of it is a 409.
+ */
 @tag("Site Automations")
 interface SiteAutomations
   extends WorkspaceCrudArchivable<

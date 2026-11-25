@@ -338,11 +338,7 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 // delivered again finds the Enrollment moved on. A Condition that no longer reads (a Custom field
 // retyped past it) fails the Enrollment; a failed read is retried.
 func (m *StepExecution) branch(ctx context.Context, s *ent.Scoped, run *ent.AutomationRun, at place, b automationstep.Branch) error {
-	conds := make([]conditiontree.Branch, len(b.Paths))
-	for i, p := range b.Paths {
-		conds[i] = p.Condition
-	}
-	truths, err := m.conditions.Outcomes(ctx, s, condition.OutcomesInput{ContactID: run.ContactID, Conditions: conds, Properties: run.EventProperties})
+	truths, err := m.conditions.Outcomes(ctx, s, condition.OutcomesInput{ContactID: run.ContactID, Conditions: b.Conditions(), Properties: run.EventProperties})
 	if errors.Is(err, condition.ErrStorage) {
 		return err
 	}

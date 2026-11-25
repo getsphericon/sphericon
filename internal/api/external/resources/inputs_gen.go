@@ -508,6 +508,21 @@ func (c *InputsImpl) OptOut(source *external.CreateUnsubscribeInput) unsubscribe
 	}
 	return unsubscriberecordingOptOutInput
 }
+func (c *InputsImpl) PathStepInputSum(source external.PathStepInputSum) external.AutomationStepInputSum {
+	var externalapiAutomationStepInputSum external.AutomationStepInputSum
+	externalapiAutomationStepInputSum.Type = c.PathStepInputType(source.Type)
+	externalapiAutomationStepInputSum.EmailStepInput = source.EmailStepInput
+	externalapiAutomationStepInputSum.TelegramStepInput = source.TelegramStepInput
+	externalapiAutomationStepInputSum.SmsStepInput = source.SmsStepInput
+	externalapiAutomationStepInputSum.WaitStepInput = source.WaitStepInput
+	externalapiAutomationStepInputSum.ApplyTagStepInput = source.ApplyTagStepInput
+	externalapiAutomationStepInputSum.RemoveTagStepInput = source.RemoveTagStepInput
+	externalapiAutomationStepInputSum.HttpStepInput = source.HttpStepInput
+	externalapiAutomationStepInputSum.EndStepInput = source.EndStepInput
+	externalapiAutomationStepInputSum.BranchStepInput = source.BranchStepInput
+	externalapiAutomationStepInputSum.SplitStepInput = source.SplitStepInput
+	return externalapiAutomationStepInputSum
+}
 func (c *InputsImpl) PathStepInputType(source external.PathStepInputSumType) external.AutomationStepInputSumType {
 	var externalapiAutomationStepInputSumType external.AutomationStepInputSumType
 	switch source {
@@ -678,6 +693,21 @@ func (c *InputsImpl) SmsStepIn(source external.SmsStepInput) automationstep.SMS 
 	automationstepSMS.Text = source.Text
 	automationstepSMS.LinkTracking = boolPtrIn(source.LinkTracking)
 	return automationstepSMS
+}
+func (c *InputsImpl) SplitPathStepInputSum(source external.SplitPathStepInputSum) external.AutomationStepInputSum {
+	var externalapiAutomationStepInputSum external.AutomationStepInputSum
+	externalapiAutomationStepInputSum.Type = c.SplitPathStepInputType(source.Type)
+	externalapiAutomationStepInputSum.EmailStepInput = source.EmailStepInput
+	externalapiAutomationStepInputSum.TelegramStepInput = source.TelegramStepInput
+	externalapiAutomationStepInputSum.SmsStepInput = source.SmsStepInput
+	externalapiAutomationStepInputSum.WaitStepInput = source.WaitStepInput
+	externalapiAutomationStepInputSum.ApplyTagStepInput = source.ApplyTagStepInput
+	externalapiAutomationStepInputSum.RemoveTagStepInput = source.RemoveTagStepInput
+	externalapiAutomationStepInputSum.HttpStepInput = source.HttpStepInput
+	externalapiAutomationStepInputSum.EndStepInput = source.EndStepInput
+	externalapiAutomationStepInputSum.BranchStepInput = source.BranchStepInput
+	externalapiAutomationStepInputSum.SplitStepInput = source.SplitStepInput
+	return externalapiAutomationStepInputSum
 }
 func (c *InputsImpl) SplitPathStepInputType(source external.SplitPathStepInputSumType) external.AutomationStepInputSumType {
 	var externalapiAutomationStepInputSumType external.AutomationStepInputSumType

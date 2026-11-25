@@ -1129,8 +1129,8 @@ export type BranchStep = {
 };
 
 /**
- * A Branch, as a request writes it. It needs a path besides `otherwise`; Publish refuses it
- * without `unknown` when a Condition counts an open or a click, and with `unknown` when none does.
+ * A Branch, as a request writes it. Publish refuses it without `unknown` when a Condition counts
+ * an open or a click, and with `unknown` when none does.
  */
 export type BranchStepInput = {
   /**
@@ -1139,7 +1139,8 @@ export type BranchStepInput = {
   id?: StepId;
   type: 'branch';
   /**
-   * The paths, in the order their Conditions are tested
+   * The paths, in the order their Conditions are tested: one to nine, so that with `otherwise` a
+   * Branch has at most ten (`unknown` is not counted)
    */
   paths: Array<BranchPathInput>;
   /**
@@ -6508,8 +6509,8 @@ export type SplitPathInput = {
    */
   id?: StepId;
   /**
-   * The path's share of the Contacts that reach the Split, a whole percentage of at least 1. The
-   * weights of a Split's paths sum to 100, or the save is refused, naming the Split.
+   * The path's share of the Contacts that reach the Split, a whole percentage. The weights of a
+   * Split's paths sum to 100, or the save is refused, naming the Split.
    */
   weight: number;
   /**
@@ -6588,7 +6589,7 @@ export type SplitStep = {
 };
 
 /**
- * A Split, as a request writes it. It needs two to ten paths, with weights summing to 100.
+ * A Split, as a request writes it. Its paths' weights sum to 100.
  */
 export type SplitStepInput = {
   /**
@@ -6597,7 +6598,7 @@ export type SplitStepInput = {
   id?: StepId;
   type: 'split';
   /**
-   * The paths, in order
+   * The paths, in order: two to ten
    */
   paths: Array<SplitPathInput>;
 };

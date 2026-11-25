@@ -1,4 +1,4 @@
-import { allSteps, forkPaths } from './definition.ts'
+import { allSteps, forkPaths, isFork } from './definition.ts'
 import type {
   BranchPathDraft,
   EditedKind,
@@ -97,9 +97,7 @@ function withPaths(step: ForkStep, change: (path: FlowPath) => FlowPath): ForkSt
 // sees a path after the paths nested in its Steps were rebuilt.
 function mapPath(path: FlowPath, change: (path: FlowPath) => FlowPath): FlowPath {
   const steps = path.steps.map((step) =>
-    step.kind === 'branch' || step.kind === 'split'
-      ? withPaths(step, (nested) => mapPath(nested, change))
-      : step,
+    isFork(step) ? withPaths(step, (nested) => mapPath(nested, change)) : step,
   )
   return change({ ...path, steps })
 }
@@ -119,9 +117,7 @@ function mapStep(flow: Flow, id: string, change: (step: FlowStep) => FlowStep): 
 
 // mapFork changes the fork of the id; a Step of another kind is left as it is.
 function mapFork(flow: Flow, id: string, change: (step: ForkStep) => ForkStep): Flow {
-  return mapStep(flow, id, (step) =>
-    step.kind === 'branch' || step.kind === 'split' ? change(step) : step,
-  )
+  return mapStep(flow, id, (step) => (isFork(step) ? change(step) : step))
 }
 
 // A place a Step goes: the path's id, and the index in it (0 is its start).
@@ -161,7 +157,7 @@ function copyOf(step: FlowStep): FlowStep {
   if (step.kind === 'http') {
     return { ...step, id, draft: { ...structuredClone(step.draft), stored: false } }
   }
-  if (step.kind === 'branch' || step.kind === 'split') {
+  if (isFork(step)) {
     return { ...withPaths(step, copyPath), id }
   }
   return { ...structuredClone(step), id }

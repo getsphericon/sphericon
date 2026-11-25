@@ -27,7 +27,7 @@ func walk(p Path, pos *int, yield func(int, *Step) bool) bool {
 			return false
 		}
 		*pos++
-		for _, sub := range forksOf(st) {
+		for _, sub := range Forks(st) {
 			if !walk(sub, pos, yield) {
 				return false
 			}
@@ -51,9 +51,7 @@ func Own(p Path) iter.Seq[*Step] {
 
 // Forks are the paths of the Step when it is a fork, in the order the walker visits them; none for
 // any other Step.
-func Forks(st *Step) []Path { return forksOf(st) }
-
-func forksOf(st *Step) []Path {
+func Forks(st *Step) []Path {
 	if f, ok := st.Payload.(Fork); ok {
 		return f.Forks()
 	}
@@ -73,7 +71,7 @@ func walkPaths(p Path, yield func(Path) bool) bool {
 		return false
 	}
 	for i := range p.Steps {
-		for _, sub := range forksOf(&p.Steps[i]) {
+		for _, sub := range Forks(&p.Steps[i]) {
 			if !walkPaths(sub, yield) {
 				return false
 			}

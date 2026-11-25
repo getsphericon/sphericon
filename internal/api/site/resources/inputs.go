@@ -251,12 +251,15 @@ type Inputs interface {
 	// goverter:map Condition | segmentConditionIn
 	SegmentPreview(source *siteapi.SitePreviewSegmentInput) (segments.PreviewInput, error)
 
-	// The kind of a Step of a fork's path as the kind of a Step of the root's: the two unions have
-	// the same arms (pathStepsIn).
+	// A Step of a fork's path as a Step of the root's union: the two unions have the same arms, so
+	// an arm one of them lacks fails generation (pathStepsIn).
+	// goverter:skipCopySameType
+	PathStepInputSum(source siteapi.PathStepInputSum) siteapi.AutomationStepInputSum
 	// goverter:enum:transform value
 	PathStepInputType(source siteapi.PathStepInputSumType) siteapi.AutomationStepInputSumType
-	// The kind of a Step of a Split's path as the kind of a Step of the root's: the two unions have
-	// the same arms (splitPathStepsIn).
+	// A Step of a Split's path as a Step of the root's union, as PathStepInputSum (splitPathStepsIn).
+	// goverter:skipCopySameType
+	SplitPathStepInputSum(source siteapi.SplitPathStepInputSum) siteapi.AutomationStepInputSum
 	// goverter:enum:transform value
 	SplitPathStepInputType(source siteapi.SplitPathStepInputSumType) siteapi.AutomationStepInputSumType
 	// The Conditions of a Branch being edited, whose need of an unknown path the editor asks.
@@ -507,13 +510,8 @@ func automationStepsIn(c Inputs, in []siteapi.AutomationStepInput) ([]automation
 func pathStepsIn(c Inputs, in []siteapi.PathStepInput) ([]automationstep.Step, error) {
 	out := make([]automationstep.Step, len(in))
 	for i := range in {
-		s := &in[i].OneOf
-		st, err := automationStepIn(c, &siteapi.AutomationStepInputSum{
-			Type: c.PathStepInputType(s.Type), EmailStepInput: s.EmailStepInput, TelegramStepInput: s.TelegramStepInput,
-			SmsStepInput: s.SmsStepInput, WaitStepInput: s.WaitStepInput, ApplyTagStepInput: s.ApplyTagStepInput,
-			RemoveTagStepInput: s.RemoveTagStepInput, HttpStepInput: s.HttpStepInput, EndStepInput: s.EndStepInput,
-			BranchStepInput: s.BranchStepInput, SplitStepInput: s.SplitStepInput,
-		})
+		sum := c.PathStepInputSum(in[i].OneOf)
+		st, err := automationStepIn(c, &sum)
 		if err != nil {
 			return nil, err
 		}
@@ -527,13 +525,8 @@ func pathStepsIn(c Inputs, in []siteapi.PathStepInput) ([]automationstep.Step, e
 func splitPathStepsIn(c Inputs, in []siteapi.SplitPathStepInput) ([]automationstep.Step, error) {
 	out := make([]automationstep.Step, len(in))
 	for i := range in {
-		s := &in[i].OneOf
-		st, err := automationStepIn(c, &siteapi.AutomationStepInputSum{
-			Type: c.SplitPathStepInputType(s.Type), EmailStepInput: s.EmailStepInput, TelegramStepInput: s.TelegramStepInput,
-			SmsStepInput: s.SmsStepInput, WaitStepInput: s.WaitStepInput, ApplyTagStepInput: s.ApplyTagStepInput,
-			RemoveTagStepInput: s.RemoveTagStepInput, HttpStepInput: s.HttpStepInput, EndStepInput: s.EndStepInput,
-			BranchStepInput: s.BranchStepInput, SplitStepInput: s.SplitStepInput,
-		})
+		sum := c.SplitPathStepInputSum(in[i].OneOf)
+		st, err := automationStepIn(c, &sum)
 		if err != nil {
 			return nil, err
 		}

@@ -19,7 +19,7 @@ import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { canvasFigures } from './canvasFigures.ts'
-import { allSteps, forkPaths, holdsKept } from './definition.ts'
+import { allSteps, forkPaths, holdsKept, isFork } from './definition.ts'
 import type { Flow } from './definition.ts'
 import { automationOutcomeTexts } from './draftActions.ts'
 import { automationAdapter, editedFlow, editorSession } from './editorSession.ts'
@@ -143,17 +143,25 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
     effects,
   })
 
-  const onSave = async () => {
-    // Every fork is checked, its panel open or not: its node shows the error from then on.
+  // The check a Save and a "Save mine over it" run before they send: every fork is checked, its
+  // panel open or not, and its node shows the error from then on; the open Step's form is checked;
+  // the first invalid fork whose panel is closed opens. False when anything is invalid.
+  const checkBeforeSending = (): boolean => {
     const invalid = invalidForks(latest.current)
     check(invalid.map((fork) => fork.id))
     if (validatorRef.current?.() === false) {
-      return
+      return false
     }
-    // The first invalid fork whose panel is closed opens.
     const [first] = invalid
     if (first !== undefined) {
       setSelected(first.id)
+      return false
+    }
+    return true
+  }
+
+  const onSave = async () => {
+    if (!checkBeforeSending()) {
       return
     }
     await save((submission) => {
@@ -236,7 +244,7 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
   }
   const errorOf = (id: string): string | null => {
     const step = checked.has(id) ? allSteps(flow.path).find((s) => s.id === id) : undefined
-    const error = step?.kind === 'branch' || step?.kind === 'split' ? forkError(step) : null
+    const error = step !== undefined && isFork(step) ? forkError(step) : null
     return error === null ? null : forkErrorText(error)
   }
   const forks: ForkControls = {
@@ -375,7 +383,9 @@ export function AutomationBuilder({ workspaceId, automation }: AutomationBuilder
                 void stored(reload)
               }}
               onOverwrite={() => {
-                void stored(overwrite)
+                if (checkBeforeSending()) {
+                  void stored(overwrite)
+                }
               }}
             />
           )}

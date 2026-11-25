@@ -88,14 +88,16 @@ func refusedNaming(t *testing.T, err error, id, kind string) string {
 	return detail
 }
 
-// A Branch needs a path besides otherwise: one without is refused, naming it.
+// A Branch needs a path besides otherwise, a bound of the contract: one without is refused (400),
+// naming the property.
 func TestExternalAutomationRefusesABranchWithOnlyOtherwise(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, stepAuthorScopes...)
 
 	_, err := saveBranch(t, c, `{"id":"`+branchID+`","type":"branch","paths":[],"otherwise":{"steps":[]}}`)
 
-	refusedNaming(t, err, branchID, "branch")
+	refused := testhelper.ExternalRefusal(t, err, http.StatusBadRequest)
+	assert.Contains(t, refused.Errors.Or(nil), "steps.steps.0.paths")
 }
 
 // Each path of a Branch has a Condition that tests something: an empty one is refused, naming the
@@ -180,7 +182,8 @@ func TestExternalAutomationRefusesTheHundredAndFirstStepOverAllPaths(t *testing.
 	assert.Contains(t, detail, "100")
 }
 
-// A fork has at most 10 paths, otherwise counted: an eleventh refuses the save, naming the Branch.
+// A fork has at most 10 paths, otherwise counted, a bound of the contract: an eleventh is refused
+// (400), naming the property.
 func TestExternalAutomationRefusesABranchOfElevenPaths(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, stepAuthorScopes...)
@@ -192,7 +195,8 @@ func TestExternalAutomationRefusesABranchOfElevenPaths(t *testing.T) {
 	_, err := saveBranch(t, c, fmt.Sprintf(`{"id":"%s","type":"branch","paths":[%s],"otherwise":{"steps":[]}}`, branchID, ten))
 
 	require.NoError(t, fits)
-	refusedNaming(t, err, branchID, "branch")
+	refused := testhelper.ExternalRefusal(t, err, http.StatusBadRequest)
+	assert.Contains(t, refused.Errors.Or(nil), "steps.steps.0.paths")
 }
 
 // openedOnce is a Branch path's Condition that counts an open, unknown for a Contact whose address

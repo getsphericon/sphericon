@@ -7429,7 +7429,9 @@
             "items": {
               "$ref": "#/components/schemas/BranchPathInput"
             },
-            "description": "The paths, in the order their Conditions are tested"
+            "minItems": 1,
+            "maxItems": 9,
+            "description": "The paths, in the order their Conditions are tested: one to nine, so that with `otherwise` a\nBranch has at most ten (`unknown` is not counted)"
           },
           "otherwise": {
             "allOf": [
@@ -7448,7 +7450,7 @@
             "description": "The path taken when the first Condition that does not fail is unknown"
           }
         },
-        "description": "A Branch, as a request writes it. It needs a path besides `otherwise`; Publish refuses it\nwithout `unknown` when a Condition counts an open or a click, and with `unknown` when none does.",
+        "description": "A Branch, as a request writes it. Publish refuses it without `unknown` when a Condition counts\nan open or a click, and with `unknown` when none does.",
         "additionalProperties": false
       },
       "BrandKitResource": {
@@ -15307,7 +15309,8 @@
           "weight": {
             "type": "integer",
             "format": "int32",
-            "description": "The path's share of the Contacts that reach the Split, a whole percentage of at least 1. The\nweights of a Split's paths sum to 100, or the save is refused, naming the Split."
+            "minimum": 1,
+            "description": "The path's share of the Contacts that reach the Split, a whole percentage. The weights of a\nSplit's paths sum to 100, or the save is refused, naming the Split."
           },
           "steps": {
             "type": "array",
@@ -15469,10 +15472,12 @@
             "items": {
               "$ref": "#/components/schemas/SplitPathInput"
             },
-            "description": "The paths, in order"
+            "minItems": 2,
+            "maxItems": 10,
+            "description": "The paths, in order: two to ten"
           }
         },
-        "description": "A Split, as a request writes it. It needs two to ten paths, with weights summing to 100.",
+        "description": "A Split, as a request writes it. Its paths' weights sum to 100.",
         "additionalProperties": false
       },
       "StateOperator": {

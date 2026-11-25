@@ -358,15 +358,18 @@ model BranchStep {
   `unknown`?: AutomationPath;
 }
 
-/** A Branch, as a request writes it. It needs a path besides `otherwise`; Publish refuses it
- * without `unknown` when a Condition counts an open or a click, and with `unknown` when none does. */
+/** A Branch, as a request writes it. Publish refuses it without `unknown` when a Condition counts
+ * an open or a click, and with `unknown` when none does. */
 model BranchStepInput {
   /** The Step's id; omitted, the Step is given one */
   id?: StepId;
 
   type: "branch";
 
-  /** The paths, in the order their Conditions are tested */
+  /** The paths, in the order their Conditions are tested: one to nine, so that with `otherwise` a
+   * Branch has at most ten (`unknown` is not counted) */
+  @minItems(1)
+  @maxItems(9)
   paths: BranchPathInput[];
 
   /** The path taken when no Condition holds */
@@ -394,8 +397,9 @@ model SplitPathInput {
   /** The path's id; omitted, the path is given one */
   id?: StepId;
 
-  /** The path's share of the Contacts that reach the Split, a whole percentage of at least 1. The
-   * weights of a Split's paths sum to 100, or the save is refused, naming the Split. */
+  /** The path's share of the Contacts that reach the Split, a whole percentage. The weights of a
+   * Split's paths sum to 100, or the save is refused, naming the Split. */
+  @minValue(1)
   weight: int32;
 
   /** The path's Steps, in order; none is a holdout, sent nothing, that goes on to the Step after
@@ -417,14 +421,16 @@ model SplitStep {
   paths: SplitPath[];
 }
 
-/** A Split, as a request writes it. It needs two to ten paths, with weights summing to 100. */
+/** A Split, as a request writes it. Its paths' weights sum to 100. */
 model SplitStepInput {
   /** The Step's id; omitted, the Step is given one */
   id?: StepId;
 
   type: "split";
 
-  /** The paths, in order */
+  /** The paths, in order: two to ten */
+  @minItems(2)
+  @maxItems(10)
   paths: SplitPathInput[];
 }
 

@@ -115,12 +115,7 @@ func pathStepViews(c Converter, views []automations.StepView) ([]externalapi.Pat
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, externalapi.PathStep{OneOf: externalapi.PathStepSum{
-			Type: c.PathStepType(sum.Type), EmailStep: sum.EmailStep, TelegramStep: sum.TelegramStep,
-			SmsStep: sum.SmsStep, WaitStep: sum.WaitStep, ApplyTagStep: sum.ApplyTagStep,
-			RemoveTagStep: sum.RemoveTagStep, HttpStep: sum.HttpStep, EndStep: sum.EndStep, BranchStep: sum.BranchStep,
-			SplitStep: sum.SplitStep,
-		}})
+		out = append(out, externalapi.PathStep{OneOf: c.PathStepSum(sum)})
 	}
 	return out, nil
 }
@@ -134,12 +129,7 @@ func splitPathStepViews(c Converter, views []automations.StepView) ([]externalap
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, externalapi.SplitPathStep{OneOf: externalapi.SplitPathStepSum{
-			Type: c.SplitPathStepType(sum.Type), EmailStep: sum.EmailStep, TelegramStep: sum.TelegramStep,
-			SmsStep: sum.SmsStep, WaitStep: sum.WaitStep, ApplyTagStep: sum.ApplyTagStep,
-			RemoveTagStep: sum.RemoveTagStep, HttpStep: sum.HttpStep, EndStep: sum.EndStep, BranchStep: sum.BranchStep,
-			SplitStep: sum.SplitStep,
-		}})
+		out = append(out, externalapi.SplitPathStep{OneOf: c.SplitPathStepSum(sum)})
 	}
 	return out, nil
 }
@@ -439,12 +429,15 @@ type Converter interface {
 	EndStepToResource(source automations.EndView) externalapi.EndStep
 	BranchStepToResource(source automations.BranchView) (externalapi.BranchStep, error)
 	BranchPathToResource(source automations.BranchPathView) (externalapi.BranchPath, error)
-	// The kind of a Step of the root's union as the kind of a Step of a fork's path: the two unions
-	// have the same arms (pathStepViews).
+	// A Step of the root's union as a Step of a fork's path: the two unions have the same arms, so
+	// an arm one of them lacks fails generation (pathStepViews).
+	// goverter:skipCopySameType
+	PathStepSum(source externalapi.AutomationStepSum) externalapi.PathStepSum
 	// goverter:enum:transform value
 	PathStepType(source externalapi.AutomationStepSumType) externalapi.PathStepSumType
-	// The kind of a Step of the root's union as the kind of a Step of a Split's path: the two unions
-	// have the same arms (splitPathStepViews).
+	// A Step of the root's union as a Step of a Split's path, as PathStepSum (splitPathStepViews).
+	// goverter:skipCopySameType
+	SplitPathStepSum(source externalapi.AutomationStepSum) externalapi.SplitPathStepSum
 	// goverter:enum:transform value
 	SplitPathStepType(source externalapi.AutomationStepSumType) externalapi.SplitPathStepSumType
 	SplitStepToResource(source automations.SplitView) (externalapi.SplitStep, error)

@@ -116,12 +116,10 @@ func refuse(st *automationstep.Step, why string) error {
 	return ErrInvalidStep.With(fmt.Sprintf("step %s (%s): %s", st.ID, st.Kind(), why))
 }
 
-// The bounds of a version's tree (ADR 0122, ADR 0124): its Steps over all paths, and the paths of
-// one fork, a Branch's otherwise counted. Nesting has no bound of its own.
-const (
-	MaxStepsPerVersion = 100
-	MaxPathsPerFork    = 10
-)
+// MaxStepsPerVersion bounds a version's tree (ADR 0122, ADR 0124): its Steps over all paths. The
+// paths of one fork are the contract's (bounds.BranchPaths, bounds.SplitPaths); nesting has no bound
+// of its own.
+const MaxStepsPerVersion = 100
 
 // validate checks each step on its own, at any depth of the tree, and the tree's bounds; the steps
 // carry their ids (identify). linkLength is the length of the Workspace's short tracked links, what
@@ -187,15 +185,13 @@ func validate(steps automationstep.Path, linkLength int) error {
 	return nil
 }
 
-// validateBranch checks the shape of a Branch (ADR 0124): a path besides otherwise, at most
-// MaxPathsPerFork paths with otherwise, and a Condition that tests something on each path. Whether
-// each Condition names what the Workspace holds is checkBranches'.
+// validateBranch checks the shape of a Branch (ADR 0124): the contract's count of listed paths
+// besides otherwise (bounds.BranchPaths), and a Condition that tests something on each path.
+// Whether each Condition names what the Workspace holds is checkBranches'.
 func validateBranch(st *automationstep.Step, b automationstep.Branch) error {
-	if len(b.Paths) == 0 {
-		return refuse(st, "a branch needs a path besides otherwise")
-	}
-	if n := len(b.Paths) + 1; n > MaxPathsPerFork {
-		return refuse(st, fmt.Sprintf("a branch has at most %d paths with otherwise, this one has %d", MaxPathsPerFork, n))
+	if n := len(b.Paths); n < bounds.BranchPathsMinItems || n > bounds.BranchPathsMaxItems {
+		return refuse(st, fmt.Sprintf("a branch has %d to %d paths besides otherwise, this one has %d",
+			bounds.BranchPathsMinItems, bounds.BranchPathsMaxItems, n))
 	}
 	for i, p := range b.Paths {
 		if !p.Condition.Tests() {
@@ -223,11 +219,7 @@ func checkUnknownPaths(steps automationstep.Path) error {
 		if !ok {
 			continue
 		}
-		conditions := make([]conditiontree.Branch, len(b.Paths))
-		for i, p := range b.Paths {
-			conditions[i] = p.Condition
-		}
-		needs := NeedsUnknownPath(conditions)
+		needs := NeedsUnknownPath(b.Conditions())
 		switch {
 		case needs && b.Unknown == nil:
 			return refuse(st, "a branch whose conditions count an open or a click needs an unknown path, taken when one is unknown for the contact")
@@ -375,16 +367,16 @@ func (m *Module) build(ctx context.Context, written automationstep.Path) (automa
 	})
 }
 
-// validateSplit checks the shape of a Split (ADR 0124): two to MaxPathsPerFork paths, each of a
-// whole weight of at least 1, the weights summing to 100.
+// validateSplit checks the shape of a Split (ADR 0124): the contract's count of paths
+// (bounds.SplitPaths) and least weight (bounds.SplitWeight), and the weights summing to 100.
 func validateSplit(st *automationstep.Step, sp automationstep.Split) error {
-	if n := len(sp.Paths); n < 2 || n > MaxPathsPerFork {
-		return refuse(st, fmt.Sprintf("a split has 2 to %d paths, this one has %d", MaxPathsPerFork, n))
+	if n := len(sp.Paths); n < bounds.SplitPathsMinItems || n > bounds.SplitPathsMaxItems {
+		return refuse(st, fmt.Sprintf("a split has %d to %d paths, this one has %d", bounds.SplitPathsMinItems, bounds.SplitPathsMaxItems, n))
 	}
 	sum := 0
 	for i, p := range sp.Paths {
-		if p.Weight < 1 {
-			return refuse(st, fmt.Sprintf("path %d: a weight is at least 1, this one is %d", i+1, p.Weight))
+		if p.Weight < bounds.SplitWeightMin {
+			return refuse(st, fmt.Sprintf("path %d: a weight is at least %d, this one is %d", i+1, bounds.SplitWeightMin, p.Weight))
 		}
 		sum += p.Weight
 	}

@@ -655,6 +655,21 @@ func (c *InputsImpl) PasskeyRename(source *site.SitePasskeyRenameInput) passkeys
 	}
 	return passkeysRenameInput
 }
+func (c *InputsImpl) PathStepInputSum(source site.PathStepInputSum) site.AutomationStepInputSum {
+	var siteapiAutomationStepInputSum site.AutomationStepInputSum
+	siteapiAutomationStepInputSum.Type = c.PathStepInputType(source.Type)
+	siteapiAutomationStepInputSum.EmailStepInput = source.EmailStepInput
+	siteapiAutomationStepInputSum.TelegramStepInput = source.TelegramStepInput
+	siteapiAutomationStepInputSum.SmsStepInput = source.SmsStepInput
+	siteapiAutomationStepInputSum.WaitStepInput = source.WaitStepInput
+	siteapiAutomationStepInputSum.ApplyTagStepInput = source.ApplyTagStepInput
+	siteapiAutomationStepInputSum.RemoveTagStepInput = source.RemoveTagStepInput
+	siteapiAutomationStepInputSum.HttpStepInput = source.HttpStepInput
+	siteapiAutomationStepInputSum.EndStepInput = source.EndStepInput
+	siteapiAutomationStepInputSum.BranchStepInput = source.BranchStepInput
+	siteapiAutomationStepInputSum.SplitStepInput = source.SplitStepInput
+	return siteapiAutomationStepInputSum
+}
 func (c *InputsImpl) PathStepInputType(source site.PathStepInputSumType) site.AutomationStepInputSumType {
 	var siteapiAutomationStepInputSumType site.AutomationStepInputSumType
 	switch source {
@@ -1075,6 +1090,21 @@ func (c *InputsImpl) SortDirection(source site.SortDirection) pagination.Directi
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return paginationDirection
+}
+func (c *InputsImpl) SplitPathStepInputSum(source site.SplitPathStepInputSum) site.AutomationStepInputSum {
+	var siteapiAutomationStepInputSum site.AutomationStepInputSum
+	siteapiAutomationStepInputSum.Type = c.SplitPathStepInputType(source.Type)
+	siteapiAutomationStepInputSum.EmailStepInput = source.EmailStepInput
+	siteapiAutomationStepInputSum.TelegramStepInput = source.TelegramStepInput
+	siteapiAutomationStepInputSum.SmsStepInput = source.SmsStepInput
+	siteapiAutomationStepInputSum.WaitStepInput = source.WaitStepInput
+	siteapiAutomationStepInputSum.ApplyTagStepInput = source.ApplyTagStepInput
+	siteapiAutomationStepInputSum.RemoveTagStepInput = source.RemoveTagStepInput
+	siteapiAutomationStepInputSum.HttpStepInput = source.HttpStepInput
+	siteapiAutomationStepInputSum.EndStepInput = source.EndStepInput
+	siteapiAutomationStepInputSum.BranchStepInput = source.BranchStepInput
+	siteapiAutomationStepInputSum.SplitStepInput = source.SplitStepInput
+	return siteapiAutomationStepInputSum
 }
 func (c *InputsImpl) SplitPathStepInputType(source site.SplitPathStepInputSumType) site.AutomationStepInputSumType {
 	var siteapiAutomationStepInputSumType site.AutomationStepInputSumType

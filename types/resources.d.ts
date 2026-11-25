@@ -453,9 +453,9 @@ export default interface Resources {
       "removePath": "Remove path",
       "removeStep": "Remove step",
       "removeTagNodeDescription": "Take a tag off the contact.",
-      "removeUnknownPathConfirm": "No condition of this Branch counts an open or a click any more, so it needs no unknown path. Removing it also removes the step it holds." | "No condition of this Branch counts an open or a click any more, so it needs no unknown path. Removing it also removes the {{count}} steps it holds.",
+      "removeUnknownPathConfirm": "No condition of this Branch counts an open or a click any more, so it needs no unknown path. Removing it also removes the step it holds." | "No condition of this Branch counts an open or a click any more, so it needs no unknown path. Removing it also removes the {{count, number}} steps it holds.",
       "removeUnknownPathTitle": "Remove the unknown path",
-      "removeWithStepsConfirm": "Removing this {{label}} also removes the step it holds." | "Removing this {{label}} also removes the {{count}} steps it holds.",
+      "removeWithStepsConfirm": "Removing this {{label}} also removes the step it holds." | "Removing this {{label}} also removes the {{count, number}} steps it holds.",
       "removeWithStepsTitle": "Remove {{label}}",
       "results": {
         "averageDuration": "Average duration",

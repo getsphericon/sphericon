@@ -2158,6 +2158,14 @@ func (s *BranchStepInput) Validate() error {
 		if s.Paths == nil {
 			return errors.New("nil is invalid value")
 		}
+		if err := (validate.Array{
+			MinLength:    1,
+			MinLengthSet: true,
+			MaxLength:    9,
+			MaxLengthSet: true,
+		}).ValidateLength(len(s.Paths)); err != nil {
+			return errors.Wrap(err, "array")
+		}
 		var failures []validate.FieldError
 		for i, elem := range s.Paths {
 			if err := func() error {
@@ -2244,6 +2252,14 @@ func (s *BranchUnknownPathInput) Validate() error {
 	if err := func() error {
 		if s.Conditions == nil {
 			return errors.New("nil is invalid value")
+		}
+		if err := (validate.Array{
+			MinLength:    1,
+			MinLengthSet: true,
+			MaxLength:    9,
+			MaxLengthSet: true,
+		}).ValidateLength(len(s.Conditions)); err != nil {
+			return errors.Wrap(err, "array")
 		}
 		var failures []validate.FieldError
 		for i, elem := range s.Conditions {
@@ -15648,6 +15664,27 @@ func (s *SplitPathInput) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
+		if err := (validate.Int{
+			MinSet:        true,
+			Min:           1,
+			MaxSet:        false,
+			Max:           0,
+			MinExclusive:  false,
+			MaxExclusive:  false,
+			MultipleOfSet: false,
+			MultipleOf:    0,
+			Pattern:       nil,
+		}).Validate(int64(s.Weight)); err != nil {
+			return errors.Wrap(err, "int")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "weight",
+			Error: err,
+		})
+	}
+	if err := func() error {
 		if s.Steps == nil {
 			return errors.New("nil is invalid value")
 		}
@@ -15912,6 +15949,14 @@ func (s *SplitStepInput) Validate() error {
 	if err := func() error {
 		if s.Paths == nil {
 			return errors.New("nil is invalid value")
+		}
+		if err := (validate.Array{
+			MinLength:    2,
+			MinLengthSet: true,
+			MaxLength:    10,
+			MaxLengthSet: true,
+		}).ValidateLength(len(s.Paths)); err != nil {
+			return errors.Wrap(err, "array")
 		}
 		var failures []validate.FieldError
 		for i, elem := range s.Paths {

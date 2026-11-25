@@ -437,12 +437,15 @@ type Converter interface {
 	EndStepToResource(source automations.EndView) siteapi.EndStep
 	BranchStepToResource(source automations.BranchView) (siteapi.BranchStep, error)
 	BranchPathToResource(source automations.BranchPathView) (siteapi.BranchPath, error)
-	// The kind of a Step of the root's union as the kind of a Step of a fork's path: the two unions
-	// have the same arms (pathStepViews).
+	// A Step of the root's union as a Step of a fork's path: the two unions have the same arms, so
+	// an arm one of them lacks fails generation (pathStepViews).
+	// goverter:skipCopySameType
+	PathStepSum(source siteapi.AutomationStepSum) siteapi.PathStepSum
 	// goverter:enum:transform value
 	PathStepType(source siteapi.AutomationStepSumType) siteapi.PathStepSumType
-	// The kind of a Step of the root's union as the kind of a Step of a Split's path: the two unions
-	// have the same arms (splitPathStepViews).
+	// A Step of the root's union as a Step of a Split's path, as PathStepSum (splitPathStepViews).
+	// goverter:skipCopySameType
+	SplitPathStepSum(source siteapi.AutomationStepSum) siteapi.SplitPathStepSum
 	// goverter:enum:transform value
 	SplitPathStepType(source siteapi.AutomationStepSumType) siteapi.SplitPathStepSumType
 	SplitStepToResource(source automations.SplitView) (siteapi.SplitStep, error)
@@ -1179,12 +1182,7 @@ func pathStepViews(c Converter, views []automations.StepView) ([]siteapi.PathSte
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, siteapi.PathStep{OneOf: siteapi.PathStepSum{
-			Type: c.PathStepType(sum.Type), EmailStep: sum.EmailStep, TelegramStep: sum.TelegramStep,
-			SmsStep: sum.SmsStep, WaitStep: sum.WaitStep, ApplyTagStep: sum.ApplyTagStep,
-			RemoveTagStep: sum.RemoveTagStep, HttpStep: sum.HttpStep, EndStep: sum.EndStep, BranchStep: sum.BranchStep,
-			SplitStep: sum.SplitStep,
-		}})
+		out = append(out, siteapi.PathStep{OneOf: c.PathStepSum(sum)})
 	}
 	return out, nil
 }
@@ -1198,12 +1196,7 @@ func splitPathStepViews(c Converter, views []automations.StepView) ([]siteapi.Sp
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, siteapi.SplitPathStep{OneOf: siteapi.SplitPathStepSum{
-			Type: c.SplitPathStepType(sum.Type), EmailStep: sum.EmailStep, TelegramStep: sum.TelegramStep,
-			SmsStep: sum.SmsStep, WaitStep: sum.WaitStep, ApplyTagStep: sum.ApplyTagStep,
-			RemoveTagStep: sum.RemoveTagStep, HttpStep: sum.HttpStep, EndStep: sum.EndStep, BranchStep: sum.BranchStep,
-			SplitStep: sum.SplitStep,
-		}})
+		out = append(out, siteapi.SplitPathStep{OneOf: c.SplitPathStepSum(sum)})
 	}
 	return out, nil
 }

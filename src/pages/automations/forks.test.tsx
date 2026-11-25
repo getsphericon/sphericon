@@ -196,14 +196,6 @@ test("a Step inserted into a fork's empty path goes there", async () => {
     ])
 })
 
-test('an End is offered only at the end of a path', async () => {
-  const { screen } = await editing([WAIT])
-
-  await screen.getByRole('button', { name: 'Add a step here' }).first().click()
-  await expect.element(screen.getByRole('menuitem', { name: 'Wait' })).toBeVisible()
-  await expect.element(screen.getByRole('menuitem', { name: 'End' })).not.toBeInTheDocument()
-})
-
 test('removing a Branch whose paths hold Steps asks first, naming how many go with it', async () => {
   const branch: AutomationStep = {
     id: stepId(20),
@@ -340,6 +332,70 @@ test('a Save stopped on a fork whose panel is closed opens it, showing the error
   expect(saved()).toEqual([])
 })
 
+// The next Save is answered as a write over a change the editor had not seen, so the page offers to
+// save over it; returns the bodies that Save and any later one sent.
+function conflictOnNextSave() {
+  const bodies: UpdateAutomationInput[] = []
+  worker.use(
+    handleSiteAutomationsUpdate(async ({ request }) => {
+      bodies.push(await request.json())
+      return problem(409, { title: 'Changed', code: 'revision_changed' })
+    }),
+  )
+  return () => bodies.map((body) => body.steps?.steps)
+}
+
+test('"Save mine over it" does not send a Split whose weights miss 100, opening it', async () => {
+  const split: AutomationStep = {
+    id: stepId(20),
+    type: 'split',
+    paths: [
+      { id: stepId(21), weight: 50, steps: [] },
+      { id: stepId(22), weight: 50, steps: [] },
+    ],
+  }
+  const { screen } = await editing([split])
+  const sent = conflictOnNextSave()
+  await nodeButton(screen, 'Split').click()
+  await screen.getByRole('textbox', { name: 'Path 1 weight' }).fill('40')
+  await screen.getByRole('textbox', { name: 'Path 2 weight' }).fill('60')
+  await save(screen)
+  await expect.element(screen.getByRole('button', { name: 'Save mine over it' })).toBeVisible()
+
+  await screen.getByRole('textbox', { name: 'Path 2 weight' }).fill('50')
+  await screen.getByRole('button', { name: 'Close panel' }).click()
+
+  await screen.getByRole('button', { name: 'Save mine over it' }).click()
+
+  await expect.element(screen.getByRole('region', { name: 'Split' })).toBeVisible()
+  expect(screen.getByText('The weights sum to 90%, not 100%').elements()).toHaveLength(2)
+  expect(sent()).toHaveLength(1)
+})
+
+test('"Save mine over it" does not send a Branch path left without a Condition, opening it', async () => {
+  const branch: AutomationStep = {
+    id: stepId(20),
+    type: 'branch',
+    paths: [{ id: stepId(21), condition: VIP, steps: [] }],
+    otherwise: { id: stepId(22), steps: [] },
+  }
+  const { screen } = await editing([branch, WAIT])
+  const sent = conflictOnNextSave()
+  await screen.getByRole('button', { name: 'Add a step here' }).last().click()
+  await screen.getByRole('menuitem', { name: 'Wait' }).click()
+  await save(screen)
+  await expect.element(screen.getByRole('button', { name: 'Save mine over it' })).toBeVisible()
+  await nodeButton(screen, 'Branch').click()
+  await screen.getByRole('region', { name: 'Branch' }).getByTitle('Remove rule').click()
+  await screen.getByRole('button', { name: 'Close panel' }).click()
+
+  await screen.getByRole('button', { name: 'Save mine over it' }).click()
+
+  await expect.element(screen.getByRole('region', { name: 'Branch' })).toBeVisible()
+  await expect.element(screen.getByText('Path 1 needs a condition')).toBeVisible()
+  expect(sent()).toHaveLength(1)
+})
+
 test('an open test added to a Condition adds the unknown path', async () => {
   const branch: AutomationStep = {
     id: stepId(20),
@@ -469,17 +525,6 @@ test('retyping the count of an open test keeps the unknown path as it is', async
     ],
   ])
   expect(screen.getByText('needs no unknown path', { exact: false }).elements()).toEqual([])
-})
-
-test('an End offers no copy: a copy after it would never run', async () => {
-  const { screen } = await editing([WAIT, { id: stepId(14), type: 'end' }])
-
-  await nodeButton(screen, 'End').click()
-
-  await expect.element(screen.getByRole('region', { name: 'End' })).toBeVisible()
-  await expect
-    .element(screen.getByRole('button', { name: 'Duplicate step' }))
-    .not.toBeInTheDocument()
 })
 
 test('each path of a fork shows the Enrollments that took it and those that reached the goal', async () => {

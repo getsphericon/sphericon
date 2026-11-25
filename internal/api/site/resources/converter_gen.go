@@ -1921,6 +1921,21 @@ func (c *ConverterImpl) PasskeysToResources(source []*ent.Passkey) []site.SitePa
 	}
 	return siteapiSitePasskeyList
 }
+func (c *ConverterImpl) PathStepSum(source site.AutomationStepSum) site.PathStepSum {
+	var siteapiPathStepSum site.PathStepSum
+	siteapiPathStepSum.Type = c.PathStepType(source.Type)
+	siteapiPathStepSum.EmailStep = source.EmailStep
+	siteapiPathStepSum.TelegramStep = source.TelegramStep
+	siteapiPathStepSum.SmsStep = source.SmsStep
+	siteapiPathStepSum.WaitStep = source.WaitStep
+	siteapiPathStepSum.ApplyTagStep = source.ApplyTagStep
+	siteapiPathStepSum.RemoveTagStep = source.RemoveTagStep
+	siteapiPathStepSum.HttpStep = source.HttpStep
+	siteapiPathStepSum.EndStep = source.EndStep
+	siteapiPathStepSum.BranchStep = source.BranchStep
+	siteapiPathStepSum.SplitStep = source.SplitStep
+	return siteapiPathStepSum
+}
 func (c *ConverterImpl) PathStepType(source site.AutomationStepSumType) site.PathStepSumType {
 	var siteapiPathStepSumType site.PathStepSumType
 	switch source {
@@ -2722,6 +2737,21 @@ func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) s
 	siteapiSmtpConfig.From = site.EmailAddress(source.From)
 	siteapiSmtpConfig.FromName = omitEmpty(source.FromName)
 	return siteapiSmtpConfig
+}
+func (c *ConverterImpl) SplitPathStepSum(source site.AutomationStepSum) site.SplitPathStepSum {
+	var siteapiSplitPathStepSum site.SplitPathStepSum
+	siteapiSplitPathStepSum.Type = c.SplitPathStepType(source.Type)
+	siteapiSplitPathStepSum.EmailStep = source.EmailStep
+	siteapiSplitPathStepSum.TelegramStep = source.TelegramStep
+	siteapiSplitPathStepSum.SmsStep = source.SmsStep
+	siteapiSplitPathStepSum.WaitStep = source.WaitStep
+	siteapiSplitPathStepSum.ApplyTagStep = source.ApplyTagStep
+	siteapiSplitPathStepSum.RemoveTagStep = source.RemoveTagStep
+	siteapiSplitPathStepSum.HttpStep = source.HttpStep
+	siteapiSplitPathStepSum.EndStep = source.EndStep
+	siteapiSplitPathStepSum.BranchStep = source.BranchStep
+	siteapiSplitPathStepSum.SplitStep = source.SplitStep
+	return siteapiSplitPathStepSum
 }
 func (c *ConverterImpl) SplitPathStepType(source site.AutomationStepSumType) site.SplitPathStepSumType {
 	var siteapiSplitPathStepSumType site.SplitPathStepSumType

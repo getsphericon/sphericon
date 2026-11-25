@@ -33,7 +33,7 @@ func (x *Index) add(p Path, fork ID) {
 	for i := range p.Steps {
 		st := &p.Steps[i]
 		x.steps[st.ID] = stepPlace{step: st, path: p.ID, pos: i}
-		for _, sub := range forksOf(st) {
+		for _, sub := range Forks(st) {
 			x.add(sub, st.ID)
 		}
 	}

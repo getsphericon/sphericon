@@ -242,6 +242,11 @@ export function flowOf(version: AutomationVersion): Flow {
   }
 }
 
+// Whether the Step is a fork: a Step whose paths rejoin after it.
+export function isFork(step: FlowStep): step is ForkStep {
+  return step.kind === 'branch' || step.kind === 'split'
+}
+
 // forkPaths are the paths of a fork, in the order the canvas draws them: a Branch's listed paths,
 // `otherwise`, then the unknown path; a Split's paths. Any other Step has none.
 export function forkPaths(step: FlowStep): FlowPath[] {
