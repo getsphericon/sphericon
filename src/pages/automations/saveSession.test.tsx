@@ -1,5 +1,5 @@
 import { HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { beforeEach, expect, test } from 'vitest'
 import { page } from 'vitest/browser'
 
 import {
@@ -13,7 +13,6 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteAutomationResource, AutomationVersion } from '../../generated/site/types.gen.ts'
 import { Route } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
-import { canvasProperties } from '../../test/canvas.ts'
 import { stepId, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -22,6 +21,22 @@ import { worker } from '../../test/worker.ts'
 import { AutomationEditPage } from './edit.tsx'
 
 const EDIT_ROUTE = routeMount(Route, { workspaceId: 'TestWs01', automationId: testId(5) })
+
+beforeEach(async () => {
+  // The editor is a desktop tool: its side panel sits beside the canvas, not over it.
+  await page.viewport(1280, 900)
+})
+
+type Screen = Awaited<ReturnType<typeof renderWithRouter>>['screen']
+
+// Opens the canvas node whose kind is `label` in the side panel; `index` picks among nodes of one
+// kind, top to bottom.
+async function openNode(screen: Screen, label: string, index = 0) {
+  await screen
+    .getByRole('button', { name: new RegExp(`^${label}`) })
+    .nth(index)
+    .click()
+}
 const LIVE: AutomationVersion = {
   number: 1,
   trigger: {
@@ -57,14 +72,6 @@ function noEnrollmentsOrIntegrations() {
   )
 }
 
-function triggerNode() {
-  const node = document.querySelector('[data-testid="rf__node-trigger"]')
-  if (!node) {
-    throw new Error('Trigger node has not rendered')
-  }
-  return node
-}
-
 test.each([
   { label: 'the first draft', draft: null },
   { label: 'an existing draft', draft: DRAFT },
@@ -95,26 +102,16 @@ test.each([
     }),
   )
   const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
-  await expect.poll(() => triggerNode()).toBeInstanceOf(Element)
-  await page.elementLocator(triggerNode()).click()
-  await screen.getByText('Properties').click()
-  await screen.getByRole('combobox', { name: 'Trigger Event' }).fill('course_completed')
+  await openNode(screen, 'Trigger')
+  await screen.getByRole('combobox', { name: 'Trigger event' }).fill('course_completed')
   await screen.getByLabelText('Name', { exact: false }).fill('Submitted name')
-  // The Trigger's edit reaches the canvas store, which the Save reads, a moment later.
-  await expect
-    .poll(() => canvasProperties('trigger'))
-    .toMatchObject({ triggerEvent: 'course_completed' })
-  // The Trigger's panel covers the toolbar: the Save is a click dispatched on it.
-  screen
-    .getByRole('button', { name: 'Save' })
-    .element()
-    .dispatchEvent(new MouseEvent('click', { bubbles: true }))
+  await screen.getByRole('button', { name: 'Save' }).click()
   await received.promise
   await expect.element(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
   await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeDisabled()
   await expect.element(screen.getByLabelText('Name', { exact: false })).toBeEnabled()
   await screen.getByLabelText('Name', { exact: false }).fill('Newer local name')
-  await screen.getByRole('combobox', { name: 'Trigger Event' }).fill('newer_event')
+  await screen.getByRole('combobox', { name: 'Trigger event' }).fill('newer_event')
   release.resolve(undefined)
   await expect.element(screen.getByText('Automation updated')).toBeInTheDocument()
   await expect
@@ -122,11 +119,11 @@ test.each([
     .toHaveValue('Newer local name')
   await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeDisabled()
   await expect
-    .element(screen.getByRole('combobox', { name: 'Trigger Event' }))
+    .element(screen.getByRole('combobox', { name: 'Trigger event' }))
     .toHaveValue('newer_event')
   await screen.getByLabelText('Name', { exact: false }).fill('Submitted name')
   await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeDisabled()
-  await screen.getByRole('combobox', { name: 'Trigger Event' }).fill('course_completed')
+  await screen.getByRole('combobox', { name: 'Trigger event' }).fill('course_completed')
   await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeEnabled()
 })
 
@@ -144,11 +141,7 @@ test('a refused save preserves newer edits and the previous acknowledged content
   )
   const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
   await screen.getByLabelText('Name', { exact: false }).fill('Submitted name')
-  // The Trigger's panel covers the toolbar: the Save is a click dispatched on it.
-  screen
-    .getByRole('button', { name: 'Save' })
-    .element()
-    .dispatchEvent(new MouseEvent('click', { bubbles: true }))
+  await screen.getByRole('button', { name: 'Save' }).click()
   await received.promise
   await expect.element(screen.getByRole('button', { name: 'Revert' })).toBeDisabled()
   await screen.getByLabelText('Name', { exact: false }).fill('Newer local name')
@@ -189,16 +182,10 @@ test('Revert replaces local content with live and prevents editing during the op
     }),
   )
   const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
-  await expect.poll(() => triggerNode()).toBeInstanceOf(Element)
-  await page.elementLocator(triggerNode()).click()
-  await screen.getByText('Properties').click()
-  await screen.getByRole('combobox', { name: 'Trigger Event' }).fill('unsaved_event')
+  await openNode(screen, 'Trigger')
+  await screen.getByRole('combobox', { name: 'Trigger event' }).fill('unsaved_event')
   await screen.getByLabelText('Name', { exact: false }).fill('Unsaved local name')
-  // The Trigger's panel covers the toolbar: the Revert is a click dispatched on it.
-  screen
-    .getByRole('button', { name: 'Revert' })
-    .element()
-    .dispatchEvent(new MouseEvent('click', { bubbles: true }))
+  await screen.getByRole('button', { name: 'Revert' }).click()
   const confirmation = screen.getByRole('dialog', { name: 'Revert without saving?' })
   await expect
     .element(confirmation.getByText('Your changes to this automation are not saved.'))
@@ -209,19 +196,18 @@ test('Revert replaces local content with live and prevents editing during the op
     await expect.element(screen.getByLabelText('Name', { exact: false })).toBeDisabled()
     await expect.element(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
     await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeDisabled()
-    await expect.element(screen.getByRole('combobox', { name: 'Trigger Event' })).toBeDisabled()
+    await expect.element(screen.getByRole('combobox', { name: 'Trigger event' })).toBeDisabled()
   } finally {
     release.resolve(undefined)
   }
   await expect.element(screen.getByText('Unpublished changes reverted')).toBeInTheDocument()
   await expect.element(screen.getByLabelText('Name', { exact: false })).toHaveValue('Welcome flow')
   await expect.element(screen.getByRole('button', { name: 'Revert' })).not.toBeInTheDocument()
-  await page.elementLocator(triggerNode()).click()
-  await screen.getByText('Properties').click()
+  await openNode(screen, 'Trigger')
   await expect
-    .element(screen.getByRole('combobox', { name: 'Trigger Event' }))
+    .element(screen.getByRole('combobox', { name: 'Trigger event' }))
     .toHaveValue('email.clicked')
-  await expect.element(screen.getByRole('combobox', { name: 'Trigger Event' })).toBeEnabled()
+  await expect.element(screen.getByRole('combobox', { name: 'Trigger event' })).toBeEnabled()
 })
 
 test('Publish serializes operations and preserves the current canvas', async () => {
@@ -246,14 +232,12 @@ test('Publish serializes operations and preserves the current canvas', async () 
     }),
   )
   const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
-  await expect.poll(() => triggerNode()).toBeInstanceOf(Element)
-  await page.elementLocator(triggerNode()).click()
-  await screen.getByText('Properties').click()
+  await openNode(screen, 'Trigger')
   await screen.getByRole('button', { name: 'Publish' }).click()
   await received.promise
   try {
     await expect.element(screen.getByLabelText('Name', { exact: false })).toBeDisabled()
-    await expect.element(screen.getByRole('combobox', { name: 'Trigger Event' })).toBeDisabled()
+    await expect.element(screen.getByRole('combobox', { name: 'Trigger event' })).toBeDisabled()
     await expect.element(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
     await expect.element(screen.getByRole('button', { name: 'Revert' })).toBeDisabled()
   } finally {
@@ -261,9 +245,9 @@ test('Publish serializes operations and preserves the current canvas', async () 
   }
   await expect.element(screen.getByText('Automation published')).toBeInTheDocument()
   await expect
-    .element(screen.getByRole('combobox', { name: 'Trigger Event' }))
+    .element(screen.getByRole('combobox', { name: 'Trigger event' }))
     .toHaveValue('course_completed')
-  await expect.element(screen.getByRole('combobox', { name: 'Trigger Event' })).toBeEnabled()
+  await expect.element(screen.getByRole('combobox', { name: 'Trigger event' })).toBeEnabled()
   await expect.element(screen.getByRole('button', { name: 'Revert' })).not.toBeInTheDocument()
 })
 
@@ -301,4 +285,30 @@ test('leaving while Save is pending does not ask when nothing changed since', as
 
   await expect.poll(() => router.history.location.pathname).toBe('/workspaces/TestWs01')
   expect(screen.getByRole('dialog', { name: 'Leave without saving?' }).elements()).toEqual([])
+})
+
+test('a Step inserted on the canvas while saving stays, unsaved, after the save', async () => {
+  const received = Promise.withResolvers<undefined>()
+  const release = Promise.withResolvers<undefined>()
+  noEnrollmentsOrIntegrations()
+  worker.use(
+    handleSiteAutomationsGet({ body: { ...STORED, draft: DRAFT } }),
+    handleSiteAutomationsUpdate(async () => {
+      received.resolve(undefined)
+      await release.promise
+      return HttpResponse.json({ ...STORED, draft: DRAFT })
+    }),
+  )
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+  await screen.getByRole('button', { name: 'Save' }).click()
+  await received.promise
+  await screen.getByRole('button', { name: 'Add a step here' }).click()
+  await screen.getByRole('menuitem', { name: 'Wait' }).click()
+  release.resolve(undefined)
+
+  await expect.element(screen.getByText('Automation updated')).toBeInTheDocument()
+  await expect.element(screen.getByRole('button', { name: /^Wait/ })).toBeVisible()
+  await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeDisabled()
+  await screen.getByRole('button', { name: 'Remove step' }).click()
+  await expect.element(screen.getByRole('button', { name: 'Publish' })).toBeEnabled()
 })

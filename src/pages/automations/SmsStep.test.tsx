@@ -1,5 +1,5 @@
 import { HttpResponse } from 'msw'
-import { expect, test } from 'vitest'
+import { beforeEach, expect, test } from 'vitest'
 import { page } from 'vitest/browser'
 
 import {
@@ -15,7 +15,6 @@ import type {
   SiteAutomationResource,
 } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
-import { canvasProperties } from '../../test/canvas.ts'
 import {
   emailIntegration,
   stepId,
@@ -32,6 +31,22 @@ const EDIT_ROUTE = routeMount(automationsEditRoute, {
   workspaceId: 'TestWs01',
   automationId: testId(5),
 })
+
+beforeEach(async () => {
+  // The editor is a desktop tool: its side panel sits beside the canvas, not over it.
+  await page.viewport(1280, 900)
+})
+
+type Screen = Awaited<ReturnType<typeof renderWithRouter>>['screen']
+
+// Opens the canvas node whose kind is `label` in the side panel; `index` picks among nodes of one
+// kind, top to bottom.
+async function openNode(screen: Screen, label: string, index = 0) {
+  await screen
+    .getByRole('button', { name: new RegExp(`^${label}`) })
+    .nth(index)
+    .click()
+}
 
 const STEP: AutomationStep = {
   id: stepId(11),
@@ -88,14 +103,6 @@ function stored(steps: AutomationStep[]): SiteAutomationResource {
   }
 }
 
-function flowNode(index: number) {
-  const node = document.querySelectorAll('.react-flow__node')[index]
-  if (!node) {
-    throw new Error('the canvas has not drawn the node yet')
-  }
-  return node
-}
-
 test('an SMS step round-trips: its Integration and text load, an edit saves them back', async () => {
   const bodies: { steps?: AutomationPathInput }[] = []
   const current = stored([STEP])
@@ -113,9 +120,7 @@ test('an SMS step round-trips: its Integration and text load, an edit saves them
   )
   const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
 
-  await expect.poll(() => flowNode(1)).toBeInstanceOf(Element)
-  await page.elementLocator(flowNode(1)).click()
-  await screen.getByText('Properties').click({ force: true })
+  await openNode(screen, 'Send SMS')
   const picker = screen.getByRole('combobox', { name: 'Integration' })
   await expect.element(picker).toHaveValue('Acme Twilio')
   await picker.click()
@@ -128,14 +133,6 @@ test('an SMS step round-trips: its Integration and text load, an edit saves them
   await screen.getByText('Insert a merge tag').click()
   await screen.getByRole('menuitem', { name: 'unsubscribe_url' }).click()
   await screen.getByText('Track links').click({ force: true })
-  // The edit reaches the canvas store, which the Save reads, a moment later.
-  await expect
-    .poll(() => canvasProperties(STEP.id))
-    .toMatchObject({
-      integrationId: '',
-      text: 'Your cart is waiting: {{ unsubscribe_url }}',
-      linkTracking: 'off',
-    })
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect

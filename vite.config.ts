@@ -72,6 +72,7 @@ export default defineConfig({
   optimizeDeps: {
     include: [
       'react-dom/client',
+      '@dagrejs/dagre',
       '@mantine/charts',
       '@mantine/core',
       '@mantine/form',
@@ -87,6 +88,7 @@ export default defineConfig({
       '@sphericon/analytics > uuid',
       '@sphericon/analytics > xstate',
       '@tiptap/react',
+      '@xyflow/react',
       'ahooks',
       'ajv/dist/2020.js',
       'dayjs',
