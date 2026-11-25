@@ -185,7 +185,7 @@ export function reachesPastKept(count: {
 
 // testsNothing tells a filter that holds no test, which is no filter: an empty group that is not
 // negated holds for every Event.
-export function testsNothing(filter: AnyCondition | ConditionDraft): boolean {
+function testsNothing(filter: AnyCondition | ConditionDraft): boolean {
   return filter.entries.length === 0 && filter.not !== true
 }
 
