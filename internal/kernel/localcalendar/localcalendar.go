@@ -1,0 +1,325 @@
+// Package localcalendar is the local calendar of ADR 0126: every calendar moment a date Trigger
+// and a Wait until read, computed from a calendar date, a local time and a zone. It touches no
+// database and keeps no clock: the caller passes "now".
+//
+// Its calendar rules: a local time a daylight-saving change skips is the first moment after the
+// gap, one that occurs twice is the first of the two, and 29 February is 28 February in a year
+// without it.
+package localcalendar
+
+import (
+	"errors"
+	"fmt"
+	"slices"
+	"strings"
+	"time"
+
+	"github.com/getsphericon/sphericon/internal/kernel/reportday"
+)
+
+// Date is a calendar date, with no time or zone.
+type Date struct {
+	year  int
+	month time.Month
+	day   int
+}
+
+// NewDate is the calendar date of year, month and day, normalized as time.Date normalizes them.
+func NewDate(year int, month time.Month, day int) Date {
+	return DateOf(time.Date(year, month, day, 0, 0, 0, 0, time.UTC))
+}
+
+// DateOf is the calendar date t reads in its own location, never moved into another zone: a
+// Contact's `birthday`, a date already, is its own year, month and day.
+func DateOf(t time.Time) Date {
+	year, month, day := t.Date()
+	return Date{year: year, month: month, day: day}
+}
+
+// Year is the date's year.
+func (d Date) Year() int { return d.year }
+
+// String is the date as YYYY-MM-DD.
+func (d Date) String() string { return d.midnight().Format(time.DateOnly) }
+
+// midnight is the date's start in UTC, the instant its calendar arithmetic runs on.
+func (d Date) midnight() time.Time { return time.Date(d.year, d.month, d.day, 0, 0, 0, 0, time.UTC) }
+
+// addDays is the date days calendar days after d (before it when negative).
+func (d Date) addDays(days int) Date { return DateOf(d.midnight().AddDate(0, 0, days)) }
+
+// in is the date's day and month in year; 29 February is 28 February in a year without it.
+func (d Date) in(year int) Date {
+	if d.month == time.February && d.day == 29 && !isLeap(year) {
+		return Date{year: year, month: time.February, day: 28}
+	}
+	return Date{year: year, month: d.month, day: d.day}
+}
+
+func isLeap(year int) bool {
+	return year%4 == 0 && (year%100 != 0 || year%400 == 0)
+}
+
+// isoLayouts are the ISO forms of a datetime Custom field's value (#817): a date-time with an offset
+// (RFC 3339, "Z" or "+03:00", fractional seconds allowed), one without an offset and a bare date.
+// A slash form such as 01/15/2026 is read month-first by some tools and day-first by others, so it
+// is no date.
+var isoLayouts = []string{time.RFC3339Nano, "2006-01-02T15:04:05.999999999", time.DateOnly}
+
+// IsISODate reports whether s is a date in one of the ISO forms a datetime Custom field's value
+// takes.
+func IsISODate(s string) bool {
+	return slices.ContainsFunc(isoLayouts, func(layout string) bool {
+		_, err := time.Parse(layout, s)
+		return err == nil
+	})
+}
+
+// ValueDate is the calendar date of a datetime Custom field's value, read in the Workspace time
+// zone (ADR 0087): a value with an offset is moved into that zone, one without an offset or a bare
+// date keeps its own date. A value that is no date in an ISO form is not held (false).
+func ValueDate(value any, workspace *time.Location) (Date, bool) {
+	s, ok := value.(string)
+	if !ok {
+		return Date{}, false
+	}
+	if t, err := time.Parse(time.RFC3339Nano, s); err == nil {
+		return DateOf(t.In(workspace)), true
+	}
+	for _, layout := range isoLayouts[1:] {
+		if t, err := time.Parse(layout, s); err == nil {
+			return DateOf(t), true
+		}
+	}
+	return Date{}, false
+}
+
+// Zone is the zone a Contact's local times are read in: the Contact's own when the zone database
+// loads it, by the Report day's rule, and the Workspace time zone otherwise, UTC while unset.
+// Zone(nil, workspace) is the Workspace time zone, in which ValueDate reads a value. A Workspace
+// zone the database does not load is an error: it was checked when it was written.
+func Zone(contact, workspace *string) (*time.Location, error) {
+	fallback, err := reportday.Location(workspace)
+	if err != nil {
+		return nil, fmt.Errorf("workspace time zone: %w", err)
+	}
+	if contact != nil {
+		if loc, err := reportday.Load(*contact); err == nil {
+			return loc, nil
+		}
+	}
+	return fallback, nil
+}
+
+// Recurrence is how often a date recurs: every year, or once.
+type Recurrence string
+
+// The recurrences of a date.
+const (
+	// Yearly recurs every year, from the year after the date's own (a sign-up anniversary starts in
+	// year one).
+	Yearly Recurrence = "yearly"
+	// Once is the date itself, its one occurrence.
+	Once Recurrence = "once"
+)
+
+// The refusals of a constructor, matched with errors.Is.
+var (
+	ErrRecurrence = errors.New("unknown recurrence")
+	ErrOffset     = errors.New("offset out of range")
+	ErrLocalTime  = errors.New("malformed local time")
+	// ErrWeekday is a name that is no ISO day name in lower case ("monday" to "sunday").
+	ErrWeekday         = errors.New("unknown weekday")
+	ErrRepeatedWeekday = errors.New("repeated weekday")
+)
+
+// maxOffsetDays is the bound of an offset, in whole days before or after the date (decision 6 of
+// #1613). When the contract declares it, the bound is the generated one.
+const maxOffsetDays = 365
+
+// hhmm is a local time: a time of day in whole minutes.
+type hhmm struct {
+	hour, minute int
+}
+
+// parseLocalTime reads a local time written HH:MM, from 00:00 to 23:59.
+func parseLocalTime(s string) (hhmm, error) {
+	if len(s) != len("15:04") || s[2] != ':' {
+		return hhmm{}, fmt.Errorf("%w: %q", ErrLocalTime, s)
+	}
+	hour, okHour := twoDigits(s[0:2])
+	minute, okMinute := twoDigits(s[3:5])
+	if !okHour || !okMinute || hour > 23 || minute > 59 {
+		return hhmm{}, fmt.Errorf("%w: %q", ErrLocalTime, s)
+	}
+	return hhmm{hour: hour, minute: minute}, nil
+}
+
+func twoDigits(s string) (int, bool) {
+	if s[0] < '0' || s[0] > '9' || s[1] < '0' || s[1] > '9' {
+		return 0, false
+	}
+	return int(s[0]-'0')*10 + int(s[1]-'0'), true
+}
+
+// on is the moment of the local time on date d in loc, by the calendar rules of the package.
+func (t hhmm) on(d Date, loc *time.Location) time.Time {
+	wall := time.Date(d.year, d.month, d.day, t.hour, t.minute, 0, 0, time.UTC)
+	// Every instant that may read as wall in loc lies within a day of wall read as UTC, and the
+	// offsets in effect over those two days are the ones at their ends and middle.
+	var first time.Time
+	for _, probe := range []time.Time{wall.Add(-24 * time.Hour), wall, wall.Add(24 * time.Hour)} {
+		_, offset := probe.In(loc).Zone()
+		at := wall.Add(-time.Duration(offset) * time.Second)
+		if sameWall(at.In(loc), wall) && (first.IsZero() || at.Before(first)) {
+			first = at
+		}
+	}
+	if !first.IsZero() {
+		return first.In(loc)
+	}
+	// No instant reads as wall: the change skipped it. Read with the offset before the change, it
+	// lands after the change, in the zone that begins at the first moment after the gap.
+	_, before := wall.Add(-24 * time.Hour).In(loc).Zone()
+	start, _ := wall.Add(-time.Duration(before) * time.Second).In(loc).ZoneBounds()
+	return start.In(loc)
+}
+
+func sameWall(t, wall time.Time) bool {
+	y, mo, d := t.Date()
+	return y == wall.Year() && mo == wall.Month() && d == wall.Day() && t.Hour() == wall.Hour() && t.Minute() == wall.Minute()
+}
+
+// Schedule is when a date's occurrences come: its recurrence, an offset in whole days from the
+// date and a local time on the day the offset lands on.
+type Schedule struct {
+	recurrence Recurrence
+	offsetDays int
+	at         hhmm
+}
+
+// NewSchedule is the schedule of the recurrence, offset and local time given, or the refusal of
+// every one out of bounds, joined: ErrRecurrence, ErrOffset (beyond ±maxOffsetDays) and
+// ErrLocalTime.
+func NewSchedule(recurrence Recurrence, offsetDays int, localTime string) (Schedule, error) {
+	var errs []error
+	if recurrence != Yearly && recurrence != Once {
+		errs = append(errs, fmt.Errorf("%w: %q", ErrRecurrence, recurrence))
+	}
+	if offsetDays < -maxOffsetDays || offsetDays > maxOffsetDays {
+		errs = append(errs, fmt.Errorf("%w: %d days", ErrOffset, offsetDays))
+	}
+	at, err := parseLocalTime(localTime)
+	if err != nil {
+		errs = append(errs, err)
+	}
+	if len(errs) > 0 {
+		return Schedule{}, errors.Join(errs...)
+	}
+	return Schedule{recurrence: recurrence, offsetDays: offsetDays, at: at}, nil
+}
+
+// Moment is the moment of date's occurrence in the anniversary year given, in loc. The
+// anniversary year is the year of the date the offset counts from, so "3 days before" 2 January
+// falls on 30 December of the year before. A yearly date has none in its own year or before; a
+// once date has one only in its own year.
+func (s Schedule) Moment(date Date, year int, loc *time.Location) (time.Time, bool) {
+	switch s.recurrence {
+	case Yearly:
+		if year <= date.year {
+			return time.Time{}, false
+		}
+	case Once:
+		if year != date.year {
+			return time.Time{}, false
+		}
+	}
+	return s.at.on(date.in(year).addDays(s.offsetDays), loc), true
+}
+
+// Occurrence is one occurrence of a date: its anniversary year and its moment.
+type Occurrence struct {
+	Year int
+	At   time.Time
+}
+
+// Next is date's first occurrence at or after the moment given, in loc: an occurrence at that very
+// moment is ahead. A yearly date always has one; a once date has none once its own has passed.
+func (s Schedule) Next(date Date, after time.Time, loc *time.Location) (Occurrence, bool) {
+	if s.recurrence == Once {
+		at, _ := s.Moment(date, date.year, loc)
+		return Occurrence{Year: date.year, At: at}, !at.Before(after)
+	}
+	// An offset of up to a year moves an anniversary year's moment into the calendar year before or
+	// after it, and each year's moment is later than the one before.
+	for year := max(date.year+1, after.In(loc).Year()-2); ; year++ {
+		at, _ := s.Moment(date, year, loc)
+		if !at.Before(after) {
+			return Occurrence{Year: year, At: at}, true
+		}
+	}
+}
+
+// TimeOfDay is a local time on chosen weekdays, every day when none is chosen.
+type TimeOfDay struct {
+	at       hhmm
+	weekdays [7]bool // by time.Weekday; all false is every day
+}
+
+// NewTimeOfDay is the local time on the weekdays named ("monday" to "sunday"), or the refusal of
+// every part out of bounds, joined: ErrLocalTime, ErrWeekday and ErrRepeatedWeekday.
+func NewTimeOfDay(localTime string, weekdays []string) (TimeOfDay, error) {
+	var errs []error
+	at, err := parseLocalTime(localTime)
+	if err != nil {
+		errs = append(errs, err)
+	}
+	var days [7]bool
+	for _, name := range weekdays {
+		day, ok := weekday(name)
+		switch {
+		case !ok:
+			errs = append(errs, fmt.Errorf("%w: %q", ErrWeekday, name))
+		case days[day]:
+			errs = append(errs, fmt.Errorf("%w: %q", ErrRepeatedWeekday, name))
+		default:
+			days[day] = true
+		}
+	}
+	if len(errs) > 0 {
+		return TimeOfDay{}, errors.Join(errs...)
+	}
+	return TimeOfDay{at: at, weekdays: days}, nil
+}
+
+// weekday is the day an ISO day name in lower case names.
+func weekday(name string) (time.Weekday, bool) {
+	for day := time.Sunday; day <= time.Saturday; day++ {
+		if name == strings.ToLower(day.String()) {
+			return day, true
+		}
+	}
+	return 0, false
+}
+
+// takes reports whether the time of day comes on the weekday.
+func (w TimeOfDay) takes(day time.Weekday) bool {
+	return w.weekdays == [7]bool{} || w.weekdays[day]
+}
+
+// Next is the first moment of the local time on a chosen weekday at or after the moment given, in
+// loc: one at that very moment is ahead.
+func (w TimeOfDay) Next(after time.Time, loc *time.Location) time.Time {
+	today := DateOf(after.In(loc))
+	// The same weekday a week on is the last day the search can reach.
+	for days := 0; ; days++ {
+		day := today.addDays(days)
+		if !w.takes(day.midnight().Weekday()) {
+			continue
+		}
+		at := w.at.on(day, loc)
+		if !at.Before(after) {
+			return at
+		}
+	}
+}
