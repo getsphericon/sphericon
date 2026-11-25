@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
@@ -117,6 +118,26 @@ func (_c *AutomationStepRecordCreate) SetNillableSkipReason(v *skipreason.Reason
 	if v != nil {
 		_c.SetSkipReason(*v)
 	}
+	return _c
+}
+
+// SetPathID sets the "path_id" field.
+func (_c *AutomationStepRecordCreate) SetPathID(v automationstep.ID) *AutomationStepRecordCreate {
+	_c.mutation.SetPathID(v)
+	return _c
+}
+
+// SetNillablePathID sets the "path_id" field if the given value is not nil.
+func (_c *AutomationStepRecordCreate) SetNillablePathID(v *automationstep.ID) *AutomationStepRecordCreate {
+	if v != nil {
+		_c.SetPathID(*v)
+	}
+	return _c
+}
+
+// SetPathOutcomes sets the "path_outcomes" field.
+func (_c *AutomationStepRecordCreate) SetPathOutcomes(v map[automationstep.ID]conditiontree.Truth) *AutomationStepRecordCreate {
+	_c.mutation.SetPathOutcomes(v)
 	return _c
 }
 
@@ -292,6 +313,14 @@ func (_c *AutomationStepRecordCreate) createSpec() (*AutomationStepRecord, *sqlg
 		_spec.SetField(automationsteprecord.FieldSkipReason, field.TypeEnum, value)
 		_node.SkipReason = &value
 	}
+	if value, ok := _c.mutation.PathID(); ok {
+		_spec.SetField(automationsteprecord.FieldPathID, field.TypeString, value)
+		_node.PathID = &value
+	}
+	if value, ok := _c.mutation.PathOutcomes(); ok {
+		_spec.SetField(automationsteprecord.FieldPathOutcomes, field.TypeJSON, value)
+		_node.PathOutcomes = value
+	}
 	if value, ok := _c.mutation.DueAt(); ok {
 		_spec.SetField(automationsteprecord.FieldDueAt, field.TypeTime, value)
 		_node.DueAt = &value
@@ -460,6 +489,42 @@ func (u *AutomationStepRecordUpsert) ClearSkipReason() *AutomationStepRecordUpse
 	return u
 }
 
+// SetPathID sets the "path_id" field.
+func (u *AutomationStepRecordUpsert) SetPathID(v automationstep.ID) *AutomationStepRecordUpsert {
+	u.Set(automationsteprecord.FieldPathID, v)
+	return u
+}
+
+// UpdatePathID sets the "path_id" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsert) UpdatePathID() *AutomationStepRecordUpsert {
+	u.SetExcluded(automationsteprecord.FieldPathID)
+	return u
+}
+
+// ClearPathID clears the value of the "path_id" field.
+func (u *AutomationStepRecordUpsert) ClearPathID() *AutomationStepRecordUpsert {
+	u.SetNull(automationsteprecord.FieldPathID)
+	return u
+}
+
+// SetPathOutcomes sets the "path_outcomes" field.
+func (u *AutomationStepRecordUpsert) SetPathOutcomes(v map[automationstep.ID]conditiontree.Truth) *AutomationStepRecordUpsert {
+	u.Set(automationsteprecord.FieldPathOutcomes, v)
+	return u
+}
+
+// UpdatePathOutcomes sets the "path_outcomes" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsert) UpdatePathOutcomes() *AutomationStepRecordUpsert {
+	u.SetExcluded(automationsteprecord.FieldPathOutcomes)
+	return u
+}
+
+// ClearPathOutcomes clears the value of the "path_outcomes" field.
+func (u *AutomationStepRecordUpsert) ClearPathOutcomes() *AutomationStepRecordUpsert {
+	u.SetNull(automationsteprecord.FieldPathOutcomes)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -611,6 +676,48 @@ func (u *AutomationStepRecordUpsertOne) UpdateSkipReason() *AutomationStepRecord
 func (u *AutomationStepRecordUpsertOne) ClearSkipReason() *AutomationStepRecordUpsertOne {
 	return u.Update(func(s *AutomationStepRecordUpsert) {
 		s.ClearSkipReason()
+	})
+}
+
+// SetPathID sets the "path_id" field.
+func (u *AutomationStepRecordUpsertOne) SetPathID(v automationstep.ID) *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.SetPathID(v)
+	})
+}
+
+// UpdatePathID sets the "path_id" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsertOne) UpdatePathID() *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.UpdatePathID()
+	})
+}
+
+// ClearPathID clears the value of the "path_id" field.
+func (u *AutomationStepRecordUpsertOne) ClearPathID() *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.ClearPathID()
+	})
+}
+
+// SetPathOutcomes sets the "path_outcomes" field.
+func (u *AutomationStepRecordUpsertOne) SetPathOutcomes(v map[automationstep.ID]conditiontree.Truth) *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.SetPathOutcomes(v)
+	})
+}
+
+// UpdatePathOutcomes sets the "path_outcomes" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsertOne) UpdatePathOutcomes() *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.UpdatePathOutcomes()
+	})
+}
+
+// ClearPathOutcomes clears the value of the "path_outcomes" field.
+func (u *AutomationStepRecordUpsertOne) ClearPathOutcomes() *AutomationStepRecordUpsertOne {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.ClearPathOutcomes()
 	})
 }
 
@@ -931,6 +1038,48 @@ func (u *AutomationStepRecordUpsertBulk) UpdateSkipReason() *AutomationStepRecor
 func (u *AutomationStepRecordUpsertBulk) ClearSkipReason() *AutomationStepRecordUpsertBulk {
 	return u.Update(func(s *AutomationStepRecordUpsert) {
 		s.ClearSkipReason()
+	})
+}
+
+// SetPathID sets the "path_id" field.
+func (u *AutomationStepRecordUpsertBulk) SetPathID(v automationstep.ID) *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.SetPathID(v)
+	})
+}
+
+// UpdatePathID sets the "path_id" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsertBulk) UpdatePathID() *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.UpdatePathID()
+	})
+}
+
+// ClearPathID clears the value of the "path_id" field.
+func (u *AutomationStepRecordUpsertBulk) ClearPathID() *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.ClearPathID()
+	})
+}
+
+// SetPathOutcomes sets the "path_outcomes" field.
+func (u *AutomationStepRecordUpsertBulk) SetPathOutcomes(v map[automationstep.ID]conditiontree.Truth) *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.SetPathOutcomes(v)
+	})
+}
+
+// UpdatePathOutcomes sets the "path_outcomes" field to the value that was provided on create.
+func (u *AutomationStepRecordUpsertBulk) UpdatePathOutcomes() *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.UpdatePathOutcomes()
+	})
+}
+
+// ClearPathOutcomes clears the value of the "path_outcomes" field.
+func (u *AutomationStepRecordUpsertBulk) ClearPathOutcomes() *AutomationStepRecordUpsertBulk {
+	return u.Update(func(s *AutomationStepRecordUpsert) {
+		s.ClearPathOutcomes()
 	})
 }
 

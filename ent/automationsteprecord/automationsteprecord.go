@@ -34,6 +34,10 @@ const (
 	FieldOutcome = "outcome"
 	// FieldSkipReason holds the string denoting the skip_reason field in the database.
 	FieldSkipReason = "skip_reason"
+	// FieldPathID holds the string denoting the path_id field in the database.
+	FieldPathID = "path_id"
+	// FieldPathOutcomes holds the string denoting the path_outcomes field in the database.
+	FieldPathOutcomes = "path_outcomes"
 	// FieldDueAt holds the string denoting the due_at field in the database.
 	FieldDueAt = "due_at"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
@@ -70,6 +74,8 @@ var Columns = []string{
 	FieldLeftAt,
 	FieldOutcome,
 	FieldSkipReason,
+	FieldPathID,
+	FieldPathOutcomes,
 	FieldDueAt,
 }
 
@@ -99,6 +105,7 @@ type Outcome string
 const (
 	OutcomeDone    Outcome = "done"
 	OutcomeSkipped Outcome = "skipped"
+	OutcomePath    Outcome = "path"
 )
 
 func (o Outcome) String() string {
@@ -108,7 +115,7 @@ func (o Outcome) String() string {
 // OutcomeValidator is a validator for the "outcome" field enum values. It is called by the builders before save.
 func OutcomeValidator(o Outcome) error {
 	switch o {
-	case OutcomeDone, OutcomeSkipped:
+	case OutcomeDone, OutcomeSkipped, OutcomePath:
 		return nil
 	default:
 		return fmt.Errorf("automationsteprecord: invalid enum value for outcome field: %q", o)
@@ -176,6 +183,11 @@ func ByOutcome(opts ...sql.OrderTermOption) OrderOption {
 // BySkipReason orders the results by the skip_reason field.
 func BySkipReason(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSkipReason, opts...).ToFunc()
+}
+
+// ByPathID orders the results by the path_id field.
+func ByPathID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPathID, opts...).ToFunc()
 }
 
 // ByDueAt orders the results by the due_at field.

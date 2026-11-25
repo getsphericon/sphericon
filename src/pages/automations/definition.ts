@@ -162,6 +162,7 @@ function draftOf(step: AutomationStep): EditedStep | null {
     case 'remove_tag':
       return { id, kind: 'remove_tag', draft: { tag: step.tag } }
     case 'end':
+    case 'branch':
     default:
       return null
   }

@@ -83,7 +83,8 @@ func TestMCPToolCarriesTheStepUnionInDefs(t *testing.T) {
 	assert.Equal(t, "#/$defs/AutomationPathInput", refOf(schema.Properties["steps"]))
 	assert.Equal(t, "#/$defs/AutomationStepInput", steps["items"].(map[string]any)["$ref"])
 	assert.Equal(t, "#/$defs/WaitStepInput", mapping["wait"])
-	assert.Len(t, mapping, 8, "every kind of Step")
+	assert.Len(t, mapping, 9, "every kind of Step")
 	assert.Equal(t, "#/$defs/EndStepInput", mapping["end"])
+	assert.Equal(t, "#/$defs/BranchStepInput", mapping["branch"])
 	assert.Empty(t, unresolvedRefs(raw, schema.Defs))
 }

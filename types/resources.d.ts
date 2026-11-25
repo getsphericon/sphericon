@@ -487,6 +487,7 @@ export default interface Resources {
       "stateFilter": "Status",
       "statusLabel": "Status",
       "stepApplyTag": "Apply tag",
+      "stepBranch": "Branch",
       "stepEmail": "Send email",
       "stepEnd": "End",
       "stepFigures": {

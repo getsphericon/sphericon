@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
@@ -39,6 +41,10 @@ type AutomationStepRecord struct {
 	Outcome *automationsteprecord.Outcome `json:"outcome,omitempty"`
 	// SkipReason holds the value of the "skip_reason" field.
 	SkipReason *skipreason.Reason `json:"skip_reason,omitempty"`
+	// PathID holds the value of the "path_id" field.
+	PathID *automationstep.ID `json:"path_id,omitempty"`
+	// PathOutcomes holds the value of the "path_outcomes" field.
+	PathOutcomes map[automationstep.ID]conditiontree.Truth `json:"path_outcomes,omitempty"`
 	// DueAt holds the value of the "due_at" field.
 	DueAt *time.Time `json:"due_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -85,9 +91,11 @@ func (*AutomationStepRecord) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case automationsteprecord.FieldPathOutcomes:
+			values[i] = new([]byte)
 		case automationsteprecord.FieldID, automationsteprecord.FieldWorkspaceID, automationsteprecord.FieldRunID:
 			values[i] = new(sql.NullInt64)
-		case automationsteprecord.FieldStepID, automationsteprecord.FieldOutcome, automationsteprecord.FieldSkipReason:
+		case automationsteprecord.FieldStepID, automationsteprecord.FieldOutcome, automationsteprecord.FieldSkipReason, automationsteprecord.FieldPathID:
 			values[i] = new(sql.NullString)
 		case automationsteprecord.FieldCreatedAt, automationsteprecord.FieldUpdatedAt, automationsteprecord.FieldReachedAt, automationsteprecord.FieldLeftAt, automationsteprecord.FieldDueAt:
 			values[i] = new(sql.NullTime)
@@ -168,6 +176,21 @@ func (_m *AutomationStepRecord) assignValues(columns []string, values []any) err
 			} else if value.Valid {
 				_m.SkipReason = new(skipreason.Reason)
 				*_m.SkipReason = skipreason.Reason(value.String)
+			}
+		case automationsteprecord.FieldPathID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field path_id", values[i])
+			} else if value.Valid {
+				_m.PathID = new(automationstep.ID)
+				*_m.PathID = automationstep.ID(value.String)
+			}
+		case automationsteprecord.FieldPathOutcomes:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field path_outcomes", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.PathOutcomes); err != nil {
+					return fmt.Errorf("unmarshal field path_outcomes: %w", err)
+				}
 			}
 		case automationsteprecord.FieldDueAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -254,6 +277,14 @@ func (_m *AutomationStepRecord) String() string {
 		builder.WriteString("skip_reason=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	if v := _m.PathID; v != nil {
+		builder.WriteString("path_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("path_outcomes=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PathOutcomes))
 	builder.WriteString(", ")
 	if v := _m.DueAt; v != nil {
 		builder.WriteString("due_at=")

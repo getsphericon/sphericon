@@ -11,6 +11,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationskippedentry"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
@@ -18,9 +19,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
-	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
 // RunStepArgs is the job that executes one step of one Enrollment. StepID is the id of the Step
@@ -80,6 +81,8 @@ type StepExecution struct {
 	locks *contactlock.Module
 	// firings reads which Event the Firing whose Enroll Action made an Enrollment fired on.
 	firings *rules.Firings
+	// conditions reads a Branch's Conditions for the enrolled Contact (branch).
+	conditions *condition.Module
 }
 
 // NewStepExecution builds the Step execution. The bus runs a move and the job that follows it in
@@ -91,7 +94,7 @@ type StepExecution struct {
 // wait.
 func NewStepExecution(bus *events.Bus, out *outboundmessages.Module, people *contacts.Module, fence Fencer, cipher *secrets.Cipher, client webhook.Doer, now func() time.Time) *StepExecution {
 	return &StepExecution{bus: bus, out: out, contacts: people, fence: fence, cipher: cipher, client: client, now: now,
-		locks: contactlock.New(), firings: rules.NewFirings()}
+		locks: contactlock.New(), firings: rules.NewFirings(), conditions: condition.New(now)}
 }
 
 // OnEventInput is an Event of a Contact handed to the Automations: the Contact and the Event.
@@ -272,11 +275,13 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 	if run.ResumeAt != nil && run.ResumeAt.After(m.now()) {
 		return m.requeue(ctx, s, run.ID, step, *run.ResumeAt)
 	}
-	st, ok := automationstep.Find(version.Steps, step)
+	// The tree is indexed once, as it is decoded: where each Step stands and what follows it.
+	index := automationstep.NewIndex(version.Steps)
+	st, ok := index.Step(step)
 	if !ok {
 		return m.fail(ctx, s, run.ID, fmt.Errorf("step %s is not a step of version %d", step, version.ID))
 	}
-	at := place{steps: version.Steps, step: step}
+	at := place{index: index, step: step}
 
 	switch p := st.Payload.(type) {
 	case automationstep.Wait:
@@ -299,6 +304,9 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 		// its path holds after it is never reached.
 		return m.end(ctx, s, run.ID, at)
 
+	case automationstep.Branch:
+		return m.branch(ctx, s, run, at, p)
+
 	case automationstep.HTTP:
 		// The call runs on its own queue (ADR 0039); the job queued here makes it and moves
 		// the Enrollment on through ExecuteHTTP.
@@ -312,6 +320,54 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 		}
 		return m.fail(ctx, s, run.ID, fmt.Errorf("unknown step type %q", st.Kind()))
 	}
+}
+
+// branch decides a Branch for the Enrollment (ADR 0124): every path's Condition is read for its
+// Contact, on its live data now, in one read, the Enrollment's `event` copy given to the property
+// tests (ADR 0180), and the first path whose Condition is not false decides: true takes it,
+// unknown takes the unknown path, and none takes otherwise. The move down the path, the Branch's
+// record of the path and of every path's outcome, and the reach of the Step it leads to commit in
+// one transaction behind the compare-and-set on the cursor, so the path is decided once: a job
+// delivered again finds the Enrollment moved on. A Condition that no longer reads (a Custom field
+// retyped past it) fails the Enrollment; a failed read is retried.
+func (m *StepExecution) branch(ctx context.Context, s *ent.Scoped, run *ent.AutomationRun, at place, b automationstep.Branch) error {
+	conds := make([]conditiontree.Branch, len(b.Paths))
+	for i, p := range b.Paths {
+		conds[i] = p.Condition
+	}
+	truths, err := m.conditions.Outcomes(ctx, s, condition.OutcomesInput{ContactID: run.ContactID, Conditions: conds, Properties: run.EventProperties})
+	if errors.Is(err, condition.ErrStorage) {
+		return err
+	}
+	if err != nil {
+		return m.fail(ctx, s, run.ID, fmt.Errorf("branch step %s: %w", at.step, err))
+	}
+	return m.advance(ctx, s, run.ID, at, stepMove{path: chosen(b, truths)})
+}
+
+// chosen is the path of the Branch its paths' truths send the Enrollment down (ADR 0124), with each
+// listed path's truth: the first whose truth is not false decides, true taking it and unknown the
+// unknown path; none takes otherwise. Publish refuses a Branch whose Conditions can be unknown
+// without an unknown path, so a version that runs has one wherever a truth is unknown; were it
+// missing, otherwise is taken.
+func chosen(b automationstep.Branch, truths []conditiontree.Truth) *pathTaken {
+	taken := &pathTaken{id: b.Otherwise.ID, outcomes: make(map[automationstep.ID]conditiontree.Truth, len(b.Paths))}
+	decided := false
+	for i, p := range b.Paths {
+		truth := truths[i]
+		taken.outcomes[p.ID] = truth
+		if decided || truth == conditiontree.TruthFalse {
+			continue
+		}
+		decided = true
+		switch {
+		case truth == conditiontree.TruthTrue:
+			taken.id = p.ID
+		case b.Unknown != nil:
+			taken.id = b.Unknown.ID
+		}
+	}
+	return taken
 }
 
 // tag runs a tag step: change changes the Contact's Tags, and the Enrollment moves straight on;
@@ -383,20 +439,22 @@ func (m *StepExecution) send(ctx context.Context, s *ent.Scoped, a *ent.Automati
 	}
 }
 
-// stepMove is what an advance does besides moving the Enrollment: skipped, when set, is why the
-// Step it leaves was skipped, which its record keeps; with makes writes of its own in the same
-// transaction. contactID, set when with writes the Contact's row, is that Contact: its lock is
-// taken before the Enrollment's (the lock order of lockContact).
+// stepMove is what an advance does besides moving the Enrollment: leaving is how the Enrollment
+// leaves the Step, which its record keeps (skipped, or down a fork's path, which is where the move
+// goes); with makes writes of its own in the same transaction. contactID, set when with writes the
+// Contact's row, is that Contact: its lock is taken before the Enrollment's (the lock order of
+// lockContact).
 type stepMove struct {
-	skipped   skipreason.Reason
+	leaving
+
 	contactID int64
 	with      func(*ent.Scoped, events.Publisher) error
 }
 
-// place is the Step an Enrollment stands on: its id, and the path of the Enrollment's version
-// that holds it.
+// place is the Step an Enrollment stands on: its id, and the index of the tree of the
+// Enrollment's version that holds it.
 type place struct {
-	steps automationstep.Path
+	index *automationstep.Index
 	step  automationstep.ID
 }
 
@@ -404,10 +462,14 @@ type place struct {
 // and the Step records of the move (ADR 0124): onto the next Step, which it reaches then, queueing
 // the job that runs it (at the due moment of a wait, which holds the Enrollment on itself until
 // then), or, with no next Step, to its end: it completes, on the Step it left, and nothing is
-// queued. A move that finds the Enrollment gone or elsewhere, or its Contact gone, writes nothing
-// and returns nil.
+// queued. The next Step is the one after the Step left (Index.Next) or, down a fork's path, the
+// path's first Step or, for an empty path, the Step after the fork (Index.Enter). A move that finds
+// the Enrollment gone or elsewhere, or its Contact gone, writes nothing and returns nil.
 func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64, from place, mv stepMove) error {
-	next, more := automationstep.Next(from.steps, from.step)
+	next, more := from.index.Next(from.step)
+	if mv.path != nil {
+		next, more = from.index.Enter(mv.path.id)
+	}
 	now := m.now()
 	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher, q events.Enqueuer) error {
 		if mv.contactID != 0 {
@@ -422,10 +484,10 @@ func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64,
 			if err := advanceRun(ctx, ts, runID, from.step, next.ID, due); err != nil {
 				return err
 			}
-			if err := leave(ctx, ts, runID, from.step, now, mv.skipped); err != nil {
+			if err := leave(ctx, ts, runID, from.step, now, mv.leaving); err != nil {
 				return err
 			}
-		} else if err := completeOn(ctx, ts, pub, runID, from.step, now, mv.skipped); err != nil {
+		} else if err := completeOn(ctx, ts, pub, runID, from.step, now, mv.leaving); err != nil {
 			return err
 		}
 		if mv.with != nil {
@@ -449,17 +511,17 @@ func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64,
 func (m *StepExecution) end(ctx context.Context, s *ent.Scoped, runID int64, at place) error {
 	now := m.now()
 	return quiet(m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		return completeOn(ctx, ts, pub, runID, at.step, now, "")
+		return completeOn(ctx, ts, pub, runID, at.step, now, leaving{})
 	}))
 }
 
-// completeOn completes the Enrollment on the Step of the id, which it leaves at now (skipped for
-// why when why is set), in the transaction s is bound to.
-func completeOn(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID int64, step automationstep.ID, now time.Time, why skipreason.Reason) error {
+// completeOn completes the Enrollment on the Step of the id, which it leaves at now as how says, in
+// the transaction s is bound to.
+func completeOn(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID int64, step automationstep.ID, now time.Time, how leaving) error {
 	if err := completeRun(ctx, s, pub, runID, step, now); err != nil {
 		return err
 	}
-	return leave(ctx, s, runID, step, now, why)
+	return leave(ctx, s, runID, step, now, how)
 }
 
 // requeue queues the same step again for at.

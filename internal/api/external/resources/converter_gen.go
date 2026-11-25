@@ -317,6 +317,47 @@ func (c *ConverterImpl) AutomationsToResources(source []*ent.Automation) ([]exte
 	}
 	return externalapiAutomationResourceList, nil
 }
+func (c *ConverterImpl) BranchPathToResource(source automations.BranchPathView) (external.BranchPath, error) {
+	var externalapiBranchPath external.BranchPath
+	externalapiBranchPath.ID = external.StepId(source.ID)
+	externalapiBranchCondition, err := branchCondition(source.Condition)
+	if err != nil {
+		return externalapiBranchPath, err
+	}
+	externalapiBranchPath.Condition = externalapiBranchCondition
+	externalapiPathStepList, err := pathStepViews(c, source.Steps)
+	if err != nil {
+		return externalapiBranchPath, err
+	}
+	externalapiBranchPath.Steps = externalapiPathStepList
+	return externalapiBranchPath, nil
+}
+func (c *ConverterImpl) BranchStepToResource(source automations.BranchView) (external.BranchStep, error) {
+	var externalapiBranchStep external.BranchStep
+	externalapiBranchStep.ID = external.StepId(source.ID)
+	externalapiBranchStep.Type = branchStepType(source.Type)
+	if source.Paths != nil {
+		externalapiBranchStep.Paths = make([]external.BranchPath, len(source.Paths))
+		for i := 0; i < len(source.Paths); i++ {
+			externalapiBranchPath, err := c.BranchPathToResource(source.Paths[i])
+			if err != nil {
+				return externalapiBranchStep, err
+			}
+			externalapiBranchStep.Paths[i] = externalapiBranchPath
+		}
+	}
+	externalapiAutomationPath, err := c.AutomationPathToResource(source.Otherwise)
+	if err != nil {
+		return externalapiBranchStep, err
+	}
+	externalapiBranchStep.Otherwise = externalapiAutomationPath
+	externalapiOptAutomationPath, err := optAutomationPath(c, source.Unknown)
+	if err != nil {
+		return externalapiBranchStep, err
+	}
+	externalapiBranchStep.Unknown = externalapiOptAutomationPath
+	return externalapiBranchStep, nil
+}
 func (c *ConverterImpl) BrandKitToResource(source brandkits.Kit) external.BrandKitResource {
 	var externalapiBrandKitResource external.BrandKitResource
 	externalapiBrandKitResource.Saved = source.Saved

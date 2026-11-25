@@ -163,6 +163,7 @@ var ConditionKinds = Table{
 			Unions: []Union{
 				{Schema: "SegmentConditionNode", List: "SegmentKinds", Doc: []string{"SegmentKinds is every Kind a Segment's Condition admits."}},
 				{Schema: "RuleConditionNode", List: "RuleKinds", Doc: []string{"RuleKinds is every Kind a Rule's Condition admits."}},
+				{Schema: "BranchConditionNode", List: "BranchKinds", Doc: []string{"BranchKinds is every Kind a Branch path's Condition admits."}},
 				{Schema: "EventFilterNode", List: "EventFilterKinds", Doc: []string{"EventFilterKinds is every Kind an Event filter admits."}},
 			},
 		},
@@ -188,6 +189,7 @@ var ConditionKinds = Table{
 			Prefix: "Source",
 			Unions: []Union{
 				{Schema: "RulePropertySource", List: "RuleSources", Doc: []string{"RuleSources is every Source a Rule's property leaf reads."}},
+				{Schema: "BranchPropertySource", List: "BranchSources", Doc: []string{"BranchSources is every Source a Branch path's property leaf reads."}},
 			},
 		},
 	),

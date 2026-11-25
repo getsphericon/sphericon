@@ -311,6 +311,71 @@ model EndStepInput {
   type: "end";
 }
 
+/** A path of a Branch: the Condition that sends an Enrollment down it and its Steps */
+model BranchPath {
+  /** The path's id */
+  id: StepId;
+
+  /** The Condition an Enrollment takes the path on, when no path above it is taken */
+  condition: BranchCondition;
+
+  /** The path's Steps, in order; none goes on to the Step after the Branch */
+  steps: PathStep[];
+}
+
+/** A path of a Branch, as a request writes it */
+model BranchPathInput {
+  /** The path's id; omitted, the path is given one */
+  id?: StepId;
+
+  /** The Condition an Enrollment takes the path on, when no path above it is taken. A path
+   * without a test refuses the save, naming the Branch. */
+  condition: BranchConditionInput;
+
+  /** The path's Steps, in order; none goes on to the Step after the Branch */
+  steps: PathStepInput[];
+}
+
+/** A Step that sends each Enrollment down the first of its paths whose Condition holds, on the
+ * Contact's live data when the Enrollment reaches it (ADR 0124), and down `otherwise` when none
+ * does. A Condition that is unknown for the Contact (an engagement count of a Destination that is
+ * not tracked, ADR 0123) before any holds sends it down `unknown`. The paths rejoin at the Step
+ * after the Branch. */
+model BranchStep {
+  /** The Step's id */
+  id: StepId;
+
+  type: "branch";
+
+  /** The paths, in the order their Conditions are tested */
+  paths: BranchPath[];
+
+  /** The path taken when no Condition holds */
+  otherwise: AutomationPath;
+
+  /** The path taken when the first Condition that does not fail is unknown; present only on a
+   * Branch whose Conditions can be unknown */
+  `unknown`?: AutomationPath;
+}
+
+/** A Branch, as a request writes it. It needs a path besides `otherwise`; Publish refuses it
+ * without `unknown` when a Condition counts an open or a click, and with `unknown` when none does. */
+model BranchStepInput {
+  /** The Step's id; omitted, the Step is given one */
+  id?: StepId;
+
+  type: "branch";
+
+  /** The paths, in the order their Conditions are tested */
+  paths: BranchPathInput[];
+
+  /** The path taken when no Condition holds */
+  otherwise: AutomationPathInput;
+
+  /** The path taken when the first Condition that does not fail is unknown */
+  `unknown`?: AutomationPathInput;
+}
+
 /** One Step of an automation, by `type` */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "type" })
 union AutomationStep {
@@ -322,6 +387,7 @@ union AutomationStep {
   remove_tag: RemoveTagStep,
   http: HttpStep,
   end: EndStep,
+  branch: BranchStep,
 }
 
 /** One Step of an automation, by `type`, as a request writes it. A field of another kind is refused. */
@@ -335,6 +401,39 @@ union AutomationStepInput {
   remove_tag: RemoveTagStepInput,
   http: HttpStepInput,
   end: EndStepInput,
+  branch: BranchStepInput,
+}
+
+// A fork's listed paths hold their Steps through a union of their own, the same arms as
+// AutomationStep: ogen breaks a recursion only at an object, so the union a Branch's path reaches
+// must be one that no Step union above it is still being built from.
+
+/** One Step of a fork's path, by `type`: the arms of AutomationStep */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "type" })
+union PathStep {
+  email: EmailStep,
+  telegram: TelegramStep,
+  sms: SmsStep,
+  wait: WaitStep,
+  apply_tag: ApplyTagStep,
+  remove_tag: RemoveTagStep,
+  http: HttpStep,
+  end: EndStep,
+  branch: BranchStep,
+}
+
+/** One Step of a fork's path, by `type`, as a request writes it: the arms of AutomationStepInput */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "type" })
+union PathStepInput {
+  email: EmailStepInput,
+  telegram: TelegramStepInput,
+  sms: SmsStepInput,
+  wait: WaitStepInput,
+  apply_tag: ApplyTagStepInput,
+  remove_tag: RemoveTagStepInput,
+  http: HttpStepInput,
+  end: EndStepInput,
+  branch: BranchStepInput,
 }
 
 /** A path of Steps, in the order an Enrollment walks them. A version's Steps are its root path. */

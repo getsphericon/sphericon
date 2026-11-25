@@ -11,10 +11,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 )
 
 // AutomationStepRecord is what an Enrollment keeps of one Step it reached (ADR 0124): when it
-// reached and left it, how it left it and, at a wait, the moment the wait is due. One per
+// reached and left it, how it left it (at a fork, the path it took and, at a Branch, each path's
+// outcome) and, at a wait, the moment the wait is due. One per
 // Enrollment and Step: a version's Steps form a tree with no cycles. It is written in the
 // transaction of the move that reaches or leaves the Step, which the Enrollment's own
 // compare-and-set on its cursor decides, and goes with its Enrollment (ON DELETE CASCADE, so an
@@ -34,10 +36,12 @@ func (AutomationStepRecord) Annotations() []schema.Annotation {
 	return []schema.Annotation{a}
 }
 
-// stepOutcome is the column that explains each outcome: a skipped Step its reason.
+// stepOutcome is the column that explains each outcome: a skipped Step its reason, a fork the
+// path it sent the Enrollment down and, at a Branch, each path's outcome.
 var stepOutcome = []variant{
 	{value: "done"},
 	{value: "skipped", required: []string{"skip_reason"}},
+	{value: "path", required: []string{"path_id"}, optional: []string{"path_outcomes"}},
 }
 
 func (AutomationStepRecord) Mixin() []ent.Mixin {
@@ -66,11 +70,12 @@ func (AutomationStepRecord) Fields() []ent.Field {
 			Optional().
 			Nillable(),
 		// done: the Step did its work (a send's own result is its Outbound message's). skipped:
-		// the Enrollment moved on without it, for skip_reason. Null on a Step the Enrollment ended
+		// the Enrollment moved on without it, for skip_reason. path: a fork sent the Enrollment
+		// down the path of path_id (ADR 0124). Null on a Step the Enrollment ended
 		// on through an exit, a goal, a failure or an unsubscribe: its end says why. Written in
 		// the latch of left_at, never after it.
 		field.Enum("outcome").
-			Values("done", "skipped").
+			Values("done", "skipped", "path").
 			Annotations(Latch()).
 			Optional().
 			Nillable(),
@@ -80,6 +85,18 @@ func (AutomationStepRecord) Fields() []ent.Field {
 			GoType(skipreason.Reason("")).
 			Optional().
 			Nillable(),
+		// The path of its fork the Enrollment was sent down, by the path's id (ADR 0124): decided
+		// once, and written in the latch of left_at with the outcome `path`, never after it. Null
+		// for a Step that is no fork.
+		field.String("path_id").
+			GoType(automationstep.ID("")).
+			Optional().
+			Nillable(),
+		// At a Branch, what each path's Condition was for the Contact when the Enrollment reached
+		// it, by path id: true, false or unknown (ADR 0123), never the values it tested. Written
+		// with path_id; null for any other Step.
+		field.JSON("path_outcomes", map[automationstep.ID]conditiontree.Truth{}).
+			Optional(),
 		// When a wait is due: computed once, when the Enrollment reached it, so a restart neither
 		// moves it early nor makes it wait twice. Null for any other Step.
 		field.Time("due_at").

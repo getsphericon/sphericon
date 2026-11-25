@@ -2783,6 +2783,7 @@ type AutomationStepInputSum struct {
 	RemoveTagStepInput RemoveTagStepInput
 	HttpStepInput      HttpStepInput
 	EndStepInput       EndStepInput
+	BranchStepInput    BranchStepInput
 }
 
 // AutomationStepInputSumType is oneOf type of AutomationStepInputSum.
@@ -2798,6 +2799,7 @@ const (
 	RemoveTagStepInputAutomationStepInputSum AutomationStepInputSumType = "remove_tag"
 	HttpStepInputAutomationStepInputSum      AutomationStepInputSumType = "http"
 	EndStepInputAutomationStepInputSum       AutomationStepInputSumType = "end"
+	BranchStepInputAutomationStepInputSum    AutomationStepInputSumType = "branch"
 )
 
 // IsEmailStepInput reports whether AutomationStepInputSum is EmailStepInput.
@@ -2838,6 +2840,11 @@ func (s AutomationStepInputSum) IsHttpStepInput() bool {
 // IsEndStepInput reports whether AutomationStepInputSum is EndStepInput.
 func (s AutomationStepInputSum) IsEndStepInput() bool {
 	return s.Type == EndStepInputAutomationStepInputSum
+}
+
+// IsBranchStepInput reports whether AutomationStepInputSum is BranchStepInput.
+func (s AutomationStepInputSum) IsBranchStepInput() bool {
+	return s.Type == BranchStepInputAutomationStepInputSum
 }
 
 // SetEmailStepInput sets AutomationStepInputSum to EmailStepInput.
@@ -3008,6 +3015,27 @@ func NewEndStepInputAutomationStepInputSum(v EndStepInput) AutomationStepInputSu
 	return s
 }
 
+// SetBranchStepInput sets AutomationStepInputSum to BranchStepInput.
+func (s *AutomationStepInputSum) SetBranchStepInput(v BranchStepInput) {
+	s.Type = BranchStepInputAutomationStepInputSum
+	s.BranchStepInput = v
+}
+
+// GetBranchStepInput returns BranchStepInput and true boolean if AutomationStepInputSum is BranchStepInput.
+func (s AutomationStepInputSum) GetBranchStepInput() (v BranchStepInput, ok bool) {
+	if !s.IsBranchStepInput() {
+		return v, false
+	}
+	return s.BranchStepInput, true
+}
+
+// NewBranchStepInputAutomationStepInputSum returns new AutomationStepInputSum from BranchStepInput.
+func NewBranchStepInputAutomationStepInputSum(v BranchStepInput) AutomationStepInputSum {
+	var s AutomationStepInputSum
+	s.SetBranchStepInput(v)
+	return s
+}
+
 // AutomationStepSum represents sum type.
 type AutomationStepSum struct {
 	// Type selects the active sum variant, switch on this field.
@@ -3020,6 +3048,7 @@ type AutomationStepSum struct {
 	RemoveTagStep RemoveTagStep
 	HttpStep      HttpStep
 	EndStep       EndStep
+	BranchStep    BranchStep
 }
 
 // AutomationStepSumType is oneOf type of AutomationStepSum.
@@ -3035,6 +3064,7 @@ const (
 	RemoveTagStepAutomationStepSum AutomationStepSumType = "remove_tag"
 	HttpStepAutomationStepSum      AutomationStepSumType = "http"
 	EndStepAutomationStepSum       AutomationStepSumType = "end"
+	BranchStepAutomationStepSum    AutomationStepSumType = "branch"
 )
 
 // IsEmailStep reports whether AutomationStepSum is EmailStep.
@@ -3060,6 +3090,9 @@ func (s AutomationStepSum) IsHttpStep() bool { return s.Type == HttpStepAutomati
 
 // IsEndStep reports whether AutomationStepSum is EndStep.
 func (s AutomationStepSum) IsEndStep() bool { return s.Type == EndStepAutomationStepSum }
+
+// IsBranchStep reports whether AutomationStepSum is BranchStep.
+func (s AutomationStepSum) IsBranchStep() bool { return s.Type == BranchStepAutomationStepSum }
 
 // SetEmailStep sets AutomationStepSum to EmailStep.
 func (s *AutomationStepSum) SetEmailStep(v EmailStep) {
@@ -3226,6 +3259,27 @@ func (s AutomationStepSum) GetEndStep() (v EndStep, ok bool) {
 func NewEndStepAutomationStepSum(v EndStep) AutomationStepSum {
 	var s AutomationStepSum
 	s.SetEndStep(v)
+	return s
+}
+
+// SetBranchStep sets AutomationStepSum to BranchStep.
+func (s *AutomationStepSum) SetBranchStep(v BranchStep) {
+	s.Type = BranchStepAutomationStepSum
+	s.BranchStep = v
+}
+
+// GetBranchStep returns BranchStep and true boolean if AutomationStepSum is BranchStep.
+func (s AutomationStepSum) GetBranchStep() (v BranchStep, ok bool) {
+	if !s.IsBranchStep() {
+		return v, false
+	}
+	return s.BranchStep, true
+}
+
+// NewBranchStepAutomationStepSum returns new AutomationStepSum from BranchStep.
+func NewBranchStepAutomationStepSum(v BranchStep) AutomationStepSum {
+	var s AutomationStepSum
+	s.SetBranchStep(v)
 	return s
 }
 
@@ -3896,6 +3950,1367 @@ func NewWithinLastTestBirthdayTestSum(v WithinLastTest) BirthdayTestSum {
 	var s BirthdayTestSum
 	s.SetWithinLastTest(v)
 	return s
+}
+
+// A Branch path's Condition: the tree of tests the Contact, on its live data when the Enrollment
+// reaches the Branch, and the Event the Enrollment began with match.
+// Ref: #/components/schemas/BranchCondition
+type BranchCondition struct {
+	Kind BranchConditionKind `json:"kind"`
+	// How the entries combine.
+	Combinator ConditionCombinator `json:"combinator"`
+	// Negate the whole group.
+	Not OptBool `json:"not"`
+	// The group's tests and nested groups.
+	Entries []BranchConditionNode `json:"entries"`
+}
+
+// GetKind returns the value of Kind.
+func (s *BranchCondition) GetKind() BranchConditionKind {
+	return s.Kind
+}
+
+// GetCombinator returns the value of Combinator.
+func (s *BranchCondition) GetCombinator() ConditionCombinator {
+	return s.Combinator
+}
+
+// GetNot returns the value of Not.
+func (s *BranchCondition) GetNot() OptBool {
+	return s.Not
+}
+
+// GetEntries returns the value of Entries.
+func (s *BranchCondition) GetEntries() []BranchConditionNode {
+	return s.Entries
+}
+
+// SetKind sets the value of Kind.
+func (s *BranchCondition) SetKind(val BranchConditionKind) {
+	s.Kind = val
+}
+
+// SetCombinator sets the value of Combinator.
+func (s *BranchCondition) SetCombinator(val ConditionCombinator) {
+	s.Combinator = val
+}
+
+// SetNot sets the value of Not.
+func (s *BranchCondition) SetNot(val OptBool) {
+	s.Not = val
+}
+
+// SetEntries sets the value of Entries.
+func (s *BranchCondition) SetEntries(val []BranchConditionNode) {
+	s.Entries = val
+}
+
+// A Branch path's Condition: the tree of tests the Contact, on its live data when the Enrollment
+// reaches the Branch, and the Event the Enrollment began with match.
+// Ref: #/components/schemas/BranchConditionInput
+type BranchConditionInput struct {
+	Kind BranchConditionInputKind `json:"kind"`
+	// How the entries combine.
+	Combinator ConditionCombinator `json:"combinator"`
+	// Negate the whole group.
+	Not OptBool `json:"not"`
+	// The group's tests and nested groups.
+	Entries []BranchConditionNodeInput `json:"entries"`
+}
+
+// GetKind returns the value of Kind.
+func (s *BranchConditionInput) GetKind() BranchConditionInputKind {
+	return s.Kind
+}
+
+// GetCombinator returns the value of Combinator.
+func (s *BranchConditionInput) GetCombinator() ConditionCombinator {
+	return s.Combinator
+}
+
+// GetNot returns the value of Not.
+func (s *BranchConditionInput) GetNot() OptBool {
+	return s.Not
+}
+
+// GetEntries returns the value of Entries.
+func (s *BranchConditionInput) GetEntries() []BranchConditionNodeInput {
+	return s.Entries
+}
+
+// SetKind sets the value of Kind.
+func (s *BranchConditionInput) SetKind(val BranchConditionInputKind) {
+	s.Kind = val
+}
+
+// SetCombinator sets the value of Combinator.
+func (s *BranchConditionInput) SetCombinator(val ConditionCombinator) {
+	s.Combinator = val
+}
+
+// SetNot sets the value of Not.
+func (s *BranchConditionInput) SetNot(val OptBool) {
+	s.Not = val
+}
+
+// SetEntries sets the value of Entries.
+func (s *BranchConditionInput) SetEntries(val []BranchConditionNodeInput) {
+	s.Entries = val
+}
+
+type BranchConditionInputKind string
+
+const (
+	BranchConditionInputKindGroup BranchConditionInputKind = "group"
+)
+
+// AllValues returns all BranchConditionInputKind values.
+func (BranchConditionInputKind) AllValues() []BranchConditionInputKind {
+	return []BranchConditionInputKind{
+		BranchConditionInputKindGroup,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s BranchConditionInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case BranchConditionInputKindGroup:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *BranchConditionInputKind) UnmarshalText(data []byte) error {
+	switch BranchConditionInputKind(data) {
+	case BranchConditionInputKindGroup:
+		*s = BranchConditionInputKindGroup
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type BranchConditionKind string
+
+const (
+	BranchConditionKindGroup BranchConditionKind = "group"
+)
+
+// AllValues returns all BranchConditionKind values.
+func (BranchConditionKind) AllValues() []BranchConditionKind {
+	return []BranchConditionKind{
+		BranchConditionKindGroup,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s BranchConditionKind) MarshalText() ([]byte, error) {
+	switch s {
+	case BranchConditionKindGroup:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *BranchConditionKind) UnmarshalText(data []byte) error {
+	switch BranchConditionKind(data) {
+	case BranchConditionKindGroup:
+		*s = BranchConditionKindGroup
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// An entry of a Branch path's Condition, by `kind`: a Rule's, the property test reading the Event the
+// Enrollment began with.
+// Ref: #/components/schemas/BranchConditionNode
+type BranchConditionNode struct {
+	OneOf BranchConditionNodeSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *BranchConditionNode) GetOneOf() BranchConditionNodeSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *BranchConditionNode) SetOneOf(val BranchConditionNodeSum) {
+	s.OneOf = val
+}
+
+// An entry of a Branch path's Condition, by `kind`: a Rule's, the property test reading the Event the
+// Enrollment began with.
+// Ref: #/components/schemas/BranchConditionNodeInput
+type BranchConditionNodeInput struct {
+	OneOf BranchConditionNodeInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *BranchConditionNodeInput) GetOneOf() BranchConditionNodeInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *BranchConditionNodeInput) SetOneOf(val BranchConditionNodeInputSum) {
+	s.OneOf = val
+}
+
+// BranchConditionNodeInputSum represents sum type.
+type BranchConditionNodeInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                        BranchConditionNodeInputSumType
+	BranchConditionInput        BranchConditionInput
+	AttributeLeafInput          AttributeLeafInput
+	BirthdayLeafInput           BirthdayLeafInput
+	TagLeafInput                TagLeafInput
+	TelegramLeafInput           TelegramLeafInput
+	SmsLeafInput                SmsLeafInput
+	EngagementTrackingLeafInput EngagementTrackingLeafInput
+	CustomFieldLeafInput        CustomFieldLeafInput
+	EventLeafInput              EventLeafInput
+	BranchPropertyLeafInput     BranchPropertyLeafInput
+}
+
+// BranchConditionNodeInputSumType is oneOf type of BranchConditionNodeInputSum.
+type BranchConditionNodeInputSumType string
+
+// Possible values for BranchConditionNodeInputSumType.
+const (
+	BranchConditionInputBranchConditionNodeInputSum        BranchConditionNodeInputSumType = "group"
+	AttributeLeafInputBranchConditionNodeInputSum          BranchConditionNodeInputSumType = "attribute"
+	BirthdayLeafInputBranchConditionNodeInputSum           BranchConditionNodeInputSumType = "birthday"
+	TagLeafInputBranchConditionNodeInputSum                BranchConditionNodeInputSumType = "tag"
+	TelegramLeafInputBranchConditionNodeInputSum           BranchConditionNodeInputSumType = "telegram"
+	SmsLeafInputBranchConditionNodeInputSum                BranchConditionNodeInputSumType = "sms"
+	EngagementTrackingLeafInputBranchConditionNodeInputSum BranchConditionNodeInputSumType = "engagementTracking"
+	CustomFieldLeafInputBranchConditionNodeInputSum        BranchConditionNodeInputSumType = "customField"
+	EventLeafInputBranchConditionNodeInputSum              BranchConditionNodeInputSumType = "event"
+	BranchPropertyLeafInputBranchConditionNodeInputSum     BranchConditionNodeInputSumType = "property"
+)
+
+// IsBranchConditionInput reports whether BranchConditionNodeInputSum is BranchConditionInput.
+func (s BranchConditionNodeInputSum) IsBranchConditionInput() bool {
+	return s.Type == BranchConditionInputBranchConditionNodeInputSum
+}
+
+// IsAttributeLeafInput reports whether BranchConditionNodeInputSum is AttributeLeafInput.
+func (s BranchConditionNodeInputSum) IsAttributeLeafInput() bool {
+	return s.Type == AttributeLeafInputBranchConditionNodeInputSum
+}
+
+// IsBirthdayLeafInput reports whether BranchConditionNodeInputSum is BirthdayLeafInput.
+func (s BranchConditionNodeInputSum) IsBirthdayLeafInput() bool {
+	return s.Type == BirthdayLeafInputBranchConditionNodeInputSum
+}
+
+// IsTagLeafInput reports whether BranchConditionNodeInputSum is TagLeafInput.
+func (s BranchConditionNodeInputSum) IsTagLeafInput() bool {
+	return s.Type == TagLeafInputBranchConditionNodeInputSum
+}
+
+// IsTelegramLeafInput reports whether BranchConditionNodeInputSum is TelegramLeafInput.
+func (s BranchConditionNodeInputSum) IsTelegramLeafInput() bool {
+	return s.Type == TelegramLeafInputBranchConditionNodeInputSum
+}
+
+// IsSmsLeafInput reports whether BranchConditionNodeInputSum is SmsLeafInput.
+func (s BranchConditionNodeInputSum) IsSmsLeafInput() bool {
+	return s.Type == SmsLeafInputBranchConditionNodeInputSum
+}
+
+// IsEngagementTrackingLeafInput reports whether BranchConditionNodeInputSum is EngagementTrackingLeafInput.
+func (s BranchConditionNodeInputSum) IsEngagementTrackingLeafInput() bool {
+	return s.Type == EngagementTrackingLeafInputBranchConditionNodeInputSum
+}
+
+// IsCustomFieldLeafInput reports whether BranchConditionNodeInputSum is CustomFieldLeafInput.
+func (s BranchConditionNodeInputSum) IsCustomFieldLeafInput() bool {
+	return s.Type == CustomFieldLeafInputBranchConditionNodeInputSum
+}
+
+// IsEventLeafInput reports whether BranchConditionNodeInputSum is EventLeafInput.
+func (s BranchConditionNodeInputSum) IsEventLeafInput() bool {
+	return s.Type == EventLeafInputBranchConditionNodeInputSum
+}
+
+// IsBranchPropertyLeafInput reports whether BranchConditionNodeInputSum is BranchPropertyLeafInput.
+func (s BranchConditionNodeInputSum) IsBranchPropertyLeafInput() bool {
+	return s.Type == BranchPropertyLeafInputBranchConditionNodeInputSum
+}
+
+// SetBranchConditionInput sets BranchConditionNodeInputSum to BranchConditionInput.
+func (s *BranchConditionNodeInputSum) SetBranchConditionInput(v BranchConditionInput) {
+	s.Type = BranchConditionInputBranchConditionNodeInputSum
+	s.BranchConditionInput = v
+}
+
+// GetBranchConditionInput returns BranchConditionInput and true boolean if BranchConditionNodeInputSum is BranchConditionInput.
+func (s BranchConditionNodeInputSum) GetBranchConditionInput() (v BranchConditionInput, ok bool) {
+	if !s.IsBranchConditionInput() {
+		return v, false
+	}
+	return s.BranchConditionInput, true
+}
+
+// NewBranchConditionInputBranchConditionNodeInputSum returns new BranchConditionNodeInputSum from BranchConditionInput.
+func NewBranchConditionInputBranchConditionNodeInputSum(v BranchConditionInput) BranchConditionNodeInputSum {
+	var s BranchConditionNodeInputSum
+	s.SetBranchConditionInput(v)
+	return s
+}
+
+// SetAttributeLeafInput sets BranchConditionNodeInputSum to AttributeLeafInput.
+func (s *BranchConditionNodeInputSum) SetAttributeLeafInput(v AttributeLeafInput) {
+	s.Type = AttributeLeafInputBranchConditionNodeInputSum
+	s.AttributeLeafInput = v
+}
+
+// GetAttributeLeafInput returns AttributeLeafInput and true boolean if BranchConditionNodeInputSum is AttributeLeafInput.
+func (s BranchConditionNodeInputSum) GetAttributeLeafInput() (v AttributeLeafInput, ok bool) {
+	if !s.IsAttributeLeafInput() {
+		return v, false
+	}
+	return s.AttributeLeafInput, true
+}
+
+// NewAttributeLeafInputBranchConditionNodeInputSum returns new BranchConditionNodeInputSum from AttributeLeafInput.
+func NewAttributeLeafInputBranchConditionNodeInputSum(v AttributeLeafInput) BranchConditionNodeInputSum {
+	var s BranchConditionNodeInputSum
+	s.SetAttributeLeafInput(v)
+	return s
+}
+
+// SetBirthdayLeafInput sets BranchConditionNodeInputSum to BirthdayLeafInput.
+func (s *BranchConditionNodeInputSum) SetBirthdayLeafInput(v BirthdayLeafInput) {
+	s.Type = BirthdayLeafInputBranchConditionNodeInputSum
+	s.BirthdayLeafInput = v
+}
+
+// GetBirthdayLeafInput returns BirthdayLeafInput and true boolean if BranchConditionNodeInputSum is BirthdayLeafInput.
+func (s BranchConditionNodeInputSum) GetBirthdayLeafInput() (v BirthdayLeafInput, ok bool) {
+	if !s.IsBirthdayLeafInput() {
+		return v, false
+	}
+	return s.BirthdayLeafInput, true
+}
+
+// NewBirthdayLeafInputBranchConditionNodeInputSum returns new BranchConditionNodeInputSum from BirthdayLeafInput.
+func NewBirthdayLeafInputBranchConditionNodeInputSum(v BirthdayLeafInput) BranchConditionNodeInputSum {
+	var s BranchConditionNodeInputSum
+	s.SetBirthdayLeafInput(v)
+	return s
+}
+
+// SetTagLeafInput sets BranchConditionNodeInputSum to TagLeafInput.
+func (s *BranchConditionNodeInputSum) SetTagLeafInput(v TagLeafInput) {
+	s.Type = TagLeafInputBranchConditionNodeInputSum
+	s.TagLeafInput = v
+}
+
+// GetTagLeafInput returns TagLeafInput and true boolean if BranchConditionNodeInputSum is TagLeafInput.
+func (s BranchConditionNodeInputSum) GetTagLeafInput() (v TagLeafInput, ok bool) {
+	if !s.IsTagLeafInput() {
+		return v, false
+	}
+	return s.TagLeafInput, true
+}
+
+// NewTagLeafInputBranchConditionNodeInputSum returns new BranchConditionNodeInputSum from TagLeafInput.
+func NewTagLeafInputBranchConditionNodeInputSum(v TagLeafInput) BranchConditionNodeInputSum {
+	var s BranchConditionNodeInputSum
+	s.SetTagLeafInput(v)
+	return s
+}
+
+// SetTelegramLeafInput sets BranchConditionNodeInputSum to TelegramLeafInput.
+func (s *BranchConditionNodeInputSum) SetTelegramLeafInput(v TelegramLeafInput) {
+	s.Type = TelegramLeafInputBranchConditionNodeInputSum
+	s.TelegramLeafInput = v
+}
+
+// GetTelegramLeafInput returns TelegramLeafInput and true boolean if BranchConditionNodeInputSum is TelegramLeafInput.
+func (s BranchConditionNodeInputSum) GetTelegramLeafInput() (v TelegramLeafInput, ok bool) {
+	if !s.IsTelegramLeafInput() {
+		return v, false
+	}
+	return s.TelegramLeafInput, true
+}
+
+// NewTelegramLeafInputBranchConditionNodeInputSum returns new BranchConditionNodeInputSum from TelegramLeafInput.
+func NewTelegramLeafInputBranchConditionNodeInputSum(v TelegramLeafInput) BranchConditionNodeInputSum {
+	var s BranchConditionNodeInputSum
+	s.SetTelegramLeafInput(v)
+	return s
+}
+
+// SetSmsLeafInput sets BranchConditionNodeInputSum to SmsLeafInput.
+func (s *BranchConditionNodeInputSum) SetSmsLeafInput(v SmsLeafInput) {
+	s.Type = SmsLeafInputBranchConditionNodeInputSum
+	s.SmsLeafInput = v
+}
+
+// GetSmsLeafInput returns SmsLeafInput and true boolean if BranchConditionNodeInputSum is SmsLeafInput.
+func (s BranchConditionNodeInputSum) GetSmsLeafInput() (v SmsLeafInput, ok bool) {
+	if !s.IsSmsLeafInput() {
+		return v, false
+	}
+	return s.SmsLeafInput, true
+}
+
+// NewSmsLeafInputBranchConditionNodeInputSum returns new BranchConditionNodeInputSum from SmsLeafInput.
+func NewSmsLeafInputBranchConditionNodeInputSum(v SmsLeafInput) BranchConditionNodeInputSum {
+	var s BranchConditionNodeInputSum
+	s.SetSmsLeafInput(v)
+	return s
+}
+
+// SetEngagementTrackingLeafInput sets BranchConditionNodeInputSum to EngagementTrackingLeafInput.
+func (s *BranchConditionNodeInputSum) SetEngagementTrackingLeafInput(v EngagementTrackingLeafInput) {
+	s.Type = EngagementTrackingLeafInputBranchConditionNodeInputSum
+	s.EngagementTrackingLeafInput = v
+}
+
+// GetEngagementTrackingLeafInput returns EngagementTrackingLeafInput and true boolean if BranchConditionNodeInputSum is EngagementTrackingLeafInput.
+func (s BranchConditionNodeInputSum) GetEngagementTrackingLeafInput() (v EngagementTrackingLeafInput, ok bool) {
+	if !s.IsEngagementTrackingLeafInput() {
+		return v, false
+	}
+	return s.EngagementTrackingLeafInput, true
+}
+
+// NewEngagementTrackingLeafInputBranchConditionNodeInputSum returns new BranchConditionNodeInputSum from EngagementTrackingLeafInput.
+func NewEngagementTrackingLeafInputBranchConditionNodeInputSum(v EngagementTrackingLeafInput) BranchConditionNodeInputSum {
+	var s BranchConditionNodeInputSum
+	s.SetEngagementTrackingLeafInput(v)
+	return s
+}
+
+// SetCustomFieldLeafInput sets BranchConditionNodeInputSum to CustomFieldLeafInput.
+func (s *BranchConditionNodeInputSum) SetCustomFieldLeafInput(v CustomFieldLeafInput) {
+	s.Type = CustomFieldLeafInputBranchConditionNodeInputSum
+	s.CustomFieldLeafInput = v
+}
+
+// GetCustomFieldLeafInput returns CustomFieldLeafInput and true boolean if BranchConditionNodeInputSum is CustomFieldLeafInput.
+func (s BranchConditionNodeInputSum) GetCustomFieldLeafInput() (v CustomFieldLeafInput, ok bool) {
+	if !s.IsCustomFieldLeafInput() {
+		return v, false
+	}
+	return s.CustomFieldLeafInput, true
+}
+
+// NewCustomFieldLeafInputBranchConditionNodeInputSum returns new BranchConditionNodeInputSum from CustomFieldLeafInput.
+func NewCustomFieldLeafInputBranchConditionNodeInputSum(v CustomFieldLeafInput) BranchConditionNodeInputSum {
+	var s BranchConditionNodeInputSum
+	s.SetCustomFieldLeafInput(v)
+	return s
+}
+
+// SetEventLeafInput sets BranchConditionNodeInputSum to EventLeafInput.
+func (s *BranchConditionNodeInputSum) SetEventLeafInput(v EventLeafInput) {
+	s.Type = EventLeafInputBranchConditionNodeInputSum
+	s.EventLeafInput = v
+}
+
+// GetEventLeafInput returns EventLeafInput and true boolean if BranchConditionNodeInputSum is EventLeafInput.
+func (s BranchConditionNodeInputSum) GetEventLeafInput() (v EventLeafInput, ok bool) {
+	if !s.IsEventLeafInput() {
+		return v, false
+	}
+	return s.EventLeafInput, true
+}
+
+// NewEventLeafInputBranchConditionNodeInputSum returns new BranchConditionNodeInputSum from EventLeafInput.
+func NewEventLeafInputBranchConditionNodeInputSum(v EventLeafInput) BranchConditionNodeInputSum {
+	var s BranchConditionNodeInputSum
+	s.SetEventLeafInput(v)
+	return s
+}
+
+// SetBranchPropertyLeafInput sets BranchConditionNodeInputSum to BranchPropertyLeafInput.
+func (s *BranchConditionNodeInputSum) SetBranchPropertyLeafInput(v BranchPropertyLeafInput) {
+	s.Type = BranchPropertyLeafInputBranchConditionNodeInputSum
+	s.BranchPropertyLeafInput = v
+}
+
+// GetBranchPropertyLeafInput returns BranchPropertyLeafInput and true boolean if BranchConditionNodeInputSum is BranchPropertyLeafInput.
+func (s BranchConditionNodeInputSum) GetBranchPropertyLeafInput() (v BranchPropertyLeafInput, ok bool) {
+	if !s.IsBranchPropertyLeafInput() {
+		return v, false
+	}
+	return s.BranchPropertyLeafInput, true
+}
+
+// NewBranchPropertyLeafInputBranchConditionNodeInputSum returns new BranchConditionNodeInputSum from BranchPropertyLeafInput.
+func NewBranchPropertyLeafInputBranchConditionNodeInputSum(v BranchPropertyLeafInput) BranchConditionNodeInputSum {
+	var s BranchConditionNodeInputSum
+	s.SetBranchPropertyLeafInput(v)
+	return s
+}
+
+// BranchConditionNodeSum represents sum type.
+type BranchConditionNodeSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                   BranchConditionNodeSumType
+	BranchCondition        BranchCondition
+	AttributeLeaf          AttributeLeaf
+	BirthdayLeaf           BirthdayLeaf
+	TagLeaf                TagLeaf
+	TelegramLeaf           TelegramLeaf
+	SmsLeaf                SmsLeaf
+	EngagementTrackingLeaf EngagementTrackingLeaf
+	CustomFieldLeaf        CustomFieldLeaf
+	EventLeaf              EventLeaf
+	BranchPropertyLeaf     BranchPropertyLeaf
+}
+
+// BranchConditionNodeSumType is oneOf type of BranchConditionNodeSum.
+type BranchConditionNodeSumType string
+
+// Possible values for BranchConditionNodeSumType.
+const (
+	BranchConditionBranchConditionNodeSum        BranchConditionNodeSumType = "group"
+	AttributeLeafBranchConditionNodeSum          BranchConditionNodeSumType = "attribute"
+	BirthdayLeafBranchConditionNodeSum           BranchConditionNodeSumType = "birthday"
+	TagLeafBranchConditionNodeSum                BranchConditionNodeSumType = "tag"
+	TelegramLeafBranchConditionNodeSum           BranchConditionNodeSumType = "telegram"
+	SmsLeafBranchConditionNodeSum                BranchConditionNodeSumType = "sms"
+	EngagementTrackingLeafBranchConditionNodeSum BranchConditionNodeSumType = "engagementTracking"
+	CustomFieldLeafBranchConditionNodeSum        BranchConditionNodeSumType = "customField"
+	EventLeafBranchConditionNodeSum              BranchConditionNodeSumType = "event"
+	BranchPropertyLeafBranchConditionNodeSum     BranchConditionNodeSumType = "property"
+)
+
+// IsBranchCondition reports whether BranchConditionNodeSum is BranchCondition.
+func (s BranchConditionNodeSum) IsBranchCondition() bool {
+	return s.Type == BranchConditionBranchConditionNodeSum
+}
+
+// IsAttributeLeaf reports whether BranchConditionNodeSum is AttributeLeaf.
+func (s BranchConditionNodeSum) IsAttributeLeaf() bool {
+	return s.Type == AttributeLeafBranchConditionNodeSum
+}
+
+// IsBirthdayLeaf reports whether BranchConditionNodeSum is BirthdayLeaf.
+func (s BranchConditionNodeSum) IsBirthdayLeaf() bool {
+	return s.Type == BirthdayLeafBranchConditionNodeSum
+}
+
+// IsTagLeaf reports whether BranchConditionNodeSum is TagLeaf.
+func (s BranchConditionNodeSum) IsTagLeaf() bool { return s.Type == TagLeafBranchConditionNodeSum }
+
+// IsTelegramLeaf reports whether BranchConditionNodeSum is TelegramLeaf.
+func (s BranchConditionNodeSum) IsTelegramLeaf() bool {
+	return s.Type == TelegramLeafBranchConditionNodeSum
+}
+
+// IsSmsLeaf reports whether BranchConditionNodeSum is SmsLeaf.
+func (s BranchConditionNodeSum) IsSmsLeaf() bool { return s.Type == SmsLeafBranchConditionNodeSum }
+
+// IsEngagementTrackingLeaf reports whether BranchConditionNodeSum is EngagementTrackingLeaf.
+func (s BranchConditionNodeSum) IsEngagementTrackingLeaf() bool {
+	return s.Type == EngagementTrackingLeafBranchConditionNodeSum
+}
+
+// IsCustomFieldLeaf reports whether BranchConditionNodeSum is CustomFieldLeaf.
+func (s BranchConditionNodeSum) IsCustomFieldLeaf() bool {
+	return s.Type == CustomFieldLeafBranchConditionNodeSum
+}
+
+// IsEventLeaf reports whether BranchConditionNodeSum is EventLeaf.
+func (s BranchConditionNodeSum) IsEventLeaf() bool { return s.Type == EventLeafBranchConditionNodeSum }
+
+// IsBranchPropertyLeaf reports whether BranchConditionNodeSum is BranchPropertyLeaf.
+func (s BranchConditionNodeSum) IsBranchPropertyLeaf() bool {
+	return s.Type == BranchPropertyLeafBranchConditionNodeSum
+}
+
+// SetBranchCondition sets BranchConditionNodeSum to BranchCondition.
+func (s *BranchConditionNodeSum) SetBranchCondition(v BranchCondition) {
+	s.Type = BranchConditionBranchConditionNodeSum
+	s.BranchCondition = v
+}
+
+// GetBranchCondition returns BranchCondition and true boolean if BranchConditionNodeSum is BranchCondition.
+func (s BranchConditionNodeSum) GetBranchCondition() (v BranchCondition, ok bool) {
+	if !s.IsBranchCondition() {
+		return v, false
+	}
+	return s.BranchCondition, true
+}
+
+// NewBranchConditionBranchConditionNodeSum returns new BranchConditionNodeSum from BranchCondition.
+func NewBranchConditionBranchConditionNodeSum(v BranchCondition) BranchConditionNodeSum {
+	var s BranchConditionNodeSum
+	s.SetBranchCondition(v)
+	return s
+}
+
+// SetAttributeLeaf sets BranchConditionNodeSum to AttributeLeaf.
+func (s *BranchConditionNodeSum) SetAttributeLeaf(v AttributeLeaf) {
+	s.Type = AttributeLeafBranchConditionNodeSum
+	s.AttributeLeaf = v
+}
+
+// GetAttributeLeaf returns AttributeLeaf and true boolean if BranchConditionNodeSum is AttributeLeaf.
+func (s BranchConditionNodeSum) GetAttributeLeaf() (v AttributeLeaf, ok bool) {
+	if !s.IsAttributeLeaf() {
+		return v, false
+	}
+	return s.AttributeLeaf, true
+}
+
+// NewAttributeLeafBranchConditionNodeSum returns new BranchConditionNodeSum from AttributeLeaf.
+func NewAttributeLeafBranchConditionNodeSum(v AttributeLeaf) BranchConditionNodeSum {
+	var s BranchConditionNodeSum
+	s.SetAttributeLeaf(v)
+	return s
+}
+
+// SetBirthdayLeaf sets BranchConditionNodeSum to BirthdayLeaf.
+func (s *BranchConditionNodeSum) SetBirthdayLeaf(v BirthdayLeaf) {
+	s.Type = BirthdayLeafBranchConditionNodeSum
+	s.BirthdayLeaf = v
+}
+
+// GetBirthdayLeaf returns BirthdayLeaf and true boolean if BranchConditionNodeSum is BirthdayLeaf.
+func (s BranchConditionNodeSum) GetBirthdayLeaf() (v BirthdayLeaf, ok bool) {
+	if !s.IsBirthdayLeaf() {
+		return v, false
+	}
+	return s.BirthdayLeaf, true
+}
+
+// NewBirthdayLeafBranchConditionNodeSum returns new BranchConditionNodeSum from BirthdayLeaf.
+func NewBirthdayLeafBranchConditionNodeSum(v BirthdayLeaf) BranchConditionNodeSum {
+	var s BranchConditionNodeSum
+	s.SetBirthdayLeaf(v)
+	return s
+}
+
+// SetTagLeaf sets BranchConditionNodeSum to TagLeaf.
+func (s *BranchConditionNodeSum) SetTagLeaf(v TagLeaf) {
+	s.Type = TagLeafBranchConditionNodeSum
+	s.TagLeaf = v
+}
+
+// GetTagLeaf returns TagLeaf and true boolean if BranchConditionNodeSum is TagLeaf.
+func (s BranchConditionNodeSum) GetTagLeaf() (v TagLeaf, ok bool) {
+	if !s.IsTagLeaf() {
+		return v, false
+	}
+	return s.TagLeaf, true
+}
+
+// NewTagLeafBranchConditionNodeSum returns new BranchConditionNodeSum from TagLeaf.
+func NewTagLeafBranchConditionNodeSum(v TagLeaf) BranchConditionNodeSum {
+	var s BranchConditionNodeSum
+	s.SetTagLeaf(v)
+	return s
+}
+
+// SetTelegramLeaf sets BranchConditionNodeSum to TelegramLeaf.
+func (s *BranchConditionNodeSum) SetTelegramLeaf(v TelegramLeaf) {
+	s.Type = TelegramLeafBranchConditionNodeSum
+	s.TelegramLeaf = v
+}
+
+// GetTelegramLeaf returns TelegramLeaf and true boolean if BranchConditionNodeSum is TelegramLeaf.
+func (s BranchConditionNodeSum) GetTelegramLeaf() (v TelegramLeaf, ok bool) {
+	if !s.IsTelegramLeaf() {
+		return v, false
+	}
+	return s.TelegramLeaf, true
+}
+
+// NewTelegramLeafBranchConditionNodeSum returns new BranchConditionNodeSum from TelegramLeaf.
+func NewTelegramLeafBranchConditionNodeSum(v TelegramLeaf) BranchConditionNodeSum {
+	var s BranchConditionNodeSum
+	s.SetTelegramLeaf(v)
+	return s
+}
+
+// SetSmsLeaf sets BranchConditionNodeSum to SmsLeaf.
+func (s *BranchConditionNodeSum) SetSmsLeaf(v SmsLeaf) {
+	s.Type = SmsLeafBranchConditionNodeSum
+	s.SmsLeaf = v
+}
+
+// GetSmsLeaf returns SmsLeaf and true boolean if BranchConditionNodeSum is SmsLeaf.
+func (s BranchConditionNodeSum) GetSmsLeaf() (v SmsLeaf, ok bool) {
+	if !s.IsSmsLeaf() {
+		return v, false
+	}
+	return s.SmsLeaf, true
+}
+
+// NewSmsLeafBranchConditionNodeSum returns new BranchConditionNodeSum from SmsLeaf.
+func NewSmsLeafBranchConditionNodeSum(v SmsLeaf) BranchConditionNodeSum {
+	var s BranchConditionNodeSum
+	s.SetSmsLeaf(v)
+	return s
+}
+
+// SetEngagementTrackingLeaf sets BranchConditionNodeSum to EngagementTrackingLeaf.
+func (s *BranchConditionNodeSum) SetEngagementTrackingLeaf(v EngagementTrackingLeaf) {
+	s.Type = EngagementTrackingLeafBranchConditionNodeSum
+	s.EngagementTrackingLeaf = v
+}
+
+// GetEngagementTrackingLeaf returns EngagementTrackingLeaf and true boolean if BranchConditionNodeSum is EngagementTrackingLeaf.
+func (s BranchConditionNodeSum) GetEngagementTrackingLeaf() (v EngagementTrackingLeaf, ok bool) {
+	if !s.IsEngagementTrackingLeaf() {
+		return v, false
+	}
+	return s.EngagementTrackingLeaf, true
+}
+
+// NewEngagementTrackingLeafBranchConditionNodeSum returns new BranchConditionNodeSum from EngagementTrackingLeaf.
+func NewEngagementTrackingLeafBranchConditionNodeSum(v EngagementTrackingLeaf) BranchConditionNodeSum {
+	var s BranchConditionNodeSum
+	s.SetEngagementTrackingLeaf(v)
+	return s
+}
+
+// SetCustomFieldLeaf sets BranchConditionNodeSum to CustomFieldLeaf.
+func (s *BranchConditionNodeSum) SetCustomFieldLeaf(v CustomFieldLeaf) {
+	s.Type = CustomFieldLeafBranchConditionNodeSum
+	s.CustomFieldLeaf = v
+}
+
+// GetCustomFieldLeaf returns CustomFieldLeaf and true boolean if BranchConditionNodeSum is CustomFieldLeaf.
+func (s BranchConditionNodeSum) GetCustomFieldLeaf() (v CustomFieldLeaf, ok bool) {
+	if !s.IsCustomFieldLeaf() {
+		return v, false
+	}
+	return s.CustomFieldLeaf, true
+}
+
+// NewCustomFieldLeafBranchConditionNodeSum returns new BranchConditionNodeSum from CustomFieldLeaf.
+func NewCustomFieldLeafBranchConditionNodeSum(v CustomFieldLeaf) BranchConditionNodeSum {
+	var s BranchConditionNodeSum
+	s.SetCustomFieldLeaf(v)
+	return s
+}
+
+// SetEventLeaf sets BranchConditionNodeSum to EventLeaf.
+func (s *BranchConditionNodeSum) SetEventLeaf(v EventLeaf) {
+	s.Type = EventLeafBranchConditionNodeSum
+	s.EventLeaf = v
+}
+
+// GetEventLeaf returns EventLeaf and true boolean if BranchConditionNodeSum is EventLeaf.
+func (s BranchConditionNodeSum) GetEventLeaf() (v EventLeaf, ok bool) {
+	if !s.IsEventLeaf() {
+		return v, false
+	}
+	return s.EventLeaf, true
+}
+
+// NewEventLeafBranchConditionNodeSum returns new BranchConditionNodeSum from EventLeaf.
+func NewEventLeafBranchConditionNodeSum(v EventLeaf) BranchConditionNodeSum {
+	var s BranchConditionNodeSum
+	s.SetEventLeaf(v)
+	return s
+}
+
+// SetBranchPropertyLeaf sets BranchConditionNodeSum to BranchPropertyLeaf.
+func (s *BranchConditionNodeSum) SetBranchPropertyLeaf(v BranchPropertyLeaf) {
+	s.Type = BranchPropertyLeafBranchConditionNodeSum
+	s.BranchPropertyLeaf = v
+}
+
+// GetBranchPropertyLeaf returns BranchPropertyLeaf and true boolean if BranchConditionNodeSum is BranchPropertyLeaf.
+func (s BranchConditionNodeSum) GetBranchPropertyLeaf() (v BranchPropertyLeaf, ok bool) {
+	if !s.IsBranchPropertyLeaf() {
+		return v, false
+	}
+	return s.BranchPropertyLeaf, true
+}
+
+// NewBranchPropertyLeafBranchConditionNodeSum returns new BranchConditionNodeSum from BranchPropertyLeaf.
+func NewBranchPropertyLeafBranchConditionNodeSum(v BranchPropertyLeaf) BranchConditionNodeSum {
+	var s BranchConditionNodeSum
+	s.SetBranchPropertyLeaf(v)
+	return s
+}
+
+// A path of a Branch: the Condition that sends an Enrollment down it and its Steps.
+// Ref: #/components/schemas/BranchPath
+type BranchPath struct {
+	// The path's id.
+	ID StepId `json:"id"`
+	// The Condition an Enrollment takes the path on, when no path above it is taken.
+	Condition BranchCondition `json:"condition"`
+	// The path's Steps, in order; none goes on to the Step after the Branch.
+	Steps []PathStep `json:"steps"`
+}
+
+// GetID returns the value of ID.
+func (s *BranchPath) GetID() StepId {
+	return s.ID
+}
+
+// GetCondition returns the value of Condition.
+func (s *BranchPath) GetCondition() BranchCondition {
+	return s.Condition
+}
+
+// GetSteps returns the value of Steps.
+func (s *BranchPath) GetSteps() []PathStep {
+	return s.Steps
+}
+
+// SetID sets the value of ID.
+func (s *BranchPath) SetID(val StepId) {
+	s.ID = val
+}
+
+// SetCondition sets the value of Condition.
+func (s *BranchPath) SetCondition(val BranchCondition) {
+	s.Condition = val
+}
+
+// SetSteps sets the value of Steps.
+func (s *BranchPath) SetSteps(val []PathStep) {
+	s.Steps = val
+}
+
+// A path of a Branch, as a request writes it.
+// Ref: #/components/schemas/BranchPathInput
+type BranchPathInput struct {
+	// The path's id; omitted, the path is given one.
+	ID OptStepId `json:"id"`
+	// The Condition an Enrollment takes the path on, when no path above it is taken. A path without a test
+	// refuses the save, naming the Branch.
+	Condition BranchConditionInput `json:"condition"`
+	// The path's Steps, in order; none goes on to the Step after the Branch.
+	Steps []PathStepInput `json:"steps"`
+}
+
+// GetID returns the value of ID.
+func (s *BranchPathInput) GetID() OptStepId {
+	return s.ID
+}
+
+// GetCondition returns the value of Condition.
+func (s *BranchPathInput) GetCondition() BranchConditionInput {
+	return s.Condition
+}
+
+// GetSteps returns the value of Steps.
+func (s *BranchPathInput) GetSteps() []PathStepInput {
+	return s.Steps
+}
+
+// SetID sets the value of ID.
+func (s *BranchPathInput) SetID(val OptStepId) {
+	s.ID = val
+}
+
+// SetCondition sets the value of Condition.
+func (s *BranchPathInput) SetCondition(val BranchConditionInput) {
+	s.Condition = val
+}
+
+// SetSteps sets the value of Steps.
+func (s *BranchPathInput) SetSteps(val []PathStepInput) {
+	s.Steps = val
+}
+
+// A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a key
+// holding a dot is one key.
+// Ref: #/components/schemas/BranchPropertyLeaf
+type BranchPropertyLeaf struct {
+	Kind BranchPropertyLeafKind `json:"kind"`
+	// Whose property it is.
+	Of BranchPropertySource `json:"of"`
+	// The property's key.
+	Key string `json:"key"`
+	// What it asks of the property's value.
+	Test PropertyTest `json:"test"`
+}
+
+// GetKind returns the value of Kind.
+func (s *BranchPropertyLeaf) GetKind() BranchPropertyLeafKind {
+	return s.Kind
+}
+
+// GetOf returns the value of Of.
+func (s *BranchPropertyLeaf) GetOf() BranchPropertySource {
+	return s.Of
+}
+
+// GetKey returns the value of Key.
+func (s *BranchPropertyLeaf) GetKey() string {
+	return s.Key
+}
+
+// GetTest returns the value of Test.
+func (s *BranchPropertyLeaf) GetTest() PropertyTest {
+	return s.Test
+}
+
+// SetKind sets the value of Kind.
+func (s *BranchPropertyLeaf) SetKind(val BranchPropertyLeafKind) {
+	s.Kind = val
+}
+
+// SetOf sets the value of Of.
+func (s *BranchPropertyLeaf) SetOf(val BranchPropertySource) {
+	s.Of = val
+}
+
+// SetKey sets the value of Key.
+func (s *BranchPropertyLeaf) SetKey(val string) {
+	s.Key = val
+}
+
+// SetTest sets the value of Test.
+func (s *BranchPropertyLeaf) SetTest(val PropertyTest) {
+	s.Test = val
+}
+
+// A test of one property of an Event: whose it is in `of`, its key in a field of its own, so a key
+// holding a dot is one key.
+// Ref: #/components/schemas/BranchPropertyLeafInput
+type BranchPropertyLeafInput struct {
+	Kind BranchPropertyLeafInputKind `json:"kind"`
+	// Whose property it is.
+	Of BranchPropertySourceInput `json:"of"`
+	// The property's key.
+	Key string `json:"key"`
+	// What it asks of the property's value.
+	Test PropertyTestInput `json:"test"`
+}
+
+// GetKind returns the value of Kind.
+func (s *BranchPropertyLeafInput) GetKind() BranchPropertyLeafInputKind {
+	return s.Kind
+}
+
+// GetOf returns the value of Of.
+func (s *BranchPropertyLeafInput) GetOf() BranchPropertySourceInput {
+	return s.Of
+}
+
+// GetKey returns the value of Key.
+func (s *BranchPropertyLeafInput) GetKey() string {
+	return s.Key
+}
+
+// GetTest returns the value of Test.
+func (s *BranchPropertyLeafInput) GetTest() PropertyTestInput {
+	return s.Test
+}
+
+// SetKind sets the value of Kind.
+func (s *BranchPropertyLeafInput) SetKind(val BranchPropertyLeafInputKind) {
+	s.Kind = val
+}
+
+// SetOf sets the value of Of.
+func (s *BranchPropertyLeafInput) SetOf(val BranchPropertySourceInput) {
+	s.Of = val
+}
+
+// SetKey sets the value of Key.
+func (s *BranchPropertyLeafInput) SetKey(val string) {
+	s.Key = val
+}
+
+// SetTest sets the value of Test.
+func (s *BranchPropertyLeafInput) SetTest(val PropertyTestInput) {
+	s.Test = val
+}
+
+type BranchPropertyLeafInputKind string
+
+const (
+	BranchPropertyLeafInputKindProperty BranchPropertyLeafInputKind = "property"
+)
+
+// AllValues returns all BranchPropertyLeafInputKind values.
+func (BranchPropertyLeafInputKind) AllValues() []BranchPropertyLeafInputKind {
+	return []BranchPropertyLeafInputKind{
+		BranchPropertyLeafInputKindProperty,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s BranchPropertyLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case BranchPropertyLeafInputKindProperty:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *BranchPropertyLeafInputKind) UnmarshalText(data []byte) error {
+	switch BranchPropertyLeafInputKind(data) {
+	case BranchPropertyLeafInputKindProperty:
+		*s = BranchPropertyLeafInputKindProperty
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type BranchPropertyLeafKind string
+
+const (
+	BranchPropertyLeafKindProperty BranchPropertyLeafKind = "property"
+)
+
+// AllValues returns all BranchPropertyLeafKind values.
+func (BranchPropertyLeafKind) AllValues() []BranchPropertyLeafKind {
+	return []BranchPropertyLeafKind{
+		BranchPropertyLeafKindProperty,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s BranchPropertyLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case BranchPropertyLeafKindProperty:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *BranchPropertyLeafKind) UnmarshalText(data []byte) error {
+	switch BranchPropertyLeafKind(data) {
+	case BranchPropertyLeafKindProperty:
+		*s = BranchPropertyLeafKindProperty
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment began with.
+// Ref: #/components/schemas/BranchPropertySource
+type BranchPropertySource struct {
+	OneOf BranchPropertySourceSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *BranchPropertySource) GetOneOf() BranchPropertySourceSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *BranchPropertySource) SetOneOf(val BranchPropertySourceSum) {
+	s.OneOf = val
+}
+
+// Whose properties a Branch path's property test reads, by `kind`: the Event the Enrollment began with.
+// Ref: #/components/schemas/BranchPropertySourceInput
+type BranchPropertySourceInput struct {
+	OneOf BranchPropertySourceInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *BranchPropertySourceInput) GetOneOf() BranchPropertySourceInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *BranchPropertySourceInput) SetOneOf(val BranchPropertySourceInputSum) {
+	s.OneOf = val
+}
+
+// BranchPropertySourceInputSum represents sum type.
+type BranchPropertySourceInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type               BranchPropertySourceInputSumType
+	TriggerSourceInput TriggerSourceInput
+}
+
+// BranchPropertySourceInputSumType is oneOf type of BranchPropertySourceInputSum.
+type BranchPropertySourceInputSumType string
+
+// Possible values for BranchPropertySourceInputSumType.
+const (
+	TriggerSourceInputBranchPropertySourceInputSum BranchPropertySourceInputSumType = "trigger"
+)
+
+// IsTriggerSourceInput reports whether BranchPropertySourceInputSum is TriggerSourceInput.
+func (s BranchPropertySourceInputSum) IsTriggerSourceInput() bool {
+	return s.Type == TriggerSourceInputBranchPropertySourceInputSum
+}
+
+// SetTriggerSourceInput sets BranchPropertySourceInputSum to TriggerSourceInput.
+func (s *BranchPropertySourceInputSum) SetTriggerSourceInput(v TriggerSourceInput) {
+	s.Type = TriggerSourceInputBranchPropertySourceInputSum
+	s.TriggerSourceInput = v
+}
+
+// GetTriggerSourceInput returns TriggerSourceInput and true boolean if BranchPropertySourceInputSum is TriggerSourceInput.
+func (s BranchPropertySourceInputSum) GetTriggerSourceInput() (v TriggerSourceInput, ok bool) {
+	if !s.IsTriggerSourceInput() {
+		return v, false
+	}
+	return s.TriggerSourceInput, true
+}
+
+// NewTriggerSourceInputBranchPropertySourceInputSum returns new BranchPropertySourceInputSum from TriggerSourceInput.
+func NewTriggerSourceInputBranchPropertySourceInputSum(v TriggerSourceInput) BranchPropertySourceInputSum {
+	var s BranchPropertySourceInputSum
+	s.SetTriggerSourceInput(v)
+	return s
+}
+
+// BranchPropertySourceSum represents sum type.
+type BranchPropertySourceSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type          BranchPropertySourceSumType
+	TriggerSource TriggerSource
+}
+
+// BranchPropertySourceSumType is oneOf type of BranchPropertySourceSum.
+type BranchPropertySourceSumType string
+
+// Possible values for BranchPropertySourceSumType.
+const (
+	TriggerSourceBranchPropertySourceSum BranchPropertySourceSumType = "trigger"
+)
+
+// IsTriggerSource reports whether BranchPropertySourceSum is TriggerSource.
+func (s BranchPropertySourceSum) IsTriggerSource() bool {
+	return s.Type == TriggerSourceBranchPropertySourceSum
+}
+
+// SetTriggerSource sets BranchPropertySourceSum to TriggerSource.
+func (s *BranchPropertySourceSum) SetTriggerSource(v TriggerSource) {
+	s.Type = TriggerSourceBranchPropertySourceSum
+	s.TriggerSource = v
+}
+
+// GetTriggerSource returns TriggerSource and true boolean if BranchPropertySourceSum is TriggerSource.
+func (s BranchPropertySourceSum) GetTriggerSource() (v TriggerSource, ok bool) {
+	if !s.IsTriggerSource() {
+		return v, false
+	}
+	return s.TriggerSource, true
+}
+
+// NewTriggerSourceBranchPropertySourceSum returns new BranchPropertySourceSum from TriggerSource.
+func NewTriggerSourceBranchPropertySourceSum(v TriggerSource) BranchPropertySourceSum {
+	var s BranchPropertySourceSum
+	s.SetTriggerSource(v)
+	return s
+}
+
+// A Step that sends each Enrollment down the first of its paths whose Condition holds, on the
+// Contact's live data when the Enrollment reaches it (ADR 0124), and down `otherwise` when none does.
+// A Condition that is unknown for the Contact (an engagement count of a Destination that is not
+// tracked, ADR 0123) before any holds sends it down `unknown`. The paths rejoin at the Step after the
+// Branch.
+// Ref: #/components/schemas/BranchStep
+type BranchStep struct {
+	// The Step's id.
+	ID   StepId         `json:"id"`
+	Type BranchStepType `json:"type"`
+	// The paths, in the order their Conditions are tested.
+	Paths []BranchPath `json:"paths"`
+	// The path taken when no Condition holds.
+	Otherwise AutomationPath `json:"otherwise"`
+	// The path taken when the first Condition that does not fail is unknown; present only on a Branch
+	// whose Conditions can be unknown.
+	Unknown OptAutomationPath `json:"unknown"`
+}
+
+// GetID returns the value of ID.
+func (s *BranchStep) GetID() StepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *BranchStep) GetType() BranchStepType {
+	return s.Type
+}
+
+// GetPaths returns the value of Paths.
+func (s *BranchStep) GetPaths() []BranchPath {
+	return s.Paths
+}
+
+// GetOtherwise returns the value of Otherwise.
+func (s *BranchStep) GetOtherwise() AutomationPath {
+	return s.Otherwise
+}
+
+// GetUnknown returns the value of Unknown.
+func (s *BranchStep) GetUnknown() OptAutomationPath {
+	return s.Unknown
+}
+
+// SetID sets the value of ID.
+func (s *BranchStep) SetID(val StepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *BranchStep) SetType(val BranchStepType) {
+	s.Type = val
+}
+
+// SetPaths sets the value of Paths.
+func (s *BranchStep) SetPaths(val []BranchPath) {
+	s.Paths = val
+}
+
+// SetOtherwise sets the value of Otherwise.
+func (s *BranchStep) SetOtherwise(val AutomationPath) {
+	s.Otherwise = val
+}
+
+// SetUnknown sets the value of Unknown.
+func (s *BranchStep) SetUnknown(val OptAutomationPath) {
+	s.Unknown = val
+}
+
+// A Branch, as a request writes it. It needs a path besides `otherwise`; Publish refuses it without
+// `unknown` when a Condition counts an open or a click, and with `unknown` when none does.
+// Ref: #/components/schemas/BranchStepInput
+type BranchStepInput struct {
+	// The Step's id; omitted, the Step is given one.
+	ID   OptStepId           `json:"id"`
+	Type BranchStepInputType `json:"type"`
+	// The paths, in the order their Conditions are tested.
+	Paths []BranchPathInput `json:"paths"`
+	// The path taken when no Condition holds.
+	Otherwise AutomationPathInput `json:"otherwise"`
+	// The path taken when the first Condition that does not fail is unknown.
+	Unknown OptAutomationPathInput `json:"unknown"`
+}
+
+// GetID returns the value of ID.
+func (s *BranchStepInput) GetID() OptStepId {
+	return s.ID
+}
+
+// GetType returns the value of Type.
+func (s *BranchStepInput) GetType() BranchStepInputType {
+	return s.Type
+}
+
+// GetPaths returns the value of Paths.
+func (s *BranchStepInput) GetPaths() []BranchPathInput {
+	return s.Paths
+}
+
+// GetOtherwise returns the value of Otherwise.
+func (s *BranchStepInput) GetOtherwise() AutomationPathInput {
+	return s.Otherwise
+}
+
+// GetUnknown returns the value of Unknown.
+func (s *BranchStepInput) GetUnknown() OptAutomationPathInput {
+	return s.Unknown
+}
+
+// SetID sets the value of ID.
+func (s *BranchStepInput) SetID(val OptStepId) {
+	s.ID = val
+}
+
+// SetType sets the value of Type.
+func (s *BranchStepInput) SetType(val BranchStepInputType) {
+	s.Type = val
+}
+
+// SetPaths sets the value of Paths.
+func (s *BranchStepInput) SetPaths(val []BranchPathInput) {
+	s.Paths = val
+}
+
+// SetOtherwise sets the value of Otherwise.
+func (s *BranchStepInput) SetOtherwise(val AutomationPathInput) {
+	s.Otherwise = val
+}
+
+// SetUnknown sets the value of Unknown.
+func (s *BranchStepInput) SetUnknown(val OptAutomationPathInput) {
+	s.Unknown = val
+}
+
+type BranchStepInputType string
+
+const (
+	BranchStepInputTypeBranch BranchStepInputType = "branch"
+)
+
+// AllValues returns all BranchStepInputType values.
+func (BranchStepInputType) AllValues() []BranchStepInputType {
+	return []BranchStepInputType{
+		BranchStepInputTypeBranch,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s BranchStepInputType) MarshalText() ([]byte, error) {
+	switch s {
+	case BranchStepInputTypeBranch:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *BranchStepInputType) UnmarshalText(data []byte) error {
+	switch BranchStepInputType(data) {
+	case BranchStepInputTypeBranch:
+		*s = BranchStepInputTypeBranch
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type BranchStepType string
+
+const (
+	BranchStepTypeBranch BranchStepType = "branch"
+)
+
+// AllValues returns all BranchStepType values.
+func (BranchStepType) AllValues() []BranchStepType {
+	return []BranchStepType{
+		BranchStepTypeBranch,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s BranchStepType) MarshalText() ([]byte, error) {
+	switch s {
+	case BranchStepTypeBranch:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *BranchStepType) UnmarshalText(data []byte) error {
+	switch BranchStepType(data) {
+	case BranchStepTypeBranch:
+		*s = BranchStepTypeBranch
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 // The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets the
@@ -15617,6 +17032,52 @@ func (o OptAutomationHttpErrorKind) Or(d AutomationHttpErrorKind) AutomationHttp
 	return d
 }
 
+// NewOptAutomationPath returns new OptAutomationPath with value set to v.
+func NewOptAutomationPath(v AutomationPath) OptAutomationPath {
+	return OptAutomationPath{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptAutomationPath is optional AutomationPath.
+type OptAutomationPath struct {
+	Value AutomationPath
+	Set   bool
+}
+
+// IsSet returns true if OptAutomationPath was set.
+func (o OptAutomationPath) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptAutomationPath) Reset() {
+	var v AutomationPath
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptAutomationPath) SetTo(v AutomationPath) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptAutomationPath) Get() (v AutomationPath, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptAutomationPath) Or(d AutomationPath) AutomationPath {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptAutomationPathInput returns new OptAutomationPathInput with value set to v.
 func NewOptAutomationPathInput(v AutomationPathInput) OptAutomationPathInput {
 	return OptAutomationPathInput{
@@ -19001,6 +20462,538 @@ func (o OptWebhookFailure) Or(d WebhookFailure) WebhookFailure {
 		return v
 	}
 	return d
+}
+
+// One Step of a fork's path, by `type`: the arms of AutomationStep.
+// Ref: #/components/schemas/PathStep
+type PathStep struct {
+	OneOf PathStepSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *PathStep) GetOneOf() PathStepSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *PathStep) SetOneOf(val PathStepSum) {
+	s.OneOf = val
+}
+
+// One Step of a fork's path, by `type`, as a request writes it: the arms of AutomationStepInput.
+// Ref: #/components/schemas/PathStepInput
+type PathStepInput struct {
+	OneOf PathStepInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *PathStepInput) GetOneOf() PathStepInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *PathStepInput) SetOneOf(val PathStepInputSum) {
+	s.OneOf = val
+}
+
+// PathStepInputSum represents sum type.
+type PathStepInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type               PathStepInputSumType
+	EmailStepInput     EmailStepInput
+	TelegramStepInput  TelegramStepInput
+	SmsStepInput       SmsStepInput
+	WaitStepInput      WaitStepInput
+	ApplyTagStepInput  ApplyTagStepInput
+	RemoveTagStepInput RemoveTagStepInput
+	HttpStepInput      HttpStepInput
+	EndStepInput       EndStepInput
+	BranchStepInput    BranchStepInput
+}
+
+// PathStepInputSumType is oneOf type of PathStepInputSum.
+type PathStepInputSumType string
+
+// Possible values for PathStepInputSumType.
+const (
+	EmailStepInputPathStepInputSum     PathStepInputSumType = "email"
+	TelegramStepInputPathStepInputSum  PathStepInputSumType = "telegram"
+	SmsStepInputPathStepInputSum       PathStepInputSumType = "sms"
+	WaitStepInputPathStepInputSum      PathStepInputSumType = "wait"
+	ApplyTagStepInputPathStepInputSum  PathStepInputSumType = "apply_tag"
+	RemoveTagStepInputPathStepInputSum PathStepInputSumType = "remove_tag"
+	HttpStepInputPathStepInputSum      PathStepInputSumType = "http"
+	EndStepInputPathStepInputSum       PathStepInputSumType = "end"
+	BranchStepInputPathStepInputSum    PathStepInputSumType = "branch"
+)
+
+// IsEmailStepInput reports whether PathStepInputSum is EmailStepInput.
+func (s PathStepInputSum) IsEmailStepInput() bool { return s.Type == EmailStepInputPathStepInputSum }
+
+// IsTelegramStepInput reports whether PathStepInputSum is TelegramStepInput.
+func (s PathStepInputSum) IsTelegramStepInput() bool {
+	return s.Type == TelegramStepInputPathStepInputSum
+}
+
+// IsSmsStepInput reports whether PathStepInputSum is SmsStepInput.
+func (s PathStepInputSum) IsSmsStepInput() bool { return s.Type == SmsStepInputPathStepInputSum }
+
+// IsWaitStepInput reports whether PathStepInputSum is WaitStepInput.
+func (s PathStepInputSum) IsWaitStepInput() bool { return s.Type == WaitStepInputPathStepInputSum }
+
+// IsApplyTagStepInput reports whether PathStepInputSum is ApplyTagStepInput.
+func (s PathStepInputSum) IsApplyTagStepInput() bool {
+	return s.Type == ApplyTagStepInputPathStepInputSum
+}
+
+// IsRemoveTagStepInput reports whether PathStepInputSum is RemoveTagStepInput.
+func (s PathStepInputSum) IsRemoveTagStepInput() bool {
+	return s.Type == RemoveTagStepInputPathStepInputSum
+}
+
+// IsHttpStepInput reports whether PathStepInputSum is HttpStepInput.
+func (s PathStepInputSum) IsHttpStepInput() bool { return s.Type == HttpStepInputPathStepInputSum }
+
+// IsEndStepInput reports whether PathStepInputSum is EndStepInput.
+func (s PathStepInputSum) IsEndStepInput() bool { return s.Type == EndStepInputPathStepInputSum }
+
+// IsBranchStepInput reports whether PathStepInputSum is BranchStepInput.
+func (s PathStepInputSum) IsBranchStepInput() bool { return s.Type == BranchStepInputPathStepInputSum }
+
+// SetEmailStepInput sets PathStepInputSum to EmailStepInput.
+func (s *PathStepInputSum) SetEmailStepInput(v EmailStepInput) {
+	s.Type = EmailStepInputPathStepInputSum
+	s.EmailStepInput = v
+}
+
+// GetEmailStepInput returns EmailStepInput and true boolean if PathStepInputSum is EmailStepInput.
+func (s PathStepInputSum) GetEmailStepInput() (v EmailStepInput, ok bool) {
+	if !s.IsEmailStepInput() {
+		return v, false
+	}
+	return s.EmailStepInput, true
+}
+
+// NewEmailStepInputPathStepInputSum returns new PathStepInputSum from EmailStepInput.
+func NewEmailStepInputPathStepInputSum(v EmailStepInput) PathStepInputSum {
+	var s PathStepInputSum
+	s.SetEmailStepInput(v)
+	return s
+}
+
+// SetTelegramStepInput sets PathStepInputSum to TelegramStepInput.
+func (s *PathStepInputSum) SetTelegramStepInput(v TelegramStepInput) {
+	s.Type = TelegramStepInputPathStepInputSum
+	s.TelegramStepInput = v
+}
+
+// GetTelegramStepInput returns TelegramStepInput and true boolean if PathStepInputSum is TelegramStepInput.
+func (s PathStepInputSum) GetTelegramStepInput() (v TelegramStepInput, ok bool) {
+	if !s.IsTelegramStepInput() {
+		return v, false
+	}
+	return s.TelegramStepInput, true
+}
+
+// NewTelegramStepInputPathStepInputSum returns new PathStepInputSum from TelegramStepInput.
+func NewTelegramStepInputPathStepInputSum(v TelegramStepInput) PathStepInputSum {
+	var s PathStepInputSum
+	s.SetTelegramStepInput(v)
+	return s
+}
+
+// SetSmsStepInput sets PathStepInputSum to SmsStepInput.
+func (s *PathStepInputSum) SetSmsStepInput(v SmsStepInput) {
+	s.Type = SmsStepInputPathStepInputSum
+	s.SmsStepInput = v
+}
+
+// GetSmsStepInput returns SmsStepInput and true boolean if PathStepInputSum is SmsStepInput.
+func (s PathStepInputSum) GetSmsStepInput() (v SmsStepInput, ok bool) {
+	if !s.IsSmsStepInput() {
+		return v, false
+	}
+	return s.SmsStepInput, true
+}
+
+// NewSmsStepInputPathStepInputSum returns new PathStepInputSum from SmsStepInput.
+func NewSmsStepInputPathStepInputSum(v SmsStepInput) PathStepInputSum {
+	var s PathStepInputSum
+	s.SetSmsStepInput(v)
+	return s
+}
+
+// SetWaitStepInput sets PathStepInputSum to WaitStepInput.
+func (s *PathStepInputSum) SetWaitStepInput(v WaitStepInput) {
+	s.Type = WaitStepInputPathStepInputSum
+	s.WaitStepInput = v
+}
+
+// GetWaitStepInput returns WaitStepInput and true boolean if PathStepInputSum is WaitStepInput.
+func (s PathStepInputSum) GetWaitStepInput() (v WaitStepInput, ok bool) {
+	if !s.IsWaitStepInput() {
+		return v, false
+	}
+	return s.WaitStepInput, true
+}
+
+// NewWaitStepInputPathStepInputSum returns new PathStepInputSum from WaitStepInput.
+func NewWaitStepInputPathStepInputSum(v WaitStepInput) PathStepInputSum {
+	var s PathStepInputSum
+	s.SetWaitStepInput(v)
+	return s
+}
+
+// SetApplyTagStepInput sets PathStepInputSum to ApplyTagStepInput.
+func (s *PathStepInputSum) SetApplyTagStepInput(v ApplyTagStepInput) {
+	s.Type = ApplyTagStepInputPathStepInputSum
+	s.ApplyTagStepInput = v
+}
+
+// GetApplyTagStepInput returns ApplyTagStepInput and true boolean if PathStepInputSum is ApplyTagStepInput.
+func (s PathStepInputSum) GetApplyTagStepInput() (v ApplyTagStepInput, ok bool) {
+	if !s.IsApplyTagStepInput() {
+		return v, false
+	}
+	return s.ApplyTagStepInput, true
+}
+
+// NewApplyTagStepInputPathStepInputSum returns new PathStepInputSum from ApplyTagStepInput.
+func NewApplyTagStepInputPathStepInputSum(v ApplyTagStepInput) PathStepInputSum {
+	var s PathStepInputSum
+	s.SetApplyTagStepInput(v)
+	return s
+}
+
+// SetRemoveTagStepInput sets PathStepInputSum to RemoveTagStepInput.
+func (s *PathStepInputSum) SetRemoveTagStepInput(v RemoveTagStepInput) {
+	s.Type = RemoveTagStepInputPathStepInputSum
+	s.RemoveTagStepInput = v
+}
+
+// GetRemoveTagStepInput returns RemoveTagStepInput and true boolean if PathStepInputSum is RemoveTagStepInput.
+func (s PathStepInputSum) GetRemoveTagStepInput() (v RemoveTagStepInput, ok bool) {
+	if !s.IsRemoveTagStepInput() {
+		return v, false
+	}
+	return s.RemoveTagStepInput, true
+}
+
+// NewRemoveTagStepInputPathStepInputSum returns new PathStepInputSum from RemoveTagStepInput.
+func NewRemoveTagStepInputPathStepInputSum(v RemoveTagStepInput) PathStepInputSum {
+	var s PathStepInputSum
+	s.SetRemoveTagStepInput(v)
+	return s
+}
+
+// SetHttpStepInput sets PathStepInputSum to HttpStepInput.
+func (s *PathStepInputSum) SetHttpStepInput(v HttpStepInput) {
+	s.Type = HttpStepInputPathStepInputSum
+	s.HttpStepInput = v
+}
+
+// GetHttpStepInput returns HttpStepInput and true boolean if PathStepInputSum is HttpStepInput.
+func (s PathStepInputSum) GetHttpStepInput() (v HttpStepInput, ok bool) {
+	if !s.IsHttpStepInput() {
+		return v, false
+	}
+	return s.HttpStepInput, true
+}
+
+// NewHttpStepInputPathStepInputSum returns new PathStepInputSum from HttpStepInput.
+func NewHttpStepInputPathStepInputSum(v HttpStepInput) PathStepInputSum {
+	var s PathStepInputSum
+	s.SetHttpStepInput(v)
+	return s
+}
+
+// SetEndStepInput sets PathStepInputSum to EndStepInput.
+func (s *PathStepInputSum) SetEndStepInput(v EndStepInput) {
+	s.Type = EndStepInputPathStepInputSum
+	s.EndStepInput = v
+}
+
+// GetEndStepInput returns EndStepInput and true boolean if PathStepInputSum is EndStepInput.
+func (s PathStepInputSum) GetEndStepInput() (v EndStepInput, ok bool) {
+	if !s.IsEndStepInput() {
+		return v, false
+	}
+	return s.EndStepInput, true
+}
+
+// NewEndStepInputPathStepInputSum returns new PathStepInputSum from EndStepInput.
+func NewEndStepInputPathStepInputSum(v EndStepInput) PathStepInputSum {
+	var s PathStepInputSum
+	s.SetEndStepInput(v)
+	return s
+}
+
+// SetBranchStepInput sets PathStepInputSum to BranchStepInput.
+func (s *PathStepInputSum) SetBranchStepInput(v BranchStepInput) {
+	s.Type = BranchStepInputPathStepInputSum
+	s.BranchStepInput = v
+}
+
+// GetBranchStepInput returns BranchStepInput and true boolean if PathStepInputSum is BranchStepInput.
+func (s PathStepInputSum) GetBranchStepInput() (v BranchStepInput, ok bool) {
+	if !s.IsBranchStepInput() {
+		return v, false
+	}
+	return s.BranchStepInput, true
+}
+
+// NewBranchStepInputPathStepInputSum returns new PathStepInputSum from BranchStepInput.
+func NewBranchStepInputPathStepInputSum(v BranchStepInput) PathStepInputSum {
+	var s PathStepInputSum
+	s.SetBranchStepInput(v)
+	return s
+}
+
+// PathStepSum represents sum type.
+type PathStepSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type          PathStepSumType
+	EmailStep     EmailStep
+	TelegramStep  TelegramStep
+	SmsStep       SmsStep
+	WaitStep      WaitStep
+	ApplyTagStep  ApplyTagStep
+	RemoveTagStep RemoveTagStep
+	HttpStep      HttpStep
+	EndStep       EndStep
+	BranchStep    BranchStep
+}
+
+// PathStepSumType is oneOf type of PathStepSum.
+type PathStepSumType string
+
+// Possible values for PathStepSumType.
+const (
+	EmailStepPathStepSum     PathStepSumType = "email"
+	TelegramStepPathStepSum  PathStepSumType = "telegram"
+	SmsStepPathStepSum       PathStepSumType = "sms"
+	WaitStepPathStepSum      PathStepSumType = "wait"
+	ApplyTagStepPathStepSum  PathStepSumType = "apply_tag"
+	RemoveTagStepPathStepSum PathStepSumType = "remove_tag"
+	HttpStepPathStepSum      PathStepSumType = "http"
+	EndStepPathStepSum       PathStepSumType = "end"
+	BranchStepPathStepSum    PathStepSumType = "branch"
+)
+
+// IsEmailStep reports whether PathStepSum is EmailStep.
+func (s PathStepSum) IsEmailStep() bool { return s.Type == EmailStepPathStepSum }
+
+// IsTelegramStep reports whether PathStepSum is TelegramStep.
+func (s PathStepSum) IsTelegramStep() bool { return s.Type == TelegramStepPathStepSum }
+
+// IsSmsStep reports whether PathStepSum is SmsStep.
+func (s PathStepSum) IsSmsStep() bool { return s.Type == SmsStepPathStepSum }
+
+// IsWaitStep reports whether PathStepSum is WaitStep.
+func (s PathStepSum) IsWaitStep() bool { return s.Type == WaitStepPathStepSum }
+
+// IsApplyTagStep reports whether PathStepSum is ApplyTagStep.
+func (s PathStepSum) IsApplyTagStep() bool { return s.Type == ApplyTagStepPathStepSum }
+
+// IsRemoveTagStep reports whether PathStepSum is RemoveTagStep.
+func (s PathStepSum) IsRemoveTagStep() bool { return s.Type == RemoveTagStepPathStepSum }
+
+// IsHttpStep reports whether PathStepSum is HttpStep.
+func (s PathStepSum) IsHttpStep() bool { return s.Type == HttpStepPathStepSum }
+
+// IsEndStep reports whether PathStepSum is EndStep.
+func (s PathStepSum) IsEndStep() bool { return s.Type == EndStepPathStepSum }
+
+// IsBranchStep reports whether PathStepSum is BranchStep.
+func (s PathStepSum) IsBranchStep() bool { return s.Type == BranchStepPathStepSum }
+
+// SetEmailStep sets PathStepSum to EmailStep.
+func (s *PathStepSum) SetEmailStep(v EmailStep) {
+	s.Type = EmailStepPathStepSum
+	s.EmailStep = v
+}
+
+// GetEmailStep returns EmailStep and true boolean if PathStepSum is EmailStep.
+func (s PathStepSum) GetEmailStep() (v EmailStep, ok bool) {
+	if !s.IsEmailStep() {
+		return v, false
+	}
+	return s.EmailStep, true
+}
+
+// NewEmailStepPathStepSum returns new PathStepSum from EmailStep.
+func NewEmailStepPathStepSum(v EmailStep) PathStepSum {
+	var s PathStepSum
+	s.SetEmailStep(v)
+	return s
+}
+
+// SetTelegramStep sets PathStepSum to TelegramStep.
+func (s *PathStepSum) SetTelegramStep(v TelegramStep) {
+	s.Type = TelegramStepPathStepSum
+	s.TelegramStep = v
+}
+
+// GetTelegramStep returns TelegramStep and true boolean if PathStepSum is TelegramStep.
+func (s PathStepSum) GetTelegramStep() (v TelegramStep, ok bool) {
+	if !s.IsTelegramStep() {
+		return v, false
+	}
+	return s.TelegramStep, true
+}
+
+// NewTelegramStepPathStepSum returns new PathStepSum from TelegramStep.
+func NewTelegramStepPathStepSum(v TelegramStep) PathStepSum {
+	var s PathStepSum
+	s.SetTelegramStep(v)
+	return s
+}
+
+// SetSmsStep sets PathStepSum to SmsStep.
+func (s *PathStepSum) SetSmsStep(v SmsStep) {
+	s.Type = SmsStepPathStepSum
+	s.SmsStep = v
+}
+
+// GetSmsStep returns SmsStep and true boolean if PathStepSum is SmsStep.
+func (s PathStepSum) GetSmsStep() (v SmsStep, ok bool) {
+	if !s.IsSmsStep() {
+		return v, false
+	}
+	return s.SmsStep, true
+}
+
+// NewSmsStepPathStepSum returns new PathStepSum from SmsStep.
+func NewSmsStepPathStepSum(v SmsStep) PathStepSum {
+	var s PathStepSum
+	s.SetSmsStep(v)
+	return s
+}
+
+// SetWaitStep sets PathStepSum to WaitStep.
+func (s *PathStepSum) SetWaitStep(v WaitStep) {
+	s.Type = WaitStepPathStepSum
+	s.WaitStep = v
+}
+
+// GetWaitStep returns WaitStep and true boolean if PathStepSum is WaitStep.
+func (s PathStepSum) GetWaitStep() (v WaitStep, ok bool) {
+	if !s.IsWaitStep() {
+		return v, false
+	}
+	return s.WaitStep, true
+}
+
+// NewWaitStepPathStepSum returns new PathStepSum from WaitStep.
+func NewWaitStepPathStepSum(v WaitStep) PathStepSum {
+	var s PathStepSum
+	s.SetWaitStep(v)
+	return s
+}
+
+// SetApplyTagStep sets PathStepSum to ApplyTagStep.
+func (s *PathStepSum) SetApplyTagStep(v ApplyTagStep) {
+	s.Type = ApplyTagStepPathStepSum
+	s.ApplyTagStep = v
+}
+
+// GetApplyTagStep returns ApplyTagStep and true boolean if PathStepSum is ApplyTagStep.
+func (s PathStepSum) GetApplyTagStep() (v ApplyTagStep, ok bool) {
+	if !s.IsApplyTagStep() {
+		return v, false
+	}
+	return s.ApplyTagStep, true
+}
+
+// NewApplyTagStepPathStepSum returns new PathStepSum from ApplyTagStep.
+func NewApplyTagStepPathStepSum(v ApplyTagStep) PathStepSum {
+	var s PathStepSum
+	s.SetApplyTagStep(v)
+	return s
+}
+
+// SetRemoveTagStep sets PathStepSum to RemoveTagStep.
+func (s *PathStepSum) SetRemoveTagStep(v RemoveTagStep) {
+	s.Type = RemoveTagStepPathStepSum
+	s.RemoveTagStep = v
+}
+
+// GetRemoveTagStep returns RemoveTagStep and true boolean if PathStepSum is RemoveTagStep.
+func (s PathStepSum) GetRemoveTagStep() (v RemoveTagStep, ok bool) {
+	if !s.IsRemoveTagStep() {
+		return v, false
+	}
+	return s.RemoveTagStep, true
+}
+
+// NewRemoveTagStepPathStepSum returns new PathStepSum from RemoveTagStep.
+func NewRemoveTagStepPathStepSum(v RemoveTagStep) PathStepSum {
+	var s PathStepSum
+	s.SetRemoveTagStep(v)
+	return s
+}
+
+// SetHttpStep sets PathStepSum to HttpStep.
+func (s *PathStepSum) SetHttpStep(v HttpStep) {
+	s.Type = HttpStepPathStepSum
+	s.HttpStep = v
+}
+
+// GetHttpStep returns HttpStep and true boolean if PathStepSum is HttpStep.
+func (s PathStepSum) GetHttpStep() (v HttpStep, ok bool) {
+	if !s.IsHttpStep() {
+		return v, false
+	}
+	return s.HttpStep, true
+}
+
+// NewHttpStepPathStepSum returns new PathStepSum from HttpStep.
+func NewHttpStepPathStepSum(v HttpStep) PathStepSum {
+	var s PathStepSum
+	s.SetHttpStep(v)
+	return s
+}
+
+// SetEndStep sets PathStepSum to EndStep.
+func (s *PathStepSum) SetEndStep(v EndStep) {
+	s.Type = EndStepPathStepSum
+	s.EndStep = v
+}
+
+// GetEndStep returns EndStep and true boolean if PathStepSum is EndStep.
+func (s PathStepSum) GetEndStep() (v EndStep, ok bool) {
+	if !s.IsEndStep() {
+		return v, false
+	}
+	return s.EndStep, true
+}
+
+// NewEndStepPathStepSum returns new PathStepSum from EndStep.
+func NewEndStepPathStepSum(v EndStep) PathStepSum {
+	var s PathStepSum
+	s.SetEndStep(v)
+	return s
+}
+
+// SetBranchStep sets PathStepSum to BranchStep.
+func (s *PathStepSum) SetBranchStep(v BranchStep) {
+	s.Type = BranchStepPathStepSum
+	s.BranchStep = v
+}
+
+// GetBranchStep returns BranchStep and true boolean if PathStepSum is BranchStep.
+func (s PathStepSum) GetBranchStep() (v BranchStep, ok bool) {
+	if !s.IsBranchStep() {
+		return v, false
+	}
+	return s.BranchStep, true
+}
+
+// NewBranchStepPathStepSum returns new PathStepSum from BranchStep.
+func NewBranchStepPathStepSum(v BranchStep) PathStepSum {
+	var s PathStepSum
+	s.SetBranchStep(v)
+	return s
 }
 
 // Whether a value is set.

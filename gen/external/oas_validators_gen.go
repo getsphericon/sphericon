@@ -1163,6 +1163,11 @@ func (s AutomationStepInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case BranchStepInputAutomationStepInputSum:
+		if err := s.BranchStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -1207,6 +1212,11 @@ func (s AutomationStepSum) Validate() error {
 		return nil
 	case EndStepAutomationStepSum:
 		if err := s.EndStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case BranchStepAutomationStepSum:
+		if err := s.BranchStep.Validate(); err != nil {
 			return err
 		}
 		return nil
@@ -1583,6 +1593,766 @@ func (s BirthdayTestSum) Validate() error {
 		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
+func (s *BranchCondition) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Combinator.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "combinator",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Entries == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Entries {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "entries",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *BranchConditionInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Combinator.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "combinator",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Entries == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Entries {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "entries",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s BranchConditionInputKind) Validate() error {
+	switch s {
+	case "group":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s BranchConditionKind) Validate() error {
+	switch s {
+	case "group":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *BranchConditionNode) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *BranchConditionNodeInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s BranchConditionNodeInputSum) Validate() error {
+	switch s.Type {
+	case BranchConditionInputBranchConditionNodeInputSum:
+		if err := s.BranchConditionInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case AttributeLeafInputBranchConditionNodeInputSum:
+		if err := s.AttributeLeafInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case BirthdayLeafInputBranchConditionNodeInputSum:
+		if err := s.BirthdayLeafInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case TagLeafInputBranchConditionNodeInputSum:
+		if err := s.TagLeafInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case TelegramLeafInputBranchConditionNodeInputSum:
+		if err := s.TelegramLeafInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case SmsLeafInputBranchConditionNodeInputSum:
+		if err := s.SmsLeafInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case EngagementTrackingLeafInputBranchConditionNodeInputSum:
+		if err := s.EngagementTrackingLeafInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case CustomFieldLeafInputBranchConditionNodeInputSum:
+		if err := s.CustomFieldLeafInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case EventLeafInputBranchConditionNodeInputSum:
+		if err := s.EventLeafInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case BranchPropertyLeafInputBranchConditionNodeInputSum:
+		if err := s.BranchPropertyLeafInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
+func (s BranchConditionNodeSum) Validate() error {
+	switch s.Type {
+	case BranchConditionBranchConditionNodeSum:
+		if err := s.BranchCondition.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case AttributeLeafBranchConditionNodeSum:
+		if err := s.AttributeLeaf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case BirthdayLeafBranchConditionNodeSum:
+		if err := s.BirthdayLeaf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case TagLeafBranchConditionNodeSum:
+		if err := s.TagLeaf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case TelegramLeafBranchConditionNodeSum:
+		if err := s.TelegramLeaf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case SmsLeafBranchConditionNodeSum:
+		if err := s.SmsLeaf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case EngagementTrackingLeafBranchConditionNodeSum:
+		if err := s.EngagementTrackingLeaf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case CustomFieldLeafBranchConditionNodeSum:
+		if err := s.CustomFieldLeaf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case EventLeafBranchConditionNodeSum:
+		if err := s.EventLeaf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case BranchPropertyLeafBranchConditionNodeSum:
+		if err := s.BranchPropertyLeaf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
+func (s *BranchPath) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Condition.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "condition",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Steps == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Steps {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "steps",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *BranchPathInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Condition.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "condition",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Steps == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Steps {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "steps",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *BranchPropertyLeaf) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Of.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "of",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Test.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "test",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *BranchPropertyLeafInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Of.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "of",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Test.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "test",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s BranchPropertyLeafInputKind) Validate() error {
+	switch s {
+	case "property":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s BranchPropertyLeafKind) Validate() error {
+	switch s {
+	case "property":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *BranchPropertySource) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *BranchPropertySourceInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s BranchPropertySourceInputSum) Validate() error {
+	switch s.Type {
+	case TriggerSourceInputBranchPropertySourceInputSum:
+		if err := s.TriggerSourceInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
+func (s BranchPropertySourceSum) Validate() error {
+	switch s.Type {
+	case TriggerSourceBranchPropertySourceSum:
+		if err := s.TriggerSource.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
+func (s *BranchStep) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Paths == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Paths {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "paths",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Otherwise.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "otherwise",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Unknown.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "unknown",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *BranchStepInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Type.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "type",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if s.Paths == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Paths {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "paths",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Otherwise.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "otherwise",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Unknown.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "unknown",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s BranchStepInputType) Validate() error {
+	switch s {
+	case "branch":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s BranchStepType) Validate() error {
+	switch s {
+	case "branch":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
 	}
 }
 
@@ -6833,6 +7603,156 @@ func (s OptOutVia) Validate() error {
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *PathStep) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *PathStepInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s PathStepInputSum) Validate() error {
+	switch s.Type {
+	case EmailStepInputPathStepInputSum:
+		if err := s.EmailStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case TelegramStepInputPathStepInputSum:
+		if err := s.TelegramStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case SmsStepInputPathStepInputSum:
+		if err := s.SmsStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case WaitStepInputPathStepInputSum:
+		if err := s.WaitStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case ApplyTagStepInputPathStepInputSum:
+		if err := s.ApplyTagStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case RemoveTagStepInputPathStepInputSum:
+		if err := s.RemoveTagStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case HttpStepInputPathStepInputSum:
+		if err := s.HttpStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case EndStepInputPathStepInputSum:
+		if err := s.EndStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case BranchStepInputPathStepInputSum:
+		if err := s.BranchStepInput.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
+func (s PathStepSum) Validate() error {
+	switch s.Type {
+	case EmailStepPathStepSum:
+		if err := s.EmailStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case TelegramStepPathStepSum:
+		if err := s.TelegramStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case SmsStepPathStepSum:
+		if err := s.SmsStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case WaitStepPathStepSum:
+		if err := s.WaitStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case ApplyTagStepPathStepSum:
+		if err := s.ApplyTagStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case RemoveTagStepPathStepSum:
+		if err := s.RemoveTagStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case HttpStepPathStepSum:
+		if err := s.HttpStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case EndStepPathStepSum:
+		if err := s.EndStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case BranchStepPathStepSum:
+		if err := s.BranchStep.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
 	}
 }
 

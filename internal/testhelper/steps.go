@@ -48,6 +48,8 @@ func SiteStep(st any) siteapi.AutomationStepInput {
 		return siteapi.AutomationStepInput{OneOf: siteapi.NewHttpStepInputAutomationStepInputSum(v)}
 	case siteapi.EndStepInput:
 		return siteapi.AutomationStepInput{OneOf: siteapi.NewEndStepInputAutomationStepInputSum(v)}
+	case siteapi.BranchStepInput:
+		return siteapi.AutomationStepInput{OneOf: siteapi.NewBranchStepInputAutomationStepInputSum(v)}
 	default:
 		panic(fmt.Sprintf("testhelper: %T is not a site Step", st))
 	}
@@ -88,6 +90,8 @@ func ExternalStep(st any) externalapi.AutomationStepInput {
 		return externalapi.AutomationStepInput{OneOf: externalapi.NewHttpStepInputAutomationStepInputSum(v)}
 	case externalapi.EndStepInput:
 		return externalapi.AutomationStepInput{OneOf: externalapi.NewEndStepInputAutomationStepInputSum(v)}
+	case externalapi.BranchStepInput:
+		return externalapi.AutomationStepInput{OneOf: externalapi.NewBranchStepInputAutomationStepInputSum(v)}
 	default:
 		panic(fmt.Sprintf("testhelper: %T is not an external Step", st))
 	}
@@ -144,4 +148,21 @@ func JSONOfEach[T any, PT interface {
 	out, err := json.Marshal(raw)
 	require.NoError(tb, err)
 	return string(out)
+}
+
+// ExternalBranch is a Branch of the external API as its JSON writes it, so a test reads as the
+// tree it saves.
+func ExternalBranch(tb testing.TB, doc string) externalapi.BranchStepInput {
+	tb.Helper()
+	var b externalapi.BranchStepInput
+	require.NoError(tb, b.UnmarshalJSON([]byte(doc)))
+	return b
+}
+
+// SiteBranch is ExternalBranch for the site API.
+func SiteBranch(tb testing.TB, doc string) siteapi.BranchStepInput {
+	tb.Helper()
+	var b siteapi.BranchStepInput
+	require.NoError(tb, b.UnmarshalJSON([]byte(doc)))
+	return b
 }

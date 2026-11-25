@@ -93,42 +93,89 @@ func automationPath(c Converter, steps automationstep.Path) (externalapi.Automat
 	return c.AutomationPathToResource(view)
 }
 
-// automationStepViews wraps each Step's view in the arm of its kind: a oneOf is beyond goverter,
-// so only the switch is written here. A view with no arm fails the response, never shown as an
-// empty Step.
+// automationStepViews wraps each Step's view of the root path in the arm of its kind (stepSum).
 func automationStepViews(c Converter, views []automations.StepView) ([]externalapi.AutomationStep, error) {
 	out := make([]externalapi.AutomationStep, 0, len(views))
 	for _, v := range views {
-		var sum externalapi.AutomationStepSum
-		switch v := v.(type) {
-		case automations.EmailView:
-			sum = externalapi.NewEmailStepAutomationStepSum(c.EmailStepToResource(v))
-		case automations.TelegramView:
-			sum = externalapi.NewTelegramStepAutomationStepSum(c.TelegramStepToResource(v))
-		case automations.SMSView:
-			sum = externalapi.NewSmsStepAutomationStepSum(c.SmsStepToResource(v))
-		case automations.WaitView:
-			sum = externalapi.NewWaitStepAutomationStepSum(c.WaitStepToResource(v))
-		case automations.TagView:
-			// The module shows both tag kinds as one view; the union has an arm for each.
-			switch v.Type {
-			case automationstep.KindApplyTag:
-				sum = externalapi.NewApplyTagStepAutomationStepSum(c.ApplyTagStepToResource(v))
-			case automationstep.KindRemoveTag:
-				sum = externalapi.NewRemoveTagStepAutomationStepSum(c.RemoveTagStepToResource(v))
-			default:
-				return nil, fmt.Errorf("a tag step view of kind %q has no arm", v.Type)
-			}
-		case automations.HTTPView:
-			sum = externalapi.NewHttpStepAutomationStepSum(c.HttpStepToResource(v))
-		case automations.EndView:
-			sum = externalapi.NewEndStepAutomationStepSum(c.EndStepToResource(v))
-		default:
-			return nil, fmt.Errorf("the step view %T has no arm", v)
+		sum, err := stepSum(c, v)
+		if err != nil {
+			return nil, err
 		}
 		out = append(out, externalapi.AutomationStep{OneOf: sum})
 	}
 	return out, nil
+}
+
+// pathStepViews wraps each Step's view of a fork's path in the arm of its kind (stepSum): the
+// contract's union of a fork's path has the arms of the root's.
+func pathStepViews(c Converter, views []automations.StepView) ([]externalapi.PathStep, error) {
+	out := make([]externalapi.PathStep, 0, len(views))
+	for _, v := range views {
+		sum, err := stepSum(c, v)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, externalapi.PathStep{OneOf: externalapi.PathStepSum{
+			Type: externalapi.PathStepSumType(sum.Type), EmailStep: sum.EmailStep, TelegramStep: sum.TelegramStep,
+			SmsStep: sum.SmsStep, WaitStep: sum.WaitStep, ApplyTagStep: sum.ApplyTagStep,
+			RemoveTagStep: sum.RemoveTagStep, HttpStep: sum.HttpStep, EndStep: sum.EndStep, BranchStep: sum.BranchStep,
+		}})
+	}
+	return out, nil
+}
+
+// stepSum is the arm of the Step's view: a oneOf is beyond goverter, so only the switch is written
+// here. A view with no arm fails the response, never shown as an empty Step.
+func stepSum(c Converter, v automations.StepView) (externalapi.AutomationStepSum, error) {
+	switch v := v.(type) {
+	case automations.EmailView:
+		return externalapi.NewEmailStepAutomationStepSum(c.EmailStepToResource(v)), nil
+	case automations.TelegramView:
+		return externalapi.NewTelegramStepAutomationStepSum(c.TelegramStepToResource(v)), nil
+	case automations.SMSView:
+		return externalapi.NewSmsStepAutomationStepSum(c.SmsStepToResource(v)), nil
+	case automations.WaitView:
+		return externalapi.NewWaitStepAutomationStepSum(c.WaitStepToResource(v)), nil
+	case automations.TagView:
+		// The module shows both tag kinds as one view; the union has an arm for each.
+		switch v.Type {
+		case automationstep.KindApplyTag:
+			return externalapi.NewApplyTagStepAutomationStepSum(c.ApplyTagStepToResource(v)), nil
+		case automationstep.KindRemoveTag:
+			return externalapi.NewRemoveTagStepAutomationStepSum(c.RemoveTagStepToResource(v)), nil
+		default:
+			return externalapi.AutomationStepSum{}, fmt.Errorf("a tag step view of kind %q has no arm", v.Type)
+		}
+	case automations.HTTPView:
+		return externalapi.NewHttpStepAutomationStepSum(c.HttpStepToResource(v)), nil
+	case automations.EndView:
+		return externalapi.NewEndStepAutomationStepSum(c.EndStepToResource(v)), nil
+	case automations.BranchView:
+		b, err := c.BranchStepToResource(v)
+		if err != nil {
+			return externalapi.AutomationStepSum{}, err
+		}
+		return externalapi.NewBranchStepAutomationStepSum(b), nil
+	default:
+		return externalapi.AutomationStepSum{}, fmt.Errorf("the step view %T has no arm", v)
+	}
+}
+
+// optAutomationPath is a Branch's unknown path, absent for none.
+func optAutomationPath(c Converter, v *automations.PathView) (externalapi.OptAutomationPath, error) {
+	if v == nil {
+		return externalapi.OptAutomationPath{}, nil
+	}
+	p, err := c.AutomationPathToResource(*v)
+	if err != nil {
+		return externalapi.OptAutomationPath{}, err
+	}
+	return externalapi.NewOptAutomationPath(p), nil
+}
+
+// branchCondition maps a Branch path's Condition into the typed DTO.
+func branchCondition(g conditiontree.Branch) (externalapi.BranchCondition, error) {
+	return convert.Document[externalapi.BranchCondition](g)
 }
 
 // The discriminators of the Step arms.
@@ -148,6 +195,9 @@ func removeTagStepType(automationstep.Kind) externalapi.RemoveTagStepType {
 }
 func httpStepType(automationstep.Kind) externalapi.HttpStepType { return externalapi.HttpStepTypeHTTP }
 func endStepType(automationstep.Kind) externalapi.EndStepType   { return externalapi.EndStepTypeEnd }
+func branchStepType(automationstep.Kind) externalapi.BranchStepType {
+	return externalapi.BranchStepTypeBranch
+}
 
 func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 	return convert.OptObject[externalapi.OptEditorDocument](convert.DocObject[externalapi.EditorDocument](doc))
@@ -222,6 +272,10 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend removeTagStepType
 // goverter:extend httpStepType
 // goverter:extend endStepType
+// goverter:extend branchStepType
+// goverter:extend pathStepViews
+// goverter:extend optAutomationPath
+// goverter:extend branchCondition
 // goverter:extend telegramContentChannel
 // goverter:extend smsContentChannel
 type Converter interface {
@@ -352,6 +406,8 @@ type Converter interface {
 	RemoveTagStepToResource(source automations.TagView) externalapi.RemoveTagStep
 	HttpStepToResource(source automations.HTTPView) externalapi.HttpStep
 	EndStepToResource(source automations.EndView) externalapi.EndStep
+	BranchStepToResource(source automations.BranchView) (externalapi.BranchStep, error)
+	BranchPathToResource(source automations.BranchPathView) (externalapi.BranchPath, error)
 	// goverter:ignore Value
 	AutomationHttpHeaderToResource(source automations.HeaderName) externalapi.AutomationHttpHeader
 	TelegramButtonToResource(source telegramrender.Button) externalapi.TelegramButton

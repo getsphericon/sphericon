@@ -240,3 +240,54 @@ func (w *Workspace) OpenMail(msg Message) {
 	require.NoError(w.t, res.Body.Close())
 	require.Equal(w.t, http.StatusOK, res.StatusCode, "open pixel %s", pixel)
 }
+
+// BranchAutomation is what a scenario chooses about an Automation that sends each Enrollment down a
+// path by a property of the Event that began it (ADR 0124): a Branch whose one path holds when the
+// property Key equals Value and sends PathSubject, whose otherwise sends OtherwiseSubject, and an
+// email after the Branch, AfterSubject, that both paths' Contacts receive.
+type BranchAutomation struct {
+	TriggerEvent     string
+	Key, Value       string
+	PathSubject      string
+	OtherwiseSubject string
+	AfterSubject     string
+}
+
+// PublishBranchAutomation creates the Automation with its Branch through the public API and
+// publishes it.
+func (w *Workspace) PublishBranchAutomation(a BranchAutomation) {
+	w.t.Helper()
+	ctx := w.t.Context()
+	leaf, err := json.Marshal(map[string]any{
+		"kind": "group", "combinator": "and", "entries": []any{map[string]any{
+			"kind": "property", "of": map[string]any{"kind": "trigger"}, "key": a.Key,
+			"test": map[string]any{"kind": "text", "operator": "eq", "value": a.Value},
+		}},
+	})
+	require.NoError(w.t, err)
+	var cond externalapi.BranchConditionInput
+	require.NoError(w.t, cond.UnmarshalJSON(leaf))
+	email := func(subject string) externalapi.EmailStepInput {
+		return externalapi.EmailStepInput{Subject: subject, Body: externalapi.NewOptString(HTML(subject))}
+	}
+	branch := externalapi.BranchStepInput{
+		Type: externalapi.BranchStepInputTypeBranch,
+		Paths: []externalapi.BranchPathInput{{
+			Condition: cond,
+			Steps:     []externalapi.PathStepInput{{OneOf: externalapi.NewEmailStepInputPathStepInputSum(email(a.PathSubject))}},
+		}},
+		Otherwise: externalapi.AutomationPathInput{Steps: []externalapi.AutomationStepInput{emailStep(email(a.OtherwiseSubject))}},
+	}
+	res, err := w.api.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
+		Name:    externalapi.Name("e2e branch automation " + uniq()),
+		Trigger: eventTrigger(a.TriggerEvent),
+		Steps: rootPath(
+			externalapi.AutomationStepInput{OneOf: externalapi.NewBranchStepInputAutomationStepInputSum(branch)},
+			emailStep(email(a.AfterSubject)),
+		),
+	})
+	created := ok[externalapi.AutomationResource](w.t, "create branch automation", res, err)
+	published, err := w.api.AutomationsPublish(ctx, &externalapi.RevisionInput{Revision: created.Revision}, externalapi.AutomationsPublishParams{ID: created.ID})
+	got := ok[externalapi.AutomationResource](w.t, "publish branch automation", published, err)
+	require.Equal(w.t, externalapi.AutomationStatusActive, got.Status)
+}

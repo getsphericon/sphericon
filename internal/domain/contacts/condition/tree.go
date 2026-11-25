@@ -15,13 +15,18 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
-// place is the kinds of entry the tree of one place admits (ADR 0181): the contract's union of
-// the place's entries, so a Segment's tree takes no test of a Rule's triggering Event.
-type place []conditiontree.Kind
+// place is what the tree of one place admits (ADR 0181): the kinds of entry, the contract's union
+// of the place's entries, so a Segment's tree takes no test of a Rule's triggering Event, and the
+// sources its property tests read.
+type place struct {
+	kinds   []conditiontree.Kind
+	sources []conditiontree.Source
+}
 
 var (
-	segmentPlace = place(conditiontree.SegmentKinds)
-	rulePlace    = place(conditiontree.RuleKinds)
+	segmentPlace = place{kinds: conditiontree.SegmentKinds}
+	rulePlace    = place{kinds: conditiontree.RuleKinds, sources: conditiontree.RuleSources}
+	branchPlace  = place{kinds: conditiontree.BranchKinds, sources: conditiontree.BranchSources}
 )
 
 // group is a decoded group of the tree: its entries hold, all of them or any, and the result is
@@ -187,11 +192,11 @@ func checkGroup(g conditiontree.Group) error {
 
 // decodeSkipping is the stored Condition as the readers of what it names see it: an entry decode
 // refuses tests nothing and is left out, so one bad entry does not hide the others. It reads the
-// leaves of every place.
+// leaves of every place: a Branch path's, which admits a Rule's and so a Segment's.
 func decodeSkipping(g conditiontree.Group) group {
 	d := group{combinator: g.Combinator, not: g.Not, entries: make([]node, 0, len(g.Entries))}
 	for _, raw := range g.Entries {
-		n, err := decodeEntry(raw, rulePlace, func(sub conditiontree.Group) (node, error) { return decodeSkipping(sub), nil })
+		n, err := decodeEntry(raw, branchPlace, func(sub conditiontree.Group) (node, error) { return decodeSkipping(sub), nil })
 		if err != nil {
 			continue
 		}
@@ -239,7 +244,7 @@ func decodeEntry(raw json.RawMessage, p place, sub func(conditiontree.Group) (no
 	if err := json.Unmarshal(raw, &e); err != nil {
 		return nil, fmt.Errorf("malformed entry: %w", err)
 	}
-	if !slices.Contains(p, e.Kind) {
+	if !slices.Contains(p.kinds, e.Kind) {
 		return nil, fmt.Errorf("unknown entry kind %q", e.Kind)
 	}
 	switch e.Kind {
@@ -301,14 +306,14 @@ func decodeEntry(raw json.RawMessage, p place, sub func(conditiontree.Group) (no
 	case conditiontree.KindEvent:
 		return decodeEvent(e)
 	case conditiontree.KindProperty:
-		return decodeProperty(e)
+		return decodeProperty(e, p.sources)
 	}
 	return nil, fmt.Errorf("unknown entry kind %q", e.Kind)
 }
 
-// decodeProperty reads a property test of a source a Rule's property test reads.
-func decodeProperty(e entry) (node, error) {
-	if e.Of == nil || !slices.Contains(conditiontree.RuleSources, e.Of.Kind) {
+// decodeProperty reads a property test of one of the sources its place's property tests read.
+func decodeProperty(e entry, sources []conditiontree.Source) (node, error) {
+	if e.Of == nil || !slices.Contains(sources, e.Of.Kind) {
 		return nil, errors.New("a property test reads the triggering Event's properties")
 	}
 	key, t, err := decodePropertyTest(e)
