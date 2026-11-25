@@ -97,7 +97,7 @@ export interface SplitStep {
 export type ForkStep = BranchStep | SplitStep
 
 // An End: it finishes its path, and is its last Step.
-export type EndStep = Pick<AutomationPath, 'id'> & { kind: 'end' }
+type EndStep = Pick<AutomationPath, 'id'> & { kind: 'end' }
 
 // A Step of a kind newer than the editor, kept as stored: the version holding it is read-only here
 // (ADR 0124), so no edit or save can drop it.
