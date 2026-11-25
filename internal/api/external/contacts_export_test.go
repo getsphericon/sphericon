@@ -107,8 +107,9 @@ func TestExternalContactsExportMembersCoverEveryStoredColumn(t *testing.T) {
 		want := lo.Map(lo.Without(columns, left...), func(col string, _ int) string { return camel(col) })
 		assert.ElementsMatch(t, want, keys, dto.Name())
 	}
-	// The revision counts the row's writes for editors (ADR 0119): nothing about the person.
-	covered(reflect.TypeFor[externalapi.ContactExportContact](), contact.Columns, "workspace_id", contact.FieldRevision)
+	// The revision counts the row's writes for editors (ADR 0119), and the send-locked dates which of
+	// them a Connection without mcp:send wrote (ADR 0132 as amended): nothing about the person.
+	covered(reflect.TypeFor[externalapi.ContactExportContact](), contact.Columns, "workspace_id", contact.FieldRevision, contact.FieldSendLockedDates)
 	// The name's key is the name lower-cased (tagname): the name itself is exported.
 	covered(reflect.TypeFor[externalapi.ContactExportTag](), tag.Columns, "workspace_id", "updated_at", tag.FieldNameKey)
 	covered(reflect.TypeFor[externalapi.ContactExportVisitor](), visitor.Columns, "workspace_id", "contact_id", "updated_at")

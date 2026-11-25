@@ -39,6 +39,7 @@ type dateCase struct {
 }
 
 func newDateCase(t *testing.T, at time.Time) *dateCase {
+	t.Helper()
 	clock := testhelper.NewClock(at)
 	env := testhelper.Setup(t, testhelper.WithClock(clock.Now))
 	return &dateCase{

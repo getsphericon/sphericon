@@ -39,7 +39,7 @@ func (w *DateTickWorker) Work(ctx context.Context, _ *river.Job[DateTickArgs]) e
 		return err
 	}
 	return jobextension.QueueEach(ctx, due, func(a *ent.Automation) river.JobArgs {
-		return DecideOccurrencesArgs{Workspace: jobkind.Workspace{WorkspaceID: a.WorkspaceID}, AutomationID: a.ID}
+		return DecideOccurrencesArgs{WorkspaceID: a.WorkspaceID, AutomationID: a.ID}
 	})
 }
 

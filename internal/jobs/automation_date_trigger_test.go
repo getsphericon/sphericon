@@ -29,7 +29,7 @@ func TestTheDateTickEnrollsTheContactsWhoseOccurrenceCame(t *testing.T) {
 	alice, err := env.DB.Contact.Get(ctx, fixtures.ContactAliceID)
 	require.NoError(t, err)
 	_, err = testhelper.Module[*contacts.Module](env).Update(ctx, acme, alice.ID, contacts.UpdateInput{
-		Revision: alice.Revision, Core: contacts.Core{Birthday: patch.Set(time.Date(1990, time.March, 14, 0, 0, 0, 0, time.UTC))},
+		Revision: alice.Revision, Birthday: patch.Set(time.Date(1990, time.March, 14, 0, 0, 0, 0, time.UTC)),
 	})
 	require.NoError(t, err)
 	m := testhelper.Module[*automations.Module](env)

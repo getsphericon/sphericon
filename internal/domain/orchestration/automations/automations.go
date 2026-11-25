@@ -985,33 +985,7 @@ func (versioned) Equal(v *ent.AutomationVersion, def definition) bool {
 
 func (versioned) Write(ctx context.Context, l *ent.WorkspaceLocked, id int64, number int, draft *ent.AutomationVersion, def definition) (int64, error) {
 	if draft != nil {
-		upd := l.AutomationVersion().UpdateOneID(draft.ID).
-			SetTriggerAction(def.trigger.Event.Action).
-			SetEntryPolicy(def.entry.policy).
-			SetCooldownSeconds(def.entry.cooldown).
-			SetExits(def.exits).
-			SetSteps(def.steps)
-		if def.trigger.Date == nil {
-			upd.ClearTriggerDate()
-		} else {
-			upd.SetTriggerDate(def.trigger.Date)
-		}
-		if def.entry.key == nil {
-			upd.ClearEnrollmentKey()
-		} else {
-			upd.SetEnrollmentKey(*def.entry.key)
-		}
-		if def.goal == nil {
-			upd.ClearGoal()
-		} else {
-			upd.SetGoal(def.goal)
-		}
-		if def.trigger.Event.Filter == nil {
-			upd.ClearTriggerFilter()
-		} else {
-			upd.SetTriggerFilter(def.trigger.Event.Filter)
-		}
-		return draft.ID, upd.Exec(ctx)
+		return draft.ID, rewriteDraft(ctx, l, draft.ID, def)
 	}
 	create := l.AutomationVersion().Create().
 		SetAutomationID(id).
@@ -1036,6 +1010,38 @@ func (versioned) Write(ctx context.Context, l *ent.WorkspaceLocked, id int64, nu
 		return 0, err
 	}
 	return created.ID, nil
+}
+
+// rewriteDraft replaces the definition of the draft in place, under the Workspace lock: nothing
+// ever stands on a draft.
+func rewriteDraft(ctx context.Context, l *ent.WorkspaceLocked, draftID int64, def definition) error {
+	upd := l.AutomationVersion().UpdateOneID(draftID).
+		SetTriggerAction(def.trigger.Event.Action).
+		SetEntryPolicy(def.entry.policy).
+		SetCooldownSeconds(def.entry.cooldown).
+		SetExits(def.exits).
+		SetSteps(def.steps)
+	if def.trigger.Date == nil {
+		upd.ClearTriggerDate()
+	} else {
+		upd.SetTriggerDate(def.trigger.Date)
+	}
+	if def.entry.key == nil {
+		upd.ClearEnrollmentKey()
+	} else {
+		upd.SetEnrollmentKey(*def.entry.key)
+	}
+	if def.goal == nil {
+		upd.ClearGoal()
+	} else {
+		upd.SetGoal(def.goal)
+	}
+	if def.trigger.Event.Filter == nil {
+		upd.ClearTriggerFilter()
+	} else {
+		upd.SetTriggerFilter(def.trigger.Event.Filter)
+	}
+	return upd.Exec(ctx)
 }
 
 // Publishable checks the Trigger, exit and goal events of the version going live again, and the
