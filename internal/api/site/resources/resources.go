@@ -435,6 +435,10 @@ type Converter interface {
 	EndStepToResource(source automations.EndView) siteapi.EndStep
 	BranchStepToResource(source automations.BranchView) (siteapi.BranchStep, error)
 	BranchPathToResource(source automations.BranchPathView) (siteapi.BranchPath, error)
+	// The kind of a Step of the root's union as the kind of a Step of a fork's path: the two unions
+	// have the same arms (pathStepViews).
+	// goverter:enum:transform value
+	PathStepType(source siteapi.AutomationStepSumType) siteapi.PathStepSumType
 	// goverter:ignore Value
 	AutomationHttpHeaderToResource(source automations.HeaderName) siteapi.AutomationHttpHeader
 	TelegramButtonToResource(source telegramrender.Button) siteapi.TelegramButton
@@ -1168,7 +1172,7 @@ func pathStepViews(c Converter, views []automations.StepView) ([]siteapi.PathSte
 			return nil, err
 		}
 		out = append(out, siteapi.PathStep{OneOf: siteapi.PathStepSum{
-			Type: siteapi.PathStepSumType(sum.Type), EmailStep: sum.EmailStep, TelegramStep: sum.TelegramStep,
+			Type: c.PathStepType(sum.Type), EmailStep: sum.EmailStep, TelegramStep: sum.TelegramStep,
 			SmsStep: sum.SmsStep, WaitStep: sum.WaitStep, ApplyTagStep: sum.ApplyTagStep,
 			RemoveTagStep: sum.RemoveTagStep, HttpStep: sum.HttpStep, EndStep: sum.EndStep, BranchStep: sum.BranchStep,
 		}})

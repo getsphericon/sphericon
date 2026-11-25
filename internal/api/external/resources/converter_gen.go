@@ -1317,6 +1317,32 @@ func (c *ConverterImpl) OwnershipRecordToResource(source trackingdomains.Ownersh
 	externalapiDnsRecord.Value = source.Value
 	return externalapiDnsRecord
 }
+func (c *ConverterImpl) PathStepType(source external.AutomationStepSumType) external.PathStepSumType {
+	var externalapiPathStepSumType external.PathStepSumType
+	switch source {
+	case external.ApplyTagStepAutomationStepSum:
+		externalapiPathStepSumType = external.ApplyTagStepPathStepSum
+	case external.BranchStepAutomationStepSum:
+		externalapiPathStepSumType = external.BranchStepPathStepSum
+	case external.EmailStepAutomationStepSum:
+		externalapiPathStepSumType = external.EmailStepPathStepSum
+	case external.EndStepAutomationStepSum:
+		externalapiPathStepSumType = external.EndStepPathStepSum
+	case external.HttpStepAutomationStepSum:
+		externalapiPathStepSumType = external.HttpStepPathStepSum
+	case external.RemoveTagStepAutomationStepSum:
+		externalapiPathStepSumType = external.RemoveTagStepPathStepSum
+	case external.SmsStepAutomationStepSum:
+		externalapiPathStepSumType = external.SmsStepPathStepSum
+	case external.TelegramStepAutomationStepSum:
+		externalapiPathStepSumType = external.TelegramStepPathStepSum
+	case external.WaitStepAutomationStepSum:
+		externalapiPathStepSumType = external.WaitStepPathStepSum
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiPathStepSumType
+}
 func (c *ConverterImpl) PresenceOperatorToResource(source conditiontree.PresenceOperator) external.PresenceOperator {
 	var externalapiPresenceOperator external.PresenceOperator
 	switch source {

@@ -508,6 +508,32 @@ func (c *InputsImpl) OptOut(source *external.CreateUnsubscribeInput) unsubscribe
 	}
 	return unsubscriberecordingOptOutInput
 }
+func (c *InputsImpl) PathStepInputType(source external.PathStepInputSumType) external.AutomationStepInputSumType {
+	var externalapiAutomationStepInputSumType external.AutomationStepInputSumType
+	switch source {
+	case external.ApplyTagStepInputPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.ApplyTagStepInputAutomationStepInputSum
+	case external.BranchStepInputPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.BranchStepInputAutomationStepInputSum
+	case external.EmailStepInputPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.EmailStepInputAutomationStepInputSum
+	case external.EndStepInputPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.EndStepInputAutomationStepInputSum
+	case external.HttpStepInputPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.HttpStepInputAutomationStepInputSum
+	case external.RemoveTagStepInputPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.RemoveTagStepInputAutomationStepInputSum
+	case external.SmsStepInputPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.SmsStepInputAutomationStepInputSum
+	case external.TelegramStepInputPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.TelegramStepInputAutomationStepInputSum
+	case external.WaitStepInputPathStepInputSum:
+		externalapiAutomationStepInputSumType = external.WaitStepInputAutomationStepInputSum
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiAutomationStepInputSumType
+}
 func (c *InputsImpl) RemoveTagStepIn(source external.RemoveTagStepInput) automationstep.RemoveTag {
 	var automationstepRemoveTag automationstep.RemoveTag
 	automationstepRemoveTag.Tag = source.Tag

@@ -250,6 +250,10 @@ type Inputs interface {
 	// goverter:map Condition | segmentConditionIn
 	SegmentPreview(source *siteapi.SitePreviewSegmentInput) (segments.PreviewInput, error)
 
+	// The kind of a Step of a fork's path as the kind of a Step of the root's: the two unions have
+	// the same arms (pathStepsIn).
+	// goverter:enum:transform value
+	PathStepInputType(source siteapi.PathStepInputSumType) siteapi.AutomationStepInputSumType
 	// A version's root path; each Step is picked by automationStepIn.
 	AutomationPath(source siteapi.AutomationPathInput) (automationstep.Path, error)
 	// The arms of a Step, which automationStepIn picks; the Step's id is the arm's, which it
@@ -498,7 +502,7 @@ func pathStepsIn(c Inputs, in []siteapi.PathStepInput) ([]automationstep.Step, e
 	for i := range in {
 		s := &in[i].OneOf
 		st, err := automationStepIn(c, &siteapi.AutomationStepInputSum{
-			Type: siteapi.AutomationStepInputSumType(s.Type), EmailStepInput: s.EmailStepInput, TelegramStepInput: s.TelegramStepInput,
+			Type: c.PathStepInputType(s.Type), EmailStepInput: s.EmailStepInput, TelegramStepInput: s.TelegramStepInput,
 			SmsStepInput: s.SmsStepInput, WaitStepInput: s.WaitStepInput, ApplyTagStepInput: s.ApplyTagStepInput,
 			RemoveTagStepInput: s.RemoveTagStepInput, HttpStepInput: s.HttpStepInput, EndStepInput: s.EndStepInput,
 			BranchStepInput: s.BranchStepInput,

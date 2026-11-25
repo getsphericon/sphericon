@@ -640,6 +640,32 @@ func (c *InputsImpl) PasskeyRename(source *site.SitePasskeyRenameInput) passkeys
 	}
 	return passkeysRenameInput
 }
+func (c *InputsImpl) PathStepInputType(source site.PathStepInputSumType) site.AutomationStepInputSumType {
+	var siteapiAutomationStepInputSumType site.AutomationStepInputSumType
+	switch source {
+	case site.ApplyTagStepInputPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.ApplyTagStepInputAutomationStepInputSum
+	case site.BranchStepInputPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.BranchStepInputAutomationStepInputSum
+	case site.EmailStepInputPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.EmailStepInputAutomationStepInputSum
+	case site.EndStepInputPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.EndStepInputAutomationStepInputSum
+	case site.HttpStepInputPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.HttpStepInputAutomationStepInputSum
+	case site.RemoveTagStepInputPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.RemoveTagStepInputAutomationStepInputSum
+	case site.SmsStepInputPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.SmsStepInputAutomationStepInputSum
+	case site.TelegramStepInputPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.TelegramStepInputAutomationStepInputSum
+	case site.WaitStepInputPathStepInputSum:
+		siteapiAutomationStepInputSumType = site.WaitStepInputAutomationStepInputSum
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiAutomationStepInputSumType
+}
 func (c *InputsImpl) PersonalScope(source site.PersonalScope) tokenscope.PersonalScope {
 	var tokenscopePersonalScope tokenscope.PersonalScope
 	switch source {

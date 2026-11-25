@@ -1914,6 +1914,32 @@ func (c *ConverterImpl) PasskeysToResources(source []*ent.Passkey) []site.SitePa
 	}
 	return siteapiSitePasskeyList
 }
+func (c *ConverterImpl) PathStepType(source site.AutomationStepSumType) site.PathStepSumType {
+	var siteapiPathStepSumType site.PathStepSumType
+	switch source {
+	case site.ApplyTagStepAutomationStepSum:
+		siteapiPathStepSumType = site.ApplyTagStepPathStepSum
+	case site.BranchStepAutomationStepSum:
+		siteapiPathStepSumType = site.BranchStepPathStepSum
+	case site.EmailStepAutomationStepSum:
+		siteapiPathStepSumType = site.EmailStepPathStepSum
+	case site.EndStepAutomationStepSum:
+		siteapiPathStepSumType = site.EndStepPathStepSum
+	case site.HttpStepAutomationStepSum:
+		siteapiPathStepSumType = site.HttpStepPathStepSum
+	case site.RemoveTagStepAutomationStepSum:
+		siteapiPathStepSumType = site.RemoveTagStepPathStepSum
+	case site.SmsStepAutomationStepSum:
+		siteapiPathStepSumType = site.SmsStepPathStepSum
+	case site.TelegramStepAutomationStepSum:
+		siteapiPathStepSumType = site.TelegramStepPathStepSum
+	case site.WaitStepAutomationStepSum:
+		siteapiPathStepSumType = site.WaitStepPathStepSum
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return siteapiPathStepSumType
+}
 func (c *ConverterImpl) PendingSignupToResource(source *ent.PendingSignup) *site.SitePendingSignup {
 	var pSiteapiSitePendingSignup *site.SitePendingSignup
 	if source != nil {

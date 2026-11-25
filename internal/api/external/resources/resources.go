@@ -116,7 +116,7 @@ func pathStepViews(c Converter, views []automations.StepView) ([]externalapi.Pat
 			return nil, err
 		}
 		out = append(out, externalapi.PathStep{OneOf: externalapi.PathStepSum{
-			Type: externalapi.PathStepSumType(sum.Type), EmailStep: sum.EmailStep, TelegramStep: sum.TelegramStep,
+			Type: c.PathStepType(sum.Type), EmailStep: sum.EmailStep, TelegramStep: sum.TelegramStep,
 			SmsStep: sum.SmsStep, WaitStep: sum.WaitStep, ApplyTagStep: sum.ApplyTagStep,
 			RemoveTagStep: sum.RemoveTagStep, HttpStep: sum.HttpStep, EndStep: sum.EndStep, BranchStep: sum.BranchStep,
 		}})
@@ -408,6 +408,10 @@ type Converter interface {
 	EndStepToResource(source automations.EndView) externalapi.EndStep
 	BranchStepToResource(source automations.BranchView) (externalapi.BranchStep, error)
 	BranchPathToResource(source automations.BranchPathView) (externalapi.BranchPath, error)
+	// The kind of a Step of the root's union as the kind of a Step of a fork's path: the two unions
+	// have the same arms (pathStepViews).
+	// goverter:enum:transform value
+	PathStepType(source externalapi.AutomationStepSumType) externalapi.PathStepSumType
 	// goverter:ignore Value
 	AutomationHttpHeaderToResource(source automations.HeaderName) externalapi.AutomationHttpHeader
 	TelegramButtonToResource(source telegramrender.Button) externalapi.TelegramButton
