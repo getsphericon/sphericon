@@ -68,8 +68,9 @@ func (AutomationSkippedEntry) Fields() []ent.Field {
 		// passed) or `enrollment_ceiling` (a keyed version's Contact had 10 active Enrollments, or
 		// 10 begun within a day of the entry, ADR 0165). An occurrence of a date Trigger (ADR 0126) runs
 		// only `active_enrollment`, and is `missed` when the scheduler reached it 24 hours late or
-		// more, or `send_locked` while its date was last written through a Connection without
-		// mcp:send (ADR 0132): such an occurrence is not decided, and a later write may still enroll it.
+		// more while its date was written by its moment, or `send_locked` while its date was written
+		// through a Connection without mcp:send (ADR 0132): such an occurrence is not decided, and a
+		// later write may still enroll it.
 		field.Enum("reason").
 			Values("no_enrollment_key", "cycle", "active_enrollment", "once", "cooldown", "enrollment_ceiling", "missed", "send_locked").
 			Immutable(),

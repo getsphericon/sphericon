@@ -36,6 +36,10 @@ type ContactDate struct {
 	Date time.Time `json:"date,omitempty"`
 	// MonthDay holds the value of the "month_day" field.
 	MonthDay int `json:"month_day,omitempty"`
+	// WrittenAt holds the value of the "written_at" field.
+	WrittenAt time.Time `json:"written_at,omitempty"`
+	// SendLocked holds the value of the "send_locked" field.
+	SendLocked bool `json:"send_locked,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ContactDateQuery when eager-loading is set.
 	Edges        ContactDateEdges `json:"edges"`
@@ -80,11 +84,13 @@ func (*ContactDate) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case contactdate.FieldSendLocked:
+			values[i] = new(sql.NullBool)
 		case contactdate.FieldID, contactdate.FieldWorkspaceID, contactdate.FieldContactID, contactdate.FieldMonthDay:
 			values[i] = new(sql.NullInt64)
 		case contactdate.FieldKind, contactdate.FieldKey:
 			values[i] = new(sql.NullString)
-		case contactdate.FieldCreatedAt, contactdate.FieldUpdatedAt, contactdate.FieldDate:
+		case contactdate.FieldCreatedAt, contactdate.FieldUpdatedAt, contactdate.FieldDate, contactdate.FieldWrittenAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -155,6 +161,18 @@ func (_m *ContactDate) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.MonthDay = int(value.Int64)
 			}
+		case contactdate.FieldWrittenAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field written_at", values[i])
+			} else if value.Valid {
+				_m.WrittenAt = value.Time
+			}
+		case contactdate.FieldSendLocked:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field send_locked", values[i])
+			} else if value.Valid {
+				_m.SendLocked = value.Bool
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -224,6 +242,12 @@ func (_m *ContactDate) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("month_day=")
 	builder.WriteString(fmt.Sprintf("%v", _m.MonthDay))
+	builder.WriteString(", ")
+	builder.WriteString("written_at=")
+	builder.WriteString(_m.WrittenAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("send_locked=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SendLocked))
 	builder.WriteByte(')')
 	return builder.String()
 }

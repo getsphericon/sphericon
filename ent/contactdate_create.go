@@ -89,6 +89,18 @@ func (_c *ContactDateCreate) SetMonthDay(v int) *ContactDateCreate {
 	return _c
 }
 
+// SetWrittenAt sets the "written_at" field.
+func (_c *ContactDateCreate) SetWrittenAt(v time.Time) *ContactDateCreate {
+	_c.mutation.SetWrittenAt(v)
+	return _c
+}
+
+// SetSendLocked sets the "send_locked" field.
+func (_c *ContactDateCreate) SetSendLocked(v bool) *ContactDateCreate {
+	_c.mutation.SetSendLocked(v)
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *ContactDateCreate) SetID(v int64) *ContactDateCreate {
 	_c.mutation.SetID(v)
@@ -181,6 +193,12 @@ func (_c *ContactDateCreate) check() error {
 	if _, ok := _c.mutation.MonthDay(); !ok {
 		return &ValidationError{Name: "month_day", err: errors.New(`ent: missing required field "ContactDate.month_day"`)}
 	}
+	if _, ok := _c.mutation.WrittenAt(); !ok {
+		return &ValidationError{Name: "written_at", err: errors.New(`ent: missing required field "ContactDate.written_at"`)}
+	}
+	if _, ok := _c.mutation.SendLocked(); !ok {
+		return &ValidationError{Name: "send_locked", err: errors.New(`ent: missing required field "ContactDate.send_locked"`)}
+	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "ContactDate.workspace"`)}
 	}
@@ -243,6 +261,14 @@ func (_c *ContactDateCreate) createSpec() (*ContactDate, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.MonthDay(); ok {
 		_spec.SetField(contactdate.FieldMonthDay, field.TypeInt, value)
 		_node.MonthDay = value
+	}
+	if value, ok := _c.mutation.WrittenAt(); ok {
+		_spec.SetField(contactdate.FieldWrittenAt, field.TypeTime, value)
+		_node.WrittenAt = value
+	}
+	if value, ok := _c.mutation.SendLocked(); ok {
+		_spec.SetField(contactdate.FieldSendLocked, field.TypeBool, value)
+		_node.SendLocked = value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -354,36 +380,6 @@ func (u *ContactDateUpsert) UpdateWorkspaceID() *ContactDateUpsert {
 	return u
 }
 
-// SetDate sets the "date" field.
-func (u *ContactDateUpsert) SetDate(v time.Time) *ContactDateUpsert {
-	u.Set(contactdate.FieldDate, v)
-	return u
-}
-
-// UpdateDate sets the "date" field to the value that was provided on create.
-func (u *ContactDateUpsert) UpdateDate() *ContactDateUpsert {
-	u.SetExcluded(contactdate.FieldDate)
-	return u
-}
-
-// SetMonthDay sets the "month_day" field.
-func (u *ContactDateUpsert) SetMonthDay(v int) *ContactDateUpsert {
-	u.Set(contactdate.FieldMonthDay, v)
-	return u
-}
-
-// UpdateMonthDay sets the "month_day" field to the value that was provided on create.
-func (u *ContactDateUpsert) UpdateMonthDay() *ContactDateUpsert {
-	u.SetExcluded(contactdate.FieldMonthDay)
-	return u
-}
-
-// AddMonthDay adds v to the "month_day" field.
-func (u *ContactDateUpsert) AddMonthDay(v int) *ContactDateUpsert {
-	u.Add(contactdate.FieldMonthDay, v)
-	return u
-}
-
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -412,6 +408,18 @@ func (u *ContactDateUpsertOne) UpdateNewValues() *ContactDateUpsertOne {
 		}
 		if _, exists := u.create.mutation.Key(); exists {
 			s.SetIgnore(contactdate.FieldKey)
+		}
+		if _, exists := u.create.mutation.Date(); exists {
+			s.SetIgnore(contactdate.FieldDate)
+		}
+		if _, exists := u.create.mutation.MonthDay(); exists {
+			s.SetIgnore(contactdate.FieldMonthDay)
+		}
+		if _, exists := u.create.mutation.WrittenAt(); exists {
+			s.SetIgnore(contactdate.FieldWrittenAt)
+		}
+		if _, exists := u.create.mutation.SendLocked(); exists {
+			s.SetIgnore(contactdate.FieldSendLocked)
 		}
 	}))
 	return u
@@ -469,41 +477,6 @@ func (u *ContactDateUpsertOne) SetWorkspaceID(v int64) *ContactDateUpsertOne {
 func (u *ContactDateUpsertOne) UpdateWorkspaceID() *ContactDateUpsertOne {
 	return u.Update(func(s *ContactDateUpsert) {
 		s.UpdateWorkspaceID()
-	})
-}
-
-// SetDate sets the "date" field.
-func (u *ContactDateUpsertOne) SetDate(v time.Time) *ContactDateUpsertOne {
-	return u.Update(func(s *ContactDateUpsert) {
-		s.SetDate(v)
-	})
-}
-
-// UpdateDate sets the "date" field to the value that was provided on create.
-func (u *ContactDateUpsertOne) UpdateDate() *ContactDateUpsertOne {
-	return u.Update(func(s *ContactDateUpsert) {
-		s.UpdateDate()
-	})
-}
-
-// SetMonthDay sets the "month_day" field.
-func (u *ContactDateUpsertOne) SetMonthDay(v int) *ContactDateUpsertOne {
-	return u.Update(func(s *ContactDateUpsert) {
-		s.SetMonthDay(v)
-	})
-}
-
-// AddMonthDay adds v to the "month_day" field.
-func (u *ContactDateUpsertOne) AddMonthDay(v int) *ContactDateUpsertOne {
-	return u.Update(func(s *ContactDateUpsert) {
-		s.AddMonthDay(v)
-	})
-}
-
-// UpdateMonthDay sets the "month_day" field to the value that was provided on create.
-func (u *ContactDateUpsertOne) UpdateMonthDay() *ContactDateUpsertOne {
-	return u.Update(func(s *ContactDateUpsert) {
-		s.UpdateMonthDay()
 	})
 }
 
@@ -701,6 +674,18 @@ func (u *ContactDateUpsertBulk) UpdateNewValues() *ContactDateUpsertBulk {
 			if _, exists := b.mutation.Key(); exists {
 				s.SetIgnore(contactdate.FieldKey)
 			}
+			if _, exists := b.mutation.Date(); exists {
+				s.SetIgnore(contactdate.FieldDate)
+			}
+			if _, exists := b.mutation.MonthDay(); exists {
+				s.SetIgnore(contactdate.FieldMonthDay)
+			}
+			if _, exists := b.mutation.WrittenAt(); exists {
+				s.SetIgnore(contactdate.FieldWrittenAt)
+			}
+			if _, exists := b.mutation.SendLocked(); exists {
+				s.SetIgnore(contactdate.FieldSendLocked)
+			}
 		}
 	}))
 	return u
@@ -758,41 +743,6 @@ func (u *ContactDateUpsertBulk) SetWorkspaceID(v int64) *ContactDateUpsertBulk {
 func (u *ContactDateUpsertBulk) UpdateWorkspaceID() *ContactDateUpsertBulk {
 	return u.Update(func(s *ContactDateUpsert) {
 		s.UpdateWorkspaceID()
-	})
-}
-
-// SetDate sets the "date" field.
-func (u *ContactDateUpsertBulk) SetDate(v time.Time) *ContactDateUpsertBulk {
-	return u.Update(func(s *ContactDateUpsert) {
-		s.SetDate(v)
-	})
-}
-
-// UpdateDate sets the "date" field to the value that was provided on create.
-func (u *ContactDateUpsertBulk) UpdateDate() *ContactDateUpsertBulk {
-	return u.Update(func(s *ContactDateUpsert) {
-		s.UpdateDate()
-	})
-}
-
-// SetMonthDay sets the "month_day" field.
-func (u *ContactDateUpsertBulk) SetMonthDay(v int) *ContactDateUpsertBulk {
-	return u.Update(func(s *ContactDateUpsert) {
-		s.SetMonthDay(v)
-	})
-}
-
-// AddMonthDay adds v to the "month_day" field.
-func (u *ContactDateUpsertBulk) AddMonthDay(v int) *ContactDateUpsertBulk {
-	return u.Update(func(s *ContactDateUpsert) {
-		s.AddMonthDay(v)
-	})
-}
-
-// UpdateMonthDay sets the "month_day" field to the value that was provided on create.
-func (u *ContactDateUpsertBulk) UpdateMonthDay() *ContactDateUpsertBulk {
-	return u.Update(func(s *ContactDateUpsert) {
-		s.UpdateMonthDay()
 	})
 }
 

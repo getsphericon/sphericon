@@ -24547,55 +24547,53 @@ func (m *ConsentStampMutation) ResetEdge(name string) error {
 // ContactMutation represents an operation that mutates the Contact nodes in the graph.
 type ContactMutation struct {
 	config
-	op                      Op
-	typ                     string
-	id                      *int64
-	created_at              *time.Time
-	updated_at              *time.Time
-	revision                *int64
-	addrevision             *int64
-	subject_id              *string
-	email                   *string
-	phone                   *string
-	first_name              *string
-	last_name               *string
-	time_zone               *string
-	country                 *string
-	locale                  *string
-	birthday                *time.Time
-	city                    *string
-	avatar                  *string
-	source                  *contact.Source
-	custom_fields           *map[string]interface{}
-	send_locked_dates       *[]datetrigger.Field
-	appendsend_locked_dates []datetrigger.Field
-	clearedFields           map[string]struct{}
-	workspace               *int64
-	clearedworkspace        bool
-	visitors                map[int64]struct{}
-	removedvisitors         map[int64]struct{}
-	clearedvisitors         bool
-	bindings                map[int64]struct{}
-	removedbindings         map[int64]struct{}
-	clearedbindings         bool
-	start_tokens            map[int64]struct{}
-	removedstart_tokens     map[int64]struct{}
-	clearedstart_tokens     bool
-	dates                   map[int64]struct{}
-	removeddates            map[int64]struct{}
-	cleareddates            bool
-	tags                    map[int64]struct{}
-	removedtags             map[int64]struct{}
-	clearedtags             bool
-	events                  map[int64]struct{}
-	removedevents           map[int64]struct{}
-	clearedevents           bool
-	orders                  map[int64]struct{}
-	removedorders           map[int64]struct{}
-	clearedorders           bool
-	done                    bool
-	oldValue                func(context.Context) (*Contact, error)
-	predicates              []predicate.Contact
+	op                  Op
+	typ                 string
+	id                  *int64
+	created_at          *time.Time
+	updated_at          *time.Time
+	revision            *int64
+	addrevision         *int64
+	subject_id          *string
+	email               *string
+	phone               *string
+	first_name          *string
+	last_name           *string
+	time_zone           *string
+	country             *string
+	locale              *string
+	birthday            *time.Time
+	city                *string
+	avatar              *string
+	source              *contact.Source
+	custom_fields       *map[string]interface{}
+	clearedFields       map[string]struct{}
+	workspace           *int64
+	clearedworkspace    bool
+	visitors            map[int64]struct{}
+	removedvisitors     map[int64]struct{}
+	clearedvisitors     bool
+	bindings            map[int64]struct{}
+	removedbindings     map[int64]struct{}
+	clearedbindings     bool
+	start_tokens        map[int64]struct{}
+	removedstart_tokens map[int64]struct{}
+	clearedstart_tokens bool
+	dates               map[int64]struct{}
+	removeddates        map[int64]struct{}
+	cleareddates        bool
+	tags                map[int64]struct{}
+	removedtags         map[int64]struct{}
+	clearedtags         bool
+	events              map[int64]struct{}
+	removedevents       map[int64]struct{}
+	clearedevents       bool
+	orders              map[int64]struct{}
+	removedorders       map[int64]struct{}
+	clearedorders       bool
+	done                bool
+	oldValue            func(context.Context) (*Contact, error)
+	predicates          []predicate.Contact
 }
 
 var _ ent.Mutation = (*ContactMutation)(nil)
@@ -25490,57 +25488,6 @@ func (m *ContactMutation) ResetCustomFields() {
 	delete(m.clearedFields, contact.FieldCustomFields)
 }
 
-// SetSendLockedDates sets the "send_locked_dates" field.
-func (m *ContactMutation) SetSendLockedDates(d []datetrigger.Field) {
-	m.send_locked_dates = &d
-	m.appendsend_locked_dates = nil
-}
-
-// SendLockedDates returns the value of the "send_locked_dates" field in the mutation.
-func (m *ContactMutation) SendLockedDates() (r []datetrigger.Field, exists bool) {
-	v := m.send_locked_dates
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldSendLockedDates returns the old "send_locked_dates" field's value of the Contact entity.
-// If the Contact object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ContactMutation) OldSendLockedDates(ctx context.Context) (v []datetrigger.Field, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSendLockedDates is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSendLockedDates requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSendLockedDates: %w", err)
-	}
-	return oldValue.SendLockedDates, nil
-}
-
-// AppendSendLockedDates adds d to the "send_locked_dates" field.
-func (m *ContactMutation) AppendSendLockedDates(d []datetrigger.Field) {
-	m.appendsend_locked_dates = append(m.appendsend_locked_dates, d...)
-}
-
-// AppendedSendLockedDates returns the list of values that were appended to the "send_locked_dates" field in this mutation.
-func (m *ContactMutation) AppendedSendLockedDates() ([]datetrigger.Field, bool) {
-	if len(m.appendsend_locked_dates) == 0 {
-		return nil, false
-	}
-	return m.appendsend_locked_dates, true
-}
-
-// ResetSendLockedDates resets all changes to the "send_locked_dates" field.
-func (m *ContactMutation) ResetSendLockedDates() {
-	m.send_locked_dates = nil
-	m.appendsend_locked_dates = nil
-}
-
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *ContactMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -25980,7 +25927,7 @@ func (m *ContactMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ContactMutation) Fields() []string {
-	fields := make([]string, 0, 18)
+	fields := make([]string, 0, 17)
 	if m.created_at != nil {
 		fields = append(fields, contact.FieldCreatedAt)
 	}
@@ -26032,9 +25979,6 @@ func (m *ContactMutation) Fields() []string {
 	if m.custom_fields != nil {
 		fields = append(fields, contact.FieldCustomFields)
 	}
-	if m.send_locked_dates != nil {
-		fields = append(fields, contact.FieldSendLockedDates)
-	}
 	return fields
 }
 
@@ -26077,8 +26021,6 @@ func (m *ContactMutation) Field(name string) (ent.Value, bool) {
 		return m.Source()
 	case contact.FieldCustomFields:
 		return m.CustomFields()
-	case contact.FieldSendLockedDates:
-		return m.SendLockedDates()
 	}
 	return nil, false
 }
@@ -26122,8 +26064,6 @@ func (m *ContactMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldSource(ctx)
 	case contact.FieldCustomFields:
 		return m.OldCustomFields(ctx)
-	case contact.FieldSendLockedDates:
-		return m.OldSendLockedDates(ctx)
 	}
 	return nil, fmt.Errorf("unknown Contact field %s", name)
 }
@@ -26251,13 +26191,6 @@ func (m *ContactMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetCustomFields(v)
-		return nil
-	case contact.FieldSendLockedDates:
-		v, ok := value.([]datetrigger.Field)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetSendLockedDates(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Contact field %s", name)
@@ -26448,9 +26381,6 @@ func (m *ContactMutation) ResetField(name string) error {
 		return nil
 	case contact.FieldCustomFields:
 		m.ResetCustomFields()
-		return nil
-	case contact.FieldSendLockedDates:
-		m.ResetSendLockedDates()
 		return nil
 	}
 	return fmt.Errorf("unknown Contact field %s", name)
@@ -26727,6 +26657,8 @@ type ContactDateMutation struct {
 	date             *time.Time
 	month_day        *int
 	addmonth_day     *int
+	written_at       *time.Time
+	send_locked      *bool
 	clearedFields    map[string]struct{}
 	workspace        *int64
 	clearedworkspace bool
@@ -27149,6 +27081,78 @@ func (m *ContactDateMutation) ResetMonthDay() {
 	m.addmonth_day = nil
 }
 
+// SetWrittenAt sets the "written_at" field.
+func (m *ContactDateMutation) SetWrittenAt(t time.Time) {
+	m.written_at = &t
+}
+
+// WrittenAt returns the value of the "written_at" field in the mutation.
+func (m *ContactDateMutation) WrittenAt() (r time.Time, exists bool) {
+	v := m.written_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWrittenAt returns the old "written_at" field's value of the ContactDate entity.
+// If the ContactDate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactDateMutation) OldWrittenAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWrittenAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWrittenAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWrittenAt: %w", err)
+	}
+	return oldValue.WrittenAt, nil
+}
+
+// ResetWrittenAt resets all changes to the "written_at" field.
+func (m *ContactDateMutation) ResetWrittenAt() {
+	m.written_at = nil
+}
+
+// SetSendLocked sets the "send_locked" field.
+func (m *ContactDateMutation) SetSendLocked(b bool) {
+	m.send_locked = &b
+}
+
+// SendLocked returns the value of the "send_locked" field in the mutation.
+func (m *ContactDateMutation) SendLocked() (r bool, exists bool) {
+	v := m.send_locked
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSendLocked returns the old "send_locked" field's value of the ContactDate entity.
+// If the ContactDate object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ContactDateMutation) OldSendLocked(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSendLocked is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSendLocked requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSendLocked: %w", err)
+	}
+	return oldValue.SendLocked, nil
+}
+
+// ResetSendLocked resets all changes to the "send_locked" field.
+func (m *ContactDateMutation) ResetSendLocked() {
+	m.send_locked = nil
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *ContactDateMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -27237,7 +27241,7 @@ func (m *ContactDateMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ContactDateMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, contactdate.FieldCreatedAt)
 	}
@@ -27261,6 +27265,12 @@ func (m *ContactDateMutation) Fields() []string {
 	}
 	if m.month_day != nil {
 		fields = append(fields, contactdate.FieldMonthDay)
+	}
+	if m.written_at != nil {
+		fields = append(fields, contactdate.FieldWrittenAt)
+	}
+	if m.send_locked != nil {
+		fields = append(fields, contactdate.FieldSendLocked)
 	}
 	return fields
 }
@@ -27286,6 +27296,10 @@ func (m *ContactDateMutation) Field(name string) (ent.Value, bool) {
 		return m.Date()
 	case contactdate.FieldMonthDay:
 		return m.MonthDay()
+	case contactdate.FieldWrittenAt:
+		return m.WrittenAt()
+	case contactdate.FieldSendLocked:
+		return m.SendLocked()
 	}
 	return nil, false
 }
@@ -27311,6 +27325,10 @@ func (m *ContactDateMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldDate(ctx)
 	case contactdate.FieldMonthDay:
 		return m.OldMonthDay(ctx)
+	case contactdate.FieldWrittenAt:
+		return m.OldWrittenAt(ctx)
+	case contactdate.FieldSendLocked:
+		return m.OldSendLocked(ctx)
 	}
 	return nil, fmt.Errorf("unknown ContactDate field %s", name)
 }
@@ -27375,6 +27393,20 @@ func (m *ContactDateMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetMonthDay(v)
+		return nil
+	case contactdate.FieldWrittenAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWrittenAt(v)
+		return nil
+	case contactdate.FieldSendLocked:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSendLocked(v)
 		return nil
 	}
 	return fmt.Errorf("unknown ContactDate field %s", name)
@@ -27463,6 +27495,12 @@ func (m *ContactDateMutation) ResetField(name string) error {
 		return nil
 	case contactdate.FieldMonthDay:
 		m.ResetMonthDay()
+		return nil
+	case contactdate.FieldWrittenAt:
+		m.ResetWrittenAt()
+		return nil
+	case contactdate.FieldSendLocked:
+		m.ResetSendLocked()
 		return nil
 	}
 	return fmt.Errorf("unknown ContactDate field %s", name)

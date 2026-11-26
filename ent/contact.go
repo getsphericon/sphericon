@@ -12,7 +12,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/workspace"
-	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 )
 
 // Contact is the model entity for the Contact schema.
@@ -54,8 +53,6 @@ type Contact struct {
 	Source contact.Source `json:"source,omitempty"`
 	// CustomFields holds the value of the "custom_fields" field.
 	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
-	// SendLockedDates holds the value of the "send_locked_dates" field.
-	SendLockedDates []datetrigger.Field `json:"send_locked_dates,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ContactQuery when eager-loading is set.
 	Edges        ContactEdges `json:"edges"`
@@ -175,7 +172,7 @@ func (*Contact) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case contact.FieldCustomFields, contact.FieldSendLockedDates:
+		case contact.FieldCustomFields:
 			values[i] = new([]byte)
 		case contact.FieldID, contact.FieldWorkspaceID, contact.FieldRevision:
 			values[i] = new(sql.NullInt64)
@@ -317,14 +314,6 @@ func (_m *Contact) assignValues(columns []string, values []any) error {
 			} else if value != nil && len(*value) > 0 {
 				if err := json.Unmarshal(*value, &_m.CustomFields); err != nil {
 					return fmt.Errorf("unmarshal field custom_fields: %w", err)
-				}
-			}
-		case contact.FieldSendLockedDates:
-			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field send_locked_dates", values[i])
-			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &_m.SendLockedDates); err != nil {
-					return fmt.Errorf("unmarshal field send_locked_dates: %w", err)
 				}
 			}
 		default:
@@ -480,9 +469,6 @@ func (_m *Contact) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("custom_fields=")
 	builder.WriteString(fmt.Sprintf("%v", _m.CustomFields))
-	builder.WriteString(", ")
-	builder.WriteString("send_locked_dates=")
-	builder.WriteString(fmt.Sprintf("%v", _m.SendLockedDates))
 	builder.WriteByte(')')
 	return builder.String()
 }

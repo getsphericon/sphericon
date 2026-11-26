@@ -89,7 +89,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/ent/workspacestanding"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
-	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 )
@@ -644,10 +643,6 @@ func init() {
 	contact.DefaultRevision = contactDescRevision.Default.(func() int64)
 	// contact.RevisionValidator is a validator for the "revision" field. It is called by the builders before save.
 	contact.RevisionValidator = contactDescRevision.Validators[0].(func(int64) error)
-	// contactDescSendLockedDates is the schema descriptor for send_locked_dates field.
-	contactDescSendLockedDates := contactFields[14].Descriptor()
-	// contact.DefaultSendLockedDates holds the default value on creation for the send_locked_dates field.
-	contact.DefaultSendLockedDates = contactDescSendLockedDates.Default.([]datetrigger.Field)
 	contactdateMixin := schema.ContactDate{}.Mixin()
 	contactdateMixinFields0 := contactdateMixin[0].Fields()
 	_ = contactdateMixinFields0

@@ -91,6 +91,16 @@ func MonthDay(v int) predicate.ContactDate {
 	return predicate.ContactDate(sql.FieldEQ(FieldMonthDay, v))
 }
 
+// WrittenAt applies equality check predicate on the "written_at" field. It's identical to WrittenAtEQ.
+func WrittenAt(v time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldEQ(FieldWrittenAt, v))
+}
+
+// SendLocked applies equality check predicate on the "send_locked" field. It's identical to SendLockedEQ.
+func SendLocked(v bool) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldEQ(FieldSendLocked, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.ContactDate {
 	return predicate.ContactDate(sql.FieldEQ(FieldCreatedAt, v))
@@ -384,6 +394,56 @@ func MonthDayLT(v int) predicate.ContactDate {
 // MonthDayLTE applies the LTE predicate on the "month_day" field.
 func MonthDayLTE(v int) predicate.ContactDate {
 	return predicate.ContactDate(sql.FieldLTE(FieldMonthDay, v))
+}
+
+// WrittenAtEQ applies the EQ predicate on the "written_at" field.
+func WrittenAtEQ(v time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldEQ(FieldWrittenAt, v))
+}
+
+// WrittenAtNEQ applies the NEQ predicate on the "written_at" field.
+func WrittenAtNEQ(v time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldNEQ(FieldWrittenAt, v))
+}
+
+// WrittenAtIn applies the In predicate on the "written_at" field.
+func WrittenAtIn(vs ...time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldIn(FieldWrittenAt, vs...))
+}
+
+// WrittenAtNotIn applies the NotIn predicate on the "written_at" field.
+func WrittenAtNotIn(vs ...time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldNotIn(FieldWrittenAt, vs...))
+}
+
+// WrittenAtGT applies the GT predicate on the "written_at" field.
+func WrittenAtGT(v time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldGT(FieldWrittenAt, v))
+}
+
+// WrittenAtGTE applies the GTE predicate on the "written_at" field.
+func WrittenAtGTE(v time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldGTE(FieldWrittenAt, v))
+}
+
+// WrittenAtLT applies the LT predicate on the "written_at" field.
+func WrittenAtLT(v time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldLT(FieldWrittenAt, v))
+}
+
+// WrittenAtLTE applies the LTE predicate on the "written_at" field.
+func WrittenAtLTE(v time.Time) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldLTE(FieldWrittenAt, v))
+}
+
+// SendLockedEQ applies the EQ predicate on the "send_locked" field.
+func SendLockedEQ(v bool) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldEQ(FieldSendLocked, v))
+}
+
+// SendLockedNEQ applies the NEQ predicate on the "send_locked" field.
+func SendLockedNEQ(v bool) predicate.ContactDate {
+	return predicate.ContactDate(sql.FieldNEQ(FieldSendLocked, v))
 }
 
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.

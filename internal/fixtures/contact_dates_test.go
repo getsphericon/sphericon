@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -26,13 +27,13 @@ func keyRow(workspaceID, contactID int64, k datetrigger.Keyed) string {
 func TestFixtureContactDatesAreTheKeysOfTheirContacts(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	contacts, err := env.DB.Contact.Query().All(ctx)
+	held, err := env.DB.Contact.Query().All(ctx)
 	require.NoError(t, err)
 	stored, err := env.DB.ContactDate.Query().All(ctx)
 	require.NoError(t, err)
 
-	want := lo.FlatMap(contacts, func(c *ent.Contact, _ int) []string {
-		return lo.Map(datetrigger.Holder{Birthday: c.Birthday, CustomFields: c.CustomFields}.Keys(), func(k datetrigger.Keyed, _ int) string {
+	want := lo.FlatMap(held, func(c *ent.Contact, _ int) []string {
+		return lo.Map(contacts.DatesOf(c).Keys(), func(k datetrigger.Keyed, _ int) string {
 			return keyRow(c.WorkspaceID, c.ID, k)
 		})
 	})

@@ -10,7 +10,6 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/contact"
@@ -22,7 +21,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/workspace"
-	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 )
 
 // ContactUpdate is the builder for updating Contact entities.
@@ -309,18 +307,6 @@ func (_u *ContactUpdate) SetCustomFields(v map[string]interface{}) *ContactUpdat
 // ClearCustomFields clears the value of the "custom_fields" field.
 func (_u *ContactUpdate) ClearCustomFields() *ContactUpdate {
 	_u.mutation.ClearCustomFields()
-	return _u
-}
-
-// SetSendLockedDates sets the "send_locked_dates" field.
-func (_u *ContactUpdate) SetSendLockedDates(v []datetrigger.Field) *ContactUpdate {
-	_u.mutation.SetSendLockedDates(v)
-	return _u
-}
-
-// AppendSendLockedDates appends value to the "send_locked_dates" field.
-func (_u *ContactUpdate) AppendSendLockedDates(v []datetrigger.Field) *ContactUpdate {
-	_u.mutation.AppendSendLockedDates(v)
 	return _u
 }
 
@@ -739,14 +725,6 @@ func (_u *ContactUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.CustomFieldsCleared() {
 		_spec.ClearField(contact.FieldCustomFields, field.TypeJSON)
-	}
-	if value, ok := _u.mutation.SendLockedDates(); ok {
-		_spec.SetField(contact.FieldSendLockedDates, field.TypeJSON, value)
-	}
-	if value, ok := _u.mutation.AppendedSendLockedDates(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, contact.FieldSendLockedDates, value)
-		})
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1387,18 +1365,6 @@ func (_u *ContactUpdateOne) ClearCustomFields() *ContactUpdateOne {
 	return _u
 }
 
-// SetSendLockedDates sets the "send_locked_dates" field.
-func (_u *ContactUpdateOne) SetSendLockedDates(v []datetrigger.Field) *ContactUpdateOne {
-	_u.mutation.SetSendLockedDates(v)
-	return _u
-}
-
-// AppendSendLockedDates appends value to the "send_locked_dates" field.
-func (_u *ContactUpdateOne) AppendSendLockedDates(v []datetrigger.Field) *ContactUpdateOne {
-	_u.mutation.AppendSendLockedDates(v)
-	return _u
-}
-
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *ContactUpdateOne) SetWorkspace(v *Workspace) *ContactUpdateOne {
 	return _u.SetWorkspaceID(v.ID)
@@ -1844,14 +1810,6 @@ func (_u *ContactUpdateOne) sqlSave(ctx context.Context) (_node *Contact, err er
 	}
 	if _u.mutation.CustomFieldsCleared() {
 		_spec.ClearField(contact.FieldCustomFields, field.TypeJSON)
-	}
-	if value, ok := _u.mutation.SendLockedDates(); ok {
-		_spec.SetField(contact.FieldSendLockedDates, field.TypeJSON, value)
-	}
-	if value, ok := _u.mutation.AppendedSendLockedDates(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, contact.FieldSendLockedDates, value)
-		})
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -24466,14 +24466,6 @@ func (x *ContactScopedCreate) SetCustomFields(v map[string]interface{}) *Contact
 
 const RoleOf_ContactScopedCreate_SetCustomFields = RoleStep
 
-// SetSendLockedDates sets the "send_locked_dates" field.
-func (x *ContactScopedCreate) SetSendLockedDates(v []datetrigger.Field) *ContactScopedCreate {
-	x.set = append(x.set, func(b *ContactCreate) { b.SetSendLockedDates(v) })
-	return x
-}
-
-const RoleOf_ContactScopedCreate_SetSendLockedDates = RoleStep
-
 // AddVisitorIDs adds the "visitors" edge to the Visitor entity by IDs.
 func (x *ContactScopedCreate) AddVisitorIDs(ids ...int64) *ContactScopedCreate {
 	x.set = append(x.set, func(b *ContactCreate) { b.AddVisitorIDs(ids...) })
@@ -25014,22 +25006,6 @@ func (u *ContactScopedUpsert) ClearCustomFields() *ContactScopedUpsert {
 }
 
 const RoleOf_ContactScopedUpsert_ClearCustomFields = RoleStep
-
-// SetSendLockedDates sets the "send_locked_dates" field.
-func (u *ContactScopedUpsert) SetSendLockedDates(v []datetrigger.Field) *ContactScopedUpsert {
-	u.u.Set(contact.FieldSendLockedDates, v)
-	return u
-}
-
-const RoleOf_ContactScopedUpsert_SetSendLockedDates = RoleStep
-
-// UpdateSendLockedDates sets the "send_locked_dates" field to the value that was provided on create.
-func (u *ContactScopedUpsert) UpdateSendLockedDates() *ContactScopedUpsert {
-	u.u.SetExcluded(contact.FieldSendLockedDates)
-	return u
-}
-
-const RoleOf_ContactScopedUpsert_UpdateSendLockedDates = RoleStep
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
 // target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
@@ -25640,22 +25616,6 @@ func (x *ContactScopedUpdateOne) ClearCustomFields() *ContactScopedUpdateOne {
 }
 
 const RoleOf_ContactScopedUpdateOne_ClearCustomFields = RoleStep
-
-// SetSendLockedDates sets the "send_locked_dates" field.
-func (x *ContactScopedUpdateOne) SetSendLockedDates(v []datetrigger.Field) *ContactScopedUpdateOne {
-	x.set = append(x.set, func(b *ContactUpdateOne) { b.SetSendLockedDates(v) })
-	return x
-}
-
-const RoleOf_ContactScopedUpdateOne_SetSendLockedDates = RoleStep
-
-// AppendSendLockedDates appends value to the "send_locked_dates" field.
-func (x *ContactScopedUpdateOne) AppendSendLockedDates(v []datetrigger.Field) *ContactScopedUpdateOne {
-	x.set = append(x.set, func(b *ContactUpdateOne) { b.AppendSendLockedDates(v) })
-	return x
-}
-
-const RoleOf_ContactScopedUpdateOne_AppendSendLockedDates = RoleStep
 
 // AddVisitorIDs adds the "visitors" edge to the Visitor entity by IDs.
 func (x *ContactScopedUpdateOne) AddVisitorIDs(ids ...int64) *ContactScopedUpdateOne {
@@ -26299,22 +26259,6 @@ func (x *ContactScopedUpdate) ClearCustomFields() *ContactScopedUpdate {
 
 const RoleOf_ContactScopedUpdate_ClearCustomFields = RoleStep
 
-// SetSendLockedDates sets the "send_locked_dates" field.
-func (x *ContactScopedUpdate) SetSendLockedDates(v []datetrigger.Field) *ContactScopedUpdate {
-	x.set = append(x.set, func(b *ContactUpdate) { b.SetSendLockedDates(v) })
-	return x
-}
-
-const RoleOf_ContactScopedUpdate_SetSendLockedDates = RoleStep
-
-// AppendSendLockedDates appends value to the "send_locked_dates" field.
-func (x *ContactScopedUpdate) AppendSendLockedDates(v []datetrigger.Field) *ContactScopedUpdate {
-	x.set = append(x.set, func(b *ContactUpdate) { b.AppendSendLockedDates(v) })
-	return x
-}
-
-const RoleOf_ContactScopedUpdate_AppendSendLockedDates = RoleStep
-
 // AddVisitorIDs adds the "visitors" edge to the Visitor entity by IDs.
 func (x *ContactScopedUpdate) AddVisitorIDs(ids ...int64) *ContactScopedUpdate {
 	x.set = append(x.set, func(b *ContactUpdate) { b.AddVisitorIDs(ids...) })
@@ -26836,6 +26780,22 @@ func (x *ContactDateScopedCreate) SetMonthDay(v int) *ContactDateScopedCreate {
 
 const RoleOf_ContactDateScopedCreate_SetMonthDay = RoleStep
 
+// SetWrittenAt sets the "written_at" field.
+func (x *ContactDateScopedCreate) SetWrittenAt(v time.Time) *ContactDateScopedCreate {
+	x.set = append(x.set, func(b *ContactDateCreate) { b.SetWrittenAt(v) })
+	return x
+}
+
+const RoleOf_ContactDateScopedCreate_SetWrittenAt = RoleStep
+
+// SetSendLocked sets the "send_locked" field.
+func (x *ContactDateScopedCreate) SetSendLocked(v bool) *ContactDateScopedCreate {
+	x.set = append(x.set, func(b *ContactDateCreate) { b.SetSendLocked(v) })
+	return x
+}
+
+const RoleOf_ContactDateScopedCreate_SetSendLocked = RoleStep
+
 // SetContact sets the "contact" edge to the Contact entity.
 func (x *ContactDateScopedCreate) SetContact(v *Contact) *ContactDateScopedCreate {
 	x.set = append(x.set, func(b *ContactDateCreate) { b.SetContact(v) })
@@ -26972,46 +26932,6 @@ func (u *ContactDateScopedUpsert) UpdateUpdatedAt() *ContactDateScopedUpsert {
 }
 
 const RoleOf_ContactDateScopedUpsert_UpdateUpdatedAt = RoleStep
-
-// SetDate sets the "date" field.
-func (u *ContactDateScopedUpsert) SetDate(v time.Time) *ContactDateScopedUpsert {
-	u.u.Set(contactdate.FieldDate, v)
-	return u
-}
-
-const RoleOf_ContactDateScopedUpsert_SetDate = RoleStep
-
-// UpdateDate sets the "date" field to the value that was provided on create.
-func (u *ContactDateScopedUpsert) UpdateDate() *ContactDateScopedUpsert {
-	u.u.SetExcluded(contactdate.FieldDate)
-	return u
-}
-
-const RoleOf_ContactDateScopedUpsert_UpdateDate = RoleStep
-
-// SetMonthDay sets the "month_day" field.
-func (u *ContactDateScopedUpsert) SetMonthDay(v int) *ContactDateScopedUpsert {
-	u.u.Set(contactdate.FieldMonthDay, v)
-	return u
-}
-
-const RoleOf_ContactDateScopedUpsert_SetMonthDay = RoleStep
-
-// AddMonthDay adds v to the "month_day" field.
-func (u *ContactDateScopedUpsert) AddMonthDay(v int) *ContactDateScopedUpsert {
-	u.u.Add(contactdate.FieldMonthDay, v)
-	return u
-}
-
-const RoleOf_ContactDateScopedUpsert_AddMonthDay = RoleStep
-
-// UpdateMonthDay sets the "month_day" field to the value that was provided on create.
-func (u *ContactDateScopedUpsert) UpdateMonthDay() *ContactDateScopedUpsert {
-	u.u.SetExcluded(contactdate.FieldMonthDay)
-	return u
-}
-
-const RoleOf_ContactDateScopedUpsert_UpdateMonthDay = RoleStep
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
 // target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
@@ -27220,50 +27140,6 @@ func (x *ContactDateScopedUpdateOne) SetUpdatedAt(v time.Time) *ContactDateScope
 
 const RoleOf_ContactDateScopedUpdateOne_SetUpdatedAt = RoleStep
 
-// SetDate sets the "date" field.
-func (x *ContactDateScopedUpdateOne) SetDate(v time.Time) *ContactDateScopedUpdateOne {
-	x.set = append(x.set, func(b *ContactDateUpdateOne) { b.SetDate(v) })
-	return x
-}
-
-const RoleOf_ContactDateScopedUpdateOne_SetDate = RoleStep
-
-// SetNillableDate sets the "date" field if the given value is not nil.
-func (x *ContactDateScopedUpdateOne) SetNillableDate(v *time.Time) *ContactDateScopedUpdateOne {
-	if v != nil {
-		x.SetDate(*v)
-	}
-	return x
-}
-
-const RoleOf_ContactDateScopedUpdateOne_SetNillableDate = RoleStep
-
-// SetMonthDay sets the "month_day" field.
-func (x *ContactDateScopedUpdateOne) SetMonthDay(v int) *ContactDateScopedUpdateOne {
-	x.set = append(x.set, func(b *ContactDateUpdateOne) { b.SetMonthDay(v) })
-	return x
-}
-
-const RoleOf_ContactDateScopedUpdateOne_SetMonthDay = RoleStep
-
-// SetNillableMonthDay sets the "month_day" field if the given value is not nil.
-func (x *ContactDateScopedUpdateOne) SetNillableMonthDay(v *int) *ContactDateScopedUpdateOne {
-	if v != nil {
-		x.SetMonthDay(*v)
-	}
-	return x
-}
-
-const RoleOf_ContactDateScopedUpdateOne_SetNillableMonthDay = RoleStep
-
-// AddMonthDay adds value to the "month_day" field.
-func (x *ContactDateScopedUpdateOne) AddMonthDay(v int) *ContactDateScopedUpdateOne {
-	x.set = append(x.set, func(b *ContactDateUpdateOne) { b.AddMonthDay(v) })
-	return x
-}
-
-const RoleOf_ContactDateScopedUpdateOne_AddMonthDay = RoleStep
-
 // Save verifies the references against the Workspace, then updates the ContactDate.
 func (x *ContactDateScopedUpdateOne) Save(ctx context.Context) (*ContactDate, error) {
 	return x.save(ctx, "update", skipUnchanged)
@@ -27354,50 +27230,6 @@ func (x *ContactDateScopedUpdate) SetUpdatedAt(v time.Time) *ContactDateScopedUp
 }
 
 const RoleOf_ContactDateScopedUpdate_SetUpdatedAt = RoleStep
-
-// SetDate sets the "date" field.
-func (x *ContactDateScopedUpdate) SetDate(v time.Time) *ContactDateScopedUpdate {
-	x.set = append(x.set, func(b *ContactDateUpdate) { b.SetDate(v) })
-	return x
-}
-
-const RoleOf_ContactDateScopedUpdate_SetDate = RoleStep
-
-// SetNillableDate sets the "date" field if the given value is not nil.
-func (x *ContactDateScopedUpdate) SetNillableDate(v *time.Time) *ContactDateScopedUpdate {
-	if v != nil {
-		x.SetDate(*v)
-	}
-	return x
-}
-
-const RoleOf_ContactDateScopedUpdate_SetNillableDate = RoleStep
-
-// SetMonthDay sets the "month_day" field.
-func (x *ContactDateScopedUpdate) SetMonthDay(v int) *ContactDateScopedUpdate {
-	x.set = append(x.set, func(b *ContactDateUpdate) { b.SetMonthDay(v) })
-	return x
-}
-
-const RoleOf_ContactDateScopedUpdate_SetMonthDay = RoleStep
-
-// SetNillableMonthDay sets the "month_day" field if the given value is not nil.
-func (x *ContactDateScopedUpdate) SetNillableMonthDay(v *int) *ContactDateScopedUpdate {
-	if v != nil {
-		x.SetMonthDay(*v)
-	}
-	return x
-}
-
-const RoleOf_ContactDateScopedUpdate_SetNillableMonthDay = RoleStep
-
-// AddMonthDay adds value to the "month_day" field.
-func (x *ContactDateScopedUpdate) AddMonthDay(v int) *ContactDateScopedUpdate {
-	x.set = append(x.set, func(b *ContactDateUpdate) { b.AddMonthDay(v) })
-	return x
-}
-
-const RoleOf_ContactDateScopedUpdate_AddMonthDay = RoleStep
 
 // build makes the ent update on the client of s and verifies the references it sets.
 func (x *ContactDateScopedUpdate) build(ctx context.Context, s *Scoped) (*ContactDateUpdate, error) {

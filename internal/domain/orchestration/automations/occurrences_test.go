@@ -330,6 +330,24 @@ func TestASendLockedDateEnrollsNoOneUntilAWriteWithoutTheMark(t *testing.T) {
 	assert.Equal(t, []time.Time{at(2027, time.March, 14, 10, 0)}, c.beganAt(id, fixtures.ContactAliceID))
 }
 
+// A date written during a scheduler outage more than 24 hours after its occurrence is a date set
+// late (decision 15 of #1613): it has no occurrence this year and counts no `missed`, while a date
+// in place at its occurrence is `missed`.
+func TestADateWrittenDuringAnOutageAfterItsOccurrenceIsNotMissed(t *testing.T) {
+	c := newDateCase(t, at(2027, time.March, 13, 12, 0))
+	c.born(fixtures.ContactExportSubjectID, at(1990, time.March, 14, 0, 0), "")
+	id := c.publish(birthday(0, "10:00"))
+	c.tickAt(id, at(2027, time.March, 13, 12, 5))
+
+	c.clock.Set(at(2027, time.March, 15, 12, 0))
+	c.born(fixtures.ContactAliceID, at(1990, time.March, 14, 0, 0), "")
+	c.tickAt(id, at(2027, time.March, 15, 16, 0))
+
+	assert.Empty(t, c.beganAt(id, fixtures.ContactAliceID))
+	assert.Empty(t, c.skips(id, fixtures.ContactAliceID), "written 26 hours after its occurrence")
+	assert.Equal(t, []automationskippedentry.Reason{automationskippedentry.ReasonMissed}, c.skips(id, fixtures.ContactExportSubjectID))
+}
+
 // After an outage of years each year's occurrence is decided `missed` once, and a tick that comes
 // round again records none twice.
 func TestEveryOccurrenceOfAnOutageIsMissedOnce(t *testing.T) {

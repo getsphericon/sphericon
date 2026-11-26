@@ -1309,7 +1309,6 @@ func ScopedEntities() []*ScopedEntity {
 				if !reflect.ValueOf(src.CustomFields).IsZero() {
 					b.SetCustomFields(src.CustomFields)
 				}
-				b.SetSendLockedDates(src.SendLockedDates)
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err
@@ -1390,6 +1389,8 @@ func ScopedEntities() []*ScopedEntity {
 				b.SetKey(src.Key)
 				b.SetDate(src.Date)
 				b.SetMonthDay(src.MonthDay)
+				b.SetWrittenAt(src.WrittenAt)
+				b.SetSendLocked(src.SendLocked)
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

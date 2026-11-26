@@ -32,6 +32,10 @@ const (
 	FieldDate = "date"
 	// FieldMonthDay holds the string denoting the month_day field in the database.
 	FieldMonthDay = "month_day"
+	// FieldWrittenAt holds the string denoting the written_at field in the database.
+	FieldWrittenAt = "written_at"
+	// FieldSendLocked holds the string denoting the send_locked field in the database.
+	FieldSendLocked = "send_locked"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// EdgeContact holds the string denoting the contact edge name in mutations.
@@ -65,6 +69,8 @@ var Columns = []string{
 	FieldKey,
 	FieldDate,
 	FieldMonthDay,
+	FieldWrittenAt,
+	FieldSendLocked,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -142,6 +148,16 @@ func ByDate(opts ...sql.OrderTermOption) OrderOption {
 // ByMonthDay orders the results by the month_day field.
 func ByMonthDay(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldMonthDay, opts...).ToFunc()
+}
+
+// ByWrittenAt orders the results by the written_at field.
+func ByWrittenAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWrittenAt, opts...).ToFunc()
+}
+
+// BySendLocked orders the results by the send_locked field.
+func BySendLocked(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSendLocked, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.

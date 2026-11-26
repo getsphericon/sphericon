@@ -50,41 +50,6 @@ func (_u *ContactDateUpdate) SetNillableWorkspaceID(v *int64) *ContactDateUpdate
 	return _u
 }
 
-// SetDate sets the "date" field.
-func (_u *ContactDateUpdate) SetDate(v time.Time) *ContactDateUpdate {
-	_u.mutation.SetDate(v)
-	return _u
-}
-
-// SetNillableDate sets the "date" field if the given value is not nil.
-func (_u *ContactDateUpdate) SetNillableDate(v *time.Time) *ContactDateUpdate {
-	if v != nil {
-		_u.SetDate(*v)
-	}
-	return _u
-}
-
-// SetMonthDay sets the "month_day" field.
-func (_u *ContactDateUpdate) SetMonthDay(v int) *ContactDateUpdate {
-	_u.mutation.ResetMonthDay()
-	_u.mutation.SetMonthDay(v)
-	return _u
-}
-
-// SetNillableMonthDay sets the "month_day" field if the given value is not nil.
-func (_u *ContactDateUpdate) SetNillableMonthDay(v *int) *ContactDateUpdate {
-	if v != nil {
-		_u.SetMonthDay(*v)
-	}
-	return _u
-}
-
-// AddMonthDay adds value to the "month_day" field.
-func (_u *ContactDateUpdate) AddMonthDay(v int) *ContactDateUpdate {
-	_u.mutation.AddMonthDay(v)
-	return _u
-}
-
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *ContactDateUpdate) SetWorkspace(v *Workspace) *ContactDateUpdate {
 	return _u.SetWorkspaceID(v.ID)
@@ -169,15 +134,6 @@ func (_u *ContactDateUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(contactdate.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := _u.mutation.Date(); ok {
-		_spec.SetField(contactdate.FieldDate, field.TypeTime, value)
-	}
-	if value, ok := _u.mutation.MonthDay(); ok {
-		_spec.SetField(contactdate.FieldMonthDay, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.AddedMonthDay(); ok {
-		_spec.AddField(contactdate.FieldMonthDay, field.TypeInt, value)
-	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -246,41 +202,6 @@ func (_u *ContactDateUpdateOne) SetNillableWorkspaceID(v *int64) *ContactDateUpd
 	if v != nil {
 		_u.SetWorkspaceID(*v)
 	}
-	return _u
-}
-
-// SetDate sets the "date" field.
-func (_u *ContactDateUpdateOne) SetDate(v time.Time) *ContactDateUpdateOne {
-	_u.mutation.SetDate(v)
-	return _u
-}
-
-// SetNillableDate sets the "date" field if the given value is not nil.
-func (_u *ContactDateUpdateOne) SetNillableDate(v *time.Time) *ContactDateUpdateOne {
-	if v != nil {
-		_u.SetDate(*v)
-	}
-	return _u
-}
-
-// SetMonthDay sets the "month_day" field.
-func (_u *ContactDateUpdateOne) SetMonthDay(v int) *ContactDateUpdateOne {
-	_u.mutation.ResetMonthDay()
-	_u.mutation.SetMonthDay(v)
-	return _u
-}
-
-// SetNillableMonthDay sets the "month_day" field if the given value is not nil.
-func (_u *ContactDateUpdateOne) SetNillableMonthDay(v *int) *ContactDateUpdateOne {
-	if v != nil {
-		_u.SetMonthDay(*v)
-	}
-	return _u
-}
-
-// AddMonthDay adds value to the "month_day" field.
-func (_u *ContactDateUpdateOne) AddMonthDay(v int) *ContactDateUpdateOne {
-	_u.mutation.AddMonthDay(v)
 	return _u
 }
 
@@ -397,15 +318,6 @@ func (_u *ContactDateUpdateOne) sqlSave(ctx context.Context) (_node *ContactDate
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(contactdate.FieldUpdatedAt, field.TypeTime, value)
-	}
-	if value, ok := _u.mutation.Date(); ok {
-		_spec.SetField(contactdate.FieldDate, field.TypeTime, value)
-	}
-	if value, ok := _u.mutation.MonthDay(); ok {
-		_spec.SetField(contactdate.FieldMonthDay, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.AddedMonthDay(); ok {
-		_spec.AddField(contactdate.FieldMonthDay, field.TypeInt, value)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

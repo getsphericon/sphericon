@@ -1108,7 +1108,6 @@ var (
 		{Name: "avatar", Type: field.TypeString, Nullable: true},
 		{Name: "source", Type: field.TypeEnum, Enums: []string{"manual", "api", "tracker"}},
 		{Name: "custom_fields", Type: field.TypeJSON, Nullable: true},
-		{Name: "send_locked_dates", Type: field.TypeJSON, Default: "[]"},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// ContactsTable holds the schema information for the "contacts" table.
@@ -1119,7 +1118,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "contacts_workspaces_contacts",
-				Columns:    []*schema.Column{ContactsColumns[18]},
+				Columns:    []*schema.Column{ContactsColumns[17]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1128,27 +1127,27 @@ var (
 			{
 				Name:    "contacts_email_workspace_id",
 				Unique:  true,
-				Columns: []*schema.Column{ContactsColumns[5], ContactsColumns[18]},
+				Columns: []*schema.Column{ContactsColumns[5], ContactsColumns[17]},
 			},
 			{
 				Name:    "contacts_subject_id_workspace_id",
 				Unique:  true,
-				Columns: []*schema.Column{ContactsColumns[4], ContactsColumns[18]},
+				Columns: []*schema.Column{ContactsColumns[4], ContactsColumns[17]},
 			},
 			{
 				Name:    "contacts_phone_workspace_id",
 				Unique:  true,
-				Columns: []*schema.Column{ContactsColumns[6], ContactsColumns[18]},
+				Columns: []*schema.Column{ContactsColumns[6], ContactsColumns[17]},
 			},
 			{
 				Name:    "contact_workspace_id_updated_at_id",
 				Unique:  false,
-				Columns: []*schema.Column{ContactsColumns[18], ContactsColumns[2], ContactsColumns[0]},
+				Columns: []*schema.Column{ContactsColumns[17], ContactsColumns[2], ContactsColumns[0]},
 			},
 			{
 				Name:    "contacts_workspace_id_identified",
 				Unique:  false,
-				Columns: []*schema.Column{ContactsColumns[18]},
+				Columns: []*schema.Column{ContactsColumns[17]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "email IS NOT NULL AND email <> ''",
 				},
@@ -1164,6 +1163,8 @@ var (
 		{Name: "key", Type: field.TypeString},
 		{Name: "date", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "date"}},
 		{Name: "month_day", Type: field.TypeInt},
+		{Name: "written_at", Type: field.TypeTime},
+		{Name: "send_locked", Type: field.TypeBool},
 		{Name: "contact_id", Type: field.TypeInt64},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
@@ -1175,13 +1176,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "contact_dates_contacts_dates",
-				Columns:    []*schema.Column{ContactDatesColumns[7]},
+				Columns:    []*schema.Column{ContactDatesColumns[9]},
 				RefColumns: []*schema.Column{ContactsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "contact_dates_workspaces_contact_dates",
-				Columns:    []*schema.Column{ContactDatesColumns[8]},
+				Columns:    []*schema.Column{ContactDatesColumns[10]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1190,22 +1191,22 @@ var (
 			{
 				Name:    "contact_dates_field_contact",
 				Unique:  true,
-				Columns: []*schema.Column{ContactDatesColumns[8], ContactDatesColumns[3], ContactDatesColumns[4], ContactDatesColumns[7]},
+				Columns: []*schema.Column{ContactDatesColumns[10], ContactDatesColumns[3], ContactDatesColumns[4], ContactDatesColumns[9]},
 			},
 			{
 				Name:    "contactdate_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{ContactDatesColumns[8], ContactDatesColumns[7]},
+				Columns: []*schema.Column{ContactDatesColumns[10], ContactDatesColumns[9]},
 			},
 			{
 				Name:    "contactdate_workspace_id_kind_key_month_day",
 				Unique:  false,
-				Columns: []*schema.Column{ContactDatesColumns[8], ContactDatesColumns[3], ContactDatesColumns[4], ContactDatesColumns[6]},
+				Columns: []*schema.Column{ContactDatesColumns[10], ContactDatesColumns[3], ContactDatesColumns[4], ContactDatesColumns[6]},
 			},
 			{
 				Name:    "contactdate_workspace_id_kind_key_date",
 				Unique:  false,
-				Columns: []*schema.Column{ContactDatesColumns[8], ContactDatesColumns[3], ContactDatesColumns[4], ContactDatesColumns[5]},
+				Columns: []*schema.Column{ContactDatesColumns[10], ContactDatesColumns[3], ContactDatesColumns[4], ContactDatesColumns[5]},
 			},
 		},
 	}
@@ -3985,11 +3986,10 @@ func init() {
 		Table: "contacts",
 	}
 	ContactsTable.Annotation.Checks = map[string]string{
-		"contacts_country_format":          "country ~ '^[A-Z]{2}$'",
-		"contacts_email_lower":             "email = lower(email)",
-		"contacts_phone_format":            "phone ~ '^\\+[1-9]\\d{1,14}$'",
-		"contacts_send_locked_dates_check": "jsonb_typeof(send_locked_dates) = 'array'",
-		"contacts_source_check":            "source IN ('manual', 'api', 'tracker')",
+		"contacts_country_format": "country ~ '^[A-Z]{2}$'",
+		"contacts_email_lower":    "email = lower(email)",
+		"contacts_phone_format":   "phone ~ '^\\+[1-9]\\d{1,14}$'",
+		"contacts_source_check":   "source IN ('manual', 'api', 'tracker')",
 	}
 	ContactDatesTable.ForeignKeys[0].RefTable = ContactsTable
 	ContactDatesTable.ForeignKeys[1].RefTable = WorkspacesTable

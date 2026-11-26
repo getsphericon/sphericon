@@ -2,17 +2,22 @@ package contacts
 
 import (
 	"context"
-	"slices"
+
+	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contactdate"
+	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
+	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 )
 
-// The keys of a Contact's dates (ContactDate, ADR 0126): a row for each date it holds, its
-// birthday and each Custom field value that is a date, by the key the date scheduler's band finds
-// it by (datetrigger.Holder.Keys). Every writer of a Contact keeps them from the row it wrote, in
-// its transaction, beside the send lock of its date fields.
+// The dates a Contact holds (ContactDate, ADR 0126): a row for each, its birthday and each Custom
+// field value that is a date, by the key the date scheduler's band finds it by
+// (datetrigger.Holder.Keys), with when the write that set the key was made and whether it came
+// through a Connection without mcp:send (ADR 0132 as amended by ADR 0126). Every writer of a
+// Contact keeps them from the row it wrote, in its transaction (keepDates).
 
 // DatesOf is what the Contact holds of the dates (datetrigger.Holder): its birthday and its Custom
 // field values, nothing for a Contact not made yet. Every reader of a Contact's dates takes them
@@ -24,32 +29,49 @@ func DatesOf(c *ent.Contact) datetrigger.Holder {
 	return datetrigger.Holder{Birthday: c.Birthday, CustomFields: c.CustomFields}
 }
 
-// keysOf are the keys of the dates the Contact holds, none for a Contact not made yet.
-func keysOf(c *ent.Contact) []datetrigger.Keyed {
-	return DatesOf(c).Keys()
-}
-
-// keepDates rewrites the keys of the Contact's dates once a write took it from before (nil for a
-// Contact the write made) to after, in the transaction s is bound to: a write that leaves its
-// dates as they were writes nothing.
-func keepDates(ctx context.Context, s *ent.Scoped, before, after *ent.Contact) error {
-	held, keys := keysOf(before), keysOf(after)
-	if slices.Equal(held, keys) {
-		return nil
-	}
-	if len(held) > 0 {
-		if _, err := s.ContactDate().Delete().Where(contactdate.ContactID(after.ID)).Exec(ctx); err != nil {
+// keepDates keeps the dates of the Contact once a write in ctx took it from before (nil for a
+// Contact the write made) to after, in the transaction s is bound to. A field whose key the write
+// changed gets a new row, written now and send-locked when ctx carries the mark; a field that no
+// longer holds a date loses its row; a field whose key is as it was keeps its row, its write time
+// and its send lock.
+func (m *Module) keepDates(ctx context.Context, s *ent.Scoped, before, after *ent.Contact) error {
+	held := keyMap(DatesOf(before).Keys())
+	keys := DatesOf(after).Keys()
+	fresh := lo.Filter(keys, func(k datetrigger.Keyed, _ int) bool {
+		key, ok := held[k.Field]
+		return !ok || key != k.Key
+	})
+	kept := keyMap(keys)
+	gone := lo.Filter(lo.Keys(held), func(f datetrigger.Field, _ int) bool {
+		key, ok := kept[f]
+		return !ok || key != held[f]
+	})
+	if len(gone) > 0 {
+		fields := lo.Map(gone, func(f datetrigger.Field, _ int) predicate.ContactDate {
+			return contactdate.And(contactdate.KindEQ(f.Kind), contactdate.Key(f.Key))
+		})
+		if _, err := s.ContactDate().Delete().Where(contactdate.ContactID(after.ID), contactdate.Or(fields...)).Exec(ctx); err != nil {
 			return err
 		}
 	}
-	rows := make([]*ent.ContactDateScopedCreate, len(keys))
-	for i, k := range keys {
-		rows[i] = s.ContactDate().Create().
+	if len(fresh) == 0 {
+		return nil
+	}
+	now, locked := m.now(), events.IsSendLocked(ctx)
+	rows := lo.Map(fresh, func(k datetrigger.Keyed, _ int) *ent.ContactDateScopedCreate {
+		return s.ContactDate().Create().
 			SetContactID(after.ID).
 			SetKind(k.Field.Kind).
 			SetKey(k.Field.Key).
 			SetDate(k.Key.Midnight()).
-			SetMonthDay(k.Key.MonthDay())
-	}
+			SetMonthDay(k.Key.MonthDay()).
+			SetWrittenAt(now).
+			SetSendLocked(locked)
+	})
 	return s.ContactDate().CreateBulk(rows...).Exec(ctx)
+}
+
+// keyMap is the keys by their field.
+func keyMap(keys []datetrigger.Keyed) map[datetrigger.Field]localcalendar.Date {
+	return lo.SliceToMap(keys, func(k datetrigger.Keyed) (datetrigger.Field, localcalendar.Date) { return k.Field, k.Key })
 }

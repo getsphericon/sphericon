@@ -3,7 +3,6 @@ package automations
 import (
 	"context"
 	"fmt"
-	"slices"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -297,9 +296,11 @@ func yearsIn(d datetrigger.Date, w window, c *ent.Contact, workspaceZone *string
 // lock (ADR 0126): it reads the Contact there and computes the moment again, and leaves it alone
 // unless the Automation is still active on the version it was found on and the moment still falls
 // in the window. An occurrence decided already (an Enrollment, or a skipped entry
-// `active_enrollment` or `missed`) is left alone. One whose date was last written through a
-// Connection without mcp:send is skipped as `send_locked`, once, and stays undecided; one reached
-// 24 hours late or more is `missed`, unless it is a date set late. An Enrollment of the Contact in
+// `active_enrollment` or `missed`) is left alone. One whose date was written through a Connection
+// without mcp:send is skipped as `send_locked`, once, and stays undecided. One reached 24 hours
+// late or more is `missed` when its date was written by its moment (decision 15 of #1613), and
+// has none when the date was written after it; a date set late found by the late path is never
+// `missed`. An Enrollment of the Contact in
 // the Automation active at the moment skips it as `active_enrollment`; otherwise the Enrollment
 // begins at the moment with an empty `event` (enroll).
 func (m *StepExecution) decideOccurrence(ctx context.Context, s *ent.Scoped, c occurrenceCase) error {
@@ -320,13 +321,25 @@ func (m *StepExecution) decideOccurrence(ctx context.Context, s *ent.Scoped, c o
 			if err != nil || decided {
 				return false, err
 			}
-			switch {
-			case slices.Contains(held.SendLockedDates, c.date.Field):
-				return false, recordSkip(ctx, ts, a.ID, held.ID, *o, automationskippedentry.ReasonSendLocked)
-			case !c.late && c.now.Sub(at) >= lateBound:
-				return false, recordSkip(ctx, ts, a.ID, held.ID, *o, automationskippedentry.ReasonMissed)
+			written, err := ts.ContactDate().Query().
+				Where(contactdate.ContactID(held.ID), contactdate.KindEQ(c.date.Field.Kind), contactdate.Key(c.date.Field.Key)).
+				Only(ctx)
+			if err != nil {
+				return false, err
 			}
-			return true, nil
+			if written.SendLocked {
+				return false, recordSkip(ctx, ts, a.ID, held.ID, *o, automationskippedentry.ReasonSendLocked)
+			}
+			if c.late || c.now.Sub(at) < lateBound {
+				return true, nil
+			}
+			if written.WrittenAt.After(at) {
+				// A date written after its occurrence is a date set late (decision 15 of #1613), here
+				// 24 hours late or more: it has no occurrence this year, and the app failed to send
+				// nothing.
+				return false, nil
+			}
+			return false, recordSkip(ctx, ts, a.ID, held.ID, *o, automationskippedentry.ReasonMissed)
 		})
 	})
 	return err

@@ -1,13 +1,16 @@
 # The keys of the dates the fixture Contacts hold (ADR 0126): the birthday, and each Custom field
-# value that is a date, read in UTC. The contacts module writes them with every Contact it writes;
-# fixtures load without it, so each Contact's are here, and
-# internal/fixtures/contact_dates_test.go checks they are exactly those its row holds.
+# value that is a date, read in UTC, each written when its Contact was and without the send lock.
+# The contacts module writes them with every Contact it writes; fixtures load without it, so each
+# Contact's are here, and internal/fixtures/contact_dates_test.go checks they are exactly those its
+# row holds.
 - id: 1
   contact_id: 100
   kind: birthday
   key: ''
   date: '1994-03-14'
   month_day: 314
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 1
 - id: 2
   contact_id: 101
@@ -15,6 +18,8 @@
   key: ''
   date: '1998-07-02'
   month_day: 702
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 1
 - id: 3
   contact_id: 5540
@@ -22,6 +27,8 @@
   key: ''
   date: '1990-05-01'
   month_day: 501
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 57
 - id: 4
   contact_id: 5542
@@ -29,6 +36,8 @@
   key: ''
   date: '1985-11-20'
   month_day: 1120
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 57
 - id: 5
   contact_id: 5574
@@ -36,6 +45,8 @@
   key: 'seen_at'
   date: '2026-01-01'
   month_day: 101
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 62
 - id: 6
   contact_id: 5578
@@ -43,6 +54,8 @@
   key: 'seen_at'
   date: '2020-01-01'
   month_day: 101
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 62
 - id: 7
   contact_id: 5579
@@ -50,6 +63,8 @@
   key: 'seen_at'
   date: '2019-12-31'
   month_day: 1231
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 62
 - id: 8
   contact_id: 7703
@@ -57,6 +72,8 @@
   key: 'trial_ends'
   date: '2026-01-15'
   month_day: 115
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 94
 - id: 9
   contact_id: 7704
@@ -64,6 +81,8 @@
   key: 'trial_ends'
   date: '2026-01-15'
   month_day: 115
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 94
 - id: 10
   contact_id: 7705
@@ -71,6 +90,8 @@
   key: 'trial_ends'
   date: '2026-01-15'
   month_day: 115
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 94
 - id: 11
   contact_id: 7709
@@ -78,6 +99,8 @@
   key: 'renewal'
   date: '2026-01-15'
   month_day: 115
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 94
 - id: 12
   contact_id: 7710
@@ -85,6 +108,8 @@
   key: 'ends_on'
   date: '2026-01-15'
   month_day: 115
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 94
 - id: 13
   contact_id: 7710
@@ -92,6 +117,8 @@
   key: 'has_it'
   date: '2026-01-15'
   month_day: 115
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 94
 - id: 14
   contact_id: 20002
@@ -99,6 +126,8 @@
   key: 'last_lesson_at'
   date: '2026-10-23'
   month_day: 1023
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 15
   contact_id: 20003
@@ -106,6 +135,8 @@
   key: 'last_lesson_at'
   date: '2026-10-24'
   month_day: 1024
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 16
   contact_id: 20005
@@ -113,6 +144,8 @@
   key: 'last_lesson_at'
   date: '2026-10-26'
   month_day: 1026
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 17
   contact_id: 20006
@@ -120,6 +153,8 @@
   key: 'last_lesson_at'
   date: '2026-10-27'
   month_day: 1027
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 18
   contact_id: 20008
@@ -127,6 +162,8 @@
   key: 'last_lesson_at'
   date: '2026-10-02'
   month_day: 1002
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 19
   contact_id: 20009
@@ -134,6 +171,8 @@
   key: 'last_lesson_at'
   date: '2026-10-03'
   month_day: 1003
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 20
   contact_id: 20011
@@ -141,6 +180,8 @@
   key: 'last_lesson_at'
   date: '2026-10-05'
   month_day: 1005
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 21
   contact_id: 20012
@@ -148,6 +189,8 @@
   key: 'last_lesson_at'
   date: '2026-10-06'
   month_day: 1006
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 22
   contact_id: 20014
@@ -155,6 +198,8 @@
   key: 'last_lesson_at'
   date: '2026-10-08'
   month_day: 1008
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 23
   contact_id: 20015
@@ -162,6 +207,8 @@
   key: 'last_lesson_at'
   date: '2026-10-09'
   month_day: 1009
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 24
   contact_id: 20017
@@ -169,6 +216,8 @@
   key: 'last_lesson_at'
   date: '2026-10-11'
   month_day: 1011
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 25
   contact_id: 20018
@@ -176,6 +225,8 @@
   key: 'last_lesson_at'
   date: '2026-10-12'
   month_day: 1012
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 26
   contact_id: 20020
@@ -183,6 +234,8 @@
   key: 'last_lesson_at'
   date: '2026-10-14'
   month_day: 1014
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 27
   contact_id: 20021
@@ -190,6 +243,8 @@
   key: 'last_lesson_at'
   date: '2026-10-15'
   month_day: 1015
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 28
   contact_id: 20023
@@ -197,6 +252,8 @@
   key: 'last_lesson_at'
   date: '2026-10-17'
   month_day: 1017
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 29
   contact_id: 20024
@@ -204,6 +261,8 @@
   key: 'last_lesson_at'
   date: '2026-10-18'
   month_day: 1018
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 30
   contact_id: 20026
@@ -211,6 +270,8 @@
   key: 'last_lesson_at'
   date: '2026-10-20'
   month_day: 1020
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 31
   contact_id: 20027
@@ -218,6 +279,8 @@
   key: 'last_lesson_at'
   date: '2026-10-21'
   month_day: 1021
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 32
   contact_id: 20029
@@ -225,6 +288,8 @@
   key: 'last_lesson_at'
   date: '2026-10-23'
   month_day: 1023
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 33
   contact_id: 20030
@@ -232,6 +297,8 @@
   key: 'last_lesson_at'
   date: '2026-10-24'
   month_day: 1024
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 34
   contact_id: 20032
@@ -239,6 +306,8 @@
   key: 'last_lesson_at'
   date: '2026-10-26'
   month_day: 1026
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 35
   contact_id: 20033
@@ -246,6 +315,8 @@
   key: 'last_lesson_at'
   date: '2026-10-27'
   month_day: 1027
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 36
   contact_id: 20035
@@ -253,6 +324,8 @@
   key: 'last_lesson_at'
   date: '2026-10-02'
   month_day: 1002
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 37
   contact_id: 20036
@@ -260,6 +333,8 @@
   key: 'last_lesson_at'
   date: '2026-10-03'
   month_day: 1003
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 38
   contact_id: 20038
@@ -267,6 +342,8 @@
   key: 'last_lesson_at'
   date: '2026-10-05'
   month_day: 1005
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 39
   contact_id: 20039
@@ -274,6 +351,8 @@
   key: 'last_lesson_at'
   date: '2026-10-06'
   month_day: 1006
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 40
   contact_id: 20041
@@ -281,6 +360,8 @@
   key: 'last_lesson_at'
   date: '2026-10-08'
   month_day: 1008
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 41
   contact_id: 20042
@@ -288,6 +369,8 @@
   key: 'last_lesson_at'
   date: '2026-10-09'
   month_day: 1009
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 42
   contact_id: 20044
@@ -295,6 +378,8 @@
   key: 'last_lesson_at'
   date: '2026-10-11'
   month_day: 1011
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 43
   contact_id: 20045
@@ -302,6 +387,8 @@
   key: 'last_lesson_at'
   date: '2026-10-12'
   month_day: 1012
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 44
   contact_id: 20047
@@ -309,6 +396,8 @@
   key: 'last_lesson_at'
   date: '2026-10-14'
   month_day: 1014
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 - id: 45
   contact_id: 20048
@@ -316,6 +405,8 @@
   key: 'last_lesson_at'
   date: '2026-10-15'
   month_day: 1015
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 20
 # Globex (workspace 2): the foreign row the scoped-client isolation tests need, Reese's birthday.
 - id: 46
@@ -324,4 +415,6 @@
   key: ''
   date: '1988-06-21'
   month_day: 621
+  written_at: '2026-01-01 00:00:00'
+  send_locked: false
   workspace_id: 2
