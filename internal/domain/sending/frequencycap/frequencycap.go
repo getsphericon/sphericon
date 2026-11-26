@@ -149,8 +149,10 @@ type Standings map[string]Standing
 func (sts Standings) Over(dest string) bool { return sts[dest].Over() }
 
 // standingsAt reads where each of dests on ch stands at the moment at under rule, through s: in the
-// transaction that holds their locks for a claim, or outside any for a probe.
-func standingsAt(ctx context.Context, s *ent.Scoped, rule Rule, ch channels.Channel, dests []string, at time.Time) (Standings, error) {
+// transaction that holds their locks for a claim, or outside any for a probe. A probe reads only the
+// rows counted up to at (upTo), so a moment past reads as it stood; a claim counts every place in the
+// period, so a row another worker wrote by a clock a little ahead of this one's still holds.
+func standingsAt(ctx context.Context, s *ent.Scoped, rule Rule, ch channels.Channel, dests []string, at time.Time, upTo bool) (Standings, error) {
 	sts := Standings{}
 	var capped []string
 	var longest time.Duration
@@ -165,10 +167,11 @@ func standingsAt(ctx context.Context, s *ent.Scoped, rule Rule, ch channels.Chan
 	if len(capped) == 0 {
 		return sts, nil
 	}
-	rows, err := s.FrequencyCount().Query().
-		Where(append(holdingPlaces(ch, at.Add(-longest)), frequencycount.DestinationIn(capped...), frequencycount.CountedAtLTE(at))...).
-		Order(frequencycount.ByCountedAt()).
-		All(ctx)
+	where := append(holdingPlaces(ch, at.Add(-longest)), frequencycount.DestinationIn(capped...))
+	if upTo {
+		where = append(where, frequencycount.CountedAtLTE(at))
+	}
+	rows, err := s.FrequencyCount().Query().Where(where...).Order(frequencycount.ByCountedAt()).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("frequencycap: read the counts: %w", err)
 	}
@@ -221,7 +224,7 @@ func (m *Module) Probe(ctx context.Context, s *ent.Scoped, in ProbeInput) (Stand
 	if err != nil {
 		return nil, err
 	}
-	return standingsAt(ctx, s, rule, in.Channel, in.Destinations, in.At)
+	return standingsAt(ctx, s, rule, in.Channel, in.Destinations, in.At, true)
 }
 
 // Claim is a message about to be claimed on Channel: Destinations are the ones it counts at (none
@@ -253,7 +256,7 @@ func (m *Module) Within(ctx context.Context, s *ent.Scoped, in Claim, fn func(l 
 		}
 	}
 	return m.bus.WithinDestinationLockTx(ctx, s, keys, func(l *ent.DestinationLocked) error {
-		sts, err := standingsAt(ctx, l.Scope(), rule, in.Channel, in.Destinations, m.now())
+		sts, err := standingsAt(ctx, l.Scope(), rule, in.Channel, in.Destinations, m.now(), false)
 		if err != nil {
 			return err
 		}
@@ -283,6 +286,20 @@ func (m *Module) Count(ctx context.Context, l *ent.DestinationLocked, in CountIn
 		return fmt.Errorf("frequencycap: count message %d: %w", in.MessageID, err)
 	}
 	return nil
+}
+
+// PlacesOf is the Destinations the message holds a place at: those its claim was counted at, less
+// any the provider dropped since. A claim taken over goes to these alone, the ones its places were
+// taken for under the cap.
+func (m *Module) PlacesOf(ctx context.Context, s *ent.Scoped, messageID int64) ([]string, error) {
+	dests, err := s.FrequencyCount().Query().
+		Where(frequencycount.OutboundMessageID(messageID)).
+		Select(frequencycount.FieldDestination).
+		Strings(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("frequencycap: read the places of message %d: %w", messageID, err)
+	}
+	return dests, nil
 }
 
 // UncountInput is a target the provider dropped from a message: the Destination it no longer

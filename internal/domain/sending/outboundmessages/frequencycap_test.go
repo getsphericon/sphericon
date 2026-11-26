@@ -2,6 +2,7 @@ package outboundmessages_test
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
 
@@ -196,4 +197,68 @@ func TestTheProbeReadsTheCountAndTheReleaseMomentOfADestination(t *testing.T) {
 	assert.True(t, released.Release.IsZero())
 	assert.Zero(t, before.Count, "nothing was counted before the first")
 	assert.Equal(t, 3, counted(t, env, fixtures.AcmeID, channels.Email, fixtures.ContactAliceEmail), "the probe wrote nothing")
+}
+
+// A place counted by a worker whose clock runs ahead still holds for a worker whose clock is behind:
+// under the lock every place in the period counts, whatever moment its row carries.
+func TestAPlaceCountedByAWorkerAheadHoldsForOneBehind(t *testing.T) {
+	env := testhelper.Setup(t)
+	behind := startClock()
+	capEmail(t, env, 1)
+	ahead := testhelper.NewClock(behind.Now().Add(time.Second))
+	first := send(t, newModule(env, ahead.Now), env, "cap:ahead")
+
+	second := send(t, newModule(env, behind.Now), env, "cap:behind")
+
+	require.Equal(t, outboundmessages.Sent, first.Outcome)
+	assert.Equal(t, outboundmessages.Skipped, second.Outcome)
+	assert.Equal(t, skipreason.FrequencyCap, second.SkippedReason)
+}
+
+// The claim of the second message counted Tia's other chat only, her first being at its cap. The
+// provider fails once and the retry takes the claim over: it goes to the chat its claim counted, not
+// to the one the cap dropped.
+func TestARetryGoesOnlyToTheDestinationsItsClaimCounted(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	bot := env.LacunaTelegram(t)
+	env.DB.FrequencyCap.UpdateOneID(fixtures.FrequencyCapLacunaTelegramID).SetMaxMessages(1).SetPeriodMinutes(1440).ExecX(ctx)
+	env.DB.Unsubscribe.UpdateOneID(fixtures.UnsubscribeLacunaStoppedID).SetDestination(tiaOtherChat).ExecX(ctx)
+	require.Equal(t, outboundmessages.Sent, sendToTia(t, env, telegramToTia(t, env, bot, "cap:retry:1")).Outcome)
+	env.DB.Unsubscribe.DeleteOneID(fixtures.UnsubscribeLacunaStoppedID).ExecX(ctx)
+	env.Telegram.FailOnce(telegramtest.SendMessage, telegramtest.Failure{Code: http.StatusInternalServerError, Description: "Internal Server Error"})
+	_, err := env.OutboundModule().Send(ctx, env.DB.Scoped(fixtures.LacunaID), telegramToTia(t, env, bot, "cap:retry:2"))
+	require.Error(t, err)
+
+	retry := sendToTia(t, env, telegramToTia(t, env, bot, "cap:retry:2"))
+
+	assert.Equal(t, outboundmessages.Sent, retry.Outcome)
+	chats := lo.Map(env.Telegram.RequestsOf(telegramtest.SendMessage), func(r telegramtest.Request, _ int) string { return r.String("chat_id") })
+	assert.Equal(t, []string{tiaChat, tiaOtherChat, tiaOtherChat}, chats, "the retry does not reach the chat at its cap")
+	assert.Equal(t, 1, counted(t, env, fixtures.LacunaID, channels.Telegram, tiaChat))
+}
+
+// As above, but Tia's other chat opts out of Broadcasts before the retry: the one chat the claim
+// holds a place at is no longer a target, and the chat at its cap is not one the claim may reach, so
+// the retry is Skipped.
+func TestARetryWhoseCountedDestinationsAreGoneIsSkipped(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	bot := env.LacunaTelegram(t)
+	env.DB.FrequencyCap.UpdateOneID(fixtures.FrequencyCapLacunaTelegramID).SetMaxMessages(1).SetPeriodMinutes(1440).ExecX(ctx)
+	env.DB.Unsubscribe.UpdateOneID(fixtures.UnsubscribeLacunaStoppedID).SetDestination(tiaOtherChat).ExecX(ctx)
+	require.Equal(t, outboundmessages.Sent, sendToTia(t, env, telegramToTia(t, env, bot, "cap:gone:1")).Outcome)
+	env.DB.Unsubscribe.UpdateOneID(fixtures.UnsubscribeLacunaStoppedID).SetDestination("77407").ExecX(ctx)
+	env.Telegram.FailOnce(telegramtest.SendMessage, telegramtest.Failure{Code: http.StatusInternalServerError, Description: "Internal Server Error"})
+	_, err := env.OutboundModule().Send(ctx, env.DB.Scoped(fixtures.LacunaID), telegramToTia(t, env, bot, "cap:gone:2"))
+	require.Error(t, err)
+	env.DB.Unsubscribe.UpdateOneID(fixtures.UnsubscribeLacunaStoppedID).SetDestination(tiaOtherChat).ExecX(ctx)
+
+	retry := sendToTia(t, env, telegramToTia(t, env, bot, "cap:gone:2"))
+
+	assert.Equal(t, outboundmessages.Skipped, retry.Outcome)
+	assert.Equal(t, skipreason.NoDestination, retry.SkippedReason)
+	chats := lo.Map(env.Telegram.RequestsOf(telegramtest.SendMessage), func(r telegramtest.Request, _ int) string { return r.String("chat_id") })
+	assert.Equal(t, []string{tiaChat, tiaOtherChat}, chats, "the retry reaches neither chat")
+	assert.Equal(t, 1, counted(t, env, fixtures.LacunaID, channels.Telegram, tiaChat))
 }

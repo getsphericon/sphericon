@@ -52,7 +52,7 @@ type claimed struct {
 // check, or one that appears in a race) it is replayed when final, taken over when
 // its lease has expired, and otherwise reported as ErrInProgress. A claim taken over counts nothing
 // new and is not capped again: its rows have held its places since it was written (ADR 0178), and it
-// goes to targets as resolved now.
+// goes only to those of targets it holds a place at (placedTargets).
 func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest string, g gateResult, existing *ent.OutboundMessage, targets []target) (claimed, *Result, error) {
 	if existing == nil {
 		n, err := m.claimNew(ctx, s, req, dest, g, targets)
@@ -69,7 +69,27 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest str
 		return claimed{}, &r, nil
 	}
 	msg, replay, err := m.adopt(ctx, s, req, existing)
-	return claimed{msg: msg, targets: targets}, replay, err
+	if err != nil || replay != nil {
+		return claimed{}, replay, err
+	}
+	placed, err := m.placedTargets(ctx, s, req, msg, targets)
+	return claimed{msg: msg, targets: placed}, nil, err
+}
+
+// placedTargets is the targets a claim taken over goes to: for a message that counts, those it
+// holds a place at, so a retry never reaches a Destination the cap dropped when the claim was
+// written; all of them for one that does not count, or for a claim that holds no place at all
+// (written before the count was).
+func (m *Module) placedTargets(ctx context.Context, s *ent.Scoped, req Request, msg *ent.OutboundMessage, targets []target) ([]target, error) {
+	limits, err := recipientLimitsOf(req.Kind())
+	if err != nil || !limits.counts {
+		return targets, err
+	}
+	places, err := m.caps.PlacesOf(ctx, s, msg.ID)
+	if err != nil || len(places) == 0 {
+		return targets, err
+	}
+	return lo.Filter(targets, func(t target, _ int) bool { return lo.Contains(places, t.dest) }), nil
 }
 
 // decidedNew is what a new row claimNew wrote comes to once its transaction committed: the source's

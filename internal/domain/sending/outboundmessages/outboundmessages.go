@@ -567,6 +567,10 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		return *replay, nil
 	}
 	msg, eligible := c.msg, c.targets
+	if len(eligible) == 0 {
+		// A claim taken over whose every Destination with a place is gone or ineligible since.
+		return m.skip(ctx, s, msg, skipreason.NoDestination)
+	}
 	dest = eligible[0].dest
 
 	// Whether the message goes out tracked is decided now, after the claim, so a refusal recorded
