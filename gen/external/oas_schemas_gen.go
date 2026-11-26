@@ -2219,6 +2219,11 @@ type AutomationReport struct {
 	// then by the fork's place there and the path's place in the fork: one entry per path an enrollment
 	// took, so a path none took has none.
 	Paths []AutomationPathFigures `json:"paths"`
+	// Each Wait until by its Step id, summed over every version that had it: the enrollments that left it
+	// in the current period without waiting, because its date had no moment ahead within 366 days (ADR
+	// 0126). In Step id order: one entry per Wait until any enrollment left so, so one that every
+	// enrollment waited on has none.
+	WaitUntilSteps []AutomationWaitUntilFigures `json:"waitUntilSteps"`
 }
 
 // GetOpens returns the value of Opens.
@@ -2281,6 +2286,11 @@ func (s *AutomationReport) GetPaths() []AutomationPathFigures {
 	return s.Paths
 }
 
+// GetWaitUntilSteps returns the value of WaitUntilSteps.
+func (s *AutomationReport) GetWaitUntilSteps() []AutomationWaitUntilFigures {
+	return s.WaitUntilSteps
+}
+
 // SetOpens sets the value of Opens.
 func (s *AutomationReport) SetOpens(val int32) {
 	s.Opens = val
@@ -2339,6 +2349,11 @@ func (s *AutomationReport) SetVersionSteps(val []AutomationVersionStepFigures) {
 // SetPaths sets the value of Paths.
 func (s *AutomationReport) SetPaths(val []AutomationPathFigures) {
 	s.Paths = val
+}
+
+// SetWaitUntilSteps sets the value of WaitUntilSteps.
+func (s *AutomationReport) SetWaitUntilSteps(val []AutomationWaitUntilFigures) {
+	s.WaitUntilSteps = val
 }
 
 // The length of the period an automation's results are read over, in Report days (ADR 0057), today
@@ -3692,6 +3707,60 @@ func (s *AutomationVersionStepFigures) SetSent(val int32) {
 // SetSkipped sets the value of Skipped.
 func (s *AutomationVersionStepFigures) SetSkipped(val int32) {
 	s.Skipped = val
+}
+
+// The enrollments that went on at once from one Wait until on a date instead of waiting, by why: read
+// from what each kept when it reached the Step, counted on the moment it left it.
+// Ref: #/components/schemas/AutomationWaitUntilFigures
+type AutomationWaitUntilFigures struct {
+	// The Wait until's Step id, the same in every version.
+	StepId StepId `json:"stepId"`
+	// Its moment had passed: a once date before the arrival.
+	Past int32 `json:"past"`
+	// The contact held no date in the field, or a value that is no date.
+	NoDate int32 `json:"noDate"`
+	// Its moment lay more than 366 days ahead, such as a yearly date whose value is itself in the future.
+	BeyondBound int32 `json:"beyondBound"`
+}
+
+// GetStepId returns the value of StepId.
+func (s *AutomationWaitUntilFigures) GetStepId() StepId {
+	return s.StepId
+}
+
+// GetPast returns the value of Past.
+func (s *AutomationWaitUntilFigures) GetPast() int32 {
+	return s.Past
+}
+
+// GetNoDate returns the value of NoDate.
+func (s *AutomationWaitUntilFigures) GetNoDate() int32 {
+	return s.NoDate
+}
+
+// GetBeyondBound returns the value of BeyondBound.
+func (s *AutomationWaitUntilFigures) GetBeyondBound() int32 {
+	return s.BeyondBound
+}
+
+// SetStepId sets the value of StepId.
+func (s *AutomationWaitUntilFigures) SetStepId(val StepId) {
+	s.StepId = val
+}
+
+// SetPast sets the value of Past.
+func (s *AutomationWaitUntilFigures) SetPast(val int32) {
+	s.Past = val
+}
+
+// SetNoDate sets the value of NoDate.
+func (s *AutomationWaitUntilFigures) SetNoDate(val int32) {
+	s.NoDate = val
+}
+
+// SetBeyondBound sets the value of BeyondBound.
+func (s *AutomationWaitUntilFigures) SetBeyondBound(val int32) {
+	s.BeyondBound = val
 }
 
 // Paginated response.

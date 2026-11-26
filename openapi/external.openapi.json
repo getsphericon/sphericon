@@ -6419,7 +6419,8 @@
           "results",
           "steps",
           "versionSteps",
-          "paths"
+          "paths",
+          "waitUntilSteps"
         ],
         "properties": {
           "opens": {
@@ -6495,6 +6496,13 @@
               "$ref": "#/components/schemas/AutomationPathFigures"
             },
             "description": "Each path of a Branch (its unknown path included) and of a Split by its fork's Step id and\nits own id: the enrollments that took it and how many of them reached the goal, over the\nautomation's whole history, each summed over every version that had the path. Sorted by the\nnewest of those versions, then by the fork's place there and the path's place in the fork:\none entry per path an enrollment took, so a path none took has none"
+          },
+          "waitUntilSteps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationWaitUntilFigures"
+            },
+            "description": "Each Wait until by its Step id, summed over every version that had it: the enrollments that\nleft it in the current period without waiting, because its date had no moment ahead within 366\ndays (ADR 0126). In Step id order: one entry per Wait until any enrollment left so, so one that\nevery enrollment waited on has none"
           }
         },
         "description": "An automation's engagement figures over its whole history and its results over a period"
@@ -6979,6 +6987,36 @@
           }
         },
         "description": "The messages one version's send Step sent"
+      },
+      "AutomationWaitUntilFigures": {
+        "type": "object",
+        "required": ["stepId", "past", "noDate", "beyondBound"],
+        "properties": {
+          "stepId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Wait until's Step id, the same in every version"
+          },
+          "past": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Its moment had passed: a once date before the arrival"
+          },
+          "noDate": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The contact held no date in the field, or a value that is no date"
+          },
+          "beyondBound": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Its moment lay more than 366 days ahead, such as a yearly date whose value is itself in the\nfuture"
+          }
+        },
+        "description": "The enrollments that went on at once from one Wait until on a date instead of waiting, by why:\nread from what each kept when it reached the Step, counted on the moment it left it"
       },
       "BirthdayDateField": {
         "type": "object",

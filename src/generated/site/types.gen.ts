@@ -587,6 +587,13 @@ export type AutomationReport = {
    * one entry per path an enrollment took, so a path none took has none
    */
   paths: Array<AutomationPathFigures>;
+  /**
+   * Each Wait until by its Step id, summed over every version that had it: the enrollments that
+   * left it in the current period without waiting, because its date had no moment ahead within 366
+   * days (ADR 0126). In Step id order: one entry per Wait until any enrollment left so, so one that
+   * every enrollment waited on has none
+   */
+  waitUntilSteps: Array<AutomationWaitUntilFigures>;
 };
 
 /**
@@ -857,6 +864,30 @@ export type AutomationVersionStepFigures = {
    * Messages skipped, as in AutomationStepFigures
    */
   skipped: number;
+};
+
+/**
+ * The enrollments that went on at once from one Wait until on a date instead of waiting, by why:
+ * read from what each kept when it reached the Step, counted on the moment it left it
+ */
+export type AutomationWaitUntilFigures = {
+  /**
+   * The Wait until's Step id, the same in every version
+   */
+  stepId: StepId;
+  /**
+   * Its moment had passed: a once date before the arrival
+   */
+  past: number;
+  /**
+   * The contact held no date in the field, or a value that is no date
+   */
+  noDate: number;
+  /**
+   * Its moment lay more than 366 days ahead, such as a yearly date whose value is itself in the
+   * future
+   */
+  beyondBound: number;
 };
 
 /**

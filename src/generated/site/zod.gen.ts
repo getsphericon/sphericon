@@ -2820,6 +2820,17 @@ export const zAutomationVersionStepFigures = z.object({
 });
 
 /**
+ * The enrollments that went on at once from one Wait until on a date instead of waiting, by why:
+ * read from what each kept when it reached the Step, counted on the moment it left it
+ */
+export const zAutomationWaitUntilFigures = z.object({
+  stepId: zStepId,
+  past: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  noDate: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  beyondBound: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
  * An automation's engagement figures over its whole history and its results over a period
  */
 export const zAutomationReport = z.object({
@@ -2834,7 +2845,8 @@ export const zAutomationReport = z.object({
   results: zAutomationResults,
   steps: z.array(zAutomationStepFigures),
   versionSteps: z.array(zAutomationVersionStepFigures),
-  paths: z.array(zAutomationPathFigures)
+  paths: z.array(zAutomationPathFigures),
+  waitUntilSteps: z.array(zAutomationWaitUntilFigures)
 });
 
 /**

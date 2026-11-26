@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
@@ -53,6 +54,17 @@ type Report struct {
 	// path's id, each summed over the versions that had the path (ADR 0124), sorted by the newest
 	// of those versions, then by the fork's place there and the path's place in the fork.
 	Paths []PathFigures
+	// WaitUntilSteps is the Enrollments each Wait until let go on at once in the current period,
+	// by its Step id and why (ADR 0126), in Step id order.
+	WaitUntilSteps []WaitUntilFigures
+}
+
+// WaitUntilFigures is how many Enrollments went on at once from one Wait until on a date, over
+// every version that had it, by why: its moment had passed, the Contact held no date, or the
+// moment lay more than 366 days ahead.
+type WaitUntilFigures struct {
+	StepID                    automationstep.ID
+	Past, NoDate, BeyondBound int
 }
 
 // PathFigures is how many Enrollments took one path of a fork, over every version of the
@@ -144,7 +156,70 @@ func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64, p Report
 	if report.Paths, err = pathFiguresOf(ctx, s, id, taken); err != nil {
 		return Report{}, err
 	}
+	period, err := m.periodOf(ctx, s, p)
+	if err != nil {
+		return Report{}, err
+	}
+	if report.WaitUntilSteps, err = wentOnByStep(ctx, s, id, period); err != nil {
+		return Report{}, err
+	}
 	return report, nil
+}
+
+// wentOnByStep counts the Automation's Enrollments that went on at once from a Wait until (ADR
+// 0126), by its Step id and why, as their Step records say: each counted on the moment it left the
+// Step, within the window w. A record left by an end of the Enrollment before its job ran has no
+// outcome and is not counted: the Enrollment never went on.
+func wentOnByStep(ctx context.Context, s *ent.Scoped, id int64, w reportday.Window) ([]WaitUntilFigures, error) {
+	var rows []struct {
+		StepID automationstep.ID     `sql:"step_id"`
+		WentOn automationstep.WentOn `sql:"went_on"`
+		N      int                   `sql:"n"`
+	}
+	err := s.AutomationStepRecord().Query().
+		Where(
+			automationsteprecord.WentOnNotNil(),
+			automationsteprecord.OutcomeEQ(automationsteprecord.OutcomeDone),
+			automationsteprecord.LeftAtGTE(w.Since), automationsteprecord.LeftAtLT(w.Until),
+		).
+		Modify(func(sel *sql.Selector) {
+			run := sql.Table(automationrun.Table)
+			// The run's foreign key is composite: joined on both columns, the runs stay in the
+			// scope's Workspace and the read takes the runs' Workspace and Automation index.
+			sel.Join(run).OnP(sql.And(
+				sql.ColumnsEQ(sel.C(automationsteprecord.FieldWorkspaceID), run.C(automationrun.FieldWorkspaceID)),
+				sql.ColumnsEQ(sel.C(automationsteprecord.FieldRunID), run.C(automationrun.FieldID)),
+			))
+			sel.Where(sql.EQ(run.C(automationrun.FieldAutomationID), id))
+			sel.Select(
+				sql.As(sel.C(automationsteprecord.FieldStepID), "step_id"),
+				sql.As(sel.C(automationsteprecord.FieldWentOn), "went_on"),
+				sql.As(sql.Count("*"), "n"),
+			).GroupBy(sel.C(automationsteprecord.FieldStepID), sel.C(automationsteprecord.FieldWentOn))
+		}).Scan(ctx, &rows)
+	if err != nil {
+		return nil, err
+	}
+	figures := []WaitUntilFigures{}
+	at := map[automationstep.ID]int{}
+	for _, r := range rows {
+		i, ok := at[r.StepID]
+		if !ok {
+			i = len(figures)
+			at[r.StepID] = i
+			figures = append(figures, WaitUntilFigures{StepID: r.StepID})
+		}
+		switch r.WentOn {
+		case automationstep.WentOnPast:
+			figures[i].Past += r.N
+		case automationstep.WentOnNoDate:
+			figures[i].NoDate += r.N
+		case automationstep.WentOnBeyondBound:
+			figures[i].BeyondBound += r.N
+		}
+	}
+	slices.SortFunc(figures, func(a, b WaitUntilFigures) int { return cmp.Compare(a.StepID, b.StepID) })
+	return figures, nil
 }
 
 // versionStep names a send Step of one version: the version's row id and the Step's id.

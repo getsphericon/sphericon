@@ -212,6 +212,12 @@ func (c *ConverterImpl) AutomationReportToResource(source automations.Report) ex
 			externalapiAutomationReport.Paths[l] = c.automationsPathFiguresToExternalapiAutomationPathFigures(source.Paths[l])
 		}
 	}
+	if source.WaitUntilSteps != nil {
+		externalapiAutomationReport.WaitUntilSteps = make([]external.AutomationWaitUntilFigures, len(source.WaitUntilSteps))
+		for m := 0; m < len(source.WaitUntilSteps); m++ {
+			externalapiAutomationReport.WaitUntilSteps[m] = c.automationsWaitUntilFiguresToExternalapiAutomationWaitUntilFigures(source.WaitUntilSteps[m])
+		}
+	}
 	return externalapiAutomationReport
 }
 func (c *ConverterImpl) AutomationResultsPointToResource(source automations.ResultsPoint) external.AutomationResultsPoint {
@@ -2412,6 +2418,14 @@ func (c *ConverterImpl) automationsVersionStepFiguresToExternalapiAutomationVers
 	externalapiAutomationVersionStepFigures.Sent = count(source.Sent)
 	externalapiAutomationVersionStepFigures.Skipped = count(source.Skipped)
 	return externalapiAutomationVersionStepFigures
+}
+func (c *ConverterImpl) automationsWaitUntilFiguresToExternalapiAutomationWaitUntilFigures(source automations.WaitUntilFigures) external.AutomationWaitUntilFigures {
+	var externalapiAutomationWaitUntilFigures external.AutomationWaitUntilFigures
+	externalapiAutomationWaitUntilFigures.StepId = c.automationstepIDToExternalapiStepId(source.StepID)
+	externalapiAutomationWaitUntilFigures.Past = count(source.Past)
+	externalapiAutomationWaitUntilFigures.NoDate = count(source.NoDate)
+	externalapiAutomationWaitUntilFigures.BeyondBound = count(source.BeyondBound)
+	return externalapiAutomationWaitUntilFigures
 }
 func (c *ConverterImpl) automationstepIDToExternalapiStepId(source automationstep.ID) external.StepId {
 	return external.StepId(source)

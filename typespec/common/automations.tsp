@@ -987,6 +987,29 @@ model AutomationReport {
    * newest of those versions, then by the fork's place there and the path's place in the fork:
    * one entry per path an enrollment took, so a path none took has none */
   paths: AutomationPathFigures[];
+
+  /** Each Wait until by its Step id, summed over every version that had it: the enrollments that
+   * left it in the current period without waiting, because its date had no moment ahead within 366
+   * days (ADR 0126). In Step id order: one entry per Wait until any enrollment left so, so one that
+   * every enrollment waited on has none */
+  waitUntilSteps: AutomationWaitUntilFigures[];
+}
+
+/** The enrollments that went on at once from one Wait until on a date instead of waiting, by why:
+ * read from what each kept when it reached the Step, counted on the moment it left it */
+model AutomationWaitUntilFigures {
+  /** The Wait until's Step id, the same in every version */
+  stepId: StepId;
+
+  /** Its moment had passed: a once date before the arrival */
+  past: int32;
+
+  /** The contact held no date in the field, or a value that is no date */
+  noDate: int32;
+
+  /** Its moment lay more than 366 days ahead, such as a yearly date whose value is itself in the
+   * future */
+  beyondBound: int32;
 }
 
 /** The enrollments that took one path of a fork, over every version that had it */
