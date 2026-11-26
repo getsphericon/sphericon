@@ -3,7 +3,17 @@
 // contract's channel enums carry. It is a leaf, so the ent schema types those columns with it.
 package channels
 
+import (
+	"cmp"
+	"slices"
+)
+
 // Channel identifies a delivery medium.
+//
+// It is a closed enum (rule 19 of docs/standards/review-rules.md). A new Channel is added by adding
+// its constant, then following the lint errors, which name each switch and map that does not handle
+// it (rank below among them), and those of `mise run generate`, where goverter maps a Channel to the
+// contract's enums.
 type Channel string
 
 const (
@@ -16,14 +26,21 @@ const (
 	Telegram Channel = "telegram"
 )
 
-// all is every Channel, in the order the columns list them.
-var all = []Channel{Email, Telegram, SMS}
+// rank is every Channel with its place in the order the columns list them.
+var rank = map[Channel]int{Email: 0, Telegram: 1, SMS: 2}
 
 // Values is every Channel as a string, for the ent enum columns typed with it.
 func (Channel) Values() []string {
-	values := make([]string, len(all))
-	for i, c := range all {
-		values[i] = string(c)
+	values := make([]string, 0, len(rank))
+	for c := range rank {
+		values = append(values, string(c))
 	}
+	slices.SortFunc(values, func(a, b string) int { return cmp.Compare(rank[Channel(a)], rank[Channel(b)]) })
 	return values
+}
+
+// Valid reports whether c is a Channel: one a stored or signed value may name.
+func (c Channel) Valid() bool {
+	_, ok := rank[c]
+	return ok
 }

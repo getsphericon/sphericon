@@ -45,9 +45,8 @@ func BroadcastContent(b *ent.Broadcast) (Content, error) {
 		}, nil
 	case channels.SMS:
 		return SMSContent{Text: lo.FromPtr(b.Text), NoLinkTracking: !b.LinkTracking}, nil
-	default:
-		return nil, fmt.Errorf("outbound: broadcast %d is on channel %q, which has no content", b.ID, b.Channel)
 	}
+	return nil, fmt.Errorf("outbound: broadcast %d is on channel %q, which has no content", b.ID, b.Channel)
 }
 
 // BroadcastRecipient is the Request for one Broadcast recipient's message on the Broadcast's
@@ -98,9 +97,10 @@ func contactDestination(ch channels.Channel, c *ent.Contact) string {
 		return lo.FromPtr(c.Email)
 	case channels.SMS:
 		return lo.FromPtr(c.Phone)
-	default:
-		return ""
+	case channels.Telegram:
+		// A Telegram Destination is a Binding's user id, which the Contact's row does not hold.
 	}
+	return ""
 }
 
 // TransactionalMessage is what a Transactional send is made of. ClientKey is the

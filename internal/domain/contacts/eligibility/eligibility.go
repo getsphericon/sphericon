@@ -245,7 +245,8 @@ func (m *Module) BroadcastAudience(ctx context.Context, s *ent.Scoped, channel c
 		default:
 			dest = BindingDestination(channels.Telegram, integ.ID)
 		}
-	default:
+	}
+	if dest == nil {
 		return nil, fmt.Errorf("channel %q has no destination", channel)
 	}
 	return Audience(dest, Marketing(SourceBroadcasts)), nil

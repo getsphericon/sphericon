@@ -193,6 +193,19 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   control-flow graphs are missing fails the run instead of passing unread. The fix is in the core:
   the composition moves into the domain module that owns its rule, or into a use case when it spans
   several, and the driver makes that one call.
+- **Rule 19, `closedenum`.** The closed enums are the list in `tools/analyzers/closedenum`, which holds
+  `channels.Channel` alone. A `switch` whose tag is of such a type has no `default` clause and names
+  every member (a constant of the type its package declares) in its cases; a map literal keyed by it
+  lists every member (an empty literal is a map to fill, not a table). A type declared from the enum
+  (`type Medium channels.Channel`, or from such a type) is the enum too, in any package: the analyzer
+  exports a fact on it where it is declared. A member is matched by its constant value, so a converted
+  member names it. `exhaustive`'s `default-signifies-exhaustive` still holds for every other enum;
+  this rule takes the default away for the listed ones, which `exhaustive` cannot do per type.
+  Generated files are not read (goverter checks an enum mapping when it runs), nor are test files.
+  The fix of a `default` is a case per member it caught, each doing what the default did (an empty
+  case with a comment that says so when that is the code after the switch), and a value outside the
+  set (a zero value) handled after the switch; a table that applies to some members only is a
+  function with a full switch, not a padded map.
 - **Rule 15, `no-common-refusal-in-handlers` (ast-grep).** A handler in `internal/api/site`,
   `internal/api/external`, `internal/api/staff` or `ee/api/**` names no `validation.RefusalError`,
   `validation.FieldsError` or `validation.Message` and nothing of `liveuse`, and never spells `"workspace not found"`: it returns

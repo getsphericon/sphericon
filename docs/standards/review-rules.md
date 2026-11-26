@@ -194,3 +194,12 @@ or `AGENTS.md`.
     and checks every reference the write sets; a path without one is a named entry of the closed list
     in `docs/architecture/workspace-scoping.md`. A row loaded through the scope is not written through
     the client it still carries: it is updated by id through the scope.
+
+## Closed sets
+
+19. **A decision over a closed set names every member.** Where the code decides something per member
+    of a closed enum of the domain, it lists each member: a `switch` on it has no `default`, and a
+    member a branch does not apply to is named in a case that says what happens to it (an error, a
+    refusal, nothing); a table keyed by it lists every member. A new member is then added by adding
+    it and following the build's errors, never by searching for the places that decide per member,
+    and none of them takes it silently through a fallback.
