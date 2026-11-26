@@ -3,6 +3,7 @@ import * as z from 'zod'
 
 import {
   zRetentionDays,
+  zSiteSetLinkIdentityInput,
   zSiteUpdateConfirmationEmailInput,
   zSiteUpdateRevenueSettingsInput,
   zSiteUpdateWorkspaceInput,
@@ -38,6 +39,12 @@ export interface ConfirmationEmailValues {
   intro: string
 }
 
+// Link identity tokens (ADR 0160): the switch and the hostnames of the Workspace's own sites.
+export interface LinkIdentityValues {
+  linkIdentityEnabled: boolean
+  linkIdentityHosts: string[]
+}
+
 // A blank input holds '': no window, the log is kept forever.
 export interface RetentionValues {
   retentionDays: number | ''
@@ -51,11 +58,13 @@ const generalBody = zSiteUpdateWorkspaceInput.omit({ revision: true })
 const timezoneBody = zSiteWorkspaceTimezoneInput.omit({ revision: true })
 const revenueBody = zSiteUpdateRevenueSettingsInput.omit({ revision: true })
 const confirmationEmailBody = zSiteUpdateConfirmationEmailInput.omit({ revision: true })
+export const linkIdentityBody = zSiteSetLinkIdentityInput.omit({ revision: true })
 
 export type GeneralPayload = z.output<typeof generalBody>
 export type TimezonePayload = z.output<typeof timezoneBody>
 export type RevenuePayload = z.output<typeof revenueBody>
 export type ConfirmationEmailPayload = z.output<typeof confirmationEmailBody>
+export type LinkIdentityPayload = z.output<typeof linkIdentityBody>
 
 const generalBlank: GeneralValues = { name: '', postalAddress: '' }
 const timezoneBlank: TimezoneValues = { timezone: '' }
@@ -71,6 +80,11 @@ export const confirmationEmailSchema = resourceFormSchema(confirmationEmailBody,
   subject: '',
   intro: '',
 } satisfies ConfirmationEmailValues)
+
+export const linkIdentitySchema = resourceFormSchema(linkIdentityBody, {
+  linkIdentityEnabled: false,
+  linkIdentityHosts: [],
+} satisfies LinkIdentityValues)
 
 const retention = z
   .custom<RetentionValues>((value) => typeof value === 'object' && value !== null)

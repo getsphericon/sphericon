@@ -522,6 +522,40 @@ func (x *WorkspaceScopedUpdateOne) SetNillableDomainJoinEnabled(v *bool) *Worksp
 
 const RoleOf_WorkspaceScopedUpdateOne_SetNillableDomainJoinEnabled = RoleStep
 
+// SetLinkIdentityEnabled sets the "link_identity_enabled" field.
+func (x *WorkspaceScopedUpdateOne) SetLinkIdentityEnabled(v bool) *WorkspaceScopedUpdateOne {
+	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.SetLinkIdentityEnabled(v) })
+	return x
+}
+
+const RoleOf_WorkspaceScopedUpdateOne_SetLinkIdentityEnabled = RoleStep
+
+// SetNillableLinkIdentityEnabled sets the "link_identity_enabled" field if the given value is not nil.
+func (x *WorkspaceScopedUpdateOne) SetNillableLinkIdentityEnabled(v *bool) *WorkspaceScopedUpdateOne {
+	if v != nil {
+		x.SetLinkIdentityEnabled(*v)
+	}
+	return x
+}
+
+const RoleOf_WorkspaceScopedUpdateOne_SetNillableLinkIdentityEnabled = RoleStep
+
+// SetLinkIdentityHosts sets the "link_identity_hosts" field.
+func (x *WorkspaceScopedUpdateOne) SetLinkIdentityHosts(v []string) *WorkspaceScopedUpdateOne {
+	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.SetLinkIdentityHosts(v) })
+	return x
+}
+
+const RoleOf_WorkspaceScopedUpdateOne_SetLinkIdentityHosts = RoleStep
+
+// AppendLinkIdentityHosts appends value to the "link_identity_hosts" field.
+func (x *WorkspaceScopedUpdateOne) AppendLinkIdentityHosts(v []string) *WorkspaceScopedUpdateOne {
+	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.AppendLinkIdentityHosts(v) })
+	return x
+}
+
+const RoleOf_WorkspaceScopedUpdateOne_AppendLinkIdentityHosts = RoleStep
+
 // SetSecondFactorRequiredAt sets the "second_factor_required_at" field.
 func (x *WorkspaceScopedUpdateOne) SetSecondFactorRequiredAt(v time.Time) *WorkspaceScopedUpdateOne {
 	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.SetSecondFactorRequiredAt(v) })

@@ -1638,6 +1638,14 @@ type Invoker interface {
 	//
 	// PUT /workspaces/{workspaceId}/engagement-tracking-default
 	SiteWorkspacesSetEngagementTrackingDefault(ctx context.Context, request *SiteSetEngagementTrackingDefaultInput, params SiteWorkspacesSetEngagementTrackingDefaultParams) (*SiteWorkspaceResource, error)
+	// SiteWorkspacesSetLinkIdentity invokes SiteWorkspaces_setLinkIdentity operation.
+	//
+	// Set the Link identity token settings (Owner and Admin, ADR 0160): the switch and the hostnames of
+	// the Workspace's sites. Only a person changes them, here: neither `/api` nor MCP does. Turning it on
+	// with no host is refused with 422. A change is recorded as an Audit entry.
+	//
+	// PUT /workspaces/{workspaceId}/link-identity
+	SiteWorkspacesSetLinkIdentity(ctx context.Context, request *SiteSetLinkIdentityInput, params SiteWorkspacesSetLinkIdentityParams) (*SiteWorkspaceResource, error)
 	// SiteWorkspacesSetTimezone invokes SiteWorkspaces_setTimezone operation.
 	//
 	// Set the Workspace time zone (Owner and Admin only), the zone of every Report day (ADR 0057). 422 for
@@ -33659,6 +33667,146 @@ func (c *Client) sendSiteWorkspacesSetEngagementTrackingDefault(ctx context.Cont
 
 	stage = "DecodeResponse"
 	result, err := decodeSiteWorkspacesSetEngagementTrackingDefaultResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SiteWorkspacesSetLinkIdentity invokes SiteWorkspaces_setLinkIdentity operation.
+//
+// Set the Link identity token settings (Owner and Admin, ADR 0160): the switch and the hostnames of
+// the Workspace's sites. Only a person changes them, here: neither `/api` nor MCP does. Turning it on
+// with no host is refused with 422. A change is recorded as an Audit entry.
+//
+// PUT /workspaces/{workspaceId}/link-identity
+func (c *Client) SiteWorkspacesSetLinkIdentity(ctx context.Context, request *SiteSetLinkIdentityInput, params SiteWorkspacesSetLinkIdentityParams) (*SiteWorkspaceResource, error) {
+	res, err := c.sendSiteWorkspacesSetLinkIdentity(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSiteWorkspacesSetLinkIdentity(ctx context.Context, request *SiteSetLinkIdentityInput, params SiteWorkspacesSetLinkIdentityParams) (res *SiteWorkspaceResource, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("SiteWorkspaces_setLinkIdentity"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/workspaces/{workspaceId}/link-identity"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SiteWorkspacesSetLinkIdentityOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/workspaces/"
+	{
+		// Encode "workspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "workspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.WorkspaceId); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/link-identity"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSiteWorkspacesSetLinkIdentityRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:ApiKeyAuth"
+			switch err := c.securityApiKeyAuth(ctx, SiteWorkspacesSetLinkIdentityOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"ApiKeyAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer func() {
+		// Drain the body to EOF before closing, so the underlying
+		// connection can be reused by the Transport regardless of the
+		// response status code. See https://github.com/ogen-go/ogen/issues/1670.
+		_, _ = io.Copy(io.Discard, body)
+		_ = body.Close()
+	}()
+
+	stage = "DecodeResponse"
+	result, err := decodeSiteWorkspacesSetLinkIdentityResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

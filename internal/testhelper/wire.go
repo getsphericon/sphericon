@@ -43,3 +43,20 @@ func (c bodyEditor) Do(r *http.Request) (*http.Response, error) {
 	r.ContentLength = int64(len(edited))
 	return c.inner.Do(r)
 }
+
+// WithUserAgent sets the User-Agent of every request, for a test of how a surface reads it (a known
+// crawler's).
+func WithUserAgent(userAgent string) func(ht.Client) ht.Client {
+	return func(inner ht.Client) ht.Client { return userAgentSetter{inner: inner, userAgent: userAgent} }
+}
+
+type userAgentSetter struct {
+	inner     ht.Client
+	userAgent string
+}
+
+func (c userAgentSetter) Do(r *http.Request) (*http.Response, error) {
+	r = r.Clone(r.Context())
+	r.Header.Set("User-Agent", c.userAgent)
+	return c.inner.Do(r)
+}

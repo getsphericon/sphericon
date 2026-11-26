@@ -76,21 +76,20 @@ func (r *Recorder) Open(ctx context.Context, token string, hit Hit) error {
 	if err != nil {
 		return ErrInvalidToken
 	}
-	return r.record(ctx, m, hit, privaterelayranges.AnOpen, func(e engaged, machine bool, at time.Time) events.DomainEvent {
+	_, _, err = r.record(ctx, m, hit, privaterelayranges.AnOpen, func(e engaged, machine bool, at time.Time) events.DomainEvent {
 		return e.engagement(systemevent.EmailOpened, "", machine, at)
 	})
+	return err
 }
 
-// Click records a click on the link the token signs and returns that link.
+// Click records a click on the link the token signs and returns that link, with the recipient's
+// Link identity token when the click was recorded (withLinkIdentity).
 func (r *Recorder) Click(ctx context.Context, token string, hit Hit) (string, error) {
 	m, dest, err := r.tracker.DecodeClick(token)
 	if err != nil {
 		return "", ErrInvalidToken
 	}
-	if err := r.record(ctx, m, hit, privaterelayranges.AClick, clickOn(dest)); err != nil {
-		return "", err
-	}
-	return dest, nil
+	return r.click(ctx, m, dest, hit)
 }
 
 // ShortLink records a click on the short tracked link of a Telegram message or an SMS (ADR 0083)
@@ -109,11 +108,44 @@ func (r *Recorder) ShortLink(ctx context.Context, token string, hit Hit) (string
 	case link.OutboundMessageID == nil:
 		return link.URL, nil
 	}
-	m := messagetoken.Message{WorkspaceID: link.WorkspaceID, ID: *link.OutboundMessageID}
-	if err := r.record(ctx, m, hit, privaterelayranges.AClick, clickOn(link.URL)); err != nil {
-		return "", err
+	return r.click(ctx, messagetoken.Message{WorkspaceID: link.WorkspaceID, ID: *link.OutboundMessageID}, link.URL, hit)
+}
+
+// click records a click on dest in the message m names and returns dest, with the recipient's Link
+// identity token when the click was recorded (withLinkIdentity).
+func (r *Recorder) click(ctx context.Context, m messagetoken.Message, dest string, hit Hit) (string, error) {
+	e, recorded, err := r.record(ctx, m, hit, privaterelayranges.AClick, clickOn(dest))
+	if err != nil || !recorded {
+		return dest, err
 	}
-	return link.URL, nil
+	return r.withLinkIdentity(ctx, e, dest), nil
+}
+
+// withLinkIdentity is dest with the Link identity token of the Contact the recorded click's message
+// went to (ADR 0160), when its Workspace has turned them on and dest is one of its sites
+// (messagetoken.Tracker.WithLinkIdentity); dest as it is for a message with no Contact or no send
+// time. Whether a machine made the click does not matter: the tracker keeps a scanner out on the
+// site. A read or a mint that fails leaves dest as it is, since a tracked link never refuses its
+// recipient (ADR 0025).
+func (r *Recorder) withLinkIdentity(ctx context.Context, e engaged, dest string) string {
+	if e.contact == nil || e.msg.SentAt == nil {
+		return dest
+	}
+	ws, err := r.client.Scoped(e.msg.WorkspaceID).Workspace(ctx)
+	if err != nil {
+		slog.ErrorContext(ctx, "engagement: reading the link identity settings failed", "message_id", e.msg.ID, "err", err)
+		return dest
+	}
+	if !ws.LinkIdentityEnabled {
+		return dest
+	}
+	id := messagetoken.LinkIdentity{WorkspaceID: e.msg.WorkspaceID, ContactID: e.contact.ID}
+	link, err := r.tracker.WithLinkIdentity(dest, id, *e.msg.SentAt, ws.LinkIdentityHosts)
+	if err != nil {
+		slog.ErrorContext(ctx, "engagement: link identity token failed", "message_id", e.msg.ID, "err", err)
+		return dest
+	}
+	return link
 }
 
 // record publishes the Event eventOf builds for a hit on the message m names. A hit on a Tracking
@@ -125,29 +157,36 @@ func (r *Recorder) ShortLink(ctx context.Context, token string, hit Hit) (string
 // publish, records nothing and is logged, since a tracked link never refuses its recipient (ADR
 // 0025).
 //
+// recorded says whether the Event was published; e is then what the check read.
+//
 // The check and the publish are one transaction that holds the message's row FOR SHARE: a
 // withdrawal of the message's tracking, which takes the row for its update, either waits for the
 // Event to commit (and then removes it) or commits first, and the check sees it.
-func (r *Recorder) record(ctx context.Context, m messagetoken.Message, hit Hit, kind privaterelayranges.Kind, eventOf func(e engaged, machine bool, at time.Time) events.DomainEvent) error {
+func (r *Recorder) record(ctx context.Context, m messagetoken.Message, hit Hit, kind privaterelayranges.Kind, eventOf func(e engaged, machine bool, at time.Time) events.DomainEvent) (e engaged, recorded bool, err error) {
 	if hit.Host != 0 && hit.Host != m.WorkspaceID {
-		return ErrNotFound
+		return engaged{}, false, ErrNotFound
 	}
 	if !hit.MayRecord() {
-		return nil
+		return engaged{}, false, nil
 	}
 	// Judged before the transaction: the detector reads its ranges through a connection of its own.
 	machine := r.detector.IsMachine(ctx, privaterelayranges.IsMachineInput{Kind: kind, UserAgent: hit.UserAgent, ClientAddr: hit.Address})
-	err := r.bus.WithinScopedTx(ctx, r.client.Scoped(m.WorkspaceID), func(ts *ent.Scoped, pub events.Publisher) error {
-		e, ok, err := r.engagedOf(ctx, ts, m.ID)
+	err = r.bus.WithinScopedTx(ctx, r.client.Scoped(m.WorkspaceID), func(ts *ent.Scoped, pub events.Publisher) error {
+		read, ok, err := r.engagedOf(ctx, ts, m.ID)
 		if err != nil || !ok {
 			return err
 		}
-		return pub.Publish(ctx, eventOf(e, machine, r.now()))
+		if err := pub.Publish(ctx, eventOf(read, machine, r.now())); err != nil {
+			return err
+		}
+		e, recorded = read, true
+		return nil
 	})
 	if err != nil {
 		slog.ErrorContext(ctx, "engagement: recording failed", "message_id", m.ID, "err", err)
+		return engaged{}, false, nil
 	}
-	return nil
+	return e, recorded, nil
 }
 
 // engaged is the Outbound message a hit names, with the Contact it went to when there is one. A

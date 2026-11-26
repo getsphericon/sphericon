@@ -15,6 +15,7 @@ import { Route as trackingRoute } from '../../../routes/workspaces/$workspaceId/
 import { DOCS_URL, SDK_SOURCE_URL } from '../../../utils/docs.ts'
 import { can } from '../../../utils/permissions.ts'
 import { IdentitySecretSection } from './IdentitySecretSection.tsx'
+import { LinkIdentitySection } from './LinkIdentitySection.tsx'
 import { SettingsFrame } from './SettingsFrame.tsx'
 import { TrackingDomainSection } from './TrackingDomainSection.tsx'
 
@@ -169,6 +170,7 @@ function TrackerSetup({ workspace }: { workspace: SiteWorkspaceResource }) {
       />
       <TestEvent collectKey={workspace.collectKey} trackerUrl={trackerUrl} />
       {can(workspace, 'tokens:manage') && <IdentitySecretSection workspaceId={workspace.id} />}
+      <LinkIdentitySection workspace={workspace} />
       <TrackingDomainSection workspace={workspace} />
       <SendEvents />
     </Stack>

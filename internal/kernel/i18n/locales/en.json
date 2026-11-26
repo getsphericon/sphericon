@@ -386,6 +386,8 @@
   "errors.engagement_tracking_state": "state must be granted or denied",
   "errors.engagement_tracking_provenance": "the consent's provenance is not one of page, manual, imported, onsite_form",
   "errors.engagement_tracking_default_unknown": "the engagement tracking default must be track or dont_track",
+  "errors.link_identity_host_invalid": "{{.Host}} is not a host name: enter a domain such as shop.example.com",
+  "errors.link_identity_host_required": "list at least one site before turning link identity tokens on",
   "errors.contact_email_missing": "the contact has no email",
   "errors.contact_phone_missing": "the contact has no phone",
   "errors.variables_invalid": "invalid variables",

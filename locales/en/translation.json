@@ -2316,6 +2316,18 @@
         "title": "Give Twilio the address of {{name}}"
       }
     },
+    "linkIdentity": {
+      "change": "Change",
+      "description": "Recognize a recipient who follows a link of a tracked message to your own site: the click adds a signed token naming them, and the tracker there links the visitor to their contact on their first click, key press or touch. It never moves a visitor that already belongs to another contact, and a token is ignored 7 days after its message was sent. Only links over https to the sites listed here carry it.",
+      "enabledLabel": "Add link identity tokens to tracked links",
+      "errorTitle": "Could not save the link identity tokens",
+      "hostsDescription": "The host names where your tracker runs, such as shop.example.com. Each is matched exactly: list a subdomain on its own.",
+      "hostsLabel": "Your sites",
+      "loadError": "Could not load the link identity tokens",
+      "off": "Off: tracked links carry no link identity token.",
+      "on": "On for {{hosts}}.",
+      "title": "Link identity tokens"
+    },
     "loadErrorTitle": "Failed to load workspace",
     "mcp": {
       "addressLabel": "Connector address",

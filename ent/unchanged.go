@@ -1157,6 +1157,9 @@ func (m *WorkspaceMutation) unchanged(ctx context.Context) (*Workspace, bool, er
 	if v, ok := m.AddedSendCap(); ok && v != 0 {
 		return nil, false, nil
 	}
+	if v, ok := m.AppendedLinkIdentityHosts(); ok && len(v) > 0 {
+		return nil, false, nil
+	}
 	// An update that names no column but the noise is a touch: a write of what an editor shows.
 	written := slices.Concat(m.Fields(), m.ClearedFields())
 	if !slices.ContainsFunc(written, func(c string) bool { return !revisionNoise(c) }) {
@@ -1321,6 +1324,16 @@ func (m *WorkspaceMutation) unchanged(ctx context.Context) (*Workspace, bool, er
 	}
 	if v, ok := m.DomainJoinEnabled(); ok {
 		if !reflect.DeepEqual(v, row.DomainJoinEnabled) {
+			return nil, false, nil
+		}
+	}
+	if v, ok := m.LinkIdentityEnabled(); ok {
+		if !reflect.DeepEqual(v, row.LinkIdentityEnabled) {
+			return nil, false, nil
+		}
+	}
+	if v, ok := m.LinkIdentityHosts(); ok {
+		if !sameJSON(v, row.LinkIdentityHosts) {
 			return nil, false, nil
 		}
 	}

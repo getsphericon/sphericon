@@ -108,6 +108,14 @@ type SetEngagementTrackingDefaultInput struct {
 	Default  workspace.EngagementTrackingDefault
 }
 
+// SetLinkIdentityInput is a change of the Workspace's Link identity token settings (ADR 0160): the
+// switch and the hostnames of its sites, made on Revision (ADR 0119).
+type SetLinkIdentityInput struct {
+	Revision            int64
+	LinkIdentityEnabled bool
+	LinkIdentityHosts   []string
+}
+
 // SetSecondFactorRequirementInput switches the Two-factor requirement on (Required) or off. Switching
 // it on is made on Revision (ADR 0119); lifting it names none (nil).
 type SetSecondFactorRequirementInput struct {
@@ -258,6 +266,16 @@ func (u *UseCase) SetEngagementTrackingDefault(ctx context.Context, s *ent.Scope
 		}
 		return q.Enqueue(ctx, outboundmessages.WithdrawUngrantedArgs{WorkspaceID: ws.ID, Before: u.now()}, nil)
 	})
+	if err != nil {
+		return View{}, err
+	}
+	return u.view(ctx, s, c, ws)
+}
+
+// SetLinkIdentity sets the Link identity token settings of the Workspace of s
+// (workspaces.Module.SetLinkIdentity, ADR 0160) and answers its View for the caller.
+func (u *UseCase) SetLinkIdentity(ctx context.Context, s *ent.Scoped, c Caller, in SetLinkIdentityInput) (View, error) {
+	ws, err := u.workspaces.SetLinkIdentity(ctx, s, in.Revision, workspaces.SetLinkIdentityInput{Enabled: in.LinkIdentityEnabled, Hosts: in.LinkIdentityHosts})
 	if err != nil {
 		return View{}, err
 	}

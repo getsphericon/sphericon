@@ -24116,13 +24116,13 @@ func (s *Server) handleWebhooksUpdateRequest(args [1]string, argsEscaped bool, w
 // handleWorkspaceGetRequest handles Workspace_get operation.
 //
 // Read the Workspace the token acts in: its name, postal address, confirmed opt-in, Engagement
-// tracking default, time zone and Send cap. Read the postal address before arming marketing email: an
-// empty one refuses it, and only a person can set it. Read the Send cap to explain a slow send or to
-// plan one: a send larger than what remains of it in the last 24 hours goes out over more than a day.
-// Read confirmed opt-in to know whether a Contact needs a Confirmation before email reaches it. Read
-// the Engagement tracking default to know whether a Destination with no consent recorded is tracked.
-// Read-only: no operation changes the Send cap, the postal address, confirmed opt-in or the Engagement
-// tracking default.
+// tracking default, Link identity token settings, time zone and Send cap. Read the postal address
+// before arming marketing email: an empty one refuses it, and only a person can set it. Read the Send
+// cap to explain a slow send or to plan one: a send larger than what remains of it in the last 24
+// hours goes out over more than a day. Read confirmed opt-in to know whether a Contact needs a
+// Confirmation before email reaches it. Read the Engagement tracking default to know whether a
+// Destination with no consent recorded is tracked. Read-only: no operation changes the Send cap, the
+// postal address, confirmed opt-in or the Engagement tracking default.
 //
 // GET /workspace
 func (s *Server) handleWorkspaceGetRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {

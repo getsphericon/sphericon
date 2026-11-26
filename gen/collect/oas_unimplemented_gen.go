@@ -27,6 +27,19 @@ func (UnimplementedHandler) CollectIdentifyCreate(ctx context.Context, req *Coll
 	return r, ht.ErrNotImplemented
 }
 
+// CollectLinkIdentitiesCreate implements CollectLinkIdentities_create operation.
+//
+// Binds the visitor to the contact a Link identity token names, as a claim binds: only while the
+// visitor is anonymous or already that contact's, stitching its anonymous events onto the contact and
+// handing it none of the visitor's chats. It answers 204 whatever it binds: an invalid, expired or
+// foreign token, a contact that no longer exists, a visitor of another contact, or a request whose
+// User-Agent names a known crawler binds nothing and says so to no one.
+//
+// POST /link-identities
+func (UnimplementedHandler) CollectLinkIdentitiesCreate(ctx context.Context, req *CollectLinkIdentityInput) error {
+	return ht.ErrNotImplemented
+}
+
 // CollectTelegramStartLinksCreate implements CollectTelegramStartLinks_create operation.
 //
 // Issues a start link on the workspace's default Telegram integration. It is refused with 422 when the

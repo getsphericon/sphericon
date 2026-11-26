@@ -334,6 +334,26 @@ func (_c *WorkspaceCreate) SetNillableDomainJoinEnabled(v *bool) *WorkspaceCreat
 	return _c
 }
 
+// SetLinkIdentityEnabled sets the "link_identity_enabled" field.
+func (_c *WorkspaceCreate) SetLinkIdentityEnabled(v bool) *WorkspaceCreate {
+	_c.mutation.SetLinkIdentityEnabled(v)
+	return _c
+}
+
+// SetNillableLinkIdentityEnabled sets the "link_identity_enabled" field if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableLinkIdentityEnabled(v *bool) *WorkspaceCreate {
+	if v != nil {
+		_c.SetLinkIdentityEnabled(*v)
+	}
+	return _c
+}
+
+// SetLinkIdentityHosts sets the "link_identity_hosts" field.
+func (_c *WorkspaceCreate) SetLinkIdentityHosts(v []string) *WorkspaceCreate {
+	_c.mutation.SetLinkIdentityHosts(v)
+	return _c
+}
+
 // SetSecondFactorRequiredAt sets the "second_factor_required_at" field.
 func (_c *WorkspaceCreate) SetSecondFactorRequiredAt(v time.Time) *WorkspaceCreate {
 	_c.mutation.SetSecondFactorRequiredAt(v)
@@ -1363,6 +1383,14 @@ func (_c *WorkspaceCreate) defaults() {
 		v := workspace.DefaultDomainJoinEnabled
 		_c.mutation.SetDomainJoinEnabled(v)
 	}
+	if _, ok := _c.mutation.LinkIdentityEnabled(); !ok {
+		v := workspace.DefaultLinkIdentityEnabled
+		_c.mutation.SetLinkIdentityEnabled(v)
+	}
+	if _, ok := _c.mutation.LinkIdentityHosts(); !ok {
+		v := workspace.DefaultLinkIdentityHosts
+		_c.mutation.SetLinkIdentityHosts(v)
+	}
 	if _, ok := _c.mutation.AbuseExempt(); !ok {
 		v := workspace.DefaultAbuseExempt
 		_c.mutation.SetAbuseExempt(v)
@@ -1465,6 +1493,12 @@ func (_c *WorkspaceCreate) check() error {
 	}
 	if _, ok := _c.mutation.DomainJoinEnabled(); !ok {
 		return &ValidationError{Name: "domain_join_enabled", err: errors.New(`ent: missing required field "Workspace.domain_join_enabled"`)}
+	}
+	if _, ok := _c.mutation.LinkIdentityEnabled(); !ok {
+		return &ValidationError{Name: "link_identity_enabled", err: errors.New(`ent: missing required field "Workspace.link_identity_enabled"`)}
+	}
+	if _, ok := _c.mutation.LinkIdentityHosts(); !ok {
+		return &ValidationError{Name: "link_identity_hosts", err: errors.New(`ent: missing required field "Workspace.link_identity_hosts"`)}
 	}
 	if v, ok := _c.mutation.SuspendedByKind(); ok {
 		if err := workspace.SuspendedByKindValidator(v); err != nil {
@@ -1586,6 +1620,14 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.DomainJoinEnabled(); ok {
 		_spec.SetField(workspace.FieldDomainJoinEnabled, field.TypeBool, value)
 		_node.DomainJoinEnabled = value
+	}
+	if value, ok := _c.mutation.LinkIdentityEnabled(); ok {
+		_spec.SetField(workspace.FieldLinkIdentityEnabled, field.TypeBool, value)
+		_node.LinkIdentityEnabled = value
+	}
+	if value, ok := _c.mutation.LinkIdentityHosts(); ok {
+		_spec.SetField(workspace.FieldLinkIdentityHosts, field.TypeJSON, value)
+		_node.LinkIdentityHosts = value
 	}
 	if value, ok := _c.mutation.SecondFactorRequiredAt(); ok {
 		_spec.SetField(workspace.FieldSecondFactorRequiredAt, field.TypeTime, value)
@@ -2867,6 +2909,30 @@ func (u *WorkspaceUpsert) UpdateDomainJoinEnabled() *WorkspaceUpsert {
 	return u
 }
 
+// SetLinkIdentityEnabled sets the "link_identity_enabled" field.
+func (u *WorkspaceUpsert) SetLinkIdentityEnabled(v bool) *WorkspaceUpsert {
+	u.Set(workspace.FieldLinkIdentityEnabled, v)
+	return u
+}
+
+// UpdateLinkIdentityEnabled sets the "link_identity_enabled" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateLinkIdentityEnabled() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldLinkIdentityEnabled)
+	return u
+}
+
+// SetLinkIdentityHosts sets the "link_identity_hosts" field.
+func (u *WorkspaceUpsert) SetLinkIdentityHosts(v []string) *WorkspaceUpsert {
+	u.Set(workspace.FieldLinkIdentityHosts, v)
+	return u
+}
+
+// UpdateLinkIdentityHosts sets the "link_identity_hosts" field to the value that was provided on create.
+func (u *WorkspaceUpsert) UpdateLinkIdentityHosts() *WorkspaceUpsert {
+	u.SetExcluded(workspace.FieldLinkIdentityHosts)
+	return u
+}
+
 // SetSecondFactorRequiredAt sets the "second_factor_required_at" field.
 func (u *WorkspaceUpsert) SetSecondFactorRequiredAt(v time.Time) *WorkspaceUpsert {
 	u.Set(workspace.FieldSecondFactorRequiredAt, v)
@@ -3406,6 +3472,34 @@ func (u *WorkspaceUpsertOne) SetDomainJoinEnabled(v bool) *WorkspaceUpsertOne {
 func (u *WorkspaceUpsertOne) UpdateDomainJoinEnabled() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.UpdateDomainJoinEnabled()
+	})
+}
+
+// SetLinkIdentityEnabled sets the "link_identity_enabled" field.
+func (u *WorkspaceUpsertOne) SetLinkIdentityEnabled(v bool) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetLinkIdentityEnabled(v)
+	})
+}
+
+// UpdateLinkIdentityEnabled sets the "link_identity_enabled" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateLinkIdentityEnabled() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateLinkIdentityEnabled()
+	})
+}
+
+// SetLinkIdentityHosts sets the "link_identity_hosts" field.
+func (u *WorkspaceUpsertOne) SetLinkIdentityHosts(v []string) *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetLinkIdentityHosts(v)
+	})
+}
+
+// UpdateLinkIdentityHosts sets the "link_identity_hosts" field to the value that was provided on create.
+func (u *WorkspaceUpsertOne) UpdateLinkIdentityHosts() *WorkspaceUpsertOne {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateLinkIdentityHosts()
 	})
 }
 
@@ -4137,6 +4231,34 @@ func (u *WorkspaceUpsertBulk) SetDomainJoinEnabled(v bool) *WorkspaceUpsertBulk 
 func (u *WorkspaceUpsertBulk) UpdateDomainJoinEnabled() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.UpdateDomainJoinEnabled()
+	})
+}
+
+// SetLinkIdentityEnabled sets the "link_identity_enabled" field.
+func (u *WorkspaceUpsertBulk) SetLinkIdentityEnabled(v bool) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetLinkIdentityEnabled(v)
+	})
+}
+
+// UpdateLinkIdentityEnabled sets the "link_identity_enabled" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateLinkIdentityEnabled() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateLinkIdentityEnabled()
+	})
+}
+
+// SetLinkIdentityHosts sets the "link_identity_hosts" field.
+func (u *WorkspaceUpsertBulk) SetLinkIdentityHosts(v []string) *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.SetLinkIdentityHosts(v)
+	})
+}
+
+// UpdateLinkIdentityHosts sets the "link_identity_hosts" field to the value that was provided on create.
+func (u *WorkspaceUpsertBulk) UpdateLinkIdentityHosts() *WorkspaceUpsertBulk {
+	return u.Update(func(s *WorkspaceUpsert) {
+		s.UpdateLinkIdentityHosts()
 	})
 }
 

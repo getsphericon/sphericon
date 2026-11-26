@@ -224,10 +224,23 @@ const (
 )
 
 // VisitorID is the tracker's id of a Visitor, the device an Event, an Identify or a start link names.
-// From collect CollectEventInput.visitorId, collect CollectIdentifyInput.visitorId, collect CollectTelegramStartLinkInput.visitorId.
+// From collect CollectEventInput.visitorId, collect CollectIdentifyInput.visitorId, collect CollectTelegramStartLinkInput.visitorId, collect CollectLinkIdentityInput.visitorId.
 const (
 	VisitorIDMinLength = 1
 	VisitorIDMaxLength = 255
+)
+
+// LinkIdentityHost is a hostname of a Workspace's own site a Link identity token may go to.
+// From site LinkIdentityHost.
+const (
+	LinkIdentityHostMinLength = 1
+	LinkIdentityHostMaxLength = 253
+)
+
+// LinkIdentityHosts are the hostnames of a Workspace's own sites a Link identity token may go to.
+// From site SiteSetLinkIdentityInput.linkIdentityHosts.
+const (
+	LinkIdentityHostsMaxItems = 25
 )
 
 // CollectEventAction is the action of an Event the tracker collects.
@@ -436,6 +449,9 @@ var Owners = map[string][]string{
 	"TelegramUnsubscribeButtonMaxLength": {"internal/kernel/telegramrender"},
 	"VisitorIDMinLength":                 {"Visitor"},
 	"VisitorIDMaxLength":                 {"Visitor"},
+	"LinkIdentityHostMinLength":          {"Workspace"},
+	"LinkIdentityHostMaxLength":          {"Workspace"},
+	"LinkIdentityHostsMaxItems":          {"Workspace"},
 	"CollectEventActionMinLength":        {"internal/domain/contacts/visitors"},
 	"CollectEventActionMaxLength":        {"internal/domain/contacts/visitors"},
 	"ClientEventIDMinLength":             {"internal/domain/contacts/visitors", "internal/domain/contacts/eventrecording"},

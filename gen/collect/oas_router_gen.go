@@ -20,6 +20,9 @@ var (
 	rn4AllowedHeaders = map[string]string{
 		"POST": "Content-Type,X-Collect-Key",
 	}
+	rn5AllowedHeaders = map[string]string{
+		"POST": "Content-Type,X-Collect-Key",
+	}
 )
 
 func (s *Server) cutPrefix(path string) (string, bool) {
@@ -122,6 +125,31 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
+			case 'l': // Prefix: "link-identities"
+
+				if l := len("link-identities"); len(elem) >= l && elem[0:l] == "link-identities" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					// Leaf node.
+					switch r.Method {
+					case "POST":
+						s.handleCollectLinkIdentitiesCreateRequest([0]string{}, elemIsEscaped, w, r)
+					default:
+						s.notAllowed(w, r, notAllowedParams{
+							allowedMethods: "POST",
+							allowedHeaders: rn4AllowedHeaders,
+							acceptPost:     "application/json",
+							acceptPatch:    "",
+						})
+					}
+
+					return
+				}
+
 			case 't': // Prefix: "telegram-start-links"
 
 				if l := len("telegram-start-links"); len(elem) >= l && elem[0:l] == "telegram-start-links" {
@@ -138,7 +166,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					default:
 						s.notAllowed(w, r, notAllowedParams{
 							allowedMethods: "POST",
-							allowedHeaders: rn4AllowedHeaders,
+							allowedHeaders: rn5AllowedHeaders,
 							acceptPost:     "application/json",
 							acceptPatch:    "",
 						})
@@ -289,6 +317,31 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 						r.operationID = "CollectIdentify_create"
 						r.operationGroup = ""
 						r.pathPattern = "/identify"
+						r.args = args
+						r.count = 0
+						return r, true
+					default:
+						return
+					}
+				}
+
+			case 'l': // Prefix: "link-identities"
+
+				if l := len("link-identities"); len(elem) >= l && elem[0:l] == "link-identities" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					// Leaf node.
+					switch method {
+					case "POST":
+						r.name = CollectLinkIdentitiesCreateOperation
+						r.summary = ""
+						r.operationID = "CollectLinkIdentities_create"
+						r.operationGroup = ""
+						r.pathPattern = "/link-identities"
 						r.args = args
 						r.count = 0
 						return r, true

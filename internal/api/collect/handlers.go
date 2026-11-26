@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors"
+	"github.com/getsphericon/sphericon/internal/kernel/clientip"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/usecase/visitoridentification"
 	"github.com/go-faster/jx"
@@ -131,6 +132,14 @@ func (h *Handlers) CollectTelegramStartLinksCreate(ctx context.Context, req *col
 		return nil, err
 	}
 	return &collectapi.CollectTelegramStartLink{URL: link.URL, ExpiresAt: collectapi.Timestamp(link.ExpiresAt)}, nil
+}
+
+// CollectLinkIdentitiesCreate binds the Visitor to the Contact a Link identity token names (ADR
+// 0160), answering alike whatever it binds.
+func (h *Handlers) CollectLinkIdentitiesCreate(ctx context.Context, req *collectapi.CollectLinkIdentityInput) error {
+	return h.identify.BindLinkIdentity(ctx, auth.CollectScoped(ctx), visitoridentification.LinkIdentityInput{
+		VisitorID: req.VisitorId, Token: req.Token, UserAgent: clientip.UserAgentFromContext(ctx),
+	})
 }
 
 var _ collectapi.Handler = (*Handlers)(nil)

@@ -29,6 +29,14 @@ model WorkspaceResource {
    * console's Workspace settings. */
   engagementTrackingDefault: EngagementTrackingDecision;
 
+  /** Whether the click of a tracked link adds a Link identity token to a destination on one of
+   * `linkIdentityHosts` (ADR 0160), so the tracker there binds the anonymous visitor to the
+   * recipient's contact. Read-only: only a person changes it, in the console's tracking settings. */
+  linkIdentityEnabled: boolean;
+
+  /** The hostnames of the Workspace's own sites a Link identity token may be added to a link of */
+  linkIdentityHosts: string[];
+
   /** The IANA time zone every analytics report counts its days in (ADR 0057) */
   timezone: TimeZoneName;
 
@@ -43,7 +51,7 @@ model WorkspaceResource {
 @route("/workspace")
 @tag("Workspace")
 namespace Workspace {
-  /** Read the Workspace the token acts in: its name, postal address, confirmed opt-in, Engagement tracking default, time zone and Send cap. Read
+  /** Read the Workspace the token acts in: its name, postal address, confirmed opt-in, Engagement tracking default, Link identity token settings, time zone and Send cap. Read
    * the postal address before arming marketing email: an empty one refuses it, and only a person
    * can set it. Read the Send cap to explain a slow send or to plan one: a send larger than what
    * remains of it in the last 24 hours goes out over more than a day. Read confirmed opt-in to know

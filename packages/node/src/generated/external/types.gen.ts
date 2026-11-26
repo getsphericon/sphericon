@@ -8429,6 +8429,16 @@ export type WorkspaceResource = {
    */
   engagementTrackingDefault: EngagementTrackingDecision;
   /**
+   * Whether the click of a tracked link adds a Link identity token to a destination on one of
+   * `linkIdentityHosts` (ADR 0160), so the tracker there binds the anonymous visitor to the
+   * recipient's contact. Read-only: only a person changes it, in the console's tracking settings.
+   */
+  linkIdentityEnabled: boolean;
+  /**
+   * The hostnames of the Workspace's own sites a Link identity token may be added to a link of
+   */
+  linkIdentityHosts: Array<string>;
+  /**
    * The IANA time zone every analytics report counts its days in (ADR 0057)
    */
   timezone: TimeZoneName;

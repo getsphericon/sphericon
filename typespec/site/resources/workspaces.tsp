@@ -57,6 +57,16 @@ model SiteWorkspaceResource {
    * consent recorded has its opens and clicks tracked. `track` until an Owner or Admin changes it. */
   engagementTrackingDefault: EngagementTrackingDecision;
 
+  /** Whether the click of a tracked link adds a Link identity token to a destination on one of
+   * `linkIdentityHosts` (ADR 0160), so the tracker there binds the anonymous visitor to the
+   * recipient's contact. Off until an Owner or Admin turns it on. */
+  linkIdentityEnabled: boolean;
+
+  /** The hostnames of the Workspace's own sites, where its tracker runs: only an `https` link to
+   * one of them gets a Link identity token. Each is matched exactly, so a subdomain is listed on its
+   * own. */
+  linkIdentityHosts: string[];
+
   /** The authenticated User's role in this Workspace (from their Membership). It
    * rides the Workspace list so role-gated UI is known even while the Workspace's
    * own endpoints are withheld under a Two-factor requirement. */
@@ -184,6 +194,27 @@ model SiteSetEngagementTrackingDefaultInput {
    * click recorded from then on. */
   engagementTrackingDefault: EngagementTrackingDecision;
 }
+
+/** Set the Link identity token settings (ADR 0160) */
+model SiteSetLinkIdentityInput {
+  /** The Workspace's `revision` the change was made on (ADR 0119): the one it was read with */
+  revision: Revision;
+
+  /** On: the click of a tracked link adds the recipient's Link identity token to an `https`
+   * destination on one of `linkIdentityHosts`. It cannot be on with no host listed (422). */
+  linkIdentityEnabled: boolean;
+
+  /** The hostnames of the Workspace's own sites, such as `shop.example.com`: each is normalized as
+   * a Sending domain is (lower case, IDN as punycode, no trailing dot), and one that is not a
+   * domain name is refused with 422. The list replaces the one stored. */
+  @maxItems(25)
+  linkIdentityHosts: LinkIdentityHost[];
+}
+
+/** A hostname a Link identity token may be added to a link of */
+@minLength(1)
+@maxLength(253)
+scalar LinkIdentityHost extends string;
 
 /** The texts the confirmation email goes out with while the Workspace sets none of its own: the
  * Instance's defaults naming the Workspace */
@@ -427,6 +458,17 @@ namespace SiteWorkspaces {
   op setEngagementTrackingDefault(
     @path workspaceId: WorkspaceId,
     @body body: SiteSetEngagementTrackingDefaultInput,
+  ): SiteWorkspaceResource | Problem;
+
+  /** Set the Link identity token settings (Owner and Admin, ADR 0160): the switch and the
+   * hostnames of the Workspace's sites. Only a person changes them, here: neither `/api` nor MCP
+   * does. Turning it on with no host is refused with 422. A change is recorded as an Audit entry. */
+  @put
+  @route("/{workspaceId}/link-identity")
+  @requiresPermissions(#[Permission.workspaceUpdate])
+  op setLinkIdentity(
+    @path workspaceId: WorkspaceId,
+    @body body: SiteSetLinkIdentityInput,
   ): SiteWorkspaceResource | Problem;
 
   /** Read the confirmation email's settings (Owner and Admin, ADR 0013) */
