@@ -43,16 +43,21 @@ func DateOf(t time.Time) Date {
 func (d Date) Year() int { return d.year }
 
 // String is the date as YYYY-MM-DD.
-func (d Date) String() string { return d.midnight().Format(time.DateOnly) }
+func (d Date) String() string { return d.Midnight().Format(time.DateOnly) }
 
-// midnight is the date's start in UTC, the instant its calendar arithmetic runs on.
-func (d Date) midnight() time.Time { return time.Date(d.year, d.month, d.day, 0, 0, 0, 0, time.UTC) }
+// MonthDay is the date's month and day as one number, month × 100 + day: 14 March is 314. It
+// orders the days of a year as the calendar does.
+func (d Date) MonthDay() int { return int(d.month)*100 + d.day }
 
-// addDays is the date days calendar days after d (before it when negative).
-func (d Date) addDays(days int) Date { return DateOf(d.midnight().AddDate(0, 0, days)) }
+// Midnight is the date's start in UTC, the instant its calendar arithmetic runs on and the value a
+// date column holds.
+func (d Date) Midnight() time.Time { return time.Date(d.year, d.month, d.day, 0, 0, 0, 0, time.UTC) }
+
+// AddDays is the date days calendar days after d (before it when negative).
+func (d Date) AddDays(days int) Date { return DateOf(d.Midnight().AddDate(0, 0, days)) }
 
 // weekday is the day of the week the date falls on.
-func (d Date) weekday() time.Weekday { return d.midnight().Weekday() }
+func (d Date) weekday() time.Weekday { return d.Midnight().Weekday() }
 
 // in is the date's day and month in year; 29 February is 28 February in a year without it.
 func (d Date) in(year int) Date {
@@ -249,7 +254,7 @@ func (s Schedule) Moment(date Date, year int, loc *time.Location) (time.Time, bo
 			return time.Time{}, false
 		}
 	}
-	day := date.in(year).addDays(s.offsetDays)
+	day := date.in(year).AddDays(s.offsetDays)
 	return s.at.on(day, loc), true
 }
 
@@ -331,7 +336,7 @@ func (w TimeOfDay) Next(after time.Time, loc *time.Location) time.Time {
 	today := DateOf(local)
 	// The same weekday a week on is the last day the search can reach.
 	for days := 0; ; days++ {
-		day := today.addDays(days)
+		day := today.AddDays(days)
 		if !w.takes(day.weekday()) {
 			continue
 		}

@@ -6,6 +6,8 @@
 package datetrigger
 
 import (
+	"maps"
+	"slices"
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
@@ -21,6 +23,9 @@ const (
 	// CustomField is a datetime Custom field of the Workspace, named by its key.
 	CustomField FieldKind = "customField"
 )
+
+// Values are the kinds of date field, the values of a column that stores one.
+func (FieldKind) Values() []string { return []string{string(Birthday), string(CustomField)} }
 
 // Field names the date: the birthday, or a Custom field by its key (empty for the birthday).
 type Field struct {
@@ -79,4 +84,101 @@ func (f Field) Of(h Holder, workspace *time.Location) (localcalendar.Date, bool)
 		return localcalendar.ValueDate(value, workspace)
 	}
 	return localcalendar.Date{}, false
+}
+
+// The key of a date (ADR 0126): the calendar date the date scheduler's band finds a Contact by,
+// which no Workspace time zone moves. A datetime value's date is read in the Workspace time zone
+// (Field.Of), which a Workspace may change without touching a Contact; its key is its date read in
+// UTC instead, and the date in any zone is the key or the day either side of it. The band reaches
+// past the window far enough to cover that day, so a zone change rewrites no key.
+
+// KeyOf is the key of the date the Contact holds in the field: the birthday itself, a datetime value
+// read in UTC (localcalendar.ValueDate); false when it holds none.
+func (f Field) KeyOf(h Holder) (localcalendar.Date, bool) {
+	return f.Of(h, time.UTC)
+}
+
+// Keyed is a date a Contact holds, by its field and its key.
+type Keyed struct {
+	Field Field
+	Key   localcalendar.Date
+}
+
+// Keys are the keys of every date the Contact holds, ordered by field: its birthday, and each
+// Custom field value that is a date in an ISO form, whatever the field's type. A type change
+// rewrites no stored value, so a field made datetime later finds its values keyed already.
+func (h Holder) Keys() []Keyed {
+	var keys []Keyed
+	fields := []Field{{Kind: Birthday}}
+	for _, key := range slices.Sorted(maps.Keys(h.CustomFields)) {
+		fields = append(fields, Field{Kind: CustomField, Key: key})
+	}
+	for _, f := range fields {
+		if key, ok := f.KeyOf(h); ok {
+			keys = append(keys, Keyed{Field: f, Key: key})
+		}
+	}
+	return keys
+}
+
+// bandMargin is how many calendar days the band of a window reaches past it on each side: an
+// occurrence's local day lies within a day of its UTC day, the Workspace zone's date of a value
+// within a day of its key, and 29 February counts on 28 February in a common year.
+const bandMargin = 3
+
+// maxBandDays is the widest band of a yearly date narrowed by its days: a window longer than a year
+// holds every key.
+const maxBandDays = 400
+
+// Band is the keys of the dates whose occurrence may fall in a window (Date.Band): the database
+// narrows the Contacts to those holding such a key, and the local calendar computes each one's
+// moment. A once date's band is a range of keys; a yearly date's is a set of month and day
+// (localcalendar.Date.MonthDay), or every key when the window is longer than a year.
+type Band struct {
+	once        bool
+	first, last localcalendar.Date
+	monthDays   []int
+}
+
+// Band is the band of the window from..to: the days the window spans in UTC, bandMargin each side,
+// moved back by the offset.
+func (d Date) Band(from, to time.Time) Band {
+	first := localcalendar.DateOf(from.UTC()).AddDays(-bandMargin - d.OffsetDays)
+	last := localcalendar.DateOf(to.UTC()).AddDays(bandMargin - d.OffsetDays)
+	if d.Recurrence == localcalendar.Once {
+		return Band{once: true, first: first, last: last}
+	}
+	if last.Midnight().Sub(first.Midnight()) > maxBandDays*24*time.Hour {
+		return Band{}
+	}
+	var days []int
+	for day := first; !day.Midnight().After(last.Midnight()); day = day.AddDays(1) {
+		days = append(days, day.MonthDay())
+		// 29 February comes on 28 February in a common year.
+		if day.MonthDay() == 228 {
+			days = append(days, 229)
+		}
+	}
+	slices.Sort(days)
+	return Band{monthDays: slices.Compact(days)}
+}
+
+// Range is a once date's band, the keys from first to last, both included; false for a yearly
+// date.
+func (b Band) Range() (first, last localcalendar.Date, ok bool) {
+	return b.first, b.last, b.once
+}
+
+// MonthDays is a yearly date's band, the month and day of its keys; false when it holds every key,
+// and for a once date.
+func (b Band) MonthDays() ([]int, bool) {
+	return b.monthDays, b.monthDays != nil
+}
+
+// Holds reports whether the band holds the key.
+func (b Band) Holds(key localcalendar.Date) bool {
+	if b.once {
+		return !key.Midnight().Before(b.first.Midnight()) && !key.Midnight().After(b.last.Midnight())
+	}
+	return b.monthDays == nil || slices.Contains(b.monthDays, key.MonthDay())
 }
