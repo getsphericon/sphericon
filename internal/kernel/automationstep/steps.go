@@ -266,8 +266,8 @@ func (b Branch) WithForks(paths []Path) Fork {
 }
 
 // Split sends an Enrollment down one of its Paths by weight (ADR 0124): a draw of its Contact, its
-// Step and its ordinal (Draw) lands on a path by the running total of the weights (At). An empty
-// path is a holdout, sent nothing. Its paths rejoin at the Step after it.
+// Step and its round (Draw) lands on a path by the running total of the weights (At). An empty path
+// is a holdout, sent nothing. Its paths rejoin at the Step after it.
 type Split struct {
 	Paths []SplitPath `json:"paths"`
 }
@@ -312,12 +312,13 @@ func (s Split) At(draw int) ID {
 	return s.Paths[len(s.Paths)-1].ID
 }
 
-// Draw is the draw, 0 to 99, of the Contact at the Split's Step for the Enrollment of the ordinal
-// (ADR 0124, ADR 0127): the first eight bytes of the SHA-256 of "<contact>:<step>:<ordinal>",
-// big-endian, mod 100. It holds no random state, so the same Enrollment always draws the same, and
-// a new Enrollment of the Contact draws again.
-func Draw(contactID int64, step ID, ordinal int) int {
-	sum := sha256.Sum256(fmt.Appendf(nil, "%d:%s:%d", contactID, step, ordinal))
+// Draw is the draw, 0 to 99, of the Contact at the Split's Step in the round (ADR 0124): the first
+// eight bytes of the SHA-256 of "<contact>:<step>:<round>", big-endian, mod 100. The round is the
+// Enrollment's ordinal (ADR 0127), or the anniversary year of one a yearly date Trigger made (ADR
+// 0126). It holds no random state, so the same round always draws the same, and a new one draws
+// again.
+func Draw(contactID int64, step ID, round int) int {
+	sum := sha256.Sum256(fmt.Appendf(nil, "%d:%s:%d", contactID, step, round))
 	return int(binary.BigEndian.Uint64(sum[:8]) % 100)
 }
 
