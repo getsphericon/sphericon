@@ -202,9 +202,10 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   member names it. `exhaustive`'s `default-signifies-exhaustive` still holds for every other enum;
   this rule takes the default away for the listed ones, which `exhaustive` cannot do per type.
   Generated files are not read (goverter checks an enum mapping when it runs), nor are test files.
-  The fix of a `default` is a case per member it caught, each doing what the default did, and a value
-  outside the set (a zero value) handled after the switch; a table that applies to some members only
-  is a function with a full switch, not a padded map.
+  The fix of a `default` is a case per member it caught, each doing what the default did (an empty
+  case with a comment that says so when that is the code after the switch), and a value outside the
+  set (a zero value) handled after the switch; a table that applies to some members only is a
+  function with a full switch, not a padded map.
 - **Rule 15, `no-common-refusal-in-handlers` (ast-grep).** A handler in `internal/api/site`,
   `internal/api/external`, `internal/api/staff` or `ee/api/**` names no `validation.RefusalError`,
   `validation.FieldsError` or `validation.Message` and nothing of `liveuse`, and never spells `"workspace not found"`: it returns
