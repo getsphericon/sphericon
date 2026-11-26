@@ -7,10 +7,12 @@
 //   - holds: Workspace freeze, then the Send route of the Request's Channel and the Channel's own
 //     check (email: an unverified Sending domain) — reversible, per-source, never consumed as a
 //     per-recipient failure;
+//   - the targets: where the message goes on its Channel, read only;
+//   - Send-eligibility of each target, fail-closed: a target it forbids is dropped, and when none is
+//     left the send is Skipped (final for that destination), recorded as a decided message under
+//     the Request's idempotency key with no claim taken first;
 //   - claim: the Outbound message row is taken before the provider is called, under
 //     the Request's idempotency key, with a lease against racing retries;
-//   - Send-eligibility on the Channel, per message, fail-closed (a Skipped is final for that
-//     destination);
 //   - render, the Provider limit and the Send cap, the provider call;
 //   - the record of the result and the Channel's sent Event, in one transaction.
 //
@@ -89,7 +91,7 @@ const (
 	// Refused: a Test send the System sender will not make (ADR 0041). Result.Refusal is a Refuse*
 	// constant; unlike a Held it does not clear by waiting.
 	Refused Outcome = "refused"
-	// Withdrawn: the source stopped taking new messages before this one was claimed
+	// Withdrawn: the source stopped taking new messages before this one was claimed or decided
 	// (Request.Stopped, a cancelled Broadcast, ADR 0150). Nothing was sent or recorded, and it is
 	// final: the same Request is withdrawn again.
 	Withdrawn Outcome = "withdrawn"
@@ -414,12 +416,13 @@ type Request struct {
 	Ref Ref
 
 	// Stopped, when set, says when the source stopped taking new messages: the surface that owns
-	// it reads its own state (a cancelled Broadcast, ADR 0150). It is asked once a new claim is
-	// written, so a stop that raced the claim is seen: one committed before the question withdraws
-	// the claim (Withdrawn, nothing recorded), and one committed after it finds the claim, a
-	// message that goes out. A claim another attempt left behind is asked too, once its lease has
-	// run out: one written after the stop is a withdrawal that never finished, and is withdrawn
-	// instead of taken over; one written before it goes on.
+	// it reads its own state (a cancelled Broadcast, ADR 0150). It is asked once a new claim, or a
+	// Skipped decided before the claim, is written, so a stop that raced the write is seen: one
+	// committed before the question withdraws the row (Withdrawn, nothing recorded), and one
+	// committed after it finds the row, a message that goes out or stays Skipped. A claim another
+	// attempt left behind is asked too, once its lease has run out: one written after the stop is a
+	// withdrawal that never finished, and is withdrawn instead of taken over; one written before it
+	// goes on.
 	Stopped SourceStop
 
 	// digest is what a Transactional request with the caller's key asked for (requestDigest); ""
@@ -526,34 +529,31 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 		return Result{Outcome: Held, Hold: g.hold}, nil
 	}
 
+	// Where the message goes is the Channel's to resolve, read only and before the claim: a Channel
+	// of Bindings reads the Contact's Bindings of the routed Integration. A Contact with no
+	// Destination on the Channel has nothing to send to, and a target Send-eligibility forbids is
+	// dropped: when none is left, the send is Skipped, recorded as a decided message under the key
+	// with no claim taken first, after the holds (ADR 0079, 0081, 0178).
+	eligible, skip, err := m.recipients(ctx, s, req, ch, g, dest)
+	if err != nil {
+		return Result{}, err
+	}
+	if len(eligible) == 0 {
+		return m.skipUnclaimed(ctx, s, req, dest, g, existing, skip)
+	}
+
+	// The Sending window and the Frequency cap sit here, between Send-eligibility and the claim
+	// (ADR 0178), and read whether the message's kind is held to them.
+	if _, err := recipientLimitsOf(req.Kind()); err != nil {
+		return Result{}, err
+	}
+
 	msg, replay, err := m.claim(ctx, s, req, dest, g, existing)
 	if err != nil {
 		return Result{}, err
 	}
 	if replay != nil {
 		return *replay, nil
-	}
-
-	// Where the message goes is the Channel's to resolve, after the claim: a Channel of Bindings
-	// reads the Contact's Bindings of the routed Integration. A Contact with no Destination on the
-	// Channel has nothing to send to: a Skipped, recorded on the claimed message like an opt-out,
-	// after the holds as eligibility is (ADR 0079, 0081).
-	targets, err := ch.targets(ctx, s, req, g.route, dest)
-	if err != nil {
-		m.release(ctx, s, msg)
-		return Result{}, err
-	}
-	if len(targets) == 0 {
-		return m.skip(ctx, s, msg, skipreason.NoDestination)
-	}
-
-	eligible, skip, err := m.eligibleTargets(ctx, s, req, targets)
-	if err != nil {
-		m.release(ctx, s, msg)
-		return Result{}, err
-	}
-	if len(eligible) == 0 {
-		return m.skip(ctx, s, msg, skip)
 	}
 	dest = eligible[0].dest
 
@@ -623,6 +623,20 @@ func renderedSubject(rendered any) string {
 		return email.Subject
 	}
 	return ""
+}
+
+// recipients is the targets of req that Send-eligibility allows, read only: those its Channel
+// resolves through the route g (dest is the Request's own Destination), each checked on its own.
+// When none is left, skip says why: no_destination when the Channel resolves none.
+func (m *Module) recipients(ctx context.Context, s *ent.Scoped, req Request, ch channel, g gateResult, dest string) (eligible []target, skip skipreason.Reason, err error) {
+	targets, err := ch.targets(ctx, s, req, g.route, dest)
+	if err != nil {
+		return nil, "", err
+	}
+	if len(targets) == 0 {
+		return nil, skipreason.NoDestination, nil
+	}
+	return m.eligibleTargets(ctx, s, req, targets)
 }
 
 // eligibleTargets is the targets that pass Send-eligibility, each checked on its own at send time,
