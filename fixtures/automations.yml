@@ -124,6 +124,17 @@
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
 
+# A once date Trigger (ADR 0126): each Acme Contact's renewal_on at 10:00. Inactive, so the date
+# scheduler's tick never reaches it; it keeps Alice's Enrollment of its one occurrence.
+- id: 1714 # fixture: AutomationRenewalNotice
+  revision: 1
+  name: Renewal notice
+  status: inactive
+  live_version_id: 1714
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+
 # Globex (workspace 2).
 - id: 900 # fixture: AutomationGlobex
   revision: 1

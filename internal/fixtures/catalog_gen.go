@@ -607,6 +607,12 @@ const (
 	AutomationQuahogHookUnsignedVersionID = 7652
 	// AutomationQuahogHookVersionID is from fixtures/automation_versions.
 	AutomationQuahogHookVersionID = 7653
+	// AutomationRenewalNoticeID is from fixtures/automations.
+	AutomationRenewalNoticeID = 1714
+	// AutomationRenewalNoticeName is from fixtures/automations.
+	AutomationRenewalNoticeName = "Renewal notice"
+	// AutomationRenewalNoticeVersionID is from fixtures/automation_versions.
+	AutomationRenewalNoticeVersionID = 1714
 	// AutomationRepeatPurchaseID is from fixtures/automations.
 	AutomationRepeatPurchaseID = 15540
 	// AutomationRepeatPurchaseName is from fixtures/automations.
@@ -741,6 +747,8 @@ const (
 	AutomationRunQuahogHookUnsignedID = 7652
 	// AutomationRunRecoveryActiveID is from fixtures/automation_runs.
 	AutomationRunRecoveryActiveID = 7500
+	// AutomationRunRenewalNoticeAliceID is from fixtures/automation_runs.
+	AutomationRunRenewalNoticeAliceID = 17140
 	// AutomationRunRepeatPurchaseFirstID is from fixtures/automation_runs.
 	AutomationRunRepeatPurchaseFirstID = 15540
 	// AutomationRunRepeatPurchaseSecondID is from fixtures/automation_runs.
@@ -1669,6 +1677,12 @@ const (
 	CustomFieldAcmePlanKey = "plan"
 	// CustomFieldAcmePlanName is from fixtures/custom_fields.
 	CustomFieldAcmePlanName = "Plan"
+	// CustomFieldAcmeRenewalOnID is from fixtures/custom_fields.
+	CustomFieldAcmeRenewalOnID = 7
+	// CustomFieldAcmeRenewalOnKey is from fixtures/custom_fields.
+	CustomFieldAcmeRenewalOnKey = "renewal_on"
+	// CustomFieldAcmeRenewalOnName is from fixtures/custom_fields.
+	CustomFieldAcmeRenewalOnName = "Renewal on"
 	// CustomFieldAcmeTrialEndsAtID is from fixtures/custom_fields.
 	CustomFieldAcmeTrialEndsAtID = 6
 	// CustomFieldAcmeTrialEndsAtKey is from fixtures/custom_fields.

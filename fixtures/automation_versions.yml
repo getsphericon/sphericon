@@ -65,6 +65,17 @@
   created_at: '{{daysAgo 3}}'
   updated_at: '{{daysAgo 3}}'
 
+# The Renewal notice's once date Trigger (ADR 0126).
+- id: 1714 # fixture: AutomationRenewalNoticeVersion
+  automation_id: 1714
+  trigger_action: ''
+  trigger_date: '{"field":{"kind":"customField","key":"renewal_on"},"recurrence":"once","offsetDays":0,"localTime":"10:00"}'
+  version: 1
+  steps: '{"id":"7c2b1f4e-1714-4d1a-9a1e-1714a0000001","steps":[]}'
+  workspace_id: 1
+  created_at: '{{daysAgo 3}}'
+  updated_at: '{{daysAgo 3}}'
+
 - id: 104 # fixture: AutomationTagOnEngagementVersion
   automation_id: 104
   trigger_action: tag_demo

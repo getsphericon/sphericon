@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -112,17 +111,17 @@ func TestExternalEnrollmentsShowTheAnniversaryYearOfADateTrigger(t *testing.T) {
 	assert.False(t, evented.Occurrence.IsSet())
 }
 
-// An Enrollment of a once date Trigger carries the once date's one occurrence, and no year.
+// An Enrollment of a once date Trigger carries the once date's one occurrence, and no year
+// (fixture Renewal notice: Alice's).
 func TestExternalEnrollmentsShowTheOnceOccurrence(t *testing.T) {
-	clock := testhelper.NewClock(time.Date(2027, time.March, 19, 12, 0, 0, 0, time.UTC))
-	env := testhelper.Setup(t, testhelper.WithClock(clock.Now))
+	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeEnrollmentsRead)
-	id := env.OnceDateEnrollment(t, clock)
 
-	listed, err := c.EnrollmentsList(t.Context(), externalapi.EnrollmentsListParams{AutomationId: entityIDString(id)})
+	listed, err := c.EnrollmentsList(t.Context(), externalapi.EnrollmentsListParams{AutomationId: entityIDString(fixtures.AutomationRenewalNoticeID)})
 	require.NoError(t, err)
 
 	require.Len(t, listed.Items, 1)
+	assert.Equal(t, entityIDString(fixtures.AutomationRunRenewalNoticeAliceID), listed.Items[0].ID)
 	occurrence, ok := listed.Items[0].Occurrence.Get()
 	require.True(t, ok)
 	assert.JSONEq(t, `{"recurrence":"once"}`, testhelper.JSONOf(t, &occurrence))

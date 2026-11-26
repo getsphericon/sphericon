@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -89,19 +88,19 @@ func TestSiteEnrollmentsShowTheAnniversaryYearOfADateTrigger(t *testing.T) {
 	assert.JSONEq(t, `{"recurrence":"yearly","year":2026}`, testhelper.JSONOf(t, &occurrence))
 }
 
-// An Enrollment of a once date Trigger carries the once date's one occurrence, and no year.
+// An Enrollment of a once date Trigger carries the once date's one occurrence, and no year
+// (fixture Renewal notice: Alice's).
 func TestSiteEnrollmentsShowTheOnceOccurrence(t *testing.T) {
-	clock := testhelper.NewClock(time.Date(2027, time.March, 19, 12, 0, 0, 0, time.UTC))
-	env := testhelper.Setup(t, testhelper.WithClock(clock.Now))
+	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	id := env.OnceDateEnrollment(t, clock)
 
 	listed, err := c.SiteEnrollmentsList(t.Context(), siteapi.SiteEnrollmentsListParams{
-		WorkspaceId: fixtures.AcmePublicID, AutomationId: siteapi.EntityId(id),
+		WorkspaceId: fixtures.AcmePublicID, AutomationId: siteapi.EntityId(fixtures.AutomationRenewalNoticeID),
 	})
 	require.NoError(t, err)
 
 	require.Len(t, listed.Items, 1)
+	assert.Equal(t, siteapi.EntityId(fixtures.AutomationRunRenewalNoticeAliceID), listed.Items[0].ID)
 	occurrence, ok := listed.Items[0].Occurrence.Get()
 	require.True(t, ok)
 	assert.JSONEq(t, `{"recurrence":"once"}`, testhelper.JSONOf(t, &occurrence))

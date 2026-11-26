@@ -40,6 +40,16 @@
   workspace_id: 1
   created_at: '{{daysAgo 170}}'
   updated_at: '{{daysAgo 170}}'
+# When an Acme Contact's plan renews: the datetime field the once date Trigger of Renewal notice
+# names (ADR 0126), apart from trial_ends_at, which the retype tests change.
+- id: 7 # fixture: CustomFieldAcmeRenewalOn
+  revision: 1
+  key: renewal_on
+  name: Renewal on
+  type: datetime
+  workspace_id: 1
+  created_at: '{{daysAgo 170}}'
+  updated_at: '{{daysAgo 170}}'
 
 # --- Globex (workspace 2) foreign row — DO NOT change ---
 - id: 900 # fixture: CustomFieldGlobex
