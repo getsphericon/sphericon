@@ -104,15 +104,6 @@ func TestConsentBoundsTheScopesByTheUsersRole(t *testing.T) {
 	}
 }
 
-// demoteVehementAdmin makes the Vehement admin Ada a member.
-func demoteVehementAdmin(t *testing.T, env *testhelper.TestEnv) {
-	t.Helper()
-	_, err := env.SiteActor(t, fixtures.VehementOwnerValEmail).SiteMembershipsUpdate(t.Context(),
-		&siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleMember},
-		siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.VehementPublicID, ID: siteapi.EntityId(fixtures.VehementAdminMembershipID)})
-	require.NoError(t, err)
-}
-
 // A Connection can do what its scopes and its User's current Role allow: an admin's Connection to
 // the webhook endpoints loses them on the request after the admin is made a member.
 func TestADemotionTakesEffectOnTheNextRequest(t *testing.T) {
@@ -122,7 +113,7 @@ func TestADemotionTakesEffectOnTheNextRequest(t *testing.T) {
 	_, err := api.WebhooksList(t.Context(), externalapi.WebhooksListParams{})
 	require.NoError(t, err)
 
-	demoteVehementAdmin(t, env)
+	env.DemoteVehementAdmin(t)
 
 	_, err = api.WebhooksList(t.Context(), externalapi.WebhooksListParams{})
 	refused := testhelper.ExternalRefusal(t, err, http.StatusForbidden)
@@ -156,7 +147,7 @@ func TestADemotionTakesExportAndSuppressionsAway(t *testing.T) {
 	env := testhelper.Setup(t)
 	api := env.ExternalWithToken(t, adasConnection)
 
-	demoteVehementAdmin(t, env)
+	env.DemoteVehementAdmin(t)
 
 	_, err := api.ContactsExport(t.Context(), externalapi.ContactsExportParams{ID: externalapi.NewOptEntityId(externalapi.EntityId(fixtures.ContactVehementVicID))})
 	refusedExport := testhelper.ExternalRefusal(t, err, http.StatusForbidden)
@@ -273,7 +264,7 @@ func TestTheTwoFactorRequirementWithholdsAConnection(t *testing.T) {
 
 	clock.Set(graceEnds.Add(time.Hour))
 
-	rec := serve(env, mcpRequest(t, ritasConnection))
+	rec := env.Serve(mcpRequest(t, ritasConnection))
 	assert.Equal(t, http.StatusForbidden, rec.Code)
 	var problem struct {
 		Code string `json:"code"`

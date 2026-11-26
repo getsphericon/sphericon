@@ -38,7 +38,5 @@ func TestTheJobQueueUIServesItsPagesAndHidesArguments(t *testing.T) {
 
 func serve(t *testing.T, h http.Handler, path string) *httptest.ResponseRecorder {
 	t.Helper()
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil))
-	return rec
+	return testhelper.ServeHandler(h, httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil))
 }

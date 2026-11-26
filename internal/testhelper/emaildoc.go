@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"html"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/go-faster/jx"
 
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 )
@@ -83,5 +86,14 @@ func (n docNode) blocks(out *[]string) {
 	}
 	for _, c := range n.Content {
 		c.blocks(out)
+	}
+}
+
+// ParagraphDoc is an email document of one paragraph holding text, as a request's free-form JSON.
+func ParagraphDoc(text string) map[string]jx.Raw {
+	return map[string]jx.Raw{
+		"type": jx.Raw(`"doc"`),
+		"content": jx.Raw(`[{"type":"paragraph","content":[{"type":"text","text":` +
+			strconv.Quote(text) + `}]}]`),
 	}
 }

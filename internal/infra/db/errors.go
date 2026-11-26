@@ -8,6 +8,8 @@ import (
 
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
+
+	"github.com/getsphericon/sphericon/ent"
 )
 
 // IsUnavailable reports whether err means the database cannot be reached right now: a
@@ -44,4 +46,14 @@ func IsUnavailable(err error) bool {
 // request took effect is unknown, so only a request whose retry is idempotent may be retried.
 func IsConnectionLost(err error) bool {
 	return errors.Is(err, pgconn.ErrConnClosed)
+}
+
+// NotFoundAs is refusal when err is ent's miss of a row, and err otherwise: a module answers a row
+// it was asked for and does not hold with its own not-found refusal, as Constraints answers a
+// violated constraint with the refusal declared for it.
+func NotFoundAs(err, refusal error) error {
+	if ent.IsNotFound(err) {
+		return refusal
+	}
+	return err
 }

@@ -52,3 +52,15 @@ func Document(tb testing.TB, v any) string {
 	require.NoError(tb, err)
 	return string(b)
 }
+
+// NestedCondition is a Condition as JSON holding leaf at entries.1.entries.1, behind a valid leaf at
+// each depth: where a refusal of the leaf names its place.
+func NestedCondition(tb testing.TB, leaf string) map[string]any {
+	tb.Helper()
+	var condition map[string]any
+	require.NoError(tb, json.Unmarshal([]byte(`{"kind":"group","combinator":"and","entries":[
+		{"kind":"tag","name":"vip","operator":"has"},
+		{"kind":"group","combinator":"or","entries":[{"kind":"tag","name":"vip","operator":"has"},`+leaf+`]}
+	]}`), &condition))
+	return condition
+}

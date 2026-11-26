@@ -14,11 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// serve drives the real in-memory server (no sockets).
-func serve(env *testhelper.TestEnv, req *http.Request) *httptest.ResponseRecorder {
-	return env.Serve(req)
-}
-
 func appURL(t *testing.T) string {
 	t.Helper()
 	cfg, err := config.Load(config.EnvTest)
@@ -28,7 +23,7 @@ func appURL(t *testing.T) string {
 
 func getJSON(t *testing.T, env *testhelper.TestEnv, path string) map[string]any {
 	t.Helper()
-	rec := serve(env, httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil))
+	rec := env.Serve(httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil))
 	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
 	var doc map[string]any
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &doc))
@@ -47,7 +42,7 @@ func TestMCPChallengePointsAtProtectedResourceMetadata(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, testhelper.MCPEndpoint, strings.NewReader(`{}`))
 			req.Header["Authorization"] = auth
-			rec := serve(env, req)
+			rec := env.Serve(req)
 
 			assert.Equal(t, http.StatusUnauthorized, rec.Code)
 			assert.Contains(t, rec.Header().Get("WWW-Authenticate"),
@@ -102,7 +97,7 @@ func TestSplitHostDiscovery(t *testing.T) {
 func TestSplitHostChallengeNamesTheMCPHost(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.MCPURL = splitMCPURL }))
 
-	rec := serve(env, httptest.NewRequestWithContext(t.Context(), http.MethodPost, testhelper.MCPEndpoint, strings.NewReader(`{}`)))
+	rec := env.Serve(httptest.NewRequestWithContext(t.Context(), http.MethodPost, testhelper.MCPEndpoint, strings.NewReader(`{}`)))
 
 	assert.Equal(t, http.StatusUnauthorized, rec.Code)
 	assert.Contains(t, rec.Header().Get("WWW-Authenticate"),

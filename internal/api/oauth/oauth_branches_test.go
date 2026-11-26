@@ -49,7 +49,7 @@ func TestTokenEndpointRefusesAMalformedBody(t *testing.T) {
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/oauth/token", strings.NewReader("code=%zz"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	rec := serve(env, req)
+	rec := env.Serve(req)
 
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 	assert.Equal(t, "invalid_request", errorOf(t, rec))

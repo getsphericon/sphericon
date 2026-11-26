@@ -74,13 +74,6 @@ var constraints = db.Declare(
 		"the current and replacement roles are moved under the Workspace lock, after the Workspace's hosts are read"),
 )
 
-func notFound(err error) error {
-	if ent.IsNotFound(err) {
-		return ErrNotFound
-	}
-	return err
-}
-
 // CNAMELookup resolves the canonical name of a host. net.Resolver.LookupCNAME satisfies
 // it; a host with no CNAME answers itself or a not-found error.
 type CNAMELookup func(ctx context.Context, host string) (string, error)
@@ -205,7 +198,7 @@ func roleRank(r trackingdomain.Role) int {
 // Get returns the Workspace's Tracking domain with the id; an unknown id is ErrNotFound.
 func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.TrackingDomain, error) {
 	row, err := s.TrackingDomain().Get(ctx, id)
-	return row, notFound(err)
+	return row, db.NotFoundAs(err, ErrNotFound)
 }
 
 // ServingHost is the host the Workspace's new mail and snippet are built on: the current Tracking
@@ -342,7 +335,7 @@ func (m *Module) Remove(ctx context.Context, s *ent.Scoped, id int64) error {
 		ts := wl.Scope()
 		row, err := ts.TrackingDomain().Get(ctx, id)
 		if err != nil {
-			return notFound(err)
+			return db.NotFoundAs(err, ErrNotFound)
 		}
 		if row.Role != trackingdomain.RoleCurrent {
 			return ts.TrackingDomain().DeleteOneID(id).Exec(ctx)
@@ -403,7 +396,7 @@ func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.Trac
 	}
 	row, err := s.TrackingDomain().Get(ctx, id)
 	if err != nil {
-		return nil, notFound(err)
+		return nil, db.NotFoundAs(err, ErrNotFound)
 	}
 	if err := m.checkRow(ctx, s, row); err != nil {
 		return nil, err

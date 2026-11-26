@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio"
@@ -898,7 +899,7 @@ func withVersions(q *ent.AutomationQuery) *ent.AutomationQuery {
 // still addressable (viewed, unarchived, its Enrollments listed).
 func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {
 	a, err := withVersions(s.Automation().QueryWithArchived().Where(automation.ID(id))).Only(ctx)
-	return a, notFound(err)
+	return a, db.NotFoundAs(err, ErrNotFound)
 }
 
 // Create stores a new inactive Automation whose first version is its draft: nothing is live until
@@ -1447,11 +1448,4 @@ func (m *Module) Revert(ctx context.Context, s *ent.Scoped, id, revision int64) 
 // archived Automation is read-only: ErrArchived.
 func (m *Module) Deactivate(ctx context.Context, s *ent.Scoped, id int64) (*ent.Automation, error) {
 	return m.life.Deactivate(ctx, s, id)
-}
-
-func notFound(err error) error {
-	if ent.IsNotFound(err) {
-		return ErrNotFound
-	}
-	return err
 }

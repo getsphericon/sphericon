@@ -6,6 +6,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
@@ -20,7 +21,7 @@ type EnrollmentsFilter struct {
 // only those in one status. ErrNotFound when the Workspace has no such Automation.
 func (m *Module) Enrollments(ctx context.Context, s *ent.Scoped, p pagination.Params, f EnrollmentsFilter) (pagination.Page[*ent.AutomationRun], error) {
 	if _, err := s.Automation().Get(ctx, f.AutomationID); err != nil {
-		return pagination.Page[*ent.AutomationRun]{}, notFound(err)
+		return pagination.Page[*ent.AutomationRun]{}, db.NotFoundAs(err, ErrNotFound)
 	}
 	q := s.AutomationRun().Query().Where(automationrun.AutomationID(f.AutomationID))
 	if f.Status != "" {

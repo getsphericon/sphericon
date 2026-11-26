@@ -81,7 +81,7 @@ func refreshForm(refreshToken string) url.Values {
 // mcpStatus calls /mcp with a bearer and returns the HTTP status.
 func mcpStatus(t *testing.T, env *testhelper.TestEnv, bearer string) int {
 	t.Helper()
-	return serve(env, mcpRequest(t, bearer)).Code
+	return env.Serve(mcpRequest(t, bearer)).Code
 }
 
 // mcpRequest is a call of /mcp with a bearer.

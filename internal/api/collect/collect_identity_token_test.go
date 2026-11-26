@@ -54,7 +54,7 @@ func TestAProvenIdentifyFillsKeysMovesTheVisitorAndHandsOverItsChats(t *testing.
 	bot := env.AcmeTelegram(t)
 	env.MakeDefaultTelegram(t, bot)
 	secret := identitySecret(t, env)
-	identify(t, env, "dev-proven", fixtures.ContactAliceEmail)
+	env.IdentifyVisitor(t, "dev-proven", fixtures.ContactAliceEmail)
 	env.StartTelegram(t, bot, 1, 6101, startLink(t, env, "dev-proven").URL)
 
 	err := identifyProven(t, env, collectapi.CollectIdentifyInput{

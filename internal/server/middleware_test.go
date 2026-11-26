@@ -52,9 +52,7 @@ func serveRequest(t *testing.T, h http.Handler, method, target string, headers m
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, req)
-	return rec
+	return testhelper.ServeHandler(h, req)
 }
 
 // panicOnVisitorWrites makes the transaction collect opens panic with value.
