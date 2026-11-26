@@ -2,6 +2,7 @@ package automations
 
 import (
 	"context"
+	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/samber/lo"
@@ -87,12 +88,8 @@ func (c cause) insertSkip(ctx context.Context, create *ent.AutomationSkippedEntr
 			OnConflictColumns(automationskippedentry.FieldWorkspaceID, automationskippedentry.FieldAutomationID, automationskippedentry.FieldFiringID).
 			DoNothing().Exec(ctx)
 	case c.byOccurrence():
-		held := sql.NEQ(automationskippedentry.FieldReason, automationskippedentry.ReasonSendLocked)
-		if reason == automationskippedentry.ReasonSendLocked {
-			held = sql.EQ(automationskippedentry.FieldReason, automationskippedentry.ReasonSendLocked)
-		}
 		return create.SetOccurrence(*c.occurrence).
-			OnConflictColumnsWhere(sql.And(sql.NotNull(automationskippedentry.FieldOccurrence), held),
+			OnConflictColumnsWhere(occurrenceSkipIndexOf(reason),
 				automationskippedentry.FieldWorkspaceID, automationskippedentry.FieldAutomationID,
 				automationskippedentry.FieldContactID, automationskippedentry.FieldOccurrence).
 			DoNothing().Exec(ctx)
@@ -118,4 +115,21 @@ func begunBy(ctx context.Context, s *ent.Scoped, firings *rules.Firings, run *en
 		return false, err
 	}
 	return fired == sourceID, nil
+}
+
+// occurrenceSkipIndexOf is the predicate of the partial unique index a skipped entry of an
+// occurrence for the reason is written on: the one of `send_locked`, or the one of the reasons that
+// decide the occurrence.
+func occurrenceSkipIndexOf(reason automationskippedentry.Reason) *sql.Predicate {
+	op := "<>"
+	if reason == automationskippedentry.ReasonSendLocked {
+		op = "="
+	}
+	// raw sql: Postgres infers a partial index from the ON CONFLICT predicate only when that
+	// predicate implies the index's, which a bound argument never does once the statement runs on a
+	// generic plan; the reason is a constant of the enum, written as the literal the index holds.
+	return sql.P(func(b *sql.Builder) {
+		b.WriteString(fmt.Sprintf("%s IS NOT NULL AND %s %s '%s'",
+			automationskippedentry.FieldOccurrence, automationskippedentry.FieldReason, op, automationskippedentry.ReasonSendLocked))
+	})
 }

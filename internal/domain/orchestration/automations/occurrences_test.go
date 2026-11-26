@@ -2,6 +2,7 @@ package automations_test
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
@@ -326,4 +327,41 @@ func TestASendLockedDateEnrollsNoOneUntilAWriteWithoutTheMark(t *testing.T) {
 	assert.Equal(t, []automationskippedentry.Reason{automationskippedentry.ReasonSendLocked}, held)
 	assert.Empty(t, same, "the same value written again lifts nothing")
 	assert.Equal(t, []time.Time{at(2027, time.March, 14, 10, 0)}, c.beganAt(id, fixtures.ContactAliceID))
+}
+
+// After an outage of years each year's occurrence is decided `missed` once, and a tick that comes
+// round again records none twice.
+func TestEveryOccurrenceOfAnOutageIsMissedOnce(t *testing.T) {
+	c := newDateCase(t, at(2027, time.March, 13, 12, 0))
+	c.born(fixtures.ContactAliceID, at(1990, time.March, 14, 0, 0), "")
+	id := c.publish(birthday(0, "10:00"))
+
+	c.tickAt(id, at(2034, time.March, 15, 12, 0))
+	c.tickAt(id, at(2034, time.March, 15, 12, 5))
+
+	assert.Equal(t, slices.Repeat([]automationskippedentry.Reason{automationskippedentry.ReasonMissed}, 8), c.skips(id, fixtures.ContactAliceID))
+	assert.Empty(t, c.beganAt(id, fixtures.ContactAliceID))
+}
+
+// A time zone change that moves an occurrence not yet reached to a moment already past, eastward,
+// enrolls it by the late path and counts no `missed` (decision 12 of #1613): the Workspace's, for a
+// Contact without a zone, as the Contact's own.
+func TestAnOccurrenceAZoneChangeMovesIntoThePastEnrollsLate(t *testing.T) {
+	c := newDateCase(t, at(2027, time.March, 13, 12, 0))
+	c.born(fixtures.ContactAliceID, at(1990, time.March, 14, 0, 0), "")
+	c.born(fixtures.ContactExportSubjectID, at(1990, time.March, 14, 0, 0), "Europe/London")
+	id := c.publish(birthday(0, "10:00"))
+	c.tickAt(id, at(2027, time.March, 14, 5, 0))
+
+	ws, err := c.acme.Workspace(t.Context())
+	require.NoError(t, err)
+	_, err = testhelper.Module[*workspaces.Module](c.env).SetTimezone(t.Context(), c.acme, ws.Revision, "Asia/Tokyo")
+	require.NoError(t, err)
+	c.born(fixtures.ContactExportSubjectID, at(1990, time.March, 14, 0, 0), "Asia/Kolkata")
+	c.tickAt(id, at(2027, time.March, 14, 5, 5))
+
+	assert.Equal(t, []time.Time{at(2027, time.March, 14, 1, 0)}, c.beganAt(id, fixtures.ContactAliceID), "10:00 in Tokyo")
+	assert.Equal(t, []time.Time{at(2027, time.March, 14, 4, 30)}, c.beganAt(id, fixtures.ContactExportSubjectID), "10:00 in Kolkata")
+	assert.Empty(t, c.skips(id, fixtures.ContactAliceID))
+	assert.Empty(t, c.skips(id, fixtures.ContactExportSubjectID))
 }
