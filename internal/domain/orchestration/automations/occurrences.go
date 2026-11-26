@@ -319,8 +319,17 @@ func (m *StepExecution) decideOccurrence(ctx context.Context, s *ent.Scoped, c o
 
 // occurrenceDecided reports whether the Contact's occurrence of the Automation's date Trigger is
 // decided: an Enrollment was made for it, or a skipped entry other than `send_locked` records it.
-// It is read under the Contact's lock, which every decision of the occurrence takes, across the two
-// tables each of whose partial unique indexes holds one decision.
+// It is read under the Contact's lock, which every decision of the occurrence takes.
+//
+// This read is not a duplicate check before an insert (review rule 8): each of the two inserts is
+// ON CONFLICT DO NOTHING on its own partial unique index, which refuses a second Enrollment or a
+// second deciding skip of the occurrence. What no index can refuse is a decision in one table
+// after one in the other, as a unique index spans one table: a tick skips the occurrence as
+// `active_enrollment` while last year's Enrollment runs; the Enrollment ends; the Contact's date
+// then moves to a later day of the same year, and a tick reaching the occurrence's new moment,
+// with nothing active at it any more, would enroll it. A constraint across both tables would need a
+// table of decisions of its own; the read under the lock that serialises them is the check instead
+// (TestAnOccurrenceSkippedForAnActiveEnrollmentStaysDecided).
 func occurrenceDecided(ctx context.Context, s *ent.Scoped, automationID, contactID int64, occurrence datetrigger.Occurrence) (bool, error) {
 	stored := datetrigger.Stored(occurrence)
 	enrolled, err := s.AutomationRun().Query().

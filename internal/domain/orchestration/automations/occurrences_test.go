@@ -200,6 +200,28 @@ func TestAnOccurrenceDuringLastYearsEnrollmentIsSkippedUntilItEnds(t *testing.T)
 	assert.Equal(t, []time.Time{at(2027, time.March, 14, 10, 0), at(2029, time.March, 14, 10, 0)}, c.beganAt(id, fixtures.ContactAliceID))
 }
 
+// An occurrence skipped as `active_enrollment` stays decided: once last year's Enrollment has
+// ended, a birthday moved to a later day of the same year enrolls no one for that year.
+func TestAnOccurrenceSkippedForAnActiveEnrollmentStaysDecided(t *testing.T) {
+	c := newDateCase(t, at(2027, time.March, 13, 12, 0))
+	c.born(fixtures.ContactAliceID, at(1990, time.March, 14, 0, 0), "")
+	id := c.publish(birthday(0, "10:00"))
+	c.tickAt(id, at(2027, time.March, 14, 10, 5))
+	c.tickAt(id, at(2028, time.March, 14, 10, 5))
+	err := c.env.Bus.WithinScopedTx(t.Context(), c.acme, func(ts *ent.Scoped, _ events.Publisher) error {
+		_, err := c.module.Exit(t.Context(), ts, id, fixtures.ContactAliceID)
+		return err
+	})
+	require.NoError(t, err)
+
+	c.clock.Set(at(2028, time.March, 14, 11, 0))
+	c.born(fixtures.ContactAliceID, at(1990, time.March, 15, 0, 0), "")
+	c.tickAt(id, at(2028, time.March, 15, 10, 5))
+
+	assert.Equal(t, []time.Time{at(2027, time.March, 14, 10, 0)}, c.beganAt(id, fixtures.ContactAliceID))
+	assert.Equal(t, []automationskippedentry.Reason{automationskippedentry.ReasonActiveEnrollment}, c.skips(id, fixtures.ContactAliceID))
+}
+
 // A once Trigger on a datetime Custom field enrolls the Contact once: a later tick, and a corrected
 // date still ahead, enroll no one again.
 func TestAOnceDateEnrollsOnce(t *testing.T) {
