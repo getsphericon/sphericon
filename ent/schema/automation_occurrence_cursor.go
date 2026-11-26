@@ -37,20 +37,24 @@ func (AutomationOccurrenceCursor) Fields() []ent.Field {
 		// The start of the active span of the live version (decision 1 of #1613): the later of the
 		// Automation's activation and the Publish of its live version, on the Instance clock. No
 		// occurrence before it enrolls anyone or is missed.
-		field.Time("span_start"),
+		field.Time("span_start").
+			Annotations(Machine()),
 		// The watermark: the moment, on the Instance clock, up to which the occurrences are decided.
 		// It starts at span_start and moves to each tick's now.
-		field.Time("decided_through"),
+		field.Time("decided_through").
+			Annotations(Machine()),
 		// The Workspace time zone the last tick read the occurrences in; nil before the first tick
 		// and for a Workspace whose zone is unset (UTC). A tick that finds another zone rescans the
 		// span of the last 24 hours for every Contact.
 		field.String("workspace_zone").
+			Annotations(Attribute("an observation of the tick that last moved the cursor, written with its move")).
 			Optional().
 			Nillable(),
 		// The latest change of a Contact of the Workspace (its updated_at, the clock that stamps the
 		// row) the last tick had seen: the next tick reads the dates set since. Nil before the first
 		// tick, which reads every Contact.
 		field.Time("contacts_seen_through").
+			Annotations(Attribute("an observation of the tick that last moved the cursor, written with its move")).
 			Optional().
 			Nillable(),
 	}

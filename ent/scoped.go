@@ -6703,6 +6703,8 @@ func (u *AutomationOccurrenceCursorScopedUpsert) SetSpanStart(v time.Time) *Auto
 
 const RoleOf_AutomationOccurrenceCursorScopedUpsert_SetSpanStart = RoleStep
 
+const SetsState_AutomationOccurrenceCursorScopedUpsert_SetSpanStart = "SpanStart"
+
 // UpdateSpanStart sets the "span_start" field to the value that was provided on create.
 func (u *AutomationOccurrenceCursorScopedUpsert) UpdateSpanStart() *AutomationOccurrenceCursorScopedUpsert {
 	u.u.SetExcluded(automationoccurrencecursor.FieldSpanStart)
@@ -6710,6 +6712,8 @@ func (u *AutomationOccurrenceCursorScopedUpsert) UpdateSpanStart() *AutomationOc
 }
 
 const RoleOf_AutomationOccurrenceCursorScopedUpsert_UpdateSpanStart = RoleStep
+
+const SetsState_AutomationOccurrenceCursorScopedUpsert_UpdateSpanStart = "SpanStart"
 
 // SetDecidedThrough sets the "decided_through" field.
 func (u *AutomationOccurrenceCursorScopedUpsert) SetDecidedThrough(v time.Time) *AutomationOccurrenceCursorScopedUpsert {
@@ -6719,6 +6723,8 @@ func (u *AutomationOccurrenceCursorScopedUpsert) SetDecidedThrough(v time.Time) 
 
 const RoleOf_AutomationOccurrenceCursorScopedUpsert_SetDecidedThrough = RoleStep
 
+const SetsState_AutomationOccurrenceCursorScopedUpsert_SetDecidedThrough = "DecidedThrough"
+
 // UpdateDecidedThrough sets the "decided_through" field to the value that was provided on create.
 func (u *AutomationOccurrenceCursorScopedUpsert) UpdateDecidedThrough() *AutomationOccurrenceCursorScopedUpsert {
 	u.u.SetExcluded(automationoccurrencecursor.FieldDecidedThrough)
@@ -6726,6 +6732,8 @@ func (u *AutomationOccurrenceCursorScopedUpsert) UpdateDecidedThrough() *Automat
 }
 
 const RoleOf_AutomationOccurrenceCursorScopedUpsert_UpdateDecidedThrough = RoleStep
+
+const SetsState_AutomationOccurrenceCursorScopedUpsert_UpdateDecidedThrough = "DecidedThrough"
 
 // SetWorkspaceZone sets the "workspace_zone" field.
 func (u *AutomationOccurrenceCursorScopedUpsert) SetWorkspaceZone(v string) *AutomationOccurrenceCursorScopedUpsert {
@@ -6994,6 +7002,8 @@ func (x *AutomationOccurrenceCursorScopedUpdateOne) SetSpanStart(v time.Time) *A
 
 const RoleOf_AutomationOccurrenceCursorScopedUpdateOne_SetSpanStart = RoleStep
 
+const SetsState_AutomationOccurrenceCursorScopedUpdateOne_SetSpanStart = "SpanStart"
+
 // SetNillableSpanStart sets the "span_start" field if the given value is not nil.
 func (x *AutomationOccurrenceCursorScopedUpdateOne) SetNillableSpanStart(v *time.Time) *AutomationOccurrenceCursorScopedUpdateOne {
 	if v != nil {
@@ -7004,6 +7014,8 @@ func (x *AutomationOccurrenceCursorScopedUpdateOne) SetNillableSpanStart(v *time
 
 const RoleOf_AutomationOccurrenceCursorScopedUpdateOne_SetNillableSpanStart = RoleStep
 
+const SetsState_AutomationOccurrenceCursorScopedUpdateOne_SetNillableSpanStart = "SpanStart"
+
 // SetDecidedThrough sets the "decided_through" field.
 func (x *AutomationOccurrenceCursorScopedUpdateOne) SetDecidedThrough(v time.Time) *AutomationOccurrenceCursorScopedUpdateOne {
 	x.set = append(x.set, func(b *AutomationOccurrenceCursorUpdateOne) { b.SetDecidedThrough(v) })
@@ -7011,6 +7023,8 @@ func (x *AutomationOccurrenceCursorScopedUpdateOne) SetDecidedThrough(v time.Tim
 }
 
 const RoleOf_AutomationOccurrenceCursorScopedUpdateOne_SetDecidedThrough = RoleStep
+
+const SetsState_AutomationOccurrenceCursorScopedUpdateOne_SetDecidedThrough = "DecidedThrough"
 
 // SetNillableDecidedThrough sets the "decided_through" field if the given value is not nil.
 func (x *AutomationOccurrenceCursorScopedUpdateOne) SetNillableDecidedThrough(v *time.Time) *AutomationOccurrenceCursorScopedUpdateOne {
@@ -7021,6 +7035,8 @@ func (x *AutomationOccurrenceCursorScopedUpdateOne) SetNillableDecidedThrough(v 
 }
 
 const RoleOf_AutomationOccurrenceCursorScopedUpdateOne_SetNillableDecidedThrough = RoleStep
+
+const SetsState_AutomationOccurrenceCursorScopedUpdateOne_SetNillableDecidedThrough = "DecidedThrough"
 
 // SetWorkspaceZone sets the "workspace_zone" field.
 func (x *AutomationOccurrenceCursorScopedUpdateOne) SetWorkspaceZone(v string) *AutomationOccurrenceCursorScopedUpdateOne {
@@ -7173,6 +7189,8 @@ func (x *AutomationOccurrenceCursorScopedUpdate) SetSpanStart(v time.Time) *Auto
 
 const RoleOf_AutomationOccurrenceCursorScopedUpdate_SetSpanStart = RoleStep
 
+const SetsState_AutomationOccurrenceCursorScopedUpdate_SetSpanStart = "SpanStart"
+
 // SetNillableSpanStart sets the "span_start" field if the given value is not nil.
 func (x *AutomationOccurrenceCursorScopedUpdate) SetNillableSpanStart(v *time.Time) *AutomationOccurrenceCursorScopedUpdate {
 	if v != nil {
@@ -7183,6 +7201,8 @@ func (x *AutomationOccurrenceCursorScopedUpdate) SetNillableSpanStart(v *time.Ti
 
 const RoleOf_AutomationOccurrenceCursorScopedUpdate_SetNillableSpanStart = RoleStep
 
+const SetsState_AutomationOccurrenceCursorScopedUpdate_SetNillableSpanStart = "SpanStart"
+
 // SetDecidedThrough sets the "decided_through" field.
 func (x *AutomationOccurrenceCursorScopedUpdate) SetDecidedThrough(v time.Time) *AutomationOccurrenceCursorScopedUpdate {
 	x.set = append(x.set, func(b *AutomationOccurrenceCursorUpdate) { b.SetDecidedThrough(v) })
@@ -7190,6 +7210,8 @@ func (x *AutomationOccurrenceCursorScopedUpdate) SetDecidedThrough(v time.Time) 
 }
 
 const RoleOf_AutomationOccurrenceCursorScopedUpdate_SetDecidedThrough = RoleStep
+
+const SetsState_AutomationOccurrenceCursorScopedUpdate_SetDecidedThrough = "DecidedThrough"
 
 // SetNillableDecidedThrough sets the "decided_through" field if the given value is not nil.
 func (x *AutomationOccurrenceCursorScopedUpdate) SetNillableDecidedThrough(v *time.Time) *AutomationOccurrenceCursorScopedUpdate {
@@ -7200,6 +7222,8 @@ func (x *AutomationOccurrenceCursorScopedUpdate) SetNillableDecidedThrough(v *ti
 }
 
 const RoleOf_AutomationOccurrenceCursorScopedUpdate_SetNillableDecidedThrough = RoleStep
+
+const SetsState_AutomationOccurrenceCursorScopedUpdate_SetNillableDecidedThrough = "DecidedThrough"
 
 // SetWorkspaceZone sets the "workspace_zone" field.
 func (x *AutomationOccurrenceCursorScopedUpdate) SetWorkspaceZone(v string) *AutomationOccurrenceCursorScopedUpdate {

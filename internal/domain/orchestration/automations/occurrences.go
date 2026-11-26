@@ -2,6 +2,7 @@ package automations
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -10,46 +11,21 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
-	"github.com/getsphericon/sphericon/ent/automationoccurrencecursor"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationskippedentry"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contactdate"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/ent/schema"
-	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/optional"
 )
 
 // The date scheduler (ADR 0126): the occurrences of an Automation's date Trigger are decided by
 // its cursor, which the Publish of a date Trigger resets (resetCursor) and each tick moves
-// (DecideOccurrences).
-
-// The unique constraint of the cursor (ADR 0106): no client can break it.
-var _ = db.Declare(
-	db.Fault(schema.OccurrenceCursorIndex,
-		"an Automation's cursor is written by an upsert on this index: a Publish resets it, a tick moves it"),
-	db.Fault("automation_occurrence_cursors_automation_id_key",
-		"the Automation's one cursor, the same key as the Workspace's index, which the upsert writes on"),
-)
-
-// resetCursor starts the active span of the Automation's date Trigger at, and stands its watermark
-// there: nothing before it is ever decided. The Workspace zone and the Contacts seen are forgotten,
-// so the next tick reads the Workspace's every Contact over the span it decides.
-func resetCursor(ctx context.Context, s *ent.Scoped, automationID int64, at time.Time) error {
-	return s.AutomationOccurrenceCursor().Create().
-		SetAutomationID(automationID).
-		SetSpanStart(at).
-		SetDecidedThrough(at).
-		OnConflictColumns(automationoccurrencecursor.FieldWorkspaceID, automationoccurrencecursor.FieldAutomationID).
-		Update(func(u *ent.AutomationOccurrenceCursorScopedUpsert) {
-			u.SetSpanStart(at).SetDecidedThrough(at).ClearWorkspaceZone().ClearContactsSeenThrough()
-		}).
-		Exec(ctx)
-}
+// (DecideOccurrences), both through its machine (cursor.go).
 
 // The 24 hours of ADR 0126: an occurrence the scheduler reaches later than this after its moment
 // is `missed`, and a date set this long after its occurrence has none.
@@ -168,16 +144,11 @@ func (m *StepExecution) DecideOccurrences(ctx context.Context, s *ent.Scoped, au
 			return err
 		}
 	}
-	return s.AutomationOccurrenceCursor().Update().
-		Where(
-			automationoccurrencecursor.ID(cur.ID),
-			automationoccurrencecursor.DecidedThrough(watermark),
-			automationoccurrencecursor.SpanStart(cur.SpanStart),
-		).
-		SetDecidedThrough(now).
-		SetNillableWorkspaceZone(ws.Timezone).
-		SetNillableContactsSeenThrough(seen).
-		Exec(ctx)
+	err = moveCursor(ctx, s, cur.ID, cursorTick, positionOf(cur), cursorPosition(cur.SpanStart, now), observed{workspaceZone: ws.Timezone, contactsSeen: seen})
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		return nil // a Publish reset the cursor meanwhile: it stands where the Publish put it
+	}
+	return err
 }
 
 // later is the later of two moments.
