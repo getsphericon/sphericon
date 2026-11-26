@@ -128,7 +128,8 @@ func TestExternalContactsExportMembersCoverEveryStoredColumn(t *testing.T) {
 		// 0134), which the number already exported decides.
 		outboundmessage.FieldDeferredSince, outboundmessage.FieldDeferralCause, outboundmessage.FieldWindowSingleZone)
 	covered(reflect.TypeFor[externalapi.ContactExportBroadcastRecipient](), broadcastrecipient.Columns,
-		"workspace_id", "contact_id", "updated_at", "outbound_message_id", "deferred_until", broadcastrecipient.FieldDeferralCause)
+		"workspace_id", "contact_id", "updated_at", "outbound_message_id", "deferred_until", broadcastrecipient.FieldDeferralCause,
+		broadcastrecipient.FieldDeferredSince)
 }
 
 // No tenant id and no rendered message content reach the document.
