@@ -469,8 +469,9 @@ model SplitPathInput {
 
 /** A Step that sends each Enrollment down one of its paths by weight (ADR 0124): a hash of the
  * Contact, the Split and the Enrollment's ordinal chooses the path, so the same Enrollment always
- * takes the same path and a new Enrollment of the Contact draws again. An empty path is a holdout.
- * The paths rejoin at the Step after the Split. */
+ * takes the same path and a new Enrollment of the Contact draws again. In an Automation with a
+ * yearly date Trigger the anniversary year takes the ordinal's place, so the Contact draws again
+ * each year (ADR 0126). An empty path is a holdout. The paths rejoin at the Step after the Split. */
 model SplitStep {
   /** The Step's id */
   id: StepId;
