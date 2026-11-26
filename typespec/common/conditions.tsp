@@ -363,6 +363,30 @@ model SentByLeaf {
   id: EntityId;
 }
 
+/** What a test of an Enrollment's own message asks of it: that it was opened (an email Step's
+ * message only) or clicked */
+enum MessageEngagement {
+  opened,
+  clicked,
+}
+
+/** A test of the message a send Step of the Automation sent to this Enrollment (ADR 0122): whether
+ * it was opened or clicked, by the first human open or click stamped on it, so an open or click by
+ * a machine never counts (ADR 0053). It is unknown, never false, when the message went out
+ * untracked, when its tracking was withdrawn since (ADR 0120), when the Step was skipped and when
+ * the Enrollment never passed it, so a Branch holding it needs its unknown path. The Step must be a
+ * send Step that can come before the Branch: an email Step for `opened`, any send Step for
+ * `clicked`. A Step a test names cannot be removed. */
+model StepMessageLeaf {
+  kind: "stepMessage";
+
+  /** The send Step's id */
+  step: StepId;
+
+  /** Whether the message was opened or clicked */
+  engagement: MessageEngagement;
+}
+
 /** The Event that fired a Rule, whose properties a property test reads */
 model TriggerSource {
   kind: "trigger";
@@ -440,6 +464,7 @@ model CustomFieldLeafInput is CustomFieldLeafOf<CustomFieldTestInput>;
 model EventLeaf is EventLeafOf<EventFilter>;
 model EventLeafInput is EventLeafOf<EventFilterInput>;
 model SentByLeafInput is SentByLeaf;
+model StepMessageLeafInput is StepMessageLeaf;
 model RulePropertyLeaf is PropertyLeafOf<RulePropertySource, PropertyTest>;
 model BranchPropertyLeaf is PropertyLeafOf<BranchPropertySource, PropertyTest>;
 model BranchPropertyLeafInput is PropertyLeafOf<
@@ -546,7 +571,7 @@ model RuleCondition is ConditionOf<RuleConditionNode>;
 model RuleConditionInput is ConditionOf<RuleConditionNodeInput>;
 
 /** An entry of a Branch path's Condition, by `kind`: a Rule's, the property test reading the
- * Event the Enrollment began with */
+ * Event the Enrollment began with, and the test of the Enrollment's own message */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union BranchConditionNode {
   group: BranchCondition,
@@ -559,10 +584,11 @@ union BranchConditionNode {
   customField: CustomFieldLeaf,
   event: EventLeaf,
   property: BranchPropertyLeaf,
+  stepMessage: StepMessageLeaf,
 }
 
 /** An entry of a Branch path's Condition, by `kind`: a Rule's, the property test reading the
- * Event the Enrollment began with */
+ * Event the Enrollment began with, and the test of the Enrollment's own message */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union BranchConditionNodeInput {
   group: BranchConditionInput,
@@ -575,14 +601,17 @@ union BranchConditionNodeInput {
   customField: CustomFieldLeafInput,
   event: EventLeafInput,
   property: BranchPropertyLeafInput,
+  stepMessage: StepMessageLeafInput,
 }
 
 /** A Branch path's Condition: the tree of tests the Contact, on its live data when the Enrollment
- * reaches the Branch, and the Event the Enrollment began with match */
+ * reaches the Branch, the Event the Enrollment began with and the messages the Enrollment was sent
+ * match */
 model BranchCondition is ConditionOf<BranchConditionNode>;
 
 /** A Branch path's Condition: the tree of tests the Contact, on its live data when the Enrollment
- * reaches the Branch, and the Event the Enrollment began with match */
+ * reaches the Branch, the Event the Enrollment began with and the messages the Enrollment was sent
+ * match */
 model BranchConditionInput is ConditionOf<BranchConditionNodeInput>;
 
 /** An entry of an Event filter, by `kind`: a test of a property of the one Event the filter is

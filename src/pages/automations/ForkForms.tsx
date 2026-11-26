@@ -1,17 +1,20 @@
 import { ActionIcon, Box, Button, Group, NumberInput, Stack, Text } from '@mantine/core'
 import { IconArrowDown, IconArrowUp, IconPlus, IconTrash } from '@tabler/icons-react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { emptyGroup } from '../../components/conditions/condition.ts'
 import { ConditionBuilder } from '../../components/conditions/ConditionBuilder.tsx'
+import type { MessageStep } from '../../components/conditions/ConditionBuilder.tsx'
 import { zSplitPathInput } from '../../generated/site/zod.gen.ts'
 import { useSchemaForm } from '../../resources/schemaForm.ts'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { boundsOf } from '../../utils/bounds.ts'
-import { branchConditionOf, filterText } from './definition.ts'
-import type { BranchStep, ForkStep, SplitStep } from './definition.ts'
+import { allSteps, branchConditionOf, filterText, sendsMessage, stepsBefore } from './definition.ts'
+import type { BranchStep, FlowPath, FlowStep, ForkStep, SplitStep } from './definition.ts'
 import type { PathPatch } from './flowEdits.ts'
 import { canAddPath, canRemovePath, forkError, forkSchemas, weightSum } from './forkRules.ts'
+import { useStepInfo } from './stepKinds.ts'
 import { useShownErrors, useValidator } from './stepValidator.ts'
 import type { StepValidator } from './stepValidator.ts'
 
@@ -101,10 +104,35 @@ function AddPathButton({ step, onAddPath }: { step: ForkStep; onAddPath: () => v
   )
 }
 
+// The send Steps whose message the Branch may test (ADR 0122): those an Enrollment may have passed
+// when it reaches it, each named by its place on the canvas, its kind (infoOf) and an email's
+// subject.
+function messageStepsOf(
+  infoOf: (step: FlowStep) => { label: string },
+  root: FlowPath,
+  branch: BranchStep,
+): MessageStep[] {
+  const places = allSteps(root).map((step) => step.id)
+  return stepsBefore(root, branch.id)
+    .filter((step) => sendsMessage(step))
+    .map((step) => {
+      const kind = infoOf(step).label
+      const named =
+        step.kind === 'email' && step.draft.subject !== '' ? `${kind}: ${step.draft.subject}` : kind
+      return {
+        id: step.id,
+        label: `${places.indexOf(step.id) + 1}. ${named}`,
+        opens: step.kind === 'email',
+      }
+    })
+}
+
 // A Branch's panel: each listed path's Condition, in the Condition builder of the Branch path's
 // place (ADR 0181), which tests the Contact and the Event the Enrollment began with, in the order
-// they are tested; then `otherwise` and, while a Condition can be unknown, the unknown path.
+// they are tested, and the messages of the send Steps before it (root is the version's Steps); then
+// `otherwise` and, while a Condition can be unknown, the unknown path.
 export function BranchForm({
+  root,
   step,
   checked,
   validatorRef,
@@ -113,9 +141,11 @@ export function BranchForm({
   onAddPath,
   onRemovePath,
   onMovePath,
-}: ForkFormProps<BranchStep>) {
+}: ForkFormProps<BranchStep> & { root: FlowPath }) {
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()
+  const infoOf = useStepInfo()
+  const messageSteps = useMemo(() => messageStepsOf(infoOf, root, step), [infoOf, root, step])
   const form = useSchemaForm(
     forkSchemas.branch,
     { paths: step.paths.map(({ id, conditionText }) => ({ id, conditionText })) },
@@ -155,6 +185,7 @@ export function BranchForm({
               <ConditionBuilder
                 workspaceId={workspaceId}
                 place="branch"
+                messageSteps={messageSteps}
                 initialValue={branchConditionOf(path.conditionText) ?? emptyGroup}
                 onChange={(draft) => form.setFieldValue(field, filterText(draft))}
               />

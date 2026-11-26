@@ -95,6 +95,11 @@ func TestExternalConditionRefusesWhatItsPlaceDoesNotAdmitByItsPath(t *testing.T)
 			"condition.entries.1.entries.1",
 		},
 		{
+			"a test of an Enrollment's own message in a Segment",
+			`{"kind":"stepMessage","step":"5a0f6d2e-8b1c-4e3a-9f7d-000000000002","engagement":"opened"}`,
+			"condition.entries.1.entries.1",
+		},
+		{
 			"a text operator on a number test",
 			`{"kind":"customField","key":"courses_completed","test":{"kind":"number","operator":"contains","value":1}}`,
 			"condition.entries.1.entries.1.test.operator",
@@ -134,4 +139,22 @@ func TestExternalConditionRefusesWhatItsPlaceDoesNotAdmitByItsPath(t *testing.T)
 			assert.Equal(t, []string{tc.path}, slices.Collect(maps.Keys(refused.Errors.Or(nil))))
 		})
 	}
+}
+
+// A Rule's Condition does not admit the test of an Enrollment's own message, which is a Branch
+// path's alone (ADR 0122): the schema refuses it with a 400 that names its path.
+func TestExternalRuleConditionRefusesATestOfAnEnrollmentsOwnMessage(t *testing.T) {
+	env := testhelper.Setup(t)
+	edited := env.ExternalVia(t, env.ScopedBearer(t, apitokens.ScopeAutomationsWrite), testhelper.EditBody(func(body map[string]any) {
+		body["condition"] = testhelper.NestedCondition(t, `{"kind":"stepMessage","step":"5a0f6d2e-8b1c-4e3a-9f7d-000000000002","engagement":"clicked"}`)
+	}))
+
+	_, err := edited.RulesCreate(t.Context(), &externalapi.CreateRuleInput{
+		Name: "Misplaced", TriggerEvents: []string{"checkout"},
+		Actions:   []externalapi.RuleActionInput{{Type: externalapi.RuleActionTypeApplyTag, Tag: externalapi.NewOptString("x")}},
+		Condition: externalapi.NewOptRuleConditionInput(testhelper.ConditionInput[externalapi.RuleConditionInput](t, `{"kind":"group","combinator":"and","entries":[]}`)),
+	})
+
+	refused := testhelper.ExternalRefusal(t, err, http.StatusBadRequest)
+	assert.Equal(t, []string{"condition.entries.1.entries.1"}, slices.Collect(maps.Keys(refused.Errors.Or(nil))))
 }

@@ -327,14 +327,14 @@ func validateBranch(st *automationstep.Step, b automationstep.Branch) error {
 
 // NeedsUnknownPath reports whether a Branch whose listed paths hold these Conditions needs an
 // unknown path (ADR 0124): it does when one of them can be unknown for a Contact
-// (condition.CanBeUnknown: an engagement count, ADR 0123). Publish arms a Branch by it, and the
-// editor asks it of the Conditions being edited.
+// (condition.CanBeUnknown: an engagement count, ADR 0123, or a test of the Enrollment's own message,
+// ADR 0122). Publish arms a Branch by it, and the editor asks it of the Conditions being edited.
 func NeedsUnknownPath(conditions []conditiontree.Branch) bool {
 	return slices.ContainsFunc(conditions, func(c conditiontree.Branch) bool { return condition.CanBeUnknown(c.Group) })
 }
 
 // checkUnknownPaths refuses, naming it, a Branch of the tree whose Conditions can be unknown for a
-// Contact (condition.CanBeUnknown: an engagement count, ADR 0123) and that has no unknown path, and
+// Contact (NeedsUnknownPath) and that has no unknown path, and
 // a Branch whose Conditions cannot be unknown and that has one (ADR 0124). A save keeps either, so
 // the author can build the Branch up; Publish arms it.
 func checkUnknownPaths(steps automationstep.Path) error {
@@ -346,12 +346,57 @@ func checkUnknownPaths(steps automationstep.Path) error {
 		needs := NeedsUnknownPath(b.Conditions())
 		switch {
 		case needs && b.Unknown == nil:
-			return refuse(st, "a branch whose conditions count an open or a click needs an unknown path, taken when one is unknown for the contact")
+			return refuse(st, "a branch whose conditions count an open or a click, or test a message of the enrollment, needs an unknown path, taken when one is unknown for the contact")
 		case !needs && b.Unknown != nil:
-			return refuse(st, "a branch whose conditions count no open or click is never unknown, so it takes no unknown path")
+			return refuse(st, "a branch whose conditions count no open or click and test no message of the enrollment is never unknown, so it takes no unknown path")
 		}
 	}
 	return nil
+}
+
+// checkStepMessages refuses, naming the Branch and its path, a test of the Enrollment's own message
+// (ADR 0122) that names a Step which is not a send Step that can come before the Branch
+// (automationstep.Before): one after it, in its own paths, in another path of a fork it stands in,
+// or one the version does not hold, so a send Step a test names cannot be removed; and a test of an
+// open of a message that is no email, the one Channel whose opens are tracked. A click is tracked on
+// every Channel. The steps carry their ids (identify).
+func checkStepMessages(steps automationstep.Path) error {
+	for _, st := range automationstep.All(steps) {
+		b, ok := st.Payload.(automationstep.Branch)
+		if !ok {
+			continue
+		}
+		passed := automationstep.Before(steps, st.ID)
+		before := lo.KeyBy(passed, func(s *automationstep.Step) automationstep.ID { return s.ID })
+		for i, p := range b.Paths {
+			for _, test := range condition.StepMessageTests(p.Condition.Group) {
+				if why := messageProblem(before[test.Step], test); why != "" {
+					return refuse(st, fmt.Sprintf("path %d: %s", i+1, why))
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// messageProblem is why a Branch's test cannot read the message of the Step sent, one of the Steps
+// before the Branch (nil for none of them); "" when it can.
+func messageProblem(sent *automationstep.Step, test condition.StepMessageTest) string {
+	if sent == nil {
+		return fmt.Sprintf("the message test names step %s, which is no send step before the branch", test.Step)
+	}
+	ch, sends := sent.Kind().Channel()
+	if !sends {
+		return fmt.Sprintf("the message test names step %s (%s), which sends no message", sent.ID, sent.Kind())
+	}
+	switch test.Engagement {
+	case conditiontree.MessageOpened:
+		if ch != channels.Email {
+			return fmt.Sprintf("only an email step's message is opened, step %s sends %s", sent.ID, ch)
+		}
+	case conditiontree.MessageClicked:
+	}
+	return ""
 }
 
 // identify gives the path and each step without an id one, keeping the ids sent; a malformed id
@@ -1065,6 +1110,9 @@ func (v versioned) mergeSteps(ctx context.Context, ts *ent.Scoped, steps, stored
 		return automationstep.Path{}, err
 	}
 	if err := checkEnds(steps); err != nil {
+		return automationstep.Path{}, err
+	}
+	if err := checkStepMessages(steps); err != nil {
 		return automationstep.Path{}, err
 	}
 	if err := v.m.checkBranches(ctx, ts, steps); err != nil {

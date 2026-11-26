@@ -4,8 +4,8 @@
 // leaves. A stored Condition is read once into the typed tree (decode, tree.go): groups with a
 // combinator, a negation and their entries, whose leaves test a Contact attribute, the birthday, a
 // Tag, Telegram and SMS reachability, an Engagement tracking consent, a Custom field, a count of the
-// Contact's Events or, in a Rule, a property of the triggering Event, each by a test typed by the
-// value it reads (text, presence, number, moment or the last days). An Event matcher's filter is a tree of property tests
+// Contact's Events, in a Rule a property of the triggering Event or, in a Branch, the message a send
+// Step sent to the Enrollment, each by a test typed by the value it reads (text, presence, number, moment or the last days). An Event matcher's filter is a tree of property tests
 // alone, compiled to one SQL/JSON path (filter.go, ADR 0180), and a Rule's property tests run as the
 // same path on the triggering Event's properties: no property test is evaluated in Go. What each
 // place, leaf and test admits, and every operator, is the contract's vocabulary generated into
@@ -16,10 +16,11 @@
 // A leaf is built from ent's generated predicates wherever one exists: the core
 // attributes (contact.EmailEQ …) and Tags (contact.HasTagsWith). An event count is a correlated
 // COUNT(*) of the Contact's Events, built with ent's SQL builder and the generated Event
-// predicates. A count of opens or clicks is the one leaf that can be unknown (ADR 0123): NULL for
-// a Contact whose Destination on the Channel of the count is not tracked now, so Postgres carries it
-// through AND, OR, NOT and WHERE by Kleene's rules and a Segment or a Rule reads it as no match;
-// every other leaf is meant two-valued. The one dynamic piece is a Custom field's key inside the
+// predicates. A count of opens or clicks can be unknown (ADR 0123): NULL for a Contact whose
+// Destination on the Channel of the count is not tracked now, so Postgres carries it through AND, OR,
+// NOT and WHERE by Kleene's rules and a Segment or a Rule reads it as no match. So can a Branch's
+// test of the Enrollment's own message (ADR 0122), a boolean bound to the statement that is NULL
+// unless the message went out tracked and is tracked still; every other leaf is meant two-valued. The one dynamic piece is a Custom field's key inside the
 // custom_fields JSON column, which no generated predicate covers; it is addressed
 // with ent's JSON predicates (sqljson) after the key is checked, and by a number or moment test
 // with a jsonpath filter, which is false on a value of another type where a cast would fail the
@@ -36,6 +37,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/tagname"
 
@@ -193,6 +195,9 @@ type compiler struct {
 	// trigger is the properties of the Event a Rule's tests of the triggering Event read, a JSON
 	// object; nil in a Segment, whose tree holds no such test.
 	trigger json.RawMessage
+	// messages is what a Branch's tests of the Enrollment's own messages read, by the send Step
+	// that sent each (ADR 0122); nil where none is read, as in a check, which reads them unknown.
+	messages map[automationstep.ID]SentMessage
 }
 
 func (c *compiler) group(ctx context.Context, g group) (predicate.Contact, error) {
@@ -248,6 +253,8 @@ func (c *compiler) node(ctx context.Context, n node) (predicate.Contact, error) 
 		return c.event(ctx, l)
 	case propertyLeaf:
 		return c.property(l)
+	case stepMessageLeaf:
+		return c.stepMessage(l), nil
 	default:
 		return nil, fmt.Errorf("unknown leaf %T", n)
 	}
@@ -444,6 +451,43 @@ func (c *compiler) event(ctx context.Context, l eventCountLeaf) (predicate.Conta
 			b.WriteString("CASE WHEN ").Join(unknown).WriteString(" THEN NULL ELSE ").Join(holds).WriteString(" END")
 		}))
 	}), nil
+}
+
+// SentMessage is what a Branch reads of the message a send Step sent to the Enrollment (ADR 0122):
+// whether it is tracked (it went out tracked and its tracking was not withdrawn since, ADR 0120),
+// and whether its first human open and click are stamped. A Step that sent the Enrollment no message
+// (it was skipped, or the Enrollment never passed it) has none.
+type SentMessage struct {
+	Tracked, Opened, Clicked bool
+}
+
+// stamped reports whether the engagement e is stamped on the message.
+func (m SentMessage) stamped(e conditiontree.Engagement) bool {
+	switch e {
+	case conditiontree.MessageOpened:
+		return m.Opened
+	case conditiontree.MessageClicked:
+		return m.Clicked
+	}
+	return false
+}
+
+// stepMessage is the test of the Enrollment's own message as a boolean bound to the statement: its
+// stamp while the message is tracked, and NULL otherwise, so Postgres carries the unknown through the
+// tree by Kleene's rules (ADR 0180). Read as counted, it is the stamp as it stands, as an engagement
+// count is: known, whatever the tracking.
+func (c *compiler) stepMessage(l stepMessageLeaf) predicate.Contact {
+	msg := c.messages[l.step]
+	var value any
+	if msg.Tracked || c.counted {
+		value = msg.stamped(l.engagement)
+	}
+	return predicate.Contact(func(s *sql.Selector) {
+		// raw sql: ent has no predicate of a bound value; the cast types a NULL as a boolean.
+		s.Where(sql.P(func(b *sql.Builder) {
+			b.WriteString("CAST(").Arg(value).WriteString(" AS boolean)")
+		}))
+	})
 }
 
 // tagRule is the subject has (or lacks) the Tag. Evaluated live — membership is never
@@ -726,12 +770,38 @@ func ReachesPastKept(g conditiontree.Group, keptDays int) bool {
 	return false
 }
 
+// StepMessageTest is a test of the Enrollment's own message a Branch path's Condition holds (ADR
+// 0122): the send Step whose message it reads, and whether it asks for an open or a click.
+type StepMessageTest struct {
+	Step       automationstep.ID
+	Engagement conditiontree.Engagement
+}
+
+// StepMessageTests are the tests of the Enrollment's own messages the group holds, at any depth and
+// under a negation too, in the tree's order: what a Branch reads of the Enrollment's messages, and
+// what a save checks the version's Steps against. A malformed entry tests nothing.
+func StepMessageTests(g conditiontree.Group) []StepMessageTest {
+	var out []StepMessageTest
+	for n := range decodeSkipping(g).leaves() {
+		if l, ok := n.(stepMessageLeaf); ok {
+			out = append(out, StepMessageTest{Step: l.step, Engagement: l.engagement})
+		}
+	}
+	return out
+}
+
 // CanBeUnknown reports whether the group can be unknown for a Contact (ADR 0181): it can when a
 // leaf, at any depth and under a negation too, counts an open or a click, whose tracking a Contact
-// may have refused. A malformed entry counts nothing.
+// may have refused, or tests the Enrollment's own message, which may have gone out untracked or never
+// gone out (ADR 0122). A malformed entry counts nothing.
 func CanBeUnknown(g conditiontree.Group) bool {
 	for n := range decodeSkipping(g).leaves() {
-		if l, ok := n.(eventCountLeaf); ok && events.IsEngagement(l.action) {
+		switch l := n.(type) {
+		case eventCountLeaf:
+			if events.IsEngagement(l.action) {
+				return true
+			}
+		case stepMessageLeaf:
 			return true
 		}
 	}

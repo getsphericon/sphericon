@@ -22,6 +22,7 @@ import {
   EngagementTrackingState,
   EventCountOperator,
   HasOperator,
+  MessageEngagement,
   MessageSender,
   SystemEventAction,
 } from '../../generated/site/types.gen.ts'
@@ -33,6 +34,7 @@ import {
   eventPresets,
   sentByFieldId,
   sentByOperator,
+  stepMessageFieldId,
   subjectFields,
   subjectless,
   toCondition,
@@ -141,6 +143,31 @@ const placeFields: Record<ConditionPlace, (t: TFunction, contact: Field[]) => Fi
   eventFilter: (t) => [propertyField(t)],
 }
 
+// A send Step whose message a Branch path's Condition may test (ADR 0122): one an Enrollment may
+// have passed when it reaches the Branch. Its label names it on the canvas; opens tells an email's,
+// whose message is opened or clicked, from another Channel's, whose message is only clicked.
+export interface MessageStep {
+  id: string
+  label: string
+  opens: boolean
+}
+
+// The fields of the tests of the Enrollment's own messages, one per send Step: whether its message
+// was opened or clicked, with no value to type. "Did not open" is a negated group.
+function messageFields(t: TFunction, steps: readonly MessageStep[]): Field[] {
+  return steps.map((step) => ({
+    name: stepMessageFieldId(step.id),
+    label: t(($) => $.conditions.stepMessage, { step: step.label }),
+    operators: Object.values(MessageEngagement)
+      .filter((engagement) => step.opens || engagement !== MessageEngagement.OPENED)
+      .map((engagement) => ({
+        name: engagement,
+        label: t(($) => $.conditions.messageEngagements[engagement]),
+        arity: 'unary' as const,
+      })),
+  }))
+}
+
 // What a place reads of the Workspace's catalogue to offer the Contact's fields: an Event filter
 // offers none.
 function testsContact(place: ConditionPlace): boolean {
@@ -169,6 +196,9 @@ interface ConditionBuilderProps {
   propertyKeys?: readonly string[]
   // The fields an Event filter adds to its property tests: what sent a message's System event.
   filterFields?: Field[]
+  // The send Steps a Branch path's Condition may test the message of (ADR 0122), in the order the
+  // Enrollment passes them; a Condition of any other place tests none.
+  messageSteps?: readonly MessageStep[]
 }
 
 // ConditionBuilder is the visual Condition editor (react-querybuilder + the official
@@ -182,6 +212,7 @@ export function ConditionBuilder({
   propertyValues,
   propertyKeys,
   filterFields,
+  messageSteps,
 }: ConditionBuilderProps) {
   const { t } = useTranslation()
   const labelOf = useEventActionLabel()
@@ -224,8 +255,9 @@ export function ConditionBuilder({
     return [
       ...placeFields[place](t, [...contactFields(t), ...customFields, ...eventFields]),
       ...(filterFields ?? []),
+      ...messageFields(t, messageSteps ?? []),
     ]
-  }, [actionsQuery.data, customFieldsQuery.data, labelOf, t, place, filterFields])
+  }, [actionsQuery.data, customFieldsQuery.data, labelOf, t, place, filterFields, messageSteps])
   // What the value editors read: the values and keys a property test is offered, and, where an
   // event test is edited, the Workspace, the editor of its filter and how far back Events are kept.
   const context: ValueEditorContext = {

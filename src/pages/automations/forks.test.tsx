@@ -83,7 +83,7 @@ beforeEach(async () => {
 
 // Renders the editor over the stored steps and the Automation's report, recording the body of
 // every save. The server says a Branch needs an unknown path when one of its Conditions counts an
-// open.
+// open or tests the Enrollment's own message.
 async function editing(steps: AutomationStep[], report: AutomationReport = NO_AUTOMATION_REPORT) {
   const bodies: UpdateAutomationInput[] = []
   const stored: SiteAutomationResource = {
@@ -110,7 +110,9 @@ async function editing(steps: AutomationStep[], report: AutomationReport = NO_AU
     }),
     handleSiteAutomationsUnknownPath(async ({ request }) => {
       const { conditions } = await request.json()
-      return HttpResponse.json({ needed: JSON.stringify(conditions).includes('email.opened') })
+      return HttpResponse.json({
+        needed: /email\.opened|stepMessage/.test(JSON.stringify(conditions)),
+      })
     }),
     handleSiteEventsActions({
       body: { actions: ['email.opened'], eventsKeptDays: 400, messageActions: [], keptActions: [] },
@@ -430,6 +432,60 @@ test('an open test added to a Condition adds the unknown path', async () => {
   ])
 })
 
+// A Branch path's Condition offers the message of each send Step an Enrollment may have passed when
+// it reaches the Branch (ADR 0122), never one after it; testing it adds the unknown path.
+test("a Branch path's Condition tests whether the message of a send Step before it was opened", async () => {
+  const email: AutomationStep = {
+    id: stepId(10),
+    type: 'email',
+    subject: 'Welcome',
+    body: '<p></p>',
+  }
+  const sms: AutomationStep = { id: stepId(30), type: 'sms', text: 'Hi', linkTracking: true }
+  const branch: AutomationStep = {
+    id: stepId(20),
+    type: 'branch',
+    paths: [{ id: stepId(21), condition: VIP, steps: [] }],
+    otherwise: { id: stepId(22), steps: [] },
+  }
+  const { screen, saved } = await editing([email, branch, sms])
+
+  await nodeButton(screen, 'Branch').click()
+  const panel = screen.getByRole('region', { name: 'Branch' })
+  await panel.getByRole('button', { name: /Rule/ }).first().click()
+  await panel.getByTestId('fields').last().click()
+  await expect
+    .element(screen.getByRole('option', { name: /^Message of .*SMS/ }))
+    .not.toBeInTheDocument()
+  await screen.getByRole('option', { name: 'Message of 1. Send email: Welcome' }).click()
+  await expect.element(screen.getByRole('button', { name: /^Unknown/ })).toBeVisible()
+  await save(screen)
+
+  await expect.poll(saved).toEqual([
+    [
+      expect.objectContaining({ id: stepId(10), type: 'email' }),
+      {
+        ...branch,
+        paths: [
+          {
+            id: stepId(21),
+            condition: {
+              ...VIP,
+              entries: [
+                ...VIP.entries,
+                { kind: 'stepMessage', step: stepId(10), engagement: 'opened' },
+              ],
+            },
+            steps: [],
+          },
+        ],
+        unknown: { id: anyId, steps: [] },
+      },
+      expect.objectContaining({ id: stepId(30), type: 'sms' }),
+    ],
+  ])
+})
+
 test('removing the last open test removes the unknown path, asking first while it holds Steps', async () => {
   const branch: AutomationStep = {
     id: stepId(20),
@@ -477,7 +533,7 @@ test("Publish's refusal of a Branch's unknown path shows in the editor", async (
     paths: [{ id: stepId(21), condition: VIP, steps: [] }],
     otherwise: { id: stepId(22), steps: [] },
   }
-  const refusal = `step ${stepId(20)} (branch): a branch whose conditions count an open or a click needs an unknown path`
+  const refusal = `step ${stepId(20)} (branch): a branch whose conditions count an open or a click, or test a message of the enrollment, needs an unknown path`
   const { screen } = await editing([branch])
   worker.use(handleSiteAutomationsPublish(() => problem(422, { detail: refusal })))
 

@@ -20,6 +20,7 @@ export default defineConfig({
       'capturedMessages.surfaces.*',
       'conditions.attributes.*',
       'conditions.hasOperators.*',
+      'conditions.messageEngagements.*',
       'conditions.momentOperators.*',
       'conditions.numberOperators.*',
       'conditions.presenceOperators.*',
