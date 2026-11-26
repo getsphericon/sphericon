@@ -71,9 +71,9 @@ import (
 )
 
 // Outcome is what an Outbound send did. Sent, Skipped and Failed are final for the
-// destination; Held and Deferral are reversible per-source Outcomes — nothing was
-// consumed, the caller should try the same Request again later (a Held after its own
-// delay, a Deferral after Result.Wait).
+// destination; Held and Deferral are reversible Outcomes — nothing was consumed, the
+// caller should try the same Request again later (a Held after its own delay, a Deferral
+// when Result.Retry says).
 type Outcome string
 
 const (
@@ -87,10 +87,12 @@ const (
 	Failed Outcome = "failed"
 	// Held: the source cannot send right now. Result.Hold says why.
 	Held Outcome = "held"
-	// Deferral: a send limit is spent — the Integration's Provider limit (ADR 0023), the
-	// Workspace's Send cap (ADR 0067) or the provider's own. Nothing is wrong with the source,
-	// it is busy: no hold reason, no claim, no attempt consumed. Result.Wait says when
-	// capacity returns and Result.Cause which limit it waits for.
+	// Deferral: the send waits. Per source, a send limit is spent — the Integration's Provider
+	// limit (ADR 0023), the Workspace's Send cap (ADR 0067) or the provider's own: nothing is
+	// wrong with the source, it is busy, and Result.Wait says when capacity returns. Per
+	// recipient, the recipient may not get it yet — an Automation's send over its Destination's
+	// Frequency cap (ADR 0137, ADR 0178): Result.Until is the moment it may. Either way no hold
+	// reason, no claim, no attempt consumed, and Result.Cause says what it waits for.
 	Deferral Outcome = "deferral"
 	// Refused: a Test send the System sender will not make (ADR 0041). Result.Refusal is a Refuse*
 	// constant; unlike a Held it does not clear by waiting.
@@ -186,10 +188,14 @@ var ErrNoTracker = errors.New("outbound: marketing send requires an unsubscribe 
 // Result is the outcome of a Send.
 type Result struct {
 	Outcome Outcome
-	// Wait is, for a Deferral, how long until capacity returns.
+	// Wait is, for a per-source Deferral (a Provider limit, the Send cap, the provider), how long
+	// until capacity returns.
 	Wait time.Duration
-	// Cause is, for a Deferral of a Send, the limit it waits for; empty for every other Outcome
-	// and for a Test send (its cap is Limit).
+	// Until is, for a per-recipient Deferral (the Frequency cap, a Sending window), the moment the
+	// recipient's send may go: its release moment. Zero for every other Outcome.
+	Until time.Time
+	// Cause is, for a Deferral of a Send, what it waits for; empty for every other Outcome and
+	// for a Test send (its cap is Limit).
 	Cause deferralcause.Cause
 	// SkippedReason is why a Skipped send was skipped.
 	SkippedReason skipreason.Reason
@@ -557,8 +563,8 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 
 	// The Sending window and the Frequency cap sit here, between Send-eligibility and the claim
 	// (ADR 0178): under the lock of each Destination a cap holds, a target over its cap is dropped and
-	// a new claim is written to the rest with its count; with none left, the send is Skipped
-	// (claimNew).
+	// a new claim is written to the rest with its count; with none left, the send is Skipped, or
+	// an Automation's deferred until a place frees (claimNew, overCap).
 	c, replay, err := m.claim(ctx, s, req, dest, g, existing, eligible)
 	if err != nil {
 		return Result{}, err

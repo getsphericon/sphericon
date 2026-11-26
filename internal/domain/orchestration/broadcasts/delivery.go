@@ -112,7 +112,7 @@ func (d *Delivery) deliver(ctx context.Context, s *ent.Scoped, rec *ent.Broadcas
 	if err != nil {
 		return err
 	}
-	if retry := res.Retry(0); retry.Wanted {
+	if retry := res.Retry(0, d.out.Now()); retry.Wanted {
 		return d.retryLater(ctx, s, b, rec, res)
 	}
 	return d.settle(ctx, s, rec, res)
@@ -214,7 +214,7 @@ func (d *Delivery) retryLater(ctx context.Context, s *ent.Scoped, b *ent.Broadca
 	if cerr != nil {
 		ahead = 0 // the estimate only spreads retries; never fail the send over it
 	}
-	retry := res.Retry(ahead)
+	retry := res.Retry(ahead, now)
 	// Best effort, like the count: it sharpens later recipients' backlog and says why and until
 	// when the recipient waits (ADR 0178), which the send itself does not need.
 	if uerr := s.BroadcastRecipient().UpdateOneID(rec.ID).SetDeferredUntil(now.Add(retry.After)).SetDeferralCause(res.Cause).Exec(ctx); uerr != nil {
