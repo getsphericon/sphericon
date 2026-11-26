@@ -421,7 +421,7 @@ type Module struct {
 func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer, out *outboundmessages.Module, clicks *linkclick.Module, enrollers *rules.Module, people *contacts.Module, now func() time.Time) *Module {
 	m := &Module{cipher: cipher, bus: bus, renderer: renderer, out: out, clicks: clicks, rules: enrollers, people: people, now: now,
 		revenues: orders.NewRevenues(), tags: tags.New(), conditions: condition.New(now), senders: messagesenders.New()}
-	m.life = versioneddefinition.New(bus, versioned{m: m}, versioneddefinition.Errors{
+	m.life = versioneddefinition.NewActivating(bus, versioned{m: m}, versioneddefinition.Errors{
 		NotFound:         ErrNotFound,
 		Archived:         ErrArchived,
 		NothingToPublish: ErrNothingToPublish,
@@ -925,7 +925,8 @@ func (versioned) Store(s *ent.Scoped) ent.VersionedStore[ent.Automation, ent.Aut
 // changes: the Trigger, exit and goal events (validateEvents, and the definitions their filters
 // name, checkNamed), and the steps, each send step's Integration kept (not archived). An HTTP step that names one of the
 // base's steps by ID keeps the secrets it does not resend.
-func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.AutomationVersion, e edit) (definition, error) {
+func (v versioned) Merge(ctx context.Context, l *ent.WorkspaceLocked, base *ent.AutomationVersion, e edit) (definition, error) {
+	ts := l.Scope()
 	def := definition{
 		entry: defaultEntry,
 		exits: []eventmatcher.Matcher{}, steps: automationstep.Path{ID: automationstep.NewID(), Steps: []automationstep.Step{}},

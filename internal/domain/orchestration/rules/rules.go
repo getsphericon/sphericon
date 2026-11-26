@@ -233,8 +233,8 @@ func (versioned) Store(s *ent.Scoped) ent.VersionedStore[ent.Rule, ent.RuleVersi
 	return s.Rule().Pointers(withTriggers)
 }
 
-func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.RuleVersion, in UpdateInput) (definition, error) {
-	return v.m.merge(ctx, ts, base, in)
+func (v versioned) Merge(ctx context.Context, l *ent.WorkspaceLocked, base *ent.RuleVersion, in UpdateInput) (definition, error) {
+	return v.m.merge(ctx, l, base, in)
 }
 
 func (versioned) Equal(v *ent.RuleVersion, def definition) bool { return def.equal(definitionOf(v)) }
@@ -251,11 +251,8 @@ func (versioned) Write(ctx context.Context, l *ent.WorkspaceLocked, id int64, nu
 }
 
 func (versioned) Publishable(ctx context.Context, l *ent.WorkspaceLocked, draft *ent.RuleVersion) error {
-	return publishable(ctx, l.Scope(), draft)
+	return publishable(ctx, l, draft)
 }
-
-// Published keeps nothing: a Rule acts on the Events recorded from its activation (activated_at).
-func (versioned) Published(context.Context, *ent.WorkspaceLocked, *ent.RuleVersion) error { return nil }
 
 // Archivable never refuses: a Rule is discarded, never archived (ADR 0100), so it is never asked.
 func (versioned) Archivable(context.Context, *ent.WorkspaceLocked, *ent.Rule) error { return nil }
@@ -269,9 +266,10 @@ func (versioned) Editable(r *ent.Rule) error {
 }
 
 // merge lays the fields of an edit over the version it starts from (nil for a new Rule) and
-// validates what it changes. An http Action that names one of the base's Actions by ID keeps the
-// secrets it does not resend.
-func (m *Module) merge(ctx context.Context, s *ent.Scoped, base *ent.RuleVersion, in UpdateInput) (definition, error) {
+// validates what it changes, under the Workspace lock. An http Action that names one of the base's
+// Actions by ID keeps the secrets it does not resend.
+func (m *Module) merge(ctx context.Context, l *ent.WorkspaceLocked, base *ent.RuleVersion, in UpdateInput) (definition, error) {
+	s := l.Scope()
 	def := definition{condition: conditiontree.Rule{Group: conditiontree.Empty()}, actions: []ruleaction.Action{}}
 	var stored []ruleaction.Action
 	if base != nil {
@@ -295,7 +293,7 @@ func (m *Module) merge(ctx context.Context, s *ent.Scoped, base *ent.RuleVersion
 		if err != nil {
 			return definition{}, err
 		}
-		if err := requireAutomations(ctx, s, *in.Actions); err != nil {
+		if err := requireAutomations(ctx, l, *in.Actions); err != nil {
 			return definition{}, err
 		}
 		def.actions = actions
@@ -389,11 +387,11 @@ func (m *Module) Publish(ctx context.Context, s *ent.Scoped, id, revision int64)
 
 // publishable refuses a version that cannot run: one with no Actions, or with an enroll Action
 // whose Automation is gone.
-func publishable(ctx context.Context, s *ent.Scoped, v *ent.RuleVersion) error {
+func publishable(ctx context.Context, l *ent.WorkspaceLocked, v *ent.RuleVersion) error {
 	if len(v.Actions) == 0 {
 		return ErrInvalid.With("a Rule needs at least one Action to be published")
 	}
-	return requireAutomations(ctx, s, v.Actions)
+	return requireAutomations(ctx, l, v.Actions)
 }
 
 // Revert drops the Rule's draft: its live version is again the latest (ADR 0065). It is
@@ -809,9 +807,10 @@ func (m *Module) record(ctx context.Context, s *ent.Scoped, firingID int64, inde
 // Workspace, or whose live version starts on a date (ADR 0126, decision 4 of #1613): such an
 // Automation enrolls a Contact once per occurrence of its date, and only its scheduler does
 // (ErrInvalid, naming it). Only the live version counts: the Automation's own Publish refuses a
-// date Trigger while an active Rule enrolls into it. Both read under the Workspace lock, so neither
-// slips past the other.
-func requireAutomations(ctx context.Context, s *ent.Scoped, actions []ruleaction.Action) error {
+// date Trigger while an active Rule enrolls into it. Both read under the Workspace lock, which l
+// stands for, so neither slips past the other.
+func requireAutomations(ctx context.Context, l *ent.WorkspaceLocked, actions []ruleaction.Action) error {
+	s := l.Scope()
 	named := lo.FilterMap(actions, func(a ruleaction.Action, _ int) (int64, bool) { return a.AutomationID, a.Type == ruleaction.Enroll })
 	if len(named) == 0 {
 		return nil
