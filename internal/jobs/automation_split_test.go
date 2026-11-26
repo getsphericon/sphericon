@@ -13,10 +13,15 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationsteprecord"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
+	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
+	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -142,4 +147,88 @@ func TestASplitDrawsOncePerEnrollmentAndAgainForANewOne(t *testing.T) {
 	assert.Equal(t, holdoutPathID, second, "a new Enrollment draws again")
 	assert.Equal(t, []string{"Try this"}, sentBy(t, env, runs[0].ID))
 	assert.Empty(t, sentBy(t, env, runs[1].ID))
+}
+
+// A date-triggered Split case (ADR 0126): an Instance whose clock the test moves, Alice born on 14
+// March in Acme's zone (UTC, as she has none), and the Step execution that runs her Steps on that
+// clock.
+type datedSplit struct {
+	t       *testing.T
+	env     *testhelper.TestEnv
+	clock   *testhelper.Clock
+	stepper *automations.StepExecution
+}
+
+func newDatedSplit(t *testing.T, at time.Time) *datedSplit {
+	t.Helper()
+	clock := testhelper.NewClock(at)
+	env := testhelper.Setup(t, testhelper.WithClock(clock.Now))
+	ctx := t.Context()
+	alice, err := env.DB.Contact.Get(ctx, fixtures.ContactAliceID)
+	require.NoError(t, err)
+	_, err = testhelper.Module[*contacts.Module](env).Update(ctx, env.DB.Scoped(fixtures.AcmeID), alice.ID, contacts.UpdateInput{
+		Revision: alice.Revision, Birthday: patch.Set(time.Date(1990, time.March, 14, 0, 0, 0, 0, time.UTC)),
+	})
+	require.NoError(t, err)
+	stepper := stepperAt(env, newMod(env, resolvingTo(&fakeSender{}), clock.Now), clock.Now)
+	return &datedSplit{t: t, env: env, clock: clock, stepper: stepper}
+}
+
+// publish makes an Automation of Acme on the date with the root path's Steps and publishes it at the
+// clock's now.
+func (c *datedSplit) publish(d datetrigger.Date, steps ...automationstep.Step) int64 {
+	c.t.Helper()
+	ctx := c.t.Context()
+	acme := c.env.DB.Scoped(fixtures.AcmeID)
+	m := testhelper.Module[*automations.Module](c.env)
+	root := automationstep.Root(steps...)
+	created, err := m.Create(ctx, acme, automations.CreateInput{Name: "Birthday split", Trigger: automations.Trigger{Date: &d}, Steps: &root})
+	require.NoError(c.t, err)
+	_, err = m.Publish(ctx, acme, created.ID, testhelper.AutomationRevisionIn(ctx, c.t, acme, created.ID))
+	require.NoError(c.t, err)
+	return created.ID
+}
+
+// tickAt moves the clock to the moment, works the date scheduler's tick and the decisions it queues,
+// then every Step they queued.
+func (c *datedSplit) tickAt(now time.Time) {
+	c.t.Helper()
+	c.clock.Set(now)
+	c.env.EnqueueJob(c.t, jobs.DateTickArgs{})
+	c.env.PerformEnqueuedJobs(c.t, jobs.DateTickArgs{}, jobs.DecideOccurrencesArgs{})
+	c.env.RunQueuedSteps(c.t, c.stepper)
+}
+
+// pathsOf is the path Alice's Enrollments in the Automation took at the Split, the first first.
+func (c *datedSplit) pathsOf(automationID int64, splitID automationstep.ID) []automationstep.ID {
+	c.t.Helper()
+	runs := byOrdinalOf(c.t, c.env, automationID, fixtures.ContactAliceID)
+	return lo.Map(runs, func(r *ent.AutomationRun, _ int) automationstep.ID {
+		return tookPath(recordOf(c.t, c.env, r.ID, splitID))
+	})
+}
+
+// yearlyBirthday is a yearly date Trigger on the birthday, at 10:00.
+func yearlyBirthday() datetrigger.Date {
+	return datetrigger.Date{Field: datetrigger.Field{Kind: datetrigger.Birthday}, Recurrence: localcalendar.Yearly, LocalTime: "10:00"}
+}
+
+// A Split in a yearly date-triggered Automation draws on the anniversary year in place of the
+// ordinal (ADR 0126): at the pinned Split Alice draws 65 for 2030, the holdout, and 18 for 2031, the
+// variant, where her first and second Enrollments' ordinals would draw 39 and 91 (shasum). A twin
+// Automation published after her 2030 birthday enrolls her first in 2031, at ordinal 1, and its draw
+// for the same year lands on the same path.
+func TestASplitInADateTriggeredAutomationDrawsAgainEachYear(t *testing.T) {
+	c := newDatedSplit(t, time.Date(2030, time.March, 1, 12, 0, 0, 0, time.UTC))
+	auto := c.publish(yearlyBirthday(), fiftyFifty())
+	c.tickAt(time.Date(2030, time.March, 14, 10, 1, 0, 0, time.UTC))
+	c.clock.Set(time.Date(2030, time.June, 1, 12, 0, 0, 0, time.UTC))
+	twin := c.publish(yearlyBirthday(), fiftyFifty())
+
+	c.tickAt(time.Date(2031, time.March, 14, 10, 1, 0, 0, time.UTC))
+
+	paths := c.pathsOf(auto, pinnedSplitID)
+	twinPaths := c.pathsOf(twin, pinnedSplitID)
+	assert.Equal(t, []automationstep.ID{holdoutPathID, variantPathID}, paths, "2030 holds her out, 2031 draws her again")
+	assert.Equal(t, []automationstep.ID{variantPathID}, twinPaths, "the same Contact and year draw the same path")
 }
