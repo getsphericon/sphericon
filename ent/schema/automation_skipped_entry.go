@@ -110,11 +110,11 @@ func (AutomationSkippedEntry) Indexes() []ent.Index {
 		// occurrence held by the send lock, which is not decided.
 		index.Fields("workspace_id", "automation_id", "contact_id", "occurrence").
 			Unique().
-			Annotations(entsql.IndexWhere("occurrence IS NOT NULL AND reason <> 'send_locked'")).
+			Annotations(entsql.IndexWhere(OccurrenceSkipWhere)).
 			StorageKey(OccurrenceSkipIndex),
 		index.Fields("workspace_id", "automation_id", "contact_id", "occurrence").
 			Unique().
-			Annotations(entsql.IndexWhere("occurrence IS NOT NULL AND reason = 'send_locked'")).
+			Annotations(entsql.IndexWhere(OccurrenceSendLockedWhere)).
 			StorageKey(OccurrenceSendLockedIndex),
 		// The report counts an Automation's skipped entries in a window; the list reads them newest
 		// first.
@@ -133,4 +133,11 @@ func (AutomationSkippedEntry) Indexes() []ent.Index {
 const (
 	OccurrenceSkipIndex       = "automation_skipped_entries_occurrence"
 	OccurrenceSendLockedIndex = "automation_skipped_entries_occurrence_send_locked"
+)
+
+// The predicates of the two partial indexes, which an insert on one names in its ON CONFLICT
+// clause: Postgres infers a partial index only from a predicate that implies the index's.
+const (
+	OccurrenceSkipWhere       = "occurrence IS NOT NULL AND reason <> 'send_locked'"
+	OccurrenceSendLockedWhere = "occurrence IS NOT NULL AND reason = 'send_locked'"
 )

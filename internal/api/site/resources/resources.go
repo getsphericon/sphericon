@@ -1374,7 +1374,9 @@ func waitUntilDateForm(datetrigger.Date) siteapi.WaitUntilDateForm {
 }
 
 // dateOffsetDays is a date's offset in days, within the contract's bound when it was stored.
-func dateOffsetDays(days int) siteapi.DateOffsetDays { return siteapi.DateOffsetDays(narrow.Int32(days)) }
+func dateOffsetDays(days int) siteapi.DateOffsetDays {
+	return siteapi.DateOffsetDays(narrow.Int32(days))
+}
 
 // dateField maps a date Trigger's field into the typed DTO by its kind. A stored field is checked
 // when it is written, so a kind it does not know is the birthday's never.

@@ -2,7 +2,6 @@ package automations
 
 import (
 	"context"
-	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/samber/lo"
@@ -10,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationskippedentry"
+	"github.com/getsphericon/sphericon/ent/schema"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 )
@@ -40,7 +40,7 @@ type byEvent struct{ sourceID string }
 type byFiring struct{ firingID int64 }
 
 // byOccurrence is an occurrence of a date Trigger: it enrolls once per Automation and Contact, and
-// records one deciding skipped entry and one `send_locked` one (OccurrenceSkipWhere).
+// records one deciding skipped entry and one `send_locked` one (schema.OccurrenceSkipWhere).
 type byOccurrence struct{ occurrence datetrigger.Occurrence }
 
 // noCause is an entry nothing makes once only.
@@ -152,18 +152,15 @@ func begunBy(ctx context.Context, s *ent.Scoped, firings *rules.Firings, run *en
 }
 
 // occurrenceSkipIndexOf is the predicate of the partial unique index a skipped entry of an
-// occurrence for the reason is written on: the one of `send_locked`, or the one of the reasons that
-// decide the occurrence.
+// occurrence for the reason is written on, as the schema declares it: the one of `send_locked`, or
+// the one of the reasons that decide the occurrence.
 func occurrenceSkipIndexOf(reason automationskippedentry.Reason) *sql.Predicate {
-	op := "<>"
+	where := schema.OccurrenceSkipWhere
 	if reason == automationskippedentry.ReasonSendLocked {
-		op = "="
+		where = schema.OccurrenceSendLockedWhere
 	}
 	// raw sql: Postgres infers a partial index from the ON CONFLICT predicate only when that
 	// predicate implies the index's, which a bound argument never does once the statement runs on a
-	// generic plan; the reason is a constant of the enum, written as the literal the index holds.
-	return sql.P(func(b *sql.Builder) {
-		b.WriteString(fmt.Sprintf("%s IS NOT NULL AND %s %s '%s'",
-			automationskippedentry.FieldOccurrence, automationskippedentry.FieldReason, op, automationskippedentry.ReasonSendLocked))
-	})
+	// generic plan; the predicate is the index's own, from the schema.
+	return sql.P(func(b *sql.Builder) { b.WriteString(where) })
 }

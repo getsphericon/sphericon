@@ -1021,13 +1021,17 @@ func automationTrigger(c Converter, v *ent.AutomationVersion) (externalapi.Autom
 	return externalapi.AutomationTrigger{}, fmt.Errorf("version %d has a trigger of no kind", v.ID)
 }
 
-func dateTriggerKind(datetrigger.Date) externalapi.DateTriggerKind { return externalapi.DateTriggerKindDate }
+func dateTriggerKind(datetrigger.Date) externalapi.DateTriggerKind {
+	return externalapi.DateTriggerKindDate
+}
 func waitUntilDateForm(datetrigger.Date) externalapi.WaitUntilDateForm {
 	return externalapi.WaitUntilDateFormDate
 }
 
 // dateOffsetDays is a date's offset in days, within the contract's bound when it was stored.
-func dateOffsetDays(days int) externalapi.DateOffsetDays { return externalapi.DateOffsetDays(narrow.Int32(days)) }
+func dateOffsetDays(days int) externalapi.DateOffsetDays {
+	return externalapi.DateOffsetDays(narrow.Int32(days))
+}
 
 // dateField maps a date Trigger's field into the typed DTO by its kind. A stored field is checked
 // when it is written, so a kind it does not know is the birthday's never.

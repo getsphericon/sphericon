@@ -133,18 +133,6 @@ func contactZone(name *string) (*time.Location, bool) {
 	return loc, err == nil
 }
 
-// Recurrence is how often a date recurs: every year, or once.
-type Recurrence string
-
-// The recurrences of a date.
-const (
-	// Yearly recurs every year, from the year after the date's own (a sign-up anniversary starts in
-	// year one).
-	Yearly Recurrence = "yearly"
-	// Once is the date itself, its one occurrence.
-	Once Recurrence = "once"
-)
-
 // The refusals of a constructor beside the contract's bounds, matched with errors.Is. A bound the
 // contract declares, an offset in days (DateOffsetDays) or a local time (LocalTime), is refused in
 // the kernel's one form: validation.ErrOutOfRange or validation.ErrPatternMismatch on its field.
@@ -223,7 +211,7 @@ type Schedule struct {
 // (validation.Range) and a local time not of its LocalTime (validation.Pattern).
 func NewSchedule(recurrence Recurrence, offsetDays int, localTime string) (Schedule, error) {
 	var errs []error
-	if recurrence != Yearly && recurrence != Once {
+	if !slices.Contains(Recurrences, recurrence) {
 		errs = append(errs, fmt.Errorf("%w: %q", ErrRecurrence, recurrence))
 	}
 	if err := validation.Range(fieldname.OffsetDays, offsetDays, bounds.DateOffsetDaysMin, bounds.DateOffsetDaysMax); err != nil {

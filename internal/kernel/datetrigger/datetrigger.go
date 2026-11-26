@@ -13,19 +13,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 )
 
-// FieldKind is the kind of date a Contact holds.
-type FieldKind string
-
-// The kinds of date field.
-const (
-	// Birthday is the Contact's date of birth, a calendar date already.
-	Birthday FieldKind = "birthday"
-	// CustomField is a datetime Custom field of the Workspace, named by its key.
-	CustomField FieldKind = "customField"
-)
-
 // Values are the kinds of date field, the values of a column that stores one.
-func (FieldKind) Values() []string { return []string{string(Birthday), string(CustomField)} }
+func (FieldKind) Values() []string {
+	values := make([]string, len(FieldKinds))
+	for i, k := range FieldKinds {
+		values[i] = string(k)
+	}
+	return values
+}
 
 // Field names the date: the birthday, or a Custom field by its key (empty for the birthday).
 type Field struct {

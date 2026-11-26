@@ -19,17 +19,9 @@ type WaitUntil struct {
 	Until Until
 }
 
-// Form is the form of a Wait until's moment: the `form` it is stored and shown under.
-type Form string
-
-// The forms of a Wait until's moment.
-const (
-	FormTimeOfDay Form = "time_of_day"
-	FormDate      Form = "date"
-)
-
 // Until is the moment a Wait until holds the Enrollment until, one type per form: TimeOfDay and
-// OnDate. A new form adds its type, its Form constant and its line in untilDecoders, and a type
+// OnDate. A new form is an arm of the contract's WaitUntilMoment, whose discriminator generates its
+// Form (form_gen.go); it adds its type and its line in untilDecoders, and a type
 // switch over Until that misses it fails the lint (gochecksumtype).
 //
 //sumtype:decl
