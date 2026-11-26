@@ -120,7 +120,7 @@ func (m *Module) RegenerateSecret(ctx context.Context, s *ent.Scoped, id int64) 
 	}
 	e, err := s.WebhookEndpoint().UpdateOneID(id).SetSecretEncrypted(sealed).Save(ctx)
 	if err != nil {
-		return Endpoint{}, missing(err)
+		return Endpoint{}, db.NotFoundAs(err, ErrNotFound)
 	}
 	return m.open(ctx, s, e)
 }
@@ -309,22 +309,14 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 
 // Delete removes the endpoint. An unknown id is ErrNotFound.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
-	return missing(s.WebhookEndpoint().DeleteOneID(id).Exec(ctx))
-}
-
-// missing turns the store's miss into ErrNotFound.
-func missing(err error) error {
-	if ent.IsNotFound(err) {
-		return ErrNotFound
-	}
-	return err
+	return db.NotFoundAs(s.WebhookEndpoint().DeleteOneID(id).Exec(ctx), ErrNotFound)
 }
 
 // Get returns one endpoint. An unknown id is ErrNotFound.
 func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (Endpoint, error) {
 	e, err := s.WebhookEndpoint().Query().Where(webhookendpoint.ID(id)).WithHealth().Only(ctx)
 	if err != nil {
-		return Endpoint{}, missing(err)
+		return Endpoint{}, db.NotFoundAs(err, ErrNotFound)
 	}
 	return m.open(ctx, s, e)
 }

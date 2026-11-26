@@ -266,7 +266,7 @@ type SkippedEntriesFilter struct {
 // those of one Contact. ErrNotFound when the Workspace has no such Automation.
 func (m *Module) SkippedEntries(ctx context.Context, s *ent.Scoped, p pagination.Params, f SkippedEntriesFilter) (pagination.Page[*ent.AutomationSkippedEntry], error) {
 	if _, err := s.Automation().Get(ctx, f.AutomationID); err != nil {
-		return pagination.Page[*ent.AutomationSkippedEntry]{}, notFound(err)
+		return pagination.Page[*ent.AutomationSkippedEntry]{}, db.NotFoundAs(err, ErrNotFound)
 	}
 	q := s.AutomationSkippedEntry().Query().Where(automationskippedentry.AutomationID(f.AutomationID))
 	if f.ContactID != 0 {

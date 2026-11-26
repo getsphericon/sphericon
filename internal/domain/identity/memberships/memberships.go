@@ -14,6 +14,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -164,7 +165,7 @@ type SecondFactorResetTargetInput struct {
 func (ms *Module) SecondFactorResetTarget(ctx context.Context, s *ent.Scoped, in SecondFactorResetTargetInput) (*ent.Membership, error) {
 	target, err := s.Membership().Get(ctx, in.TargetID)
 	if err != nil {
-		return nil, memberTarget(err)
+		return nil, db.NotFoundAs(err, ErrMemberNotFound)
 	}
 	if err := resetRight(in.CallerRole, target); err != nil {
 		return nil, err

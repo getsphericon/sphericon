@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -27,14 +28,6 @@ var (
 	// ErrMemberNotFound means no Membership of that id is in the Workspace.
 	ErrMemberNotFound = validation.NotFound("memberships: member not found", i18n.ErrorsMemberNotFound)
 )
-
-// memberTarget is the Membership targetID's refusal when it is not in the Workspace.
-func memberTarget(err error) error {
-	if ent.IsNotFound(err) {
-		return ErrMemberNotFound
-	}
-	return err
-}
 
 // Caller is the member who changes or removes a Membership: the actor of the Audit entry, and the
 // Role whose Permissions the Owner rules ask.
@@ -61,7 +54,7 @@ func (ms *Module) ChangeRole(ctx context.Context, s *ent.Scoped, caller Caller, 
 	err := ms.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		target, owners, err := lockedTarget(ctx, ts, membership.ID(in.ID))
 		if err != nil {
-			return memberTarget(err)
+			return db.NotFoundAs(err, ErrMemberNotFound)
 		}
 		if err := checkOwnerChange(caller.Role, target, owners, in.Role); err != nil {
 			return err
@@ -92,7 +85,7 @@ func (ms *Module) Remove(ctx context.Context, s *ent.Scoped, caller Caller, targ
 	return ms.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		target, owners, err := lockedTarget(ctx, ts, membership.ID(targetID))
 		if err != nil {
-			return memberTarget(err)
+			return db.NotFoundAs(err, ErrMemberNotFound)
 		}
 		return ms.removeLocked(ctx, ts, caller.Actor, caller.Role, target, owners)
 	})

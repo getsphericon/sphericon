@@ -247,7 +247,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, src contact.Source, 
 		return m.SetTagsIn(ctx, ts, c.ID, in.Tags)
 	})
 	if err != nil {
-		return nil, domainError(err)
+		return nil, db.NotFoundAs(err, ErrNotFound)
 	}
 	return m.Get(ctx, s, c.ID)
 }
@@ -309,7 +309,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		return m.SetTagsIn(ctx, ts, id, names)
 	})
 	if err != nil {
-		return nil, domainError(err)
+		return nil, db.NotFoundAs(err, ErrNotFound)
 	}
 	return m.Get(ctx, s, id)
 }
@@ -327,7 +327,7 @@ func (m *Module) Upsert(ctx context.Context, s *ent.Scoped, src contact.Source, 
 		return err
 	})
 	if err != nil {
-		return Result{}, domainError(err)
+		return Result{}, db.NotFoundAs(err, ErrNotFound)
 	}
 	return res, nil
 }
@@ -394,7 +394,7 @@ func (m *Module) UpsertIn(ctx context.Context, s *ent.Scoped, src contact.Source
 func (m *Module) importIn(ctx context.Context, s *ent.Scoped, src contact.Source, in UpsertInput) (Result, error) {
 	res, err := m.upsertIn(ctx, s, src, in, importChanges)
 	if err != nil {
-		return Result{}, domainError(err)
+		return Result{}, db.NotFoundAs(err, ErrNotFound)
 	}
 	return res, nil
 }
@@ -724,21 +724,13 @@ func trimmed(s *string) *string {
 	return &v
 }
 
-// domainError turns storage errors into the module's domain errors.
-func domainError(err error) error {
-	if ent.IsNotFound(err) {
-		return ErrNotFound
-	}
-	return err
-}
-
 // Get returns the Contact with its Tags loaded, sorted by name, or ErrNotFound.
 func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Contact, error) {
 	c, err := s.Contact().Query().Where(contact.ID(id)).
 		WithTags(func(q *ent.TagQuery) { q.Order(ent.Asc(tag.FieldName)) }).
 		Only(ctx)
 	if err != nil {
-		return nil, domainError(err)
+		return nil, db.NotFoundAs(err, ErrNotFound)
 	}
 	return c, nil
 }

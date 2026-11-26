@@ -56,14 +56,6 @@ var (
 // The unique constraint of the Sending domains (ADR 0106): a domain is added once per Workspace.
 var constraints = db.Declare(db.Refusal("sendingdomain_workspace_id_domain", ErrAlreadyExists))
 
-// notFound is ErrNotFound for ent's not-found error of the domain's row, err otherwise.
-func notFound(err error) error {
-	if ent.IsNotFound(err) {
-		return ErrNotFound
-	}
-	return err
-}
-
 // selectorPattern is a DNS label sequence: letters, digits and hyphens, dot-separated.
 var selectorPattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$`)
 
@@ -232,7 +224,7 @@ func validSelector(raw string) (string, error) {
 func editable(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
 	row, err := s.SendingDomain().Get(ctx, id)
 	if err != nil {
-		return nil, notFound(err)
+		return nil, db.NotFoundAs(err, ErrNotFound)
 	}
 	if row.DiscardedAt != nil {
 		return nil, ErrNotFound
@@ -244,7 +236,7 @@ func editable(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain,
 // Workspace, is ErrNotFound.
 func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
 	row, err := s.SendingDomain().Get(ctx, id)
-	return row, notFound(err)
+	return row, db.NotFoundAs(err, ErrNotFound)
 }
 
 // List returns one page of the Workspace's kept Sending domains, ascending by id.

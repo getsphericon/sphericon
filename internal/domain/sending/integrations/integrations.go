@@ -110,20 +110,12 @@ type Module struct {
 	now     func() time.Time
 }
 
-// missing turns the store's miss into ErrNotFound.
-func missing(err error) error {
-	if ent.IsNotFound(err) {
-		return ErrNotFound
-	}
-	return err
-}
-
 // Get returns one Integration of the Workspace, with its provider state (ADR 0168). An unknown id
 // is ErrNotFound.
 func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Integration, error) {
 	row, err := withStateByID(ctx, s, id)
 	if err != nil {
-		return nil, missing(err)
+		return nil, db.NotFoundAs(err, ErrNotFound)
 	}
 	return row, nil
 }

@@ -58,14 +58,6 @@ var constraints = db.Declare(
 	db.Refusal("joindomain_domain", ErrHeldElsewhere),
 )
 
-// notFound is ErrNotFound for ent's not-found error of the domain's row, err otherwise.
-func notFound(err error) error {
-	if ent.IsNotFound(err) {
-		return ErrNotFound
-	}
-	return err
-}
-
 // Record is the DNS TXT record an Owner publishes to prove a domain.
 type Record struct {
 	Host  string
@@ -129,7 +121,7 @@ func (m *Module) Add(ctx context.Context, s *ent.Scoped, raw string) (*ent.JoinD
 // Remove deletes the claim, and only the claim: Memberships are never touched. An unknown
 // id is ErrNotFound.
 func (m *Module) Remove(ctx context.Context, s *ent.Scoped, id int64) error {
-	return notFound(s.JoinDomain().DeleteOneID(id).Exec(ctx))
+	return db.NotFoundAs(s.JoinDomain().DeleteOneID(id).Exec(ctx), ErrNotFound)
 }
 
 // Verify checks the TXT record live and verifies the domain when it is published. A domain
@@ -143,7 +135,7 @@ func (m *Module) Remove(ctx context.Context, s *ent.Scoped, id int64) error {
 func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.JoinDomain, error) {
 	row, err := s.JoinDomain().Get(ctx, id)
 	if err != nil {
-		return nil, notFound(err)
+		return nil, db.NotFoundAs(err, ErrNotFound)
 	}
 	if Verified(row) {
 		return row, nil
@@ -209,7 +201,7 @@ func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.Join
 		return nil, err
 	}
 	verified, err := s.JoinDomain().Get(ctx, id)
-	return verified, notFound(err)
+	return verified, db.NotFoundAs(err, ErrNotFound)
 }
 
 // Due returns up to limit verified Join domains to re-check, across every Workspace, each with
