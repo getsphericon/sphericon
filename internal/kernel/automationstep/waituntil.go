@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 )
 
@@ -22,11 +24,12 @@ type Form string
 // The forms of a Wait until's moment.
 const (
 	FormTimeOfDay Form = "time_of_day"
+	FormDate      Form = "date"
 )
 
-// Until is the moment a Wait until holds the Enrollment until, one type per form: TimeOfDay. A new
-// form adds its type, its Form constant and its line in untilDecoders, and a type switch over
-// Until that misses it fails the lint (gochecksumtype).
+// Until is the moment a Wait until holds the Enrollment until, one type per form: TimeOfDay and
+// OnDate. A new form adds its type, its Form constant and its line in untilDecoders, and a type
+// switch over Until that misses it fails the lint (gochecksumtype).
 //
 //sumtype:decl
 type Until interface {
@@ -59,6 +62,17 @@ func (t TimeOfDay) Calendar() (localcalendar.TimeOfDay, error) {
 	return localcalendar.NewTimeOfDay(t.LocalTime, t.Weekdays)
 }
 
+// OnDate is the next occurrence of a date the Contact holds, in the date Trigger's model (ADR 0126):
+// its birthday or a datetime Custom field, every year or once, OffsetDays before or after it, at
+// LocalTime in the Contact's zone.
+type OnDate struct {
+	datetrigger.Date
+}
+
+func (OnDate) Form() Form { return FormDate }
+
+func (d OnDate) stored() Until { return d }
+
 func (WaitUntil) Kind() Kind { return KindWaitUntil }
 
 // Stored is the Wait until with its moment in its stored form.
@@ -72,6 +86,7 @@ func (w WaitUntil) Stored() Payload {
 // untilDecoders read the fields of each form's moment, refusing any field the form does not hold.
 var untilDecoders = map[Form]func([]byte) (Until, error){
 	FormTimeOfDay: decodeUntilAs[TimeOfDay],
+	FormDate:      decodeUntilAs[OnDate],
 }
 
 func decodeUntilAs[U Until](b []byte) (Until, error) {
@@ -148,4 +163,79 @@ func (w *WaitUntil) UnmarshalJSON(b []byte) error {
 	}
 	*w = WaitUntil{Until: u}
 	return nil
+}
+
+// WentOn is why an Enrollment went on at once from a Wait until instead of waiting on it (ADR
+// 0126), decided when it reached the Step and kept on the Step's record.
+type WentOn string
+
+// The reasons an Enrollment goes on at once from a Wait until on a date.
+const (
+	// WentOnPast: the date's moment has passed, and a once date has no other.
+	WentOnPast WentOn = "past"
+	// WentOnNoDate: the Contact holds no date in the field, or a value that is no date.
+	WentOnNoDate WentOn = "no_date"
+	// WentOnBeyondBound: the moment lies more than BoundDays ahead.
+	WentOnBeyondBound WentOn = "beyond_bound"
+)
+
+// Values is every reason, as an ent enum column takes them.
+func (WentOn) Values() []string {
+	return []string{string(WentOnPast), string(WentOnNoDate), string(WentOnBeyondBound)}
+}
+
+// BoundDays is how far ahead, in days of the Contact's calendar, a Wait until waits at most: a
+// moment further away goes on at once as WentOnBeyondBound (ADR 0126).
+const BoundDays = 366
+
+// Contact is what a Wait until reads of the Contact that reaches it: the zone its local times are
+// read in (localcalendar.Zone), the Workspace's zone a datetime value's date is read in, and the
+// dates it holds.
+type Contact struct {
+	Zone, Workspace *time.Location
+	Dates           datetrigger.Holder
+}
+
+// Due is what a Wait until decides for an Enrollment that reaches it: the moment it waits for, At,
+// or, with At zero, why it goes on at once, WentOn.
+type Due struct {
+	At     time.Time
+	WentOn WentOn
+}
+
+// Reach is what the Wait until's moment u decides for the Contact c reaching it at now, computed
+// once, then kept (ADR 0126): the first moment at or after now, one equal to now waiting zero
+// (decision 11 of #1613). A time of day always has one within a week. A date goes on at once when
+// the Contact holds no date in its field, when its moment has passed, or when the moment lies
+// more than BoundDays ahead on the Contact's calendar. An error is a moment out of its bounds, which
+// its save refuses.
+func Reach(u Until, c Contact, now time.Time) (Due, error) {
+	switch u := u.(type) {
+	case TimeOfDay:
+		w, err := u.Calendar()
+		if err != nil {
+			return Due{}, err
+		}
+		return Due{At: w.Next(now, c.Zone)}, nil
+	case OnDate:
+		date, held := u.Field.Of(c.Dates, c.Workspace)
+		if !held {
+			return Due{WentOn: WentOnNoDate}, nil
+		}
+		schedule, err := u.Schedule()
+		if err != nil {
+			return Due{}, err
+		}
+		next, ok := schedule.Next(date, now, c.Zone)
+		if !ok {
+			return Due{WentOn: WentOnPast}, nil
+		}
+		if next.At.After(now.In(c.Zone).AddDate(0, 0, BoundDays)) {
+			return Due{WentOn: WentOnBeyondBound}, nil
+		}
+		return Due{At: next.At}, nil
+	case nil:
+		return Due{}, errors.New("automationstep: a wait until without a moment")
+	}
+	return Due{}, fmt.Errorf("automationstep: the moment %T has no due moment", u)
 }

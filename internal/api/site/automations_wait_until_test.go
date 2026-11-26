@@ -66,3 +66,35 @@ func TestSiteAutomationRefusesAMalformedWaitUntil(t *testing.T) {
 	assert.Contains(t, detail, waitUntilStepID)
 	assert.Contains(t, detail, "(wait_until)")
 }
+
+// A Wait until on a date round-trips through /site as the console sends back what it read (ADR
+// 0126); one naming a Custom field the catalogue lacks is refused by the save (422), naming the
+// Step.
+func TestSiteAutomationKeepsAWaitUntilOnADateAndRefusesAnUnknownField(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := t.Context()
+	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
+	written := `{"id":"` + waitUntilStepID + `","type":"wait_until",` +
+		`"until":{"form":"date","field":{"kind":"customField","key":"trial_ends_at"},"recurrence":"yearly","offsetDays":-3,"localTime":"10:00"}}`
+	created, err := createWaitUntil(t, c, written)
+	require.NoError(t, err)
+
+	_, err = c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{
+		Revision: created.Revision,
+		Steps:    siteapi.NewOptAutomationPathInput(testhelper.Resend[siteapi.AutomationPathInput](t, &created.Draft.Value.Steps)),
+	}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: created.ID})
+	require.NoError(t, err)
+	got, err := c.SiteAutomationsGet(ctx, siteapi.SiteAutomationsGetParams{WorkspaceId: workspaceID, ID: created.ID})
+	require.NoError(t, err)
+	_, unknown := createWaitUntil(t, c, `{"id":"`+waitUntilStepID+`","type":"wait_until",`+
+		`"until":{"form":"date","field":{"kind":"customField","key":"renews_on"},"recurrence":"yearly","offsetDays":0,"localTime":"10:00"}}`)
+
+	steps := got.Draft.Value.Steps.Steps
+	require.Len(t, steps, 1)
+	assert.JSONEq(t, written, testhelper.JSONOf(t, &steps[0].OneOf.WaitUntilStep))
+	refused := testhelper.SiteRefusal(t, unknown, http.StatusUnprocessableEntity)
+	detail := refused.Detail.Or("")
+	assert.Contains(t, detail, waitUntilStepID)
+	assert.Contains(t, detail, "renews_on")
+}

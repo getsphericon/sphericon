@@ -553,6 +553,14 @@ export default interface Resources {
       "triggerOnDate": "On a date the contact holds",
       "waitNodeDescription": "Pause before the next step.",
       "waitSecondsLabel": "Wait (seconds)",
+      "waitUntilFigures": {
+        "beyondBound": "Over a year ahead",
+        "hint": "Contacts a Wait until on a date let go on at once in the period instead of waiting: its moment had passed, they held no date in the field, or the moment lay more than 366 days ahead.",
+        "noDate": "No date",
+        "past": "Passed",
+        "step": "Step",
+        "title": "Wait until steps"
+      },
       "waitingUntil": "Waiting until",
       "weightSum": "Total: {{sum}}%",
       "weightSumError": "The weights sum to {{sum}}%, not 100%"

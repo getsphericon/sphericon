@@ -124,19 +124,13 @@ func (c *ResultCounts) plus(o ResultCounts) {
 // resultsOf reads the Results of the Automation id over the period ending today in the
 // Workspace time zone.
 func (m *Module) resultsOf(ctx context.Context, s *ent.Scoped, id int64, p ReportPeriod) (Results, error) {
-	ws, err := s.Workspace(ctx)
+	cur, err := m.periodOf(ctx, s, p)
 	if err != nil {
 		return Results{}, err
 	}
-	loc, err := reportday.Location(ws.Timezone)
-	if err != nil {
-		return Results{}, err
-	}
-	now := m.now()
-	cur := reportday.Trailing(now, loc, int(p))
 	prev := cur.Previous()
 	// Twice the period ending today is both periods: the previous one and the current one.
-	byDay, err := countsByDay(ctx, s, id, reportday.Trailing(now, loc, 2*int(p)))
+	byDay, err := countsByDay(ctx, s, id, reportday.Trailing(m.now(), cur.Loc, 2*int(p)))
 	if err != nil {
 		return Results{}, err
 	}
@@ -153,6 +147,19 @@ func (m *Module) resultsOf(ctx context.Context, s *ent.Scoped, id int64, p Repor
 		series = append(series, ResultsPoint{Date: day, ResultCounts: byDay[day]})
 	}
 	return Results{Period: p, Current: current, Previous: previous, Series: series}, nil
+}
+
+// periodOf is the current period of p: its Report days ending today, in the Workspace time zone.
+func (m *Module) periodOf(ctx context.Context, s *ent.Scoped, p ReportPeriod) (reportday.Window, error) {
+	ws, err := s.Workspace(ctx)
+	if err != nil {
+		return reportday.Window{}, err
+	}
+	loc, err := reportday.Location(ws.Timezone)
+	if err != nil {
+		return reportday.Window{}, err
+	}
+	return reportday.Trailing(m.now(), loc, int(p)), nil
 }
 
 // countsByDay counts the Automation's Enrollments that began, and those that ended by outcome, in

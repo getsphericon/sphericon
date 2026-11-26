@@ -9994,6 +9994,7 @@ type AutomationStepRecordMutation struct {
 	path_id          *automationstep.ID
 	path_outcomes    *map[automationstep.ID]conditiontree.Truth
 	due_at           *time.Time
+	went_on          *automationstep.WentOn
 	clearedFields    map[string]struct{}
 	workspace        *int64
 	clearedworkspace bool
@@ -10618,6 +10619,55 @@ func (m *AutomationStepRecordMutation) ResetDueAt() {
 	delete(m.clearedFields, automationsteprecord.FieldDueAt)
 }
 
+// SetWentOn sets the "went_on" field.
+func (m *AutomationStepRecordMutation) SetWentOn(ao automationstep.WentOn) {
+	m.went_on = &ao
+}
+
+// WentOn returns the value of the "went_on" field in the mutation.
+func (m *AutomationStepRecordMutation) WentOn() (r automationstep.WentOn, exists bool) {
+	v := m.went_on
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWentOn returns the old "went_on" field's value of the AutomationStepRecord entity.
+// If the AutomationStepRecord object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationStepRecordMutation) OldWentOn(ctx context.Context) (v *automationstep.WentOn, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWentOn is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWentOn requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWentOn: %w", err)
+	}
+	return oldValue.WentOn, nil
+}
+
+// ClearWentOn clears the value of the "went_on" field.
+func (m *AutomationStepRecordMutation) ClearWentOn() {
+	m.went_on = nil
+	m.clearedFields[automationsteprecord.FieldWentOn] = struct{}{}
+}
+
+// WentOnCleared returns if the "went_on" field was cleared in this mutation.
+func (m *AutomationStepRecordMutation) WentOnCleared() bool {
+	_, ok := m.clearedFields[automationsteprecord.FieldWentOn]
+	return ok
+}
+
+// ResetWentOn resets all changes to the "went_on" field.
+func (m *AutomationStepRecordMutation) ResetWentOn() {
+	m.went_on = nil
+	delete(m.clearedFields, automationsteprecord.FieldWentOn)
+}
+
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *AutomationStepRecordMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -10706,7 +10756,7 @@ func (m *AutomationStepRecordMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationStepRecordMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, automationsteprecord.FieldCreatedAt)
 	}
@@ -10743,6 +10793,9 @@ func (m *AutomationStepRecordMutation) Fields() []string {
 	if m.due_at != nil {
 		fields = append(fields, automationsteprecord.FieldDueAt)
 	}
+	if m.went_on != nil {
+		fields = append(fields, automationsteprecord.FieldWentOn)
+	}
 	return fields
 }
 
@@ -10775,6 +10828,8 @@ func (m *AutomationStepRecordMutation) Field(name string) (ent.Value, bool) {
 		return m.PathOutcomes()
 	case automationsteprecord.FieldDueAt:
 		return m.DueAt()
+	case automationsteprecord.FieldWentOn:
+		return m.WentOn()
 	}
 	return nil, false
 }
@@ -10808,6 +10863,8 @@ func (m *AutomationStepRecordMutation) OldField(ctx context.Context, name string
 		return m.OldPathOutcomes(ctx)
 	case automationsteprecord.FieldDueAt:
 		return m.OldDueAt(ctx)
+	case automationsteprecord.FieldWentOn:
+		return m.OldWentOn(ctx)
 	}
 	return nil, fmt.Errorf("unknown AutomationStepRecord field %s", name)
 }
@@ -10901,6 +10958,13 @@ func (m *AutomationStepRecordMutation) SetField(name string, value ent.Value) er
 		}
 		m.SetDueAt(v)
 		return nil
+	case automationsteprecord.FieldWentOn:
+		v, ok := value.(automationstep.WentOn)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWentOn(v)
+		return nil
 	}
 	return fmt.Errorf("unknown AutomationStepRecord field %s", name)
 }
@@ -10952,6 +11016,9 @@ func (m *AutomationStepRecordMutation) ClearedFields() []string {
 	if m.FieldCleared(automationsteprecord.FieldDueAt) {
 		fields = append(fields, automationsteprecord.FieldDueAt)
 	}
+	if m.FieldCleared(automationsteprecord.FieldWentOn) {
+		fields = append(fields, automationsteprecord.FieldWentOn)
+	}
 	return fields
 }
 
@@ -10983,6 +11050,9 @@ func (m *AutomationStepRecordMutation) ClearField(name string) error {
 		return nil
 	case automationsteprecord.FieldDueAt:
 		m.ClearDueAt()
+		return nil
+	case automationsteprecord.FieldWentOn:
+		m.ClearWentOn()
 		return nil
 	}
 	return fmt.Errorf("unknown AutomationStepRecord nullable field %s", name)
@@ -11027,6 +11097,9 @@ func (m *AutomationStepRecordMutation) ResetField(name string) error {
 		return nil
 	case automationsteprecord.FieldDueAt:
 		m.ResetDueAt()
+		return nil
+	case automationsteprecord.FieldWentOn:
+		m.ResetWentOn()
 		return nil
 	}
 	return fmt.Errorf("unknown AutomationStepRecord field %s", name)

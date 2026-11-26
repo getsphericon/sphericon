@@ -369,6 +369,18 @@ const (
 	AutomationJobsWaitFirstName = "Jobs wait first"
 	// AutomationJobsWaitFirstVersionID is from fixtures/automation_versions.
 	AutomationJobsWaitFirstVersionID = 5562
+	// AutomationJobsWaitUntilBirthdayID is from fixtures/automations.
+	AutomationJobsWaitUntilBirthdayID = 5593
+	// AutomationJobsWaitUntilBirthdayName is from fixtures/automations.
+	AutomationJobsWaitUntilBirthdayName = "Jobs wait until the birthday"
+	// AutomationJobsWaitUntilBirthdayVersionID is from fixtures/automation_versions.
+	AutomationJobsWaitUntilBirthdayVersionID = 5593
+	// AutomationJobsWaitUntilDateID is from fixtures/automations.
+	AutomationJobsWaitUntilDateID = 5592
+	// AutomationJobsWaitUntilDateName is from fixtures/automations.
+	AutomationJobsWaitUntilDateName = "Jobs wait until a date"
+	// AutomationJobsWaitUntilDateVersionID is from fixtures/automation_versions.
+	AutomationJobsWaitUntilDateVersionID = 5592
 	// AutomationJobsWaitUntilID is from fixtures/automations.
 	AutomationJobsWaitUntilID = 5591
 	// AutomationJobsWaitUntilName is from fixtures/automations.

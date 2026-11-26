@@ -567,6 +567,13 @@ export type AutomationReport = {
    * one entry per path an enrollment took, so a path none took has none
    */
   paths: Array<AutomationPathFigures>;
+  /**
+   * Each Wait until by its Step id, summed over every version that had it: the enrollments that
+   * left it in the current period without waiting, because its date had no moment ahead within 366
+   * days (ADR 0126). In Step id order: one entry per Wait until any enrollment left so, so one that
+   * every enrollment waited on has none
+   */
+  waitUntilSteps: Array<AutomationWaitUntilFigures>;
 };
 
 /**
@@ -900,6 +907,30 @@ export type AutomationVersionStepFigures = {
    * Messages skipped, as in AutomationStepFigures
    */
   skipped: number;
+};
+
+/**
+ * The enrollments that went on at once from one Wait until on a date instead of waiting, by why:
+ * read from what each kept when it reached the Step, counted on the moment it left it
+ */
+export type AutomationWaitUntilFigures = {
+  /**
+   * The Wait until's Step id, the same in every version
+   */
+  stepId: StepId;
+  /**
+   * Its moment had passed: a once date before the arrival
+   */
+  past: number;
+  /**
+   * The contact held no date in the field, or a value that is no date
+   */
+  noDate: number;
+  /**
+   * Its moment lay more than 366 days ahead, such as a yearly date whose value is itself in the
+   * future
+   */
+  beyondBound: number;
 };
 
 /**
@@ -2866,6 +2897,54 @@ export type DateFieldInput = ({
 } & BirthdayDateFieldInput) | ({
   kind: 'customField';
 } & CustomFieldDateFieldInput);
+
+/**
+ * When a date the Contact holds comes (ADR 0126), as a date Trigger enrolls on it and a Wait until
+ * waits for it: on each anniversary of the date, from the year after its own, or once on it,
+ * `offsetDays` before or after it, at `localTime` in the Contact's time zone, or in the Workspace
+ * time zone when the Contact has no valid one
+ */
+export type DateOccurrence = {
+  /**
+   * The date the occurrences come from
+   */
+  field: DateField;
+  /**
+   * Every year, or once
+   */
+  recurrence: DateRecurrence;
+  /**
+   * Days before (negative) or after the date
+   */
+  offsetDays: DateOffsetDays;
+  /**
+   * The time of day of each occurrence, in the Contact's time zone
+   */
+  localTime: LocalTime;
+};
+
+/**
+ * When a date the Contact holds comes, as a request writes it
+ */
+export type DateOccurrenceInput = {
+  /**
+   * The date the occurrences come from: the birthday, or a datetime Custom field of the
+   * Workspace's catalogue
+   */
+  field: DateFieldInput;
+  /**
+   * Every year, or once; the birthday is only yearly
+   */
+  recurrence: DateRecurrence;
+  /**
+   * Days before (negative) or after the date, within 365
+   */
+  offsetDays: DateOffsetDays;
+  /**
+   * The time of day of each occurrence, `HH:MM`, in the Contact's time zone
+   */
+  localTime: LocalTime;
+};
 
 /**
  * A whole number of days before (negative) or after the date, within a year
@@ -7980,14 +8059,75 @@ export type WaitStepInput = {
 };
 
 /**
+ * Wait until the next occurrence of a date the Contact holds (ADR 0126), at or after the moment
+ * the Enrollment reaches the Step: `offsetDays` before or after the date, at `localTime` in the
+ * Contact's time zone, or the Workspace time zone when the Contact has no valid one. A yearly date
+ * waits for its next anniversary, from the year after the date's own; a once date for the date
+ * itself. When there is no such moment within 366 days the Enrollment goes on at once, and the
+ * report counts why: the moment has passed (`past`), the Contact holds no date in the field
+ * (`no_date`), or it lies more than 366 days ahead (`beyond_bound`).
+ */
+export type WaitUntilDate = {
+  form: 'date';
+  /**
+   * The date the occurrences come from
+   */
+  field: DateField;
+  /**
+   * Every year, or once
+   */
+  recurrence: DateRecurrence;
+  /**
+   * Days before (negative) or after the date
+   */
+  offsetDays: DateOffsetDays;
+  /**
+   * The time of day of each occurrence, in the Contact's time zone
+   */
+  localTime: LocalTime;
+};
+
+/**
+ * Wait until the next occurrence of a date the Contact holds, as a request writes it
+ */
+export type WaitUntilDateInput = {
+  form: 'date';
+  /**
+   * The date the occurrences come from: the birthday, or a datetime Custom field of the
+   * Workspace's catalogue
+   */
+  field: DateFieldInput;
+  /**
+   * Every year, or once; the birthday is only yearly
+   */
+  recurrence: DateRecurrence;
+  /**
+   * Days before (negative) or after the date, within 365
+   */
+  offsetDays: DateOffsetDays;
+  /**
+   * The time of day of each occurrence, `HH:MM`, in the Contact's time zone
+   */
+  localTime: LocalTime;
+};
+
+/**
  * The moment a Wait until holds an Enrollment until, by `form`
  */
-export type WaitUntilMoment = WaitUntilTimeOfDay;
+export type WaitUntilMoment = ({
+  form: 'time_of_day';
+} & WaitUntilTimeOfDay) | ({
+  form: 'date';
+} & WaitUntilDate);
 
 /**
  * The moment a Wait until holds an Enrollment until, by `form`, as a request writes it
  */
-export type WaitUntilMomentInput = WaitUntilTimeOfDayInput;
+export type WaitUntilMomentInput = ({
+  form: 'time_of_day';
+} & WaitUntilTimeOfDayInput) | ({
+  form: 'date';
+} & WaitUntilDateInput);
 
 /**
  * A Step that holds the Enrollment until a calendar moment (ADR 0126): the moment is computed

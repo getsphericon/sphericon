@@ -286,7 +286,8 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 
 	switch p := st.Payload.(type) {
 	case automationstep.Wait, automationstep.WaitUntil:
-		// Its due moment, recorded when the Enrollment reached it, has come.
+		// Its due moment, recorded when the Enrollment reached it, has come; or a Wait until had
+		// none to wait for, which its record says why, and goes on at once.
 		return m.advance(ctx, s, run.ID, at, stepMove{})
 
 	case automationstep.ApplyTag:
@@ -495,14 +496,14 @@ func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64,
 				return err // an erased Contact's Enrollment is erased with it
 			}
 		}
-		var due *time.Time
+		var arrived arrival
 		if more {
 			var err error
-			due, err = dueOf(next, now, func() (*time.Location, error) { return runZone(ctx, ts, runID) })
+			arrived, err = arrive(next, now, func() (automationstep.Contact, error) { return runCalendar(ctx, ts, runID) })
 			if err != nil {
 				return err
 			}
-			if err := advanceRun(ctx, ts, runID, from.step, next.ID, due); err != nil {
+			if err := advanceRun(ctx, ts, runID, from.step, next.ID, arrived.due); err != nil {
 				return err
 			}
 			if err := leave(ctx, ts, runID, from.step, now, mv.leaving); err != nil {
@@ -519,10 +520,10 @@ func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64,
 		if !more {
 			return nil
 		}
-		if err := reach(ctx, ts, runID, next.ID, now, due); err != nil {
+		if err := reach(ctx, ts, runID, next.ID, now, arrived); err != nil {
 			return err
 		}
-		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: runID, StepID: next.ID}, scheduled(due))
+		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: runID, StepID: next.ID}, scheduled(arrived.due))
 	})
 	return quiet(err)
 }

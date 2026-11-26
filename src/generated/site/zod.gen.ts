@@ -793,6 +793,29 @@ export const zLintFinding = z.object({
 export const zLocalTime = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 
 /**
+ * When a date the Contact holds comes (ADR 0126), as a date Trigger enrolls on it and a Wait until
+ * waits for it: on each anniversary of the date, from the year after its own, or once on it,
+ * `offsetDays` before or after it, at `localTime` in the Contact's time zone, or in the Workspace
+ * time zone when the Contact has no valid one
+ */
+export const zDateOccurrence = z.object({
+  field: zDateField,
+  recurrence: zDateRecurrence,
+  offsetDays: zDateOffsetDays,
+  localTime: zLocalTime
+});
+
+/**
+ * When a date the Contact holds comes, as a request writes it
+ */
+export const zDateOccurrenceInput = z.object({
+  field: zDateFieldInput,
+  recurrence: zDateRecurrence,
+  offsetDays: zDateOffsetDays,
+  localTime: zLocalTime
+});
+
+/**
  * A Trigger that enrolls a Contact on a date it holds (ADR 0126): on each anniversary of its
  * birthday or of a datetime Custom field, or once on such a field, `offsetDays` before or after it,
  * at `localTime` in the Contact's time zone, or in the Workspace time zone when the Contact has no
@@ -2864,6 +2887,17 @@ export const zAutomationVersionStepFigures = z.object({
 });
 
 /**
+ * The enrollments that went on at once from one Wait until on a date instead of waiting, by why:
+ * read from what each kept when it reached the Step, counted on the moment it left it
+ */
+export const zAutomationWaitUntilFigures = z.object({
+  stepId: zStepId,
+  past: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  noDate: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  beyondBound: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
  * An automation's engagement figures over its whole history and its results over a period
  */
 export const zAutomationReport = z.object({
@@ -2878,7 +2912,8 @@ export const zAutomationReport = z.object({
   results: zAutomationResults,
   steps: z.array(zAutomationStepFigures),
   versionSteps: z.array(zAutomationVersionStepFigures),
-  paths: z.array(zAutomationPathFigures)
+  paths: z.array(zAutomationPathFigures),
+  waitUntilSteps: z.array(zAutomationWaitUntilFigures)
 });
 
 /**
@@ -4664,6 +4699,34 @@ export const zWaitStepInput = z.strictObject({
 });
 
 /**
+ * Wait until the next occurrence of a date the Contact holds (ADR 0126), at or after the moment
+ * the Enrollment reaches the Step: `offsetDays` before or after the date, at `localTime` in the
+ * Contact's time zone, or the Workspace time zone when the Contact has no valid one. A yearly date
+ * waits for its next anniversary, from the year after the date's own; a once date for the date
+ * itself. When there is no such moment within 366 days the Enrollment goes on at once, and the
+ * report counts why: the moment has passed (`past`), the Contact holds no date in the field
+ * (`no_date`), or it lies more than 366 days ahead (`beyond_bound`).
+ */
+export const zWaitUntilDate = z.object({
+  form: z.enum(['date']),
+  field: zDateField,
+  recurrence: zDateRecurrence,
+  offsetDays: zDateOffsetDays,
+  localTime: zLocalTime
+});
+
+/**
+ * Wait until the next occurrence of a date the Contact holds, as a request writes it
+ */
+export const zWaitUntilDateInput = z.strictObject({
+  form: z.enum(['date']),
+  field: zDateFieldInput,
+  recurrence: zDateRecurrence,
+  offsetDays: zDateOffsetDays,
+  localTime: zLocalTime
+});
+
+/**
  * Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the
  * receiver answered 410 Gone) and `persistent_failure` (deliveries failed for longer
  * than the window). Absent while the endpoint is enabled.
@@ -4750,7 +4813,10 @@ export const zWaitUntilTimeOfDay = z.object({
 /**
  * The moment a Wait until holds an Enrollment until, by `form`
  */
-export const zWaitUntilMoment = zWaitUntilTimeOfDay;
+export const zWaitUntilMoment = z.discriminatedUnion('form', [
+  zWaitUntilTimeOfDay.extend({ form: z.literal('time_of_day') }),
+  zWaitUntilDate.extend({ form: z.literal('date') })
+]);
 
 /**
  * A Step that holds the Enrollment until a calendar moment (ADR 0126): the moment is computed
@@ -4775,7 +4841,10 @@ export const zWaitUntilTimeOfDayInput = z.strictObject({
 /**
  * The moment a Wait until holds an Enrollment until, by `form`, as a request writes it
  */
-export const zWaitUntilMomentInput = zWaitUntilTimeOfDayInput;
+export const zWaitUntilMomentInput = z.discriminatedUnion('form', [
+  zWaitUntilTimeOfDayInput.extend({ form: z.literal('time_of_day') }),
+  zWaitUntilDateInput.extend({ form: z.literal('date') })
+]);
 
 /**
  * A Step that holds the Enrollment until a calendar moment, as a request writes it

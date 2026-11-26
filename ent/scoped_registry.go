@@ -620,6 +620,9 @@ func ScopedEntities() []*ScopedEntity {
 				if src.DueAt != nil {
 					b.SetDueAt(*src.DueAt)
 				}
+				if src.WentOn != nil {
+					b.SetWentOn(*src.WentOn)
+				}
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

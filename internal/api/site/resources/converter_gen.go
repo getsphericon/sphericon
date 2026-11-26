@@ -438,6 +438,12 @@ func (c *ConverterImpl) AutomationReportToResource(source automations.Report) si
 			siteapiAutomationReport.Paths[k] = c.automationsPathFiguresToSiteapiAutomationPathFigures(source.Paths[k])
 		}
 	}
+	if source.WaitUntilSteps != nil {
+		siteapiAutomationReport.WaitUntilSteps = make([]site.AutomationWaitUntilFigures, len(source.WaitUntilSteps))
+		for l := 0; l < len(source.WaitUntilSteps); l++ {
+			siteapiAutomationReport.WaitUntilSteps[l] = c.automationsWaitUntilFiguresToSiteapiAutomationWaitUntilFigures(source.WaitUntilSteps[l])
+		}
+	}
 	return siteapiAutomationReport
 }
 func (c *ConverterImpl) AutomationResultsPointToResource(source automations.ResultsPoint) site.AutomationResultsPoint {
@@ -3459,6 +3465,14 @@ func (c *ConverterImpl) automationsVersionStepFiguresToSiteapiAutomationVersionS
 	siteapiAutomationVersionStepFigures.Sent = count(source.Sent)
 	siteapiAutomationVersionStepFigures.Skipped = count(source.Skipped)
 	return siteapiAutomationVersionStepFigures
+}
+func (c *ConverterImpl) automationsWaitUntilFiguresToSiteapiAutomationWaitUntilFigures(source automations.WaitUntilFigures) site.AutomationWaitUntilFigures {
+	var siteapiAutomationWaitUntilFigures site.AutomationWaitUntilFigures
+	siteapiAutomationWaitUntilFigures.StepId = c.automationstepIDToSiteapiStepId(source.StepID)
+	siteapiAutomationWaitUntilFigures.Past = count(source.Past)
+	siteapiAutomationWaitUntilFigures.NoDate = count(source.NoDate)
+	siteapiAutomationWaitUntilFigures.BeyondBound = count(source.BeyondBound)
+	return siteapiAutomationWaitUntilFigures
 }
 func (c *ConverterImpl) automationstepIDToSiteapiStepId(source automationstep.ID) site.StepId {
 	return site.StepId(source)

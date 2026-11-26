@@ -238,14 +238,14 @@ func (m *StepExecution) enroll(ctx context.Context, s *ent.Scoped, pub events.Pu
 	// The Enrollment reaches its first Step as it is made; a wait there is due from now (ADR 0124).
 	now := m.now()
 	first, stepping := automationstep.First(a.row.Edges.LiveVersion.Steps)
-	var due *time.Time
+	var arrived arrival
 	if stepping && !ended {
-		due, err = dueOf(first, now, func() (*time.Location, error) { return contactZone(ctx, s, held.Contact()) })
+		arrived, err = arrive(first, now, func() (automationstep.Contact, error) { return calendarOf(ctx, s, held.Contact()) })
 		if err != nil {
 			return entered{}, err
 		}
 	}
-	runID, inserted, err := begin(ctx, s, held, a, o, judged.ordinal, due)
+	runID, inserted, err := begin(ctx, s, held, a, o, judged.ordinal, arrived.due)
 	if err != nil || !inserted {
 		return entered{}, err
 	}
@@ -271,7 +271,7 @@ func (m *StepExecution) enroll(ctx context.Context, s *ent.Scoped, pub events.Pu
 		}
 		return entered{runID: runID}, nil
 	}
-	if err := reach(ctx, s, runID, first.ID, now, due); err != nil {
+	if err := reach(ctx, s, runID, first.ID, now, arrived); err != nil {
 		return entered{}, err
 	}
 	return entered{runID: runID, stepping: true}, nil
