@@ -485,6 +485,12 @@ func ScopedEntities() []*ScopedEntity {
 				if src.ResumeAt != nil {
 					b.SetResumeAt(*src.ResumeAt)
 				}
+				if src.DeferredSince != nil {
+					b.SetDeferredSince(*src.DeferredSince)
+				}
+				if src.DeferralCause != nil {
+					b.SetDeferralCause(*src.DeferralCause)
+				}
 				if src.FailureKind != nil {
 					b.SetFailureKind(*src.FailureKind)
 				}
@@ -1038,6 +1044,9 @@ func ScopedEntities() []*ScopedEntity {
 				}
 				if src.DeferredUntil != nil {
 					b.SetDeferredUntil(*src.DeferredUntil)
+				}
+				if src.DeferralCause != nil {
+					b.SetDeferralCause(*src.DeferralCause)
 				}
 				if src.UnsubscribedAt != nil {
 					b.SetUnsubscribedAt(*src.UnsubscribedAt)
@@ -2396,6 +2405,12 @@ func ScopedEntities() []*ScopedEntity {
 				}
 				if src.Failure != nil {
 					b.SetFailure(*src.Failure)
+				}
+				if src.DeferredSince != nil {
+					b.SetDeferredSince(*src.DeferredSince)
+				}
+				if src.DeferralCause != nil {
+					b.SetDeferralCause(*src.DeferralCause)
 				}
 				b.SetClaimedAt(src.ClaimedAt)
 				if src.SentAt != nil {

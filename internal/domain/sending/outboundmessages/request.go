@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/oklog/ulid/v2"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 )
 
 // The Request constructors are the only code that derives a Ref (and with it the Kind and the mode
@@ -51,7 +53,7 @@ func BroadcastContent(b *ent.Broadcast) (Content, error) {
 
 // BroadcastRecipient is the Request for one Broadcast recipient's message on the Broadcast's
 // Channel. Its Destination is the Contact's on that Channel: on email the address, which a Contact
-// with none is Skipped for; a Channel of Bindings reads them after the claim.
+// with none is Skipped for; a Channel of Bindings reads them when the message is sent.
 func BroadcastRecipient(b *ent.Broadcast, rec *ent.BroadcastRecipient, c *ent.Contact) (Request, error) {
 	content, err := BroadcastContent(b)
 	if err != nil {
@@ -68,6 +70,32 @@ func BroadcastRecipient(b *ent.Broadcast, rec *ent.BroadcastRecipient, c *ent.Co
 	}, nil
 }
 
+// Waited is how a send has waited at its place before this attempt (ADR 0178): since when, the
+// moment of its first Deferral there, and why, the cause of its latest. The zero value is a send
+// that has not waited. The Outbound message keeps it once decided.
+type Waited struct {
+	Since time.Time
+	Cause deferralcause.Cause
+}
+
+// stamp writes the wait onto a new claim: none for a send that has not waited.
+func (w Waited) stamp(c *ent.OutboundMessageScopedCreate) {
+	if w.Since.IsZero() {
+		return
+	}
+	c.SetDeferredSince(w.Since).SetDeferralCause(w.Cause)
+}
+
+// restamp writes the wait onto a claim an attempt takes over: the Request's, which may have waited
+// since the claim was made.
+func (w Waited) restamp(u *ent.OutboundMessageScopedUpdate) {
+	if w.Since.IsZero() {
+		u.ClearDeferredSince().ClearDeferralCause()
+		return
+	}
+	u.SetDeferredSince(w.Since).SetDeferralCause(w.Cause)
+}
+
 // AutomationStep is the Request for the send Step stepID of the version an Automation run stands
 // on: its content, on the content's Channel, through the Integration the step names (nil: that
 // Channel's default, ADR 0081). The Destination is the Contact's on that Channel; a Contact with
@@ -75,8 +103,9 @@ func BroadcastRecipient(b *ent.Broadcast, rec *ent.BroadcastRecipient, c *ent.Co
 // Automation is its own unsubscribe Sending source; the unsubscribe click exits the enrollment (ADR
 // 0001). The message binds the Event the run began on as `event` (#752). Its key names the run and
 // the Step id, which every version keeps, so a Step inserted above it never changes the key (ADR
-// 0122).
-func AutomationStep(a *ent.Automation, run *ent.AutomationRun, stepID automationstep.ID, integrationID *int64, c *ent.Contact, content Content) Request {
+// 0122). waited is how the send has waited at the Step so far (the zero Waited: not at all), which
+// its message keeps.
+func AutomationStep(a *ent.Automation, run *ent.AutomationRun, stepID automationstep.ID, integrationID *int64, c *ent.Contact, content Content, waited Waited) Request {
 	return Request{
 		Key:           fmt.Sprintf("automation:%d:%s", run.ID, stepID),
 		Destination:   contactDestination(content.Channel(), c),
@@ -86,6 +115,7 @@ func AutomationStep(a *ent.Automation, run *ent.AutomationRun, stepID automation
 		Ref:           AutomationRef{AutomationID: a.ID, VersionID: run.VersionID, RunID: run.ID, StepID: stepID},
 		IntegrationID: integrationID,
 		Variables:     EnrollmentVariables(run),
+		Waited:        waited,
 	}
 }
 

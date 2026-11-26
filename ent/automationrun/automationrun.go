@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 )
 
 const (
@@ -53,6 +54,10 @@ const (
 	FieldCurrentStepID = "current_step_id"
 	// FieldResumeAt holds the string denoting the resume_at field in the database.
 	FieldResumeAt = "resume_at"
+	// FieldDeferredSince holds the string denoting the deferred_since field in the database.
+	FieldDeferredSince = "deferred_since"
+	// FieldDeferralCause holds the string denoting the deferral_cause field in the database.
+	FieldDeferralCause = "deferral_cause"
 	// FieldFailureKind holds the string denoting the failure_kind field in the database.
 	FieldFailureKind = "failure_kind"
 	// FieldFailureStatus holds the string denoting the failure_status field in the database.
@@ -130,6 +135,8 @@ var Columns = []string{
 	FieldEndedAt,
 	FieldCurrentStepID,
 	FieldResumeAt,
+	FieldDeferredSince,
+	FieldDeferralCause,
 	FieldFailureKind,
 	FieldFailureStatus,
 	FieldFailureExcerpt,
@@ -184,6 +191,16 @@ func StatusValidator(s Status) error {
 		return nil
 	default:
 		return fmt.Errorf("automationrun: invalid enum value for status field: %q", s)
+	}
+}
+
+// DeferralCauseValidator is a validator for the "deferral_cause" field enum values. It is called by the builders before save.
+func DeferralCauseValidator(dc deferralcause.Cause) error {
+	switch dc {
+	case "provider_limit", "send_cap", "provider", "sending_window", "frequency_cap":
+		return nil
+	default:
+		return fmt.Errorf("automationrun: invalid enum value for deferral_cause field: %q", dc)
 	}
 }
 
@@ -304,6 +321,16 @@ func ByCurrentStepID(opts ...sql.OrderTermOption) OrderOption {
 // ByResumeAt orders the results by the resume_at field.
 func ByResumeAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldResumeAt, opts...).ToFunc()
+}
+
+// ByDeferredSince orders the results by the deferred_since field.
+func ByDeferredSince(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeferredSince, opts...).ToFunc()
+}
+
+// ByDeferralCause orders the results by the deferral_cause field.
+func ByDeferralCause(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeferralCause, opts...).ToFunc()
 }
 
 // ByFailureKind orders the results by the failure_kind field.

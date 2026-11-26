@@ -122,9 +122,12 @@ func TestExternalContactsExportMembersCoverEveryStoredColumn(t *testing.T) {
 	covered(reflect.TypeFor[externalapi.ContactExportOutboundMessage](), outboundmessage.Columns,
 		"workspace_id", "contact_id", "updated_at", "idempotency_key", outboundmessage.FieldRequestDigest, "broadcast_recipient_id", "automation_run_id", "automation_version_id", "integration_id", "app_origin",
 		// The rendered subject (#899) is kept for the feeds only: #899 leaves the export as it was.
-		outboundmessage.FieldSubject)
+		outboundmessage.FieldSubject,
+		// Since when and why a send waited (ADR 0178) is the pace of the Workspace's sending, nothing
+		// about the person, as a recipient's deferral is.
+		outboundmessage.FieldDeferredSince, outboundmessage.FieldDeferralCause)
 	covered(reflect.TypeFor[externalapi.ContactExportBroadcastRecipient](), broadcastrecipient.Columns,
-		"workspace_id", "contact_id", "updated_at", "outbound_message_id", "deferred_until")
+		"workspace_id", "contact_id", "updated_at", "outbound_message_id", "deferred_until", broadcastrecipient.FieldDeferralCause)
 }
 
 // No tenant id and no rendered message content reach the document.

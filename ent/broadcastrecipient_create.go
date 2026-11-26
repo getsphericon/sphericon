@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 )
 
 // BroadcastRecipientCreate is the builder for creating a BroadcastRecipient entity.
@@ -89,6 +90,20 @@ func (_c *BroadcastRecipientCreate) SetDeferredUntil(v time.Time) *BroadcastReci
 func (_c *BroadcastRecipientCreate) SetNillableDeferredUntil(v *time.Time) *BroadcastRecipientCreate {
 	if v != nil {
 		_c.SetDeferredUntil(*v)
+	}
+	return _c
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (_c *BroadcastRecipientCreate) SetDeferralCause(v deferralcause.Cause) *BroadcastRecipientCreate {
+	_c.mutation.SetDeferralCause(v)
+	return _c
+}
+
+// SetNillableDeferralCause sets the "deferral_cause" field if the given value is not nil.
+func (_c *BroadcastRecipientCreate) SetNillableDeferralCause(v *deferralcause.Cause) *BroadcastRecipientCreate {
+	if v != nil {
+		_c.SetDeferralCause(*v)
 	}
 	return _c
 }
@@ -187,6 +202,11 @@ func (_c *BroadcastRecipientCreate) check() error {
 	if _, ok := _c.mutation.BroadcastID(); !ok {
 		return &ValidationError{Name: "broadcast_id", err: errors.New(`ent: missing required field "BroadcastRecipient.broadcast_id"`)}
 	}
+	if v, ok := _c.mutation.DeferralCause(); ok {
+		if err := broadcastrecipient.DeferralCauseValidator(v); err != nil {
+			return &ValidationError{Name: "deferral_cause", err: fmt.Errorf(`ent: validator failed for field "BroadcastRecipient.deferral_cause": %w`, err)}
+		}
+	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "BroadcastRecipient.workspace"`)}
 	}
@@ -237,6 +257,10 @@ func (_c *BroadcastRecipientCreate) createSpec() (*BroadcastRecipient, *sqlgraph
 	if value, ok := _c.mutation.DeferredUntil(); ok {
 		_spec.SetField(broadcastrecipient.FieldDeferredUntil, field.TypeTime, value)
 		_node.DeferredUntil = &value
+	}
+	if value, ok := _c.mutation.DeferralCause(); ok {
+		_spec.SetField(broadcastrecipient.FieldDeferralCause, field.TypeEnum, value)
+		_node.DeferralCause = &value
 	}
 	if value, ok := _c.mutation.UnsubscribedAt(); ok {
 		_spec.SetField(broadcastrecipient.FieldUnsubscribedAt, field.TypeTime, value)
@@ -417,6 +441,24 @@ func (u *BroadcastRecipientUpsert) ClearDeferredUntil() *BroadcastRecipientUpser
 	return u
 }
 
+// SetDeferralCause sets the "deferral_cause" field.
+func (u *BroadcastRecipientUpsert) SetDeferralCause(v deferralcause.Cause) *BroadcastRecipientUpsert {
+	u.Set(broadcastrecipient.FieldDeferralCause, v)
+	return u
+}
+
+// UpdateDeferralCause sets the "deferral_cause" field to the value that was provided on create.
+func (u *BroadcastRecipientUpsert) UpdateDeferralCause() *BroadcastRecipientUpsert {
+	u.SetExcluded(broadcastrecipient.FieldDeferralCause)
+	return u
+}
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (u *BroadcastRecipientUpsert) ClearDeferralCause() *BroadcastRecipientUpsert {
+	u.SetNull(broadcastrecipient.FieldDeferralCause)
+	return u
+}
+
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (u *BroadcastRecipientUpsert) SetUnsubscribedAt(v time.Time) *BroadcastRecipientUpsert {
 	u.Set(broadcastrecipient.FieldUnsubscribedAt, v)
@@ -567,6 +609,27 @@ func (u *BroadcastRecipientUpsertOne) UpdateDeferredUntil() *BroadcastRecipientU
 func (u *BroadcastRecipientUpsertOne) ClearDeferredUntil() *BroadcastRecipientUpsertOne {
 	return u.Update(func(s *BroadcastRecipientUpsert) {
 		s.ClearDeferredUntil()
+	})
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (u *BroadcastRecipientUpsertOne) SetDeferralCause(v deferralcause.Cause) *BroadcastRecipientUpsertOne {
+	return u.Update(func(s *BroadcastRecipientUpsert) {
+		s.SetDeferralCause(v)
+	})
+}
+
+// UpdateDeferralCause sets the "deferral_cause" field to the value that was provided on create.
+func (u *BroadcastRecipientUpsertOne) UpdateDeferralCause() *BroadcastRecipientUpsertOne {
+	return u.Update(func(s *BroadcastRecipientUpsert) {
+		s.UpdateDeferralCause()
+	})
+}
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (u *BroadcastRecipientUpsertOne) ClearDeferralCause() *BroadcastRecipientUpsertOne {
+	return u.Update(func(s *BroadcastRecipientUpsert) {
+		s.ClearDeferralCause()
 	})
 }
 
@@ -889,6 +952,27 @@ func (u *BroadcastRecipientUpsertBulk) UpdateDeferredUntil() *BroadcastRecipient
 func (u *BroadcastRecipientUpsertBulk) ClearDeferredUntil() *BroadcastRecipientUpsertBulk {
 	return u.Update(func(s *BroadcastRecipientUpsert) {
 		s.ClearDeferredUntil()
+	})
+}
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (u *BroadcastRecipientUpsertBulk) SetDeferralCause(v deferralcause.Cause) *BroadcastRecipientUpsertBulk {
+	return u.Update(func(s *BroadcastRecipientUpsert) {
+		s.SetDeferralCause(v)
+	})
+}
+
+// UpdateDeferralCause sets the "deferral_cause" field to the value that was provided on create.
+func (u *BroadcastRecipientUpsertBulk) UpdateDeferralCause() *BroadcastRecipientUpsertBulk {
+	return u.Update(func(s *BroadcastRecipientUpsert) {
+		s.UpdateDeferralCause()
+	})
+}
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (u *BroadcastRecipientUpsertBulk) ClearDeferralCause() *BroadcastRecipientUpsertBulk {
+	return u.Update(func(s *BroadcastRecipientUpsert) {
+		s.ClearDeferralCause()
 	})
 }
 

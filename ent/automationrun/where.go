@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 )
 
 // ID filters vertices based on their ID field.
@@ -137,6 +138,11 @@ func CurrentStepID(v automationstep.ID) predicate.AutomationRun {
 // ResumeAt applies equality check predicate on the "resume_at" field. It's identical to ResumeAtEQ.
 func ResumeAt(v time.Time) predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldEQ(FieldResumeAt, v))
+}
+
+// DeferredSince applies equality check predicate on the "deferred_since" field. It's identical to DeferredSinceEQ.
+func DeferredSince(v time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldDeferredSince, v))
 }
 
 // FailureStatus applies equality check predicate on the "failure_status" field. It's identical to FailureStatusEQ.
@@ -930,6 +936,96 @@ func ResumeAtIsNil() predicate.AutomationRun {
 // ResumeAtNotNil applies the NotNil predicate on the "resume_at" field.
 func ResumeAtNotNil() predicate.AutomationRun {
 	return predicate.AutomationRun(sql.FieldNotNull(FieldResumeAt))
+}
+
+// DeferredSinceEQ applies the EQ predicate on the "deferred_since" field.
+func DeferredSinceEQ(v time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldEQ(FieldDeferredSince, v))
+}
+
+// DeferredSinceNEQ applies the NEQ predicate on the "deferred_since" field.
+func DeferredSinceNEQ(v time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNEQ(FieldDeferredSince, v))
+}
+
+// DeferredSinceIn applies the In predicate on the "deferred_since" field.
+func DeferredSinceIn(vs ...time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIn(FieldDeferredSince, vs...))
+}
+
+// DeferredSinceNotIn applies the NotIn predicate on the "deferred_since" field.
+func DeferredSinceNotIn(vs ...time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotIn(FieldDeferredSince, vs...))
+}
+
+// DeferredSinceGT applies the GT predicate on the "deferred_since" field.
+func DeferredSinceGT(v time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldGT(FieldDeferredSince, v))
+}
+
+// DeferredSinceGTE applies the GTE predicate on the "deferred_since" field.
+func DeferredSinceGTE(v time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldGTE(FieldDeferredSince, v))
+}
+
+// DeferredSinceLT applies the LT predicate on the "deferred_since" field.
+func DeferredSinceLT(v time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldLT(FieldDeferredSince, v))
+}
+
+// DeferredSinceLTE applies the LTE predicate on the "deferred_since" field.
+func DeferredSinceLTE(v time.Time) predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldLTE(FieldDeferredSince, v))
+}
+
+// DeferredSinceIsNil applies the IsNil predicate on the "deferred_since" field.
+func DeferredSinceIsNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIsNull(FieldDeferredSince))
+}
+
+// DeferredSinceNotNil applies the NotNil predicate on the "deferred_since" field.
+func DeferredSinceNotNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotNull(FieldDeferredSince))
+}
+
+// DeferralCauseEQ applies the EQ predicate on the "deferral_cause" field.
+func DeferralCauseEQ(v deferralcause.Cause) predicate.AutomationRun {
+	vc := v
+	return predicate.AutomationRun(sql.FieldEQ(FieldDeferralCause, vc))
+}
+
+// DeferralCauseNEQ applies the NEQ predicate on the "deferral_cause" field.
+func DeferralCauseNEQ(v deferralcause.Cause) predicate.AutomationRun {
+	vc := v
+	return predicate.AutomationRun(sql.FieldNEQ(FieldDeferralCause, vc))
+}
+
+// DeferralCauseIn applies the In predicate on the "deferral_cause" field.
+func DeferralCauseIn(vs ...deferralcause.Cause) predicate.AutomationRun {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.AutomationRun(sql.FieldIn(FieldDeferralCause, v...))
+}
+
+// DeferralCauseNotIn applies the NotIn predicate on the "deferral_cause" field.
+func DeferralCauseNotIn(vs ...deferralcause.Cause) predicate.AutomationRun {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.AutomationRun(sql.FieldNotIn(FieldDeferralCause, v...))
+}
+
+// DeferralCauseIsNil applies the IsNil predicate on the "deferral_cause" field.
+func DeferralCauseIsNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldIsNull(FieldDeferralCause))
+}
+
+// DeferralCauseNotNil applies the NotNil predicate on the "deferral_cause" field.
+func DeferralCauseNotNil() predicate.AutomationRun {
+	return predicate.AutomationRun(sql.FieldNotNull(FieldDeferralCause))
 }
 
 // FailureKindEQ applies the EQ predicate on the "failure_kind" field.

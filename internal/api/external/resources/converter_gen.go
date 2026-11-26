@@ -50,6 +50,7 @@ import (
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	conditiontree "github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	datetrigger "github.com/getsphericon/sphericon/internal/kernel/datetrigger"
+	deferralcause "github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	emaildoc "github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	emailrender "github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	holdreason "github.com/getsphericon/sphericon/internal/kernel/holdreason"
@@ -841,6 +842,24 @@ func (c *ConverterImpl) DateTriggerToResource(source datetrigger.Date) external.
 	externalapiDateTrigger.LocalTime = external.LocalTime(source.LocalTime)
 	return externalapiDateTrigger
 }
+func (c *ConverterImpl) DeferralCauseToResource(source deferralcause.Cause) external.DeferralCause {
+	var externalapiDeferralCause external.DeferralCause
+	switch source {
+	case deferralcause.FrequencyCap:
+		externalapiDeferralCause = external.DeferralCauseFrequencyCap
+	case deferralcause.ProviderLimit:
+		externalapiDeferralCause = external.DeferralCauseProviderLimit
+	case deferralcause.SendCap:
+		externalapiDeferralCause = external.DeferralCauseSendCap
+	case deferralcause.SendingWindow:
+		externalapiDeferralCause = external.DeferralCauseSendingWindow
+	case deferralcause.SlowDown:
+		externalapiDeferralCause = external.DeferralCauseProvider
+	default:
+		panic(fmt.Sprintf("unexpected enum element: %v", source))
+	}
+	return externalapiDeferralCause
+}
 func (c *ConverterImpl) DnsRecordToResource(source sendingdomains.Record) external.DnsRecord {
 	var externalapiDnsRecord external.DnsRecord
 	externalapiDnsRecord.Type = dnsRecordType(source)
@@ -1060,6 +1079,8 @@ func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) external
 		externalapiEnrollmentResource.Occurrence = enrollmentOccurrence((*source).Occurrence)
 		externalapiEnrollmentResource.CurrentStepId = optStepID((*source).CurrentStepID)
 		externalapiEnrollmentResource.ResumeAt = optTimestamp((*source).ResumeAt)
+		externalapiEnrollmentResource.DeferredSince = optTimestamp((*source).DeferredSince)
+		externalapiEnrollmentResource.DeferralCause = optDeferralCause(c, (*source).DeferralCause)
 		externalapiEnrollmentResource.Failure = enrollmentFailure(c, (*source))
 		externalapiEnrollmentResource.CreatedAt = timestamp((*source).CreatedAt)
 		externalapiEnrollmentResource.UpdatedAt = timestamp((*source).UpdatedAt)

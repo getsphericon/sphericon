@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
@@ -307,6 +308,7 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend optEditorDocument
 // goverter:extend optTrackingReason
 // goverter:extend optSkippedReason
+// goverter:extend optDeferralCause
 // goverter:extend auditDiff
 // goverter:extend optWebhookDisabledReason
 // goverter:extend nilCurrencyCode
@@ -805,6 +807,8 @@ type Converter interface {
 	// goverter:enum:transform value
 	SkippedReasonToResource(source skipreason.Reason) externalapi.SkippedReason
 	// goverter:enum:transform value
+	DeferralCauseToResource(source deferralcause.Cause) externalapi.DeferralCause
+	// goverter:enum:transform value
 	TransactionalSendStatusToResource(source outboundmessages.TransactionalStatus) externalapi.TransactionalSendStatus
 	// goverter:enum:transform value
 	TrackingStateToResource(source trackingdomain.State) externalapi.TrackingState
@@ -1131,6 +1135,11 @@ func optTrackingReason(c Converter, v *trackingdomain.Reason) externalapi.OptTra
 // optSkippedReason is absent on every message but a skipped one.
 func optSkippedReason(c Converter, v *skipreason.Reason) externalapi.OptNilSkippedReason {
 	return convert.OptVia[externalapi.OptNilSkippedReason](v, c.SkippedReasonToResource)
+}
+
+// optDeferralCause is absent on everything that does not wait.
+func optDeferralCause(c Converter, v *deferralcause.Cause) externalapi.OptDeferralCause {
+	return convert.OptVia[externalapi.OptDeferralCause](v, c.DeferralCauseToResource)
 }
 
 // enrollmentOccurrence is the occurrence of a date Trigger the enrollment was made for (ADR 0126):

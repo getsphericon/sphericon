@@ -24,7 +24,7 @@ import (
 func (m *Module) decideTracking(ctx context.Context, s *ent.Scoped, req Request, ch channel, msg *ent.OutboundMessage, targets []target) (bool, error) {
 	tracked := ch.tracks(req) && msg.TrackingWithdrawnAt == nil && (msg.TrackingDecidedAt == nil || msg.Tracked)
 	if tracked && msg.Destination == "" && len(targets) > 0 {
-		// A Channel of Bindings resolves its Destination after the claim. It is on the row before
+		// A Channel of Bindings claims with no Destination: its first target is on the row before
 		// the consent is read, so a refusal recorded meanwhile, whose withdrawal finds the messages
 		// by their Destination, reaches this one; the send records the target that accepted. A
 		// message rendered once for several chats keeps every one of them, so a refusal of any

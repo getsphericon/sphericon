@@ -75,6 +75,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
@@ -7807,6 +7808,42 @@ func (x *AutomationRunScopedCreate) SetNillableResumeAt(v *time.Time) *Automatio
 
 const RoleOf_AutomationRunScopedCreate_SetNillableResumeAt = RoleStep
 
+// SetDeferredSince sets the "deferred_since" field.
+func (x *AutomationRunScopedCreate) SetDeferredSince(v time.Time) *AutomationRunScopedCreate {
+	x.set = append(x.set, func(b *AutomationRunCreate) { b.SetDeferredSince(v) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedCreate_SetDeferredSince = RoleStep
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (x *AutomationRunScopedCreate) SetNillableDeferredSince(v *time.Time) *AutomationRunScopedCreate {
+	if v != nil {
+		x.SetDeferredSince(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationRunScopedCreate_SetNillableDeferredSince = RoleStep
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (x *AutomationRunScopedCreate) SetDeferralCause(v deferralcause.Cause) *AutomationRunScopedCreate {
+	x.set = append(x.set, func(b *AutomationRunCreate) { b.SetDeferralCause(v) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedCreate_SetDeferralCause = RoleStep
+
+// SetNillableDeferralCause sets the "deferral_cause" field if the given value is not nil.
+func (x *AutomationRunScopedCreate) SetNillableDeferralCause(v *deferralcause.Cause) *AutomationRunScopedCreate {
+	if v != nil {
+		x.SetDeferralCause(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationRunScopedCreate_SetNillableDeferralCause = RoleStep
+
 // SetFailureKind sets the "failure_kind" field.
 func (x *AutomationRunScopedCreate) SetFailureKind(v automationrun.FailureKind) *AutomationRunScopedCreate {
 	x.set = append(x.set, func(b *AutomationRunCreate) { b.SetFailureKind(v) })
@@ -8137,6 +8174,54 @@ func (u *AutomationRunScopedUpsert) ClearResumeAt() *AutomationRunScopedUpsert {
 }
 
 const RoleOf_AutomationRunScopedUpsert_ClearResumeAt = RoleStep
+
+// SetDeferredSince sets the "deferred_since" field.
+func (u *AutomationRunScopedUpsert) SetDeferredSince(v time.Time) *AutomationRunScopedUpsert {
+	u.u.Set(automationrun.FieldDeferredSince, v)
+	return u
+}
+
+const RoleOf_AutomationRunScopedUpsert_SetDeferredSince = RoleStep
+
+// UpdateDeferredSince sets the "deferred_since" field to the value that was provided on create.
+func (u *AutomationRunScopedUpsert) UpdateDeferredSince() *AutomationRunScopedUpsert {
+	u.u.SetExcluded(automationrun.FieldDeferredSince)
+	return u
+}
+
+const RoleOf_AutomationRunScopedUpsert_UpdateDeferredSince = RoleStep
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (u *AutomationRunScopedUpsert) ClearDeferredSince() *AutomationRunScopedUpsert {
+	u.u.SetNull(automationrun.FieldDeferredSince)
+	return u
+}
+
+const RoleOf_AutomationRunScopedUpsert_ClearDeferredSince = RoleStep
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (u *AutomationRunScopedUpsert) SetDeferralCause(v deferralcause.Cause) *AutomationRunScopedUpsert {
+	u.u.Set(automationrun.FieldDeferralCause, v)
+	return u
+}
+
+const RoleOf_AutomationRunScopedUpsert_SetDeferralCause = RoleStep
+
+// UpdateDeferralCause sets the "deferral_cause" field to the value that was provided on create.
+func (u *AutomationRunScopedUpsert) UpdateDeferralCause() *AutomationRunScopedUpsert {
+	u.u.SetExcluded(automationrun.FieldDeferralCause)
+	return u
+}
+
+const RoleOf_AutomationRunScopedUpsert_UpdateDeferralCause = RoleStep
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (u *AutomationRunScopedUpsert) ClearDeferralCause() *AutomationRunScopedUpsert {
+	u.u.SetNull(automationrun.FieldDeferralCause)
+	return u
+}
+
+const RoleOf_AutomationRunScopedUpsert_ClearDeferralCause = RoleStep
 
 // SetFailureKind sets the "failure_kind" field.
 func (u *AutomationRunScopedUpsert) SetFailureKind(v automationrun.FailureKind) *AutomationRunScopedUpsert {
@@ -8579,6 +8664,58 @@ func (x *AutomationRunScopedUpdateOne) ClearResumeAt() *AutomationRunScopedUpdat
 
 const RoleOf_AutomationRunScopedUpdateOne_ClearResumeAt = RoleStep
 
+// SetDeferredSince sets the "deferred_since" field.
+func (x *AutomationRunScopedUpdateOne) SetDeferredSince(v time.Time) *AutomationRunScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationRunUpdateOne) { b.SetDeferredSince(v) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedUpdateOne_SetDeferredSince = RoleStep
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (x *AutomationRunScopedUpdateOne) SetNillableDeferredSince(v *time.Time) *AutomationRunScopedUpdateOne {
+	if v != nil {
+		x.SetDeferredSince(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationRunScopedUpdateOne_SetNillableDeferredSince = RoleStep
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (x *AutomationRunScopedUpdateOne) ClearDeferredSince() *AutomationRunScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationRunUpdateOne) { b.ClearDeferredSince() })
+	return x
+}
+
+const RoleOf_AutomationRunScopedUpdateOne_ClearDeferredSince = RoleStep
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (x *AutomationRunScopedUpdateOne) SetDeferralCause(v deferralcause.Cause) *AutomationRunScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationRunUpdateOne) { b.SetDeferralCause(v) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedUpdateOne_SetDeferralCause = RoleStep
+
+// SetNillableDeferralCause sets the "deferral_cause" field if the given value is not nil.
+func (x *AutomationRunScopedUpdateOne) SetNillableDeferralCause(v *deferralcause.Cause) *AutomationRunScopedUpdateOne {
+	if v != nil {
+		x.SetDeferralCause(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationRunScopedUpdateOne_SetNillableDeferralCause = RoleStep
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (x *AutomationRunScopedUpdateOne) ClearDeferralCause() *AutomationRunScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationRunUpdateOne) { b.ClearDeferralCause() })
+	return x
+}
+
+const RoleOf_AutomationRunScopedUpdateOne_ClearDeferralCause = RoleStep
+
 // SetFailureKind sets the "failure_kind" field.
 func (x *AutomationRunScopedUpdateOne) SetFailureKind(v automationrun.FailureKind) *AutomationRunScopedUpdateOne {
 	x.set = append(x.set, func(b *AutomationRunUpdateOne) { b.SetFailureKind(v) })
@@ -8957,6 +9094,58 @@ func (x *AutomationRunScopedUpdate) ClearResumeAt() *AutomationRunScopedUpdate {
 }
 
 const RoleOf_AutomationRunScopedUpdate_ClearResumeAt = RoleStep
+
+// SetDeferredSince sets the "deferred_since" field.
+func (x *AutomationRunScopedUpdate) SetDeferredSince(v time.Time) *AutomationRunScopedUpdate {
+	x.set = append(x.set, func(b *AutomationRunUpdate) { b.SetDeferredSince(v) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedUpdate_SetDeferredSince = RoleStep
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (x *AutomationRunScopedUpdate) SetNillableDeferredSince(v *time.Time) *AutomationRunScopedUpdate {
+	if v != nil {
+		x.SetDeferredSince(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationRunScopedUpdate_SetNillableDeferredSince = RoleStep
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (x *AutomationRunScopedUpdate) ClearDeferredSince() *AutomationRunScopedUpdate {
+	x.set = append(x.set, func(b *AutomationRunUpdate) { b.ClearDeferredSince() })
+	return x
+}
+
+const RoleOf_AutomationRunScopedUpdate_ClearDeferredSince = RoleStep
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (x *AutomationRunScopedUpdate) SetDeferralCause(v deferralcause.Cause) *AutomationRunScopedUpdate {
+	x.set = append(x.set, func(b *AutomationRunUpdate) { b.SetDeferralCause(v) })
+	return x
+}
+
+const RoleOf_AutomationRunScopedUpdate_SetDeferralCause = RoleStep
+
+// SetNillableDeferralCause sets the "deferral_cause" field if the given value is not nil.
+func (x *AutomationRunScopedUpdate) SetNillableDeferralCause(v *deferralcause.Cause) *AutomationRunScopedUpdate {
+	if v != nil {
+		x.SetDeferralCause(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationRunScopedUpdate_SetNillableDeferralCause = RoleStep
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (x *AutomationRunScopedUpdate) ClearDeferralCause() *AutomationRunScopedUpdate {
+	x.set = append(x.set, func(b *AutomationRunUpdate) { b.ClearDeferralCause() })
+	return x
+}
+
+const RoleOf_AutomationRunScopedUpdate_ClearDeferralCause = RoleStep
 
 // SetFailureKind sets the "failure_kind" field.
 func (x *AutomationRunScopedUpdate) SetFailureKind(v automationrun.FailureKind) *AutomationRunScopedUpdate {
@@ -19717,6 +19906,24 @@ func (x *BroadcastRecipientScopedCreate) SetNillableDeferredUntil(v *time.Time) 
 
 const RoleOf_BroadcastRecipientScopedCreate_SetNillableDeferredUntil = RoleStep
 
+// SetDeferralCause sets the "deferral_cause" field.
+func (x *BroadcastRecipientScopedCreate) SetDeferralCause(v deferralcause.Cause) *BroadcastRecipientScopedCreate {
+	x.set = append(x.set, func(b *BroadcastRecipientCreate) { b.SetDeferralCause(v) })
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedCreate_SetDeferralCause = RoleStep
+
+// SetNillableDeferralCause sets the "deferral_cause" field if the given value is not nil.
+func (x *BroadcastRecipientScopedCreate) SetNillableDeferralCause(v *deferralcause.Cause) *BroadcastRecipientScopedCreate {
+	if v != nil {
+		x.SetDeferralCause(*v)
+	}
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedCreate_SetNillableDeferralCause = RoleStep
+
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (x *BroadcastRecipientScopedCreate) SetUnsubscribedAt(v time.Time) *BroadcastRecipientScopedCreate {
 	x.set = append(x.set, func(b *BroadcastRecipientCreate) { b.SetUnsubscribedAt(v) })
@@ -19927,6 +20134,30 @@ func (u *BroadcastRecipientScopedUpsert) ClearDeferredUntil() *BroadcastRecipien
 }
 
 const RoleOf_BroadcastRecipientScopedUpsert_ClearDeferredUntil = RoleStep
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (u *BroadcastRecipientScopedUpsert) SetDeferralCause(v deferralcause.Cause) *BroadcastRecipientScopedUpsert {
+	u.u.Set(broadcastrecipient.FieldDeferralCause, v)
+	return u
+}
+
+const RoleOf_BroadcastRecipientScopedUpsert_SetDeferralCause = RoleStep
+
+// UpdateDeferralCause sets the "deferral_cause" field to the value that was provided on create.
+func (u *BroadcastRecipientScopedUpsert) UpdateDeferralCause() *BroadcastRecipientScopedUpsert {
+	u.u.SetExcluded(broadcastrecipient.FieldDeferralCause)
+	return u
+}
+
+const RoleOf_BroadcastRecipientScopedUpsert_UpdateDeferralCause = RoleStep
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (u *BroadcastRecipientScopedUpsert) ClearDeferralCause() *BroadcastRecipientScopedUpsert {
+	u.u.SetNull(broadcastrecipient.FieldDeferralCause)
+	return u
+}
+
+const RoleOf_BroadcastRecipientScopedUpsert_ClearDeferralCause = RoleStep
 
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (u *BroadcastRecipientScopedUpsert) SetUnsubscribedAt(v time.Time) *BroadcastRecipientScopedUpsert {
@@ -20229,6 +20460,32 @@ func (x *BroadcastRecipientScopedUpdateOne) ClearDeferredUntil() *BroadcastRecip
 
 const RoleOf_BroadcastRecipientScopedUpdateOne_ClearDeferredUntil = RoleStep
 
+// SetDeferralCause sets the "deferral_cause" field.
+func (x *BroadcastRecipientScopedUpdateOne) SetDeferralCause(v deferralcause.Cause) *BroadcastRecipientScopedUpdateOne {
+	x.set = append(x.set, func(b *BroadcastRecipientUpdateOne) { b.SetDeferralCause(v) })
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedUpdateOne_SetDeferralCause = RoleStep
+
+// SetNillableDeferralCause sets the "deferral_cause" field if the given value is not nil.
+func (x *BroadcastRecipientScopedUpdateOne) SetNillableDeferralCause(v *deferralcause.Cause) *BroadcastRecipientScopedUpdateOne {
+	if v != nil {
+		x.SetDeferralCause(*v)
+	}
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedUpdateOne_SetNillableDeferralCause = RoleStep
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (x *BroadcastRecipientScopedUpdateOne) ClearDeferralCause() *BroadcastRecipientScopedUpdateOne {
+	x.set = append(x.set, func(b *BroadcastRecipientUpdateOne) { b.ClearDeferralCause() })
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedUpdateOne_ClearDeferralCause = RoleStep
+
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (x *BroadcastRecipientScopedUpdateOne) SetUnsubscribedAt(v time.Time) *BroadcastRecipientScopedUpdateOne {
 	x.set = append(x.set, func(b *BroadcastRecipientUpdateOne) { b.SetUnsubscribedAt(v) })
@@ -20447,6 +20704,32 @@ func (x *BroadcastRecipientScopedUpdate) ClearDeferredUntil() *BroadcastRecipien
 }
 
 const RoleOf_BroadcastRecipientScopedUpdate_ClearDeferredUntil = RoleStep
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (x *BroadcastRecipientScopedUpdate) SetDeferralCause(v deferralcause.Cause) *BroadcastRecipientScopedUpdate {
+	x.set = append(x.set, func(b *BroadcastRecipientUpdate) { b.SetDeferralCause(v) })
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedUpdate_SetDeferralCause = RoleStep
+
+// SetNillableDeferralCause sets the "deferral_cause" field if the given value is not nil.
+func (x *BroadcastRecipientScopedUpdate) SetNillableDeferralCause(v *deferralcause.Cause) *BroadcastRecipientScopedUpdate {
+	if v != nil {
+		x.SetDeferralCause(*v)
+	}
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedUpdate_SetNillableDeferralCause = RoleStep
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (x *BroadcastRecipientScopedUpdate) ClearDeferralCause() *BroadcastRecipientScopedUpdate {
+	x.set = append(x.set, func(b *BroadcastRecipientUpdate) { b.ClearDeferralCause() })
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedUpdate_ClearDeferralCause = RoleStep
 
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (x *BroadcastRecipientScopedUpdate) SetUnsubscribedAt(v time.Time) *BroadcastRecipientScopedUpdate {
@@ -48188,6 +48471,42 @@ func (x *OutboundMessageScopedCreate) SetNillableFailure(v *string) *OutboundMes
 
 const RoleOf_OutboundMessageScopedCreate_SetNillableFailure = RoleStep
 
+// SetDeferredSince sets the "deferred_since" field.
+func (x *OutboundMessageScopedCreate) SetDeferredSince(v time.Time) *OutboundMessageScopedCreate {
+	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetDeferredSince(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetDeferredSince = RoleStep
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableDeferredSince(v *time.Time) *OutboundMessageScopedCreate {
+	if v != nil {
+		x.SetDeferredSince(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetNillableDeferredSince = RoleStep
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (x *OutboundMessageScopedCreate) SetDeferralCause(v deferralcause.Cause) *OutboundMessageScopedCreate {
+	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetDeferralCause(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetDeferralCause = RoleStep
+
+// SetNillableDeferralCause sets the "deferral_cause" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableDeferralCause(v *deferralcause.Cause) *OutboundMessageScopedCreate {
+	if v != nil {
+		x.SetDeferralCause(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedCreate_SetNillableDeferralCause = RoleStep
+
 // SetClaimedAt sets the "claimed_at" field.
 func (x *OutboundMessageScopedCreate) SetClaimedAt(v time.Time) *OutboundMessageScopedCreate {
 	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetClaimedAt(v) })
@@ -49048,6 +49367,54 @@ func (u *OutboundMessageScopedUpsert) ClearFailure() *OutboundMessageScopedUpser
 }
 
 const RoleOf_OutboundMessageScopedUpsert_ClearFailure = RoleStep
+
+// SetDeferredSince sets the "deferred_since" field.
+func (u *OutboundMessageScopedUpsert) SetDeferredSince(v time.Time) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldDeferredSince, v)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_SetDeferredSince = RoleStep
+
+// UpdateDeferredSince sets the "deferred_since" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateDeferredSince() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldDeferredSince)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_UpdateDeferredSince = RoleStep
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (u *OutboundMessageScopedUpsert) ClearDeferredSince() *OutboundMessageScopedUpsert {
+	u.u.SetNull(outboundmessage.FieldDeferredSince)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_ClearDeferredSince = RoleStep
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (u *OutboundMessageScopedUpsert) SetDeferralCause(v deferralcause.Cause) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldDeferralCause, v)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_SetDeferralCause = RoleStep
+
+// UpdateDeferralCause sets the "deferral_cause" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateDeferralCause() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldDeferralCause)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_UpdateDeferralCause = RoleStep
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (u *OutboundMessageScopedUpsert) ClearDeferralCause() *OutboundMessageScopedUpsert {
+	u.u.SetNull(outboundmessage.FieldDeferralCause)
+	return u
+}
+
+const RoleOf_OutboundMessageScopedUpsert_ClearDeferralCause = RoleStep
 
 // SetClaimedAt sets the "claimed_at" field.
 func (u *OutboundMessageScopedUpsert) SetClaimedAt(v time.Time) *OutboundMessageScopedUpsert {
@@ -49991,6 +50358,58 @@ func (x *OutboundMessageScopedUpdateOne) ClearFailure() *OutboundMessageScopedUp
 }
 
 const RoleOf_OutboundMessageScopedUpdateOne_ClearFailure = RoleStep
+
+// SetDeferredSince sets the "deferred_since" field.
+func (x *OutboundMessageScopedUpdateOne) SetDeferredSince(v time.Time) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetDeferredSince(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetDeferredSince = RoleStep
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableDeferredSince(v *time.Time) *OutboundMessageScopedUpdateOne {
+	if v != nil {
+		x.SetDeferredSince(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetNillableDeferredSince = RoleStep
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (x *OutboundMessageScopedUpdateOne) ClearDeferredSince() *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.ClearDeferredSince() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_ClearDeferredSince = RoleStep
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (x *OutboundMessageScopedUpdateOne) SetDeferralCause(v deferralcause.Cause) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetDeferralCause(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetDeferralCause = RoleStep
+
+// SetNillableDeferralCause sets the "deferral_cause" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableDeferralCause(v *deferralcause.Cause) *OutboundMessageScopedUpdateOne {
+	if v != nil {
+		x.SetDeferralCause(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_SetNillableDeferralCause = RoleStep
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (x *OutboundMessageScopedUpdateOne) ClearDeferralCause() *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.ClearDeferralCause() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdateOne_ClearDeferralCause = RoleStep
 
 // SetClaimedAt sets the "claimed_at" field.
 func (x *OutboundMessageScopedUpdateOne) SetClaimedAt(v time.Time) *OutboundMessageScopedUpdateOne {
@@ -51088,6 +51507,58 @@ func (x *OutboundMessageScopedUpdate) ClearFailure() *OutboundMessageScopedUpdat
 }
 
 const RoleOf_OutboundMessageScopedUpdate_ClearFailure = RoleStep
+
+// SetDeferredSince sets the "deferred_since" field.
+func (x *OutboundMessageScopedUpdate) SetDeferredSince(v time.Time) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetDeferredSince(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetDeferredSince = RoleStep
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableDeferredSince(v *time.Time) *OutboundMessageScopedUpdate {
+	if v != nil {
+		x.SetDeferredSince(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetNillableDeferredSince = RoleStep
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (x *OutboundMessageScopedUpdate) ClearDeferredSince() *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.ClearDeferredSince() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_ClearDeferredSince = RoleStep
+
+// SetDeferralCause sets the "deferral_cause" field.
+func (x *OutboundMessageScopedUpdate) SetDeferralCause(v deferralcause.Cause) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetDeferralCause(v) })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetDeferralCause = RoleStep
+
+// SetNillableDeferralCause sets the "deferral_cause" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableDeferralCause(v *deferralcause.Cause) *OutboundMessageScopedUpdate {
+	if v != nil {
+		x.SetDeferralCause(*v)
+	}
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_SetNillableDeferralCause = RoleStep
+
+// ClearDeferralCause clears the value of the "deferral_cause" field.
+func (x *OutboundMessageScopedUpdate) ClearDeferralCause() *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.ClearDeferralCause() })
+	return x
+}
+
+const RoleOf_OutboundMessageScopedUpdate_ClearDeferralCause = RoleStep
 
 // SetClaimedAt sets the "claimed_at" field.
 func (x *OutboundMessageScopedUpdate) SetClaimedAt(v time.Time) *OutboundMessageScopedUpdate {

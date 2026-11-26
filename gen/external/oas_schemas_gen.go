@@ -11699,6 +11699,71 @@ func (s *DateTriggerKind) UnmarshalText(data []byte) error {
 	}
 }
 
+// What a Deferral waits for: the send is not consumed and goes through every check again when it is
+// retried.
+// Ref: #/components/schemas/DeferralCause
+type DeferralCause string
+
+const (
+	DeferralCauseProviderLimit DeferralCause = "provider_limit"
+	DeferralCauseSendCap       DeferralCause = "send_cap"
+	DeferralCauseProvider      DeferralCause = "provider"
+	DeferralCauseSendingWindow DeferralCause = "sending_window"
+	DeferralCauseFrequencyCap  DeferralCause = "frequency_cap"
+)
+
+// AllValues returns all DeferralCause values.
+func (DeferralCause) AllValues() []DeferralCause {
+	return []DeferralCause{
+		DeferralCauseProviderLimit,
+		DeferralCauseSendCap,
+		DeferralCauseProvider,
+		DeferralCauseSendingWindow,
+		DeferralCauseFrequencyCap,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s DeferralCause) MarshalText() ([]byte, error) {
+	switch s {
+	case DeferralCauseProviderLimit:
+		return []byte(s), nil
+	case DeferralCauseSendCap:
+		return []byte(s), nil
+	case DeferralCauseProvider:
+		return []byte(s), nil
+	case DeferralCauseSendingWindow:
+		return []byte(s), nil
+	case DeferralCauseFrequencyCap:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *DeferralCause) UnmarshalText(data []byte) error {
+	switch DeferralCause(data) {
+	case DeferralCauseProviderLimit:
+		*s = DeferralCauseProviderLimit
+		return nil
+	case DeferralCauseSendCap:
+		*s = DeferralCauseSendCap
+		return nil
+	case DeferralCauseProvider:
+		*s = DeferralCauseProvider
+		return nil
+	case DeferralCauseSendingWindow:
+		*s = DeferralCauseSendingWindow
+		return nil
+	case DeferralCauseFrequencyCap:
+		*s = DeferralCauseFrequencyCap
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A TXT record the caller publishes: a Sending domain's DKIM key, or a Tracking domain's ownership.
 // Ref: #/components/schemas/DnsRecord
 type DnsRecord struct {
@@ -13812,8 +13877,15 @@ type EnrollmentResource struct {
 	// Id of the Step of its version the Enrollment stands on (ADR 0122): a wait while it waits, the Step
 	// it ended on once it ended; absent only for a version of no Steps.
 	CurrentStepId OptStepId `json:"currentStepId"`
-	// When the wait the Enrollment stands on is due: computed once, when it reached the wait (ADR 0124).
+	// When the wait the Enrollment stands on is due: a wait Step's, computed once when it reached the wait
+	// (ADR 0124), or, while the send of its Step is deferred, when the send is tried again (ADR 0178).
 	ResumeAt OptTimestamp `json:"resumeAt"`
+	// Since when the send of the Step the Enrollment stands on waits: the first Deferral at the Step (ADR
+	// 0178); absent once it moves on, and while its send is not deferred.
+	DeferredSince OptTimestamp `json:"deferredSince"`
+	// Why the send of the Step the Enrollment stands on waits: the cause of its latest Deferral; absent
+	// whenever `deferredSince` is.
+	DeferralCause OptDeferralCause `json:"deferralCause"`
 	// Present on a failed Enrollment whose failure an HTTP step recorded.
 	Failure OptEnrollmentFailure `json:"failure"`
 	// When the Contact was enrolled.
@@ -13865,6 +13937,16 @@ func (s *EnrollmentResource) GetCurrentStepId() OptStepId {
 // GetResumeAt returns the value of ResumeAt.
 func (s *EnrollmentResource) GetResumeAt() OptTimestamp {
 	return s.ResumeAt
+}
+
+// GetDeferredSince returns the value of DeferredSince.
+func (s *EnrollmentResource) GetDeferredSince() OptTimestamp {
+	return s.DeferredSince
+}
+
+// GetDeferralCause returns the value of DeferralCause.
+func (s *EnrollmentResource) GetDeferralCause() OptDeferralCause {
+	return s.DeferralCause
 }
 
 // GetFailure returns the value of Failure.
@@ -13925,6 +14007,16 @@ func (s *EnrollmentResource) SetCurrentStepId(val OptStepId) {
 // SetResumeAt sets the value of ResumeAt.
 func (s *EnrollmentResource) SetResumeAt(val OptTimestamp) {
 	s.ResumeAt = val
+}
+
+// SetDeferredSince sets the value of DeferredSince.
+func (s *EnrollmentResource) SetDeferredSince(val OptTimestamp) {
+	s.DeferredSince = val
+}
+
+// SetDeferralCause sets the value of DeferralCause.
+func (s *EnrollmentResource) SetDeferralCause(val OptDeferralCause) {
+	s.DeferralCause = val
 }
 
 // SetFailure sets the value of Failure.
@@ -19135,6 +19227,52 @@ func (o OptCustomFieldType) Get() (v CustomFieldType, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptCustomFieldType) Or(d CustomFieldType) CustomFieldType {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptDeferralCause returns new OptDeferralCause with value set to v.
+func NewOptDeferralCause(v DeferralCause) OptDeferralCause {
+	return OptDeferralCause{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptDeferralCause is optional DeferralCause.
+type OptDeferralCause struct {
+	Value DeferralCause
+	Set   bool
+}
+
+// IsSet returns true if OptDeferralCause was set.
+func (o OptDeferralCause) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptDeferralCause) Reset() {
+	var v DeferralCause
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptDeferralCause) SetTo(v DeferralCause) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptDeferralCause) Get() (v DeferralCause, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptDeferralCause) Or(d DeferralCause) DeferralCause {
 	if v, ok := o.Get(); ok {
 		return v
 	}
