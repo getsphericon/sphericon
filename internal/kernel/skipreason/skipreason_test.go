@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"pgregory.net/rapid"
 
+	"github.com/getsphericon/sphericon/ent/automationfigure"
+	"github.com/getsphericon/sphericon/ent/broadcastfigure"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
@@ -23,4 +25,14 @@ func TestCountsNamesEveryReasonWithItsCount(t *testing.T) {
 		assert.Equal(t, lo.Map(reasons, func(r skipreason.Reason, _ int) int { return by[r] }),
 			lo.Map(got, func(c skipreason.Count, _ int) int { return c.Count }))
 	})
+}
+
+// The frozen figures of a Broadcast and the pruned ones of an Automation's step keep a count per
+// reason (ADR 0143, ADR 0178): every reason of the closed list has its column in both, so a reason
+// added without one fails here, and the switches that map onto them fail the lint (closedenum).
+func TestEveryReasonHasItsColumnInTheFigures(t *testing.T) {
+	columns := lo.Map(skipreason.All(), func(r skipreason.Reason, _ int) string { return "skipped_" + string(r) })
+
+	assert.Subset(t, broadcastfigure.Columns, columns)
+	assert.Subset(t, automationfigure.Columns, columns)
 }

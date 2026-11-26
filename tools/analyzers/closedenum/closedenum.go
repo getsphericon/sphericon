@@ -34,13 +34,14 @@ import (
 // here, with every switch and map literal on it brought to the rule in the same change.
 var enums = []struct{ path, name string }{
 	{path: tier.Module + "internal/kernel/channels", name: "Channel"},
+	{path: tier.Module + "internal/kernel/skipreason", name: "Reason"},
 }
 
 // Analyzer reports a switch over a closed enum with a default clause or a member left out, and a
 // map literal keyed by one that leaves a member out.
 var Analyzer = &analysis.Analyzer{
 	Name:      "closedenum",
-	Doc:       "refuses a switch over a closed enum (channels.Channel) with a default or a member left out, and a map literal keyed by one that misses a member",
+	Doc:       "refuses a switch over a closed enum (channels.Channel, skipreason.Reason) with a default or a member left out, and a map literal keyed by one that misses a member",
 	Requires:  []*analysis.Analyzer{inspect.Analyzer},
 	Run:       run,
 	FactTypes: []analysis.Fact{new(Derived)},

@@ -272,42 +272,79 @@ func (m *Module) StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[
 // 0143): Channel and Revenue are not stored. frozenStats reads the row back; the two are the one
 // mapping between Stats and BroadcastFigure, kept side by side.
 func (st Stats) Frozen(c *ent.BroadcastFigureScopedCreate) *ent.BroadcastFigureScopedCreate {
-	return c.
+	c.
 		SetRecipients(st.Recipients).SetUnsubscribed(st.Unsubscribed).
 		SetSent(st.Sent).SetSkipped(st.Skipped).SetFailed(st.Failed).SetCancelled(st.Cancelled).SetPending(st.Pending).
 		SetDelivered(st.Delivered).SetUndelivered(st.Undelivered).
 		SetBounced(st.Bounced).SetComplained(st.Complained).
 		SetOpened(st.Opened).SetClicked(st.Clicked).SetUntracked(st.Untracked).SetCaptured(st.Captured).
-		SetSkippedSuppressed(st.SkippedBy[skipreason.Suppressed]).
-		SetSkippedUnsubscribedEverything(st.SkippedBy[skipreason.UnsubscribedEverything]).
-		SetSkippedUnsubscribedSource(st.SkippedBy[skipreason.UnsubscribedSource]).
-		SetSkippedUnconfirmed(st.SkippedBy[skipreason.Unconfirmed]).
-		SetSkippedNoDestination(st.SkippedBy[skipreason.NoDestination]).
-		SetSkippedContactErased(st.SkippedBy[skipreason.ContactErased]).
-		SetSkippedNoLocalTime(st.SkippedBy[skipreason.NoLocalTime]).
-		SetSkippedFrequencyCap(st.SkippedBy[skipreason.FrequencyCap]).
 		SetSingleZone(st.SingleZone)
+	for _, r := range skipreason.All() {
+		setSkipped(c, r, st.SkippedBy[r])
+	}
+	return c
 }
 
 // frozenStats is the Stats a frozen figures row keeps, Frozen read back.
 func frozenStats(f *ent.BroadcastFigure) Stats {
+	skippedBy := map[skipreason.Reason]int{}
+	for _, r := range skipreason.All() {
+		skippedBy[r] = skippedOf(f, r)
+	}
 	return Stats{
 		Recipients: f.Recipients, Unsubscribed: f.Unsubscribed,
 		Sent: f.Sent, Skipped: f.Skipped, Failed: f.Failed, Cancelled: f.Cancelled, Pending: f.Pending,
 		Delivered: f.Delivered, Undelivered: f.Undelivered, Bounced: f.Bounced, Complained: f.Complained,
 		Opened: f.Opened, Clicked: f.Clicked, Untracked: f.Untracked, Captured: f.Captured,
 		SingleZone: f.SingleZone,
-		SkippedBy: counted(map[skipreason.Reason]int{
-			skipreason.Suppressed:             f.SkippedSuppressed,
-			skipreason.UnsubscribedEverything: f.SkippedUnsubscribedEverything,
-			skipreason.UnsubscribedSource:     f.SkippedUnsubscribedSource,
-			skipreason.Unconfirmed:            f.SkippedUnconfirmed,
-			skipreason.NoDestination:          f.SkippedNoDestination,
-			skipreason.ContactErased:          f.SkippedContactErased,
-			skipreason.NoLocalTime:            f.SkippedNoLocalTime,
-			skipreason.FrequencyCap:           f.SkippedFrequencyCap,
-		}),
+		SkippedBy:  counted(skippedBy),
 	}
+}
+
+// setSkipped and skippedOf are the one mapping of the Skipped reasons onto a frozen figures row's
+// columns, one per reason: each switch names every reason of the closed list (review rule 19), so a
+// new reason fails the build until it has its column here.
+func setSkipped(c *ent.BroadcastFigureScopedCreate, r skipreason.Reason, n int) {
+	switch r {
+	case skipreason.Suppressed:
+		c.SetSkippedSuppressed(n)
+	case skipreason.UnsubscribedEverything:
+		c.SetSkippedUnsubscribedEverything(n)
+	case skipreason.UnsubscribedSource:
+		c.SetSkippedUnsubscribedSource(n)
+	case skipreason.Unconfirmed:
+		c.SetSkippedUnconfirmed(n)
+	case skipreason.NoDestination:
+		c.SetSkippedNoDestination(n)
+	case skipreason.ContactErased:
+		c.SetSkippedContactErased(n)
+	case skipreason.NoLocalTime:
+		c.SetSkippedNoLocalTime(n)
+	case skipreason.FrequencyCap:
+		c.SetSkippedFrequencyCap(n)
+	}
+}
+
+func skippedOf(f *ent.BroadcastFigure, r skipreason.Reason) int {
+	switch r {
+	case skipreason.Suppressed:
+		return f.SkippedSuppressed
+	case skipreason.UnsubscribedEverything:
+		return f.SkippedUnsubscribedEverything
+	case skipreason.UnsubscribedSource:
+		return f.SkippedUnsubscribedSource
+	case skipreason.Unconfirmed:
+		return f.SkippedUnconfirmed
+	case skipreason.NoDestination:
+		return f.SkippedNoDestination
+	case skipreason.ContactErased:
+		return f.SkippedContactErased
+	case skipreason.NoLocalTime:
+		return f.SkippedNoLocalTime
+	case skipreason.FrequencyCap:
+		return f.SkippedFrequencyCap
+	}
+	return 0
 }
 
 // counted is the counts of by above zero, nil when none is: what the grouped count of the rows
