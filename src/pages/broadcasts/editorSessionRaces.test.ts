@@ -55,6 +55,7 @@ const RESOURCE: SiteBroadcastResource = {
     skippedCount: 0,
     skippedByReason: [],
     waitingByCause: [],
+    singleZoneCount: null,
     failedCount: 0,
     pendingCount: 0,
     cancelledCount: 0,

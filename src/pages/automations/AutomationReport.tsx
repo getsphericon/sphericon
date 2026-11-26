@@ -204,7 +204,16 @@ function StepFigures({
             {report.steps.map((figures) => (
               <Table.Tr key={figures.stepId}>
                 <Table.Td>{reportedStepLabel(t, liveSteps, figures.stepId)}</Table.Td>
-                <Table.Td>{formatNumber(figures.sent)}</Table.Td>
+                <Table.Td>
+                  {formatNumber(figures.sent)}
+                  {figures.singleZone > 0 && (
+                    <Text size="xs" c="dimmed">
+                      {t(($) => $.automations.stepFigures.singleZone, {
+                        count: figures.singleZone,
+                      })}
+                    </Text>
+                  )}
+                </Table.Td>
                 <Table.Td>
                   {formatNumber(figures.skipped)}
                   <OutcomeLines skippedByReason={figures.skippedByReason} />

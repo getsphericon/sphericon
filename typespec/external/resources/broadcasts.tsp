@@ -93,6 +93,9 @@ model BroadcastReport {
   /** The pending recipients whose send waits now, by the cause of its latest Deferral (ADR 0178): every cause of the closed list in its order, one none waits for at zero; all zero once the broadcast is no longer sending */
   waitingByCause: DeferralCauseCount[];
 
+  /** Messages sent whose Sending window judged them by a single time zone (ADR 0134): the recipient could be in one zone only, so the window held exactly to its hours; null on a Channel with no Sending window */
+  singleZoneCount: int32 | null;
+
   /** Messages that failed to send */
   failedCount: int32;
 

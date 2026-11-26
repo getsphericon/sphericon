@@ -12274,7 +12274,14 @@
       },
       "AutomationStepFigures": {
         "type": "object",
-        "required": ["stepId", "sent", "skipped", "skippedByReason", "waitingByCause"],
+        "required": [
+          "stepId",
+          "sent",
+          "skipped",
+          "skippedByReason",
+          "waitingByCause",
+          "singleZone"
+        ],
         "properties": {
           "stepId": {
             "allOf": [
@@ -12307,6 +12314,11 @@
               "$ref": "#/components/schemas/DeferralCauseCount"
             },
             "description": "The active enrollments standing on the Step whose send waits now, by the cause of its latest\nDeferral (ADR 0178): every cause of the closed list in its order, one none waits for at zero"
+          },
+          "singleZone": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages sent whose Sending window judged them by a single time zone (ADR 0134): the\nrecipient could be in one zone only. Zero on a Channel with no Sending window."
           }
         },
         "description": "The messages of one send Step, over every version that had it"
@@ -12451,7 +12463,15 @@
       },
       "AutomationVersionStepFigures": {
         "type": "object",
-        "required": ["version", "stepId", "sent", "skipped", "skippedByReason", "waitingByCause"],
+        "required": [
+          "version",
+          "stepId",
+          "sent",
+          "skipped",
+          "skippedByReason",
+          "waitingByCause",
+          "singleZone"
+        ],
         "properties": {
           "version": {
             "type": "integer",
@@ -12489,6 +12509,11 @@
               "$ref": "#/components/schemas/DeferralCauseCount"
             },
             "description": "The active enrollments of the version standing on the Step whose send waits now, by cause, as\nin AutomationStepFigures"
+          },
+          "singleZone": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Messages sent whose Sending window judged them by a single time zone, as in\nAutomationStepFigures"
           }
         },
         "description": "The messages one version's send Step sent"
@@ -19925,6 +19950,7 @@
           "skippedCount",
           "skippedByReason",
           "waitingByCause",
+          "singleZoneCount",
           "failedCount",
           "pendingCount",
           "cancelledCount",
@@ -19974,6 +20000,12 @@
               "$ref": "#/components/schemas/DeferralCauseCount"
             },
             "description": "The pending recipients whose send waits now, by the cause of its latest Deferral (ADR 0178): every cause of the closed list in its order, one none waits for at zero; all zero once the broadcast is no longer sending"
+          },
+          "singleZoneCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "description": "Messages sent whose Sending window judged them by a single time zone (ADR 0134): the recipient could be in one zone only, so the window held exactly to its hours; null on a Channel with no Sending window"
           },
           "failedCount": {
             "type": "integer",

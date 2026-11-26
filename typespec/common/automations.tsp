@@ -1056,6 +1056,10 @@ model AutomationStepFigures {
   /** The active enrollments standing on the Step whose send waits now, by the cause of its latest
    * Deferral (ADR 0178): every cause of the closed list in its order, one none waits for at zero */
   waitingByCause: DeferralCauseCount[];
+
+  /** Messages sent whose Sending window judged them by a single time zone (ADR 0134): the
+   * recipient could be in one zone only. Zero on a Channel with no Sending window. */
+  singleZone: int32;
 }
 
 /** The messages one version's send Step sent */
@@ -1078,4 +1082,8 @@ model AutomationVersionStepFigures {
   /** The active enrollments of the version standing on the Step whose send waits now, by cause, as
    * in AutomationStepFigures */
   waitingByCause: DeferralCauseCount[];
+
+  /** Messages sent whose Sending window judged them by a single time zone, as in
+   * AutomationStepFigures */
+  singleZone: int32;
 }

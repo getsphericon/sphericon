@@ -208,8 +208,22 @@ test("a send Step's node shows what it sent and skipped by its id, none of them 
   const { screen } = await editing([email, WAIT, sms], {
     ...NO_AUTOMATION_REPORT,
     steps: [
-      { stepId: sms.id, sent: 1204, skipped: 12, skippedByReason: [], waitingByCause: [] },
-      { stepId: stepId(99), sent: 7, skipped: 3, skippedByReason: [], waitingByCause: [] },
+      {
+        stepId: sms.id,
+        sent: 1204,
+        skipped: 12,
+        skippedByReason: [],
+        waitingByCause: [],
+        singleZone: 0,
+      },
+      {
+        stepId: stepId(99),
+        sent: 7,
+        skipped: 3,
+        skippedByReason: [],
+        waitingByCause: [],
+        singleZone: 0,
+      },
     ],
   })
 

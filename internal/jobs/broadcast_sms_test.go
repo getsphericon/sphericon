@@ -53,7 +53,7 @@ func TestAnSMSBroadcastTextsOnlyTheConfirmedNumbers(t *testing.T) {
 	smsSent := env.QueuedCount(t, systemevent.SmsSent, map[string]any{"broadcastId": id, "contactId": fixtures.ContactLacunaBeaID})
 	assert.Equal(t, 1, smsSent)
 	figures := figuresOf(t, env, id)
-	assert.Equal(t, broadcasts.Stats{Recipients: 1, Sent: 1}, figures)
+	assert.Equal(t, broadcasts.Stats{Recipients: 1, Sent: 1, SingleZone: 1}, figures, "a Boston number is judged by one zone")
 }
 
 // A Recipient frozen with a confirmed phone is checked again when its text is sent: one that lost
@@ -90,7 +90,7 @@ func TestAnSMSBroadcastSkipsARecipientThatLostItsPhoneOrOptedOutWithTheReason(t 
 		fixtures.ContactLacunaCydID: skipreason.Suppressed,
 	}, reasons)
 	figures := figuresOf(t, env, id)
-	assert.Equal(t, broadcasts.Stats{Recipients: 4, Sent: 1, Skipped: 3, SkippedBy: map[skipreason.Reason]int{
+	assert.Equal(t, broadcasts.Stats{Recipients: 4, Sent: 1, SingleZone: 1, Skipped: 3, SkippedBy: map[skipreason.Reason]int{
 		skipreason.NoDestination: 1, skipreason.UnsubscribedEverything: 1, skipreason.Suppressed: 1,
 	}}, figures)
 }

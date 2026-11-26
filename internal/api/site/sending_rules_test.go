@@ -82,6 +82,10 @@ var (
 	smsDefaultWindow = windowOf("", hoursOf(480, 1200, everyDay...))
 )
 
+// acmeWindow is Acme's SMS window in the fixtures: open all day, so that no test that sends a text
+// is held by the hour it runs at (fixtures/sending_windows.yml).
+var acmeWindow = windowOf("", hoursOf(0, 1440, everyDay...))
+
 func TestAWorkspaceCreatedNowHasTheSMSCapAndWindow(t *testing.T) {
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
@@ -138,10 +142,10 @@ func TestAnOwnerReplacesTheSendingRulesAndTheChangeIsAudited(t *testing.T) {
 		},
 		"sending_windows": {
 			"from": [{"channel": "sms", "country": null, "hours": [
-				{"day": "monday", "opensAt": 480, "closesAt": 1200}, {"day": "tuesday", "opensAt": 480, "closesAt": 1200},
-				{"day": "wednesday", "opensAt": 480, "closesAt": 1200}, {"day": "thursday", "opensAt": 480, "closesAt": 1200},
-				{"day": "friday", "opensAt": 480, "closesAt": 1200}, {"day": "saturday", "opensAt": 480, "closesAt": 1200},
-				{"day": "sunday", "opensAt": 480, "closesAt": 1200}]}],
+				{"day": "monday", "opensAt": 0, "closesAt": 1440}, {"day": "tuesday", "opensAt": 0, "closesAt": 1440},
+				{"day": "wednesday", "opensAt": 0, "closesAt": 1440}, {"day": "thursday", "opensAt": 0, "closesAt": 1440},
+				{"day": "friday", "opensAt": 0, "closesAt": 1440}, {"day": "saturday", "opensAt": 0, "closesAt": 1440},
+				{"day": "sunday", "opensAt": 0, "closesAt": 1440}]}],
 			"to": [
 				{"channel": "sms", "country": null, "hours": [
 					{"day": "monday", "opensAt": 480, "closesAt": 1200}, {"day": "tuesday", "opensAt": 480, "closesAt": 1200},
@@ -217,7 +221,7 @@ func TestAWindowThatNeverOpensIsRefused(t *testing.T) {
 	assert.Contains(t, channel.Errors.Value["sendingWindows.0"][0], "never opens")
 	country := testhelper.SiteRefusal(t, countryErr, http.StatusUnprocessableEntity)
 	assert.Contains(t, country.Errors.Value["sendingWindows.1"][0], "never opens")
-	assert.Equal(t, []siteapi.SendingWindow{smsDefaultWindow}, sendingRules(t, owner, fixtures.AcmePublicID).SendingWindows)
+	assert.Equal(t, []siteapi.SendingWindow{acmeWindow}, sendingRules(t, owner, fixtures.AcmePublicID).SendingWindows)
 	assert.Empty(t, env.QueuedEvents(t, events.NameAuditEntry))
 }
 

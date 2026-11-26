@@ -434,6 +434,7 @@ func (c *ConverterImpl) BroadcastReportToResource(source broadcasts.Report) exte
 			externalapiBroadcastReport.WaitingByCause[j] = c.deferralcauseCountToExternalapiDeferralCauseCount(source.Figures.WaitingByCause[j])
 		}
 	}
+	externalapiBroadcastReport.SingleZoneCount = nilInt32(source.Figures.SingleZone)
 	externalapiBroadcastReport.FailedCount = count(source.Figures.Failed)
 	externalapiBroadcastReport.PendingCount = count(source.Figures.Pending)
 	externalapiBroadcastReport.CancelledCount = count(source.Figures.Cancelled)
@@ -2549,6 +2550,7 @@ func (c *ConverterImpl) automationsStepFiguresToExternalapiAutomationStepFigures
 			externalapiAutomationStepFigures.WaitingByCause[j] = c.deferralcauseCountToExternalapiDeferralCauseCount(source.WaitingByCause[j])
 		}
 	}
+	externalapiAutomationStepFigures.SingleZone = count(source.SingleZone)
 	return externalapiAutomationStepFigures
 }
 func (c *ConverterImpl) automationsVersionStepFiguresToExternalapiAutomationVersionStepFigures(source automations.VersionStepFigures) external.AutomationVersionStepFigures {
@@ -2569,6 +2571,7 @@ func (c *ConverterImpl) automationsVersionStepFiguresToExternalapiAutomationVers
 			externalapiAutomationVersionStepFigures.WaitingByCause[j] = c.deferralcauseCountToExternalapiDeferralCauseCount(source.WaitingByCause[j])
 		}
 	}
+	externalapiAutomationVersionStepFigures.SingleZone = count(source.SingleZone)
 	return externalapiAutomationVersionStepFigures
 }
 func (c *ConverterImpl) automationsWaitUntilFiguresToExternalapiAutomationWaitUntilFigures(source automations.WaitUntilFigures) external.AutomationWaitUntilFigures {

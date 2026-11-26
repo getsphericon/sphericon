@@ -15,7 +15,8 @@ import (
 // AddPruned counts the Automation messages message retention deletes into their Automations'
 // figures, one row per version and Step id (ADR 0143, ADR 0122), in the transaction that deletes them: the use
 // case internal/usecase/messageretention runs it. It counts as the report does, sent and skipped by
-// step, the skipped by their Skipped reason (ADR 0178), and the delivery stamps whatever the status, so the report reads the same figures after the
+// step, the skipped by their Skipped reason (ADR 0178), the sent a Sending window judged by a single
+// zone (ADR 0134), and the delivery stamps whatever the status, so the report reads the same figures after the
 // prune as before. Run alone, it would count messages twice.
 func (m *Module) AddPruned(ctx context.Context, s *ent.Scoped, msgs []*ent.OutboundMessage) error {
 	type key struct {
@@ -51,6 +52,7 @@ func (m *Module) AddPruned(ctx context.Context, s *ent.Scoped, msgs []*ent.Outbo
 			SetSkippedContactErased(c.skippedBy[skipreason.ContactErased]).
 			SetSkippedNoLocalTime(c.skippedBy[skipreason.NoLocalTime]).
 			SetSkippedFrequencyCap(c.skippedBy[skipreason.FrequencyCap]).
+			SetSingleZone(c.singleZone).
 			OnConflictColumns(automationfigure.FieldWorkspaceID, automationfigure.FieldAutomationID, automationfigure.FieldVersionID, automationfigure.FieldStepID).
 			Update(func(u *ent.AutomationFigureScopedUpsert) {
 				u.AddSent(c.sent).AddSkipped(c.skipped).AddDelivered(c.delivered).
@@ -63,6 +65,7 @@ func (m *Module) AddPruned(ctx context.Context, s *ent.Scoped, msgs []*ent.Outbo
 					AddSkippedContactErased(c.skippedBy[skipreason.ContactErased]).
 					AddSkippedNoLocalTime(c.skippedBy[skipreason.NoLocalTime]).
 					AddSkippedFrequencyCap(c.skippedBy[skipreason.FrequencyCap]).
+					AddSingleZone(c.singleZone).
 					UpdateUpdatedAt()
 			}).
 			Exec(ctx)
@@ -75,14 +78,17 @@ func (m *Module) AddPruned(ctx context.Context, s *ent.Scoped, msgs []*ent.Outbo
 
 // counts is what a batch of messages adds to one step's figures.
 type counts struct {
-	sent, skipped, delivered, bounced, complained, captured int
-	skippedBy                                               map[skipreason.Reason]int
+	sent, skipped, delivered, bounced, complained, captured, singleZone int
+	skippedBy                                                           map[skipreason.Reason]int
 }
 
 func (c *counts) add(m *ent.OutboundMessage) {
 	switch m.Status {
 	case outboundmessage.StatusSent:
 		c.sent++
+		if m.WindowSingleZone {
+			c.singleZone++
+		}
 	case outboundmessage.StatusSkipped:
 		c.skipped++
 		if c.skippedBy == nil {

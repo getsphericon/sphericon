@@ -716,8 +716,16 @@ test('shows what each send step sent, skipped by reason and has waiting by cause
             skipped: 3,
             skippedByReason: [{ reason: 'suppressed', count: 3 }],
             waitingByCause: [{ cause: 'provider_limit', count: 2 }],
+            singleZone: 0,
           },
-          { stepId: stepId(13), sent: 17, skipped: 29, skippedByReason: [], waitingByCause: [] },
+          {
+            stepId: stepId(13),
+            sent: 17,
+            skipped: 29,
+            skippedByReason: [],
+            waitingByCause: [],
+            singleZone: 0,
+          },
         ],
         versionSteps: [
           {
@@ -727,6 +735,7 @@ test('shows what each send step sent, skipped by reason and has waiting by cause
             skipped: 29,
             skippedByReason: [],
             waitingByCause: [],
+            singleZone: 0,
           },
           {
             version: 1,
@@ -735,6 +744,7 @@ test('shows what each send step sent, skipped by reason and has waiting by cause
             skipped: 3,
             skippedByReason: [],
             waitingByCause: [],
+            singleZone: 0,
           },
           {
             version: 2,
@@ -743,6 +753,7 @@ test('shows what each send step sent, skipped by reason and has waiting by cause
             skipped: 0,
             skippedByReason: [],
             waitingByCause: [],
+            singleZone: 0,
           },
         ],
       },

@@ -26,6 +26,7 @@ const STATS = {
   skippedCount: 4,
   skippedByReason: [],
   waitingByCause: [],
+  singleZoneCount: null,
   pendingCount: 0,
   cancelledCount: 0,
   openedCount: 80,

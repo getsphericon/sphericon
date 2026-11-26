@@ -2743,6 +2743,9 @@ type AutomationStepFigures struct {
 	// The active enrollments standing on the Step whose send waits now, by the cause of its latest
 	// Deferral (ADR 0178): every cause of the closed list in its order, one none waits for at zero.
 	WaitingByCause []DeferralCauseCount `json:"waitingByCause"`
+	// Messages sent whose Sending window judged them by a single time zone (ADR 0134): the recipient could
+	// be in one zone only. Zero on a Channel with no Sending window.
+	SingleZone int32 `json:"singleZone"`
 }
 
 // GetStepId returns the value of StepId.
@@ -2770,6 +2773,11 @@ func (s *AutomationStepFigures) GetWaitingByCause() []DeferralCauseCount {
 	return s.WaitingByCause
 }
 
+// GetSingleZone returns the value of SingleZone.
+func (s *AutomationStepFigures) GetSingleZone() int32 {
+	return s.SingleZone
+}
+
 // SetStepId sets the value of StepId.
 func (s *AutomationStepFigures) SetStepId(val StepId) {
 	s.StepId = val
@@ -2793,6 +2801,11 @@ func (s *AutomationStepFigures) SetSkippedByReason(val []SkippedReasonCount) {
 // SetWaitingByCause sets the value of WaitingByCause.
 func (s *AutomationStepFigures) SetWaitingByCause(val []DeferralCauseCount) {
 	s.WaitingByCause = val
+}
+
+// SetSingleZone sets the value of SingleZone.
+func (s *AutomationStepFigures) SetSingleZone(val int32) {
+	s.SingleZone = val
 }
 
 // One Step of an automation, by `type`, as a request writes it. A field of another kind is refused.
@@ -3682,6 +3695,8 @@ type AutomationVersionStepFigures struct {
 	// The active enrollments of the version standing on the Step whose send waits now, by cause, as in
 	// AutomationStepFigures.
 	WaitingByCause []DeferralCauseCount `json:"waitingByCause"`
+	// Messages sent whose Sending window judged them by a single time zone, as in AutomationStepFigures.
+	SingleZone int32 `json:"singleZone"`
 }
 
 // GetVersion returns the value of Version.
@@ -3714,6 +3729,11 @@ func (s *AutomationVersionStepFigures) GetWaitingByCause() []DeferralCauseCount 
 	return s.WaitingByCause
 }
 
+// GetSingleZone returns the value of SingleZone.
+func (s *AutomationVersionStepFigures) GetSingleZone() int32 {
+	return s.SingleZone
+}
+
 // SetVersion sets the value of Version.
 func (s *AutomationVersionStepFigures) SetVersion(val int32) {
 	s.Version = val
@@ -3742,6 +3762,11 @@ func (s *AutomationVersionStepFigures) SetSkippedByReason(val []SkippedReasonCou
 // SetWaitingByCause sets the value of WaitingByCause.
 func (s *AutomationVersionStepFigures) SetWaitingByCause(val []DeferralCauseCount) {
 	s.WaitingByCause = val
+}
+
+// SetSingleZone sets the value of SingleZone.
+func (s *AutomationVersionStepFigures) SetSingleZone(val int32) {
+	s.SingleZone = val
 }
 
 // The enrollments that went on at once from one Wait until on a date instead of waiting, by why: read
@@ -29365,6 +29390,10 @@ type SiteBroadcastStats struct {
 	// cause of the closed list in its order, one none waits for at zero; all zero once the broadcast is no
 	// longer sending.
 	WaitingByCause []DeferralCauseCount `json:"waitingByCause"`
+	// Messages sent whose Sending window judged them by a single time zone (ADR 0134): the recipient could
+	// be in one zone only, so the window held exactly to its hours; null on a Channel with no Sending
+	// window.
+	SingleZoneCount NilInt32 `json:"singleZoneCount"`
 	// Messages that failed to send.
 	FailedCount int32 `json:"failedCount"`
 	// Recipients whose send has not ended yet; none on a cancelled broadcast but a message already handed
@@ -29438,6 +29467,11 @@ func (s *SiteBroadcastStats) GetSkippedByReason() []SkippedReasonCount {
 // GetWaitingByCause returns the value of WaitingByCause.
 func (s *SiteBroadcastStats) GetWaitingByCause() []DeferralCauseCount {
 	return s.WaitingByCause
+}
+
+// GetSingleZoneCount returns the value of SingleZoneCount.
+func (s *SiteBroadcastStats) GetSingleZoneCount() NilInt32 {
+	return s.SingleZoneCount
 }
 
 // GetFailedCount returns the value of FailedCount.
@@ -29558,6 +29592,11 @@ func (s *SiteBroadcastStats) SetSkippedByReason(val []SkippedReasonCount) {
 // SetWaitingByCause sets the value of WaitingByCause.
 func (s *SiteBroadcastStats) SetWaitingByCause(val []DeferralCauseCount) {
 	s.WaitingByCause = val
+}
+
+// SetSingleZoneCount sets the value of SingleZoneCount.
+func (s *SiteBroadcastStats) SetSingleZoneCount(val NilInt32) {
+	s.SingleZoneCount = val
 }
 
 // SetFailedCount sets the value of FailedCount.
