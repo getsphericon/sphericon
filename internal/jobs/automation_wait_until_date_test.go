@@ -129,7 +129,7 @@ func TestAWaitUntilTheNextBirthdayWaitsForThisYearsOrNextYears(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			env, clock := waitUntilEnv(t, time.Date(2027, time.January, 15, 12, 0, 0, 0, newYork))
 			ctx := t.Context()
-			updateContact(t, env, fixtures.ContactLiamID, contacts.UpdateInput{Core: contacts.Core{Birthday: patch.Set(tc.birthday)}})
+			updateContact(t, env, fixtures.ContactLiamID, contacts.UpdateInput{Birthday: patch.Set(tc.birthday)})
 
 			runID := enrollOnItsTrigger(t, env, clock, fixtures.AutomationJobsWaitUntilBirthdayID, fixtures.ContactLiamID)
 

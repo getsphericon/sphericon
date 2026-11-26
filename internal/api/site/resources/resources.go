@@ -1500,7 +1500,7 @@ func enrollmentOccurrence(stored *datetrigger.StoredOccurrence) siteapi.OptEnrol
 		return siteapi.OptEnrollmentOccurrence{}
 	}
 	var sum siteapi.EnrollmentOccurrenceSum
-	switch o := stored.Occurrence.(type) {
+	switch o := stored.Occurrence().(type) {
 	case datetrigger.Yearly:
 		sum = siteapi.NewYearlyEnrollmentOccurrenceEnrollmentOccurrenceSum(siteapi.YearlyEnrollmentOccurrence{
 			Recurrence: siteapi.YearlyEnrollmentOccurrenceRecurrenceYearly, Year: count(o.Year),

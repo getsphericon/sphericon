@@ -28,40 +28,49 @@ var _ = db.Declare(
 		"a Step record is written by the move that puts the Enrollment on the Step, which its cursor's compare-and-set lets happen once, and a version's Steps have no cycles"),
 )
 
-// arrival is what a Step decides for an Enrollment that reaches it, computed once, then kept on its
-// Step record (ADR 0124, ADR 0126): due, the moment a wait holds the Enrollment until (nil for a
-// Step that runs at once), and wentOn, why a Wait until with no moment to wait for lets it go on at
-// once.
-type arrival struct {
-	due    *time.Time
-	wentOn *automationstep.WentOn
-}
-
-// arrive is what the Step st decides for an Enrollment that reaches it at now: a wait's delay
-// after now, and a Wait until's moment for its Contact, in the Contact's zone or else the
-// Workspace's, or why it goes on at once (automationstep.Reach), which contact reads only for a
-// Wait until. Any other Step runs at once.
-func arrive(st *automationstep.Step, now time.Time, contact func() (automationstep.Contact, error)) (arrival, error) {
+// arrive is what the Step st decides for an Enrollment that reaches it at now, computed once, then
+// kept on its Step record (ADR 0124, ADR 0126): a wait's delay after now, and a Wait until's moment
+// for its Contact, in the Contact's zone or else the Workspace's, or why it goes on at once
+// (automationstep.Reach), which contact reads only for a Wait until. Any other Step decides
+// nothing (nil) and runs at once.
+func arrive(st *automationstep.Step, now time.Time, contact func() (automationstep.Contact, error)) (automationstep.Due, error) {
 	switch p := st.Payload.(type) {
 	case automationstep.Wait:
-		due := now.Add(time.Duration(p.Seconds) * time.Second)
-		return arrival{due: &due}, nil
+		return automationstep.WaitsUntil{At: now.Add(time.Duration(p.Seconds) * time.Second)}, nil
 	case automationstep.WaitUntil:
 		c, err := contact()
 		if err != nil {
-			return arrival{}, err
+			return nil, err
 		}
 		reached, err := automationstep.Reach(p.Until, c, now)
 		if err != nil {
-			return arrival{}, fmt.Errorf("wait until step %s: %w", st.ID, err)
+			return nil, fmt.Errorf("wait until step %s: %w", st.ID, err)
 		}
-		if reached.WentOn != "" {
-			return arrival{wentOn: &reached.WentOn}, nil
-		}
-		return arrival{due: &reached.At}, nil
+		return reached, nil
 	default:
-		return arrival{}, nil
+		return nil, nil
 	}
+}
+
+// dueAt is the moment a wait holds the Enrollment until, nil for a Step it does not hold (one that
+// decided nothing on arrival, nil, or a Wait until that went on at once).
+func dueAt(d automationstep.Due) *time.Time {
+	switch d := d.(type) {
+	case automationstep.WaitsUntil:
+		return &d.At
+	case automationstep.GoesOn, nil:
+	}
+	return nil
+}
+
+// wentOn is why a Wait until let the Enrollment go on at once, nil for any other arrival.
+func wentOn(d automationstep.Due) *automationstep.WentOn {
+	switch d := d.(type) {
+	case automationstep.GoesOn:
+		return &d.Reason
+	case automationstep.WaitsUntil, nil:
+	}
+	return nil
 }
 
 // calendarOf is what a Wait until reads of the Contact c in its Workspace (contactCalendar).
@@ -102,13 +111,13 @@ func runCalendar(ctx context.Context, s *ent.Scoped, runID int64) (automationste
 
 // reach records that the Enrollment runID reached the Step of the id at now, with what the Step
 // decided then: a wait's due moment, or why a Wait until let it go on at once.
-func reach(ctx context.Context, s *ent.Scoped, runID int64, stepID automationstep.ID, now time.Time, a arrival) error {
+func reach(ctx context.Context, s *ent.Scoped, runID int64, stepID automationstep.ID, now time.Time, d automationstep.Due) error {
 	return s.AutomationStepRecord().Create().
 		SetRunID(runID).
 		SetStepID(stepID).
 		SetReachedAt(now).
-		SetNillableDueAt(a.due).
-		SetNillableWentOn(a.wentOn).
+		SetNillableDueAt(dueAt(d)).
+		SetNillableWentOn(wentOn(d)).
 		Exec(ctx)
 }
 

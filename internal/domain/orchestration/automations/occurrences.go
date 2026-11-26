@@ -240,11 +240,12 @@ func candidates(ctx context.Context, s *ent.Scoped, f datetrigger.Field, band da
 	// ent generates no range predicate of an edge's column: the keyset's is written with its builder.
 	q := s.ContactDate().Query().
 		Where(contactdate.KindEQ(f.Kind), contactdate.Key(f.Key), predicate.ContactDate(sql.FieldGT(contactdate.FieldContactID, after)))
-	if first, last, ok := band.Range(); ok {
-		q = q.Where(contactdate.DateGTE(first.Midnight()), contactdate.DateLTE(last.Midnight()))
-	}
-	if days, ok := band.MonthDays(); ok {
-		q = q.Where(contactdate.MonthDayIn(days...))
+	switch b := band.(type) {
+	case datetrigger.KeyRange:
+		q = q.Where(contactdate.DateGTE(b.First.Midnight()), contactdate.DateLTE(b.Last.Midnight()))
+	case datetrigger.MonthDays:
+		q = q.Where(contactdate.MonthDayIn(b.Days...))
+	case datetrigger.EveryKey:
 	}
 	if changedAfter != nil {
 		q = q.Where(contactdate.HasContactWith(contact.WorkspaceID(s.WorkspaceID()), contact.UpdatedAtGT(*changedAfter)))
@@ -305,7 +306,7 @@ func yearsIn(d datetrigger.Date, w window, c *ent.Contact, workspaceZone *string
 // begins at the moment with an empty `event` (enroll).
 func (m *StepExecution) decideOccurrence(ctx context.Context, s *ent.Scoped, c occurrenceCase) error {
 	occurrence := c.date.Occurrence(c.year)
-	o := origin{Cause: cause{occurrence: occurrence}}
+	o := origin{Cause: byOccurrence{occurrence: occurrence}}
 	_, err := m.start(ctx, s, func(ts *ent.Scoped, pub events.Publisher) (entered, error) {
 		return m.enroll(ctx, ts, pub, c.automationID, c.contactID, o, func(a *ent.Automation, held *ent.Contact, o *origin) (bool, error) {
 			live := a.Edges.LiveVersion

@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -34,6 +35,12 @@ func trialEnds(recurrence localcalendar.Recurrence) automationstep.OnDate {
 // nextBirthday is "until the next birthday, at 10:00".
 var nextBirthday = automationstep.OnDate{
 	Field: datetrigger.Field{Kind: datetrigger.Birthday}, Recurrence: localcalendar.Yearly, LocalTime: "10:00",
+}
+
+// utc is the Wait until's decision with its moment, when it waits, read in UTC.
+func utc(d automationstep.Due) automationstep.Due {
+	w, waits := d.(automationstep.WaitsUntil)
+	return lo.Ternary[automationstep.Due](waits, automationstep.WaitsUntil{At: w.At.UTC()}, d)
 }
 
 func holding(trialEndsAt any) datetrigger.Holder {
@@ -72,8 +79,7 @@ func TestAWaitUntilOnADateWaitsForItsNextOccurrence(t *testing.T) {
 			due, err := automationstep.Reach(c.until, contact, c.arrival)
 
 			require.NoError(t, err)
-			assert.Equal(t, c.want, due.At.UTC())
-			assert.Empty(t, due.WentOn)
+			assert.Equal(t, automationstep.WaitsUntil{At: c.want}, utc(due))
 		})
 	}
 }
@@ -105,7 +111,7 @@ func TestAWaitUntilOnADateGoesOnAtOnceWithItsReason(t *testing.T) {
 			due, err := automationstep.Reach(c.until, contact, friday)
 
 			require.NoError(t, err)
-			assert.Equal(t, automationstep.Due{WentOn: c.want}, due)
+			assert.Equal(t, automationstep.GoesOn{Reason: c.want}, due)
 		})
 	}
 }
@@ -119,5 +125,5 @@ func TestAWaitUntilAtATimeOfDayAlwaysWaits(t *testing.T) {
 	due, err := automationstep.Reach(until, contact, at(2027, time.January, 15, 17, 0, 0))
 
 	require.NoError(t, err)
-	assert.Equal(t, at(2027, time.January, 18, 8, 0, 0), due.At.UTC())
+	assert.Equal(t, automationstep.WaitsUntil{At: at(2027, time.January, 18, 8, 0, 0)}, utc(due))
 }

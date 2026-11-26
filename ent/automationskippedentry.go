@@ -112,9 +112,7 @@ func (*AutomationSkippedEntry) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case automationskippedentry.FieldOccurrence:
-			values[i] = &sql.NullScanner{S: new(datetrigger.StoredOccurrence)}
-		case automationskippedentry.FieldID, automationskippedentry.FieldWorkspaceID, automationskippedentry.FieldAutomationID, automationskippedentry.FieldContactID, automationskippedentry.FieldFiringID:
+		case automationskippedentry.FieldID, automationskippedentry.FieldWorkspaceID, automationskippedentry.FieldAutomationID, automationskippedentry.FieldContactID, automationskippedentry.FieldFiringID, automationskippedentry.FieldOccurrence:
 			values[i] = new(sql.NullInt64)
 		case automationskippedentry.FieldSourceID, automationskippedentry.FieldReason:
 			values[i] = new(sql.NullString)
@@ -186,11 +184,11 @@ func (_m *AutomationSkippedEntry) assignValues(columns []string, values []any) e
 				*_m.FiringID = value.Int64
 			}
 		case automationskippedentry.FieldOccurrence:
-			if value, ok := values[i].(*sql.NullScanner); !ok {
+			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field occurrence", values[i])
 			} else if value.Valid {
 				_m.Occurrence = new(datetrigger.StoredOccurrence)
-				*_m.Occurrence = *value.S.(*datetrigger.StoredOccurrence)
+				*_m.Occurrence = datetrigger.StoredOccurrence(value.Int64)
 			}
 		case automationskippedentry.FieldReason:
 			if value, ok := values[i].(*sql.NullString); !ok {

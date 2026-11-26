@@ -94,7 +94,7 @@ type origin struct {
 // stored before the trigger job is queued (#751); an Event no longer stored (Retention or an Erasure
 // removed it) gives no properties.
 func originOf(ctx context.Context, s *ent.Scoped, ev Event) (origin, error) {
-	o := origin{Action: ev.Action, OccurredAt: ev.OccurredAt, Cause: cause{sourceID: ev.SourceID}, Chain: ev.Chain}
+	o := origin{Action: ev.Action, OccurredAt: ev.OccurredAt, Cause: eventCause(ev.SourceID), Chain: ev.Chain}
 	stored, err := storedEvent(ctx, s, ev.SourceID)
 	if err != nil || stored == nil {
 		return o, err
@@ -133,7 +133,7 @@ func (m *StepExecution) enrollOnRule(ctx context.Context, s *ent.Scoped, pub eve
 	if err != nil {
 		return entered{}, err
 	}
-	o := origin{OccurredAt: now, Cause: cause{firingID: in.FiringID}, Chain: in.Chain}
+	o := origin{OccurredAt: now, Cause: firingCause(in.FiringID), Chain: in.Chain}
 	if fired != nil {
 		o.Action, o.Properties, o.OccurredAt = fired.Action, events.BoundedProperties(fired.Properties), fired.OccurredAt
 		o.BegunOnSourceID = in.SourceID
@@ -160,7 +160,7 @@ func (m *StepExecution) enrollOnTrigger(ctx context.Context, s *ent.Scoped, pub 
 			return false, nil
 		}
 		// The first entry check: an Event its filter misses is no entry, and nothing is recorded.
-		return matchesEvent(ctx, s, eventMatcherOf(live), o.Action, event.SourceID(o.Cause.sourceID))
+		return matchesEvent(ctx, s, eventMatcherOf(live), o.Action, event.SourceID(sourceOf(o.Cause)))
 	})
 }
 
@@ -238,14 +238,14 @@ func (m *StepExecution) enroll(ctx context.Context, s *ent.Scoped, pub events.Pu
 	// The Enrollment reaches its first Step as it is made; a wait there is due from now (ADR 0124).
 	now := m.now()
 	first, stepping := automationstep.First(a.row.Edges.LiveVersion.Steps)
-	var arrived arrival
+	var arrived automationstep.Due
 	if stepping && !ended {
 		arrived, err = arrive(first, now, func() (automationstep.Contact, error) { return calendarOf(ctx, s, held.Contact()) })
 		if err != nil {
 			return entered{}, err
 		}
 	}
-	runID, inserted, err := begin(ctx, s, held, a, o, judged.ordinal, arrived.due)
+	runID, inserted, err := begin(ctx, s, held, a, o, judged.ordinal, dueAt(arrived))
 	if err != nil || !inserted {
 		return entered{}, err
 	}

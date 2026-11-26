@@ -101,7 +101,7 @@ func (AutomationRun) Fields() []ent.Field {
 		// not the version: one Enrollment per Contact and occurrence, whatever field a later version
 		// names. Null for an Enrollment an Event or a Rule began.
 		field.Int("occurrence").
-			GoType(datetrigger.StoredOccurrence{}).
+			GoType(datetrigger.StoredOccurrence(0)).
 			Optional().
 			Nillable().
 			Immutable(),

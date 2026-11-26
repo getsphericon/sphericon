@@ -1,11 +1,5 @@
 package datetrigger
 
-import (
-	"database/sql/driver"
-	"errors"
-	"fmt"
-)
-
 // Occurrence is one occurrence of a date (ADR 0126) an Enrollment or a skipped entry is made for,
 // by the date's recurrence: an anniversary year (Yearly), or a once date's one occurrence (Once).
 // It is the contract's `{recurrence: yearly, year} | {recurrence: once}`. A Contact is enrolled in an
@@ -15,7 +9,7 @@ import (
 //sumtype:decl
 type Occurrence interface {
 	// stored is the occurrence as a column holds it (StoredOccurrence).
-	stored() int64
+	stored() int
 }
 
 // Yearly is the occurrence of a yearly date in an anniversary year: the year of the date the
@@ -27,40 +21,24 @@ type Yearly struct {
 // Once is the one occurrence of a once date.
 type Once struct{}
 
-func (y Yearly) stored() int64 { return int64(y.Year) }
+func (y Yearly) stored() int { return y.Year }
 
 // onceStored is how a column holds Once: no anniversary year is 0.
 const onceStored = 0
 
-func (Once) stored() int64 { return onceStored }
+func (Once) stored() int { return onceStored }
 
-// StoredOccurrence is an Occurrence as an int column holds it, encoded and decoded here alone: its
-// anniversary year, or 0 for Once, which no year equals.
-type StoredOccurrence struct {
-	Occurrence Occurrence
-}
-
-// Value is the column's int.
-func (s StoredOccurrence) Value() (driver.Value, error) {
-	if s.Occurrence == nil {
-		return nil, errors.New("datetrigger: an occurrence of no kind")
-	}
-	return s.Occurrence.stored(), nil
-}
-
-// Scan reads the column's int.
-func (s *StoredOccurrence) Scan(src any) error {
-	n, ok := src.(int64)
-	if !ok {
-		return fmt.Errorf("datetrigger: an occurrence stored as %T", src)
-	}
-	if n == onceStored {
-		s.Occurrence = Once{}
-		return nil
-	}
-	s.Occurrence = Yearly{Year: int(n)}
-	return nil
-}
+// StoredOccurrence is an Occurrence as an int column holds it, encoded (Stored) and decoded
+// (Occurrence) here alone: its anniversary year, or 0 for Once, which no year equals.
+type StoredOccurrence int
 
 // Stored is the occurrence as its column holds it.
-func Stored(o Occurrence) StoredOccurrence { return StoredOccurrence{Occurrence: o} }
+func Stored(o Occurrence) StoredOccurrence { return StoredOccurrence(o.stored()) }
+
+// Occurrence is the occurrence the column holds.
+func (s StoredOccurrence) Occurrence() Occurrence {
+	if s == onceStored {
+		return Once{}
+	}
+	return Yearly{Year: int(s)}
+}

@@ -209,7 +209,7 @@ func judgeEntry(ctx context.Context, s *ent.Scoped, v *ent.AutomationVersion, co
 		return next, nil
 	}
 	checks := entryChecks
-	if o.Cause.byOccurrence() {
+	if _, ok := o.Cause.(byOccurrence); ok {
 		// An occurrence of a date Trigger (ADR 0126) has no key, no chain before it and no Entry
 		// policy: its uniqueness stands in for `once`, so only an Enrollment active at its moment
 		// skips it.

@@ -58,7 +58,7 @@ func (AutomationSkippedEntry) Fields() []ent.Field {
 		// yearly date or a once date's one (datetrigger.Occurrence, an int column). Null for an Event's or a
 		// Rule's entry.
 		field.Int("occurrence").
-			GoType(datetrigger.StoredOccurrence{}).
+			GoType(datetrigger.StoredOccurrence(0)).
 			Optional().
 			Nillable().
 			Immutable(),

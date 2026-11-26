@@ -1104,7 +1104,7 @@ func enrollmentOccurrence(stored *datetrigger.StoredOccurrence) externalapi.OptE
 		return externalapi.OptEnrollmentOccurrence{}
 	}
 	var sum externalapi.EnrollmentOccurrenceSum
-	switch o := stored.Occurrence.(type) {
+	switch o := stored.Occurrence().(type) {
 	case datetrigger.Yearly:
 		sum = externalapi.NewYearlyEnrollmentOccurrenceEnrollmentOccurrenceSum(externalapi.YearlyEnrollmentOccurrence{
 			Recurrence: externalapi.YearlyEnrollmentOccurrenceRecurrenceYearly, Year: count(o.Year),

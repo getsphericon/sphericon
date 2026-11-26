@@ -129,13 +129,42 @@ const maxBandDays = 400
 
 // Band is the keys of the dates whose occurrence may fall in a window (Date.Band): the database
 // narrows the Contacts to those holding such a key, and the local calendar computes each one's
-// moment. A once date's band is a range of keys; a yearly date's is a set of month and day
-// (localcalendar.Date.MonthDay), or every key when the window is longer than a year.
-type Band struct {
-	once        bool
-	first, last localcalendar.Date
-	monthDays   []int
+// moment. A once date's band is a range of keys (KeyRange); a yearly date's is a set of month and
+// day (MonthDays, localcalendar.Date.MonthDay), or every key when the window is longer than a year
+// (EveryKey). A type switch over it that misses a kind fails the lint (gochecksumtype).
+//
+//sumtype:decl
+type Band interface {
+	// Holds reports whether the band holds the key.
+	Holds(key localcalendar.Date) bool
+	band()
 }
+
+// KeyRange is a once date's band: the keys from First to Last, both included.
+type KeyRange struct {
+	First, Last localcalendar.Date
+}
+
+// MonthDays is a yearly date's band over a window of a year at most: the keys of these month and
+// days, ascending.
+type MonthDays struct {
+	Days []int
+}
+
+// EveryKey is a yearly date's band over a window longer than a year: every key.
+type EveryKey struct{}
+
+func (KeyRange) band()  {}
+func (MonthDays) band() {}
+func (EveryKey) band()  {}
+
+func (b KeyRange) Holds(key localcalendar.Date) bool {
+	return !key.Midnight().Before(b.First.Midnight()) && !key.Midnight().After(b.Last.Midnight())
+}
+
+func (b MonthDays) Holds(key localcalendar.Date) bool { return slices.Contains(b.Days, key.MonthDay()) }
+
+func (EveryKey) Holds(localcalendar.Date) bool { return true }
 
 // Band is the band of the window from..to: the days the window spans in UTC, bandMargin each side,
 // moved back by the offset.
@@ -143,10 +172,10 @@ func (d Date) Band(from, to time.Time) Band {
 	first := localcalendar.DateOf(from.UTC()).AddDays(-bandMargin - d.OffsetDays)
 	last := localcalendar.DateOf(to.UTC()).AddDays(bandMargin - d.OffsetDays)
 	if d.Recurrence == localcalendar.Once {
-		return Band{once: true, first: first, last: last}
+		return KeyRange{First: first, Last: last}
 	}
 	if last.Midnight().Sub(first.Midnight()) > maxBandDays*24*time.Hour {
-		return Band{}
+		return EveryKey{}
 	}
 	var days []int
 	for day := first; !day.Midnight().After(last.Midnight()); day = day.AddDays(1) {
@@ -157,25 +186,5 @@ func (d Date) Band(from, to time.Time) Band {
 		}
 	}
 	slices.Sort(days)
-	return Band{monthDays: slices.Compact(days)}
-}
-
-// Range is a once date's band, the keys from first to last, both included; false for a yearly
-// date.
-func (b Band) Range() (first, last localcalendar.Date, ok bool) {
-	return b.first, b.last, b.once
-}
-
-// MonthDays is a yearly date's band, the month and day of its keys; false when it holds every key,
-// and for a once date.
-func (b Band) MonthDays() ([]int, bool) {
-	return b.monthDays, b.monthDays != nil
-}
-
-// Holds reports whether the band holds the key.
-func (b Band) Holds(key localcalendar.Date) bool {
-	if b.once {
-		return !key.Midnight().Before(b.first.Midnight()) && !key.Midnight().After(b.last.Midnight())
-	}
-	return b.monthDays == nil || slices.Contains(b.monthDays, key.MonthDay())
+	return MonthDays{Days: slices.Compact(days)}
 }

@@ -25,6 +25,12 @@ func drawBirthdayWait(t *rapid.T) automationstep.OnDate {
 	}
 }
 
+// waitsUntil is the moment a Wait until waits for, zero when it goes on at once.
+func waitsUntil(d automationstep.Due) time.Time {
+	w, _ := d.(automationstep.WaitsUntil)
+	return w.At
+}
+
 // A yearly date the Contact holds from before the arrival's year always has its next occurrence
 // at or after the arrival and within the bound, so the Enrollment waits for it: a birthday never
 // goes on at once.
@@ -40,14 +46,15 @@ func TestAYearlyDateFromAnEarlierYearAlwaysWaitsWithinTheBound(t *testing.T) {
 		due, err := automationstep.Reach(drawBirthdayWait(t), contact, arrival)
 
 		require.NoError(t, err)
-		assert.Empty(t, due.WentOn)
-		assert.False(t, due.At.Before(arrival), "never before the arrival: %s", due.At)
-		assert.False(t, due.At.After(arrival.In(loc).AddDate(0, 0, automationstep.BoundDays)), "within the bound: %s", due.At)
+		at := waitsUntil(due)
+		assert.Equal(t, automationstep.WaitsUntil{At: at}, due, "it waits")
+		assert.False(t, at.Before(arrival), "never before the arrival: %s", at)
+		assert.False(t, at.After(arrival.In(loc).AddDate(0, 0, automationstep.BoundDays)), "within the bound: %s", at)
 	})
 }
 
 // Whatever the Contact holds, a Wait until on a date either waits for a moment at or after the
-// arrival within the bound, or goes on at once with a reason: never both, never neither.
+// arrival within the bound, or goes on at once with a reason.
 func TestAWaitUntilOnADateWaitsOrGoesOnNeverBoth(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		loc, err := time.LoadLocation(rapid.SampledFrom(reachZones).Draw(t, "zone"))
@@ -62,8 +69,9 @@ func TestAWaitUntilOnADateWaitsOrGoesOnNeverBoth(t *testing.T) {
 		due, err := automationstep.Reach(until, contact, arrival)
 
 		require.NoError(t, err)
-		assert.NotEqual(t, due.At.IsZero(), due.WentOn == "", "a moment or a reason: %+v", due)
-		assert.False(t, !due.At.IsZero() && due.At.Before(arrival), "never before the arrival: %s", due.At)
-		assert.False(t, due.At.After(arrival.In(loc).AddDate(0, 0, automationstep.BoundDays)), "within the bound: %s", due.At)
+		at := waitsUntil(due)
+		assert.NotNil(t, due, "a moment or a reason")
+		assert.False(t, !at.IsZero() && at.Before(arrival), "never before the arrival: %s", at)
+		assert.False(t, at.After(arrival.In(loc).AddDate(0, 0, automationstep.BoundDays)), "within the bound: %s", at)
 	})
 }

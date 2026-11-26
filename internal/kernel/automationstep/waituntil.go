@@ -197,12 +197,27 @@ type Contact struct {
 	Dates           datetrigger.Holder
 }
 
-// Due is what a Wait until decides for an Enrollment that reaches it: the moment it waits for, At,
-// or, with At zero, why it goes on at once, WentOn.
-type Due struct {
-	At     time.Time
-	WentOn WentOn
+// Due is what a Wait until decides for an Enrollment that reaches it, computed once, then kept
+// (ADR 0126): it waits until a moment (WaitsUntil), or goes on at once for a reason (GoesOn). A type
+// switch over it that misses a kind fails the lint (gochecksumtype).
+//
+//sumtype:decl
+type Due interface {
+	due()
 }
+
+// WaitsUntil holds the Enrollment on the Step until At.
+type WaitsUntil struct {
+	At time.Time
+}
+
+// GoesOn lets the Enrollment go on at once, for Reason.
+type GoesOn struct {
+	Reason WentOn
+}
+
+func (WaitsUntil) due() {}
+func (GoesOn) due()     {}
 
 // Reach is what the Wait until's moment u decides for the Contact c reaching it at now, computed
 // once, then kept (ADR 0126): the first moment at or after now, one equal to now waiting zero
@@ -215,30 +230,30 @@ func Reach(u Until, c Contact, now time.Time) (Due, error) {
 	case TimeOfDay:
 		w, err := u.Calendar()
 		if err != nil {
-			return Due{}, err
+			return nil, err
 		}
-		return Due{At: w.Next(now, c.Zone)}, nil
+		return WaitsUntil{At: w.Next(now, c.Zone)}, nil
 	case OnDate:
 		date, held := u.Field.Of(c.Dates, c.Workspace)
 		if !held {
-			return Due{WentOn: WentOnNoDate}, nil
+			return GoesOn{Reason: WentOnNoDate}, nil
 		}
 		schedule, err := u.Schedule()
 		if err != nil {
-			return Due{}, err
+			return nil, err
 		}
 		next, ok := schedule.Next(date, now, c.Zone)
 		if !ok {
-			return Due{WentOn: WentOnPast}, nil
+			return GoesOn{Reason: WentOnPast}, nil
 		}
 		if next.At.After(now.In(c.Zone).AddDate(0, 0, BoundDays)) {
-			return Due{WentOn: WentOnBeyondBound}, nil
+			return GoesOn{Reason: WentOnBeyondBound}, nil
 		}
-		return Due{At: next.At}, nil
+		return WaitsUntil{At: next.At}, nil
 	case nil:
-		return Due{}, errors.New("automationstep: a wait until without a moment")
+		return nil, errors.New("automationstep: a wait until without a moment")
 	}
-	return Due{}, fmt.Errorf("automationstep: the moment %T has no due moment", u)
+	return nil, fmt.Errorf("automationstep: the moment %T has no due moment", u)
 }
 
 // OnDates yields each Wait until of the tree that waits on a date, with its Step, in the walker's

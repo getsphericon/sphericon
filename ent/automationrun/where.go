@@ -109,7 +109,8 @@ func FiringID(v int64) predicate.AutomationRun {
 
 // Occurrence applies equality check predicate on the "occurrence" field. It's identical to OccurrenceEQ.
 func Occurrence(v datetrigger.StoredOccurrence) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldEQ(FieldOccurrence, v))
+	vc := int(v)
+	return predicate.AutomationRun(sql.FieldEQ(FieldOccurrence, vc))
 }
 
 // Ordinal applies equality check predicate on the "ordinal" field. It's identical to OrdinalEQ.
@@ -560,42 +561,56 @@ func FiringIDNotNil() predicate.AutomationRun {
 
 // OccurrenceEQ applies the EQ predicate on the "occurrence" field.
 func OccurrenceEQ(v datetrigger.StoredOccurrence) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldEQ(FieldOccurrence, v))
+	vc := int(v)
+	return predicate.AutomationRun(sql.FieldEQ(FieldOccurrence, vc))
 }
 
 // OccurrenceNEQ applies the NEQ predicate on the "occurrence" field.
 func OccurrenceNEQ(v datetrigger.StoredOccurrence) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldNEQ(FieldOccurrence, v))
+	vc := int(v)
+	return predicate.AutomationRun(sql.FieldNEQ(FieldOccurrence, vc))
 }
 
 // OccurrenceIn applies the In predicate on the "occurrence" field.
 func OccurrenceIn(vs ...datetrigger.StoredOccurrence) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldIn(FieldOccurrence, vs...))
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = int(vs[i])
+	}
+	return predicate.AutomationRun(sql.FieldIn(FieldOccurrence, v...))
 }
 
 // OccurrenceNotIn applies the NotIn predicate on the "occurrence" field.
 func OccurrenceNotIn(vs ...datetrigger.StoredOccurrence) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldNotIn(FieldOccurrence, vs...))
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = int(vs[i])
+	}
+	return predicate.AutomationRun(sql.FieldNotIn(FieldOccurrence, v...))
 }
 
 // OccurrenceGT applies the GT predicate on the "occurrence" field.
 func OccurrenceGT(v datetrigger.StoredOccurrence) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldGT(FieldOccurrence, v))
+	vc := int(v)
+	return predicate.AutomationRun(sql.FieldGT(FieldOccurrence, vc))
 }
 
 // OccurrenceGTE applies the GTE predicate on the "occurrence" field.
 func OccurrenceGTE(v datetrigger.StoredOccurrence) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldGTE(FieldOccurrence, v))
+	vc := int(v)
+	return predicate.AutomationRun(sql.FieldGTE(FieldOccurrence, vc))
 }
 
 // OccurrenceLT applies the LT predicate on the "occurrence" field.
 func OccurrenceLT(v datetrigger.StoredOccurrence) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldLT(FieldOccurrence, v))
+	vc := int(v)
+	return predicate.AutomationRun(sql.FieldLT(FieldOccurrence, vc))
 }
 
 // OccurrenceLTE applies the LTE predicate on the "occurrence" field.
 func OccurrenceLTE(v datetrigger.StoredOccurrence) predicate.AutomationRun {
-	return predicate.AutomationRun(sql.FieldLTE(FieldOccurrence, v))
+	vc := int(v)
+	return predicate.AutomationRun(sql.FieldLTE(FieldOccurrence, vc))
 }
 
 // OccurrenceIsNil applies the IsNil predicate on the "occurrence" field.

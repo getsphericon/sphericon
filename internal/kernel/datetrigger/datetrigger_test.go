@@ -112,12 +112,8 @@ func TestABandLongerThanAYearHoldsEveryKey(t *testing.T) {
 	week := yearly.Band(time.Date(2027, time.March, 14, 0, 0, 0, 0, time.UTC), time.Date(2027, time.March, 15, 0, 0, 0, 0, time.UTC))
 	outage := yearly.Band(time.Date(2027, time.March, 14, 0, 0, 0, 0, time.UTC), time.Date(2034, time.March, 15, 0, 0, 0, 0, time.UTC))
 
-	days, narrowed := week.MonthDays()
-	_, outageNarrowed := outage.MonthDays()
-
-	require.True(t, narrowed)
-	assert.Equal(t, []int{308, 309, 310, 311, 312, 313, 314, 315}, days)
-	assert.False(t, outageNarrowed)
+	assert.Equal(t, datetrigger.MonthDays{Days: []int{308, 309, 310, 311, 312, 313, 314, 315}}, week)
+	assert.Equal(t, datetrigger.EveryKey{}, outage)
 	assert.True(t, outage.Holds(localcalendar.NewDate(1990, time.September, 1)))
 	assert.False(t, week.Holds(localcalendar.NewDate(1990, time.September, 1)))
 }
@@ -139,12 +135,8 @@ func TestEveryStoredOccurrenceReadsBack(t *testing.T) {
 			rapid.Map(rapid.IntRange(1, 9999), func(year int) datetrigger.Occurrence { return datetrigger.Yearly{Year: year} }),
 			rapid.Just[datetrigger.Occurrence](datetrigger.Once{}),
 		).Draw(t, "occurrence")
-		column, err := datetrigger.Stored(want).Value()
-		require.NoError(t, err)
+		read := datetrigger.Stored(want).Occurrence()
 
-		var read datetrigger.StoredOccurrence
-		require.NoError(t, read.Scan(column))
-
-		assert.Equal(t, want, read.Occurrence)
+		assert.Equal(t, want, read)
 	})
 }

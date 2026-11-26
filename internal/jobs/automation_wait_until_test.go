@@ -126,7 +126,7 @@ func TestAContactsTimeZoneChangedDuringAWaitUntilDoesNotMoveIt(t *testing.T) {
 	runID := enrollInWaitUntil(t, env, clock, fixtures.ContactLiamID)
 	due := env.DB.AutomationRun.GetX(ctx, runID).ResumeAt
 
-	updateContact(t, env, fixtures.ContactLiamID, contacts.UpdateInput{Core: contacts.Core{TimeZone: patch.Set("Asia/Tokyo")}})
+	updateContact(t, env, fixtures.ContactLiamID, contacts.UpdateInput{TimeZone: patch.Set("Asia/Tokyo")})
 	clock.now = time.Date(2027, time.January, 18, 9, 0, 0, 0, newYork)
 	env.RunQueuedSteps(t, stepper)
 

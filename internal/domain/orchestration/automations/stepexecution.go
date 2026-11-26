@@ -338,7 +338,7 @@ func splitRound(run *ent.AutomationRun) int {
 	if run.Occurrence == nil {
 		return run.Ordinal
 	}
-	switch o := run.Occurrence.Occurrence.(type) {
+	switch o := run.Occurrence.Occurrence().(type) {
 	case datetrigger.Yearly:
 		return o.Year
 	case datetrigger.Once:
@@ -498,14 +498,14 @@ func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64,
 				return err // an erased Contact's Enrollment is erased with it
 			}
 		}
-		var arrived arrival
+		var arrived automationstep.Due
 		if more {
 			var err error
 			arrived, err = arrive(next, now, func() (automationstep.Contact, error) { return runCalendar(ctx, ts, runID) })
 			if err != nil {
 				return err
 			}
-			if err := advanceRun(ctx, ts, runID, from.step, next.ID, arrived.due); err != nil {
+			if err := advanceRun(ctx, ts, runID, from.step, next.ID, dueAt(arrived)); err != nil {
 				return err
 			}
 			if err := leave(ctx, ts, runID, from.step, now, mv.leaving); err != nil {
@@ -525,7 +525,7 @@ func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64,
 		if err := reach(ctx, ts, runID, next.ID, now, arrived); err != nil {
 			return err
 		}
-		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: runID, StepID: next.ID}, scheduled(arrived.due))
+		return q.Enqueue(ctx, RunStepArgs{WorkspaceID: ts.WorkspaceID(), RunID: runID, StepID: next.ID}, scheduled(dueAt(arrived)))
 	})
 	return quiet(err)
 }
