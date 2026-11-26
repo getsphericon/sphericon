@@ -157,3 +157,35 @@ func TestAnAutomationSendThatLosesTheLastPlaceIsDeferred(t *testing.T) {
 	assert.False(t, keyHolds(t, env, automation.Key), "the deferred send records no message")
 	assert.Equal(t, 1, counted(t, env, fixtures.AcmeID, channels.Email, fixtures.ContactAliceEmail))
 }
+
+// Two attempts of one Automation step's send to Alice at her cap, queued behind her lock: the first
+// has waited past its bound and is Skipped with frequency_cap; the second, which found no message
+// under the key before it waited for the lock, reads the key again under it and takes the first's
+// decision instead of a Deferral of its own.
+func TestAnAttemptBehindTheLockTakesTheDecisionAnotherMadeUnderItsKey(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.Committed())
+	capEmail(t, env, 1)
+	require.Equal(t, outboundmessages.Sent, sendTo(t, env.OutboundModule(), env, marketing(t, env, "reread:seed", fixtures.ContactAliceID)).Outcome)
+	key := postgres.DestinationKey(frequencycap.LockKind, fixtures.AcmeID, string(channels.Email), fixtures.ContactAliceEmail)
+	stepID := automationstep.ID("6e2c8a5f-3b7d-5cae-d4a6-3b5c7d9e1f26")
+	pastItsBound := outboundmessages.Waited{Since: time.Now().Add(-48 * time.Hour), Cause: deferralcause.FrequencyCap}
+	bounded := automationEmailTo(t, env, fixtures.ContactAliceID, stepID, pastItsBound)
+	fresh := automationEmailTo(t, env, fixtures.ContactAliceID, stepID, outboundmessages.Waited{})
+	var first, second outboundmessages.Result
+	writer := func(name string, req outboundmessages.Request, res *outboundmessages.Result) testhelper.Writer {
+		return testhelper.Writer{Name: name, Run: func() error {
+			var err error
+			*res, err = env.OutboundModule().Send(t.Context(), acme(env), req)
+			return err
+		}}
+	}
+
+	errs := env.QueueBehindKey(t, key, writer("first", bounded, &first), writer("second", fresh, &second))
+
+	require.NoError(t, errs["first"])
+	require.NoError(t, errs["second"])
+	assert.Equal(t, outboundmessages.Skipped, first.Outcome)
+	assert.Equal(t, outboundmessages.Skipped, second.Outcome, "the second takes the decision under its key, not a Deferral")
+	assert.Equal(t, skipreason.FrequencyCap, second.SkippedReason)
+	assert.Equal(t, first.MessageID, second.MessageID)
+}
