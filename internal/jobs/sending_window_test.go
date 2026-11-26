@@ -10,20 +10,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
-	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio/twiliotest"
-	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
-	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -37,23 +33,6 @@ import (
 func tomorrowAt(loc *time.Location, hour int) time.Time {
 	day := time.Now().In(loc).AddDate(0, 0, 1)
 	return time.Date(day.Year(), day.Month(), day.Day(), hour, 0, 0, 0, loc)
-}
-
-// windowSMS gives the scoped Workspace an SMS window from the hour opens to the hour closes every
-// day in place of its windows, as its settings would.
-func windowSMS(t *testing.T, env *testhelper.TestEnv, s *ent.Scoped, opens, closes int) {
-	t.Helper()
-	m := testhelper.Module[*workspaces.Module](env)
-	rules, err := m.SendingRules(t.Context(), s)
-	require.NoError(t, err)
-	hours := lo.Map(localcalendar.Weekdays, func(day localcalendar.Weekday, _ int) workspaces.OpenHours {
-		return workspaces.OpenHours{Day: day, OpensAt: opens * 60, ClosesAt: closes * 60}
-	})
-	_, err = m.ReplaceSendingRules(t.Context(), s, workspaces.ReplaceSendingRulesInput{
-		Revision: rules.Revision, FrequencyCaps: rules.FrequencyCaps,
-		SendingWindows: []workspaces.SendingWindow{{Channel: channels.SMS, Hours: hours}},
-	})
-	require.NoError(t, err)
 }
 
 // readsAt reports whether t reads as hour:00 in loc, give or take the minute of jitter a wake-up
@@ -93,7 +72,7 @@ func TestABroadcastTextsTheRecipientsInsideTheirWindowAndTheOthersWhenItOpens(t 
 		require.NoError(t, err)
 		require.Equal(t, outboundmessages.Sent, res.Outcome)
 	}
-	windowSMS(t, env, lacuna, 9, 17)
+	env.WindowSMS(t, fixtures.LacunaID, 9*time.Hour, 17*time.Hour)
 	env.DB.Contact.UpdateOneID(fixtures.ContactLacunaCydID).SetTimeZone("Asia/Tokyo").ExecX(ctx)
 	env.DB.Contact.UpdateOneID(fixtures.ContactLacunaDotID).SetPhone(dotInHonolulu).ExecX(ctx)
 	env.DB.Confirmation.UpdateOneID(fixtures.ConfirmationLacunaDotID).SetDestination(dotInHonolulu).ExecX(ctx)
@@ -143,7 +122,7 @@ func TestAnAutomationTextOutsideTheWindowWaitsAtItsStepUntilItOpens(t *testing.T
 	ctx := t.Context()
 	env.AcmeTwilio(t)
 	confirmSMS(t, env, fixtures.ContactTexterPhone)
-	windowSMS(t, env, env.DB.Scoped(fixtures.AcmeID), 8, 20)
+	env.WindowSMS(t, fixtures.AcmeID, 8*time.Hour, 20*time.Hour)
 	stepper := stepperAt(env, env.OutboundModule(), c.Now)
 	runID := int64(fixtures.AutomationRunJobsSMSHiThenTagTexterID)
 	queueStep(t, env, runID)
@@ -184,7 +163,7 @@ func TestABroadcastTextHeldByTheWindowKeepsItsWaitOnItsMessage(t *testing.T) {
 	env.LacunaTwilio(t)
 	mod := env.OutboundModule()
 	id := int64(fixtures.BroadcastLacunaSmsHelloID)
-	windowSMS(t, env, env.DB.Scoped(fixtures.LacunaID), 9, 17)
+	env.WindowSMS(t, fixtures.LacunaID, 9*time.Hour, 17*time.Hour)
 	_, err := planAudience(ctx, env.DB, mod, id)
 	require.NoError(t, err)
 	env.DB.Broadcast.UpdateOneID(id).SetStatus(broadcast.StatusSending).ExecX(ctx)

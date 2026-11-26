@@ -10,10 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/kernel/channels"
-	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -23,19 +20,7 @@ import (
 func TestSiteOutsideWindowHoldsTheRecipientsOutsideTheirWindowUntilItOpens(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	s := env.DB.Scoped(fixtures.LacunaID)
-	m := testhelper.Module[*workspaces.Module](env)
-	rules, err := m.SendingRules(ctx, s)
-	require.NoError(t, err)
-	_, err = m.ReplaceSendingRules(ctx, s, workspaces.ReplaceSendingRulesInput{
-		Revision:      rules.Revision,
-		FrequencyCaps: rules.FrequencyCaps,
-		SendingWindows: []workspaces.SendingWindow{{Channel: channels.SMS, Hours: lo.Map(localcalendar.Weekdays,
-			func(day localcalendar.Weekday, _ int) workspaces.OpenHours {
-				return workspaces.OpenHours{Day: day, OpensAt: 8 * 60, ClosesAt: 20 * 60}
-			})}},
-	})
-	require.NoError(t, err)
+	env.WindowSMS(t, fixtures.LacunaID, 8*time.Hour, 20*time.Hour)
 	newYork := lo.Must(time.LoadLocation("America/New_York"))
 
 	got, err := env.SiteActor(t, fixtures.LacunaOwnerLenaEmail).SiteBroadcastsOutsideWindow(ctx, &siteapi.SiteBroadcastOutsideWindowInput{
