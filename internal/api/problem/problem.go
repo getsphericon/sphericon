@@ -211,6 +211,12 @@ func Write(ctx context.Context, w http.ResponseWriter, status int, body *siteapi
 	}
 }
 
+// WriteDetail renders the plain problem of status (Body) with detail, for an answer made outside a
+// surface's handlers: a middleware, a route of its own.
+func WriteDetail(ctx context.Context, w http.ResponseWriter, status int, detail string) {
+	Write(ctx, w, status, Body(status, detail))
+}
+
 // mapper maps what a refusal names to the problem models' members, and the site's problem to
 // the other surfaces' (the goverter converter of converter.go).
 var mapper mapping.Converter = &mapping.ConverterImpl{}

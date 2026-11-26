@@ -912,11 +912,7 @@ func broadcastContentPatch(c Inputs, o siteapi.OptBroadcastContentInput) (broadc
 
 // broadcastChannelPtrIn is the Channel a list is narrowed to: nil for every Channel.
 func broadcastChannelPtrIn(c Inputs, o siteapi.OptBroadcastChannel) *channels.Channel {
-	v, ok := o.Get()
-	if !ok {
-		return nil
-	}
-	return new(c.BroadcastChannel(v))
+	return convert.PtrVia(o, c.BroadcastChannel)
 }
 
 // automationStateIn is the State the Automation list is narrowed to: empty for every State.
