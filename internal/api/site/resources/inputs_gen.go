@@ -263,6 +263,20 @@ func (c *InputsImpl) BroadcastCreate(source *site.CreateBroadcastInput) (broadca
 	}
 	return broadcastsCreateInput, nil
 }
+func (c *InputsImpl) BroadcastOutsideWindow(source *site.SiteBroadcastOutsideWindowInput) (broadcasts.WindowInput, error) {
+	var broadcastsWindowInput broadcasts.WindowInput
+	if source != nil {
+		pConditiontreeSegment, err := segmentConditionIn((*source).Condition)
+		if err != nil {
+			return broadcastsWindowInput, err
+		}
+		broadcastsWindowInput.Condition = pConditiontreeSegment
+		broadcastsWindowInput.Channel = c.BroadcastChannel((*source).Channel)
+		broadcastsWindowInput.IntegrationID = nilEntityIDPtrIn((*source).IntegrationId)
+		broadcastsWindowInput.At = timeIn((*source).ScheduledAt)
+	}
+	return broadcastsWindowInput, nil
+}
 func (c *InputsImpl) BroadcastSchedule(source *site.ScheduleBroadcastInput) broadcasts.ScheduleInput {
 	var broadcastsScheduleInput broadcasts.ScheduleInput
 	if source != nil {

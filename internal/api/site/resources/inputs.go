@@ -236,6 +236,10 @@ type Inputs interface {
 	// goverter:ignore Order
 	BroadcastsListFilter(source siteapi.SiteBroadcastsListParams) broadcasts.ListFilter
 	BroadcastSchedule(source *siteapi.ScheduleBroadcastInput) broadcasts.ScheduleInput
+	// goverter:map Condition | segmentConditionIn
+	// goverter:map IntegrationId IntegrationID
+	// goverter:map ScheduledAt At
+	BroadcastOutsideWindow(source *siteapi.SiteBroadcastOutsideWindowInput) (broadcasts.WindowInput, error)
 	AutomationsListFilter(source siteapi.SiteAutomationsListParams) automations.ListFilter
 	// goverter:map AutomationId AutomationID
 	EnrollmentsFilter(source siteapi.SiteEnrollmentsListParams) automations.EnrollmentsFilter

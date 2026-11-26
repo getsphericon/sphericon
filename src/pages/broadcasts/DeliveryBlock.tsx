@@ -23,7 +23,8 @@ export type BroadcastDelivery = 'SEND' | 'SCHEDULE'
 // form's unsaved edits to be saved, and are only possible for drafts. Test send works for any
 // status of an email Broadcast, to an address, and of an SMS one, to a phone number: Telegram has
 // none, so its action is not offered (ADR 0080). Schedule first shows the Recipients it would take
-// now and schedules once that is confirmed (ADR 0149).
+// now (ADR 0149), on SMS with the share the Sending window would hold at the moment chosen (ADR
+// 0134), and schedules once that is confirmed.
 export function DeliveryBlock({
   broadcast,
   editor,
@@ -57,6 +58,7 @@ export function DeliveryBlock({
     (close) => (
       <ScheduleConfirmation
         broadcast={broadcast}
+        scheduledAt={new Date(scheduledAt).toISOString()}
         onCancel={close}
         onConfirm={() => {
           close()

@@ -402,6 +402,15 @@ type Handler interface {
 	//
 	// GET /workspaces/{workspaceId}/broadcasts
 	SiteBroadcastsList(ctx context.Context, params SiteBroadcastsListParams) (*SiteBroadcastsListOK, error)
+	// SiteBroadcastsOutsideWindow implements SiteBroadcasts_outsideWindow operation.
+	//
+	// The share of a broadcast's audience its Sending window would hold if it were sent at `scheduledAt`
+	// (ADR 0134): how many of the recipients the segment preview counts for the Channel and Integration
+	// would wait for their window, judged in every zone their number may be in and their own time zone,
+	// and when the last of them is reached. A condition that does not compile is a 422.
+	//
+	// POST /workspaces/{workspaceId}/broadcasts/outside-window
+	SiteBroadcastsOutsideWindow(ctx context.Context, req *SiteBroadcastOutsideWindowInput, params SiteBroadcastsOutsideWindowParams) (*SiteBroadcastOutsideWindowResult, error)
 	// SiteBroadcastsSchedule implements SiteBroadcasts_schedule operation.
 	//
 	// Schedule a broadcast to send at a future time. The answer carries `recipients`, the recipients it

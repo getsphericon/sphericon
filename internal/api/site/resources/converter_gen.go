@@ -1991,6 +1991,12 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) sit
 	}
 	return siteapiContactExportOutboundMessage
 }
+func (c *ConverterImpl) OutsideWindowToResource(source broadcasts.OutsideWindow) site.SiteBroadcastOutsideWindowResult {
+	var siteapiSiteBroadcastOutsideWindowResult site.SiteBroadcastOutsideWindowResult
+	siteapiSiteBroadcastOutsideWindowResult.Held = count(source.Held)
+	siteapiSiteBroadcastOutsideWindowResult.ReachedAt = optTimestamp(source.ReachedAt)
+	return siteapiSiteBroadcastOutsideWindowResult
+}
 func (c *ConverterImpl) OwnershipRecordToResource(source trackingdomains.OwnershipRecord) site.DnsRecord {
 	var siteapiDnsRecord site.DnsRecord
 	siteapiDnsRecord.Type = ownershipRecordType(source)

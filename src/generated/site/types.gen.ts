@@ -6129,6 +6129,44 @@ export type SiteBroadcastLinkClicksList = {
 };
 
 /**
+ * Request body for the share of a broadcast's audience outside its Sending window: the audience, as the segment preview names it, and a moment
+ */
+export type SiteBroadcastOutsideWindowInput = {
+  /**
+   * The condition of the broadcast's segment; absent means all contacts
+   */
+  condition?: SegmentConditionInput;
+  /**
+   * The broadcast's Channel
+   */
+  channel: BroadcastChannel;
+  /**
+   * The Integration the broadcast routes through; null or absent is the Channel's default
+   */
+  integrationId?: EntityId | null;
+  /**
+   * The moment the broadcast would be scheduled at
+   */
+  scheduledAt: Timestamp;
+};
+
+/**
+ * How many of a broadcast's recipients the Sending window would hold at a moment (ADR 0134)
+ */
+export type SiteBroadcastOutsideWindowResult = {
+  /**
+   * How many of the recipients the broadcast would take would wait for their Sending window to
+   * open. A recipient whose zones are never open at once is skipped (no_local_time), not counted.
+   * Always 0 on email and Telegram, which no window holds.
+   */
+  held: number;
+  /**
+   * When the last of them is reached: the latest moment their windows open. Absent when none is held.
+   */
+  reachedAt?: Timestamp;
+};
+
+/**
  * How far a sending broadcast has got. A broadcast limited by its Integration's Provider
  * limit is paced: recipients go out at an even interval. The Workspace's Send cap lets a
  * day's worth out at a time. The estimate is derived on the server from both, the later
@@ -14975,6 +15013,42 @@ export type SiteBroadcastsCreateResponses = {
 };
 
 export type SiteBroadcastsCreateResponse = SiteBroadcastsCreateResponses[keyof SiteBroadcastsCreateResponses];
+
+export type SiteBroadcastsOutsideWindowData = {
+  body: SiteBroadcastOutsideWindowInput;
+  path: {
+    /**
+     * The Workspace id: its short opaque public address and the route key for nested
+     * workspace resources (ADR 0043)
+     */
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/broadcasts/outside-window';
+};
+
+export type SiteBroadcastsOutsideWindowErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteBroadcastsOutsideWindowError = SiteBroadcastsOutsideWindowErrors[keyof SiteBroadcastsOutsideWindowErrors];
+
+export type SiteBroadcastsOutsideWindowResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteBroadcastOutsideWindowResult;
+};
+
+export type SiteBroadcastsOutsideWindowResponse = SiteBroadcastsOutsideWindowResponses[keyof SiteBroadcastsOutsideWindowResponses];
 
 export type SiteBroadcastLinksListData = {
   body?: never;
