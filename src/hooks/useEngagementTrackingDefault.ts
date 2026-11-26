@@ -1,4 +1,3 @@
-import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -14,7 +13,6 @@ import { useResourceMutation } from './useResourceMutation.ts'
 // Workspace again.
 export function useSetEngagementTrackingDefault(workspaceId: string) {
   const { t } = useTranslation()
-  const queryClient = useQueryClient()
   const workspaceKeys = [
     siteWorkspacesListQueryKey(),
     siteWorkspacesGetOptions({ path: { workspaceId } }).queryKey,
@@ -25,11 +23,6 @@ export function useSetEngagementTrackingDefault(workspaceId: string) {
     successMessage: t(($) => $.settings.engagementTrackingDefault.saved),
     errorTitle: t(($) => $.settings.engagementTrackingDefault.errorTitle),
     forbiddenMessage: t(($) => $.settings.engagementTrackingDefault.forbidden),
-    handleError: async () => {
-      await Promise.all(
-        workspaceKeys.map(async (queryKey) => queryClient.invalidateQueries({ queryKey })),
-      )
-      return false
-    },
+    rereadOnError: true,
   })
 }

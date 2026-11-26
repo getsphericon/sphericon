@@ -1,11 +1,10 @@
-import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import {
   siteWorkspacesLiftSecondFactorRequirementMutation,
   siteWorkspacesRequireSecondFactorMutation,
 } from '../generated/site/@tanstack/react-query.gen.ts'
-import { invalidateOwn, useResourceMutation } from './useResourceMutation.ts'
+import { useResourceMutation } from './useResourceMutation.ts'
 
 // useRequireSecondFactor switches a Workspace's Two-factor requirement (ADR 0020) on and
 // refreshes the Workspace list, which carries the requirement and the signed-in User's grace.
@@ -30,14 +29,10 @@ export function useLiftSecondFactorRequirement() {
 // Workspace changed since it was read, ADR 0119) still says why, and reads the Workspaces again.
 function useRequirementFeedback() {
   const { t } = useTranslation()
-  const queryClient = useQueryClient()
   return {
     successMessage: t(($) => $.secondFactorRequirement.saved),
     errorTitle: t(($) => $.secondFactorRequirement.errorTitle),
     forbiddenMessage: t(($) => $.secondFactorRequirement.forbidden),
-    handleError: async () => {
-      await invalidateOwn(queryClient, siteWorkspacesRequireSecondFactorMutation().mutationKey)
-      return false
-    },
+    rereadOnError: true,
   }
 }

@@ -1,4 +1,3 @@
-import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -13,7 +12,6 @@ import { useResourceMutation } from './useResourceMutation.ts'
 // (the Workspace changed since it was read, ADR 0119) still says why, and reads the Workspace again.
 export function useSetConfirmedOptIn(workspaceId: string) {
   const { t } = useTranslation()
-  const queryClient = useQueryClient()
   const workspaceKeys = [
     siteWorkspacesListQueryKey(),
     siteWorkspacesGetOptions({ path: { workspaceId } }).queryKey,
@@ -24,11 +22,6 @@ export function useSetConfirmedOptIn(workspaceId: string) {
     successMessage: t(($) => $.settings.confirmedOptIn.saved),
     errorTitle: t(($) => $.settings.confirmedOptIn.errorTitle),
     forbiddenMessage: t(($) => $.settings.confirmedOptIn.forbidden),
-    handleError: async () => {
-      await Promise.all(
-        workspaceKeys.map(async (queryKey) => queryClient.invalidateQueries({ queryKey })),
-      )
-      return false
-    },
+    rereadOnError: true,
   })
 }

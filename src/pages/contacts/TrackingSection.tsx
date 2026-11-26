@@ -1,5 +1,5 @@
 import { Button, Group, Stack, Table, Text, Title } from '@mantine/core'
-import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import { DetailsBadge } from '../../components/DetailsBadge.tsx'
@@ -8,7 +8,6 @@ import { BlockSkeleton } from '../../components/Skeletons.tsx'
 import {
   siteEngagementTrackingCreateMutation,
   siteEngagementTrackingGetOptions,
-  siteEngagementTrackingGetQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
   EngagementTrackingChannel,
@@ -96,13 +95,6 @@ function TrackingRow({
   const { t } = useTranslation()
   const { formatDateTime } = useFormat()
   const confirmRefusal = useConfirmation()
-  const queryClient = useQueryClient()
-  // A refused observation (a grant over a refusal recorded meanwhile) reads the consent again, so
-  // the row shows what stands; the toast still says why.
-  const reread = async () => {
-    await queryClient.invalidateQueries({ queryKey: siteEngagementTrackingGetQueryKey({ path }) })
-    return false
-  }
 
   const channels: Record<EngagementTrackingChannel, string> = {
     email: t(($) => $.contacts.trackingChannelEmail),
@@ -116,17 +108,19 @@ function TrackingRow({
     onsite_form: t(($) => $.contacts.trackingProvenanceOnsiteForm),
   }
 
+  // A refused observation (a grant over a refusal recorded meanwhile) reads the consent again, so
+  // the row shows what stands; the toast still says why.
   const grant = useResourceMutation({
     mutation: siteEngagementTrackingCreateMutation(),
     successMessage: t(($) => $.contacts.trackingGrantedRecorded),
     errorTitle: t(($) => $.contacts.trackingError),
-    handleError: reread,
+    rereadOnError: true,
   })
   const refuse = useResourceMutation({
     mutation: siteEngagementTrackingCreateMutation(),
     successMessage: t(($) => $.contacts.trackingRefused),
     errorTitle: t(($) => $.contacts.trackingError),
-    handleError: reread,
+    rereadOnError: true,
   })
   const body = (state: EngagementTrackingState) => ({
     channel: consent.channel,
