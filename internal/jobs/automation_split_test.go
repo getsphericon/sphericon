@@ -232,3 +232,31 @@ func TestASplitInADateTriggeredAutomationDrawsAgainEachYear(t *testing.T) {
 	assert.Equal(t, []automationstep.ID{holdoutPathID, variantPathID}, paths, "2030 holds her out, 2031 draws her again")
 	assert.Equal(t, []automationstep.ID{variantPathID}, twinPaths, "the same Contact and year draw the same path")
 }
+
+// onceSplitID is a Split's id at which Alice's draw for the ordinal 1 is 6, the variant, and for the
+// once mark 0 would be 98, the holdout (shasum).
+const onceSplitID = automationstep.ID("5c1d0e2f-8a4b-4c3d-9e2f-000000000010")
+
+// A Split in a once date-triggered Automation draws on the Enrollment's ordinal (ADR 0126): Alice's
+// one Enrollment, on her `trial_ends_at`, takes the ordinal 1 and draws the variant.
+func TestASplitInAOnceDateTriggeredAutomationDrawsOnTheOrdinal(t *testing.T) {
+	c := newDatedSplit(t, time.Date(2030, time.March, 1, 12, 0, 0, 0, time.UTC))
+	alice, err := c.env.DB.Contact.Get(t.Context(), fixtures.ContactAliceID)
+	require.NoError(t, err)
+	_, err = testhelper.Module[*contacts.Module](c.env).Update(t.Context(), c.env.DB.Scoped(fixtures.AcmeID), alice.ID, contacts.UpdateInput{
+		Revision: alice.Revision, CustomFields: patch.Set(map[string]any{fixtures.CustomFieldAcmeTrialEndsAtKey: "2030-03-14T00:00:00Z"}),
+	})
+	require.NoError(t, err)
+	split := fiftyFifty()
+	split.ID = onceSplitID
+	trialEnds := datetrigger.Date{
+		Field:      datetrigger.Field{Kind: datetrigger.CustomField, Key: fixtures.CustomFieldAcmeTrialEndsAtKey},
+		Recurrence: localcalendar.Once, LocalTime: "10:00",
+	}
+	auto := c.publish(trialEnds, split)
+
+	c.tickAt(time.Date(2030, time.March, 14, 10, 1, 0, 0, time.UTC))
+
+	paths := c.pathsOf(auto, onceSplitID)
+	assert.Equal(t, []automationstep.ID{variantPathID}, paths)
+}
