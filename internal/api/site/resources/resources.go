@@ -625,6 +625,7 @@ type Converter interface {
 	RuleDryRunToResource(source rules.DryRun) siteapi.RuleDryRunResource
 
 	// goverter:map . Failure | enrollmentFailure
+	// goverter:map Occurrence | enrollmentOccurrence
 	EnrollmentToResource(source *ent.AutomationRun) siteapi.EnrollmentResource
 	// The store names the triggering Event's source id; the contract says whose it is.
 	// goverter:map SourceID EventSourceId
@@ -1482,6 +1483,23 @@ func inviterEmail(inv ent.Invitation) siteapi.OptNilString {
 		return siteapi.OptNilString{}
 	}
 	return siteapi.NewOptNilString(inv.Edges.Inviter.Email)
+}
+
+// enrollmentOccurrence is the occurrence of a date Trigger the enrollment was made for (ADR 0126):
+// its anniversary year, or a once date's one occurrence; absent for one an Event or a rule began.
+func enrollmentOccurrence(occurrence *int) siteapi.OptEnrollmentOccurrence {
+	if occurrence == nil {
+		return siteapi.OptEnrollmentOccurrence{}
+	}
+	year, yearly := datetrigger.YearOf(*occurrence)
+	if !yearly {
+		return siteapi.NewOptEnrollmentOccurrence(siteapi.EnrollmentOccurrence{OneOf: siteapi.NewOnceEnrollmentOccurrenceEnrollmentOccurrenceSum(
+			siteapi.OnceEnrollmentOccurrence{Recurrence: siteapi.OnceEnrollmentOccurrenceRecurrenceOnce},
+		)})
+	}
+	return siteapi.NewOptEnrollmentOccurrence(siteapi.EnrollmentOccurrence{OneOf: siteapi.NewYearlyEnrollmentOccurrenceEnrollmentOccurrenceSum(
+		siteapi.YearlyEnrollmentOccurrence{Recurrence: siteapi.YearlyEnrollmentOccurrenceRecurrenceYearly, Year: count(year)},
+	)})
 }
 
 // enrollmentFailure is the enrollment's failure detail; absent unless it failed.

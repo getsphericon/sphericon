@@ -1380,6 +1380,7 @@ func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) site.Enr
 		siteapiEnrollmentResource.Status = c.EnrollmentStatusToResource((*source).Status)
 		siteapiEnrollmentResource.Ordinal = count((*source).Ordinal)
 		siteapiEnrollmentResource.KeyValue = optString((*source).KeyValue)
+		siteapiEnrollmentResource.Occurrence = enrollmentOccurrence((*source).Occurrence)
 		siteapiEnrollmentResource.CurrentStepId = optStepID((*source).CurrentStepID)
 		siteapiEnrollmentResource.ResumeAt = optTimestamp((*source).ResumeAt)
 		siteapiEnrollmentResource.Failure = enrollmentFailure(c, (*source))
@@ -3440,6 +3441,8 @@ func (c *ConverterImpl) automationsSkippedCountsToSiteapiAutomationSkippedCounts
 	siteapiAutomationSkippedCounts.Cooldown = count(source.Cooldown)
 	siteapiAutomationSkippedCounts.NoEnrollmentKey = count(source.NoEnrollmentKey)
 	siteapiAutomationSkippedCounts.EnrollmentCeiling = count(source.EnrollmentCeiling)
+	siteapiAutomationSkippedCounts.Missed = count(source.Missed)
+	siteapiAutomationSkippedCounts.SendLocked = count(source.SendLocked)
 	return siteapiAutomationSkippedCounts
 }
 func (c *ConverterImpl) automationsStepFiguresToSiteapiAutomationStepFigures(source automations.StepFigures) site.AutomationStepFigures {

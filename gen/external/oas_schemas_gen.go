@@ -2661,6 +2661,13 @@ type AutomationSkippedCounts struct {
 	NoEnrollmentKey int32 `json:"noEnrollmentKey"`
 	// Entries of a contact that had 10 active enrollments in the keyed automation, or 10 begun in a day.
 	EnrollmentCeiling int32 `json:"enrollmentCeiling"`
+	// Occurrences of a date Trigger (ADR 0126) the scheduler reached 24 hours late or more, which enroll
+	// no one.
+	Missed int32 `json:"missed"`
+	// Occurrences of a date Trigger whose date was last written through a Connection without mcp:send,
+	// which enroll no one while it stays so; a later write of the date may still enroll the same
+	// occurrence within 24 hours, which then counts as entered too.
+	SendLocked int32 `json:"sendLocked"`
 }
 
 // GetCycle returns the value of Cycle.
@@ -2693,6 +2700,16 @@ func (s *AutomationSkippedCounts) GetEnrollmentCeiling() int32 {
 	return s.EnrollmentCeiling
 }
 
+// GetMissed returns the value of Missed.
+func (s *AutomationSkippedCounts) GetMissed() int32 {
+	return s.Missed
+}
+
+// GetSendLocked returns the value of SendLocked.
+func (s *AutomationSkippedCounts) GetSendLocked() int32 {
+	return s.SendLocked
+}
+
 // SetCycle sets the value of Cycle.
 func (s *AutomationSkippedCounts) SetCycle(val int32) {
 	s.Cycle = val
@@ -2721,6 +2738,16 @@ func (s *AutomationSkippedCounts) SetNoEnrollmentKey(val int32) {
 // SetEnrollmentCeiling sets the value of EnrollmentCeiling.
 func (s *AutomationSkippedCounts) SetEnrollmentCeiling(val int32) {
 	s.EnrollmentCeiling = val
+}
+
+// SetMissed sets the value of Missed.
+func (s *AutomationSkippedCounts) SetMissed(val int32) {
+	s.Missed = val
+}
+
+// SetSendLocked sets the value of SendLocked.
+func (s *AutomationSkippedCounts) SetSendLocked(val int32) {
+	s.SendLocked = val
 }
 
 // Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody.
@@ -13515,6 +13542,92 @@ func (s *EnrollmentFailureKind) UnmarshalText(data []byte) error {
 	}
 }
 
+// The occurrence of a date Trigger an Enrollment was made for (ADR 0126), by `recurrence`: a contact
+// is enrolled at most once per occurrence.
+// Ref: #/components/schemas/EnrollmentOccurrence
+type EnrollmentOccurrence struct {
+	OneOf EnrollmentOccurrenceSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *EnrollmentOccurrence) GetOneOf() EnrollmentOccurrenceSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *EnrollmentOccurrence) SetOneOf(val EnrollmentOccurrenceSum) {
+	s.OneOf = val
+}
+
+// EnrollmentOccurrenceSum represents sum type.
+type EnrollmentOccurrenceSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                       EnrollmentOccurrenceSumType
+	YearlyEnrollmentOccurrence YearlyEnrollmentOccurrence
+	OnceEnrollmentOccurrence   OnceEnrollmentOccurrence
+}
+
+// EnrollmentOccurrenceSumType is oneOf type of EnrollmentOccurrenceSum.
+type EnrollmentOccurrenceSumType string
+
+// Possible values for EnrollmentOccurrenceSumType.
+const (
+	YearlyEnrollmentOccurrenceEnrollmentOccurrenceSum EnrollmentOccurrenceSumType = "yearly"
+	OnceEnrollmentOccurrenceEnrollmentOccurrenceSum   EnrollmentOccurrenceSumType = "once"
+)
+
+// IsYearlyEnrollmentOccurrence reports whether EnrollmentOccurrenceSum is YearlyEnrollmentOccurrence.
+func (s EnrollmentOccurrenceSum) IsYearlyEnrollmentOccurrence() bool {
+	return s.Type == YearlyEnrollmentOccurrenceEnrollmentOccurrenceSum
+}
+
+// IsOnceEnrollmentOccurrence reports whether EnrollmentOccurrenceSum is OnceEnrollmentOccurrence.
+func (s EnrollmentOccurrenceSum) IsOnceEnrollmentOccurrence() bool {
+	return s.Type == OnceEnrollmentOccurrenceEnrollmentOccurrenceSum
+}
+
+// SetYearlyEnrollmentOccurrence sets EnrollmentOccurrenceSum to YearlyEnrollmentOccurrence.
+func (s *EnrollmentOccurrenceSum) SetYearlyEnrollmentOccurrence(v YearlyEnrollmentOccurrence) {
+	s.Type = YearlyEnrollmentOccurrenceEnrollmentOccurrenceSum
+	s.YearlyEnrollmentOccurrence = v
+}
+
+// GetYearlyEnrollmentOccurrence returns YearlyEnrollmentOccurrence and true boolean if EnrollmentOccurrenceSum is YearlyEnrollmentOccurrence.
+func (s EnrollmentOccurrenceSum) GetYearlyEnrollmentOccurrence() (v YearlyEnrollmentOccurrence, ok bool) {
+	if !s.IsYearlyEnrollmentOccurrence() {
+		return v, false
+	}
+	return s.YearlyEnrollmentOccurrence, true
+}
+
+// NewYearlyEnrollmentOccurrenceEnrollmentOccurrenceSum returns new EnrollmentOccurrenceSum from YearlyEnrollmentOccurrence.
+func NewYearlyEnrollmentOccurrenceEnrollmentOccurrenceSum(v YearlyEnrollmentOccurrence) EnrollmentOccurrenceSum {
+	var s EnrollmentOccurrenceSum
+	s.SetYearlyEnrollmentOccurrence(v)
+	return s
+}
+
+// SetOnceEnrollmentOccurrence sets EnrollmentOccurrenceSum to OnceEnrollmentOccurrence.
+func (s *EnrollmentOccurrenceSum) SetOnceEnrollmentOccurrence(v OnceEnrollmentOccurrence) {
+	s.Type = OnceEnrollmentOccurrenceEnrollmentOccurrenceSum
+	s.OnceEnrollmentOccurrence = v
+}
+
+// GetOnceEnrollmentOccurrence returns OnceEnrollmentOccurrence and true boolean if EnrollmentOccurrenceSum is OnceEnrollmentOccurrence.
+func (s EnrollmentOccurrenceSum) GetOnceEnrollmentOccurrence() (v OnceEnrollmentOccurrence, ok bool) {
+	if !s.IsOnceEnrollmentOccurrence() {
+		return v, false
+	}
+	return s.OnceEnrollmentOccurrence, true
+}
+
+// NewOnceEnrollmentOccurrenceEnrollmentOccurrenceSum returns new EnrollmentOccurrenceSum from OnceEnrollmentOccurrence.
+func NewOnceEnrollmentOccurrenceEnrollmentOccurrenceSum(v OnceEnrollmentOccurrence) EnrollmentOccurrenceSum {
+	var s EnrollmentOccurrenceSum
+	s.SetOnceEnrollmentOccurrence(v)
+	return s
+}
+
 // One Contact's progress through an Automation. Erased with the Contact.
 // Ref: #/components/schemas/EnrollmentResource
 type EnrollmentResource struct {
@@ -13532,6 +13645,10 @@ type EnrollmentResource struct {
 	// The value of the automation's Enrollment key the triggering Event carried, the property's string
 	// form (ADR 0165); absent for an automation with no key.
 	KeyValue OptString `json:"keyValue"`
+	// The occurrence of the automation's date Trigger the Enrollment was made for (ADR 0126): which year's
+	// anniversary, or the once date's one occurrence; absent for an Enrollment an Event or a rule's enroll
+	// action began.
+	Occurrence OptEnrollmentOccurrence `json:"occurrence"`
 	// Id of the Step of its version the Enrollment stands on (ADR 0122): a wait while it waits, the Step
 	// it ended on once it ended; absent only for a version of no Steps.
 	CurrentStepId OptStepId `json:"currentStepId"`
@@ -13573,6 +13690,11 @@ func (s *EnrollmentResource) GetOrdinal() int32 {
 // GetKeyValue returns the value of KeyValue.
 func (s *EnrollmentResource) GetKeyValue() OptString {
 	return s.KeyValue
+}
+
+// GetOccurrence returns the value of Occurrence.
+func (s *EnrollmentResource) GetOccurrence() OptEnrollmentOccurrence {
+	return s.Occurrence
 }
 
 // GetCurrentStepId returns the value of CurrentStepId.
@@ -13628,6 +13750,11 @@ func (s *EnrollmentResource) SetOrdinal(val int32) {
 // SetKeyValue sets the value of KeyValue.
 func (s *EnrollmentResource) SetKeyValue(val OptString) {
 	s.KeyValue = val
+}
+
+// SetOccurrence sets the value of Occurrence.
+func (s *EnrollmentResource) SetOccurrence(val OptEnrollmentOccurrence) {
+	s.Occurrence = val
 }
 
 // SetCurrentStepId sets the value of CurrentStepId.
@@ -17912,6 +18039,56 @@ func (s *NumberTestKind) UnmarshalText(data []byte) error {
 	}
 }
 
+// The occurrence of a once date Trigger an Enrollment was made for: the one it has.
+// Ref: #/components/schemas/OnceEnrollmentOccurrence
+type OnceEnrollmentOccurrence struct {
+	Recurrence OnceEnrollmentOccurrenceRecurrence `json:"recurrence"`
+}
+
+// GetRecurrence returns the value of Recurrence.
+func (s *OnceEnrollmentOccurrence) GetRecurrence() OnceEnrollmentOccurrenceRecurrence {
+	return s.Recurrence
+}
+
+// SetRecurrence sets the value of Recurrence.
+func (s *OnceEnrollmentOccurrence) SetRecurrence(val OnceEnrollmentOccurrenceRecurrence) {
+	s.Recurrence = val
+}
+
+type OnceEnrollmentOccurrenceRecurrence string
+
+const (
+	OnceEnrollmentOccurrenceRecurrenceOnce OnceEnrollmentOccurrenceRecurrence = "once"
+)
+
+// AllValues returns all OnceEnrollmentOccurrenceRecurrence values.
+func (OnceEnrollmentOccurrenceRecurrence) AllValues() []OnceEnrollmentOccurrenceRecurrence {
+	return []OnceEnrollmentOccurrenceRecurrence{
+		OnceEnrollmentOccurrenceRecurrenceOnce,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s OnceEnrollmentOccurrenceRecurrence) MarshalText() ([]byte, error) {
+	switch s {
+	case OnceEnrollmentOccurrenceRecurrenceOnce:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *OnceEnrollmentOccurrenceRecurrence) UnmarshalText(data []byte) error {
+	switch OnceEnrollmentOccurrenceRecurrence(data) {
+	case OnceEnrollmentOccurrenceRecurrenceOnce:
+		*s = OnceEnrollmentOccurrenceRecurrenceOnce
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // NewOptAuditAction returns new OptAuditAction with value set to v.
 func NewOptAuditAction(v AuditAction) OptAuditAction {
 	return OptAuditAction{
@@ -18734,6 +18911,52 @@ func (o OptEnrollmentFailure) Get() (v EnrollmentFailure, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptEnrollmentFailure) Or(d EnrollmentFailure) EnrollmentFailure {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptEnrollmentOccurrence returns new OptEnrollmentOccurrence with value set to v.
+func NewOptEnrollmentOccurrence(v EnrollmentOccurrence) OptEnrollmentOccurrence {
+	return OptEnrollmentOccurrence{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptEnrollmentOccurrence is optional EnrollmentOccurrence.
+type OptEnrollmentOccurrence struct {
+	Value EnrollmentOccurrence
+	Set   bool
+}
+
+// IsSet returns true if OptEnrollmentOccurrence was set.
+func (o OptEnrollmentOccurrence) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptEnrollmentOccurrence) Reset() {
+	var v EnrollmentOccurrence
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptEnrollmentOccurrence) SetTo(v EnrollmentOccurrence) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptEnrollmentOccurrence) Get() (v EnrollmentOccurrence, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptEnrollmentOccurrence) Or(d EnrollmentOccurrence) EnrollmentOccurrence {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -34637,4 +34860,66 @@ func (s *WorkspaceResource) SetSendCap(val OptNilSendCap) {
 // SetRevision sets the value of Revision.
 func (s *WorkspaceResource) SetRevision(val Revision) {
 	s.Revision = val
+}
+
+// The occurrence of a yearly date Trigger an Enrollment was made for: its anniversary year.
+// Ref: #/components/schemas/YearlyEnrollmentOccurrence
+type YearlyEnrollmentOccurrence struct {
+	Recurrence YearlyEnrollmentOccurrenceRecurrence `json:"recurrence"`
+	// The anniversary year: the year of the date the Trigger's offset counts from.
+	Year int32 `json:"year"`
+}
+
+// GetRecurrence returns the value of Recurrence.
+func (s *YearlyEnrollmentOccurrence) GetRecurrence() YearlyEnrollmentOccurrenceRecurrence {
+	return s.Recurrence
+}
+
+// GetYear returns the value of Year.
+func (s *YearlyEnrollmentOccurrence) GetYear() int32 {
+	return s.Year
+}
+
+// SetRecurrence sets the value of Recurrence.
+func (s *YearlyEnrollmentOccurrence) SetRecurrence(val YearlyEnrollmentOccurrenceRecurrence) {
+	s.Recurrence = val
+}
+
+// SetYear sets the value of Year.
+func (s *YearlyEnrollmentOccurrence) SetYear(val int32) {
+	s.Year = val
+}
+
+type YearlyEnrollmentOccurrenceRecurrence string
+
+const (
+	YearlyEnrollmentOccurrenceRecurrenceYearly YearlyEnrollmentOccurrenceRecurrence = "yearly"
+)
+
+// AllValues returns all YearlyEnrollmentOccurrenceRecurrence values.
+func (YearlyEnrollmentOccurrenceRecurrence) AllValues() []YearlyEnrollmentOccurrenceRecurrence {
+	return []YearlyEnrollmentOccurrenceRecurrence{
+		YearlyEnrollmentOccurrenceRecurrenceYearly,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s YearlyEnrollmentOccurrenceRecurrence) MarshalText() ([]byte, error) {
+	switch s {
+	case YearlyEnrollmentOccurrenceRecurrenceYearly:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *YearlyEnrollmentOccurrenceRecurrence) UnmarshalText(data []byte) error {
+	switch YearlyEnrollmentOccurrenceRecurrence(data) {
+	case YearlyEnrollmentOccurrenceRecurrenceYearly:
+		*s = YearlyEnrollmentOccurrenceRecurrenceYearly
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }

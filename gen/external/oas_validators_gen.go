@@ -6119,6 +6119,46 @@ func (s EnrollmentFailureKind) Validate() error {
 	}
 }
 
+func (s *EnrollmentOccurrence) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.OneOf.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "OneOf",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s EnrollmentOccurrenceSum) Validate() error {
+	switch s.Type {
+	case YearlyEnrollmentOccurrenceEnrollmentOccurrenceSum:
+		if err := s.YearlyEnrollmentOccurrence.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case OnceEnrollmentOccurrenceEnrollmentOccurrenceSum:
+		if err := s.OnceEnrollmentOccurrence.Validate(); err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
 func (s *EnrollmentResource) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -6133,6 +6173,24 @@ func (s *EnrollmentResource) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "status",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if value, ok := s.Occurrence.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "occurrence",
 			Error: err,
 		})
 	}
@@ -8096,6 +8154,38 @@ func (s NumberTestInputKind) Validate() error {
 func (s NumberTestKind) Validate() error {
 	switch s {
 	case "number":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *OnceEnrollmentOccurrence) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Recurrence.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "recurrence",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s OnceEnrollmentOccurrenceRecurrence) Validate() error {
+	switch s {
+	case "once":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
@@ -14793,4 +14883,36 @@ func (s *WorkspaceResource) Validate() error {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
+}
+
+func (s *YearlyEnrollmentOccurrence) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Recurrence.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "recurrence",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s YearlyEnrollmentOccurrenceRecurrence) Validate() error {
+	switch s {
+	case "yearly":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
 }

@@ -255,7 +255,9 @@ export const zAutomationSkippedCounts = z.object({
   once: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   cooldown: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   noEnrollmentKey: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  enrollmentCeiling: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+  enrollmentCeiling: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  missed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  sendLocked: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
 /**
@@ -940,6 +942,13 @@ export const zNumberTestInput = z.strictObject({
   kind: z.enum(['number']),
   operator: zNumberOperator,
   value: z.number()
+});
+
+/**
+ * The occurrence of a once date Trigger an Enrollment was made for: the one it has
+ */
+export const zOnceEnrollmentOccurrence = z.object({
+  recurrence: z.enum(['once'])
 });
 
 /**
@@ -3644,23 +3653,6 @@ export const zEngagementTrackingObservationResult = z.object({
 });
 
 /**
- * One Contact's progress through an Automation. Erased with the Contact.
- */
-export const zEnrollmentResource = z.object({
-  id: zEntityId,
-  automationId: zEntityId,
-  contactId: zEntityId,
-  status: zEnrollmentStatus,
-  ordinal: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  keyValue: z.exactOptional(z.string()),
-  currentStepId: z.exactOptional(zStepId),
-  resumeAt: z.exactOptional(zTimestamp),
-  failure: z.exactOptional(zEnrollmentFailure),
-  createdAt: zTimestamp,
-  updatedAt: zTimestamp
-});
-
-/**
  * A test of a moment: before or after `at`. Only a date-time with a UTC offset is a moment: a
  * missing value, a date without a time, a date-time without an offset or a value that is not a
  * date-time fails it.
@@ -4984,6 +4976,41 @@ export const zProblemDetails = z.object({
   debug: z.exactOptional(zProblemDebug),
   usedBy: z.exactOptional(z.array(zUsedBy)),
   workspaces: z.exactOptional(z.array(zSoleOwnedWorkspace))
+});
+
+/**
+ * The occurrence of a yearly date Trigger an Enrollment was made for: its anniversary year
+ */
+export const zYearlyEnrollmentOccurrence = z.object({
+  recurrence: z.enum(['yearly']),
+  year: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * The occurrence of a date Trigger an Enrollment was made for (ADR 0126), by `recurrence`: a
+ * contact is enrolled at most once per occurrence
+ */
+export const zEnrollmentOccurrence = z.discriminatedUnion('recurrence', [
+  zYearlyEnrollmentOccurrence.extend({ recurrence: z.literal('yearly') }),
+  zOnceEnrollmentOccurrence.extend({ recurrence: z.literal('once') })
+]);
+
+/**
+ * One Contact's progress through an Automation. Erased with the Contact.
+ */
+export const zEnrollmentResource = z.object({
+  id: zEntityId,
+  automationId: zEntityId,
+  contactId: zEntityId,
+  status: zEnrollmentStatus,
+  ordinal: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  keyValue: z.exactOptional(z.string()),
+  occurrence: z.exactOptional(zEnrollmentOccurrence),
+  currentStepId: z.exactOptional(zStepId),
+  resumeAt: z.exactOptional(zTimestamp),
+  failure: z.exactOptional(zEnrollmentFailure),
+  createdAt: zTimestamp,
+  updatedAt: zTimestamp
 });
 
 /**

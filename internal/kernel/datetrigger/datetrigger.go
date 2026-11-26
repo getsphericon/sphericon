@@ -56,6 +56,15 @@ func (d Date) Occurrence(year int) int {
 // year is 0, so a switch between yearly and once starts its own key.
 const OnceMark = 0
 
+// YearOf reads an occurrence back: the anniversary year of a yearly date, and false for OnceMark,
+// which a once date records and which holds no year.
+func YearOf(occurrence int) (int, bool) {
+	if occurrence == OnceMark {
+		return 0, false
+	}
+	return occurrence, true
+}
+
 // Holder is what a Contact holds of the dates: its birthday and its Custom field values.
 type Holder struct {
 	Birthday     *time.Time

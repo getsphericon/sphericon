@@ -714,6 +714,17 @@ export type AutomationSkippedCounts = {
    * day
    */
   enrollmentCeiling: number;
+  /**
+   * Occurrences of a date Trigger (ADR 0126) the scheduler reached 24 hours late or more, which
+   * enroll no one
+   */
+  missed: number;
+  /**
+   * Occurrences of a date Trigger whose date was last written through a Connection without
+   * mcp:send, which enroll no one while it stays so; a later write of the date may still enroll the
+   * same occurrence within 24 hours, which then counts as entered too
+   */
+  sendLocked: number;
 };
 
 /**
@@ -2791,6 +2802,16 @@ export const EnrollmentFailureKind = {
 export type EnrollmentFailureKind = typeof EnrollmentFailureKind[keyof typeof EnrollmentFailureKind];
 
 /**
+ * The occurrence of a date Trigger an Enrollment was made for (ADR 0126), by `recurrence`: a
+ * contact is enrolled at most once per occurrence
+ */
+export type EnrollmentOccurrence = ({
+  recurrence: 'yearly';
+} & YearlyEnrollmentOccurrence) | ({
+  recurrence: 'once';
+} & OnceEnrollmentOccurrence);
+
+/**
  * One Contact's progress through an Automation. Erased with the Contact.
  */
 export type EnrollmentResource = {
@@ -2820,6 +2841,12 @@ export type EnrollmentResource = {
    * string form (ADR 0165); absent for an automation with no key
    */
   keyValue?: string;
+  /**
+   * The occurrence of the automation's date Trigger the Enrollment was made for (ADR 0126): which
+   * year's anniversary, or the once date's one occurrence; absent for an Enrollment an Event or a
+   * rule's enroll action began
+   */
+  occurrence?: EnrollmentOccurrence;
   /**
    * Id of the Step of its version the Enrollment stands on (ADR 0122): a wait while it waits, the Step it ended on once it ended; absent only for a version of no Steps
    */
@@ -3622,6 +3649,13 @@ export type NumberTestInput = {
    * The number compared with
    */
   value: number;
+};
+
+/**
+ * The occurrence of a once date Trigger an Enrollment was made for: the one it has
+ */
+export type OnceEnrollmentOccurrence = {
+  recurrence: 'once';
 };
 
 /**
@@ -10576,6 +10610,17 @@ export type WithinLastTestInput = {
  * Workspace's one public address.
  */
 export type WorkspaceId = string;
+
+/**
+ * The occurrence of a yearly date Trigger an Enrollment was made for: its anniversary year
+ */
+export type YearlyEnrollmentOccurrence = {
+  recurrence: 'yearly';
+  /**
+   * The anniversary year: the year of the date the Trigger's offset counts from
+   */
+  year: number;
+};
 
 /**
  * true lists the archived resources instead of the kept ones; the default hides them

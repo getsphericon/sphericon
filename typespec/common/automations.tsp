@@ -963,6 +963,15 @@ model AutomationSkippedCounts {
   /** Entries of a contact that had 10 active enrollments in the keyed automation, or 10 begun in a
    * day */
   enrollmentCeiling: int32;
+
+  /** Occurrences of a date Trigger (ADR 0126) the scheduler reached 24 hours late or more, which
+   * enroll no one */
+  missed: int32;
+
+  /** Occurrences of a date Trigger whose date was last written through a Connection without
+   * mcp:send, which enroll no one while it stays so; a later write of the date may still enroll the
+   * same occurrence within 24 hours, which then counts as entered too */
+  sendLocked: int32;
 }
 
 /** One Report day of an automation's results */

@@ -86,3 +86,22 @@ func TestABirthdayWrittenThroughAConnectionStartsASendOnlyWithMCPSend(t *testing
 		})
 	}
 }
+
+// An agent reads which occurrence an Enrollment of a date Trigger was made for, its anniversary
+// year (fixture Birthday greeting: Alice's for 2026), and none on an Enrollment an Event began.
+func TestMCPEnrollmentsShowTheAnniversaryYearOfADateTrigger(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeEnrollmentsRead))
+
+	dated := call(t, s, "enrollments_get", map[string]any{
+		"automationId": testhelper.ID(fixtures.AutomationBirthdayGreetingID), "enrollmentId": testhelper.ID(fixtures.AutomationRunBirthdayGreetingAliceID),
+	})
+	evented := call(t, s, "enrollments_get", map[string]any{
+		"automationId": testhelper.ID(fixtures.AutomationWelcomeSeriesID), "enrollmentId": testhelper.ID(fixtures.AutomationRunWelcomeCompletedID),
+	})
+
+	require.False(t, dated.IsError, text(t, dated))
+	assert.Equal(t, map[string]any{"recurrence": "yearly", "year": float64(2026)}, decode(t, text(t, dated))["occurrence"])
+	require.False(t, evented.IsError, text(t, evented))
+	assert.NotContains(t, decode(t, text(t, evented)), "occurrence")
+}

@@ -6699,7 +6699,9 @@
           "once",
           "cooldown",
           "noEnrollmentKey",
-          "enrollmentCeiling"
+          "enrollmentCeiling",
+          "missed",
+          "sendLocked"
         ],
         "properties": {
           "cycle": {
@@ -6731,6 +6733,16 @@
             "type": "integer",
             "format": "int32",
             "description": "Entries of a contact that had 10 active enrollments in the keyed automation, or 10 begun in a\nday"
+          },
+          "missed": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Occurrences of a date Trigger (ADR 0126) the scheduler reached 24 hours late or more, which\nenroll no one"
+          },
+          "sendLocked": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Occurrences of a date Trigger whose date was last written through a Connection without\nmcp:send, which enroll no one while it stays so; a later write of the date may still enroll the\nsame occurrence within 24 hours, which then counts as entered too"
           }
         },
         "description": "How many entries into an automation were skipped, by reason"
@@ -10907,6 +10919,25 @@
         "enum": ["invalid_body", "timeout", "blocked_address", "http_status", "network"],
         "description": "Why an Enrollment failed. A closed set: `invalid_body` (an HTTP step's body did not render\nto valid JSON), `timeout` (no answer in time), `blocked_address` (the URL names an address\nthis instance does not permit), `http_status` (a non-2xx answer, see `status`) and\n`network` (any other transport failure)."
       },
+      "EnrollmentOccurrence": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/YearlyEnrollmentOccurrence"
+          },
+          {
+            "$ref": "#/components/schemas/OnceEnrollmentOccurrence"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "recurrence",
+          "mapping": {
+            "yearly": "#/components/schemas/YearlyEnrollmentOccurrence",
+            "once": "#/components/schemas/OnceEnrollmentOccurrence"
+          }
+        },
+        "description": "The occurrence of a date Trigger an Enrollment was made for (ADR 0126), by `recurrence`: a\ncontact is enrolled at most once per occurrence"
+      },
       "EnrollmentResource": {
         "type": "object",
         "required": [
@@ -10960,6 +10991,14 @@
             "type": "string",
             "description": "The value of the automation's Enrollment key the triggering Event carried, the property's\nstring form (ADR 0165); absent for an automation with no key",
             "x-untrusted": true
+          },
+          "occurrence": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EnrollmentOccurrence"
+              }
+            ],
+            "description": "The occurrence of the automation's date Trigger the Enrollment was made for (ADR 0126): which\nyear's anniversary, or the once date's one occurrence; absent for an Enrollment an Event or a\nrule's enroll action began"
           },
           "currentStepId": {
             "allOf": [
@@ -12950,6 +12989,17 @@
         },
         "description": "A test of a number. A missing value, or one that is not a number (text, a boolean, null, a\nlist), fails it.",
         "additionalProperties": false
+      },
+      "OnceEnrollmentOccurrence": {
+        "type": "object",
+        "required": ["recurrence"],
+        "properties": {
+          "recurrence": {
+            "type": "string",
+            "enum": ["once"]
+          }
+        },
+        "description": "The occurrence of a once date Trigger an Enrollment was made for: the one it has"
       },
       "OptOutVia": {
         "type": "string",
@@ -17729,6 +17779,22 @@
           }
         },
         "description": "The Workspace the token acts in"
+      },
+      "YearlyEnrollmentOccurrence": {
+        "type": "object",
+        "required": ["recurrence", "year"],
+        "properties": {
+          "recurrence": {
+            "type": "string",
+            "enum": ["yearly"]
+          },
+          "year": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The anniversary year: the year of the date the Trigger's offset counts from"
+          }
+        },
+        "description": "The occurrence of a yearly date Trigger an Enrollment was made for: its anniversary year"
       }
     },
     "securitySchemes": {

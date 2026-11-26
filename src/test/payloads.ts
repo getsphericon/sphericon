@@ -142,6 +142,8 @@ function nothingDone(from: string, to: string): AutomationPeriodResults {
       cooldown: 0,
       noEnrollmentKey: 0,
       enrollmentCeiling: 0,
+      missed: 0,
+      sendLocked: 0,
     },
     averageDurationSeconds: null,
     revenue: NO_REVENUE,
