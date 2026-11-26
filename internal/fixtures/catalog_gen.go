@@ -2257,6 +2257,8 @@ const (
 	FrequencyCapGlobexGermanyID = 900
 	// FrequencyCapLacunaSMSID is from fixtures/frequency_caps.
 	FrequencyCapLacunaSMSID = 1096
+	// FrequencyCapLacunaTelegramID is from fixtures/frequency_caps.
+	FrequencyCapLacunaTelegramID = 1196
 	// FrequencyCountBystanderDestination is from fixtures/frequency_counts.
 	FrequencyCountBystanderDestination = "ben@initech.test"
 	// FrequencyCountBystanderID is from fixtures/frequency_counts.

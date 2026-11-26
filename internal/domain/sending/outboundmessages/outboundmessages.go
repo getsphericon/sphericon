@@ -13,8 +13,9 @@
 //     the Request's idempotency key with no claim taken first;
 //   - claim: the Outbound message row is taken before the provider is called, under
 //     the Request's idempotency key, with a lease against racing retries; a new claim of a
-//     marketing message is written with its Frequency cap count, under the lock of each
-//     Destination a cap holds (frequencycap, ADR 0178);
+//     marketing message is checked against the Frequency cap of each target and written with its
+//     count, under the lock of each Destination a cap holds (frequencycap, ADR 0178): a target over
+//     its cap is dropped, and when none is left the send is Skipped, recorded as a decided message;
 //   - render, the Provider limit and the Send cap, the provider call;
 //   - the record of the result and the Channel's sent Event, in one transaction.
 //
@@ -555,14 +556,20 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, req Request) (Result, 
 	}
 
 	// The Sending window and the Frequency cap sit here, between Send-eligibility and the claim
-	// (ADR 0178): a new claim is written with its count, under the lock of each Destination a cap
-	// holds (claimNew).
-	msg, replay, err := m.claim(ctx, s, req, dest, g, existing, eligible)
+	// (ADR 0178): under the lock of each Destination a cap holds, a target over its cap is dropped and
+	// a new claim is written to the rest with its count; with none left, the send is Skipped
+	// (claimNew).
+	c, replay, err := m.claim(ctx, s, req, dest, g, existing, eligible)
 	if err != nil {
 		return Result{}, err
 	}
 	if replay != nil {
 		return *replay, nil
+	}
+	msg, eligible := c.msg, c.targets
+	if len(eligible) == 0 {
+		// A claim taken over whose every Destination with a place is gone or ineligible since.
+		return m.skip(ctx, s, msg, skipreason.NoDestination)
 	}
 	dest = eligible[0].dest
 

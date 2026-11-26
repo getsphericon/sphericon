@@ -25,7 +25,7 @@ func claimFor(t *testing.T, env *testhelper.TestEnv, number string) func() error
 	return func() error {
 		return testhelper.Module[*frequencycap.Module](env).Within(t.Context(), env.DB.Scoped(fixtures.GlobexID),
 			frequencycap.Claim{Channel: channels.SMS, Destinations: []string{number}},
-			func(*ent.DestinationLocked) error { return nil })
+			func(*ent.DestinationLocked, frequencycap.Standings) error { return nil })
 	}
 }
 
