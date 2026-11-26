@@ -4557,12 +4557,30 @@ func (s *AutomationStepFigures) encodeFields(e *jx.Encoder) {
 		e.FieldStart("skipped")
 		e.Int32(s.Skipped)
 	}
+	{
+		e.FieldStart("skippedByReason")
+		e.ArrStart()
+		for _, elem := range s.SkippedByReason {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+	{
+		e.FieldStart("waitingByCause")
+		e.ArrStart()
+		for _, elem := range s.WaitingByCause {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
 }
 
-var jsonFieldsNameOfAutomationStepFigures = [3]string{
+var jsonFieldsNameOfAutomationStepFigures = [5]string{
 	0: "stepId",
 	1: "sent",
 	2: "skipped",
+	3: "skippedByReason",
+	4: "waitingByCause",
 }
 
 // Decode decodes AutomationStepFigures from json.
@@ -4608,6 +4626,42 @@ func (s *AutomationStepFigures) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"skipped\"")
 			}
+		case "skippedByReason":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				s.SkippedByReason = make([]SkippedReasonCount, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem SkippedReasonCount
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.SkippedByReason = append(s.SkippedByReason, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"skippedByReason\"")
+			}
+		case "waitingByCause":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				s.WaitingByCause = make([]DeferralCauseCount, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem DeferralCauseCount
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.WaitingByCause = append(s.WaitingByCause, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"waitingByCause\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -4618,7 +4672,7 @@ func (s *AutomationStepFigures) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000111,
+		0b00011111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -6093,13 +6147,31 @@ func (s *AutomationVersionStepFigures) encodeFields(e *jx.Encoder) {
 		e.FieldStart("skipped")
 		e.Int32(s.Skipped)
 	}
+	{
+		e.FieldStart("skippedByReason")
+		e.ArrStart()
+		for _, elem := range s.SkippedByReason {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+	{
+		e.FieldStart("waitingByCause")
+		e.ArrStart()
+		for _, elem := range s.WaitingByCause {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
 }
 
-var jsonFieldsNameOfAutomationVersionStepFigures = [4]string{
+var jsonFieldsNameOfAutomationVersionStepFigures = [6]string{
 	0: "version",
 	1: "stepId",
 	2: "sent",
 	3: "skipped",
+	4: "skippedByReason",
+	5: "waitingByCause",
 }
 
 // Decode decodes AutomationVersionStepFigures from json.
@@ -6157,6 +6229,42 @@ func (s *AutomationVersionStepFigures) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"skipped\"")
 			}
+		case "skippedByReason":
+			requiredBitSet[0] |= 1 << 4
+			if err := func() error {
+				s.SkippedByReason = make([]SkippedReasonCount, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem SkippedReasonCount
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.SkippedByReason = append(s.SkippedByReason, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"skippedByReason\"")
+			}
+		case "waitingByCause":
+			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				s.WaitingByCause = make([]DeferralCauseCount, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem DeferralCauseCount
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.WaitingByCause = append(s.WaitingByCause, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"waitingByCause\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -6167,7 +6275,7 @@ func (s *AutomationVersionStepFigures) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00001111,
+		0b00111111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -10592,6 +10700,22 @@ func (s *BroadcastReport) encodeFields(e *jx.Encoder) {
 		e.Int32(s.SkippedCount)
 	}
 	{
+		e.FieldStart("skippedByReason")
+		e.ArrStart()
+		for _, elem := range s.SkippedByReason {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+	{
+		e.FieldStart("waitingByCause")
+		e.ArrStart()
+		for _, elem := range s.WaitingByCause {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+	{
 		e.FieldStart("failedCount")
 		e.Int32(s.FailedCount)
 	}
@@ -10649,26 +10773,28 @@ func (s *BroadcastReport) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfBroadcastReport = [19]string{
+var jsonFieldsNameOfBroadcastReport = [21]string{
 	0:  "status",
 	1:  "holdReason",
 	2:  "recipientsTotal",
 	3:  "sentCount",
 	4:  "skippedCount",
-	5:  "failedCount",
-	6:  "pendingCount",
-	7:  "cancelledCount",
-	8:  "openedCount",
-	9:  "clickedCount",
-	10: "untrackedCount",
-	11: "unsubscribedCount",
-	12: "deliveredCount",
-	13: "undeliveredCount",
-	14: "bouncedCount",
-	15: "complainedCount",
-	16: "capturedCount",
-	17: "openRate",
-	18: "clickRate",
+	5:  "skippedByReason",
+	6:  "waitingByCause",
+	7:  "failedCount",
+	8:  "pendingCount",
+	9:  "cancelledCount",
+	10: "openedCount",
+	11: "clickedCount",
+	12: "untrackedCount",
+	13: "unsubscribedCount",
+	14: "deliveredCount",
+	15: "undeliveredCount",
+	16: "bouncedCount",
+	17: "complainedCount",
+	18: "capturedCount",
+	19: "openRate",
+	20: "clickRate",
 }
 
 // Decode decodes BroadcastReport from json.
@@ -10736,8 +10862,44 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"skippedCount\"")
 			}
-		case "failedCount":
+		case "skippedByReason":
 			requiredBitSet[0] |= 1 << 5
+			if err := func() error {
+				s.SkippedByReason = make([]SkippedReasonCount, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem SkippedReasonCount
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.SkippedByReason = append(s.SkippedByReason, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"skippedByReason\"")
+			}
+		case "waitingByCause":
+			requiredBitSet[0] |= 1 << 6
+			if err := func() error {
+				s.WaitingByCause = make([]DeferralCauseCount, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem DeferralCauseCount
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.WaitingByCause = append(s.WaitingByCause, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"waitingByCause\"")
+			}
+		case "failedCount":
+			requiredBitSet[0] |= 1 << 7
 			if err := func() error {
 				v, err := d.Int32()
 				s.FailedCount = int32(v)
@@ -10749,7 +10911,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"failedCount\"")
 			}
 		case "pendingCount":
-			requiredBitSet[0] |= 1 << 6
+			requiredBitSet[1] |= 1 << 0
 			if err := func() error {
 				v, err := d.Int32()
 				s.PendingCount = int32(v)
@@ -10761,7 +10923,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"pendingCount\"")
 			}
 		case "cancelledCount":
-			requiredBitSet[0] |= 1 << 7
+			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				v, err := d.Int32()
 				s.CancelledCount = int32(v)
@@ -10773,7 +10935,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"cancelledCount\"")
 			}
 		case "openedCount":
-			requiredBitSet[1] |= 1 << 0
+			requiredBitSet[1] |= 1 << 2
 			if err := func() error {
 				if err := s.OpenedCount.Decode(d); err != nil {
 					return err
@@ -10783,7 +10945,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"openedCount\"")
 			}
 		case "clickedCount":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[1] |= 1 << 3
 			if err := func() error {
 				v, err := d.Int32()
 				s.ClickedCount = int32(v)
@@ -10795,7 +10957,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"clickedCount\"")
 			}
 		case "untrackedCount":
-			requiredBitSet[1] |= 1 << 2
+			requiredBitSet[1] |= 1 << 4
 			if err := func() error {
 				v, err := d.Int32()
 				s.UntrackedCount = int32(v)
@@ -10807,7 +10969,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"untrackedCount\"")
 			}
 		case "unsubscribedCount":
-			requiredBitSet[1] |= 1 << 3
+			requiredBitSet[1] |= 1 << 5
 			if err := func() error {
 				v, err := d.Int32()
 				s.UnsubscribedCount = int32(v)
@@ -10819,7 +10981,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"unsubscribedCount\"")
 			}
 		case "deliveredCount":
-			requiredBitSet[1] |= 1 << 4
+			requiredBitSet[1] |= 1 << 6
 			if err := func() error {
 				if err := s.DeliveredCount.Decode(d); err != nil {
 					return err
@@ -10829,7 +10991,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"deliveredCount\"")
 			}
 		case "undeliveredCount":
-			requiredBitSet[1] |= 1 << 5
+			requiredBitSet[1] |= 1 << 7
 			if err := func() error {
 				if err := s.UndeliveredCount.Decode(d); err != nil {
 					return err
@@ -10839,7 +11001,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"undeliveredCount\"")
 			}
 		case "bouncedCount":
-			requiredBitSet[1] |= 1 << 6
+			requiredBitSet[2] |= 1 << 0
 			if err := func() error {
 				if err := s.BouncedCount.Decode(d); err != nil {
 					return err
@@ -10849,7 +11011,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"bouncedCount\"")
 			}
 		case "complainedCount":
-			requiredBitSet[1] |= 1 << 7
+			requiredBitSet[2] |= 1 << 1
 			if err := func() error {
 				if err := s.ComplainedCount.Decode(d); err != nil {
 					return err
@@ -10859,7 +11021,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"complainedCount\"")
 			}
 		case "capturedCount":
-			requiredBitSet[2] |= 1 << 0
+			requiredBitSet[2] |= 1 << 2
 			if err := func() error {
 				if err := s.CapturedCount.Decode(d); err != nil {
 					return err
@@ -10869,7 +11031,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"capturedCount\"")
 			}
 		case "openRate":
-			requiredBitSet[2] |= 1 << 1
+			requiredBitSet[2] |= 1 << 3
 			if err := func() error {
 				if err := s.OpenRate.Decode(d); err != nil {
 					return err
@@ -10879,7 +11041,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"openRate\"")
 			}
 		case "clickRate":
-			requiredBitSet[2] |= 1 << 2
+			requiredBitSet[2] |= 1 << 4
 			if err := func() error {
 				v, err := d.Float32()
 				s.ClickRate = float32(v)
@@ -10902,7 +11064,7 @@ func (s *BroadcastReport) Decode(d *jx.Decoder) error {
 	for i, mask := range [3]uint8{
 		0b11111101,
 		0b11111111,
-		0b00000111,
+		0b00011111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -21434,6 +21596,117 @@ func (s DeferralCause) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *DeferralCause) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *DeferralCauseCount) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *DeferralCauseCount) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("cause")
+		s.Cause.Encode(e)
+	}
+	{
+		e.FieldStart("count")
+		e.Int32(s.Count)
+	}
+}
+
+var jsonFieldsNameOfDeferralCauseCount = [2]string{
+	0: "cause",
+	1: "count",
+}
+
+// Decode decodes DeferralCauseCount from json.
+func (s *DeferralCauseCount) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode DeferralCauseCount to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "cause":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Cause.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"cause\"")
+			}
+		case "count":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Int32()
+				s.Count = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"count\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode DeferralCauseCount")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfDeferralCauseCount) {
+					name = jsonFieldsNameOfDeferralCauseCount[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *DeferralCauseCount) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *DeferralCauseCount) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -49270,6 +49543,117 @@ func (s SkippedReason) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SkippedReason) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SkippedReasonCount) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SkippedReasonCount) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("reason")
+		s.Reason.Encode(e)
+	}
+	{
+		e.FieldStart("count")
+		e.Int32(s.Count)
+	}
+}
+
+var jsonFieldsNameOfSkippedReasonCount = [2]string{
+	0: "reason",
+	1: "count",
+}
+
+// Decode decodes SkippedReasonCount from json.
+func (s *SkippedReasonCount) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SkippedReasonCount to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "reason":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Reason.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"reason\"")
+			}
+		case "count":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Int32()
+				s.Count = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"count\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SkippedReasonCount")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfSkippedReasonCount) {
+					name = jsonFieldsNameOfSkippedReasonCount[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SkippedReasonCount) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SkippedReasonCount) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

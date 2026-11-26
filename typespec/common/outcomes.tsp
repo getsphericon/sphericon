@@ -47,3 +47,21 @@ enum DeferralCause {
   /** The destination is at its frequency cap: the send waits until a place frees */
   frequency_cap,
 }
+
+/** How many sends were Skipped for one reason */
+model SkippedReasonCount {
+  /** The reason, one of the closed list */
+  reason: SkippedReason;
+
+  /** Sends Skipped for it */
+  count: int32;
+}
+
+/** How many sends wait now for one cause */
+model DeferralCauseCount {
+  /** The cause, one of the closed list */
+  cause: DeferralCause;
+
+  /** Sends whose latest Deferral was for it and that still wait */
+  count: int32;
+}

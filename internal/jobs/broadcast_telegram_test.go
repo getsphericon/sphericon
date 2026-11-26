@@ -96,7 +96,7 @@ func TestATelegramBroadcastToAContactWhoStoppedIsNotFrozenAndALostBindingIsSkipp
 	assert.Equal(t, int64(fixtures.ContactLacunaBenID), lo.FromPtr(skipped.ContactID))
 	assert.Equal(t, skipreason.NoDestination, *skipped.SkippedReason)
 	figures := figuresOf(t, env, id)
-	assert.Equal(t, broadcasts.Stats{Recipients: 4, Sent: 3, Skipped: 1}, figures)
+	assert.Equal(t, broadcasts.Stats{Recipients: 4, Sent: 3, Skipped: 1, SkippedBy: map[skipreason.Reason]int{skipreason.NoDestination: 1}}, figures)
 }
 
 // Lacuna's Segment Chatham holds Ben, Eve and Fay, each in one chat of the bot.

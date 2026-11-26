@@ -48,3 +48,19 @@ func (Reason) Values() []string {
 	}
 	return values
 }
+
+// Count is how many sends were Skipped for one reason.
+type Count struct {
+	Reason Reason
+	Count  int
+}
+
+// Counts lists the count by holds of every reason, in the order of the closed list: a reason by
+// lacks reads zero, so a report names every reason whatever its rows hold.
+func Counts(by map[Reason]int) []Count {
+	counts := make([]Count, len(all))
+	for i, r := range all {
+		counts[i] = Count{Reason: r, Count: by[r]}
+	}
+	return counts
+}

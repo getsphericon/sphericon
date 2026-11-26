@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -180,7 +181,7 @@ func TestAMessageClaimedBeforeCancelGoesOn(t *testing.T) {
 
 	assert.Zero(t, cancelled.Unsent)
 	assert.Equal(t, outboundmessage.StatusSkipped, d.messageOf(bob).Status)
-	assert.Equal(t, broadcasts.Stats{Recipients: 1, Skipped: 1}, d.stats())
+	assert.Equal(t, broadcasts.Stats{Recipients: 1, Skipped: 1, SkippedBy: map[skipreason.Reason]int{skipreason.UnsubscribedSource: 1}}, d.stats())
 }
 
 // A claim written after Cancel whose withdrawal never finished (its attempt died between the claim

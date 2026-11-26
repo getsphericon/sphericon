@@ -537,13 +537,14 @@
     "stepEmail": "Send email",
     "stepEnd": "End",
     "stepFigures": {
-      "hint": "What each send step sent and skipped, across every version that had it, and each version's share. A contact skipped at a step (no address, opted out of the channel, or suppressed) moves on to the next step.",
+      "hint": "What each send step sent and skipped, across every version that had it, and each version's share, with why contacts were skipped and what the ones waiting at a step wait for now. A contact skipped at a step (no address, opted out of the channel, or suppressed) moves on to the next step.",
       "notLive": "Not in the live version",
       "sent": "Sent",
       "skipped": "Skipped",
       "step": "Step",
       "title": "Send steps",
-      "version": "Version"
+      "version": "Version",
+      "waiting": "Waiting now"
     },
     "stepHttp": "Call a URL",
     "stepRemoveTag": "Remove tag",
@@ -1648,6 +1649,29 @@
     "recoveryLabel": "Recovery code",
     "useAppCode": "Use a code from the app",
     "useRecoveryCode": "Use a recovery code"
+  },
+  "outcomes": {
+    "deferralCause": {
+      "frequency_cap": "Frequency cap",
+      "provider": "Provider asked to slow down",
+      "provider_limit": "Provider limit",
+      "send_cap": "Send cap",
+      "sending_window": "Sending window closed"
+    },
+    "skippedHint": "Why recipients were skipped: a skipped send is final for its recipient and never retried.",
+    "skippedReason": {
+      "contact_erased": "Contact erased",
+      "frequency_cap": "Over the frequency cap",
+      "no_destination": "No address on the channel",
+      "no_local_time": "No sending window in every time zone",
+      "suppressed": "Suppressed",
+      "unconfirmed": "Not confirmed",
+      "unsubscribed_everything": "Unsubscribed from everything",
+      "unsubscribed_source": "Unsubscribed from this sender"
+    },
+    "skippedTitle": "Skipped by reason",
+    "waitingHint": "Recipients whose send waits now, and what for: each goes out once its wait ends.",
+    "waitingTitle": "Waiting now"
   },
   "overview": {
     "attention": {

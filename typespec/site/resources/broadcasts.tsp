@@ -23,6 +23,12 @@ model SiteBroadcastStats {
   /** Recipients skipped at send time: no destination any more, or an opt-out that landed after planning */
   skippedCount: int32;
 
+  /** The skipped recipients by Skipped reason (ADR 0178): every reason of the closed list in its order, one none was skipped for at zero; they add up to `skippedCount` */
+  skippedByReason: SkippedReasonCount[];
+
+  /** The pending recipients whose send waits now, by the cause of its latest Deferral (ADR 0178): every cause of the closed list in its order, one none waits for at zero; all zero once the broadcast is no longer sending */
+  waitingByCause: DeferralCauseCount[];
+
   /** Messages that failed to send */
   failedCount: int32;
 

@@ -17,6 +17,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/aggregates"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
 // Stats is a Broadcast's delivery figures. They are read from its rows: the audience is its
@@ -32,6 +34,13 @@ type Stats struct {
 	Recipients int
 	// Sent, Skipped and Failed count the recipients whose message ended that way.
 	Sent, Skipped, Failed int
+	// SkippedBy counts the Skipped ones by their Skipped reason (ADR 0178): they add up to
+	// Skipped. A reason none was Skipped for has no entry.
+	SkippedBy map[skipreason.Reason]int
+	// Waiting counts the pending recipients whose send waits now, by the cause of its latest
+	// Deferral (ADR 0178), while the Broadcast is sending: a finished one has none waiting, so
+	// nothing of it is frozen. A cause none waits for has no entry.
+	Waiting map[deferralcause.Cause]int
 	// Cancelled counts the recipients of a cancelled Broadcast that have no message (ADR 0150):
 	// Cancel left them unsent, and none is created for them afterwards. It is zero on any other
 	// Broadcast, and no row is written for them.
@@ -67,6 +76,11 @@ type Stats struct {
 type Figures struct {
 	Recipients, Sent, Skipped, Failed, Cancelled, Pending, Clicked, Unsubscribed, Untracked int
 
+	// SkippedByReason and WaitingByCause name every reason and cause of the closed lists, in
+	// their order, one the Stats have none of at zero.
+	SkippedByReason []skipreason.Count
+	WaitingByCause  []deferralcause.Count
+
 	Opened, Delivered, Undelivered, Bounced, Complained, Captured *int
 
 	DeliveryRate, OpenRate, ClickToOpenRate *float32
@@ -80,6 +94,7 @@ func (st Stats) Figures() Figures {
 	f := Figures{
 		Recipients: st.Recipients, Sent: st.Sent, Skipped: st.Skipped, Failed: st.Failed,
 		Cancelled: st.Cancelled, Pending: st.Pending,
+		SkippedByReason: skipreason.Counts(st.SkippedBy), WaitingByCause: deferralcause.Counts(st.Waiting),
 		Clicked: st.Clicked, Unsubscribed: st.Unsubscribed, Untracked: st.Untracked,
 		ClickRate: st.ClickRate(), UnsubscribeRate: st.UnsubscribeRate(), FailureRate: st.FailureRate(),
 		Revenue: st.Revenue,
@@ -250,7 +265,15 @@ func (st Stats) Frozen(c *ent.BroadcastFigureScopedCreate) *ent.BroadcastFigureS
 		SetSent(st.Sent).SetSkipped(st.Skipped).SetFailed(st.Failed).SetCancelled(st.Cancelled).SetPending(st.Pending).
 		SetDelivered(st.Delivered).SetUndelivered(st.Undelivered).
 		SetBounced(st.Bounced).SetComplained(st.Complained).
-		SetOpened(st.Opened).SetClicked(st.Clicked).SetUntracked(st.Untracked).SetCaptured(st.Captured)
+		SetOpened(st.Opened).SetClicked(st.Clicked).SetUntracked(st.Untracked).SetCaptured(st.Captured).
+		SetSkippedSuppressed(st.SkippedBy[skipreason.Suppressed]).
+		SetSkippedUnsubscribedEverything(st.SkippedBy[skipreason.UnsubscribedEverything]).
+		SetSkippedUnsubscribedSource(st.SkippedBy[skipreason.UnsubscribedSource]).
+		SetSkippedUnconfirmed(st.SkippedBy[skipreason.Unconfirmed]).
+		SetSkippedNoDestination(st.SkippedBy[skipreason.NoDestination]).
+		SetSkippedContactErased(st.SkippedBy[skipreason.ContactErased]).
+		SetSkippedNoLocalTime(st.SkippedBy[skipreason.NoLocalTime]).
+		SetSkippedFrequencyCap(st.SkippedBy[skipreason.FrequencyCap])
 }
 
 // frozenStats is the Stats a frozen figures row keeps, Frozen read back.
@@ -260,7 +283,27 @@ func frozenStats(f *ent.BroadcastFigure) Stats {
 		Sent: f.Sent, Skipped: f.Skipped, Failed: f.Failed, Cancelled: f.Cancelled, Pending: f.Pending,
 		Delivered: f.Delivered, Undelivered: f.Undelivered, Bounced: f.Bounced, Complained: f.Complained,
 		Opened: f.Opened, Clicked: f.Clicked, Untracked: f.Untracked, Captured: f.Captured,
+		SkippedBy: counted(map[skipreason.Reason]int{
+			skipreason.Suppressed:             f.SkippedSuppressed,
+			skipreason.UnsubscribedEverything: f.SkippedUnsubscribedEverything,
+			skipreason.UnsubscribedSource:     f.SkippedUnsubscribedSource,
+			skipreason.Unconfirmed:            f.SkippedUnconfirmed,
+			skipreason.NoDestination:          f.SkippedNoDestination,
+			skipreason.ContactErased:          f.SkippedContactErased,
+			skipreason.NoLocalTime:            f.SkippedNoLocalTime,
+			skipreason.FrequencyCap:           f.SkippedFrequencyCap,
+		}),
 	}
+}
+
+// counted is the counts of by above zero, nil when none is: what the grouped count of the rows
+// gives, so a frozen row reads back the Stats it was frozen from.
+func counted[K comparable](by map[K]int) map[K]int {
+	out := lo.OmitByValues(by, []int{0})
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 // RowStatsOf counts the given Broadcasts' figures from their rows, Revenue aside, whether or not
@@ -341,6 +384,12 @@ func (m *Module) RowStatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (m
 	if err := engagementOf(ctx, s, ids, out); err != nil {
 		return nil, err
 	}
+	if err := skippedByReasonOf(ctx, s, ids, out); err != nil {
+		return nil, err
+	}
+	if err := waitingOf(ctx, s, ids, out); err != nil {
+		return nil, err
+	}
 	var cancelled []struct {
 		BroadcastID int64 `json:"broadcast_id"`
 		Count       int   `json:"count"`
@@ -367,6 +416,65 @@ func (m *Module) RowStatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (m
 		out[id] = st
 	}
 	return out, nil
+}
+
+// skippedByReasonOf counts into out the given Broadcasts' Skipped messages by their Skipped reason
+// (ADR 0178).
+func skippedByReasonOf(ctx context.Context, s *ent.Scoped, ids []int64, out map[int64]Stats) error {
+	var rows []struct {
+		BroadcastID int64             `json:"broadcast_id"`
+		Reason      skipreason.Reason `json:"skipped_reason"`
+		Count       int               `json:"count"`
+	}
+	if err := s.OutboundMessage().Query().
+		Where(outboundmessage.BroadcastIDIn(ids...), outboundmessage.StatusEQ(outboundmessage.StatusSkipped)).
+		GroupBy(outboundmessage.FieldBroadcastID, outboundmessage.FieldSkippedReason).
+		Aggregate(ent.As(ent.Count(), "count")).
+		Scan(ctx, &rows); err != nil {
+		return err
+	}
+	for _, row := range rows {
+		st := out[row.BroadcastID]
+		if st.SkippedBy == nil {
+			st.SkippedBy = map[skipreason.Reason]int{}
+		}
+		st.SkippedBy[row.Reason] = row.Count
+		out[row.BroadcastID] = st
+	}
+	return nil
+}
+
+// waitingOf counts into out the given Broadcasts' recipients that wait now, by the cause of their
+// latest Deferral (ADR 0178): pending, on a Broadcast still sending. The cause is cleared once a
+// recipient's send is decided, and a recipient of a Broadcast that ended waits for nothing, whatever
+// its row still holds.
+func waitingOf(ctx context.Context, s *ent.Scoped, ids []int64, out map[int64]Stats) error {
+	var rows []struct {
+		BroadcastID int64               `json:"broadcast_id"`
+		Cause       deferralcause.Cause `json:"deferral_cause"`
+		Count       int                 `json:"count"`
+	}
+	if err := s.BroadcastRecipient().Query().
+		Where(
+			broadcastrecipient.BroadcastIDIn(ids...),
+			broadcastrecipient.DeferralCauseNotNil(),
+			broadcastrecipient.HasBroadcastWith(broadcast.StatusEQ(broadcast.StatusSending)),
+			Pending(),
+		).
+		GroupBy(broadcastrecipient.FieldBroadcastID, broadcastrecipient.FieldDeferralCause).
+		Aggregate(ent.As(ent.Count(), "count")).
+		Scan(ctx, &rows); err != nil {
+		return err
+	}
+	for _, row := range rows {
+		st := out[row.BroadcastID]
+		if st.Waiting == nil {
+			st.Waiting = map[deferralcause.Cause]int{}
+		}
+		st.Waiting[row.Cause] = row.Count
+		out[row.BroadcastID] = st
+	}
+	return nil
 }
 
 // engagementOf counts into out the given Broadcasts' opened and clicked over their tracked

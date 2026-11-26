@@ -88,7 +88,9 @@ func TestAnSMSBroadcastSkipsARecipientThatLostItsPhoneOrOptedOutWithTheReason(t 
 		fixtures.ContactLacunaCydID: skipreason.Suppressed,
 	}, reasons)
 	figures := figuresOf(t, env, id)
-	assert.Equal(t, broadcasts.Stats{Recipients: 4, Sent: 1, Skipped: 3}, figures)
+	assert.Equal(t, broadcasts.Stats{Recipients: 4, Sent: 1, Skipped: 3, SkippedBy: map[skipreason.Reason]int{
+		skipreason.NoDestination: 1, skipreason.UnsubscribedEverything: 1, skipreason.Suppressed: 1,
+	}}, figures)
 }
 
 // Lacuna's four confirmed phones are paced.

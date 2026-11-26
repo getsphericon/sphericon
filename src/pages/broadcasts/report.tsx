@@ -4,6 +4,7 @@ import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 
 import { LinkClickTable } from '../../components/LinkClickTable.tsx'
+import { OutcomeCards } from '../../components/OutcomeCounts.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { PageSkeleton } from '../../components/Skeletons.tsx'
 import { StatCard } from '../../components/StatCard.tsx'
@@ -198,6 +199,11 @@ function BroadcastReport() {
           <StatCard key={entry.label} label={entry.label} value={entry.value} percent />
         ))}
       </SimpleGrid>
+
+      <OutcomeCards
+        skippedByReason={broadcast.stats.skippedByReason}
+        waitingByCause={broadcast.stats.waitingByCause}
+      />
 
       <BroadcastLinks workspaceId={workspaceId} broadcastId={broadcastId} />
     </Stack>

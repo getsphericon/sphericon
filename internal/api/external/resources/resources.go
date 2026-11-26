@@ -381,6 +381,8 @@ type Converter interface {
 	// goverter:map Figures.Untracked UntrackedCount
 	// goverter:map Figures.OpenRate OpenRate
 	// goverter:map Figures.ClickRate ClickRate
+	// goverter:map Figures.SkippedByReason SkippedByReason
+	// goverter:map Figures.WaitingByCause WaitingByCause
 	BroadcastReportToResource(source broadcasts.Report) externalapi.BroadcastReport
 	// The Reporting currency is the Workspace's, null until chosen; the sums are minor units.
 	// goverter:autoMap Credited
