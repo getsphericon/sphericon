@@ -1,6 +1,9 @@
 package automationstep
 
-import "iter"
+import (
+	"iter"
+	"strconv"
+)
 
 // The walker is the one way a reader visits a version's stored Steps: no reader indexes into the
 // decoded Steps, so a change of their shape changes this walker, not its readers. A version's Steps
@@ -56,6 +59,34 @@ func Forks(st *Step) []Path {
 		return f.Forks()
 	}
 	return nil
+}
+
+// Locations are where each Step of the tree lies in the path's document, as a request writes it,
+// by its id: `steps.1` for the second Step of the path, `steps.1.paths.0.steps.0` for the first of
+// the first listed path of that fork, `steps.1.otherwise.steps.0` in a Branch's otherwise. A
+// refusal of a Step is placed there.
+func Locations(p Path) map[ID]string {
+	out := map[ID]string{}
+	locate(p, "", out)
+	return out
+}
+
+// locate adds the location of each Step of the path p and of its forks' paths to out, each under
+// the prefix of p's own location ("" for the root).
+func locate(p Path, prefix string, out map[ID]string) {
+	for i := range p.Steps {
+		st := &p.Steps[i]
+		at := prefix + "steps." + strconv.Itoa(i)
+		out[st.ID] = at
+		f, ok := st.Payload.(Fork)
+		if !ok {
+			continue
+		}
+		places := f.ForkPlaces()
+		for j, sub := range f.Forks() {
+			locate(sub, at+"."+places[j]+".", out)
+		}
+	}
 }
 
 // Paths yields every path of the tree: the root, then the paths of each fork in the order the

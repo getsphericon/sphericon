@@ -55,7 +55,8 @@ func TestExternalDateTriggerRefusesAFieldWithNoOccurrence(t *testing.T) {
 			_, err := c.AutomationsCreate(t.Context(), &externalapi.CreateAutomationInput{Name: "Dated",
 				Trigger: testhelper.ConditionInput[externalapi.AutomationTriggerInput](t, trigger)})
 
-			testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
+			refused := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
+			assert.Equal(t, []string{"trigger"}, slices.Collect(maps.Keys(refused.Errors.Or(nil))))
 		})
 	}
 }

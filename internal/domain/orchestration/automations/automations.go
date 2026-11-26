@@ -117,9 +117,45 @@ func StoredSteps(p automationstep.Path) automationstep.Path {
 	})
 }
 
-// refuse is ErrInvalidStep naming the Step by its id and kind (ADR 0122), and why.
+// refuse is ErrInvalidStep naming the Step by its id and kind (ADR 0122), and why. The save places
+// it at the Step's location in the request (placeStep).
 func refuse(st *automationstep.Step, why string) error {
-	return ErrInvalidStep.With(fmt.Sprintf("step %s (%s): %s", st.ID, st.Kind(), why))
+	return &stepRefusalError{step: st.ID, detail: fmt.Sprintf("step %s (%s): %s", st.ID, st.Kind(), why)}
+}
+
+// stepRefusalError is ErrInvalidStep of one Step, which its detail names by its id and kind, reported
+// against the request field at the Step's location once the save placed it ("" before).
+type stepRefusalError struct {
+	step   automationstep.ID
+	field  string
+	detail string
+}
+
+func (e *stepRefusalError) Error() string { return e.refusal().Error() }
+func (e *stepRefusalError) Unwrap() error { return e.refusal() }
+
+func (e *stepRefusalError) refusal() error {
+	if e.field == "" {
+		return ErrInvalidStep.With(e.detail)
+	}
+	return ErrInvalidStep.On(e.field).With(e.detail)
+}
+
+// stepsField is the json name of the request field that writes a version's steps.
+const stepsField = "steps"
+
+// placeStep places a refusal of one of the steps a save writes at the Step's location in the
+// request (`steps.steps.1`), where a client shows it beside the Step; any other error is as it is.
+func placeStep(err error, steps automationstep.Path) error {
+	refused, ok := errors.AsType[*stepRefusalError](err)
+	if !ok {
+		return err
+	}
+	at, ok := automationstep.Locations(steps)[refused.step]
+	if !ok {
+		return err
+	}
+	return &stepRefusalError{step: refused.step, field: stepsField + "." + at, detail: refused.detail}
 }
 
 // MaxStepsPerVersion bounds a version's tree (ADR 0122, ADR 0124): its Steps over all paths. The
@@ -650,17 +686,21 @@ const errDateTriggerEntry = "a date trigger takes no entry policy, cooldown or e
 // until's date form is held to the same checks (checkUntil, checkDateFields).
 func (m *Module) checkDate(ctx context.Context, s *ent.Scoped, d datetrigger.Date) error {
 	if problem := dateProblem(d); problem != "" {
-		return ErrInvalidTrigger.With(problem)
+		return errDateTriggerRefused.With(problem)
 	}
 	problem, err := m.dateFieldProblem(ctx, s, d)
 	if err != nil {
 		return err
 	}
 	if problem != "" {
-		return ErrInvalidTrigger.With(problem)
+		return errDateTriggerRefused.With(problem)
 	}
 	return nil
 }
+
+// errDateTriggerRefused is ErrInvalidTrigger of a date Trigger, reported against the request's
+// `trigger`, where a client shows it beside the Trigger.
+var errDateTriggerRefused = ErrInvalidTrigger.On("trigger")
 
 // normalizeMatcher turns an Event matcher into its stored form: its action trimmed.
 func normalizeMatcher(m eventmatcher.Matcher) eventmatcher.Matcher {
@@ -900,7 +940,7 @@ func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.Automati
 	if def.trigger.Date != nil {
 		// A date Trigger has no Entry policy, cooldown or Enrollment key: it stores the defaults.
 		if e.entry != nil && e.entry.given() {
-			return definition{}, ErrInvalidTrigger.With(errDateTriggerEntry)
+			return definition{}, errDateTriggerRefused.With(errDateTriggerEntry)
 		}
 		def.entry = defaultEntry
 	} else if e.entry != nil {
@@ -939,7 +979,7 @@ func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.Automati
 	if e.steps != nil {
 		steps, err := v.mergeSteps(ctx, ts, *e.steps, stored)
 		if err != nil {
-			return definition{}, err
+			return definition{}, placeStep(err, *e.steps)
 		}
 		def.steps = steps
 	}

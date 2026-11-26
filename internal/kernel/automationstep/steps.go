@@ -238,6 +238,9 @@ type Fork interface {
 	// WithForks is the fork with its paths replaced by paths, given in the order Forks gives them;
 	// what else it holds (a path's Condition) is kept.
 	WithForks(paths []Path) Fork
+	// ForkPlaces are where the fork's paths lie in its Step's document, in the order Forks gives
+	// them (`paths.0`, `otherwise`): a refusal of a Step in one is placed through it (Locations).
+	ForkPlaces() []string
 }
 
 func (b Branch) Forks() []Path {
@@ -248,6 +251,18 @@ func (b Branch) Forks() []Path {
 	out = append(out, b.Otherwise)
 	if b.Unknown != nil {
 		out = append(out, *b.Unknown)
+	}
+	return out
+}
+
+func (b Branch) ForkPlaces() []string {
+	out := make([]string, 0, len(b.Paths)+2)
+	for i := range b.Paths {
+		out = append(out, "paths."+strconv.Itoa(i))
+	}
+	out = append(out, "otherwise")
+	if b.Unknown != nil {
+		out = append(out, "unknown")
 	}
 	return out
 }
@@ -283,6 +298,14 @@ func (s Split) Forks() []Path {
 	out := make([]Path, len(s.Paths))
 	for i, p := range s.Paths {
 		out[i] = Path{ID: p.ID, Steps: p.Steps}
+	}
+	return out
+}
+
+func (s Split) ForkPlaces() []string {
+	out := make([]string, len(s.Paths))
+	for i := range s.Paths {
+		out[i] = "paths." + strconv.Itoa(i)
 	}
 	return out
 }

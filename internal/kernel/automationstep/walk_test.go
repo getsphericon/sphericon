@@ -222,3 +222,41 @@ func TestAfterEndFindsTheFirstStepThatFollowsAnEnd(t *testing.T) {
 
 // stepID is the id withIDs gives the Step at pos.
 func stepID(pos int) automationstep.ID { return automationstep.ID("step-" + strconv.Itoa(pos)) }
+
+// Locations names each Step by where it lies in the path's document, as a request writes it: a
+// refusal of the Step is placed there.
+func TestLocationsNameEachStepByItsPlaceInTheDocument(t *testing.T) {
+	step := func(id string, p automationstep.Payload) automationstep.Step {
+		return automationstep.Step{ID: automationstep.ID(id), Payload: p}
+	}
+	wait := automationstep.Wait{Seconds: 60}
+	branch := automationstep.Branch{
+		Paths: []automationstep.BranchPath{
+			{ID: "p1", Steps: []automationstep.Step{step("a", wait)}},
+			{ID: "p2", Steps: []automationstep.Step{step("b", wait), step("c", wait)}},
+		},
+		Otherwise: automationstep.Path{ID: "o", Steps: []automationstep.Step{step("d", wait)}},
+		Unknown:   &automationstep.Path{ID: "u", Steps: []automationstep.Step{step("e", wait)}},
+	}
+	split := automationstep.Split{Paths: []automationstep.SplitPath{
+		{ID: "s1", Weight: 50, Steps: []automationstep.Step{}},
+		{ID: "s2", Weight: 50, Steps: []automationstep.Step{step("f", automationstep.End{})}},
+	}}
+	steps := automationstep.Path{ID: "root", Steps: []automationstep.Step{
+		step("first", wait), step("branch", branch), step("split", split),
+	}}
+
+	locations := automationstep.Locations(steps)
+
+	assert.Equal(t, map[automationstep.ID]string{
+		"first":  "steps.0",
+		"branch": "steps.1",
+		"a":      "steps.1.paths.0.steps.0",
+		"b":      "steps.1.paths.1.steps.0",
+		"c":      "steps.1.paths.1.steps.1",
+		"d":      "steps.1.otherwise.steps.0",
+		"e":      "steps.1.unknown.steps.0",
+		"split":  "steps.2",
+		"f":      "steps.2.paths.1.steps.0",
+	}, locations)
+}

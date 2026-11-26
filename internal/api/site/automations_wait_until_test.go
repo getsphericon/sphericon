@@ -97,4 +97,6 @@ func TestSiteAutomationKeepsAWaitUntilOnADateAndRefusesAnUnknownField(t *testing
 	detail := refused.Detail.Or("")
 	assert.Contains(t, detail, waitUntilStepID)
 	assert.Contains(t, detail, "renews_on")
+	// Placed at the Step, where the console shows it.
+	assert.Equal(t, map[string][]string{"steps.steps.0": {detail}}, map[string][]string(refused.Errors.Or(nil)))
 }
