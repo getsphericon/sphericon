@@ -2557,6 +2557,7 @@
       "periodMinutes_other": "{{count, number}} minutes",
       "removeCap": "Remove cap",
       "removeWindow": "Remove window",
+      "ruleRepeated": "Another rule is already set for this channel and country.",
       "saved": "Sending rules saved",
       "saveError": "Could not save the sending rules",
       "timeRequired": "Enter a time.",

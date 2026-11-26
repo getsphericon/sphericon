@@ -688,8 +688,8 @@ export default interface Resources {
       "scheduleConfirm": {
         "confirm": "Schedule broadcast",
         "countError": "Could not count the recipients",
-        "outsideWindow": "{{count, number}} of them ({{share}}) would wait for the Sending window at that time: it is closed where they are. They are reached on {{reachedAt}}." | "{{count, number}} of them ({{share}}) would wait for their Sending window at that time: it is closed where they are. The last of them is reached on {{reachedAt}}.",
-        "outsideWindowError": "Could not read the Sending window",
+        "outsideWindow": "{{count, number}} of them ({{share}}) would wait for the sending window at that time: it is closed where they are. They are reached on {{reachedAt}}." | "{{count, number}} of them ({{share}}) would wait for their sending window at that time: it is closed where they are. The last of them is reached on {{reachedAt}}.",
+        "outsideWindowError": "Could not read the sending window",
         "recipients": "It would reach {{count, number}} recipient now: the contacts of its audience who can receive it on its channel. Who receives it is settled when it sends." | "It would reach {{count, number}} recipients now: the contacts of its audience who can receive it on its channel. Who receives it is settled when it sends.",
         "title": "Schedule this broadcast?"
       },
@@ -2507,6 +2507,7 @@ export default interface Resources {
         "periodMinutes": "{{count, number}} minute" | "{{count, number}} minutes",
         "removeCap": "Remove cap",
         "removeWindow": "Remove window",
+        "ruleRepeated": "Another rule is already set for this channel and country.",
         "saveError": "Could not save the sending rules",
         "saved": "Sending rules saved",
         "timeRequired": "Enter a time.",

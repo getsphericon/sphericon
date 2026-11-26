@@ -12,6 +12,7 @@ import type {
   SiteWorkspaceResource,
 } from '../../../generated/site/types.gen.ts'
 import { workspace as workspacePayload } from '../../../test/payloads.ts'
+import { problem } from '../../../test/problem.ts'
 import { renderWithRouter } from '../../../test/renderWithRouter.tsx'
 import { worker } from '../../../test/worker.ts'
 import { SendingRulesSection } from './SendingRulesSection.tsx'
@@ -72,4 +73,54 @@ test('without workspace:update the rules show and offer no change', async () => 
 
   await expect.element(screen.getByText(/SMS: Monday 08:00–20:00/)).toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Change' })).not.toBeInTheDocument()
+})
+
+// The server names a window's day by its place among the hours sent: its refusal shows under the
+// day's own input, and no toast repeats it.
+test('a refusal of a window day shows under that day', async () => {
+  worker.use(
+    handleSiteWorkspacesList({ body: [workspace(['workspace:update'])] }),
+    handleSiteWorkspacesGetSendingRules({ body: defaults }),
+    handleSiteWorkspacesReplaceSendingRules(() =>
+      problem(422, {
+        title: 'Unprocessable',
+        errors: { 'sendingWindows.0.hours.0.closesAt': ['Close after it opens.'] },
+      }),
+    ),
+  )
+  const { screen } = await renderWithRouter(
+    <SendingRulesSection workspace={workspace(['workspace:update'])} />,
+  )
+
+  await screen.getByRole('button', { name: 'Change' }).click()
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.element(screen.getByText('Close after it opens.')).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('textbox', { name: 'Monday closes at' }))
+    .toHaveAttribute('aria-invalid', 'true')
+  await expect.element(screen.getByText('Could not save the sending rules')).not.toBeInTheDocument()
+})
+
+// The rules changed since the form read them (ADR 0119): the editor says so and offers to load the
+// saved version or save over it.
+test('a save over a change made since shows the changed notice', async () => {
+  worker.use(
+    handleSiteWorkspacesList({ body: [workspace(['workspace:update'])] }),
+    handleSiteWorkspacesGetSendingRules({ body: defaults }),
+    handleSiteWorkspacesReplaceSendingRules(() =>
+      problem(409, { title: 'Changed', code: 'revision_changed' }),
+    ),
+  )
+  const { screen } = await renderWithRouter(
+    <SendingRulesSection workspace={workspace(['workspace:update'])} />,
+  )
+
+  await screen.getByRole('button', { name: 'Change' }).click()
+  await screen.getByRole('textbox', { name: 'Maximum' }).fill('2')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .element(screen.getByRole('button', { name: 'Load the saved version' }))
+    .toBeInTheDocument()
 })

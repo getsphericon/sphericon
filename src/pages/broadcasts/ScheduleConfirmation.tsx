@@ -15,6 +15,7 @@ import type {
 } from '../../generated/site/types.gen.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
+import { hasSendingWindow } from '../../utils/sendingRules.ts'
 
 // What Schedule arms, shown before it does (ADR 0149): the Recipients the saved Broadcast would take
 // now, whether or not a Send cap applies, and on SMS how many of them the Sending window would hold
@@ -102,7 +103,7 @@ function Recipients({
   return (
     <>
       <Text>{t(($) => $.broadcasts.scheduleConfirm.recipients, { count: recipients })}</Text>
-      {broadcast.channel === 'sms' && (
+      {hasSendingWindow(broadcast.channel) && (
         <QueryBoundary
           fallback={<Skeleton height={24} />}
           errorTitle={t(($) => $.broadcasts.scheduleConfirm.outsideWindowError)}
