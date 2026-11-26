@@ -651,28 +651,36 @@ function branchInput(step: BranchStep): AutomationStepInput | null {
   }
 }
 
-// What a flow saves as the version's definition: the Trigger, its exit and goal events and the root
-// path, each Step and path with its id. `filterIncomplete` says a filter of the Trigger, an exit or
-// the goal is still being typed, and is left out. A flow that is never saved as it stands (a date
-// Trigger not set: triggerInputOf; a kept Step, a Branch path's Condition missing or being typed, a
-// Wait until not set: pathInputOf) shows that part as the editor holds it, which tells one such
-// flow from another.
-export function definitionOf(flow: Flow): {
-  trigger: AutomationTriggerInput | TriggerDraft
+// A part of a flow as Save sends it (`sends`), or as the editor holds the part (`holds`) while it is
+// not one to save, which tells one such flow from another.
+export type Sendable<Input, Draft> = { sends: Input } | { holds: Draft }
+
+// A flow's definition: the Trigger, its exit and goal events and the root path, each Step and path
+// with its id. `filterIncomplete` says a filter of the Trigger, an exit or the goal is still being
+// typed, and is left out. The Trigger is held while its date is not set (triggerInputOf), the root
+// path while it holds a kept Step, a Branch path's Condition missing or being typed, or a Wait
+// until not set (pathInputOf).
+export interface FlowDefinition {
+  trigger: Sendable<AutomationTriggerInput, TriggerDraft>
   filterIncomplete: boolean
   exitEvents: EventMatcherInput[]
   goalEvent: EventMatcherInput | null
-  steps: AutomationPathInput | FlowPath
-} {
+  steps: Sendable<AutomationPathInput, FlowPath>
+}
+
+// definitionOf is the flow's definition (FlowDefinition): what Save sends, and what the editor
+// holds of a part it cannot send yet.
+export function definitionOf(flow: Flow): FlowDefinition {
   const { trigger, incomplete } = triggerOf(flow.trigger)
   const exits = flow.trigger.exits.flatMap((draft) => endingRead(draft))
   const [goal] = endingRead(flow.trigger.goal)
+  const steps = pathInputOf(flow)
   return {
-    trigger: trigger ?? flow.trigger,
+    trigger: trigger === null ? { holds: flow.trigger } : { sends: trigger },
     filterIncomplete: incomplete || [...exits, ...(goal ? [goal] : [])].some((e) => e.incomplete),
     exitEvents: exits.map(({ matcher }) => matcher),
     goalEvent: goal?.matcher ?? null,
-    steps: pathInputOf(flow) ?? flow.path,
+    steps: steps === null ? { holds: flow.path } : { sends: steps },
   }
 }
 

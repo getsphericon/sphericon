@@ -9,9 +9,9 @@ import type {
   DateFieldInput,
   DateRecurrence,
   SiteCustomFieldResource,
-  Weekday,
 } from '../../generated/site/types.gen.ts'
 import { zDateFieldInput, zDateRecurrence, zWeekday } from '../../generated/site/zod.gen.ts'
+import { useWeekdayNames } from '../../hooks/useWeekdayNames.ts'
 import { useSchemaForm } from '../../resources/schemaForm.ts'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { jsonText } from '../../utils/jsonText.ts'
@@ -217,15 +217,7 @@ export function TimeOfDayForm({
   const form = useSchemaForm(timeOfDaySchema, value, onChange)
   useValidator(form, validatorRef)
   useShownErrors(form, checked)
-  const names: Record<Weekday, string> = {
-    monday: t(($) => $.automations.weekday.monday),
-    tuesday: t(($) => $.automations.weekday.tuesday),
-    wednesday: t(($) => $.automations.weekday.wednesday),
-    thursday: t(($) => $.automations.weekday.thursday),
-    friday: t(($) => $.automations.weekday.friday),
-    saturday: t(($) => $.automations.weekday.saturday),
-    sunday: t(($) => $.automations.weekday.sunday),
-  }
+  const names = useWeekdayNames()
 
   return (
     <Stack onBlur={onChecked}>

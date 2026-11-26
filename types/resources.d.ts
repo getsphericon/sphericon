@@ -171,16 +171,7 @@ export default interface Resources {
       "opensByHour": {
         "cell": "{{day}} {{hour}}:00, {{count, number}} open" | "{{day}} {{hour}}:00, {{count, number}} opens",
         "empty": "No opens in this window",
-        "note": "Human opens by hour of day in the workspace time zone. Opens by mail software that fetches images for the reader are left out.",
-        "weekdays": {
-          "friday": "Friday",
-          "monday": "Monday",
-          "saturday": "Saturday",
-          "sunday": "Sunday",
-          "thursday": "Thursday",
-          "tuesday": "Tuesday",
-          "wednesday": "Wednesday"
-        }
+        "note": "Human opens by hour of day in the workspace time zone. Opens by mail software that fetches images for the reader are left out."
       },
       "range": {
         "30d": "Last 30 days",
@@ -596,15 +587,6 @@ export default interface Resources {
       "waitUntilFormLabel": "Wait for",
       "waitUntilNodeDescription": "Pause until a time of day or a date the contact holds.",
       "waitingUntil": "Waiting until",
-      "weekday": {
-        "friday": "Friday",
-        "monday": "Monday",
-        "saturday": "Saturday",
-        "sunday": "Sunday",
-        "thursday": "Thursday",
-        "tuesday": "Tuesday",
-        "wednesday": "Wednesday"
-      },
       "weekdaysHint": "None chosen is every day.",
       "weekdaysLabel": "Weekdays",
       "weightSum": "Total: {{sum}}%",
@@ -2879,6 +2861,15 @@ export default interface Resources {
       "submitButton": "Set password",
       "title": "Set your password",
       "verifying": "Confirming your email…"
+    },
+    "weekday": {
+      "friday": "Friday",
+      "monday": "Monday",
+      "saturday": "Saturday",
+      "sunday": "Sunday",
+      "thursday": "Thursday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday"
     },
     "workspaceHold": {
       "actionContact": "To resolve it, contact an Owner or Admin of this workspace.",

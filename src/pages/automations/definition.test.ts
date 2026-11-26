@@ -47,11 +47,13 @@ function triggered(trigger: Partial<TriggerDraft>): Flow {
 
 test('a stored version round-trips through the flow, each Step and the path keeping its id', () => {
   expect(definitionOf(flowOf(version(STEPS, 'email.clicked')))).toEqual({
-    trigger: { kind: 'event', action: 'email.clicked', entryPolicy: 'once', cooldown: 3600 },
+    trigger: {
+      sends: { kind: 'event', action: 'email.clicked', entryPolicy: 'once', cooldown: 3600 },
+    },
     filterIncomplete: false,
     exitEvents: [],
     goalEvent: null,
-    steps: { id: ROOT, steps: STEPS },
+    steps: { sends: { id: ROOT, steps: STEPS } },
   })
   expect(pathInputOf(flowOf(version(STEPS)))).toEqual({ id: ROOT, steps: STEPS })
 })
@@ -137,7 +139,7 @@ test('a version holding forks and an End round-trips, every Step and path keepin
 
   expect(holdsKept(flow)).toBe(false)
   expect(pathInputOf(flow)).toEqual({ id: ROOT, steps: TREE })
-  expect(definitionOf(flow).steps).toEqual({ id: ROOT, steps: TREE })
+  expect(definitionOf(flow).steps).toEqual({ sends: { id: ROOT, steps: TREE } })
 })
 
 // A stored Condition is saved back as read, whatever its leaves: the read shape of each leaf is
@@ -298,7 +300,7 @@ test('a date Trigger round-trips, its offset as days before or after', () => {
     },
   })
   expect(definitionOf(flowOf(stored))).toMatchObject({
-    trigger: stored.trigger,
+    trigger: { sends: stored.trigger },
     filterIncomplete: false,
   })
 })
@@ -486,7 +488,7 @@ test("the Trigger's filter, Entry policy, cooldown and Enrollment key round-trip
     enrollmentKey: 'order_id',
   })
   expect(definitionOf(flowOf(stored))).toMatchObject({
-    trigger: stored.trigger,
+    trigger: { sends: stored.trigger },
     filterIncomplete: false,
   })
 })
@@ -496,14 +498,14 @@ test('a Trigger with no filter, cooldown or Enrollment key leaves them to the se
     triggered({ filterText: '', cooldown: null, enrollmentKey: '  ' }),
   )
 
-  expect(trigger).toEqual({ kind: 'event', action: 'paid', entryPolicy: 'once' })
+  expect(trigger).toEqual({ sends: { kind: 'event', action: 'paid', entryPolicy: 'once' } })
 })
 
 test('a filter still being typed is flagged and left out of the saved Trigger', () => {
   const saved = definitionOf(triggered({ filterText: BLANK_KEY, cooldown: null }))
 
   expect(saved.filterIncomplete).toBe(true)
-  expect(saved.trigger).toEqual({ kind: 'event', action: 'paid', entryPolicy: 'once' })
+  expect(saved.trigger).toEqual({ sends: { kind: 'event', action: 'paid', entryPolicy: 'once' } })
 })
 
 test('the cooldown is typed in hours and held in seconds', () => {
@@ -592,10 +594,12 @@ test('a Trigger switched to a date saves no Event matcher or entry settings', ()
 
   expect(saved.filterIncomplete).toBe(false)
   expect(saved.trigger).toEqual({
-    kind: 'date',
-    field: { kind: 'birthday' },
-    recurrence: 'yearly',
-    offsetDays: 0,
-    localTime: '10:00',
+    sends: {
+      kind: 'date',
+      field: { kind: 'birthday' },
+      recurrence: 'yearly',
+      offsetDays: 0,
+      localTime: '10:00',
+    },
   })
 })

@@ -6,9 +6,9 @@ import { useTranslation } from 'react-i18next'
 
 import { CenteredEmptyState } from '../../../components/CenteredEmptyState.tsx'
 import { siteAnalyticsOpensByHourOptions } from '../../../generated/site/@tanstack/react-query.gen.ts'
-import type { Weekday } from '../../../generated/site/types.gen.ts'
 import { zWeekday } from '../../../generated/site/zod.gen.ts'
 import { useAnalyticsRange } from '../../../hooks/useAnalyticsRange.ts'
+import { useWeekdayNames } from '../../../hooks/useWeekdayNames.ts'
 import { Route as opensByHourRoute } from '../../../routes/workspaces/$workspaceId/analytics/opens-by-hour.tsx'
 import { ReportBoundary } from './ReportBoundary.tsx'
 
@@ -31,6 +31,7 @@ function OpensByHourReport() {
   const { t } = useTranslation()
   const { workspaceId } = opensByHourRoute.useParams()
   const range = useAnalyticsRange()
+  const names = useWeekdayNames()
 
   const report = useSuspenseQuery(
     siteAnalyticsOpensByHourOptions({ path: { workspaceId }, query: { range } }),
@@ -42,15 +43,6 @@ function OpensByHourReport() {
     )
   }
 
-  const names: Record<Weekday, string> = {
-    monday: t(($) => $.analytics.opensByHour.weekdays.monday),
-    tuesday: t(($) => $.analytics.opensByHour.weekdays.tuesday),
-    wednesday: t(($) => $.analytics.opensByHour.weekdays.wednesday),
-    thursday: t(($) => $.analytics.opensByHour.weekdays.thursday),
-    friday: t(($) => $.analytics.opensByHour.weekdays.friday),
-    saturday: t(($) => $.analytics.opensByHour.weekdays.saturday),
-    sunday: t(($) => $.analytics.opensByHour.weekdays.sunday),
-  }
   const days = WEEKDAYS.map((key) => names[key])
   // A cell of the report as the chart takes it: the hour is the column, the weekday the row. An
   // hour without opens is an empty cell, drawn in the theme's empty gray rather than the palest blue.
