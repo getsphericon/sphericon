@@ -664,15 +664,15 @@ func automationTriggerIn(c Inputs, t siteapi.AutomationTriggerInput) (automation
 		ev := t.OneOf.EventTriggerInput
 		filter, err := condition.FromOptionalDTO[conditiontree.EventFilter](ev.Filter)
 		if err != nil {
-			return automations.Trigger{}, err
+			return nil, err
 		}
-		return automations.Trigger{Event: eventmatcher.Matcher{Action: ev.Action, Filter: filter}}, nil
+		return automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: ev.Action, Filter: filter}}, nil
 	case siteapi.DateTriggerInputAutomationTriggerInputSum:
 		d := t.OneOf.DateTriggerInput
-		date := dateIn(c, d.Field, d.Recurrence, d.OffsetDays, d.LocalTime)
-		return automations.Trigger{Date: &date}, nil
+		return automations.DateTrigger{Date: dateIn(c, d.Field, d.Recurrence, d.OffsetDays, d.LocalTime)}, nil
 	}
-	return automations.Trigger{}, nil
+	// A Trigger of no kind is an Event Trigger with no action, which the save refuses.
+	return automations.EventTrigger{}, nil
 }
 
 // dateFieldIn is the date field a date Trigger names, by its kind: the birthday, or a Custom field by
@@ -788,16 +788,12 @@ func automationGoalPatch(o siteapi.OptNilEventMatcherInput) (patch.Field[eventma
 }
 
 // automationTriggerPtrIn is the Trigger an update replaces: omitted (nil) keeps the stored one.
-func automationTriggerPtrIn(c Inputs, o siteapi.OptAutomationTriggerInput) (*automations.Trigger, error) {
+func automationTriggerPtrIn(c Inputs, o siteapi.OptAutomationTriggerInput) (automations.Trigger, error) {
 	t, ok := o.Get()
 	if !ok {
 		return nil, nil
 	}
-	m, err := automationTriggerIn(c, t)
-	if err != nil {
-		return nil, err
-	}
-	return &m, nil
+	return automationTriggerIn(c, t)
 }
 
 // ruleConditionIn is a Rule's Condition the request may leave out; nil when it is absent.

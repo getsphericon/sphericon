@@ -104,7 +104,7 @@ func TestEditingALiveAutomationWritesADraftAndEnrollsOnTheLiveVersion(t *testing
 	require.NoError(t, err)
 	published := liveSteps(t, before)
 
-	_, err = m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: steps(automationstep.Wait{Seconds: 60}), Trigger: &automations.Trigger{Event: eventmatcher.Matcher{Action: "hold_demo_edited"}}})
+	_, err = m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: steps(automationstep.Wait{Seconds: 60}), Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: "hold_demo_edited"}}})
 	require.NoError(t, err)
 	edited := []automationstep.Payload{automationstep.Wait{Seconds: 120}}
 	updated, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: steps(edited...)})
@@ -136,7 +136,7 @@ func TestSavingUnchangedStepsStoresNothing(t *testing.T) {
 	live, _ := automations.LiveAndDraft(before)
 	same := pathOf(t, live)
 
-	updated, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: &same, Trigger: &automations.Trigger{Event: eventmatcher.Matcher{Action: "hold_demo"}}})
+	updated, err := m.Update(ctx, acme, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, fixtures.AutomationHoldDemoID), Steps: &same, Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: "hold_demo"}}})
 	require.NoError(t, err)
 	_, draft := automations.LiveAndDraft(updated)
 	assert.Nil(t, draft)

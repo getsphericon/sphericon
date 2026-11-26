@@ -27,21 +27,21 @@ func TestSmsReceivedTriggersExitsAndCompletesButSmsSentDoesNot(t *testing.T) {
 	received, confirmed, sent := systemevent.SmsReceived, systemevent.SmsConfirmed, systemevent.SmsSent
 
 	onReply, err := m.Create(t.Context(), s, automations.CreateInput{
-		Name: "Reply", Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: received}}, ExitEvents: []eventmatcher.Matcher{{Action: systemevent.ContactTagged}}, GoalEvent: &eventmatcher.Matcher{Action: confirmed},
+		Name: "Reply", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: received}}, ExitEvents: []eventmatcher.Matcher{{Action: systemevent.ContactTagged}}, GoalEvent: &eventmatcher.Matcher{Action: confirmed},
 	})
 	require.NoError(t, err)
 	assert.NotZero(t, onReply.ID)
 	ending, err := m.Create(t.Context(), s, automations.CreateInput{
-		Name: "Ends on a reply", Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: confirmed}}, ExitEvents: []eventmatcher.Matcher{{Action: received}},
+		Name: "Ends on a reply", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: confirmed}}, ExitEvents: []eventmatcher.Matcher{{Action: received}},
 	})
 	require.NoError(t, err)
 	assert.NotZero(t, ending.ID)
 
-	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Sent", Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: sent}}, ExitEvents: []eventmatcher.Matcher{}})
+	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Sent", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: sent}}, ExitEvents: []eventmatcher.Matcher{}})
 	require.ErrorIs(t, err, automations.ErrInvalidTrigger)
-	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Exit", Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: received}}, ExitEvents: []eventmatcher.Matcher{{Action: sent}}})
+	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Exit", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: received}}, ExitEvents: []eventmatcher.Matcher{{Action: sent}}})
 	require.ErrorIs(t, err, automations.ErrInvalidExitEvent)
-	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Goal", Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: received}}, ExitEvents: []eventmatcher.Matcher{}, GoalEvent: &eventmatcher.Matcher{Action: sent}})
+	_, err = m.Create(t.Context(), s, automations.CreateInput{Name: "Goal", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: received}}, ExitEvents: []eventmatcher.Matcher{}, GoalEvent: &eventmatcher.Matcher{Action: sent}})
 	require.ErrorIs(t, err, automations.ErrInvalidGoalEvent)
 }
 
@@ -54,12 +54,12 @@ func TestSmsDeliveredAndUndeliveredTriggerExitAndComplete(t *testing.T) {
 	delivered, undelivered := systemevent.SmsDelivered, systemevent.SmsUndelivered
 
 	onUndelivered, err := m.Create(t.Context(), s, automations.CreateInput{
-		Name: "Undelivered", Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: undelivered}}, ExitEvents: []eventmatcher.Matcher{{Action: delivered}},
+		Name: "Undelivered", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: undelivered}}, ExitEvents: []eventmatcher.Matcher{{Action: delivered}},
 	})
 	require.NoError(t, err)
 	assert.NotZero(t, onUndelivered.ID)
 	onDelivered, err := m.Create(t.Context(), s, automations.CreateInput{
-		Name: "Delivered", Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: delivered}}, ExitEvents: []eventmatcher.Matcher{}, GoalEvent: &eventmatcher.Matcher{Action: undelivered},
+		Name: "Delivered", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: delivered}}, ExitEvents: []eventmatcher.Matcher{}, GoalEvent: &eventmatcher.Matcher{Action: undelivered},
 	})
 	require.NoError(t, err)
 	assert.NotZero(t, onDelivered.ID)
@@ -74,12 +74,12 @@ func TestSmsUnsubscribedTriggersAndExits(t *testing.T) {
 	unsubscribed, confirmed := systemevent.SmsUnsubscribed, systemevent.SmsConfirmed
 
 	onStop, err := m.Create(t.Context(), s, automations.CreateInput{
-		Name: "Unsubscribed", Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: unsubscribed}}, ExitEvents: []eventmatcher.Matcher{{Action: confirmed}},
+		Name: "Unsubscribed", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: unsubscribed}}, ExitEvents: []eventmatcher.Matcher{{Action: confirmed}},
 	})
 	require.NoError(t, err)
 	assert.NotZero(t, onStop.ID)
 	onConsent, err := m.Create(t.Context(), s, automations.CreateInput{
-		Name: "Confirmed", Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: confirmed}}, ExitEvents: []eventmatcher.Matcher{{Action: unsubscribed}},
+		Name: "Confirmed", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: confirmed}}, ExitEvents: []eventmatcher.Matcher{{Action: unsubscribed}},
 	})
 	require.NoError(t, err)
 	assert.NotZero(t, onConsent.ID)

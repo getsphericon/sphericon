@@ -25,7 +25,7 @@ func TestACustomFieldADateTriggerNamesIsRefusedItsRetypeNamingTheAutomation(t *t
 	ctx := t.Context()
 	dated, err := testhelper.Module[*automations.Module](env).Create(ctx, env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{
 		Name: "Trial ending",
-		Trigger: automations.Trigger{Date: &datetrigger.Date{
+		Trigger: automations.DateTrigger{Date: datetrigger.Date{
 			Field:      datetrigger.Field{Kind: datetrigger.CustomField, Key: fixtures.CustomFieldAcmeTrialEndsAtKey},
 			Recurrence: localcalendar.Once, OffsetDays: -3, LocalTime: "10:00",
 		}},

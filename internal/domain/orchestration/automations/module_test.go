@@ -31,7 +31,7 @@ func TestModuleIsConfinedToTheScopedWorkspace(t *testing.T) {
 	_, err = m.Archive(ctx, acme, fixtures.AutomationGlobexID)
 	require.ErrorIs(t, err, automations.ErrNotFound)
 
-	created, err := m.Create(ctx, acme, automations.CreateInput{Name: "New", Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: systemevent.ContactCreated}}})
+	created, err := m.Create(ctx, acme, automations.CreateInput{Name: "New", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: systemevent.ContactCreated}}})
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.AcmeID, created.WorkspaceID)
 

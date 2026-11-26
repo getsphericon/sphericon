@@ -626,10 +626,12 @@ func eventProblem(action string) string {
 // exit events and its goal event. They may share an action (ADR 0133): an Enrollment's triggering
 // Event never ends it, and an Event matching the goal and an exit reaches the goal.
 func validateEvents(def definition) error {
-	if def.trigger.Date == nil {
-		if problem := matcherProblem(def.trigger.Event); problem != "" {
+	switch t := def.trigger.(type) {
+	case EventTrigger:
+		if problem := matcherProblem(t.Matcher); problem != "" {
 			return ErrInvalidTrigger.With(problem)
 		}
+	case DateTrigger:
 	}
 	for _, e := range def.exits {
 		if problem := matcherProblem(e); problem != "" {
@@ -645,28 +647,65 @@ func validateEvents(def definition) error {
 	return nil
 }
 
-// Trigger is what enrolls a Contact in an Automation, one of two kinds: an Event matcher (ADR
-// 0133), Event, when Date is nil; or a date the Contact holds (ADR 0126), Date, with Event left
-// empty. A date Trigger takes no Entry policy, cooldown or Enrollment key.
-type Trigger struct {
-	Event eventmatcher.Matcher
-	Date  *datetrigger.Date
+// Trigger is what enrolls a Contact in an Automation, one of two kinds: an Event matcher
+// (EventTrigger, ADR 0133), or a date the Contact holds (DateTrigger, ADR 0126), which takes no
+// Entry policy, cooldown or Enrollment key. A type switch over it that misses a kind fails the lint
+// (gochecksumtype).
+//
+//sumtype:decl
+type Trigger interface {
+	trigger()
 }
 
-// normalizeTrigger turns a Trigger into its stored form: an Event matcher normalized, and a date
-// Trigger with no matcher.
+// EventTrigger enrolls a Contact on each Event the matcher matches.
+type EventTrigger struct {
+	Matcher eventmatcher.Matcher
+}
+
+// DateTrigger enrolls a Contact on each occurrence of a date it holds.
+type DateTrigger struct {
+	Date datetrigger.Date
+}
+
+func (EventTrigger) trigger() {}
+func (DateTrigger) trigger()  {}
+
+// normalizeTrigger turns a Trigger into its stored form: an Event matcher's action trimmed, and a
+// date's Custom field key.
 func normalizeTrigger(t Trigger) Trigger {
-	if t.Date != nil {
-		d := *t.Date
-		d.Field.Key = strings.TrimSpace(d.Field.Key)
-		return Trigger{Date: &d}
+	switch t := t.(type) {
+	case EventTrigger:
+		return EventTrigger{Matcher: normalizeMatcher(t.Matcher)}
+	case DateTrigger:
+		t.Date.Field.Key = strings.TrimSpace(t.Date.Field.Key)
+		return t
 	}
-	return Trigger{Event: normalizeMatcher(t.Event)}
+	return t
 }
 
 // sameTrigger reports whether two Triggers enroll alike: the same matcher, or the same date.
 func sameTrigger(a, b Trigger) bool {
-	return sameMatcher(a.Event, b.Event) && optional.Equal(a.Date, b.Date)
+	switch a := a.(type) {
+	case EventTrigger:
+		b, ok := b.(EventTrigger)
+		return ok && sameMatcher(a.Matcher, b.Matcher)
+	case DateTrigger:
+		b, ok := b.(DateTrigger)
+		return ok && a.Date == b.Date
+	}
+	return false
+}
+
+// triggerColumns are the columns of a version that hold the Trigger: an Event Trigger's action and
+// filter, and a date Trigger's date with an empty action (automation_versions_trigger_kind_check).
+func triggerColumns(t Trigger) (action string, filter *conditiontree.EventFilter, date *datetrigger.Date) {
+	switch t := t.(type) {
+	case EventTrigger:
+		return t.Matcher.Action, t.Matcher.Filter, nil
+	case DateTrigger:
+		return "", nil, &t.Date
+	}
+	return "", nil, nil
 }
 
 // errDateTriggerEntry is the refusal of an Entry policy, a cooldown or an Enrollment key given with
@@ -803,7 +842,7 @@ type UpdateInput struct {
 	Revision int64
 	Name     *string
 	// Trigger replaces the Trigger, its filter with it; nil leaves it alone.
-	Trigger *Trigger
+	Trigger Trigger
 	// Entry replaces the Trigger's Entry policy, which a request writes with the Trigger; nil
 	// leaves it alone.
 	Entry *Entry
@@ -854,7 +893,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 		}
 		return a.ID, nil
 	}
-	e := edit{trigger: &in.Trigger, entry: &in.Entry, exits: &in.ExitEvents, goal: patch.FromPtr(in.GoalEvent)}
+	e := edit{trigger: in.Trigger, entry: &in.Entry, exits: &in.ExitEvents, goal: patch.FromPtr(in.GoalEvent)}
 	if in.Steps != nil {
 		e.steps = &steps
 	}
@@ -887,7 +926,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 // edit is a change of an Automation's definition; nil fields keep the base's. The steps are built
 // (their documents rendered) before the transaction.
 type edit struct {
-	trigger *Trigger
+	trigger Trigger
 	entry   *Entry
 	exits   *[]eventmatcher.Matcher
 	goal    patch.Field[eventmatcher.Matcher]
@@ -920,7 +959,9 @@ func (versioned) Store(s *ent.Scoped) ent.VersionedStore[ent.Automation, ent.Aut
 func (v versioned) Merge(ctx context.Context, l *ent.WorkspaceLocked, base *ent.AutomationVersion, e edit) (definition, error) {
 	ts := l.Scope()
 	def := definition{
-		entry: defaultEntry,
+		// A new definition starts as an Event Trigger with no action, which validateEvents refuses
+		// unless the edit gives a Trigger.
+		trigger: EventTrigger{}, entry: defaultEntry,
 		exits: []eventmatcher.Matcher{}, steps: automationstep.Path{ID: automationstep.NewID(), Steps: []automationstep.Step{}},
 	}
 	var stored automationstep.Path
@@ -928,20 +969,23 @@ func (v versioned) Merge(ctx context.Context, l *ent.WorkspaceLocked, base *ent.
 		def, stored = definitionOf(base), base.Steps
 	}
 	if e.trigger != nil {
-		def.trigger = normalizeTrigger(*e.trigger)
+		def.trigger = normalizeTrigger(e.trigger)
 	}
-	if def.trigger.Date != nil {
+	switch def.trigger.(type) {
+	case DateTrigger:
 		// A date Trigger has no Entry policy, cooldown or Enrollment key: it stores the defaults.
 		if e.entry != nil && e.entry.given() {
 			return definition{}, errDateTriggerRefused.With(errDateTriggerEntry)
 		}
 		def.entry = defaultEntry
-	} else if e.entry != nil {
-		settings, err := normalizeEntry(*e.entry)
-		if err != nil {
-			return definition{}, err
+	case EventTrigger:
+		if e.entry != nil {
+			settings, err := normalizeEntry(*e.entry)
+			if err != nil {
+				return definition{}, err
+			}
+			def.entry = settings
 		}
-		def.entry = settings
 	}
 	if e.exits != nil {
 		def.exits = normalizeExits(*e.exits)
@@ -1018,24 +1062,31 @@ func (v versioned) mergeSteps(ctx context.Context, ts *ent.Scoped, steps, stored
 	return StoredSteps(sealed), nil
 }
 
-// TriggerOf is the version's Event Trigger: the Event matcher its action and filter columns hold,
-// empty for a date Trigger (DateTriggerOf).
-func TriggerOf(v *ent.AutomationVersion) eventmatcher.Matcher {
-	return eventmatcher.Matcher{Action: v.TriggerAction, Filter: v.TriggerFilter}
+// TriggerOf is the version's Trigger: the date its trigger_date column holds, or else the Event
+// matcher of its action and filter columns.
+func TriggerOf(v *ent.AutomationVersion) Trigger {
+	if v.TriggerDate != nil {
+		return DateTrigger{Date: *v.TriggerDate}
+	}
+	return EventTrigger{Matcher: eventMatcherOf(v)}
 }
 
-// DateTriggerOf is the version's date Trigger (ADR 0126), nil for an Event Trigger.
-func DateTriggerOf(v *ent.AutomationVersion) *datetrigger.Date {
-	return v.TriggerDate
+// eventMatcherOf is the Event matcher of the version's action and filter columns, which a date
+// Trigger leaves empty, so that no Event matches it.
+func eventMatcherOf(v *ent.AutomationVersion) eventmatcher.Matcher {
+	return eventmatcher.Matcher{Action: v.TriggerAction, Filter: v.TriggerFilter}
 }
 
 // checkTrigger refuses a Trigger whose catalogue references do not hold: an Event matcher's filter
 // (checkNamed), or a date's Custom field (checkDate).
 func (m *Module) checkTrigger(ctx context.Context, s *ent.Scoped, t Trigger) error {
-	if t.Date != nil {
-		return m.checkDate(ctx, s, *t.Date)
+	switch t := t.(type) {
+	case EventTrigger:
+		return m.checkNamed(ctx, s, t.Matcher, ErrInvalidTrigger)
+	case DateTrigger:
+		return m.checkDate(ctx, s, t.Date)
 	}
-	return m.checkNamed(ctx, s, t.Event, ErrInvalidTrigger)
+	return nil
 }
 
 // ExitsOf is the version's exit events, the Event matchers that end an Enrollment on it early;
@@ -1047,7 +1098,7 @@ func ExitsOf(v *ent.AutomationVersion) []eventmatcher.Matcher {
 // definitionOf is the definition a version holds.
 func definitionOf(v *ent.AutomationVersion) definition {
 	return definition{
-		trigger: Trigger{Event: TriggerOf(v), Date: DateTriggerOf(v)},
+		trigger: TriggerOf(v),
 		entry:   entrySettings{policy: v.EntryPolicy, cooldown: v.CooldownSeconds, key: v.EnrollmentKey},
 		exits:   ExitsOf(v), goal: v.Goal, steps: v.Steps,
 	}
@@ -1068,20 +1119,21 @@ func (versioned) Write(ctx context.Context, l *ent.WorkspaceLocked, id int64, nu
 	if draft != nil {
 		return draft.ID, rewriteDraft(ctx, l, draft.ID, def)
 	}
+	action, filter, date := triggerColumns(def.trigger)
 	create := l.AutomationVersion().Create().
 		SetAutomationID(id).
 		SetVersion(number).
-		SetTriggerAction(def.trigger.Event.Action).
+		SetTriggerAction(action).
 		SetEntryPolicy(def.entry.policy).
 		SetCooldownSeconds(def.entry.cooldown).
 		SetNillableEnrollmentKey(def.entry.key).
 		SetExits(def.exits).
 		SetSteps(def.steps)
-	if def.trigger.Event.Filter != nil {
-		create.SetTriggerFilter(def.trigger.Event.Filter)
+	if filter != nil {
+		create.SetTriggerFilter(filter)
 	}
-	if def.trigger.Date != nil {
-		create.SetTriggerDate(def.trigger.Date)
+	if date != nil {
+		create.SetTriggerDate(date)
 	}
 	if def.goal != nil {
 		create.SetGoal(def.goal)
@@ -1096,16 +1148,17 @@ func (versioned) Write(ctx context.Context, l *ent.WorkspaceLocked, id int64, nu
 // rewriteDraft replaces the definition of the draft in place, under the Workspace lock: nothing
 // ever stands on a draft.
 func rewriteDraft(ctx context.Context, l *ent.WorkspaceLocked, draftID int64, def definition) error {
+	action, filter, date := triggerColumns(def.trigger)
 	upd := l.AutomationVersion().UpdateOneID(draftID).
-		SetTriggerAction(def.trigger.Event.Action).
+		SetTriggerAction(action).
 		SetEntryPolicy(def.entry.policy).
 		SetCooldownSeconds(def.entry.cooldown).
 		SetExits(def.exits).
 		SetSteps(def.steps)
-	if def.trigger.Date == nil {
+	if date == nil {
 		upd.ClearTriggerDate()
 	} else {
-		upd.SetTriggerDate(def.trigger.Date)
+		upd.SetTriggerDate(date)
 	}
 	if def.entry.key == nil {
 		upd.ClearEnrollmentKey()
@@ -1117,10 +1170,10 @@ func rewriteDraft(ctx context.Context, l *ent.WorkspaceLocked, draftID int64, de
 	} else {
 		upd.SetGoal(def.goal)
 	}
-	if def.trigger.Event.Filter == nil {
+	if filter == nil {
 		upd.ClearTriggerFilter()
 	} else {
-		upd.SetTriggerFilter(def.trigger.Event.Filter)
+		upd.SetTriggerFilter(filter)
 	}
 	return upd.Exec(ctx)
 }
@@ -1139,8 +1192,8 @@ func (v versioned) Publishable(ctx context.Context, l *ent.WorkspaceLocked, vers
 	if err := validateEvents(definitionOf(version)); err != nil {
 		return err
 	}
-	if date := DateTriggerOf(version); date != nil {
-		if err := v.m.checkDate(ctx, ts, *date); err != nil {
+	if date, ok := TriggerOf(version).(DateTrigger); ok {
+		if err := v.m.checkDate(ctx, ts, date.Date); err != nil {
 			return err
 		}
 		if err := v.m.refuseEnrollers(ctx, l, version.AutomationID); err != nil {
@@ -1214,7 +1267,7 @@ func (m *Module) refuseEnrollers(ctx context.Context, l *ent.WorkspaceLocked, au
 // of the activation and the Publish, and its watermark stands there, so no occurrence before the
 // Publish enrolls anyone or counts as missed.
 func (v versioned) Published(ctx context.Context, l *ent.WorkspaceLocked, version *ent.AutomationVersion) error {
-	if DateTriggerOf(version) == nil {
+	if _, ok := TriggerOf(version).(DateTrigger); !ok {
 		return nil
 	}
 	return resetCursor(ctx, l.Scope(), version.AutomationID, v.m.now())

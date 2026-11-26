@@ -67,7 +67,7 @@ func (c *dateCase) publish(d datetrigger.Date) int64 {
 	c.t.Helper()
 	ctx := c.t.Context()
 	created, err := c.module.Create(ctx, c.acme, automations.CreateInput{
-		Name: "On a date", Trigger: automations.Trigger{Date: &d},
+		Name: "On a date", Trigger: automations.DateTrigger{Date: d},
 		Steps: new(automationstep.Root(automationstep.New(automationstep.Wait{Seconds: 540 * 24 * 3600}))),
 	})
 	require.NoError(c.t, err)

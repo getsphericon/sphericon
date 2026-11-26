@@ -116,7 +116,7 @@ func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 		"an empty secret":   {emptySecret},
 		"a secret no key":   {notBase64},
 	} {
-		_, err := m.Create(ctx, acme, automations.CreateInput{Name: name, Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: "signup"}}, Steps: steps(refused...)})
+		_, err := m.Create(ctx, acme, automations.CreateInput{Name: name, Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: "signup"}}, Steps: steps(refused...)})
 		require.ErrorIs(t, err, automations.ErrInvalidStep, name)
 	}
 
@@ -127,7 +127,7 @@ func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 		ten[i] = httpStep("https://hooks.example.com/x")
 	}
 	for name, kept := range map[string][]automationstep.Payload{"five headers": {five}, "ten steps": ten} {
-		_, err := m.Create(ctx, acme, automations.CreateInput{Name: name, Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: "signup"}}, Steps: steps(kept...)})
+		_, err := m.Create(ctx, acme, automations.CreateInput{Name: name, Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: "signup"}}, Steps: steps(kept...)})
 		assert.NoError(t, err, name)
 	}
 }
@@ -160,7 +160,7 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	step.Headers = []httpheader.Header{{Name: "Authorization", Value: "Bearer hunter2"}}
 	step.Secret = stepSecret
 	created, err := m.Create(ctx, acme, automations.CreateInput{
-		Name: "Notify", Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: "signup"}}, Steps: steps(automationstep.Wait{Seconds: 1}, step),
+		Name: "Notify", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: "signup"}}, Steps: steps(automationstep.Wait{Seconds: 1}, step),
 	})
 	require.NoError(t, err)
 	for _, secret := range []string{"SECRETPATH", "hunter2", stepSecret} {
@@ -215,7 +215,7 @@ func TestAnHTTPStepWithAnUnknownIDKeepsNoStoredSecret(t *testing.T) {
 	m := testhelper.Module[*automations.Module](env)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	ctx := context.Background()
-	created, err := m.Create(ctx, acme, automations.CreateInput{Name: "Notify", Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: "signup"}}, Steps: steps(httpStep("https://hooks.example.com/x"))})
+	created, err := m.Create(ctx, acme, automations.CreateInput{Name: "Notify", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: "signup"}}, Steps: steps(httpStep("https://hooks.example.com/x"))})
 	require.NoError(t, err)
 
 	other := automationstep.Step{ID: automationstep.NewID(), Payload: automationstep.HTTP{Body: slackBody}}

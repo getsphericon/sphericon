@@ -33,7 +33,7 @@ func TestTheDateTickEnrollsTheContactsWhoseOccurrenceCame(t *testing.T) {
 	})
 	require.NoError(t, err)
 	m := testhelper.Module[*automations.Module](env)
-	created, err := m.Create(ctx, acme, automations.CreateInput{Name: "Birthday", Trigger: automations.Trigger{Date: &datetrigger.Date{
+	created, err := m.Create(ctx, acme, automations.CreateInput{Name: "Birthday", Trigger: automations.DateTrigger{Date: datetrigger.Date{
 		Field: datetrigger.Field{Kind: datetrigger.Birthday}, Recurrence: localcalendar.Yearly, LocalTime: "10:00",
 	}}})
 	require.NoError(t, err)

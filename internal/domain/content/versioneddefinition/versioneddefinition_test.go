@@ -108,7 +108,7 @@ func automationKind(env *testhelper.TestEnv) kind {
 			return automationView(m.Update(ctx, s, id, automations.UpdateInput{Revision: automationRevision(ctx, s, id), Name: &name}))
 		},
 		edit: func(ctx context.Context, s *ent.Scoped, id int64, mark string) (view, error) {
-			return automationView(m.Update(ctx, s, id, automations.UpdateInput{Revision: automationRevision(ctx, s, id), Trigger: &automations.Trigger{Event: eventmatcher.Matcher{Action: mark}}}))
+			return automationView(m.Update(ctx, s, id, automations.UpdateInput{Revision: automationRevision(ctx, s, id), Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: mark}}}))
 		},
 		get: func(ctx context.Context, s *ent.Scoped, id int64) (view, error) {
 			return automationView(m.Get(ctx, s, id))

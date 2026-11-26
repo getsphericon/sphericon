@@ -59,7 +59,7 @@ func publishedSplitting(t *testing.T, env *testhelper.TestEnv, steps ...automati
 	m := testhelper.Module[*automations.Module](env)
 	root := automationstep.Root(steps...)
 	a, err := m.Create(ctx, s, automations.CreateInput{
-		Name: "Splitting", Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: splitTrigger}},
+		Name: "Splitting", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: splitTrigger}},
 		Entry: automations.Entry{Policy: automationversion.EntryPolicyAgain}, Steps: &root,
 	})
 	require.NoError(t, err)
@@ -182,7 +182,7 @@ func (c *datedSplit) publish(d datetrigger.Date, steps ...automationstep.Step) i
 	acme := c.env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](c.env)
 	root := automationstep.Root(steps...)
-	created, err := m.Create(ctx, acme, automations.CreateInput{Name: "Birthday split", Trigger: automations.Trigger{Date: &d}, Steps: &root})
+	created, err := m.Create(ctx, acme, automations.CreateInput{Name: "Birthday split", Trigger: automations.DateTrigger{Date: d}, Steps: &root})
 	require.NoError(c.t, err)
 	_, err = m.Publish(ctx, acme, created.ID, testhelper.AutomationRevisionIn(ctx, c.t, acme, created.ID))
 	require.NoError(c.t, err)

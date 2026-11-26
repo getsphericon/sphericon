@@ -39,7 +39,7 @@ func filteredOn(t *testing.T, env *testhelper.TestEnv, workspaceID int64, name s
 	ctx := context.Background()
 	s := env.DB.Scoped(workspaceID)
 	m := testhelper.Module[*automations.Module](env)
-	a, err := m.Create(ctx, s, automations.CreateInput{Name: name, Trigger: automations.Trigger{Event: trigger}})
+	a, err := m.Create(ctx, s, automations.CreateInput{Name: name, Trigger: automations.EventTrigger{Matcher: trigger}})
 	require.NoError(t, err)
 	if published {
 		a, err = m.Publish(ctx, s, a.ID, testhelper.AutomationRevisionIn(ctx, t, s, a.ID))

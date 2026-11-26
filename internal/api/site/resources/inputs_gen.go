@@ -158,11 +158,11 @@ func (c *InputsImpl) AutomationUpdate(source *site.UpdateAutomationInput) (autom
 	if source != nil {
 		automationsUpdateInput.Revision = revisionIn((*source).Revision)
 		automationsUpdateInput.Name = namePtrIn((*source).Name)
-		pAutomationsTrigger, err := automationTriggerPtrIn(c, (*source).Trigger)
+		automationsTrigger, err := automationTriggerPtrIn(c, (*source).Trigger)
 		if err != nil {
 			return automationsUpdateInput, err
 		}
-		automationsUpdateInput.Trigger = pAutomationsTrigger
+		automationsUpdateInput.Trigger = automationsTrigger
 		automationsUpdateInput.Entry = automationEntryPtrIn(c, (*source).Trigger)
 		pEventmatcherMatcherList, err := automationExitsPtrIn((*source).ExitEvents)
 		if err != nil {

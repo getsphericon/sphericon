@@ -32,7 +32,7 @@ func publishedWithGoal(t *testing.T, env *testhelper.TestEnv, steps ...automatio
 	m := testhelper.Module[*automations.Module](env)
 	root := automationstep.Root(steps...)
 	a, err := m.Create(ctx, s, automations.CreateInput{
-		Name: "Forking", Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: branchTrigger}},
+		Name: "Forking", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: branchTrigger}},
 		GoalEvent: &eventmatcher.Matcher{Action: forkGoal}, Steps: &root,
 	})
 	require.NoError(t, err)

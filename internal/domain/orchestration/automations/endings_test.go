@@ -330,7 +330,7 @@ func TestCreateKeepsExitAndGoalEventsInTheDraft(t *testing.T) {
 	paid := propertyEq(t, "status", "paid")
 
 	created, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{
-		Name: "Upsell", Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: "plan_limit_reached"}},
+		Name: "Upsell", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: "plan_limit_reached"}},
 		ExitEvents: []eventmatcher.Matcher{
 			{Action: "account_closed"}, {Action: " account_closed"}, {Action: "account_closed", Filter: paid}, {Action: systemevent.EmailUnsubscribed},
 		},
@@ -355,12 +355,12 @@ func TestCreateRefusesAnExitOrGoalEventThatCannotEndAnEnrollment(t *testing.T) {
 		in   automations.CreateInput
 		want error
 	}{
-		{"an empty exit", automations.CreateInput{Trigger: automations.Trigger{Event: trigger}, ExitEvents: []eventmatcher.Matcher{{Action: " "}}}, automations.ErrInvalidExitEvent},
-		{"an infrastructure exit", automations.CreateInput{Trigger: automations.Trigger{Event: trigger}, ExitEvents: []eventmatcher.Matcher{{Action: systemevent.EmailSent}}}, automations.ErrInvalidExitEvent},
-		{"an infrastructure goal", automations.CreateInput{Trigger: automations.Trigger{Event: trigger}, GoalEvent: &eventmatcher.Matcher{Action: systemevent.EmailDelivered}}, automations.ErrInvalidGoalEvent},
-		{"an exit naming a Tag the Workspace lacks", automations.CreateInput{Trigger: automations.Trigger{Event: trigger},
+		{"an empty exit", automations.CreateInput{Trigger: automations.EventTrigger{Matcher: trigger}, ExitEvents: []eventmatcher.Matcher{{Action: " "}}}, automations.ErrInvalidExitEvent},
+		{"an infrastructure exit", automations.CreateInput{Trigger: automations.EventTrigger{Matcher: trigger}, ExitEvents: []eventmatcher.Matcher{{Action: systemevent.EmailSent}}}, automations.ErrInvalidExitEvent},
+		{"an infrastructure goal", automations.CreateInput{Trigger: automations.EventTrigger{Matcher: trigger}, GoalEvent: &eventmatcher.Matcher{Action: systemevent.EmailDelivered}}, automations.ErrInvalidGoalEvent},
+		{"an exit naming a Tag the Workspace lacks", automations.CreateInput{Trigger: automations.EventTrigger{Matcher: trigger},
 			ExitEvents: []eventmatcher.Matcher{{Action: systemevent.ContactTagged, Filter: propertyEq(t, "tag", "no-such-tag")}}}, automations.ErrInvalidExitEvent},
-		{"a goal naming a Custom field the Workspace lacks", automations.CreateInput{Trigger: automations.Trigger{Event: trigger},
+		{"a goal naming a Custom field the Workspace lacks", automations.CreateInput{Trigger: automations.EventTrigger{Matcher: trigger},
 			GoalEvent: &eventmatcher.Matcher{Action: systemevent.ContactFieldChanged, Filter: propertyEq(t, "key", "no_such_field")}}, automations.ErrInvalidGoalEvent},
 	}
 	for _, tc := range cases {
@@ -384,9 +384,9 @@ func TestASaveAcceptsExitAndGoalEventsSharingAnAction(t *testing.T) {
 		name string
 		in   automations.CreateInput
 	}{
-		{"an exit on the trigger's action", automations.CreateInput{Trigger: automations.Trigger{Event: trigger}, ExitEvents: []eventmatcher.Matcher{trigger}}},
-		{"a goal on the trigger's action", automations.CreateInput{Trigger: automations.Trigger{Event: trigger}, GoalEvent: &trigger}},
-		{"a goal on an exit's action", automations.CreateInput{Trigger: automations.Trigger{Event: trigger},
+		{"an exit on the trigger's action", automations.CreateInput{Trigger: automations.EventTrigger{Matcher: trigger}, ExitEvents: []eventmatcher.Matcher{trigger}}},
+		{"a goal on the trigger's action", automations.CreateInput{Trigger: automations.EventTrigger{Matcher: trigger}, GoalEvent: &trigger}},
+		{"a goal on an exit's action", automations.CreateInput{Trigger: automations.EventTrigger{Matcher: trigger},
 			ExitEvents: []eventmatcher.Matcher{{Action: "paid"}}, GoalEvent: &eventmatcher.Matcher{Action: "paid"}}},
 	}
 	for _, tc := range cases {
@@ -409,7 +409,7 @@ func TestUpdateAcceptsATriggerOnAStoredExitEventsAction(t *testing.T) {
 	m := testhelper.Module[*automations.Module](env)
 
 	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationPaymentRecoveryID),
-		Trigger: &automations.Trigger{Event: eventmatcher.Matcher{Action: recoveryExit}},
+		Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: recoveryExit}},
 	})
 
 	require.NoError(t, err)

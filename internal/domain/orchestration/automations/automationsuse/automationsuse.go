@@ -67,8 +67,12 @@ func (m *Module) UsingCustomField(ctx context.Context, l *ent.WorkspaceLocked, k
 // Trigger names it, or a Wait until does, at any depth.
 func datesField(v *ent.AutomationVersion, key string) bool {
 	field := datetrigger.Field{Kind: datetrigger.CustomField, Key: key}
-	if d := automations.DateTriggerOf(v); d != nil && d.Field == field {
-		return true
+	switch t := automations.TriggerOf(v).(type) {
+	case automations.DateTrigger:
+		if t.Date.Field == field {
+			return true
+		}
+	case automations.EventTrigger:
 	}
 	for _, d := range automationstep.OnDates(v.Steps) {
 		if d.Field == field {
@@ -119,7 +123,13 @@ func stepsTag(v *ent.AutomationVersion, name string) bool {
 // matcherNames is what the filters of the version's Event matchers name in the catalogue
 // (condition.NamedDefinitions): its Trigger's, its exits' and its goal's.
 func matcherNames(v *ent.AutomationVersion) condition.Definitions {
-	matchers := append([]eventmatcher.Matcher{automations.TriggerOf(v)}, automations.ExitsOf(v)...)
+	var matchers []eventmatcher.Matcher
+	switch t := automations.TriggerOf(v).(type) {
+	case automations.EventTrigger:
+		matchers = append(matchers, t.Matcher)
+	case automations.DateTrigger:
+	}
+	matchers = append(matchers, automations.ExitsOf(v)...)
 	if v.Goal != nil {
 		matchers = append(matchers, *v.Goal)
 	}

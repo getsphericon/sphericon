@@ -1341,26 +1341,28 @@ func segmentCondition(g conditiontree.Segment) (siteapi.SegmentCondition, error)
 // automationTrigger maps a version's Trigger into the typed DTO by its kind: an Event matcher whose
 // filter is checked as a stored Condition is (convert.Document).
 func automationTrigger(c Converter, v *ent.AutomationVersion) (siteapi.AutomationTrigger, error) {
-	if d := automations.DateTriggerOf(v); d != nil {
+	switch t := automations.TriggerOf(v).(type) {
+	case automations.DateTrigger:
 		return siteapi.AutomationTrigger{OneOf: siteapi.NewDateTriggerAutomationTriggerSum(siteapi.DateTrigger{
-			Kind: siteapi.DateTriggerKindDate, Field: dateField(d.Field), Recurrence: c.DateRecurrenceToResource(d.Recurrence),
-			OffsetDays: siteapi.DateOffsetDays(narrow.Int32(d.OffsetDays)), LocalTime: siteapi.LocalTime(d.LocalTime),
+			Kind: siteapi.DateTriggerKindDate, Field: dateField(t.Date.Field), Recurrence: c.DateRecurrenceToResource(t.Date.Recurrence),
+			OffsetDays: siteapi.DateOffsetDays(narrow.Int32(t.Date.OffsetDays)), LocalTime: siteapi.LocalTime(t.Date.LocalTime),
 		})}, nil
-	}
-	m := automations.TriggerOf(v)
-	ev := siteapi.EventTrigger{
-		Kind: siteapi.EventTriggerKindEvent, Action: m.Action,
-		EntryPolicy: c.EntryPolicyToResource(v.EntryPolicy), Cooldown: siteapi.EntryCooldown(narrow.Int32(v.CooldownSeconds)),
-		EnrollmentKey: optString(v.EnrollmentKey),
-	}
-	if m.Filter != nil {
-		f, err := convert.Document[siteapi.EventFilter](*m.Filter)
-		if err != nil {
-			return siteapi.AutomationTrigger{}, err
+	case automations.EventTrigger:
+		ev := siteapi.EventTrigger{
+			Kind: siteapi.EventTriggerKindEvent, Action: t.Matcher.Action,
+			EntryPolicy: c.EntryPolicyToResource(v.EntryPolicy), Cooldown: siteapi.EntryCooldown(narrow.Int32(v.CooldownSeconds)),
+			EnrollmentKey: optString(v.EnrollmentKey),
 		}
-		ev.Filter = siteapi.NewOptEventFilter(f)
+		if t.Matcher.Filter != nil {
+			f, err := convert.Document[siteapi.EventFilter](*t.Matcher.Filter)
+			if err != nil {
+				return siteapi.AutomationTrigger{}, err
+			}
+			ev.Filter = siteapi.NewOptEventFilter(f)
+		}
+		return siteapi.AutomationTrigger{OneOf: siteapi.NewEventTriggerAutomationTriggerSum(ev)}, nil
 	}
-	return siteapi.AutomationTrigger{OneOf: siteapi.NewEventTriggerAutomationTriggerSum(ev)}, nil
+	return siteapi.AutomationTrigger{}, fmt.Errorf("version %d has a trigger of no kind", v.ID)
 }
 
 // dateField maps a date Trigger's field into the typed DTO by its kind. A stored field is checked

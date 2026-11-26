@@ -35,7 +35,7 @@ func liveEnding(t *testing.T, env *testhelper.TestEnv, trigger eventmatcher.Matc
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 	a, err := m.Create(ctx, s, automations.CreateInput{
-		Name: "Ending on " + trigger.Action, Trigger: automations.Trigger{Event: trigger}, ExitEvents: e.exits, GoalEvent: e.goal,
+		Name: "Ending on " + trigger.Action, Trigger: automations.EventTrigger{Matcher: trigger}, ExitEvents: e.exits, GoalEvent: e.goal,
 		Steps: steps(automationstep.Wait{Seconds: 3600}),
 	})
 	require.NoError(t, err)

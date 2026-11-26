@@ -41,7 +41,7 @@ func telegramAutomation(t *testing.T, env *testhelper.TestEnv, steps ...automati
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := testhelper.Module[*automations.Module](env)
 	created, err := m.Create(ctx, s, automations.CreateInput{
-		Name: "Telegram welcome", Trigger: automations.Trigger{Event: eventmatcher.Matcher{Action: systemevent.TelegramBound}}, ExitEvents: []eventmatcher.Matcher{}, Steps: new(automationstep.Root(steps...)),
+		Name: "Telegram welcome", Trigger: automations.EventTrigger{Matcher: eventmatcher.Matcher{Action: systemevent.TelegramBound}}, ExitEvents: []eventmatcher.Matcher{}, Steps: new(automationstep.Root(steps...)),
 	})
 	require.NoError(t, err)
 	_, err = m.Publish(ctx, s, created.ID, testhelper.AutomationRevisionIn(ctx, t, s, created.ID))

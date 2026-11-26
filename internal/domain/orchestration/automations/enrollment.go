@@ -160,7 +160,7 @@ func (m *StepExecution) enrollOnTrigger(ctx context.Context, s *ent.Scoped, pub 
 			return false, nil
 		}
 		// The first entry check: an Event its filter misses is no entry, and nothing is recorded.
-		return matchesEvent(ctx, s, TriggerOf(live), o.Action, event.SourceID(o.Cause.sourceID))
+		return matchesEvent(ctx, s, eventMatcherOf(live), o.Action, event.SourceID(o.Cause.sourceID))
 	})
 }
 
@@ -556,7 +556,7 @@ func triggeredBy(ctx context.Context, s *ent.Scoped, ev Event) ([]int64, error) 
 	}
 	var ids []int64
 	for _, a := range candidates {
-		ok, err := matchesEvent(ctx, s, TriggerOf(a.Edges.LiveVersion), ev.Action, event.SourceID(ev.SourceID))
+		ok, err := matchesEvent(ctx, s, eventMatcherOf(a.Edges.LiveVersion), ev.Action, event.SourceID(ev.SourceID))
 		if err != nil {
 			return nil, err
 		}
