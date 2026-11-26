@@ -4695,34 +4695,50 @@ func (m *AutomationMutation) ResetEdge(name string) error {
 // AutomationFigureMutation represents an operation that mutates the AutomationFigure nodes in the graph.
 type AutomationFigureMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *int64
-	created_at        *time.Time
-	updated_at        *time.Time
-	step_id           *automationstep.ID
-	sent              *int
-	addsent           *int
-	skipped           *int
-	addskipped        *int
-	delivered         *int
-	adddelivered      *int
-	bounced           *int
-	addbounced        *int
-	complained        *int
-	addcomplained     *int
-	captured          *int
-	addcaptured       *int
-	clearedFields     map[string]struct{}
-	workspace         *int64
-	clearedworkspace  bool
-	automation        *int64
-	clearedautomation bool
-	version           *int64
-	clearedversion    bool
-	done              bool
-	oldValue          func(context.Context) (*AutomationFigure, error)
-	predicates        []predicate.AutomationFigure
+	op                                 Op
+	typ                                string
+	id                                 *int64
+	created_at                         *time.Time
+	updated_at                         *time.Time
+	step_id                            *automationstep.ID
+	sent                               *int
+	addsent                            *int
+	skipped                            *int
+	addskipped                         *int
+	skipped_suppressed                 *int
+	addskipped_suppressed              *int
+	skipped_unsubscribed_everything    *int
+	addskipped_unsubscribed_everything *int
+	skipped_unsubscribed_source        *int
+	addskipped_unsubscribed_source     *int
+	skipped_unconfirmed                *int
+	addskipped_unconfirmed             *int
+	skipped_no_destination             *int
+	addskipped_no_destination          *int
+	skipped_contact_erased             *int
+	addskipped_contact_erased          *int
+	skipped_no_local_time              *int
+	addskipped_no_local_time           *int
+	skipped_frequency_cap              *int
+	addskipped_frequency_cap           *int
+	delivered                          *int
+	adddelivered                       *int
+	bounced                            *int
+	addbounced                         *int
+	complained                         *int
+	addcomplained                      *int
+	captured                           *int
+	addcaptured                        *int
+	clearedFields                      map[string]struct{}
+	workspace                          *int64
+	clearedworkspace                   bool
+	automation                         *int64
+	clearedautomation                  bool
+	version                            *int64
+	clearedversion                     bool
+	done                               bool
+	oldValue                           func(context.Context) (*AutomationFigure, error)
+	predicates                         []predicate.AutomationFigure
 }
 
 var _ ent.Mutation = (*AutomationFigureMutation)(nil)
@@ -5157,6 +5173,454 @@ func (m *AutomationFigureMutation) ResetSkipped() {
 	m.addskipped = nil
 }
 
+// SetSkippedSuppressed sets the "skipped_suppressed" field.
+func (m *AutomationFigureMutation) SetSkippedSuppressed(i int) {
+	m.skipped_suppressed = &i
+	m.addskipped_suppressed = nil
+}
+
+// SkippedSuppressed returns the value of the "skipped_suppressed" field in the mutation.
+func (m *AutomationFigureMutation) SkippedSuppressed() (r int, exists bool) {
+	v := m.skipped_suppressed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkippedSuppressed returns the old "skipped_suppressed" field's value of the AutomationFigure entity.
+// If the AutomationFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationFigureMutation) OldSkippedSuppressed(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkippedSuppressed is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkippedSuppressed requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkippedSuppressed: %w", err)
+	}
+	return oldValue.SkippedSuppressed, nil
+}
+
+// AddSkippedSuppressed adds i to the "skipped_suppressed" field.
+func (m *AutomationFigureMutation) AddSkippedSuppressed(i int) {
+	if m.addskipped_suppressed != nil {
+		*m.addskipped_suppressed += i
+	} else {
+		m.addskipped_suppressed = &i
+	}
+}
+
+// AddedSkippedSuppressed returns the value that was added to the "skipped_suppressed" field in this mutation.
+func (m *AutomationFigureMutation) AddedSkippedSuppressed() (r int, exists bool) {
+	v := m.addskipped_suppressed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSkippedSuppressed resets all changes to the "skipped_suppressed" field.
+func (m *AutomationFigureMutation) ResetSkippedSuppressed() {
+	m.skipped_suppressed = nil
+	m.addskipped_suppressed = nil
+}
+
+// SetSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field.
+func (m *AutomationFigureMutation) SetSkippedUnsubscribedEverything(i int) {
+	m.skipped_unsubscribed_everything = &i
+	m.addskipped_unsubscribed_everything = nil
+}
+
+// SkippedUnsubscribedEverything returns the value of the "skipped_unsubscribed_everything" field in the mutation.
+func (m *AutomationFigureMutation) SkippedUnsubscribedEverything() (r int, exists bool) {
+	v := m.skipped_unsubscribed_everything
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkippedUnsubscribedEverything returns the old "skipped_unsubscribed_everything" field's value of the AutomationFigure entity.
+// If the AutomationFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationFigureMutation) OldSkippedUnsubscribedEverything(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkippedUnsubscribedEverything is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkippedUnsubscribedEverything requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkippedUnsubscribedEverything: %w", err)
+	}
+	return oldValue.SkippedUnsubscribedEverything, nil
+}
+
+// AddSkippedUnsubscribedEverything adds i to the "skipped_unsubscribed_everything" field.
+func (m *AutomationFigureMutation) AddSkippedUnsubscribedEverything(i int) {
+	if m.addskipped_unsubscribed_everything != nil {
+		*m.addskipped_unsubscribed_everything += i
+	} else {
+		m.addskipped_unsubscribed_everything = &i
+	}
+}
+
+// AddedSkippedUnsubscribedEverything returns the value that was added to the "skipped_unsubscribed_everything" field in this mutation.
+func (m *AutomationFigureMutation) AddedSkippedUnsubscribedEverything() (r int, exists bool) {
+	v := m.addskipped_unsubscribed_everything
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSkippedUnsubscribedEverything resets all changes to the "skipped_unsubscribed_everything" field.
+func (m *AutomationFigureMutation) ResetSkippedUnsubscribedEverything() {
+	m.skipped_unsubscribed_everything = nil
+	m.addskipped_unsubscribed_everything = nil
+}
+
+// SetSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field.
+func (m *AutomationFigureMutation) SetSkippedUnsubscribedSource(i int) {
+	m.skipped_unsubscribed_source = &i
+	m.addskipped_unsubscribed_source = nil
+}
+
+// SkippedUnsubscribedSource returns the value of the "skipped_unsubscribed_source" field in the mutation.
+func (m *AutomationFigureMutation) SkippedUnsubscribedSource() (r int, exists bool) {
+	v := m.skipped_unsubscribed_source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkippedUnsubscribedSource returns the old "skipped_unsubscribed_source" field's value of the AutomationFigure entity.
+// If the AutomationFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationFigureMutation) OldSkippedUnsubscribedSource(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkippedUnsubscribedSource is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkippedUnsubscribedSource requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkippedUnsubscribedSource: %w", err)
+	}
+	return oldValue.SkippedUnsubscribedSource, nil
+}
+
+// AddSkippedUnsubscribedSource adds i to the "skipped_unsubscribed_source" field.
+func (m *AutomationFigureMutation) AddSkippedUnsubscribedSource(i int) {
+	if m.addskipped_unsubscribed_source != nil {
+		*m.addskipped_unsubscribed_source += i
+	} else {
+		m.addskipped_unsubscribed_source = &i
+	}
+}
+
+// AddedSkippedUnsubscribedSource returns the value that was added to the "skipped_unsubscribed_source" field in this mutation.
+func (m *AutomationFigureMutation) AddedSkippedUnsubscribedSource() (r int, exists bool) {
+	v := m.addskipped_unsubscribed_source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSkippedUnsubscribedSource resets all changes to the "skipped_unsubscribed_source" field.
+func (m *AutomationFigureMutation) ResetSkippedUnsubscribedSource() {
+	m.skipped_unsubscribed_source = nil
+	m.addskipped_unsubscribed_source = nil
+}
+
+// SetSkippedUnconfirmed sets the "skipped_unconfirmed" field.
+func (m *AutomationFigureMutation) SetSkippedUnconfirmed(i int) {
+	m.skipped_unconfirmed = &i
+	m.addskipped_unconfirmed = nil
+}
+
+// SkippedUnconfirmed returns the value of the "skipped_unconfirmed" field in the mutation.
+func (m *AutomationFigureMutation) SkippedUnconfirmed() (r int, exists bool) {
+	v := m.skipped_unconfirmed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkippedUnconfirmed returns the old "skipped_unconfirmed" field's value of the AutomationFigure entity.
+// If the AutomationFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationFigureMutation) OldSkippedUnconfirmed(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkippedUnconfirmed is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkippedUnconfirmed requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkippedUnconfirmed: %w", err)
+	}
+	return oldValue.SkippedUnconfirmed, nil
+}
+
+// AddSkippedUnconfirmed adds i to the "skipped_unconfirmed" field.
+func (m *AutomationFigureMutation) AddSkippedUnconfirmed(i int) {
+	if m.addskipped_unconfirmed != nil {
+		*m.addskipped_unconfirmed += i
+	} else {
+		m.addskipped_unconfirmed = &i
+	}
+}
+
+// AddedSkippedUnconfirmed returns the value that was added to the "skipped_unconfirmed" field in this mutation.
+func (m *AutomationFigureMutation) AddedSkippedUnconfirmed() (r int, exists bool) {
+	v := m.addskipped_unconfirmed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSkippedUnconfirmed resets all changes to the "skipped_unconfirmed" field.
+func (m *AutomationFigureMutation) ResetSkippedUnconfirmed() {
+	m.skipped_unconfirmed = nil
+	m.addskipped_unconfirmed = nil
+}
+
+// SetSkippedNoDestination sets the "skipped_no_destination" field.
+func (m *AutomationFigureMutation) SetSkippedNoDestination(i int) {
+	m.skipped_no_destination = &i
+	m.addskipped_no_destination = nil
+}
+
+// SkippedNoDestination returns the value of the "skipped_no_destination" field in the mutation.
+func (m *AutomationFigureMutation) SkippedNoDestination() (r int, exists bool) {
+	v := m.skipped_no_destination
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkippedNoDestination returns the old "skipped_no_destination" field's value of the AutomationFigure entity.
+// If the AutomationFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationFigureMutation) OldSkippedNoDestination(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkippedNoDestination is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkippedNoDestination requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkippedNoDestination: %w", err)
+	}
+	return oldValue.SkippedNoDestination, nil
+}
+
+// AddSkippedNoDestination adds i to the "skipped_no_destination" field.
+func (m *AutomationFigureMutation) AddSkippedNoDestination(i int) {
+	if m.addskipped_no_destination != nil {
+		*m.addskipped_no_destination += i
+	} else {
+		m.addskipped_no_destination = &i
+	}
+}
+
+// AddedSkippedNoDestination returns the value that was added to the "skipped_no_destination" field in this mutation.
+func (m *AutomationFigureMutation) AddedSkippedNoDestination() (r int, exists bool) {
+	v := m.addskipped_no_destination
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSkippedNoDestination resets all changes to the "skipped_no_destination" field.
+func (m *AutomationFigureMutation) ResetSkippedNoDestination() {
+	m.skipped_no_destination = nil
+	m.addskipped_no_destination = nil
+}
+
+// SetSkippedContactErased sets the "skipped_contact_erased" field.
+func (m *AutomationFigureMutation) SetSkippedContactErased(i int) {
+	m.skipped_contact_erased = &i
+	m.addskipped_contact_erased = nil
+}
+
+// SkippedContactErased returns the value of the "skipped_contact_erased" field in the mutation.
+func (m *AutomationFigureMutation) SkippedContactErased() (r int, exists bool) {
+	v := m.skipped_contact_erased
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkippedContactErased returns the old "skipped_contact_erased" field's value of the AutomationFigure entity.
+// If the AutomationFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationFigureMutation) OldSkippedContactErased(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkippedContactErased is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkippedContactErased requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkippedContactErased: %w", err)
+	}
+	return oldValue.SkippedContactErased, nil
+}
+
+// AddSkippedContactErased adds i to the "skipped_contact_erased" field.
+func (m *AutomationFigureMutation) AddSkippedContactErased(i int) {
+	if m.addskipped_contact_erased != nil {
+		*m.addskipped_contact_erased += i
+	} else {
+		m.addskipped_contact_erased = &i
+	}
+}
+
+// AddedSkippedContactErased returns the value that was added to the "skipped_contact_erased" field in this mutation.
+func (m *AutomationFigureMutation) AddedSkippedContactErased() (r int, exists bool) {
+	v := m.addskipped_contact_erased
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSkippedContactErased resets all changes to the "skipped_contact_erased" field.
+func (m *AutomationFigureMutation) ResetSkippedContactErased() {
+	m.skipped_contact_erased = nil
+	m.addskipped_contact_erased = nil
+}
+
+// SetSkippedNoLocalTime sets the "skipped_no_local_time" field.
+func (m *AutomationFigureMutation) SetSkippedNoLocalTime(i int) {
+	m.skipped_no_local_time = &i
+	m.addskipped_no_local_time = nil
+}
+
+// SkippedNoLocalTime returns the value of the "skipped_no_local_time" field in the mutation.
+func (m *AutomationFigureMutation) SkippedNoLocalTime() (r int, exists bool) {
+	v := m.skipped_no_local_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkippedNoLocalTime returns the old "skipped_no_local_time" field's value of the AutomationFigure entity.
+// If the AutomationFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationFigureMutation) OldSkippedNoLocalTime(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkippedNoLocalTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkippedNoLocalTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkippedNoLocalTime: %w", err)
+	}
+	return oldValue.SkippedNoLocalTime, nil
+}
+
+// AddSkippedNoLocalTime adds i to the "skipped_no_local_time" field.
+func (m *AutomationFigureMutation) AddSkippedNoLocalTime(i int) {
+	if m.addskipped_no_local_time != nil {
+		*m.addskipped_no_local_time += i
+	} else {
+		m.addskipped_no_local_time = &i
+	}
+}
+
+// AddedSkippedNoLocalTime returns the value that was added to the "skipped_no_local_time" field in this mutation.
+func (m *AutomationFigureMutation) AddedSkippedNoLocalTime() (r int, exists bool) {
+	v := m.addskipped_no_local_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSkippedNoLocalTime resets all changes to the "skipped_no_local_time" field.
+func (m *AutomationFigureMutation) ResetSkippedNoLocalTime() {
+	m.skipped_no_local_time = nil
+	m.addskipped_no_local_time = nil
+}
+
+// SetSkippedFrequencyCap sets the "skipped_frequency_cap" field.
+func (m *AutomationFigureMutation) SetSkippedFrequencyCap(i int) {
+	m.skipped_frequency_cap = &i
+	m.addskipped_frequency_cap = nil
+}
+
+// SkippedFrequencyCap returns the value of the "skipped_frequency_cap" field in the mutation.
+func (m *AutomationFigureMutation) SkippedFrequencyCap() (r int, exists bool) {
+	v := m.skipped_frequency_cap
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkippedFrequencyCap returns the old "skipped_frequency_cap" field's value of the AutomationFigure entity.
+// If the AutomationFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationFigureMutation) OldSkippedFrequencyCap(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkippedFrequencyCap is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkippedFrequencyCap requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkippedFrequencyCap: %w", err)
+	}
+	return oldValue.SkippedFrequencyCap, nil
+}
+
+// AddSkippedFrequencyCap adds i to the "skipped_frequency_cap" field.
+func (m *AutomationFigureMutation) AddSkippedFrequencyCap(i int) {
+	if m.addskipped_frequency_cap != nil {
+		*m.addskipped_frequency_cap += i
+	} else {
+		m.addskipped_frequency_cap = &i
+	}
+}
+
+// AddedSkippedFrequencyCap returns the value that was added to the "skipped_frequency_cap" field in this mutation.
+func (m *AutomationFigureMutation) AddedSkippedFrequencyCap() (r int, exists bool) {
+	v := m.addskipped_frequency_cap
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSkippedFrequencyCap resets all changes to the "skipped_frequency_cap" field.
+func (m *AutomationFigureMutation) ResetSkippedFrequencyCap() {
+	m.skipped_frequency_cap = nil
+	m.addskipped_frequency_cap = nil
+}
+
 // SetDelivered sets the "delivered" field.
 func (m *AutomationFigureMutation) SetDelivered(i int) {
 	m.delivered = &i
@@ -5496,7 +5960,7 @@ func (m *AutomationFigureMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AutomationFigureMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 20)
 	if m.created_at != nil {
 		fields = append(fields, automationfigure.FieldCreatedAt)
 	}
@@ -5520,6 +5984,30 @@ func (m *AutomationFigureMutation) Fields() []string {
 	}
 	if m.skipped != nil {
 		fields = append(fields, automationfigure.FieldSkipped)
+	}
+	if m.skipped_suppressed != nil {
+		fields = append(fields, automationfigure.FieldSkippedSuppressed)
+	}
+	if m.skipped_unsubscribed_everything != nil {
+		fields = append(fields, automationfigure.FieldSkippedUnsubscribedEverything)
+	}
+	if m.skipped_unsubscribed_source != nil {
+		fields = append(fields, automationfigure.FieldSkippedUnsubscribedSource)
+	}
+	if m.skipped_unconfirmed != nil {
+		fields = append(fields, automationfigure.FieldSkippedUnconfirmed)
+	}
+	if m.skipped_no_destination != nil {
+		fields = append(fields, automationfigure.FieldSkippedNoDestination)
+	}
+	if m.skipped_contact_erased != nil {
+		fields = append(fields, automationfigure.FieldSkippedContactErased)
+	}
+	if m.skipped_no_local_time != nil {
+		fields = append(fields, automationfigure.FieldSkippedNoLocalTime)
+	}
+	if m.skipped_frequency_cap != nil {
+		fields = append(fields, automationfigure.FieldSkippedFrequencyCap)
 	}
 	if m.delivered != nil {
 		fields = append(fields, automationfigure.FieldDelivered)
@@ -5557,6 +6045,22 @@ func (m *AutomationFigureMutation) Field(name string) (ent.Value, bool) {
 		return m.Sent()
 	case automationfigure.FieldSkipped:
 		return m.Skipped()
+	case automationfigure.FieldSkippedSuppressed:
+		return m.SkippedSuppressed()
+	case automationfigure.FieldSkippedUnsubscribedEverything:
+		return m.SkippedUnsubscribedEverything()
+	case automationfigure.FieldSkippedUnsubscribedSource:
+		return m.SkippedUnsubscribedSource()
+	case automationfigure.FieldSkippedUnconfirmed:
+		return m.SkippedUnconfirmed()
+	case automationfigure.FieldSkippedNoDestination:
+		return m.SkippedNoDestination()
+	case automationfigure.FieldSkippedContactErased:
+		return m.SkippedContactErased()
+	case automationfigure.FieldSkippedNoLocalTime:
+		return m.SkippedNoLocalTime()
+	case automationfigure.FieldSkippedFrequencyCap:
+		return m.SkippedFrequencyCap()
 	case automationfigure.FieldDelivered:
 		return m.Delivered()
 	case automationfigure.FieldBounced:
@@ -5590,6 +6094,22 @@ func (m *AutomationFigureMutation) OldField(ctx context.Context, name string) (e
 		return m.OldSent(ctx)
 	case automationfigure.FieldSkipped:
 		return m.OldSkipped(ctx)
+	case automationfigure.FieldSkippedSuppressed:
+		return m.OldSkippedSuppressed(ctx)
+	case automationfigure.FieldSkippedUnsubscribedEverything:
+		return m.OldSkippedUnsubscribedEverything(ctx)
+	case automationfigure.FieldSkippedUnsubscribedSource:
+		return m.OldSkippedUnsubscribedSource(ctx)
+	case automationfigure.FieldSkippedUnconfirmed:
+		return m.OldSkippedUnconfirmed(ctx)
+	case automationfigure.FieldSkippedNoDestination:
+		return m.OldSkippedNoDestination(ctx)
+	case automationfigure.FieldSkippedContactErased:
+		return m.OldSkippedContactErased(ctx)
+	case automationfigure.FieldSkippedNoLocalTime:
+		return m.OldSkippedNoLocalTime(ctx)
+	case automationfigure.FieldSkippedFrequencyCap:
+		return m.OldSkippedFrequencyCap(ctx)
 	case automationfigure.FieldDelivered:
 		return m.OldDelivered(ctx)
 	case automationfigure.FieldBounced:
@@ -5663,6 +6183,62 @@ func (m *AutomationFigureMutation) SetField(name string, value ent.Value) error 
 		}
 		m.SetSkipped(v)
 		return nil
+	case automationfigure.FieldSkippedSuppressed:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkippedSuppressed(v)
+		return nil
+	case automationfigure.FieldSkippedUnsubscribedEverything:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkippedUnsubscribedEverything(v)
+		return nil
+	case automationfigure.FieldSkippedUnsubscribedSource:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkippedUnsubscribedSource(v)
+		return nil
+	case automationfigure.FieldSkippedUnconfirmed:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkippedUnconfirmed(v)
+		return nil
+	case automationfigure.FieldSkippedNoDestination:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkippedNoDestination(v)
+		return nil
+	case automationfigure.FieldSkippedContactErased:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkippedContactErased(v)
+		return nil
+	case automationfigure.FieldSkippedNoLocalTime:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkippedNoLocalTime(v)
+		return nil
+	case automationfigure.FieldSkippedFrequencyCap:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkippedFrequencyCap(v)
+		return nil
 	case automationfigure.FieldDelivered:
 		v, ok := value.(int)
 		if !ok {
@@ -5705,6 +6281,30 @@ func (m *AutomationFigureMutation) AddedFields() []string {
 	if m.addskipped != nil {
 		fields = append(fields, automationfigure.FieldSkipped)
 	}
+	if m.addskipped_suppressed != nil {
+		fields = append(fields, automationfigure.FieldSkippedSuppressed)
+	}
+	if m.addskipped_unsubscribed_everything != nil {
+		fields = append(fields, automationfigure.FieldSkippedUnsubscribedEverything)
+	}
+	if m.addskipped_unsubscribed_source != nil {
+		fields = append(fields, automationfigure.FieldSkippedUnsubscribedSource)
+	}
+	if m.addskipped_unconfirmed != nil {
+		fields = append(fields, automationfigure.FieldSkippedUnconfirmed)
+	}
+	if m.addskipped_no_destination != nil {
+		fields = append(fields, automationfigure.FieldSkippedNoDestination)
+	}
+	if m.addskipped_contact_erased != nil {
+		fields = append(fields, automationfigure.FieldSkippedContactErased)
+	}
+	if m.addskipped_no_local_time != nil {
+		fields = append(fields, automationfigure.FieldSkippedNoLocalTime)
+	}
+	if m.addskipped_frequency_cap != nil {
+		fields = append(fields, automationfigure.FieldSkippedFrequencyCap)
+	}
 	if m.adddelivered != nil {
 		fields = append(fields, automationfigure.FieldDelivered)
 	}
@@ -5729,6 +6329,22 @@ func (m *AutomationFigureMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedSent()
 	case automationfigure.FieldSkipped:
 		return m.AddedSkipped()
+	case automationfigure.FieldSkippedSuppressed:
+		return m.AddedSkippedSuppressed()
+	case automationfigure.FieldSkippedUnsubscribedEverything:
+		return m.AddedSkippedUnsubscribedEverything()
+	case automationfigure.FieldSkippedUnsubscribedSource:
+		return m.AddedSkippedUnsubscribedSource()
+	case automationfigure.FieldSkippedUnconfirmed:
+		return m.AddedSkippedUnconfirmed()
+	case automationfigure.FieldSkippedNoDestination:
+		return m.AddedSkippedNoDestination()
+	case automationfigure.FieldSkippedContactErased:
+		return m.AddedSkippedContactErased()
+	case automationfigure.FieldSkippedNoLocalTime:
+		return m.AddedSkippedNoLocalTime()
+	case automationfigure.FieldSkippedFrequencyCap:
+		return m.AddedSkippedFrequencyCap()
 	case automationfigure.FieldDelivered:
 		return m.AddedDelivered()
 	case automationfigure.FieldBounced:
@@ -5759,6 +6375,62 @@ func (m *AutomationFigureMutation) AddField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddSkipped(v)
+		return nil
+	case automationfigure.FieldSkippedSuppressed:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSkippedSuppressed(v)
+		return nil
+	case automationfigure.FieldSkippedUnsubscribedEverything:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSkippedUnsubscribedEverything(v)
+		return nil
+	case automationfigure.FieldSkippedUnsubscribedSource:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSkippedUnsubscribedSource(v)
+		return nil
+	case automationfigure.FieldSkippedUnconfirmed:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSkippedUnconfirmed(v)
+		return nil
+	case automationfigure.FieldSkippedNoDestination:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSkippedNoDestination(v)
+		return nil
+	case automationfigure.FieldSkippedContactErased:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSkippedContactErased(v)
+		return nil
+	case automationfigure.FieldSkippedNoLocalTime:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSkippedNoLocalTime(v)
+		return nil
+	case automationfigure.FieldSkippedFrequencyCap:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSkippedFrequencyCap(v)
 		return nil
 	case automationfigure.FieldDelivered:
 		v, ok := value.(int)
@@ -5838,6 +6510,30 @@ func (m *AutomationFigureMutation) ResetField(name string) error {
 		return nil
 	case automationfigure.FieldSkipped:
 		m.ResetSkipped()
+		return nil
+	case automationfigure.FieldSkippedSuppressed:
+		m.ResetSkippedSuppressed()
+		return nil
+	case automationfigure.FieldSkippedUnsubscribedEverything:
+		m.ResetSkippedUnsubscribedEverything()
+		return nil
+	case automationfigure.FieldSkippedUnsubscribedSource:
+		m.ResetSkippedUnsubscribedSource()
+		return nil
+	case automationfigure.FieldSkippedUnconfirmed:
+		m.ResetSkippedUnconfirmed()
+		return nil
+	case automationfigure.FieldSkippedNoDestination:
+		m.ResetSkippedNoDestination()
+		return nil
+	case automationfigure.FieldSkippedContactErased:
+		m.ResetSkippedContactErased()
+		return nil
+	case automationfigure.FieldSkippedNoLocalTime:
+		m.ResetSkippedNoLocalTime()
+		return nil
+	case automationfigure.FieldSkippedFrequencyCap:
+		m.ResetSkippedFrequencyCap()
 		return nil
 	case automationfigure.FieldDelivered:
 		m.ResetDelivered()
@@ -17519,50 +18215,66 @@ func (m *BroadcastMutation) ResetEdge(name string) error {
 // BroadcastFigureMutation represents an operation that mutates the BroadcastFigure nodes in the graph.
 type BroadcastFigureMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *int64
-	created_at       *time.Time
-	updated_at       *time.Time
-	recipients       *int
-	addrecipients    *int
-	unsubscribed     *int
-	addunsubscribed  *int
-	sent             *int
-	addsent          *int
-	skipped          *int
-	addskipped       *int
-	failed           *int
-	addfailed        *int
-	pending          *int
-	addpending       *int
-	cancelled        *int
-	addcancelled     *int
-	delivered        *int
-	adddelivered     *int
-	undelivered      *int
-	addundelivered   *int
-	bounced          *int
-	addbounced       *int
-	complained       *int
-	addcomplained    *int
-	opened           *int
-	addopened        *int
-	clicked          *int
-	addclicked       *int
-	captured         *int
-	addcaptured      *int
-	untracked        *int
-	adduntracked     *int
-	pruned_at        *time.Time
-	clearedFields    map[string]struct{}
-	workspace        *int64
-	clearedworkspace bool
-	broadcast        *int64
-	clearedbroadcast bool
-	done             bool
-	oldValue         func(context.Context) (*BroadcastFigure, error)
-	predicates       []predicate.BroadcastFigure
+	op                                 Op
+	typ                                string
+	id                                 *int64
+	created_at                         *time.Time
+	updated_at                         *time.Time
+	recipients                         *int
+	addrecipients                      *int
+	unsubscribed                       *int
+	addunsubscribed                    *int
+	sent                               *int
+	addsent                            *int
+	skipped                            *int
+	addskipped                         *int
+	failed                             *int
+	addfailed                          *int
+	pending                            *int
+	addpending                         *int
+	cancelled                          *int
+	addcancelled                       *int
+	delivered                          *int
+	adddelivered                       *int
+	undelivered                        *int
+	addundelivered                     *int
+	bounced                            *int
+	addbounced                         *int
+	complained                         *int
+	addcomplained                      *int
+	opened                             *int
+	addopened                          *int
+	clicked                            *int
+	addclicked                         *int
+	captured                           *int
+	addcaptured                        *int
+	untracked                          *int
+	adduntracked                       *int
+	skipped_suppressed                 *int
+	addskipped_suppressed              *int
+	skipped_unsubscribed_everything    *int
+	addskipped_unsubscribed_everything *int
+	skipped_unsubscribed_source        *int
+	addskipped_unsubscribed_source     *int
+	skipped_unconfirmed                *int
+	addskipped_unconfirmed             *int
+	skipped_no_destination             *int
+	addskipped_no_destination          *int
+	skipped_contact_erased             *int
+	addskipped_contact_erased          *int
+	skipped_no_local_time              *int
+	addskipped_no_local_time           *int
+	skipped_frequency_cap              *int
+	addskipped_frequency_cap           *int
+	pruned_at                          *time.Time
+	clearedFields                      map[string]struct{}
+	workspace                          *int64
+	clearedworkspace                   bool
+	broadcast                          *int64
+	clearedbroadcast                   bool
+	done                               bool
+	oldValue                           func(context.Context) (*BroadcastFigure, error)
+	predicates                         []predicate.BroadcastFigure
 }
 
 var _ ent.Mutation = (*BroadcastFigureMutation)(nil)
@@ -18653,6 +19365,454 @@ func (m *BroadcastFigureMutation) ResetUntracked() {
 	m.adduntracked = nil
 }
 
+// SetSkippedSuppressed sets the "skipped_suppressed" field.
+func (m *BroadcastFigureMutation) SetSkippedSuppressed(i int) {
+	m.skipped_suppressed = &i
+	m.addskipped_suppressed = nil
+}
+
+// SkippedSuppressed returns the value of the "skipped_suppressed" field in the mutation.
+func (m *BroadcastFigureMutation) SkippedSuppressed() (r int, exists bool) {
+	v := m.skipped_suppressed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkippedSuppressed returns the old "skipped_suppressed" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldSkippedSuppressed(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkippedSuppressed is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkippedSuppressed requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkippedSuppressed: %w", err)
+	}
+	return oldValue.SkippedSuppressed, nil
+}
+
+// AddSkippedSuppressed adds i to the "skipped_suppressed" field.
+func (m *BroadcastFigureMutation) AddSkippedSuppressed(i int) {
+	if m.addskipped_suppressed != nil {
+		*m.addskipped_suppressed += i
+	} else {
+		m.addskipped_suppressed = &i
+	}
+}
+
+// AddedSkippedSuppressed returns the value that was added to the "skipped_suppressed" field in this mutation.
+func (m *BroadcastFigureMutation) AddedSkippedSuppressed() (r int, exists bool) {
+	v := m.addskipped_suppressed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSkippedSuppressed resets all changes to the "skipped_suppressed" field.
+func (m *BroadcastFigureMutation) ResetSkippedSuppressed() {
+	m.skipped_suppressed = nil
+	m.addskipped_suppressed = nil
+}
+
+// SetSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field.
+func (m *BroadcastFigureMutation) SetSkippedUnsubscribedEverything(i int) {
+	m.skipped_unsubscribed_everything = &i
+	m.addskipped_unsubscribed_everything = nil
+}
+
+// SkippedUnsubscribedEverything returns the value of the "skipped_unsubscribed_everything" field in the mutation.
+func (m *BroadcastFigureMutation) SkippedUnsubscribedEverything() (r int, exists bool) {
+	v := m.skipped_unsubscribed_everything
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkippedUnsubscribedEverything returns the old "skipped_unsubscribed_everything" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldSkippedUnsubscribedEverything(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkippedUnsubscribedEverything is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkippedUnsubscribedEverything requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkippedUnsubscribedEverything: %w", err)
+	}
+	return oldValue.SkippedUnsubscribedEverything, nil
+}
+
+// AddSkippedUnsubscribedEverything adds i to the "skipped_unsubscribed_everything" field.
+func (m *BroadcastFigureMutation) AddSkippedUnsubscribedEverything(i int) {
+	if m.addskipped_unsubscribed_everything != nil {
+		*m.addskipped_unsubscribed_everything += i
+	} else {
+		m.addskipped_unsubscribed_everything = &i
+	}
+}
+
+// AddedSkippedUnsubscribedEverything returns the value that was added to the "skipped_unsubscribed_everything" field in this mutation.
+func (m *BroadcastFigureMutation) AddedSkippedUnsubscribedEverything() (r int, exists bool) {
+	v := m.addskipped_unsubscribed_everything
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSkippedUnsubscribedEverything resets all changes to the "skipped_unsubscribed_everything" field.
+func (m *BroadcastFigureMutation) ResetSkippedUnsubscribedEverything() {
+	m.skipped_unsubscribed_everything = nil
+	m.addskipped_unsubscribed_everything = nil
+}
+
+// SetSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field.
+func (m *BroadcastFigureMutation) SetSkippedUnsubscribedSource(i int) {
+	m.skipped_unsubscribed_source = &i
+	m.addskipped_unsubscribed_source = nil
+}
+
+// SkippedUnsubscribedSource returns the value of the "skipped_unsubscribed_source" field in the mutation.
+func (m *BroadcastFigureMutation) SkippedUnsubscribedSource() (r int, exists bool) {
+	v := m.skipped_unsubscribed_source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkippedUnsubscribedSource returns the old "skipped_unsubscribed_source" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldSkippedUnsubscribedSource(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkippedUnsubscribedSource is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkippedUnsubscribedSource requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkippedUnsubscribedSource: %w", err)
+	}
+	return oldValue.SkippedUnsubscribedSource, nil
+}
+
+// AddSkippedUnsubscribedSource adds i to the "skipped_unsubscribed_source" field.
+func (m *BroadcastFigureMutation) AddSkippedUnsubscribedSource(i int) {
+	if m.addskipped_unsubscribed_source != nil {
+		*m.addskipped_unsubscribed_source += i
+	} else {
+		m.addskipped_unsubscribed_source = &i
+	}
+}
+
+// AddedSkippedUnsubscribedSource returns the value that was added to the "skipped_unsubscribed_source" field in this mutation.
+func (m *BroadcastFigureMutation) AddedSkippedUnsubscribedSource() (r int, exists bool) {
+	v := m.addskipped_unsubscribed_source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSkippedUnsubscribedSource resets all changes to the "skipped_unsubscribed_source" field.
+func (m *BroadcastFigureMutation) ResetSkippedUnsubscribedSource() {
+	m.skipped_unsubscribed_source = nil
+	m.addskipped_unsubscribed_source = nil
+}
+
+// SetSkippedUnconfirmed sets the "skipped_unconfirmed" field.
+func (m *BroadcastFigureMutation) SetSkippedUnconfirmed(i int) {
+	m.skipped_unconfirmed = &i
+	m.addskipped_unconfirmed = nil
+}
+
+// SkippedUnconfirmed returns the value of the "skipped_unconfirmed" field in the mutation.
+func (m *BroadcastFigureMutation) SkippedUnconfirmed() (r int, exists bool) {
+	v := m.skipped_unconfirmed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkippedUnconfirmed returns the old "skipped_unconfirmed" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldSkippedUnconfirmed(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkippedUnconfirmed is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkippedUnconfirmed requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkippedUnconfirmed: %w", err)
+	}
+	return oldValue.SkippedUnconfirmed, nil
+}
+
+// AddSkippedUnconfirmed adds i to the "skipped_unconfirmed" field.
+func (m *BroadcastFigureMutation) AddSkippedUnconfirmed(i int) {
+	if m.addskipped_unconfirmed != nil {
+		*m.addskipped_unconfirmed += i
+	} else {
+		m.addskipped_unconfirmed = &i
+	}
+}
+
+// AddedSkippedUnconfirmed returns the value that was added to the "skipped_unconfirmed" field in this mutation.
+func (m *BroadcastFigureMutation) AddedSkippedUnconfirmed() (r int, exists bool) {
+	v := m.addskipped_unconfirmed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSkippedUnconfirmed resets all changes to the "skipped_unconfirmed" field.
+func (m *BroadcastFigureMutation) ResetSkippedUnconfirmed() {
+	m.skipped_unconfirmed = nil
+	m.addskipped_unconfirmed = nil
+}
+
+// SetSkippedNoDestination sets the "skipped_no_destination" field.
+func (m *BroadcastFigureMutation) SetSkippedNoDestination(i int) {
+	m.skipped_no_destination = &i
+	m.addskipped_no_destination = nil
+}
+
+// SkippedNoDestination returns the value of the "skipped_no_destination" field in the mutation.
+func (m *BroadcastFigureMutation) SkippedNoDestination() (r int, exists bool) {
+	v := m.skipped_no_destination
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkippedNoDestination returns the old "skipped_no_destination" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldSkippedNoDestination(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkippedNoDestination is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkippedNoDestination requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkippedNoDestination: %w", err)
+	}
+	return oldValue.SkippedNoDestination, nil
+}
+
+// AddSkippedNoDestination adds i to the "skipped_no_destination" field.
+func (m *BroadcastFigureMutation) AddSkippedNoDestination(i int) {
+	if m.addskipped_no_destination != nil {
+		*m.addskipped_no_destination += i
+	} else {
+		m.addskipped_no_destination = &i
+	}
+}
+
+// AddedSkippedNoDestination returns the value that was added to the "skipped_no_destination" field in this mutation.
+func (m *BroadcastFigureMutation) AddedSkippedNoDestination() (r int, exists bool) {
+	v := m.addskipped_no_destination
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSkippedNoDestination resets all changes to the "skipped_no_destination" field.
+func (m *BroadcastFigureMutation) ResetSkippedNoDestination() {
+	m.skipped_no_destination = nil
+	m.addskipped_no_destination = nil
+}
+
+// SetSkippedContactErased sets the "skipped_contact_erased" field.
+func (m *BroadcastFigureMutation) SetSkippedContactErased(i int) {
+	m.skipped_contact_erased = &i
+	m.addskipped_contact_erased = nil
+}
+
+// SkippedContactErased returns the value of the "skipped_contact_erased" field in the mutation.
+func (m *BroadcastFigureMutation) SkippedContactErased() (r int, exists bool) {
+	v := m.skipped_contact_erased
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkippedContactErased returns the old "skipped_contact_erased" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldSkippedContactErased(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkippedContactErased is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkippedContactErased requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkippedContactErased: %w", err)
+	}
+	return oldValue.SkippedContactErased, nil
+}
+
+// AddSkippedContactErased adds i to the "skipped_contact_erased" field.
+func (m *BroadcastFigureMutation) AddSkippedContactErased(i int) {
+	if m.addskipped_contact_erased != nil {
+		*m.addskipped_contact_erased += i
+	} else {
+		m.addskipped_contact_erased = &i
+	}
+}
+
+// AddedSkippedContactErased returns the value that was added to the "skipped_contact_erased" field in this mutation.
+func (m *BroadcastFigureMutation) AddedSkippedContactErased() (r int, exists bool) {
+	v := m.addskipped_contact_erased
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSkippedContactErased resets all changes to the "skipped_contact_erased" field.
+func (m *BroadcastFigureMutation) ResetSkippedContactErased() {
+	m.skipped_contact_erased = nil
+	m.addskipped_contact_erased = nil
+}
+
+// SetSkippedNoLocalTime sets the "skipped_no_local_time" field.
+func (m *BroadcastFigureMutation) SetSkippedNoLocalTime(i int) {
+	m.skipped_no_local_time = &i
+	m.addskipped_no_local_time = nil
+}
+
+// SkippedNoLocalTime returns the value of the "skipped_no_local_time" field in the mutation.
+func (m *BroadcastFigureMutation) SkippedNoLocalTime() (r int, exists bool) {
+	v := m.skipped_no_local_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkippedNoLocalTime returns the old "skipped_no_local_time" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldSkippedNoLocalTime(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkippedNoLocalTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkippedNoLocalTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkippedNoLocalTime: %w", err)
+	}
+	return oldValue.SkippedNoLocalTime, nil
+}
+
+// AddSkippedNoLocalTime adds i to the "skipped_no_local_time" field.
+func (m *BroadcastFigureMutation) AddSkippedNoLocalTime(i int) {
+	if m.addskipped_no_local_time != nil {
+		*m.addskipped_no_local_time += i
+	} else {
+		m.addskipped_no_local_time = &i
+	}
+}
+
+// AddedSkippedNoLocalTime returns the value that was added to the "skipped_no_local_time" field in this mutation.
+func (m *BroadcastFigureMutation) AddedSkippedNoLocalTime() (r int, exists bool) {
+	v := m.addskipped_no_local_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSkippedNoLocalTime resets all changes to the "skipped_no_local_time" field.
+func (m *BroadcastFigureMutation) ResetSkippedNoLocalTime() {
+	m.skipped_no_local_time = nil
+	m.addskipped_no_local_time = nil
+}
+
+// SetSkippedFrequencyCap sets the "skipped_frequency_cap" field.
+func (m *BroadcastFigureMutation) SetSkippedFrequencyCap(i int) {
+	m.skipped_frequency_cap = &i
+	m.addskipped_frequency_cap = nil
+}
+
+// SkippedFrequencyCap returns the value of the "skipped_frequency_cap" field in the mutation.
+func (m *BroadcastFigureMutation) SkippedFrequencyCap() (r int, exists bool) {
+	v := m.skipped_frequency_cap
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkippedFrequencyCap returns the old "skipped_frequency_cap" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldSkippedFrequencyCap(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkippedFrequencyCap is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkippedFrequencyCap requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkippedFrequencyCap: %w", err)
+	}
+	return oldValue.SkippedFrequencyCap, nil
+}
+
+// AddSkippedFrequencyCap adds i to the "skipped_frequency_cap" field.
+func (m *BroadcastFigureMutation) AddSkippedFrequencyCap(i int) {
+	if m.addskipped_frequency_cap != nil {
+		*m.addskipped_frequency_cap += i
+	} else {
+		m.addskipped_frequency_cap = &i
+	}
+}
+
+// AddedSkippedFrequencyCap returns the value that was added to the "skipped_frequency_cap" field in this mutation.
+func (m *BroadcastFigureMutation) AddedSkippedFrequencyCap() (r int, exists bool) {
+	v := m.addskipped_frequency_cap
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSkippedFrequencyCap resets all changes to the "skipped_frequency_cap" field.
+func (m *BroadcastFigureMutation) ResetSkippedFrequencyCap() {
+	m.skipped_frequency_cap = nil
+	m.addskipped_frequency_cap = nil
+}
+
 // SetPrunedAt sets the "pruned_at" field.
 func (m *BroadcastFigureMutation) SetPrunedAt(t time.Time) {
 	m.pruned_at = &t
@@ -18790,7 +19950,7 @@ func (m *BroadcastFigureMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BroadcastFigureMutation) Fields() []string {
-	fields := make([]string, 0, 20)
+	fields := make([]string, 0, 28)
 	if m.created_at != nil {
 		fields = append(fields, broadcastfigure.FieldCreatedAt)
 	}
@@ -18848,6 +20008,30 @@ func (m *BroadcastFigureMutation) Fields() []string {
 	if m.untracked != nil {
 		fields = append(fields, broadcastfigure.FieldUntracked)
 	}
+	if m.skipped_suppressed != nil {
+		fields = append(fields, broadcastfigure.FieldSkippedSuppressed)
+	}
+	if m.skipped_unsubscribed_everything != nil {
+		fields = append(fields, broadcastfigure.FieldSkippedUnsubscribedEverything)
+	}
+	if m.skipped_unsubscribed_source != nil {
+		fields = append(fields, broadcastfigure.FieldSkippedUnsubscribedSource)
+	}
+	if m.skipped_unconfirmed != nil {
+		fields = append(fields, broadcastfigure.FieldSkippedUnconfirmed)
+	}
+	if m.skipped_no_destination != nil {
+		fields = append(fields, broadcastfigure.FieldSkippedNoDestination)
+	}
+	if m.skipped_contact_erased != nil {
+		fields = append(fields, broadcastfigure.FieldSkippedContactErased)
+	}
+	if m.skipped_no_local_time != nil {
+		fields = append(fields, broadcastfigure.FieldSkippedNoLocalTime)
+	}
+	if m.skipped_frequency_cap != nil {
+		fields = append(fields, broadcastfigure.FieldSkippedFrequencyCap)
+	}
 	if m.pruned_at != nil {
 		fields = append(fields, broadcastfigure.FieldPrunedAt)
 	}
@@ -18897,6 +20081,22 @@ func (m *BroadcastFigureMutation) Field(name string) (ent.Value, bool) {
 		return m.Captured()
 	case broadcastfigure.FieldUntracked:
 		return m.Untracked()
+	case broadcastfigure.FieldSkippedSuppressed:
+		return m.SkippedSuppressed()
+	case broadcastfigure.FieldSkippedUnsubscribedEverything:
+		return m.SkippedUnsubscribedEverything()
+	case broadcastfigure.FieldSkippedUnsubscribedSource:
+		return m.SkippedUnsubscribedSource()
+	case broadcastfigure.FieldSkippedUnconfirmed:
+		return m.SkippedUnconfirmed()
+	case broadcastfigure.FieldSkippedNoDestination:
+		return m.SkippedNoDestination()
+	case broadcastfigure.FieldSkippedContactErased:
+		return m.SkippedContactErased()
+	case broadcastfigure.FieldSkippedNoLocalTime:
+		return m.SkippedNoLocalTime()
+	case broadcastfigure.FieldSkippedFrequencyCap:
+		return m.SkippedFrequencyCap()
 	case broadcastfigure.FieldPrunedAt:
 		return m.PrunedAt()
 	}
@@ -18946,6 +20146,22 @@ func (m *BroadcastFigureMutation) OldField(ctx context.Context, name string) (en
 		return m.OldCaptured(ctx)
 	case broadcastfigure.FieldUntracked:
 		return m.OldUntracked(ctx)
+	case broadcastfigure.FieldSkippedSuppressed:
+		return m.OldSkippedSuppressed(ctx)
+	case broadcastfigure.FieldSkippedUnsubscribedEverything:
+		return m.OldSkippedUnsubscribedEverything(ctx)
+	case broadcastfigure.FieldSkippedUnsubscribedSource:
+		return m.OldSkippedUnsubscribedSource(ctx)
+	case broadcastfigure.FieldSkippedUnconfirmed:
+		return m.OldSkippedUnconfirmed(ctx)
+	case broadcastfigure.FieldSkippedNoDestination:
+		return m.OldSkippedNoDestination(ctx)
+	case broadcastfigure.FieldSkippedContactErased:
+		return m.OldSkippedContactErased(ctx)
+	case broadcastfigure.FieldSkippedNoLocalTime:
+		return m.OldSkippedNoLocalTime(ctx)
+	case broadcastfigure.FieldSkippedFrequencyCap:
+		return m.OldSkippedFrequencyCap(ctx)
 	case broadcastfigure.FieldPrunedAt:
 		return m.OldPrunedAt(ctx)
 	}
@@ -19090,6 +20306,62 @@ func (m *BroadcastFigureMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetUntracked(v)
 		return nil
+	case broadcastfigure.FieldSkippedSuppressed:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkippedSuppressed(v)
+		return nil
+	case broadcastfigure.FieldSkippedUnsubscribedEverything:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkippedUnsubscribedEverything(v)
+		return nil
+	case broadcastfigure.FieldSkippedUnsubscribedSource:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkippedUnsubscribedSource(v)
+		return nil
+	case broadcastfigure.FieldSkippedUnconfirmed:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkippedUnconfirmed(v)
+		return nil
+	case broadcastfigure.FieldSkippedNoDestination:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkippedNoDestination(v)
+		return nil
+	case broadcastfigure.FieldSkippedContactErased:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkippedContactErased(v)
+		return nil
+	case broadcastfigure.FieldSkippedNoLocalTime:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkippedNoLocalTime(v)
+		return nil
+	case broadcastfigure.FieldSkippedFrequencyCap:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkippedFrequencyCap(v)
+		return nil
 	case broadcastfigure.FieldPrunedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -19150,6 +20422,30 @@ func (m *BroadcastFigureMutation) AddedFields() []string {
 	if m.adduntracked != nil {
 		fields = append(fields, broadcastfigure.FieldUntracked)
 	}
+	if m.addskipped_suppressed != nil {
+		fields = append(fields, broadcastfigure.FieldSkippedSuppressed)
+	}
+	if m.addskipped_unsubscribed_everything != nil {
+		fields = append(fields, broadcastfigure.FieldSkippedUnsubscribedEverything)
+	}
+	if m.addskipped_unsubscribed_source != nil {
+		fields = append(fields, broadcastfigure.FieldSkippedUnsubscribedSource)
+	}
+	if m.addskipped_unconfirmed != nil {
+		fields = append(fields, broadcastfigure.FieldSkippedUnconfirmed)
+	}
+	if m.addskipped_no_destination != nil {
+		fields = append(fields, broadcastfigure.FieldSkippedNoDestination)
+	}
+	if m.addskipped_contact_erased != nil {
+		fields = append(fields, broadcastfigure.FieldSkippedContactErased)
+	}
+	if m.addskipped_no_local_time != nil {
+		fields = append(fields, broadcastfigure.FieldSkippedNoLocalTime)
+	}
+	if m.addskipped_frequency_cap != nil {
+		fields = append(fields, broadcastfigure.FieldSkippedFrequencyCap)
+	}
 	return fields
 }
 
@@ -19188,6 +20484,22 @@ func (m *BroadcastFigureMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedCaptured()
 	case broadcastfigure.FieldUntracked:
 		return m.AddedUntracked()
+	case broadcastfigure.FieldSkippedSuppressed:
+		return m.AddedSkippedSuppressed()
+	case broadcastfigure.FieldSkippedUnsubscribedEverything:
+		return m.AddedSkippedUnsubscribedEverything()
+	case broadcastfigure.FieldSkippedUnsubscribedSource:
+		return m.AddedSkippedUnsubscribedSource()
+	case broadcastfigure.FieldSkippedUnconfirmed:
+		return m.AddedSkippedUnconfirmed()
+	case broadcastfigure.FieldSkippedNoDestination:
+		return m.AddedSkippedNoDestination()
+	case broadcastfigure.FieldSkippedContactErased:
+		return m.AddedSkippedContactErased()
+	case broadcastfigure.FieldSkippedNoLocalTime:
+		return m.AddedSkippedNoLocalTime()
+	case broadcastfigure.FieldSkippedFrequencyCap:
+		return m.AddedSkippedFrequencyCap()
 	}
 	return nil, false
 }
@@ -19302,6 +20614,62 @@ func (m *BroadcastFigureMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddUntracked(v)
 		return nil
+	case broadcastfigure.FieldSkippedSuppressed:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSkippedSuppressed(v)
+		return nil
+	case broadcastfigure.FieldSkippedUnsubscribedEverything:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSkippedUnsubscribedEverything(v)
+		return nil
+	case broadcastfigure.FieldSkippedUnsubscribedSource:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSkippedUnsubscribedSource(v)
+		return nil
+	case broadcastfigure.FieldSkippedUnconfirmed:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSkippedUnconfirmed(v)
+		return nil
+	case broadcastfigure.FieldSkippedNoDestination:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSkippedNoDestination(v)
+		return nil
+	case broadcastfigure.FieldSkippedContactErased:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSkippedContactErased(v)
+		return nil
+	case broadcastfigure.FieldSkippedNoLocalTime:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSkippedNoLocalTime(v)
+		return nil
+	case broadcastfigure.FieldSkippedFrequencyCap:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSkippedFrequencyCap(v)
+		return nil
 	}
 	return fmt.Errorf("unknown BroadcastFigure numeric field %s", name)
 }
@@ -19394,6 +20762,30 @@ func (m *BroadcastFigureMutation) ResetField(name string) error {
 		return nil
 	case broadcastfigure.FieldUntracked:
 		m.ResetUntracked()
+		return nil
+	case broadcastfigure.FieldSkippedSuppressed:
+		m.ResetSkippedSuppressed()
+		return nil
+	case broadcastfigure.FieldSkippedUnsubscribedEverything:
+		m.ResetSkippedUnsubscribedEverything()
+		return nil
+	case broadcastfigure.FieldSkippedUnsubscribedSource:
+		m.ResetSkippedUnsubscribedSource()
+		return nil
+	case broadcastfigure.FieldSkippedUnconfirmed:
+		m.ResetSkippedUnconfirmed()
+		return nil
+	case broadcastfigure.FieldSkippedNoDestination:
+		m.ResetSkippedNoDestination()
+		return nil
+	case broadcastfigure.FieldSkippedContactErased:
+		m.ResetSkippedContactErased()
+		return nil
+	case broadcastfigure.FieldSkippedNoLocalTime:
+		m.ResetSkippedNoLocalTime()
+		return nil
+	case broadcastfigure.FieldSkippedFrequencyCap:
+		m.ResetSkippedFrequencyCap()
 		return nil
 	case broadcastfigure.FieldPrunedAt:
 		m.ResetPrunedAt()

@@ -8,6 +8,7 @@
     step_id: '2a17428c-014b-5b9e-866e-a08363b2780d',
     sent: 3,
     skipped: 1,
+    skipped_suppressed: 1,
     delivered: 2,
     bounced: 1,
     complained: 0,

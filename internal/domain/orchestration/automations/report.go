@@ -21,7 +21,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
@@ -75,18 +77,24 @@ type PathFigures struct {
 }
 
 // StepFigures is what one send Step sent and skipped over every version of the Automation that had
-// it: a skip moves the Enrollment on (ADR 0081), so the report shows each Step's skips.
+// it: a skip moves the Enrollment on (ADR 0081), so the report shows each Step's skips, by their
+// Skipped reason, and the active Enrollments whose send there waits now, by the cause of its latest
+// Deferral (ADR 0178). Both name every reason and cause of the closed lists.
 type StepFigures struct {
-	StepID        automationstep.ID
-	Sent, Skipped int
+	StepID          automationstep.ID
+	Sent, Skipped   int
+	SkippedByReason []skipreason.Count
+	WaitingByCause  []deferralcause.Count
 }
 
-// VersionStepFigures is what one send Step of one version sent and skipped; Version is the
-// version's number.
+// VersionStepFigures is StepFigures for one send Step of one version; Version is the version's
+// number.
 type VersionStepFigures struct {
-	Version       int
-	StepID        automationstep.ID
-	Sent, Skipped int
+	Version         int
+	StepID          automationstep.ID
+	Sent, Skipped   int
+	SkippedByReason []skipreason.Count
+	WaitingByCause  []deferralcause.Count
 }
 
 // ReportOf counts, leaving out machine engagement (ADR 0053), the `email.opened` Events and the click Events
@@ -134,6 +142,9 @@ func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64, p Report
 	}
 	sent, err := sentByStep(ctx, s, id)
 	if err != nil {
+		return Report{}, err
+	}
+	if err := waitingByStep(ctx, s, id, sent); err != nil {
 		return Report{}, err
 	}
 	report := Report{
@@ -228,11 +239,44 @@ type versionStep struct {
 	stepID    automationstep.ID
 }
 
-// sentSkipped is what a send Step sent and skipped.
-type sentSkipped struct{ sent, skipped int }
+// sentSkipped is what a send Step sent and skipped, its skips by reason, and the active Enrollments
+// whose send waits there now by cause.
+type sentSkipped struct {
+	sent, skipped int
+	skippedBy     map[skipreason.Reason]int
+	waiting       map[deferralcause.Cause]int
+}
+
+// add adds o's counts to c's.
+func (c *sentSkipped) add(o *sentSkipped) {
+	c.sent += o.sent
+	c.skipped += o.skipped
+	for r, n := range o.skippedBy {
+		c.skip(r, n)
+	}
+	for cause, n := range o.waiting {
+		c.wait(cause, n)
+	}
+}
+
+// skip counts n sends Skipped for the reason r.
+func (c *sentSkipped) skip(r skipreason.Reason, n int) {
+	if c.skippedBy == nil {
+		c.skippedBy = map[skipreason.Reason]int{}
+	}
+	c.skippedBy[r] += n
+}
+
+// wait counts n Enrollments waiting for the cause.
+func (c *sentSkipped) wait(cause deferralcause.Cause, n int) {
+	if c.waiting == nil {
+		c.waiting = map[deferralcause.Cause]int{}
+	}
+	c.waiting[cause] += n
+}
 
 // addPruned adds to the report what the Automation's pruned messages counted (ADR 0143): their
-// delivery stamps and, into sent, their sent and skipped by version and Step id.
+// delivery stamps and, into sent, their sent and skipped, by reason too, by version and Step id.
 func addPruned(ctx context.Context, s *ent.Scoped, id int64, report *Report, sent map[versionStep]*sentSkipped) error {
 	pruned, err := s.AutomationFigure().Query().Where(automationfigure.AutomationID(id)).All(ctx)
 	if err != nil {
@@ -244,8 +288,16 @@ func addPruned(ctx context.Context, s *ent.Scoped, id int64, report *Report, sen
 		report.Complained += f.Complained
 		report.Captured += f.Captured
 		c := countsOf(sent, versionStep{versionID: f.VersionID, stepID: f.StepID})
-		c.sent += f.Sent
-		c.skipped += f.Skipped
+		c.add(&sentSkipped{sent: f.Sent, skipped: f.Skipped, skippedBy: map[skipreason.Reason]int{
+			skipreason.Suppressed:             f.SkippedSuppressed,
+			skipreason.UnsubscribedEverything: f.SkippedUnsubscribedEverything,
+			skipreason.UnsubscribedSource:     f.SkippedUnsubscribedSource,
+			skipreason.Unconfirmed:            f.SkippedUnconfirmed,
+			skipreason.NoDestination:          f.SkippedNoDestination,
+			skipreason.ContactErased:          f.SkippedContactErased,
+			skipreason.NoLocalTime:            f.SkippedNoLocalTime,
+			skipreason.FrequencyCap:           f.SkippedFrequencyCap,
+		}})
 	}
 	return nil
 }
@@ -261,12 +313,13 @@ func countsOf(sent map[versionStep]*sentSkipped, k versionStep) *sentSkipped {
 }
 
 // sentByStep counts the Automation's sent and skipped Outbound messages by the version and the
-// Step id that sent them, on every Channel.
+// Step id that sent them, on every Channel, the skipped ones by their Skipped reason too.
 func sentByStep(ctx context.Context, s *ent.Scoped, id int64) (map[versionStep]*sentSkipped, error) {
 	var rows []struct {
 		VersionID int64                  `json:"automation_version_id"`
 		StepID    automationstep.ID      `json:"automation_step_id"`
 		Status    outboundmessage.Status `json:"status"`
+		Reason    *skipreason.Reason     `json:"skipped_reason"`
 		Count     int                    `json:"count"`
 	}
 	err := s.OutboundMessage().Query().
@@ -274,7 +327,7 @@ func sentByStep(ctx context.Context, s *ent.Scoped, id int64) (map[versionStep]*
 			outboundmessage.AutomationID(id),
 			outboundmessage.StatusIn(outboundmessage.StatusSent, outboundmessage.StatusSkipped),
 		).
-		GroupBy(outboundmessage.FieldAutomationVersionID, outboundmessage.FieldAutomationStepID, outboundmessage.FieldStatus).
+		GroupBy(outboundmessage.FieldAutomationVersionID, outboundmessage.FieldAutomationStepID, outboundmessage.FieldStatus, outboundmessage.FieldSkippedReason).
 		Aggregate(ent.Count()).
 		Scan(ctx, &rows)
 	if err != nil {
@@ -284,12 +337,43 @@ func sentByStep(ctx context.Context, s *ent.Scoped, id int64) (map[versionStep]*
 	for _, r := range rows {
 		c := countsOf(sent, versionStep{versionID: r.VersionID, stepID: r.StepID})
 		if r.Status == outboundmessage.StatusSent {
-			c.sent = r.Count
-		} else {
-			c.skipped = r.Count
+			c.sent += r.Count
+			continue
 		}
+		c.skipped += r.Count
+		// The outcome check sets a reason on every skipped message.
+		c.skip(lo.FromPtr(r.Reason), r.Count)
 	}
 	return sent, nil
+}
+
+// waitingByStep counts into sent the Automation's active Enrollments whose send waits now (ADR
+// 0178), by the version and the Step id they stand on and the cause of the latest Deferral there:
+// the move off the Step and the end of the Enrollment clear it.
+func waitingByStep(ctx context.Context, s *ent.Scoped, id int64, sent map[versionStep]*sentSkipped) error {
+	var rows []struct {
+		VersionID int64               `json:"version_id"`
+		StepID    automationstep.ID   `json:"current_step_id"`
+		Cause     deferralcause.Cause `json:"deferral_cause"`
+		Count     int                 `json:"count"`
+	}
+	err := s.AutomationRun().Query().
+		Where(
+			automationrun.AutomationID(id),
+			automationrun.StatusEQ(automationrun.StatusActive),
+			automationrun.DeferralCauseNotNil(),
+			automationrun.CurrentStepIDNotNil(),
+		).
+		GroupBy(automationrun.FieldVersionID, automationrun.FieldCurrentStepID, automationrun.FieldDeferralCause).
+		Aggregate(ent.Count()).
+		Scan(ctx, &rows)
+	if err != nil {
+		return err
+	}
+	for _, r := range rows {
+		countsOf(sent, versionStep{versionID: r.VersionID, stepID: r.StepID}).wait(r.Cause, r.Count)
+	}
+	return nil
 }
 
 // stepFiguresOf sets the report's Steps and VersionSteps from what each version's send Steps
@@ -314,7 +398,10 @@ func stepFiguresOf(ctx context.Context, s *ent.Scoped, id int64, sent map[versio
 		var figures []VersionStepFigures
 		for k, c := range sent {
 			if k.versionID == v.ID {
-				figures = append(figures, VersionStepFigures{Version: v.Version, StepID: k.stepID, Sent: c.sent, Skipped: c.skipped})
+				figures = append(figures, VersionStepFigures{
+					Version: v.Version, StepID: k.stepID, Sent: c.sent, Skipped: c.skipped,
+					SkippedByReason: skipreason.Counts(c.skippedBy), WaitingByCause: deferralcause.Counts(c.waiting),
+				})
 			}
 		}
 		slices.SortFunc(figures, func(a, b VersionStepFigures) int {
@@ -323,20 +410,27 @@ func stepFiguresOf(ctx context.Context, s *ent.Scoped, id int64, sent map[versio
 		byVersion = append(byVersion, figures)
 	}
 	report.VersionSteps = append([]VersionStepFigures{}, slices.Concat(byVersion...)...)
-	report.Steps = []StepFigures{}
-	sums := map[automationstep.ID]int{}
+	versionOf := lo.SliceToMap(versions, func(v *ent.AutomationVersion) (int, int64) { return v.Version, v.ID })
+	var order []automationstep.ID
+	sums := map[automationstep.ID]*sentSkipped{}
 	for _, figures := range slices.Backward(byVersion) {
 		for _, f := range figures {
-			i, ok := sums[f.StepID]
+			sum, ok := sums[f.StepID]
 			if !ok {
-				i = len(report.Steps)
-				sums[f.StepID] = i
-				report.Steps = append(report.Steps, StepFigures{StepID: f.StepID})
+				sum = &sentSkipped{}
+				sums[f.StepID] = sum
+				order = append(order, f.StepID)
 			}
-			report.Steps[i].Sent += f.Sent
-			report.Steps[i].Skipped += f.Skipped
+			sum.add(sent[versionStep{versionID: versionOf[f.Version], stepID: f.StepID}])
 		}
 	}
+	report.Steps = lo.Map(order, func(stepID automationstep.ID, _ int) StepFigures {
+		sum := sums[stepID]
+		return StepFigures{
+			StepID: stepID, Sent: sum.sent, Skipped: sum.skipped,
+			SkippedByReason: skipreason.Counts(sum.skippedBy), WaitingByCause: deferralcause.Counts(sum.waiting),
+		}
+	})
 	return nil
 }
 

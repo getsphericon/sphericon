@@ -5285,6 +5285,150 @@ func (x *AutomationFigureScopedCreate) SetNillableSkipped(v *int) *AutomationFig
 
 const RoleOf_AutomationFigureScopedCreate_SetNillableSkipped = RoleStep
 
+// SetSkippedSuppressed sets the "skipped_suppressed" field.
+func (x *AutomationFigureScopedCreate) SetSkippedSuppressed(v int) *AutomationFigureScopedCreate {
+	x.set = append(x.set, func(b *AutomationFigureCreate) { b.SetSkippedSuppressed(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedCreate_SetSkippedSuppressed = RoleStep
+
+// SetNillableSkippedSuppressed sets the "skipped_suppressed" field if the given value is not nil.
+func (x *AutomationFigureScopedCreate) SetNillableSkippedSuppressed(v *int) *AutomationFigureScopedCreate {
+	if v != nil {
+		x.SetSkippedSuppressed(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedCreate_SetNillableSkippedSuppressed = RoleStep
+
+// SetSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field.
+func (x *AutomationFigureScopedCreate) SetSkippedUnsubscribedEverything(v int) *AutomationFigureScopedCreate {
+	x.set = append(x.set, func(b *AutomationFigureCreate) { b.SetSkippedUnsubscribedEverything(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedCreate_SetSkippedUnsubscribedEverything = RoleStep
+
+// SetNillableSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field if the given value is not nil.
+func (x *AutomationFigureScopedCreate) SetNillableSkippedUnsubscribedEverything(v *int) *AutomationFigureScopedCreate {
+	if v != nil {
+		x.SetSkippedUnsubscribedEverything(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedCreate_SetNillableSkippedUnsubscribedEverything = RoleStep
+
+// SetSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field.
+func (x *AutomationFigureScopedCreate) SetSkippedUnsubscribedSource(v int) *AutomationFigureScopedCreate {
+	x.set = append(x.set, func(b *AutomationFigureCreate) { b.SetSkippedUnsubscribedSource(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedCreate_SetSkippedUnsubscribedSource = RoleStep
+
+// SetNillableSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field if the given value is not nil.
+func (x *AutomationFigureScopedCreate) SetNillableSkippedUnsubscribedSource(v *int) *AutomationFigureScopedCreate {
+	if v != nil {
+		x.SetSkippedUnsubscribedSource(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedCreate_SetNillableSkippedUnsubscribedSource = RoleStep
+
+// SetSkippedUnconfirmed sets the "skipped_unconfirmed" field.
+func (x *AutomationFigureScopedCreate) SetSkippedUnconfirmed(v int) *AutomationFigureScopedCreate {
+	x.set = append(x.set, func(b *AutomationFigureCreate) { b.SetSkippedUnconfirmed(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedCreate_SetSkippedUnconfirmed = RoleStep
+
+// SetNillableSkippedUnconfirmed sets the "skipped_unconfirmed" field if the given value is not nil.
+func (x *AutomationFigureScopedCreate) SetNillableSkippedUnconfirmed(v *int) *AutomationFigureScopedCreate {
+	if v != nil {
+		x.SetSkippedUnconfirmed(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedCreate_SetNillableSkippedUnconfirmed = RoleStep
+
+// SetSkippedNoDestination sets the "skipped_no_destination" field.
+func (x *AutomationFigureScopedCreate) SetSkippedNoDestination(v int) *AutomationFigureScopedCreate {
+	x.set = append(x.set, func(b *AutomationFigureCreate) { b.SetSkippedNoDestination(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedCreate_SetSkippedNoDestination = RoleStep
+
+// SetNillableSkippedNoDestination sets the "skipped_no_destination" field if the given value is not nil.
+func (x *AutomationFigureScopedCreate) SetNillableSkippedNoDestination(v *int) *AutomationFigureScopedCreate {
+	if v != nil {
+		x.SetSkippedNoDestination(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedCreate_SetNillableSkippedNoDestination = RoleStep
+
+// SetSkippedContactErased sets the "skipped_contact_erased" field.
+func (x *AutomationFigureScopedCreate) SetSkippedContactErased(v int) *AutomationFigureScopedCreate {
+	x.set = append(x.set, func(b *AutomationFigureCreate) { b.SetSkippedContactErased(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedCreate_SetSkippedContactErased = RoleStep
+
+// SetNillableSkippedContactErased sets the "skipped_contact_erased" field if the given value is not nil.
+func (x *AutomationFigureScopedCreate) SetNillableSkippedContactErased(v *int) *AutomationFigureScopedCreate {
+	if v != nil {
+		x.SetSkippedContactErased(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedCreate_SetNillableSkippedContactErased = RoleStep
+
+// SetSkippedNoLocalTime sets the "skipped_no_local_time" field.
+func (x *AutomationFigureScopedCreate) SetSkippedNoLocalTime(v int) *AutomationFigureScopedCreate {
+	x.set = append(x.set, func(b *AutomationFigureCreate) { b.SetSkippedNoLocalTime(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedCreate_SetSkippedNoLocalTime = RoleStep
+
+// SetNillableSkippedNoLocalTime sets the "skipped_no_local_time" field if the given value is not nil.
+func (x *AutomationFigureScopedCreate) SetNillableSkippedNoLocalTime(v *int) *AutomationFigureScopedCreate {
+	if v != nil {
+		x.SetSkippedNoLocalTime(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedCreate_SetNillableSkippedNoLocalTime = RoleStep
+
+// SetSkippedFrequencyCap sets the "skipped_frequency_cap" field.
+func (x *AutomationFigureScopedCreate) SetSkippedFrequencyCap(v int) *AutomationFigureScopedCreate {
+	x.set = append(x.set, func(b *AutomationFigureCreate) { b.SetSkippedFrequencyCap(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedCreate_SetSkippedFrequencyCap = RoleStep
+
+// SetNillableSkippedFrequencyCap sets the "skipped_frequency_cap" field if the given value is not nil.
+func (x *AutomationFigureScopedCreate) SetNillableSkippedFrequencyCap(v *int) *AutomationFigureScopedCreate {
+	if v != nil {
+		x.SetSkippedFrequencyCap(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedCreate_SetNillableSkippedFrequencyCap = RoleStep
+
 // SetDelivered sets the "delivered" field.
 func (x *AutomationFigureScopedCreate) SetDelivered(v int) *AutomationFigureScopedCreate {
 	x.set = append(x.set, func(b *AutomationFigureCreate) { b.SetDelivered(v) })
@@ -5549,6 +5693,198 @@ func (u *AutomationFigureScopedUpsert) UpdateSkipped() *AutomationFigureScopedUp
 }
 
 const RoleOf_AutomationFigureScopedUpsert_UpdateSkipped = RoleStep
+
+// SetSkippedSuppressed sets the "skipped_suppressed" field.
+func (u *AutomationFigureScopedUpsert) SetSkippedSuppressed(v int) *AutomationFigureScopedUpsert {
+	u.u.Set(automationfigure.FieldSkippedSuppressed, v)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_SetSkippedSuppressed = RoleStep
+
+// AddSkippedSuppressed adds v to the "skipped_suppressed" field.
+func (u *AutomationFigureScopedUpsert) AddSkippedSuppressed(v int) *AutomationFigureScopedUpsert {
+	u.u.Add(automationfigure.FieldSkippedSuppressed, v)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_AddSkippedSuppressed = RoleStep
+
+// UpdateSkippedSuppressed sets the "skipped_suppressed" field to the value that was provided on create.
+func (u *AutomationFigureScopedUpsert) UpdateSkippedSuppressed() *AutomationFigureScopedUpsert {
+	u.u.SetExcluded(automationfigure.FieldSkippedSuppressed)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_UpdateSkippedSuppressed = RoleStep
+
+// SetSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field.
+func (u *AutomationFigureScopedUpsert) SetSkippedUnsubscribedEverything(v int) *AutomationFigureScopedUpsert {
+	u.u.Set(automationfigure.FieldSkippedUnsubscribedEverything, v)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_SetSkippedUnsubscribedEverything = RoleStep
+
+// AddSkippedUnsubscribedEverything adds v to the "skipped_unsubscribed_everything" field.
+func (u *AutomationFigureScopedUpsert) AddSkippedUnsubscribedEverything(v int) *AutomationFigureScopedUpsert {
+	u.u.Add(automationfigure.FieldSkippedUnsubscribedEverything, v)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_AddSkippedUnsubscribedEverything = RoleStep
+
+// UpdateSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field to the value that was provided on create.
+func (u *AutomationFigureScopedUpsert) UpdateSkippedUnsubscribedEverything() *AutomationFigureScopedUpsert {
+	u.u.SetExcluded(automationfigure.FieldSkippedUnsubscribedEverything)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_UpdateSkippedUnsubscribedEverything = RoleStep
+
+// SetSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field.
+func (u *AutomationFigureScopedUpsert) SetSkippedUnsubscribedSource(v int) *AutomationFigureScopedUpsert {
+	u.u.Set(automationfigure.FieldSkippedUnsubscribedSource, v)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_SetSkippedUnsubscribedSource = RoleStep
+
+// AddSkippedUnsubscribedSource adds v to the "skipped_unsubscribed_source" field.
+func (u *AutomationFigureScopedUpsert) AddSkippedUnsubscribedSource(v int) *AutomationFigureScopedUpsert {
+	u.u.Add(automationfigure.FieldSkippedUnsubscribedSource, v)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_AddSkippedUnsubscribedSource = RoleStep
+
+// UpdateSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field to the value that was provided on create.
+func (u *AutomationFigureScopedUpsert) UpdateSkippedUnsubscribedSource() *AutomationFigureScopedUpsert {
+	u.u.SetExcluded(automationfigure.FieldSkippedUnsubscribedSource)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_UpdateSkippedUnsubscribedSource = RoleStep
+
+// SetSkippedUnconfirmed sets the "skipped_unconfirmed" field.
+func (u *AutomationFigureScopedUpsert) SetSkippedUnconfirmed(v int) *AutomationFigureScopedUpsert {
+	u.u.Set(automationfigure.FieldSkippedUnconfirmed, v)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_SetSkippedUnconfirmed = RoleStep
+
+// AddSkippedUnconfirmed adds v to the "skipped_unconfirmed" field.
+func (u *AutomationFigureScopedUpsert) AddSkippedUnconfirmed(v int) *AutomationFigureScopedUpsert {
+	u.u.Add(automationfigure.FieldSkippedUnconfirmed, v)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_AddSkippedUnconfirmed = RoleStep
+
+// UpdateSkippedUnconfirmed sets the "skipped_unconfirmed" field to the value that was provided on create.
+func (u *AutomationFigureScopedUpsert) UpdateSkippedUnconfirmed() *AutomationFigureScopedUpsert {
+	u.u.SetExcluded(automationfigure.FieldSkippedUnconfirmed)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_UpdateSkippedUnconfirmed = RoleStep
+
+// SetSkippedNoDestination sets the "skipped_no_destination" field.
+func (u *AutomationFigureScopedUpsert) SetSkippedNoDestination(v int) *AutomationFigureScopedUpsert {
+	u.u.Set(automationfigure.FieldSkippedNoDestination, v)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_SetSkippedNoDestination = RoleStep
+
+// AddSkippedNoDestination adds v to the "skipped_no_destination" field.
+func (u *AutomationFigureScopedUpsert) AddSkippedNoDestination(v int) *AutomationFigureScopedUpsert {
+	u.u.Add(automationfigure.FieldSkippedNoDestination, v)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_AddSkippedNoDestination = RoleStep
+
+// UpdateSkippedNoDestination sets the "skipped_no_destination" field to the value that was provided on create.
+func (u *AutomationFigureScopedUpsert) UpdateSkippedNoDestination() *AutomationFigureScopedUpsert {
+	u.u.SetExcluded(automationfigure.FieldSkippedNoDestination)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_UpdateSkippedNoDestination = RoleStep
+
+// SetSkippedContactErased sets the "skipped_contact_erased" field.
+func (u *AutomationFigureScopedUpsert) SetSkippedContactErased(v int) *AutomationFigureScopedUpsert {
+	u.u.Set(automationfigure.FieldSkippedContactErased, v)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_SetSkippedContactErased = RoleStep
+
+// AddSkippedContactErased adds v to the "skipped_contact_erased" field.
+func (u *AutomationFigureScopedUpsert) AddSkippedContactErased(v int) *AutomationFigureScopedUpsert {
+	u.u.Add(automationfigure.FieldSkippedContactErased, v)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_AddSkippedContactErased = RoleStep
+
+// UpdateSkippedContactErased sets the "skipped_contact_erased" field to the value that was provided on create.
+func (u *AutomationFigureScopedUpsert) UpdateSkippedContactErased() *AutomationFigureScopedUpsert {
+	u.u.SetExcluded(automationfigure.FieldSkippedContactErased)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_UpdateSkippedContactErased = RoleStep
+
+// SetSkippedNoLocalTime sets the "skipped_no_local_time" field.
+func (u *AutomationFigureScopedUpsert) SetSkippedNoLocalTime(v int) *AutomationFigureScopedUpsert {
+	u.u.Set(automationfigure.FieldSkippedNoLocalTime, v)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_SetSkippedNoLocalTime = RoleStep
+
+// AddSkippedNoLocalTime adds v to the "skipped_no_local_time" field.
+func (u *AutomationFigureScopedUpsert) AddSkippedNoLocalTime(v int) *AutomationFigureScopedUpsert {
+	u.u.Add(automationfigure.FieldSkippedNoLocalTime, v)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_AddSkippedNoLocalTime = RoleStep
+
+// UpdateSkippedNoLocalTime sets the "skipped_no_local_time" field to the value that was provided on create.
+func (u *AutomationFigureScopedUpsert) UpdateSkippedNoLocalTime() *AutomationFigureScopedUpsert {
+	u.u.SetExcluded(automationfigure.FieldSkippedNoLocalTime)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_UpdateSkippedNoLocalTime = RoleStep
+
+// SetSkippedFrequencyCap sets the "skipped_frequency_cap" field.
+func (u *AutomationFigureScopedUpsert) SetSkippedFrequencyCap(v int) *AutomationFigureScopedUpsert {
+	u.u.Set(automationfigure.FieldSkippedFrequencyCap, v)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_SetSkippedFrequencyCap = RoleStep
+
+// AddSkippedFrequencyCap adds v to the "skipped_frequency_cap" field.
+func (u *AutomationFigureScopedUpsert) AddSkippedFrequencyCap(v int) *AutomationFigureScopedUpsert {
+	u.u.Add(automationfigure.FieldSkippedFrequencyCap, v)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_AddSkippedFrequencyCap = RoleStep
+
+// UpdateSkippedFrequencyCap sets the "skipped_frequency_cap" field to the value that was provided on create.
+func (u *AutomationFigureScopedUpsert) UpdateSkippedFrequencyCap() *AutomationFigureScopedUpsert {
+	u.u.SetExcluded(automationfigure.FieldSkippedFrequencyCap)
+	return u
+}
+
+const RoleOf_AutomationFigureScopedUpsert_UpdateSkippedFrequencyCap = RoleStep
 
 // SetDelivered sets the "delivered" field.
 func (u *AutomationFigureScopedUpsert) SetDelivered(v int) *AutomationFigureScopedUpsert {
@@ -5905,6 +6241,214 @@ func (x *AutomationFigureScopedUpdateOne) AddSkipped(v int) *AutomationFigureSco
 
 const RoleOf_AutomationFigureScopedUpdateOne_AddSkipped = RoleStep
 
+// SetSkippedSuppressed sets the "skipped_suppressed" field.
+func (x *AutomationFigureScopedUpdateOne) SetSkippedSuppressed(v int) *AutomationFigureScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationFigureUpdateOne) { b.SetSkippedSuppressed(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_SetSkippedSuppressed = RoleStep
+
+// SetNillableSkippedSuppressed sets the "skipped_suppressed" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdateOne) SetNillableSkippedSuppressed(v *int) *AutomationFigureScopedUpdateOne {
+	if v != nil {
+		x.SetSkippedSuppressed(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_SetNillableSkippedSuppressed = RoleStep
+
+// AddSkippedSuppressed adds value to the "skipped_suppressed" field.
+func (x *AutomationFigureScopedUpdateOne) AddSkippedSuppressed(v int) *AutomationFigureScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationFigureUpdateOne) { b.AddSkippedSuppressed(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_AddSkippedSuppressed = RoleStep
+
+// SetSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field.
+func (x *AutomationFigureScopedUpdateOne) SetSkippedUnsubscribedEverything(v int) *AutomationFigureScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationFigureUpdateOne) { b.SetSkippedUnsubscribedEverything(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_SetSkippedUnsubscribedEverything = RoleStep
+
+// SetNillableSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdateOne) SetNillableSkippedUnsubscribedEverything(v *int) *AutomationFigureScopedUpdateOne {
+	if v != nil {
+		x.SetSkippedUnsubscribedEverything(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_SetNillableSkippedUnsubscribedEverything = RoleStep
+
+// AddSkippedUnsubscribedEverything adds value to the "skipped_unsubscribed_everything" field.
+func (x *AutomationFigureScopedUpdateOne) AddSkippedUnsubscribedEverything(v int) *AutomationFigureScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationFigureUpdateOne) { b.AddSkippedUnsubscribedEverything(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_AddSkippedUnsubscribedEverything = RoleStep
+
+// SetSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field.
+func (x *AutomationFigureScopedUpdateOne) SetSkippedUnsubscribedSource(v int) *AutomationFigureScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationFigureUpdateOne) { b.SetSkippedUnsubscribedSource(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_SetSkippedUnsubscribedSource = RoleStep
+
+// SetNillableSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdateOne) SetNillableSkippedUnsubscribedSource(v *int) *AutomationFigureScopedUpdateOne {
+	if v != nil {
+		x.SetSkippedUnsubscribedSource(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_SetNillableSkippedUnsubscribedSource = RoleStep
+
+// AddSkippedUnsubscribedSource adds value to the "skipped_unsubscribed_source" field.
+func (x *AutomationFigureScopedUpdateOne) AddSkippedUnsubscribedSource(v int) *AutomationFigureScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationFigureUpdateOne) { b.AddSkippedUnsubscribedSource(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_AddSkippedUnsubscribedSource = RoleStep
+
+// SetSkippedUnconfirmed sets the "skipped_unconfirmed" field.
+func (x *AutomationFigureScopedUpdateOne) SetSkippedUnconfirmed(v int) *AutomationFigureScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationFigureUpdateOne) { b.SetSkippedUnconfirmed(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_SetSkippedUnconfirmed = RoleStep
+
+// SetNillableSkippedUnconfirmed sets the "skipped_unconfirmed" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdateOne) SetNillableSkippedUnconfirmed(v *int) *AutomationFigureScopedUpdateOne {
+	if v != nil {
+		x.SetSkippedUnconfirmed(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_SetNillableSkippedUnconfirmed = RoleStep
+
+// AddSkippedUnconfirmed adds value to the "skipped_unconfirmed" field.
+func (x *AutomationFigureScopedUpdateOne) AddSkippedUnconfirmed(v int) *AutomationFigureScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationFigureUpdateOne) { b.AddSkippedUnconfirmed(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_AddSkippedUnconfirmed = RoleStep
+
+// SetSkippedNoDestination sets the "skipped_no_destination" field.
+func (x *AutomationFigureScopedUpdateOne) SetSkippedNoDestination(v int) *AutomationFigureScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationFigureUpdateOne) { b.SetSkippedNoDestination(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_SetSkippedNoDestination = RoleStep
+
+// SetNillableSkippedNoDestination sets the "skipped_no_destination" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdateOne) SetNillableSkippedNoDestination(v *int) *AutomationFigureScopedUpdateOne {
+	if v != nil {
+		x.SetSkippedNoDestination(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_SetNillableSkippedNoDestination = RoleStep
+
+// AddSkippedNoDestination adds value to the "skipped_no_destination" field.
+func (x *AutomationFigureScopedUpdateOne) AddSkippedNoDestination(v int) *AutomationFigureScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationFigureUpdateOne) { b.AddSkippedNoDestination(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_AddSkippedNoDestination = RoleStep
+
+// SetSkippedContactErased sets the "skipped_contact_erased" field.
+func (x *AutomationFigureScopedUpdateOne) SetSkippedContactErased(v int) *AutomationFigureScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationFigureUpdateOne) { b.SetSkippedContactErased(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_SetSkippedContactErased = RoleStep
+
+// SetNillableSkippedContactErased sets the "skipped_contact_erased" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdateOne) SetNillableSkippedContactErased(v *int) *AutomationFigureScopedUpdateOne {
+	if v != nil {
+		x.SetSkippedContactErased(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_SetNillableSkippedContactErased = RoleStep
+
+// AddSkippedContactErased adds value to the "skipped_contact_erased" field.
+func (x *AutomationFigureScopedUpdateOne) AddSkippedContactErased(v int) *AutomationFigureScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationFigureUpdateOne) { b.AddSkippedContactErased(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_AddSkippedContactErased = RoleStep
+
+// SetSkippedNoLocalTime sets the "skipped_no_local_time" field.
+func (x *AutomationFigureScopedUpdateOne) SetSkippedNoLocalTime(v int) *AutomationFigureScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationFigureUpdateOne) { b.SetSkippedNoLocalTime(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_SetSkippedNoLocalTime = RoleStep
+
+// SetNillableSkippedNoLocalTime sets the "skipped_no_local_time" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdateOne) SetNillableSkippedNoLocalTime(v *int) *AutomationFigureScopedUpdateOne {
+	if v != nil {
+		x.SetSkippedNoLocalTime(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_SetNillableSkippedNoLocalTime = RoleStep
+
+// AddSkippedNoLocalTime adds value to the "skipped_no_local_time" field.
+func (x *AutomationFigureScopedUpdateOne) AddSkippedNoLocalTime(v int) *AutomationFigureScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationFigureUpdateOne) { b.AddSkippedNoLocalTime(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_AddSkippedNoLocalTime = RoleStep
+
+// SetSkippedFrequencyCap sets the "skipped_frequency_cap" field.
+func (x *AutomationFigureScopedUpdateOne) SetSkippedFrequencyCap(v int) *AutomationFigureScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationFigureUpdateOne) { b.SetSkippedFrequencyCap(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_SetSkippedFrequencyCap = RoleStep
+
+// SetNillableSkippedFrequencyCap sets the "skipped_frequency_cap" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdateOne) SetNillableSkippedFrequencyCap(v *int) *AutomationFigureScopedUpdateOne {
+	if v != nil {
+		x.SetSkippedFrequencyCap(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_SetNillableSkippedFrequencyCap = RoleStep
+
+// AddSkippedFrequencyCap adds value to the "skipped_frequency_cap" field.
+func (x *AutomationFigureScopedUpdateOne) AddSkippedFrequencyCap(v int) *AutomationFigureScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationFigureUpdateOne) { b.AddSkippedFrequencyCap(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdateOne_AddSkippedFrequencyCap = RoleStep
+
 // SetDelivered sets the "delivered" field.
 func (x *AutomationFigureScopedUpdateOne) SetDelivered(v int) *AutomationFigureScopedUpdateOne {
 	x.set = append(x.set, func(b *AutomationFigureUpdateOne) { b.SetDelivered(v) })
@@ -6151,6 +6695,214 @@ func (x *AutomationFigureScopedUpdate) AddSkipped(v int) *AutomationFigureScoped
 }
 
 const RoleOf_AutomationFigureScopedUpdate_AddSkipped = RoleStep
+
+// SetSkippedSuppressed sets the "skipped_suppressed" field.
+func (x *AutomationFigureScopedUpdate) SetSkippedSuppressed(v int) *AutomationFigureScopedUpdate {
+	x.set = append(x.set, func(b *AutomationFigureUpdate) { b.SetSkippedSuppressed(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_SetSkippedSuppressed = RoleStep
+
+// SetNillableSkippedSuppressed sets the "skipped_suppressed" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdate) SetNillableSkippedSuppressed(v *int) *AutomationFigureScopedUpdate {
+	if v != nil {
+		x.SetSkippedSuppressed(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_SetNillableSkippedSuppressed = RoleStep
+
+// AddSkippedSuppressed adds value to the "skipped_suppressed" field.
+func (x *AutomationFigureScopedUpdate) AddSkippedSuppressed(v int) *AutomationFigureScopedUpdate {
+	x.set = append(x.set, func(b *AutomationFigureUpdate) { b.AddSkippedSuppressed(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_AddSkippedSuppressed = RoleStep
+
+// SetSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field.
+func (x *AutomationFigureScopedUpdate) SetSkippedUnsubscribedEverything(v int) *AutomationFigureScopedUpdate {
+	x.set = append(x.set, func(b *AutomationFigureUpdate) { b.SetSkippedUnsubscribedEverything(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_SetSkippedUnsubscribedEverything = RoleStep
+
+// SetNillableSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdate) SetNillableSkippedUnsubscribedEverything(v *int) *AutomationFigureScopedUpdate {
+	if v != nil {
+		x.SetSkippedUnsubscribedEverything(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_SetNillableSkippedUnsubscribedEverything = RoleStep
+
+// AddSkippedUnsubscribedEverything adds value to the "skipped_unsubscribed_everything" field.
+func (x *AutomationFigureScopedUpdate) AddSkippedUnsubscribedEverything(v int) *AutomationFigureScopedUpdate {
+	x.set = append(x.set, func(b *AutomationFigureUpdate) { b.AddSkippedUnsubscribedEverything(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_AddSkippedUnsubscribedEverything = RoleStep
+
+// SetSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field.
+func (x *AutomationFigureScopedUpdate) SetSkippedUnsubscribedSource(v int) *AutomationFigureScopedUpdate {
+	x.set = append(x.set, func(b *AutomationFigureUpdate) { b.SetSkippedUnsubscribedSource(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_SetSkippedUnsubscribedSource = RoleStep
+
+// SetNillableSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdate) SetNillableSkippedUnsubscribedSource(v *int) *AutomationFigureScopedUpdate {
+	if v != nil {
+		x.SetSkippedUnsubscribedSource(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_SetNillableSkippedUnsubscribedSource = RoleStep
+
+// AddSkippedUnsubscribedSource adds value to the "skipped_unsubscribed_source" field.
+func (x *AutomationFigureScopedUpdate) AddSkippedUnsubscribedSource(v int) *AutomationFigureScopedUpdate {
+	x.set = append(x.set, func(b *AutomationFigureUpdate) { b.AddSkippedUnsubscribedSource(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_AddSkippedUnsubscribedSource = RoleStep
+
+// SetSkippedUnconfirmed sets the "skipped_unconfirmed" field.
+func (x *AutomationFigureScopedUpdate) SetSkippedUnconfirmed(v int) *AutomationFigureScopedUpdate {
+	x.set = append(x.set, func(b *AutomationFigureUpdate) { b.SetSkippedUnconfirmed(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_SetSkippedUnconfirmed = RoleStep
+
+// SetNillableSkippedUnconfirmed sets the "skipped_unconfirmed" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdate) SetNillableSkippedUnconfirmed(v *int) *AutomationFigureScopedUpdate {
+	if v != nil {
+		x.SetSkippedUnconfirmed(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_SetNillableSkippedUnconfirmed = RoleStep
+
+// AddSkippedUnconfirmed adds value to the "skipped_unconfirmed" field.
+func (x *AutomationFigureScopedUpdate) AddSkippedUnconfirmed(v int) *AutomationFigureScopedUpdate {
+	x.set = append(x.set, func(b *AutomationFigureUpdate) { b.AddSkippedUnconfirmed(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_AddSkippedUnconfirmed = RoleStep
+
+// SetSkippedNoDestination sets the "skipped_no_destination" field.
+func (x *AutomationFigureScopedUpdate) SetSkippedNoDestination(v int) *AutomationFigureScopedUpdate {
+	x.set = append(x.set, func(b *AutomationFigureUpdate) { b.SetSkippedNoDestination(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_SetSkippedNoDestination = RoleStep
+
+// SetNillableSkippedNoDestination sets the "skipped_no_destination" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdate) SetNillableSkippedNoDestination(v *int) *AutomationFigureScopedUpdate {
+	if v != nil {
+		x.SetSkippedNoDestination(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_SetNillableSkippedNoDestination = RoleStep
+
+// AddSkippedNoDestination adds value to the "skipped_no_destination" field.
+func (x *AutomationFigureScopedUpdate) AddSkippedNoDestination(v int) *AutomationFigureScopedUpdate {
+	x.set = append(x.set, func(b *AutomationFigureUpdate) { b.AddSkippedNoDestination(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_AddSkippedNoDestination = RoleStep
+
+// SetSkippedContactErased sets the "skipped_contact_erased" field.
+func (x *AutomationFigureScopedUpdate) SetSkippedContactErased(v int) *AutomationFigureScopedUpdate {
+	x.set = append(x.set, func(b *AutomationFigureUpdate) { b.SetSkippedContactErased(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_SetSkippedContactErased = RoleStep
+
+// SetNillableSkippedContactErased sets the "skipped_contact_erased" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdate) SetNillableSkippedContactErased(v *int) *AutomationFigureScopedUpdate {
+	if v != nil {
+		x.SetSkippedContactErased(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_SetNillableSkippedContactErased = RoleStep
+
+// AddSkippedContactErased adds value to the "skipped_contact_erased" field.
+func (x *AutomationFigureScopedUpdate) AddSkippedContactErased(v int) *AutomationFigureScopedUpdate {
+	x.set = append(x.set, func(b *AutomationFigureUpdate) { b.AddSkippedContactErased(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_AddSkippedContactErased = RoleStep
+
+// SetSkippedNoLocalTime sets the "skipped_no_local_time" field.
+func (x *AutomationFigureScopedUpdate) SetSkippedNoLocalTime(v int) *AutomationFigureScopedUpdate {
+	x.set = append(x.set, func(b *AutomationFigureUpdate) { b.SetSkippedNoLocalTime(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_SetSkippedNoLocalTime = RoleStep
+
+// SetNillableSkippedNoLocalTime sets the "skipped_no_local_time" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdate) SetNillableSkippedNoLocalTime(v *int) *AutomationFigureScopedUpdate {
+	if v != nil {
+		x.SetSkippedNoLocalTime(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_SetNillableSkippedNoLocalTime = RoleStep
+
+// AddSkippedNoLocalTime adds value to the "skipped_no_local_time" field.
+func (x *AutomationFigureScopedUpdate) AddSkippedNoLocalTime(v int) *AutomationFigureScopedUpdate {
+	x.set = append(x.set, func(b *AutomationFigureUpdate) { b.AddSkippedNoLocalTime(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_AddSkippedNoLocalTime = RoleStep
+
+// SetSkippedFrequencyCap sets the "skipped_frequency_cap" field.
+func (x *AutomationFigureScopedUpdate) SetSkippedFrequencyCap(v int) *AutomationFigureScopedUpdate {
+	x.set = append(x.set, func(b *AutomationFigureUpdate) { b.SetSkippedFrequencyCap(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_SetSkippedFrequencyCap = RoleStep
+
+// SetNillableSkippedFrequencyCap sets the "skipped_frequency_cap" field if the given value is not nil.
+func (x *AutomationFigureScopedUpdate) SetNillableSkippedFrequencyCap(v *int) *AutomationFigureScopedUpdate {
+	if v != nil {
+		x.SetSkippedFrequencyCap(*v)
+	}
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_SetNillableSkippedFrequencyCap = RoleStep
+
+// AddSkippedFrequencyCap adds value to the "skipped_frequency_cap" field.
+func (x *AutomationFigureScopedUpdate) AddSkippedFrequencyCap(v int) *AutomationFigureScopedUpdate {
+	x.set = append(x.set, func(b *AutomationFigureUpdate) { b.AddSkippedFrequencyCap(v) })
+	return x
+}
+
+const RoleOf_AutomationFigureScopedUpdate_AddSkippedFrequencyCap = RoleStep
 
 // SetDelivered sets the "delivered" field.
 func (x *AutomationFigureScopedUpdate) SetDelivered(v int) *AutomationFigureScopedUpdate {
@@ -19028,6 +19780,150 @@ func (x *BroadcastFigureScopedCreate) SetNillableUntracked(v *int) *BroadcastFig
 }
 
 const RoleOf_BroadcastFigureScopedCreate_SetNillableUntracked = RoleStep
+
+// SetSkippedSuppressed sets the "skipped_suppressed" field.
+func (x *BroadcastFigureScopedCreate) SetSkippedSuppressed(v int) *BroadcastFigureScopedCreate {
+	x.set = append(x.set, func(b *BroadcastFigureCreate) { b.SetSkippedSuppressed(v) })
+	return x
+}
+
+const RoleOf_BroadcastFigureScopedCreate_SetSkippedSuppressed = RoleStep
+
+// SetNillableSkippedSuppressed sets the "skipped_suppressed" field if the given value is not nil.
+func (x *BroadcastFigureScopedCreate) SetNillableSkippedSuppressed(v *int) *BroadcastFigureScopedCreate {
+	if v != nil {
+		x.SetSkippedSuppressed(*v)
+	}
+	return x
+}
+
+const RoleOf_BroadcastFigureScopedCreate_SetNillableSkippedSuppressed = RoleStep
+
+// SetSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field.
+func (x *BroadcastFigureScopedCreate) SetSkippedUnsubscribedEverything(v int) *BroadcastFigureScopedCreate {
+	x.set = append(x.set, func(b *BroadcastFigureCreate) { b.SetSkippedUnsubscribedEverything(v) })
+	return x
+}
+
+const RoleOf_BroadcastFigureScopedCreate_SetSkippedUnsubscribedEverything = RoleStep
+
+// SetNillableSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field if the given value is not nil.
+func (x *BroadcastFigureScopedCreate) SetNillableSkippedUnsubscribedEverything(v *int) *BroadcastFigureScopedCreate {
+	if v != nil {
+		x.SetSkippedUnsubscribedEverything(*v)
+	}
+	return x
+}
+
+const RoleOf_BroadcastFigureScopedCreate_SetNillableSkippedUnsubscribedEverything = RoleStep
+
+// SetSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field.
+func (x *BroadcastFigureScopedCreate) SetSkippedUnsubscribedSource(v int) *BroadcastFigureScopedCreate {
+	x.set = append(x.set, func(b *BroadcastFigureCreate) { b.SetSkippedUnsubscribedSource(v) })
+	return x
+}
+
+const RoleOf_BroadcastFigureScopedCreate_SetSkippedUnsubscribedSource = RoleStep
+
+// SetNillableSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field if the given value is not nil.
+func (x *BroadcastFigureScopedCreate) SetNillableSkippedUnsubscribedSource(v *int) *BroadcastFigureScopedCreate {
+	if v != nil {
+		x.SetSkippedUnsubscribedSource(*v)
+	}
+	return x
+}
+
+const RoleOf_BroadcastFigureScopedCreate_SetNillableSkippedUnsubscribedSource = RoleStep
+
+// SetSkippedUnconfirmed sets the "skipped_unconfirmed" field.
+func (x *BroadcastFigureScopedCreate) SetSkippedUnconfirmed(v int) *BroadcastFigureScopedCreate {
+	x.set = append(x.set, func(b *BroadcastFigureCreate) { b.SetSkippedUnconfirmed(v) })
+	return x
+}
+
+const RoleOf_BroadcastFigureScopedCreate_SetSkippedUnconfirmed = RoleStep
+
+// SetNillableSkippedUnconfirmed sets the "skipped_unconfirmed" field if the given value is not nil.
+func (x *BroadcastFigureScopedCreate) SetNillableSkippedUnconfirmed(v *int) *BroadcastFigureScopedCreate {
+	if v != nil {
+		x.SetSkippedUnconfirmed(*v)
+	}
+	return x
+}
+
+const RoleOf_BroadcastFigureScopedCreate_SetNillableSkippedUnconfirmed = RoleStep
+
+// SetSkippedNoDestination sets the "skipped_no_destination" field.
+func (x *BroadcastFigureScopedCreate) SetSkippedNoDestination(v int) *BroadcastFigureScopedCreate {
+	x.set = append(x.set, func(b *BroadcastFigureCreate) { b.SetSkippedNoDestination(v) })
+	return x
+}
+
+const RoleOf_BroadcastFigureScopedCreate_SetSkippedNoDestination = RoleStep
+
+// SetNillableSkippedNoDestination sets the "skipped_no_destination" field if the given value is not nil.
+func (x *BroadcastFigureScopedCreate) SetNillableSkippedNoDestination(v *int) *BroadcastFigureScopedCreate {
+	if v != nil {
+		x.SetSkippedNoDestination(*v)
+	}
+	return x
+}
+
+const RoleOf_BroadcastFigureScopedCreate_SetNillableSkippedNoDestination = RoleStep
+
+// SetSkippedContactErased sets the "skipped_contact_erased" field.
+func (x *BroadcastFigureScopedCreate) SetSkippedContactErased(v int) *BroadcastFigureScopedCreate {
+	x.set = append(x.set, func(b *BroadcastFigureCreate) { b.SetSkippedContactErased(v) })
+	return x
+}
+
+const RoleOf_BroadcastFigureScopedCreate_SetSkippedContactErased = RoleStep
+
+// SetNillableSkippedContactErased sets the "skipped_contact_erased" field if the given value is not nil.
+func (x *BroadcastFigureScopedCreate) SetNillableSkippedContactErased(v *int) *BroadcastFigureScopedCreate {
+	if v != nil {
+		x.SetSkippedContactErased(*v)
+	}
+	return x
+}
+
+const RoleOf_BroadcastFigureScopedCreate_SetNillableSkippedContactErased = RoleStep
+
+// SetSkippedNoLocalTime sets the "skipped_no_local_time" field.
+func (x *BroadcastFigureScopedCreate) SetSkippedNoLocalTime(v int) *BroadcastFigureScopedCreate {
+	x.set = append(x.set, func(b *BroadcastFigureCreate) { b.SetSkippedNoLocalTime(v) })
+	return x
+}
+
+const RoleOf_BroadcastFigureScopedCreate_SetSkippedNoLocalTime = RoleStep
+
+// SetNillableSkippedNoLocalTime sets the "skipped_no_local_time" field if the given value is not nil.
+func (x *BroadcastFigureScopedCreate) SetNillableSkippedNoLocalTime(v *int) *BroadcastFigureScopedCreate {
+	if v != nil {
+		x.SetSkippedNoLocalTime(*v)
+	}
+	return x
+}
+
+const RoleOf_BroadcastFigureScopedCreate_SetNillableSkippedNoLocalTime = RoleStep
+
+// SetSkippedFrequencyCap sets the "skipped_frequency_cap" field.
+func (x *BroadcastFigureScopedCreate) SetSkippedFrequencyCap(v int) *BroadcastFigureScopedCreate {
+	x.set = append(x.set, func(b *BroadcastFigureCreate) { b.SetSkippedFrequencyCap(v) })
+	return x
+}
+
+const RoleOf_BroadcastFigureScopedCreate_SetSkippedFrequencyCap = RoleStep
+
+// SetNillableSkippedFrequencyCap sets the "skipped_frequency_cap" field if the given value is not nil.
+func (x *BroadcastFigureScopedCreate) SetNillableSkippedFrequencyCap(v *int) *BroadcastFigureScopedCreate {
+	if v != nil {
+		x.SetSkippedFrequencyCap(*v)
+	}
+	return x
+}
+
+const RoleOf_BroadcastFigureScopedCreate_SetNillableSkippedFrequencyCap = RoleStep
 
 // SetPrunedAt sets the "pruned_at" field.
 func (x *BroadcastFigureScopedCreate) SetPrunedAt(v time.Time) *BroadcastFigureScopedCreate {

@@ -755,6 +755,18 @@ func (c *ConverterImpl) BroadcastStatsToResource(source broadcasts.Figures) site
 	siteapiSiteBroadcastStats.RecipientsTotal = count(source.Recipients)
 	siteapiSiteBroadcastStats.SentCount = count(source.Sent)
 	siteapiSiteBroadcastStats.SkippedCount = count(source.Skipped)
+	if source.SkippedByReason != nil {
+		siteapiSiteBroadcastStats.SkippedByReason = make([]site.SkippedReasonCount, len(source.SkippedByReason))
+		for i := 0; i < len(source.SkippedByReason); i++ {
+			siteapiSiteBroadcastStats.SkippedByReason[i] = c.skipreasonCountToSiteapiSkippedReasonCount(source.SkippedByReason[i])
+		}
+	}
+	if source.WaitingByCause != nil {
+		siteapiSiteBroadcastStats.WaitingByCause = make([]site.DeferralCauseCount, len(source.WaitingByCause))
+		for j := 0; j < len(source.WaitingByCause); j++ {
+			siteapiSiteBroadcastStats.WaitingByCause[j] = c.deferralcauseCountToSiteapiDeferralCauseCount(source.WaitingByCause[j])
+		}
+	}
 	siteapiSiteBroadcastStats.FailedCount = count(source.Failed)
 	siteapiSiteBroadcastStats.PendingCount = count(source.Pending)
 	siteapiSiteBroadcastStats.CancelledCount = count(source.Cancelled)
@@ -3518,6 +3530,18 @@ func (c *ConverterImpl) automationsStepFiguresToSiteapiAutomationStepFigures(sou
 	siteapiAutomationStepFigures.StepId = site.StepId(source.StepID)
 	siteapiAutomationStepFigures.Sent = count(source.Sent)
 	siteapiAutomationStepFigures.Skipped = count(source.Skipped)
+	if source.SkippedByReason != nil {
+		siteapiAutomationStepFigures.SkippedByReason = make([]site.SkippedReasonCount, len(source.SkippedByReason))
+		for i := 0; i < len(source.SkippedByReason); i++ {
+			siteapiAutomationStepFigures.SkippedByReason[i] = c.skipreasonCountToSiteapiSkippedReasonCount(source.SkippedByReason[i])
+		}
+	}
+	if source.WaitingByCause != nil {
+		siteapiAutomationStepFigures.WaitingByCause = make([]site.DeferralCauseCount, len(source.WaitingByCause))
+		for j := 0; j < len(source.WaitingByCause); j++ {
+			siteapiAutomationStepFigures.WaitingByCause[j] = c.deferralcauseCountToSiteapiDeferralCauseCount(source.WaitingByCause[j])
+		}
+	}
 	return siteapiAutomationStepFigures
 }
 func (c *ConverterImpl) automationsVersionStepFiguresToSiteapiAutomationVersionStepFigures(source automations.VersionStepFigures) site.AutomationVersionStepFigures {
@@ -3526,6 +3550,18 @@ func (c *ConverterImpl) automationsVersionStepFiguresToSiteapiAutomationVersionS
 	siteapiAutomationVersionStepFigures.StepId = site.StepId(source.StepID)
 	siteapiAutomationVersionStepFigures.Sent = count(source.Sent)
 	siteapiAutomationVersionStepFigures.Skipped = count(source.Skipped)
+	if source.SkippedByReason != nil {
+		siteapiAutomationVersionStepFigures.SkippedByReason = make([]site.SkippedReasonCount, len(source.SkippedByReason))
+		for i := 0; i < len(source.SkippedByReason); i++ {
+			siteapiAutomationVersionStepFigures.SkippedByReason[i] = c.skipreasonCountToSiteapiSkippedReasonCount(source.SkippedByReason[i])
+		}
+	}
+	if source.WaitingByCause != nil {
+		siteapiAutomationVersionStepFigures.WaitingByCause = make([]site.DeferralCauseCount, len(source.WaitingByCause))
+		for j := 0; j < len(source.WaitingByCause); j++ {
+			siteapiAutomationVersionStepFigures.WaitingByCause[j] = c.deferralcauseCountToSiteapiDeferralCauseCount(source.WaitingByCause[j])
+		}
+	}
 	return siteapiAutomationVersionStepFigures
 }
 func (c *ConverterImpl) automationsWaitUntilFiguresToSiteapiAutomationWaitUntilFigures(source automations.WaitUntilFigures) site.AutomationWaitUntilFigures {
@@ -3538,6 +3574,12 @@ func (c *ConverterImpl) automationsWaitUntilFiguresToSiteapiAutomationWaitUntilF
 }
 func (c *ConverterImpl) automationstepIDToSiteapiStepId(source automationstep.ID) site.StepId {
 	return site.StepId(source)
+}
+func (c *ConverterImpl) deferralcauseCountToSiteapiDeferralCauseCount(source deferralcause.Count) site.DeferralCauseCount {
+	var siteapiDeferralCauseCount site.DeferralCauseCount
+	siteapiDeferralCauseCount.Cause = c.DeferralCauseToResource(source.Cause)
+	siteapiDeferralCauseCount.Count = count(source.Count)
+	return siteapiDeferralCauseCount
 }
 func (c *ConverterImpl) linkclickClicksToSiteapiLinkClicks(source linkclick.Clicks) site.LinkClicks {
 	var siteapiLinkClicks site.LinkClicks
@@ -3595,6 +3637,12 @@ func (c *ConverterImpl) setupchecklistStepsToSiteapiSiteSetupSteps(source setupc
 	siteapiSiteSetupSteps.Contact = c.SetupStepStatusToResource(source.Contact)
 	siteapiSiteSetupSteps.SentEmail = c.SetupStepStatusToResource(source.SentEmail)
 	return siteapiSiteSetupSteps
+}
+func (c *ConverterImpl) skipreasonCountToSiteapiSkippedReasonCount(source skipreason.Count) site.SkippedReasonCount {
+	var siteapiSkippedReasonCount site.SkippedReasonCount
+	siteapiSkippedReasonCount.Reason = c.SkippedReasonToResource(source.Reason)
+	siteapiSkippedReasonCount.Count = count(source.Count)
+	return siteapiSkippedReasonCount
 }
 func (c *ConverterImpl) workspacesConfirmationEmailDefaultsToSiteapiSiteConfirmationEmailDefaults(source workspaces.ConfirmationEmailDefaults) site.SiteConfirmationEmailDefaults {
 	var siteapiSiteConfirmationEmailDefaults site.SiteConfirmationEmailDefaults

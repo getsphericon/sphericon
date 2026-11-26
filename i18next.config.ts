@@ -31,6 +31,8 @@ export default defineConfig({
       'console.workspaces.review.systemFrozen',
       'console.workspaces.review.warned',
       'customFields.types.*',
+      'outcomes.deferralCause.*',
+      'outcomes.skippedReason.*',
       'overview.attention.metrics.*',
       'rules.dryRunOutcome.*',
       'rules.firingStatus.*',

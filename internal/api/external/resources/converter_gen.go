@@ -421,6 +421,18 @@ func (c *ConverterImpl) BroadcastReportToResource(source broadcasts.Report) exte
 	externalapiBroadcastReport.RecipientsTotal = count(source.Figures.Recipients)
 	externalapiBroadcastReport.SentCount = count(source.Figures.Sent)
 	externalapiBroadcastReport.SkippedCount = count(source.Figures.Skipped)
+	if source.Figures.SkippedByReason != nil {
+		externalapiBroadcastReport.SkippedByReason = make([]external.SkippedReasonCount, len(source.Figures.SkippedByReason))
+		for i := 0; i < len(source.Figures.SkippedByReason); i++ {
+			externalapiBroadcastReport.SkippedByReason[i] = c.skipreasonCountToExternalapiSkippedReasonCount(source.Figures.SkippedByReason[i])
+		}
+	}
+	if source.Figures.WaitingByCause != nil {
+		externalapiBroadcastReport.WaitingByCause = make([]external.DeferralCauseCount, len(source.Figures.WaitingByCause))
+		for j := 0; j < len(source.Figures.WaitingByCause); j++ {
+			externalapiBroadcastReport.WaitingByCause[j] = c.deferralcauseCountToExternalapiDeferralCauseCount(source.Figures.WaitingByCause[j])
+		}
+	}
 	externalapiBroadcastReport.FailedCount = count(source.Figures.Failed)
 	externalapiBroadcastReport.PendingCount = count(source.Figures.Pending)
 	externalapiBroadcastReport.CancelledCount = count(source.Figures.Cancelled)
@@ -2458,6 +2470,18 @@ func (c *ConverterImpl) automationsStepFiguresToExternalapiAutomationStepFigures
 	externalapiAutomationStepFigures.StepId = external.StepId(source.StepID)
 	externalapiAutomationStepFigures.Sent = count(source.Sent)
 	externalapiAutomationStepFigures.Skipped = count(source.Skipped)
+	if source.SkippedByReason != nil {
+		externalapiAutomationStepFigures.SkippedByReason = make([]external.SkippedReasonCount, len(source.SkippedByReason))
+		for i := 0; i < len(source.SkippedByReason); i++ {
+			externalapiAutomationStepFigures.SkippedByReason[i] = c.skipreasonCountToExternalapiSkippedReasonCount(source.SkippedByReason[i])
+		}
+	}
+	if source.WaitingByCause != nil {
+		externalapiAutomationStepFigures.WaitingByCause = make([]external.DeferralCauseCount, len(source.WaitingByCause))
+		for j := 0; j < len(source.WaitingByCause); j++ {
+			externalapiAutomationStepFigures.WaitingByCause[j] = c.deferralcauseCountToExternalapiDeferralCauseCount(source.WaitingByCause[j])
+		}
+	}
 	return externalapiAutomationStepFigures
 }
 func (c *ConverterImpl) automationsVersionStepFiguresToExternalapiAutomationVersionStepFigures(source automations.VersionStepFigures) external.AutomationVersionStepFigures {
@@ -2466,6 +2490,18 @@ func (c *ConverterImpl) automationsVersionStepFiguresToExternalapiAutomationVers
 	externalapiAutomationVersionStepFigures.StepId = external.StepId(source.StepID)
 	externalapiAutomationVersionStepFigures.Sent = count(source.Sent)
 	externalapiAutomationVersionStepFigures.Skipped = count(source.Skipped)
+	if source.SkippedByReason != nil {
+		externalapiAutomationVersionStepFigures.SkippedByReason = make([]external.SkippedReasonCount, len(source.SkippedByReason))
+		for i := 0; i < len(source.SkippedByReason); i++ {
+			externalapiAutomationVersionStepFigures.SkippedByReason[i] = c.skipreasonCountToExternalapiSkippedReasonCount(source.SkippedByReason[i])
+		}
+	}
+	if source.WaitingByCause != nil {
+		externalapiAutomationVersionStepFigures.WaitingByCause = make([]external.DeferralCauseCount, len(source.WaitingByCause))
+		for j := 0; j < len(source.WaitingByCause); j++ {
+			externalapiAutomationVersionStepFigures.WaitingByCause[j] = c.deferralcauseCountToExternalapiDeferralCauseCount(source.WaitingByCause[j])
+		}
+	}
 	return externalapiAutomationVersionStepFigures
 }
 func (c *ConverterImpl) automationsWaitUntilFiguresToExternalapiAutomationWaitUntilFigures(source automations.WaitUntilFigures) external.AutomationWaitUntilFigures {
@@ -2478,6 +2514,12 @@ func (c *ConverterImpl) automationsWaitUntilFiguresToExternalapiAutomationWaitUn
 }
 func (c *ConverterImpl) automationstepIDToExternalapiStepId(source automationstep.ID) external.StepId {
 	return external.StepId(source)
+}
+func (c *ConverterImpl) deferralcauseCountToExternalapiDeferralCauseCount(source deferralcause.Count) external.DeferralCauseCount {
+	var externalapiDeferralCauseCount external.DeferralCauseCount
+	externalapiDeferralCauseCount.Cause = c.DeferralCauseToResource(source.Cause)
+	externalapiDeferralCauseCount.Count = count(source.Count)
+	return externalapiDeferralCauseCount
 }
 func (c *ConverterImpl) emaildocAgentAttrToExternalapiEmailSchemaAttribute(source emaildoc.AgentAttr) external.EmailSchemaAttribute {
 	var externalapiEmailSchemaAttribute external.EmailSchemaAttribute
@@ -2555,4 +2597,10 @@ func (c *ConverterImpl) schemaCapturedHeaderToExternalapiCapturedMessageHeader(s
 	externalapiCapturedMessageHeader.Name = source.Name
 	externalapiCapturedMessageHeader.Value = source.Value
 	return externalapiCapturedMessageHeader
+}
+func (c *ConverterImpl) skipreasonCountToExternalapiSkippedReasonCount(source skipreason.Count) external.SkippedReasonCount {
+	var externalapiSkippedReasonCount external.SkippedReasonCount
+	externalapiSkippedReasonCount.Reason = c.SkippedReasonToResource(source.Reason)
+	externalapiSkippedReasonCount.Count = count(source.Count)
+	return externalapiSkippedReasonCount
 }

@@ -552,7 +552,7 @@ export type AutomationReport = {
   /**
    * The send Steps' messages by Step id, each summed over every version that had the Step and
    * sorted by the newest of those versions, then by its place there: one entry per Step any of the
-   * automation's messages was sent from
+   * automation's messages was sent from or an active enrollment's send waits at now
    */
   steps: Array<AutomationStepFigures>;
   /**
@@ -814,6 +814,16 @@ export type AutomationStepFigures = {
    * was suppressed. The enrollment moved on to the next step.
    */
   skipped: number;
+  /**
+   * The skipped messages by Skipped reason (ADR 0178): every reason of the closed list in its
+   * order, one none was skipped for at zero; they add up to `skipped`
+   */
+  skippedByReason: Array<SkippedReasonCount>;
+  /**
+   * The active enrollments standing on the Step whose send waits now, by the cause of its latest
+   * Deferral (ADR 0178): every cause of the closed list in its order, one none waits for at zero
+   */
+  waitingByCause: Array<DeferralCauseCount>;
 };
 
 /**
@@ -909,6 +919,15 @@ export type AutomationVersionStepFigures = {
    * Messages skipped, as in AutomationStepFigures
    */
   skipped: number;
+  /**
+   * The skipped messages by Skipped reason, as in AutomationStepFigures
+   */
+  skippedByReason: Array<SkippedReasonCount>;
+  /**
+   * The active enrollments of the version standing on the Step whose send waits now, by cause, as
+   * in AutomationStepFigures
+   */
+  waitingByCause: Array<DeferralCauseCount>;
 };
 
 /**
@@ -1343,6 +1362,14 @@ export type BroadcastReport = {
    * Recipients skipped at send time (no destination any more, unsubscribed or suppressed after planning)
    */
   skippedCount: number;
+  /**
+   * The skipped recipients by Skipped reason (ADR 0178): every reason of the closed list in its order, one none was skipped for at zero; they add up to `skippedCount`
+   */
+  skippedByReason: Array<SkippedReasonCount>;
+  /**
+   * The pending recipients whose send waits now, by the cause of its latest Deferral (ADR 0178): every cause of the closed list in its order, one none waits for at zero; all zero once the broadcast is no longer sending
+   */
+  waitingByCause: Array<DeferralCauseCount>;
   /**
    * Messages that failed to send
    */
@@ -3056,6 +3083,20 @@ export const DeferralCause = {
  * What a Deferral waits for: the send is not consumed and goes through every check again when it is retried
  */
 export type DeferralCause = typeof DeferralCause[keyof typeof DeferralCause];
+
+/**
+ * How many sends wait now for one cause
+ */
+export type DeferralCauseCount = {
+  /**
+   * The cause, one of the closed list
+   */
+  cause: DeferralCause;
+  /**
+   * Sends whose latest Deferral was for it and that still wait
+   */
+  count: number;
+};
 
 /**
  * A TXT record the caller publishes: a Sending domain's DKIM key, or a Tracking domain's ownership
@@ -6569,6 +6610,20 @@ export const SkippedReason = {
  * are Send-eligibility's; a client switches over the list.
  */
 export type SkippedReason = typeof SkippedReason[keyof typeof SkippedReason];
+
+/**
+ * How many sends were Skipped for one reason
+ */
+export type SkippedReasonCount = {
+  /**
+   * The reason, one of the closed list
+   */
+  reason: SkippedReason;
+  /**
+   * Sends Skipped for it
+   */
+  count: number;
+};
 
 /**
  * SMS's content of a Broadcast as stored

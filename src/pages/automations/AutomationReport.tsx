@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import { ApiErrorAlert } from '../../components/ApiErrorAlert.tsx'
 import { LinkClickTable } from '../../components/LinkClickTable.tsx'
+import { OutcomeLines } from '../../components/OutcomeCounts.tsx'
 import { StatCard } from '../../components/StatCard.tsx'
 import { siteAutomationReportsGetOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
@@ -12,6 +13,7 @@ import type {
   AutomationReportPeriod,
   AutomationResults,
   AutomationStep,
+  DeferralCauseCount,
 } from '../../generated/site/types.gen.ts'
 import { zAutomationReportPeriod } from '../../generated/site/zod.gen.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
@@ -20,6 +22,11 @@ import { SkippedEntriesLink } from './SkippedEntries.tsx'
 import { reportedStepLabel } from './stepLabel.ts'
 
 const PERIODS = zAutomationReportPeriod.options
+
+// How many Enrollments wait at a Step now, whatever the cause.
+function waitingTotal(waitingByCause: DeferralCauseCount[]): number {
+  return waitingByCause.reduce((total, { count }) => total + count, 0)
+}
 
 // What an Automation's Enrollments did over the period, each figure with the period before it: the
 // line under a figure is its value then and the change since.
@@ -159,8 +166,9 @@ function ResultsFigures({ results }: { results: AutomationResults }) {
 
 // What each send Step sent and skipped, by its id over every version, named by its place in the live
 // version; and, once more than one version sent, each version's share. A skipped send moves the
-// Enrollment on (ADR 0081), so this is where a Step that missed people shows. Renders nothing
-// before any send.
+// Enrollment on (ADR 0081), so this is where a Step that missed people shows, with why, and where
+// Enrollments wait now for a send of theirs to go, with what for (ADR 0178). Renders nothing before
+// any send or wait.
 function StepFigures({
   report,
   liveSteps,
@@ -189,6 +197,7 @@ function StepFigures({
               <Table.Th>{t(($) => $.automations.stepFigures.step)}</Table.Th>
               <Table.Th>{t(($) => $.automations.stepFigures.sent)}</Table.Th>
               <Table.Th>{t(($) => $.automations.stepFigures.skipped)}</Table.Th>
+              <Table.Th>{t(($) => $.automations.stepFigures.waiting)}</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -196,7 +205,14 @@ function StepFigures({
               <Table.Tr key={figures.stepId}>
                 <Table.Td>{reportedStepLabel(t, liveSteps, figures.stepId)}</Table.Td>
                 <Table.Td>{formatNumber(figures.sent)}</Table.Td>
-                <Table.Td>{formatNumber(figures.skipped)}</Table.Td>
+                <Table.Td>
+                  {formatNumber(figures.skipped)}
+                  <OutcomeLines skippedByReason={figures.skippedByReason} />
+                </Table.Td>
+                <Table.Td>
+                  {formatNumber(waitingTotal(figures.waitingByCause))}
+                  <OutcomeLines waitingByCause={figures.waitingByCause} />
+                </Table.Td>
               </Table.Tr>
             ))}
           </Table.Tbody>
@@ -211,6 +227,7 @@ function StepFigures({
                 <Table.Th>{t(($) => $.automations.stepFigures.step)}</Table.Th>
                 <Table.Th>{t(($) => $.automations.stepFigures.sent)}</Table.Th>
                 <Table.Th>{t(($) => $.automations.stepFigures.skipped)}</Table.Th>
+                <Table.Th>{t(($) => $.automations.stepFigures.waiting)}</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -220,6 +237,7 @@ function StepFigures({
                   <Table.Td>{reportedStepLabel(t, liveSteps, figures.stepId)}</Table.Td>
                   <Table.Td>{formatNumber(figures.sent)}</Table.Td>
                   <Table.Td>{formatNumber(figures.skipped)}</Table.Td>
+                  <Table.Td>{formatNumber(waitingTotal(figures.waitingByCause))}</Table.Td>
                 </Table.Tr>
               ))}
             </Table.Tbody>

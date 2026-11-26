@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
 // The figures of several Broadcasts come from their rows in one read; a Broadcast with no
@@ -26,7 +27,7 @@ func TestStatsOfReadsEachBroadcastsRows(t *testing.T) {
 	// Fixtures: 11 recipients, all sent, 5 opened and 2 clicked; the delivery result is stamped
 	// on three messages (3 delivered, 1 bounced, 1 complained).
 	assert.Equal(t, broadcasts.Stats{Recipients: 11, Sent: 11, Opened: 5, Clicked: 2, Delivered: 3, Bounced: 1, Complained: 1}, got[fixtures.BroadcastSentID])
-	assert.Equal(t, broadcasts.Stats{Recipients: 5, Failed: 3, Skipped: 2}, got[fixtures.BroadcastFailedID])
+	assert.Equal(t, broadcasts.Stats{Recipients: 5, Failed: 3, Skipped: 2, SkippedBy: map[skipreason.Reason]int{skipreason.Suppressed: 1, skipreason.UnsubscribedSource: 1}}, got[fixtures.BroadcastFailedID])
 	// The cancelled one left both its recipients unsent.
 	assert.Equal(t, broadcasts.Stats{Recipients: 2, Cancelled: 2}, got[fixtures.BroadcastCancelledID])
 	assert.Zero(t, got[fixtures.BroadcastDraftID])

@@ -106,6 +106,118 @@ func (_c *AutomationFigureCreate) SetNillableSkipped(v *int) *AutomationFigureCr
 	return _c
 }
 
+// SetSkippedSuppressed sets the "skipped_suppressed" field.
+func (_c *AutomationFigureCreate) SetSkippedSuppressed(v int) *AutomationFigureCreate {
+	_c.mutation.SetSkippedSuppressed(v)
+	return _c
+}
+
+// SetNillableSkippedSuppressed sets the "skipped_suppressed" field if the given value is not nil.
+func (_c *AutomationFigureCreate) SetNillableSkippedSuppressed(v *int) *AutomationFigureCreate {
+	if v != nil {
+		_c.SetSkippedSuppressed(*v)
+	}
+	return _c
+}
+
+// SetSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field.
+func (_c *AutomationFigureCreate) SetSkippedUnsubscribedEverything(v int) *AutomationFigureCreate {
+	_c.mutation.SetSkippedUnsubscribedEverything(v)
+	return _c
+}
+
+// SetNillableSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field if the given value is not nil.
+func (_c *AutomationFigureCreate) SetNillableSkippedUnsubscribedEverything(v *int) *AutomationFigureCreate {
+	if v != nil {
+		_c.SetSkippedUnsubscribedEverything(*v)
+	}
+	return _c
+}
+
+// SetSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field.
+func (_c *AutomationFigureCreate) SetSkippedUnsubscribedSource(v int) *AutomationFigureCreate {
+	_c.mutation.SetSkippedUnsubscribedSource(v)
+	return _c
+}
+
+// SetNillableSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field if the given value is not nil.
+func (_c *AutomationFigureCreate) SetNillableSkippedUnsubscribedSource(v *int) *AutomationFigureCreate {
+	if v != nil {
+		_c.SetSkippedUnsubscribedSource(*v)
+	}
+	return _c
+}
+
+// SetSkippedUnconfirmed sets the "skipped_unconfirmed" field.
+func (_c *AutomationFigureCreate) SetSkippedUnconfirmed(v int) *AutomationFigureCreate {
+	_c.mutation.SetSkippedUnconfirmed(v)
+	return _c
+}
+
+// SetNillableSkippedUnconfirmed sets the "skipped_unconfirmed" field if the given value is not nil.
+func (_c *AutomationFigureCreate) SetNillableSkippedUnconfirmed(v *int) *AutomationFigureCreate {
+	if v != nil {
+		_c.SetSkippedUnconfirmed(*v)
+	}
+	return _c
+}
+
+// SetSkippedNoDestination sets the "skipped_no_destination" field.
+func (_c *AutomationFigureCreate) SetSkippedNoDestination(v int) *AutomationFigureCreate {
+	_c.mutation.SetSkippedNoDestination(v)
+	return _c
+}
+
+// SetNillableSkippedNoDestination sets the "skipped_no_destination" field if the given value is not nil.
+func (_c *AutomationFigureCreate) SetNillableSkippedNoDestination(v *int) *AutomationFigureCreate {
+	if v != nil {
+		_c.SetSkippedNoDestination(*v)
+	}
+	return _c
+}
+
+// SetSkippedContactErased sets the "skipped_contact_erased" field.
+func (_c *AutomationFigureCreate) SetSkippedContactErased(v int) *AutomationFigureCreate {
+	_c.mutation.SetSkippedContactErased(v)
+	return _c
+}
+
+// SetNillableSkippedContactErased sets the "skipped_contact_erased" field if the given value is not nil.
+func (_c *AutomationFigureCreate) SetNillableSkippedContactErased(v *int) *AutomationFigureCreate {
+	if v != nil {
+		_c.SetSkippedContactErased(*v)
+	}
+	return _c
+}
+
+// SetSkippedNoLocalTime sets the "skipped_no_local_time" field.
+func (_c *AutomationFigureCreate) SetSkippedNoLocalTime(v int) *AutomationFigureCreate {
+	_c.mutation.SetSkippedNoLocalTime(v)
+	return _c
+}
+
+// SetNillableSkippedNoLocalTime sets the "skipped_no_local_time" field if the given value is not nil.
+func (_c *AutomationFigureCreate) SetNillableSkippedNoLocalTime(v *int) *AutomationFigureCreate {
+	if v != nil {
+		_c.SetSkippedNoLocalTime(*v)
+	}
+	return _c
+}
+
+// SetSkippedFrequencyCap sets the "skipped_frequency_cap" field.
+func (_c *AutomationFigureCreate) SetSkippedFrequencyCap(v int) *AutomationFigureCreate {
+	_c.mutation.SetSkippedFrequencyCap(v)
+	return _c
+}
+
+// SetNillableSkippedFrequencyCap sets the "skipped_frequency_cap" field if the given value is not nil.
+func (_c *AutomationFigureCreate) SetNillableSkippedFrequencyCap(v *int) *AutomationFigureCreate {
+	if v != nil {
+		_c.SetSkippedFrequencyCap(*v)
+	}
+	return _c
+}
+
 // SetDelivered sets the "delivered" field.
 func (_c *AutomationFigureCreate) SetDelivered(v int) *AutomationFigureCreate {
 	_c.mutation.SetDelivered(v)
@@ -234,6 +346,38 @@ func (_c *AutomationFigureCreate) defaults() {
 		v := automationfigure.DefaultSkipped
 		_c.mutation.SetSkipped(v)
 	}
+	if _, ok := _c.mutation.SkippedSuppressed(); !ok {
+		v := automationfigure.DefaultSkippedSuppressed
+		_c.mutation.SetSkippedSuppressed(v)
+	}
+	if _, ok := _c.mutation.SkippedUnsubscribedEverything(); !ok {
+		v := automationfigure.DefaultSkippedUnsubscribedEverything
+		_c.mutation.SetSkippedUnsubscribedEverything(v)
+	}
+	if _, ok := _c.mutation.SkippedUnsubscribedSource(); !ok {
+		v := automationfigure.DefaultSkippedUnsubscribedSource
+		_c.mutation.SetSkippedUnsubscribedSource(v)
+	}
+	if _, ok := _c.mutation.SkippedUnconfirmed(); !ok {
+		v := automationfigure.DefaultSkippedUnconfirmed
+		_c.mutation.SetSkippedUnconfirmed(v)
+	}
+	if _, ok := _c.mutation.SkippedNoDestination(); !ok {
+		v := automationfigure.DefaultSkippedNoDestination
+		_c.mutation.SetSkippedNoDestination(v)
+	}
+	if _, ok := _c.mutation.SkippedContactErased(); !ok {
+		v := automationfigure.DefaultSkippedContactErased
+		_c.mutation.SetSkippedContactErased(v)
+	}
+	if _, ok := _c.mutation.SkippedNoLocalTime(); !ok {
+		v := automationfigure.DefaultSkippedNoLocalTime
+		_c.mutation.SetSkippedNoLocalTime(v)
+	}
+	if _, ok := _c.mutation.SkippedFrequencyCap(); !ok {
+		v := automationfigure.DefaultSkippedFrequencyCap
+		_c.mutation.SetSkippedFrequencyCap(v)
+	}
 	if _, ok := _c.mutation.Delivered(); !ok {
 		v := automationfigure.DefaultDelivered
 		_c.mutation.SetDelivered(v)
@@ -286,6 +430,70 @@ func (_c *AutomationFigureCreate) check() error {
 	if v, ok := _c.mutation.Skipped(); ok {
 		if err := automationfigure.SkippedValidator(v); err != nil {
 			return &ValidationError{Name: "skipped", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SkippedSuppressed(); !ok {
+		return &ValidationError{Name: "skipped_suppressed", err: errors.New(`ent: missing required field "AutomationFigure.skipped_suppressed"`)}
+	}
+	if v, ok := _c.mutation.SkippedSuppressed(); ok {
+		if err := automationfigure.SkippedSuppressedValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_suppressed", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_suppressed": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SkippedUnsubscribedEverything(); !ok {
+		return &ValidationError{Name: "skipped_unsubscribed_everything", err: errors.New(`ent: missing required field "AutomationFigure.skipped_unsubscribed_everything"`)}
+	}
+	if v, ok := _c.mutation.SkippedUnsubscribedEverything(); ok {
+		if err := automationfigure.SkippedUnsubscribedEverythingValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_unsubscribed_everything", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_unsubscribed_everything": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SkippedUnsubscribedSource(); !ok {
+		return &ValidationError{Name: "skipped_unsubscribed_source", err: errors.New(`ent: missing required field "AutomationFigure.skipped_unsubscribed_source"`)}
+	}
+	if v, ok := _c.mutation.SkippedUnsubscribedSource(); ok {
+		if err := automationfigure.SkippedUnsubscribedSourceValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_unsubscribed_source", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_unsubscribed_source": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SkippedUnconfirmed(); !ok {
+		return &ValidationError{Name: "skipped_unconfirmed", err: errors.New(`ent: missing required field "AutomationFigure.skipped_unconfirmed"`)}
+	}
+	if v, ok := _c.mutation.SkippedUnconfirmed(); ok {
+		if err := automationfigure.SkippedUnconfirmedValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_unconfirmed", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_unconfirmed": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SkippedNoDestination(); !ok {
+		return &ValidationError{Name: "skipped_no_destination", err: errors.New(`ent: missing required field "AutomationFigure.skipped_no_destination"`)}
+	}
+	if v, ok := _c.mutation.SkippedNoDestination(); ok {
+		if err := automationfigure.SkippedNoDestinationValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_no_destination", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_no_destination": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SkippedContactErased(); !ok {
+		return &ValidationError{Name: "skipped_contact_erased", err: errors.New(`ent: missing required field "AutomationFigure.skipped_contact_erased"`)}
+	}
+	if v, ok := _c.mutation.SkippedContactErased(); ok {
+		if err := automationfigure.SkippedContactErasedValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_contact_erased", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_contact_erased": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SkippedNoLocalTime(); !ok {
+		return &ValidationError{Name: "skipped_no_local_time", err: errors.New(`ent: missing required field "AutomationFigure.skipped_no_local_time"`)}
+	}
+	if v, ok := _c.mutation.SkippedNoLocalTime(); ok {
+		if err := automationfigure.SkippedNoLocalTimeValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_no_local_time", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_no_local_time": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SkippedFrequencyCap(); !ok {
+		return &ValidationError{Name: "skipped_frequency_cap", err: errors.New(`ent: missing required field "AutomationFigure.skipped_frequency_cap"`)}
+	}
+	if v, ok := _c.mutation.SkippedFrequencyCap(); ok {
+		if err := automationfigure.SkippedFrequencyCapValidator(v); err != nil {
+			return &ValidationError{Name: "skipped_frequency_cap", err: fmt.Errorf(`ent: validator failed for field "AutomationFigure.skipped_frequency_cap": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.Delivered(); !ok {
@@ -381,6 +589,38 @@ func (_c *AutomationFigureCreate) createSpec() (*AutomationFigure, *sqlgraph.Cre
 	if value, ok := _c.mutation.Skipped(); ok {
 		_spec.SetField(automationfigure.FieldSkipped, field.TypeInt, value)
 		_node.Skipped = value
+	}
+	if value, ok := _c.mutation.SkippedSuppressed(); ok {
+		_spec.SetField(automationfigure.FieldSkippedSuppressed, field.TypeInt, value)
+		_node.SkippedSuppressed = value
+	}
+	if value, ok := _c.mutation.SkippedUnsubscribedEverything(); ok {
+		_spec.SetField(automationfigure.FieldSkippedUnsubscribedEverything, field.TypeInt, value)
+		_node.SkippedUnsubscribedEverything = value
+	}
+	if value, ok := _c.mutation.SkippedUnsubscribedSource(); ok {
+		_spec.SetField(automationfigure.FieldSkippedUnsubscribedSource, field.TypeInt, value)
+		_node.SkippedUnsubscribedSource = value
+	}
+	if value, ok := _c.mutation.SkippedUnconfirmed(); ok {
+		_spec.SetField(automationfigure.FieldSkippedUnconfirmed, field.TypeInt, value)
+		_node.SkippedUnconfirmed = value
+	}
+	if value, ok := _c.mutation.SkippedNoDestination(); ok {
+		_spec.SetField(automationfigure.FieldSkippedNoDestination, field.TypeInt, value)
+		_node.SkippedNoDestination = value
+	}
+	if value, ok := _c.mutation.SkippedContactErased(); ok {
+		_spec.SetField(automationfigure.FieldSkippedContactErased, field.TypeInt, value)
+		_node.SkippedContactErased = value
+	}
+	if value, ok := _c.mutation.SkippedNoLocalTime(); ok {
+		_spec.SetField(automationfigure.FieldSkippedNoLocalTime, field.TypeInt, value)
+		_node.SkippedNoLocalTime = value
+	}
+	if value, ok := _c.mutation.SkippedFrequencyCap(); ok {
+		_spec.SetField(automationfigure.FieldSkippedFrequencyCap, field.TypeInt, value)
+		_node.SkippedFrequencyCap = value
 	}
 	if value, ok := _c.mutation.Delivered(); ok {
 		_spec.SetField(automationfigure.FieldDelivered, field.TypeInt, value)
@@ -558,6 +798,150 @@ func (u *AutomationFigureUpsert) UpdateSkipped() *AutomationFigureUpsert {
 // AddSkipped adds v to the "skipped" field.
 func (u *AutomationFigureUpsert) AddSkipped(v int) *AutomationFigureUpsert {
 	u.Add(automationfigure.FieldSkipped, v)
+	return u
+}
+
+// SetSkippedSuppressed sets the "skipped_suppressed" field.
+func (u *AutomationFigureUpsert) SetSkippedSuppressed(v int) *AutomationFigureUpsert {
+	u.Set(automationfigure.FieldSkippedSuppressed, v)
+	return u
+}
+
+// UpdateSkippedSuppressed sets the "skipped_suppressed" field to the value that was provided on create.
+func (u *AutomationFigureUpsert) UpdateSkippedSuppressed() *AutomationFigureUpsert {
+	u.SetExcluded(automationfigure.FieldSkippedSuppressed)
+	return u
+}
+
+// AddSkippedSuppressed adds v to the "skipped_suppressed" field.
+func (u *AutomationFigureUpsert) AddSkippedSuppressed(v int) *AutomationFigureUpsert {
+	u.Add(automationfigure.FieldSkippedSuppressed, v)
+	return u
+}
+
+// SetSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field.
+func (u *AutomationFigureUpsert) SetSkippedUnsubscribedEverything(v int) *AutomationFigureUpsert {
+	u.Set(automationfigure.FieldSkippedUnsubscribedEverything, v)
+	return u
+}
+
+// UpdateSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field to the value that was provided on create.
+func (u *AutomationFigureUpsert) UpdateSkippedUnsubscribedEverything() *AutomationFigureUpsert {
+	u.SetExcluded(automationfigure.FieldSkippedUnsubscribedEverything)
+	return u
+}
+
+// AddSkippedUnsubscribedEverything adds v to the "skipped_unsubscribed_everything" field.
+func (u *AutomationFigureUpsert) AddSkippedUnsubscribedEverything(v int) *AutomationFigureUpsert {
+	u.Add(automationfigure.FieldSkippedUnsubscribedEverything, v)
+	return u
+}
+
+// SetSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field.
+func (u *AutomationFigureUpsert) SetSkippedUnsubscribedSource(v int) *AutomationFigureUpsert {
+	u.Set(automationfigure.FieldSkippedUnsubscribedSource, v)
+	return u
+}
+
+// UpdateSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field to the value that was provided on create.
+func (u *AutomationFigureUpsert) UpdateSkippedUnsubscribedSource() *AutomationFigureUpsert {
+	u.SetExcluded(automationfigure.FieldSkippedUnsubscribedSource)
+	return u
+}
+
+// AddSkippedUnsubscribedSource adds v to the "skipped_unsubscribed_source" field.
+func (u *AutomationFigureUpsert) AddSkippedUnsubscribedSource(v int) *AutomationFigureUpsert {
+	u.Add(automationfigure.FieldSkippedUnsubscribedSource, v)
+	return u
+}
+
+// SetSkippedUnconfirmed sets the "skipped_unconfirmed" field.
+func (u *AutomationFigureUpsert) SetSkippedUnconfirmed(v int) *AutomationFigureUpsert {
+	u.Set(automationfigure.FieldSkippedUnconfirmed, v)
+	return u
+}
+
+// UpdateSkippedUnconfirmed sets the "skipped_unconfirmed" field to the value that was provided on create.
+func (u *AutomationFigureUpsert) UpdateSkippedUnconfirmed() *AutomationFigureUpsert {
+	u.SetExcluded(automationfigure.FieldSkippedUnconfirmed)
+	return u
+}
+
+// AddSkippedUnconfirmed adds v to the "skipped_unconfirmed" field.
+func (u *AutomationFigureUpsert) AddSkippedUnconfirmed(v int) *AutomationFigureUpsert {
+	u.Add(automationfigure.FieldSkippedUnconfirmed, v)
+	return u
+}
+
+// SetSkippedNoDestination sets the "skipped_no_destination" field.
+func (u *AutomationFigureUpsert) SetSkippedNoDestination(v int) *AutomationFigureUpsert {
+	u.Set(automationfigure.FieldSkippedNoDestination, v)
+	return u
+}
+
+// UpdateSkippedNoDestination sets the "skipped_no_destination" field to the value that was provided on create.
+func (u *AutomationFigureUpsert) UpdateSkippedNoDestination() *AutomationFigureUpsert {
+	u.SetExcluded(automationfigure.FieldSkippedNoDestination)
+	return u
+}
+
+// AddSkippedNoDestination adds v to the "skipped_no_destination" field.
+func (u *AutomationFigureUpsert) AddSkippedNoDestination(v int) *AutomationFigureUpsert {
+	u.Add(automationfigure.FieldSkippedNoDestination, v)
+	return u
+}
+
+// SetSkippedContactErased sets the "skipped_contact_erased" field.
+func (u *AutomationFigureUpsert) SetSkippedContactErased(v int) *AutomationFigureUpsert {
+	u.Set(automationfigure.FieldSkippedContactErased, v)
+	return u
+}
+
+// UpdateSkippedContactErased sets the "skipped_contact_erased" field to the value that was provided on create.
+func (u *AutomationFigureUpsert) UpdateSkippedContactErased() *AutomationFigureUpsert {
+	u.SetExcluded(automationfigure.FieldSkippedContactErased)
+	return u
+}
+
+// AddSkippedContactErased adds v to the "skipped_contact_erased" field.
+func (u *AutomationFigureUpsert) AddSkippedContactErased(v int) *AutomationFigureUpsert {
+	u.Add(automationfigure.FieldSkippedContactErased, v)
+	return u
+}
+
+// SetSkippedNoLocalTime sets the "skipped_no_local_time" field.
+func (u *AutomationFigureUpsert) SetSkippedNoLocalTime(v int) *AutomationFigureUpsert {
+	u.Set(automationfigure.FieldSkippedNoLocalTime, v)
+	return u
+}
+
+// UpdateSkippedNoLocalTime sets the "skipped_no_local_time" field to the value that was provided on create.
+func (u *AutomationFigureUpsert) UpdateSkippedNoLocalTime() *AutomationFigureUpsert {
+	u.SetExcluded(automationfigure.FieldSkippedNoLocalTime)
+	return u
+}
+
+// AddSkippedNoLocalTime adds v to the "skipped_no_local_time" field.
+func (u *AutomationFigureUpsert) AddSkippedNoLocalTime(v int) *AutomationFigureUpsert {
+	u.Add(automationfigure.FieldSkippedNoLocalTime, v)
+	return u
+}
+
+// SetSkippedFrequencyCap sets the "skipped_frequency_cap" field.
+func (u *AutomationFigureUpsert) SetSkippedFrequencyCap(v int) *AutomationFigureUpsert {
+	u.Set(automationfigure.FieldSkippedFrequencyCap, v)
+	return u
+}
+
+// UpdateSkippedFrequencyCap sets the "skipped_frequency_cap" field to the value that was provided on create.
+func (u *AutomationFigureUpsert) UpdateSkippedFrequencyCap() *AutomationFigureUpsert {
+	u.SetExcluded(automationfigure.FieldSkippedFrequencyCap)
+	return u
+}
+
+// AddSkippedFrequencyCap adds v to the "skipped_frequency_cap" field.
+func (u *AutomationFigureUpsert) AddSkippedFrequencyCap(v int) *AutomationFigureUpsert {
+	u.Add(automationfigure.FieldSkippedFrequencyCap, v)
 	return u
 }
 
@@ -760,6 +1144,174 @@ func (u *AutomationFigureUpsertOne) AddSkipped(v int) *AutomationFigureUpsertOne
 func (u *AutomationFigureUpsertOne) UpdateSkipped() *AutomationFigureUpsertOne {
 	return u.Update(func(s *AutomationFigureUpsert) {
 		s.UpdateSkipped()
+	})
+}
+
+// SetSkippedSuppressed sets the "skipped_suppressed" field.
+func (u *AutomationFigureUpsertOne) SetSkippedSuppressed(v int) *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.SetSkippedSuppressed(v)
+	})
+}
+
+// AddSkippedSuppressed adds v to the "skipped_suppressed" field.
+func (u *AutomationFigureUpsertOne) AddSkippedSuppressed(v int) *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.AddSkippedSuppressed(v)
+	})
+}
+
+// UpdateSkippedSuppressed sets the "skipped_suppressed" field to the value that was provided on create.
+func (u *AutomationFigureUpsertOne) UpdateSkippedSuppressed() *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.UpdateSkippedSuppressed()
+	})
+}
+
+// SetSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field.
+func (u *AutomationFigureUpsertOne) SetSkippedUnsubscribedEverything(v int) *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.SetSkippedUnsubscribedEverything(v)
+	})
+}
+
+// AddSkippedUnsubscribedEverything adds v to the "skipped_unsubscribed_everything" field.
+func (u *AutomationFigureUpsertOne) AddSkippedUnsubscribedEverything(v int) *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.AddSkippedUnsubscribedEverything(v)
+	})
+}
+
+// UpdateSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field to the value that was provided on create.
+func (u *AutomationFigureUpsertOne) UpdateSkippedUnsubscribedEverything() *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.UpdateSkippedUnsubscribedEverything()
+	})
+}
+
+// SetSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field.
+func (u *AutomationFigureUpsertOne) SetSkippedUnsubscribedSource(v int) *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.SetSkippedUnsubscribedSource(v)
+	})
+}
+
+// AddSkippedUnsubscribedSource adds v to the "skipped_unsubscribed_source" field.
+func (u *AutomationFigureUpsertOne) AddSkippedUnsubscribedSource(v int) *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.AddSkippedUnsubscribedSource(v)
+	})
+}
+
+// UpdateSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field to the value that was provided on create.
+func (u *AutomationFigureUpsertOne) UpdateSkippedUnsubscribedSource() *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.UpdateSkippedUnsubscribedSource()
+	})
+}
+
+// SetSkippedUnconfirmed sets the "skipped_unconfirmed" field.
+func (u *AutomationFigureUpsertOne) SetSkippedUnconfirmed(v int) *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.SetSkippedUnconfirmed(v)
+	})
+}
+
+// AddSkippedUnconfirmed adds v to the "skipped_unconfirmed" field.
+func (u *AutomationFigureUpsertOne) AddSkippedUnconfirmed(v int) *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.AddSkippedUnconfirmed(v)
+	})
+}
+
+// UpdateSkippedUnconfirmed sets the "skipped_unconfirmed" field to the value that was provided on create.
+func (u *AutomationFigureUpsertOne) UpdateSkippedUnconfirmed() *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.UpdateSkippedUnconfirmed()
+	})
+}
+
+// SetSkippedNoDestination sets the "skipped_no_destination" field.
+func (u *AutomationFigureUpsertOne) SetSkippedNoDestination(v int) *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.SetSkippedNoDestination(v)
+	})
+}
+
+// AddSkippedNoDestination adds v to the "skipped_no_destination" field.
+func (u *AutomationFigureUpsertOne) AddSkippedNoDestination(v int) *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.AddSkippedNoDestination(v)
+	})
+}
+
+// UpdateSkippedNoDestination sets the "skipped_no_destination" field to the value that was provided on create.
+func (u *AutomationFigureUpsertOne) UpdateSkippedNoDestination() *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.UpdateSkippedNoDestination()
+	})
+}
+
+// SetSkippedContactErased sets the "skipped_contact_erased" field.
+func (u *AutomationFigureUpsertOne) SetSkippedContactErased(v int) *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.SetSkippedContactErased(v)
+	})
+}
+
+// AddSkippedContactErased adds v to the "skipped_contact_erased" field.
+func (u *AutomationFigureUpsertOne) AddSkippedContactErased(v int) *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.AddSkippedContactErased(v)
+	})
+}
+
+// UpdateSkippedContactErased sets the "skipped_contact_erased" field to the value that was provided on create.
+func (u *AutomationFigureUpsertOne) UpdateSkippedContactErased() *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.UpdateSkippedContactErased()
+	})
+}
+
+// SetSkippedNoLocalTime sets the "skipped_no_local_time" field.
+func (u *AutomationFigureUpsertOne) SetSkippedNoLocalTime(v int) *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.SetSkippedNoLocalTime(v)
+	})
+}
+
+// AddSkippedNoLocalTime adds v to the "skipped_no_local_time" field.
+func (u *AutomationFigureUpsertOne) AddSkippedNoLocalTime(v int) *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.AddSkippedNoLocalTime(v)
+	})
+}
+
+// UpdateSkippedNoLocalTime sets the "skipped_no_local_time" field to the value that was provided on create.
+func (u *AutomationFigureUpsertOne) UpdateSkippedNoLocalTime() *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.UpdateSkippedNoLocalTime()
+	})
+}
+
+// SetSkippedFrequencyCap sets the "skipped_frequency_cap" field.
+func (u *AutomationFigureUpsertOne) SetSkippedFrequencyCap(v int) *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.SetSkippedFrequencyCap(v)
+	})
+}
+
+// AddSkippedFrequencyCap adds v to the "skipped_frequency_cap" field.
+func (u *AutomationFigureUpsertOne) AddSkippedFrequencyCap(v int) *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.AddSkippedFrequencyCap(v)
+	})
+}
+
+// UpdateSkippedFrequencyCap sets the "skipped_frequency_cap" field to the value that was provided on create.
+func (u *AutomationFigureUpsertOne) UpdateSkippedFrequencyCap() *AutomationFigureUpsertOne {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.UpdateSkippedFrequencyCap()
 	})
 }
 
@@ -1140,6 +1692,174 @@ func (u *AutomationFigureUpsertBulk) AddSkipped(v int) *AutomationFigureUpsertBu
 func (u *AutomationFigureUpsertBulk) UpdateSkipped() *AutomationFigureUpsertBulk {
 	return u.Update(func(s *AutomationFigureUpsert) {
 		s.UpdateSkipped()
+	})
+}
+
+// SetSkippedSuppressed sets the "skipped_suppressed" field.
+func (u *AutomationFigureUpsertBulk) SetSkippedSuppressed(v int) *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.SetSkippedSuppressed(v)
+	})
+}
+
+// AddSkippedSuppressed adds v to the "skipped_suppressed" field.
+func (u *AutomationFigureUpsertBulk) AddSkippedSuppressed(v int) *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.AddSkippedSuppressed(v)
+	})
+}
+
+// UpdateSkippedSuppressed sets the "skipped_suppressed" field to the value that was provided on create.
+func (u *AutomationFigureUpsertBulk) UpdateSkippedSuppressed() *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.UpdateSkippedSuppressed()
+	})
+}
+
+// SetSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field.
+func (u *AutomationFigureUpsertBulk) SetSkippedUnsubscribedEverything(v int) *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.SetSkippedUnsubscribedEverything(v)
+	})
+}
+
+// AddSkippedUnsubscribedEverything adds v to the "skipped_unsubscribed_everything" field.
+func (u *AutomationFigureUpsertBulk) AddSkippedUnsubscribedEverything(v int) *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.AddSkippedUnsubscribedEverything(v)
+	})
+}
+
+// UpdateSkippedUnsubscribedEverything sets the "skipped_unsubscribed_everything" field to the value that was provided on create.
+func (u *AutomationFigureUpsertBulk) UpdateSkippedUnsubscribedEverything() *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.UpdateSkippedUnsubscribedEverything()
+	})
+}
+
+// SetSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field.
+func (u *AutomationFigureUpsertBulk) SetSkippedUnsubscribedSource(v int) *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.SetSkippedUnsubscribedSource(v)
+	})
+}
+
+// AddSkippedUnsubscribedSource adds v to the "skipped_unsubscribed_source" field.
+func (u *AutomationFigureUpsertBulk) AddSkippedUnsubscribedSource(v int) *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.AddSkippedUnsubscribedSource(v)
+	})
+}
+
+// UpdateSkippedUnsubscribedSource sets the "skipped_unsubscribed_source" field to the value that was provided on create.
+func (u *AutomationFigureUpsertBulk) UpdateSkippedUnsubscribedSource() *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.UpdateSkippedUnsubscribedSource()
+	})
+}
+
+// SetSkippedUnconfirmed sets the "skipped_unconfirmed" field.
+func (u *AutomationFigureUpsertBulk) SetSkippedUnconfirmed(v int) *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.SetSkippedUnconfirmed(v)
+	})
+}
+
+// AddSkippedUnconfirmed adds v to the "skipped_unconfirmed" field.
+func (u *AutomationFigureUpsertBulk) AddSkippedUnconfirmed(v int) *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.AddSkippedUnconfirmed(v)
+	})
+}
+
+// UpdateSkippedUnconfirmed sets the "skipped_unconfirmed" field to the value that was provided on create.
+func (u *AutomationFigureUpsertBulk) UpdateSkippedUnconfirmed() *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.UpdateSkippedUnconfirmed()
+	})
+}
+
+// SetSkippedNoDestination sets the "skipped_no_destination" field.
+func (u *AutomationFigureUpsertBulk) SetSkippedNoDestination(v int) *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.SetSkippedNoDestination(v)
+	})
+}
+
+// AddSkippedNoDestination adds v to the "skipped_no_destination" field.
+func (u *AutomationFigureUpsertBulk) AddSkippedNoDestination(v int) *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.AddSkippedNoDestination(v)
+	})
+}
+
+// UpdateSkippedNoDestination sets the "skipped_no_destination" field to the value that was provided on create.
+func (u *AutomationFigureUpsertBulk) UpdateSkippedNoDestination() *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.UpdateSkippedNoDestination()
+	})
+}
+
+// SetSkippedContactErased sets the "skipped_contact_erased" field.
+func (u *AutomationFigureUpsertBulk) SetSkippedContactErased(v int) *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.SetSkippedContactErased(v)
+	})
+}
+
+// AddSkippedContactErased adds v to the "skipped_contact_erased" field.
+func (u *AutomationFigureUpsertBulk) AddSkippedContactErased(v int) *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.AddSkippedContactErased(v)
+	})
+}
+
+// UpdateSkippedContactErased sets the "skipped_contact_erased" field to the value that was provided on create.
+func (u *AutomationFigureUpsertBulk) UpdateSkippedContactErased() *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.UpdateSkippedContactErased()
+	})
+}
+
+// SetSkippedNoLocalTime sets the "skipped_no_local_time" field.
+func (u *AutomationFigureUpsertBulk) SetSkippedNoLocalTime(v int) *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.SetSkippedNoLocalTime(v)
+	})
+}
+
+// AddSkippedNoLocalTime adds v to the "skipped_no_local_time" field.
+func (u *AutomationFigureUpsertBulk) AddSkippedNoLocalTime(v int) *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.AddSkippedNoLocalTime(v)
+	})
+}
+
+// UpdateSkippedNoLocalTime sets the "skipped_no_local_time" field to the value that was provided on create.
+func (u *AutomationFigureUpsertBulk) UpdateSkippedNoLocalTime() *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.UpdateSkippedNoLocalTime()
+	})
+}
+
+// SetSkippedFrequencyCap sets the "skipped_frequency_cap" field.
+func (u *AutomationFigureUpsertBulk) SetSkippedFrequencyCap(v int) *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.SetSkippedFrequencyCap(v)
+	})
+}
+
+// AddSkippedFrequencyCap adds v to the "skipped_frequency_cap" field.
+func (u *AutomationFigureUpsertBulk) AddSkippedFrequencyCap(v int) *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.AddSkippedFrequencyCap(v)
+	})
+}
+
+// UpdateSkippedFrequencyCap sets the "skipped_frequency_cap" field to the value that was provided on create.
+func (u *AutomationFigureUpsertBulk) UpdateSkippedFrequencyCap() *AutomationFigureUpsertBulk {
+	return u.Update(func(s *AutomationFigureUpsert) {
+		s.UpdateSkippedFrequencyCap()
 	})
 }
 

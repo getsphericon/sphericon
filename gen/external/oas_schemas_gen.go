@@ -2215,7 +2215,7 @@ type AutomationReport struct {
 	Results AutomationResults `json:"results"`
 	// The send Steps' messages by Step id, each summed over every version that had the Step and sorted by
 	// the newest of those versions, then by its place there: one entry per Step any of the automation's
-	// messages was sent from.
+	// messages was sent from or an active enrollment's send waits at now.
 	Steps []AutomationStepFigures `json:"steps"`
 	// The send Steps' messages by version and Step id, in version order and, within a version, in its Step
 	// order.
@@ -2842,6 +2842,12 @@ type AutomationStepFigures struct {
 	// Messages skipped: the contact had no address on the step's Channel, had opted out of it, or was
 	// suppressed. The enrollment moved on to the next step.
 	Skipped int32 `json:"skipped"`
+	// The skipped messages by Skipped reason (ADR 0178): every reason of the closed list in its order, one
+	// none was skipped for at zero; they add up to `skipped`.
+	SkippedByReason []SkippedReasonCount `json:"skippedByReason"`
+	// The active enrollments standing on the Step whose send waits now, by the cause of its latest
+	// Deferral (ADR 0178): every cause of the closed list in its order, one none waits for at zero.
+	WaitingByCause []DeferralCauseCount `json:"waitingByCause"`
 }
 
 // GetStepId returns the value of StepId.
@@ -2859,6 +2865,16 @@ func (s *AutomationStepFigures) GetSkipped() int32 {
 	return s.Skipped
 }
 
+// GetSkippedByReason returns the value of SkippedByReason.
+func (s *AutomationStepFigures) GetSkippedByReason() []SkippedReasonCount {
+	return s.SkippedByReason
+}
+
+// GetWaitingByCause returns the value of WaitingByCause.
+func (s *AutomationStepFigures) GetWaitingByCause() []DeferralCauseCount {
+	return s.WaitingByCause
+}
+
 // SetStepId sets the value of StepId.
 func (s *AutomationStepFigures) SetStepId(val StepId) {
 	s.StepId = val
@@ -2872,6 +2888,16 @@ func (s *AutomationStepFigures) SetSent(val int32) {
 // SetSkipped sets the value of Skipped.
 func (s *AutomationStepFigures) SetSkipped(val int32) {
 	s.Skipped = val
+}
+
+// SetSkippedByReason sets the value of SkippedByReason.
+func (s *AutomationStepFigures) SetSkippedByReason(val []SkippedReasonCount) {
+	s.SkippedByReason = val
+}
+
+// SetWaitingByCause sets the value of WaitingByCause.
+func (s *AutomationStepFigures) SetWaitingByCause(val []DeferralCauseCount) {
+	s.WaitingByCause = val
 }
 
 // One Step of an automation, by `type`, as a request writes it. A field of another kind is refused.
@@ -3756,6 +3782,11 @@ type AutomationVersionStepFigures struct {
 	Sent int32 `json:"sent"`
 	// Messages skipped, as in AutomationStepFigures.
 	Skipped int32 `json:"skipped"`
+	// The skipped messages by Skipped reason, as in AutomationStepFigures.
+	SkippedByReason []SkippedReasonCount `json:"skippedByReason"`
+	// The active enrollments of the version standing on the Step whose send waits now, by cause, as in
+	// AutomationStepFigures.
+	WaitingByCause []DeferralCauseCount `json:"waitingByCause"`
 }
 
 // GetVersion returns the value of Version.
@@ -3778,6 +3809,16 @@ func (s *AutomationVersionStepFigures) GetSkipped() int32 {
 	return s.Skipped
 }
 
+// GetSkippedByReason returns the value of SkippedByReason.
+func (s *AutomationVersionStepFigures) GetSkippedByReason() []SkippedReasonCount {
+	return s.SkippedByReason
+}
+
+// GetWaitingByCause returns the value of WaitingByCause.
+func (s *AutomationVersionStepFigures) GetWaitingByCause() []DeferralCauseCount {
+	return s.WaitingByCause
+}
+
 // SetVersion sets the value of Version.
 func (s *AutomationVersionStepFigures) SetVersion(val int32) {
 	s.Version = val
@@ -3796,6 +3837,16 @@ func (s *AutomationVersionStepFigures) SetSent(val int32) {
 // SetSkipped sets the value of Skipped.
 func (s *AutomationVersionStepFigures) SetSkipped(val int32) {
 	s.Skipped = val
+}
+
+// SetSkippedByReason sets the value of SkippedByReason.
+func (s *AutomationVersionStepFigures) SetSkippedByReason(val []SkippedReasonCount) {
+	s.SkippedByReason = val
+}
+
+// SetWaitingByCause sets the value of WaitingByCause.
+func (s *AutomationVersionStepFigures) SetWaitingByCause(val []DeferralCauseCount) {
+	s.WaitingByCause = val
 }
 
 // The enrollments that went on at once from one Wait until on a date instead of waiting, by why: read
@@ -6194,6 +6245,13 @@ type BroadcastReport struct {
 	SentCount int32 `json:"sentCount"`
 	// Recipients skipped at send time (no destination any more, unsubscribed or suppressed after planning).
 	SkippedCount int32 `json:"skippedCount"`
+	// The skipped recipients by Skipped reason (ADR 0178): every reason of the closed list in its order,
+	// one none was skipped for at zero; they add up to `skippedCount`.
+	SkippedByReason []SkippedReasonCount `json:"skippedByReason"`
+	// The pending recipients whose send waits now, by the cause of its latest Deferral (ADR 0178): every
+	// cause of the closed list in its order, one none waits for at zero; all zero once the broadcast is no
+	// longer sending.
+	WaitingByCause []DeferralCauseCount `json:"waitingByCause"`
 	// Messages that failed to send.
 	FailedCount int32 `json:"failedCount"`
 	// Recipients whose send has not ended yet; none on a cancelled broadcast but a message already handed
@@ -6256,6 +6314,16 @@ func (s *BroadcastReport) GetSentCount() int32 {
 // GetSkippedCount returns the value of SkippedCount.
 func (s *BroadcastReport) GetSkippedCount() int32 {
 	return s.SkippedCount
+}
+
+// GetSkippedByReason returns the value of SkippedByReason.
+func (s *BroadcastReport) GetSkippedByReason() []SkippedReasonCount {
+	return s.SkippedByReason
+}
+
+// GetWaitingByCause returns the value of WaitingByCause.
+func (s *BroadcastReport) GetWaitingByCause() []DeferralCauseCount {
+	return s.WaitingByCause
 }
 
 // GetFailedCount returns the value of FailedCount.
@@ -6351,6 +6419,16 @@ func (s *BroadcastReport) SetSentCount(val int32) {
 // SetSkippedCount sets the value of SkippedCount.
 func (s *BroadcastReport) SetSkippedCount(val int32) {
 	s.SkippedCount = val
+}
+
+// SetSkippedByReason sets the value of SkippedByReason.
+func (s *BroadcastReport) SetSkippedByReason(val []SkippedReasonCount) {
+	s.SkippedByReason = val
+}
+
+// SetWaitingByCause sets the value of WaitingByCause.
+func (s *BroadcastReport) SetWaitingByCause(val []DeferralCauseCount) {
+	s.WaitingByCause = val
 }
 
 // SetFailedCount sets the value of FailedCount.
@@ -11755,6 +11833,35 @@ func (s *DeferralCause) UnmarshalText(data []byte) error {
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
+}
+
+// How many sends wait now for one cause.
+// Ref: #/components/schemas/DeferralCauseCount
+type DeferralCauseCount struct {
+	// The cause, one of the closed list.
+	Cause DeferralCause `json:"cause"`
+	// Sends whose latest Deferral was for it and that still wait.
+	Count int32 `json:"count"`
+}
+
+// GetCause returns the value of Cause.
+func (s *DeferralCauseCount) GetCause() DeferralCause {
+	return s.Cause
+}
+
+// GetCount returns the value of Count.
+func (s *DeferralCauseCount) GetCount() int32 {
+	return s.Count
+}
+
+// SetCause sets the value of Cause.
+func (s *DeferralCauseCount) SetCause(val DeferralCause) {
+	s.Cause = val
+}
+
+// SetCount sets the value of Count.
+func (s *DeferralCauseCount) SetCount(val int32) {
+	s.Count = val
 }
 
 // A TXT record the caller publishes: a Sending domain's DKIM key, or a Tracking domain's ownership.
@@ -28442,6 +28549,35 @@ func (s *SkippedReason) UnmarshalText(data []byte) error {
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
+}
+
+// How many sends were Skipped for one reason.
+// Ref: #/components/schemas/SkippedReasonCount
+type SkippedReasonCount struct {
+	// The reason, one of the closed list.
+	Reason SkippedReason `json:"reason"`
+	// Sends Skipped for it.
+	Count int32 `json:"count"`
+}
+
+// GetReason returns the value of Reason.
+func (s *SkippedReasonCount) GetReason() SkippedReason {
+	return s.Reason
+}
+
+// GetCount returns the value of Count.
+func (s *SkippedReasonCount) GetCount() int32 {
+	return s.Count
+}
+
+// SetReason sets the value of Reason.
+func (s *SkippedReasonCount) SetReason(val SkippedReason) {
+	s.Reason = val
+}
+
+// SetCount sets the value of Count.
+func (s *SkippedReasonCount) SetCount(val int32) {
+	s.Count = val
 }
 
 // SMS's content of a Broadcast as stored.

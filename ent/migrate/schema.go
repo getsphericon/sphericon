@@ -210,6 +210,14 @@ var (
 		{Name: "step_id", Type: field.TypeString},
 		{Name: "sent", Type: field.TypeInt, Default: 0},
 		{Name: "skipped", Type: field.TypeInt, Default: 0},
+		{Name: "skipped_suppressed", Type: field.TypeInt, Default: 0},
+		{Name: "skipped_unsubscribed_everything", Type: field.TypeInt, Default: 0},
+		{Name: "skipped_unsubscribed_source", Type: field.TypeInt, Default: 0},
+		{Name: "skipped_unconfirmed", Type: field.TypeInt, Default: 0},
+		{Name: "skipped_no_destination", Type: field.TypeInt, Default: 0},
+		{Name: "skipped_contact_erased", Type: field.TypeInt, Default: 0},
+		{Name: "skipped_no_local_time", Type: field.TypeInt, Default: 0},
+		{Name: "skipped_frequency_cap", Type: field.TypeInt, Default: 0},
 		{Name: "delivered", Type: field.TypeInt, Default: 0},
 		{Name: "bounced", Type: field.TypeInt, Default: 0},
 		{Name: "complained", Type: field.TypeInt, Default: 0},
@@ -226,19 +234,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "automation_figures_automations_automation",
-				Columns:    []*schema.Column{AutomationFiguresColumns[10]},
+				Columns:    []*schema.Column{AutomationFiguresColumns[18]},
 				RefColumns: []*schema.Column{AutomationsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "automation_figures_automation_versions_version",
-				Columns:    []*schema.Column{AutomationFiguresColumns[11]},
+				Columns:    []*schema.Column{AutomationFiguresColumns[19]},
 				RefColumns: []*schema.Column{AutomationVersionsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "automation_figures_workspaces_automation_figures",
-				Columns:    []*schema.Column{AutomationFiguresColumns[12]},
+				Columns:    []*schema.Column{AutomationFiguresColumns[20]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -247,12 +255,12 @@ var (
 			{
 				Name:    "automation_figures_workspace_automation_version_step",
 				Unique:  true,
-				Columns: []*schema.Column{AutomationFiguresColumns[12], AutomationFiguresColumns[10], AutomationFiguresColumns[11], AutomationFiguresColumns[3]},
+				Columns: []*schema.Column{AutomationFiguresColumns[20], AutomationFiguresColumns[18], AutomationFiguresColumns[19], AutomationFiguresColumns[3]},
 			},
 			{
 				Name:    "automation_figures_workspace_id_version_id",
 				Unique:  false,
-				Columns: []*schema.Column{AutomationFiguresColumns[12], AutomationFiguresColumns[11]},
+				Columns: []*schema.Column{AutomationFiguresColumns[20], AutomationFiguresColumns[19]},
 			},
 		},
 	}
@@ -817,6 +825,14 @@ var (
 		{Name: "clicked", Type: field.TypeInt},
 		{Name: "captured", Type: field.TypeInt},
 		{Name: "untracked", Type: field.TypeInt, Default: 0},
+		{Name: "skipped_suppressed", Type: field.TypeInt, Default: 0},
+		{Name: "skipped_unsubscribed_everything", Type: field.TypeInt, Default: 0},
+		{Name: "skipped_unsubscribed_source", Type: field.TypeInt, Default: 0},
+		{Name: "skipped_unconfirmed", Type: field.TypeInt, Default: 0},
+		{Name: "skipped_no_destination", Type: field.TypeInt, Default: 0},
+		{Name: "skipped_contact_erased", Type: field.TypeInt, Default: 0},
+		{Name: "skipped_no_local_time", Type: field.TypeInt, Default: 0},
+		{Name: "skipped_frequency_cap", Type: field.TypeInt, Default: 0},
 		{Name: "pruned_at", Type: field.TypeTime, Nullable: true},
 		{Name: "broadcast_id", Type: field.TypeInt64},
 		{Name: "workspace_id", Type: field.TypeInt64},
@@ -829,13 +845,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "broadcast_figures_broadcasts_figures",
-				Columns:    []*schema.Column{BroadcastFiguresColumns[19]},
+				Columns:    []*schema.Column{BroadcastFiguresColumns[27]},
 				RefColumns: []*schema.Column{BroadcastsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "broadcast_figures_workspaces_broadcast_figures",
-				Columns:    []*schema.Column{BroadcastFiguresColumns[20]},
+				Columns:    []*schema.Column{BroadcastFiguresColumns[28]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -844,7 +860,7 @@ var (
 			{
 				Name:    "broadcast_figures_workspace_id_broadcast_id",
 				Unique:  true,
-				Columns: []*schema.Column{BroadcastFiguresColumns[20], BroadcastFiguresColumns[19]},
+				Columns: []*schema.Column{BroadcastFiguresColumns[28], BroadcastFiguresColumns[27]},
 			},
 		},
 	}
