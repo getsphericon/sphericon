@@ -145,6 +145,25 @@ func TestASkippedMessageFreesItsPlaces(t *testing.T) {
 	assert.Zero(t, counted(t, env, fixtures.LacunaID, channels.Telegram, tiaOtherChat))
 }
 
+// A claim handed back after a provider failure keeps its place; when its Contact opts out before the
+// retry, the retry Skips the message, and its place no longer counts.
+func TestAMessageSkippedAfterItsClaimFreesItsPlace(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := newModule(env, time.Now)
+
+	env.CustomerMail.SetErr(errors.New("smtp unavailable"))
+	_, err := m.Send(t.Context(), acme(env), marketing(t, env, "count:skipped-claim", fixtures.ContactAliceID))
+	require.Error(t, err)
+	held := counted(t, env, fixtures.AcmeID, channels.Email, fixtures.ContactAliceEmail)
+	env.UnsubscribeFromBroadcasts(t.Context(), fixtures.ContactAliceEmail)
+	res, err := m.Send(t.Context(), acme(env), marketing(t, env, "count:skipped-claim", fixtures.ContactAliceID))
+
+	require.NoError(t, err)
+	require.Equal(t, outboundmessages.Skipped, res.Outcome)
+	assert.Equal(t, 1, held, "the handed-back claim held its place")
+	assert.Zero(t, counted(t, env, fixtures.AcmeID, channels.Email, fixtures.ContactAliceEmail))
+}
+
 // A provider failure hands the claim back, and the retry takes it over: the claim held its place all
 // along, so the retry counts nothing new.
 func TestAClaimTakenOverDoesNotCountTwice(t *testing.T) {

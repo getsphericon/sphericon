@@ -2273,6 +2273,10 @@ const (
 	FrequencyCountRecentDestination = "usage.ses@codebasics.dev"
 	// FrequencyCountRecentID is from fixtures/frequency_counts.
 	FrequencyCountRecentID = 2
+	// FrequencyCountTexterDestination is from fixtures/frequency_counts.
+	FrequencyCountTexterDestination = "+14155550810"
+	// FrequencyCountTexterID is from fixtures/frequency_counts.
+	FrequencyCountTexterID = 3
 	// FreshLoginAttemptEmail is from fixtures/auth_attempts.
 	FreshLoginAttemptEmail = "fresh@attempts.test"
 	// FreshLoginAttemptID is from fixtures/auth_attempts.

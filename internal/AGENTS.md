@@ -39,7 +39,12 @@ subscribers and consumers, and the Edition's hooks are production's. A race runs
 `env.QueueBehindWorkspaceLock(t, s, writers...)` and `env.QueueBehindKey` queue the writers behind a
 lock the env holds, `env.HoldOpen` holds a write in flight, and `env.QueueBehind(t, release,
 writers...)` queues them behind any transaction the test holds open; each writer must wait for the
-hold, as Postgres reports it (`pg_blocking_pids`), and each refuses a rolled-back env. Its database
+hold, as Postgres reports it (`pg_blocking_pids`), and each refuses a rolled-back env.
+`env.RunBesideKey(t, key, run)` is the other side: it holds the key and fails the test unless `run`
+finishes without waiting for it (a write that must take no such lock). A claim of an Outbound
+message is written in a transaction of the bus (under its Destination locks, ADR 0178): a test that
+hooks or intercepts it registers on `env.Bus` too (`Use`, `Intercept`), and a hook that writes
+writes through the mutation's own client (`m.Client()`), since the env's pool has one connection. Its database
 is a clone of a second database the process leases and loads with the fixtures at the same moment
 as `Setup`'s, so both see the same rows with the same relative dates; the clone is dropped when the
 test ends, so no test cleans up by hand or resets state at its start. It costs the clone, ten times

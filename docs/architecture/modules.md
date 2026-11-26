@@ -236,7 +236,7 @@ where its dependencies come from and the shapes that recur under it; the Tags pa
   (`ApplyDeletion(ctx, l, d)`). What applying needs besides comes from `New`: the clock for a time it
   writes, and the bus to publish an event or queue a job in the transaction its scope is bound to.
   `Bus.PublishIn(ctx, s, ev)` and `Bus.EnqueueIn(ctx, s, args, opts)` do that with the publisher of
-  the bus transaction that scope (or a tx-bound `*ent.Client`, or a `*ent.WorkspaceLocked`) is bound
+  the bus transaction that scope (or a tx-bound `*ent.Client`, a `*ent.WorkspaceLocked` or a `*ent.DestinationLocked`) is bound
   to, and refuse one bound to none (`events.ErrNotInBusTx`): they never open a transaction. An
   operation that publishes therefore takes no `events.Publisher` or `events.Enqueuer` argument, and
   one that records an explicit Audit entry calls `Bus.RecordAuditIn(ctx, s, entry)`, which is

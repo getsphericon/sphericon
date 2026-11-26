@@ -109,7 +109,10 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
 5. transactions: `events.Bus.WithinScopedTx` (and its variants: `WithinScopedEnqueueTx`, and
    `WithinWorkspaceLockTx` / `WithinWorkspaceLockEnqueueTx`, which first take the Workspace's
    advisory lock, ADR 0099, and hand over the scope that stands for it, `*ent.WorkspaceLocked`,
-   which only they build, through `ent.Scoped.LockWorkspace`, ADR 0108), and `tx.Scoped(...)` inside
+   which only they build, through `ent.Scoped.LockWorkspace`, ADR 0108, and
+   `WithinDestinationLockTx`, which first takes the advisory locks of the Destinations a claim is
+   written for and hands over `*ent.DestinationLocked`, which only it builds, through
+   `ent.Scoped.LockDestinations`, ADR 0178), and `tx.Scoped(...)` inside
    `users.Module.AcceptInvitation` (its `acceptInvitationIn`, which the completion of a pending
    sign-up also runs in its own transaction) and inside `secondfactors.Module.Reset` (the Second
    factor reset reads its target Membership in the reset's transaction; the member's other
