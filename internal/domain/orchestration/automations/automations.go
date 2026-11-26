@@ -204,16 +204,46 @@ func validateStep(st *automationstep.Step, linkLength int) error {
 }
 
 // checkUntil refuses a Wait until's moment out of its bounds (decision 6 of #1613): a malformed
-// local time, an unknown or a repeated weekday, each named.
+// local time, an unknown or a repeated weekday, each named; and a date the date Trigger's rules
+// that need no catalogue refuse (dateProblem). Whether its Custom field is in the catalogue is
+// checkDateFields'.
 func checkUntil(u automationstep.Until) error {
 	switch u := u.(type) {
 	case automationstep.TimeOfDay:
 		_, err := u.Calendar()
 		return err
+	case automationstep.OnDate:
+		if problem := dateProblem(u.Date); problem != "" {
+			return errors.New(problem)
+		}
+		return nil
 	case nil:
 		return errors.New("a wait until needs the moment it waits for")
 	}
 	return nil
+}
+
+// dateProblem says why the date a date Trigger or a Wait until names cannot be stored (ADR 0126), by
+// the rules that need no catalogue: its schedule out of the calendar's bounds
+// (localcalendar.NewSchedule), a field of no known kind or a Custom field without a key, and `once`
+// on the birthday, which is always past (decision 5 of #1613). Empty when it can.
+func dateProblem(d datetrigger.Date) string {
+	if _, err := d.Schedule(); err != nil {
+		return err.Error()
+	}
+	switch d.Field.Kind {
+	case datetrigger.Birthday:
+		if d.Recurrence == localcalendar.Once {
+			return "a birthday is always past, so it is only yearly"
+		}
+		return ""
+	case datetrigger.CustomField:
+		if d.Field.Key == "" {
+			return "the custom field has no key"
+		}
+		return ""
+	}
+	return fmt.Sprintf("%q is not a date field", d.Field.Kind)
 }
 
 // validateBranch checks the shape of a Branch (ADR 0124): the contract's count of listed paths
@@ -363,6 +393,49 @@ func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer, o
 		RevisionChanged:  ErrRevisionChanged,
 	}, now)
 	return m
+}
+
+// dateFieldProblem says why the Workspace's catalogue cannot hold the date d names: a Custom
+// field it lacks, or holds with another type than datetime, whose date would never come. Empty
+// when it can, and for the birthday, which every Contact has.
+func (m *Module) dateFieldProblem(ctx context.Context, s *ent.Scoped, d datetrigger.Date) (string, error) {
+	if d.Field.Kind != datetrigger.CustomField {
+		return "", nil
+	}
+	field, err := m.people.CustomFieldByKey(ctx, s, d.Field.Key)
+	if err != nil {
+		return "", err
+	}
+	if field == nil {
+		return fmt.Sprintf("the Workspace has no Custom field %q", d.Field.Key), nil
+	}
+	if field.Type != customfield.TypeDatetime {
+		return fmt.Sprintf("the Custom field %q is a %s, not a datetime", d.Field.Key, field.Type), nil
+	}
+	return "", nil
+}
+
+// checkDateFields refuses a Wait until on a date whose Custom field the Workspace's catalogue cannot
+// hold (dateFieldProblem), naming the Step.
+func (m *Module) checkDateFields(ctx context.Context, s *ent.Scoped, steps automationstep.Path) error {
+	for _, st := range automationstep.All(steps) {
+		w, ok := st.Payload.(automationstep.WaitUntil)
+		if !ok {
+			continue
+		}
+		d, ok := w.Until.(automationstep.OnDate)
+		if !ok {
+			continue
+		}
+		problem, err := m.dateFieldProblem(ctx, s, d.Date)
+		if err != nil {
+			return err
+		}
+		if problem != "" {
+			return refuse(st, problem)
+		}
+	}
+	return nil
 }
 
 // build renders every email step that holds a document to its body, in the same save (ADR 0040,
@@ -572,47 +645,19 @@ func sameTrigger(a, b Trigger) bool {
 // a date Trigger, which has none (ADR 0126).
 const errDateTriggerEntry = "a date trigger takes no entry policy, cooldown or enrollment key"
 
-// dateProblem says why a date Trigger cannot be stored, by the rules that need no catalogue: its
-// schedule out of the calendar's bounds (localcalendar.NewSchedule), a field of no known kind or a
-// Custom field without a key, and `once` on the birthday, which is always past (decision 5 of
-// #1613). Empty when it can.
-func dateProblem(d datetrigger.Date) string {
-	if _, err := d.Schedule(); err != nil {
-		return err.Error()
-	}
-	switch d.Field.Kind {
-	case datetrigger.Birthday:
-		if d.Recurrence == localcalendar.Once {
-			return "a birthday is always past, so its trigger is only yearly"
-		}
-		return ""
-	case datetrigger.CustomField:
-		if d.Field.Key == "" {
-			return "the custom field has no key"
-		}
-		return ""
-	}
-	return fmt.Sprintf("%q is not a date field", d.Field.Kind)
-}
-
-// checkDate refuses a date Trigger dateProblem refuses, or whose Custom field the Workspace's
-// catalogue lacks or holds with another type than datetime: such a Trigger would never fire.
+// checkDate refuses a date Trigger whose date cannot be stored (dateProblem), or whose Custom field
+// the Workspace's catalogue cannot hold (dateFieldProblem): such a Trigger would never fire. A Wait
+// until's date form is held to the same checks (checkUntil, checkDateFields).
 func (m *Module) checkDate(ctx context.Context, s *ent.Scoped, d datetrigger.Date) error {
 	if problem := dateProblem(d); problem != "" {
 		return ErrInvalidTrigger.With(problem)
 	}
-	if d.Field.Kind != datetrigger.CustomField {
-		return nil
-	}
-	field, err := m.people.CustomFieldByKey(ctx, s, d.Field.Key)
+	problem, err := m.dateFieldProblem(ctx, s, d)
 	if err != nil {
 		return err
 	}
-	if field == nil {
-		return ErrInvalidTrigger.With(fmt.Sprintf("the Workspace has no Custom field %q", d.Field.Key))
-	}
-	if field.Type != customfield.TypeDatetime {
-		return ErrInvalidTrigger.With(fmt.Sprintf("the Custom field %q is a %s, not a datetime", d.Field.Key, field.Type))
+	if problem != "" {
+		return ErrInvalidTrigger.With(problem)
 	}
 	return nil
 }
@@ -916,6 +961,9 @@ func (v versioned) mergeSteps(ctx context.Context, ts *ent.Scoped, steps, stored
 		return automationstep.Path{}, err
 	}
 	if err := v.m.checkBranches(ctx, ts, steps); err != nil {
+		return automationstep.Path{}, err
+	}
+	if err := v.m.checkDateFields(ctx, ts, steps); err != nil {
 		return automationstep.Path{}, err
 	}
 	// Each Integration the steps name is checked once, however many steps send through it.

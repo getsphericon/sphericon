@@ -2222,6 +2222,11 @@ type AutomationReport struct {
 	// then by the fork's place there and the path's place in the fork: one entry per path an enrollment
 	// took, so a path none took has none.
 	Paths []AutomationPathFigures `json:"paths"`
+	// Each Wait until by its Step id, summed over every version that had it: the enrollments that left it
+	// in the current period without waiting, because its date had no moment ahead within 366 days (ADR
+	// 0126). In Step id order: one entry per Wait until any enrollment left so, so one that every
+	// enrollment waited on has none.
+	WaitUntilSteps []AutomationWaitUntilFigures `json:"waitUntilSteps"`
 }
 
 // GetOpens returns the value of Opens.
@@ -2284,6 +2289,11 @@ func (s *AutomationReport) GetPaths() []AutomationPathFigures {
 	return s.Paths
 }
 
+// GetWaitUntilSteps returns the value of WaitUntilSteps.
+func (s *AutomationReport) GetWaitUntilSteps() []AutomationWaitUntilFigures {
+	return s.WaitUntilSteps
+}
+
 // SetOpens sets the value of Opens.
 func (s *AutomationReport) SetOpens(val int32) {
 	s.Opens = val
@@ -2342,6 +2352,11 @@ func (s *AutomationReport) SetVersionSteps(val []AutomationVersionStepFigures) {
 // SetPaths sets the value of Paths.
 func (s *AutomationReport) SetPaths(val []AutomationPathFigures) {
 	s.Paths = val
+}
+
+// SetWaitUntilSteps sets the value of WaitUntilSteps.
+func (s *AutomationReport) SetWaitUntilSteps(val []AutomationWaitUntilFigures) {
+	s.WaitUntilSteps = val
 }
 
 // The length of the period an automation's results are read over, in Report days (ADR 0057), today
@@ -3634,6 +3649,60 @@ func (s *AutomationVersionStepFigures) SetSent(val int32) {
 // SetSkipped sets the value of Skipped.
 func (s *AutomationVersionStepFigures) SetSkipped(val int32) {
 	s.Skipped = val
+}
+
+// The enrollments that went on at once from one Wait until on a date instead of waiting, by why: read
+// from what each kept when it reached the Step, counted on the moment it left it.
+// Ref: #/components/schemas/AutomationWaitUntilFigures
+type AutomationWaitUntilFigures struct {
+	// The Wait until's Step id, the same in every version.
+	StepId StepId `json:"stepId"`
+	// Its moment had passed: a once date before the arrival.
+	Past int32 `json:"past"`
+	// The contact held no date in the field, or a value that is no date.
+	NoDate int32 `json:"noDate"`
+	// Its moment lay more than 366 days ahead, such as a yearly date whose value is itself in the future.
+	BeyondBound int32 `json:"beyondBound"`
+}
+
+// GetStepId returns the value of StepId.
+func (s *AutomationWaitUntilFigures) GetStepId() StepId {
+	return s.StepId
+}
+
+// GetPast returns the value of Past.
+func (s *AutomationWaitUntilFigures) GetPast() int32 {
+	return s.Past
+}
+
+// GetNoDate returns the value of NoDate.
+func (s *AutomationWaitUntilFigures) GetNoDate() int32 {
+	return s.NoDate
+}
+
+// GetBeyondBound returns the value of BeyondBound.
+func (s *AutomationWaitUntilFigures) GetBeyondBound() int32 {
+	return s.BeyondBound
+}
+
+// SetStepId sets the value of StepId.
+func (s *AutomationWaitUntilFigures) SetStepId(val StepId) {
+	s.StepId = val
+}
+
+// SetPast sets the value of Past.
+func (s *AutomationWaitUntilFigures) SetPast(val int32) {
+	s.Past = val
+}
+
+// SetNoDate sets the value of NoDate.
+func (s *AutomationWaitUntilFigures) SetNoDate(val int32) {
+	s.NoDate = val
+}
+
+// SetBeyondBound sets the value of BeyondBound.
+func (s *AutomationWaitUntilFigures) SetBeyondBound(val int32) {
+	s.BeyondBound = val
 }
 
 // The Contact's date of birth, a date field every Contact has.
@@ -39863,8 +39932,9 @@ func NewSplitStepSplitPathStepSum(v SplitStep) SplitPathStepSum {
 
 // A Step that sends each Enrollment down one of its paths by weight (ADR 0124): a hash of the Contact,
 // the Split and the Enrollment's ordinal chooses the path, so the same Enrollment always takes the
-// same path and a new Enrollment of the Contact draws again. An empty path is a holdout. The paths
-// rejoin at the Step after the Split.
+// same path and a new Enrollment of the Contact draws again. In an Automation with a yearly date
+// Trigger the anniversary year takes the ordinal's place, so the Contact draws again each year (ADR
+// 0126). An empty path is a holdout. The paths rejoin at the Step after the Split.
 // Ref: #/components/schemas/SplitStep
 type SplitStep struct {
 	// The Step's id.
@@ -42839,6 +42909,209 @@ func (s *WaitStepType) UnmarshalText(data []byte) error {
 	}
 }
 
+// Wait until the next occurrence of a date the Contact holds (ADR 0126), at or after the moment the
+// Enrollment reaches the Step: `offsetDays` before or after the date, at `localTime` in the Contact's
+// time zone, or the Workspace time zone when the Contact has no valid one. A yearly date waits for its
+// next anniversary, from the year after the date's own; a once date for the date itself. When there is
+// no such moment within 366 days the Enrollment goes on at once, and the report counts why: the moment
+// has passed (`past`), the Contact holds no date in the field (`no_date`), or it lies more than 366
+// days ahead (`beyond_bound`).
+// Ref: #/components/schemas/WaitUntilDate
+type WaitUntilDate struct {
+	Form WaitUntilDateForm `json:"form"`
+	// The date the occurrences come from.
+	Field DateField `json:"field"`
+	// Every year, or once.
+	Recurrence DateRecurrence `json:"recurrence"`
+	// Days before (negative) or after the date.
+	OffsetDays DateOffsetDays `json:"offsetDays"`
+	// The time of day of each occurrence, in the Contact's time zone.
+	LocalTime LocalTime `json:"localTime"`
+}
+
+// GetForm returns the value of Form.
+func (s *WaitUntilDate) GetForm() WaitUntilDateForm {
+	return s.Form
+}
+
+// GetField returns the value of Field.
+func (s *WaitUntilDate) GetField() DateField {
+	return s.Field
+}
+
+// GetRecurrence returns the value of Recurrence.
+func (s *WaitUntilDate) GetRecurrence() DateRecurrence {
+	return s.Recurrence
+}
+
+// GetOffsetDays returns the value of OffsetDays.
+func (s *WaitUntilDate) GetOffsetDays() DateOffsetDays {
+	return s.OffsetDays
+}
+
+// GetLocalTime returns the value of LocalTime.
+func (s *WaitUntilDate) GetLocalTime() LocalTime {
+	return s.LocalTime
+}
+
+// SetForm sets the value of Form.
+func (s *WaitUntilDate) SetForm(val WaitUntilDateForm) {
+	s.Form = val
+}
+
+// SetField sets the value of Field.
+func (s *WaitUntilDate) SetField(val DateField) {
+	s.Field = val
+}
+
+// SetRecurrence sets the value of Recurrence.
+func (s *WaitUntilDate) SetRecurrence(val DateRecurrence) {
+	s.Recurrence = val
+}
+
+// SetOffsetDays sets the value of OffsetDays.
+func (s *WaitUntilDate) SetOffsetDays(val DateOffsetDays) {
+	s.OffsetDays = val
+}
+
+// SetLocalTime sets the value of LocalTime.
+func (s *WaitUntilDate) SetLocalTime(val LocalTime) {
+	s.LocalTime = val
+}
+
+type WaitUntilDateForm string
+
+const (
+	WaitUntilDateFormDate WaitUntilDateForm = "date"
+)
+
+// AllValues returns all WaitUntilDateForm values.
+func (WaitUntilDateForm) AllValues() []WaitUntilDateForm {
+	return []WaitUntilDateForm{
+		WaitUntilDateFormDate,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WaitUntilDateForm) MarshalText() ([]byte, error) {
+	switch s {
+	case WaitUntilDateFormDate:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WaitUntilDateForm) UnmarshalText(data []byte) error {
+	switch WaitUntilDateForm(data) {
+	case WaitUntilDateFormDate:
+		*s = WaitUntilDateFormDate
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Wait until the next occurrence of a date the Contact holds, as a request writes it.
+// Ref: #/components/schemas/WaitUntilDateInput
+type WaitUntilDateInput struct {
+	Form WaitUntilDateInputForm `json:"form"`
+	// The date the occurrences come from: the birthday, or a datetime Custom field of the Workspace's
+	// catalogue.
+	Field DateFieldInput `json:"field"`
+	// Every year, or once; the birthday is only yearly.
+	Recurrence DateRecurrence `json:"recurrence"`
+	// Days before (negative) or after the date, within 365.
+	OffsetDays DateOffsetDays `json:"offsetDays"`
+	// The time of day of each occurrence, `HH:MM`, in the Contact's time zone.
+	LocalTime LocalTime `json:"localTime"`
+}
+
+// GetForm returns the value of Form.
+func (s *WaitUntilDateInput) GetForm() WaitUntilDateInputForm {
+	return s.Form
+}
+
+// GetField returns the value of Field.
+func (s *WaitUntilDateInput) GetField() DateFieldInput {
+	return s.Field
+}
+
+// GetRecurrence returns the value of Recurrence.
+func (s *WaitUntilDateInput) GetRecurrence() DateRecurrence {
+	return s.Recurrence
+}
+
+// GetOffsetDays returns the value of OffsetDays.
+func (s *WaitUntilDateInput) GetOffsetDays() DateOffsetDays {
+	return s.OffsetDays
+}
+
+// GetLocalTime returns the value of LocalTime.
+func (s *WaitUntilDateInput) GetLocalTime() LocalTime {
+	return s.LocalTime
+}
+
+// SetForm sets the value of Form.
+func (s *WaitUntilDateInput) SetForm(val WaitUntilDateInputForm) {
+	s.Form = val
+}
+
+// SetField sets the value of Field.
+func (s *WaitUntilDateInput) SetField(val DateFieldInput) {
+	s.Field = val
+}
+
+// SetRecurrence sets the value of Recurrence.
+func (s *WaitUntilDateInput) SetRecurrence(val DateRecurrence) {
+	s.Recurrence = val
+}
+
+// SetOffsetDays sets the value of OffsetDays.
+func (s *WaitUntilDateInput) SetOffsetDays(val DateOffsetDays) {
+	s.OffsetDays = val
+}
+
+// SetLocalTime sets the value of LocalTime.
+func (s *WaitUntilDateInput) SetLocalTime(val LocalTime) {
+	s.LocalTime = val
+}
+
+type WaitUntilDateInputForm string
+
+const (
+	WaitUntilDateInputFormDate WaitUntilDateInputForm = "date"
+)
+
+// AllValues returns all WaitUntilDateInputForm values.
+func (WaitUntilDateInputForm) AllValues() []WaitUntilDateInputForm {
+	return []WaitUntilDateInputForm{
+		WaitUntilDateInputFormDate,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WaitUntilDateInputForm) MarshalText() ([]byte, error) {
+	switch s {
+	case WaitUntilDateInputFormDate:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WaitUntilDateInputForm) UnmarshalText(data []byte) error {
+	switch WaitUntilDateInputForm(data) {
+	case WaitUntilDateInputFormDate:
+		*s = WaitUntilDateInputFormDate
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // The moment a Wait until holds an Enrollment until, by `form`.
 // Ref: #/components/schemas/WaitUntilMoment
 type WaitUntilMoment struct {
@@ -42876,6 +43149,7 @@ type WaitUntilMomentInputSum struct {
 	// Type selects the active sum variant, switch on this field.
 	Type                    WaitUntilMomentInputSumType
 	WaitUntilTimeOfDayInput WaitUntilTimeOfDayInput
+	WaitUntilDateInput      WaitUntilDateInput
 }
 
 // WaitUntilMomentInputSumType is oneOf type of WaitUntilMomentInputSum.
@@ -42884,11 +43158,17 @@ type WaitUntilMomentInputSumType string
 // Possible values for WaitUntilMomentInputSumType.
 const (
 	WaitUntilTimeOfDayInputWaitUntilMomentInputSum WaitUntilMomentInputSumType = "time_of_day"
+	WaitUntilDateInputWaitUntilMomentInputSum      WaitUntilMomentInputSumType = "date"
 )
 
 // IsWaitUntilTimeOfDayInput reports whether WaitUntilMomentInputSum is WaitUntilTimeOfDayInput.
 func (s WaitUntilMomentInputSum) IsWaitUntilTimeOfDayInput() bool {
 	return s.Type == WaitUntilTimeOfDayInputWaitUntilMomentInputSum
+}
+
+// IsWaitUntilDateInput reports whether WaitUntilMomentInputSum is WaitUntilDateInput.
+func (s WaitUntilMomentInputSum) IsWaitUntilDateInput() bool {
+	return s.Type == WaitUntilDateInputWaitUntilMomentInputSum
 }
 
 // SetWaitUntilTimeOfDayInput sets WaitUntilMomentInputSum to WaitUntilTimeOfDayInput.
@@ -42912,11 +43192,33 @@ func NewWaitUntilTimeOfDayInputWaitUntilMomentInputSum(v WaitUntilTimeOfDayInput
 	return s
 }
 
+// SetWaitUntilDateInput sets WaitUntilMomentInputSum to WaitUntilDateInput.
+func (s *WaitUntilMomentInputSum) SetWaitUntilDateInput(v WaitUntilDateInput) {
+	s.Type = WaitUntilDateInputWaitUntilMomentInputSum
+	s.WaitUntilDateInput = v
+}
+
+// GetWaitUntilDateInput returns WaitUntilDateInput and true boolean if WaitUntilMomentInputSum is WaitUntilDateInput.
+func (s WaitUntilMomentInputSum) GetWaitUntilDateInput() (v WaitUntilDateInput, ok bool) {
+	if !s.IsWaitUntilDateInput() {
+		return v, false
+	}
+	return s.WaitUntilDateInput, true
+}
+
+// NewWaitUntilDateInputWaitUntilMomentInputSum returns new WaitUntilMomentInputSum from WaitUntilDateInput.
+func NewWaitUntilDateInputWaitUntilMomentInputSum(v WaitUntilDateInput) WaitUntilMomentInputSum {
+	var s WaitUntilMomentInputSum
+	s.SetWaitUntilDateInput(v)
+	return s
+}
+
 // WaitUntilMomentSum represents sum type.
 type WaitUntilMomentSum struct {
 	// Type selects the active sum variant, switch on this field.
 	Type               WaitUntilMomentSumType
 	WaitUntilTimeOfDay WaitUntilTimeOfDay
+	WaitUntilDate      WaitUntilDate
 }
 
 // WaitUntilMomentSumType is oneOf type of WaitUntilMomentSum.
@@ -42925,12 +43227,16 @@ type WaitUntilMomentSumType string
 // Possible values for WaitUntilMomentSumType.
 const (
 	WaitUntilTimeOfDayWaitUntilMomentSum WaitUntilMomentSumType = "time_of_day"
+	WaitUntilDateWaitUntilMomentSum      WaitUntilMomentSumType = "date"
 )
 
 // IsWaitUntilTimeOfDay reports whether WaitUntilMomentSum is WaitUntilTimeOfDay.
 func (s WaitUntilMomentSum) IsWaitUntilTimeOfDay() bool {
 	return s.Type == WaitUntilTimeOfDayWaitUntilMomentSum
 }
+
+// IsWaitUntilDate reports whether WaitUntilMomentSum is WaitUntilDate.
+func (s WaitUntilMomentSum) IsWaitUntilDate() bool { return s.Type == WaitUntilDateWaitUntilMomentSum }
 
 // SetWaitUntilTimeOfDay sets WaitUntilMomentSum to WaitUntilTimeOfDay.
 func (s *WaitUntilMomentSum) SetWaitUntilTimeOfDay(v WaitUntilTimeOfDay) {
@@ -42950,6 +43256,27 @@ func (s WaitUntilMomentSum) GetWaitUntilTimeOfDay() (v WaitUntilTimeOfDay, ok bo
 func NewWaitUntilTimeOfDayWaitUntilMomentSum(v WaitUntilTimeOfDay) WaitUntilMomentSum {
 	var s WaitUntilMomentSum
 	s.SetWaitUntilTimeOfDay(v)
+	return s
+}
+
+// SetWaitUntilDate sets WaitUntilMomentSum to WaitUntilDate.
+func (s *WaitUntilMomentSum) SetWaitUntilDate(v WaitUntilDate) {
+	s.Type = WaitUntilDateWaitUntilMomentSum
+	s.WaitUntilDate = v
+}
+
+// GetWaitUntilDate returns WaitUntilDate and true boolean if WaitUntilMomentSum is WaitUntilDate.
+func (s WaitUntilMomentSum) GetWaitUntilDate() (v WaitUntilDate, ok bool) {
+	if !s.IsWaitUntilDate() {
+		return v, false
+	}
+	return s.WaitUntilDate, true
+}
+
+// NewWaitUntilDateWaitUntilMomentSum returns new WaitUntilMomentSum from WaitUntilDate.
+func NewWaitUntilDateWaitUntilMomentSum(v WaitUntilDate) WaitUntilMomentSum {
+	var s WaitUntilMomentSum
+	s.SetWaitUntilDate(v)
 	return s
 }
 

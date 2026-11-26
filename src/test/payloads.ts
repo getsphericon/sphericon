@@ -169,5 +169,6 @@ export const NO_AUTOMATION_REPORT: AutomationReport = {
   steps: [],
   versionSteps: [],
   paths: [],
+  waitUntilSteps: [],
   results: NO_AUTOMATION_RESULTS,
 }

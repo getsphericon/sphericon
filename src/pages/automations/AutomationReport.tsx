@@ -220,6 +220,55 @@ function StepFigures({
   )
 }
 
+// What each Wait until on a date let go on at once in the period instead of waiting, by why: its
+// moment had passed, the Contact held no date, or the moment lay more than 366 days ahead (ADR
+// 0126). Named by its place in the live version; renders nothing while none let anyone go on.
+function WaitUntilFigures({
+  report,
+  liveSteps,
+}: {
+  report: AutomationReport
+  liveSteps: AutomationStep[]
+}) {
+  const { t } = useTranslation()
+  const { formatNumber } = useFormat()
+
+  if (report.waitUntilSteps.length === 0) {
+    return null
+  }
+
+  return (
+    <Stack gap="xs">
+      <Title order={5}>{t(($) => $.automations.waitUntilFigures.title)}</Title>
+      <Text size="sm" c="dimmed">
+        {t(($) => $.automations.waitUntilFigures.hint)}
+      </Text>
+      <Table.ScrollContainer minWidth={320}>
+        <Table>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>{t(($) => $.automations.waitUntilFigures.step)}</Table.Th>
+              <Table.Th>{t(($) => $.automations.waitUntilFigures.past)}</Table.Th>
+              <Table.Th>{t(($) => $.automations.waitUntilFigures.noDate)}</Table.Th>
+              <Table.Th>{t(($) => $.automations.waitUntilFigures.beyondBound)}</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {report.waitUntilSteps.map((figures) => (
+              <Table.Tr key={figures.stepId}>
+                <Table.Td>{reportedStepLabel(t, liveSteps, figures.stepId)}</Table.Td>
+                <Table.Td>{formatNumber(figures.past)}</Table.Td>
+                <Table.Td>{formatNumber(figures.noDate)}</Table.Td>
+                <Table.Td>{formatNumber(figures.beyondBound)}</Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
+    </Stack>
+  )
+}
+
 // How the emails of an Automation were engaged with over its whole history.
 function Engagement({ report }: { report: AutomationReport }) {
   const { t } = useTranslation()
@@ -303,6 +352,9 @@ export function AutomationReport({
         )}
         {report && !reportQuery.isPlaceholderData && <ResultsFigures results={report.results} />}
       </Stack>
+      {report && !reportQuery.isPlaceholderData && (
+        <WaitUntilFigures report={report} liveSteps={liveSteps} />
+      )}
       {report && <StepFigures report={report} liveSteps={liveSteps} />}
       {report && <Engagement report={report} />}
     </Stack>

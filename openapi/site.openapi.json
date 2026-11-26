@@ -11729,7 +11729,8 @@
           "results",
           "steps",
           "versionSteps",
-          "paths"
+          "paths",
+          "waitUntilSteps"
         ],
         "properties": {
           "opens": {
@@ -11805,6 +11806,13 @@
               "$ref": "#/components/schemas/AutomationPathFigures"
             },
             "description": "Each path of a Branch (its unknown path included) and of a Split by its fork's Step id and\nits own id: the enrollments that took it and how many of them reached the goal, over the\nautomation's whole history, each summed over every version that had the path. Sorted by the\nnewest of those versions, then by the fork's place there and the path's place in the fork:\none entry per path an enrollment took, so a path none took has none"
+          },
+          "waitUntilSteps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationWaitUntilFigures"
+            },
+            "description": "Each Wait until by its Step id, summed over every version that had it: the enrollments that\nleft it in the current period without waiting, because its date had no moment ahead within 366\ndays (ADR 0126). In Step id order: one entry per Wait until any enrollment left so, so one that\nevery enrollment waited on has none"
           }
         },
         "description": "An automation's engagement figures over its whole history and its results over a period"
@@ -12216,6 +12224,36 @@
           }
         },
         "description": "The messages one version's send Step sent"
+      },
+      "AutomationWaitUntilFigures": {
+        "type": "object",
+        "required": ["stepId", "past", "noDate", "beyondBound"],
+        "properties": {
+          "stepId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepId"
+              }
+            ],
+            "description": "The Wait until's Step id, the same in every version"
+          },
+          "past": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Its moment had passed: a once date before the arrival"
+          },
+          "noDate": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The contact held no date in the field, or a value that is no date"
+          },
+          "beyondBound": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Its moment lay more than 366 days ahead, such as a yearly date whose value is itself in the\nfuture"
+          }
+        },
+        "description": "The enrollments that went on at once from one Wait until on a date instead of waiting, by why:\nread from what each kept when it reached the Step, counted on the moment it left it"
       },
       "BirthdayDateField": {
         "type": "object",
@@ -14309,6 +14347,84 @@
           }
         },
         "description": "A date a Contact holds, by `kind`, as a request writes it"
+      },
+      "DateOccurrence": {
+        "type": "object",
+        "required": ["field", "recurrence", "offsetDays", "localTime"],
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateField"
+              }
+            ],
+            "description": "The date the occurrences come from"
+          },
+          "recurrence": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateRecurrence"
+              }
+            ],
+            "description": "Every year, or once"
+          },
+          "offsetDays": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateOffsetDays"
+              }
+            ],
+            "description": "Days before (negative) or after the date"
+          },
+          "localTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocalTime"
+              }
+            ],
+            "description": "The time of day of each occurrence, in the Contact's time zone"
+          }
+        },
+        "description": "When a date the Contact holds comes (ADR 0126), as a date Trigger enrolls on it and a Wait until\nwaits for it: on each anniversary of the date, from the year after its own, or once on it,\n`offsetDays` before or after it, at `localTime` in the Contact's time zone, or in the Workspace\ntime zone when the Contact has no valid one"
+      },
+      "DateOccurrenceInput": {
+        "type": "object",
+        "required": ["field", "recurrence", "offsetDays", "localTime"],
+        "properties": {
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateFieldInput"
+              }
+            ],
+            "description": "The date the occurrences come from: the birthday, or a datetime Custom field of the\nWorkspace's catalogue"
+          },
+          "recurrence": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateRecurrence"
+              }
+            ],
+            "description": "Every year, or once; the birthday is only yearly"
+          },
+          "offsetDays": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateOffsetDays"
+              }
+            ],
+            "description": "Days before (negative) or after the date, within 365"
+          },
+          "localTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocalTime"
+              }
+            ],
+            "description": "The time of day of each occurrence, `HH:MM`, in the Contact's time zone"
+          }
+        },
+        "description": "When a date the Contact holds comes, as a request writes it"
       },
       "DateOffsetDays": {
         "type": "integer",
@@ -24301,7 +24417,7 @@
             "description": "The paths, in order"
           }
         },
-        "description": "A Step that sends each Enrollment down one of its paths by weight (ADR 0124): a hash of the\nContact, the Split and the Enrollment's ordinal chooses the path, so the same Enrollment always\ntakes the same path and a new Enrollment of the Contact draws again. An empty path is a holdout.\nThe paths rejoin at the Step after the Split."
+        "description": "A Step that sends each Enrollment down one of its paths by weight (ADR 0124): a hash of the\nContact, the Split and the Enrollment's ordinal chooses the path, so the same Enrollment always\ntakes the same path and a new Enrollment of the Contact draws again. In an Automation with a\nyearly date Trigger the anniversary year takes the ordinal's place, so the Contact draws again\neach year (ADR 0126). An empty path is a holdout. The paths rejoin at the Step after the Split."
       },
       "SplitStepInput": {
         "type": "object",
@@ -25607,17 +25723,108 @@
         "description": "A Step that waits before the next one, as a request writes it",
         "additionalProperties": false
       },
+      "WaitUntilDate": {
+        "type": "object",
+        "required": ["form", "field", "recurrence", "offsetDays", "localTime"],
+        "properties": {
+          "form": {
+            "type": "string",
+            "enum": ["date"]
+          },
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateField"
+              }
+            ],
+            "description": "The date the occurrences come from"
+          },
+          "recurrence": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateRecurrence"
+              }
+            ],
+            "description": "Every year, or once"
+          },
+          "offsetDays": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateOffsetDays"
+              }
+            ],
+            "description": "Days before (negative) or after the date"
+          },
+          "localTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocalTime"
+              }
+            ],
+            "description": "The time of day of each occurrence, in the Contact's time zone"
+          }
+        },
+        "description": "Wait until the next occurrence of a date the Contact holds (ADR 0126), at or after the moment\nthe Enrollment reaches the Step: `offsetDays` before or after the date, at `localTime` in the\nContact's time zone, or the Workspace time zone when the Contact has no valid one. A yearly date\nwaits for its next anniversary, from the year after the date's own; a once date for the date\nitself. When there is no such moment within 366 days the Enrollment goes on at once, and the\nreport counts why: the moment has passed (`past`), the Contact holds no date in the field\n(`no_date`), or it lies more than 366 days ahead (`beyond_bound`)."
+      },
+      "WaitUntilDateInput": {
+        "type": "object",
+        "required": ["form", "field", "recurrence", "offsetDays", "localTime"],
+        "properties": {
+          "form": {
+            "type": "string",
+            "enum": ["date"]
+          },
+          "field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateFieldInput"
+              }
+            ],
+            "description": "The date the occurrences come from: the birthday, or a datetime Custom field of the\nWorkspace's catalogue"
+          },
+          "recurrence": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateRecurrence"
+              }
+            ],
+            "description": "Every year, or once; the birthday is only yearly"
+          },
+          "offsetDays": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DateOffsetDays"
+              }
+            ],
+            "description": "Days before (negative) or after the date, within 365"
+          },
+          "localTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocalTime"
+              }
+            ],
+            "description": "The time of day of each occurrence, `HH:MM`, in the Contact's time zone"
+          }
+        },
+        "description": "Wait until the next occurrence of a date the Contact holds, as a request writes it",
+        "additionalProperties": false
+      },
       "WaitUntilMoment": {
         "type": "object",
         "oneOf": [
           {
             "$ref": "#/components/schemas/WaitUntilTimeOfDay"
+          },
+          {
+            "$ref": "#/components/schemas/WaitUntilDate"
           }
         ],
         "discriminator": {
           "propertyName": "form",
           "mapping": {
-            "time_of_day": "#/components/schemas/WaitUntilTimeOfDay"
+            "time_of_day": "#/components/schemas/WaitUntilTimeOfDay",
+            "date": "#/components/schemas/WaitUntilDate"
           }
         },
         "description": "The moment a Wait until holds an Enrollment until, by `form`"
@@ -25627,12 +25834,16 @@
         "oneOf": [
           {
             "$ref": "#/components/schemas/WaitUntilTimeOfDayInput"
+          },
+          {
+            "$ref": "#/components/schemas/WaitUntilDateInput"
           }
         ],
         "discriminator": {
           "propertyName": "form",
           "mapping": {
-            "time_of_day": "#/components/schemas/WaitUntilTimeOfDayInput"
+            "time_of_day": "#/components/schemas/WaitUntilTimeOfDayInput",
+            "date": "#/components/schemas/WaitUntilDateInput"
           }
         },
         "description": "The moment a Wait until holds an Enrollment until, by `form`, as a request writes it"

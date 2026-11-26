@@ -18,7 +18,8 @@ import (
 )
 
 // A datetime Custom field a date Trigger names, in a draft not yet published, is in Definition use
-// (ADR 0126): its retype to any type is refused, naming the Automation.
+// (ADR 0126): its retype to any type is refused, naming the Automation, beside the fixture
+// Automation whose Wait until waits on the same field.
 func TestACustomFieldADateTriggerNamesIsRefusedItsRetypeNamingTheAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
@@ -36,6 +37,7 @@ func TestACustomFieldADateTriggerNamesIsRefusedItsRetypeNamingTheAutomation(t *t
 	})
 
 	assert.Equal(t, &liveuse.Error{What: liveuse.SubjectCustomField, Users: []liveuse.User{
+		{Kind: liveuse.Automation, ID: fixtures.AutomationJobsWaitUntilDateID, Name: fixtures.AutomationJobsWaitUntilDateName},
 		{Kind: liveuse.Automation, ID: dated.ID, Name: dated.Name},
 	}}, refused)
 }

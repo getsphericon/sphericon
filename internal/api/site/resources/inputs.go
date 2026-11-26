@@ -583,6 +583,9 @@ func waitUntilMomentIn(c Inputs, in siteapi.WaitUntilMomentInput) (automationste
 	switch in.OneOf.Type {
 	case siteapi.WaitUntilTimeOfDayInputWaitUntilMomentInputSum:
 		return c.WaitUntilTimeOfDayIn(in.OneOf.WaitUntilTimeOfDayInput), nil
+	case siteapi.WaitUntilDateInputWaitUntilMomentInputSum:
+		d := in.OneOf.WaitUntilDateInput
+		return automationstep.OnDate{Date: dateIn(c, d.Field, d.Recurrence, d.OffsetDays, d.LocalTime)}, nil
 	default:
 		return nil, fmt.Errorf("the moment of form %q has no form of a wait until", in.OneOf.Type)
 	}
@@ -666,10 +669,8 @@ func automationTriggerIn(c Inputs, t siteapi.AutomationTriggerInput) (automation
 		return automations.Trigger{Event: eventmatcher.Matcher{Action: ev.Action, Filter: filter}}, nil
 	case siteapi.DateTriggerInputAutomationTriggerInputSum:
 		d := t.OneOf.DateTriggerInput
-		return automations.Trigger{Date: &datetrigger.Date{
-			Field: dateFieldIn(d.Field), Recurrence: c.DateRecurrence(d.Recurrence),
-			OffsetDays: int(d.OffsetDays), LocalTime: string(d.LocalTime),
-		}}, nil
+		date := dateIn(c, d.Field, d.Recurrence, d.OffsetDays, d.LocalTime)
+		return automations.Trigger{Date: &date}, nil
 	}
 	return automations.Trigger{}, nil
 }
@@ -684,6 +685,15 @@ func dateFieldIn(f siteapi.DateFieldInput) datetrigger.Field {
 		return datetrigger.Field{Kind: datetrigger.CustomField, Key: f.OneOf.CustomFieldDateFieldInput.Key}
 	}
 	return datetrigger.Field{}
+}
+
+// dateIn is the date a date Trigger or a Wait until names (ADR 0126): the two write the same
+// model, so they are read by the same function.
+func dateIn(c Inputs, field siteapi.DateFieldInput, recurrence siteapi.DateRecurrence, offsetDays siteapi.DateOffsetDays, localTime siteapi.LocalTime) datetrigger.Date {
+	return datetrigger.Date{
+		Field: dateFieldIn(field), Recurrence: c.DateRecurrence(recurrence),
+		OffsetDays: int(offsetDays), LocalTime: string(localTime),
+	}
 }
 
 // automationEntryIn is the Entry policy and the Enrollment key a write gives with its Trigger, an

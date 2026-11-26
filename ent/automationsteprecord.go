@@ -47,6 +47,8 @@ type AutomationStepRecord struct {
 	PathOutcomes map[automationstep.ID]conditiontree.Truth `json:"path_outcomes,omitempty"`
 	// DueAt holds the value of the "due_at" field.
 	DueAt *time.Time `json:"due_at,omitempty"`
+	// WentOn holds the value of the "went_on" field.
+	WentOn *automationstep.WentOn `json:"went_on,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AutomationStepRecordQuery when eager-loading is set.
 	Edges        AutomationStepRecordEdges `json:"edges"`
@@ -95,7 +97,7 @@ func (*AutomationStepRecord) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case automationsteprecord.FieldID, automationsteprecord.FieldWorkspaceID, automationsteprecord.FieldRunID:
 			values[i] = new(sql.NullInt64)
-		case automationsteprecord.FieldStepID, automationsteprecord.FieldOutcome, automationsteprecord.FieldSkipReason, automationsteprecord.FieldPathID:
+		case automationsteprecord.FieldStepID, automationsteprecord.FieldOutcome, automationsteprecord.FieldSkipReason, automationsteprecord.FieldPathID, automationsteprecord.FieldWentOn:
 			values[i] = new(sql.NullString)
 		case automationsteprecord.FieldCreatedAt, automationsteprecord.FieldUpdatedAt, automationsteprecord.FieldReachedAt, automationsteprecord.FieldLeftAt, automationsteprecord.FieldDueAt:
 			values[i] = new(sql.NullTime)
@@ -199,6 +201,13 @@ func (_m *AutomationStepRecord) assignValues(columns []string, values []any) err
 				_m.DueAt = new(time.Time)
 				*_m.DueAt = value.Time
 			}
+		case automationsteprecord.FieldWentOn:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field went_on", values[i])
+			} else if value.Valid {
+				_m.WentOn = new(automationstep.WentOn)
+				*_m.WentOn = automationstep.WentOn(value.String)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -289,6 +298,11 @@ func (_m *AutomationStepRecord) String() string {
 	if v := _m.DueAt; v != nil {
 		builder.WriteString("due_at=")
 		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.WentOn; v != nil {
+		builder.WriteString("went_on=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteByte(')')
 	return builder.String()

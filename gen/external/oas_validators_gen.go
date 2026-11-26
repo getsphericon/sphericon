@@ -928,6 +928,17 @@ func (s *AutomationReport) Validate() error {
 			Error: err,
 		})
 	}
+	if err := func() error {
+		if s.WaitUntilSteps == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "waitUntilSteps",
+			Error: err,
+		})
+	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
 	}
@@ -14099,6 +14110,158 @@ func (s WaitStepType) Validate() error {
 	}
 }
 
+func (s *WaitUntilDate) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Form.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "form",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Field.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "field",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Recurrence.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "recurrence",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.OffsetDays.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "offsetDays",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.LocalTime.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "localTime",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s WaitUntilDateForm) Validate() error {
+	switch s {
+	case "date":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *WaitUntilDateInput) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Form.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "form",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Field.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "field",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Recurrence.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "recurrence",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.OffsetDays.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "offsetDays",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.LocalTime.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "localTime",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s WaitUntilDateInputForm) Validate() error {
+	switch s {
+	case "date":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *WaitUntilMoment) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -14152,6 +14315,11 @@ func (s WaitUntilMomentInputSum) Validate() error {
 			return err
 		}
 		return nil
+	case WaitUntilDateInputWaitUntilMomentInputSum:
+		if err := s.WaitUntilDateInput.Validate(); err != nil {
+			return err
+		}
+		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
 	}
@@ -14161,6 +14329,11 @@ func (s WaitUntilMomentSum) Validate() error {
 	switch s.Type {
 	case WaitUntilTimeOfDayWaitUntilMomentSum:
 		if err := s.WaitUntilTimeOfDay.Validate(); err != nil {
+			return err
+		}
+		return nil
+	case WaitUntilDateWaitUntilMomentSum:
+		if err := s.WaitUntilDate.Validate(); err != nil {
 			return err
 		}
 		return nil

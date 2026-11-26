@@ -13,6 +13,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
 	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
@@ -83,7 +84,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
-	"github.com/getsphericon/sphericon/internal/kernel/datetrigger"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/eventmatcher"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
@@ -1301,11 +1301,17 @@ func waitUntilMoment(c Converter, u automationstep.Until) (siteapi.WaitUntilMome
 	switch u := u.(type) {
 	case automationstep.TimeOfDay:
 		return siteapi.WaitUntilMoment{OneOf: siteapi.NewWaitUntilTimeOfDayWaitUntilMomentSum(c.WaitUntilTimeOfDayToResource(u))}, nil
+	case automationstep.OnDate:
+		return siteapi.WaitUntilMoment{OneOf: siteapi.NewWaitUntilDateWaitUntilMomentSum(siteapi.WaitUntilDate{
+			Form: siteapi.WaitUntilDateFormDate, Field: dateField(u.Field), Recurrence: c.DateRecurrenceToResource(u.Recurrence),
+			OffsetDays: siteapi.DateOffsetDays(narrow.Int32(u.OffsetDays)), LocalTime: siteapi.LocalTime(u.LocalTime),
+		})}, nil
 	case nil:
 		return siteapi.WaitUntilMoment{}, errors.New("a wait until without a moment")
 	}
 	return siteapi.WaitUntilMoment{}, fmt.Errorf("the moment %T has no arm", u)
 }
+
 func applyTagStepType(automationstep.Kind) siteapi.ApplyTagStepType {
 	return siteapi.ApplyTagStepTypeApplyTag
 }

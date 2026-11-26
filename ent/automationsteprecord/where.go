@@ -622,6 +622,46 @@ func DueAtNotNil() predicate.AutomationStepRecord {
 	return predicate.AutomationStepRecord(sql.FieldNotNull(FieldDueAt))
 }
 
+// WentOnEQ applies the EQ predicate on the "went_on" field.
+func WentOnEQ(v automationstep.WentOn) predicate.AutomationStepRecord {
+	vc := v
+	return predicate.AutomationStepRecord(sql.FieldEQ(FieldWentOn, vc))
+}
+
+// WentOnNEQ applies the NEQ predicate on the "went_on" field.
+func WentOnNEQ(v automationstep.WentOn) predicate.AutomationStepRecord {
+	vc := v
+	return predicate.AutomationStepRecord(sql.FieldNEQ(FieldWentOn, vc))
+}
+
+// WentOnIn applies the In predicate on the "went_on" field.
+func WentOnIn(vs ...automationstep.WentOn) predicate.AutomationStepRecord {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.AutomationStepRecord(sql.FieldIn(FieldWentOn, v...))
+}
+
+// WentOnNotIn applies the NotIn predicate on the "went_on" field.
+func WentOnNotIn(vs ...automationstep.WentOn) predicate.AutomationStepRecord {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.AutomationStepRecord(sql.FieldNotIn(FieldWentOn, v...))
+}
+
+// WentOnIsNil applies the IsNil predicate on the "went_on" field.
+func WentOnIsNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldIsNull(FieldWentOn))
+}
+
+// WentOnNotNil applies the NotNil predicate on the "went_on" field.
+func WentOnNotNil() predicate.AutomationStepRecord {
+	return predicate.AutomationStepRecord(sql.FieldNotNull(FieldWentOn))
+}
+
 // HasWorkspace applies the HasEdge predicate on the "workspace" edge.
 func HasWorkspace() predicate.AutomationStepRecord {
 	return predicate.AutomationStepRecord(func(s *sql.Selector) {

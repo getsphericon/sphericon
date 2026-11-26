@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 )
 
@@ -40,6 +41,8 @@ const (
 	FieldPathOutcomes = "path_outcomes"
 	// FieldDueAt holds the string denoting the due_at field in the database.
 	FieldDueAt = "due_at"
+	// FieldWentOn holds the string denoting the went_on field in the database.
+	FieldWentOn = "went_on"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// EdgeRun holds the string denoting the run edge name in mutations.
@@ -77,6 +80,7 @@ var Columns = []string{
 	FieldPathID,
 	FieldPathOutcomes,
 	FieldDueAt,
+	FieldWentOn,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -129,6 +133,16 @@ func SkipReasonValidator(sr skipreason.Reason) error {
 		return nil
 	default:
 		return fmt.Errorf("automationsteprecord: invalid enum value for skip_reason field: %q", sr)
+	}
+}
+
+// WentOnValidator is a validator for the "went_on" field enum values. It is called by the builders before save.
+func WentOnValidator(wo automationstep.WentOn) error {
+	switch wo {
+	case "past", "no_date", "beyond_bound":
+		return nil
+	default:
+		return fmt.Errorf("automationsteprecord: invalid enum value for went_on field: %q", wo)
 	}
 }
 
@@ -193,6 +207,11 @@ func ByPathID(opts ...sql.OrderTermOption) OrderOption {
 // ByDueAt orders the results by the due_at field.
 func ByDueAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDueAt, opts...).ToFunc()
+}
+
+// ByWentOn orders the results by the went_on field.
+func ByWentOn(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWentOn, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.
