@@ -37,6 +37,27 @@ model EnrollmentFailure {
   excerpt?: string;
 }
 
+/** The occurrence of a yearly date Trigger an Enrollment was made for: its anniversary year */
+model YearlyEnrollmentOccurrence {
+  recurrence: "yearly";
+
+  /** The anniversary year: the year of the date the Trigger's offset counts from */
+  year: int32;
+}
+
+/** The occurrence of a once date Trigger an Enrollment was made for: the one it has */
+model OnceEnrollmentOccurrence {
+  recurrence: "once";
+}
+
+/** The occurrence of a date Trigger an Enrollment was made for (ADR 0126), by `recurrence`: a
+ * contact is enrolled at most once per occurrence */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "recurrence" })
+union EnrollmentOccurrence {
+  yearly: YearlyEnrollmentOccurrence,
+  once: OnceEnrollmentOccurrence,
+}
+
 /** One Contact's progress through an Automation. Erased with the Contact. */
 model EnrollmentResource {
   /** Unique identifier */
@@ -59,6 +80,11 @@ model EnrollmentResource {
    * string form (ADR 0165); absent for an automation with no key */
   @untrusted
   keyValue?: string;
+
+  /** The occurrence of the automation's date Trigger the Enrollment was made for (ADR 0126): which
+   * year's anniversary, or the once date's one occurrence; absent for an Enrollment an Event or a
+   * rule's enroll action began */
+  occurrence?: EnrollmentOccurrence;
 
   /** Id of the Step of its version the Enrollment stands on (ADR 0122): a wait while it waits, the Step it ended on once it ended; absent only for a version of no Steps */
   currentStepId?: StepId;

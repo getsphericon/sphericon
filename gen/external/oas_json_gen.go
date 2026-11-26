@@ -4260,15 +4260,25 @@ func (s *AutomationSkippedCounts) encodeFields(e *jx.Encoder) {
 		e.FieldStart("enrollmentCeiling")
 		e.Int32(s.EnrollmentCeiling)
 	}
+	{
+		e.FieldStart("missed")
+		e.Int32(s.Missed)
+	}
+	{
+		e.FieldStart("sendLocked")
+		e.Int32(s.SendLocked)
+	}
 }
 
-var jsonFieldsNameOfAutomationSkippedCounts = [6]string{
+var jsonFieldsNameOfAutomationSkippedCounts = [8]string{
 	0: "cycle",
 	1: "activeEnrollment",
 	2: "once",
 	3: "cooldown",
 	4: "noEnrollmentKey",
 	5: "enrollmentCeiling",
+	6: "missed",
+	7: "sendLocked",
 }
 
 // Decode decodes AutomationSkippedCounts from json.
@@ -4352,6 +4362,30 @@ func (s *AutomationSkippedCounts) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"enrollmentCeiling\"")
 			}
+		case "missed":
+			requiredBitSet[0] |= 1 << 6
+			if err := func() error {
+				v, err := d.Int32()
+				s.Missed = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"missed\"")
+			}
+		case "sendLocked":
+			requiredBitSet[0] |= 1 << 7
+			if err := func() error {
+				v, err := d.Int32()
+				s.SendLocked = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"sendLocked\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -4362,7 +4396,7 @@ func (s *AutomationSkippedCounts) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00111111,
+		0b11111111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -25303,6 +25337,151 @@ func (s *EnrollmentFailureKind) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
+func (s *EnrollmentOccurrence) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *EnrollmentOccurrence) encodeFields(e *jx.Encoder) {
+	s.OneOf.encodeFields(e)
+}
+
+var jsonFieldsNameOfEnrollmentOccurrence = [0]string{}
+
+// Decode decodes EnrollmentOccurrence from json.
+func (s *EnrollmentOccurrence) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode EnrollmentOccurrence to nil")
+	}
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return s.OneOf.Decode(d)
+	}); err != nil {
+		return errors.Wrap(err, "decode field OneOf")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		default:
+			return d.Skip()
+		}
+	}); err != nil {
+		return errors.Wrap(err, "decode EnrollmentOccurrence")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *EnrollmentOccurrence) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *EnrollmentOccurrence) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes EnrollmentOccurrenceSum as json.
+func (s EnrollmentOccurrenceSum) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+func (s EnrollmentOccurrenceSum) encodeFields(e *jx.Encoder) {
+	switch s.Type {
+	case YearlyEnrollmentOccurrenceEnrollmentOccurrenceSum:
+		e.FieldStart("recurrence")
+		e.Str("yearly")
+		{
+			s := s.YearlyEnrollmentOccurrence
+			{
+				e.FieldStart("year")
+				e.Int32(s.Year)
+			}
+		}
+	case OnceEnrollmentOccurrenceEnrollmentOccurrenceSum:
+		e.FieldStart("recurrence")
+		e.Str("once")
+	}
+}
+
+// Decode decodes EnrollmentOccurrenceSum from json.
+func (s *EnrollmentOccurrenceSum) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode EnrollmentOccurrenceSum to nil")
+	}
+	// Sum type discriminator.
+	if typ := d.Next(); typ != jx.Object {
+		return errors.Errorf("unexpected json type %q", typ)
+	}
+
+	var found bool
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return d.ObjBytes(func(d *jx.Decoder, key []byte) error {
+			if found {
+				return d.Skip()
+			}
+			switch string(key) {
+			case "recurrence":
+				typ, err := d.Str()
+				if err != nil {
+					return err
+				}
+				switch typ {
+				case "yearly":
+					s.Type = YearlyEnrollmentOccurrenceEnrollmentOccurrenceSum
+					found = true
+				case "once":
+					s.Type = OnceEnrollmentOccurrenceEnrollmentOccurrenceSum
+					found = true
+				default:
+					return errors.Errorf("unknown type %s", typ)
+				}
+				return nil
+			}
+			return d.Skip()
+		})
+	}); err != nil {
+		return errors.Wrap(err, "capture")
+	}
+	if !found {
+		return errors.New("unable to detect sum type variant")
+	}
+	switch s.Type {
+	case YearlyEnrollmentOccurrenceEnrollmentOccurrenceSum:
+		if err := s.YearlyEnrollmentOccurrence.Decode(d); err != nil {
+			return err
+		}
+	case OnceEnrollmentOccurrenceEnrollmentOccurrenceSum:
+		if err := s.OnceEnrollmentOccurrence.Decode(d); err != nil {
+			return err
+		}
+	default:
+		return errors.Errorf("inferred invalid type: %s", s.Type)
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s EnrollmentOccurrenceSum) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *EnrollmentOccurrenceSum) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *EnrollmentResource) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -25338,6 +25517,12 @@ func (s *EnrollmentResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.Occurrence.Set {
+			e.FieldStart("occurrence")
+			s.Occurrence.Encode(e)
+		}
+	}
+	{
 		if s.CurrentStepId.Set {
 			e.FieldStart("currentStepId")
 			s.CurrentStepId.Encode(e)
@@ -25365,18 +25550,19 @@ func (s *EnrollmentResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfEnrollmentResource = [11]string{
+var jsonFieldsNameOfEnrollmentResource = [12]string{
 	0:  "id",
 	1:  "automationId",
 	2:  "contactId",
 	3:  "status",
 	4:  "ordinal",
 	5:  "keyValue",
-	6:  "currentStepId",
-	7:  "resumeAt",
-	8:  "failure",
-	9:  "createdAt",
-	10: "updatedAt",
+	6:  "occurrence",
+	7:  "currentStepId",
+	8:  "resumeAt",
+	9:  "failure",
+	10: "createdAt",
+	11: "updatedAt",
 }
 
 // Decode decodes EnrollmentResource from json.
@@ -25450,6 +25636,16 @@ func (s *EnrollmentResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"keyValue\"")
 			}
+		case "occurrence":
+			if err := func() error {
+				s.Occurrence.Reset()
+				if err := s.Occurrence.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"occurrence\"")
+			}
 		case "currentStepId":
 			if err := func() error {
 				s.CurrentStepId.Reset()
@@ -25481,7 +25677,7 @@ func (s *EnrollmentResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"failure\"")
 			}
 		case "createdAt":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[1] |= 1 << 2
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -25491,7 +25687,7 @@ func (s *EnrollmentResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[1] |= 1 << 2
+			requiredBitSet[1] |= 1 << 3
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -25511,7 +25707,7 @@ func (s *EnrollmentResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
 		0b00011111,
-		0b00000110,
+		0b00001100,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -33063,6 +33259,138 @@ func (s *NumberTestKind) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode implements json.Marshaler.
+func (s *OnceEnrollmentOccurrence) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *OnceEnrollmentOccurrence) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("recurrence")
+		s.Recurrence.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfOnceEnrollmentOccurrence = [1]string{
+	0: "recurrence",
+}
+
+// Decode decodes OnceEnrollmentOccurrence from json.
+func (s *OnceEnrollmentOccurrence) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode OnceEnrollmentOccurrence to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "recurrence":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Recurrence.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"recurrence\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode OnceEnrollmentOccurrence")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfOnceEnrollmentOccurrence) {
+					name = jsonFieldsNameOfOnceEnrollmentOccurrence[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *OnceEnrollmentOccurrence) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OnceEnrollmentOccurrence) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes OnceEnrollmentOccurrenceRecurrence as json.
+func (s OnceEnrollmentOccurrenceRecurrence) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes OnceEnrollmentOccurrenceRecurrence from json.
+func (s *OnceEnrollmentOccurrenceRecurrence) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode OnceEnrollmentOccurrenceRecurrence to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch OnceEnrollmentOccurrenceRecurrence(v) {
+	case OnceEnrollmentOccurrenceRecurrenceOnce:
+		*s = OnceEnrollmentOccurrenceRecurrenceOnce
+	default:
+		*s = OnceEnrollmentOccurrenceRecurrence(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OnceEnrollmentOccurrenceRecurrence) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OnceEnrollmentOccurrenceRecurrence) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes AutomationHttpErrorKind as json.
 func (o OptAutomationHttpErrorKind) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -33557,6 +33885,39 @@ func (s OptEnrollmentFailure) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *OptEnrollmentFailure) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes EnrollmentOccurrence as json.
+func (o OptEnrollmentOccurrence) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes EnrollmentOccurrence from json.
+func (o *OptEnrollmentOccurrence) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptEnrollmentOccurrence to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptEnrollmentOccurrence) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptEnrollmentOccurrence) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -62127,6 +62488,155 @@ func (s *WorkspaceResource) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *WorkspaceResource) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *YearlyEnrollmentOccurrence) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *YearlyEnrollmentOccurrence) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("recurrence")
+		s.Recurrence.Encode(e)
+	}
+	{
+		e.FieldStart("year")
+		e.Int32(s.Year)
+	}
+}
+
+var jsonFieldsNameOfYearlyEnrollmentOccurrence = [2]string{
+	0: "recurrence",
+	1: "year",
+}
+
+// Decode decodes YearlyEnrollmentOccurrence from json.
+func (s *YearlyEnrollmentOccurrence) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode YearlyEnrollmentOccurrence to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "recurrence":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Recurrence.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"recurrence\"")
+			}
+		case "year":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Int32()
+				s.Year = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"year\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode YearlyEnrollmentOccurrence")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfYearlyEnrollmentOccurrence) {
+					name = jsonFieldsNameOfYearlyEnrollmentOccurrence[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *YearlyEnrollmentOccurrence) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *YearlyEnrollmentOccurrence) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes YearlyEnrollmentOccurrenceRecurrence as json.
+func (s YearlyEnrollmentOccurrenceRecurrence) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes YearlyEnrollmentOccurrenceRecurrence from json.
+func (s *YearlyEnrollmentOccurrenceRecurrence) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode YearlyEnrollmentOccurrenceRecurrence to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch YearlyEnrollmentOccurrenceRecurrence(v) {
+	case YearlyEnrollmentOccurrenceRecurrenceYearly:
+		*s = YearlyEnrollmentOccurrenceRecurrenceYearly
+	default:
+		*s = YearlyEnrollmentOccurrenceRecurrence(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s YearlyEnrollmentOccurrenceRecurrence) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *YearlyEnrollmentOccurrenceRecurrence) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

@@ -569,6 +569,7 @@ type Converter interface {
 	RuleDryRunToResource(source rules.DryRun) externalapi.RuleDryRunResource
 
 	// goverter:map . Failure | enrollmentFailure
+	// goverter:map Occurrence | enrollmentOccurrence
 	EnrollmentToResource(source *ent.AutomationRun) externalapi.EnrollmentResource
 	// The store names the triggering Event's source id; the contract says whose it is.
 	// goverter:map SourceID EventSourceId
@@ -1092,6 +1093,23 @@ func optTrackingReason(c Converter, v *trackingdomain.Reason) externalapi.OptTra
 // optSkippedReason is absent on every message but a skipped one.
 func optSkippedReason(c Converter, v *skipreason.Reason) externalapi.OptNilSkippedReason {
 	return convert.OptVia[externalapi.OptNilSkippedReason](v, c.SkippedReasonToResource)
+}
+
+// enrollmentOccurrence is the occurrence of a date Trigger the enrollment was made for (ADR 0126):
+// its anniversary year, or a once date's one occurrence; absent for one an Event or a rule began.
+func enrollmentOccurrence(occurrence *int) externalapi.OptEnrollmentOccurrence {
+	if occurrence == nil {
+		return externalapi.OptEnrollmentOccurrence{}
+	}
+	year, yearly := datetrigger.YearOf(*occurrence)
+	if !yearly {
+		return externalapi.NewOptEnrollmentOccurrence(externalapi.EnrollmentOccurrence{OneOf: externalapi.NewOnceEnrollmentOccurrenceEnrollmentOccurrenceSum(
+			externalapi.OnceEnrollmentOccurrence{Recurrence: externalapi.OnceEnrollmentOccurrenceRecurrenceOnce},
+		)})
+	}
+	return externalapi.NewOptEnrollmentOccurrence(externalapi.EnrollmentOccurrence{OneOf: externalapi.NewYearlyEnrollmentOccurrenceEnrollmentOccurrenceSum(
+		externalapi.YearlyEnrollmentOccurrence{Recurrence: externalapi.YearlyEnrollmentOccurrenceRecurrenceYearly, Year: count(year)},
+	)})
 }
 
 // enrollmentFailure is the enrollment's failure detail; absent unless it failed.

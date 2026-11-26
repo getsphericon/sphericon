@@ -112,6 +112,16 @@ function ResultsFigures({ results }: { results: AutomationResults }) {
           current.skipped.enrollmentCeiling,
           previous.skipped.enrollmentCeiling,
         )}
+        {count(
+          t(($) => $.automations.results.skippedMissed),
+          current.skipped.missed,
+          previous.skipped.missed,
+        )}
+        {count(
+          t(($) => $.automations.results.skippedSendLocked),
+          current.skipped.sendLocked,
+          previous.skipped.sendLocked,
+        )}
         <StatCard
           label={t(($) => $.automations.results.averageDuration)}
           value={duration === null ? '–' : formatDuration(duration)}

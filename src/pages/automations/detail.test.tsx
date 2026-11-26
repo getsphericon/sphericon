@@ -577,6 +577,8 @@ const MONTH: AutomationResults = {
       cooldown: 10,
       noEnrollmentKey: 12,
       enrollmentCeiling: 3,
+      missed: 9,
+      sendLocked: 13,
     },
     averageDurationSeconds: 85_050,
     revenue: { reportingCurrency: 'USD', orders: 1, amount: 3500 },
@@ -597,6 +599,8 @@ const MONTH: AutomationResults = {
       cooldown: 4,
       noEnrollmentKey: 8,
       enrollmentCeiling: 1,
+      missed: 2,
+      sendLocked: 6,
     },
     averageDurationSeconds: 57_600,
     revenue: { reportingCurrency: 'USD', orders: 1, amount: 2500 },
@@ -649,6 +653,14 @@ test('shows what the enrollments did in the period against the period before', a
     .element(screen.getByText('Skipped: too many enrollments of one contact'))
     .toBeInTheDocument()
   await expect.element(screen.getByText('Previous 30 days: 1 (+200%)')).toBeInTheDocument()
+  await expect
+    .element(screen.getByText('Skipped: reached more than 24 hours late'))
+    .toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 2 (+350%)')).toBeInTheDocument()
+  await expect
+    .element(screen.getByText('Skipped: the date was set by an agent that may not send'))
+    .toBeInTheDocument()
+  await expect.element(screen.getByText('Previous 30 days: 6 (+116.67%)')).toBeInTheDocument()
 })
 
 test('the period picked shows the results of that period', async () => {
