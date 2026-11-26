@@ -1,9 +1,10 @@
 import { Button, Group, Stack, Text, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
+import { siteWorkspacesSetEngagementTrackingDefaultMutation } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteWorkspaceResource } from '../../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../../hooks/useConfirmation.tsx'
-import { useSetEngagementTrackingDefault } from '../../../hooks/useEngagementTrackingDefault.ts'
+import { useWorkspaceSettingMutation } from '../../../hooks/useWorkspaceSettingMutation.ts'
 import { can } from '../../../utils/permissions.ts'
 
 // EngagementTrackingDefaultSection holds the Workspace's Engagement tracking default (ADR 0120):
@@ -16,7 +17,12 @@ export function EngagementTrackingDefaultSection({
 }) {
   const { t } = useTranslation()
   const confirm = useConfirmation()
-  const mutation = useSetEngagementTrackingDefault(workspace.id)
+  const mutation = useWorkspaceSettingMutation(workspace.id, {
+    mutation: siteWorkspacesSetEngagementTrackingDefaultMutation(),
+    successMessage: t(($) => $.settings.engagementTrackingDefault.saved),
+    errorTitle: t(($) => $.settings.engagementTrackingDefault.errorTitle),
+    forbiddenMessage: t(($) => $.settings.engagementTrackingDefault.forbidden),
+  })
   const tracks = workspace.engagementTrackingDefault === 'track'
   const change = () =>
     confirm({

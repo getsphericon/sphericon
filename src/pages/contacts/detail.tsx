@@ -43,6 +43,7 @@ import { Route as contactsRoute } from '../../routes/workspaces/$workspaceId/con
 import { withPage } from '../../searchSchemas.ts'
 import { contactFullName, contactIdentifier, contactName } from '../../utils/contactName.ts'
 import { countryName } from '../../utils/countries.ts'
+import { displayValue } from '../../utils/displayValue.ts'
 import { can } from '../../utils/permissions.ts'
 import { formatPhone } from '../../utils/phone.ts'
 import { workspaceOptions } from '../../utils/workspace.ts'
@@ -78,18 +79,6 @@ function AttributeTable({ rows }: { rows: Attribute[] }) {
       </Table.Tbody>
     </Table>
   )
-}
-
-// Custom field values are typed (string/number/bool/…); render scalars directly and
-// anything richer as compact JSON.
-function formatCustomValue(value: unknown): string {
-  if (value === null || value === undefined) {
-    return ''
-  }
-  if (typeof value === 'string') {
-    return value
-  }
-  return JSON.stringify(value)
 }
 
 function ContactActions({
@@ -278,7 +267,8 @@ function ContactDetails({ contact }: { contact: SiteContactResource }) {
   const { t } = useTranslation()
   const customFields = Object.entries(contact.customFields ?? {}).map(([key, value]) => ({
     label: key,
-    value: formatCustomValue(value),
+    // A custom field value is typed: a scalar shows as it is, anything richer as compact JSON.
+    value: displayValue(value) ?? '',
   }))
   return (
     <AttributeTable
