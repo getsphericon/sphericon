@@ -11,12 +11,9 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
-	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/deferralcause"
-	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/kernel/skipreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -54,30 +51,6 @@ func tomorrowAt(loc *time.Location, hour int) time.Time {
 // sameDayAt is hour o'clock on the day t reads in its location.
 func sameDayAt(t time.Time, hour int) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), hour, 0, 0, 0, t.Location())
-}
-
-// windowSMS gives the scoped Workspace an SMS window open from opens to closes, in minutes of the
-// day, every day, in place of its windows, as its settings would.
-func windowSMS(t *testing.T, env *testhelper.TestEnv, s *ent.Scoped, opens, closes int) {
-	t.Helper()
-	m := testhelper.Module[*workspaces.Module](env)
-	rules, err := m.SendingRules(t.Context(), s)
-	require.NoError(t, err)
-	hours := lo.Map(localcalendar.Weekdays, func(day localcalendar.Weekday, _ int) workspaces.OpenHours {
-		return workspaces.OpenHours{Day: day, OpensAt: opens, ClosesAt: closes}
-	})
-	_, err = m.ReplaceSendingRules(t.Context(), s, workspaces.ReplaceSendingRulesInput{
-		Revision:       rules.Revision,
-		FrequencyCaps:  rules.FrequencyCaps,
-		SendingWindows: []workspaces.SendingWindow{{Channel: channels.SMS, Hours: hours}},
-	})
-	require.NoError(t, err)
-}
-
-// windowLacuna is windowSMS for Lacuna.
-func (wt *windowTest) windowLacuna(t *testing.T, opens, closes int) {
-	t.Helper()
-	windowSMS(t, wt.env, lacuna(wt.env), opens, closes)
 }
 
 // text sends Lacuna's Broadcast text under key to the Contact's number now, and requires no error.
@@ -121,7 +94,7 @@ func TestATextAt22InItsZoneIsDeferredUntil8ThereAndThenSentUnderTheCap(t *testin
 	for i := range 3 {
 		require.Equal(t, outboundmessages.Sent, wt.text(t, fixtures.ContactLacunaAdaID, fmt.Sprintf("earlier:%d", i)).Outcome)
 	}
-	wt.windowLacuna(t, 8*60, 20*60)
+	wt.env.WindowSMS(t, fixtures.LacunaID, 8*time.Hour, 20*time.Hour)
 	night := sameDayAt(early, 22)
 	wt.clock.Set(night)
 
@@ -142,7 +115,7 @@ func TestATextAt22InItsZoneIsDeferredUntil8ThereAndThenSentUnderTheCap(t *testin
 	assert.Len(t, wt.env.Twilio.Messages(), 4)
 	msg := wt.message(t, "window:night")
 	require.NotNil(t, msg)
-	assert.True(t, msg.WindowSingleZone, "a Boston number is judged by New York alone")
+	assert.Equal(t, outboundmessage.WindowZonesOneZone, msg.WindowZones, "a Boston number is judged by New York alone")
 }
 
 // Ada texted STOP overnight: when her window opens, the text that waited is read again from the top
@@ -150,7 +123,7 @@ func TestATextAt22InItsZoneIsDeferredUntil8ThereAndThenSentUnderTheCap(t *testin
 func TestATextThatWaitedForTheWindowIsSkippedForASTOPReceivedOvernight(t *testing.T) {
 	night := tomorrowAt(newYork, 22)
 	wt := newWindowTest(t, night)
-	wt.windowLacuna(t, 8*60, 20*60)
+	wt.env.WindowSMS(t, fixtures.LacunaID, 8*time.Hour, 20*time.Hour)
 	waits := wt.text(t, fixtures.ContactLacunaAdaID, "window:stop")
 	require.Equal(t, outboundmessages.Deferral, waits.Outcome)
 	wt.env.DB.Unsubscribe.UpdateOneID(fixtures.UnsubscribeLacunaParkedID).SetDestination(fixtures.ContactLacunaAdaPhone).ExecX(t.Context())
@@ -178,7 +151,7 @@ var honolulu = lo.Must(time.LoadLocation("Pacific/Honolulu"))
 // New York it is night there, so the text waits until 8:00 in Honolulu.
 func TestATextToANumberWhosePrefixMapsNoZoneWaitsForEveryZoneOfItsCountry(t *testing.T) {
 	wt := newWindowTest(t, tomorrowAt(newYork, 9))
-	wt.windowLacuna(t, 8*60, 20*60)
+	wt.env.WindowSMS(t, fixtures.LacunaID, 8*time.Hour, 20*time.Hour)
 	wt.tollFreeAda(t)
 
 	res := wt.text(t, fixtures.ContactLacunaAdaID, "window:toll-free")
@@ -191,7 +164,7 @@ func TestATextToANumberWhosePrefixMapsNoZoneWaitsForEveryZoneOfItsCountry(t *tes
 // time, and its text is Skipped with the reason, recorded under its key.
 func TestATextToANumberWhoseZonesNeverShareAnOpenMomentIsSkippedWithNoLocalTime(t *testing.T) {
 	wt := newWindowTest(t, tomorrowAt(newYork, 10))
-	wt.windowLacuna(t, 9*60, 12*60)
+	wt.env.WindowSMS(t, fixtures.LacunaID, 9*time.Hour, 12*time.Hour)
 	wt.tollFreeAda(t)
 
 	res := wt.text(t, fixtures.ContactLacunaAdaID, "window:nowhere")
@@ -201,15 +174,61 @@ func TestATextToANumberWhoseZonesNeverShareAnOpenMomentIsSkippedWithNoLocalTime(
 	msg := wt.message(t, "window:nowhere")
 	require.NotNil(t, msg)
 	assert.Equal(t, skipreason.NoLocalTime, lo.FromPtr(msg.SkippedReason))
-	assert.False(t, msg.WindowSingleZone)
+	assert.Equal(t, outboundmessage.WindowZonesSeveralZones, msg.WindowZones)
 	assert.Empty(t, wt.env.Twilio.Messages())
+}
+
+// globalAda moves Ada and her Confirmation onto a global service number: of no country, so in no
+// zone of its own.
+func (wt *windowTest) globalAda(t *testing.T) {
+	t.Helper()
+	const global = "+80012345678"
+	wt.env.DB.Contact.UpdateOneID(fixtures.ContactLacunaAdaID).SetPhone(global).ExecX(t.Context())
+	wt.env.DB.Confirmation.UpdateOneID(fixtures.ConfirmationLacunaAdaID).SetDestination(global).ExecX(t.Context())
+}
+
+// Ada's global service number is in no zone, and her time zone says New York: the window is judged
+// there alone, so at 22:00 in New York her text waits until 8:00 there, and then goes, judged by
+// one zone.
+func TestATextToANumberInNoZoneIsJudgedByTheContactsZone(t *testing.T) {
+	wt := newWindowTest(t, tomorrowAt(newYork, 22))
+	wt.env.WindowSMS(t, fixtures.LacunaID, 8*time.Hour, 20*time.Hour)
+	wt.globalAda(t)
+	wt.env.DB.Contact.UpdateOneID(fixtures.ContactLacunaAdaID).SetTimeZone("America/New_York").ExecX(t.Context())
+
+	waits := wt.text(t, fixtures.ContactLacunaAdaID, "window:global")
+	wt.clock.Set(waits.Until)
+	sent := wt.text(t, fixtures.ContactLacunaAdaID, "window:global")
+
+	assert.Equal(t, outboundmessages.Deferral, waits.Outcome)
+	assert.True(t, readsAt(waits.Until, newYork, 8), "until 8:00 in New York: %s", waits.Until.In(newYork))
+	assert.Equal(t, outboundmessages.Sent, sent.Outcome)
+	msg := wt.message(t, "window:global")
+	require.NotNil(t, msg)
+	assert.Equal(t, outboundmessage.WindowZonesOneZone, msg.WindowZones)
+}
+
+// Without a time zone of hers, Ada's global service number is in no zone at all: her text has no
+// local time, and its message says no zone judged it.
+func TestATextToANumberInNoZoneOfAContactWithoutOneIsSkippedWithNoLocalTime(t *testing.T) {
+	wt := newWindowTest(t, tomorrowAt(newYork, 10))
+	wt.env.WindowSMS(t, fixtures.LacunaID, 8*time.Hour, 20*time.Hour)
+	wt.globalAda(t)
+
+	res := wt.text(t, fixtures.ContactLacunaAdaID, "window:global-alone")
+
+	assert.Equal(t, outboundmessages.Skipped, res.Outcome)
+	assert.Equal(t, skipreason.NoLocalTime, res.SkippedReason)
+	msg := wt.message(t, "window:global-alone")
+	require.NotNil(t, msg)
+	assert.Equal(t, outboundmessage.WindowZonesNoZone, msg.WindowZones)
 }
 
 // At 22:00 in New York it is noon in Tokyo: a Contact whose time zone says Tokyo does not open the
 // window her Boston number keeps closed. Her text waits for a moment open in both: 8:00 in Tokyo.
 func TestAContactsTimeZoneThatIsOpenWhereHerNumberIsClosedDoesNotSendThen(t *testing.T) {
 	wt := newWindowTest(t, tomorrowAt(newYork, 22))
-	wt.windowLacuna(t, 8*60, 20*60)
+	wt.env.WindowSMS(t, fixtures.LacunaID, 8*time.Hour, 20*time.Hour)
 	wt.env.DB.Contact.UpdateOneID(fixtures.ContactLacunaAdaID).SetTimeZone("Asia/Tokyo").ExecX(t.Context())
 
 	res := wt.text(t, fixtures.ContactLacunaAdaID, "window:tokyo")
@@ -224,7 +243,7 @@ func TestAContactsTimeZoneThatIsOpenWhereHerNumberIsClosedDoesNotSendThen(t *tes
 // goes.
 func TestAContactsTimeZoneThatIsNoZoneIsIgnored(t *testing.T) {
 	wt := newWindowTest(t, tomorrowAt(newYork, 10))
-	wt.windowLacuna(t, 8*60, 20*60)
+	wt.env.WindowSMS(t, fixtures.LacunaID, 8*time.Hour, 20*time.Hour)
 	wt.env.DB.Contact.UpdateOneID(fixtures.ContactLacunaAdaID).SetTimeZone("Mars/Olympus_Mons").ExecX(t.Context())
 
 	res := wt.text(t, fixtures.ContactLacunaAdaID, "window:mars")
@@ -235,7 +254,7 @@ func TestAContactsTimeZoneThatIsNoZoneIsIgnored(t *testing.T) {
 // A Test send goes to the number its author types: no window holds it, at any hour.
 func TestATestSendAtNightGoesOut(t *testing.T) {
 	wt := newWindowTest(t, tomorrowAt(newYork, 3))
-	wt.windowLacuna(t, 8*60, 20*60)
+	wt.env.WindowSMS(t, fixtures.LacunaID, 8*time.Hour, 20*time.Hour)
 	b := wt.env.DB.Broadcast.GetX(t.Context(), fixtures.BroadcastLacunaSmsHelloID)
 
 	res, err := wt.env.OutboundModule().SendBroadcastTest(t.Context(), lacuna(wt.env), b, outboundmessages.TestAddress{Phone: fixtures.ContactLacunaAdaPhone})
@@ -248,11 +267,12 @@ func TestATestSendAtNightGoesOut(t *testing.T) {
 // No law sets hours for email: a marketing email at 3:00 goes, whatever the texts' window.
 func TestAMarketingEmailAtNightGoesOut(t *testing.T) {
 	wt := newWindowTest(t, tomorrowAt(newYork, 3))
-	windowSMS(t, wt.env, acme(wt.env), 8*60, 20*60)
+	wt.env.WindowSMS(t, fixtures.AcmeID, 8*time.Hour, 20*time.Hour)
 
 	res, err := wt.env.OutboundModule().Send(t.Context(), acme(wt.env), marketing(t, wt.env, "window:email", fixtures.ContactAliceID))
 
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Sent, res.Outcome)
-	assert.False(t, byKey(t, wt.env, "window:email").WindowSingleZone, "no window held it")
+	msg := byKey(t, wt.env, "window:email")
+	assert.Equal(t, outboundmessage.WindowZonesUnjudged, msg.WindowZones, "no window held it")
 }

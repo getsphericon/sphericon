@@ -873,6 +873,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "deferred_until", Type: field.TypeTime, Nullable: true},
 		{Name: "deferral_cause", Type: field.TypeEnum, Nullable: true, Enums: []string{"provider_limit", "send_cap", "provider", "sending_window", "frequency_cap"}},
+		{Name: "deferred_since", Type: field.TypeTime, Nullable: true},
 		{Name: "unsubscribed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "broadcast_id", Type: field.TypeInt64},
 		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
@@ -886,19 +887,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "broadcast_recipients_broadcasts_recipients",
-				Columns:    []*schema.Column{BroadcastRecipientsColumns[6]},
+				Columns:    []*schema.Column{BroadcastRecipientsColumns[7]},
 				RefColumns: []*schema.Column{BroadcastsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "broadcast_recipients_contacts_contact",
-				Columns:    []*schema.Column{BroadcastRecipientsColumns[7]},
+				Columns:    []*schema.Column{BroadcastRecipientsColumns[8]},
 				RefColumns: []*schema.Column{ContactsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "broadcast_recipients_workspaces_broadcast_recipients",
-				Columns:    []*schema.Column{BroadcastRecipientsColumns[8]},
+				Columns:    []*schema.Column{BroadcastRecipientsColumns[9]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -907,12 +908,12 @@ var (
 			{
 				Name:    "broadcast_recipients_workspace_id_broadcast_id_contact_id",
 				Unique:  true,
-				Columns: []*schema.Column{BroadcastRecipientsColumns[8], BroadcastRecipientsColumns[6], BroadcastRecipientsColumns[7]},
+				Columns: []*schema.Column{BroadcastRecipientsColumns[9], BroadcastRecipientsColumns[7], BroadcastRecipientsColumns[8]},
 			},
 			{
 				Name:    "broadcast_recipients_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastRecipientsColumns[8], BroadcastRecipientsColumns[7]},
+				Columns: []*schema.Column{BroadcastRecipientsColumns[9], BroadcastRecipientsColumns[8]},
 			},
 		},
 	}
@@ -2373,7 +2374,7 @@ var (
 		{Name: "failure", Type: field.TypeString, Nullable: true},
 		{Name: "deferred_since", Type: field.TypeTime, Nullable: true},
 		{Name: "deferral_cause", Type: field.TypeEnum, Nullable: true, Enums: []string{"provider_limit", "send_cap", "provider", "sending_window", "frequency_cap"}},
-		{Name: "window_single_zone", Type: field.TypeBool, Default: false},
+		{Name: "window_zones", Type: field.TypeEnum, Enums: []string{"unjudged", "no_zone", "one_zone", "several_zones"}, Default: "unjudged"},
 		{Name: "claimed_at", Type: field.TypeTime},
 		{Name: "sent_at", Type: field.TypeTime, Nullable: true},
 		{Name: "delivered_at", Type: field.TypeTime, Nullable: true},
@@ -4091,6 +4092,7 @@ func init() {
 	BroadcastRecipientsTable.Annotation.Checks = map[string]string{
 		"broadcast_recipients_deferral_cause_check": "deferral_cause IN ('provider_limit', 'send_cap', 'provider', 'sending_window', 'frequency_cap')",
 		"broadcast_recipients_deferral_check":       "deferral_cause IS NULL OR deferred_until IS NOT NULL",
+		"broadcast_recipients_deferred_since_check": "deferred_since IS NULL OR deferral_cause IS NOT NULL",
 	}
 	CapturedMessagesTable.ForeignKeys[0].RefTable = OutboundMessagesTable
 	CapturedMessagesTable.ForeignKeys[1].RefTable = IntegrationsTable
@@ -4354,6 +4356,7 @@ func init() {
 		"outbound_messages_provenance_check":     "(kind = 'broadcast' AND broadcast_id IS NOT NULL AND automation_id IS NULL AND automation_version_id IS NULL AND automation_step_id IS NULL AND automation_run_id IS NULL AND template_id IS NULL) OR (kind = 'automation' AND automation_id IS NOT NULL AND automation_version_id IS NOT NULL AND automation_step_id IS NOT NULL AND broadcast_id IS NULL AND broadcast_recipient_id IS NULL AND template_id IS NULL) OR (kind = 'transactional' AND broadcast_id IS NULL AND broadcast_recipient_id IS NULL AND automation_id IS NULL AND automation_version_id IS NULL AND automation_step_id IS NULL AND automation_run_id IS NULL) OR (kind = 'confirmation' AND broadcast_id IS NULL AND broadcast_recipient_id IS NULL AND automation_id IS NULL AND automation_version_id IS NULL AND automation_step_id IS NULL AND automation_run_id IS NULL AND template_id IS NULL)",
 		"outbound_messages_skipped_reason_check": "skipped_reason IN ('suppressed', 'unsubscribed_everything', 'unsubscribed_source', 'unconfirmed', 'no_destination', 'contact_erased', 'no_local_time', 'frequency_cap')",
 		"outbound_messages_status_check":         "status IN ('pending', 'sent', 'skipped', 'failed')",
+		"outbound_messages_window_zones_check":   "window_zones IN ('unjudged', 'no_zone', 'one_zone', 'several_zones')",
 	}
 	PasskeysTable.ForeignKeys[0].RefTable = UsersTable
 	PasskeysTable.Annotation = &entsql.Annotation{

@@ -40,33 +40,24 @@ func (m *Module) AddPruned(ctx context.Context, s *ent.Scoped, msgs []*ent.Outbo
 	}
 	for _, k := range order {
 		c := byStep[k]
-		err := s.AutomationFigure().Create().
+		create := s.AutomationFigure().Create().
 			SetAutomationID(k.automation).SetVersionID(k.version).SetStepID(k.step).
 			SetSent(c.sent).SetSkipped(c.skipped).SetDelivered(c.delivered).
 			SetBounced(c.bounced).SetComplained(c.complained).SetCaptured(c.captured).
-			SetSkippedSuppressed(c.skippedBy[skipreason.Suppressed]).
-			SetSkippedUnsubscribedEverything(c.skippedBy[skipreason.UnsubscribedEverything]).
-			SetSkippedUnsubscribedSource(c.skippedBy[skipreason.UnsubscribedSource]).
-			SetSkippedUnconfirmed(c.skippedBy[skipreason.Unconfirmed]).
-			SetSkippedNoDestination(c.skippedBy[skipreason.NoDestination]).
-			SetSkippedContactErased(c.skippedBy[skipreason.ContactErased]).
-			SetSkippedNoLocalTime(c.skippedBy[skipreason.NoLocalTime]).
-			SetSkippedFrequencyCap(c.skippedBy[skipreason.FrequencyCap]).
-			SetSingleZone(c.singleZone).
+			SetSingleZone(c.singleZone)
+		for _, r := range skipreason.All() {
+			setSkipped(create, r, c.skippedBy[r])
+		}
+		err := create.
 			OnConflictColumns(automationfigure.FieldWorkspaceID, automationfigure.FieldAutomationID, automationfigure.FieldVersionID, automationfigure.FieldStepID).
 			Update(func(u *ent.AutomationFigureScopedUpsert) {
 				u.AddSent(c.sent).AddSkipped(c.skipped).AddDelivered(c.delivered).
 					AddBounced(c.bounced).AddComplained(c.complained).AddCaptured(c.captured).
-					AddSkippedSuppressed(c.skippedBy[skipreason.Suppressed]).
-					AddSkippedUnsubscribedEverything(c.skippedBy[skipreason.UnsubscribedEverything]).
-					AddSkippedUnsubscribedSource(c.skippedBy[skipreason.UnsubscribedSource]).
-					AddSkippedUnconfirmed(c.skippedBy[skipreason.Unconfirmed]).
-					AddSkippedNoDestination(c.skippedBy[skipreason.NoDestination]).
-					AddSkippedContactErased(c.skippedBy[skipreason.ContactErased]).
-					AddSkippedNoLocalTime(c.skippedBy[skipreason.NoLocalTime]).
-					AddSkippedFrequencyCap(c.skippedBy[skipreason.FrequencyCap]).
 					AddSingleZone(c.singleZone).
 					UpdateUpdatedAt()
+				for _, r := range skipreason.All() {
+					addSkipped(u, r, c.skippedBy[r])
+				}
 			}).
 			Exec(ctx)
 		if err != nil {
@@ -86,7 +77,7 @@ func (c *counts) add(m *ent.OutboundMessage) {
 	switch m.Status {
 	case outboundmessage.StatusSent:
 		c.sent++
-		if m.WindowSingleZone {
+		if m.WindowZones == outboundmessage.WindowZonesOneZone {
 			c.singleZone++
 		}
 	case outboundmessage.StatusSkipped:
@@ -109,5 +100,51 @@ func (c *counts) add(m *ent.OutboundMessage) {
 	}
 	if m.Captured {
 		c.captured++
+	}
+}
+
+// setSkipped and addSkipped are the one mapping of the Skipped reasons onto a step's figures row's
+// columns, written and added to: each switch names every reason of the closed list (review rule
+// 19), so a new reason fails the build until it has its column here. The report reads them back
+// (automations.skippedOf).
+func setSkipped(c *ent.AutomationFigureScopedCreate, r skipreason.Reason, n int) {
+	switch r {
+	case skipreason.Suppressed:
+		c.SetSkippedSuppressed(n)
+	case skipreason.UnsubscribedEverything:
+		c.SetSkippedUnsubscribedEverything(n)
+	case skipreason.UnsubscribedSource:
+		c.SetSkippedUnsubscribedSource(n)
+	case skipreason.Unconfirmed:
+		c.SetSkippedUnconfirmed(n)
+	case skipreason.NoDestination:
+		c.SetSkippedNoDestination(n)
+	case skipreason.ContactErased:
+		c.SetSkippedContactErased(n)
+	case skipreason.NoLocalTime:
+		c.SetSkippedNoLocalTime(n)
+	case skipreason.FrequencyCap:
+		c.SetSkippedFrequencyCap(n)
+	}
+}
+
+func addSkipped(u *ent.AutomationFigureScopedUpsert, r skipreason.Reason, n int) {
+	switch r {
+	case skipreason.Suppressed:
+		u.AddSkippedSuppressed(n)
+	case skipreason.UnsubscribedEverything:
+		u.AddSkippedUnsubscribedEverything(n)
+	case skipreason.UnsubscribedSource:
+		u.AddSkippedUnsubscribedSource(n)
+	case skipreason.Unconfirmed:
+		u.AddSkippedUnconfirmed(n)
+	case skipreason.NoDestination:
+		u.AddSkippedNoDestination(n)
+	case skipreason.ContactErased:
+		u.AddSkippedContactErased(n)
+	case skipreason.NoLocalTime:
+		u.AddSkippedNoLocalTime(n)
+	case skipreason.FrequencyCap:
+		u.AddSkippedFrequencyCap(n)
 	}
 }

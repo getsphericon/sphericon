@@ -48,7 +48,8 @@ func TestAMarketingTextToANumberWithThreeTextsInADayIsSkippedForTheFrequencyCap(
 	msg := byKey(t, env, "cap:fourth")
 	assert.Equal(t, skipreason.FrequencyCap, lo.FromPtr(msg.SkippedReason), "the Skipped is recorded under the key")
 	assert.Len(t, env.Twilio.Messages(), 3, "the fourth text is not sent")
-	assert.Equal(t, 3, counted(t, env, fixtures.AcmeID, channels.SMS, fixtures.ContactTexterPhone), "a Skipped send takes no place")
+	n := counted(t, env, fixtures.AcmeID, channels.SMS, fixtures.ContactTexterPhone)
+	assert.Equal(t, 3, n, "a Skipped send takes no place")
 }
 
 // A Skipped over the cap is recorded under the Request's key: the same Request replays it.
@@ -84,8 +85,10 @@ func TestATelegramMessageGoesOnlyToTheBindingsUnderTheirCap(t *testing.T) {
 	assert.Equal(t, outboundmessages.Sent, second.Outcome)
 	chats := lo.Map(env.Telegram.RequestsOf(telegramtest.SendMessage), func(r telegramtest.Request, _ int) string { return r.String("chat_id") })
 	assert.Equal(t, []string{tiaChat, tiaOtherChat}, chats, "the first went to the first chat, the second to the other only")
-	assert.Equal(t, 1, counted(t, env, fixtures.LacunaID, channels.Telegram, tiaChat), "the dropped chat's count does not grow")
-	assert.Equal(t, 1, counted(t, env, fixtures.LacunaID, channels.Telegram, tiaOtherChat))
+	dropped := counted(t, env, fixtures.LacunaID, channels.Telegram, tiaChat)
+	other := counted(t, env, fixtures.LacunaID, channels.Telegram, tiaOtherChat)
+	assert.Equal(t, 1, dropped, "the dropped chat's count does not grow")
+	assert.Equal(t, 1, other)
 }
 
 // Two Broadcast texts to one number at its last place, queued behind its lock: the first takes the
@@ -111,7 +114,8 @@ func TestTwoTextsAtANumbersLastPlaceTakeItOnce(t *testing.T) {
 	assert.Equal(t, outboundmessages.Sent, first.Outcome)
 	assert.Equal(t, outboundmessages.Skipped, second.Outcome)
 	assert.Equal(t, skipreason.FrequencyCap, second.SkippedReason)
-	assert.Equal(t, 3, counted(t, env, fixtures.AcmeID, channels.SMS, fixtures.ContactTexterPhone))
+	n := counted(t, env, fixtures.AcmeID, channels.SMS, fixtures.ContactTexterPhone)
+	assert.Equal(t, 3, n)
 }
 
 // A Test send is no Outbound message: a number at its cap still gets it, and its count does not grow.
@@ -127,7 +131,8 @@ func TestATestSendToANumberAtItsCapGoesOut(t *testing.T) {
 	assert.Equal(t, outboundmessages.Sent, res.Outcome)
 	texted := lo.Map(env.Twilio.Messages(), func(m twiliotest.Message, _ int) string { return m.To })
 	assert.Equal(t, []string{fixtures.ContactTexterPhone, fixtures.ContactTexterPhone, fixtures.ContactTexterPhone, fixtures.ContactTexterPhone}, texted)
-	assert.Equal(t, 3, counted(t, env, fixtures.AcmeID, channels.SMS, fixtures.ContactTexterPhone))
+	n := counted(t, env, fixtures.AcmeID, channels.SMS, fixtures.ContactTexterPhone)
+	assert.Equal(t, 3, n)
 }
 
 // capEmail gives Acme a cap of most emails a day in place of its caps, as its settings would.
@@ -161,7 +166,8 @@ func TestATransactionalEmailIsNeitherCountedNorCapped(t *testing.T) {
 	assert.Equal(t, outboundmessages.Sent, receipt.Outcome)
 	assert.Equal(t, outboundmessages.Skipped, next.Outcome)
 	assert.Equal(t, skipreason.FrequencyCap, next.SkippedReason)
-	assert.Equal(t, 1, counted(t, env, fixtures.AcmeID, channels.Email, fixtures.ContactAliceEmail))
+	n := counted(t, env, fixtures.AcmeID, channels.Email, fixtures.ContactAliceEmail)
+	assert.Equal(t, 1, n)
 }
 
 // Alice gets three emails an hour apart under a cap of three a day, which is then lowered to two:
@@ -174,7 +180,8 @@ func TestTheProbeReadsTheCountAndTheReleaseMomentOfADestination(t *testing.T) {
 	capEmail(t, env, 3)
 	start := c.Now()
 	for i := range 3 {
-		require.Equal(t, outboundmessages.Sent, send(t, m, env, fmt.Sprintf("probe:%d", i)).Outcome)
+		seed := send(t, m, env, fmt.Sprintf("probe:%d", i))
+		require.Equal(t, outboundmessages.Sent, seed.Outcome)
 		c.Advance(time.Hour)
 	}
 	capEmail(t, env, 2)
@@ -196,7 +203,8 @@ func TestTheProbeReadsTheCountAndTheReleaseMomentOfADestination(t *testing.T) {
 	assert.False(t, released.Over())
 	assert.True(t, released.Release.IsZero())
 	assert.Zero(t, before.Count, "nothing was counted before the first")
-	assert.Equal(t, 3, counted(t, env, fixtures.AcmeID, channels.Email, fixtures.ContactAliceEmail), "the probe wrote nothing")
+	n := counted(t, env, fixtures.AcmeID, channels.Email, fixtures.ContactAliceEmail)
+	assert.Equal(t, 3, n, "the probe wrote nothing")
 }
 
 // A place counted by a worker whose clock runs ahead still holds for a worker whose clock is behind:
@@ -224,7 +232,8 @@ func TestARetryGoesOnlyToTheDestinationsItsClaimCounted(t *testing.T) {
 	bot := env.LacunaTelegram(t)
 	env.DB.FrequencyCap.UpdateOneID(fixtures.FrequencyCapLacunaTelegramID).SetMaxMessages(1).SetPeriodMinutes(1440).ExecX(ctx)
 	env.DB.Unsubscribe.UpdateOneID(fixtures.UnsubscribeLacunaStoppedID).SetDestination(tiaOtherChat).ExecX(ctx)
-	require.Equal(t, outboundmessages.Sent, sendToTia(t, env, telegramToTia(t, env, bot, "cap:retry:1")).Outcome)
+	seed := sendToTia(t, env, telegramToTia(t, env, bot, "cap:retry:1"))
+	require.Equal(t, outboundmessages.Sent, seed.Outcome)
 	env.DB.Unsubscribe.DeleteOneID(fixtures.UnsubscribeLacunaStoppedID).ExecX(ctx)
 	env.Telegram.FailOnce(telegramtest.SendMessage, telegramtest.Failure{Code: http.StatusInternalServerError, Description: "Internal Server Error"})
 	_, err := env.OutboundModule().Send(ctx, env.DB.Scoped(fixtures.LacunaID), telegramToTia(t, env, bot, "cap:retry:2"))
@@ -235,7 +244,8 @@ func TestARetryGoesOnlyToTheDestinationsItsClaimCounted(t *testing.T) {
 	assert.Equal(t, outboundmessages.Sent, retry.Outcome)
 	chats := lo.Map(env.Telegram.RequestsOf(telegramtest.SendMessage), func(r telegramtest.Request, _ int) string { return r.String("chat_id") })
 	assert.Equal(t, []string{tiaChat, tiaOtherChat, tiaOtherChat}, chats, "the retry does not reach the chat at its cap")
-	assert.Equal(t, 1, counted(t, env, fixtures.LacunaID, channels.Telegram, tiaChat))
+	n := counted(t, env, fixtures.LacunaID, channels.Telegram, tiaChat)
+	assert.Equal(t, 1, n)
 }
 
 // As above, but Tia's other chat opts out of Broadcasts before the retry: the one chat the claim
@@ -247,7 +257,8 @@ func TestARetryWhoseCountedDestinationsAreGoneIsSkipped(t *testing.T) {
 	bot := env.LacunaTelegram(t)
 	env.DB.FrequencyCap.UpdateOneID(fixtures.FrequencyCapLacunaTelegramID).SetMaxMessages(1).SetPeriodMinutes(1440).ExecX(ctx)
 	env.DB.Unsubscribe.UpdateOneID(fixtures.UnsubscribeLacunaStoppedID).SetDestination(tiaOtherChat).ExecX(ctx)
-	require.Equal(t, outboundmessages.Sent, sendToTia(t, env, telegramToTia(t, env, bot, "cap:gone:1")).Outcome)
+	seed := sendToTia(t, env, telegramToTia(t, env, bot, "cap:gone:1"))
+	require.Equal(t, outboundmessages.Sent, seed.Outcome)
 	env.DB.Unsubscribe.UpdateOneID(fixtures.UnsubscribeLacunaStoppedID).SetDestination("77407").ExecX(ctx)
 	env.Telegram.FailOnce(telegramtest.SendMessage, telegramtest.Failure{Code: http.StatusInternalServerError, Description: "Internal Server Error"})
 	_, err := env.OutboundModule().Send(ctx, env.DB.Scoped(fixtures.LacunaID), telegramToTia(t, env, bot, "cap:gone:2"))
@@ -260,5 +271,6 @@ func TestARetryWhoseCountedDestinationsAreGoneIsSkipped(t *testing.T) {
 	assert.Equal(t, skipreason.NoDestination, retry.SkippedReason)
 	chats := lo.Map(env.Telegram.RequestsOf(telegramtest.SendMessage), func(r telegramtest.Request, _ int) string { return r.String("chat_id") })
 	assert.Equal(t, []string{tiaChat, tiaOtherChat}, chats, "the retry reaches neither chat")
-	assert.Equal(t, 1, counted(t, env, fixtures.LacunaID, channels.Telegram, tiaChat))
+	n := counted(t, env, fixtures.LacunaID, channels.Telegram, tiaChat)
+	assert.Equal(t, 1, n)
 }

@@ -189,7 +189,8 @@ func TestAReplacementThatChangesNothingIsNotAudited(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, before, after)
-	assert.Empty(t, env.QueuedEvents(t, events.NameAuditEntry))
+	audited := env.QueuedEvents(t, events.NameAuditEntry)
+	assert.Empty(t, audited)
 }
 
 // A form read before another change is refused rather than saved over it (ADR 0119).
@@ -204,7 +205,8 @@ func TestAReplacementOnAStaleRevisionIsRefused(t *testing.T) {
 		siteapi.SiteWorkspacesReplaceSendingRulesParams{WorkspaceId: fixtures.AcmePublicID})
 
 	testhelper.SiteRefusal(t, err, http.StatusConflict)
-	assert.Equal(t, []siteapi.FrequencyCap{smsDefaultCap}, sendingRules(t, owner, fixtures.AcmePublicID).FrequencyCaps)
+	stored := sendingRules(t, owner, fixtures.AcmePublicID)
+	assert.Equal(t, []siteapi.FrequencyCap{smsDefaultCap}, stored.FrequencyCaps)
 }
 
 // A window that never opens in a week would hold its messages for ever (ADR 0134), a country's as
@@ -218,11 +220,13 @@ func TestAWindowThatNeverOpensIsRefused(t *testing.T) {
 	_, countryErr := replaceSendingRules(t, env, owner, asInput(caps, []siteapi.SendingWindow{smsDefaultWindow, windowOf("FR", nil)}))
 
 	channel := testhelper.SiteRefusal(t, channelErr, http.StatusUnprocessableEntity)
-	assert.Contains(t, channel.Errors.Value["sendingWindows.0"][0], "never opens")
+	assert.Contains(t, channel.Errors.Value["sendingWindows.0.hours"][0], "never opens")
 	country := testhelper.SiteRefusal(t, countryErr, http.StatusUnprocessableEntity)
-	assert.Contains(t, country.Errors.Value["sendingWindows.1"][0], "never opens")
-	assert.Equal(t, []siteapi.SendingWindow{acmeWindow}, sendingRules(t, owner, fixtures.AcmePublicID).SendingWindows)
-	assert.Empty(t, env.QueuedEvents(t, events.NameAuditEntry))
+	assert.Contains(t, country.Errors.Value["sendingWindows.1.hours"][0], "never opens")
+	stored := sendingRules(t, owner, fixtures.AcmePublicID)
+	assert.Equal(t, []siteapi.SendingWindow{acmeWindow}, stored.SendingWindows)
+	audited := env.QueuedEvents(t, events.NameAuditEntry)
+	assert.Empty(t, audited)
 }
 
 func TestACapPeriodOutsideOneMinuteToSevenDaysIsRefused(t *testing.T) {
@@ -235,8 +239,10 @@ func TestACapPeriodOutsideOneMinuteToSevenDaysIsRefused(t *testing.T) {
 
 	testhelper.SiteRefusal(t, zero, http.StatusBadRequest)
 	testhelper.SiteRefusal(t, overAWeek, http.StatusBadRequest)
-	assert.Equal(t, []siteapi.FrequencyCap{smsDefaultCap}, sendingRules(t, owner, fixtures.AcmePublicID).FrequencyCaps)
-	assert.Empty(t, env.QueuedEvents(t, events.NameAuditEntry))
+	stored := sendingRules(t, owner, fixtures.AcmePublicID)
+	assert.Equal(t, []siteapi.FrequencyCap{smsDefaultCap}, stored.FrequencyCaps)
+	audited := env.QueuedEvents(t, events.NameAuditEntry)
+	assert.Empty(t, audited)
 }
 
 // The rest of what a replacement may not hold: a country off a phone Channel, a maximum without a
@@ -255,16 +261,18 @@ func TestARuleTheChannelOrItsShapeCannotHoldIsRefused(t *testing.T) {
 		message string
 	}{
 		{"a country on email", asInput([]siteapi.FrequencyCap{capOf(siteapi.FrequencyCapChannelEmail, "US", 3, 1440)}, windows),
-			"frequencyCaps.0", "only on a phone channel"},
-		{"a maximum without a period", asInput([]siteapi.FrequencyCap{noPeriod}, windows), "frequencyCaps.0", "both a maximum and a period"},
+			"frequencyCaps.0.country", "only on a phone channel"},
+		{"a maximum without a period", asInput([]siteapi.FrequencyCap{noPeriod}, windows), "frequencyCaps.0.periodMinutes", "both a maximum and a period"},
 		{"two caps for SMS", asInput([]siteapi.FrequencyCap{smsDefaultCap, capOf(siteapi.FrequencyCapChannelSMS, "", 2, 60)}, windows),
-			"frequencyCaps.1", "already have a rule"},
+			"frequencyCaps.1.channel", "already have a rule"},
+		{"two caps for one country", asInput([]siteapi.FrequencyCap{capOf(siteapi.FrequencyCapChannelSMS, "US", 3, 1440), capOf(siteapi.FrequencyCapChannelSMS, "US", 2, 60)}, windows),
+			"frequencyCaps.1.country", "already have a rule"},
 		{"two windows for one country", asInput(nil, []siteapi.SendingWindow{windowOf("US", hoursOf(480, 1200, everyDay...)), windowOf("US", hoursOf(540, 1200, everyDay...))}),
-			"sendingWindows.1", "already have a rule"},
+			"sendingWindows.1.country", "already have a rule"},
 		{"a day listed twice", asInput(nil, []siteapi.SendingWindow{windowOf("", hoursOf(480, 1200, siteapi.WeekdayMonday, siteapi.WeekdayMonday))}),
-			"sendingWindows.0.hours.1", "listed twice"},
+			"sendingWindows.0.hours.1.day", "listed twice"},
 		{"a window that closes as it opens", asInput(nil, []siteapi.SendingWindow{windowOf("", hoursOf(600, 600, siteapi.WeekdayMonday))}),
-			"sendingWindows.0.hours.0", "closes after it opens"},
+			"sendingWindows.0.hours.0.closesAt", "closes after it opens"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -274,7 +282,8 @@ func TestARuleTheChannelOrItsShapeCannotHoldIsRefused(t *testing.T) {
 			assert.Contains(t, refused.Errors.Value[c.field][0], c.message)
 		})
 	}
-	assert.Empty(t, env.QueuedEvents(t, events.NameAuditEntry))
+	audited := env.QueuedEvents(t, events.NameAuditEntry)
+	assert.Empty(t, audited)
 }
 
 func TestAMemberCannotChangeTheSendingRules(t *testing.T) {
@@ -286,6 +295,8 @@ func TestAMemberCannotChangeTheSendingRules(t *testing.T) {
 
 	testhelper.SiteRefusal(t, member, http.StatusForbidden)
 	testhelper.SiteRefusal(t, outsider, http.StatusNotFound)
-	assert.Equal(t, []siteapi.FrequencyCap{smsDefaultCap}, sendingRules(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID).FrequencyCaps)
-	assert.Empty(t, env.QueuedEvents(t, events.NameAuditEntry))
+	stored := sendingRules(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
+	assert.Equal(t, []siteapi.FrequencyCap{smsDefaultCap}, stored.FrequencyCaps)
+	audited := env.QueuedEvents(t, events.NameAuditEntry)
+	assert.Empty(t, audited)
 }

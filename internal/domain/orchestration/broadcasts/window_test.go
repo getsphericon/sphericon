@@ -8,40 +8,21 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
-	"github.com/getsphericon/sphericon/internal/kernel/localcalendar"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // The share of a Broadcast's audience its Sending window would hold at a scheduled moment (ADR 0134).
 // Lacuna's texters Ada, Bea, Cyd and Dot have Boston numbers, in New York's zone alone; its
-// fixture window is open all day, so each test narrows it to 8:00 to 20:00. 2027-01-15 is a Friday.
+// fixture window is open all day, so each test narrows it to 8:00 to 20:00 (env.WindowSMS).
+// 2027-01-15 is a Friday.
 
 var (
 	newYork    = lo.Must(time.LoadLocation("America/New_York"))
 	losAngeles = lo.Must(time.LoadLocation("America/Los_Angeles"))
 )
-
-// narrowLacunaSMS gives Lacuna an SMS window open from 8:00 to 20:00 every day, as its settings would.
-func narrowLacunaSMS(t *testing.T, env *testhelper.TestEnv) {
-	t.Helper()
-	s := env.DB.Scoped(fixtures.LacunaID)
-	m := testhelper.Module[*workspaces.Module](env)
-	rules, err := m.SendingRules(t.Context(), s)
-	require.NoError(t, err)
-	hours := lo.Map(localcalendar.Weekdays, func(day localcalendar.Weekday, _ int) workspaces.OpenHours {
-		return workspaces.OpenHours{Day: day, OpensAt: 8 * 60, ClosesAt: 20 * 60}
-	})
-	_, err = m.ReplaceSendingRules(t.Context(), s, workspaces.ReplaceSendingRulesInput{
-		Revision:       rules.Revision,
-		FrequencyCaps:  rules.FrequencyCaps,
-		SendingWindows: []workspaces.SendingWindow{{Channel: channels.SMS, Hours: hours}},
-	})
-	require.NoError(t, err)
-}
 
 func outsideWindow(t *testing.T, env *testhelper.TestEnv, workspaceID int64, in broadcasts.WindowInput) broadcasts.OutsideWindow {
 	t.Helper()
@@ -52,7 +33,7 @@ func outsideWindow(t *testing.T, env *testhelper.TestEnv, workspaceID int64, in 
 
 func TestAnSMSBroadcastAt21InItsRecipientsZoneHoldsThemUntil8There(t *testing.T) {
 	env := testhelper.Setup(t)
-	narrowLacunaSMS(t, env)
+	env.WindowSMS(t, fixtures.LacunaID, 8*time.Hour, 20*time.Hour)
 
 	got := outsideWindow(t, env, fixtures.LacunaID, broadcasts.WindowInput{
 		Channel: channels.SMS, At: time.Date(2027, time.January, 15, 21, 0, 0, 0, newYork),
@@ -65,7 +46,7 @@ func TestAnSMSBroadcastAt21InItsRecipientsZoneHoldsThemUntil8There(t *testing.T)
 
 func TestAnSMSBroadcastInsideTheWindowHoldsNone(t *testing.T) {
 	env := testhelper.Setup(t)
-	narrowLacunaSMS(t, env)
+	env.WindowSMS(t, fixtures.LacunaID, 8*time.Hour, 20*time.Hour)
 
 	got := outsideWindow(t, env, fixtures.LacunaID, broadcasts.WindowInput{
 		Channel: channels.SMS, At: time.Date(2027, time.January, 15, 14, 0, 0, 0, newYork),
@@ -78,7 +59,7 @@ func TestAnSMSBroadcastInsideTheWindowHoldsNone(t *testing.T) {
 // Textham's only number that can be texted is Bea's.
 func TestTheWindowCountsOnlyTheAudienceOfTheCondition(t *testing.T) {
 	env := testhelper.Setup(t)
-	narrowLacunaSMS(t, env)
+	env.WindowSMS(t, fixtures.LacunaID, 8*time.Hour, 20*time.Hour)
 	textham := env.DB.Segment.GetX(t.Context(), fixtures.SegmentLacunaTexthamID)
 
 	got := outsideWindow(t, env, fixtures.LacunaID, broadcasts.WindowInput{
@@ -91,7 +72,7 @@ func TestTheWindowCountsOnlyTheAudienceOfTheCondition(t *testing.T) {
 // Ada lives in Los Angeles: her window opens when it is 8:00 there, three hours after the others'.
 func TestTheLastRecipientIsReachedWhenTheLatestWindowOpens(t *testing.T) {
 	env := testhelper.Setup(t)
-	narrowLacunaSMS(t, env)
+	env.WindowSMS(t, fixtures.LacunaID, 8*time.Hour, 20*time.Hour)
 	env.DB.Contact.UpdateOneID(fixtures.ContactLacunaAdaID).SetTimeZone("America/Los_Angeles").ExecX(t.Context())
 
 	got := outsideWindow(t, env, fixtures.LacunaID, broadcasts.WindowInput{
@@ -107,7 +88,7 @@ func TestTheLastRecipientIsReachedWhenTheLatestWindowOpens(t *testing.T) {
 // Ada in Bangkok has no local time, so she is Skipped, not held.
 func TestARecipientWithNoLocalTimeIsNotHeld(t *testing.T) {
 	env := testhelper.Setup(t)
-	narrowLacunaSMS(t, env)
+	env.WindowSMS(t, fixtures.LacunaID, 8*time.Hour, 20*time.Hour)
 	env.DB.Contact.UpdateOneID(fixtures.ContactLacunaAdaID).SetTimeZone("Asia/Bangkok").ExecX(t.Context())
 
 	got := outsideWindow(t, env, fixtures.LacunaID, broadcasts.WindowInput{

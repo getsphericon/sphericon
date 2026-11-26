@@ -194,7 +194,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   the composition moves into the domain module that owns its rule, or into a use case when it spans
   several, and the driver makes that one call.
 - **Rule 19, `closedenum`.** The closed enums are the list in `tools/analyzers/closedenum`, which holds
-  `channels.Channel` alone. A `switch` whose tag is of such a type has no `default` clause and names
+  `channels.Channel` and `skipreason.Reason`. A `switch` whose tag is of such a type has no `default` clause and names
   every member (a constant of the type its package declares) in its cases; a map literal keyed by it
   lists every member (an empty literal is a map to fill, not a table). A type declared from the enum
   (`type Medium channels.Channel`, or from such a type) is the enum too, in any package: the analyzer

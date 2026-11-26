@@ -126,9 +126,10 @@ func TestExternalContactsExportMembersCoverEveryStoredColumn(t *testing.T) {
 		// Since when and why a send waited (ADR 0178) is the pace of the Workspace's sending, nothing
 		// about the person, as a recipient's deferral is; so is how the Sending window judged it (ADR
 		// 0134), which the number already exported decides.
-		outboundmessage.FieldDeferredSince, outboundmessage.FieldDeferralCause, outboundmessage.FieldWindowSingleZone)
+		outboundmessage.FieldDeferredSince, outboundmessage.FieldDeferralCause, outboundmessage.FieldWindowZones)
 	covered(reflect.TypeFor[externalapi.ContactExportBroadcastRecipient](), broadcastrecipient.Columns,
-		"workspace_id", "contact_id", "updated_at", "outbound_message_id", "deferred_until", broadcastrecipient.FieldDeferralCause)
+		"workspace_id", "contact_id", "updated_at", "outbound_message_id", "deferred_until", broadcastrecipient.FieldDeferralCause,
+		broadcastrecipient.FieldDeferredSince)
 }
 
 // No tenant id and no rendered message content reach the document.

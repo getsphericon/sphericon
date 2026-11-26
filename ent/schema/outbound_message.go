@@ -154,13 +154,15 @@ func (OutboundMessage) Fields() []ent.Field {
 			GoType(deferralcause.Cause("")).
 			Optional().
 			Nillable(),
-		// Whether a Sending window judged the message by a single zone (ADR 0134): true when the
-		// recipient could be in one zone only; false when the window had to be open in several, and
-		// for a message no window held (a Channel without one, or a send decided before the window
-		// was read). Written with the claim, or with a Skipped for no local time.
-		field.Bool("window_single_zone").
-			Annotations(Attribute("records how the window judged the send, written with its claim")).
-			Default(false),
+		// How a Sending window judged the message (ADR 0134), by the zones the recipient may be in:
+		// unjudged when no window held it (a Channel without one, or a send decided before the
+		// window was read); no_zone when one held it but the recipient is in no zone (no local
+		// time); one_zone when the recipient may be in a single zone; several_zones when the window
+		// had to be open in more than one. Written with the claim, or with a Skipped for no local
+		// time.
+		field.Enum("window_zones").
+			Values("unjudged", "no_zone", "one_zone", "several_zones").
+			Default("unjudged"),
 		// Lease: a pending claim may be taken over by a retry only when its
 		// claimed_at is older than the lease, so an in-flight send is never raced.
 		field.Time("claimed_at").

@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -33,8 +34,8 @@ func TestStatsOfReadsEachBroadcastsRows(t *testing.T) {
 	assert.Zero(t, got[fixtures.BroadcastDraftID])
 }
 
-// everyCount is Stats with every count set, each to a value of its own: a count added to Stats is
-// set here too, without an edit.
+// everyCount is Stats with every count set, each to a value of its own, Skipped for every reason
+// of the closed list included: a count or a reason added is set here too, without an edit.
 func everyCount() broadcasts.Stats {
 	var st broadcasts.Stats
 	v := reflect.ValueOf(&st).Elem()
@@ -43,6 +44,9 @@ func everyCount() broadcasts.Stats {
 			f.SetInt(int64(i + 1))
 		}
 	}
+	st.SkippedBy = lo.SliceToMap(skipreason.All(), func(r skipreason.Reason) (skipreason.Reason, int) {
+		return r, 100 + lo.IndexOf(skipreason.All(), r)
+	})
 	return st
 }
 

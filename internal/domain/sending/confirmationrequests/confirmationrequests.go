@@ -113,9 +113,12 @@ func (m *Module) AskByWorkspace(ctx context.Context, s *ent.Scoped, contactID in
 		return "", ErrSuppressed
 	case skipreason.UnsubscribedEverything:
 		return "", ErrUnsubscribedEverything
-	default:
-		// Eligible: the Workspace's mode names no other layer.
+	case skipreason.UnsubscribedSource, skipreason.Unconfirmed:
+		// The Workspace's mode names no Sending source and asks for no Confirmation: never given.
+	case skipreason.NoDestination, skipreason.ContactErased, skipreason.NoLocalTime, skipreason.FrequencyCap:
+		// Outbound send's reasons, which Send-eligibility never gives.
 	}
+	// No reason (the zero value): eligible.
 	confirmed, err := holdsConfirmation(ctx, s, address)
 	if err != nil {
 		return "", err

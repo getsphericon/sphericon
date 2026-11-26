@@ -4,6 +4,8 @@
 // Send-eligibility gives the first four; Outbound send the rest.
 package skipreason
 
+import "slices"
+
 // Reason is why a send is Skipped.
 type Reason string
 
@@ -39,6 +41,9 @@ var all = []Reason{
 	Suppressed, UnsubscribedEverything, UnsubscribedSource, Unconfirmed,
 	NoDestination, ContactErased, NoLocalTime, FrequencyCap,
 }
+
+// All is every reason, in the order of the closed list.
+func All() []Reason { return slices.Clone(all) }
 
 // Values is every reason, as an ent enum column takes them.
 func (Reason) Values() []string {

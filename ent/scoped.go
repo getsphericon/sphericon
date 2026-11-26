@@ -20949,6 +20949,24 @@ func (x *BroadcastRecipientScopedCreate) SetNillableDeferralCause(v *deferralcau
 
 const RoleOf_BroadcastRecipientScopedCreate_SetNillableDeferralCause = RoleStep
 
+// SetDeferredSince sets the "deferred_since" field.
+func (x *BroadcastRecipientScopedCreate) SetDeferredSince(v time.Time) *BroadcastRecipientScopedCreate {
+	x.set = append(x.set, func(b *BroadcastRecipientCreate) { b.SetDeferredSince(v) })
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedCreate_SetDeferredSince = RoleStep
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (x *BroadcastRecipientScopedCreate) SetNillableDeferredSince(v *time.Time) *BroadcastRecipientScopedCreate {
+	if v != nil {
+		x.SetDeferredSince(*v)
+	}
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedCreate_SetNillableDeferredSince = RoleStep
+
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (x *BroadcastRecipientScopedCreate) SetUnsubscribedAt(v time.Time) *BroadcastRecipientScopedCreate {
 	x.set = append(x.set, func(b *BroadcastRecipientCreate) { b.SetUnsubscribedAt(v) })
@@ -21183,6 +21201,30 @@ func (u *BroadcastRecipientScopedUpsert) ClearDeferralCause() *BroadcastRecipien
 }
 
 const RoleOf_BroadcastRecipientScopedUpsert_ClearDeferralCause = RoleStep
+
+// SetDeferredSince sets the "deferred_since" field.
+func (u *BroadcastRecipientScopedUpsert) SetDeferredSince(v time.Time) *BroadcastRecipientScopedUpsert {
+	u.u.Set(broadcastrecipient.FieldDeferredSince, v)
+	return u
+}
+
+const RoleOf_BroadcastRecipientScopedUpsert_SetDeferredSince = RoleStep
+
+// UpdateDeferredSince sets the "deferred_since" field to the value that was provided on create.
+func (u *BroadcastRecipientScopedUpsert) UpdateDeferredSince() *BroadcastRecipientScopedUpsert {
+	u.u.SetExcluded(broadcastrecipient.FieldDeferredSince)
+	return u
+}
+
+const RoleOf_BroadcastRecipientScopedUpsert_UpdateDeferredSince = RoleStep
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (u *BroadcastRecipientScopedUpsert) ClearDeferredSince() *BroadcastRecipientScopedUpsert {
+	u.u.SetNull(broadcastrecipient.FieldDeferredSince)
+	return u
+}
+
+const RoleOf_BroadcastRecipientScopedUpsert_ClearDeferredSince = RoleStep
 
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (u *BroadcastRecipientScopedUpsert) SetUnsubscribedAt(v time.Time) *BroadcastRecipientScopedUpsert {
@@ -21511,6 +21553,32 @@ func (x *BroadcastRecipientScopedUpdateOne) ClearDeferralCause() *BroadcastRecip
 
 const RoleOf_BroadcastRecipientScopedUpdateOne_ClearDeferralCause = RoleStep
 
+// SetDeferredSince sets the "deferred_since" field.
+func (x *BroadcastRecipientScopedUpdateOne) SetDeferredSince(v time.Time) *BroadcastRecipientScopedUpdateOne {
+	x.set = append(x.set, func(b *BroadcastRecipientUpdateOne) { b.SetDeferredSince(v) })
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedUpdateOne_SetDeferredSince = RoleStep
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (x *BroadcastRecipientScopedUpdateOne) SetNillableDeferredSince(v *time.Time) *BroadcastRecipientScopedUpdateOne {
+	if v != nil {
+		x.SetDeferredSince(*v)
+	}
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedUpdateOne_SetNillableDeferredSince = RoleStep
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (x *BroadcastRecipientScopedUpdateOne) ClearDeferredSince() *BroadcastRecipientScopedUpdateOne {
+	x.set = append(x.set, func(b *BroadcastRecipientUpdateOne) { b.ClearDeferredSince() })
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedUpdateOne_ClearDeferredSince = RoleStep
+
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (x *BroadcastRecipientScopedUpdateOne) SetUnsubscribedAt(v time.Time) *BroadcastRecipientScopedUpdateOne {
 	x.set = append(x.set, func(b *BroadcastRecipientUpdateOne) { b.SetUnsubscribedAt(v) })
@@ -21755,6 +21823,32 @@ func (x *BroadcastRecipientScopedUpdate) ClearDeferralCause() *BroadcastRecipien
 }
 
 const RoleOf_BroadcastRecipientScopedUpdate_ClearDeferralCause = RoleStep
+
+// SetDeferredSince sets the "deferred_since" field.
+func (x *BroadcastRecipientScopedUpdate) SetDeferredSince(v time.Time) *BroadcastRecipientScopedUpdate {
+	x.set = append(x.set, func(b *BroadcastRecipientUpdate) { b.SetDeferredSince(v) })
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedUpdate_SetDeferredSince = RoleStep
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (x *BroadcastRecipientScopedUpdate) SetNillableDeferredSince(v *time.Time) *BroadcastRecipientScopedUpdate {
+	if v != nil {
+		x.SetDeferredSince(*v)
+	}
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedUpdate_SetNillableDeferredSince = RoleStep
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (x *BroadcastRecipientScopedUpdate) ClearDeferredSince() *BroadcastRecipientScopedUpdate {
+	x.set = append(x.set, func(b *BroadcastRecipientUpdate) { b.ClearDeferredSince() })
+	return x
+}
+
+const RoleOf_BroadcastRecipientScopedUpdate_ClearDeferredSince = RoleStep
 
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (x *BroadcastRecipientScopedUpdate) SetUnsubscribedAt(v time.Time) *BroadcastRecipientScopedUpdate {
@@ -50249,23 +50343,23 @@ func (x *OutboundMessageScopedCreate) SetNillableDeferralCause(v *deferralcause.
 
 const RoleOf_OutboundMessageScopedCreate_SetNillableDeferralCause = RoleStep
 
-// SetWindowSingleZone sets the "window_single_zone" field.
-func (x *OutboundMessageScopedCreate) SetWindowSingleZone(v bool) *OutboundMessageScopedCreate {
-	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetWindowSingleZone(v) })
+// SetWindowZones sets the "window_zones" field.
+func (x *OutboundMessageScopedCreate) SetWindowZones(v outboundmessage.WindowZones) *OutboundMessageScopedCreate {
+	x.set = append(x.set, func(b *OutboundMessageCreate) { b.SetWindowZones(v) })
 	return x
 }
 
-const RoleOf_OutboundMessageScopedCreate_SetWindowSingleZone = RoleStep
+const RoleOf_OutboundMessageScopedCreate_SetWindowZones = RoleStep
 
-// SetNillableWindowSingleZone sets the "window_single_zone" field if the given value is not nil.
-func (x *OutboundMessageScopedCreate) SetNillableWindowSingleZone(v *bool) *OutboundMessageScopedCreate {
+// SetNillableWindowZones sets the "window_zones" field if the given value is not nil.
+func (x *OutboundMessageScopedCreate) SetNillableWindowZones(v *outboundmessage.WindowZones) *OutboundMessageScopedCreate {
 	if v != nil {
-		x.SetWindowSingleZone(*v)
+		x.SetWindowZones(*v)
 	}
 	return x
 }
 
-const RoleOf_OutboundMessageScopedCreate_SetNillableWindowSingleZone = RoleStep
+const RoleOf_OutboundMessageScopedCreate_SetNillableWindowZones = RoleStep
 
 // SetClaimedAt sets the "claimed_at" field.
 func (x *OutboundMessageScopedCreate) SetClaimedAt(v time.Time) *OutboundMessageScopedCreate {
@@ -51192,21 +51286,21 @@ func (u *OutboundMessageScopedUpsert) ClearDeferralCause() *OutboundMessageScope
 
 const RoleOf_OutboundMessageScopedUpsert_ClearDeferralCause = RoleStep
 
-// SetWindowSingleZone sets the "window_single_zone" field.
-func (u *OutboundMessageScopedUpsert) SetWindowSingleZone(v bool) *OutboundMessageScopedUpsert {
-	u.u.Set(outboundmessage.FieldWindowSingleZone, v)
+// SetWindowZones sets the "window_zones" field.
+func (u *OutboundMessageScopedUpsert) SetWindowZones(v outboundmessage.WindowZones) *OutboundMessageScopedUpsert {
+	u.u.Set(outboundmessage.FieldWindowZones, v)
 	return u
 }
 
-const RoleOf_OutboundMessageScopedUpsert_SetWindowSingleZone = RoleStep
+const RoleOf_OutboundMessageScopedUpsert_SetWindowZones = RoleStep
 
-// UpdateWindowSingleZone sets the "window_single_zone" field to the value that was provided on create.
-func (u *OutboundMessageScopedUpsert) UpdateWindowSingleZone() *OutboundMessageScopedUpsert {
-	u.u.SetExcluded(outboundmessage.FieldWindowSingleZone)
+// UpdateWindowZones sets the "window_zones" field to the value that was provided on create.
+func (u *OutboundMessageScopedUpsert) UpdateWindowZones() *OutboundMessageScopedUpsert {
+	u.u.SetExcluded(outboundmessage.FieldWindowZones)
 	return u
 }
 
-const RoleOf_OutboundMessageScopedUpsert_UpdateWindowSingleZone = RoleStep
+const RoleOf_OutboundMessageScopedUpsert_UpdateWindowZones = RoleStep
 
 // SetClaimedAt sets the "claimed_at" field.
 func (u *OutboundMessageScopedUpsert) SetClaimedAt(v time.Time) *OutboundMessageScopedUpsert {
@@ -52203,23 +52297,23 @@ func (x *OutboundMessageScopedUpdateOne) ClearDeferralCause() *OutboundMessageSc
 
 const RoleOf_OutboundMessageScopedUpdateOne_ClearDeferralCause = RoleStep
 
-// SetWindowSingleZone sets the "window_single_zone" field.
-func (x *OutboundMessageScopedUpdateOne) SetWindowSingleZone(v bool) *OutboundMessageScopedUpdateOne {
-	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetWindowSingleZone(v) })
+// SetWindowZones sets the "window_zones" field.
+func (x *OutboundMessageScopedUpdateOne) SetWindowZones(v outboundmessage.WindowZones) *OutboundMessageScopedUpdateOne {
+	x.set = append(x.set, func(b *OutboundMessageUpdateOne) { b.SetWindowZones(v) })
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdateOne_SetWindowSingleZone = RoleStep
+const RoleOf_OutboundMessageScopedUpdateOne_SetWindowZones = RoleStep
 
-// SetNillableWindowSingleZone sets the "window_single_zone" field if the given value is not nil.
-func (x *OutboundMessageScopedUpdateOne) SetNillableWindowSingleZone(v *bool) *OutboundMessageScopedUpdateOne {
+// SetNillableWindowZones sets the "window_zones" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdateOne) SetNillableWindowZones(v *outboundmessage.WindowZones) *OutboundMessageScopedUpdateOne {
 	if v != nil {
-		x.SetWindowSingleZone(*v)
+		x.SetWindowZones(*v)
 	}
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdateOne_SetNillableWindowSingleZone = RoleStep
+const RoleOf_OutboundMessageScopedUpdateOne_SetNillableWindowZones = RoleStep
 
 // SetClaimedAt sets the "claimed_at" field.
 func (x *OutboundMessageScopedUpdateOne) SetClaimedAt(v time.Time) *OutboundMessageScopedUpdateOne {
@@ -53410,23 +53504,23 @@ func (x *OutboundMessageScopedUpdate) ClearDeferralCause() *OutboundMessageScope
 
 const RoleOf_OutboundMessageScopedUpdate_ClearDeferralCause = RoleStep
 
-// SetWindowSingleZone sets the "window_single_zone" field.
-func (x *OutboundMessageScopedUpdate) SetWindowSingleZone(v bool) *OutboundMessageScopedUpdate {
-	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetWindowSingleZone(v) })
+// SetWindowZones sets the "window_zones" field.
+func (x *OutboundMessageScopedUpdate) SetWindowZones(v outboundmessage.WindowZones) *OutboundMessageScopedUpdate {
+	x.set = append(x.set, func(b *OutboundMessageUpdate) { b.SetWindowZones(v) })
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdate_SetWindowSingleZone = RoleStep
+const RoleOf_OutboundMessageScopedUpdate_SetWindowZones = RoleStep
 
-// SetNillableWindowSingleZone sets the "window_single_zone" field if the given value is not nil.
-func (x *OutboundMessageScopedUpdate) SetNillableWindowSingleZone(v *bool) *OutboundMessageScopedUpdate {
+// SetNillableWindowZones sets the "window_zones" field if the given value is not nil.
+func (x *OutboundMessageScopedUpdate) SetNillableWindowZones(v *outboundmessage.WindowZones) *OutboundMessageScopedUpdate {
 	if v != nil {
-		x.SetWindowSingleZone(*v)
+		x.SetWindowZones(*v)
 	}
 	return x
 }
 
-const RoleOf_OutboundMessageScopedUpdate_SetNillableWindowSingleZone = RoleStep
+const RoleOf_OutboundMessageScopedUpdate_SetNillableWindowZones = RoleStep
 
 // SetClaimedAt sets the "claimed_at" field.
 func (x *OutboundMessageScopedUpdate) SetClaimedAt(v time.Time) *OutboundMessageScopedUpdate {

@@ -127,6 +127,26 @@ func (_u *BroadcastRecipientUpdate) ClearDeferralCause() *BroadcastRecipientUpda
 	return _u
 }
 
+// SetDeferredSince sets the "deferred_since" field.
+func (_u *BroadcastRecipientUpdate) SetDeferredSince(v time.Time) *BroadcastRecipientUpdate {
+	_u.mutation.SetDeferredSince(v)
+	return _u
+}
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (_u *BroadcastRecipientUpdate) SetNillableDeferredSince(v *time.Time) *BroadcastRecipientUpdate {
+	if v != nil {
+		_u.SetDeferredSince(*v)
+	}
+	return _u
+}
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (_u *BroadcastRecipientUpdate) ClearDeferredSince() *BroadcastRecipientUpdate {
+	_u.mutation.ClearDeferredSince()
+	return _u
+}
+
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (_u *BroadcastRecipientUpdate) SetUnsubscribedAt(v time.Time) *BroadcastRecipientUpdate {
 	_u.mutation.SetUnsubscribedAt(v)
@@ -269,6 +289,12 @@ func (_u *BroadcastRecipientUpdate) sqlSave(ctx context.Context) (_node int, err
 	}
 	if _u.mutation.DeferralCauseCleared() {
 		_spec.ClearField(broadcastrecipient.FieldDeferralCause, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.DeferredSince(); ok {
+		_spec.SetField(broadcastrecipient.FieldDeferredSince, field.TypeTime, value)
+	}
+	if _u.mutation.DeferredSinceCleared() {
+		_spec.ClearField(broadcastrecipient.FieldDeferredSince, field.TypeTime)
 	}
 	if value, ok := _u.mutation.UnsubscribedAt(); ok {
 		_spec.SetField(broadcastrecipient.FieldUnsubscribedAt, field.TypeTime, value)
@@ -479,6 +505,26 @@ func (_u *BroadcastRecipientUpdateOne) ClearDeferralCause() *BroadcastRecipientU
 	return _u
 }
 
+// SetDeferredSince sets the "deferred_since" field.
+func (_u *BroadcastRecipientUpdateOne) SetDeferredSince(v time.Time) *BroadcastRecipientUpdateOne {
+	_u.mutation.SetDeferredSince(v)
+	return _u
+}
+
+// SetNillableDeferredSince sets the "deferred_since" field if the given value is not nil.
+func (_u *BroadcastRecipientUpdateOne) SetNillableDeferredSince(v *time.Time) *BroadcastRecipientUpdateOne {
+	if v != nil {
+		_u.SetDeferredSince(*v)
+	}
+	return _u
+}
+
+// ClearDeferredSince clears the value of the "deferred_since" field.
+func (_u *BroadcastRecipientUpdateOne) ClearDeferredSince() *BroadcastRecipientUpdateOne {
+	_u.mutation.ClearDeferredSince()
+	return _u
+}
+
 // SetUnsubscribedAt sets the "unsubscribed_at" field.
 func (_u *BroadcastRecipientUpdateOne) SetUnsubscribedAt(v time.Time) *BroadcastRecipientUpdateOne {
 	_u.mutation.SetUnsubscribedAt(v)
@@ -651,6 +697,12 @@ func (_u *BroadcastRecipientUpdateOne) sqlSave(ctx context.Context) (_node *Broa
 	}
 	if _u.mutation.DeferralCauseCleared() {
 		_spec.ClearField(broadcastrecipient.FieldDeferralCause, field.TypeEnum)
+	}
+	if value, ok := _u.mutation.DeferredSince(); ok {
+		_spec.SetField(broadcastrecipient.FieldDeferredSince, field.TypeTime, value)
+	}
+	if _u.mutation.DeferredSinceCleared() {
+		_spec.ClearField(broadcastrecipient.FieldDeferredSince, field.TypeTime)
 	}
 	if value, ok := _u.mutation.UnsubscribedAt(); ok {
 		_spec.SetField(broadcastrecipient.FieldUnsubscribedAt, field.TypeTime, value)

@@ -15,7 +15,7 @@ export type SchemaForm<TValues extends object, TOutput> = Omit<
   UseFormReturnType<TValues, TOutput, undefined>,
   'validate' | 'validateField' | 'isValid'
 > & {
-  showFieldErrors: (error: unknown) => FieldErrors | undefined
+  showFieldErrors: (error: unknown, fieldOf?: (path: string) => string) => FieldErrors | undefined
   validateFields: (paths: string[]) => boolean
 }
 
@@ -31,7 +31,9 @@ export type SchemaForm<TValues extends object, TOutput> = Omit<
 // puts each message of the problem's `errors` under the field the form renders for its path, and
 // focuses the first of them in the page's order. It hands back what it could not place: the
 // messages of paths the form does not render, or an empty object when the problem names no field,
-// so the page decides how they show. Undefined means every refusal shows under its field.
+// so the page decides how they show. Undefined means every refusal shows under its field. A form
+// whose fields are not named as the request names them (a list the form keys otherwise) gives
+// fieldOf, which names the form's field of a problem's path.
 //
 // validateFields checks a part of the form as a submit checks the whole (a step of a form shown
 // one screen at a time): it shows the errors of the paths given, focuses the first of them in the
@@ -76,8 +78,13 @@ export function useSchemaForm<TValues extends object, TOutput>(
       handleValidationFailure?.(errors, values, event)
     })
 
-  const showFieldErrors = (error: unknown) => {
-    const fieldErrors = getFieldErrors(error) ?? {}
+  const showFieldErrors = (error: unknown, fieldOf: (path: string) => string = (path) => path) => {
+    const fieldErrors = Object.fromEntries(
+      Object.entries(getFieldErrors(error) ?? {}).map(([path, messages]) => [
+        fieldOf(path),
+        messages,
+      ]),
+    )
     const placed = Object.keys(fieldErrors).filter(
       (path) => fieldErrors[path]?.[0] && form.getInputNode(path),
     )

@@ -52,8 +52,8 @@ const (
 	FieldDeferredSince = "deferred_since"
 	// FieldDeferralCause holds the string denoting the deferral_cause field in the database.
 	FieldDeferralCause = "deferral_cause"
-	// FieldWindowSingleZone holds the string denoting the window_single_zone field in the database.
-	FieldWindowSingleZone = "window_single_zone"
+	// FieldWindowZones holds the string denoting the window_zones field in the database.
+	FieldWindowZones = "window_zones"
 	// FieldClaimedAt holds the string denoting the claimed_at field in the database.
 	FieldClaimedAt = "claimed_at"
 	// FieldSentAt holds the string denoting the sent_at field in the database.
@@ -225,7 +225,7 @@ var Columns = []string{
 	FieldFailure,
 	FieldDeferredSince,
 	FieldDeferralCause,
-	FieldWindowSingleZone,
+	FieldWindowZones,
 	FieldClaimedAt,
 	FieldSentAt,
 	FieldDeliveredAt,
@@ -271,8 +271,6 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// IdempotencyKeyValidator is a validator for the "idempotency_key" field. It is called by the builders before save.
 	IdempotencyKeyValidator func(string) error
-	// DefaultWindowSingleZone holds the default value on creation for the "window_single_zone" field.
-	DefaultWindowSingleZone bool
 	// DefaultClaimedAt holds the default value on creation for the "claimed_at" field.
 	DefaultClaimedAt func() time.Time
 	// DefaultCaptured holds the default value on creation for the "captured" field.
@@ -366,6 +364,34 @@ func DeferralCauseValidator(dc deferralcause.Cause) error {
 	}
 }
 
+// WindowZones defines the type for the "window_zones" enum field.
+type WindowZones string
+
+// WindowZonesUnjudged is the default value of the WindowZones enum.
+const DefaultWindowZones = WindowZonesUnjudged
+
+// WindowZones values.
+const (
+	WindowZonesUnjudged     WindowZones = "unjudged"
+	WindowZonesNoZone       WindowZones = "no_zone"
+	WindowZonesOneZone      WindowZones = "one_zone"
+	WindowZonesSeveralZones WindowZones = "several_zones"
+)
+
+func (wz WindowZones) String() string {
+	return string(wz)
+}
+
+// WindowZonesValidator is a validator for the "window_zones" field enum values. It is called by the builders before save.
+func WindowZonesValidator(wz WindowZones) error {
+	switch wz {
+	case WindowZonesUnjudged, WindowZonesNoZone, WindowZonesOneZone, WindowZonesSeveralZones:
+		return nil
+	default:
+		return fmt.Errorf("outboundmessage: invalid enum value for window_zones field: %q", wz)
+	}
+}
+
 // OrderOption defines the ordering options for the OutboundMessage queries.
 type OrderOption func(*sql.Selector)
 
@@ -454,9 +480,9 @@ func ByDeferralCause(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDeferralCause, opts...).ToFunc()
 }
 
-// ByWindowSingleZone orders the results by the window_single_zone field.
-func ByWindowSingleZone(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldWindowSingleZone, opts...).ToFunc()
+// ByWindowZones orders the results by the window_zones field.
+func ByWindowZones(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWindowZones, opts...).ToFunc()
 }
 
 // ByClaimedAt orders the results by the claimed_at field.

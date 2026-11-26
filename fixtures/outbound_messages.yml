@@ -5284,7 +5284,7 @@
   contact_id: 810
   sending_source: broadcasts
   status: sent
-  window_single_zone: true
+  window_zones: one_zone
   tracked: true
   provider_message_id: 'SM00000000000000000000000000007500'
   sent_at: '2026-02-01 00:00:00'
@@ -5619,7 +5619,7 @@
   contact_id: 7222
   sending_source: automations
   status: sent
-  window_single_zone: true
+  window_zones: one_zone
   tracked: true
   sent_at: '{{daysAgo 5}}'
   claimed_at: '{{daysAgo 5}}'

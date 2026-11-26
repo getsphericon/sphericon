@@ -114,11 +114,6 @@ func DeferredSince(v time.Time) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldDeferredSince, v))
 }
 
-// WindowSingleZone applies equality check predicate on the "window_single_zone" field. It's identical to WindowSingleZoneEQ.
-func WindowSingleZone(v bool) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldEQ(FieldWindowSingleZone, v))
-}
-
 // ClaimedAt applies equality check predicate on the "claimed_at" field. It's identical to ClaimedAtEQ.
 func ClaimedAt(v time.Time) predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldEQ(FieldClaimedAt, v))
@@ -1020,14 +1015,24 @@ func DeferralCauseNotNil() predicate.OutboundMessage {
 	return predicate.OutboundMessage(sql.FieldNotNull(FieldDeferralCause))
 }
 
-// WindowSingleZoneEQ applies the EQ predicate on the "window_single_zone" field.
-func WindowSingleZoneEQ(v bool) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldEQ(FieldWindowSingleZone, v))
+// WindowZonesEQ applies the EQ predicate on the "window_zones" field.
+func WindowZonesEQ(v WindowZones) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldEQ(FieldWindowZones, v))
 }
 
-// WindowSingleZoneNEQ applies the NEQ predicate on the "window_single_zone" field.
-func WindowSingleZoneNEQ(v bool) predicate.OutboundMessage {
-	return predicate.OutboundMessage(sql.FieldNEQ(FieldWindowSingleZone, v))
+// WindowZonesNEQ applies the NEQ predicate on the "window_zones" field.
+func WindowZonesNEQ(v WindowZones) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNEQ(FieldWindowZones, v))
+}
+
+// WindowZonesIn applies the In predicate on the "window_zones" field.
+func WindowZonesIn(vs ...WindowZones) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldIn(FieldWindowZones, vs...))
+}
+
+// WindowZonesNotIn applies the NotIn predicate on the "window_zones" field.
+func WindowZonesNotIn(vs ...WindowZones) predicate.OutboundMessage {
+	return predicate.OutboundMessage(sql.FieldNotIn(FieldWindowZones, vs...))
 }
 
 // ClaimedAtEQ applies the EQ predicate on the "claimed_at" field.

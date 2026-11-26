@@ -21,6 +21,17 @@
   created_at: '{{hoursAgo 1}}'
   updated_at: '{{hoursAgo 1}}'
 
+# Globex (workspace 2): the place of its usage Broadcast email (OutboundMessageGlobexUsage), a row
+# of another Workspace for the scoped client's isolation test.
+- id: 200 # fixture: FrequencyCountGlobex
+  outbound_message_id: 901
+  channel: email
+  destination: usage@globex.test
+  counted_at: '{{hoursAgo 1}}'
+  workspace_id: 2
+  created_at: '{{hoursAgo 1}}'
+  updated_at: '{{hoursAgo 1}}'
+
 # Acme: the place of the text to ContactTexter (OutboundTexterSms), which its Erasure deletes.
 - id: 3 # fixture: FrequencyCountTexter
   outbound_message_id: 7500

@@ -1,4 +1,5 @@
 import { Fieldset, Modal, Stack, Title } from '@mantine/core'
+import type { MantineSize } from '@mantine/core'
 import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import type { QueryKey, UseMutationOptions, UseSuspenseQueryOptions } from '@tanstack/react-query'
 import { Navigate, useNavigate } from '@tanstack/react-router'
@@ -288,6 +289,10 @@ export type EditDescription<
   editorId: string
   // The form's values of a stored resource, when they are not its payload's fields.
   valuesOf?: (loaded: TResource) => TValues
+  // Given, a refused Save shows each refusal of a field under the form's field this names for its
+  // path in the problem, for the values the form holds (a list the form keys otherwise than the
+  // request), and only what no field shows is the toast.
+  refusalField?: (path: string, values: TValues) => string
 }
 
 // defineEditForm builds the edit form of a resource, the one implementation of an edit in an editor
@@ -301,7 +306,7 @@ export function defineEditForm<
   TGetKey extends QueryKey,
   TOperation extends string,
 >(resource: EditDescription<TPayload, TValues, TResource, TError, TGetKey, TOperation>) {
-  const { operations } = resource
+  const { operations, refusalField } = resource
   const adapter = resourceEditorAdapter({
     id: resource.editorId,
     schema: resource.schema,
@@ -362,7 +367,15 @@ export function defineEditForm<
       },
       failed: (operation, error) => {
         setFailure(error)
-        if (!onFailed?.(error, operation)) {
+        if (onFailed?.(error, operation)) {
+          return
+        }
+        const placed =
+          operation === 'SAVE' &&
+          refusalField !== undefined &&
+          form.showFieldErrors(error, (field) => refusalField(field, form.getValues())) ===
+            undefined
+        if (!placed) {
           toasts.failed(operation, error)
         }
       },
@@ -464,6 +477,8 @@ export interface ResourceEditModalProps<TResource> {
   title?: string
   // Takes over a refused write before its toast (EditForm's onFailed).
   onFailed?: (error: unknown) => boolean
+  // The modal's width, for a form wider than one column of fields (Mantine's Modal size).
+  size?: MantineSize
 }
 
 // The edit of a resource that is listed rather than given its own page (a Custom field, a Webhook):
@@ -508,11 +523,17 @@ export function defineModalEditor<
     children,
     title,
     onFailed,
+    size,
   }: ResourceEditModalProps<TResource> & { id: string | null }) {
     const { t } = useTranslation()
     const texts = resource.texts(t)
     return (
-      <Modal opened={id !== null} onClose={onClose} title={title ?? texts.editTitle}>
+      <Modal
+        opened={id !== null}
+        onClose={onClose}
+        title={title ?? texts.editTitle}
+        {...(size && { size })}
+      >
         {id !== null && (
           <QueryBoundary fallback={<PageSkeleton />} errorTitle={texts.loadErrorTitle}>
             <LoadedEditForm

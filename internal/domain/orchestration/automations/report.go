@@ -293,18 +293,38 @@ func addPruned(ctx context.Context, s *ent.Scoped, id int64, report *Report, sen
 		report.Complained += f.Complained
 		report.Captured += f.Captured
 		c := countsOf(sent, versionStep{versionID: f.VersionID, stepID: f.StepID})
-		c.add(&sentSkipped{sent: f.Sent, skipped: f.Skipped, singleZone: f.SingleZone, skippedBy: map[skipreason.Reason]int{
-			skipreason.Suppressed:             f.SkippedSuppressed,
-			skipreason.UnsubscribedEverything: f.SkippedUnsubscribedEverything,
-			skipreason.UnsubscribedSource:     f.SkippedUnsubscribedSource,
-			skipreason.Unconfirmed:            f.SkippedUnconfirmed,
-			skipreason.NoDestination:          f.SkippedNoDestination,
-			skipreason.ContactErased:          f.SkippedContactErased,
-			skipreason.NoLocalTime:            f.SkippedNoLocalTime,
-			skipreason.FrequencyCap:           f.SkippedFrequencyCap,
-		}})
+		skippedBy := map[skipreason.Reason]int{}
+		for _, r := range skipreason.All() {
+			skippedBy[r] = skippedOf(f, r)
+		}
+		c.add(&sentSkipped{sent: f.Sent, skipped: f.Skipped, singleZone: f.SingleZone, skippedBy: skippedBy})
 	}
 	return nil
+}
+
+// skippedOf reads a step's figures row's count of the sends Skipped for r, as the Automation's
+// retention wrote it (automationsunchecked): the switch names every reason of the closed list
+// (review rule 19), so a new reason fails the build until it is read here.
+func skippedOf(f *ent.AutomationFigure, r skipreason.Reason) int {
+	switch r {
+	case skipreason.Suppressed:
+		return f.SkippedSuppressed
+	case skipreason.UnsubscribedEverything:
+		return f.SkippedUnsubscribedEverything
+	case skipreason.UnsubscribedSource:
+		return f.SkippedUnsubscribedSource
+	case skipreason.Unconfirmed:
+		return f.SkippedUnconfirmed
+	case skipreason.NoDestination:
+		return f.SkippedNoDestination
+	case skipreason.ContactErased:
+		return f.SkippedContactErased
+	case skipreason.NoLocalTime:
+		return f.SkippedNoLocalTime
+	case skipreason.FrequencyCap:
+		return f.SkippedFrequencyCap
+	}
+	return 0
 }
 
 // countsOf is the counts of the Step in sent, added at zero when it has none yet.
@@ -334,7 +354,7 @@ func sentByStep(ctx context.Context, s *ent.Scoped, id int64) (map[versionStep]*
 			outboundmessage.StatusIn(outboundmessage.StatusSent, outboundmessage.StatusSkipped),
 		).
 		GroupBy(outboundmessage.FieldAutomationVersionID, outboundmessage.FieldAutomationStepID, outboundmessage.FieldStatus, outboundmessage.FieldSkippedReason).
-		Aggregate(ent.Count(), aggregates.CountTrue(outboundmessage.FieldWindowSingleZone, "single_zone")).
+		Aggregate(ent.Count(), aggregates.CountEQ(outboundmessage.FieldWindowZones, string(outboundmessage.WindowZonesOneZone), "single_zone")).
 		Scan(ctx, &rows)
 	if err != nil {
 		return nil, err

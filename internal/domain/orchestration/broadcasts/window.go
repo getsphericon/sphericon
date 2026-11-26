@@ -74,7 +74,7 @@ func (m *Module) OutsideWindow(ctx context.Context, s *ent.Scoped, in WindowInpu
 			if err != nil {
 				return OutsideWindow{}, err
 			}
-			if j.Open || j.NoLocalTime() {
+			if j.Open || j.NoLocalTime {
 				continue
 			}
 			out.Held++

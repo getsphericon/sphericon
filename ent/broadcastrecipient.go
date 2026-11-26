@@ -35,6 +35,8 @@ type BroadcastRecipient struct {
 	DeferredUntil *time.Time `json:"deferred_until,omitempty"`
 	// DeferralCause holds the value of the "deferral_cause" field.
 	DeferralCause *deferralcause.Cause `json:"deferral_cause,omitempty"`
+	// DeferredSince holds the value of the "deferred_since" field.
+	DeferredSince *time.Time `json:"deferred_since,omitempty"`
 	// UnsubscribedAt holds the value of the "unsubscribed_at" field.
 	UnsubscribedAt *time.Time `json:"unsubscribed_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -98,7 +100,7 @@ func (*BroadcastRecipient) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case broadcastrecipient.FieldDeferralCause:
 			values[i] = new(sql.NullString)
-		case broadcastrecipient.FieldCreatedAt, broadcastrecipient.FieldUpdatedAt, broadcastrecipient.FieldDeferredUntil, broadcastrecipient.FieldUnsubscribedAt:
+		case broadcastrecipient.FieldCreatedAt, broadcastrecipient.FieldUpdatedAt, broadcastrecipient.FieldDeferredUntil, broadcastrecipient.FieldDeferredSince, broadcastrecipient.FieldUnsubscribedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -164,6 +166,13 @@ func (_m *BroadcastRecipient) assignValues(columns []string, values []any) error
 			} else if value.Valid {
 				_m.DeferralCause = new(deferralcause.Cause)
 				*_m.DeferralCause = deferralcause.Cause(value.String)
+			}
+		case broadcastrecipient.FieldDeferredSince:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field deferred_since", values[i])
+			} else if value.Valid {
+				_m.DeferredSince = new(time.Time)
+				*_m.DeferredSince = value.Time
 			}
 		case broadcastrecipient.FieldUnsubscribedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -246,6 +255,11 @@ func (_m *BroadcastRecipient) String() string {
 	if v := _m.DeferralCause; v != nil {
 		builder.WriteString("deferral_cause=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.DeferredSince; v != nil {
+		builder.WriteString("deferred_since=")
+		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")
 	if v := _m.UnsubscribedAt; v != nil {
